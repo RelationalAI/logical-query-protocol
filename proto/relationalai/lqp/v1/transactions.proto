@@ -24,8 +24,7 @@ message Write {
   oneof write_type {
     Define define = 1;
     Undefine undefine = 2;
-    SetContext set_context = 3;
-    UnsetContext unset_context = 4;
+    Context context = 3;
   }
 }
 
@@ -37,11 +36,7 @@ message Undefine {
   FragmentId fragment_id = 1;
 }
 
-message SetContext {
-  repeated RelationId relations = 1;
-}
-
-message UnsetContext {
+message Context {
   repeated RelationId relations = 1;
 }
 
