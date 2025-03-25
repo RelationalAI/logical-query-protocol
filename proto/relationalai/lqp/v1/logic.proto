@@ -1,0 +1,137 @@
+syntax = "proto3";
+
+package relationalai.lqp.v1;
+
+message Declaration {
+  oneof declaration_type {
+    Def def = 1;
+    Loop loop = 2;
+  }
+}
+
+message Def {
+  RelationId name = 1;
+  Abstraction body = 2;
+  repeated Attribute attrs = 3;
+}
+
+message Loop {
+  LoopIndex temporal_var = 1;
+  repeated Def inits = 2;
+  repeated Declaration body = 3;
+}
+
+// Abstraction and related types
+message Abstraction {
+  repeated Var vars = 1;
+  Formula value = 2;
+}
+
+// Formula variants
+message Formula {
+  oneof formula_type {
+    Exists exists = 1;
+    Reduce reduce = 2;
+    Conjunction conjunction = 3;
+    Disjunction disjunction = 4;
+    Not not = 5;
+    FFI ffi = 6;
+    Atom atom = 7;
+    Pragma pragma = 8;
+    Primitive primitive = 9;
+    True true_val = 10;
+    False false_val = 11;
+  }
+}
+
+message Exists {
+  repeated Var vars = 1;
+  Formula value = 2;
+}
+
+message Reduce {
+  Abstraction op = 1;
+  Abstraction body = 2;
+  repeated Term terms = 3;
+}
+
+message Conjunction {
+  repeated Formula args = 1;
+}
+
+message Disjunction {
+  repeated Formula args = 1;
+}
+
+message Not {
+  Formula arg = 1;
+}
+
+message FFI {
+  string name = 1;
+  repeated Abstraction args = 2;
+  repeated Term terms = 3;
+}
+
+message Atom {
+  RelationId name = 1;
+  repeated Term terms = 2;
+}
+
+message Pragma {
+  string name = 1;
+  repeated Term terms = 2;
+}
+
+message Primitive {
+  string name = 1;
+  repeated Term terms = 2;
+}
+
+message True {}
+message False {}
+
+message Term {
+  oneof term_type {
+    Var var = 1;
+    Constant constant = 2;
+  }
+}
+
+message Var {
+  string name = 1; // Symbol as the variable's identifier
+  PrimitiveType type = 2; // Reference to the type
+}
+
+message Constant {
+  PrimitiveValue value = 1; // Actual value instance
+}
+
+message Attribute {
+  string name = 1;
+  repeated Constant args = 2;
+}
+
+message RelationId {
+  fixed64 id_low = 1; // Lower 64 bits of UInt128
+  fixed64 id_high = 2; // Upper 64 bits of UInt128
+}
+
+message LoopIndex {
+  string name = 1; // Assuming LoopIndex is a named identifier
+}
+
+enum PrimitiveType {
+  PRIMITIVE_TYPE_UNSPECIFIED = 0;
+  PRIMITIVE_TYPE_STRING = 1;
+  PRIMITIVE_TYPE_INT = 2;
+  PRIMITIVE_TYPE_FLOAT = 3;
+}
+
+message PrimitiveValue {
+  oneof value {
+    string string_value = 1;
+    int64 int_value = 2;
+    double float_value = 3;
+  }
+}
