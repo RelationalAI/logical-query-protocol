@@ -1,0 +1,8 @@
+version: v2
+clean: true # Cleans the output directory before generation
+plugins:
+  - protoc_builtin: python
+    out: gen/python
+    opt: []
+inputs:
+  - directory: proto

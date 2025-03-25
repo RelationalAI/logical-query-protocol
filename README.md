@@ -20,3 +20,11 @@ detection](https://buf.build/docs/cli/quickstart/#detect-breaking-changes).
 ```
 buf breaking --against ".git#subdir=proto"
 ```
+
+## Build
+
+The build is [configured in `buf.gen.yaml`](https://buf.build/docs/generate/overview/).
+
+```
+buf generate
+```
