@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package relationalai.lqp.v1;
+
+import "relationalai/lqp/v1/fragments.proto";
+import "relationalai/lqp/v1/logic.proto";
+
+// Transaction and Epoch
+message Transaction {
+  repeated Epoch epochs = 1;
+}
+
+message Epoch {
+  repeated Write persistent_writes = 1;
+  repeated Write local_writes = 2;
+  repeated Read reads = 3;
+}
+
+//
+// Write operations
+//
+
+message Write {
+  oneof write_type {
+    Define define = 1;
+    Undefine undefine = 2;
+    SetContext set_context = 3;
+    UnsetContext unset_context = 4;
+  }
+}
+
+message Define {
+  Fragment fragment = 1;
+}
+
+message Undefine {
+  FragmentId fragment_id = 1;
+}
+
+message SetContext {
+  repeated RelationId relations = 1;
+}
+
+message UnsetContext {
+  repeated RelationId relations = 1;
+}
+
+//
+// Read operations
+//
+
+message Read {
+  oneof read_type {
+    Demand demand = 1;
+    Output output = 2;
+    WhatIf what_if = 3;
+  }
+}
+
+message Demand {
+  RelationId relation_id = 1;
+}
+
+message Output {
+  string name = 1;
+  RelationId relation_id = 2;
+}
+
+message WhatIf {
+  string branch = 1;
+  Epoch epoch = 2;
+}
