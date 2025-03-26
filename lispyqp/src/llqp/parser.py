@@ -206,13 +206,27 @@ def main():
 
     print(args)
 
-    # Process each file in the input directory
-    for file in os.listdir(args.input_directory):
-        if not file.endswith(".llqp"):
-            print(f"Skipping file {file} as it does not have the .llqp extension")
-            continue
-        
-        process_file(file, args)
+    # Check if directory
+    if not os.path.isdir(args.input_directory):
+        filename = args.input_directory
+        if not filename.endswith(".llqp"):
+            print(f"Skipping file {filename} as it does not have the .llqp extension")
+            return
+
+        with open(filename, "r") as f:
+            lqp_text = f.read()
+
+        lqp_proto = parse_lqp(lqp_text)
+        print(lqp_proto)
+
+    else:
+        # Process each file in the input directory
+        for file in os.listdir(args.input_directory):
+            if not file.endswith(".llqp"):
+                print(f"Skipping file {file} as it does not have the .llqp extension")
+                continue
+
+            process_file(file, args)
 
 
 if __name__ == "__main__":
