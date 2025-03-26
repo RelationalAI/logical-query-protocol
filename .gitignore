@@ -1,1 +1,6 @@
 .DS_Store
+
+# Python
+__pycache__/
+lispyqp/dist/
+lispyqp/src/lispy_qp.egg-info/

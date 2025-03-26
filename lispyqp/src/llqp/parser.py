@@ -1,0 +1,219 @@
+import argparse
+import os
+import sys
+
+import hashlib
+from lark import Lark, Transformer
+from relationalai.lqp.v1 import logic_pb2, fragments_pb2, transactions_pb2
+
+from google.protobuf.json_format import MessageToJson
+
+grammar = """
+start: transaction | fragment
+
+transaction: "(transaction" epoch* ")"
+epoch: "(epoch" persistent_writes? local_writes? reads? ")"
+persistent_writes: "(persistent_writes" write* ")"
+local_writes: "(local_writes" write* ")"
+reads: "(reads" read* ")"
+
+write: define | undefine | context
+define: "(define" fragment ")"
+undefine: "(undefine" fragment_id ")"
+context: "(context" relation_id* ")"
+
+read: demand | output
+demand: "(demand" relation_id ")"
+output: "(output" name? relation_id ")"
+
+fragment: "(fragment" fragment_id declaration* ")"
+
+declaration: def_
+def_: "(def" relation_id abstraction attrs? ")"
+
+abstraction: "(" vars formula ")"
+vars: "[" var* "]"
+
+formula: exists | reduce | conjunction | disjunction | not | ffi | atom | pragma | primitive | true | false
+exists: "(exists" vars formula ")"
+reduce: "(reduce" abstraction abstraction terms ")"
+conjunction: "(and" formula* ")"
+disjunction: "(or" formula* ")"
+not: "(not" formula ")"
+ffi: "(ffi" name args terms ")"
+atom: "(atom" relation_id term* ")"
+pragma: "(pragma" name terms ")"
+true: "(true)"
+false: "(false)"
+args: "(args" abstraction* ")"
+terms: "(terms" term* ")"
+
+primitive: raw_primitive | eq | add
+raw_primitive: "(primitive" name term* ")"
+eq: "(=" term term ")"
+add: "(+" term term term ")"
+
+term: var | constant
+var: SYMBOL "::" PRIMITIVE_TYPE
+constant: primitive_value
+
+attrs: "(attrs" attribute* ")"
+attribute: "(attribute" name constant* ")"
+
+fragment_id: ":" SYMBOL
+relation_id: ":" SYMBOL
+name: ":" SYMBOL
+
+primitive_value: STRING | NUMBER | FLOAT
+PRIMITIVE_TYPE: "STRING" | "INT" | "FLOAT"
+
+SYMBOL: /[a-zA-Z_][a-zA-Z0-9_-]*/
+STRING: "\\"" /[^"]*/ "\\""
+NUMBER: /\d+/
+FLOAT: /\d+\.\d+/
+
+COMMENT: /;;.*/  // Matches ;; followed by any characters except newline
+%ignore /\s+/
+%ignore COMMENT
+"""
+
+class LQPTransformer(Transformer):
+    def start(self, items): return items[0]
+
+    #
+    # Transactions
+    #
+    def transaction(self, items): return transactions_pb2.Transaction(epochs=items)
+    def epoch(self, items):
+        kwargs = {k: v for k, v in items if v}  # Filter out None values
+        return transactions_pb2.Epoch(**kwargs)
+
+    def persistent_writes(self, items): return ("persistent_writes", items)
+    def local_writes(self, items): return ("local_writes", items)
+    def reads(self, items): return ("reads", items)
+    
+    def write(self, items): return self.transform(items[0])
+    def define(self, items): return transactions_pb2.Write(define=transactions_pb2.Define(fragment=items[0]))
+    def undefine(self, items): return transactions_pb2.Write(undefine=transactions_pb2.Undefine(fragment_id=items[0]))
+    def context(self, items): return transactions_pb2.Write(context=transactions_pb2.Context(relations=items))
+    
+    def read(self, items): return self.transform(items[0])
+    def demand(self, items): return transactions_pb2.Read(demand=transactions_pb2.Demand(relation_id=items[0]))
+    def output(self, items):
+        if len(items) == 1: return transactions_pb2.Read(output=transactions_pb2.Output(relation_id=items[0]))
+        return transactions_pb2.Read(output=transactions_pb2.Output(name=items[0], relation_id=items[1]))
+    
+    #
+    # Logic
+    #
+    def fragment(self, items): return fragments_pb2.Fragment(id=items[0], declarations=items[1:])
+    def fragment_id(self, items): return fragments_pb2.FragmentId(id=items[0].encode())
+    
+    def declaration(self, items): return items[0]
+    def def_(self, items):
+        definition = logic_pb2.Def(name=items[0], body=items[1], attrs=items[2] if len(items) > 2 else [])
+        return logic_pb2.Declaration(**{'def': definition})
+        
+    def abstraction(self, items):
+        return logic_pb2.Abstraction(vars=items[0], value=items[1])
+
+    def vars(self, items): return [term.var for term in items]
+    def attrs(self, items): return items
+    
+    def formula(self, items): return items[0]
+    def true(self, _): return logic_pb2.Formula(true_val=getattr(logic_pb2, 'True')())
+    def false(self, _): return logic_pb2.Formula(false_val=getattr(logic_pb2, 'False')())
+    def exists(self, items): return logic_pb2.Formula(exists=logic_pb2.Exists(vars=items[0], value=items[1]))
+    def reduce(self, items): return logic_pb2.Formula(reduce=logic_pb2.Reduce(op=items[0], body=items[1], terms=items[2]))
+    def conjunction(self, items): return logic_pb2.Formula(conjunction=logic_pb2.Conjunction(args=items))
+    def disjunction(self, items): return logic_pb2.Formula(disjunction=logic_pb2.Disjunction(args=items))
+    def not_(self, items): return logic_pb2.Formula(not_=logic_pb2.Not(arg=items[0]))
+    def ffi(self, items): return logic_pb2.Formula(ffi=logic_pb2.FFI(name=items[0], args=items[1], terms=items[2]))
+    def atom(self, items): return logic_pb2.Formula(atom=logic_pb2.Atom(name=items[0], terms=items[1:]))
+    def pragma(self, items): return logic_pb2.Formula(pragma=logic_pb2.Pragma(name=items[0], terms=items[1]))
+
+    #
+    # Primitives
+    #     
+    def primitive(self, items): return items[0]
+    def raw_primitive(self, items): return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=items[0], terms=items[1:]))
+    def eq(self, items): return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name([":rel_primitive_eq"]), terms=items))
+    def add(self, items): return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name([":rel_primitive_add"]), terms=items))
+
+    def args(self, items): return items
+    def terms(self, items): return items
+    
+    def term(self, items): return items[0]
+    def var(self, items):
+        identifier = items[0]
+        primitive_type = items[1]
+        type_enum = getattr(logic_pb2.PrimitiveType, f"PRIMITIVE_TYPE_{primitive_type.upper()}")
+        return logic_pb2.Term(var=logic_pb2.Var(name=identifier, type=type_enum))
+    def constant(self, items):
+        return logic_pb2.Term(constant=logic_pb2.Constant(value=items[0]))
+    def name(self, items): return items[0]
+    def attribute(self, items): return logic_pb2.Attribute(name=items[0], args=items[1:])
+
+    def relation_id(self, items): 
+        symbol = items[0][1:]  # Remove leading ':'
+        hash_val = int(hashlib.sha256(symbol.encode()).hexdigest()[:16], 16)  # First 64 bits of SHA-256
+        return logic_pb2.RelationId(id_low=hash_val, id_high=0)  # Simplified hashing
+
+    #
+    # Primitive values 
+    #
+    def primitive_value(self, items): return items[0]
+    def STRING(self, s): return logic_pb2.PrimitiveValue(string_value=s[1:-1])  # Strip quotes
+    def NUMBER(self, n): return logic_pb2.PrimitiveValue(int_value=int(n))
+    def FLOAT(self, f): return logic_pb2.PrimitiveValue(float_value=float(f))
+    def SYMBOL(self, sym): return str(sym)
+
+# LALR(1) is significantly faster than Earley for parsing, especially on larger inputs. It
+# uses a precomputed parse table, reducing runtime complexity to O(n) (linear in input
+# size), whereas Earley is O(n³) in the worst case (though often O(n²) or better for
+# practical grammars). The LQP grammar is relatively complex but unambiguous, making
+# LALR(1)’s speed advantage appealing for a CLI tool where quick parsing matters.
+parser = Lark(grammar, parser="lalr")
+
+def parse_lqp(text):
+    tree = parser.parse(text)
+    return LQPTransformer().transform(tree)
+
+def process_file(filename, args):
+    with open(os.path.join(args.input_directory, filename), "r") as f:
+        lqp_text = f.read()
+
+    lqp_proto = parse_lqp(lqp_text)
+    print(lqp_proto)
+
+    # Write binary output to the configured directories, using the same filename.
+    if args.bin:
+        with open(os.path.join(args.bin, filename+".bin"), "wb") as f:
+            f.write(lqp_proto.SerializeToString())
+
+    # Write JSON output
+    if args.json:
+        with open(os.path.join(args.json, filename+".json"), "w") as f:
+            f.write(MessageToJson(lqp_proto, preserving_proto_field_name=True))
+
+
+def main():
+    arg_parser = argparse.ArgumentParser(description="Parse LQP S-expression into Protobuf binary and JSON files.")
+    arg_parser.add_argument("input_directory", help="path to the input LQP S-expression files")
+    arg_parser.add_argument("--bin", help="output directory for the binary encoded protobuf")
+    arg_parser.add_argument("--json", help="output directory for the JSON encoded protobuf")
+    args = arg_parser.parse_args()
+
+    print(args)
+
+    # Process each file in the input directory
+    for file in os.listdir(args.input_directory):
+        if not file.endswith(".llqp"):
+            print(f"Skipping file {file} as it does not have the .llqp extension")
+            continue
+        
+        process_file(file, args)
+
+
+if __name__ == "__main__":
+    main()

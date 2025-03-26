@@ -1,0 +1,19 @@
+[project]
+name = "lispy-qp"
+version = "0.1.0"
+description = "A parser for Logical Query Protocol (LQP) S-expressions into Protobuf"
+readme = "README.md"
+authors = [
+    { name = "Niko Göbel", email = "nikolas.goebel@relational.ai" }
+]
+dependencies = [
+    "lark>=1.1.9",
+    "protobuf==5.29.4"
+]
+
+[project.scripts]
+llqp = "llqp.parser:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
