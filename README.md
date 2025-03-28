@@ -28,3 +28,14 @@ The build is [configured in `buf.gen.yaml`](https://buf.build/docs/generate/over
 ```
 buf generate
 ```
+
+### Generating Julia code
+
+Julia codegen is not supported out of the box. We get it via ProtoBuf.jl. To generate the
+code, switch into the `proto/` directory and start a Julia REPL. Then do the following:
+
+```julia
+julia> using ProtoBuf
+
+julia> protojl(readdir("relationalai/lqp/v1/", join=true), ".", "../gen/julia/", add_kwarg_constructors=true)
+```
