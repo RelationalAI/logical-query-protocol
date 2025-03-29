@@ -137,8 +137,8 @@ class LQPTransformer(Transformer):
     #     
     def primitive(self, items): return items[0]
     def raw_primitive(self, items): return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=items[0], terms=items[1:]))
-    def eq(self, items): return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name([":rel_primitive_eq"]), terms=items))
-    def add(self, items): return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name([":rel_primitive_add"]), terms=items))
+    def eq(self, items): return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_eq"]), terms=items))
+    def add(self, items): return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_add"]), terms=items))
 
     def args(self, items): return items
     def terms(self, items): return items
