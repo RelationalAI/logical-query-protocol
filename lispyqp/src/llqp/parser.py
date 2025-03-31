@@ -8,6 +8,76 @@ from relationalai.lqp.v1 import logic_pb2, fragments_pb2, transactions_pb2
 
 from google.protobuf.json_format import MessageToJson
 
+grammar = """
+start: transaction | fragment
+
+transaction: "(transaction" epoch* ")"
+epoch: "(epoch" persistent_writes? local_writes? reads? ")"
+persistent_writes: "(persistent_writes" write* ")"
+local_writes: "(local_writes" write* ")"
+reads: "(reads" read* ")"
+
+write: define | undefine | context
+define: "(define" fragment ")"
+undefine: "(undefine" fragment_id ")"
+context: "(context" relation_id* ")"
+
+read: demand | output
+demand: "(demand" relation_id ")"
+output: "(output" name? relation_id ")"
+
+fragment: "(fragment" fragment_id declaration* ")"
+
+declaration: def_
+def_: "(def" relation_id abstraction attrs? ")"
+
+abstraction: "(" vars formula ")"
+vars: "[" var* "]"
+
+formula: exists | reduce | conjunction | disjunction | not | ffi | atom | pragma | primitive | true | false
+exists: "(exists" vars formula ")"
+reduce: "(reduce" abstraction abstraction terms ")"
+conjunction: "(and" formula* ")"
+disjunction: "(or" formula* ")"
+not: "(not" formula ")"
+ffi: "(ffi" name args terms ")"
+atom: "(atom" relation_id term* ")"
+pragma: "(pragma" name terms ")"
+true: "(true)"
+false: "(false)"
+args: "(args" abstraction* ")"
+terms: "(terms" term* ")"
+
+primitive: raw_primitive | eq | add
+raw_primitive: "(primitive" name term* ")"
+eq: "(=" term term ")"
+add: "(+" term term term ")"
+
+term: var | constant
+var: SYMBOL "::" PRIMITIVE_TYPE
+constant: primitive_value
+
+attrs: "(attrs" attribute* ")"
+attribute: "(attribute" name constant* ")"
+
+fragment_id: ":" SYMBOL
+relation_id: ":" SYMBOL
+name: ":" SYMBOL
+
+primitive_value: STRING | NUMBER | FLOAT
+PRIMITIVE_TYPE: "STRING" | "INT" | "FLOAT"
+
+SYMBOL: /[a-zA-Z_][a-zA-Z0-9_-]*/
+STRING: "\\"" /[^"]*/ "\\""
+NUMBER: /\d+/
+FLOAT: /\d+\.\d+/
+
+COMMENT: /;;.*/  // Matches ;; followed by any characters except newline
+%ignore /\s+/
+%ignore COMMENT
+"""
+
+
 class LQPTransformer(Transformer):
     def start(self, items): return items[0]
 
@@ -104,7 +174,7 @@ class LQPTransformer(Transformer):
 # size), whereas Earley is O(n³) in the worst case (though often O(n²) or better for
 # practical grammars). The LQP grammar is relatively complex but unambiguous, making
 # LALR(1)’s speed advantage appealing for a CLI tool where quick parsing matters.
-parser = Lark.open("llqp.lark", rel_to=__file__, parser="lalr")
+parser = Lark(grammar, parser="lalr")
 
 def parse_lqp(text):
     tree = parser.parse(text)
