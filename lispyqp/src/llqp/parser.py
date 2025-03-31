@@ -179,23 +179,22 @@ def parse_lqp(text):
     tree = parser.parse(text)
     return LQPTransformer().transform(tree)
 
-def process_file(filename, args):
-    with open(os.path.join(args.input_directory, filename), "r") as f:
+def process_file(filename, bin, json):
+    with open(filename, "r") as f:
         lqp_text = f.read()
 
     lqp_proto = parse_lqp(lqp_text)
     print(lqp_proto)
 
     # Write binary output to the configured directories, using the same filename.
-    if args.bin:
-        with open(os.path.join(args.bin, filename+".bin"), "wb") as f:
+    if bin:
+        with open(bin, "wb") as f:
             f.write(lqp_proto.SerializeToString())
 
     # Write JSON output
-    if args.json:
-        with open(os.path.join(args.json, filename+".json"), "w") as f:
+    if json:
+        with open(json, "w") as f:
             f.write(MessageToJson(lqp_proto, preserving_proto_field_name=True))
-
 
 def main():
     arg_parser = argparse.ArgumentParser(description="Parse LQP S-expression into Protobuf binary and JSON files.")
@@ -213,11 +212,16 @@ def main():
             print(f"Skipping file {filename} as it does not have the .llqp extension")
             return
 
-        with open(filename, "r") as f:
-            lqp_text = f.read()
+        bin = args.bin if args.bin else None
+        if bin and not bin.endswith(".bin"):
+            print(f"Skipping output {bin} as it does not have the .bin extension")
+            bin = None
 
-        lqp_proto = parse_lqp(lqp_text)
-        print(lqp_proto)
+        json = args.json if args.json else None
+        if json and not json.endswith(".json"):
+            print(f"Skipping output {json} as it does not have the .json extension")
+            json = None
+        process_file(filename, bin, json)
 
     else:
         # Process each file in the input directory
@@ -226,7 +230,10 @@ def main():
                 print(f"Skipping file {file} as it does not have the .llqp extension")
                 continue
 
-            process_file(file, args)
+            filename = os.path.join(args.input_directory, file)
+            bin = os.path.join(args.bin, file+".bin") if args.bin else None
+            json = os.path.join(args.json, file+".json") if args.json else None
+            process_file(filename, bin, json)
 
 
 if __name__ == "__main__":
