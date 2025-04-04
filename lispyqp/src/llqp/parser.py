@@ -22,9 +22,10 @@ define: "(define" fragment ")"
 undefine: "(undefine" fragment_id ")"
 context: "(context" relation_id* ")"
 
-read: demand | output
+read: demand | output | abort
 demand: "(demand" relation_id ")"
 output: "(output" name? relation_id ")"
+abort: "(abort" name? relation_id ")"
 
 fragment: "(fragment" fragment_id declaration* ")"
 
@@ -79,72 +80,113 @@ COMMENT: /;;.*/  // Matches ;; followed by any characters except newline
 
 
 class LQPTransformer(Transformer):
-    def start(self, items): return items[0]
+    def start(self, items):
+        return items[0]
 
     #
     # Transactions
     #
-    def transaction(self, items): return transactions_pb2.Transaction(epochs=items)
+    def transaction(self, items):
+        return transactions_pb2.Transaction(epochs=items)
     def epoch(self, items):
         kwargs = {k: v for k, v in items if v}  # Filter out None values
         return transactions_pb2.Epoch(**kwargs)
 
-    def persistent_writes(self, items): return ("persistent_writes", items)
-    def local_writes(self, items): return ("local_writes", items)
-    def reads(self, items): return ("reads", items)
-    
-    def write(self, items): return self.transform(items[0])
-    def define(self, items): return transactions_pb2.Write(define=transactions_pb2.Define(fragment=items[0]))
-    def undefine(self, items): return transactions_pb2.Write(undefine=transactions_pb2.Undefine(fragment_id=items[0]))
-    def context(self, items): return transactions_pb2.Write(context=transactions_pb2.Context(relations=items))
-    
-    def read(self, items): return self.transform(items[0])
-    def demand(self, items): return transactions_pb2.Read(demand=transactions_pb2.Demand(relation_id=items[0]))
+    def persistent_writes(self, items):
+        return ("persistent_writes", items)
+    def local_writes(self, items):
+        return ("local_writes", items)
+    def reads(self, items):
+        return ("reads", items)
+    def write(self, items):
+        return self.transform(items[0])
+
+    def define(self, items):
+        return transactions_pb2.Write(define=transactions_pb2.Define(fragment=items[0]))
+    def undefine(self, items):
+        return transactions_pb2.Write(undefine=transactions_pb2.Undefine(fragment_id=items[0]))
+    def context(self, items):
+        return transactions_pb2.Write(context=transactions_pb2.Context(relations=items))
+
+    def read(self, items):
+        return self.transform(items[0])
+    def demand(self, items):
+        return transactions_pb2.Read(demand=transactions_pb2.Demand(relation_id=items[0]))
     def output(self, items):
-        if len(items) == 1: return transactions_pb2.Read(output=transactions_pb2.Output(relation_id=items[0]))
+        if len(items) == 1:
+            return transactions_pb2.Read(output=transactions_pb2.Output(relation_id=items[0]))
         return transactions_pb2.Read(output=transactions_pb2.Output(name=items[0], relation_id=items[1]))
-    
+    def abort(self, items):
+        if len(items) == 1:
+            return transactions_pb2.Read(abort=transactions_pb2.Output(relation_id=items[0]))
+        return transactions_pb2.Read(abort=transactions_pb2.Output(name=items[0], relation_id=items[1]))
+
     #
     # Logic
     #
-    def fragment(self, items): return fragments_pb2.Fragment(id=items[0], declarations=items[1:])
-    def fragment_id(self, items): return fragments_pb2.FragmentId(id=items[0].encode())
-    
-    def declaration(self, items): return items[0]
+    def fragment(self, items):
+        return fragments_pb2.Fragment(id=items[0], declarations=items[1:])
+    def fragment_id(self, items):
+        return fragments_pb2.FragmentId(id=items[0].encode())
+
+    def declaration(self, items):
+        return items[0]
     def def_(self, items):
-        definition = logic_pb2.Def(name=items[0], body=items[1], attrs=items[2] if len(items) > 2 else [])
+        definition = []
+        if len(items) > 2:
+            definition = logic_pb2.Def(name=items[0], body=items[1], attrs=items[2])
         return logic_pb2.Declaration(**{'def': definition})
-        
+
     def abstraction(self, items):
         return logic_pb2.Abstraction(vars=items[0], value=items[1])
 
-    def vars(self, items): return [term.var for term in items]
-    def attrs(self, items): return items
-    
-    def formula(self, items): return items[0]
-    def true(self, _): return logic_pb2.Formula(true_val=getattr(logic_pb2, 'True')())
-    def false(self, _): return logic_pb2.Formula(false_val=getattr(logic_pb2, 'False')())
-    def exists(self, items): return logic_pb2.Formula(exists=logic_pb2.Exists(vars=items[0], value=items[1]))
-    def reduce(self, items): return logic_pb2.Formula(reduce=logic_pb2.Reduce(op=items[0], body=items[1], terms=items[2]))
-    def conjunction(self, items): return logic_pb2.Formula(conjunction=logic_pb2.Conjunction(args=items))
-    def disjunction(self, items): return logic_pb2.Formula(disjunction=logic_pb2.Disjunction(args=items))
-    def not_(self, items): return logic_pb2.Formula(not_=logic_pb2.Not(arg=items[0]))
-    def ffi(self, items): return logic_pb2.Formula(ffi=logic_pb2.FFI(name=items[0], args=items[1], terms=items[2]))
-    def atom(self, items): return logic_pb2.Formula(atom=logic_pb2.Atom(name=items[0], terms=items[1:]))
-    def pragma(self, items): return logic_pb2.Formula(pragma=logic_pb2.Pragma(name=items[0], terms=items[1]))
+    def vars(self, items):
+        return [term.var for term in items]
+    def attrs(self, items):
+        return items
+
+    def formula(self, items):
+        return items[0]
+    def true(self, _):
+        return logic_pb2.Formula(true_val=getattr(logic_pb2, 'True')())
+    def false(self, _):
+        return logic_pb2.Formula(false_val=getattr(logic_pb2, 'False')())
+    def exists(self, items):
+        return logic_pb2.Formula(exists=logic_pb2.Exists(vars=items[0], value=items[1]))
+    def reduce(self, items):
+        return logic_pb2.Formula(reduce=logic_pb2.Reduce(op=items[0], body=items[1], terms=items[2]))
+    def conjunction(self, items):
+        return logic_pb2.Formula(conjunction=logic_pb2.Conjunction(args=items))
+    def disjunction(self, items):
+        return logic_pb2.Formula(disjunction=logic_pb2.Disjunction(args=items))
+    def not_(self, items):
+        return logic_pb2.Formula(not_=logic_pb2.Not(arg=items[0]))
+    def ffi(self, items):
+        return logic_pb2.Formula(ffi=logic_pb2.FFI(name=items[0], args=items[1], terms=items[2]))
+    def atom(self, items):
+        return logic_pb2.Formula(atom=logic_pb2.Atom(name=items[0], terms=items[1:]))
+    def pragma(self, items):
+        return logic_pb2.Formula(pragma=logic_pb2.Pragma(name=items[0], terms=items[1]))
 
     #
     # Primitives
-    #     
-    def primitive(self, items): return items[0]
-    def raw_primitive(self, items): return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=items[0], terms=items[1:]))
-    def eq(self, items): return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_eq"]), terms=items))
-    def add(self, items): return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_add"]), terms=items))
+    #
+    def primitive(self, items):
+        return items[0]
+    def raw_primitive(self, items):
+        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=items[0], terms=items[1:]))
+    def eq(self, items):
+        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_eq"]), terms=items))
+    def add(self, items):
+        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_add"]), terms=items))
 
-    def args(self, items): return items
-    def terms(self, items): return items
-    
-    def term(self, items): return items[0]
+    def args(self, items):
+        return items
+    def terms(self, items):
+        return items
+
+    def term(self, items):
+        return items[0]
     def var(self, items):
         identifier = items[0]
         primitive_type = items[1]
@@ -152,22 +194,29 @@ class LQPTransformer(Transformer):
         return logic_pb2.Term(var=logic_pb2.Var(name=identifier, type=type_enum))
     def constant(self, items):
         return logic_pb2.Term(constant=logic_pb2.Constant(value=items[0]))
-    def name(self, items): return items[0]
-    def attribute(self, items): return logic_pb2.Attribute(name=items[0], args=items[1:])
+    def name(self, items):
+        return items[0]
+    def attribute(self, items):
+        return logic_pb2.Attribute(name=items[0], args=items[1:])
 
-    def relation_id(self, items): 
+    def relation_id(self, items):
         symbol = items[0][1:]  # Remove leading ':'
         hash_val = int(hashlib.sha256(symbol.encode()).hexdigest()[:16], 16)  # First 64 bits of SHA-256
         return logic_pb2.RelationId(id_low=hash_val, id_high=0)  # Simplified hashing
 
     #
-    # Primitive values 
+    # Primitive values
     #
-    def primitive_value(self, items): return items[0]
-    def STRING(self, s): return logic_pb2.PrimitiveValue(string_value=s[1:-1])  # Strip quotes
-    def NUMBER(self, n): return logic_pb2.PrimitiveValue(int_value=int(n))
-    def FLOAT(self, f): return logic_pb2.PrimitiveValue(float_value=float(f))
-    def SYMBOL(self, sym): return str(sym)
+    def primitive_value(self, items):
+        return items[0]
+    def STRING(self, s):
+        return logic_pb2.PrimitiveValue(string_value=s[1:-1])  # Strip quotes
+    def NUMBER(self, n):
+        return logic_pb2.PrimitiveValue(int_value=int(n))
+    def FLOAT(self, f):
+        return logic_pb2.PrimitiveValue(float_value=float(f))
+    def SYMBOL(self, sym):
+        return str(sym)
 
 # LALR(1) is significantly faster than Earley for parsing, especially on larger inputs. It
 # uses a precomputed parse table, reducing runtime complexity to O(n) (linear in input
