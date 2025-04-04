@@ -117,8 +117,8 @@ class LQPTransformer(Transformer):
         return transactions_pb2.Read(output=transactions_pb2.Output(name=items[0], relation_id=items[1]))
     def abort(self, items):
         if len(items) == 1:
-            return transactions_pb2.Read(abort=transactions_pb2.Output(relation_id=items[0]))
-        return transactions_pb2.Read(abort=transactions_pb2.Output(name=items[0], relation_id=items[1]))
+            return transactions_pb2.Read(abort=transactions_pb2.Abort(relation_id=items[0]))
+        return transactions_pb2.Read(abort=transactions_pb2.Abort(name=items[0], relation_id=items[1]))
 
     #
     # Logic
@@ -131,9 +131,11 @@ class LQPTransformer(Transformer):
     def declaration(self, items):
         return items[0]
     def def_(self, items):
-        definition = []
-        if len(items) > 2:
-            definition = logic_pb2.Def(name=items[0], body=items[1], attrs=items[2])
+        name = items[0]
+        body = items[1]
+        attrs = items[2] if len(items) > 2 else []
+
+        definition = logic_pb2.Def(name=name, body=body, attrs=attrs)
         return logic_pb2.Declaration(**{'def': definition})
 
     def abstraction(self, items):
