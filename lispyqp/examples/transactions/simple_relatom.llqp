@@ -1,0 +1,15 @@
+(transaction
+    (epoch
+        (local_writes
+            (define
+                (fragment :f1
+                    (def :foo ([x::INT] (relatom (sig :hello/INT/FLOAT) x::INT)))
+                )
+            )
+        )
+
+        (reads
+            (output :foo :foo)
+        )
+    )
+)
