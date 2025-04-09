@@ -173,7 +173,7 @@ class LQPTransformer(Transformer):
     def pragma(self, items):
         return logic_pb2.Formula(pragma=logic_pb2.Pragma(name=items[0], terms=items[1]))
     def relatom(self, items):
-        return logic_pb2.Formula(rel_atom=logic_pb2.RelAtom(name=items[0], terms=items[1:]))
+        return logic_pb2.Formula(rel_atom=logic_pb2.RelAtom(sig=items[0], terms=items[1:]))
 
     #
     # Primitives

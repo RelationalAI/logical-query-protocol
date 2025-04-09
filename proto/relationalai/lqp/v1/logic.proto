@@ -93,7 +93,7 @@ message True {}
 message False {}
 
 message RelAtom {
-  RelationSig name = 1;
+  RelationSig sig = 1;
   repeated Term terms = 2;
 }
 
