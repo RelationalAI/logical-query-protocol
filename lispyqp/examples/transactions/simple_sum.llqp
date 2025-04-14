@@ -10,16 +10,7 @@
                             (reduce
                                 ([a::INT b::INT c::INT] (+ a::INT b::INT c::INT))   ;; op
                                 ([num::INT] (atom :bar num::INT))                   ;; body
-                                (terms x::INT)                                      ;; result
-                            )
-                        )
-                    )
-                )
-            )
-        )
+                                (terms x::INT)))))))
 
         (reads
-            (output :foo :result)
-        )
-    )
-)
+            (output :foo :result))))
