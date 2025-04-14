@@ -1,0 +1,181 @@
+(transaction
+    (epoch
+        (local_writes
+            (define
+                (fragment :f1
+                    ;; def common_10172(_lineitem, _lineitem_l_shipdate, _lineitem_l_returnflag, _lineitem_l_linestatus, _lineitem_l_extendedprice, _lineitem_l_discount, _res, _res_2):
+                    ;;     LineItem(_lineitem) and
+                    ;;     l_shipdate(_lineitem, _lineitem_l_shipdate) and
+                    ;;     _lineitem_l_shipdate <= "1998-09-02" and
+                    ;;     l_returnflag(_lineitem, _lineitem_l_returnflag) and
+                    ;;     l_linestatus(_lineitem, _lineitem_l_linestatus) and
+                    ;;     l_extendedprice(_lineitem, _lineitem_l_extendedprice) and
+                    ;;     l_discount(_lineitem, _lineitem_l_discount) and
+                    ;;     _res_2 = 1 - _lineitem_l_discount and
+                    ;;     _res = _lineitem_l_extendedprice * _res_2
+
+                    ;; TODO: still needed in the LQP:
+                    ;;  - more types - ENTITY/HASH, CHAR, DECIMAL
+                    ;;  - more simple primitives (<=, -, *)
+                    (def :common
+                        (
+                            [
+                                _lineitem::ENTITY
+                                _lineitem_l_shipdate::INT
+                                _lineitem_l_returnflag::STRING
+                                _lineitem_l_linestatus::STRING
+                                _lineitem_l_extendedprice::DECIMAL
+                                _lineitem_l_discount::DECIMAL
+                                _res::DECIMAL
+                                _res_2::DECIMAL
+                            ]
+
+                            (and
+                                (relatom (sig :LineItem/ENTITY) _lineitem::ENTITY)
+                                (relatom (sig :lqp_l_shipdate/ENTITY/INT) _lineitem::ENTITY _lineitem_l_shipdate::INT)
+                                (<= _lineitem_l_shipdate::INT 729634)
+                                (relatom (sig :lqp_l_returnflag/ENTITY/STRING) _lineitem::ENTITY _lineitem_l_returnflag::STRING)
+                                (relatom (sig :lqp_l_linestatus/ENTITY/STRING) _lineitem::ENTITY _lineitem_l_linestatus::STRING)
+                                (relatom (sig :lqp_l_extendedprice/ENTITY/DECIMAL) _lineitem::ENTITY _lineitem_l_extendedprice::DECIMAL)
+                                (relatom (sig :lqp_l_discount/ENTITY/DECIMAL) _lineitem::ENTITY _lineitem_l_discount::DECIMAL)
+                                (exists [_inter::DECIMAL]
+                                    (and
+                                        (- 1 _lineitem_l_discount::DECIMAL _inter::DECIMAL)
+                                        (= _res_2::DECIMAL _inter::DECIMAL)
+                                    )
+                                )
+                                (exists [_inter_2::DECIMAL]
+                                    (and
+                                        (* _lineitem_l_extendedprice::DECIMAL _res_2::DECIMAL _inter_2::DECIMAL)
+                                        (= _res::DECIMAL _inter_2::DECIMAL)
+                                    )
+                                )
+                            )
+                        )
+                    )
+
+                    ;; def nested_10196(_lineitem_l_returnflag, _lineitem_l_linestatus, _v):
+                    ;; std::common::sum(
+                    ;;     {(_lineitem, _lineitem_l_quantity):
+                    ;;         exists((_lineitem_l_shipdate, _lineitem_l_extendedprice, _lineitem_l_discount, _res, _res_2) |
+                    ;;             common_10172(_lineitem, _lineitem_l_shipdate, _lineitem_l_returnflag, _lineitem_l_linestatus, _lineitem_l_extendedprice, _lineitem_l_discount, _res, _res_2) and
+                    ;;             l_quantity(_lineitem, _lineitem_l_quantity)
+                    ;;         )
+                    ;;     },
+                    ;;     _v
+                    ;; )
+
+                    (def :quantity_sum
+                        (
+                            [
+                                _lineitem_l_returnflag::STRING
+                                _lineitem_l_linestatus::STRING
+                                _v::DECIMAL
+                            ]
+
+                            (reduce
+                                ([a::DECIMAL b::DECIMAL c::DECIMAL] (+ a::DECIMAL b::DECIMAL c::DECIMAL))   ;; op
+                                ([_lineitem::ENTITY _lineitem_l_quantity::DECIMAL]      ;; body
+                                    (exists
+                                        [
+                                            _lineitem_l_shipdate::INT
+                                            _lineitem_l_extendedprice::DECIMAL
+                                            _lineitem_l_discount::DECIMAL
+                                            _res::DECIMAL
+                                            _res_2::DECIMAL
+                                        ]
+
+                                        (and
+                                            (atom
+                                                :common
+                                                _lineitem::ENTITY
+                                                _lineitem_l_shipdate::INT
+                                                _lineitem_l_returnflag::STRING
+                                                _lineitem_l_linestatus::STRING
+                                                _lineitem_l_extendedprice::DECIMAL
+                                                _lineitem_l_discount::DECIMAL
+                                                _res::DECIMAL
+                                                _res_2::DECIMAL
+                                            )
+                                            (relatom
+                                                (sig :lqp_l_quantity/ENTITY/DECIMAL)
+                                                _lineitem::ENTITY
+                                                _lineitem_l_quantity::DECIMAL
+                                            )
+                                        )
+                                    )
+                                )
+                                (terms _v::DECIMAL)                                     ;; result
+                            )
+                        )
+                    )
+
+                    ;; def nested_10197(_lineitem_l_returnflag, _lineitem_l_linestatus, _v):
+                    ;; std::common::sum(
+                    ;;     {(_lineitem, _lineitem_l_extendedprice):
+                    ;;         exists((_lineitem_l_shipdate, _lineitem_l_discount, _res, _res_2) |
+                    ;;             common_10172(_lineitem, _lineitem_l_shipdate, _lineitem_l_returnflag, _lineitem_l_linestatus, _lineitem_l_extendedprice, _lineitem_l_discount, _res, _res_2)
+                    ;;         )
+                    ;;     },
+                    ;;     _v
+                    ;; )
+
+                    (def :extendedprice_sum
+                        (
+                            [
+                                _lineitem_l_returnflag::STRING
+                                _lineitem_l_linestatus::STRING
+                                _v::DECIMAL
+                            ]
+
+                            (reduce
+                                ([a::DECIMAL b::DECIMAL c::DECIMAL] (+ a::DECIMAL b::DECIMAL c::DECIMAL))   ;; op
+                                ([_lineitem::ENTITY _lineitem_l_extendedprice::DECIMAL]                     ;; body
+                                    (exists
+                                        [
+                                            _lineitem_l_shipdate::INT
+                                            _lineitem_l_discount::DECIMAL
+                                            _res::DECIMAL
+                                            _res_2::DECIMAL
+                                        ]
+
+                                        (and
+                                            (atom
+                                                :common
+                                                _lineitem::ENTITY
+                                                _lineitem_l_shipdate::INT
+                                                _lineitem_l_returnflag::STRING
+                                                _lineitem_l_linestatus::STRING
+                                                _lineitem_l_extendedprice::DECIMAL
+                                                _lineitem_l_discount::DECIMAL
+                                                _res::DECIMAL
+                                                _res_2::DECIMAL
+                                            )
+                                        )
+                                    )
+                                )
+                                (terms _v::DECIMAL)                                                         ;; result
+                            )
+                        )
+                    )
+
+                    ;; def nested_10198(_lineitem_l_returnflag, _lineitem_l_linestatus, _v):
+                    ;; std::common::sum(
+                    ;;     {(_lineitem, _res):
+                    ;;         exists((_lineitem_l_shipdate, _lineitem_l_extendedprice, _lineitem_l_discount, _res_2) |
+                    ;;             common_10172(_lineitem, _lineitem_l_shipdate, _lineitem_l_returnflag, _lineitem_l_linestatus, _lineitem_l_extendedprice, _lineitem_l_discount, _res_2, _res)
+                    ;;         )
+                    ;;     },
+                    ;;     _v
+                    ;; )
+
+                )
+            )
+        )
+
+
+        (reads
+            (output :result :quantity_sum)
+        )
+    )
+)
