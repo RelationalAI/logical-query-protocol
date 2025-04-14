@@ -133,6 +133,7 @@ enum PrimitiveType {
   PRIMITIVE_TYPE_INT = 2;
   PRIMITIVE_TYPE_FLOAT = 3;
   PRIMITIVE_TYPE_DECIMAL = 4;
+  // TODO PR: should we just use UINT128?
   PRIMITIVE_TYPE_HASH = 5;
 }
 
@@ -142,6 +143,7 @@ message PrimitiveValue {
     int64 int_value = 2;
     double float_value = 3;
     Decimal decimal_value = 4;
+    // TODO PR: UINT128??
     Hash hash_value = 5;
   }
 }
