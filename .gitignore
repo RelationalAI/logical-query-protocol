@@ -5,3 +5,6 @@ __pycache__/
 lispyqp/dist/
 lispyqp/src/lispy_qp.egg-info/
 lispyqp/out/
+
+# Proto generated files
+gen

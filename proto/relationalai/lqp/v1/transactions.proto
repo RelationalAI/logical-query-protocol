@@ -49,6 +49,7 @@ message Read {
     Demand demand = 1;
     Output output = 2;
     WhatIf what_if = 3;
+    Abort abort = 4;
   }
 }
 
@@ -64,4 +65,9 @@ message Output {
 message WhatIf {
   string branch = 1;
   Epoch epoch = 2;
+}
+
+message Abort {
+  string name = 1;
+  RelationId relation_id = 2;
 }

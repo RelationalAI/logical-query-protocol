@@ -1,0 +1,12 @@
+(transaction
+    (epoch
+        (local_writes
+            (define
+                (fragment :f1
+                    (def :foo ([] (= 1 1)))
+                    (def :abort ([] (atom :foo)))
+                    (def :output ([] (atom :foo))))))
+
+        (reads
+            (output :result :output)
+            (abort :abort_1_eq_1 :abort))))
