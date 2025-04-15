@@ -66,7 +66,6 @@
                     ;;     },
                     ;;     _v
                     ;; )
-
                     (def :sum_qty
                         (
                             [
@@ -121,7 +120,6 @@
                     ;;         },
                     ;;         _v
                     ;;     )
-
                     (def :sum_base_price
                         (
                             [
@@ -170,7 +168,6 @@
                     ;;         },
                     ;;         _v
                     ;;     )
-
                     (def :sum_disc_price
                         (
                             [
@@ -222,7 +219,6 @@
                     ;;         },
                     ;;         _v
                     ;;     )
-
                     (def :sum_charge
                         (
                             [
@@ -282,7 +278,6 @@
                     ;;         },
                     ;;         _v
                     ;;     )
-
                     (def :avg_qty
                         (
                             [
@@ -345,8 +340,7 @@
                     ;;         },
                     ;;         _v
                     ;;     )
-
-                    (def :avg_price
+                    (def :avg_base_price
                         (
                             [
                                 _lineitem_l_returnflag::STRING
@@ -393,6 +387,139 @@
                         )
                     )
 
+                    ;; def nested_10202(_lineitem_l_returnflag, _lineitem_l_linestatus, _v):
+                    ;;     std::common::mean(
+                    ;;         {(_lineitem, _lineitem_l_discount):
+                    ;;             exists((_lineitem_l_shipdate, _lineitem_l_extendedprice, _res, _res_2) |
+                    ;;                 common_10172(_lineitem, _lineitem_l_shipdate, _lineitem_l_returnflag, _lineitem_l_linestatus, _lineitem_l_extendedprice, _lineitem_l_discount, _res, _res_2)
+                    ;;             )
+                    ;;         },
+                    ;;         _v
+                    ;;     )
+                    (def :avg_disc
+                        (
+                            [
+                                _lineitem_l_returnflag::STRING
+                                _lineitem_l_linestatus::STRING
+                                _v::DECIMAL
+                            ]
+
+                            ;; sum_discount / count(discount)
+                            (exists [_sum_discount::DECIMAL _count_discount::INT]
+                                (and
+                                    (/ _sum_discount::DECIMAL _count_discount::INT _v::DECIMAL)
+                                    (reduce
+                                        ([a::DECIMAL b::DECIMAL c::DECIMAL] (+ a::DECIMAL b::DECIMAL c::DECIMAL))   ;; op
+                                        ([_lineitem::ENTITY _lineitem_l_discount::DECIMAL]                          ;; body
+                                            (exists
+                                                [
+                                                    _lineitem_l_shipdate::INT
+                                                    _lineitem_l_extendedprice::DECIMAL
+                                                    _disc_price::DECIMAL
+                                                    _res_2::DECIMAL
+                                                ]
+
+                                                (and
+                                                    (atom
+                                                        :common
+                                                        _lineitem::ENTITY
+                                                        _lineitem_l_shipdate::INT
+                                                        _lineitem_l_returnflag::STRING
+                                                        _lineitem_l_linestatus::STRING
+                                                        _lineitem_l_extendedprice::DECIMAL
+                                                        _lineitem_l_discount::DECIMAL
+                                                        _disc_price::DECIMAL
+                                                        _res_2::DECIMAL
+                                                    )
+                                                )
+                                            )
+                                        )
+                                        (terms _sum_discount::DECIMAL)                                             ;; result
+                                    )
+                                    (reduce
+                                        ([a::INT b::INT c::INT] (+ a::INT b::INT c::INT))                           ;; op
+                                        ([_lineitem::ENTITY _lineitem_l_discount::DECIMAL _one::INT]                ;; body
+                                            (exists
+                                                [
+                                                    _lineitem_l_shipdate::INT
+                                                    _lineitem_l_extendedprice::DECIMAL
+                                                    _disc_price::DECIMAL
+                                                    _res_2::DECIMAL
+                                                ]
+
+                                                (and
+                                                    (atom
+                                                        :common
+                                                        _lineitem::ENTITY
+                                                        _lineitem_l_shipdate::INT
+                                                        _lineitem_l_returnflag::STRING
+                                                        _lineitem_l_linestatus::STRING
+                                                        _lineitem_l_extendedprice::DECIMAL
+                                                        _lineitem_l_discount::DECIMAL
+                                                        _disc_price::DECIMAL
+                                                        _res_2::DECIMAL
+                                                    )
+                                                    (= _one::INT 1)
+                                                )
+                                            )
+                                        )
+                                        (terms _count_discount::INT)                                               ;; result
+                                    )
+                                )
+                            )
+                        )
+                    )
+
+                    ;; def nested_10203(_lineitem_l_returnflag, _lineitem_l_linestatus, _v):
+                    ;;     std::common::count(
+                    ;;         {(_lineitem):
+                    ;;             exists((_lineitem_l_shipdate, _lineitem_l_extendedprice, _lineitem_l_discount, _res, _res_2) |
+                    ;;                 common_10172(_lineitem, _lineitem_l_shipdate, _lineitem_l_returnflag, _lineitem_l_linestatus, _lineitem_l_extendedprice, _lineitem_l_discount, _res, _res_2)
+                    ;;             )
+                    ;;         },
+                    ;;         _v
+                    ;;     )
+                    (def :count_order
+                        (
+                            [
+                                _lineitem_l_returnflag::STRING
+                                _lineitem_l_linestatus::STRING
+                                _v::INT
+                            ]
+
+                            (reduce
+                                ([a::INT b::INT c::INT] (+ a::INT b::INT c::INT))   ;; op
+                                ([_lineitem::ENTITY _one::INT]                     ;; body
+                                    (exists
+                                        [
+                                            _lineitem_l_shipdate::INT
+                                            _lineitem_l_extendedprice::DECIMAL
+                                            _lineitem_l_discount::DECIMAL
+                                            _disc_price::DECIMAL
+                                            _res_2::DECIMAL
+                                        ]
+
+                                        (and
+                                            (atom
+                                                :common
+                                                _lineitem::ENTITY
+                                                _lineitem_l_shipdate::INT
+                                                _lineitem_l_returnflag::STRING
+                                                _lineitem_l_linestatus::STRING
+                                                _lineitem_l_extendedprice::DECIMAL
+                                                _lineitem_l_discount::DECIMAL
+                                                _disc_price::DECIMAL
+                                                _res_2::DECIMAL
+                                            )
+                                            (= _one::INT 1)
+                                        )
+                                    )
+                                )
+                                (terms _v::INT)                                     ;; result
+                            )
+                        )
+                    )
+
                 )
             )
         )
@@ -404,7 +531,9 @@
             (output :sum_disc_price :sum_disc_price)
             (output :sum_charge :sum_charge)
             (output :avg_qty :avg_qty)
-            (output :avg_price :avg_price)
+            (output :avg_base_price :avg_base_price)
+            (output :avg_disc :avg_disc)
+            (output :count_order :count_order)
         )
     )
 )
