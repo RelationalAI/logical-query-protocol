@@ -285,13 +285,13 @@
                             [
                                 _lineitem_l_returnflag::STRING
                                 _lineitem_l_linestatus::STRING
-                                _v::FLOAT
+                                _v::INT
                             ]
 
                             ;; sum_qty / count(qty)
                             (exists [_sum_qty::INT _count_qty::INT]
                                 (and
-                                    (/ _sum_qty::INT _count_qty::INT _v::FLOAT)
+                                    (primitive :rel_primitive_divide_decimal 4 _sum_qty::INT _count_qty::INT _v::INT)
                                     (atom :sum_qty _lineitem_l_returnflag::STRING _lineitem_l_linestatus::STRING _sum_qty::INT)
                                     (reduce
                                         ([a::INT b::INT c::INT] (+ a::INT b::INT c::INT))   ;; op
@@ -348,13 +348,13 @@
                             [
                                 _lineitem_l_returnflag::STRING
                                 _lineitem_l_linestatus::STRING
-                                _v::FLOAT
+                                _v::INT
                             ]
 
                             ;; sum_base_price / count(base_price)
                             (exists [_sum_base_price::INT _count_base_price::INT]
                                 (and
-                                    (/ _sum_base_price::INT _count_base_price::INT _v::FLOAT)
+                                    (primitive :rel_primitive_divide_decimal 4 _sum_base_price::INT _count_base_price::INT _v::INT)
                                     (atom :sum_base_price _lineitem_l_returnflag::STRING _lineitem_l_linestatus::STRING _sum_base_price::INT)
                                     (reduce
                                         ([a::INT b::INT c::INT] (+ a::INT b::INT c::INT))   ;; op
@@ -405,13 +405,13 @@
                             [
                                 _lineitem_l_returnflag::STRING
                                 _lineitem_l_linestatus::STRING
-                                _v::FLOAT
+                                _v::INT
                             ]
 
                             ;; sum_discount / count(discount)
                             (exists [_sum_discount::INT _count_discount::INT]
                                 (and
-                                    (/ _sum_discount::INT _count_discount::INT _v::FLOAT)
+                                    (primitive :rel_primitive_divide_decimal 4 _sum_discount::INT _count_discount::INT _v::INT)
                                     (reduce
                                         ([a::INT b::INT c::INT] (+ a::INT b::INT c::INT))   ;; op
                                         ([_lineitem::ENTITY _lineitem_l_discount::INT]                          ;; body
