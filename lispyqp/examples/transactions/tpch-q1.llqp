@@ -51,14 +51,6 @@
                                 ;;    decimal and so the arithmetic operator needs
                                 ;;    to convert/interpret the physical values
 
-                                ;; TODO: figure out how to allow primitives to
-                                ;; (exists [_converted_one::INT]
-                                ;;     (and
-                                ;;         (primitive :rel_primitive_decimal 64 4 1 _converted_one::INT)
-                                ;;         (- _converted_one::INT _lineitem_l_discount::INT _res_2::INT)
-                                ;;     )
-                                ;; )
-
                                 ;; 10000 is 1 converted to decimal[64, 4]
                                 (- 10000 _lineitem_l_discount::INT _res_2::INT)
                                 (* _lineitem_l_extendedprice::INT _res_2::INT _disc_price::INT)
@@ -330,7 +322,8 @@
                                                         _lineitem::ENTITY
                                                         _lineitem_l_quantity::INT
                                                     )
-                                                    (= _one::INT 1)
+                                                    ;; 10000 is 1 as a decimal[64, 4]
+                                                    (= _one::INT 10000)
                                                 )
                                             )
                                         )
@@ -386,7 +379,8 @@
                                                         _disc_price::INT
                                                         _res_2::INT
                                                     )
-                                                    (= _one::INT 1)
+                                                    ;; 10000 is 1 as a decimal[64, 4]
+                                                    (= _one::INT 10000)
                                                 )
                                             )
                                         )
@@ -469,7 +463,8 @@
                                                         _disc_price::INT
                                                         _res_2::INT
                                                     )
-                                                    (= _one::INT 1)
+                                                    ;; 10000 is 1 as a decimal[64, 4]
+                                                    (= _one::INT 10000)
                                                 )
                                             )
                                         )
