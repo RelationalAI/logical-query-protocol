@@ -51,7 +51,7 @@ args: "(args" abstraction* ")"
 terms: "(terms" term* ")"
 
 primitive: raw_primitive | eq | lt | lt_eq | gt | gt_eq | add | minus | multiply | divide
-raw_primitive: "(primitive" (name | relationsig) term* ")"
+raw_primitive: "(primitive" name term* ")"
 eq: "(=" term term ")"
 lt: "(<" term term ")"
 lt_eq: "(<=" term term ")"
@@ -75,15 +75,13 @@ relation_id: ":" SYMBOL
 name: ":" SYMBOL
 
 primitive_value: STRING | NUMBER | FLOAT
-PRIMITIVE_TYPE: "STRING" | "INT" | "FLOAT" | "UINT128" | "ENTITY"
-specialized_type: "#" (SYMBOL | DIGITS)
-rel_sig_type: "/" (PRIMITIVE_TYPE | specialized_type)
+PRIMITIVE_TYPE: "STRING" | "INT" | "FLOAT" | "DECIMAL" | "HASH" | "ENTITY"
+rel_sig_type: "/" PRIMITIVE_TYPE
 relationsig: "(sig" name rel_sig_type* ")"
 
 SYMBOL: /[a-zA-Z_][a-zA-Z0-9_-]*/
 STRING: "\\"" /[^"]*/ "\\""
-DIGITS: /\d+/
-NUMBER: DIGITS
+NUMBER: /\d+/
 FLOAT: /\d+\.\d+/
 
 COMMENT: /;;.*/  // Matches ;; followed by any characters except newline
@@ -94,7 +92,7 @@ COMMENT: /;;.*/  // Matches ;; followed by any characters except newline
 def primitive_type_to_proto(primitive_type):
     # Map ENTITY -> HASH
     if primitive_type.upper() == "ENTITY":
-        primitive_type = "UINT128"
+        primitive_type = "HASH"
 
     # Map the primitive type string to the corresponding protobuf enum value
     return getattr(logic_pb2.PrimitiveType, f"PRIMITIVE_TYPE_{primitive_type.upper()}")
@@ -198,11 +196,7 @@ class LQPTransformer(Transformer):
     def primitive(self, items):
         return items[0]
     def raw_primitive(self, items):
-        if type(items[0]) == logic_pb2.RelationSig:
-            return logic_pb2.Formula(primitive=logic_pb2.Primitive(sig=items[0], terms=items[1:]))
-        else:
-            return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=items[0], terms=items[1:]))
-
+        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=items[0], terms=items[1:]))
     def eq(self, items):
         return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_eq"]), terms=items))
     def lt(self, items):
@@ -247,19 +241,11 @@ class LQPTransformer(Transformer):
         hash_val = int(hashlib.sha256(symbol.encode()).hexdigest()[:16], 16)  # First 64 bits of SHA-256
         return logic_pb2.RelationId(id_low=hash_val, id_high=0)  # Simplified hashing
 
-    def specialized_type(self, items):
-        if type(items[0]) == str:
-            return logic_pb2.SpecializedType(spec_string=items[0])
-        elif type(items[0]) == int:
-            return logic_pb2.SpecializedType(spec_int=items[0])
     def rel_sig_type(self, items):
-        if type(items[0]) == logic_pb2.SpecializedType:
-            return logic_pb2.SigType(spec_type=items[0])
-        else:
-            return logic_pb2.SigType(prim_type=primitive_type_to_proto(items[0]))
+        return items[0]
     def relationsig(self, items):
         name = items[0]
-        types = items[1:]
+        types = [primitive_type_to_proto(t) for t in items[1:]]
         return logic_pb2.RelationSig(name=name, types=types)
 
     #
@@ -273,8 +259,6 @@ class LQPTransformer(Transformer):
         return logic_pb2.PrimitiveValue(int_value=int(n))
     def FLOAT(self, f):
         return logic_pb2.PrimitiveValue(float_value=float(f))
-    def DIGITS(self, n):
-        return int(n)
     def SYMBOL(self, sym):
         return str(sym)
 

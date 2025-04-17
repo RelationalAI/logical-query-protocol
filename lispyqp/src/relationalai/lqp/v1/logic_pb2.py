@@ -24,15 +24,15 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1frelationalai/lqp/v1/logic.proto\x12\x13relationalai.lqp.v1\"\x80\x01\n\x0b\x44\x65\x63laration\x12,\n\x03\x64\x65\x66\x18\x01 \x01(\x0b\x32\x18.relationalai.lqp.v1.DefH\x00R\x03\x64\x65\x66\x12/\n\x04loop\x18\x02 \x01(\x0b\x32\x19.relationalai.lqp.v1.LoopH\x00R\x04loopB\x12\n\x10\x64\x65\x63laration_type\"\xa6\x01\n\x03\x44\x65\x66\x12\x33\n\x04name\x18\x01 \x01(\x0b\x32\x1f.relationalai.lqp.v1.RelationIdR\x04name\x12\x34\n\x04\x62ody\x18\x02 \x01(\x0b\x32 .relationalai.lqp.v1.AbstractionR\x04\x62ody\x12\x34\n\x05\x61ttrs\x18\x03 \x03(\x0b\x32\x1e.relationalai.lqp.v1.AttributeR\x05\x61ttrs\"\xaf\x01\n\x04Loop\x12\x41\n\x0ctemporal_var\x18\x01 \x01(\x0b\x32\x1e.relationalai.lqp.v1.LoopIndexR\x0btemporalVar\x12.\n\x05inits\x18\x02 \x03(\x0b\x32\x18.relationalai.lqp.v1.DefR\x05inits\x12\x34\n\x04\x62ody\x18\x03 \x03(\x0b\x32 .relationalai.lqp.v1.DeclarationR\x04\x62ody\"o\n\x0b\x41\x62straction\x12,\n\x04vars\x18\x01 \x03(\x0b\x32\x18.relationalai.lqp.v1.VarR\x04vars\x12\x32\n\x05value\x18\x02 \x01(\x0b\x32\x1c.relationalai.lqp.v1.FormulaR\x05value\"\xc5\x05\n\x07\x46ormula\x12\x35\n\x06\x65xists\x18\x01 \x01(\x0b\x32\x1b.relationalai.lqp.v1.ExistsH\x00R\x06\x65xists\x12\x35\n\x06reduce\x18\x02 \x01(\x0b\x32\x1b.relationalai.lqp.v1.ReduceH\x00R\x06reduce\x12\x44\n\x0b\x63onjunction\x18\x03 \x01(\x0b\x32 .relationalai.lqp.v1.ConjunctionH\x00R\x0b\x63onjunction\x12\x44\n\x0b\x64isjunction\x18\x04 \x01(\x0b\x32 .relationalai.lqp.v1.DisjunctionH\x00R\x0b\x64isjunction\x12,\n\x03not\x18\x05 \x01(\x0b\x32\x18.relationalai.lqp.v1.NotH\x00R\x03not\x12,\n\x03\x66\x66i\x18\x06 \x01(\x0b\x32\x18.relationalai.lqp.v1.FFIH\x00R\x03\x66\x66i\x12/\n\x04\x61tom\x18\x07 \x01(\x0b\x32\x19.relationalai.lqp.v1.AtomH\x00R\x04\x61tom\x12\x35\n\x06pragma\x18\x08 \x01(\x0b\x32\x1b.relationalai.lqp.v1.PragmaH\x00R\x06pragma\x12>\n\tprimitive\x18\t \x01(\x0b\x32\x1e.relationalai.lqp.v1.PrimitiveH\x00R\tprimitive\x12\x36\n\x08true_val\x18\n \x01(\x0b\x32\x19.relationalai.lqp.v1.TrueH\x00R\x07trueVal\x12\x39\n\tfalse_val\x18\x0b \x01(\x0b\x32\x1a.relationalai.lqp.v1.FalseH\x00R\x08\x66\x61lseVal\x12\x39\n\x08rel_atom\x18\x0c \x01(\x0b\x32\x1c.relationalai.lqp.v1.RelAtomH\x00R\x07relAtomB\x0e\n\x0c\x66ormula_type\"j\n\x06\x45xists\x12,\n\x04vars\x18\x01 \x03(\x0b\x32\x18.relationalai.lqp.v1.VarR\x04vars\x12\x32\n\x05value\x18\x02 \x01(\x0b\x32\x1c.relationalai.lqp.v1.FormulaR\x05value\"\xa1\x01\n\x06Reduce\x12\x30\n\x02op\x18\x01 \x01(\x0b\x32 .relationalai.lqp.v1.AbstractionR\x02op\x12\x34\n\x04\x62ody\x18\x02 \x01(\x0b\x32 .relationalai.lqp.v1.AbstractionR\x04\x62ody\x12/\n\x05terms\x18\x03 \x03(\x0b\x32\x19.relationalai.lqp.v1.TermR\x05terms\"?\n\x0b\x43onjunction\x12\x30\n\x04\x61rgs\x18\x01 \x03(\x0b\x32\x1c.relationalai.lqp.v1.FormulaR\x04\x61rgs\"?\n\x0b\x44isjunction\x12\x30\n\x04\x61rgs\x18\x01 \x03(\x0b\x32\x1c.relationalai.lqp.v1.FormulaR\x04\x61rgs\"5\n\x03Not\x12.\n\x03\x61rg\x18\x01 \x01(\x0b\x32\x1c.relationalai.lqp.v1.FormulaR\x03\x61rg\"\x80\x01\n\x03\x46\x46I\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12\x34\n\x04\x61rgs\x18\x02 \x03(\x0b\x32 .relationalai.lqp.v1.AbstractionR\x04\x61rgs\x12/\n\x05terms\x18\x03 \x03(\x0b\x32\x19.relationalai.lqp.v1.TermR\x05terms\"l\n\x04\x41tom\x12\x33\n\x04name\x18\x01 \x01(\x0b\x32\x1f.relationalai.lqp.v1.RelationIdR\x04name\x12/\n\x05terms\x18\x02 \x03(\x0b\x32\x19.relationalai.lqp.v1.TermR\x05terms\"M\n\x06Pragma\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12/\n\x05terms\x18\x02 \x03(\x0b\x32\x19.relationalai.lqp.v1.TermR\x05terms\"\x8e\x01\n\tPrimitive\x12\x14\n\x04name\x18\x01 \x01(\tH\x00R\x04name\x12\x34\n\x03sig\x18\x03 \x01(\x0b\x32 .relationalai.lqp.v1.RelationSigH\x00R\x03sig\x12/\n\x05terms\x18\x02 \x03(\x0b\x32\x19.relationalai.lqp.v1.TermR\x05termsB\x04\n\x02id\"\x06\n\x04True\"\x07\n\x05\x46\x61lse\"n\n\x07RelAtom\x12\x32\n\x03sig\x18\x01 \x01(\x0b\x32 .relationalai.lqp.v1.RelationSigR\x03sig\x12/\n\x05terms\x18\x02 \x03(\x0b\x32\x19.relationalai.lqp.v1.TermR\x05terms\"~\n\x04Term\x12,\n\x03var\x18\x01 \x01(\x0b\x32\x18.relationalai.lqp.v1.VarH\x00R\x03var\x12;\n\x08\x63onstant\x18\x02 \x01(\x0b\x32\x1d.relationalai.lqp.v1.ConstantH\x00R\x08\x63onstantB\x0b\n\tterm_type\"Q\n\x03Var\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12\x36\n\x04type\x18\x02 \x01(\x0e\x32\".relationalai.lqp.v1.PrimitiveTypeR\x04type\"E\n\x08\x43onstant\x12\x39\n\x05value\x18\x01 \x01(\x0b\x32#.relationalai.lqp.v1.PrimitiveValueR\x05value\"R\n\tAttribute\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12\x31\n\x04\x61rgs\x18\x02 \x03(\x0b\x32\x1d.relationalai.lqp.v1.ConstantR\x04\x61rgs\"<\n\nRelationId\x12\x15\n\x06id_low\x18\x01 \x01(\x06R\x05idLow\x12\x17\n\x07id_high\x18\x02 \x01(\x06R\x06idHigh\"\x1f\n\tLoopIndex\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\"\xc5\x01\n\x0ePrimitiveValue\x12#\n\x0cstring_value\x18\x01 \x01(\tH\x00R\x0bstringValue\x12\x1d\n\tint_value\x18\x02 \x01(\x03H\x00R\x08intValue\x12!\n\x0b\x66loat_value\x18\x03 \x01(\x01H\x00R\nfloatValue\x12\x43\n\ruint128_value\x18\x04 \x01(\x0b\x32\x1c.relationalai.lqp.v1.UInt128H\x00R\x0cuint128ValueB\x07\n\x05value\"A\n\x07UInt128\x12\x19\n\x08hash_low\x18\x01 \x01(\x06R\x07hashLow\x12\x1b\n\thash_high\x18\x02 \x01(\x06R\x08hashHigh\"\x9a\x01\n\x07SigType\x12\x41\n\tprim_type\x18\x01 \x01(\x0e\x32\".relationalai.lqp.v1.PrimitiveTypeH\x00R\x08primType\x12\x43\n\tspec_type\x18\x02 \x01(\x0b\x32$.relationalai.lqp.v1.SpecializedTypeH\x00R\x08specTypeB\x07\n\x05_type\"^\n\x0fSpecializedType\x12!\n\x0bspec_string\x18\x01 \x01(\tH\x00R\nspecString\x12\x1b\n\x08spec_int\x18\x02 \x01(\x03H\x00R\x07specIntB\x0b\n\tspec_type\"U\n\x0bRelationSig\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12\x32\n\x05types\x18\x03 \x03(\x0b\x32\x1c.relationalai.lqp.v1.SigTypeR\x05types*\x98\x01\n\rPrimitiveType\x12\x1e\n\x1aPRIMITIVE_TYPE_UNSPECIFIED\x10\x00\x12\x19\n\x15PRIMITIVE_TYPE_STRING\x10\x01\x12\x16\n\x12PRIMITIVE_TYPE_INT\x10\x02\x12\x18\n\x14PRIMITIVE_TYPE_FLOAT\x10\x03\x12\x1a\n\x16PRIMITIVE_TYPE_UINT128\x10\x04\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1frelationalai/lqp/v1/logic.proto\x12\x13relationalai.lqp.v1\"\x80\x01\n\x0b\x44\x65\x63laration\x12,\n\x03\x64\x65\x66\x18\x01 \x01(\x0b\x32\x18.relationalai.lqp.v1.DefH\x00R\x03\x64\x65\x66\x12/\n\x04loop\x18\x02 \x01(\x0b\x32\x19.relationalai.lqp.v1.LoopH\x00R\x04loopB\x12\n\x10\x64\x65\x63laration_type\"\xa6\x01\n\x03\x44\x65\x66\x12\x33\n\x04name\x18\x01 \x01(\x0b\x32\x1f.relationalai.lqp.v1.RelationIdR\x04name\x12\x34\n\x04\x62ody\x18\x02 \x01(\x0b\x32 .relationalai.lqp.v1.AbstractionR\x04\x62ody\x12\x34\n\x05\x61ttrs\x18\x03 \x03(\x0b\x32\x1e.relationalai.lqp.v1.AttributeR\x05\x61ttrs\"\xaf\x01\n\x04Loop\x12\x41\n\x0ctemporal_var\x18\x01 \x01(\x0b\x32\x1e.relationalai.lqp.v1.LoopIndexR\x0btemporalVar\x12.\n\x05inits\x18\x02 \x03(\x0b\x32\x18.relationalai.lqp.v1.DefR\x05inits\x12\x34\n\x04\x62ody\x18\x03 \x03(\x0b\x32 .relationalai.lqp.v1.DeclarationR\x04\x62ody\"o\n\x0b\x41\x62straction\x12,\n\x04vars\x18\x01 \x03(\x0b\x32\x18.relationalai.lqp.v1.VarR\x04vars\x12\x32\n\x05value\x18\x02 \x01(\x0b\x32\x1c.relationalai.lqp.v1.FormulaR\x05value\"\xc5\x05\n\x07\x46ormula\x12\x35\n\x06\x65xists\x18\x01 \x01(\x0b\x32\x1b.relationalai.lqp.v1.ExistsH\x00R\x06\x65xists\x12\x35\n\x06reduce\x18\x02 \x01(\x0b\x32\x1b.relationalai.lqp.v1.ReduceH\x00R\x06reduce\x12\x44\n\x0b\x63onjunction\x18\x03 \x01(\x0b\x32 .relationalai.lqp.v1.ConjunctionH\x00R\x0b\x63onjunction\x12\x44\n\x0b\x64isjunction\x18\x04 \x01(\x0b\x32 .relationalai.lqp.v1.DisjunctionH\x00R\x0b\x64isjunction\x12,\n\x03not\x18\x05 \x01(\x0b\x32\x18.relationalai.lqp.v1.NotH\x00R\x03not\x12,\n\x03\x66\x66i\x18\x06 \x01(\x0b\x32\x18.relationalai.lqp.v1.FFIH\x00R\x03\x66\x66i\x12/\n\x04\x61tom\x18\x07 \x01(\x0b\x32\x19.relationalai.lqp.v1.AtomH\x00R\x04\x61tom\x12\x35\n\x06pragma\x18\x08 \x01(\x0b\x32\x1b.relationalai.lqp.v1.PragmaH\x00R\x06pragma\x12>\n\tprimitive\x18\t \x01(\x0b\x32\x1e.relationalai.lqp.v1.PrimitiveH\x00R\tprimitive\x12\x36\n\x08true_val\x18\n \x01(\x0b\x32\x19.relationalai.lqp.v1.TrueH\x00R\x07trueVal\x12\x39\n\tfalse_val\x18\x0b \x01(\x0b\x32\x1a.relationalai.lqp.v1.FalseH\x00R\x08\x66\x61lseVal\x12\x39\n\x08rel_atom\x18\x0c \x01(\x0b\x32\x1c.relationalai.lqp.v1.RelAtomH\x00R\x07relAtomB\x0e\n\x0c\x66ormula_type\"j\n\x06\x45xists\x12,\n\x04vars\x18\x01 \x03(\x0b\x32\x18.relationalai.lqp.v1.VarR\x04vars\x12\x32\n\x05value\x18\x02 \x01(\x0b\x32\x1c.relationalai.lqp.v1.FormulaR\x05value\"\xa1\x01\n\x06Reduce\x12\x30\n\x02op\x18\x01 \x01(\x0b\x32 .relationalai.lqp.v1.AbstractionR\x02op\x12\x34\n\x04\x62ody\x18\x02 \x01(\x0b\x32 .relationalai.lqp.v1.AbstractionR\x04\x62ody\x12/\n\x05terms\x18\x03 \x03(\x0b\x32\x19.relationalai.lqp.v1.TermR\x05terms\"?\n\x0b\x43onjunction\x12\x30\n\x04\x61rgs\x18\x01 \x03(\x0b\x32\x1c.relationalai.lqp.v1.FormulaR\x04\x61rgs\"?\n\x0b\x44isjunction\x12\x30\n\x04\x61rgs\x18\x01 \x03(\x0b\x32\x1c.relationalai.lqp.v1.FormulaR\x04\x61rgs\"5\n\x03Not\x12.\n\x03\x61rg\x18\x01 \x01(\x0b\x32\x1c.relationalai.lqp.v1.FormulaR\x03\x61rg\"\x80\x01\n\x03\x46\x46I\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12\x34\n\x04\x61rgs\x18\x02 \x03(\x0b\x32 .relationalai.lqp.v1.AbstractionR\x04\x61rgs\x12/\n\x05terms\x18\x03 \x03(\x0b\x32\x19.relationalai.lqp.v1.TermR\x05terms\"l\n\x04\x41tom\x12\x33\n\x04name\x18\x01 \x01(\x0b\x32\x1f.relationalai.lqp.v1.RelationIdR\x04name\x12/\n\x05terms\x18\x02 \x03(\x0b\x32\x19.relationalai.lqp.v1.TermR\x05terms\"M\n\x06Pragma\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12/\n\x05terms\x18\x02 \x03(\x0b\x32\x19.relationalai.lqp.v1.TermR\x05terms\"P\n\tPrimitive\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12/\n\x05terms\x18\x02 \x03(\x0b\x32\x19.relationalai.lqp.v1.TermR\x05terms\"\x06\n\x04True\"\x07\n\x05\x46\x61lse\"n\n\x07RelAtom\x12\x32\n\x03sig\x18\x01 \x01(\x0b\x32 .relationalai.lqp.v1.RelationSigR\x03sig\x12/\n\x05terms\x18\x02 \x03(\x0b\x32\x19.relationalai.lqp.v1.TermR\x05terms\"~\n\x04Term\x12,\n\x03var\x18\x01 \x01(\x0b\x32\x18.relationalai.lqp.v1.VarH\x00R\x03var\x12;\n\x08\x63onstant\x18\x02 \x01(\x0b\x32\x1d.relationalai.lqp.v1.ConstantH\x00R\x08\x63onstantB\x0b\n\tterm_type\"Q\n\x03Var\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12\x36\n\x04type\x18\x02 \x01(\x0e\x32\".relationalai.lqp.v1.PrimitiveTypeR\x04type\"E\n\x08\x43onstant\x12\x39\n\x05value\x18\x01 \x01(\x0b\x32#.relationalai.lqp.v1.PrimitiveValueR\x05value\"R\n\tAttribute\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12\x31\n\x04\x61rgs\x18\x02 \x03(\x0b\x32\x1d.relationalai.lqp.v1.ConstantR\x04\x61rgs\"<\n\nRelationId\x12\x15\n\x06id_low\x18\x01 \x01(\x06R\x05idLow\x12\x17\n\x07id_high\x18\x02 \x01(\x06R\x06idHigh\"\x1f\n\tLoopIndex\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\"\x81\x02\n\x0ePrimitiveValue\x12#\n\x0cstring_value\x18\x01 \x01(\tH\x00R\x0bstringValue\x12\x1d\n\tint_value\x18\x02 \x01(\x03H\x00R\x08intValue\x12!\n\x0b\x66loat_value\x18\x03 \x01(\x01H\x00R\nfloatValue\x12\x43\n\rdecimal_value\x18\x04 \x01(\x0b\x32\x1c.relationalai.lqp.v1.DecimalH\x00R\x0c\x64\x65\x63imalValue\x12:\n\nhash_value\x18\x05 \x01(\x0b\x32\x19.relationalai.lqp.v1.HashH\x00R\thashValueB\x07\n\x05value\">\n\x04Hash\x12\x19\n\x08hash_low\x18\x01 \x01(\x06R\x07hashLow\x12\x1b\n\thash_high\x18\x02 \x01(\x06R\x08hashHigh\"A\n\x07\x44\x65\x63imal\x12\x19\n\x08hash_low\x18\x01 \x01(\x06R\x07hashLow\x12\x1b\n\thash_high\x18\x02 \x01(\x06R\x08hashHigh\"[\n\x0bRelationSig\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12\x38\n\x05types\x18\x02 \x03(\x0e\x32\".relationalai.lqp.v1.PrimitiveTypeR\x05types*\xb1\x01\n\rPrimitiveType\x12\x1e\n\x1aPRIMITIVE_TYPE_UNSPECIFIED\x10\x00\x12\x19\n\x15PRIMITIVE_TYPE_STRING\x10\x01\x12\x16\n\x12PRIMITIVE_TYPE_INT\x10\x02\x12\x18\n\x14PRIMITIVE_TYPE_FLOAT\x10\x03\x12\x1a\n\x16PRIMITIVE_TYPE_DECIMAL\x10\x04\x12\x17\n\x13PRIMITIVE_TYPE_HASH\x10\x05\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'relationalai.lqp.v1.logic_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_PRIMITIVETYPE']._serialized_start=3479
-  _globals['_PRIMITIVETYPE']._serialized_end=3631
+  _globals['_PRIMITIVETYPE']._serialized_start=3293
+  _globals['_PRIMITIVETYPE']._serialized_end=3470
   _globals['_DECLARATION']._serialized_start=57
   _globals['_DECLARATION']._serialized_end=185
   _globals['_DEF']._serialized_start=188
@@ -59,34 +59,32 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_ATOM']._serialized_end=2055
   _globals['_PRAGMA']._serialized_start=2057
   _globals['_PRAGMA']._serialized_end=2134
-  _globals['_PRIMITIVE']._serialized_start=2137
-  _globals['_PRIMITIVE']._serialized_end=2279
-  _globals['_TRUE']._serialized_start=2281
-  _globals['_TRUE']._serialized_end=2287
-  _globals['_FALSE']._serialized_start=2289
-  _globals['_FALSE']._serialized_end=2296
-  _globals['_RELATOM']._serialized_start=2298
-  _globals['_RELATOM']._serialized_end=2408
-  _globals['_TERM']._serialized_start=2410
-  _globals['_TERM']._serialized_end=2536
-  _globals['_VAR']._serialized_start=2538
-  _globals['_VAR']._serialized_end=2619
-  _globals['_CONSTANT']._serialized_start=2621
-  _globals['_CONSTANT']._serialized_end=2690
-  _globals['_ATTRIBUTE']._serialized_start=2692
-  _globals['_ATTRIBUTE']._serialized_end=2774
-  _globals['_RELATIONID']._serialized_start=2776
-  _globals['_RELATIONID']._serialized_end=2836
-  _globals['_LOOPINDEX']._serialized_start=2838
-  _globals['_LOOPINDEX']._serialized_end=2869
-  _globals['_PRIMITIVEVALUE']._serialized_start=2872
-  _globals['_PRIMITIVEVALUE']._serialized_end=3069
-  _globals['_UINT128']._serialized_start=3071
-  _globals['_UINT128']._serialized_end=3136
-  _globals['_SIGTYPE']._serialized_start=3139
-  _globals['_SIGTYPE']._serialized_end=3293
-  _globals['_SPECIALIZEDTYPE']._serialized_start=3295
-  _globals['_SPECIALIZEDTYPE']._serialized_end=3389
-  _globals['_RELATIONSIG']._serialized_start=3391
-  _globals['_RELATIONSIG']._serialized_end=3476
+  _globals['_PRIMITIVE']._serialized_start=2136
+  _globals['_PRIMITIVE']._serialized_end=2216
+  _globals['_TRUE']._serialized_start=2218
+  _globals['_TRUE']._serialized_end=2224
+  _globals['_FALSE']._serialized_start=2226
+  _globals['_FALSE']._serialized_end=2233
+  _globals['_RELATOM']._serialized_start=2235
+  _globals['_RELATOM']._serialized_end=2345
+  _globals['_TERM']._serialized_start=2347
+  _globals['_TERM']._serialized_end=2473
+  _globals['_VAR']._serialized_start=2475
+  _globals['_VAR']._serialized_end=2556
+  _globals['_CONSTANT']._serialized_start=2558
+  _globals['_CONSTANT']._serialized_end=2627
+  _globals['_ATTRIBUTE']._serialized_start=2629
+  _globals['_ATTRIBUTE']._serialized_end=2711
+  _globals['_RELATIONID']._serialized_start=2713
+  _globals['_RELATIONID']._serialized_end=2773
+  _globals['_LOOPINDEX']._serialized_start=2775
+  _globals['_LOOPINDEX']._serialized_end=2806
+  _globals['_PRIMITIVEVALUE']._serialized_start=2809
+  _globals['_PRIMITIVEVALUE']._serialized_end=3066
+  _globals['_HASH']._serialized_start=3068
+  _globals['_HASH']._serialized_end=3130
+  _globals['_DECIMAL']._serialized_start=3132
+  _globals['_DECIMAL']._serialized_end=3197
+  _globals['_RELATIONSIG']._serialized_start=3199
+  _globals['_RELATIONSIG']._serialized_end=3290
 # @@protoc_insertion_point(module_scope)
