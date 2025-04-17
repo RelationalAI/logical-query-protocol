@@ -75,7 +75,7 @@ relation_id: ":" SYMBOL
 name: ":" SYMBOL
 
 primitive_value: STRING | NUMBER | FLOAT
-PRIMITIVE_TYPE: "STRING" | "INT" | "FLOAT" | "DECIMAL" | "HASH" | "ENTITY"
+PRIMITIVE_TYPE: "STRING" | "INT" | "FLOAT" | "UINT128" | "ENTITY"
 rel_sig_type: "/" PRIMITIVE_TYPE
 relationsig: "(sig" name rel_sig_type* ")"
 
@@ -92,7 +92,7 @@ COMMENT: /;;.*/  // Matches ;; followed by any characters except newline
 def primitive_type_to_proto(primitive_type):
     # Map ENTITY -> HASH
     if primitive_type.upper() == "ENTITY":
-        primitive_type = "HASH"
+        primitive_type = "UINT128"
 
     # Map the primitive type string to the corresponding protobuf enum value
     return getattr(logic_pb2.PrimitiveType, f"PRIMITIVE_TYPE_{primitive_type.upper()}")
