@@ -15,7 +15,7 @@
                     ;;     _res = _lineitem_l_extendedprice * _res_2
 
                     ;; TODO: still needed in the LQP:
-                    ;;  - more types - ENTITY/HASH, CHAR, DECIMAL
+                    ;;  - more types - ENTITY/HASH, CHAR, INT
                     ;;  - more simple primitives (<=, -, *)
                     (def :common
                         (
@@ -24,21 +24,21 @@
                                 _lineitem_l_shipdate::INT
                                 _lineitem_l_returnflag::STRING
                                 _lineitem_l_linestatus::STRING
-                                _lineitem_l_extendedprice::DECIMAL
-                                _lineitem_l_discount::DECIMAL
-                                _disc_price::DECIMAL
-                                _res_2::DECIMAL
+                                _lineitem_l_extendedprice::INT
+                                _lineitem_l_discount::INT
+                                _disc_price::INT
+                                _res_2::INT
                             ]
 
                             (and
                                 (relatom (sig :LineItem/ENTITY) _lineitem::ENTITY)
                                 (relatom (sig :lqp_l_shipdate/ENTITY/INT) _lineitem::ENTITY _lineitem_l_shipdate::INT)
-                                (<= _lineitem_l_shipdate::INT 729634)
+                                (<= _lineitem_l_shipdate::INT 729723)
                                 (relatom (sig :lqp_l_returnflag/ENTITY/STRING) _lineitem::ENTITY _lineitem_l_returnflag::STRING)
                                 (relatom (sig :lqp_l_linestatus/ENTITY/STRING) _lineitem::ENTITY _lineitem_l_linestatus::STRING)
-                                (relatom (sig :lqp_l_extendedprice/ENTITY/DECIMAL) _lineitem::ENTITY _lineitem_l_extendedprice::DECIMAL)
-                                (relatom (sig :lqp_l_discount/ENTITY/DECIMAL) _lineitem::ENTITY _lineitem_l_discount::DECIMAL)
-                                ;; TODO: how should we handle DECIMALs?
+                                (relatom (sig :lqp_l_extendedprice/ENTITY/INT) _lineitem::ENTITY _lineitem_l_extendedprice::INT)
+                                (relatom (sig :lqp_l_discount/ENTITY/INT) _lineitem::ENTITY _lineitem_l_discount::INT)
+                                ;; TODO: how should we handle INTs?
                                 ;;  - we want to keep only physical types in the LQP
                                 ;;    to the backend, i.e., decimals are physically
                                 ;;    ints
@@ -50,8 +50,18 @@
                                 ;;    physical type is int, the logical type is
                                 ;;    decimal and so the arithmetic operator needs
                                 ;;    to convert/interpret the physical values
-                                (- 1 _lineitem_l_discount::DECIMAL _res_2::DECIMAL)
-                                (* _lineitem_l_extendedprice::DECIMAL _res_2::DECIMAL _disc_price::DECIMAL)
+
+                                ;; TODO: figure out how to allow primitives to
+                                ;; (exists [_converted_one::INT]
+                                ;;     (and
+                                ;;         (primitive :rel_primitive_decimal 64 4 1 _converted_one::INT)
+                                ;;         (- _converted_one::INT _lineitem_l_discount::INT _res_2::INT)
+                                ;;     )
+                                ;; )
+
+                                ;; 10000 is 1 converted to decimal[64, 4]
+                                (- 10000 _lineitem_l_discount::INT _res_2::INT)
+                                (* _lineitem_l_extendedprice::INT _res_2::INT _disc_price::INT)
                             )
                         )
                     )
@@ -71,19 +81,19 @@
                             [
                                 _lineitem_l_returnflag::STRING
                                 _lineitem_l_linestatus::STRING
-                                _v::DECIMAL
+                                _v::INT
                             ]
 
                             (reduce
-                                ([a::DECIMAL b::DECIMAL c::DECIMAL] (+ a::DECIMAL b::DECIMAL c::DECIMAL))   ;; op
-                                ([_lineitem::ENTITY _lineitem_l_quantity::DECIMAL]      ;; body
+                                ([a::INT b::INT c::INT] (+ a::INT b::INT c::INT))   ;; op
+                                ([_lineitem::ENTITY _lineitem_l_quantity::INT]      ;; body
                                     (exists
                                         [
                                             _lineitem_l_shipdate::INT
-                                            _lineitem_l_extendedprice::DECIMAL
-                                            _lineitem_l_discount::DECIMAL
-                                            _disc_price::DECIMAL
-                                            _res_2::DECIMAL
+                                            _lineitem_l_extendedprice::INT
+                                            _lineitem_l_discount::INT
+                                            _disc_price::INT
+                                            _res_2::INT
                                         ]
 
                                         (and
@@ -93,20 +103,20 @@
                                                 _lineitem_l_shipdate::INT
                                                 _lineitem_l_returnflag::STRING
                                                 _lineitem_l_linestatus::STRING
-                                                _lineitem_l_extendedprice::DECIMAL
-                                                _lineitem_l_discount::DECIMAL
-                                                _disc_price::DECIMAL
-                                                _res_2::DECIMAL
+                                                _lineitem_l_extendedprice::INT
+                                                _lineitem_l_discount::INT
+                                                _disc_price::INT
+                                                _res_2::INT
                                             )
                                             (relatom
-                                                (sig :lqp_l_quantity/ENTITY/DECIMAL)
+                                                (sig :lqp_l_quantity/ENTITY/INT)
                                                 _lineitem::ENTITY
-                                                _lineitem_l_quantity::DECIMAL
+                                                _lineitem_l_quantity::INT
                                             )
                                         )
                                     )
                                 )
-                                (terms _v::DECIMAL)                                     ;; result
+                                (terms _v::INT)                                     ;; result
                             )
                         )
                     )
@@ -125,18 +135,18 @@
                             [
                                 _lineitem_l_returnflag::STRING
                                 _lineitem_l_linestatus::STRING
-                                _v::DECIMAL
+                                _v::INT
                             ]
 
                             (reduce
-                                ([a::DECIMAL b::DECIMAL c::DECIMAL] (+ a::DECIMAL b::DECIMAL c::DECIMAL))   ;; op
-                                ([_lineitem::ENTITY _lineitem_l_extendedprice::DECIMAL]                     ;; body
+                                ([a::INT b::INT c::INT] (+ a::INT b::INT c::INT))   ;; op
+                                ([_lineitem::ENTITY _lineitem_l_extendedprice::INT]                     ;; body
                                     (exists
                                         [
                                             _lineitem_l_shipdate::INT
-                                            _lineitem_l_discount::DECIMAL
-                                            _disc_price::DECIMAL
-                                            _res_2::DECIMAL
+                                            _lineitem_l_discount::INT
+                                            _disc_price::INT
+                                            _res_2::INT
                                         ]
 
                                         (and
@@ -146,15 +156,15 @@
                                                 _lineitem_l_shipdate::INT
                                                 _lineitem_l_returnflag::STRING
                                                 _lineitem_l_linestatus::STRING
-                                                _lineitem_l_extendedprice::DECIMAL
-                                                _lineitem_l_discount::DECIMAL
-                                                _disc_price::DECIMAL
-                                                _res_2::DECIMAL
+                                                _lineitem_l_extendedprice::INT
+                                                _lineitem_l_discount::INT
+                                                _disc_price::INT
+                                                _res_2::INT
                                             )
                                         )
                                     )
                                 )
-                                (terms _v::DECIMAL)                                                         ;; result
+                                (terms _v::INT)                                                         ;; result
                             )
                         )
                     )
@@ -173,18 +183,18 @@
                             [
                                 _lineitem_l_returnflag::STRING
                                 _lineitem_l_linestatus::STRING
-                                _v::DECIMAL
+                                _v::INT
                             ]
 
                             (reduce
-                                ([a::DECIMAL b::DECIMAL c::DECIMAL] (+ a::DECIMAL b::DECIMAL c::DECIMAL))   ;; op
-                                ([_lineitem::ENTITY _disc_price::DECIMAL]                                   ;; body
+                                ([a::INT b::INT c::INT] (+ a::INT b::INT c::INT))   ;; op
+                                ([_lineitem::ENTITY _disc_price::INT]                                   ;; body
                                     (exists
                                         [
                                             _lineitem_l_shipdate::INT
-                                            _lineitem_l_extendedprice::DECIMAL
-                                            _lineitem_l_discount::DECIMAL
-                                            _res_2::DECIMAL
+                                            _lineitem_l_extendedprice::INT
+                                            _lineitem_l_discount::INT
+                                            _res_2::INT
                                         ]
 
                                         (and
@@ -194,15 +204,15 @@
                                                 _lineitem_l_shipdate::INT
                                                 _lineitem_l_returnflag::STRING
                                                 _lineitem_l_linestatus::STRING
-                                                _lineitem_l_extendedprice::DECIMAL
-                                                _lineitem_l_discount::DECIMAL
-                                                _disc_price::DECIMAL
-                                                _res_2::DECIMAL
+                                                _lineitem_l_extendedprice::INT
+                                                _lineitem_l_discount::INT
+                                                _disc_price::INT
+                                                _res_2::INT
                                             )
                                         )
                                     )
                                 )
-                                (terms _v::DECIMAL)                                                         ;; result
+                                (terms _v::INT)                                                         ;; result
                             )
                         )
                     )
@@ -224,21 +234,21 @@
                             [
                                 _lineitem_l_returnflag::STRING
                                 _lineitem_l_linestatus::STRING
-                                _v::DECIMAL
+                                _v::INT
                             ]
 
                             (reduce
-                                ([a::DECIMAL b::DECIMAL c::DECIMAL] (+ a::DECIMAL b::DECIMAL c::DECIMAL))   ;; op
-                                ([_lineitem::ENTITY _charge::DECIMAL]                                      ;; body
+                                ([a::INT b::INT c::INT] (+ a::INT b::INT c::INT))   ;; op
+                                ([_lineitem::ENTITY _charge::INT]                                      ;; body
                                     (exists
                                         [
                                             _lineitem_l_shipdate::INT
-                                            _lineitem_l_extendedprice::DECIMAL
-                                            _lineitem_l_discount::DECIMAL
-                                            _disc_price::DECIMAL
-                                            _res_2::DECIMAL
-                                            _lineitem_l_tax::DECIMAL
-                                            _res_4::DECIMAL
+                                            _lineitem_l_extendedprice::INT
+                                            _lineitem_l_discount::INT
+                                            _disc_price::INT
+                                            _res_2::INT
+                                            _lineitem_l_tax::INT
+                                            _res_4::INT
                                         ]
 
                                         (and
@@ -248,22 +258,22 @@
                                                 _lineitem_l_shipdate::INT
                                                 _lineitem_l_returnflag::STRING
                                                 _lineitem_l_linestatus::STRING
-                                                _lineitem_l_extendedprice::DECIMAL
-                                                _lineitem_l_discount::DECIMAL
-                                                _disc_price::DECIMAL
-                                                _res_2::DECIMAL
+                                                _lineitem_l_extendedprice::INT
+                                                _lineitem_l_discount::INT
+                                                _disc_price::INT
+                                                _res_2::INT
                                             )
                                             (relatom
-                                                (sig :lqp_l_tax/ENTITY/DECIMAL)
+                                                (sig :lqp_l_tax/ENTITY/INT)
                                                 _lineitem::ENTITY
-                                                _lineitem_l_tax::DECIMAL
+                                                _lineitem_l_tax::INT
                                             )
-                                            (+ 1 _lineitem_l_tax::DECIMAL _res_4::DECIMAL)
-                                            (* _res_2::DECIMAL _res_4::DECIMAL _charge::DECIMAL)
+                                            (+ 1 _lineitem_l_tax::INT _res_4::INT)
+                                            (* _res_2::INT _res_4::INT _charge::INT)
                                         )
                                     )
                                 )
-                                (terms _v::DECIMAL)                                                         ;; result
+                                (terms _v::INT)                                                         ;; result
                             )
                         )
                     )
@@ -283,24 +293,24 @@
                             [
                                 _lineitem_l_returnflag::STRING
                                 _lineitem_l_linestatus::STRING
-                                _v::DECIMAL
+                                _v::FLOAT
                             ]
 
                             ;; sum_qty / count(qty)
-                            (exists [_sum_qty::DECIMAL _count_qty::INT]
+                            (exists [_sum_qty::INT _count_qty::INT]
                                 (and
-                                    (/ _sum_qty::DECIMAL _count_qty::INT _v::DECIMAL)
-                                    (atom :sum_qty _lineitem_l_returnflag::STRING _lineitem_l_linestatus::STRING _sum_qty::DECIMAL)
+                                    (/ _sum_qty::INT _count_qty::INT _v::FLOAT)
+                                    (atom :sum_qty _lineitem_l_returnflag::STRING _lineitem_l_linestatus::STRING _sum_qty::INT)
                                     (reduce
                                         ([a::INT b::INT c::INT] (+ a::INT b::INT c::INT))   ;; op
-                                        ([_lineitem::ENTITY _lineitem_l_quantity::DECIMAL _one::INT]      ;; body
+                                        ([_lineitem::ENTITY _lineitem_l_quantity::INT _one::INT]      ;; body
                                             (exists
                                                 [
                                                     _lineitem_l_shipdate::INT
-                                                    _lineitem_l_extendedprice::DECIMAL
-                                                    _lineitem_l_discount::DECIMAL
-                                                    _disc_price::DECIMAL
-                                                    _res_2::DECIMAL
+                                                    _lineitem_l_extendedprice::INT
+                                                    _lineitem_l_discount::INT
+                                                    _disc_price::INT
+                                                    _res_2::INT
                                                 ]
 
                                                 (and
@@ -310,15 +320,15 @@
                                                         _lineitem_l_shipdate::INT
                                                         _lineitem_l_returnflag::STRING
                                                         _lineitem_l_linestatus::STRING
-                                                        _lineitem_l_extendedprice::DECIMAL
-                                                        _lineitem_l_discount::DECIMAL
-                                                        _disc_price::DECIMAL
-                                                        _res_2::DECIMAL
+                                                        _lineitem_l_extendedprice::INT
+                                                        _lineitem_l_discount::INT
+                                                        _disc_price::INT
+                                                        _res_2::INT
                                                     )
                                                     (relatom
-                                                        (sig :lqp_l_quantity/ENTITY/DECIMAL)
+                                                        (sig :lqp_l_quantity/ENTITY/INT)
                                                         _lineitem::ENTITY
-                                                        _lineitem_l_quantity::DECIMAL
+                                                        _lineitem_l_quantity::INT
                                                     )
                                                     (= _one::INT 1)
                                                 )
@@ -345,23 +355,23 @@
                             [
                                 _lineitem_l_returnflag::STRING
                                 _lineitem_l_linestatus::STRING
-                                _v::DECIMAL
+                                _v::FLOAT
                             ]
 
                             ;; sum_base_price / count(base_price)
-                            (exists [_sum_base_price::DECIMAL _count_base_price::INT]
+                            (exists [_sum_base_price::INT _count_base_price::INT]
                                 (and
-                                    (/ _sum_base_price::DECIMAL _count_base_price::INT _v::DECIMAL)
-                                    (atom :sum_base_price _lineitem_l_returnflag::STRING _lineitem_l_linestatus::STRING _sum_base_price::DECIMAL)
+                                    (/ _sum_base_price::INT _count_base_price::INT _v::FLOAT)
+                                    (atom :sum_base_price _lineitem_l_returnflag::STRING _lineitem_l_linestatus::STRING _sum_base_price::INT)
                                     (reduce
                                         ([a::INT b::INT c::INT] (+ a::INT b::INT c::INT))   ;; op
-                                        ([_lineitem::ENTITY _lineitem_l_extendedprice::DECIMAL _one::INT]      ;; body
+                                        ([_lineitem::ENTITY _lineitem_l_extendedprice::INT _one::INT]      ;; body
                                             (exists
                                                 [
                                                     _lineitem_l_shipdate::INT
-                                                    _lineitem_l_discount::DECIMAL
-                                                    _disc_price::DECIMAL
-                                                    _res_2::DECIMAL
+                                                    _lineitem_l_discount::INT
+                                                    _disc_price::INT
+                                                    _res_2::INT
                                                 ]
 
                                                 (and
@@ -371,10 +381,10 @@
                                                         _lineitem_l_shipdate::INT
                                                         _lineitem_l_returnflag::STRING
                                                         _lineitem_l_linestatus::STRING
-                                                        _lineitem_l_extendedprice::DECIMAL
-                                                        _lineitem_l_discount::DECIMAL
-                                                        _disc_price::DECIMAL
-                                                        _res_2::DECIMAL
+                                                        _lineitem_l_extendedprice::INT
+                                                        _lineitem_l_discount::INT
+                                                        _disc_price::INT
+                                                        _res_2::INT
                                                     )
                                                     (= _one::INT 1)
                                                 )
@@ -401,22 +411,22 @@
                             [
                                 _lineitem_l_returnflag::STRING
                                 _lineitem_l_linestatus::STRING
-                                _v::DECIMAL
+                                _v::FLOAT
                             ]
 
                             ;; sum_discount / count(discount)
-                            (exists [_sum_discount::DECIMAL _count_discount::INT]
+                            (exists [_sum_discount::INT _count_discount::INT]
                                 (and
-                                    (/ _sum_discount::DECIMAL _count_discount::INT _v::DECIMAL)
+                                    (/ _sum_discount::INT _count_discount::INT _v::FLOAT)
                                     (reduce
-                                        ([a::DECIMAL b::DECIMAL c::DECIMAL] (+ a::DECIMAL b::DECIMAL c::DECIMAL))   ;; op
-                                        ([_lineitem::ENTITY _lineitem_l_discount::DECIMAL]                          ;; body
+                                        ([a::INT b::INT c::INT] (+ a::INT b::INT c::INT))   ;; op
+                                        ([_lineitem::ENTITY _lineitem_l_discount::INT]                          ;; body
                                             (exists
                                                 [
                                                     _lineitem_l_shipdate::INT
-                                                    _lineitem_l_extendedprice::DECIMAL
-                                                    _disc_price::DECIMAL
-                                                    _res_2::DECIMAL
+                                                    _lineitem_l_extendedprice::INT
+                                                    _disc_price::INT
+                                                    _res_2::INT
                                                 ]
 
                                                 (and
@@ -426,25 +436,25 @@
                                                         _lineitem_l_shipdate::INT
                                                         _lineitem_l_returnflag::STRING
                                                         _lineitem_l_linestatus::STRING
-                                                        _lineitem_l_extendedprice::DECIMAL
-                                                        _lineitem_l_discount::DECIMAL
-                                                        _disc_price::DECIMAL
-                                                        _res_2::DECIMAL
+                                                        _lineitem_l_extendedprice::INT
+                                                        _lineitem_l_discount::INT
+                                                        _disc_price::INT
+                                                        _res_2::INT
                                                     )
                                                 )
                                             )
                                         )
-                                        (terms _sum_discount::DECIMAL)                                             ;; result
+                                        (terms _sum_discount::INT)                                             ;; result
                                     )
                                     (reduce
                                         ([a::INT b::INT c::INT] (+ a::INT b::INT c::INT))                           ;; op
-                                        ([_lineitem::ENTITY _lineitem_l_discount::DECIMAL _one::INT]                ;; body
+                                        ([_lineitem::ENTITY _lineitem_l_discount::INT _one::INT]                ;; body
                                             (exists
                                                 [
                                                     _lineitem_l_shipdate::INT
-                                                    _lineitem_l_extendedprice::DECIMAL
-                                                    _disc_price::DECIMAL
-                                                    _res_2::DECIMAL
+                                                    _lineitem_l_extendedprice::INT
+                                                    _disc_price::INT
+                                                    _res_2::INT
                                                 ]
 
                                                 (and
@@ -454,10 +464,10 @@
                                                         _lineitem_l_shipdate::INT
                                                         _lineitem_l_returnflag::STRING
                                                         _lineitem_l_linestatus::STRING
-                                                        _lineitem_l_extendedprice::DECIMAL
-                                                        _lineitem_l_discount::DECIMAL
-                                                        _disc_price::DECIMAL
-                                                        _res_2::DECIMAL
+                                                        _lineitem_l_extendedprice::INT
+                                                        _lineitem_l_discount::INT
+                                                        _disc_price::INT
+                                                        _res_2::INT
                                                     )
                                                     (= _one::INT 1)
                                                 )
@@ -493,10 +503,10 @@
                                     (exists
                                         [
                                             _lineitem_l_shipdate::INT
-                                            _lineitem_l_extendedprice::DECIMAL
-                                            _lineitem_l_discount::DECIMAL
-                                            _disc_price::DECIMAL
-                                            _res_2::DECIMAL
+                                            _lineitem_l_extendedprice::INT
+                                            _lineitem_l_discount::INT
+                                            _disc_price::INT
+                                            _res_2::INT
                                         ]
 
                                         (and
@@ -506,10 +516,10 @@
                                                 _lineitem_l_shipdate::INT
                                                 _lineitem_l_returnflag::STRING
                                                 _lineitem_l_linestatus::STRING
-                                                _lineitem_l_extendedprice::DECIMAL
-                                                _lineitem_l_discount::DECIMAL
-                                                _disc_price::DECIMAL
-                                                _res_2::DECIMAL
+                                                _lineitem_l_extendedprice::INT
+                                                _lineitem_l_discount::INT
+                                                _disc_price::INT
+                                                _res_2::INT
                                             )
                                             (= _one::INT 1)
                                         )
