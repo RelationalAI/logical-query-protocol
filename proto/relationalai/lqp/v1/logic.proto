@@ -85,7 +85,10 @@ message Pragma {
 }
 
 message Primitive {
-  string name = 1;
+  oneof id {
+    string name = 1;
+    RelationSig sig = 3;
+  }
   repeated Term terms = 2;
 }
 
@@ -132,9 +135,7 @@ enum PrimitiveType {
   PRIMITIVE_TYPE_STRING = 1;
   PRIMITIVE_TYPE_INT = 2;
   PRIMITIVE_TYPE_FLOAT = 3;
-  PRIMITIVE_TYPE_DECIMAL = 4;
-  // TODO PR: should we just use UINT128?
-  PRIMITIVE_TYPE_HASH = 5;
+  PRIMITIVE_TYPE_UINT128 = 4;
 }
 
 message PrimitiveValue {
@@ -142,25 +143,30 @@ message PrimitiveValue {
     string string_value = 1;
     int64 int_value = 2;
     double float_value = 3;
-    Decimal decimal_value = 4;
-    // TODO PR: UINT128??
-    Hash hash_value = 5;
+    UInt128 uint128_value = 4;
   }
 }
 
-message Hash {
+message UInt128 {
   fixed64 hash_low = 1; // Lower 64 bits of UInt128
   fixed64 hash_high = 2; // Upper 64 bits of UInt128
 }
 
-// Encodes byte representation of decimals up to 128 bits
-// TODO: do we need to specify precision and scale?
-message Decimal {
-  fixed64 hash_low = 1; // Lower 64 bits of UInt128
-  fixed64 hash_high = 2; // Upper 64 bits of UInt128
+message SigType {
+  oneof _type {
+    PrimitiveType prim_type = 1;
+    SpecializedType spec_type = 2;
+  }
+}
+
+message SpecializedType {
+  oneof spec_type {
+    string spec_string = 1;
+    int64 spec_int = 2;
+  }
 }
 
 message RelationSig {
   string name = 1; // Name of the relation
-  repeated PrimitiveType types = 2; // Attributes of the relation
+  repeated SigType types = 3; // Attributes of the relation
 }
