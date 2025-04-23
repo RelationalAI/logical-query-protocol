@@ -41,6 +41,7 @@ message Formula {
     Primitive primitive = 9;
     True true_val = 10;
     False false_val = 11;
+    RelAtom rel_atom = 12;
   }
 }
 
@@ -91,6 +92,11 @@ message Primitive {
 message True {}
 message False {}
 
+message RelAtom {
+  RelationSig sig = 1;
+  repeated Term terms = 2;
+}
+
 message Term {
   oneof term_type {
     Var var = 1;
@@ -134,4 +140,9 @@ message PrimitiveValue {
     int64 int_value = 2;
     double float_value = 3;
   }
+}
+
+message RelationSig {
+  string name = 1; // Name of the relation
+  repeated PrimitiveType types = 2; // Attributes of the relation
 }

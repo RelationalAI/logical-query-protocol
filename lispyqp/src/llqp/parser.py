@@ -35,7 +35,7 @@ def_: "(def" relation_id abstraction attrs? ")"
 abstraction: "(" vars formula ")"
 vars: "[" var* "]"
 
-formula: exists | reduce | conjunction | disjunction | not | ffi | atom | pragma | primitive | true | false
+formula: exists | reduce | conjunction | disjunction | not | ffi | atom | pragma | primitive | true | false | relatom
 exists: "(exists" vars formula ")"
 reduce: "(reduce" abstraction abstraction terms ")"
 conjunction: "(and" formula* ")"
@@ -43,6 +43,7 @@ disjunction: "(or" formula* ")"
 not: "(not" formula ")"
 ffi: "(ffi" name args terms ")"
 atom: "(atom" relation_id term* ")"
+relatom: "(relatom" relationsig term* ")"
 pragma: "(pragma" name terms ")"
 true: "(true)"
 false: "(false)"
@@ -67,6 +68,8 @@ name: ":" SYMBOL
 
 primitive_value: STRING | NUMBER | FLOAT
 PRIMITIVE_TYPE: "STRING" | "INT" | "FLOAT"
+rel_sig_type: "/" PRIMITIVE_TYPE
+relationsig: "(sig" name rel_sig_type* ")"
 
 SYMBOL: /[a-zA-Z_][a-zA-Z0-9_-]*/
 STRING: "\\"" /[^"]*/ "\\""
@@ -169,6 +172,8 @@ class LQPTransformer(Transformer):
         return logic_pb2.Formula(atom=logic_pb2.Atom(name=items[0], terms=items[1:]))
     def pragma(self, items):
         return logic_pb2.Formula(pragma=logic_pb2.Pragma(name=items[0], terms=items[1]))
+    def relatom(self, items):
+        return logic_pb2.Formula(rel_atom=logic_pb2.RelAtom(sig=items[0], terms=items[1:]))
 
     #
     # Primitives
@@ -205,6 +210,13 @@ class LQPTransformer(Transformer):
         symbol = items[0][1:]  # Remove leading ':'
         hash_val = int(hashlib.sha256(symbol.encode()).hexdigest()[:16], 16)  # First 64 bits of SHA-256
         return logic_pb2.RelationId(id_low=hash_val, id_high=0)  # Simplified hashing
+
+    def rel_sig_type(self, items):
+        return items[0]
+    def relationsig(self, items):
+        name = items[0]
+        types = [getattr(logic_pb2.PrimitiveType, f"PRIMITIVE_TYPE_{t.upper()}") for t in items[1:]]
+        return logic_pb2.RelationSig(name=name, types=types)
 
     #
     # Primitive values

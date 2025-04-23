@@ -1,0 +1,16 @@
+(transaction
+    (epoch
+        (local_writes
+            (define
+                (fragment :f1
+                    (def :foo ([x::INT] (or (= x::INT 1) (= x::INT 2) (= x::INT 3))))
+                    (def :bar ([x::INT] (atom :foo x::INT)))
+                    (def :result
+                        ([x::INT]
+                            (reduce
+                                ([a::INT b::INT c::INT] (+ a::INT b::INT c::INT))   ;; op
+                                ([num::INT] (atom :bar num::INT))                   ;; body
+                                (terms x::INT)))))))
+
+        (reads
+            (output :foo :result))))
