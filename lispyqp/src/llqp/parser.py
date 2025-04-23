@@ -74,7 +74,7 @@ fragment_id: ":" SYMBOL
 relation_id: ":" SYMBOL
 name: ":" SYMBOL
 
-primitive_value: STRING | NUMBER | FLOAT
+primitive_value: STRING | NUMBER | FLOAT | UINT128
 PRIMITIVE_TYPE: "STRING" | "INT" | "FLOAT" | "UINT128" | "ENTITY"
 rel_sig_type: "/" PRIMITIVE_TYPE
 relationsig: "(sig" name rel_sig_type* ")"
@@ -82,6 +82,7 @@ relationsig: "(sig" name rel_sig_type* ")"
 SYMBOL: /[a-zA-Z_][a-zA-Z0-9_-]*/
 STRING: "\\"" /[^"]*/ "\\""
 NUMBER: /\d+/
+UINT128: /0x[0-9a-fA-F]+/
 FLOAT: /\d+\.\d+/
 
 COMMENT: /;;.*/  // Matches ;; followed by any characters except newline
@@ -261,6 +262,12 @@ class LQPTransformer(Transformer):
         return logic_pb2.PrimitiveValue(float_value=float(f))
     def SYMBOL(self, sym):
         return str(sym)
+    def UINT128(self, u):
+        uint128_val = int(u, 16)
+        low = uint128_val & 0xFFFFFFFFFFFFFFFF
+        high = (uint128_val >> 64) & 0xFFFFFFFFFFFFFFFF
+        uint128_proto = logic_pb2.UInt128(hash_low=low, hash_high=high)
+        return logic_pb2.PrimitiveValue(uint128_value=uint128_proto)
 
 # LALR(1) is significantly faster than Earley for parsing, especially on larger inputs. It
 # uses a precomputed parse table, reducing runtime complexity to O(n) (linear in input
