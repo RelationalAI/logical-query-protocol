@@ -46,8 +46,7 @@ message Formula {
 }
 
 message Exists {
-  repeated Var vars = 1;
-  Formula value = 2;
+  Abstraction body = 3;
 }
 
 message Reduce {
@@ -93,7 +92,7 @@ message True {}
 message False {}
 
 message RelAtom {
-  RelationSig sig = 1;
+  string name = 3;
   repeated Term terms = 2;
 }
 
@@ -147,9 +146,4 @@ message PrimitiveValue {
 message UInt128 {
   fixed64 hash_low = 1; // Lower 64 bits of UInt128
   fixed64 hash_high = 2; // Upper 64 bits of UInt128
-}
-
-message RelationSig {
-  string name = 1; // Name of the relation
-  repeated PrimitiveType types = 2; // Attributes of the relation
 }
