@@ -42,6 +42,7 @@ message Formula {
     True true_val = 10;
     False false_val = 11;
     RelAtom rel_atom = 12;
+    Cast cast = 13;
   }
 }
 
@@ -94,6 +95,12 @@ message False {}
 message RelAtom {
   string name = 3;
   repeated Term terms = 2;
+}
+
+message Cast {
+  PrimitiveType type = 1;
+  Term input = 2;
+  Term result = 3;
 }
 
 message Term {
