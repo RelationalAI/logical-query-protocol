@@ -86,12 +86,12 @@ REL_VALUE_TYPE: "DECIMAL" | "DATE" | "DATETIME"
 
 SYMBOL: /[a-zA-Z_][a-zA-Z0-9_-]*/
 STRING: "\\"" /[^"]*/ "\\""
-NUMBER: /\d+/
+NUMBER: /\\d+/
 UINT128: /0x[0-9a-fA-F]+/
-FLOAT: /\d+\.\d+/
+FLOAT: /\\d+\\.\\d+/
 
 COMMENT: /;;.*/  // Matches ;; followed by any characters except newline
-%ignore /\s+/
+%ignore /\\s+/
 %ignore COMMENT
 """
 
