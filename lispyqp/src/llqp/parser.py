@@ -5,6 +5,7 @@ import sys
 import hashlib
 from lark import Lark, Transformer
 from relationalai.lqp.v1 import logic_pb2, fragments_pb2, transactions_pb2
+from llqp.validator import validate_lqp, ValidationError
 
 from google.protobuf.json_format import MessageToJson
 
@@ -301,6 +302,7 @@ def process_file(filename, bin, json):
         lqp_text = f.read()
 
     lqp_proto = parse_lqp(lqp_text)
+    validate_lqp(lqp_proto)
     print(lqp_proto)
 
     # Write binary output to the configured directories, using the same filename.

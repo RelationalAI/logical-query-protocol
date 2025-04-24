@@ -4,6 +4,7 @@ import pytest
 import sys
 from pathlib import Path
 from llqp.parser import parse_lqp
+from llqp.validator import ValidationError, validate_lqp
 
 TEST_INPUTS_DIR = Path(__file__).parent / "test_files" / "lqp_input"
 TEST_OUTPUTS_DIR = Path(__file__).parent / "test_files" / "bin_output"
@@ -47,3 +48,39 @@ def test_parse_lqp(input_file):
 
     except Exception as e:
         pytest.fail(f"Failed checking {input_file}: {str(e)}")
+
+VALIDATOR_DIR = Path(__file__).parent / "validator"
+
+def test_valid_validator_files():
+    for validator_file in VALIDATOR_DIR.glob("valid_*.llqp"):
+        with open(validator_file, "r") as f:
+            content = f.read()
+        try:
+            result = parse_lqp(content)
+            assert result is not None, f"Failed to parse {validator_file}"
+            print(f"Successfully validated {validator_file}")
+        except Exception as e:
+            pytest.fail(f"Failed to parse valid validator file {validator_file}: {str(e)}")
+
+def extract_expected_error(file_path):
+    with open(file_path, "r") as f:
+        content = f.read()
+    error_match = re.search(r';;\s*ERROR:\s*(.+)(?:\n|\r\n?)', content)
+    if error_match:
+        return error_match.group(1).strip()
+    return None
+
+@pytest.mark.parametrize("validator_file", [f for f in os.listdir(VALIDATOR_DIR) if f.startswith("fail_")])
+def test_validator_failure_files(validator_file):
+    file_path = VALIDATOR_DIR / validator_file
+    expected_error = extract_expected_error(file_path)
+    if not expected_error:
+        pytest.skip(f"No expected error comment found in {validator_file}")
+        return
+    with open(file_path, "r") as f:
+        content = f.read()
+    result = parse_lqp(content)
+    with pytest.raises(ValidationError) as exc_info:
+        validate_lqp(result)
+    error_message = str(exc_info.value)
+    assert expected_error in error_message, f"Expected '{expected_error}' in error message: {error_message}"

@@ -1,0 +1,11 @@
+;; ERROR: Undeclared variable used: 'some_limit'
+(fragment :frag
+  (def :person
+    ([name::STRING age::INT] ;; Declare name, age
+     (and
+       (atom :source name::STRING age::INT) ;; OK: name, age are declared
+       (= age::INT some_limit::INT) ;; FAIL: some_limit is not declared
+     )
+    )
+  )
+)
