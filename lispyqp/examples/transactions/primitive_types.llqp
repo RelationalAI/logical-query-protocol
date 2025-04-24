@@ -7,7 +7,7 @@
           (def :output_str ([v::STRING] (= v::STRING "hello")))
           (def :output_decimal ([v::DECIMAL] (relatom (sig :dec/DECIMAL) v::DECIMAL)))
           (def :output_date ([v::DATE] (relatom (sig :date/DATE) v::DATE)))
-          (def :output_datetime ([v::DATETIME] (relatom (sig :date/DATETIME) v::DATETIME)))
+          (def :output_datetime ([v::DATETIME] (relatom (sig :datetime/DATETIME) v::DATETIME)))
           (def :output_second ([v::SECOND] (relatom (sig :second/SECOND) v::SECOND))))))
 
     (reads
