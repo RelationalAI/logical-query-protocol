@@ -77,7 +77,7 @@ name: ":" SYMBOL
 primitive_value: STRING | NUMBER | FLOAT | UINT128
 PRIMITIVE_TYPE: "STRING" | "INT" | "FLOAT" | "UINT128" | "ENTITY"
               | "DECIMAL" | "DATE" | "DATETIME"
-              | "NANOSECOND" | "MICROSECOND" | "SECOND" | "MINUTE" | "HOUR"
+              | "NANOSECOND" | "MICROSECOND" | "MILLISECOND" | "SECOND" | "MINUTE" | "HOUR"
               | "DAY" | "WEEK" | "MONTH" | "YEAR"
 rel_sig_type: "/" PRIMITIVE_TYPE
 relationsig: "(sig" name rel_sig_type* ")"
