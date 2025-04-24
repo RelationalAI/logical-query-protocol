@@ -8,3 +8,5 @@ lispyqp/out/
 
 # Proto generated files
 gen
+
+.envrc
