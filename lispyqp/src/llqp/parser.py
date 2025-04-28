@@ -66,14 +66,15 @@ fragment_id: ":" SYMBOL
 relation_id: ":" SYMBOL
 name: ":" SYMBOL
 
-primitive_value: STRING | NUMBER | FLOAT
-PRIMITIVE_TYPE: "STRING" | "INT" | "FLOAT"
+primitive_value: STRING | NUMBER | FLOAT | UINT128
+PRIMITIVE_TYPE: "STRING" | "INT" | "FLOAT" | "UINT128"
 rel_sig_type: "/" PRIMITIVE_TYPE
 relationsig: "(sig" name rel_sig_type* ")"
 
 SYMBOL: /[a-zA-Z_][a-zA-Z0-9_-]*/
 STRING: "\\"" /[^"]*/ "\\""
 NUMBER: /\d+/
+UINT128: /0x[0-9a-fA-F]+/
 FLOAT: /\d+\.\d+/
 
 COMMENT: /;;.*/  // Matches ;; followed by any characters except newline
@@ -81,6 +82,8 @@ COMMENT: /;;.*/  // Matches ;; followed by any characters except newline
 %ignore COMMENT
 """
 
+def primitive_type_to_proto(primitive_type):
+    return getattr(logic_pb2.PrimitiveType, f"PRIMITIVE_TYPE_{primitive_type.upper()}")
 
 class LQPTransformer(Transformer):
     def start(self, items):
@@ -197,7 +200,7 @@ class LQPTransformer(Transformer):
     def var(self, items):
         identifier = items[0]
         primitive_type = items[1]
-        type_enum = getattr(logic_pb2.PrimitiveType, f"PRIMITIVE_TYPE_{primitive_type.upper()}")
+        type_enum = primitive_type_to_proto(primitive_type)
         return logic_pb2.Term(var=logic_pb2.Var(name=identifier, type=type_enum))
     def constant(self, items):
         return logic_pb2.Term(constant=logic_pb2.Constant(value=items[0]))
@@ -215,7 +218,7 @@ class LQPTransformer(Transformer):
         return items[0]
     def relationsig(self, items):
         name = items[0]
-        types = [getattr(logic_pb2.PrimitiveType, f"PRIMITIVE_TYPE_{t.upper()}") for t in items[1:]]
+        types = [primitive_type_to_proto(t) for t in items[1:]]
         return logic_pb2.RelationSig(name=name, types=types)
 
     #
@@ -231,6 +234,12 @@ class LQPTransformer(Transformer):
         return logic_pb2.PrimitiveValue(float_value=float(f))
     def SYMBOL(self, sym):
         return str(sym)
+    def UINT128(self, u):
+        uint128_val = int(u, 16)
+        low = uint128_val & 0xFFFFFFFFFFFFFFFF
+        high = (uint128_val >> 64) & 0xFFFFFFFFFFFFFFFF
+        uint128_proto = logic_pb2.UInt128(low=low, high=high)
+        return logic_pb2.PrimitiveValue(uint128_value=uint128_proto)
 
 # LALR(1) is significantly faster than Earley for parsing, especially on larger inputs. It
 # uses a precomputed parse table, reducing runtime complexity to O(n) (linear in input
