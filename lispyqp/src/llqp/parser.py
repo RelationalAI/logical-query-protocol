@@ -211,7 +211,7 @@ class LQPTransformer(Transformer):
     def relatom(self, items):
         return logic_pb2.Formula(rel_atom=logic_pb2.RelAtom(name=items[0], terms=items[1:]))
     def cast(self, items):
-        t = primitive_type_to_proto(items[0])
+        t = rel_type_to_proto(items[0])
         return logic_pb2.Formula(cast=logic_pb2.Cast(type=t, input=items[1], result=items[2]))
 
     #
