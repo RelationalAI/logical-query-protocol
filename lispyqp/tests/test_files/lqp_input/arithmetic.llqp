@@ -1,0 +1,20 @@
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :f1
+          (def :output_decimal ([a::DECIMAL b::DECIMAL c::DECIMAL]
+            (and
+                (relatom :dec_a a::DECIMAL)
+                (relatom :dec_b b::DECIMAL)
+                (+ a::DECIMAL b::DECIMAL c::DECIMAL))))
+
+          (def :output_date ([a::DATE b::DAY c::DATE]
+            (and
+                (relatom :date_a a::DATE)
+                (relatom :day_b b::DAY)
+                (+ a::DATE b::DAY c::DATE)))))))
+
+    (reads
+      (output :dec :output_decimal)
+      (output :date :output_date))))

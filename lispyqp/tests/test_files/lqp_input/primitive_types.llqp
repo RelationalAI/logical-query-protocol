@@ -1,0 +1,19 @@
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :f1
+          (def :output_uint128 ([v::UINT128] (= v::UINT128 0x123456789abcdef12345)))
+          (def :output_str ([v::STRING] (= v::STRING "hello")))
+          (def :output_decimal ([v::DECIMAL] (relatom :dec v::DECIMAL)))
+          (def :output_date ([v::DATE] (relatom :date v::DATE)))
+          (def :output_datetime ([v::DATETIME] (relatom :datetime v::DATETIME)))
+          (def :output_second ([v::SECOND] (relatom :second v::SECOND))))))
+
+    (reads
+      (output :uint128 :output_uint128)
+      (output :str :output_str)
+      (output :dec :output_decimal)
+      (output :date :output_date)
+      (output :datetime :output_datetime)
+      (output :second :output_second))))
