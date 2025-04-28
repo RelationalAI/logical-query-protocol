@@ -132,6 +132,7 @@ enum PrimitiveType {
   PRIMITIVE_TYPE_STRING = 1;
   PRIMITIVE_TYPE_INT = 2;
   PRIMITIVE_TYPE_FLOAT = 3;
+  PRIMITIVE_TYPE_UINT128 = 4;
 }
 
 message PrimitiveValue {
@@ -139,7 +140,13 @@ message PrimitiveValue {
     string string_value = 1;
     int64 int_value = 2;
     double float_value = 3;
+    UInt128 uint128_value = 4;
   }
+}
+
+message UInt128 {
+  fixed64 low = 1; // Lower 64 bits of UInt128
+  fixed64 high = 2; // Upper 64 bits of UInt128
 }
 
 message RelationSig {
