@@ -50,13 +50,21 @@ false: "(false)"
 args: "(args" abstraction* ")"
 terms: "(terms" term* ")"
 
-primitive: raw_primitive | eq | add
+primitive: raw_primitive | eq | lt | lt_eq | gt | gt_eq | add | minus | multiply | divide
 raw_primitive: "(primitive" name term* ")"
 eq: "(=" term term ")"
+lt: "(<" term term ")"
+lt_eq: "(<=" term term ")"
+gt: "(>" term term ")"
+gt_eq: "(>=" term term ")"
+
 add: "(+" term term term ")"
+minus: "(-" term term term ")"
+multiply: "(*" term term term ")"
+divide: "(/" term term term ")"
 
 term: var | constant
-var: SYMBOL "::" PRIMITIVE_TYPE
+var: SYMBOL "::" rel_type
 constant: primitive_value
 
 attrs: "(attrs" attribute* ")"
@@ -67,8 +75,13 @@ relation_id: ":" SYMBOL
 name: ":" SYMBOL
 
 primitive_value: STRING | NUMBER | FLOAT | UINT128
-PRIMITIVE_TYPE: "STRING" | "INT" | "FLOAT" | "UINT128"
-rel_sig_type: "/" PRIMITIVE_TYPE
+
+rel_type: PRIMITIVE_TYPE | REL_VALUE_TYPE
+PRIMITIVE_TYPE: "STRING" | "INT" | "FLOAT" | "UINT128" | "ENTITY"
+REL_VALUE_TYPE: "DECIMAL" | "DATE" | "DATETIME"
+              | "NANOSECOND" | "MICROSECOND" | "MILLISECOND" | "SECOND" | "MINUTE" | "HOUR"
+              | "DAY" | "WEEK" | "MONTH" | "YEAR"
+rel_sig_type: "/" rel_type
 relationsig: "(sig" name rel_sig_type* ")"
 
 SYMBOL: /[a-zA-Z_][a-zA-Z0-9_-]*/
@@ -82,8 +95,27 @@ COMMENT: /;;.*/  // Matches ;; followed by any characters except newline
 %ignore COMMENT
 """
 
+def rel_type_to_proto(parsed_type):
+    if parsed_type.children[0].type == "PRIMITIVE_TYPE":
+        val = primitive_type_to_proto(parsed_type.children[0].value)
+        return logic_pb2.RelType(primitive_type=val)
+    elif parsed_type.children[0].type == "REL_VALUE_TYPE":
+        val = rel_value_type_to_proto(parsed_type.children[0].value)
+        return logic_pb2.RelType(value_type=val)
+    else:
+        raise ValueError(f"Unknown type: {parsed_type.children[0].type}")
+
 def primitive_type_to_proto(primitive_type):
+    # Map ENTITY -> HASH
+    if primitive_type.upper() == "ENTITY":
+        primitive_type = "UINT128"
+
+    # Map the primitive type string to the corresponding protobuf enum value
     return getattr(logic_pb2.PrimitiveType, f"PRIMITIVE_TYPE_{primitive_type.upper()}")
+
+def rel_value_type_to_proto(primitive_type):
+    # Map the primitive type string to the corresponding protobuf enum value
+    return getattr(logic_pb2.RelValueType, f"REL_VALUE_TYPE_{primitive_type.upper()}")
 
 class LQPTransformer(Transformer):
     def start(self, items):
@@ -187,8 +219,23 @@ class LQPTransformer(Transformer):
         return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=items[0], terms=items[1:]))
     def eq(self, items):
         return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_eq"]), terms=items))
+    def lt(self, items):
+        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_lt"]), terms=items))
+    def lt_eq(self, items):
+        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_lt_eq"]), terms=items))
+    def gt(self, items):
+        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_gt"]), terms=items))
+    def gt_eq(self, items):
+        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_gt_eq"]), terms=items))
+
     def add(self, items):
         return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_add"]), terms=items))
+    def minus(self, items):
+        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_subtract"]), terms=items))
+    def multiply(self, items):
+        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_multiply"]), terms=items))
+    def divide(self, items):
+        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_divide"]), terms=items))
 
     def args(self, items):
         return items
@@ -200,7 +247,7 @@ class LQPTransformer(Transformer):
     def var(self, items):
         identifier = items[0]
         primitive_type = items[1]
-        type_enum = primitive_type_to_proto(primitive_type)
+        type_enum = rel_type_to_proto(primitive_type)
         return logic_pb2.Term(var=logic_pb2.Var(name=identifier, type=type_enum))
     def constant(self, items):
         return logic_pb2.Term(constant=logic_pb2.Constant(value=items[0]))
@@ -218,7 +265,7 @@ class LQPTransformer(Transformer):
         return items[0]
     def relationsig(self, items):
         name = items[0]
-        types = [primitive_type_to_proto(t) for t in items[1:]]
+        types = [rel_type_to_proto(t) for t in items[1:]]
         return logic_pb2.RelationSig(name=name, types=types)
 
     #
