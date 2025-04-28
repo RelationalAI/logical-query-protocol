@@ -171,8 +171,8 @@ message PrimitiveValue {
 }
 
 message UInt128 {
-  fixed64 hash_low = 1; // Lower 64 bits of UInt128
-  fixed64 hash_high = 2; // Upper 64 bits of UInt128
+  fixed64 low = 1; // Lower 64 bits of UInt128
+  fixed64 high = 2; // Upper 64 bits of UInt128
 }
 
 message RelationSig {
