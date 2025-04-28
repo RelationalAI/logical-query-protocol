@@ -106,7 +106,7 @@ message Term {
 
 message Var {
   string name = 1; // Symbol as the variable's identifier
-  PrimitiveType type = 2; // Reference to the type
+  RelType type = 2; // Reference to the type
 }
 
 message Constant {
@@ -127,28 +127,37 @@ message LoopIndex {
   string name = 1; // Assuming LoopIndex is a named identifier
 }
 
+message RelType {
+  oneof rel_type {
+    PrimitiveType primitive_type = 1;
+    RelValueType value_type = 2;
+  }
+}
+
 enum PrimitiveType {
   PRIMITIVE_TYPE_UNSPECIFIED = 0;
   PRIMITIVE_TYPE_STRING = 1;
   PRIMITIVE_TYPE_INT = 2;
   PRIMITIVE_TYPE_FLOAT = 3;
   PRIMITIVE_TYPE_UINT128 = 4;
+}
 
-  PRIMITIVE_TYPE_DECIMAL = 5;
+enum RelValueType {
+  PRIMITIVE_TYPE_DECIMAL = 1;
 
-  PRIMITIVE_TYPE_DATE = 6;
-  PRIMITIVE_TYPE_DATETIME = 7;
+  PRIMITIVE_TYPE_DATE = 2;
+  PRIMITIVE_TYPE_DATETIME = 3;
 
-  PRIMITIVE_TYPE_NANOSECOND = 8;
-  PRIMITIVE_TYPE_MICROSECOND = 9;
-  PRIMITIVE_TYPE_MILLISECOND = 10;
-  PRIMITIVE_TYPE_SECOND = 11;
-  PRIMITIVE_TYPE_MINUTE = 12;
-  PRIMITIVE_TYPE_HOUR = 13;
-  PRIMITIVE_TYPE_DAY = 14;
-  PRIMITIVE_TYPE_WEEK = 15;
-  PRIMITIVE_TYPE_MONTH = 16;
-  PRIMITIVE_TYPE_YEAR = 17;
+  PRIMITIVE_TYPE_NANOSECOND = 4;
+  PRIMITIVE_TYPE_MICROSECOND = 5;
+  PRIMITIVE_TYPE_MILLISECOND = 6;
+  PRIMITIVE_TYPE_SECOND = 7;
+  PRIMITIVE_TYPE_MINUTE = 8;
+  PRIMITIVE_TYPE_HOUR = 9;
+  PRIMITIVE_TYPE_DAY = 10;
+  PRIMITIVE_TYPE_WEEK = 11;
+  PRIMITIVE_TYPE_MONTH = 12;
+  PRIMITIVE_TYPE_YEAR = 13;
 }
 
 message PrimitiveValue {
@@ -167,5 +176,5 @@ message UInt128 {
 
 message RelationSig {
   string name = 1; // Name of the relation
-  repeated PrimitiveType types = 2; // Attributes of the relation
+  repeated RelType types = 2; // Attributes of the relation
 }
