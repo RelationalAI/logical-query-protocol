@@ -112,7 +112,7 @@ message Term {
 
 message Var {
   string name = 1; // Symbol as the variable's identifier
-  PrimitiveType type = 2; // Reference to the type
+  RelType type = 2; // Reference to the type
 }
 
 message Constant {
@@ -133,12 +133,38 @@ message LoopIndex {
   string name = 1; // Assuming LoopIndex is a named identifier
 }
 
+message RelType {
+  oneof rel_type {
+    PrimitiveType primitive_type = 1;
+    RelValueType value_type = 2;
+  }
+}
+
 enum PrimitiveType {
   PRIMITIVE_TYPE_UNSPECIFIED = 0;
   PRIMITIVE_TYPE_STRING = 1;
   PRIMITIVE_TYPE_INT = 2;
   PRIMITIVE_TYPE_FLOAT = 3;
   PRIMITIVE_TYPE_UINT128 = 4;
+}
+
+enum RelValueType {
+  REL_VALUE_TYPE_UNSPECIFIED = 0;
+  REL_VALUE_TYPE_DECIMAL = 1;
+
+  REL_VALUE_TYPE_DATE = 2;
+  REL_VALUE_TYPE_DATETIME = 3;
+
+  REL_VALUE_TYPE_NANOSECOND = 4;
+  REL_VALUE_TYPE_MICROSECOND = 5;
+  REL_VALUE_TYPE_MILLISECOND = 6;
+  REL_VALUE_TYPE_SECOND = 7;
+  REL_VALUE_TYPE_MINUTE = 8;
+  REL_VALUE_TYPE_HOUR = 9;
+  REL_VALUE_TYPE_DAY = 10;
+  REL_VALUE_TYPE_WEEK = 11;
+  REL_VALUE_TYPE_MONTH = 12;
+  REL_VALUE_TYPE_YEAR = 13;
 }
 
 message PrimitiveValue {
@@ -151,6 +177,6 @@ message PrimitiveValue {
 }
 
 message UInt128 {
-  fixed64 hash_low = 1; // Lower 64 bits of UInt128
-  fixed64 hash_high = 2; // Upper 64 bits of UInt128
+  fixed64 low = 1; // Lower 64 bits of UInt128
+  fixed64 high = 2; // Upper 64 bits of UInt128
 }
