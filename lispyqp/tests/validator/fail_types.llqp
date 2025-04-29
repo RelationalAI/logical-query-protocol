@@ -4,8 +4,4 @@
     ([key::STRING value::INT]
      (and
        (= key::STRING "test")
-       (primitive :process value::STRING) ;; Using value as STRING when it was declared as INT
-     )
-    )
-  )
-)
+       (primitive :process value::STRING))))) ;; Using value as STRING when it was declared as INT
