@@ -1,9 +1,0 @@
-(transaction
-    (epoch
-        (local_writes
-            (define
-                (fragment :f1
-                    (def :foo ([x::INT] (relatom :hello x::INT))))))
-
-        (reads
-            (output :foo :foo))))

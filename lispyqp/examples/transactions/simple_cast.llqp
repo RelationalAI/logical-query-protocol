@@ -1,9 +1,0 @@
-(transaction
-  (epoch
-    (local_writes
-      (define
-        (fragment :f1
-          (def :output ([v::UINT128] (cast UINT128 123 v::UINT128))))))
-
-    (reads
-      (output :output :output))))
