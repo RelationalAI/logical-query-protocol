@@ -5,10 +5,10 @@
         (fragment :f1
           (def :output_uint128 ([v::UINT128] (= v::UINT128 0x123456789abcdef12345)))
           (def :output_str ([v::STRING] (= v::STRING "hello")))
-          (def :output_decimal ([v::DECIMAL] (relatom (sig :dec/DECIMAL) v::DECIMAL)))
-          (def :output_date ([v::DATE] (relatom (sig :date/DATE) v::DATE)))
-          (def :output_datetime ([v::DATETIME] (relatom (sig :datetime/DATETIME) v::DATETIME)))
-          (def :output_second ([v::SECOND] (relatom (sig :second/SECOND) v::SECOND))))))
+          (def :output_decimal ([v::DECIMAL] (relatom :dec v::DECIMAL)))
+          (def :output_date ([v::DATE] (relatom :date v::DATE)))
+          (def :output_datetime ([v::DATETIME] (relatom :datetime v::DATETIME)))
+          (def :output_second ([v::SECOND] (relatom :second v::SECOND))))))
 
     (reads
       (output :uint128 :output_uint128)

@@ -1,0 +1,48 @@
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :f1
+          (def :output_decimal_addition ([a::DECIMAL b::DECIMAL c::DECIMAL]
+            (and
+                (relatom :dec_a a::DECIMAL)
+                (relatom :dec_b b::DECIMAL)
+                (+ a::DECIMAL b::DECIMAL c::DECIMAL))))
+
+          (def :output_decimal_subtraction ([a::DECIMAL b::DECIMAL c::DECIMAL]
+            (and
+                (relatom :dec_a a::DECIMAL)
+                (relatom :dec_b b::DECIMAL)
+                (- a::DECIMAL b::DECIMAL c::DECIMAL))))
+
+          (def :output_decimal_multiplication ([a::DECIMAL b::DECIMAL c::DECIMAL]
+            (and
+                (relatom :dec_a a::DECIMAL)
+                (relatom :dec_b b::DECIMAL)
+                (* a::DECIMAL b::DECIMAL c::DECIMAL))))
+
+          (def :output_decimal_division ([a::DECIMAL b::DECIMAL c::DECIMAL]
+            (and
+                (relatom :dec_a a::DECIMAL)
+                (relatom :dec_b b::DECIMAL)
+                (/ a::DECIMAL b::DECIMAL c::DECIMAL))))
+
+          (def :output_date_addition ([a::DATE b::DAY c::DATE]
+            (and
+                (relatom :date_a a::DATE)
+                (relatom :day_b b::DAY)
+                (+ a::DATE b::DAY c::DATE))))
+
+          (def :output_date_subtraction ([a::DATE b::DAY c::DATE]
+            (and
+                (relatom :date_a a::DATE)
+                (relatom :day_b b::DAY)
+                (- a::DATE b::DAY c::DATE)))))))
+
+    (reads
+      (output :dec_add :output_decimal_addition)
+      (output :dec_sub :output_decimal_subtraction)
+      (output :dec_mult :output_decimal_multiplication)
+      (output :dec_div :output_decimal_division)
+      (output :date_add :output_date_addition)
+      (output :date_sub :output_date_subtraction))))

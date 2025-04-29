@@ -42,12 +42,12 @@ message Formula {
     True true_val = 10;
     False false_val = 11;
     RelAtom rel_atom = 12;
+    Cast cast = 13;
   }
 }
 
 message Exists {
-  repeated Var vars = 1;
-  Formula value = 2;
+  Abstraction body = 3;
 }
 
 message Reduce {
@@ -93,8 +93,14 @@ message True {}
 message False {}
 
 message RelAtom {
-  RelationSig sig = 1;
+  string name = 3;
   repeated Term terms = 2;
+}
+
+message Cast {
+  RelType type = 1;
+  Term input = 2;
+  Term result = 3;
 }
 
 message Term {
@@ -173,9 +179,4 @@ message PrimitiveValue {
 message UInt128 {
   fixed64 low = 1; // Lower 64 bits of UInt128
   fixed64 high = 2; // Upper 64 bits of UInt128
-}
-
-message RelationSig {
-  string name = 1; // Name of the relation
-  repeated RelType types = 2; // Attributes of the relation
 }

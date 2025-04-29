@@ -35,7 +35,7 @@ def_: "(def" relation_id abstraction attrs? ")"
 abstraction: "(" vars formula ")"
 vars: "[" var* "]"
 
-formula: exists | reduce | conjunction | disjunction | not | ffi | atom | pragma | primitive | true | false | relatom
+formula: exists | reduce | conjunction | disjunction | not | ffi | atom | pragma | primitive | true | false | relatom | cast
 exists: "(exists" vars formula ")"
 reduce: "(reduce" abstraction abstraction terms ")"
 conjunction: "(and" formula* ")"
@@ -43,10 +43,12 @@ disjunction: "(or" formula* ")"
 not: "(not" formula ")"
 ffi: "(ffi" name args terms ")"
 atom: "(atom" relation_id term* ")"
-relatom: "(relatom" relationsig term* ")"
+relatom: "(relatom" name term* ")"
+cast: "(cast" rel_type term term ")"
 pragma: "(pragma" name terms ")"
 true: "(true)"
 false: "(false)"
+
 args: "(args" abstraction* ")"
 terms: "(terms" term* ")"
 
@@ -81,8 +83,6 @@ PRIMITIVE_TYPE: "STRING" | "INT" | "FLOAT" | "UINT128" | "ENTITY"
 REL_VALUE_TYPE: "DECIMAL" | "DATE" | "DATETIME"
               | "NANOSECOND" | "MICROSECOND" | "MILLISECOND" | "SECOND" | "MINUTE" | "HOUR"
               | "DAY" | "WEEK" | "MONTH" | "YEAR"
-rel_sig_type: "/" rel_type
-relationsig: "(sig" name rel_sig_type* ")"
 
 SYMBOL: /[a-zA-Z_][a-zA-Z0-9_-]*/
 STRING: "\\"" /[^"]*/ "\\""
@@ -192,7 +192,8 @@ class LQPTransformer(Transformer):
     def false(self, _):
         return logic_pb2.Formula(false_val=getattr(logic_pb2, 'False')())
     def exists(self, items):
-        return logic_pb2.Formula(exists=logic_pb2.Exists(vars=items[0], value=items[1]))
+        inner_abs = logic_pb2.Abstraction(vars=items[0], value=items[1])
+        return logic_pb2.Formula(exists=logic_pb2.Exists(body=inner_abs))
     def reduce(self, items):
         return logic_pb2.Formula(reduce=logic_pb2.Reduce(op=items[0], body=items[1], terms=items[2]))
     def conjunction(self, items):
@@ -208,7 +209,10 @@ class LQPTransformer(Transformer):
     def pragma(self, items):
         return logic_pb2.Formula(pragma=logic_pb2.Pragma(name=items[0], terms=items[1]))
     def relatom(self, items):
-        return logic_pb2.Formula(rel_atom=logic_pb2.RelAtom(sig=items[0], terms=items[1:]))
+        return logic_pb2.Formula(rel_atom=logic_pb2.RelAtom(name=items[0], terms=items[1:]))
+    def cast(self, items):
+        t = rel_type_to_proto(items[0])
+        return logic_pb2.Formula(cast=logic_pb2.Cast(type=t, input=items[1], result=items[2]))
 
     #
     # Primitives
@@ -260,13 +264,6 @@ class LQPTransformer(Transformer):
         symbol = items[0][1:]  # Remove leading ':'
         hash_val = int(hashlib.sha256(symbol.encode()).hexdigest()[:16], 16)  # First 64 bits of SHA-256
         return logic_pb2.RelationId(id_low=hash_val, id_high=0)  # Simplified hashing
-
-    def rel_sig_type(self, items):
-        return items[0]
-    def relationsig(self, items):
-        name = items[0]
-        types = [rel_type_to_proto(t) for t in items[1:]]
-        return logic_pb2.RelationSig(name=name, types=types)
 
     #
     # Primitive values
