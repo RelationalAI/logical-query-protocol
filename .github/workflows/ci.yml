@@ -1,4 +1,4 @@
-name: Python Parser Tests
+name: Python Tests
 
 on:
   push:
