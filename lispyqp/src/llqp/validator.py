@@ -29,6 +29,13 @@ class LQPValidator:
             pass # Allow shadowing for now
         self.scopes[-1][var.name] = var.type
 
+    def _get_type_name(self, rel_type):
+        if rel_type.HasField("primitive_type"):
+            return logic_pb2.PrimitiveType.Name(rel_type.primitive_type)
+        elif rel_type.HasField("value_type"):
+            return logic_pb2.RelValueType.Name(rel_type.value_type)
+        return "UNKNOWN"
+
     def _check_var_usage(self, var: logic_pb2.Var):
         """Check if a variable is declared and used with its declared type."""
         declared_type = None
@@ -42,13 +49,15 @@ class LQPValidator:
             raise ValidationError(f"Undeclared variable used: '{var.name}'")
 
         # Check type consistency: The type used must match the declared type.
-        if var.type != logic_pb2.PrimitiveType.PRIMITIVE_TYPE_UNSPECIFIED and var.type != declared_type:
-             type_name_declared = logic_pb2.PrimitiveType.Name(declared_type)
-             type_name_used = logic_pb2.PrimitiveType.Name(var.type)
-             raise ValidationError(
-                 f"Type mismatch for variable '{var.name}': "
-                 f"Declared as {type_name_declared}, used as {type_name_used}"
-             )
+        if (var.type.HasField("primitive_type") and
+            var.type.primitive_type != logic_pb2.PrimitiveType.PRIMITIVE_TYPE_UNSPECIFIED and
+            var.type != declared_type):
+            type_name_declared = self._get_type_name(declared_type)
+            type_name_used = self._get_type_name(var.type)
+            raise ValidationError(
+                f"Type mismatch for variable '{var.name}': "
+                f"Declared as {type_name_declared}, used as {type_name_used}"
+            )
 
     def validate(self, proto_obj: Message):
         """Public method to start validation."""
