@@ -1,5 +1,5 @@
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Union, Tuple, Sequence
 import datetime as dt
@@ -246,9 +246,9 @@ class Read(LqpNode):
 # Epoch(persistent_writes::Write[], local_writes::Write[], reads::Read[])
 @dataclass(frozen=True)
 class Epoch(LqpNode):
-    persistent_writes: Sequence[Write]
-    local_writes: Sequence[Write]
-    reads: Sequence[Read]
+    persistent_writes: Sequence[Write] = field(default_factory=list)
+    local_writes: Sequence[Write] = field(default_factory=list)
+    reads: Sequence[Read] = field(default_factory=list)
 
 # Transaction(epochs::Epoch[])
 @dataclass(frozen=True)
