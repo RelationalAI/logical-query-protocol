@@ -5,6 +5,7 @@ import sys
 import hashlib
 from lark import Lark, Transformer
 from relationalai.lqp.v1 import logic_pb2, fragments_pb2, transactions_pb2
+from llqp.validator import validate_lqp, ValidationError
 
 from google.protobuf.json_format import MessageToJson
 
@@ -86,12 +87,12 @@ REL_VALUE_TYPE: "DECIMAL" | "DATE" | "DATETIME"
 
 SYMBOL: /[a-zA-Z_][a-zA-Z0-9_-]*/
 STRING: "\\"" /[^"]*/ "\\""
-NUMBER: /\d+/
+NUMBER: /\\d+/
 UINT128: /0x[0-9a-fA-F]+/
-FLOAT: /\d+\.\d+/
+FLOAT: /\\d+\\.\\d+/
 
 COMMENT: /;;.*/  // Matches ;; followed by any characters except newline
-%ignore /\s+/
+%ignore /\\s+/
 %ignore COMMENT
 """
 
@@ -301,6 +302,7 @@ def process_file(filename, bin, json):
         lqp_text = f.read()
 
     lqp_proto = parse_lqp(lqp_text)
+    validate_lqp(lqp_proto)
     print(lqp_proto)
 
     # Write binary output to the configured directories, using the same filename.

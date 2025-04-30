@@ -1,0 +1,7 @@
+;; Shadowing a variable is allowed by current validator
+(fragment :frag
+  (def :outer_scope
+    ([x::INT]
+      (exists [x::STRING]
+         (and
+           (primitive :check_string x::STRING))))))
