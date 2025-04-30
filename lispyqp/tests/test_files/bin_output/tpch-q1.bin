@@ -1,0 +1,627 @@
+
+Ş0ş.
+û.
+ø.
+
+f1‰
+†
+		|íN²&úø
+
+	_lineitem
+
+_lineitem_l_returnflag
+
+_lineitem_l_linestatus¨
+¥¢
+
+_lineitem_l_shipdate
+
+_date_limitğí
+b
+
+	_lineitemLineItem
+CbA
+
+	_lineitem
+
+_lineitem_l_shipdatelqp_l_shipdate
+GbE
+
+	_lineitem
+
+_lineitem_l_returnflaglqp_l_returnflag
+GbE
+
+	_lineitem
+
+_lineitem_l_linestatuslqp_l_linestatus
+'b%
+
+_date_limitlqp_date_limit
+JJH
+rel_primitive_lt_eq
+
+_lineitem_l_shipdate
+
+_date_limit›
+˜
+		–ÿå§ÌÁÂŠ
+
+_lineitem_l_returnflag
+
+_lineitem_l_linestatus
+
+_vÁ¾
+S
+
+a
+
+b
+
+c6J4
+rel_primitive_add	
+
+a	
+
+b	
+
+cÚ
+
+	_lineitem
+
+_lineitem_l_quantityª§
+`:^
+		|íN²&ú
+
+	_lineitem
+
+_lineitem_l_returnflag
+
+_lineitem_l_linestatus
+CbA
+
+	_lineitem
+
+_lineitem_l_quantitylqp_l_quantity
+
+
+_vª
+§
+		×åöã°A™
+
+_lineitem_l_returnflag
+
+_lineitem_l_linestatus
+
+_vĞÍ
+S
+
+a
+
+b
+
+c6J4
+rel_primitive_add	
+
+a	
+
+b	
+
+cé
+
+	_lineitem
+
+_lineitem_l_extendedprice´±
+`:^
+		|íN²&ú
+
+	_lineitem
+
+_lineitem_l_returnflag
+
+_lineitem_l_linestatus
+MbK
+
+	_lineitem!
+
+_lineitem_l_extendedpricelqp_l_extendedprice
+
+
+_v¯
+¬
+		Ä{âQ
+
+_lineitem_l_returnflag
+
+_lineitem_l_linestatus
+
+_vÕÒ
+S
+
+a
+
+b
+
+c6J4
+rel_primitive_add	
+
+a	
+
+b	
+
+cî
+
+	_lineitem
+
+_disc_priceÇ
+ÄÁ
+
+_lineitem_l_discount
+
+_lineitem_l_extendedprice
+
+
+_disc_percïì
+`:^
+		|íN²&ú
+
+	_lineitem
+
+_lineitem_l_returnflag
+
+_lineitem_l_linestatus
+CbA
+
+	_lineitem
+
+_lineitem_l_discountlqp_l_discount
+MbK
+
+	_lineitem!
+
+_lineitem_l_extendedpricelqp_l_extendedprice
+aJ_
+rel_primitive_add!
+
+_lineitem_l_extendedprice
+
+
+_disc_perc
+
+_disc_price
+
+Š
+
+
+_one|z
+j
+
+
+
+
+_one
+ZJX
+rel_primitive_subtract
+
+
+_one
+
+_lineitem_l_discount
+
+
+_disc_perc
+
+
+_v¿
+¼
+		ÕŞÒvó$³)®
+
+_lineitem_l_returnflag
+
+_lineitem_l_linestatus
+
+_våâ
+S
+
+a
+
+b
+
+c6J4
+rel_primitive_add	
+
+a	
+
+b	
+
+cş
+
+	_lineitem
+
+_chargeÛ
+ØÕ
+
+_lineitem_l_extendedprice
+
+_lineitem_l_discount
+
+_lineitem_l_tax
+
+
+_disc_perc
+
+_disc_price
+
+	_tax_rate
+
+
+_one¼¹
+`:^
+		|íN²&ú
+
+	_lineitem
+
+_lineitem_l_returnflag
+
+_lineitem_l_linestatus
+MbK
+
+	_lineitem!
+
+_lineitem_l_extendedpricelqp_l_extendedprice
+CbA
+
+	_lineitem
+
+_lineitem_l_discountlqp_l_discount
+9b7
+
+	_lineitem
+
+_lineitem_l_tax	lqp_l_tax
+j
+
+
+
+
+_one
+fJd
+rel_primitive_multiply!
+
+_lineitem_l_extendedprice
+
+
+_disc_perc
+
+_disc_price
+ZJX
+rel_primitive_subtract
+
+
+_one
+
+_lineitem_l_discount
+
+
+_disc_perc
+SJQ
+rel_primitive_multiply
+
+_disc_price
+
+	_tax_rate
+
+_charge
+OJM
+rel_primitive_add
+
+
+_one
+
+_lineitem_l_tax
+
+	_tax_rate
+
+
+_v«
+¨
+		 B4œ°8˜š
+
+_lineitem_l_returnflag
+
+_lineitem_l_linestatus
+
+_vÑ
+ÎË
+
+_sum_qty
+
+
+_count_qty¦£
+_:]
+		–ÿå§ÌÁÂ
+
+_lineitem_l_returnflag
+
+_lineitem_l_linestatus
+
+_sum_qty
+óğ
+S
+
+a
+
+b
+
+c6J4
+rel_primitive_add	
+
+a	
+
+b	
+
+c„
+
+	_lineitem
+
+_lineitem_l_quantity
+
+
+_oneÈÅ
+`:^
+		|íN²&ú
+
+	_lineitem
+
+_lineitem_l_returnflag
+
+_lineitem_l_linestatus
+CbA
+
+	_lineitem
+
+_lineitem_l_quantitylqp_l_quantity
+j
+
+
+
+
+_one
+
+
+_count_qty
+JJH
+rel_primitive_divide
+
+_sum_qty
+
+
+_count_qty
+
+
+_vä
+á
+		†^TlğtºÓ
+
+_lineitem_l_returnflag
+
+_lineitem_l_linestatus
+
+_vŠ
+‡„
+
+_sum_base_price
+
+_count_base_priceÑÎ
+f:d
+		×åöã°A
+
+_lineitem_l_returnflag
+
+_lineitem_l_linestatus
+
+_sum_base_price
+‰†
+S
+
+a
+
+b
+
+c6J4
+rel_primitive_add	
+
+a	
+
+b	
+
+c“
+
+	_lineitem
+
+_lineitem_l_extendedprice
+
+
+_oneÒÏ
+`:^
+		|íN²&ú
+
+	_lineitem
+
+_lineitem_l_returnflag
+
+_lineitem_l_linestatus
+MbK
+
+	_lineitem!
+
+_lineitem_l_extendedpricelqp_l_extendedprice
+j
+
+
+
+
+_one
+
+_count_base_price
+XJV
+rel_primitive_divide
+
+_sum_base_price
+
+_count_base_price
+
+
+_vš
+—
+		¥´0ª*x‰
+
+_lineitem_l_returnflag
+
+_lineitem_l_linestatus
+
+_vÀ
+½º
+
+	_sum_disc
+
+_count_disc“
+ÈÅ
+S
+
+a
+
+b
+
+c6J4
+rel_primitive_add	
+
+a	
+
+b	
+
+cÚ
+
+	_lineitem
+
+_lineitem_l_discountª§
+`:^
+		|íN²&ú
+
+	_lineitem
+
+_lineitem_l_returnflag
+
+_lineitem_l_linestatus
+CbA
+
+	_lineitem
+
+_lineitem_l_discountlqp_l_discount
+
+	_sum_disc
+ôñ
+S
+
+a
+
+b
+
+c6J4
+rel_primitive_add	
+
+a	
+
+b	
+
+c„
+
+	_lineitem
+
+_lineitem_l_discount
+
+
+_oneÈÅ
+`:^
+		|íN²&ú
+
+	_lineitem
+
+_lineitem_l_returnflag
+
+_lineitem_l_linestatus
+CbA
+
+	_lineitem
+
+_lineitem_l_discountlqp_l_discount
+j
+
+
+
+
+_one
+
+_count_disc
+LJJ
+rel_primitive_divide
+
+	_sum_disc
+
+_count_disc
+
+
+_vò
+ï
+		$TÙªÙ”Åá
+
+_lineitem_l_returnflag
+
+_lineitem_l_linestatus
+
+_v˜•
+S
+
+a
+
+b
+
+c6J4
+rel_primitive_add	
+
+a	
+
+b	
+
+c±
+
+	_lineitem
+
+
+_one‘
+`:^
+		|íN²&ú
+
+	_lineitem
+
+_lineitem_l_returnflag
+
+_lineitem_l_linestatus
+*J(
+rel_primitive_eq
+
+
+_one
+
+
+
+_v
+sum_qty		–ÿå§ÌÁÂ
+sum_base_price		×åöã°A
+sum_disc_price		Ä{âQ
+
+sum_charge		ÕŞÒvó$³)
+avg_qty		 B4œ°8˜
+avg_base_price		†^Tlğtº
+avg_disc		¥´0ª*x
+count_order		$TÙªÙ”Å
