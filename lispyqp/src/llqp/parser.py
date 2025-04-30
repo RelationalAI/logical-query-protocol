@@ -176,7 +176,7 @@ class LQPTransformer(Transformer):
         attrs = items[2] if len(items) > 2 else []
 
         definition = logic_pb2.Def(name=name, body=body, attrs=attrs)
-        return logic_pb2.Declaration(**{'def': definition})
+        return logic_pb2.Declaration(**{'def': definition}) # type: ignore
 
     def abstraction(self, items):
         return logic_pb2.Abstraction(vars=items[0], value=items[1])

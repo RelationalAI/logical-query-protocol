@@ -134,7 +134,8 @@ class LQPValidator:
             for arg_formula in container.args:
                 self._validate_formula(arg_formula)
         elif formula_type == "not":
-            self._validate_formula(formula.not_.arg)
+            not_field = getattr(formula, "not")
+            self._validate_formula(not_field.arg)
         elif formula_type == "ffi":
             for arg_abs in formula.ffi.args:
                 self._validate_abstraction(arg_abs)
