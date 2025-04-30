@@ -15,7 +15,7 @@ dependencies = [
 llqp = "llqp.parser:main"
 
 [project.optional-dependencies]
-test = ["pytest>=7.0.0"]
+test = ["pytest>=7.0.0", "pyright>=1.1.318"]
 
 [build-system]
 requires = ["setuptools>=61.0"]
