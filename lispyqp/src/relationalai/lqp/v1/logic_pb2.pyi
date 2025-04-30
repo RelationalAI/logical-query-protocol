@@ -108,11 +108,11 @@ class Formula(_message.Message):
     atom: Atom
     pragma: Pragma
     primitive: Primitive
-    true_val: globals()['True']
-    false_val: globals()['False']
+    true_val: TrueVal
+    false_val: FalseVal
     rel_atom: RelAtom
     cast: Cast
-    def __init__(self, exists: _Optional[_Union[Exists, _Mapping]] = ..., reduce: _Optional[_Union[Reduce, _Mapping]] = ..., conjunction: _Optional[_Union[Conjunction, _Mapping]] = ..., disjunction: _Optional[_Union[Disjunction, _Mapping]] = ..., ffi: _Optional[_Union[FFI, _Mapping]] = ..., atom: _Optional[_Union[Atom, _Mapping]] = ..., pragma: _Optional[_Union[Pragma, _Mapping]] = ..., primitive: _Optional[_Union[Primitive, _Mapping]] = ..., true_val: _Optional[_Union[globals()['True'], _Mapping]] = ..., false_val: _Optional[_Union[globals()['False'], _Mapping]] = ..., rel_atom: _Optional[_Union[RelAtom, _Mapping]] = ..., cast: _Optional[_Union[Cast, _Mapping]] = ..., **kwargs) -> None: ...
+    def __init__(self, exists: _Optional[_Union[Exists, _Mapping]] = ..., reduce: _Optional[_Union[Reduce, _Mapping]] = ..., conjunction: _Optional[_Union[Conjunction, _Mapping]] = ..., disjunction: _Optional[_Union[Disjunction, _Mapping]] = ..., ffi: _Optional[_Union[FFI, _Mapping]] = ..., atom: _Optional[_Union[Atom, _Mapping]] = ..., pragma: _Optional[_Union[Pragma, _Mapping]] = ..., primitive: _Optional[_Union[Primitive, _Mapping]] = ..., true_val: _Optional[_Union[TrueVal, _Mapping]] = ..., false_val: _Optional[_Union[FalseVal, _Mapping]] = ..., rel_atom: _Optional[_Union[RelAtom, _Mapping]] = ..., cast: _Optional[_Union[Cast, _Mapping]] = ..., **kwargs) -> None: ...
 
 class Exists(_message.Message):
     __slots__ = ("body",)
@@ -182,11 +182,11 @@ class Primitive(_message.Message):
     terms: _containers.RepeatedCompositeFieldContainer[Term]
     def __init__(self, name: _Optional[str] = ..., terms: _Optional[_Iterable[_Union[Term, _Mapping]]] = ...) -> None: ...
 
-class True(_message.Message):
+class TrueVal(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
 
-class False(_message.Message):
+class FalseVal(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
 
