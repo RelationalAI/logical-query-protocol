@@ -133,7 +133,7 @@
                                                 (and
                                                     (cast DECIMAL 1 _one::DECIMAL)
                                                     (- _one::DECIMAL _lineitem_l_discount::DECIMAL _disc_perc::DECIMAL))))))
-                                (terms _v::INT))))
+                                (terms _v::DECIMAL))))
 
                     ;; def sum_charge(_lineitem_l_returnflag, _lineitem_l_linestatus, _v):
                     ;;     std::common::sum(
@@ -190,7 +190,7 @@
                                             (- _one::DECIMAL _lineitem_l_discount::DECIMAL _disc_perc::DECIMAL)
                                             (* _disc_price::DECIMAL _tax_rate::DECIMAL _charge::DECIMAL)
                                             (+ _one::DECIMAL _lineitem_l_tax::DECIMAL _tax_rate::DECIMAL))))
-                                (terms _v::INT))))
+                                (terms _v::DECIMAL))))
 
                     ;; def avg_qty(_lineitem_l_returnflag, _lineitem_l_linestatus, _v):
                     ;;     std::common::mean(
@@ -224,7 +224,7 @@
                                                     _lineitem_l_quantity::DECIMAL)
                                                 ;; TODO: we probably should be counting with INT and casting to decimal, but this works for now
                                                 (cast DECIMAL 1 _one::DECIMAL)))
-                                        (terms _count_qty::INT))
+                                        (terms _count_qty::DECIMAL))
                                     (/ _sum_qty::DECIMAL _count_qty::DECIMAL _v::DECIMAL)))))
 
                     ;; def avg_base_price(_lineitem_l_returnflag, _lineitem_l_linestatus, _v):
@@ -259,7 +259,7 @@
                                                     _lineitem_l_extendedprice::DECIMAL)
                                                 ;; TODO: we probably should be counting with INT and casting to decimal, but this works for now
                                                 (cast DECIMAL 1 _one::DECIMAL)))
-                                        (terms _count_base_price::INT))
+                                        (terms _count_base_price::DECIMAL))
                                     (/ _sum_base_price::DECIMAL _count_base_price::DECIMAL _v::DECIMAL)))))
 
                     ;; def avg_disc(_lineitem_l_returnflag, _lineitem_l_linestatus, _v):
