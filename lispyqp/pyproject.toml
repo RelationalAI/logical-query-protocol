@@ -1,5 +1,5 @@
 [project]
-name = "lispy-qp"
+name = "llqp"
 version = "0.1.0"
 description = "A parser for Logical Query Protocol (LQP) S-expressions into Protobuf"
 readme = "README.md"
