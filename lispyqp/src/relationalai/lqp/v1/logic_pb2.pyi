@@ -86,7 +86,7 @@ class Abstraction(_message.Message):
     def __init__(self, vars: _Optional[_Iterable[_Union[Var, _Mapping]]] = ..., value: _Optional[_Union[Formula, _Mapping]] = ...) -> None: ...
 
 class Formula(_message.Message):
-    __slots__ = ("exists", "reduce", "conjunction", "disjunction", "ffi", "atom", "pragma", "primitive", "true_val", "false_val", "rel_atom", "cast")
+    __slots__ = ("exists", "reduce", "conjunction", "disjunction", "ffi", "atom", "pragma", "primitive", "rel_atom", "cast")
     EXISTS_FIELD_NUMBER: _ClassVar[int]
     REDUCE_FIELD_NUMBER: _ClassVar[int]
     CONJUNCTION_FIELD_NUMBER: _ClassVar[int]
@@ -96,8 +96,6 @@ class Formula(_message.Message):
     ATOM_FIELD_NUMBER: _ClassVar[int]
     PRAGMA_FIELD_NUMBER: _ClassVar[int]
     PRIMITIVE_FIELD_NUMBER: _ClassVar[int]
-    TRUE_VAL_FIELD_NUMBER: _ClassVar[int]
-    FALSE_VAL_FIELD_NUMBER: _ClassVar[int]
     REL_ATOM_FIELD_NUMBER: _ClassVar[int]
     CAST_FIELD_NUMBER: _ClassVar[int]
     exists: Exists
@@ -108,11 +106,9 @@ class Formula(_message.Message):
     atom: Atom
     pragma: Pragma
     primitive: Primitive
-    true_val: globals()['True']
-    false_val: globals()['False']
     rel_atom: RelAtom
     cast: Cast
-    def __init__(self, exists: _Optional[_Union[Exists, _Mapping]] = ..., reduce: _Optional[_Union[Reduce, _Mapping]] = ..., conjunction: _Optional[_Union[Conjunction, _Mapping]] = ..., disjunction: _Optional[_Union[Disjunction, _Mapping]] = ..., ffi: _Optional[_Union[FFI, _Mapping]] = ..., atom: _Optional[_Union[Atom, _Mapping]] = ..., pragma: _Optional[_Union[Pragma, _Mapping]] = ..., primitive: _Optional[_Union[Primitive, _Mapping]] = ..., true_val: _Optional[_Union[globals()['True'], _Mapping]] = ..., false_val: _Optional[_Union[globals()['False'], _Mapping]] = ..., rel_atom: _Optional[_Union[RelAtom, _Mapping]] = ..., cast: _Optional[_Union[Cast, _Mapping]] = ..., **kwargs) -> None: ...
+    def __init__(self, exists: _Optional[_Union[Exists, _Mapping]] = ..., reduce: _Optional[_Union[Reduce, _Mapping]] = ..., conjunction: _Optional[_Union[Conjunction, _Mapping]] = ..., disjunction: _Optional[_Union[Disjunction, _Mapping]] = ..., ffi: _Optional[_Union[FFI, _Mapping]] = ..., atom: _Optional[_Union[Atom, _Mapping]] = ..., pragma: _Optional[_Union[Pragma, _Mapping]] = ..., primitive: _Optional[_Union[Primitive, _Mapping]] = ..., rel_atom: _Optional[_Union[RelAtom, _Mapping]] = ..., cast: _Optional[_Union[Cast, _Mapping]] = ..., **kwargs) -> None: ...
 
 class Exists(_message.Message):
     __slots__ = ("body",)
@@ -181,14 +177,6 @@ class Primitive(_message.Message):
     name: str
     terms: _containers.RepeatedCompositeFieldContainer[Term]
     def __init__(self, name: _Optional[str] = ..., terms: _Optional[_Iterable[_Union[Term, _Mapping]]] = ...) -> None: ...
-
-class True(_message.Message):
-    __slots__ = ()
-    def __init__(self) -> None: ...
-
-class False(_message.Message):
-    __slots__ = ()
-    def __init__(self) -> None: ...
 
 class RelAtom(_message.Message):
     __slots__ = ("name", "terms")
