@@ -79,7 +79,7 @@ class Not(Formula):
 
 # FFI(name::string, args::Abstraction[], terms::Term[])
 @dataclass(frozen=True)
-class Ffi(Formula):
+class FFI(Formula):
     name: str
     args: Sequence[Abstraction]
     terms: Sequence[Term]

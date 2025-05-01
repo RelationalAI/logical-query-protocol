@@ -80,7 +80,7 @@ def test_validator_failure_files(validator_file):
         return
     with open(file_path, "r") as f:
         content = f.read()
-    result = ir_to_proto(parse_lqp(content))
+    result = parse_lqp(content)
     with pytest.raises(ValidationError) as exc_info:
         validate_lqp(result)
     error_message = str(exc_info.value)

@@ -96,7 +96,7 @@ def convert_formula(f: ir.Formula) -> logic_pb2.Formula:
         return logic_pb2.Formula(disjunction=logic_pb2.Disjunction(args=[convert_formula(arg) for arg in f.args]))
     elif isinstance(f, ir.Not):
         return logic_pb2.Formula(not_=logic_pb2.Not(arg=convert_formula(f.arg))) # Note the underscore
-    elif isinstance(f, ir.Ffi):
+    elif isinstance(f, ir.FFI):
         return logic_pb2.Formula(ffi=logic_pb2.FFI(
             name=f.name,
             args=[convert_abstraction(arg) for arg in f.args],

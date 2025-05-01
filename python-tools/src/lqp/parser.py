@@ -210,7 +210,7 @@ class LQPTransformer(Transformer):
         return ir.Disjunction(args=items)
 
     def ffi(self, items):
-        return ir.Ffi(name=items[0], args=items[1], terms=items[2])
+        return ir.FFI(name=items[0], args=items[1], terms=items[2])
 
     def atom(self, items):
         return ir.Atom(name=items[0], terms=items[1:])
@@ -318,8 +318,9 @@ def process_file(filename, bin, json):
     with open(filename, "r") as f:
         lqp_text = f.read()
 
-    lqp_proto = ir_to_proto(parse_lqp(lqp_text))
-    validate_lqp(lqp_proto)
+    lqp = parse_lqp(lqp_text)
+    validate_lqp(lqp)
+    lqp_proto = ir_to_proto(lqp)
     print(lqp_proto)
 
     # Write binary output to the configured directories, using the same filename.

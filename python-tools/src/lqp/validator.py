@@ -1,18 +1,34 @@
-from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
-from google.protobuf.message import Message
+import lqp.ir as ir
+from typing import Union, Dict, Any, Generic, TypeVar
+
+T = TypeVar('T')
 
 class ValidationError(Exception):
-    """Custom exception for validation errors."""
     pass
 
-class LQPValidator:
-    """
-    Validates LQP protobuf structures for variable scope and type consistency.
-    """
+class LqpVisitor(Generic[T]):
+    def visit(self, node: ir.LqpNode, *args: Any) -> T:
+        method_name = f'visit_{node.__class__.__name__}'
+        visitor_method = getattr(self, method_name, self.generic_visit)
+        return visitor_method(node, *args)
+
+    def generic_visit(self, node: ir.LqpNode, *args: Any) -> T:
+        for field_name, field_value in node.__dataclass_fields__.items():
+            value = getattr(node, field_name)
+            if isinstance(value, ir.LqpNode):
+                self.visit(value, *args)
+            elif isinstance(value, (list, tuple)):
+                for item in value:
+                    if isinstance(item, ir.LqpNode):
+                        self.visit(item, *args)
+            elif isinstance(value, dict):
+                 for key, item in value.items():
+                    if isinstance(item, ir.LqpNode):
+                        self.visit(item, *args)
+
+class VariableScopeVisitor(LqpVisitor[None]):
     def __init__(self):
-        # Scope: list of dictionaries mapping var_name -> var_type_enum
-        # Innermost scope is at the end of the list
-        self.scopes = [{}]
+        self.scopes: list[Dict[str, ir.RelType]] = [{}]
 
     def _enter_scope(self):
         self.scopes.append({})
@@ -23,23 +39,18 @@ class LQPValidator:
         else:
             raise RuntimeError("Attempted to exit global scope")
 
-    def _declare_var(self, var: logic_pb2.Var):
-        """Declare a variable in the current innermost scope."""
+    def _declare_var(self, var: ir.Var):
         if var.name in self.scopes[-1]:
-            pass # Allow shadowing for now
+            pass # Allow shadowing
         self.scopes[-1][var.name] = var.type
 
-    def _get_type_name(self, rel_type):
-        if rel_type.HasField("primitive_type"):
-            return logic_pb2.PrimitiveType.Name(rel_type.primitive_type)
-        elif rel_type.HasField("value_type"):
-            return logic_pb2.RelValueType.Name(rel_type.value_type)
+    def _get_type_name(self, rel_type: ir.RelType) -> str:
+        if isinstance(rel_type, (ir.PrimitiveType, ir.RelValueType)):
+            return rel_type.name
         return "UNKNOWN"
 
-    def _check_var_usage(self, var: logic_pb2.Var):
-        """Check if a variable is declared and used with its declared type."""
-        declared_type = None
-        # Look up the variable starting from the innermost scope
+    def _check_var_usage(self, var: ir.Var):
+        declared_type: Union[ir.RelType, None] = None
         for scope in reversed(self.scopes):
             if var.name in scope:
                 declared_type = scope[var.name]
@@ -48,10 +59,7 @@ class LQPValidator:
         if declared_type is None:
             raise ValidationError(f"Undeclared variable used: '{var.name}'")
 
-        # Check type consistency: The type used must match the declared type.
-        if (var.type.HasField("primitive_type") and
-            var.type.primitive_type != logic_pb2.PrimitiveType.PRIMITIVE_TYPE_UNSPECIFIED and
-            var.type != declared_type):
+        if var.type != declared_type:
             type_name_declared = self._get_type_name(declared_type)
             type_name_used = self._get_type_name(var.type)
             raise ValidationError(
@@ -59,119 +67,20 @@ class LQPValidator:
                 f"Declared as {type_name_declared}, used as {type_name_used}"
             )
 
-    def validate(self, proto_obj: Message):
-        """Public method to start validation."""
-        if isinstance(proto_obj, transactions_pb2.Transaction):
-            self._validate_transaction(proto_obj)
-        elif isinstance(proto_obj, fragments_pb2.Fragment):
-            self._validate_fragment(proto_obj)
+    def visit_Fragment(self, node: ir.Fragment):
+        self.scopes = [{}] # Reset scope for each fragment
+        self.generic_visit(node)
 
-    def _validate_transaction(self, tx: transactions_pb2.Transaction):
-        for epoch in tx.epochs:
-            self._validate_epoch(epoch)
-
-    def _validate_epoch(self, epoch: transactions_pb2.Epoch):
-        for write in epoch.persistent_writes:
-            self._validate_write(write)
-        for write in epoch.local_writes:
-            self._validate_write(write)
-
-    def _validate_write(self, write: transactions_pb2.Write):
-        write_type = write.WhichOneof("write_type")
-        if write_type == "define":
-            self._validate_fragment(write.define.fragment)
-
-    def _validate_fragment(self, fragment: fragments_pb2.Fragment):
-        self.scopes = [{}]
-        for decl in fragment.declarations:
-            self._validate_declaration(decl)
-
-    def _validate_declaration(self, decl: logic_pb2.Declaration):
-        decl_type = decl.WhichOneof("declaration_type")
-        if decl_type == "def":
-            # Def introduces a relation, its body has variable scopes
-            self._validate_def(getattr(decl, "def"))
-        elif decl_type == "loop":
-            self._validate_loop(decl.loop)
-
-    def _validate_def(self, definition: logic_pb2.Def):
-        self._validate_abstraction(definition.body)
-
-    def _validate_loop(self, loop: logic_pb2.Loop):
+    def visit_Abstraction(self, node: ir.Abstraction):
         self._enter_scope()
-        # Declare the temporal variable if it has a name (assuming it acts like a declared var)
-        # Need clarity on its type - assume INT for now? Or add type to LoopIndex?
-        # Let's assume it doesn't have a type specified in proto for now.
-        # self._declare_var(logic_pb2.Var(name=loop.temporal_var.name, type=...?))
-
-        # Validate initial definitions within the loop's scope
-        for init_def in loop.inits:
-            self._validate_def(init_def)
-        # Validate body declarations within the loop's scope
-        for decl in loop.body:
-            self._validate_declaration(decl)
-        self._exit_scope()
-
-    def _validate_abstraction(self, abstraction: logic_pb2.Abstraction):
-        self._enter_scope()
-        for var in abstraction.vars:
+        for var in node.vars:
             self._declare_var(var)
-        self._validate_formula(abstraction.value)
+        self.visit(node.value)
         self._exit_scope()
 
-    def _validate_formula(self, formula: logic_pb2.Formula):
-        formula_type = formula.WhichOneof("formula_type")
+    def visit_Var(self, node: ir.Var):
+        self._check_var_usage(node)
 
-        if formula_type == "exists":
-            self._validate_abstraction(formula.exists.body)
-        elif formula_type == "reduce":
-            self._validate_abstraction(formula.reduce.op)
-            self._validate_abstraction(formula.reduce.body)
-            for term in formula.reduce.terms:
-                self._validate_term(term)
-        elif formula_type == "conjunction" or formula_type == "disjunction":
-            container = getattr(formula, formula_type)
-            for arg_formula in container.args:
-                self._validate_formula(arg_formula)
-        elif formula_type == "not":
-            not_field = getattr(formula, "not")
-            self._validate_formula(not_field.arg)
-        elif formula_type == "ffi":
-            for arg_abs in formula.ffi.args:
-                self._validate_abstraction(arg_abs)
-            for term in formula.ffi.terms:
-                self._validate_term(term)
-        elif formula_type == "atom" or formula_type == "pragma":
-            container = getattr(formula, formula_type)
-            for term in container.terms:
-                self._validate_term(term)
-        elif formula_type == "rel_atom" or formula_type == "primitive":
-            # Primitives and RelAtoms can have specialized values as terms.
-            container = getattr(formula, formula_type)
-            for rel_term in container.terms:
-                self._validate_rel_term(rel_term)
-
-    def _validate_term(self, term: logic_pb2.Term):
-        term_type = term.WhichOneof("term_type")
-        if term_type == "var":
-            self._check_var_usage(term.var)
-        elif term_type == "constant":
-            pass
-
-    def _validate_rel_term(self, rel_term: logic_pb2.RelTerm):
-        rel_term_type = rel_term.WhichOneof("rel_term_type")
-        if rel_term_type == "specialized_value":
-            pass
-        elif rel_term_type == "term":
-            self._validate_term(rel_term.term)
-        else:
-            raise ValidationError(f"Unknown relation term type: {rel_term_type}")
-
-# Helper function to be called from parser script
-def validate_lqp(proto_obj: Message):
-    """
-    Validates the given LQP protobuf object.
-    Raises ValidationError on failure.
-    """
-    validator = LQPValidator()
-    validator.validate(proto_obj)
+def validate_lqp(lqp: ir.LqpNode):
+    validator = VariableScopeVisitor()
+    validator.visit(lqp)
