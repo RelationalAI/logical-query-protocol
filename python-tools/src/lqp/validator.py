@@ -1,20 +1,18 @@
 import lqp.ir as ir
-from typing import Union, Dict, Any, Generic, TypeVar
-
-T = TypeVar('T')
+from typing import Union, Dict, Any, Generic, TypeVar, List, Tuple, Set
 
 class ValidationError(Exception):
     pass
 
-class LqpVisitor(Generic[T]):
-    def visit(self, node: ir.LqpNode, *args: Any) -> T:
+class LqpVisitor:
+    def visit(self, node: ir.LqpNode, *args: Any) -> None:
         method_name = f'visit_{node.__class__.__name__}'
         visitor_method = getattr(self, method_name, self.generic_visit)
         return visitor_method(node, *args)
 
-    def generic_visit(self, node: ir.LqpNode, *args: Any) -> T:
-        for field_name, field_value in node.__dataclass_fields__.items():
-            value = getattr(node, field_name)
+    def generic_visit(self, node: ir.LqpNode, *args: Any) -> None:
+        for name, _ in node.__dataclass_fields__.items():
+            value = getattr(node, name)
             if isinstance(value, ir.LqpNode):
                 self.visit(value, *args)
             elif isinstance(value, (list, tuple)):
@@ -26,18 +24,9 @@ class LqpVisitor(Generic[T]):
                     if isinstance(item, ir.LqpNode):
                         self.visit(item, *args)
 
-class VariableScopeVisitor(LqpVisitor[None]):
+class VariableScopeVisitor(LqpVisitor):
     def __init__(self):
-        self.scopes: list[Dict[str, ir.RelType]] = [{}]
-
-    def _enter_scope(self):
-        self.scopes.append({})
-
-    def _exit_scope(self):
-        if len(self.scopes) > 1:
-            self.scopes.pop()
-        else:
-            raise RuntimeError("Attempted to exit global scope")
+        self.scopes: list[Dict[str, ir.RelType]] = []
 
     def _declare_var(self, var: ir.Var):
         if var.name in self.scopes[-1]:
@@ -49,16 +38,15 @@ class VariableScopeVisitor(LqpVisitor[None]):
             return rel_type.name
         return "UNKNOWN"
 
-    def _check_var_usage(self, var: ir.Var):
-        declared_type: Union[ir.RelType, None] = None
+    def _get_type(self, var: str) -> Union[ir.RelType, None]:
         for scope in reversed(self.scopes):
-            if var.name in scope:
-                declared_type = scope[var.name]
-                break
+            if var in scope:
+                return scope[var]
 
+    def _check_var_usage(self, var: ir.Var):
+        declared_type: Union[ir.RelType, None] = self._get_type(var.name)
         if declared_type is None:
             raise ValidationError(f"Undeclared variable used: '{var.name}'")
-
         if var.type != declared_type:
             type_name_declared = self._get_type_name(declared_type)
             type_name_used = self._get_type_name(var.type)
@@ -67,20 +55,44 @@ class VariableScopeVisitor(LqpVisitor[None]):
                 f"Declared as {type_name_declared}, used as {type_name_used}"
             )
 
-    def visit_Fragment(self, node: ir.Fragment):
-        self.scopes = [{}] # Reset scope for each fragment
-        self.generic_visit(node)
-
     def visit_Abstraction(self, node: ir.Abstraction):
-        self._enter_scope()
+        self.scopes.append({})
         for var in node.vars:
             self._declare_var(var)
         self.visit(node.value)
-        self._exit_scope()
+        self.scopes.pop()
 
     def visit_Var(self, node: ir.Var):
         self._check_var_usage(node)
 
+class UnusedVariableVisitor(LqpVisitor):
+    def __init__(self):
+        self.scopes: List[Tuple[Set[str], Set[str]]] = []
+
+    def _declare_var(self, var_name: str):
+        if self.scopes:
+            self.scopes[-1][0].add(var_name)
+
+    def _mark_var_used(self, var_name: str):
+        for declared, used in reversed(self.scopes):
+            if var_name in declared:
+                used.add(var_name)
+                break
+
+    def visit_Abstraction(self, node: ir.Abstraction):
+        self.scopes.append((set(), set()))
+        for var in node.vars:
+            self._declare_var(var.name)
+        self.visit(node.value)
+        declared, used = self.scopes.pop()
+        unused = declared - used
+        if unused:
+            for var_name in unused:
+                raise ValidationError(f"Unused variable declared: '{var_name}'")
+
+    def visit_Var(self, node: ir.Var, *args: Any):
+        self._mark_var_used(node.name)
+
 def validate_lqp(lqp: ir.LqpNode):
-    validator = VariableScopeVisitor()
-    validator.visit(lqp)
+    VariableScopeVisitor().visit(lqp)
+    UnusedVariableVisitor().visit(lqp)
