@@ -8,7 +8,7 @@ authors = [
 ]
 dependencies = [
     "lark>=1.1.9",
-    "protobuf==5.29.4"
+    "protobuf>=5.29.4"
 ]
 
 [project.scripts]
