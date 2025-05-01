@@ -123,11 +123,7 @@ class LQPValidator:
         formula_type = formula.WhichOneof("formula_type")
 
         if formula_type == "exists":
-            self._enter_scope()
-            for var in formula.exists.vars:
-                self._declare_var(var)
-            self._validate_formula(formula.exists.value)
-            self._exit_scope()
+            self._validate_abstraction(formula.exists.body)
         elif formula_type == "reduce":
             self._validate_abstraction(formula.reduce.op)
             self._validate_abstraction(formula.reduce.body)
