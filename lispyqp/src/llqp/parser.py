@@ -350,8 +350,9 @@ def main():
                 continue
 
             filename = os.path.join(args.input_directory, file)
-            bin = os.path.join(args.bin, file+".bin") if args.bin else None
-            json = os.path.join(args.json, file+".json") if args.json else None
+            basename = os.path.splitext(file)[0]
+            bin = os.path.join(args.bin, basename+".bin") if args.bin else None
+            json = os.path.join(args.json, basename+".json") if args.json else None
             process_file(filename, bin, json)
 
 

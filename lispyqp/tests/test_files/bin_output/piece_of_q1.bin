@@ -17,26 +17,26 @@
 _lineitem_l_shipdate
 
 _date_limitàİ
-b
+R
 
 	_lineitemLineItem
-?b=
+?R=
 
 	_lineitem
 
 _lineitem_l_shipdate
 l_shipdate
-CbA
+CRA
 
 	_lineitem
 
 _lineitem_l_returnflagl_returnflag
-CbA
+CRA
 
 	_lineitem
 
 _lineitem_l_linestatusl_linestatus
-#b!
+#R!
 
 _date_limit
 date_limit
