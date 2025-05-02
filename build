@@ -1,17 +1,33 @@
 #!/usr/bin/env bash
+# Build script for the Logical Query Protocol (LQP)
+# This script validates and generates protocol buffer code from the protobuf definitions
+
+# Enable strict error handling and command echo
 set -euox pipefail
 
+# Validate protobuf files using buf lint
 buf lint
+
+# Check for breaking changes against the previous version in git
 buf breaking --against ".git#subdir=proto"
+
+# Generate code from protobuf definitions
 buf generate
 
+# Copy generated Python protobuf files to the python-tools directory
 cp gen/python/relationalai/lqp/v1/*_pb2.py* python-tools/src/lqp/proto/v1/
 
+# Fix import paths in the generated Python files
+# This replaces the fully qualified import paths with local ones
 for file in python-tools/src/lqp/proto/v1/*_pb2.py*; do
+    # Replace "from relationalai.lqp.v1" with "from lqp.proto.v1"
     sed 's/from relationalai\.lqp\.v1/from lqp\.proto\.v1/g' "$file" > "$file.tmp"
     mv "$file.tmp" "$file"
+
+    # Replace "import relationalai.lqp.v1" with "import lqp.proto.v1"
     sed 's/import relationalai\.lqp\.v1/import lqp\.proto\.v1/g' "$file" > "$file.tmp"
     mv "$file.tmp" "$file"
 done
 
+# Clean up temporary generated files
 rm -rf gen/python
