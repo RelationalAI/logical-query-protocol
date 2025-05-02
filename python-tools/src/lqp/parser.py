@@ -1,9 +1,8 @@
 import argparse
 import os
-import sys
 import hashlib
-from lark import Lark, Transformer, ParseTree
-from typing import Union, cast
+from lark import Lark, Transformer
+from typing import cast
 import lqp.ir as ir
 from lqp.emit import ir_to_proto
 from lqp.validator import validate_lqp

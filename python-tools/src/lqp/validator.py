@@ -1,5 +1,5 @@
 import lqp.ir as ir
-from typing import Union, Dict, Any, Generic, TypeVar, List, Tuple, Set
+from typing import Union, Dict, Any, List, Tuple, Set
 
 class ValidationError(Exception):
     pass

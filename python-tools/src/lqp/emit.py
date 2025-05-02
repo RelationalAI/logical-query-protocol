@@ -1,6 +1,6 @@
 import lqp.ir as ir
 from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
-from typing import Sequence, Union, Optional
+from typing import Union, Dict, Any
 
 def convert_primitive_type(pt: ir.PrimitiveType) -> logic_pb2.PrimitiveType:
     if pt == ir.PrimitiveType.STRING:
@@ -146,7 +146,7 @@ def convert_loop(l: ir.Loop) -> logic_pb2.Loop:
 
 def convert_declaration(decl: ir.Declaration) -> logic_pb2.Declaration:
     if isinstance(decl, ir.Def):
-        return logic_pb2.Declaration(**{'def': convert_def(decl)})
+        return logic_pb2.Declaration(**{'def': convert_def(decl)})  # type: ignore
     elif isinstance(decl, ir.Loop):
         return logic_pb2.Declaration(loop=convert_loop(decl))
     else:
@@ -182,22 +182,22 @@ def convert_demand(d: ir.Demand) -> transactions_pb2.Demand:
     return transactions_pb2.Demand(relation_id=convert_relation_id(d.relation_id))
 
 def convert_output(o: ir.Output) -> transactions_pb2.Output:
-    kwargs = {'relation_id': convert_relation_id(o.relation_id)}
+    kwargs: Dict[str, Any] = {'relation_id': convert_relation_id(o.relation_id)}
     if o.name is not None:
         kwargs['name'] = o.name
-    return transactions_pb2.Output(**kwargs)
+    return transactions_pb2.Output(**kwargs) # type: ignore
 
 def convert_abort(a: ir.Abort) -> transactions_pb2.Abort:
-    kwargs = {'relation_id': convert_relation_id(a.relation_id)}
+    kwargs: Dict[str, Any] = {'relation_id': convert_relation_id(a.relation_id)}
     if a.name is not None:
         kwargs['name'] = a.name
-    return transactions_pb2.Abort(**kwargs)
+    return transactions_pb2.Abort(**kwargs) # type: ignore
 
 def convert_whatif(wi: ir.WhatIf) -> transactions_pb2.WhatIf:
-    kwargs = {'epoch': convert_epoch(wi.epoch)} # Forward declaration handled by Python
+    kwargs: Dict[str, Any] = {'epoch': convert_epoch(wi.epoch)}
     if wi.branch is not None:
         kwargs['branch'] = wi.branch
-    return transactions_pb2.WhatIf(**kwargs)
+    return transactions_pb2.WhatIf(**kwargs) # type: ignore
 
 def convert_read(r: ir.Read) -> transactions_pb2.Read:
     rt = r.read_type
