@@ -11,3 +11,5 @@ lispyqp/out/
 gen
 
 .envrc
+.venv
+.pytest_cache

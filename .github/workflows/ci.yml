@@ -27,7 +27,14 @@ jobs:
         python -m pip install --upgrade pip
         cd lispyqp
         python -m pip install -e ".[test]"
+        python -m pip install pyright
+
     - name: Test with pytest
       run: |
         cd lispyqp
         python -m pytest
+
+    - name: Type check with Pyright
+      run: |
+        cd lispyqp
+        pyright

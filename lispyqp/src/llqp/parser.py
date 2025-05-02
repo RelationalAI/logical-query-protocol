@@ -176,7 +176,7 @@ class LQPTransformer(Transformer):
         attrs = items[2] if len(items) > 2 else []
 
         definition = logic_pb2.Def(name=name, body=body, attrs=attrs)
-        return logic_pb2.Declaration(**{'def': definition})
+        return logic_pb2.Declaration(**{'def': definition}) # type: ignore
 
     def abstraction(self, items):
         return logic_pb2.Abstraction(vars=items[0], value=items[1])
@@ -189,9 +189,9 @@ class LQPTransformer(Transformer):
     def formula(self, items):
         return items[0]
     def true(self, _):
-        return logic_pb2.Formula(true_val=getattr(logic_pb2, 'True')())
+        return logic_pb2.Formula(conjunction=logic_pb2.Conjunction(args=[]))
     def false(self, _):
-        return logic_pb2.Formula(false_val=getattr(logic_pb2, 'False')())
+        return logic_pb2.Formula(disjunction=logic_pb2.Disjunction(args=[]))
     def exists(self, items):
         inner_abs = logic_pb2.Abstraction(vars=items[0], value=items[1])
         return logic_pb2.Formula(exists=logic_pb2.Exists(body=inner_abs))
@@ -350,8 +350,9 @@ def main():
                 continue
 
             filename = os.path.join(args.input_directory, file)
-            bin = os.path.join(args.bin, file+".bin") if args.bin else None
-            json = os.path.join(args.json, file+".json") if args.json else None
+            basename = os.path.splitext(file)[0]
+            bin = os.path.join(args.bin, basename+".bin") if args.bin else None
+            json = os.path.join(args.json, basename+".json") if args.json else None
             process_file(filename, bin, json)
 
 
