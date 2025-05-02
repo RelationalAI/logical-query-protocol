@@ -1,5 +1,5 @@
 [project]
-name = "lispy-qp"
+name = "lqp"
 version = "0.1.0"
 description = "A parser for Logical Query Protocol (LQP) S-expressions into Protobuf"
 readme = "README.md"
@@ -8,11 +8,11 @@ authors = [
 ]
 dependencies = [
     "lark>=1.1.9",
-    "protobuf==5.29.4"
+    "protobuf>=5.29.4"
 ]
 
 [project.scripts]
-llqp = "llqp.parser:main"
+lqp = "lqp.parser:main"
 
 [project.optional-dependencies]
 test = ["pytest>=7.0.0", "pyright>=1.1.318"]
