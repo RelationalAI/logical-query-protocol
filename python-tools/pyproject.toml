@@ -1,5 +1,5 @@
 [project]
-name = "llqp"
+name = "lqp"
 version = "0.1.0"
 description = "A parser for Logical Query Protocol (LQP) S-expressions into Protobuf"
 readme = "README.md"
@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [project.scripts]
-llqp = "llqp.parser:main"
+lqp = "lqp.parser:main"
 
 [project.optional-dependencies]
 test = ["pytest>=7.0.0", "pyright>=1.1.318"]

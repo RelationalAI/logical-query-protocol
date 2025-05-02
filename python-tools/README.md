@@ -6,7 +6,7 @@ and JSON formats.
 ## Usage
 
 ```
-usage: llqp [-h] [--bin BIN] [--json JSON] input_directory
+usage: lqp [-h] [--bin BIN] [--json JSON] input_directory
 
 Parse LQP S-expression into Protobuf binary and JSON files.
 

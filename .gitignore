@@ -2,10 +2,10 @@
 
 # LispyQP
 __pycache__/
-lispyqp/dist/
-lispyqp/build/
-lispyqp/src/*.egg-info/
-lispyqp/out/
+python-tools/dist/
+python-tools/build/
+python-tools/src/*.egg-info/
+python-tools/out/
 
 # Proto generated files
 gen

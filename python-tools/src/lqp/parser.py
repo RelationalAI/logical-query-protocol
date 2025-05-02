@@ -5,7 +5,7 @@ import sys
 import hashlib
 from lark import Lark, Transformer
 from relationalai.lqp.v1 import logic_pb2, fragments_pb2, transactions_pb2
-from llqp.validator import validate_lqp, ValidationError
+from lqp.validator import validate_lqp, ValidationError
 
 from google.protobuf.json_format import MessageToJson
 
@@ -327,8 +327,8 @@ def main():
     # Check if directory
     if not os.path.isdir(args.input_directory):
         filename = args.input_directory
-        if not filename.endswith(".llqp"):
-            print(f"Skipping file {filename} as it does not have the .llqp extension")
+        if not filename.endswith(".lqp"):
+            print(f"Skipping file {filename} as it does not have the .lqp extension")
             return
 
         bin = args.bin if args.bin else None
@@ -345,8 +345,8 @@ def main():
     else:
         # Process each file in the input directory
         for file in os.listdir(args.input_directory):
-            if not file.endswith(".llqp"):
-                print(f"Skipping file {file} as it does not have the .llqp extension")
+            if not file.endswith(".lqp"):
+                print(f"Skipping file {file} as it does not have the .lqp extension")
                 continue
 
             filename = os.path.join(args.input_directory, file)
