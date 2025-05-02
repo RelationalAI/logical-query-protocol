@@ -4,7 +4,7 @@ import sys
 
 import hashlib
 from lark import Lark, Transformer
-from relationalai.lqp.v1 import logic_pb2, fragments_pb2, transactions_pb2
+from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
 from lqp.validator import validate_lqp, ValidationError
 
 from google.protobuf.json_format import MessageToJson

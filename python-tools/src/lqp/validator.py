@@ -1,4 +1,4 @@
-from relationalai.lqp.v1 import logic_pb2, fragments_pb2, transactions_pb2
+from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
 from google.protobuf.message import Message
 
 class ValidationError(Exception):
