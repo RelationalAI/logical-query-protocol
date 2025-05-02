@@ -66,7 +66,7 @@ minus: "(-" term term term ")"
 multiply: "(*" term term term ")"
 divide: "(/" term term term ")"
 
-term: var | constant
+term: var | constant | specialized_value
 var: SYMBOL "::" rel_type
 constant: primitive_value
 
@@ -76,6 +76,8 @@ attribute: "(attribute" name constant* ")"
 fragment_id: ":" SYMBOL
 relation_id: ":" SYMBOL
 name: ":" SYMBOL
+
+specialized_value: "#" primitive_value
 
 primitive_value: STRING | NUMBER | FLOAT | UINT128
 
@@ -256,6 +258,9 @@ class LQPTransformer(Transformer):
         return logic_pb2.Term(var=logic_pb2.Var(name=identifier, type=type_enum))
     def constant(self, items):
         return logic_pb2.Term(constant=logic_pb2.Constant(value=items[0]))
+    def specialized_value(self, items):
+        return logic_pb2.Term(specialized_value=logic_pb2.SpecializedValue(value=items[0]))
+
     def name(self, items):
         return items[0]
     def attribute(self, items):
@@ -265,6 +270,7 @@ class LQPTransformer(Transformer):
         symbol = items[0][1:]  # Remove leading ':'
         hash_val = int(hashlib.sha256(symbol.encode()).hexdigest()[:16], 16)  # First 64 bits of SHA-256
         return logic_pb2.RelationId(id_low=hash_val, id_high=0)  # Simplified hashing
+
 
     #
     # Primitive values
