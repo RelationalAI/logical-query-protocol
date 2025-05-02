@@ -189,9 +189,9 @@ class LQPTransformer(Transformer):
     def formula(self, items):
         return items[0]
     def true(self, _):
-        return logic_pb2.Formula(true_val=getattr(logic_pb2, 'True')())
+        return logic_pb2.Formula(conjunction=logic_pb2.Conjunction(args=[]))
     def false(self, _):
-        return logic_pb2.Formula(false_val=getattr(logic_pb2, 'False')())
+        return logic_pb2.Formula(disjunction=logic_pb2.Disjunction(args=[]))
     def exists(self, items):
         inner_abs = logic_pb2.Abstraction(vars=items[0], value=items[1])
         return logic_pb2.Formula(exists=logic_pb2.Exists(body=inner_abs))
