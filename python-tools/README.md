@@ -1,4 +1,4 @@
-# Lispy LQP
+# python-tools
 
 A command-line tool to parse Logical Query Protocol (LQP) S-expressions into Protobuf binary
 and JSON formats.
@@ -33,5 +33,5 @@ python -m build
 
 Install locally:
 ```
-pip install [--force-reinstall] dist/lispy_qp-0.1.0-py3-none-any.whl
+pip install [--force-reinstall] dist/lqp-0.1.0-py3-none-any.whl
 ```
