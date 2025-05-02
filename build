@@ -8,8 +8,10 @@ buf generate
 cp gen/python/relationalai/lqp/v1/*_pb2.py* python-tools/src/lqp/proto/v1/
 
 for file in python-tools/src/lqp/proto/v1/*_pb2.py*; do
-    sed -i '' 's/from relationalai\.lqp\.v1/from lqp\.proto\.v1/g' "$file"
-    sed -i '' 's/import relationalai\.lqp\.v1/import lqp\.proto\.v1/g' "$file"
+    sed 's/from relationalai\.lqp\.v1/from lqp\.proto\.v1/g' "$file" > "$file.tmp"
+    mv "$file.tmp" "$file"
+    sed 's/import relationalai\.lqp\.v1/import lqp\.proto\.v1/g' "$file" > "$file.tmp"
+    mv "$file.tmp" "$file"
 done
 
 rm -rf gen/python
