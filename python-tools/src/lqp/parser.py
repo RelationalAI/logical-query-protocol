@@ -44,7 +44,7 @@ disjunction: "(or" formula* ")"
 not: "(not" formula ")"
 ffi: "(ffi" name args terms ")"
 atom: "(atom" relation_id term* ")"
-relatom: "(relatom" name term* ")"
+relatom: "(relatom" name relterm* ")"
 cast: "(cast" rel_type term term ")"
 pragma: "(pragma" name terms ")"
 true: "(true)"
@@ -66,7 +66,8 @@ minus: "(-" term term term ")"
 multiply: "(*" term term term ")"
 divide: "(/" term term term ")"
 
-term: var | constant | specialized_value
+relterm: specialized_value | term
+term: var | constant
 var: SYMBOL "::" rel_type
 constant: primitive_value
 
@@ -249,6 +250,8 @@ class LQPTransformer(Transformer):
     def terms(self, items):
         return items
 
+    def relterm(self, items):
+        return items[0]
     def term(self, items):
         return items[0]
     def var(self, items):
