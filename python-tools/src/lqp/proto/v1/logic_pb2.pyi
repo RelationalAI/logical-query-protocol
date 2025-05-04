@@ -175,8 +175,8 @@ class Primitive(_message.Message):
     NAME_FIELD_NUMBER: _ClassVar[int]
     TERMS_FIELD_NUMBER: _ClassVar[int]
     name: str
-    terms: _containers.RepeatedCompositeFieldContainer[Term]
-    def __init__(self, name: _Optional[str] = ..., terms: _Optional[_Iterable[_Union[Term, _Mapping]]] = ...) -> None: ...
+    terms: _containers.RepeatedCompositeFieldContainer[RelTerm]
+    def __init__(self, name: _Optional[str] = ..., terms: _Optional[_Iterable[_Union[RelTerm, _Mapping]]] = ...) -> None: ...
 
 class RelAtom(_message.Message):
     __slots__ = ("name", "terms")

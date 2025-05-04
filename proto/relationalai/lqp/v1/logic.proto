@@ -84,7 +84,7 @@ message Pragma {
 
 message Primitive {
   string name = 1;
-  repeated Term terms = 2;
+  repeated RelTerm terms = 2;
 }
 
 message RelAtom {

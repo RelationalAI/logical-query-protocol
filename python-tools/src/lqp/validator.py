@@ -141,11 +141,12 @@ class LQPValidator:
                 self._validate_abstraction(arg_abs)
             for term in formula.ffi.terms:
                 self._validate_term(term)
-        elif formula_type == "atom" or formula_type == "pragma" or formula_type == "primitive":
+        elif formula_type == "atom" or formula_type == "pragma":
             container = getattr(formula, formula_type)
             for term in container.terms:
                 self._validate_term(term)
-        elif formula_type == "rel_atom":
+        elif formula_type == "rel_atom" or formula_type == "primitive":
+            # Primitives and RelAtoms can have specialized values as terms.
             container = getattr(formula, formula_type)
             for rel_term in container.terms:
                 self._validate_rel_term(rel_term)
