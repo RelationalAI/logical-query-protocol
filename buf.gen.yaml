@@ -4,5 +4,8 @@ plugins:
   - protoc_builtin: python
     out: gen/python
     opt: []
+  - protoc_builtin: pyi
+    out: gen/python
+    opt: []
 inputs:
   - directory: proto

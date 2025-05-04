@@ -1,0 +1,48 @@
+
+‹ˆ
+…
+‚
+
+f1ù
+ö
+		|íN²&úè
+
+	_lineitem
+
+_lineitem_l_returnflag
+
+_lineitem_l_linestatus˜
+•’
+
+_lineitem_l_shipdate
+
+_date_limitàİ
+R
+
+	_lineitemLineItem
+?R=
+
+	_lineitem
+
+_lineitem_l_shipdate
+l_shipdate
+CRA
+
+	_lineitem
+
+_lineitem_l_returnflagl_returnflag
+CRA
+
+	_lineitem
+
+_lineitem_l_linestatusl_linestatus
+#R!
+
+_date_limit
+date_limit
+JJH
+rel_primitive_lt_eq
+
+_lineitem_l_shipdate
+
+_date_limit

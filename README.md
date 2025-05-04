@@ -23,10 +23,10 @@ buf breaking --against ".git#subdir=proto"
 
 ## Build
 
-The build is [configured in `buf.gen.yaml`](https://buf.build/docs/generate/overview/).
+The build is [configured in `buf.gen.yaml`](https://buf.build/docs/generate/overview/), and managed by the `build` script, which runs validation and generates Python proto code in the `python-tools` directory.
 
 ```
-buf generate
+./build
 ```
 
 ### Generating Julia code

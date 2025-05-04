@@ -1,0 +1,4 @@
+*.bin binary
+*.pb binary
+*.protobuf binary
+*.lqp linguist-language=clojure

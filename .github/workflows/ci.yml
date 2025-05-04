@@ -25,9 +25,16 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        cd lispyqp
+        cd python-tools
         python -m pip install -e ".[test]"
+        python -m pip install pyright
+
     - name: Test with pytest
       run: |
-        cd lispyqp
+        cd python-tools
         python -m pytest
+
+    - name: Type check with Pyright
+      run: |
+        cd python-tools
+        pyright

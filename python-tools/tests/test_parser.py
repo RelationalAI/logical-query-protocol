@@ -3,19 +3,19 @@ import re
 import pytest
 import sys
 from pathlib import Path
-from llqp.parser import parse_lqp
-from llqp.validator import ValidationError, validate_lqp
+from lqp.parser import parse_lqp
+from lqp.validator import ValidationError, validate_lqp
 
 TEST_INPUTS_DIR = Path(__file__).parent / "test_files" / "lqp_input"
 TEST_OUTPUTS_DIR = Path(__file__).parent / "test_files" / "bin_output"
 
 def get_all_input_files():
-    """Find all .llqp files in the test inputs directory and subdirectories"""
+    """Find all .lqp files in the test inputs directory and subdirectories"""
     input_files = []
 
     for root, dirs, files in os.walk(TEST_INPUTS_DIR):
         for file in files:
-            if file.endswith(".llqp"):
+            if file.endswith(".lqp"):
                 input_files.append(os.path.join(root, file))
 
     return input_files
@@ -23,7 +23,7 @@ def get_all_input_files():
 def get_output_file(input_file):
     """Get the corresponding output file for a given input file"""
     base_name = os.path.basename(input_file)
-    output_file = os.path.join(TEST_OUTPUTS_DIR, base_name.replace(".llqp", ".bin"))
+    output_file = os.path.join(TEST_OUTPUTS_DIR, base_name.replace(".lqp", ".bin"))
     return output_file
 
 @pytest.mark.parametrize("input_file", get_all_input_files())
@@ -52,7 +52,7 @@ def test_parse_lqp(input_file):
 VALIDATOR_DIR = Path(__file__).parent / "validator"
 
 def test_valid_validator_files():
-    for validator_file in VALIDATOR_DIR.glob("valid_*.llqp"):
+    for validator_file in VALIDATOR_DIR.glob("valid_*.lqp"):
         with open(validator_file, "r") as f:
             content = f.read()
         try:

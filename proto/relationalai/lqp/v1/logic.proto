@@ -39,10 +39,8 @@ message Formula {
     Atom atom = 7;
     Pragma pragma = 8;
     Primitive primitive = 9;
-    True true_val = 10;
-    False false_val = 11;
-    RelAtom rel_atom = 12;
-    Cast cast = 13;
+    RelAtom rel_atom = 10;
+    Cast cast = 11;
   }
 }
 
@@ -88,9 +86,6 @@ message Primitive {
   string name = 1;
   repeated Term terms = 2;
 }
-
-message True {}
-message False {}
 
 message RelAtom {
   string name = 3;

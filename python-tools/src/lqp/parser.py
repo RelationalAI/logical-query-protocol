@@ -4,8 +4,8 @@ import sys
 
 import hashlib
 from lark import Lark, Transformer
-from relationalai.lqp.v1 import logic_pb2, fragments_pb2, transactions_pb2
-from llqp.validator import validate_lqp, ValidationError
+from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
+from lqp.validator import validate_lqp, ValidationError
 
 from google.protobuf.json_format import MessageToJson
 
@@ -178,7 +178,7 @@ class LQPTransformer(Transformer):
         attrs = items[2] if len(items) > 2 else []
 
         definition = logic_pb2.Def(name=name, body=body, attrs=attrs)
-        return logic_pb2.Declaration(**{'def': definition})
+        return logic_pb2.Declaration(**{'def': definition}) # type: ignore
 
     def abstraction(self, items):
         return logic_pb2.Abstraction(vars=items[0], value=items[1])
@@ -191,9 +191,9 @@ class LQPTransformer(Transformer):
     def formula(self, items):
         return items[0]
     def true(self, _):
-        return logic_pb2.Formula(true_val=getattr(logic_pb2, 'True')())
+        return logic_pb2.Formula(conjunction=logic_pb2.Conjunction(args=[]))
     def false(self, _):
-        return logic_pb2.Formula(false_val=getattr(logic_pb2, 'False')())
+        return logic_pb2.Formula(disjunction=logic_pb2.Disjunction(args=[]))
     def exists(self, items):
         inner_abs = logic_pb2.Abstraction(vars=items[0], value=items[1])
         return logic_pb2.Formula(exists=logic_pb2.Exists(body=inner_abs))
@@ -333,8 +333,8 @@ def main():
     # Check if directory
     if not os.path.isdir(args.input_directory):
         filename = args.input_directory
-        if not filename.endswith(".llqp"):
-            print(f"Skipping file {filename} as it does not have the .llqp extension")
+        if not filename.endswith(".lqp"):
+            print(f"Skipping file {filename} as it does not have the .lqp extension")
             return
 
         bin = args.bin if args.bin else None
@@ -351,13 +351,14 @@ def main():
     else:
         # Process each file in the input directory
         for file in os.listdir(args.input_directory):
-            if not file.endswith(".llqp"):
-                print(f"Skipping file {file} as it does not have the .llqp extension")
+            if not file.endswith(".lqp"):
+                print(f"Skipping file {file} as it does not have the .lqp extension")
                 continue
 
             filename = os.path.join(args.input_directory, file)
-            bin = os.path.join(args.bin, file+".bin") if args.bin else None
-            json = os.path.join(args.json, file+".json") if args.json else None
+            basename = os.path.splitext(file)[0]
+            bin = os.path.join(args.bin, basename+".bin") if args.bin else None
+            json = os.path.join(args.json, basename+".json") if args.json else None
             process_file(filename, bin, json)
 
 

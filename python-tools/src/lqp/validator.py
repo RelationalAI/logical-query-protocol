@@ -1,4 +1,4 @@
-from relationalai.lqp.v1 import logic_pb2, fragments_pb2, transactions_pb2
+from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
 from google.protobuf.message import Message
 
 class ValidationError(Exception):
@@ -123,11 +123,7 @@ class LQPValidator:
         formula_type = formula.WhichOneof("formula_type")
 
         if formula_type == "exists":
-            self._enter_scope()
-            for var in formula.exists.vars:
-                self._declare_var(var)
-            self._validate_formula(formula.exists.value)
-            self._exit_scope()
+            self._validate_abstraction(formula.exists.body)
         elif formula_type == "reduce":
             self._validate_abstraction(formula.reduce.op)
             self._validate_abstraction(formula.reduce.body)
@@ -138,7 +134,8 @@ class LQPValidator:
             for arg_formula in container.args:
                 self._validate_formula(arg_formula)
         elif formula_type == "not":
-            self._validate_formula(formula.not_.arg)
+            not_field = getattr(formula, "not")
+            self._validate_formula(not_field.arg)
         elif formula_type == "ffi":
             for arg_abs in formula.ffi.args:
                 self._validate_abstraction(arg_abs)
