@@ -44,7 +44,7 @@ disjunction: "(or" formula* ")"
 not: "(not" formula ")"
 ffi: "(ffi" name args terms ")"
 atom: "(atom" relation_id term* ")"
-relatom: "(relatom" name term* ")"
+relatom: "(relatom" name relterm* ")"
 cast: "(cast" rel_type term term ")"
 pragma: "(pragma" name terms ")"
 true: "(true)"
@@ -66,6 +66,7 @@ minus: "(-" term term term ")"
 multiply: "(*" term term term ")"
 divide: "(/" term term term ")"
 
+relterm: specialized_value | term
 term: var | constant
 var: SYMBOL "::" rel_type
 constant: primitive_value
@@ -76,6 +77,8 @@ attribute: "(attribute" name constant* ")"
 fragment_id: ":" SYMBOL
 relation_id: ":" SYMBOL
 name: ":" SYMBOL
+
+specialized_value: "#" primitive_value
 
 primitive_value: STRING | NUMBER | FLOAT | UINT128
 
@@ -247,6 +250,8 @@ class LQPTransformer(Transformer):
     def terms(self, items):
         return items
 
+    def relterm(self, items):
+        return items[0]
     def term(self, items):
         return items[0]
     def var(self, items):
@@ -256,6 +261,9 @@ class LQPTransformer(Transformer):
         return logic_pb2.Term(var=logic_pb2.Var(name=identifier, type=type_enum))
     def constant(self, items):
         return logic_pb2.Term(constant=logic_pb2.Constant(value=items[0]))
+    def specialized_value(self, items):
+        return logic_pb2.Term(specialized_value=logic_pb2.SpecializedValue(value=items[0]))
+
     def name(self, items):
         return items[0]
     def attribute(self, items):
