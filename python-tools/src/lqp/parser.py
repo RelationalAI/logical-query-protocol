@@ -251,7 +251,11 @@ class LQPTransformer(Transformer):
         return items
 
     def relterm(self, items):
-        return items[0]
+        inner = items[0]
+        if isinstance(inner, logic_pb2.SpecializedValue):
+            return logic_pb2.RelTerm(specialized_value=inner)
+        else:
+            return logic_pb2.RelTerm(term=inner)
     def term(self, items):
         return items[0]
     def var(self, items):
@@ -262,7 +266,7 @@ class LQPTransformer(Transformer):
     def constant(self, items):
         return logic_pb2.Term(constant=logic_pb2.Constant(value=items[0]))
     def specialized_value(self, items):
-        return logic_pb2.Term(specialized_value=logic_pb2.SpecializedValue(value=items[0]))
+        return logic_pb2.SpecializedValue(value=items[0])
 
     def name(self, items):
         return items[0]
