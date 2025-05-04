@@ -244,7 +244,7 @@ class LQPTransformer(Transformer):
     def add(self, items):
         return desugar_to_raw_primitive(self.name(["rel_primitive_add"]), items)
     def minus(self, items):
-        return desugar_to_raw_primitive(self.name(["rel_primitive_minus"]), items)
+        return desugar_to_raw_primitive(self.name(["rel_primitive_subtract"]), items)
     def multiply(self, items):
         return desugar_to_raw_primitive(self.name(["rel_primitive_multiply"]), items)
     def divide(self, items):
