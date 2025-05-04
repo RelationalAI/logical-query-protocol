@@ -102,6 +102,7 @@ message Term {
   oneof term_type {
     Var var = 1;
     Constant constant = 2;
+    SpecializedValue specialized_value = 3;
   }
 }
 
@@ -111,6 +112,10 @@ message Var {
 }
 
 message Constant {
+  PrimitiveValue value = 1; // Actual value instance
+}
+
+message SpecializedValue {
   PrimitiveValue value = 1; // Actual value instance
 }
 

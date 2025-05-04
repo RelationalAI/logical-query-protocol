@@ -197,12 +197,14 @@ class Cast(_message.Message):
     def __init__(self, type: _Optional[_Union[RelType, _Mapping]] = ..., input: _Optional[_Union[Term, _Mapping]] = ..., result: _Optional[_Union[Term, _Mapping]] = ...) -> None: ...
 
 class Term(_message.Message):
-    __slots__ = ("var", "constant")
+    __slots__ = ("var", "constant", "specialized_value")
     VAR_FIELD_NUMBER: _ClassVar[int]
     CONSTANT_FIELD_NUMBER: _ClassVar[int]
+    SPECIALIZED_VALUE_FIELD_NUMBER: _ClassVar[int]
     var: Var
     constant: Constant
-    def __init__(self, var: _Optional[_Union[Var, _Mapping]] = ..., constant: _Optional[_Union[Constant, _Mapping]] = ...) -> None: ...
+    specialized_value: SpecializedValue
+    def __init__(self, var: _Optional[_Union[Var, _Mapping]] = ..., constant: _Optional[_Union[Constant, _Mapping]] = ..., specialized_value: _Optional[_Union[SpecializedValue, _Mapping]] = ...) -> None: ...
 
 class Var(_message.Message):
     __slots__ = ("name", "type")
@@ -213,6 +215,12 @@ class Var(_message.Message):
     def __init__(self, name: _Optional[str] = ..., type: _Optional[_Union[RelType, _Mapping]] = ...) -> None: ...
 
 class Constant(_message.Message):
+    __slots__ = ("value",)
+    VALUE_FIELD_NUMBER: _ClassVar[int]
+    value: PrimitiveValue
+    def __init__(self, value: _Optional[_Union[PrimitiveValue, _Mapping]] = ...) -> None: ...
+
+class SpecializedValue(_message.Message):
     __slots__ = ("value",)
     VALUE_FIELD_NUMBER: _ClassVar[int]
     value: PrimitiveValue
