@@ -274,7 +274,6 @@ class LQPTransformer(Transformer):
         hash_val = int(hashlib.sha256(symbol.encode()).hexdigest()[:16], 16)  # First 64 bits of SHA-256
         return logic_pb2.RelationId(id_low=hash_val, id_high=0)  # Simplified hashing
 
-
     #
     # Primitive values
     #
