@@ -175,16 +175,16 @@ class Primitive(_message.Message):
     NAME_FIELD_NUMBER: _ClassVar[int]
     TERMS_FIELD_NUMBER: _ClassVar[int]
     name: str
-    terms: _containers.RepeatedCompositeFieldContainer[Term]
-    def __init__(self, name: _Optional[str] = ..., terms: _Optional[_Iterable[_Union[Term, _Mapping]]] = ...) -> None: ...
+    terms: _containers.RepeatedCompositeFieldContainer[RelTerm]
+    def __init__(self, name: _Optional[str] = ..., terms: _Optional[_Iterable[_Union[RelTerm, _Mapping]]] = ...) -> None: ...
 
 class RelAtom(_message.Message):
     __slots__ = ("name", "terms")
     NAME_FIELD_NUMBER: _ClassVar[int]
     TERMS_FIELD_NUMBER: _ClassVar[int]
     name: str
-    terms: _containers.RepeatedCompositeFieldContainer[Term]
-    def __init__(self, name: _Optional[str] = ..., terms: _Optional[_Iterable[_Union[Term, _Mapping]]] = ...) -> None: ...
+    terms: _containers.RepeatedCompositeFieldContainer[RelTerm]
+    def __init__(self, name: _Optional[str] = ..., terms: _Optional[_Iterable[_Union[RelTerm, _Mapping]]] = ...) -> None: ...
 
 class Cast(_message.Message):
     __slots__ = ("type", "input", "result")
@@ -196,15 +196,21 @@ class Cast(_message.Message):
     result: Term
     def __init__(self, type: _Optional[_Union[RelType, _Mapping]] = ..., input: _Optional[_Union[Term, _Mapping]] = ..., result: _Optional[_Union[Term, _Mapping]] = ...) -> None: ...
 
+class RelTerm(_message.Message):
+    __slots__ = ("specialized_value", "term")
+    SPECIALIZED_VALUE_FIELD_NUMBER: _ClassVar[int]
+    TERM_FIELD_NUMBER: _ClassVar[int]
+    specialized_value: SpecializedValue
+    term: Term
+    def __init__(self, specialized_value: _Optional[_Union[SpecializedValue, _Mapping]] = ..., term: _Optional[_Union[Term, _Mapping]] = ...) -> None: ...
+
 class Term(_message.Message):
-    __slots__ = ("var", "constant", "specialized_value")
+    __slots__ = ("var", "constant")
     VAR_FIELD_NUMBER: _ClassVar[int]
     CONSTANT_FIELD_NUMBER: _ClassVar[int]
-    SPECIALIZED_VALUE_FIELD_NUMBER: _ClassVar[int]
     var: Var
     constant: Constant
-    specialized_value: SpecializedValue
-    def __init__(self, var: _Optional[_Union[Var, _Mapping]] = ..., constant: _Optional[_Union[Constant, _Mapping]] = ..., specialized_value: _Optional[_Union[SpecializedValue, _Mapping]] = ...) -> None: ...
+    def __init__(self, var: _Optional[_Union[Var, _Mapping]] = ..., constant: _Optional[_Union[Constant, _Mapping]] = ...) -> None: ...
 
 class Var(_message.Message):
     __slots__ = ("name", "type")
