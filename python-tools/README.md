@@ -33,5 +33,5 @@ python -m build
 
 Install locally:
 ```
-pip install [--force-reinstall] dist/lqp-0.1.0-py3-none-any.whl
+pip install [--user] [--force-reinstall] dist/lqp-0.1.0-py3-none-any.whl
 ```
