@@ -3,8 +3,8 @@
         (local_writes
             (define
                 (fragment :f1
-                    (def :foo ([x::INT] (relatom :hello x::INT)))
-                    (def :bar ([x::INT y::STRING] (relatom :bar #"sp_str" x::INT #123 y::STRING))))))
+                    (def :foo ([x::INT] (relatom :hello x)))
+                    (def :bar ([x::INT y::STRING] (relatom :bar #"sp_str" x #123 y))))))
 
         (reads
             (output :foo :foo)

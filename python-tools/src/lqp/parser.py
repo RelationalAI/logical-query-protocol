@@ -228,8 +228,20 @@ class LQPTransformer(Interpreter):
     def false(self, tree):
         return logic_pb2.Formula(disjunction=logic_pb2.Disjunction(args=[]))
     def exists(self, tree):
-        items = self.visit_children(tree)
-        inner_abs = logic_pb2.Abstraction(vars=items[0], value=items[1])
+        vars = self.visit(tree.children[0])
+
+        for var in vars:
+            if var.name in self.var_map:
+                raise ValidationError(f"Duplicate variable name: {var.name}")
+            self.var_map[var.name] = var.type
+
+        body = self.visit(tree.children[1])
+
+        # Clean up var_map so that it doesn't affect other branches
+        for var in vars:
+            del self.var_map[var.name]
+
+        inner_abs = logic_pb2.Abstraction(vars=vars, value=body)
         return logic_pb2.Formula(exists=logic_pb2.Exists(body=inner_abs))
     def reduce(self, tree):
         items = self.visit_children(tree)

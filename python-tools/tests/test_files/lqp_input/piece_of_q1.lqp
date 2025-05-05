@@ -15,4 +15,4 @@
                   ;; We don't have date literals in LQP, so we need to get the date limit
                   ;; from a relatom
                   (relatom :date_limit _date_limit)
-                  (<= _lineitem_l_shipdate::DATE _date_limit))))))))))
+                  (<= _lineitem_l_shipdate _date_limit))))))))))
