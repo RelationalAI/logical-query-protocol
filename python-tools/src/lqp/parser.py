@@ -3,7 +3,8 @@ import os
 import sys
 
 import hashlib
-from lark import Lark, Transformer
+from lark import Lark
+from lark.visitors import Transformer, Interpreter
 from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
 from lqp.validator import validate_lqp, ValidationError
 
@@ -100,14 +101,14 @@ COMMENT: /;;.*/  // Matches ;; followed by any characters except newline
 """
 
 def rel_type_to_proto(parsed_type):
-    if parsed_type.children[0].type == "PRIMITIVE_TYPE":
-        val = primitive_type_to_proto(parsed_type.children[0].value)
+    if parsed_type[0].type == "PRIMITIVE_TYPE":
+        val = primitive_type_to_proto(parsed_type[0].value)
         return logic_pb2.RelType(primitive_type=val)
-    elif parsed_type.children[0].type == "REL_VALUE_TYPE":
-        val = rel_value_type_to_proto(parsed_type.children[0].value)
+    elif parsed_type[0].type == "REL_VALUE_TYPE":
+        val = rel_value_type_to_proto(parsed_type[0].value)
         return logic_pb2.RelType(value_type=val)
     else:
-        raise ValueError(f"Unknown type: {parsed_type.children[0].type}")
+        raise ValueError(f"Unknown type: {parsed_type[0].type}")
 
 def primitive_type_to_proto(primitive_type):
     # Map ENTITY -> HASH
@@ -121,189 +122,232 @@ def rel_value_type_to_proto(primitive_type):
     # Map the primitive type string to the corresponding protobuf enum value
     return getattr(logic_pb2.RelValueType, f"REL_VALUE_TYPE_{primitive_type.upper()}")
 
-class LQPTransformer(Transformer):
-    def start(self, items):
-        return items[0]
+class LQPTransformer(Interpreter):
+    def start(self, tree):
+        result = self.visit_children(tree)
+        return result[0]
 
-    #
     # Transactions
-    #
-    def transaction(self, items):
-        return transactions_pb2.Transaction(epochs=items)
-    def epoch(self, items):
+    def transaction(self, tree):
+        _epochs = self.visit_children(tree)
+        return transactions_pb2.Transaction(epochs=_epochs)
+
+    def epoch(self, tree):
+        items = self.visit_children(tree)
         kwargs = {k: v for k, v in items if v}  # Filter out None values
         return transactions_pb2.Epoch(**kwargs)
 
-    def persistent_writes(self, items):
+    def persistent_writes(self, tree):
+        items = self.visit_children(tree)
         return ("persistent_writes", items)
-    def local_writes(self, items):
+    def local_writes(self, tree):
+        items = self.visit_children(tree)
         return ("local_writes", items)
-    def reads(self, items):
+    def reads(self, tree):
+        items = self.visit_children(tree)
         return ("reads", items)
-    def write(self, items):
-        return self.transform(items[0])
+    def write(self, tree):
+        items = self.visit_children(tree)
+        return items[0]
 
-    def define(self, items):
+    def define(self, tree):
+        items = self.visit_children(tree)
         return transactions_pb2.Write(define=transactions_pb2.Define(fragment=items[0]))
-    def undefine(self, items):
+    def undefine(self, tree):
+        items = self.visit_children(tree)
         return transactions_pb2.Write(undefine=transactions_pb2.Undefine(fragment_id=items[0]))
-    def context(self, items):
+    def context(self, tree):
+        items = self.visit_children(tree)
         return transactions_pb2.Write(context=transactions_pb2.Context(relations=items))
 
-    def read(self, items):
-        return self.transform(items[0])
-    def demand(self, items):
+    def read(self, tree):
+        items = self.visit_children(tree)
+        return items[0]
+    def demand(self, tree):
+        items = self.visit_children(tree)
         return transactions_pb2.Read(demand=transactions_pb2.Demand(relation_id=items[0]))
-    def output(self, items):
+    def output(self, tree):
+        items = self.visit_children(tree)
         if len(items) == 1:
             return transactions_pb2.Read(output=transactions_pb2.Output(relation_id=items[0]))
         return transactions_pb2.Read(output=transactions_pb2.Output(name=items[0], relation_id=items[1]))
-    def abort(self, items):
+    def abort(self, tree):
+        items = self.visit_children(tree)
         if len(items) == 1:
             return transactions_pb2.Read(abort=transactions_pb2.Abort(relation_id=items[0]))
         return transactions_pb2.Read(abort=transactions_pb2.Abort(name=items[0], relation_id=items[1]))
 
-    #
     # Logic
-    #
-    def fragment(self, items):
+    def fragment(self, tree):
+        items = self.visit_children(tree)
         return fragments_pb2.Fragment(id=items[0], declarations=items[1:])
-    def fragment_id(self, items):
+    def fragment_id(self, tree):
+        items = self.visit_children(tree)
         return fragments_pb2.FragmentId(id=items[0].encode())
 
-    def declaration(self, items):
+    def declaration(self, tree):
+        items = self.visit_children(tree)
         return items[0]
-    def def_(self, items):
+    def def_(self, tree):
+        items = self.visit_children(tree)
         name = items[0]
         body = items[1]
         attrs = items[2] if len(items) > 2 else []
 
         definition = logic_pb2.Def(name=name, body=body, attrs=attrs)
-        return logic_pb2.Declaration(**{'def': definition}) # type: ignore
-
-    def abstraction(self, items):
+        return logic_pb2.Declaration(**{'def': definition})
+    def abstraction(self, tree):
+        items = self.visit_children(tree)
         return logic_pb2.Abstraction(vars=items[0], value=items[1])
-
-    def vars(self, items):
+    def vars(self, tree):
+        items = self.visit_children(tree)
         return [term.var for term in items]
-    def attrs(self, items):
+    def attrs(self, tree):
+        items = self.visit_children(tree)
         return items
-
-    def formula(self, items):
+    def formula(self, tree):
+        items = self.visit_children(tree)
         return items[0]
-    def true(self, _):
+    def true(self, tree):
         return logic_pb2.Formula(conjunction=logic_pb2.Conjunction(args=[]))
-    def false(self, _):
+    def false(self, tree):
         return logic_pb2.Formula(disjunction=logic_pb2.Disjunction(args=[]))
-    def exists(self, items):
+    def exists(self, tree):
+        items = self.visit_children(tree)
         inner_abs = logic_pb2.Abstraction(vars=items[0], value=items[1])
         return logic_pb2.Formula(exists=logic_pb2.Exists(body=inner_abs))
-    def reduce(self, items):
+    def reduce(self, tree):
+        items = self.visit_children(tree)
         return logic_pb2.Formula(reduce=logic_pb2.Reduce(op=items[0], body=items[1], terms=items[2]))
-    def conjunction(self, items):
+    def conjunction(self, tree):
+        items = self.visit_children(tree)
         return logic_pb2.Formula(conjunction=logic_pb2.Conjunction(args=items))
-    def disjunction(self, items):
+    def disjunction(self, tree):
+        items = self.visit_children(tree)
         return logic_pb2.Formula(disjunction=logic_pb2.Disjunction(args=items))
-    def not_(self, items):
+    def not_(self, tree):
+        items = self.visit_children(tree)
         return logic_pb2.Formula(not_=logic_pb2.Not(arg=items[0]))
-    def ffi(self, items):
+    def ffi(self, tree):
+        items = self.visit_children(tree)
         return logic_pb2.Formula(ffi=logic_pb2.FFI(name=items[0], args=items[1], terms=items[2]))
-    def atom(self, items):
+    def atom(self, tree):
+        items = self.visit_children(tree)
         return logic_pb2.Formula(atom=logic_pb2.Atom(name=items[0], terms=items[1:]))
-    def pragma(self, items):
+    def pragma(self, tree):
+        items = self.visit_children(tree)
         return logic_pb2.Formula(pragma=logic_pb2.Pragma(name=items[0], terms=items[1]))
-    def relatom(self, items):
+    def relatom(self, tree):
+        items = self.visit_children(tree)
         return logic_pb2.Formula(rel_atom=logic_pb2.RelAtom(name=items[0], terms=items[1:]))
-    def cast(self, items):
+    def cast(self, tree):
+        items = self.visit_children(tree)
         t = rel_type_to_proto(items[0])
         return logic_pb2.Formula(cast=logic_pb2.Cast(type=t, input=items[1], result=items[2]))
 
-    #
+
     # Primitives
-    #
-    def primitive(self, items):
+    def primitive(self, tree):
+        items = self.visit_children(tree)
         return items[0]
-    def raw_primitive(self, items):
+    def raw_primitive(self, tree):
+        items = self.visit_children(tree)
         return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=items[0], terms=items[1:]))
-    def eq(self, items):
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_eq"]), terms=items))
-    def lt(self, items):
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_lt"]), terms=items))
-    def lt_eq(self, items):
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_lt_eq"]), terms=items))
-    def gt(self, items):
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_gt"]), terms=items))
-    def gt_eq(self, items):
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_gt_eq"]), terms=items))
+    def eq(self, tree):
+        items = self.visit_children(tree)
+        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name="rel_primitive_eq", terms=items))
+    def lt(self, tree):
+        items = self.visit_children(tree)
+        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name="rel_primitive_lt", terms=items))
+    def lt_eq(self, tree):
+        items = self.visit_children(tree)
+        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name="rel_primitive_lt_eq", terms=items))
+    def gt(self, tree):
+        items = self.visit_children(tree)
+        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name="rel_primitive_gt", terms=items))
+    def gt_eq(self, tree):
+        items = self.visit_children(tree)
+        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name="rel_primitive_gt_eq", terms=items))
+    def add(self, tree):
+        items = self.visit_children(tree)
+        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name="rel_primitive_add", terms=items))
+    def minus(self, tree):
+        items = self.visit_children(tree)
+        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name="rel_primitive_subtract", terms=items))
+    def multiply(self, tree):
+        items = self.visit_children(tree)
+        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name="rel_primitive_multiply", terms=items))
+    def divide(self, tree):
+        items = self.visit_children(tree)
+        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name="rel_primitive_divide", terms=items))
 
-    def add(self, items):
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_add"]), terms=items))
-    def minus(self, items):
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_subtract"]), terms=items))
-    def multiply(self, items):
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_multiply"]), terms=items))
-    def divide(self, items):
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_divide"]), terms=items))
-
-    def args(self, items):
+    def args(self, tree):
+        items = self.visit_children(tree)
         return items
-    def terms(self, items):
+    def terms(self, tree):
+        items = self.visit_children(tree)
         return items
 
-    def relterm(self, items):
+    def relterm(self, tree):
+        items = self.visit_children(tree)
         return items[0]
-    def term(self, items):
+    def term(self, tree):
+        items = self.visit_children(tree)
         return items[0]
-    def var(self, items):
+    def var(self, tree):
+        items = self.visit_children(tree)
         identifier = items[0]
         primitive_type = items[1]
         type_enum = rel_type_to_proto(primitive_type)
         return logic_pb2.Term(var=logic_pb2.Var(name=identifier, type=type_enum))
-    def constant(self, items):
+    def constant(self, tree):
+        items = self.visit_children(tree)
         return logic_pb2.Term(constant=logic_pb2.Constant(value=items[0]))
-    def specialized_value(self, items):
+    def specialized_value(self, tree):
+        items = self.visit_children(tree)
+        print("specialized_value", "\n", tree, "\n", items, "\n", type(items[0]))
         return logic_pb2.Term(specialized_value=logic_pb2.SpecializedValue(value=items[0]))
-
-    def name(self, items):
+    def name(self, tree):
+        items = self.visit_children(tree)
         return items[0]
-    def attribute(self, items):
+    def attribute(self, tree):
+        items = self.visit_children(tree)
         return logic_pb2.Attribute(name=items[0], args=items[1:])
 
-    def relation_id(self, items):
-        symbol = items[0][1:]  # Remove leading ':'
+    def relation_id(self, tree):
+        items = self.visit_children(tree)
+        symbol = items[0][1:]
         hash_val = int(hashlib.sha256(symbol.encode()).hexdigest()[:16], 16)  # First 64 bits of SHA-256
-        return logic_pb2.RelationId(id_low=hash_val, id_high=0)  # Simplified hashing
+        result = logic_pb2.RelationId(id_low=hash_val, id_high=0)  # Simplified hashing
+        return result
 
-    #
     # Primitive values
-    #
-    def primitive_value(self, items):
-        return items[0]
-    def STRING(self, s):
-        return logic_pb2.PrimitiveValue(string_value=s[1:-1])  # Strip quotes
-    def NUMBER(self, n):
-        return logic_pb2.PrimitiveValue(int_value=int(n))
-    def FLOAT(self, f):
-        return logic_pb2.PrimitiveValue(float_value=float(f))
-    def SYMBOL(self, sym):
-        return str(sym)
-    def UINT128(self, u):
-        uint128_val = int(u, 16)
-        low = uint128_val & 0xFFFFFFFFFFFFFFFF
-        high = (uint128_val >> 64) & 0xFFFFFFFFFFFFFFFF
-        uint128_proto = logic_pb2.UInt128(low=low, high=high)
-        return logic_pb2.PrimitiveValue(uint128_value=uint128_proto)
+    def primitive_value(self, tree):
+        item = self.visit_children(tree)[0]
 
-# LALR(1) is significantly faster than Earley for parsing, especially on larger inputs. It
-# uses a precomputed parse table, reducing runtime complexity to O(n) (linear in input
-# size), whereas Earley is O(n³) in the worst case (though often O(n²) or better for
-# practical grammars). The LQP grammar is relatively complex but unambiguous, making
-# LALR(1)’s speed advantage appealing for a CLI tool where quick parsing matters.
-parser = Lark(grammar, parser="lalr")
+        if item.type == "STRING":
+            return logic_pb2.PrimitiveValue(string_value=item[1:-1])
+        elif item.type == "NUMBER":
+            return logic_pb2.PrimitiveValue(int_value=int(item))
+        elif item.type == "FLOAT":
+            return logic_pb2.PrimitiveValue(float_value=float(item))
+        elif item.type == "UINT128":
+            uint128_val = int(item, 16)
+            low = uint128_val & 0xFFFFFFFFFFFFFFFF
+            high = (uint128_val >> 64) & 0xFFFFFFFFFFFFFFFF
+            uint128_proto = logic_pb2.UInt128(low=low, high=high)
+            return logic_pb2.PrimitiveValue(uint128_value=uint128_proto)
 
 def parse_lqp(text):
+    # LALR(1) is significantly faster than Earley for parsing, especially on larger inputs. It
+    # uses a precomputed parse table, reducing runtime complexity to O(n) (linear in input
+    # size), whereas Earley is O(n³) in the worst case (though often O(n²) or better for
+    # practical grammars). The LQP grammar is relatively complex but unambiguous, making
+    # LALR(1)’s speed advantage appealing for a CLI tool where quick parsing matters.
+    parser = Lark(grammar, parser="lalr")
     tree = parser.parse(text)
-    return LQPTransformer().transform(tree)
+    result = LQPTransformer().visit(tree)
+    return result
 
 def process_file(filename, bin, json):
     with open(filename, "r") as f:
