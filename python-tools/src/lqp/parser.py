@@ -128,8 +128,7 @@ class LQPTransformer(Interpreter):
         self.var_map = {}
 
     def start(self, tree):
-        result = self.visit_children(tree)
-        return result[0]
+        return self.visit_children(tree)[0]
 
     # Transactions
     def transaction(self, tree):
@@ -142,17 +141,13 @@ class LQPTransformer(Interpreter):
         return transactions_pb2.Epoch(**kwargs)
 
     def persistent_writes(self, tree):
-        items = self.visit_children(tree)
-        return ("persistent_writes", items)
+        return ("persistent_writes", self.visit_children(tree))
     def local_writes(self, tree):
-        items = self.visit_children(tree)
-        return ("local_writes", items)
+        return ("local_writes", self.visit_children(tree))
     def reads(self, tree):
-        items = self.visit_children(tree)
-        return ("reads", items)
+        return ("reads", self.visit_children(tree))
     def write(self, tree):
-        items = self.visit_children(tree)
-        return items[0]
+        return self.visit_children(tree)[0]
 
     def define(self, tree):
         items = self.visit_children(tree)
@@ -165,8 +160,7 @@ class LQPTransformer(Interpreter):
         return transactions_pb2.Write(context=transactions_pb2.Context(relations=items))
 
     def read(self, tree):
-        items = self.visit_children(tree)
-        return items[0]
+        return self.visit_children(tree)[0]
     def demand(self, tree):
         items = self.visit_children(tree)
         return transactions_pb2.Read(demand=transactions_pb2.Demand(relation_id=items[0]))
@@ -209,7 +203,11 @@ class LQPTransformer(Interpreter):
             self.var_map[var.name] = var.type
 
         body = self.visit(tree.children[1])
-        # print("abstraction", tree, "\n", vars, "\n", items[0][0].name,"\n", items[0][0].type)
+
+        # Clean up var_map so that it doesn't affect other branches
+        for var in vars:
+            del self.var_map[var.name]
+
         return logic_pb2.Abstraction(vars=vars, value=body)
     def bindings(self, tree):
         items = self.visit_children(tree)
@@ -222,11 +220,9 @@ class LQPTransformer(Interpreter):
         return logic_pb2.Term(var=logic_pb2.Var(name=identifier, type=type_enum))
 
     def attrs(self, tree):
-        items = self.visit_children(tree)
-        return items
+        return self.visit_children(tree)
     def formula(self, tree):
-        items = self.visit_children(tree)
-        return items[0]
+        return self.visit_children(tree)[0]
     def true(self, tree):
         return logic_pb2.Formula(conjunction=logic_pb2.Conjunction(args=[]))
     def false(self, tree):
@@ -301,26 +297,20 @@ class LQPTransformer(Interpreter):
         return logic_pb2.Formula(primitive=logic_pb2.Primitive(name="rel_primitive_divide", terms=items))
 
     def args(self, tree):
-        items = self.visit_children(tree)
-        return items
+        return self.visit_children(tree)
     def terms(self, tree):
-        items = self.visit_children(tree)
-        return items
+        return self.visit_children(tree)
 
     def relterm(self, tree):
-        items = self.visit_children(tree)
-        return items[0]
+        return self.visit_children(tree)[0]
     def term(self, tree):
-        items = self.visit_children(tree)
-        return items[0]
+        return self.visit_children(tree)[0]
     def var(self, tree):
         item = self.visit_children(tree)[0]
 
         if item not in self.var_map:
             raise ValidationError(f"Variable '{item}' not found in the variable map.")
         var_type = self.var_map[item]
-
-        print("var", "\n", tree, "\n", item, "\n", var_type)
         return logic_pb2.Term(var=logic_pb2.Var(name=item, type=var_type))
 
     def constant(self, tree):
