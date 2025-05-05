@@ -34,11 +34,12 @@ fragment: "(fragment" fragment_id declaration* ")"
 declaration: def_
 def_: "(def" relation_id abstraction attrs? ")"
 
-abstraction: "(" vars formula ")"
-vars: "[" var* "]"
+abstraction: "(" bindings formula ")"
+bindings: "[" binding* "]"
+binding: SYMBOL "::" rel_type
 
 formula: exists | reduce | conjunction | disjunction | not | ffi | atom | pragma | primitive | true | false | relatom | cast
-exists: "(exists" vars formula ")"
+exists: "(exists" bindings formula ")"
 reduce: "(reduce" abstraction abstraction terms ")"
 conjunction: "(and" formula* ")"
 disjunction: "(or" formula* ")"
@@ -69,7 +70,7 @@ divide: "(/" term term term ")"
 
 relterm: specialized_value | term
 term: var | constant
-var: SYMBOL "::" rel_type
+var: SYMBOL
 constant: primitive_value
 
 attrs: "(attrs" attribute* ")"
@@ -123,6 +124,9 @@ def rel_value_type_to_proto(primitive_type):
     return getattr(logic_pb2.RelValueType, f"REL_VALUE_TYPE_{primitive_type.upper()}")
 
 class LQPTransformer(Interpreter):
+    def __init__(self):
+        self.var_map = {}
+
     def start(self, tree):
         result = self.visit_children(tree)
         return result[0]
@@ -197,11 +201,26 @@ class LQPTransformer(Interpreter):
         definition = logic_pb2.Def(name=name, body=body, attrs=attrs)
         return logic_pb2.Declaration(**{'def': definition})
     def abstraction(self, tree):
-        items = self.visit_children(tree)
-        return logic_pb2.Abstraction(vars=items[0], value=items[1])
-    def vars(self, tree):
+        vars = self.visit(tree.children[0])
+
+        for var in vars:
+            if var.name in self.var_map:
+                raise ValidationError(f"Duplicate variable name: {var.name}")
+            self.var_map[var.name] = var.type
+
+        body = self.visit(tree.children[1])
+        # print("abstraction", tree, "\n", vars, "\n", items[0][0].name,"\n", items[0][0].type)
+        return logic_pb2.Abstraction(vars=vars, value=body)
+    def bindings(self, tree):
         items = self.visit_children(tree)
         return [term.var for term in items]
+    def binding(self, tree):
+        items = self.visit_children(tree)
+        identifier = items[0]
+        primitive_type = items[1]
+        type_enum = rel_type_to_proto(primitive_type)
+        return logic_pb2.Term(var=logic_pb2.Var(name=identifier, type=type_enum))
+
     def attrs(self, tree):
         items = self.visit_children(tree)
         return items
@@ -295,11 +314,15 @@ class LQPTransformer(Interpreter):
         items = self.visit_children(tree)
         return items[0]
     def var(self, tree):
-        items = self.visit_children(tree)
-        identifier = items[0]
-        primitive_type = items[1]
-        type_enum = rel_type_to_proto(primitive_type)
-        return logic_pb2.Term(var=logic_pb2.Var(name=identifier, type=type_enum))
+        item = self.visit_children(tree)[0]
+
+        if item not in self.var_map:
+            raise ValidationError(f"Variable '{item}' not found in the variable map.")
+        var_type = self.var_map[item]
+
+        print("var", "\n", tree, "\n", item, "\n", var_type)
+        return logic_pb2.Term(var=logic_pb2.Var(name=item, type=var_type))
+
     def constant(self, tree):
         items = self.visit_children(tree)
         return logic_pb2.Term(constant=logic_pb2.Constant(value=items[0]))
