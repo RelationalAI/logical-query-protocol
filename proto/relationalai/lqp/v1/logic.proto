@@ -84,12 +84,12 @@ message Pragma {
 
 message Primitive {
   string name = 1;
-  repeated Term terms = 2;
+  repeated RelTerm terms = 2;
 }
 
 message RelAtom {
   string name = 3;
-  repeated Term terms = 2;
+  repeated RelTerm terms = 2;
 }
 
 message Cast {
@@ -98,11 +98,17 @@ message Cast {
   Term result = 3;
 }
 
+message RelTerm {
+  oneof rel_term_type {
+    SpecializedValue specialized_value = 1;
+    Term term = 2;
+  }
+}
+
 message Term {
   oneof term_type {
     Var var = 1;
     Constant constant = 2;
-    SpecializedValue specialized_value = 3;
   }
 }
 

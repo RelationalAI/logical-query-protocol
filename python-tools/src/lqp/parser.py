@@ -56,7 +56,7 @@ args: "(args" abstraction* ")"
 terms: "(terms" term* ")"
 
 primitive: raw_primitive | eq | lt | lt_eq | gt | gt_eq | add | minus | multiply | divide
-raw_primitive: "(primitive" name term* ")"
+raw_primitive: "(primitive" name relterm* ")"
 eq: "(=" term term ")"
 lt: "(<" term term ")"
 lt_eq: "(<=" term term ")"
@@ -122,6 +122,11 @@ def primitive_type_to_proto(primitive_type):
 def rel_value_type_to_proto(primitive_type):
     # Map the primitive type string to the corresponding protobuf enum value
     return getattr(logic_pb2.RelValueType, f"REL_VALUE_TYPE_{primitive_type.upper()}")
+
+def desugar_to_raw_primitive(name, terms):
+    # Convert terms to relterms
+    relterms = [logic_pb2.RelTerm(term=term) for term in terms]
+    return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=name, terms=relterms))
 
 class LQPTransformer(Interpreter):
     def __init__(self):
@@ -219,6 +224,7 @@ class LQPTransformer(Interpreter):
         type_enum = rel_type_to_proto(primitive_type)
         return logic_pb2.Term(var=logic_pb2.Var(name=identifier, type=type_enum))
 
+
     def attrs(self, tree):
         return self.visit_children(tree)
     def formula(self, tree):
@@ -282,31 +288,31 @@ class LQPTransformer(Interpreter):
         return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=items[0], terms=items[1:]))
     def eq(self, tree):
         items = self.visit_children(tree)
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name="rel_primitive_eq", terms=items))
+        return desugar_to_raw_primitive("rel_primitive_eq", items)
     def lt(self, tree):
         items = self.visit_children(tree)
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name="rel_primitive_lt", terms=items))
+        return desugar_to_raw_primitive("rel_primitive_lt", items)
     def lt_eq(self, tree):
         items = self.visit_children(tree)
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name="rel_primitive_lt_eq", terms=items))
+        return desugar_to_raw_primitive("rel_primitive_lt_eq", items)
     def gt(self, tree):
         items = self.visit_children(tree)
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name="rel_primitive_gt", terms=items))
+        return desugar_to_raw_primitive("rel_primitive_gt", items)
     def gt_eq(self, tree):
         items = self.visit_children(tree)
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name="rel_primitive_gt_eq", terms=items))
+        return desugar_to_raw_primitive("rel_primitive_gt_eq", items)
     def add(self, tree):
         items = self.visit_children(tree)
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name="rel_primitive_add", terms=items))
+        return desugar_to_raw_primitive("rel_primitive_add", items)
     def minus(self, tree):
         items = self.visit_children(tree)
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name="rel_primitive_subtract", terms=items))
+        return desugar_to_raw_primitive("rel_primitive_subtract", items)
     def multiply(self, tree):
         items = self.visit_children(tree)
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name="rel_primitive_multiply", terms=items))
+        return desugar_to_raw_primitive("rel_primitive_multiply", items)
     def divide(self, tree):
         items = self.visit_children(tree)
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name="rel_primitive_divide", terms=items))
+        return desugar_to_raw_primitive("rel_primitive_divide", items)
 
     def args(self, tree):
         return self.visit_children(tree)
@@ -314,7 +320,11 @@ class LQPTransformer(Interpreter):
         return self.visit_children(tree)
 
     def relterm(self, tree):
-        return self.visit_children(tree)[0]
+        inner = self.visit_children(tree)[0]
+        if isinstance(inner, logic_pb2.SpecializedValue):
+            return logic_pb2.RelTerm(specialized_value=inner)
+        else:
+            return logic_pb2.RelTerm(term=inner)
     def term(self, tree):
         return self.visit_children(tree)[0]
     def var(self, tree):
@@ -331,7 +341,7 @@ class LQPTransformer(Interpreter):
     def specialized_value(self, tree):
         items = self.visit_children(tree)
         print("specialized_value", "\n", tree, "\n", items, "\n", type(items[0]))
-        return logic_pb2.Term(specialized_value=logic_pb2.SpecializedValue(value=items[0]))
+        return logic_pb2.SpecializedValue(value=items[0])
     def name(self, tree):
         items = self.visit_children(tree)
         return items[0]
