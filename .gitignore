@@ -12,4 +12,5 @@ gen
 
 .envrc
 .venv
+venv
 .pytest_cache
