@@ -232,12 +232,6 @@ class Abort(LqpNode):
     name: Union[str, None]
     relation_id: RelationId
 
-# WhatIf(branch::string?, epoch::Epoch)
-@dataclass(frozen=True)
-class WhatIf(LqpNode):
-    branch: Union[str, None]
-    epoch: 'Epoch' # Use string forward reference
-
 # Read := Demand | Output | WhatIf | Abort
 @dataclass(frozen=True)
 class Read(LqpNode):
@@ -249,6 +243,12 @@ class Epoch(LqpNode):
     persistent_writes: Sequence[Write] = field(default_factory=list)
     local_writes: Sequence[Write] = field(default_factory=list)
     reads: Sequence[Read] = field(default_factory=list)
+
+# WhatIf(branch::string?, epoch::Epoch)
+@dataclass(frozen=True)
+class WhatIf(LqpNode):
+    branch: Union[str, None]
+    epoch: Epoch
 
 # Transaction(epochs::Epoch[])
 @dataclass(frozen=True)
