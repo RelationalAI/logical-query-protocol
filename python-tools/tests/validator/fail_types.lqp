@@ -1,7 +1,0 @@
-;; ERROR: Type mismatch for variable 'value': Declared as PRIMITIVE_TYPE_INT, used as PRIMITIVE_TYPE_STRING
-(fragment :frag
-  (def :my_relation
-    ([key::STRING value::INT]
-     (and
-       (= key::STRING "test")
-       (primitive :process value::STRING))))) ;; Using value as STRING when it was declared as INT

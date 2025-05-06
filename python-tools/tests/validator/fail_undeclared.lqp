@@ -3,5 +3,5 @@
   (def :person
     ([name::STRING age::INT] ;; Declare name, age
      (and
-       (atom :source name::STRING age::INT) ;; OK: name, age are declared
-       (= age::INT some_limit::INT))))) ;; FAIL: some_limit is not declared
+       (atom :source name age) ;; OK: name, age are declared
+       (= age some_limit))))) ;; FAIL: some_limit is not declared

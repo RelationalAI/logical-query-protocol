@@ -79,8 +79,8 @@ def test_validator_failure_files(validator_file):
         return
     with open(file_path, "r") as f:
         content = f.read()
-    result = parse_lqp(content)
     with pytest.raises(ValidationError) as exc_info:
+        result = parse_lqp(content)
         validate_lqp(result)
     error_message = str(exc_info.value)
     assert expected_error in error_message, f"Expected '{expected_error}' in error message: {error_message}"

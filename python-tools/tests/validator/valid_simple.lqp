@@ -4,6 +4,6 @@
     ([name::STRING age::INT] ;; Declare vars in abstraction
      (exists [city::STRING] ;; Declare var in exists
        (and
-         (atom :source name::STRING age::INT city::STRING) ;; Use declared vars
-         (= age::INT 10) ;; Use declared var and constant
-         (primitive :some_check city::STRING)))))) ;; Use declared var
+         (atom :source name age city) ;; Use declared vars
+         (= age 10) ;; Use declared var and constant
+         (primitive :some_check city)))))) ;; Use declared var

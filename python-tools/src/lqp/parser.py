@@ -204,7 +204,7 @@ class LQPTransformer(Interpreter):
 
         for var in vars:
             if var.name in self.var_map:
-                raise ValidationError(f"Duplicate variable name: {var.name}")
+                raise ValidationError(f"Shadowed variable: '{var.name}'")
             self.var_map[var.name] = var.type
 
         body = self.visit(tree.children[1])
@@ -238,7 +238,7 @@ class LQPTransformer(Interpreter):
 
         for var in vars:
             if var.name in self.var_map:
-                raise ValidationError(f"Duplicate variable name: {var.name}")
+                raise ValidationError(f"Shadowed variable: '{var.name}'")
             self.var_map[var.name] = var.type
 
         body = self.visit(tree.children[1])
@@ -331,7 +331,7 @@ class LQPTransformer(Interpreter):
         item = self.visit_children(tree)[0]
 
         if item not in self.var_map:
-            raise ValidationError(f"Variable '{item}' not found in the variable map.")
+            raise ValidationError(f"Undeclared variable used: '{item}'")
         var_type = self.var_map[item]
         return logic_pb2.Term(var=logic_pb2.Var(name=item, type=var_type))
 
