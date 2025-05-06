@@ -141,10 +141,15 @@ class LQPValidator:
                 self._validate_abstraction(arg_abs)
             for term in formula.ffi.terms:
                 self._validate_term(term)
-        elif formula_type == "atom" or formula_type == "rel_atom" or formula_type == "pragma" or formula_type == "primitive":
+        elif formula_type == "atom" or formula_type == "pragma":
             container = getattr(formula, formula_type)
             for term in container.terms:
                 self._validate_term(term)
+        elif formula_type == "rel_atom" or formula_type == "primitive":
+            # Primitives and RelAtoms can have specialized values as terms.
+            container = getattr(formula, formula_type)
+            for rel_term in container.terms:
+                self._validate_rel_term(rel_term)
 
     def _validate_term(self, term: logic_pb2.Term):
         term_type = term.WhichOneof("term_type")
@@ -152,6 +157,15 @@ class LQPValidator:
             self._check_var_usage(term.var)
         elif term_type == "constant":
             pass
+
+    def _validate_rel_term(self, rel_term: logic_pb2.RelTerm):
+        rel_term_type = rel_term.WhichOneof("rel_term_type")
+        if rel_term_type == "specialized_value":
+            pass
+        elif rel_term_type == "term":
+            self._validate_term(rel_term.term)
+        else:
+            raise ValidationError(f"Unknown relation term type: {rel_term_type}")
 
 # Helper function to be called from parser script
 def validate_lqp(proto_obj: Message):

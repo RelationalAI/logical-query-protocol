@@ -54,7 +54,7 @@ args: "(args" abstraction* ")"
 terms: "(terms" term* ")"
 
 primitive: raw_primitive | eq | lt | lt_eq | gt | gt_eq | add | minus | multiply | divide
-raw_primitive: "(primitive" name term* ")"
+raw_primitive: "(primitive" name relterm* ")"
 eq: "(=" term term ")"
 lt: "(<" term term ")"
 lt_eq: "(<=" term term ")"
@@ -120,6 +120,11 @@ def primitive_type_to_proto(primitive_type):
 def rel_value_type_to_proto(primitive_type):
     # Map the primitive type string to the corresponding protobuf enum value
     return getattr(logic_pb2.RelValueType, f"REL_VALUE_TYPE_{primitive_type.upper()}")
+
+def desugar_to_raw_primitive(name, terms):
+    # Convert terms to relterms
+    relterms = [logic_pb2.RelTerm(term=term) for term in terms]
+    return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=name, terms=relterms))
 
 class LQPTransformer(Transformer):
     def start(self, items):
@@ -226,24 +231,24 @@ class LQPTransformer(Transformer):
     def raw_primitive(self, items):
         return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=items[0], terms=items[1:]))
     def eq(self, items):
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_eq"]), terms=items))
+        return desugar_to_raw_primitive(self.name(["rel_primitive_eq"]), items)
     def lt(self, items):
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_lt"]), terms=items))
+        return desugar_to_raw_primitive(self.name(["rel_primitive_lt"]), items)
     def lt_eq(self, items):
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_lt_eq"]), terms=items))
+        return desugar_to_raw_primitive(self.name(["rel_primitive_lt_eq"]), items)
     def gt(self, items):
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_gt"]), terms=items))
+        return desugar_to_raw_primitive(self.name(["rel_primitive_gt"]), items)
     def gt_eq(self, items):
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_gt_eq"]), terms=items))
+        return desugar_to_raw_primitive(self.name(["rel_primitive_gt_eq"]), items)
 
     def add(self, items):
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_add"]), terms=items))
+        return desugar_to_raw_primitive(self.name(["rel_primitive_add"]), items)
     def minus(self, items):
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_subtract"]), terms=items))
+        return desugar_to_raw_primitive(self.name(["rel_primitive_subtract"]), items)
     def multiply(self, items):
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_multiply"]), terms=items))
+        return desugar_to_raw_primitive(self.name(["rel_primitive_multiply"]), items)
     def divide(self, items):
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=self.name(["rel_primitive_divide"]), terms=items))
+        return desugar_to_raw_primitive(self.name(["rel_primitive_divide"]), items)
 
     def args(self, items):
         return items
@@ -251,7 +256,11 @@ class LQPTransformer(Transformer):
         return items
 
     def relterm(self, items):
-        return items[0]
+        inner = items[0]
+        if isinstance(inner, logic_pb2.SpecializedValue):
+            return logic_pb2.RelTerm(specialized_value=inner)
+        else:
+            return logic_pb2.RelTerm(term=inner)
     def term(self, items):
         return items[0]
     def var(self, items):
@@ -262,7 +271,7 @@ class LQPTransformer(Transformer):
     def constant(self, items):
         return logic_pb2.Term(constant=logic_pb2.Constant(value=items[0]))
     def specialized_value(self, items):
-        return logic_pb2.Term(specialized_value=logic_pb2.SpecializedValue(value=items[0]))
+        return logic_pb2.SpecializedValue(value=items[0])
 
     def name(self, items):
         return items[0]
