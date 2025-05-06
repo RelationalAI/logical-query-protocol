@@ -95,7 +95,7 @@ def convert_formula(f: ir.Formula) -> logic_pb2.Formula:
     elif isinstance(f, ir.Disjunction):
         return logic_pb2.Formula(disjunction=logic_pb2.Disjunction(args=[convert_formula(arg) for arg in f.args]))
     elif isinstance(f, ir.Not):
-        return logic_pb2.Formula(not_=logic_pb2.Not(arg=convert_formula(f.arg))) # Note the underscore
+        return logic_pb2.Formula(**{"not": logic_pb2.Not(arg=convert_formula(f.arg))}) # type: ignore
     elif isinstance(f, ir.FFI):
         return logic_pb2.Formula(ffi=logic_pb2.FFI(
             name=f.name,
@@ -146,7 +146,10 @@ def convert_loop(l: ir.Loop) -> logic_pb2.Loop:
 
 def convert_declaration(decl: ir.Declaration) -> logic_pb2.Declaration:
     if isinstance(decl, ir.Def):
-        return logic_pb2.Declaration(**{'def': convert_def(decl)})  # type: ignore
+        # 'def' is a Python keyword, so we use the same approach as with 'not'
+        from typing import Dict, Any
+        decl_dict: Dict[str, Any] = {'def': convert_def(decl)}
+        return logic_pb2.Declaration(**decl_dict)  # type: ignore
     elif isinstance(decl, ir.Loop):
         return logic_pb2.Declaration(loop=convert_loop(decl))
     else:

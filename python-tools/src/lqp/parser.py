@@ -35,12 +35,12 @@ def_: "(def" relation_id abstraction attrs? ")"
 abstraction: "(" vars formula ")"
 vars: "[" var* "]"
 
-formula: exists | reduce | conjunction | disjunction | not | ffi | atom | pragma | primitive | true | false | relatom | cast
+formula: exists | reduce | conjunction | disjunction | not_ | ffi | atom | pragma | primitive | true | false | relatom | cast
 exists: "(exists" vars formula ")"
 reduce: "(reduce" abstraction abstraction terms ")"
 conjunction: "(and" formula* ")"
 disjunction: "(or" formula* ")"
-not: "(not" formula ")"
+not_: "(not" formula ")"
 ffi: "(ffi" name args terms ")"
 atom: "(atom" relation_id term* ")"
 relatom: "(relatom" name relterm* ")"
@@ -208,6 +208,9 @@ class LQPTransformer(Transformer):
     def disjunction(self, items):
         return ir.Disjunction(args=items)
 
+    def not_(self, items):
+        return ir.Not(arg=items[0])
+
     def ffi(self, items):
         return ir.FFI(name=items[0], args=items[1], terms=items[2])
 
@@ -227,7 +230,9 @@ class LQPTransformer(Transformer):
     # Primitives
     #
     def primitive(self, items):
-        return items[0]
+        if isinstance(items[0], ir.Formula):
+            return items[0]
+        raise TypeError(f"Unexpected primitive type: {type(items[0])}")
     def raw_primitive(self, items):
         return ir.Primitive(name=items[0], terms=items[1:])
     def _make_primitive(self, name_symbol, terms):
