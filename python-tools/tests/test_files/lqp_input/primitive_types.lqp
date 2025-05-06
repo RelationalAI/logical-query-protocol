@@ -3,17 +3,13 @@
     (local_writes
       (define
         (fragment :f1
+          (def :output_int ([v::INT] (= v 21)))
           (def :output_uint128 ([v::UINT128] (= v 0x123456789abcdef12345)))
-          (def :output_str ([v::STRING] (= v "hello")))
-          (def :output_decimal ([v::DECIMAL] (relatom :dec v)))
-          (def :output_date ([v::DATE] (relatom :date v)))
-          (def :output_datetime ([v::DATETIME] (relatom :datetime v)))
-          (def :output_second ([v::SECOND] (relatom :second v))))))
+          (def :output_float ([v::FLOAT] (= v 1.23)))
+          (def :output_str ([v::STRING] (= v "hello"))))))
 
     (reads
+      (output :int :output_int)
       (output :uint128 :output_uint128)
-      (output :str :output_str)
-      (output :dec :output_decimal)
-      (output :date :output_date)
-      (output :datetime :output_datetime)
-      (output :second :output_second))))
+      (output :float :output_float)
+      (output :str :output_str))))
