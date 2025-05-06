@@ -3,19 +3,19 @@
     (local_writes
       (define
         (fragment :f1
-          (def :output_decimal ([v::DECIMAL] (relatom :dec v::DECIMAL)))
-          (def :output_date ([v::DATE] (relatom :date v::DATE)))
-          (def :output_datetime ([v::DATETIME] (relatom :datetime v::DATETIME)))
-          (def :output_nanosecond ([v::NANOSECOND] (relatom :nanosecond v::NANOSECOND)))
-          (def :output_microsecond ([v::MICROSECOND] (relatom :microsecond v::MICROSECOND)))
-          (def :output_millisecond ([v::MILLISECOND] (relatom :millisecond v::MILLISECOND)))
-          (def :output_second ([v::SECOND] (relatom :second v::SECOND)))
-          (def :output_minute ([v::MINUTE] (relatom :minute v::MINUTE)))
-          (def :output_hour ([v::HOUR] (relatom :hour v::HOUR)))
-          (def :output_day ([v::DAY] (relatom :day v::DAY)))
-          (def :output_week ([v::WEEK] (relatom :week v::WEEK)))
-          (def :output_month ([v::MONTH] (relatom :month v::MONTH)))
-          (def :output_year ([v::YEAR] (relatom :year v::YEAR))))))
+          (def :output_decimal ([v::DECIMAL] (relatom :dec v)))
+          (def :output_date ([v::DATE] (relatom :date v)))
+          (def :output_datetime ([v::DATETIME] (relatom :datetime v)))
+          (def :output_nanosecond ([v::NANOSECOND] (relatom :nanosecond v)))
+          (def :output_microsecond ([v::MICROSECOND] (relatom :microsecond v)))
+          (def :output_millisecond ([v::MILLISECOND] (relatom :millisecond v)))
+          (def :output_second ([v::SECOND] (relatom :second v)))
+          (def :output_minute ([v::MINUTE] (relatom :minute v)))
+          (def :output_hour ([v::HOUR] (relatom :hour v)))
+          (def :output_day ([v::DAY] (relatom :day v)))
+          (def :output_week ([v::WEEK] (relatom :week v)))
+          (def :output_month ([v::MONTH] (relatom :month v)))
+          (def :output_year ([v::YEAR] (relatom :year v))))))
 
     (reads
       (output :dec :output_decimal)

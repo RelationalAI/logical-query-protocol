@@ -5,7 +5,7 @@ from lark import Lark, Transformer
 from typing import cast
 import lqp.ir as ir
 from lqp.emit import ir_to_proto
-from lqp.validator import validate_lqp
+from lqp.validator import validate_lqp, fill_types
 from google.protobuf.json_format import MessageToJson
 
 grammar = """
@@ -67,7 +67,7 @@ divide: "(/" term term term ")"
 
 relterm: specialized_value | term
 term: var | constant
-var: SYMBOL "::" rel_type
+var: SYMBOL "::" rel_type | SYMBOL
 constant: primitive_value
 
 attrs: "(attrs" attribute* ")"
@@ -265,8 +265,11 @@ class LQPTransformer(Transformer):
         return items[0]
     def var(self, items):
         identifier = items[0]
-        rel_type_obj = items[1]
-        return ir.Var(name=identifier, type=rel_type_obj)
+        if len(items) > 1:
+            rel_type_obj = items[1]
+            return ir.Var(name=identifier, type=rel_type_obj)
+        else:
+            return ir.Var(name=identifier, type=ir.PrimitiveType.UNSPECIFIED)
     def constant(self, items):
         return items[0]
     def specialized_value(self, items):
@@ -311,7 +314,9 @@ parser = Lark(grammar, parser="lalr", transformer=LQPTransformer())
 
 def parse_lqp(text) -> ir.LqpNode:
     """Parse LQP text and return an IR node that can be converted to protocol buffers"""
-    return cast(ir.LqpNode, parser.parse(text))
+    lqp_node = cast(ir.LqpNode, parser.parse(text))
+    fill_types(lqp_node)
+    return lqp_node
 
 def process_file(filename, bin, json):
     with open(filename, "r") as f:

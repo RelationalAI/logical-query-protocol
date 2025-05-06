@@ -1,5 +1,5 @@
 import lqp.ir as ir
-from typing import Union, Dict, Any, List, Tuple, Set
+from typing import Union, Dict, Any, List, Tuple, Set, cast
 
 class ValidationError(Exception):
     pass
@@ -25,8 +25,9 @@ class LqpVisitor:
                         self.visit(item, *args)
 
 class VariableScopeVisitor(LqpVisitor):
-    def __init__(self):
+    def __init__(self, fill=False):
         self.scopes: list[Dict[str, ir.RelType]] = []
+        self.fill = fill
 
     def _declare_var(self, var: ir.Var):
         if var.name in self.scopes[-1]:
@@ -45,10 +46,12 @@ class VariableScopeVisitor(LqpVisitor):
 
     def _check_var_usage(self, var: ir.Var):
         declared_type: Union[ir.RelType, None] = self._get_type(var.name)
-        if declared_type is None:
+        if declared_type is None and not self.fill:
             raise ValidationError(f"Undeclared variable used: '{var.name}'")
-        if var.type != declared_type:
-            type_name_declared = self._get_type_name(declared_type)
+        if var.type == ir.PrimitiveType.UNSPECIFIED and self.fill:
+            object.__setattr__(var, 'type', declared_type)
+        elif var.type != declared_type and not self.fill:
+            type_name_declared = self._get_type_name(cast(ir.RelType, declared_type))
             type_name_used = self._get_type_name(var.type)
             raise ValidationError(
                 f"Type mismatch for variable '{var.name}': "
@@ -94,5 +97,8 @@ class UnusedVariableVisitor(LqpVisitor):
         self._mark_var_used(node.name)
 
 def validate_lqp(lqp: ir.LqpNode):
-    VariableScopeVisitor().visit(lqp)
+    VariableScopeVisitor(fill=False).visit(lqp)
     UnusedVariableVisitor().visit(lqp)
+
+def fill_types(lqp: ir.LqpNode):
+    VariableScopeVisitor(fill=True).visit(lqp)
