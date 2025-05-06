@@ -1,0 +1,4 @@
+(fragment :frag
+  (def :test
+    ([x::INT y::INT]
+        (not (= x y)))))

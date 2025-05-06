@@ -1,12 +1,11 @@
 import argparse
 import os
-import sys
-
 import hashlib
 from lark import Lark, Transformer
-from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
-from lqp.validator import validate_lqp, ValidationError
-
+from typing import cast
+import lqp.ir as ir
+from lqp.emit import ir_to_proto
+from lqp.validator import validate_lqp, fill_types
 from google.protobuf.json_format import MessageToJson
 
 grammar = """
@@ -36,12 +35,12 @@ def_: "(def" relation_id abstraction attrs? ")"
 abstraction: "(" vars formula ")"
 vars: "[" var* "]"
 
-formula: exists | reduce | conjunction | disjunction | not | ffi | atom | pragma | primitive | true | false | relatom | cast
+formula: exists | reduce | conjunction | disjunction | not_ | ffi | atom | pragma | primitive | true | false | relatom | cast
 exists: "(exists" vars formula ")"
 reduce: "(reduce" abstraction abstraction terms ")"
 conjunction: "(and" formula* ")"
 disjunction: "(or" formula* ")"
-not: "(not" formula ")"
+not_: "(not" formula ")"
 ffi: "(ffi" name args terms ")"
 atom: "(atom" relation_id term* ")"
 relatom: "(relatom" name relterm* ")"
@@ -68,7 +67,7 @@ divide: "(/" term term term ")"
 
 relterm: specialized_value | term
 term: var | constant
-var: SYMBOL "::" rel_type
+var: SYMBOL "::" rel_type | SYMBOL
 constant: primitive_value
 
 attrs: "(attrs" attribute* ")"
@@ -99,45 +98,35 @@ COMMENT: /;;.*/  // Matches ;; followed by any characters except newline
 %ignore COMMENT
 """
 
-def rel_type_to_proto(parsed_type):
-    if parsed_type.children[0].type == "PRIMITIVE_TYPE":
-        val = primitive_type_to_proto(parsed_type.children[0].value)
-        return logic_pb2.RelType(primitive_type=val)
-    elif parsed_type.children[0].type == "REL_VALUE_TYPE":
-        val = rel_value_type_to_proto(parsed_type.children[0].value)
-        return logic_pb2.RelType(value_type=val)
-    else:
-        raise ValueError(f"Unknown type: {parsed_type.children[0].type}")
-
-def primitive_type_to_proto(primitive_type):
-    # Map ENTITY -> HASH
-    if primitive_type.upper() == "ENTITY":
-        primitive_type = "UINT128"
-
-    # Map the primitive type string to the corresponding protobuf enum value
-    return getattr(logic_pb2.PrimitiveType, f"PRIMITIVE_TYPE_{primitive_type.upper()}")
-
-def rel_value_type_to_proto(primitive_type):
-    # Map the primitive type string to the corresponding protobuf enum value
-    return getattr(logic_pb2.RelValueType, f"REL_VALUE_TYPE_{primitive_type.upper()}")
 
 def desugar_to_raw_primitive(name, terms):
     # Convert terms to relterms
-    relterms = [logic_pb2.RelTerm(term=term) for term in terms]
-    return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=name, terms=relterms))
+    return ir.Primitive(name=name, terms=terms)
 
 class LQPTransformer(Transformer):
     def start(self, items):
+        return items[0]
+
+    def PRIMITIVE_TYPE(self, s):
+        # Map ENTITY -> HASH
+        if s.upper() == "ENTITY":
+            return ir.PrimitiveType.UINT128
+        return getattr(ir.PrimitiveType, s.upper())
+
+    def REL_VALUE_TYPE(self, s):
+        return getattr(ir.RelValueType, s.upper())
+
+    def rel_type(self, items):
         return items[0]
 
     #
     # Transactions
     #
     def transaction(self, items):
-        return transactions_pb2.Transaction(epochs=items)
+        return ir.Transaction(epochs=items)
     def epoch(self, items):
-        kwargs = {k: v for k, v in items if v}  # Filter out None values
-        return transactions_pb2.Epoch(**kwargs)
+        kwargs = {k: v for k, v in items if v} # Filter out None values
+        return ir.Epoch(**kwargs)
 
     def persistent_writes(self, items):
         return ("persistent_writes", items)
@@ -146,35 +135,40 @@ class LQPTransformer(Transformer):
     def reads(self, items):
         return ("reads", items)
     def write(self, items):
-        return self.transform(items[0])
+        return ir.Write(write_type=items[0])
 
     def define(self, items):
-        return transactions_pb2.Write(define=transactions_pb2.Define(fragment=items[0]))
+        return ir.Define(fragment=items[0])
+
     def undefine(self, items):
-        return transactions_pb2.Write(undefine=transactions_pb2.Undefine(fragment_id=items[0]))
+        return ir.Undefine(fragment_id=items[0])
+
     def context(self, items):
-        return transactions_pb2.Write(context=transactions_pb2.Context(relations=items))
+        return ir.Context(relations=items)
 
     def read(self, items):
-        return self.transform(items[0])
+        return ir.Read(read_type=items[0])
     def demand(self, items):
-        return transactions_pb2.Read(demand=transactions_pb2.Demand(relation_id=items[0]))
+        return ir.Demand(relation_id=items[0])
+
     def output(self, items):
         if len(items) == 1:
-            return transactions_pb2.Read(output=transactions_pb2.Output(relation_id=items[0]))
-        return transactions_pb2.Read(output=transactions_pb2.Output(name=items[0], relation_id=items[1]))
+            return ir.Output(name=None, relation_id=items[0])
+        return ir.Output(name=items[0], relation_id=items[1])
+
     def abort(self, items):
         if len(items) == 1:
-            return transactions_pb2.Read(abort=transactions_pb2.Abort(relation_id=items[0]))
-        return transactions_pb2.Read(abort=transactions_pb2.Abort(name=items[0], relation_id=items[1]))
+            return ir.Abort(name=None, relation_id=items[0])
+        return ir.Abort(name=items[0], relation_id=items[1])
 
     #
     # Logic
     #
     def fragment(self, items):
-        return fragments_pb2.Fragment(id=items[0], declarations=items[1:])
+        return ir.Fragment(id=items[0], declarations=items[1:])
+
     def fragment_id(self, items):
-        return fragments_pb2.FragmentId(id=items[0].encode())
+        return ir.FragmentId(id=items[0].encode())
 
     def declaration(self, items):
         return items[0]
@@ -182,54 +176,69 @@ class LQPTransformer(Transformer):
         name = items[0]
         body = items[1]
         attrs = items[2] if len(items) > 2 else []
-
-        definition = logic_pb2.Def(name=name, body=body, attrs=attrs)
-        return logic_pb2.Declaration(**{'def': definition}) # type: ignore
+        return ir.Def(name=name, body=body, attrs=attrs)
 
     def abstraction(self, items):
-        return logic_pb2.Abstraction(vars=items[0], value=items[1])
+        return ir.Abstraction(vars=items[0], value=items[1])
 
     def vars(self, items):
-        return [term.var for term in items]
+        return items
     def attrs(self, items):
         return items
 
     def formula(self, items):
         return items[0]
     def true(self, _):
-        return logic_pb2.Formula(conjunction=logic_pb2.Conjunction(args=[]))
+        return ir.Conjunction(args=[])
+
     def false(self, _):
-        return logic_pb2.Formula(disjunction=logic_pb2.Disjunction(args=[]))
+        return ir.Disjunction(args=[])
+
     def exists(self, items):
-        inner_abs = logic_pb2.Abstraction(vars=items[0], value=items[1])
-        return logic_pb2.Formula(exists=logic_pb2.Exists(body=inner_abs))
+        # Create Abstraction for body directly here
+        body_abstraction = ir.Abstraction(vars=items[0], value=items[1])
+        return ir.Exists(body=body_abstraction)
+
     def reduce(self, items):
-        return logic_pb2.Formula(reduce=logic_pb2.Reduce(op=items[0], body=items[1], terms=items[2]))
+        return ir.Reduce(op=items[0], body=items[1], terms=items[2])
+
     def conjunction(self, items):
-        return logic_pb2.Formula(conjunction=logic_pb2.Conjunction(args=items))
+        return ir.Conjunction(args=items)
+
     def disjunction(self, items):
-        return logic_pb2.Formula(disjunction=logic_pb2.Disjunction(args=items))
+        return ir.Disjunction(args=items)
+
     def not_(self, items):
-        return logic_pb2.Formula(not_=logic_pb2.Not(arg=items[0]))
+        return ir.Not(arg=items[0])
+
     def ffi(self, items):
-        return logic_pb2.Formula(ffi=logic_pb2.FFI(name=items[0], args=items[1], terms=items[2]))
+        return ir.FFI(name=items[0], args=items[1], terms=items[2])
+
     def atom(self, items):
-        return logic_pb2.Formula(atom=logic_pb2.Atom(name=items[0], terms=items[1:]))
+        return ir.Atom(name=items[0], terms=items[1:])
+
     def pragma(self, items):
-        return logic_pb2.Formula(pragma=logic_pb2.Pragma(name=items[0], terms=items[1]))
+        return ir.Pragma(name=items[0], terms=items[1])
+
     def relatom(self, items):
-        return logic_pb2.Formula(rel_atom=logic_pb2.RelAtom(name=items[0], terms=items[1:]))
+        return ir.RelAtom(name=items[0], terms=items[1:])
+
     def cast(self, items):
-        t = rel_type_to_proto(items[0])
-        return logic_pb2.Formula(cast=logic_pb2.Cast(type=t, input=items[1], result=items[2]))
+        return ir.Cast(type=items[0], input=items[1], result=items[2])
 
     #
     # Primitives
     #
     def primitive(self, items):
-        return items[0]
+        if isinstance(items[0], ir.Formula):
+            return items[0]
+        raise TypeError(f"Unexpected primitive type: {type(items[0])}")
     def raw_primitive(self, items):
-        return logic_pb2.Formula(primitive=logic_pb2.Primitive(name=items[0], terms=items[1:]))
+        return ir.Primitive(name=items[0], terms=items[1:])
+    def _make_primitive(self, name_symbol, terms):
+         # Convert name symbol to string if needed, assuming self.name handles it
+         name_str = self.name([name_symbol]) if isinstance(name_symbol, str) else name_symbol
+         return ir.Primitive(name=name_str, terms=terms)
     def eq(self, items):
         return desugar_to_raw_primitive(self.name(["rel_primitive_eq"]), items)
     def lt(self, items):
@@ -256,32 +265,31 @@ class LQPTransformer(Transformer):
         return items
 
     def relterm(self, items):
-        inner = items[0]
-        if isinstance(inner, logic_pb2.SpecializedValue):
-            return logic_pb2.RelTerm(specialized_value=inner)
-        else:
-            return logic_pb2.RelTerm(term=inner)
+        return items[0]
     def term(self, items):
         return items[0]
     def var(self, items):
         identifier = items[0]
-        primitive_type = items[1]
-        type_enum = rel_type_to_proto(primitive_type)
-        return logic_pb2.Term(var=logic_pb2.Var(name=identifier, type=type_enum))
+        if len(items) > 1:
+            rel_type_obj = items[1]
+            return ir.Var(name=identifier, type=rel_type_obj)
+        else:
+            return ir.Var(name=identifier, type=ir.PrimitiveType.UNSPECIFIED)
     def constant(self, items):
-        return logic_pb2.Term(constant=logic_pb2.Constant(value=items[0]))
+        return items[0]
     def specialized_value(self, items):
-        return logic_pb2.SpecializedValue(value=items[0])
+        return ir.Specialized(value=items[0])
 
     def name(self, items):
-        return items[0]
+        return items[0] # SYMBOL string
+
     def attribute(self, items):
-        return logic_pb2.Attribute(name=items[0], args=items[1:])
+        return ir.Attribute(name=items[0], args=items[1:])
 
     def relation_id(self, items):
-        symbol = items[0][1:]  # Remove leading ':'
-        hash_val = int(hashlib.sha256(symbol.encode()).hexdigest()[:16], 16)  # First 64 bits of SHA-256
-        return logic_pb2.RelationId(id_low=hash_val, id_high=0)  # Simplified hashing
+        symbol = items[0][1:] # Remove leading ':'
+        hash_val = int(hashlib.sha256(symbol.encode()).hexdigest()[:16], 16) # First 64 bits of SHA-256
+        return ir.RelationId(id_low=hash_val, id_high=0) # Simplified hashing
 
     #
     # Primitive values
@@ -289,37 +297,39 @@ class LQPTransformer(Transformer):
     def primitive_value(self, items):
         return items[0]
     def STRING(self, s):
-        return logic_pb2.PrimitiveValue(string_value=s[1:-1])  # Strip quotes
+        return s[1:-1] # Strip quotes
     def NUMBER(self, n):
-        return logic_pb2.PrimitiveValue(int_value=int(n))
+        return int(n)
     def FLOAT(self, f):
-        return logic_pb2.PrimitiveValue(float_value=float(f))
+        return float(f)
     def SYMBOL(self, sym):
         return str(sym)
     def UINT128(self, u):
         uint128_val = int(u, 16)
         low = uint128_val & 0xFFFFFFFFFFFFFFFF
         high = (uint128_val >> 64) & 0xFFFFFFFFFFFFFFFF
-        uint128_proto = logic_pb2.UInt128(low=low, high=high)
-        return logic_pb2.PrimitiveValue(uint128_value=uint128_proto)
+        return ir.UInt128(low=low, high=high)
 
 # LALR(1) is significantly faster than Earley for parsing, especially on larger inputs. It
 # uses a precomputed parse table, reducing runtime complexity to O(n) (linear in input
 # size), whereas Earley is O(n³) in the worst case (though often O(n²) or better for
 # practical grammars). The LQP grammar is relatively complex but unambiguous, making
 # LALR(1)’s speed advantage appealing for a CLI tool where quick parsing matters.
-parser = Lark(grammar, parser="lalr")
+parser = Lark(grammar, parser="lalr", transformer=LQPTransformer())
 
-def parse_lqp(text):
-    tree = parser.parse(text)
-    return LQPTransformer().transform(tree)
+def parse_lqp(text) -> ir.LqpNode:
+    """Parse LQP text and return an IR node that can be converted to protocol buffers"""
+    lqp_node = cast(ir.LqpNode, parser.parse(text))
+    fill_types(lqp_node)
+    return lqp_node
 
 def process_file(filename, bin, json):
     with open(filename, "r") as f:
         lqp_text = f.read()
 
-    lqp_proto = parse_lqp(lqp_text)
-    validate_lqp(lqp_proto)
+    lqp = parse_lqp(lqp_text)
+    validate_lqp(lqp)
+    lqp_proto = ir_to_proto(lqp)
     print(lqp_proto)
 
     # Write binary output to the configured directories, using the same filename.

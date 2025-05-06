@@ -1,4 +1,4 @@
-;; ERROR: Type mismatch for variable 'value': Declared as PRIMITIVE_TYPE_INT, used as PRIMITIVE_TYPE_STRING
+;; ERROR: Type mismatch for variable 'value': Declared as INT, used as STRING
 (fragment :frag
   (def :my_relation
     ([key::STRING value::INT]

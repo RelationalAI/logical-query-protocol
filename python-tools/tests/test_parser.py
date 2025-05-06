@@ -4,6 +4,7 @@ import pytest
 import sys
 from pathlib import Path
 from lqp.parser import parse_lqp
+from lqp.emit import ir_to_proto
 from lqp.validator import ValidationError, validate_lqp
 
 TEST_INPUTS_DIR = Path(__file__).parent / "test_files" / "lqp_input"
@@ -34,7 +35,7 @@ def test_parse_lqp(input_file):
             content = f.read()
 
         # Parse the file and check it returns a valid protobuf object
-        result = parse_lqp(content)
+        result = ir_to_proto(parse_lqp(content))
         assert result is not None, f"Failed to parse {input_file}"
 
         # Log the successful parse for verbose output
