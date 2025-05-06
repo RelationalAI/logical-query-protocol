@@ -198,7 +198,7 @@ class LQPTransformer(Interpreter):
         attrs = items[2] if len(items) > 2 else []
 
         definition = logic_pb2.Def(name=name, body=body, attrs=attrs)
-        return logic_pb2.Declaration(**{'def': definition})
+        return logic_pb2.Declaration(**{'def': definition}) # type: ignore
     def abstraction(self, tree):
         vars = self.visit(tree.children[0])
 
