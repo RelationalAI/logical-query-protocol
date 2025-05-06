@@ -105,8 +105,11 @@ def desugar_to_raw_primitive(name, terms):
 
 @v_args(meta=True)
 class LQPTransformer(Transformer):
-    # def meta(meta):
-    #     return
+    def __init__(self, file: str):
+        self.file = file
+
+    def meta(self, meta):
+        return ir.SourceInfo(file=self.file, line=meta.line, column=meta.column)
 
     def start(self, meta, items):
         return items[0]
@@ -127,10 +130,10 @@ class LQPTransformer(Transformer):
     # Transactions
     #
     def transaction(self, meta, items):
-        return ir.Transaction(epochs=items, meta=None)
+        return ir.Transaction(epochs=items, meta=self.meta(meta))
     def epoch(self, meta, items):
         kwargs = {k: v for k, v in items if v} # Filter out None values
-        return ir.Epoch(**kwargs, meta=None)
+        return ir.Epoch(**kwargs, meta=self.meta(meta))
 
     def persistent_writes(self, meta, items):
         return ("persistent_writes", items)
@@ -139,40 +142,40 @@ class LQPTransformer(Transformer):
     def reads(self, meta, items):
         return ("reads", items)
     def write(self, meta, items):
-        return ir.Write(write_type=items[0], meta=None)
+        return ir.Write(write_type=items[0], meta=self.meta(meta))
 
     def define(self, meta, items):
-        return ir.Define(fragment=items[0], meta=None)
+        return ir.Define(fragment=items[0], meta=self.meta(meta))
 
     def undefine(self, meta, items):
-        return ir.Undefine(fragment_id=items[0], meta=None)
+        return ir.Undefine(fragment_id=items[0], meta=self.meta(meta))
 
     def context(self, meta, items):
-        return ir.Context(relations=items, meta=None)
+        return ir.Context(relations=items, meta=self.meta(meta))
 
     def read(self, meta, items):
-        return ir.Read(read_type=items[0], meta=None)
+        return ir.Read(read_type=items[0], meta=self.meta(meta))
     def demand(self, meta, items):
-        return ir.Demand(relation_id=items[0], meta=None)
+        return ir.Demand(relation_id=items[0], meta=self.meta(meta))
 
     def output(self, meta, items):
         if len(items) == 1:
-            return ir.Output(name=None, relation_id=items[0], meta=None)
-        return ir.Output(name=items[0], relation_id=items[1], meta=None)
+            return ir.Output(name=None, relation_id=items[0], meta=self.meta(meta))
+        return ir.Output(name=items[0], relation_id=items[1], meta=self.meta(meta))
 
     def abort(self, meta, items):
         if len(items) == 1:
-            return ir.Abort(name=None, relation_id=items[0], meta=None)
-        return ir.Abort(name=items[0], relation_id=items[1], meta=None)
+            return ir.Abort(name=None, relation_id=items[0], meta=self.meta(meta))
+        return ir.Abort(name=items[0], relation_id=items[1], meta=self.meta(meta))
 
     #
     # Logic
     #
     def fragment(self, meta, items):
-        return ir.Fragment(id=items[0], declarations=items[1:], meta=None)
+        return ir.Fragment(id=items[0], declarations=items[1:], meta=self.meta(meta))
 
     def fragment_id(self, meta, items):
-        return ir.FragmentId(id=items[0].encode(), meta=None)
+        return ir.FragmentId(id=items[0].encode(), meta=self.meta(meta))
 
     def declaration(self, meta, items):
         return items[0]
@@ -180,10 +183,10 @@ class LQPTransformer(Transformer):
         name = items[0]
         body = items[1]
         attrs = items[2] if len(items) > 2 else []
-        return ir.Def(name=name, body=body, attrs=attrs, meta=None)
+        return ir.Def(name=name, body=body, attrs=attrs, meta=self.meta(meta))
 
     def abstraction(self, meta, items):
-        return ir.Abstraction(vars=items[0], value=items[1], meta=None)
+        return ir.Abstraction(vars=items[0], value=items[1], meta=self.meta(meta))
 
     def vars(self, meta, items):
         return items
@@ -193,42 +196,42 @@ class LQPTransformer(Transformer):
     def formula(self, meta, items):
         return items[0]
     def true(self, _, meta):
-        return ir.Conjunction(args=[], meta=None)
+        return ir.Conjunction(args=[], meta=self.meta(meta))
 
     def false(self, _, meta):
-        return ir.Disjunction(args=[], meta=None)
+        return ir.Disjunction(args=[], meta=self.meta(meta))
 
     def exists(self, meta, items):
         # Create Abstraction for body directly here
-        body_abstraction = ir.Abstraction(vars=items[0], value=items[1], meta=None)
-        return ir.Exists(body=body_abstraction, meta=None)
+        body_abstraction = ir.Abstraction(vars=items[0], value=items[1], meta=self.meta(meta))
+        return ir.Exists(body=body_abstraction, meta=self.meta(meta))
 
     def reduce(self, meta, items):
-        return ir.Reduce(op=items[0], body=items[1], terms=items[2], meta=None)
+        return ir.Reduce(op=items[0], body=items[1], terms=items[2], meta=self.meta(meta))
 
     def conjunction(self, meta, items):
-        return ir.Conjunction(args=items, meta=None)
+        return ir.Conjunction(args=items, meta=self.meta(meta))
 
     def disjunction(self, meta, items):
-        return ir.Disjunction(args=items, meta=None)
+        return ir.Disjunction(args=items, meta=self.meta(meta))
 
     def not_(self, meta, items):
-        return ir.Not(arg=items[0], meta=None)
+        return ir.Not(arg=items[0], meta=self.meta(meta))
 
     def ffi(self, meta, items):
-        return ir.FFI(name=items[0], args=items[1], terms=items[2], meta=None)
+        return ir.FFI(name=items[0], args=items[1], terms=items[2], meta=self.meta(meta))
 
     def atom(self, meta, items):
-        return ir.Atom(name=items[0], terms=items[1:], meta=None)
+        return ir.Atom(name=items[0], terms=items[1:], meta=self.meta(meta))
 
     def pragma(self, meta, items):
-        return ir.Pragma(name=items[0], terms=items[1], meta=None)
+        return ir.Pragma(name=items[0], terms=items[1], meta=self.meta(meta))
 
     def relatom(self, meta, items):
-        return ir.RelAtom(name=items[0], terms=items[1:], meta=None)
+        return ir.RelAtom(name=items[0], terms=items[1:], meta=self.meta(meta))
 
     def cast(self, meta, items):
-        return ir.Cast(type=items[0], input=items[1], result=items[2], meta=None)
+        return ir.Cast(type=items[0], input=items[1], result=items[2], meta=self.meta(meta))
 
     #
     # Primitives
@@ -238,11 +241,11 @@ class LQPTransformer(Transformer):
             return items[0]
         raise TypeError(f"Unexpected primitive type: {type(items[0])}")
     def raw_primitive(self, meta, items):
-        return ir.Primitive(name=items[0], terms=items[1:], meta=None)
+        return ir.Primitive(name=items[0], terms=items[1:], meta=self.meta(meta))
     def _make_primitive(self, name_symbol, terms, meta):
          # Convert name symbol to string if needed, assuming self.name handles it
-         name_str = self.name([name_symbol]) if isinstance(name_symbol, str) else name_symbol
-         return ir.Primitive(name=name_str, terms=terms)
+         name_str = self.name([name_symbol], meta) if isinstance(name_symbol, str) else name_symbol
+         return ir.Primitive(name=name_str, terms=terms, meta=self.meta(meta))
     def eq(self, meta, items):
         return desugar_to_raw_primitive(self.name(meta, ["rel_primitive_eq"]), items)
     def lt(self, meta, items):
@@ -276,29 +279,29 @@ class LQPTransformer(Transformer):
         identifier = items[0]
         if len(items) > 1:
             rel_type_obj = items[1]
-            return ir.Var(name=identifier, type=rel_type_obj, meta=None)
+            return ir.Var(name=identifier, type=rel_type_obj, meta=self.meta(meta))
         else:
-            return ir.Var(name=identifier, type=ir.PrimitiveType.UNSPECIFIED, meta=None)
+            return ir.Var(name=identifier, type=ir.PrimitiveType.UNSPECIFIED, meta=self.meta(meta))
     def constant(self, meta, items):
         return items[0]
     def specialized_value(self, meta, items):
-        return ir.Specialized(value=items[0], meta=None)
+        return ir.Specialized(value=items[0], meta=self.meta(meta))
 
     def name(self, meta, items):
         return items[0]
 
     def attribute(self, meta, items):
-        return ir.Attribute(name=items[0], args=items[1:], meta=None)
+        return ir.Attribute(name=items[0], args=items[1:], meta=self.meta(meta))
 
     def relation_id(self, meta, items):
         ident = items[0] # Remove leading ':'
         if isinstance(ident, str):
             hash_val = int(hashlib.sha256(ident.encode()).hexdigest()[:16], 16) # First 64 bits of SHA-256
-            return ir.RelationId(id_low=hash_val, id_high=0, meta=None) # Simplified hashing
+            return ir.RelationId(id_low=hash_val, id_high=0, meta=self.meta(meta)) # Simplified hashing
         elif isinstance(ident, int):
             low = ident & 0xFFFFFFFFFFFFFFFF
             high = (ident >> 64) & 0xFFFFFFFFFFFFFFFF
-            return ir.RelationId(id_low=low, id_high=high, meta=None)
+            return ir.RelationId(id_low=low, id_high=high, meta=self.meta(meta))
 
     #
     # Primitive values
@@ -324,12 +327,12 @@ class LQPTransformer(Transformer):
 # size), whereas Earley is O(n³) in the worst case (though often O(n²) or better for
 # practical grammars). The LQP grammar is relatively complex but unambiguous, making
 # LALR(1)’s speed advantage appealing for a CLI tool where quick parsing matters.
-parser = Lark(grammar, parser="lalr")
+parser = Lark(grammar, parser="lalr", propagate_positions=True)
 
-def parse_lqp(text) -> ir.LqpNode:
+def parse_lqp(file, text) -> ir.LqpNode:
     """Parse LQP text and return an IR node that can be converted to protocol buffers"""
     tree = cast(ir.LqpNode, parser.parse(text))
-    lqp_node = LQPTransformer().transform(tree)
+    lqp_node = LQPTransformer(file).transform(tree)
     fill_types(lqp_node)
     return lqp_node
 
@@ -337,7 +340,7 @@ def process_file(filename, bin, json):
     with open(filename, "r") as f:
         lqp_text = f.read()
 
-    lqp = parse_lqp(lqp_text)
+    lqp = parse_lqp(filename, lqp_text)
     validate_lqp(lqp)
     lqp_proto = ir_to_proto(lqp)
     print(lqp_proto)

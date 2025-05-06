@@ -35,7 +35,7 @@ def test_parse_lqp(input_file):
             content = f.read()
 
         # Parse the file and check it returns a valid protobuf object
-        result = ir_to_proto(parse_lqp(content))
+        result = ir_to_proto(parse_lqp(input_file, content))
         assert result is not None, f"Failed to parse {input_file}"
 
         # Log the successful parse for verbose output
@@ -57,7 +57,7 @@ def test_valid_validator_files():
         with open(validator_file, "r") as f:
             content = f.read()
         try:
-            result = parse_lqp(content)
+            result = parse_lqp(validator_file, content)
             assert result is not None, f"Failed to parse {validator_file}"
             print(f"Successfully validated {validator_file}")
         except Exception as e:
@@ -80,7 +80,7 @@ def test_validator_failure_files(validator_file):
         return
     with open(file_path, "r") as f:
         content = f.read()
-    result = parse_lqp(content)
+    result = parse_lqp(validator_file, content)
     with pytest.raises(ValidationError) as exc_info:
         validate_lqp(result)
     error_message = str(exc_info.value)
