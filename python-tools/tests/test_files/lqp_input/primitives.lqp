@@ -13,7 +13,7 @@
 
           (def :day
             ([v::DAY]
-              (primitive :rel_primitive_parse_day #90))))))
+              (primitive :rel_primitive_parse_day #90 v))))))
 
     (reads
       (output :date :date)
