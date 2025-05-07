@@ -74,7 +74,7 @@ attrs: "(attrs" attribute* ")"
 attribute: "(attribute" name constant* ")"
 
 fragment_id: ":" SYMBOL
-relation_id: ":" SYMBOL
+relation_id: (":" SYMBOL) | NUMBER
 name: ":" SYMBOL
 
 specialized_value: "#" primitive_value
@@ -287,9 +287,15 @@ class LQPTransformer(Transformer):
         return ir.Attribute(name=items[0], args=items[1:])
 
     def relation_id(self, items):
-        symbol = items[0][1:] # Remove leading ':'
-        hash_val = int(hashlib.sha256(symbol.encode()).hexdigest()[:16], 16) # First 64 bits of SHA-256
-        return ir.RelationId(id_low=hash_val, id_high=0) # Simplified hashing
+        ident = items[0] # Remove leading ':'
+        print("relation id", items, ident)
+        if isinstance(ident, str):
+            hash_val = int(hashlib.sha256(ident.encode()).hexdigest()[:16], 16) # First 64 bits of SHA-256
+            return ir.RelationId(id_low=hash_val, id_high=0) # Simplified hashing
+        elif isinstance(ident, int):
+            low = ident & 0xFFFFFFFFFFFFFFFF
+            high = (ident >> 64) & 0xFFFFFFFFFFFFFFFF
+            return ir.RelationId(id_low=low, id_high=high)
 
     #
     # Primitive values
