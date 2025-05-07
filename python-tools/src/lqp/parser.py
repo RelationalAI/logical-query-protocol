@@ -240,24 +240,24 @@ class LQPTransformer(Transformer):
          name_str = self.name([name_symbol]) if isinstance(name_symbol, str) else name_symbol
          return ir.Primitive(name=name_str, terms=terms)
     def eq(self, items):
-        return desugar_to_raw_primitive(self.name(["rel_primitive_eq"]), items)
+        return desugar_to_raw_primitive(self.name(["rel_primitive_eq_monotype"]), items)
     def lt(self, items):
-        return desugar_to_raw_primitive(self.name(["rel_primitive_lt"]), items)
+        return desugar_to_raw_primitive(self.name(["rel_primitive_lt_monotype"]), items)
     def lt_eq(self, items):
-        return desugar_to_raw_primitive(self.name(["rel_primitive_lt_eq"]), items)
+        return desugar_to_raw_primitive(self.name(["rel_primitive_lt_eq_monotype"]), items)
     def gt(self, items):
-        return desugar_to_raw_primitive(self.name(["rel_primitive_gt"]), items)
+        return desugar_to_raw_primitive(self.name(["rel_primitive_gt_monotype"]), items)
     def gt_eq(self, items):
-        return desugar_to_raw_primitive(self.name(["rel_primitive_gt_eq"]), items)
+        return desugar_to_raw_primitive(self.name(["rel_primitive_gt_eq_monotype"]), items)
 
     def add(self, items):
-        return desugar_to_raw_primitive(self.name(["rel_primitive_add"]), items)
+        return desugar_to_raw_primitive(self.name(["rel_primitive_add_monotype"]), items)
     def minus(self, items):
-        return desugar_to_raw_primitive(self.name(["rel_primitive_subtract"]), items)
+        return desugar_to_raw_primitive(self.name(["rel_primitive_subtract_monotype"]), items)
     def multiply(self, items):
-        return desugar_to_raw_primitive(self.name(["rel_primitive_multiply"]), items)
+        return desugar_to_raw_primitive(self.name(["rel_primitive_multiply_monotype"]), items)
     def divide(self, items):
-        return desugar_to_raw_primitive(self.name(["rel_primitive_divide"]), items)
+        return desugar_to_raw_primitive(self.name(["rel_primitive_divide_monotype"]), items)
 
     def args(self, items):
         return items
