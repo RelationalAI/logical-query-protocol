@@ -1,3 +1,4 @@
+from lqp.proto.v1 import constants_pb2 as _constants_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
@@ -221,10 +222,12 @@ class Var(_message.Message):
     def __init__(self, name: _Optional[str] = ..., type: _Optional[_Union[RelType, _Mapping]] = ...) -> None: ...
 
 class Constant(_message.Message):
-    __slots__ = ("value",)
+    __slots__ = ("value", "val_type_value")
     VALUE_FIELD_NUMBER: _ClassVar[int]
+    VAL_TYPE_VALUE_FIELD_NUMBER: _ClassVar[int]
     value: PrimitiveValue
-    def __init__(self, value: _Optional[_Union[PrimitiveValue, _Mapping]] = ...) -> None: ...
+    val_type_value: _constants_pb2.RelValueTypeValue
+    def __init__(self, value: _Optional[_Union[PrimitiveValue, _Mapping]] = ..., val_type_value: _Optional[_Union[_constants_pb2.RelValueTypeValue, _Mapping]] = ...) -> None: ...
 
 class SpecializedValue(_message.Message):
     __slots__ = ("value",)

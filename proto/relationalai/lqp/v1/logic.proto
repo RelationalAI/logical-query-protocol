@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package relationalai.lqp.v1;
 
+import "relationalai/lqp/v1/constants.proto";
+
 message Declaration {
   oneof declaration_type {
     Def def = 1;
@@ -118,7 +120,10 @@ message Var {
 }
 
 message Constant {
-  PrimitiveValue value = 1; // Actual value instance
+  oneof constant_val {
+    PrimitiveValue value = 1; // Actual value instance
+    RelValueTypeValue val_type_value = 2;
+  }
 }
 
 message SpecializedValue {
