@@ -240,7 +240,7 @@ class LQPTransformer(Transformer):
          name_str = self.name([name_symbol]) if isinstance(name_symbol, str) else name_symbol
          return ir.Primitive(name=name_str, terms=terms)
     def eq(self, items):
-        return desugar_to_raw_primitive(self.name(["rel_primitive_eq_monotype"]), items)
+        return desugar_to_raw_primitive(self.name(["rel_primitive_eq"]), items)
     def lt(self, items):
         return desugar_to_raw_primitive(self.name(["rel_primitive_lt_monotype"]), items)
     def lt_eq(self, items):
