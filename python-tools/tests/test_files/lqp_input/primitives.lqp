@@ -9,7 +9,7 @@
 
           (def :decimal
             ([v::DECIMAL]
-              (primitive :rel_primitive_parse_decimal #64 #2 "3.14" v)))
+              (primitive :rel_primitive_parse_decimal #64 #4 "3.14" v)))
 
           (def :day
             ([v::DAY]
@@ -17,5 +17,4 @@
 
     (reads
       (output :date :date)
-      (output :decimal :decimal)
-      (output :day :day))))
+      (output :decimal :decimal))))
