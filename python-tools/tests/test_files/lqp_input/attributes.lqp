@@ -1,0 +1,15 @@
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :f1
+          (def :foo ([a::INT b::INT]
+            (or
+                (and (= a 1) (= b 2))
+                (and (= a 1) (= b 3))
+                (and (= a 1) (= b 4))))
+            (attrs (attribute :function))))))
+
+
+    (reads
+      (output :foo :foo))))
