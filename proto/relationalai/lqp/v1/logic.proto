@@ -105,7 +105,7 @@ message Cast {
 
 message RelTerm {
   oneof rel_term_type {
-    SpecializedValue specialized_value = 1;
+    PrimitiveValue specialized = 1;
     Term term = 2;
   }
 }
@@ -119,10 +119,6 @@ message Term {
 
 message Var {
   string name = 1; // Symbol as the variable's identifier
-}
-
-message SpecializedValue {
-  PrimitiveValue value = 1; // Actual value instance
 }
 
 message Attribute {
