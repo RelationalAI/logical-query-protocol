@@ -108,7 +108,7 @@ message RelTerm {
 message Term {
   oneof term_type {
     Var var = 1;
-    Constant constant = 2;
+    PrimitiveValue constant = 2;
   }
 }
 
@@ -117,17 +117,13 @@ message Var {
   RelType type = 2; // Reference to the type
 }
 
-message Constant {
-  PrimitiveValue value = 1; // Actual value instance
-}
-
 message SpecializedValue {
   PrimitiveValue value = 1; // Actual value instance
 }
 
 message Attribute {
   string name = 1;
-  repeated Constant args = 2;
+  repeated PrimitiveValue args = 2;
 }
 
 message RelationId {
