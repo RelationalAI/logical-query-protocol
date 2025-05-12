@@ -77,13 +77,21 @@ class Loop(_message.Message):
     body: _containers.RepeatedCompositeFieldContainer[Declaration]
     def __init__(self, temporal_var: _Optional[_Union[LoopIndex, _Mapping]] = ..., inits: _Optional[_Iterable[_Union[Def, _Mapping]]] = ..., body: _Optional[_Iterable[_Union[Declaration, _Mapping]]] = ...) -> None: ...
 
+class Binding(_message.Message):
+    __slots__ = ("var", "type")
+    VAR_FIELD_NUMBER: _ClassVar[int]
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    var: Var
+    type: RelType
+    def __init__(self, var: _Optional[_Union[Var, _Mapping]] = ..., type: _Optional[_Union[RelType, _Mapping]] = ...) -> None: ...
+
 class Abstraction(_message.Message):
     __slots__ = ("vars", "value")
     VARS_FIELD_NUMBER: _ClassVar[int]
     VALUE_FIELD_NUMBER: _ClassVar[int]
-    vars: _containers.RepeatedCompositeFieldContainer[Var]
+    vars: _containers.RepeatedCompositeFieldContainer[Binding]
     value: Formula
-    def __init__(self, vars: _Optional[_Iterable[_Union[Var, _Mapping]]] = ..., value: _Optional[_Union[Formula, _Mapping]] = ...) -> None: ...
+    def __init__(self, vars: _Optional[_Iterable[_Union[Binding, _Mapping]]] = ..., value: _Optional[_Union[Formula, _Mapping]] = ...) -> None: ...
 
 class Formula(_message.Message):
     __slots__ = ("exists", "reduce", "conjunction", "disjunction", "ffi", "atom", "pragma", "primitive", "rel_atom", "cast")
@@ -213,12 +221,10 @@ class Term(_message.Message):
     def __init__(self, var: _Optional[_Union[Var, _Mapping]] = ..., constant: _Optional[_Union[Constant, _Mapping]] = ...) -> None: ...
 
 class Var(_message.Message):
-    __slots__ = ("name", "type")
+    __slots__ = ("name",)
     NAME_FIELD_NUMBER: _ClassVar[int]
-    TYPE_FIELD_NUMBER: _ClassVar[int]
     name: str
-    type: RelType
-    def __init__(self, name: _Optional[str] = ..., type: _Optional[_Union[RelType, _Mapping]] = ...) -> None: ...
+    def __init__(self, name: _Optional[str] = ...) -> None: ...
 
 class Constant(_message.Message):
     __slots__ = ("value",)
