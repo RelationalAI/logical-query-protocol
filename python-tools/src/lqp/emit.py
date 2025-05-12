@@ -48,7 +48,7 @@ def convert_constant(c: ir.Constant) -> logic_pb2.Constant:
     return logic_pb2.Constant(value=convert_primitive_value(c))
 
 def convert_var(v: ir.Var) -> logic_pb2.Var:
-    return logic_pb2.Var(name=v.name, type=convert_rel_type(v.type))
+    return logic_pb2.Var(name=v.name)
 
 def convert_term(t: ir.Term) -> logic_pb2.Term:
     if isinstance(t, ir.Var):
@@ -76,8 +76,10 @@ def convert_attribute(attr: ir.Attribute) -> logic_pb2.Attribute:
     )
 
 def convert_abstraction(abst: ir.Abstraction) -> logic_pb2.Abstraction:
+    bindings = [logic_pb2.Binding(var=logic_pb2.Var(name=var_tuple[0].name), type=convert_rel_type(var_tuple[1]))
+                for var_tuple in abst.vars]
     return logic_pb2.Abstraction(
-        vars=[convert_var(v) for v in abst.vars],
+        vars=bindings,
         value=convert_formula(abst.value)
     )
 

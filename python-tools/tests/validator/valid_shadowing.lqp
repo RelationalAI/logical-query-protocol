@@ -4,4 +4,4 @@
     ([x::INT]
       (exists [x::STRING]
          (and
-           (primitive :check_string x::STRING))))))
+           (primitive :check_string x))))))

@@ -5,7 +5,7 @@ from lark import Lark, Transformer, v_args
 from typing import cast
 import lqp.ir as ir
 from lqp.emit import ir_to_proto
-from lqp.validator import validate_lqp, fill_types
+from lqp.validator import validate_lqp
 from google.protobuf.json_format import MessageToJson
 
 grammar = """
@@ -32,11 +32,12 @@ fragment: "(fragment" fragment_id declaration* ")"
 declaration: def_
 def_: "(def" relation_id abstraction attrs? ")"
 
-abstraction: "(" vars formula ")"
-vars: "[" var* "]"
+abstraction: "(" bindings formula ")"
+bindings: "[" binding* "]"
+binding: SYMBOL "::" rel_type
 
 formula: exists | reduce | conjunction | disjunction | not_ | ffi | atom | pragma | primitive | true | false | relatom | cast
-exists: "(exists" vars formula ")"
+exists: "(exists" bindings formula ")"
 reduce: "(reduce" abstraction abstraction terms ")"
 conjunction: "(and" formula* ")"
 disjunction: "(or" formula* ")"
@@ -67,7 +68,7 @@ divide: "(/" term term term ")"
 
 relterm: specialized_value | term
 term: var | constant
-var: SYMBOL "::" rel_type | SYMBOL
+var: SYMBOL
 constant: primitive_value
 
 attrs: "(attrs" attribute* ")"
@@ -188,7 +189,13 @@ class LQPTransformer(Transformer):
     def abstraction(self, meta, items):
         return ir.Abstraction(vars=items[0], value=items[1], meta=self.meta(meta))
 
+    def binding(self, meta, items):
+        name, rel_type = items
+        return (ir.Var(name=name, meta=self.meta(meta)), rel_type)
+
     def vars(self, meta, items):
+        return items
+    def bindings(self, meta, items):
         return items
     def attrs(self, meta, items):
         return items
@@ -276,13 +283,8 @@ class LQPTransformer(Transformer):
     def term(self, meta, items):
         return items[0]
     def var(self, meta, items):
-        identifier = items[0]
-        if len(items) > 1:
-            rel_type_obj = items[1]
-            return ir.Var(name=identifier, type=rel_type_obj, meta=self.meta(meta))
-        else:
-            return ir.Var(name=identifier, type=ir.PrimitiveType.UNSPECIFIED, meta=self.meta(meta))
-    def constant(self, meta, items):
+        return ir.Var(name=items[0], meta=self.meta(meta))
+    def constant(self, items):
         return items[0]
     def specialized_value(self, meta, items):
         return ir.Specialized(value=items[0], meta=self.meta(meta))
@@ -333,7 +335,6 @@ def parse_lqp(file, text) -> ir.LqpNode:
     """Parse LQP text and return an IR node that can be converted to protocol buffers"""
     tree = cast(ir.LqpNode, parser.parse(text))
     lqp_node = LQPTransformer(file).transform(tree)
-    fill_types(lqp_node)
     return lqp_node
 
 def process_file(filename, bin, json):
