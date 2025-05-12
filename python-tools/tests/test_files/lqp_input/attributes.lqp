@@ -5,10 +5,12 @@
         (fragment :f1
           (def :foo ([a::INT b::INT]
             (or
-                (and (= a 1) (= b 2))
-                (and (= a 1) (= b 3))
-                (and (= a 1) (= b 4))))
-            (attrs (attribute :function))))))
+              (and (= a 1) (= b 2))
+              (and (= a 1) (= b 3))
+              (and (= a 1) (= b 4))))
+            (attrs
+              (attribute :function)
+              (attribute :inspect "normalizer" 2))))))
 
 
     (reads
