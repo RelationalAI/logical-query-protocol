@@ -32,12 +32,12 @@ class UnusedVariableVisitor(LqpVisitor):
         if self.scopes:
             self.scopes[-1][0].add(var_name)
 
-    def _mark_var_used(self, var_name: str):
+    def _mark_var_used(self, var: ir.Var):
         for declared, used in reversed(self.scopes):
-            if var_name in declared:
-                used.add(var_name)
+            if var.name in declared:
+                used.add(var.name)
                 return
-        raise ValidationError(f"Undeclared variable used: '{var_name}'")
+        raise ValidationError(f"Undeclared variable used at {var.meta}: '{var.name}'")
 
     def visit_Abstraction(self, node: ir.Abstraction):
         self.scopes.append((set(), set()))
@@ -51,7 +51,7 @@ class UnusedVariableVisitor(LqpVisitor):
                 raise ValidationError(f"Unused variable declared: '{var_name}'")
 
     def visit_Var(self, node: ir.Var, *args: Any):
-        self._mark_var_used(node.name)
+        self._mark_var_used(node)
 
 def validate_lqp(lqp: ir.LqpNode):
     UnusedVariableVisitor().visit(lqp)
