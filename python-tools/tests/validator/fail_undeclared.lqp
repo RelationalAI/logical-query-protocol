@@ -1,7 +1,7 @@
-;; ERROR: Undeclared variable used at fail_undeclared.lqp:7:20: 'some_limit'
+;; ERROR: Undeclared variable used at fail_undeclared.lqp:7:15: 'some_limit'
 (fragment :frag
   (def :person
     ([name::STRING age::INT] ;; Declare name, age
      (and
-       (atom :source name::STRING age::INT) ;; OK: name, age are declared
-       (= age::INT some_limit::INT))))) ;; FAIL: some_limit is not declared
+       (atom :source name age) ;; OK: name, age are declared
+       (= age some_limit))))) ;; FAIL: some_limit is not declared

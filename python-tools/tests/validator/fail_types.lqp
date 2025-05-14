@@ -1,7 +1,0 @@
-;; ERROR: Type mismatch for variable 'value' at fail_types.lqp:7:28: Declared as INT, used as STRING
-(fragment :frag
-  (def :my_relation
-    ([key::STRING value::INT]
-     (and
-       (= key::STRING "test")
-       (primitive :process value::STRING))))) ;; Using value as STRING when it was declared as INT

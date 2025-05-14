@@ -21,9 +21,14 @@ message Loop {
   repeated Declaration body = 3;
 }
 
+message Binding {
+  Var var = 1;
+  RelType type = 2;
+}
+
 // Abstraction and related types
 message Abstraction {
-  repeated Var vars = 1;
+  repeated Binding vars = 1;
   Formula value = 2;
 }
 
@@ -114,7 +119,6 @@ message Term {
 
 message Var {
   string name = 1; // Symbol as the variable's identifier
-  RelType type = 2; // Reference to the type
 }
 
 message Constant {

@@ -48,10 +48,10 @@ class Loop(Declaration):
     inits: Sequence[Def]
     body: Sequence[Declaration]
 
-# Abstraction(vars::Var[], value::Formula)
+# Abstraction(vars::Binding[], value::Formula)
 @dataclass(frozen=True)
 class Abstraction(LqpNode):
-    vars: Sequence[Var]
+    vars: Sequence[Tuple[Var, RelType]]
     value: Formula
 
 # Formula := Exists | Reduce | Conjunction | Disjunction | Not | FFI | Atom | Pragma | Primitive | TrueVal | FalseVal | RelAtom | Cast
@@ -124,11 +124,10 @@ class Cast(Formula):
     input: Term
     result: Term
 
-# Var(name::string, type::RelType)
+# Var(name::string)
 @dataclass(frozen=True)
 class Var(LqpNode):
     name: str
-    type: RelType
 
 # UInt128(low::fixed64, high::fixed64)
 @dataclass(frozen=True)
