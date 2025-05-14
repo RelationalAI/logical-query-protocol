@@ -47,14 +47,14 @@ class VariableScopeVisitor(LqpVisitor):
     def _check_var_usage(self, var: ir.Var):
         declared_type: Union[ir.RelType, None] = self._get_type(var.name)
         if declared_type is None and not self.fill_types:
-            raise ValidationError(f"Undeclared variable used: '{var.name}'")
+            raise ValidationError(f"Undeclared variable used at {var.meta}: '{var.name}'")
         if var.type == ir.PrimitiveType.UNSPECIFIED and self.fill_types:
             object.__setattr__(var, 'type', declared_type)
         elif var.type != declared_type and not self.fill_types:
             type_name_declared = self._get_type_name(cast(ir.RelType, declared_type))
             type_name_used = self._get_type_name(var.type)
             raise ValidationError(
-                f"Type mismatch for variable '{var.name}': "
+                f"Type mismatch for variable '{var.name}' at {var.meta}: "
                 f"Declared as {type_name_declared}, used as {type_name_used}"
             )
 

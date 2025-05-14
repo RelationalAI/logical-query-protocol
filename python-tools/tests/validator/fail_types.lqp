@@ -1,4 +1,4 @@
-;; ERROR: Type mismatch for variable 'value': Declared as INT, used as STRING
+;; ERROR: Type mismatch for variable 'value' at fail_types.lqp:7:28: Declared as INT, used as STRING
 (fragment :frag
   (def :my_relation
     ([key::STRING value::INT]

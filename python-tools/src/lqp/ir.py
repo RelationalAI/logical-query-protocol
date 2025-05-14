@@ -1,7 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Union, Tuple, Sequence
+from typing import Union, Tuple, Sequence, Optional, Dict
 import datetime as dt
 
 # Tree representation of LQP. Each non-terminal (those with more than one
@@ -9,11 +9,20 @@ import datetime as dt
 # which are children of LqpNode. PrimitiveType and PrimitiveValue are
 # exceptions. PrimitiveType is an enum and PrimitiveValue is just a value.
 
+@dataclass(frozen=True)
+class SourceInfo:
+    file: str
+    line: int
+    column: int
+
+    def __str__(self) -> str:
+        return f"{self.file}:{self.line}:{self.column}"
+
 # --- Logic Types ---
 
 @dataclass(frozen=True)
 class LqpNode:
-    pass
+    meta: Optional[SourceInfo]
 
 # Declaration := Def | Loop
 @dataclass(frozen=True)
