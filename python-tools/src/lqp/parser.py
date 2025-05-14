@@ -284,7 +284,7 @@ class LQPTransformer(Transformer):
         return items[0]
     def var(self, meta, items):
         return ir.Var(name=items[0], meta=self.meta(meta))
-    def constant(self, items):
+    def constant(self, meta, items):
         return items[0]
     def specialized_value(self, meta, items):
         return ir.Specialized(value=items[0], meta=self.meta(meta))
