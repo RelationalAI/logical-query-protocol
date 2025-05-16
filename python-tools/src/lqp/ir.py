@@ -157,11 +157,13 @@ class Attribute(LqpNode):
     name: str
     args: Sequence[Constant]
 
-# RelationId(id_low::fixed64, id_high::fixed64)
+# RelationId(id::UInt128)
 @dataclass(frozen=True)
 class RelationId(LqpNode):
-    id_low: int
-    id_high: int
+    id: int
+    def __post_init__(self):
+        if self.id < 0 or self.id > 0xffffffffffffffffffffffffffffffff:
+            raise ValueError("RelationId constructed with out of range (UInt128) number: {}".format(self.id))
 
 class PrimitiveType(Enum):
     UNSPECIFIED = 0

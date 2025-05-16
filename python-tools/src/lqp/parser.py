@@ -298,12 +298,11 @@ class LQPTransformer(Transformer):
     def relation_id(self, meta, items):
         ident = items[0] # Remove leading ':'
         if isinstance(ident, str):
-            hash_val = int(hashlib.sha256(ident.encode()).hexdigest()[:16], 16) # First 64 bits of SHA-256
-            return ir.RelationId(id_low=hash_val, id_high=0, meta=self.meta(meta)) # Simplified hashing
+            # First 64 bits of SHA-256 as the id
+            id_val = int(hashlib.sha256(ident.encode()).hexdigest()[:16], 16)
+            return ir.RelationId(id=id_val, meta=self.meta(meta))
         elif isinstance(ident, int):
-            low = ident & 0xFFFFFFFFFFFFFFFF
-            high = (ident >> 64) & 0xFFFFFFFFFFFFFFFF
-            return ir.RelationId(id_low=low, id_high=high, meta=self.meta(meta))
+            return ir.RelationId(id=ident, meta=self.meta(meta))
 
     #
     # Primitive values
