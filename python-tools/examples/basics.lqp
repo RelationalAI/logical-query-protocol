@@ -2,7 +2,7 @@
   ;; Nullaries
   (def :false ([] (false)))
   (def :true ([] (true)))
-
+  
   ;; Variables and constants
   (def :intval ([x::INT] (primitive :rel_primitive_eq x::INT 0)))
   (def :floatval ([x::FLOAT] (primitive :rel_primitive_eq x::FLOAT 1.0)))
@@ -13,13 +13,13 @@
   (def :add ([v::INT] (+ 1 1 v::INT)))
 
   (def :atom ([x::INT y::INT z::INT] (atom :edge x::INT y::INT z::INT)))
-
+  
   (def :disjunction
     ([x::STRING]
       (or
         (= x::STRING "hello")
         (= x::STRING "world"))))
-
+  
   (def :conjunction
     ([x::INT y::INT z::INT]
       (and
