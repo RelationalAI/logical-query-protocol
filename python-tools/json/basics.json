@@ -1,0 +1,41 @@
+{
+  "id": {
+    "id": "YmFzaWNz"
+  },
+  "declarations": [
+    {
+      "def": {
+        "name": {
+          "id_low": "3181428560199927439"
+        },
+        "body": {
+          "vars": [
+            {
+              "name": "x",
+              "type": {
+                "primitive_type": "PRIMITIVE_TYPE_INT"
+              }
+            }
+          ],
+          "value": {
+            "rel_atom": {
+              "terms": [
+                {
+                  "term": {
+                    "var": {
+                      "name": "x",
+                      "type": {
+                        "primitive_type": "PRIMITIVE_TYPE_INT"
+                      }
+                    }
+                  }
+                }
+              ],
+              "name": "hello"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

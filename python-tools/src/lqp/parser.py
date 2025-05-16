@@ -74,7 +74,7 @@ constant: primitive_value
 attrs: "(attrs" attribute* ")"
 attribute: "(attribute" name constant* ")"
 
-fragment_id: ":" SYMBOL
+fragment_id: ":" SYMBOL | "[" NUMBER* "]"
 relation_id: (":" SYMBOL) | NUMBER
 name: ":" SYMBOL
 
@@ -176,7 +176,10 @@ class LQPTransformer(Transformer):
         return ir.Fragment(id=items[0], declarations=items[1:], meta=self.meta(meta))
 
     def fragment_id(self, meta, items):
-        return ir.FragmentId(id=items[0].encode(), meta=self.meta(meta))
+        if isinstance(items[0], str) :
+            return ir.FragmentId(id=items[0].encode(), meta=self.meta(meta))
+        else :
+            return ir.FragmentId(id=bytes(items), meta=self.meta(meta))
 
     def declaration(self, meta, items):
         return items[0]
