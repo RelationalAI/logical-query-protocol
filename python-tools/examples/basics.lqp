@@ -1,3 +1,29 @@
 (fragment :basics
-  (def :foo ([x::INT] (relatom :hello x)))
-)
+  ;; Nullaries
+  (def :false ([] (false)))
+  (def :true ([] (true)))
+
+  ;; Variables and constants
+  (def :intval ([x::INT] (primitive :rel_primitive_eq x::INT 0)))
+  (def :floatval ([x::FLOAT] (primitive :rel_primitive_eq x::FLOAT 1.0)))
+  (def :stringval ([x::STRING] (primitive :rel_primitive_eq x::STRING "hello")))
+  (def :sugar ([x::STRING] (= x::STRING "hello world")))
+
+  ;; One-plus-one
+  (def :add ([v::INT] (+ 1 1 v::INT)))
+
+  (def :atom ([x::INT y::INT z::INT] (atom :edge x::INT y::INT z::INT)))
+
+  (def :disjunction
+    ([x::STRING]
+      (or
+        (= x::STRING "hello")
+        (= x::STRING "world"))))
+
+  (def :conjunction
+    ([x::INT y::INT z::INT]
+      (and
+        (atom :edge x::INT y::INT z::INT)
+        (atom :edge y::INT z::INT x::INT)
+        (atom :edge z::INT x::INT y::INT))))
+  )
