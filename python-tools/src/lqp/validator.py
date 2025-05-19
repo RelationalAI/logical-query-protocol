@@ -1,5 +1,6 @@
 import lqp.ir as ir
-from typing import Union, Dict, Any, List, Tuple, Set, cast
+from typing import Any, List, Tuple, Set
+from dataclasses import is_dataclass, fields
 
 class ValidationError(Exception):
     pass
@@ -11,8 +12,10 @@ class LqpVisitor:
         return visitor_method(node, *args)
 
     def generic_visit(self, node: ir.LqpNode, *args: Any) -> None:
-        for name, _ in node.__dataclass_fields__.items():
-            value = getattr(node, name)
+        if not is_dataclass(node):
+            raise ValidationError(f"Expected dataclass, got {type(node)}")
+        for field in fields(node):
+            value = getattr(node, field.name)
             if isinstance(value, ir.LqpNode):
                 self.visit(value, *args)
             elif isinstance(value, (list, tuple)):
@@ -20,7 +23,7 @@ class LqpVisitor:
                     if isinstance(item, ir.LqpNode):
                         self.visit(item, *args)
             elif isinstance(value, dict):
-                 for key, item in value.items():
+                for item in value.values():
                     if isinstance(item, ir.LqpNode):
                         self.visit(item, *args)
 
