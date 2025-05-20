@@ -34,7 +34,7 @@ def convert_uint128(val: ir.UInt128) -> logic_pb2.UInt128:
     high = (val.value >> 64) & 0xFFFFFFFFFFFFFFFF
     return logic_pb2.UInt128(low=low, high=high)
 
-def convert_primitive_value(pv: ir.PrimitiveValue) -> logic_pb2.Value:
+def convert_value(pv: ir.PrimitiveValue) -> logic_pb2.Value:
     if isinstance(pv, str):
         return logic_pb2.Value(string_value=pv)
     elif isinstance(pv, int):
@@ -53,11 +53,11 @@ def convert_term(t: ir.Term) -> logic_pb2.Term:
     if isinstance(t, ir.Var):
         return logic_pb2.Term(var=convert_var(t))
     else:
-        return logic_pb2.Term(constant=convert_primitive_value(t))
+        return logic_pb2.Term(constant=convert_value(t))
 
 def convert_relterm(t: ir.RelTerm) -> logic_pb2.RelTerm:
     if isinstance(t, ir.Specialized):
-        return logic_pb2.RelTerm(specialized_value=convert_primitive_value(t.value))
+        return logic_pb2.RelTerm(specialized_value=convert_value(t.value))
     else:
         return logic_pb2.RelTerm(term=convert_term(t))
 
@@ -72,7 +72,7 @@ def convert_fragment_id(fid: ir.FragmentId) -> fragments_pb2.FragmentId:
 def convert_attribute(attr: ir.Attribute) -> logic_pb2.Attribute:
     return logic_pb2.Attribute(
         name=attr.name,
-        args=[convert_primitive_value(arg) for arg in attr.args]
+        args=[convert_value(arg) for arg in attr.args]
 )
 
 def convert_abstraction(abst: ir.Abstraction) -> logic_pb2.Abstraction:
