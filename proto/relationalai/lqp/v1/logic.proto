@@ -16,9 +16,8 @@ message Def {
 }
 
 message Loop {
-  LoopIndex temporal_var = 1;
-  repeated Def inits = 2;
-  repeated Declaration body = 3;
+  repeated Def inits = 1;
+  repeated Declaration body = 2;
 }
 
 message Binding {
@@ -105,7 +104,7 @@ message Cast {
 
 message RelTerm {
   oneof rel_term_type {
-    SpecializedValue specialized_value = 1;
+    Value specialized_value = 1;
     Term term = 2;
   }
 }
@@ -113,34 +112,22 @@ message RelTerm {
 message Term {
   oneof term_type {
     Var var = 1;
-    Constant constant = 2;
+    Value constant = 2;
   }
 }
 
 message Var {
-  string name = 1; // Symbol as the variable's identifier
-}
-
-message Constant {
-  PrimitiveValue value = 1; // Actual value instance
-}
-
-message SpecializedValue {
-  PrimitiveValue value = 1; // Actual value instance
+  string name = 1;
 }
 
 message Attribute {
   string name = 1;
-  repeated Constant args = 2;
+  repeated Value args = 2;
 }
 
 message RelationId {
   fixed64 id_low = 1; // Lower 64 bits of UInt128
   fixed64 id_high = 2; // Upper 64 bits of UInt128
-}
-
-message LoopIndex {
-  string name = 1; // Assuming LoopIndex is a named identifier
 }
 
 message RelType {
@@ -177,7 +164,7 @@ enum RelValueType {
   REL_VALUE_TYPE_YEAR = 13;
 }
 
-message PrimitiveValue {
+message Value {
   oneof value {
     string string_value = 1;
     int64 int_value = 2;

@@ -68,14 +68,12 @@ class Def(_message.Message):
     def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
 
 class Loop(_message.Message):
-    __slots__ = ("temporal_var", "inits", "body")
-    TEMPORAL_VAR_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("inits", "body")
     INITS_FIELD_NUMBER: _ClassVar[int]
     BODY_FIELD_NUMBER: _ClassVar[int]
-    temporal_var: LoopIndex
     inits: _containers.RepeatedCompositeFieldContainer[Def]
     body: _containers.RepeatedCompositeFieldContainer[Declaration]
-    def __init__(self, temporal_var: _Optional[_Union[LoopIndex, _Mapping]] = ..., inits: _Optional[_Iterable[_Union[Def, _Mapping]]] = ..., body: _Optional[_Iterable[_Union[Declaration, _Mapping]]] = ...) -> None: ...
+    def __init__(self, inits: _Optional[_Iterable[_Union[Def, _Mapping]]] = ..., body: _Optional[_Iterable[_Union[Declaration, _Mapping]]] = ...) -> None: ...
 
 class Binding(_message.Message):
     __slots__ = ("var", "type")
@@ -208,17 +206,17 @@ class RelTerm(_message.Message):
     __slots__ = ("specialized_value", "term")
     SPECIALIZED_VALUE_FIELD_NUMBER: _ClassVar[int]
     TERM_FIELD_NUMBER: _ClassVar[int]
-    specialized_value: SpecializedValue
+    specialized_value: Value
     term: Term
-    def __init__(self, specialized_value: _Optional[_Union[SpecializedValue, _Mapping]] = ..., term: _Optional[_Union[Term, _Mapping]] = ...) -> None: ...
+    def __init__(self, specialized_value: _Optional[_Union[Value, _Mapping]] = ..., term: _Optional[_Union[Term, _Mapping]] = ...) -> None: ...
 
 class Term(_message.Message):
     __slots__ = ("var", "constant")
     VAR_FIELD_NUMBER: _ClassVar[int]
     CONSTANT_FIELD_NUMBER: _ClassVar[int]
     var: Var
-    constant: Constant
-    def __init__(self, var: _Optional[_Union[Var, _Mapping]] = ..., constant: _Optional[_Union[Constant, _Mapping]] = ...) -> None: ...
+    constant: Value
+    def __init__(self, var: _Optional[_Union[Var, _Mapping]] = ..., constant: _Optional[_Union[Value, _Mapping]] = ...) -> None: ...
 
 class Var(_message.Message):
     __slots__ = ("name",)
@@ -226,25 +224,13 @@ class Var(_message.Message):
     name: str
     def __init__(self, name: _Optional[str] = ...) -> None: ...
 
-class Constant(_message.Message):
-    __slots__ = ("value",)
-    VALUE_FIELD_NUMBER: _ClassVar[int]
-    value: PrimitiveValue
-    def __init__(self, value: _Optional[_Union[PrimitiveValue, _Mapping]] = ...) -> None: ...
-
-class SpecializedValue(_message.Message):
-    __slots__ = ("value",)
-    VALUE_FIELD_NUMBER: _ClassVar[int]
-    value: PrimitiveValue
-    def __init__(self, value: _Optional[_Union[PrimitiveValue, _Mapping]] = ...) -> None: ...
-
 class Attribute(_message.Message):
     __slots__ = ("name", "args")
     NAME_FIELD_NUMBER: _ClassVar[int]
     ARGS_FIELD_NUMBER: _ClassVar[int]
     name: str
-    args: _containers.RepeatedCompositeFieldContainer[Constant]
-    def __init__(self, name: _Optional[str] = ..., args: _Optional[_Iterable[_Union[Constant, _Mapping]]] = ...) -> None: ...
+    args: _containers.RepeatedCompositeFieldContainer[Value]
+    def __init__(self, name: _Optional[str] = ..., args: _Optional[_Iterable[_Union[Value, _Mapping]]] = ...) -> None: ...
 
 class RelationId(_message.Message):
     __slots__ = ("id_low", "id_high")
@@ -254,12 +240,6 @@ class RelationId(_message.Message):
     id_high: int
     def __init__(self, id_low: _Optional[int] = ..., id_high: _Optional[int] = ...) -> None: ...
 
-class LoopIndex(_message.Message):
-    __slots__ = ("name",)
-    NAME_FIELD_NUMBER: _ClassVar[int]
-    name: str
-    def __init__(self, name: _Optional[str] = ...) -> None: ...
-
 class RelType(_message.Message):
     __slots__ = ("primitive_type", "value_type")
     PRIMITIVE_TYPE_FIELD_NUMBER: _ClassVar[int]
@@ -268,7 +248,7 @@ class RelType(_message.Message):
     value_type: RelValueType
     def __init__(self, primitive_type: _Optional[_Union[PrimitiveType, str]] = ..., value_type: _Optional[_Union[RelValueType, str]] = ...) -> None: ...
 
-class PrimitiveValue(_message.Message):
+class Value(_message.Message):
     __slots__ = ("string_value", "int_value", "float_value", "uint128_value")
     STRING_VALUE_FIELD_NUMBER: _ClassVar[int]
     INT_VALUE_FIELD_NUMBER: _ClassVar[int]
