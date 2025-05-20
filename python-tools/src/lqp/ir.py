@@ -36,15 +36,10 @@ class Def(Declaration):
     body: Abstraction
     attrs: Sequence[Attribute]
 
-# LoopIndex(name::string)
-@dataclass(frozen=True)
-class LoopIndex(LqpNode):
-    name: str
-
 # Loop(temporal_var::LoopIndex, inits::Def[], body::Declaration[])
 @dataclass(frozen=True)
 class Loop(Declaration):
-    temporal_var: LoopIndex
+    temporal_var: str
     inits: Sequence[Def]
     body: Sequence[Declaration]
 
@@ -132,8 +127,7 @@ class Var(LqpNode):
 # UInt128(low::fixed64, high::fixed64)
 @dataclass(frozen=True)
 class UInt128(LqpNode):
-    low: int
-    high: int
+    value: int
 
 # PrimitiveValue union type for Constant
 PrimitiveValue = Union[str, int, float, UInt128]
