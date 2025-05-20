@@ -138,7 +138,6 @@ def convert_def(d: ir.Def) -> logic_pb2.Def:
 
 def convert_loop(l: ir.Loop) -> logic_pb2.Loop:
     return logic_pb2.Loop(
-        temporal_var=l.temporal_var,
         inits=[convert_def(init_def) for init_def in l.inits],
         body=[convert_declaration(decl) for decl in l.body]
     )

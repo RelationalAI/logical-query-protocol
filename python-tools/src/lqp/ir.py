@@ -36,10 +36,9 @@ class Def(Declaration):
     body: Abstraction
     attrs: Sequence[Attribute]
 
-# Loop(temporal_var::LoopIndex, inits::Def[], body::Declaration[])
+# Loop(inits::Def[], body::Declaration[])
 @dataclass(frozen=True)
 class Loop(Declaration):
-    temporal_var: str
     inits: Sequence[Def]
     body: Sequence[Declaration]
 

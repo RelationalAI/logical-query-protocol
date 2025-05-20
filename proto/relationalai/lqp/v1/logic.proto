@@ -16,9 +16,8 @@ message Def {
 }
 
 message Loop {
-  string temporal_var = 1;
-  repeated Def inits = 2;
-  repeated Declaration body = 3;
+  repeated Def inits = 1;
+  repeated Declaration body = 2;
 }
 
 message Binding {
