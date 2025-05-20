@@ -2,7 +2,6 @@ import argparse
 import os
 import hashlib
 from lark import Lark, Transformer, v_args
-from typing import cast
 import lqp.ir as ir
 from lqp.emit import ir_to_proto
 from lqp.validator import validate_lqp
@@ -332,9 +331,8 @@ parser = Lark(grammar, parser="lalr", propagate_positions=True)
 
 def parse_lqp(file, text) -> ir.LqpNode:
     """Parse LQP text and return an IR node that can be converted to protocol buffers"""
-    tree = cast(ir.LqpNode, parser.parse(text))
-    lqp_node = LQPTransformer(file).transform(tree)
-    return lqp_node
+    tree = parser.parse(text)
+    return LQPTransformer(file).transform(tree)
 
 def process_file(filename, bin, json):
     with open(filename, "r") as f:

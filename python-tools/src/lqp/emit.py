@@ -246,7 +246,5 @@ def ir_to_proto(node: ir.LqpNode) -> Union[
         return convert_declaration(node)
     elif isinstance(node, ir.Formula):
         return convert_formula(node)
-    elif isinstance(node, ir.Term):
-        return convert_term(node)
     else:
         raise TypeError(f"Unsupported top-level IR node type for conversion: {type(node)}")
