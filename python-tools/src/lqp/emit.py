@@ -30,7 +30,9 @@ def convert_rel_type(rt: ir.RelType) -> logic_pb2.RelType:
         return logic_pb2.RelType(primitive_type=logic_pb2.PRIMITIVE_TYPE_UNSPECIFIED)
 
 def convert_uint128(val: ir.UInt128) -> logic_pb2.UInt128:
-    return logic_pb2.UInt128(low=val.low, high=val.high)
+    low = val.value & 0xFFFFFFFFFFFFFFFF
+    high = (val.value >> 64) & 0xFFFFFFFFFFFFFFFF
+    return logic_pb2.UInt128(low=low, high=high)
 
 def convert_primitive_value(pv: ir.PrimitiveValue) -> logic_pb2.PrimitiveValue:
     if isinstance(pv, str):
@@ -131,9 +133,6 @@ def convert_formula(f: ir.Formula) -> logic_pb2.Formula:
     else:
         raise TypeError(f"Unsupported Formula type: {type(f)}")
 
-def convert_loop_index(li: ir.LoopIndex) -> logic_pb2.LoopIndex:
-    return logic_pb2.LoopIndex(name=li.name)
-
 def convert_def(d: ir.Def) -> logic_pb2.Def:
     return logic_pb2.Def(
         name=convert_relation_id(d.name),
@@ -143,7 +142,7 @@ def convert_def(d: ir.Def) -> logic_pb2.Def:
 
 def convert_loop(l: ir.Loop) -> logic_pb2.Loop:
     return logic_pb2.Loop(
-        temporal_var=convert_loop_index(l.temporal_var),
+        temporal_var=logic_pb2.LoopIndex(name=l.temporal_var),
         inits=[convert_def(init_def) for init_def in l.inits],
         body=[convert_declaration(decl) for decl in l.body]
     )
