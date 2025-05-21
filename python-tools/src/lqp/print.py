@@ -66,24 +66,24 @@ class Unstyled(StyleConfig):
 class Styled(StyleConfig):
     def SIND(self, ): return "    "
 
-    def LPAREN(self, ): return Style.DIM + "(" + Style.RESET_ALL
-    def RPAREN(self, ): return Style.DIM + ")" + Style.RESET_ALL
+    def LPAREN(self, ): return str(Style.DIM) + "(" + str(Style.RESET_ALL)
+    def RPAREN(self, ): return str(Style.DIM) + ")" + str(Style.RESET_ALL)
 
-    def LBRACKET(self, ): return Style.DIM + "[" + Style.RESET_ALL
-    def RBRACKET(self, ): return Style.DIM + "]" + Style.RESET_ALL
+    def LBRACKET(self, ): return str(Style.DIM) + "[" + str(Style.RESET_ALL)
+    def RBRACKET(self, ): return str(Style.DIM) + "]" + str(Style.RESET_ALL)
 
     def indentation(self, level: int) -> str:
         return self.SIND() * level
 
     def kw(self, x: str) -> str:
-        return Fore.YELLOW + x + Style.RESET_ALL
+        return str(Fore.YELLOW) + x + str(Style.RESET_ALL)
 
     def uname(self, x: str) -> str:
-        return Fore.WHITE + x + Style.RESET_ALL
+        return str(Fore.WHITE) + x + str(Style.RESET_ALL)
 
     # Styled type annotation, e.g. ::INT.
     def type_anno(self, x: str) -> str:
-        return Style.DIM + x + Style.RESET_ALL
+        return str(Style.DIM) + x + str(Style.RESET_ALL)
 
 class PrettyOptions(Enum):
     STYLED = 1,
@@ -140,67 +140,30 @@ def terms_to_llqp(terms: Sequence[Union[ir.Term, ir.Specialized]], indent_level:
 
     return llqp
 
-def program_to_llqp(node: ir.LqpProgram, options: Dict = {}) -> str:
+def program_to_llqp(node: ir.Transaction, options: Dict = {}) -> str:
     conf = style_config(options)
-    options["_debug"] = node.debug_info
+    epochs_portion = ""
+    for epoch in node.epochs:
+        epochs_portion += conf.indentation(1) + conf.LPAREN() + conf.kw("epoch") + "\n"
+        if len(epoch.persistent_writes) > 0:
+            epochs_portion += conf.indentation(2) + conf.LPAREN() + conf.kw("persistent_writes") + "\n"
+            epochs_portion += list_to_llqp(epoch.persistent_writes, 3, "\n", options) + "\n"
+            epochs_portion += conf.indentation(2) + conf.RPAREN() + "\n"
 
-    # TODO: is this true? and in general for the other things can they be missing?
-    reads_portion = ""
-    if len(node.outputs) == 0:
-        reads_portion += conf.indentation(2) + conf.LPAREN() + conf.kw("reads") + conf.RPAREN() +" ;; no outputs" + "\n"
-    else:
-        reads_portion += conf.indentation(2) + conf.LPAREN() + conf.kw("reads") + "\n"
-
-        for (name, rel_id) in node.outputs:
-            reads_portion +=\
-                f"{conf.indentation(3)}" +\
-                conf.LPAREN() +\
-                conf.kw("output") + " " +\
-                f":{conf.uname(name)} " +\
-                f"{to_llqp(rel_id, 0, options)}" +\
-                conf.RPAREN()
-
-        reads_portion += conf.RPAREN()
-
-    delim = "\n\n"
-    writes_portion = f"{list_to_llqp(node.defs, 5, delim, options)}"
-
-    debugging_info = debugging_info_str(node, options)
-    if debugging_info != "":
-        debug_str = "\n\n"
-        debug_str += ";; Debug information\n"
-        debug_str += ";; -----------------------\n"
-        debug_str += debugging_info
-    else:
-        debug_str = ""
+        if len(epoch.local_writes) > 0:
+            epochs_portion += conf.indentation(2) + conf.LPAREN() + conf.kw("local_writes") + "\n"
+            epochs_portion += list_to_llqp(epoch.local_writes, 3, "\n", options) + "\n"
+            epochs_portion += conf.indentation(2) + conf.RPAREN() + "\n"
+        if len(epoch.reads) > 0:
+            epochs_portion += conf.indentation(2) + conf.LPAREN() + conf.kw("reads") + "\n"
+            epochs_portion += list_to_llqp(epoch.reads, 3, "\n", options) + "\n"
+            epochs_portion += conf.indentation(2) + conf.RPAREN() + "\n"
+        epochs_portion += conf.indentation(1) + conf.RPAREN() + "\n" # Close epoch
 
     return\
     conf.indentation(0) + conf.LPAREN() + conf.kw("transaction") + "\n" +\
-    conf.indentation(1) + conf.LPAREN() + conf.kw("epoch") + "\n" +\
-    conf.indentation(2) + conf.LPAREN() + conf.kw("local_writes") + "\n" +\
-    conf.indentation(3) + conf.LPAREN() + conf.kw("define") + "\n" +\
-    conf.indentation(4) + conf.LPAREN() + conf.kw("fragment") + " " + conf.uname(":f1") + "\n" +\
-    writes_portion +\
-    conf.RPAREN() + conf.RPAREN() + conf.RPAREN() +\
-    "\n" +\
-    reads_portion +\
-    conf.RPAREN() + conf.RPAREN() +\
-    debug_str
-
-def debugging_info_str(node: ir.LqpProgram, options: Dict) -> str:
-    debugging_info = ""
-    if node.debug_info is None:
-        return debugging_info
-
-    if has_option(options, PrettyOptions.PRINT_NAMES):
-        # No need to extract names from the debug info if we're already printing them directly
-        return debugging_info
-
-    if len(node.debug_info.id_to_orig_name) > 0:
-        debugging_info += ";; Original names\n"
-    for (rid, name) in node.debug_info.id_to_orig_name.items():
-        debugging_info += ";; \t " + str(rid) + " -> `" + name + "`\n"
-    return debugging_info
+    epochs_portion +\
+    conf.indentation(0) + conf.RPAREN()
 
 def to_llqp(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Specialized], indent_level: int, options: Dict = {}) -> str:
     conf = style_config(options)
@@ -276,11 +239,14 @@ def to_llqp(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Spec
     elif isinstance(node, ir.RelAtom):
         llqp += f"{ind}{conf.LPAREN()}{conf.kw('relatom')} {node.name} {list_to_llqp(node.terms, 0, ' ', options)}{conf.RPAREN()}"
 
+    elif isinstance(node, ir.Cast):
+        llqp += ind + conf.LPAREN() + conf.kw("cast") + " " + type_to_llqp(node.type) + " " + to_llqp(node.input, 0, options) + " " + to_llqp(node.result, 0, options) + conf.RPAREN()
+
     elif isinstance(node, ir.Var):
         llqp += ind + conf.uname(node.name)
 
     elif isinstance(node, str):
-        llqp += ind + "\"" + node + "\""
+        llqp += f"{ind}\"{node}\""
     elif isinstance(node, ir.UInt128):
         llqp += ind + str(node.value)
     elif isinstance(node, bool):
@@ -315,18 +281,93 @@ def to_llqp(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Spec
 
     elif isinstance(node, ir.RelationId):
         name = id_to_name(options, node)
-        llqp += f"{ind}{conf.uname(str(name))}"
+        llqp += f"{ind}{str(conf.uname(name))}"
 
     elif isinstance(node, ir.PrimitiveType):
         llqp += ind + node.name
+
+    elif isinstance(node, ir.Write):
+        # Delegate to the specific write type
+        llqp += to_llqp(node.write_type, indent_level, options)
+
+    elif isinstance(node, ir.Define):
+        llqp += ind + conf.LPAREN() + conf.kw("define") + " " + to_llqp(node.fragment, 0, options) + conf.RPAREN()
+
+    elif isinstance(node, ir.Undefine):
+        llqp += ind + conf.LPAREN() + conf.kw("undefine") + " " + to_llqp(node.fragment_id, 0, options) + conf.RPAREN()
+
+    elif isinstance(node, ir.Context):
+        llqp += ind + conf.LPAREN() + conf.kw("context") + " " + list_to_llqp(node.relations, 0, " ", options) + conf.RPAREN()
+
+    elif isinstance(node, ir.FragmentId):
+        llqp += f"{ind}:{conf.uname(node.id.decode())}"
+
+    elif isinstance(node, ir.Read):
+        # Delegate to the specific read type
+        llqp += to_llqp(node.read_type, indent_level, options)
+
+    elif isinstance(node, ir.Demand):
+        llqp += ind + conf.LPAREN() + conf.kw("demand") + " " + to_llqp(node.relation_id, 0, options) + conf.RPAREN()
+
+    elif isinstance(node, ir.Output):
+        name_str = f":{conf.uname(node.name)} " if node.name else ""
+        llqp += ind + conf.LPAREN() + conf.kw("output") + " " + name_str + to_llqp(node.relation_id, 0, options) + conf.RPAREN()
+
+    elif isinstance(node, ir.Abort):
+        name_str = f":{conf.uname(node.name)} " if node.name else ""
+        llqp += ind + conf.LPAREN() + conf.kw("abort") + " " + name_str + to_llqp(node.relation_id, 0, options) + conf.RPAREN()
+
+    elif isinstance(node, ir.WhatIf):
+        branch_str = f":{conf.uname(node.branch)} " if node.branch else ""
+        llqp += ind + conf.LPAREN() + conf.kw("what_if") + " " + branch_str + to_llqp(node.epoch, indent_level + 1, options) + conf.RPAREN()
+
+    elif isinstance(node, ir.Epoch):
+        # Epoch is handled within program_to_llqp, but might be called directly for WhatIf
+        # This case should ideally not be hit directly by list_to_llqp for epoch.local_writes etc.
+        # But if it is, it should print its contents.
+        epoch_content = ""
+        if len(node.persistent_writes) > 0:
+            epoch_content += conf.indentation(indent_level + 1) + conf.LPAREN() + conf.kw("persistent_writes") + "\n"
+            epoch_content += list_to_llqp(node.persistent_writes, indent_level + 2, "\n", options) + "\n"
+            epoch_content += conf.indentation(indent_level + 1) + conf.RPAREN() + "\n"
+
+        if len(node.local_writes) > 0:
+            epoch_content += conf.indentation(indent_level + 1) + conf.LPAREN() + conf.kw("local_writes") + "\n"
+            epoch_content += list_to_llqp(node.local_writes, indent_level + 2, "\n", options) + "\n"
+            epoch_content += conf.indentation(indent_level + 1) + conf.RPAREN() + "\n"
+
+        if len(node.reads) > 0:
+            epoch_content += conf.indentation(indent_level + 1) + conf.LPAREN() + conf.kw("reads") + "\n"
+            epoch_content += list_to_llqp(node.reads, indent_level + 2, "\n", options) + "\n"
+            epoch_content += conf.indentation(indent_level + 1) + conf.RPAREN() + "\n"
+        llqp += ind + conf.LPAREN() + conf.kw("epoch") + "\n" + epoch_content + ind + conf.RPAREN()
+
+    elif isinstance(node, ir.Fragment):
+        llqp += fragment_to_llqp(node, options)
 
     else:
         raise NotImplementedError(f"to_llqp not implemented for {type(node)}.")
 
     return llqp
 
+def fragment_to_llqp(node: ir.Fragment, options: Dict = {}) -> str:
+    conf = style_config(options)
+    declarations_portion = list_to_llqp(node.declarations, 5, "\n", options)
+    return \
+        conf.indentation(0) + conf.LPAREN() + conf.kw("fragment") + " " + to_llqp(node.id, 0, options) + "\n" + \
+        declarations_portion + \
+        conf.RPAREN()
+
+def to_llqp_string(node: ir.LqpNode, options: Dict = {}) -> str:
+    if isinstance(node, ir.Transaction):
+        return program_to_llqp(node, options)
+    elif isinstance(node, ir.Fragment):
+        return fragment_to_llqp(node, options)
+    else:
+        raise NotImplementedError(f"to_llqp_string not implemented for top-level node type {type(node)}.")
+
 def type_to_llqp(node: ir.RelType) -> str:
-    return node.name
+    return str(node.name)
 
 def id_to_name(options: Dict, rid: ir.RelationId) -> str:
     if not has_option(options, PrettyOptions.PRINT_NAMES):
