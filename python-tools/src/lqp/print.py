@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Union, Sequence, Dict
+from typing import Union, Sequence, Dict, List
 
 from colorama import Style, Fore
 from enum import Enum
@@ -142,28 +142,27 @@ def terms_to_llqp(terms: Sequence[Union[ir.Term, ir.Specialized]], indent_level:
 
 def program_to_llqp(node: ir.Transaction, options: Dict = {}) -> str:
     conf = style_config(options)
-    epochs_portion = ""
+    s = conf.indentation(0) + conf.LPAREN() + conf.kw("transaction")
+    epoch_strs: List[str] = []
     for epoch in node.epochs:
-        epochs_portion += conf.indentation(1) + conf.LPAREN() + conf.kw("epoch") + "\n"
-        if len(epoch.persistent_writes) > 0:
-            epochs_portion += conf.indentation(2) + conf.LPAREN() + conf.kw("persistent_writes") + "\n"
-            epochs_portion += list_to_llqp(epoch.persistent_writes, 3, "\n", options) + "\n"
-            epochs_portion += conf.indentation(2) + conf.RPAREN() + "\n"
-
-        if len(epoch.local_writes) > 0:
-            epochs_portion += conf.indentation(2) + conf.LPAREN() + conf.kw("local_writes") + "\n"
-            epochs_portion += list_to_llqp(epoch.local_writes, 3, "\n", options) + "\n"
-            epochs_portion += conf.indentation(2) + conf.RPAREN() + "\n"
-        if len(epoch.reads) > 0:
-            epochs_portion += conf.indentation(2) + conf.LPAREN() + conf.kw("reads") + "\n"
-            epochs_portion += list_to_llqp(epoch.reads, 3, "\n", options) + "\n"
-            epochs_portion += conf.indentation(2) + conf.RPAREN() + "\n"
-        epochs_portion += conf.indentation(1) + conf.RPAREN() + "\n" # Close epoch
-
-    return\
-    conf.indentation(0) + conf.LPAREN() + conf.kw("transaction") + "\n" +\
-    epochs_portion +\
-    conf.indentation(0) + conf.RPAREN()
+        s += "\n" + conf.indentation(1) + conf.LPAREN() + conf.kw("epoch")
+        section_strs: List[str] = []
+        def build_section(keyword: str, items_list: Sequence[Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Specialized]]) -> Union[str, None]:
+            if not items_list:
+                return None
+            sec_s = "\n" + conf.indentation(2) + conf.LPAREN() + conf.kw(keyword) + "\n"
+            sec_s += list_to_llqp(items_list, 3, "\n", options) + conf.RPAREN()
+            return sec_s
+        persistent_writes_s = build_section("persistent_writes", epoch.persistent_writes)
+        if persistent_writes_s: section_strs.append(persistent_writes_s)
+        local_writes_s = build_section("local_writes", epoch.local_writes)
+        if local_writes_s: section_strs.append(local_writes_s)
+        reads_s = build_section("reads", epoch.reads)
+        if reads_s: section_strs.append(reads_s)
+        s += "".join(section_strs)
+        s += conf.RPAREN()
+    s += conf.RPAREN()
+    return s
 
 def to_llqp(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Specialized], indent_level: int, options: Dict = {}) -> str:
     conf = style_config(options)
@@ -178,17 +177,17 @@ def to_llqp(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Spec
             llqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("attrs") + conf.RPAREN() + conf.RPAREN()
         else:
             llqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("attrs") + "\n"
-            llqp += list_to_llqp(node.attrs, indent_level + 2, "\n", options) + "\n"
-            llqp += ind + conf.SIND() + conf.RPAREN() + conf.RPAREN()
+            llqp += list_to_llqp(node.attrs, indent_level + 2, "\n", options)
+            llqp += conf.RPAREN() + conf.RPAREN()
 
     elif isinstance(node, ir.Loop):
         llqp += ind + conf.LPAREN() + conf.kw("loop") + "\n"
         llqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("inits") + "\n"
-        llqp += list_to_llqp(node.inits, indent_level + 2, "\n", options) + "\n"
-        llqp += ind + conf.SIND() + conf.RPAREN() + "\n"
+        llqp += list_to_llqp(node.inits, indent_level + 2, "\n", options)
+        llqp += conf.RPAREN() + "\n"
         llqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("body") + "\n"
-        llqp += list_to_llqp(node.body, indent_level + 2, "\n", options) + "\n"
-        llqp += ind + conf.SIND() + conf.RPAREN() + conf.RPAREN()
+        llqp += list_to_llqp(node.body, indent_level + 2, "\n", options)
+        llqp += conf.RPAREN() + conf.RPAREN()
 
     elif isinstance(node, ir.Abstraction):
         llqp += ind + conf.LPAREN() + conf.LBRACKET()
@@ -223,12 +222,12 @@ def to_llqp(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Spec
     elif isinstance(node, ir.FFI):
         llqp += ind + conf.LPAREN() + conf.kw("ffi") + " " + ":" + node.name + "\n"
         llqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("args") + "\n"
-        llqp += list_to_llqp(node.args, indent_level + 2, "\n", options) + "\n"
-        llqp += ind + conf.SIND() + conf.RPAREN() + "\n"
+        llqp += list_to_llqp(node.args, indent_level + 2, "\n", options)
+        llqp += conf.RPAREN() + "\n"
         llqp += terms_to_llqp(node.terms, indent_level + 1, options) + conf.RPAREN()
 
     elif isinstance(node, ir.Atom):
-        llqp += f"{ind}{conf.LPAREN()}{conf.kw('atom!')} {to_llqp(node.name, 0, options)} {list_to_llqp(node.terms, 0, ' ', options)}{conf.RPAREN()}"
+        llqp += f"{ind}{conf.LPAREN()}{conf.kw('atom')} {to_llqp(node.name, 0, options)} {list_to_llqp(node.terms, 0, ' ', options)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Pragma):
         llqp += f"{ind}{conf.LPAREN()}{conf.kw('pragma')} :{conf.uname(node.name)} {terms_to_llqp(node.terms, 0, options)}{conf.RPAREN()}"
@@ -237,7 +236,7 @@ def to_llqp(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Spec
         llqp += f"{ind}{conf.LPAREN()}{conf.kw('primitive')} :{conf.uname(node.name)} {list_to_llqp(node.terms, 0, ' ', options)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.RelAtom):
-        llqp += f"{ind}{conf.LPAREN()}{conf.kw('relatom')} {node.name} {list_to_llqp(node.terms, 0, ' ', options)}{conf.RPAREN()}"
+        llqp += f"{ind}{conf.LPAREN()}{conf.kw('relatom')} :{node.name} {list_to_llqp(node.terms, 0, ' ', options)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Cast):
         llqp += ind + conf.LPAREN() + conf.kw("cast") + " " + type_to_llqp(node.type) + " " + to_llqp(node.input, 0, options) + " " + to_llqp(node.result, 0, options) + conf.RPAREN()
@@ -248,7 +247,7 @@ def to_llqp(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Spec
     elif isinstance(node, str):
         llqp += f"{ind}\"{node}\""
     elif isinstance(node, ir.UInt128):
-        llqp += ind + str(node.value)
+        llqp += f"{ind}{hex(node.value)}"
     elif isinstance(node, bool):
         llqp += ind + str(node).lower()
     elif isinstance(node, (int, float)):
@@ -257,26 +256,21 @@ def to_llqp(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Spec
     elif isinstance(node, ir.Specialized):
         val_to_print = node.value
         if isinstance(val_to_print, str):
-            llqp += ind + "\"" + val_to_print + "\""
+            llqp += f"{ind}#\"{val_to_print}\""
         elif isinstance(val_to_print, ir.UInt128):
-            llqp += ind + str(val_to_print.value)
+            llqp += f"{ind}#{hex(val_to_print.value)}"
         elif isinstance(val_to_print, bool):
-            llqp += ind + str(val_to_print).lower()
+            llqp += f"{ind}#{str(val_to_print).lower()}"
         elif isinstance(val_to_print, (int, float)):
-            llqp += ind + str(val_to_print)
+            llqp += f"{ind}#{val_to_print}"
         else:
-            llqp += ind + str(val_to_print)
+            llqp += f"{ind}#{val_to_print}"
 
     elif isinstance(node, ir.Attribute):
         llqp += ind
         llqp += conf.LPAREN() + conf.kw("attribute") + " "
         llqp += ":" + node.name + " "
-        if len(node.args) == 0:
-            llqp += conf.LPAREN() + conf.kw("args") + conf.RPAREN()
-        else:
-            llqp += conf.LPAREN() + conf.kw("args") + " "
-            llqp += list_to_llqp(node.args, 0, " ", options)
-            llqp += conf.RPAREN()
+        llqp += list_to_llqp(node.args, 0, " ", options)
         llqp += conf.RPAREN()
 
     elif isinstance(node, ir.RelationId):
@@ -328,19 +322,19 @@ def to_llqp(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Spec
         epoch_content = ""
         if len(node.persistent_writes) > 0:
             epoch_content += conf.indentation(indent_level + 1) + conf.LPAREN() + conf.kw("persistent_writes") + "\n"
-            epoch_content += list_to_llqp(node.persistent_writes, indent_level + 2, "\n", options) + "\n"
-            epoch_content += conf.indentation(indent_level + 1) + conf.RPAREN() + "\n"
+            epoch_content += list_to_llqp(node.persistent_writes, indent_level + 2, "\n", options)
+            epoch_content += conf.RPAREN() + "\n"
 
         if len(node.local_writes) > 0:
             epoch_content += conf.indentation(indent_level + 1) + conf.LPAREN() + conf.kw("local_writes") + "\n"
-            epoch_content += list_to_llqp(node.local_writes, indent_level + 2, "\n", options) + "\n"
-            epoch_content += conf.indentation(indent_level + 1) + conf.RPAREN() + "\n"
+            epoch_content += list_to_llqp(node.local_writes, indent_level + 2, "\n", options)
+            epoch_content += conf.RPAREN() + "\n"
 
         if len(node.reads) > 0:
             epoch_content += conf.indentation(indent_level + 1) + conf.LPAREN() + conf.kw("reads") + "\n"
-            epoch_content += list_to_llqp(node.reads, indent_level + 2, "\n", options) + "\n"
-            epoch_content += conf.indentation(indent_level + 1) + conf.RPAREN() + "\n"
-        llqp += ind + conf.LPAREN() + conf.kw("epoch") + "\n" + epoch_content + ind + conf.RPAREN()
+            epoch_content += list_to_llqp(node.reads, indent_level + 2, "\n", options)
+            epoch_content += conf.RPAREN() + "\n"
+        llqp += ind + conf.LPAREN() + conf.kw("epoch") + "\n" + epoch_content + conf.RPAREN()
 
     elif isinstance(node, ir.Fragment):
         llqp += fragment_to_llqp(node, options)

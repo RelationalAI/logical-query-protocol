@@ -1,0 +1,46 @@
+(transaction
+    (epoch
+        (local_writes
+            (define (fragment :f1
+                    (def 3181428560199927439
+                        ([category::STRING amount::FLOAT]
+                            (or
+                                (and
+                                    (primitive :rel_primitive_eq category "food")
+                                    (primitive :rel_primitive_eq amount 1.23))
+                                (and
+                                    (primitive :rel_primitive_eq category "food")
+                                    (primitive :rel_primitive_eq amount 10.23))
+                                (and
+                                    (primitive :rel_primitive_eq category "food")
+                                    (primitive :rel_primitive_eq amount 13.0))
+                                (and
+                                    (primitive :rel_primitive_eq category "drink")
+                                    (primitive :rel_primitive_eq amount 6.34))
+                                (and
+                                    (primitive :rel_primitive_eq category "drink")
+                                    (primitive :rel_primitive_eq amount 2.82))))
+                        (attrs))
+                    (def 717761118272002131
+                        ([cat::STRING x::FLOAT]
+                            (reduce
+                                ([a::FLOAT b::FLOAT c::FLOAT]
+                                    (primitive :rel_primitive_add_monotype a b c))
+                                ([num::FLOAT]
+                                    (atom 3181428560199927439 cat num))
+                                (terms x)))
+                        (attrs))
+                    (def 7797218844049897513
+                        ([cat::STRING x::INT]
+                            (reduce
+                                ([a::FLOAT b::FLOAT c::FLOAT]
+                                    (primitive :rel_primitive_add_monotype a b c))
+                                ([num::FLOAT one::INT]
+                                    (and
+                                        (atom 3181428560199927439 cat num)
+                                        (primitive :rel_primitive_eq one 1)))
+                                (terms x)))
+                        (attrs)))))
+        (reads
+            (output :items_sum 717761118272002131)
+            (output :items_count 7797218844049897513))))
