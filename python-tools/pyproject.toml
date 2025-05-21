@@ -8,14 +8,19 @@ authors = [
 ]
 dependencies = [
     "lark>=1.1.9",
-    "protobuf>=3.20.3,<5.0.0"
+    "protobuf>=3.20.3,<5.0.0",
+    "colorama",
 ]
 
 [project.scripts]
 lqp = "lqp.parser:main"
 
 [project.optional-dependencies]
-test = ["pytest>=7.0.0"]
+test = [
+    "pytest>=7.0.0",
+    "pytest-snapshot",
+    "pyrefly",
+]
 
 [build-system]
 requires = ["setuptools>=61.0"]
