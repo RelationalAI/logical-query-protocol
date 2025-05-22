@@ -1,0 +1,3 @@
+(fragment :frag
+  (def :r ([x::INT]
+    (not (not (atom :s x))))))

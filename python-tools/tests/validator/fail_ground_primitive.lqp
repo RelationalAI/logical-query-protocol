@@ -1,0 +1,7 @@
+;; ERROR: Variables not grounded: x
+(fragment :frag
+  (def :bad
+    ([x::INT y::INT]
+      (and
+        (atom :foo y)
+        (primitive :plus x y)))))
