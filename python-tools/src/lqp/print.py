@@ -174,9 +174,9 @@ def to_lqp(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         lqp += ind + conf.LPAREN() + conf.kw("def") + " " + to_lqp(node.name, 0, options) + "\n"
         lqp += to_lqp(node.body, indent_level + 1, options) + "\n"
         if len(node.attrs) == 0:
-            lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("attrs") + conf.RPAREN() + conf.RPAREN()
+            lqp += conf.indentation(indent_level + 1) + conf.LPAREN() + conf.kw("attrs") + conf.RPAREN() + conf.RPAREN()
         else:
-            lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("attrs") + "\n"
+            lqp += conf.indentation(indent_level + 1) + conf.LPAREN() + conf.kw("attrs") + "\n"
             lqp += list_to_lqp(node.attrs, indent_level + 2, "\n", options)
             lqp += conf.RPAREN() + conf.RPAREN()
 
@@ -285,7 +285,7 @@ def to_lqp(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         lqp += to_lqp(node.write_type, indent_level, options)
 
     elif isinstance(node, ir.Define):
-        lqp += ind + conf.LPAREN() + conf.kw("define") + f"\n{ind}  " + to_lqp(node.fragment, 0, options) + conf.RPAREN()
+        lqp += ind + conf.LPAREN() + conf.kw("define") + "\n" + to_lqp(node.fragment, indent_level + 1, options) + conf.RPAREN()
 
     elif isinstance(node, ir.Undefine):
         lqp += ind + conf.LPAREN() + conf.kw("undefine") + " " + to_lqp(node.fragment_id, 0, options) + conf.RPAREN()
@@ -337,18 +337,19 @@ def to_lqp(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         lqp += ind + conf.LPAREN() + conf.kw("epoch") + "\n" + epoch_content + conf.RPAREN()
 
     elif isinstance(node, ir.Fragment):
-        lqp += fragment_to_lqp(node, options)
+        lqp += fragment_to_lqp(node, indent_level, options)
 
     else:
         raise NotImplementedError(f"to_lqp not implemented for {type(node)}.")
 
     return lqp
 
-def fragment_to_lqp(node: ir.Fragment, options: Dict = {}) -> str:
+def fragment_to_lqp(node: ir.Fragment, indent_level: int, options: Dict = {}) -> str:
     conf = style_config(options)
-    declarations_portion = list_to_lqp(node.declarations, 5, "\n", options)
+    ind = conf.indentation(indent_level)
+    declarations_portion = list_to_lqp(node.declarations, indent_level + 1, "\n", options)
     return \
-        conf.indentation(0) + conf.LPAREN() + conf.kw("fragment") + " " + to_lqp(node.id, 0, options) + "\n" + \
+        ind + conf.LPAREN() + conf.kw("fragment") + " " + to_lqp(node.id, 0, options) + "\n" + \
         declarations_portion + \
         conf.RPAREN()
 
@@ -356,7 +357,7 @@ def to_lqp_string(node: ir.LqpNode, options: Dict = {}) -> str:
     if isinstance(node, ir.Transaction):
         return program_to_lqp(node, options)
     elif isinstance(node, ir.Fragment):
-        return fragment_to_lqp(node, options)
+        return fragment_to_lqp(node, 0, options)
     else:
         raise NotImplementedError(f"to_lqp_string not implemented for top-level node type {type(node)}.")
 
