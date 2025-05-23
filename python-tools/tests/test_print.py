@@ -31,7 +31,7 @@ def test_print_snapshot(snapshot, input_file):
     with open(input_file, "r") as f:
         original_lqp_str = f.read()
     parsed_node = parser.parse_lqp(input_file, original_lqp_str)
-    printed_lqp_str = lqp_print.to_llqp_string(parsed_node)
+    printed_lqp_str = lqp_print.to_lqp_string(parsed_node)
     snapshot.snapshot_dir = "tests/lqp_output"
     snapshot.assert_match(printed_lqp_str, os.path.basename(input_file))
     re_parsed_node = parser.parse_lqp("reparsed_output.lqp", printed_lqp_str)
