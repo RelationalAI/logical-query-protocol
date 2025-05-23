@@ -66,24 +66,24 @@ class Unstyled(StyleConfig):
 class Styled(StyleConfig):
     def SIND(self, ): return "  "
 
-    def LPAREN(self, ): return str(Style.DIM) + "(" + str(Style.RESET_ALL)
-    def RPAREN(self, ): return str(Style.DIM) + ")" + str(Style.RESET_ALL)
+    def LPAREN(self, ): return f"{Style.DIM}({Style.RESET_ALL}"
+    def RPAREN(self, ): return f"{Style.DIM}){Style.RESET_ALL}"
 
-    def LBRACKET(self, ): return str(Style.DIM) + "[" + str(Style.RESET_ALL)
-    def RBRACKET(self, ): return str(Style.DIM) + "]" + str(Style.RESET_ALL)
+    def LBRACKET(self, ): return f"{Style.DIM}[{Style.RESET_ALL}"
+    def RBRACKET(self, ): return f"{Style.DIM}]{Style.RESET_ALL}"
 
     def indentation(self, level: int) -> str:
         return self.SIND() * level
 
     def kw(self, x: str) -> str:
-        return str(Fore.YELLOW) + x + str(Style.RESET_ALL)
+        return f"{Fore.YELLOW}{x}{Style.RESET_ALL}"
 
     def uname(self, x: str) -> str:
-        return str(Fore.WHITE) + x + str(Style.RESET_ALL)
+        return f"{Fore.WHITE}{x}{Style.RESET_ALL}"
 
     # Styled type annotation, e.g. ::INT.
     def type_anno(self, x: str) -> str:
-        return str(Style.DIM) + x + str(Style.RESET_ALL)
+        return f"{Style.DIM}{x}{Style.RESET_ALL}"
 
 class PrettyOptions(Enum):
     STYLED = 1,
@@ -134,9 +134,9 @@ def terms_to_str(terms: Sequence[Union[ir.Term, ir.Specialized]], indent_level: 
 
     lqp = ""
     if len(terms) == 0:
-        lqp = ind + conf.LPAREN() + conf.kw("terms") + conf.RPAREN()
+        lqp = f"{ind}{conf.LPAREN()}{conf.kw('terms')}{conf.RPAREN()}"
     else:
-        lqp = ind + conf.LPAREN() + conf.kw("terms") + " " + list_to_str(terms, 0, " ", options) + conf.RPAREN()
+        lqp = f"{ind}{conf.LPAREN()}{conf.kw('terms')} {list_to_str(terms, 0, ' ', options)}{conf.RPAREN()}"
 
     return lqp
 
@@ -174,11 +174,11 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         lqp += ind + conf.LPAREN() + conf.kw("def") + " " + to_str(node.name, 0, options) + "\n"
         lqp += to_str(node.body, indent_level + 1, options) + "\n"
         if len(node.attrs) == 0:
-            lqp += conf.indentation(indent_level + 1) + conf.LPAREN() + conf.kw("attrs") + conf.RPAREN() + conf.RPAREN()
+            lqp += f"{conf.indentation(indent_level + 1)}{conf.LPAREN()}{conf.kw('attrs')}{conf.RPAREN()}{conf.RPAREN()}"
         else:
             lqp += conf.indentation(indent_level + 1) + conf.LPAREN() + conf.kw("attrs") + "\n"
             lqp += list_to_str(node.attrs, indent_level + 2, "\n", options)
-            lqp += conf.RPAREN() + conf.RPAREN()
+            lqp += f"{conf.RPAREN()}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Loop):
         lqp += ind + conf.LPAREN() + conf.kw("loop") + "\n"
@@ -193,7 +193,7 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         lqp += ind + conf.LPAREN() + conf.LBRACKET()
         lqp += " ".join(map(lambda v: conf.uname(v[0].name) + conf.type_anno("::" + type_to_str(v[1])), node.vars))
         lqp += conf.RBRACKET() + "\n"
-        lqp += to_str(node.value, indent_level + 1, options) + conf.RPAREN()
+        lqp += f"{to_str(node.value, indent_level + 1, options)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Exists):
         lqp += ind + conf.LPAREN() + conf.kw("exists") + " " + conf.LBRACKET()
@@ -205,7 +205,7 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         lqp += ind + conf.LPAREN() + conf.kw("reduce") + "\n"
         lqp += to_str(node.op, indent_level + 1, options) + "\n"
         lqp += to_str(node.body, indent_level + 1, options) + "\n"
-        lqp += terms_to_str(node.terms, indent_level + 1, options) + conf.RPAREN()
+        lqp += f"{terms_to_str(node.terms, indent_level + 1, options)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Conjunction):
         lqp += ind + conf.LPAREN() + conf.kw("and") + "\n"
@@ -217,14 +217,14 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
 
     elif isinstance(node, ir.Not):
         lqp += ind + conf.LPAREN() + conf.kw("not") + "\n"
-        lqp += to_str(node.arg, indent_level + 1, options) + conf.RPAREN()
+        lqp += f"{to_str(node.arg, indent_level + 1, options)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.FFI):
         lqp += ind + conf.LPAREN() + conf.kw("ffi") + " " + ":" + node.name + "\n"
         lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("args") + "\n"
         lqp += list_to_str(node.args, indent_level + 2, "\n", options)
         lqp += conf.RPAREN() + "\n"
-        lqp += terms_to_str(node.terms, indent_level + 1, options) + conf.RPAREN()
+        lqp += f"{terms_to_str(node.terms, indent_level + 1, options)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Atom):
         lqp += f"{ind}{conf.LPAREN()}{conf.kw('atom')} {to_str(node.name, 0, options)} {list_to_str(node.terms, 0, ' ', options)}{conf.RPAREN()}"
@@ -239,19 +239,19 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         lqp += f"{ind}{conf.LPAREN()}{conf.kw('relatom')} :{node.name} {list_to_str(node.terms, 0, ' ', options)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Cast):
-        lqp += ind + conf.LPAREN() + conf.kw("cast") + " " + type_to_str(node.type) + " " + to_str(node.input, 0, options) + " " + to_str(node.result, 0, options) + conf.RPAREN()
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('cast')} {type_to_str(node.type)} {to_str(node.input, 0, options)} {to_str(node.result, 0, options)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Var):
-        lqp += ind + conf.uname(node.name)
+        lqp += f"{ind}{conf.uname(node.name)}"
 
     elif isinstance(node, str):
         lqp += f"{ind}\"{node}\""
     elif isinstance(node, ir.UInt128):
         lqp += f"{ind}{hex(node.value)}"
     elif isinstance(node, bool):
-        lqp += ind + str(node).lower()
+        lqp += f"{ind}{str(node).lower()}"
     elif isinstance(node, (int, float)):
-        lqp += ind + str(node)
+        lqp += f"{ind}{str(node)}"
 
     elif isinstance(node, ir.Specialized):
         val_to_print = node.value
@@ -267,18 +267,14 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
             lqp += f"{ind}#{val_to_print}"
 
     elif isinstance(node, ir.Attribute):
-        lqp += ind
-        lqp += conf.LPAREN() + conf.kw("attribute") + " "
-        lqp += ":" + node.name + " "
-        lqp += list_to_str(node.args, 0, " ", options)
-        lqp += conf.RPAREN()
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('attribute')} :{node.name} {list_to_str(node.args, 0, ' ', options)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.RelationId):
         name = id_to_name(options, node)
         lqp += f"{ind}{str(conf.uname(name))}"
 
     elif isinstance(node, ir.PrimitiveType):
-        lqp += ind + node.name
+        lqp += f"{ind}{node.name}"
 
     elif isinstance(node, ir.Write):
         # Delegate to the specific write type
@@ -288,10 +284,10 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         lqp += ind + conf.LPAREN() + conf.kw("define") + "\n" + to_str(node.fragment, indent_level + 1, options) + conf.RPAREN()
 
     elif isinstance(node, ir.Undefine):
-        lqp += ind + conf.LPAREN() + conf.kw("undefine") + " " + to_str(node.fragment_id, 0, options) + conf.RPAREN()
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('undefine')} {to_str(node.fragment_id, 0, options)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Context):
-        lqp += ind + conf.LPAREN() + conf.kw("context") + " " + list_to_str(node.relations, 0, " ", options) + conf.RPAREN()
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('context')} {list_to_str(node.relations, 0, ' ', options)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.FragmentId):
         lqp += f"{ind}:{conf.uname(node.id.decode())}"
@@ -301,19 +297,19 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         lqp += to_str(node.read_type, indent_level, options)
 
     elif isinstance(node, ir.Demand):
-        lqp += ind + conf.LPAREN() + conf.kw("demand") + " " + to_str(node.relation_id, 0, options) + conf.RPAREN()
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('demand')} {to_str(node.relation_id, 0, options)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Output):
         name_str = f":{conf.uname(node.name)} " if node.name else ""
-        lqp += ind + conf.LPAREN() + conf.kw("output") + " " + name_str + to_str(node.relation_id, 0, options) + conf.RPAREN()
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('output')} {name_str}{to_str(node.relation_id, 0, options)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Abort):
         name_str = f":{conf.uname(node.name)} " if node.name else ""
-        lqp += ind + conf.LPAREN() + conf.kw("abort") + " " + name_str + to_str(node.relation_id, 0, options) + conf.RPAREN()
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('abort')} {name_str}{to_str(node.relation_id, 0, options)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.WhatIf):
         branch_str = f":{conf.uname(node.branch)} " if node.branch else ""
-        lqp += ind + conf.LPAREN() + conf.kw("what_if") + " " + branch_str + to_str(node.epoch, indent_level + 1, options) + conf.RPAREN()
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('what_if')} {branch_str}{to_str(node.epoch, indent_level + 1, options)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Epoch):
         # Epoch is handled within program_to_str, but might be called directly for WhatIf
@@ -362,17 +358,17 @@ def to_string(node: ir.LqpNode, options: Dict = {}) -> str:
         raise NotImplementedError(f"to_string not implemented for top-level node type {type(node)}.")
 
 def type_to_str(node: ir.RelType) -> str:
-    return str(node.name)
+    return f"{node.name}"
 
 def id_to_name(options: Dict, rid: ir.RelationId) -> str:
     if not has_option(options, PrettyOptions.PRINT_NAMES):
-        return str(rid.id)
+        return f"{rid.id}"
     debug = options.get("_debug", None)
     if debug is None:
-        return str(rid.id)
+        return f"{rid.id}"
     assert rid in debug.id_to_orig_name, f"ID {rid} not found in debug info."
     name = debug.id_to_orig_name[rid]
-    name = ":" + name
+    name = f":{name}"
     return name
 
 def has_option(options: Dict, opt: PrettyOptions) -> bool:
