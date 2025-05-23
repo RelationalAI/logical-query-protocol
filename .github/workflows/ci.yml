@@ -27,14 +27,14 @@ jobs:
         python -m pip install --upgrade pip
         cd python-tools
         python -m pip install -e ".[test]"
-        python -m pip install pyright
+        python -m pip install pyrefly
 
     - name: Test with pytest
       run: |
         cd python-tools
         python -m pytest
 
-    - name: Type check with Pyright
+    - name: Type check
       run: |
         cd python-tools
-        pyright
+        pyrefly check

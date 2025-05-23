@@ -158,6 +158,11 @@ class RelationId(LqpNode):
         if self.id < 0 or self.id > 0xffffffffffffffffffffffffffffffff:
             raise ValueError("RelationId constructed with out of range (UInt128) number: {}".format(self.id))
 
+    def __str__(self) -> str:
+        if self.meta:
+            return f"RelationId(meta={self.meta}, id={self.id})"
+        return f"RelationId(id={self.id})"
+
 class PrimitiveType(Enum):
     UNSPECIFIED = 0
     STRING = 1

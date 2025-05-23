@@ -1,6 +1,6 @@
 [project]
 name = "lqp"
-version = "0.1.0"
+version = "0.1.1"
 description = "A parser for Logical Query Protocol (LQP) S-expressions into Protobuf"
 readme = "README.md"
 authors = [
@@ -8,23 +8,20 @@ authors = [
 ]
 dependencies = [
     "lark>=1.1.9",
-    "protobuf>=3.20.3,<5.0.0"
+    "protobuf>=3.20.3,<5.0.0",
+    "colorama",
 ]
 
 [project.scripts]
 lqp = "lqp.parser:main"
 
 [project.optional-dependencies]
-test = ["pytest>=7.0.0", "pyright>=1.1.318"]
+test = [
+    "pytest>=7.0.0",
+    "pytest-snapshot",
+    "pyrefly",
+]
 
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
-
-[tool.pyright]
-include = ["src"]
-exclude = ["**/node_modules", "**/__pycache__", "build"]
-reportMissingImports = true
-reportMissingTypeStubs = false
-pythonVersion = "3.11"
-typeCheckingMode = "basic"
