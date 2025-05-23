@@ -39,7 +39,7 @@ class StyleConfig(ABC):
 # Some basic components and how they are to be printed.
 class Unstyled(StyleConfig):
     # Single INDentation.
-    def SIND(self, ): return "    "
+    def SIND(self, ): return "  "
 
     def LPAREN(self, ): return "("
     def RPAREN(self, ): return ")"
@@ -64,7 +64,7 @@ class Unstyled(StyleConfig):
         return x
 
 class Styled(StyleConfig):
-    def SIND(self, ): return "    "
+    def SIND(self, ): return "  "
 
     def LPAREN(self, ): return str(Style.DIM) + "(" + str(Style.RESET_ALL)
     def RPAREN(self, ): return str(Style.DIM) + ")" + str(Style.RESET_ALL)

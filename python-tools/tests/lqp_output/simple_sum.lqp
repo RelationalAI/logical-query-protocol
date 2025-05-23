@@ -1,26 +1,26 @@
 (transaction
-    (epoch
-        (local_writes
-            (define (fragment :f1
-                    (def 3181428560199927439
-                        ([x::INT]
-                            (or
-                                (primitive :rel_primitive_eq x 1)
-                                (primitive :rel_primitive_eq x 2)
-                                (primitive :rel_primitive_eq x 3)))
-                        (attrs))
-                    (def 18221048622641146868
-                        ([x::INT]
-                            (atom 3181428560199927439 x))
-                        (attrs))
-                    (def 17771790133431687692
-                        ([x::INT]
-                            (reduce
-                                ([a::INT b::INT c::INT]
-                                    (primitive :rel_primitive_add_monotype a b c))
-                                ([num::INT]
-                                    (atom 18221048622641146868 num))
-                                (terms x)))
-                        (attrs)))))
-        (reads
-            (output :foo 17771790133431687692))))
+  (epoch
+    (local_writes
+      (define (fragment :f1
+          (def 3181428560199927439
+            ([x::INT]
+              (or
+                (primitive :rel_primitive_eq x 1)
+                (primitive :rel_primitive_eq x 2)
+                (primitive :rel_primitive_eq x 3)))
+            (attrs))
+          (def 18221048622641146868
+            ([x::INT]
+              (atom 3181428560199927439 x))
+            (attrs))
+          (def 17771790133431687692
+            ([x::INT]
+              (reduce
+                ([a::INT b::INT c::INT]
+                  (primitive :rel_primitive_add_monotype a b c))
+                ([num::INT]
+                  (atom 18221048622641146868 num))
+                (terms x)))
+            (attrs)))))
+    (reads
+      (output :foo 17771790133431687692))))
