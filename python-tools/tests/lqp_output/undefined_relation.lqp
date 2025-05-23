@@ -1,7 +1,8 @@
 (transaction
   (epoch
     (local_writes
-      (define (fragment :f1
+      (define
+        (fragment :f1
           (def 16208045718567772255
             ([v::INT]
               (atom 3238736544897475342 v))

@@ -285,7 +285,7 @@ def to_lqp(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         lqp += to_lqp(node.write_type, indent_level, options)
 
     elif isinstance(node, ir.Define):
-        lqp += ind + conf.LPAREN() + conf.kw("define") + " " + to_lqp(node.fragment, 0, options) + conf.RPAREN()
+        lqp += ind + conf.LPAREN() + conf.kw("define") + f"\n{ind}  " + to_lqp(node.fragment, 0, options) + conf.RPAREN()
 
     elif isinstance(node, ir.Undefine):
         lqp += ind + conf.LPAREN() + conf.kw("undefine") + " " + to_lqp(node.fragment_id, 0, options) + conf.RPAREN()

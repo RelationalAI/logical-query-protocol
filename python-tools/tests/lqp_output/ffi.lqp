@@ -1,7 +1,8 @@
 (transaction
   (epoch
     (local_writes
-      (define (fragment :primitives
+      (define
+        (fragment :primitives
           (def 17566150147137631162
             ([v::INT]
               (or
