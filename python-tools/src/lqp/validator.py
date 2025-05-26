@@ -154,6 +154,13 @@ class _GroundingVisitor:
         negated = set().union(*ns) if ns else set()
         return grounded, negated, qs
 
+    def visit_Reduce(self, node: ir.Reduce, bound: Set[str]):
+        body_g, body_n, body_q = self.visit(node.body, bound)
+        args = {v[0].name for v in node.op.vars}
+        op_g, op_n, op_q = self.visit(node.op.value, bound | args)
+        op_g |= args
+        return body_g | op_g | self._vars(node.terms), body_n | op_n, body_q | op_q
+
     def visit_Abstraction(self, node: ir.Abstraction, bound: Set[str]):
         declared = {v[0].name for v in node.vars}
         g, n, q = self.visit(node.value, bound)

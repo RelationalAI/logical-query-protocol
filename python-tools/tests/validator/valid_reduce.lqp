@@ -1,0 +1,14 @@
+(fragment :test
+  (def 273484394488631418538070167239745887555
+      ([x::INT y::INT v::INT]
+          (reduce
+              ([x_2::INT y_2::INT z_2::INT]
+                  (primitive :rel_primitive_add x_2 y_2 z_2))
+              ([z::INT]
+                  (and
+                      (atom 129286532170022156067395499674307471058 x y)
+                      (atom 89299796221419629531007686804139881056 y)
+                      (atom 219453690954079747222140214967066902956 x z)
+                      (primitive :rel_primitive_gt z 3)))
+              (terms v)))
+      (attrs)))
