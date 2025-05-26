@@ -1,0 +1,20 @@
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :f1
+          (def 3181428560199927439
+            ([]
+              (primitive :rel_primitive_eq 1 1))
+            (attrs))
+          (def 4202944263766022126
+            ([]
+              (atom 3181428560199927439 ))
+            (attrs))
+          (def 16208045718567772255
+            ([]
+              (atom 3181428560199927439 ))
+            (attrs)))))
+    (reads
+      (output :result 16208045718567772255)
+      (abort :abort_1_eq_1 4202944263766022126))))

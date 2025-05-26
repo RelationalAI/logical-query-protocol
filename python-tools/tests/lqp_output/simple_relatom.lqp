@@ -1,0 +1,16 @@
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :f1
+          (def 3181428560199927439
+            ([x::INT]
+              (relatom :hello x))
+            (attrs))
+          (def 18221048622641146868
+            ([x::INT y::STRING]
+              (relatom :bar #"sp_str" x #123 y))
+            (attrs)))))
+    (reads
+      (output :foo 3181428560199927439)
+      (output :bar 18221048622641146868))))
