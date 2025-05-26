@@ -68,6 +68,13 @@ class UnusedVariableVisitor(LqpVisitor):
         self._mark_var_used(node)
 
 class _GroundingVisitor:
+    def __init__(self):
+        self.primitive_binding_patterns = {
+            "rel_primitive_eq": [([0], [1]), ([1], [0])],
+            # TODO not sure if we support this
+            # "rel_primitive_add": [([0, 1], [2]), ([0, 2], [1]), ([1, 2], [0])],
+        }
+
     def visit(self, node: ir.LqpNode, bound: Set[str]) -> Tuple[Set[str], Set[str], Set[str]]:
         return getattr(self, f"visit_{node.__class__.__name__}", self.generic_visit)(node, bound)
 
@@ -107,9 +114,18 @@ class _GroundingVisitor:
     def visit_Primitive(self, node: ir.Primitive, bound: Set[str]):
         if not node.terms:
             return set(), set(), set()
-        prev_vars = self._vars(node.terms[:-1])
-        last = node.terms[-1]
-        g = {last.name} if isinstance(last, ir.Var) and prev_vars <= bound else set()
+        if node.name in self.primitive_binding_patterns:
+            t = node.terms
+            grounded = {
+                t[p].name  # type: ignore[attr-defined]
+                for ins, outs in self.primitive_binding_patterns[node.name]
+                if all(p < len(t) and (not isinstance(t[p], ir.Var) or t[p].name in bound) for p in ins)  # type: ignore[attr-defined]
+                for p in outs
+                if p < len(t) and isinstance(t[p], ir.Var)
+            }
+            return grounded, set(), set()
+        *prev, last = node.terms
+        g = {last.name} if isinstance(last, ir.Var) and self._vars(prev) <= bound else set()
         return g, set(), set()
 
     def visit_Not(self, node: ir.Not, bound: Set[str]):

@@ -1,6 +1,17 @@
 (fragment :frag
-  (def :bad
+  (def :test1
     ([x::INT y::INT]
       (and
         (atom :foo x)
-        (primitive :plus x y)))))
+        (primitive :plus x y))))
+  (def :test2
+    ([x::INT y::INT]
+      (and
+        (atom :foo x)
+        (= x y))))
+  (def :test3
+    ([x::INT y::INT]
+      (and
+        (atom :foo y)
+        (= x y))))
+  (def :test4 ([x::INT] (= x 1))))
