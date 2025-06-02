@@ -180,7 +180,7 @@ def _debug_str(debug_info) -> str:
     debug_str += ";; -----------------------\n"
     debug_str += ";; Original names\n"
     for (rid, name) in debug_info.id_to_orig_name.items():
-        debug_str += f";; \t {rid} -> `{name}`\n"
+        debug_str += f";; \t ID `{rid.id}` -> `{name}`\n"
     return debug_str
 
 def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Specialized], indent_level: int, options: Dict = {}) -> str:

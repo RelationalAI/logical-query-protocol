@@ -107,6 +107,7 @@ def desugar_to_raw_primitive(name, terms):
 class LQPTransformer(Transformer):
     def __init__(self, file: str):
         self.file = file
+        self.id_to_orig_name = {}
 
     def meta(self, meta):
         return ir.SourceInfo(file=self.file, line=meta.line, column=meta.column)
@@ -299,7 +300,10 @@ class LQPTransformer(Transformer):
         if isinstance(ident, str):
             # First 64 bits of SHA-256 as the id
             id_val = int(hashlib.sha256(ident.encode()).hexdigest()[:16], 16)
-            return ir.RelationId(id=id_val, meta=self.meta(meta))
+            result = ir.RelationId(id=id_val, meta=self.meta(meta))
+            self.id_to_orig_name[result] = ident
+            return result
+
         elif isinstance(ident, int):
             return ir.RelationId(id=ident, meta=self.meta(meta))
 
@@ -331,6 +335,18 @@ def parse_lqp(file, text) -> ir.LqpNode:
     """Parse LQP text and return an IR node that can be converted to protocol buffers"""
     tree = parser.parse(text)
     return LQPTransformer(file).transform(tree)
+
+class DebugInfo:
+    def __init__(self, file: str, id_to_orig_name: dict):
+        self.file = file
+        self.id_to_orig_name = id_to_orig_name
+
+# TODO: remove this once the IR has debug info in it directly
+def parse_lqp_with_debug(file, text):
+    tree = parser.parse(text)
+    transformer = LQPTransformer(file)
+    result = transformer.transform(tree)
+    return result, DebugInfo(file, transformer.id_to_orig_name)
 
 def process_file(filename, bin, json):
     with open(filename, "r") as f:

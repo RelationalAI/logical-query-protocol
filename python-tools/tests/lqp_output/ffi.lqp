@@ -21,3 +21,12 @@
     (reads
       (output :numbers 17566150147137631162)
       (output :sorted_numbers 2638187172736215459))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `17566150147137631162` -> `numbers`
+;; 	 ID `2638187172736215459` -> `sorted_numbers`
+;; 	 ID `17566150147137631162` -> `numbers`
+;; 	 ID `17566150147137631162` -> `numbers`
+;; 	 ID `2638187172736215459` -> `sorted_numbers`

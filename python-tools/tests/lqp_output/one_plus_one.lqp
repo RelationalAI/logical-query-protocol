@@ -9,3 +9,9 @@
             (attrs)))))
     (reads
       (output :output 16208045718567772255))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `16208045718567772255` -> `output`
+;; 	 ID `16208045718567772255` -> `output`
