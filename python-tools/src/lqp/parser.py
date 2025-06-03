@@ -325,6 +325,7 @@ class LQPTransformer(Transformer):
         uint128_val = int(u, 16)
         return ir.UInt128(value=uint128_val, meta=None)
 
+# TODO: Eventually this should be part of the actual transaction IR
 @dataclass(frozen=True)
 class DebugInfo:
     file: str
