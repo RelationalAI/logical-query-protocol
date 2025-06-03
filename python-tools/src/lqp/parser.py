@@ -1,6 +1,7 @@
 import argparse
 import os
 import hashlib
+from dataclasses import dataclass
 from lark import Lark, Transformer, v_args
 import lqp.ir as ir
 from lqp.emit import ir_to_proto
@@ -324,6 +325,11 @@ class LQPTransformer(Transformer):
         uint128_val = int(u, 16)
         return ir.UInt128(value=uint128_val, meta=None)
 
+@dataclass(frozen=True)
+class DebugInfo:
+    file: str
+    id_to_orig_name: dict[ir.RelationId, str]
+
 # LALR(1) is significantly faster than Earley for parsing, especially on larger inputs. It
 # uses a precomputed parse table, reducing runtime complexity to O(n) (linear in input
 # size), whereas Earley is O(n³) in the worst case (though often O(n²) or better for
@@ -333,13 +339,8 @@ parser = Lark(grammar, parser="lalr", propagate_positions=True)
 
 def parse_lqp(file, text) -> ir.LqpNode:
     """Parse LQP text and return an IR node that can be converted to protocol buffers"""
-    tree = parser.parse(text)
-    return LQPTransformer(file).transform(tree)
-
-class DebugInfo:
-    def __init__(self, file: str, id_to_orig_name: dict):
-        self.file = file
-        self.id_to_orig_name = id_to_orig_name
+    result, _ = parse_lqp_with_debug(file, text)
+    return result
 
 # TODO: remove this once the IR has debug info in it directly
 def parse_lqp_with_debug(file, text):
