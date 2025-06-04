@@ -88,30 +88,35 @@ class Styled(StyleConfig):
 class PrettyOptions(Enum):
     STYLED = 1,
     PRINT_NAMES = 2,
+    PRINT_DEBUG = 3
 
     def __str__(self):
         return option_to_key[self]
 
 option_to_key = {
     PrettyOptions.STYLED: "styled",
-    PrettyOptions.PRINT_NAMES: "print_names"
+    PrettyOptions.PRINT_NAMES: "print_names",
+    PrettyOptions.PRINT_DEBUG: "print_debug"
 }
 
 option_to_default = {
     PrettyOptions.STYLED: False,
-    PrettyOptions.PRINT_NAMES: False
+    PrettyOptions.PRINT_NAMES: False,
+    PrettyOptions.PRINT_DEBUG: True,
 }
 
 # Used for precise testing
 ugly_config = {
     str(PrettyOptions.STYLED): False,
     str(PrettyOptions.PRINT_NAMES): False,
+    str(PrettyOptions.PRINT_DEBUG): True,
 }
 
 # Used for humans
 pretty_config = {
     str(PrettyOptions.STYLED): True,
     str(PrettyOptions.PRINT_NAMES): True,
+    str(PrettyOptions.PRINT_DEBUG): False
 }
 
 def style_config(options: Dict) -> StyleConfig:
@@ -143,7 +148,6 @@ def terms_to_str(terms: Sequence[Union[ir.Term, ir.Specialized]], indent_level: 
 def program_to_str(node: ir.Transaction, options: Dict = {}) -> str:
     conf = style_config(options)
     s = conf.indentation(0) + conf.LPAREN() + conf.kw("transaction")
-    epoch_strs: List[str] = []
     for epoch in node.epochs:
         s += "\n" + conf.indentation(1) + conf.LPAREN() + conf.kw("epoch")
         section_strs: List[str] = []
@@ -162,7 +166,22 @@ def program_to_str(node: ir.Transaction, options: Dict = {}) -> str:
         s += "".join(section_strs)
         s += conf.RPAREN()
     s += conf.RPAREN()
+
+    if has_option(options, PrettyOptions.PRINT_DEBUG) or True:
+        s += _debug_str(options.get("_debug", None))
+
     return s
+
+def _debug_str(debug_info) -> str:
+    if debug_info is None or len(debug_info.id_to_orig_name) == 0:
+        return ""
+    debug_str: str = "\n\n"
+    debug_str += ";; Debug information\n"
+    debug_str += ";; -----------------------\n"
+    debug_str += ";; Original names\n"
+    for (rid, name) in debug_info.id_to_orig_name.items():
+        debug_str += f";; \t ID `{rid}` -> `{name}`\n"
+    return debug_str
 
 def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Specialized], indent_level: int, options: Dict = {}) -> str:
     conf = style_config(options)

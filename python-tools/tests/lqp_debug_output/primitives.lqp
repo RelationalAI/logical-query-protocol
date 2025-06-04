@@ -1,0 +1,27 @@
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :primitives
+          (def 1046914482580477072
+            ([v::DATE]
+              (primitive :rel_primitive_parse_date "1998-12-01" "Y-m-d" v))
+            (attrs))
+          (def 4498334357512242845
+            ([v::DECIMAL]
+              (primitive :rel_primitive_parse_decimal #64 #4 "3.14" v))
+            (attrs))
+          (def 10685959883456165753
+            ([v::DAY]
+              (primitive :rel_primitive_parse_day #90 v))
+            (attrs)))))
+    (reads
+      (output :date 1046914482580477072)
+      (output :decimal 4498334357512242845))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `1046914482580477072` -> `date`
+;; 	 ID `4498334357512242845` -> `decimal`
+;; 	 ID `10685959883456165753` -> `day`

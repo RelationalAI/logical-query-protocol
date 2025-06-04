@@ -1,0 +1,34 @@
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :f1
+          (def 2965631662653371761
+            ([v::INT]
+              (primitive :rel_primitive_eq v 21))
+            (attrs))
+          (def 7505808394141676799
+            ([v::UINT128]
+              (primitive :rel_primitive_eq v 0x123456789abcdef12345))
+            (attrs))
+          (def 11698363356127107011
+            ([v::FLOAT]
+              (primitive :rel_primitive_eq v 1.23))
+            (attrs))
+          (def 8321355183808865828
+            ([v::STRING]
+              (primitive :rel_primitive_eq v "hello"))
+            (attrs)))))
+    (reads
+      (output :int 2965631662653371761)
+      (output :uint128 7505808394141676799)
+      (output :float 11698363356127107011)
+      (output :str 8321355183808865828))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `2965631662653371761` -> `output_int`
+;; 	 ID `7505808394141676799` -> `output_uint128`
+;; 	 ID `11698363356127107011` -> `output_float`
+;; 	 ID `8321355183808865828` -> `output_str`

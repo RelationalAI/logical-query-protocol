@@ -1,6 +1,7 @@
 import argparse
 import os
 import hashlib
+from dataclasses import dataclass
 from lark import Lark, Transformer, v_args
 import lqp.ir as ir
 from lqp.emit import ir_to_proto
@@ -107,6 +108,7 @@ def desugar_to_raw_primitive(name, terms):
 class LQPTransformer(Transformer):
     def __init__(self, file: str):
         self.file = file
+        self.id_to_orig_name = {}
 
     def meta(self, meta):
         return ir.SourceInfo(file=self.file, line=meta.line, column=meta.column)
@@ -299,7 +301,10 @@ class LQPTransformer(Transformer):
         if isinstance(ident, str):
             # First 64 bits of SHA-256 as the id
             id_val = int(hashlib.sha256(ident.encode()).hexdigest()[:16], 16)
-            return ir.RelationId(id=id_val, meta=self.meta(meta))
+            result = ir.RelationId(id=id_val, meta=self.meta(meta))
+            self.id_to_orig_name[id_val] = ident
+            return result
+
         elif isinstance(ident, int):
             return ir.RelationId(id=ident, meta=self.meta(meta))
 
@@ -320,6 +325,12 @@ class LQPTransformer(Transformer):
         uint128_val = int(u, 16)
         return ir.UInt128(value=uint128_val, meta=None)
 
+# TODO: Eventually this should be part of the actual transaction IR
+@dataclass(frozen=True)
+class DebugInfo:
+    file: str
+    id_to_orig_name: dict[int, str]
+
 # LALR(1) is significantly faster than Earley for parsing, especially on larger inputs. It
 # uses a precomputed parse table, reducing runtime complexity to O(n) (linear in input
 # size), whereas Earley is O(n³) in the worst case (though often O(n²) or better for
@@ -329,8 +340,15 @@ parser = Lark(grammar, parser="lalr", propagate_positions=True)
 
 def parse_lqp(file, text) -> ir.LqpNode:
     """Parse LQP text and return an IR node that can be converted to protocol buffers"""
+    result, _ = parse_lqp_with_debug(file, text)
+    return result
+
+# TODO: remove this once the IR has debug info in it directly
+def parse_lqp_with_debug(file, text):
     tree = parser.parse(text)
-    return LQPTransformer(file).transform(tree)
+    transformer = LQPTransformer(file)
+    result = transformer.transform(tree)
+    return result, DebugInfo(file, transformer.id_to_orig_name)
 
 def process_file(filename, bin, json):
     with open(filename, "r") as f:

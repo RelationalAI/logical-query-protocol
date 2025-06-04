@@ -1,0 +1,6 @@
+(fragment :frag
+  (def 11495104353665842533
+    ([x::INT y::INT]
+      (not
+        (primitive :rel_primitive_eq x y)))
+    (attrs)))
