@@ -158,6 +158,14 @@ class RelationId(LqpNode):
         if self.id < 0 or self.id > 0xffffffffffffffffffffffffffffffff:
             raise ValueError("RelationId constructed with out of range (UInt128) number: {}".format(self.id))
 
+    def __eq__(self, other):
+        if not isinstance(other, RelationId):
+            return False
+        return self.id == other.id
+
+    def __hash__(self):
+        return hash(self.id)
+
     def __str__(self) -> str:
         if self.meta:
             return f"RelationId(meta={self.meta}, id={self.id})"
