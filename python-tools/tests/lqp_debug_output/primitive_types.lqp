@@ -24,3 +24,11 @@
       (output :uint128 7505808394141676799)
       (output :float 11698363356127107011)
       (output :str 8321355183808865828))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `2965631662653371761` -> `output_int`
+;; 	 ID `7505808394141676799` -> `output_uint128`
+;; 	 ID `11698363356127107011` -> `output_float`
+;; 	 ID `8321355183808865828` -> `output_str`
