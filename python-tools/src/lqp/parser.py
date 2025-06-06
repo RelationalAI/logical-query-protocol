@@ -174,7 +174,10 @@ class LQPTransformer(Transformer):
     # Logic
     #
     def fragment(self, meta, items):
-        return ir.Fragment(id=items[0], declarations=items[1:], meta=self.meta(meta))
+        keys = list(self.id_to_orig_name.keys())
+        values = list(self.id_to_orig_name.values())
+        self.id_to_orig_name = {} # reset debugging
+        return ir.Fragment(id=items[0], declarations=items[1:], debug_keys=keys, debug_values=values, meta=self.meta(meta))
 
     def fragment_id(self, meta, items):
         return ir.FragmentId(id=items[0].encode(), meta=self.meta(meta))
@@ -302,7 +305,7 @@ class LQPTransformer(Transformer):
             # First 64 bits of SHA-256 as the id
             id_val = int(hashlib.sha256(ident.encode()).hexdigest()[:16], 16)
             result = ir.RelationId(id=id_val, meta=self.meta(meta))
-            self.id_to_orig_name[id_val] = ident
+            self.id_to_orig_name[result] = ident
             return result
 
         elif isinstance(ident, int):
@@ -329,7 +332,7 @@ class LQPTransformer(Transformer):
 @dataclass(frozen=True)
 class DebugInfo:
     file: str
-    id_to_orig_name: dict[int, str]
+    id_to_orig_name: dict[ir.RelationId, str]
 
 # LALR(1) is significantly faster than Earley for parsing, especially on larger inputs. It
 # uses a precomputed parse table, reducing runtime complexity to O(n) (linear in input

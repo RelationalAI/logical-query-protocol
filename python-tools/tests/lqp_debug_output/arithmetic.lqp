@@ -52,13 +52,3 @@
       (output :dec_div 11795783772012398890)
       (output :date_add 12661780409938758043)
       (output :date_sub 691583957587953840))))
-
-;; Debug information
-;; -----------------------
-;; Original names
-;; 	 ID `8346242610505581273` -> `output_decimal_addition`
-;; 	 ID `3056642369193908718` -> `output_decimal_subtraction`
-;; 	 ID `16478189523298330666` -> `output_decimal_multiplication`
-;; 	 ID `11795783772012398890` -> `output_decimal_division`
-;; 	 ID `12661780409938758043` -> `output_date_addition`
-;; 	 ID `691583957587953840` -> `output_date_subtraction`

@@ -45,10 +45,3 @@
     (reads
       (output :items_sum 717761118272002131)
       (output :items_count 7797218844049897513))))
-
-;; Debug information
-;; -----------------------
-;; Original names
-;; 	 ID `3181428560199927439` -> `foo`
-;; 	 ID `717761118272002131` -> `sum`
-;; 	 ID `7797218844049897513` -> `count`

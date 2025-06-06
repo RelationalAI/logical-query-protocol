@@ -69,20 +69,3 @@
       (output :week 10438474524702072604)
       (output :month 17436258858767430927)
       (output :year 14697628564360421281))))
-
-;; Debug information
-;; -----------------------
-;; Original names
-;; 	 ID `9204631264110356583` -> `output_decimal`
-;; 	 ID `5168972349743097577` -> `output_date`
-;; 	 ID `1476699919531177603` -> `output_datetime`
-;; 	 ID `8163113465643616746` -> `output_nanosecond`
-;; 	 ID `1588506369562167081` -> `output_microsecond`
-;; 	 ID `1957779428604074794` -> `output_millisecond`
-;; 	 ID `14300380758524772344` -> `output_second`
-;; 	 ID `3596032385316586583` -> `output_minute`
-;; 	 ID `17979754919520810771` -> `output_hour`
-;; 	 ID `1987637647232885858` -> `output_day`
-;; 	 ID `10438474524702072604` -> `output_week`
-;; 	 ID `17436258858767430927` -> `output_month`
-;; 	 ID `14697628564360421281` -> `output_year`

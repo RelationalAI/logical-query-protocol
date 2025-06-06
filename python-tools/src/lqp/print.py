@@ -167,21 +167,21 @@ def program_to_str(node: ir.Transaction, options: Dict = {}) -> str:
         s += conf.RPAREN()
     s += conf.RPAREN()
 
-    if has_option(options, PrettyOptions.PRINT_DEBUG) or True:
-        s += _debug_str(options.get("_debug", None))
+    # if has_option(options, PrettyOptions.PRINT_DEBUG) or True:
+    #     s += _debug_str(options.get("_debug", None))
 
     return s
 
-def _debug_str(debug_info) -> str:
-    if debug_info is None or len(debug_info.id_to_orig_name) == 0:
-        return ""
-    debug_str: str = "\n\n"
-    debug_str += ";; Debug information\n"
-    debug_str += ";; -----------------------\n"
-    debug_str += ";; Original names\n"
-    for (rid, name) in debug_info.id_to_orig_name.items():
-        debug_str += f";; \t ID `{rid}` -> `{name}`\n"
-    return debug_str
+# def _debug_str(debug_info) -> str:
+#     if debug_info is None or len(debug_info.id_to_orig_name) == 0:
+#         return ""
+#     debug_str: str = "\n\n"
+#     debug_str += ";; Debug information\n"
+#     debug_str += ";; -----------------------\n"
+#     debug_str += ";; Original names\n"
+#     for (rid, name) in debug_info.id_to_orig_name.items():
+#         debug_str += f";; \t ID `{rid}` -> `{name}`\n"
+#     return debug_str
 
 def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Specialized], indent_level: int, options: Dict = {}) -> str:
     conf = style_config(options)
@@ -362,6 +362,8 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
 def fragment_to_str(node: ir.Fragment, indent_level: int, options: Dict = {}) -> str:
     conf = style_config(options)
     ind = conf.indentation(indent_level)
+    for k, v in zip(node.debug_keys, node.debug_values):
+        options[k] = v
     declarations_portion = list_to_str(node.declarations, indent_level + 1, "\n", options)
     return \
         ind + conf.LPAREN() + conf.kw("fragment") + " " + to_str(node.id, 0, options) + "\n" + \
@@ -382,13 +384,11 @@ def type_to_str(node: ir.RelType) -> str:
 def id_to_name(options: Dict, rid: ir.RelationId) -> str:
     if not has_option(options, PrettyOptions.PRINT_NAMES):
         return f"{rid.id}"
-    debug = options.get("_debug", None)
+    debug = options.get(rid, None)
     if debug is None:
         return f"{rid.id}"
-    assert rid in debug.id_to_orig_name, f"ID {rid} not found in debug info."
-    name = debug.id_to_orig_name[rid]
-    name = f":{name}"
-    return name
+    assert rid in options, f"ID {rid} not found in debug info."
+    return ":"+debug
 
 def has_option(options: Dict, opt: PrettyOptions) -> bool:
     return options.get(option_to_key[opt], option_to_default[opt])

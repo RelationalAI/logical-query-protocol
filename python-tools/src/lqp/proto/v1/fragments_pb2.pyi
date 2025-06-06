@@ -7,12 +7,16 @@ from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Map
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class Fragment(_message.Message):
-    __slots__ = ("id", "declarations")
+    __slots__ = ("id", "declarations", "keys", "values")
     ID_FIELD_NUMBER: _ClassVar[int]
     DECLARATIONS_FIELD_NUMBER: _ClassVar[int]
+    KEYS_FIELD_NUMBER: _ClassVar[int]
+    VALUES_FIELD_NUMBER: _ClassVar[int]
     id: FragmentId
     declarations: _containers.RepeatedCompositeFieldContainer[_logic_pb2.Declaration]
-    def __init__(self, id: _Optional[_Union[FragmentId, _Mapping]] = ..., declarations: _Optional[_Iterable[_Union[_logic_pb2.Declaration, _Mapping]]] = ...) -> None: ...
+    keys: _containers.RepeatedCompositeFieldContainer[_logic_pb2.RelationId]
+    values: _containers.RepeatedScalarFieldContainer[str]
+    def __init__(self, id: _Optional[_Union[FragmentId, _Mapping]] = ..., declarations: _Optional[_Iterable[_Union[_logic_pb2.Declaration, _Mapping]]] = ..., keys: _Optional[_Iterable[_Union[_logic_pb2.RelationId, _Mapping]]] = ..., values: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class FragmentId(_message.Message):
     __slots__ = ("id",)

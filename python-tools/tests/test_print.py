@@ -17,6 +17,7 @@ def assert_lqp_nodes_equal(obj1, obj2):
             raise AssertionError(f"Node types differ: {obj1.__class__} vs {obj2.__class__}")
         for field_info in dataclasses.fields(type(obj1)):
             if field_info.name == 'meta': continue
+            if field_info.name.startswith('debug_'): continue
             assert_lqp_nodes_equal(getattr(obj1, field_info.name), getattr(obj2, field_info.name))
     elif isinstance(obj1, (list, tuple)) and isinstance(obj2, (list, tuple)):
         if len(obj1) != len(obj2):
@@ -48,3 +49,16 @@ def test_print_debug_snapshot(snapshot, input_file):
     snapshot.assert_match(printed_lqp_str, os.path.basename(input_file))
     re_parsed_node = parser.parse_lqp("reparsed_output.lqp", printed_lqp_str)
     assert_lqp_nodes_equal(re_parsed_node, parsed_node)
+
+@pytest.mark.parametrize("input_file", get_lqp_input_files())
+def test_print_debug_snapshot(snapshot, input_file):
+    with open(input_file, "r") as f:
+        original_lqp_str = f.read()
+    parsed_node = parser.parse_lqp(input_file, original_lqp_str)
+    printed_lqp_str = lqp_print.to_string(parsed_node, {})
+    options = lqp_print.ugly_config
+    options[str(lqp_print.PrettyOptions.PRINT_NAMES)] = True
+    pretty_printed_lqp_str = lqp_print.to_string(parsed_node, options)
+    re_parsed_node = parser.parse_lqp("reparsed_output.lqp", pretty_printed_lqp_str)
+    assert_lqp_nodes_equal(re_parsed_node, parsed_node)
+

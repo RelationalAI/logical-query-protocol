@@ -30,11 +30,3 @@
       (output :int_dec 2416119102758728972)
       (output :dec_int 643033171408983360)
       (output :hour_minute 15959071190882653462))))
-
-;; Debug information
-;; -----------------------
-;; Original names
-;; 	 ID `16349762466079412570` -> `int_uint`
-;; 	 ID `2416119102758728972` -> `int_dec`
-;; 	 ID `643033171408983360` -> `dec_int`
-;; 	 ID `15959071190882653462` -> `hour_minute`

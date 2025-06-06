@@ -14,8 +14,3 @@
                   (relatom :date_limit _date_limit)
                   (primitive :rel_primitive_lt_eq_monotype _lineitem_l_shipdate _date_limit))))
             (attrs)))))))
-
-;; Debug information
-;; -----------------------
-;; Original names
-;; 	 ID `10567094013610926008` -> `common`

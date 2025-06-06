@@ -155,7 +155,9 @@ def convert_declaration(decl: ir.Declaration) -> logic_pb2.Declaration:
 def convert_fragment(frag: ir.Fragment) -> fragments_pb2.Fragment:
     return fragments_pb2.Fragment(
         id=convert_fragment_id(frag.id),
-        declarations=[convert_declaration(decl) for decl in frag.declarations]
+        declarations=[convert_declaration(decl) for decl in frag.declarations],
+        keys=[convert_relation_id(key) for key in frag.debug_keys],
+        values=frag.debug_values
     )
 
 def convert_define(d: ir.Define) -> transactions_pb2.Define:

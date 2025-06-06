@@ -15,7 +15,7 @@ _sym_db = _symbol_database.Default()
 from lqp.proto.v1 import logic_pb2 as relationalai_dot_lqp_dot_v1_dot_logic__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n#relationalai/lqp/v1/fragments.proto\x12\x13relationalai.lqp.v1\x1a\x1frelationalai/lqp/v1/logic.proto\"\x81\x01\n\x08\x46ragment\x12/\n\x02id\x18\x01 \x01(\x0b\x32\x1f.relationalai.lqp.v1.FragmentIdR\x02id\x12\x44\n\x0c\x64\x65\x63larations\x18\x02 \x03(\x0b\x32 .relationalai.lqp.v1.DeclarationR\x0c\x64\x65\x63larations\"\x1c\n\nFragmentId\x12\x0e\n\x02id\x18\x01 \x01(\x0cR\x02idb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n#relationalai/lqp/v1/fragments.proto\x12\x13relationalai.lqp.v1\x1a\x1frelationalai/lqp/v1/logic.proto\"\xce\x01\n\x08\x46ragment\x12/\n\x02id\x18\x01 \x01(\x0b\x32\x1f.relationalai.lqp.v1.FragmentIdR\x02id\x12\x44\n\x0c\x64\x65\x63larations\x18\x02 \x03(\x0b\x32 .relationalai.lqp.v1.DeclarationR\x0c\x64\x65\x63larations\x12\x33\n\x04keys\x18\x03 \x03(\x0b\x32\x1f.relationalai.lqp.v1.RelationIdR\x04keys\x12\x16\n\x06values\x18\x04 \x03(\tR\x06values\"\x1c\n\nFragmentId\x12\x0e\n\x02id\x18\x01 \x01(\x0cR\x02idb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -23,7 +23,7 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'relationalai.lqp.v1.fragmen
 if _descriptor._USE_C_DESCRIPTORS == False:
   DESCRIPTOR._options = None
   _globals['_FRAGMENT']._serialized_start=94
-  _globals['_FRAGMENT']._serialized_end=223
-  _globals['_FRAGMENTID']._serialized_start=225
-  _globals['_FRAGMENTID']._serialized_end=253
+  _globals['_FRAGMENT']._serialized_end=300
+  _globals['_FRAGMENTID']._serialized_start=302
+  _globals['_FRAGMENTID']._serialized_end=330
 # @@protoc_insertion_point(module_scope)

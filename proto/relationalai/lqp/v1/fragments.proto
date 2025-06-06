@@ -7,6 +7,8 @@ import "relationalai/lqp/v1/logic.proto";
 message Fragment {
   FragmentId id = 1;
   repeated Declaration declarations = 2;
+  repeated RelationId keys = 3; // Can't do a map for hash reasons on ProtoBuf side
+  repeated string values = 4;
 }
 
 message FragmentId {
