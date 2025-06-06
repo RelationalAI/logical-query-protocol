@@ -1,0 +1,20 @@
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :primitives
+          (def :date
+            ([v::DATE]
+              (primitive :rel_primitive_parse_date "1998-12-01" "Y-m-d" v))
+            (attrs))
+          (def :decimal
+            ([v::DECIMAL]
+              (primitive :rel_primitive_parse_decimal #64 #4 "3.14" v))
+            (attrs))
+          (def :day
+            ([v::DAY]
+              (primitive :rel_primitive_parse_day #90 v))
+            (attrs)))))
+    (reads
+      (output :date 1046914482580477072)
+      (output :decimal 4498334357512242845))))

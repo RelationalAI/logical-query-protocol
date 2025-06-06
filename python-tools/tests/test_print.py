@@ -59,6 +59,8 @@ def test_print_debug_snapshot(snapshot, input_file):
     options = lqp_print.ugly_config
     options[str(lqp_print.PrettyOptions.PRINT_NAMES)] = True
     pretty_printed_lqp_str = lqp_print.to_string(parsed_node, options)
+    snapshot.snapshot_dir = "tests/lqp_pretty_output"
+    snapshot.assert_match(pretty_printed_lqp_str, os.path.basename(input_file))
     re_parsed_node = parser.parse_lqp("reparsed_output.lqp", pretty_printed_lqp_str)
     assert_lqp_nodes_equal(re_parsed_node, parsed_node)
 

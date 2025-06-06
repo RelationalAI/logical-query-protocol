@@ -1,0 +1,54 @@
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :f1
+          (def :output_decimal_addition
+            ([a::DECIMAL b::DECIMAL c::DECIMAL]
+              (and
+                (relatom :dec_a a)
+                (relatom :dec_b b)
+                (primitive :rel_primitive_add_monotype a b c)))
+            (attrs))
+          (def :output_decimal_subtraction
+            ([a::DECIMAL b::DECIMAL c::DECIMAL]
+              (and
+                (relatom :dec_a a)
+                (relatom :dec_b b)
+                (primitive :rel_primitive_subtract_monotype a b c)))
+            (attrs))
+          (def :output_decimal_multiplication
+            ([a::DECIMAL b::DECIMAL c::DECIMAL]
+              (and
+                (relatom :dec_a a)
+                (relatom :dec_b b)
+                (primitive :rel_primitive_multiply_monotype a b c)))
+            (attrs))
+          (def :output_decimal_division
+            ([a::DECIMAL b::DECIMAL c::DECIMAL]
+              (and
+                (relatom :dec_a a)
+                (relatom :dec_b b)
+                (primitive :rel_primitive_divide_monotype a b c)))
+            (attrs))
+          (def :output_date_addition
+            ([a::DATE b::DAY c::DATE]
+              (and
+                (relatom :date_a a)
+                (relatom :day_b b)
+                (primitive :rel_primitive_add_monotype a b c)))
+            (attrs))
+          (def :output_date_subtraction
+            ([a::DATE b::DAY c::DATE]
+              (and
+                (relatom :date_a a)
+                (relatom :day_b b)
+                (primitive :rel_primitive_subtract_monotype a b c)))
+            (attrs)))))
+    (reads
+      (output :dec_add 8346242610505581273)
+      (output :dec_sub 3056642369193908718)
+      (output :dec_mult 16478189523298330666)
+      (output :dec_div 11795783772012398890)
+      (output :date_add 12661780409938758043)
+      (output :date_sub 691583957587953840))))

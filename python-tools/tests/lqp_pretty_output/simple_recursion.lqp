@@ -1,0 +1,60 @@
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :f1
+          (def :edge1
+            ([x::STRING y::STRING]
+              (and
+                (primitive :rel_primitive_eq x "a")
+                (primitive :rel_primitive_eq y "b")))
+            (attrs))
+          (def :edge2
+            ([x::STRING y::STRING]
+              (and
+                (primitive :rel_primitive_eq x "b")
+                (primitive :rel_primitive_eq y "c")))
+            (attrs))
+          (def :edge3
+            ([x::STRING y::STRING]
+              (and
+                (primitive :rel_primitive_eq x "b")
+                (primitive :rel_primitive_eq y "d")))
+            (attrs))
+          (def :edge4
+            ([x::STRING y::STRING]
+              (and
+                (primitive :rel_primitive_eq x "d")
+                (primitive :rel_primitive_eq y "e")))
+            (attrs))
+          (def :edge
+            ([x::STRING y::STRING]
+              (or
+                (atom :edge1 x y)
+                (atom :edge2 x y)
+                (atom :edge3 x y)
+                (atom :edge4 x y)))
+            (attrs))
+          (def :path1
+            ([x::STRING y::STRING]
+              (atom :edge x y))
+            (attrs))
+          (def :path2
+            ([x::STRING z::STRING]
+              (exists [y::STRING]
+                (and
+                  (atom :edge x y)
+                  (atom :path y z))))
+            (attrs))
+          (def :path
+            ([x::STRING y::STRING]
+              (or
+                (atom :path1 x y)
+                (atom :path2 x y)))
+            (attrs))
+          (def :output
+            ([x::STRING y::STRING]
+              (atom :path x y))
+            (attrs)))))
+    (reads
+      (output :result 16208045718567772255))))

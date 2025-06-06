@@ -1,0 +1,71 @@
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :f1
+          (def :output_decimal
+            ([v::DECIMAL]
+              (relatom :dec v))
+            (attrs))
+          (def :output_date
+            ([v::DATE]
+              (relatom :date v))
+            (attrs))
+          (def :output_datetime
+            ([v::DATETIME]
+              (relatom :datetime v))
+            (attrs))
+          (def :output_nanosecond
+            ([v::NANOSECOND]
+              (relatom :nanosecond v))
+            (attrs))
+          (def :output_microsecond
+            ([v::MICROSECOND]
+              (relatom :microsecond v))
+            (attrs))
+          (def :output_millisecond
+            ([v::MILLISECOND]
+              (relatom :millisecond v))
+            (attrs))
+          (def :output_second
+            ([v::SECOND]
+              (relatom :second v))
+            (attrs))
+          (def :output_minute
+            ([v::MINUTE]
+              (relatom :minute v))
+            (attrs))
+          (def :output_hour
+            ([v::HOUR]
+              (relatom :hour v))
+            (attrs))
+          (def :output_day
+            ([v::DAY]
+              (relatom :day v))
+            (attrs))
+          (def :output_week
+            ([v::WEEK]
+              (relatom :week v))
+            (attrs))
+          (def :output_month
+            ([v::MONTH]
+              (relatom :month v))
+            (attrs))
+          (def :output_year
+            ([v::YEAR]
+              (relatom :year v))
+            (attrs)))))
+    (reads
+      (output :dec 9204631264110356583)
+      (output :date 5168972349743097577)
+      (output :datetime 1476699919531177603)
+      (output :nanosecond 8163113465643616746)
+      (output :microsecond 1588506369562167081)
+      (output :millisecond 1957779428604074794)
+      (output :second 14300380758524772344)
+      (output :minute 3596032385316586583)
+      (output :hour 17979754919520810771)
+      (output :day 1987637647232885858)
+      (output :week 10438474524702072604)
+      (output :month 17436258858767430927)
+      (output :year 14697628564360421281))))
