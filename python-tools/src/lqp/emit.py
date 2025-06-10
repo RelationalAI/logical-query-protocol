@@ -164,8 +164,7 @@ def convert_fragment(frag: ir.Fragment) -> fragments_pb2.Fragment:
 
 def convert_debug_info(info: ir.DebugInfo) -> fragments_pb2.DebugInfo:
     return fragments_pb2.DebugInfo(
-        ids=[logic_pb2.RelationId(id_low=_split_relation_id(key)[0], id_high=_split_relation_id(key)[1]) \
-                for key in info.debug_keys],
+        ids=[_convert_relation_id(key) for key in info.debug_keys],
         orig_names=info.debug_values
     )
 
