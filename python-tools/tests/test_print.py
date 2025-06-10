@@ -51,7 +51,7 @@ def test_print_debug_snapshot(snapshot, input_file):
     assert_lqp_nodes_equal(re_parsed_node, parsed_node)
 
 @pytest.mark.parametrize("input_file", get_lqp_input_files())
-def test_print_debug_snapshot(snapshot, input_file):
+def test_print_pretty_snapshot(snapshot, input_file):
     with open(input_file, "r") as f:
         original_lqp_str = f.read()
     parsed_node = parser.parse_lqp(input_file, original_lqp_str)
@@ -63,4 +63,3 @@ def test_print_debug_snapshot(snapshot, input_file):
     snapshot.assert_match(pretty_printed_lqp_str, os.path.basename(input_file))
     re_parsed_node = parser.parse_lqp("reparsed_output.lqp", pretty_printed_lqp_str)
     assert_lqp_nodes_equal(re_parsed_node, parsed_node)
-

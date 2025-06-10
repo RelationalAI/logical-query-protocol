@@ -26,7 +26,7 @@
                   (cast MINUTE h v))))
             (attrs)))))
     (reads
-      (output :int_uint 16349762466079412570)
-      (output :int_dec 2416119102758728972)
-      (output :dec_int 643033171408983360)
-      (output :hour_minute 15959071190882653462))))
+      (output :int_uint :int_uint)
+      (output :int_dec :int_dec)
+      (output :dec_int :dec_int)
+      (output :hour_minute :hour_minute))))

@@ -20,3 +20,8 @@
               (attribute :inspect "normalizer" 2))))))
     (reads
       (output :foo 3181428560199927439))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `3181428560199927439` -> `foo`

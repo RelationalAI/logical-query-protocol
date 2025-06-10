@@ -8,4 +8,4 @@
               (primitive :rel_primitive_add_monotype 1 1 v))
             (attrs)))))
     (reads
-      (output :output 16208045718567772255))))
+      (output :output :output))))

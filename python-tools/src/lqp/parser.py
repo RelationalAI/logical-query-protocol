@@ -305,7 +305,7 @@ class LQPTransformer(Transformer):
             # First 64 bits of SHA-256 as the id
             id_val = int(hashlib.sha256(ident.encode()).hexdigest()[:16], 16)
             result = ir.RelationId(id=id_val, meta=self.meta(meta))
-            self.id_to_orig_name[result] = ident
+            self.id_to_orig_name[id_val] = ident
             return result
 
         elif isinstance(ident, int):
@@ -332,7 +332,7 @@ class LQPTransformer(Transformer):
 @dataclass(frozen=True)
 class DebugInfo:
     file: str
-    id_to_orig_name: dict[ir.RelationId, str]
+    id_to_orig_name: dict[int, str]
 
 # LALR(1) is significantly faster than Earley for parsing, especially on larger inputs. It
 # uses a precomputed parse table, reducing runtime complexity to O(n) (linear in input
@@ -360,7 +360,6 @@ def process_file(filename, bin, json):
     lqp = parse_lqp(filename, lqp_text)
     validate_lqp(lqp)
     lqp_proto = ir_to_proto(lqp)
-    print(lqp_proto)
 
     # Write binary output to the configured directories, using the same filename.
     if bin:

@@ -25,3 +25,8 @@
             (attrs)))))
     (reads
       (output :foo 17771790133431687692))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `17771790133431687692` -> `result`

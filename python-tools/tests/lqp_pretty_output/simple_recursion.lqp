@@ -57,4 +57,4 @@
               (atom :path x y))
             (attrs)))))
     (reads
-      (output :result 16208045718567772255))))
+      (output :result :output))))

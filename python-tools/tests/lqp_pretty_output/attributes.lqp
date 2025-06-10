@@ -19,4 +19,4 @@
               (attribute :function )
               (attribute :inspect "normalizer" 2))))))
     (reads
-      (output :foo 3181428560199927439))))
+      (output :foo :foo))))

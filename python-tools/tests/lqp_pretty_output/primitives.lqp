@@ -16,5 +16,5 @@
               (primitive :rel_primitive_parse_day #90 v))
             (attrs)))))
     (reads
-      (output :date 1046914482580477072)
-      (output :decimal 4498334357512242845))))
+      (output :date :date)
+      (output :decimal :decimal))))

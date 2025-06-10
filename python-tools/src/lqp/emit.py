@@ -61,9 +61,13 @@ def convert_relterm(t: ir.RelTerm) -> logic_pb2.RelTerm:
     else:
         return logic_pb2.RelTerm(term=convert_term(t))
 
+def _split_relation_id(i: int) -> tuple[int, int]:
+    id_low = i & 0xFFFFFFFFFFFFFFFF
+    id_high = (i >> 64) & 0xFFFFFFFFFFFFFFFF
+    return id_low, id_high
+
 def convert_relation_id(rid: ir.RelationId) -> logic_pb2.RelationId:
-    id_low = rid.id & 0xFFFFFFFFFFFFFFFF
-    id_high = (rid.id >> 64) & 0xFFFFFFFFFFFFFFFF
+    id_low, id_high = _split_relation_id(rid.id)
     return logic_pb2.RelationId(id_low=id_low, id_high=id_high)
 
 def convert_fragment_id(fid: ir.FragmentId) -> fragments_pb2.FragmentId:
@@ -156,7 +160,8 @@ def convert_fragment(frag: ir.Fragment) -> fragments_pb2.Fragment:
     return fragments_pb2.Fragment(
         id=convert_fragment_id(frag.id),
         declarations=[convert_declaration(decl) for decl in frag.declarations],
-        keys=[convert_relation_id(key) for key in frag.debug_keys],
+        keys=[logic_pb2.RelationId(id_low=_split_relation_id(key)[0], id_high=_split_relation_id(key)[1]) \
+                for key in frag.debug_keys],
         values=frag.debug_values
     )
 

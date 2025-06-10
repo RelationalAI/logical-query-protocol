@@ -58,3 +58,8 @@
             (attrs)))))
     (reads
       (output :result 16208045718567772255))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `16208045718567772255` -> `output`

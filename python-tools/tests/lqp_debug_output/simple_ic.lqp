@@ -18,3 +18,9 @@
     (reads
       (output :result 16208045718567772255)
       (abort :abort_1_eq_1 4202944263766022126))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `16208045718567772255` -> `output`
+;; 	 ID `4202944263766022126` -> `abort`

@@ -24,4 +24,4 @@
                 (terms x)))
             (attrs)))))
     (reads
-      (output :foo 17771790133431687692))))
+      (output :foo :result))))

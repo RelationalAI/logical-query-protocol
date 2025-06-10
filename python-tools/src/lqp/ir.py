@@ -200,7 +200,7 @@ class FragmentId(LqpNode):
 class Fragment(LqpNode):
     id: FragmentId
     declarations: Sequence[Declaration]
-    debug_keys: Sequence[RelationId]
+    debug_keys: Sequence[int]
     debug_values: Sequence[str]
 
 # --- Transaction Types ---
