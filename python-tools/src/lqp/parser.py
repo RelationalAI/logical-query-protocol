@@ -356,6 +356,7 @@ def process_file(filename, bin, json):
     lqp = parse_lqp(filename, lqp_text)
     validate_lqp(lqp)
     lqp_proto = ir_to_proto(lqp)
+    print(lqp_proto)
 
     # Write binary output to the configured directories, using the same filename.
     if bin:

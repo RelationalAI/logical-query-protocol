@@ -109,14 +109,14 @@ option_to_default = {
 ugly_config = {
     str(PrettyOptions.STYLED): False,
     str(PrettyOptions.PRINT_NAMES): False,
-    str(PrettyOptions.PRINT_DEBUG): True,
+    str(PrettyOptions.PRINT_DEBUG): True
 }
 
 # Used for humans
 pretty_config = {
     str(PrettyOptions.STYLED): True,
     str(PrettyOptions.PRINT_NAMES): True,
-    str(PrettyOptions.PRINT_DEBUG): False,
+    str(PrettyOptions.PRINT_DEBUG): False
 }
 
 def style_config(options: Dict) -> StyleConfig:
