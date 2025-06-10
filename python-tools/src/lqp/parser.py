@@ -343,15 +343,10 @@ parser = Lark(grammar, parser="lalr", propagate_positions=True)
 
 def parse_lqp(file, text) -> ir.LqpNode:
     """Parse LQP text and return an IR node that can be converted to protocol buffers"""
-    result, _ = parse_lqp_with_debug(file, text)
-    return result
-
-# TODO: remove this once the IR has debug info in it directly
-def parse_lqp_with_debug(file, text):
     tree = parser.parse(text)
     transformer = LQPTransformer(file)
     result = transformer.transform(tree)
-    return result, DebugInfo(file, transformer.id_to_orig_name)
+    return result
 
 def process_file(filename, bin, json):
     with open(filename, "r") as f:
