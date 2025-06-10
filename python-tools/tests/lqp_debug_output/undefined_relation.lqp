@@ -1,0 +1,17 @@
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :f1
+          (def 16208045718567772255
+            ([v::INT]
+              (atom 3238736544897475342 v))
+            (attrs)))))
+    (reads
+      (output :output 16208045718567772255))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `16208045718567772255` -> `output`
+;; 	 ID `3238736544897475342` -> `hello`

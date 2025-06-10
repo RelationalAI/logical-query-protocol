@@ -195,11 +195,15 @@ RelType = Union[PrimitiveType, RelValueType]
 class FragmentId(LqpNode):
     id: bytes
 
-# Fragment(id::FragmentId, declarations::Declaration[])
+# Fragment(id::FragmentId, declarations::Declaration[], debug_info::DebugInfo)
 @dataclass(frozen=True)
 class Fragment(LqpNode):
     id: FragmentId
     declarations: Sequence[Declaration]
+    debug_info: DebugInfo
+
+@dataclass(frozen=True)
+class DebugInfo(LqpNode):
     debug_keys: Sequence[int]
     debug_values: Sequence[str]
 

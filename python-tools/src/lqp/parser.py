@@ -176,8 +176,9 @@ class LQPTransformer(Transformer):
     def fragment(self, meta, items):
         keys = list(self.id_to_orig_name.keys())
         values = list(self.id_to_orig_name.values())
+        debug_info = ir.DebugInfo(debug_keys=keys, debug_values=values, meta=self.meta(meta))
         self.id_to_orig_name = {} # reset debugging
-        return ir.Fragment(id=items[0], declarations=items[1:], debug_keys=keys, debug_values=values, meta=self.meta(meta))
+        return ir.Fragment(id=items[0], declarations=items[1:], debug_info=debug_info, meta=self.meta(meta))
 
     def fragment_id(self, meta, items):
         return ir.FragmentId(id=items[0].encode(), meta=self.meta(meta))

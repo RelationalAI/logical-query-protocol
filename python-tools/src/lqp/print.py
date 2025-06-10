@@ -116,7 +116,7 @@ ugly_config = {
 pretty_config = {
     str(PrettyOptions.STYLED): True,
     str(PrettyOptions.PRINT_NAMES): True,
-    str(PrettyOptions.PRINT_DEBUG): False
+    str(PrettyOptions.PRINT_DEBUG): False,
 }
 
 def style_config(options: Dict) -> StyleConfig:
@@ -147,6 +147,7 @@ def terms_to_str(terms: Sequence[Union[ir.Term, ir.Specialized]], indent_level: 
 
 def program_to_str(node: ir.Transaction, options: Dict = {}) -> str:
     conf = style_config(options)
+    options.pop("_debug", None) # flush debuginfo for each program
     s = conf.indentation(0) + conf.LPAREN() + conf.kw("transaction")
     for epoch in node.epochs:
         s += "\n" + conf.indentation(1) + conf.LPAREN() + conf.kw("epoch")
@@ -167,7 +168,21 @@ def program_to_str(node: ir.Transaction, options: Dict = {}) -> str:
         s += conf.RPAREN()
     s += conf.RPAREN()
 
+    if has_option(options, PrettyOptions.PRINT_DEBUG):
+        s += _debug_str(options.get("_debug", None))
+
     return s
+
+def _debug_str(debug_info) -> str:
+    if debug_info is None or len(debug_info) == 0:
+        return ""
+    debug_str: str = "\n\n"
+    debug_str += ";; Debug information\n"
+    debug_str += ";; -----------------------\n"
+    debug_str += ";; Original names\n"
+    for (rid, name) in debug_info.items():
+        debug_str += f";; \t ID `{rid}` -> `{name}`\n"
+    return debug_str
 
 def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Specialized], indent_level: int, options: Dict = {}) -> str:
     conf = style_config(options)
@@ -348,13 +363,22 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
 def fragment_to_str(node: ir.Fragment, indent_level: int, options: Dict = {}) -> str:
     conf = style_config(options)
     ind = conf.indentation(indent_level)
-    for k, v in zip(node.debug_keys, node.debug_values):
-        options[k] = v
+    add_debug_info(options, node.debug_info)
     declarations_portion = list_to_str(node.declarations, indent_level + 1, "\n", options)
     return \
         ind + conf.LPAREN() + conf.kw("fragment") + " " + to_str(node.id, 0, options) + "\n" + \
         declarations_portion + \
         conf.RPAREN()
+
+def add_debug_info(options: Dict, debug: ir.DebugInfo) -> None:
+    new_info = {}
+    for k, v in zip(debug.debug_keys, debug.debug_values):
+        new_info[k] = v
+    if options.get("_debug", None) is None:
+        options["_debug"] = new_info
+    else:
+        options["_debug"] = options.get("_debug", {}) | new_info
+    return
 
 def to_string(node: ir.LqpNode, options: Dict = {}) -> str:
     if isinstance(node, ir.Transaction):
@@ -370,11 +394,11 @@ def type_to_str(node: ir.RelType) -> str:
 def id_to_name(options: Dict, rid: ir.RelationId) -> str:
     if not has_option(options, PrettyOptions.PRINT_NAMES):
         return f"{rid.id}"
-    debug = options.get(rid.id, None)
-    if debug is None:
+    debug = options.get("_debug", None)
+    if debug is None or len(debug) == 0:
         return f"{rid.id}"
-    assert rid.id in options, f"ID {rid} not found in debug info."
-    return ":"+debug
+    assert rid.id in debug, f"ID {rid} not found in debug info."
+    return ":"+debug.get(rid.id, "")
 
 def has_option(options: Dict, opt: PrettyOptions) -> bool:
     return options.get(option_to_key[opt], option_to_default[opt])
