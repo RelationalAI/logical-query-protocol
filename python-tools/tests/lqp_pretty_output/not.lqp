@@ -2,5 +2,4 @@
   (def :test
     ([x::INT y::INT]
       (not
-        (primitive :rel_primitive_eq x y)))
-    ))
+        (primitive :rel_primitive_eq x y)))))

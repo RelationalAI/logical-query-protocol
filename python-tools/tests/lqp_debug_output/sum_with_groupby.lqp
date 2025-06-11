@@ -20,8 +20,7 @@
                   (primitive :rel_primitive_eq amount 6.34))
                 (and
                   (primitive :rel_primitive_eq category "drink")
-                  (primitive :rel_primitive_eq amount 2.82))))
-            )
+                  (primitive :rel_primitive_eq amount 2.82)))))
           (def 717761118272002131
             ([cat::STRING x::FLOAT]
               (reduce
@@ -29,8 +28,7 @@
                   (primitive :rel_primitive_add_monotype a b c))
                 ([num::FLOAT]
                   (atom 3181428560199927439 cat num))
-                (terms x)))
-            )
+                (terms x))))
           (def 7797218844049897513
             ([cat::STRING x::INT]
               (reduce
@@ -40,8 +38,7 @@
                   (and
                     (atom 3181428560199927439 cat num)
                     (primitive :rel_primitive_eq one 1)))
-                (terms x)))
-            ))))
+                (terms x)))))))
     (reads
       (output :items_sum 717761118272002131)
       (output :items_count 7797218844049897513))))

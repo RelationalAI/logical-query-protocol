@@ -5,7 +5,10 @@
         (fragment :f1
           (def 1234567898765432123456789
             ([v::INT]
-              (primitive :rel_primitive_add_monotype 1 1 v))
-            ))))
+              (primitive :rel_primitive_add_monotype 1 1 v))))))
     (reads
       (output :output 1234567898765432123456789))))
+
+;; Debug information
+;; -----------------------
+;; Original names

@@ -5,56 +5,43 @@
         (fragment :f1
           (def 9204631264110356583
             ([v::DECIMAL]
-              (relatom :dec v))
-            )
+              (relatom :dec v)))
           (def 5168972349743097577
             ([v::DATE]
-              (relatom :date v))
-            )
+              (relatom :date v)))
           (def 1476699919531177603
             ([v::DATETIME]
-              (relatom :datetime v))
-            )
+              (relatom :datetime v)))
           (def 8163113465643616746
             ([v::NANOSECOND]
-              (relatom :nanosecond v))
-            )
+              (relatom :nanosecond v)))
           (def 1588506369562167081
             ([v::MICROSECOND]
-              (relatom :microsecond v))
-            )
+              (relatom :microsecond v)))
           (def 1957779428604074794
             ([v::MILLISECOND]
-              (relatom :millisecond v))
-            )
+              (relatom :millisecond v)))
           (def 14300380758524772344
             ([v::SECOND]
-              (relatom :second v))
-            )
+              (relatom :second v)))
           (def 3596032385316586583
             ([v::MINUTE]
-              (relatom :minute v))
-            )
+              (relatom :minute v)))
           (def 17979754919520810771
             ([v::HOUR]
-              (relatom :hour v))
-            )
+              (relatom :hour v)))
           (def 1987637647232885858
             ([v::DAY]
-              (relatom :day v))
-            )
+              (relatom :day v)))
           (def 10438474524702072604
             ([v::WEEK]
-              (relatom :week v))
-            )
+              (relatom :week v)))
           (def 17436258858767430927
             ([v::MONTH]
-              (relatom :month v))
-            )
+              (relatom :month v)))
           (def 14697628564360421281
             ([v::YEAR]
-              (relatom :year v))
-            ))))
+              (relatom :year v))))))
     (reads
       (output :dec 9204631264110356583)
       (output :date 5168972349743097577)

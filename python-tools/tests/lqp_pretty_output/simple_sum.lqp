@@ -8,12 +8,10 @@
               (or
                 (primitive :rel_primitive_eq x 1)
                 (primitive :rel_primitive_eq x 2)
-                (primitive :rel_primitive_eq x 3)))
-            )
+                (primitive :rel_primitive_eq x 3))))
           (def :bar
             ([x::INT]
-              (atom :foo x))
-            )
+              (atom :foo x)))
           (def :result
             ([x::INT]
               (reduce
@@ -21,7 +19,6 @@
                   (primitive :rel_primitive_add_monotype a b c))
                 ([num::INT]
                   (atom :bar num))
-                (terms x)))
-            ))))
+                (terms x)))))))
     (reads
       (output :foo :result))))

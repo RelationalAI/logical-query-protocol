@@ -8,12 +8,10 @@
               (or
                 (primitive :rel_primitive_eq x 1)
                 (primitive :rel_primitive_eq x 2)
-                (primitive :rel_primitive_eq x 3)))
-            )
+                (primitive :rel_primitive_eq x 3))))
           (def 18221048622641146868
             ([x::INT]
-              (atom 3181428560199927439 x))
-            )
+              (atom 3181428560199927439 x)))
           (def 17771790133431687692
             ([x::INT]
               (reduce
@@ -21,8 +19,7 @@
                   (primitive :rel_primitive_add_monotype a b c))
                 ([num::INT]
                   (atom 18221048622641146868 num))
-                (terms x)))
-            ))))
+                (terms x)))))))
     (reads
       (output :foo 17771790133431687692))))
 

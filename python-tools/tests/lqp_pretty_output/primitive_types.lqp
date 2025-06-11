@@ -5,20 +5,16 @@
         (fragment :f1
           (def :output_int
             ([v::INT]
-              (primitive :rel_primitive_eq v 21))
-            )
+              (primitive :rel_primitive_eq v 21)))
           (def :output_uint128
             ([v::UINT128]
-              (primitive :rel_primitive_eq v 0x123456789abcdef12345))
-            )
+              (primitive :rel_primitive_eq v 0x123456789abcdef12345)))
           (def :output_float
             ([v::FLOAT]
-              (primitive :rel_primitive_eq v 1.23))
-            )
+              (primitive :rel_primitive_eq v 1.23)))
           (def :output_str
             ([v::STRING]
-              (primitive :rel_primitive_eq v "hello"))
-            ))))
+              (primitive :rel_primitive_eq v "hello"))))))
     (reads
       (output :int :output_int)
       (output :uint128 :output_uint128)

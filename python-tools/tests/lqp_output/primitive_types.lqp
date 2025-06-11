@@ -5,20 +5,16 @@
         (fragment :f1
           (def 2965631662653371761
             ([v::INT]
-              (primitive :rel_primitive_eq v 21))
-            )
+              (primitive :rel_primitive_eq v 21)))
           (def 7505808394141676799
             ([v::UINT128]
-              (primitive :rel_primitive_eq v 0x123456789abcdef12345))
-            )
+              (primitive :rel_primitive_eq v 0x123456789abcdef12345)))
           (def 11698363356127107011
             ([v::FLOAT]
-              (primitive :rel_primitive_eq v 1.23))
-            )
+              (primitive :rel_primitive_eq v 1.23)))
           (def 8321355183808865828
             ([v::STRING]
-              (primitive :rel_primitive_eq v "hello"))
-            ))))
+              (primitive :rel_primitive_eq v "hello"))))))
     (reads
       (output :int 2965631662653371761)
       (output :uint128 7505808394141676799)

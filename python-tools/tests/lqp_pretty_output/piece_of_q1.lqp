@@ -12,5 +12,4 @@
                   (relatom :l_returnflag _lineitem _lineitem_l_returnflag)
                   (relatom :l_linestatus _lineitem _lineitem_l_linestatus)
                   (relatom :date_limit _date_limit)
-                  (primitive :rel_primitive_lt_eq_monotype _lineitem_l_shipdate _date_limit))))
-            ))))))
+                  (primitive :rel_primitive_lt_eq_monotype _lineitem_l_shipdate _date_limit))))))))))

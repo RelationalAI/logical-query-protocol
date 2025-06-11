@@ -174,7 +174,7 @@ class LQPTransformer(Transformer):
     # Logic
     #
     def fragment(self, meta, items):
-        debug_info = ir.DebugInfo(debug_info=self.id_to_orig_name, meta=self.meta(meta))
+        debug_info = ir.DebugInfo(id_to_orig_name=self.id_to_orig_name, meta=self.meta(meta))
         self.id_to_orig_name = {} # reset debugging
         return ir.Fragment(id=items[0], declarations=items[1:], debug_info=debug_info, meta=self.meta(meta))
 
@@ -304,7 +304,7 @@ class LQPTransformer(Transformer):
             # First 64 bits of SHA-256 as the id
             id_val = int(hashlib.sha256(ident.encode()).hexdigest()[:16], 16)
             result = ir.RelationId(id=id_val, meta=self.meta(meta))
-            self.id_to_orig_name[id_val] = ident
+            self.id_to_orig_name[result] = ident
             return result
 
         elif isinstance(ident, int):

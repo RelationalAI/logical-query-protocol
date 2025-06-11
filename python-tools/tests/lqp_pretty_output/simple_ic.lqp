@@ -5,16 +5,13 @@
         (fragment :f1
           (def :foo
             ([]
-              (primitive :rel_primitive_eq 1 1))
-            )
+              (primitive :rel_primitive_eq 1 1)))
           (def :abort
             ([]
-              (atom :foo ))
-            )
+              (atom :foo )))
           (def :output
             ([]
-              (atom :foo ))
-            ))))
+              (atom :foo ))))))
     (reads
       (output :result :output)
       (abort :abort_1_eq_1 :abort))))

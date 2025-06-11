@@ -8,16 +8,14 @@
               (or
                 (primitive :rel_primitive_eq v 5)
                 (primitive :rel_primitive_eq v 12)
-                (primitive :rel_primitive_eq v 3)))
-            )
+                (primitive :rel_primitive_eq v 3))))
           (def :sorted_numbers
             ([ord::INT v::INT]
               (ffi :rel_primitive_sort
                 (args
                   ([x::INT]
                     (atom :numbers x)))
-                (terms ord v)))
-            ))))
+                (terms ord v)))))))
     (reads
       (output :numbers :numbers)
       (output :sorted_numbers :sorted_numbers))))

@@ -5,12 +5,10 @@
         (fragment :f1
           (def :foo
             ([x::INT]
-              (relatom :hello x))
-            )
+              (relatom :hello x)))
           (def :bar
             ([x::INT y::STRING]
-              (relatom :bar #"sp_str" x #123 y))
-            ))))
+              (relatom :bar #"sp_str" x #123 y))))))
     (reads
       (output :foo :foo)
       (output :bar :bar))))

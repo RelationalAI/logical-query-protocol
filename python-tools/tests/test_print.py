@@ -27,13 +27,15 @@ def assert_lqp_nodes_equal(obj1, obj2):
     elif obj1 != obj2:
         raise AssertionError(f"Values differ: {obj1} vs {obj2}")
 
-options = lqp_print.ugly_config
+def get_ugly_config():
+    return lqp_print.ugly_config
 
 @pytest.mark.parametrize("input_file", get_lqp_input_files())
 def test_print_snapshot(snapshot, input_file):
     with open(input_file, "r") as f:
         original_lqp_str = f.read()
     parsed_node = parser.parse_lqp(input_file, original_lqp_str)
+    options = get_ugly_config()
     options[str(lqp_print.PrettyOptions.PRINT_DEBUG)] = False
     printed_lqp_str = lqp_print.to_string(parsed_node, options)
     snapshot.snapshot_dir = "tests/lqp_output"
@@ -46,6 +48,7 @@ def test_print_debug_snapshot(snapshot, input_file):
     with open(input_file, "r") as f:
         original_lqp_str = f.read()
     parsed_node = parser.parse_lqp(input_file, original_lqp_str)
+    options = get_ugly_config()
     options[str(lqp_print.PrettyOptions.PRINT_DEBUG)] = True
     printed_lqp_str = lqp_print.to_string(parsed_node, options)
     snapshot.snapshot_dir = "tests/lqp_debug_output"
@@ -59,6 +62,7 @@ def test_print_pretty_snapshot(snapshot, input_file):
         original_lqp_str = f.read()
     parsed_node = parser.parse_lqp(input_file, original_lqp_str)
     printed_lqp_str = lqp_print.to_string(parsed_node, {})
+    options = get_ugly_config()
     options[str(lqp_print.PrettyOptions.PRINT_NAMES)] = True
     options[str(lqp_print.PrettyOptions.PRINT_DEBUG)] = False
     pretty_printed_lqp_str = lqp_print.to_string(parsed_node, options)

@@ -5,56 +5,43 @@
         (fragment :f1
           (def :output_decimal
             ([v::DECIMAL]
-              (relatom :dec v))
-            )
+              (relatom :dec v)))
           (def :output_date
             ([v::DATE]
-              (relatom :date v))
-            )
+              (relatom :date v)))
           (def :output_datetime
             ([v::DATETIME]
-              (relatom :datetime v))
-            )
+              (relatom :datetime v)))
           (def :output_nanosecond
             ([v::NANOSECOND]
-              (relatom :nanosecond v))
-            )
+              (relatom :nanosecond v)))
           (def :output_microsecond
             ([v::MICROSECOND]
-              (relatom :microsecond v))
-            )
+              (relatom :microsecond v)))
           (def :output_millisecond
             ([v::MILLISECOND]
-              (relatom :millisecond v))
-            )
+              (relatom :millisecond v)))
           (def :output_second
             ([v::SECOND]
-              (relatom :second v))
-            )
+              (relatom :second v)))
           (def :output_minute
             ([v::MINUTE]
-              (relatom :minute v))
-            )
+              (relatom :minute v)))
           (def :output_hour
             ([v::HOUR]
-              (relatom :hour v))
-            )
+              (relatom :hour v)))
           (def :output_day
             ([v::DAY]
-              (relatom :day v))
-            )
+              (relatom :day v)))
           (def :output_week
             ([v::WEEK]
-              (relatom :week v))
-            )
+              (relatom :week v)))
           (def :output_month
             ([v::MONTH]
-              (relatom :month v))
-            )
+              (relatom :month v)))
           (def :output_year
             ([v::YEAR]
-              (relatom :year v))
-            ))))
+              (relatom :year v))))))
     (reads
       (output :dec :output_decimal)
       (output :date :output_date)

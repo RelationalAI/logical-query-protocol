@@ -163,6 +163,12 @@ class RelationId(LqpNode):
             return f"RelationId(meta={self.meta}, id={self.id})"
         return f"RelationId(id={self.id})"
 
+    def __eq__(self, other) -> bool:
+        return self.id == other.id
+
+    def __hash__(self) -> int:
+        return hash(self.id)
+
 class PrimitiveType(Enum):
     UNSPECIFIED = 0
     STRING = 1
@@ -202,12 +208,9 @@ class Fragment(LqpNode):
     declarations: Sequence[Declaration]
     debug_info: DebugInfo
 
-# DebugInfo takes in integer keys (not RelationIds, like ProtoBuf)
-# because parsed RelationIds at the IR level retains useful meta information
-# such as line position. This helps debugging but breaks pretty printing.
 @dataclass(frozen=True)
 class DebugInfo(LqpNode):
-    debug_info: Dict[int, str]
+    id_to_orig_name: Dict[RelationId, str]
 
 # --- Transaction Types ---
 

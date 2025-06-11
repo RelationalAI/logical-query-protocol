@@ -7,55 +7,46 @@
             ([x::STRING y::STRING]
               (and
                 (primitive :rel_primitive_eq x "a")
-                (primitive :rel_primitive_eq y "b")))
-            )
+                (primitive :rel_primitive_eq y "b"))))
           (def 13756630614515951718
             ([x::STRING y::STRING]
               (and
                 (primitive :rel_primitive_eq x "b")
-                (primitive :rel_primitive_eq y "c")))
-            )
+                (primitive :rel_primitive_eq y "c"))))
           (def 409501014042465539
             ([x::STRING y::STRING]
               (and
                 (primitive :rel_primitive_eq x "b")
-                (primitive :rel_primitive_eq y "d")))
-            )
+                (primitive :rel_primitive_eq y "d"))))
           (def 7285625101263508808
             ([x::STRING y::STRING]
               (and
                 (primitive :rel_primitive_eq x "d")
-                (primitive :rel_primitive_eq y "e")))
-            )
+                (primitive :rel_primitive_eq y "e"))))
           (def 11658429718464131530
             ([x::STRING y::STRING]
               (or
                 (atom 13022943963523327216 x y)
                 (atom 13756630614515951718 x y)
                 (atom 409501014042465539 x y)
-                (atom 7285625101263508808 x y)))
-            )
+                (atom 7285625101263508808 x y))))
           (def 11183417301082826268
             ([x::STRING y::STRING]
-              (atom 11658429718464131530 x y))
-            )
+              (atom 11658429718464131530 x y)))
           (def 2220326454382330079
             ([x::STRING z::STRING]
               (exists [y::STRING]
                 (and
                   (atom 11658429718464131530 x y)
-                  (atom 11578648566410131430 y z))))
-            )
+                  (atom 11578648566410131430 y z)))))
           (def 11578648566410131430
             ([x::STRING y::STRING]
               (or
                 (atom 11183417301082826268 x y)
-                (atom 2220326454382330079 x y)))
-            )
+                (atom 2220326454382330079 x y))))
           (def 16208045718567772255
             ([x::STRING y::STRING]
-              (atom 11578648566410131430 x y))
-            ))))
+              (atom 11578648566410131430 x y))))))
     (reads
       (output :result 16208045718567772255))))
 
