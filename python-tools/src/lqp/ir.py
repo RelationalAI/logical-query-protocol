@@ -191,6 +191,8 @@ class RelValueType(Enum):
     WEEK = 11
     MONTH = 12
     YEAR = 13
+    DECIMAL64 = 14
+    DECIMAL128 = 15
 
 RelType = Union[PrimitiveType, RelValueType]
 
