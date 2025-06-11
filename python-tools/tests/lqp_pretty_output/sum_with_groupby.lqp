@@ -21,7 +21,7 @@
                 (and
                   (primitive :rel_primitive_eq category "drink")
                   (primitive :rel_primitive_eq amount 2.82))))
-            (attrs))
+            )
           (def :sum
             ([cat::STRING x::FLOAT]
               (reduce
@@ -30,7 +30,7 @@
                 ([num::FLOAT]
                   (atom :foo cat num))
                 (terms x)))
-            (attrs))
+            )
           (def :count
             ([cat::STRING x::INT]
               (reduce
@@ -41,7 +41,7 @@
                     (atom :foo cat num)
                     (primitive :rel_primitive_eq one 1)))
                 (terms x)))
-            (attrs)))))
+            ))))
     (reads
       (output :items_sum :sum)
       (output :items_count :count))))

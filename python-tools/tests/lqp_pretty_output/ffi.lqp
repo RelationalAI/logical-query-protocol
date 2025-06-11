@@ -9,7 +9,7 @@
                 (primitive :rel_primitive_eq v 5)
                 (primitive :rel_primitive_eq v 12)
                 (primitive :rel_primitive_eq v 3)))
-            (attrs))
+            )
           (def :sorted_numbers
             ([ord::INT v::INT]
               (ffi :rel_primitive_sort
@@ -17,7 +17,7 @@
                   ([x::INT]
                     (atom :numbers x)))
                 (terms ord v)))
-            (attrs)))))
+            ))))
     (reads
       (output :numbers :numbers)
       (output :sorted_numbers :sorted_numbers))))

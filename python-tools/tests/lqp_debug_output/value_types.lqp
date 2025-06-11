@@ -6,55 +6,55 @@
           (def 9204631264110356583
             ([v::DECIMAL]
               (relatom :dec v))
-            (attrs))
+            )
           (def 5168972349743097577
             ([v::DATE]
               (relatom :date v))
-            (attrs))
+            )
           (def 1476699919531177603
             ([v::DATETIME]
               (relatom :datetime v))
-            (attrs))
+            )
           (def 8163113465643616746
             ([v::NANOSECOND]
               (relatom :nanosecond v))
-            (attrs))
+            )
           (def 1588506369562167081
             ([v::MICROSECOND]
               (relatom :microsecond v))
-            (attrs))
+            )
           (def 1957779428604074794
             ([v::MILLISECOND]
               (relatom :millisecond v))
-            (attrs))
+            )
           (def 14300380758524772344
             ([v::SECOND]
               (relatom :second v))
-            (attrs))
+            )
           (def 3596032385316586583
             ([v::MINUTE]
               (relatom :minute v))
-            (attrs))
+            )
           (def 17979754919520810771
             ([v::HOUR]
               (relatom :hour v))
-            (attrs))
+            )
           (def 1987637647232885858
             ([v::DAY]
               (relatom :day v))
-            (attrs))
+            )
           (def 10438474524702072604
             ([v::WEEK]
               (relatom :week v))
-            (attrs))
+            )
           (def 17436258858767430927
             ([v::MONTH]
               (relatom :month v))
-            (attrs))
+            )
           (def 14697628564360421281
             ([v::YEAR]
               (relatom :year v))
-            (attrs)))))
+            ))))
     (reads
       (output :dec 9204631264110356583)
       (output :date 5168972349743097577)

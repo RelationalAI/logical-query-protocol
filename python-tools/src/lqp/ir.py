@@ -202,10 +202,12 @@ class Fragment(LqpNode):
     declarations: Sequence[Declaration]
     debug_info: DebugInfo
 
+# DebugInfo takes in integer keys (not RelationIds, like ProtoBuf)
+# because parsed RelationIds at the IR level retains useful meta information
+# such as line position. This helps debugging but breaks pretty printing.
 @dataclass(frozen=True)
 class DebugInfo(LqpNode):
-    debug_keys: Sequence[int]
-    debug_values: Sequence[str]
+    debug_info: Dict[int, str]
 
 # --- Transaction Types ---
 

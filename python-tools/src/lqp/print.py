@@ -194,7 +194,7 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         lqp += ind + conf.LPAREN() + conf.kw("def") + " " + to_str(node.name, 0, options) + "\n"
         lqp += to_str(node.body, indent_level + 1, options) + "\n"
         if len(node.attrs) == 0:
-            lqp += f"{conf.indentation(indent_level + 1)}{conf.LPAREN()}{conf.kw('attrs')}{conf.RPAREN()}{conf.RPAREN()}"
+            lqp += f"{conf.indentation(indent_level + 1)}{conf.RPAREN()}"
         else:
             lqp += conf.indentation(indent_level + 1) + conf.LPAREN() + conf.kw("attrs") + "\n"
             lqp += list_to_str(node.attrs, indent_level + 2, "\n", options)
@@ -371,13 +371,10 @@ def fragment_to_str(node: ir.Fragment, indent_level: int, options: Dict = {}) ->
         conf.RPAREN()
 
 def add_debug_info(options: Dict, debug: ir.DebugInfo) -> None:
-    new_info = {}
-    for k, v in zip(debug.debug_keys, debug.debug_values):
-        new_info[k] = v
     if options.get("_debug", None) is None:
-        options["_debug"] = new_info
+        options["_debug"] = debug.debug_info
     else:
-        options["_debug"] = options.get("_debug", {}) | new_info
+        options["_debug"] = options.get("_debug", {}) | debug.debug_info
     return
 
 def to_string(node: ir.LqpNode, options: Dict = {}) -> str:

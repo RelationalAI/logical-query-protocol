@@ -9,11 +9,11 @@
                 (primitive :rel_primitive_eq x 1)
                 (primitive :rel_primitive_eq x 2)
                 (primitive :rel_primitive_eq x 3)))
-            (attrs))
+            )
           (def :bar
             ([x::INT]
               (atom :foo x))
-            (attrs))
+            )
           (def :result
             ([x::INT]
               (reduce
@@ -22,6 +22,6 @@
                 ([num::INT]
                   (atom :bar num))
                 (terms x)))
-            (attrs)))))
+            ))))
     (reads
       (output :foo :result))))

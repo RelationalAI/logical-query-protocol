@@ -6,6 +6,6 @@
           (def :output
             ([v::INT]
               (primitive :rel_primitive_add_monotype 1 1 v))
-            (attrs)))))
+            ))))
     (reads
       (output :output :output))))

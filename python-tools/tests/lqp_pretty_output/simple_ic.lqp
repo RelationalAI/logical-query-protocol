@@ -6,15 +6,15 @@
           (def :foo
             ([]
               (primitive :rel_primitive_eq 1 1))
-            (attrs))
+            )
           (def :abort
             ([]
               (atom :foo ))
-            (attrs))
+            )
           (def :output
             ([]
               (atom :foo ))
-            (attrs)))))
+            ))))
     (reads
       (output :result :output)
       (abort :abort_1_eq_1 :abort))))

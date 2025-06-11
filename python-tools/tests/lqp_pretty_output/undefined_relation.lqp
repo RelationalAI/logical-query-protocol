@@ -6,6 +6,6 @@
           (def :output
             ([v::INT]
               (atom :hello v))
-            (attrs)))))
+            ))))
     (reads
       (output :output :output))))

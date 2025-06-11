@@ -6,11 +6,11 @@
           (def :foo
             ([x::INT]
               (relatom :hello x))
-            (attrs))
+            )
           (def :bar
             ([x::INT y::STRING]
               (relatom :bar #"sp_str" x #123 y))
-            (attrs)))))
+            ))))
     (reads
       (output :foo :foo)
       (output :bar :bar))))

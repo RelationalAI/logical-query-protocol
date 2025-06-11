@@ -164,8 +164,8 @@ def convert_fragment(frag: ir.Fragment) -> fragments_pb2.Fragment:
 
 def convert_debug_info(info: ir.DebugInfo) -> fragments_pb2.DebugInfo:
     return fragments_pb2.DebugInfo(
-        ids=[_convert_relation_id(key) for key in info.debug_keys],
-        orig_names=info.debug_values
+        ids=[_convert_relation_id(key) for key in info.debug_info.keys()],
+        orig_names=info.debug_info.values()
     )
 
 def convert_define(d: ir.Define) -> transactions_pb2.Define:
