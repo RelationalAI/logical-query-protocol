@@ -30,6 +30,8 @@ class RelValueType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     REL_VALUE_TYPE_WEEK: _ClassVar[RelValueType]
     REL_VALUE_TYPE_MONTH: _ClassVar[RelValueType]
     REL_VALUE_TYPE_YEAR: _ClassVar[RelValueType]
+    REL_VALUE_TYPE_DECIMAL64: _ClassVar[RelValueType]
+    REL_VALUE_TYPE_DECIMAL128: _ClassVar[RelValueType]
 PRIMITIVE_TYPE_UNSPECIFIED: PrimitiveType
 PRIMITIVE_TYPE_STRING: PrimitiveType
 PRIMITIVE_TYPE_INT: PrimitiveType
@@ -49,6 +51,8 @@ REL_VALUE_TYPE_DAY: RelValueType
 REL_VALUE_TYPE_WEEK: RelValueType
 REL_VALUE_TYPE_MONTH: RelValueType
 REL_VALUE_TYPE_YEAR: RelValueType
+REL_VALUE_TYPE_DECIMAL64: RelValueType
+REL_VALUE_TYPE_DECIMAL128: RelValueType
 
 class Declaration(_message.Message):
     __slots__ = ("loop",)
