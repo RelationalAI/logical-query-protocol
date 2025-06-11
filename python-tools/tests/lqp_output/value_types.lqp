@@ -5,16 +5,13 @@
         (fragment :f1
           (def 9204631264110356583
             ([v::DECIMAL]
-              (relatom :dec v))
-            (attrs))
+              (relatom :dec v)))
           (def 11083562605256160670
             ([v::DECIMAL64]
-              (relatom :dec64 v))
-            (attrs))
+              (relatom :dec64 v)))
           (def 17909083773971274800
             ([v::DECIMAL128]
-              (relatom :dec128 v))
-            (attrs))
+              (relatom :dec128 v)))
           (def 5168972349743097577
             ([v::DATE]
               (relatom :date v)))
