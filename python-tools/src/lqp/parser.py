@@ -103,12 +103,12 @@ COMMENT: /;;.*/  // Matches ;; followed by any characters except newline
 def desugar_to_raw_primitive(name, terms):
     # Convert terms to relterms
     return ir.Primitive(name=name, terms=terms, meta=None)
-
 @v_args(meta=True)
 class LQPTransformer(Transformer):
     def __init__(self, file: str):
         self.file = file
-        self.id_to_orig_name = {}
+        self.id_to_debuginfo = {}
+        self._current_fragment_id = None
 
     def meta(self, meta):
         return ir.SourceInfo(file=self.file, line=meta.line, column=meta.column)
@@ -174,12 +174,17 @@ class LQPTransformer(Transformer):
     # Logic
     #
     def fragment(self, meta, items):
-        debug_info = ir.DebugInfo(id_to_orig_name=self.id_to_orig_name, meta=self.meta(meta))
-        self.id_to_orig_name = {} # reset debugging
-        return ir.Fragment(id=items[0], declarations=items[1:], debug_info=debug_info, meta=self.meta(meta))
+        fragment_id = items[0]
+        debug_info = ir.DebugInfo(id_to_orig_name=self.id_to_debuginfo[fragment_id], meta=self.meta(meta))
+        self._current_fragment_id = None
+        return ir.Fragment(id=fragment_id, declarations=items[1:], debug_info=debug_info, meta=self.meta(meta))
 
     def fragment_id(self, meta, items):
-        return ir.FragmentId(id=items[0].encode(), meta=self.meta(meta))
+        fragment_id = ir.FragmentId(id=items[0].encode(), meta=self.meta(meta))
+        self._current_fragment_id = fragment_id
+        if fragment_id not in self.id_to_debuginfo:
+            self.id_to_debuginfo[fragment_id] = {}
+        return fragment_id
 
     def declaration(self, meta, items):
         return items[0]
@@ -304,7 +309,10 @@ class LQPTransformer(Transformer):
             # First 64 bits of SHA-256 as the id
             id_val = int(hashlib.sha256(ident.encode()).hexdigest()[:16], 16)
             result = ir.RelationId(id=id_val, meta=self.meta(meta))
-            self.id_to_orig_name[result] = ident
+
+            # Store mapping in the current fragment's debug info
+            if self._current_fragment_id is not None:
+                self.id_to_debuginfo[self._current_fragment_id][result] = ident
             return result
 
         elif isinstance(ident, int):
@@ -326,12 +334,6 @@ class LQPTransformer(Transformer):
     def UINT128(self, u):
         uint128_val = int(u, 16)
         return ir.UInt128(value=uint128_val, meta=None)
-
-# TODO: Eventually this should be part of the actual transaction IR
-@dataclass(frozen=True)
-class DebugInfo:
-    file: str
-    id_to_orig_name: dict[int, str]
 
 # LALR(1) is significantly faster than Earley for parsing, especially on larger inputs. It
 # uses a precomputed parse table, reducing runtime complexity to O(n) (linear in input
