@@ -7,6 +7,14 @@
             ([v::DECIMAL]
               (relatom :dec v))
             (attrs))
+          (def 11083562605256160670
+            ([v::DECIMAL64]
+              (relatom :dec64 v))
+            (attrs))
+          (def 17909083773971274800
+            ([v::DECIMAL128]
+              (relatom :dec128 v))
+            (attrs))
           (def 5168972349743097577
             ([v::DATE]
               (relatom :date v))
@@ -57,6 +65,8 @@
             (attrs)))))
     (reads
       (output :dec 9204631264110356583)
+      (output :dec64 11083562605256160670)
+      (output :dec128 17909083773971274800)
       (output :date 5168972349743097577)
       (output :datetime 1476699919531177603)
       (output :nanosecond 8163113465643616746)
