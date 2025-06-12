@@ -61,13 +61,10 @@ def convert_relterm(t: ir.RelTerm) -> logic_pb2.RelTerm:
     else:
         return logic_pb2.RelTerm(term=convert_term(t))
 
-def _convert_relation_id(i: int) -> logic_pb2.RelationId:
-    id_low = i & 0xFFFFFFFFFFFFFFFF
-    id_high = (i >> 64) & 0xFFFFFFFFFFFFFFFF
-    return logic_pb2.RelationId(id_low=id_low, id_high=id_high)
-
 def convert_relation_id(rid: ir.RelationId) -> logic_pb2.RelationId:
-    return _convert_relation_id(rid.id)
+    id_low = rid.id & 0xFFFFFFFFFFFFFFFF
+    id_high = (rid.id >> 64) & 0xFFFFFFFFFFFFFFFF
+    return logic_pb2.RelationId(id_low=id_low, id_high=id_high)
 
 def convert_fragment_id(fid: ir.FragmentId) -> fragments_pb2.FragmentId:
     return fragments_pb2.FragmentId(id=fid.id)

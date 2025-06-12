@@ -175,14 +175,16 @@ def program_to_str(node: ir.Transaction, options: Dict = {}) -> str:
     return s
 
 def _debug_str(node: ir.LqpNode) -> str:
-    debug_str: str = "\n\n"
-    debug_str += ";; Debug information\n"
-    debug_str += ";; -----------------------\n"
-    debug_str += ";; Original names\n"
     debug_infos = _collect_debug_infos(node)
-    for (rid, name) in debug_infos.items():
-        debug_str += f";; \t ID `{rid.id}` -> `{name}`\n"
-    return debug_str
+    if len(debug_infos) != 0:
+        debug_str: str = "\n\n"
+        debug_str += ";; Debug information\n"
+        debug_str += ";; -----------------------\n"
+        debug_str += ";; Original names\n"
+        for (rid, name) in debug_infos.items():
+            debug_str += f";; \t ID `{rid.id}` -> `{name}`\n"
+        return debug_str
+    else: return ""
 
 def _collect_debug_infos(node: ir.LqpNode) -> Dict[ir.RelationId, str]:
     debug_infos: Dict = {}
