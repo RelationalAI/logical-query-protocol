@@ -16,9 +16,8 @@ message Def {
 }
 
 message Loop {
-  repeated Def init = 3;
+  repeated Def init = 1;
   repeated Declaration body = 2;
-  reserved 1;
 }
 
 message Binding {
