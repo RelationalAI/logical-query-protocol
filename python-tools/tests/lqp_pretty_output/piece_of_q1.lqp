@@ -3,7 +3,7 @@
     (local_writes
       (define
         (fragment :f1
-          (def 10567094013610926008
+          (def :common
             ([_lineitem::UINT128 _lineitem_l_returnflag::STRING _lineitem_l_linestatus::STRING]
               (exists [_lineitem_l_shipdate::DATE _date_limit::DATE]
                 (and

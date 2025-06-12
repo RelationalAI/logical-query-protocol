@@ -163,6 +163,12 @@ class RelationId(LqpNode):
             return f"RelationId(meta={self.meta}, id={self.id})"
         return f"RelationId(id={self.id})"
 
+    def __eq__(self, other) -> bool:
+        return self.id == other.id
+
+    def __hash__(self) -> int:
+        return hash(self.id)
+
 class PrimitiveType(Enum):
     UNSPECIFIED = 0
     STRING = 1
@@ -197,11 +203,16 @@ RelType = Union[PrimitiveType, RelValueType]
 class FragmentId(LqpNode):
     id: bytes
 
-# Fragment(id::FragmentId, declarations::Declaration[])
+# Fragment(id::FragmentId, declarations::Declaration[], debug_info::DebugInfo)
 @dataclass(frozen=True)
 class Fragment(LqpNode):
     id: FragmentId
     declarations: Sequence[Declaration]
+    debug_info: DebugInfo
+
+@dataclass(frozen=True)
+class DebugInfo(LqpNode):
+    id_to_orig_name: Dict[RelationId, str]
 
 # --- Transaction Types ---
 

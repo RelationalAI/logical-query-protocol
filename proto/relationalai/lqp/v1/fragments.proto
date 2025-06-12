@@ -7,6 +7,12 @@ import "relationalai/lqp/v1/logic.proto";
 message Fragment {
   FragmentId id = 1;
   repeated Declaration declarations = 2;
+  DebugInfo debug_info = 3;
+}
+
+message DebugInfo {
+  repeated RelationId ids = 1;
+  repeated string orig_names = 2;
 }
 
 message FragmentId {

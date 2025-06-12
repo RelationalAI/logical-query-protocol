@@ -5,64 +5,49 @@
         (fragment :f1
           (def 9204631264110356583
             ([v::DECIMAL]
-              (relatom :dec v))
-            (attrs))
+              (relatom :dec v)))
           (def 11083562605256160670
             ([v::DECIMAL64]
-              (relatom :dec64 v))
-            (attrs))
+              (relatom :dec64 v)))
           (def 17909083773971274800
             ([v::DECIMAL128]
-              (relatom :dec128 v))
-            (attrs))
+              (relatom :dec128 v)))
           (def 5168972349743097577
             ([v::DATE]
-              (relatom :date v))
-            (attrs))
+              (relatom :date v)))
           (def 1476699919531177603
             ([v::DATETIME]
-              (relatom :datetime v))
-            (attrs))
+              (relatom :datetime v)))
           (def 8163113465643616746
             ([v::NANOSECOND]
-              (relatom :nanosecond v))
-            (attrs))
+              (relatom :nanosecond v)))
           (def 1588506369562167081
             ([v::MICROSECOND]
-              (relatom :microsecond v))
-            (attrs))
+              (relatom :microsecond v)))
           (def 1957779428604074794
             ([v::MILLISECOND]
-              (relatom :millisecond v))
-            (attrs))
+              (relatom :millisecond v)))
           (def 14300380758524772344
             ([v::SECOND]
-              (relatom :second v))
-            (attrs))
+              (relatom :second v)))
           (def 3596032385316586583
             ([v::MINUTE]
-              (relatom :minute v))
-            (attrs))
+              (relatom :minute v)))
           (def 17979754919520810771
             ([v::HOUR]
-              (relatom :hour v))
-            (attrs))
+              (relatom :hour v)))
           (def 1987637647232885858
             ([v::DAY]
-              (relatom :day v))
-            (attrs))
+              (relatom :day v)))
           (def 10438474524702072604
             ([v::WEEK]
-              (relatom :week v))
-            (attrs))
+              (relatom :week v)))
           (def 17436258858767430927
             ([v::MONTH]
-              (relatom :month v))
-            (attrs))
+              (relatom :month v)))
           (def 14697628564360421281
             ([v::YEAR]
-              (relatom :year v))
-            (attrs)))))
+              (relatom :year v))))))
     (reads
       (output :dec 9204631264110356583)
       (output :dec64 11083562605256160670)
