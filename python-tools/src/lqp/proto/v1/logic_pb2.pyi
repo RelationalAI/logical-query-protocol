@@ -72,12 +72,12 @@ class Def(_message.Message):
     def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
 
 class Loop(_message.Message):
-    __slots__ = ("inits", "body")
-    INITS_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("init", "body")
+    INIT_FIELD_NUMBER: _ClassVar[int]
     BODY_FIELD_NUMBER: _ClassVar[int]
-    inits: _containers.RepeatedCompositeFieldContainer[Def]
+    init: _containers.RepeatedCompositeFieldContainer[Def]
     body: _containers.RepeatedCompositeFieldContainer[Declaration]
-    def __init__(self, inits: _Optional[_Iterable[_Union[Def, _Mapping]]] = ..., body: _Optional[_Iterable[_Union[Declaration, _Mapping]]] = ...) -> None: ...
+    def __init__(self, init: _Optional[_Iterable[_Union[Def, _Mapping]]] = ..., body: _Optional[_Iterable[_Union[Declaration, _Mapping]]] = ...) -> None: ...
 
 class Binding(_message.Message):
     __slots__ = ("var", "type")
