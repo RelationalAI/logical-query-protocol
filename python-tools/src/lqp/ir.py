@@ -36,10 +36,10 @@ class Def(Declaration):
     body: Abstraction
     attrs: Sequence[Attribute]
 
-# Loop(inits::Def[], body::Declaration[])
+# Loop(init::Def[], body::Declaration[])
 @dataclass(frozen=True)
 class Loop(Declaration):
-    inits: Sequence[Def]
+    init: Sequence[Def]
     body: Sequence[Declaration]
 
 # Abstraction(vars::Binding[], value::Formula)

@@ -16,7 +16,7 @@ message Def {
 }
 
 message Loop {
-  repeated Def inits = 1;
+  repeated Def init = 1;
   repeated Declaration body = 2;
 }
 

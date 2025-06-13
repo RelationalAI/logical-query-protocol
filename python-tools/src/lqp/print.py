@@ -219,7 +219,7 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
     elif isinstance(node, ir.Loop):
         lqp += ind + conf.LPAREN() + conf.kw("loop") + "\n"
         lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("inits") + "\n"
-        lqp += list_to_str(node.inits, indent_level + 2, "\n", options, debug_info)
+        lqp += list_to_str(node.init, indent_level + 2, "\n", options, debug_info)
         lqp += conf.RPAREN() + "\n"
         lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("body") + "\n"
         lqp += list_to_str(node.body, indent_level + 2, "\n", options, debug_info)
