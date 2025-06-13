@@ -8,16 +8,14 @@
               (or
                 (primitive :rel_primitive_eq v 5)
                 (primitive :rel_primitive_eq v 12)
-                (primitive :rel_primitive_eq v 3)))
-            (attrs))
+                (primitive :rel_primitive_eq v 3))))
           (def 2638187172736215459
             ([ord::INT v::INT]
               (ffi :rel_primitive_sort
                 (args
                   ([x::INT]
                     (atom 17566150147137631162 x)))
-                (terms ord v)))
-            (attrs)))))
+                (terms ord v)))))))
     (reads
       (output :numbers 17566150147137631162)
       (output :sorted_numbers 2638187172736215459))))
