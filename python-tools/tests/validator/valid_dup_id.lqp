@@ -1,0 +1,7 @@
+;; Duplicate IDs in different fragments.
+(transaction
+  (epoch
+    (local_writes
+      (define (fragment :f1 (def :foo ([] (or)))))
+      (define (fragment :f2 (def :foo ([] (or))))))
+    (reads)))
