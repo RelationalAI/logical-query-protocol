@@ -1,5 +1,5 @@
 import lqp.ir as ir
-from typing import Any, List, Tuple, Set
+from typing import Any, List, Tuple, Sequence, Set
 from dataclasses import is_dataclass, fields
 
 class ValidationError(Exception):
@@ -56,5 +56,34 @@ class UnusedVariableVisitor(LqpVisitor):
     def visit_Var(self, node: ir.Var, *args: Any):
         self._mark_var_used(node)
 
+# Checks for shadowing of variables. Raises ValidationError upon encountering such.
+class ShadowedVariableFinder(LqpVisitor):
+    # The varargs passed in must be a single set of strings.
+    @staticmethod
+    def args_ok(args: Sequence[Any]) -> bool:
+        return (
+            len(args) == 0 or
+            (
+                len(args) == 1 and
+                isinstance(args[0], Set) and
+                all(isinstance(s, str) for s in args[0])
+            )
+        )
+
+    # Only Abstractions introduce variables.
+    def visit_Abstraction(self, node: ir.Abstraction, *args: Any) -> None:
+        assert ShadowedVariableFinder.args_ok(args)
+        in_scope_names = set() if len(args) == 0 else args[0]
+
+        for v in node.vars:
+            var = v[0]
+            if var.name in in_scope_names:
+                raise ValidationError(f"Shadowed variable at {var.meta}: '{var.name}'")
+
+        self.visit(node.value, in_scope_names | set(v[0].name for v in node.vars))
+
+
+
 def validate_lqp(lqp: ir.LqpNode):
+    ShadowedVariableFinder().visit(lqp)
     UnusedVariableVisitor().visit(lqp)
