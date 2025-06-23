@@ -1,4 +1,4 @@
-;; Shadowing a variable is allowed by current validator
+;; ERROR: Shadowed variable at fail_shadowing.lqp:5:16: 'x'
 (fragment :frag
   (def :outer_scope
     ([x::INT]
