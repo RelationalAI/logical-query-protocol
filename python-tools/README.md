@@ -35,3 +35,22 @@ Install locally:
 ```
 pip install [--user] [--force-reinstall] dist/lqp-0.1.0-py3-none-any.whl
 ```
+
+## Running tests
+Within `python-tools`,
+
+Setup:
+```
+python -m pip install -e ".[test]"
+python -m pip install pyrefly
+```
+
+Running tests:
+```
+python -m pytest
+```
+
+Type checking:
+```
+pyrefly check
+```
