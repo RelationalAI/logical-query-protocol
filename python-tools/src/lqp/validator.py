@@ -88,6 +88,7 @@ class DuplicateRelationIdFinder(LqpVisitor):
     def visit_Fragment(self, node: ir.Fragment, *args: Any) -> None:
         seen_ids = set()
         for decl in node.declarations:
+            # Of Declarations, only Defs have relation IDs.
             if isinstance(decl, ir.Def):
                 if decl.name in seen_ids:
                     raise ValidationError(
