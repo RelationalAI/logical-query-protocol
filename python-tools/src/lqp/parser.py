@@ -1,6 +1,7 @@
 import argparse
 import os
 import hashlib
+from dataclasses import dataclass
 from lark import Lark, Transformer, v_args
 import lqp.ir as ir
 from lqp.emit import ir_to_proto
@@ -83,7 +84,7 @@ primitive_value: STRING | NUMBER | FLOAT | UINT128
 
 rel_type: PRIMITIVE_TYPE | REL_VALUE_TYPE
 PRIMITIVE_TYPE: "STRING" | "INT" | "FLOAT" | "UINT128" | "ENTITY"
-REL_VALUE_TYPE: "DECIMAL" | "DATE" | "DATETIME"
+REL_VALUE_TYPE: "DECIMAL" | "DECIMAL64" | "DECIMAL128" | "DATE" | "DATETIME"
               | "NANOSECOND" | "MICROSECOND" | "MILLISECOND" | "SECOND" | "MINUTE" | "HOUR"
               | "DAY" | "WEEK" | "MONTH" | "YEAR"
 
@@ -102,11 +103,12 @@ COMMENT: /;;.*/  // Matches ;; followed by any characters except newline
 def desugar_to_raw_primitive(name, terms):
     # Convert terms to relterms
     return ir.Primitive(name=name, terms=terms, meta=None)
-
 @v_args(meta=True)
 class LQPTransformer(Transformer):
     def __init__(self, file: str):
         self.file = file
+        self.id_to_debuginfo = {}
+        self._current_fragment_id = None
 
     def meta(self, meta):
         return ir.SourceInfo(file=self.file, line=meta.line, column=meta.column)
@@ -172,10 +174,17 @@ class LQPTransformer(Transformer):
     # Logic
     #
     def fragment(self, meta, items):
-        return ir.Fragment(id=items[0], declarations=items[1:], meta=self.meta(meta))
+        fragment_id = items[0]
+        debug_info = ir.DebugInfo(id_to_orig_name=self.id_to_debuginfo[fragment_id], meta=self.meta(meta))
+        self._current_fragment_id = None
+        return ir.Fragment(id=fragment_id, declarations=items[1:], debug_info=debug_info, meta=self.meta(meta))
 
     def fragment_id(self, meta, items):
-        return ir.FragmentId(id=items[0].encode(), meta=self.meta(meta))
+        fragment_id = ir.FragmentId(id=items[0].encode(), meta=self.meta(meta))
+        self._current_fragment_id = fragment_id
+        if fragment_id not in self.id_to_debuginfo:
+            self.id_to_debuginfo[fragment_id] = {}
+        return fragment_id
 
     def declaration(self, meta, items):
         return items[0]
@@ -299,7 +308,13 @@ class LQPTransformer(Transformer):
         if isinstance(ident, str):
             # First 64 bits of SHA-256 as the id
             id_val = int(hashlib.sha256(ident.encode()).hexdigest()[:16], 16)
-            return ir.RelationId(id=id_val, meta=self.meta(meta))
+            result = ir.RelationId(id=id_val, meta=self.meta(meta))
+
+            # Store mapping in the current fragment's debug info
+            if self._current_fragment_id is not None:
+                self.id_to_debuginfo[self._current_fragment_id][result] = ident
+            return result
+
         elif isinstance(ident, int):
             return ir.RelationId(id=ident, meta=self.meta(meta))
 
@@ -330,7 +345,9 @@ parser = Lark(grammar, parser="lalr", propagate_positions=True)
 def parse_lqp(file, text) -> ir.LqpNode:
     """Parse LQP text and return an IR node that can be converted to protocol buffers"""
     tree = parser.parse(text)
-    return LQPTransformer(file).transform(tree)
+    transformer = LQPTransformer(file)
+    result = transformer.transform(tree)
+    return result
 
 def process_file(filename, bin, json):
     with open(filename, "r") as f:

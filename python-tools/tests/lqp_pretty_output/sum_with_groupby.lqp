@@ -1,0 +1,44 @@
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :f1
+          (def :foo
+            ([category::STRING amount::FLOAT]
+              (or
+                (and
+                  (primitive :rel_primitive_eq category "food")
+                  (primitive :rel_primitive_eq amount 1.23))
+                (and
+                  (primitive :rel_primitive_eq category "food")
+                  (primitive :rel_primitive_eq amount 10.23))
+                (and
+                  (primitive :rel_primitive_eq category "food")
+                  (primitive :rel_primitive_eq amount 13.0))
+                (and
+                  (primitive :rel_primitive_eq category "drink")
+                  (primitive :rel_primitive_eq amount 6.34))
+                (and
+                  (primitive :rel_primitive_eq category "drink")
+                  (primitive :rel_primitive_eq amount 2.82)))))
+          (def :sum
+            ([cat::STRING x::FLOAT]
+              (reduce
+                ([a::FLOAT b::FLOAT c::FLOAT]
+                  (primitive :rel_primitive_add_monotype a b c))
+                ([num::FLOAT]
+                  (atom :foo cat num))
+                (terms x))))
+          (def :count
+            ([cat::STRING x::INT]
+              (reduce
+                ([a::FLOAT b::FLOAT c::FLOAT]
+                  (primitive :rel_primitive_add_monotype a b c))
+                ([num::FLOAT one::INT]
+                  (and
+                    (atom :foo cat num)
+                    (primitive :rel_primitive_eq one 1)))
+                (terms x)))))))
+    (reads
+      (output :items_sum :sum)
+      (output :items_count :count))))

@@ -138,7 +138,7 @@ def convert_def(d: ir.Def) -> logic_pb2.Def:
 
 def convert_loop(l: ir.Loop) -> logic_pb2.Loop:
     return logic_pb2.Loop(
-        inits=[convert_def(init_def) for init_def in l.inits],
+        init=[convert_def(init_def) for init_def in l.init],
         body=[convert_declaration(decl) for decl in l.body]
     )
 
@@ -155,7 +155,14 @@ def convert_declaration(decl: ir.Declaration) -> logic_pb2.Declaration:
 def convert_fragment(frag: ir.Fragment) -> fragments_pb2.Fragment:
     return fragments_pb2.Fragment(
         id=convert_fragment_id(frag.id),
-        declarations=[convert_declaration(decl) for decl in frag.declarations]
+        declarations=[convert_declaration(decl) for decl in frag.declarations],
+        debug_info=convert_debug_info(frag.debug_info)
+    )
+
+def convert_debug_info(info: ir.DebugInfo) -> fragments_pb2.DebugInfo:
+    return fragments_pb2.DebugInfo(
+        ids=[convert_relation_id(key) for key in info.id_to_orig_name.keys()],
+        orig_names=info.id_to_orig_name.values()
     )
 
 def convert_define(d: ir.Define) -> transactions_pb2.Define:

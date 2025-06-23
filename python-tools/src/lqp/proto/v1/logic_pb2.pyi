@@ -30,6 +30,8 @@ class RelValueType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     REL_VALUE_TYPE_WEEK: _ClassVar[RelValueType]
     REL_VALUE_TYPE_MONTH: _ClassVar[RelValueType]
     REL_VALUE_TYPE_YEAR: _ClassVar[RelValueType]
+    REL_VALUE_TYPE_DECIMAL64: _ClassVar[RelValueType]
+    REL_VALUE_TYPE_DECIMAL128: _ClassVar[RelValueType]
 PRIMITIVE_TYPE_UNSPECIFIED: PrimitiveType
 PRIMITIVE_TYPE_STRING: PrimitiveType
 PRIMITIVE_TYPE_INT: PrimitiveType
@@ -49,6 +51,8 @@ REL_VALUE_TYPE_DAY: RelValueType
 REL_VALUE_TYPE_WEEK: RelValueType
 REL_VALUE_TYPE_MONTH: RelValueType
 REL_VALUE_TYPE_YEAR: RelValueType
+REL_VALUE_TYPE_DECIMAL64: RelValueType
+REL_VALUE_TYPE_DECIMAL128: RelValueType
 
 class Declaration(_message.Message):
     __slots__ = ("loop",)
@@ -68,12 +72,12 @@ class Def(_message.Message):
     def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
 
 class Loop(_message.Message):
-    __slots__ = ("inits", "body")
-    INITS_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("init", "body")
+    INIT_FIELD_NUMBER: _ClassVar[int]
     BODY_FIELD_NUMBER: _ClassVar[int]
-    inits: _containers.RepeatedCompositeFieldContainer[Def]
+    init: _containers.RepeatedCompositeFieldContainer[Def]
     body: _containers.RepeatedCompositeFieldContainer[Declaration]
-    def __init__(self, inits: _Optional[_Iterable[_Union[Def, _Mapping]]] = ..., body: _Optional[_Iterable[_Union[Declaration, _Mapping]]] = ...) -> None: ...
+    def __init__(self, init: _Optional[_Iterable[_Union[Def, _Mapping]]] = ..., body: _Optional[_Iterable[_Union[Declaration, _Mapping]]] = ...) -> None: ...
 
 class Binding(_message.Message):
     __slots__ = ("var", "type")

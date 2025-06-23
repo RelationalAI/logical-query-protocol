@@ -1,0 +1,7 @@
+;; ERROR: Shadowed variable at fail_shadowing_1.lqp:5:16: 'x'
+(fragment :frag
+  (def :outer_scope
+    ([x::INT]
+      (exists [x::STRING]
+         (and
+           (primitive :check_string x))))))
