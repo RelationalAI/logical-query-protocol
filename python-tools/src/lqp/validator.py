@@ -92,7 +92,7 @@ class DuplicateRelationIdFinder(LqpVisitor):
             if isinstance(decl, ir.Def):
                 if decl.name in seen_ids:
                     raise ValidationError(
-                        f"Duplicate declaration within fragment {node.id.id} at {decl.meta}: '{decl.name.id}'"
+                        f"Duplicate declaration within fragment at {decl.meta}: '{decl.name.id}'"
                     )
                 else:
                     seen_ids.add(decl.name)

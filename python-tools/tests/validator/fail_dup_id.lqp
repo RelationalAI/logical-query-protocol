@@ -1,4 +1,4 @@
-;; ERROR: Duplicate declaration within fragment b'frag' at fail_dup_id.lqp:5:3: '14069321933851954459'
+;; ERROR: Duplicate declaration within fragment at fail_dup_id.lqp:5:3: '14069321933851954459'
 (fragment :frag
   (def :cool
     ([] (and)))
