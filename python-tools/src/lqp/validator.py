@@ -82,20 +82,23 @@ class ShadowedVariableFinder(LqpVisitor):
 
         self.visit(node.value, in_scope_names | set(v[0].name for v in node.vars))
 
-# Checks for duplicate RelationIds within a fragment.
+# Checks for duplicate RelationIds.
 # Raises ValidationError upon encountering such.
 class DuplicateRelationIdFinder(LqpVisitor):
-    def visit_Fragment(self, node: ir.Fragment, *args: Any) -> None:
-        seen_ids = set()
-        for decl in node.declarations:
-            # Of Declarations, only Defs have relation IDs.
-            if isinstance(decl, ir.Def):
-                if decl.name in seen_ids:
-                    raise ValidationError(
-                        f"Duplicate declaration within fragment at {decl.meta}: '{decl.name.id}'"
-                    )
-                else:
-                    seen_ids.add(decl.name)
+    def __init__(self):
+        self.seen_ids: ir.RelationId = set()
+
+    def visit_Def(self, node: ir.Def, *args: Any) -> None:
+        if node.name in self.seen_ids:
+            raise ValidationError(
+                f"Duplicate declaration at {node.meta}: '{node.name.id}'"
+            )
+        else:
+            self.seen_ids.add(node.name)
+
+    def visit_Loop(self, node: ir.Loop, *args: Any) -> None:
+        # Block the Defs of a Loop.
+        pass
 
 
 def validate_lqp(lqp: ir.LqpNode):
