@@ -50,6 +50,7 @@ message Read {
     Output output = 2;
     WhatIf what_if = 3;
     Abort abort = 4;
+    Export export = 5;
   }
 }
 
@@ -58,6 +59,11 @@ message Demand {
 }
 
 message Output {
+  string name = 1;
+  RelationId relation_id = 2;
+}
+
+message Export {
   string name = 1;
   RelationId relation_id = 2;
 }

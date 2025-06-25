@@ -52,16 +52,18 @@ class Context(_message.Message):
     def __init__(self, relations: _Optional[_Iterable[_Union[_logic_pb2.RelationId, _Mapping]]] = ...) -> None: ...
 
 class Read(_message.Message):
-    __slots__ = ("demand", "output", "what_if", "abort")
+    __slots__ = ("demand", "output", "what_if", "abort", "export")
     DEMAND_FIELD_NUMBER: _ClassVar[int]
     OUTPUT_FIELD_NUMBER: _ClassVar[int]
     WHAT_IF_FIELD_NUMBER: _ClassVar[int]
     ABORT_FIELD_NUMBER: _ClassVar[int]
+    EXPORT_FIELD_NUMBER: _ClassVar[int]
     demand: Demand
     output: Output
     what_if: WhatIf
     abort: Abort
-    def __init__(self, demand: _Optional[_Union[Demand, _Mapping]] = ..., output: _Optional[_Union[Output, _Mapping]] = ..., what_if: _Optional[_Union[WhatIf, _Mapping]] = ..., abort: _Optional[_Union[Abort, _Mapping]] = ...) -> None: ...
+    export: Export
+    def __init__(self, demand: _Optional[_Union[Demand, _Mapping]] = ..., output: _Optional[_Union[Output, _Mapping]] = ..., what_if: _Optional[_Union[WhatIf, _Mapping]] = ..., abort: _Optional[_Union[Abort, _Mapping]] = ..., export: _Optional[_Union[Export, _Mapping]] = ...) -> None: ...
 
 class Demand(_message.Message):
     __slots__ = ("relation_id",)
@@ -70,6 +72,14 @@ class Demand(_message.Message):
     def __init__(self, relation_id: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ...) -> None: ...
 
 class Output(_message.Message):
+    __slots__ = ("name", "relation_id")
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    RELATION_ID_FIELD_NUMBER: _ClassVar[int]
+    name: str
+    relation_id: _logic_pb2.RelationId
+    def __init__(self, name: _Optional[str] = ..., relation_id: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ...) -> None: ...
+
+class Export(_message.Message):
     __slots__ = ("name", "relation_id")
     NAME_FIELD_NUMBER: _ClassVar[int]
     RELATION_ID_FIELD_NUMBER: _ClassVar[int]
