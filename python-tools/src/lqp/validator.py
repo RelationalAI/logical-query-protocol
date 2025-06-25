@@ -98,6 +98,7 @@ class DuplicateRelationIdFinder(LqpVisitor):
                     seen_ids.add(decl.name)
 
 # Checks that Atoms are applied to the correct number and types of terms.
+# Assumes UnusedVariableVisitor has passed.
 class AtomTypeChecker(LqpVisitor):
     # Helper to get all Defs defined in a Transaction
     @staticmethod
@@ -172,6 +173,7 @@ class AtomTypeChecker(LqpVisitor):
         # field ensures that.
         self.warned: bool = False
 
+    # Visit Transaction to collect the types of Defs.
     def visit_Transaction(self, node: ir.Transaction, *args: Any) -> None:
         self.relation_types = {
             # v[1] holds the RelType.
@@ -179,6 +181,7 @@ class AtomTypeChecker(LqpVisitor):
         }
         self.generic_visit(node)
 
+    # Visit Abstractions to collect the types of variables.
     def visit_Abstraction(self, node: ir.Abstraction, *args: Any) -> None:
         assert AtomTypeChecker.args_ok(args)
         types = {} if len(args) == 0 else args[0]
