@@ -97,8 +97,9 @@ class DuplicateRelationIdFinder(LqpVisitor):
             self.seen_ids.add(node.name)
 
     def visit_Loop(self, node: ir.Loop, *args: Any) -> None:
-        # Block the Defs of a Loop.
-        pass
+        # Only the Defs in init are globally visible so don't visit body Defs.
+        for d in node.init:
+            self.visit(d)
 
 
 def validate_lqp(lqp: ir.LqpNode):
