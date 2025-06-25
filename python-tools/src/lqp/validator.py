@@ -75,6 +75,7 @@ class _GroundingVisitor:
             # "rel_primitive_add": [([0, 1], [2]), ([0, 2], [1]), ([1, 2], [0])],
         }
 
+    # Returns a tuple of sets: (grounded, negated, quantified)
     def visit(self, node: ir.LqpNode, bound: Set[str]) -> Tuple[Set[str], Set[str], Set[str]]:
         return getattr(self, f"visit_{node.__class__.__name__}", self.generic_visit)(node, bound)
 
@@ -82,6 +83,7 @@ class _GroundingVisitor:
         if not is_dataclass(node):
             return set(), set(), set()
         g = n = q = set()
+        # Visit all the children fields
         for f in fields(node):
             v = getattr(node, f.name)
             if isinstance(v, ir.LqpNode):
@@ -116,6 +118,7 @@ class _GroundingVisitor:
             return set(), set(), set()
         if node.name in self.primitive_binding_patterns:
             t = node.terms
+            # TODO davidwzhao: understand this lol
             grounded = {
                 t[p].name  # type: ignore[attr-defined]
                 for ins, outs in self.primitive_binding_patterns[node.name]
@@ -124,6 +127,9 @@ class _GroundingVisitor:
                 if p < len(t) and isinstance(t[p], ir.Var)
             }
             return grounded, set(), set()
+
+        # Assume the primitive has n-1 inputs and 1 output. If all inputs are bound, then
+        # the output is also bound.
         *prev, last = node.terms
         g = {last.name} if isinstance(last, ir.Var) and self._vars(prev) <= bound else set()
         return g, set(), set()

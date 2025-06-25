@@ -1,4 +1,5 @@
 ;; ERROR: Variables not grounded: x
 (fragment :frag
-  (def :r ([x::INT]
-    (not (atom :s x)))))
+  (def :r
+    ([x::INT]
+      (not (atom :s x)))))
