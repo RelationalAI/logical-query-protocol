@@ -140,9 +140,11 @@ message RelType {
 enum PrimitiveType {
   PRIMITIVE_TYPE_UNSPECIFIED = 0;
   PRIMITIVE_TYPE_STRING = 1;
-  PRIMITIVE_TYPE_INT = 2;
+  PRIMITIVE_TYPE_INT = 2; // deprecated, use INT64 instead, but kept for compatibility
   PRIMITIVE_TYPE_FLOAT = 3;
   PRIMITIVE_TYPE_UINT128 = 4;
+  PRIMITIVE_TYPE_INT64 = 5;
+  PRIMITIVE_TYPE_INT128 = 6;
 }
 
 enum RelValueType {
