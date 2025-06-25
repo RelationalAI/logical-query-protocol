@@ -194,6 +194,13 @@ def convert_output(o: ir.Output) -> transactions_pb2.Output:
         kwargs['name'] = o.name
     return transactions_pb2.Output(**kwargs) # type: ignore
 
+def convert_export(e: ir.Export) -> transactions_pb2.Export:
+    kwargs: Dict[str, Any] = {
+        'relation_id': convert_relation_id(e.relation_id),
+        'name': e.name
+    }
+    return transactions_pb2.Export(**kwargs) # type: ignore
+
 def convert_abort(a: ir.Abort) -> transactions_pb2.Abort:
     kwargs: Dict[str, Any] = {'relation_id': convert_relation_id(a.relation_id)}
     if a.name is not None:
@@ -216,6 +223,8 @@ def convert_read(r: ir.Read) -> transactions_pb2.Read:
         return transactions_pb2.Read(what_if=convert_whatif(rt)) # Note the underscore
     elif isinstance(rt, ir.Abort):
         return transactions_pb2.Read(abort=convert_abort(rt))
+    elif isinstance(rt, ir.Export):
+        return transactions_pb2.Read(export=convert_export(rt))
     else:
         raise TypeError(f"Unsupported Read type: {type(rt)}")
 

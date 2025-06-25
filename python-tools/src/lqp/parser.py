@@ -22,9 +22,10 @@ define: "(define" fragment ")"
 undefine: "(undefine" fragment_id ")"
 context: "(context" relation_id* ")"
 
-read: demand | output | abort
+read: demand | output | export | abort
 demand: "(demand" relation_id ")"
 output: "(output" name? relation_id ")"
+export: "(export" name relation_id ")"
 abort: "(abort" name? relation_id ")"
 
 fragment: "(fragment" fragment_id declaration* ")"
@@ -164,6 +165,9 @@ class LQPTransformer(Transformer):
         if len(items) == 1:
             return ir.Output(name=None, relation_id=items[0], meta=self.meta(meta))
         return ir.Output(name=items[0], relation_id=items[1], meta=self.meta(meta))
+
+    def export(self, meta, items):
+        return ir.Export(name=items[0], relation_id=items[1], meta=self.meta(meta))
 
     def abort(self, meta, items):
         if len(items) == 1:

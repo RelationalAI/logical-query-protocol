@@ -247,6 +247,12 @@ class Output(LqpNode):
     name: Union[str, None]
     relation_id: RelationId
 
+# Export(name::string, relation_id::RelationId)
+@dataclass(frozen=True)
+class Export(LqpNode):
+    name: str
+    relation_id: RelationId
+
 # Abort(name::string?, relation_id::RelationId)
 @dataclass(frozen=True)
 class Abort(LqpNode):
