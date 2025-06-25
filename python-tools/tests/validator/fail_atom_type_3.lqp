@@ -1,0 +1,9 @@
+;; ERROR: Incorrect type for '3181428560199927439' atom at index 0 ('1') at fail_atom_type_3.lqp:8:25: expected STRING term, got INT
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :f1
+          (def :foo ([x::STRING y::STRING z::FLOAT] (and (= x "A") (= y "B") (= z 4.4))))
+          (def :bar ([] (atom :foo 1 2 3))))))
+    (reads)))
