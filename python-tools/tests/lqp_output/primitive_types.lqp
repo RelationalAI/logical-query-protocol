@@ -6,6 +6,12 @@
           (def 2965631662653371761
             ([v::INT]
               (primitive :rel_primitive_eq v 21)))
+          (def 4194452819989837703
+            ([v::INT64]
+              (primitive :rel_primitive_eq v 22)))
+          (def 14238373087184130027
+            ([v::INT128]
+              (primitive :rel_primitive_eq v 23)))
           (def 7505808394141676799
             ([v::UINT128]
               (primitive :rel_primitive_eq v 0x123456789abcdef12345)))
@@ -17,6 +23,8 @@
               (primitive :rel_primitive_eq v "hello"))))))
     (reads
       (output :int 2965631662653371761)
+      (output :int64 4194452819989837703)
+      (output :int128 14238373087184130027)
       (output :uint128 7505808394141676799)
       (output :float 11698363356127107011)
       (output :str 8321355183808865828))))
