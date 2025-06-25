@@ -1,0 +1,9 @@
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :f1
+          (def :foo ([v::INT] (+ 1 1 v))))))
+
+    (reads
+      (export :export_rel :foo))))
