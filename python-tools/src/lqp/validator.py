@@ -111,8 +111,10 @@ class AtomTypeChecker(LqpVisitor):
     def collect_global_defs(txn: ir.Transaction) -> List[ir.Def]:
         # Visitor to do the work.
         class DefCollector(LqpVisitor):
-            def __init__(self):
+            def __init__(self, txn: ir.Transaction):
                 self.defs: List[ir.Def] = []
+                self.visit(txn)
+
 
             def visit_Def(self, node: ir.Def) -> None:
                 self.defs.append(node)
@@ -122,9 +124,7 @@ class AtomTypeChecker(LqpVisitor):
                 # Don't touch the body, they are not globally visible. Treat
                 # this node as a leaf.
 
-        dc = DefCollector()
-        dc.visit(txn)
-        return dc.defs
+        return DefCollector(txn).defs
 
     # Helper to map Constants to their RelType.
     @staticmethod
@@ -139,19 +139,6 @@ class AtomTypeChecker(LqpVisitor):
             return ir.PrimitiveType.UINT128
         else:
             assert False
-
-    # The varargs passed in (visit_Abstraction and visit_Atom) must be a Dict
-    # of strings to RelTypes (or nothing at all).
-    @staticmethod
-    def args_ok(args: List[Any]) -> bool:
-        return (
-            len(args) == 0 or
-            (
-                len(args) == 1 and
-                isinstance(args[0], Dict) and
-                all((isinstance(k, str) and isinstance(v, ir.RelType)) for (k, v) in args[0].items())
-            )
-        )
 
     @staticmethod
     def type_error_message(atom: ir.Atom, index: int, expected: ir.RelType, actual: ir.RelType) -> str:
@@ -171,47 +158,86 @@ class AtomTypeChecker(LqpVisitor):
             f"Incorrect type for '{atom.name.id}' atom at index {index} ('{pretty_term}') at {atom.meta}: " +\
             f"expected {expected} term, got {actual}"
 
+    # Return a list of the types of the parameters of a Def.
+    @staticmethod
+    def get_relation_sig(d: ir.Def):
+        # v[1] holds the RelType.
+        return [v[1] for v in d.body.vars]
 
-    def __init__(self):
-        # Map of relation names to their expected types.
-        # We say Option as we cannot perform this pass properly without `visit`
-        # being passed a Transaction, which, decisively, contains all relations.
-        # Thus, we will populate this in `visit_Transaction`, and if we never
-        # `visit_Transaction`, we'll give a warning.
-        self.relation_types: Option[Dict[ir.RelationId, List[ir.RelType]]] = None
-        # If we try to visit an Atom to check types and `relation_types` is
-        # false, we want to warn. But we want to only warn once and this
-        # field ensures that.
-        self.warned: bool = False
+    # The varargs passed be a State or nothing at all.
+    @staticmethod
+    def args_ok(args: List[Any]) -> bool:
+        return len(args) == 1 and isinstance(args[0], AtomTypeChecker.State)
 
-    # Visit Transaction to collect the types of Defs.
-    def visit_Transaction(self, node: ir.Transaction, *args: Any) -> None:
-        self.relation_types = {
-            # v[1] holds the RelType.
-            d.name : [v[1] for v in d.body.vars] for d in AtomTypeChecker.collect_global_defs(node)
-        }
-        self.generic_visit(node)
+    # What we pass around.
+    class State:
+        def __init__(
+            self,
+            relation_types: Dict[ir.RelationId, List[ir.RelType]],
+            var_types: Dict[str, ir.RelType],
+        ):
+            # Maps relations in scope to their types.
+            self.relation_types = relation_types
+            # Maps variables in scope to their type.
+            self.var_types = var_types
+
+
+    def __init__(self, txn: ir.Transaction):
+        state = AtomTypeChecker.State(
+            {
+                d.name : AtomTypeChecker.get_relation_sig(d)
+                for d in AtomTypeChecker.collect_global_defs(txn)
+            },
+            # No variables declared yet.
+            {},
+        )
+        self.visit(txn, state)
 
     # Visit Abstractions to collect the types of variables.
     def visit_Abstraction(self, node: ir.Abstraction, *args: Any) -> None:
         assert AtomTypeChecker.args_ok(args)
-        types = {} if len(args) == 0 else args[0]
-        self.generic_visit(node, types | {v.name : t for (v, t) in node.vars})
+        state = args[0]
+
+        self.generic_visit(
+            node,
+            AtomTypeChecker.State(
+                state.relation_types,
+                state.var_types | {v.name : t for (v, t) in node.vars},
+            ),
+        )
+
+    # Visit Loops as body Defs are not global and need to be introduced to their
+    # children.
+    def visit_Loop(self, node: ir.Loop, *args: Any) -> None:
+        assert AtomTypeChecker.args_ok(args)
+        state = args[0]
+
+        for d in node.init:
+            self.visit(d, state)
+
+        for decl in node.body:
+            if isinstance(decl, ir.Def):
+                self.visit(
+                    decl,
+                    AtomTypeChecker.State(
+                        {decl.name : get_relation_sig(decl)} | state.relation_types,
+                        state.var_types,
+                    ),
+                )
+            else:
+                self.visit(decl, state)
 
     def visit_Atom(self, node: ir.Atom, *args: Any) -> None:
         assert AtomTypeChecker.args_ok(args)
+        state = args[0]
 
-        if self.relation_types is None:
-            if not self.warned:
-                print("WARNING: not given a Transaction, cannot typecheck Atoms")
-            self.warned = True
-        else:
-            assert node.name in self.relation_types
-            relation_types = self.relation_types[node.name]
+        # Relation may have been defined in another transaction, we don't know.
+        if node.name in state.relation_types:
+            relation_type_sig = state.relation_types[node.name]
 
             # Check arity.
             atom_arity = len(node.terms)
-            relation_arity = len(relation_types)
+            relation_arity = len(relation_type_sig)
             if atom_arity != relation_arity:
                 raise ValidationError(
                     f"Incorrect arity for '{node.name.id}' atom at {node.meta}: " +\
@@ -219,10 +245,9 @@ class AtomTypeChecker(LqpVisitor):
                 )
 
             # Check types.
-            var_types = {} if len(args) == 0 else args[0]
-            for (i, (term, relation_type)) in enumerate(zip(node.terms, relation_types)):
+            for (i, (term, relation_type)) in enumerate(zip(node.terms, relation_type_sig)):
                 # var_types[term] is okay because we assume UnusedVariableVisitor.
-                term_type = var_types[term.name] if isinstance(term, ir.Var) else AtomTypeChecker.constant_type(term)
+                term_type = state.var_types[term.name] if isinstance(term, ir.Var) else AtomTypeChecker.constant_type(term)
                 if term_type != relation_type:
                     raise ValidationError(
                         AtomTypeChecker.type_error_message(node, i, relation_type, term_type)
@@ -235,4 +260,4 @@ def validate_lqp(lqp: ir.LqpNode):
     ShadowedVariableFinder().visit(lqp)
     UnusedVariableVisitor().visit(lqp)
     DuplicateRelationIdFinder().visit(lqp)
-    AtomTypeChecker().visit(lqp)
+    AtomTypeChecker(lqp)
