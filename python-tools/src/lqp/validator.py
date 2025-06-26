@@ -98,6 +98,7 @@ class DuplicateRelationIdFinder(LqpVisitor):
 
     def visit_Loop(self, node: ir.Loop, *args: Any) -> None:
         # Only the Defs in init are globally visible so don't visit body Defs.
+        # TODO: add test for non-/duplicates associated with loops.
         for d in node.init:
             self.visit(d)
 
