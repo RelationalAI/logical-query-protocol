@@ -140,19 +140,58 @@ def convert_def(d: ir.Def) -> logic_pb2.Def:
 
 def convert_loop(l: ir.Loop) -> logic_pb2.Loop:
     return logic_pb2.Loop(
-        init=[convert_def(init_def) for init_def in l.init],
-        body=[convert_declaration(decl) for decl in l.body]
+        init=[convert_instruction(init_def) for init_def in l.init],
+        body=convert_script(l.body)
     )
 
 def convert_declaration(decl: ir.Declaration) -> logic_pb2.Declaration:
+    from typing import Dict, Any
     if isinstance(decl, ir.Def):
-        from typing import Dict, Any
         decl_dict: Dict[str, Any] = {'def': convert_def(decl)}
         return logic_pb2.Declaration(**decl_dict)  # type: ignore
-    elif isinstance(decl, ir.Loop):
-        return logic_pb2.Declaration(loop=convert_loop(decl))
+    elif isinstance(decl, ir.Algorithm):
+        algorithm_dict: Dict[str, Any] = {'algorithm': convert_algorithm(decl)}
+        return logic_pb2.Declaration(**algorithm_dict)
     else:
         raise TypeError(f"Unsupported Declaration type: {type(decl)}")
+
+def convert_algorithm(algo: ir.Algorithm)-> logic_pb2.Algorithm:
+    return logic_pb2.Algorithm(
+        exports=[convert_relation_id(id) for id in algo.exports],
+        body=convert_script(algo.body)
+    )
+
+def convert_instr_type(tp: ir.InstrType) -> logic_pb2.InstrType:
+    if tp == ir.InstrType.ASSIGN :
+        return logic_pb2.InstrType({'assign': logic_pb2.Assign()})
+    elif tp == ir.InstrType.BREAK :
+        return logic_pb2.InstrType({'break': logic_pb2.Break()})
+    elif tp == ir.InstrType.EMPTY :
+        return logic_pb2.InstrType({'empty': logic_pb2.Empty()})
+    elif tp == ir.InstrType.UPSERT :
+        return logic_pb2.InstrType({'upsert': logic_pb2.Upsert()})
+    else:
+        raise TypeError(f"Unsupported instruction type: {tp}")
+
+def convert_instruction(instr: ir.Instruction) -> logic_pb2.Instruction:
+    return logic_pb2.Instruction(
+        {'type': convert_instr_type(instr.instr_type),
+        'def': convert_def(instr.definition)}
+    )
+
+def convert_script(script: ir.Script) -> logic_pb2.Script:
+    return logic_pb2.Script(constructs=[convert_construct(c) for c in script.constructs])
+
+def convert_construct(construct: ir.Construct) -> logic_pb2.Construct:
+    from typing import Dict, Any
+    if isinstance(construct, ir.Loop):
+        loop_dict: Dict[str, Any] = {'loop': convert_loop(construct)}
+        return logic_pb2.Construct(**loop_dict)  # type: ignore
+    elif isinstance(construct, ir.Instruction):
+        instruction_dict: Dict[str, Any] = {'instruction': convert_instruction(construct)}
+        return logic_pb2.Construct(**instruction_dict)
+    else:
+        raise TypeError(f"Unsupported Construct type: {type(construct)}")
 
 def convert_fragment(frag: ir.Fragment) -> fragments_pb2.Fragment:
     return fragments_pb2.Fragment(

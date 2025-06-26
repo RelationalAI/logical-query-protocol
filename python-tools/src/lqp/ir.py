@@ -24,7 +24,7 @@ class SourceInfo:
 class LqpNode:
     meta: Optional[SourceInfo]
 
-# Declaration := Def | Loop
+# Declaration := Def | Algorithm
 @dataclass(frozen=True)
 class Declaration(LqpNode):
     pass
@@ -36,11 +36,39 @@ class Def(Declaration):
     body: Abstraction
     attrs: Sequence[Attribute]
 
-# Loop(init::Def[], body::Declaration[])
+# Algorithm(exports::RelationId[], body::Script)
 @dataclass(frozen=True)
-class Loop(Declaration):
-    init: Sequence[Def]
-    body: Sequence[Declaration]
+class Algorithm(Declaration):
+    exports: Sequence[RelationId]
+    body: Script
+
+# Script := Construct[]
+@dataclass(frozen=True)
+class Script(LqpNode):
+    constructs: Sequence[Construct]
+
+# Construct := Loop | Instruction
+@dataclass(frozen=True)
+class Construct(LqpNode):
+    pass
+
+# Loop(init::Instruction[], body::Script)
+@dataclass(frozen=True)
+class Loop(Construct):
+    init: Sequence[Instruction]
+    body: Script
+
+# Instruction(type::InstrType, definition::Def)
+@dataclass(frozen=True)
+class Instruction(Construct):
+    instr_type: InstrType
+    definition: Def
+
+class InstrType(Enum):
+    ASSIGN = 0
+    EMPTY = 1
+    UPSERT = 2
+    BREAK = 3
 
 # Abstraction(vars::Binding[], value::Formula)
 @dataclass(frozen=True)

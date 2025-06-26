@@ -5,7 +5,7 @@ package relationalai.lqp.v1;
 message Declaration {
   oneof declaration_type {
     Def def = 1;
-    Loop loop = 2;
+    Algorithm algorithm = 2;
   }
 }
 
@@ -15,10 +15,48 @@ message Def {
   repeated Attribute attrs = 3;
 }
 
-message Loop {
-  repeated Def init = 1;
-  repeated Declaration body = 2;
+message Algorithm {
+  repeated RelationId exports = 1;
+  Script body = 2;
 }
+
+message Script {
+  repeated Construct constructs = 1;
+}
+
+message Construct {
+  oneof construct_type {
+    Loop loop = 1;
+    Instruction instruction = 2;
+  }
+}
+
+message Loop {
+  repeated Instruction init = 1;
+  Script body = 2;
+}
+
+message Instruction {
+  InstrType type = 1;
+  Def def = 2;
+}
+
+message InstrType { // Not an enum because of TBD ops parameterized by Monoids
+  oneof instruction_type {
+    Assign assign = 1;
+    Empty empty = 2;
+    Upsert upsert = 3;
+    Break break = 4;
+  }
+}
+
+message Assign {}
+
+message Empty {}
+
+message Upsert {}
+
+message Break {}
 
 message Binding {
   Var var = 1;

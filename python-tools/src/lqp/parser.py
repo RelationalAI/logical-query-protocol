@@ -29,8 +29,19 @@ abort: "(abort" name? relation_id ")"
 
 fragment: "(fragment" fragment_id declaration* ")"
 
-declaration: def_
+declaration: def_ | algorithm
 def_: "(def" relation_id abstraction attrs? ")"
+
+algorithm: "(algorithm" exports script ")"
+exports: "(exports" relation_id* ")"
+script: "(script" construct* ")"
+
+construct: loop | instruction
+loop: "(loop" init script ")"
+init: "(init" instruction* ")"
+
+instruction: "(instruction" INSTR_TYPE def_ ")"
+INSTR_TYPE: "assign" | "empty" | "upsert" | "break"
 
 abstraction: "(" bindings formula ")"
 bindings: "[" binding* "]"
@@ -122,6 +133,9 @@ class LQPTransformer(Transformer):
     def REL_VALUE_TYPE(self, s):
         return getattr(ir.RelValueType, s.upper())
 
+    def INSTR_TYPE(self, s):
+        return getattr(ir.InstrType, s.upper())
+
     def rel_type(self, meta, items):
         return items[0]
 
@@ -190,6 +204,21 @@ class LQPTransformer(Transformer):
         body = items[1]
         attrs = items[2] if len(items) > 2 else []
         return ir.Def(name=name, body=body, attrs=attrs, meta=self.meta(meta))
+
+    def algorithm(self, meta, items):
+        return ir.Algorithm(exports=items[0], body=items[1], meta=self.meta(meta))
+    def script(self, meta, items):
+        return ir.Script(constructs=items, meta=self.meta(meta))
+
+    def construct(self, meta, items):
+        return items[0]
+    def loop(self, meta, items):
+        init = items[0]
+        script = items[1]
+        return ir.Loop(init=init, body=script, meta=self.meta(meta))
+
+    def instruction(self, meta, items):
+        return ir.Instruction(instr_type=items[0], definition=items[1], meta=self.meta(meta))
 
     def abstraction(self, meta, items):
         return ir.Abstraction(vars=items[0], value=items[1], meta=self.meta(meta))
