@@ -175,6 +175,7 @@ class PrimitiveType(Enum):
     INT = 2
     FLOAT = 3
     UINT128 = 4
+    INT128 = 5
 
     def __str__(self) -> str:
         return self.name
