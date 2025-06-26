@@ -1,6 +1,6 @@
 import lqp.ir as ir
 from typing import Any, Dict, List, Tuple, Sequence, Set
-from dataclasses import is_dataclass, fields
+from dataclasses import dataclass, is_dataclass, fields
 
 class ValidationError(Exception):
     pass
@@ -174,18 +174,13 @@ class AtomTypeChecker(LqpVisitor):
     def args_ok(args: List[Any]) -> bool:
         return len(args) == 1 and isinstance(args[0], AtomTypeChecker.State)
 
-    # What we pass around.
+    # What we pass around to the visit methods.
+    @dataclass(frozen=True)
     class State:
-        def __init__(
-            self,
-            relation_types: Dict[ir.RelationId, List[ir.RelType]],
-            var_types: Dict[str, ir.RelType],
-        ):
-            # Maps relations in scope to their types.
-            self.relation_types = relation_types
-            # Maps variables in scope to their type.
-            self.var_types = var_types
-
+        # Maps relations in scope to their types.
+        relation_types: Dict[ir.RelationId, List[ir.RelType]]
+        # Maps variables in scope to their type.
+        var_types: Dict[str, ir.RelType]
 
     def __init__(self, txn: ir.Transaction):
         state = AtomTypeChecker.State(
