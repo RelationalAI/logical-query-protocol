@@ -231,7 +231,8 @@ class AtomTypeChecker(LqpVisitor):
         assert AtomTypeChecker.args_ok(args)
         state = args[0]
 
-        # Relation may have been defined in another transaction, we don't know.
+        # Relation may have been defined in another transaction, we don't know,
+        # so ignore this atom.
         if node.name in state.relation_types:
             relation_type_sig = state.relation_types[node.name]
 
