@@ -195,11 +195,28 @@ def convert_output(o: ir.Output) -> transactions_pb2.Output:
     return transactions_pb2.Output(**kwargs) # type: ignore
 
 def convert_export(e: ir.Export) -> transactions_pb2.Export:
+    return transactions_pb2.Export(config=convert_export_config(e.config)) # type: ignore
+
+def convert_export_config(ec: ir.ExportConfig) -> transactions_pb2.ExportConfig:
+    csv_conf = convert_export_csv_config(ec.export_config)
+    return transactions_pb2.ExportConfig(csv_config=csv_conf)
+
+def convert_export_csv_config(ec: ir.ExportCSVConfig) -> transactions_pb2.ExportCSVConfig:
+    kwargs = {field: getattr(ec, field) for field in dir(ec) if not field.startswith('_') and not callable(getattr(ec, field))}
     kwargs: Dict[str, Any] = {
-        'relation_id': convert_relation_id(e.relation_id),
-        'name': e.name
+        'data': convert_relation_id(ec.data),
+        'path': ec.path,
+        'partition_size': ec.partition_size,
+        'compression': ec.compression,
+        'syntax_header_names': ec.syntax_header_names,
+        'syntax_header_row': ec.syntax_header_row,
+        'syntax_missing_string': ec.syntax_missing_string,
+        'syntax_delim': ec.syntax_delim,
+        'syntax_quotechar': ec.syntax_quotechar,
+        'syntax_escapechar': ec.syntax_escapechar
     }
-    return transactions_pb2.Export(**kwargs) # type: ignore
+
+    return transactions_pb2.ExportCSVConfig(**kwargs)
 
 def convert_abort(a: ir.Abort) -> transactions_pb2.Abort:
     kwargs: Dict[str, Any] = {'relation_id': convert_relation_id(a.relation_id)}

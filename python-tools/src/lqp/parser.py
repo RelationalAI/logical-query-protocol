@@ -184,24 +184,28 @@ class LQPTransformer(Transformer):
         return ir.Export(config=items[0], meta=self.meta(meta))
 
     def export_config(self, meta, items):
-        print("export config", items)
-
         assert len(items) >= 2, "Export config must have at least data and path"
 
-        export_optional_fields = {}
-        for i in items[3:]:
+        export_fields = {}
+        for i in items[1:]:
             assert isinstance(i, dict)
-            export_optional_fields.update(i)
+            export_fields.update(i)
+
+        assert 'path' in export_fields, "Export config must have a path"
 
         return ir.ExportConfig(
             export_config=ir.ExportCSVConfig(
                 data=items[0],
-                path=items[1],
-                **export_optional_fields,
+                **export_fields,
                 meta=self.meta(meta)
             ),
             meta=self.meta(meta)
         )
+
+    # The following methods return dictionaries so that we can combine them to form the
+    # kwargs that construct the ExportCSVConfig
+    def export_path(self, meta, items):
+        return {'path': items[0]}
 
     def export_partition_size(self, meta, items):
         return {'partition_size': items[0]}
