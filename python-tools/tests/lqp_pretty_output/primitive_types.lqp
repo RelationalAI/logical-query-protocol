@@ -6,9 +6,6 @@
           (def :output_int
             ([v::INT]
               (primitive :rel_primitive_eq v 21)))
-          (def :output_int64
-            ([v::INT64]
-              (primitive :rel_primitive_eq v 22)))
           (def :output_int128
             ([v::INT128]
               (primitive :rel_primitive_eq v 23)))
@@ -23,7 +20,6 @@
               (primitive :rel_primitive_eq v "hello"))))))
     (reads
       (output :int :output_int)
-      (output :int64 :output_int64)
       (output :int128 :output_int128)
       (output :uint128 :output_uint128)
       (output :float :output_float)

@@ -11,8 +11,6 @@ def convert_primitive_type(pt: ir.PrimitiveType) -> logic_pb2.PrimitiveType:
         return logic_pb2.PRIMITIVE_TYPE_FLOAT
     elif pt == ir.PrimitiveType.UINT128:
         return logic_pb2.PRIMITIVE_TYPE_UINT128
-    elif pt == ir.PrimitiveType.INT64:
-        return logic_pb2.PRIMITIVE_TYPE_INT64
     elif pt == ir.PrimitiveType.INT128:
         return logic_pb2.PRIMITIVE_TYPE_INT128
     else:

@@ -4,7 +4,6 @@
       (define
         (fragment :f1
           (def :output_int ([v::INT] (= v 21)))
-          (def :output_int64 ([v::INT64] (= v 22)))
           (def :output_int128 ([v::INT128] (= v 23)))
           (def :output_uint128 ([v::UINT128] (= v 0x123456789abcdef12345)))
           (def :output_float ([v::FLOAT] (= v 1.23)))
@@ -12,7 +11,6 @@
 
     (reads
       (output :int :output_int)
-      (output :int64 :output_int64)
       (output :int128 :output_int128)
       (output :uint128 :output_uint128)
       (output :float :output_float)
