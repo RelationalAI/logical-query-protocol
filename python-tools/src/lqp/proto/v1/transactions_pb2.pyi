@@ -58,9 +58,9 @@ class ExportConfig(_message.Message):
     def __init__(self, csv_config: _Optional[_Union[ExportCSVConfig, _Mapping]] = ...) -> None: ...
 
 class ExportCSVConfig(_message.Message):
-    __slots__ = ("path", "data", "partition_size", "compression", "syntax_header_names", "syntax_header_row", "syntax_missing_string", "syntax_delim", "syntax_quotechar", "syntax_escapechar")
-    PATH_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("data", "path", "partition_size", "compression", "syntax_header_names", "syntax_header_row", "syntax_missing_string", "syntax_delim", "syntax_quotechar", "syntax_escapechar")
     DATA_FIELD_NUMBER: _ClassVar[int]
+    PATH_FIELD_NUMBER: _ClassVar[int]
     PARTITION_SIZE_FIELD_NUMBER: _ClassVar[int]
     COMPRESSION_FIELD_NUMBER: _ClassVar[int]
     SYNTAX_HEADER_NAMES_FIELD_NUMBER: _ClassVar[int]
@@ -69,8 +69,8 @@ class ExportCSVConfig(_message.Message):
     SYNTAX_DELIM_FIELD_NUMBER: _ClassVar[int]
     SYNTAX_QUOTECHAR_FIELD_NUMBER: _ClassVar[int]
     SYNTAX_ESCAPECHAR_FIELD_NUMBER: _ClassVar[int]
-    path: str
     data: _logic_pb2.RelationId
+    path: str
     partition_size: int
     compression: str
     syntax_header_names: _containers.RepeatedScalarFieldContainer[str]
@@ -79,7 +79,7 @@ class ExportCSVConfig(_message.Message):
     syntax_delim: str
     syntax_quotechar: str
     syntax_escapechar: str
-    def __init__(self, path: _Optional[str] = ..., data: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ..., partition_size: _Optional[int] = ..., compression: _Optional[str] = ..., syntax_header_names: _Optional[_Iterable[str]] = ..., syntax_header_row: bool = ..., syntax_missing_string: _Optional[str] = ..., syntax_delim: _Optional[str] = ..., syntax_quotechar: _Optional[str] = ..., syntax_escapechar: _Optional[str] = ...) -> None: ...
+    def __init__(self, data: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ..., path: _Optional[str] = ..., partition_size: _Optional[int] = ..., compression: _Optional[str] = ..., syntax_header_names: _Optional[_Iterable[str]] = ..., syntax_header_row: bool = ..., syntax_missing_string: _Optional[str] = ..., syntax_delim: _Optional[str] = ..., syntax_quotechar: _Optional[str] = ..., syntax_escapechar: _Optional[str] = ...) -> None: ...
 
 class Read(_message.Message):
     __slots__ = ("demand", "output", "what_if", "abort", "export")

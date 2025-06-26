@@ -53,8 +53,8 @@ message ExportConfig {
 }
 
 message ExportCSVConfig {
-  string path = 1;
-  RelationId data = 2;
+  RelationId data = 1;
+  string path = 2;
   optional int64 partition_size = 3;
   optional string compression = 4;
 
