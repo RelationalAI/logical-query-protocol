@@ -100,7 +100,8 @@ class DuplicateRelationIdFinder(LqpVisitor):
 # Checks that Atoms are applied to the correct number and types of terms.
 # Assumes UnusedVariableVisitor has passed.
 class AtomTypeChecker(LqpVisitor):
-    # Helper to get all Defs defined in a Transaction
+    # Helper to get all Defs defined in a Transaction. We are only interested
+    # in globally visible Defs thus ignore Loop bodies.
     @staticmethod
     def collect_defs(txn: ir.Transaction) -> List[ir.Def]:
         # Visitor to do the work.
@@ -110,6 +111,11 @@ class AtomTypeChecker(LqpVisitor):
 
             def visit_Def(self, node: ir.Def) -> None:
                 self.defs.append(node)
+
+            def visit_Loop(self, node: ir.Def) -> None:
+                self.defs.extend(node.init)
+                # Don't touch the body, they are not globally visible. Treat
+                # this node as a leaf.
 
         dc = DefCollector()
         dc.visit(txn)
