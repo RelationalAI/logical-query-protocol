@@ -25,8 +25,22 @@ context: "(context" relation_id* ")"
 read: demand | output | export | abort
 demand: "(demand" relation_id ")"
 output: "(output" name? relation_id ")"
-export: "(export" name relation_id ")"
+export: "(export" export_config ")"
 abort: "(abort" name? relation_id ")"
+
+export_config: "(export_config" relation_id export_path (export_partition_size
+    | export_compression | export_header_names | export_header_row
+    | export_missing_string | export_delimiter | export_quotechar
+    | export_escapechar)* ")"
+export_path: "(path" STRING ")"
+export_partition_size: "(partition_size" NUMBER ")"
+export_compression: "(compression" STRING ")"
+export_header_names: "(header_names" STRING* ")"
+export_header_row: "(header_row" NUMBER ")"
+export_missing_string: "(missing_string" STRING ")"
+export_delimiter: "(delim_char" STRING ")"
+export_quotechar: "(quote_char" STRING ")"
+export_escapechar: "(escape_char" STRING ")"
 
 fragment: "(fragment" fragment_id declaration* ")"
 
@@ -167,7 +181,51 @@ class LQPTransformer(Transformer):
         return ir.Output(name=items[0], relation_id=items[1], meta=self.meta(meta))
 
     def export(self, meta, items):
-        return ir.Export(name=items[0], relation_id=items[1], meta=self.meta(meta))
+        return ir.Export(config=items[0], meta=self.meta(meta))
+
+    def export_config(self, meta, items):
+        print("export config", items)
+
+        assert len(items) >= 2, "Export config must have at least data and path"
+
+        export_optional_fields = {}
+        for i in items[3:]:
+            assert isinstance(i, dict)
+            export_optional_fields.update(i)
+
+        return ir.ExportConfig(
+            export_config=ir.ExportCSVConfig(
+                data=items[0],
+                path=items[1],
+                **export_optional_fields,
+                meta=self.meta(meta)
+            ),
+            meta=self.meta(meta)
+        )
+
+    def export_partition_size(self, meta, items):
+        return {'partition_size': items[0]}
+
+    def export_compression(self, meta, items):
+        return {'compression': items[0]}
+
+    def export_header_names(self, meta, items):
+        return {'syntax_header_names': items}
+
+    def export_header_row(self, meta, items):
+        return {'syntax_header_row': items[0]}
+
+    def export_missing_string(self, meta, items):
+        return {'syntax_missing_string': items[0]}
+
+    def export_delimiter(self, meta, items):
+        return {'syntax_delim': items[0]}
+
+    def export_quotechar(self, meta, items):
+        return {'syntax_quotechar': items[0]}
+
+    def export_escapechar(self, meta, items):
+        return {'syntax_escapechar': items[0]}
 
     def abort(self, meta, items):
         if len(items) == 1:

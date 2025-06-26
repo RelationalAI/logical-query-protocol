@@ -247,11 +247,31 @@ class Output(LqpNode):
     name: Union[str, None]
     relation_id: RelationId
 
+# ExportConfig(export_config)
+@dataclass(frozen=True)
+class ExportConfig(LqpNode):
+    # TODO: Once we add a JSON export, this should be union[ExportCSVConfig, ExportJSONConfig]
+    export_config: ExportCSVConfig
+
+# ExportCSVConfig
+@dataclass(frozen=True)
+class ExportCSVConfig(LqpNode):
+    data: RelationId
+    path: str
+    partition_size: Optional[int] = None
+    compression: Optional[str] = None
+
+    syntax_header_names: Optional[Sequence[str]] = None
+    syntax_header_row: Optional[bool] = None
+    syntax_missing_string: Optional[str] = None
+    syntax_delim: Optional[str] = None
+    syntax_quotechar: Optional[str] = None
+    syntax_escapechar: Optional[str] = None
+
 # Export(name::string, relation_id::RelationId)
 @dataclass(frozen=True)
 class Export(LqpNode):
-    name: str
-    relation_id: RelationId
+    config: ExportConfig
 
 # Abort(name::string?, relation_id::RelationId)
 @dataclass(frozen=True)
