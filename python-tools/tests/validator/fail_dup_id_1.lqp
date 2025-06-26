@@ -1,0 +1,6 @@
+;; ERROR: Duplicate declaration at fail_dup_id_1.lqp:5:3: '14069321933851954459'
+(fragment :frag
+  (def :cool
+    ([] (and)))
+  (def :cool
+    ([] (or))))
