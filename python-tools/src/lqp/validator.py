@@ -108,7 +108,7 @@ class AtomTypeChecker(LqpVisitor):
     # Helper to get all Defs defined in a Transaction. We are only interested
     # in globally visible Defs thus ignore Loop bodies.
     @staticmethod
-    def collect_defs(txn: ir.Transaction) -> List[ir.Def]:
+    def collect_global_defs(txn: ir.Transaction) -> List[ir.Def]:
         # Visitor to do the work.
         class DefCollector(LqpVisitor):
             def __init__(self):
@@ -188,7 +188,7 @@ class AtomTypeChecker(LqpVisitor):
     def visit_Transaction(self, node: ir.Transaction, *args: Any) -> None:
         self.relation_types = {
             # v[1] holds the RelType.
-            d.name : [v[1] for v in d.body.vars] for d in AtomTypeChecker.collect_defs(node)
+            d.name : [v[1] for v in d.body.vars] for d in AtomTypeChecker.collect_global_defs(node)
         }
         self.generic_visit(node)
 
