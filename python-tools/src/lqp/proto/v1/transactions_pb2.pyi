@@ -51,6 +51,36 @@ class Context(_message.Message):
     relations: _containers.RepeatedCompositeFieldContainer[_logic_pb2.RelationId]
     def __init__(self, relations: _Optional[_Iterable[_Union[_logic_pb2.RelationId, _Mapping]]] = ...) -> None: ...
 
+class ExportConfig(_message.Message):
+    __slots__ = ("csv_config",)
+    CSV_CONFIG_FIELD_NUMBER: _ClassVar[int]
+    csv_config: ExportCSVConfig
+    def __init__(self, csv_config: _Optional[_Union[ExportCSVConfig, _Mapping]] = ...) -> None: ...
+
+class ExportCSVConfig(_message.Message):
+    __slots__ = ("path", "data", "partition_size", "compression", "syntax_header_names", "syntax_header_row", "syntax_missing_string", "syntax_delim", "syntax_quotechar", "syntax_escapechar")
+    PATH_FIELD_NUMBER: _ClassVar[int]
+    DATA_FIELD_NUMBER: _ClassVar[int]
+    PARTITION_SIZE_FIELD_NUMBER: _ClassVar[int]
+    COMPRESSION_FIELD_NUMBER: _ClassVar[int]
+    SYNTAX_HEADER_NAMES_FIELD_NUMBER: _ClassVar[int]
+    SYNTAX_HEADER_ROW_FIELD_NUMBER: _ClassVar[int]
+    SYNTAX_MISSING_STRING_FIELD_NUMBER: _ClassVar[int]
+    SYNTAX_DELIM_FIELD_NUMBER: _ClassVar[int]
+    SYNTAX_QUOTECHAR_FIELD_NUMBER: _ClassVar[int]
+    SYNTAX_ESCAPECHAR_FIELD_NUMBER: _ClassVar[int]
+    path: str
+    data: _logic_pb2.RelationId
+    partition_size: int
+    compression: str
+    syntax_header_names: _containers.RepeatedScalarFieldContainer[str]
+    syntax_header_row: bool
+    syntax_missing_string: str
+    syntax_delim: str
+    syntax_quotechar: str
+    syntax_escapechar: str
+    def __init__(self, path: _Optional[str] = ..., data: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ..., partition_size: _Optional[int] = ..., compression: _Optional[str] = ..., syntax_header_names: _Optional[_Iterable[str]] = ..., syntax_header_row: bool = ..., syntax_missing_string: _Optional[str] = ..., syntax_delim: _Optional[str] = ..., syntax_quotechar: _Optional[str] = ..., syntax_escapechar: _Optional[str] = ...) -> None: ...
+
 class Read(_message.Message):
     __slots__ = ("demand", "output", "what_if", "abort", "export")
     DEMAND_FIELD_NUMBER: _ClassVar[int]
@@ -80,12 +110,10 @@ class Output(_message.Message):
     def __init__(self, name: _Optional[str] = ..., relation_id: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ...) -> None: ...
 
 class Export(_message.Message):
-    __slots__ = ("name", "relation_id")
-    NAME_FIELD_NUMBER: _ClassVar[int]
-    RELATION_ID_FIELD_NUMBER: _ClassVar[int]
-    name: str
-    relation_id: _logic_pb2.RelationId
-    def __init__(self, name: _Optional[str] = ..., relation_id: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ...) -> None: ...
+    __slots__ = ("config",)
+    CONFIG_FIELD_NUMBER: _ClassVar[int]
+    config: ExportConfig
+    def __init__(self, config: _Optional[_Union[ExportConfig, _Mapping]] = ...) -> None: ...
 
 class WhatIf(_message.Message):
     __slots__ = ("branch", "epoch")

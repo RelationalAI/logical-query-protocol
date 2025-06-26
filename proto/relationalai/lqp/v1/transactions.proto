@@ -41,6 +41,34 @@ message Context {
 }
 
 //
+// Export config
+//
+
+message ExportConfig {
+  oneof export_config {
+    ExportCSVConfig csv_config = 1;
+
+    // TODO: support JSON export
+  }
+}
+
+message ExportCSVConfig {
+  string path = 1;
+  RelationId data = 2;
+  optional int64 partition_size = 3;
+  optional string compression = 4;
+
+  repeated string           syntax_header_names = 5;
+  optional bool             syntax_header_row = 6;
+  optional string           syntax_missing_string = 7;
+  optional string           syntax_delim = 8;
+  optional string           syntax_quotechar = 9;
+  optional string           syntax_escapechar = 10;
+
+  // TODO: support integration
+}
+
+//
 // Read operations
 //
 
@@ -64,8 +92,7 @@ message Output {
 }
 
 message Export {
-  string name = 1;
-  RelationId relation_id = 2;
+  ExportConfig config = 1;
 }
 
 message WhatIf {
