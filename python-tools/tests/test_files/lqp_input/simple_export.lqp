@@ -3,7 +3,19 @@
     (local_writes
       (define
         (fragment :f1
-          (def :foo ([v::INT] (+ 1 1 v))))))
+          (def :col1
+            ([row::INT v::INT]
+              (and
+                (= row 1)
+                (= 2 v))))
+          (def :col2
+            ([row::INT v::STRING]
+              (and
+                (= row 1)
+                (= v "hello")))))))
 
     (reads
-      (export :export_rel :foo))))
+      (export
+        (export_config
+          (columns (column 1 "col1name" :col1) (column 2 "col2name" :col2))
+          (path "/tmp/hello_lqp.csv"))))))
