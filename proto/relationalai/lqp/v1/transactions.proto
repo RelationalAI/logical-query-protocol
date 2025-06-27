@@ -53,7 +53,7 @@ message ExportConfig {
 }
 
 message ExportCSVConfig {
-  RelationId data = 1;
+  repeated ExportCSVColumn data = 1;
   string path = 2;
   optional int64 partition_size = 3;
   optional string compression = 4;
@@ -66,6 +66,12 @@ message ExportCSVConfig {
   optional string           syntax_escapechar = 10;
 
   // TODO: support integration
+}
+
+message ExportCSVColumn {
+  int64 column_number = 1;
+  string column_name = 2;
+  RelationId column_data = 3;
 }
 
 //
