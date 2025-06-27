@@ -341,7 +341,41 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
 
     # TODO PR: complete this
     elif isinstance(node, ir.Export):
-        lqp += f"{ind}{conf.LPAREN()}{conf.kw('export')}\n{name_str}{to_str(node.path, 0, options, debug_info)}{conf.RPAREN()}"
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('export')}\n{to_str(node.config, indent_level + 1, options, debug_info)}{conf.RPAREN()}"
+
+    elif isinstance(node, ir.ExportConfig):
+        # Delegate to the specific export config type
+        lqp += to_str(node.export_config, indent_level, options, debug_info)
+
+    elif isinstance(node, ir.ExportCSVConfig):
+        def line(kw: str, body: str) -> str:
+            return f"{ind}{conf.SIND()}{conf.LPAREN()}{conf.kw(kw)} {body}{conf.RPAREN()}"
+
+        def line_conf_f(kw: str, field: Union[int, str]) -> str:
+            return line(kw, to_str(field, 0, options, debug_info))
+
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('export_config')}\n"
+        lqp += line('columns', list_to_str(node.data_columns, 0, " ", options, debug_info)) + "\n"
+        lqp += line_conf_f('path', node.path)
+
+        if node.partition_size is not None:
+            lqp += "\n" + line_conf_f('partition_size', node.partition_size)
+        if node.compression is not None:
+            lqp += "\n" + line_conf_f('compression', node.compression)
+        if node.syntax_header_row is not None:
+            lqp += "\n" + line_conf_f('header_row', node.syntax_header_row)
+        if node.syntax_missing_string is not None:
+            lqp += "\n" + line_conf_f('missing_string', node.syntax_missing_string)
+        if node.syntax_delim is not None:
+            lqp += "\n" + line_conf_f('delim_char', node.syntax_delim)
+        if node.syntax_quotechar is not None:
+            lqp += "\n" + line_conf_f('quote_char', node.syntax_quotechar)
+        if node.syntax_escapechar is not None:
+            lqp += "\n" + line_conf_f('escape_char', node.syntax_escapechar)
+        lqp += f"{conf.RPAREN()}"
+
+    elif isinstance(node, ir.ExportCSVColumn):
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('column')} {node.column_number} {to_str(node.column_name, 0, options, debug_info)} {to_str(node.column_data, 0, options, debug_info)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Abort):
         name_str = f":{conf.uname(node.name)} " if node.name else ""
