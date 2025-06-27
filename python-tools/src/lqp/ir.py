@@ -256,17 +256,22 @@ class ExportConfig(LqpNode):
 # ExportCSVConfig
 @dataclass(frozen=True)
 class ExportCSVConfig(LqpNode):
-    data: RelationId
+    data_columns: Sequence[ExportCSVColumn]
     path: str
     partition_size: Optional[int] = None
     compression: Optional[str] = None
 
-    syntax_header_names: Optional[Sequence[str]] = None
-    syntax_header_row: Optional[bool] = None
+    syntax_header_row: Optional[int] = None
     syntax_missing_string: Optional[str] = None
     syntax_delim: Optional[str] = None
     syntax_quotechar: Optional[str] = None
     syntax_escapechar: Optional[str] = None
+
+@dataclass(frozen=True)
+class ExportCSVColumn(LqpNode):
+    column_number: int
+    column_name: str
+    column_data: RelationId
 
 # Export(name::string, relation_id::RelationId)
 @dataclass(frozen=True)

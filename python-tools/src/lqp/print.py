@@ -339,6 +339,10 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         name_str = f":{conf.uname(node.name)} " if node.name else ""
         lqp += f"{ind}{conf.LPAREN()}{conf.kw('output')} {name_str}{to_str(node.relation_id, 0, options, debug_info)}{conf.RPAREN()}"
 
+    # TODO PR: complete this
+    elif isinstance(node, ir.Export):
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('export')}\n{name_str}{to_str(node.path, 0, options, debug_info)}{conf.RPAREN()}"
+
     elif isinstance(node, ir.Abort):
         name_str = f":{conf.uname(node.name)} " if node.name else ""
         lqp += f"{ind}{conf.LPAREN()}{conf.kw('abort')} {name_str}{to_str(node.relation_id, 0, options, debug_info)}{conf.RPAREN()}"

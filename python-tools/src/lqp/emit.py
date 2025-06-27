@@ -201,22 +201,40 @@ def convert_export_config(ec: ir.ExportConfig) -> transactions_pb2.ExportConfig:
     csv_conf = convert_export_csv_config(ec.export_config)
     return transactions_pb2.ExportConfig(csv_config=csv_conf)
 
-def convert_export_csv_config(ec: ir.ExportCSVConfig) -> transactions_pb2.ExportCSVConfig:
-    kwargs = {field: getattr(ec, field) for field in dir(ec) if not field.startswith('_') and not callable(getattr(ec, field))}
-    kwargs: Dict[str, Any] = {
-        'data': convert_relation_id(ec.data),
-        'path': ec.path,
-        'partition_size': ec.partition_size,
-        'compression': ec.compression,
-        'syntax_header_names': ec.syntax_header_names,
-        'syntax_header_row': ec.syntax_header_row,
-        'syntax_missing_string': ec.syntax_missing_string,
-        'syntax_delim': ec.syntax_delim,
-        'syntax_quotechar': ec.syntax_quotechar,
-        'syntax_escapechar': ec.syntax_escapechar
-    }
+def convert_export_csv_column(ec: ir.ExportCSVColumn) -> transactions_pb2.ExportCSVColumn:
+    return transactions_pb2.ExportCSVColumn(
+        column_number=ec.column_number,
+        column_name=ec.column_name,
+        column_data=convert_relation_id(ec.column_data),
+    )
 
-    return transactions_pb2.ExportCSVConfig(**kwargs)
+def convert_export_csv_config(ec: ir.ExportCSVConfig) -> transactions_pb2.ExportCSVConfig:
+    # kwargs: Dict[str, Any] = {
+    #     'data_columns': [convert_relation_id(c) for c in ec.data_columns],
+    #     'path': ec.path,
+    #     'partition_size': ec.partition_size,
+    #     'compression': ec.compression,
+    #     'syntax_header_names': ec.syntax_header_names,
+    #     'syntax_header_row': ec.syntax_header_row,
+    #     'syntax_missing_string': ec.syntax_missing_string,
+    #     'syntax_delim': ec.syntax_delim,
+    #     'syntax_quotechar': ec.syntax_quotechar,
+    #     'syntax_escapechar': ec.syntax_escapechar
+    # }
+
+    return transactions_pb2.ExportCSVConfig(
+        data_columns=[convert_export_csv_column(c) for c in ec.data_columns],
+        path=ec.path,
+        partition_size=ec.partition_size,
+        compression=ec.compression,
+        syntax_header_row=ec.syntax_header_row,
+        syntax_missing_string=ec.syntax_missing_string,
+        syntax_delim=ec.syntax_delim,
+        syntax_quotechar=ec.syntax_quotechar,
+        syntax_escapechar=ec.syntax_escapechar
+    )
+
+    # return transactions_pb2.ExportCSVConfig(**kwargs)
 
 def convert_abort(a: ir.Abort) -> transactions_pb2.Abort:
     kwargs: Dict[str, Any] = {'relation_id': convert_relation_id(a.relation_id)}

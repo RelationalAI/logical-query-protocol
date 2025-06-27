@@ -28,14 +28,16 @@ output: "(output" name? relation_id ")"
 export: "(export" export_config ")"
 abort: "(abort" name? relation_id ")"
 
-export_config: "(export_config" relation_id export_path (export_partition_size
-    | export_compression | export_header_names | export_header_row
-    | export_missing_string | export_delimiter | export_quotechar
-    | export_escapechar)* ")"
+export_config: "(export_config" export_columns export_path (export_partition_size
+    | export_compression | export_header_row | export_missing_string | export_delimiter
+    | export_quotechar | export_escapechar)* ")"
+
+export_column: "(column" NUMBER STRING relation_id ")"
+export_columns: "(columns" export_column* ")"
+
 export_path: "(path" STRING ")"
 export_partition_size: "(partition_size" NUMBER ")"
 export_compression: "(compression" STRING ")"
-export_header_names: "(header_names" STRING* ")"
 export_header_row: "(header_row" NUMBER ")"
 export_missing_string: "(missing_string" STRING ")"
 export_delimiter: "(delim_char" STRING ")"
@@ -195,10 +197,23 @@ class LQPTransformer(Transformer):
 
         return ir.ExportConfig(
             export_config=ir.ExportCSVConfig(
-                data=items[0],
+                data_columns=items[0],
                 **export_fields,
                 meta=self.meta(meta)
             ),
+            meta=self.meta(meta)
+        )
+
+    def export_columns(self, meta, items):
+        # items is a list of ExportCSVColumn objects
+        return items
+
+    def export_column(self, meta, items):
+        # items[0] is the column number, items[1] is the column name, items[2] is the relation_id
+        return ir.ExportCSVColumn(
+            column_number=items[0],
+            column_name=items[1],
+            column_data=items[2],
             meta=self.meta(meta)
         )
 
