@@ -7,8 +7,8 @@
             ([v::DATE]
               (primitive :rel_primitive_parse_date "1998-12-01" "Y-m-d" v)))
           (def :decimal
-            ([v::DECIMAL]
-              (primitive :rel_primitive_parse_decimal #64 #4 "3.14" v)))
+            ([v::DECIMAL64]
+              (primitive :rel_primitive_parse_decimal #64 #6 "3.14" v)))
           (def :day
             ([v::DAY]
               (primitive :rel_primitive_parse_day #90 v))))))

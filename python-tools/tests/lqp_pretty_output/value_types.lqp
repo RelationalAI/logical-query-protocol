@@ -3,9 +3,6 @@
     (local_writes
       (define
         (fragment :f1
-          (def :output_decimal
-            ([v::DECIMAL]
-              (relatom :dec v)))
           (def :output_decimal64
             ([v::DECIMAL64]
               (relatom :dec64 v)))
@@ -49,7 +46,6 @@
             ([v::YEAR]
               (relatom :year v))))))
     (reads
-      (output :dec :output_decimal)
       (output :dec64 :output_decimal64)
       (output :dec128 :output_decimal128)
       (output :date :output_date)
