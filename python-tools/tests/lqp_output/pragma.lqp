@@ -1,0 +1,40 @@
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :f1
+          (def 10098605871750969749
+            ([a::INT b::INT c::INT]
+              (or
+                (and
+                  (primitive :rel_primitive_eq a 1)
+                  (primitive :rel_primitive_eq b 2)
+                  (primitive :rel_primitive_eq c 0))
+                (and
+                  (primitive :rel_primitive_eq a 1)
+                  (primitive :rel_primitive_eq b 3)
+                  (primitive :rel_primitive_eq c 0))
+                (and
+                  (primitive :rel_primitive_eq a 1)
+                  (primitive :rel_primitive_eq b 4)
+                  (primitive :rel_primitive_eq c 0)))))
+          (def 10223368810657819737
+            ([b::INT a::INT]
+              (or
+                (and
+                  (primitive :rel_primitive_eq b 2)
+                  (primitive :rel_primitive_eq a 1))
+                (and
+                  (primitive :rel_primitive_eq b 3)
+                  (primitive :rel_primitive_eq a 1))
+                (and
+                  (primitive :rel_primitive_eq b 4)
+                  (primitive :rel_primitive_eq a 1)))))
+          (def 3181428560199927439
+            ([a::INT b::INT c::INT]
+              (and
+                (atom 10098605871750969749 a b c)
+                (atom 10223368810657819737 b a)
+                (pragma :rel_primitive_force_var_order c b a)))))))
+    (reads
+      (output :foo 3181428560199927439))))
