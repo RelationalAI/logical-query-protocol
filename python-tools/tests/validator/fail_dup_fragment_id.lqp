@@ -1,0 +1,12 @@
+;; ERROR: Duplicate fragment within an epoch at fail_dup_fragment_id.lqp:9:7: 'frag'
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :frag
+          (def :cool
+            ([] (or)))))
+      (define
+        (fragment :frag))
+    )
+    (reads)))

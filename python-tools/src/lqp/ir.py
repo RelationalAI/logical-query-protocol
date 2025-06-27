@@ -204,6 +204,12 @@ RelType = Union[PrimitiveType, RelValueType]
 class FragmentId(LqpNode):
     id: bytes
 
+    def __eq__(self, other) -> bool:
+        return self.id == other.id
+
+    def __hash__(self) -> int:
+        return hash(self.id)
+
 # Fragment(id::FragmentId, declarations::Declaration[], debug_info::DebugInfo)
 @dataclass(frozen=True)
 class Fragment(LqpNode):
