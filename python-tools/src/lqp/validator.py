@@ -122,8 +122,9 @@ class DuplicateFragmentDefinitionFinder(LqpVisitor):
         self.seen_ids.clear()
         self.generic_visit(node)
 
-    # We could visit_Fragment instead but the point of this pass is to find
-    # duplicate Fragments being _defined_ so this is a bit more fitting.
+    # We could visit_Fragment instead (no node has a Fragment child except
+    # Define) but the point of this pass is to find duplicate Fragments
+    # being _defined_ so this is a bit more fitting.
     def visit_Define(self, node: ir.Define, *args: Any) -> None:
         if node.fragment.id in self.seen_ids:
             id_str = node.fragment.id.id.decode("utf-8")
