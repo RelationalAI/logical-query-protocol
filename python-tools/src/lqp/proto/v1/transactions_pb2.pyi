@@ -58,28 +58,26 @@ class ExportConfig(_message.Message):
     def __init__(self, csv_config: _Optional[_Union[ExportCSVConfig, _Mapping]] = ...) -> None: ...
 
 class ExportCSVConfig(_message.Message):
-    __slots__ = ("data", "path", "partition_size", "compression", "syntax_header_names", "syntax_header_row", "syntax_missing_string", "syntax_delim", "syntax_quotechar", "syntax_escapechar")
-    DATA_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("data_columns", "path", "partition_size", "compression", "syntax_header_row", "syntax_missing_string", "syntax_delim", "syntax_quotechar", "syntax_escapechar")
+    DATA_COLUMNS_FIELD_NUMBER: _ClassVar[int]
     PATH_FIELD_NUMBER: _ClassVar[int]
     PARTITION_SIZE_FIELD_NUMBER: _ClassVar[int]
     COMPRESSION_FIELD_NUMBER: _ClassVar[int]
-    SYNTAX_HEADER_NAMES_FIELD_NUMBER: _ClassVar[int]
     SYNTAX_HEADER_ROW_FIELD_NUMBER: _ClassVar[int]
     SYNTAX_MISSING_STRING_FIELD_NUMBER: _ClassVar[int]
     SYNTAX_DELIM_FIELD_NUMBER: _ClassVar[int]
     SYNTAX_QUOTECHAR_FIELD_NUMBER: _ClassVar[int]
     SYNTAX_ESCAPECHAR_FIELD_NUMBER: _ClassVar[int]
-    data: _containers.RepeatedCompositeFieldContainer[ExportCSVColumn]
+    data_columns: _containers.RepeatedCompositeFieldContainer[ExportCSVColumn]
     path: str
     partition_size: int
     compression: str
-    syntax_header_names: _containers.RepeatedScalarFieldContainer[str]
     syntax_header_row: bool
     syntax_missing_string: str
     syntax_delim: str
     syntax_quotechar: str
     syntax_escapechar: str
-    def __init__(self, data: _Optional[_Iterable[_Union[ExportCSVColumn, _Mapping]]] = ..., path: _Optional[str] = ..., partition_size: _Optional[int] = ..., compression: _Optional[str] = ..., syntax_header_names: _Optional[_Iterable[str]] = ..., syntax_header_row: bool = ..., syntax_missing_string: _Optional[str] = ..., syntax_delim: _Optional[str] = ..., syntax_quotechar: _Optional[str] = ..., syntax_escapechar: _Optional[str] = ...) -> None: ...
+    def __init__(self, data_columns: _Optional[_Iterable[_Union[ExportCSVColumn, _Mapping]]] = ..., path: _Optional[str] = ..., partition_size: _Optional[int] = ..., compression: _Optional[str] = ..., syntax_header_row: bool = ..., syntax_missing_string: _Optional[str] = ..., syntax_delim: _Optional[str] = ..., syntax_quotechar: _Optional[str] = ..., syntax_escapechar: _Optional[str] = ...) -> None: ...
 
 class ExportCSVColumn(_message.Message):
     __slots__ = ("column_number", "column_name", "column_data")

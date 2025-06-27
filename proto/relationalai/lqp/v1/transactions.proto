@@ -53,17 +53,16 @@ message ExportConfig {
 }
 
 message ExportCSVConfig {
-  repeated ExportCSVColumn data = 1;
+  repeated ExportCSVColumn data_columns = 1;
   string path = 2;
   optional int64 partition_size = 3;
   optional string compression = 4;
 
-  repeated string           syntax_header_names = 5;
-  optional bool             syntax_header_row = 6;
-  optional string           syntax_missing_string = 7;
-  optional string           syntax_delim = 8;
-  optional string           syntax_quotechar = 9;
-  optional string           syntax_escapechar = 10;
+  optional bool             syntax_header_row = 5;
+  optional string           syntax_missing_string = 6;
+  optional string           syntax_delim = 7;
+  optional string           syntax_quotechar = 8;
+  optional string           syntax_escapechar = 9;
 
   // TODO: support integration
 }
