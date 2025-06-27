@@ -28,8 +28,9 @@ class LqpVisitor:
                         self.visit(item, *args)
 
 class UnusedVariableVisitor(LqpVisitor):
-    def __init__(self):
+    def __init__(self, txn: ir.Transaction):
         self.scopes: List[Tuple[Set[str], Set[str]]] = []
+        self.visit(txn)
 
     def _declare_var(self, var_name: str):
         if self.scopes:
@@ -58,6 +59,9 @@ class UnusedVariableVisitor(LqpVisitor):
 
 # Checks for shadowing of variables. Raises ValidationError upon encountering such.
 class ShadowedVariableFinder(LqpVisitor):
+    def __init__(self, txn: ir.Transaction):
+        self.visit(txn)
+
     # The varargs passed in must be a single set of strings.
     @staticmethod
     def args_ok(args: Sequence[Any]) -> bool:
@@ -82,23 +86,29 @@ class ShadowedVariableFinder(LqpVisitor):
 
         self.visit(node.value, in_scope_names | set(v[0].name for v in node.vars))
 
-# Checks for duplicate RelationIds within a fragment.
+# Checks for duplicate RelationIds.
 # Raises ValidationError upon encountering such.
 class DuplicateRelationIdFinder(LqpVisitor):
-    def visit_Fragment(self, node: ir.Fragment, *args: Any) -> None:
-        seen_ids = set()
-        for decl in node.declarations:
-            # Of Declarations, only Defs have relation IDs.
-            if isinstance(decl, ir.Def):
-                if decl.name in seen_ids:
-                    raise ValidationError(
-                        f"Duplicate declaration within fragment at {decl.meta}: '{decl.name.id}'"
-                    )
-                else:
-                    seen_ids.add(decl.name)
+    def __init__(self, txn: ir.Transaction):
+        self.seen_ids: ir.RelationId = set()
+        self.visit(txn)
+
+    def visit_Def(self, node: ir.Def, *args: Any) -> None:
+        if node.name in self.seen_ids:
+            raise ValidationError(
+                f"Duplicate declaration at {node.meta}: '{node.name.id}'"
+            )
+        else:
+            self.seen_ids.add(node.name)
+
+    def visit_Loop(self, node: ir.Loop, *args: Any) -> None:
+        # Only the Defs in init are globally visible so don't visit body Defs.
+        # TODO: add test for non-/duplicates associated with loops.
+        for d in node.init:
+            self.visit(d)
 
 
-def validate_lqp(lqp: ir.LqpNode):
-    ShadowedVariableFinder().visit(lqp)
-    UnusedVariableVisitor().visit(lqp)
-    DuplicateRelationIdFinder().visit(lqp)
+def validate_lqp(lqp: ir.Transaction):
+    ShadowedVariableFinder(lqp)
+    UnusedVariableVisitor(lqp)
+    DuplicateRelationIdFinder(lqp)

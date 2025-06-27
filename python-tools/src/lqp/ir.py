@@ -175,6 +175,7 @@ class PrimitiveType(Enum):
     INT = 2
     FLOAT = 3
     UINT128 = 4
+    INT128 = 5
 
 class RelValueType(Enum):
     UNSPECIFIED = 0
