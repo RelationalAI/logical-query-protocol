@@ -41,7 +41,7 @@ loop: "(loop" init script ")"
 init: "(init" instruction* ")"
 
 instruction: "(instruction" INSTR_TYPE def_ ")"
-INSTR_TYPE: "assign" | "empty" | "upsert" | "break"
+INSTR_TYPE: "ASSIGN" | "EMPTY" | "UPSERT" | "BREAK"
 
 abstraction: "(" bindings formula ")"
 bindings: "[" binding* "]"

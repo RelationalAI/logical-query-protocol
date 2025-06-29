@@ -216,14 +216,31 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
             lqp += list_to_str(node.attrs, indent_level + 2, "\n", options, debug_info)
             lqp += f"{conf.RPAREN()}{conf.RPAREN()}"
 
+    elif isinstance(node, ir.Algorithm):
+        lqp += ind + conf.LPAREN() + conf.kw("algorithm") + "\n"
+        # Print exports
+        lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("exports") + "\n"
+        lqp += list_to_str(node.exports, indent_level + 2, "\n", options, debug_info) + conf.RPAREN()+"\n"
+        lqp += ind + conf.SIND() + to_str(node.body, indent_level + 1, options, debug_info)
+        lqp += conf.RPAREN()
+
+    elif isinstance(node, ir.Script):
+        lqp += ind + conf.LPAREN() + conf.kw("script") + "\n"
+        lqp += list_to_str(node.constructs, indent_level + 1, "\n", options, debug_info)
+        lqp += conf.RPAREN()
+
     elif isinstance(node, ir.Loop):
         lqp += ind + conf.LPAREN() + conf.kw("loop") + "\n"
-        lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("inits") + "\n"
+        lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("init") + "\n"
         lqp += list_to_str(node.init, indent_level + 2, "\n", options, debug_info)
         lqp += conf.RPAREN() + "\n"
-        lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("body") + "\n"
-        lqp += list_to_str(node.body, indent_level + 2, "\n", options, debug_info)
-        lqp += conf.RPAREN() + conf.RPAREN()
+        lqp += to_str(node.body, indent_level + 2, options, debug_info)
+        lqp += conf.RPAREN()
+
+    elif isinstance(node, ir.Instruction):
+        lqp += ind + conf.LPAREN() + conf.kw("instruction") + " " + conf.uname(node.instr_type.name) + "\n"
+        lqp += to_str(node.definition, indent_level + 1, options, debug_info)
+        lqp += conf.RPAREN()
 
     elif isinstance(node, ir.Abstraction):
         lqp += ind + conf.LPAREN() + conf.LBRACKET()
