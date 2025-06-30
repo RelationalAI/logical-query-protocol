@@ -355,7 +355,7 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         def line_conf_f(kw: str, field: Union[int, str]) -> str:
             return line(kw, to_str(field, 0, options, debug_info))
 
-        lqp += f"{ind}{conf.LPAREN()}{conf.kw('export_config')}\n"
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('export_csv_config')}\n"
         lqp += line('columns', list_to_str(node.data_columns, 0, " ", options, debug_info)) + "\n"
         lqp += line_conf_f('path', node.path)
 
