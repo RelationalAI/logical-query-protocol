@@ -1,4 +1,5 @@
 import lqp.ir as ir
+import lqp.print as p
 from typing import Any, Dict, List, Tuple, Sequence, Set
 from dataclasses import dataclass, is_dataclass, fields
 
@@ -148,17 +149,7 @@ class AtomTypeChecker(LqpVisitor):
     @staticmethod
     def type_error_message(atom: ir.Atom, index: int, expected: ir.RelType, actual: ir.RelType) -> str:
         term = atom.terms[index]
-        # How should we print the offending term?
-        pretty_term = None
-        if isinstance(term, ir.Var):
-            pretty_term = term.name
-        else:
-            assert isinstance(term, ir.Constant)
-            if isinstance(term, str):
-                pretty_term = f"\"{term}\""
-            else:
-                pretty_term = term
-
+        pretty_term = p.to_str(term, 0)
         return \
             f"Incorrect type for '{atom.name.id}' atom at index {index} ('{pretty_term}') at {atom.meta}: " +\
             f"expected {expected} term, got {actual}"
