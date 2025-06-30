@@ -192,7 +192,7 @@ class LQPTransformer(Transformer):
 
     def fragment_id(self, meta, items):
         fragment_id = ir.FragmentId(id=items[0].encode(), meta=self.meta(meta))
-        self._current_fragment_id = fragment_id
+        self._current_fragment_id = fragment_id # type: ignore
         if fragment_id not in self.id_to_debuginfo:
             self.id_to_debuginfo[fragment_id] = {}
         return fragment_id
@@ -207,15 +207,20 @@ class LQPTransformer(Transformer):
 
     def algorithm(self, meta, items):
         return ir.Algorithm(exports=items[0], body=items[1], meta=self.meta(meta))
+    def exports(self, meta, items):
+        return items
     def script(self, meta, items):
         return ir.Script(constructs=items, meta=self.meta(meta))
 
     def construct(self, meta, items):
         return items[0]
+
     def loop(self, meta, items):
         init = items[0]
         script = items[1]
         return ir.Loop(init=init, body=script, meta=self.meta(meta))
+    def init(self, meta, items):
+        return items
 
     def instruction(self, meta, items):
         return ir.Instruction(instr_type=items[0], definition=items[1], meta=self.meta(meta))
@@ -380,7 +385,7 @@ def process_file(filename, bin, json):
         lqp_text = f.read()
 
     lqp = parse_lqp(filename, lqp_text)
-    validate_lqp(lqp)
+    validate_lqp(lqp) # type: ignore
     lqp_proto = ir_to_proto(lqp)
     print(lqp_proto)
 

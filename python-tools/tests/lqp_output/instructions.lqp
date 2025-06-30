@@ -1,0 +1,24 @@
+(transaction
+  (epoch
+    (persistent_writes
+      (define
+        (fragment :instructions
+          (algorithm
+            (exports 3181428560199927439 18221048622641146868)
+            (script
+              (instruction UPSERT
+                (def 1967807609550870936
+                  ([x::INT]
+                    (atom 3159282601090220207 x))))
+              (instruction BREAK
+                (def 6931104569591695457
+                  ([x::INT]
+                    (atom 3159282601090220207 x))))
+              (instruction EMPTY
+                (def 18258050539415108999
+                  ([x::INT]
+                    (atom 3159282601090220207 x))))
+              (instruction ASSIGN
+                (def 11882225170668076754
+                  ([x::INT]
+                    (atom 3159282601090220207 x)))))))))))

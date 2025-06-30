@@ -1,0 +1,16 @@
+(transaction
+  (epoch
+    (persistent_writes
+      (define
+        (fragment :def_and_loop
+          (def :test ([x::INT] (atom :alice x)))
+          (algorithm
+            (exports :foo :bar)
+            (script
+              (loop
+                (init
+                  (instruction ASSIGN
+                    (def :test2 ([x::INT] (atom :bob x)))))
+                (script
+                  (instruction BREAK
+                    (def :test3 ([x::INT] (atom :carol x)))))))))))))

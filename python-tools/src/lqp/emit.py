@@ -163,20 +163,20 @@ def convert_algorithm(algo: ir.Algorithm)-> logic_pb2.Algorithm:
 
 def convert_instr_type(tp: ir.InstrType) -> logic_pb2.InstrType:
     if tp == ir.InstrType.ASSIGN :
-        return logic_pb2.InstrType({'assign': logic_pb2.Assign()})
+        return logic_pb2.InstrType(assign=logic_pb2.Assign())
     elif tp == ir.InstrType.BREAK :
-        return logic_pb2.InstrType({'break': logic_pb2.Break()})
+        return logic_pb2.InstrType(**{"break": logic_pb2.Break()})  # type: ignore
     elif tp == ir.InstrType.EMPTY :
-        return logic_pb2.InstrType({'empty': logic_pb2.Empty()})
+        return logic_pb2.InstrType(empty=logic_pb2.Empty())
     elif tp == ir.InstrType.UPSERT :
-        return logic_pb2.InstrType({'upsert': logic_pb2.Upsert()})
+        return logic_pb2.InstrType(upsert=logic_pb2.Upsert())
     else:
         raise TypeError(f"Unsupported instruction type: {tp}")
 
 def convert_instruction(instr: ir.Instruction) -> logic_pb2.Instruction:
     return logic_pb2.Instruction(
-        {'type': convert_instr_type(instr.instr_type),
-        'def': convert_def(instr.definition)}
+        type=convert_instr_type(instr.instr_type),
+        **{"def": convert_def(instr.definition)}
     )
 
 def convert_script(script: ir.Script) -> logic_pb2.Script:

@@ -90,7 +90,7 @@ class ShadowedVariableFinder(LqpVisitor):
 # Raises ValidationError upon encountering such.
 class DuplicateRelationIdFinder(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
-        self.seen_ids: ir.RelationId = set()
+        self.seen_ids: Set[ir.RelationId] = set()
         self.visit(txn)
 
     def visit_Def(self, node: ir.Def, *args: Any) -> None:
@@ -105,7 +105,7 @@ class DuplicateRelationIdFinder(LqpVisitor):
         # Only the Defs in init are globally visible so don't visit body Defs.
         # TODO: add test for non-/duplicates associated with loops.
         for d in node.init:
-            self.visit(d)
+            self.visit(d.definition)
 
 
 def validate_lqp(lqp: ir.Transaction):
