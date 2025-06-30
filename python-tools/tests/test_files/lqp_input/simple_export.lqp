@@ -18,4 +18,8 @@
       (export
         (export_config
           (columns (column 1 "col1name" :col1) (column 2 "col2name" :col2))
-          (path "/tmp/hello_lqp.csv"))))))
+          (path "/tmp/hello_lqp.csv")
+          (partition_size 10)
+          (compression "gzip")
+          (quote_char "\"")
+          (escape_char "\\"))))))
