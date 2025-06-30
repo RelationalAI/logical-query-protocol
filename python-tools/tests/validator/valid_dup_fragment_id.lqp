@@ -11,5 +11,4 @@
   (epoch
     (local_writes
       (define (fragment :frag))
-    )
-    (reads)))
+    )))
