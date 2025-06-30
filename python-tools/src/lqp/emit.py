@@ -211,19 +211,6 @@ def convert_export_csv_column(ec: ir.ExportCSVColumn) -> transactions_pb2.Export
     )
 
 def convert_export_csv_config(ec: ir.ExportCSVConfig) -> transactions_pb2.ExportCSVConfig:
-    # kwargs: Dict[str, Any] = {
-    #     'data_columns': [convert_relation_id(c) for c in ec.data_columns],
-    #     'path': ec.path,
-    #     'partition_size': ec.partition_size,
-    #     'compression': ec.compression,
-    #     'syntax_header_names': ec.syntax_header_names,
-    #     'syntax_header_row': ec.syntax_header_row,
-    #     'syntax_missing_string': ec.syntax_missing_string,
-    #     'syntax_delim': ec.syntax_delim,
-    #     'syntax_quotechar': ec.syntax_quotechar,
-    #     'syntax_escapechar': ec.syntax_escapechar
-    # }
-
     return transactions_pb2.ExportCSVConfig(
         data_columns=[convert_export_csv_column(c) for c in ec.data_columns],
         path=ec.path,
@@ -235,8 +222,6 @@ def convert_export_csv_config(ec: ir.ExportCSVConfig) -> transactions_pb2.Export
         syntax_quotechar=ec.syntax_quotechar,
         syntax_escapechar=ec.syntax_escapechar
     )
-
-    # return transactions_pb2.ExportCSVConfig(**kwargs)
 
 def convert_abort(a: ir.Abort) -> transactions_pb2.Abort:
     kwargs: Dict[str, Any] = {'relation_id': convert_relation_id(a.relation_id)}
