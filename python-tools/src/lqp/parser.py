@@ -63,7 +63,7 @@ ffi: "(ffi" name args terms ")"
 atom: "(atom" relation_id term* ")"
 relatom: "(relatom" name relterm* ")"
 cast: "(cast" rel_type term term ")"
-pragma: "(pragma" name terms ")"
+pragma: "(pragma" name  term* ")"
 true: "(true)"
 false: "(false)"
 
@@ -318,7 +318,7 @@ class LQPTransformer(Transformer):
         return ir.Atom(name=items[0], terms=items[1:], meta=self.meta(meta))
 
     def pragma(self, meta, items):
-        return ir.Pragma(name=items[0], terms=items[1], meta=self.meta(meta))
+        return ir.Pragma(name=items[0], terms=items[1:], meta=self.meta(meta))
 
     def relatom(self, meta, items):
         return ir.RelAtom(name=items[0], terms=items[1:], meta=self.meta(meta))

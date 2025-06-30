@@ -266,7 +266,8 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         lqp += f"{ind}{conf.LPAREN()}{conf.kw('atom')} {to_str(node.name, 0, options, debug_info)} {list_to_str(node.terms, 0, ' ', options, debug_info)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Pragma):
-        lqp += f"{ind}{conf.LPAREN()}{conf.kw('pragma')} :{conf.uname(node.name)} {terms_to_str(node.terms, 0, options, debug_info)}{conf.RPAREN()}"
+        terms = f"{list_to_str(node.terms, 0, ' ', options, debug_info)}"
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('pragma')} :{conf.uname(node.name)} {terms}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Primitive):
         lqp += f"{ind}{conf.LPAREN()}{conf.kw('primitive')} :{conf.uname(node.name)} {list_to_str(node.terms, 0, ' ', options, debug_info)}{conf.RPAREN()}"
