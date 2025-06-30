@@ -331,6 +331,9 @@ class LQPTransformer(Transformer):
     def UINT128(self, u):
         uint128_val = int(u, 16)
         return ir.UInt128(value=uint128_val, meta=None)
+    def INT128(self, u):
+        int128_val = int(u, 16)
+        return ir.Int128(value=int128_val, meta=None)
 
 # LALR(1) is significantly faster than Earley for parsing, especially on larger inputs. It
 # uses a precomputed parse table, reducing runtime complexity to O(n) (linear in input

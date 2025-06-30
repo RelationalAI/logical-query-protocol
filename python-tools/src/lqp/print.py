@@ -285,6 +285,8 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         lqp += f"{ind}\"{node}\""
     elif isinstance(node, ir.UInt128):
         lqp += f"{ind}{hex(node.value)}"
+    elif isinstance(node, ir.Int128):
+        lqp += f"{ind}{node.value}"
     elif isinstance(node, bool):
         lqp += f"{ind}{str(node).lower()}"
     elif isinstance(node, (int, float)):
@@ -296,6 +298,8 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
             lqp += f"{ind}#\"{val_to_print}\""
         elif isinstance(val_to_print, ir.UInt128):
             lqp += f"{ind}#{hex(val_to_print.value)}"
+        elif isinstance(val_to_print, ir.Int128):
+            lqp += f"{ind}#{val_to_print.value}"
         elif isinstance(val_to_print, bool):
             lqp += f"{ind}#{str(val_to_print).lower()}"
         elif isinstance(val_to_print, (int, float)):

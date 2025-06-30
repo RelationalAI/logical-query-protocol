@@ -128,8 +128,13 @@ class Var(LqpNode):
 class UInt128(LqpNode):
     value: int
 
+# Int128(low::fixed64, high::fixed64)
+@dataclass(frozen=True)
+class Int128(LqpNode):
+    value: int
+
 # PrimitiveValue union type for Constant
-PrimitiveValue = Union[str, int, float, UInt128]
+PrimitiveValue = Union[str, int, float, UInt128, Int128]
 
 # Constant(value::PrimitiveValue)
 Constant = Union[PrimitiveValue]

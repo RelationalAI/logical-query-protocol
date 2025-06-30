@@ -36,15 +36,31 @@ def convert_uint128(val: ir.UInt128) -> logic_pb2.UInt128:
     high = (val.value >> 64) & 0xFFFFFFFFFFFFFFFF
     return logic_pb2.UInt128(low=low, high=high)
 
+def convert_int128(val: ir.Int128) -> logic_pb2.Int128:
+    low = val.value & 0xFFFFFFFFFFFFFFFF
+    high = (val.value >> 64) & 0xFFFFFFFFFFFFFFFF
+    return logic_pb2.Int128(low=low, high=high)
+
+def convert_int128_from_int(val: int) -> logic_pb2.Int128:
+    low = val & 0xFFFFFFFFFFFFFFFF
+    high = (val >> 64) & 0xFFFFFFFFFFFFFFFF
+    return logic_pb2.Int128(low=low, high=high)
+
 def convert_value(pv: ir.PrimitiveValue) -> logic_pb2.Value:
     if isinstance(pv, str):
         return logic_pb2.Value(string_value=pv)
     elif isinstance(pv, int):
-        return logic_pb2.Value(int_value=pv)
+        # Python's int can be arbitrarily large, so it can represent both int64 and int128.
+        if pv.bit_length() > 64:
+            return logic_pb2.Value(int128_value=convert_int128_from_int(pv))
+        else:
+            return logic_pb2.Value(int_value=pv)
     elif isinstance(pv, float):
         return logic_pb2.Value(float_value=pv)
     elif isinstance(pv, ir.UInt128):
         return logic_pb2.Value(uint128_value=convert_uint128(pv))
+    elif isinstance(pv, ir.Int128):
+        return logic_pb2.Value(int128_value=convert_int128(pv))
     else:
         raise TypeError(f"Unsupported PrimitiveValue type: {type(pv)}")
 

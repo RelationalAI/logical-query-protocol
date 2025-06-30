@@ -8,7 +8,7 @@
               (primitive :rel_primitive_eq v 21)))
           (def 14238373087184130027
             ([v::INT128]
-              (primitive :rel_primitive_eq v 23)))
+              (primitive :rel_primitive_eq v 85968058283706962486085)))
           (def 7505808394141676799
             ([v::UINT128]
               (primitive :rel_primitive_eq v 0x123456789abcdef12345)))
