@@ -106,7 +106,7 @@ REL_VALUE_TYPE: "DECIMAL" | "DECIMAL64" | "DECIMAL128" | "DATE" | "DATETIME"
               | "DAY" | "WEEK" | "MONTH" | "YEAR"
 
 SYMBOL: /[a-zA-Z_][a-zA-Z0-9_-]*/
-STRING: "\\"" /[^"]*/ "\\""
+STRING: ESCAPED_STRING
 NUMBER: /\\d+/
 UINT128: /0x[0-9a-fA-F]+/
 FLOAT: /\\d+\\.\\d+/
@@ -114,6 +114,7 @@ FLOAT: /\\d+\\.\\d+/
 COMMENT: /;;.*/  // Matches ;; followed by any characters except newline
 %ignore /\\s+/
 %ignore COMMENT
+%import common.ESCAPED_STRING -> ESCAPED_STRING
 """
 
 
