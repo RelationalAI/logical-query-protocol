@@ -4,14 +4,16 @@
       (define
         (fragment :f1
           (def :output_int ([v::INT] (= v 21)))
-          (def :output_int128 ([v::INT128] (= v 85968058283706962486085)))
+          (def :output_int128_s ([v::INT128] (= v 21)))
+          (def :output_int128_l ([v::INT128] (= v 85968058283706962486085)))
           (def :output_uint128 ([v::UINT128] (= v 0x123456789abcdef12345)))
           (def :output_float ([v::FLOAT] (= v 1.23)))
           (def :output_str ([v::STRING] (= v "hello"))))))
 
     (reads
       (output :int :output_int)
-      (output :int128 :output_int128)
+      (output :int128_s :output_int128_s)
+      (output :int128_l :output_int128_l)
       (output :uint128 :output_uint128)
       (output :float :output_float)
       (output :str :output_str))))
