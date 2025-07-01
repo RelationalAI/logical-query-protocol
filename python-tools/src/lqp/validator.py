@@ -69,9 +69,11 @@ class UnusedVariableVisitor(LqpVisitor):
 #      in said conjunction.
 #   4. A variable must be grounded in all branches of a disjunction to be
 #      deemed grounded in said disjunction.
-#   5. TODO Reduce
-#   6. TODO Abstraction
-#   7. TODO Not
+#   5. In a Reduce,
+#   6. Declared variables which are ground in the body of Abstractions are
+#      quantified. Ultimately these quantified variables are deemed grounded
+#      and are unaffected by upstream negation.
+#   7. Ground variables become unground by negation (negation negates negation).
 class GroundingChecker:
     # Return all children variables of node.
     @staticmethod
@@ -180,6 +182,7 @@ class GroundingChecker:
             g = {last.name} if isinstance(last, ir.Var) and self._vars(prev) <= bound else set()
             return g, set(), set()
 
+    # Flips groundedness and negatedness.
     def visit_Not(self, node: ir.Not, bound: Set[str]):
         g, n, q = self.visit(node.arg, bound)
         return n, g, q
@@ -217,6 +220,7 @@ class GroundingChecker:
         op_g |= args
         return body_g | op_g | self._vars(node.terms), body_n | op_n, body_q | op_q
 
+    # Introduced variables which are grounded in the body are deemed quantified.
     def visit_Abstraction(self, node: ir.Abstraction, bound: Set[str]):
         declared = {v[0].name for v in node.vars}
         g, n, q = self.visit(node.value, bound)
