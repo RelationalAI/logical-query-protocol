@@ -5,9 +5,13 @@ package relationalai.lqp.v1;
 import "relationalai/lqp/v1/fragments.proto";
 import "relationalai/lqp/v1/logic.proto";
 
-// Transaction and Epoch
 message Transaction {
   repeated Epoch epochs = 1;
+  Configure configure = 2;
+}
+
+message Configure {
+  int64 semantics_version = 1;
 }
 
 message Epoch {
