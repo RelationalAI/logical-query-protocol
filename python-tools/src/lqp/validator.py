@@ -87,6 +87,11 @@ class GroundingChecker:
 
         return VariableCollector(node).variables
 
+    # Pull var names from a List of Terms into a Set.
+    @staticmethod
+    def filter_vars(terms: List[ir.Term]) -> Set[str]:
+        return set(t.name for t in terms if isinstance(t, ir.Var))
+
     def __init__(self, txn: ir.Transaction):
         # Maps primitive names to their binding pattern. A binding pattern
         # specifies, as a pair, 1) slots in the Primitive's arguments which
@@ -131,23 +136,14 @@ class GroundingChecker:
                         g |= g2; n |= n2; q |= q2
         return g, n, q
 
-    def _vars(self, terms) -> Set[str]:
-        out: Set[str] = set()
-        for t in terms:
-            if isinstance(t, ir.Var):
-                out.add(t.name)
-            elif isinstance(t, (list, tuple)):
-                out |= self._vars(t)
-        return out
-
     # Atoms ground all variables.
     def visit_Atom(self, node: ir.Atom, bound: Set[str]):
-        v = self._vars(node.terms)
+        v = GroundingChecker.filter_vars(node.terms)
         return v, set(), set()
 
     # Like Atoms.
     def visit_RelAtom(self, node: ir.RelAtom, bound: Set[str]):
-        v = self._vars(node.terms)
+        v = GroundingChecker.filter_vars(node.terms)
         return v, set(), set()
 
     def visit_Primitive(self, node: ir.Primitive, bound: Set[str]):
@@ -179,7 +175,7 @@ class GroundingChecker:
             # Assume the primitive has n-1 inputs and 1 output. If all inputs are bound, then
             # the output is also bound.
             *prev, last = node.terms
-            g = {last.name} if isinstance(last, ir.Var) and self._vars(prev) <= bound else set()
+            g = {last.name} if isinstance(last, ir.Var) and GroundingChecker.filter_vars(prev) <= bound else set()
             return g, set(), set()
 
     # Flips groundedness and negatedness.
@@ -218,7 +214,7 @@ class GroundingChecker:
         args = {v[0].name for v in node.op.vars}
         op_g, op_n, op_q = self.visit(node.op.value, bound | args)
         op_g |= args
-        return body_g | op_g | self._vars(node.terms), body_n | op_n, body_q | op_q
+        return body_g | op_g | GroundingChecker.filter_vars(node.terms), body_n | op_n, body_q | op_q
 
     # Introduced variables which are grounded in the body are deemed quantified.
     def visit_Abstraction(self, node: ir.Abstraction, bound: Set[str]):
