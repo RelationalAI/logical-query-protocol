@@ -107,10 +107,12 @@ class _GroundingVisitor:
                 out |= self._vars(t)
         return out
 
+    # Atoms ground all variables.
     def visit_Atom(self, node: ir.Atom, bound: Set[str]):
         v = self._vars(node.terms)
         return v, set(), set()
 
+    # Like Atoms.
     def visit_RelAtom(self, node: ir.RelAtom, bound: Set[str]):
         v = self._vars(node.terms)
         return v, set(), set()
@@ -119,14 +121,14 @@ class _GroundingVisitor:
         if not node.terms:
             return set(), set(), set()
         if node.name in self.primitive_binding_patterns:
-            t = node.terms
+            terms = node.terms
             # TODO davidwzhao: understand this lol
             grounded = {
-                t[p].name  # type: ignore[attr-defined]
+                terms[p].name  # type: ignore[attr-defined]
                 for ins, outs in self.primitive_binding_patterns[node.name]
-                if all(p < len(t) and (not isinstance(t[p], ir.Var) or t[p].name in bound) for p in ins)  # type: ignore[attr-defined]
+                if all(p < len(t) and (not isinstance(terms[p], ir.Var) or terms[p].name in bound) for p in ins)  # type: ignore[attr-defined]
                 for p in outs
-                if p < len(t) and isinstance(t[p], ir.Var)
+                if p < len(terms) and isinstance(terms[p], ir.Var)
             }
             return grounded, set(), set()
 
@@ -140,6 +142,8 @@ class _GroundingVisitor:
         g, n, q = self.visit(node.arg, bound)
         return n, g, q
 
+    # Variables are grounded if they are grounded in any branch and negated if
+    # they are negated in all branches.
     def visit_Conjunction(self, node: ir.Conjunction, bound: Set[str]):
         gs: List[Set[str]] = []
         ns: List[Set[str]] = []
@@ -147,10 +151,12 @@ class _GroundingVisitor:
         for a in node.args:
             g, n, q = self.visit(a, bound)
             gs.append(g); ns.append(n); qs |= q
-        grounded = set().union(*gs) if gs else set()
+        grounded = set.union(*gs) if gs else set()
         negated = set.intersection(*ns) if ns else set()
         return grounded, negated, qs
 
+    # Variables are grounded if they are grounded in every branch and negated if
+    # they are negated in any branches.
     def visit_Disjunction(self, node: ir.Disjunction, bound: Set[str]):
         gs: List[Set[str]] = []
         ns: List[Set[str]] = []
@@ -159,7 +165,7 @@ class _GroundingVisitor:
             g, n, q = self.visit(a, bound)
             gs.append(g); ns.append(n); qs |= q
         grounded = set.intersection(*gs) if gs else set()
-        negated = set().union(*ns) if ns else set()
+        negated = set.union(*ns) if ns else set()
         return grounded, negated, qs
 
     def visit_Reduce(self, node: ir.Reduce, bound: Set[str]):
