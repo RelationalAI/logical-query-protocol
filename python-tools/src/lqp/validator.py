@@ -126,7 +126,7 @@ class _GroundingVisitor:
             grounded = {
                 terms[p].name  # type: ignore[attr-defined]
                 for ins, outs in self.primitive_binding_patterns[node.name]
-                if all(p < len(t) and (not isinstance(terms[p], ir.Var) or terms[p].name in bound) for p in ins)  # type: ignore[attr-defined]
+                if all(p < len(terms) and (not isinstance(terms[p], ir.Var) or terms[p].name in bound) for p in ins)  # type: ignore[attr-defined]
                 for p in outs
                 if p < len(terms) and isinstance(terms[p], ir.Var)
             }
