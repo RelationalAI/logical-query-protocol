@@ -69,13 +69,24 @@ class UnusedVariableVisitor(LqpVisitor):
     def visit_Var(self, node: ir.Var, *args: Any):
         self._mark_var_used(node)
 
-class _GroundingVisitor:
-    def __init__(self):
+class GroundingChecker:
+    def __init__(self, txn: ir.Transaction):
         self.primitive_binding_patterns = {
             "rel_primitive_eq": [([0], [1]), ([1], [0])],
             # TODO not sure if we support this
             # "rel_primitive_add": [([0, 1], [2]), ([0, 2], [1]), ([1, 2], [0])],
         }
+
+        bound: Set[str] = set()
+        prev: Set[str] | None = None
+        while bound != prev:
+            prev = bound.copy()
+            g, n, q = self.visit(txn, bound)
+            bound |= g | q
+
+        n = variables(txn) - bound
+        if n:
+            raise ValidationError(f"Variables not grounded: {', '.join(sorted(n))}")
 
     # Returns a tuple of sets: (grounded, negated, quantified)
     def visit(self, node: ir.LqpNode, bound: Set[str]) -> Tuple[Set[str], Set[str], Set[str]]:
@@ -191,22 +202,6 @@ class _GroundingVisitor:
         quant = declared & g
         g -= declared; n -= declared; q |= quant
         return g, n, q
-
-def grounded(node: ir.LqpNode) -> Set[str]:
-    bound: Set[str] = set()
-    prev: Set[str] | None = None
-    visitor = _GroundingVisitor()
-    while bound != prev:
-        prev = bound.copy()
-        g, n, q = visitor.visit(node, bound)
-        bound |= g | q
-    return bound
-
-def grounding_check(node: ir.LqpNode):
-    bound = grounded(node)
-    n = variables(node) - bound
-    if n:
-        raise ValidationError(f"Variables not grounded: {', '.join(sorted(n))}")
 
 # Checks for shadowing of variables. Raises ValidationError upon encountering such.
 class ShadowedVariableFinder(LqpVisitor):
@@ -432,4 +427,4 @@ def validate_lqp(lqp: ir.Transaction):
     DuplicateRelationIdFinder(lqp)
     DuplicateFragmentDefinitionFinder(lqp)
     AtomTypeChecker(lqp)
-    grounding_check(lqp)
+    GroundingChecker(lqp)
