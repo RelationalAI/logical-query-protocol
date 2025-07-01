@@ -36,11 +36,6 @@ def convert_uint128(val: ir.UInt128) -> logic_pb2.UInt128:
     high = (val.value >> 64) & 0xFFFFFFFFFFFFFFFF
     return logic_pb2.UInt128(low=low, high=high)
 
-def convert_int128(val: ir.Int128) -> logic_pb2.Int128:
-    low = val.value & 0xFFFFFFFFFFFFFFFF
-    high = (val.value >> 64) & 0xFFFFFFFFFFFFFFFF
-    return logic_pb2.Int128(low=low, high=high)
-
 def convert_int128_from_int(val: int) -> logic_pb2.Int128:
     low = val & 0xFFFFFFFFFFFFFFFF
     high = (val >> 64) & 0xFFFFFFFFFFFFFFFF
