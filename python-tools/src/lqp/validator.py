@@ -1,6 +1,7 @@
 import lqp.ir as ir
-from typing import Any, List, Tuple, Sequence, Set
-from dataclasses import is_dataclass, fields
+import lqp.print as p
+from typing import Any, Dict, List, Tuple, Sequence, Set
+from dataclasses import dataclass, is_dataclass, fields
 
 class ValidationError(Exception):
     pass
@@ -241,6 +242,145 @@ class DuplicateRelationIdFinder(LqpVisitor):
         for d in node.init:
             self.visit(d)
 
+# Checks that Atoms are applied to the correct number and types of terms.
+# Assumes UnusedVariableVisitor has passed.
+class AtomTypeChecker(LqpVisitor):
+    # Helper to get all Defs defined in a Transaction. We are only interested
+    # in globally visible Defs thus ignore Loop bodies.
+    @staticmethod
+    def collect_global_defs(txn: ir.Transaction) -> List[ir.Def]:
+        # Visitor to do the work.
+        class DefCollector(LqpVisitor):
+            def __init__(self, txn: ir.Transaction):
+                self.defs: List[ir.Def] = []
+                self.visit(txn)
+
+
+            def visit_Def(self, node: ir.Def) -> None:
+                self.defs.append(node)
+
+            def visit_Loop(self, node: ir.Def) -> None:
+                self.defs.extend(node.init)
+                # Don't touch the body, they are not globally visible. Treat
+                # this node as a leaf.
+
+        return DefCollector(txn).defs
+
+    # Helper to map Constants to their RelType.
+    @staticmethod
+    def constant_type(c: ir.Constant) -> ir.RelType:
+        if isinstance(c, str):
+            return ir.PrimitiveType.STRING
+        elif isinstance(c, int):
+            return ir.PrimitiveType.INT
+        elif isinstance(c, float):
+            return ir.PrimitiveType.FLOAT
+        elif isinstance(c, ir.UInt128):
+            return ir.PrimitiveType.UINT128
+        else:
+            assert False
+
+    @staticmethod
+    def type_error_message(atom: ir.Atom, index: int, expected: ir.RelType, actual: ir.RelType) -> str:
+        term = atom.terms[index]
+        pretty_term = p.to_str(term, 0)
+        return \
+            f"Incorrect type for '{atom.name.id}' atom at index {index} ('{pretty_term}') at {atom.meta}: " +\
+            f"expected {expected} term, got {actual}"
+
+    # Return a list of the types of the parameters of a Def.
+    @staticmethod
+    def get_relation_sig(d: ir.Def):
+        # v[1] holds the RelType.
+        return [v[1] for v in d.body.vars]
+
+    # The varargs passed be a State or nothing at all.
+    @staticmethod
+    def args_ok(args: List[Any]) -> bool:
+        return len(args) == 1 and isinstance(args[0], AtomTypeChecker.State)
+
+    # What we pass around to the visit methods.
+    @dataclass(frozen=True)
+    class State:
+        # Maps relations in scope to their types.
+        relation_types: Dict[ir.RelationId, List[ir.RelType]]
+        # Maps variables in scope to their type.
+        var_types: Dict[str, ir.RelType]
+
+    def __init__(self, txn: ir.Transaction):
+        state = AtomTypeChecker.State(
+            {
+                d.name : AtomTypeChecker.get_relation_sig(d)
+                for d in AtomTypeChecker.collect_global_defs(txn)
+            },
+            # No variables declared yet.
+            {},
+        )
+        self.visit(txn, state)
+
+    # Visit Abstractions to collect the types of variables.
+    def visit_Abstraction(self, node: ir.Abstraction, *args: Any) -> None:
+        assert AtomTypeChecker.args_ok(args)
+        state = args[0]
+
+        self.generic_visit(
+            node,
+            AtomTypeChecker.State(
+                state.relation_types,
+                state.var_types | {v.name : t for (v, t) in node.vars},
+            ),
+        )
+
+    # Visit Loops as body Defs are not global and need to be introduced to their
+    # children.
+    def visit_Loop(self, node: ir.Loop, *args: Any) -> None:
+        assert AtomTypeChecker.args_ok(args)
+        state = args[0]
+
+        for d in node.init:
+            self.visit(d, state)
+
+        for decl in node.body:
+            if isinstance(decl, ir.Def):
+                self.visit(
+                    decl,
+                    AtomTypeChecker.State(
+                        {decl.name : get_relation_sig(decl)} | state.relation_types,
+                        state.var_types,
+                    ),
+                )
+            else:
+                self.visit(decl, state)
+
+    def visit_Atom(self, node: ir.Atom, *args: Any) -> None:
+        assert AtomTypeChecker.args_ok(args)
+        state = args[0]
+
+        # Relation may have been defined in another transaction, we don't know,
+        # so ignore this atom.
+        if node.name in state.relation_types:
+            relation_type_sig = state.relation_types[node.name]
+
+            # Check arity.
+            atom_arity = len(node.terms)
+            relation_arity = len(relation_type_sig)
+            if atom_arity != relation_arity:
+                raise ValidationError(
+                    f"Incorrect arity for '{node.name.id}' atom at {node.meta}: " +\
+                    f"expected {relation_arity} term{'' if relation_arity == 1 else 's'}, got {atom_arity}"
+                )
+
+            # Check types.
+            for (i, (term, relation_type)) in enumerate(zip(node.terms, relation_type_sig)):
+                # var_types[term] is okay because we assume UnusedVariableVisitor.
+                term_type = state.var_types[term.name] if isinstance(term, ir.Var) else AtomTypeChecker.constant_type(term)
+                if term_type != relation_type:
+                    raise ValidationError(
+                        AtomTypeChecker.type_error_message(node, i, relation_type, term_type)
+                    )
+
+        # This is a leaf for our purposes, no need to recurse further.
+
 # Checks for the definition (Define) of duplicate Fragment(Ids) within an Epoch.
 # Raises ValidationError upon encountering such.
 class DuplicateFragmentDefinitionFinder(LqpVisitor):
@@ -275,4 +415,5 @@ def validate_lqp(lqp: ir.Transaction):
     UnusedVariableVisitor(lqp)
     DuplicateRelationIdFinder(lqp)
     DuplicateFragmentDefinitionFinder(lqp)
+    AtomTypeChecker(lqp)
     grounding_check(lqp)

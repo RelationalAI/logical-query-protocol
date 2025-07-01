@@ -128,8 +128,13 @@ class Var(LqpNode):
 class UInt128(LqpNode):
     value: int
 
+# Int128(low::fixed64, high::fixed64)
+@dataclass(frozen=True)
+class Int128(LqpNode):
+    value: int
+
 # PrimitiveValue union type for Constant
-PrimitiveValue = Union[str, int, float, UInt128]
+PrimitiveValue = Union[str, int, float, UInt128, Int128]
 
 # Constant(value::PrimitiveValue)
 Constant = Union[PrimitiveValue]
@@ -177,6 +182,9 @@ class PrimitiveType(Enum):
     UINT128 = 4
     INT128 = 5
 
+    def __str__(self) -> str:
+        return self.name
+
 class RelValueType(Enum):
     UNSPECIFIED = 0
     DECIMAL = 1
@@ -194,6 +202,9 @@ class RelValueType(Enum):
     YEAR = 13
     DECIMAL64 = 14
     DECIMAL128 = 15
+
+    def __str__(self) -> str:
+        return self.name
 
 RelType = Union[PrimitiveType, RelValueType]
 
