@@ -119,8 +119,10 @@ class _GroundingVisitor:
 
     def visit_Primitive(self, node: ir.Primitive, bound: Set[str]):
         if not node.terms:
+            # No arguments.
             return set(), set(), set()
-        if node.name in self.primitive_binding_patterns:
+        elif node.name in self.primitive_binding_patterns:
+            # Known primitive with more liberal rules.
             terms = node.terms
             patterns = self.primitive_binding_patterns[node.name]
             # All terms corresponding to an output slot (in primitive patterns)
@@ -137,12 +139,14 @@ class _GroundingVisitor:
                 for o in outs if o < len(terms) and isinstance(terms[o], ir.Var)
             }
             return grounded, set(), set()
+        else:
+            # Random primitive we don't "know" about.
 
-        # Assume the primitive has n-1 inputs and 1 output. If all inputs are bound, then
-        # the output is also bound.
-        *prev, last = node.terms
-        g = {last.name} if isinstance(last, ir.Var) and self._vars(prev) <= bound else set()
-        return g, set(), set()
+            # Assume the primitive has n-1 inputs and 1 output. If all inputs are bound, then
+            # the output is also bound.
+            *prev, last = node.terms
+            g = {last.name} if isinstance(last, ir.Var) and self._vars(prev) <= bound else set()
+            return g, set(), set()
 
     def visit_Not(self, node: ir.Not, bound: Set[str]):
         g, n, q = self.visit(node.arg, bound)
