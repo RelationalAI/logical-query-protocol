@@ -1,0 +1,9 @@
+;; ERROR: Incorrect arity for '3181428560199927439' atom at fail_atom_arity_2.lqp:8:25: expected 2 terms, got 1
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :f1
+          (def :foo ([x::STRING y::STRING] (and (= x "A") (= y "B"))))
+          (def :bar ([] (atom :foo "A"))))))
+    (reads)))

@@ -182,6 +182,9 @@ class PrimitiveType(Enum):
     UINT128 = 4
     INT128 = 5
 
+    def __str__(self) -> str:
+        return self.name
+
 class RelValueType(Enum):
     UNSPECIFIED = 0
     DECIMAL = 1
@@ -199,6 +202,9 @@ class RelValueType(Enum):
     YEAR = 13
     DECIMAL64 = 14
     DECIMAL128 = 15
+
+    def __str__(self) -> str:
+        return self.name
 
 RelType = Union[PrimitiveType, RelValueType]
 
