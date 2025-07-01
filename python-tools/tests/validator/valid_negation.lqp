@@ -1,3 +1,7 @@
-(fragment :frag
-  (def :r ([x::INT]
-    (not (not (atom :s x))))))
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :frag
+          (def :r ([x::INT]
+            (not (not (atom :s x))))))))))

@@ -1,5 +1,9 @@
 ;; ERROR: Variables not grounded: x
-(fragment :frag
-  (def :r
-    ([x::INT]
-      (not (atom :s x)))))
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :frag
+          (def :r
+            ([x::INT]
+              (not (atom :s x)))))))))

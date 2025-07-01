@@ -1,7 +1,11 @@
 ;; ERROR: Variables not grounded: y
-(fragment :frag
-  (def :bad
-    ([x::INT y::INT]
-      (or
-        (atom :foo x y)
-        (atom :bar x)))))
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :frag
+          (def :bad
+            ([x::INT y::INT]
+              (or
+                (atom :foo x y)
+                (atom :bar x)))))))))
