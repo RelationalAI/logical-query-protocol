@@ -9,9 +9,6 @@
           (def 12020515264615679488
             ([v::INT128]
               (primitive :rel_primitive_eq v 21)))
-          (def 12372217943612403113
-            ([v::INT128]
-              (primitive :rel_primitive_eq v 85968058283706962486085)))
           (def 6864231520054082253
             ([v::INT128]
               (primitive :rel_primitive_eq v 21i128)))
@@ -30,7 +27,6 @@
     (reads
       (output :int 2965631662653371761)
       (output :int128_s 12020515264615679488)
-      (output :int128_l 12372217943612403113)
       (output :int128_s128 6864231520054082253)
       (output :int128_l128 9483684744106318471)
       (output :uint128 7505808394141676799)
@@ -42,7 +38,6 @@
 ;; Original names
 ;; 	 ID `2965631662653371761` -> `output_int`
 ;; 	 ID `12020515264615679488` -> `output_int128_s`
-;; 	 ID `12372217943612403113` -> `output_int128_l`
 ;; 	 ID `6864231520054082253` -> `output_int128_s128`
 ;; 	 ID `9483684744106318471` -> `output_int128_l128`
 ;; 	 ID `7505808394141676799` -> `output_uint128`

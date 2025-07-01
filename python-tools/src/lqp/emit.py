@@ -50,11 +50,8 @@ def convert_value(pv: ir.PrimitiveValue) -> logic_pb2.Value:
     if isinstance(pv, str):
         return logic_pb2.Value(string_value=pv)
     elif isinstance(pv, int):
-        # Python's int can be arbitrarily large, so it can represent both int64 and int128.
-        if pv.bit_length() > 64:
-            return logic_pb2.Value(int128_value=convert_int128_from_int(pv))
-        else:
-            return logic_pb2.Value(int_value=pv)
+        assert pv.bit_length() <= 64, "Integer value exceeds 64 bits"
+        return logic_pb2.Value(int_value=pv)
     elif isinstance(pv, float):
         return logic_pb2.Value(float_value=pv)
     elif isinstance(pv, ir.UInt128):

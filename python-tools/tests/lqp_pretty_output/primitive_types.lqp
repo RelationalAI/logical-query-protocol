@@ -9,9 +9,6 @@
           (def :output_int128_s
             ([v::INT128]
               (primitive :rel_primitive_eq v 21)))
-          (def :output_int128_l
-            ([v::INT128]
-              (primitive :rel_primitive_eq v 85968058283706962486085)))
           (def :output_int128_s128
             ([v::INT128]
               (primitive :rel_primitive_eq v 21i128)))
@@ -30,7 +27,6 @@
     (reads
       (output :int :output_int)
       (output :int128_s :output_int128_s)
-      (output :int128_l :output_int128_l)
       (output :int128_s128 :output_int128_s128)
       (output :int128_l128 :output_int128_l128)
       (output :uint128 :output_uint128)
