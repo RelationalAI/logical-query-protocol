@@ -91,7 +91,7 @@ REL_VALUE_TYPE: "DECIMAL" | "DECIMAL64" | "DECIMAL128" | "DATE" | "DATETIME"
 SYMBOL: /[a-zA-Z_][a-zA-Z0-9_-]*/
 STRING: "\\"" /[^"]*/ "\\""
 NUMBER: /\\d+/
-INT128: /\\d+/
+INT128: /\\d+i128/
 UINT128: /0x[0-9a-fA-F]+/
 FLOAT: /\\d+\\.\\d+/
 
@@ -333,6 +333,7 @@ class LQPTransformer(Transformer):
         uint128_val = int(u, 16)
         return ir.UInt128(value=uint128_val, meta=None)
     def INT128(self, u):
+        u= u[:-5]  # Remove the 'i128' suffix
         int128_val = int(u, 16)
         return ir.Int128(value=int128_val, meta=None)
 

@@ -12,6 +12,12 @@
           (def :output_int128_l
             ([v::INT128]
               (primitive :rel_primitive_eq v 85968058283706962486085)))
+          (def :output_int128_s128
+            ([v::INT128]
+              (primitive :rel_primitive_eq v 2)))
+          (def :output_int128_l128
+            ([v::INT128]
+              (primitive :rel_primitive_eq v 161497856516805337674974728)))
           (def :output_uint128
             ([v::UINT128]
               (primitive :rel_primitive_eq v 0x123456789abcdef12345)))
@@ -25,6 +31,8 @@
       (output :int :output_int)
       (output :int128_s :output_int128_s)
       (output :int128_l :output_int128_l)
+      (output :int128_s128 :output_int128_s128)
+      (output :int128_l128 :output_int128_l128)
       (output :uint128 :output_uint128)
       (output :float :output_float)
       (output :str :output_str))))
