@@ -58,6 +58,20 @@ class UnusedVariableVisitor(LqpVisitor):
     def visit_Var(self, node: ir.Var, *args: Any):
         self._mark_var_used(node)
 
+# Raises on any ungrounded variables.
+# Rules:
+#   1. Atoms and RelAtoms ground all their variable arguments.
+#   2. Primitives either:
+#       a. Ground the output if the first n - 1 arguments are ground, or
+#       b. Ground the variable in the output slot if the variables in the
+#          input slots are grounded as specified in primitive_binding_patterns.
+#   3. A variable grounded in any branch of a conjunction is deemed grounded
+#      in said conjunction.
+#   4. A variable must be grounded in all branches of a disjunction to be
+#      deemed grounded in said disjunction.
+#   5. TODO Reduce
+#   6. TODO Abstraction
+#   7. TODO Not
 class GroundingChecker:
     # Return all children variables of node.
     @staticmethod
