@@ -175,6 +175,7 @@ class PrimitiveType(Enum):
     INT = 2
     FLOAT = 3
     UINT128 = 4
+    INT128 = 5
 
 class RelValueType(Enum):
     UNSPECIFIED = 0
@@ -202,6 +203,12 @@ RelType = Union[PrimitiveType, RelValueType]
 @dataclass(frozen=True)
 class FragmentId(LqpNode):
     id: bytes
+
+    def __eq__(self, other) -> bool:
+        return self.id == other.id
+
+    def __hash__(self) -> int:
+        return hash(self.id)
 
 # Fragment(id::FragmentId, declarations::Declaration[], debug_info::DebugInfo)
 @dataclass(frozen=True)

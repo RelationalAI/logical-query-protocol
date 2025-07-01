@@ -46,7 +46,7 @@ ffi: "(ffi" name args terms ")"
 atom: "(atom" relation_id term* ")"
 relatom: "(relatom" name relterm* ")"
 cast: "(cast" rel_type term term ")"
-pragma: "(pragma" name terms ")"
+pragma: "(pragma" name  term* ")"
 true: "(true)"
 false: "(false)"
 
@@ -83,7 +83,7 @@ specialized_value: "#" primitive_value
 primitive_value: STRING | NUMBER | FLOAT | UINT128
 
 rel_type: PRIMITIVE_TYPE | REL_VALUE_TYPE
-PRIMITIVE_TYPE: "STRING" | "INT" | "FLOAT" | "UINT128" | "ENTITY"
+PRIMITIVE_TYPE: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
 REL_VALUE_TYPE: "DECIMAL" | "DECIMAL64" | "DECIMAL128" | "DATE" | "DATETIME"
               | "NANOSECOND" | "MICROSECOND" | "MILLISECOND" | "SECOND" | "MINUTE" | "HOUR"
               | "DAY" | "WEEK" | "MONTH" | "YEAR"
@@ -117,9 +117,6 @@ class LQPTransformer(Transformer):
         return items[0]
 
     def PRIMITIVE_TYPE(self, s):
-        # Map ENTITY -> HASH
-        if s.upper() == "ENTITY":
-            return ir.PrimitiveType.UINT128
         return getattr(ir.PrimitiveType, s.upper())
 
     def REL_VALUE_TYPE(self, s):
@@ -240,7 +237,7 @@ class LQPTransformer(Transformer):
         return ir.Atom(name=items[0], terms=items[1:], meta=self.meta(meta))
 
     def pragma(self, meta, items):
-        return ir.Pragma(name=items[0], terms=items[1], meta=self.meta(meta))
+        return ir.Pragma(name=items[0], terms=items[1:], meta=self.meta(meta))
 
     def relatom(self, meta, items):
         return ir.RelAtom(name=items[0], terms=items[1:], meta=self.meta(meta))

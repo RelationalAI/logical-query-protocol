@@ -2,6 +2,7 @@ import os
 import re
 import pytest
 import sys
+import lqp.ir as ir
 from pathlib import Path
 from lqp.parser import parse_lqp
 from lqp.emit import ir_to_proto
@@ -73,6 +74,7 @@ def test_validator_failure_files(validator_file):
     with open(file_path, "r") as f:
         content = f.read()
     result = parse_lqp(validator_file, content)
+    assert isinstance(result, ir.Transaction), f"{validator_file} does not contain a transaction"
     with pytest.raises(ValidationError) as exc_info:
         validate_lqp(result)
     error_message = str(exc_info.value)

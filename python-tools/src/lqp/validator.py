@@ -39,8 +39,9 @@ def variables(node: ir.LqpNode) -> Set[str]:
     return collector.variables
 
 class UnusedVariableVisitor(LqpVisitor):
-    def __init__(self):
+    def __init__(self, txn: ir.Transaction):
         self.scopes: List[Tuple[Set[str], Set[str]]] = []
+        self.visit(txn)
 
     def _declare_var(self, var_name: str):
         if self.scopes:
@@ -192,6 +193,9 @@ def grounding_check(node: ir.LqpNode):
 
 # Checks for shadowing of variables. Raises ValidationError upon encountering such.
 class ShadowedVariableFinder(LqpVisitor):
+    def __init__(self, txn: ir.Transaction):
+        self.visit(txn)
+
     # The varargs passed in must be a single set of strings.
     @staticmethod
     def args_ok(args: Sequence[Any]) -> bool:
@@ -216,9 +220,59 @@ class ShadowedVariableFinder(LqpVisitor):
 
         self.visit(node.value, in_scope_names | set(v[0].name for v in node.vars))
 
+# Checks for duplicate RelationIds.
+# Raises ValidationError upon encountering such.
+class DuplicateRelationIdFinder(LqpVisitor):
+    def __init__(self, txn: ir.Transaction):
+        self.seen_ids: ir.RelationId = set()
+        self.visit(txn)
 
+    def visit_Def(self, node: ir.Def, *args: Any) -> None:
+        if node.name in self.seen_ids:
+            raise ValidationError(
+                f"Duplicate declaration at {node.meta}: '{node.name.id}'"
+            )
+        else:
+            self.seen_ids.add(node.name)
 
-def validate_lqp(lqp: ir.LqpNode):
-    ShadowedVariableFinder().visit(lqp)
-    UnusedVariableVisitor().visit(lqp)
+    def visit_Loop(self, node: ir.Loop, *args: Any) -> None:
+        # Only the Defs in init are globally visible so don't visit body Defs.
+        # TODO: add test for non-/duplicates associated with loops.
+        for d in node.init:
+            self.visit(d)
+
+# Checks for the definition (Define) of duplicate Fragment(Ids) within an Epoch.
+# Raises ValidationError upon encountering such.
+class DuplicateFragmentDefinitionFinder(LqpVisitor):
+    def __init__(self, txn: ir.Transaction):
+        # Instead of passing this back and forth, we are going to clear this
+        # when we visit an Epoch and let it fill, checking for duplicates
+        # when we visit descendent Fragments. When we visit another Epoch, it'll
+        # be cleared again, etc.
+        self.seen_ids: Set[ir.FragmentId] = set()
+        self.visit(txn)
+
+    def visit_Epoch(self, node: ir.Epoch, *args: Any) -> None:
+        self.seen_ids.clear()
+        self.generic_visit(node)
+
+    # We could visit_Fragment instead (no node has a Fragment child except
+    # Define) but the point of this pass is to find duplicate Fragments
+    # being _defined_ so this is a bit more fitting.
+    def visit_Define(self, node: ir.Define, *args: Any) -> None:
+        if node.fragment.id in self.seen_ids:
+            id_str = node.fragment.id.id.decode("utf-8")
+            raise ValidationError(
+                f"Duplicate fragment within an epoch at {node.meta}: '{id_str}'"
+            )
+        else:
+            self.seen_ids.add(node.fragment.id)
+
+        # No need to recurse further; no descendent Epochs/Fragments.
+
+def validate_lqp(lqp: ir.Transaction):
+    ShadowedVariableFinder(lqp)
+    UnusedVariableVisitor(lqp)
+    DuplicateRelationIdFinder(lqp)
+    DuplicateFragmentDefinitionFinder(lqp)
     grounding_check(lqp)

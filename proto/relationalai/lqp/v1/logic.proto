@@ -143,6 +143,7 @@ enum PrimitiveType {
   PRIMITIVE_TYPE_INT = 2;
   PRIMITIVE_TYPE_FLOAT = 3;
   PRIMITIVE_TYPE_UINT128 = 4;
+  PRIMITIVE_TYPE_INT128 = 5;
 }
 
 enum RelValueType {
