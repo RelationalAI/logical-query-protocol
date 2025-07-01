@@ -122,13 +122,19 @@ class _GroundingVisitor:
             return set(), set(), set()
         if node.name in self.primitive_binding_patterns:
             terms = node.terms
-            # TODO davidwzhao: understand this lol
+            patterns = self.primitive_binding_patterns[node.name]
+            # All terms corresponding to an output slot (in primitive patterns)
+            # are grounded if all terms corresponding to an input slot are
+            # constant (not Var) or bound.
+            # i/o < len(terms) are sanity checks.
             grounded = {
-                terms[p].name  # type: ignore[attr-defined]
-                for ins, outs in self.primitive_binding_patterns[node.name]
-                if all(p < len(terms) and (not isinstance(terms[p], ir.Var) or terms[p].name in bound) for p in ins)  # type: ignore[attr-defined]
-                for p in outs
-                if p < len(terms) and isinstance(terms[p], ir.Var)
+                terms[o].name  # type: ignore[attr-defined]
+                for ins, outs in patterns if (
+                    len(terms) == len(ins) + len(outs) and  # TODO: there should be a pass checking type/arity of primitives.
+                    # Checks all inputs are bound.
+                    all(i < len(terms) and (not isinstance(terms[i], ir.Var) or terms[i].name in bound) for i in ins)  # type: ignore[attr-defined]
+                )
+                for o in outs if o < len(terms) and isinstance(terms[o], ir.Var)
             }
             return grounded, set(), set()
 
