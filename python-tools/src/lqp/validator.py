@@ -69,10 +69,11 @@ class UnusedVariableVisitor(LqpVisitor):
 #      in said conjunction.
 #   4. A variable must be grounded in all branches of a disjunction to be
 #      deemed grounded in said disjunction.
-#   5. In a Reduce,
+#   5. In a Reduce, ???
 #   6. Declared variables which are ground in the body of Abstractions are
 #      quantified. Ultimately these quantified variables are deemed grounded
 #      and are unaffected by upstream negation.
+#      ???
 #   7. Ground variables become unground by negation (negation negates negation).
 class GroundingChecker:
     # Return all children variables of node.
