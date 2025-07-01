@@ -253,18 +253,28 @@ class RelType(_message.Message):
     def __init__(self, primitive_type: _Optional[_Union[PrimitiveType, str]] = ..., value_type: _Optional[_Union[RelValueType, str]] = ...) -> None: ...
 
 class Value(_message.Message):
-    __slots__ = ("string_value", "int_value", "float_value", "uint128_value")
+    __slots__ = ("string_value", "int_value", "float_value", "uint128_value", "int128_value")
     STRING_VALUE_FIELD_NUMBER: _ClassVar[int]
     INT_VALUE_FIELD_NUMBER: _ClassVar[int]
     FLOAT_VALUE_FIELD_NUMBER: _ClassVar[int]
     UINT128_VALUE_FIELD_NUMBER: _ClassVar[int]
+    INT128_VALUE_FIELD_NUMBER: _ClassVar[int]
     string_value: str
     int_value: int
     float_value: float
     uint128_value: UInt128
-    def __init__(self, string_value: _Optional[str] = ..., int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128, _Mapping]] = ...) -> None: ...
+    int128_value: Int128
+    def __init__(self, string_value: _Optional[str] = ..., int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128, _Mapping]] = ..., int128_value: _Optional[_Union[Int128, _Mapping]] = ...) -> None: ...
 
 class UInt128(_message.Message):
+    __slots__ = ("low", "high")
+    LOW_FIELD_NUMBER: _ClassVar[int]
+    HIGH_FIELD_NUMBER: _ClassVar[int]
+    low: int
+    high: int
+    def __init__(self, low: _Optional[int] = ..., high: _Optional[int] = ...) -> None: ...
+
+class Int128(_message.Message):
     __slots__ = ("low", "high")
     LOW_FIELD_NUMBER: _ClassVar[int]
     HIGH_FIELD_NUMBER: _ClassVar[int]
