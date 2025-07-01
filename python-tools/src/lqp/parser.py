@@ -334,7 +334,7 @@ class LQPTransformer(Transformer):
         return ir.UInt128(value=uint128_val, meta=None)
     def INT128(self, u):
         u= u[:-5]  # Remove the 'i128' suffix
-        int128_val = int(u, 16)
+        int128_val = int(u)
         return ir.Int128(value=int128_val, meta=None)
 
 # LALR(1) is significantly faster than Earley for parsing, especially on larger inputs. It

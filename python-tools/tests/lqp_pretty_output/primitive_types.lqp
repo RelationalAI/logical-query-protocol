@@ -17,7 +17,7 @@
               (primitive :rel_primitive_eq v 2)))
           (def :output_int128_l128
             ([v::INT128]
-              (primitive :rel_primitive_eq v 161497856516805337674974728)))
+              (primitive :rel_primitive_eq v 8596805828370696248608)))
           (def :output_uint128
             ([v::UINT128]
               (primitive :rel_primitive_eq v 0x123456789abcdef12345)))
