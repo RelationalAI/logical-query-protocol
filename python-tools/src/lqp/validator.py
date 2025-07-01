@@ -28,17 +28,6 @@ class LqpVisitor:
                     if isinstance(item, ir.LqpNode):
                         self.visit(item, *args)
 
-class VariableCollector(LqpVisitor):
-    def __init__(self):
-        self.variables: Set[str] = set()
-    def visit_Var(self, node: ir.Var, *args: Any) -> None:
-        self.variables.add(node.name)
-
-def variables(node: ir.LqpNode) -> Set[str]:
-    collector = VariableCollector()
-    collector.visit(node)
-    return collector.variables
-
 class UnusedVariableVisitor(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
         self.scopes: List[Tuple[Set[str], Set[str]]] = []
@@ -70,6 +59,18 @@ class UnusedVariableVisitor(LqpVisitor):
         self._mark_var_used(node)
 
 class GroundingChecker:
+    # Return all children variables of node.
+    @staticmethod
+    def variables(node: ir.LqpNode) -> Set[str]:
+        class VariableCollector(LqpVisitor):
+            def __init__(self, node: ir.LqpNode):
+                self.variables: Set[str] = set()
+                self.visit(node)
+            def visit_Var(self, node: ir.Var, *args: Any) -> None:
+                self.variables.add(node.name)
+
+        return VariableCollector(node).variables
+
     def __init__(self, txn: ir.Transaction):
         self.primitive_binding_patterns = {
             "rel_primitive_eq": [([0], [1]), ([1], [0])],
@@ -84,7 +85,7 @@ class GroundingChecker:
             g, n, q = self.visit(txn, bound)
             bound |= g | q
 
-        n = variables(txn) - bound
+        n = GroundingChecker.variables(txn) - bound
         if n:
             raise ValidationError(f"Variables not grounded: {', '.join(sorted(n))}")
 
