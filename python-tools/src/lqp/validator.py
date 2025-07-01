@@ -147,6 +147,8 @@ class GroundingChecker:
         v = GroundingChecker.filter_vars(node.terms)
         return v, set(), set()
 
+    # Grounds per the primitive patterns. If no such pattern exists, grounds
+    # the (single) output if all the inputs are ground.
     def visit_Primitive(self, node: ir.Primitive, bound: Set[str]):
         if not node.terms:
             # No arguments.
