@@ -72,6 +72,11 @@ class GroundingChecker:
         return VariableCollector(node).variables
 
     def __init__(self, txn: ir.Transaction):
+        # Maps primitive names to their binding pattern. A binding pattern
+        # specifies, as a pair, 1) slots in the Primitive's arguments which
+        # are deemed inputs, and 2) the slot which is deemed the output.
+        # This allows for, e.g., both argument slots of the eq primitive to
+        # ground the other.
         self.primitive_binding_patterns: Dict[str, List[Tuple[List[int], int]]] = {
             "rel_primitive_eq": [([0], 1), ([1], 0)],
             # TODO not sure if we support this
