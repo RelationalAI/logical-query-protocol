@@ -227,9 +227,6 @@ class LQPTransformer(Transformer):
     def export_compression(self, meta, items):
         return {'compression': items[0]}
 
-    def export_header_names(self, meta, items):
-        return {'syntax_header_names': items}
-
     def export_header_row(self, meta, items):
         return {'syntax_header_row': items[0]}
 
@@ -237,13 +234,16 @@ class LQPTransformer(Transformer):
         return {'syntax_missing_string': items[0]}
 
     def export_delimiter(self, meta, items):
-        return {'syntax_delim': items[0]}
+        # Unescape the strings
+        return {'syntax_delim': items[0].encode('raw_unicode_escape').decode('unicode_escape')}
 
     def export_quotechar(self, meta, items):
-        return {'syntax_quotechar': items[0]}
+        # Unescape the strings
+        return {'syntax_delim': items[0].encode('raw_unicode_escape').decode('unicode_escape')}
 
     def export_escapechar(self, meta, items):
-        return {'syntax_escapechar': items[0]}
+        # Unescape the strings
+        return {'syntax_escapechar': items[0].encode('raw_unicode_escape').decode('unicode_escape')}
 
     def abort(self, meta, items):
         if len(items) == 1:

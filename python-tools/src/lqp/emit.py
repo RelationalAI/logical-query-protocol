@@ -214,13 +214,13 @@ def convert_export_csv_config(ec: ir.ExportCSVConfig) -> transactions_pb2.Export
     return transactions_pb2.ExportCSVConfig(
         data_columns=[convert_export_csv_column(c) for c in ec.data_columns],
         path=ec.path,
-        partition_size=ec.partition_size,
-        compression=ec.compression,
-        syntax_header_row=ec.syntax_header_row,
-        syntax_missing_string=ec.syntax_missing_string,
-        syntax_delim=ec.syntax_delim,
-        syntax_quotechar=ec.syntax_quotechar,
-        syntax_escapechar=ec.syntax_escapechar
+        partition_size=ec.partition_size if ec.partition_size is not None else 0,
+        compression=ec.compression if ec.compression is not None else "",
+        syntax_header_row=ec.syntax_header_row if ec.syntax_header_row is not None else True,
+        syntax_missing_string=ec.syntax_missing_string if ec.syntax_missing_string is not None else "",
+        syntax_delim=ec.syntax_delim if ec.syntax_delim is not None else ",",
+        syntax_quotechar=ec.syntax_quotechar if ec.syntax_quotechar is not None else '"',
+        syntax_escapechar=ec.syntax_escapechar if ec.syntax_escapechar is not None else '\\'
     )
 
 def convert_abort(a: ir.Abort) -> transactions_pb2.Abort:
