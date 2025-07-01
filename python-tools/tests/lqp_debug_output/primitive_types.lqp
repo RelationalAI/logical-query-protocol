@@ -14,10 +14,10 @@
               (primitive :rel_primitive_eq v 85968058283706962486085)))
           (def 6864231520054082253
             ([v::INT128]
-              (primitive :rel_primitive_eq v 2)))
+              (primitive :rel_primitive_eq v 2i128)))
           (def 9483684744106318471
             ([v::INT128]
-              (primitive :rel_primitive_eq v 8596805828370696248608)))
+              (primitive :rel_primitive_eq v 8596805828370696248608i128)))
           (def 7505808394141676799
             ([v::UINT128]
               (primitive :rel_primitive_eq v 0x123456789abcdef12345)))
