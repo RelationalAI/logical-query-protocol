@@ -72,10 +72,10 @@ class GroundingChecker:
         return VariableCollector(node).variables
 
     def __init__(self, txn: ir.Transaction):
-        self.primitive_binding_patterns = {
-            "rel_primitive_eq": [([0], [1]), ([1], [0])],
+        self.primitive_binding_patterns: Dict[str, List[Tuple[List[int], int]]] = {
+            "rel_primitive_eq": [([0], 1), ([1], 0)],
             # TODO not sure if we support this
-            # "rel_primitive_add": [([0, 1], [2]), ([0, 2], [1]), ([1, 2], [0])],
+            # "rel_primitive_add": [([0, 1], 2), ([0, 2], 1), ([1, 2], 0)],
         }
 
         bound: Set[str] = set()
@@ -140,15 +140,16 @@ class GroundingChecker:
             # All terms corresponding to an output slot (in primitive patterns)
             # are grounded if all terms corresponding to an input slot are
             # constant (not Var) or bound.
-            # i/o < len(terms) are sanity checks.
+            # i/out < len(terms) are sanity checks.
             grounded = {
-                terms[o].name  # type: ignore[attr-defined]
-                for ins, outs in patterns if (
+                terms[out].name  # type: ignore[attr-defined]
+                for ins, out in patterns if (
                     len(terms) == len(ins) + len(outs) and  # TODO: there should be a pass checking type/arity of primitives.
                     # Checks all inputs are bound.
-                    all(i < len(terms) and (not isinstance(terms[i], ir.Var) or terms[i].name in bound) for i in ins)  # type: ignore[attr-defined]
+                    all(i < len(terms) and (not isinstance(terms[i], ir.Var) or terms[i].name in bound) for i in ins) and  # type: ignore[attr-defined]
+                    # Only interested when out is a variable (not a constant).
+                    out < len(terms) and isinstance(terms[out], ir.Var)
                 )
-                for o in outs if o < len(terms) and isinstance(terms[o], ir.Var)
             }
             return grounded, set(), set()
         else:
