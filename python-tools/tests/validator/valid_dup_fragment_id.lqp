@@ -1,0 +1,14 @@
+;; No problem because the "duplication" happens in a separate epoch.
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :frag
+          (def :cool
+            ([] (or)))))
+    )
+    (reads))
+  (epoch
+    (local_writes
+      (define (fragment :frag))
+    )))
