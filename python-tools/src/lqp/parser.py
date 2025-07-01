@@ -80,7 +80,7 @@ name: ":" SYMBOL
 
 specialized_value: "#" primitive_value
 
-primitive_value: STRING | NUMBER | FLOAT | UINT128
+primitive_value: STRING | NUMBER | FLOAT | UINT128 | INT128
 
 rel_type: PRIMITIVE_TYPE | REL_VALUE_TYPE
 PRIMITIVE_TYPE: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
@@ -91,6 +91,7 @@ REL_VALUE_TYPE: "DECIMAL" | "DECIMAL64" | "DECIMAL128" | "DATE" | "DATETIME"
 SYMBOL: /[a-zA-Z_][a-zA-Z0-9_-]*/
 STRING: "\\"" /[^"]*/ "\\""
 NUMBER: /\\d+/
+INT128: /\\d+/
 UINT128: /0x[0-9a-fA-F]+/
 FLOAT: /\\d+\\.\\d+/
 
