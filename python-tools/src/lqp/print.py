@@ -299,7 +299,7 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         elif isinstance(val_to_print, ir.UInt128):
             lqp += f"{ind}#{hex(val_to_print.value)}"
         elif isinstance(val_to_print, ir.Int128):
-            lqp += f"{ind}#{val_to_print.value}"
+            lqp += f"{ind}#{val_to_print.value}i128"
         elif isinstance(val_to_print, bool):
             lqp += f"{ind}#{str(val_to_print).lower()}"
         elif isinstance(val_to_print, (int, float)):
