@@ -173,10 +173,16 @@ message Value {
     int64 int_value = 2;
     double float_value = 3;
     UInt128 uint128_value = 4;
+    Int128 int128_value = 5;
   }
 }
 
 message UInt128 {
   fixed64 low = 1; // Lower 64 bits of UInt128
   fixed64 high = 2; // Upper 64 bits of UInt128
+}
+
+message Int128 {
+  fixed64 low = 1; // Lower 64 bits of Int128
+  fixed64 high = 2; // Upper 64 bits of Int128
 }
