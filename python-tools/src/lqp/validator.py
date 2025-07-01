@@ -162,11 +162,11 @@ class GroundingChecker:
             # constant (not Var) or bound.
             # i/out < len(terms) are sanity checks.
             grounded = {
-                terms[out].name  # type: ignore[attr-defined]
+                terms[out].name
                 for ins, out in patterns if (
                     len(terms) == len(ins) + len(outs) and  # TODO: there should be a pass checking type/arity of primitives.
                     # Checks all inputs are bound.
-                    all(i < len(terms) and (not isinstance(terms[i], ir.Var) or terms[i].name in bound) for i in ins) and  # type: ignore[attr-defined]
+                    all(i < len(terms) and (not isinstance(terms[i], ir.Var) or terms[i].name in bound) for i in ins) and
                     # Only interested when out is a variable (not a constant).
                     out < len(terms) and isinstance(terms[out], ir.Var)
                 )
