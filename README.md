@@ -5,8 +5,8 @@
 ## Validate
 
 We use the [buf utility](https://buf.build/docs/cli/quickstart/) to [validate and
-lint](https://buf.build/docs/cli/quickstart/#lint-your-api) the
-protobuf specification. Just follow the linked instructions and then run
+lint](https://buf.build/docs/cli/quickstart/#lint-your-api) the protobuf specification. Just
+follow the linked instructions and then run
 
 ```
 buf lint
@@ -23,7 +23,9 @@ buf breaking --against ".git#subdir=proto"
 
 ## Build
 
-The build is [configured in `buf.gen.yaml`](https://buf.build/docs/generate/overview/), and managed by the `build` script, which runs validation and generates Python proto code in the `python-tools` directory.
+The build is [configured in `buf.gen.yaml`](https://buf.build/docs/generate/overview/), and
+managed by the `build` script, which runs validation and generates Python proto code in the
+`python-tools` directory.
 
 ```
 ./build

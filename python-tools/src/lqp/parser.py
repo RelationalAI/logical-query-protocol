@@ -98,7 +98,7 @@ name: ":" SYMBOL
 
 specialized_value: "#" primitive_value
 
-primitive_value: STRING | NUMBER | FLOAT | UINT128
+primitive_value: STRING | NUMBER | FLOAT | UINT128 | INT128
 
 rel_type: PRIMITIVE_TYPE | REL_VALUE_TYPE
 PRIMITIVE_TYPE: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
@@ -109,6 +109,7 @@ REL_VALUE_TYPE: "DECIMAL" | "DECIMAL64" | "DECIMAL128" | "DATE" | "DATETIME"
 SYMBOL: /[a-zA-Z_][a-zA-Z0-9_-]*/
 STRING: ESCAPED_STRING
 NUMBER: /\\d+/
+INT128: /\\d+i128/
 UINT128: /0x[0-9a-fA-F]+/
 FLOAT: /\\d+\\.\\d+/
 
@@ -414,6 +415,10 @@ class LQPTransformer(Transformer):
     def UINT128(self, u):
         uint128_val = int(u, 16)
         return ir.UInt128(value=uint128_val, meta=None)
+    def INT128(self, u):
+        u= u[:-4]  # Remove the 'i128' suffix
+        int128_val = int(u)
+        return ir.Int128(value=int128_val, meta=None)
 
 # LALR(1) is significantly faster than Earley for parsing, especially on larger inputs. It
 # uses a precomputed parse table, reducing runtime complexity to O(n) (linear in input
