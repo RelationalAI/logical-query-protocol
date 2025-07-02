@@ -235,15 +235,15 @@ class LQPTransformer(Transformer):
 
     def export_delimiter(self, meta, items):
         # Unescape the strings
-        return {'syntax_delim': items[0].encode('raw_unicode_escape').decode('unicode_escape')}
+        return {'syntax_delim': items[0].encode().decode('unicode_escape')}
 
     def export_quotechar(self, meta, items):
         # Unescape the strings
-        return {'syntax_delim': items[0].encode('raw_unicode_escape').decode('unicode_escape')}
+        return {'syntax_quotechar': items[0].encode().decode('unicode_escape')}
 
     def export_escapechar(self, meta, items):
         # Unescape the strings
-        return {'syntax_escapechar': items[0].encode('raw_unicode_escape').decode('unicode_escape')}
+        return {'syntax_escapechar': items[0].encode().decode('unicode_escape')}
 
     def abort(self, meta, items):
         if len(items) == 1:

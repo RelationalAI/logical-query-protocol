@@ -368,11 +368,11 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         if node.syntax_missing_string is not None:
             lqp += "\n" + line_conf_f('missing_string', node.syntax_missing_string)
         if node.syntax_delim is not None:
-            lqp += "\n" + line_conf_f('delim_char', node.syntax_delim)
+            lqp += "\n" + line_conf_f('delim_char', node.syntax_delim.encode('unicode_escape').replace(b'"', b'\\"').decode())
         if node.syntax_quotechar is not None:
-            lqp += "\n" + line_conf_f('quote_char', node.syntax_quotechar)
+            lqp += "\n" + line_conf_f('quote_char', node.syntax_quotechar.encode('unicode_escape').replace(b'"', b'\\"').decode())
         if node.syntax_escapechar is not None:
-            lqp += "\n" + line_conf_f('escape_char', node.syntax_escapechar)
+            lqp += "\n" + line_conf_f('escape_char', node.syntax_escapechar.encode('unicode_escape').replace(b'"', b'\\"').decode())
         lqp += f"{conf.RPAREN()}"
 
     elif isinstance(node, ir.ExportCSVColumn):
