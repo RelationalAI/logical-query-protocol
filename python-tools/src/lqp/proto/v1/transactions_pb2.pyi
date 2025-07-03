@@ -8,10 +8,18 @@ from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Map
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class Transaction(_message.Message):
-    __slots__ = ("epochs",)
+    __slots__ = ("epochs", "configure")
     EPOCHS_FIELD_NUMBER: _ClassVar[int]
+    CONFIGURE_FIELD_NUMBER: _ClassVar[int]
     epochs: _containers.RepeatedCompositeFieldContainer[Epoch]
-    def __init__(self, epochs: _Optional[_Iterable[_Union[Epoch, _Mapping]]] = ...) -> None: ...
+    configure: Configure
+    def __init__(self, epochs: _Optional[_Iterable[_Union[Epoch, _Mapping]]] = ..., configure: _Optional[_Union[Configure, _Mapping]] = ...) -> None: ...
+
+class Configure(_message.Message):
+    __slots__ = ("semantics_version",)
+    SEMANTICS_VERSION_FIELD_NUMBER: _ClassVar[int]
+    semantics_version: int
+    def __init__(self, semantics_version: _Optional[int] = ...) -> None: ...
 
 class Epoch(_message.Message):
     __slots__ = ("persistent_writes", "local_writes", "reads")
