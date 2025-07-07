@@ -1,1131 +1,0 @@
-
-™>Õ
-Ò
-Ï
-
-schema_mapping
-}
-		’¥ô.¡›u4p
-
-
-row_id^
-\Z
-
-	
-row_id2GRE
-
-METADATA$ROW_ID
-
-
-row_id
-	
-row_id2tpch_sf1_lineitemv
-t
-		ÊHN¶¤8ég
-
-
-row_id
-
-
-
-orderkeyCRA
-
-
-L_ORDERKEY
-
-
-row_id
-
-
-orderkeytpch_sf1_lineitems
-q
-		‹÷‘-hÜuÒd
-
-
-row_id
-
-	
-partkeyAR?
-
-	L_PARTKEY
-
-
-row_id
-	
-partkeytpch_sf1_lineitems
-q
-		!z]^ÄÈ[šd
-
-
-row_id
-
-	
-suppkeyAR?
-
-	L_SUPPKEY
-
-
-row_id
-	
-suppkeytpch_sf1_lineitem|
-z
-		¤òÈn,º_Ém
-
-
-row_id
-
-
-
-linenumberGRE
-
-L_LINENUMBER
-
-
-row_id
-
-
-linenumbertpch_sf1_lineitemv
-t
-		š‡È`½g
-
-
-row_id
-
-
-
-quantityCRA
-
-
-L_QUANTITY
-
-
-row_id
-
-
-quantitytpch_sf1_lineitem†
-ƒ
-		3"@h7¸Æ­v
-
-
-row_id
-
-
-extendedpriceMRK
-
-L_EXTENDEDPRICE
-
-
-row_id
-
-extendedpricetpch_sf1_lineitemv
-t
-		/˜¦ËY\Kg
-
-
-row_id
-
-
-
-discountCRA
-
-
-L_DISCOUNT
-
-
-row_id
-
-
-discounttpch_sf1_lineitemg
-e
-		õ˜²ÝB‰iX
-
-
-row_id
-
-
-tax9R7	
-
-L_TAX
-
-
-row_id	
-
-taxtpch_sf1_lineitem|
-z
-		×O0Ò”ÁÓm
-
-
-row_id
-
-
-
-returnflagGRE
-
-L_RETURNFLAG
-
-
-row_id
-
-
-returnflagtpch_sf1_lineitem|
-z
-		,ùø[ÖrVÌm
-
-
-row_id
-
-
-
-linestatusGRE
-
-L_LINESTATUS
-
-
-row_id
-
-
-linestatustpch_sf1_lineitemv
-t
-		7'q)¦Ïkg
-
-
-row_id
-
-
-
-shipdateCRA
-
-
-L_SHIPDATE
-
-
-row_id
-
-
-shipdatetpch_sf1_lineitem|
-z
-		h!N.¹.Æ‚m
-
-
-row_id
-
-
-
-commitdateGRE
-
-L_COMMITDATE
-
-
-row_id
-
-
-commitdatetpch_sf1_lineitem
-}
-		ÔøŽ°ÙÿŠ p
-
-
-row_id
-
-
-receiptdateIRG
-
-L_RECEIPTDATE
-
-
-row_id
-
-receiptdatetpch_sf1_lineitemƒ
-€
-		q{âÉ«NKs
-
-
-row_id
-
-
-shipinstructKRI
-
-L_SHIPINSTRUCT
-
-
-row_id
-
-shipinstructtpch_sf1_lineitemv
-t
-		ö;S°‰ËsWg
-
-
-row_id
-
-
-
-shipmodeCRA
-
-
-L_SHIPMODE
-
-
-row_id
-
-
-shipmodetpch_sf1_lineitems
-q
-		L×ßJ•d
-
-
-row_id
-
-	
-commentAR?
-
-	L_COMMENT
-
-
-row_id
-	
-commenttpch_sf1_lineitem‘
-		’¥ô.¡›u4
-		ÊHN¶¤8é
-		‹÷‘-hÜuÒ
-		!z]^ÄÈ[š
-		¤òÈn,º_É
-		š‡È`½
-		3"@h7¸Æ­
-		/˜¦ËY\K
-		õ˜²ÝB‰i
-		×O0Ò”ÁÓ
-		,ùø[ÖrVÌ
-		7'q)¦Ïk
-		h!N.¹.Æ‚
-		ÔøŽ°ÙÿŠ 
-		q{âÉ«NK
-		ö;S°‰ËsW
-		L×ßJ•LineItem
-l_orderkey	l_partkey	l_suppkeyl_linenumber
-l_quantityl_extendedprice
-l_discountl_taxl_returnflagl_linestatus
-l_shipdatel_commitdatel_receiptdatel_shipinstruct
-l_shipmode	l_comment§*
-¤*
-¡*
-
-q1–
-“
-		¸Ÿo½Ü¥’…
-	
-
-e
-
-
-
-returnflag
-
-
-
-linestatusÏ
-ÌÉ
-
-
-	_shipdate
-
-
-_date_limitž›
-:
-		’¥ô.¡›u4
-
-e
-#:!
-		7'q)¦Ïk
-
-e
-
-	_shipdate
-$:"
-		×O0Ò”ÁÓ
-
-e
-
-
-returnflag
-$:"
-		,ùø[ÖrVÌ
-
-e
-
-
-linestatus
-LJJ
-rel_primitive_construct_dateÎ	
-
-_date_limit
-DJB
-rel_primitive_lt_eq_monotype
-
-	_shipdate
-
-_date_limit¿
-¼
-		ºaö0{®
-
-
-
-returnflag
-
-
-
-linestatus
-
-
-sum
-
-
-avgé
-æã
-
-
-
-_count_int
-
-
-
-_count_dec¸µ
-¿¼
-Ô
-
-
-
-x1
-
-
-
-x2
-
-
-
-y1
-
-
-
-y2
-
-
-_sum
-
-
-count„
->J<
-rel_primitive_add_monotype
-
-x1
-
-y1
-
-
-_sum
-?J=
-rel_primitive_add_monotype
-
-x2
-
-y2	
-
-countÉ
-
-	
-_row_id
-
-
-	_quantity
-
-
-_one”‘
-::8
-		¸Ÿo½Ü¥’
-	
-_row_id
-
-
-returnflag
-
-
-linestatus
-):'
-		š‡È`½
-	
-_row_id
-
-	_quantity
-(J&
-rel_primitive_eq
-
-
-_one
-
-sum
-
-
-_count_int
-&Z$
-
-
-
-_count_int
-
-
-_count_dec
-IJG
-rel_primitive_divide_monotype	
-
-sum
-
-
-_count_dec	
-
-avgÉ
-Æ
-		²'
-8°¨á¸
-
-
-
-returnflag
-
-
-
-linestatus
-
-
-sum
-
-
-avgó
-ðí
-
-
-
-_count_int
-
-
-
-_count_decÂ¿
-ÉÆ
-Ô
-
-
-
-x1
-
-
-
-x2
-
-
-
-y1
-
-
-
-y2
-
-
-_sum
-
-
-count„
->J<
-rel_primitive_add_monotype
-
-x1
-
-y1
-
-
-_sum
-?J=
-rel_primitive_add_monotype
-
-x2
-
-y2	
-
-countÓ
-
-	
-_row_id
-
-
-_extendedprice
-
-
-_one™–
-::8
-		¸Ÿo½Ü¥’
-	
-_row_id
-
-
-returnflag
-
-
-linestatus
-.:,
-		3"@h7¸Æ­
-	
-_row_id
-
-_extendedprice
-(J&
-rel_primitive_eq
-
-
-_one
-
-sum
-
-
-_count_int
-&Z$
-
-
-
-_count_int
-
-
-_count_dec
-IJG
-rel_primitive_divide_monotype	
-
-sum
-
-
-_count_dec	
-
-avgŠ
-‡
-		N™â³‘LŠ¯ù
-
-
-
-returnflag
-
-
-
-linestatus
-	
-
-vÃÀ
-\
-	
-
-a
-	
-
-b
-	
-
-c9J7
-rel_primitive_add_monotype
-
-a
-
-b
-
-cØ
-
-
-
-_e
-
-
-_disc_price´
-±®
-
-
-	_discount
-
-
-_extendedprice
-
-
-
-_disc_percìé
-5:3
-		¸Ÿo½Ü¥’
-
-_e
-
-
-returnflag
-
-
-linestatus
-$:"
-		/˜¦ËY\K
-
-_e
-
-	_discount
-):'
-		3"@h7¸Æ­
-
-_e
-
-_extendedprice
-YJW
-rel_primitive_add_monotype
-
-_extendedprice
-
-
-_disc_perc
-
-_disc_price
-ƒ
-€~
-
-
-_onenl
-Z
-
-
-_one
-RJP
-rel_primitive_subtract_monotype
-
-
-_one
-
-	_discount
-
-
-_disc_perc
-
-v÷
-ô
-		-ñ4:sMÿˆæ
-
-
-
-returnflag
-
-
-
-linestatus
-	
-
-v°­
-\
-	
-
-a
-	
-
-b
-	
-
-c9J7
-rel_primitive_add_monotype
-
-a
-
-b
-
-cÅ
-
-
-
-_e
-
-	
-_charge¥
-¢Ÿ
-
-
-_extendedprice
-
-
-	_discount
-
-
-_tax
-
-
-
-_disc_perc
-
-
-_disc_price
-
-
-	_tax_rate
-
-
-_one™–
-5:3
-		¸Ÿo½Ü¥’
-
-_e
-
-
-returnflag
-
-
-linestatus
-):'
-		3"@h7¸Æ­
-
-_e
-
-_extendedprice
-$:"
-		/˜¦ËY\K
-
-_e
-
-	_discount
-:
-		õ˜²ÝB‰i
-
-_e
-
-_tax
-Z
-
-
-_one
-^J\
-rel_primitive_multiply_monotype
-
-_extendedprice
-
-
-_disc_perc
-
-_disc_price
-RJP
-rel_primitive_subtract_monotype
-
-
-_one
-
-	_discount
-
-
-_disc_perc
-VJT
-rel_primitive_multiply_monotype
-
-_disc_price
-
-	_tax_rate
-	
-_charge
-GJE
-rel_primitive_add_monotype
-
-
-_one
-
-
-_tax
-
-	_tax_rate
-
-vË
-È
-		îu1÷m?Pº
-
-
-
-returnflag
-
-
-
-linestatus
-	
-
-v„
-þ
-
-
-	_sum_disc
-
-
-
-_count_int
-
-
-
-_count_decÀ½
-ÃÀ
-Ò
-
-
-
-x1
-
-
-
-x2
-
-
-
-y1
-
-
-
-y2
-
-
-sum
-
-
-countƒ€
-=J;
-rel_primitive_add_monotype
-
-x1
-
-y1	
-
-sum
-?J=
-rel_primitive_add_monotype
-
-x2
-
-y2	
-
-countÉ
-
-	
-_row_id
-
-
-	_discount
-
-
-_one”‘
-::8
-		¸Ÿo½Ü¥’
-	
-_row_id
-
-
-returnflag
-
-
-linestatus
-):'
-		/˜¦ËY\K
-	
-_row_id
-
-	_discount
-(J&
-rel_primitive_eq
-
-
-_one
-
-	_sum_disc
-
-
-_count_int
-&Z$
-
-
-
-_count_int
-
-
-_count_dec
-MJK
-rel_primitive_divide_monotype
-
-	_sum_disc
-
-
-_count_dec
-
-v²
-¯
-		±áÉÜy¥¡
-
-
-
-returnflag
-
-
-
-linestatus
-
-
-
-_vêç
-\
-	
-
-a
-	
-
-b
-	
-
-c9J7
-rel_primitive_add_monotype
-
-a
-
-b
-
-c
-
-
-
-_e
-
-
-_oneca
-5:3
-		¸Ÿo½Ü¥’
-
-_e
-
-
-returnflag
-
-
-linestatus
-(J&
-rel_primitive_eq
-
-
-_one
-
-_vù
-ö
-		_à…µ‹îàè
-
-
-
-returnflag
-
-
-
-linestatus
-
-	
-sum_qty
-
-
-sum_base_price
-
-
-sum_disc_price
-
-
-
-sum_charge
-
-	
-avg_qty
-
-
-	avg_price
-
-
-
-avg_disc
-
-
-count_orderš
-G:E
-		ºaö0{
-
-
-returnflag
-
-
-linestatus
-	
-sum_qty
-	
-avg_qty
-P:N
-		²'
-8°¨á
-
-
-returnflag
-
-
-linestatus
-
-sum_base_price
-
-	avg_price
-A:?
-		N™â³‘LŠ¯
-
-
-returnflag
-
-
-linestatus
-
-sum_disc_price
-=:;
-		-ñ4:sMÿˆ
-
-
-returnflag
-
-
-linestatus
-
-
-sum_charge
-;:9
-		îu1÷m?P
-
-
-returnflag
-
-
-linestatus
-
-
-avg_disc
->:<
-		±áÉÜy¥
-
-
-returnflag
-
-
-linestatus
-
-count_orderë
-		¸Ÿo½Ü¥’
-		’¥ô.¡›u4
-		7'q)¦Ïk
-		×O0Ò”ÁÓ
-		,ùø[ÖrVÌ
-		ºaö0{
-		š‡È`½
-		²'
-8°¨á
-		3"@h7¸Æ­
-		N™â³‘LŠ¯
-		/˜¦ËY\K
-		-ñ4:sMÿˆ
-		õ˜²ÝB‰i
-		îu1÷m?P
-		±áÉÜy¥
-		_à…µ‹îàcommonLineItem
-l_shipdatel_returnflagl_linestatusquantity
-l_quantity
-base_pricel_extendedpricesum_disc_price
-l_discount
-sum_chargel_taxavg_disccount_orderoutput
-output		_à…µ‹îà
