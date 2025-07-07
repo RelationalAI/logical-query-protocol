@@ -1,0 +1,43 @@
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :f1
+          (def :cola1
+            ([row::INT v::INT]
+              (and
+                (= row 1)
+                (= 2 v))))
+          (def :cola2
+            ([row::INT v::STRING]
+              (and
+                (= row 1)
+                (= v "hello"))))
+          (def :colb1
+            ([row_1::STRING row_2::INT v::FLOAT]
+              (and
+                (= row_1 "b")
+                (= row_2 12)
+                (= v 6.1))))
+          (def :colb2
+            ([row_1::STRING row_2::INT v::INT]
+              (and
+                (= row_1 "b")
+                (= row_2 12)
+                (= v 123)))))))
+
+    (reads
+      (export
+        (export_csv_config
+          (columns (column 1 "col1name" :cola1) (column 2 "col2name" :cola2))
+          (path "/tmp/hello_lqp_1.csv")
+          (partition_size 10)
+          (compression "")
+          (quote_char "\"")
+          (escape_char "\\")))
+      (export
+        (export_csv_config
+          (columns (column 1 "blahblah" :colb1) (column 2 "foofoo" :colb2))
+          (path "/tmp/hello_lqp_2.csv")
+          (quote_char "\"")
+          (escape_char "\\"))))))
