@@ -6,7 +6,7 @@
 set -euox pipefail
 
 # Validate protobuf files using buf lint
-# buf lint
+buf lint
 
 # Check for breaking changes against the previous version in git
 buf breaking --against ".git#subdir=proto"
