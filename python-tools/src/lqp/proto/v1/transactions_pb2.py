@@ -16,7 +16,7 @@ from lqp.proto.v1 import fragments_pb2 as relationalai_dot_lqp_dot_v1_dot_fragme
 from lqp.proto.v1 import logic_pb2 as relationalai_dot_lqp_dot_v1_dot_logic__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n&relationalai/lqp/v1/transactions.proto\x12\x13relationalai.lqp.v1\x1a#relationalai/lqp/v1/fragments.proto\x1a\x1frelationalai/lqp/v1/logic.proto\"A\n\x0bTransaction\x12\x32\n\x06\x65pochs\x18\x01 \x03(\x0b\x32\x1a.relationalai.lqp.v1.EpochR\x06\x65pochs\"\xc0\x01\n\x05\x45poch\x12G\n\x11persistent_writes\x18\x01 \x03(\x0b\x32\x1a.relationalai.lqp.v1.WriteR\x10persistentWrites\x12=\n\x0clocal_writes\x18\x02 \x03(\x0b\x32\x1a.relationalai.lqp.v1.WriteR\x0blocalWrites\x12/\n\x05reads\x18\x03 \x03(\x0b\x32\x19.relationalai.lqp.v1.ReadR\x05reads\"\xc3\x01\n\x05Write\x12\x35\n\x06\x64\x65\x66ine\x18\x01 \x01(\x0b\x32\x1b.relationalai.lqp.v1.DefineH\x00R\x06\x64\x65\x66ine\x12;\n\x08undefine\x18\x02 \x01(\x0b\x32\x1d.relationalai.lqp.v1.UndefineH\x00R\x08undefine\x12\x38\n\x07\x63ontext\x18\x03 \x01(\x0b\x32\x1c.relationalai.lqp.v1.ContextH\x00R\x07\x63ontextB\x0c\n\nwrite_type\"C\n\x06\x44\x65\x66ine\x12\x39\n\x08\x66ragment\x18\x01 \x01(\x0b\x32\x1d.relationalai.lqp.v1.FragmentR\x08\x66ragment\"L\n\x08Undefine\x12@\n\x0b\x66ragment_id\x18\x01 \x01(\x0b\x32\x1f.relationalai.lqp.v1.FragmentIdR\nfragmentId\"H\n\x07\x43ontext\x12=\n\trelations\x18\x01 \x03(\x0b\x32\x1f.relationalai.lqp.v1.RelationIdR\trelations\"\xed\x01\n\x04Read\x12\x35\n\x06\x64\x65mand\x18\x01 \x01(\x0b\x32\x1b.relationalai.lqp.v1.DemandH\x00R\x06\x64\x65mand\x12\x35\n\x06output\x18\x02 \x01(\x0b\x32\x1b.relationalai.lqp.v1.OutputH\x00R\x06output\x12\x36\n\x07what_if\x18\x03 \x01(\x0b\x32\x1b.relationalai.lqp.v1.WhatIfH\x00R\x06whatIf\x12\x32\n\x05\x61\x62ort\x18\x04 \x01(\x0b\x32\x1a.relationalai.lqp.v1.AbortH\x00R\x05\x61\x62ortB\x0b\n\tread_type\"J\n\x06\x44\x65mand\x12@\n\x0brelation_id\x18\x01 \x01(\x0b\x32\x1f.relationalai.lqp.v1.RelationIdR\nrelationId\"^\n\x06Output\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12@\n\x0brelation_id\x18\x02 \x01(\x0b\x32\x1f.relationalai.lqp.v1.RelationIdR\nrelationId\"R\n\x06WhatIf\x12\x16\n\x06\x62ranch\x18\x01 \x01(\tR\x06\x62ranch\x12\x30\n\x05\x65poch\x18\x02 \x01(\x0b\x32\x1a.relationalai.lqp.v1.EpochR\x05\x65poch\"]\n\x05\x41\x62ort\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12@\n\x0brelation_id\x18\x02 \x01(\x0b\x32\x1f.relationalai.lqp.v1.RelationIdR\nrelationIdb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n&relationalai/lqp/v1/transactions.proto\x12\x13relationalai.lqp.v1\x1a#relationalai/lqp/v1/fragments.proto\x1a\x1frelationalai/lqp/v1/logic.proto\"\x7f\n\x0bTransaction\x12\x32\n\x06\x65pochs\x18\x01 \x03(\x0b\x32\x1a.relationalai.lqp.v1.EpochR\x06\x65pochs\x12<\n\tconfigure\x18\x02 \x01(\x0b\x32\x1e.relationalai.lqp.v1.ConfigureR\tconfigure\"8\n\tConfigure\x12+\n\x11semantics_version\x18\x01 \x01(\x03R\x10semanticsVersion\"\xc0\x01\n\x05\x45poch\x12G\n\x11persistent_writes\x18\x01 \x03(\x0b\x32\x1a.relationalai.lqp.v1.WriteR\x10persistentWrites\x12=\n\x0clocal_writes\x18\x02 \x03(\x0b\x32\x1a.relationalai.lqp.v1.WriteR\x0blocalWrites\x12/\n\x05reads\x18\x03 \x03(\x0b\x32\x19.relationalai.lqp.v1.ReadR\x05reads\"\xc3\x01\n\x05Write\x12\x35\n\x06\x64\x65\x66ine\x18\x01 \x01(\x0b\x32\x1b.relationalai.lqp.v1.DefineH\x00R\x06\x64\x65\x66ine\x12;\n\x08undefine\x18\x02 \x01(\x0b\x32\x1d.relationalai.lqp.v1.UndefineH\x00R\x08undefine\x12\x38\n\x07\x63ontext\x18\x03 \x01(\x0b\x32\x1c.relationalai.lqp.v1.ContextH\x00R\x07\x63ontextB\x0c\n\nwrite_type\"C\n\x06\x44\x65\x66ine\x12\x39\n\x08\x66ragment\x18\x01 \x01(\x0b\x32\x1d.relationalai.lqp.v1.FragmentR\x08\x66ragment\"L\n\x08Undefine\x12@\n\x0b\x66ragment_id\x18\x01 \x01(\x0b\x32\x1f.relationalai.lqp.v1.FragmentIdR\nfragmentId\"H\n\x07\x43ontext\x12=\n\trelations\x18\x01 \x03(\x0b\x32\x1f.relationalai.lqp.v1.RelationIdR\trelations\"\xed\x01\n\x04Read\x12\x35\n\x06\x64\x65mand\x18\x01 \x01(\x0b\x32\x1b.relationalai.lqp.v1.DemandH\x00R\x06\x64\x65mand\x12\x35\n\x06output\x18\x02 \x01(\x0b\x32\x1b.relationalai.lqp.v1.OutputH\x00R\x06output\x12\x36\n\x07what_if\x18\x03 \x01(\x0b\x32\x1b.relationalai.lqp.v1.WhatIfH\x00R\x06whatIf\x12\x32\n\x05\x61\x62ort\x18\x04 \x01(\x0b\x32\x1a.relationalai.lqp.v1.AbortH\x00R\x05\x61\x62ortB\x0b\n\tread_type\"J\n\x06\x44\x65mand\x12@\n\x0brelation_id\x18\x01 \x01(\x0b\x32\x1f.relationalai.lqp.v1.RelationIdR\nrelationId\"^\n\x06Output\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12@\n\x0brelation_id\x18\x02 \x01(\x0b\x32\x1f.relationalai.lqp.v1.RelationIdR\nrelationId\"R\n\x06WhatIf\x12\x16\n\x06\x62ranch\x18\x01 \x01(\tR\x06\x62ranch\x12\x30\n\x05\x65poch\x18\x02 \x01(\x0b\x32\x1a.relationalai.lqp.v1.EpochR\x05\x65poch\"]\n\x05\x41\x62ort\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12@\n\x0brelation_id\x18\x02 \x01(\x0b\x32\x1f.relationalai.lqp.v1.RelationIdR\nrelationIdb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -24,25 +24,27 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'relationalai.lqp.v1.transac
 if _descriptor._USE_C_DESCRIPTORS == False:
   DESCRIPTOR._options = None
   _globals['_TRANSACTION']._serialized_start=133
-  _globals['_TRANSACTION']._serialized_end=198
-  _globals['_EPOCH']._serialized_start=201
-  _globals['_EPOCH']._serialized_end=393
-  _globals['_WRITE']._serialized_start=396
-  _globals['_WRITE']._serialized_end=591
-  _globals['_DEFINE']._serialized_start=593
-  _globals['_DEFINE']._serialized_end=660
-  _globals['_UNDEFINE']._serialized_start=662
-  _globals['_UNDEFINE']._serialized_end=738
-  _globals['_CONTEXT']._serialized_start=740
-  _globals['_CONTEXT']._serialized_end=812
-  _globals['_READ']._serialized_start=815
-  _globals['_READ']._serialized_end=1052
-  _globals['_DEMAND']._serialized_start=1054
-  _globals['_DEMAND']._serialized_end=1128
-  _globals['_OUTPUT']._serialized_start=1130
-  _globals['_OUTPUT']._serialized_end=1224
-  _globals['_WHATIF']._serialized_start=1226
-  _globals['_WHATIF']._serialized_end=1308
-  _globals['_ABORT']._serialized_start=1310
-  _globals['_ABORT']._serialized_end=1403
+  _globals['_TRANSACTION']._serialized_end=260
+  _globals['_CONFIGURE']._serialized_start=262
+  _globals['_CONFIGURE']._serialized_end=318
+  _globals['_EPOCH']._serialized_start=321
+  _globals['_EPOCH']._serialized_end=513
+  _globals['_WRITE']._serialized_start=516
+  _globals['_WRITE']._serialized_end=711
+  _globals['_DEFINE']._serialized_start=713
+  _globals['_DEFINE']._serialized_end=780
+  _globals['_UNDEFINE']._serialized_start=782
+  _globals['_UNDEFINE']._serialized_end=858
+  _globals['_CONTEXT']._serialized_start=860
+  _globals['_CONTEXT']._serialized_end=932
+  _globals['_READ']._serialized_start=935
+  _globals['_READ']._serialized_end=1172
+  _globals['_DEMAND']._serialized_start=1174
+  _globals['_DEMAND']._serialized_end=1248
+  _globals['_OUTPUT']._serialized_start=1250
+  _globals['_OUTPUT']._serialized_end=1344
+  _globals['_WHATIF']._serialized_start=1346
+  _globals['_WHATIF']._serialized_end=1428
+  _globals['_ABORT']._serialized_start=1430
+  _globals['_ABORT']._serialized_end=1523
 # @@protoc_insertion_point(module_scope)
