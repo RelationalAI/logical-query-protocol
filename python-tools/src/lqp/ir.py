@@ -52,23 +52,37 @@ class Script(LqpNode):
 class Construct(LqpNode):
     pass
 
-# Loop(init::Instruction[], body::Script)
+# Loop(init::Instruction[], body::Algorithm)
 @dataclass(frozen=True)
 class Loop(Construct):
     init: Sequence[Instruction]
     body: Script
 
-# Instruction(type::InstrType, definition::Def)
+# Instruction := Assign | Break | Upsert
 @dataclass(frozen=True)
 class Instruction(Construct):
-    instr_type: InstrType
-    definition: Def
+    pass
 
-class InstrType(Enum):
-    ASSIGN = 0
-    EMPTY = 1
-    UPSERT = 2
-    BREAK = 3
+# Assign(name::RelationId, body::Abstraction, attrs::Attribute[])
+@dataclass(frozen=True)
+class Assign(Instruction):
+    name: RelationId
+    body: Abstraction
+    attrs: Sequence[Attribute]
+
+# Upsert(name::RelationId, body::Abstraction, attrs::Attribute[])
+@dataclass(frozen=True)
+class Upsert(Instruction):
+    name: RelationId
+    body: Abstraction
+    attrs: Sequence[Attribute]
+
+# Break(name::RelationId, body::Abstraction, attrs::Attribute[])
+@dataclass(frozen=True)
+class Break(Instruction):
+    name: RelationId
+    body: Abstraction
+    attrs: Sequence[Attribute]
 
 # Abstraction(vars::Binding[], value::Formula)
 @dataclass(frozen=True)

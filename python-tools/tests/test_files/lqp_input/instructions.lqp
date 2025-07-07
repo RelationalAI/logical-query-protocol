@@ -6,11 +6,6 @@
           (algorithm
             (exports :foo :bar)
             (script
-              (instruction UPSERT
-                (def :test1 ([x::INT] (atom :alice x))))
-              (instruction BREAK
-                (def :test2 ([x::INT] (atom :alice x))))
-              (instruction EMPTY
-                (def :test3 ([x::INT] (atom :alice x))))
-              (instruction ASSIGN
-                (def :test4 ([x::INT] (atom :alice x)))))))))))
+              (upsert :test1 ([x::INT] (atom :alice x)))
+              (break :test2 ([x::INT] (atom :alice x)))
+              (assign :test4 ([x::INT] (atom :alice x))))))))))

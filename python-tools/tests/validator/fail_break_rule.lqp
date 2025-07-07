@@ -1,0 +1,13 @@
+;; ERROR: Break rule found outside of init at fail_break_rule.lqp:13:17: '3181428560199927439'
+(transaction
+  (epoch
+    (local_writes
+      (define (fragment :f1
+        (algorithm
+          (exports :foo)
+          (script
+            (loop
+              (init
+                (assign :foo ([] (or))))
+              (script
+                (break :foo ([] (or))))))))))))

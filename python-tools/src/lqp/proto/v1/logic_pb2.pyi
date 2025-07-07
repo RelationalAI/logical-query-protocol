@@ -104,38 +104,43 @@ class Loop(_message.Message):
     def __init__(self, init: _Optional[_Iterable[_Union[Instruction, _Mapping]]] = ..., body: _Optional[_Union[Script, _Mapping]] = ...) -> None: ...
 
 class Instruction(_message.Message):
-    __slots__ = ("type",)
-    TYPE_FIELD_NUMBER: _ClassVar[int]
-    DEF_FIELD_NUMBER: _ClassVar[int]
-    type: InstrType
-    def __init__(self, type: _Optional[_Union[InstrType, _Mapping]] = ..., **kwargs) -> None: ...
-
-class InstrType(_message.Message):
-    __slots__ = ("assign", "empty", "upsert")
+    __slots__ = ("assign", "upsert")
     ASSIGN_FIELD_NUMBER: _ClassVar[int]
-    EMPTY_FIELD_NUMBER: _ClassVar[int]
     UPSERT_FIELD_NUMBER: _ClassVar[int]
     BREAK_FIELD_NUMBER: _ClassVar[int]
     assign: Assign
-    empty: Empty
     upsert: Upsert
-    def __init__(self, assign: _Optional[_Union[Assign, _Mapping]] = ..., empty: _Optional[_Union[Empty, _Mapping]] = ..., upsert: _Optional[_Union[Upsert, _Mapping]] = ..., **kwargs) -> None: ...
+    def __init__(self, assign: _Optional[_Union[Assign, _Mapping]] = ..., upsert: _Optional[_Union[Upsert, _Mapping]] = ..., **kwargs) -> None: ...
 
 class Assign(_message.Message):
-    __slots__ = ()
-    def __init__(self) -> None: ...
-
-class Empty(_message.Message):
-    __slots__ = ()
-    def __init__(self) -> None: ...
+    __slots__ = ("name", "body", "attrs")
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    BODY_FIELD_NUMBER: _ClassVar[int]
+    ATTRS_FIELD_NUMBER: _ClassVar[int]
+    name: RelationId
+    body: Abstraction
+    attrs: _containers.RepeatedCompositeFieldContainer[Attribute]
+    def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
 
 class Upsert(_message.Message):
-    __slots__ = ()
-    def __init__(self) -> None: ...
+    __slots__ = ("name", "body", "attrs")
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    BODY_FIELD_NUMBER: _ClassVar[int]
+    ATTRS_FIELD_NUMBER: _ClassVar[int]
+    name: RelationId
+    body: Abstraction
+    attrs: _containers.RepeatedCompositeFieldContainer[Attribute]
+    def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
 
 class Break(_message.Message):
-    __slots__ = ()
-    def __init__(self) -> None: ...
+    __slots__ = ("name", "body", "attrs")
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    BODY_FIELD_NUMBER: _ClassVar[int]
+    ATTRS_FIELD_NUMBER: _ClassVar[int]
+    name: RelationId
+    body: Abstraction
+    attrs: _containers.RepeatedCompositeFieldContainer[Attribute]
+    def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
 
 class Binding(_message.Message):
     __slots__ = ("var", "type")

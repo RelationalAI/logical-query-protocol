@@ -40,8 +40,11 @@ construct: loop | instruction
 loop: "(loop" init script ")"
 init: "(init" instruction* ")"
 
-instruction: "(instruction" INSTR_TYPE def_ ")"
-INSTR_TYPE: "ASSIGN" | "EMPTY" | "UPSERT" | "BREAK"
+instruction: assign | upsert | break_
+
+assign : "(assign" relation_id abstraction attrs? ")"
+upsert : "(upsert" relation_id abstraction attrs? ")"
+break_ : "(break" relation_id abstraction attrs? ")"
 
 abstraction: "(" bindings formula ")"
 bindings: "[" binding* "]"
@@ -134,9 +137,6 @@ class LQPTransformer(Transformer):
     def REL_VALUE_TYPE(self, s):
         return getattr(ir.RelValueType, s.upper())
 
-    def INSTR_TYPE(self, s):
-        return getattr(ir.InstrType, s.upper())
-
     def rel_type(self, meta, items):
         return items[0]
 
@@ -224,7 +224,23 @@ class LQPTransformer(Transformer):
         return items
 
     def instruction(self, meta, items):
-        return ir.Instruction(instr_type=items[0], definition=items[1], meta=self.meta(meta))
+        return items[0]
+
+    def assign(self, meta, items):
+        name = items[0]
+        body = items[1]
+        attrs = items[2] if len(items) > 2 else []
+        return ir.Assign(name=name, body=body, attrs=attrs, meta=self.meta(meta))
+    def upsert(self, meta, items):
+        name = items[0]
+        body = items[1]
+        attrs = items[2] if len(items) > 2 else []
+        return ir.Upsert(name=name, body=body, attrs=attrs, meta=self.meta(meta))
+    def break_(self, meta, items):
+        name = items[0]
+        body = items[1]
+        attrs = items[2] if len(items) > 2 else []
+        return ir.Break(name=name, body=body, attrs=attrs, meta=self.meta(meta))
 
     def abstraction(self, meta, items):
         return ir.Abstraction(vars=items[0], value=items[1], meta=self.meta(meta))

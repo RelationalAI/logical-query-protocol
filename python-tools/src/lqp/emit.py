@@ -169,22 +169,37 @@ def convert_algorithm(algo: ir.Algorithm)-> logic_pb2.Algorithm:
         body=convert_script(algo.body)
     )
 
-def convert_instr_type(tp: ir.InstrType) -> logic_pb2.InstrType:
-    if tp == ir.InstrType.ASSIGN :
-        return logic_pb2.InstrType(assign=logic_pb2.Assign())
-    elif tp == ir.InstrType.BREAK :
-        return logic_pb2.InstrType(**{"break": logic_pb2.Break()})  # type: ignore
-    elif tp == ir.InstrType.EMPTY :
-        return logic_pb2.InstrType(empty=logic_pb2.Empty())
-    elif tp == ir.InstrType.UPSERT :
-        return logic_pb2.InstrType(upsert=logic_pb2.Upsert())
-    else:
-        raise TypeError(f"Unsupported instruction type: {tp}")
-
 def convert_instruction(instr: ir.Instruction) -> logic_pb2.Instruction:
-    return logic_pb2.Instruction(
-        type=convert_instr_type(instr.instr_type),
-        **{"def": convert_def(instr.definition)}
+    from typing import Dict, Any
+    if isinstance(instr, ir.Assign):
+        dict: Dict[str, Any] = {'assign': convert_assign(instr)}
+        return logic_pb2.Instruction(**dict)
+    elif isinstance(instr, ir.Break):
+        dict: Dict[str, Any] = {'break': convert_break(instr)}
+        return logic_pb2.Instruction(**dict)
+    elif isinstance(instr, ir.Upsert):
+        dict: Dict[str, Any] = {'upsert': convert_upsert(instr)}
+        return logic_pb2.Instruction(**dict)
+    else:
+        raise TypeError(f"Unsupported Instruction type: {type(instr)}")
+
+def convert_assign(instr: ir.Assign) -> logic_pb2.Assign:
+    return logic_pb2.Assign(
+        name=convert_relation_id(instr.name),
+        body=convert_abstraction(instr.body),
+        attrs=[convert_attribute(attr) for attr in instr.attrs]
+    )
+def convert_break(instr: ir.Break) -> logic_pb2.Break:
+    return logic_pb2.Break(
+        name=convert_relation_id(instr.name),
+        body=convert_abstraction(instr.body),
+        attrs=[convert_attribute(attr) for attr in instr.attrs]
+    )
+def convert_upsert(instr: ir.Upsert) -> logic_pb2.Upsert:
+    return logic_pb2.Upsert(
+        name=convert_relation_id(instr.name),
+        body=convert_abstraction(instr.body),
+        attrs=[convert_attribute(attr) for attr in instr.attrs]
     )
 
 def convert_script(script: ir.Script) -> logic_pb2.Script:

@@ -11,12 +11,10 @@
             (script
               (loop
                 (init
-                  (instruction ASSIGN
-                    (def :test2
-                      ([x::INT]
-                        (atom :bob x)))))
+                  (assign :test2
+                    ([x::INT]
+                      (atom :bob x))))
                   (script
-                    (instruction BREAK
-                      (def :test3
-                        ([x::INT]
-                          (atom :carol x)))))))))))))
+                    (break :test3
+                      ([x::INT]
+                        (atom :carol x))))))))))))

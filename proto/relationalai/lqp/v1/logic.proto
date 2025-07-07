@@ -37,26 +37,30 @@ message Loop {
 }
 
 message Instruction {
-  InstrType type = 1;
-  Def def = 2;
-}
-
-message InstrType { // Not an enum because of TBD ops parameterized by Monoids
-  oneof instruction_type {
+  oneof instr_type {
     Assign assign = 1;
-    Empty empty = 2;
-    Upsert upsert = 3;
-    Break break = 4;
+    Upsert upsert = 2;
+    Break break = 3;
   }
 }
 
-message Assign {}
+message Assign {
+  RelationId name = 1;
+  Abstraction body = 2;
+  repeated Attribute attrs = 3;
+}
 
-message Empty {}
+message Upsert {
+  RelationId name = 1;
+  Abstraction body = 2;
+  repeated Attribute attrs = 3;
+}
 
-message Upsert {}
-
-message Break {}
+message Break {
+  RelationId name = 1;
+  Abstraction body = 2;
+  repeated Attribute attrs = 3;
+}
 
 message Binding {
   Var var = 1;
