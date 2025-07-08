@@ -29,21 +29,19 @@ export: "(export" export_config ")"
 abort: "(abort" name? relation_id ")"
 
 export_config: export_csv_config
-export_csv_config: "(export_csv_config" export_columns export_path (export_partition_size
-    | export_compression | export_header_row | export_missing_string | export_delimiter
-    | export_quotechar | export_escapechar)* ")"
+export_csv_config: "(export_csv_config" export_columns export_path config_dict ")"
 
-export_column: "(column" NUMBER STRING relation_id ")"
 export_columns: "(columns" export_column* ")"
-
+export_column: "(column" NUMBER STRING relation_id ")"
 export_path: "(path" STRING ")"
-export_partition_size: "(partition_size" NUMBER ")"
-export_compression: "(compression" STRING ")"
-export_header_row: "(header_row" NUMBER ")"
-export_missing_string: "(missing_string" STRING ")"
-export_delimiter: "(delim_char" STRING ")"
-export_quotechar: "(quote_char" STRING ")"
-export_escapechar: "(escape_char" STRING ")"
+
+# export_partition_size: "(partition_size" NUMBER ")"
+# export_compression: "(compression" STRING ")"
+# export_header_row: "(header_row" NUMBER ")"
+# export_missing_string: "(missing_string" STRING ")"
+# export_delimiter: "(delim_char" STRING ")"
+# export_quotechar: "(quote_char" STRING ")"
+# export_escapechar: "(escape_char" STRING ")"
 
 fragment: "(fragment" fragment_id declaration* ")"
 
@@ -112,6 +110,9 @@ NUMBER: /\\d+/
 INT128: /\\d+i128/
 UINT128: /0x[0-9a-fA-F]+/
 FLOAT: /\\d+\\.\\d+/
+
+config_dict: "{" config_key_value* "}"
+config_key_value: ":" SYMBOL primitive_value
 
 COMMENT: /;;.*/  // Matches ;; followed by any characters except newline
 %ignore /\\s+/
@@ -222,29 +223,29 @@ class LQPTransformer(Transformer):
     def export_path(self, meta, items):
         return {'path': items[0]}
 
-    def export_partition_size(self, meta, items):
-        return {'partition_size': items[0]}
+    # def export_partition_size(self, meta, items):
+    #     return {'partition_size': items[0]}
 
-    def export_compression(self, meta, items):
-        return {'compression': items[0]}
+    # def export_compression(self, meta, items):
+    #     return {'compression': items[0]}
 
-    def export_header_row(self, meta, items):
-        return {'syntax_header_row': items[0]}
+    # def export_header_row(self, meta, items):
+    #     return {'syntax_header_row': items[0]}
 
-    def export_missing_string(self, meta, items):
-        return {'syntax_missing_string': items[0]}
+    # def export_missing_string(self, meta, items):
+    #     return {'syntax_missing_string': items[0]}
 
-    def export_delimiter(self, meta, items):
-        # Unescape the strings
-        return {'syntax_delim': items[0].encode().decode('unicode_escape')}
+    # def export_delimiter(self, meta, items):
+    #     # Unescape the strings
+    #     return {'syntax_delim': items[0].encode().decode('unicode_escape')}
 
-    def export_quotechar(self, meta, items):
-        # Unescape the strings
-        return {'syntax_quotechar': items[0].encode().decode('unicode_escape')}
+    # def export_quotechar(self, meta, items):
+    #     # Unescape the strings
+    #     return {'syntax_quotechar': items[0].encode().decode('unicode_escape')}
 
-    def export_escapechar(self, meta, items):
-        # Unescape the strings
-        return {'syntax_escapechar': items[0].encode().decode('unicode_escape')}
+    # def export_escapechar(self, meta, items):
+    #     # Unescape the strings
+    #     return {'syntax_escapechar': items[0].encode().decode('unicode_escape')}
 
     def abort(self, meta, items):
         if len(items) == 1:
@@ -405,7 +406,7 @@ class LQPTransformer(Transformer):
     def primitive_value(self, meta, items):
         return items[0]
     def STRING(self, s):
-        return s[1:-1] # Strip quotes
+        return s[1:-1].encode().decode('unicode_escape') # Strip quotes and process escaping
     def NUMBER(self, n):
         return int(n)
     def FLOAT(self, f):
@@ -419,6 +420,17 @@ class LQPTransformer(Transformer):
         u= u[:-4]  # Remove the 'i128' suffix
         int128_val = int(u)
         return ir.Int128(value=int128_val, meta=None)
+
+    def config_dict(self, meta, items):
+        # items is a list of key-value pairs
+        config = {}
+        for (k, v) in items:
+            config[k] = v
+        return config
+
+    def config_key_value(self, meta, items):
+        assert len(items) == 2
+        return (items[0], items[1])
 
 # LALR(1) is significantly faster than Earley for parsing, especially on larger inputs. It
 # uses a precomputed parse table, reducing runtime complexity to O(n) (linear in input
