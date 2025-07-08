@@ -1,0 +1,53 @@
+(transaction 
+  (epoch
+    (persistent_writes
+      (define
+        (fragment :f1
+          (def :person_age
+            ([x::INT age::INT]
+             (or
+               (and (= x 100) (= age 16))
+               (and (= x 101) (= age 18))
+               (and (= x 102) (= age 20)))))
+          
+          (def :has_drivers_license
+            ([x::INT]
+             (or
+               (= x 100))))
+          
+          (def :burger_count
+            ([v::INT]
+             (reduce
+               ([a::INT b::INT c::INT] (primitive :rel_primitive_add_monotype a b c))
+               ([a::INT c::INT]
+                (and 
+                  (atom :Adult a)
+                  (= c 1)))
+               (terms v))))))
+      
+      (define
+        (fragment :f2
+          (def :Adult
+            ([x::INT]
+             (exists [age::INT]
+               (and
+                 (atom :person_age x age)
+                 (>= age 18))))))))
+
+    (reads
+      (output :adult :Adult)
+      (output :burger_count :burger_count)))
+  
+  (epoch
+    (reads
+      (whatif
+        (epoch
+          (persistent_writes
+            (define
+              (fragment :f2
+                (def :Adult ([x::INT] (atom :has_drivers_license x))))))
+          
+          (reads
+            (output :whatif_adult :Adult)
+            (output :whatif_burger_count :burger_count))))))
+  )

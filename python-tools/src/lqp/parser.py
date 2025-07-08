@@ -22,10 +22,11 @@ define: "(define" fragment ")"
 undefine: "(undefine" fragment_id ")"
 context: "(context" relation_id* ")"
 
-read: demand | output | abort
+read: demand | output | abort | whatif
 demand: "(demand" relation_id ")"
 output: "(output" name? relation_id ")"
 abort: "(abort" name? relation_id ")"
+whatif: "(whatif" STRING? epoch ")"
 
 fragment: "(fragment" fragment_id declaration* ")"
 
@@ -155,6 +156,7 @@ class LQPTransformer(Transformer):
 
     def read(self, meta, items):
         return ir.Read(read_type=items[0], meta=self.meta(meta))
+
     def demand(self, meta, items):
         return ir.Demand(relation_id=items[0], meta=self.meta(meta))
 
@@ -167,6 +169,11 @@ class LQPTransformer(Transformer):
         if len(items) == 1:
             return ir.Abort(name=None, relation_id=items[0], meta=self.meta(meta))
         return ir.Abort(name=items[0], relation_id=items[1], meta=self.meta(meta))
+
+    def whatif(self, meta, items):
+        if len(items) == 1:
+            return ir.WhatIf(branch=None, epoch=items[0], meta=self.meta(meta))
+        return ir.WhatIf(branch=items[0], epoch=items[1], meta=self.meta(meta))
 
     #
     # Logic

@@ -1,0 +1,63 @@
+(transaction
+  (epoch
+    (persistent_writes
+      (define
+        (fragment :f1
+          (def 8935946271800696398
+            ([x::INT age::INT]
+              (or
+                (and
+                  (primitive :rel_primitive_eq x 100)
+                  (primitive :rel_primitive_eq age 16))
+                (and
+                  (primitive :rel_primitive_eq x 101)
+                  (primitive :rel_primitive_eq age 18))
+                (and
+                  (primitive :rel_primitive_eq x 102)
+                  (primitive :rel_primitive_eq age 20)))))
+          (def 7411481956814672024
+            ([x::INT]
+              (or
+                (primitive :rel_primitive_eq x 100))))
+          (def 10289151701901378773
+            ([v::INT]
+              (reduce
+                ([a::INT b::INT c::INT]
+                  (primitive :rel_primitive_add_monotype a b c))
+                ([a::INT c::INT]
+                  (and
+                    (atom 12468460745508163726 a)
+                    (primitive :rel_primitive_eq c 1)))
+                (terms v))))))
+      (define
+        (fragment :f2
+          (def 12468460745508163726
+            ([x::INT]
+              (exists [age::INT]
+                (and
+                  (atom 8935946271800696398 x age)
+                  (primitive :rel_primitive_gt_eq_monotype age 18))))))))
+    (reads
+      (output :adult 12468460745508163726)
+      (output :burger_count 10289151701901378773)))
+  (epoch
+    (reads
+      (whatif         (epoch
+          (persistent_writes
+            (define
+              (fragment :f2
+                (def 12468460745508163726
+                  ([x::INT]
+                    (atom 7411481956814672024 x))))))
+          (reads
+            (output :whatif_adult 12468460745508163726)
+            (output :whatif_burger_count 10289151701901378773))
+)))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `12468460745508163726` -> `Adult`
+;; 	 ID `8935946271800696398` -> `person_age`
+;; 	 ID `7411481956814672024` -> `has_drivers_license`
+;; 	 ID `10289151701901378773` -> `burger_count`

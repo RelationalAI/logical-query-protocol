@@ -350,7 +350,7 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
 
     elif isinstance(node, ir.WhatIf):
         branch_str = f":{conf.uname(node.branch)} " if node.branch else ""
-        lqp += f"{ind}{conf.LPAREN()}{conf.kw('what_if')} {branch_str}{to_str(node.epoch, indent_level + 1, options, debug_info)}{conf.RPAREN()}"
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('whatif')} {branch_str}{to_str(node.epoch, indent_level + 1, options, debug_info)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Epoch):
         # Epoch is handled within program_to_str, but might be called directly for WhatIf
