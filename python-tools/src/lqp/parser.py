@@ -35,14 +35,6 @@ export_columns: "(columns" export_column* ")"
 export_column: "(column" NUMBER STRING relation_id ")"
 export_path: "(path" STRING ")"
 
-# export_partition_size: "(partition_size" NUMBER ")"
-# export_compression: "(compression" STRING ")"
-# export_header_row: "(header_row" NUMBER ")"
-# export_missing_string: "(missing_string" STRING ")"
-# export_delimiter: "(delim_char" STRING ")"
-# export_quotechar: "(quote_char" STRING ")"
-# export_escapechar: "(escape_char" STRING ")"
-
 fragment: "(fragment" fragment_id declaration* ")"
 
 declaration: def_
@@ -218,34 +210,8 @@ class LQPTransformer(Transformer):
             meta=self.meta(meta)
         )
 
-    # The following methods return dictionaries so that we can combine them to form the
-    # kwargs that construct the ExportCSVConfig
     def export_path(self, meta, items):
         return {'path': items[0]}
-
-    # def export_partition_size(self, meta, items):
-    #     return {'partition_size': items[0]}
-
-    # def export_compression(self, meta, items):
-    #     return {'compression': items[0]}
-
-    # def export_header_row(self, meta, items):
-    #     return {'syntax_header_row': items[0]}
-
-    # def export_missing_string(self, meta, items):
-    #     return {'syntax_missing_string': items[0]}
-
-    # def export_delimiter(self, meta, items):
-    #     # Unescape the strings
-    #     return {'syntax_delim': items[0].encode().decode('unicode_escape')}
-
-    # def export_quotechar(self, meta, items):
-    #     # Unescape the strings
-    #     return {'syntax_quotechar': items[0].encode().decode('unicode_escape')}
-
-    # def export_escapechar(self, meta, items):
-    #     # Unescape the strings
-    #     return {'syntax_escapechar': items[0].encode().decode('unicode_escape')}
 
     def abort(self, meta, items):
         if len(items) == 1:
