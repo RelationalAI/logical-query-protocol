@@ -147,6 +147,25 @@ def terms_to_str(terms: Sequence[Union[ir.Term, ir.Specialized]], indent_level: 
 
     return lqp
 
+# Produces
+# { :key1 value1
+#   :key2 value2
+#   ... }
+def config_dict_to_str(config: Dict[str, Union[str, int]], indent_level: int, options: Dict) -> str:
+    conf = style_config(options)
+    ind = conf.indentation(indent_level)
+
+    if len(config) == 0:
+        return f"{ind}{{}}"
+
+    config_str = ind + "{"
+    for k, v in config.items():
+        config_str += f"\n{ind}{conf.SIND()}:{str(k)} {to_str(v, 0, options)}"
+
+    config_str += "}"
+
+    return config_str
+
 def program_to_str(node: ir.Transaction, options: Dict = {}) -> str:
     conf = style_config(options)
     s = conf.indentation(0) + conf.LPAREN() + conf.kw("transaction")
@@ -282,7 +301,7 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         lqp += f"{ind}{conf.uname(node.name)}"
 
     elif isinstance(node, str):
-        lqp += f"{ind}\"{node}\""
+        lqp += ind + "\"" + node.encode('unicode_escape').replace(b'"', b'\\"').decode() + "\""
     elif isinstance(node, ir.UInt128):
         lqp += f"{ind}{hex(node.value)}"
     elif isinstance(node, ir.Int128):
@@ -363,20 +382,23 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         lqp += line('columns', list_to_str(node.data_columns, 0, " ", options, debug_info)) + "\n"
         lqp += line_conf_f('path', node.path)
 
+        config_dict = {}
         if node.partition_size is not None:
-            lqp += "\n" + line_conf_f('partition_size', node.partition_size)
+            config_dict['partition_size'] = node.partition_size
         if node.compression is not None:
-            lqp += "\n" + line_conf_f('compression', node.compression)
+            config_dict['compression'] = node.compression
         if node.syntax_header_row is not None:
-            lqp += "\n" + line_conf_f('header_row', node.syntax_header_row)
+            config_dict['header_row'] = node.syntax_header_row
         if node.syntax_missing_string is not None:
-            lqp += "\n" + line_conf_f('missing_string', node.syntax_missing_string)
+            config_dict['syntax_missing_string'] = node.syntax_missing_string
         if node.syntax_delim is not None:
-            lqp += "\n" + line_conf_f('delim_char', node.syntax_delim.encode('unicode_escape').replace(b'"', b'\\"').decode())
+            config_dict['syntax_delim'] = node.syntax_delim
         if node.syntax_quotechar is not None:
-            lqp += "\n" + line_conf_f('quote_char', node.syntax_quotechar.encode('unicode_escape').replace(b'"', b'\\"').decode())
+            config_dict['syntax_quotechar'] = node.syntax_quotechar
         if node.syntax_escapechar is not None:
-            lqp += "\n" + line_conf_f('escape_char', node.syntax_escapechar.encode('unicode_escape').replace(b'"', b'\\"').decode())
+            config_dict['syntax_escapechar'] = node.syntax_escapechar
+
+        lqp += "\n" + config_dict_to_str(config_dict, indent_level + 1, options)
         lqp += f"{conf.RPAREN()}"
 
     elif isinstance(node, ir.ExportCSVColumn):
