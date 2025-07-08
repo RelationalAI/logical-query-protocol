@@ -6,6 +6,7 @@ python-tools/dist/
 python-tools/build/
 python-tools/src/*.egg-info/
 python-tools/out/
+python-tools/.lsp/.cache
 
 # Proto generated files
 gen

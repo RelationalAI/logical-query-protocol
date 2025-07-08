@@ -63,7 +63,7 @@ language](https://clojure.org/), in order to leverage the existing tools in that
 LQP syntax should be formatted via [cljfmt](https://github.com/weavejester/cljfmt) with the
 following configuration:
 
-```clj
+```clojure
 ;; .cljfmt.edn
 {:indents {#re ".*" [[:inner 0]]}
  :remove-surrounding-whitespace?  false
@@ -85,3 +85,12 @@ integrate `paredit` and `cljfmt` into your VSCode workflow, just install [the Ca
 extension](https://calva.io/) and [follow the configuration
 guide](https://calva.io/formatting/#configuration) to use the `cljfmt` configuration pasted
 in the previous section.
+
+Out-of-the-box, Calva also runs a Clojure linter, which of course does not know what to do
+with LQP, resulting in lots of squiggly lines. For that reason, it is also advisable to
+create the following config file at `.lsp/config.edn` from the project root:
+
+```clojure
+;; .lsp/config.edn
+{:linters {:clj-kondo {:level :off}}}
+```
