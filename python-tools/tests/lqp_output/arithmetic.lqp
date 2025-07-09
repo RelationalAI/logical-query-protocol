@@ -4,25 +4,25 @@
       (define
         (fragment :f1
           (def 8346242610505581273
-            ([a::DECIMAL b::DECIMAL c::DECIMAL]
+            ([a::DECIMAL128 b::DECIMAL128 c::DECIMAL128]
               (and
                 (relatom :dec_a a)
                 (relatom :dec_b b)
                 (primitive :rel_primitive_add_monotype a b c))))
           (def 3056642369193908718
-            ([a::DECIMAL b::DECIMAL c::DECIMAL]
+            ([a::DECIMAL128 b::DECIMAL128 c::DECIMAL128]
               (and
                 (relatom :dec_a a)
                 (relatom :dec_b b)
                 (primitive :rel_primitive_subtract_monotype a b c))))
           (def 16478189523298330666
-            ([a::DECIMAL b::DECIMAL c::DECIMAL]
+            ([a::DECIMAL128 b::DECIMAL128 c::DECIMAL128]
               (and
                 (relatom :dec_a a)
                 (relatom :dec_b b)
                 (primitive :rel_primitive_multiply_monotype a b c))))
           (def 11795783772012398890
-            ([a::DECIMAL b::DECIMAL c::DECIMAL]
+            ([a::DECIMAL128 b::DECIMAL128 c::DECIMAL128]
               (and
                 (relatom :dec_a a)
                 (relatom :dec_b b)
