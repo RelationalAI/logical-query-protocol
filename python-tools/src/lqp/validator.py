@@ -105,8 +105,6 @@ class DuplicateRelationIdFinder(LqpVisitor):
         assert self.curr_fragment is not None
         assert self.curr_epoch > 0
 
-        print("Looking at $(node.name) in $(self.curr_epoch) epoch, $(self.curr_fragment) fragment")
-
         if node.name in self.seen_ids:
             seen_in_epoch, seen_in_fragment = self.seen_ids[node.name]
             if self.curr_fragment != seen_in_fragment:
@@ -119,8 +117,8 @@ class DuplicateRelationIdFinder(LqpVisitor):
                 raise ValidationError(
                     f"Duplicate declaration within fragment in epoch at {node.meta}: '{node.name.id}'"
                 )
+            # else: the final case (dup ID, same fragment, different epoch) is valid.
 
-            # The final case (dup ID, same fragment, different epoch) is valid.
         self.seen_ids[node.name] = (self.curr_epoch, self.curr_fragment)
 
     def visit_Fragment(self, node: ir.Fragment, *args: Any) -> None:
