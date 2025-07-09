@@ -1,0 +1,14 @@
+;; ERROR: Duplicate declaration across fragments at fail_dup_id_3.lqp:13:11: '14069321933851954459'
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :frag1
+          (def :cool
+            ([] (or)))))))
+  (epoch
+    (local_writes
+      (define
+        (fragment :frag2
+          (def :cool
+            ([] (or))))))))
