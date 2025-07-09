@@ -3,9 +3,6 @@
     (local_writes
       (define
         (fragment :f1
-          (def 9204631264110356583
-            ([v::DECIMAL]
-              (relatom :dec v)))
           (def 11083562605256160670
             ([v::DECIMAL64]
               (relatom :dec64 v)))
@@ -49,7 +46,6 @@
             ([v::YEAR]
               (relatom :year v))))))
     (reads
-      (output :dec 9204631264110356583)
       (output :dec64 11083562605256160670)
       (output :dec128 17909083773971274800)
       (output :date 5168972349743097577)
