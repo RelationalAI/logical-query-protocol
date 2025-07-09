@@ -1,6 +1,6 @@
 import lqp.ir as ir
 import lqp.print as p
-from typing import Any, Dict, List, Tuple, Sequence, Set, Union
+from typing import Any, Dict, List, Tuple, Sequence, Set, Union, Optional
 from dataclasses import dataclass, is_dataclass, fields
 
 class ValidationError(Exception):
@@ -137,32 +137,32 @@ class DuplicateRelationIdFinder(LqpVisitor):
                     f"Duplicate declaration at {d.meta}: '{d.id}'"
                 )
             else:
-                # fix this
-                self.seen_ids.add(d)
+                self.seen_ids[d] = (self.curr_epoch, self.curr_fragment)
 
-# Checks that Atoms are applied to the correct number and types of terms.
+# Checks that Instructions are applied to the correct number and types of terms.
 # Assumes UnusedVariableVisitor has passed.
 class AtomTypeChecker(LqpVisitor):
-    Atoms = Union[ir.Def, ir.Assign, ir.Break, ir.Upsert]
+    Instructions = Union[ir.Def, ir.Assign, ir.Break, ir.Upsert]
     # Helper to get all Defs defined in a Transaction. We are only interested
     # in globally visible Defs thus ignore Loop bodies.
     @staticmethod
-    def collect_global_defs(txn: ir.Transaction) -> List[Atoms]:
+    def collect_global_defs(txn: ir.Transaction) -> List[Instructions]:
         # Visitor to do the work.
         class DefCollector(LqpVisitor):
             def __init__(self, txn: ir.Transaction):
-                self.atoms: List[AtomTypeChecker.Atoms] = []
+                self.atoms: List[AtomTypeChecker.Instructions] = []
                 self.visit(txn)
 
-
-            def visit_Def(self, node: AtomTypeChecker.Atoms) -> None:
+            def visit_Def(self, node: ir.Def) -> None:
                 self.atoms.append(node)
 
+            def visit_Algorithm(self, node:ir.Algorithm):
+                self.atoms.extend([d for d in node.body.constructs if isinstance(d, AtomTypeChecker.Instructions)])
+
             def visit_Loop(self, node: ir.Loop) -> None:
-                self.atoms.extend([d for d in node.init if isinstance(d, AtomTypeChecker.Atoms)])
+                self.atoms.extend([d for d in node.init if isinstance(d, AtomTypeChecker.Instructions)])
                 # Don't touch the body, they are not globally visible. Treat
                 # this node as a leaf.
-
         return DefCollector(txn).atoms
 
     # Helper to map Constants to their RelType.
@@ -189,7 +189,7 @@ class AtomTypeChecker(LqpVisitor):
 
     # Return a list of the types of the parameters of a Def.
     @staticmethod
-    def get_relation_sig(d: Atoms):
+    def get_relation_sig(d: Instructions):
         # v[1] holds the RelType.
         return [v[1] for v in d.body.vars]
 
