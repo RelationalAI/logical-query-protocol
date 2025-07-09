@@ -205,7 +205,7 @@ def convert_output(o: ir.Output) -> transactions_pb2.Output:
     return transactions_pb2.Output(**kwargs) # type: ignore
 
 def convert_export(e: ir.Export) -> transactions_pb2.Export:
-    return transactions_pb2.Export(config=convert_export_config(e.config)) # type: ignore
+    return transactions_pb2.Export(csv_config=convert_export_config(e.config)) # type: ignore
 
 def convert_export_config(ec: ir.ExportCSVConfig) -> transactions_pb2.ExportCSVConfig:
     return transactions_pb2.ExportCSVConfig(
