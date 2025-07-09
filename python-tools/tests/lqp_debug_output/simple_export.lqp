@@ -16,7 +16,7 @@
     (reads
       (export
         (export_csv_config
-          (columns (column 1 "col1name" 17307602785083346210) (column 2 "col2name" 8011686847096043948))
+          (columns (column "col1name" 17307602785083346210) (column "col2name" 8011686847096043948))
           (path "/tmp/hello_lqp.csv")
           {
             :partition_size 10

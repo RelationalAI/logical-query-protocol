@@ -29,7 +29,7 @@
     (reads
       (export
         (export_csv_config
-          (columns (column 1 "col1name" :cola1) (column 2 "col2name" :cola2))
+          (columns (column "col1name" :cola1) (column "col2name" :cola2))
           (path "/tmp/hello_lqp_1.csv")
           { :partition_size 10
             :compression ""
@@ -37,7 +37,7 @@
             :syntax_escapechar "\\"}))
       (export
         (export_csv_config
-          (columns (column 1 "blahblah" :colb1) (column 2 "foofoo" :colb2))
+          (columns (column "blahblah" :colb1) (column "foofoo" :colb2))
           (path "/tmp/hello_lqp_2.csv")
           { :syntax_quotechar "\""
             :syntax_escapechar "\\"})))))

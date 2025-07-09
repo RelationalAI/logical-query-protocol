@@ -28,7 +28,7 @@
     (reads
       (export
         (export_csv_config
-          (columns (column 1 "col1name" 2344968532315871158) (column 2 "col2name" 3069421044470708673))
+          (columns (column "col1name" 2344968532315871158) (column "col2name" 3069421044470708673))
           (path "/tmp/hello_lqp_1.csv")
           {
             :partition_size 10
@@ -37,7 +37,7 @@
             :syntax_escapechar "\\"}))
       (export
         (export_csv_config
-          (columns (column 1 "blahblah" 3616683933217157613) (column 2 "foofoo" 11835545690810417679))
+          (columns (column "blahblah" 3616683933217157613) (column "foofoo" 11835545690810417679))
           (path "/tmp/hello_lqp_2.csv")
           {
             :syntax_quotechar "\""

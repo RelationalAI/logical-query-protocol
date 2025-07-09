@@ -17,7 +17,7 @@
     (reads
       (export
         (export_csv_config
-          (columns (column 1 "col1name" :col1) (column 2 "col2name" :col2))
+          (columns (column "col1name" :col1) (column "col2name" :col2))
           (path "/tmp/hello_lqp.csv")
           { :partition_size 10
             :compression ""
