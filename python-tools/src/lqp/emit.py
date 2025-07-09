@@ -207,18 +207,7 @@ def convert_output(o: ir.Output) -> transactions_pb2.Output:
 def convert_export(e: ir.Export) -> transactions_pb2.Export:
     return transactions_pb2.Export(config=convert_export_config(e.config)) # type: ignore
 
-def convert_export_config(ec: ir.ExportConfig) -> transactions_pb2.ExportConfig:
-    csv_conf = convert_export_csv_config(ec.export_config)
-    return transactions_pb2.ExportConfig(csv_config=csv_conf)
-
-def convert_export_csv_column(ec: ir.ExportCSVColumn) -> transactions_pb2.ExportCSVColumn:
-    return transactions_pb2.ExportCSVColumn(
-        column_number=ec.column_number,
-        column_name=ec.column_name,
-        column_data=convert_relation_id(ec.column_data),
-    )
-
-def convert_export_csv_config(ec: ir.ExportCSVConfig) -> transactions_pb2.ExportCSVConfig:
+def convert_export_config(ec: ir.ExportCSVConfig) -> transactions_pb2.ExportConfig:
     return transactions_pb2.ExportCSVConfig(
         data_columns=[convert_export_csv_column(c) for c in ec.data_columns],
         path=ec.path,
@@ -229,6 +218,12 @@ def convert_export_csv_config(ec: ir.ExportCSVConfig) -> transactions_pb2.Export
         syntax_delim=ec.syntax_delim if ec.syntax_delim is not None else ",",
         syntax_quotechar=ec.syntax_quotechar if ec.syntax_quotechar is not None else '"',
         syntax_escapechar=ec.syntax_escapechar if ec.syntax_escapechar is not None else '\\'
+    )
+
+def convert_export_csv_column(ec: ir.ExportCSVColumn) -> transactions_pb2.ExportCSVColumn:
+    return transactions_pb2.ExportCSVColumn(
+        column_name=ec.column_name,
+        column_data=convert_relation_id(ec.column_data),
     )
 
 def convert_abort(a: ir.Abort) -> transactions_pb2.Abort:

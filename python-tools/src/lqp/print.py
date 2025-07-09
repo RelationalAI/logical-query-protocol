@@ -366,10 +366,6 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
     elif isinstance(node, ir.Export):
         lqp += f"{ind}{conf.LPAREN()}{conf.kw('export')}\n{to_str(node.config, indent_level + 1, options, debug_info)}{conf.RPAREN()}"
 
-    elif isinstance(node, ir.ExportConfig):
-        # Delegate to the specific export config type
-        lqp += to_str(node.export_config, indent_level, options, debug_info)
-
     elif isinstance(node, ir.ExportCSVConfig):
         def line(kw: str, body: str) -> str:
             return f"{ind}{conf.SIND()}{conf.LPAREN()}{conf.kw(kw)} {body}{conf.RPAREN()}"
@@ -401,7 +397,7 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         lqp += f"{conf.RPAREN()}"
 
     elif isinstance(node, ir.ExportCSVColumn):
-        lqp += f"{ind}{conf.LPAREN()}{conf.kw('column')} {node.column_number} {to_str(node.column_name, 0, options, debug_info)} {to_str(node.column_data, 0, options, debug_info)}{conf.RPAREN()}"
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('column')} {to_str(node.column_name, 0, options, debug_info)} {to_str(node.column_data, 0, options, debug_info)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Abort):
         name_str = f":{conf.uname(node.name)} " if node.name else ""

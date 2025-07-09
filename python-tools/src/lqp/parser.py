@@ -25,14 +25,13 @@ context: "(context" relation_id* ")"
 read: demand | output | export | abort
 demand: "(demand" relation_id ")"
 output: "(output" name? relation_id ")"
-export: "(export" export_config ")"
+export: "(export" export_csv_config ")"
 abort: "(abort" name? relation_id ")"
 
-export_config: export_csv_config
 export_csv_config: "(export_csv_config" export_columns export_path config_dict ")"
 
 export_columns: "(columns" export_column* ")"
-export_column: "(column" NUMBER STRING relation_id ")"
+export_column: "(column" STRING relation_id ")"
 export_path: "(path" STRING ")"
 
 fragment: "(fragment" fragment_id declaration* ")"
@@ -178,9 +177,6 @@ class LQPTransformer(Transformer):
     def export(self, meta, items):
         return ir.Export(config=items[0], meta=self.meta(meta))
 
-    def export_config(self, meta, items):
-        return ir.ExportConfig(export_config=items[0], meta=self.meta(meta))
-
     def export_csv_config(self, meta, items):
         assert len(items) >= 2, "Export config must have at least columns and path"
 
@@ -204,9 +200,8 @@ class LQPTransformer(Transformer):
     def export_column(self, meta, items):
         # items[0] is the column number, items[1] is the column name, items[2] is the relation_id
         return ir.ExportCSVColumn(
-            column_number=items[0],
-            column_name=items[1],
-            column_data=items[2],
+            column_name=items[0],
+            column_data=items[1],
             meta=self.meta(meta)
         )
 
