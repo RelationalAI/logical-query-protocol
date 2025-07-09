@@ -148,19 +148,73 @@ def convert_def(d: ir.Def) -> logic_pb2.Def:
 
 def convert_loop(l: ir.Loop) -> logic_pb2.Loop:
     return logic_pb2.Loop(
-        init=[convert_def(init_def) for init_def in l.init],
-        body=[convert_declaration(decl) for decl in l.body]
+        init=[convert_instruction(init_def) for init_def in l.init],
+        body=convert_script(l.body)
     )
 
 def convert_declaration(decl: ir.Declaration) -> logic_pb2.Declaration:
+    from typing import Dict, Any
     if isinstance(decl, ir.Def):
-        from typing import Dict, Any
         decl_dict: Dict[str, Any] = {'def': convert_def(decl)}
         return logic_pb2.Declaration(**decl_dict)  # type: ignore
-    elif isinstance(decl, ir.Loop):
-        return logic_pb2.Declaration(loop=convert_loop(decl))
+    elif isinstance(decl, ir.Algorithm):
+        algorithm_dict: Dict[str, Any] = {'algorithm': convert_algorithm(decl)}
+        return logic_pb2.Declaration(**algorithm_dict)
     else:
         raise TypeError(f"Unsupported Declaration type: {type(decl)}")
+
+def convert_algorithm(algo: ir.Algorithm)-> logic_pb2.Algorithm:
+    return logic_pb2.Algorithm(
+        exports=[convert_relation_id(id) for id in algo.exports],
+        body=convert_script(algo.body)
+    )
+
+def convert_instruction(instr: ir.Instruction) -> logic_pb2.Instruction:
+    from typing import Dict, Any
+    if isinstance(instr, ir.Assign):
+        dict: Dict[str, Any] = {'assign': convert_assign(instr)}
+        return logic_pb2.Instruction(**dict)
+    elif isinstance(instr, ir.Break):
+        dict: Dict[str, Any] = {'break': convert_break(instr)}
+        return logic_pb2.Instruction(**dict)
+    elif isinstance(instr, ir.Upsert):
+        dict: Dict[str, Any] = {'upsert': convert_upsert(instr)}
+        return logic_pb2.Instruction(**dict)
+    else:
+        raise TypeError(f"Unsupported Instruction type: {type(instr)}")
+
+def convert_assign(instr: ir.Assign) -> logic_pb2.Assign:
+    return logic_pb2.Assign(
+        name=convert_relation_id(instr.name),
+        body=convert_abstraction(instr.body),
+        attrs=[convert_attribute(attr) for attr in instr.attrs]
+    )
+def convert_break(instr: ir.Break) -> logic_pb2.Break:
+    return logic_pb2.Break(
+        name=convert_relation_id(instr.name),
+        body=convert_abstraction(instr.body),
+        attrs=[convert_attribute(attr) for attr in instr.attrs]
+    )
+def convert_upsert(instr: ir.Upsert) -> logic_pb2.Upsert:
+    return logic_pb2.Upsert(
+        name=convert_relation_id(instr.name),
+        body=convert_abstraction(instr.body),
+        attrs=[convert_attribute(attr) for attr in instr.attrs]
+    )
+
+def convert_script(script: ir.Script) -> logic_pb2.Script:
+    return logic_pb2.Script(constructs=[convert_construct(c) for c in script.constructs])
+
+def convert_construct(construct: ir.Construct) -> logic_pb2.Construct:
+    from typing import Dict, Any
+    if isinstance(construct, ir.Loop):
+        loop_dict: Dict[str, Any] = {'loop': convert_loop(construct)}
+        return logic_pb2.Construct(**loop_dict)  # type: ignore
+    elif isinstance(construct, ir.Instruction):
+        instruction_dict: Dict[str, Any] = {'instruction': convert_instruction(construct)}
+        return logic_pb2.Construct(**instruction_dict)
+    else:
+        raise TypeError(f"Unsupported Construct type: {type(construct)}")
 
 def convert_fragment(frag: ir.Fragment) -> fragments_pb2.Fragment:
     return fragments_pb2.Fragment(
