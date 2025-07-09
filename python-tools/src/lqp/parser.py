@@ -29,22 +29,8 @@ abort: "(abort" name? relation_id ")"
 
 fragment: "(fragment" fragment_id declaration* ")"
 
-declaration: def_ | algorithm
+declaration: def_
 def_: "(def" relation_id abstraction attrs? ")"
-
-algorithm: "(algorithm" exports script ")"
-exports: "(exports" relation_id* ")"
-script: "(script" construct* ")"
-
-construct: loop | instruction
-loop: "(loop" init script ")"
-init: "(init" instruction* ")"
-
-instruction: assign | upsert | break_
-
-assign : "(assign" relation_id abstraction attrs? ")"
-upsert : "(upsert" relation_id abstraction attrs? ")"
-break_ : "(break" relation_id abstraction attrs? ")"
 
 abstraction: "(" bindings formula ")"
 bindings: "[" binding* "]"
@@ -193,7 +179,7 @@ class LQPTransformer(Transformer):
 
     def fragment_id(self, meta, items):
         fragment_id = ir.FragmentId(id=items[0].encode(), meta=self.meta(meta))
-        self._current_fragment_id = fragment_id # type: ignore
+        self._current_fragment_id = fragment_id
         if fragment_id not in self.id_to_debuginfo:
             self.id_to_debuginfo[fragment_id] = {}
         return fragment_id
@@ -205,42 +191,6 @@ class LQPTransformer(Transformer):
         body = items[1]
         attrs = items[2] if len(items) > 2 else []
         return ir.Def(name=name, body=body, attrs=attrs, meta=self.meta(meta))
-
-    def algorithm(self, meta, items):
-        return ir.Algorithm(exports=items[0], body=items[1], meta=self.meta(meta))
-    def exports(self, meta, items):
-        return items
-    def script(self, meta, items):
-        return ir.Script(constructs=items, meta=self.meta(meta))
-
-    def construct(self, meta, items):
-        return items[0]
-
-    def loop(self, meta, items):
-        init = items[0]
-        script = items[1]
-        return ir.Loop(init=init, body=script, meta=self.meta(meta))
-    def init(self, meta, items):
-        return items
-
-    def instruction(self, meta, items):
-        return items[0]
-
-    def assign(self, meta, items):
-        name = items[0]
-        body = items[1]
-        attrs = items[2] if len(items) > 2 else []
-        return ir.Assign(name=name, body=body, attrs=attrs, meta=self.meta(meta))
-    def upsert(self, meta, items):
-        name = items[0]
-        body = items[1]
-        attrs = items[2] if len(items) > 2 else []
-        return ir.Upsert(name=name, body=body, attrs=attrs, meta=self.meta(meta))
-    def break_(self, meta, items):
-        name = items[0]
-        body = items[1]
-        attrs = items[2] if len(items) > 2 else []
-        return ir.Break(name=name, body=body, attrs=attrs, meta=self.meta(meta))
 
     def abstraction(self, meta, items):
         return ir.Abstraction(vars=items[0], value=items[1], meta=self.meta(meta))
@@ -406,7 +356,7 @@ def process_file(filename, bin, json):
         lqp_text = f.read()
 
     lqp = parse_lqp(filename, lqp_text)
-    validate_lqp(lqp) # type: ignore
+    validate_lqp(lqp)
     lqp_proto = ir_to_proto(lqp)
     print(lqp_proto)
 

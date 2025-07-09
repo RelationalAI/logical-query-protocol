@@ -5,7 +5,7 @@ package relationalai.lqp.v1;
 message Declaration {
   oneof declaration_type {
     Def def = 1;
-    Algorithm algorithm = 2;
+    Loop loop = 2;
   }
 }
 
@@ -15,51 +15,9 @@ message Def {
   repeated Attribute attrs = 3;
 }
 
-message Algorithm {
-  repeated RelationId exports = 1;
-  Script body = 2;
-}
-
-message Script {
-  repeated Construct constructs = 1;
-}
-
-message Construct {
-  oneof construct_type {
-    Loop loop = 1;
-    Instruction instruction = 2;
-  }
-}
-
 message Loop {
-  repeated Instruction init = 1;
-  Script body = 2;
-}
-
-message Instruction {
-  oneof instr_type {
-    Assign assign = 1;
-    Upsert upsert = 2;
-    Break break = 3;
-  }
-}
-
-message Assign {
-  RelationId name = 1;
-  Abstraction body = 2;
-  repeated Attribute attrs = 3;
-}
-
-message Upsert {
-  RelationId name = 1;
-  Abstraction body = 2;
-  repeated Attribute attrs = 3;
-}
-
-message Break {
-  RelationId name = 1;
-  Abstraction body = 2;
-  repeated Attribute attrs = 3;
+  repeated Def init = 1;
+  repeated Declaration body = 2;
 }
 
 message Binding {

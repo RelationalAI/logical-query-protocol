@@ -216,43 +216,14 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
             lqp += list_to_str(node.attrs, indent_level + 2, "\n", options, debug_info)
             lqp += f"{conf.RPAREN()}{conf.RPAREN()}"
 
-    elif isinstance(node, ir.Algorithm):
-        lqp += ind + conf.LPAREN() + conf.kw("algorithm") + "\n"
-        # Print exports
-        lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("exports")
-        if len(node.exports) > 4:
-            lqp += "\n"
-            lqp += list_to_str(node.exports, indent_level + 2, "\n", options, debug_info) + conf.RPAREN()+"\n"
-        else:
-            lqp += " "
-            lqp += list_to_str(node.exports, 0, " ", options, debug_info) + conf.RPAREN()+"\n"
-        lqp += to_str(node.body, indent_level + 1, options, debug_info)
-        lqp += conf.RPAREN()
-
-    elif isinstance(node, ir.Script):
-        lqp += ind + conf.LPAREN() + conf.kw("script") + "\n"
-        lqp += list_to_str(node.constructs, indent_level + 1, "\n", options, debug_info)
-        lqp += conf.RPAREN()
-
     elif isinstance(node, ir.Loop):
         lqp += ind + conf.LPAREN() + conf.kw("loop") + "\n"
-        lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("init") + "\n"
+        lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("inits") + "\n"
         lqp += list_to_str(node.init, indent_level + 2, "\n", options, debug_info)
         lqp += conf.RPAREN() + "\n"
-        lqp += to_str(node.body, indent_level + 2, options, debug_info)
-        lqp += conf.RPAREN()
-
-    elif isinstance(node, (ir.Assign, ir.Break, ir.Upsert)):
-        s = "assign" if isinstance(node, ir.Assign) else "break" if isinstance(node, ir.Break) else "upsert"
-        lqp += ind + conf.LPAREN() + conf.kw(s) + " " + to_str(node.name, 0, options, debug_info) + "\n"
-        lqp += to_str(node.body, indent_level + 1, options, debug_info)
-        if len(node.attrs) == 0:
-            lqp += f"{conf.RPAREN()}"
-        else:
-            lqp += "\n"
-            lqp += conf.indentation(indent_level + 1) + conf.LPAREN() + conf.kw("attrs") + "\n"
-            lqp += list_to_str(node.attrs, indent_level + 2, "\n", options, debug_info)
-            lqp += f"{conf.RPAREN()}{conf.RPAREN()}"
+        lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("body") + "\n"
+        lqp += list_to_str(node.body, indent_level + 2, "\n", options, debug_info)
+        lqp += conf.RPAREN() + conf.RPAREN()
 
     elif isinstance(node, ir.Abstraction):
         lqp += ind + conf.LPAREN() + conf.LBRACKET()
