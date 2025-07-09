@@ -52,6 +52,8 @@ def test_valid_validator_files():
         try:
             result = parse_lqp(validator_file, content)
             assert result is not None, f"Failed to parse {validator_file}"
+            assert isinstance(result, ir.Transaction), f"{validator_file} does not contain a transaction"
+            validate_lqp(result)
             print(f"Successfully validated {validator_file}")
         except Exception as e:
             pytest.fail(f"Failed to parse valid validator file {validator_file}: {str(e)}")
