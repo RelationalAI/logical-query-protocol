@@ -229,7 +229,6 @@ class PrimitiveType(Enum):
 
 class RelValueType(Enum):
     UNSPECIFIED = 0
-    DECIMAL = 1
     DATE = 2
     DATETIME = 3
     NANOSECOND = 4

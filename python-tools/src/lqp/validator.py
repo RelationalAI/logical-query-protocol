@@ -87,20 +87,47 @@ class ShadowedVariableFinder(LqpVisitor):
 
         self.visit(node.value, in_scope_names | set(v[0].name for v in node.vars))
 
-# Checks for duplicate RelationIds.
+# Checks for invalid duplicate RelationIds. Duplicate relation IDs are only valid
+# when they are within the same fragment in different epochs.
 # Raises ValidationError upon encountering such.
 class DuplicateRelationIdFinder(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
-        self.seen_ids: Set[ir.RelationId] = set()
+        # RelationIds and where they have been defined. The integer represents
+        # the epoch.
+        self.seen_ids: Dict[ir.RelationId, Set[Tuple[int, ir.FragmentId]]] = dict()
+        # We'll use this to give IDs to epochs as we visit them.
+        self.curr_epoch: int = 0
+        self.curr_fragment: Optional[ir.FragmentId] = None
+
         self.visit(txn)
 
     def visit_Def(self, node: ir.Def, *args: Any) -> None:
+        assert self.curr_fragment is not None
+        assert self.curr_epoch > 0
+
         if node.name in self.seen_ids:
-            raise ValidationError(
-                f"Duplicate declaration at {node.meta}: '{node.name.id}'"
-            )
-        else:
-            self.seen_ids.add(node.name)
+            seen_in_epoch, seen_in_fragment = self.seen_ids[node.name]
+            if self.curr_fragment != seen_in_fragment:
+                # Dup ID, different fragments, same or different epoch.
+                raise ValidationError(
+                    f"Duplicate declaration across fragments at {node.meta}: '{node.name.id}'"
+                )
+            elif self.curr_epoch == seen_in_epoch:
+                # Dup ID, same fragment, same epoch.
+                raise ValidationError(
+                    f"Duplicate declaration within fragment in epoch at {node.meta}: '{node.name.id}'"
+                )
+            # else: the final case (dup ID, same fragment, different epoch) is valid.
+
+        self.seen_ids[node.name] = (self.curr_epoch, self.curr_fragment)
+
+    def visit_Fragment(self, node: ir.Fragment, *args: Any) -> None:
+        self.curr_fragment = node.id
+        self.generic_visit(node, args)
+
+    def visit_Epoch(self, node: ir.Epoch, *args: Any) -> None:
+        self.curr_epoch += 1
+        self.generic_visit(node, args)
 
     def visit_Algorithm(self, node: ir.Algorithm, *args: Any) -> None:
         # Only the Defs in init are globally visible so don't visit body Defs.
@@ -110,6 +137,7 @@ class DuplicateRelationIdFinder(LqpVisitor):
                     f"Duplicate declaration at {d.meta}: '{d.id}'"
                 )
             else:
+                # fix this
                 self.seen_ids.add(d)
 
 # Checks that Atoms are applied to the correct number and types of terms.

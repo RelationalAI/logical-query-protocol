@@ -3,25 +3,25 @@
     (local_writes
       (define
         (fragment :f1
-          (def :output_decimal_addition ([a::DECIMAL b::DECIMAL c::DECIMAL]
+          (def :output_decimal_addition ([a::DECIMAL128 b::DECIMAL128 c::DECIMAL128]
             (and
                 (relatom :dec_a a)
                 (relatom :dec_b b)
                 (+ a b c))))
 
-          (def :output_decimal_subtraction ([a::DECIMAL b::DECIMAL c::DECIMAL]
+          (def :output_decimal_subtraction ([a::DECIMAL128 b::DECIMAL128 c::DECIMAL128]
             (and
                 (relatom :dec_a a)
                 (relatom :dec_b b)
                 (- a b c))))
 
-          (def :output_decimal_multiplication ([a::DECIMAL b::DECIMAL c::DECIMAL]
+          (def :output_decimal_multiplication ([a::DECIMAL128 b::DECIMAL128 c::DECIMAL128]
             (and
                 (relatom :dec_a a)
                 (relatom :dec_b b)
                 (* a b c))))
 
-          (def :output_decimal_division ([a::DECIMAL b::DECIMAL c::DECIMAL]
+          (def :output_decimal_division ([a::DECIMAL128 b::DECIMAL128 c::DECIMAL128]
             (and
                 (relatom :dec_a a)
                 (relatom :dec_b b)

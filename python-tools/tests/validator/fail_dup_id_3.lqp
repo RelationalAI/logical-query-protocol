@@ -1,14 +1,15 @@
-;; ERROR: Duplicate declaration at fail_dup_id_3.lqp:8:20: '3181428560199927439'
+;; ERROR: Duplicate declaration across fragments at fail_dup_id_3.lqp:14:11: '14069321933851954459'
+;; Duplicate ID, different fragment, different epoch.
 (transaction
   (epoch
     (local_writes
-      (define (fragment :f1 (def :foo ([] (or)))))
-      (define (fragment :f2
-        (algorithm
-          (exports :foo)
-          (script
-            (loop
-              (init
-                (assign :foo ([] (or))))
-              (script
-                (assign :foo ([] (or))))))))))))
+      (define
+        (fragment :frag1
+          (def :cool
+            ([] (or)))))))
+  (epoch
+    (local_writes
+      (define
+        (fragment :frag2
+          (def :cool
+            ([] (or))))))))

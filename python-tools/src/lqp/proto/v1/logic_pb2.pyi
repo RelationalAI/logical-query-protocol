@@ -18,7 +18,6 @@ class PrimitiveType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
 class RelValueType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = ()
     REL_VALUE_TYPE_UNSPECIFIED: _ClassVar[RelValueType]
-    REL_VALUE_TYPE_DECIMAL: _ClassVar[RelValueType]
     REL_VALUE_TYPE_DATE: _ClassVar[RelValueType]
     REL_VALUE_TYPE_DATETIME: _ClassVar[RelValueType]
     REL_VALUE_TYPE_NANOSECOND: _ClassVar[RelValueType]
@@ -40,7 +39,6 @@ PRIMITIVE_TYPE_FLOAT: PrimitiveType
 PRIMITIVE_TYPE_UINT128: PrimitiveType
 PRIMITIVE_TYPE_INT128: PrimitiveType
 REL_VALUE_TYPE_UNSPECIFIED: RelValueType
-REL_VALUE_TYPE_DECIMAL: RelValueType
 REL_VALUE_TYPE_DATE: RelValueType
 REL_VALUE_TYPE_DATETIME: RelValueType
 REL_VALUE_TYPE_NANOSECOND: RelValueType
