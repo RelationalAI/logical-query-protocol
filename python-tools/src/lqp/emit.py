@@ -207,7 +207,7 @@ def convert_output(o: ir.Output) -> transactions_pb2.Output:
 def convert_export(e: ir.Export) -> transactions_pb2.Export:
     return transactions_pb2.Export(config=convert_export_config(e.config)) # type: ignore
 
-def convert_export_config(ec: ir.ExportCSVConfig) -> transactions_pb2.ExportConfig:
+def convert_export_config(ec: ir.ExportCSVConfig) -> transactions_pb2.ExportCSVConfig:
     return transactions_pb2.ExportCSVConfig(
         data_columns=[convert_export_csv_column(c) for c in ec.data_columns],
         path=ec.path,
