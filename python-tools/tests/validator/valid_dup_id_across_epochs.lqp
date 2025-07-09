@@ -1,4 +1,4 @@
-;; Fine because the relation is duplicated in the same fragment across epochs.
+;; Duplicate ID, same fragment, different epoch.
 (transaction
   (epoch
     (persistent_writes

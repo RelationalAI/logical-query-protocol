@@ -1,4 +1,5 @@
-;; ERROR: Duplicate declaration across fragments at fail_dup_id_2.lqp:6:29: '3181428560199927439'
+;; ERROR: Duplicate declaration across fragments at fail_dup_id_2.lqp:7:29: '3181428560199927439'
+;; Duplicate ID, different fragment, same epoch.
 (transaction
   (epoch
     (local_writes
