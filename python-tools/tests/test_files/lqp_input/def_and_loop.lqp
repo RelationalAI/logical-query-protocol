@@ -9,6 +9,7 @@
             (script
               (loop
                 (init
-                  (assign :test2 ([x::INT] (atom :bob x))))
+                  (break :test3 ([x::INT] (atom :carol x)))
+                  )
                 (script
-                  (break :test3 ([x::INT] (atom :carol x))))))))))))
+                  (assign :test2 ([x::INT] (atom :bob x))))))))))))
