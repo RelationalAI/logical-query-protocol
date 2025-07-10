@@ -211,7 +211,6 @@ class LQPTransformer(Transformer):
         return items
 
     def export_column(self, meta, items):
-        # items[0] is the column number, items[1] is the column name, items[2] is the relation_id
         return ir.ExportCSVColumn(
             column_name=items[0],
             column_data=items[1],
