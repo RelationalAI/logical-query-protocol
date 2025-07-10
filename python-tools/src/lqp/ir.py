@@ -309,8 +309,8 @@ class Output(LqpNode):
 # ExportCSVConfig
 @dataclass(frozen=True)
 class ExportCSVConfig(LqpNode):
-    data_columns: Sequence[ExportCSVColumn]
     path: str
+    data_columns: Sequence[ExportCSVColumn]
     partition_size: Optional[int] = None
     compression: Optional[str] = None
 

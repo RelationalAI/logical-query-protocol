@@ -49,8 +49,8 @@ message Context {
 //
 
 message ExportCSVConfig {
-  repeated ExportCSVColumn data_columns = 1;
-  string path = 2;
+  string path = 1;
+  repeated ExportCSVColumn data_columns = 2;
 
   optional int64 partition_size = 3;
   optional string compression = 4;

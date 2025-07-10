@@ -60,9 +60,9 @@ class Context(_message.Message):
     def __init__(self, relations: _Optional[_Iterable[_Union[_logic_pb2.RelationId, _Mapping]]] = ...) -> None: ...
 
 class ExportCSVConfig(_message.Message):
-    __slots__ = ("data_columns", "path", "partition_size", "compression", "syntax_header_row", "syntax_missing_string", "syntax_delim", "syntax_quotechar", "syntax_escapechar")
-    DATA_COLUMNS_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("path", "data_columns", "partition_size", "compression", "syntax_header_row", "syntax_missing_string", "syntax_delim", "syntax_quotechar", "syntax_escapechar")
     PATH_FIELD_NUMBER: _ClassVar[int]
+    DATA_COLUMNS_FIELD_NUMBER: _ClassVar[int]
     PARTITION_SIZE_FIELD_NUMBER: _ClassVar[int]
     COMPRESSION_FIELD_NUMBER: _ClassVar[int]
     SYNTAX_HEADER_ROW_FIELD_NUMBER: _ClassVar[int]
@@ -70,8 +70,8 @@ class ExportCSVConfig(_message.Message):
     SYNTAX_DELIM_FIELD_NUMBER: _ClassVar[int]
     SYNTAX_QUOTECHAR_FIELD_NUMBER: _ClassVar[int]
     SYNTAX_ESCAPECHAR_FIELD_NUMBER: _ClassVar[int]
-    data_columns: _containers.RepeatedCompositeFieldContainer[ExportCSVColumn]
     path: str
+    data_columns: _containers.RepeatedCompositeFieldContainer[ExportCSVColumn]
     partition_size: int
     compression: str
     syntax_header_row: bool
@@ -79,7 +79,7 @@ class ExportCSVConfig(_message.Message):
     syntax_delim: str
     syntax_quotechar: str
     syntax_escapechar: str
-    def __init__(self, data_columns: _Optional[_Iterable[_Union[ExportCSVColumn, _Mapping]]] = ..., path: _Optional[str] = ..., partition_size: _Optional[int] = ..., compression: _Optional[str] = ..., syntax_header_row: bool = ..., syntax_missing_string: _Optional[str] = ..., syntax_delim: _Optional[str] = ..., syntax_quotechar: _Optional[str] = ..., syntax_escapechar: _Optional[str] = ...) -> None: ...
+    def __init__(self, path: _Optional[str] = ..., data_columns: _Optional[_Iterable[_Union[ExportCSVColumn, _Mapping]]] = ..., partition_size: _Optional[int] = ..., compression: _Optional[str] = ..., syntax_header_row: bool = ..., syntax_missing_string: _Optional[str] = ..., syntax_delim: _Optional[str] = ..., syntax_quotechar: _Optional[str] = ..., syntax_escapechar: _Optional[str] = ...) -> None: ...
 
 class ExportCSVColumn(_message.Message):
     __slots__ = ("column_name", "column_data")
