@@ -28,7 +28,7 @@ output: "(output" name? relation_id ")"
 export: "(export" export_csv_config ")"
 abort: "(abort" name? relation_id ")"
 
-export_csv_config: "(export_csv_config" export_columns export_path config_dict ")"
+export_csv_config: "(export_csv_config" export_path export_columns config_dict ")"
 
 export_columns: "(columns" export_column* ")"
 export_column: "(column" STRING relation_id ")"
@@ -195,14 +195,13 @@ class LQPTransformer(Transformer):
         assert len(items) >= 2, "Export config must have at least columns and path"
 
         export_fields = {}
-        for i in items[1:]:
+        for i in items[2:]:
             assert isinstance(i, dict)
             export_fields.update(i)
 
-        assert 'path' in export_fields, "Export config must have a path"
-
         return ir.ExportCSVConfig(
-            data_columns=items[0],
+            path=items[0],
+            data_columns=items[1],
             **export_fields,
             meta=self.meta(meta)
         )
@@ -220,7 +219,7 @@ class LQPTransformer(Transformer):
         )
 
     def export_path(self, meta, items):
-        return {'path': items[0]}
+        return items[0]
 
     def abort(self, meta, items):
         if len(items) == 1:
