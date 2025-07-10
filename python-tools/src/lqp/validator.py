@@ -316,10 +316,10 @@ class LoopyBadBreakFinder(LqpVisitor):
         self.visit(txn)
 
     def visit_Loop(self, node: ir.Loop, *args: Any) -> None:
-        for i in node.body.constructs:
+        for i in node.init:
             if isinstance(i, ir.Break):
                 raise ValidationError(
-                    f"Break rule found outside of init at {i.meta}: '{i.name.id}'"
+                    f"Break rule found outside of body at {i.meta}: '{i.name.id}'"
                 )
 
 # Loopy contract: Algorithm exports cannot be in loop body
