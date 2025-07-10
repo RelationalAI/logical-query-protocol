@@ -129,11 +129,11 @@ def style_config(options: Dict) -> StyleConfig:
 
 # Call to_str on all nodes, each of which with indent_level, separating them
 # by delim.
-def list_to_str(nodes: Sequence[Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Specialized]], indent_level: int, delim: str, options: Dict, debug_info: Dict = {}) -> str:
+def list_to_str(nodes: Sequence[Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.SpecializedValue]], indent_level: int, delim: str, options: Dict, debug_info: Dict = {}) -> str:
     return delim.join(map(lambda n: to_str(n, indent_level, options, debug_info), nodes))
 
 # Produces "(terms term1 term2 ...)" (all on one line) indented at indent_level.
-def terms_to_str(terms: Sequence[Union[ir.Term, ir.Specialized]], indent_level: int, options: Dict, debug_info: Dict = {}) -> str:
+def terms_to_str(terms: Sequence[Union[ir.RelTerm, ir.SpecializedValue]], indent_level: int, options: Dict, debug_info: Dict = {}) -> str:
     # Default to true for styled.
     conf = style_config(options)
 
@@ -172,7 +172,7 @@ def program_to_str(node: ir.Transaction, options: Dict = {}) -> str:
     for epoch in node.epochs:
         s += "\n" + conf.indentation(1) + conf.LPAREN() + conf.kw("epoch")
         section_strs: List[str] = []
-        def build_section(keyword: str, items_list: Sequence[Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Specialized]], debug_info: Dict = {}) -> Union[str, None]:
+        def build_section(keyword: str, items_list: Sequence[Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.SpecializedValue]], debug_info: Dict = {}) -> Union[str, None]:
             if not items_list:
                 return None
             sec_s = "\n" + conf.indentation(2) + conf.LPAREN() + conf.kw(keyword) + "\n"
@@ -218,7 +218,7 @@ def _collect_debug_infos(node: ir.LqpNode) -> Dict[ir.RelationId, str]:
                 debug_infos = _collect_debug_infos(elt) | debug_infos
     return debug_infos
 
-def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Specialized], indent_level: int, options: Dict = {}, debug_info: Dict = {}) -> str:
+def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.SpecializedValue], indent_level: int, options: Dict = {}, debug_info: Dict = {}) -> str:
     conf = style_config(options)
 
     ind = conf.indentation(indent_level)
@@ -340,20 +340,21 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
     elif isinstance(node, (int, float)):
         lqp += f"{ind}{str(node)}"
 
-    elif isinstance(node, ir.Specialized):
-        val_to_print = node.value
-        if isinstance(val_to_print, str):
-            lqp += f"{ind}#\"{val_to_print}\""
-        elif isinstance(val_to_print, ir.UInt128):
-            lqp += f"{ind}#{hex(val_to_print.value)}"
-        elif isinstance(val_to_print, ir.Int128):
-            lqp += f"{ind}#{val_to_print.value}i128"
-        elif isinstance(val_to_print, bool):
-            lqp += f"{ind}#{str(val_to_print).lower()}"
-        elif isinstance(val_to_print, (int, float)):
-            lqp += f"{ind}#{val_to_print}"
-        else:
-            lqp += f"{ind}#{val_to_print}"
+    elif isinstance(node, ir.SpecializedValue):
+        lqp += specialized_to_str(node)
+        # val_to_print = node.value
+        # if isinstance(val_to_print, str):
+        #     lqp += f"{ind}#\"{val_to_print}\""
+        # elif isinstance(val_to_print, ir.UInt128):
+        #     lqp += f"{ind}#{hex(val_to_print.value)}"
+        # elif isinstance(val_to_print, ir.Int128):
+        #     lqp += f"{ind}#{val_to_print.value}i128"
+        # elif isinstance(val_to_print, bool):
+        #     lqp += f"{ind}#{str(val_to_print).lower()}"
+        # elif isinstance(val_to_print, (int, float)):
+        #     lqp += f"{ind}#{val_to_print}"
+        # else:
+        #     lqp += f"{ind}#{val_to_print}"
 
     elif isinstance(node, ir.Attribute):
         lqp += f"{ind}{conf.LPAREN()}{conf.kw('attribute')} :{node.name} {list_to_str(node.args, 0, ' ', options, debug_info)}{conf.RPAREN()}"
@@ -481,8 +482,14 @@ def to_string(node: ir.LqpNode, options: Dict = {}) -> str:
     else:
         raise NotImplementedError(f"to_string not implemented for top-level node type {type(node)}.")
 
+def specialized_to_str(value: Union[ir.SpecializedValue,ir.SpecializedType]) -> str:
+    return "#" + to_str(value.value, 0, {}, {})
+
 def type_to_str(node: ir.RelType) -> str:
-    return f"{node.name}"
+    if isinstance(node, ir.PrimitiveType):
+        return node.name
+    elif isinstance(node, ir.SpecializedType):
+        return specialized_to_str(node.value)
 
 def id_to_name(options: Dict, debug_info: Dict, rid: ir.RelationId) -> str:
     if not has_option(options, PrettyOptions.PRINT_NAMES):
