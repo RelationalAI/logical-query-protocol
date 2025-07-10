@@ -275,6 +275,7 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
 
     elif isinstance(node, ir.Abstraction):
         lqp += ind + conf.LPAREN() + conf.LBRACKET()
+        print("what is this??", [(v[0], v[1]) for v in node.vars])
         lqp += " ".join(map(lambda v: conf.uname(v[0].name) + conf.type_anno("::" + type_to_str(v[1])), node.vars))
         lqp += conf.RBRACKET() + "\n"
         lqp += f"{to_str(node.value, indent_level + 1, options, debug_info)}{conf.RPAREN()}"
@@ -487,7 +488,7 @@ def specialized_to_str(value: Union[ir.SpecializedValue,ir.SpecializedType]) -> 
 
 def type_to_str(node: ir.RelType) -> str:
     if isinstance(node, ir.PrimitiveType):
-        return node.name
+        return str(node.name)
     elif isinstance(node, ir.SpecializedType):
         return specialized_to_str(node.value)
 

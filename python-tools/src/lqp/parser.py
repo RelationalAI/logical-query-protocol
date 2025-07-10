@@ -101,8 +101,8 @@ name: ":" SYMBOL
 
 primitive_value: STRING | NUMBER | FLOAT | UINT128 | INT128
 
-rel_type: primitive_type | specialized_type
-primitive_type: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
+rel_type: PRIMITIVE_TYPE | specialized_type
+PRIMITIVE_TYPE: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
               | "DECIMAL64" | "DECIMAL128" | "DATE" | "DATETIME"
 specialized_type: "#" primitive_value
 
@@ -141,10 +141,8 @@ class LQPTransformer(Transformer):
 
     def PRIMITIVE_TYPE(self, s):
         return getattr(ir.PrimitiveType, s.upper())
-
-    def REL_VALUE_TYPE(self, s):
-        return getattr(ir.RelValueType, s.upper())
-
+    def specialized_type(self, meta, items):
+        return ir.SpecializedType(value=items[0], meta=self.meta(meta))
     def rel_type(self, meta, items):
         return items[0]
 
@@ -286,8 +284,8 @@ class LQPTransformer(Transformer):
         return ir.Abstraction(vars=items[0], value=items[1], meta=self.meta(meta))
 
     def binding(self, meta, items):
-        name, rel_type = items
-        return (ir.Var(name=name, meta=self.meta(meta)), rel_type)
+        name, rel_t = items
+        return (ir.Var(name=name, meta=self.meta(meta)), rel_t)
 
     def vars(self, meta, items):
         return items
