@@ -1,4 +1,4 @@
-;; ERROR: Break rule found outside of init at fail_break_rule.lqp:13:17: '3181428560199927439'
+;; ERROR: Break rule found outside of body at fail_break_rule.lqp:11:17: '3181428560199927439'
 (transaction
   (epoch
     (local_writes
@@ -8,6 +8,6 @@
           (script
             (loop
               (init
-                (assign :foo ([] (or))))
+                (break :foo ([] (or))))
               (script
-                (break :foo ([] (or))))))))))))
+                (assign :foo ([] (or))))))))))))
