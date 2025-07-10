@@ -100,12 +100,12 @@ class Formula(LqpNode):
 class Exists(Formula):
     body: Abstraction
 
-# Reduce(op::Abstraction, body::Abstraction, terms::Term[])
+# Reduce(op::Abstraction, body::Abstraction, terms::RelTerm[])
 @dataclass(frozen=True)
 class Reduce(Formula):
     op: Abstraction
     body: Abstraction
-    terms: Sequence[Term]
+    terms: Sequence[RelTerm]
 
 # Conjunction(args::Formula[])
 @dataclass(frozen=True)
@@ -122,24 +122,24 @@ class Disjunction(Formula):
 class Not(Formula):
     arg: Formula
 
-# FFI(name::string, args::Abstraction[], terms::Term[])
+# FFI(name::string, args::Abstraction[], terms::RelTerm[])
 @dataclass(frozen=True)
 class FFI(Formula):
     name: str
     args: Sequence[Abstraction]
-    terms: Sequence[Term]
+    terms: Sequence[RelTerm]
 
-# Atom(name::RelationId, terms::Term[])
+# Atom(name::RelationId, terms::RelTerm[])
 @dataclass(frozen=True)
 class Atom(Formula):
     name: RelationId
-    terms: Sequence[Term]
+    terms: Sequence[RelTerm]
 
-# Pragma(name::string, terms::Term[])
+# Pragma(name::string, terms::RelTerm[])
 @dataclass(frozen=True)
 class Pragma(Formula):
     name: str
-    terms: Sequence[Term]
+    terms: Sequence[RelTerm]
 
 # Primitive(name::string, terms::RelTerm[])
 @dataclass(frozen=True)
@@ -153,12 +153,12 @@ class RelAtom(Formula):
     name: str
     terms: Sequence[RelTerm]
 
-# Cast(type::RelType, input::Term, result::Term)
+# Cast(type::RelType, input::RelTerm, result::RelTerm)
 @dataclass(frozen=True)
 class Cast(Formula):
     type: RelType
-    input: Term
-    result: Term
+    input: RelTerm
+    result: RelTerm
 
 # Var(name::string)
 @dataclass(frozen=True)
@@ -181,15 +181,13 @@ PrimitiveValue = Union[str, int, float, UInt128, Int128]
 # Constant(value::PrimitiveValue)
 Constant = Union[PrimitiveValue]
 
-# Term := Var | Constant
-Term = Union[Var, Constant]
-
 # SpecializedValue(value::PrimitiveValue)
 @dataclass(frozen=True)
-class Specialized(LqpNode):
+class SpecializedValue(LqpNode):
     value: PrimitiveValue
 
-RelTerm = Union[Term, Specialized]
+# RelTerm := Var | Constant | Specialized
+RelTerm = Union[Var, Constant, SpecializedValue]
 
 # Attribute(name::string, args::Constant[])
 @dataclass(frozen=True)
@@ -223,31 +221,20 @@ class PrimitiveType(Enum):
     FLOAT = 3
     UINT128 = 4
     INT128 = 5
+    DATE = 6
+    DATETIME = 7
+    DECIMAL64 = 8
+    DECIMAL128 = 9
 
     def __str__(self) -> str:
         return self.name
 
-class RelValueType(Enum):
-    UNSPECIFIED = 0
-    DATE = 2
-    DATETIME = 3
-    NANOSECOND = 4
-    MICROSECOND = 5
-    MILLISECOND = 6
-    SECOND = 7
-    MINUTE = 8
-    HOUR = 9
-    DAY = 10
-    WEEK = 11
-    MONTH = 12
-    YEAR = 13
-    DECIMAL64 = 14
-    DECIMAL128 = 15
+# SpecializedType(value::PrimitiveValue)
+@dataclass(frozen=True)
+class SpecializedType(LqpNode):
+    value: PrimitiveValue
 
-    def __str__(self) -> str:
-        return self.name
-
-RelType = Union[PrimitiveType, RelValueType]
+RelType = Union[PrimitiveType, SpecializedType]
 
 # --- Fragment Types ---
 
