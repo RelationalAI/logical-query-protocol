@@ -1,0 +1,13 @@
+;; ERROR: Export rule found in body at fail_bad_export.lqp:13:17: '3181428560199927439'
+(transaction
+  (epoch
+    (local_writes
+      (define (fragment :f1
+        (algorithm
+          (exports :foo)
+          (script
+            (loop
+              (init
+                (assign :bar ([] (or))))
+              (script
+                (assign :foo ([] (or))))))))))))

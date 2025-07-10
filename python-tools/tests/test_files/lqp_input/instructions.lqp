@@ -1,0 +1,11 @@
+(transaction
+  (epoch
+    (persistent_writes
+      (define
+        (fragment :instructions
+          (algorithm
+            (exports :foo :bar)
+            (script
+              (upsert :test1 ([x::INT] (atom :alice x)))
+              (break :test2 ([x::INT] (atom :alice x)))
+              (assign :test4 ([x::INT] (atom :alice x))))))))))

@@ -1,0 +1,23 @@
+;; Duplicate ID, same fragment, different epoch.
+(transaction
+  (epoch
+    (persistent_writes
+      (define
+        (fragment :f1
+          (def :Adult
+            ([x::INT]
+             (exists [age::INT]
+               (and
+                 (atom :person_age x age)
+                 (>= age 18)))))))))
+
+  (epoch
+    (persistent_writes
+      (define
+        (fragment :f1
+          (def :Adult
+            ([x::INT]
+             (exists [age::INT]
+               (and
+                 (atom :person_age x age)
+                 (>= age 21))))))))))

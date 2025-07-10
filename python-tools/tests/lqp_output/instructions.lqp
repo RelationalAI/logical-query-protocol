@@ -1,0 +1,17 @@
+(transaction
+  (epoch
+    (persistent_writes
+      (define
+        (fragment :instructions
+          (algorithm
+            (exports 3181428560199927439 18221048622641146868)
+            (script
+              (upsert 1967807609550870936
+                ([x::INT]
+                  (atom 3159282601090220207 x)))
+              (break 6931104569591695457
+                ([x::INT]
+                  (atom 3159282601090220207 x)))
+              (assign 11882225170668076754
+                ([x::INT]
+                  (atom 3159282601090220207 x))))))))))
