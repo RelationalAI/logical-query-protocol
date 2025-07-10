@@ -97,7 +97,7 @@ message Exists {
 message Reduce {
   Abstraction op = 1;
   Abstraction body = 2;
-  repeated Term terms = 3;
+  repeated RelTerm terms = 3;
 }
 
 message Conjunction {
@@ -115,17 +115,17 @@ message Not {
 message FFI {
   string name = 1;
   repeated Abstraction args = 2;
-  repeated Term terms = 3;
+  repeated RelTerm terms = 3;
 }
 
 message Atom {
   RelationId name = 1;
-  repeated Term terms = 2;
+  repeated RelTerm terms = 2;
 }
 
 message Pragma {
   string name = 1;
-  repeated Term terms = 2;
+  repeated RelTerm terms = 2;
 }
 
 message Primitive {
@@ -140,21 +140,15 @@ message RelAtom {
 
 message Cast {
   RelType type = 1;
-  Term input = 2;
-  Term result = 3;
+  RelTerm input = 2;
+  RelTerm result = 3;
 }
 
 message RelTerm {
   oneof rel_term_type {
     Value specialized_value = 1;
-    Term term = 2;
-  }
-}
-
-message Term {
-  oneof term_type {
-    Var var = 1;
-    Value constant = 2;
+    Var var = 2;
+    Value constant = 3;
   }
 }
 
@@ -175,7 +169,7 @@ message RelationId {
 message RelType {
   oneof rel_type {
     PrimitiveType primitive_type = 1;
-    RelValueType value_type = 2;
+    Value specialized_type = 2;
   }
 }
 
@@ -186,28 +180,12 @@ enum PrimitiveType {
   PRIMITIVE_TYPE_FLOAT = 3;
   PRIMITIVE_TYPE_UINT128 = 4;
   PRIMITIVE_TYPE_INT128 = 5;
-}
 
-enum RelValueType {
-  REL_VALUE_TYPE_UNSPECIFIED = 0;
-  reserved 1;
+  PRIMITIVE_TYPE_DATE = 7;
+  PRIMITIVE_TYPE_DATETIME = 8;
 
-  REL_VALUE_TYPE_DATE = 2;
-  REL_VALUE_TYPE_DATETIME = 3;
-
-  REL_VALUE_TYPE_NANOSECOND = 4;
-  REL_VALUE_TYPE_MICROSECOND = 5;
-  REL_VALUE_TYPE_MILLISECOND = 6;
-  REL_VALUE_TYPE_SECOND = 7;
-  REL_VALUE_TYPE_MINUTE = 8;
-  REL_VALUE_TYPE_HOUR = 9;
-  REL_VALUE_TYPE_DAY = 10;
-  REL_VALUE_TYPE_WEEK = 11;
-  REL_VALUE_TYPE_MONTH = 12;
-  REL_VALUE_TYPE_YEAR = 13;
-
-  REL_VALUE_TYPE_DECIMAL64 = 14;
-  REL_VALUE_TYPE_DECIMAL128 = 15;
+  PRIMITIVE_TYPE_DECIMAL64 = 9;
+  PRIMITIVE_TYPE_DECIMAL128 = 10;
 }
 
 message Value {
