@@ -45,6 +45,30 @@ message Context {
 }
 
 //
+// Export config
+//
+
+message ExportCSVConfig {
+  string path = 1;
+  repeated ExportCSVColumn data_columns = 2;
+
+  optional int64 partition_size = 3;
+  optional string compression = 4;
+  optional bool             syntax_header_row = 5;
+  optional string           syntax_missing_string = 6;
+  optional string           syntax_delim = 7;
+  optional string           syntax_quotechar = 8;
+  optional string           syntax_escapechar = 9;
+
+  // TODO: support data integration options, e.g., private tokens for private buckets etc.
+}
+
+message ExportCSVColumn {
+  string column_name = 1;
+  RelationId column_data = 2;
+}
+
+//
 // Read operations
 //
 
@@ -54,6 +78,7 @@ message Read {
     Output output = 2;
     WhatIf what_if = 3;
     Abort abort = 4;
+    Export export = 5;
   }
 }
 
@@ -64,6 +89,14 @@ message Demand {
 message Output {
   string name = 1;
   RelationId relation_id = 2;
+}
+
+message Export {
+  oneof export_config {
+    ExportCSVConfig csv_config = 1;
+
+    // TODO: support JSON export
+  }
 }
 
 message WhatIf {

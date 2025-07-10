@@ -1,0 +1,52 @@
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :f1
+          (def 2344968532315871158
+            ([row::INT v::INT]
+              (and
+                (primitive :rel_primitive_eq row 1)
+                (primitive :rel_primitive_eq 2 v))))
+          (def 3069421044470708673
+            ([row::INT v::STRING]
+              (and
+                (primitive :rel_primitive_eq row 1)
+                (primitive :rel_primitive_eq v "hello"))))
+          (def 3616683933217157613
+            ([row_1::STRING row_2::INT v::FLOAT]
+              (and
+                (primitive :rel_primitive_eq row_1 "b")
+                (primitive :rel_primitive_eq row_2 12)
+                (primitive :rel_primitive_eq v 6.1))))
+          (def 11835545690810417679
+            ([row_1::STRING row_2::INT v::INT]
+              (and
+                (primitive :rel_primitive_eq row_1 "b")
+                (primitive :rel_primitive_eq row_2 12)
+                (primitive :rel_primitive_eq v 123)))))))
+    (reads
+      (export
+        (export_csv_config
+          (path "/tmp/hello_lqp_1.csv")          (columns (column "col1name" 2344968532315871158) (column "col2name" 3069421044470708673))
+
+          {
+            :partition_size 10
+            :compression ""
+            :syntax_quotechar "\""
+            :syntax_escapechar "\\"}))
+      (export
+        (export_csv_config
+          (path "/tmp/hello_lqp_2.csv")          (columns (column "blahblah" 3616683933217157613) (column "foofoo" 11835545690810417679))
+
+          {
+            :syntax_quotechar "\""
+            :syntax_escapechar "\\"})))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `2344968532315871158` -> `cola1`
+;; 	 ID `3069421044470708673` -> `cola2`
+;; 	 ID `3616683933217157613` -> `colb1`
+;; 	 ID `11835545690810417679` -> `colb2`

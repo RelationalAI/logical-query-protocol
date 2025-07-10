@@ -1,0 +1,25 @@
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :f1
+          (def 17307602785083346210
+            ([row::INT v::INT]
+              (and
+                (primitive :rel_primitive_eq row 1)
+                (primitive :rel_primitive_eq 2 v))))
+          (def 8011686847096043948
+            ([row::INT v::STRING]
+              (and
+                (primitive :rel_primitive_eq row 1)
+                (primitive :rel_primitive_eq v "hello")))))))
+    (reads
+      (export
+        (export_csv_config
+          (path "/tmp/hello_lqp.csv")          (columns (column "col1name" 17307602785083346210) (column "col2name" 8011686847096043948))
+
+          {
+            :partition_size 10
+            :compression ""
+            :syntax_quotechar "\""
+            :syntax_escapechar "\\"})))))

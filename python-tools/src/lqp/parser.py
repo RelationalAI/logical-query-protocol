@@ -22,10 +22,17 @@ define: "(define" fragment ")"
 undefine: "(undefine" fragment_id ")"
 context: "(context" relation_id* ")"
 
-read: demand | output | abort
+read: demand | output | export | abort
 demand: "(demand" relation_id ")"
 output: "(output" name? relation_id ")"
+export: "(export" export_csv_config ")"
 abort: "(abort" name? relation_id ")"
+
+export_csv_config: "(export_csv_config" export_path export_columns config_dict ")"
+
+export_columns: "(columns" export_column* ")"
+export_column: "(column" STRING relation_id ")"
+export_path: "(path" STRING ")"
 
 fragment: "(fragment" fragment_id declaration* ")"
 
@@ -103,15 +110,19 @@ REL_VALUE_TYPE: "DECIMAL64" | "DECIMAL128" | "DATE" | "DATETIME"
               | "DAY" | "WEEK" | "MONTH" | "YEAR"
 
 SYMBOL: /[a-zA-Z_][a-zA-Z0-9_-]*/
-STRING: "\\"" /[^"]*/ "\\""
+STRING: ESCAPED_STRING
 NUMBER: /\\d+/
 INT128: /\\d+i128/
 UINT128: /0x[0-9a-fA-F]+/
 FLOAT: /\\d+\\.\\d+/
 
+config_dict: "{" config_key_value* "}"
+config_key_value: ":" SYMBOL primitive_value
+
 COMMENT: /;;.*/  // Matches ;; followed by any characters except newline
 %ignore /\\s+/
 %ignore COMMENT
+%import common.ESCAPED_STRING -> ESCAPED_STRING
 """
 
 
@@ -176,6 +187,38 @@ class LQPTransformer(Transformer):
         if len(items) == 1:
             return ir.Output(name=None, relation_id=items[0], meta=self.meta(meta))
         return ir.Output(name=items[0], relation_id=items[1], meta=self.meta(meta))
+
+    def export(self, meta, items):
+        return ir.Export(config=items[0], meta=self.meta(meta))
+
+    def export_csv_config(self, meta, items):
+        assert len(items) >= 2, "Export config must have at least columns and path"
+
+        export_fields = {}
+        for i in items[2:]:
+            assert isinstance(i, dict)
+            export_fields.update(i)
+
+        return ir.ExportCSVConfig(
+            path=items[0],
+            data_columns=items[1],
+            **export_fields,
+            meta=self.meta(meta)
+        )
+
+    def export_columns(self, meta, items):
+        # items is a list of ExportCSVColumn objects
+        return items
+
+    def export_column(self, meta, items):
+        return ir.ExportCSVColumn(
+            column_name=items[0],
+            column_data=items[1],
+            meta=self.meta(meta)
+        )
+
+    def export_path(self, meta, items):
+        return items[0]
 
     def abort(self, meta, items):
         if len(items) == 1:
@@ -372,7 +415,7 @@ class LQPTransformer(Transformer):
     def primitive_value(self, meta, items):
         return items[0]
     def STRING(self, s):
-        return s[1:-1] # Strip quotes
+        return s[1:-1].encode().decode('unicode_escape') # Strip quotes and process escaping
     def NUMBER(self, n):
         return int(n)
     def FLOAT(self, f):
@@ -386,6 +429,17 @@ class LQPTransformer(Transformer):
         u= u[:-4]  # Remove the 'i128' suffix
         int128_val = int(u)
         return ir.Int128(value=int128_val, meta=None)
+
+    def config_dict(self, meta, items):
+        # items is a list of key-value pairs
+        config = {}
+        for (k, v) in items:
+            config[k] = v
+        return config
+
+    def config_key_value(self, meta, items):
+        assert len(items) == 2
+        return (items[0], items[1])
 
 # LALR(1) is significantly faster than Earley for parsing, especially on larger inputs. It
 # uses a precomputed parse table, reducing runtime complexity to O(n) (linear in input

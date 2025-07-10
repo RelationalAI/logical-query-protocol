@@ -258,6 +258,28 @@ def convert_output(o: ir.Output) -> transactions_pb2.Output:
         kwargs['name'] = o.name
     return transactions_pb2.Output(**kwargs) # type: ignore
 
+def convert_export(e: ir.Export) -> transactions_pb2.Export:
+    return transactions_pb2.Export(csv_config=convert_export_config(e.config)) # type: ignore
+
+def convert_export_config(ec: ir.ExportCSVConfig) -> transactions_pb2.ExportCSVConfig:
+    return transactions_pb2.ExportCSVConfig(
+        data_columns=[convert_export_csv_column(c) for c in ec.data_columns],
+        path=ec.path,
+        partition_size=ec.partition_size if ec.partition_size is not None else 0,
+        compression=ec.compression if ec.compression is not None else "",
+        syntax_header_row=ec.syntax_header_row if ec.syntax_header_row is not None else True,
+        syntax_missing_string=ec.syntax_missing_string if ec.syntax_missing_string is not None else "",
+        syntax_delim=ec.syntax_delim if ec.syntax_delim is not None else ",",
+        syntax_quotechar=ec.syntax_quotechar if ec.syntax_quotechar is not None else '"',
+        syntax_escapechar=ec.syntax_escapechar if ec.syntax_escapechar is not None else '\\'
+    )
+
+def convert_export_csv_column(ec: ir.ExportCSVColumn) -> transactions_pb2.ExportCSVColumn:
+    return transactions_pb2.ExportCSVColumn(
+        column_name=ec.column_name,
+        column_data=convert_relation_id(ec.column_data),
+    )
+
 def convert_abort(a: ir.Abort) -> transactions_pb2.Abort:
     kwargs: Dict[str, Any] = {'relation_id': convert_relation_id(a.relation_id)}
     if a.name is not None:
@@ -280,6 +302,8 @@ def convert_read(r: ir.Read) -> transactions_pb2.Read:
         return transactions_pb2.Read(what_if=convert_whatif(rt)) # Note the underscore
     elif isinstance(rt, ir.Abort):
         return transactions_pb2.Read(abort=convert_abort(rt))
+    elif isinstance(rt, ir.Export):
+        return transactions_pb2.Read(export=convert_export(rt))
     else:
         raise TypeError(f"Unsupported Read type: {type(rt)}")
 

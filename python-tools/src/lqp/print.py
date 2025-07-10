@@ -147,6 +147,25 @@ def terms_to_str(terms: Sequence[Union[ir.Term, ir.Specialized]], indent_level: 
 
     return lqp
 
+# Produces
+# { :key1 value1
+#   :key2 value2
+#   ... }
+def config_dict_to_str(config: Dict[str, Union[str, int]], indent_level: int, options: Dict) -> str:
+    conf = style_config(options)
+    ind = conf.indentation(indent_level)
+
+    if len(config) == 0:
+        return f"{ind}{{}}"
+
+    config_str = ind + "{"
+    for k, v in config.items():
+        config_str += f"\n{ind}{conf.SIND()}:{str(k)} {to_str(v, 0, options)}"
+
+    config_str += "}"
+
+    return config_str
+
 def program_to_str(node: ir.Transaction, options: Dict = {}) -> str:
     conf = style_config(options)
     s = conf.indentation(0) + conf.LPAREN() + conf.kw("transaction")
@@ -311,7 +330,7 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         lqp += f"{ind}{conf.uname(node.name)}"
 
     elif isinstance(node, str):
-        lqp += f"{ind}\"{node}\""
+        lqp += ind + "\"" + node.encode('unicode_escape').replace(b'"', b'\\"').decode() + "\""
     elif isinstance(node, ir.UInt128):
         lqp += f"{ind}{hex(node.value)}"
     elif isinstance(node, ir.Int128):
@@ -372,6 +391,42 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
     elif isinstance(node, ir.Output):
         name_str = f":{conf.uname(node.name)} " if node.name else ""
         lqp += f"{ind}{conf.LPAREN()}{conf.kw('output')} {name_str}{to_str(node.relation_id, 0, options, debug_info)}{conf.RPAREN()}"
+
+    elif isinstance(node, ir.Export):
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('export')}\n{to_str(node.config, indent_level + 1, options, debug_info)}{conf.RPAREN()}"
+
+    elif isinstance(node, ir.ExportCSVConfig):
+        def line(kw: str, body: str) -> str:
+            return f"{ind}{conf.SIND()}{conf.LPAREN()}{conf.kw(kw)} {body}{conf.RPAREN()}"
+
+        def line_conf_f(kw: str, field: Union[int, str]) -> str:
+            return line(kw, to_str(field, 0, options, debug_info))
+
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('export_csv_config')}\n"
+        lqp += line_conf_f('path', node.path)
+        lqp += line('columns', list_to_str(node.data_columns, 0, " ", options, debug_info)) + "\n"
+
+        config_dict = {}
+        if node.partition_size is not None:
+            config_dict['partition_size'] = node.partition_size
+        if node.compression is not None:
+            config_dict['compression'] = node.compression
+        if node.syntax_header_row is not None:
+            config_dict['header_row'] = node.syntax_header_row
+        if node.syntax_missing_string is not None:
+            config_dict['syntax_missing_string'] = node.syntax_missing_string
+        if node.syntax_delim is not None:
+            config_dict['syntax_delim'] = node.syntax_delim
+        if node.syntax_quotechar is not None:
+            config_dict['syntax_quotechar'] = node.syntax_quotechar
+        if node.syntax_escapechar is not None:
+            config_dict['syntax_escapechar'] = node.syntax_escapechar
+
+        lqp += "\n" + config_dict_to_str(config_dict, indent_level + 1, options)
+        lqp += f"{conf.RPAREN()}"
+
+    elif isinstance(node, ir.ExportCSVColumn):
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('column')} {to_str(node.column_name, 0, options, debug_info)} {to_str(node.column_data, 0, options, debug_info)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Abort):
         name_str = f":{conf.uname(node.name)} " if node.name else ""
