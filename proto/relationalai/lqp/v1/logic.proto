@@ -16,7 +16,7 @@ message Def {
 }
 
 message Algorithm {
-  repeated RelationId exports = 1;
+  repeated RelationId global = 1;
   Script body = 2;
 }
 

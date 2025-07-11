@@ -4,7 +4,7 @@
       (define
         (fragment :instructions
           (algorithm
-            (exports 3181428560199927439 18221048622641146868)
+            (global 3181428560199927439 18221048622641146868)
             (script
               (upsert 1967807609550870936
                 ([x::INT]

@@ -237,14 +237,14 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
 
     elif isinstance(node, ir.Algorithm):
         lqp += ind + conf.LPAREN() + conf.kw("algorithm") + "\n"
-        # Print exports
-        lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("exports")
-        if len(node.exports) > 4:
+        # Print global_
+        lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("global")
+        if len(node.global_) > 4:
             lqp += "\n"
-            lqp += list_to_str(node.exports, indent_level + 2, "\n", options, debug_info) + conf.RPAREN()+"\n"
+            lqp += list_to_str(node.global_, indent_level + 2, "\n", options, debug_info) + conf.RPAREN()+"\n"
         else:
             lqp += " "
-            lqp += list_to_str(node.exports, 0, " ", options, debug_info) + conf.RPAREN()+"\n"
+            lqp += list_to_str(node.global_, 0, " ", options, debug_info) + conf.RPAREN()+"\n"
         lqp += to_str(node.body, indent_level + 1, options, debug_info)
         lqp += conf.RPAREN()
 

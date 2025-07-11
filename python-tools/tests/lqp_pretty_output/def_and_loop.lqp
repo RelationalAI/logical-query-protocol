@@ -7,7 +7,7 @@
             ([x::INT]
               (atom :alice x)))
           (algorithm
-            (exports :foo :bar)
+            (global :foo :bar)
             (script
               (loop
                 (init

@@ -72,12 +72,11 @@ class Def(_message.Message):
     def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
 
 class Algorithm(_message.Message):
-    __slots__ = ("exports", "body")
-    EXPORTS_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("body",)
+    GLOBAL_FIELD_NUMBER: _ClassVar[int]
     BODY_FIELD_NUMBER: _ClassVar[int]
-    exports: _containers.RepeatedCompositeFieldContainer[RelationId]
     body: Script
-    def __init__(self, exports: _Optional[_Iterable[_Union[RelationId, _Mapping]]] = ..., body: _Optional[_Union[Script, _Mapping]] = ...) -> None: ...
+    def __init__(self, body: _Optional[_Union[Script, _Mapping]] = ..., **kwargs) -> None: ...
 
 class Script(_message.Message):
     __slots__ = ("constructs",)

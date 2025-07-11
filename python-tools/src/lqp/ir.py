@@ -36,10 +36,10 @@ class Def(Declaration):
     body: Abstraction
     attrs: Sequence[Attribute]
 
-# Algorithm(exports::RelationId[], body::Script)
+# Algorithm(globals::RelationId[], body::Script)
 @dataclass(frozen=True)
 class Algorithm(Declaration):
-    exports: Sequence[RelationId]
+    global_: Sequence[RelationId]
     body: Script
 
 # Script := Construct[]

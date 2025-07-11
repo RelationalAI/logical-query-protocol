@@ -4,7 +4,7 @@
     (local_writes
       (define (fragment :f1
         (algorithm
-          (exports :foo)
+          (global :foo)
           (script
             (loop
               (init

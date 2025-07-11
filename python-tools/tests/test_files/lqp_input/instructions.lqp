@@ -4,7 +4,7 @@
       (define
         (fragment :instructions
           (algorithm
-            (exports :foo :bar)
+            (global :foo :bar)
             (script
               (upsert :test1 ([x::INT] (atom :alice x)))
               (break :test2 ([x::INT] (atom :alice x)))

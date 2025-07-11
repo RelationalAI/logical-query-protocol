@@ -39,8 +39,8 @@ fragment: "(fragment" fragment_id declaration* ")"
 declaration: def_ | algorithm
 def_: "(def" relation_id abstraction attrs? ")"
 
-algorithm: "(algorithm" exports script ")"
-exports: "(exports" relation_id* ")"
+algorithm: "(algorithm" global_ script ")"
+global_: "(global" relation_id* ")"
 script: "(script" construct* ")"
 
 construct: loop | instruction
@@ -250,8 +250,8 @@ class LQPTransformer(Transformer):
         return ir.Def(name=name, body=body, attrs=attrs, meta=self.meta(meta))
 
     def algorithm(self, meta, items):
-        return ir.Algorithm(exports=items[0], body=items[1], meta=self.meta(meta))
-    def exports(self, meta, items):
+        return ir.Algorithm(global_=items[0], body=items[1], meta=self.meta(meta))
+    def global_(self, meta, items):
         return items
     def script(self, meta, items):
         return ir.Script(constructs=items, meta=self.meta(meta))
