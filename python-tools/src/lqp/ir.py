@@ -337,10 +337,10 @@ class Abort(LqpNode):
     name: Union[str, None]
     relation_id: RelationId
 
-# Read := Demand | Output | WhatIf | Abort
+# Read := Demand | Output | Export | WhatIf | Abort
 @dataclass(frozen=True)
 class Read(LqpNode):
-    read_type: Union[Demand, Output, WhatIf, Abort]
+    read_type: Union[Demand, Output, Export, WhatIf, Abort]
 
 # Epoch(persistent_writes::Write[], local_writes::Write[], reads::Read[])
 @dataclass(frozen=True)
