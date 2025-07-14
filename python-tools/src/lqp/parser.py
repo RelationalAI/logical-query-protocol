@@ -40,7 +40,7 @@ declaration: def_ | algorithm
 def_: "(def" relation_id abstraction attrs? ")"
 
 algorithm: "(algorithm" global_ script ")"
-global_: "(global" relation_id* ")"
+global_: "[" relation_id* "]"
 script: "(script" construct* ")"
 
 construct: loop | instruction

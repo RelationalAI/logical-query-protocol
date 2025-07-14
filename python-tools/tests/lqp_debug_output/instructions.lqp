@@ -3,8 +3,7 @@
     (persistent_writes
       (define
         (fragment :instructions
-          (algorithm
-            (global 3181428560199927439 18221048622641146868)
+          (algorithm [3181428560199927439 18221048622641146868]
             (script
               (upsert 1967807609550870936
                 ([x::INT]
