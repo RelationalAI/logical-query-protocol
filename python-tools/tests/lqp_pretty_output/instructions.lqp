@@ -3,8 +3,7 @@
     (persistent_writes
       (define
         (fragment :instructions
-          (algorithm
-            (exports :foo :bar)
+          (algorithm :foo :bar
             (script
               (upsert :test1
                 ([x::INT]

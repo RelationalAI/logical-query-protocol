@@ -4,8 +4,7 @@
       (define
         (fragment :def_and_loop
           (def :test ([x::INT] (atom :alice x)))
-          (algorithm
-            (exports :foo :bar)
+          (algorithm :foo :bar
             (script
               (loop
                 (init

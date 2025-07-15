@@ -131,7 +131,7 @@ class DuplicateRelationIdFinder(LqpVisitor):
 
     def visit_Algorithm(self, node: ir.Algorithm, *args: Any) -> None:
         # Only the Defs in init are globally visible so don't visit body Defs.
-        for d in node.exports:
+        for d in node.global_:
             if d in self.seen_ids:
                 raise ValidationError(
                     f"Duplicate declaration at {d.meta}: '{d.id}'"
@@ -323,13 +323,13 @@ class LoopyBadBreakFinder(LqpVisitor):
                 )
 
 # Loopy contract: Algorithm exports cannot be in loop body
-class LoopyBadExportFinder(LqpVisitor):
+class LoopyBadGlobalFinder(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
         self.seen_ids: Set[ir.RelationId] = set()
         self.visit(txn)
 
     def visit_Algorithm(self, node: ir.Algorithm, *args: Any) -> None:
-        self.seen_ids = self.seen_ids.union(node.exports)
+        self.seen_ids = self.seen_ids.union(node.global_)
         self.visit(node.body)
         self.seen_ids.clear()
 
@@ -338,7 +338,7 @@ class LoopyBadExportFinder(LqpVisitor):
             if isinstance(i, (ir.Break, ir.Assign, ir.Upsert)):
                 if i.name in self.seen_ids:
                     raise ValidationError(
-                        f"Export rule found in body at {i.meta}: '{i.name.id}'"
+                        f"Global rule found in body at {i.meta}: '{i.name.id}'"
                     )
 
 def validate_lqp(lqp: ir.Transaction):
@@ -348,4 +348,4 @@ def validate_lqp(lqp: ir.Transaction):
     DuplicateFragmentDefinitionFinder(lqp)
     AtomTypeChecker(lqp)
     LoopyBadBreakFinder(lqp)
-    LoopyBadExportFinder(lqp)
+    LoopyBadGlobalFinder(lqp)
