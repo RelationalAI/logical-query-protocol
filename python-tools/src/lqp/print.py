@@ -240,11 +240,11 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         # Print global_
         if len(node.global_) > 4:
             lqp += "\n"
-            lqp += ind + conf.SIND() + conf.LBRACKET() + list_to_str(node.global_, indent_level + 2, "\n", options, debug_info) + conf.RBRACKET()
+            lqp += ind + conf.SIND() + list_to_str(node.global_, indent_level + 2, "\n", options, debug_info)
             lqp += "\n"
         else:
             lqp += " "
-            lqp += conf.LBRACKET() + list_to_str(node.global_, 0, " ", options, debug_info) + conf.RBRACKET()+"\n"
+            lqp += list_to_str(node.global_, 0, " ", options, debug_info) + "\n"
         lqp += to_str(node.body, indent_level + 1, options, debug_info)
         lqp += conf.RPAREN()
 

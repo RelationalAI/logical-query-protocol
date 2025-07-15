@@ -6,7 +6,7 @@
           (def :test
             ([x::INT]
               (atom :alice x)))
-          (algorithm [:foo :bar]
+          (algorithm :foo :bar
             (script
               (loop
                 (init

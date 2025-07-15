@@ -3,7 +3,7 @@
   (epoch
     (local_writes
       (define (fragment :f1
-        (algorithm [:foo]
+        (algorithm :foo
           (script
             (loop
               (init

@@ -323,7 +323,7 @@ class LoopyBadBreakFinder(LqpVisitor):
                 )
 
 # Loopy contract: Algorithm exports cannot be in loop body
-class LoopyBadExportFinder(LqpVisitor):
+class LoopyBadGlobalFinder(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
         self.seen_ids: Set[ir.RelationId] = set()
         self.visit(txn)
@@ -338,7 +338,7 @@ class LoopyBadExportFinder(LqpVisitor):
             if isinstance(i, (ir.Break, ir.Assign, ir.Upsert)):
                 if i.name in self.seen_ids:
                     raise ValidationError(
-                        f"Export rule found in body at {i.meta}: '{i.name.id}'"
+                        f"Global rule found in body at {i.meta}: '{i.name.id}'"
                     )
 
 def validate_lqp(lqp: ir.Transaction):
@@ -348,4 +348,4 @@ def validate_lqp(lqp: ir.Transaction):
     DuplicateFragmentDefinitionFinder(lqp)
     AtomTypeChecker(lqp)
     LoopyBadBreakFinder(lqp)
-    LoopyBadExportFinder(lqp)
+    LoopyBadGlobalFinder(lqp)

@@ -3,7 +3,7 @@
     (persistent_writes
       (define
         (fragment :instructions
-          (algorithm [:foo :bar]
+          (algorithm :foo :bar
             (script
               (upsert :test1 ([x::INT] (atom :alice x)))
               (break :test2 ([x::INT] (atom :alice x)))
