@@ -322,21 +322,23 @@ class LoopyBadBreakFinder(LqpVisitor):
                     f"Break rule found outside of body at {i.meta}: '{i.name.id}'"
                 )
 
-# Loopy contract: Algorithm exports cannot be in loop body
+# Loopy contract: Algorithm globals cannot be in loop body unless they were already in init
 class LoopyBadGlobalFinder(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
-        self.seen_ids: Set[ir.RelationId] = set()
+        self.globals: Set[ir.RelationId] = set()
+        self.init: Set[ir.RelationId] = set()
         self.visit(txn)
 
     def visit_Algorithm(self, node: ir.Algorithm, *args: Any) -> None:
-        self.seen_ids = self.seen_ids.union(node.global_)
+        self.globals = self.globals.union(node.global_)
         self.visit(node.body)
-        self.seen_ids.clear()
+        self.globals.clear()
 
     def visit_Loop(self, node: ir.Loop, *args: Any) -> None:
+        self.init = {x.name for x in node.init if isinstance(x, (ir.Break, ir.Assign, ir.Upsert))}
         for i in node.body.constructs:
             if isinstance(i, (ir.Break, ir.Assign, ir.Upsert)):
-                if i.name in self.seen_ids:
+                if (i.name in self.globals) and (i.name not in self.init):
                     raise ValidationError(
                         f"Global rule found in body at {i.meta}: '{i.name.id}'"
                     )
