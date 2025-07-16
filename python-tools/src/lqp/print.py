@@ -275,7 +275,6 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
 
     elif isinstance(node, ir.Abstraction):
         lqp += ind + conf.LPAREN() + conf.LBRACKET()
-        print("what is this??", [(v[0], v[1]) for v in node.vars])
         lqp += " ".join(map(lambda v: conf.uname(v[0].name) + conf.type_anno("::" + type_to_str(v[1])), node.vars))
         lqp += conf.RBRACKET() + "\n"
         lqp += f"{to_str(node.value, indent_level + 1, options, debug_info)}{conf.RPAREN()}"
@@ -343,19 +342,6 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
 
     elif isinstance(node, ir.SpecializedValue):
         lqp += specialized_to_str(node)
-        # val_to_print = node.value
-        # if isinstance(val_to_print, str):
-        #     lqp += f"{ind}#\"{val_to_print}\""
-        # elif isinstance(val_to_print, ir.UInt128):
-        #     lqp += f"{ind}#{hex(val_to_print.value)}"
-        # elif isinstance(val_to_print, ir.Int128):
-        #     lqp += f"{ind}#{val_to_print.value}i128"
-        # elif isinstance(val_to_print, bool):
-        #     lqp += f"{ind}#{str(val_to_print).lower()}"
-        # elif isinstance(val_to_print, (int, float)):
-        #     lqp += f"{ind}#{val_to_print}"
-        # else:
-        #     lqp += f"{ind}#{val_to_print}"
 
     elif isinstance(node, ir.Attribute):
         lqp += f"{ind}{conf.LPAREN()}{conf.kw('attribute')} :{node.name} {list_to_str(node.args, 0, ' ', options, debug_info)}{conf.RPAREN()}"
@@ -487,10 +473,7 @@ def specialized_to_str(value: Union[ir.SpecializedValue,ir.SpecializedType]) -> 
     return "#" + to_str(value.value, 0, {}, {})
 
 def type_to_str(node: ir.RelType) -> str:
-    if isinstance(node, ir.PrimitiveType):
-        return str(node.name)
-    elif isinstance(node, ir.SpecializedType):
-        return specialized_to_str(node.value)
+    return f"{node.name}"
 
 def id_to_name(options: Dict, debug_info: Dict, rid: ir.RelationId) -> str:
     if not has_option(options, PrettyOptions.PRINT_NAMES):

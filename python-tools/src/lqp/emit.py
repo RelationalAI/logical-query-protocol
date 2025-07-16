@@ -301,8 +301,7 @@ def ir_to_proto(node: ir.LqpNode) -> Union[
     transactions_pb2.Transaction,
     fragments_pb2.Fragment,
     logic_pb2.Declaration,
-    logic_pb2.Formula,
-    logic_pb2.RelTerm
+    logic_pb2.Formula
 ]:
     if isinstance(node, ir.Transaction):
         return convert_transaction(node)

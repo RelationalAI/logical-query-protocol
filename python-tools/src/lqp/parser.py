@@ -54,7 +54,7 @@ break_ : "(break" relation_id abstraction attrs? ")"
 
 abstraction: "(" bindings formula ")"
 bindings: "[" binding* "]"
-binding: SYMBOL "::" rel_type
+binding: SYMBOL "::" PRIMITIVE_TYPE
 
 formula: exists | reduce | conjunction | disjunction | not_ | ffi | atom | pragma | primitive | true | false | relatom | cast
 exists: "(exists" bindings formula ")"
@@ -63,30 +63,31 @@ conjunction: "(and" formula* ")"
 disjunction: "(or" formula* ")"
 not_: "(not" formula ")"
 ffi: "(ffi" name args terms ")"
-atom: "(atom" relation_id relterm* ")"
+atom: "(atom" relation_id term* ")"
 relatom: "(relatom" name relterm* ")"
-cast: "(cast" rel_type relterm relterm ")"
-pragma: "(pragma" name  relterm* ")"
+cast: "(cast" PRIMITIVE_TYPE term term ")"
+pragma: "(pragma" name  term* ")"
 true: "(true)"
 false: "(false)"
 
 args: "(args" abstraction* ")"
-terms: "(terms" relterm* ")"
+terms: "(terms" term* ")"
 
 primitive: raw_primitive | eq | lt | lt_eq | gt | gt_eq | add | minus | multiply | divide
 raw_primitive: "(primitive" name relterm* ")"
-eq: "(=" relterm relterm ")"
-lt: "(<" relterm relterm ")"
-lt_eq: "(<=" relterm relterm ")"
-gt: "(>" relterm relterm ")"
-gt_eq: "(>=" relterm relterm ")"
+eq: "(=" term term ")"
+lt: "(<" term term ")"
+lt_eq: "(<=" term term ")"
+gt: "(>" term term ")"
+gt_eq: "(>=" term term ")"
 
-add: "(+" relterm relterm relterm ")"
-minus: "(-" relterm relterm relterm ")"
-multiply: "(*" relterm relterm relterm ")"
-divide: "(/" relterm relterm relterm ")"
+add: "(+" term term term ")"
+minus: "(-" term term term ")"
+multiply: "(*" term term term ")"
+divide: "(/" term term term ")"
 
-relterm: specialized_value | var | constant
+relterm: specialized_value | term
+term: var | constant
 specialized_value: "#" primitive_value
 var: SYMBOL
 constant: primitive_value
@@ -100,10 +101,8 @@ name: ":" SYMBOL
 
 primitive_value: STRING | NUMBER | FLOAT | UINT128 | INT128
 
-rel_type: PRIMITIVE_TYPE | specialized_type
 PRIMITIVE_TYPE: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
               | "DECIMAL64" | "DECIMAL128" | "DATE" | "DATETIME"
-specialized_type: "#" primitive_value
 
 SYMBOL: /[a-zA-Z_][a-zA-Z0-9_-]*/
 STRING: ESCAPED_STRING
@@ -140,8 +139,6 @@ class LQPTransformer(Transformer):
 
     def PRIMITIVE_TYPE(self, s):
         return getattr(ir.PrimitiveType, s.upper())
-    def specialized_type(self, meta, items):
-        return ir.SpecializedType(value=items[0], meta=self.meta(meta))
     def rel_type(self, meta, items):
         return items[0]
 
@@ -370,6 +367,8 @@ class LQPTransformer(Transformer):
         return items
 
     def relterm(self, meta, items):
+        return items[0]
+    def term(self, meta, items):
         return items[0]
     def var(self, meta, items):
         return ir.Var(name=items[0], meta=self.meta(meta))
