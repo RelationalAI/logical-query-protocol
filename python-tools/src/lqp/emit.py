@@ -147,10 +147,11 @@ def convert_declaration(decl: ir.Declaration) -> logic_pb2.Declaration:
         raise TypeError(f"Unsupported Declaration type: {type(decl)}")
 
 def convert_algorithm(algo: ir.Algorithm)-> logic_pb2.Algorithm:
-    return logic_pb2.Algorithm(
-        exports=[convert_relation_id(id) for id in algo.exports],
-        body=convert_script(algo.body)
-    )
+    dict: Dict[str, Any] = {
+        'global': [convert_relation_id(id) for id in algo.global_],
+        'body':convert_script(algo.body)
+    }
+    return logic_pb2.Algorithm(**dict)
 
 def convert_instruction(instr: ir.Instruction) -> logic_pb2.Instruction:
     from typing import Dict, Any

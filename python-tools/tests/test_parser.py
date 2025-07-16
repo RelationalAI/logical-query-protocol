@@ -44,12 +44,13 @@ def test_parse_lqp(snapshot: Snapshot, input_file):
         pytest.fail(f"Failed checking {input_file}: {str(e)}")
 
 @pytest.mark.parametrize("input_file", get_all_input_files())
-def test_validate_lpq_inputs(input_file):
+def test_validate_lqp_inputs(input_file):
     try:
         with open(input_file, "r") as f:
             content = f.read()
         parsed_lqp = parse_lqp(input_file, content)
         if not(isinstance(parsed_lqp, ir.Transaction)): return
+        validate_lqp(parsed_lqp)
     except Exception as e:
         pytest.fail(f"Failed validating {input_file}: {str(e)}")
 
@@ -62,6 +63,8 @@ def test_valid_validator_files():
         try:
             result = parse_lqp(validator_file, content)
             assert result is not None, f"Failed to parse {validator_file}"
+            assert isinstance(result, ir.Transaction), f"{validator_file} does not contain a transaction"
+            validate_lqp(result)
             print(f"Successfully validated {validator_file}")
         except Exception as e:
             pytest.fail(f"Failed to parse valid validator file {validator_file}: {str(e)}")

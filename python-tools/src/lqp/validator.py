@@ -131,7 +131,7 @@ class DuplicateRelationIdFinder(LqpVisitor):
 
     def visit_Algorithm(self, node: ir.Algorithm, *args: Any) -> None:
         # Only the Defs in init are globally visible so don't visit body Defs.
-        for d in node.exports:
+        for d in node.global_:
             if d in self.seen_ids:
                 raise ValidationError(
                     f"Duplicate declaration at {d.meta}: '{d.id}'"
@@ -316,29 +316,31 @@ class LoopyBadBreakFinder(LqpVisitor):
         self.visit(txn)
 
     def visit_Loop(self, node: ir.Loop, *args: Any) -> None:
-        for i in node.body.constructs:
+        for i in node.init:
             if isinstance(i, ir.Break):
                 raise ValidationError(
-                    f"Break rule found outside of init at {i.meta}: '{i.name.id}'"
+                    f"Break rule found outside of body at {i.meta}: '{i.name.id}'"
                 )
 
-# Loopy contract: Algorithm exports cannot be in loop body
-class LoopyBadExportFinder(LqpVisitor):
+# Loopy contract: Algorithm globals cannot be in loop body unless they were already in init
+class LoopyBadGlobalFinder(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
-        self.seen_ids: Set[ir.RelationId] = set()
+        self.globals: Set[ir.RelationId] = set()
+        self.init: Set[ir.RelationId] = set()
         self.visit(txn)
 
     def visit_Algorithm(self, node: ir.Algorithm, *args: Any) -> None:
-        self.seen_ids = self.seen_ids.union(node.exports)
+        self.globals = self.globals.union(node.global_)
         self.visit(node.body)
-        self.seen_ids.clear()
+        self.globals.clear()
 
     def visit_Loop(self, node: ir.Loop, *args: Any) -> None:
+        self.init = {x.name for x in node.init if isinstance(x, (ir.Break, ir.Assign, ir.Upsert))}
         for i in node.body.constructs:
             if isinstance(i, (ir.Break, ir.Assign, ir.Upsert)):
-                if i.name in self.seen_ids:
+                if (i.name in self.globals) and (i.name not in self.init):
                     raise ValidationError(
-                        f"Export rule found in body at {i.meta}: '{i.name.id}'"
+                        f"Global rule found in body at {i.meta}: '{i.name.id}'"
                     )
 
 def validate_lqp(lqp: ir.Transaction):
@@ -348,4 +350,4 @@ def validate_lqp(lqp: ir.Transaction):
     DuplicateFragmentDefinitionFinder(lqp)
     AtomTypeChecker(lqp)
     LoopyBadBreakFinder(lqp)
-    LoopyBadExportFinder(lqp)
+    LoopyBadGlobalFinder(lqp)
