@@ -8,16 +8,6 @@ def convert_primitive_type(rvt: ir.PrimitiveType) -> logic_pb2.PrimitiveType:
     except AttributeError:
         return logic_pb2.PRIMITIVE_TYPE_UNSPECIFIED
 
-def convert_rel_type(rt: ir.RelType) -> logic_pb2.RelType:
-    if isinstance(rt, ir.PrimitiveType):
-        return logic_pb2.RelType(primitive_type=convert_primitive_type(rt))
-    elif isinstance(rt, ir.SpecializedType):
-        specialized_t = logic_pb2.SpecializedType(value=convert_value(rt.value))
-        return logic_pb2.RelType(specialized_type=specialized_t)
-    else:
-        # Default or error case
-        return logic_pb2.RelType(primitive_type=logic_pb2.PRIMITIVE_TYPE_UNSPECIFIED)
-
 def convert_uint128(val: ir.UInt128) -> logic_pb2.UInt128:
     low = val.value & 0xFFFFFFFFFFFFFFFF
     high = (val.value >> 64) & 0xFFFFFFFFFFFFFFFF
@@ -46,13 +36,17 @@ def convert_value(pv: ir.PrimitiveValue) -> logic_pb2.Value:
 def convert_var(v: ir.Var) -> logic_pb2.Var:
     return logic_pb2.Var(name=v.name)
 
-def convert_relterm(t: ir.RelTerm) -> logic_pb2.RelTerm:
+def convert_term(t: ir.Term) -> logic_pb2.Term:
     if isinstance(t, ir.Var):
-        return logic_pb2.RelTerm(var=convert_var(t))
-    elif isinstance(t, ir.Constant):
-        return logic_pb2.RelTerm(constant=convert_value(t))
-    elif isinstance(t, ir.SpecializedValue):
+        return logic_pb2.Term(var=convert_var(t))
+    else:
+        return logic_pb2.Term(constant=convert_value(t))
+
+def convert_relterm(t: ir.RelTerm) -> logic_pb2.RelTerm:
+    if isinstance(t, ir.SpecializedValue):
         return logic_pb2.RelTerm(specialized_value=convert_value(t.value))
+    else:
+        return logic_pb2.RelTerm(term=convert_term(t))
 
 def convert_relation_id(rid: ir.RelationId) -> logic_pb2.RelationId:
     id_low = rid.id & 0xFFFFFFFFFFFFFFFF
@@ -69,7 +63,7 @@ def convert_attribute(attr: ir.Attribute) -> logic_pb2.Attribute:
 )
 
 def convert_abstraction(abst: ir.Abstraction) -> logic_pb2.Abstraction:
-    bindings = [logic_pb2.Binding(var=convert_var(var_tuple[0]), type=convert_rel_type(var_tuple[1]))
+    bindings = [logic_pb2.Binding(var=convert_var(var_tuple[0]), type=convert_primitive_type(var_tuple[1]))
                 for var_tuple in abst.vars]
     return logic_pb2.Abstraction(
         vars=bindings,
@@ -83,7 +77,7 @@ def convert_formula(f: ir.Formula) -> logic_pb2.Formula:
         return logic_pb2.Formula(reduce=logic_pb2.Reduce(
             op=convert_abstraction(f.op),
             body=convert_abstraction(f.body),
-            terms=[convert_relterm(t) for t in f.terms]
+            terms=[convert_term(t) for t in f.terms]
         ))
     elif isinstance(f, ir.Conjunction):
         return logic_pb2.Formula(conjunction=logic_pb2.Conjunction(args=[convert_formula(arg) for arg in f.args]))
@@ -95,17 +89,17 @@ def convert_formula(f: ir.Formula) -> logic_pb2.Formula:
         return logic_pb2.Formula(ffi=logic_pb2.FFI(
             name=f.name,
             args=[convert_abstraction(arg) for arg in f.args],
-            terms=[convert_relterm(t) for t in f.terms]
+            terms=[convert_term(t) for t in f.terms]
         ))
     elif isinstance(f, ir.Atom):
         return logic_pb2.Formula(atom=logic_pb2.Atom(
             name=convert_relation_id(f.name),
-            terms=[convert_relterm(t) for t in f.terms]
+            terms=[convert_term(t) for t in f.terms]
         ))
     elif isinstance(f, ir.Pragma):
         return logic_pb2.Formula(pragma=logic_pb2.Pragma(
             name=f.name,
-            terms=[convert_relterm(t) for t in f.terms]
+            terms=[convert_term(t) for t in f.terms]
         ))
     elif isinstance(f, ir.Primitive):
         primitive_proto = logic_pb2.Primitive(name=f.name, terms=[convert_relterm(t) for t in f.terms])
@@ -115,9 +109,9 @@ def convert_formula(f: ir.Formula) -> logic_pb2.Formula:
         return logic_pb2.Formula(rel_atom=rel_atom_proto)
     elif isinstance(f, ir.Cast):
         return logic_pb2.Formula(cast=logic_pb2.Cast(
-            type=convert_rel_type(f.type),
-            input=convert_relterm(f.input),
-            result=convert_relterm(f.result)
+            type=convert_primitive_type(f.type),
+            input=convert_term(f.input),
+            result=convert_term(f.result)
         ))
     else:
         raise TypeError(f"Unsupported Formula type: {type(f)}")
