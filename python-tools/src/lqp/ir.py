@@ -87,7 +87,7 @@ class Break(Instruction):
 # Abstraction(vars::Binding[], value::Formula)
 @dataclass(frozen=True)
 class Abstraction(LqpNode):
-    vars: Sequence[Tuple[Var, RelType]]
+    vars: Sequence[Tuple[Var, PrimitiveType]]
     value: Formula
 
 # Formula := Exists | Reduce | Conjunction | Disjunction | Not | FFI | Atom | Pragma | Primitive | TrueVal | FalseVal | RelAtom | Cast
@@ -100,12 +100,12 @@ class Formula(LqpNode):
 class Exists(Formula):
     body: Abstraction
 
-# Reduce(op::Abstraction, body::Abstraction, terms::RelTerm[])
+# Reduce(op::Abstraction, body::Abstraction, terms::Term[])
 @dataclass(frozen=True)
 class Reduce(Formula):
     op: Abstraction
     body: Abstraction
-    terms: Sequence[RelTerm]
+    terms: Sequence[Term]
 
 # Conjunction(args::Formula[])
 @dataclass(frozen=True)
@@ -122,24 +122,24 @@ class Disjunction(Formula):
 class Not(Formula):
     arg: Formula
 
-# FFI(name::string, args::Abstraction[], terms::RelTerm[])
+# FFI(name::string, args::Abstraction[], terms::Term[])
 @dataclass(frozen=True)
 class FFI(Formula):
     name: str
     args: Sequence[Abstraction]
-    terms: Sequence[RelTerm]
+    terms: Sequence[Term]
 
-# Atom(name::RelationId, terms::RelTerm[])
+# Atom(name::RelationId, terms::Term[])
 @dataclass(frozen=True)
 class Atom(Formula):
     name: RelationId
-    terms: Sequence[RelTerm]
+    terms: Sequence[Term]
 
-# Pragma(name::string, terms::RelTerm[])
+# Pragma(name::string, terms::Term[])
 @dataclass(frozen=True)
 class Pragma(Formula):
     name: str
-    terms: Sequence[RelTerm]
+    terms: Sequence[Term]
 
 # Primitive(name::string, terms::RelTerm[])
 @dataclass(frozen=True)
@@ -153,12 +153,12 @@ class RelAtom(Formula):
     name: str
     terms: Sequence[RelTerm]
 
-# Cast(type::RelType, input::RelTerm, result::RelTerm)
+# Cast(type::PrimitiveType, input::Term, result::Term)
 @dataclass(frozen=True)
 class Cast(Formula):
-    type: RelType
-    input: RelTerm
-    result: RelTerm
+    type: PrimitiveType
+    input: Term
+    result: Term
 
 # Var(name::string)
 @dataclass(frozen=True)
@@ -231,13 +231,6 @@ class PrimitiveType(Enum):
 
     def __str__(self) -> str:
         return self.name
-
-# SpecializedType(value::PrimitiveValue)
-@dataclass(frozen=True)
-class SpecializedType(LqpNode):
-    value: PrimitiveValue
-
-RelType = Union[PrimitiveType, SpecializedType]
 
 # --- Fragment Types ---
 
