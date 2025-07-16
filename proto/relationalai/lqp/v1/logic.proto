@@ -64,7 +64,7 @@ message Break {
 
 message Binding {
   Var var = 1;
-  RelType type = 2;
+  PrimitiveType type = 2;
 }
 
 // Abstraction and related types
@@ -97,7 +97,7 @@ message Exists {
 message Reduce {
   Abstraction op = 1;
   Abstraction body = 2;
-  repeated RelTerm terms = 3;
+  repeated Term terms = 3;
 }
 
 message Conjunction {
@@ -115,17 +115,17 @@ message Not {
 message FFI {
   string name = 1;
   repeated Abstraction args = 2;
-  repeated RelTerm terms = 3;
+  repeated Term terms = 3;
 }
 
 message Atom {
   RelationId name = 1;
-  repeated RelTerm terms = 2;
+  repeated Term terms = 2;
 }
 
 message Pragma {
   string name = 1;
-  repeated RelTerm terms = 2;
+  repeated Term terms = 2;
 }
 
 message Primitive {
@@ -139,16 +139,22 @@ message RelAtom {
 }
 
 message Cast {
-  RelType type = 1;
-  RelTerm input = 2;
-  RelTerm result = 3;
+  PrimitiveType type = 1;
+  Term input = 2;
+  Term result = 3;
 }
 
 message RelTerm {
   oneof rel_term_type {
     Value specialized_value = 1;
-    Var var = 2;
-    Value constant = 3;
+    Term term = 2;
+  }
+}
+
+message Term {
+  oneof term_type {
+    Var var = 1;
+    Value constant = 2;
   }
 }
 
@@ -164,13 +170,6 @@ message Attribute {
 message RelationId {
   fixed64 id_low = 1; // Lower 64 bits of UInt128
   fixed64 id_high = 2; // Upper 64 bits of UInt128
-}
-
-message RelType {
-  oneof rel_type {
-    PrimitiveType primitive_type = 1;
-    Value specialized_type = 2;
-  }
 }
 
 enum PrimitiveType {
