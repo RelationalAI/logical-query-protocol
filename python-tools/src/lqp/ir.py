@@ -186,8 +186,11 @@ Constant = Union[PrimitiveValue]
 class SpecializedValue(LqpNode):
     value: PrimitiveValue
 
-# RelTerm := Var | Constant | Specialized
-RelTerm = Union[Var, Constant, SpecializedValue]
+# Term := Var | Constant
+Term = Union[Var, Constant]
+
+# RelTerm := Term | SpecializedValue
+RelTerm = Union[Term, SpecializedValue]
 
 # Attribute(name::string, args::Constant[])
 @dataclass(frozen=True)
