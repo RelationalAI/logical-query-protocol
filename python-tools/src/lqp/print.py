@@ -275,13 +275,13 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
 
     elif isinstance(node, ir.Abstraction):
         lqp += ind + conf.LPAREN() + conf.LBRACKET()
-        lqp += " ".join(map(lambda v: conf.uname(v[0].name) + conf.type_anno("::" + type_to_str(v[1])), node.vars))
+        lqp += " ".join(map(lambda v: conf.uname(v[0].name) + conf.type_anno("::" + str(v[1])), node.vars))
         lqp += conf.RBRACKET() + "\n"
         lqp += f"{to_str(node.value, indent_level + 1, options, debug_info)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Exists):
         lqp += ind + conf.LPAREN() + conf.kw("exists") + " " + conf.LBRACKET()
-        lqp += " ".join(map(lambda v: conf.uname(v[0].name) + conf.type_anno("::" + type_to_str(v[1])), node.body.vars))
+        lqp += " ".join(map(lambda v: conf.uname(v[0].name) + conf.type_anno("::" + str(v[1])), node.body.vars))
         lqp += conf.RBRACKET() + "\n"
         lqp += to_str(node.body.value, indent_level + 1, options, debug_info) + conf.RPAREN()
 
@@ -324,7 +324,7 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         lqp += f"{ind}{conf.LPAREN()}{conf.kw('relatom')} :{node.name} {list_to_str(node.terms, 0, ' ', options, debug_info)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Cast):
-        lqp += f"{ind}{conf.LPAREN()}{conf.kw('cast')} {type_to_str(node.type)} {to_str(node.input, 0, options, debug_info)} {to_str(node.result, 0, options, debug_info)}{conf.RPAREN()}"
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('cast')} {str(node.type)} {to_str(node.input, 0, options, debug_info)} {to_str(node.result, 0, options, debug_info)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Var):
         lqp += f"{ind}{conf.uname(node.name)}"
@@ -341,7 +341,7 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         lqp += f"{ind}{str(node)}"
 
     elif isinstance(node, ir.SpecializedValue):
-        lqp += specialized_to_str(node)
+        lqp += "#" + to_str(node.value, 0, {}, {})
 
     elif isinstance(node, ir.Attribute):
         lqp += f"{ind}{conf.LPAREN()}{conf.kw('attribute')} :{node.name} {list_to_str(node.args, 0, ' ', options, debug_info)}{conf.RPAREN()}"
@@ -468,12 +468,6 @@ def to_string(node: ir.LqpNode, options: Dict = {}) -> str:
         return fragment_to_str(node, 0, {}, options)
     else:
         raise NotImplementedError(f"to_string not implemented for top-level node type {type(node)}.")
-
-def specialized_to_str(value: Union[ir.SpecializedValue,ir.SpecializedType]) -> str:
-    return "#" + to_str(value.value, 0, {}, {})
-
-def type_to_str(node: ir.RelType) -> str:
-    return f"{node.name}"
 
 def id_to_name(options: Dict, debug_info: Dict, rid: ir.RelationId) -> str:
     if not has_option(options, PrettyOptions.PRINT_NAMES):
