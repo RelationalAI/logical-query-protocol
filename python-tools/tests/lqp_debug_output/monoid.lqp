@@ -1,0 +1,31 @@
+(transaction
+  (epoch
+    (persistent_writes
+      (define
+        (fragment :monoid
+          (algorithm 
+            (script
+              (monoid BOOL::OR 1967807609550870936
+                ([x::INT]
+                  (atom 3159282601090220207 x)))
+              (monus INT::MIN 6931104569591695457
+                ([x::INT]
+                  (atom 9346719481748178650 x)))
+              (monoid INT128::MAX 18258050539415108999
+                ([x::INT]
+                  (atom 5487311821363206302 x)))
+              (monus FLOAT::SUM 11882225170668076754
+                ([x::INT]
+                  (atom 9226192870059563236 x))))))))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `1967807609550870936` -> `test1`
+;; 	 ID `3159282601090220207` -> `alice`
+;; 	 ID `6931104569591695457` -> `test2`
+;; 	 ID `9346719481748178650` -> `bob`
+;; 	 ID `18258050539415108999` -> `test3`
+;; 	 ID `5487311821363206302` -> `carol`
+;; 	 ID `11882225170668076754` -> `test4`
+;; 	 ID `9226192870059563236` -> `dname`

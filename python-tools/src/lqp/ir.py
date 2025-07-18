@@ -58,7 +58,7 @@ class Loop(Construct):
     init: Sequence[Instruction]
     body: Script
 
-# Instruction := Assign | Break | Upsert
+# Instruction := Assign | Break | Upsert | Copy | MonoidDef | MonusDef
 @dataclass(frozen=True)
 class Instruction(Construct):
     pass
@@ -83,6 +83,54 @@ class Break(Instruction):
     name: RelationId
     body: Abstraction
     attrs: Sequence[Attribute]
+
+# Copy(name::RelationId, body::Abstraction, attrs::Attribute[])
+@dataclass(frozen=True)
+class Copy(Instruction):
+    name: RelationId
+    body: Abstraction
+    attrs: Sequence[Attribute]
+
+# MonoidDef(monoid::Monoid, name::RelationId, body::Abstraction, attrs::Attribute[])
+@dataclass(frozen=True)
+class MonoidDef(Instruction):
+    monoid: Monoid
+    name: RelationId
+    body: Abstraction
+    attrs: Sequence[Attribute]
+
+# MonusDef(monoid::Monoid, name::RelationId, body::Abstraction, attrs::Attribute[])
+@dataclass(frozen=True)
+class MonusDef(Instruction):
+    monoid: Monoid
+    name: RelationId
+    body: Abstraction
+    attrs: Sequence[Attribute]
+
+# Monoid := OrMonoid | MinMonoid | MaxMonoid | SumMonoid
+@dataclass(frozen=True)
+class Monoid(LqpNode):
+    pass
+
+# OrMonoid
+@dataclass(frozen=True)
+class OrMonoid(Monoid):
+    pass
+
+# MinMonoid
+@dataclass(frozen=True)
+class MinMonoid(Monoid):
+    type: PrimitiveType
+
+# MaxMonoid
+@dataclass(frozen=True)
+class MaxMonoid(Monoid):
+    type: PrimitiveType
+
+# SumMonoid
+@dataclass(frozen=True)
+class SumMonoid(Monoid):
+    type: PrimitiveType
 
 # Abstraction(vars::Binding[], value::Formula)
 @dataclass(frozen=True)

@@ -1,0 +1,10 @@
+(transaction
+  (epoch
+    (persistent_writes
+      (define
+        (fragment :copy
+          (algorithm 1967807609550870936
+            (script
+              (copy 1967807609550870936
+                ([x::INT]
+                  (atom 3159282601090220207 x))))))))))

@@ -261,8 +261,15 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         lqp += to_str(node.body, indent_level + 2, options, debug_info)
         lqp += conf.RPAREN()
 
-    elif isinstance(node, (ir.Assign, ir.Break, ir.Upsert)):
-        s = "assign" if isinstance(node, ir.Assign) else "break" if isinstance(node, ir.Break) else "upsert"
+    elif isinstance(node, (ir.Assign, ir.Break, ir.Upsert, ir.Copy)):
+        if isinstance(node, ir.Assign):
+            s = "assign"
+        elif isinstance(node, ir.Break):
+            s = "break"
+        elif isinstance(node, ir.Upsert):
+            s = "upsert"
+        elif isinstance(node, ir.Copy):
+            s = "copy"
         lqp += ind + conf.LPAREN() + conf.kw(s) + " " + to_str(node.name, 0, options, debug_info) + "\n"
         lqp += to_str(node.body, indent_level + 1, options, debug_info)
         if len(node.attrs) == 0:
@@ -272,6 +279,32 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
             lqp += conf.indentation(indent_level + 1) + conf.LPAREN() + conf.kw("attrs") + "\n"
             lqp += list_to_str(node.attrs, indent_level + 2, "\n", options, debug_info)
             lqp += f"{conf.RPAREN()}{conf.RPAREN()}"
+
+    elif isinstance(node, (ir.MonoidDef, ir.MonusDef)):
+        s = "monoid" if isinstance(node, ir.MonoidDef) else "monus"
+        lqp += ind + conf.LPAREN() + conf.kw(s) + " " \
+                + to_str(node.monoid, 0, options, debug_info) + " " \
+                + to_str(node.name, 0, options, debug_info) + "\n"
+        lqp += to_str(node.body, indent_level + 1, options, debug_info)
+        if len(node.attrs) == 0:
+            lqp += f"{conf.RPAREN()}"
+        else:
+            lqp += "\n"
+            lqp += conf.indentation(indent_level + 1) + conf.LPAREN() + conf.kw("attrs") + "\n"
+            lqp += list_to_str(node.attrs, indent_level + 2, "\n", options, debug_info)
+            lqp += f"{conf.RPAREN()}{conf.RPAREN()}"
+
+    elif isinstance(node, ir.OrMonoid):
+        lqp += "BOOL::OR"
+
+    elif isinstance(node, ir.MinMonoid):
+        lqp += to_str(node.type, 0, options, debug_info) + "::MIN"
+
+    elif isinstance(node, ir.MaxMonoid):
+        lqp += to_str(node.type, 0, options, debug_info) + "::MAX"
+
+    elif isinstance(node, ir.SumMonoid):
+        lqp += to_str(node.type, 0, options, debug_info) + "::SUM"
 
     elif isinstance(node, ir.Abstraction):
         lqp += ind + conf.LPAREN() + conf.LBRACKET()

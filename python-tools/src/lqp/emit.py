@@ -181,6 +181,15 @@ def convert_instruction(instr: ir.Instruction) -> logic_pb2.Instruction:
     elif isinstance(instr, ir.Upsert):
         dict: Dict[str, Any] = {'upsert': convert_upsert(instr)}
         return logic_pb2.Instruction(**dict)
+    elif isinstance(instr, ir.Copy):
+        dict: Dict[str, Any] = {'copy': convert_copy(instr)}
+        return logic_pb2.Instruction(**dict)
+    elif isinstance(instr, ir.MonoidDef):
+        dict: Dict[str, Any] = {'monoid_def': convert_monoid_def(instr)}
+        return logic_pb2.Instruction(**dict)
+    elif isinstance(instr, ir.MonusDef):
+        dict: Dict[str, Any] = {'monus_def': convert_monus_def(instr)}
+        return logic_pb2.Instruction(**dict)
     else:
         raise TypeError(f"Unsupported Instruction type: {type(instr)}")
 
@@ -202,6 +211,42 @@ def convert_upsert(instr: ir.Upsert) -> logic_pb2.Upsert:
         body=convert_abstraction(instr.body),
         attrs=[convert_attribute(attr) for attr in instr.attrs]
     )
+def convert_copy(instr: ir.Copy) -> logic_pb2.Copy:
+    return logic_pb2.Copy(
+        name=convert_relation_id(instr.name),
+        body=convert_abstraction(instr.body),
+        attrs=[convert_attribute(attr) for attr in instr.attrs]
+    )
+def convert_monoid_def(instr: ir.MonoidDef) -> logic_pb2.MonoidDef:
+    return logic_pb2.MonoidDef(
+        monoid=convert_monoid(instr.monoid),
+        name=convert_relation_id(instr.name),
+        body=convert_abstraction(instr.body),
+        attrs=[convert_attribute(attr) for attr in instr.attrs]
+    )
+def convert_monus_def(instr: ir.MonusDef) -> logic_pb2.MonusDef:
+    return logic_pb2.MonusDef(
+        monoid=convert_monoid(instr.monoid),
+        name=convert_relation_id(instr.name),
+        body=convert_abstraction(instr.body),
+        attrs=[convert_attribute(attr) for attr in instr.attrs]
+    )
+def convert_monoid(monoid: ir.Monoid) -> logic_pb2.Monoid:
+    from typing import Dict, Any
+    if isinstance(monoid, ir.OrMonoid):
+        return logic_pb2.Monoid(**{'or_monoid': logic_pb2.OrMonoid()})  # type: ignore
+    elif isinstance(monoid, ir.SumMonoid):
+        type = convert_primitive_type(monoid.type)
+        return logic_pb2.Monoid(**{'sum_monoid': logic_pb2.SumMonoid(type=type)})  # type: ignore
+    elif isinstance(monoid, ir.MinMonoid):
+        type = convert_primitive_type(monoid.type)
+        return logic_pb2.Monoid(**{'min_monoid': logic_pb2.MinMonoid(type=type)})  # type: ignore
+    elif isinstance(monoid, ir.MaxMonoid):
+        type = convert_primitive_type(monoid.type)
+        return logic_pb2.Monoid(**{'max_monoid': logic_pb2.MaxMonoid(type=type)})  # type: ignore
+    else:
+        raise TypeError(f"Unsupported Monoid: {monoid}")
+
 
 def convert_script(script: ir.Script) -> logic_pb2.Script:
     return logic_pb2.Script(constructs=[convert_construct(c) for c in script.constructs])
@@ -268,7 +313,7 @@ def convert_export_config(ec: ir.ExportCSVConfig) -> transactions_pb2.ExportCSVC
         path=ec.path,
         partition_size=ec.partition_size if ec.partition_size is not None else 0,
         compression=ec.compression if ec.compression is not None else "",
-        syntax_header_row=ec.syntax_header_row if ec.syntax_header_row is not None else True,
+        syntax_header_row=ec.syntax_header_row if ec.syntax_header_row is not None else True, # type: ignore
         syntax_missing_string=ec.syntax_missing_string if ec.syntax_missing_string is not None else "",
         syntax_delim=ec.syntax_delim if ec.syntax_delim is not None else ",",
         syntax_quotechar=ec.syntax_quotechar if ec.syntax_quotechar is not None else '"',

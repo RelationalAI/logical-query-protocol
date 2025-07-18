@@ -41,6 +41,9 @@ message Instruction {
     Assign assign = 1;
     Upsert upsert = 2;
     Break break = 3;
+    Copy copy = 4;
+    MonoidDef monoid_def = 5;
+    MonusDef monus_def = 6;
   }
 }
 
@@ -61,6 +64,50 @@ message Break {
   Abstraction body = 2;
   repeated Attribute attrs = 3;
 }
+
+message Copy {
+  RelationId name = 1;
+  Abstraction body = 2;
+  repeated Attribute attrs = 3;
+}
+
+message MonoidDef {
+  Monoid monoid = 1;
+  RelationId name = 2;
+  Abstraction body = 3;
+  repeated Attribute attrs = 4;
+}
+
+message MonusDef {
+  Monoid monoid = 1;
+  RelationId name = 2;
+  Abstraction body = 3;
+  repeated Attribute attrs = 4;
+}
+
+message Monoid {
+    oneof value {
+        OrMonoid or_monoid = 1;
+        MinMonoid min_monoid = 2;
+        MaxMonoid max_monoid = 3;
+        SumMonoid sum_monoid = 4;
+    }
+}
+
+message OrMonoid {} // Only over Booleans
+
+message MinMonoid { // Parametrized by a type T
+    PrimitiveType type = 1;
+}
+
+message MaxMonoid { // Parametrized by a type T
+    PrimitiveType type = 1;
+}
+
+message SumMonoid { // Parametrized by a type T
+    PrimitiveType type = 1;
+}
+
 
 message Binding {
   Var var = 1;
