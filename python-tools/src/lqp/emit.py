@@ -109,7 +109,6 @@ def convert_formula(f: ir.Formula) -> logic_pb2.Formula:
         return logic_pb2.Formula(rel_atom=rel_atom_proto)
     elif isinstance(f, ir.Cast):
         return logic_pb2.Formula(cast=logic_pb2.Cast(
-            type=convert_primitive_type(f.type),
             input=convert_term(f.input),
             result=convert_term(f.result)
         ))

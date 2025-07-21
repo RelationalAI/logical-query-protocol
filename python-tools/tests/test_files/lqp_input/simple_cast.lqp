@@ -3,12 +3,12 @@
     (local_writes
       (define
         (fragment :f1
-          (def :int_uint ([v::UINT128] (cast UINT128 123 v)))
-          (def :int_dec ([v::DECIMAL128] (cast DECIMAL128 123 v)))
+          (def :int_uint ([v::UINT128] (cast 123 v)))
+          (def :int_dec ([v::DECIMAL128] (cast 123 v)))
           (def :dec_int ([v::INT]
             (exists [d::DECIMAL128] (and
               (primitive :rel_primitive_decimal #64 #4 5 d)
-              (cast INT d v))))))))
+              (cast d v))))))))
 
     (reads
       (output :int_uint :int_uint)

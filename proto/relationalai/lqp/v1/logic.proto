@@ -139,7 +139,6 @@ message RelAtom {
 }
 
 message Cast {
-  PrimitiveType type = 1;
   Term input = 2;
   Term result = 3;
 }

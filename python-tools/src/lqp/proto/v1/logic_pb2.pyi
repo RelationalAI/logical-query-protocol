@@ -232,14 +232,12 @@ class RelAtom(_message.Message):
     def __init__(self, name: _Optional[str] = ..., terms: _Optional[_Iterable[_Union[RelTerm, _Mapping]]] = ...) -> None: ...
 
 class Cast(_message.Message):
-    __slots__ = ("type", "input", "result")
-    TYPE_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("input", "result")
     INPUT_FIELD_NUMBER: _ClassVar[int]
     RESULT_FIELD_NUMBER: _ClassVar[int]
-    type: PrimitiveType
     input: Term
     result: Term
-    def __init__(self, type: _Optional[_Union[PrimitiveType, str]] = ..., input: _Optional[_Union[Term, _Mapping]] = ..., result: _Optional[_Union[Term, _Mapping]] = ...) -> None: ...
+    def __init__(self, input: _Optional[_Union[Term, _Mapping]] = ..., result: _Optional[_Union[Term, _Mapping]] = ...) -> None: ...
 
 class RelTerm(_message.Message):
     __slots__ = ("specialized_value", "term")
