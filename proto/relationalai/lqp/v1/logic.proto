@@ -38,12 +38,12 @@ message Loop {
 
 message Instruction {
   oneof instr_type {
-    Assign assign = 1;
-    Upsert upsert = 2;
-    Break break = 3;
-    Copy copy = 4;
-    MonoidDef monoid_def = 5;
-    MonusDef monus_def = 6;
+    Assign assign = 1; // Work like Defs, but only within a loop
+    Upsert upsert = 2; // In-place update of relation by another by swapping
+    Break break = 3; // Nullary relation that exits the loop when fired
+    Copy copy = 4; // Copies a relation, potentially with a different underlying data structure
+    MonoidDef monoid_def = 5; // In-place update of relation by another by a monoid operation
+    MonusDef monus_def = 6; // In-place update of relation by another by "subtraction" operation, if it exists
   }
 }
 
