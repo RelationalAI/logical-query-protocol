@@ -1,0 +1,10 @@
+(transaction
+  (epoch
+    (persistent_writes
+      (define
+        (fragment :copy
+          (algorithm :test1
+            (script
+              (copy :test1
+                ([x::INT]
+                  (atom :alice x))))))))))

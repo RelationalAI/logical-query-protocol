@@ -343,6 +343,17 @@ class LoopyBadGlobalFinder(LqpVisitor):
                         f"Global rule found in body at {i.meta}: '{i.name.id}'"
                     )
 
+class LoopyUpdatesShouldBeAtoms(LqpVisitor):
+    def __init__(self, txn: ir.Transaction):
+        self.generic_visit(txn)
+
+    def visit_instruction_with_atom_body(self, node: Any, *args: Any) -> None:
+        if not isinstance(node.body.value, ir.Atom):
+            instruction_type = node.__class__.__name__
+            raise ValidationError(f"{instruction_type} at {node.meta} must have an Atom as its value")
+
+    visit_Copy = visit_MonoidDef = visit_MonusDef = visit_Upsert = visit_instruction_with_atom_body
+
 def validate_lqp(lqp: ir.Transaction):
     ShadowedVariableFinder(lqp)
     UnusedVariableVisitor(lqp)
@@ -351,3 +362,4 @@ def validate_lqp(lqp: ir.Transaction):
     AtomTypeChecker(lqp)
     LoopyBadBreakFinder(lqp)
     LoopyBadGlobalFinder(lqp)
+    LoopyUpdatesShouldBeAtoms(lqp)

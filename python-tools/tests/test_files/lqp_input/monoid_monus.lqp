@@ -1,0 +1,69 @@
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :f1
+            (algorithm :R1 :R2 :R3 :R4
+              (script
+                (loop
+                  (init
+                    (assign :R1 ([x::INT y::INT]
+                      (or
+                        (and
+                          (primitive :rel_primitive_eq x 1)
+                          (primitive :rel_primitive_eq y 10))
+                        (and
+                          (primitive :rel_primitive_eq x 2)
+                          (primitive :rel_primitive_eq y 3))))
+                      (attrs (attribute :function)))
+                    (assign :R2 ([x::INT y::INT]
+                      (or
+                        (and
+                          (primitive :rel_primitive_eq x 1)
+                          (primitive :rel_primitive_eq y 10))
+                        (and
+                          (primitive :rel_primitive_eq x 2)
+                          (primitive :rel_primitive_eq y 3)))))
+                    (assign :R3 ([x::INT y::INT]
+                      (or
+                        (and
+                          (primitive :rel_primitive_eq x 1)
+                          (primitive :rel_primitive_eq y 5))
+                        (and
+                          (primitive :rel_primitive_eq x 2)
+                          (primitive :rel_primitive_eq y 20))))
+                      (attrs (attribute :function)))
+                    (assign :R4 ([x::INT y::INT]
+                      (or
+                        (and
+                          (primitive :rel_primitive_eq x 1)
+                          (primitive :rel_primitive_eq y 7))
+                        (and
+                          (primitive :rel_primitive_eq x 2)
+                          (primitive :rel_primitive_eq y 25))))
+                      (attrs (attribute :function)))
+                    (assign :U ([x::INT y::INT]
+                      (or
+                        (and
+                          (primitive :rel_primitive_eq x 1)
+                          (primitive :rel_primitive_eq y 5))
+                        (and
+                          (primitive :rel_primitive_eq x 2)
+                          (primitive :rel_primitive_eq y 20))))
+                      (attrs (attribute :function)))
+                    (assign :always ([] (or))))
+                (script
+                    (monoid INT::MIN :R1 ([x::INT y::INT]
+                      (atom :U x y)))
+                    (monoid BOOL::OR :R2 ([x::INT y::INT]
+                      (atom :U x y)))
+                    (monus BOOL::OR :R3 ([x::INT y::INT]
+                      (atom :U x y)))
+                    (monus INT::SUM :R4 ([x::INT y::INT]
+                      (atom :U x y)))
+                    (break :always ([] (and))))))))))
+    (reads
+      (output :R1 :R1)
+      (output :R2 :R2)
+      (output :R3 :R3)
+      (output :R4 :R4))))

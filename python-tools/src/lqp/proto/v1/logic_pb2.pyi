@@ -76,13 +76,19 @@ class Loop(_message.Message):
     def __init__(self, init: _Optional[_Iterable[_Union[Instruction, _Mapping]]] = ..., body: _Optional[_Union[Script, _Mapping]] = ...) -> None: ...
 
 class Instruction(_message.Message):
-    __slots__ = ("assign", "upsert")
+    __slots__ = ("assign", "upsert", "copy", "monoid_def", "monus_def")
     ASSIGN_FIELD_NUMBER: _ClassVar[int]
     UPSERT_FIELD_NUMBER: _ClassVar[int]
     BREAK_FIELD_NUMBER: _ClassVar[int]
+    COPY_FIELD_NUMBER: _ClassVar[int]
+    MONOID_DEF_FIELD_NUMBER: _ClassVar[int]
+    MONUS_DEF_FIELD_NUMBER: _ClassVar[int]
     assign: Assign
     upsert: Upsert
-    def __init__(self, assign: _Optional[_Union[Assign, _Mapping]] = ..., upsert: _Optional[_Union[Upsert, _Mapping]] = ..., **kwargs) -> None: ...
+    copy: Copy
+    monoid_def: MonoidDef
+    monus_def: MonusDef
+    def __init__(self, assign: _Optional[_Union[Assign, _Mapping]] = ..., upsert: _Optional[_Union[Upsert, _Mapping]] = ..., copy: _Optional[_Union[Copy, _Mapping]] = ..., monoid_def: _Optional[_Union[MonoidDef, _Mapping]] = ..., monus_def: _Optional[_Union[MonusDef, _Mapping]] = ..., **kwargs) -> None: ...
 
 class Assign(_message.Message):
     __slots__ = ("name", "body", "attrs")
@@ -113,6 +119,74 @@ class Break(_message.Message):
     body: Abstraction
     attrs: _containers.RepeatedCompositeFieldContainer[Attribute]
     def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
+
+class Copy(_message.Message):
+    __slots__ = ("name", "body", "attrs")
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    BODY_FIELD_NUMBER: _ClassVar[int]
+    ATTRS_FIELD_NUMBER: _ClassVar[int]
+    name: RelationId
+    body: Abstraction
+    attrs: _containers.RepeatedCompositeFieldContainer[Attribute]
+    def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
+
+class MonoidDef(_message.Message):
+    __slots__ = ("monoid", "name", "body", "attrs")
+    MONOID_FIELD_NUMBER: _ClassVar[int]
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    BODY_FIELD_NUMBER: _ClassVar[int]
+    ATTRS_FIELD_NUMBER: _ClassVar[int]
+    monoid: Monoid
+    name: RelationId
+    body: Abstraction
+    attrs: _containers.RepeatedCompositeFieldContainer[Attribute]
+    def __init__(self, monoid: _Optional[_Union[Monoid, _Mapping]] = ..., name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
+
+class MonusDef(_message.Message):
+    __slots__ = ("monoid", "name", "body", "attrs")
+    MONOID_FIELD_NUMBER: _ClassVar[int]
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    BODY_FIELD_NUMBER: _ClassVar[int]
+    ATTRS_FIELD_NUMBER: _ClassVar[int]
+    monoid: Monoid
+    name: RelationId
+    body: Abstraction
+    attrs: _containers.RepeatedCompositeFieldContainer[Attribute]
+    def __init__(self, monoid: _Optional[_Union[Monoid, _Mapping]] = ..., name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
+
+class Monoid(_message.Message):
+    __slots__ = ("or_monoid", "min_monoid", "max_monoid", "sum_monoid")
+    OR_MONOID_FIELD_NUMBER: _ClassVar[int]
+    MIN_MONOID_FIELD_NUMBER: _ClassVar[int]
+    MAX_MONOID_FIELD_NUMBER: _ClassVar[int]
+    SUM_MONOID_FIELD_NUMBER: _ClassVar[int]
+    or_monoid: OrMonoid
+    min_monoid: MinMonoid
+    max_monoid: MaxMonoid
+    sum_monoid: SumMonoid
+    def __init__(self, or_monoid: _Optional[_Union[OrMonoid, _Mapping]] = ..., min_monoid: _Optional[_Union[MinMonoid, _Mapping]] = ..., max_monoid: _Optional[_Union[MaxMonoid, _Mapping]] = ..., sum_monoid: _Optional[_Union[SumMonoid, _Mapping]] = ...) -> None: ...
+
+class OrMonoid(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
+
+class MinMonoid(_message.Message):
+    __slots__ = ("type",)
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    type: PrimitiveType
+    def __init__(self, type: _Optional[_Union[PrimitiveType, str]] = ...) -> None: ...
+
+class MaxMonoid(_message.Message):
+    __slots__ = ("type",)
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    type: PrimitiveType
+    def __init__(self, type: _Optional[_Union[PrimitiveType, str]] = ...) -> None: ...
+
+class SumMonoid(_message.Message):
+    __slots__ = ("type",)
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    type: PrimitiveType
+    def __init__(self, type: _Optional[_Union[PrimitiveType, str]] = ...) -> None: ...
 
 class Binding(_message.Message):
     __slots__ = ("var", "type")

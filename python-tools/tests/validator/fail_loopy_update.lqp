@@ -1,0 +1,9 @@
+;; ERROR: Copy at fail_loopy_update.lqp:9:15 must have an Atom as its value
+(transaction
+  (epoch
+    (persistent_writes
+      (define
+        (fragment :copy
+          (algorithm :test1
+            (script
+              (copy :test1 ([] (and ))))))))))

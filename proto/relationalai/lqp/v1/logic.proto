@@ -38,9 +38,12 @@ message Loop {
 
 message Instruction {
   oneof instr_type {
-    Assign assign = 1;
-    Upsert upsert = 2;
-    Break break = 3;
+    Assign assign = 1; // Work like Defs, but only within a loop
+    Upsert upsert = 2; // In-place update of relation by another by swapping
+    Break break = 3; // Nullary relation that exits the loop when fired
+    Copy copy = 4; // Copies a relation, potentially with a different underlying data structure
+    MonoidDef monoid_def = 5; // In-place update of relation by another by a monoid operation
+    MonusDef monus_def = 6; // In-place update of relation by another by "subtraction" operation, if it exists
   }
 }
 
@@ -61,6 +64,50 @@ message Break {
   Abstraction body = 2;
   repeated Attribute attrs = 3;
 }
+
+message Copy {
+  RelationId name = 1;
+  Abstraction body = 2;
+  repeated Attribute attrs = 3;
+}
+
+message MonoidDef {
+  Monoid monoid = 1;
+  RelationId name = 2;
+  Abstraction body = 3;
+  repeated Attribute attrs = 4;
+}
+
+message MonusDef {
+  Monoid monoid = 1;
+  RelationId name = 2;
+  Abstraction body = 3;
+  repeated Attribute attrs = 4;
+}
+
+message Monoid {
+    oneof value {
+        OrMonoid or_monoid = 1;
+        MinMonoid min_monoid = 2;
+        MaxMonoid max_monoid = 3;
+        SumMonoid sum_monoid = 4;
+    }
+}
+
+message OrMonoid {} // Only over Booleans
+
+message MinMonoid { // Parametrized by a type T
+    PrimitiveType type = 1;
+}
+
+message MaxMonoid { // Parametrized by a type T
+    PrimitiveType type = 1;
+}
+
+message SumMonoid { // Parametrized by a type T
+    PrimitiveType type = 1;
+}
+
 
 message Binding {
   Var var = 1;
