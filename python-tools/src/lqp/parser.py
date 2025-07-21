@@ -65,7 +65,7 @@ not_: "(not" formula ")"
 ffi: "(ffi" name args terms ")"
 atom: "(atom" relation_id term* ")"
 relatom: "(relatom" name relterm* ")"
-cast: "(cast" PRIMITIVE_TYPE term term ")"
+cast: "(cast" term term ")"
 pragma: "(pragma" name  term* ")"
 true: "(true)"
 false: "(false)"
@@ -326,7 +326,7 @@ class LQPTransformer(Transformer):
         return ir.RelAtom(name=items[0], terms=items[1:], meta=self.meta(meta))
 
     def cast(self, meta, items):
-        return ir.Cast(type=items[0], input=items[1], result=items[2], meta=self.meta(meta))
+        return ir.Cast(input=items[0], result=items[1], meta=self.meta(meta))
 
     #
     # Primitives

@@ -156,7 +156,6 @@ class RelAtom(Formula):
 # Cast(type::PrimitiveType, input::Term, result::Term)
 @dataclass(frozen=True)
 class Cast(Formula):
-    type: PrimitiveType
     input: Term
     result: Term
 

@@ -324,7 +324,7 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         lqp += f"{ind}{conf.LPAREN()}{conf.kw('relatom')} :{node.name} {list_to_str(node.terms, 0, ' ', options, debug_info)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Cast):
-        lqp += f"{ind}{conf.LPAREN()}{conf.kw('cast')} {str(node.type)} {to_str(node.input, 0, options, debug_info)} {to_str(node.result, 0, options, debug_info)}{conf.RPAREN()}"
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('cast')} {to_str(node.input, 0, options, debug_info)} {to_str(node.result, 0, options, debug_info)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Var):
         lqp += f"{ind}{conf.uname(node.name)}"
