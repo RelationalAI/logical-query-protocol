@@ -8,10 +8,7 @@
               (primitive :rel_primitive_parse_date "1998-12-01" "Y-m-d" v)))
           (def 4498334357512242845
             ([v::DECIMAL64]
-              (primitive :rel_primitive_parse_decimal #64 #6 "3.14" v)))
-          (def 10685959883456165753
-            ([v::DAY]
-              (primitive :rel_primitive_parse_day #90 v))))))
+              (primitive :rel_primitive_parse_decimal #64 #6 "3.14" v))))))
     (reads
       (output :date 1046914482580477072)
       (output :decimal 4498334357512242845))))
@@ -21,4 +18,3 @@
 ;; Original names
 ;; 	 ID `1046914482580477072` -> `date`
 ;; 	 ID `4498334357512242845` -> `decimal`
-;; 	 ID `10685959883456165753` -> `day`

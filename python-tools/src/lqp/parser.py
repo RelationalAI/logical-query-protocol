@@ -54,7 +54,7 @@ break_ : "(break" relation_id abstraction attrs? ")"
 
 abstraction: "(" bindings formula ")"
 bindings: "[" binding* "]"
-binding: SYMBOL "::" rel_type
+binding: SYMBOL "::" PRIMITIVE_TYPE
 
 formula: exists | reduce | conjunction | disjunction | not_ | ffi | atom | pragma | primitive | true | false | relatom | cast
 exists: "(exists" bindings formula ")"
@@ -65,7 +65,7 @@ not_: "(not" formula ")"
 ffi: "(ffi" name args terms ")"
 atom: "(atom" relation_id term* ")"
 relatom: "(relatom" name relterm* ")"
-cast: "(cast" rel_type term term ")"
+cast: "(cast" PRIMITIVE_TYPE term term ")"
 pragma: "(pragma" name  term* ")"
 true: "(true)"
 false: "(false)"
@@ -88,6 +88,7 @@ divide: "(/" term term term ")"
 
 relterm: specialized_value | term
 term: var | constant
+specialized_value: "#" primitive_value
 var: SYMBOL
 constant: primitive_value
 
@@ -98,15 +99,10 @@ fragment_id: ":" SYMBOL
 relation_id: (":" SYMBOL) | NUMBER
 name: ":" SYMBOL
 
-specialized_value: "#" primitive_value
-
 primitive_value: STRING | NUMBER | FLOAT | UINT128 | INT128
 
-rel_type: PRIMITIVE_TYPE | REL_VALUE_TYPE
 PRIMITIVE_TYPE: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
-REL_VALUE_TYPE: "DECIMAL64" | "DECIMAL128" | "DATE" | "DATETIME"
-              | "NANOSECOND" | "MICROSECOND" | "MILLISECOND" | "SECOND" | "MINUTE" | "HOUR"
-              | "DAY" | "WEEK" | "MONTH" | "YEAR"
+              | "DECIMAL64" | "DECIMAL128" | "DATE" | "DATETIME"
 
 SYMBOL: /[a-zA-Z_][a-zA-Z0-9_-]*/
 STRING: ESCAPED_STRING
@@ -143,10 +139,6 @@ class LQPTransformer(Transformer):
 
     def PRIMITIVE_TYPE(self, s):
         return getattr(ir.PrimitiveType, s.upper())
-
-    def REL_VALUE_TYPE(self, s):
-        return getattr(ir.RelValueType, s.upper())
-
     def rel_type(self, meta, items):
         return items[0]
 
@@ -286,8 +278,8 @@ class LQPTransformer(Transformer):
         return ir.Abstraction(vars=items[0], value=items[1], meta=self.meta(meta))
 
     def binding(self, meta, items):
-        name, rel_type = items
-        return (ir.Var(name=name, meta=self.meta(meta)), rel_type)
+        name, rel_t = items
+        return (ir.Var(name=name, meta=self.meta(meta)), rel_t)
 
     def vars(self, meta, items):
         return items
@@ -383,7 +375,7 @@ class LQPTransformer(Transformer):
     def constant(self, meta, items):
         return items[0]
     def specialized_value(self, meta, items):
-        return ir.Specialized(value=items[0], meta=self.meta(meta))
+        return ir.SpecializedValue(value=items[0], meta=self.meta(meta))
 
     def name(self, meta, items):
         return items[0]
