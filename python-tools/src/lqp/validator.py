@@ -165,9 +165,9 @@ class AtomTypeChecker(LqpVisitor):
                 # this node as a leaf.
         return DefCollector(txn).atoms
 
-    # Helper to map Constants to their RelType.
+    # Helper to map Constants to their PrimitiveType.
     @staticmethod
-    def constant_type(c: ir.Constant) -> ir.RelType: # type: ignore
+    def constant_type(c: ir.Constant) -> ir.PrimitiveType: # type: ignore
         if isinstance(c, str):
             return ir.PrimitiveType.STRING
         elif isinstance(c, int):
@@ -180,7 +180,7 @@ class AtomTypeChecker(LqpVisitor):
             assert False
 
     @staticmethod
-    def type_error_message(atom: ir.Atom, index: int, expected: ir.RelType, actual: ir.RelType) -> str:
+    def type_error_message(atom: ir.Atom, index: int, expected: ir.PrimitiveType, actual: ir.PrimitiveType) -> str:
         term = atom.terms[index]
         pretty_term = p.to_str(term, 0)
         return \
@@ -190,7 +190,7 @@ class AtomTypeChecker(LqpVisitor):
     # Return a list of the types of the parameters of a Def.
     @staticmethod
     def get_relation_sig(d: Instructions):
-        # v[1] holds the RelType.
+        # v[1] holds the PrimitiveType.
         return [v[1] for v in d.body.vars]
 
     # The varargs passed be a State or nothing at all.
@@ -202,9 +202,9 @@ class AtomTypeChecker(LqpVisitor):
     @dataclass(frozen=True)
     class State:
         # Maps relations in scope to their types.
-        relation_types: Dict[ir.RelationId, List[ir.RelType]]
+        relation_types: Dict[ir.RelationId, List[ir.PrimitiveType]]
         # Maps variables in scope to their type.
-        var_types: Dict[str, ir.RelType]
+        var_types: Dict[str, ir.PrimitiveType]
 
     def __init__(self, txn: ir.Transaction):
         state = AtomTypeChecker.State(

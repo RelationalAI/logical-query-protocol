@@ -5,24 +5,17 @@
         (fragment :f1
           (def 16349762466079412570
             ([v::UINT128]
-              (cast UINT128 123 v)))
+              (cast 123 v)))
           (def 2416119102758728972
             ([v::DECIMAL128]
-              (cast DECIMAL128 123 v)))
+              (cast 123 v)))
           (def 643033171408983360
             ([v::INT]
               (exists [d::DECIMAL128]
                 (and
                   (primitive :rel_primitive_decimal #64 #4 5 d)
-                  (cast INT d v)))))
-          (def 15959071190882653462
-            ([v::MINUTE]
-              (exists [h::HOUR]
-                (and
-                  (primitive :rel_primitive_pack 4 h)
-                  (cast MINUTE h v))))))))
+                  (cast d v))))))))
     (reads
       (output :int_uint 16349762466079412570)
       (output :int_dec 2416119102758728972)
-      (output :dec_int 643033171408983360)
-      (output :hour_minute 15959071190882653462))))
+      (output :dec_int 643033171408983360))))

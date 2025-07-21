@@ -1,0 +1,98 @@
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :f1
+          (algorithm 12074491928194973989 15443881159395485941 151923326135382205 17041058638615872964
+            (script
+              (loop
+                (init
+                  (assign 12074491928194973989
+                    ([x::INT y::INT]
+                      (or
+                        (and
+                          (primitive :rel_primitive_eq x 1)
+                          (primitive :rel_primitive_eq y 10))
+                        (and
+                          (primitive :rel_primitive_eq x 2)
+                          (primitive :rel_primitive_eq y 3))))
+                    (attrs
+                      (attribute :function )))
+                  (assign 15443881159395485941
+                    ([x::INT y::INT]
+                      (or
+                        (and
+                          (primitive :rel_primitive_eq x 1)
+                          (primitive :rel_primitive_eq y 10))
+                        (and
+                          (primitive :rel_primitive_eq x 2)
+                          (primitive :rel_primitive_eq y 3)))))
+                  (assign 151923326135382205
+                    ([x::INT y::INT]
+                      (or
+                        (and
+                          (primitive :rel_primitive_eq x 1)
+                          (primitive :rel_primitive_eq y 5))
+                        (and
+                          (primitive :rel_primitive_eq x 2)
+                          (primitive :rel_primitive_eq y 20))))
+                    (attrs
+                      (attribute :function )))
+                  (assign 17041058638615872964
+                    ([x::INT y::INT]
+                      (or
+                        (and
+                          (primitive :rel_primitive_eq x 1)
+                          (primitive :rel_primitive_eq y 7))
+                        (and
+                          (primitive :rel_primitive_eq x 2)
+                          (primitive :rel_primitive_eq y 25))))
+                    (attrs
+                      (attribute :function )))
+                  (assign 11697277356358429352
+                    ([x::INT y::INT]
+                      (or
+                        (and
+                          (primitive :rel_primitive_eq x 1)
+                          (primitive :rel_primitive_eq y 5))
+                        (and
+                          (primitive :rel_primitive_eq x 2)
+                          (primitive :rel_primitive_eq y 20))))
+                    (attrs
+                      (attribute :function )))
+                  (assign 11303028219845360359
+                    ([]
+                      (or
+))))
+                  (script
+                    (monoid INT::MIN 12074491928194973989
+                      ([x::INT y::INT]
+                        (atom 11697277356358429352 x y)))
+                    (monoid BOOL::OR 15443881159395485941
+                      ([x::INT y::INT]
+                        (atom 11697277356358429352 x y)))
+                    (monus BOOL::OR 151923326135382205
+                      ([x::INT y::INT]
+                        (atom 11697277356358429352 x y)))
+                    (monus INT::SUM 17041058638615872964
+                      ([x::INT y::INT]
+                        (atom 11697277356358429352 x y)))
+                    (break 11303028219845360359
+                      ([]
+                        (and
+))))))))))
+    (reads
+      (output :R1 12074491928194973989)
+      (output :R2 15443881159395485941)
+      (output :R3 151923326135382205)
+      (output :R4 17041058638615872964))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `12074491928194973989` -> `R1`
+;; 	 ID `15443881159395485941` -> `R2`
+;; 	 ID `151923326135382205` -> `R3`
+;; 	 ID `17041058638615872964` -> `R4`
+;; 	 ID `11697277356358429352` -> `U`
+;; 	 ID `11303028219845360359` -> `always`

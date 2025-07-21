@@ -135,7 +135,7 @@ class SumMonoid(Monoid):
 # Abstraction(vars::Binding[], value::Formula)
 @dataclass(frozen=True)
 class Abstraction(LqpNode):
-    vars: Sequence[Tuple[Var, RelType]]
+    vars: Sequence[Tuple[Var, PrimitiveType]]
     value: Formula
 
 # Formula := Exists | Reduce | Conjunction | Disjunction | Not | FFI | Atom | Pragma | Primitive | TrueVal | FalseVal | RelAtom | Cast
@@ -201,10 +201,9 @@ class RelAtom(Formula):
     name: str
     terms: Sequence[RelTerm]
 
-# Cast(type::RelType, input::Term, result::Term)
+# Cast(type::PrimitiveType, input::Term, result::Term)
 @dataclass(frozen=True)
 class Cast(Formula):
-    type: RelType
     input: Term
     result: Term
 
@@ -229,15 +228,16 @@ PrimitiveValue = Union[str, int, float, UInt128, Int128]
 # Constant(value::PrimitiveValue)
 Constant = Union[PrimitiveValue]
 
+# SpecializedValue(value::PrimitiveValue)
+@dataclass(frozen=True)
+class SpecializedValue(LqpNode):
+    value: PrimitiveValue
+
 # Term := Var | Constant
 Term = Union[Var, Constant]
 
-# SpecializedValue(value::PrimitiveValue)
-@dataclass(frozen=True)
-class Specialized(LqpNode):
-    value: PrimitiveValue
-
-RelTerm = Union[Term, Specialized]
+# RelTerm := Term | SpecializedValue
+RelTerm = Union[Term, SpecializedValue]
 
 # Attribute(name::string, args::Constant[])
 @dataclass(frozen=True)
@@ -271,31 +271,13 @@ class PrimitiveType(Enum):
     FLOAT = 3
     UINT128 = 4
     INT128 = 5
+    DATE = 6
+    DATETIME = 7
+    DECIMAL64 = 8
+    DECIMAL128 = 9
 
     def __str__(self) -> str:
         return self.name
-
-class RelValueType(Enum):
-    UNSPECIFIED = 0
-    DATE = 2
-    DATETIME = 3
-    NANOSECOND = 4
-    MICROSECOND = 5
-    MILLISECOND = 6
-    SECOND = 7
-    MINUTE = 8
-    HOUR = 9
-    DAY = 10
-    WEEK = 11
-    MONTH = 12
-    YEAR = 13
-    DECIMAL64 = 14
-    DECIMAL128 = 15
-
-    def __str__(self) -> str:
-        return self.name
-
-RelType = Union[PrimitiveType, RelValueType]
 
 # --- Fragment Types ---
 

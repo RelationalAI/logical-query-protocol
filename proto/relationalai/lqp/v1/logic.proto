@@ -111,7 +111,7 @@ message SumMonoid { // Parametrized by a type T
 
 message Binding {
   Var var = 1;
-  RelType type = 2;
+  PrimitiveType type = 2;
 }
 
 // Abstraction and related types
@@ -186,7 +186,6 @@ message RelAtom {
 }
 
 message Cast {
-  RelType type = 1;
   Term input = 2;
   Term result = 3;
 }
@@ -219,13 +218,6 @@ message RelationId {
   fixed64 id_high = 2; // Upper 64 bits of UInt128
 }
 
-message RelType {
-  oneof rel_type {
-    PrimitiveType primitive_type = 1;
-    RelValueType value_type = 2;
-  }
-}
-
 enum PrimitiveType {
   PRIMITIVE_TYPE_UNSPECIFIED = 0;
   PRIMITIVE_TYPE_STRING = 1;
@@ -233,28 +225,12 @@ enum PrimitiveType {
   PRIMITIVE_TYPE_FLOAT = 3;
   PRIMITIVE_TYPE_UINT128 = 4;
   PRIMITIVE_TYPE_INT128 = 5;
-}
 
-enum RelValueType {
-  REL_VALUE_TYPE_UNSPECIFIED = 0;
-  reserved 1;
+  PRIMITIVE_TYPE_DATE = 7;
+  PRIMITIVE_TYPE_DATETIME = 8;
 
-  REL_VALUE_TYPE_DATE = 2;
-  REL_VALUE_TYPE_DATETIME = 3;
-
-  REL_VALUE_TYPE_NANOSECOND = 4;
-  REL_VALUE_TYPE_MICROSECOND = 5;
-  REL_VALUE_TYPE_MILLISECOND = 6;
-  REL_VALUE_TYPE_SECOND = 7;
-  REL_VALUE_TYPE_MINUTE = 8;
-  REL_VALUE_TYPE_HOUR = 9;
-  REL_VALUE_TYPE_DAY = 10;
-  REL_VALUE_TYPE_WEEK = 11;
-  REL_VALUE_TYPE_MONTH = 12;
-  REL_VALUE_TYPE_YEAR = 13;
-
-  REL_VALUE_TYPE_DECIMAL64 = 14;
-  REL_VALUE_TYPE_DECIMAL128 = 15;
+  PRIMITIVE_TYPE_DECIMAL64 = 9;
+  PRIMITIVE_TYPE_DECIMAL128 = 10;
 }
 
 message Value {
