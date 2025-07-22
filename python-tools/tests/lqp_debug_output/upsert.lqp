@@ -1,0 +1,60 @@
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :f1
+          (algorithm 12074491928194973989 15443881159395485941
+            (script
+              (loop
+                (init
+                  (assign 12074491928194973989
+                    ([a::INT b::INT]
+                      (or
+                        (and
+                          (primitive :rel_primitive_eq a 1)
+                          (primitive :rel_primitive_eq b 2))
+                        (and
+                          (primitive :rel_primitive_eq a 2)
+                          (primitive :rel_primitive_eq b 3)))))
+                  (assign 15443881159395485941
+                    ([a::INT b::INT]
+                      (or
+                        (and
+                          (primitive :rel_primitive_eq a 1)
+                          (primitive :rel_primitive_eq b 2))
+                        (and
+                          (primitive :rel_primitive_eq a 2)
+                          (primitive :rel_primitive_eq b 3))))
+                    (attrs
+                      (attribute :function )))
+                  (assign 11697277356358429352
+                    ([a::INT b::INT]
+                      (and
+                        (primitive :rel_primitive_eq a 1)
+                        (primitive :rel_primitive_eq b 3))))
+                  (assign 11303028219845360359
+                    ([]
+                      (or
+))))
+                  (script
+                    (upsert 12074491928194973989
+                      ([a::INT b::INT]
+                        (atom 11697277356358429352 a b)))
+                    (upsert 15443881159395485941
+                      ([a::INT b::INT]
+                        (atom 11697277356358429352 a b)))
+                    (break 11303028219845360359
+                      ([]
+                        (and
+))))))))))
+    (reads
+      (output :R1 12074491928194973989)
+      (output :R2 15443881159395485941))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `12074491928194973989` -> `R1`
+;; 	 ID `15443881159395485941` -> `R2`
+;; 	 ID `11697277356358429352` -> `U`
+;; 	 ID `11303028219845360359` -> `always`

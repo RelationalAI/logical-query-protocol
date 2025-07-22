@@ -15,7 +15,17 @@
                 (args
                   ([x::INT]
                     (atom :numbers x)))
+                (terms ord v))))
+          (def :limit_sorted_numbers
+            ([ord::INT v::INT]
+              (ffi :rel_primitive_top
+                (args
+                  ([x::INT]
+                    (atom :numbers x))
+                  ([limit::INT]
+                    (primitive :rel_primitive_eq limit 2)))
                 (terms ord v)))))))
     (reads
       (output :numbers :numbers)
+      (output :limit_sorted_numbers :limit_sorted_numbers)
       (output :sorted_numbers :sorted_numbers))))

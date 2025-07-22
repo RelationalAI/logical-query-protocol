@@ -1,5 +1,16 @@
-(fragment :frag
-  (def 11495104353665842533
-    ([x::INT y::INT]
-      (not
-        (primitive :rel_primitive_eq x y)))))
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :frag
+          (def 11495104353665842533
+            ([x::INT y::INT]
+              (not
+                (primitive :rel_primitive_eq x y)))))))
+    (reads
+      (output :output 1234567898765432123456789))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `11495104353665842533` -> `test`

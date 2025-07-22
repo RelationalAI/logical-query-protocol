@@ -17,7 +17,7 @@
                 (init
                   (assign :frontier ([n::INT]
                       (= n 1)))
-                  (assign :reachable ([n::INT] (or))))
+                  (assign :reachable ([_n::INT] (or))))
                 (script
                   (upsert :reachable ([n::INT] (atom :frontier n)))
                   (assign :next

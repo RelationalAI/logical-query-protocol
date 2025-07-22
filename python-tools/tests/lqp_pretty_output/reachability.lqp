@@ -24,39 +24,33 @@
                 (and
                   (primitive :rel_primitive_eq a 6)
                   (primitive :rel_primitive_eq b 5)))))
-          (algorithm :frontier :reachable
+          (algorithm :reachable
             (script
               (loop
                 (init
-                  (assign :frontier
-                    ([n::INT]
-                      (primitive :rel_primitive_eq n 1)))
                   (assign :reachable
-                    ([_n::INT]
-                      (or
-))))
+                    ([n::INT]
+                      (primitive :rel_primitive_eq n 1))))
                   (script
-                    (upsert :reachable
-                      ([n::INT]
-                        (atom :frontier n)))
                     (assign :next
                       ([m::INT]
-                        (exists [n::INT]
-                          (and
+                        (or
+                          (atom :reachable m)
+                          (exists [n::INT]
                             (and
-                              (atom :frontier n)
-                              (atom :edges n m))
-                            (not
-                              (atom :reachable m))))))
-                    (copy :frontier
-                      ([n::INT]
-                        (atom :next n)))
-                    (break :empty_frontier
+                              (atom :reachable n)
+                              (atom :edges n m))))))
+                    (break :nothing_new
                       ([]
-                        (ffi :rel_primitive_all_empty
+                        (ffi :rel_primitive_pairwise_equal
                           (args
                             ([n::INT]
-                              (atom :frontier n)))
-                          (terms)))))))))))
+                              (atom :reachable n))
+                            ([n::INT]
+                              (atom :next n)))
+                          (terms))))
+                    (assign :reachable
+                      ([n::INT]
+                        (atom :next n))))))))))
     (reads
       (output :reachable :reachable))))

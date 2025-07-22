@@ -1,0 +1,25 @@
+(transaction
+  (epoch
+    (persistent_writes
+      (define
+        (fragment :f1
+          (def 15648190185117610840
+            ([v::INT]
+              (primitive :rel_primitive_add_monotype 1 1 v)))
+          (def 16208045718567772255
+            ([v::INT]
+              (primitive :rel_primitive_eq v 101))))))
+    (reads
+      (output :output_0 16208045718567772255)
+      (output :other_0 15648190185117610840)))
+  (epoch
+    (persistent_writes
+      (undefine :f1)
+      (define
+        (fragment :f1
+          (def 16208045718567772255
+            ([v::STRING]
+              (primitive :rel_primitive_eq v "hello"))))))
+    (reads
+      (output :output_1 16208045718567772255)
+      (output :other_1 15648190185117610840))))

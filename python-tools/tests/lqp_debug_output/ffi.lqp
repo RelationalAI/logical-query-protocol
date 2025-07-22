@@ -15,9 +15,19 @@
                 (args
                   ([x::INT]
                     (atom 17566150147137631162 x)))
+                (terms ord v))))
+          (def 7431768677182986746
+            ([ord::INT v::INT]
+              (ffi :rel_primitive_top
+                (args
+                  ([x::INT]
+                    (atom 17566150147137631162 x))
+                  ([limit::INT]
+                    (primitive :rel_primitive_eq limit 2)))
                 (terms ord v)))))))
     (reads
       (output :numbers 17566150147137631162)
+      (output :limit_sorted_numbers 7431768677182986746)
       (output :sorted_numbers 2638187172736215459))))
 
 ;; Debug information
@@ -25,3 +35,4 @@
 ;; Original names
 ;; 	 ID `17566150147137631162` -> `numbers`
 ;; 	 ID `2638187172736215459` -> `sorted_numbers`
+;; 	 ID `7431768677182986746` -> `limit_sorted_numbers`
