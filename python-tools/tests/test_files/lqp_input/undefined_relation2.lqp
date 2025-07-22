@@ -4,17 +4,17 @@
   (epoch
     (persistent_writes
       (define
+        (fragment :f2
+          (def :hello ([v::INT] (= v 101)))))
+      (define
         (fragment :f1
           (def :output ([v::INT] (atom :hello v))))))
     (reads
-      (output :epoch0 :output)
-      (output :nonexistent :nonexistent)))
+      (output :epoch0 :output)))
 
-  ;; In the second epoch we add a definition for the previously undefined relation.
+  ;; In the second epoch we delete the definition.
   (epoch
     (persistent_writes
-      (define
-        (fragment :f2
-          (def :hello ([v::INT] (= v 101))))))
+      (undefine :f2))
     (reads
       (output :epoch1 :output))))

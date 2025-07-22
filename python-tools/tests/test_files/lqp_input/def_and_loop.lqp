@@ -10,5 +10,4 @@
                 (init
                   (assign :test2 ([x::INT] (atom :bob x))))
                 (script
-                  (break :test3 ([x::INT] (atom :carol x)))
-                  )))))))))
+                  (break :test3 ([x::INT] (atom :carol x))))))))))))

@@ -14,22 +14,26 @@
                 (= row 1)
                 (= v "hello"))))
           (def :colb1
-            ([row_1::STRING row_2::INT v::FLOAT]
+            ([row_1::STRING row_2::DECIMAL64 row_3::UINT128 row_4::FLOAT v::FLOAT]
               (and
                 (= row_1 "b")
-                (= row_2 12)
+                (primitive :rel_primitive_parse_decimal #64 #6 "12.12" row_2)
+                (= row_3 0x123abc)
+                (= row_4 1.234)
                 (= v 6.1))))
           (def :colb2
-            ([row_1::STRING row_2::INT v::INT]
+            ([row_1::STRING row_2::DECIMAL64 row_3::UINT128 row_4::FLOAT v::INT]
               (and
                 (= row_1 "b")
-                (= row_2 12)
+                (primitive :rel_primitive_parse_decimal #64 #6 "12.12" row_2)
+                (= row_3 0x123abc)
+                (= row_4 1.234)
                 (= v 123)))))))
 
     (reads
       (export
         (export_csv_config
-          (path "/tmp/hello_lqp_1.csv")
+          (path "wrong")
           (columns (column "col1name" :cola1) (column "col2name" :cola2))
           { :partition_size 10
             :compression ""
@@ -37,7 +41,7 @@
             :syntax_escapechar "\\"}))
       (export
         (export_csv_config
-          (path "/tmp/hello_lqp_2.csv")
+          (path "wrong")
           (columns (column "blahblah" :colb1) (column "foofoo" :colb2))
           { :syntax_quotechar "\""
             :syntax_escapechar "\\"})))))
