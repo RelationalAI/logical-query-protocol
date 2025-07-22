@@ -507,7 +507,10 @@ def id_to_name(options: Dict, debug_info: Dict, rid: ir.RelationId) -> str:
         return f"{rid.id}"
     if len(debug_info) == 0:
         return f"{rid.id}"
-    assert rid in debug_info, f"ID {rid.id} not found in debug info."
+    if rid not in debug_info:
+        # The relation ID may be missing from the debug info if it was never defined. But it
+        # is still valid and should be treated as empty.
+        return f"{rid.id}"
     return ":"+debug_info.get(rid, "")
 
 def has_option(options: Dict, opt: PrettyOptions) -> bool:
