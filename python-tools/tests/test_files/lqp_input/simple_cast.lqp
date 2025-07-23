@@ -7,7 +7,7 @@
           (def :int_dec ([v::DECIMAL128] (cast 123 v)))
           (def :dec_int ([v::INT]
             (exists [d::DECIMAL128] (and
-              (primitive :rel_primitive_decimal #64 #4 5 d)
+              (primitive :rel_primitive_decimal #128 #10 5 d)
               (cast d v))))))))
 
     (reads
