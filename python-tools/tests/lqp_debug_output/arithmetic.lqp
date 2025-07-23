@@ -36,4 +36,7 @@
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `8346242610505581273` -> `output_decimal_addition`;; 	 ID `3056642369193908718` -> `output_decimal_subtraction`;; 	 ID `16478189523298330666` -> `output_decimal_multiplication`;; 	 ID `11795783772012398890` -> `output_decimal_division`
+;; 	 ID `8346242610505581273` -> `output_decimal_addition`
+;; 	 ID `3056642369193908718` -> `output_decimal_subtraction`
+;; 	 ID `16478189523298330666` -> `output_decimal_multiplication`
+;; 	 ID `11795783772012398890` -> `output_decimal_division`

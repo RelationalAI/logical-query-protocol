@@ -190,8 +190,9 @@ def program_to_str(node: ir.Transaction, options: Dict = {}) -> str:
 
     if has_option(options, PrettyOptions.PRINT_DEBUG):
         s += _debug_str(node)
-
-    s += "\n"
+    else:
+        # Debug str already contains a trailing newline, so add one if we don't print debug
+        s += "\n"
 
     return s
 
@@ -203,7 +204,7 @@ def _debug_str(node: ir.LqpNode) -> str:
         debug_str += ";; -----------------------\n"
         debug_str += ";; Original names\n"
         for (rid, name) in debug_infos.items():
-            debug_str += f";; \t ID `{rid.id}` -> `{name}`"
+            debug_str += f";; \t ID `{rid.id}` -> `{name}`\n"
         return debug_str
     else: return ""
 
