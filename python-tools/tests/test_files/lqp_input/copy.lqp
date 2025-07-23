@@ -1,8 +1,42 @@
 (transaction
   (epoch
-    (persistent_writes
+    (local_writes
       (define
-        (fragment :copy
-          (algorithm :test1
+        (fragment :f1
+          (def :edges ([a::INT b::INT]
+            (or
+              (and (= a 1) (= b 2))
+              (and (= a 2) (= b 3))
+              (and (= a 3) (= b 4))
+              (and (= a 2) (= b 5))
+              (and (= a 5) (= b 3))
+              (and (= a 6) (= b 5)))))
+          (algorithm :frontier :reachable
             (script
-              (copy :test1 ([x::INT] (atom :alice x))))))))))
+              (loop
+                (init
+                  (assign :frontier ([n::INT]
+                      (= n 1)))
+                  (assign :reachable ([_n::INT] (or))))
+                (script
+                  (upsert :reachable ([n::INT] (atom :frontier n)))
+                  (assign :next
+                    ([m::INT]
+                      (exists [n::INT]
+                        (and
+                          (and
+                            (atom :frontier n)
+                            (atom :edges n m))
+                          (not (atom :reachable m))))))
+                  (copy :frontier
+                    ([n::INT]
+                      (atom :next n)))
+                  (break :empty_frontier
+                    ([]
+                      (ffi
+                        :rel_primitive_all_empty
+                        (args ([n::INT]
+                          (atom :frontier n)))
+                        (terms )))))))))))
+    (reads
+      (output :reachable :reachable))))

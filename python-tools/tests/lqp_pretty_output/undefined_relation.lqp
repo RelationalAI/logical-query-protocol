@@ -1,10 +1,20 @@
 (transaction
   (epoch
-    (local_writes
+    (persistent_writes
       (define
         (fragment :f1
           (def :output
             ([v::INT]
               (atom :hello v))))))
     (reads
-      (output :output :output))))
+      (output :epoch0 :output)
+      (output :nonexistent 8738597555292590240)))
+  (epoch
+    (persistent_writes
+      (define
+        (fragment :f2
+          (def :hello
+            ([v::INT]
+              (primitive :rel_primitive_eq v 101))))))
+    (reads
+      (output :epoch1 :output))))

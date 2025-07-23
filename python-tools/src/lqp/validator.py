@@ -53,6 +53,9 @@ class UnusedVariableVisitor(LqpVisitor):
         unused = declared - used
         if unused:
             for var_name in unused:
+                # Allow an escape hatch for internal variables.
+                if var_name.startswith("_"):
+                    continue
                 raise ValidationError(f"Unused variable declared: '{var_name}'")
 
     def visit_Var(self, node: ir.Var, *args: Any):

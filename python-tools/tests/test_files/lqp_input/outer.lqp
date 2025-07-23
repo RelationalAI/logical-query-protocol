@@ -1,0 +1,29 @@
+(transaction
+  (epoch
+    (local_writes
+      (define
+        (fragment :f1
+          (algorithm :R
+            (script
+              (loop
+                (init
+                  (assign :R ([a::INT b::INT]
+                    (or
+                      (and (= a 1) (= b 2))
+                      (and (= a 2) (= b 3)))))
+                  (assign :U ([a::INT b::INT]
+                    (and (= a 1) (= b 3))))
+                  (assign :always ([]
+                    (or))))
+                (script
+                  (assign :always2 ([]
+                    (or)))
+                  (loop
+                    (init)
+                    (script
+                      (upsert :R ([a::INT b::INT]
+                        (atom :U a b)))
+                      (break :always2 ([] (and)))))
+                  (break :always ([] (and))))))))))
+    (reads
+      (output :R :R))))

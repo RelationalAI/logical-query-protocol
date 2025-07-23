@@ -1,0 +1,15 @@
+(transaction
+  (epoch
+    (persistent_writes
+      (define
+        (fragment :invalid
+          (def :output
+            ([v::INT]
+              (primitive :rel_primitive_eq v 101)))))
+      (define
+        (fragment :invalid
+          (def :output
+            ([v::STRING]
+              (primitive :rel_primitive_eq v "nope"))))))
+    (reads
+      (output :output :output))))

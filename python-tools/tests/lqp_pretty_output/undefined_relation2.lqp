@@ -1,0 +1,20 @@
+(transaction
+  (epoch
+    (persistent_writes
+      (define
+        (fragment :f2
+          (def :hello
+            ([v::INT]
+              (primitive :rel_primitive_eq v 101)))))
+      (define
+        (fragment :f1
+          (def :output
+            ([v::INT]
+              (atom :hello v))))))
+    (reads
+      (output :epoch0 :output)))
+  (epoch
+    (persistent_writes
+      (undefine :f2))
+    (reads
+      (output :epoch1 :output))))

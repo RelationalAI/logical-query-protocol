@@ -1,0 +1,25 @@
+(transaction
+  (epoch
+    (persistent_writes
+      (define
+        (fragment :f1
+          (def :other
+            ([v::INT]
+              (primitive :rel_primitive_add_monotype 1 1 v)))
+          (def :output
+            ([v::INT]
+              (primitive :rel_primitive_eq v 101))))))
+    (reads
+      (output :output_0 :output)
+      (output :other_0 :other)))
+  (epoch
+    (persistent_writes
+      (undefine :f1)
+      (define
+        (fragment :f1
+          (def :output
+            ([v::STRING]
+              (primitive :rel_primitive_eq v "hello"))))))
+    (reads
+      (output :output_1 :output)
+      (output :other_1 :other))))
