@@ -1,110 +1,32 @@
 
-ñ
-Š
-‡
+“á
+Þ
+Û
 
-f1“
-
-		ÙjoÏÓs‚
-
-
-a
+f1
+Œ
+		V×Ä³N&â¼þ
 
-
-
-b
 
+
+plus	
+
 
-
-c
-ec
-R
-
-adec_a
-R
-
-bdec_b
-9J7
-rel_primitive_add_monotype
-
-a
-
-b
-
-c˜
-•
-		î6=
-`k*‡
-
-
-a
+minus	
 
-
-
-b
 
+
+mult	
+	
+
+div	Ë
+ÈÅ
 
 
-c
-jh
-R
-
-adec_a
-R
-
-bdec_b
->J<
-rel_primitive_subtract_monotype
-
-a
-
-b
-
-c˜
-•
-		*¨ÂõJ®ä‡
+a	
 
 
-a
-
-
-
-b
-
-
-
-c
-jh
-R
-
-adec_a
-R
-
-bdec_b
->J<
-rel_primitive_multiply_monotype
-
-a
-
-b
-
-c–
-“
-		*É
-Ø
-³£…
-
-
-a
-
-
-
-b
-
-
-
-c
-hf
+b	°­
 R
 
 adec_a
@@ -112,24 +34,110 @@
 
 bdec_b
 <J:
+rel_primitive_add_monotype
+
+a
+
+b
+
+
+plus
+BJ@
+rel_primitive_subtract_monotype
+
+a
+
+b	
+
+minus
+AJ?
+rel_primitive_multiply_monotype
+
+a
+
+b
+
+
+mult
+>J<
 rel_primitive_divide_monotype
 
 a
 
-b
+b	
+
+div
+Œ
+		VÅƒñÚþ
+
+
+
+plus
+
+
+
+minus
+
+
+
+
+mult
+
+	
+
+div
+Ë
+ÈÅ
+
 
-c™
-		ÙjoÏÓs
-		î6=
-`k*
-		*¨ÂõJ®ä
-		*É
-Ø
-³£output_decimal_additionoutput_decimal_subtractionoutput_decimal_multiplicationoutput_decimal_division
-dec_add		ÙjoÏÓs
-dec_sub		î6=
-`k*
-dec_mult		*¨ÂõJ®ä
-dec_div		*É
-Ø
-³£
+a
+
+
+
+b
+°­
+R
+
+adec_a
+R
+
+bdec_b
+<J:
+rel_primitive_add_monotype
+
+a
+
+b
+
+
+plus
+BJ@
+rel_primitive_subtract_monotype
+
+a
+
+b	
+
+minus
+AJ?
+rel_primitive_multiply_monotype
+
+a
+
+b
+
+
+mult
+>J<
+rel_primitive_divide_monotype
+
+a
+
+b	
+
+div/
+		V×Ä³N&â¼
+		VÅƒñÚ
+decimal_64decimal_128
+dec_64		V×Ä³N&â¼
+dec_128		VÅƒñÚ

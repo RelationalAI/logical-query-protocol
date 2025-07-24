@@ -3,32 +3,26 @@
     (local_writes
       (define
         (fragment :f1
-          (def 8346242610505581273
-            ([a::DECIMAL128 b::DECIMAL128 c::DECIMAL128]
-              (and
-                (relatom :dec_a a)
-                (relatom :dec_b b)
-                (primitive :rel_primitive_add_monotype a b c))))
-          (def 3056642369193908718
-            ([a::DECIMAL128 b::DECIMAL128 c::DECIMAL128]
-              (and
-                (relatom :dec_a a)
-                (relatom :dec_b b)
-                (primitive :rel_primitive_subtract_monotype a b c))))
-          (def 16478189523298330666
-            ([a::DECIMAL128 b::DECIMAL128 c::DECIMAL128]
-              (and
-                (relatom :dec_a a)
-                (relatom :dec_b b)
-                (primitive :rel_primitive_multiply_monotype a b c))))
-          (def 11795783772012398890
-            ([a::DECIMAL128 b::DECIMAL128 c::DECIMAL128]
-              (and
-                (relatom :dec_a a)
-                (relatom :dec_b b)
-                (primitive :rel_primitive_divide_monotype a b c)))))))
+          (def 13610483143332386646
+            ([plus::DECIMAL64 minus::DECIMAL64 mult::DECIMAL64 div::DECIMAL64]
+              (exists [a::DECIMAL64 b::DECIMAL64]
+                (and
+                  (relatom :dec_a a)
+                  (relatom :dec_b b)
+                  (primitive :rel_primitive_add_monotype a b plus)
+                  (primitive :rel_primitive_subtract_monotype a b minus)
+                  (primitive :rel_primitive_multiply_monotype a b mult)
+                  (primitive :rel_primitive_divide_monotype a b div)))))
+          (def 349608351535289881
+            ([plus::DECIMAL128 minus::DECIMAL128 mult::DECIMAL128 div::DECIMAL128]
+              (exists [a::DECIMAL128 b::DECIMAL128]
+                (and
+                  (relatom :dec_a a)
+                  (relatom :dec_b b)
+                  (primitive :rel_primitive_add_monotype a b plus)
+                  (primitive :rel_primitive_subtract_monotype a b minus)
+                  (primitive :rel_primitive_multiply_monotype a b mult)
+                  (primitive :rel_primitive_divide_monotype a b div))))))))
     (reads
-      (output :dec_add 8346242610505581273)
-      (output :dec_sub 3056642369193908718)
-      (output :dec_mult 16478189523298330666)
-      (output :dec_div 11795783772012398890))))
+      (output :dec_64 13610483143332386646)
+      (output :dec_128 349608351535289881))))

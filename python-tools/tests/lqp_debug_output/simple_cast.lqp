@@ -6,10 +6,22 @@
           (def 16349762466079412570
             ([v::UINT128]
               (cast 123 v)))
-          (def 2416119102758728972
-            ([v::DECIMAL128]
+          (def 4140026326011003740
+            ([v::INT128]
               (cast 123 v)))
-          (def 643033171408983360
+          (def 15495714284451503364
+            ([v::DECIMAL64]
+              (cast 1234 v)))
+          (def 2334076880760390067
+            ([v::INT]
+              (exists [d::DECIMAL64]
+                (and
+                  (primitive :rel_primitive_decimal #64 #6 7 d)
+                  (cast d v)))))
+          (def 3236710351334212416
+            ([v::DECIMAL128]
+              (cast 12345 v)))
+          (def 5257262794935382812
             ([v::INT]
               (exists [d::DECIMAL128]
                 (and
@@ -17,12 +29,18 @@
                   (cast d v))))))))
     (reads
       (output :int_uint 16349762466079412570)
-      (output :int_dec 2416119102758728972)
-      (output :dec_int 643033171408983360))))
+      (output :int_int 4140026326011003740)
+      (output :int_dec64 15495714284451503364)
+      (output :dec64_int 2334076880760390067)
+      (output :int_dec128 3236710351334212416)
+      (output :dec128_int 5257262794935382812))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
 ;; 	 ID `16349762466079412570` -> `int_uint`
-;; 	 ID `2416119102758728972` -> `int_dec`
-;; 	 ID `643033171408983360` -> `dec_int`
+;; 	 ID `4140026326011003740` -> `int_int`
+;; 	 ID `15495714284451503364` -> `int_dec64`
+;; 	 ID `2334076880760390067` -> `dec64_int`
+;; 	 ID `3236710351334212416` -> `int_dec128`
+;; 	 ID `5257262794935382812` -> `dec128_int`
