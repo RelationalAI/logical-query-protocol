@@ -3,32 +3,26 @@
     (local_writes
       (define
         (fragment :f1
-          (def :output_decimal_addition
-            ([a::DECIMAL128 b::DECIMAL128 c::DECIMAL128]
-              (and
-                (relatom :dec_a a)
-                (relatom :dec_b b)
-                (primitive :rel_primitive_add_monotype a b c))))
-          (def :output_decimal_subtraction
-            ([a::DECIMAL128 b::DECIMAL128 c::DECIMAL128]
-              (and
-                (relatom :dec_a a)
-                (relatom :dec_b b)
-                (primitive :rel_primitive_subtract_monotype a b c))))
-          (def :output_decimal_multiplication
-            ([a::DECIMAL128 b::DECIMAL128 c::DECIMAL128]
-              (and
-                (relatom :dec_a a)
-                (relatom :dec_b b)
-                (primitive :rel_primitive_multiply_monotype a b c))))
-          (def :output_decimal_division
-            ([a::DECIMAL128 b::DECIMAL128 c::DECIMAL128]
-              (and
-                (relatom :dec_a a)
-                (relatom :dec_b b)
-                (primitive :rel_primitive_divide_monotype a b c)))))))
+          (def :decimal_64
+            ([plus::DECIMAL64 minus::DECIMAL64 mult::DECIMAL64 div::DECIMAL64]
+              (exists [a::DECIMAL64 b::DECIMAL64]
+                (and
+                  (relatom :dec_64_a a)
+                  (relatom :dec_64_b b)
+                  (primitive :rel_primitive_add_monotype a b plus)
+                  (primitive :rel_primitive_subtract_monotype a b minus)
+                  (primitive :rel_primitive_multiply_monotype a b mult)
+                  (primitive :rel_primitive_divide_monotype a b div)))))
+          (def :decimal_128
+            ([plus::DECIMAL128 minus::DECIMAL128 mult::DECIMAL128 div::DECIMAL128]
+              (exists [a::DECIMAL128 b::DECIMAL128]
+                (and
+                  (relatom :dec_128_a a)
+                  (relatom :dec_128_b b)
+                  (primitive :rel_primitive_add_monotype a b plus)
+                  (primitive :rel_primitive_subtract_monotype a b minus)
+                  (primitive :rel_primitive_multiply_monotype a b mult)
+                  (primitive :rel_primitive_divide_monotype a b div))))))))
     (reads
-      (output :dec_add :output_decimal_addition)
-      (output :dec_sub :output_decimal_subtraction)
-      (output :dec_mult :output_decimal_multiplication)
-      (output :dec_div :output_decimal_division))))
+      (output :dec_64 :decimal_64)
+      (output :dec_128 :decimal_128))))
