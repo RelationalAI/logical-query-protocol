@@ -6,8 +6,8 @@
           (def :decimal_64 ([plus::DECIMAL64 minus::DECIMAL64 mult::DECIMAL64 div::DECIMAL64]
             (exists [a::DECIMAL64 b::DECIMAL64]
               (and
-                (relatom :dec_a a)
-                (relatom :dec_b b)
+                (relatom :dec_64_a a)
+                (relatom :dec_64_b b)
                 (+ a b plus)
                 (- a b minus)
                 (* a b mult)
@@ -16,8 +16,8 @@
           (def :decimal_128 ([plus::DECIMAL128 minus::DECIMAL128 mult::DECIMAL128 div::DECIMAL128]
             (exists [a::DECIMAL128 b::DECIMAL128]
               (and
-                (relatom :dec_a a)
-                (relatom :dec_b b)
+                (relatom :dec_128_a a)
+                (relatom :dec_128_b b)
                 (+ a b plus)
                 (- a b minus)
                 (* a b mult)

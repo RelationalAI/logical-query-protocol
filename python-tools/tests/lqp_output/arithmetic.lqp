@@ -7,8 +7,8 @@
             ([plus::DECIMAL64 minus::DECIMAL64 mult::DECIMAL64 div::DECIMAL64]
               (exists [a::DECIMAL64 b::DECIMAL64]
                 (and
-                  (relatom :dec_a a)
-                  (relatom :dec_b b)
+                  (relatom :dec_64_a a)
+                  (relatom :dec_64_b b)
                   (primitive :rel_primitive_add_monotype a b plus)
                   (primitive :rel_primitive_subtract_monotype a b minus)
                   (primitive :rel_primitive_multiply_monotype a b mult)
@@ -17,8 +17,8 @@
             ([plus::DECIMAL128 minus::DECIMAL128 mult::DECIMAL128 div::DECIMAL128]
               (exists [a::DECIMAL128 b::DECIMAL128]
                 (and
-                  (relatom :dec_a a)
-                  (relatom :dec_b b)
+                  (relatom :dec_128_a a)
+                  (relatom :dec_128_b b)
                   (primitive :rel_primitive_add_monotype a b plus)
                   (primitive :rel_primitive_subtract_monotype a b minus)
                   (primitive :rel_primitive_multiply_monotype a b mult)
