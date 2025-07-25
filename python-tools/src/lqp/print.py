@@ -380,7 +380,8 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
     elif isinstance(node, ir.Int128):
         lqp += f"{ind}{node.value}i128"
     elif isinstance(node, bool):
-        lqp += f"{ind}{str(node).lower()}"
+        if node:
+            lqp += f"{ind}missing"
     elif isinstance(node, (int, float)):
         lqp += f"{ind}{str(node)}"
 

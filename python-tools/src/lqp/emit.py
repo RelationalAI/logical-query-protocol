@@ -50,6 +50,8 @@ def convert_value(pv: ir.PrimitiveValue) -> logic_pb2.Value:
         return logic_pb2.Value(uint128_value=convert_uint128(pv))
     elif isinstance(pv, ir.Int128):
         return logic_pb2.Value(int128_value=convert_int128(pv))
+    elif isinstance(pv, bool):
+        return logic_pb2.Value(missing_value=pv)
     else:
         raise TypeError(f"Unsupported PrimitiveValue type: {type(pv)}")
 

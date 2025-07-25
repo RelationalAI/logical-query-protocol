@@ -451,7 +451,10 @@ class LQPTransformer(Transformer):
     # Primitive values
     #
     def primitive_value(self, meta, items):
-        return items[0]
+        if items[0] == 'missing':
+            return True
+        else:
+            return items[0]
     def STRING(self, s):
         return s[1:-1].encode().decode('unicode_escape') # Strip quotes and process escaping
     def NUMBER(self, n):

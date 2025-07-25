@@ -223,7 +223,7 @@ class Int128(LqpNode):
     value: int
 
 # PrimitiveValue union type for Constant
-PrimitiveValue = Union[str, int, float, UInt128, Int128]
+PrimitiveValue = Union[str, int, float, UInt128, Int128, bool]
 
 # Constant(value::PrimitiveValue)
 Constant = Union[PrimitiveValue]
