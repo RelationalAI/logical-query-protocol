@@ -14,7 +14,7 @@
                 (= row 1)
                 (= v "hello"))))
           (def :colb1
-            ([row_1::STRING row_2::DECIMAL(64 4) row_3::UINT128 row_4::FLOAT v::FLOAT]
+            ([row_1::STRING row_2::(DECIMAL 19 6) row_3::UINT128 row_4::FLOAT v::FLOAT]
               (and
                 (= row_1 "b")
                 (primitive :rel_primitive_parse_decimal #64 #6 "12.12" row_2)
@@ -22,7 +22,7 @@
                 (= row_4 1.234)
                 (= v 6.1))))
           (def :colb2
-            ([row_1::STRING row_2::DECIMAL(64 4) row_3::UINT128 row_4::FLOAT v::INT]
+            ([row_1::STRING row_2::(DECIMAL 19 6) row_3::UINT128 row_4::FLOAT v::INT]
               (and
                 (= row_1 "b")
                 (primitive :rel_primitive_parse_decimal #64 #6 "12.12" row_2)

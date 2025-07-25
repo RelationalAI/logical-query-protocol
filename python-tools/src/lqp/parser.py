@@ -57,13 +57,13 @@ monus_def : "(monus" monoid relation_id abstraction attrs? ")"
 
 monoid : or_monoid | min_monoid | max_monoid | sum_monoid
 or_monoid : "BOOL" "::" "OR"
-min_monoid : rel_type "::" "MIN"
-max_monoid : rel_type "::" "MAX"
-sum_monoid : rel_type "::" "SUM"
+min_monoid : type_ "::" "MIN"
+max_monoid : type_ "::" "MAX"
+sum_monoid : type_ "::" "SUM"
 
 abstraction: "(" bindings formula ")"
 bindings: "[" binding* "]"
-binding: SYMBOL "::" rel_type
+binding: SYMBOL "::" type_
 
 formula: exists | reduce | conjunction | disjunction | not_ | ffi | atom | pragma | primitive | true | false | relatom | cast
 exists: "(exists" bindings formula ")"
@@ -110,14 +110,10 @@ name: ":" SYMBOL
 
 primitive_value: STRING | NUMBER | FLOAT | UINT128 | INT128 | MISSING
 
-rel_type: PRIMITIVE_TYPE | parameterized_type
+type_ : TYPE_NAME | "(" TYPE_NAME primitive_value* ")"
 
-parameterized_type: PARAMETERIZED_TYPE_NAME "(" primitive_value* ")"
-
-PRIMITIVE_TYPE: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
-                | "DATE" | "DATETIME" | "MISSING"
-
-PARAMETERIZED_TYPE_NAME: "DECIMAL"
+TYPE_NAME: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
+            | "DATE" | "DATETIME" | "MISSING" | "DECIMAL"
 
 SYMBOL: /[a-zA-Z_][a-zA-Z0-9_-]*/
 MISSING: "missing"
@@ -153,14 +149,10 @@ class LQPTransformer(Transformer):
     def start(self, meta, items):
         return items[0]
 
-    def PRIMITIVE_TYPE(self, s):
-        return getattr(ir.PrimitiveType, s.upper())
-    def PARAMETERIZED_TYPE_NAME(self, s):
-        return getattr(ir.ParameterizedTypeName, s.upper())
-    def parameterized_type(self, meta, items):
-        return ir.ParameterizedType(type_name=items[0], parameters=items[1:], meta=self.meta(meta))
-    def rel_type(self, meta, items):
-        return items[0]
+    def TYPE_NAME(self, s):
+        return getattr(ir.TypeName, s.upper())
+    def type_(self, meta, items):
+        return ir.Type(type_name=items[0], parameters=items[1:],  meta=self.meta(meta))
 
 
     #
@@ -452,7 +444,7 @@ class LQPTransformer(Transformer):
     #
     def primitive_value(self, meta, items):
         if items[0] == 'missing':
-            return True
+            return ir.Missing(value=True, meta=self.meta(meta))
         else:
             return items[0]
     def STRING(self, s):

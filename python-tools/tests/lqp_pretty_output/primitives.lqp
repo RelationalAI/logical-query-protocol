@@ -7,7 +7,7 @@
             ([v::DATE]
               (primitive :rel_primitive_parse_date "1998-12-01" "Y-m-d" v)))
           (def :decimal
-            ([v::DECIMAL(64 4)]
+            ([v::(DECIMAL19 6)]
               (primitive :rel_primitive_parse_decimal #64 #6 "3.14" v))))))
     (reads
       (output :date :date)

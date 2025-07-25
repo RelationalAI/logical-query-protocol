@@ -97,21 +97,21 @@ message Monoid {
 message OrMonoid {} // Only over Booleans
 
 message MinMonoid { // Parametrized by a type T
-  RelType type = 1;
+  Type type = 1;
 }
 
 message MaxMonoid { // Parametrized by a type T
-  RelType type = 1;
+  Type type = 1;
 }
 
 message SumMonoid { // Parametrized by a type T
-  RelType type = 1;
+  Type type = 1;
 }
 
 
 message Binding {
   Var var = 1;
-  RelType type = 2;
+  Type type = 2;
 }
 
 // Abstraction and related types
@@ -218,35 +218,42 @@ message RelationId {
   fixed64 id_high = 2; // Upper 64 bits of UInt128
 }
 
-message RelType {
-  oneof rel_type {
-    PrimitiveType primitive_type = 1;
-    ParameterizedType parameterized_type = 2;
+message Type {
+  oneof type {
+    UnspecifiedType unspecified_type = 1;
+    StringType string_type = 2;
+    IntType int_type = 3;
+    FloatType float_type = 4;
+    UInt128Type uint128_type = 5;
+    Int128Type int128_type = 6;
+    DateType date_type = 7;
+    DateTimeType datetime_type = 8;
+    MissingType missing_type = 9;
+    DecimalType decimal_type = 10;
   }
 }
 
-enum PrimitiveType {
-  PRIMITIVE_TYPE_UNSPECIFIED = 0;
-  PRIMITIVE_TYPE_STRING = 1;
-  PRIMITIVE_TYPE_INT = 2;
-  PRIMITIVE_TYPE_FLOAT = 3;
-  PRIMITIVE_TYPE_UINT128 = 4;
-  PRIMITIVE_TYPE_INT128 = 5;
+message UnspecifiedType {}
 
-  PRIMITIVE_TYPE_DATE = 7;
-  PRIMITIVE_TYPE_DATETIME = 8;
+message StringType {}
 
-  PRIMITIVE_TYPE_MISSING = 9;
-}
+message IntType {}
 
-message ParameterizedType {
-  ParameterizedTypeName type_name = 1;
-  repeated Value parameters = 2;
-}
+message FloatType {}
 
-enum ParameterizedTypeName {
-  PARAMETERIZED_TYPE_NAME_UNSPECIFIED = 0;
-  PARAMETERIZED_TYPE_NAME_DECIMAL = 1;
+message UInt128Type {}
+
+message Int128Type {}
+
+message DateType {}
+
+message DateTimeType {}
+
+message MissingType {}
+
+message DecimalType {
+  int64 precision = 1;
+  int64 scale = 2;
 }
 
 message Value {

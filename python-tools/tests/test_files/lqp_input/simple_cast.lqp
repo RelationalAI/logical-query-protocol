@@ -5,14 +5,14 @@
         (fragment :f1
           (def :int_uint ([v::UINT128] (cast 123 v)))
           (def :int_int ([v::INT128] (cast 123 v)))
-          (def :int_dec64 ([v::DECIMAL(64 4)] (cast 1234 v)))
+          (def :int_dec64 ([v::(DECIMAL 19 6)] (cast 1234 v)))
           (def :dec64_int ([v::INT]
-            (exists [d::DECIMAL(64 4)] (and
+            (exists [d::(DECIMAL 19 6)] (and
               (primitive :rel_primitive_decimal #64 #6 7 d)
               (cast d v)))))
-          (def :int_dec128 ([v::DECIMAL(128 10)] (cast 12345 v)))
+          (def :int_dec128 ([v::(DECIMAL 38 10)] (cast 12345 v)))
           (def :dec128_int ([v::INT]
-            (exists [d::DECIMAL(128 10)] (and
+            (exists [d::(DECIMAL 38 10)] (and
               (primitive :rel_primitive_decimal #128 #10 5 d)
               (cast d v))))))))
 

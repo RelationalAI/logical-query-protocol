@@ -1,38 +1,9 @@
 from google.protobuf.internal import containers as _containers
-from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
 from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Mapping, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
-
-class PrimitiveType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
-    __slots__ = ()
-    PRIMITIVE_TYPE_UNSPECIFIED: _ClassVar[PrimitiveType]
-    PRIMITIVE_TYPE_STRING: _ClassVar[PrimitiveType]
-    PRIMITIVE_TYPE_INT: _ClassVar[PrimitiveType]
-    PRIMITIVE_TYPE_FLOAT: _ClassVar[PrimitiveType]
-    PRIMITIVE_TYPE_UINT128: _ClassVar[PrimitiveType]
-    PRIMITIVE_TYPE_INT128: _ClassVar[PrimitiveType]
-    PRIMITIVE_TYPE_DATE: _ClassVar[PrimitiveType]
-    PRIMITIVE_TYPE_DATETIME: _ClassVar[PrimitiveType]
-    PRIMITIVE_TYPE_MISSING: _ClassVar[PrimitiveType]
-
-class ParameterizedTypeName(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
-    __slots__ = ()
-    PARAMETERIZED_TYPE_NAME_UNSPECIFIED: _ClassVar[ParameterizedTypeName]
-    PARAMETERIZED_TYPE_NAME_DECIMAL: _ClassVar[ParameterizedTypeName]
-PRIMITIVE_TYPE_UNSPECIFIED: PrimitiveType
-PRIMITIVE_TYPE_STRING: PrimitiveType
-PRIMITIVE_TYPE_INT: PrimitiveType
-PRIMITIVE_TYPE_FLOAT: PrimitiveType
-PRIMITIVE_TYPE_UINT128: PrimitiveType
-PRIMITIVE_TYPE_INT128: PrimitiveType
-PRIMITIVE_TYPE_DATE: PrimitiveType
-PRIMITIVE_TYPE_DATETIME: PrimitiveType
-PRIMITIVE_TYPE_MISSING: PrimitiveType
-PARAMETERIZED_TYPE_NAME_UNSPECIFIED: ParameterizedTypeName
-PARAMETERIZED_TYPE_NAME_DECIMAL: ParameterizedTypeName
 
 class Declaration(_message.Message):
     __slots__ = ("algorithm",)
@@ -178,28 +149,28 @@ class OrMonoid(_message.Message):
 class MinMonoid(_message.Message):
     __slots__ = ("type",)
     TYPE_FIELD_NUMBER: _ClassVar[int]
-    type: RelType
-    def __init__(self, type: _Optional[_Union[RelType, _Mapping]] = ...) -> None: ...
+    type: Type
+    def __init__(self, type: _Optional[_Union[Type, _Mapping]] = ...) -> None: ...
 
 class MaxMonoid(_message.Message):
     __slots__ = ("type",)
     TYPE_FIELD_NUMBER: _ClassVar[int]
-    type: RelType
-    def __init__(self, type: _Optional[_Union[RelType, _Mapping]] = ...) -> None: ...
+    type: Type
+    def __init__(self, type: _Optional[_Union[Type, _Mapping]] = ...) -> None: ...
 
 class SumMonoid(_message.Message):
     __slots__ = ("type",)
     TYPE_FIELD_NUMBER: _ClassVar[int]
-    type: RelType
-    def __init__(self, type: _Optional[_Union[RelType, _Mapping]] = ...) -> None: ...
+    type: Type
+    def __init__(self, type: _Optional[_Union[Type, _Mapping]] = ...) -> None: ...
 
 class Binding(_message.Message):
     __slots__ = ("var", "type")
     VAR_FIELD_NUMBER: _ClassVar[int]
     TYPE_FIELD_NUMBER: _ClassVar[int]
     var: Var
-    type: RelType
-    def __init__(self, var: _Optional[_Union[Var, _Mapping]] = ..., type: _Optional[_Union[RelType, _Mapping]] = ...) -> None: ...
+    type: Type
+    def __init__(self, var: _Optional[_Union[Var, _Mapping]] = ..., type: _Optional[_Union[Type, _Mapping]] = ...) -> None: ...
 
 class Abstraction(_message.Message):
     __slots__ = ("vars", "value")
@@ -356,21 +327,73 @@ class RelationId(_message.Message):
     id_high: int
     def __init__(self, id_low: _Optional[int] = ..., id_high: _Optional[int] = ...) -> None: ...
 
-class RelType(_message.Message):
-    __slots__ = ("primitive_type", "parameterized_type")
-    PRIMITIVE_TYPE_FIELD_NUMBER: _ClassVar[int]
-    PARAMETERIZED_TYPE_FIELD_NUMBER: _ClassVar[int]
-    primitive_type: PrimitiveType
-    parameterized_type: ParameterizedType
-    def __init__(self, primitive_type: _Optional[_Union[PrimitiveType, str]] = ..., parameterized_type: _Optional[_Union[ParameterizedType, _Mapping]] = ...) -> None: ...
+class Type(_message.Message):
+    __slots__ = ("unspecified_type", "string_type", "int_type", "float_type", "uint128_type", "int128_type", "date_type", "datetime_type", "missing_type", "decimal_type")
+    UNSPECIFIED_TYPE_FIELD_NUMBER: _ClassVar[int]
+    STRING_TYPE_FIELD_NUMBER: _ClassVar[int]
+    INT_TYPE_FIELD_NUMBER: _ClassVar[int]
+    FLOAT_TYPE_FIELD_NUMBER: _ClassVar[int]
+    UINT128_TYPE_FIELD_NUMBER: _ClassVar[int]
+    INT128_TYPE_FIELD_NUMBER: _ClassVar[int]
+    DATE_TYPE_FIELD_NUMBER: _ClassVar[int]
+    DATETIME_TYPE_FIELD_NUMBER: _ClassVar[int]
+    MISSING_TYPE_FIELD_NUMBER: _ClassVar[int]
+    DECIMAL_TYPE_FIELD_NUMBER: _ClassVar[int]
+    unspecified_type: UnspecifiedType
+    string_type: StringType
+    int_type: IntType
+    float_type: FloatType
+    uint128_type: UInt128Type
+    int128_type: Int128Type
+    date_type: DateType
+    datetime_type: DateTimeType
+    missing_type: MissingType
+    decimal_type: DecimalType
+    def __init__(self, unspecified_type: _Optional[_Union[UnspecifiedType, _Mapping]] = ..., string_type: _Optional[_Union[StringType, _Mapping]] = ..., int_type: _Optional[_Union[IntType, _Mapping]] = ..., float_type: _Optional[_Union[FloatType, _Mapping]] = ..., uint128_type: _Optional[_Union[UInt128Type, _Mapping]] = ..., int128_type: _Optional[_Union[Int128Type, _Mapping]] = ..., date_type: _Optional[_Union[DateType, _Mapping]] = ..., datetime_type: _Optional[_Union[DateTimeType, _Mapping]] = ..., missing_type: _Optional[_Union[MissingType, _Mapping]] = ..., decimal_type: _Optional[_Union[DecimalType, _Mapping]] = ...) -> None: ...
 
-class ParameterizedType(_message.Message):
-    __slots__ = ("type_name", "parameters")
-    TYPE_NAME_FIELD_NUMBER: _ClassVar[int]
-    PARAMETERS_FIELD_NUMBER: _ClassVar[int]
-    type_name: ParameterizedTypeName
-    parameters: _containers.RepeatedCompositeFieldContainer[Value]
-    def __init__(self, type_name: _Optional[_Union[ParameterizedTypeName, str]] = ..., parameters: _Optional[_Iterable[_Union[Value, _Mapping]]] = ...) -> None: ...
+class UnspecifiedType(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
+
+class StringType(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
+
+class IntType(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
+
+class FloatType(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
+
+class UInt128Type(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
+
+class Int128Type(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
+
+class DateType(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
+
+class DateTimeType(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
+
+class MissingType(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
+
+class DecimalType(_message.Message):
+    __slots__ = ("precision", "scale")
+    PRECISION_FIELD_NUMBER: _ClassVar[int]
+    SCALE_FIELD_NUMBER: _ClassVar[int]
+    precision: int
+    scale: int
+    def __init__(self, precision: _Optional[int] = ..., scale: _Optional[int] = ...) -> None: ...
 
 class Value(_message.Message):
     __slots__ = ("string_value", "int_value", "float_value", "uint128_value", "int128_value", "missing_value")
