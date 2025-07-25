@@ -97,9 +97,9 @@ divide: "(/" term term term ")"
 
 relterm: specialized_value | term
 term: var | constant
-specialized_value: "#" primitive_value
+specialized_value: "#" value
 var: SYMBOL
-constant: primitive_value
+constant: value
 
 attrs: "(attrs" attribute* ")"
 attribute: "(attribute" name constant* ")"
@@ -108,9 +108,10 @@ fragment_id: ":" SYMBOL
 relation_id: (":" SYMBOL) | NUMBER
 name: ":" SYMBOL
 
-primitive_value: STRING | NUMBER | FLOAT | UINT128 | INT128 | MISSING
+value: STRING | NUMBER | FLOAT | UINT128 | INT128 | MISSING
+                | (NUMBER | FLOAT | UINT128 | INT128) "::" type_
 
-type_ : TYPE_NAME | "(" TYPE_NAME primitive_value* ")"
+type_ : TYPE_NAME | "(" TYPE_NAME value* ")"
 
 TYPE_NAME: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
             | "DATE" | "DATETIME" | "MISSING" | "DECIMAL"
@@ -124,7 +125,7 @@ UINT128: /0x[0-9a-fA-F]+/
 FLOAT: /\\d+\\.\\d+/
 
 config_dict: "{" config_key_value* "}"
-config_key_value: ":" SYMBOL primitive_value
+config_key_value: ":" SYMBOL value
 
 COMMENT: /;;.*/  // Matches ;; followed by any characters except newline
 %ignore /\\s+/
@@ -442,11 +443,15 @@ class LQPTransformer(Transformer):
     #
     # Primitive values
     #
-    def primitive_value(self, meta, items):
+    def value(self, meta, items):
         if items[0] == 'missing':
             return ir.Missing(value=True, meta=self.meta(meta))
+        elif len(items) > 1:
+            cast_type = items[1]
+            return ir.CastValue(value=items[0], cast_type=cast_type, meta=self.meta(meta))
         else:
             return items[0]
+
     def STRING(self, s):
         return s[1:-1].encode().decode('unicode_escape') # Strip quotes and process escaping
     def NUMBER(self, n):

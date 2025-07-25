@@ -396,20 +396,36 @@ class DecimalType(_message.Message):
     def __init__(self, precision: _Optional[int] = ..., scale: _Optional[int] = ...) -> None: ...
 
 class Value(_message.Message):
-    __slots__ = ("string_value", "int_value", "float_value", "uint128_value", "int128_value", "missing_value")
+    __slots__ = ("string_value", "int_value", "float_value", "uint128_value", "int128_value", "missing_value", "cast_value")
     STRING_VALUE_FIELD_NUMBER: _ClassVar[int]
     INT_VALUE_FIELD_NUMBER: _ClassVar[int]
     FLOAT_VALUE_FIELD_NUMBER: _ClassVar[int]
     UINT128_VALUE_FIELD_NUMBER: _ClassVar[int]
     INT128_VALUE_FIELD_NUMBER: _ClassVar[int]
     MISSING_VALUE_FIELD_NUMBER: _ClassVar[int]
+    CAST_VALUE_FIELD_NUMBER: _ClassVar[int]
     string_value: str
     int_value: int
     float_value: float
     uint128_value: UInt128
     int128_value: Int128
     missing_value: bool
-    def __init__(self, string_value: _Optional[str] = ..., int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128, _Mapping]] = ..., int128_value: _Optional[_Union[Int128, _Mapping]] = ..., missing_value: bool = ...) -> None: ...
+    cast_value: CastValue
+    def __init__(self, string_value: _Optional[str] = ..., int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128, _Mapping]] = ..., int128_value: _Optional[_Union[Int128, _Mapping]] = ..., missing_value: bool = ..., cast_value: _Optional[_Union[CastValue, _Mapping]] = ...) -> None: ...
+
+class CastValue(_message.Message):
+    __slots__ = ("int_value", "float_value", "uint128_value", "int128_value", "cast_type")
+    INT_VALUE_FIELD_NUMBER: _ClassVar[int]
+    FLOAT_VALUE_FIELD_NUMBER: _ClassVar[int]
+    UINT128_VALUE_FIELD_NUMBER: _ClassVar[int]
+    INT128_VALUE_FIELD_NUMBER: _ClassVar[int]
+    CAST_TYPE_FIELD_NUMBER: _ClassVar[int]
+    int_value: int
+    float_value: float
+    uint128_value: UInt128
+    int128_value: Int128
+    cast_type: Type
+    def __init__(self, int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128, _Mapping]] = ..., int128_value: _Optional[_Union[Int128, _Mapping]] = ..., cast_type: _Optional[_Union[Type, _Mapping]] = ...) -> None: ...
 
 class UInt128(_message.Message):
     __slots__ = ("low", "high")

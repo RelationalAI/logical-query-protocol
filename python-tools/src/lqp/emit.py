@@ -37,7 +37,7 @@ def convert_int128(val: ir.Int128) -> logic_pb2.Int128:
     high = (val.value >> 64) & 0xFFFFFFFFFFFFFFFF
     return logic_pb2.Int128(low=low, high=high)
 
-def convert_value(pv: ir.PrimitiveValue) -> logic_pb2.Value:
+def convert_value(pv: ir.Value) -> logic_pb2.Value:
     if isinstance(pv, str):
         return logic_pb2.Value(string_value=pv)
     elif isinstance(pv, int):
@@ -51,8 +51,24 @@ def convert_value(pv: ir.PrimitiveValue) -> logic_pb2.Value:
         return logic_pb2.Value(int128_value=convert_int128(pv))
     elif isinstance(pv, ir.Missing):
         return logic_pb2.Value(missing_value=pv.value)
+    elif isinstance(pv, ir.CastValue):
+        return logic_pb2.Value(cast_value=convert_cast_value(pv))
     else:
-        raise TypeError(f"Unsupported PrimitiveValue type: {type(pv)}")
+        raise TypeError(f"Unsupported Value type: {type(pv)}")
+
+def convert_cast_value(pv: ir.CastValue) -> logic_pb2.CastValue:
+    cast_type = convert_type(pv.cast_type)
+    if isinstance(pv.value, int):
+        assert pv.value.bit_length() <= 64, "Integer value exceeds 64 bits"
+        return logic_pb2.CastValue(int_value=pv.value, cast_type=cast_type)
+    elif isinstance(pv.value, float):
+        return logic_pb2.CastValue(float_value=pv.value, cast_type=cast_type)
+    elif isinstance(pv.value, ir.UInt128):
+        return logic_pb2.CastValue(uint128_value=convert_uint128(pv.value), cast_type=cast_type)
+    elif isinstance(pv.value, ir.Int128):
+        return logic_pb2.CastValue(int128_value=convert_int128(pv.value), cast_type=cast_type)
+    else:
+        raise TypeError(f"Unsupported Cast Value type: {type(pv)}")
 
 def convert_var(v: ir.Var) -> logic_pb2.Var:
     return logic_pb2.Var(name=v.name)
