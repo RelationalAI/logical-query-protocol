@@ -14,7 +14,7 @@
                 (primitive :rel_primitive_eq row 1)
                 (primitive :rel_primitive_eq v "hello"))))
           (def :colb1
-            ([row_1::STRING row_2::DECIMAL(                64                 4) row_3::UINT128 row_4::FLOAT v::FLOAT]
+            ([row_1::STRING row_2::DECIMAL(64 4) row_3::UINT128 row_4::FLOAT v::FLOAT]
               (and
                 (primitive :rel_primitive_eq row_1 "b")
                 (primitive :rel_primitive_parse_decimal #64 #6 "12.12" row_2)
@@ -22,7 +22,7 @@
                 (primitive :rel_primitive_eq row_4 1.234)
                 (primitive :rel_primitive_eq v 6.1))))
           (def :colb2
-            ([row_1::STRING row_2::DECIMAL(                64                 4) row_3::UINT128 row_4::FLOAT v::INT]
+            ([row_1::STRING row_2::DECIMAL(64 4) row_3::UINT128 row_4::FLOAT v::INT]
               (and
                 (primitive :rel_primitive_eq row_1 "b")
                 (primitive :rel_primitive_parse_decimal #64 #6 "12.12" row_2)

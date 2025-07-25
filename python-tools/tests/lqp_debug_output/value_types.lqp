@@ -4,10 +4,10 @@
       (define
         (fragment :f1
           (def 11083562605256160670
-            ([v::DECIMAL(                64                 4)]
+            ([v::DECIMAL(64 4)]
               (relatom :dec64 v)))
           (def 17909083773971274800
-            ([v::DECIMAL(                128                 10)]
+            ([v::DECIMAL(128 10)]
               (relatom :dec128 v)))
           (def 5168972349743097577
             ([v::DATE]

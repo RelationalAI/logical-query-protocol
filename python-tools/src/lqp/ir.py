@@ -291,7 +291,6 @@ class PrimitiveType(Enum):
 
 RelType = Union[PrimitiveType, ParameterizedType]
 
-
 # --- Fragment Types ---
 
 # FragmentId(id::bytes)

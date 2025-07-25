@@ -313,7 +313,7 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         lqp += conf.type_anno(str(node))
     elif isinstance(node, ir.ParameterizedType):
         lqp += conf.type_anno(str(node.type_name)) + conf.LPAREN()
-        lqp += " ".join([to_str(param, indent_level + 1, options, debug_info) for param in node.parameters])
+        lqp += " ".join([to_str(param, 0, options, debug_info) for param in node.parameters])
         lqp += conf.RPAREN()
     elif isinstance(node, ir.Abstraction):
         lqp += ind + conf.LPAREN() + conf.LBRACKET()
