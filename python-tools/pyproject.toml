@@ -19,7 +19,7 @@ lqp = "lqp.parser:main"
 test = [
     "pytest>=7.0.0",
     "pytest-snapshot",
-    "pyrefly=0.25.1",
+    "pyrefly==0.25.1",
 ]
 
 [build-system]

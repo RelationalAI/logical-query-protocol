@@ -430,7 +430,7 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         lqp += line_conf_f('path', node.path) + "\n"
         lqp += line('columns', list_to_str(node.data_columns, 0, " ", options, debug_info)) + "\n"
 
-        config_dict: dict[str, Union[int, str]]= {}
+        config_dict: dict[str, Union[int, str]] = {}
         if node.partition_size is not None:
             config_dict['partition_size'] = node.partition_size
         if node.compression is not None:
