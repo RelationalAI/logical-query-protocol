@@ -229,7 +229,7 @@ class AtomTypeChecker(LqpVisitor):
             node,
             AtomTypeChecker.State(
                 state.relation_types,
-                state.var_types | {v.name : t for (v, t) in node.vars},
+                state.var_types | {v.name : t.type_name for (v, t) in node.vars},
             ),
         )
 
