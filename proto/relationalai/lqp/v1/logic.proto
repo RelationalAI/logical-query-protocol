@@ -239,7 +239,7 @@ enum PrimitiveType {
   PRIMITIVE_TYPE_MISSING = 9;
 }
 
-message ParameterizedType { // Haha Aussies, we're using the 'z' spelling
+message ParameterizedType {
   ParameterizedTypeName type_name = 1;
   repeated Value parameters = 2;
 }
