@@ -2,6 +2,26 @@ import lqp.ir as ir
 from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
 from typing import Union, Dict, Any
 
+def convert_rel_type(rt: ir.RelType) -> logic_pb2.RelType:
+    if isinstance(rt, ir.PrimitiveType):
+        return logic_pb2.RelType(primitive_type=convert_primitive_type(rt))
+    elif isinstance(rt, ir.ParameterizedType):
+        return logic_pb2.RelType(parameterized_type=convert_parameterized_type(rt))
+    else:
+        raise TypeError(f"Unsupported RelType: {rt}")
+
+def convert_parameterized_type(rt: ir.ParameterizedType) -> logic_pb2.ParameterizedType:
+    return logic_pb2.ParameterizedType(
+        type_name=convert_parameterized_type_name(rt.type_name),
+        parameters=[convert_value(x) for x in rt.parameters]
+    )
+
+def convert_parameterized_type_name(rvt: ir.ParameterizedTypeName)-> logic_pb2.ParameterizedTypeName:
+    try:
+        return getattr(logic_pb2.PrimitiveType, f"PARAMETERIZED_TYPE_NAME_{rvt.name}")
+    except AttributeError:
+        return logic_pb2.PARAMETERIZED_TYPE_NAME_UNSPECIFIED
+
 def convert_primitive_type(rvt: ir.PrimitiveType) -> logic_pb2.PrimitiveType:
     try:
         return getattr(logic_pb2.PrimitiveType, f"PRIMITIVE_TYPE_{rvt.name}")
@@ -63,7 +83,7 @@ def convert_attribute(attr: ir.Attribute) -> logic_pb2.Attribute:
 )
 
 def convert_abstraction(abst: ir.Abstraction) -> logic_pb2.Abstraction:
-    bindings = [logic_pb2.Binding(var=convert_var(var_tuple[0]), type=convert_primitive_type(var_tuple[1]))
+    bindings = [logic_pb2.Binding(var=convert_var(var_tuple[0]), type=convert_rel_type(var_tuple[1]))
                 for var_tuple in abst.vars]
     return logic_pb2.Abstraction(
         vars=bindings,
@@ -212,13 +232,13 @@ def convert_monoid(monoid: ir.Monoid) -> logic_pb2.Monoid:
     if isinstance(monoid, ir.OrMonoid):
         return logic_pb2.Monoid(**{'or_monoid': logic_pb2.OrMonoid()})  # type: ignore
     elif isinstance(monoid, ir.SumMonoid):
-        type = convert_primitive_type(monoid.type)
+        type = convert_rel_type(monoid.type)
         return logic_pb2.Monoid(**{'sum_monoid': logic_pb2.SumMonoid(type=type)})  # type: ignore
     elif isinstance(monoid, ir.MinMonoid):
-        type = convert_primitive_type(monoid.type)
+        type = convert_rel_type(monoid.type)
         return logic_pb2.Monoid(**{'min_monoid': logic_pb2.MinMonoid(type=type)})  # type: ignore
     elif isinstance(monoid, ir.MaxMonoid):
-        type = convert_primitive_type(monoid.type)
+        type = convert_rel_type(monoid.type)
         return logic_pb2.Monoid(**{'max_monoid': logic_pb2.MaxMonoid(type=type)})  # type: ignore
     else:
         raise TypeError(f"Unsupported Monoid: {monoid}")

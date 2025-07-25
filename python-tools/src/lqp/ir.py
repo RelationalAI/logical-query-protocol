@@ -135,7 +135,7 @@ class SumMonoid(Monoid):
 # Abstraction(vars::Binding[], value::Formula)
 @dataclass(frozen=True)
 class Abstraction(LqpNode):
-    vars: Sequence[Tuple[Var, PrimitiveType]]
+    vars: Sequence[Tuple[Var, RelType]]
     value: Formula
 
 # Formula := Exists | Reduce | Conjunction | Disjunction | Not | FFI | Atom | Pragma | Primitive | TrueVal | FalseVal | RelAtom | Cast
@@ -264,6 +264,17 @@ class RelationId(LqpNode):
     def __hash__(self) -> int:
         return hash(self.id)
 
+class ParameterizedTypeName(Enum):
+    UNSPECIFIED = 0
+    DECIMAL = 1
+
+    def __str__(self) -> str:
+        return self.name
+@dataclass(frozen=True)
+class ParameterizedType(LqpNode):
+    type_name: ParameterizedTypeName
+    parameters: Sequence[PrimitiveValue]
+
 class PrimitiveType(Enum):
     UNSPECIFIED = 0
     STRING = 1
@@ -273,11 +284,13 @@ class PrimitiveType(Enum):
     INT128 = 5
     DATE = 6
     DATETIME = 7
-    DECIMAL64 = 8
-    DECIMAL128 = 9
+    MISSING = 8
 
     def __str__(self) -> str:
         return self.name
+
+RelType = Union[PrimitiveType, ParameterizedType]
+
 
 # --- Fragment Types ---
 

@@ -57,13 +57,13 @@ monus_def : "(monus" monoid relation_id abstraction attrs? ")"
 
 monoid : or_monoid | min_monoid | max_monoid | sum_monoid
 or_monoid : "BOOL" "::" "OR"
-min_monoid : PRIMITIVE_TYPE "::" "MIN"
-max_monoid : PRIMITIVE_TYPE "::" "MAX"
-sum_monoid : PRIMITIVE_TYPE "::" "SUM"
+min_monoid : rel_type "::" "MIN"
+max_monoid : rel_type "::" "MAX"
+sum_monoid : rel_type "::" "SUM"
 
 abstraction: "(" bindings formula ")"
 bindings: "[" binding* "]"
-binding: SYMBOL "::" PRIMITIVE_TYPE
+binding: SYMBOL "::" rel_type
 
 formula: exists | reduce | conjunction | disjunction | not_ | ffi | atom | pragma | primitive | true | false | relatom | cast
 exists: "(exists" bindings formula ")"
@@ -108,12 +108,19 @@ fragment_id: ":" SYMBOL
 relation_id: (":" SYMBOL) | NUMBER
 name: ":" SYMBOL
 
-primitive_value: STRING | NUMBER | FLOAT | UINT128 | INT128
+primitive_value: STRING | NUMBER | FLOAT | UINT128 | INT128 | MISSING
+
+rel_type: PRIMITIVE_TYPE | parameterized_type
+
+parameterized_type: PARAMETERIZED_TYPE_NAME "(" primitive_value* ")"
 
 PRIMITIVE_TYPE: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
-              | "DECIMAL64" | "DECIMAL128" | "DATE" | "DATETIME"
+                | "DATE" | "DATETIME" | "MISSING"
+
+PARAMETERIZED_TYPE_NAME: "DECIMAL"
 
 SYMBOL: /[a-zA-Z_][a-zA-Z0-9_-]*/
+MISSING: "missing"
 STRING: ESCAPED_STRING
 NUMBER: /\\d+/
 INT128: /\\d+i128/
@@ -148,8 +155,13 @@ class LQPTransformer(Transformer):
 
     def PRIMITIVE_TYPE(self, s):
         return getattr(ir.PrimitiveType, s.upper())
+    def PARAMETERIZED_TYPE_NAME(self, s):
+        return getattr(ir.ParameterizedTypeName, s.upper())
+    def parameterized_type(self, meta, items):
+        return ir.ParameterizedType(type_name=items[0], parameters=items[1:], meta=self.meta(meta))
     def rel_type(self, meta, items):
         return items[0]
+
 
     #
     # Transactions

@@ -16,8 +16,12 @@ class PrimitiveType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     PRIMITIVE_TYPE_INT128: _ClassVar[PrimitiveType]
     PRIMITIVE_TYPE_DATE: _ClassVar[PrimitiveType]
     PRIMITIVE_TYPE_DATETIME: _ClassVar[PrimitiveType]
-    PRIMITIVE_TYPE_DECIMAL64: _ClassVar[PrimitiveType]
-    PRIMITIVE_TYPE_DECIMAL128: _ClassVar[PrimitiveType]
+    PRIMITIVE_TYPE_MISSING: _ClassVar[PrimitiveType]
+
+class ParameterizedTypeName(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    PARAMETERIZED_TYPE_NAME_UNSPECIFIED: _ClassVar[ParameterizedTypeName]
+    PARAMETERIZED_TYPE_NAME_DECIMAL: _ClassVar[ParameterizedTypeName]
 PRIMITIVE_TYPE_UNSPECIFIED: PrimitiveType
 PRIMITIVE_TYPE_STRING: PrimitiveType
 PRIMITIVE_TYPE_INT: PrimitiveType
@@ -26,8 +30,9 @@ PRIMITIVE_TYPE_UINT128: PrimitiveType
 PRIMITIVE_TYPE_INT128: PrimitiveType
 PRIMITIVE_TYPE_DATE: PrimitiveType
 PRIMITIVE_TYPE_DATETIME: PrimitiveType
-PRIMITIVE_TYPE_DECIMAL64: PrimitiveType
-PRIMITIVE_TYPE_DECIMAL128: PrimitiveType
+PRIMITIVE_TYPE_MISSING: PrimitiveType
+PARAMETERIZED_TYPE_NAME_UNSPECIFIED: ParameterizedTypeName
+PARAMETERIZED_TYPE_NAME_DECIMAL: ParameterizedTypeName
 
 class Declaration(_message.Message):
     __slots__ = ("algorithm",)
@@ -173,28 +178,28 @@ class OrMonoid(_message.Message):
 class MinMonoid(_message.Message):
     __slots__ = ("type",)
     TYPE_FIELD_NUMBER: _ClassVar[int]
-    type: PrimitiveType
-    def __init__(self, type: _Optional[_Union[PrimitiveType, str]] = ...) -> None: ...
+    type: RelType
+    def __init__(self, type: _Optional[_Union[RelType, _Mapping]] = ...) -> None: ...
 
 class MaxMonoid(_message.Message):
     __slots__ = ("type",)
     TYPE_FIELD_NUMBER: _ClassVar[int]
-    type: PrimitiveType
-    def __init__(self, type: _Optional[_Union[PrimitiveType, str]] = ...) -> None: ...
+    type: RelType
+    def __init__(self, type: _Optional[_Union[RelType, _Mapping]] = ...) -> None: ...
 
 class SumMonoid(_message.Message):
     __slots__ = ("type",)
     TYPE_FIELD_NUMBER: _ClassVar[int]
-    type: PrimitiveType
-    def __init__(self, type: _Optional[_Union[PrimitiveType, str]] = ...) -> None: ...
+    type: RelType
+    def __init__(self, type: _Optional[_Union[RelType, _Mapping]] = ...) -> None: ...
 
 class Binding(_message.Message):
     __slots__ = ("var", "type")
     VAR_FIELD_NUMBER: _ClassVar[int]
     TYPE_FIELD_NUMBER: _ClassVar[int]
     var: Var
-    type: PrimitiveType
-    def __init__(self, var: _Optional[_Union[Var, _Mapping]] = ..., type: _Optional[_Union[PrimitiveType, str]] = ...) -> None: ...
+    type: RelType
+    def __init__(self, var: _Optional[_Union[Var, _Mapping]] = ..., type: _Optional[_Union[RelType, _Mapping]] = ...) -> None: ...
 
 class Abstraction(_message.Message):
     __slots__ = ("vars", "value")
@@ -351,19 +356,37 @@ class RelationId(_message.Message):
     id_high: int
     def __init__(self, id_low: _Optional[int] = ..., id_high: _Optional[int] = ...) -> None: ...
 
+class RelType(_message.Message):
+    __slots__ = ("primitive_type", "parameterized_type")
+    PRIMITIVE_TYPE_FIELD_NUMBER: _ClassVar[int]
+    PARAMETERIZED_TYPE_FIELD_NUMBER: _ClassVar[int]
+    primitive_type: PrimitiveType
+    parameterized_type: ParameterizedType
+    def __init__(self, primitive_type: _Optional[_Union[PrimitiveType, str]] = ..., parameterized_type: _Optional[_Union[ParameterizedType, _Mapping]] = ...) -> None: ...
+
+class ParameterizedType(_message.Message):
+    __slots__ = ("type_name", "parameters")
+    TYPE_NAME_FIELD_NUMBER: _ClassVar[int]
+    PARAMETERS_FIELD_NUMBER: _ClassVar[int]
+    type_name: ParameterizedTypeName
+    parameters: _containers.RepeatedCompositeFieldContainer[Value]
+    def __init__(self, type_name: _Optional[_Union[ParameterizedTypeName, str]] = ..., parameters: _Optional[_Iterable[_Union[Value, _Mapping]]] = ...) -> None: ...
+
 class Value(_message.Message):
-    __slots__ = ("string_value", "int_value", "float_value", "uint128_value", "int128_value")
+    __slots__ = ("string_value", "int_value", "float_value", "uint128_value", "int128_value", "missing_value")
     STRING_VALUE_FIELD_NUMBER: _ClassVar[int]
     INT_VALUE_FIELD_NUMBER: _ClassVar[int]
     FLOAT_VALUE_FIELD_NUMBER: _ClassVar[int]
     UINT128_VALUE_FIELD_NUMBER: _ClassVar[int]
     INT128_VALUE_FIELD_NUMBER: _ClassVar[int]
+    MISSING_VALUE_FIELD_NUMBER: _ClassVar[int]
     string_value: str
     int_value: int
     float_value: float
     uint128_value: UInt128
     int128_value: Int128
-    def __init__(self, string_value: _Optional[str] = ..., int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128, _Mapping]] = ..., int128_value: _Optional[_Union[Int128, _Mapping]] = ...) -> None: ...
+    missing_value: bool
+    def __init__(self, string_value: _Optional[str] = ..., int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128, _Mapping]] = ..., int128_value: _Optional[_Union[Int128, _Mapping]] = ..., missing_value: bool = ...) -> None: ...
 
 class UInt128(_message.Message):
     __slots__ = ("low", "high")

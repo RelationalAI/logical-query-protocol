@@ -309,15 +309,23 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
     elif isinstance(node, ir.SumMonoid):
         lqp += to_str(node.type, 0, options, debug_info) + "::SUM"
 
+    elif isinstance(node, ir.PrimitiveType):
+        lqp += conf.type_anno(str(node))
+    elif isinstance(node, ir.ParameterizedType):
+        lqp += conf.type_anno(str(node.type_name)) + conf.LPAREN()
+        lqp += " ".join([to_str(param, indent_level + 1, options, debug_info) for param in node.parameters])
+        lqp += conf.RPAREN()
     elif isinstance(node, ir.Abstraction):
         lqp += ind + conf.LPAREN() + conf.LBRACKET()
-        lqp += " ".join(map(lambda v: conf.uname(v[0].name) + conf.type_anno("::" + str(v[1])), node.vars))
+        lqp += " ".join(map(lambda v: conf.uname(v[0].name) \
+                + conf.type_anno("::") + to_str(v[1], indent_level + 1, options, debug_info), node.vars))
         lqp += conf.RBRACKET() + "\n"
         lqp += f"{to_str(node.value, indent_level + 1, options, debug_info)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Exists):
         lqp += ind + conf.LPAREN() + conf.kw("exists") + " " + conf.LBRACKET()
-        lqp += " ".join(map(lambda v: conf.uname(v[0].name) + conf.type_anno("::" + str(v[1])), node.body.vars))
+        lqp += " ".join(map(lambda v: conf.uname(v[0].name) \
+                + conf.type_anno("::") + to_str(v[1], indent_level + 1, options, debug_info), node.body.vars))
         lqp += conf.RBRACKET() + "\n"
         lqp += to_str(node.body.value, indent_level + 1, options, debug_info) + conf.RPAREN()
 
@@ -434,19 +442,19 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         if node.partition_size is not None:
             config_dict['partition_size'] = node.partition_size
         if node.compression is not None:
-            config_dict['compression'] = node.compression
+            config_dict['compression'] = node.compression #type: ignore
         if node.syntax_header_row is not None:
             config_dict['header_row'] = node.syntax_header_row
         if node.syntax_missing_string is not None:
-            config_dict['syntax_missing_string'] = node.syntax_missing_string
+            config_dict['syntax_missing_string'] = node.syntax_missing_string #type: ignore
         if node.syntax_delim is not None:
-            config_dict['syntax_delim'] = node.syntax_delim
+            config_dict['syntax_delim'] = node.syntax_delim #type: ignore
         if node.syntax_quotechar is not None:
-            config_dict['syntax_quotechar'] = node.syntax_quotechar
+            config_dict['syntax_quotechar'] = node.syntax_quotechar #type: ignore
         if node.syntax_escapechar is not None:
-            config_dict['syntax_escapechar'] = node.syntax_escapechar
+            config_dict['syntax_escapechar'] = node.syntax_escapechar #type: ignore
 
-        lqp += "\n" + config_dict_to_str(config_dict, indent_level + 1, options)
+        lqp += "\n" + config_dict_to_str(config_dict, indent_level + 1, options) #type: ignore
         lqp += f"{conf.RPAREN()}"
 
     elif isinstance(node, ir.ExportCSVColumn):

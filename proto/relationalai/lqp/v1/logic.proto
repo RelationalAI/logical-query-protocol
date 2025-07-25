@@ -86,32 +86,32 @@ message MonusDef {
 }
 
 message Monoid {
-    oneof value {
-        OrMonoid or_monoid = 1;
-        MinMonoid min_monoid = 2;
-        MaxMonoid max_monoid = 3;
-        SumMonoid sum_monoid = 4;
-    }
+  oneof value {
+    OrMonoid or_monoid = 1;
+    MinMonoid min_monoid = 2;
+    MaxMonoid max_monoid = 3;
+    SumMonoid sum_monoid = 4;
+  }
 }
 
 message OrMonoid {} // Only over Booleans
 
 message MinMonoid { // Parametrized by a type T
-    PrimitiveType type = 1;
+  RelType type = 1;
 }
 
 message MaxMonoid { // Parametrized by a type T
-    PrimitiveType type = 1;
+  RelType type = 1;
 }
 
 message SumMonoid { // Parametrized by a type T
-    PrimitiveType type = 1;
+  RelType type = 1;
 }
 
 
 message Binding {
   Var var = 1;
-  PrimitiveType type = 2;
+  RelType type = 2;
 }
 
 // Abstraction and related types
@@ -218,6 +218,13 @@ message RelationId {
   fixed64 id_high = 2; // Upper 64 bits of UInt128
 }
 
+message RelType {
+  oneof rel_type {
+    PrimitiveType primitive_type = 1;
+    ParameterizedType parameterized_type = 2;
+  }
+}
+
 enum PrimitiveType {
   PRIMITIVE_TYPE_UNSPECIFIED = 0;
   PRIMITIVE_TYPE_STRING = 1;
@@ -229,8 +236,17 @@ enum PrimitiveType {
   PRIMITIVE_TYPE_DATE = 7;
   PRIMITIVE_TYPE_DATETIME = 8;
 
-  PRIMITIVE_TYPE_DECIMAL64 = 9;
-  PRIMITIVE_TYPE_DECIMAL128 = 10;
+  PRIMITIVE_TYPE_MISSING = 9;
+}
+
+message ParameterizedType { // Haha Aussies, we're using the 'z' spelling
+  ParameterizedTypeName type_name = 1;
+  repeated Value parameters = 2;
+}
+
+enum ParameterizedTypeName {
+  PARAMETERIZED_TYPE_NAME_UNSPECIFIED = 0;
+  PARAMETERIZED_TYPE_NAME_DECIMAL = 1;
 }
 
 message Value {
@@ -240,6 +256,7 @@ message Value {
     double float_value = 3;
     UInt128 uint128_value = 4;
     Int128 int128_value = 5;
+    bool missing_value = 6;
   }
 }
 

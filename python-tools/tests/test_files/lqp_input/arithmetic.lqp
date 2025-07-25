@@ -3,8 +3,8 @@
     (local_writes
       (define
         (fragment :f1
-          (def :decimal_64 ([plus::DECIMAL64 minus::DECIMAL64 mult::DECIMAL64 div::DECIMAL64]
-            (exists [a::DECIMAL64 b::DECIMAL64]
+          (def :decimal_64 ([plus::DECIMAL(64 4) minus::DECIMAL(64 4) mult::DECIMAL(64 4) div::DECIMAL(64 4)]
+            (exists [a::DECIMAL(64 4) b::DECIMAL(64 4)]
               (and
                 (relatom :dec_64_a a)
                 (relatom :dec_64_b b)
@@ -13,8 +13,8 @@
                 (* a b mult)
                 (/ a b div)))))
 
-          (def :decimal_128 ([plus::DECIMAL128 minus::DECIMAL128 mult::DECIMAL128 div::DECIMAL128]
-            (exists [a::DECIMAL128 b::DECIMAL128]
+          (def :decimal_128 ([plus::DECIMAL(128 10) minus::DECIMAL(128 10) mult::DECIMAL(128 10) div::DECIMAL(128 10)]
+            (exists [a::DECIMAL(128 10) b::DECIMAL(128 10)]
               (and
                 (relatom :dec_128_a a)
                 (relatom :dec_128_b b)
