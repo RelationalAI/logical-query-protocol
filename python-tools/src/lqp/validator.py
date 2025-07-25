@@ -97,7 +97,7 @@ class DuplicateRelationIdFinder(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
         # RelationIds and where they have been defined. The integer represents
         # the epoch.
-        self.seen_ids: Dict[ir.RelationId, Set[Tuple[int, ir.FragmentId]]] = dict()
+        self.seen_ids: Dict[ir.RelationId, Tuple[int, ir.FragmentId]] = dict()
         # We'll use this to give IDs to epochs as we visit them.
         self.curr_epoch: int = 0
         self.curr_fragment: Optional[ir.FragmentId] = None
@@ -140,6 +140,7 @@ class DuplicateRelationIdFinder(LqpVisitor):
                     f"Duplicate declaration at {d.meta}: '{d.id}'"
                 )
             else:
+                assert self.curr_fragment is not None
                 self.seen_ids[d] = (self.curr_epoch, self.curr_fragment)
 
 # Checks that Instructions are applied to the correct number and types of terms.
@@ -198,7 +199,7 @@ class AtomTypeChecker(LqpVisitor):
 
     # The varargs passed be a State or nothing at all.
     @staticmethod
-    def args_ok(args: List[Any]) -> bool:
+    def args_ok(args: tuple[Any]) -> bool:
         return len(args) == 1 and isinstance(args[0], AtomTypeChecker.State)
 
     # What we pass around to the visit methods.
@@ -247,7 +248,7 @@ class AtomTypeChecker(LqpVisitor):
                 self.visit(
                     decl,
                     AtomTypeChecker.State(
-                        {decl.name : AtomTypeChecker.get_relation_sig(decl)} | state.relation_types,
+                        {decl.name : AtomTypeChecker.get_relation_sig(decl)} | state.relation_types, #type: ignore
                         state.var_types,
                     ),
                 )
