@@ -313,7 +313,7 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue], inde
         if len(node.parameters) == 0:
             lqp += conf.type_anno(str(node.type_name))
         else:
-            lqp += conf.LPAREN() + conf.type_anno(str(node.type_name))
+            lqp += conf.LPAREN() + conf.type_anno(str(node.type_name)) + " "
             lqp += " ".join([to_str(x, 0, options, debug_info) for x in node.parameters])
             lqp += conf.RPAREN()
     elif isinstance(node, ir.Abstraction):
@@ -399,9 +399,6 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue], inde
     elif isinstance(node, ir.RelationId):
         name = id_to_name(options, debug_info, node)
         lqp += f"{ind}{str(conf.uname(name))}"
-
-    elif isinstance(node, ir.Type):
-        lqp += f"{ind}{node.type_name}"
 
     elif isinstance(node, ir.Write):
         # Delegate to the specific write type

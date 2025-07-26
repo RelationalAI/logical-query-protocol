@@ -7,8 +7,8 @@
             ([v::FLOAT]
               (primitive :rel_primitive_eq 1::FLOAT v)))
           (def 6931104569591695457
-            ([v::(DECIMAL19 6)]
-              (primitive :rel_primitive_eq 1::(DECIMAL19 6) v)))
+            ([v::(DECIMAL 19 6)]
+              (primitive :rel_primitive_eq 1::(DECIMAL 19 6) v)))
           (def 18258050539415108999
             ([v::INT]
               (primitive :rel_primitive_eq 1.2385::INT v)))

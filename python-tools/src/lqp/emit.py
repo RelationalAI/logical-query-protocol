@@ -50,7 +50,7 @@ def convert_value(pv: ir.Value) -> logic_pb2.Value:
     elif isinstance(pv, ir.Int128):
         return logic_pb2.Value(int128_value=convert_int128(pv))
     elif isinstance(pv, ir.Missing):
-        return logic_pb2.Value(missing_value=pv.value)
+        return logic_pb2.Value(missing_value=logic_pb2.MissingValue())
     elif isinstance(pv, ir.CastValue):
         return logic_pb2.Value(cast_value=convert_cast_value(pv))
     else:

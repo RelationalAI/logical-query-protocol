@@ -409,9 +409,9 @@ class Value(_message.Message):
     float_value: float
     uint128_value: UInt128
     int128_value: Int128
-    missing_value: bool
+    missing_value: MissingValue
     cast_value: CastValue
-    def __init__(self, string_value: _Optional[str] = ..., int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128, _Mapping]] = ..., int128_value: _Optional[_Union[Int128, _Mapping]] = ..., missing_value: bool = ..., cast_value: _Optional[_Union[CastValue, _Mapping]] = ...) -> None: ...
+    def __init__(self, string_value: _Optional[str] = ..., int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128, _Mapping]] = ..., int128_value: _Optional[_Union[Int128, _Mapping]] = ..., missing_value: _Optional[_Union[MissingValue, _Mapping]] = ..., cast_value: _Optional[_Union[CastValue, _Mapping]] = ...) -> None: ...
 
 class CastValue(_message.Message):
     __slots__ = ("int_value", "float_value", "uint128_value", "int128_value", "cast_type")
@@ -426,6 +426,10 @@ class CastValue(_message.Message):
     int128_value: Int128
     cast_type: Type
     def __init__(self, int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128, _Mapping]] = ..., int128_value: _Optional[_Union[Int128, _Mapping]] = ..., cast_type: _Optional[_Union[Type, _Mapping]] = ...) -> None: ...
+
+class MissingValue(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
 
 class UInt128(_message.Message):
     __slots__ = ("low", "high")

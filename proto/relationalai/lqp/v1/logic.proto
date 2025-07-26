@@ -252,8 +252,8 @@ message DateTimeType {}
 message MissingType {}
 
 message DecimalType {
-  int64 precision = 1;
-  int64 scale = 2;
+  int32 precision = 1;
+  int32 scale = 2;
 }
 
 message Value {
@@ -263,7 +263,7 @@ message Value {
     double float_value = 3;
     UInt128 uint128_value = 4;
     Int128 int128_value = 5;
-    bool missing_value = 6;
+    MissingValue missing_value = 6;
     CastValue cast_value = 7;
   }
 }
@@ -277,6 +277,8 @@ message CastValue {
   }
   Type cast_type = 5;
 }
+
+message MissingValue {}
 
 message UInt128 {
   fixed64 low = 1; // Lower 64 bits of UInt128

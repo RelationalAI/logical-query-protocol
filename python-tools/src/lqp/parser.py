@@ -445,7 +445,7 @@ class LQPTransformer(Transformer):
     #
     def value(self, meta, items):
         if items[0] == 'missing':
-            return ir.Missing(value=True, meta=self.meta(meta))
+            return ir.Missing(meta=self.meta(meta))
         elif len(items) > 1:
             cast_type = items[1]
             return ir.CastValue(value=items[0], cast_type=cast_type, meta=self.meta(meta))

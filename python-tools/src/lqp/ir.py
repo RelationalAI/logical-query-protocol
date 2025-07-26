@@ -223,7 +223,7 @@ class Int128(LqpNode):
 
 @dataclass(frozen=True)
 class Missing(LqpNode):
-    value: bool
+    pass
 
 @dataclass(frozen=True)
 class CastValue(LqpNode):

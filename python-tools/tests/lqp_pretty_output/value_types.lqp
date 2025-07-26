@@ -4,10 +4,10 @@
       (define
         (fragment :f1
           (def :output_decimal64
-            ([v::(DECIMAL19 6)]
+            ([v::(DECIMAL 19 6)]
               (relatom :dec64 v)))
           (def :output_decimal128
-            ([v::(DECIMAL38 10)]
+            ([v::(DECIMAL 38 10)]
               (relatom :dec128 v)))
           (def :output_date
             ([v::DATE]

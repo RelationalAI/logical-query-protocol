@@ -10,20 +10,20 @@
             ([v::INT128]
               (cast 123 v)))
           (def :int_dec64
-            ([v::(DECIMAL19 6)]
+            ([v::(DECIMAL 19 6)]
               (cast 1234 v)))
           (def :dec64_int
             ([v::INT]
-              (exists [d::(DECIMAL19 6)]
+              (exists [d::(DECIMAL 19 6)]
                 (and
                   (primitive :rel_primitive_decimal #64 #6 7 d)
                   (cast d v)))))
           (def :int_dec128
-            ([v::(DECIMAL38 10)]
+            ([v::(DECIMAL 38 10)]
               (cast 12345 v)))
           (def :dec128_int
             ([v::INT]
-              (exists [d::(DECIMAL38 10)]
+              (exists [d::(DECIMAL 38 10)]
                 (and
                   (primitive :rel_primitive_decimal #128 #10 5 d)
                   (cast d v))))))))
