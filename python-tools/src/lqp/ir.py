@@ -223,7 +223,7 @@ class Int128(LqpNode):
 
 @dataclass(frozen=True)
 class Missing(LqpNode):
-    value: bool
+    pass
 
 # PrimitiveValue union type for Constant
 PrimitiveValue = Union[str, int, float, UInt128, Int128, Missing]

@@ -263,9 +263,11 @@ message Value {
     double float_value = 3;
     UInt128 uint128_value = 4;
     Int128 int128_value = 5;
-    bool missing_value = 6;
+    MissingValue missing_value = 6;
   }
 }
+
+message MissingValue {}
 
 message UInt128 {
   fixed64 low = 1; // Lower 64 bits of UInt128

@@ -408,8 +408,12 @@ class Value(_message.Message):
     float_value: float
     uint128_value: UInt128
     int128_value: Int128
-    missing_value: bool
-    def __init__(self, string_value: _Optional[str] = ..., int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128, _Mapping]] = ..., int128_value: _Optional[_Union[Int128, _Mapping]] = ..., missing_value: bool = ...) -> None: ...
+    missing_value: MissingValue
+    def __init__(self, string_value: _Optional[str] = ..., int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128, _Mapping]] = ..., int128_value: _Optional[_Union[Int128, _Mapping]] = ..., missing_value: _Optional[_Union[MissingValue, _Mapping]] = ...) -> None: ...
+
+class MissingValue(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
 
 class UInt128(_message.Message):
     __slots__ = ("low", "high")

@@ -444,7 +444,7 @@ class LQPTransformer(Transformer):
     #
     def primitive_value(self, meta, items):
         if items[0] == 'missing':
-            return ir.Missing(value=True, meta=self.meta(meta))
+            return ir.Missing(meta=self.meta(meta))
         else:
             return items[0]
     def STRING(self, s):
