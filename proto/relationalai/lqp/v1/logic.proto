@@ -252,8 +252,8 @@ message DateTimeType {}
 message MissingType {}
 
 message DecimalType {
-  int64 precision = 1;
-  int64 scale = 2;
+  int32 precision = 1;
+  int32 scale = 2;
 }
 
 message Value {
