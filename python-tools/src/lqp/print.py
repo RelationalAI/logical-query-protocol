@@ -391,7 +391,6 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
     elif isinstance(node, (int, float)):
         lqp += f"{ind}{str(node)}"
 
-
     elif isinstance(node, ir.SpecializedValue):
         lqp += "#" + to_str(node.value, 0, {}, {})
 
