@@ -1,7 +1,7 @@
 ;; ERROR: Break rule found outside of body at fail_break_rule.lqp:10:17: '3181428560199927439'
 (transaction
   (epoch
-    (local_writes
+    (writes
       (define (fragment :f1
         (algorithm :foo
           (script

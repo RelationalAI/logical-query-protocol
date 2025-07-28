@@ -1,7 +1,7 @@
 ;; ERROR: Incorrect type for '3181428560199927439' atom at index 1 ('2') at fail_atom_type_1.lqp:8:25: expected STRING term, got INT
 (transaction
   (epoch
-    (local_writes
+    (writes
       (define
         (fragment :f1
           (def :foo ([x::STRING y::STRING] (and (= x "A") (= y "B"))))

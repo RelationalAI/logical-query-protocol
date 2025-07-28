@@ -1,6 +1,6 @@
 (transaction
   (epoch
-    (persistent_writes
+    (writes
       (define
         (fragment :f2
           (def :hello
@@ -14,7 +14,7 @@
     (reads
       (output :epoch0 :output)))
   (epoch
-    (persistent_writes
+    (writes
       (undefine :f2))
     (reads
       (output :epoch1 :output))))

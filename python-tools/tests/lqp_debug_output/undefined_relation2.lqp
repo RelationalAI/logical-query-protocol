@@ -1,6 +1,6 @@
 (transaction
   (epoch
-    (persistent_writes
+    (writes
       (define
         (fragment :f2
           (def 3238736544897475342
@@ -14,7 +14,7 @@
     (reads
       (output :epoch0 16208045718567772255)))
   (epoch
-    (persistent_writes
+    (writes
       (undefine :f2))
     (reads
       (output :epoch1 16208045718567772255))))

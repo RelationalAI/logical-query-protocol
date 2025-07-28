@@ -1,7 +1,7 @@
 ;; ERROR: Duplicate declaration at fail_dup_id_4.lqp:7:20: '3181428560199927439'
 (transaction
   (epoch
-    (local_writes
+    (writes
       (define (fragment :f1 (def :foo ([] (or)))))
       (define (fragment :f2
         (algorithm :foo

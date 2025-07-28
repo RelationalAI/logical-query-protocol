@@ -1,6 +1,6 @@
 (transaction
   (epoch
-    (local_writes
+    (writes
       (define
         (fragment :primitives
           (def 1046914482580477072

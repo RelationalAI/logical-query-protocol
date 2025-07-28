@@ -1,7 +1,7 @@
 ;; Simple fragment defining a relation 'person' and using variables correctly
 (transaction
   (epoch
-    (local_writes
+    (writes
       (define
         (fragment :frag
           (def :person
