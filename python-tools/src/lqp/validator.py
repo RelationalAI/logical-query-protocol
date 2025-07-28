@@ -169,22 +169,22 @@ class AtomTypeChecker(LqpVisitor):
                 # this node as a leaf.
         return DefCollector(txn).atoms
 
-    # Helper to map Constants to their PrimitiveType.
+    # Helper to map Constants to their TypeName.
     @staticmethod
-    def constant_type(c: ir.Constant) -> ir.PrimitiveType: # type: ignore
+    def constant_type(c: ir.Constant) -> ir.TypeName: # type: ignore
         if isinstance(c, str):
-            return ir.PrimitiveType.STRING
+            return ir.TypeName.STRING
         elif isinstance(c, int):
-            return ir.PrimitiveType.INT
+            return ir.TypeName.INT
         elif isinstance(c, float):
-            return ir.PrimitiveType.FLOAT
+            return ir.TypeName.FLOAT
         elif isinstance(c, ir.UInt128):
-            return ir.PrimitiveType.UINT128
+            return ir.TypeName.UINT128
         else:
             assert False
 
     @staticmethod
-    def type_error_message(atom: ir.Atom, index: int, expected: ir.PrimitiveType, actual: ir.PrimitiveType) -> str:
+    def type_error_message(atom: ir.Atom, index: int, expected: ir.TypeName, actual: ir.TypeName) -> str:
         term = atom.terms[index]
         pretty_term = p.to_str(term, 0)
         return \
@@ -194,8 +194,8 @@ class AtomTypeChecker(LqpVisitor):
     # Return a list of the types of the parameters of a Def.
     @staticmethod
     def get_relation_sig(d: Instructions):
-        # v[1] holds the PrimitiveType.
-        return [v[1] for v in d.body.vars]
+        # v[1] holds the TypeName.
+        return [v[1].type_name for v in d.body.vars]
 
     # The varargs passed be a State or nothing at all.
     @staticmethod
@@ -206,9 +206,9 @@ class AtomTypeChecker(LqpVisitor):
     @dataclass(frozen=True)
     class State:
         # Maps relations in scope to their types.
-        relation_types: Dict[ir.RelationId, List[ir.PrimitiveType]]
+        relation_types: Dict[ir.RelationId, List[ir.TypeName]]
         # Maps variables in scope to their type.
-        var_types: Dict[str, ir.PrimitiveType]
+        var_types: Dict[str, ir.TypeName]
 
     def __init__(self, txn: ir.Transaction):
         state = AtomTypeChecker.State(
@@ -230,7 +230,7 @@ class AtomTypeChecker(LqpVisitor):
             node,
             AtomTypeChecker.State(
                 state.relation_types,
-                state.var_types | {v.name : t for (v, t) in node.vars},
+                state.var_types | {v.name : t.type_name for (v, t) in node.vars},
             ),
         )
 
@@ -277,7 +277,7 @@ class AtomTypeChecker(LqpVisitor):
             for (i, (term, relation_type)) in enumerate(zip(node.terms, relation_type_sig)):
                 # var_types[term] is okay because we assume UnusedVariableVisitor.
                 term_type = state.var_types[term.name] if isinstance(term, ir.Var) else AtomTypeChecker.constant_type(term)
-                if term_type != relation_type:
+                if term_type.value != relation_type.value:
                     raise ValidationError(
                         AtomTypeChecker.type_error_message(node, i, relation_type, term_type)
                     )
