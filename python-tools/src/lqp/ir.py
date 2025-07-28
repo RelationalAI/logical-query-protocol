@@ -226,11 +226,9 @@ class Missing(LqpNode):
     pass
 
 @dataclass(frozen=True)
-class CastValue(LqpNode):
-    value: Union[int, float, UInt128, Int128]
-    cast_type: Type
-
-Value = Union[str, int, float, UInt128, Int128, Missing, CastValue]
+class Value(LqpNode):
+    value: Union[str, int, float, UInt128, Int128, Missing]
+    cast_type: Optional[Type]
 
 # Constant(value::Value)
 Constant = Union[Value]

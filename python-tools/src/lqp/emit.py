@@ -16,11 +16,12 @@ type_dict = {
 
 def convert_type(rt: ir.Type) -> logic_pb2.Type:
     if rt.type_name == ir.TypeName.DECIMAL :
-        assert isinstance(rt.parameters[0], int) and isinstance(rt.parameters[1], int), "DECIMAL parameters are not integers"
+        assert isinstance(rt.parameters[0].value, int) and isinstance(rt.parameters[1].value, int), \
+            f"DECIMAL parameters are not integers"
         assert len(rt.parameters) == 2, "DECIMAL parameters should have only precision and scale"
         return logic_pb2.Type(
             decimal_type=logic_pb2.DecimalType(
-                precision=rt.parameters[0], scale=rt.parameters[1]
+                precision=rt.parameters[0].value, scale=rt.parameters[1].value
             )
         )
     else:
@@ -38,37 +39,31 @@ def convert_int128(val: ir.Int128) -> logic_pb2.Int128:
     return logic_pb2.Int128(low=low, high=high)
 
 def convert_value(pv: ir.Value) -> logic_pb2.Value:
-    if isinstance(pv, str):
-        return logic_pb2.Value(string_value=pv)
-    elif isinstance(pv, int):
-        assert pv.bit_length() <= 64, "Integer value exceeds 64 bits"
-        return logic_pb2.Value(int_value=pv)
-    elif isinstance(pv, float):
-        return logic_pb2.Value(float_value=pv)
-    elif isinstance(pv, ir.UInt128):
-        return logic_pb2.Value(uint128_value=convert_uint128(pv))
-    elif isinstance(pv, ir.Int128):
-        return logic_pb2.Value(int128_value=convert_int128(pv))
-    elif isinstance(pv, ir.Missing):
+    if isinstance(pv.value, str):
+        assert pv.cast_type is None, "Illegal cast of String value"
+        return logic_pb2.Value(string_value=pv.value)
+    elif isinstance(pv.value, ir.Missing):
+        assert pv.cast_type is None, "Illegal cast of Missing value"
         return logic_pb2.Value(missing_value=logic_pb2.MissingValue())
-    elif isinstance(pv, ir.CastValue):
-        return logic_pb2.Value(cast_value=convert_cast_value(pv))
-    else:
-        raise TypeError(f"Unsupported Value type: {type(pv)}")
 
-def convert_cast_value(pv: ir.CastValue) -> logic_pb2.CastValue:
-    cast_type = convert_type(pv.cast_type)
+    # For numeric types, handle cast_type if present
+    value_dict: dict[Any, Any] = {}
     if isinstance(pv.value, int):
         assert pv.value.bit_length() <= 64, "Integer value exceeds 64 bits"
-        return logic_pb2.CastValue(int_value=pv.value, cast_type=cast_type)
+        value_dict['int_value'] = pv.value
     elif isinstance(pv.value, float):
-        return logic_pb2.CastValue(float_value=pv.value, cast_type=cast_type)
+        value_dict['float_value'] = pv.value
     elif isinstance(pv.value, ir.UInt128):
-        return logic_pb2.CastValue(uint128_value=convert_uint128(pv.value), cast_type=cast_type)
+        value_dict['uint128_value'] = convert_uint128(pv.value)
     elif isinstance(pv.value, ir.Int128):
-        return logic_pb2.CastValue(int128_value=convert_int128(pv.value), cast_type=cast_type)
+        value_dict['int128_value'] = convert_int128(pv.value)
     else:
-        raise TypeError(f"Unsupported Cast Value type: {type(pv)}")
+        raise TypeError(f"Unsupported Value type: {type(pv.value)}")
+
+    if pv.cast_type is not None:
+        value_dict['cast_type'] = convert_type(pv.cast_type)
+
+    return logic_pb2.Value(**value_dict)
 
 def convert_var(v: ir.Var) -> logic_pb2.Var:
     return logic_pb2.Var(name=v.name)

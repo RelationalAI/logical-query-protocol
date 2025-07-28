@@ -221,7 +221,7 @@ def _collect_debug_infos(node: ir.LqpNode) -> Dict[ir.RelationId, str]:
                 debug_infos = _collect_debug_infos(elt) | debug_infos
     return debug_infos
 
-def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue], indent_level: int, options: Dict = {}, debug_info: Dict = {}) -> str:
+def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, str, float], indent_level: int, options: Dict = {}, debug_info: Dict = {}) -> str:
     conf = style_config(options)
 
     ind = conf.indentation(indent_level)
@@ -374,6 +374,11 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue], inde
     elif isinstance(node, ir.Var):
         lqp += f"{ind}{conf.uname(node.name)}"
 
+    elif isinstance(node, ir.Value):
+        lqp += to_str(node.value, indent_level, options, debug_info)
+        if node.cast_type is not None:
+            lqp += "::"
+            lqp += to_str(node.cast_type, 0, options, debug_info)
     elif isinstance(node, str):
         lqp += ind + "\"" + node.encode('unicode_escape').replace(b'"', b'\\"').decode() + "\""
     elif isinstance(node, ir.UInt128):
@@ -385,10 +390,7 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue], inde
             lqp += f"{ind}missing"
     elif isinstance(node, (int, float)):
         lqp += f"{ind}{str(node)}"
-    elif isinstance(node, ir.CastValue):
-        lqp += to_str(node.value, 0, options, debug_info)
-        lqp += "::"
-        lqp += to_str(node.cast_type, 0, options, debug_info)
+
 
     elif isinstance(node, ir.SpecializedValue):
         lqp += "#" + to_str(node.value, 0, {}, {})

@@ -109,7 +109,7 @@ relation_id: (":" SYMBOL) | NUMBER
 name: ":" SYMBOL
 
 value: STRING | NUMBER | FLOAT | UINT128 | INT128 | MISSING
-                | (NUMBER | FLOAT | UINT128 | INT128) "::" type_
+        | (NUMBER | FLOAT | UINT128 | INT128) "::" type_
 
 type_ : TYPE_NAME | "(" TYPE_NAME value* ")"
 
@@ -202,7 +202,8 @@ class LQPTransformer(Transformer):
         export_fields = {}
         for i in items[2:]:
             assert isinstance(i, dict)
-            export_fields.update(i)
+            for k, v in i.items():
+                export_fields[k] = v.value
 
         return ir.ExportCSVConfig(
             path=items[0],
@@ -444,13 +445,10 @@ class LQPTransformer(Transformer):
     # Primitive values
     #
     def value(self, meta, items):
-        if items[0] == 'missing':
-            return ir.Missing(meta=self.meta(meta))
-        elif len(items) > 1:
-            cast_type = items[1]
-            return ir.CastValue(value=items[0], cast_type=cast_type, meta=self.meta(meta))
+        if len(items) > 1:
+            return ir.Value(value=items[0], cast_type=items[1], meta=self.meta(meta))
         else:
-            return items[0]
+            return ir.Value(value=items[0], cast_type=None, meta=self.meta(meta))
 
     def STRING(self, s):
         return s[1:-1].encode().decode('unicode_escape') # Strip quotes and process escaping

@@ -264,18 +264,8 @@ message Value {
     UInt128 uint128_value = 4;
     Int128 int128_value = 5;
     MissingValue missing_value = 6;
-    CastValue cast_value = 7;
   }
-}
-
-message CastValue {
-  oneof value {
-    int64 int_value = 1;
-    double float_value = 2;
-    UInt128 uint128_value = 3;
-    Int128 int128_value = 4;
-  }
-  Type cast_type = 5;
+  optional Type cast_type = 7; // Numbers can be cast in-place to different types
 }
 
 message MissingValue {}
