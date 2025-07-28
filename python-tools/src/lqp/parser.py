@@ -12,9 +12,8 @@ grammar = """
 start: transaction | fragment
 
 transaction: "(transaction" epoch* ")"
-epoch: "(epoch" persistent_writes? local_writes? reads? ")"
-persistent_writes: "(persistent_writes" write* ")"
-local_writes: "(local_writes" write* ")"
+epoch: "(epoch" writes? reads? ")"
+writes: "(writes" write* ")"
 reads: "(reads" read* ")"
 
 write: define | undefine | context
@@ -160,10 +159,8 @@ class LQPTransformer(Transformer):
         kwargs = {k: v for k, v in items if v} # Filter out None values
         return ir.Epoch(**kwargs, meta=self.meta(meta))
 
-    def persistent_writes(self, meta, items):
-        return ("persistent_writes", items)
-    def local_writes(self, meta, items):
-        return ("local_writes", items)
+    def writes(self, meta, items):
+        return ("writes", items)
     def reads(self, meta, items):
         return ("reads", items)
     def write(self, meta, items):
