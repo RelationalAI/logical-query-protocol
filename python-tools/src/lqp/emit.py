@@ -2,7 +2,9 @@ import lqp.ir as ir
 from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
 from typing import Union, Dict, Any
 
-type_dict = {
+# Maps ir.TypeNames to the associated Proto message for *non-paremetric types*. Used to generically construct non-parametric types.
+# Parametric types should be handled in convert_type
+non_parametric_types = {
     ir.TypeName.UNSPECIFIED: "UnspecifiedType",
     ir.TypeName.STRING: "StringType",
     ir.TypeName.INT: "IntType",
@@ -17,14 +19,16 @@ type_dict = {
 def convert_type(rt: ir.Type) -> logic_pb2.Type:
     if rt.type_name == ir.TypeName.DECIMAL :
         assert isinstance(rt.parameters[0], int) and isinstance(rt.parameters[1], int), "DECIMAL parameters are not integers"
-        assert len(rt.parameters) == 2, "DECIMAL parameters should have only precision and scale"
+        assert len(rt.parameters) == 2, f"DECIMAL parameters should have only precision and scale, got {len(rt.parameters)} arguments"
+        assert rt.parameters[0] <= 38, f"DECIMAL precision must be less than 38, got {rt.parameters[0]}"
+        assert rt.parameters[1] <= rt.parameters[0], f"DECIMAL precision ({rt.parameters[0]}) must be at least scale ({rt.parameters[1]})"
         return logic_pb2.Type(
             decimal_type=logic_pb2.DecimalType(
                 precision=rt.parameters[0], scale=rt.parameters[1]
             )
         )
     else:
-        cls = getattr(logic_pb2, type_dict[rt.type_name])
+        cls = getattr(logic_pb2, non_parametric_types[rt.type_name])
         return logic_pb2.Type(**{str(rt.type_name).lower()+"_type": cls()})
 
 def convert_uint128(val: ir.UInt128) -> logic_pb2.UInt128:
