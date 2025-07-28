@@ -6,8 +6,7 @@ import datetime as dt
 
 # Tree representation of LQP. Each non-terminal (those with more than one
 # option) is an "abstract" class and each terminal is its own class. All of
-# which are children of LqpNode. PrimitiveType and PrimitiveValue are
-# exceptions. PrimitiveType is an enum and PrimitiveValue is just a value.
+# which are children of LqpNode. PrimitiveValue is an exception -- it is just a value.
 
 @dataclass(frozen=True)
 class SourceInfo:
@@ -120,22 +119,22 @@ class OrMonoid(Monoid):
 # MinMonoid
 @dataclass(frozen=True)
 class MinMonoid(Monoid):
-    type: PrimitiveType
+    type: Type
 
 # MaxMonoid
 @dataclass(frozen=True)
 class MaxMonoid(Monoid):
-    type: PrimitiveType
+    type: Type
 
 # SumMonoid
 @dataclass(frozen=True)
 class SumMonoid(Monoid):
-    type: PrimitiveType
+    type: Type
 
 # Abstraction(vars::Binding[], value::Formula)
 @dataclass(frozen=True)
 class Abstraction(LqpNode):
-    vars: Sequence[Tuple[Var, PrimitiveType]]
+    vars: Sequence[Tuple[Var, Type]]
     value: Formula
 
 # Formula := Exists | Reduce | Conjunction | Disjunction | Not | FFI | Atom | Pragma | Primitive | TrueVal | FalseVal | RelAtom | Cast
@@ -201,7 +200,7 @@ class RelAtom(Formula):
     name: str
     terms: Sequence[RelTerm]
 
-# Cast(type::PrimitiveType, input::Term, result::Term)
+# Cast(input::Term, result::Term)
 @dataclass(frozen=True)
 class Cast(Formula):
     input: Term
@@ -222,8 +221,12 @@ class UInt128(LqpNode):
 class Int128(LqpNode):
     value: int
 
+@dataclass(frozen=True)
+class Missing(LqpNode):
+    pass
+
 # PrimitiveValue union type for Constant
-PrimitiveValue = Union[str, int, float, UInt128, Int128]
+PrimitiveValue = Union[str, int, float, UInt128, Int128, Missing]
 
 # Constant(value::PrimitiveValue)
 Constant = Union[PrimitiveValue]
@@ -264,7 +267,7 @@ class RelationId(LqpNode):
     def __hash__(self) -> int:
         return hash(self.id)
 
-class PrimitiveType(Enum):
+class TypeName(Enum):
     UNSPECIFIED = 0
     STRING = 1
     INT = 2
@@ -273,11 +276,16 @@ class PrimitiveType(Enum):
     INT128 = 5
     DATE = 6
     DATETIME = 7
-    DECIMAL64 = 8
-    DECIMAL128 = 9
+    MISSING = 8
+    DECIMAL = 9
 
     def __str__(self) -> str:
         return self.name
+
+@dataclass(frozen=True)
+class Type(LqpNode):
+    type_name: TypeName
+    parameters: Sequence[PrimitiveValue]
 
 # --- Fragment Types ---
 

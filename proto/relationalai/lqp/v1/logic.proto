@@ -86,32 +86,32 @@ message MonusDef {
 }
 
 message Monoid {
-    oneof value {
-        OrMonoid or_monoid = 1;
-        MinMonoid min_monoid = 2;
-        MaxMonoid max_monoid = 3;
-        SumMonoid sum_monoid = 4;
-    }
+  oneof value {
+    OrMonoid or_monoid = 1;
+    MinMonoid min_monoid = 2;
+    MaxMonoid max_monoid = 3;
+    SumMonoid sum_monoid = 4;
+  }
 }
 
 message OrMonoid {} // Only over Booleans
 
 message MinMonoid { // Parametrized by a type T
-    PrimitiveType type = 1;
+  Type type = 1;
 }
 
 message MaxMonoid { // Parametrized by a type T
-    PrimitiveType type = 1;
+  Type type = 1;
 }
 
 message SumMonoid { // Parametrized by a type T
-    PrimitiveType type = 1;
+  Type type = 1;
 }
 
 
 message Binding {
   Var var = 1;
-  PrimitiveType type = 2;
+  Type type = 2;
 }
 
 // Abstraction and related types
@@ -218,19 +218,42 @@ message RelationId {
   fixed64 id_high = 2; // Upper 64 bits of UInt128
 }
 
-enum PrimitiveType {
-  PRIMITIVE_TYPE_UNSPECIFIED = 0;
-  PRIMITIVE_TYPE_STRING = 1;
-  PRIMITIVE_TYPE_INT = 2;
-  PRIMITIVE_TYPE_FLOAT = 3;
-  PRIMITIVE_TYPE_UINT128 = 4;
-  PRIMITIVE_TYPE_INT128 = 5;
+message Type {
+  oneof type {
+    UnspecifiedType unspecified_type = 1;
+    StringType string_type = 2;
+    IntType int_type = 3;
+    FloatType float_type = 4;
+    UInt128Type uint128_type = 5;
+    Int128Type int128_type = 6;
+    DateType date_type = 7;
+    DateTimeType datetime_type = 8;
+    MissingType missing_type = 9;
+    DecimalType decimal_type = 10;
+  }
+}
 
-  PRIMITIVE_TYPE_DATE = 7;
-  PRIMITIVE_TYPE_DATETIME = 8;
+message UnspecifiedType {}
 
-  PRIMITIVE_TYPE_DECIMAL64 = 9;
-  PRIMITIVE_TYPE_DECIMAL128 = 10;
+message StringType {}
+
+message IntType {}
+
+message FloatType {}
+
+message UInt128Type {}
+
+message Int128Type {}
+
+message DateType {}
+
+message DateTimeType {}
+
+message MissingType {}
+
+message DecimalType {
+  int32 precision = 1;
+  int32 scale = 2;
 }
 
 message Value {
@@ -240,8 +263,11 @@ message Value {
     double float_value = 3;
     UInt128 uint128_value = 4;
     Int128 int128_value = 5;
+    MissingValue missing_value = 6;
   }
 }
+
+message MissingValue {}
 
 message UInt128 {
   fixed64 low = 1; // Lower 64 bits of UInt128

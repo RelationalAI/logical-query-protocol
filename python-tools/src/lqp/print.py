@@ -1,7 +1,7 @@
 import dataclasses
 
 from abc import ABC, abstractmethod
-from typing import Union, Sequence, Dict, List
+from typing import Union, Sequence, Dict, List, Any
 
 from colorama import Style, Fore
 from enum import Enum
@@ -129,7 +129,7 @@ def style_config(options: Dict) -> StyleConfig:
 
 # Call to_str on all nodes, each of which with indent_level, separating them
 # by delim.
-def list_to_str(nodes: Sequence[Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.SpecializedValue]], indent_level: int, delim: str, options: Dict, debug_info: Dict = {}) -> str:
+def list_to_str(nodes: Sequence[Union[ir.LqpNode, ir.Type, ir.PrimitiveValue, ir.SpecializedValue]], indent_level: int, delim: str, options: Dict, debug_info: Dict = {}) -> str:
     return delim.join(map(lambda n: to_str(n, indent_level, options, debug_info), nodes))
 
 # Produces "(terms term1 term2 ...)" (all on one line) indented at indent_level.
@@ -172,7 +172,7 @@ def program_to_str(node: ir.Transaction, options: Dict = {}) -> str:
     for epoch in node.epochs:
         s += "\n" + conf.indentation(1) + conf.LPAREN() + conf.kw("epoch")
         section_strs: List[str] = []
-        def build_section(keyword: str, items_list: Sequence[Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.SpecializedValue]], debug_info: Dict = {}) -> Union[str, None]:
+        def build_section(keyword: str, items_list: Sequence[Union[ir.LqpNode, ir.Type, ir.PrimitiveValue, ir.SpecializedValue]], debug_info: Dict = {}) -> Union[str, None]:
             if not items_list:
                 return None
             sec_s = "\n" + conf.indentation(2) + conf.LPAREN() + conf.kw(keyword) + "\n"
@@ -219,7 +219,7 @@ def _collect_debug_infos(node: ir.LqpNode) -> Dict[ir.RelationId, str]:
                 debug_infos = _collect_debug_infos(elt) | debug_infos
     return debug_infos
 
-def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.SpecializedValue], indent_level: int, options: Dict = {}, debug_info: Dict = {}) -> str:
+def to_str(node: Union[ir.LqpNode, ir.Type, ir.PrimitiveValue, ir.SpecializedValue], indent_level: int, options: Dict = {}, debug_info: Dict = {}) -> str:
     conf = style_config(options)
 
     ind = conf.indentation(indent_level)
@@ -307,15 +307,24 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
     elif isinstance(node, ir.SumMonoid):
         lqp += to_str(node.type, 0, options, debug_info) + "::SUM"
 
+    elif isinstance(node, ir.Type):
+        if len(node.parameters) == 0:
+            lqp += conf.type_anno(str(node.type_name))
+        else:
+            lqp += conf.LPAREN() + conf.type_anno(str(node.type_name)) + " "
+            lqp += " ".join([to_str(x, 0, options, debug_info) for x in node.parameters])
+            lqp += conf.RPAREN()
     elif isinstance(node, ir.Abstraction):
         lqp += ind + conf.LPAREN() + conf.LBRACKET()
-        lqp += " ".join(map(lambda v: conf.uname(v[0].name) + conf.type_anno("::" + str(v[1])), node.vars))
+        lqp += " ".join(map(lambda v: conf.uname(v[0].name) \
+                + conf.type_anno("::") + to_str(v[1], indent_level + 1, options, debug_info), node.vars))
         lqp += conf.RBRACKET() + "\n"
         lqp += f"{to_str(node.value, indent_level + 1, options, debug_info)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Exists):
         lqp += ind + conf.LPAREN() + conf.kw("exists") + " " + conf.LBRACKET()
-        lqp += " ".join(map(lambda v: conf.uname(v[0].name) + conf.type_anno("::" + str(v[1])), node.body.vars))
+        lqp += " ".join(map(lambda v: conf.uname(v[0].name) \
+                + conf.type_anno("::") + to_str(v[1], indent_level + 1, options, debug_info), node.body.vars))
         lqp += conf.RBRACKET() + "\n"
         lqp += to_str(node.body.value, indent_level + 1, options, debug_info) + conf.RPAREN()
 
@@ -369,8 +378,9 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         lqp += f"{ind}{hex(node.value)}"
     elif isinstance(node, ir.Int128):
         lqp += f"{ind}{node.value}i128"
-    elif isinstance(node, bool):
-        lqp += f"{ind}{str(node).lower()}"
+    elif isinstance(node, ir.Missing):
+        if node:
+            lqp += f"{ind}missing"
     elif isinstance(node, (int, float)):
         lqp += f"{ind}{str(node)}"
 
@@ -383,9 +393,6 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
     elif isinstance(node, ir.RelationId):
         name = id_to_name(options, debug_info, node)
         lqp += f"{ind}{str(conf.uname(name))}"
-
-    elif isinstance(node, ir.PrimitiveType):
-        lqp += f"{ind}{node.name}"
 
     elif isinstance(node, ir.Write):
         # Delegate to the specific write type
@@ -428,23 +435,23 @@ def to_str(node: Union[ir.LqpNode, ir.PrimitiveType, ir.PrimitiveValue, ir.Speci
         lqp += line_conf_f('path', node.path) + "\n"
         lqp += line('columns', list_to_str(node.data_columns, 0, " ", options, debug_info)) + "\n"
 
-        config_dict = {}
+        config_dict: dict[str, Union[int, str]] = {}
         if node.partition_size is not None:
             config_dict['partition_size'] = node.partition_size
         if node.compression is not None:
-            config_dict['compression'] = node.compression
+            config_dict['compression'] = node.compression #type: ignore
         if node.syntax_header_row is not None:
             config_dict['header_row'] = node.syntax_header_row
         if node.syntax_missing_string is not None:
-            config_dict['syntax_missing_string'] = node.syntax_missing_string
+            config_dict['syntax_missing_string'] = node.syntax_missing_string #type: ignore
         if node.syntax_delim is not None:
-            config_dict['syntax_delim'] = node.syntax_delim
+            config_dict['syntax_delim'] = node.syntax_delim #type: ignore
         if node.syntax_quotechar is not None:
-            config_dict['syntax_quotechar'] = node.syntax_quotechar
+            config_dict['syntax_quotechar'] = node.syntax_quotechar #type: ignore
         if node.syntax_escapechar is not None:
-            config_dict['syntax_escapechar'] = node.syntax_escapechar
+            config_dict['syntax_escapechar'] = node.syntax_escapechar #type: ignore
 
-        lqp += "\n" + config_dict_to_str(config_dict, indent_level + 1, options)
+        lqp += "\n" + config_dict_to_str(config_dict, indent_level + 1, options) #type: ignore
         lqp += f"{conf.RPAREN()}"
 
     elif isinstance(node, ir.ExportCSVColumn):
