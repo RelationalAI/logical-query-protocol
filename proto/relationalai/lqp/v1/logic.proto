@@ -265,6 +265,7 @@ message Value {
     Int128 int128_value = 5;
     MissingValue missing_value = 6;
   }
+  optional Type cast_type = 7; // Numbers can be cast in-place to different types
 }
 
 message MissingValue {}

@@ -3,11 +3,15 @@
     (local_writes
       (define
         (fragment :f1
-          (def 9252803505703913990
+          (def 17308140329744549114
             ([v::MISSING]
-              (primitive :rel_primitive_eq missing v))))))))
+              (primitive :rel_primitive_eq missing v)))
+          (def 7718453676946129503
+            ([v::STRING]
+              (primitive :rel_primitive_eq "missing" v))))))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `9252803505703913990` -> `miss`
+;; 	 ID `17308140329744549114` -> `miss1`
+;; 	 ID `7718453676946129503` -> `miss2`

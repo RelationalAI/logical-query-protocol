@@ -18,13 +18,13 @@ non_parametric_types = {
 
 def convert_type(rt: ir.Type) -> logic_pb2.Type:
     if rt.type_name == ir.TypeName.DECIMAL :
-        assert isinstance(rt.parameters[0], int) and isinstance(rt.parameters[1], int), "DECIMAL parameters are not integers"
+        assert isinstance(rt.parameters[0].value, int) and isinstance(rt.parameters[1].value, int), "DECIMAL parameters are not integers"
         assert len(rt.parameters) == 2, f"DECIMAL parameters should have only precision and scale, got {len(rt.parameters)} arguments"
-        assert rt.parameters[0] <= 38, f"DECIMAL precision must be less than 38, got {rt.parameters[0]}"
-        assert rt.parameters[1] <= rt.parameters[0], f"DECIMAL precision ({rt.parameters[0]}) must be at least scale ({rt.parameters[1]})"
+        assert rt.parameters[0].value <= 38, f"DECIMAL precision must be less than 38, got {rt.parameters[0]}"
+        assert rt.parameters[1].value <= rt.parameters[0].value, f"DECIMAL precision ({rt.parameters[0]}) must be at least scale ({rt.parameters[1]})"
         return logic_pb2.Type(
             decimal_type=logic_pb2.DecimalType(
-                precision=rt.parameters[0], scale=rt.parameters[1]
+                precision=rt.parameters[0].value, scale=rt.parameters[1].value
             )
         )
     else:
@@ -41,22 +41,32 @@ def convert_int128(val: ir.Int128) -> logic_pb2.Int128:
     high = (val.value >> 64) & 0xFFFFFFFFFFFFFFFF
     return logic_pb2.Int128(low=low, high=high)
 
-def convert_value(pv: ir.PrimitiveValue) -> logic_pb2.Value:
-    if isinstance(pv, str):
-        return logic_pb2.Value(string_value=pv)
-    elif isinstance(pv, int):
-        assert pv.bit_length() <= 64, "Integer value exceeds 64 bits"
-        return logic_pb2.Value(int_value=pv)
-    elif isinstance(pv, float):
-        return logic_pb2.Value(float_value=pv)
-    elif isinstance(pv, ir.UInt128):
-        return logic_pb2.Value(uint128_value=convert_uint128(pv))
-    elif isinstance(pv, ir.Int128):
-        return logic_pb2.Value(int128_value=convert_int128(pv))
-    elif isinstance(pv, ir.Missing):
+def convert_value(pv: ir.Value) -> logic_pb2.Value:
+    if isinstance(pv.value, str):
+        assert pv.cast_type is None, "Illegal cast of String value"
+        return logic_pb2.Value(string_value=pv.value)
+    elif isinstance(pv.value, ir.Missing):
+        assert pv.cast_type is None, "Illegal cast of Missing value"
         return logic_pb2.Value(missing_value=logic_pb2.MissingValue())
+
+    # For numeric types, handle cast_type if present
+    value_dict: dict[Any, Any] = {}
+    if isinstance(pv.value, int):
+        assert pv.value.bit_length() <= 64, "Integer value exceeds 64 bits"
+        value_dict['int_value'] = pv.value
+    elif isinstance(pv.value, float):
+        value_dict['float_value'] = pv.value
+    elif isinstance(pv.value, ir.UInt128):
+        value_dict['uint128_value'] = convert_uint128(pv.value)
+    elif isinstance(pv.value, ir.Int128):
+        value_dict['int128_value'] = convert_int128(pv.value)
     else:
-        raise TypeError(f"Unsupported PrimitiveValue type: {type(pv)}")
+        raise TypeError(f"Unsupported Value type: {type(pv.value)}")
+
+    if pv.cast_type is not None:
+        value_dict['cast_type'] = convert_type(pv.cast_type)
+
+    return logic_pb2.Value(**value_dict)
 
 def convert_var(v: ir.Var) -> logic_pb2.Var:
     return logic_pb2.Var(name=v.name)
