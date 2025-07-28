@@ -465,6 +465,8 @@ class LQPTransformer(Transformer):
         u= u[:-4]  # Remove the 'i128' suffix
         int128_val = int(u)
         return ir.Int128(value=int128_val, meta=None)
+    def MISSING(self, m):
+        return ir.Missing(meta=None)
 
     def config_dict(self, meta, items):
         # items is a list of key-value pairs
