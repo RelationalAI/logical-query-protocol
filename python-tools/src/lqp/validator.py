@@ -170,16 +170,19 @@ class AtomTypeChecker(LqpVisitor):
         return DefCollector(txn).atoms
 
     # Helper to map Constants to their TypeName.
+    # Helper to map Constants to their TypeName.
     @staticmethod
     def constant_type(c: ir.Constant) -> ir.TypeName: # type: ignore
-        if isinstance(c, str):
+        if isinstance(c.value, str):
             return ir.TypeName.STRING
-        elif isinstance(c, int):
+        elif isinstance(c.value, int):
             return ir.TypeName.INT
-        elif isinstance(c, float):
+        elif isinstance(c.value, float):
             return ir.TypeName.FLOAT
-        elif isinstance(c, ir.UInt128):
+        elif isinstance(c.value, ir.UInt128):
             return ir.TypeName.UINT128
+        elif isinstance(c.value, ir.Missing):
+            return ir.TypeName.MISSING
         else:
             assert False
 

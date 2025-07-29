@@ -96,9 +96,9 @@ divide: "(/" term term term ")"
 
 relterm: specialized_value | term
 term: var | constant
-specialized_value: "#" primitive_value
+specialized_value: "#" value
 var: SYMBOL
-constant: primitive_value
+constant: value
 
 attrs: "(attrs" attribute* ")"
 attribute: "(attribute" name constant* ")"
@@ -107,9 +107,10 @@ fragment_id: ":" SYMBOL
 relation_id: (":" SYMBOL) | NUMBER
 name: ":" SYMBOL
 
-primitive_value: STRING | NUMBER | FLOAT | UINT128 | INT128 | MISSING
+value: STRING | NUMBER | FLOAT | UINT128 | INT128 | MISSING
+        | (NUMBER | FLOAT | UINT128 | INT128) "::" type_
 
-type_ : TYPE_NAME | "(" TYPE_NAME primitive_value* ")"
+type_ : TYPE_NAME | "(" TYPE_NAME value* ")"
 
 TYPE_NAME: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
             | "DATE" | "DATETIME" | "MISSING" | "DECIMAL"
@@ -123,7 +124,7 @@ UINT128: /0x[0-9a-fA-F]+/
 FLOAT: /\\d+\\.\\d+/
 
 config_dict: "{" config_key_value* "}"
-config_key_value: ":" SYMBOL primitive_value
+config_key_value: ":" SYMBOL value
 
 COMMENT: /;;.*/  // Matches ;; followed by any characters except newline
 %ignore /\\s+/
@@ -198,7 +199,8 @@ class LQPTransformer(Transformer):
         export_fields = {}
         for i in items[2:]:
             assert isinstance(i, dict)
-            export_fields.update(i)
+            for k, v in i.items():
+                export_fields[k] = v.value
 
         return ir.ExportCSVConfig(
             path=items[0],
@@ -439,11 +441,12 @@ class LQPTransformer(Transformer):
     #
     # Primitive values
     #
-    def primitive_value(self, meta, items):
-        if items[0] == 'missing':
-            return ir.Missing(meta=self.meta(meta))
+    def value(self, meta, items):
+        if len(items) > 1:
+            return ir.Value(value=items[0], cast_type=items[1], meta=self.meta(meta))
         else:
-            return items[0]
+            return ir.Value(value=items[0], cast_type=None, meta=self.meta(meta))
+
     def STRING(self, s):
         return s[1:-1].encode().decode('unicode_escape') # Strip quotes and process escaping
     def NUMBER(self, n):
@@ -459,6 +462,8 @@ class LQPTransformer(Transformer):
         u= u[:-4]  # Remove the 'i128' suffix
         int128_val = int(u)
         return ir.Int128(value=int128_val, meta=None)
+    def MISSING(self, m):
+        return ir.Missing(meta=None)
 
     def config_dict(self, meta, items):
         # items is a list of key-value pairs

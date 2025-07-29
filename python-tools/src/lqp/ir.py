@@ -6,7 +6,7 @@ import datetime as dt
 
 # Tree representation of LQP. Each non-terminal (those with more than one
 # option) is an "abstract" class and each terminal is its own class. All of
-# which are children of LqpNode. PrimitiveValue is an exception -- it is just a value.
+# which are children of LqpNode. Value is an exception -- it is just a value.
 
 @dataclass(frozen=True)
 class SourceInfo:
@@ -225,16 +225,18 @@ class Int128(LqpNode):
 class Missing(LqpNode):
     pass
 
-# PrimitiveValue union type for Constant
-PrimitiveValue = Union[str, int, float, UInt128, Int128, Missing]
+@dataclass(frozen=True)
+class Value(LqpNode):
+    value: Union[str, int, float, UInt128, Int128, Missing]
+    cast_type: Optional[Type]
 
-# Constant(value::PrimitiveValue)
-Constant = Union[PrimitiveValue]
+# Constant(value::Value)
+Constant = Union[Value]
 
-# SpecializedValue(value::PrimitiveValue)
+# SpecializedValue(value::Value)
 @dataclass(frozen=True)
 class SpecializedValue(LqpNode):
-    value: PrimitiveValue
+    value: Value
 
 # Term := Var | Constant
 Term = Union[Var, Constant]
@@ -285,7 +287,7 @@ class TypeName(Enum):
 @dataclass(frozen=True)
 class Type(LqpNode):
     type_name: TypeName
-    parameters: Sequence[PrimitiveValue]
+    parameters: Sequence[Value]
 
 # --- Fragment Types ---
 
