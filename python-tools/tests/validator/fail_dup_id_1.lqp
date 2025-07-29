@@ -2,7 +2,7 @@
 ;; Duplicate ID, same fragment, same epoch.
 (transaction
   (epoch
-    (local_writes
+    (writes
       (define
         (fragment :frag
           (def :cool

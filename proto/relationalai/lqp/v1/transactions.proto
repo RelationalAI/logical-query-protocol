@@ -15,9 +15,8 @@ message Configure {
 }
 
 message Epoch {
-  repeated Write persistent_writes = 1;
-  repeated Write local_writes = 2;
-  repeated Read reads = 3;
+  repeated Write writes = 1;
+  repeated Read reads = 2;
 }
 
 //

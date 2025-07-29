@@ -1,7 +1,7 @@
 ;; ERROR: Undeclared variable used at fail_undeclared.lqp:11:23: 'some_limit'
 (transaction
   (epoch
-    (local_writes
+    (writes
       (define
         (fragment :frag
           (def :person

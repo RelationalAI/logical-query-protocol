@@ -1,7 +1,7 @@
 ;; ERROR: Duplicate declaration within fragment in epoch
 (transaction
   (epoch
-    (persistent_writes
+    (writes
       (define
         (fragment :invalid
           (def :output ([v::INT] (= v 101)))))

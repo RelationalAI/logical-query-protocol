@@ -1,6 +1,6 @@
 (transaction
   (epoch
-    (persistent_writes
+    (writes
       (define
         (fragment :instructions
           (algorithm :foo :bar

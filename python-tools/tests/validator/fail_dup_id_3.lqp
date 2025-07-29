@@ -2,13 +2,13 @@
 ;; Duplicate ID, different fragment, different epoch.
 (transaction
   (epoch
-    (local_writes
+    (writes
       (define
         (fragment :frag1
           (def :cool
             ([] (or)))))))
   (epoch
-    (local_writes
+    (writes
       (define
         (fragment :frag2
           (def :cool

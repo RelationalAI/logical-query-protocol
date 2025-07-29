@@ -1,7 +1,7 @@
 ;; No problem because the "duplication" happens in a separate epoch.
 (transaction
   (epoch
-    (local_writes
+    (writes
       (define
         (fragment :frag
           (def :cool
@@ -9,6 +9,6 @@
     )
     (reads))
   (epoch
-    (local_writes
+    (writes
       (define (fragment :frag))
     )))

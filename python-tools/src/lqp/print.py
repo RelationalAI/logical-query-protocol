@@ -178,10 +178,8 @@ def program_to_str(node: ir.Transaction, options: Dict = {}) -> str:
             sec_s = "\n" + conf.indentation(2) + conf.LPAREN() + conf.kw(keyword) + "\n"
             sec_s += list_to_str(items_list, 3, "\n", options, debug_info) + conf.RPAREN()
             return sec_s
-        persistent_writes_s = build_section("persistent_writes", epoch.persistent_writes)
-        if persistent_writes_s: section_strs.append(persistent_writes_s)
-        local_writes_s = build_section("local_writes", epoch.local_writes)
-        if local_writes_s: section_strs.append(local_writes_s)
+        writes_s = build_section("writes", epoch.writes)
+        if writes_s: section_strs.append(writes_s)
         reads_s = build_section("reads", epoch.reads, _collect_debug_infos(node))
         if reads_s: section_strs.append(reads_s)
         s += "".join(section_strs)
@@ -477,13 +475,9 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
         # This case should ideally not be hit directly by list_to_str for epoch.local_writes etc.
         # But if it is, it should print its contents.
         epoch_content = ""
-        if len(node.persistent_writes) > 0:
-            epoch_content += conf.indentation(indent_level + 1) + conf.LPAREN() + conf.kw("persistent_writes") + "\n"
-            epoch_content += list_to_str(node.persistent_writes, indent_level + 2, "\n", options, debug_info)
-            epoch_content += conf.RPAREN() + "\n"
-        if len(node.local_writes) > 0:
-            epoch_content += conf.indentation(indent_level + 1) + conf.LPAREN() + conf.kw("local_writes") + "\n"
-            epoch_content += list_to_str(node.local_writes, indent_level + 2, "\n", options, debug_info)
+        if len(node.writes) > 0:
+            epoch_content += conf.indentation(indent_level + 1) + conf.LPAREN() + conf.kw("writes") + "\n"
+            epoch_content += list_to_str(node.writes, indent_level + 2, "\n", options, debug_info)
             epoch_content += conf.RPAREN() + "\n"
         if len(node.reads) > 0:
             epoch_content += conf.indentation(indent_level + 1) + conf.LPAREN() + conf.kw("reads") + "\n"

@@ -1,6 +1,6 @@
 (transaction
   (epoch
-    (local_writes
+    (writes
       (define
         (fragment :f1
           (def 1234567898765432123456789

@@ -2,7 +2,7 @@
   ;; In the first epoch we define a fragment with a rule referencing an undefined relation,
   ;; which should be treated as empty and not throw an error.
   (epoch
-    (persistent_writes
+    (writes
       (define
         (fragment :f2
           (def :hello ([v::INT] (= v 101)))))
@@ -14,7 +14,7 @@
 
   ;; In the second epoch we delete the definition.
   (epoch
-    (persistent_writes
+    (writes
       (undefine :f2))
     (reads
       (output :epoch1 :output))))

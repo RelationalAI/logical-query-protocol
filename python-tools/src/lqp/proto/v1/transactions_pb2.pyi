@@ -22,14 +22,12 @@ class Configure(_message.Message):
     def __init__(self, semantics_version: _Optional[int] = ...) -> None: ...
 
 class Epoch(_message.Message):
-    __slots__ = ("persistent_writes", "local_writes", "reads")
-    PERSISTENT_WRITES_FIELD_NUMBER: _ClassVar[int]
-    LOCAL_WRITES_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("writes", "reads")
+    WRITES_FIELD_NUMBER: _ClassVar[int]
     READS_FIELD_NUMBER: _ClassVar[int]
-    persistent_writes: _containers.RepeatedCompositeFieldContainer[Write]
-    local_writes: _containers.RepeatedCompositeFieldContainer[Write]
+    writes: _containers.RepeatedCompositeFieldContainer[Write]
     reads: _containers.RepeatedCompositeFieldContainer[Read]
-    def __init__(self, persistent_writes: _Optional[_Iterable[_Union[Write, _Mapping]]] = ..., local_writes: _Optional[_Iterable[_Union[Write, _Mapping]]] = ..., reads: _Optional[_Iterable[_Union[Read, _Mapping]]] = ...) -> None: ...
+    def __init__(self, writes: _Optional[_Iterable[_Union[Write, _Mapping]]] = ..., reads: _Optional[_Iterable[_Union[Read, _Mapping]]] = ...) -> None: ...
 
 class Write(_message.Message):
     __slots__ = ("define", "undefine", "context")

@@ -1,6 +1,6 @@
 (transaction
   (epoch
-    (local_writes
+    (writes
       (define
         (fragment :model
           (def 7512117766650654031
@@ -132,7 +132,7 @@
                 (atom 11222845615070129783 pet_6 age_2)
                 (atom 11807380396400810730 pet_6 age_2))))))))
   (epoch
-    (local_writes
+    (writes
       (define
         (fragment :query
           (def 16208045718567772255

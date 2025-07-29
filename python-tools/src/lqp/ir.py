@@ -382,11 +382,10 @@ class Abort(LqpNode):
 class Read(LqpNode):
     read_type: Union[Demand, Output, Export, WhatIf, Abort]
 
-# Epoch(persistent_writes::Write[], local_writes::Write[], reads::Read[])
+# Epoch(writes::Write[], reads::Read[])
 @dataclass(frozen=True)
 class Epoch(LqpNode):
-    persistent_writes: Sequence[Write] = field(default_factory=list)
-    local_writes: Sequence[Write] = field(default_factory=list)
+    writes: Sequence[Write] = field(default_factory=list)
     reads: Sequence[Read] = field(default_factory=list)
 
 # WhatIf(branch::string?, epoch::Epoch)

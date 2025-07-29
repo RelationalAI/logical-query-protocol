@@ -1,6 +1,6 @@
 (transaction
   (epoch
-    (local_writes
+    (writes
       (define
         (fragment :f1
           (algorithm 10098605871750969749

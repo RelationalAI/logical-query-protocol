@@ -1,7 +1,7 @@
 ;; Duplicate ID, same fragment, different epoch.
 (transaction
   (epoch
-    (persistent_writes
+    (writes
       (define
         (fragment :f1
           (def :Adult
@@ -12,7 +12,7 @@
                  (>= age 18)))))))))
 
   (epoch
-    (persistent_writes
+    (writes
       (define
         (fragment :f1
           (def :Adult

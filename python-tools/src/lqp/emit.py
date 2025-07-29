@@ -366,8 +366,7 @@ def convert_read(r: ir.Read) -> transactions_pb2.Read:
 
 def convert_epoch(e: ir.Epoch) -> transactions_pb2.Epoch:
     return transactions_pb2.Epoch(
-        persistent_writes=[convert_write(w) for w in e.persistent_writes],
-        local_writes=[convert_write(w) for w in e.local_writes],
+        writes=[convert_write(w) for w in e.writes],
         reads=[convert_read(r) for r in e.reads]
     )
 
