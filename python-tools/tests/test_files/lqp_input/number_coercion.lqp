@@ -4,7 +4,7 @@
       (define
         (fragment :f1
           (def :test1 ([v::FLOAT] (= 1::FLOAT v)))
-          (def :test2 ([v::(DECIMAL 19 6)] (= 1::(DECIMAL 19 6) v)))
+          (def :test2 ([v::(DECIMAL 18 6)] (= 1::(DECIMAL 18 6) v)))
           (def :test3 ([v::INT] (= 1.2385::INT v)))
           (def :test4 ([v::INT128] (= 0x000000::INT128 v)))
           (def :test5 ([v::UINT128] (= 1235i128::UINT128 v))))))))
