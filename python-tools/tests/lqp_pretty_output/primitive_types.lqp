@@ -3,24 +3,54 @@
     (writes
       (define
         (fragment :f1
-          (def :output_int
+          (def :int
             ([v::INT]
               (primitive :rel_primitive_eq v 21)))
-          (def :output_int128_s
+          (def :int128_s
             ([v::INT128]
               (primitive :rel_primitive_eq v 21i128)))
-          (def :output_int128_l
+          (def :int128_l
             ([v::INT128]
               (primitive :rel_primitive_eq v 85968058283706962486085i128)))
-          (def :output_uint128
+          (def :uint128
             ([v::UINT128]
               (primitive :rel_primitive_eq v 0x123456789abcdef12345)))
-          (def :output_float
+          (def :float
             ([v::FLOAT]
               (primitive :rel_primitive_eq v 1.23)))
+          (def :str
+            ([v::STRING]
+              (primitive :rel_primitive_eq v "hello")))
+          (def :output_int
+            ([v::INT]
+              (and
+                (primitive :rel_primitive_eq v 21)
+                (atom :int 21))))
+          (def :output_int128_s
+            ([v::INT128]
+              (and
+                (primitive :rel_primitive_eq v 21i128)
+                (atom :int128_s 21i128))))
+          (def :output_int128_l
+            ([v::INT128]
+              (and
+                (primitive :rel_primitive_eq v 85968058283706962486085i128)
+                (atom :int128_l 85968058283706962486085i128))))
+          (def :output_uint128
+            ([v::UINT128]
+              (and
+                (primitive :rel_primitive_eq v 0x123456789abcdef12345)
+                (atom :uint128 0x123456789abcdef12345))))
+          (def :output_float
+            ([v::FLOAT]
+              (and
+                (primitive :rel_primitive_eq v 1.23)
+                (atom :float 1.23))))
           (def :output_str
             ([v::STRING]
-              (primitive :rel_primitive_eq v "hello"))))))
+              (and
+                (primitive :rel_primitive_eq v "hello")
+                (atom :str "hello")))))))
     (reads
       (output :int :output_int)
       (output :int128_s :output_int128_s)

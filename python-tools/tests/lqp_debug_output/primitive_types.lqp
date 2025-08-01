@@ -3,24 +3,54 @@
     (writes
       (define
         (fragment :f1
-          (def 2965631662653371761
+          (def 7901719704309484609
             ([v::INT]
               (primitive :rel_primitive_eq v 21)))
-          (def 12020515264615679488
+          (def 1294199513523589994
             ([v::INT128]
               (primitive :rel_primitive_eq v 21i128)))
-          (def 12372217943612403113
+          (def 11038540059019930827
             ([v::INT128]
               (primitive :rel_primitive_eq v 85968058283706962486085i128)))
-          (def 7505808394141676799
+          (def 15025643537523545230
             ([v::UINT128]
               (primitive :rel_primitive_eq v 0x123456789abcdef12345)))
-          (def 11698363356127107011
+          (def 8550051134248905158
             ([v::FLOAT]
               (primitive :rel_primitive_eq v 1.23)))
+          (def 10098701174489624218
+            ([v::STRING]
+              (primitive :rel_primitive_eq v "hello")))
+          (def 2965631662653371761
+            ([v::INT]
+              (and
+                (primitive :rel_primitive_eq v 21)
+                (atom 7901719704309484609 21))))
+          (def 12020515264615679488
+            ([v::INT128]
+              (and
+                (primitive :rel_primitive_eq v 21i128)
+                (atom 1294199513523589994 21i128))))
+          (def 12372217943612403113
+            ([v::INT128]
+              (and
+                (primitive :rel_primitive_eq v 85968058283706962486085i128)
+                (atom 11038540059019930827 85968058283706962486085i128))))
+          (def 7505808394141676799
+            ([v::UINT128]
+              (and
+                (primitive :rel_primitive_eq v 0x123456789abcdef12345)
+                (atom 15025643537523545230 0x123456789abcdef12345))))
+          (def 11698363356127107011
+            ([v::FLOAT]
+              (and
+                (primitive :rel_primitive_eq v 1.23)
+                (atom 8550051134248905158 1.23))))
           (def 8321355183808865828
             ([v::STRING]
-              (primitive :rel_primitive_eq v "hello"))))))
+              (and
+                (primitive :rel_primitive_eq v "hello")
+                (atom 10098701174489624218 "hello")))))))
     (reads
       (output :int 2965631662653371761)
       (output :int128_s 12020515264615679488)
@@ -32,6 +62,12 @@
 ;; Debug information
 ;; -----------------------
 ;; Original names
+;; 	 ID `7901719704309484609` -> `int`
+;; 	 ID `1294199513523589994` -> `int128_s`
+;; 	 ID `11038540059019930827` -> `int128_l`
+;; 	 ID `15025643537523545230` -> `uint128`
+;; 	 ID `8550051134248905158` -> `float`
+;; 	 ID `10098701174489624218` -> `str`
 ;; 	 ID `2965631662653371761` -> `output_int`
 ;; 	 ID `12020515264615679488` -> `output_int128_s`
 ;; 	 ID `12372217943612403113` -> `output_int128_l`
