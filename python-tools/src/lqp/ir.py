@@ -211,32 +211,15 @@ class Cast(Formula):
 class Var(LqpNode):
     name: str
 
-# UInt128(low::fixed64, high::fixed64)
 @dataclass(frozen=True)
-class UInt128(LqpNode):
-    value: int
-
-# Int128(low::fixed64, high::fixed64)
-@dataclass(frozen=True)
-class Int128(LqpNode):
-    value: int
-
-@dataclass(frozen=True)
-class Missing(LqpNode):
-    pass
-
-@dataclass(frozen=True)
-class Value(LqpNode):
-    value: Union[str, int, float, UInt128, Int128, Missing]
-    cast_type: Optional[Type]
-
-# Constant(value::Value)
-Constant = Union[Value]
+class Constant(LqpNode):
+    constant_literal: str
+    type: Type
 
 # SpecializedValue(value::Value)
 @dataclass(frozen=True)
 class SpecializedValue(LqpNode):
-    value: Value
+    value: Constant
 
 # Term := Var | Constant
 Term = Union[Var, Constant]
@@ -287,7 +270,7 @@ class TypeName(Enum):
 @dataclass(frozen=True)
 class Type(LqpNode):
     type_name: TypeName
-    parameters: Sequence[Value]
+    parameters: Sequence[Constant]
 
 # --- Fragment Types ---
 
