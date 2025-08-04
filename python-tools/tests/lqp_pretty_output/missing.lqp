@@ -8,4 +8,7 @@
               (primitive :rel_primitive_eq missing v)))
           (def :miss2
             ([v::STRING]
-              (primitive :rel_primitive_eq "missing" v))))))))
+              (primitive :rel_primitive_eq "missing" v))))))
+    (reads
+      (output :miss1 :miss1)
+      (output :miss2 :miss2))))

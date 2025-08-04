@@ -7,17 +7,23 @@
             ([v::FLOAT]
               (primitive :rel_primitive_eq 1::FLOAT v)))
           (def 6931104569591695457
-            ([v::(DECIMAL 19 6)]
-              (primitive :rel_primitive_eq 1::(DECIMAL 19 6) v)))
+            ([v::(DECIMAL 18 6)]
+              (primitive :rel_primitive_eq 1::(DECIMAL 18 6) v)))
           (def 18258050539415108999
             ([v::INT]
-              (primitive :rel_primitive_eq 1.2385::INT v)))
+              (primitive :rel_primitive_eq 1::INT v)))
           (def 11882225170668076754
             ([v::INT128]
               (primitive :rel_primitive_eq 0x0::INT128 v)))
           (def 11619498977763974898
             ([v::UINT128]
-              (primitive :rel_primitive_eq 1235i128::UINT128 v))))))))
+              (primitive :rel_primitive_eq 1235i128::UINT128 v))))))
+    (reads
+      (output :output1 1967807609550870936)
+      (output :output2 6931104569591695457)
+      (output :output3 18258050539415108999)
+      (output :output4 11882225170668076754)
+      (output :output5 11619498977763974898))))
 
 ;; Debug information
 ;; -----------------------

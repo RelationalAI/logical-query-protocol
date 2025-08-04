@@ -4,7 +4,7 @@
       (define
         (fragment :f1
           (def 11083562605256160670
-            ([v::(DECIMAL 19 6)]
+            ([v::(DECIMAL 18 6)]
               (relatom :dec64 v)))
           (def 17909083773971274800
             ([v::(DECIMAL 38 10)]
