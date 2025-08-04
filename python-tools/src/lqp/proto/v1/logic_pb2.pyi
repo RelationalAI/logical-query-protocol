@@ -293,17 +293,17 @@ class RelTerm(_message.Message):
     __slots__ = ("specialized_value", "term")
     SPECIALIZED_VALUE_FIELD_NUMBER: _ClassVar[int]
     TERM_FIELD_NUMBER: _ClassVar[int]
-    specialized_value: Value
+    specialized_value: Constant
     term: Term
-    def __init__(self, specialized_value: _Optional[_Union[Value, _Mapping]] = ..., term: _Optional[_Union[Term, _Mapping]] = ...) -> None: ...
+    def __init__(self, specialized_value: _Optional[_Union[Constant, _Mapping]] = ..., term: _Optional[_Union[Term, _Mapping]] = ...) -> None: ...
 
 class Term(_message.Message):
     __slots__ = ("var", "constant")
     VAR_FIELD_NUMBER: _ClassVar[int]
     CONSTANT_FIELD_NUMBER: _ClassVar[int]
     var: Var
-    constant: Value
-    def __init__(self, var: _Optional[_Union[Var, _Mapping]] = ..., constant: _Optional[_Union[Value, _Mapping]] = ...) -> None: ...
+    constant: Constant
+    def __init__(self, var: _Optional[_Union[Var, _Mapping]] = ..., constant: _Optional[_Union[Constant, _Mapping]] = ...) -> None: ...
 
 class Var(_message.Message):
     __slots__ = ("name",)
@@ -316,8 +316,8 @@ class Attribute(_message.Message):
     NAME_FIELD_NUMBER: _ClassVar[int]
     ARGS_FIELD_NUMBER: _ClassVar[int]
     name: str
-    args: _containers.RepeatedCompositeFieldContainer[Value]
-    def __init__(self, name: _Optional[str] = ..., args: _Optional[_Iterable[_Union[Value, _Mapping]]] = ...) -> None: ...
+    args: _containers.RepeatedCompositeFieldContainer[Constant]
+    def __init__(self, name: _Optional[str] = ..., args: _Optional[_Iterable[_Union[Constant, _Mapping]]] = ...) -> None: ...
 
 class RelationId(_message.Message):
     __slots__ = ("id_low", "id_high")
@@ -395,40 +395,10 @@ class DecimalType(_message.Message):
     scale: int
     def __init__(self, precision: _Optional[int] = ..., scale: _Optional[int] = ...) -> None: ...
 
-class Value(_message.Message):
-    __slots__ = ("string_value", "int_value", "float_value", "uint128_value", "int128_value", "missing_value", "cast_type")
-    STRING_VALUE_FIELD_NUMBER: _ClassVar[int]
-    INT_VALUE_FIELD_NUMBER: _ClassVar[int]
-    FLOAT_VALUE_FIELD_NUMBER: _ClassVar[int]
-    UINT128_VALUE_FIELD_NUMBER: _ClassVar[int]
-    INT128_VALUE_FIELD_NUMBER: _ClassVar[int]
-    MISSING_VALUE_FIELD_NUMBER: _ClassVar[int]
-    CAST_TYPE_FIELD_NUMBER: _ClassVar[int]
-    string_value: str
-    int_value: int
-    float_value: float
-    uint128_value: UInt128
-    int128_value: Int128
-    missing_value: MissingValue
-    cast_type: Type
-    def __init__(self, string_value: _Optional[str] = ..., int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128, _Mapping]] = ..., int128_value: _Optional[_Union[Int128, _Mapping]] = ..., missing_value: _Optional[_Union[MissingValue, _Mapping]] = ..., cast_type: _Optional[_Union[Type, _Mapping]] = ...) -> None: ...
-
-class MissingValue(_message.Message):
-    __slots__ = ()
-    def __init__(self) -> None: ...
-
-class UInt128(_message.Message):
-    __slots__ = ("low", "high")
-    LOW_FIELD_NUMBER: _ClassVar[int]
-    HIGH_FIELD_NUMBER: _ClassVar[int]
-    low: int
-    high: int
-    def __init__(self, low: _Optional[int] = ..., high: _Optional[int] = ...) -> None: ...
-
-class Int128(_message.Message):
-    __slots__ = ("low", "high")
-    LOW_FIELD_NUMBER: _ClassVar[int]
-    HIGH_FIELD_NUMBER: _ClassVar[int]
-    low: int
-    high: int
-    def __init__(self, low: _Optional[int] = ..., high: _Optional[int] = ...) -> None: ...
+class Constant(_message.Message):
+    __slots__ = ("constant_literal", "type")
+    CONSTANT_LITERAL_FIELD_NUMBER: _ClassVar[int]
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    constant_literal: str
+    type: Type
+    def __init__(self, constant_literal: _Optional[str] = ..., type: _Optional[_Union[Type, _Mapping]] = ...) -> None: ...
