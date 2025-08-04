@@ -192,7 +192,7 @@ message Cast {
 
 message RelTerm {
   oneof rel_term_type {
-    Value specialized_value = 1;
+    Constant specialized_value = 1;
     Term term = 2;
   }
 }
@@ -200,7 +200,7 @@ message RelTerm {
 message Term {
   oneof term_type {
     Var var = 1;
-    Value constant = 2;
+    Constant constant = 2;
   }
 }
 
@@ -210,7 +210,7 @@ message Var {
 
 message Attribute {
   string name = 1;
-  repeated Value args = 2;
+  repeated Constant args = 2;
 }
 
 message RelationId {
@@ -256,26 +256,7 @@ message DecimalType {
   int32 scale = 2;
 }
 
-message Value {
-  oneof value {
-    string string_value = 1;
-    int64 int_value = 2;
-    double float_value = 3;
-    UInt128 uint128_value = 4;
-    Int128 int128_value = 5;
-    MissingValue missing_value = 6;
-  }
-  optional Type cast_type = 7; // Numbers can be cast in-place to different types
-}
-
-message MissingValue {}
-
-message UInt128 {
-  fixed64 low = 1; // Lower 64 bits of UInt128
-  fixed64 high = 2; // Upper 64 bits of UInt128
-}
-
-message Int128 {
-  fixed64 low = 1; // Lower 64 bits of Int128
-  fixed64 high = 2; // Upper 64 bits of Int128
+message Constant {
+  string constant_literal = 1;
+  Type type = 2;
 }
