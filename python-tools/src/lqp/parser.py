@@ -96,9 +96,9 @@ divide: "(/" term term term ")"
 
 relterm: specialized_value | term
 term: var | constant
-specialized_value: "#" value
+specialized_value: "#" constant
 var: SYMBOL
-constant: value
+constant: literal | "(" literal "::" type_ ")"
 
 attrs: "(attrs" attribute* ")"
 attribute: "(attribute" name constant* ")"
@@ -107,8 +107,7 @@ fragment_id: ":" SYMBOL
 relation_id: (":" SYMBOL) | NUMBER
 name: ":" SYMBOL
 
-value: STRING | NUMBER | FLOAT | UINT128 | INT128 | MISSING
-        | (NUMBER | FLOAT | UINT128 | INT128) "::" type_
+literal: STRING | NUMBER | FLOAT | UINT128 | INT128 | MISSING
 
 type_ : TYPE_NAME | "(" TYPE_NAME value* ")"
 
@@ -124,7 +123,7 @@ UINT128: /0x[0-9a-fA-F]+/
 FLOAT: /\\d+\\.\\d+/
 
 config_dict: "{" config_key_value* "}"
-config_key_value: ":" SYMBOL value
+config_key_value: ":" SYMBOL constant
 
 COMMENT: /;;.*/  // Matches ;; followed by any characters except newline
 %ignore /\\s+/
@@ -441,29 +440,48 @@ class LQPTransformer(Transformer):
     #
     # Primitive values
     #
-    def value(self, meta, items):
+    def constant(self, meta, items):
+        literal_val = items[0][0]
+
+        if len(items) == 1:
+            literal_type = items[0][1]
+            return ir.Constant(constant_literal=literal_val, type=literal_type, meta=self.meta(meta))
+        elif len(items) == 2:
+            # If the user specifies a type, then override the default and use the specified type
+            return ir.Constant(constant_literal=literal_val, type=items[1], meta=self.meta(meta))
+        else:
+            raise ValueError(f"Unexpected number of items in constant: {len(items)}")
+
+
+    def literal(self, meta, items):
+        return items
         if len(items) > 1:
             return ir.Value(value=items[0], cast_type=items[1], meta=self.meta(meta))
         else:
             return ir.Value(value=items[0], cast_type=None, meta=self.meta(meta))
 
     def STRING(self, s):
-        return s[1:-1].encode().decode('unicode_escape') # Strip quotes and process escaping
+        s = s[1:-1].encode().decode('unicode_escape') # Strip quotes and process escaping
+        return (s, ir.Type(ir.TypeName.STRING, []))
     def NUMBER(self, n):
-        return int(n)
+        return (n, ir.Type(ir.TypeName.INT, []))
     def FLOAT(self, f):
-        return float(f)
-    def SYMBOL(self, sym):
-        return str(sym)
+        return (f, ir.Type(ir.TypeName.FLOAT, []))
     def UINT128(self, u):
-        uint128_val = int(u, 16)
-        return ir.UInt128(value=uint128_val, meta=None)
+        return (u, ir.Type(ir.TypeName.UINT128, []))
+        # uint128_val = int(u, 16)
+        # return ir.UInt128(value=uint128_val, meta=None)
     def INT128(self, u):
         u= u[:-4]  # Remove the 'i128' suffix
-        int128_val = int(u)
-        return ir.Int128(value=int128_val, meta=None)
+        return (u, ir.Type(ir.TypeName.INT128, []))
+        # int128_val = int(u)
+        # return ir.Int128(value=int128_val, meta=None)
     def MISSING(self, m):
-        return ir.Missing(meta=None)
+        return (m, ir.Type(ir.TypeName.MISSING, []))
+        # return ir.Missing(meta=None)
+
+    def SYMBOL(self, sym):
+        return str(sym)
 
     def config_dict(self, meta, items):
         # items is a list of key-value pairs
