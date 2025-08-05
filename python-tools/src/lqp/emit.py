@@ -61,7 +61,7 @@ def convert_type(rt: ir.Type) -> logic_pb2.Type:
 def convert_constant(c: ir.Constant) -> logic_pb2.Constant:
     return logic_pb2.Constant(
         constant_literal=c.constant_literal,
-        type=c.type,
+        type=convert_type(c.type),
     )
 
 def convert_var(v: ir.Var) -> logic_pb2.Var:

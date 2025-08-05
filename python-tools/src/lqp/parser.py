@@ -109,7 +109,7 @@ name: ":" SYMBOL
 
 literal: STRING | NUMBER | FLOAT | UINT128 | INT128 | MISSING
 
-type_ : TYPE_NAME | "(" TYPE_NAME value* ")"
+type_ : TYPE_NAME | "(" TYPE_NAME literal* ")"
 
 TYPE_NAME: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
             | "DATE" | "DATETIME" | "MISSING" | "DECIMAL"
@@ -151,8 +151,11 @@ class LQPTransformer(Transformer):
     def TYPE_NAME(self, s):
         return getattr(ir.TypeName, s.upper())
     def type_(self, meta, items):
-        return ir.Type(type_name=items[0], parameters=items[1:],  meta=self.meta(meta))
-
+        if len(items) == 1:
+            return ir.Type(type_name=items[0], parameters=[],  meta=self.meta(meta))
+        else:
+            params = map(lambda c: self.constant(meta, c), items[1:])
+            return ir.Type(type_name=items[0], parameters=list(params), meta=self.meta(meta))
 
     #
     # Transactions
@@ -411,8 +414,8 @@ class LQPTransformer(Transformer):
         return items[0]
     def var(self, meta, items):
         return ir.Var(name=items[0], meta=self.meta(meta))
-    def constant(self, meta, items):
-        return items[0]
+    # def constant(self, meta, items):
+    #     return items[0]
     def specialized_value(self, meta, items):
         return ir.SpecializedValue(value=items[0], meta=self.meta(meta))
 
@@ -425,6 +428,8 @@ class LQPTransformer(Transformer):
     def relation_id(self, meta, items):
         ident = items[0] # Remove leading ':'
         if isinstance(ident, str):
+            # If a symbol is specified, hash to form the id
+
             # First 64 bits of SHA-256 as the id
             id_val = int(hashlib.sha256(ident.encode()).hexdigest()[:16], 16)
             result = ir.RelationId(id=id_val, meta=self.meta(meta))
@@ -434,51 +439,40 @@ class LQPTransformer(Transformer):
                 self.id_to_debuginfo[self._current_fragment_id][result] = ident
             return result
 
-        elif isinstance(ident, int):
-            return ir.RelationId(id=ident, meta=self.meta(meta))
+        elif isinstance(ident, tuple) and ident[1] == ir.TypeName.INT:
+            # If we've parsed a literal number, just use it as the id
+            return ir.RelationId(id=int(ident[0]), meta=self.meta(meta))
 
     #
     # Primitive values
     #
     def constant(self, meta, items):
         literal_val = items[0][0]
-
         if len(items) == 1:
-            literal_type = items[0][1]
-            return ir.Constant(constant_literal=literal_val, type=literal_type, meta=self.meta(meta))
+            literal_type = ir.Type(type_name=items[0][1], parameters=[], meta=self.meta(meta))
         elif len(items) == 2:
-            # If the user specifies a type, then override the default and use the specified type
-            return ir.Constant(constant_literal=literal_val, type=items[1], meta=self.meta(meta))
+            literal_type = items[1]
         else:
             raise ValueError(f"Unexpected number of items in constant: {len(items)}")
-
+        return ir.Constant(constant_literal=literal_val, type=literal_type, meta=self.meta(meta))
 
     def literal(self, meta, items):
-        return items
-        if len(items) > 1:
-            return ir.Value(value=items[0], cast_type=items[1], meta=self.meta(meta))
-        else:
-            return ir.Value(value=items[0], cast_type=None, meta=self.meta(meta))
+        return items[0]
 
     def STRING(self, s):
         s = s[1:-1].encode().decode('unicode_escape') # Strip quotes and process escaping
-        return (s, ir.Type(ir.TypeName.STRING, []))
+        return (str(s), ir.TypeName.STRING)
     def NUMBER(self, n):
-        return (n, ir.Type(ir.TypeName.INT, []))
+        return (str(n), ir.TypeName.INT)
     def FLOAT(self, f):
-        return (f, ir.Type(ir.TypeName.FLOAT, []))
+        return (str(f), ir.TypeName.FLOAT)
     def UINT128(self, u):
-        return (u, ir.Type(ir.TypeName.UINT128, []))
-        # uint128_val = int(u, 16)
-        # return ir.UInt128(value=uint128_val, meta=None)
+        return (str(u), ir.TypeName.UINT128)
     def INT128(self, u):
-        u= u[:-4]  # Remove the 'i128' suffix
-        return (u, ir.Type(ir.TypeName.INT128, []))
-        # int128_val = int(u)
-        # return ir.Int128(value=int128_val, meta=None)
+        u = u[:-4]  # Remove the 'i128' suffix
+        return (str(u), ir.TypeName.INT128)
     def MISSING(self, m):
-        return (m, ir.Type(ir.TypeName.MISSING, []))
-        # return ir.Missing(meta=None)
+        return (str(m), ir.TypeName.MISSING)
 
     def SYMBOL(self, sym):
         return str(sym)
