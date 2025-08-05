@@ -129,7 +129,7 @@ def style_config(options: Dict) -> StyleConfig:
 
 # Call to_str on all nodes, each of which with indent_level, separating them
 # by delim.
-def list_to_str(nodes: Sequence[Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue]], indent_level: int, delim: str, options: Dict, debug_info: Dict = {}) -> str:
+def list_to_str(nodes: Sequence[Union[ir.LqpNode, ir.Type, ir.Constant, ir.SpecializedValue]], indent_level: int, delim: str, options: Dict, debug_info: Dict = {}) -> str:
     return delim.join(map(lambda n: to_str(n, indent_level, options, debug_info), nodes))
 
 # Produces "(terms term1 term2 ...)" (all on one line) indented at indent_level.
@@ -219,7 +219,7 @@ def _collect_debug_infos(node: ir.LqpNode) -> Dict[ir.RelationId, str]:
                 debug_infos = _collect_debug_infos(elt) | debug_infos
     return debug_infos
 
-def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, str, float], indent_level: int, options: Dict = {}, debug_info: Dict = {}) -> str:
+def to_str(node: Union[ir.LqpNode, ir.Type, ir.Constant, ir.SpecializedValue, str], indent_level: int, options: Dict = {}, debug_info: Dict = {}) -> str:
     conf = style_config(options)
 
     ind = conf.indentation(indent_level)
@@ -372,22 +372,30 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
     elif isinstance(node, ir.Var):
         lqp += f"{ind}{conf.uname(node.name)}"
 
-    elif isinstance(node, ir.Value):
-        lqp += to_str(node.value, indent_level, options, debug_info)
-        if node.cast_type is not None:
-            lqp += "::"
-            lqp += to_str(node.cast_type, 0, options, debug_info)
+    elif isinstance(node, ir.Constant):
+        if node.type == ir.Type(ir.TypeName.STRING, []):
+            lqp += to_str(node.constant_literal, indent_level, options, debug_info)
+        else:
+            lqp += node.constant_literal
+
+        lqp += conf.type_anno("::")
+        lqp += to_str(node.type, 0, options, debug_info)
+
+        # if node.cast_type is not None:
+        #     lqp += "::"
+        #     lqp += to_str(node.cast_type, 0, options, debug_info)
+
     elif isinstance(node, str):
         lqp += ind + "\"" + node.encode('unicode_escape').replace(b'"', b'\\"').decode() + "\""
-    elif isinstance(node, ir.UInt128):
-        lqp += f"{ind}{hex(node.value)}"
-    elif isinstance(node, ir.Int128):
-        lqp += f"{ind}{node.value}i128"
-    elif isinstance(node, ir.Missing):
-        if node:
-            lqp += f"{ind}missing"
-    elif isinstance(node, (int, float)):
-        lqp += f"{ind}{str(node)}"
+    # elif isinstance(node, ir.UInt128):
+    #     lqp += f"{ind}{hex(node.value)}"
+    # elif isinstance(node, ir.Int128):
+    #     lqp += f"{ind}{node.value}i128"
+    # elif isinstance(node, ir.Missing):
+    #     if node:
+    #         lqp += f"{ind}missing"
+    # elif isinstance(node, (int, float)):
+    #     lqp += f"{ind}{str(node)}"
 
     elif isinstance(node, ir.SpecializedValue):
         lqp += "#" + to_str(node.value, 0, {}, {})

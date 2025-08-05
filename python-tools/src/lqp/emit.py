@@ -31,42 +31,38 @@ def convert_type(rt: ir.Type) -> logic_pb2.Type:
         cls = getattr(logic_pb2, non_parametric_types[rt.type_name])
         return logic_pb2.Type(**{str(rt.type_name).lower()+"_type": cls()})
 
-def convert_uint128(val: ir.UInt128) -> logic_pb2.UInt128:
-    low = val.value & 0xFFFFFFFFFFFFFFFF
-    high = (val.value >> 64) & 0xFFFFFFFFFFFFFFFF
-    return logic_pb2.UInt128(low=low, high=high)
+# def convert_value(pv: ir.Value) -> logic_pb2.Value:
+#     if isinstance(pv.value, str):
+#         assert pv.cast_type is None, "Illegal cast of String value"
+#         return logic_pb2.Value(string_value=pv.value)
+#     elif isinstance(pv.value, ir.Missing):
+#         assert pv.cast_type is None, "Illegal cast of Missing value"
+#         return logic_pb2.Value(missing_value=logic_pb2.MissingValue())
 
-def convert_int128(val: ir.Int128) -> logic_pb2.Int128:
-    low = val.value & 0xFFFFFFFFFFFFFFFF
-    high = (val.value >> 64) & 0xFFFFFFFFFFFFFFFF
-    return logic_pb2.Int128(low=low, high=high)
+#     # For numeric types, handle cast_type if present
+#     value_dict: dict[Any, Any] = {}
+#     if isinstance(pv.value, int):
+#         assert pv.value.bit_length() <= 64, "Integer value exceeds 64 bits"
+#         value_dict['int_value'] = pv.value
+#     elif isinstance(pv.value, float):
+#         value_dict['float_value'] = pv.value
+#     elif isinstance(pv.value, ir.UInt128):
+#         value_dict['uint128_value'] = convert_uint128(pv.value)
+#     elif isinstance(pv.value, ir.Int128):
+#         value_dict['int128_value'] = convert_int128(pv.value)
+#     else:
+#         raise TypeError(f"Unsupported Value type: {type(pv.value)}")
 
-def convert_value(pv: ir.Value) -> logic_pb2.Value:
-    if isinstance(pv.value, str):
-        assert pv.cast_type is None, "Illegal cast of String value"
-        return logic_pb2.Value(string_value=pv.value)
-    elif isinstance(pv.value, ir.Missing):
-        assert pv.cast_type is None, "Illegal cast of Missing value"
-        return logic_pb2.Value(missing_value=logic_pb2.MissingValue())
+#     if pv.cast_type is not None:
+#         value_dict['cast_type'] = convert_type(pv.cast_type)
 
-    # For numeric types, handle cast_type if present
-    value_dict: dict[Any, Any] = {}
-    if isinstance(pv.value, int):
-        assert pv.value.bit_length() <= 64, "Integer value exceeds 64 bits"
-        value_dict['int_value'] = pv.value
-    elif isinstance(pv.value, float):
-        value_dict['float_value'] = pv.value
-    elif isinstance(pv.value, ir.UInt128):
-        value_dict['uint128_value'] = convert_uint128(pv.value)
-    elif isinstance(pv.value, ir.Int128):
-        value_dict['int128_value'] = convert_int128(pv.value)
-    else:
-        raise TypeError(f"Unsupported Value type: {type(pv.value)}")
+#     return logic_pb2.Value(**value_dict)
 
-    if pv.cast_type is not None:
-        value_dict['cast_type'] = convert_type(pv.cast_type)
-
-    return logic_pb2.Value(**value_dict)
+def convert_constant(c: ir.Constant) -> logic_pb2.Constant:
+    return logic_pb2.Constant(
+        constant_literal=c.constant_literal,
+        type=c.type,
+    )
 
 def convert_var(v: ir.Var) -> logic_pb2.Var:
     return logic_pb2.Var(name=v.name)
@@ -75,11 +71,11 @@ def convert_term(t: ir.Term) -> logic_pb2.Term:
     if isinstance(t, ir.Var):
         return logic_pb2.Term(var=convert_var(t))
     else:
-        return logic_pb2.Term(constant=convert_value(t))
+        return logic_pb2.Term(constant=convert_constant(t))
 
 def convert_relterm(t: ir.RelTerm) -> logic_pb2.RelTerm:
     if isinstance(t, ir.SpecializedValue):
-        return logic_pb2.RelTerm(specialized_value=convert_value(t.value))
+        return logic_pb2.RelTerm(specialized_value=convert_constant(t.value))
     else:
         return logic_pb2.RelTerm(term=convert_term(t))
 
@@ -94,7 +90,7 @@ def convert_fragment_id(fid: ir.FragmentId) -> fragments_pb2.FragmentId:
 def convert_attribute(attr: ir.Attribute) -> logic_pb2.Attribute:
     return logic_pb2.Attribute(
         name=attr.name,
-        args=[convert_value(arg) for arg in attr.args]
+        args=[convert_constant(arg) for arg in attr.args]
 )
 
 def convert_abstraction(abst: ir.Abstraction) -> logic_pb2.Abstraction:
