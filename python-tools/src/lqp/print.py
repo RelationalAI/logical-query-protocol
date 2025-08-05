@@ -172,7 +172,7 @@ def program_to_str(node: ir.Transaction, options: Dict = {}) -> str:
     for epoch in node.epochs:
         s += "\n" + conf.indentation(1) + conf.LPAREN() + conf.kw("epoch")
         section_strs: List[str] = []
-        def build_section(keyword: str, items_list: Sequence[Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue]], debug_info: Dict = {}) -> Union[str, None]:
+        def build_section(keyword: str, items_list: Sequence[Union[ir.LqpNode, ir.Type, ir.Constant, ir.SpecializedValue]], debug_info: Dict = {}) -> Union[str, None]:
             if not items_list:
                 return None
             sec_s = "\n" + conf.indentation(2) + conf.LPAREN() + conf.kw(keyword) + "\n"
@@ -373,7 +373,7 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Constant, ir.SpecializedValue, st
         lqp += f"{ind}{conf.uname(node.name)}"
 
     elif isinstance(node, ir.Constant):
-        if node.type == ir.Type(ir.TypeName.STRING, []):
+        if node.type.type_name == ir.TypeName.STRING:
             lqp += to_str(node.constant_literal, indent_level, options, debug_info)
         else:
             lqp += node.constant_literal
