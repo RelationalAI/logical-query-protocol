@@ -18,14 +18,16 @@ non_parametric_types = {
 
 def convert_type(rt: ir.Type) -> logic_pb2.Type:
     if rt.type_name == ir.TypeName.DECIMAL :
-        assert isinstance(rt.parameters[0].value, int) and isinstance(rt.parameters[1].value, int), "DECIMAL parameters are not integers"
         assert len(rt.parameters) == 2, f"DECIMAL parameters should have only precision and scale, got {len(rt.parameters)} arguments"
-        assert rt.parameters[0].value <= 38, f"DECIMAL precision must be less than 38, got {rt.parameters[0]}"
-        assert rt.parameters[1].value <= rt.parameters[0].value, f"DECIMAL precision ({rt.parameters[0]}) must be at least scale ({rt.parameters[1]})"
+
+        precision = int(rt.parameters[0].constant_literal)
+        scale = int(rt.parameters[1].constant_literal)
+
+        # assert isinstance(rt.parameters[0].value, int) and isinstance(rt.parameters[1].value, int), "DECIMAL parameters are not integers"
+        assert precision <= 38, f"DECIMAL precision must be less than 38, got {precision}"
+        assert scale <= precision, f"DECIMAL precision ({precision}) must be at least scale ({scale})"
         return logic_pb2.Type(
-            decimal_type=logic_pb2.DecimalType(
-                precision=rt.parameters[0].value, scale=rt.parameters[1].value
-            )
+            decimal_type=logic_pb2.DecimalType(precision=precision, scale=scale)
         )
     else:
         cls = getattr(logic_pb2, non_parametric_types[rt.type_name])

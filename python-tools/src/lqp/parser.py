@@ -98,7 +98,7 @@ relterm: specialized_value | term
 term: var | constant
 specialized_value: "#" constant
 var: SYMBOL
-constant: literal | "(" literal "::" type_ ")"
+constant: literal | literal "::" type_
 
 attrs: "(attrs" attribute* ")"
 attribute: "(attribute" name constant* ")"
@@ -154,7 +154,7 @@ class LQPTransformer(Transformer):
         if len(items) == 1:
             return ir.Type(type_name=items[0], parameters=[],  meta=self.meta(meta))
         else:
-            params = map(lambda c: self.constant(meta, c), items[1:])
+            params = map(lambda c: self.constant(meta, [c]), items[1:])
             return ir.Type(type_name=items[0], parameters=list(params), meta=self.meta(meta))
 
     #
