@@ -475,6 +475,6 @@ class DecimalValue(_message.Message):
     precision: int
     scale: int
     sign: int
-    coefficient: int
+    coefficient: Int128Value
     exponent: int
-    def __init__(self, precision: _Optional[int] = ..., scale: _Optional[int] = ..., sign: _Optional[int] = ..., coefficient: _Optional[int] = ..., exponent: _Optional[int] = ...) -> None: ...
+    def __init__(self, precision: _Optional[int] = ..., scale: _Optional[int] = ..., sign: _Optional[int] = ..., coefficient: _Optional[_Union[Int128Value, _Mapping]] = ..., exponent: _Optional[int] = ...) -> None: ...
