@@ -6,12 +6,18 @@
           (def 7901719704309484609
             ([v::INT]
               (primitive :rel_primitive_eq v 21)))
+          (def 17772030560817531006
+            ([v::INT]
+              (primitive :rel_primitive_eq v -21)))
           (def 1294199513523589994
             ([v::INT128]
               (primitive :rel_primitive_eq v 21i128)))
           (def 11038540059019930827
             ([v::INT128]
               (primitive :rel_primitive_eq v 85968058283706962486085i128)))
+          (def 6927505969524641992
+            ([v::INT128]
+              (primitive :rel_primitive_eq v -5968058283706962486085i128)))
           (def 15025643537523545230
             ([v::UINT128]
               (primitive :rel_primitive_eq v 0x123456789abcdef12345)))
@@ -26,6 +32,11 @@
               (and
                 (primitive :rel_primitive_eq v 21)
                 (atom 7901719704309484609 21))))
+          (def 7497735226843032597
+            ([v::INT]
+              (and
+                (primitive :rel_primitive_eq v -21)
+                (atom 17772030560817531006 -21))))
           (def 12020515264615679488
             ([v::INT128]
               (and
@@ -36,6 +47,11 @@
               (and
                 (primitive :rel_primitive_eq v 85968058283706962486085i128)
                 (atom 11038540059019930827 85968058283706962486085i128))))
+          (def 8684593875400706727
+            ([v::INT128]
+              (and
+                (primitive :rel_primitive_eq v -5968058283706962486085i128)
+                (atom 6927505969524641992 -5968058283706962486085i128))))
           (def 7505808394141676799
             ([v::UINT128]
               (and
@@ -53,8 +69,10 @@
                 (atom 10098701174489624218 "hello")))))))
     (reads
       (output :int 2965631662653371761)
+      (output :int_n 7497735226843032597)
       (output :int128_s 12020515264615679488)
       (output :int128_l 12372217943612403113)
+      (output :int128_n 8684593875400706727)
       (output :uint128 7505808394141676799)
       (output :float 11698363356127107011)
       (output :str 8321355183808865828))))

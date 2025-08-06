@@ -4,8 +4,10 @@
       (define
         (fragment :f1
           (def :int ([v::INT] (= v 21)))
+          (def :int_n ([v::INT] (= v -21)))
           (def :int128_s ([v::INT128] (= v 21i128)))
           (def :int128_l ([v::INT128] (= v 85968058283706962486085i128)))
+          (def :int128_n ([v::INT128] (= v -5968058283706962486085i128)))
           (def :uint128 ([v::UINT128] (= v 0x123456789abcdef12345)))
           (def :float ([v::FLOAT] (= v 1.23)))
           (def :str ([v::STRING] (= v "hello")))
@@ -14,6 +16,11 @@
               (and
                 (= v 21)
                 (atom :int 21))))
+          (def :output_int_n
+            ([v::INT]
+              (and
+                (= v -21)
+                (atom :int_n -21))))
           (def :output_int128_s
             ([v::INT128]
               (and
@@ -24,6 +31,11 @@
               (and
                 (= v 85968058283706962486085i128)
                 (atom :int128_l 85968058283706962486085i128))))
+          (def :output_int128_n
+            ([v::INT128]
+              (and
+                (= v -5968058283706962486085i128)
+                (atom :int128_n -5968058283706962486085i128))))
           (def :output_uint128
             ([v::UINT128]
               (and
@@ -42,8 +54,10 @@
 
     (reads
       (output :int :output_int)
+      (output :int_n :output_int_n)
       (output :int128_s :output_int128_s)
       (output :int128_l :output_int128_l)
+      (output :int128_n :output_int128_n)
       (output :uint128 :output_uint128)
       (output :float :output_float)
       (output :str :output_str))))
