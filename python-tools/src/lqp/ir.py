@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Union, Tuple, Sequence, Optional, Dict
 import datetime as dt
+from decimal import Decimal
 
 # Tree representation of LQP. Each non-terminal (those with more than one
 # option) is an "abstract" class and each terminal is its own class. All of
@@ -211,24 +212,48 @@ class Cast(Formula):
 class Var(LqpNode):
     name: str
 
-# UInt128(low::fixed64, high::fixed64)
+# UInt128Value(low::fixed64, high::fixed64)
 @dataclass(frozen=True)
-class UInt128(LqpNode):
+class UInt128Value(LqpNode):
     value: int
 
-# Int128(low::fixed64, high::fixed64)
+# Int128Value(low::fixed64, high::fixed64)
 @dataclass(frozen=True)
-class Int128(LqpNode):
+class Int128Value(LqpNode):
     value: int
 
 @dataclass(frozen=True)
-class Missing(LqpNode):
+class MissingValue(LqpNode):
     pass
+
+# DateValue(year: int, month: int, day: int)
+@dataclass(frozen=True)
+class DateValue(LqpNode):
+    value: dt.date
+
+# DatetimeValue(year: int, month: int, day: int, hour: int, minute: int, second: int, microsecond: int)
+@dataclass(frozen=True)
+class DatetimeValue(LqpNode):
+    value: dt.datetime
+
+# DecimalValue()
+@dataclass(frozen=True)
+class DecimalValue(LqpNode):
+    value: Decimal
 
 @dataclass(frozen=True)
 class Value(LqpNode):
-    value: Union[str, int, float, UInt128, Int128, Missing]
-    cast_type: Optional[Type]
+    value: Union[
+        str,
+        int,
+        float,
+        UInt128Value,
+        Int128Value,
+        MissingValue,
+        DateValue,
+        DatetimeValue,
+        DecimalValue
+    ]
 
 # Constant(value::Value)
 Constant = Union[Value]
