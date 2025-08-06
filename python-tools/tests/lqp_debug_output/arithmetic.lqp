@@ -4,8 +4,8 @@
       (define
         (fragment :f1
           (def 13610483143332386646
-            ([plus::(DECIMAL 18 6) minus::(DECIMAL 18 6) mult::(DECIMAL 18 6) div::(DECIMAL 18 6)]
-              (exists [a::(DECIMAL 18 6) b::(DECIMAL 18 6)]
+            ([plus::(DECIMAL 18::INT 6::INT) minus::(DECIMAL 18::INT 6::INT) mult::(DECIMAL 18::INT 6::INT) div::(DECIMAL 18::INT 6::INT)]
+              (exists [a::(DECIMAL 18::INT 6::INT) b::(DECIMAL 18::INT 6::INT)]
                 (and
                   (relatom :dec_64_a a)
                   (relatom :dec_64_b b)
@@ -14,8 +14,8 @@
                   (primitive :rel_primitive_multiply_monotype a b mult)
                   (primitive :rel_primitive_divide_monotype a b div)))))
           (def 349608351535289881
-            ([plus::(DECIMAL 38 10) minus::(DECIMAL 38 10) mult::(DECIMAL 38 10) div::(DECIMAL 38 10)]
-              (exists [a::(DECIMAL 38 10) b::(DECIMAL 38 10)]
+            ([plus::(DECIMAL 38::INT 10::INT) minus::(DECIMAL 38::INT 10::INT) mult::(DECIMAL 38::INT 10::INT) div::(DECIMAL 38::INT 10::INT)]
+              (exists [a::(DECIMAL 38::INT 10::INT) b::(DECIMAL 38::INT 10::INT)]
                 (and
                   (relatom :dec_128_a a)
                   (relatom :dec_128_b b)

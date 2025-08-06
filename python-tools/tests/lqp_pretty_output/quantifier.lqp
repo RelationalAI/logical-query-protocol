@@ -5,94 +5,94 @@
         (fragment :model
           (def :_intermediate_1
             ([person::UINT128]
-              (primitive :rel_primitive_hash_tuple_uint128 "Person" "name" "Alice" "age" 10 person)))
+              (primitive :rel_primitive_hash_tuple_uint128 "Person"::STRING "name"::STRING "Alice"::STRING "age"::STRING 10::INT person)))
           (def :Person_1
             ([person::UINT128]
               (atom :_intermediate_1 person)))
           (def :name_1
             ([person::UINT128 cvar::STRING]
               (and
-                (primitive :rel_primitive_eq cvar "Alice")
+                (primitive :rel_primitive_eq cvar "Alice"::STRING)
                 (atom :_intermediate_1 person))))
           (def :age_1
             ([person::UINT128 cvar_2::INT]
               (and
-                (primitive :rel_primitive_eq cvar_2 10)
+                (primitive :rel_primitive_eq cvar_2 10::INT)
                 (atom :_intermediate_1 person))))
           (def :_intermediate_2
             ([person_2::UINT128]
-              (primitive :rel_primitive_hash_tuple_uint128 "Person" "name" "Bob" "age" 30 person_2)))
+              (primitive :rel_primitive_hash_tuple_uint128 "Person"::STRING "name"::STRING "Bob"::STRING "age"::STRING 30::INT person_2)))
           (def :Person_2
             ([person_2::UINT128]
               (atom :_intermediate_2 person_2)))
           (def :name_2
             ([person_2::UINT128 cvar_3::STRING]
               (and
-                (primitive :rel_primitive_eq cvar_3 "Bob")
+                (primitive :rel_primitive_eq cvar_3 "Bob"::STRING)
                 (atom :_intermediate_2 person_2))))
           (def :age_2
             ([person_2::UINT128 cvar_4::INT]
               (and
-                (primitive :rel_primitive_eq cvar_4 30)
+                (primitive :rel_primitive_eq cvar_4 30::INT)
                 (atom :_intermediate_2 person_2))))
           (def :_intermediate_3
             ([person_3::UINT128]
-              (primitive :rel_primitive_hash_tuple_uint128 "Person" "name" "Charlie" "age" 50 person_3)))
+              (primitive :rel_primitive_hash_tuple_uint128 "Person"::STRING "name"::STRING "Charlie"::STRING "age"::STRING 50::INT person_3)))
           (def :Person_3
             ([person_3::UINT128]
               (atom :_intermediate_3 person_3)))
           (def :name_3
             ([person_3::UINT128 cvar_5::STRING]
               (and
-                (primitive :rel_primitive_eq cvar_5 "Charlie")
+                (primitive :rel_primitive_eq cvar_5 "Charlie"::STRING)
                 (atom :_intermediate_3 person_3))))
           (def :age_3
             ([person_3::UINT128 cvar_6::INT]
               (and
-                (primitive :rel_primitive_eq cvar_6 50)
+                (primitive :rel_primitive_eq cvar_6 50::INT)
                 (atom :_intermediate_3 person_3))))
           (def :_intermediate_4
             ([pet::UINT128]
-              (primitive :rel_primitive_hash_tuple_uint128 "Pet" "name" "boots" "age" 1 pet)))
+              (primitive :rel_primitive_hash_tuple_uint128 "Pet"::STRING "name"::STRING "boots"::STRING "age"::STRING 1::INT pet)))
           (def :Pet_1
             ([pet::UINT128]
               (atom :_intermediate_4 pet)))
           (def :name_1_2
             ([pet::UINT128 cvar_7::STRING]
               (and
-                (primitive :rel_primitive_eq cvar_7 "boots")
+                (primitive :rel_primitive_eq cvar_7 "boots"::STRING)
                 (atom :_intermediate_4 pet))))
           (def :age_1_2
             ([pet::UINT128 cvar_8::INT]
               (and
-                (primitive :rel_primitive_eq cvar_8 1)
+                (primitive :rel_primitive_eq cvar_8 1::INT)
                 (atom :_intermediate_4 pet))))
           (def :_intermediate_5
             ([pet_2::UINT128]
-              (primitive :rel_primitive_hash_tuple_uint128 "Pet" "name" "fluffy" "age" 3 pet_2)))
+              (primitive :rel_primitive_hash_tuple_uint128 "Pet"::STRING "name"::STRING "fluffy"::STRING "age"::STRING 3::INT pet_2)))
           (def :Pet_2
             ([pet_2::UINT128]
               (atom :_intermediate_5 pet_2)))
           (def :name_2_2
             ([pet_2::UINT128 cvar_9::STRING]
               (and
-                (primitive :rel_primitive_eq cvar_9 "fluffy")
+                (primitive :rel_primitive_eq cvar_9 "fluffy"::STRING)
                 (atom :_intermediate_5 pet_2))))
           (def :age_2_2
             ([pet_2::UINT128 cvar_10::INT]
               (and
-                (primitive :rel_primitive_eq cvar_10 3)
+                (primitive :rel_primitive_eq cvar_10 3::INT)
                 (atom :_intermediate_5 pet_2))))
           (def :pets_1
             ([person_3::UINT128 pet::UINT128]
               (and
-                (primitive :rel_primitive_hash_tuple_uint128 "Person" "name" "Charlie" "age" 50 person_3)
-                (primitive :rel_primitive_hash_tuple_uint128 "Pet" "name" "boots" "age" 1 pet))))
+                (primitive :rel_primitive_hash_tuple_uint128 "Person"::STRING "name"::STRING "Charlie"::STRING "age"::STRING 50::INT person_3)
+                (primitive :rel_primitive_hash_tuple_uint128 "Pet"::STRING "name"::STRING "boots"::STRING "age"::STRING 1::INT pet))))
           (def :pets_2
             ([person_3::UINT128 pet_2::UINT128]
               (and
-                (primitive :rel_primitive_hash_tuple_uint128 "Person" "name" "Charlie" "age" 50 person_3)
-                (primitive :rel_primitive_hash_tuple_uint128 "Pet" "name" "fluffy" "age" 3 pet_2))))
+                (primitive :rel_primitive_hash_tuple_uint128 "Person"::STRING "name"::STRING "Charlie"::STRING "age"::STRING 50::INT person_3)
+                (primitive :rel_primitive_hash_tuple_uint128 "Pet"::STRING "name"::STRING "fluffy"::STRING "age"::STRING 3::INT pet_2))))
           (def :Person
             ([person_4::UINT128]
               (or
@@ -138,8 +138,8 @@
           (def :output
             ([cvar::STRING cvar_2::STRING person::UINT128 name::STRING]
               (and
-                (primitive :rel_primitive_eq cvar "cols")
-                (primitive :rel_primitive_eq cvar_2 "col000")
+                (primitive :rel_primitive_eq cvar "cols"::STRING)
+                (primitive :rel_primitive_eq cvar_2 "col000"::STRING)
                 (atom :name person name)
                 (not
                   (exists [pet::UINT128]

@@ -5,94 +5,94 @@
         (fragment :model
           (def 7512117766650654031
             ([person::UINT128]
-              (primitive :rel_primitive_hash_tuple_uint128 "Person" "name" "Alice" "age" 10 person)))
+              (primitive :rel_primitive_hash_tuple_uint128 "Person"::STRING "name"::STRING "Alice"::STRING "age"::STRING 10::INT person)))
           (def 18139422136526288901
             ([person::UINT128]
               (atom 7512117766650654031 person)))
           (def 12718961499977487753
             ([person::UINT128 cvar::STRING]
               (and
-                (primitive :rel_primitive_eq cvar "Alice")
+                (primitive :rel_primitive_eq cvar "Alice"::STRING)
                 (atom 7512117766650654031 person))))
           (def 9492307082937470601
             ([person::UINT128 cvar_2::INT]
               (and
-                (primitive :rel_primitive_eq cvar_2 10)
+                (primitive :rel_primitive_eq cvar_2 10::INT)
                 (atom 7512117766650654031 person))))
           (def 8399384937444145343
             ([person_2::UINT128]
-              (primitive :rel_primitive_hash_tuple_uint128 "Person" "name" "Bob" "age" 30 person_2)))
+              (primitive :rel_primitive_hash_tuple_uint128 "Person"::STRING "name"::STRING "Bob"::STRING "age"::STRING 30::INT person_2)))
           (def 18339183127718524626
             ([person_2::UINT128]
               (atom 8399384937444145343 person_2)))
           (def 1369735832256492081
             ([person_2::UINT128 cvar_3::STRING]
               (and
-                (primitive :rel_primitive_eq cvar_3 "Bob")
+                (primitive :rel_primitive_eq cvar_3 "Bob"::STRING)
                 (atom 8399384937444145343 person_2))))
           (def 1063903724176868720
             ([person_2::UINT128 cvar_4::INT]
               (and
-                (primitive :rel_primitive_eq cvar_4 30)
+                (primitive :rel_primitive_eq cvar_4 30::INT)
                 (atom 8399384937444145343 person_2))))
           (def 8154019264602240939
             ([person_3::UINT128]
-              (primitive :rel_primitive_hash_tuple_uint128 "Person" "name" "Charlie" "age" 50 person_3)))
+              (primitive :rel_primitive_hash_tuple_uint128 "Person"::STRING "name"::STRING "Charlie"::STRING "age"::STRING 50::INT person_3)))
           (def 13934557884625712107
             ([person_3::UINT128]
               (atom 8154019264602240939 person_3)))
           (def 3205571553830491650
             ([person_3::UINT128 cvar_5::STRING]
               (and
-                (primitive :rel_primitive_eq cvar_5 "Charlie")
+                (primitive :rel_primitive_eq cvar_5 "Charlie"::STRING)
                 (atom 8154019264602240939 person_3))))
           (def 17828396038803401143
             ([person_3::UINT128 cvar_6::INT]
               (and
-                (primitive :rel_primitive_eq cvar_6 50)
+                (primitive :rel_primitive_eq cvar_6 50::INT)
                 (atom 8154019264602240939 person_3))))
           (def 11258823016615705613
             ([pet::UINT128]
-              (primitive :rel_primitive_hash_tuple_uint128 "Pet" "name" "boots" "age" 1 pet)))
+              (primitive :rel_primitive_hash_tuple_uint128 "Pet"::STRING "name"::STRING "boots"::STRING "age"::STRING 1::INT pet)))
           (def 15164953823225341498
             ([pet::UINT128]
               (atom 11258823016615705613 pet)))
           (def 15335969714662784111
             ([pet::UINT128 cvar_7::STRING]
               (and
-                (primitive :rel_primitive_eq cvar_7 "boots")
+                (primitive :rel_primitive_eq cvar_7 "boots"::STRING)
                 (atom 11258823016615705613 pet))))
           (def 11222845615070129783
             ([pet::UINT128 cvar_8::INT]
               (and
-                (primitive :rel_primitive_eq cvar_8 1)
+                (primitive :rel_primitive_eq cvar_8 1::INT)
                 (atom 11258823016615705613 pet))))
           (def 15911788783640802277
             ([pet_2::UINT128]
-              (primitive :rel_primitive_hash_tuple_uint128 "Pet" "name" "fluffy" "age" 3 pet_2)))
+              (primitive :rel_primitive_hash_tuple_uint128 "Pet"::STRING "name"::STRING "fluffy"::STRING "age"::STRING 3::INT pet_2)))
           (def 13601274584918128123
             ([pet_2::UINT128]
               (atom 15911788783640802277 pet_2)))
           (def 4393382297106513503
             ([pet_2::UINT128 cvar_9::STRING]
               (and
-                (primitive :rel_primitive_eq cvar_9 "fluffy")
+                (primitive :rel_primitive_eq cvar_9 "fluffy"::STRING)
                 (atom 15911788783640802277 pet_2))))
           (def 11807380396400810730
             ([pet_2::UINT128 cvar_10::INT]
               (and
-                (primitive :rel_primitive_eq cvar_10 3)
+                (primitive :rel_primitive_eq cvar_10 3::INT)
                 (atom 15911788783640802277 pet_2))))
           (def 6128499679942839714
             ([person_3::UINT128 pet::UINT128]
               (and
-                (primitive :rel_primitive_hash_tuple_uint128 "Person" "name" "Charlie" "age" 50 person_3)
-                (primitive :rel_primitive_hash_tuple_uint128 "Pet" "name" "boots" "age" 1 pet))))
+                (primitive :rel_primitive_hash_tuple_uint128 "Person"::STRING "name"::STRING "Charlie"::STRING "age"::STRING 50::INT person_3)
+                (primitive :rel_primitive_hash_tuple_uint128 "Pet"::STRING "name"::STRING "boots"::STRING "age"::STRING 1::INT pet))))
           (def 16796864715608924582
             ([person_3::UINT128 pet_2::UINT128]
               (and
-                (primitive :rel_primitive_hash_tuple_uint128 "Person" "name" "Charlie" "age" 50 person_3)
-                (primitive :rel_primitive_hash_tuple_uint128 "Pet" "name" "fluffy" "age" 3 pet_2))))
+                (primitive :rel_primitive_hash_tuple_uint128 "Person"::STRING "name"::STRING "Charlie"::STRING "age"::STRING 50::INT person_3)
+                (primitive :rel_primitive_hash_tuple_uint128 "Pet"::STRING "name"::STRING "fluffy"::STRING "age"::STRING 3::INT pet_2))))
           (def 6919740574510502700
             ([person_4::UINT128]
               (or
@@ -138,8 +138,8 @@
           (def 16208045718567772255
             ([cvar::STRING cvar_2::STRING person::UINT128 name::STRING]
               (and
-                (primitive :rel_primitive_eq cvar "cols")
-                (primitive :rel_primitive_eq cvar_2 "col000")
+                (primitive :rel_primitive_eq cvar "cols"::STRING)
+                (primitive :rel_primitive_eq cvar_2 "col000"::STRING)
                 (atom 9413459455101357694 person name)
                 (not
                   (exists [pet::UINT128]

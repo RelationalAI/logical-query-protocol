@@ -7,20 +7,20 @@
             ([category::STRING amount::FLOAT]
               (or
                 (and
-                  (primitive :rel_primitive_eq category "food")
-                  (primitive :rel_primitive_eq amount 1.23))
+                  (primitive :rel_primitive_eq category "food"::STRING)
+                  (primitive :rel_primitive_eq amount 1.23::FLOAT))
                 (and
-                  (primitive :rel_primitive_eq category "food")
-                  (primitive :rel_primitive_eq amount 10.23))
+                  (primitive :rel_primitive_eq category "food"::STRING)
+                  (primitive :rel_primitive_eq amount 10.23::FLOAT))
                 (and
-                  (primitive :rel_primitive_eq category "food")
-                  (primitive :rel_primitive_eq amount 13.0))
+                  (primitive :rel_primitive_eq category "food"::STRING)
+                  (primitive :rel_primitive_eq amount 13.00::FLOAT))
                 (and
-                  (primitive :rel_primitive_eq category "drink")
-                  (primitive :rel_primitive_eq amount 6.34))
+                  (primitive :rel_primitive_eq category "drink"::STRING)
+                  (primitive :rel_primitive_eq amount 6.34::FLOAT))
                 (and
-                  (primitive :rel_primitive_eq category "drink")
-                  (primitive :rel_primitive_eq amount 2.82)))))
+                  (primitive :rel_primitive_eq category "drink"::STRING)
+                  (primitive :rel_primitive_eq amount 2.82::FLOAT)))))
           (def 717761118272002131
             ([cat::STRING x::FLOAT]
               (reduce
@@ -37,7 +37,7 @@
                 ([num::FLOAT one::INT]
                   (and
                     (atom 3181428560199927439 cat num)
-                    (primitive :rel_primitive_eq one 1)))
+                    (primitive :rel_primitive_eq one 1::INT)))
                 (terms x)))))))
     (reads
       (output :items_sum 717761118272002131)

@@ -6,9 +6,9 @@
           (def :numbers
             ([v::INT]
               (or
-                (primitive :rel_primitive_eq v 5)
-                (primitive :rel_primitive_eq v 12)
-                (primitive :rel_primitive_eq v 3))))
+                (primitive :rel_primitive_eq v 5::INT)
+                (primitive :rel_primitive_eq v 12::INT)
+                (primitive :rel_primitive_eq v 3::INT))))
           (def :sorted_numbers
             ([ord::INT v::INT]
               (ffi :rel_primitive_sort
@@ -23,7 +23,7 @@
                   ([x::INT]
                     (atom :numbers x))
                   ([limit::INT]
-                    (primitive :rel_primitive_eq limit 2)))
+                    (primitive :rel_primitive_eq limit 2::INT)))
                 (terms ord v)))))))
     (reads
       (output :numbers :numbers)

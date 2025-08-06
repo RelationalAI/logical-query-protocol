@@ -6,9 +6,9 @@
           (def :foo
             ([x::INT]
               (or
-                (primitive :rel_primitive_eq x 1)
-                (primitive :rel_primitive_eq x 2)
-                (primitive :rel_primitive_eq x 3))))
+                (primitive :rel_primitive_eq x 1::INT)
+                (primitive :rel_primitive_eq x 2::INT)
+                (primitive :rel_primitive_eq x 3::INT))))
           (def :bar
             ([x::INT]
               (atom :foo x)))

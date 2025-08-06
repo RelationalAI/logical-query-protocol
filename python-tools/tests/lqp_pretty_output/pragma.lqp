@@ -7,29 +7,29 @@
             ([a::INT b::INT c::INT]
               (or
                 (and
-                  (primitive :rel_primitive_eq a 1)
-                  (primitive :rel_primitive_eq b 2)
-                  (primitive :rel_primitive_eq c 0))
+                  (primitive :rel_primitive_eq a 1::INT)
+                  (primitive :rel_primitive_eq b 2::INT)
+                  (primitive :rel_primitive_eq c 0::INT))
                 (and
-                  (primitive :rel_primitive_eq a 1)
-                  (primitive :rel_primitive_eq b 3)
-                  (primitive :rel_primitive_eq c 0))
+                  (primitive :rel_primitive_eq a 1::INT)
+                  (primitive :rel_primitive_eq b 3::INT)
+                  (primitive :rel_primitive_eq c 0::INT))
                 (and
-                  (primitive :rel_primitive_eq a 1)
-                  (primitive :rel_primitive_eq b 4)
-                  (primitive :rel_primitive_eq c 0)))))
+                  (primitive :rel_primitive_eq a 1::INT)
+                  (primitive :rel_primitive_eq b 4::INT)
+                  (primitive :rel_primitive_eq c 0::INT)))))
           (def :S
             ([b::INT a::INT]
               (or
                 (and
-                  (primitive :rel_primitive_eq b 2)
-                  (primitive :rel_primitive_eq a 1))
+                  (primitive :rel_primitive_eq b 2::INT)
+                  (primitive :rel_primitive_eq a 1::INT))
                 (and
-                  (primitive :rel_primitive_eq b 3)
-                  (primitive :rel_primitive_eq a 1))
+                  (primitive :rel_primitive_eq b 3::INT)
+                  (primitive :rel_primitive_eq a 1::INT))
                 (and
-                  (primitive :rel_primitive_eq b 4)
-                  (primitive :rel_primitive_eq a 1)))))
+                  (primitive :rel_primitive_eq b 4::INT)
+                  (primitive :rel_primitive_eq a 1::INT)))))
           (def :foo
             ([a::INT b::INT c::INT]
               (and

@@ -8,7 +8,7 @@
               (relatom :hello x)))
           (def 18221048622641146868
             ([x::INT y::STRING]
-              (relatom :bar #"sp_str" x #123 y))))))
+              (relatom :bar #"sp_str"::STRING x #123::INT y))))))
     (reads
       (output :foo 3181428560199927439)
       (output :bar 18221048622641146868))))

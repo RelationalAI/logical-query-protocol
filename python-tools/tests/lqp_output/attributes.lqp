@@ -7,16 +7,16 @@
             ([a::INT b::INT]
               (or
                 (and
-                  (primitive :rel_primitive_eq a 1)
-                  (primitive :rel_primitive_eq b 2))
+                  (primitive :rel_primitive_eq a 1::INT)
+                  (primitive :rel_primitive_eq b 2::INT))
                 (and
-                  (primitive :rel_primitive_eq a 1)
-                  (primitive :rel_primitive_eq b 3))
+                  (primitive :rel_primitive_eq a 1::INT)
+                  (primitive :rel_primitive_eq b 3::INT))
                 (and
-                  (primitive :rel_primitive_eq a 1)
-                  (primitive :rel_primitive_eq b 4))))
+                  (primitive :rel_primitive_eq a 1::INT)
+                  (primitive :rel_primitive_eq b 4::INT))))
             (attrs
               (attribute :function )
-              (attribute :inspect "normalizer" 2))))))
+              (attribute :inspect "normalizer"::STRING 2::INT))))))
     (reads
       (output :foo 3181428560199927439))))

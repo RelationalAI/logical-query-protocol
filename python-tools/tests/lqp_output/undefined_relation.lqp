@@ -15,6 +15,6 @@
         (fragment :f2
           (def 3238736544897475342
             ([v::INT]
-              (primitive :rel_primitive_eq v 101))))))
+              (primitive :rel_primitive_eq v 101::INT))))))
     (reads
       (output :epoch1 16208045718567772255))))

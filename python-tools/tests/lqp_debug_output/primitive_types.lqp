@@ -5,52 +5,52 @@
         (fragment :f1
           (def 7901719704309484609
             ([v::INT]
-              (primitive :rel_primitive_eq v 21)))
+              (primitive :rel_primitive_eq v 21::INT)))
           (def 1294199513523589994
             ([v::INT128]
-              (primitive :rel_primitive_eq v 21i128)))
+              (primitive :rel_primitive_eq v 21::INT128)))
           (def 11038540059019930827
             ([v::INT128]
-              (primitive :rel_primitive_eq v 85968058283706962486085i128)))
+              (primitive :rel_primitive_eq v 85968058283706962486085::INT128)))
           (def 15025643537523545230
             ([v::UINT128]
-              (primitive :rel_primitive_eq v 0x123456789abcdef12345)))
+              (primitive :rel_primitive_eq v 0x123456789abcdef12345::UINT128)))
           (def 8550051134248905158
             ([v::FLOAT]
-              (primitive :rel_primitive_eq v 1.23)))
+              (primitive :rel_primitive_eq v 1.23::FLOAT)))
           (def 10098701174489624218
             ([v::STRING]
-              (primitive :rel_primitive_eq v "hello")))
+              (primitive :rel_primitive_eq v "hello"::STRING)))
           (def 2965631662653371761
             ([v::INT]
               (and
-                (primitive :rel_primitive_eq v 21)
-                (atom 7901719704309484609 21))))
+                (primitive :rel_primitive_eq v 21::INT)
+                (atom 7901719704309484609 21::INT))))
           (def 12020515264615679488
             ([v::INT128]
               (and
-                (primitive :rel_primitive_eq v 21i128)
-                (atom 1294199513523589994 21i128))))
+                (primitive :rel_primitive_eq v 21::INT128)
+                (atom 1294199513523589994 21::INT128))))
           (def 12372217943612403113
             ([v::INT128]
               (and
-                (primitive :rel_primitive_eq v 85968058283706962486085i128)
-                (atom 11038540059019930827 85968058283706962486085i128))))
+                (primitive :rel_primitive_eq v 85968058283706962486085::INT128)
+                (atom 11038540059019930827 85968058283706962486085::INT128))))
           (def 7505808394141676799
             ([v::UINT128]
               (and
-                (primitive :rel_primitive_eq v 0x123456789abcdef12345)
-                (atom 15025643537523545230 0x123456789abcdef12345))))
+                (primitive :rel_primitive_eq v 0x123456789abcdef12345::UINT128)
+                (atom 15025643537523545230 0x123456789abcdef12345::UINT128))))
           (def 11698363356127107011
             ([v::FLOAT]
               (and
-                (primitive :rel_primitive_eq v 1.23)
-                (atom 8550051134248905158 1.23))))
+                (primitive :rel_primitive_eq v 1.23::FLOAT)
+                (atom 8550051134248905158 1.23::FLOAT))))
           (def 8321355183808865828
             ([v::STRING]
               (and
-                (primitive :rel_primitive_eq v "hello")
-                (atom 10098701174489624218 "hello")))))))
+                (primitive :rel_primitive_eq v "hello"::STRING)
+                (atom 10098701174489624218 "hello"::STRING)))))))
     (reads
       (output :int 2965631662653371761)
       (output :int128_s 12020515264615679488)

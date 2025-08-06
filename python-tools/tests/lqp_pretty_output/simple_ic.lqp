@@ -5,7 +5,7 @@
         (fragment :f1
           (def :foo
             ([]
-              (primitive :rel_primitive_eq 1 1)))
+              (primitive :rel_primitive_eq 1::INT 1::INT)))
           (def :abort
             ([]
               (atom :foo )))

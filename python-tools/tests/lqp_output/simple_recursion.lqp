@@ -6,23 +6,23 @@
           (def 13022943963523327216
             ([x::STRING y::STRING]
               (and
-                (primitive :rel_primitive_eq x "a")
-                (primitive :rel_primitive_eq y "b"))))
+                (primitive :rel_primitive_eq x "a"::STRING)
+                (primitive :rel_primitive_eq y "b"::STRING))))
           (def 13756630614515951718
             ([x::STRING y::STRING]
               (and
-                (primitive :rel_primitive_eq x "b")
-                (primitive :rel_primitive_eq y "c"))))
+                (primitive :rel_primitive_eq x "b"::STRING)
+                (primitive :rel_primitive_eq y "c"::STRING))))
           (def 409501014042465539
             ([x::STRING y::STRING]
               (and
-                (primitive :rel_primitive_eq x "b")
-                (primitive :rel_primitive_eq y "d"))))
+                (primitive :rel_primitive_eq x "b"::STRING)
+                (primitive :rel_primitive_eq y "d"::STRING))))
           (def 7285625101263508808
             ([x::STRING y::STRING]
               (and
-                (primitive :rel_primitive_eq x "d")
-                (primitive :rel_primitive_eq y "e"))))
+                (primitive :rel_primitive_eq x "d"::STRING)
+                (primitive :rel_primitive_eq y "e"::STRING))))
           (def 11658429718464131530
             ([x::STRING y::STRING]
               (or

@@ -5,10 +5,10 @@
         (fragment :primitives
           (def 1046914482580477072
             ([v::DATE]
-              (primitive :rel_primitive_parse_date "1998-12-01" "Y-m-d" v)))
+              (primitive :rel_primitive_parse_date "1998-12-01"::STRING "Y-m-d"::STRING v)))
           (def 4498334357512242845
-            ([v::(DECIMAL 18 6)]
-              (primitive :rel_primitive_parse_decimal #64 #6 "3.14" v))))))
+            ([v::(DECIMAL 18::INT 6::INT)]
+              (primitive :rel_primitive_parse_decimal #64::INT #6::INT "3.14"::STRING v))))))
     (reads
       (output :date 1046914482580477072)
       (output :decimal 4498334357512242845))))

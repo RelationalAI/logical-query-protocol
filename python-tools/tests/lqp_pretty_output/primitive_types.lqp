@@ -5,52 +5,52 @@
         (fragment :f1
           (def :int
             ([v::INT]
-              (primitive :rel_primitive_eq v 21)))
+              (primitive :rel_primitive_eq v 21::INT)))
           (def :int128_s
             ([v::INT128]
-              (primitive :rel_primitive_eq v 21i128)))
+              (primitive :rel_primitive_eq v 21::INT128)))
           (def :int128_l
             ([v::INT128]
-              (primitive :rel_primitive_eq v 85968058283706962486085i128)))
+              (primitive :rel_primitive_eq v 85968058283706962486085::INT128)))
           (def :uint128
             ([v::UINT128]
-              (primitive :rel_primitive_eq v 0x123456789abcdef12345)))
+              (primitive :rel_primitive_eq v 0x123456789abcdef12345::UINT128)))
           (def :float
             ([v::FLOAT]
-              (primitive :rel_primitive_eq v 1.23)))
+              (primitive :rel_primitive_eq v 1.23::FLOAT)))
           (def :str
             ([v::STRING]
-              (primitive :rel_primitive_eq v "hello")))
+              (primitive :rel_primitive_eq v "hello"::STRING)))
           (def :output_int
             ([v::INT]
               (and
-                (primitive :rel_primitive_eq v 21)
-                (atom :int 21))))
+                (primitive :rel_primitive_eq v 21::INT)
+                (atom :int 21::INT))))
           (def :output_int128_s
             ([v::INT128]
               (and
-                (primitive :rel_primitive_eq v 21i128)
-                (atom :int128_s 21i128))))
+                (primitive :rel_primitive_eq v 21::INT128)
+                (atom :int128_s 21::INT128))))
           (def :output_int128_l
             ([v::INT128]
               (and
-                (primitive :rel_primitive_eq v 85968058283706962486085i128)
-                (atom :int128_l 85968058283706962486085i128))))
+                (primitive :rel_primitive_eq v 85968058283706962486085::INT128)
+                (atom :int128_l 85968058283706962486085::INT128))))
           (def :output_uint128
             ([v::UINT128]
               (and
-                (primitive :rel_primitive_eq v 0x123456789abcdef12345)
-                (atom :uint128 0x123456789abcdef12345))))
+                (primitive :rel_primitive_eq v 0x123456789abcdef12345::UINT128)
+                (atom :uint128 0x123456789abcdef12345::UINT128))))
           (def :output_float
             ([v::FLOAT]
               (and
-                (primitive :rel_primitive_eq v 1.23)
-                (atom :float 1.23))))
+                (primitive :rel_primitive_eq v 1.23::FLOAT)
+                (atom :float 1.23::FLOAT))))
           (def :output_str
             ([v::STRING]
               (and
-                (primitive :rel_primitive_eq v "hello")
-                (atom :str "hello")))))))
+                (primitive :rel_primitive_eq v "hello"::STRING)
+                (atom :str "hello"::STRING)))))))
     (reads
       (output :int :output_int)
       (output :int128_s :output_int128_s)

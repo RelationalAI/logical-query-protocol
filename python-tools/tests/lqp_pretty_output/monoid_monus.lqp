@@ -11,53 +11,53 @@
                     ([x::INT y::INT]
                       (or
                         (and
-                          (primitive :rel_primitive_eq x 1)
-                          (primitive :rel_primitive_eq y 10))
+                          (primitive :rel_primitive_eq x 1::INT)
+                          (primitive :rel_primitive_eq y 10::INT))
                         (and
-                          (primitive :rel_primitive_eq x 2)
-                          (primitive :rel_primitive_eq y 3))))
+                          (primitive :rel_primitive_eq x 2::INT)
+                          (primitive :rel_primitive_eq y 3::INT))))
                     (attrs
                       (attribute :function )))
                   (assign :R2
                     ([x::INT y::INT]
                       (or
                         (and
-                          (primitive :rel_primitive_eq x 1)
-                          (primitive :rel_primitive_eq y 10))
+                          (primitive :rel_primitive_eq x 1::INT)
+                          (primitive :rel_primitive_eq y 10::INT))
                         (and
-                          (primitive :rel_primitive_eq x 2)
-                          (primitive :rel_primitive_eq y 3)))))
+                          (primitive :rel_primitive_eq x 2::INT)
+                          (primitive :rel_primitive_eq y 3::INT)))))
                   (assign :R3
                     ([x::INT y::INT]
                       (or
                         (and
-                          (primitive :rel_primitive_eq x 1)
-                          (primitive :rel_primitive_eq y 5))
+                          (primitive :rel_primitive_eq x 1::INT)
+                          (primitive :rel_primitive_eq y 5::INT))
                         (and
-                          (primitive :rel_primitive_eq x 2)
-                          (primitive :rel_primitive_eq y 20))))
+                          (primitive :rel_primitive_eq x 2::INT)
+                          (primitive :rel_primitive_eq y 20::INT))))
                     (attrs
                       (attribute :function )))
                   (assign :R4
                     ([x::INT y::INT]
                       (or
                         (and
-                          (primitive :rel_primitive_eq x 1)
-                          (primitive :rel_primitive_eq y 7))
+                          (primitive :rel_primitive_eq x 1::INT)
+                          (primitive :rel_primitive_eq y 7::INT))
                         (and
-                          (primitive :rel_primitive_eq x 2)
-                          (primitive :rel_primitive_eq y 25))))
+                          (primitive :rel_primitive_eq x 2::INT)
+                          (primitive :rel_primitive_eq y 25::INT))))
                     (attrs
                       (attribute :function )))
                   (assign :U
                     ([x::INT y::INT]
                       (or
                         (and
-                          (primitive :rel_primitive_eq x 1)
-                          (primitive :rel_primitive_eq y 5))
+                          (primitive :rel_primitive_eq x 1::INT)
+                          (primitive :rel_primitive_eq y 5::INT))
                         (and
-                          (primitive :rel_primitive_eq x 2)
-                          (primitive :rel_primitive_eq y 20))))
+                          (primitive :rel_primitive_eq x 2::INT)
+                          (primitive :rel_primitive_eq y 20::INT))))
                     (attrs
                       (attribute :function )))
                   (assign :always

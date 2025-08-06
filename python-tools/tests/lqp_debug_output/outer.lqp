@@ -11,16 +11,16 @@
                     ([a::INT b::INT]
                       (or
                         (and
-                          (primitive :rel_primitive_eq a 1)
-                          (primitive :rel_primitive_eq b 2))
+                          (primitive :rel_primitive_eq a 1::INT)
+                          (primitive :rel_primitive_eq b 2::INT))
                         (and
-                          (primitive :rel_primitive_eq a 2)
-                          (primitive :rel_primitive_eq b 3)))))
+                          (primitive :rel_primitive_eq a 2::INT)
+                          (primitive :rel_primitive_eq b 3::INT)))))
                   (assign 11697277356358429352
                     ([a::INT b::INT]
                       (and
-                        (primitive :rel_primitive_eq a 1)
-                        (primitive :rel_primitive_eq b 3))))
+                        (primitive :rel_primitive_eq a 1::INT)
+                        (primitive :rel_primitive_eq b 3::INT))))
                   (assign 11303028219845360359
                     ([]
                       (or

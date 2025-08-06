@@ -5,7 +5,7 @@
         (fragment :f2
           (def :hello
             ([v::INT]
-              (primitive :rel_primitive_eq v 101)))))
+              (primitive :rel_primitive_eq v 101::INT)))))
       (define
         (fragment :f1
           (def :output

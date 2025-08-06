@@ -7,29 +7,29 @@
             ([a::INT b::INT c::INT]
               (or
                 (and
-                  (primitive :rel_primitive_eq a 1)
-                  (primitive :rel_primitive_eq b 2)
-                  (primitive :rel_primitive_eq c 0))
+                  (primitive :rel_primitive_eq a 1::INT)
+                  (primitive :rel_primitive_eq b 2::INT)
+                  (primitive :rel_primitive_eq c 0::INT))
                 (and
-                  (primitive :rel_primitive_eq a 1)
-                  (primitive :rel_primitive_eq b 3)
-                  (primitive :rel_primitive_eq c 0))
+                  (primitive :rel_primitive_eq a 1::INT)
+                  (primitive :rel_primitive_eq b 3::INT)
+                  (primitive :rel_primitive_eq c 0::INT))
                 (and
-                  (primitive :rel_primitive_eq a 1)
-                  (primitive :rel_primitive_eq b 4)
-                  (primitive :rel_primitive_eq c 0)))))
+                  (primitive :rel_primitive_eq a 1::INT)
+                  (primitive :rel_primitive_eq b 4::INT)
+                  (primitive :rel_primitive_eq c 0::INT)))))
           (def 10223368810657819737
             ([b::INT a::INT]
               (or
                 (and
-                  (primitive :rel_primitive_eq b 2)
-                  (primitive :rel_primitive_eq a 1))
+                  (primitive :rel_primitive_eq b 2::INT)
+                  (primitive :rel_primitive_eq a 1::INT))
                 (and
-                  (primitive :rel_primitive_eq b 3)
-                  (primitive :rel_primitive_eq a 1))
+                  (primitive :rel_primitive_eq b 3::INT)
+                  (primitive :rel_primitive_eq a 1::INT))
                 (and
-                  (primitive :rel_primitive_eq b 4)
-                  (primitive :rel_primitive_eq a 1)))))
+                  (primitive :rel_primitive_eq b 4::INT)
+                  (primitive :rel_primitive_eq a 1::INT)))))
           (def 3181428560199927439
             ([a::INT b::INT c::INT]
               (and

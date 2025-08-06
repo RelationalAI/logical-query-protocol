@@ -5,10 +5,10 @@
         (fragment :f1
           (def 15648190185117610840
             ([v::INT]
-              (primitive :rel_primitive_add_monotype 1 1 v)))
+              (primitive :rel_primitive_add_monotype 1::INT 1::INT v)))
           (def 16208045718567772255
             ([v::INT]
-              (primitive :rel_primitive_eq v 101))))))
+              (primitive :rel_primitive_eq v 101::INT))))))
     (reads
       (output :output_0 16208045718567772255)
       (output :other_0 15648190185117610840)))
@@ -19,7 +19,7 @@
         (fragment :f1
           (def 16208045718567772255
             ([v::STRING]
-              (primitive :rel_primitive_eq v "hello"))))))
+              (primitive :rel_primitive_eq v "hello"::STRING))))))
     (reads
       (output :output_1 16208045718567772255)
       (output :other_1 15648190185117610840))))

@@ -7,17 +7,17 @@
             ([v::FLOAT]
               (primitive :rel_primitive_eq 1::FLOAT v)))
           (def :test2
-            ([v::(DECIMAL 18 6)]
-              (primitive :rel_primitive_eq 1::(DECIMAL 18 6) v)))
+            ([v::(DECIMAL 18::INT 6::INT)]
+              (primitive :rel_primitive_eq 1::(DECIMAL 18::INT 6::INT) v)))
           (def :test3
             ([v::INT]
               (primitive :rel_primitive_eq 1::INT v)))
           (def :test4
             ([v::INT128]
-              (primitive :rel_primitive_eq 0x0::INT128 v)))
+              (primitive :rel_primitive_eq 0x000000::INT128 v)))
           (def :test5
             ([v::UINT128]
-              (primitive :rel_primitive_eq 1235i128::UINT128 v))))))
+              (primitive :rel_primitive_eq 1235::UINT128 v))))))
     (reads
       (output :output1 :test1)
       (output :output2 :test2)

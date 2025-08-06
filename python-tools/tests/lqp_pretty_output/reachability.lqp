@@ -7,30 +7,30 @@
             ([a::INT b::INT]
               (or
                 (and
-                  (primitive :rel_primitive_eq a 1)
-                  (primitive :rel_primitive_eq b 2))
+                  (primitive :rel_primitive_eq a 1::INT)
+                  (primitive :rel_primitive_eq b 2::INT))
                 (and
-                  (primitive :rel_primitive_eq a 2)
-                  (primitive :rel_primitive_eq b 3))
+                  (primitive :rel_primitive_eq a 2::INT)
+                  (primitive :rel_primitive_eq b 3::INT))
                 (and
-                  (primitive :rel_primitive_eq a 3)
-                  (primitive :rel_primitive_eq b 4))
+                  (primitive :rel_primitive_eq a 3::INT)
+                  (primitive :rel_primitive_eq b 4::INT))
                 (and
-                  (primitive :rel_primitive_eq a 2)
-                  (primitive :rel_primitive_eq b 5))
+                  (primitive :rel_primitive_eq a 2::INT)
+                  (primitive :rel_primitive_eq b 5::INT))
                 (and
-                  (primitive :rel_primitive_eq a 5)
-                  (primitive :rel_primitive_eq b 3))
+                  (primitive :rel_primitive_eq a 5::INT)
+                  (primitive :rel_primitive_eq b 3::INT))
                 (and
-                  (primitive :rel_primitive_eq a 6)
-                  (primitive :rel_primitive_eq b 5)))))
+                  (primitive :rel_primitive_eq a 6::INT)
+                  (primitive :rel_primitive_eq b 5::INT)))))
           (algorithm :reachable
             (script
               (loop
                 (init
                   (assign :reachable
                     ([n::INT]
-                      (primitive :rel_primitive_eq n 1))))
+                      (primitive :rel_primitive_eq n 1::INT))))
                   (script
                     (assign :next
                       ([m::INT]
