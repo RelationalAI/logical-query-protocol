@@ -299,9 +299,7 @@ message DateTimeValue {
 }
 
 message DecimalValue {
-  int32 precision = 1;
-  int32 scale = 2;
-  int32 sign = 3;
-  int64 coefficient = 4;
-  int64 exponent = 5;
+  int32 sign = 1;
+  int64 coefficient = 2;
+  int64 exponent = 3;
 }
