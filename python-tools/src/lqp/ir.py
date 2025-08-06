@@ -239,6 +239,8 @@ class DatetimeValue(LqpNode):
 # DecimalValue()
 @dataclass(frozen=True)
 class DecimalValue(LqpNode):
+    precision: int
+    scale: int
     value: Decimal
 
 @dataclass(frozen=True)
@@ -255,16 +257,13 @@ class Value(LqpNode):
         DecimalValue
     ]
 
-# Constant(value::Value)
-Constant = Union[Value]
-
 # SpecializedValue(value::Value)
 @dataclass(frozen=True)
 class SpecializedValue(LqpNode):
     value: Value
 
-# Term := Var | Constant
-Term = Union[Var, Constant]
+# Term := Var | Value
+Term = Union[Var, Value]
 
 # RelTerm := Term | SpecializedValue
 RelTerm = Union[Term, SpecializedValue]
@@ -273,7 +272,7 @@ RelTerm = Union[Term, SpecializedValue]
 @dataclass(frozen=True)
 class Attribute(LqpNode):
     name: str
-    args: Sequence[Constant]
+    args: Sequence[Value]
 
 # RelationId(id::UInt128)
 @dataclass(frozen=True)
