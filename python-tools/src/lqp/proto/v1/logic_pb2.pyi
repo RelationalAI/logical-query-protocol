@@ -466,15 +466,11 @@ class DateTimeValue(_message.Message):
     def __init__(self, year: _Optional[int] = ..., month: _Optional[int] = ..., day: _Optional[int] = ..., hour: _Optional[int] = ..., minute: _Optional[int] = ..., second: _Optional[int] = ..., microsecond: _Optional[int] = ...) -> None: ...
 
 class DecimalValue(_message.Message):
-    __slots__ = ("precision", "scale", "sign", "coefficient", "exponent")
-    PRECISION_FIELD_NUMBER: _ClassVar[int]
-    SCALE_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("sign", "coefficient", "exponent")
     SIGN_FIELD_NUMBER: _ClassVar[int]
     COEFFICIENT_FIELD_NUMBER: _ClassVar[int]
     EXPONENT_FIELD_NUMBER: _ClassVar[int]
-    precision: int
-    scale: int
     sign: int
     coefficient: int
     exponent: int
-    def __init__(self, precision: _Optional[int] = ..., scale: _Optional[int] = ..., sign: _Optional[int] = ..., coefficient: _Optional[int] = ..., exponent: _Optional[int] = ...) -> None: ...
+    def __init__(self, sign: _Optional[int] = ..., coefficient: _Optional[int] = ..., exponent: _Optional[int] = ...) -> None: ...
