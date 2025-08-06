@@ -374,18 +374,20 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
 
     elif isinstance(node, ir.Value):
         lqp += to_str(node.value, indent_level, options, debug_info)
-        if node.cast_type is not None:
-            lqp += "::"
-            lqp += to_str(node.cast_type, 0, options, debug_info)
+
     elif isinstance(node, str):
         lqp += ind + "\"" + node.encode('unicode_escape').replace(b'"', b'\\"').decode() + "\""
-    elif isinstance(node, ir.UInt128):
+    elif isinstance(node, ir.UInt128Value):
         lqp += f"{ind}{hex(node.value)}"
-    elif isinstance(node, ir.Int128):
+    elif isinstance(node, ir.Int128Value):
         lqp += f"{ind}{node.value}i128"
-    elif isinstance(node, ir.Missing):
-        if node:
-            lqp += f"{ind}missing"
+    elif isinstance(node, ir.MissingValue):
+        lqp += f"{ind}missing"
+    elif isinstance(node, ir.DecimalValue):
+        _, _, exponent = node.value.as_tuple()
+        decimal_val = node.value / (10 ** (node.scale - exponent))
+        lqp += f"{ind}{str(decimal_val)}d{node.precision}"
+
     elif isinstance(node, (int, float)):
         lqp += f"{ind}{str(node)}"
 

@@ -301,7 +301,5 @@ message DateTimeValue {
 message DecimalValue {
   int32 precision = 1;
   int32 scale = 2;
-  int32 sign = 3;
-  Int128Value coefficient = 4;
-  int32 exponent = 5;
+  Int128Value value = 3;
 }

@@ -1,7 +1,7 @@
 import lqp.ir as ir
 from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
 from typing import Union, Dict, Any
-from itertools import reduce
+from functools import reduce
 
 # Maps ir.TypeNames to the associated Proto message for *non-paremetric types*. Used to generically construct non-parametric types.
 # Parametric types should be handled in convert_type
@@ -57,16 +57,16 @@ def convert_datetime(val: ir.DateTimeValue) -> logic_pb2.DateTimeValue:
     )
 
 def convert_decimal(val: ir.DecimalValue) -> logic_pb2.DecimalValue:
-    sign, digits, exponent = val.value.as_tuple()
+    _, digits, exponent = val.value.as_tuple()
     coefficient = reduce(lambda rst, d: rst * 10 + d, digits)
-    coefficient = ir.Int128Value(coefficient)
+    # Adjust coefficient by the exponent
+    coefficient *= 10 ** (val.scale - exponent)
+    coefficient = ir.Int128Value(int(coefficient))
 
     return logic_pb2.DecimalValue(
         precision=val.precision,
         scale=val.scale,
-        sign=sign,
         coefficient=convert_int128(coefficient),
-        exponent=exponent
     )
 
 def convert_value(pv: ir.Value) -> logic_pb2.Value:
