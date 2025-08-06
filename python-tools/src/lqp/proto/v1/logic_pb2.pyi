@@ -396,39 +396,85 @@ class DecimalType(_message.Message):
     def __init__(self, precision: _Optional[int] = ..., scale: _Optional[int] = ...) -> None: ...
 
 class Value(_message.Message):
-    __slots__ = ("string_value", "int_value", "float_value", "uint128_value", "int128_value", "missing_value", "cast_type")
+    __slots__ = ("string_value", "int_value", "float_value", "uint128_value", "int128_value", "missing_value", "date_value", "date_time_value", "decimal_value")
     STRING_VALUE_FIELD_NUMBER: _ClassVar[int]
     INT_VALUE_FIELD_NUMBER: _ClassVar[int]
     FLOAT_VALUE_FIELD_NUMBER: _ClassVar[int]
     UINT128_VALUE_FIELD_NUMBER: _ClassVar[int]
     INT128_VALUE_FIELD_NUMBER: _ClassVar[int]
     MISSING_VALUE_FIELD_NUMBER: _ClassVar[int]
-    CAST_TYPE_FIELD_NUMBER: _ClassVar[int]
+    DATE_VALUE_FIELD_NUMBER: _ClassVar[int]
+    DATE_TIME_VALUE_FIELD_NUMBER: _ClassVar[int]
+    DECIMAL_VALUE_FIELD_NUMBER: _ClassVar[int]
     string_value: str
     int_value: int
     float_value: float
-    uint128_value: UInt128
-    int128_value: Int128
+    uint128_value: UInt128Value
+    int128_value: Int128Value
     missing_value: MissingValue
-    cast_type: Type
-    def __init__(self, string_value: _Optional[str] = ..., int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128, _Mapping]] = ..., int128_value: _Optional[_Union[Int128, _Mapping]] = ..., missing_value: _Optional[_Union[MissingValue, _Mapping]] = ..., cast_type: _Optional[_Union[Type, _Mapping]] = ...) -> None: ...
+    date_value: DateValue
+    date_time_value: DateTimeValue
+    decimal_value: DecimalValue
+    def __init__(self, string_value: _Optional[str] = ..., int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128Value, _Mapping]] = ..., int128_value: _Optional[_Union[Int128Value, _Mapping]] = ..., missing_value: _Optional[_Union[MissingValue, _Mapping]] = ..., date_value: _Optional[_Union[DateValue, _Mapping]] = ..., date_time_value: _Optional[_Union[DateTimeValue, _Mapping]] = ..., decimal_value: _Optional[_Union[DecimalValue, _Mapping]] = ...) -> None: ...
+
+class UInt128Value(_message.Message):
+    __slots__ = ("low", "high")
+    LOW_FIELD_NUMBER: _ClassVar[int]
+    HIGH_FIELD_NUMBER: _ClassVar[int]
+    low: int
+    high: int
+    def __init__(self, low: _Optional[int] = ..., high: _Optional[int] = ...) -> None: ...
+
+class Int128Value(_message.Message):
+    __slots__ = ("low", "high")
+    LOW_FIELD_NUMBER: _ClassVar[int]
+    HIGH_FIELD_NUMBER: _ClassVar[int]
+    low: int
+    high: int
+    def __init__(self, low: _Optional[int] = ..., high: _Optional[int] = ...) -> None: ...
 
 class MissingValue(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
 
-class UInt128(_message.Message):
-    __slots__ = ("low", "high")
-    LOW_FIELD_NUMBER: _ClassVar[int]
-    HIGH_FIELD_NUMBER: _ClassVar[int]
-    low: int
-    high: int
-    def __init__(self, low: _Optional[int] = ..., high: _Optional[int] = ...) -> None: ...
+class DateValue(_message.Message):
+    __slots__ = ("year", "month", "day")
+    YEAR_FIELD_NUMBER: _ClassVar[int]
+    MONTH_FIELD_NUMBER: _ClassVar[int]
+    DAY_FIELD_NUMBER: _ClassVar[int]
+    year: int
+    month: int
+    day: int
+    def __init__(self, year: _Optional[int] = ..., month: _Optional[int] = ..., day: _Optional[int] = ...) -> None: ...
 
-class Int128(_message.Message):
-    __slots__ = ("low", "high")
-    LOW_FIELD_NUMBER: _ClassVar[int]
-    HIGH_FIELD_NUMBER: _ClassVar[int]
-    low: int
-    high: int
-    def __init__(self, low: _Optional[int] = ..., high: _Optional[int] = ...) -> None: ...
+class DateTimeValue(_message.Message):
+    __slots__ = ("year", "month", "day", "hour", "minute", "second", "microsecond")
+    YEAR_FIELD_NUMBER: _ClassVar[int]
+    MONTH_FIELD_NUMBER: _ClassVar[int]
+    DAY_FIELD_NUMBER: _ClassVar[int]
+    HOUR_FIELD_NUMBER: _ClassVar[int]
+    MINUTE_FIELD_NUMBER: _ClassVar[int]
+    SECOND_FIELD_NUMBER: _ClassVar[int]
+    MICROSECOND_FIELD_NUMBER: _ClassVar[int]
+    year: int
+    month: int
+    day: int
+    hour: int
+    minute: int
+    second: int
+    microsecond: int
+    def __init__(self, year: _Optional[int] = ..., month: _Optional[int] = ..., day: _Optional[int] = ..., hour: _Optional[int] = ..., minute: _Optional[int] = ..., second: _Optional[int] = ..., microsecond: _Optional[int] = ...) -> None: ...
+
+class DecimalValue(_message.Message):
+    __slots__ = ("precision", "scale", "sign", "coefficient", "exponent")
+    PRECISION_FIELD_NUMBER: _ClassVar[int]
+    SCALE_FIELD_NUMBER: _ClassVar[int]
+    SIGN_FIELD_NUMBER: _ClassVar[int]
+    COEFFICIENT_FIELD_NUMBER: _ClassVar[int]
+    EXPONENT_FIELD_NUMBER: _ClassVar[int]
+    precision: int
+    scale: int
+    sign: int
+    coefficient: int
+    exponent: int
+    def __init__(self, precision: _Optional[int] = ..., scale: _Optional[int] = ..., sign: _Optional[int] = ..., coefficient: _Optional[int] = ..., exponent: _Optional[int] = ...) -> None: ...
