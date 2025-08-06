@@ -233,7 +233,7 @@ class DateValue(LqpNode):
 
 # DatetimeValue(year: int, month: int, day: int, hour: int, minute: int, second: int, microsecond: int)
 @dataclass(frozen=True)
-class DatetimeValue(LqpNode):
+class DateTimeValue(LqpNode):
     value: dt.datetime
 
 # DecimalValue()
@@ -253,7 +253,7 @@ class Value(LqpNode):
         Int128Value,
         MissingValue,
         DateValue,
-        DatetimeValue,
+        DateTimeValue,
         DecimalValue
     ]
 

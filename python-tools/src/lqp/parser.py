@@ -118,8 +118,8 @@ TYPE_NAME: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
 SYMBOL: /[a-zA-Z_][a-zA-Z0-9_-]*/
 MISSING: "missing"
 STRING: ESCAPED_STRING
-NUMBER: /\\d+/
-INT128: /\\d+i128/
+NUMBER: /[-]?\\d+/
+INT128: /[-]?\\d+i128/
 UINT128: /0x[0-9a-fA-F]+/
 FLOAT: /\\d+\\.\\d+/
 DECIMAL: /\\d+\\.\\d+d\\d+/

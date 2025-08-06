@@ -35,12 +35,12 @@ def convert_type(rt: ir.Type) -> logic_pb2.Type:
 def convert_uint128(val: ir.UInt128Value) -> logic_pb2.UInt128Value:
     low = val.value & 0xFFFFFFFFFFFFFFFF
     high = (val.value >> 64) & 0xFFFFFFFFFFFFFFFF
-    return logic_pb2.UInt128(low=low, high=high)
+    return logic_pb2.UInt128Value(low=low, high=high)
 
 def convert_int128(val: ir.Int128Value) -> logic_pb2.Int128Value:
     low = val.value & 0xFFFFFFFFFFFFFFFF
     high = (val.value >> 64) & 0xFFFFFFFFFFFFFFFF
-    return logic_pb2.Int128(low=low, high=high)
+    return logic_pb2.Int128Value(low=low, high=high)
 
 def convert_date(val: ir.DateValue) -> logic_pb2.DateValue:
     return logic_pb2.DateValue(year=val.year, month=val.month, day=val.day)
@@ -71,10 +71,8 @@ def convert_decimal(val: ir.DecimalValue) -> logic_pb2.DecimalValue:
 
 def convert_value(pv: ir.Value) -> logic_pb2.Value:
     if isinstance(pv.value, str):
-        assert pv.cast_type is None, "Illegal cast of String value"
         return logic_pb2.Value(string_value=pv.value)
     elif isinstance(pv.value, ir.MissingValue):
-        assert pv.cast_type is None, "Illegal cast of Missing value"
         return logic_pb2.Value(missing_value=logic_pb2.MissingValue())
     elif isinstance(pv.value, int):
         assert pv.value.bit_length() <= 64, "Integer value exceeds 64 bits"
