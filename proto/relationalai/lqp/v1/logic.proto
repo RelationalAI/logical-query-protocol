@@ -265,7 +265,7 @@ message Value {
     Int128Value int128_value = 5;
     MissingValue missing_value = 6;
     DateValue date_value = 7;
-    DateTimeValue date_time_value = 8;
+    DateTimeValue datetime_value = 8;
     DecimalValue decimal_value = 9;
   }
 }

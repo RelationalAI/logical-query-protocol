@@ -396,7 +396,7 @@ class DecimalType(_message.Message):
     def __init__(self, precision: _Optional[int] = ..., scale: _Optional[int] = ...) -> None: ...
 
 class Value(_message.Message):
-    __slots__ = ("string_value", "int_value", "float_value", "uint128_value", "int128_value", "missing_value", "date_value", "date_time_value", "decimal_value")
+    __slots__ = ("string_value", "int_value", "float_value", "uint128_value", "int128_value", "missing_value", "date_value", "datetime_value", "decimal_value")
     STRING_VALUE_FIELD_NUMBER: _ClassVar[int]
     INT_VALUE_FIELD_NUMBER: _ClassVar[int]
     FLOAT_VALUE_FIELD_NUMBER: _ClassVar[int]
@@ -404,7 +404,7 @@ class Value(_message.Message):
     INT128_VALUE_FIELD_NUMBER: _ClassVar[int]
     MISSING_VALUE_FIELD_NUMBER: _ClassVar[int]
     DATE_VALUE_FIELD_NUMBER: _ClassVar[int]
-    DATE_TIME_VALUE_FIELD_NUMBER: _ClassVar[int]
+    DATETIME_VALUE_FIELD_NUMBER: _ClassVar[int]
     DECIMAL_VALUE_FIELD_NUMBER: _ClassVar[int]
     string_value: str
     int_value: int
@@ -413,9 +413,9 @@ class Value(_message.Message):
     int128_value: Int128Value
     missing_value: MissingValue
     date_value: DateValue
-    date_time_value: DateTimeValue
+    datetime_value: DateTimeValue
     decimal_value: DecimalValue
-    def __init__(self, string_value: _Optional[str] = ..., int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128Value, _Mapping]] = ..., int128_value: _Optional[_Union[Int128Value, _Mapping]] = ..., missing_value: _Optional[_Union[MissingValue, _Mapping]] = ..., date_value: _Optional[_Union[DateValue, _Mapping]] = ..., date_time_value: _Optional[_Union[DateTimeValue, _Mapping]] = ..., decimal_value: _Optional[_Union[DecimalValue, _Mapping]] = ...) -> None: ...
+    def __init__(self, string_value: _Optional[str] = ..., int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128Value, _Mapping]] = ..., int128_value: _Optional[_Union[Int128Value, _Mapping]] = ..., missing_value: _Optional[_Union[MissingValue, _Mapping]] = ..., date_value: _Optional[_Union[DateValue, _Mapping]] = ..., datetime_value: _Optional[_Union[DateTimeValue, _Mapping]] = ..., decimal_value: _Optional[_Union[DecimalValue, _Mapping]] = ...) -> None: ...
 
 class UInt128Value(_message.Message):
     __slots__ = ("low", "high")
