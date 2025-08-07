@@ -59,9 +59,13 @@ def convert_datetime(val: ir.DateTimeValue) -> logic_pb2.DateTimeValue:
 def convert_decimal(val: ir.DecimalValue) -> logic_pb2.DecimalValue:
     _, digits, exponent = val.value.as_tuple()
     value = reduce(lambda rst, d: rst * 10 + d, digits)
+
+    assert isinstance(exponent, int)
+    assert isinstance(value, int)
+
     # Adjust coefficient by the exponent
     value *= 10 ** (val.scale + exponent)
-    value = ir.Int128Value(value=int(value), meta=val.meta)
+    value = ir.Int128Value(value=value, meta=val.meta)
 
     return logic_pb2.DecimalValue(
         precision=val.precision,
