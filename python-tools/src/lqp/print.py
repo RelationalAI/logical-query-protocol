@@ -384,9 +384,10 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
     elif isinstance(node, ir.MissingValue):
         lqp += f"{ind}missing"
     elif isinstance(node, ir.DecimalValue):
-        _, _, exponent = node.value.as_tuple()
-        decimal_val = node.value / (10 ** (node.scale - exponent))
-        lqp += f"{ind}{str(decimal_val)}d{node.precision}"
+        sign, coefficient, exponent = node.value.as_tuple()
+        decimal_val = node.value / (10 ** (node.scale + exponent))
+        # Format the decimal to prevent scientific notation
+        lqp += f"{ind}{"{:,f}".format(decimal_val)}d{node.precision}"
 
     elif isinstance(node, (int, float)):
         lqp += f"{ind}{str(node)}"
