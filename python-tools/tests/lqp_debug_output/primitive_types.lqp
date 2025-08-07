@@ -24,6 +24,9 @@
           (def 8550051134248905158
             ([v::FLOAT]
               (primitive :rel_primitive_eq v 1.23)))
+          (def 16667871121710741243
+            ([v::(DECIMAL 18 6)]
+              (primitive :rel_primitive_eq v 123.456000d18)))
           (def 10098701174489624218
             ([v::STRING]
               (primitive :rel_primitive_eq v "hello")))
@@ -62,6 +65,11 @@
               (and
                 (primitive :rel_primitive_eq v 1.23)
                 (atom 8550051134248905158 1.23))))
+          (def 2575957693654781653
+            ([v::(DECIMAL 18 6)]
+              (and
+                (primitive :rel_primitive_eq v 123.456000d18)
+                (atom 16667871121710741243 123.456000d18))))
           (def 8321355183808865828
             ([v::STRING]
               (and
@@ -75,6 +83,7 @@
       (output :int128_n 8684593875400706727)
       (output :uint128 7505808394141676799)
       (output :float 11698363356127107011)
+      (output :dec 2575957693654781653)
       (output :str 8321355183808865828))))
 
 ;; Debug information
@@ -87,6 +96,7 @@
 ;; 	 ID `6927505969524641992` -> `int128_n`
 ;; 	 ID `15025643537523545230` -> `uint128`
 ;; 	 ID `8550051134248905158` -> `float`
+;; 	 ID `16667871121710741243` -> `dec`
 ;; 	 ID `10098701174489624218` -> `str`
 ;; 	 ID `2965631662653371761` -> `output_int`
 ;; 	 ID `7497735226843032597` -> `output_int_n`
@@ -95,4 +105,5 @@
 ;; 	 ID `8684593875400706727` -> `output_int128_n`
 ;; 	 ID `7505808394141676799` -> `output_uint128`
 ;; 	 ID `11698363356127107011` -> `output_float`
+;; 	 ID `2575957693654781653` -> `output_dec`
 ;; 	 ID `8321355183808865828` -> `output_str`

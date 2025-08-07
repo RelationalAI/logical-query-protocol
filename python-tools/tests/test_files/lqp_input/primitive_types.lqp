@@ -10,6 +10,7 @@
           (def :int128_n ([v::INT128] (= v -5968058283706962486085i128)))
           (def :uint128 ([v::UINT128] (= v 0x123456789abcdef12345)))
           (def :float ([v::FLOAT] (= v 1.23)))
+          (def :dec ([v::(DECIMAL 18 6)] (= v 123.456000d18)))
           (def :str ([v::STRING] (= v "hello")))
           (def :output_int
             ([v::INT]
@@ -46,6 +47,11 @@
               (and
                 (= v 1.23)
                 (atom :float 1.23))))
+          (def :output_dec
+            ([v::(DECIMAL 18 6)]
+              (and
+                (= v 123.456000d18)
+                (atom :dec 123.456000d18))))
           (def :output_str
             ([v::STRING]
               (and
@@ -60,4 +66,5 @@
       (output :int128_n :output_int128_n)
       (output :uint128 :output_uint128)
       (output :float :output_float)
+      (output :dec :output_dec)
       (output :str :output_str))))

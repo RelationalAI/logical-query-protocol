@@ -24,6 +24,9 @@
           (def :float
             ([v::FLOAT]
               (primitive :rel_primitive_eq v 1.23)))
+          (def :dec
+            ([v::(DECIMAL 18 6)]
+              (primitive :rel_primitive_eq v 123.456000d18)))
           (def :str
             ([v::STRING]
               (primitive :rel_primitive_eq v "hello")))
@@ -62,6 +65,11 @@
               (and
                 (primitive :rel_primitive_eq v 1.23)
                 (atom :float 1.23))))
+          (def :output_dec
+            ([v::(DECIMAL 18 6)]
+              (and
+                (primitive :rel_primitive_eq v 123.456000d18)
+                (atom :dec 123.456000d18))))
           (def :output_str
             ([v::STRING]
               (and
@@ -75,4 +83,5 @@
       (output :int128_n :output_int128_n)
       (output :uint128 :output_uint128)
       (output :float :output_float)
+      (output :dec :output_dec)
       (output :str :output_str))))
