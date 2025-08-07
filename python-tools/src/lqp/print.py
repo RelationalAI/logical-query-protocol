@@ -387,7 +387,13 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
         sign, coefficient, exponent = node.value.as_tuple()
         decimal_val = node.value / (10 ** (node.scale + exponent))
         # Format the decimal to prevent scientific notation
-        lqp += f"{ind}{"{:,f}".format(decimal_val)}d{node.precision}"
+        lqp += f"{ind}{'{:,f}'.format(decimal_val)}d{node.precision}"
+    elif isinstance(node, ir.DateValue):
+        # lqp += f"{ind}{node.value.isoformat()}"
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('date')} {node.value.year} {node.value.month} {node.value.day}{conf.RPAREN()}"
+    elif isinstance(node, ir.DateTimeValue):
+        # lqp += f"{ind}{node.value.isoformat()}"
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('datetime')} {node.value.year} {node.value.month} {node.value.day} {node.value.hour} {node.value.minute} {node.value.second} {node.value.microsecond}{conf.RPAREN()}"
 
     elif isinstance(node, (int, float)):
         lqp += f"{ind}{str(node)}"

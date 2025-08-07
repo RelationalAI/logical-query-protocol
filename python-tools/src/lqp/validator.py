@@ -186,6 +186,10 @@ class AtomTypeChecker(LqpVisitor):
             return ir.TypeName.MISSING
         elif isinstance(c.value, ir.DecimalValue):
             return ir.TypeName.DECIMAL
+        elif isinstance(c.value, ir.DateValue):
+            return ir.TypeName.DATE
+        elif isinstance(c.value, ir.DateTimeValue):
+            return ir.TypeName.DATETIME
         else:
             assert False, f"Unknown constant type: {type(c.value)}"
 

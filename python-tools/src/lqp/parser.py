@@ -8,6 +8,7 @@ from lqp.emit import ir_to_proto
 from lqp.validator import validate_lqp
 from google.protobuf.json_format import MessageToJson
 from decimal import Decimal
+from datetime import date, datetime
 
 grammar = """
 start: transaction | fragment
@@ -108,7 +109,7 @@ fragment_id: ":" SYMBOL
 relation_id: (":" SYMBOL) | NUMBER
 name: ":" SYMBOL
 
-value: STRING | NUMBER | FLOAT | UINT128 | INT128 | MISSING | DECIMAL
+value: STRING | NUMBER | FLOAT | UINT128 | INT128 | date | datetime | MISSING | DECIMAL
 
 type_ : TYPE_NAME | "(" TYPE_NAME value* ")"
 
@@ -121,8 +122,10 @@ STRING: ESCAPED_STRING
 NUMBER: /[-]?\\d+/
 INT128: /[-]?\\d+i128/
 UINT128: /0x[0-9a-fA-F]+/
-FLOAT: /\\d+\\.\\d+/
-DECIMAL: /\\d+\\.\\d+d\\d+/
+FLOAT: /[-]?\\d+\\.\\d+/
+DECIMAL: /[-]?\\d+\\.\\d+d\\d+/
+date: "(date" NUMBER NUMBER NUMBER ")"
+datetime: "(datetime" NUMBER NUMBER NUMBER NUMBER NUMBER NUMBER NUMBER? ")"
 
 config_dict: "{" config_key_value* "}"
 config_key_value: ":" SYMBOL value
@@ -463,7 +466,7 @@ class LQPTransformer(Transformer):
     def MISSING(self, m):
         return ir.MissingValue(meta=None)
     def DECIMAL(self, d):
-        # Decimal is a string like "123.456d2" where the last part is the precision
+        # Decimal is a string like "123.456d12" where the last part is the precision
         parts = d.split('d')
         if len(parts) != 2:
             raise ValueError(f"Invalid decimal format: {d}")
@@ -472,6 +475,14 @@ class LQPTransformer(Transformer):
         value = Decimal(parts[0])
 
         return ir.DecimalValue(precision=precision, scale=scale, value=value, meta=None)
+    def date(self, meta, items):
+        # Date is in the format (date YYYY MM DD)
+        date_val = date(*items)
+        return ir.DateValue(value=date_val, meta=None)
+    def datetime(self, meta, items):
+        # Date is in the format (datetime YYYY MM DD HH MM SS [MS])
+        datetime_val = datetime(*items)
+        return ir.DateTimeValue(value=datetime_val, meta=None)
 
     def config_dict(self, meta, items):
         # items is a list of key-value pairs

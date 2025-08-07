@@ -43,17 +43,17 @@ def convert_int128(val: ir.Int128Value) -> logic_pb2.Int128Value:
     return logic_pb2.Int128Value(low=low, high=high)
 
 def convert_date(val: ir.DateValue) -> logic_pb2.DateValue:
-    return logic_pb2.DateValue(year=val.year, month=val.month, day=val.day)
+    return logic_pb2.DateValue(year=val.value.year, month=val.value.month, day=val.value.day)
 
 def convert_datetime(val: ir.DateTimeValue) -> logic_pb2.DateTimeValue:
     return logic_pb2.DateTimeValue(
-        year=val.year,
-        month=val.month,
-        day=val.day,
-        hour=val.hour,
-        minute=val.minute,
-        second=val.second,
-        microsecond=val.microsecond
+        year=val.value.year,
+        month=val.value.month,
+        day=val.value.day,
+        hour=val.value.hour,
+        minute=val.value.minute,
+        second=val.value.second,
+        microsecond=val.value.microsecond
     )
 
 def convert_decimal(val: ir.DecimalValue) -> logic_pb2.DecimalValue:
