@@ -289,6 +289,8 @@ message DateValue {
 }
 
 message DateTimeValue {
+  // DateTimeValue does not have a timezone - all values are assumed to be UTC. This is in
+  // line with the Iceberg spec for timestamp
   int32 year = 1;
   int32 month = 2;
   int32 day = 3;
@@ -299,7 +301,7 @@ message DateTimeValue {
 }
 
 message DecimalValue {
-  int32 precision = 1;
-  int32 scale = 2;
-  Int128Value value = 3;
+  int32 precision = 1; // Total number of digits
+  int32 scale = 2; // Number of digits after decimal point
+  Int128Value value = 3; // Physical representation of decimal value
 }
