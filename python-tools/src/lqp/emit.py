@@ -63,7 +63,10 @@ def convert_decimal(val: ir.DecimalValue) -> logic_pb2.DecimalValue:
     assert isinstance(exponent, int)
     assert isinstance(value, int)
 
-    # Adjust coefficient by the exponent
+    # Adjust value by the exponent. Python's decimal values are (sign, digits, exponent),
+    # so if we have digits 12300 with exponent -4, but we need `scale` of 6, then we need to
+    # multiply the digits by 10 ** 2 (i.e., 10 ** (6 + -4)) to get the physical value of
+    # 1230000.
     value *= 10 ** (val.scale + exponent)
     value = ir.Int128Value(value=value, meta=val.meta)
 

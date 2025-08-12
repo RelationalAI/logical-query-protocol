@@ -466,7 +466,8 @@ class LQPTransformer(Transformer):
     def MISSING(self, m):
         return ir.MissingValue(meta=None)
     def DECIMAL(self, d):
-        # Decimal is a string like "123.456d12" where the last part is the precision
+        # Decimal is a string like "123.456d12" where the last part after `d` is the
+        # precision, and the scale is the number of digits between the decimal point and `d`
         parts = d.split('d')
         if len(parts) != 2:
             raise ValueError(f"Invalid decimal format: {d}")
