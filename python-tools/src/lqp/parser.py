@@ -7,6 +7,8 @@ import lqp.ir as ir
 from lqp.emit import ir_to_proto
 from lqp.validator import validate_lqp
 from google.protobuf.json_format import MessageToJson
+from decimal import Decimal
+from datetime import date, datetime
 
 grammar = """
 start: transaction | fragment
@@ -107,8 +109,7 @@ fragment_id: ":" SYMBOL
 relation_id: (":" SYMBOL) | NUMBER
 name: ":" SYMBOL
 
-value: STRING | NUMBER | FLOAT | UINT128 | INT128 | MISSING
-        | (NUMBER | FLOAT | UINT128 | INT128) "::" type_
+value: STRING | NUMBER | FLOAT | UINT128 | INT128 | date | datetime | MISSING | DECIMAL
 
 type_ : TYPE_NAME | "(" TYPE_NAME value* ")"
 
@@ -118,10 +119,13 @@ TYPE_NAME: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
 SYMBOL: /[a-zA-Z_][a-zA-Z0-9_-]*/
 MISSING: "missing"
 STRING: ESCAPED_STRING
-NUMBER: /\\d+/
-INT128: /\\d+i128/
+NUMBER: /[-]?\\d+/
+INT128: /[-]?\\d+i128/
 UINT128: /0x[0-9a-fA-F]+/
-FLOAT: /\\d+\\.\\d+/
+FLOAT: /[-]?\\d+\\.\\d+/
+DECIMAL: /[-]?\\d+\\.\\d+d\\d+/
+date: "(date" NUMBER NUMBER NUMBER ")"
+datetime: "(datetime" NUMBER NUMBER NUMBER NUMBER NUMBER NUMBER NUMBER? ")"
 
 config_dict: "{" config_key_value* "}"
 config_key_value: ":" SYMBOL value
@@ -442,10 +446,7 @@ class LQPTransformer(Transformer):
     # Primitive values
     #
     def value(self, meta, items):
-        if len(items) > 1:
-            return ir.Value(value=items[0], cast_type=items[1], meta=self.meta(meta))
-        else:
-            return ir.Value(value=items[0], cast_type=None, meta=self.meta(meta))
+        return ir.Value(value=items[0], meta=self.meta(meta))
 
     def STRING(self, s):
         return s[1:-1].encode().decode('unicode_escape') # Strip quotes and process escaping
@@ -457,13 +458,32 @@ class LQPTransformer(Transformer):
         return str(sym)
     def UINT128(self, u):
         uint128_val = int(u, 16)
-        return ir.UInt128(value=uint128_val, meta=None)
+        return ir.UInt128Value(value=uint128_val, meta=None)
     def INT128(self, u):
         u= u[:-4]  # Remove the 'i128' suffix
         int128_val = int(u)
-        return ir.Int128(value=int128_val, meta=None)
+        return ir.Int128Value(value=int128_val, meta=None)
     def MISSING(self, m):
-        return ir.Missing(meta=None)
+        return ir.MissingValue(meta=None)
+    def DECIMAL(self, d):
+        # Decimal is a string like "123.456d12" where the last part after `d` is the
+        # precision, and the scale is the number of digits between the decimal point and `d`
+        parts = d.split('d')
+        if len(parts) != 2:
+            raise ValueError(f"Invalid decimal format: {d}")
+        scale = len(parts[0].split('.')[1])
+        precision = int(parts[1])
+        value = Decimal(parts[0])
+
+        return ir.DecimalValue(precision=precision, scale=scale, value=value, meta=None)
+    def date(self, meta, items):
+        # Date is in the format (date YYYY MM DD)
+        date_val = date(*items)
+        return ir.DateValue(value=date_val, meta=None)
+    def datetime(self, meta, items):
+        # Date is in the format (datetime YYYY MM DD HH MM SS [MS])
+        datetime_val = datetime(*items)
+        return ir.DateTimeValue(value=datetime_val, meta=None)
 
     def config_dict(self, meta, items):
         # items is a list of key-value pairs

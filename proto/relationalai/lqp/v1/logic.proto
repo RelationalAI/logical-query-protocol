@@ -261,21 +261,47 @@ message Value {
     string string_value = 1;
     int64 int_value = 2;
     double float_value = 3;
-    UInt128 uint128_value = 4;
-    Int128 int128_value = 5;
+    UInt128Value uint128_value = 4;
+    Int128Value int128_value = 5;
     MissingValue missing_value = 6;
+    DateValue date_value = 7;
+    DateTimeValue datetime_value = 8;
+    DecimalValue decimal_value = 9;
   }
-  optional Type cast_type = 7; // Numbers can be cast in-place to different types
 }
 
-message MissingValue {}
-
-message UInt128 {
+message UInt128Value {
   fixed64 low = 1; // Lower 64 bits of UInt128
   fixed64 high = 2; // Upper 64 bits of UInt128
 }
 
-message Int128 {
+message Int128Value {
   fixed64 low = 1; // Lower 64 bits of Int128
   fixed64 high = 2; // Upper 64 bits of Int128
+}
+
+message MissingValue {}
+
+message DateValue {
+  int32 year = 1;
+  int32 month = 2;
+  int32 day = 3;
+}
+
+message DateTimeValue {
+  // DateTimeValue does not have a timezone - all values are assumed to be UTC. This is in
+  // line with the Iceberg spec for timestamp
+  int32 year = 1;
+  int32 month = 2;
+  int32 day = 3;
+  int32 hour = 4;
+  int32 minute = 5;
+  int32 second = 6;
+  int32 microsecond = 7;
+}
+
+message DecimalValue {
+  int32 precision = 1; // Total number of digits
+  int32 scale = 2; // Number of digits after decimal point
+  Int128Value value = 3; // Physical representation of decimal value
 }

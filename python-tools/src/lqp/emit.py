@@ -1,6 +1,7 @@
 import lqp.ir as ir
 from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
 from typing import Union, Dict, Any
+from functools import reduce
 
 # Maps ir.TypeNames to the associated Proto message for *non-paremetric types*. Used to generically construct non-parametric types.
 # Parametric types should be handled in convert_type
@@ -31,42 +32,82 @@ def convert_type(rt: ir.Type) -> logic_pb2.Type:
         cls = getattr(logic_pb2, non_parametric_types[rt.type_name])
         return logic_pb2.Type(**{str(rt.type_name).lower()+"_type": cls()})
 
-def convert_uint128(val: ir.UInt128) -> logic_pb2.UInt128:
+def convert_uint128(val: ir.UInt128Value) -> logic_pb2.UInt128Value:
     low = val.value & 0xFFFFFFFFFFFFFFFF
     high = (val.value >> 64) & 0xFFFFFFFFFFFFFFFF
-    return logic_pb2.UInt128(low=low, high=high)
+    return logic_pb2.UInt128Value(low=low, high=high)
 
-def convert_int128(val: ir.Int128) -> logic_pb2.Int128:
+def convert_int128(val: ir.Int128Value) -> logic_pb2.Int128Value:
     low = val.value & 0xFFFFFFFFFFFFFFFF
     high = (val.value >> 64) & 0xFFFFFFFFFFFFFFFF
-    return logic_pb2.Int128(low=low, high=high)
+    return logic_pb2.Int128Value(low=low, high=high)
+
+def convert_date(val: ir.DateValue) -> logic_pb2.DateValue:
+    return logic_pb2.DateValue(year=val.value.year, month=val.value.month, day=val.value.day)
+
+def convert_datetime(val: ir.DateTimeValue) -> logic_pb2.DateTimeValue:
+    return logic_pb2.DateTimeValue(
+        year=val.value.year,
+        month=val.value.month,
+        day=val.value.day,
+        hour=val.value.hour,
+        minute=val.value.minute,
+        second=val.value.second,
+        microsecond=val.value.microsecond
+    )
+
+def convert_decimal(val: ir.DecimalValue) -> logic_pb2.DecimalValue:
+    _, digits, exponent = val.value.as_tuple()
+    value = reduce(lambda rst, d: rst * 10 + d, digits)
+
+    assert isinstance(exponent, int)
+    assert isinstance(value, int)
+
+    # Adjust value by the exponent. Python's decimal values are (sign, digits, exponent),
+    # so if we have digits 12300 with exponent -4, but we need `scale` of 6, then we need to
+    # multiply the digits by 10 ** 2 (i.e., 10 ** (6 + -4)) to get the physical value of
+    # 1230000.
+    value *= 10 ** (val.scale + exponent)
+    value = ir.Int128Value(value=value, meta=val.meta)
+
+    return logic_pb2.DecimalValue(
+        precision=val.precision,
+        scale=val.scale,
+        value=convert_int128(value),
+    )
 
 def convert_value(pv: ir.Value) -> logic_pb2.Value:
     if isinstance(pv.value, str):
-        assert pv.cast_type is None, "Illegal cast of String value"
         return logic_pb2.Value(string_value=pv.value)
-    elif isinstance(pv.value, ir.Missing):
-        assert pv.cast_type is None, "Illegal cast of Missing value"
+    elif isinstance(pv.value, ir.MissingValue):
         return logic_pb2.Value(missing_value=logic_pb2.MissingValue())
-
-    # For numeric types, handle cast_type if present
-    value_dict: dict[Any, Any] = {}
-    if isinstance(pv.value, int):
+    elif isinstance(pv.value, int):
         assert pv.value.bit_length() <= 64, "Integer value exceeds 64 bits"
-        value_dict['int_value'] = pv.value
+        return logic_pb2.Value(int_value=pv.value)
     elif isinstance(pv.value, float):
-        value_dict['float_value'] = pv.value
-    elif isinstance(pv.value, ir.UInt128):
-        value_dict['uint128_value'] = convert_uint128(pv.value)
-    elif isinstance(pv.value, ir.Int128):
-        value_dict['int128_value'] = convert_int128(pv.value)
+        return logic_pb2.Value(float_value=pv.value)
+    elif isinstance(pv.value, ir.UInt128Value):
+        return logic_pb2.Value(
+            uint128_value=convert_uint128(pv.value)
+        )
+    elif isinstance(pv.value, ir.Int128Value):
+        return logic_pb2.Value(
+            int128_value=convert_int128(pv.value)
+        )
+    elif isinstance(pv.value, ir.DateValue):
+        return logic_pb2.Value(
+            date_value=convert_date(pv.value)
+        )
+    elif isinstance(pv.value, ir.DateTimeValue):
+        return logic_pb2.Value(
+            datetime_value=convert_datetime(pv.value)
+        )
+    elif isinstance(pv.value, ir.DecimalValue):
+        return logic_pb2.Value(
+            decimal_value=convert_decimal(pv.value)
+        )
     else:
         raise TypeError(f"Unsupported Value type: {type(pv.value)}")
-
-    if pv.cast_type is not None:
-        value_dict['cast_type'] = convert_type(pv.cast_type)
-
-    return logic_pb2.Value(**value_dict)
 
 def convert_var(v: ir.Var) -> logic_pb2.Var:
     return logic_pb2.Var(name=v.name)

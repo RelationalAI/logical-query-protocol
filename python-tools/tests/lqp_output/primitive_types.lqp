@@ -6,18 +6,33 @@
           (def 7901719704309484609
             ([v::INT]
               (primitive :rel_primitive_eq v 21)))
+          (def 17772030560817531006
+            ([v::INT]
+              (primitive :rel_primitive_eq v -21)))
           (def 1294199513523589994
             ([v::INT128]
               (primitive :rel_primitive_eq v 21i128)))
           (def 11038540059019930827
             ([v::INT128]
               (primitive :rel_primitive_eq v 85968058283706962486085i128)))
+          (def 6927505969524641992
+            ([v::INT128]
+              (primitive :rel_primitive_eq v -5968058283706962486085i128)))
           (def 15025643537523545230
             ([v::UINT128]
               (primitive :rel_primitive_eq v 0x123456789abcdef12345)))
           (def 8550051134248905158
             ([v::FLOAT]
               (primitive :rel_primitive_eq v 1.23)))
+          (def 1046914482580477072
+            ([v::DATE]
+              (primitive :rel_primitive_eq v (date 2025 8 1))))
+          (def 2838342210467241124
+            ([v::DATETIME]
+              (primitive :rel_primitive_eq v (datetime 2025 8 1 20 3 4 123))))
+          (def 16667871121710741243
+            ([v::(DECIMAL 18 6)]
+              (primitive :rel_primitive_eq v 123.456000d18)))
           (def 10098701174489624218
             ([v::STRING]
               (primitive :rel_primitive_eq v "hello")))
@@ -26,6 +41,11 @@
               (and
                 (primitive :rel_primitive_eq v 21)
                 (atom 7901719704309484609 21))))
+          (def 7497735226843032597
+            ([v::INT]
+              (and
+                (primitive :rel_primitive_eq v -21)
+                (atom 17772030560817531006 -21))))
           (def 12020515264615679488
             ([v::INT128]
               (and
@@ -36,6 +56,11 @@
               (and
                 (primitive :rel_primitive_eq v 85968058283706962486085i128)
                 (atom 11038540059019930827 85968058283706962486085i128))))
+          (def 8684593875400706727
+            ([v::INT128]
+              (and
+                (primitive :rel_primitive_eq v -5968058283706962486085i128)
+                (atom 6927505969524641992 -5968058283706962486085i128))))
           (def 7505808394141676799
             ([v::UINT128]
               (and
@@ -46,6 +71,21 @@
               (and
                 (primitive :rel_primitive_eq v 1.23)
                 (atom 8550051134248905158 1.23))))
+          (def 2575957693654781653
+            ([v::(DECIMAL 18 6)]
+              (and
+                (primitive :rel_primitive_eq v 123.456000d18)
+                (atom 16667871121710741243 123.456000d18))))
+          (def 5168972349743097577
+            ([v::DATE]
+              (and
+                (primitive :rel_primitive_eq v (date 2025 8 1))
+                (atom 1046914482580477072 (date 2025 8 1)))))
+          (def 1476699919531177603
+            ([v::DATETIME]
+              (and
+                (primitive :rel_primitive_eq v (datetime 2025 8 1 20 3 4 123))
+                (atom 2838342210467241124 (datetime 2025 8 1 20 3 4 123)))))
           (def 8321355183808865828
             ([v::STRING]
               (and
@@ -53,8 +93,13 @@
                 (atom 10098701174489624218 "hello")))))))
     (reads
       (output :int 2965631662653371761)
+      (output :int_n 7497735226843032597)
       (output :int128_s 12020515264615679488)
       (output :int128_l 12372217943612403113)
+      (output :int128_n 8684593875400706727)
       (output :uint128 7505808394141676799)
       (output :float 11698363356127107011)
+      (output :dec 2575957693654781653)
+      (output :date 5168972349743097577)
+      (output :datetime 1476699919531177603)
       (output :str 8321355183808865828))))
