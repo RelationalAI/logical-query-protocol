@@ -190,7 +190,7 @@ class AtomTypeChecker(LqpVisitor):
             return ir.TypeName.DATE
         elif isinstance(c.value, ir.DateTimeValue):
             return ir.TypeName.DATETIME
-        elif isinstance(c.value, bool):
+        elif isinstance(c.value, ir.BooleanValue):
             return ir.TypeName.BOOLEAN
         else:
             assert False, f"Unknown constant type: {type(c.value)}"
@@ -290,6 +290,7 @@ class AtomTypeChecker(LqpVisitor):
                 # var_types[term] is okay because we assume UnusedVariableVisitor.
                 term_type = state.var_types[term.name] if isinstance(term, ir.Var) else AtomTypeChecker.constant_type(term)
                 if term_type.value != relation_type.value:
+                    print("wrong?", node, relation_type_sig, term_type, relation_type)
                     raise ValidationError(
                         AtomTypeChecker.type_error_message(node, i, relation_type, term_type)
                     )
