@@ -254,7 +254,8 @@ class Value(LqpNode):
         MissingValue,
         DateValue,
         DateTimeValue,
-        DecimalValue
+        DecimalValue,
+        bool
     ]
 
 # SpecializedValue(value::Value)
@@ -304,6 +305,7 @@ class TypeName(Enum):
     DATETIME = 7
     MISSING = 8
     DECIMAL = 9
+    BOOLEAN = 10
 
     def __str__(self) -> str:
         return self.name

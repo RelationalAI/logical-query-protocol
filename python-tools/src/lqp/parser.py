@@ -114,7 +114,7 @@ value: STRING | NUMBER | FLOAT | UINT128 | INT128 | date | datetime | MISSING | 
 type_ : TYPE_NAME | "(" TYPE_NAME value* ")"
 
 TYPE_NAME: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
-            | "DATE" | "DATETIME" | "MISSING" | "DECIMAL"
+            | "DATE" | "DATETIME" | "MISSING" | "DECIMAL" | "BOOLEAN"
 
 SYMBOL: /[a-zA-Z_][a-zA-Z0-9_-]*/
 MISSING: "missing"
@@ -124,6 +124,7 @@ INT128: /[-]?\\d+i128/
 UINT128: /0x[0-9a-fA-F]+/
 FLOAT: /[-]?\\d+\\.\\d+/
 DECIMAL: /[-]?\\d+\\.\\d+d\\d+/
+BOOLEAN: "true" | "false"
 date: "(date" NUMBER NUMBER NUMBER ")"
 datetime: "(datetime" NUMBER NUMBER NUMBER NUMBER NUMBER NUMBER NUMBER? ")"
 
@@ -476,6 +477,8 @@ class LQPTransformer(Transformer):
         value = Decimal(parts[0])
 
         return ir.DecimalValue(precision=precision, scale=scale, value=value, meta=None)
+    def BOOLEAN(self, b):
+        return bool(b == "true")
     def date(self, meta, items):
         # Date is in the format (date YYYY MM DD)
         date_val = date(*items)
