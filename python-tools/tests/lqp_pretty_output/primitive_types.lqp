@@ -36,6 +36,9 @@
           (def :str
             ([v::STRING]
               (primitive :rel_primitive_eq v "hello")))
+          (def :bool
+            ([v::BOOLEAN]
+              (primitive :rel_primitive_eq v true)))
           (def :output_int
             ([v::INT]
               (and
@@ -90,7 +93,12 @@
             ([v::STRING]
               (and
                 (primitive :rel_primitive_eq v "hello")
-                (atom :str "hello")))))))
+                (atom :str "hello"))))
+          (def :output_bool
+            ([v::BOOLEAN]
+              (and
+                (primitive :rel_primitive_eq v true)
+                (atom :bool true)))))))
     (reads
       (output :int :output_int)
       (output :int_n :output_int_n)
@@ -102,4 +110,5 @@
       (output :dec :output_dec)
       (output :date :output_date)
       (output :datetime :output_datetime)
-      (output :str :output_str))))
+      (output :str :output_str)
+      (output :bool :output_bool))))

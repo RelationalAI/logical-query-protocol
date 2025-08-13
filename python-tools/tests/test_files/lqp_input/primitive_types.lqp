@@ -14,6 +14,7 @@
           (def :datetime ([v::DATETIME] (= v (datetime 2025 08 01 20 03 04 123))))
           (def :dec ([v::(DECIMAL 18 6)] (= v 123.456000d18)))
           (def :str ([v::STRING] (= v "hello")))
+          (def :bool ([v::BOOLEAN] (= v true)))
           (def :output_int
             ([v::INT]
               (and
@@ -68,7 +69,12 @@
             ([v::STRING]
               (and
                 (= v "hello")
-                (atom :str "hello")))))))
+                (atom :str "hello"))))
+          (def :output_bool
+            ([v::BOOLEAN]
+              (and
+                (= v true)
+                (atom :bool true)))))))
 
     (reads
       (output :int :output_int)
@@ -81,4 +87,5 @@
       (output :dec :output_dec)
       (output :date :output_date)
       (output :datetime :output_datetime)
-      (output :str :output_str))))
+      (output :str :output_str)
+      (output :bool :output_bool))))
