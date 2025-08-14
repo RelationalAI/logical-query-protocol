@@ -29,7 +29,7 @@
               (primitive :rel_primitive_eq v (date 2025 8 1))))
           (def 2838342210467241124
             ([v::DATETIME]
-              (primitive :rel_primitive_eq v (datetime 2025 8 1 20 3 4 123))))
+              (primitive :rel_primitive_eq v (datetime 2025 8 1 20 3 4 123000))))
           (def 16667871121710741243
             ([v::(DECIMAL 18 6)]
               (primitive :rel_primitive_eq v 123.456000d18)))
@@ -87,8 +87,8 @@
           (def 1476699919531177603
             ([v::DATETIME]
               (and
-                (primitive :rel_primitive_eq v (datetime 2025 8 1 20 3 4 123))
-                (atom 2838342210467241124 (datetime 2025 8 1 20 3 4 123)))))
+                (primitive :rel_primitive_eq v (datetime 2025 8 1 20 3 4 123000))
+                (atom 2838342210467241124 (datetime 2025 8 1 20 3 4 123000)))))
           (def 8321355183808865828
             ([v::STRING]
               (and
