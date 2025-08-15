@@ -401,9 +401,9 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
 
     elif isinstance(node, ir.BooleanValue):
         if node.value:
-            lqp += f"{ind}true"
+            lqp += f"{ind}boolean_true"
         else:
-            lqp += f"{ind}false"
+            lqp += f"{ind}boolean_false"
 
     elif isinstance(node, ir.SpecializedValue):
         lqp += "#" + to_str(node.value, 0, {}, {})
