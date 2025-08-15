@@ -38,7 +38,7 @@
               (primitive :rel_primitive_eq v "hello")))
           (def :bool
             ([v::BOOLEAN]
-              (primitive :rel_primitive_eq v boolean_false)))
+              (primitive :rel_primitive_eq v true)))
           (def :output_int
             ([v::INT]
               (and
@@ -97,8 +97,8 @@
           (def :output_bool
             ([v::BOOLEAN]
               (and
-                (primitive :rel_primitive_eq v boolean_false)
-                (atom :bool boolean_false)))))))
+                (primitive :rel_primitive_eq v true)
+                (atom :bool true)))))))
     (reads
       (output :int :output_int)
       (output :int_n :output_int_n)

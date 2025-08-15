@@ -125,7 +125,7 @@ INT128: /[-]?\\d+i128/
 UINT128: /0x[0-9a-fA-F]+/
 FLOAT: /[-]?\\d+\\.\\d+/
 DECIMAL: /[-]?\\d+\\.\\d+d\\d+/
-BOOLEAN.1: "boolean_true" | "boolean_false" // Set a higher priority so it's BOOLEAN instead of SYMBOL
+BOOLEAN.1: "true" | "false" // Set a higher priority so it's BOOLEAN instead of SYMBOL
 date: "(date" NUMBER NUMBER NUMBER ")"
 datetime: "(datetime" NUMBER NUMBER NUMBER NUMBER NUMBER NUMBER NUMBER? ")"
 
