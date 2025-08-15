@@ -9,7 +9,15 @@ with some associated Python utilities and a human-readable language mapping to L
 user-facing functionality is the `lqp` command line tool which parses the human-readable
 language.
 
-### Pre-requisites
+### From PyPi
+The `lqp` package is available on PyPi through `pip`. Use
+```bash
+pip install lqp
+```
+
+### For developers
+
+#### Pre-requisites
 It is recommended to use a Python `virtualenv`. Set one up in the `python-tools` directory
 by:
 ```bash
@@ -27,7 +35,7 @@ You will also need the `build` package for building `lqp`:
 pip install build
 ```
 
-### Building and installing the package
+#### Building and installing the package
 To build the package, run the following command in the `python-tools` directory:
 
 ```bash
@@ -40,8 +48,10 @@ To install the built package, run:
 pip install dist/lqp-<current_version>-py3-none-any.whl
 ```
 
-Once installed, you should have access to the `lqp` tool, which you can use to parse
-`lqp_query.lqp` into ProtoBuf binary `lqp_proto_binary.bin`:
+### Once Installed
+After installation, either though `pip` or manual build, you should have access to the `lqp`
+tool, which you can use to parse `lqp_query.lqp` into ProtoBuf binary
+`lqp_proto_binary.bin`:
 
 ```bash
 lqp --bin lqp_proto_binary.bin lqp_query.lqp
@@ -85,6 +95,11 @@ code, switch into the `proto/` directory and start a Julia REPL. Then do the fol
 julia> using ProtoBuf
 
 julia> protojl(readdir("relationalai/lqp/v1/", join=true), ".", "../gen/julia/", add_kwarg_constructors=true)
+```
+
+To copy the generated Julia bindings to the right place in `raicode`, run this:
+```bash
+cp -r logical-query-protocol/gen/julia/relationalai/ raicode/packages/LogicalQueryProtocol/src/gen/relationalai/
 ```
 
 ## Deployment (for Maintainers)
