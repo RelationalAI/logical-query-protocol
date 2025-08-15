@@ -4,9 +4,9 @@ version = "0.1.11"
 description = "A parser for Logical Query Protocol (LQP) S-expressions into Protobuf"
 readme = "README.md"
 authors = [
-    { name = "Niko Göbel", email = "nikolas.goebel@relational.ai" }
-    { name = "David Zhao", email = "david.zhao@relational.ai" }
-    { name = "Minsung Cho", email = "minsung.cho@relational.ai" }
+    { name = "Niko Göbel", email = "nikolas.goebel@relational.ai" },
+    { name = "David Zhao", email = "david.zhao@relational.ai" },
+    { name = "Minsung Cho", email = "minsung.cho@relational.ai" },
     { name = "Martin McGrane", email = "martin.mcgrane@relational.ai" }
 ]
 dependencies = [
