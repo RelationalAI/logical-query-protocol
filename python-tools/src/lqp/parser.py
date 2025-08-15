@@ -118,14 +118,14 @@ TYPE_NAME: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
          | "DATE" | "DATETIME" | "MISSING" | "DECIMAL" | "BOOLEAN"
 
 SYMBOL: /[a-zA-Z_][a-zA-Z0-9_-]*/
-MISSING.1: "missing"
+MISSING.1: "missing" // Set a higher priority so so it's MISSING instead of SYMBOL
 STRING: ESCAPED_STRING
 NUMBER: /[-]?\\d+/
 INT128: /[-]?\\d+i128/
 UINT128: /0x[0-9a-fA-F]+/
 FLOAT: /[-]?\\d+\\.\\d+/
 DECIMAL: /[-]?\\d+\\.\\d+d\\d+/
-BOOLEAN.1: "true" | "false"
+BOOLEAN.1: "boolean_true" | "boolean_false" // Set a higher priority so it's BOOLEAN instead of SYMBOL
 date: "(date" NUMBER NUMBER NUMBER ")"
 datetime: "(datetime" NUMBER NUMBER NUMBER NUMBER NUMBER NUMBER NUMBER? ")"
 
