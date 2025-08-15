@@ -109,21 +109,23 @@ fragment_id: ":" SYMBOL
 relation_id: (":" SYMBOL) | NUMBER
 name: ":" SYMBOL
 
-value: STRING | NUMBER | FLOAT | UINT128 | INT128 | date | datetime | MISSING | DECIMAL
+value: STRING | NUMBER | FLOAT | UINT128 | INT128
+     | date | datetime | MISSING | DECIMAL | BOOLEAN
 
 type_ : TYPE_NAME | "(" TYPE_NAME value* ")"
 
 TYPE_NAME: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
-            | "DATE" | "DATETIME" | "MISSING" | "DECIMAL"
+         | "DATE" | "DATETIME" | "MISSING" | "DECIMAL" | "BOOLEAN"
 
 SYMBOL: /[a-zA-Z_][a-zA-Z0-9_-]*/
-MISSING: "missing"
+MISSING.1: "missing" // Set a higher priority so so it's MISSING instead of SYMBOL
 STRING: ESCAPED_STRING
 NUMBER: /[-]?\\d+/
 INT128: /[-]?\\d+i128/
 UINT128: /0x[0-9a-fA-F]+/
 FLOAT: /[-]?\\d+\\.\\d+/
 DECIMAL: /[-]?\\d+\\.\\d+d\\d+/
+BOOLEAN.1: "true" | "false" // Set a higher priority so it's BOOLEAN instead of SYMBOL
 date: "(date" NUMBER NUMBER NUMBER ")"
 datetime: "(datetime" NUMBER NUMBER NUMBER NUMBER NUMBER NUMBER NUMBER? ")"
 
@@ -476,6 +478,8 @@ class LQPTransformer(Transformer):
         value = Decimal(parts[0])
 
         return ir.DecimalValue(precision=precision, scale=scale, value=value, meta=None)
+    def BOOLEAN(self, b):
+        return ir.BooleanValue(value=bool(b == "true"), meta=None)
     def date(self, meta, items):
         # Date is in the format (date YYYY MM DD)
         date_val = date(*items)

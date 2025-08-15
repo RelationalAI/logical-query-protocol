@@ -230,6 +230,7 @@ message Type {
     DateTimeType datetime_type = 8;
     MissingType missing_type = 9;
     DecimalType decimal_type = 10;
+    BooleanType boolean_type = 11;
   }
 }
 
@@ -256,6 +257,8 @@ message DecimalType {
   int32 scale = 2;
 }
 
+message BooleanType {}
+
 message Value {
   oneof value {
     string string_value = 1;
@@ -267,6 +270,7 @@ message Value {
     DateValue date_value = 7;
     DateTimeValue datetime_value = 8;
     DecimalValue decimal_value = 9;
+    bool boolean_value = 10;
   }
 }
 

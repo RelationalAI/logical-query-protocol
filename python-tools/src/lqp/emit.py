@@ -14,7 +14,8 @@ non_parametric_types = {
     ir.TypeName.INT128: "Int128Type",
     ir.TypeName.DATE: "DateType",
     ir.TypeName.DATETIME: "DateTimeType",
-    ir.TypeName.MISSING: "MissingType"
+    ir.TypeName.MISSING: "MissingType",
+    ir.TypeName.BOOLEAN: "BooleanType",
 }
 
 def convert_type(rt: ir.Type) -> logic_pb2.Type:
@@ -106,6 +107,8 @@ def convert_value(pv: ir.Value) -> logic_pb2.Value:
         return logic_pb2.Value(
             decimal_value=convert_decimal(pv.value)
         )
+    elif isinstance(pv.value, ir.BooleanValue):
+        return logic_pb2.Value(boolean_value=pv.value.value)
     else:
         raise TypeError(f"Unsupported Value type: {type(pv.value)}")
 

@@ -236,12 +236,19 @@ class DateValue(LqpNode):
 class DateTimeValue(LqpNode):
     value: dt.datetime
 
-# DecimalValue()
+# DecimalValue(precision: int, scale: int, value: Decimal)
 @dataclass(frozen=True)
 class DecimalValue(LqpNode):
     precision: int
     scale: int
     value: Decimal
+
+# BooleanValue(value: bool)
+# Note: We need a custom BooleanValue class to distinguish it from Python's `int` type.
+# Python's built-in `bool` is a subclass of `int`.
+@dataclass(frozen=True)
+class BooleanValue(LqpNode):
+    value: bool
 
 @dataclass(frozen=True)
 class Value(LqpNode):
@@ -254,7 +261,8 @@ class Value(LqpNode):
         MissingValue,
         DateValue,
         DateTimeValue,
-        DecimalValue
+        DecimalValue,
+        BooleanValue
     ]
 
 # SpecializedValue(value::Value)
@@ -304,6 +312,7 @@ class TypeName(Enum):
     DATETIME = 7
     MISSING = 8
     DECIMAL = 9
+    BOOLEAN = 10
 
     def __str__(self) -> str:
         return self.name

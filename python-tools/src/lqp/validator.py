@@ -190,6 +190,8 @@ class AtomTypeChecker(LqpVisitor):
             return ir.TypeName.DATE
         elif isinstance(c.value, ir.DateTimeValue):
             return ir.TypeName.DATETIME
+        elif isinstance(c.value, ir.BooleanValue):
+            return ir.TypeName.BOOLEAN
         else:
             assert False, f"Unknown constant type: {type(c.value)}"
 

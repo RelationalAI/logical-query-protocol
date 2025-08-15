@@ -29,13 +29,16 @@
               (primitive :rel_primitive_eq v (date 2025 8 1))))
           (def :datetime
             ([v::DATETIME]
-              (primitive :rel_primitive_eq v (datetime 2025 8 1 20 3 4 123))))
+              (primitive :rel_primitive_eq v (datetime 2025 8 1 20 3 4 123000))))
           (def :dec
             ([v::(DECIMAL 18 6)]
               (primitive :rel_primitive_eq v 123.456000d18)))
           (def :str
             ([v::STRING]
               (primitive :rel_primitive_eq v "hello")))
+          (def :bool
+            ([v::BOOLEAN]
+              (primitive :rel_primitive_eq v true)))
           (def :output_int
             ([v::INT]
               (and
@@ -84,13 +87,18 @@
           (def :output_datetime
             ([v::DATETIME]
               (and
-                (primitive :rel_primitive_eq v (datetime 2025 8 1 20 3 4 123))
-                (atom :datetime (datetime 2025 8 1 20 3 4 123)))))
+                (primitive :rel_primitive_eq v (datetime 2025 8 1 20 3 4 123000))
+                (atom :datetime (datetime 2025 8 1 20 3 4 123000)))))
           (def :output_str
             ([v::STRING]
               (and
                 (primitive :rel_primitive_eq v "hello")
-                (atom :str "hello")))))))
+                (atom :str "hello"))))
+          (def :output_bool
+            ([v::BOOLEAN]
+              (and
+                (primitive :rel_primitive_eq v true)
+                (atom :bool true)))))))
     (reads
       (output :int :output_int)
       (output :int_n :output_int_n)
@@ -102,4 +110,5 @@
       (output :dec :output_dec)
       (output :date :output_date)
       (output :datetime :output_datetime)
-      (output :str :output_str))))
+      (output :str :output_str)
+      (output :bool :output_bool))))
