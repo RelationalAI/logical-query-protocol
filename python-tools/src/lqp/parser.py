@@ -123,8 +123,8 @@ STRING: ESCAPED_STRING
 NUMBER: /[-]?\\d+/
 INT128: /[-]?\\d+i128/
 UINT128: /0x[0-9a-fA-F]+/
-FLOAT: /[-]?\\d+\\.\\d+/
-DECIMAL: /[-]?\\d+\\.\\d+d\\d+/
+FLOAT.1: /[-]?\\d+\\.\\d+/ | "inf" | "nan"
+DECIMAL.2: /[-]?\\d+\\.\\d+d\\d+/
 BOOLEAN.1: "true" | "false" // Set a higher priority so it's BOOLEAN instead of SYMBOL
 date: "(date" NUMBER NUMBER NUMBER ")"
 datetime: "(datetime" NUMBER NUMBER NUMBER NUMBER NUMBER NUMBER NUMBER? ")"
