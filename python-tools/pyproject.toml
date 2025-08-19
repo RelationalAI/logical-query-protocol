@@ -7,7 +7,8 @@ authors = [
     { name = "Niko Göbel", email = "nikolas.goebel@relational.ai" },
     { name = "David Zhao", email = "david.zhao@relational.ai" },
     { name = "Minsung Cho", email = "minsung.cho@relational.ai" },
-    { name = "Martin McGrane", email = "martin.mcgrane@relational.ai" }
+    { name = "Martin McGrane", email = "martin.mcgrane@relational.ai" },
+    { name = "Abdul Zreika", email = "abdul.zreika@relational.ai" }
 ]
 dependencies = [
     "lark>=1.1.9",
