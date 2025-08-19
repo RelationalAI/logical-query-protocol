@@ -123,6 +123,8 @@
       (output :int128_n :output_int128_n)
       (output :uint128 :output_uint128)
       (output :float :output_float)
+      (output :float_inf :output_float_inf)
+      (output :float_nan :output_float_nan)
       (output :dec :output_dec)
       (output :date :output_date)
       (output :datetime :output_datetime)

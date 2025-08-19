@@ -123,6 +123,8 @@
       (output :int128_n 8684593875400706727)
       (output :uint128 7505808394141676799)
       (output :float 11698363356127107011)
+      (output :float_inf 1235902338854889056)
+      (output :float_nan 17813938199633672175)
       (output :dec 2575957693654781653)
       (output :date 5168972349743097577)
       (output :datetime 1476699919531177603)
