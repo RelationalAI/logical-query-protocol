@@ -10,6 +10,8 @@
           (def :int128_n ([v::INT128] (= v -5968058283706962486085i128)))
           (def :uint128 ([v::UINT128] (= v 0x123456789abcdef12345)))
           (def :float ([v::FLOAT] (= v 1.23)))
+          (def :float_inf ([v::FLOAT] (= v inf)))
+          (def :float_nan ([v::FLOAT] (= v nan)))
           (def :date ([v::DATE] (= v (date 2025 08 01))))
           (def :datetime ([v::DATETIME] (= v (datetime 2025 08 01 20 03 04 123000))))
           (def :dec ([v::(DECIMAL 18 6)] (= v 123.456000d18)))
@@ -50,6 +52,16 @@
               (and
                 (= v 1.23)
                 (atom :float 1.23))))
+          (def :output_float_inf
+            ([v::FLOAT]
+              (and
+                (= v inf)
+                (atom :float_inf inf))))
+          (def :output_float_nan
+            ([v::FLOAT]
+              (and
+                (= v nan)
+                (atom :float_nan nan))))
           (def :output_dec
             ([v::(DECIMAL 18 6)]
               (and
@@ -84,6 +96,8 @@
       (output :int128_n :output_int128_n)
       (output :uint128 :output_uint128)
       (output :float :output_float)
+      (output :float_inf :output_float_inf)
+      (output :float_nan :output_float_nan)
       (output :dec :output_dec)
       (output :date :output_date)
       (output :datetime :output_datetime)

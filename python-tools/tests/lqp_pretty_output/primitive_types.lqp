@@ -24,6 +24,12 @@
           (def :float
             ([v::FLOAT]
               (primitive :rel_primitive_eq v 1.23)))
+          (def :float_inf
+            ([v::FLOAT]
+              (primitive :rel_primitive_eq v inf)))
+          (def :float_nan
+            ([v::FLOAT]
+              (primitive :rel_primitive_eq v nan)))
           (def :date
             ([v::DATE]
               (primitive :rel_primitive_eq v (date 2025 8 1))))
@@ -74,6 +80,16 @@
               (and
                 (primitive :rel_primitive_eq v 1.23)
                 (atom :float 1.23))))
+          (def :output_float_inf
+            ([v::FLOAT]
+              (and
+                (primitive :rel_primitive_eq v inf)
+                (atom :float_inf inf))))
+          (def :output_float_nan
+            ([v::FLOAT]
+              (and
+                (primitive :rel_primitive_eq v nan)
+                (atom :float_nan nan))))
           (def :output_dec
             ([v::(DECIMAL 18 6)]
               (and
@@ -107,6 +123,8 @@
       (output :int128_n :output_int128_n)
       (output :uint128 :output_uint128)
       (output :float :output_float)
+      (output :float_inf :output_float_inf)
+      (output :float_nan :output_float_nan)
       (output :dec :output_dec)
       (output :date :output_date)
       (output :datetime :output_datetime)
