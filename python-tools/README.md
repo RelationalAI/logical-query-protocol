@@ -51,6 +51,8 @@ Running tests:
 python -m pytest
 ```
 
+Run pytest with the `--snapshot-update` flag to also update relevant binary, debug mode, and pretty-printing snapshots.
+
 Type checking:
 ```
 pyrefly check
