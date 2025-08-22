@@ -57,6 +57,19 @@ tool, which you can use to parse `lqp_query.lqp` into ProtoBuf binary
 lqp --bin lqp_proto_binary.bin lqp_query.lqp
 ```
 
+or JSON:
+
+```bash
+lqp --json lqp_proto_binary.bin lqp_query.lqp
+```
+
+To process entire directories, specify the destination and source.
+For example, to parse all `.lqp` files in a directory `foo/` into `.bin` files in directory `bar/`:
+
+```bash
+lqp --bin bar foo
+```
+
 ## Validate
 
 We use the [buf utility](https://buf.build/docs/cli/quickstart/) to [validate and
@@ -85,6 +98,9 @@ managed by the `build` script, which runs validation and generates Python proto 
 ```
 ./build
 ```
+
+If you generate new Protobuf bindings, you should also update `parser.py`, `ir.py`, `print.py`, and `emit.py`
+in `python-tools/src/lqp` to reflect the changes made in the Protobuf. See the README in `python-tools/` for more details.
 
 ### Generating Julia code
 
