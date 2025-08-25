@@ -169,6 +169,16 @@ def config_dict_to_str(config: Dict[str, Union[str, int]], indent_level: int, op
 def program_to_str(node: ir.Transaction, options: Dict = {}) -> str:
     conf = style_config(options)
     s = conf.indentation(0) + conf.LPAREN() + conf.kw("transaction")
+
+    config_dict = {}
+    config = node.configure
+    if config.semantics_version != 0:
+        config_dict["semantics_version"] = config.semantics_version
+    if config.ivm_config.level != ir.MaintenanceLevel.UNSPECIFIED:
+        config_dict["ivm.maintenance_level"] = config.ivm_config.level
+    if len(config_dict) > 0:
+        s += config_dict_to_str(config_dict, 1, options)
+
     for epoch in node.epochs:
         s += "\n" + conf.indentation(1) + conf.LPAREN() + conf.kw("epoch")
         section_strs: List[str] = []
@@ -219,7 +229,7 @@ def _collect_debug_infos(node: ir.LqpNode) -> Dict[ir.RelationId, str]:
                 debug_infos = _collect_debug_infos(elt) | debug_infos
     return debug_infos
 
-def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, str, float], indent_level: int, options: Dict = {}, debug_info: Dict = {}) -> str:
+def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, ir.MaintenanceLevel, int, str, float], indent_level: int, options: Dict = {}, debug_info: Dict = {}) -> str:
     conf = style_config(options)
 
     ind = conf.indentation(indent_level)
@@ -500,6 +510,9 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
 
     elif isinstance(node, ir.Fragment):
         lqp += fragment_to_str(node, indent_level, debug_info, options)
+
+    elif isinstance(node, ir.MaintenanceLevel):
+        lqp += f"{ind}\"{str(node).lower()}\""
 
     else:
         raise NotImplementedError(f"to_str not implemented for {type(node)}.")

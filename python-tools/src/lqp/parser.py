@@ -13,7 +13,7 @@ from datetime import date, datetime
 grammar = """
 start: transaction | fragment
 
-transaction: "(transaction" epoch* ")"
+transaction: "(transaction" config_dict? epoch* ")"
 epoch: "(epoch" writes? reads? ")"
 writes: "(writes" write* ")"
 reads: "(reads" read* ")"
@@ -117,7 +117,7 @@ type_ : TYPE_NAME | "(" TYPE_NAME value* ")"
 TYPE_NAME: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
          | "DATE" | "DATETIME" | "MISSING" | "DECIMAL" | "BOOLEAN"
 
-SYMBOL: /[a-zA-Z_][a-zA-Z0-9_-]*/
+SYMBOL: /[a-zA-Z_][a-zA-Z0-9_.-]*/
 MISSING.1: "missing" // Set a higher priority so so it's MISSING instead of SYMBOL
 STRING: ESCAPED_STRING
 NUMBER: /[-]?\\d+/
@@ -165,7 +165,32 @@ class LQPTransformer(Transformer):
     # Transactions
     #
     def transaction(self, meta, items):
-        return ir.Transaction(epochs=items, meta=self.meta(meta))
+
+        # Get config_dict and epochs
+        if isinstance(items[0], dict):
+            config_dict = items[0]
+            epochs = items[1:]
+        else:
+            config_dict = {}
+            epochs = items
+
+        # Construct IVMConfig
+        maintenance_level_value = config_dict.get("ivm.maintenance_level")
+        if maintenance_level_value is None:
+            maintenance_level = ir.MaintenanceLevel.UNSPECIFIED
+        else:
+            maintenance_level = getattr(ir.MaintenanceLevel, maintenance_level_value.value.upper())
+
+        ivm_config = ir.IVMConfig(level=maintenance_level, meta=self.meta(meta))
+
+        # Construct Configure
+        config = ir.Configure(
+            semantics_version=config_dict.get("semantics_version", 0),
+            ivm_config=ivm_config,
+            meta=self.meta(meta),
+        )
+
+        return ir.Transaction(configure=config, epochs=epochs, meta=self.meta(meta))
     def epoch(self, meta, items):
         kwargs = {k: v for k, v in items if v} # Filter out None values
         return ir.Epoch(**kwargs, meta=self.meta(meta))

@@ -1,11 +1,24 @@
 from lqp.proto.v1 import fragments_pb2 as _fragments_pb2
 from lqp.proto.v1 import logic_pb2 as _logic_pb2
 from google.protobuf.internal import containers as _containers
+from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Mapping, Optional as _Optional, Union as _Union
+from collections.abc import Iterable as _Iterable, Mapping as _Mapping
+from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
+
+class MaintenanceLevel(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    MAINTENANCE_LEVEL_UNSPECIFIED: _ClassVar[MaintenanceLevel]
+    MAINTENANCE_LEVEL_OFF: _ClassVar[MaintenanceLevel]
+    MAINTENANCE_LEVEL_AUTO: _ClassVar[MaintenanceLevel]
+    MAINTENANCE_LEVEL_ALL: _ClassVar[MaintenanceLevel]
+MAINTENANCE_LEVEL_UNSPECIFIED: MaintenanceLevel
+MAINTENANCE_LEVEL_OFF: MaintenanceLevel
+MAINTENANCE_LEVEL_AUTO: MaintenanceLevel
+MAINTENANCE_LEVEL_ALL: MaintenanceLevel
 
 class Transaction(_message.Message):
     __slots__ = ("epochs", "configure")
@@ -16,10 +29,18 @@ class Transaction(_message.Message):
     def __init__(self, epochs: _Optional[_Iterable[_Union[Epoch, _Mapping]]] = ..., configure: _Optional[_Union[Configure, _Mapping]] = ...) -> None: ...
 
 class Configure(_message.Message):
-    __slots__ = ("semantics_version",)
+    __slots__ = ("semantics_version", "ivm_config")
     SEMANTICS_VERSION_FIELD_NUMBER: _ClassVar[int]
+    IVM_CONFIG_FIELD_NUMBER: _ClassVar[int]
     semantics_version: int
-    def __init__(self, semantics_version: _Optional[int] = ...) -> None: ...
+    ivm_config: IVMConfig
+    def __init__(self, semantics_version: _Optional[int] = ..., ivm_config: _Optional[_Union[IVMConfig, _Mapping]] = ...) -> None: ...
+
+class IVMConfig(_message.Message):
+    __slots__ = ("level",)
+    LEVEL_FIELD_NUMBER: _ClassVar[int]
+    level: MaintenanceLevel
+    def __init__(self, level: _Optional[_Union[MaintenanceLevel, str]] = ...) -> None: ...
 
 class Epoch(_message.Message):
     __slots__ = ("writes", "reads")
@@ -77,7 +98,7 @@ class ExportCSVConfig(_message.Message):
     syntax_delim: str
     syntax_quotechar: str
     syntax_escapechar: str
-    def __init__(self, path: _Optional[str] = ..., data_columns: _Optional[_Iterable[_Union[ExportCSVColumn, _Mapping]]] = ..., partition_size: _Optional[int] = ..., compression: _Optional[str] = ..., syntax_header_row: bool = ..., syntax_missing_string: _Optional[str] = ..., syntax_delim: _Optional[str] = ..., syntax_quotechar: _Optional[str] = ..., syntax_escapechar: _Optional[str] = ...) -> None: ...
+    def __init__(self, path: _Optional[str] = ..., data_columns: _Optional[_Iterable[_Union[ExportCSVColumn, _Mapping]]] = ..., partition_size: _Optional[int] = ..., compression: _Optional[str] = ..., syntax_header_row: _Optional[bool] = ..., syntax_missing_string: _Optional[str] = ..., syntax_delim: _Optional[str] = ..., syntax_quotechar: _Optional[str] = ..., syntax_escapechar: _Optional[str] = ...) -> None: ...
 
 class ExportCSVColumn(_message.Message):
     __slots__ = ("column_name", "column_data")
