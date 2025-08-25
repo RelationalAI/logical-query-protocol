@@ -184,8 +184,14 @@ class LQPTransformer(Transformer):
         ivm_config = ir.IVMConfig(level=maintenance_level, meta=self.meta(meta))
 
         # Construct Configure
+        semantics_version_value = config_dict.get("semantics_version")
+        if semantics_version_value is None:
+            semantics_version = 0
+        else:
+            semantics_version = semantics_version_value.value
+
         config = ir.Configure(
-            semantics_version=config_dict.get("semantics_version", 0),
+            semantics_version=semantics_version,
             ivm_config=ivm_config,
             meta=self.meta(meta),
         )

@@ -512,7 +512,7 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, ir.Ma
         lqp += fragment_to_str(node, indent_level, debug_info, options)
 
     elif isinstance(node, ir.MaintenanceLevel):
-        lqp += f"{ind}\"{str(node).lower()}\""
+        lqp += f"{ind}\"{node.name.lower()}\""
 
     else:
         raise NotImplementedError(f"to_str not implemented for {type(node)}.")

@@ -414,8 +414,20 @@ def convert_epoch(e: ir.Epoch) -> transactions_pb2.Epoch:
         reads=[convert_read(r) for r in e.reads]
     )
 
+def convert_configure(c: ir.Configure) -> transactions_pb2.Configure:
+    return transactions_pb2.Configure(
+        semantics_version=c.semantics_version,
+        ivm_config=convert_ivm_config(c.ivm_config)
+    )
+
+def convert_ivm_config(c: ir.IVMConfig) -> transactions_pb2.IVMConfig:
+    return transactions_pb2.IVMConfig(
+        level=c.level.value
+    )
+
 def convert_transaction(t: ir.Transaction) -> transactions_pb2.Transaction:
     return transactions_pb2.Transaction(
+        configure=convert_configure(t.configure),
         epochs=[convert_epoch(e) for e in t.epochs]
     )
 
