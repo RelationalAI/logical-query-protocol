@@ -422,8 +422,11 @@ def convert_configure(c: ir.Configure) -> transactions_pb2.Configure:
 
 def convert_ivm_config(c: ir.IVMConfig) -> transactions_pb2.IVMConfig:
     return transactions_pb2.IVMConfig(
-        level=c.level.value
+        level=convert_maintenance_level(c.level)
     )
+
+def convert_maintenance_level(l: ir.MaintenanceLevel) -> transactions_pb2.MaintenanceLevel:
+    return transactions_pb2.MaintenanceLevel.Name(l.value)
 
 def convert_transaction(t: ir.Transaction) -> transactions_pb2.Transaction:
     return transactions_pb2.Transaction(

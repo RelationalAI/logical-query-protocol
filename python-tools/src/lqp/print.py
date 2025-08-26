@@ -170,12 +170,12 @@ def program_to_str(node: ir.Transaction, options: Dict = {}) -> str:
     conf = style_config(options)
     s = conf.indentation(0) + conf.LPAREN() + conf.kw("transaction")
 
-    config_dict = {}
+    config_dict: Dict[str, Union[str, int]] = {}
     config = node.configure
     if config.semantics_version != 0:
         config_dict["semantics_version"] = config.semantics_version
     if config.ivm_config.level != ir.MaintenanceLevel.UNSPECIFIED:
-        config_dict["ivm.maintenance_level"] = config.ivm_config.level
+        config_dict["ivm.maintenance_level"] = config.ivm_config.level.name.lower()
     if len(config_dict) > 0:
         s += config_dict_to_str(config_dict, 1, options)
 
