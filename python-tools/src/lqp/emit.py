@@ -426,7 +426,7 @@ def convert_ivm_config(c: ir.IVMConfig) -> transactions_pb2.IVMConfig:
     )
 
 def convert_maintenance_level(l: ir.MaintenanceLevel) -> transactions_pb2.MaintenanceLevel:
-    return transactions_pb2.MaintenanceLevel.Name(l.value)
+    return transactions_pb2.MaintenanceLevel.Name(l.value) # type: ignore[missing-attribute]
 
 def convert_transaction(t: ir.Transaction) -> transactions_pb2.Transaction:
     return transactions_pb2.Transaction(
