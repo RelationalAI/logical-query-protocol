@@ -229,7 +229,7 @@ def _collect_debug_infos(node: ir.LqpNode) -> Dict[ir.RelationId, str]:
                 debug_infos = _collect_debug_infos(elt) | debug_infos
     return debug_infos
 
-def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, ir.MaintenanceLevel, int, str, float], indent_level: int, options: Dict = {}, debug_info: Dict = {}) -> str:
+def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, str, float], indent_level: int, options: Dict = {}, debug_info: Dict = {}) -> str:
     conf = style_config(options)
 
     ind = conf.indentation(indent_level)
@@ -510,9 +510,6 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, ir.Ma
 
     elif isinstance(node, ir.Fragment):
         lqp += fragment_to_str(node, indent_level, debug_info, options)
-
-    elif isinstance(node, ir.MaintenanceLevel):
-        lqp += f"{ind}\"{node.name.lower()}\""
 
     else:
         raise NotImplementedError(f"to_str not implemented for {type(node)}.")
