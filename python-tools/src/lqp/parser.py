@@ -13,7 +13,8 @@ from datetime import date, datetime
 grammar = """
 start: transaction | fragment
 
-transaction: "(transaction" config_dict? epoch* ")"
+transaction: "(transaction" configure? epoch* ")"
+configure: "(configure" config_dict ")"
 epoch: "(epoch" writes? reads? ")"
 writes: "(writes" write* ")"
 reads: "(reads" read* ")"
@@ -165,14 +166,22 @@ class LQPTransformer(Transformer):
     # Transactions
     #
     def transaction(self, meta, items):
-
-        # Get config_dict and epochs
-        if isinstance(items[0], dict):
-            config_dict = items[0]
+        if isinstance(items[0], ir.Configure):
+            configure = items[0]
             epochs = items[1:]
         else:
-            config_dict = {}
+            ivm_config = ir.IVMConfig(level=ir.MaintenanceLevel.UNSPECIFIED, meta=self.meta(meta))
+            configure = ir.Configure(
+                semantics_version=0,
+                ivm_config=ivm_config,
+                meta=self.meta(meta),
+            )
             epochs = items
+            
+        return ir.Transaction(configure=configure, epochs=epochs, meta=self.meta(meta))
+
+    def configure(self, meta, items):
+        config_dict = items[0]
 
         # Construct IVMConfig
         maintenance_level_value = config_dict.get("ivm.maintenance_level")
@@ -190,13 +199,12 @@ class LQPTransformer(Transformer):
         else:
             semantics_version = semantics_version_value.value
 
-        config = ir.Configure(
+        return ir.Configure(
             semantics_version=semantics_version,
             ivm_config=ivm_config,
             meta=self.meta(meta),
         )
 
-        return ir.Transaction(configure=config, epochs=epochs, meta=self.meta(meta))
     def epoch(self, meta, items):
         kwargs = {k: v for k, v in items if v} # Filter out None values
         return ir.Epoch(**kwargs, meta=self.meta(meta))

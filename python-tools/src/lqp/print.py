@@ -158,9 +158,11 @@ def config_dict_to_str(config: Dict[str, Union[str, int]], indent_level: int, op
     if len(config) == 0:
         return f"{ind}{{}}"
 
-    config_str = ind + "{"
-    for k, v in config.items():
-        config_str += f"\n{ind}{conf.SIND()}:{str(k)} {to_str(v, 0, options)}"
+    config_str = ind + "{" + conf.SIND()[1:]
+    for i, (k, v) in enumerate(config.items()):
+        if i > 0:
+            config_str += f"\n{ind}{conf.SIND()}"
+        config_str += f":{str(k)} {to_str(v, 0, options)}"
 
     config_str += "}"
 
@@ -177,7 +179,9 @@ def program_to_str(node: ir.Transaction, options: Dict = {}) -> str:
     if config.ivm_config.level != ir.MaintenanceLevel.UNSPECIFIED:
         config_dict["ivm.maintenance_level"] = config.ivm_config.level.name.lower()
     if len(config_dict) > 0:
-        s += config_dict_to_str(config_dict, 1, options)
+        s += "\n" + conf.indentation(1) + conf.LPAREN() + conf.kw("configure") + "\n"
+        s += config_dict_to_str(config_dict, 2, options)
+        s += conf.RPAREN()
 
     for epoch in node.epochs:
         s += "\n" + conf.indentation(1) + conf.LPAREN() + conf.kw("epoch")
