@@ -19,8 +19,7 @@
           (path "wrong")
           (columns (column "col1name" :col1) (column "col2name" :col2))
 
-          {
-            :partition_size 10
+          { :partition_size 10
             :compression ""
             :syntax_quotechar "\""
             :syntax_escapechar "\\"})))))

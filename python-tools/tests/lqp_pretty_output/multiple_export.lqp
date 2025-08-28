@@ -35,8 +35,7 @@
           (path "wrong")
           (columns (column "col1name" :cola1) (column "col2name" :cola2))
 
-          {
-            :partition_size 10
+          { :partition_size 10
             :compression ""
             :syntax_quotechar "\""
             :syntax_escapechar "\\"}))
@@ -45,6 +44,5 @@
           (path "wrong")
           (columns (column "blahblah" :colb1) (column "foofoo" :colb2))
 
-          {
-            :syntax_quotechar "\""
+          { :syntax_quotechar "\""
             :syntax_escapechar "\\"})))))
