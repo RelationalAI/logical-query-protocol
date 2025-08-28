@@ -139,6 +139,27 @@ COMMENT: /;;.*/  // Matches ;; followed by any characters except newline
 %import common.ESCAPED_STRING -> ESCAPED_STRING
 """
 
+def construct_configure(config_dict, meta):
+    # Construct IVMConfig
+    maintenance_level_value = config_dict.get("ivm.maintenance_level")
+    if maintenance_level_value:
+        maintenance_level = getattr(ir.MaintenanceLevel, maintenance_level_value.value.upper())
+    else:
+        maintenance_level = ir.MaintenanceLevel.UNSPECIFIED
+    ivm_config = ir.IVMConfig(level=maintenance_level, meta=meta)
+
+    # Construct Configure
+    semantics_version_value = config_dict.get("semantics_version")
+    if semantics_version_value:
+        semantics_version = semantics_version_value.value
+    else:
+        semantics_version = 0
+
+    return ir.Configure(
+        semantics_version=semantics_version,
+        ivm_config=ivm_config,
+        meta=meta,
+    )
 
 def desugar_to_raw_primitive(name, terms):
     # Convert terms to relterms
@@ -170,40 +191,13 @@ class LQPTransformer(Transformer):
             configure = items[0]
             epochs = items[1:]
         else:
-            ivm_config = ir.IVMConfig(level=ir.MaintenanceLevel.UNSPECIFIED, meta=self.meta(meta))
-            configure = ir.Configure(
-                semantics_version=0,
-                ivm_config=ivm_config,
-                meta=self.meta(meta),
-            )
+            configure = construct_configure({}, self.meta(meta))
             epochs = items
             
         return ir.Transaction(configure=configure, epochs=epochs, meta=self.meta(meta))
 
     def configure(self, meta, items):
-        config_dict = items[0]
-
-        # Construct IVMConfig
-        maintenance_level_value = config_dict.get("ivm.maintenance_level")
-        if maintenance_level_value is None:
-            maintenance_level = ir.MaintenanceLevel.UNSPECIFIED
-        else:
-            maintenance_level = getattr(ir.MaintenanceLevel, maintenance_level_value.value.upper())
-
-        ivm_config = ir.IVMConfig(level=maintenance_level, meta=self.meta(meta))
-
-        # Construct Configure
-        semantics_version_value = config_dict.get("semantics_version")
-        if semantics_version_value is None:
-            semantics_version = 0
-        else:
-            semantics_version = semantics_version_value.value
-
-        return ir.Configure(
-            semantics_version=semantics_version,
-            ivm_config=ivm_config,
-            meta=self.meta(meta),
-        )
+        return construct_configure(items[0], self.meta(meta))
 
     def epoch(self, meta, items):
         kwargs = {k: v for k, v in items if v} # Filter out None values
