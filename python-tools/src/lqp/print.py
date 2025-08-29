@@ -159,7 +159,7 @@ def config_dict_to_str(config: Dict[str, Union[str, int]], indent_level: int, op
         return f"{ind}{{}}"
 
     config_str = ind + "{" + conf.SIND()[1:]
-    for i, (k, v) in enumerate(config.items()):
+    for i, (k, v) in enumerate(sorted(config.items())):
         if i > 0:
             config_str += f"\n{ind}{conf.SIND()}"
         config_str += f":{str(k)} {to_str(v, 0, options)}"
