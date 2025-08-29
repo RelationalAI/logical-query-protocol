@@ -1,7 +1,7 @@
 (transaction
   (configure
-    { :semantics_version 1
-      :ivm.maintenance_level "auto"})
+    { :ivm.maintenance_level "auto"
+      :semantics_version 1})
   (epoch
     (writes
       (define

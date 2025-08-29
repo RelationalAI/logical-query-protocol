@@ -35,14 +35,14 @@
           (path "wrong")
           (columns (column "col1name" :cola1) (column "col2name" :cola2))
 
-          { :partition_size 10
-            :compression ""
-            :syntax_quotechar "\""
-            :syntax_escapechar "\\"}))
+          { :compression ""
+            :partition_size 10
+            :syntax_escapechar "\\"
+            :syntax_quotechar "\""}))
       (export
         (export_csv_config
           (path "wrong")
           (columns (column "blahblah" :colb1) (column "foofoo" :colb2))
 
-          { :syntax_quotechar "\""
-            :syntax_escapechar "\\"})))))
+          { :syntax_escapechar "\\"
+            :syntax_quotechar "\""})))))

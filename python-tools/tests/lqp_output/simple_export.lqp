@@ -19,7 +19,7 @@
           (path "wrong")
           (columns (column "col1name" 17307602785083346210) (column "col2name" 8011686847096043948))
 
-          { :partition_size 10
-            :compression ""
-            :syntax_quotechar "\""
-            :syntax_escapechar "\\"})))))
+          { :compression ""
+            :partition_size 10
+            :syntax_escapechar "\\"
+            :syntax_quotechar "\""})))))
