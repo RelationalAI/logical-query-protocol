@@ -145,7 +145,7 @@ def construct_configure(config_dict, meta):
     if maintenance_level_value:
         maintenance_level = getattr(ir.MaintenanceLevel, maintenance_level_value.value.upper())
     else:
-        maintenance_level = ir.MaintenanceLevel.UNSPECIFIED
+        maintenance_level = ir.MaintenanceLevel.OFF
     ivm_config = ir.IVMConfig(level=maintenance_level, meta=meta)
 
     # Construct Configure

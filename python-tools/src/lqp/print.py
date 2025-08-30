@@ -174,14 +174,13 @@ def program_to_str(node: ir.Transaction, options: Dict = {}) -> str:
 
     config_dict: Dict[str, Union[str, int]] = {}
     config = node.configure
-    if config.semantics_version != 0:
-        config_dict["semantics_version"] = config.semantics_version
+    config_dict["semantics_version"] = config.semantics_version
     if config.ivm_config.level != ir.MaintenanceLevel.UNSPECIFIED:
         config_dict["ivm.maintenance_level"] = config.ivm_config.level.name.lower()
-    if len(config_dict) > 0:
-        s += "\n" + conf.indentation(1) + conf.LPAREN() + conf.kw("configure") + "\n"
-        s += config_dict_to_str(config_dict, 2, options)
-        s += conf.RPAREN()
+    
+    s += "\n" + conf.indentation(1) + conf.LPAREN() + conf.kw("configure") + "\n"
+    s += config_dict_to_str(config_dict, 2, options)
+    s += conf.RPAREN()
 
     for epoch in node.epochs:
         s += "\n" + conf.indentation(1) + conf.LPAREN() + conf.kw("epoch")
