@@ -1,13 +1,7 @@
 import os
 import pytest
 from pathlib import Path
-from .utils import (
-    get_lqp_input_files, 
-    get_lqp_output_files, 
-    get_lqp_debug_output_files, 
-    get_lqp_pretty_output_files, 
-    get_bin_output_files
-)
+from .utils import get_lqp_input_files, get_all_files, PARENT_DIR
 
 
 def get_base_filename(filepath):
@@ -22,30 +16,19 @@ def check_output_files_have_corresponding_inputs():
     
     missing_inputs = []
     
-    # Check lqp output files
-    for output_file in get_lqp_output_files():
-        base_name = get_base_filename(output_file)
-        if base_name not in input_basenames:
-            missing_inputs.append(f"lqp_output/{Path(output_file).name} -> missing input {base_name}.lqp")
-    
-    # Check debug output files
-    for output_file in get_lqp_debug_output_files():
-        base_name = get_base_filename(output_file)
-        if base_name not in input_basenames:
-            missing_inputs.append(f"lqp_debug_output/{Path(output_file).name} -> missing input {base_name}.lqp")
-    
-    # Check pretty output files
-    for output_file in get_lqp_pretty_output_files():
-        base_name = get_base_filename(output_file)
-        if base_name not in input_basenames:
-            missing_inputs.append(f"lqp_pretty_output/{Path(output_file).name} -> missing input {base_name}.lqp")
-    
-    # Check binary output files (these have .bin extension but correspond to .lqp inputs)
-    for output_file in get_bin_output_files():
-        base_name = get_base_filename(output_file)
-        if base_name not in input_basenames:
-            missing_inputs.append(f"bin_output/{Path(output_file).name} -> missing input {base_name}.lqp")
-    
+    output_files = [
+        ("lqp_output", ".lqp"),
+        ("lqp_debug_output", ".lqp"),
+        ("lqp_pretty_output", ".lqp"),
+        ("test_files/bin_output", ".bin"),
+    ]
+
+    for directory, file_extension in output_files:
+        for output_file in get_all_files(PARENT_DIR / directory, file_extension):
+            base_name = get_base_filename(output_file)
+            if base_name not in input_basenames:
+                missing_inputs.append(f"{directory}/{Path(output_file).name} -> missing input {base_name}.lqp")
+
     return missing_inputs
 
 
