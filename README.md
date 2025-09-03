@@ -22,12 +22,12 @@ It is recommended to use a Python `virtualenv`. Set one up in the `python-tools`
 by:
 ```bash
 cd python-tools
-python -m venv venv
+python -m venv .venv
 ```
 
 Then activate the virtual environment:
 ```bash
-source venv/bin/activate
+source .venv/bin/activate
 ```
 
 You will also need the `build` package for building `lqp`:
@@ -97,6 +97,12 @@ managed by the `build` script, which runs validation and generates Python proto 
 
 ```
 ./build
+```
+
+The build script depends on `protoc`. If necessary, that can be installed for example via `brew`:
+
+```
+brew protobuf
 ```
 
 If you generate new Protobuf bindings, you should also update `parser.py`, `ir.py`, `print.py`, and `emit.py`
