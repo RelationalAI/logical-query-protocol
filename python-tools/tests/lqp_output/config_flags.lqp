@@ -1,7 +1,7 @@
 (transaction
   (configure
-    { :ivm.maintenance_level "off"
-      :semantics_version 0})
+    { :ivm.maintenance_level "auto"
+      :semantics_version 1})
   (epoch
     (writes
       (define
@@ -11,8 +11,3 @@
               (primitive :rel_primitive_add_monotype 1 1 v))))))
     (reads
       (output :output 16208045718567772255))))
-
-;; Debug information
-;; -----------------------
-;; Original names
-;; 	 ID `16208045718567772255` -> `output`

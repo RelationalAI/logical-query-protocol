@@ -12,6 +12,18 @@ message Transaction {
 
 message Configure {
   int64 semantics_version = 1;
+  IVMConfig ivm_config = 2;
+} 
+
+message IVMConfig {
+  MaintenanceLevel level = 1;
+}
+
+enum MaintenanceLevel {
+  MAINTENANCE_LEVEL_UNSPECIFIED = 0;
+  MAINTENANCE_LEVEL_OFF = 1;
+  MAINTENANCE_LEVEL_AUTO = 2;
+  MAINTENANCE_LEVEL_ALL = 3;
 }
 
 message Epoch {

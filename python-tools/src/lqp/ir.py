@@ -423,7 +423,28 @@ class WhatIf(LqpNode):
     branch: Union[str, None]
     epoch: Epoch
 
-# Transaction(epochs::Epoch[])
+# Transaction(epochs::Epoch[], configure::Configure)
 @dataclass(frozen=True)
 class Transaction(LqpNode):
     epochs: Sequence[Epoch]
+    configure: Configure
+
+# Configure(semantics_version::int, ivm_config::IVMConfig)
+@dataclass(frozen=True)
+class Configure(LqpNode):
+    semantics_version: int
+    ivm_config: IVMConfig
+
+# IVMConfig(level::MaintenanceLevel)
+@dataclass(frozen=True)
+class IVMConfig(LqpNode):
+    level: MaintenanceLevel
+
+class MaintenanceLevel(Enum):
+    UNSPECIFIED = 0
+    OFF = 1
+    AUTO = 2
+    ALL = 3
+
+    def __str__(self) -> str:
+        return self.name

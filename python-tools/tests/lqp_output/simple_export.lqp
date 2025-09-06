@@ -1,4 +1,7 @@
 (transaction
+  (configure
+    { :ivm.maintenance_level "off"
+      :semantics_version 0})
   (epoch
     (writes
       (define
@@ -19,8 +22,7 @@
           (path "wrong")
           (columns (column "col1name" 17307602785083346210) (column "col2name" 8011686847096043948))
 
-          {
+          { :compression ""
             :partition_size 10
-            :compression ""
-            :syntax_quotechar "\""
-            :syntax_escapechar "\\"})))))
+            :syntax_escapechar "\\"
+            :syntax_quotechar "\""})))))
