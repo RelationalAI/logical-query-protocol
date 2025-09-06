@@ -53,13 +53,13 @@
                       (attrs (attribute :function)))
                     (assign :always ([] (or))))
                 (script
-                    (monoid INT::MIN :R1 ([x::INT y::INT]
+                    (monoid::1 INT::MIN :R1 ([x::INT y::INT]
                       (atom :U x y)))
-                    (monoid BOOL::OR :R2 ([x::INT y::INT]
+                    (monoid::1 BOOL::OR :R2 ([x::INT y::INT]
                       (atom :U x y)))
-                    (monus BOOL::OR :R3 ([x::INT y::INT]
+                    (monus::1 BOOL::OR :R3 ([x::INT y::INT]
                       (atom :U x y)))
-                    (monus INT::SUM :R4 ([x::INT y::INT]
+                    (monus::1 INT::SUM :R4 ([x::INT y::INT]
                       (atom :U x y)))
                     (break :always ([] (and))))))))))
     (reads

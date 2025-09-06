@@ -21,7 +21,7 @@
                   (loop
                     (init)
                     (script
-                      (upsert :R ([a::INT b::INT]
+                      (upsert::1 :R ([a::INT b::INT]
                         (atom :U a b)))
                       (break :always2 ([] (and)))))
                   (break :always ([] (and))))))))))

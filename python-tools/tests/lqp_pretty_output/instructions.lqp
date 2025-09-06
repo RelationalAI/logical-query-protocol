@@ -5,7 +5,7 @@
         (fragment :instructions
           (algorithm :foo :bar
             (script
-              (upsert :test1
+              (upsert::1 :test1
                 ([x::INT]
                   (atom :alice x)))
               (break :test2

@@ -1,4 +1,4 @@
-;; ERROR: Copy at fail_loopy_update.lqp:9:15 must have an Atom as its value
+;; ERROR: Upsert at fail_loopy_update.lqp:9:15 must have an Atom as its value
 (transaction
   (epoch
     (writes
@@ -6,4 +6,4 @@
         (fragment :copy
           (algorithm :test1
             (script
-              (copy :test1 ([] (and ))))))))))
+              (upsert::1 :test1 ([] (and ))))))))))

@@ -37,10 +37,10 @@
                       (or
 ))))
                   (script
-                    (upsert :R1
+                    (upsert::1 :R1
                       ([a::INT b::INT]
                         (atom :U a b)))
-                    (upsert :R2
+                    (upsert::1 :R2
                       ([a::INT b::INT]
                         (atom :U a b)))
                     (break :always

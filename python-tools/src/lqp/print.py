@@ -262,15 +262,13 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
         lqp += to_str(node.body, indent_level + 2, options, debug_info)
         lqp += conf.RPAREN()
 
-    elif isinstance(node, (ir.Assign, ir.Break, ir.Upsert, ir.Copy)):
+    elif isinstance(node, (ir.Assign, ir.Break, ir.Upsert)):
         if isinstance(node, ir.Assign):
             s = "assign"
         elif isinstance(node, ir.Break):
             s = "break"
         elif isinstance(node, ir.Upsert):
-            s = "upsert"
-        elif isinstance(node, ir.Copy):
-            s = "copy"
+            s = "upsert" + "::" + to_str(node.arity, 0, options, debug_info)
         lqp += ind + conf.LPAREN() + conf.kw(s) + " " + to_str(node.name, 0, options, debug_info) + "\n"
         lqp += to_str(node.body, indent_level + 1, options, debug_info)
         if len(node.attrs) == 0:
@@ -283,6 +281,7 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
 
     elif isinstance(node, (ir.MonoidDef, ir.MonusDef)):
         s = "monoid" if isinstance(node, ir.MonoidDef) else "monus"
+        s += "::" + to_str(node.arity, 0, options, debug_info)
         lqp += ind + conf.LPAREN() + conf.kw(s) + " " \
                 + to_str(node.monoid, 0, options, debug_info) + " " \
                 + to_str(node.name, 0, options, debug_info) + "\n"

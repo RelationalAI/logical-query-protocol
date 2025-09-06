@@ -47,14 +47,15 @@ construct: loop | instruction
 loop: "(loop" init script ")"
 init: "(init" instruction* ")"
 
-instruction: assign | upsert | break_ | copy | monoid_def | monus_def
+instruction: assign | upsert | break_ | monoid_def | monus_def
 
 assign : "(assign" relation_id abstraction attrs? ")"
-upsert : "(upsert" relation_id abstraction attrs? ")"
+upsert : "(upsert" arity relation_id abstraction attrs? ")"
 break_ : "(break" relation_id abstraction attrs? ")"
-copy : "(copy" relation_id abstraction attrs? ")"
-monoid_def : "(monoid" monoid relation_id abstraction attrs? ")"
-monus_def : "(monus" monoid relation_id abstraction attrs? ")"
+monoid_def : "(monoid" arity monoid relation_id abstraction attrs? ")"
+monus_def : "(monus" arity monoid relation_id abstraction attrs? ")"
+
+arity: "::" NUMBER
 
 monoid : or_monoid | min_monoid | max_monoid | sum_monoid
 or_monoid : "BOOL" "::" "OR"
@@ -276,38 +277,38 @@ class LQPTransformer(Transformer):
     def instruction(self, meta, items):
         return items[0]
 
+    def arity(self, meta, items):
+        return items[0]
     def assign(self, meta, items):
         name = items[0]
         body = items[1]
         attrs = items[2] if len(items) > 2 else []
         return ir.Assign(name=name, body=body, attrs=attrs, meta=self.meta(meta))
     def upsert(self, meta, items):
-        name = items[0]
-        body = items[1]
-        attrs = items[2] if len(items) > 2 else []
-        return ir.Upsert(name=name, body=body, attrs=attrs, meta=self.meta(meta))
+        arity = items[0]
+        name = items[1]
+        body = items[2]
+        attrs = items[3] if len(items) > 3 else []
+        return ir.Upsert(arity=arity, name=name, body=body, attrs=attrs, meta=self.meta(meta))
     def break_(self, meta, items):
         name = items[0]
         body = items[1]
         attrs = items[2] if len(items) > 2 else []
         return ir.Break(name=name, body=body, attrs=attrs, meta=self.meta(meta))
-    def copy(self, meta, items):
-        name = items[0]
-        body = items[1]
-        attrs = items[2] if len(items) > 2 else []
-        return ir.Copy(name=name, body=body, attrs=attrs, meta=self.meta(meta))
     def monoid_def(self, meta, items):
-        monoid = items[0]
-        name = items[1]
-        body = items[2]
-        attrs = items[3] if len(items) > 3 else []
-        return ir.MonoidDef(monoid=monoid, name=name, body=body, attrs=attrs, meta=self.meta(meta))
+        arity = items[0]
+        monoid = items[1]
+        name = items[2]
+        body = items[3]
+        attrs = items[4] if len(items) > 4 else []
+        return ir.MonoidDef(arity=arity, monoid=monoid, name=name, body=body, attrs=attrs, meta=self.meta(meta))
     def monus_def(self, meta, items):
-        monoid = items[0]
-        name = items[1]
-        body = items[2]
-        attrs = items[3] if len(items) > 3 else []
-        return ir.MonusDef(monoid=monoid, name=name, body=body, attrs=attrs, meta=self.meta(meta))
+        arity = items[0]
+        monoid = items[1]
+        name = items[2]
+        body = items[3]
+        attrs = items[4] if len(items) > 4 else []
+        return ir.MonusDef(arity=arity, monoid=monoid, name=name, body=body, attrs=attrs, meta=self.meta(meta))
 
     def monoid(self, meta, items) :
         return items[0]

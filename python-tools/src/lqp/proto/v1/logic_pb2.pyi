@@ -52,19 +52,17 @@ class Loop(_message.Message):
     def __init__(self, init: _Optional[_Iterable[_Union[Instruction, _Mapping]]] = ..., body: _Optional[_Union[Script, _Mapping]] = ...) -> None: ...
 
 class Instruction(_message.Message):
-    __slots__ = ("assign", "upsert", "copy", "monoid_def", "monus_def")
+    __slots__ = ("assign", "upsert", "monoid_def", "monus_def")
     ASSIGN_FIELD_NUMBER: _ClassVar[int]
     UPSERT_FIELD_NUMBER: _ClassVar[int]
     BREAK_FIELD_NUMBER: _ClassVar[int]
-    COPY_FIELD_NUMBER: _ClassVar[int]
     MONOID_DEF_FIELD_NUMBER: _ClassVar[int]
     MONUS_DEF_FIELD_NUMBER: _ClassVar[int]
     assign: Assign
     upsert: Upsert
-    copy: Copy
     monoid_def: MonoidDef
     monus_def: MonusDef
-    def __init__(self, assign: _Optional[_Union[Assign, _Mapping]] = ..., upsert: _Optional[_Union[Upsert, _Mapping]] = ..., copy: _Optional[_Union[Copy, _Mapping]] = ..., monoid_def: _Optional[_Union[MonoidDef, _Mapping]] = ..., monus_def: _Optional[_Union[MonusDef, _Mapping]] = ..., **kwargs) -> None: ...
+    def __init__(self, assign: _Optional[_Union[Assign, _Mapping]] = ..., upsert: _Optional[_Union[Upsert, _Mapping]] = ..., monoid_def: _Optional[_Union[MonoidDef, _Mapping]] = ..., monus_def: _Optional[_Union[MonusDef, _Mapping]] = ..., **kwargs) -> None: ...
 
 class Assign(_message.Message):
     __slots__ = ("name", "body", "attrs")
@@ -77,14 +75,16 @@ class Assign(_message.Message):
     def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
 
 class Upsert(_message.Message):
-    __slots__ = ("name", "body", "attrs")
+    __slots__ = ("arity", "name", "body", "attrs")
+    ARITY_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
     BODY_FIELD_NUMBER: _ClassVar[int]
     ATTRS_FIELD_NUMBER: _ClassVar[int]
+    arity: int
     name: RelationId
     body: Abstraction
     attrs: _containers.RepeatedCompositeFieldContainer[Attribute]
-    def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
+    def __init__(self, arity: _Optional[int] = ..., name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
 
 class Break(_message.Message):
     __slots__ = ("name", "body", "attrs")
@@ -96,39 +96,33 @@ class Break(_message.Message):
     attrs: _containers.RepeatedCompositeFieldContainer[Attribute]
     def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
 
-class Copy(_message.Message):
-    __slots__ = ("name", "body", "attrs")
-    NAME_FIELD_NUMBER: _ClassVar[int]
-    BODY_FIELD_NUMBER: _ClassVar[int]
-    ATTRS_FIELD_NUMBER: _ClassVar[int]
-    name: RelationId
-    body: Abstraction
-    attrs: _containers.RepeatedCompositeFieldContainer[Attribute]
-    def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
-
 class MonoidDef(_message.Message):
-    __slots__ = ("monoid", "name", "body", "attrs")
+    __slots__ = ("monoid", "arity", "name", "body", "attrs")
     MONOID_FIELD_NUMBER: _ClassVar[int]
+    ARITY_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
     BODY_FIELD_NUMBER: _ClassVar[int]
     ATTRS_FIELD_NUMBER: _ClassVar[int]
     monoid: Monoid
+    arity: int
     name: RelationId
     body: Abstraction
     attrs: _containers.RepeatedCompositeFieldContainer[Attribute]
-    def __init__(self, monoid: _Optional[_Union[Monoid, _Mapping]] = ..., name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
+    def __init__(self, monoid: _Optional[_Union[Monoid, _Mapping]] = ..., arity: _Optional[int] = ..., name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
 
 class MonusDef(_message.Message):
-    __slots__ = ("monoid", "name", "body", "attrs")
+    __slots__ = ("monoid", "arity", "name", "body", "attrs")
     MONOID_FIELD_NUMBER: _ClassVar[int]
+    ARITY_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
     BODY_FIELD_NUMBER: _ClassVar[int]
     ATTRS_FIELD_NUMBER: _ClassVar[int]
     monoid: Monoid
+    arity: int
     name: RelationId
     body: Abstraction
     attrs: _containers.RepeatedCompositeFieldContainer[Attribute]
-    def __init__(self, monoid: _Optional[_Union[Monoid, _Mapping]] = ..., name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
+    def __init__(self, monoid: _Optional[_Union[Monoid, _Mapping]] = ..., arity: _Optional[int] = ..., name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
 
 class Monoid(_message.Message):
     __slots__ = ("or_monoid", "min_monoid", "max_monoid", "sum_monoid")

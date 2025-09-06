@@ -5,6 +5,6 @@
         (fragment :instructions
           (algorithm :foo :bar
             (script
-              (upsert :test1 ([x::INT] (atom :alice x)))
+              (upsert::1 :test1 ([x::INT] (atom :alice x)))
               (break :test2 ([x::INT] (atom :alice x)))
               (assign :test4 ([x::INT] (atom :alice x))))))))))

@@ -58,7 +58,7 @@ class Loop(Construct):
     init: Sequence[Instruction]
     body: Script
 
-# Instruction := Assign | Break | Upsert | Copy | MonoidDef | MonusDef
+# Instruction := Assign | Break | Upsert | MonoidDef | MonusDef
 @dataclass(frozen=True)
 class Instruction(Construct):
     pass
@@ -70,9 +70,10 @@ class Assign(Instruction):
     body: Abstraction
     attrs: Sequence[Attribute]
 
-# Upsert(name::RelationId, body::Abstraction, attrs::Attribute[])
+# Upsert(arity::int, name::RelationId, body::Abstraction, attrs::Attribute[])
 @dataclass(frozen=True)
 class Upsert(Instruction):
+    arity: int
     name: RelationId
     body: Abstraction
     attrs: Sequence[Attribute]
@@ -84,24 +85,19 @@ class Break(Instruction):
     body: Abstraction
     attrs: Sequence[Attribute]
 
-# Copy(name::RelationId, body::Abstraction, attrs::Attribute[])
-@dataclass(frozen=True)
-class Copy(Instruction):
-    name: RelationId
-    body: Abstraction
-    attrs: Sequence[Attribute]
-
-# MonoidDef(monoid::Monoid, name::RelationId, body::Abstraction, attrs::Attribute[])
+# MonoidDef(arity::int, monoid::Monoid, name::RelationId, body::Abstraction, attrs::Attribute[])
 @dataclass(frozen=True)
 class MonoidDef(Instruction):
+    arity: int
     monoid: Monoid
     name: RelationId
     body: Abstraction
     attrs: Sequence[Attribute]
 
-# MonusDef(monoid::Monoid, name::RelationId, body::Abstraction, attrs::Attribute[])
+# MonusDef(arity::int, monoid::Monoid, name::RelationId, body::Abstraction, attrs::Attribute[])
 @dataclass(frozen=True)
 class MonusDef(Instruction):
+    arity: int
     monoid: Monoid
     name: RelationId
     body: Abstraction

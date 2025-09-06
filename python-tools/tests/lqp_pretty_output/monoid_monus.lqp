@@ -65,16 +65,16 @@
                       (or
 ))))
                   (script
-                    (monoid INT::MIN :R1
+                    (monoid::1 INT::MIN :R1
                       ([x::INT y::INT]
                         (atom :U x y)))
-                    (monoid BOOL::OR :R2
+                    (monoid::1 BOOL::OR :R2
                       ([x::INT y::INT]
                         (atom :U x y)))
-                    (monus BOOL::OR :R3
+                    (monus::1 BOOL::OR :R3
                       ([x::INT y::INT]
                         (atom :U x y)))
-                    (monus INT::SUM :R4
+                    (monus::1 INT::SUM :R4
                       ([x::INT y::INT]
                         (atom :U x y)))
                     (break :always

@@ -21,9 +21,9 @@
                   (assign :always ([]
                     (or))))
                 (script
-                  (upsert :R1 ([a::INT b::INT]
+                  (upsert::1 :R1 ([a::INT b::INT]
                     (atom :U a b)))
-                  (upsert :R2 ([a::INT b::INT]
+                  (upsert::1 :R2 ([a::INT b::INT]
                     (atom :U a b)))
                   (break :always ([] (and))))))))))
     (reads

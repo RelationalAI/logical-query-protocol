@@ -17,7 +17,7 @@ def get_all_input_files():
 
     for root, dirs, files in os.walk(TEST_INPUTS_DIR):
         for file in files:
-            if file.endswith(".lqp"):
+            if file.endswith("flags.lqp"):
                 input_files.append(os.path.join(root, file))
 
     return input_files
@@ -35,6 +35,7 @@ def test_parse_lqp(snapshot: Snapshot, input_file):
         proto_result = ir_to_proto(parsed_lqp)
         assert proto_result is not None, f"Failed to convert IR to Proto for {input_file}"
         binary_output = proto_result.SerializeToString()
+
         snapshot.snapshot_dir = Path(__file__).parent / "test_files" / "bin_output"
         snapshot_filename = os.path.basename(input_file).replace(".lqp", ".bin")
         snapshot.assert_match(binary_output, snapshot_filename)

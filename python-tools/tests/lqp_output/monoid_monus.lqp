@@ -65,16 +65,16 @@
                       (or
 ))))
                   (script
-                    (monoid INT::MIN 12074491928194973989
+                    (monoid::1 INT::MIN 12074491928194973989
                       ([x::INT y::INT]
                         (atom 11697277356358429352 x y)))
-                    (monoid BOOL::OR 15443881159395485941
+                    (monoid::1 BOOL::OR 15443881159395485941
                       ([x::INT y::INT]
                         (atom 11697277356358429352 x y)))
-                    (monus BOOL::OR 151923326135382205
+                    (monus::1 BOOL::OR 151923326135382205
                       ([x::INT y::INT]
                         (atom 11697277356358429352 x y)))
-                    (monus INT::SUM 17041058638615872964
+                    (monus::1 INT::SUM 17041058638615872964
                       ([x::INT y::INT]
                         (atom 11697277356358429352 x y)))
                     (break 11303028219845360359
