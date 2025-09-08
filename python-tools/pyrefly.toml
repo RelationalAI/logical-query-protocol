@@ -5,3 +5,4 @@ project_excludes = [
     "src/lqp/proto/**/*",
     "build",
 ]
+search_path = ["."]
