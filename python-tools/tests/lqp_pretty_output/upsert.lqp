@@ -27,9 +27,7 @@
                           (primitive :rel_primitive_eq b 2))
                         (and
                           (primitive :rel_primitive_eq a 2)
-                          (primitive :rel_primitive_eq b 3))))
-                    (attrs
-                      (attribute :function )))
+                          (primitive :rel_primitive_eq b 3)))))
                   (assign :U
                     ([a::INT b::INT]
                       (and
@@ -40,7 +38,7 @@
                       (or
 ))))
                   (script
-                    (upsert::1 :R1
+                    (upsert::0 :R1
                       ([a::INT b::INT]
                         (atom :U a b)))
                     (upsert::1 :R2

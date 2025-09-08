@@ -27,9 +27,7 @@
                           (primitive :rel_primitive_eq b 2))
                         (and
                           (primitive :rel_primitive_eq a 2)
-                          (primitive :rel_primitive_eq b 3))))
-                    (attrs
-                      (attribute :function )))
+                          (primitive :rel_primitive_eq b 3)))))
                   (assign 11697277356358429352
                     ([a::INT b::INT]
                       (and
@@ -40,7 +38,7 @@
                       (or
 ))))
                   (script
-                    (upsert::1 12074491928194973989
+                    (upsert::0 12074491928194973989
                       ([a::INT b::INT]
                         (atom 11697277356358429352 a b)))
                     (upsert::1 15443881159395485941

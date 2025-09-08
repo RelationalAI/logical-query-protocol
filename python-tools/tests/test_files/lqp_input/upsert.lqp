@@ -14,14 +14,13 @@
                   (assign :R2 ([a::INT b::INT]
                     (or
                       (and (= a 1) (= b 2))
-                      (and (= a 2) (= b 3))))
-                    (attrs (attribute :function)))
+                      (and (= a 2) (= b 3)))))
                   (assign :U ([a::INT b::INT]
                     (and (= a 1) (= b 3))))
                   (assign :always ([]
                     (or))))
                 (script
-                  (upsert::1 :R1 ([a::INT b::INT]
+                  (upsert::0 :R1 ([a::INT b::INT]
                     (atom :U a b)))
                   (upsert::1 :R2 ([a::INT b::INT]
                     (atom :U a b)))

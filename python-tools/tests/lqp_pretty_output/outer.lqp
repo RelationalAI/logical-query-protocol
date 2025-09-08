@@ -37,7 +37,7 @@
                       (init
 )
                         (script
-                          (upsert::1 :R
+                          (upsert::0 :R
                             ([a::INT b::INT]
                               (atom :U a b)))
                           (break :always2

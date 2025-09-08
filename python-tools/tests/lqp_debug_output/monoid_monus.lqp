@@ -18,9 +18,7 @@
                           (primitive :rel_primitive_eq y 10))
                         (and
                           (primitive :rel_primitive_eq x 2)
-                          (primitive :rel_primitive_eq y 3))))
-                    (attrs
-                      (attribute :function )))
+                          (primitive :rel_primitive_eq y 3)))))
                   (assign 15443881159395485941
                     ([x::INT y::INT]
                       (or
@@ -38,9 +36,7 @@
                           (primitive :rel_primitive_eq y 5))
                         (and
                           (primitive :rel_primitive_eq x 2)
-                          (primitive :rel_primitive_eq y 20))))
-                    (attrs
-                      (attribute :function )))
+                          (primitive :rel_primitive_eq y 20)))))
                   (assign 17041058638615872964
                     ([x::INT y::INT]
                       (or
@@ -49,9 +45,7 @@
                           (primitive :rel_primitive_eq y 7))
                         (and
                           (primitive :rel_primitive_eq x 2)
-                          (primitive :rel_primitive_eq y 25))))
-                    (attrs
-                      (attribute :function )))
+                          (primitive :rel_primitive_eq y 25)))))
                   (assign 11697277356358429352
                     ([x::INT y::INT]
                       (or
@@ -70,16 +64,22 @@
                   (script
                     (monoid::1 INT::MIN 12074491928194973989
                       ([x::INT y::INT]
-                        (atom 11697277356358429352 x y)))
-                    (monoid::1 BOOL::OR 15443881159395485941
+                        (atom 11697277356358429352 x y))
+                      (attrs
+                        (attribute :function )))
+                    (monoid::0 BOOL::OR 15443881159395485941
                       ([x::INT y::INT]
                         (atom 11697277356358429352 x y)))
                     (monus::1 BOOL::OR 151923326135382205
                       ([x::INT y::INT]
-                        (atom 11697277356358429352 x y)))
+                        (atom 11697277356358429352 x y))
+                      (attrs
+                        (attribute :function )))
                     (monus::1 INT::SUM 17041058638615872964
                       ([x::INT y::INT]
-                        (atom 11697277356358429352 x y)))
+                        (atom 11697277356358429352 x y))
+                      (attrs
+                        (attribute :function )))
                     (break 11303028219845360359
                       ([]
                         (and
