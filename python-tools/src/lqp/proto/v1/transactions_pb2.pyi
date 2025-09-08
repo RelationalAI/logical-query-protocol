@@ -1,11 +1,23 @@
 from lqp.proto.v1 import fragments_pb2 as _fragments_pb2
 from lqp.proto.v1 import logic_pb2 as _logic_pb2
 from google.protobuf.internal import containers as _containers
+from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
 from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Mapping, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
+
+class MaintenanceLevel(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    MAINTENANCE_LEVEL_UNSPECIFIED: _ClassVar[MaintenanceLevel]
+    MAINTENANCE_LEVEL_OFF: _ClassVar[MaintenanceLevel]
+    MAINTENANCE_LEVEL_AUTO: _ClassVar[MaintenanceLevel]
+    MAINTENANCE_LEVEL_ALL: _ClassVar[MaintenanceLevel]
+MAINTENANCE_LEVEL_UNSPECIFIED: MaintenanceLevel
+MAINTENANCE_LEVEL_OFF: MaintenanceLevel
+MAINTENANCE_LEVEL_AUTO: MaintenanceLevel
+MAINTENANCE_LEVEL_ALL: MaintenanceLevel
 
 class Transaction(_message.Message):
     __slots__ = ("epochs", "configure")
@@ -16,10 +28,18 @@ class Transaction(_message.Message):
     def __init__(self, epochs: _Optional[_Iterable[_Union[Epoch, _Mapping]]] = ..., configure: _Optional[_Union[Configure, _Mapping]] = ...) -> None: ...
 
 class Configure(_message.Message):
-    __slots__ = ("semantics_version",)
+    __slots__ = ("semantics_version", "ivm_config")
     SEMANTICS_VERSION_FIELD_NUMBER: _ClassVar[int]
+    IVM_CONFIG_FIELD_NUMBER: _ClassVar[int]
     semantics_version: int
-    def __init__(self, semantics_version: _Optional[int] = ...) -> None: ...
+    ivm_config: IVMConfig
+    def __init__(self, semantics_version: _Optional[int] = ..., ivm_config: _Optional[_Union[IVMConfig, _Mapping]] = ...) -> None: ...
+
+class IVMConfig(_message.Message):
+    __slots__ = ("level",)
+    LEVEL_FIELD_NUMBER: _ClassVar[int]
+    level: MaintenanceLevel
+    def __init__(self, level: _Optional[_Union[MaintenanceLevel, str]] = ...) -> None: ...
 
 class Epoch(_message.Message):
     __slots__ = ("writes", "reads")

@@ -68,7 +68,13 @@ def convert_decimal(val: ir.DecimalValue) -> logic_pb2.DecimalValue:
     # so if we have digits 12300 with exponent -4, but we need `scale` of 6, then we need to
     # multiply the digits by 10 ** 2 (i.e., 10 ** (6 + -4)) to get the physical value of
     # 1230000.
-    value *= 10 ** (val.scale + exponent)
+    # Ensure we stay in the integer realm when the exponent outweighs the scale, e.g.
+    # value = 4.4000000000000003552713678800500929355621337890625
+    modifier = val.scale + exponent
+    if modifier >= 0:
+        value *= 10 ** modifier
+    else:
+        value //= 10 ** (-modifier)
     value = ir.Int128Value(value=value, meta=val.meta)
 
     return logic_pb2.DecimalValue(
@@ -414,8 +420,23 @@ def convert_epoch(e: ir.Epoch) -> transactions_pb2.Epoch:
         reads=[convert_read(r) for r in e.reads]
     )
 
+def convert_configure(c: ir.Configure) -> transactions_pb2.Configure:
+    return transactions_pb2.Configure(
+        semantics_version=c.semantics_version,
+        ivm_config=convert_ivm_config(c.ivm_config)
+    )
+
+def convert_ivm_config(c: ir.IVMConfig) -> transactions_pb2.IVMConfig:
+    return transactions_pb2.IVMConfig(
+        level=convert_maintenance_level(c.level)
+    )
+
+def convert_maintenance_level(l: ir.MaintenanceLevel) -> transactions_pb2.MaintenanceLevel:
+    return transactions_pb2.MaintenanceLevel.Name(l.value) # type: ignore[missing-attribute]
+
 def convert_transaction(t: ir.Transaction) -> transactions_pb2.Transaction:
     return transactions_pb2.Transaction(
+        configure=convert_configure(t.configure),
         epochs=[convert_epoch(e) for e in t.epochs]
     )
 
