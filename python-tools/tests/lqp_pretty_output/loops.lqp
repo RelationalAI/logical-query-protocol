@@ -27,19 +27,47 @@
                 (and
                   (primitive :rel_primitive_eq a 6)
                   (primitive :rel_primitive_eq b 5)))))
-          (algorithm :frontier :reachable
+          (algorithm :reachable
+            (script
+              (loop
+                (init
+                  (assign :reachable
+                    ([n::INT]
+                      (primitive :rel_primitive_eq n 1))))
+                  (script
+                    (assign :next
+                      ([m::INT]
+                        (or
+                          (atom :reachable m)
+                          (exists [n::INT]
+                            (and
+                              (atom :reachable n)
+                              (atom :edges n m))))))
+                    (break :nothing_new
+                      ([]
+                        (ffi :rel_primitive_pairwise_equal
+                          (args
+                            ([n::INT]
+                              (atom :reachable n))
+                            ([n::INT]
+                              (atom :next n)))
+                          (terms))))
+                    (assign :reachable
+                      ([n::INT]
+                        (atom :next n)))))))
+          (algorithm :frontier :reachable_2
             (script
               (loop
                 (init
                   (assign :frontier
                     ([n::INT]
                       (primitive :rel_primitive_eq n 1)))
-                  (assign :reachable
+                  (assign :reachable_2
                     ([_n::INT]
                       (or
 ))))
                   (script
-                    (upsert :reachable
+                    (upsert :reachable_2
                       ([n::INT]
                         (atom :frontier n)))
                     (assign :next
@@ -50,7 +78,7 @@
                               (atom :frontier n)
                               (atom :edges n m))
                             (not
-                              (atom :reachable m))))))
+                              (atom :reachable_2 m))))))
                     (copy :frontier
                       ([n::INT]
                         (atom :next n)))
@@ -62,4 +90,5 @@
                               (atom :frontier n)))
                           (terms)))))))))))
     (reads
-      (output :reachable :reachable))))
+      (output :reachable :reachable)
+      (output :reachable_2 :reachable_2))))
