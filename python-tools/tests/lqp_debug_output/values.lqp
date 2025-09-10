@@ -33,10 +33,10 @@
           (def 8550051134248905158
             ([v::FLOAT]
               (or
+                (primitive :rel_primitive_eq v -4.5)
+                (primitive :rel_primitive_eq v -4.4)
                 (primitive :rel_primitive_eq v 4.4)
-                (primitive :rel_primitive_eq v 4.5)
-                (primitive :rel_primitive_eq v inf)
-                (primitive :rel_primitive_eq v nan))))
+                (primitive :rel_primitive_eq v 4.5))))
           (def 1046914482580477072
             ([v::DATE]
               (or

@@ -26,10 +26,10 @@
               (= v 0xffffffffffffffffffffffffffffffff))))
           (def :float ([v::FLOAT]
             (or
+              (= v -4.5)
+              (= v -4.4)
               (= v 4.4)
-              (= v 4.5)
-              (= v inf)
-              (= v nan))))
+              (= v 4.5))))
           (def :date ([v::DATE]
             (or
               (= v (date 1 1 1)) ;; python's smallest possible date
