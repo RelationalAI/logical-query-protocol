@@ -1,0 +1,78 @@
+(transaction
+  (configure
+    { :ivm.maintenance_level "off"
+      :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          (def 7901719704309484609
+            ([v::INT]
+              (or
+                (primitive :rel_primitive_eq v -9223372036854775808)
+                (primitive :rel_primitive_eq v 21)
+                (primitive :rel_primitive_eq v 0)
+                (primitive :rel_primitive_eq v 21)
+                (primitive :rel_primitive_eq v 9223372036854775807))))
+          (def 3196028803117806874
+            ([v::INT128]
+              (or
+                (primitive :rel_primitive_eq v -170141183460469231731687303715884105728i128)
+                (primitive :rel_primitive_eq v -9223372036854775809i128)
+                (primitive :rel_primitive_eq v 21i128)
+                (primitive :rel_primitive_eq v 0i128)
+                (primitive :rel_primitive_eq v 21i128)
+                (primitive :rel_primitive_eq v 9223372036854775808i128)
+                (primitive :rel_primitive_eq v 170141183460469231731687303715884105727i128))))
+          (def 15025643537523545230
+            ([v::UINT128]
+              (or
+                (primitive :rel_primitive_eq v 0x0)
+                (primitive :rel_primitive_eq v 0x1)
+                (primitive :rel_primitive_eq v 0xffffffffffffffffffffffffffffffff))))
+          (def 8550051134248905158
+            ([v::FLOAT]
+              (or
+                (primitive :rel_primitive_eq v 4.4)
+                (primitive :rel_primitive_eq v 4.5)
+                (primitive :rel_primitive_eq v inf)
+                (primitive :rel_primitive_eq v nan))))
+          (def 1046914482580477072
+            ([v::DATE]
+              (or
+                (primitive :rel_primitive_eq v (date 1 1 1))
+                (primitive :rel_primitive_eq v (date 2024 2 29))
+                (primitive :rel_primitive_eq v (date 2025 8 1))
+                (primitive :rel_primitive_eq v (date 9999 12 31)))))
+          (def 2838342210467241124
+            ([v::DATETIME]
+              (or
+                (primitive :rel_primitive_eq v (datetime 1 1 1 0 0 0 0))
+                (primitive :rel_primitive_eq v (datetime 2024 2 29 20 3 4 123000))
+                (primitive :rel_primitive_eq v (datetime 2025 8 1 20 3 4 123000))
+                (primitive :rel_primitive_eq v (datetime 9999 12 31 23 59 59 999000)))))
+          (def 16667871121710741243
+            ([v::(DECIMAL 18 6)]
+              (or
+                (primitive :rel_primitive_eq v 0.000000d18)
+                (primitive :rel_primitive_eq v -123.456789d18)
+                (primitive :rel_primitive_eq v 123.456789d18)
+                (primitive :rel_primitive_eq v 123456789012.345678d18))))
+          (def 10098701174489624218
+            ([v::STRING]
+              (primitive :rel_primitive_eq v "hello")))
+          (def 13213829929622723620
+            ([v::BOOLEAN]
+              (or
+                (primitive :rel_primitive_eq v true)
+                (primitive :rel_primitive_eq v false)))))))
+    (reads
+      (output :int 7901719704309484609)
+      (output :int128 3196028803117806874)
+      (output :uint128 15025643537523545230)
+      (output :float 8550051134248905158)
+      (output :dec 16667871121710741243)
+      (output :date 1046914482580477072)
+      (output :datetime 2838342210467241124)
+      (output :str 10098701174489624218)
+      (output :bool 13213829929622723620))))
