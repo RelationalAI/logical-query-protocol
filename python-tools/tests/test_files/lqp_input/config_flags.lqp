@@ -7,6 +7,5 @@
       (define
         (fragment :f1
           (def :output ([v::INT] (+ 1 1 v))))))
-
     (reads
       (output :output :output))))

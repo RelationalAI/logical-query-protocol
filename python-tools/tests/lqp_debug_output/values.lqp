@@ -65,7 +65,10 @@
             ([v::BOOLEAN]
               (or
                 (primitive :rel_primitive_eq v true)
-                (primitive :rel_primitive_eq v false)))))))
+                (primitive :rel_primitive_eq v false))))
+          (def 18421470166314807403
+            ([v::MISSING]
+              (primitive :rel_primitive_eq missing v))))))
     (reads
       (output :int 7901719704309484609)
       (output :int128 3196028803117806874)
@@ -75,7 +78,8 @@
       (output :date 1046914482580477072)
       (output :datetime 2838342210467241124)
       (output :str 10098701174489624218)
-      (output :bool 13213829929622723620))))
+      (output :bool 13213829929622723620)
+      (output :missing 18421470166314807403))))
 
 ;; Debug information
 ;; -----------------------
@@ -89,3 +93,4 @@
 ;; 	 ID `16667871121710741243` -> `dec`
 ;; 	 ID `10098701174489624218` -> `str`
 ;; 	 ID `13213829929622723620` -> `bool`
+;; 	 ID `18421470166314807403` -> `missing`

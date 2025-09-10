@@ -52,7 +52,9 @@
           (def :bool ([v::BOOLEAN]
             (or
               (= v true)
-              (= v false)))))))
+              (= v false))))
+          (def :missing ([v::MISSING]
+              (= missing v))))))
 
     (reads
       (output :int :int)
@@ -63,4 +65,5 @@
       (output :date :date)
       (output :datetime :datetime)
       (output :str :str)
-      (output :bool :bool))))
+      (output :bool :bool)
+      (output :missing :missing))))

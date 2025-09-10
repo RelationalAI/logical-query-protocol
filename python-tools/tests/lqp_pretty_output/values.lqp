@@ -65,7 +65,10 @@
             ([v::BOOLEAN]
               (or
                 (primitive :rel_primitive_eq v true)
-                (primitive :rel_primitive_eq v false)))))))
+                (primitive :rel_primitive_eq v false))))
+          (def :missing
+            ([v::MISSING]
+              (primitive :rel_primitive_eq missing v))))))
     (reads
       (output :int :int)
       (output :int128 :int128)
@@ -75,4 +78,5 @@
       (output :date :date)
       (output :datetime :datetime)
       (output :str :str)
-      (output :bool :bool))))
+      (output :bool :bool)
+      (output :missing :missing))))

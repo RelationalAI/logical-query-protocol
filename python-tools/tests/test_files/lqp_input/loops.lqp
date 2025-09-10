@@ -1,3 +1,4 @@
+;; Loopy tests
 (transaction
   (epoch
     (writes
@@ -11,15 +12,36 @@
               (and (= a 2) (= b 5))
               (and (= a 5) (= b 3))
               (and (= a 6) (= b 5)))))
-          (algorithm :frontier :reachable
+          (algorithm :reachable
+            (script
+              (loop
+                (init
+                  (assign :reachable ([n::INT] (= n 1))))
+                (script
+                  (assign :next ([m::INT]
+                    (or
+                      (atom :reachable m)
+                      (exists [n::INT]
+                        (and
+                          (atom :reachable n)
+                          (atom :edges n m))))))
+                  (break :nothing_new ([]
+                    (ffi :rel_primitive_pairwise_equal
+                      (args
+                        ([n::INT] (atom :reachable n))
+                        ([n::INT] (atom :next n)))
+                      (terms ))))
+                  (assign :reachable ([n::INT]
+                    (atom :next n)))))))
+          (algorithm :frontier :reachable_2
             (script
               (loop
                 (init
                   (assign :frontier ([n::INT]
                       (= n 1)))
-                  (assign :reachable ([_n::INT] (or))))
+                  (assign :reachable_2 ([_n::INT] (or))))
                 (script
-                  (upsert :reachable ([n::INT] (atom :frontier n)))
+                  (upsert :reachable_2 ([n::INT] (atom :frontier n)))
                   (assign :next
                     ([m::INT]
                       (exists [n::INT]
@@ -27,7 +49,7 @@
                           (and
                             (atom :frontier n)
                             (atom :edges n m))
-                          (not (atom :reachable m))))))
+                          (not (atom :reachable_2 m))))))
                   (copy :frontier
                     ([n::INT]
                       (atom :next n)))
@@ -39,4 +61,5 @@
                           (atom :frontier n)))
                         (terms )))))))))))
     (reads
-      (output :reachable :reachable))))
+      (output :reachable :reachable)
+      (output :reachable_2 :reachable_2))))
