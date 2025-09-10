@@ -48,7 +48,12 @@
               (= v -123.456789d18)
               (= v 123.456789d18)
               (= v 123456789012.345678d18))))
-          (def :str ([v::STRING] (= v "hello")))
+          (def :str ([v::STRING]
+            (or
+              (= v "")
+              (= v "    ")
+              (= v "\U0001f431")
+              (= v "hello"))))
           (def :bool ([v::BOOLEAN]
             (or
               (= v true)

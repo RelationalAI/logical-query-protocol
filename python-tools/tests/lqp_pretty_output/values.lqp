@@ -60,7 +60,11 @@
                 (primitive :rel_primitive_eq v 123456789012.345678d18))))
           (def :str
             ([v::STRING]
-              (primitive :rel_primitive_eq v "hello")))
+              (or
+                (primitive :rel_primitive_eq v "")
+                (primitive :rel_primitive_eq v "    ")
+                (primitive :rel_primitive_eq v "\U0001f431")
+                (primitive :rel_primitive_eq v "hello"))))
           (def :bool
             ([v::BOOLEAN]
               (or

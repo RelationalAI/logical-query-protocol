@@ -60,7 +60,11 @@
                 (primitive :rel_primitive_eq v 123456789012.345678d18))))
           (def 10098701174489624218
             ([v::STRING]
-              (primitive :rel_primitive_eq v "hello")))
+              (or
+                (primitive :rel_primitive_eq v "")
+                (primitive :rel_primitive_eq v "    ")
+                (primitive :rel_primitive_eq v "\U0001f431")
+                (primitive :rel_primitive_eq v "hello"))))
           (def 13213829929622723620
             ([v::BOOLEAN]
               (or
