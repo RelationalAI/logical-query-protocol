@@ -38,6 +38,16 @@ def test_convert_decimal_value():
     ))
 
     # 4.5 is represented by the digits 4, 5
+    d = ir.DecimalValue(precision=10, scale=2, value=Decimal(-4.5), meta=None)
+    v = ir.Value(value=d, meta=None)
+    converted = emit.convert_value(v)
+    assert converted == logic_pb2.Value(decimal_value=logic_pb2.DecimalValue(
+        precision=10,
+        scale=2,
+        value=logic_pb2.Int128Value(low=18446744073709551166, high=18446744073709551615)
+    ))
+
+    # 4.5 is represented by the digits 4, 5
     d = ir.DecimalValue(precision=10, scale=2, value=Decimal(4.5), meta=None)
     v = ir.Value(value=d, meta=None)
     converted = emit.convert_value(v)
