@@ -37,7 +37,7 @@ def test_convert_decimal_value():
         value=logic_pb2.Int128Value(low=123456789123456, high=0)
     ))
 
-    # 4.5 is represented by the digits 4, 5
+    # -4.5 is represented by the digits 4, 5 and a sign of 1
     d = ir.DecimalValue(precision=10, scale=2, value=Decimal(-4.5), meta=None)
     v = ir.Value(value=d, meta=None)
     converted = emit.convert_value(v)
