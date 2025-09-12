@@ -3,7 +3,7 @@ from pathlib import Path
 
 # Directory constants
 PARENT_DIR = Path(__file__).parent
-TEST_INPUTS_DIR = PARENT_DIR / "test_files" / "lqp_input"
+TEST_INPUTS_DIR = PARENT_DIR / "test_files" / "lqp"
 
 
 def get_all_files(dir, file_extension):
