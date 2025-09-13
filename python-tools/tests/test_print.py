@@ -7,10 +7,7 @@ from math import isnan
 from lqp import parser
 from lqp import print as lqp_print
 from lqp import ir
-
-def get_lqp_input_files():
-    lqp_input_dir = "tests/test_files/lqp_input"
-    return [os.path.join(lqp_input_dir, f) for f in os.listdir(lqp_input_dir) if f.endswith(".lqp")]
+from .utils import get_lqp_input_files
 
 def assert_lqp_nodes_equal(obj1, obj2):
     if isinstance(obj1, ir.LqpNode) and isinstance(obj2, ir.LqpNode):

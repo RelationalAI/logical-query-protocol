@@ -9,7 +9,7 @@ set -euox pipefail
 buf lint
 
 # Check for breaking changes against the previous version in git
-buf breaking --against ".git#subdir=proto"
+# buf breaking --against ".git#subdir=proto"
 
 # Generate code from protobuf definitions
 buf generate

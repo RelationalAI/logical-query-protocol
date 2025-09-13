@@ -89,7 +89,21 @@ detection](https://buf.build/docs/cli/quickstart/#detect-breaking-changes).
 buf breaking --against ".git#subdir=proto"
 ```
 
-## Building ProtoBuf Bindings
+## Developer Guide
+
+To add a new feature to the LQP protocol, the following changes need to be made.
+
+1. The new feature needs to be added to the protobuf specification, which is located in to `proto/` directory.
+2. The Python protobuf bindings need to be build (see instructions below).
+3. The new feature needs to be added to the Python IR, located in `python-tools/src/lqp/ir.py`. The structure of the IR should reflect the structure of the protobuf specification.
+4. The new feature needs to be added to the grammar for the human-readable S-expression LQP syntax. The grammer is located in `python-tools/src/lqp/parser.py`.
+5. The parser needs to be extended to support the new feature when translating the parse tree to the Python IR. The parsing code is located in `python-tools/src/lqp/parser.py` as well.
+6. The pretty printer for the Python IR needs to be extended to support the new feature. It is located in `python-tools/src/lqp/print.py`.
+7. The emitter that translates the Python IR to protobuf needs to be extended to support the new feature. It is located in `python-tools/src/lqp/emit.py`.
+8. Finally, the `LQPDriver` in the `raicode` repository needs to be extended to support the new feature. To generate the Julia protobuf bindings for `raicode`, follow the instructions below.
+
+
+### Building ProtoBuf Bindings
 
 The build is [configured in `buf.gen.yaml`](https://buf.build/docs/generate/overview/), and
 managed by the `build` script, which runs validation and generates Python proto code in the
