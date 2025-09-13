@@ -41,6 +41,7 @@ message Instruction {
     Assign assign = 1; // Work like Defs, but only within a loop
     Upsert upsert = 2; // In-place update of relation by another by swapping
     Break break = 3; // Nullary relation that exits the loop when fired
+    reserved 4; // Copy rule
     MonoidDef monoid_def = 5; // In-place update of relation by another by a monoid operation
     MonusDef monus_def = 6; // In-place update of relation by another by "subtraction" operation, if it exists
   }
@@ -53,10 +54,10 @@ message Assign {
 }
 
 message Upsert {
-  int64 arity = 1;
-  RelationId name = 2;
-  Abstraction body = 3;
-  repeated Attribute attrs = 4;
+  RelationId name = 1;
+  Abstraction body = 2;
+  repeated Attribute attrs = 3;
+  int64 value_arity = 4; // dictates how to partition tuples into key-values pairs
 }
 
 message Break {
@@ -67,18 +68,18 @@ message Break {
 
 message MonoidDef {
   Monoid monoid = 1;
-  int64 arity = 2;
-  RelationId name = 3;
-  Abstraction body = 4;
-  repeated Attribute attrs = 5;
+  RelationId name = 2;
+  Abstraction body = 3;
+  repeated Attribute attrs = 4;
+  int64 value_arity = 5; // dictates how to partition tuples into key-values pairs
 }
 
 message MonusDef {
   Monoid monoid = 1;
-  int64 arity = 2;
-  RelationId name = 3;
-  Abstraction body = 4;
-  repeated Attribute attrs = 5;
+  RelationId name = 2;
+  Abstraction body = 3;
+  repeated Attribute attrs = 4;
+  int64 value_arity = 5; // dictates how to partition tuples into key-values pairs
 }
 
 message Monoid {
