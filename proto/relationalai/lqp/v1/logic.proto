@@ -37,11 +37,11 @@ message Loop {
 }
 
 message Instruction {
+  reserved 4; // Copy rule
   oneof instr_type {
     Assign assign = 1; // Work like Defs, but only within a loop
     Upsert upsert = 2; // In-place update of relation by another by swapping
     Break break = 3; // Nullary relation that exits the loop when fired
-    reserved 4; // Copy rule
     MonoidDef monoid_def = 5; // In-place update of relation by another by a monoid operation
     MonusDef monus_def = 6; // In-place update of relation by another by "subtraction" operation, if it exists
   }
