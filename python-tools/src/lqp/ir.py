@@ -73,7 +73,7 @@ class Assign(Instruction):
 # Upsert(arity::int, name::RelationId, body::Abstraction, attrs::Attribute[])
 @dataclass(frozen=True)
 class Upsert(Instruction):
-    arity: int
+    value_arity: int
     name: RelationId
     body: Abstraction
     attrs: Sequence[Attribute]
@@ -88,7 +88,7 @@ class Break(Instruction):
 # MonoidDef(arity::int, monoid::Monoid, name::RelationId, body::Abstraction, attrs::Attribute[])
 @dataclass(frozen=True)
 class MonoidDef(Instruction):
-    arity: int
+    value_arity: int
     monoid: Monoid
     name: RelationId
     body: Abstraction
@@ -97,7 +97,7 @@ class MonoidDef(Instruction):
 # MonusDef(arity::int, monoid::Monoid, name::RelationId, body::Abstraction, attrs::Attribute[])
 @dataclass(frozen=True)
 class MonusDef(Instruction):
-    arity: int
+    value_arity: int
     monoid: Monoid
     name: RelationId
     body: Abstraction

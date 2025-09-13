@@ -6,4 +6,4 @@
         (fragment :copy
           (algorithm :test1
             (script
-              (upsert::1 :test1 ([] (and ))))))))))
+              (upsert :test1 ([] (and ))))))))))

@@ -269,14 +269,14 @@ def convert_break(instr: ir.Break) -> logic_pb2.Break:
     )
 def convert_upsert(instr: ir.Upsert) -> logic_pb2.Upsert:
     return logic_pb2.Upsert(
-        arity=instr.arity,
+        value_arity=instr.value_arity,
         name=convert_relation_id(instr.name),
         body=convert_abstraction(instr.body),
         attrs=[convert_attribute(attr) for attr in instr.attrs]
     )
 def convert_monoid_def(instr: ir.MonoidDef) -> logic_pb2.MonoidDef:
     return logic_pb2.MonoidDef(
-        arity=instr.arity,
+        value_arity=instr.value_arity,
         monoid=convert_monoid(instr.monoid),
         name=convert_relation_id(instr.name),
         body=convert_abstraction(instr.body),
@@ -284,7 +284,7 @@ def convert_monoid_def(instr: ir.MonoidDef) -> logic_pb2.MonoidDef:
     )
 def convert_monus_def(instr: ir.MonusDef) -> logic_pb2.MonusDef:
     return logic_pb2.MonusDef(
-        arity=instr.arity,
+        value_arity=instr.value_arity,
         monoid=convert_monoid(instr.monoid),
         name=convert_relation_id(instr.name),
         body=convert_abstraction(instr.body),

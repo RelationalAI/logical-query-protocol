@@ -62,21 +62,21 @@
                       (or
 ))))
                   (script
-                    (monoid::1 INT::MIN :R1
-                      ([x::INT y::INT]
+                    (monoid INT::MIN :R1
+                      ([x::INT | y::INT]
                         (atom :U x y))
                       (attrs
                         (attribute :function )))
-                    (monoid::0 BOOL::OR :R2
+                    (monoid BOOL::OR :R2
                       ([x::INT y::INT]
                         (atom :U x y)))
-                    (monus::1 BOOL::OR :R3
-                      ([x::INT y::INT]
+                    (monus BOOL::OR :R3
+                      ([x::INT | y::INT]
                         (atom :U x y))
                       (attrs
                         (attribute :function )))
-                    (monus::1 INT::SUM :R4
-                      ([x::INT y::INT]
+                    (monus INT::SUM :R4
+                      ([x::INT | y::INT]
                         (atom :U x y))
                       (attrs
                         (attribute :function )))
