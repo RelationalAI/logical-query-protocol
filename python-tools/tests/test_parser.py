@@ -23,7 +23,7 @@ def test_parse_lqp(snapshot: Snapshot, input_file):
         proto_result = ir_to_proto(parsed_lqp)
         assert proto_result is not None, f"Failed to convert IR to Proto for {input_file}"
         binary_output = proto_result.SerializeToString()
-        snapshot.snapshot_dir = Path(__file__).parent / "test_files" / "bin_output"
+        snapshot.snapshot_dir = Path(__file__).parent / "test_files" / "bin"
         snapshot_filename = os.path.basename(input_file).replace(".lqp", ".bin")
         snapshot.assert_match(binary_output, snapshot_filename)
         print(f"Successfully parsed and snapshotted {input_file}")
