@@ -556,18 +556,20 @@ def process_file(filename, bin, json, validate=True):
     if validate:
         validate_lqp(lqp) # type: ignore
     lqp_proto = ir_to_proto(lqp)
-    print(bin, json)
-    # print(lqp_proto)
 
     # Write binary output to the configured directories, using the same filename.
     if bin:
         with open(bin, "wb") as f:
             f.write(lqp_proto.SerializeToString())
+        print(f"Successfully wrote {filename} to bin")
 
     # Write JSON output
     if json:
         with open(json, "w") as f:
             f.write(MessageToJson(lqp_proto, preserving_proto_field_name=True))
+        print(f"Successfully wrote {filename} to JSON")
+
+
 
 def process_directory(lqp_directory, bin, json, validate=True):
     # Create bin directory at parent level if needed
@@ -605,6 +607,7 @@ def look_for_lqp_directory(directory):
     # If we didn't find a 'lqp' directory, create one
     lqp_dir = os.path.join(directory, "lqp")
     os.makedirs(lqp_dir, exist_ok=True)
+    print(f"LQP home directory not found, created one at {directory}")
     return lqp_dir
 
 def get_lqp_files(directory):
