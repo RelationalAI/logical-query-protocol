@@ -566,8 +566,7 @@ def process_file(filename, bin, json):
         lqp_text = f.read()
 
     lqp = parse_lqp(filename, lqp_text)
-    print(lqp)
-    # validate_lqp(lqp) # type: ignore
+    validate_lqp(lqp) # type: ignore
     lqp_proto = ir_to_proto(lqp)
     print(lqp_proto)
 
