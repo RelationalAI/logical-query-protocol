@@ -50,7 +50,7 @@
                             (atom :frontier n)
                             (atom :edges n m))
                           (not (atom :reachable_2 m))))))
-                  (copy :frontier
+                  (assign :frontier
                     ([n::INT]
                       (atom :next n)))
                   (break :empty_frontier

@@ -246,9 +246,6 @@ def convert_instruction(instr: ir.Instruction) -> logic_pb2.Instruction:
     elif isinstance(instr, ir.Upsert):
         dict: Dict[str, Any] = {'upsert': convert_upsert(instr)}
         return logic_pb2.Instruction(**dict)
-    elif isinstance(instr, ir.Copy):
-        dict: Dict[str, Any] = {'copy': convert_copy(instr)}
-        return logic_pb2.Instruction(**dict)
     elif isinstance(instr, ir.MonoidDef):
         dict: Dict[str, Any] = {'monoid_def': convert_monoid_def(instr)}
         return logic_pb2.Instruction(**dict)
@@ -272,18 +269,14 @@ def convert_break(instr: ir.Break) -> logic_pb2.Break:
     )
 def convert_upsert(instr: ir.Upsert) -> logic_pb2.Upsert:
     return logic_pb2.Upsert(
-        name=convert_relation_id(instr.name),
-        body=convert_abstraction(instr.body),
-        attrs=[convert_attribute(attr) for attr in instr.attrs]
-    )
-def convert_copy(instr: ir.Copy) -> logic_pb2.Copy:
-    return logic_pb2.Copy(
+        value_arity=instr.value_arity,
         name=convert_relation_id(instr.name),
         body=convert_abstraction(instr.body),
         attrs=[convert_attribute(attr) for attr in instr.attrs]
     )
 def convert_monoid_def(instr: ir.MonoidDef) -> logic_pb2.MonoidDef:
     return logic_pb2.MonoidDef(
+        value_arity=instr.value_arity,
         monoid=convert_monoid(instr.monoid),
         name=convert_relation_id(instr.name),
         body=convert_abstraction(instr.body),
@@ -291,6 +284,7 @@ def convert_monoid_def(instr: ir.MonoidDef) -> logic_pb2.MonoidDef:
     )
 def convert_monus_def(instr: ir.MonusDef) -> logic_pb2.MonusDef:
     return logic_pb2.MonusDef(
+        value_arity=instr.value_arity,
         monoid=convert_monoid(instr.monoid),
         name=convert_relation_id(instr.name),
         body=convert_abstraction(instr.body),

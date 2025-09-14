@@ -18,9 +18,7 @@
                           (primitive :rel_primitive_eq y 10))
                         (and
                           (primitive :rel_primitive_eq x 2)
-                          (primitive :rel_primitive_eq y 3))))
-                    (attrs
-                      (attribute :function )))
+                          (primitive :rel_primitive_eq y 3)))))
                   (assign :R2
                     ([x::INT y::INT]
                       (or
@@ -38,9 +36,7 @@
                           (primitive :rel_primitive_eq y 5))
                         (and
                           (primitive :rel_primitive_eq x 2)
-                          (primitive :rel_primitive_eq y 20))))
-                    (attrs
-                      (attribute :function )))
+                          (primitive :rel_primitive_eq y 20)))))
                   (assign :R4
                     ([x::INT y::INT]
                       (or
@@ -49,9 +45,7 @@
                           (primitive :rel_primitive_eq y 7))
                         (and
                           (primitive :rel_primitive_eq x 2)
-                          (primitive :rel_primitive_eq y 25))))
-                    (attrs
-                      (attribute :function )))
+                          (primitive :rel_primitive_eq y 25)))))
                   (assign :U
                     ([x::INT y::INT]
                       (or
@@ -69,17 +63,23 @@
 ))))
                   (script
                     (monoid INT::MIN :R1
-                      ([x::INT y::INT]
-                        (atom :U x y)))
+                      ([x::INT | y::INT]
+                        (atom :U x y))
+                      (attrs
+                        (attribute :function )))
                     (monoid BOOL::OR :R2
                       ([x::INT y::INT]
                         (atom :U x y)))
                     (monus BOOL::OR :R3
-                      ([x::INT y::INT]
-                        (atom :U x y)))
+                      ([x::INT | y::INT]
+                        (atom :U x y))
+                      (attrs
+                        (attribute :function )))
                     (monus INT::SUM :R4
-                      ([x::INT y::INT]
-                        (atom :U x y)))
+                      ([x::INT | y::INT]
+                        (atom :U x y))
+                      (attrs
+                        (attribute :function )))
                     (break :always
                       ([]
                         (and

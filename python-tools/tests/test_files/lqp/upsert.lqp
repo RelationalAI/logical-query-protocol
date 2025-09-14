@@ -14,8 +14,7 @@
                   (assign :R2 ([a::INT b::INT]
                     (or
                       (and (= a 1) (= b 2))
-                      (and (= a 2) (= b 3))))
-                    (attrs (attribute :function)))
+                      (and (= a 2) (= b 3)))))
                   (assign :U ([a::INT b::INT]
                     (and (= a 1) (= b 3))))
                   (assign :always ([]
@@ -23,7 +22,7 @@
                 (script
                   (upsert :R1 ([a::INT b::INT]
                     (atom :U a b)))
-                  (upsert :R2 ([a::INT b::INT]
+                  (upsert :R2 ([a::INT | b::INT]
                     (atom :U a b)))
                   (break :always ([] (and))))))))))
     (reads

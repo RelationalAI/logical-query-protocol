@@ -49,12 +49,11 @@ construct: loop | instruction
 loop: "(loop" init script ")"
 init: "(init" instruction* ")"
 
-instruction: assign | upsert | break_ | copy | monoid_def | monus_def
+instruction: assign | upsert | break_ | monoid_def | monus_def
 
 assign : "(assign" relation_id abstraction attrs? ")"
 upsert : "(upsert" relation_id abstraction attrs? ")"
 break_ : "(break" relation_id abstraction attrs? ")"
-copy : "(copy" relation_id abstraction attrs? ")"
 monoid_def : "(monoid" monoid relation_id abstraction attrs? ")"
 monus_def : "(monus" monoid relation_id abstraction attrs? ")"
 
@@ -65,7 +64,9 @@ max_monoid : type_ "::" "MAX"
 sum_monoid : type_ "::" "SUM"
 
 abstraction: "(" bindings formula ")"
-bindings: "[" binding* "]"
+bindings: "[" left_bindings ("|" right_bindings)? "]"
+left_bindings: binding*
+right_bindings: binding*
 binding: SYMBOL "::" type_
 
 formula: exists | reduce | conjunction | disjunction | not_ | ffi | atom | pragma | primitive | true | false | relatom | cast
@@ -288,7 +289,8 @@ class LQPTransformer(Transformer):
         return items[0]
     def def_(self, meta, items):
         name = items[0]
-        body = items[1]
+        body, value_arity = items[1]
+        assert value_arity == 0, f"Defs should not have a value arity"
         attrs = items[2] if len(items) > 2 else []
         return ir.Def(name=name, body=body, attrs=attrs, meta=self.meta(meta))
 
@@ -312,36 +314,33 @@ class LQPTransformer(Transformer):
 
     def assign(self, meta, items):
         name = items[0]
-        body = items[1]
+        body, value_arity = items[1]
+        assert value_arity == 0, f"Assigns should not have a value arity"
         attrs = items[2] if len(items) > 2 else []
         return ir.Assign(name=name, body=body, attrs=attrs, meta=self.meta(meta))
     def upsert(self, meta, items):
         name = items[0]
-        body = items[1]
+        body, value_arity = items[1]
         attrs = items[2] if len(items) > 2 else []
-        return ir.Upsert(name=name, body=body, attrs=attrs, meta=self.meta(meta))
+        return ir.Upsert(value_arity=value_arity, name=name, body=body, attrs=attrs, meta=self.meta(meta))
     def break_(self, meta, items):
         name = items[0]
-        body = items[1]
+        body, value_arity = items[1]
+        assert value_arity == 0, f"Breaks should not have a value arity"
         attrs = items[2] if len(items) > 2 else []
         return ir.Break(name=name, body=body, attrs=attrs, meta=self.meta(meta))
-    def copy(self, meta, items):
-        name = items[0]
-        body = items[1]
-        attrs = items[2] if len(items) > 2 else []
-        return ir.Copy(name=name, body=body, attrs=attrs, meta=self.meta(meta))
     def monoid_def(self, meta, items):
         monoid = items[0]
         name = items[1]
-        body = items[2]
+        body, value_arity = items[2]
         attrs = items[3] if len(items) > 3 else []
-        return ir.MonoidDef(monoid=monoid, name=name, body=body, attrs=attrs, meta=self.meta(meta))
+        return ir.MonoidDef(value_arity=value_arity, monoid=monoid, name=name, body=body, attrs=attrs, meta=self.meta(meta))
     def monus_def(self, meta, items):
         monoid = items[0]
         name = items[1]
-        body = items[2]
+        body, value_arity = items[2]
         attrs = items[3] if len(items) > 3 else []
-        return ir.MonusDef(monoid=monoid, name=name, body=body, attrs=attrs, meta=self.meta(meta))
+        return ir.MonusDef(value_arity=value_arity, monoid=monoid, name=name, body=body, attrs=attrs, meta=self.meta(meta))
 
     def monoid(self, meta, items) :
         return items[0]
@@ -355,7 +354,8 @@ class LQPTransformer(Transformer):
         return ir.SumMonoid(type=items[0], meta=meta)
 
     def abstraction(self, meta, items):
-        return ir.Abstraction(vars=items[0], value=items[1], meta=self.meta(meta))
+        vars, arity = items[0]
+        return ir.Abstraction(vars=vars, value=items[1], meta=self.meta(meta)), arity
 
     def binding(self, meta, items):
         name, rel_t = items
@@ -364,6 +364,15 @@ class LQPTransformer(Transformer):
     def vars(self, meta, items):
         return items
     def bindings(self, meta, items):
+        if len(items) == 1 : # Bindings do not indicate a value_arity
+            return items[0], 0
+        else:
+            left = items[0]
+            right = items[1]
+            return left+right, len(right)
+    def left_bindings(self, meta, items):
+        return items
+    def right_bindings(self, meta, items):
         return items
     def attrs(self, meta, items):
         return items
@@ -377,12 +386,17 @@ class LQPTransformer(Transformer):
         return ir.Disjunction(args=[], meta=self.meta(meta))
 
     def exists(self, meta, items):
+        vars, arity = items[0]
+        assert arity == 0, f"Exists should not have a value_arity"
         # Create Abstraction for body directly here
-        body_abstraction = ir.Abstraction(vars=items[0], value=items[1], meta=self.meta(meta))
+        body_abstraction = ir.Abstraction(vars=vars, value=items[1], meta=self.meta(meta))
         return ir.Exists(body=body_abstraction, meta=self.meta(meta))
 
     def reduce(self, meta, items):
-        return ir.Reduce(op=items[0], body=items[1], terms=items[2], meta=self.meta(meta))
+        op, x = items[0]
+        body, y = items[1]
+        assert x == y == 0, f"Abstractions in Reduce should not have value arities"
+        return ir.Reduce(op=op, body=body, terms=items[2], meta=self.meta(meta))
 
     def conjunction(self, meta, items):
         return ir.Conjunction(args=items, meta=self.meta(meta))
@@ -442,7 +456,7 @@ class LQPTransformer(Transformer):
         return desugar_to_raw_primitive(self.name(meta, ["rel_primitive_divide_monotype"]), items)
 
     def args(self, meta, items):
-        return items
+        return [item[0] for item in items]
     def terms(self, meta, items):
         return items
 

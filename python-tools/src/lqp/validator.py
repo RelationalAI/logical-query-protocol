@@ -368,7 +368,7 @@ class LoopyUpdatesShouldBeAtoms(LqpVisitor):
             instruction_type = node.__class__.__name__
             raise ValidationError(f"{instruction_type} at {node.meta} must have an Atom as its value")
 
-    visit_Copy = visit_MonoidDef = visit_MonusDef = visit_Upsert = visit_instruction_with_atom_body
+    visit_MonoidDef = visit_MonusDef = visit_Upsert = visit_instruction_with_atom_body
 
 def validate_lqp(lqp: ir.Transaction):
     ShadowedVariableFinder(lqp)
