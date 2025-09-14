@@ -58,7 +58,7 @@ class Loop(Construct):
     init: Sequence[Instruction]
     body: Script
 
-# Instruction := Assign | Break | Upsert | Copy | MonoidDef | MonusDef
+# Instruction := Assign | Break | Upsert | MonoidDef | MonusDef
 @dataclass(frozen=True)
 class Instruction(Construct):
     pass
@@ -70,9 +70,10 @@ class Assign(Instruction):
     body: Abstraction
     attrs: Sequence[Attribute]
 
-# Upsert(name::RelationId, body::Abstraction, attrs::Attribute[])
+# Upsert(arity::int, name::RelationId, body::Abstraction, attrs::Attribute[])
 @dataclass(frozen=True)
 class Upsert(Instruction):
+    value_arity: int
     name: RelationId
     body: Abstraction
     attrs: Sequence[Attribute]
@@ -84,24 +85,19 @@ class Break(Instruction):
     body: Abstraction
     attrs: Sequence[Attribute]
 
-# Copy(name::RelationId, body::Abstraction, attrs::Attribute[])
-@dataclass(frozen=True)
-class Copy(Instruction):
-    name: RelationId
-    body: Abstraction
-    attrs: Sequence[Attribute]
-
-# MonoidDef(monoid::Monoid, name::RelationId, body::Abstraction, attrs::Attribute[])
+# MonoidDef(arity::int, monoid::Monoid, name::RelationId, body::Abstraction, attrs::Attribute[])
 @dataclass(frozen=True)
 class MonoidDef(Instruction):
+    value_arity: int
     monoid: Monoid
     name: RelationId
     body: Abstraction
     attrs: Sequence[Attribute]
 
-# MonusDef(monoid::Monoid, name::RelationId, body::Abstraction, attrs::Attribute[])
+# MonusDef(arity::int, monoid::Monoid, name::RelationId, body::Abstraction, attrs::Attribute[])
 @dataclass(frozen=True)
 class MonusDef(Instruction):
+    value_arity: int
     monoid: Monoid
     name: RelationId
     body: Abstraction
@@ -236,12 +232,19 @@ class DateValue(LqpNode):
 class DateTimeValue(LqpNode):
     value: dt.datetime
 
-# DecimalValue()
+# DecimalValue(precision: int, scale: int, value: Decimal)
 @dataclass(frozen=True)
 class DecimalValue(LqpNode):
     precision: int
     scale: int
     value: Decimal
+
+# BooleanValue(value: bool)
+# Note: We need a custom BooleanValue class to distinguish it from Python's `int` type.
+# Python's built-in `bool` is a subclass of `int`.
+@dataclass(frozen=True)
+class BooleanValue(LqpNode):
+    value: bool
 
 @dataclass(frozen=True)
 class Value(LqpNode):
@@ -254,7 +257,8 @@ class Value(LqpNode):
         MissingValue,
         DateValue,
         DateTimeValue,
-        DecimalValue
+        DecimalValue,
+        BooleanValue
     ]
 
 # SpecializedValue(value::Value)
@@ -304,6 +308,7 @@ class TypeName(Enum):
     DATETIME = 7
     MISSING = 8
     DECIMAL = 9
+    BOOLEAN = 10
 
     def __str__(self) -> str:
         return self.name
@@ -418,7 +423,28 @@ class WhatIf(LqpNode):
     branch: Union[str, None]
     epoch: Epoch
 
-# Transaction(epochs::Epoch[])
+# Transaction(epochs::Epoch[], configure::Configure)
 @dataclass(frozen=True)
 class Transaction(LqpNode):
     epochs: Sequence[Epoch]
+    configure: Configure
+
+# Configure(semantics_version::int, ivm_config::IVMConfig)
+@dataclass(frozen=True)
+class Configure(LqpNode):
+    semantics_version: int
+    ivm_config: IVMConfig
+
+# IVMConfig(level::MaintenanceLevel)
+@dataclass(frozen=True)
+class IVMConfig(LqpNode):
+    level: MaintenanceLevel
+
+class MaintenanceLevel(Enum):
+    UNSPECIFIED = 0
+    OFF = 1
+    AUTO = 2
+    ALL = 3
+
+    def __str__(self) -> str:
+        return self.name

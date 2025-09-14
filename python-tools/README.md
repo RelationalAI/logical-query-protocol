@@ -6,17 +6,53 @@ and JSON formats.
 ## Usage
 
 ```
-usage: lqp [-h] [--bin BIN] [--json JSON] input_directory
+usage: lqp [-h] [--no-validation] [--bin] [--json] input
 
 Parse LQP S-expression into Protobuf binary and JSON files.
 
 positional arguments:
-  input_directory  path to the input LQP S-expression files
+  input            directory holding .lqp files, or a single .lqp file
 
 options:
   -h, --help       show this help message and exit
-  --bin BIN        output directory for the binary encoded protobuf
-  --json JSON      output directory for the JSON encoded protobuf
+  --no-validation  don't validate parsed LQP
+  --bin            encode emitted ProtoBuf into binary
+  --json           encode emitted ProtoBuf into JSON
+```
+
+## Examples
+
+```bash
+lqp --no-validation --bin --json foo/bar.lqp
+```
+Will create two files in `foo/` named `bar.bin` and `bar.json` containing the binary and JSON encodings of the parsed ProtoBuf.
+In this case, the parser will not go through the client-side validations we do to check for well-formed LQP.
+
+```bash
+lqp --bin --json foo
+```
+This will look for `.lqp` files both at the top-level and inside an `lqp` subdirectory.
+Then it will organize the generated binary and JSON into folders, as well as the original found files. So, for example, if `foo` has this structure:
+
+```
+foo/
+| bar.lqp
+| lqp/
+| | baz.lqp
+```
+Then after executing the above command, it should have this structure:
+
+```
+foo/
+| bin/
+| | bar.bin
+| | baz.bin
+| json/
+| | bar.json
+| | baz.json
+| lqp/
+| | bar.lqp
+| | baz.lqp
 ```
 
 ## Build
@@ -50,6 +86,11 @@ Running tests:
 ```
 python -m pytest
 ```
+
+To add testcases, add a `.lqp` file to the `tests/test_files/lqp_input` subdirectory. New
+files get picked up automatically. To generate or update the corresponding output files
+(binary, debug mode, and pretty-printing snapshots), run pytest with the
+`--snapshot-update` flag.
 
 Type checking:
 ```

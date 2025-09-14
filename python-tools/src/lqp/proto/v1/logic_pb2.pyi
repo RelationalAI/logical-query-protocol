@@ -52,19 +52,17 @@ class Loop(_message.Message):
     def __init__(self, init: _Optional[_Iterable[_Union[Instruction, _Mapping]]] = ..., body: _Optional[_Union[Script, _Mapping]] = ...) -> None: ...
 
 class Instruction(_message.Message):
-    __slots__ = ("assign", "upsert", "copy", "monoid_def", "monus_def")
+    __slots__ = ("assign", "upsert", "monoid_def", "monus_def")
     ASSIGN_FIELD_NUMBER: _ClassVar[int]
     UPSERT_FIELD_NUMBER: _ClassVar[int]
     BREAK_FIELD_NUMBER: _ClassVar[int]
-    COPY_FIELD_NUMBER: _ClassVar[int]
     MONOID_DEF_FIELD_NUMBER: _ClassVar[int]
     MONUS_DEF_FIELD_NUMBER: _ClassVar[int]
     assign: Assign
     upsert: Upsert
-    copy: Copy
     monoid_def: MonoidDef
     monus_def: MonusDef
-    def __init__(self, assign: _Optional[_Union[Assign, _Mapping]] = ..., upsert: _Optional[_Union[Upsert, _Mapping]] = ..., copy: _Optional[_Union[Copy, _Mapping]] = ..., monoid_def: _Optional[_Union[MonoidDef, _Mapping]] = ..., monus_def: _Optional[_Union[MonusDef, _Mapping]] = ..., **kwargs) -> None: ...
+    def __init__(self, assign: _Optional[_Union[Assign, _Mapping]] = ..., upsert: _Optional[_Union[Upsert, _Mapping]] = ..., monoid_def: _Optional[_Union[MonoidDef, _Mapping]] = ..., monus_def: _Optional[_Union[MonusDef, _Mapping]] = ..., **kwargs) -> None: ...
 
 class Assign(_message.Message):
     __slots__ = ("name", "body", "attrs")
@@ -77,14 +75,16 @@ class Assign(_message.Message):
     def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
 
 class Upsert(_message.Message):
-    __slots__ = ("name", "body", "attrs")
+    __slots__ = ("name", "body", "attrs", "value_arity")
     NAME_FIELD_NUMBER: _ClassVar[int]
     BODY_FIELD_NUMBER: _ClassVar[int]
     ATTRS_FIELD_NUMBER: _ClassVar[int]
+    VALUE_ARITY_FIELD_NUMBER: _ClassVar[int]
     name: RelationId
     body: Abstraction
     attrs: _containers.RepeatedCompositeFieldContainer[Attribute]
-    def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
+    value_arity: int
+    def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ..., value_arity: _Optional[int] = ...) -> None: ...
 
 class Break(_message.Message):
     __slots__ = ("name", "body", "attrs")
@@ -96,39 +96,33 @@ class Break(_message.Message):
     attrs: _containers.RepeatedCompositeFieldContainer[Attribute]
     def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
 
-class Copy(_message.Message):
-    __slots__ = ("name", "body", "attrs")
-    NAME_FIELD_NUMBER: _ClassVar[int]
-    BODY_FIELD_NUMBER: _ClassVar[int]
-    ATTRS_FIELD_NUMBER: _ClassVar[int]
-    name: RelationId
-    body: Abstraction
-    attrs: _containers.RepeatedCompositeFieldContainer[Attribute]
-    def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
-
 class MonoidDef(_message.Message):
-    __slots__ = ("monoid", "name", "body", "attrs")
+    __slots__ = ("monoid", "name", "body", "attrs", "value_arity")
     MONOID_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
     BODY_FIELD_NUMBER: _ClassVar[int]
     ATTRS_FIELD_NUMBER: _ClassVar[int]
+    VALUE_ARITY_FIELD_NUMBER: _ClassVar[int]
     monoid: Monoid
     name: RelationId
     body: Abstraction
     attrs: _containers.RepeatedCompositeFieldContainer[Attribute]
-    def __init__(self, monoid: _Optional[_Union[Monoid, _Mapping]] = ..., name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
+    value_arity: int
+    def __init__(self, monoid: _Optional[_Union[Monoid, _Mapping]] = ..., name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ..., value_arity: _Optional[int] = ...) -> None: ...
 
 class MonusDef(_message.Message):
-    __slots__ = ("monoid", "name", "body", "attrs")
+    __slots__ = ("monoid", "name", "body", "attrs", "value_arity")
     MONOID_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
     BODY_FIELD_NUMBER: _ClassVar[int]
     ATTRS_FIELD_NUMBER: _ClassVar[int]
+    VALUE_ARITY_FIELD_NUMBER: _ClassVar[int]
     monoid: Monoid
     name: RelationId
     body: Abstraction
     attrs: _containers.RepeatedCompositeFieldContainer[Attribute]
-    def __init__(self, monoid: _Optional[_Union[Monoid, _Mapping]] = ..., name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
+    value_arity: int
+    def __init__(self, monoid: _Optional[_Union[Monoid, _Mapping]] = ..., name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ..., value_arity: _Optional[int] = ...) -> None: ...
 
 class Monoid(_message.Message):
     __slots__ = ("or_monoid", "min_monoid", "max_monoid", "sum_monoid")
@@ -328,7 +322,7 @@ class RelationId(_message.Message):
     def __init__(self, id_low: _Optional[int] = ..., id_high: _Optional[int] = ...) -> None: ...
 
 class Type(_message.Message):
-    __slots__ = ("unspecified_type", "string_type", "int_type", "float_type", "uint128_type", "int128_type", "date_type", "datetime_type", "missing_type", "decimal_type")
+    __slots__ = ("unspecified_type", "string_type", "int_type", "float_type", "uint128_type", "int128_type", "date_type", "datetime_type", "missing_type", "decimal_type", "boolean_type")
     UNSPECIFIED_TYPE_FIELD_NUMBER: _ClassVar[int]
     STRING_TYPE_FIELD_NUMBER: _ClassVar[int]
     INT_TYPE_FIELD_NUMBER: _ClassVar[int]
@@ -339,6 +333,7 @@ class Type(_message.Message):
     DATETIME_TYPE_FIELD_NUMBER: _ClassVar[int]
     MISSING_TYPE_FIELD_NUMBER: _ClassVar[int]
     DECIMAL_TYPE_FIELD_NUMBER: _ClassVar[int]
+    BOOLEAN_TYPE_FIELD_NUMBER: _ClassVar[int]
     unspecified_type: UnspecifiedType
     string_type: StringType
     int_type: IntType
@@ -349,7 +344,8 @@ class Type(_message.Message):
     datetime_type: DateTimeType
     missing_type: MissingType
     decimal_type: DecimalType
-    def __init__(self, unspecified_type: _Optional[_Union[UnspecifiedType, _Mapping]] = ..., string_type: _Optional[_Union[StringType, _Mapping]] = ..., int_type: _Optional[_Union[IntType, _Mapping]] = ..., float_type: _Optional[_Union[FloatType, _Mapping]] = ..., uint128_type: _Optional[_Union[UInt128Type, _Mapping]] = ..., int128_type: _Optional[_Union[Int128Type, _Mapping]] = ..., date_type: _Optional[_Union[DateType, _Mapping]] = ..., datetime_type: _Optional[_Union[DateTimeType, _Mapping]] = ..., missing_type: _Optional[_Union[MissingType, _Mapping]] = ..., decimal_type: _Optional[_Union[DecimalType, _Mapping]] = ...) -> None: ...
+    boolean_type: BooleanType
+    def __init__(self, unspecified_type: _Optional[_Union[UnspecifiedType, _Mapping]] = ..., string_type: _Optional[_Union[StringType, _Mapping]] = ..., int_type: _Optional[_Union[IntType, _Mapping]] = ..., float_type: _Optional[_Union[FloatType, _Mapping]] = ..., uint128_type: _Optional[_Union[UInt128Type, _Mapping]] = ..., int128_type: _Optional[_Union[Int128Type, _Mapping]] = ..., date_type: _Optional[_Union[DateType, _Mapping]] = ..., datetime_type: _Optional[_Union[DateTimeType, _Mapping]] = ..., missing_type: _Optional[_Union[MissingType, _Mapping]] = ..., decimal_type: _Optional[_Union[DecimalType, _Mapping]] = ..., boolean_type: _Optional[_Union[BooleanType, _Mapping]] = ...) -> None: ...
 
 class UnspecifiedType(_message.Message):
     __slots__ = ()
@@ -395,8 +391,12 @@ class DecimalType(_message.Message):
     scale: int
     def __init__(self, precision: _Optional[int] = ..., scale: _Optional[int] = ...) -> None: ...
 
+class BooleanType(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
+
 class Value(_message.Message):
-    __slots__ = ("string_value", "int_value", "float_value", "uint128_value", "int128_value", "missing_value", "date_value", "datetime_value", "decimal_value")
+    __slots__ = ("string_value", "int_value", "float_value", "uint128_value", "int128_value", "missing_value", "date_value", "datetime_value", "decimal_value", "boolean_value")
     STRING_VALUE_FIELD_NUMBER: _ClassVar[int]
     INT_VALUE_FIELD_NUMBER: _ClassVar[int]
     FLOAT_VALUE_FIELD_NUMBER: _ClassVar[int]
@@ -406,6 +406,7 @@ class Value(_message.Message):
     DATE_VALUE_FIELD_NUMBER: _ClassVar[int]
     DATETIME_VALUE_FIELD_NUMBER: _ClassVar[int]
     DECIMAL_VALUE_FIELD_NUMBER: _ClassVar[int]
+    BOOLEAN_VALUE_FIELD_NUMBER: _ClassVar[int]
     string_value: str
     int_value: int
     float_value: float
@@ -415,7 +416,8 @@ class Value(_message.Message):
     date_value: DateValue
     datetime_value: DateTimeValue
     decimal_value: DecimalValue
-    def __init__(self, string_value: _Optional[str] = ..., int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128Value, _Mapping]] = ..., int128_value: _Optional[_Union[Int128Value, _Mapping]] = ..., missing_value: _Optional[_Union[MissingValue, _Mapping]] = ..., date_value: _Optional[_Union[DateValue, _Mapping]] = ..., datetime_value: _Optional[_Union[DateTimeValue, _Mapping]] = ..., decimal_value: _Optional[_Union[DecimalValue, _Mapping]] = ...) -> None: ...
+    boolean_value: bool
+    def __init__(self, string_value: _Optional[str] = ..., int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128Value, _Mapping]] = ..., int128_value: _Optional[_Union[Int128Value, _Mapping]] = ..., missing_value: _Optional[_Union[MissingValue, _Mapping]] = ..., date_value: _Optional[_Union[DateValue, _Mapping]] = ..., datetime_value: _Optional[_Union[DateTimeValue, _Mapping]] = ..., decimal_value: _Optional[_Union[DecimalValue, _Mapping]] = ..., boolean_value: bool = ...) -> None: ...
 
 class UInt128Value(_message.Message):
     __slots__ = ("low", "high")

@@ -14,7 +14,8 @@ non_parametric_types = {
     ir.TypeName.INT128: "Int128Type",
     ir.TypeName.DATE: "DateType",
     ir.TypeName.DATETIME: "DateTimeType",
-    ir.TypeName.MISSING: "MissingType"
+    ir.TypeName.MISSING: "MissingType",
+    ir.TypeName.BOOLEAN: "BooleanType",
 }
 
 def convert_type(rt: ir.Type) -> logic_pb2.Type:
@@ -57,7 +58,7 @@ def convert_datetime(val: ir.DateTimeValue) -> logic_pb2.DateTimeValue:
     )
 
 def convert_decimal(val: ir.DecimalValue) -> logic_pb2.DecimalValue:
-    _, digits, exponent = val.value.as_tuple()
+    sign, digits, exponent = val.value.as_tuple()
     value = reduce(lambda rst, d: rst * 10 + d, digits)
 
     assert isinstance(exponent, int)
@@ -67,7 +68,17 @@ def convert_decimal(val: ir.DecimalValue) -> logic_pb2.DecimalValue:
     # so if we have digits 12300 with exponent -4, but we need `scale` of 6, then we need to
     # multiply the digits by 10 ** 2 (i.e., 10 ** (6 + -4)) to get the physical value of
     # 1230000.
-    value *= 10 ** (val.scale + exponent)
+    # Ensure we stay in the integer realm when the exponent outweighs the scale, e.g.
+    # value = 4.4000000000000003552713678800500929355621337890625
+    modifier = val.scale + exponent
+    if modifier >= 0:
+        value *= 10 ** modifier
+    else:
+        value //= 10 ** (-modifier)
+
+    if sign == 1:
+        value = -value
+
     value = ir.Int128Value(value=value, meta=val.meta)
 
     return logic_pb2.DecimalValue(
@@ -106,6 +117,8 @@ def convert_value(pv: ir.Value) -> logic_pb2.Value:
         return logic_pb2.Value(
             decimal_value=convert_decimal(pv.value)
         )
+    elif isinstance(pv.value, ir.BooleanValue):
+        return logic_pb2.Value(boolean_value=pv.value.value)
     else:
         raise TypeError(f"Unsupported Value type: {type(pv.value)}")
 
@@ -233,9 +246,6 @@ def convert_instruction(instr: ir.Instruction) -> logic_pb2.Instruction:
     elif isinstance(instr, ir.Upsert):
         dict: Dict[str, Any] = {'upsert': convert_upsert(instr)}
         return logic_pb2.Instruction(**dict)
-    elif isinstance(instr, ir.Copy):
-        dict: Dict[str, Any] = {'copy': convert_copy(instr)}
-        return logic_pb2.Instruction(**dict)
     elif isinstance(instr, ir.MonoidDef):
         dict: Dict[str, Any] = {'monoid_def': convert_monoid_def(instr)}
         return logic_pb2.Instruction(**dict)
@@ -259,18 +269,14 @@ def convert_break(instr: ir.Break) -> logic_pb2.Break:
     )
 def convert_upsert(instr: ir.Upsert) -> logic_pb2.Upsert:
     return logic_pb2.Upsert(
-        name=convert_relation_id(instr.name),
-        body=convert_abstraction(instr.body),
-        attrs=[convert_attribute(attr) for attr in instr.attrs]
-    )
-def convert_copy(instr: ir.Copy) -> logic_pb2.Copy:
-    return logic_pb2.Copy(
+        value_arity=instr.value_arity,
         name=convert_relation_id(instr.name),
         body=convert_abstraction(instr.body),
         attrs=[convert_attribute(attr) for attr in instr.attrs]
     )
 def convert_monoid_def(instr: ir.MonoidDef) -> logic_pb2.MonoidDef:
     return logic_pb2.MonoidDef(
+        value_arity=instr.value_arity,
         monoid=convert_monoid(instr.monoid),
         name=convert_relation_id(instr.name),
         body=convert_abstraction(instr.body),
@@ -278,6 +284,7 @@ def convert_monoid_def(instr: ir.MonoidDef) -> logic_pb2.MonoidDef:
     )
 def convert_monus_def(instr: ir.MonusDef) -> logic_pb2.MonusDef:
     return logic_pb2.MonusDef(
+        value_arity=instr.value_arity,
         monoid=convert_monoid(instr.monoid),
         name=convert_relation_id(instr.name),
         body=convert_abstraction(instr.body),
@@ -411,8 +418,23 @@ def convert_epoch(e: ir.Epoch) -> transactions_pb2.Epoch:
         reads=[convert_read(r) for r in e.reads]
     )
 
+def convert_configure(c: ir.Configure) -> transactions_pb2.Configure:
+    return transactions_pb2.Configure(
+        semantics_version=c.semantics_version,
+        ivm_config=convert_ivm_config(c.ivm_config)
+    )
+
+def convert_ivm_config(c: ir.IVMConfig) -> transactions_pb2.IVMConfig:
+    return transactions_pb2.IVMConfig(
+        level=convert_maintenance_level(c.level)
+    )
+
+def convert_maintenance_level(l: ir.MaintenanceLevel) -> transactions_pb2.MaintenanceLevel:
+    return transactions_pb2.MaintenanceLevel.Name(l.value) # type: ignore[missing-attribute]
+
 def convert_transaction(t: ir.Transaction) -> transactions_pb2.Transaction:
     return transactions_pb2.Transaction(
+        configure=convert_configure(t.configure),
         epochs=[convert_epoch(e) for e in t.epochs]
     )
 

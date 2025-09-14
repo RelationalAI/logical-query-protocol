@@ -1,0 +1,140 @@
+
+é
+·
+´
+±
+
+f1¹
+¶
+		V×Ä³N&â¼¨
+
+
+plusR
+
+
+minusR
+
+
+multR
+
+
+divRÝ
+Ú×
+
+
+aR
+
+
+bR¶³
+R
+
+adec_64_a
+R
+
+bdec_64_b
+<J:
+rel_primitive_add_monotype
+
+a
+
+b
+
+
+plus
+BJ@
+rel_primitive_subtract_monotype
+
+a
+
+b	
+
+minus
+AJ?
+rel_primitive_multiply_monotype
+
+a
+
+b
+
+
+mult
+>J<
+rel_primitive_divide_monotype
+
+a
+
+b	
+
+div»
+¸
+		VÅƒñÚª
+
+
+plusR&
+
+
+
+minusR&
+
+
+
+multR&
+
+
+
+divR&
+ß
+ÜÙ
+
+
+aR&
+
+
+
+bR&
+¸µ
+R
+
+a	dec_128_a
+R
+
+b	dec_128_b
+<J:
+rel_primitive_add_monotype
+
+a
+
+b
+
+
+plus
+BJ@
+rel_primitive_subtract_monotype
+
+a
+
+b	
+
+minus
+AJ?
+rel_primitive_multiply_monotype
+
+a
+
+b
+
+
+mult
+>J<
+rel_primitive_divide_monotype
+
+a
+
+b	
+
+div/
+		V×Ä³N&â¼
+		VÅƒñÚ
+decimal_64decimal_128
+dec_64		V×Ä³N&â¼
+dec_128		VÅƒñÚ

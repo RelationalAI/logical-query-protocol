@@ -2,14 +2,12 @@ import pytest
 import os
 import dataclasses
 from pytest_snapshot.plugin import Snapshot
+from math import isnan
 
 from lqp import parser
 from lqp import print as lqp_print
 from lqp import ir
-
-def get_lqp_input_files():
-    lqp_input_dir = "tests/test_files/lqp_input"
-    return [os.path.join(lqp_input_dir, f) for f in os.listdir(lqp_input_dir) if f.endswith(".lqp")]
+from .utils import get_lqp_input_files
 
 def assert_lqp_nodes_equal(obj1, obj2):
     if isinstance(obj1, ir.LqpNode) and isinstance(obj2, ir.LqpNode):
@@ -24,6 +22,11 @@ def assert_lqp_nodes_equal(obj1, obj2):
             raise AssertionError(f"Sequence lengths differ: {len(obj1)} vs {len(obj2)}")
         for i, (item1, item2) in enumerate(zip(obj1, obj2)):
             assert_lqp_nodes_equal(item1, item2)
+    elif isinstance(obj1, float) and isinstance(obj2, float):
+        if isnan(obj1) and isnan(obj2):
+            return
+        if obj1 != obj2:
+            raise AssertionError(f"Values differ: {obj1} vs {obj2}")
     elif obj1 != obj2:
         raise AssertionError(f"Values differ: {obj1} vs {obj2}")
 

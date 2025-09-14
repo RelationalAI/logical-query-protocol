@@ -1,4 +1,7 @@
 (transaction
+  (configure
+    { :ivm.maintenance_level "off"
+      :semantics_version 0})
   (epoch
     (writes
       (define
@@ -35,19 +38,17 @@
           (path "wrong")
           (columns (column "col1name" 2344968532315871158) (column "col2name" 3069421044470708673))
 
-          {
+          { :compression ""
             :partition_size 10
-            :compression ""
-            :syntax_quotechar "\""
-            :syntax_escapechar "\\"}))
+            :syntax_escapechar "\\"
+            :syntax_quotechar "\""}))
       (export
         (export_csv_config
           (path "wrong")
           (columns (column "blahblah" 3616683933217157613) (column "foofoo" 11835545690810417679))
 
-          {
-            :syntax_quotechar "\""
-            :syntax_escapechar "\\"})))))
+          { :syntax_escapechar "\\"
+            :syntax_quotechar "\""})))))
 
 ;; Debug information
 ;; -----------------------

@@ -1,6 +1,7 @@
 import argparse
 import os
 import hashlib
+import shutil
 from dataclasses import dataclass
 from lark import Lark, Transformer, v_args
 import lqp.ir as ir
@@ -13,7 +14,8 @@ from datetime import date, datetime
 grammar = """
 start: transaction | fragment
 
-transaction: "(transaction" epoch* ")"
+transaction: "(transaction" configure? epoch* ")"
+configure: "(configure" config_dict ")"
 epoch: "(epoch" writes? reads? ")"
 writes: "(writes" write* ")"
 reads: "(reads" read* ")"
@@ -47,12 +49,11 @@ construct: loop | instruction
 loop: "(loop" init script ")"
 init: "(init" instruction* ")"
 
-instruction: assign | upsert | break_ | copy | monoid_def | monus_def
+instruction: assign | upsert | break_ | monoid_def | monus_def
 
 assign : "(assign" relation_id abstraction attrs? ")"
 upsert : "(upsert" relation_id abstraction attrs? ")"
 break_ : "(break" relation_id abstraction attrs? ")"
-copy : "(copy" relation_id abstraction attrs? ")"
 monoid_def : "(monoid" monoid relation_id abstraction attrs? ")"
 monus_def : "(monus" monoid relation_id abstraction attrs? ")"
 
@@ -63,7 +64,9 @@ max_monoid : type_ "::" "MAX"
 sum_monoid : type_ "::" "SUM"
 
 abstraction: "(" bindings formula ")"
-bindings: "[" binding* "]"
+bindings: "[" left_bindings ("|" right_bindings)? "]"
+left_bindings: binding*
+right_bindings: binding*
 binding: SYMBOL "::" type_
 
 formula: exists | reduce | conjunction | disjunction | not_ | ffi | atom | pragma | primitive | true | false | relatom | cast
@@ -109,21 +112,23 @@ fragment_id: ":" SYMBOL
 relation_id: (":" SYMBOL) | NUMBER
 name: ":" SYMBOL
 
-value: STRING | NUMBER | FLOAT | UINT128 | INT128 | date | datetime | MISSING | DECIMAL
+value: STRING | NUMBER | FLOAT | UINT128 | INT128
+     | date | datetime | MISSING | DECIMAL | BOOLEAN
 
 type_ : TYPE_NAME | "(" TYPE_NAME value* ")"
 
 TYPE_NAME: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
-            | "DATE" | "DATETIME" | "MISSING" | "DECIMAL"
+         | "DATE" | "DATETIME" | "MISSING" | "DECIMAL" | "BOOLEAN"
 
-SYMBOL: /[a-zA-Z_][a-zA-Z0-9_-]*/
-MISSING: "missing"
+SYMBOL: /[a-zA-Z_][a-zA-Z0-9_.-]*/
+MISSING.1: "missing" // Set a higher priority so so it's MISSING instead of SYMBOL
 STRING: ESCAPED_STRING
 NUMBER: /[-]?\\d+/
 INT128: /[-]?\\d+i128/
 UINT128: /0x[0-9a-fA-F]+/
-FLOAT: /[-]?\\d+\\.\\d+/
-DECIMAL: /[-]?\\d+\\.\\d+d\\d+/
+FLOAT.1: /[-]?\\d+\\.\\d+/ | "inf" | "nan"
+DECIMAL.2: /[-]?\\d+\\.\\d+d\\d+/
+BOOLEAN.1: "true" | "false" // Set a higher priority so it's BOOLEAN instead of SYMBOL
 date: "(date" NUMBER NUMBER NUMBER ")"
 datetime: "(datetime" NUMBER NUMBER NUMBER NUMBER NUMBER NUMBER NUMBER? ")"
 
@@ -136,6 +141,27 @@ COMMENT: /;;.*/  // Matches ;; followed by any characters except newline
 %import common.ESCAPED_STRING -> ESCAPED_STRING
 """
 
+def construct_configure(config_dict, meta):
+    # Construct IVMConfig
+    maintenance_level_value = config_dict.get("ivm.maintenance_level")
+    if maintenance_level_value:
+        maintenance_level = getattr(ir.MaintenanceLevel, maintenance_level_value.value.upper())
+    else:
+        maintenance_level = ir.MaintenanceLevel.OFF
+    ivm_config = ir.IVMConfig(level=maintenance_level, meta=meta)
+
+    # Construct Configure
+    semantics_version_value = config_dict.get("semantics_version")
+    if semantics_version_value:
+        semantics_version = semantics_version_value.value
+    else:
+        semantics_version = 0
+
+    return ir.Configure(
+        semantics_version=semantics_version,
+        ivm_config=ivm_config,
+        meta=meta,
+    )
 
 def desugar_to_raw_primitive(name, terms):
     # Convert terms to relterms
@@ -163,7 +189,18 @@ class LQPTransformer(Transformer):
     # Transactions
     #
     def transaction(self, meta, items):
-        return ir.Transaction(epochs=items, meta=self.meta(meta))
+        if isinstance(items[0], ir.Configure):
+            configure = items[0]
+            epochs = items[1:]
+        else:
+            configure = construct_configure({}, self.meta(meta))
+            epochs = items
+
+        return ir.Transaction(configure=configure, epochs=epochs, meta=self.meta(meta))
+
+    def configure(self, meta, items):
+        return construct_configure(items[0], self.meta(meta))
+
     def epoch(self, meta, items):
         kwargs = {k: v for k, v in items if v} # Filter out None values
         return ir.Epoch(**kwargs, meta=self.meta(meta))
@@ -252,7 +289,8 @@ class LQPTransformer(Transformer):
         return items[0]
     def def_(self, meta, items):
         name = items[0]
-        body = items[1]
+        body, value_arity = items[1]
+        assert value_arity == 0, f"Defs should not have a value arity"
         attrs = items[2] if len(items) > 2 else []
         return ir.Def(name=name, body=body, attrs=attrs, meta=self.meta(meta))
 
@@ -276,36 +314,33 @@ class LQPTransformer(Transformer):
 
     def assign(self, meta, items):
         name = items[0]
-        body = items[1]
+        body, value_arity = items[1]
+        assert value_arity == 0, f"Assigns should not have a value arity"
         attrs = items[2] if len(items) > 2 else []
         return ir.Assign(name=name, body=body, attrs=attrs, meta=self.meta(meta))
     def upsert(self, meta, items):
         name = items[0]
-        body = items[1]
+        body, value_arity = items[1]
         attrs = items[2] if len(items) > 2 else []
-        return ir.Upsert(name=name, body=body, attrs=attrs, meta=self.meta(meta))
+        return ir.Upsert(value_arity=value_arity, name=name, body=body, attrs=attrs, meta=self.meta(meta))
     def break_(self, meta, items):
         name = items[0]
-        body = items[1]
+        body, value_arity = items[1]
+        assert value_arity == 0, f"Breaks should not have a value arity"
         attrs = items[2] if len(items) > 2 else []
         return ir.Break(name=name, body=body, attrs=attrs, meta=self.meta(meta))
-    def copy(self, meta, items):
-        name = items[0]
-        body = items[1]
-        attrs = items[2] if len(items) > 2 else []
-        return ir.Copy(name=name, body=body, attrs=attrs, meta=self.meta(meta))
     def monoid_def(self, meta, items):
         monoid = items[0]
         name = items[1]
-        body = items[2]
+        body, value_arity = items[2]
         attrs = items[3] if len(items) > 3 else []
-        return ir.MonoidDef(monoid=monoid, name=name, body=body, attrs=attrs, meta=self.meta(meta))
+        return ir.MonoidDef(value_arity=value_arity, monoid=monoid, name=name, body=body, attrs=attrs, meta=self.meta(meta))
     def monus_def(self, meta, items):
         monoid = items[0]
         name = items[1]
-        body = items[2]
+        body, value_arity = items[2]
         attrs = items[3] if len(items) > 3 else []
-        return ir.MonusDef(monoid=monoid, name=name, body=body, attrs=attrs, meta=self.meta(meta))
+        return ir.MonusDef(value_arity=value_arity, monoid=monoid, name=name, body=body, attrs=attrs, meta=self.meta(meta))
 
     def monoid(self, meta, items) :
         return items[0]
@@ -319,7 +354,8 @@ class LQPTransformer(Transformer):
         return ir.SumMonoid(type=items[0], meta=meta)
 
     def abstraction(self, meta, items):
-        return ir.Abstraction(vars=items[0], value=items[1], meta=self.meta(meta))
+        vars, arity = items[0]
+        return ir.Abstraction(vars=vars, value=items[1], meta=self.meta(meta)), arity
 
     def binding(self, meta, items):
         name, rel_t = items
@@ -328,6 +364,15 @@ class LQPTransformer(Transformer):
     def vars(self, meta, items):
         return items
     def bindings(self, meta, items):
+        if len(items) == 1 : # Bindings do not indicate a value_arity
+            return items[0], 0
+        else:
+            left = items[0]
+            right = items[1]
+            return left+right, len(right)
+    def left_bindings(self, meta, items):
+        return items
+    def right_bindings(self, meta, items):
         return items
     def attrs(self, meta, items):
         return items
@@ -341,12 +386,17 @@ class LQPTransformer(Transformer):
         return ir.Disjunction(args=[], meta=self.meta(meta))
 
     def exists(self, meta, items):
+        vars, arity = items[0]
+        assert arity == 0, f"Exists should not have a value_arity"
         # Create Abstraction for body directly here
-        body_abstraction = ir.Abstraction(vars=items[0], value=items[1], meta=self.meta(meta))
+        body_abstraction = ir.Abstraction(vars=vars, value=items[1], meta=self.meta(meta))
         return ir.Exists(body=body_abstraction, meta=self.meta(meta))
 
     def reduce(self, meta, items):
-        return ir.Reduce(op=items[0], body=items[1], terms=items[2], meta=self.meta(meta))
+        op, x = items[0]
+        body, y = items[1]
+        assert x == y == 0, f"Abstractions in Reduce should not have value arities"
+        return ir.Reduce(op=op, body=body, terms=items[2], meta=self.meta(meta))
 
     def conjunction(self, meta, items):
         return ir.Conjunction(args=items, meta=self.meta(meta))
@@ -406,7 +456,7 @@ class LQPTransformer(Transformer):
         return desugar_to_raw_primitive(self.name(meta, ["rel_primitive_divide_monotype"]), items)
 
     def args(self, meta, items):
-        return items
+        return [item[0] for item in items]
     def terms(self, meta, items):
         return items
 
@@ -476,6 +526,8 @@ class LQPTransformer(Transformer):
         value = Decimal(parts[0])
 
         return ir.DecimalValue(precision=precision, scale=scale, value=value, meta=None)
+    def BOOLEAN(self, b):
+        return ir.BooleanValue(value=bool(b == "true"), meta=None)
     def date(self, meta, items):
         # Date is in the format (date YYYY MM DD)
         date_val = date(*items)
@@ -510,64 +562,106 @@ def parse_lqp(file, text) -> ir.LqpNode:
     result = transformer.transform(tree)
     return result
 
-def process_file(filename, bin, json):
+def process_file(filename, bin, json, validate=True):
     with open(filename, "r") as f:
         lqp_text = f.read()
 
     lqp = parse_lqp(filename, lqp_text)
-    validate_lqp(lqp) # type: ignore
+    if validate:
+        validate_lqp(lqp) # type: ignore
     lqp_proto = ir_to_proto(lqp)
-    print(lqp_proto)
 
     # Write binary output to the configured directories, using the same filename.
     if bin:
         with open(bin, "wb") as f:
             f.write(lqp_proto.SerializeToString())
+        print(f"Successfully wrote {filename} to bin")
 
     # Write JSON output
     if json:
         with open(json, "w") as f:
             f.write(MessageToJson(lqp_proto, preserving_proto_field_name=True))
+        print(f"Successfully wrote {filename} to JSON")
+
+def process_directory(lqp_directory, bin, json, validate=True):
+    # Create bin directory at parent level if needed
+    bin_dir = None
+    if bin:
+        parent_dir = os.path.dirname(lqp_directory)
+        bin_dir = os.path.join(parent_dir, "bin")
+        os.makedirs(bin_dir, exist_ok=True)
+
+    # Create json directory at parent level if needed
+    json_dir = None
+    if json:
+        parent_dir = os.path.dirname(lqp_directory)
+        json_dir = os.path.join(parent_dir, "json")
+        os.makedirs(json_dir, exist_ok=True)
+
+    # Process each LQP file in the directory
+    for file in os.listdir(lqp_directory):
+        if not file.endswith(".lqp"):
+            continue
+
+        filename = os.path.join(lqp_directory, file)
+        basename = os.path.splitext(file)[0]
+
+        bin_output = os.path.join(bin_dir, basename + ".bin") if bin_dir else None
+        json_output = os.path.join(json_dir, basename + ".json") if json_dir else None
+
+        process_file(filename, bin_output, json_output, validate)
+
+def look_for_lqp_directory(directory):
+    for root, dirs, _ in os.walk(directory):
+        if "lqp" in dirs:
+            return os.path.join(root, "lqp")
+
+    # If we didn't find a 'lqp' directory, create one
+    lqp_dir = os.path.join(directory, "lqp")
+    os.makedirs(lqp_dir, exist_ok=True)
+    print(f"LQP home directory not found, created one at {directory}")
+    return lqp_dir
+
+def get_lqp_files(directory):
+    lqp_files = []
+    for file in os.listdir(directory):
+        if file.endswith(".lqp"):
+            lqp_files.append(os.path.join(directory, file))
+    return lqp_files
+
 
 def main():
     arg_parser = argparse.ArgumentParser(description="Parse LQP S-expression into Protobuf binary and JSON files.")
-    arg_parser.add_argument("input_directory", help="path to the input LQP S-expression files")
-    arg_parser.add_argument("--bin", help="output directory for the binary encoded protobuf")
-    arg_parser.add_argument("--json", help="output directory for the JSON encoded protobuf")
+    arg_parser.add_argument("input", help="directory holding .lqp files, or a single .lqp file")
+    arg_parser.add_argument("--no-validation", action="store_true", help="don't validate parsed LQP")
+    arg_parser.add_argument("--bin", action="store_true", help="encode emitted ProtoBuf into binary")
+    arg_parser.add_argument("--json", action="store_true", help="encode emitted ProtoBuf into JSON")
     args = arg_parser.parse_args()
 
-    print(args)
+    validate = not args.no_validation
+    bin = args.bin
+    json = args.json
 
-    # Check if directory
-    if not os.path.isdir(args.input_directory):
-        filename = args.input_directory
-        if not filename.endswith(".lqp"):
-            print(f"Skipping file {filename} as it does not have the .lqp extension")
-            return
+    if os.path.isfile(args.input): # Case if input is a file
+        filename = args.input
+        assert filename.endswith(".lqp") and os.path.isfile(filename), \
+            f"The input {filename} does not seem to be an LQP file"
 
-        bin = args.bin if args.bin else None
-        if bin and not bin.endswith(".bin"):
-            print(f"Skipping output {bin} as it does not have the .bin extension")
-            bin = None
+        basename = os.path.splitext(filename)[0]
+        bin_name = basename+".bin" if args.bin else None
+        json_name = basename+".bin" if args.json else None
 
-        json = args.json if args.json else None
-        if json and not json.endswith(".json"):
-            print(f"Skipping output {json} as it does not have the .json extension")
-            json = None
-        process_file(filename, bin, json)
+        process_file(filename, bin_name, json_name, validate)
+    elif os.path.isdir(args.input):
+        lqp_directory = look_for_lqp_directory(args.input)
+        lqp_files = get_lqp_files(args.input)
+        for file in lqp_files:
+            shutil.move(file, lqp_directory)
 
+        process_directory(lqp_directory, bin, json, validate)
     else:
-        # Process each file in the input directory
-        for file in os.listdir(args.input_directory):
-            if not file.endswith(".lqp"):
-                print(f"Skipping file {file} as it does not have the .lqp extension")
-                continue
+        print("Input is not a valid file nor directory")
 
-            filename = os.path.join(args.input_directory, file)
-            basename = os.path.splitext(file)[0]
-            bin = os.path.join(args.bin, basename+".bin") if args.bin else None
-            json = os.path.join(args.json, basename+".json") if args.json else None
-            process_file(filename, bin, json)
 
 
 if __name__ == "__main__":

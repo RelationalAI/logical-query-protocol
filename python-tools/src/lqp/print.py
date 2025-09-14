@@ -158,9 +158,11 @@ def config_dict_to_str(config: Dict[str, Union[str, int]], indent_level: int, op
     if len(config) == 0:
         return f"{ind}{{}}"
 
-    config_str = ind + "{"
-    for k, v in config.items():
-        config_str += f"\n{ind}{conf.SIND()}:{str(k)} {to_str(v, 0, options)}"
+    config_str = ind + "{" + conf.SIND()[1:]
+    for i, (k, v) in enumerate(sorted(config.items())):
+        if i > 0:
+            config_str += f"\n{ind}{conf.SIND()}"
+        config_str += f":{str(k)} {to_str(v, 0, options)}"
 
     config_str += "}"
 
@@ -169,6 +171,17 @@ def config_dict_to_str(config: Dict[str, Union[str, int]], indent_level: int, op
 def program_to_str(node: ir.Transaction, options: Dict = {}) -> str:
     conf = style_config(options)
     s = conf.indentation(0) + conf.LPAREN() + conf.kw("transaction")
+
+    config_dict: Dict[str, Union[str, int]] = {}
+    config = node.configure
+    config_dict["semantics_version"] = config.semantics_version
+    if config.ivm_config.level != ir.MaintenanceLevel.UNSPECIFIED:
+        config_dict["ivm.maintenance_level"] = config.ivm_config.level.name.lower()
+
+    s += "\n" + conf.indentation(1) + conf.LPAREN() + conf.kw("configure") + "\n"
+    s += config_dict_to_str(config_dict, 2, options)
+    s += conf.RPAREN()
+
     for epoch in node.epochs:
         s += "\n" + conf.indentation(1) + conf.LPAREN() + conf.kw("epoch")
         section_strs: List[str] = []
@@ -262,17 +275,37 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
         lqp += to_str(node.body, indent_level + 2, options, debug_info)
         lqp += conf.RPAREN()
 
-    elif isinstance(node, (ir.Assign, ir.Break, ir.Upsert, ir.Copy)):
+    elif isinstance(node, (ir.Assign, ir.Break)):
         if isinstance(node, ir.Assign):
             s = "assign"
         elif isinstance(node, ir.Break):
             s = "break"
-        elif isinstance(node, ir.Upsert):
-            s = "upsert"
-        elif isinstance(node, ir.Copy):
-            s = "copy"
         lqp += ind + conf.LPAREN() + conf.kw(s) + " " + to_str(node.name, 0, options, debug_info) + "\n"
         lqp += to_str(node.body, indent_level + 1, options, debug_info)
+        if len(node.attrs) == 0:
+            lqp += f"{conf.RPAREN()}"
+        else:
+            lqp += "\n"
+            lqp += conf.indentation(indent_level + 1) + conf.LPAREN() + conf.kw("attrs") + "\n"
+            lqp += list_to_str(node.attrs, indent_level + 2, "\n", options, debug_info)
+            lqp += f"{conf.RPAREN()}{conf.RPAREN()}"
+
+    elif isinstance(node, ir.Upsert):
+        lqp += ind + conf.LPAREN() + conf.kw("upsert") + " " + to_str(node.name, 0, options, debug_info) + "\n"
+        body = node.body
+        if node.value_arity == 0:
+            lqp += to_str(body, indent_level + 1, options, debug_info)
+        else: # We need a different printing mechanism
+            partition = len(body.vars)-node.value_arity
+            lvars, rvars = body.vars[:partition], body.vars[partition:]
+            lqp += ind + conf.indentation(1) + conf.LPAREN() + conf.LBRACKET()
+            lqp += " ".join(map(lambda v: conf.uname(v[0].name) \
+                    + conf.type_anno("::") + to_str(v[1], indent_level + 2, options, debug_info), lvars))
+            lqp += " | "
+            lqp += " ".join(map(lambda v: conf.uname(v[0].name) \
+                    + conf.type_anno("::") + to_str(v[1], indent_level + 2, options, debug_info), rvars))
+            lqp += conf.RBRACKET() + "\n"
+            lqp += f"{to_str(body.value, indent_level + 2, options, debug_info)}{conf.RPAREN()}"
         if len(node.attrs) == 0:
             lqp += f"{conf.RPAREN()}"
         else:
@@ -286,7 +319,20 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
         lqp += ind + conf.LPAREN() + conf.kw(s) + " " \
                 + to_str(node.monoid, 0, options, debug_info) + " " \
                 + to_str(node.name, 0, options, debug_info) + "\n"
-        lqp += to_str(node.body, indent_level + 1, options, debug_info)
+        body = node.body
+        if node.value_arity == 0:
+            lqp += to_str(body, indent_level + 1, options, debug_info)
+        else:
+            partition = len(body.vars)-node.value_arity
+            lvars, rvars = body.vars[:partition], body.vars[partition:]
+            lqp += ind + conf.indentation(1) + conf.LPAREN() + conf.LBRACKET()
+            lqp += " ".join(map(lambda v: conf.uname(v[0].name) \
+                    + conf.type_anno("::") + to_str(v[1], indent_level + 2, options, debug_info), lvars))
+            lqp += " | "
+            lqp += " ".join(map(lambda v: conf.uname(v[0].name) \
+                    + conf.type_anno("::") + to_str(v[1], indent_level + 2, options, debug_info), rvars))
+            lqp += conf.RBRACKET() + "\n"
+            lqp += f"{to_str(body.value, indent_level + 2, options, debug_info)}{conf.RPAREN()}"
         if len(node.attrs) == 0:
             lqp += f"{conf.RPAREN()}"
         else:
@@ -386,18 +432,21 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
     elif isinstance(node, ir.DecimalValue):
         _, _, exponent = node.value.as_tuple()
         assert isinstance(exponent, int)
-        decimal_val = node.value / (10 ** (node.scale + exponent))
-        # Format the decimal to prevent scientific notation
-        lqp += f"{ind}{'{:,f}'.format(decimal_val)}d{node.precision}"
+        # Format the decimal to have the correct scale
+        lqp += f"{ind}{node.value:.{node.scale}f}d{node.precision}"
     elif isinstance(node, ir.DateValue):
-        # lqp += f"{ind}{node.value.isoformat()}"
         lqp += f"{ind}{conf.LPAREN()}{conf.kw('date')} {node.value.year} {node.value.month} {node.value.day}{conf.RPAREN()}"
     elif isinstance(node, ir.DateTimeValue):
-        # lqp += f"{ind}{node.value.isoformat()}"
         lqp += f"{ind}{conf.LPAREN()}{conf.kw('datetime')} {node.value.year} {node.value.month} {node.value.day} {node.value.hour} {node.value.minute} {node.value.second} {node.value.microsecond}{conf.RPAREN()}"
 
     elif isinstance(node, (int, float)):
         lqp += f"{ind}{str(node)}"
+
+    elif isinstance(node, ir.BooleanValue):
+        if node.value:
+            lqp += f"{ind}true"
+        else:
+            lqp += f"{ind}false"
 
     elif isinstance(node, ir.SpecializedValue):
         lqp += "#" + to_str(node.value, 0, {}, {})
