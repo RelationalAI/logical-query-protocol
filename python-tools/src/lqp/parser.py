@@ -569,8 +569,6 @@ def process_file(filename, bin, json, validate=True):
             f.write(MessageToJson(lqp_proto, preserving_proto_field_name=True))
         print(f"Successfully wrote {filename} to JSON")
 
-
-
 def process_directory(lqp_directory, bin, json, validate=True):
     # Create bin directory at parent level if needed
     bin_dir = None
