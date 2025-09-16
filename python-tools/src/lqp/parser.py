@@ -575,13 +575,13 @@ def process_file(filename, bin, json, validate=True):
     if bin:
         with open(bin, "wb") as f:
             f.write(lqp_proto.SerializeToString())
-        print(f"Successfully wrote {filename} to bin")
+        print(f"Successfully wrote {filename} to bin at {bin}")
 
     # Write JSON output
     if json:
         with open(json, "w") as f:
             f.write(MessageToJson(lqp_proto, preserving_proto_field_name=True))
-        print(f"Successfully wrote {filename} to JSON")
+        print(f"Successfully wrote {filename} to JSON at {json}")
 
 def process_directory(lqp_directory, bin, json, validate=True):
     # Create bin directory at parent level if needed
@@ -636,6 +636,8 @@ def main():
     arg_parser.add_argument("--no-validation", action="store_true", help="don't validate parsed LQP")
     arg_parser.add_argument("--bin", action="store_true", help="encode emitted ProtoBuf into binary")
     arg_parser.add_argument("--json", action="store_true", help="encode emitted ProtoBuf into JSON")
+    arg_parser.add_argument("--bin_file", help="encode emitted ProtoBuf into binary and write to this file")
+    arg_parser.add_argument("--json_file", help="encode emitted ProtoBuf into JSON and write to this file")
     args = arg_parser.parse_args()
 
     validate = not args.no_validation
@@ -648,8 +650,15 @@ def main():
             f"The input {filename} does not seem to be an LQP file"
 
         basename = os.path.splitext(filename)[0]
-        bin_name = basename+".bin" if args.bin else None
-        json_name = basename+".bin" if args.json else None
+        if args.bin_file:
+            bin_name = args.bin_file
+        else:
+            bin_name = basename+".bin" if args.bin else None
+
+        if args.json_file:
+            json_name = args.json_file
+        else:
+            json_name = basename+".json" if args.json else None
 
         process_file(filename, bin_name, json_name, validate)
     elif os.path.isdir(args.input):
