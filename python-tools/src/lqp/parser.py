@@ -654,16 +654,14 @@ def main():
         basename = os.path.splitext(filename)[0]
 
         if args.bin:
-            if args.output_file:
-                bin_name = args.output_file
-            else:
-                bin_name = basename + ".bin" if args.bin else None
+            bin_name = args.output_file if args.output_file else basename + ".bin"
+        else:
+            bin_name = None
 
         if args.json:
-            if args.output_file:
-                json_name = args.output_file
-            else:
-                json_name = basename + ".json" if args.json else None
+            json_name = args.output_file if args.output_file else basename + ".json"
+        else:
+            json_name = None
 
         process_file(filename, bin_name, json_name, validate)
     elif os.path.isdir(args.input):
