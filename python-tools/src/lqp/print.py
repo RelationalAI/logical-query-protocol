@@ -505,7 +505,7 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
         if has_option(options, PrettyOptions.PRINT_CSV_FILENAME):
             lqp += line_conf_f('path', node.path) + "\n"
         else:
-            lqp += line_conf_f('path', '<hidden csv filename>') + "\n"
+            lqp += line_conf_f('path', '<hidden filename>') + "\n"
         lqp += line('columns', list_to_str(node.data_columns, 0, " ", options, debug_info)) + "\n"
 
         config_dict: dict[str, Union[int, str]] = {}
