@@ -636,8 +636,7 @@ def main():
     arg_parser.add_argument("--no-validation", action="store_true", help="don't validate parsed LQP")
     arg_parser.add_argument("--bin", action="store_true", help="encode emitted ProtoBuf into binary")
     arg_parser.add_argument("--json", action="store_true", help="encode emitted ProtoBuf into JSON")
-    arg_parser.add_argument("--bin_file", help="encode emitted ProtoBuf into binary and write to this file")
-    arg_parser.add_argument("--json_file", help="encode emitted ProtoBuf into JSON and write to this file")
+    arg_parser.add_argument("--output-file", help="write emitted binary or JSON to this file")
     args = arg_parser.parse_args()
 
     validate = not args.no_validation
@@ -649,16 +648,22 @@ def main():
         assert filename.endswith(".lqp") and os.path.isfile(filename), \
             f"The input {filename} does not seem to be an LQP file"
 
-        basename = os.path.splitext(filename)[0]
-        if args.bin_file:
-            bin_name = args.bin_file
-        else:
-            bin_name = basename+".bin" if args.bin else None
+        if args.output_file:
+            assert not (args.bin and args.json), "Cannot specify both --bin and --json with --output_file option"
 
-        if args.json_file:
-            json_name = args.json_file
-        else:
-            json_name = basename+".json" if args.json else None
+        basename = os.path.splitext(filename)[0]
+
+        if args.bin:
+            if args.output_file:
+                bin_name = args.output_file
+            else:
+                bin_name = basename + ".bin" if args.bin else None
+
+        if args.json:
+            if args.output_file:
+                json_name = args.output_file
+            else:
+                json_name = basename + ".json" if args.json else None
 
         process_file(filename, bin_name, json_name, validate)
     elif os.path.isdir(args.input):
