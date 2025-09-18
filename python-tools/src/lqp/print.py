@@ -90,7 +90,8 @@ class Styled(StyleConfig):
 class PrettyOptions(Enum):
     STYLED = 1,
     PRINT_NAMES = 2,
-    PRINT_DEBUG = 3
+    PRINT_DEBUG = 3,
+    PRINT_CSV_FILENAME = 4  # Useful for snapshot testing with generated CSV filenames
 
     def __str__(self):
         return option_to_key[self]
@@ -98,27 +99,31 @@ class PrettyOptions(Enum):
 option_to_key = {
     PrettyOptions.STYLED: "styled",
     PrettyOptions.PRINT_NAMES: "print_names",
-    PrettyOptions.PRINT_DEBUG: "print_debug"
+    PrettyOptions.PRINT_DEBUG: "print_debug",
+    PrettyOptions.PRINT_CSV_FILENAME: "print_csv_filename"
 }
 
 option_to_default = {
     PrettyOptions.STYLED: False,
     PrettyOptions.PRINT_NAMES: False,
     PrettyOptions.PRINT_DEBUG: True,
+    PrettyOptions.PRINT_CSV_FILENAME: True
 }
 
 # Used for precise testing
 ugly_config = {
     str(PrettyOptions.STYLED): False,
     str(PrettyOptions.PRINT_NAMES): False,
-    str(PrettyOptions.PRINT_DEBUG): True
+    str(PrettyOptions.PRINT_DEBUG): True,
+    str(PrettyOptions.PRINT_CSV_FILENAME): True
 }
 
 # Used for humans
 pretty_config = {
     str(PrettyOptions.STYLED): True,
     str(PrettyOptions.PRINT_NAMES): True,
-    str(PrettyOptions.PRINT_DEBUG): False
+    str(PrettyOptions.PRINT_DEBUG): False,
+    str(PrettyOptions.PRINT_CSV_FILENAME): True
 }
 
 def style_config(options: Dict) -> StyleConfig:
@@ -496,7 +501,11 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
             return line(kw, to_str(field, 0, options, debug_info))
 
         lqp += f"{ind}{conf.LPAREN()}{conf.kw('export_csv_config')}\n"
-        lqp += line_conf_f('path', node.path) + "\n"
+
+        if has_option(options, PrettyOptions.PRINT_CSV_FILENAME):
+            lqp += line_conf_f('path', node.path) + "\n"
+        else:
+            lqp += line_conf_f('path', '<hidden filename>') + "\n"
         lqp += line('columns', list_to_str(node.data_columns, 0, " ", options, debug_info)) + "\n"
 
         config_dict: dict[str, Union[int, str]] = {}
