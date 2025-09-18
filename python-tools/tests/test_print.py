@@ -7,7 +7,7 @@ from math import isnan
 from lqp import parser
 from lqp import print as lqp_print
 from lqp import ir
-from .utils import get_lqp_input_files
+from .utils import get_lqp_input_files, TEST_INPUTS_DIR
 
 def assert_lqp_nodes_equal(obj1, obj2):
     if isinstance(obj1, ir.LqpNode) and isinstance(obj2, ir.LqpNode):
@@ -70,3 +70,19 @@ def test_print_pretty_snapshot(snapshot, input_file):
     snapshot.assert_match(pretty_printed_lqp_str, os.path.basename(input_file))
     re_parsed_node = parser.parse_lqp("reparsed_output.lqp", pretty_printed_lqp_str)
     assert_lqp_nodes_equal(re_parsed_node, parsed_node)
+
+@pytest.mark.parametrize("input_file", [
+    os.path.join(TEST_INPUTS_DIR, "simple_export.lqp"),
+    os.path.join(TEST_INPUTS_DIR, "multiple_export.lqp"),
+])
+def test_print_no_csv_filename_snapshot(snapshot, input_file):
+    with open(input_file, "r") as f:
+        original_lqp_str = f.read()
+    parsed_node = parser.parse_lqp(input_file, original_lqp_str)
+    options = lqp_print.ugly_config.copy()
+    options[str(lqp_print.PrettyOptions.PRINT_NAMES)] = True
+    options[str(lqp_print.PrettyOptions.PRINT_DEBUG)] = False
+    options[str(lqp_print.PrettyOptions.PRINT_CSV_FILENAME)] = False
+    pretty_printed_lqp_str = lqp_print.to_string(parsed_node, options)
+    snapshot.snapshot_dir = "tests/lqp_no_csv_filename_output"
+    snapshot.assert_match(pretty_printed_lqp_str, os.path.basename(input_file))
