@@ -3,6 +3,7 @@ import os
 import hashlib
 import shutil
 from dataclasses import dataclass
+import sys
 from lark import Lark, Transformer, v_args
 import lqp.ir as ir
 from lqp.emit import ir_to_proto
@@ -573,15 +574,23 @@ def process_file(filename, bin, json, validate=True):
 
     # Write binary output to the configured directories, using the same filename.
     if bin:
-        with open(bin, "wb") as f:
-            f.write(lqp_proto.SerializeToString())
-        print(f"Successfully wrote {filename} to bin")
+        lqp_bin = lqp_proto.SerializeToString()
+        if bin == "-":
+            sys.stdout.buffer.write(lqp_bin)
+        else:
+            with open(bin, "wb") as f:
+                f.write(lqp_bin)
+            print(f"Successfully wrote {filename} to bin at {bin}")
 
     # Write JSON output
     if json:
-        with open(json, "w") as f:
-            f.write(MessageToJson(lqp_proto, preserving_proto_field_name=True))
-        print(f"Successfully wrote {filename} to JSON")
+        lqp_json = MessageToJson(lqp_proto, preserving_proto_field_name=True)
+        if json == "-":
+            sys.stdout.write(lqp_json)
+        else:
+            with open(json, "w") as f:
+                f.write(lqp_json)
+            print(f"Successfully wrote {filename} to JSON at {json}")
 
 def process_directory(lqp_directory, bin, json, validate=True):
     # Create bin directory at parent level if needed
@@ -636,6 +645,7 @@ def main():
     arg_parser.add_argument("--no-validation", action="store_true", help="don't validate parsed LQP")
     arg_parser.add_argument("--bin", action="store_true", help="encode emitted ProtoBuf into binary")
     arg_parser.add_argument("--json", action="store_true", help="encode emitted ProtoBuf into JSON")
+    arg_parser.add_argument("--out", action="store_true", help="write emitted binary or JSON to stdout")
     args = arg_parser.parse_args()
 
     validate = not args.no_validation
@@ -647,9 +657,19 @@ def main():
         assert filename.endswith(".lqp") and os.path.isfile(filename), \
             f"The input {filename} does not seem to be an LQP file"
 
+        if args.out:
+            assert not (args.bin and args.json), "Cannot specify both --bin and --json with --out option"
+
         basename = os.path.splitext(filename)[0]
-        bin_name = basename+".bin" if args.bin else None
-        json_name = basename+".bin" if args.json else None
+
+        bin_name = None
+        json_name = None
+
+        if args.bin:
+            bin_name = "-" if args.out else basename + ".bin"
+
+        if args.json:
+            json_name = "-" if args.out else basename + ".json"
 
         process_file(filename, bin_name, json_name, validate)
     elif os.path.isdir(args.input):
@@ -661,8 +681,6 @@ def main():
         process_directory(lqp_directory, bin, json, validate)
     else:
         print("Input is not a valid file nor directory")
-
-
 
 if __name__ == "__main__":
     main()
