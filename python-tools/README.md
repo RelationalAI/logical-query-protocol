@@ -6,7 +6,7 @@ and JSON formats.
 ## Usage
 
 ```
-usage: lqp [-h] [--no-validation] [--bin] [--json] input
+usage: lqp [-h] [--no-validation] [--bin] [--json] [--out] input
 
 Parse LQP S-expression into Protobuf binary and JSON files.
 
@@ -18,6 +18,7 @@ options:
   --no-validation  don't validate parsed LQP
   --bin            encode emitted ProtoBuf into binary
   --json           encode emitted ProtoBuf into JSON
+  --out            write emitted binary or JSON to stdout
 ```
 
 ## Examples
@@ -56,10 +57,10 @@ foo/
 ```
 
 ```bash
-lqp --bin_file foo.bin foo.lqp
+lqp --bin --out foo.lqp
 ```
-Will create the file `foo.bin` containing the ProtoBuf binary parsed from the `foo.lqp`
-file.
+Will write the ProtoBuf binary parsed from the `foo.lqp` to stdout. The result can be piped
+into the desired output file, e.g., `lqp --bin --out foo.lqp > foo.bin`.
 
 ## Setup
 It is recommended to use a Python `virtualenv`. Set one up in the `python-tools` directory
