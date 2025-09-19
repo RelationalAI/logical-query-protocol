@@ -55,20 +55,39 @@ foo/
 | | baz.lqp
 ```
 
+```bash
+lqp --bin_file foo.bin foo.lqp
+```
+Will create the file `foo.bin` containing the ProtoBuf binary parsed from the `foo.lqp`
+file.
+
+## Setup
+It is recommended to use a Python `virtualenv`. Set one up in the `python-tools` directory
+by:
+```bash
+cd python-tools
+python -m venv .venv
+```
+
+Then activate the virtual environment:
+```bash
+source .venv/bin/activate
+```
+
 ## Build
 
 Install preprequisites:
-```
+```bash
 pip install pip build setuptools wheel
 ```
 
 Then build the module itself:
-```
+```bash
 python -m build
 ```
 
 Install locally:
-```
+```bash
 pip install [--user] [--force-reinstall] dist/lqp-0.1.0-py3-none-any.whl
 ```
 
@@ -77,13 +96,13 @@ pip install [--user] [--force-reinstall] dist/lqp-0.1.0-py3-none-any.whl
 Within `python-tools`,
 
 Setup:
-```
+```bash
 python -m pip install -e ".[test]"
 python -m pip install pyrefly
 ```
 
 Running tests:
-```
+```bash
 python -m pytest
 ```
 
@@ -93,7 +112,7 @@ files get picked up automatically. To generate or update the corresponding outpu
 `--snapshot-update` flag.
 
 Type checking:
-```
+```bash
 pyrefly check
 ```
 

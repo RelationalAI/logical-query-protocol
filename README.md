@@ -15,60 +15,9 @@ The `lqp` package is available on PyPi through `pip`. Use
 pip install lqp
 ```
 
-### For developers
+### Examples and Developer Build
 
-#### Pre-requisites
-It is recommended to use a Python `virtualenv`. Set one up in the `python-tools` directory
-by:
-```bash
-cd python-tools
-python -m venv .venv
-```
-
-Then activate the virtual environment:
-```bash
-source .venv/bin/activate
-```
-
-You will also need the `build` package for building `lqp`:
-```bash
-pip install build
-```
-
-#### Building and installing the package
-To build the package, run the following command in the `python-tools` directory:
-
-```bash
-python -m build
-```
-
-To install the built package, run:
-
-```bash
-pip install dist/lqp-<current_version>-py3-none-any.whl
-```
-
-### Once Installed
-After installation, either though `pip` or manual build, you should have access to the `lqp`
-tool, which you can use to parse `lqp_query.lqp` into ProtoBuf binary
-`lqp_proto_binary.bin`:
-
-```bash
-lqp --bin lqp_proto_binary.bin lqp_query.lqp
-```
-
-or JSON:
-
-```bash
-lqp --json lqp_proto_binary.bin lqp_query.lqp
-```
-
-To process entire directories, specify the destination and source.
-For example, to parse all `.lqp` files in a directory `foo/` into `.bin` files in directory `bar/`:
-
-```bash
-lqp --bin bar foo
-```
+See [python-tools/README.md](python-tools/README.md)
 
 ## Validate
 
