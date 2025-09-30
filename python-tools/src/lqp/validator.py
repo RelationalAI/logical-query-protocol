@@ -7,7 +7,12 @@ class ValidationError(Exception):
     pass
 
 class LqpVisitor:
+    def __init__(self):
+        self.original_names = {}
+
     def visit(self, node: ir.LqpNode, *args: Any) -> None:
+        if isinstance(node, ir.Fragment):
+            self.original_names = node.debug_info.id_to_orig_name
         method_name = f'visit_{node.__class__.__name__}'
         visitor_method = getattr(self, method_name, self.generic_visit)
         return visitor_method(node, *args)
@@ -30,6 +35,7 @@ class LqpVisitor:
 
 class UnusedVariableVisitor(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
+        super().__init__()
         self.scopes: List[Tuple[Set[str], Set[str]]] = []
         self.visit(txn)
 
@@ -64,6 +70,7 @@ class UnusedVariableVisitor(LqpVisitor):
 # Checks for shadowing of variables. Raises ValidationError upon encountering such.
 class ShadowedVariableFinder(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
+        super().__init__()
         self.visit(txn)
 
     # The varargs passed in must be a single set of strings.
@@ -95,14 +102,13 @@ class ShadowedVariableFinder(LqpVisitor):
 # Raises ValidationError upon encountering such.
 class DuplicateRelationIdFinder(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
+        super().__init__()
         # RelationIds and where they have been defined. The integer represents
         # the epoch.
         self.seen_ids: Dict[ir.RelationId, Tuple[int, ir.FragmentId]] = dict()
         # We'll use this to give IDs to epochs as we visit them.
         self.curr_epoch: int = 0
         self.curr_fragment: Optional[ir.FragmentId] = None
-        # Plus some way to pretty print original names.
-        self.original_names = {}
 
         self.visit(txn)
 
@@ -130,7 +136,6 @@ class DuplicateRelationIdFinder(LqpVisitor):
 
     def visit_Fragment(self, node: ir.Fragment, *args: Any) -> None:
         self.curr_fragment = node.id
-        self.original_names = node.debug_info.id_to_orig_name
         self.generic_visit(node, args)
 
     def visit_Epoch(self, node: ir.Epoch, *args: Any) -> None:
@@ -227,34 +232,18 @@ class AtomTypeChecker(LqpVisitor):
         relation_types: Dict[ir.RelationId, List[ir.TypeName]]
         # Maps variables in scope to their type.
         var_types: Dict[str, ir.TypeName]
-        # Holds original names for more informative pretty-printing.
-        original_names: Dict[ir.RelationId, str]
 
     def __init__(self, txn: ir.Transaction):
+        super().__init__()
         state = AtomTypeChecker.State(
             {
                 d.name : AtomTypeChecker.get_relation_sig(d)
                 for d in AtomTypeChecker.collect_global_defs(txn)
             },
             # No variables nor debug info declared yet.
-            {},
             {}
         )
         self.visit(txn, state)
-
-    # Visit Fragments to get original mappings.
-    def visit_Fragment(self, node: ir.Fragment, *args: Any) -> None:
-        assert AtomTypeChecker.args_ok(args)
-        state = args[0]
-
-        self.generic_visit(
-            node,
-            AtomTypeChecker.State(
-                state.relation_types,
-                state.var_types,
-                node.debug_info.id_to_orig_name
-            ),
-        )
 
     # Visit Abstractions to collect the types of variables.
     def visit_Abstraction(self, node: ir.Abstraction, *args: Any) -> None:
@@ -265,8 +254,7 @@ class AtomTypeChecker(LqpVisitor):
             node,
             AtomTypeChecker.State(
                 state.relation_types,
-                state.var_types | {v.name : t.type_name for (v, t) in node.vars},
-                state.original_names
+                state.var_types | {v.name : t.type_name for (v, t) in node.vars}
             ),
         )
 
@@ -285,8 +273,7 @@ class AtomTypeChecker(LqpVisitor):
                     decl,
                     AtomTypeChecker.State(
                         {decl.name : AtomTypeChecker.get_relation_sig(decl)} | state.relation_types, #type: ignore
-                        state.var_types,
-                        state.original_names
+                        state.var_types
                     ),
                 )
             else:
@@ -305,7 +292,7 @@ class AtomTypeChecker(LqpVisitor):
             atom_arity = len(node.terms)
             relation_arity = len(relation_type_sig)
             if atom_arity != relation_arity:
-                original_name = state.original_names.get(node.name, node.name.id)
+                original_name = self.original_names.get(node.name, node.name.id)
                 raise ValidationError(
                     f"Incorrect arity for '{original_name}' atom at {node.meta}: " +\
                     f"expected {relation_arity} term{'' if relation_arity == 1 else 's'}, got {atom_arity}"
@@ -316,7 +303,7 @@ class AtomTypeChecker(LqpVisitor):
                 # var_types[term] is okay because we assume UnusedVariableVisitor.
                 term_type = state.var_types[term.name] if isinstance(term, ir.Var) else AtomTypeChecker.constant_type(term)
                 if term_type.value != relation_type.value:
-                    original_name = state.original_names.get(node.name, node.name.id)
+                    original_name = self.original_names.get(node.name, node.name.id)
                     raise ValidationError(
                         AtomTypeChecker.type_error_message(node, original_name, i, relation_type, term_type)
                     )
@@ -327,6 +314,7 @@ class AtomTypeChecker(LqpVisitor):
 # Raises ValidationError upon encountering such.
 class DuplicateFragmentDefinitionFinder(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
+        super().__init__()
         # Instead of passing this back and forth, we are going to clear this
         # when we visit an Epoch and let it fill, checking for duplicates
         # when we visit descendent Fragments. When we visit another Epoch, it'll
@@ -356,12 +344,8 @@ class DuplicateFragmentDefinitionFinder(LqpVisitor):
 # Loopy contract: Break rules can only go in inits
 class LoopyBadBreakFinder(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
-        self.original_names = {}
+        super().__init__()
         self.visit(txn)
-
-    def visit_Fragment(self, node: ir.Fragment, *args: Any):
-        self.original_names = node.debug_info.id_to_orig_name
-        self.generic_visit(node)
 
     def visit_Loop(self, node: ir.Loop, *args: Any) -> None:
         for i in node.init:
@@ -374,14 +358,10 @@ class LoopyBadBreakFinder(LqpVisitor):
 # Loopy contract: Algorithm globals cannot be in loop body unless they were already in init
 class LoopyBadGlobalFinder(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
+        super().__init__()
         self.globals: Set[ir.RelationId] = set()
         self.init: Set[ir.RelationId] = set()
-        self.original_names = {}
         self.visit(txn)
-
-    def visit_Fragment(self, node: ir.Fragment, *args: Any):
-        self.original_names = node.debug_info.id_to_orig_name
-        self.generic_visit(node)
 
     def visit_Algorithm(self, node: ir.Algorithm, *args: Any) -> None:
         self.globals = self.globals.union(node.global_)
@@ -400,6 +380,7 @@ class LoopyBadGlobalFinder(LqpVisitor):
 
 class LoopyUpdatesShouldBeAtoms(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
+        super().__init__()
         self.generic_visit(txn)
 
     def visit_instruction_with_atom_body(self, node: Any, *args: Any) -> None:
