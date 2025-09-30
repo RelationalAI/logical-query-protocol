@@ -101,6 +101,8 @@ class DuplicateRelationIdFinder(LqpVisitor):
         # We'll use this to give IDs to epochs as we visit them.
         self.curr_epoch: int = 0
         self.curr_fragment: Optional[ir.FragmentId] = None
+        # Plus some way to pretty print original names.
+        self.original_names = {}
 
         self.visit(txn)
 
@@ -111,14 +113,16 @@ class DuplicateRelationIdFinder(LqpVisitor):
         if node.name in self.seen_ids:
             seen_in_epoch, seen_in_fragment = self.seen_ids[node.name]
             if self.curr_fragment != seen_in_fragment:
+                original_name = self.original_names.get(node.name, node.name.id)
                 # Dup ID, different fragments, same or different epoch.
                 raise ValidationError(
-                    f"Duplicate declaration across fragments at {node.meta}: '{node.name.id}'"
+                    f"Duplicate declaration across fragments at {node.meta}: '{original_name}'"
                 )
             elif self.curr_epoch == seen_in_epoch:
+                original_name = self.original_names.get(node.name, node.name.id)
                 # Dup ID, same fragment, same epoch.
                 raise ValidationError(
-                    f"Duplicate declaration within fragment in epoch at {node.meta}: '{node.name.id}'"
+                    f"Duplicate declaration within fragment in epoch at {node.meta}: '{original_name}'"
                 )
             # else: the final case (dup ID, same fragment, different epoch) is valid.
 
@@ -126,6 +130,7 @@ class DuplicateRelationIdFinder(LqpVisitor):
 
     def visit_Fragment(self, node: ir.Fragment, *args: Any) -> None:
         self.curr_fragment = node.id
+        self.original_names = node.debug_info.id_to_orig_name
         self.generic_visit(node, args)
 
     def visit_Epoch(self, node: ir.Epoch, *args: Any) -> None:
@@ -136,8 +141,9 @@ class DuplicateRelationIdFinder(LqpVisitor):
         # Only the Defs in init are globally visible so don't visit body Defs.
         for d in node.global_:
             if d in self.seen_ids:
+                original_name = self.original_names.get(d, d.id)
                 raise ValidationError(
-                    f"Duplicate declaration at {d.meta}: '{d.id}'"
+                    f"Duplicate declaration at {d.meta}: '{original_name}'"
                 )
             else:
                 assert self.curr_fragment is not None
@@ -196,11 +202,11 @@ class AtomTypeChecker(LqpVisitor):
             assert False, f"Unknown constant type: {type(c.value)}"
 
     @staticmethod
-    def type_error_message(atom: ir.Atom, index: int, expected: ir.TypeName, actual: ir.TypeName) -> str:
+    def type_error_message(atom: ir.Atom, original_name, index: int, expected: ir.TypeName, actual: ir.TypeName) -> str:
         term = atom.terms[index]
         pretty_term = p.to_str(term, 0)
         return \
-            f"Incorrect type for '{atom.name.id}' atom at index {index} ('{pretty_term}') at {atom.meta}: " +\
+            f"Incorrect type for '{original_name}' atom at index {index} ('{pretty_term}') at {atom.meta}: " +\
             f"expected {expected} term, got {actual}"
 
     # Return a list of the types of the parameters of a Def.
@@ -221,6 +227,8 @@ class AtomTypeChecker(LqpVisitor):
         relation_types: Dict[ir.RelationId, List[ir.TypeName]]
         # Maps variables in scope to their type.
         var_types: Dict[str, ir.TypeName]
+        # Holds original names for more informative pretty-printing.
+        original_names: Dict[ir.RelationId, str]
 
     def __init__(self, txn: ir.Transaction):
         state = AtomTypeChecker.State(
@@ -228,10 +236,25 @@ class AtomTypeChecker(LqpVisitor):
                 d.name : AtomTypeChecker.get_relation_sig(d)
                 for d in AtomTypeChecker.collect_global_defs(txn)
             },
-            # No variables declared yet.
+            # No variables nor debug info declared yet.
             {},
+            {}
         )
         self.visit(txn, state)
+
+    # Visit Fragments to get original mappings.
+    def visit_Fragment(self, node: ir.Fragment, *args: Any) -> None:
+        assert AtomTypeChecker.args_ok(args)
+        state = args[0]
+
+        self.generic_visit(
+            node,
+            AtomTypeChecker.State(
+                state.relation_types,
+                state.var_types,
+                node.debug_info.id_to_orig_name
+            ),
+        )
 
     # Visit Abstractions to collect the types of variables.
     def visit_Abstraction(self, node: ir.Abstraction, *args: Any) -> None:
@@ -243,6 +266,7 @@ class AtomTypeChecker(LqpVisitor):
             AtomTypeChecker.State(
                 state.relation_types,
                 state.var_types | {v.name : t.type_name for (v, t) in node.vars},
+                state.original_names
             ),
         )
 
@@ -262,6 +286,7 @@ class AtomTypeChecker(LqpVisitor):
                     AtomTypeChecker.State(
                         {decl.name : AtomTypeChecker.get_relation_sig(decl)} | state.relation_types, #type: ignore
                         state.var_types,
+                        state.original_names
                     ),
                 )
             else:
@@ -280,8 +305,9 @@ class AtomTypeChecker(LqpVisitor):
             atom_arity = len(node.terms)
             relation_arity = len(relation_type_sig)
             if atom_arity != relation_arity:
+                original_name = state.original_names.get(node.name, node.name.id)
                 raise ValidationError(
-                    f"Incorrect arity for '{node.name.id}' atom at {node.meta}: " +\
+                    f"Incorrect arity for '{original_name}' atom at {node.meta}: " +\
                     f"expected {relation_arity} term{'' if relation_arity == 1 else 's'}, got {atom_arity}"
                 )
 
@@ -290,8 +316,9 @@ class AtomTypeChecker(LqpVisitor):
                 # var_types[term] is okay because we assume UnusedVariableVisitor.
                 term_type = state.var_types[term.name] if isinstance(term, ir.Var) else AtomTypeChecker.constant_type(term)
                 if term_type.value != relation_type.value:
+                    original_name = state.original_names.get(node.name, node.name.id)
                     raise ValidationError(
-                        AtomTypeChecker.type_error_message(node, i, relation_type, term_type)
+                        AtomTypeChecker.type_error_message(node, original_name, i, relation_type, term_type)
                     )
 
         # This is a leaf for our purposes, no need to recurse further.
@@ -329,13 +356,19 @@ class DuplicateFragmentDefinitionFinder(LqpVisitor):
 # Loopy contract: Break rules can only go in inits
 class LoopyBadBreakFinder(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
+        self.original_names = {}
         self.visit(txn)
+
+    def visit_Fragment(self, node: ir.Fragment, *args: Any):
+        self.original_names = node.debug_info.id_to_orig_name
+        self.generic_visit(node)
 
     def visit_Loop(self, node: ir.Loop, *args: Any) -> None:
         for i in node.init:
             if isinstance(i, ir.Break):
+                original_name = self.original_names.get(i.name, i.name.id)
                 raise ValidationError(
-                    f"Break rule found outside of body at {i.meta}: '{i.name.id}'"
+                    f"Break rule found outside of body at {i.meta}: '{original_name}'"
                 )
 
 # Loopy contract: Algorithm globals cannot be in loop body unless they were already in init
@@ -343,7 +376,12 @@ class LoopyBadGlobalFinder(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
         self.globals: Set[ir.RelationId] = set()
         self.init: Set[ir.RelationId] = set()
+        self.original_names = {}
         self.visit(txn)
+
+    def visit_Fragment(self, node: ir.Fragment, *args: Any):
+        self.original_names = node.debug_info.id_to_orig_name
+        self.generic_visit(node)
 
     def visit_Algorithm(self, node: ir.Algorithm, *args: Any) -> None:
         self.globals = self.globals.union(node.global_)
@@ -355,8 +393,9 @@ class LoopyBadGlobalFinder(LqpVisitor):
         for i in node.body.constructs:
             if isinstance(i, (ir.Break, ir.Assign, ir.Upsert)):
                 if (i.name in self.globals) and (i.name not in self.init):
+                    original_name = self.original_names.get(i.name, i.name.id)
                     raise ValidationError(
-                        f"Global rule found in body at {i.meta}: '{i.name.id}'"
+                        f"Global rule found in body at {i.meta}: '{original_name}'"
                     )
 
 class LoopyUpdatesShouldBeAtoms(LqpVisitor):

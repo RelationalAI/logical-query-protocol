@@ -1,4 +1,4 @@
-;; ERROR: Global rule found in body at fail_bad_global.lqp:12:17: '3181428560199927439'
+;; ERROR: Global rule found in body at fail_bad_global.lqp:12:17: 'foo'
 (transaction
   (epoch
     (writes
