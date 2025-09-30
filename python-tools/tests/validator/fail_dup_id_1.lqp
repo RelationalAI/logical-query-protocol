@@ -1,4 +1,4 @@
-;; ERROR: Duplicate declaration within fragment in epoch at fail_dup_id_1.lqp:10:11: '14069321933851954459'
+;; ERROR: Duplicate declaration within fragment in epoch at fail_dup_id_1.lqp:10:11: 'cool'
 ;; Duplicate ID, same fragment, same epoch.
 (transaction
   (epoch

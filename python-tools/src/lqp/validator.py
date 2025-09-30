@@ -7,7 +7,16 @@ class ValidationError(Exception):
     pass
 
 class LqpVisitor:
+    def __init__(self):
+        self.original_names = {}
+
+    # Gets original name if it exists. If not, print the raw RelationId
+    def get_original_name(self, relation_id: ir.RelationId):
+        return self.original_names.get(relation_id, relation_id.id)
+
     def visit(self, node: ir.LqpNode, *args: Any) -> None:
+        if isinstance(node, ir.Fragment):
+            self.original_names = node.debug_info.id_to_orig_name
         method_name = f'visit_{node.__class__.__name__}'
         visitor_method = getattr(self, method_name, self.generic_visit)
         return visitor_method(node, *args)
@@ -30,6 +39,7 @@ class LqpVisitor:
 
 class UnusedVariableVisitor(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
+        super().__init__()
         self.scopes: List[Tuple[Set[str], Set[str]]] = []
         self.visit(txn)
 
@@ -64,6 +74,7 @@ class UnusedVariableVisitor(LqpVisitor):
 # Checks for shadowing of variables. Raises ValidationError upon encountering such.
 class ShadowedVariableFinder(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
+        super().__init__()
         self.visit(txn)
 
     # The varargs passed in must be a single set of strings.
@@ -95,6 +106,7 @@ class ShadowedVariableFinder(LqpVisitor):
 # Raises ValidationError upon encountering such.
 class DuplicateRelationIdFinder(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
+        super().__init__()
         # RelationIds and where they have been defined. The integer represents
         # the epoch.
         self.seen_ids: Dict[ir.RelationId, Tuple[int, ir.FragmentId]] = dict()
@@ -111,14 +123,16 @@ class DuplicateRelationIdFinder(LqpVisitor):
         if node.name in self.seen_ids:
             seen_in_epoch, seen_in_fragment = self.seen_ids[node.name]
             if self.curr_fragment != seen_in_fragment:
+                original_name = self.get_original_name(node.name)
                 # Dup ID, different fragments, same or different epoch.
                 raise ValidationError(
-                    f"Duplicate declaration across fragments at {node.meta}: '{node.name.id}'"
+                    f"Duplicate declaration across fragments at {node.meta}: '{original_name}'"
                 )
             elif self.curr_epoch == seen_in_epoch:
+                original_name = self.get_original_name(node.name)
                 # Dup ID, same fragment, same epoch.
                 raise ValidationError(
-                    f"Duplicate declaration within fragment in epoch at {node.meta}: '{node.name.id}'"
+                    f"Duplicate declaration within fragment in epoch at {node.meta}: '{original_name}'"
                 )
             # else: the final case (dup ID, same fragment, different epoch) is valid.
 
@@ -136,8 +150,9 @@ class DuplicateRelationIdFinder(LqpVisitor):
         # Only the Defs in init are globally visible so don't visit body Defs.
         for d in node.global_:
             if d in self.seen_ids:
+                original_name = self.get_original_name(d)
                 raise ValidationError(
-                    f"Duplicate declaration at {d.meta}: '{d.id}'"
+                    f"Duplicate declaration at {d.meta}: '{original_name}'"
                 )
             else:
                 assert self.curr_fragment is not None
@@ -196,11 +211,11 @@ class AtomTypeChecker(LqpVisitor):
             assert False, f"Unknown constant type: {type(c.value)}"
 
     @staticmethod
-    def type_error_message(atom: ir.Atom, index: int, expected: ir.TypeName, actual: ir.TypeName) -> str:
+    def type_error_message(atom: ir.Atom, original_name, index: int, expected: ir.TypeName, actual: ir.TypeName) -> str:
         term = atom.terms[index]
         pretty_term = p.to_str(term, 0)
         return \
-            f"Incorrect type for '{atom.name.id}' atom at index {index} ('{pretty_term}') at {atom.meta}: " +\
+            f"Incorrect type for '{original_name}' atom at index {index} ('{pretty_term}') at {atom.meta}: " +\
             f"expected {expected} term, got {actual}"
 
     # Return a list of the types of the parameters of a Def.
@@ -223,6 +238,7 @@ class AtomTypeChecker(LqpVisitor):
         var_types: Dict[str, ir.TypeName]
 
     def __init__(self, txn: ir.Transaction):
+        super().__init__()
         state = AtomTypeChecker.State(
             {
                 d.name : AtomTypeChecker.get_relation_sig(d)
@@ -280,8 +296,9 @@ class AtomTypeChecker(LqpVisitor):
             atom_arity = len(node.terms)
             relation_arity = len(relation_type_sig)
             if atom_arity != relation_arity:
+                original_name = self.get_original_name(node.name)
                 raise ValidationError(
-                    f"Incorrect arity for '{node.name.id}' atom at {node.meta}: " +\
+                    f"Incorrect arity for '{original_name}' atom at {node.meta}: " +\
                     f"expected {relation_arity} term{'' if relation_arity == 1 else 's'}, got {atom_arity}"
                 )
 
@@ -290,8 +307,9 @@ class AtomTypeChecker(LqpVisitor):
                 # var_types[term] is okay because we assume UnusedVariableVisitor.
                 term_type = state.var_types[term.name] if isinstance(term, ir.Var) else AtomTypeChecker.constant_type(term)
                 if term_type.value != relation_type.value:
+                    original_name = self.get_original_name(node.name)
                     raise ValidationError(
-                        AtomTypeChecker.type_error_message(node, i, relation_type, term_type)
+                        AtomTypeChecker.type_error_message(node, original_name, i, relation_type, term_type)
                     )
 
         # This is a leaf for our purposes, no need to recurse further.
@@ -300,6 +318,7 @@ class AtomTypeChecker(LqpVisitor):
 # Raises ValidationError upon encountering such.
 class DuplicateFragmentDefinitionFinder(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
+        super().__init__()
         # Instead of passing this back and forth, we are going to clear this
         # when we visit an Epoch and let it fill, checking for duplicates
         # when we visit descendent Fragments. When we visit another Epoch, it'll
@@ -329,18 +348,21 @@ class DuplicateFragmentDefinitionFinder(LqpVisitor):
 # Loopy contract: Break rules can only go in inits
 class LoopyBadBreakFinder(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
+        super().__init__()
         self.visit(txn)
 
     def visit_Loop(self, node: ir.Loop, *args: Any) -> None:
         for i in node.init:
             if isinstance(i, ir.Break):
+                original_name = self.get_original_name(i.name)
                 raise ValidationError(
-                    f"Break rule found outside of body at {i.meta}: '{i.name.id}'"
+                    f"Break rule found outside of body at {i.meta}: '{original_name}'"
                 )
 
 # Loopy contract: Algorithm globals cannot be in loop body unless they were already in init
 class LoopyBadGlobalFinder(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
+        super().__init__()
         self.globals: Set[ir.RelationId] = set()
         self.init: Set[ir.RelationId] = set()
         self.visit(txn)
@@ -355,12 +377,14 @@ class LoopyBadGlobalFinder(LqpVisitor):
         for i in node.body.constructs:
             if isinstance(i, (ir.Break, ir.Assign, ir.Upsert)):
                 if (i.name in self.globals) and (i.name not in self.init):
+                    original_name = self.get_original_name(i.name)
                     raise ValidationError(
-                        f"Global rule found in body at {i.meta}: '{i.name.id}'"
+                        f"Global rule found in body at {i.meta}: '{original_name}'"
                     )
 
 class LoopyUpdatesShouldBeAtoms(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
+        super().__init__()
         self.generic_visit(txn)
 
     def visit_instruction_with_atom_body(self, node: Any, *args: Any) -> None:

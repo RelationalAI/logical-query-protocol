@@ -1,0 +1,16 @@
+;; ERROR: Incorrect type for 'foo' atom at index 1 ('1') at fail_atom_type_4.lqp:15:26: expected STRING term, got INT
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          (def :foo ([x::STRING y::STRING] (and (= x "A") (= y "B"))))
+          (def :bar ([] (atom :foo "A" "B"))))))
+    (reads))
+  (epoch
+    (writes
+      (define
+        (fragment :f2
+          (def :foo2 ([x::STRING y::STRING] (and (= x "A") (= y "B"))))
+          (def :bar2 ([] (atom :foo "A" 1))))))
+    (reads)))
