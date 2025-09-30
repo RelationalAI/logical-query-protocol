@@ -10,6 +10,10 @@ class LqpVisitor:
     def __init__(self):
         self.original_names = {}
 
+    # Gets original name if it exists. If not, print the raw RelationId
+    def get_original_name(self, relation_id: ir.RelationId):
+        return self.original_names.get(relation_id, relation_id.id)
+
     def visit(self, node: ir.LqpNode, *args: Any) -> None:
         if isinstance(node, ir.Fragment):
             self.original_names = node.debug_info.id_to_orig_name
@@ -119,13 +123,13 @@ class DuplicateRelationIdFinder(LqpVisitor):
         if node.name in self.seen_ids:
             seen_in_epoch, seen_in_fragment = self.seen_ids[node.name]
             if self.curr_fragment != seen_in_fragment:
-                original_name = self.original_names.get(node.name, node.name.id)
+                original_name = self.get_original_name(node.name)
                 # Dup ID, different fragments, same or different epoch.
                 raise ValidationError(
                     f"Duplicate declaration across fragments at {node.meta}: '{original_name}'"
                 )
             elif self.curr_epoch == seen_in_epoch:
-                original_name = self.original_names.get(node.name, node.name.id)
+                original_name = self.get_original_name(node.name)
                 # Dup ID, same fragment, same epoch.
                 raise ValidationError(
                     f"Duplicate declaration within fragment in epoch at {node.meta}: '{original_name}'"
@@ -146,7 +150,7 @@ class DuplicateRelationIdFinder(LqpVisitor):
         # Only the Defs in init are globally visible so don't visit body Defs.
         for d in node.global_:
             if d in self.seen_ids:
-                original_name = self.original_names.get(d, d.id)
+                original_name = self.get_original_name(d)
                 raise ValidationError(
                     f"Duplicate declaration at {d.meta}: '{original_name}'"
                 )
@@ -292,7 +296,7 @@ class AtomTypeChecker(LqpVisitor):
             atom_arity = len(node.terms)
             relation_arity = len(relation_type_sig)
             if atom_arity != relation_arity:
-                original_name = self.original_names.get(node.name, node.name.id)
+                original_name = self.get_original_name(node.name)
                 raise ValidationError(
                     f"Incorrect arity for '{original_name}' atom at {node.meta}: " +\
                     f"expected {relation_arity} term{'' if relation_arity == 1 else 's'}, got {atom_arity}"
@@ -303,7 +307,7 @@ class AtomTypeChecker(LqpVisitor):
                 # var_types[term] is okay because we assume UnusedVariableVisitor.
                 term_type = state.var_types[term.name] if isinstance(term, ir.Var) else AtomTypeChecker.constant_type(term)
                 if term_type.value != relation_type.value:
-                    original_name = self.original_names.get(node.name, node.name.id)
+                    original_name = self.get_original_name(node.name)
                     raise ValidationError(
                         AtomTypeChecker.type_error_message(node, original_name, i, relation_type, term_type)
                     )
@@ -350,7 +354,7 @@ class LoopyBadBreakFinder(LqpVisitor):
     def visit_Loop(self, node: ir.Loop, *args: Any) -> None:
         for i in node.init:
             if isinstance(i, ir.Break):
-                original_name = self.original_names.get(i.name, i.name.id)
+                original_name = self.get_original_name(i.name)
                 raise ValidationError(
                     f"Break rule found outside of body at {i.meta}: '{original_name}'"
                 )
@@ -373,7 +377,7 @@ class LoopyBadGlobalFinder(LqpVisitor):
         for i in node.body.constructs:
             if isinstance(i, (ir.Break, ir.Assign, ir.Upsert)):
                 if (i.name in self.globals) and (i.name not in self.init):
-                    original_name = self.original_names.get(i.name, i.name.id)
+                    original_name = self.get_original_name(i.name)
                     raise ValidationError(
                         f"Global rule found in body at {i.meta}: '{original_name}'"
                     )
