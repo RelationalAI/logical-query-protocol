@@ -240,8 +240,8 @@ class AtomTypeChecker(LqpVisitor):
                 d.name : AtomTypeChecker.get_relation_sig(d)
                 for d in AtomTypeChecker.collect_global_defs(txn)
             },
-            # No variables nor debug info declared yet.
-            {}
+            # No variables declared yet.
+            {},
         )
         self.visit(txn, state)
 
@@ -254,7 +254,7 @@ class AtomTypeChecker(LqpVisitor):
             node,
             AtomTypeChecker.State(
                 state.relation_types,
-                state.var_types | {v.name : t.type_name for (v, t) in node.vars}
+                state.var_types | {v.name : t.type_name for (v, t) in node.vars},
             ),
         )
 
@@ -273,7 +273,7 @@ class AtomTypeChecker(LqpVisitor):
                     decl,
                     AtomTypeChecker.State(
                         {decl.name : AtomTypeChecker.get_relation_sig(decl)} | state.relation_types, #type: ignore
-                        state.var_types
+                        state.var_types,
                     ),
                 )
             else:
