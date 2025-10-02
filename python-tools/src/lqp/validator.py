@@ -395,18 +395,21 @@ class LoopyUpdatesShouldBeAtoms(LqpVisitor):
     visit_MonoidDef = visit_MonusDef = visit_Upsert = visit_instruction_with_atom_body
 
 class CSVConfigChecker(LqpVisitor):
-    def __init__(self, txn: ir.Transaction, type_state: AtomTypeChecker.State):
+    def __init__(self, txn: ir.Transaction):
         super().__init__()
-        self.type_state = type_state
+        self.relation_types: Dict[ir.RelationId, List[ir.TypeName]] = {
+            d.name : AtomTypeChecker.get_relation_sig(d)
+            for d in AtomTypeChecker.collect_global_defs(txn)
+        }
         self.visit(txn)
 
     def visit_ExportCSVConfig(self, node: ir.ExportCSVConfig, *args: Any) -> None:
-        if node.delimiter is not None and len(node.delimiter) != 1:
-            raise ValidationError(f"CSV delimiter should be a single character at {node.meta}, got '{node.delimiter}'")
-        if node.quotechar is not None and len(node.quotechar) != 1:
-            raise ValidationError(f"CSV quotechar should be a single character at {node.meta}, got '{node.quotechar}'")
-        if node.escapechar is not None and len(node.escapechar) != 1:
-            raise ValidationError(f"CSV escapechar should be a single character at {node.meta}, got '{node.escapechar}'")
+        if node.syntax_delim is not None and len(node.syntax_delim) != 1:
+            raise ValidationError(f"CSV delimiter should be a single character at {node.meta}, got '{node.syntax_delim}'")
+        if node.syntax_quotechar is not None and len(node.syntax_quotechar) != 1:
+            raise ValidationError(f"CSV quotechar should be a single character at {node.meta}, got '{node.syntax_quotechar}'")
+        if node.syntax_escapechar is not None and len(node.syntax_escapechar) != 1:
+            raise ValidationError(f"CSV escapechar should be a single character at {node.meta}, got '{node.syntax_escapechar}'")
 
         # Check compression is valid
         valid_compressions = {'', 'gzip'}
@@ -417,7 +420,11 @@ class CSVConfigChecker(LqpVisitor):
         column_0_key_types = None
         column_0_relation_id = None
         for column in node.data_columns:
-            column_types = self.type_state.relation_types.get(column.column_data)
+            # If the column relation is not defined in this transaction, we can't check it.
+            if column.column_data not in self.relation_types:
+                continue
+
+            column_types = self.relation_types[column.column_data]
             key_types = column_types[:-1]
             if column_0_key_types is None:
                 column_0_key_types = key_types
@@ -426,8 +433,8 @@ class CSVConfigChecker(LqpVisitor):
                 if column_0_key_types != key_types:
                     raise ValidationError(
                         f"All data columns in ExportCSVConfig at {node.meta} must have the same key types. " +\
-                        f"Got '{self.get_original_name(column_0_relation_id)}' with key types {column_0_key_types} " +\
-                        f"and '{self.get_original_name(column.column_data)}' with key types {key_types}."
+                        f"Got '{self.get_original_name(column_0_relation_id)}' with key types {[str(t) for t in column_0_key_types]} " +\
+                        f"and '{self.get_original_name(column.column_data)}' with key types {[str(t) for t in key_types]}."
                     )
 
 def validate_lqp(lqp: ir.Transaction):
@@ -435,9 +442,8 @@ def validate_lqp(lqp: ir.Transaction):
     UnusedVariableVisitor(lqp)
     DuplicateRelationIdFinder(lqp)
     DuplicateFragmentDefinitionFinder(lqp)
-    # Keep the atom type checker state, since it contains a list of types of defs
-    atom_type_checker = AtomTypeChecker(lqp)
+    AtomTypeChecker(lqp)
     LoopyBadBreakFinder(lqp)
     LoopyBadGlobalFinder(lqp)
     LoopyUpdatesShouldBeAtoms(lqp)
-    CSVConfigChecker(lqp, atom_type_checker.state)
+    CSVConfigChecker(lqp)
