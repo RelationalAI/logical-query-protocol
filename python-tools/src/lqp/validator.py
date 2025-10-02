@@ -394,12 +394,50 @@ class LoopyUpdatesShouldBeAtoms(LqpVisitor):
 
     visit_MonoidDef = visit_MonusDef = visit_Upsert = visit_instruction_with_atom_body
 
+class CSVConfigChecker(LqpVisitor):
+    def __init__(self, txn: ir.Transaction, type_state: AtomTypeChecker.State):
+        super().__init__()
+        self.type_state = type_state
+        self.visit(txn)
+
+    def visit_ExportCSVConfig(self, node: ir.ExportCSVConfig, *args: Any) -> None:
+        if node.delimiter is not None and len(node.delimiter) != 1:
+            raise ValidationError(f"CSV delimiter should be a single character at {node.meta}, got '{node.delimiter}'")
+        if node.quotechar is not None and len(node.quotechar) != 1:
+            raise ValidationError(f"CSV quotechar should be a single character at {node.meta}, got '{node.quotechar}'")
+        if node.escapechar is not None and len(node.escapechar) != 1:
+            raise ValidationError(f"CSV escapechar should be a single character at {node.meta}, got '{node.escapechar}'")
+
+        # Check compression is valid
+        valid_compressions = {'', 'gzip'}
+        if node.compression is not None and node.compression not in valid_compressions:
+            raise ValidationError(f"CSV compression should be one of {valid_compressions} at {node.meta}, got '{node.compression}'")
+
+        # Check that the column relations have the same key types
+        column_0_key_types = None
+        column_0_relation_id = None
+        for column in node.data_columns:
+            column_types = self.type_state.relation_types.get(column.column_data)
+            key_types = column_types[:-1]
+            if column_0_key_types is None:
+                column_0_key_types = key_types
+                column_0_relation_id = column.column_data
+            else:
+                if column_0_key_types != key_types:
+                    raise ValidationError(
+                        f"All data columns in ExportCSVConfig at {node.meta} must have the same key types. " +\
+                        f"Got '{self.get_original_name(column_0_relation_id)}' with key types {column_0_key_types} " +\
+                        f"and '{self.get_original_name(column.column_data)}' with key types {key_types}."
+                    )
+
 def validate_lqp(lqp: ir.Transaction):
     ShadowedVariableFinder(lqp)
     UnusedVariableVisitor(lqp)
     DuplicateRelationIdFinder(lqp)
     DuplicateFragmentDefinitionFinder(lqp)
-    AtomTypeChecker(lqp)
+    # Keep the atom type checker state, since it contains a list of types of defs
+    atom_type_checker = AtomTypeChecker(lqp)
     LoopyBadBreakFinder(lqp)
     LoopyBadGlobalFinder(lqp)
     LoopyUpdatesShouldBeAtoms(lqp)
+    CSVConfigChecker(lqp, atom_type_checker.state)
