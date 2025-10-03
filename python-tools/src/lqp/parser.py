@@ -649,7 +649,7 @@ def main():
 
     validate = not args.no_validation
     format_type = args.format
-    output_to_stdout = args.output == "-"
+    output_to_stdout = args.out == "-"
 
     if os.path.isfile(args.input): # Case if input is a file
         filename = args.input
@@ -657,8 +657,8 @@ def main():
             f"The input {filename} does not seem to be an LQP file"
 
         # Determine output path
-        if args.output:
-            output_path = args.output
+        if args.out:
+            output_path = args.out
         else:
             basename = os.path.splitext(filename)[0]
             extension = ".bin" if format_type == "bin" else ".json"
@@ -671,7 +671,7 @@ def main():
         for file in lqp_files:
             shutil.move(file, lqp_directory)
 
-        process_directory(lqp_directory, format_type, args.output, output_to_stdout, validate)
+        process_directory(lqp_directory, format_type, args.out, output_to_stdout, validate)
     else:
         print("Input is not a valid file nor directory")
 
