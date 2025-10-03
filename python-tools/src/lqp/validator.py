@@ -424,12 +424,14 @@ class CSVConfigChecker(LqpVisitor):
             if column.column_data not in self.relation_types:
                 continue
 
-            column_types = self.relation_types[column.column_data]
+            column_types = self.relation_types[column.column_data]  # type: ignore
             key_types = column_types[:-1]
             if column_0_key_types is None:
                 column_0_key_types = key_types
                 column_0_relation_id = column.column_data
             else:
+                assert column_0_key_types is not None
+                assert column_0_relation_id is not None
                 if column_0_key_types != key_types:
                     raise ValidationError(
                         f"All data columns in ExportCSVConfig at {node.meta} must have the same key types. " +\
