@@ -394,6 +394,53 @@ class LoopyUpdatesShouldBeAtoms(LqpVisitor):
 
     visit_MonoidDef = visit_MonusDef = visit_Upsert = visit_instruction_with_atom_body
 
+class CSVConfigChecker(LqpVisitor):
+    def __init__(self, txn: ir.Transaction):
+        super().__init__()
+        self.relation_types: Dict[ir.RelationId, List[ir.TypeName]] = {
+            d.name : AtomTypeChecker.get_relation_sig(d)
+            for d in AtomTypeChecker.collect_global_defs(txn)
+        }
+        self.visit(txn)
+
+    def visit_ExportCSVConfig(self, node: ir.ExportCSVConfig, *args: Any) -> None:
+        if node.syntax_delim is not None and len(node.syntax_delim) != 1:
+            raise ValidationError(f"CSV delimiter should be a single character at {node.meta}, got '{node.syntax_delim}'")
+        if node.syntax_quotechar is not None and len(node.syntax_quotechar) != 1:
+            raise ValidationError(f"CSV quotechar should be a single character at {node.meta}, got '{node.syntax_quotechar}'")
+        if node.syntax_escapechar is not None and len(node.syntax_escapechar) != 1:
+            raise ValidationError(f"CSV escapechar should be a single character at {node.meta}, got '{node.syntax_escapechar}'")
+
+        # Check compression is valid
+        valid_compressions = {'', 'gzip'}
+        if node.compression is not None and node.compression not in valid_compressions:
+            raise ValidationError(f"CSV compression should be one of {valid_compressions} at {node.meta}, got '{node.compression}'")
+
+        # Check that the column relations have the same key types
+        column_0_key_types = None
+        column_0_relation_id = None
+        for column in node.data_columns:
+            # If the column relation is not defined in this transaction, we can't check it.
+            if column.column_data not in self.relation_types:
+                continue
+
+            column_types = self.relation_types[column.column_data]  # type: ignore
+            if len(column_types) < 1:
+                raise ValidationError(f"Data column relation must have at least one column at {node.meta}, got zero columns in '{self.get_original_name(column.column_data)}'")
+            key_types = column_types[:-1]
+            if column_0_key_types is None:
+                column_0_key_types = key_types
+                column_0_relation_id = column.column_data
+            else:
+                assert column_0_key_types is not None
+                assert column_0_relation_id is not None
+                if column_0_key_types != key_types:
+                    raise ValidationError(
+                        f"All data columns in ExportCSVConfig at {node.meta} must have the same key types. " +\
+                        f"Got '{self.get_original_name(column_0_relation_id)}' with key types {[str(t) for t in column_0_key_types]} " +\
+                        f"and '{self.get_original_name(column.column_data)}' with key types {[str(t) for t in key_types]}."
+                    )
+
 def validate_lqp(lqp: ir.Transaction):
     ShadowedVariableFinder(lqp)
     UnusedVariableVisitor(lqp)
@@ -403,3 +450,4 @@ def validate_lqp(lqp: ir.Transaction):
     LoopyBadBreakFinder(lqp)
     LoopyBadGlobalFinder(lqp)
     LoopyUpdatesShouldBeAtoms(lqp)
+    CSVConfigChecker(lqp)
