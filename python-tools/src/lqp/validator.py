@@ -425,6 +425,8 @@ class CSVConfigChecker(LqpVisitor):
                 continue
 
             column_types = self.relation_types[column.column_data]  # type: ignore
+            if len(column_types) < 1:
+                raise ValidationError(f"Data column relation must have at least one column at {node.meta}, got zero columns in '{self.get_original_name(column.column_data)}'")
             key_types = column_types[:-1]
             if column_0_key_types is None:
                 column_0_key_types = key_types
