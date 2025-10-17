@@ -13,7 +13,7 @@ from decimal import Decimal
 from datetime import date, datetime
 
 grammar = """
-start: transaction | fragment
+start: transaction
 
 transaction: "(transaction" configure? epoch* ")"
 configure: "(configure" config_dict ")"
@@ -21,10 +21,11 @@ epoch: "(epoch" writes? reads? ")"
 writes: "(writes" write* ")"
 reads: "(reads" read* ")"
 
-write: define | undefine | context
+write: define | undefine | context | sync
 define: "(define" fragment ")"
 undefine: "(undefine" fragment_id ")"
 context: "(context" relation_id* ")"
+sync: "(sync" fragment_id* ")"
 
 read: demand | output | export | abort
 demand: "(demand" relation_id ")"
@@ -221,6 +222,9 @@ class LQPTransformer(Transformer):
 
     def context(self, meta, items):
         return ir.Context(relations=items, meta=self.meta(meta))
+
+    def sync(self, meta, items):
+        return ir.Sync(fragments=items, meta=self.meta(meta))
 
     def read(self, meta, items):
         return ir.Read(read_type=items[0], meta=self.meta(meta))

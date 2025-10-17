@@ -13,7 +13,7 @@ message Transaction {
 message Configure {
   int64 semantics_version = 1;
   IVMConfig ivm_config = 2;
-} 
+}
 
 message IVMConfig {
   MaintenanceLevel level = 1;
@@ -40,6 +40,7 @@ message Write {
     Define define = 1;
     Undefine undefine = 2;
     Context context = 3;
+    Sync sync = 4;
   }
 }
 
@@ -53,6 +54,10 @@ message Undefine {
 
 message Context {
   repeated RelationId relations = 1;
+}
+
+message Sync {
+repeated FragmentId fragments = 1;
 }
 
 //
