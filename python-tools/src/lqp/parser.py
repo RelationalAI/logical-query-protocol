@@ -13,7 +13,7 @@ from decimal import Decimal
 from datetime import date, datetime
 
 grammar = """
-start: transaction
+start: transaction | fragment
 
 transaction: "(transaction" configure? epoch* ")"
 configure: "(configure" config_dict ")"

@@ -13,7 +13,7 @@ message Transaction {
 message Configure {
   int64 semantics_version = 1;
   IVMConfig ivm_config = 2;
-}
+} 
 
 message IVMConfig {
   MaintenanceLevel level = 1;
@@ -57,7 +57,7 @@ message Context {
 }
 
 message Sync {
-repeated FragmentId fragments = 1;
+  repeated FragmentId fragments = 1;
 }
 
 //
