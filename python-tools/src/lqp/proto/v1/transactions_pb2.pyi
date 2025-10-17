@@ -50,14 +50,16 @@ class Epoch(_message.Message):
     def __init__(self, writes: _Optional[_Iterable[_Union[Write, _Mapping]]] = ..., reads: _Optional[_Iterable[_Union[Read, _Mapping]]] = ...) -> None: ...
 
 class Write(_message.Message):
-    __slots__ = ("define", "undefine", "context")
+    __slots__ = ("define", "undefine", "context", "sync")
     DEFINE_FIELD_NUMBER: _ClassVar[int]
     UNDEFINE_FIELD_NUMBER: _ClassVar[int]
     CONTEXT_FIELD_NUMBER: _ClassVar[int]
+    SYNC_FIELD_NUMBER: _ClassVar[int]
     define: Define
     undefine: Undefine
     context: Context
-    def __init__(self, define: _Optional[_Union[Define, _Mapping]] = ..., undefine: _Optional[_Union[Undefine, _Mapping]] = ..., context: _Optional[_Union[Context, _Mapping]] = ...) -> None: ...
+    sync: Sync
+    def __init__(self, define: _Optional[_Union[Define, _Mapping]] = ..., undefine: _Optional[_Union[Undefine, _Mapping]] = ..., context: _Optional[_Union[Context, _Mapping]] = ..., sync: _Optional[_Union[Sync, _Mapping]] = ...) -> None: ...
 
 class Define(_message.Message):
     __slots__ = ("fragment",)
@@ -76,6 +78,12 @@ class Context(_message.Message):
     RELATIONS_FIELD_NUMBER: _ClassVar[int]
     relations: _containers.RepeatedCompositeFieldContainer[_logic_pb2.RelationId]
     def __init__(self, relations: _Optional[_Iterable[_Union[_logic_pb2.RelationId, _Mapping]]] = ...) -> None: ...
+
+class Sync(_message.Message):
+    __slots__ = ("fragments",)
+    FRAGMENTS_FIELD_NUMBER: _ClassVar[int]
+    fragments: _containers.RepeatedCompositeFieldContainer[_fragments_pb2.FragmentId]
+    def __init__(self, fragments: _Optional[_Iterable[_Union[_fragments_pb2.FragmentId, _Mapping]]] = ...) -> None: ...
 
 class ExportCSVConfig(_message.Message):
     __slots__ = ("path", "data_columns", "partition_size", "compression", "syntax_header_row", "syntax_missing_string", "syntax_delim", "syntax_quotechar", "syntax_escapechar")
