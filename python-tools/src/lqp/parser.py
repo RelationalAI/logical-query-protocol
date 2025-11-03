@@ -128,7 +128,7 @@ value: STRING | NUMBER | FLOAT | UINT128 | INT128
 type_ : TYPE_NAME | "(" TYPE_NAME value* ")"
 
 TYPE_NAME.1: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
-         | "DATE" | "DATETIME" | "MISSING" | "DECIMAL" | "BOOLEAN"
+           | "DATE" | "DATETIME" | "MISSING" | "DECIMAL" | "BOOLEAN"
 
 SYMBOL: /[a-zA-Z_][a-zA-Z0-9_.-]*/
 MISSING.1: "missing" // Set a higher priority so so it's MISSING instead of SYMBOL
@@ -329,12 +329,9 @@ class LQPTransformer(Transformer):
         )
 
     def key_types(self, meta, items):
-        return items[0]
+        return items
 
     def value_types(self, meta, items):
-        return items[0]
-
-    def type_list(self, meta, items):
         return items
 
     def betree_config(self, meta, items):
