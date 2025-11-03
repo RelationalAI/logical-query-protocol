@@ -71,6 +71,9 @@ class UnusedVariableVisitor(LqpVisitor):
     def visit_Var(self, node: ir.Var, *args: Any):
         self._mark_var_used(node)
 
+    def visit_FunctionalDependency(self, node: ir.FunctionalDependency):
+        self.visit(node.guard)
+
 # Checks for shadowing of variables. Raises ValidationError upon encountering such.
 class ShadowedVariableFinder(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
@@ -441,6 +444,20 @@ class CSVConfigChecker(LqpVisitor):
                         f"and '{self.get_original_name(column.column_data)}' with key types {[str(t) for t in key_types]}."
                     )
 
+class FDVarsChecker(LqpVisitor):
+    def __init__(self, txn: ir.Transaction):
+        super().__init__()
+        self.visit(txn)
+
+    def visit_FunctionalDependency(self, node: ir.FunctionalDependency):
+        guard_var_names = {var[0].name for var in node.guard.vars}
+        for var in node.x:
+            if var.name not in guard_var_names:
+                raise ValidationError(f"Determinant variable '{var.name}' not declared in guard at {var.meta}")
+        for var in node.y:
+            if var.name not in guard_var_names:
+                raise ValidationError(f"Dependent variable '{var.name}' not declared in guard at {var.meta}")
+
 def validate_lqp(lqp: ir.Transaction):
     ShadowedVariableFinder(lqp)
     UnusedVariableVisitor(lqp)
@@ -451,3 +468,4 @@ def validate_lqp(lqp: ir.Transaction):
     LoopyBadGlobalFinder(lqp)
     LoopyUpdatesShouldBeAtoms(lqp)
     CSVConfigChecker(lqp)
+    FDVarsChecker(lqp)

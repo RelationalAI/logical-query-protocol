@@ -1,0 +1,16 @@
+(transaction
+  (configure
+    { :ivm.maintenance_level "off"
+      :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment :fds
+          (functional_dependency
+            ([a::INT b::INT c::INT]
+              (atom :r a b c))
+            (x a b)
+            (y c)
+          ))))
+    (reads
+      (output :output 1234567898765432123456789))))

@@ -1,0 +1,21 @@
+(transaction
+  (configure
+    { :ivm.maintenance_level "off"
+      :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment :fds
+          (functional_dependency
+            ([a::INT b::INT c::INT]
+              (atom 4990914056244187799 a b c))
+            (x a b)
+            (y c)
+          ))))
+    (reads
+      (output :output 1234567898765432123456789))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `4990914056244187799` -> `r`

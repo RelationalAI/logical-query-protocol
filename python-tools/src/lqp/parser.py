@@ -41,8 +41,13 @@ export_path: "(path" STRING ")"
 
 fragment: "(fragment" fragment_id declaration* ")"
 
-declaration: def_ | algorithm
+declaration: def_ | algorithm | constraint
 def_: "(def" relation_id abstraction attrs? ")"
+
+constraint: functional_dependency
+functional_dependency: "(functional_dependency" abstraction fd_determinants fd_dependents ")"
+fd_determinants: "(x" var* ")"
+fd_dependents: "(y" var* ")"
 
 algorithm: "(algorithm" relation_id* script ")"
 script: "(script" construct* ")"
@@ -298,6 +303,23 @@ class LQPTransformer(Transformer):
         assert value_arity == 0, f"Defs should not have a value arity"
         attrs = items[2] if len(items) > 2 else []
         return ir.Def(name=name, body=body, attrs=attrs, meta=self.meta(meta))
+
+    def constraint(self, meta, items):
+        return items[0]
+    def functional_dependency(self, meta, items):
+        guard, _ = items[0]
+        x = items[1]
+        y = items[2]
+        return ir.FunctionalDependency(
+            guard=guard,
+            x=x,
+            y=y,
+            meta=self.meta(meta)
+        )
+    def fd_determinants(self, meta, items):
+        return items
+    def fd_dependents(self, meta, items):
+        return items
 
     def algorithm(self, meta, items):
         return ir.Algorithm(global_=items[:-1], body=items[-1], meta=self.meta(meta))
