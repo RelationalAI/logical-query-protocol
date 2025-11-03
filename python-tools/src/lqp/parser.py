@@ -47,9 +47,8 @@ def_: "(def" relation_id abstraction attrs? ")"
 data: base_relation
 base_relation: "(base_relation" relation_id base_relation_info ")"
 base_relation_info: "(base_relation_info" key_types value_types betree_config betree_relation ")"
-key_types: "(key_types" type_list ")"
-value_types: "(value_types" type_list ")"
-type_list: type_*
+key_types: "(key_types" type_* ")"
+value_types: "(value_types" type_* ")"
 betree_config: "(betree_config" FLOAT NUMBER NUMBER NUMBER ")"
 betree_relation: "(betree_relation" UINT128 NUMBER NUMBER ")"
 
@@ -128,7 +127,7 @@ value: STRING | NUMBER | FLOAT | UINT128 | INT128
 
 type_ : TYPE_NAME | "(" TYPE_NAME value* ")"
 
-TYPE_NAME: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
+TYPE_NAME.1: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
          | "DATE" | "DATETIME" | "MISSING" | "DECIMAL" | "BOOLEAN"
 
 SYMBOL: /[a-zA-Z_][a-zA-Z0-9_.-]*/
