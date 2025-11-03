@@ -318,6 +318,42 @@ class Type(LqpNode):
     type_name: TypeName
     parameters: Sequence[Value]
 
+# --- Data Types (Base Relations, BeTree Config) ---
+
+# BeTreeConfig(epsilon::float, max_pivots::int, max_deltas::int, max_leaf::int)
+@dataclass(frozen=True)
+class BeTreeConfig(LqpNode):
+    epsilon: float
+    max_pivots: int
+    max_deltas: int
+    max_leaf: int
+
+# BeTreeRelation(root_pageid::UInt128Value, element_count::int, tree_height::int)
+@dataclass(frozen=True)
+class BeTreeRelation(LqpNode):
+    root_pageid: UInt128Value
+    element_count: int
+    tree_height: int
+
+# BaseRelationInfo(key_types::Type[], value_types::Type[], storage_config::BeTreeConfig, relation_locator::BeTreeRelation)
+@dataclass(frozen=True)
+class BaseRelationInfo(LqpNode):
+    key_types: Sequence[Type]
+    value_types: Sequence[Type]
+    storage_config: BeTreeConfig
+    relation_locator: BeTreeRelation
+
+# Data := BaseRelation | CSVRelation | ArrowRelation
+@dataclass(frozen=True)
+class Data(Declaration):
+    pass
+
+# BaseRelation(name::RelationId, relation_info::BaseRelationInfo)
+@dataclass(frozen=True)
+class BaseRelation(Data):
+    name: RelationId
+    relation_info: BaseRelationInfo
+
 # --- Fragment Types ---
 
 # FragmentId(id::bytes)

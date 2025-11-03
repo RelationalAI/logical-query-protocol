@@ -41,8 +41,17 @@ export_path: "(path" STRING ")"
 
 fragment: "(fragment" fragment_id declaration* ")"
 
-declaration: def_ | algorithm
+declaration: def_ | algorithm | data
 def_: "(def" relation_id abstraction attrs? ")"
+
+data: base_relation
+base_relation: "(base_relation" relation_id base_relation_info ")"
+base_relation_info: "(base_relation_info" key_types value_types betree_config betree_relation ")"
+key_types: "(key_types" type_list ")"
+value_types: "(value_types" type_list ")"
+type_list: type_*
+betree_config: "(betree_config" FLOAT NUMBER NUMBER NUMBER ")"
+betree_relation: "(betree_relation" UINT128 NUMBER NUMBER ")"
 
 algorithm: "(algorithm" relation_id* script ")"
 script: "(script" construct* ")"
@@ -298,6 +307,60 @@ class LQPTransformer(Transformer):
         assert value_arity == 0, f"Defs should not have a value arity"
         attrs = items[2] if len(items) > 2 else []
         return ir.Def(name=name, body=body, attrs=attrs, meta=self.meta(meta))
+
+    def data(self, meta, items):
+        return items[0]
+
+    def base_relation(self, meta, items):
+        name = items[0]
+        relation_info = items[1]
+        return ir.BaseRelation(name=name, relation_info=relation_info, meta=self.meta(meta))
+
+    def base_relation_info(self, meta, items):
+        key_types = items[0]
+        value_types = items[1]
+        storage_config = items[2]
+        relation_locator = items[3]
+        return ir.BaseRelationInfo(
+            key_types=key_types,
+            value_types=value_types,
+            storage_config=storage_config,
+            relation_locator=relation_locator,
+            meta=self.meta(meta)
+        )
+
+    def key_types(self, meta, items):
+        return items[0]
+
+    def value_types(self, meta, items):
+        return items[0]
+
+    def type_list(self, meta, items):
+        return items
+
+    def betree_config(self, meta, items):
+        epsilon = items[0]
+        max_pivots = items[1]
+        max_deltas = items[2]
+        max_leaf = items[3]
+        return ir.BeTreeConfig(
+            epsilon=epsilon,
+            max_pivots=max_pivots,
+            max_deltas=max_deltas,
+            max_leaf=max_leaf,
+            meta=self.meta(meta)
+        )
+
+    def betree_relation(self, meta, items):
+        root_pageid = items[0]
+        element_count = items[1]
+        tree_height = items[2]
+        return ir.BeTreeRelation(
+            root_pageid=root_pageid,
+            element_count=element_count,
+            tree_height=tree_height,
+            meta=self.meta(meta)
+        )
 
     def algorithm(self, meta, items):
         return ir.Algorithm(global_=items[:-1], body=items[-1], meta=self.meta(meta))

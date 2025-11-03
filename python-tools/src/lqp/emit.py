@@ -204,6 +204,41 @@ def convert_formula(f: ir.Formula) -> logic_pb2.Formula:
     else:
         raise TypeError(f"Unsupported Formula type: {type(f)}")
 
+def convert_betree_config(config: ir.BeTreeConfig) -> logic_pb2.BeTreeConfig:
+    return logic_pb2.BeTreeConfig(
+        epsilon=config.epsilon,
+        max_pivots=config.max_pivots,
+        max_deltas=config.max_deltas,
+        max_leaf=config.max_leaf
+    )
+
+def convert_betree_relation(rel: ir.BeTreeRelation) -> logic_pb2.BeTreeRelation:
+    return logic_pb2.BeTreeRelation(
+        root_pageid=convert_uint128(rel.root_pageid),
+        element_count=rel.element_count,
+        tree_height=rel.tree_height
+    )
+
+def convert_base_relation_info(info: ir.BaseRelationInfo) -> logic_pb2.BaseRelationInfo:
+    return logic_pb2.BaseRelationInfo(
+        key_types=[convert_type(kt) for kt in info.key_types],
+        value_types=[convert_type(vt) for vt in info.value_types],
+        storage_config=convert_betree_config(info.storage_config),
+        relation_locator=convert_betree_relation(info.relation_locator)
+    )
+
+def convert_base_relation(br: ir.BaseRelation) -> logic_pb2.BaseRelation:
+    return logic_pb2.BaseRelation(
+        name=convert_relation_id(br.name),
+        relation_info=convert_base_relation_info(br.relation_info)
+    )
+
+def convert_data(data: ir.Data) -> logic_pb2.Data:
+    if isinstance(data, ir.BaseRelation):
+        return logic_pb2.Data(base_relation=convert_base_relation(data))
+    else:
+        raise TypeError(f"Unsupported Data type: {type(data)}")
+
 def convert_def(d: ir.Def) -> logic_pb2.Def:
     return logic_pb2.Def(
         name=convert_relation_id(d.name),
@@ -225,6 +260,9 @@ def convert_declaration(decl: ir.Declaration) -> logic_pb2.Declaration:
     elif isinstance(decl, ir.Algorithm):
         algorithm_dict: Dict[str, Any] = {'algorithm': convert_algorithm(decl)}
         return logic_pb2.Declaration(**algorithm_dict)
+    elif isinstance(decl, ir.Data):
+        data_dict: Dict[str, Any] = {'data': convert_data(decl)}
+        return logic_pb2.Declaration(**data_dict)  # type: ignore
     else:
         raise TypeError(f"Unsupported Declaration type: {type(decl)}")
 
