@@ -1,16 +1,19 @@
 from google.protobuf.internal import containers as _containers
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Mapping, Optional as _Optional, Union as _Union
+from collections.abc import Iterable as _Iterable, Mapping as _Mapping
+from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class Declaration(_message.Message):
-    __slots__ = ("algorithm",)
+    __slots__ = ("algorithm", "data")
     DEF_FIELD_NUMBER: _ClassVar[int]
     ALGORITHM_FIELD_NUMBER: _ClassVar[int]
+    DATA_FIELD_NUMBER: _ClassVar[int]
     algorithm: Algorithm
-    def __init__(self, algorithm: _Optional[_Union[Algorithm, _Mapping]] = ..., **kwargs) -> None: ...
+    data: Data
+    def __init__(self, algorithm: _Optional[_Union[Algorithm, _Mapping]] = ..., data: _Optional[_Union[Data, _Mapping]] = ..., **kwargs) -> None: ...
 
 class Def(_message.Message):
     __slots__ = ("name", "body", "attrs")
@@ -313,6 +316,54 @@ class Attribute(_message.Message):
     args: _containers.RepeatedCompositeFieldContainer[Value]
     def __init__(self, name: _Optional[str] = ..., args: _Optional[_Iterable[_Union[Value, _Mapping]]] = ...) -> None: ...
 
+class Data(_message.Message):
+    __slots__ = ("base_relation",)
+    BASE_RELATION_FIELD_NUMBER: _ClassVar[int]
+    base_relation: BaseRelation
+    def __init__(self, base_relation: _Optional[_Union[BaseRelation, _Mapping]] = ...) -> None: ...
+
+class BaseRelation(_message.Message):
+    __slots__ = ("name", "relation_info")
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    RELATION_INFO_FIELD_NUMBER: _ClassVar[int]
+    name: RelationId
+    relation_info: BaseRelationInfo
+    def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., relation_info: _Optional[_Union[BaseRelationInfo, _Mapping]] = ...) -> None: ...
+
+class BaseRelationInfo(_message.Message):
+    __slots__ = ("key_types", "value_types", "storage_config", "relation_locator")
+    KEY_TYPES_FIELD_NUMBER: _ClassVar[int]
+    VALUE_TYPES_FIELD_NUMBER: _ClassVar[int]
+    STORAGE_CONFIG_FIELD_NUMBER: _ClassVar[int]
+    RELATION_LOCATOR_FIELD_NUMBER: _ClassVar[int]
+    key_types: _containers.RepeatedCompositeFieldContainer[Type]
+    value_types: _containers.RepeatedCompositeFieldContainer[Type]
+    storage_config: BeTreeConfig
+    relation_locator: BeTreeRelation
+    def __init__(self, key_types: _Optional[_Iterable[_Union[Type, _Mapping]]] = ..., value_types: _Optional[_Iterable[_Union[Type, _Mapping]]] = ..., storage_config: _Optional[_Union[BeTreeConfig, _Mapping]] = ..., relation_locator: _Optional[_Union[BeTreeRelation, _Mapping]] = ...) -> None: ...
+
+class BeTreeConfig(_message.Message):
+    __slots__ = ("epsilon", "max_pivots", "max_deltas", "max_leaf")
+    EPSILON_FIELD_NUMBER: _ClassVar[int]
+    MAX_PIVOTS_FIELD_NUMBER: _ClassVar[int]
+    MAX_DELTAS_FIELD_NUMBER: _ClassVar[int]
+    MAX_LEAF_FIELD_NUMBER: _ClassVar[int]
+    epsilon: float
+    max_pivots: int
+    max_deltas: int
+    max_leaf: int
+    def __init__(self, epsilon: _Optional[float] = ..., max_pivots: _Optional[int] = ..., max_deltas: _Optional[int] = ..., max_leaf: _Optional[int] = ...) -> None: ...
+
+class BeTreeRelation(_message.Message):
+    __slots__ = ("root_pageid", "element_count", "tree_height")
+    ROOT_PAGEID_FIELD_NUMBER: _ClassVar[int]
+    ELEMENT_COUNT_FIELD_NUMBER: _ClassVar[int]
+    TREE_HEIGHT_FIELD_NUMBER: _ClassVar[int]
+    root_pageid: UInt128Value
+    element_count: int
+    tree_height: int
+    def __init__(self, root_pageid: _Optional[_Union[UInt128Value, _Mapping]] = ..., element_count: _Optional[int] = ..., tree_height: _Optional[int] = ...) -> None: ...
+
 class RelationId(_message.Message):
     __slots__ = ("id_low", "id_high")
     ID_LOW_FIELD_NUMBER: _ClassVar[int]
@@ -417,7 +468,7 @@ class Value(_message.Message):
     datetime_value: DateTimeValue
     decimal_value: DecimalValue
     boolean_value: bool
-    def __init__(self, string_value: _Optional[str] = ..., int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128Value, _Mapping]] = ..., int128_value: _Optional[_Union[Int128Value, _Mapping]] = ..., missing_value: _Optional[_Union[MissingValue, _Mapping]] = ..., date_value: _Optional[_Union[DateValue, _Mapping]] = ..., datetime_value: _Optional[_Union[DateTimeValue, _Mapping]] = ..., decimal_value: _Optional[_Union[DecimalValue, _Mapping]] = ..., boolean_value: bool = ...) -> None: ...
+    def __init__(self, string_value: _Optional[str] = ..., int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128Value, _Mapping]] = ..., int128_value: _Optional[_Union[Int128Value, _Mapping]] = ..., missing_value: _Optional[_Union[MissingValue, _Mapping]] = ..., date_value: _Optional[_Union[DateValue, _Mapping]] = ..., datetime_value: _Optional[_Union[DateTimeValue, _Mapping]] = ..., decimal_value: _Optional[_Union[DecimalValue, _Mapping]] = ..., boolean_value: _Optional[bool] = ...) -> None: ...
 
 class UInt128Value(_message.Message):
     __slots__ = ("low", "high")
