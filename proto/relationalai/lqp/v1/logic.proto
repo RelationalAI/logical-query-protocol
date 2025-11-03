@@ -6,6 +6,7 @@ message Declaration {
   oneof declaration_type {
     Def def = 1;
     Algorithm algorithm = 2;
+    Data data = 3;
   }
 }
 
@@ -210,6 +211,63 @@ message Attribute {
   repeated Value args = 2;
 }
 
+//
+// Input data (base relations, CSVs)
+//
+message Data {
+  oneof data_type {
+    BaseRelation base_relation = 1;
+    // TODO
+    // CSVRelation csv_relation = 2;
+    // ArrowRelation arrow_relation = 3;
+  }
+}
+
+message BaseRelation {
+  RelationId name = 1;
+  BaseRelationInfo relation_info = 2;
+}
+
+message BaseRelationInfo {
+  repeated Type key_types = 1;
+  repeated Type value_types = 2;
+  BeTreeConfig storage_config = 3;
+  BeTreeRelation relation_locator = 4;
+}
+
+// TODO: do we need these?
+// message StorageConfig {
+//     // for inline relations, the storage config is empty
+//     bool is_empty = 1;
+// 
+//     // otherwise, the betree config describes how the paged data is stored
+//     BeTreeConfig be_tree_config = 2;
+// }
+// 
+// enum TypeErasureMethod {
+//     // next available: 3
+// 
+//     NO_ERASURE = 0;
+//     NORMALIZE_ALL_EXCEPT_STRINGS = 1;
+//     NORMALIZE_ALL = 2;
+// }
+
+message BeTreeConfig {
+    double epsilon = 1;
+    int64 max_pivots = 2;
+    int64 max_deltas = 3;
+    int64 max_leaf = 4;
+}
+
+message BeTreeRelation {
+    UInt128Value root_pageid = 1;
+    int64 element_count = 2;
+    int64 tree_height = 3;
+}
+
+//
+// Relation identifiers and types
+//
 message RelationId {
   fixed64 id_low = 1; // Lower 64 bits of UInt128
   fixed64 id_high = 2; // Upper 64 bits of UInt128
