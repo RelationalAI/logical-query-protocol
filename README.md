@@ -45,7 +45,7 @@ To add a new feature to the LQP protocol, the following changes need to be made.
 1. The new feature needs to be added to the protobuf specification, which is located in to `proto/` directory.
 2. The Python protobuf bindings need to be build (see instructions below).
 3. The new feature needs to be added to the Python IR, located in `python-tools/src/lqp/ir.py`. The structure of the IR should reflect the structure of the protobuf specification.
-4. The new feature needs to be added to the grammar for the human-readable S-expression LQP syntax. The grammer is located in `python-tools/src/lqp/parser.py`.
+4. The new feature needs to be added to the grammar for the human-readable S-expression LQP syntax. The grammar is located in `python-tools/src/lqp/parser.py`.
 5. The parser needs to be extended to support the new feature when translating the parse tree to the Python IR. The parsing code is located in `python-tools/src/lqp/parser.py` as well.
 6. The pretty printer for the Python IR needs to be extended to support the new feature. It is located in `python-tools/src/lqp/print.py`.
 7. The emitter that translates the Python IR to protobuf needs to be extended to support the new feature. It is located in `python-tools/src/lqp/emit.py`.
@@ -65,7 +65,7 @@ managed by the `build` script, which runs validation and generates Python proto 
 The build script depends on `protoc`. If necessary, that can be installed for example via `brew`:
 
 ```
-brew protobuf
+brew install protobuf
 ```
 
 If you generate new Protobuf bindings, you should also update `parser.py`, `ir.py`, `print.py`, and `emit.py`
