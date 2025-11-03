@@ -1,0 +1,84 @@
+(transaction
+  (configure
+    { :ivm.maintenance_level "off"
+      :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          (base_relation 12241733354516903356
+            (base_relation_info
+              (key_types INT)
+              (value_types STRING INT)
+              (betree_config 0.5 4 16 16)
+              (betree_relation 0x1234567890123456789012 0 0)))
+          (base_relation 11296646467174418931
+            (base_relation_info
+              (key_types INT STRING)
+              (value_types FLOAT)
+              (betree_config 0.8 8 32 32)
+              (betree_relation 0xabcdef1234567890abcdef 100 2)))
+          (base_relation 2517080472536116612
+            (base_relation_info
+              (key_types UINT128)
+              (value_types INT FLOAT (DECIMAL 18 4))
+              (betree_config 0.3 10 20 64)
+              (betree_relation 0xfedcba9876543210fedcba 500 3)))
+          (base_relation 10555505896768410262
+            (base_relation_info
+              (key_types DATE)
+              (value_types DATETIME STRING)
+              (betree_config 0.6 6 24 48)
+              (betree_relation 0x9999888877776666555544 250 2)))
+          (base_relation 16514460326753631698
+            (base_relation_info
+              (key_types STRING)
+              (value_types BOOLEAN MISSING)
+              (betree_config 0.7 5 15 20)
+              (betree_relation 0x1111222233334444555566 75 1)))
+          (base_relation 7467225577664975353
+            (base_relation_info
+              (key_types INT STRING)
+              (value_types)
+              (betree_config 0.4 12 18 40)
+              (betree_relation 0x7777888899990000111122 10 1)))
+          (def 3181428560199927439
+            ([x::INT]
+              (primitive :rel_primitive_eq x 1)))
+          (algorithm 18221048622641146868 13449332429612589307
+            (script
+              (assign 18221048622641146868
+                ([y::INT]
+                  (primitive :rel_primitive_eq y 2)))))))
+      (define
+        (fragment :f2
+          (base_relation 15511961118399231270
+            (base_relation_info
+              (key_types STRING)
+              (value_types INT)
+              (betree_config 0.5 4 16 16)
+              (betree_relation 0x3333444455556666777788 1000 4))))))
+    (reads
+      (output :foo 3181428560199927439)
+      (output :edb 12241733354516903356)
+      (output :multi_key 11296646467174418931)
+      (output :numeric_types 2517080472536116612)
+      (output :temporal_data 10555505896768410262)
+      (output :boolean_data 16514460326753631698)
+      (output :key_only 7467225577664975353)
+      (output :bar 18221048622641146868)
+      (output :another_edb 15511961118399231270))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `15511961118399231270` -> `another_edb`
+;; 	 ID `12241733354516903356` -> `edb`
+;; 	 ID `11296646467174418931` -> `multi_key`
+;; 	 ID `2517080472536116612` -> `numeric_types`
+;; 	 ID `10555505896768410262` -> `temporal_data`
+;; 	 ID `16514460326753631698` -> `boolean_data`
+;; 	 ID `7467225577664975353` -> `key_only`
+;; 	 ID `3181428560199927439` -> `foo`
+;; 	 ID `18221048622641146868` -> `bar`
+;; 	 ID `13449332429612589307` -> `baz`

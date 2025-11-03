@@ -1,0 +1,70 @@
+(transaction
+  (configure
+    { :ivm.maintenance_level "off"
+      :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          (base_relation :edb
+            (base_relation_info
+              (key_types INT)
+              (value_types STRING INT)
+              (betree_config 0.5 4 16 16)
+              (betree_relation 0x1234567890123456789012 0 0)))
+          (base_relation :multi_key
+            (base_relation_info
+              (key_types INT STRING)
+              (value_types FLOAT)
+              (betree_config 0.8 8 32 32)
+              (betree_relation 0xabcdef1234567890abcdef 100 2)))
+          (base_relation :numeric_types
+            (base_relation_info
+              (key_types UINT128)
+              (value_types INT FLOAT (DECIMAL 18 4))
+              (betree_config 0.3 10 20 64)
+              (betree_relation 0xfedcba9876543210fedcba 500 3)))
+          (base_relation :temporal_data
+            (base_relation_info
+              (key_types DATE)
+              (value_types DATETIME STRING)
+              (betree_config 0.6 6 24 48)
+              (betree_relation 0x9999888877776666555544 250 2)))
+          (base_relation :boolean_data
+            (base_relation_info
+              (key_types STRING)
+              (value_types BOOLEAN MISSING)
+              (betree_config 0.7 5 15 20)
+              (betree_relation 0x1111222233334444555566 75 1)))
+          (base_relation :key_only
+            (base_relation_info
+              (key_types INT STRING)
+              (value_types)
+              (betree_config 0.4 12 18 40)
+              (betree_relation 0x7777888899990000111122 10 1)))
+          (def :foo
+            ([x::INT]
+              (primitive :rel_primitive_eq x 1)))
+          (algorithm :bar :baz
+            (script
+              (assign :bar
+                ([y::INT]
+                  (primitive :rel_primitive_eq y 2)))))))
+      (define
+        (fragment :f2
+          (base_relation :another_edb
+            (base_relation_info
+              (key_types STRING)
+              (value_types INT)
+              (betree_config 0.5 4 16 16)
+              (betree_relation 0x3333444455556666777788 1000 4))))))
+    (reads
+      (output :foo :foo)
+      (output :edb :edb)
+      (output :multi_key :multi_key)
+      (output :numeric_types :numeric_types)
+      (output :temporal_data :temporal_data)
+      (output :boolean_data :boolean_data)
+      (output :key_only :key_only)
+      (output :bar :bar)
+      (output :another_edb :another_edb))))
