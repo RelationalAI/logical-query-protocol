@@ -320,6 +320,12 @@ class Type(LqpNode):
 
 # --- Data Types (Base Relations, BeTree Config) ---
 
+# BeTreeIdentifier(scc_hash::UInt128Value, scc_index::int)
+@dataclass(frozen=True)
+class BeTreeIdentifier(LqpNode):
+    scc_hash: UInt128Value
+    scc_index: int
+
 # BeTreeConfig(epsilon::float, max_pivots::int, max_deltas::int, max_leaf::int)
 @dataclass(frozen=True)
 class BeTreeConfig(LqpNode):
@@ -335,11 +341,12 @@ class BeTreeRelation(LqpNode):
     element_count: int
     tree_height: int
 
-# BaseRelationInfo(key_types::Type[], value_types::Type[], storage_config::BeTreeConfig, relation_locator::BeTreeRelation)
+# BaseRelationInfo(key_types::Type[], value_types::Type[], relation_identifier::BeTreeIdentifier, storage_config::BeTreeConfig, relation_locator::BeTreeRelation)
 @dataclass(frozen=True)
 class BaseRelationInfo(LqpNode):
     key_types: Sequence[Type]
     value_types: Sequence[Type]
+    relation_identifier: BeTreeIdentifier
     storage_config: BeTreeConfig
     relation_locator: BeTreeRelation
 

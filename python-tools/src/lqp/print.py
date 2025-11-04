@@ -284,10 +284,14 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
         if len(node.value_types) > 0:
             lqp += " " + list_to_str(node.value_types, 0, " ", options, debug_info)
         lqp += conf.RPAREN() + "\n"
-        # Print storage config and relation locator
+        # Print relation identifier, storage config, and relation locator
+        lqp += to_str(node.relation_identifier, indent_level + 1, options, debug_info) + "\n"
         lqp += to_str(node.storage_config, indent_level + 1, options, debug_info) + "\n"
         lqp += to_str(node.relation_locator, indent_level + 1, options, debug_info)
         lqp += conf.RPAREN()
+
+    elif isinstance(node, ir.BeTreeIdentifier):
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('betree_identifier')} {to_str(node.scc_hash, 0, options, debug_info)} {node.scc_index}{conf.RPAREN()}"
 
     elif isinstance(node, ir.BeTreeConfig):
         lqp += f"{ind}{conf.LPAREN()}{conf.kw('betree_config')} {node.epsilon} {node.max_pivots} {node.max_deltas} {node.max_leaf}{conf.RPAREN()}"

@@ -204,6 +204,12 @@ def convert_formula(f: ir.Formula) -> logic_pb2.Formula:
     else:
         raise TypeError(f"Unsupported Formula type: {type(f)}")
 
+def convert_betree_identifier(identifier: ir.BeTreeIdentifier) -> logic_pb2.BeTreeIdentifier:
+    return logic_pb2.BeTreeIdentifier(
+        scc_hash=convert_uint128(identifier.scc_hash),
+        scc_index=identifier.scc_index
+    )
+
 def convert_betree_config(config: ir.BeTreeConfig) -> logic_pb2.BeTreeConfig:
     return logic_pb2.BeTreeConfig(
         epsilon=config.epsilon,
@@ -223,6 +229,7 @@ def convert_base_relation_info(info: ir.BaseRelationInfo) -> logic_pb2.BaseRelat
     return logic_pb2.BaseRelationInfo(
         key_types=[convert_type(kt) for kt in info.key_types],
         value_types=[convert_type(vt) for vt in info.value_types],
+        relation_identifier=convert_betree_identifier(info.relation_identifier),
         storage_config=convert_betree_config(info.storage_config),
         relation_locator=convert_betree_relation(info.relation_locator)
     )

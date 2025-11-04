@@ -46,9 +46,10 @@ def_: "(def" relation_id abstraction attrs? ")"
 
 data: base_relation
 base_relation: "(base_relation" relation_id base_relation_info ")"
-base_relation_info: "(base_relation_info" key_types value_types betree_config betree_relation ")"
+base_relation_info: "(base_relation_info" key_types value_types betree_identifier betree_config betree_relation ")"
 key_types: "(key_types" type_* ")"
 value_types: "(value_types" type_* ")"
+betree_identifier: "(betree_identifier" UINT128 NUMBER ")"
 betree_config: "(betree_config" FLOAT NUMBER NUMBER NUMBER ")"
 betree_relation: "(betree_relation" UINT128 NUMBER NUMBER ")"
 
@@ -318,11 +319,13 @@ class LQPTransformer(Transformer):
     def base_relation_info(self, meta, items):
         key_types = items[0]
         value_types = items[1]
-        storage_config = items[2]
-        relation_locator = items[3]
+        relation_identifier = items[2]
+        storage_config = items[3]
+        relation_locator = items[4]
         return ir.BaseRelationInfo(
             key_types=key_types,
             value_types=value_types,
+            relation_identifier=relation_identifier,
             storage_config=storage_config,
             relation_locator=relation_locator,
             meta=self.meta(meta)
@@ -333,6 +336,15 @@ class LQPTransformer(Transformer):
 
     def value_types(self, meta, items):
         return items
+
+    def betree_identifier(self, meta, items):
+        scc_hash = items[0]
+        scc_index = items[1]
+        return ir.BeTreeIdentifier(
+            scc_hash=scc_hash,
+            scc_index=scc_index,
+            meta=self.meta(meta)
+        )
 
     def betree_config(self, meta, items):
         epsilon = items[0]
