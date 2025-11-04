@@ -10,36 +10,42 @@
             (base_relation_info
               (key_types INT)
               (value_types STRING INT)
+              (betree_identifier 0xaabbccdd11223344 1)
               (betree_config 0.5 4 16 16)
               (betree_relation 0x1234567890123456789012 0 0)))
           (base_relation :multi_key
             (base_relation_info
               (key_types INT STRING)
               (value_types FLOAT)
+              (betree_identifier 0xbeef1234 2)
               (betree_config 0.8 8 32 32)
               (betree_relation 0xabcdef1234567890abcdef 100 2)))
           (base_relation :numeric_types
             (base_relation_info
               (key_types UINT128)
               (value_types INT FLOAT (DECIMAL 18 4))
+              (betree_identifier 0xcafe5678 3)
               (betree_config 0.3 10 20 64)
               (betree_relation 0xfedcba9876543210fedcba 500 3)))
           (base_relation :temporal_data
             (base_relation_info
               (key_types DATE)
               (value_types DATETIME STRING)
+              (betree_identifier 0xdead9abc 4)
               (betree_config 0.6 6 24 48)
               (betree_relation 0x9999888877776666555544 250 2)))
           (base_relation :boolean_data
             (base_relation_info
               (key_types STRING)
               (value_types BOOLEAN MISSING)
+              (betree_identifier 0xface0def 5)
               (betree_config 0.7 5 15 20)
               (betree_relation 0x1111222233334444555566 75 1)))
           (base_relation :key_only
             (base_relation_info
               (key_types INT STRING)
               (value_types)
+              (betree_identifier 0xbabe1111 6)
               (betree_config 0.4 12 18 40)
               (betree_relation 0x7777888899990000111122 10 1)))
           (def :foo
@@ -56,6 +62,7 @@
             (base_relation_info
               (key_types STRING)
               (value_types INT)
+              (betree_identifier 0x9999eeee 7)
               (betree_config 0.5 4 16 16)
               (betree_relation 0x3333444455556666777788 1000 4))))))
     (reads
