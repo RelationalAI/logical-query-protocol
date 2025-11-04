@@ -331,16 +331,26 @@ class BaseRelation(_message.Message):
     def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., relation_info: _Optional[_Union[BaseRelationInfo, _Mapping]] = ...) -> None: ...
 
 class BaseRelationInfo(_message.Message):
-    __slots__ = ("key_types", "value_types", "storage_config", "relation_locator")
+    __slots__ = ("key_types", "value_types", "relation_identifier", "storage_config", "relation_locator")
     KEY_TYPES_FIELD_NUMBER: _ClassVar[int]
     VALUE_TYPES_FIELD_NUMBER: _ClassVar[int]
+    RELATION_IDENTIFIER_FIELD_NUMBER: _ClassVar[int]
     STORAGE_CONFIG_FIELD_NUMBER: _ClassVar[int]
     RELATION_LOCATOR_FIELD_NUMBER: _ClassVar[int]
     key_types: _containers.RepeatedCompositeFieldContainer[Type]
     value_types: _containers.RepeatedCompositeFieldContainer[Type]
+    relation_identifier: BeTreeIdentifier
     storage_config: BeTreeConfig
     relation_locator: BeTreeRelation
-    def __init__(self, key_types: _Optional[_Iterable[_Union[Type, _Mapping]]] = ..., value_types: _Optional[_Iterable[_Union[Type, _Mapping]]] = ..., storage_config: _Optional[_Union[BeTreeConfig, _Mapping]] = ..., relation_locator: _Optional[_Union[BeTreeRelation, _Mapping]] = ...) -> None: ...
+    def __init__(self, key_types: _Optional[_Iterable[_Union[Type, _Mapping]]] = ..., value_types: _Optional[_Iterable[_Union[Type, _Mapping]]] = ..., relation_identifier: _Optional[_Union[BeTreeIdentifier, _Mapping]] = ..., storage_config: _Optional[_Union[BeTreeConfig, _Mapping]] = ..., relation_locator: _Optional[_Union[BeTreeRelation, _Mapping]] = ...) -> None: ...
+
+class BeTreeIdentifier(_message.Message):
+    __slots__ = ("scc_hash", "scc_index")
+    SCC_HASH_FIELD_NUMBER: _ClassVar[int]
+    SCC_INDEX_FIELD_NUMBER: _ClassVar[int]
+    scc_hash: UInt128Value
+    scc_index: int
+    def __init__(self, scc_hash: _Optional[_Union[UInt128Value, _Mapping]] = ..., scc_index: _Optional[int] = ...) -> None: ...
 
 class BeTreeConfig(_message.Message):
     __slots__ = ("epsilon", "max_pivots", "max_deltas", "max_leaf")
