@@ -444,6 +444,7 @@ class CSVConfigChecker(LqpVisitor):
                         f"and '{self.get_original_name(column.column_data)}' with key types {[str(t) for t in key_types]}."
                     )
 
+# Checks that the variables used in an FD are drawn from free variables of the guard.
 class FDVarsChecker(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
         super().__init__()

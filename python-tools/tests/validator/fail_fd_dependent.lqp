@@ -7,13 +7,6 @@
           (functional_dependency
             ([a::INT b::INT c::INT] (atom :r a b c))
             (x a b)
-            (y d)
-          )
-        )
-      )
-    )
+            (y d)))))
     (reads
-      (output :output 1234567898765432123456789)
-    )
-  )
-)
+      (output :output 1234567898765432123456789))))
