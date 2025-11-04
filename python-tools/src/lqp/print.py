@@ -263,8 +263,8 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
                 + conf.RPAREN() + "\n"
             lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("y") + " " \
                 + " ".join([to_str(var, 0, options, debug_info) for var in node.y]) \
-                + conf.RPAREN() + "\n"
-            lqp += ind + conf.RPAREN()
+                + conf.RPAREN() \
+                + conf.RPAREN()
         else:
             raise NotImplementedError(f"to_str not implemented for constraint type {type(node)}.")
 

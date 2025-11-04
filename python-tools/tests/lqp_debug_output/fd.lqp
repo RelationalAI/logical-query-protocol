@@ -10,8 +10,7 @@
             ([a::INT b::INT c::INT]
               (atom 4990914056244187799 a b c))
             (x a b)
-            (y c)
-          ))))
+            (y c)))))
     (reads
       (output :output 1234567898765432123456789))))
 
