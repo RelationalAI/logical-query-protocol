@@ -231,8 +231,9 @@ message BaseRelation {
 message BaseRelationInfo {
   repeated Type key_types = 1;
   repeated Type value_types = 2;
-  BeTreeConfig storage_config = 3;
-  BeTreeRelation relation_locator = 4;
+  BeTreeIdentifier relation_identifier = 3;
+  BeTreeConfig storage_config = 4;
+  BeTreeRelation relation_locator = 5;
 }
 
 // TODO: do we need these?
@@ -252,17 +253,22 @@ message BaseRelationInfo {
 //     NORMALIZE_ALL = 2;
 // }
 
+message BeTreeIdentifier {
+  UInt128Value scc_hash = 1;
+  int64 scc_index = 2;
+}
+
 message BeTreeConfig {
-    double epsilon = 1;
-    int64 max_pivots = 2;
-    int64 max_deltas = 3;
-    int64 max_leaf = 4;
+  double epsilon = 1;
+  int64 max_pivots = 2;
+  int64 max_deltas = 3;
+  int64 max_leaf = 4;
 }
 
 message BeTreeRelation {
-    UInt128Value root_pageid = 1;
-    int64 element_count = 2;
-    int64 tree_height = 3;
+  UInt128Value root_pageid = 1;
+  int64 element_count = 2;
+  int64 tree_height = 3;
 }
 
 //
