@@ -34,12 +34,12 @@ class Constraint(_message.Message):
 class FunctionalDependency(_message.Message):
     __slots__ = ()
     GUARD_FIELD_NUMBER: _ClassVar[int]
-    X_FIELD_NUMBER: _ClassVar[int]
-    Y_FIELD_NUMBER: _ClassVar[int]
+    KEYS_FIELD_NUMBER: _ClassVar[int]
+    VALUES_FIELD_NUMBER: _ClassVar[int]
     guard: Abstraction
-    x: _containers.RepeatedCompositeFieldContainer[Var]
-    y: _containers.RepeatedCompositeFieldContainer[Var]
-    def __init__(self, guard: _Optional[_Union[Abstraction, _Mapping]] = ..., x: _Optional[_Iterable[_Union[Var, _Mapping]]] = ..., y: _Optional[_Iterable[_Union[Var, _Mapping]]] = ...) -> None: ...
+    keys: _containers.RepeatedCompositeFieldContainer[Var]
+    values: _containers.RepeatedCompositeFieldContainer[Var]
+    def __init__(self, guard: _Optional[_Union[Abstraction, _Mapping]] = ..., keys: _Optional[_Iterable[_Union[Var, _Mapping]]] = ..., values: _Optional[_Iterable[_Union[Var, _Mapping]]] = ...) -> None: ...
 
 class Algorithm(_message.Message):
     __slots__ = ()
