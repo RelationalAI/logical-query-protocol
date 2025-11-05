@@ -242,6 +242,7 @@ def convert_constraint(constraint: ir.Constraint) -> logic_pb2.Constraint:
         )
     else:
         raise TypeError(f"Unsupported Constraint type: {type(constraint)}")
+
 def convert_algorithm(algo: ir.Algorithm)-> logic_pb2.Algorithm:
     dict: Dict[str, Any] = {
         'global': [convert_relation_id(id) for id in algo.global_],
