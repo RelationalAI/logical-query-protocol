@@ -236,23 +236,6 @@ message BaseRelationInfo {
   BeTreeRelation relation_locator = 5;
 }
 
-// TODO: do we need these?
-// message StorageConfig {
-//     // for inline relations, the storage config is empty
-//     bool is_empty = 1;
-// 
-//     // otherwise, the betree config describes how the paged data is stored
-//     BeTreeConfig be_tree_config = 2;
-// }
-// 
-// enum TypeErasureMethod {
-//     // next available: 3
-// 
-//     NO_ERASURE = 0;
-//     NORMALIZE_ALL_EXCEPT_STRINGS = 1;
-//     NORMALIZE_ALL = 2;
-// }
-
 message BeTreeIdentifier {
   UInt128Value scc_hash = 1;
   int64 scc_index = 2;
