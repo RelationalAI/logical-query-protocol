@@ -24,8 +24,8 @@ message Constraint {
 
 message FunctionalDependency {
   Abstraction guard = 1;
-  repeated Var x = 2;
-  repeated Var y = 3;
+  repeated Var keys = 2;
+  repeated Var values = 3;
 }
 
 message Algorithm {
