@@ -313,7 +313,7 @@ class LQPTransformer(Transformer):
         return ir.FunctionalDependency(
             guard=guard,
             keys=keys,
-            values=values   ,
+            values=values,
             meta=self.meta(meta)
         )
     def fd_keys(self, meta, items):
