@@ -452,12 +452,12 @@ class FDVarsChecker(LqpVisitor):
 
     def visit_FunctionalDependency(self, node: ir.FunctionalDependency):
         guard_var_names = {var.name for (var, _) in node.guard.vars}
-        for var in node.x:
+        for var in node.keys:
             if var.name not in guard_var_names:
-                raise ValidationError(f"Determinant variable '{var.name}' not declared in guard at {var.meta}")
-        for var in node.y:
+                raise ValidationError(f"Key variable '{var.name}' not declared in guard at {var.meta}")
+        for var in node.values:
             if var.name not in guard_var_names:
-                raise ValidationError(f"Dependent variable '{var.name}' not declared in guard at {var.meta}")
+                raise ValidationError(f"Value variable '{var.name}' not declared in guard at {var.meta}")
 
 def validate_lqp(lqp: ir.Transaction):
     ShadowedVariableFinder(lqp)
