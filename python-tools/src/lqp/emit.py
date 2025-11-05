@@ -236,8 +236,8 @@ def convert_constraint(constraint: ir.Constraint) -> logic_pb2.Constraint:
         return logic_pb2.Constraint(
             functional_dependency=logic_pb2.FunctionalDependency(
                 guard=convert_abstraction(constraint.guard),
-                x=[convert_var(v) for v in constraint.x],
-                y=[convert_var(v) for v in constraint.y]
+                keys=[convert_var(v) for v in constraint.keys],
+                values=[convert_var(v) for v in constraint.values],
             )
         )
     else:
