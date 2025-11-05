@@ -451,7 +451,7 @@ class FDVarsChecker(LqpVisitor):
         self.visit(txn)
 
     def visit_FunctionalDependency(self, node: ir.FunctionalDependency):
-        guard_var_names = {var[0].name for var in node.guard.vars}
+        guard_var_names = {var.name for (var, _) in node.guard.vars}
         for var in node.x:
             if var.name not in guard_var_names:
                 raise ValidationError(f"Determinant variable '{var.name}' not declared in guard at {var.meta}")
