@@ -45,8 +45,8 @@ class Constraint(Declaration):
 @dataclass(frozen=True)
 class FunctionalDependency(Constraint):
     guard: Abstraction
-    x: Sequence[Var]
-    y: Sequence[Var]
+    keys: Sequence[Var]
+    values: Sequence[Var]
 
 # Algorithm(globals::RelationId[], body::Script)
 @dataclass(frozen=True)
