@@ -45,9 +45,9 @@ declaration: def_ | algorithm | constraint
 def_: "(def" relation_id abstraction attrs? ")"
 
 constraint: functional_dependency
-functional_dependency: "(functional_dependency" abstraction fd_determinants fd_dependents ")"
-fd_determinants: "(x" var* ")"
-fd_dependents: "(y" var* ")"
+functional_dependency: "(functional_dependency" abstraction fd_keys fd_values ")"
+fd_keys: "(keys" var* ")"
+fd_values: "(values" var* ")"
 
 algorithm: "(algorithm" relation_id* script ")"
 script: "(script" construct* ")"
@@ -308,17 +308,17 @@ class LQPTransformer(Transformer):
         return items[0]
     def functional_dependency(self, meta, items):
         guard, _ = items[0]
-        x = items[1]
-        y = items[2]
+        keys = items[1]
+        values = items[2]
         return ir.FunctionalDependency(
             guard=guard,
-            x=x,
-            y=y,
+            keys=keys,
+            values=values   ,
             meta=self.meta(meta)
         )
-    def fd_determinants(self, meta, items):
+    def fd_keys(self, meta, items):
         return items
-    def fd_dependents(self, meta, items):
+    def fd_values(self, meta, items):
         return items
 
     def algorithm(self, meta, items):

@@ -258,11 +258,11 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
         if isinstance(node, ir.FunctionalDependency):
             lqp += ind + conf.LPAREN() + conf.kw("functional_dependency") + "\n"
             lqp += to_str(node.guard, indent_level + 1, options, debug_info) + "\n"
-            lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("x") + " " \
-                + " ".join([to_str(var, 0, options, debug_info) for var in node.x]) \
+            lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("keys") + " " \
+                + " ".join([to_str(var, 0, options, debug_info) for var in node.keys]) \
                 + conf.RPAREN() + "\n"
-            lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("y") + " " \
-                + " ".join([to_str(var, 0, options, debug_info) for var in node.y]) \
+            lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("values") + " " \
+                + " ".join([to_str(var, 0, options, debug_info) for var in node.values]) \
                 + conf.RPAREN() \
                 + conf.RPAREN()
         else:
