@@ -29,5 +29,10 @@ for file in python-tools/src/lqp/proto/v1/*_pb2.py*; do
     mv "$file.tmp" "$file"
 done
 
+# Copy generated Go protobuf files to the go directory
+mkdir -p go/relationalai/lqp/v1
+cp -r gen/go/relationalai/lqp/v1/*.go go/relationalai/lqp/v1/
+
 # Clean up temporary generated files
 rm -rf gen/python
+rm -rf gen/go

@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package relationalai.lqp.v1;
 
+option go_package = "logical-query-protocol/relationalai/lqp/v1";
+
 message Declaration {
   oneof declaration_type {
     Def def = 1;
