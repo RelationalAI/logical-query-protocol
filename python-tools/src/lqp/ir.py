@@ -320,12 +320,6 @@ class Type(LqpNode):
 
 # --- Data Types (Base Relations, BeTree Config) ---
 
-# BeTreeIdentifier(scc_hash::UInt128Value, scc_index::int)
-@dataclass(frozen=True)
-class BeTreeIdentifier(LqpNode):
-    scc_hash: UInt128Value
-    scc_index: int
-
 # BeTreeConfig(epsilon::float, max_pivots::int, max_deltas::int, max_leaf::int)
 @dataclass(frozen=True)
 class BeTreeConfig(LqpNode):
@@ -334,32 +328,40 @@ class BeTreeConfig(LqpNode):
     max_deltas: int
     max_leaf: int
 
-# BeTreeRelation(root_pageid::UInt128Value, element_count::int, tree_height::int)
+# BeTreeLocator(root_pageid::UInt128Value, element_count::int, tree_height::int)
 @dataclass(frozen=True)
-class BeTreeRelation(LqpNode):
+class BeTreeLocator(LqpNode):
     root_pageid: UInt128Value
     element_count: int
     tree_height: int
 
-# BaseRelationInfo(key_types::Type[], value_types::Type[], relation_identifier::BeTreeIdentifier, storage_config::BeTreeConfig, relation_locator::BeTreeRelation)
+# BeTreeInfo(key_types::Type[], value_types::Type[], storage_config::BeTreeConfig, relation_locator::BeTreeLocator)
 @dataclass(frozen=True)
-class BaseRelationInfo(LqpNode):
+class BeTreeInfo(LqpNode):
     key_types: Sequence[Type]
     value_types: Sequence[Type]
-    relation_identifier: BeTreeIdentifier
     storage_config: BeTreeConfig
-    relation_locator: BeTreeRelation
+    relation_locator: BeTreeLocator
 
-# Data := BaseRelation | CSVRelation | ArrowRelation
+# BaseRelationType := Type | SpecializedValue
+BaseRelationType = Union[Type, Value]
+
+# BaseRelationPath(name::string, types::BaseRelationType[])
+@dataclass(frozen=True)
+class BaseRelationPath(LqpNode):
+    name: str
+    types: Sequence[BaseRelationType]
+
+# Data := BeTreeRelation | CSVRelation | ArrowRelation
 @dataclass(frozen=True)
 class Data(Declaration):
     pass
 
-# BaseRelation(name::RelationId, relation_info::BaseRelationInfo)
+# BeTreeRelation(name::RelationId, identifier_scheme::Union[BeTreeInfo, BaseRelationPath])
 @dataclass(frozen=True)
-class BaseRelation(Data):
+class BeTreeRelation(Data):
     name: RelationId
-    relation_info: BaseRelationInfo
+    identifier_scheme: Union[BeTreeInfo, BaseRelationPath]
 
 # --- Fragment Types ---
 

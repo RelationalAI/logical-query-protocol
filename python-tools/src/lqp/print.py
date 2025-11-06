@@ -267,13 +267,13 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
         lqp += to_str(node.body, indent_level + 1, options, debug_info)
         lqp += conf.RPAREN()
 
-    elif isinstance(node, ir.BaseRelation):
-        lqp += ind + conf.LPAREN() + conf.kw("base_relation") + " " + to_str(node.name, 0, options, debug_info) + "\n"
-        lqp += to_str(node.relation_info, indent_level + 1, options, debug_info)
+    elif isinstance(node, ir.BeTreeRelation):
+        lqp += ind + conf.LPAREN() + conf.kw("betree_relation") + " " + to_str(node.name, 0, options, debug_info) + "\n"
+        lqp += to_str(node.identifier_scheme, indent_level + 1, options, debug_info)
         lqp += conf.RPAREN()
 
-    elif isinstance(node, ir.BaseRelationInfo):
-        lqp += ind + conf.LPAREN() + conf.kw("base_relation_info") + "\n"
+    elif isinstance(node, ir.BeTreeInfo):
+        lqp += ind + conf.LPAREN() + conf.kw("betree_info") + "\n"
         # Print key_types
         lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("key_types")
         if len(node.key_types) > 0:
@@ -284,20 +284,24 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
         if len(node.value_types) > 0:
             lqp += " " + list_to_str(node.value_types, 0, " ", options, debug_info)
         lqp += conf.RPAREN() + "\n"
-        # Print relation identifier, storage config, and relation locator
-        lqp += to_str(node.relation_identifier, indent_level + 1, options, debug_info) + "\n"
+        # Print storage config and relation locator
         lqp += to_str(node.storage_config, indent_level + 1, options, debug_info) + "\n"
         lqp += to_str(node.relation_locator, indent_level + 1, options, debug_info)
         lqp += conf.RPAREN()
 
-    elif isinstance(node, ir.BeTreeIdentifier):
-        lqp += f"{ind}{conf.LPAREN()}{conf.kw('betree_identifier')} {to_str(node.scc_hash, 0, options, debug_info)} {node.scc_index}{conf.RPAREN()}"
+    elif isinstance(node, ir.BaseRelationPath):
+        lqp += ind + conf.LPAREN() + conf.kw("base_relation_path") + " " + to_str(node.name, 0, options, debug_info)
+        lqp += " " + conf.LBRACKET()
+        if len(node.types) > 0:
+            lqp += list_to_str(node.types, 0, " ", options, debug_info)
+        lqp += conf.RBRACKET()
+        lqp += conf.RPAREN()
 
     elif isinstance(node, ir.BeTreeConfig):
         lqp += f"{ind}{conf.LPAREN()}{conf.kw('betree_config')} {node.epsilon} {node.max_pivots} {node.max_deltas} {node.max_leaf}{conf.RPAREN()}"
 
-    elif isinstance(node, ir.BeTreeRelation):
-        lqp += f"{ind}{conf.LPAREN()}{conf.kw('betree_relation')} {to_str(node.root_pageid, 0, options, debug_info)} {node.element_count} {node.tree_height}{conf.RPAREN()}"
+    elif isinstance(node, ir.BeTreeLocator):
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('betree_locator')} {to_str(node.root_pageid, 0, options, debug_info)} {node.element_count} {node.tree_height}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Script):
         lqp += ind + conf.LPAREN() + conf.kw("script") + "\n"

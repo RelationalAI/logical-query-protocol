@@ -44,14 +44,16 @@ fragment: "(fragment" fragment_id declaration* ")"
 declaration: def_ | algorithm | data
 def_: "(def" relation_id abstraction attrs? ")"
 
-data: base_relation
-base_relation: "(base_relation" relation_id base_relation_info ")"
-base_relation_info: "(base_relation_info" key_types value_types betree_identifier betree_config betree_relation ")"
+data: betree_relation
+betree_relation: "(betree_relation" relation_id identifier_scheme ")"
+identifier_scheme: betree_info | base_relation_path
+betree_info: "(betree_info" key_types value_types betree_config betree_locator ")"
+base_relation_path: "(base_relation_path" STRING "[" base_relation_type* "]" ")"
+base_relation_type: type_ | specialized_value
 key_types: "(key_types" type_* ")"
 value_types: "(value_types" type_* ")"
-betree_identifier: "(betree_identifier" UINT128 NUMBER ")"
 betree_config: "(betree_config" FLOAT NUMBER NUMBER NUMBER ")"
-betree_relation: "(betree_relation" UINT128 NUMBER NUMBER ")"
+betree_locator: "(betree_locator" UINT128 NUMBER NUMBER ")"
 
 algorithm: "(algorithm" relation_id* script ")"
 script: "(script" construct* ")"
@@ -311,40 +313,44 @@ class LQPTransformer(Transformer):
     def data(self, meta, items):
         return items[0]
 
-    def base_relation(self, meta, items):
+    def betree_relation(self, meta, items):
         name = items[0]
-        relation_info = items[1]
-        return ir.BaseRelation(name=name, relation_info=relation_info, meta=self.meta(meta))
+        identifier_scheme = items[1]
+        return ir.BeTreeRelation(name=name, identifier_scheme=identifier_scheme, meta=self.meta(meta))
 
-    def base_relation_info(self, meta, items):
+    def identifier_scheme(self, meta, items):
+        return items[0]
+
+    def betree_info(self, meta, items):
         key_types = items[0]
         value_types = items[1]
-        relation_identifier = items[2]
-        storage_config = items[3]
-        relation_locator = items[4]
-        return ir.BaseRelationInfo(
+        storage_config = items[2]
+        relation_locator = items[3]
+        return ir.BeTreeInfo(
             key_types=key_types,
             value_types=value_types,
-            relation_identifier=relation_identifier,
             storage_config=storage_config,
             relation_locator=relation_locator,
             meta=self.meta(meta)
         )
+
+    def base_relation_path(self, meta, items):
+        name = items[0]
+        types = items[1:]
+        return ir.BaseRelationPath(
+            name=name,
+            types=types,
+            meta=self.meta(meta)
+        )
+
+    def base_relation_type(self, meta, items):
+        return items[0]
 
     def key_types(self, meta, items):
         return items
 
     def value_types(self, meta, items):
         return items
-
-    def betree_identifier(self, meta, items):
-        scc_hash = items[0]
-        scc_index = items[1]
-        return ir.BeTreeIdentifier(
-            scc_hash=scc_hash,
-            scc_index=scc_index,
-            meta=self.meta(meta)
-        )
 
     def betree_config(self, meta, items):
         epsilon = items[0]
@@ -359,11 +365,11 @@ class LQPTransformer(Transformer):
             meta=self.meta(meta)
         )
 
-    def betree_relation(self, meta, items):
+    def betree_locator(self, meta, items):
         root_pageid = items[0]
         element_count = items[1]
         tree_height = items[2]
-        return ir.BeTreeRelation(
+        return ir.BeTreeLocator(
             root_pageid=root_pageid,
             element_count=element_count,
             tree_height=tree_height,

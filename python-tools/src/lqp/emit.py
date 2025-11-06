@@ -204,12 +204,6 @@ def convert_formula(f: ir.Formula) -> logic_pb2.Formula:
     else:
         raise TypeError(f"Unsupported Formula type: {type(f)}")
 
-def convert_betree_identifier(identifier: ir.BeTreeIdentifier) -> logic_pb2.BeTreeIdentifier:
-    return logic_pb2.BeTreeIdentifier(
-        scc_hash=convert_uint128(identifier.scc_hash),
-        scc_index=identifier.scc_index
-    )
-
 def convert_betree_config(config: ir.BeTreeConfig) -> logic_pb2.BeTreeConfig:
     return logic_pb2.BeTreeConfig(
         epsilon=config.epsilon,
@@ -218,31 +212,52 @@ def convert_betree_config(config: ir.BeTreeConfig) -> logic_pb2.BeTreeConfig:
         max_leaf=config.max_leaf
     )
 
-def convert_betree_relation(rel: ir.BeTreeRelation) -> logic_pb2.BeTreeRelation:
-    return logic_pb2.BeTreeRelation(
-        root_pageid=convert_uint128(rel.root_pageid),
-        element_count=rel.element_count,
-        tree_height=rel.tree_height
+def convert_betree_locator(locator: ir.BeTreeLocator) -> logic_pb2.BeTreeLocator:
+    return logic_pb2.BeTreeLocator(
+        root_pageid=convert_uint128(locator.root_pageid),
+        element_count=locator.element_count,
+        tree_height=locator.tree_height
     )
 
-def convert_base_relation_info(info: ir.BaseRelationInfo) -> logic_pb2.BaseRelationInfo:
-    return logic_pb2.BaseRelationInfo(
+def convert_betree_info(info: ir.BeTreeInfo) -> logic_pb2.BeTreeInfo:
+    return logic_pb2.BeTreeInfo(
         key_types=[convert_type(kt) for kt in info.key_types],
         value_types=[convert_type(vt) for vt in info.value_types],
-        relation_identifier=convert_betree_identifier(info.relation_identifier),
         storage_config=convert_betree_config(info.storage_config),
-        relation_locator=convert_betree_relation(info.relation_locator)
+        relation_locator=convert_betree_locator(info.relation_locator)
     )
 
-def convert_base_relation(br: ir.BaseRelation) -> logic_pb2.BaseRelation:
-    return logic_pb2.BaseRelation(
-        name=convert_relation_id(br.name),
-        relation_info=convert_base_relation_info(br.relation_info)
+def convert_base_relation_type(brt: ir.BaseRelationType) -> logic_pb2.BaseRelationType:
+    if isinstance(brt, ir.Type):
+        return logic_pb2.BaseRelationType(type=convert_type(brt))
+    elif isinstance(brt, ir.Value):
+        return logic_pb2.BaseRelationType(specialized_type=convert_value(brt))
+    else:
+        raise TypeError(f"Unsupported BaseRelationType: {type(brt)}")
+
+def convert_base_relation_path(path: ir.BaseRelationPath) -> logic_pb2.BaseRelationPath:
+    return logic_pb2.BaseRelationPath(
+        name=path.name,
+        types=[convert_base_relation_type(t) for t in path.types]
     )
+
+def convert_betree_relation(rel: ir.BeTreeRelation) -> logic_pb2.BeTreeRelation:
+    if isinstance(rel.identifier_scheme, ir.BeTreeInfo):
+        return logic_pb2.BeTreeRelation(
+            name=convert_relation_id(rel.name),
+            relation_info=convert_betree_info(rel.identifier_scheme)
+        )
+    elif isinstance(rel.identifier_scheme, ir.BaseRelationPath):
+        return logic_pb2.BeTreeRelation(
+            name=convert_relation_id(rel.name),
+            relation_path=convert_base_relation_path(rel.identifier_scheme)
+        )
+    else:
+        raise TypeError(f"Unsupported identifier_scheme type: {type(rel.identifier_scheme)}")
 
 def convert_data(data: ir.Data) -> logic_pb2.Data:
-    if isinstance(data, ir.BaseRelation):
-        return logic_pb2.Data(base_relation=convert_base_relation(data))
+    if isinstance(data, ir.BeTreeRelation):
+        return logic_pb2.Data(betree_relation=convert_betree_relation(data))
     else:
         raise TypeError(f"Unsupported Data type: {type(data)}")
 
