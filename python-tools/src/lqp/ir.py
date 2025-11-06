@@ -344,7 +344,7 @@ class BeTreeInfo(LqpNode):
     relation_locator: BeTreeLocator
 
 # BaseRelationType := Type | SpecializedValue
-BaseRelationType = Union[Type, Value]
+BaseRelationType = Union[Type, SpecializedValue]
 
 # BaseRelationPath(name::string, types::BaseRelationType[])
 @dataclass(frozen=True)

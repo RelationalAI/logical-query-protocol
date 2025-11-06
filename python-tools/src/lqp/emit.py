@@ -230,8 +230,8 @@ def convert_betree_info(info: ir.BeTreeInfo) -> logic_pb2.BeTreeInfo:
 def convert_base_relation_type(brt: ir.BaseRelationType) -> logic_pb2.BaseRelationType:
     if isinstance(brt, ir.Type):
         return logic_pb2.BaseRelationType(type=convert_type(brt))
-    elif isinstance(brt, ir.Value):
-        return logic_pb2.BaseRelationType(specialized_type=convert_value(brt))
+    elif isinstance(brt, ir.SpecializedValue):
+        return logic_pb2.BaseRelationType(specialized_type=convert_value(brt.value))
     else:
         raise TypeError(f"Unsupported BaseRelationType: {type(brt)}")
 
