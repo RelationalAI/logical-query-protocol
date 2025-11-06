@@ -19,7 +19,7 @@
                   (primitive :rel_primitive_eq a 1)
                   (primitive :rel_primitive_eq b 4))))
             (attrs
-              (attribute :function )
+              (attribute :function)
               (attribute :inspect "normalizer" 2))))))
     (reads
       (output :foo :foo))))

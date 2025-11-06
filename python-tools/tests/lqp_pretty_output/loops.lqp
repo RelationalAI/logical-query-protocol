@@ -34,27 +34,27 @@
                   (assign :reachable
                     ([n::INT]
                       (primitive :rel_primitive_eq n 1))))
-                  (script
-                    (assign :next
-                      ([m::INT]
-                        (or
-                          (atom :reachable m)
-                          (exists [n::INT]
-                            (and
-                              (atom :reachable n)
-                              (atom :edges n m))))))
-                    (break :nothing_new
-                      ([]
-                        (ffi :rel_primitive_pairwise_equal
-                          (args
-                            ([n::INT]
-                              (atom :reachable n))
-                            ([n::INT]
-                              (atom :next n)))
-                          (terms))))
-                    (assign :reachable
-                      ([n::INT]
-                        (atom :next n)))))))
+                (script
+                  (assign :next
+                    ([m::INT]
+                      (or
+                        (atom :reachable m)
+                        (exists [n::INT]
+                          (and
+                            (atom :reachable n)
+                            (atom :edges n m))))))
+                  (break :nothing_new
+                    ([]
+                      (ffi :rel_primitive_pairwise_equal
+                        (args
+                          ([n::INT]
+                            (atom :reachable n))
+                          ([n::INT]
+                            (atom :next n)))
+                        (terms))))
+                  (assign :reachable
+                    ([n::INT]
+                      (atom :next n)))))))
           (algorithm :frontier :reachable_2
             (script
               (loop
@@ -64,31 +64,30 @@
                       (primitive :rel_primitive_eq n 1)))
                   (assign :reachable_2
                     ([_n::INT]
-                      (or
-))))
-                  (script
-                    (upsert :reachable_2
-                      ([n::INT]
-                        (atom :frontier n)))
-                    (assign :next
-                      ([m::INT]
-                        (exists [n::INT]
+                      (or))))
+                (script
+                  (upsert :reachable_2
+                    ([n::INT]
+                      (atom :frontier n)))
+                  (assign :next
+                    ([m::INT]
+                      (exists [n::INT]
+                        (and
                           (and
-                            (and
-                              (atom :frontier n)
-                              (atom :edges n m))
-                            (not
-                              (atom :reachable_2 m))))))
-                    (assign :frontier
-                      ([n::INT]
-                        (atom :next n)))
-                    (break :empty_frontier
-                      ([]
-                        (ffi :rel_primitive_all_empty
-                          (args
-                            ([n::INT]
-                              (atom :frontier n)))
-                          (terms)))))))))))
+                            (atom :frontier n)
+                            (atom :edges n m))
+                          (not
+                            (atom :reachable_2 m))))))
+                  (assign :frontier
+                    ([n::INT]
+                      (atom :next n)))
+                  (break :empty_frontier
+                    ([]
+                      (ffi :rel_primitive_all_empty
+                        (args
+                          ([n::INT]
+                            (atom :frontier n)))
+                        (terms)))))))))))
     (reads
       (output :reachable :reachable)
       (output :reachable_2 :reachable_2))))

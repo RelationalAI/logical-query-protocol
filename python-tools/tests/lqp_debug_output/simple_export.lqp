@@ -21,10 +21,12 @@
         (export_csv_config
           (path "wrong")
           (columns (column "col1name" 17307602785083346210) (column "col2name" 8011686847096043948))
-
           { :compression ""
             :partition_size 10
+            :syntax_delim ","
             :syntax_escapechar "\\"
+            :syntax_header_row 1
+            :syntax_missing_string ""
             :syntax_quotechar "\""})))))
 
 ;; Debug information
