@@ -274,10 +274,12 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
 
     elif isinstance(node, ir.Loop):
         lqp += ind + conf.LPAREN() + conf.kw("loop") + "\n"
-        lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("init") + "\n"
-        lqp += list_to_str(node.init, indent_level + 2, "\n", options, debug_info)
+        lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("init")
+        if len(node.init) > 0:
+            lqp += "\n"
+            lqp += list_to_str(node.init, indent_level + 2, "\n", options, debug_info)
         lqp += conf.RPAREN() + "\n"
-        lqp += to_str(node.body, indent_level + 2, options, debug_info)
+        lqp += to_str(node.body, indent_level + 1, options, debug_info)
         lqp += conf.RPAREN()
 
     elif isinstance(node, (ir.Assign, ir.Break)):
@@ -386,12 +388,18 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
         lqp += f"{terms_to_str(node.terms, indent_level + 1, options, debug_info)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Conjunction):
-        lqp += ind + conf.LPAREN() + conf.kw("and") + "\n"
-        lqp += list_to_str(node.args, indent_level + 1, "\n", options, debug_info) + conf.RPAREN()
+        if len(node.args) == 0:
+            lqp += ind + conf.LPAREN() + conf.kw("and") + conf.RPAREN()
+        else:
+            lqp += ind + conf.LPAREN() + conf.kw("and") + "\n"
+            lqp += list_to_str(node.args, indent_level + 1, "\n", options, debug_info) + conf.RPAREN()
 
     elif isinstance(node, ir.Disjunction):
-        lqp += ind + conf.LPAREN() + conf.kw("or") + "\n"
-        lqp += list_to_str(node.args, indent_level + 1, "\n", options, debug_info) + conf.RPAREN()
+        if len(node.args) == 0:
+            lqp += ind + conf.LPAREN() + conf.kw("or") + conf.RPAREN()
+        else:
+            lqp += ind + conf.LPAREN() + conf.kw("or") + "\n"
+            lqp += list_to_str(node.args, indent_level + 1, "\n", options, debug_info) + conf.RPAREN()
 
     elif isinstance(node, ir.Not):
         lqp += ind + conf.LPAREN() + conf.kw("not") + "\n"
@@ -405,17 +413,29 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
         lqp += f"{terms_to_str(node.terms, indent_level + 1, options, debug_info)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Atom):
-        lqp += f"{ind}{conf.LPAREN()}{conf.kw('atom')} {to_str(node.name, 0, options, debug_info)} {list_to_str(node.terms, 0, ' ', options, debug_info)}{conf.RPAREN()}"
+        if len(node.terms) > 4:
+            lqp += f"{ind}{conf.LPAREN()}{conf.kw('atom')} {to_str(node.name, 0, options, debug_info)}\n"
+            lqp += list_to_str(node.terms, indent_level + 1, "\n", options, debug_info) + conf.RPAREN()
+        else:
+            lqp += f"{ind}{conf.LPAREN()}{conf.kw('atom')} {to_str(node.name, 0, options, debug_info)} {list_to_str(node.terms, 0, ' ', options, debug_info)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Pragma):
         terms = f"{list_to_str(node.terms, 0, ' ', options, debug_info)}"
         lqp += f"{ind}{conf.LPAREN()}{conf.kw('pragma')} :{conf.uname(node.name)} {terms}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Primitive):
-        lqp += f"{ind}{conf.LPAREN()}{conf.kw('primitive')} :{conf.uname(node.name)} {list_to_str(node.terms, 0, ' ', options, debug_info)}{conf.RPAREN()}"
+        if len(node.terms) > 4:
+            lqp += f"{ind}{conf.LPAREN()}{conf.kw('primitive')} :{conf.uname(node.name)}\n"
+            lqp += list_to_str(node.terms, indent_level + 1, "\n", options, debug_info) + conf.RPAREN()
+        else:
+            lqp += f"{ind}{conf.LPAREN()}{conf.kw('primitive')} :{conf.uname(node.name)} {list_to_str(node.terms, 0, ' ', options, debug_info)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.RelAtom):
-        lqp += f"{ind}{conf.LPAREN()}{conf.kw('relatom')} :{node.name} {list_to_str(node.terms, 0, ' ', options, debug_info)}{conf.RPAREN()}"
+        if len(node.terms) > 4:
+            lqp += f"{ind}{conf.LPAREN()}{conf.kw('relatom')} :{node.name}\n"
+            lqp += list_to_str(node.terms, indent_level + 1, "\n", options, debug_info) + conf.RPAREN()
+        else:
+            lqp += f"{ind}{conf.LPAREN()}{conf.kw('relatom')} :{node.name} {list_to_str(node.terms, 0, ' ', options, debug_info)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Cast):
         lqp += f"{ind}{conf.LPAREN()}{conf.kw('cast')} {to_str(node.input, 0, options, debug_info)} {to_str(node.result, 0, options, debug_info)}{conf.RPAREN()}"
@@ -457,7 +477,9 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
         lqp += "#" + to_str(node.value, 0, {}, {})
 
     elif isinstance(node, ir.Attribute):
-        lqp += f"{ind}{conf.LPAREN()}{conf.kw('attribute')} :{node.name} {list_to_str(node.args, 0, ' ', options, debug_info)}{conf.RPAREN()}"
+        args_str = list_to_str(node.args, 0, ' ', options, debug_info)
+        space = " " if args_str else ""
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('attribute')} :{node.name}{space}{args_str}{conf.RPAREN()}"
 
     elif isinstance(node, ir.RelationId):
         name = id_to_name(options, debug_info, node)
@@ -512,22 +534,15 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
         lqp += line('columns', list_to_str(node.data_columns, 0, " ", options, debug_info)) + "\n"
 
         config_dict: dict[str, Union[int, str]] = {}
-        if node.partition_size is not None:
-            config_dict['partition_size'] = node.partition_size
-        if node.compression is not None:
-            config_dict['compression'] = node.compression #type: ignore
-        if node.syntax_header_row is not None:
-            config_dict['header_row'] = node.syntax_header_row
-        if node.syntax_missing_string is not None:
-            config_dict['syntax_missing_string'] = node.syntax_missing_string #type: ignore
-        if node.syntax_delim is not None:
-            config_dict['syntax_delim'] = node.syntax_delim #type: ignore
-        if node.syntax_quotechar is not None:
-            config_dict['syntax_quotechar'] = node.syntax_quotechar #type: ignore
-        if node.syntax_escapechar is not None:
-            config_dict['syntax_escapechar'] = node.syntax_escapechar #type: ignore
+        config_dict['partition_size'] = node.partition_size if node.partition_size is not None else 0
+        config_dict['compression'] = node.compression if node.compression is not None else "" #type: ignore
+        config_dict['syntax_header_row'] = node.syntax_header_row if node.syntax_header_row is not None else 1
+        config_dict['syntax_missing_string'] = node.syntax_missing_string if node.syntax_missing_string is not None else "" #type: ignore
+        config_dict['syntax_delim'] = node.syntax_delim if node.syntax_delim is not None else "," #type: ignore
+        config_dict['syntax_quotechar'] = node.syntax_quotechar if node.syntax_quotechar is not None else '"' #type: ignore
+        config_dict['syntax_escapechar'] = node.syntax_escapechar if node.syntax_escapechar is not None else '\\' #type: ignore
 
-        lqp += "\n" + config_dict_to_str(config_dict, indent_level + 1, options) #type: ignore
+        lqp += config_dict_to_str(config_dict, indent_level + 1, options) #type: ignore
         lqp += f"{conf.RPAREN()}"
 
     elif isinstance(node, ir.ExportCSVColumn):

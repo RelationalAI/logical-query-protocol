@@ -8,7 +8,13 @@
         (fragment :model
           (def :_intermediate_1
             ([person::UINT128]
-              (primitive :rel_primitive_hash_tuple_uint128 "Person" "name" "Alice" "age" 10 person)))
+              (primitive :rel_primitive_hash_tuple_uint128
+                "Person"
+                "name"
+                "Alice"
+                "age"
+                10
+                person)))
           (def :Person_1
             ([person::UINT128]
               (atom :_intermediate_1 person)))
@@ -24,7 +30,13 @@
                 (atom :_intermediate_1 person))))
           (def :_intermediate_2
             ([person_2::UINT128]
-              (primitive :rel_primitive_hash_tuple_uint128 "Person" "name" "Bob" "age" 30 person_2)))
+              (primitive :rel_primitive_hash_tuple_uint128
+                "Person"
+                "name"
+                "Bob"
+                "age"
+                30
+                person_2)))
           (def :Person_2
             ([person_2::UINT128]
               (atom :_intermediate_2 person_2)))
@@ -40,7 +52,13 @@
                 (atom :_intermediate_2 person_2))))
           (def :_intermediate_3
             ([person_3::UINT128]
-              (primitive :rel_primitive_hash_tuple_uint128 "Person" "name" "Charlie" "age" 50 person_3)))
+              (primitive :rel_primitive_hash_tuple_uint128
+                "Person"
+                "name"
+                "Charlie"
+                "age"
+                50
+                person_3)))
           (def :Person_3
             ([person_3::UINT128]
               (atom :_intermediate_3 person_3)))
@@ -56,7 +74,13 @@
                 (atom :_intermediate_3 person_3))))
           (def :_intermediate_4
             ([pet::UINT128]
-              (primitive :rel_primitive_hash_tuple_uint128 "Pet" "name" "boots" "age" 1 pet)))
+              (primitive :rel_primitive_hash_tuple_uint128
+                "Pet"
+                "name"
+                "boots"
+                "age"
+                1
+                pet)))
           (def :Pet_1
             ([pet::UINT128]
               (atom :_intermediate_4 pet)))
@@ -72,7 +96,13 @@
                 (atom :_intermediate_4 pet))))
           (def :_intermediate_5
             ([pet_2::UINT128]
-              (primitive :rel_primitive_hash_tuple_uint128 "Pet" "name" "fluffy" "age" 3 pet_2)))
+              (primitive :rel_primitive_hash_tuple_uint128
+                "Pet"
+                "name"
+                "fluffy"
+                "age"
+                3
+                pet_2)))
           (def :Pet_2
             ([pet_2::UINT128]
               (atom :_intermediate_5 pet_2)))
@@ -89,13 +119,37 @@
           (def :pets_1
             ([person_3::UINT128 pet::UINT128]
               (and
-                (primitive :rel_primitive_hash_tuple_uint128 "Person" "name" "Charlie" "age" 50 person_3)
-                (primitive :rel_primitive_hash_tuple_uint128 "Pet" "name" "boots" "age" 1 pet))))
+                (primitive :rel_primitive_hash_tuple_uint128
+                  "Person"
+                  "name"
+                  "Charlie"
+                  "age"
+                  50
+                  person_3)
+                (primitive :rel_primitive_hash_tuple_uint128
+                  "Pet"
+                  "name"
+                  "boots"
+                  "age"
+                  1
+                  pet))))
           (def :pets_2
             ([person_3::UINT128 pet_2::UINT128]
               (and
-                (primitive :rel_primitive_hash_tuple_uint128 "Person" "name" "Charlie" "age" 50 person_3)
-                (primitive :rel_primitive_hash_tuple_uint128 "Pet" "name" "fluffy" "age" 3 pet_2))))
+                (primitive :rel_primitive_hash_tuple_uint128
+                  "Person"
+                  "name"
+                  "Charlie"
+                  "age"
+                  50
+                  person_3)
+                (primitive :rel_primitive_hash_tuple_uint128
+                  "Pet"
+                  "name"
+                  "fluffy"
+                  "age"
+                  3
+                  pet_2))))
           (def :Person
             ([person_4::UINT128]
               (or
