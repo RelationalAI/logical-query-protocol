@@ -6,7 +6,7 @@ message Declaration {
   oneof declaration_type {
     Def def = 1;
     Algorithm algorithm = 2;
-    Data data = 3;
+    Data data = 4;
   }
 }
 
@@ -216,29 +216,29 @@ message Attribute {
 //
 message Data {
   oneof data_type {
-    BaseRelation base_relation = 1;
+    BeTreeRelation betree_relation = 1;
     // TODO
     // CSVRelation csv_relation = 2;
     // ArrowRelation arrow_relation = 3;
   }
 }
 
-message BaseRelation {
+message BeTreeRelation {
   RelationId name = 1;
-  BaseRelationInfo relation_info = 2;
+  // A betree relation can be identified either by an independent BeTreeInfo, or a
+  // BaseRelationPath which depends on the engine's identification scheme.
+  oneof identifier_scheme {
+    BeTreeInfo relation_info = 2;
+    BaseRelationPath relation_path = 3;
+  }
 }
 
-message BaseRelationInfo {
+message BeTreeInfo {
+  reserved 3; // potentially needed for relation_identifier
   repeated Type key_types = 1;
   repeated Type value_types = 2;
-  BeTreeIdentifier relation_identifier = 3;
   BeTreeConfig storage_config = 4;
-  BeTreeRelation relation_locator = 5;
-}
-
-message BeTreeIdentifier {
-  UInt128Value scc_hash = 1;
-  int64 scc_index = 2;
+  BeTreeLocator relation_locator = 5;
 }
 
 message BeTreeConfig {
@@ -248,10 +248,22 @@ message BeTreeConfig {
   int64 max_leaf = 4;
 }
 
-message BeTreeRelation {
+message BeTreeLocator {
   UInt128Value root_pageid = 1;
   int64 element_count = 2;
   int64 tree_height = 3;
+}
+
+message BaseRelationPath {
+  string name = 1;
+  repeated BaseRelationType types = 2;
+}
+
+message BaseRelationType {
+  oneof base_relation_type {
+    Type type = 1;
+    Value specialized_type = 2;
+  }
 }
 
 //
