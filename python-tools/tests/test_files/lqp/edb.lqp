@@ -3,59 +3,70 @@
     (writes
       (define
         (fragment :f1
-          ;; Basic base relation: single key type, multiple value types
-          (base_relation :edb
-            (base_relation_info
+          ;; Basic betree relation: single key type, multiple value types
+          (betree_relation :edb
+            (betree_info
               (key_types INT)
               (value_types STRING INT)
-              (betree_identifier 0xaabbccdd11223344 1)
               (betree_config 0.5 4 16 16)
-              (betree_relation 0x1234567890123456789012 0 0)))
+              (betree_locator 0x1234567890123456789012 0 0)))
 
           ;; Multiple key types
-          (base_relation :multi_key
-            (base_relation_info
+          (betree_relation :multi_key
+            (betree_info
               (key_types INT STRING)
               (value_types FLOAT)
-              (betree_identifier 0xbeef1234 2)
               (betree_config 0.8 8 32 32)
-              (betree_relation 0xabcdef1234567890abcdef 100 2)))
+              (betree_locator 0xabcdef1234567890abcdef 100 2)))
 
           ;; Different numeric types
-          (base_relation :numeric_types
-            (base_relation_info
+          (betree_relation :numeric_types
+            (betree_info
               (key_types UINT128)
               (value_types INT FLOAT (DECIMAL 18 4))
-              (betree_identifier 0xcafe5678 3)
               (betree_config 0.3 10 20 64)
-              (betree_relation 0xfedcba9876543210fedcba 500 3)))
+              (betree_locator 0xfedcba9876543210fedcba 500 3)))
 
           ;; Date/time types
-          (base_relation :temporal_data
-            (base_relation_info
+          (betree_relation :temporal_data
+            (betree_info
               (key_types DATE)
               (value_types DATETIME STRING)
-              (betree_identifier 0xdead9abc 4)
               (betree_config 0.6 6 24 48)
-              (betree_relation 0x9999888877776666555544 250 2)))
+              (betree_locator 0x9999888877776666555544 250 2)))
 
           ;; Boolean and missing types
-          (base_relation :boolean_data
-            (base_relation_info
+          (betree_relation :boolean_data
+            (betree_info
               (key_types STRING)
               (value_types BOOLEAN MISSING)
-              (betree_identifier 0xface0def 5)
               (betree_config 0.7 5 15 20)
-              (betree_relation 0x1111222233334444555566 75 1)))
+              (betree_locator 0x1111222233334444555566 75 1)))
 
           ;; No value types (key-only relation)
-          (base_relation :key_only
-            (base_relation_info
+          (betree_relation :key_only
+            (betree_info
               (key_types INT STRING)
               (value_types)
-              (betree_identifier 0xbabe1111 6)
               (betree_config 0.4 12 18 40)
-              (betree_relation 0x7777888899990000111122 10 1)))
+              (betree_locator 0x7777888899990000111122 10 1)))
+
+          ;; BaseRelationPath examples
+          ;; Simple path with basic types
+          (betree_relation :path_simple
+            (base_relation_path "my_base_relation" [INT STRING FLOAT]))
+
+          ;; Path with specialized types
+          (betree_relation :path_specialized
+            (base_relation_path "another_path" [INT #"specialized_string" STRING]))
+
+          ;; Path with mixed types including decimals
+          (betree_relation :path_mixed
+            (base_relation_path "complex_path" [(DECIMAL 10 2) INT #42 STRING]))
+
+          ;; Path with no types (empty)
+          (betree_relation :path_empty
+            (base_relation_path "empty_path" []))
 
           ;; Mix with def and algorithm
           (def :foo ([x::INT] (= x 1)))
@@ -66,14 +77,13 @@
 
       (define
         (fragment :f2
-          ;; Another fragment with a base relation
-          (base_relation :another_edb
-            (base_relation_info
+          ;; Another fragment with a betree relation
+          (betree_relation :another_edb
+            (betree_info
               (key_types STRING)
               (value_types INT)
-              (betree_identifier 0x9999eeee 7)
               (betree_config 0.5 4 16 16)
-              (betree_relation 0x3333444455556666777788 1000 4))))))
+              (betree_locator 0x3333444455556666777788 1000 4))))))
 
     (reads
       (output :foo :foo)
@@ -83,5 +93,9 @@
       (output :temporal_data :temporal_data)
       (output :boolean_data :boolean_data)
       (output :key_only :key_only)
+      (output :path_simple :path_simple)
+      (output :path_specialized :path_specialized)
+      (output :path_mixed :path_mixed)
+      (output :path_empty :path_empty)
       (output :bar :bar)
       (output :another_edb :another_edb))))
