@@ -37,17 +37,23 @@
         (export_csv_config
           (path "wrong")
           (columns (column "col1name" 2344968532315871158) (column "col2name" 3069421044470708673))
-
           { :compression ""
             :partition_size 10
+            :syntax_delim ","
             :syntax_escapechar "\\"
+            :syntax_header_row 1
+            :syntax_missing_string ""
             :syntax_quotechar "\""}))
       (export
         (export_csv_config
           (path "wrong")
           (columns (column "blahblah" 3616683933217157613) (column "foofoo" 11835545690810417679))
-
-          { :syntax_escapechar "\\"
+          { :compression ""
+            :partition_size 0
+            :syntax_delim ","
+            :syntax_escapechar "\\"
+            :syntax_header_row 1
+            :syntax_missing_string ""
             :syntax_quotechar "\""})))))
 
 ;; Debug information

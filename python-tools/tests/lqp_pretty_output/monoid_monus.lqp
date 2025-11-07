@@ -56,34 +56,32 @@
                           (primitive :rel_primitive_eq x 2)
                           (primitive :rel_primitive_eq y 20))))
                     (attrs
-                      (attribute :function )))
+                      (attribute :function)))
                   (assign :always
                     ([]
-                      (or
-))))
-                  (script
-                    (monoid INT::MIN :R1
-                      ([x::INT | y::INT]
-                        (atom :U x y))
-                      (attrs
-                        (attribute :function )))
-                    (monoid BOOL::OR :R2
-                      ([x::INT y::INT]
-                        (atom :U x y)))
-                    (monus BOOL::OR :R3
-                      ([x::INT | y::INT]
-                        (atom :U x y))
-                      (attrs
-                        (attribute :function )))
-                    (monus INT::SUM :R4
-                      ([x::INT | y::INT]
-                        (atom :U x y))
-                      (attrs
-                        (attribute :function )))
-                    (break :always
-                      ([]
-                        (and
-))))))))))
+                      (or))))
+                (script
+                  (monoid INT::MIN :R1
+                    ([x::INT | y::INT]
+                      (atom :U x y))
+                    (attrs
+                      (attribute :function)))
+                  (monoid BOOL::OR :R2
+                    ([x::INT y::INT]
+                      (atom :U x y)))
+                  (monus BOOL::OR :R3
+                    ([x::INT | y::INT]
+                      (atom :U x y))
+                    (attrs
+                      (attribute :function)))
+                  (monus INT::SUM :R4
+                    ([x::INT | y::INT]
+                      (atom :U x y))
+                    (attrs
+                      (attribute :function)))
+                  (break :always
+                    ([]
+                      (and))))))))))
     (reads
       (output :R1 :R1)
       (output :R2 :R2)
