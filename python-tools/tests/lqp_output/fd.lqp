@@ -10,6 +10,11 @@
             ([a::INT b::INT c::INT]
               (atom 4990914056244187799 a b c))
             (keys a b)
-            (values c)))))
+            (values c))
+          (functional_dependency
+            ([x::INT y::INT z::INT]
+              (atom 4990914056244187799 x y z))
+            (keys y)
+            (values x z)))))
     (reads
       (output :output 1234567898765432123456789))))
