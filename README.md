@@ -87,6 +87,31 @@ To copy the generated Julia bindings to the right place in `raicode`, run this:
 cp -r logical-query-protocol/gen/julia/relationalai/ raicode/packages/LogicalQueryProtocol/src/gen/relationalai/
 ```
 
+### Test cases and pretty printing
+
+If your work introduces new parsing test cases in `python-tools/tests/test_files/lqp` or new
+validation test cases in `python-tools/tests/validator`, it is recommended to propagate them
+to other LQP libraries. Depending on the case, you may need to copy the s-expression version
+of a file and a binary compiled version. For parsing/pretty-printing test cases, the binaries
+are created during snapshot regeneration (see [Running
+tests](python-tools/README.md#runningtests)).  For validation test cases, you have to
+generate the binary manually using the `lqp` command line (see
+[Usage](python-tools/README.md#usage)).
+
+For the Julia implementation in `raicode`, you should (selectively) copy the new files from
+`python-tools/tests/test_files/lqp` and their (regenerated) binary versions in
+`python-tools/tests/test_files/bin` to the corresponding subdirectories of
+`raicode/packages/LogicalQueryProtocol/src/Testing/testcases`.
+Additionally, copy the pretty-printed test file from `python-tools/tests/lqp_pretty_output`
+into `raicode/packages/LogicalQueryProtocol/src/Testing/testcases/pretty`.
+
+Analogously, for validation
+test files, copy the files from `python-tools/tests/validator` and their binary compiled
+versions to the appropriate subdirectories of
+`raicode/packages/LogicalQueryProtocol/src/Testing/testcases`. **Important**: Be selective in
+the files you copy, and do not blindly copyt all files, as not every test file in this
+repository may be suitable for testing another LQP library implementation.
+
 ## Deployment (for Maintainers)
 
 This package is [deployed to PyPI](https://pypi.org/project/lqp/). For maintainers, these
