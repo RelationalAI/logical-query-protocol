@@ -101,7 +101,11 @@ generate the binary manually using the `lqp` command line (see
 For the Julia implementation in `raicode`, you should (selectively) copy the new files from
 `python-tools/tests/test_files/lqp` and their (regenerated) binary versions in
 `python-tools/tests/test_files/bin` to the corresponding subdirectories of
-`raicode/packages/LogicalQueryProtocol/src/Testing/testcases`. Analogously, for validation
+`raicode/packages/LogicalQueryProtocol/src/Testing/testcases`.
+Additionally, copy the pretty-printed test file from `python-tools/tests/lqp_pretty_output`
+into `raicode/packages/LogicalQueryProtocol/src/Testing/testcases/pretty`.
+
+Analogously, for validation
 test files, copy the files from `python-tools/tests/validator` and their binary compiled
 versions to the appropriate subdirectories of
 `raicode/packages/LogicalQueryProtocol/src/Testing/testcases`. **Important**: Be selective in
