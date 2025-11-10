@@ -6,34 +6,43 @@ and JSON formats.
 ## Usage
 
 ```
-usage: lqp [-h] [--no-validation] [--bin] [--json] [--out] input
+usage: lqp [-h] [--no-validation] [--format {bin,json}] [-o OUT] input
 
 Parse LQP S-expression into Protobuf binary and JSON files.
 
 positional arguments:
-  input            directory holding .lqp files, or a single .lqp file
+  input                directory holding .lqp files, or a single .lqp file
 
 options:
-  -h, --help       show this help message and exit
-  --no-validation  don't validate parsed LQP
-  --bin            encode emitted ProtoBuf into binary
-  --json           encode emitted ProtoBuf into JSON
-  --out            write emitted binary or JSON to stdout
+  -h, --help           show this help message and exit
+  --no-validation      don't validate parsed LQP
+  --format {bin,json}  output format (default: bin)
+  -o OUT, --out OUT    output file (use '-' for stdout, default: input basename + extension specified via --format)
 ```
 
 ## Examples
 
 ```bash
-lqp --no-validation --bin --json foo/bar.lqp
+lqp foo/bar.lqp
 ```
-Will create two files in `foo/` named `bar.bin` and `bar.json` containing the binary and JSON encodings of the parsed ProtoBuf.
+Default behavior: parse `bar.lqp` and create `bar.bin` in the same directory (binary format is default).
+
+```bash
+lqp --no-validation --format bin foo/bar.lqp
+```
+Will parse `bar.lqp`, compile it, and create a file `bar.bin` in the `foo/` directory.
 In this case, the parser will not go through the client-side validations we do to check for well-formed LQP.
 
 ```bash
-lqp --bin --json foo
+lqp --format json foo/bar.lqp
+```
+Parse `bar.lqp` and create `bar.json` in the `foo/` directory.
+
+```bash
+lqp --format json foo
 ```
 This will look for `.lqp` files both at the top-level and inside an `lqp` subdirectory.
-Then it will organize the generated binary and JSON into folders, as well as the original found files. So, for example, if `foo` has this structure:
+Then it will organize the generated files into their respective directories. So, for example, if `foo` has this structure:
 
 ```
 foo/
@@ -45,9 +54,6 @@ Then after executing the above command, it should have this structure:
 
 ```
 foo/
-| bin/
-| | bar.bin
-| | baz.bin
 | json/
 | | bar.json
 | | baz.json
@@ -57,10 +63,14 @@ foo/
 ```
 
 ```bash
-lqp --bin --out foo.lqp
+lqp --format bin -o - foo.lqp
 ```
-Will write the ProtoBuf binary parsed from the `foo.lqp` to stdout. The result can be piped
-into the desired output file, e.g., `lqp --bin --out foo.lqp > foo.bin`.
+Write binary output to stdout. Can be piped to a file of choice: `lqp --format bin -o - foo.lqp > output.bin`.
+
+```bash
+lqp --format bin -o custom-file.bin foo.lqp
+```
+Write binary output to `custom-file.bin`
 
 ## Setup
 It is recommended to use a Python `virtualenv`. Set one up in the `python-tools` directory
