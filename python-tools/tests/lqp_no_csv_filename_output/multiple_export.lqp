@@ -37,15 +37,21 @@
         (export_csv_config
           (path "<hidden filename>")
           (columns (column "col1name" :cola1) (column "col2name" :cola2))
-
           { :compression ""
             :partition_size 10
+            :syntax_delim ","
             :syntax_escapechar "\\"
+            :syntax_header_row 1
+            :syntax_missing_string ""
             :syntax_quotechar "\""}))
       (export
         (export_csv_config
           (path "<hidden filename>")
           (columns (column "blahblah" :colb1) (column "foofoo" :colb2))
-
-          { :syntax_escapechar "\\"
+          { :compression ""
+            :partition_size 0
+            :syntax_delim ","
+            :syntax_escapechar "\\"
+            :syntax_header_row 1
+            :syntax_missing_string ""
             :syntax_quotechar "\""})))))

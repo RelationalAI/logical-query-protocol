@@ -36,6 +36,18 @@ class Def(Declaration):
     body: Abstraction
     attrs: Sequence[Attribute]
 
+# Constraint := FunctionalDependency
+@dataclass(frozen=True)
+class Constraint(Declaration):
+    pass
+
+# FunctionalDependency(guard::Abstraction, x::Var[], y::Var[])
+@dataclass(frozen=True)
+class FunctionalDependency(Constraint):
+    guard: Abstraction
+    keys: Sequence[Var]
+    values: Sequence[Var]
+
 # Algorithm(globals::RelationId[], body::Script)
 @dataclass(frozen=True)
 class Algorithm(Declaration):

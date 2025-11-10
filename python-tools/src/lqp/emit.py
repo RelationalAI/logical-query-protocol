@@ -282,11 +282,26 @@ def convert_declaration(decl: ir.Declaration) -> logic_pb2.Declaration:
     elif isinstance(decl, ir.Algorithm):
         algorithm_dict: Dict[str, Any] = {'algorithm': convert_algorithm(decl)}
         return logic_pb2.Declaration(**algorithm_dict)
+    elif isinstance(decl, ir.Constraint):
+        constraint_dict: Dict[str, Any] = {'constraint': convert_constraint(decl)}
+        return logic_pb2.Declaration(**constraint_dict)
     elif isinstance(decl, ir.Data):
         data_dict: Dict[str, Any] = {'data': convert_data(decl)}
         return logic_pb2.Declaration(**data_dict)  # type: ignore
     else:
         raise TypeError(f"Unsupported Declaration type: {type(decl)}")
+
+def convert_constraint(constraint: ir.Constraint) -> logic_pb2.Constraint:
+    if isinstance(constraint, ir.FunctionalDependency):
+        return logic_pb2.Constraint(
+            functional_dependency=logic_pb2.FunctionalDependency(
+                guard=convert_abstraction(constraint.guard),
+                keys=[convert_var(v) for v in constraint.keys],
+                values=[convert_var(v) for v in constraint.values],
+            )
+        )
+    else:
+        raise TypeError(f"Unsupported Constraint type: {type(constraint)}")
 
 def convert_algorithm(algo: ir.Algorithm)-> logic_pb2.Algorithm:
     dict: Dict[str, Any] = {

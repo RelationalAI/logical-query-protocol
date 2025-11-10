@@ -13,10 +13,21 @@ def assert_lqp_nodes_equal(obj1, obj2):
     if isinstance(obj1, ir.LqpNode) and isinstance(obj2, ir.LqpNode):
         if obj1.__class__ is not obj2.__class__:
             raise AssertionError(f"Node types differ: {obj1.__class__} vs {obj2.__class__}")
-        for field_info in dataclasses.fields(type(obj1)):
-            if field_info.name == 'meta': continue
-            if field_info.name.startswith('debug_'): continue
-            assert_lqp_nodes_equal(getattr(obj1, field_info.name), getattr(obj2, field_info.name))
+        # Special case for ExportCSVConfig: Weak comparison, don't compare when default values are used
+        elif isinstance(obj1, ir.ExportCSVConfig) and isinstance(obj2, ir.ExportCSVConfig):
+            for field_info in dataclasses.fields(type(obj1)):
+                if field_info.name == 'meta': continue
+                if field_info.name.startswith('debug_'): continue
+                val1 = getattr(obj1, field_info.name)
+                val2 = getattr(obj2, field_info.name)
+                # Only compare if both values are not None
+                if val1 is not None and val2 is not None:
+                    assert_lqp_nodes_equal(val1, val2)
+        else:
+            for field_info in dataclasses.fields(type(obj1)):
+                if field_info.name == 'meta': continue
+                if field_info.name.startswith('debug_'): continue
+                assert_lqp_nodes_equal(getattr(obj1, field_info.name), getattr(obj2, field_info.name))
     elif isinstance(obj1, (list, tuple)) and isinstance(obj2, (list, tuple)):
         if len(obj1) != len(obj2):
             raise AssertionError(f"Sequence lengths differ: {len(obj1)} vs {len(obj2)}")

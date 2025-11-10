@@ -7,13 +7,15 @@ from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class Declaration(_message.Message):
-    __slots__ = ("algorithm", "data")
+    __slots__ = ("algorithm", "constraint", "data")
     DEF_FIELD_NUMBER: _ClassVar[int]
     ALGORITHM_FIELD_NUMBER: _ClassVar[int]
+    CONSTRAINT_FIELD_NUMBER: _ClassVar[int]
     DATA_FIELD_NUMBER: _ClassVar[int]
     algorithm: Algorithm
+    constraint: Constraint
     data: Data
-    def __init__(self, algorithm: _Optional[_Union[Algorithm, _Mapping]] = ..., data: _Optional[_Union[Data, _Mapping]] = ..., **kwargs) -> None: ...
+    def __init__(self, algorithm: _Optional[_Union[Algorithm, _Mapping]] = ..., constraint: _Optional[_Union[Constraint, _Mapping]] = ..., data: _Optional[_Union[Data, _Mapping]] = ..., **kwargs) -> None: ...
 
 class Def(_message.Message):
     __slots__ = ("name", "body", "attrs")
@@ -24,6 +26,22 @@ class Def(_message.Message):
     body: Abstraction
     attrs: _containers.RepeatedCompositeFieldContainer[Attribute]
     def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
+
+class Constraint(_message.Message):
+    __slots__ = ("functional_dependency",)
+    FUNCTIONAL_DEPENDENCY_FIELD_NUMBER: _ClassVar[int]
+    functional_dependency: FunctionalDependency
+    def __init__(self, functional_dependency: _Optional[_Union[FunctionalDependency, _Mapping]] = ...) -> None: ...
+
+class FunctionalDependency(_message.Message):
+    __slots__ = ("guard", "keys", "values")
+    GUARD_FIELD_NUMBER: _ClassVar[int]
+    KEYS_FIELD_NUMBER: _ClassVar[int]
+    VALUES_FIELD_NUMBER: _ClassVar[int]
+    guard: Abstraction
+    keys: _containers.RepeatedCompositeFieldContainer[Var]
+    values: _containers.RepeatedCompositeFieldContainer[Var]
+    def __init__(self, guard: _Optional[_Union[Abstraction, _Mapping]] = ..., keys: _Optional[_Iterable[_Union[Var, _Mapping]]] = ..., values: _Optional[_Iterable[_Union[Var, _Mapping]]] = ...) -> None: ...
 
 class Algorithm(_message.Message):
     __slots__ = ("body",)

@@ -6,6 +6,7 @@ message Declaration {
   oneof declaration_type {
     Def def = 1;
     Algorithm algorithm = 2;
+    Constraint constraint = 3;
     Data data = 4;
   }
 }
@@ -14,6 +15,18 @@ message Def {
   RelationId name = 1;
   Abstraction body = 2;
   repeated Attribute attrs = 3;
+}
+
+message Constraint {
+  oneof constraint_type {
+    FunctionalDependency functional_dependency = 1;
+  }
+}
+
+message FunctionalDependency {
+  Abstraction guard = 1;
+  repeated Var keys = 2;
+  repeated Var values = 3;
 }
 
 message Algorithm {
