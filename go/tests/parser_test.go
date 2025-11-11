@@ -159,7 +159,7 @@ func TestParserValues(t *testing.T) {
         (fragment :values
           (def :test_values
             ([]
-             (and
+             (add
                (= x "hello")
                (= y 42)
                (= z 3.14)
