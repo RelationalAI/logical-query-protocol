@@ -7,10 +7,9 @@ import (
 )
 
 // Tree representation of LQP. Each non-terminal (those with more than one
-// option) is an "abstract" interface and each terminal is its own struct. All
-// structs implement the LqpNode interface.
+// option) is an "abstract" class and each terminal is its own class. All of
+// which are children of LqpNode. Value is an exception -- it is just a value.
 
-// SourceInfo represents source location information
 type SourceInfo struct {
 	File   string
 	Line   int
@@ -21,46 +20,19 @@ func (s SourceInfo) String() string {
 	return fmt.Sprintf("%s:%d:%d", s.File, s.Line, s.Column)
 }
 
-// --- Base Interfaces ---
+// --- Logic Types ---
 
-// LqpNode is the base interface for all LQP nodes
 type LqpNode interface {
 	GetMeta() *SourceInfo
 }
 
-// Declaration is implemented by Def and Algorithm
+// Declaration := Def | Algorithm
 type Declaration interface {
 	LqpNode
 	isDeclaration()
 }
 
-// Construct is implemented by Loop and Instruction types
-type Construct interface {
-	LqpNode
-	isConstruct()
-}
-
-// Instruction is implemented by Assign, Break, Upsert, MonoidDef, MonusDef
-type Instruction interface {
-	Construct
-	isInstruction()
-}
-
-// Formula is implemented by all formula types
-type Formula interface {
-	LqpNode
-	isFormula()
-}
-
-// Monoid is implemented by OrMonoid, MinMonoid, MaxMonoid, SumMonoid
-type Monoid interface {
-	LqpNode
-	isMonoid()
-}
-
-// --- Logic Types ---
-
-// Def represents a definition with a name, body, and attributes
+// Def(name::RelationId, body::Abstraction, attrs::Attribute[])
 type Def struct {
 	Meta  *SourceInfo
 	Name  *RelationId
@@ -71,7 +43,7 @@ type Def struct {
 func (d *Def) GetMeta() *SourceInfo { return d.Meta }
 func (d *Def) isDeclaration()       {}
 
-// Algorithm represents an algorithm with global relations and a body
+// Algorithm(globals::RelationId[], body::Script)
 type Algorithm struct {
 	Meta   *SourceInfo
 	Global []*RelationId
@@ -81,7 +53,7 @@ type Algorithm struct {
 func (a *Algorithm) GetMeta() *SourceInfo { return a.Meta }
 func (a *Algorithm) isDeclaration()       {}
 
-// Script represents a sequence of constructs
+// Script := Construct[]
 type Script struct {
 	Meta       *SourceInfo
 	Constructs []Construct
@@ -89,7 +61,13 @@ type Script struct {
 
 func (s *Script) GetMeta() *SourceInfo { return s.Meta }
 
-// Loop represents a loop with initialization and body
+// Construct := Loop | Instruction
+type Construct interface {
+	LqpNode
+	isConstruct()
+}
+
+// Loop(init::Instruction[], body::Algorithm)
 type Loop struct {
 	Meta *SourceInfo
 	Init []Instruction
@@ -99,7 +77,13 @@ type Loop struct {
 func (l *Loop) GetMeta() *SourceInfo { return l.Meta }
 func (l *Loop) isConstruct()         {}
 
-// Assign represents an assignment instruction
+// Instruction := Assign | Break | Upsert | MonoidDef | MonusDef
+type Instruction interface {
+	Construct
+	isInstruction()
+}
+
+// Assign(name::RelationId, body::Abstraction, attrs::Attribute[])
 type Assign struct {
 	Meta  *SourceInfo
 	Name  *RelationId
@@ -111,7 +95,7 @@ func (a *Assign) GetMeta() *SourceInfo { return a.Meta }
 func (a *Assign) isConstruct()         {}
 func (a *Assign) isInstruction()       {}
 
-// Upsert represents an upsert instruction
+// Upsert(arity::int, name::RelationId, body::Abstraction, attrs::Attribute[])
 type Upsert struct {
 	Meta       *SourceInfo
 	ValueArity int64
@@ -124,7 +108,7 @@ func (u *Upsert) GetMeta() *SourceInfo { return u.Meta }
 func (u *Upsert) isConstruct()         {}
 func (u *Upsert) isInstruction()       {}
 
-// Break represents a break instruction
+// Break(name::RelationId, body::Abstraction, attrs::Attribute[])
 type Break struct {
 	Meta  *SourceInfo
 	Name  *RelationId
@@ -136,7 +120,7 @@ func (b *Break) GetMeta() *SourceInfo { return b.Meta }
 func (b *Break) isConstruct()         {}
 func (b *Break) isInstruction()       {}
 
-// MonoidDef represents a monoid definition
+// MonoidDef(arity::int, monoid::Monoid, name::RelationId, body::Abstraction, attrs::Attribute[])
 type MonoidDef struct {
 	Meta       *SourceInfo
 	ValueArity int64
@@ -150,7 +134,7 @@ func (m *MonoidDef) GetMeta() *SourceInfo { return m.Meta }
 func (m *MonoidDef) isConstruct()         {}
 func (m *MonoidDef) isInstruction()       {}
 
-// MonusDef represents a monus definition
+// MonusDef(arity::int, monoid::Monoid, name::RelationId, body::Abstraction, attrs::Attribute[])
 type MonusDef struct {
 	Meta       *SourceInfo
 	ValueArity int64
@@ -164,9 +148,13 @@ func (m *MonusDef) GetMeta() *SourceInfo { return m.Meta }
 func (m *MonusDef) isConstruct()         {}
 func (m *MonusDef) isInstruction()       {}
 
-// --- Monoid Types ---
+// Monoid := OrMonoid | MinMonoid | MaxMonoid | SumMonoid
+type Monoid interface {
+	LqpNode
+	isMonoid()
+}
 
-// OrMonoid represents an OR monoid (only over Booleans)
+// OrMonoid
 type OrMonoid struct {
 	Meta *SourceInfo
 }
@@ -174,7 +162,7 @@ type OrMonoid struct {
 func (o *OrMonoid) GetMeta() *SourceInfo { return o.Meta }
 func (o *OrMonoid) isMonoid()            {}
 
-// MinMonoid represents a MIN monoid parametrized by a type T
+// MinMonoid
 type MinMonoid struct {
 	Meta *SourceInfo
 	Type *Type
@@ -183,7 +171,7 @@ type MinMonoid struct {
 func (m *MinMonoid) GetMeta() *SourceInfo { return m.Meta }
 func (m *MinMonoid) isMonoid()            {}
 
-// MaxMonoid represents a MAX monoid parametrized by a type T
+// MaxMonoid
 type MaxMonoid struct {
 	Meta *SourceInfo
 	Type *Type
@@ -192,7 +180,7 @@ type MaxMonoid struct {
 func (m *MaxMonoid) GetMeta() *SourceInfo { return m.Meta }
 func (m *MaxMonoid) isMonoid()            {}
 
-// SumMonoid represents a SUM monoid parametrized by a type T
+// SumMonoid
 type SumMonoid struct {
 	Meta *SourceInfo
 	Type *Type
@@ -201,15 +189,12 @@ type SumMonoid struct {
 func (s *SumMonoid) GetMeta() *SourceInfo { return s.Meta }
 func (s *SumMonoid) isMonoid()            {}
 
-// --- Formula Types ---
-
-// Binding represents a variable binding with its type
 type Binding struct {
 	Var  *Var
 	Type *Type
 }
 
-// Abstraction represents an abstraction with variables and a formula value
+// Abstraction(vars::Binding[], value::Formula)
 type Abstraction struct {
 	Meta  *SourceInfo
 	Vars  []*Binding
@@ -218,7 +203,13 @@ type Abstraction struct {
 
 func (a *Abstraction) GetMeta() *SourceInfo { return a.Meta }
 
-// Exists represents an existential quantification
+// Formula := Exists | Reduce | Conjunction | Disjunction | Not | FFI | Atom | Pragma | Primitive | TrueVal | FalseVal | RelAtom | Cast
+type Formula interface {
+	LqpNode
+	isFormula()
+}
+
+// Exists(body::Abstraction)
 type Exists struct {
 	Meta *SourceInfo
 	Body *Abstraction
@@ -227,7 +218,7 @@ type Exists struct {
 func (e *Exists) GetMeta() *SourceInfo { return e.Meta }
 func (e *Exists) isFormula()           {}
 
-// Reduce represents a reduction operation
+// Reduce(op::Abstraction, body::Abstraction, terms::Term[])
 type Reduce struct {
 	Meta  *SourceInfo
 	Op    *Abstraction
@@ -238,7 +229,7 @@ type Reduce struct {
 func (r *Reduce) GetMeta() *SourceInfo { return r.Meta }
 func (r *Reduce) isFormula()           {}
 
-// Conjunction represents a conjunction of formulas
+// Conjunction(args::Formula[])
 type Conjunction struct {
 	Meta *SourceInfo
 	Args []Formula
@@ -247,7 +238,7 @@ type Conjunction struct {
 func (c *Conjunction) GetMeta() *SourceInfo { return c.Meta }
 func (c *Conjunction) isFormula()           {}
 
-// Disjunction represents a disjunction of formulas
+// Disjunction(args::Formula[])
 type Disjunction struct {
 	Meta *SourceInfo
 	Args []Formula
@@ -256,7 +247,7 @@ type Disjunction struct {
 func (d *Disjunction) GetMeta() *SourceInfo { return d.Meta }
 func (d *Disjunction) isFormula()           {}
 
-// Not represents a negation
+// Not(arg::Formula)
 type Not struct {
 	Meta *SourceInfo
 	Arg  Formula
@@ -265,7 +256,7 @@ type Not struct {
 func (n *Not) GetMeta() *SourceInfo { return n.Meta }
 func (n *Not) isFormula()           {}
 
-// FFI represents a foreign function interface call
+// FFI(name::string, args::Abstraction[], terms::Term[])
 type FFI struct {
 	Meta  *SourceInfo
 	Name  string
@@ -276,7 +267,7 @@ type FFI struct {
 func (f *FFI) GetMeta() *SourceInfo { return f.Meta }
 func (f *FFI) isFormula()           {}
 
-// Atom represents an atom with a relation name and terms
+// Atom(name::RelationId, terms::Term[])
 type Atom struct {
 	Meta  *SourceInfo
 	Name  *RelationId
@@ -286,7 +277,7 @@ type Atom struct {
 func (a *Atom) GetMeta() *SourceInfo { return a.Meta }
 func (a *Atom) isFormula()           {}
 
-// Pragma represents a pragma directive
+// Pragma(name::string, terms::Term[])
 type Pragma struct {
 	Meta  *SourceInfo
 	Name  string
@@ -296,7 +287,7 @@ type Pragma struct {
 func (p *Pragma) GetMeta() *SourceInfo { return p.Meta }
 func (p *Pragma) isFormula()           {}
 
-// Primitive represents a primitive operation
+// Primitive(name::string, terms::RelTerm[])
 type Primitive struct {
 	Meta  *SourceInfo
 	Name  string
@@ -306,7 +297,7 @@ type Primitive struct {
 func (p *Primitive) GetMeta() *SourceInfo { return p.Meta }
 func (p *Primitive) isFormula()           {}
 
-// RelAtom represents a relational atom
+// RelAtom(name::string, terms::RelTerm[])
 type RelAtom struct {
 	Meta  *SourceInfo
 	Name  string
@@ -316,7 +307,7 @@ type RelAtom struct {
 func (r *RelAtom) GetMeta() *SourceInfo { return r.Meta }
 func (r *RelAtom) isFormula()           {}
 
-// Cast represents a type cast
+// Cast(input::Term, result::Term)
 type Cast struct {
 	Meta   *SourceInfo
 	Input  Term
@@ -326,21 +317,7 @@ type Cast struct {
 func (c *Cast) GetMeta() *SourceInfo { return c.Meta }
 func (c *Cast) isFormula()           {}
 
-// --- Term Types ---
-
-// Term can be either a Var or a Value
-type Term interface {
-	LqpNode
-	isTerm()
-}
-
-// RelTerm can be a Term or a SpecializedValue
-type RelTerm interface {
-	LqpNode
-	isRelTerm()
-}
-
-// Var represents a variable
+// Var(name::string)
 type Var struct {
 	Meta *SourceInfo
 	Name string
@@ -350,9 +327,7 @@ func (v *Var) GetMeta() *SourceInfo { return v.Meta }
 func (v *Var) isTerm()              {}
 func (v *Var) isRelTerm()           {}
 
-// --- Value Types ---
-
-// UInt128Value represents a 128-bit unsigned integer
+// UInt128Value(low::fixed64, high::fixed64)
 type UInt128Value struct {
 	Meta  *SourceInfo
 	Value *big.Int
@@ -360,7 +335,7 @@ type UInt128Value struct {
 
 func (u *UInt128Value) GetMeta() *SourceInfo { return u.Meta }
 
-// Int128Value represents a 128-bit signed integer
+// Int128Value(low::fixed64, high::fixed64)
 type Int128Value struct {
 	Meta  *SourceInfo
 	Value *big.Int
@@ -368,14 +343,13 @@ type Int128Value struct {
 
 func (i *Int128Value) GetMeta() *SourceInfo { return i.Meta }
 
-// MissingValue represents a missing value
 type MissingValue struct {
 	Meta *SourceInfo
 }
 
 func (m *MissingValue) GetMeta() *SourceInfo { return m.Meta }
 
-// DateValue represents a date
+// DateValue(year: int, month: int, day: int)
 type DateValue struct {
 	Meta  *SourceInfo
 	Value time.Time
@@ -383,7 +357,7 @@ type DateValue struct {
 
 func (d *DateValue) GetMeta() *SourceInfo { return d.Meta }
 
-// DateTimeValue represents a datetime
+// DatetimeValue(year: int, month: int, day: int, hour: int, minute: int, second: int, microsecond: int)
 type DateTimeValue struct {
 	Meta  *SourceInfo
 	Value time.Time
@@ -391,17 +365,28 @@ type DateTimeValue struct {
 
 func (d *DateTimeValue) GetMeta() *SourceInfo { return d.Meta }
 
-// DecimalValue represents a decimal number
+// Decimal represents a decimal number as (sign, coefficient, exponent)
+// This matches Python's Decimal.as_tuple() representation
+// The value is: (-1)^sign * coefficient * 10^exponent
+type Decimal struct {
+	Sign        int      // 0 for positive, 1 for negative
+	Coefficient *big.Int // The digits as an integer
+	Exponent    int      // The power of 10
+}
+
+// DecimalValue(precision: int, scale: int, value: Decimal)
 type DecimalValue struct {
 	Meta      *SourceInfo
 	Precision int32
 	Scale     int32
-	Value     *big.Int
+	Value     *Decimal
 }
 
 func (d *DecimalValue) GetMeta() *SourceInfo { return d.Meta }
 
-// BooleanValue represents a boolean value
+// BooleanValue(value: bool)
+// Note: We need a custom BooleanValue class to distinguish it from Python's `int` type.
+// Python's built-in `bool` is a subclass of `int`.
 type BooleanValue struct {
 	Meta  *SourceInfo
 	Value bool
@@ -409,12 +394,11 @@ type BooleanValue struct {
 
 func (b *BooleanValue) GetMeta() *SourceInfo { return b.Meta }
 
-// ValueData is the union type for value data
 type ValueData interface {
 	isValueData()
 }
 
-// Wrapper types for primitive value data
+// Need alias to implement isValueData()
 type StringValue string
 type Int64Value int64
 type Float64Value float64
@@ -430,7 +414,6 @@ func (d *DateTimeValue) isValueData() {}
 func (d *DecimalValue) isValueData()  {}
 func (b *BooleanValue) isValueData()  {}
 
-// Value represents a constant value
 type Value struct {
 	Meta  *SourceInfo
 	Value ValueData
@@ -440,7 +423,7 @@ func (v *Value) GetMeta() *SourceInfo { return v.Meta }
 func (v *Value) isTerm()              {}
 func (v *Value) isRelTerm()           {}
 
-// SpecializedValue wraps a value for specialized use
+// SpecializedValue(value::Value)
 type SpecializedValue struct {
 	Meta  *SourceInfo
 	Value *Value
@@ -449,9 +432,19 @@ type SpecializedValue struct {
 func (s *SpecializedValue) GetMeta() *SourceInfo { return s.Meta }
 func (s *SpecializedValue) isRelTerm()           {}
 
-// --- Other Types ---
+// Term := Var | Value
+type Term interface {
+	LqpNode
+	isTerm()
+}
 
-// Attribute represents an attribute with a name and value arguments
+// RelTerm := Term | SpecializedValue
+type RelTerm interface {
+	LqpNode
+	isRelTerm()
+}
+
+// Attribute(name::string, args::Constant[])
 type Attribute struct {
 	Meta *SourceInfo
 	Name string
@@ -460,7 +453,7 @@ type Attribute struct {
 
 func (a *Attribute) GetMeta() *SourceInfo { return a.Meta }
 
-// RelationId represents a unique identifier for a relation (UInt128)
+// RelationId(id::UInt128)
 type RelationId struct {
 	Meta *SourceInfo
 	Id   *big.Int
@@ -486,7 +479,6 @@ func (r *RelationId) String() string {
 	return fmt.Sprintf("RelationId(id=%s)", r.Id)
 }
 
-// TypeName represents the name of a type
 type TypeName int
 
 const (
@@ -543,7 +535,7 @@ func (t *Type) GetMeta() *SourceInfo { return t.Meta }
 
 // --- Fragment Types ---
 
-// FragmentId represents a fragment identifier
+// FragmentId(id::bytes)
 type FragmentId struct {
 	Meta *SourceInfo
 	Id   []byte
@@ -551,15 +543,7 @@ type FragmentId struct {
 
 func (f *FragmentId) GetMeta() *SourceInfo { return f.Meta }
 
-// DebugInfo maps relation IDs to their original names
-type DebugInfo struct {
-	Meta         *SourceInfo
-	IdToOrigName map[string]string // Map RelationId.String() to original name
-}
-
-func (d *DebugInfo) GetMeta() *SourceInfo { return d.Meta }
-
-// Fragment represents a fragment with an ID, declarations, and debug info
+// Fragment(id::FragmentId, declarations::Declaration[], debug_info::DebugInfo)
 type Fragment struct {
 	Meta         *SourceInfo
 	Id           *FragmentId
@@ -569,15 +553,16 @@ type Fragment struct {
 
 func (f *Fragment) GetMeta() *SourceInfo { return f.Meta }
 
-// --- Transaction Types ---
-
-// WriteType is a union type for write operations
-type WriteType interface {
-	LqpNode
-	isWriteType()
+type DebugInfo struct {
+	Meta         *SourceInfo
+	IdToOrigName map[string]string // Map RelationId.String() to original name
 }
 
-// Define represents a define operation
+func (d *DebugInfo) GetMeta() *SourceInfo { return d.Meta }
+
+// --- Transaction Types ---
+
+// Define(fragment::Fragment)
 type Define struct {
 	Meta     *SourceInfo
 	Fragment *Fragment
@@ -586,7 +571,7 @@ type Define struct {
 func (d *Define) GetMeta() *SourceInfo { return d.Meta }
 func (d *Define) isWriteType()         {}
 
-// Undefine represents an undefine operation
+// Undefine(fragment_id::FragmentId)
 type Undefine struct {
 	Meta       *SourceInfo
 	FragmentId *FragmentId
@@ -595,7 +580,7 @@ type Undefine struct {
 func (u *Undefine) GetMeta() *SourceInfo { return u.Meta }
 func (u *Undefine) isWriteType()         {}
 
-// Context represents a context operation
+// Context(relations::RelationId[])
 type Context struct {
 	Meta      *SourceInfo
 	Relations []*RelationId
@@ -604,7 +589,7 @@ type Context struct {
 func (c *Context) GetMeta() *SourceInfo { return c.Meta }
 func (c *Context) isWriteType()         {}
 
-// Sync represents a sync operation
+// Sync(fragments::FragmentId[])
 type Sync struct {
 	Meta      *SourceInfo
 	Fragments []*FragmentId
@@ -613,7 +598,12 @@ type Sync struct {
 func (s *Sync) GetMeta() *SourceInfo { return s.Meta }
 func (s *Sync) isWriteType()         {}
 
-// Write represents a write operation
+type WriteType interface {
+	LqpNode
+	isWriteType()
+}
+
+// Write := Define | Undefine | Context
 type Write struct {
 	Meta      *SourceInfo
 	WriteType WriteType
@@ -621,13 +611,7 @@ type Write struct {
 
 func (w *Write) GetMeta() *SourceInfo { return w.Meta }
 
-// ReadType is a union type for read operations
-type ReadType interface {
-	LqpNode
-	isReadType()
-}
-
-// Demand represents a demand operation
+// Demand(relation_id::RelationId)
 type Demand struct {
 	Meta       *SourceInfo
 	RelationId *RelationId
@@ -636,7 +620,7 @@ type Demand struct {
 func (d *Demand) GetMeta() *SourceInfo { return d.Meta }
 func (d *Demand) isReadType()          {}
 
-// Output represents an output operation
+// Output(name::string?, relation_id::RelationId)
 type Output struct {
 	Meta       *SourceInfo
 	Name       *string
@@ -646,16 +630,7 @@ type Output struct {
 func (o *Output) GetMeta() *SourceInfo { return o.Meta }
 func (o *Output) isReadType()          {}
 
-// ExportCSVColumn represents a column in a CSV export
-type ExportCSVColumn struct {
-	Meta       *SourceInfo
-	ColumnName string
-	ColumnData *RelationId
-}
-
-func (e *ExportCSVColumn) GetMeta() *SourceInfo { return e.Meta }
-
-// ExportCSVConfig represents CSV export configuration
+// ExportCSVConfig
 type ExportCSVConfig struct {
 	Meta        *SourceInfo
 	Path        string
@@ -672,7 +647,15 @@ type ExportCSVConfig struct {
 
 func (e *ExportCSVConfig) GetMeta() *SourceInfo { return e.Meta }
 
-// Export represents an export operation
+type ExportCSVColumn struct {
+	Meta       *SourceInfo
+	ColumnName string
+	ColumnData *RelationId
+}
+
+func (e *ExportCSVColumn) GetMeta() *SourceInfo { return e.Meta }
+
+// Export(name::string, relation_id::RelationId)
 type Export struct {
 	Meta   *SourceInfo
 	Config *ExportCSVConfig
@@ -681,7 +664,7 @@ type Export struct {
 func (e *Export) GetMeta() *SourceInfo { return e.Meta }
 func (e *Export) isReadType()          {}
 
-// Abort represents an abort operation
+// Abort(name::string?, relation_id::RelationId)
 type Abort struct {
 	Meta       *SourceInfo
 	Name       *string
@@ -691,7 +674,29 @@ type Abort struct {
 func (a *Abort) GetMeta() *SourceInfo { return a.Meta }
 func (a *Abort) isReadType()          {}
 
-// WhatIf represents a what-if operation
+type ReadType interface {
+	LqpNode
+	isReadType()
+}
+
+// Read := Demand | Output | Export | WhatIf | Abort
+type Read struct {
+	Meta     *SourceInfo
+	ReadType ReadType
+}
+
+func (r *Read) GetMeta() *SourceInfo { return r.Meta }
+
+// Epoch(writes::Write[], reads::Read[])
+type Epoch struct {
+	Meta   *SourceInfo
+	Writes []*Write
+	Reads  []*Read
+}
+
+func (e *Epoch) GetMeta() *SourceInfo { return e.Meta }
+
+// WhatIf(branch::string?, epoch::Epoch)
 type WhatIf struct {
 	Meta   *SourceInfo
 	Branch *string
@@ -701,24 +706,32 @@ type WhatIf struct {
 func (w *WhatIf) GetMeta() *SourceInfo { return w.Meta }
 func (w *WhatIf) isReadType()          {}
 
-// Read represents a read operation
-type Read struct {
-	Meta     *SourceInfo
-	ReadType ReadType
+// Transaction(epochs::Epoch[], configure::Configure)
+type Transaction struct {
+	Meta      *SourceInfo
+	Epochs    []*Epoch
+	Configure *Configure
 }
 
-func (r *Read) GetMeta() *SourceInfo { return r.Meta }
+func (t *Transaction) GetMeta() *SourceInfo { return t.Meta }
 
-// Epoch represents an epoch with writes and reads
-type Epoch struct {
-	Meta   *SourceInfo
-	Writes []*Write
-	Reads  []*Read
+// Configure(semantics_version::int, ivm_config::IVMConfig)
+type Configure struct {
+	Meta             *SourceInfo
+	SemanticsVersion int64
+	IvmConfig        *IVMConfig
 }
 
-func (e *Epoch) GetMeta() *SourceInfo { return e.Meta }
+func (c *Configure) GetMeta() *SourceInfo { return c.Meta }
 
-// MaintenanceLevel represents the maintenance level for IVM
+// IVMConfig(level::MaintenanceLevel)
+type IVMConfig struct {
+	Meta  *SourceInfo
+	Level MaintenanceLevel
+}
+
+func (i *IVMConfig) GetMeta() *SourceInfo { return i.Meta }
+
 type MaintenanceLevel int
 
 const (
@@ -742,29 +755,3 @@ func (m MaintenanceLevel) String() string {
 		return "UNKNOWN"
 	}
 }
-
-// IVMConfig represents IVM configuration
-type IVMConfig struct {
-	Meta  *SourceInfo
-	Level MaintenanceLevel
-}
-
-func (i *IVMConfig) GetMeta() *SourceInfo { return i.Meta }
-
-// Configure represents configuration settings
-type Configure struct {
-	Meta             *SourceInfo
-	SemanticsVersion int64
-	IvmConfig        *IVMConfig
-}
-
-func (c *Configure) GetMeta() *SourceInfo { return c.Meta }
-
-// Transaction represents a transaction with epochs and configuration
-type Transaction struct {
-	Meta      *SourceInfo
-	Epochs    []*Epoch
-	Configure *Configure
-}
-
-func (t *Transaction) GetMeta() *SourceInfo { return t.Meta }

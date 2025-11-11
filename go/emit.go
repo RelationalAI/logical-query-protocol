@@ -9,6 +9,8 @@ import (
 
 // Maps ir.TypeNames to the associated Proto message for *non-parametric types*.
 // Parametric types should be handled in ConvertType
+// Difference from Python: it returns a thunk of the ProtoBuf type to avoid
+// accidental sharing of the same value, which Python avoids automatically.
 var nonParametricTypes = map[TypeName]func() *pb.Type{
 	TypeNameUnspecified: func() *pb.Type {
 		return &pb.Type{Type: &pb.Type_UnspecifiedType{UnspecifiedType: &pb.UnspecifiedType{}}}
@@ -25,26 +27,26 @@ var nonParametricTypes = map[TypeName]func() *pb.Type{
 }
 
 // ConvertType converts an ir.Type to a protobuf Type
-func ConvertType(rt *Type) (*pb.Type, error) {
+func ConvertType(rt *Type) *pb.Type {
 	if rt.TypeName == TypeNameDecimal {
 		if len(rt.Parameters) != 2 {
-			return nil, fmt.Errorf("DECIMAL parameters should have only precision and scale, got %d arguments", len(rt.Parameters))
+			panic(fmt.Sprintf("DECIMAL parameters should have only precision and scale, got %d arguments", len(rt.Parameters)))
 		}
 
 		precision, ok := rt.Parameters[0].Value.(Int64Value)
 		if !ok {
-			return nil, fmt.Errorf("DECIMAL precision parameter is not an integer")
+			panic("DECIMAL precision parameter is not an integer")
 		}
 		scale, ok := rt.Parameters[1].Value.(Int64Value)
 		if !ok {
-			return nil, fmt.Errorf("DECIMAL scale parameter is not an integer")
+			panic("DECIMAL scale parameter is not an integer")
 		}
 
 		if precision > 38 {
-			return nil, fmt.Errorf("DECIMAL precision must be less than 38, got %d", precision)
+			panic(fmt.Sprintf("DECIMAL precision must be less than 38, got %d", precision))
 		}
 		if scale > precision {
-			return nil, fmt.Errorf("DECIMAL precision (%d) must be at least scale (%d)", precision, scale)
+			panic(fmt.Sprintf("DECIMAL precision (%d) must be at least scale (%d)", precision, scale))
 		}
 
 		return &pb.Type{
@@ -54,14 +56,14 @@ func ConvertType(rt *Type) (*pb.Type, error) {
 					Scale:     int32(scale),
 				},
 			},
-		}, nil
+		}
 	}
 
 	factory, ok := nonParametricTypes[rt.TypeName]
 	if !ok {
-		return nil, fmt.Errorf("unsupported type name: %v", rt.TypeName)
+		panic(fmt.Sprintf("unsupported type name: %v", rt.TypeName))
 	}
-	return factory(), nil
+	return factory()
 }
 
 // ConvertUInt128 converts an ir.UInt128Value to a protobuf UInt128Value
@@ -79,7 +81,6 @@ func ConvertUInt128(val *UInt128Value) *pb.UInt128Value {
 	}
 }
 
-// ConvertInt128 converts an ir.Int128Value to a protobuf Int128Value
 func ConvertInt128(val *Int128Value) *pb.Int128Value {
 	mask := new(big.Int)
 	mask.SetString("FFFFFFFFFFFFFFFF", 16)
@@ -94,7 +95,6 @@ func ConvertInt128(val *Int128Value) *pb.Int128Value {
 	}
 }
 
-// ConvertDate converts an ir.DateValue to a protobuf DateValue
 func ConvertDate(val *DateValue) *pb.DateValue {
 	return &pb.DateValue{
 		Year:  int32(val.Value.Year()),
@@ -103,7 +103,6 @@ func ConvertDate(val *DateValue) *pb.DateValue {
 	}
 }
 
-// ConvertDateTime converts an ir.DateTimeValue to a protobuf DateTimeValue
 func ConvertDateTime(val *DateTimeValue) *pb.DateTimeValue {
 	return &pb.DateTimeValue{
 		Year:        int32(val.Value.Year()),
@@ -116,12 +115,33 @@ func ConvertDateTime(val *DateTimeValue) *pb.DateTimeValue {
 	}
 }
 
-// ConvertDecimal converts an ir.DecimalValue to a protobuf DecimalValue
 func ConvertDecimal(val *DecimalValue) *pb.DecimalValue {
-	// The value is already stored as the physical representation in Int128
+	// In Python, value is a tuple of digits that need to be reinterpreted as int.
+	// In Go, we represent it as an int already.
+	value := new(big.Int).Set(val.Value.Coefficient)
+
+	// Adjust value by the exponent. Python's decimal values are (sign, coefficient, exponent),
+	// so if we have coefficient 12300 with exponent -4, but we need `scale` of 6, then we need to
+	// multiply the coefficient by 10 ** 2 (i.e., 10 ** (6 + -4)) to get the physical value of
+	// 1230000.
+	// Ensure we stay in the integer realm when the exponent outweighs the scale, e.g.
+	// value = 4.4000000000000003552713678800500929355621337890625
+	modifier := int(val.Scale) + val.Value.Exponent
+	if modifier >= 0 {
+		multiplier := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(modifier)), nil)
+		value.Mul(value, multiplier)
+	} else {
+		divisor := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(-modifier)), nil)
+		value.Div(value, divisor)
+	}
+
+	if val.Value.Sign == 1 {
+		value.Neg(value)
+	}
+
 	int128Val := &Int128Value{
 		Meta:  val.Meta,
-		Value: val.Value,
+		Value: value,
 	}
 
 	return &pb.DecimalValue{
@@ -131,76 +151,59 @@ func ConvertDecimal(val *DecimalValue) *pb.DecimalValue {
 	}
 }
 
-// ConvertValue converts an ir.Value to a protobuf Value
-func ConvertValue(pv *Value) (*pb.Value, error) {
+func ConvertValue(pv *Value) *pb.Value {
 	switch v := pv.Value.(type) {
 	case StringValue:
-		return &pb.Value{Value: &pb.Value_StringValue{StringValue: string(v)}}, nil
-	case *MissingValue:
-		return &pb.Value{Value: &pb.Value_MissingValue{MissingValue: &pb.MissingValue{}}}, nil
+		return &pb.Value{Value: &pb.Value_StringValue{StringValue: string(v)}}
 	case Int64Value:
-		return &pb.Value{Value: &pb.Value_IntValue{IntValue: int64(v)}}, nil
+		return &pb.Value{Value: &pb.Value_IntValue{IntValue: int64(v)}}
 	case Float64Value:
-		return &pb.Value{Value: &pb.Value_FloatValue{FloatValue: float64(v)}}, nil
+		return &pb.Value{Value: &pb.Value_FloatValue{FloatValue: float64(v)}}
+	case *MissingValue:
+		return &pb.Value{Value: &pb.Value_MissingValue{MissingValue: &pb.MissingValue{}}}
 	case *UInt128Value:
-		return &pb.Value{Value: &pb.Value_Uint128Value{Uint128Value: ConvertUInt128(v)}}, nil
+		return &pb.Value{Value: &pb.Value_Uint128Value{Uint128Value: ConvertUInt128(v)}}
 	case *Int128Value:
-		return &pb.Value{Value: &pb.Value_Int128Value{Int128Value: ConvertInt128(v)}}, nil
+		return &pb.Value{Value: &pb.Value_Int128Value{Int128Value: ConvertInt128(v)}}
 	case *DateValue:
-		return &pb.Value{Value: &pb.Value_DateValue{DateValue: ConvertDate(v)}}, nil
+		return &pb.Value{Value: &pb.Value_DateValue{DateValue: ConvertDate(v)}}
 	case *DateTimeValue:
-		return &pb.Value{Value: &pb.Value_DatetimeValue{DatetimeValue: ConvertDateTime(v)}}, nil
+		return &pb.Value{Value: &pb.Value_DatetimeValue{DatetimeValue: ConvertDateTime(v)}}
 	case *DecimalValue:
-		return &pb.Value{Value: &pb.Value_DecimalValue{DecimalValue: ConvertDecimal(v)}}, nil
+		return &pb.Value{Value: &pb.Value_DecimalValue{DecimalValue: ConvertDecimal(v)}}
 	case *BooleanValue:
-		return &pb.Value{Value: &pb.Value_BooleanValue{BooleanValue: v.Value}}, nil
-	default:
-		return nil, fmt.Errorf("unsupported Value type: %T", v)
+		return &pb.Value{Value: &pb.Value_BooleanValue{BooleanValue: v.Value}}
 	}
+	panic(fmt.Sprintf("Unsupported Value type: %T", pv.Value))
 }
 
-// ConvertVar converts an ir.Var to a protobuf Var
 func ConvertVar(v *Var) *pb.Var {
 	return &pb.Var{Name: v.Name}
 }
 
-// ConvertTerm converts an ir.Term to a protobuf Term
-func ConvertTerm(t Term) (*pb.Term, error) {
+func ConvertTerm(t Term) *pb.Term {
 	switch term := t.(type) {
 	case *Var:
-		return &pb.Term{TermType: &pb.Term_Var{Var: ConvertVar(term)}}, nil
+		return &pb.Term{TermType: &pb.Term_Var{Var: ConvertVar(term)}}
 	case *Value:
-		val, err := ConvertValue(term)
-		if err != nil {
-			return nil, err
-		}
-		return &pb.Term{TermType: &pb.Term_Constant{Constant: val}}, nil
-	default:
-		return nil, fmt.Errorf("unsupported Term type: %T", term)
+		val := ConvertValue(term)
+		return &pb.Term{TermType: &pb.Term_Constant{Constant: val}}
 	}
+	panic(fmt.Sprintf("Unsupported Term type: %T", t))
 }
 
-// ConvertRelTerm converts an ir.RelTerm to a protobuf RelTerm
-func ConvertRelTerm(t RelTerm) (*pb.RelTerm, error) {
+func ConvertRelTerm(t RelTerm) *pb.RelTerm {
 	switch relTerm := t.(type) {
 	case *SpecializedValue:
-		val, err := ConvertValue(relTerm.Value)
-		if err != nil {
-			return nil, err
-		}
-		return &pb.RelTerm{RelTermType: &pb.RelTerm_SpecializedValue{SpecializedValue: val}}, nil
+		val := ConvertValue(relTerm.Value)
+		return &pb.RelTerm{RelTermType: &pb.RelTerm_SpecializedValue{SpecializedValue: val}}
 	case Term:
-		term, err := ConvertTerm(relTerm)
-		if err != nil {
-			return nil, err
-		}
-		return &pb.RelTerm{RelTermType: &pb.RelTerm_Term{Term: term}}, nil
-	default:
-		return nil, fmt.Errorf("unsupported RelTerm type: %T", relTerm)
+		term := ConvertTerm(relTerm)
+		return &pb.RelTerm{RelTermType: &pb.RelTerm_Term{Term: term}}
 	}
+	panic(fmt.Sprintf("unsupported RelTerm type: %T", t))
 }
 
-// ConvertRelationId converts an ir.RelationId to a protobuf RelationId
 func ConvertRelationId(rid *RelationId) *pb.RelationId {
 	mask := new(big.Int)
 	mask.SetString("FFFFFFFFFFFFFFFF", 16)
@@ -215,340 +218,241 @@ func ConvertRelationId(rid *RelationId) *pb.RelationId {
 	}
 }
 
-// ConvertFragmentId converts an ir.FragmentId to a protobuf FragmentId
 func ConvertFragmentId(fid *FragmentId) *pb.FragmentId {
 	return &pb.FragmentId{Id: fid.Id}
 }
 
-// ConvertAttribute converts an ir.Attribute to a protobuf Attribute
-func ConvertAttribute(attr *Attribute) (*pb.Attribute, error) {
+func ConvertAttribute(attr *Attribute) *pb.Attribute {
 	args := make([]*pb.Value, len(attr.Args))
 	for i, arg := range attr.Args {
-		val, err := ConvertValue(arg)
-		if err != nil {
-			return nil, err
-		}
+		val := ConvertValue(arg)
 		args[i] = val
 	}
-	return &pb.Attribute{Name: attr.Name, Args: args}, nil
+	return &pb.Attribute{Name: attr.Name, Args: args}
 }
 
-// ConvertAbstraction converts an ir.Abstraction to a protobuf Abstraction
-func ConvertAbstraction(abst *Abstraction) (*pb.Abstraction, error) {
+func ConvertAbstraction(abst *Abstraction) *pb.Abstraction {
 	bindings := make([]*pb.Binding, len(abst.Vars))
 	for i, binding := range abst.Vars {
-		typ, err := ConvertType(binding.Type)
-		if err != nil {
-			return nil, err
-		}
 		bindings[i] = &pb.Binding{
 			Var:  ConvertVar(binding.Var),
-			Type: typ,
+			Type: ConvertType(binding.Type),
 		}
-	}
-
-	formula, err := ConvertFormula(abst.Value)
-	if err != nil {
-		return nil, err
 	}
 
 	return &pb.Abstraction{
 		Vars:  bindings,
-		Value: formula,
-	}, nil
+		Value: ConvertFormula(abst.Value),
+	}
 }
 
-// ConvertFormula converts an ir.Formula to a protobuf Formula
-func ConvertFormula(f Formula) (*pb.Formula, error) {
+func ConvertFormula(f Formula) *pb.Formula {
 	switch formula := f.(type) {
 	case *Exists:
-		body, err := ConvertAbstraction(formula.Body)
-		if err != nil {
-			return nil, err
-		}
-		return &pb.Formula{FormulaType: &pb.Formula_Exists{Exists: &pb.Exists{Body: body}}}, nil
-
+		body := ConvertAbstraction(formula.Body)
+		return &pb.Formula{FormulaType: &pb.Formula_Exists{Exists: &pb.Exists{Body: body}}}
 	case *Reduce:
-		op, err := ConvertAbstraction(formula.Op)
-		if err != nil {
-			return nil, err
-		}
-		body, err := ConvertAbstraction(formula.Body)
-		if err != nil {
-			return nil, err
-		}
+		op := ConvertAbstraction(formula.Op)
+		body := ConvertAbstraction(formula.Body)
 		terms := make([]*pb.Term, len(formula.Terms))
 		for i, t := range formula.Terms {
-			term, err := ConvertTerm(t)
-			if err != nil {
-				return nil, err
-			}
+			term := ConvertTerm(t)
 			terms[i] = term
 		}
 		return &pb.Formula{FormulaType: &pb.Formula_Reduce{Reduce: &pb.Reduce{
 			Op:    op,
 			Body:  body,
 			Terms: terms,
-		}}}, nil
-
+		}}}
 	case *Conjunction:
 		args := make([]*pb.Formula, len(formula.Args))
 		for i, arg := range formula.Args {
-			f, err := ConvertFormula(arg)
-			if err != nil {
-				return nil, err
-			}
+			f := ConvertFormula(arg)
 			args[i] = f
 		}
-		return &pb.Formula{FormulaType: &pb.Formula_Conjunction{Conjunction: &pb.Conjunction{Args: args}}}, nil
-
+		return &pb.Formula{FormulaType: &pb.Formula_Conjunction{Conjunction: &pb.Conjunction{Args: args}}}
 	case *Disjunction:
 		args := make([]*pb.Formula, len(formula.Args))
 		for i, arg := range formula.Args {
-			f, err := ConvertFormula(arg)
-			if err != nil {
-				return nil, err
-			}
+			f := ConvertFormula(arg)
 			args[i] = f
 		}
-		return &pb.Formula{FormulaType: &pb.Formula_Disjunction{Disjunction: &pb.Disjunction{Args: args}}}, nil
-
+		return &pb.Formula{FormulaType: &pb.Formula_Disjunction{Disjunction: &pb.Disjunction{Args: args}}}
 	case *Not:
-		arg, err := ConvertFormula(formula.Arg)
-		if err != nil {
-			return nil, err
-		}
-		return &pb.Formula{FormulaType: &pb.Formula_Not{Not: &pb.Not{Arg: arg}}}, nil
-
+		arg := ConvertFormula(formula.Arg)
+		return &pb.Formula{FormulaType: &pb.Formula_Not{Not: &pb.Not{Arg: arg}}}
 	case *FFI:
 		args := make([]*pb.Abstraction, len(formula.Args))
 		for i, arg := range formula.Args {
-			abst, err := ConvertAbstraction(arg)
-			if err != nil {
-				return nil, err
-			}
+			abst := ConvertAbstraction(arg)
 			args[i] = abst
 		}
 		terms := make([]*pb.Term, len(formula.Terms))
 		for i, t := range formula.Terms {
-			term, err := ConvertTerm(t)
-			if err != nil {
-				return nil, err
-			}
+			term := ConvertTerm(t)
 			terms[i] = term
 		}
 		return &pb.Formula{FormulaType: &pb.Formula_Ffi{Ffi: &pb.FFI{
 			Name:  formula.Name,
 			Args:  args,
 			Terms: terms,
-		}}}, nil
-
+		}}}
 	case *Atom:
 		terms := make([]*pb.Term, len(formula.Terms))
 		for i, t := range formula.Terms {
-			term, err := ConvertTerm(t)
-			if err != nil {
-				return nil, err
-			}
+			term := ConvertTerm(t)
 			terms[i] = term
 		}
 		return &pb.Formula{FormulaType: &pb.Formula_Atom{Atom: &pb.Atom{
 			Name:  ConvertRelationId(formula.Name),
 			Terms: terms,
-		}}}, nil
-
+		}}}
 	case *Pragma:
 		terms := make([]*pb.Term, len(formula.Terms))
 		for i, t := range formula.Terms {
-			term, err := ConvertTerm(t)
-			if err != nil {
-				return nil, err
-			}
+			term := ConvertTerm(t)
 			terms[i] = term
 		}
 		return &pb.Formula{FormulaType: &pb.Formula_Pragma{Pragma: &pb.Pragma{
 			Name:  formula.Name,
 			Terms: terms,
-		}}}, nil
-
+		}}}
 	case *Primitive:
 		terms := make([]*pb.RelTerm, len(formula.Terms))
 		for i, t := range formula.Terms {
-			term, err := ConvertRelTerm(t)
-			if err != nil {
-				return nil, err
-			}
+			term := ConvertRelTerm(t)
 			terms[i] = term
 		}
 		return &pb.Formula{FormulaType: &pb.Formula_Primitive{Primitive: &pb.Primitive{
 			Name:  formula.Name,
 			Terms: terms,
-		}}}, nil
-
+		}}}
 	case *RelAtom:
 		terms := make([]*pb.RelTerm, len(formula.Terms))
 		for i, t := range formula.Terms {
-			term, err := ConvertRelTerm(t)
-			if err != nil {
-				return nil, err
-			}
+			term := ConvertRelTerm(t)
 			terms[i] = term
 		}
 		return &pb.Formula{FormulaType: &pb.Formula_RelAtom{RelAtom: &pb.RelAtom{
 			Name:  formula.Name,
 			Terms: terms,
-		}}}, nil
-
+		}}}
 	case *Cast:
-		input, err := ConvertTerm(formula.Input)
-		if err != nil {
-			return nil, err
-		}
-		result, err := ConvertTerm(formula.Result)
-		if err != nil {
-			return nil, err
-		}
+		input := ConvertTerm(formula.Input)
+		result := ConvertTerm(formula.Result)
 		return &pb.Formula{FormulaType: &pb.Formula_Cast{Cast: &pb.Cast{
 			Input:  input,
 			Result: result,
-		}}}, nil
-
-	default:
-		return nil, fmt.Errorf("unsupported Formula type: %T", formula)
+		}}}
 	}
+	panic(fmt.Sprintf("unsupported Formula type: %T", f))
 }
 
-// ConvertDef converts an ir.Def to a protobuf Def
-func ConvertDef(d *Def) (*pb.Def, error) {
-	body, err := ConvertAbstraction(d.Body)
-	if err != nil {
-		return nil, err
-	}
+func ConvertDef(d *Def) *pb.Def {
+	body := ConvertAbstraction(d.Body)
 	attrs := make([]*pb.Attribute, len(d.Attrs))
 	for i, attr := range d.Attrs {
-		a, err := ConvertAttribute(attr)
-		if err != nil {
-			return nil, err
-		}
+		a := ConvertAttribute(attr)
 		attrs[i] = a
 	}
 	return &pb.Def{
 		Name:  ConvertRelationId(d.Name),
 		Body:  body,
 		Attrs: attrs,
-	}, nil
+	}
 }
 
-// ConvertLoop converts an ir.Loop to a protobuf Loop
-func ConvertLoop(l *Loop) (*pb.Loop, error) {
+func ConvertLoop(l *Loop) *pb.Loop {
 	init := make([]*pb.Instruction, len(l.Init))
 	for i, instr := range l.Init {
-		inst, err := ConvertInstruction(instr)
-		if err != nil {
-			return nil, err
-		}
+		inst := ConvertInstruction(instr)
 		init[i] = inst
 	}
-	body, err := ConvertScript(l.Body)
-	if err != nil {
-		return nil, err
-	}
+	body := ConvertScript(l.Body)
 	return &pb.Loop{
 		Init: init,
 		Body: body,
-	}, nil
+	}
 }
 
-// ConvertAlgorithm converts an ir.Algorithm to a protobuf Algorithm
-func ConvertAlgorithm(algo *Algorithm) (*pb.Algorithm, error) {
+func ConvertDeclaration(decl Declaration) *pb.Declaration {
+	switch d := decl.(type) {
+	case *Def:
+		def := ConvertDef(d)
+		return &pb.Declaration{DeclarationType: &pb.Declaration_Def{Def: def}}
+	case *Algorithm:
+		algo := ConvertAlgorithm(d)
+		return &pb.Declaration{DeclarationType: &pb.Declaration_Algorithm{Algorithm: algo}}
+	}
+	panic(fmt.Sprintf("unsupported Declaration type: %T", decl))
+}
+
+func ConvertAlgorithm(algo *Algorithm) *pb.Algorithm {
 	global := make([]*pb.RelationId, len(algo.Global))
 	for i, rid := range algo.Global {
 		global[i] = ConvertRelationId(rid)
 	}
-	body, err := ConvertScript(algo.Body)
-	if err != nil {
-		return nil, err
-	}
+	body := ConvertScript(algo.Body)
 	return &pb.Algorithm{
 		Global: global,
 		Body:   body,
-	}, nil
-}
-
-// ConvertDeclaration converts an ir.Declaration to a protobuf Declaration
-func ConvertDeclaration(decl Declaration) (*pb.Declaration, error) {
-	switch d := decl.(type) {
-	case *Def:
-		def, err := ConvertDef(d)
-		if err != nil {
-			return nil, err
-		}
-		return &pb.Declaration{DeclarationType: &pb.Declaration_Def{Def: def}}, nil
-	case *Algorithm:
-		algo, err := ConvertAlgorithm(d)
-		if err != nil {
-			return nil, err
-		}
-		return &pb.Declaration{DeclarationType: &pb.Declaration_Algorithm{Algorithm: algo}}, nil
-	default:
-		return nil, fmt.Errorf("unsupported Declaration type: %T", decl)
 	}
 }
 
-// ConvertAssign converts an ir.Assign to a protobuf Assign
-func ConvertAssign(instr *Assign) (*pb.Assign, error) {
-	body, err := ConvertAbstraction(instr.Body)
-	if err != nil {
-		return nil, err
+func ConvertInstruction(instr Instruction) *pb.Instruction {
+	switch i := instr.(type) {
+	case *Assign:
+		assign := ConvertAssign(i)
+		return &pb.Instruction{InstrType: &pb.Instruction_Assign{Assign: assign}}
+	case *Break:
+		brk := ConvertBreak(i)
+		return &pb.Instruction{InstrType: &pb.Instruction_Break{Break: brk}}
+	case *Upsert:
+		upsert := ConvertUpsert(i)
+		return &pb.Instruction{InstrType: &pb.Instruction_Upsert{Upsert: upsert}}
+	case *MonoidDef:
+		monoidDef := ConvertMonoidDef(i)
+		return &pb.Instruction{InstrType: &pb.Instruction_MonoidDef{MonoidDef: monoidDef}}
+	case *MonusDef:
+		monusDef := ConvertMonusDef(i)
+		return &pb.Instruction{InstrType: &pb.Instruction_MonusDef{MonusDef: monusDef}}
 	}
+	panic(fmt.Sprintf("unsupported Instruction type: %T", instr))
+}
+
+func ConvertAssign(instr *Assign) *pb.Assign {
+	body := ConvertAbstraction(instr.Body)
 	attrs := make([]*pb.Attribute, len(instr.Attrs))
 	for i, attr := range instr.Attrs {
-		a, err := ConvertAttribute(attr)
-		if err != nil {
-			return nil, err
-		}
+		a := ConvertAttribute(attr)
 		attrs[i] = a
 	}
 	return &pb.Assign{
 		Name:  ConvertRelationId(instr.Name),
 		Body:  body,
 		Attrs: attrs,
-	}, nil
+	}
 }
 
-// ConvertBreak converts an ir.Break to a protobuf Break
-func ConvertBreak(instr *Break) (*pb.Break, error) {
-	body, err := ConvertAbstraction(instr.Body)
-	if err != nil {
-		return nil, err
-	}
+func ConvertBreak(instr *Break) *pb.Break {
+	body := ConvertAbstraction(instr.Body)
 	attrs := make([]*pb.Attribute, len(instr.Attrs))
 	for i, attr := range instr.Attrs {
-		a, err := ConvertAttribute(attr)
-		if err != nil {
-			return nil, err
-		}
+		a := ConvertAttribute(attr)
 		attrs[i] = a
 	}
 	return &pb.Break{
 		Name:  ConvertRelationId(instr.Name),
 		Body:  body,
 		Attrs: attrs,
-	}, nil
+	}
 }
 
-// ConvertUpsert converts an ir.Upsert to a protobuf Upsert
-func ConvertUpsert(instr *Upsert) (*pb.Upsert, error) {
-	body, err := ConvertAbstraction(instr.Body)
-	if err != nil {
-		return nil, err
-	}
+func ConvertUpsert(instr *Upsert) *pb.Upsert {
+	body := ConvertAbstraction(instr.Body)
 	attrs := make([]*pb.Attribute, len(instr.Attrs))
 	for i, attr := range instr.Attrs {
-		a, err := ConvertAttribute(attr)
-		if err != nil {
-			return nil, err
-		}
+		a := ConvertAttribute(attr)
 		attrs[i] = a
 	}
 	return &pb.Upsert{
@@ -556,53 +460,15 @@ func ConvertUpsert(instr *Upsert) (*pb.Upsert, error) {
 		Name:       ConvertRelationId(instr.Name),
 		Body:       body,
 		Attrs:      attrs,
-	}, nil
-}
-
-// ConvertMonoid converts an ir.Monoid to a protobuf Monoid
-func ConvertMonoid(monoid Monoid) (*pb.Monoid, error) {
-	switch m := monoid.(type) {
-	case *OrMonoid:
-		return &pb.Monoid{Value: &pb.Monoid_OrMonoid{OrMonoid: &pb.OrMonoid{}}}, nil
-	case *SumMonoid:
-		typ, err := ConvertType(m.Type)
-		if err != nil {
-			return nil, err
-		}
-		return &pb.Monoid{Value: &pb.Monoid_SumMonoid{SumMonoid: &pb.SumMonoid{Type: typ}}}, nil
-	case *MinMonoid:
-		typ, err := ConvertType(m.Type)
-		if err != nil {
-			return nil, err
-		}
-		return &pb.Monoid{Value: &pb.Monoid_MinMonoid{MinMonoid: &pb.MinMonoid{Type: typ}}}, nil
-	case *MaxMonoid:
-		typ, err := ConvertType(m.Type)
-		if err != nil {
-			return nil, err
-		}
-		return &pb.Monoid{Value: &pb.Monoid_MaxMonoid{MaxMonoid: &pb.MaxMonoid{Type: typ}}}, nil
-	default:
-		return nil, fmt.Errorf("unsupported Monoid type: %T", monoid)
 	}
 }
 
-// ConvertMonoidDef converts an ir.MonoidDef to a protobuf MonoidDef
-func ConvertMonoidDef(instr *MonoidDef) (*pb.MonoidDef, error) {
-	monoid, err := ConvertMonoid(instr.Monoid)
-	if err != nil {
-		return nil, err
-	}
-	body, err := ConvertAbstraction(instr.Body)
-	if err != nil {
-		return nil, err
-	}
+func ConvertMonoidDef(instr *MonoidDef) *pb.MonoidDef {
+	monoid := ConvertMonoid(instr.Monoid)
+	body := ConvertAbstraction(instr.Body)
 	attrs := make([]*pb.Attribute, len(instr.Attrs))
 	for i, attr := range instr.Attrs {
-		a, err := ConvertAttribute(attr)
-		if err != nil {
-			return nil, err
-		}
+		a := ConvertAttribute(attr)
 		attrs[i] = a
 	}
 	return &pb.MonoidDef{
@@ -611,25 +477,15 @@ func ConvertMonoidDef(instr *MonoidDef) (*pb.MonoidDef, error) {
 		Name:       ConvertRelationId(instr.Name),
 		Body:       body,
 		Attrs:      attrs,
-	}, nil
+	}
 }
 
-// ConvertMonusDef converts an ir.MonusDef to a protobuf MonusDef
-func ConvertMonusDef(instr *MonusDef) (*pb.MonusDef, error) {
-	monoid, err := ConvertMonoid(instr.Monoid)
-	if err != nil {
-		return nil, err
-	}
-	body, err := ConvertAbstraction(instr.Body)
-	if err != nil {
-		return nil, err
-	}
+func ConvertMonusDef(instr *MonusDef) *pb.MonusDef {
+	monoid := ConvertMonoid(instr.Monoid)
+	body := ConvertAbstraction(instr.Body)
 	attrs := make([]*pb.Attribute, len(instr.Attrs))
 	for i, attr := range instr.Attrs {
-		a, err := ConvertAttribute(attr)
-		if err != nil {
-			return nil, err
-		}
+		a := ConvertAttribute(attr)
 		attrs[i] = a
 	}
 	return &pb.MonusDef{
@@ -638,81 +494,60 @@ func ConvertMonusDef(instr *MonusDef) (*pb.MonusDef, error) {
 		Name:       ConvertRelationId(instr.Name),
 		Body:       body,
 		Attrs:      attrs,
-	}, nil
-}
-
-// ConvertInstruction converts an ir.Instruction to a protobuf Instruction
-func ConvertInstruction(instr Instruction) (*pb.Instruction, error) {
-	switch i := instr.(type) {
-	case *Assign:
-		assign, err := ConvertAssign(i)
-		if err != nil {
-			return nil, err
-		}
-		return &pb.Instruction{InstrType: &pb.Instruction_Assign{Assign: assign}}, nil
-	case *Break:
-		brk, err := ConvertBreak(i)
-		if err != nil {
-			return nil, err
-		}
-		return &pb.Instruction{InstrType: &pb.Instruction_Break{Break: brk}}, nil
-	case *Upsert:
-		upsert, err := ConvertUpsert(i)
-		if err != nil {
-			return nil, err
-		}
-		return &pb.Instruction{InstrType: &pb.Instruction_Upsert{Upsert: upsert}}, nil
-	case *MonoidDef:
-		monoidDef, err := ConvertMonoidDef(i)
-		if err != nil {
-			return nil, err
-		}
-		return &pb.Instruction{InstrType: &pb.Instruction_MonoidDef{MonoidDef: monoidDef}}, nil
-	case *MonusDef:
-		monusDef, err := ConvertMonusDef(i)
-		if err != nil {
-			return nil, err
-		}
-		return &pb.Instruction{InstrType: &pb.Instruction_MonusDef{MonusDef: monusDef}}, nil
-	default:
-		return nil, fmt.Errorf("unsupported Instruction type: %T", instr)
 	}
 }
 
-// ConvertConstruct converts an ir.Construct to a protobuf Construct
-func ConvertConstruct(construct Construct) (*pb.Construct, error) {
-	switch c := construct.(type) {
-	case *Loop:
-		loop, err := ConvertLoop(c)
-		if err != nil {
-			return nil, err
-		}
-		return &pb.Construct{ConstructType: &pb.Construct_Loop{Loop: loop}}, nil
-	case Instruction:
-		instr, err := ConvertInstruction(c)
-		if err != nil {
-			return nil, err
-		}
-		return &pb.Construct{ConstructType: &pb.Construct_Instruction{Instruction: instr}}, nil
-	default:
-		return nil, fmt.Errorf("unsupported Construct type: %T", construct)
+func ConvertMonoid(monoid Monoid) *pb.Monoid {
+	switch m := monoid.(type) {
+	case *OrMonoid:
+		return &pb.Monoid{Value: &pb.Monoid_OrMonoid{OrMonoid: &pb.OrMonoid{}}}
+	case *SumMonoid:
+		typ := ConvertType(m.Type)
+		return &pb.Monoid{Value: &pb.Monoid_SumMonoid{SumMonoid: &pb.SumMonoid{Type: typ}}}
+	case *MinMonoid:
+		typ := ConvertType(m.Type)
+		return &pb.Monoid{Value: &pb.Monoid_MinMonoid{MinMonoid: &pb.MinMonoid{Type: typ}}}
+	case *MaxMonoid:
+		typ := ConvertType(m.Type)
+		return &pb.Monoid{Value: &pb.Monoid_MaxMonoid{MaxMonoid: &pb.MaxMonoid{Type: typ}}}
 	}
+	panic(fmt.Sprintf("unsupported Monoid type: %T", monoid))
 }
 
-// ConvertScript converts an ir.Script to a protobuf Script
-func ConvertScript(script *Script) (*pb.Script, error) {
+func ConvertScript(script *Script) *pb.Script {
 	constructs := make([]*pb.Construct, len(script.Constructs))
 	for i, c := range script.Constructs {
-		construct, err := ConvertConstruct(c)
-		if err != nil {
-			return nil, err
-		}
+		construct := ConvertConstruct(c)
 		constructs[i] = construct
 	}
-	return &pb.Script{Constructs: constructs}, nil
+	return &pb.Script{Constructs: constructs}
 }
 
-// ConvertDebugInfo converts an ir.DebugInfo to a protobuf DebugInfo
+func ConvertConstruct(construct Construct) *pb.Construct {
+	switch c := construct.(type) {
+	case *Loop:
+		loop := ConvertLoop(c)
+		return &pb.Construct{ConstructType: &pb.Construct_Loop{Loop: loop}}
+	case Instruction:
+		instr := ConvertInstruction(c)
+		return &pb.Construct{ConstructType: &pb.Construct_Instruction{Instruction: instr}}
+	}
+	panic(fmt.Sprintf("unsupported Construct type: %T", construct))
+}
+
+func ConvertFragment(frag *Fragment) *pb.Fragment {
+	declarations := make([]*pb.Declaration, len(frag.Declarations))
+	for i, decl := range frag.Declarations {
+		d := ConvertDeclaration(decl)
+		declarations[i] = d
+	}
+	return &pb.Fragment{
+		Id:           ConvertFragmentId(frag.Id),
+		Declarations: declarations,
+		DebugInfo:    ConvertDebugInfo(frag.DebugInfo),
+	}
+}
+
 func ConvertDebugInfo(info *DebugInfo) *pb.DebugInfo {
 	ids := make([]*pb.RelationId, 0, len(info.IdToOrigName))
 	origNames := make([]string, 0, len(info.IdToOrigName))
@@ -725,40 +560,15 @@ func ConvertDebugInfo(info *DebugInfo) *pb.DebugInfo {
 		ids = append(ids, ConvertRelationId(rid))
 		origNames = append(origNames, name)
 	}
-
 	return &pb.DebugInfo{
 		Ids:       ids,
 		OrigNames: origNames,
 	}
 }
 
-// ConvertFragment converts an ir.Fragment to a protobuf Fragment
-func ConvertFragment(frag *Fragment) (*pb.Fragment, error) {
-	declarations := make([]*pb.Declaration, len(frag.Declarations))
-	for i, decl := range frag.Declarations {
-		d, err := ConvertDeclaration(decl)
-		if err != nil {
-			return nil, err
-		}
-		declarations[i] = d
-	}
-
-	return &pb.Fragment{
-		Id:           ConvertFragmentId(frag.Id),
-		Declarations: declarations,
-		DebugInfo:    ConvertDebugInfo(frag.DebugInfo),
-	}, nil
-}
-
-// --- Transaction Types ---
-
-// ConvertDefine converts an ir.Define to a protobuf Define
-func ConvertDefine(d *Define) (*pb.Define, error) {
-	frag, err := ConvertFragment(d.Fragment)
-	if err != nil {
-		return nil, err
-	}
-	return &pb.Define{Fragment: frag}, nil
+func ConvertDefine(d *Define) *pb.Define {
+	frag := ConvertFragment(d.Fragment)
+	return &pb.Define{Fragment: frag}
 }
 
 // ConvertUndefine converts an ir.Undefine to a protobuf Undefine
@@ -785,23 +595,19 @@ func ConvertSync(s *Sync) *pb.Sync {
 }
 
 // ConvertWrite converts an ir.Write to a protobuf Write
-func ConvertWrite(w *Write) (*pb.Write, error) {
+func ConvertWrite(w *Write) *pb.Write {
 	switch wt := w.WriteType.(type) {
 	case *Define:
-		define, err := ConvertDefine(wt)
-		if err != nil {
-			return nil, err
-		}
-		return &pb.Write{WriteType: &pb.Write_Define{Define: define}}, nil
+		define := ConvertDefine(wt)
+		return &pb.Write{WriteType: &pb.Write_Define{Define: define}}
 	case *Undefine:
-		return &pb.Write{WriteType: &pb.Write_Undefine{Undefine: ConvertUndefine(wt)}}, nil
+		return &pb.Write{WriteType: &pb.Write_Undefine{Undefine: ConvertUndefine(wt)}}
 	case *Context:
-		return &pb.Write{WriteType: &pb.Write_Context{Context: ConvertContext(wt)}}, nil
+		return &pb.Write{WriteType: &pb.Write_Context{Context: ConvertContext(wt)}}
 	case *Sync:
-		return &pb.Write{WriteType: &pb.Write_Sync{Sync: ConvertSync(wt)}}, nil
-	default:
-		return nil, fmt.Errorf("unsupported Write type: %T", wt)
+		return &pb.Write{WriteType: &pb.Write_Sync{Sync: ConvertSync(wt)}}
 	}
+	panic(fmt.Sprintf("unsupported Write type: %T", w.WriteType))
 }
 
 // ConvertDemand converts an ir.Demand to a protobuf Demand
@@ -818,7 +624,12 @@ func ConvertOutput(o *Output) *pb.Output {
 	return result
 }
 
-// ConvertExportCSVColumn converts an ir.ExportCSVColumn to a protobuf ExportCSVColumn
+func ConvertExport(e *Export) *pb.Export {
+	return &pb.Export{
+		ExportConfig: &pb.Export_CsvConfig{CsvConfig: ConvertExportConfig(e.Config)},
+	}
+}
+
 func ConvertExportCSVColumn(ec *ExportCSVColumn) *pb.ExportCSVColumn {
 	return &pb.ExportCSVColumn{
 		ColumnName: ec.ColumnName,
@@ -826,7 +637,6 @@ func ConvertExportCSVColumn(ec *ExportCSVColumn) *pb.ExportCSVColumn {
 	}
 }
 
-// ConvertExportConfig converts an ir.ExportCSVConfig to a protobuf ExportCSVConfig
 func ConvertExportConfig(ec *ExportCSVConfig) *pb.ExportCSVConfig {
 	dataColumns := make([]*pb.ExportCSVColumn, len(ec.DataColumns))
 	for i, col := range ec.DataColumns {
@@ -840,37 +650,56 @@ func ConvertExportConfig(ec *ExportCSVConfig) *pb.ExportCSVConfig {
 
 	if ec.PartitionSize != nil {
 		result.PartitionSize = ec.PartitionSize
+	} else {
+		partitionSize := int64(0)
+		result.PartitionSize = &partitionSize
 	}
+
 	if ec.Compression != nil {
 		result.Compression = ec.Compression
+	} else {
+		compression := ""
+		result.Compression = &compression
 	}
+
 	if ec.SyntaxHeaderRow != nil {
 		result.SyntaxHeaderRow = ec.SyntaxHeaderRow
+	} else {
+		syntaxHeaderRow := true
+		result.SyntaxHeaderRow = &syntaxHeaderRow
 	}
+
 	if ec.SyntaxMissingString != nil {
 		result.SyntaxMissingString = ec.SyntaxMissingString
+	} else {
+		syntaxMissingString := ""
+		result.SyntaxMissingString = &syntaxMissingString
 	}
+
 	if ec.SyntaxDelim != nil {
 		result.SyntaxDelim = ec.SyntaxDelim
+	} else {
+		syntaxDelim := ","
+		result.SyntaxDelim = &syntaxDelim
 	}
+
 	if ec.SyntaxQuotechar != nil {
 		result.SyntaxQuotechar = ec.SyntaxQuotechar
+	} else {
+		syntaxQuotechar := "\""
+		result.SyntaxQuotechar = &syntaxQuotechar
 	}
+
 	if ec.SyntaxEscapechar != nil {
 		result.SyntaxEscapechar = ec.SyntaxEscapechar
+	} else {
+		syntaxEscapechar := "\\"
+		result.SyntaxEscapechar = &syntaxEscapechar
 	}
 
 	return result
 }
 
-// ConvertExport converts an ir.Export to a protobuf Export
-func ConvertExport(e *Export) *pb.Export {
-	return &pb.Export{
-		ExportConfig: &pb.Export_CsvConfig{CsvConfig: ConvertExportConfig(e.Config)},
-	}
-}
-
-// ConvertAbort converts an ir.Abort to a protobuf Abort
 func ConvertAbort(a *Abort) *pb.Abort {
 	result := &pb.Abort{RelationId: ConvertRelationId(a.RelationId)}
 	if a.Name != nil {
@@ -879,68 +708,64 @@ func ConvertAbort(a *Abort) *pb.Abort {
 	return result
 }
 
-// ConvertEpoch converts an ir.Epoch to a protobuf Epoch
-func ConvertEpoch(e *Epoch) (*pb.Epoch, error) {
+func ConvertWhatIf(wi *WhatIf) *pb.WhatIf {
+	epoch := ConvertEpoch(wi.Epoch)
+	result := &pb.WhatIf{Epoch: epoch}
+	if wi.Branch != nil {
+		result.Branch = *wi.Branch
+	}
+	return result
+}
+
+func ConvertRead(r *Read) *pb.Read {
+	switch rt := r.ReadType.(type) {
+	case *Demand:
+		return &pb.Read{ReadType: &pb.Read_Demand{Demand: ConvertDemand(rt)}}
+	case *Output:
+		return &pb.Read{ReadType: &pb.Read_Output{Output: ConvertOutput(rt)}}
+	case *WhatIf:
+		whatIf := ConvertWhatIf(rt)
+		return &pb.Read{ReadType: &pb.Read_WhatIf{WhatIf: whatIf}}
+	case *Abort:
+		return &pb.Read{ReadType: &pb.Read_Abort{Abort: ConvertAbort(rt)}}
+	case *Export:
+		return &pb.Read{ReadType: &pb.Read_Export{Export: ConvertExport(rt)}}
+	}
+	panic(fmt.Sprintf("unsupported Read type: %T", r.ReadType))
+}
+
+func ConvertEpoch(e *Epoch) *pb.Epoch {
 	writes := make([]*pb.Write, len(e.Writes))
 	for i, w := range e.Writes {
-		write, err := ConvertWrite(w)
-		if err != nil {
-			return nil, err
-		}
+		write := ConvertWrite(w)
 		writes[i] = write
 	}
 
 	reads := make([]*pb.Read, len(e.Reads))
 	for i, r := range e.Reads {
-		read, err := ConvertRead(r)
-		if err != nil {
-			return nil, err
-		}
+		read := ConvertRead(r)
 		reads[i] = read
 	}
 
 	return &pb.Epoch{
 		Writes: writes,
 		Reads:  reads,
-	}, nil
-}
-
-// ConvertWhatIf converts an ir.WhatIf to a protobuf WhatIf
-func ConvertWhatIf(wi *WhatIf) (*pb.WhatIf, error) {
-	epoch, err := ConvertEpoch(wi.Epoch)
-	if err != nil {
-		return nil, err
-	}
-	result := &pb.WhatIf{Epoch: epoch}
-	if wi.Branch != nil {
-		result.Branch = *wi.Branch
-	}
-	return result, nil
-}
-
-// ConvertRead converts an ir.Read to a protobuf Read
-func ConvertRead(r *Read) (*pb.Read, error) {
-	switch rt := r.ReadType.(type) {
-	case *Demand:
-		return &pb.Read{ReadType: &pb.Read_Demand{Demand: ConvertDemand(rt)}}, nil
-	case *Output:
-		return &pb.Read{ReadType: &pb.Read_Output{Output: ConvertOutput(rt)}}, nil
-	case *WhatIf:
-		whatIf, err := ConvertWhatIf(rt)
-		if err != nil {
-			return nil, err
-		}
-		return &pb.Read{ReadType: &pb.Read_WhatIf{WhatIf: whatIf}}, nil
-	case *Abort:
-		return &pb.Read{ReadType: &pb.Read_Abort{Abort: ConvertAbort(rt)}}, nil
-	case *Export:
-		return &pb.Read{ReadType: &pb.Read_Export{Export: ConvertExport(rt)}}, nil
-	default:
-		return nil, fmt.Errorf("unsupported Read type: %T", rt)
 	}
 }
 
-// ConvertMaintenanceLevel converts an ir.MaintenanceLevel to a protobuf MaintenanceLevel
+func ConvertConfigure(c *Configure) *pb.Configure {
+	return &pb.Configure{
+		SemanticsVersion: c.SemanticsVersion,
+		IvmConfig:        ConvertIVMConfig(c.IvmConfig),
+	}
+}
+
+func ConvertIVMConfig(c *IVMConfig) *pb.IVMConfig {
+	return &pb.IVMConfig{
+		Level: ConvertMaintenanceLevel(c.Level),
+	}
+}
+
 func ConvertMaintenanceLevel(l MaintenanceLevel) pb.MaintenanceLevel {
 	switch l {
 	case MaintenanceLevelUnspecified:
@@ -951,45 +776,24 @@ func ConvertMaintenanceLevel(l MaintenanceLevel) pb.MaintenanceLevel {
 		return pb.MaintenanceLevel_MAINTENANCE_LEVEL_AUTO
 	case MaintenanceLevelAll:
 		return pb.MaintenanceLevel_MAINTENANCE_LEVEL_ALL
-	default:
-		return pb.MaintenanceLevel_MAINTENANCE_LEVEL_UNSPECIFIED
 	}
+	panic(fmt.Sprintf("unsupported MaintenanceLevel: %v", l))
 }
 
-// ConvertIVMConfig converts an ir.IVMConfig to a protobuf IVMConfig
-func ConvertIVMConfig(c *IVMConfig) *pb.IVMConfig {
-	return &pb.IVMConfig{
-		Level: ConvertMaintenanceLevel(c.Level),
-	}
-}
-
-// ConvertConfigure converts an ir.Configure to a protobuf Configure
-func ConvertConfigure(c *Configure) *pb.Configure {
-	return &pb.Configure{
-		SemanticsVersion: c.SemanticsVersion,
-		IvmConfig:        ConvertIVMConfig(c.IvmConfig),
-	}
-}
-
-// ConvertTransaction converts an ir.Transaction to a protobuf Transaction
-func ConvertTransaction(t *Transaction) (*pb.Transaction, error) {
+func ConvertTransaction(t *Transaction) *pb.Transaction {
 	epochs := make([]*pb.Epoch, len(t.Epochs))
 	for i, e := range t.Epochs {
-		epoch, err := ConvertEpoch(e)
-		if err != nil {
-			return nil, err
-		}
+		epoch := ConvertEpoch(e)
 		epochs[i] = epoch
 	}
 
 	return &pb.Transaction{
 		Configure: ConvertConfigure(t.Configure),
 		Epochs:    epochs,
-	}, nil
+	}
 }
 
-// IrToProto converts a top-level IR node to its corresponding protobuf message
-func IrToProto(node LqpNode) (interface{}, error) {
+func IrToProto(node LqpNode) interface{} {
 	switch n := node.(type) {
 	case *Transaction:
 		return ConvertTransaction(n)
@@ -999,7 +803,6 @@ func IrToProto(node LqpNode) (interface{}, error) {
 		return ConvertDeclaration(n)
 	case Formula:
 		return ConvertFormula(n)
-	default:
-		return nil, fmt.Errorf("unsupported top-level IR node type for conversion: %T", node)
 	}
+	panic(fmt.Sprintf("unsupported top-level IR node type for conversion: %T", node))
 }
