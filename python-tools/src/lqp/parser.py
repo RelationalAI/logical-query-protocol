@@ -666,7 +666,7 @@ def get_lqp_files(directory):
     return lqp_files
 
 def get_package_version():
-    """Get the version of the installed `lqp` version."""
+    """Get the version of the installed `lqp` package."""
     return version("lqp")
 
 def main():
