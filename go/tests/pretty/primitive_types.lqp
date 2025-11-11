@@ -1,0 +1,135 @@
+(transaction
+  (configure
+    { :ivm.maintenance_level "off"
+      :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          (def :int
+            ([v::INT]
+              (primitive :rel_primitive_eq v 21)))
+          (def :int_n
+            ([v::INT]
+              (primitive :rel_primitive_eq v -21)))
+          (def :int128_s
+            ([v::INT128]
+              (primitive :rel_primitive_eq v 21i128)))
+          (def :int128_l
+            ([v::INT128]
+              (primitive :rel_primitive_eq v 85968058283706962486085i128)))
+          (def :int128_n
+            ([v::INT128]
+              (primitive :rel_primitive_eq v -5968058283706962486085i128)))
+          (def :uint128
+            ([v::UINT128]
+              (primitive :rel_primitive_eq v 0x123456789abcdef12345)))
+          (def :float
+            ([v::FLOAT]
+              (primitive :rel_primitive_eq v 1.23)))
+          (def :float_inf
+            ([v::FLOAT]
+              (primitive :rel_primitive_eq v +Inf)))
+          (def :float_nan
+            ([v::FLOAT]
+              (primitive :rel_primitive_eq v NaN)))
+          (def :date
+            ([v::DATE]
+              (primitive :rel_primitive_eq v (date 2025 8 1))))
+          (def :datetime
+            ([v::DATETIME]
+              (primitive :rel_primitive_eq v (datetime 2025 8 1 20 3 4 123000))))
+          (def :dec
+            ([v::(DECIMAL 18 6)]
+              (primitive :rel_primitive_eq v 123456000d18)))
+          (def :str
+            ([v::STRING]
+              (primitive :rel_primitive_eq v "hello")))
+          (def :bool
+            ([v::BOOLEAN]
+              (primitive :rel_primitive_eq v true)))
+          (def :output_int
+            ([v::INT]
+              (and
+                (primitive :rel_primitive_eq v 21)
+                (atom :int 21))))
+          (def :output_int_n
+            ([v::INT]
+              (and
+                (primitive :rel_primitive_eq v -21)
+                (atom :int_n -21))))
+          (def :output_int128_s
+            ([v::INT128]
+              (and
+                (primitive :rel_primitive_eq v 21i128)
+                (atom :int128_s 21i128))))
+          (def :output_int128_l
+            ([v::INT128]
+              (and
+                (primitive :rel_primitive_eq v 85968058283706962486085i128)
+                (atom :int128_l 85968058283706962486085i128))))
+          (def :output_int128_n
+            ([v::INT128]
+              (and
+                (primitive :rel_primitive_eq v -5968058283706962486085i128)
+                (atom :int128_n -5968058283706962486085i128))))
+          (def :output_uint128
+            ([v::UINT128]
+              (and
+                (primitive :rel_primitive_eq v 0x123456789abcdef12345)
+                (atom :uint128 0x123456789abcdef12345))))
+          (def :output_float
+            ([v::FLOAT]
+              (and
+                (primitive :rel_primitive_eq v 1.23)
+                (atom :float 1.23))))
+          (def :output_float_inf
+            ([v::FLOAT]
+              (and
+                (primitive :rel_primitive_eq v +Inf)
+                (atom :float_inf +Inf))))
+          (def :output_float_nan
+            ([v::FLOAT]
+              (and
+                (primitive :rel_primitive_eq v NaN)
+                (atom :float_nan NaN))))
+          (def :output_dec
+            ([v::(DECIMAL 18 6)]
+              (and
+                (primitive :rel_primitive_eq v 123456000d18)
+                (atom :dec 123456000d18))))
+          (def :output_date
+            ([v::DATE]
+              (and
+                (primitive :rel_primitive_eq v (date 2025 8 1))
+                (atom :date (date 2025 8 1)))))
+          (def :output_datetime
+            ([v::DATETIME]
+              (and
+                (primitive :rel_primitive_eq v (datetime 2025 8 1 20 3 4 123000))
+                (atom :datetime (datetime 2025 8 1 20 3 4 123000)))))
+          (def :output_str
+            ([v::STRING]
+              (and
+                (primitive :rel_primitive_eq v "hello")
+                (atom :str "hello"))))
+          (def :output_bool
+            ([v::BOOLEAN]
+              (and
+                (primitive :rel_primitive_eq v true)
+                (atom :bool true)))))))
+    (reads
+      (output :int :output_int)
+      (output :int_n :output_int_n)
+      (output :int128_s :output_int128_s)
+      (output :int128_l :output_int128_l)
+      (output :int128_n :output_int128_n)
+      (output :uint128 :output_uint128)
+      (output :float :output_float)
+      (output :float_inf :output_float_inf)
+      (output :float_nan :output_float_nan)
+      (output :dec :output_dec)
+      (output :date :output_date)
+      (output :datetime :output_datetime)
+      (output :str :output_str)
+      (output :bool :output_bool))))

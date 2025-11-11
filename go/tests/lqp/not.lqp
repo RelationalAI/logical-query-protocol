@@ -1,0 +1,11 @@
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :frag
+          (def :test
+            ([x::INT y::INT]
+              (not (= x y)))))))
+
+    (reads
+      (output :output 1234567898765432123456789))))
