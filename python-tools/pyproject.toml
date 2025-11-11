@@ -1,6 +1,6 @@
 [project]
 name = "lqp"
-version = "0.1.16"
+version = "0.1.17"
 description = "A parser for Logical Query Protocol (LQP) S-expressions into Protobuf"
 readme = "README.md"
 authors = [
@@ -8,7 +8,8 @@ authors = [
     { name = "David Zhao", email = "david.zhao@relational.ai" },
     { name = "Minsung Cho", email = "minsung.cho@relational.ai" },
     { name = "Martin McGrane", email = "martin.mcgrane@relational.ai" },
-    { name = "Abdul Zreika", email = "abdul.zreika@relational.ai" }
+    { name = "Abdul Zreika", email = "abdul.zreika@relational.ai" },
+    { name = "Sławek Staworko", email = "slawek.staworko@relational.ai" },
 ]
 dependencies = [
     "lark>=1.1.9",
