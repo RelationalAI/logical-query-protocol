@@ -2,6 +2,7 @@ package lqp
 
 import (
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 )
@@ -22,28 +23,28 @@ type StyleConfig interface {
 // Unstyled provides basic unstyled output
 type Unstyled struct{}
 
-func (u *Unstyled) SIND() string            { return "  " }
-func (u *Unstyled) LPAREN() string          { return "(" }
-func (u *Unstyled) RPAREN() string          { return ")" }
-func (u *Unstyled) LBRACKET() string        { return "[" }
-func (u *Unstyled) RBRACKET() string        { return "]" }
+func (u *Unstyled) SIND() string                 { return "  " }
+func (u *Unstyled) LPAREN() string               { return "(" }
+func (u *Unstyled) RPAREN() string               { return ")" }
+func (u *Unstyled) LBRACKET() string             { return "[" }
+func (u *Unstyled) RBRACKET() string             { return "]" }
 func (u *Unstyled) Indentation(level int) string { return strings.Repeat(u.SIND(), level) }
-func (u *Unstyled) Kw(x string) string      { return x }
-func (u *Unstyled) Uname(x string) string   { return x }
-func (u *Unstyled) TypeAnno(x string) string { return x }
+func (u *Unstyled) Kw(x string) string           { return x }
+func (u *Unstyled) Uname(x string) string        { return x }
+func (u *Unstyled) TypeAnno(x string) string     { return x }
 
 // Styled provides ANSI-styled output (simplified - no colorama in Go stdlib)
 type Styled struct{}
 
-func (s *Styled) SIND() string            { return "  " }
-func (s *Styled) LPAREN() string          { return "\033[2m(\033[0m" }  // Dim
-func (s *Styled) RPAREN() string          { return "\033[2m)\033[0m" }  // Dim
-func (s *Styled) LBRACKET() string        { return "\033[2m[\033[0m" }  // Dim
-func (s *Styled) RBRACKET() string        { return "\033[2m]\033[0m" }  // Dim
+func (s *Styled) SIND() string                 { return "  " }
+func (s *Styled) LPAREN() string               { return "\033[2m(\033[0m" } // Dim
+func (s *Styled) RPAREN() string               { return "\033[2m)\033[0m" } // Dim
+func (s *Styled) LBRACKET() string             { return "\033[2m[\033[0m" } // Dim
+func (s *Styled) RBRACKET() string             { return "\033[2m]\033[0m" } // Dim
 func (s *Styled) Indentation(level int) string { return strings.Repeat(s.SIND(), level) }
-func (s *Styled) Kw(x string) string      { return "\033[33m" + x + "\033[0m" }  // Yellow
-func (s *Styled) Uname(x string) string   { return "\033[37m" + x + "\033[0m" }  // White
-func (s *Styled) TypeAnno(x string) string { return "\033[2m" + x + "\033[0m" }  // Dim
+func (s *Styled) Kw(x string) string           { return "\033[33m" + x + "\033[0m" } // Yellow
+func (s *Styled) Uname(x string) string        { return "\033[37m" + x + "\033[0m" } // White
+func (s *Styled) TypeAnno(x string) string     { return "\033[2m" + x + "\033[0m" }  // Dim
 
 // PrettyOption represents formatting options
 type PrettyOption int
@@ -71,18 +72,18 @@ var optionToDefault = map[PrettyOption]bool{
 
 // UglyConfig for precise testing
 var UglyConfig = map[string]bool{
-	"styled":              false,
-	"print_names":         false,
-	"print_debug":         true,
-	"print_csv_filename":  true,
+	"styled":             false,
+	"print_names":        false,
+	"print_debug":        true,
+	"print_csv_filename": true,
 }
 
 // PrettyConfig for human-readable output
 var PrettyConfig = map[string]bool{
-	"styled":              true,
-	"print_names":         true,
-	"print_debug":         false,
-	"print_csv_filename":  true,
+	"styled":             true,
+	"print_names":        true,
+	"print_debug":        false,
+	"print_csv_filename": true,
 }
 
 func styleConfig(options map[string]bool) StyleConfig {
@@ -702,6 +703,17 @@ func valueToStr(value interface{}, indentLevel int, options map[string]bool, deb
 	case Int64Value:
 		return ind + fmt.Sprintf("%d", int64(v))
 	case Float64Value:
+		if math.IsInf(float64(v), 0) {
+			return ind + "inf"
+		}
+		if math.IsNaN(float64(v)) {
+			return ind + "nan"
+		}
+		// If the float is a whole number, we add a trailing zero
+		// to bring to parity with Julia and Python.
+		if float64(v) == float64(int64(v)) {
+			return ind + fmt.Sprintf("%.1f", float64(v))
+		}
 		return ind + fmt.Sprintf("%v", float64(v))
 	case *UInt128Value:
 		return ind + "0x" + v.Value.Text(16)
@@ -716,6 +728,20 @@ func valueToStr(value interface{}, indentLevel int, options map[string]bool, deb
 		if v.Value.Sign != 0 {
 			decStr = "-" + decStr
 		}
+
+		// Insert decimal point Scale digits from the end
+		scale := int(v.Scale)
+		if scale > 0 && scale < len(decStr) {
+			// Insert decimal point at the correct position
+			pos := len(decStr) - scale
+			decStr = decStr[:pos] + "." + decStr[pos:]
+		} else if scale >= len(decStr) {
+			// Need to pad with leading zeros
+			zerosNeeded := scale - len(decStr)
+			decStr = "0." + strings.Repeat("0", zerosNeeded) + decStr
+		}
+		// If scale == 0, no decimal point needed
+
 		return ind + decStr + "d" + fmt.Sprintf("%d", v.Precision)
 	case *DateValue:
 		return ind + conf.LPAREN() + conf.Kw("date") + " " +

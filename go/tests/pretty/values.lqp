@@ -54,10 +54,10 @@
           (def :dec
             ([v::(DECIMAL 18 6)]
               (or
-                (primitive :rel_primitive_eq v 0d18)
+                (primitive :rel_primitive_eq v 0.000000d18)
                 (primitive :rel_primitive_eq v -123.456789d18)
-                (primitive :rel_primitive_eq v 123456789d18)
-                (primitive :rel_primitive_eq v 123456789012345678d18))))
+                (primitive :rel_primitive_eq v 123.456789d18)
+                (primitive :rel_primitive_eq v 123456789012.345678d18))))
           (def :str
             ([v::STRING]
               (primitive :rel_primitive_eq v "hello")))
