@@ -135,10 +135,13 @@ value: STRING | NUMBER | FLOAT | UINT128 | INT128
 
 type_ : TYPE_NAME | "(" TYPE_NAME value* ")"
 
+// The terminal symbols are sometimes ambiguous. We set explicit priorities to resolve them.
+// SYMBOL.0 is the lowest priority, which has the effect that other string terminals act
+// as keywords.
 TYPE_NAME.1: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
            | "DATE" | "DATETIME" | "MISSING" | "DECIMAL" | "BOOLEAN"
 
-SYMBOL: /[a-zA-Z_][a-zA-Z0-9_.-]*/
+SYMBOL.0: /[a-zA-Z_][a-zA-Z0-9_.-]*/
 MISSING.1: "missing" // Set a higher priority so so it's MISSING instead of SYMBOL
 STRING: ESCAPED_STRING
 NUMBER: /[-]?\\d+/
