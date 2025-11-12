@@ -9,12 +9,10 @@ import (
 	"math/big"
 	"strconv"
 	"strings"
-	"text/scanner"
 	"time"
-	"unicode"
 )
 
-// Parser parses LQP S-expressions into AST nodes
+// Parser data structure
 type Parser struct {
 	lex     *Lexer
 	file    string
@@ -22,270 +20,8 @@ type Parser struct {
 	peek    Token
 
 	// Debug info tracking
-	idToDebugInfo       map[*FragmentId]map[*RelationId]string
-	currentFragmentId   *FragmentId
-}
-
-// Token represents a lexical token
-type Token struct {
-	Type    TokenType
-	Value   string
-	Line    int
-	Column  int
-}
-
-type TokenType int
-
-const (
-	TokenEOF TokenType = iota
-	TokenLParen
-	TokenRParen
-	TokenLBracket
-	TokenRBracket
-	TokenLBrace
-	TokenRBrace
-	TokenColon
-	TokenColonColon
-	TokenPipe
-	TokenHash
-	TokenSymbol
-	TokenString
-	TokenNumber
-	TokenFloat
-	TokenUInt128
-	TokenInt128
-	TokenDecimal
-	TokenBoolean
-	TokenMissing
-	TokenComment
-)
-
-func (t TokenType) String() string {
-	switch t {
-	case TokenEOF:
-		return "EOF"
-	case TokenLParen:
-		return "("
-	case TokenRParen:
-		return ")"
-	case TokenLBracket:
-		return "["
-	case TokenRBracket:
-		return "]"
-	case TokenLBrace:
-		return "{"
-	case TokenRBrace:
-		return "}"
-	case TokenColon:
-		return ":"
-	case TokenColonColon:
-		return "::"
-	case TokenPipe:
-		return "|"
-	case TokenHash:
-		return "#"
-	case TokenSymbol:
-		return "SYMBOL"
-	case TokenString:
-		return "STRING"
-	case TokenNumber:
-		return "NUMBER"
-	case TokenFloat:
-		return "FLOAT"
-	case TokenUInt128:
-		return "UINT128"
-	case TokenInt128:
-		return "INT128"
-	case TokenDecimal:
-		return "DECIMAL"
-	case TokenBoolean:
-		return "BOOLEAN"
-	case TokenMissing:
-		return "MISSING"
-	case TokenComment:
-		return "COMMENT"
-	default:
-		return fmt.Sprintf("Unknown(%d)", t)
-	}
-}
-
-// Lexer tokenizes LQP input
-type Lexer struct {
-	scanner scanner.Scanner
-	file    string
-}
-
-func NewLexer(r io.Reader, file string) *Lexer {
-	var s scanner.Scanner
-	s.Init(r)
-	s.Mode = scanner.ScanIdents | scanner.ScanFloats | scanner.ScanStrings | scanner.ScanComments
-	s.Whitespace = 1<<'\t' | 1<<'\n' | 1<<'\r' | 1<<' '
-	s.IsIdentRune = func(ch rune, i int) bool {
-		return ch == '_' || ch == '-' || ch == '.' || unicode.IsLetter(ch) || (unicode.IsDigit(ch) && i > 0)
-	}
-
-	return &Lexer{
-		scanner: s,
-		file:    file,
-	}
-}
-
-func (l *Lexer) Next() Token {
-	for {
-		tok := l.scanner.Scan()
-		line := l.scanner.Position.Line
-		col := l.scanner.Position.Column
-		text := l.scanner.TokenText()
-
-		switch tok {
-		case scanner.EOF:
-			return Token{Type: TokenEOF, Line: line, Column: col}
-
-		case scanner.Comment:
-			// Skip comments
-			continue
-
-		case '(':
-			return Token{Type: TokenLParen, Value: text, Line: line, Column: col}
-		case ')':
-			return Token{Type: TokenRParen, Value: text, Line: line, Column: col}
-		case '[':
-			return Token{Type: TokenLBracket, Value: text, Line: line, Column: col}
-		case ']':
-			return Token{Type: TokenRBracket, Value: text, Line: line, Column: col}
-		case '{':
-			return Token{Type: TokenLBrace, Value: text, Line: line, Column: col}
-		case '}':
-			return Token{Type: TokenRBrace, Value: text, Line: line, Column: col}
-		case '|':
-			return Token{Type: TokenPipe, Value: text, Line: line, Column: col}
-		case '#':
-			return Token{Type: TokenHash, Value: text, Line: line, Column: col}
-
-		case ':':
-			// Check if followed by another colon
-			next := l.scanner.Peek()
-			if next == ':' {
-				l.scanner.Next()
-				return Token{Type: TokenColonColon, Value: "::", Line: line, Column: col}
-			}
-			return Token{Type: TokenColon, Value: text, Line: line, Column: col}
-
-		case scanner.String:
-			// Remove quotes and process escape sequences
-			unquoted, err := strconv.Unquote(text)
-			if err != nil {
-				unquoted = text[1 : len(text)-1] // fallback
-			}
-			return Token{Type: TokenString, Value: unquoted, Line: line, Column: col}
-
-		case scanner.Int, scanner.Float:
-			return l.classifyNumber(text, line, col)
-
-		case scanner.Ident:
-			return l.classifyIdent(text, line, col)
-
-		case ';':
-			// Handle ;; comments manually
-			next := l.scanner.Peek()
-			if next == ';' {
-				// Skip rest of line
-				for {
-					ch := l.scanner.Next()
-					if ch == '\n' || ch == scanner.EOF {
-						break
-					}
-				}
-				continue
-			}
-			fallthrough
-
-		case '<':
-			// Check for <=
-			if l.scanner.Peek() == '=' {
-				l.scanner.Next()
-				return Token{Type: TokenSymbol, Value: "<=", Line: line, Column: col}
-			}
-			return Token{Type: TokenSymbol, Value: text, Line: line, Column: col}
-
-		case '>':
-			// Check for >=
-			if l.scanner.Peek() == '=' {
-				l.scanner.Next()
-				return Token{Type: TokenSymbol, Value: ">=", Line: line, Column: col}
-			}
-			return Token{Type: TokenSymbol, Value: text, Line: line, Column: col}
-
-		default:
-			// Unknown token, return as symbol
-			return Token{Type: TokenSymbol, Value: text, Line: line, Column: col}
-		}
-	}
-}
-
-func (l *Lexer) classifyNumber(text string, line, col int) Token {
-	// Check for special number types
-	if strings.HasPrefix(text, "0x") {
-		// Hex number (UInt128)
-		return Token{Type: TokenUInt128, Value: text, Line: line, Column: col}
-	}
-
-	// Check for i128 suffix - need to read ahead
-	if ch := l.scanner.Peek(); ch == 'i' {
-		// Try to read "i128"
-		l.scanner.Next() // consume 'i'
-		if l.scanner.Peek() == '1' {
-			l.scanner.Next() // consume '1'
-			if l.scanner.Peek() == '2' {
-				l.scanner.Next() // consume '2'
-				if l.scanner.Peek() == '8' {
-					l.scanner.Next() // consume '8'
-					text = text + "i128"
-					return Token{Type: TokenInt128, Value: text, Line: line, Column: col}
-				}
-			}
-		}
-	}
-
-	if strings.Contains(text, ".") {
-		// Check for decimal format (e.g., "123.456d12")
-		// Need to check if 'd' follows
-		if ch := l.scanner.Peek(); ch == 'd' {
-			l.scanner.Next() // consume 'd'
-			// Read the precision digits
-			precText := ""
-			for {
-				ch := l.scanner.Peek()
-				if ch >= '0' && ch <= '9' {
-					precText += string(l.scanner.Next())
-				} else {
-					break
-				}
-			}
-			if precText != "" {
-				text = text + "d" + precText
-				return Token{Type: TokenDecimal, Value: text, Line: line, Column: col}
-			}
-		}
-		// Regular float
-		return Token{Type: TokenFloat, Value: text, Line: line, Column: col}
-	}
-	// Regular integer
-	return Token{Type: TokenNumber, Value: text, Line: line, Column: col}
-}
-
-func (l *Lexer) classifyIdent(text string, line, col int) Token {
-	// Check for special keywords
-	switch text {
-	case "true", "false":
-		return Token{Type: TokenBoolean, Value: text, Line: line, Column: col}
-	case "missing":
-		return Token{Type: TokenMissing, Value: text, Line: line, Column: col}
-	case "inf", "nan":
-		return Token{Type: TokenFloat, Value: text, Line: line, Column: col}
-	default:
-		return Token{Type: TokenSymbol, Value: text, Line: line, Column: col}
-	}
+	idToDebugInfo     map[*FragmentId]map[*RelationId]string
+	currentFragmentId *FragmentId
 }
 
 func NewParser(r io.Reader, file string) *Parser {
@@ -339,7 +75,14 @@ func (p *Parser) expectSymbol(expected string) error {
 	return nil
 }
 
-// Parse is the main entry point
+// -----------------------------------------------------------------
+// Entry points
+
+func ParseLQP(r io.Reader, file string) (LqpNode, error) {
+	parser := NewParser(r, file)
+	return parser.Parse()
+}
+
 func (p *Parser) Parse() (LqpNode, error) {
 	// Expect opening '('
 	if err := p.expect(TokenLParen); err != nil {
@@ -360,6 +103,14 @@ func (p *Parser) Parse() (LqpNode, error) {
 		return nil, fmt.Errorf("expected 'transaction' or 'fragment', got '%s'", tok.Value)
 	}
 }
+
+// -----------------------------------------------------------------
+// Recursive descent-style parser.
+
+// Recursive descent was used because:
+// 1. Lark (our Python parser generator) is not in Go
+// 2. goyacc (Go's inbuilt parser) is not well maintained
+// 3. S-expression syntax is amenable to recursive descent.
 
 func (p *Parser) parseTransaction(tok Token) (*Transaction, error) {
 	meta := p.meta(tok.Line, tok.Column)
@@ -529,13 +280,13 @@ func (p *Parser) parseEpoch(tok Token) (*Epoch, error) {
 
 		switch tok.Value {
 		case "writes":
-			ws, err := p.parseWrites(tok)
+			ws, err := p.parseWrites()
 			if err != nil {
 				return nil, err
 			}
 			writes = ws
 		case "reads":
-			rs, err := p.parseReads(tok)
+			rs, err := p.parseReads()
 			if err != nil {
 				return nil, err
 			}
@@ -552,7 +303,7 @@ func (p *Parser) parseEpoch(tok Token) (*Epoch, error) {
 	}, nil
 }
 
-func (p *Parser) parseWrites(tok Token) ([]*Write, error) {
+func (p *Parser) parseWrites() ([]*Write, error) {
 	var writes []*Write
 
 	for {
@@ -645,7 +396,7 @@ func (p *Parser) parseWrite() (*Write, error) {
 	}, nil
 }
 
-func (p *Parser) parseReads(tok Token) ([]*Read, error) {
+func (p *Parser) parseReads() ([]*Read, error) {
 	var reads []*Read
 
 	for {
@@ -704,31 +455,21 @@ func (p *Parser) parseRead() (*Read, error) {
 				return nil, fmt.Errorf("expected symbol or number after ':'")
 			}
 
-			// Try to parse as relation id
-			if nameTok.Type == TokenNumber {
-				// It's a numeric relation id
-				id, err := strconv.ParseInt(nameTok.Value, 10, 64)
+			// Check if there's another relation_id (meaning the first was a name)
+			next2 := p.peekToken()
+			if next2.Type == TokenColon || next2.Type == TokenNumber {
+				// This is a name, parse the relation_id next
+				nameStr := nameTok.Value
+				name = &nameStr
+				relId, err = p.parseRelationId()
 				if err != nil {
 					return nil, err
 				}
-				relId = &RelationId{
-					Meta: p.meta(nameTok.Line, nameTok.Column),
-					Id:   big.NewInt(id),
-				}
 			} else {
-				// It's a symbolic name, need to check if there's another relation_id
-				next2 := p.peekToken()
-				if next2.Type == TokenColon || next2.Type == TokenNumber {
-					// This is a name, parse the relation_id next
-					nameStr := nameTok.Value
-					name = &nameStr
-					relId, err = p.parseRelationId()
-					if err != nil {
-						return nil, err
-					}
-				} else {
-					// This is a symbolic relation_id (no name)
-					relId = p.makeRelationIdFromSymbol(nameTok.Value, p.meta(nameTok.Line, nameTok.Column))
+				// This is a relation_id (no name)
+				relId, err = p.parseRelationIdFromToken(nameTok)
+				if err != nil {
+					return nil, err
 				}
 			}
 		} else {
@@ -762,26 +503,21 @@ func (p *Parser) parseRead() (*Read, error) {
 				return nil, fmt.Errorf("expected symbol or number after ':'")
 			}
 
-			if nameTok.Type == TokenNumber {
-				id, err := strconv.ParseInt(nameTok.Value, 10, 64)
+			// Check if there's another relation_id (meaning the first was a name)
+			next2 := p.peekToken()
+			if next2.Type == TokenColon || next2.Type == TokenNumber {
+				// This is a name, parse the relation_id next
+				nameStr := nameTok.Value
+				name = &nameStr
+				relId, err = p.parseRelationId()
 				if err != nil {
 					return nil, err
 				}
-				relId = &RelationId{
-					Meta: p.meta(nameTok.Line, nameTok.Column),
-					Id:   big.NewInt(id),
-				}
 			} else {
-				next2 := p.peekToken()
-				if next2.Type == TokenColon || next2.Type == TokenNumber {
-					nameStr := nameTok.Value
-					name = &nameStr
-					relId, err = p.parseRelationId()
-					if err != nil {
-						return nil, err
-					}
-				} else {
-					relId = p.makeRelationIdFromSymbol(nameTok.Value, p.meta(nameTok.Line, nameTok.Column))
+				// This is a relation_id (no name)
+				relId, err = p.parseRelationIdFromToken(nameTok)
+				if err != nil {
+					return nil, err
 				}
 			}
 		}
@@ -1216,7 +952,6 @@ func (p *Parser) parseConstruct() (Construct, error) {
 }
 
 func (p *Parser) parseLoop(meta *SourceInfo) (*Loop, error) {
-	// Parse init
 	if err := p.expect(TokenLParen); err != nil {
 		return nil, err
 	}
@@ -1239,7 +974,6 @@ func (p *Parser) parseLoop(meta *SourceInfo) (*Loop, error) {
 		init = append(init, instr)
 	}
 
-	// Parse script
 	if err := p.expect(TokenLParen); err != nil {
 		return nil, err
 	}
@@ -1480,15 +1214,12 @@ func (p *Parser) parseMonusDef(meta *SourceInfo) (*MonusDef, error) {
 }
 
 func (p *Parser) parseMonoid() (Monoid, error) {
-	// Monoid is TYPE_NAME :: OPERATOR
-	// e.g., BOOL::OR, INT::MIN, FLOAT::MAX, INT::SUM
-
 	typeTok := p.nextToken()
 	if typeTok.Type != TokenSymbol {
 		return nil, fmt.Errorf("expected type name for monoid, got %s", typeTok.Type)
 	}
 
-	if err := p.expect(TokenColonColon); err != nil {
+	if err := p.expect(TokenBinding); err != nil {
 		return nil, err
 	}
 
@@ -1614,10 +1345,9 @@ func (p *Parser) parseBindings() ([]*Binding, int64, error) {
 		leftBindings = append(leftBindings, binding)
 	}
 
-	// Check for pipe (right bindings)
 	next := p.peekToken()
 	if next.Type == TokenPipe {
-		p.nextToken() // consume '|'
+		p.nextToken()
 
 		// Parse right bindings
 		for {
@@ -1645,13 +1375,12 @@ func (p *Parser) parseBindings() ([]*Binding, int64, error) {
 }
 
 func (p *Parser) parseBinding() (*Binding, error) {
-	// SYMBOL :: type
 	nameTok := p.nextToken()
 	if nameTok.Type != TokenSymbol {
 		return nil, fmt.Errorf("expected symbol for binding name, got %s", nameTok.Type)
 	}
 
-	if err := p.expect(TokenColonColon); err != nil {
+	if err := p.expect(TokenBinding); err != nil {
 		return nil, err
 	}
 
@@ -1792,13 +1521,11 @@ func (p *Parser) parseFormula() (Formula, error) {
 	case "cast":
 		return p.parseCast(meta)
 	case "true":
-		// (true) -> empty conjunction
 		if err := p.expect(TokenRParen); err != nil {
 			return nil, err
 		}
 		return &Conjunction{Meta: meta, Args: nil}, nil
 	case "false":
-		// (false) -> empty disjunction
 		if err := p.expect(TokenRParen); err != nil {
 			return nil, err
 		}
@@ -1856,7 +1583,6 @@ func (p *Parser) parseExists(meta *SourceInfo) (*Exists, error) {
 }
 
 func (p *Parser) parseReduce(meta *SourceInfo) (*Reduce, error) {
-	// (reduce abstraction abstraction terms)
 	op, opArity, err := p.parseAbstraction()
 	if err != nil {
 		return nil, err
@@ -1951,7 +1677,6 @@ func (p *Parser) parseNot(meta *SourceInfo) (*Not, error) {
 }
 
 func (p *Parser) parseFFI(meta *SourceInfo) (*FFI, error) {
-	// (ffi name args terms)
 	name, err := p.parseName()
 	if err != nil {
 		return nil, err
@@ -1980,7 +1705,6 @@ func (p *Parser) parseFFI(meta *SourceInfo) (*FFI, error) {
 }
 
 func (p *Parser) parseAtom(meta *SourceInfo) (*Atom, error) {
-	// (atom relation_id term*)
 	relId, err := p.parseRelationId()
 	if err != nil {
 		return nil, err
@@ -2009,7 +1733,6 @@ func (p *Parser) parseAtom(meta *SourceInfo) (*Atom, error) {
 }
 
 func (p *Parser) parseRelAtom(meta *SourceInfo) (*RelAtom, error) {
-	// (relatom name relterm*)
 	name, err := p.parseName()
 	if err != nil {
 		return nil, err
@@ -2038,7 +1761,6 @@ func (p *Parser) parseRelAtom(meta *SourceInfo) (*RelAtom, error) {
 }
 
 func (p *Parser) parseRawPrimitive(meta *SourceInfo) (*Primitive, error) {
-	// (primitive name relterm*)
 	name, err := p.parseName()
 	if err != nil {
 		return nil, err
@@ -2067,7 +1789,6 @@ func (p *Parser) parseRawPrimitive(meta *SourceInfo) (*Primitive, error) {
 }
 
 func (p *Parser) parsePragma(meta *SourceInfo) (*Pragma, error) {
-	// (pragma name term*)
 	name, err := p.parseName()
 	if err != nil {
 		return nil, err
@@ -2096,7 +1817,6 @@ func (p *Parser) parsePragma(meta *SourceInfo) (*Pragma, error) {
 }
 
 func (p *Parser) parseCast(meta *SourceInfo) (*Cast, error) {
-	// (cast term term)
 	input, err := p.parseTerm()
 	if err != nil {
 		return nil, err
@@ -2119,7 +1839,6 @@ func (p *Parser) parseCast(meta *SourceInfo) (*Cast, error) {
 }
 
 // Primitive operations (desugared)
-// Note: Terms satisfy the RelTerm interface, so we can use them directly
 func (p *Parser) parseEq(meta *SourceInfo) (*Primitive, error) {
 	term1, err := p.parseRelTerm()
 	if err != nil {
@@ -2352,7 +2071,6 @@ func (p *Parser) parseName() (string, error) {
 }
 
 func (p *Parser) parseArgs() ([]*Abstraction, error) {
-	// (args abstraction*)
 	if err := p.expect(TokenLParen); err != nil {
 		return nil, err
 	}
@@ -2381,7 +2099,6 @@ func (p *Parser) parseArgs() ([]*Abstraction, error) {
 }
 
 func (p *Parser) parseTerms() ([]Term, error) {
-	// (terms term*)
 	if err := p.expect(TokenLParen); err != nil {
 		return nil, err
 	}
@@ -2412,7 +2129,7 @@ func (p *Parser) parseTerms() ([]Term, error) {
 func (p *Parser) parseRelTerm() (RelTerm, error) {
 	next := p.peekToken()
 
-	if next.Type == TokenHash {
+	if next.Type == TokenSpecialized {
 		// SpecializedValue
 		p.nextToken() // consume '#'
 		tok := p.current
@@ -2429,19 +2146,16 @@ func (p *Parser) parseRelTerm() (RelTerm, error) {
 		}, nil
 	}
 
-	// Regular term - both Var and Value satisfy RelTerm interface
 	term, err := p.parseTerm()
 	if err != nil {
 		return nil, err
 	}
-	// Since Term is a subset of RelTerm (Var and Value implement both), we can safely cast
 	return term.(RelTerm), nil
 }
 
 func (p *Parser) parseTerm() (Term, error) {
 	next := p.peekToken()
 
-	// Check if it's a variable (SYMBOL without colon prefix)
 	if next.Type == TokenSymbol {
 		tok := p.nextToken()
 		return &Var{
@@ -2450,7 +2164,6 @@ func (p *Parser) parseTerm() (Term, error) {
 		}, nil
 	}
 
-	// Otherwise it's a constant (value)
 	return p.parseValue()
 }
 
@@ -2479,9 +2192,9 @@ func (p *Parser) parseValue() (*Value, error) {
 		var val float64
 		switch tok.Value {
 		case "inf":
-			val = math.Inf(1) // positive infinity
+			val = math.Inf(1)
 		case "nan":
-			val = math.NaN() // NaN
+			val = math.NaN()
 		default:
 			var err error
 			val, err = strconv.ParseFloat(tok.Value, 64)
@@ -2495,9 +2208,8 @@ func (p *Parser) parseValue() (*Value, error) {
 		}, nil
 
 	case TokenUInt128:
-		// Parse hex number
 		val := new(big.Int)
-		_, ok := val.SetString(tok.Value[2:], 16) // skip "0x"
+		_, ok := val.SetString(tok.Value[2:], 16)
 		if !ok {
 			return nil, fmt.Errorf("invalid uint128: %s", tok.Value)
 		}
@@ -2510,8 +2222,7 @@ func (p *Parser) parseValue() (*Value, error) {
 		}, nil
 
 	case TokenInt128:
-		// Parse int128
-		valStr := tok.Value[:len(tok.Value)-4] // remove "i128"
+		valStr := tok.Value[:len(tok.Value)-4]
 		val := new(big.Int)
 		_, ok := val.SetString(valStr, 10)
 		if !ok {
@@ -2526,7 +2237,6 @@ func (p *Parser) parseValue() (*Value, error) {
 		}, nil
 
 	case TokenDecimal:
-		// Parse decimal (e.g., "123.456d12")
 		parts := strings.Split(tok.Value, "d")
 		if len(parts) != 2 {
 			return nil, fmt.Errorf("invalid decimal format: %s", tok.Value)
@@ -2543,8 +2253,6 @@ func (p *Parser) parseValue() (*Value, error) {
 			return nil, fmt.Errorf("invalid decimal precision: %s", tok.Value)
 		}
 
-		// Parse the value as a big decimal
-		// Remove the decimal point and parse as integer
 		coefficient := new(big.Int)
 		_, ok := coefficient.SetString(decParts[0]+decParts[1], 10)
 		if !ok {
@@ -2589,8 +2297,8 @@ func (p *Parser) parseValue() (*Value, error) {
 			},
 		}, nil
 
+	// Date or datetime
 	case TokenLParen:
-		// Could be date or datetime
 		typeTok := p.nextToken()
 		if typeTok.Type != TokenSymbol {
 			return nil, fmt.Errorf("expected date or datetime, got %s", typeTok.Type)
@@ -2712,7 +2420,6 @@ func (p *Parser) parseDateTime(meta *SourceInfo) (*Value, error) {
 }
 
 func (p *Parser) parseAttrs() ([]*Attribute, error) {
-	// (attrs attribute*)
 	if err := p.expect(TokenLParen); err != nil {
 		return nil, err
 	}
@@ -2741,7 +2448,6 @@ func (p *Parser) parseAttrs() ([]*Attribute, error) {
 }
 
 func (p *Parser) parseAttribute() (*Attribute, error) {
-	// (attribute name constant*)
 	if err := p.expect(TokenLParen); err != nil {
 		return nil, err
 	}
@@ -2783,9 +2489,33 @@ func (p *Parser) parseAttribute() (*Attribute, error) {
 func (p *Parser) parseRelationId() (*RelationId, error) {
 	next := p.peekToken()
 
+	// RelationId can be a number directly
 	if next.Type == TokenNumber {
-		// Numeric relation ID - use big.Int to handle large numbers
 		tok := p.nextToken()
+		return p.parseRelationIdFromToken(tok)
+	}
+
+	// RelationId can be a symbol (prefixed with :)
+	if next.Type == TokenColon {
+		p.nextToken() // Consume :
+		tok := p.nextToken()
+		if tok.Type != TokenSymbol {
+			return nil, fmt.Errorf("expected symbol for relation id, got %s", tok.Type)
+		}
+		return p.parseRelationIdFromToken(tok)
+	}
+
+	return nil, fmt.Errorf("expected relation id, got %s", next.Type)
+}
+
+// parseRelationIdFromToken parses a relation ID from an already-consumed token
+func (p *Parser) parseRelationIdFromToken(tok Token) (*RelationId, error) {
+	if tok.Type != TokenSymbol && tok.Type != TokenNumber {
+		return nil, fmt.Errorf("expected symbol or number for relation id, got %s", tok.Type)
+	}
+
+	if tok.Type == TokenNumber {
+		// Numeric relation_id
 		id := new(big.Int)
 		_, ok := id.SetString(tok.Value, 10)
 		if !ok {
@@ -2797,18 +2527,8 @@ func (p *Parser) parseRelationId() (*RelationId, error) {
 		}, nil
 	}
 
-	if next.Type == TokenColon {
-		// Symbolic relation ID
-		p.nextToken() // consume ':'
-		tok := p.nextToken()
-		if tok.Type != TokenSymbol {
-			return nil, fmt.Errorf("expected symbol for relation id, got %s", tok.Type)
-		}
-
-		return p.makeRelationIdFromSymbol(tok.Value, p.meta(tok.Line, tok.Column)), nil
-	}
-
-	return nil, fmt.Errorf("expected relation id, got %s", next.Type)
+	// Symbolic relation_id
+	return p.makeRelationIdFromSymbol(tok.Value, p.meta(tok.Line, tok.Column)), nil
 }
 
 func (p *Parser) makeRelationIdFromSymbol(symbol string, meta *SourceInfo) *RelationId {
@@ -2832,10 +2552,4 @@ func (p *Parser) makeRelationIdFromSymbol(symbol string, meta *SourceInfo) *Rela
 	}
 
 	return relId
-}
-
-// ParseLQP is the main entry point for parsing LQP text
-func ParseLQP(r io.Reader, file string) (LqpNode, error) {
-	parser := NewParser(r, file)
-	return parser.Parse()
 }
