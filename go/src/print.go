@@ -290,6 +290,32 @@ func toStr(node interface{}, indentLevel int, options map[string]bool, debugInfo
 			lqp += conf.RPAREN() + conf.RPAREN()
 		}
 
+	case *FunctionalDependency:
+		lqp += ind + conf.LPAREN() + conf.Kw("functional_dependency") + "\n"
+		lqp += toStr(n.Guard, indentLevel+1, options, debugInfo, conf) + "\n"
+		lqp += ind + conf.SIND() + conf.LPAREN() + conf.Kw("keys")
+		if len(n.Keys) > 0 {
+			lqp += " "
+			for i, v := range n.Keys {
+				if i > 0 {
+					lqp += " "
+				}
+				lqp += toStr(v, 0, options, debugInfo, conf)
+			}
+		}
+		lqp += conf.RPAREN() + "\n"
+		lqp += ind + conf.SIND() + conf.LPAREN() + conf.Kw("values")
+		if len(n.Values) > 0 {
+			lqp += " "
+			for i, v := range n.Values {
+				if i > 0 {
+					lqp += " "
+				}
+				lqp += toStr(v, 0, options, debugInfo, conf)
+			}
+		}
+		lqp += conf.RPAREN() + conf.RPAREN()
+
 	case *Algorithm:
 		lqp += ind + conf.LPAREN() + conf.Kw("algorithm")
 		if len(n.Global) > 4 {

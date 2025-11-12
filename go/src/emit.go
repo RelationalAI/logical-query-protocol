@@ -383,8 +383,39 @@ func ConvertDeclaration(decl Declaration) *pb.Declaration {
 	case *Algorithm:
 		algo := ConvertAlgorithm(d)
 		return &pb.Declaration{DeclarationType: &pb.Declaration_Algorithm{Algorithm: algo}}
+	case *FunctionalDependency:
+		constraint := ConvertConstraint(d)
+		return &pb.Declaration{DeclarationType: &pb.Declaration_Constraint{Constraint: constraint}}
 	}
 	panic(fmt.Sprintf("unsupported Declaration type: %T", decl))
+}
+
+func ConvertConstraint(constraint Constraint) *pb.Constraint {
+	switch c := constraint.(type) {
+	case *FunctionalDependency:
+		return &pb.Constraint{
+			ConstraintType: &pb.Constraint_FunctionalDependency{
+				FunctionalDependency: ConvertFunctionalDependency(c),
+			},
+		}
+	}
+	panic(fmt.Sprintf("unsupported Constraint type: %T", constraint))
+}
+
+func ConvertFunctionalDependency(fd *FunctionalDependency) *pb.FunctionalDependency {
+	keys := make([]*pb.Var, len(fd.Keys))
+	for i, k := range fd.Keys {
+		keys[i] = ConvertVar(k)
+	}
+	values := make([]*pb.Var, len(fd.Values))
+	for i, v := range fd.Values {
+		values[i] = ConvertVar(v)
+	}
+	return &pb.FunctionalDependency{
+		Guard:  ConvertAbstraction(fd.Guard),
+		Keys:   keys,
+		Values: values,
+	}
 }
 
 func ConvertAlgorithm(algo *Algorithm) *pb.Algorithm {

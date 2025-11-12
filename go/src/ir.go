@@ -26,11 +26,29 @@ type LqpNode interface {
 	GetMeta() *SourceInfo
 }
 
-// Declaration := Def | Algorithm
+// Declaration := Def | Algorithm | Constraint
 type Declaration interface {
 	LqpNode
 	isDeclaration()
 }
+
+// Constraint := FunctionalDependency
+type Constraint interface {
+	Declaration
+	isConstraint()
+}
+
+// FunctionalDependency(guard::Abstraction, x::Var[], y::Var[])
+type FunctionalDependency struct {
+	Meta   *SourceInfo
+	Guard  *Abstraction
+	Keys   []*Var
+	Values []*Var
+}
+
+func (d *FunctionalDependency) GetMeta() *SourceInfo { return d.Meta }
+func (d *FunctionalDependency) isDeclaration()       {}
+func (d *FunctionalDependency) isConstraint()        {}
 
 // Def(name::RelationId, body::Abstraction, attrs::Attribute[])
 type Def struct {

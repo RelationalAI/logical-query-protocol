@@ -812,6 +812,8 @@ func (p *Parser) parseDeclaration() (Declaration, error) {
 		return p.parseDef(meta)
 	case "algorithm":
 		return p.parseAlgorithm(meta)
+	case "functional_dependency":
+		return p.parseFunctionalDependency(meta)
 	default:
 		return nil, fmt.Errorf("unknown declaration type: %s", tok.Value)
 	}
@@ -850,6 +852,84 @@ func (p *Parser) parseDef(meta *SourceInfo) (*Def, error) {
 		Name:  relId,
 		Body:  abs,
 		Attrs: attrs,
+	}, nil
+}
+
+func (p *Parser) parseFunctionalDependency(meta *SourceInfo) (*FunctionalDependency, error) {
+	// Parse the guard abstraction
+	guard, arity, err := p.parseAbstraction()
+	if err != nil {
+		return nil, err
+	}
+
+	if arity != 0 {
+		return nil, fmt.Errorf("functional_dependency guard should not have value arity")
+	}
+
+	// Parse (keys ...)
+	if err := p.expect(TokenLParen); err != nil {
+		return nil, err
+	}
+	if err := p.expectSymbol("keys"); err != nil {
+		return nil, err
+	}
+
+	var keys []*Var
+	for {
+		next := p.peekToken()
+		if next.Type == TokenRParen {
+			p.nextToken()
+			break
+		}
+
+		if next.Type != TokenSymbol {
+			return nil, fmt.Errorf("expected symbol for key variable, got %s", next.Type)
+		}
+
+		tok := p.nextToken()
+		keys = append(keys, &Var{
+			Meta: p.meta(tok.Line, tok.Column),
+			Name: tok.Value,
+		})
+	}
+
+	// Parse (values ...)
+	if err := p.expect(TokenLParen); err != nil {
+		return nil, err
+	}
+	if err := p.expectSymbol("values"); err != nil {
+		return nil, err
+	}
+
+	var values []*Var
+	for {
+		next := p.peekToken()
+		if next.Type == TokenRParen {
+			p.nextToken()
+			break
+		}
+
+		if next.Type != TokenSymbol {
+			return nil, fmt.Errorf("expected symbol for value variable, got %s", next.Type)
+		}
+
+		tok := p.nextToken()
+		values = append(values, &Var{
+			Meta: p.meta(tok.Line, tok.Column),
+			Name: tok.Value,
+		})
+	}
+
+	// Expect closing paren for functional_dependency
+	if err := p.expect(TokenRParen); err != nil {
+		return nil, err
+	}
+
+	return &FunctionalDependency{
+		Meta:   meta,
+		Guard:  guard,
+		Keys:   keys,
+		Values: values,
 	}, nil
 }
 
