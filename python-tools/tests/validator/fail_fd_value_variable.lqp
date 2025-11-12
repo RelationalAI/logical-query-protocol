@@ -1,0 +1,13 @@
+;; ERROR: Value variable 'd' not declared in guard at fail_fd_value_variable.lqp:11:21
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :fds
+          (functional_dependency
+            ([a::INT b::INT c::INT]
+              (atom :r a b c))
+            (keys a b)
+            (values d)))))
+    (reads
+      (output :output 1234567898765432123456789))))

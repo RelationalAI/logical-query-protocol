@@ -1,0 +1,17 @@
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :fds
+          (functional_dependency
+            ([a::INT b::INT c::INT]
+              (atom :r a b c))
+            (keys a b)
+            (values c))
+          (functional_dependency
+            ([x::INT y::INT z::INT]
+              (atom :r x y z))
+            (keys y)
+            (values x z)))))
+    (reads
+      (output :output 1234567898765432123456789))))

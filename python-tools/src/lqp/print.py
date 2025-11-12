@@ -254,6 +254,20 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
             lqp += list_to_str(node.attrs, indent_level + 2, "\n", options, debug_info)
             lqp += f"{conf.RPAREN()}{conf.RPAREN()}"
 
+    elif isinstance(node, ir.Constraint):
+        if isinstance(node, ir.FunctionalDependency):
+            lqp += ind + conf.LPAREN() + conf.kw("functional_dependency") + "\n"
+            lqp += to_str(node.guard, indent_level + 1, options, debug_info) + "\n"
+            lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("keys") + " " \
+                + " ".join([to_str(var, 0, options, debug_info) for var in node.keys]) \
+                + conf.RPAREN() + "\n"
+            lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("values") + " " \
+                + " ".join([to_str(var, 0, options, debug_info) for var in node.values]) \
+                + conf.RPAREN() \
+                + conf.RPAREN()
+        else:
+            raise NotImplementedError(f"to_str not implemented for constraint type {type(node)}.")
+
     elif isinstance(node, ir.Algorithm):
         lqp += ind + conf.LPAREN() + conf.kw("algorithm")
         # Print global_
