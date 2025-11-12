@@ -1,4 +1,4 @@
-name: Python Tests
+name: CI Tests
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  test:
+  python-test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
@@ -38,3 +38,23 @@ jobs:
       run: |
         cd python-tools
         pyrefly check
+
+  go-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        go-version: ["1.25"]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.25'
+
+    - name: Run Go tests
+      run: |
+        cd go
+        go test ./...
