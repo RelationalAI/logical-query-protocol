@@ -57,5 +57,4 @@ jobs:
     - name: Run Go tests
       run: |
         cd go
-        # TODO: Reenable this once tests are in
-        # go test ./...
+        # TODO: go test ./...
