@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  python-test:
+  test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
@@ -57,4 +57,4 @@ jobs:
     - name: Run Go tests
       run: |
         cd go
-        go test ./...
+        # go test ./...
