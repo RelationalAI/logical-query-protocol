@@ -151,8 +151,8 @@ func assertLqpNodesEqual(t *testing.T, obj1, obj2 interface{}) {
 }
 
 func TestParseAllLQPFiles(t *testing.T) {
-	// Parse all .lqp files in the lqp directory
-	files, err := filepath.Glob("lqp/*.lqp")
+	pythonLQPDir := "../../python-tools/tests/test_files/lqp"
+	files, err := filepath.Glob(filepath.Join(pythonLQPDir, "*.lqp"))
 	if err != nil {
 		t.Fatalf("Failed to find lqp files: %v", err)
 	}
@@ -208,7 +208,8 @@ func TestRoundTrip(t *testing.T) {
 	}
 
 	// Get all LQP files from lqp/
-	files, err := filepath.Glob("lqp/*.lqp")
+	pythonLQPDir := "../../python-tools/tests/test_files/lqp"
+	files, err := filepath.Glob(filepath.Join(pythonLQPDir, "*.lqp"))
 	if err != nil {
 		t.Fatalf("Failed to find LQP files: %v", err)
 	}
@@ -261,6 +262,123 @@ func TestRoundTrip(t *testing.T) {
 
 			// Compare the two parsed AST structures for equality
 			assertLqpNodesEqual(t, node2, node)
+		})
+	}
+}
+
+func TestGoPythonPrettyParity(t *testing.T) {
+	// Paths to the pretty output directories
+	goPrettyDir := "pretty"
+	pythonPrettyDir := "../../python-tools/tests/lqp_pretty_output"
+
+	// Get all .lqp files from Go pretty directory
+	goFiles, err := filepath.Glob(filepath.Join(goPrettyDir, "*.lqp"))
+	if err != nil {
+		t.Fatalf("Failed to find Go pretty output files: %v", err)
+	}
+
+	if len(goFiles) == 0 {
+		t.Skip("No .lqp files found in go/tests/pretty/")
+	}
+
+	// Get all .lqp files from Python pretty directory
+	pythonFiles, err := filepath.Glob(filepath.Join(pythonPrettyDir, "*.lqp"))
+	if err != nil {
+		t.Fatalf("Failed to find Python pretty output files: %v", err)
+	}
+
+	// Create maps of basenames for easy comparison
+	goFileMap := make(map[string]string)
+	for _, f := range goFiles {
+		goFileMap[filepath.Base(f)] = f
+	}
+
+	pythonFileMap := make(map[string]string)
+	for _, f := range pythonFiles {
+		pythonFileMap[filepath.Base(f)] = f
+	}
+
+	// Test that both directories have the same set of files
+	t.Run("FileCountParity", func(t *testing.T) {
+		var missingInGo []string
+		var missingInPython []string
+
+		for name := range pythonFileMap {
+			if _, exists := goFileMap[name]; !exists {
+				missingInGo = append(missingInGo, name)
+			}
+		}
+
+		for name := range goFileMap {
+			if _, exists := pythonFileMap[name]; !exists {
+				missingInPython = append(missingInPython, name)
+			}
+		}
+
+		if len(missingInGo) > 0 {
+			t.Errorf("Files in Python but not in Go: %v", missingInGo)
+		}
+		if len(missingInPython) > 0 {
+			t.Errorf("Files in Go but not in Python: %v", missingInPython)
+		}
+		if len(goFiles) != len(pythonFiles) {
+			t.Errorf("File count mismatch: Go has %d files, Python has %d files", len(goFiles), len(pythonFiles))
+		}
+	})
+
+	// Test that each file's content matches
+	for basename, goFile := range goFileMap {
+		pythonFile, exists := pythonFileMap[basename]
+		if !exists {
+			continue // Already reported in FileCountParity test
+		}
+
+		t.Run(basename, func(t *testing.T) {
+			// Read Go file
+			goContent, err := os.ReadFile(goFile)
+			if err != nil {
+				t.Fatalf("Failed to read Go file %s: %v", goFile, err)
+			}
+
+			// Read Python file
+			pythonContent, err := os.ReadFile(pythonFile)
+			if err != nil {
+				t.Fatalf("Failed to read Python file %s: %v", pythonFile, err)
+			}
+
+			// Compare content
+			if !bytes.Equal(goContent, pythonContent) {
+				t.Errorf("Pretty output mismatch for %s:\nGo output length: %d bytes\nPython output length: %d bytes",
+					basename, len(goContent), len(pythonContent))
+
+				// Optionally, show the diff for debugging
+				goStr := string(goContent)
+				pythonStr := string(pythonContent)
+				if goStr != pythonStr {
+					// Find first difference
+					minLen := len(goStr)
+					if len(pythonStr) < minLen {
+						minLen = len(pythonStr)
+					}
+					for i := 0; i < minLen; i++ {
+						if goStr[i] != pythonStr[i] {
+							start := i - 20
+							if start < 0 {
+								start = 0
+							}
+							end := i + 20
+							if end > minLen {
+								end = minLen
+							}
+							t.Errorf("First difference at position %d:\nGo: %q\nPython: %q",
+								i, goStr[start:end], pythonStr[start:end])
+							break
+						}
+					}
+				}
+			} else {
+				t.Logf("✓ Content matches: %s (%d bytes)", basename, len(goContent))
+			}
 		})
 	}
 }

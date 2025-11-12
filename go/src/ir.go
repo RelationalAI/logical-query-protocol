@@ -553,9 +553,12 @@ type Fragment struct {
 
 func (f *Fragment) GetMeta() *SourceInfo { return f.Meta }
 
+// We can't have map[*RelationId]string (mirroring Python, Julia)
+// because the same RelationId at different locations are represented
+// as different pointers to memory. So instead we use the string conv.
 type DebugInfo struct {
 	Meta         *SourceInfo
-	IdToOrigName map[string]string // Map RelationId.String() to original name
+	IdToOrigName map[string]string
 }
 
 func (d *DebugInfo) GetMeta() *SourceInfo { return d.Meta }

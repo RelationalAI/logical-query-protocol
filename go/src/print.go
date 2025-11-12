@@ -785,17 +785,6 @@ func varsToStr(vars []*Binding, options map[string]bool, debugInfo map[string]st
 	return strings.Join(parts, " ")
 }
 
-func termsToStr(terms []RelTerm, indentLevel int, options map[string]bool, debugInfo map[string]string, conf StyleConfig) string {
-	ind := conf.Indentation(indentLevel)
-
-	if len(terms) == 0 {
-		return ind + conf.LPAREN() + conf.Kw("terms") + conf.RPAREN()
-	}
-
-	return ind + conf.LPAREN() + conf.Kw("terms") + " " +
-		relTermList(terms, 0, " ", options, debugInfo, conf) + conf.RPAREN()
-}
-
 func termListToStr(terms []Term, indentLevel int, options map[string]bool, debugInfo map[string]string, conf StyleConfig) string {
 	ind := conf.Indentation(indentLevel)
 
