@@ -1,6 +1,6 @@
 [project]
 name = "lqp"
-version = "0.1.17"
+version = "0.1.18"
 description = "A parser for Logical Query Protocol (LQP) S-expressions into Protobuf"
 readme = "README.md"
 authors = [
