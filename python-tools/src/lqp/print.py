@@ -156,7 +156,7 @@ def terms_to_str(terms: Sequence[Union[ir.RelTerm, ir.SpecializedValue]], indent
 # { :key1 value1
 #   :key2 value2
 #   ... }
-def config_dict_to_str(config: Dict[str, Union[str, int]], indent_level: int, options: Dict) -> str:
+def config_dict_to_str(config: Dict[str, Any], indent_level: int, options: Dict) -> str:
     conf = style_config(options)
     ind = conf.indentation(indent_level)
 
@@ -298,9 +298,16 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
         if len(node.value_types) > 0:
             lqp += " " + list_to_str(node.value_types, 0, " ", options, debug_info)
         lqp += conf.RPAREN() + "\n"
-        # Print storage config and relation locator
-        lqp += to_str(node.storage_config, indent_level + 1, options, debug_info) + "\n"
-        lqp += to_str(node.relation_locator, indent_level + 1, options, debug_info)
+        # Print config_dict combining storage_config and relation_locator
+        config_dict: Dict[str, Union[int, float, str]] = {}
+        config_dict['betree_config_epsilon'] = node.storage_config.epsilon
+        config_dict['betree_config_max_pivots'] = node.storage_config.max_pivots
+        config_dict['betree_config_max_deltas'] = node.storage_config.max_deltas
+        config_dict['betree_config_max_leaf'] = node.storage_config.max_leaf
+        config_dict['betree_locator_root_pageid'] = node.relation_locator.root_pageid
+        config_dict['betree_locator_element_count'] = node.relation_locator.element_count
+        config_dict['betree_locator_tree_height'] = node.relation_locator.tree_height
+        lqp += config_dict_to_str(config_dict, indent_level + 1, options)
         lqp += conf.RPAREN()
 
     elif isinstance(node, ir.BaseRelationPath):
@@ -310,12 +317,6 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
             lqp += list_to_str(node.types, 0, " ", options, debug_info)
         lqp += conf.RBRACKET()
         lqp += conf.RPAREN()
-
-    elif isinstance(node, ir.BeTreeConfig):
-        lqp += f"{ind}{conf.LPAREN()}{conf.kw('betree_config')} {node.epsilon} {node.max_pivots} {node.max_deltas} {node.max_leaf}{conf.RPAREN()}"
-
-    elif isinstance(node, ir.BeTreeLocator):
-        lqp += f"{ind}{conf.LPAREN()}{conf.kw('betree_locator')} {to_str(node.root_pageid, 0, options, debug_info)} {node.element_count} {node.tree_height}{conf.RPAREN()}"
 
     elif isinstance(node, ir.Script):
         lqp += ind + conf.LPAREN() + conf.kw("script") + "\n"

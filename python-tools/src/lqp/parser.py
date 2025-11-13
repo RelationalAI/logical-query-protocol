@@ -52,13 +52,11 @@ fd_values: "(values" var* ")"
 data: betree_relation
 betree_relation: "(betree_relation" relation_id identifier_scheme ")"
 identifier_scheme: betree_info | base_relation_path
-betree_info: "(betree_info" key_types value_types betree_config betree_locator ")"
 base_relation_path: "(base_relation_path" STRING "[" base_relation_type* "]" ")"
 base_relation_type: type_ | specialized_value
+betree_info: "(betree_info" key_types value_types config_dict ")"
 key_types: "(key_types" type_* ")"
 value_types: "(value_types" type_* ")"
-betree_config: "(betree_config" FLOAT NUMBER NUMBER NUMBER ")"
-betree_locator: "(betree_locator" UINT128 NUMBER NUMBER ")"
 
 algorithm: "(algorithm" relation_id* script ")"
 script: "(script" construct* ")"
@@ -349,8 +347,25 @@ class LQPTransformer(Transformer):
     def betree_info(self, meta, items):
         key_types = items[0]
         value_types = items[1]
-        storage_config = items[2]
-        relation_locator = items[3]
+
+        storage_config = {}
+        relation_locator = {}
+        for i in items[2:]:
+            assert isinstance(i, dict)
+            for k, v in i.items():
+                # Extract raw value from ir.Value wrapper
+                raw_value = v.value if isinstance(v, ir.Value) else v
+
+                if k.startswith("betree_config_"):
+                    key = k.replace("betree_config_", "")
+                    storage_config[key] = raw_value
+                elif k.startswith("betree_locator_"):
+                    key = k.replace("betree_locator_", "")
+                    relation_locator[key] = raw_value
+
+        storage_config = ir.BeTreeConfig(**storage_config, meta=self.meta(meta))
+        relation_locator = ir.BeTreeLocator(**relation_locator, meta=self.meta(meta))
+
         return ir.BeTreeInfo(
             key_types=key_types,
             value_types=value_types,
@@ -376,30 +391,6 @@ class LQPTransformer(Transformer):
 
     def value_types(self, meta, items):
         return items
-
-    def betree_config(self, meta, items):
-        epsilon = items[0]
-        max_pivots = items[1]
-        max_deltas = items[2]
-        max_leaf = items[3]
-        return ir.BeTreeConfig(
-            epsilon=epsilon,
-            max_pivots=max_pivots,
-            max_deltas=max_deltas,
-            max_leaf=max_leaf,
-            meta=self.meta(meta)
-        )
-
-    def betree_locator(self, meta, items):
-        root_pageid = items[0]
-        element_count = items[1]
-        tree_height = items[2]
-        return ir.BeTreeLocator(
-            root_pageid=root_pageid,
-            element_count=element_count,
-            tree_height=tree_height,
-            meta=self.meta(meta)
-        )
 
     def algorithm(self, meta, items):
         return ir.Algorithm(global_=items[:-1], body=items[-1], meta=self.meta(meta))
