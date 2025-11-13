@@ -299,7 +299,7 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
             lqp += " " + list_to_str(node.value_types, 0, " ", options, debug_info)
         lqp += conf.RPAREN() + "\n"
         # Print config_dict combining storage_config and relation_locator
-        config_dict: Dict[str, Union[int, float, str]] = {}
+        config_dict: dict[str, Any] = {}
         config_dict['betree_config_epsilon'] = node.storage_config.epsilon
         config_dict['betree_config_max_pivots'] = node.storage_config.max_pivots
         config_dict['betree_config_max_deltas'] = node.storage_config.max_deltas
@@ -584,7 +584,7 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
             lqp += line_conf_f('path', '<hidden filename>') + "\n"
         lqp += line('columns', list_to_str(node.data_columns, 0, " ", options, debug_info)) + "\n"
 
-        config_dict: dict[str, Union[int, str]] = {}
+        config_dict: dict[str, Any] = {}
         config_dict['partition_size'] = node.partition_size if node.partition_size is not None else 0
         config_dict['compression'] = node.compression if node.compression is not None else "" #type: ignore
         config_dict['syntax_header_row'] = node.syntax_header_row if node.syntax_header_row is not None else 1
