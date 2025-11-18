@@ -44,7 +44,7 @@ message Write {
   oneof write_type {
     Define define = 1;
     Undefine undefine = 2;
-    Context context = 3; 
+    Context context = 3;
     Sync sync = 4 [deprecated = true];
   }
 }
