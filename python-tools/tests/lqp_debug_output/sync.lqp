@@ -2,9 +2,9 @@
   (configure
     { :ivm.maintenance_level "off"
       :semantics_version 0})
+  (sync :foo :bar)
   (epoch
     (writes
-      (sync :foo :bar)
       (define
         (fragment :frag
           (def 11495104353665842533

@@ -2,6 +2,7 @@
   (configure
     { :ivm.maintenance_level "off"
       :semantics_version 0})
+  (sync)
   (epoch
     (writes
       (define

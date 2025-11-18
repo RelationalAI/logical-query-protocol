@@ -16,17 +16,17 @@ from importlib.metadata import version
 grammar = """
 start: transaction | fragment
 
-transaction: "(transaction" configure? epoch* ")"
+transaction: "(transaction" configure? sync? epoch* ")"
 configure: "(configure" config_dict ")"
+sync: "(sync" fragment_id* ")"
 epoch: "(epoch" writes? reads? ")"
 writes: "(writes" write* ")"
 reads: "(reads" read* ")"
 
-write: define | undefine | context | sync
+write: define | undefine | context
 define: "(define" fragment ")"
 undefine: "(undefine" fragment_id ")"
 context: "(context" relation_id* ")"
-sync: "(sync" fragment_id* ")"
 
 read: demand | output | export | abort
 demand: "(demand" relation_id ")"
@@ -171,6 +171,9 @@ def construct_configure(config_dict, meta):
         meta=meta,
     )
 
+def construct_sync(meta):
+    return ir.Sync(meta=meta, fragments=[])
+
 def desugar_to_raw_primitive(name, terms):
     # Convert terms to relterms
     return ir.Primitive(name=name, terms=terms, meta=None)
@@ -199,12 +202,22 @@ class LQPTransformer(Transformer):
     def transaction(self, meta, items):
         if isinstance(items[0], ir.Configure):
             configure = items[0]
+            if isinstance(items[1], ir.Sync):
+                sync = items[1]
+                epochs = items[2:]
+            else:
+                sync = construct_sync(self.meta(meta))
+                epochs = items[1:]
+        elif isinstance(items[0], ir.Sync):
+            configure = construct_configure({}, self.meta(meta))
+            sync = items[0]
             epochs = items[1:]
         else:
             configure = construct_configure({}, self.meta(meta))
+            sync = construct_sync(self.meta(meta))
             epochs = items
 
-        return ir.Transaction(configure=configure, epochs=epochs, meta=self.meta(meta))
+        return ir.Transaction(configure=configure, epochs=epochs, sync=sync, meta=self.meta(meta))
 
     def configure(self, meta, items):
         return construct_configure(items[0], self.meta(meta))
