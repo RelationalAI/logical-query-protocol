@@ -282,7 +282,7 @@ message BaseRelationType {
 message CSVRelation {
   repeated string paths = 1;
   CSVSyntax syntax = 2;
-  repeated ImportCSVColumn columns = 3;
+  repeated IngestCSVColumn columns = 3;
   DateTimeValue asof = 4;
 }
 
@@ -294,7 +294,7 @@ message CSVSyntax {
   optional string           escapechar = 5;
 }
 
-message ImportCSVColumn {
+message IngestCSVColumn {
   string column_name = 1;
   RelationId column_data = 2;
   repeated Type column_types = 3;   // First n - 1 column types are the keys, the last is the value
