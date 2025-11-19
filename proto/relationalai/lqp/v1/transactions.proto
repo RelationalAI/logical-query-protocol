@@ -8,7 +8,7 @@ import "relationalai/lqp/v1/logic.proto";
 message Transaction {
   repeated Epoch epochs = 1;
   Configure configure = 2;
-  Sync sync = 3;  
+  optional Sync sync = 3;  
 }
 
 message Configure {
@@ -41,11 +41,11 @@ message Epoch {
 //
 
 message Write {
+  reserved 4; // Sync is now at transaction level
   oneof write_type {
     Define define = 1;
     Undefine undefine = 2;
     Context context = 3;
-    Sync sync = 4 [deprecated = true];
   }
 }
 

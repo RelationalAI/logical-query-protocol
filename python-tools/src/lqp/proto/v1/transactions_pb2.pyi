@@ -63,12 +63,10 @@ class Write(_message.Message):
     DEFINE_FIELD_NUMBER: _ClassVar[int]
     UNDEFINE_FIELD_NUMBER: _ClassVar[int]
     CONTEXT_FIELD_NUMBER: _ClassVar[int]
-    SYNC_FIELD_NUMBER: _ClassVar[int]
     define: Define
     undefine: Undefine
     context: Context
-    sync: Sync
-    def __init__(self, define: _Optional[_Union[Define, _Mapping]] = ..., undefine: _Optional[_Union[Undefine, _Mapping]] = ..., context: _Optional[_Union[Context, _Mapping]] = ..., sync: _Optional[_Union[Sync, _Mapping]] = ...) -> None: ...
+    def __init__(self, define: _Optional[_Union[Define, _Mapping]] = ..., undefine: _Optional[_Union[Undefine, _Mapping]] = ..., context: _Optional[_Union[Context, _Mapping]] = ...) -> None: ...
 
 class Define(_message.Message):
     __slots__ = ()
