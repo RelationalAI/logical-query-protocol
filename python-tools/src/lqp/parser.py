@@ -11,6 +11,7 @@ from lqp.validator import validate_lqp
 from google.protobuf.json_format import MessageToJson
 from decimal import Decimal
 from datetime import date, datetime
+from importlib.metadata import version
 
 grammar = """
 start: transaction | fragment
@@ -735,9 +736,13 @@ def get_lqp_files(directory):
             lqp_files.append(os.path.join(directory, file))
     return lqp_files
 
+def get_package_version():
+    """Get the version of the installed `lqp` package."""
+    return version("lqp")
 
 def main():
     arg_parser = argparse.ArgumentParser(description="Parse LQP S-expression into Protobuf binary and JSON files.")
+    arg_parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {get_package_version()}", help="show program's version number and exit")
     arg_parser.add_argument("input", help="directory holding .lqp files, or a single .lqp file")
     arg_parser.add_argument("--no-validation", action="store_true", help="don't validate parsed LQP")
     arg_parser.add_argument("--bin", action="store_true", help="encode emitted ProtoBuf into binary")
