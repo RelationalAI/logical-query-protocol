@@ -24,9 +24,11 @@ class Transaction(_message.Message):
     __slots__ = ()
     EPOCHS_FIELD_NUMBER: _ClassVar[int]
     CONFIGURE_FIELD_NUMBER: _ClassVar[int]
+    SYNC_FIELD_NUMBER: _ClassVar[int]
     epochs: _containers.RepeatedCompositeFieldContainer[Epoch]
     configure: Configure
-    def __init__(self, epochs: _Optional[_Iterable[_Union[Epoch, _Mapping]]] = ..., configure: _Optional[_Union[Configure, _Mapping]] = ...) -> None: ...
+    sync: Sync
+    def __init__(self, epochs: _Optional[_Iterable[_Union[Epoch, _Mapping]]] = ..., configure: _Optional[_Union[Configure, _Mapping]] = ..., sync: _Optional[_Union[Sync, _Mapping]] = ...) -> None: ...
 
 class Configure(_message.Message):
     __slots__ = ()
@@ -42,6 +44,12 @@ class IVMConfig(_message.Message):
     level: MaintenanceLevel
     def __init__(self, level: _Optional[_Union[MaintenanceLevel, str]] = ...) -> None: ...
 
+class Sync(_message.Message):
+    __slots__ = ()
+    FRAGMENTS_FIELD_NUMBER: _ClassVar[int]
+    fragments: _containers.RepeatedCompositeFieldContainer[_fragments_pb2.FragmentId]
+    def __init__(self, fragments: _Optional[_Iterable[_Union[_fragments_pb2.FragmentId, _Mapping]]] = ...) -> None: ...
+
 class Epoch(_message.Message):
     __slots__ = ()
     WRITES_FIELD_NUMBER: _ClassVar[int]
@@ -55,12 +63,10 @@ class Write(_message.Message):
     DEFINE_FIELD_NUMBER: _ClassVar[int]
     UNDEFINE_FIELD_NUMBER: _ClassVar[int]
     CONTEXT_FIELD_NUMBER: _ClassVar[int]
-    SYNC_FIELD_NUMBER: _ClassVar[int]
     define: Define
     undefine: Undefine
     context: Context
-    sync: Sync
-    def __init__(self, define: _Optional[_Union[Define, _Mapping]] = ..., undefine: _Optional[_Union[Undefine, _Mapping]] = ..., context: _Optional[_Union[Context, _Mapping]] = ..., sync: _Optional[_Union[Sync, _Mapping]] = ...) -> None: ...
+    def __init__(self, define: _Optional[_Union[Define, _Mapping]] = ..., undefine: _Optional[_Union[Undefine, _Mapping]] = ..., context: _Optional[_Union[Context, _Mapping]] = ...) -> None: ...
 
 class Define(_message.Message):
     __slots__ = ()
@@ -79,12 +85,6 @@ class Context(_message.Message):
     RELATIONS_FIELD_NUMBER: _ClassVar[int]
     relations: _containers.RepeatedCompositeFieldContainer[_logic_pb2.RelationId]
     def __init__(self, relations: _Optional[_Iterable[_Union[_logic_pb2.RelationId, _Mapping]]] = ...) -> None: ...
-
-class Sync(_message.Message):
-    __slots__ = ()
-    FRAGMENTS_FIELD_NUMBER: _ClassVar[int]
-    fragments: _containers.RepeatedCompositeFieldContainer[_fragments_pb2.FragmentId]
-    def __init__(self, fragments: _Optional[_Iterable[_Union[_fragments_pb2.FragmentId, _Mapping]]] = ...) -> None: ...
 
 class ExportCSVConfig(_message.Message):
     __slots__ = ()
