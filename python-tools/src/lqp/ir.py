@@ -440,7 +440,7 @@ class WhatIf(LqpNode):
 class Transaction(LqpNode):
     epochs: Sequence[Epoch]
     configure: Configure
-    sync: Sync
+    sync: Optional[Sync]
 
 # Configure(semantics_version::int, ivm_config::IVMConfig)
 @dataclass(frozen=True)

@@ -451,11 +451,13 @@ def convert_sync(c: ir.Sync) -> transactions_pb2.Sync:
     return transactions_pb2.Sync(fragments=[convert_fragment_id(rid) for rid in c.fragments])
 
 def convert_transaction(t: ir.Transaction) -> transactions_pb2.Transaction:
-    return transactions_pb2.Transaction(
-        configure=convert_configure(t.configure),
-        epochs=[convert_epoch(e) for e in t.epochs],
-        sync=convert_sync(t.sync)
-    )
+    kwargs: Dict[str, Any] = {
+        'configure': convert_configure(t.configure),
+        'epochs': [convert_epoch(e) for e in t.epochs]
+    }
+    if t.sync is not None:
+        kwargs['sync'] = convert_sync(t.sync)
+    return transactions_pb2.Transaction(**kwargs)
 
 def ir_to_proto(node: ir.LqpNode) -> Union[
     transactions_pb2.Transaction,

@@ -171,9 +171,6 @@ def construct_configure(config_dict, meta):
         meta=meta,
     )
 
-def construct_sync(meta):
-    return ir.Sync(meta=meta, fragments=[])
-
 def desugar_to_raw_primitive(name, terms):
     # Convert terms to relterms
     return ir.Primitive(name=name, terms=terms, meta=None)
@@ -206,7 +203,7 @@ class LQPTransformer(Transformer):
                 sync = items[1]
                 epochs = items[2:]
             else:
-                sync = construct_sync(self.meta(meta))
+                sync = None
                 epochs = items[1:]
         elif isinstance(items[0], ir.Sync):
             configure = construct_configure({}, self.meta(meta))
@@ -214,7 +211,7 @@ class LQPTransformer(Transformer):
             epochs = items[1:]
         else:
             configure = construct_configure({}, self.meta(meta))
-            sync = construct_sync(self.meta(meta))
+            sync = None
             epochs = items
 
         return ir.Transaction(configure=configure, epochs=epochs, sync=sync, meta=self.meta(meta))
