@@ -364,7 +364,7 @@ class BaseRelationPath(LqpNode):
     name: str
     types: Sequence[BaseRelationType]
 
-# Data := BeTreeRelation | CSVRelation | ArrowRelation
+# Data := BeTreeRelation | CSVRelation
 @dataclass(frozen=True)
 class Data(Declaration):
     pass
@@ -374,6 +374,30 @@ class Data(Declaration):
 class BeTreeRelation(Data):
     name: RelationId
     identifier_scheme: Union[BeTreeInfo, BaseRelationPath]
+
+# CSVSyntax
+@dataclass(frozen=True)
+class CSVSyntax(LqpNode):
+    header_row: Optional[bool] = None
+    missing_string: Optional[str] = None
+    delim: Optional[str] = None
+    quotechar: Optional[str] = None
+    escapechar: Optional[str] = None
+
+# ImportCSVColumn(column_name::string, column_data::RelationId, column_types::Type[])
+@dataclass(frozen=True)
+class ImportCSVColumn(LqpNode):
+    column_name: str
+    column_data: RelationId
+    column_types: Sequence[Type]
+
+# CSVRelation(paths::string[], syntax::CSVSyntax, columns::ImportCSVColumn[], asof::DateTimeValue)
+@dataclass(frozen=True)
+class CSVRelation(Data):
+    paths: Sequence[str]
+    syntax: CSVSyntax
+    columns: Sequence[ImportCSVColumn]
+    asof: Optional[DateTimeValue] = None
 
 # --- Fragment Types ---
 

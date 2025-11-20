@@ -50,7 +50,7 @@ functional_dependency: "(functional_dependency" abstraction fd_keys fd_values ")
 fd_keys: "(keys" var* ")"
 fd_values: "(values" var* ")"
 
-data: betree_relation
+data: betree_relation | csv_relation
 betree_relation: "(betree_relation" relation_id identifier_scheme ")"
 identifier_scheme: betree_info | base_relation_path
 base_relation_path: "(base_relation_path" STRING "[" base_relation_type* "]" ")"
@@ -58,6 +58,14 @@ base_relation_type: type_ | specialized_value
 betree_info: "(betree_info" key_types value_types config_dict ")"
 key_types: "(key_types" type_* ")"
 value_types: "(value_types" type_* ")"
+
+csv_relation: "(csv_relation" csv_paths csv_syntax import_columns asof? ")"
+csv_paths: "(paths" STRING* ")"
+csv_syntax: "(csv_syntax" config_dict ")"
+import_columns: "(columns" import_column* ")"
+import_column: "(column" STRING relation_id column_types ")"
+column_types: "(types" type_* ")"
+asof: "(asof" datetime ")"
 
 algorithm: "(algorithm" relation_id* script ")"
 script: "(script" construct* ")"
@@ -392,6 +400,61 @@ class LQPTransformer(Transformer):
 
     def value_types(self, meta, items):
         return items
+
+    def csv_relation(self, meta, items):
+        paths = items[0]
+        syntax = items[1]
+        columns = items[2]
+        asof = items[3] if len(items) > 3 else None
+        return ir.CSVRelation(
+            paths=paths,
+            syntax=syntax,
+            columns=columns,
+            asof=asof,
+            meta=self.meta(meta)
+        )
+
+    def csv_paths(self, meta, items):
+        return items
+
+    def csv_syntax(self, meta, items):
+        config_dict = items[0] if items else {}
+
+        # Extract CSV syntax fields from config_dict
+        syntax_fields = {}
+        for key, value in config_dict.items():
+            if key == "header_row":
+                syntax_fields["header_row"] = value.value if isinstance(value, ir.Value) else value
+            elif key == "missing_string":
+                syntax_fields["missing_string"] = value.value if isinstance(value, ir.Value) else value
+            elif key == "delim":
+                syntax_fields["delim"] = value.value if isinstance(value, ir.Value) else value
+            elif key == "quotechar":
+                syntax_fields["quotechar"] = value.value if isinstance(value, ir.Value) else value
+            elif key == "escapechar":
+                syntax_fields["escapechar"] = value.value if isinstance(value, ir.Value) else value
+
+        return ir.CSVSyntax(**syntax_fields, meta=self.meta(meta))
+
+    def import_columns(self, meta, items):
+        return items
+
+    def import_column(self, meta, items):
+        column_name = items[0]
+        column_data = items[1]
+        column_types = items[2]
+        return ir.ImportCSVColumn(
+            column_name=column_name,
+            column_data=column_data,
+            column_types=column_types,
+            meta=self.meta(meta)
+        )
+
+    def column_types(self, meta, items):
+        return items
+
+    def asof(self, meta, items):
+        return items[0]
 
     def algorithm(self, meta, items):
         return ir.Algorithm(global_=items[:-1], body=items[-1], meta=self.meta(meta))

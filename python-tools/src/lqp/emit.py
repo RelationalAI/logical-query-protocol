@@ -255,9 +255,42 @@ def convert_betree_relation(rel: ir.BeTreeRelation) -> logic_pb2.BeTreeRelation:
     else:
         raise TypeError(f"Unsupported identifier_scheme type: {type(rel.identifier_scheme)}")
 
+def convert_csv_syntax(syntax: ir.CSVSyntax) -> logic_pb2.CSVSyntax:
+    kwargs = {}
+    if syntax.header_row is not None:
+        kwargs['header_row'] = syntax.header_row
+    if syntax.missing_string is not None:
+        kwargs['missing_string'] = syntax.missing_string
+    if syntax.delim is not None:
+        kwargs['delim'] = syntax.delim
+    if syntax.quotechar is not None:
+        kwargs['quotechar'] = syntax.quotechar
+    if syntax.escapechar is not None:
+        kwargs['escapechar'] = syntax.escapechar
+    return logic_pb2.CSVSyntax(**kwargs)
+
+def convert_import_csv_column(col: ir.ImportCSVColumn) -> logic_pb2.ImportCSVColumn:
+    return logic_pb2.ImportCSVColumn(
+        column_name=col.column_name,
+        column_data=convert_relation_id(col.column_data),
+        column_types=[convert_type(t) for t in col.column_types]
+    )
+
+def convert_csv_relation(rel: ir.CSVRelation) -> logic_pb2.CSVRelation:
+    kwargs = {
+        'paths': list(rel.paths),
+        'syntax': convert_csv_syntax(rel.syntax),
+        'columns': [convert_import_csv_column(col) for col in rel.columns]
+    }
+    if rel.asof is not None:
+        kwargs['asof'] = convert_datetime(rel.asof)
+    return logic_pb2.CSVRelation(**kwargs)
+
 def convert_data(data: ir.Data) -> logic_pb2.Data:
     if isinstance(data, ir.BeTreeRelation):
         return logic_pb2.Data(betree_relation=convert_betree_relation(data))
+    elif isinstance(data, ir.CSVRelation):
+        return logic_pb2.Data(csv_relation=convert_csv_relation(data))
     else:
         raise TypeError(f"Unsupported Data type: {type(data)}")
 

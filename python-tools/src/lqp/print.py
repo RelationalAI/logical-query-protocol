@@ -318,6 +318,49 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
         lqp += conf.RBRACKET()
         lqp += conf.RPAREN()
 
+    elif isinstance(node, ir.CSVRelation):
+        lqp += ind + conf.LPAREN() + conf.kw("csv_relation") + "\n"
+        # Print paths
+        lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("paths")
+        if len(node.paths) > 0:
+            lqp += " " + " ".join([to_str(path, 0, options, debug_info) for path in node.paths])
+        lqp += conf.RPAREN() + "\n"
+        # Print syntax
+        lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("csv_syntax") + "\n"
+        syntax_dict: dict[str, Any] = {}
+        if node.syntax.header_row is not None:
+            syntax_dict['header_row'] = node.syntax.header_row
+        if node.syntax.missing_string is not None:
+            syntax_dict['missing_string'] = node.syntax.missing_string
+        if node.syntax.delim is not None:
+            syntax_dict['delim'] = node.syntax.delim
+        if node.syntax.quotechar is not None:
+            syntax_dict['quotechar'] = node.syntax.quotechar
+        if node.syntax.escapechar is not None:
+            syntax_dict['escapechar'] = node.syntax.escapechar
+        lqp += config_dict_to_str(syntax_dict, indent_level + 2, options)
+        lqp += conf.RPAREN() + "\n"
+        # Print columns
+        lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("columns")
+        if len(node.columns) > 0:
+            lqp += "\n"
+            lqp += list_to_str(node.columns, indent_level + 2, "\n", options, debug_info)
+        lqp += conf.RPAREN()
+        # Print asof if present
+        if node.asof is not None:
+            lqp += "\n"
+            lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("asof") + " " + to_str(node.asof, 0, options, debug_info) + conf.RPAREN()
+        lqp += conf.RPAREN()
+
+    elif isinstance(node, ir.ImportCSVColumn):
+        lqp += ind + conf.LPAREN() + conf.kw("column") + " " + to_str(node.column_name, 0, options, debug_info)
+        lqp += " " + to_str(node.column_data, 0, options, debug_info)
+        lqp += " " + conf.LPAREN() + conf.kw("types")
+        if len(node.column_types) > 0:
+            lqp += " " + list_to_str(node.column_types, 0, " ", options, debug_info)
+        lqp += conf.RPAREN()
+        lqp += conf.RPAREN()
+
     elif isinstance(node, ir.Script):
         lqp += ind + conf.LPAREN() + conf.kw("script") + "\n"
         lqp += list_to_str(node.constructs, indent_level + 1, "\n", options, debug_info)
