@@ -335,10 +335,12 @@ class Attribute(_message.Message):
     def __init__(self, name: _Optional[str] = ..., args: _Optional[_Iterable[_Union[Value, _Mapping]]] = ...) -> None: ...
 
 class Data(_message.Message):
-    __slots__ = ("betree_relation",)
+    __slots__ = ("betree_relation", "csv_relation")
     BETREE_RELATION_FIELD_NUMBER: _ClassVar[int]
+    CSV_RELATION_FIELD_NUMBER: _ClassVar[int]
     betree_relation: BeTreeRelation
-    def __init__(self, betree_relation: _Optional[_Union[BeTreeRelation, _Mapping]] = ...) -> None: ...
+    csv_relation: CSVRelation
+    def __init__(self, betree_relation: _Optional[_Union[BeTreeRelation, _Mapping]] = ..., csv_relation: _Optional[_Union[CSVRelation, _Mapping]] = ...) -> None: ...
 
 class BeTreeRelation(_message.Message):
     __slots__ = ("name", "relation_info", "relation_path")
@@ -399,6 +401,42 @@ class BaseRelationType(_message.Message):
     type: Type
     specialized_type: Value
     def __init__(self, type: _Optional[_Union[Type, _Mapping]] = ..., specialized_type: _Optional[_Union[Value, _Mapping]] = ...) -> None: ...
+
+class CSVRelation(_message.Message):
+    __slots__ = ("paths", "syntax", "columns", "asof")
+    PATHS_FIELD_NUMBER: _ClassVar[int]
+    SYNTAX_FIELD_NUMBER: _ClassVar[int]
+    COLUMNS_FIELD_NUMBER: _ClassVar[int]
+    ASOF_FIELD_NUMBER: _ClassVar[int]
+    paths: _containers.RepeatedScalarFieldContainer[str]
+    syntax: CSVSyntax
+    columns: _containers.RepeatedCompositeFieldContainer[IngestCSVColumn]
+    asof: DateTimeValue
+    def __init__(self, paths: _Optional[_Iterable[str]] = ..., syntax: _Optional[_Union[CSVSyntax, _Mapping]] = ..., columns: _Optional[_Iterable[_Union[IngestCSVColumn, _Mapping]]] = ..., asof: _Optional[_Union[DateTimeValue, _Mapping]] = ...) -> None: ...
+
+class CSVSyntax(_message.Message):
+    __slots__ = ("header_row", "missing_string", "delim", "quotechar", "escapechar")
+    HEADER_ROW_FIELD_NUMBER: _ClassVar[int]
+    MISSING_STRING_FIELD_NUMBER: _ClassVar[int]
+    DELIM_FIELD_NUMBER: _ClassVar[int]
+    QUOTECHAR_FIELD_NUMBER: _ClassVar[int]
+    ESCAPECHAR_FIELD_NUMBER: _ClassVar[int]
+    header_row: bool
+    missing_string: str
+    delim: str
+    quotechar: str
+    escapechar: str
+    def __init__(self, header_row: _Optional[bool] = ..., missing_string: _Optional[str] = ..., delim: _Optional[str] = ..., quotechar: _Optional[str] = ..., escapechar: _Optional[str] = ...) -> None: ...
+
+class IngestCSVColumn(_message.Message):
+    __slots__ = ("column_name", "column_data", "column_types")
+    COLUMN_NAME_FIELD_NUMBER: _ClassVar[int]
+    COLUMN_DATA_FIELD_NUMBER: _ClassVar[int]
+    COLUMN_TYPES_FIELD_NUMBER: _ClassVar[int]
+    column_name: str
+    column_data: RelationId
+    column_types: _containers.RepeatedCompositeFieldContainer[Type]
+    def __init__(self, column_name: _Optional[str] = ..., column_data: _Optional[_Union[RelationId, _Mapping]] = ..., column_types: _Optional[_Iterable[_Union[Type, _Mapping]]] = ...) -> None: ...
 
 class RelationId(_message.Message):
     __slots__ = ("id_low", "id_high")
