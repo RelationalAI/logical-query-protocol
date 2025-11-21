@@ -169,9 +169,15 @@ func (p *Parser) parseTransaction(tok Token) (*Transaction, error) {
 }
 func (p *Parser) parseSync(tok Token) (*Sync, error) {
 	fragIds, err := p.parseFragmentIdList()
+
 	if err != nil {
 		return nil, err
 	}
+
+	if err := p.expect(TokenRParen); err != nil {
+		return nil, err
+	}
+
 	return &Sync{
 		Fragments: fragIds,
 	}, nil

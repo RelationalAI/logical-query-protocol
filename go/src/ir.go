@@ -556,3 +556,49 @@ type Type struct {
 	TypeName   TypeName
 	Parameters []*Value
 }
+
+// String returns the string representation of MaintenanceLevel
+func (ml MaintenanceLevel) String() string {
+	switch ml {
+	case MaintenanceLevelUnspecified:
+		return "UNSPECIFIED"
+	case MaintenanceLevelOff:
+		return "OFF"
+	case MaintenanceLevelAuto:
+		return "AUTO"
+	case MaintenanceLevelAll:
+		return "ALL"
+	default:
+		return "UNKNOWN"
+	}
+}
+
+// String returns the string representation of TypeName
+func (tn TypeName) String() string {
+	switch tn {
+	case TypeNameUnspecified:
+		return "UNSPECIFIED"
+	case TypeNameString:
+		return "STRING"
+	case TypeNameInt:
+		return "INT"
+	case TypeNameFloat:
+		return "FLOAT"
+	case TypeNameUInt128:
+		return "UINT128"
+	case TypeNameInt128:
+		return "INT128"
+	case TypeNameDate:
+		return "DATE"
+	case TypeNameDateTime:
+		return "DATETIME"
+	case TypeNameMissing:
+		return "MISSING"
+	case TypeNameDecimal:
+		return "DECIMAL"
+	case TypeNameBoolean:
+		return "BOOLEAN"
+	default:
+		return "UNKNOWN"
+	}
+}
