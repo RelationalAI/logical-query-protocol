@@ -187,6 +187,12 @@ def program_to_str(node: ir.Transaction, options: Dict = {}) -> str:
     s += config_dict_to_str(config_dict, 2, options)
     s += conf.RPAREN()
 
+    if node.sync is not None:
+        s += "\n" + conf.indentation(1) + conf.LPAREN() + conf.kw("sync")
+        if len(node.sync.fragments) != 0:
+            s += " " + list_to_str(node.sync.fragments, 0, " ", options)
+        s += conf.RPAREN()
+
     for epoch in node.epochs:
         s += "\n" + conf.indentation(1) + conf.LPAREN() + conf.kw("epoch")
         section_strs: List[str] = []
@@ -511,9 +517,6 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
 
     elif isinstance(node, ir.Context):
         lqp += f"{ind}{conf.LPAREN()}{conf.kw('context')} {list_to_str(node.relations, 0, ' ', options, debug_info)}{conf.RPAREN()}"
-
-    elif isinstance(node, ir.Sync):
-        lqp += f"{ind}{conf.LPAREN()}{conf.kw('sync')} {list_to_str(node.fragments, 0, ' ', options, debug_info)}{conf.RPAREN()}"
 
     elif isinstance(node, ir.FragmentId):
         lqp += f"{ind}:{conf.uname(node.id.decode())}"
