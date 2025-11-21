@@ -634,8 +634,6 @@ func ConvertWrite(w *Write) *pb.Write {
 		return &pb.Write{WriteType: &pb.Write_Undefine{Undefine: ConvertUndefine(wt)}}
 	case *Context:
 		return &pb.Write{WriteType: &pb.Write_Context{Context: ConvertContext(wt)}}
-	case *Sync:
-		return &pb.Write{WriteType: &pb.Write_Sync{Sync: ConvertSync(wt)}}
 	}
 	panic(fmt.Sprintf("unsupported Write type: %T", w.WriteType))
 }
@@ -819,6 +817,7 @@ func ConvertTransaction(t *Transaction) *pb.Transaction {
 
 	return &pb.Transaction{
 		Configure: ConvertConfigure(t.Configure),
+		Sync:      ConvertSync(t.Sync),
 		Epochs:    epochs,
 	}
 }

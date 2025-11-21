@@ -13,7 +13,13 @@ var _ = sha256.Sum256 // Ensure sha256 is used
 // Transaction(epochs::Epoch[], configure::Configure)
 type Transaction struct {
 	Configure *Configure
+	Sync      *Sync
 	Epochs    []*Epoch
+}
+
+// Sync(fragments::FragmentId[])
+type Sync struct {
+	Fragments []*FragmentId
 }
 
 // Configure(semantics_version::int, ivm_config::IVMConfig)
@@ -82,13 +88,6 @@ type Context struct {
 }
 
 func (c *Context) isWriteType() {}
-
-// Sync(fragments::FragmentId[])
-type Sync struct {
-	Fragments []*FragmentId
-}
-
-func (s *Sync) isWriteType() {}
 
 // Demand(relation_id::RelationId)
 type Demand struct {
