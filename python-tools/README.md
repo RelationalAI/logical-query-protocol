@@ -6,7 +6,7 @@ and JSON formats.
 ## Usage
 
 ```
-usage: lqp [-h] [--no-validation] [--bin] [--json] [--out] input
+usage: lqp [-h] [-v] [--no-validation] [--bin] [--json] [--out] input
 
 Parse LQP S-expression into Protobuf binary and JSON files.
 
@@ -15,6 +15,7 @@ positional arguments:
 
 options:
   -h, --help       show this help message and exit
+  -v, --version    show program's version number and exit
   --no-validation  don't validate parsed LQP
   --bin            encode emitted ProtoBuf into binary
   --json           encode emitted ProtoBuf into JSON
