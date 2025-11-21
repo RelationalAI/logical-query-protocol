@@ -1,0 +1,25 @@
+(transaction
+  (configure
+    { :ivm.maintenance_level "off"
+      :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment :f6631
+          (def :foo
+            ([a::INT b::INT]
+              (or
+                (and
+                  (primitive :rel_primitive_eq a 1)
+                  (primitive :rel_primitive_eq b 2))
+                (and
+                  (primitive :rel_primitive_eq a 1)
+                  (primitive :rel_primitive_eq b 3))
+                (and
+                  (primitive :rel_primitive_eq a 1)
+                  (primitive :rel_primitive_eq b 4))))
+            (attrs
+              (attribute :function)
+              (attribute :inspect "normalizer" 2))))))
+    (reads
+      (output :foo :foo))))

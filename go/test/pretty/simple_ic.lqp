@@ -1,0 +1,20 @@
+(transaction
+  (configure
+    { :ivm.maintenance_level "off"
+      :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment :f6631
+          (def :foo
+            ([]
+              (primitive :rel_primitive_eq 1 1)))
+          (def :abort
+            ([]
+              (atom :foo )))
+          (def :output
+            ([]
+              (atom :foo ))))))
+    (reads
+      (output :result :output)
+      (abort :abort_1_eq_1 :abort))))

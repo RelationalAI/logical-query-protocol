@@ -1,0 +1,206 @@
+(transaction
+  (configure
+    { :ivm.maintenance_level "off"
+      :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment :f6d6f64656c
+          (def :_intermediate_1
+            ([person::UINT128]
+              (primitive :rel_primitive_hash_tuple_uint128
+                "Person"
+                "name"
+                "Alice"
+                "age"
+                10
+                person)))
+          (def :Person_1
+            ([person::UINT128]
+              (atom :_intermediate_1 person)))
+          (def :name_1
+            ([person::UINT128 cvar::STRING]
+              (and
+                (primitive :rel_primitive_eq cvar "Alice")
+                (atom :_intermediate_1 person))))
+          (def :age_1
+            ([person::UINT128 cvar_2::INT]
+              (and
+                (primitive :rel_primitive_eq cvar_2 10)
+                (atom :_intermediate_1 person))))
+          (def :_intermediate_2
+            ([person_2::UINT128]
+              (primitive :rel_primitive_hash_tuple_uint128
+                "Person"
+                "name"
+                "Bob"
+                "age"
+                30
+                person_2)))
+          (def :Person_2
+            ([person_2::UINT128]
+              (atom :_intermediate_2 person_2)))
+          (def :name_2
+            ([person_2::UINT128 cvar_3::STRING]
+              (and
+                (primitive :rel_primitive_eq cvar_3 "Bob")
+                (atom :_intermediate_2 person_2))))
+          (def :age_2
+            ([person_2::UINT128 cvar_4::INT]
+              (and
+                (primitive :rel_primitive_eq cvar_4 30)
+                (atom :_intermediate_2 person_2))))
+          (def :_intermediate_3
+            ([person_3::UINT128]
+              (primitive :rel_primitive_hash_tuple_uint128
+                "Person"
+                "name"
+                "Charlie"
+                "age"
+                50
+                person_3)))
+          (def :Person_3
+            ([person_3::UINT128]
+              (atom :_intermediate_3 person_3)))
+          (def :name_3
+            ([person_3::UINT128 cvar_5::STRING]
+              (and
+                (primitive :rel_primitive_eq cvar_5 "Charlie")
+                (atom :_intermediate_3 person_3))))
+          (def :age_3
+            ([person_3::UINT128 cvar_6::INT]
+              (and
+                (primitive :rel_primitive_eq cvar_6 50)
+                (atom :_intermediate_3 person_3))))
+          (def :_intermediate_4
+            ([pet::UINT128]
+              (primitive :rel_primitive_hash_tuple_uint128
+                "Pet"
+                "name"
+                "boots"
+                "age"
+                1
+                pet)))
+          (def :Pet_1
+            ([pet::UINT128]
+              (atom :_intermediate_4 pet)))
+          (def :name_1_2
+            ([pet::UINT128 cvar_7::STRING]
+              (and
+                (primitive :rel_primitive_eq cvar_7 "boots")
+                (atom :_intermediate_4 pet))))
+          (def :age_1_2
+            ([pet::UINT128 cvar_8::INT]
+              (and
+                (primitive :rel_primitive_eq cvar_8 1)
+                (atom :_intermediate_4 pet))))
+          (def :_intermediate_5
+            ([pet_2::UINT128]
+              (primitive :rel_primitive_hash_tuple_uint128
+                "Pet"
+                "name"
+                "fluffy"
+                "age"
+                3
+                pet_2)))
+          (def :Pet_2
+            ([pet_2::UINT128]
+              (atom :_intermediate_5 pet_2)))
+          (def :name_2_2
+            ([pet_2::UINT128 cvar_9::STRING]
+              (and
+                (primitive :rel_primitive_eq cvar_9 "fluffy")
+                (atom :_intermediate_5 pet_2))))
+          (def :age_2_2
+            ([pet_2::UINT128 cvar_10::INT]
+              (and
+                (primitive :rel_primitive_eq cvar_10 3)
+                (atom :_intermediate_5 pet_2))))
+          (def :pets_1
+            ([person_3::UINT128 pet::UINT128]
+              (and
+                (primitive :rel_primitive_hash_tuple_uint128
+                  "Person"
+                  "name"
+                  "Charlie"
+                  "age"
+                  50
+                  person_3)
+                (primitive :rel_primitive_hash_tuple_uint128
+                  "Pet"
+                  "name"
+                  "boots"
+                  "age"
+                  1
+                  pet))))
+          (def :pets_2
+            ([person_3::UINT128 pet_2::UINT128]
+              (and
+                (primitive :rel_primitive_hash_tuple_uint128
+                  "Person"
+                  "name"
+                  "Charlie"
+                  "age"
+                  50
+                  person_3)
+                (primitive :rel_primitive_hash_tuple_uint128
+                  "Pet"
+                  "name"
+                  "fluffy"
+                  "age"
+                  3
+                  pet_2))))
+          (def :Person
+            ([person_4::UINT128]
+              (or
+                (atom :Person_1 person_4)
+                (atom :Person_2 person_4)
+                (atom :Person_3 person_4))))
+          (def :Pet
+            ([pet_3::UINT128]
+              (or
+                (atom :Pet_1 pet_3)
+                (atom :Pet_2 pet_3))))
+          (def :pets
+            ([person_5::UINT128 pet_4::UINT128]
+              (or
+                (atom :pets_1 person_5 pet_4)
+                (atom :pets_2 person_5 pet_4))))
+          (def :name
+            ([person_6::UINT128 name::STRING]
+              (or
+                (atom :name_1 person_6 name)
+                (atom :name_2 person_6 name)
+                (atom :name_3 person_6 name))))
+          (def :name_4
+            ([pet_5::UINT128 name_2::STRING]
+              (or
+                (atom :name_1_2 pet_5 name_2)
+                (atom :name_2_2 pet_5 name_2))))
+          (def :age
+            ([person_7::UINT128 age::INT]
+              (or
+                (atom :age_1 person_7 age)
+                (atom :age_2 person_7 age)
+                (atom :age_3 person_7 age))))
+          (def :age_4
+            ([pet_6::UINT128 age_2::INT]
+              (or
+                (atom :age_1_2 pet_6 age_2)
+                (atom :age_2_2 pet_6 age_2))))))))
+  (epoch
+    (writes
+      (define
+        (fragment :f7175657279
+          (def :output
+            ([cvar::STRING cvar_2::STRING person::UINT128 name::STRING]
+              (and
+                (primitive :rel_primitive_eq cvar "cols")
+                (primitive :rel_primitive_eq cvar_2 "col000")
+                (atom :name person name)
+                (not
+                  (exists [pet::UINT128]
+                    (atom :pets person pet)))
+                (atom :Person person)))))))
+    (reads
+      (output :output_0 :output))))
