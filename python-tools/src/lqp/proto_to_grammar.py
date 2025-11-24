@@ -884,12 +884,12 @@ class GrammarGenerator:
             return 'relatom'
         if name == 'RelTerm':
             return 'relterm'
-        snake_case = self._to_rule_name(name)
+        snake_case = self._to_snake_case(name)
         if snake_case in KEYWORDS:
             return f"{snake_case}_"
         return snake_case
 
-    def _to_rule_name(self, name: str) -> str:
+    def _to_snake_case(self, name: str) -> str:
         """Convert CamelCase to snake_case."""
         result = re.sub(r'([a-z\d])([A-Z])', r'\1_\2', name)
         return result.lower()
