@@ -1,21 +1,25 @@
 #!/usr/bin/env python3
 """
-Tool to generate a Lark grammar from protobuf specifications.
+Generate a Lark grammar from protobuf specifications.
 
-This tool reads protobuf specifications and generates a Lark grammar for parsing
-s-expression representations of the same structured data.
+Reads protobuf files and generates a Lark grammar for parsing s-expression
+representations of the protobuf messages.
 
-The mapping works as follows:
-- protobuf message types become grammar rules
-- oneof fields become alternatives (|)
-- repeated fields become zero-or-more (*)
-- message fields become nested s-expressions
-- primitive types map to terminal tokens
+Mapping:
+- Message types → grammar rules
+- oneof fields → alternatives (|)
+- repeated fields → zero-or-more (*)
+- optional fields → optional (?)
+- Message fields → nested s-expressions
+- Primitive types → terminal tokens
 
-Special handling:
-- Messages with only a oneof become unwrapped alternatives
-- Certain primitives like RelationId become tokens
-- Some wrapper types are flattened
+Special cases:
+- Messages containing only a single oneof and no other fields generate multiple
+  rules with the same LHS, one per oneof field type
+- Repeated message fields where the field name differs from the type name
+  generate wrapper rules
+- Certain rules (transaction, bindings, primitive operators) are prepopulated
+  rather than auto-generated
 """
 
 import argparse
@@ -24,17 +28,23 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
-
-SPECIAL_MAPPINGS = {
-    'RelationId': 'relation_id',
-    'FragmentId': 'fragment_id',
-    'Var': 'var',
-    'Value': 'value',
-    'Type': 'type_',
+# Keywords from Python, Go, and Julia that need underscore suffix
+KEYWORDS = {
+    # Python keywords
+    'false', 'none', 'true', 'and', 'as', 'assert', 'async', 'await',
+    'break', 'class', 'continue', 'def', 'del', 'elif', 'else', 'except',
+    'finally', 'for', 'from', 'global', 'if', 'import', 'in', 'is',
+    'lambda', 'nonlocal', 'not', 'or', 'pass', 'raise', 'return',
+    'try', 'while', 'with', 'yield',
+    # Go keywords
+    'chan', 'const', 'defer', 'fallthrough', 'func', 'go', 'goto',
+    'interface', 'map', 'package', 'range', 'select', 'struct', 'switch',
+    'type', 'var',
+    # Julia keywords
+    'abstract', 'baremodule', 'begin', 'bitstype', 'catch', 'ccall',
+    'do', 'elseif', 'end', 'export', 'function', 'immutable', 'let', 'local', 'macro',
+    'module', 'mutable', 'outer', 'primitive', 'quote', 'using', 'where',
 }
-
-
-
 
 PRIMITIVE_TYPES = {
     'string': 'STRING',
@@ -52,13 +62,13 @@ PRIMITIVE_TYPES = {
 
 @dataclass
 class Rhs:
-    """Base class for right-hand side of grammar rules."""
+    """Base class for right-hand sides of grammar rules."""
     pass
 
 
 @dataclass
-class Terminal(Rhs):
-    """Represents a terminal symbol (literal string)."""
+class Literal(Rhs):
+    """Literal terminal (quoted string in grammar)."""
     name: str
 
     def __str__(self) -> str:
@@ -66,8 +76,17 @@ class Terminal(Rhs):
 
 
 @dataclass
+class Terminal(Rhs):
+    """Token terminal (unquoted uppercase name like SYMBOL, NUMBER)."""
+    name: str
+
+    def __str__(self) -> str:
+        return self.name
+
+
+@dataclass
 class Nonterminal(Rhs):
-    """Represents a nonterminal symbol."""
+    """Nonterminal (rule name)."""
     name: str
 
     def __str__(self) -> str:
@@ -76,7 +95,7 @@ class Nonterminal(Rhs):
 
 @dataclass
 class Sequence(Rhs):
-    """Represents a sequence of RHS elements."""
+    """Sequence of grammar symbols (concatenation)."""
     elements: List['Rhs'] = field(default_factory=list)
 
     def __str__(self) -> str:
@@ -85,21 +104,19 @@ class Sequence(Rhs):
 
 @dataclass
 class Union(Rhs):
-    """Represents alternatives (|)."""
+    """Alternatives (|). Not currently used in generated grammar."""
     alternatives: List['Rhs'] = field(default_factory=list)
 
     def __str__(self) -> str:
-        # Union formatting is handled by Rule.to_pattern
         return " | ".join(str(a) for a in self.alternatives)
 
 
 @dataclass
 class Star(Rhs):
-    """Represents zero or more repetitions (*)."""
+    """Zero or more repetitions (*)."""
     rhs: 'Rhs'
 
     def __str__(self) -> str:
-        # Add parentheses if the inner RHS is complex
         if isinstance(self.rhs, (Sequence, Union)):
             return f"({self.rhs})*"
         return f"{self.rhs}*"
@@ -107,11 +124,10 @@ class Star(Rhs):
 
 @dataclass
 class Plus(Rhs):
-    """Represents one or more repetitions (+)."""
+    """One or more repetitions (+). Not currently used in generated grammar."""
     rhs: 'Rhs'
 
     def __str__(self) -> str:
-        # Add parentheses if the inner RHS is complex
         if isinstance(self.rhs, (Sequence, Union)):
             return f"({self.rhs})+"
         return f"{self.rhs}+"
@@ -119,11 +135,10 @@ class Plus(Rhs):
 
 @dataclass
 class Option(Rhs):
-    """Represents optional (?)."""
+    """Optional element (?)."""
     rhs: 'Rhs'
 
     def __str__(self) -> str:
-        # Add parentheses if the inner RHS is complex
         if isinstance(self.rhs, (Sequence, Union)):
             return f"({self.rhs})?"
         return f"{self.rhs}?"
@@ -131,7 +146,7 @@ class Option(Rhs):
 
 @dataclass
 class ProtoField:
-    """Represents a field in a protobuf message."""
+    """Field in a protobuf message."""
     name: str
     type: str
     number: int
@@ -141,21 +156,21 @@ class ProtoField:
 
 @dataclass
 class ProtoOneof:
-    """Represents a oneof group in a protobuf message."""
+    """Oneof group in a protobuf message."""
     name: str
     fields: List[ProtoField] = field(default_factory=list)
 
 
 @dataclass
 class ProtoEnum:
-    """Represents an enum in a protobuf message."""
+    """Enum definition in a protobuf message."""
     name: str
     values: List[Tuple[str, int]] = field(default_factory=list)
 
 
 @dataclass
 class ProtoMessage:
-    """Represents a protobuf message."""
+    """Protobuf message definition."""
     name: str
     fields: List[ProtoField] = field(default_factory=list)
     oneofs: List[ProtoOneof] = field(default_factory=list)
@@ -164,7 +179,7 @@ class ProtoMessage:
 
 @dataclass
 class Rule:
-    """Represents a grammar rule."""
+    """Grammar rule (production)."""
     lhs: Nonterminal
     rhs: Rhs
     action: Optional[str] = None
@@ -177,7 +192,7 @@ class Rule:
 
 @dataclass
 class Token:
-    """Represents a token definition."""
+    """Token definition (terminal with regex pattern)."""
     name: str
     pattern: str
     priority: Optional[int] = None
@@ -185,44 +200,44 @@ class Token:
 
 @dataclass
 class Grammar:
-    """Represents a complete grammar."""
-    rules: List[Rule] = field(default_factory=list)
+    """Complete grammar specification."""
+    rules: Dict[str, List[Rule]] = field(default_factory=dict)
+    rule_order: List[str] = field(default_factory=list)
     tokens: List[Token] = field(default_factory=list)
     imports: List[str] = field(default_factory=list)
     ignores: List[str] = field(default_factory=list)
 
-    def get_rule(self, name: str) -> Optional[Rule]:
-        """Get a rule by name."""
-        for rule in self.rules:
-            if rule.lhs.name == name:
-                return rule
-        return None
+    def add_rule(self, rule: Rule) -> None:
+        """Add a rule to the grammar."""
+        lhs_name = rule.lhs.name
+        if lhs_name not in self.rules:
+            self.rules[lhs_name] = []
+            self.rule_order.append(lhs_name)
+        self.rules[lhs_name].append(rule)
+
+    def get_rules(self, name: str) -> List[Rule]:
+        """Get all rules with the given LHS name."""
+        return self.rules.get(name, [])
 
     def has_rule(self, name: str) -> bool:
-        """Check if a rule exists."""
-        return self.get_rule(name) is not None
+        """Check if any rule has the given LHS name."""
+        return name in self.rules
 
     def has_token(self, name: str) -> bool:
-        """Check if a token exists."""
+        """Check if a token with the given name exists."""
         for token in self.tokens:
             if token.name == name:
                 return True
         return False
 
     def to_lark(self) -> str:
-        """Convert grammar to Lark format."""
+        """Convert to Lark grammar format."""
         lines = []
         lines.append("// Auto-generated grammar from protobuf specifications")
         lines.append("")
 
-        rules_by_lhs: Dict[str, List[Rule]] = {}
-        for rule in self.rules:
-            lhs_name = rule.lhs.name
-            if lhs_name not in rules_by_lhs:
-                rules_by_lhs[lhs_name] = []
-            rules_by_lhs[lhs_name].append(rule)
-
-        for lhs, rules_list in rules_by_lhs.items():
+        for lhs in self.rule_order:
+            rules_list = self.rules[lhs]
             if len(rules_list) == 1:
                 lines.append(f"{lhs}: {rules_list[0].to_pattern(self)}")
             else:
@@ -254,26 +269,25 @@ class Grammar:
 
 
 class ProtoParser:
-    """Parse protobuf files into an internal representation."""
-
+    """Parser for protobuf files."""
     def __init__(self):
         self.messages: Dict[str, ProtoMessage] = {}
         self.enums: Dict[str, ProtoEnum] = {}
 
     def parse_file(self, filepath: Path) -> None:
-        """Parse a single protobuf file."""
+        """Parse protobuf file and add messages/enums to internal state."""
         content = filepath.read_text()
         content = self._remove_comments(content)
         self._parse_content(content)
 
     def _remove_comments(self, content: str) -> str:
-        """Remove C-style comments from protobuf content."""
+        """Remove C-style comments."""
         content = re.sub(r'//.*?\n', '\n', content)
         content = re.sub(r'/\*.*?\*/', '', content, flags=re.DOTALL)
         return content
 
     def _parse_content(self, content: str) -> None:
-        """Parse protobuf content."""
+        """Parse message and enum definitions."""
         i = 0
         while i < len(content):
             message_match = re.match(r'message\s+(\w+)\s*\{', content[i:])
@@ -297,7 +311,7 @@ class ProtoParser:
                     i += 1
 
     def _extract_braced_content(self, content: str, start: int) -> tuple[str, int]:
-        """Extract content within braces, handling nesting."""
+        """Extract content within matching braces, handling nested braces."""
         depth = 1
         i = start
         while i < len(content) and depth > 0:
@@ -309,7 +323,7 @@ class ProtoParser:
         return content[start:i-1], i
 
     def _parse_message(self, name: str, body: str) -> ProtoMessage:
-        """Parse a message definition."""
+        """Parse message definition body into fields, oneofs, and nested enums."""
         message = ProtoMessage(name=name)
 
         oneof_pattern = r'oneof\s+(\w+)\s*\{((?:[^{}]|\{[^}]*\})*)\}'
@@ -365,7 +379,7 @@ class ProtoParser:
         return message
 
     def _parse_enum(self, name: str, body: str) -> ProtoEnum:
-        """Parse an enum definition."""
+        """Parse enum definition body into values."""
         enum_obj = ProtoEnum(name=name)
         for match in re.finditer(r'(\w+)\s*=\s*(\d+);', body):
             value_name = match.group(1)
@@ -375,105 +389,91 @@ class ProtoParser:
 
 
 class GrammarGenerator:
-    """Generate a Lark grammar from parsed protobuf messages."""
-
+    """Generator for Lark grammars from protobuf specifications."""
     def __init__(self, parser: ProtoParser, verbose: bool = False):
         self.parser = parser
         self.generated_rules: Set[str] = set()
         self.grammar = Grammar()
         self.verbose = verbose
-        self.auto_generated_rules: Dict[str, List[Rule]] = {}
-        self._warned_rules: Set[str] = set()
+
+    def _add_rule(self, rule: Rule) -> None:
+        """Add a rule to the grammar and track it in generated_rules."""
+        self.generated_rules.add(rule.lhs.name)
+        self.grammar.add_rule(rule)
 
     def generate(self, start_message: str = "Transaction") -> Grammar:
-        """Generate a complete grammar."""
-        # Add prepopulated rules first
+        """Generate complete grammar with prepopulated and message-derived rules."""
         self._add_all_prepopulated_rules()
 
         start_rule = self._get_rule_name(start_message)
-        self.grammar.rules.append(Rule(
+        self.grammar.add_rule(Rule(
             lhs=Nonterminal("start"),
-            rhs=[Nonterminal(start_rule)],
+            rhs=Nonterminal(start_rule),
             grammar=self.grammar
         ))
-        self.grammar.rules.append(Rule(
+        self.grammar.add_rule(Rule(
             lhs=Nonterminal("start"),
-            rhs=[Nonterminal("fragment")],
+            rhs=Nonterminal("fragment"),
             grammar=self.grammar
         ))
 
         self._generate_message_rule(start_message)
 
         for message_name in sorted(self.parser.messages.keys()):
-            if message_name not in self.generated_rules:
-                self._generate_message_rule(message_name)
-
-        # Add terminal mapping rules
-        if 'relation_id' not in self.generated_rules:
-            self.grammar.rules.append(Rule(
-                lhs=Nonterminal("relation_id"),
-                rhs=[Terminal("("), Terminal(":"), Nonterminal("SYMBOL"), Terminal(")")],
-                grammar=self.grammar
-            ))
-            self.grammar.rules.append(Rule(
-                lhs=Nonterminal("relation_id"),
-                rhs=[Nonterminal("NUMBER")],
-                grammar=self.grammar
-            ))
+            self._generate_message_rule(message_name)
 
         if 'fragment_id' not in self.generated_rules:
-            self.grammar.rules.append(Rule(
+            self._add_rule(Rule(
                 lhs=Nonterminal("fragment_id"),
-                rhs=[Terminal(":"), Nonterminal("SYMBOL")],
+                rhs=Sequence([Literal(":"), Terminal("SYMBOL")]),
                 grammar=self.grammar
             ))
 
         if 'var' not in self.generated_rules:
-            self.grammar.rules.append(Rule(
+            self._add_rule(Rule(
                 lhs=Nonterminal("var"),
-                rhs=[Nonterminal("SYMBOL")],
+                rhs=Terminal("SYMBOL"),
                 grammar=self.grammar
             ))
 
         if 'value' not in self.generated_rules:
             for val_type in ['STRING', 'NUMBER', 'FLOAT', 'UINT128', 'INT128', 'date', 'datetime', 'MISSING', 'DECIMAL', 'BOOLEAN']:
-                self.grammar.rules.append(Rule(
+                self._add_rule(Rule(
                     lhs=Nonterminal("value"),
-                    rhs=[Nonterminal(val_type)],
+                    rhs=Nonterminal(val_type),
                     grammar=self.grammar
                 ))
 
         if 'type_' not in self.generated_rules:
-            self.grammar.rules.append(Rule(
+            self._add_rule(Rule(
                 lhs=Nonterminal("type_"),
-                rhs=[Nonterminal("TYPE_NAME")],
+                rhs=Terminal("TYPE_NAME"),
                 grammar=self.grammar
             ))
-            self.grammar.rules.append(Rule(
+            self._add_rule(Rule(
                 lhs=Nonterminal("type_"),
-                rhs=[Terminal("("), Nonterminal("TYPE_NAME"), Star(Nonterminal("value")), Terminal(")")],
+                rhs=Sequence([Literal("("), Terminal("TYPE_NAME"), Star(Nonterminal("value")), Literal(")")]),
                 grammar=self.grammar
             ))
 
-
-        self.grammar.rules.append(Rule(
+        self._add_rule(Rule(
             lhs=Nonterminal("date"),
-            rhs=[Terminal("("), Terminal("date"), Nonterminal("NUMBER"), Nonterminal("NUMBER"), Nonterminal("NUMBER"), Terminal(")")],
+            rhs=Sequence([Literal("("), Literal("date"), Terminal("NUMBER"), Terminal("NUMBER"), Terminal("NUMBER"), Literal(")")]),
             grammar=self.grammar
         ))
-        self.grammar.rules.append(Rule(
+        self._add_rule(Rule(
             lhs=Nonterminal("datetime"),
-            rhs=[Terminal("("), Terminal("datetime"), Nonterminal("NUMBER"), Nonterminal("NUMBER"), Nonterminal("NUMBER"), Nonterminal("NUMBER"), Nonterminal("NUMBER"), Nonterminal("NUMBER"), Option(Nonterminal("NUMBER")), Terminal(")")],
+            rhs=Sequence([Literal("("), Literal("datetime"), Terminal("NUMBER"), Terminal("NUMBER"), Terminal("NUMBER"), Terminal("NUMBER"), Terminal("NUMBER"), Terminal("NUMBER"), Option(Terminal("NUMBER")), Literal(")")]),
             grammar=self.grammar
         ))
-        self.grammar.rules.append(Rule(
+        self._add_rule(Rule(
             lhs=Nonterminal("config_dict"),
-            rhs=[Terminal("{"), Star(Nonterminal("config_key_value")), Terminal("}")],
+            rhs=Sequence([Literal("{"), Star(Nonterminal("config_key_value")), Literal("}")]),
             grammar=self.grammar
         ))
-        self.grammar.rules.append(Rule(
+        self._add_rule(Rule(
             lhs=Nonterminal("config_key_value"),
-            rhs=[Terminal(":"), Nonterminal("SYMBOL"), Nonterminal("value")],
+            rhs=Sequence([Literal(":"), Terminal("SYMBOL"), Nonterminal("value")]),
             grammar=self.grammar
         ))
 
@@ -487,186 +487,415 @@ class GrammarGenerator:
         self.grammar.tokens.append(Token("FLOAT", '/[-]?\\d+\\.\\d+/ | "inf" | "nan"', 1))
         self.grammar.tokens.append(Token("DECIMAL", '/[-]?\\d+\\.\\d+d\\d+/', 2))
         self.grammar.tokens.append(Token("BOOLEAN", '"true" | "false"', 1))
-        self.grammar.tokens.append(Token("COMMENT", '/;;.*/'))
+        self.grammar.tokens.append(Token("COMMENT", '/;.*/'))
 
         self.grammar.ignores.append('/\\s+/')
         self.grammar.ignores.append('COMMENT')
 
         self.grammar.imports.append('%import common.ESCAPED_STRING -> ESCAPED_STRING')
-
         self._post_process_grammar()
-
         return self.grammar
 
     def _add_all_prepopulated_rules(self) -> None:
-        """Add all prepopulated rules that override auto-generated ones."""
-        self._add_prepopulated_rule(Rule(
+        """Add manually-crafted rules that should not be auto-generated."""
+        def add_rule(rule: Rule) -> None:
+            self.generated_rules.add(rule.lhs.name)
+            self.grammar.add_rule(rule)
+
+        add_rule(Rule(
             lhs=Nonterminal("transaction"),
-            rhs=[Terminal("("), Terminal("transaction"), Option(Nonterminal("configure")), Star(Nonterminal("epoch")), Terminal(")")],
+            rhs=Sequence([Literal("("), Literal("transaction"), Option(Nonterminal("configure")), Star(Nonterminal("epoch")), Literal(")")]),
             grammar=self.grammar
         ))
-        # TODO: bindings rule needs Group support for ("|" right_bindings)?
-        # For now, create a simplified version
-        self._add_prepopulated_rule(Rule(
+        add_rule(Rule(
             lhs=Nonterminal("bindings"),
-            rhs=[Terminal("["), Nonterminal("left_bindings"), Option(Terminal("|")), Option(Nonterminal("right_bindings")), Terminal("]")],
+            rhs=Sequence([Literal("["), Star(Nonterminal("binding")), Option(Sequence([Literal("|"), Star(Nonterminal("binding"))])), Literal("]")]),
             grammar=self.grammar
         ))
-        self._add_prepopulated_rule(Rule(
-            lhs=Nonterminal("left_bindings"),
-            rhs=[Star(Nonterminal("binding"))],
-            grammar=self.grammar
-        ))
-        self._add_prepopulated_rule(Rule(
-            lhs=Nonterminal("right_bindings"),
-            rhs=[Star(Nonterminal("binding"))],
-            grammar=self.grammar
-        ))
-        self._add_prepopulated_rule(Rule(
+        add_rule(Rule(
             lhs=Nonterminal("binding"),
-            rhs=[Nonterminal("SYMBOL"), Terminal("::"), Nonterminal("type_")],
+            rhs=Sequence([Terminal("SYMBOL"), Literal("::"), Nonterminal("type_")]),
             grammar=self.grammar
         ))
-        self._add_prepopulated_rule(Rule(
+        add_rule(Rule(
             lhs=Nonterminal("abstraction"),
-            rhs=[Terminal("("), Nonterminal("bindings"), Nonterminal("formula"), Terminal(")")],
+            rhs=Sequence([Literal("("), Nonterminal("bindings"), Nonterminal("formula"), Literal(")")]),
             grammar=self.grammar
         ))
-        self._add_prepopulated_rule(Rule(
+        add_rule(Rule(
             lhs=Nonterminal("name"),
-            rhs=[Terminal(":"), Nonterminal("SYMBOL")],
+            rhs=Sequence([Literal(":"), Terminal("SYMBOL")]),
             grammar=self.grammar
         ))
 
-        self._add_prepopulated_rule(Rule(
+        add_rule(Rule(
+            lhs=Nonterminal("true"),
+            rhs=Sequence([Literal("("), Literal("true"), Literal(")")]),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("false"),
+            rhs=Sequence([Literal("("), Literal("false"), Literal(")")]),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("formula"),
+            rhs=Nonterminal("true"),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("formula"),
+            rhs=Nonterminal("false"),
+            grammar=self.grammar
+        ))
+
+        add_rule(Rule(
+            lhs=Nonterminal("export_"),
+            rhs=Sequence([Literal("("), Literal("export"), Nonterminal("export_csv_config"), Literal(")")]),
+            grammar=self.grammar
+        ))
+
+        add_rule(Rule(
+            lhs=Nonterminal("export_csv_config"),
+            rhs=Sequence([Literal("("), Literal("export_csv_config"), Nonterminal("export_path"), Nonterminal("export_columns"), Nonterminal("config_dict"), Literal(")")]),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("export_columns"),
+            rhs=Sequence([Literal("("), Literal("columns"), Star(Nonterminal("export_column")), Literal(")")]),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("export_column"),
+            rhs=Sequence([Literal("("), Literal("column"), Terminal("STRING"), Nonterminal("relation_id"), Literal(")")]),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("export_path"),
+            rhs=Sequence([Literal("("), Literal("path"), Terminal("STRING"), Literal(")")]),
+            grammar=self.grammar
+        ))
+
+        add_rule(Rule(
+            lhs=Nonterminal("relation_id"),
+            rhs=Sequence([Literal("("), Literal(":"), Terminal("SYMBOL"), Literal(")")]),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("relation_id"),
+            rhs=Terminal("NUMBER"),
+            grammar=self.grammar
+        ))
+
+        add_rule(Rule(
+            lhs=Nonterminal("specialized_value"),
+            rhs=Sequence([Literal("#"), Nonterminal("value")]),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("rel_term"),
+            rhs=Nonterminal("specialized_value"),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("rel_term"),
+            rhs=Nonterminal("term"),
+            grammar=self.grammar
+        ))
+
+        add_rule(Rule(
+            lhs=Nonterminal("string_type"),
+            rhs=Literal("STRING"),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("int_type"),
+            rhs=Literal("INT"),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("float_type"),
+            rhs=Literal("FLOAT"),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("uint128_type"),
+            rhs=Literal("UINT128"),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("int128_type"),
+            rhs=Literal("INT128"),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("boolean_type"),
+            rhs=Literal("BOOLEAN"),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("date_type"),
+            rhs=Literal("DATE"),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("date_time_type"),
+            rhs=Literal("DATETIME"),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("missing_type"),
+            rhs=Literal("MISSING"),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("decimal_type"),
+            rhs=Sequence([Literal("("), Literal("DECIMAL"), Terminal("NUMBER"), Terminal("NUMBER"), Literal(")")]),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("unspecified_type"),
+            rhs=Literal("UNKNOWN"),
+            grammar=self.grammar
+        ))
+
+        add_rule(Rule(
+            lhs=Nonterminal("missing_value"),
+            rhs=Literal("missing"),
+            grammar=self.grammar
+        ))
+
+        add_rule(Rule(
+            lhs=Nonterminal("value"),
+            rhs=Terminal("STRING"),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("value"),
+            rhs=Terminal("NUMBER"),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("value"),
+            rhs=Terminal("FLOAT"),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("value"),
+            rhs=Terminal("UINT128"),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("value"),
+            rhs=Terminal("INT128"),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("value"),
+            rhs=Nonterminal("date"),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("value"),
+            rhs=Nonterminal("datetime"),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("value"),
+            rhs=Terminal("MISSING"),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("value"),
+            rhs=Terminal("DECIMAL"),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("value"),
+            rhs=Terminal("BOOLEAN"),
+            grammar=self.grammar
+        ))
+
+        add_rule(Rule(
             lhs=Nonterminal("eq"),
-            rhs=[Terminal("("), Terminal("="), Nonterminal("term"), Nonterminal("term"), Terminal(")")],
+            rhs=Sequence([Literal("("), Literal("="), Nonterminal("term"), Nonterminal("term"), Literal(")")]),
             grammar=self.grammar
         ))
-        self._add_prepopulated_rule(Rule(
+        add_rule(Rule(
             lhs=Nonterminal("lt"),
-            rhs=[Terminal("("), Terminal("<"), Nonterminal("term"), Nonterminal("term"), Terminal(")")],
+            rhs=Sequence([Literal("("), Literal("<"), Nonterminal("term"), Nonterminal("term"), Literal(")")]),
             grammar=self.grammar
         ))
-        self._add_prepopulated_rule(Rule(
+        add_rule(Rule(
             lhs=Nonterminal("lt_eq"),
-            rhs=[Terminal("("), Terminal("<="), Nonterminal("term"), Nonterminal("term"), Terminal(")")],
+            rhs=Sequence([Literal("("), Literal("<="), Nonterminal("term"), Nonterminal("term"), Literal(")")]),
             grammar=self.grammar
         ))
-        self._add_prepopulated_rule(Rule(
+        add_rule(Rule(
             lhs=Nonterminal("gt"),
-            rhs=[Terminal("("), Terminal(">"), Nonterminal("term"), Nonterminal("term"), Terminal(")")],
+            rhs=Sequence([Literal("("), Literal(">"), Nonterminal("term"), Nonterminal("term"), Literal(")")]),
             grammar=self.grammar
         ))
-        self._add_prepopulated_rule(Rule(
+        add_rule(Rule(
             lhs=Nonterminal("gt_eq"),
-            rhs=[Terminal("("), Terminal(">="), Nonterminal("term"), Nonterminal("term"), Terminal(")")],
+            rhs=Sequence([Literal("("), Literal(">="), Nonterminal("term"), Nonterminal("term"), Literal(")")]),
             grammar=self.grammar
         ))
 
-        self._add_prepopulated_rule(Rule(
+        add_rule(Rule(
             lhs=Nonterminal("add"),
-            rhs=[Terminal("("), Terminal("+"), Nonterminal("term"), Nonterminal("term"), Nonterminal("term"), Terminal(")")],
+            rhs=Sequence([Literal("("), Literal("+"), Nonterminal("term"), Nonterminal("term"), Nonterminal("term"), Literal(")")]),
             grammar=self.grammar
         ))
-        self._add_prepopulated_rule(Rule(
+        add_rule(Rule(
             lhs=Nonterminal("minus"),
-            rhs=[Terminal("("), Terminal("-"), Nonterminal("term"), Nonterminal("term"), Nonterminal("term"), Terminal(")")],
+            rhs=Sequence([Literal("("), Literal("-"), Nonterminal("term"), Nonterminal("term"), Nonterminal("term"), Literal(")")]),
             grammar=self.grammar
         ))
-        self._add_prepopulated_rule(Rule(
+        add_rule(Rule(
             lhs=Nonterminal("multiply"),
-            rhs=[Terminal("("), Terminal("*"), Nonterminal("term"), Nonterminal("term"), Nonterminal("term"), Terminal(")")],
+            rhs=Sequence([Literal("("), Literal("*"), Nonterminal("term"), Nonterminal("term"), Nonterminal("term"), Literal(")")]),
             grammar=self.grammar
         ))
-        self._add_prepopulated_rule(Rule(
+        add_rule(Rule(
             lhs=Nonterminal("divide"),
-            rhs=[Terminal("("), Terminal("/"), Nonterminal("term"), Nonterminal("term"), Nonterminal("term"), Terminal(")")],
+            rhs=Sequence([Literal("("), Literal("/"), Nonterminal("term"), Nonterminal("term"), Nonterminal("term"), Literal(")")]),
             grammar=self.grammar
         ))
 
         for prim in ["raw_primitive", "eq", "lt", "lt_eq", "gt", "gt_eq", "add", "minus", "multiply", "divide"]:
-            self._add_prepopulated_rule(Rule(
-                lhs=Nonterminal("primitive"),
-                rhs=[Nonterminal(prim)],
+            add_rule(Rule(
+                lhs=Nonterminal("primitive_"),
+                rhs=Nonterminal(prim),
                 grammar=self.grammar
             ))
-        self._add_prepopulated_rule(Rule(
+        add_rule(Rule(
             lhs=Nonterminal("raw_primitive"),
-            rhs=[Terminal("("), Terminal("primitive"), Nonterminal("name"), Star(Nonterminal("rel_term")), Terminal(")")],
+            rhs=Sequence([Literal("("), Literal("primitive"), Nonterminal("name"), Star(Nonterminal("rel_term")), Literal(")")]),
             grammar=self.grammar
         ))
 
     def _post_process_grammar(self) -> None:
-        """Apply rewrite rules to the grammar."""
+        """Apply grammar rewrite rules."""
         self._rewrite_monoid_rules()
         self._rewrite_monoid_monus_def_tags()
         self._rewrite_string_to_name_optional()
         self._rewrite_string_to_name_in_ffi_and_pragma()
+        self._rewrite_fragment_declarations()
+        self._rewrite_fragment_remove_debug_info()
+        self._rewrite_terms_optional_to_star()
 
     def _rewrite_monoid_rules(self) -> None:
-        """Rewrite monoid rules to use type_ "::" "OPERATION" format."""
+        """Rewrite *_monoid rules to type_ "::" OPERATION format."""
         import re as regex
-
         monoid_pattern = regex.compile(r'^(\w+)_monoid$')
-
-        for rule in self.grammar.rules:
-            match = monoid_pattern.match(rule.lhs.name)
-            if match:
-                operation = match.group(1).upper()
-                if operation == 'OR':
-                    rule.rhs = [Nonterminal('BOOL'), Terminal('::'), Terminal(operation)]
-                else:
-                    rule.rhs = [Nonterminal('type_'), Terminal('::'), Terminal(operation)]
+        for rules_list in self.grammar.rules.values():
+            for rule in rules_list:
+                match = monoid_pattern.match(rule.lhs.name)
+                if match:
+                    operation = match.group(1).upper()
+                    if operation == 'OR':
+                        rule.rhs = Sequence([Terminal('BOOL'), Literal('::'), Literal(operation)])
+                    else:
+                        rule.rhs = Sequence([Nonterminal('type_'), Literal('::'), Literal(operation)])
 
     def _rewrite_monoid_monus_def_tags(self) -> None:
-        """Rewrite 'monoid_def' tag to 'monoid' and 'monus_def' tag to 'monus'."""
-        for rule in self.grammar.rules:
-            if rule.lhs.name in ['monoid_def', 'monus_def']:
-                for i, symbol in enumerate(rule.rhs):
-                    if isinstance(symbol, Terminal):
-                        if symbol.name == 'monoid_def':
-                            rule.rhs[i] = Terminal('monoid')
-                        elif symbol.name == 'monus_def':
-                            rule.rhs[i] = Terminal('monus')
+        """Rewrite monoid_def → monoid and monus_def → monus in terminal strings."""
+        for rules_list in self.grammar.rules.values():
+            for rule in rules_list:
+                if rule.lhs.name in ['monoid_def', 'monus_def']:
+                    if isinstance(rule.rhs, Sequence):
+                        for i, symbol in enumerate(rule.rhs.elements):
+                            if isinstance(symbol, Literal):
+                                if symbol.name == 'monoid_def':
+                                    rule.rhs.elements[i] = Literal('monoid')
+                                elif symbol.name == 'monus_def':
+                                    rule.rhs.elements[i] = Literal('monus')
 
     def _rewrite_string_to_name_optional(self) -> None:
         """Replace STRING with name? in output and abort rules."""
-        for rule in self.grammar.rules:
-            if rule.lhs.name in ['output', 'abort']:
-                for i, symbol in enumerate(rule.rhs):
-                    if isinstance(symbol, Nonterminal) and symbol.name == 'STRING':
-                        rule.rhs[i] = Option(Nonterminal('name'))
+        for rules_list in self.grammar.rules.values():
+            for rule in rules_list:
+                if rule.lhs.name in ['output', 'abort']:
+                    if isinstance(rule.rhs, Sequence):
+                        for i, symbol in enumerate(rule.rhs.elements):
+                            if isinstance(symbol, Terminal) and symbol.name == 'STRING':
+                                rule.rhs.elements[i] = Option(Nonterminal('name'))
 
     def _rewrite_string_to_name_in_ffi_and_pragma(self) -> None:
         """Replace STRING with name in ffi and pragma rules."""
-        for rule in self.grammar.rules:
-            if rule.lhs.name in ['ffi', 'pragma']:
-                for i, symbol in enumerate(rule.rhs):
-                    if isinstance(symbol, Nonterminal) and symbol.name == 'STRING':
-                        rule.rhs[i] = Nonterminal('name')
+        for rules_list in self.grammar.rules.values():
+            for rule in rules_list:
+                if rule.lhs.name in ['ffi', 'pragma']:
+                    if isinstance(rule.rhs, Sequence):
+                        for i, symbol in enumerate(rule.rhs.elements):
+                            if isinstance(symbol, Terminal) and symbol.name == 'STRING':
+                                rule.rhs.elements[i] = Nonterminal('name')
 
-    def _add_prepopulated_rule(self, rule: Rule) -> None:
-        """Add a pre-populated rule and mark it to prevent auto-generation."""
-        name = rule.lhs.name
-        # Mark this rule as generated so it won't be auto-generated
-        self.generated_rules.add(name)
-        self.grammar.rules.append(rule)
+    def _rewrite_fragment_declarations(self) -> None:
+        """Replace declarations? with declaration* in fragment rules."""
+        for rules_list in self.grammar.rules.values():
+            for rule in rules_list:
+                if rule.lhs.name == 'fragment':
+                    if isinstance(rule.rhs, Sequence):
+                        for i, symbol in enumerate(rule.rhs.elements):
+                            if isinstance(symbol, Option):
+                                if isinstance(symbol.rhs, Nonterminal) and symbol.rhs.name == 'declarations':
+                                    rule.rhs.elements[i] = Star(Nonterminal('declaration'))
+
+    def _rewrite_fragment_remove_debug_info(self) -> None:
+        """Remove debug_info from fragment rules."""
+        for rules_list in self.grammar.rules.values():
+            for rule in rules_list:
+                if rule.lhs.name == 'fragment':
+                    if isinstance(rule.rhs, Sequence):
+                        new_elements = []
+                        for symbol in rule.rhs.elements:
+                            if isinstance(symbol, Option):
+                                if isinstance(symbol.rhs, Nonterminal) and symbol.rhs.name == 'debug_info':
+                                    continue
+                            elif isinstance(symbol, Nonterminal) and symbol.name == 'debug_info':
+                                continue
+                            new_elements.append(symbol)
+                        rule.rhs.elements = new_elements
+
+    def _rewrite_terms_optional_to_star(self) -> None:
+        """Replace terms? with term* in pragma, atom, ffi, and reduce rules, and with rel_term* in rel_atom."""
+        for rules_list in self.grammar.rules.values():
+            for rule in rules_list:
+                if rule.lhs.name in ['pragma', 'atom', 'ffi']:
+                    if isinstance(rule.rhs, Sequence):
+                        for i, symbol in enumerate(rule.rhs.elements):
+                            if isinstance(symbol, Option):
+                                if isinstance(symbol.rhs, Nonterminal) and symbol.rhs.name == 'terms':
+                                    rule.rhs.elements[i] = Star(Nonterminal('term'))
+                elif rule.lhs.name == 'rel_atom':
+                    if isinstance(rule.rhs, Sequence):
+                        for i, symbol in enumerate(rule.rhs.elements):
+                            if isinstance(symbol, Option):
+                                if isinstance(symbol.rhs, Nonterminal) and symbol.rhs.name == 'terms':
+                                    rule.rhs.elements[i] = Star(Nonterminal('rel_term'))
+                            elif isinstance(symbol, Terminal) and symbol.name == 'STRING':
+                                rule.rhs.elements[i] = Nonterminal('name')
 
     def _get_rule_name(self, name: str) -> str:
-        """Get the grammar rule name for a message."""
-        if name in SPECIAL_MAPPINGS:
-            return SPECIAL_MAPPINGS[name]
-        return self._to_rule_name(name)
+        """Convert message name to rule name, adding underscore suffix for keywords."""
+        if name == 'RelAtom':
+            return 'relatom'
+        if name == 'RelTerm':
+            return 'relterm'
+        snake_case = self._to_rule_name(name)
+        if snake_case in KEYWORDS:
+            return f"{snake_case}_"
+        return snake_case
 
     def _to_rule_name(self, name: str) -> str:
-        """Convert a message name to a grammar rule name."""
-        result = re.sub(r'([A-Z]+)([A-Z][a-z])', r'\1_\2', name)
-        result = re.sub(r'([a-z\d])([A-Z])', r'\1_\2', result)
+        """Convert CamelCase to snake_case."""
+        result = re.sub(r'([a-z\d])([A-Z])', r'\1_\2', name)
         return result.lower()
 
     def _to_field_name(self, name: str) -> str:
-        """Convert a field name to snake_case."""
+        """Normalize field name to valid identifier."""
         return name.replace('-', '_').replace('.', '_')
 
     def _is_oneof_only_message(self, message: ProtoMessage) -> bool:
@@ -674,77 +903,55 @@ class GrammarGenerator:
         return len(message.oneofs) > 0 and len(message.fields) == 0
 
     def _generate_message_rule(self, message_name: str) -> None:
-        """Generate a grammar rule for a message."""
-        if message_name in self.generated_rules:
-            return
-
+        """Generate grammar rules for a protobuf message and recursively for its fields."""
         if message_name not in self.parser.messages:
             return
 
-        if message_name in SPECIAL_MAPPINGS:
-            self.generated_rules.add(message_name)
-            return
-
-        self.generated_rules.add(message_name)
-        message = self.parser.messages[message_name]
-        rule_name = self._to_rule_name(message_name)
-
-        # Skip if a prepopulated rule already exists for this rule name
+        rule_name = self._get_rule_name(message_name)
         if rule_name in self.generated_rules:
             return
 
+        self.generated_rules.add(rule_name)
+        message = self.parser.messages[message_name]
         if self._is_oneof_only_message(message):
             oneof = message.oneofs[0]
-            alternatives = []
-            rules_for_nonterm = []
             for field in oneof.fields:
                 field_rule = self._get_rule_name(field.type)
-                alternatives.append(field_rule)
-
-            for alt in alternatives:
-                alt_rule = Rule(lhs=Nonterminal(rule_name), rhs=[Nonterminal(alt)], grammar=self.grammar)
-                self.grammar.rules.append(alt_rule)
-                rules_for_nonterm.append(alt_rule)
-
-            self.auto_generated_rules[rule_name] = rules_for_nonterm
-
+                alt_rule = Rule(lhs=Nonterminal(rule_name), rhs=Nonterminal(field_rule), grammar=self.grammar)
+                self._add_rule(alt_rule)
             for field in oneof.fields:
                 self._generate_message_rule(field.type)
         else:
             tag = self._to_sexp_tag(message_name)
-
-            rhs_symbols: List[GrammarSymbol] = [Terminal('('), Terminal(tag)]
+            rhs_symbols: List[Rhs] = [Literal('('), Literal(tag)]
             for field in message.fields:
                 field_symbol = self._generate_field_symbol(field)
                 if field_symbol:
                     rhs_symbols.append(field_symbol)
-            rhs_symbols.append(Terminal(')'))
-
-            rule = Rule(lhs=Nonterminal(rule_name), rhs=rhs_symbols, grammar=self.grammar)
-            self.grammar.rules.append(rule)
-            self.auto_generated_rules[rule_name] = [rule]
-
+            rhs_symbols.append(Literal(')'))
+            rule = Rule(lhs=Nonterminal(rule_name), rhs=Sequence(rhs_symbols), grammar=self.grammar)
+            self._add_rule(rule)
             for field in message.fields:
                 if self._is_message_type(field.type):
                     self._generate_message_rule(field.type)
 
     def _to_sexp_tag(self, name: str) -> str:
-        """Convert a message name to an s-expression tag."""
+        """Convert message name to s-expression tag (same as snake_case conversion)."""
         result = re.sub(r'([A-Z]+)([A-Z][a-z])', r'\1_\2', name)
         result = re.sub(r'([a-z\d])([A-Z])', r'\1_\2', result)
         return result.lower()
 
     def _is_sexp_tag(self, symbol: str) -> bool:
-        """Check if a symbol is an s-expression tag (should be quoted as literal)."""
+        """Check if symbol should be treated as s-expression tag (currently unused)."""
         if not symbol or not symbol.isidentifier():
             return False
         return symbol.islower() or '_' in symbol
 
-    def _generate_field_symbol(self, field: ProtoField) -> Optional[GrammarSymbol]:
-        """Generate a symbol for a field."""
+    def _generate_field_symbol(self, field: ProtoField) -> Optional[Rhs]:
+        """Generate grammar symbol for a protobuf field, handling repeated/optional modifiers."""
         if self._is_primitive_type(field.type):
             terminal_name = self._map_primitive_type(field.type)
-            base_symbol: GrammarSymbol = Nonterminal(terminal_name)
+            base_symbol: Rhs = Nonterminal(terminal_name)
             if field.is_repeated:
                 return Star(base_symbol)
             elif field.is_optional:
@@ -756,17 +963,14 @@ class GrammarGenerator:
             field_rule_name = self._to_field_name(field.name)
 
             if field.is_repeated:
-                # Check if field name differs from type name - if so, create wrapper rule
                 if field_rule_name != rule_name:
-                    # Only add wrapper rule if it doesn't already exist
                     if not self.grammar.has_rule(field_rule_name):
-                        # Create wrapper rule: field_name: "(" "field_name" type* ")"
                         wrapper_rule = Rule(
                             lhs=Nonterminal(field_rule_name),
-                            rhs=[Terminal("("), Terminal(field_rule_name), Star(Nonterminal(rule_name)), Terminal(")")],
+                            rhs=Sequence([Literal("("), Literal(field_rule_name), Star(Nonterminal(rule_name)), Literal(")")]),
                             grammar=self.grammar
                         )
-                        self.grammar.rules.append(wrapper_rule)
+                        self._add_rule(wrapper_rule)
                     return Option(Nonterminal(field_rule_name))
                 else:
                     return Star(Nonterminal(rule_name))
@@ -778,15 +982,15 @@ class GrammarGenerator:
             return None
 
     def _is_primitive_type(self, type_name: str) -> bool:
-        """Check if a type is a protobuf primitive."""
+        """Check if type is a protobuf primitive."""
         return type_name in PRIMITIVE_TYPES
 
     def _is_message_type(self, type_name: str) -> bool:
-        """Check if a type is a message type."""
+        """Check if type is a protobuf message."""
         return type_name in self.parser.messages
 
     def _map_primitive_type(self, type_name: str) -> str:
-        """Map protobuf primitive types to grammar terminals."""
+        """Map protobuf primitive to grammar terminal name."""
         return PRIMITIVE_TYPES.get(type_name, 'SYMBOL')
 
 
