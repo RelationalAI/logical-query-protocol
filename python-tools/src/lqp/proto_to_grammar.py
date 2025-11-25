@@ -921,18 +921,30 @@ class GrammarGenerator:
                 # Determine canonical name based on common suffix
                 canonical_lhs = self._find_canonical_name(lhs_names)
 
-                # If canonical name differs from first name, need to rename
-                if canonical_lhs != lhs_names[0]:
-                    rename_map[lhs_names[0]] = canonical_lhs
-                    # Move the rule to the new name
-                    self.grammar.rules[canonical_lhs] = self.grammar.rules[lhs_names[0]]
-                    self.grammar.rules[canonical_lhs][0].lhs = Nonterminal(canonical_lhs)
-                    # Update rule_order
-                    try:
-                        idx = self.grammar.rule_order.index(lhs_names[0])
-                        del self.grammar.rule_order[idx]
-                    except ValueError:
-                        pass
+                # Keep the first rule as the canonical one, delete the rest
+                for i, lhs_name in enumerate(lhs_names):
+                    if i == 0:
+                        # Rename the first rule to canonical name if needed
+                        if canonical_lhs != lhs_name:
+                            rename_map[lhs_name] = canonical_lhs
+                            self.grammar.rules[canonical_lhs] = self.grammar.rules[lhs_name]
+                            self.grammar.rules[canonical_lhs][0].lhs = Nonterminal(canonical_lhs)
+                            del self.grammar.rules[lhs_name]
+                            try:
+                                idx = self.grammar.rule_order.index(lhs_name)
+                                self.grammar.rule_order[idx] = canonical_lhs
+                            except ValueError:
+                                pass
+                    else:
+                        # Mark this name as renamed to canonical
+                        rename_map[lhs_name] = canonical_lhs
+                        # Remove from grammar
+                        if lhs_name in self.grammar.rules:
+                            del self.grammar.rules[lhs_name]
+                        try:
+                            self.grammar.rule_order.remove(lhs_name)
+                        except ValueError:
+                            pass
 
         # Replace all occurrences of renamed rules throughout the grammar
         if rename_map:
