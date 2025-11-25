@@ -166,6 +166,7 @@ class Rule:
     rhs: Rhs
     action: Optional[str] = None
     grammar: Optional['Grammar'] = field(default=None, repr=False, compare=False)
+    source_type: Optional[str] = None  # Track the protobuf type this rule came from
 
     def to_pattern(self, grammar: Optional['Grammar'] = None) -> str:
         """Convert RHS to pattern string."""
@@ -268,13 +269,15 @@ class Grammar:
                 unreachable.append(rule_name)
         return unreachable
 
-    def to_lark(self) -> str:
+    def to_lark(self, reachable: Optional[Set[str]] = None) -> str:
         """Convert to Lark grammar format."""
         lines = []
         lines.append("// Auto-generated grammar from protobuf specifications")
         lines.append("")
 
         for lhs in self.rule_order:
+            if reachable is not None and lhs not in reachable:
+                continue
             rules_list = self.rules[lhs]
             if len(rules_list) == 1:
                 lines.append(f"{lhs}: {rules_list[0].to_pattern(self)}")
@@ -432,8 +435,25 @@ class GrammarGenerator:
         self.parser = parser
         self.generated_rules: Set[str] = set()
         self.final_rules: Set[str] = set()
+        self.expected_unreachable: Set[str] = set()
         self.grammar = Grammar()
         self.verbose = verbose
+        self.inline_fields: Set[Tuple[str, str]] = {
+            ("Script", "constructs"),
+            ("Conjunction", "args"),
+            ("Disjunction", "args"),
+            ("Fragment", "declarations"),
+            ("Context", "relations"),
+            ("Sync", "fragments"),
+            ("Algorithm", "global"),
+            ("Attribute", "args"),
+        }
+        self.rule_literal_renames: Dict[str, str] = {
+            "monoid_def": "monoid",
+            "monus_def": "monus",
+            "conjunction": "and",
+            "disjunction": "or",
+        }
 
     def _add_rule(self, rule: Rule) -> None:
         """Add a rule to the grammar and track it in generated_rules."""
@@ -483,18 +503,6 @@ class GrammarGenerator:
                     grammar=self.grammar
                 ))
 
-        if 'type_' not in self.generated_rules:
-            self._add_rule(Rule(
-                lhs=Nonterminal("type"),
-                rhs=Terminal("TYPE_NAME"),
-                grammar=self.grammar
-            ))
-            self._add_rule(Rule(
-                lhs=Nonterminal("type"),
-                rhs=Sequence([Literal("("), Terminal("TYPE_NAME"), Star(Nonterminal("value")), Literal(")")]),
-                grammar=self.grammar
-            ))
-
         self._add_rule(Rule(
             lhs=Nonterminal("date"),
             rhs=Sequence([Literal("("), Literal("date"), Terminal("NUMBER"), Terminal("NUMBER"), Terminal("NUMBER"), Literal(")")]),
@@ -516,7 +524,6 @@ class GrammarGenerator:
             grammar=self.grammar
         ))
 
-        self.grammar.tokens.append(Token("TYPE_NAME", '"STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"\n         | "DATE" | "DATETIME" | "MISSING" | "DECIMAL" | "BOOLEAN"'))
         self.grammar.tokens.append(Token("SYMBOL", '/[a-zA-Z_][a-zA-Z0-9_.-]*/'))
         self.grammar.tokens.append(Token("MISSING", '"missing"', 1))
         self.grammar.tokens.append(Token("STRING", 'ESCAPED_STRING'))
@@ -526,7 +533,7 @@ class GrammarGenerator:
         self.grammar.tokens.append(Token("FLOAT", '/[-]?\\d+\\.\\d+/ | "inf" | "nan"', 1))
         self.grammar.tokens.append(Token("DECIMAL", '/[-]?\\d+\\.\\d+d\\d+/', 2))
         self.grammar.tokens.append(Token("BOOLEAN", '"true" | "false"', 1))
-        self.grammar.tokens.append(Token("COMMENT", '/;.*/'))
+        self.grammar.tokens.append(Token("COMMENT", '/;;.*/'))
 
         self.grammar.ignores.append('/\\s+/')
         self.grammar.ignores.append('COMMENT')
@@ -566,6 +573,12 @@ class GrammarGenerator:
         add_rule(Rule(
             lhs=Nonterminal("name"),
             rhs=Sequence([Literal(":"), Terminal("SYMBOL")]),
+            grammar=self.grammar
+        ))
+
+        add_rule(Rule(
+            lhs=Nonterminal("configure"),
+            rhs=Sequence([Literal("("), Literal("configure"), Nonterminal("config_dict"), Literal(")")]),
             grammar=self.grammar
         ))
 
@@ -618,8 +631,19 @@ class GrammarGenerator:
         ))
 
         add_rule(Rule(
+            lhs=Nonterminal("var"),
+            rhs=Sequence([Terminal("SYMBOL")]),
+            grammar=self.grammar
+        ))
+
+        add_rule(Rule(
+            lhs=Nonterminal("fragment_id"),
+            rhs=Sequence([Literal(":"), Terminal("SYMBOL")]),
+            grammar=self.grammar
+        ))
+        add_rule(Rule(
             lhs=Nonterminal("relation_id"),
-            rhs=Sequence([Literal("("), Literal(":"), Terminal("SYMBOL"), Literal(")")]),
+            rhs=Sequence([Literal(":"), Terminal("SYMBOL")]),
             grammar=self.grammar
         ))
         add_rule(Rule(
@@ -643,142 +667,71 @@ class GrammarGenerator:
             rhs=Nonterminal("term"),
             grammar=self.grammar
         ))
+        type_rules = {
+            "string_type": Literal("STRING"),
+            "int_type": Literal("INT"),
+            "float_type": Literal("FLOAT"),
+            "uint128_type": Literal("UINT128"),
+            "int128_type": Literal("INT128"),
+            "boolean_type": Literal("BOOLEAN"),
+            "date_type": Literal("DATE"),
+            "datetime_type": Literal("DATETIME"),
+            "missing_type": Literal("MISSING"),
+            "decimal_type": Sequence([Literal("("), Literal("DECIMAL"), Terminal("NUMBER"), Terminal("NUMBER"), Literal(")")]),
+            "unspecified_type": Literal("UNKNOWN"),
+        }
+        for lhs_name, rhs_value in type_rules.items():
+            add_rule(Rule(
+                lhs=Nonterminal(lhs_name),
+                rhs=rhs_value,
+                grammar=self.grammar
+            ))
 
-        add_rule(Rule(
-            lhs=Nonterminal("string_type"),
-            rhs=Literal("STRING"),
-            grammar=self.grammar
-        ))
-        add_rule(Rule(
-            lhs=Nonterminal("int_type"),
-            rhs=Literal("INT"),
-            grammar=self.grammar
-        ))
-        add_rule(Rule(
-            lhs=Nonterminal("float_type"),
-            rhs=Literal("FLOAT"),
-            grammar=self.grammar
-        ))
-        add_rule(Rule(
-            lhs=Nonterminal("uint128_type"),
-            rhs=Literal("UINT128"),
-            grammar=self.grammar
-        ))
-        add_rule(Rule(
-            lhs=Nonterminal("int128_type"),
-            rhs=Literal("INT128"),
-            grammar=self.grammar
-        ))
-        add_rule(Rule(
-            lhs=Nonterminal("boolean_type"),
-            rhs=Literal("BOOLEAN"),
-            grammar=self.grammar
-        ))
-        add_rule(Rule(
-            lhs=Nonterminal("date_type"),
-            rhs=Literal("DATE"),
-            grammar=self.grammar
-        ))
-        add_rule(Rule(
-            lhs=Nonterminal("datetime_type"),
-            rhs=Literal("DATETIME"),
-            grammar=self.grammar
-        ))
-        add_rule(Rule(
-            lhs=Nonterminal("missing_type"),
-            rhs=Literal("MISSING"),
-            grammar=self.grammar
-        ))
-        add_rule(Rule(
-            lhs=Nonterminal("decimal_type"),
-            rhs=Sequence([Literal("("), Literal("DECIMAL"), Terminal("NUMBER"), Terminal("NUMBER"), Literal(")")]),
-            grammar=self.grammar
-        ))
-        add_rule(Rule(
-            lhs=Nonterminal("unspecified_type"),
-            rhs=Literal("UNKNOWN"),
-            grammar=self.grammar
-        ))
+        value_rules = {
+            "missing_value": Terminal("MISSING"),
+            "datetime_value": Nonterminal("datetime"),
+            "date_value": Nonterminal("date"),
+            "int128_value": Terminal("INT128"),
+            "uint128_value": Terminal("UINT128"),
+            "decimal_value": Terminal("DECIMAL"),
+        }
+        for lhs_name, rhs_value in value_rules.items():
+            add_rule(Rule(
+                lhs=Nonterminal(lhs_name),
+                rhs=rhs_value,
+                grammar=self.grammar
+            ))
 
-        add_rule(Rule(
-            lhs=Nonterminal("missing_value"),
-            rhs=Terminal("MISSING"),
-            grammar=self.grammar
-        ))
-        add_rule(Rule(
-            lhs=Nonterminal("datetime_value"),
-            rhs=Nonterminal("datetime"),
-            grammar=self.grammar
-        ))
-        add_rule(Rule(
-            lhs=Nonterminal("date_value"),
-            rhs=Nonterminal("date"),
-            grammar=self.grammar
-        ))
-        add_rule(Rule(
-            lhs=Nonterminal("int128_value"),
-            rhs=Terminal("INT128"),
-            grammar=self.grammar
-        ))
-        add_rule(Rule(
-            lhs=Nonterminal("uint128_value"),
-            rhs=Terminal("UINT128"),
-            grammar=self.grammar
-        ))
-        add_rule(Rule(
-            lhs=Nonterminal("decimal_value"),
-            rhs=Terminal("DECIMAL"),
-            grammar=self.grammar
-        ))
+        # Comparison operators (binary)
+        comparison_ops = {
+            "eq": "=",
+            "lt": "<",
+            "lt_eq": "<=",
+            "gt": ">",
+            "gt_eq": ">=",
+        }
+        for name, op in comparison_ops.items():
+            add_rule(Rule(
+                lhs=Nonterminal(name),
+                rhs=Sequence([Literal("("), Literal(op), Nonterminal("term"), Nonterminal("term"), Literal(")")]),
+                grammar=self.grammar
+            ))
 
-        add_rule(Rule(
-            lhs=Nonterminal("eq"),
-            rhs=Sequence([Literal("("), Literal("="), Nonterminal("term"), Nonterminal("term"), Literal(")")]),
-            grammar=self.grammar
-        ))
-        add_rule(Rule(
-            lhs=Nonterminal("lt"),
-            rhs=Sequence([Literal("("), Literal("<"), Nonterminal("term"), Nonterminal("term"), Literal(")")]),
-            grammar=self.grammar
-        ))
-        add_rule(Rule(
-            lhs=Nonterminal("lt_eq"),
-            rhs=Sequence([Literal("("), Literal("<="), Nonterminal("term"), Nonterminal("term"), Literal(")")]),
-            grammar=self.grammar
-        ))
-        add_rule(Rule(
-            lhs=Nonterminal("gt"),
-            rhs=Sequence([Literal("("), Literal(">"), Nonterminal("term"), Nonterminal("term"), Literal(")")]),
-            grammar=self.grammar
-        ))
-        add_rule(Rule(
-            lhs=Nonterminal("gt_eq"),
-            rhs=Sequence([Literal("("), Literal(">="), Nonterminal("term"), Nonterminal("term"), Literal(")")]),
-            grammar=self.grammar
-        ))
+        # Arithmetic operators (ternary)
+        arithmetic_ops = {
+            "add": "+",
+            "minus": "-",
+            "multiply": "*",
+            "divide": "/",
+        }
+        for name, op in arithmetic_ops.items():
+            add_rule(Rule(
+                lhs=Nonterminal(name),
+                rhs=Sequence([Literal("("), Literal(op), Nonterminal("term"), Nonterminal("term"), Nonterminal("term"), Literal(")")]),
+                grammar=self.grammar
+            ))
 
-        add_rule(Rule(
-            lhs=Nonterminal("add"),
-            rhs=Sequence([Literal("("), Literal("+"), Nonterminal("term"), Nonterminal("term"), Nonterminal("term"), Literal(")")]),
-            grammar=self.grammar
-        ))
-        add_rule(Rule(
-            lhs=Nonterminal("minus"),
-            rhs=Sequence([Literal("("), Literal("-"), Nonterminal("term"), Nonterminal("term"), Nonterminal("term"), Literal(")")]),
-            grammar=self.grammar
-        ))
-        add_rule(Rule(
-            lhs=Nonterminal("multiply"),
-            rhs=Sequence([Literal("("), Literal("*"), Nonterminal("term"), Nonterminal("term"), Nonterminal("term"), Literal(")")]),
-            grammar=self.grammar
-        ))
-        add_rule(Rule(
-            lhs=Nonterminal("divide"),
-            rhs=Sequence([Literal("("), Literal("/"), Nonterminal("term"), Nonterminal("term"), Nonterminal("term"), Literal(")")]),
-            grammar=self.grammar
-        ))
-
-        for prim in ["eq", "lt", "lt_eq", "gt", "gt_eq", "add", "minus", "multiply", "divide"]:
+        for prim in list(comparison_ops.keys()) + list(arithmetic_ops.keys()):
             add_rule(Rule(
                 lhs=Nonterminal("primitive"),
                 rhs=Nonterminal(prim),
@@ -788,13 +741,20 @@ class GrammarGenerator:
     def _post_process_grammar(self) -> None:
         """Apply grammar rewrite rules."""
         self._rewrite_monoid_rules()
-        self._rewrite_monoid_monus_def_tags()
         self._rewrite_string_to_name_optional()
-        self._rewrite_string_to_name_in_ffi_and_pragma()
-        self._rewrite_fragment_declarations()
+        self._rewrite_string_to_name()
         self._rewrite_fragment_remove_debug_info()
         self._rewrite_terms_optional_to_star()
         self._rewrite_primitive_rule()
+        self._rewrite_exists()
+        self._rewrite_drop_number_from_instructions()
+        self._rewrite_relatom_rule()
+        self._rewrite_attribute_rule()
+        self._combine_identical_rules()
+
+        self.expected_unreachable.add("debug_info")
+        self.expected_unreachable.add("debug_info_ids")
+        self.expected_unreachable.add("ivmconfig")
 
     def _rewrite_monoid_rules(self) -> None:
         """Rewrite *_monoid rules to type_ "::" OPERATION format."""
@@ -807,21 +767,14 @@ class GrammarGenerator:
                     operation = match.group(1).upper()
                     if operation == 'OR':
                         rule.rhs = Sequence([Literal('BOOL'), Literal('::'), Literal(operation)])
-                    else:
-                        rule.rhs = Sequence([Nonterminal('type_'), Literal('::'), Literal(operation)])
+                    elif (isinstance(rule.rhs, Sequence) and len(rule.rhs.elements) == 4 and
+                        isinstance(rule.rhs.elements[0], Literal) and rule.rhs.elements[0].name == '(' and
+                        isinstance(rule.rhs.elements[1], Literal) and rule.rhs.elements[1].name == rule.lhs.name and
+                        isinstance(rule.rhs.elements[2], Nonterminal) and rule.rhs.elements[2].name == 'type' and
+                        isinstance(rule.rhs.elements[3], Literal) and rule.rhs.elements[3].name == ')'):
 
-    def _rewrite_monoid_monus_def_tags(self) -> None:
-        """Rewrite monoid_def → monoid and monus_def → monus in terminal strings."""
-        for rules_list in self.grammar.rules.values():
-            for rule in rules_list:
-                if rule.lhs.name in ['monoid_def', 'monus_def']:
-                    if isinstance(rule.rhs, Sequence):
-                        for i, symbol in enumerate(rule.rhs.elements):
-                            if isinstance(symbol, Literal):
-                                if symbol.name == 'monoid_def':
-                                    rule.rhs.elements[i] = Literal('monoid')
-                                elif symbol.name == 'monus_def':
-                                    rule.rhs.elements[i] = Literal('monus')
+                        # Only rewrite if RHS is "(" <rule_name> type ")"
+                        rule.rhs = Sequence([Nonterminal('type'), Literal('::'), Literal(operation)])
 
     def _rewrite_string_to_name_optional(self) -> None:
         """Replace STRING with name? in output and abort rules."""
@@ -833,8 +786,8 @@ class GrammarGenerator:
                             if isinstance(symbol, Terminal) and symbol.name == 'STRING':
                                 rule.rhs.elements[i] = Option(Nonterminal('name'))
 
-    def _rewrite_string_to_name_in_ffi_and_pragma(self) -> None:
-        """Replace STRING with name in ffi and pragma rules."""
+    def _rewrite_string_to_name(self) -> None:
+        """Replace STRING with name? in output and abort rules."""
         for rules_list in self.grammar.rules.values():
             for rule in rules_list:
                 if rule.lhs.name in ['ffi', 'pragma']:
@@ -842,17 +795,6 @@ class GrammarGenerator:
                         for i, symbol in enumerate(rule.rhs.elements):
                             if isinstance(symbol, Terminal) and symbol.name == 'STRING':
                                 rule.rhs.elements[i] = Nonterminal('name')
-
-    def _rewrite_fragment_declarations(self) -> None:
-        """Replace declarations? with declaration* in fragment rules."""
-        for rules_list in self.grammar.rules.values():
-            for rule in rules_list:
-                if rule.lhs.name == 'fragment':
-                    if isinstance(rule.rhs, Sequence):
-                        for i, symbol in enumerate(rule.rhs.elements):
-                            if isinstance(symbol, Option):
-                                if isinstance(symbol.rhs, Nonterminal) and symbol.rhs.name == 'declarations':
-                                    rule.rhs.elements[i] = Star(Nonterminal('declaration'))
 
     def _rewrite_fragment_remove_debug_info(self) -> None:
         """Remove debug_info from fragment rules."""
@@ -903,6 +845,142 @@ class GrammarGenerator:
                                 elif isinstance(symbol, Option):
                                     if isinstance(symbol.rhs, Nonterminal) and symbol.rhs.name == 'terms':
                                         rule.rhs.elements[i] = Star(Nonterminal('relterm'))
+
+    def _rewrite_exists(self) -> None:
+        """Rewrite exists rule to use bindings and formula instead of abstraction."""
+        for rules_list in self.grammar.rules.values():
+            for rule in rules_list:
+                if rule.lhs.name == 'exists':
+                    if isinstance(rule.rhs, Sequence):
+                        new_elements = []
+                        for elem in rule.rhs.elements:
+                            if isinstance(elem, Nonterminal) and elem.name == 'abstraction':
+                                new_elements.append(Nonterminal('bindings'))
+                                new_elements.append(Nonterminal('formula'))
+                            else:
+                                new_elements.append(elem)
+                        rule.rhs.elements = new_elements
+
+    def _rewrite_drop_number_from_instructions(self) -> None:
+        """Drop NUMBER argument from penultimate position in upsert, monoid_def, and monus_def rules."""
+        for rules_list in self.grammar.rules.values():
+            for rule in rules_list:
+                if rule.lhs.name in ['upsert', 'monoid_def', 'monus_def']:
+                    if isinstance(rule.rhs, Sequence) and len(rule.rhs.elements) >= 2:
+                        penultimate_idx = len(rule.rhs.elements) - 2
+                        if penultimate_idx >= 0:
+                            elem = rule.rhs.elements[penultimate_idx]
+                            if isinstance(elem, Terminal) and elem.name == 'NUMBER':
+                                rule.rhs.elements.pop(penultimate_idx)
+
+    def _rewrite_relatom_rule(self) -> None:
+        """Replace STRING with name and terms? with relterm* in relatom rules."""
+        for rules_list in self.grammar.rules.values():
+            for rule in rules_list:
+                if rule.lhs.name == 'relatom':
+                    if isinstance(rule.rhs, Sequence):
+                        for i, symbol in enumerate(rule.rhs.elements):
+                            if isinstance(symbol, Terminal) and symbol.name == 'STRING':
+                                rule.rhs.elements[i] = Nonterminal('name')
+                            elif isinstance(symbol, Option):
+                                if isinstance(symbol.rhs, Nonterminal) and symbol.rhs.name == 'terms':
+                                    rule.rhs.elements[i] = Star(Nonterminal('relterm'))
+
+    def _rewrite_attribute_rule(self) -> None:
+        """Replace STRING with name and args? with value* in attribute rules."""
+        for rules_list in self.grammar.rules.values():
+            for rule in rules_list:
+                if rule.lhs.name == 'attribute':
+                    if isinstance(rule.rhs, Sequence):
+                        for i, symbol in enumerate(rule.rhs.elements):
+                            if isinstance(symbol, Terminal) and symbol.name == 'STRING':
+                                rule.rhs.elements[i] = Nonterminal('name')
+                            elif isinstance(symbol, Option):
+                                if isinstance(symbol.rhs, Nonterminal) and symbol.rhs.name == 'args':
+                                    rule.rhs.elements[i] = Star(Nonterminal('value'))
+
+    def _combine_identical_rules(self) -> None:
+        """Combine rules with identical RHS patterns into a single rule with multiple alternatives."""
+        # Build a map from (RHS pattern, source_type) to list of LHS names
+        # Only combine rules that came from the same protobuf type
+        rhs_source_to_lhs: Dict[Tuple[str, Optional[str]], List[str]] = {}
+        for lhs_name in self.grammar.rule_order:
+            rules_list = self.grammar.rules[lhs_name]
+            if len(rules_list) == 1:
+                rule = rules_list[0]
+                rhs_pattern = str(rule.rhs)
+                source_type = rule.source_type
+                # Only combine rules with a source_type (i.e., generated from messages)
+                if source_type:
+                    key = (rhs_pattern, source_type)
+                    if key not in rhs_source_to_lhs:
+                        rhs_source_to_lhs[key] = []
+                    rhs_source_to_lhs[key].append(lhs_name)
+
+        # Track renaming map
+        rename_map: Dict[str, str] = {}
+
+        # Find groups of rules with identical RHS from the same source type
+        for (rhs_pattern, source_type), lhs_names in rhs_source_to_lhs.items():
+            if len(lhs_names) > 1:
+                # Determine canonical name based on common suffix
+                canonical_lhs = self._find_canonical_name(lhs_names)
+
+                # If canonical name differs from first name, need to rename
+                if canonical_lhs != lhs_names[0]:
+                    rename_map[lhs_names[0]] = canonical_lhs
+                    # Move the rule to the new name
+                    self.grammar.rules[canonical_lhs] = self.grammar.rules[lhs_names[0]]
+                    self.grammar.rules[canonical_lhs][0].lhs = Nonterminal(canonical_lhs)
+                    # Update rule_order
+                    idx = self.grammar.rule_order.index(lhs_names[0])
+                    del self.grammar.rule_order[idx]
+
+        # Replace all occurrences of renamed rules throughout the grammar
+        if rename_map:
+            self._apply_renames(rename_map)
+
+    def _find_canonical_name(self, names: List[str]) -> str:
+        """Find canonical name for a group of rules with identical RHS.
+
+        If all names share a common suffix '_foo', use 'foo' as the canonical name.
+        Otherwise, use the first name in the list.
+        """
+        if len(names) < 2:
+            return names[0]
+
+        # Find common suffix
+        # Split each name by '_' and check if all have the same last part
+        parts = [name.split('_') for name in names]
+        if all(len(p) > 1 for p in parts):
+            # Check if all have the same last part
+            last_parts = [p[-1] for p in parts]
+            if len(set(last_parts)) == 1:
+                # All share the same suffix
+                return last_parts[0]
+
+        # No common suffix, use first name
+        return names[0]
+
+    def _apply_renames(self, rename_map: Dict[str, str]) -> None:
+        """Replace all occurrences of old names with new names throughout the grammar."""
+        for rules_list in self.grammar.rules.values():
+            for rule in rules_list:
+                self._rename_in_rhs(rule.rhs, rename_map)
+
+    def _rename_in_rhs(self, rhs: Rhs, rename_map: Dict[str, str]) -> None:
+        """Recursively rename nonterminals in RHS."""
+        if isinstance(rhs, Nonterminal):
+            if rhs.name in rename_map:
+                rhs.name = rename_map[rhs.name]
+        elif isinstance(rhs, Sequence):
+            for elem in rhs.elements:
+                self._rename_in_rhs(elem, rename_map)
+        elif isinstance(rhs, Union):
+            for alt in rhs.alternatives:
+                self._rename_in_rhs(alt, rename_map)
+        elif isinstance(rhs, (Star, Plus, Option)):
+            self._rename_in_rhs(rhs.rhs, rename_map)
 
     def _get_rule_name(self, name: str) -> str:
         """Convert message name to rule name."""
@@ -960,14 +1038,14 @@ class GrammarGenerator:
             for field in oneof.fields:
                 self._generate_message_rule(field.type)
         else:
-            tag = rule_name
+            tag = self.rule_literal_renames.get(rule_name, rule_name)
             rhs_symbols: List[Rhs] = [Literal('('), Literal(tag)]
             for field in message.fields:
-                field_symbol = self._generate_field_symbol(field)
+                field_symbol = self._generate_field_symbol(field, message_name)
                 if field_symbol:
                     rhs_symbols.append(field_symbol)
             rhs_symbols.append(Literal(')'))
-            rule = Rule(lhs=Nonterminal(rule_name), rhs=Sequence(rhs_symbols), grammar=self.grammar)
+            rule = Rule(lhs=Nonterminal(rule_name), rhs=Sequence(rhs_symbols), grammar=self.grammar, source_type=message_name)
             self._add_rule(rule)
             for field in message.fields:
                 if self._is_message_type(field.type):
@@ -985,7 +1063,7 @@ class GrammarGenerator:
             return False
         return symbol.islower() or '_' in symbol
 
-    def _generate_field_symbol(self, field: ProtoField) -> Optional[Rhs]:
+    def _generate_field_symbol(self, field: ProtoField, message_name: str = "") -> Optional[Rhs]:
         """Generate grammar symbol for a protobuf field, handling repeated/optional modifiers."""
         if self._is_primitive_type(field.type):
             terminal_name = self._map_primitive_type(field.type)
@@ -1001,17 +1079,22 @@ class GrammarGenerator:
             field_rule_name = self._to_field_name(field.name)
 
             if field.is_repeated:
-                if field_rule_name != rule_name:
-                    if not self.grammar.has_rule(field_rule_name):
+                should_inline = (message_name, field.name) in self.inline_fields
+                if should_inline:
+                    return Star(Nonterminal(rule_name))
+                else:
+                    # Generate wrapper rule name using message_name + field_name
+                    message_rule_name = self._get_rule_name(message_name)
+                    wrapper_rule_name = f"{message_rule_name}_{field_rule_name}"
+                    if not self.grammar.has_rule(wrapper_rule_name):
                         wrapper_rule = Rule(
-                            lhs=Nonterminal(field_rule_name),
+                            lhs=Nonterminal(wrapper_rule_name),
                             rhs=Sequence([Literal("("), Literal(field_rule_name), Star(Nonterminal(rule_name)), Literal(")")]),
-                            grammar=self.grammar
+                            grammar=self.grammar,
+                            source_type=field.type
                         )
                         self._add_rule(wrapper_rule)
-                    return Option(Nonterminal(field_rule_name))
-                else:
-                    return Star(Nonterminal(rule_name))
+                    return Option(Nonterminal(wrapper_rule_name))
             elif field.is_optional:
                 return Option(Nonterminal(rule_name))
             else:
@@ -1065,14 +1148,16 @@ def main():
     generator = GrammarGenerator(proto_parser, verbose=True)
     grammar_obj = generator.generate(args.start)
 
+    reachable = grammar_obj.check_reachability()
     unreachable = grammar_obj.get_unreachable_rules()
-    if unreachable:
+    unexpected_unreachable = [r for r in unreachable if r not in generator.expected_unreachable]
+    if unexpected_unreachable:
         print("Warning: Unreachable rules detected:")
-        for rule_name in unreachable:
+        for rule_name in unexpected_unreachable:
             print(f"  {rule_name}")
         print()
 
-    grammar_text = grammar_obj.to_lark()
+    grammar_text = grammar_obj.to_lark(reachable=reachable)
 
     if args.output:
         args.output.write_text(grammar_text)
