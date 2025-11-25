@@ -447,6 +447,10 @@ class GrammarGenerator:
             ("Sync", "fragments"),
             ("Algorithm", "global"),
             ("Attribute", "args"),
+            ("Atom", "terms"),
+            ("Primitive", "terms"),
+            ("RelAtom", "terms"),
+            ("Pragma", "terms"),
         }
         self.rule_literal_renames: Dict[str, str] = {
             "monoid_def": "monoid",
@@ -657,17 +661,9 @@ class GrammarGenerator:
             rhs=Sequence([Literal("#"), Nonterminal("value")]),
             grammar=self.grammar
         ))
-        add_rule(Rule(
-            lhs=Nonterminal("relterm"),
-            rhs=Nonterminal("specialized_value"),
-            grammar=self.grammar
-        ))
-        add_rule(Rule(
-            lhs=Nonterminal("relterm"),
-            rhs=Nonterminal("term"),
-            grammar=self.grammar
-        ))
+
         type_rules = {
+            "unspecified_type": Literal("UNKNOWN"),
             "string_type": Literal("STRING"),
             "int_type": Literal("INT"),
             "float_type": Literal("FLOAT"),
@@ -678,7 +674,6 @@ class GrammarGenerator:
             "datetime_type": Literal("DATETIME"),
             "missing_type": Literal("MISSING"),
             "decimal_type": Sequence([Literal("("), Literal("DECIMAL"), Terminal("NUMBER"), Terminal("NUMBER"), Literal(")")]),
-            "unspecified_type": Literal("UNKNOWN"),
         }
         for lhs_name, rhs_value in type_rules.items():
             add_rule(Rule(
@@ -757,7 +752,7 @@ class GrammarGenerator:
         self.expected_unreachable.add("ivmconfig")
 
     def _rewrite_monoid_rules(self) -> None:
-        """Rewrite *_monoid rules to type_ "::" OPERATION format."""
+        """Rewrite *_monoid rules to type "::" OPERATION format."""
         import re as regex
         monoid_pattern = regex.compile(r'^(\w+)_monoid$')
         for rules_list in self.grammar.rules.values():
@@ -787,7 +782,7 @@ class GrammarGenerator:
                                 rule.rhs.elements[i] = Option(Nonterminal('name'))
 
     def _rewrite_string_to_name(self) -> None:
-        """Replace STRING with name? in output and abort rules."""
+        """Replace STRING with name in ffi and pragma rules."""
         for rules_list in self.grammar.rules.values():
             for rule in rules_list:
                 if rule.lhs.name in ['ffi', 'pragma']:
@@ -832,7 +827,7 @@ class GrammarGenerator:
                                 rule.rhs.elements[i] = Nonterminal('name')
 
     def _rewrite_primitive_rule(self) -> None:
-        """Replace STRING with name and terms? with relterm* in primitive rules."""
+        """Replace STRING with name and term* with relterm* in primitive rules."""
         for rules_list in self.grammar.rules.values():
             for rule in rules_list:
                 if rule.lhs.name == 'primitive':
@@ -842,8 +837,8 @@ class GrammarGenerator:
                             for i, symbol in enumerate(rule.rhs.elements):
                                 if isinstance(symbol, Terminal) and symbol.name == 'STRING':
                                     rule.rhs.elements[i] = Nonterminal('name')
-                                elif isinstance(symbol, Option):
-                                    if isinstance(symbol.rhs, Nonterminal) and symbol.rhs.name == 'terms':
+                                elif isinstance(symbol, Star):
+                                    if isinstance(symbol.rhs, Nonterminal) and symbol.rhs.name == 'term':
                                         rule.rhs.elements[i] = Star(Nonterminal('relterm'))
 
     def _rewrite_exists(self) -> None:
@@ -933,8 +928,11 @@ class GrammarGenerator:
                     self.grammar.rules[canonical_lhs] = self.grammar.rules[lhs_names[0]]
                     self.grammar.rules[canonical_lhs][0].lhs = Nonterminal(canonical_lhs)
                     # Update rule_order
-                    idx = self.grammar.rule_order.index(lhs_names[0])
-                    del self.grammar.rule_order[idx]
+                    try:
+                        idx = self.grammar.rule_order.index(lhs_names[0])
+                        del self.grammar.rule_order[idx]
+                    except ValueError:
+                        pass
 
         # Replace all occurrences of renamed rules throughout the grammar
         if rename_map:
@@ -1032,11 +1030,24 @@ class GrammarGenerator:
         if self._is_oneof_only_message(message):
             oneof = message.oneofs[0]
             for field in oneof.fields:
-                field_rule = self._get_rule_name(field.type)
+                field_rule = self._get_rule_name(field.name)
                 alt_rule = Rule(lhs=Nonterminal(rule_name), rhs=Nonterminal(field_rule), grammar=self.grammar)
                 self._add_rule(alt_rule)
+
+                if self._is_primitive_type(field.type):
+                    # For primitive types, generate rule mapping to terminal
+                    terminal_name = self._map_primitive_type(field.type)
+                    field_to_type_rule = Rule(lhs=Nonterminal(field_rule), rhs=Terminal(terminal_name), grammar=self.grammar)
+                    self._add_rule(field_to_type_rule)
+                else:
+                    # For message types, generate rule mapping to type nonterminal
+                    type_rule = self._get_rule_name(field.type)
+                    if field_rule != type_rule:
+                        field_to_type_rule = Rule(lhs=Nonterminal(field_rule), rhs=Nonterminal(type_rule), grammar=self.grammar)
+                        self._add_rule(field_to_type_rule)
             for field in oneof.fields:
-                self._generate_message_rule(field.type)
+                if self._is_message_type(field.type):
+                    self._generate_message_rule(field.type)
         else:
             tag = self.rule_literal_renames.get(rule_name, rule_name)
             rhs_symbols: List[Rhs] = [Literal('('), Literal(tag)]
@@ -1075,30 +1086,39 @@ class GrammarGenerator:
             else:
                 return base_symbol
         elif self._is_message_type(field.type):
-            rule_name = self._get_rule_name(field.type)
+            type_rule_name = self._get_rule_name(field.type)
+            message_rule_name = self._get_rule_name(message_name)
             field_rule_name = self._to_field_name(field.name)
+            wrapper_rule_name = f"{message_rule_name}_{field_rule_name}"
 
             if field.is_repeated:
                 should_inline = (message_name, field.name) in self.inline_fields
                 if should_inline:
-                    return Star(Nonterminal(rule_name))
+                    if self.grammar.has_rule(wrapper_rule_name):
+                        return Nonterminal(wrapper_rule_name)
+                    else:
+                        return Star(Nonterminal(type_rule_name))
                 else:
-                    # Generate wrapper rule name using message_name + field_name
-                    message_rule_name = self._get_rule_name(message_name)
-                    wrapper_rule_name = f"{message_rule_name}_{field_rule_name}"
+                    literal_name = self.rule_literal_renames.get(field_rule_name, field_rule_name)
                     if not self.grammar.has_rule(wrapper_rule_name):
                         wrapper_rule = Rule(
                             lhs=Nonterminal(wrapper_rule_name),
-                            rhs=Sequence([Literal("("), Literal(field_rule_name), Star(Nonterminal(rule_name)), Literal(")")]),
+                            rhs=Sequence([Literal("("), Literal(literal_name), Star(Nonterminal(type_rule_name)), Literal(")")]),
                             grammar=self.grammar,
                             source_type=field.type
                         )
                         self._add_rule(wrapper_rule)
                     return Option(Nonterminal(wrapper_rule_name))
             elif field.is_optional:
-                return Option(Nonterminal(rule_name))
+                if self.grammar.has_rule(wrapper_rule_name):
+                    return Option(Nonterminal(wrapper_rule_name))
+                else:
+                    return Option(Nonterminal(type_rule_name))
             else:
-                return Nonterminal(rule_name)
+                if self.grammar.has_rule(wrapper_rule_name):
+                    return Nonterminal(wrapper_rule_name)
+                else:
+                    return Nonterminal(type_rule_name)
         else:
             return None
 
