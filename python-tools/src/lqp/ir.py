@@ -416,15 +416,10 @@ class Undefine(LqpNode):
 class Context(LqpNode):
     relations: Sequence[RelationId]
 
-# Sync(fragments::FragmentId[])
-@dataclass(frozen=True)
-class Sync(LqpNode):
-    fragments: Sequence[FragmentId]
-
 # Write := Define | Undefine | Context
 @dataclass(frozen=True)
 class Write(LqpNode):
-    write_type: Union[Define, Undefine, Context, Sync]
+    write_type: Union[Define, Undefine, Context]
 
 # Demand(relation_id::RelationId)
 @dataclass(frozen=True)
@@ -490,12 +485,18 @@ class WhatIf(LqpNode):
 class Transaction(LqpNode):
     epochs: Sequence[Epoch]
     configure: Configure
+    sync: Optional[Sync]
 
 # Configure(semantics_version::int, ivm_config::IVMConfig)
 @dataclass(frozen=True)
 class Configure(LqpNode):
     semantics_version: int
     ivm_config: IVMConfig
+
+# Sync(fragments::FragmentId[])
+@dataclass(frozen=True)
+class Sync(LqpNode):
+    fragments: Sequence[FragmentId]
 
 # IVMConfig(level::MaintenanceLevel)
 @dataclass(frozen=True)

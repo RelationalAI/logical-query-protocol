@@ -4,8 +4,7 @@ from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from collections.abc import Iterable as _Iterable, Mapping as _Mapping
-from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
+from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Mapping, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -21,12 +20,14 @@ MAINTENANCE_LEVEL_AUTO: MaintenanceLevel
 MAINTENANCE_LEVEL_ALL: MaintenanceLevel
 
 class Transaction(_message.Message):
-    __slots__ = ("epochs", "configure")
+    __slots__ = ("epochs", "configure", "sync")
     EPOCHS_FIELD_NUMBER: _ClassVar[int]
     CONFIGURE_FIELD_NUMBER: _ClassVar[int]
+    SYNC_FIELD_NUMBER: _ClassVar[int]
     epochs: _containers.RepeatedCompositeFieldContainer[Epoch]
     configure: Configure
-    def __init__(self, epochs: _Optional[_Iterable[_Union[Epoch, _Mapping]]] = ..., configure: _Optional[_Union[Configure, _Mapping]] = ...) -> None: ...
+    sync: Sync
+    def __init__(self, epochs: _Optional[_Iterable[_Union[Epoch, _Mapping]]] = ..., configure: _Optional[_Union[Configure, _Mapping]] = ..., sync: _Optional[_Union[Sync, _Mapping]] = ...) -> None: ...
 
 class Configure(_message.Message):
     __slots__ = ("semantics_version", "ivm_config")
@@ -42,6 +43,12 @@ class IVMConfig(_message.Message):
     level: MaintenanceLevel
     def __init__(self, level: _Optional[_Union[MaintenanceLevel, str]] = ...) -> None: ...
 
+class Sync(_message.Message):
+    __slots__ = ("fragments",)
+    FRAGMENTS_FIELD_NUMBER: _ClassVar[int]
+    fragments: _containers.RepeatedCompositeFieldContainer[_fragments_pb2.FragmentId]
+    def __init__(self, fragments: _Optional[_Iterable[_Union[_fragments_pb2.FragmentId, _Mapping]]] = ...) -> None: ...
+
 class Epoch(_message.Message):
     __slots__ = ("writes", "reads")
     WRITES_FIELD_NUMBER: _ClassVar[int]
@@ -51,16 +58,14 @@ class Epoch(_message.Message):
     def __init__(self, writes: _Optional[_Iterable[_Union[Write, _Mapping]]] = ..., reads: _Optional[_Iterable[_Union[Read, _Mapping]]] = ...) -> None: ...
 
 class Write(_message.Message):
-    __slots__ = ("define", "undefine", "context", "sync")
+    __slots__ = ("define", "undefine", "context")
     DEFINE_FIELD_NUMBER: _ClassVar[int]
     UNDEFINE_FIELD_NUMBER: _ClassVar[int]
     CONTEXT_FIELD_NUMBER: _ClassVar[int]
-    SYNC_FIELD_NUMBER: _ClassVar[int]
     define: Define
     undefine: Undefine
     context: Context
-    sync: Sync
-    def __init__(self, define: _Optional[_Union[Define, _Mapping]] = ..., undefine: _Optional[_Union[Undefine, _Mapping]] = ..., context: _Optional[_Union[Context, _Mapping]] = ..., sync: _Optional[_Union[Sync, _Mapping]] = ...) -> None: ...
+    def __init__(self, define: _Optional[_Union[Define, _Mapping]] = ..., undefine: _Optional[_Union[Undefine, _Mapping]] = ..., context: _Optional[_Union[Context, _Mapping]] = ...) -> None: ...
 
 class Define(_message.Message):
     __slots__ = ("fragment",)
@@ -79,12 +84,6 @@ class Context(_message.Message):
     RELATIONS_FIELD_NUMBER: _ClassVar[int]
     relations: _containers.RepeatedCompositeFieldContainer[_logic_pb2.RelationId]
     def __init__(self, relations: _Optional[_Iterable[_Union[_logic_pb2.RelationId, _Mapping]]] = ...) -> None: ...
-
-class Sync(_message.Message):
-    __slots__ = ("fragments",)
-    FRAGMENTS_FIELD_NUMBER: _ClassVar[int]
-    fragments: _containers.RepeatedCompositeFieldContainer[_fragments_pb2.FragmentId]
-    def __init__(self, fragments: _Optional[_Iterable[_Union[_fragments_pb2.FragmentId, _Mapping]]] = ...) -> None: ...
 
 class ExportCSVConfig(_message.Message):
     __slots__ = ("path", "data_columns", "partition_size", "compression", "syntax_header_row", "syntax_missing_string", "syntax_delim", "syntax_quotechar", "syntax_escapechar")
@@ -106,7 +105,7 @@ class ExportCSVConfig(_message.Message):
     syntax_delim: str
     syntax_quotechar: str
     syntax_escapechar: str
-    def __init__(self, path: _Optional[str] = ..., data_columns: _Optional[_Iterable[_Union[ExportCSVColumn, _Mapping]]] = ..., partition_size: _Optional[int] = ..., compression: _Optional[str] = ..., syntax_header_row: _Optional[bool] = ..., syntax_missing_string: _Optional[str] = ..., syntax_delim: _Optional[str] = ..., syntax_quotechar: _Optional[str] = ..., syntax_escapechar: _Optional[str] = ...) -> None: ...
+    def __init__(self, path: _Optional[str] = ..., data_columns: _Optional[_Iterable[_Union[ExportCSVColumn, _Mapping]]] = ..., partition_size: _Optional[int] = ..., compression: _Optional[str] = ..., syntax_header_row: bool = ..., syntax_missing_string: _Optional[str] = ..., syntax_delim: _Optional[str] = ..., syntax_quotechar: _Optional[str] = ..., syntax_escapechar: _Optional[str] = ...) -> None: ...
 
 class ExportCSVColumn(_message.Message):
     __slots__ = ("column_name", "column_data")

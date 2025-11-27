@@ -418,9 +418,6 @@ def convert_undefine(u: ir.Undefine) -> transactions_pb2.Undefine:
 def convert_context(c: ir.Context) -> transactions_pb2.Context:
     return transactions_pb2.Context(relations=[convert_relation_id(rid) for rid in c.relations])
 
-def convert_sync(c: ir.Sync) -> transactions_pb2.Sync:
-    return transactions_pb2.Sync(fragments=[convert_fragment_id(rid) for rid in c.fragments])
-
 def convert_write(w: ir.Write) -> transactions_pb2.Write:
     wt = w.write_type
     if isinstance(wt, ir.Define):
@@ -429,8 +426,6 @@ def convert_write(w: ir.Write) -> transactions_pb2.Write:
         return transactions_pb2.Write(undefine=convert_undefine(wt))
     elif isinstance(wt, ir.Context):
         return transactions_pb2.Write(context=convert_context(wt))
-    elif isinstance(wt, ir.Sync):
-        return transactions_pb2.Write(sync=convert_sync(wt))
     else:
         raise TypeError(f"Unsupported Write type: {type(wt)}")
 
@@ -512,11 +507,17 @@ def convert_ivm_config(c: ir.IVMConfig) -> transactions_pb2.IVMConfig:
 def convert_maintenance_level(l: ir.MaintenanceLevel) -> transactions_pb2.MaintenanceLevel:
     return transactions_pb2.MaintenanceLevel.Name(l.value) # type: ignore[missing-attribute]
 
+def convert_sync(c: ir.Sync) -> transactions_pb2.Sync:
+    return transactions_pb2.Sync(fragments=[convert_fragment_id(rid) for rid in c.fragments])
+
 def convert_transaction(t: ir.Transaction) -> transactions_pb2.Transaction:
-    return transactions_pb2.Transaction(
-        configure=convert_configure(t.configure),
-        epochs=[convert_epoch(e) for e in t.epochs]
-    )
+    kwargs: Dict[str, Any] = {
+        'configure': convert_configure(t.configure),
+        'epochs': [convert_epoch(e) for e in t.epochs]
+    }
+    if t.sync is not None:
+        kwargs['sync'] = convert_sync(t.sync)
+    return transactions_pb2.Transaction(**kwargs)
 
 def ir_to_proto(node: ir.LqpNode) -> Union[
     transactions_pb2.Transaction,
