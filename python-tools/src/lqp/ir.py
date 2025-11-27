@@ -358,22 +358,23 @@ class BeTreeInfo(LqpNode):
 # BaseRelationType := Type | SpecializedValue
 BaseRelationType = Union[Type, SpecializedValue]
 
-# BaseRelationPath(name::string, types::BaseRelationType[])
-@dataclass(frozen=True)
-class BaseRelationPath(LqpNode):
-    name: str
-    types: Sequence[BaseRelationType]
-
-# Data := BeTreeRelation | CSVRelation | ArrowRelation
+# Data := RelEDB | BeTreeRelation | CSVRelation | IcebergRelation
 @dataclass(frozen=True)
 class Data(Declaration):
     pass
 
-# BeTreeRelation(name::RelationId, identifier_scheme::Union[BeTreeInfo, BaseRelationPath])
+# RelEDB(name::RelationId, path_name::string, types::BaseRelationType[])
+@dataclass(frozen=True)
+class RelEDB(Data):
+    name: RelationId
+    path_name: str
+    types: Sequence[BaseRelationType]
+
+# BeTreeRelation(name::RelationId, relation_info::BeTreeInfo)
 @dataclass(frozen=True)
 class BeTreeRelation(Data):
     name: RelationId
-    identifier_scheme: Union[BeTreeInfo, BaseRelationPath]
+    relation_info: BeTreeInfo
 
 # --- Fragment Types ---
 

@@ -50,11 +50,10 @@ functional_dependency: "(functional_dependency" abstraction fd_keys fd_values ")
 fd_keys: "(keys" var* ")"
 fd_values: "(values" var* ")"
 
-data: betree_relation
-betree_relation: "(betree_relation" relation_id identifier_scheme ")"
-identifier_scheme: betree_info | base_relation_path
-base_relation_path: "(base_relation_path" STRING "[" base_relation_type* "]" ")"
+data: rel_edb | betree_relation
+rel_edb: "(rel_edb" relation_id STRING "[" base_relation_type* "]" ")"
 base_relation_type: type_ | specialized_value
+betree_relation: "(betree_relation" relation_id betree_info ")"
 betree_info: "(betree_info" key_types value_types config_dict ")"
 key_types: "(key_types" type_* ")"
 value_types: "(value_types" type_* ")"
@@ -347,13 +346,21 @@ class LQPTransformer(Transformer):
     def data(self, meta, items):
         return items[0]
 
+    def rel_edb(self, meta, items):
+        name = items[0]
+        path_name = items[1]
+        types = items[2:]
+        return ir.RelEDB(
+            name=name,
+            path_name=path_name,
+            types=types,
+            meta=self.meta(meta)
+        )
+
     def betree_relation(self, meta, items):
         name = items[0]
-        identifier_scheme = items[1]
-        return ir.BeTreeRelation(name=name, identifier_scheme=identifier_scheme, meta=self.meta(meta))
-
-    def identifier_scheme(self, meta, items):
-        return items[0]
+        relation_info = items[1]
+        return ir.BeTreeRelation(name=name, relation_info=relation_info, meta=self.meta(meta))
 
     def betree_info(self, meta, items):
         key_types = items[0]
@@ -382,15 +389,6 @@ class LQPTransformer(Transformer):
             value_types=value_types,
             storage_config=storage_config,
             relation_locator=relation_locator,
-            meta=self.meta(meta)
-        )
-
-    def base_relation_path(self, meta, items):
-        name = items[0]
-        types = items[1:]
-        return ir.BaseRelationPath(
-            name=name,
-            types=types,
             meta=self.meta(meta)
         )
 

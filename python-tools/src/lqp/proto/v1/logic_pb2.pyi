@@ -334,20 +334,30 @@ class Attribute(_message.Message):
     def __init__(self, name: _Optional[str] = ..., args: _Optional[_Iterable[_Union[Value, _Mapping]]] = ...) -> None: ...
 
 class Data(_message.Message):
-    __slots__ = ("betree_relation",)
+    __slots__ = ("rel_edb", "betree_relation")
+    REL_EDB_FIELD_NUMBER: _ClassVar[int]
     BETREE_RELATION_FIELD_NUMBER: _ClassVar[int]
+    rel_edb: RelEDB
     betree_relation: BeTreeRelation
-    def __init__(self, betree_relation: _Optional[_Union[BeTreeRelation, _Mapping]] = ...) -> None: ...
+    def __init__(self, rel_edb: _Optional[_Union[RelEDB, _Mapping]] = ..., betree_relation: _Optional[_Union[BeTreeRelation, _Mapping]] = ...) -> None: ...
+
+class RelEDB(_message.Message):
+    __slots__ = ("name", "path_name", "types")
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    PATH_NAME_FIELD_NUMBER: _ClassVar[int]
+    TYPES_FIELD_NUMBER: _ClassVar[int]
+    name: RelationId
+    path_name: str
+    types: _containers.RepeatedCompositeFieldContainer[BaseRelationType]
+    def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., path_name: _Optional[str] = ..., types: _Optional[_Iterable[_Union[BaseRelationType, _Mapping]]] = ...) -> None: ...
 
 class BeTreeRelation(_message.Message):
-    __slots__ = ("name", "relation_info", "relation_path")
+    __slots__ = ("name", "relation_info")
     NAME_FIELD_NUMBER: _ClassVar[int]
     RELATION_INFO_FIELD_NUMBER: _ClassVar[int]
-    RELATION_PATH_FIELD_NUMBER: _ClassVar[int]
     name: RelationId
     relation_info: BeTreeInfo
-    relation_path: BaseRelationPath
-    def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., relation_info: _Optional[_Union[BeTreeInfo, _Mapping]] = ..., relation_path: _Optional[_Union[BaseRelationPath, _Mapping]] = ...) -> None: ...
+    def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., relation_info: _Optional[_Union[BeTreeInfo, _Mapping]] = ...) -> None: ...
 
 class BeTreeInfo(_message.Message):
     __slots__ = ("key_types", "value_types", "storage_config", "relation_locator")
@@ -382,14 +392,6 @@ class BeTreeLocator(_message.Message):
     element_count: int
     tree_height: int
     def __init__(self, root_pageid: _Optional[_Union[UInt128Value, _Mapping]] = ..., element_count: _Optional[int] = ..., tree_height: _Optional[int] = ...) -> None: ...
-
-class BaseRelationPath(_message.Message):
-    __slots__ = ("name", "types")
-    NAME_FIELD_NUMBER: _ClassVar[int]
-    TYPES_FIELD_NUMBER: _ClassVar[int]
-    name: str
-    types: _containers.RepeatedCompositeFieldContainer[BaseRelationType]
-    def __init__(self, name: _Optional[str] = ..., types: _Optional[_Iterable[_Union[BaseRelationType, _Mapping]]] = ...) -> None: ...
 
 class BaseRelationType(_message.Message):
     __slots__ = ("type", "specialized_type")

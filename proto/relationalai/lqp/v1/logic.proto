@@ -231,21 +231,22 @@ message Attribute {
 //
 message Data {
   oneof data_type {
-    BeTreeRelation betree_relation = 1;
-    // TODO
-    // CSVRelation csv_relation = 2;
-    // ArrowRelation arrow_relation = 3;
+    RelEDB rel_edb = 1;
+    BeTreeRelation betree_relation = 2;
+    // CSVRelation csv_relation = 3;
+    // IcebergRelation iceberg_relation = 4;
   }
+}
+
+message RelEDB {
+  RelationId name = 1;
+  string path_name = 2;
+  repeated BaseRelationType types = 3;
 }
 
 message BeTreeRelation {
   RelationId name = 1;
-  // A betree relation can be identified either by an independent BeTreeInfo, or a
-  // BaseRelationPath which depends on the engine's identification scheme.
-  oneof identifier_scheme {
-    BeTreeInfo relation_info = 2;
-    BaseRelationPath relation_path = 3;
-  }
+  BeTreeInfo relation_info = 2;
 }
 
 message BeTreeInfo {
@@ -267,11 +268,6 @@ message BeTreeLocator {
   UInt128Value root_pageid = 1;
   int64 element_count = 2;
   int64 tree_height = 3;
-}
-
-message BaseRelationPath {
-  string name = 1;
-  repeated BaseRelationType types = 2;
 }
 
 message BaseRelationType {

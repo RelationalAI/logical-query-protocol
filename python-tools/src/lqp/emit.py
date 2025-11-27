@@ -235,28 +235,23 @@ def convert_base_relation_type(brt: ir.BaseRelationType) -> logic_pb2.BaseRelati
     else:
         raise TypeError(f"Unsupported BaseRelationType: {type(brt)}")
 
-def convert_base_relation_path(path: ir.BaseRelationPath) -> logic_pb2.BaseRelationPath:
-    return logic_pb2.BaseRelationPath(
-        name=path.name,
-        types=[convert_base_relation_type(t) for t in path.types]
+def convert_rel_edb(rel: ir.RelEDB) -> logic_pb2.RelEDB:
+    return logic_pb2.RelEDB(
+        name=convert_relation_id(rel.name),
+        path_name=rel.path_name,
+        types=[convert_base_relation_type(t) for t in rel.types]
     )
 
 def convert_betree_relation(rel: ir.BeTreeRelation) -> logic_pb2.BeTreeRelation:
-    if isinstance(rel.identifier_scheme, ir.BeTreeInfo):
-        return logic_pb2.BeTreeRelation(
-            name=convert_relation_id(rel.name),
-            relation_info=convert_betree_info(rel.identifier_scheme)
-        )
-    elif isinstance(rel.identifier_scheme, ir.BaseRelationPath):
-        return logic_pb2.BeTreeRelation(
-            name=convert_relation_id(rel.name),
-            relation_path=convert_base_relation_path(rel.identifier_scheme)
-        )
-    else:
-        raise TypeError(f"Unsupported identifier_scheme type: {type(rel.identifier_scheme)}")
+    return logic_pb2.BeTreeRelation(
+        name=convert_relation_id(rel.name),
+        relation_info=convert_betree_info(rel.relation_info)
+    )
 
 def convert_data(data: ir.Data) -> logic_pb2.Data:
-    if isinstance(data, ir.BeTreeRelation):
+    if isinstance(data, ir.RelEDB):
+        return logic_pb2.Data(rel_edb=convert_rel_edb(data))
+    elif isinstance(data, ir.BeTreeRelation):
         return logic_pb2.Data(betree_relation=convert_betree_relation(data))
     else:
         raise TypeError(f"Unsupported Data type: {type(data)}")

@@ -287,9 +287,18 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
         lqp += to_str(node.body, indent_level + 1, options, debug_info)
         lqp += conf.RPAREN()
 
+    elif isinstance(node, ir.RelEDB):
+        lqp += ind + conf.LPAREN() + conf.kw("rel_edb") + " " + to_str(node.name, 0, options, debug_info)
+        lqp += " " + to_str(node.path_name, 0, options, debug_info)
+        lqp += " " + conf.LBRACKET()
+        if len(node.types) > 0:
+            lqp += list_to_str(node.types, 0, " ", options, debug_info)
+        lqp += conf.RBRACKET()
+        lqp += conf.RPAREN()
+
     elif isinstance(node, ir.BeTreeRelation):
         lqp += ind + conf.LPAREN() + conf.kw("betree_relation") + " " + to_str(node.name, 0, options, debug_info) + "\n"
-        lqp += to_str(node.identifier_scheme, indent_level + 1, options, debug_info)
+        lqp += to_str(node.relation_info, indent_level + 1, options, debug_info)
         lqp += conf.RPAREN()
 
     elif isinstance(node, ir.BeTreeInfo):
@@ -314,14 +323,6 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
         config_dict['betree_locator_element_count'] = node.relation_locator.element_count
         config_dict['betree_locator_tree_height'] = node.relation_locator.tree_height
         lqp += config_dict_to_str(config_dict, indent_level + 1, options)
-        lqp += conf.RPAREN()
-
-    elif isinstance(node, ir.BaseRelationPath):
-        lqp += ind + conf.LPAREN() + conf.kw("base_relation_path") + " " + to_str(node.name, 0, options, debug_info)
-        lqp += " " + conf.LBRACKET()
-        if len(node.types) > 0:
-            lqp += list_to_str(node.types, 0, " ", options, debug_info)
-        lqp += conf.RBRACKET()
         lqp += conf.RPAREN()
 
     elif isinstance(node, ir.Script):
