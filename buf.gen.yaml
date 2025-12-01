@@ -8,5 +8,9 @@ plugins:
   - protoc_builtin: pyi
     out: gen/python
     opt: []
+  - remote: buf.build/protocolbuffers/go:v1.36.4
+    out: gen/go
+    opt:
+      - paths=source_relative
 inputs:
   - directory: proto
