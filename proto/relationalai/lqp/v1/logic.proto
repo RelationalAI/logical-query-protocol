@@ -233,7 +233,7 @@ message Data {
   oneof data_type {
     RelEDB rel_edb = 1;
     BeTreeRelation betree_relation = 2;
-    // CSVRelation csv_relation = 3;
+    CSVRelation csv_relation = 3;
     // IcebergRelation iceberg_relation = 4;
   }
 }
@@ -271,6 +271,49 @@ message BeTreeLocator {
   }
   int64 element_count = 2;
   int64 tree_height = 3;
+}
+
+message CSVRelation {
+  CSVLocator locator = 1;
+  CSVConfig config = 2;
+  repeated CSVColumn columns = 3;
+  string asof = 4; // Blob storage timestamp for freshness requirements
+}
+
+message CSVLocator {
+  repeated string paths = 1; // URL(s) or filesystem path(s) for partitioned loading
+  bytes inline_data = 2; // Inline CSV content (mutually exclusive with paths)
+}
+
+message CSVConfig {
+  // Header and structure
+  int32 header_row = 1; // Row number for headers (< 1 means no header)
+  int64 skip = 2; // Lines to skip at start (default: 0)
+  string new_line = 3; // Newline char(s) (default: auto-detect)
+
+  // Delimiters and quotes
+  string delimiter = 4; // Column delimiter (default: ",")
+  string quotechar = 5; // Quote character (default: "\"")
+  string escapechar = 6; // Escape character (default: "\"")
+  string comment = 7; // Comment initiator (default: none)
+
+  // NULL handling
+  repeated string missing_strings = 8; // Strings to treat as NULL/missing
+
+  // Numeric formatting
+  string decimal_separator = 9; // Decimal point (default: ".")
+
+  // Encoding
+  string encoding = 10; // Character encoding (default: "utf-8")
+
+  // Compression
+  string compression = 11; // "none", "gzip", "zstd", "auto" (default: "auto")
+}
+
+message CSVColumn {
+  string column_name = 1; // Name in CSV file
+  RelationId target_id = 2; // Target relation
+  repeated Type types = 3; // Relation signature (key types + value types)
 }
 
 //
