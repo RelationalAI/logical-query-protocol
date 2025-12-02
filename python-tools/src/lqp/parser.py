@@ -51,8 +51,7 @@ fd_keys: "(keys" var* ")"
 fd_values: "(values" var* ")"
 
 data: rel_edb | betree_relation
-rel_edb: "(rel_edb" relation_id STRING "[" base_relation_type* "]" ")"
-base_relation_type: type_ | specialized_value
+rel_edb: "(rel_edb" relation_id "[" STRING* "]" "[" type_* "]" ")"
 betree_relation: "(betree_relation" relation_id betree_info ")"
 betree_info: "(betree_info" key_types value_types config_dict ")"
 key_types: "(key_types" type_* ")"
@@ -348,11 +347,18 @@ class LQPTransformer(Transformer):
 
     def rel_edb(self, meta, items):
         name = items[0]
-        path_name = items[1]
-        types = items[2:]
+        # items[1:] contains first the path strings, then the types
+        # We need to separate them - find where types start (they are ir.Type instances)
+        path = []
+        types = []
+        for item in items[1:]:
+            if isinstance(item, ir.Type):
+                types.append(item)
+            else:
+                path.append(item)
         return ir.RelEDB(
             name=name,
-            path_name=path_name,
+            path=path,
             types=types,
             meta=self.meta(meta)
         )
@@ -391,9 +397,6 @@ class LQPTransformer(Transformer):
             relation_locator=relation_locator,
             meta=self.meta(meta)
         )
-
-    def base_relation_type(self, meta, items):
-        return items[0]
 
     def key_types(self, meta, items):
         return items

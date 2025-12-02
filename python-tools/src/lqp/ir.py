@@ -355,20 +355,17 @@ class BeTreeInfo(LqpNode):
     storage_config: BeTreeConfig
     relation_locator: BeTreeLocator
 
-# BaseRelationType := Type | SpecializedValue
-BaseRelationType = Union[Type, SpecializedValue]
-
 # Data := RelEDB | BeTreeRelation | CSVRelation | IcebergRelation
 @dataclass(frozen=True)
 class Data(Declaration):
     pass
 
-# RelEDB(name::RelationId, path_name::string, types::BaseRelationType[])
+# RelEDB(name::RelationId, path::string[], types::Type[])
 @dataclass(frozen=True)
 class RelEDB(Data):
     name: RelationId
-    path_name: str
-    types: Sequence[BaseRelationType]
+    path: Sequence[str]
+    types: Sequence[Type]
 
 # BeTreeRelation(name::RelationId, relation_info::BeTreeInfo)
 @dataclass(frozen=True)

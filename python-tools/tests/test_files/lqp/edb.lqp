@@ -83,16 +83,16 @@
 
           ;; RelEDB examples (formerly BaseRelationPath)
           ;; Simple path with basic types
-          (rel_edb :path_simple "my_base_relation" [INT STRING FLOAT])
+          (rel_edb :path_simple ["my_base_relation"] [INT STRING FLOAT])
 
-          ;; Path with specialized types
-          (rel_edb :path_specialized "another_path" [INT #"specialized_string" STRING])
+          ;; Path with multiple segments
+          (rel_edb :path_specialized ["another" "path"] [INT STRING])
 
           ;; Path with mixed types including decimals
-          (rel_edb :path_mixed "complex_path" [(DECIMAL 10 2) INT #42 STRING])
+          (rel_edb :path_mixed ["complex" "path" "here"] [(DECIMAL 10 2) INT STRING])
 
           ;; Path with no types (empty)
-          (rel_edb :path_empty "empty_path" [])
+          (rel_edb :path_empty ["empty_path"] [])
 
           ;; Mix with def and algorithm
           (def :foo ([x::INT] (= x 1)))

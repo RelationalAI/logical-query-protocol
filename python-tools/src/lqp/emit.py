@@ -227,19 +227,11 @@ def convert_betree_info(info: ir.BeTreeInfo) -> logic_pb2.BeTreeInfo:
         relation_locator=convert_betree_locator(info.relation_locator)
     )
 
-def convert_base_relation_type(brt: ir.BaseRelationType) -> logic_pb2.BaseRelationType:
-    if isinstance(brt, ir.Type):
-        return logic_pb2.BaseRelationType(type=convert_type(brt))
-    elif isinstance(brt, ir.SpecializedValue):
-        return logic_pb2.BaseRelationType(specialized_type=convert_value(brt.value))
-    else:
-        raise TypeError(f"Unsupported BaseRelationType: {type(brt)}")
-
 def convert_rel_edb(rel: ir.RelEDB) -> logic_pb2.RelEDB:
     return logic_pb2.RelEDB(
         name=convert_relation_id(rel.name),
-        path_name=rel.path_name,
-        types=[convert_base_relation_type(t) for t in rel.types]
+        path=rel.path,
+        types=[convert_type(t) for t in rel.types]
     )
 
 def convert_betree_relation(rel: ir.BeTreeRelation) -> logic_pb2.BeTreeRelation:

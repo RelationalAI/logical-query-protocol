@@ -240,8 +240,8 @@ message Data {
 
 message RelEDB {
   RelationId name = 1;
-  string path_name = 2;
-  repeated BaseRelationType types = 3;
+  repeated string path = 2;
+  repeated Type types = 3;
 }
 
 message BeTreeRelation {
@@ -268,13 +268,6 @@ message BeTreeLocator {
   UInt128Value root_pageid = 1;
   int64 element_count = 2;
   int64 tree_height = 3;
-}
-
-message BaseRelationType {
-  oneof base_relation_type {
-    Type type = 1;
-    Value specialized_type = 2;
-  }
 }
 
 //
