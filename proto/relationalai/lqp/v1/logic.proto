@@ -265,7 +265,10 @@ message BeTreeConfig {
 }
 
 message BeTreeLocator {
-  UInt128Value root_pageid = 1;
+  oneof location {
+    UInt128Value root_pageid = 1;
+    bytes inline_data = 4;
+  }
   int64 element_count = 2;
   int64 tree_height = 3;
 }

@@ -384,14 +384,16 @@ class BeTreeConfig(_message.Message):
     def __init__(self, epsilon: _Optional[float] = ..., max_pivots: _Optional[int] = ..., max_deltas: _Optional[int] = ..., max_leaf: _Optional[int] = ...) -> None: ...
 
 class BeTreeLocator(_message.Message):
-    __slots__ = ("root_pageid", "element_count", "tree_height")
+    __slots__ = ("root_pageid", "inline_data", "element_count", "tree_height")
     ROOT_PAGEID_FIELD_NUMBER: _ClassVar[int]
+    INLINE_DATA_FIELD_NUMBER: _ClassVar[int]
     ELEMENT_COUNT_FIELD_NUMBER: _ClassVar[int]
     TREE_HEIGHT_FIELD_NUMBER: _ClassVar[int]
     root_pageid: UInt128Value
+    inline_data: bytes
     element_count: int
     tree_height: int
-    def __init__(self, root_pageid: _Optional[_Union[UInt128Value, _Mapping]] = ..., element_count: _Optional[int] = ..., tree_height: _Optional[int] = ...) -> None: ...
+    def __init__(self, root_pageid: _Optional[_Union[UInt128Value, _Mapping]] = ..., inline_data: _Optional[bytes] = ..., element_count: _Optional[int] = ..., tree_height: _Optional[int] = ...) -> None: ...
 
 class RelationId(_message.Message):
     __slots__ = ("id_low", "id_high")

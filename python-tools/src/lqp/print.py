@@ -322,7 +322,13 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
         config_dict['betree_config_max_pivots'] = node.storage_config.max_pivots
         config_dict['betree_config_max_deltas'] = node.storage_config.max_deltas
         config_dict['betree_config_max_leaf'] = node.storage_config.max_leaf
-        config_dict['betree_locator_root_pageid'] = node.relation_locator.root_pageid
+        # Handle oneof: only print the location field that is set
+        if node.relation_locator.root_pageid is not None:
+            config_dict['betree_locator_root_pageid'] = node.relation_locator.root_pageid
+        if node.relation_locator.inline_data is not None:
+            # Convert bytes back to string for printing
+            inline_data_str = node.relation_locator.inline_data.decode('utf-8')
+            config_dict['betree_locator_inline_data'] = inline_data_str
         config_dict['betree_locator_element_count'] = node.relation_locator.element_count
         config_dict['betree_locator_tree_height'] = node.relation_locator.tree_height
         lqp += config_dict_to_str(config_dict, indent_level + 1, options)

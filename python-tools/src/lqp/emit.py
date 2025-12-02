@@ -213,11 +213,16 @@ def convert_betree_config(config: ir.BeTreeConfig) -> logic_pb2.BeTreeConfig:
     )
 
 def convert_betree_locator(locator: ir.BeTreeLocator) -> logic_pb2.BeTreeLocator:
-    return logic_pb2.BeTreeLocator(
-        root_pageid=convert_uint128(locator.root_pageid),
-        element_count=locator.element_count,
-        tree_height=locator.tree_height
-    )
+    # Handle oneof: only set the location field that is not None
+    kwargs = {
+        'element_count': locator.element_count,
+        'tree_height': locator.tree_height
+    }
+    if locator.root_pageid is not None:
+        kwargs['root_pageid'] = convert_uint128(locator.root_pageid)
+    if locator.inline_data is not None:
+        kwargs['inline_data'] = locator.inline_data
+    return logic_pb2.BeTreeLocator(**kwargs)
 
 def convert_betree_info(info: ir.BeTreeInfo) -> logic_pb2.BeTreeInfo:
     return logic_pb2.BeTreeInfo(

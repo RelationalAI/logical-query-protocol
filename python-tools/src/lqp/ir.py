@@ -340,10 +340,12 @@ class BeTreeConfig(LqpNode):
     max_deltas: int
     max_leaf: int
 
-# BeTreeLocator(root_pageid::UInt128Value, element_count::int, tree_height::int)
+# BeTreeLocator(root_pageid::UInt128Value?, inline_data::bytes?, element_count::int, tree_height::int)
+# Note: Exactly one of root_pageid or inline_data must be set (oneof in protobuf)
 @dataclass(frozen=True)
 class BeTreeLocator(LqpNode):
-    root_pageid: UInt128Value
+    root_pageid: Optional[UInt128Value]
+    inline_data: Optional[bytes]
     element_count: int
     tree_height: int
 

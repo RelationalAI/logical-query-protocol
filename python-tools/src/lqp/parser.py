@@ -385,9 +385,19 @@ class LQPTransformer(Transformer):
                     storage_config[key] = raw_value
                 elif k.startswith("betree_locator_"):
                     key = k.replace("betree_locator_", "")
+                    # Convert string to bytes for inline_data
+                    if key == "inline_data" and isinstance(raw_value, str):
+                        raw_value = raw_value.encode('utf-8')
                     relation_locator[key] = raw_value
 
         storage_config = ir.BeTreeConfig(**storage_config, meta=self.meta(meta))
+
+        # Handle oneof: set missing location field to None
+        if 'root_pageid' not in relation_locator:
+            relation_locator['root_pageid'] = None
+        if 'inline_data' not in relation_locator:
+            relation_locator['inline_data'] = None
+
         relation_locator = ir.BeTreeLocator(**relation_locator, meta=self.meta(meta))
 
         return ir.BeTreeInfo(
