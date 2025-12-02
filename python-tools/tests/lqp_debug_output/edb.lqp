@@ -72,10 +72,10 @@
                 :betree_locator_element_count 10
                 :betree_locator_root_pageid 0x7777888899990000111122
                 :betree_locator_tree_height 1}))
-          (rel_edb 1550376294846102864 "my_base_relation" [INT STRING FLOAT])
-          (rel_edb 15100206361345813856 "another_path" [INT #"specialized_string" STRING])
-          (rel_edb 2113800447908720020 "complex_path" [(DECIMAL 10 2) INT #42 STRING])
-          (rel_edb 14850802608622135859 "empty_path" [])
+          (rel_edb 1550376294846102864 ["my_base_relation"] [INT STRING FLOAT])
+          (rel_edb 15100206361345813856 ["another" "path"] [INT STRING])
+          (rel_edb 2113800447908720020 ["complex" "path" "here"] [(DECIMAL 10 2) INT STRING])
+          (rel_edb 14850802608622135859 ["empty_path"] [])
           (def 3181428560199927439
             ([x::INT]
               (primitive :rel_primitive_eq x 1)))
@@ -96,7 +96,18 @@
                 :betree_config_max_pivots 4
                 :betree_locator_element_count 1000
                 :betree_locator_root_pageid 0x3333444455556666777788
-                :betree_locator_tree_height 4})))))
+                :betree_locator_tree_height 4}))
+          (betree_relation 4623326149048941860
+            (betree_info
+              (key_types INT)
+              (value_types STRING)
+              { :betree_config_epsilon 0.5
+                :betree_config_max_deltas 16
+                :betree_config_max_leaf 16
+                :betree_config_max_pivots 4
+                :betree_locator_element_count 42
+                :betree_locator_inline_data "binary_blob_data_here"
+                :betree_locator_tree_height 1})))))
     (reads
       (output :foo 3181428560199927439)
       (output :edb 12241733354516903356)
@@ -110,12 +121,14 @@
       (output :path_mixed 2113800447908720020)
       (output :path_empty 14850802608622135859)
       (output :bar 18221048622641146868)
-      (output :another_edb 15511961118399231270))))
+      (output :another_edb 15511961118399231270)
+      (output :inline_edb 4623326149048941860))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
 ;; 	 ID `15511961118399231270` -> `another_edb`
+;; 	 ID `4623326149048941860` -> `inline_edb`
 ;; 	 ID `12241733354516903356` -> `edb`
 ;; 	 ID `11296646467174418931` -> `multi_key`
 ;; 	 ID `2517080472536116612` -> `numeric_types`

@@ -334,6 +334,74 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
         lqp += config_dict_to_str(config_dict, indent_level + 1, options)
         lqp += conf.RPAREN()
 
+    elif isinstance(node, ir.CSVRelation):
+        lqp += ind + conf.LPAREN() + conf.kw("csv_relation") + "\n"
+        lqp += to_str(node.locator, indent_level + 1, options, debug_info) + "\n"
+        lqp += to_str(node.config, indent_level + 1, options, debug_info) + "\n"
+        # Print columns
+        lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("columns") + "\n"
+        lqp += list_to_str(node.columns, indent_level + 2, "\n", options, debug_info)
+        lqp += conf.RPAREN() + "\n"
+        # Print asof
+        lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("asof") + " " + to_str(node.asof, 0, options, debug_info) + conf.RPAREN()
+        lqp += conf.RPAREN()
+
+    elif isinstance(node, ir.CSVLocator):
+        lqp += ind + conf.LPAREN() + conf.kw("csv_locator") + "\n"
+        # Print paths or inline_data (mutually exclusive)
+        if node.paths:
+            lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("paths")
+            if len(node.paths) > 0:
+                lqp += " " + list_to_str(node.paths, 0, " ", options, debug_info)
+            lqp += conf.RPAREN()
+        elif node.inline_data is not None:
+            # Convert bytes back to string for printing
+            inline_data_str = node.inline_data.decode('utf-8')
+            lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("inline_data") + " " + to_str(inline_data_str, 0, options, debug_info) + conf.RPAREN()
+        lqp += conf.RPAREN()
+
+    elif isinstance(node, ir.CSVConfig):
+        config_dict: dict[str, Any] = {}
+        # Always include all config values
+        config_dict['csv_header_row'] = node.header_row
+        config_dict['csv_skip'] = node.skip
+        if node.new_line != '':
+            config_dict['csv_new_line'] = node.new_line
+        config_dict['csv_delimiter'] = node.delimiter
+        config_dict['csv_quotechar'] = node.quotechar
+        config_dict['csv_escapechar'] = node.escapechar
+        if node.comment != '':
+            config_dict['csv_comment'] = node.comment
+        if node.missing_strings:
+            # For lists, we only support single string values in config dicts for now
+            # If there's only one missing string, output it as a single string
+            # Otherwise, we'll need to output just the first one (this is a limitation)
+            if len(node.missing_strings) == 1:
+                config_dict['csv_missing_strings'] = node.missing_strings[0]
+            else:
+                # For multiple missing strings, join them or just use first
+                # This is a temporary workaround - we may need a better solution
+                config_dict['csv_missing_strings'] = node.missing_strings[0]
+        config_dict['csv_decimal_separator'] = node.decimal_separator
+        config_dict['csv_encoding'] = node.encoding
+        config_dict['csv_compression'] = node.compression
+
+        lqp += ind + conf.LPAREN() + conf.kw("csv_config")
+        if len(config_dict) > 0:
+            lqp += "\n"
+        lqp += config_dict_to_str(config_dict, indent_level + 1, options)
+        lqp += conf.RPAREN()
+
+    elif isinstance(node, ir.CSVColumn):
+        lqp += ind + conf.LPAREN() + conf.kw("column") + " "
+        lqp += to_str(node.column_name, 0, options, debug_info) + " "
+        lqp += to_str(node.target_id, 0, options, debug_info)
+        lqp += " " + conf.LBRACKET()
+        if len(node.types) > 0:
+            lqp += list_to_str(node.types, 0, " ", options, debug_info)
+        lqp += conf.RBRACKET()
+        lqp += conf.RPAREN()
+
     elif isinstance(node, ir.Script):
         lqp += ind + conf.LPAREN() + conf.kw("script") + "\n"
         lqp += list_to_str(node.constructs, indent_level + 1, "\n", options, debug_info)

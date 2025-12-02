@@ -375,6 +375,45 @@ class BeTreeRelation(Data):
     name: RelationId
     relation_info: BeTreeInfo
 
+# CSVRelation(locator::CSVLocator, config::CSVConfig, columns::CSVColumn[], asof::string)
+@dataclass(frozen=True)
+class CSVRelation(Data):
+    locator: 'CSVLocator'
+    config: 'CSVConfig'
+    columns: Sequence['CSVColumn']
+    asof: str
+
+# CSVLocator(paths::string[], inline_data::bytes?)
+# Note: Exactly one of paths or inline_data should be set (mutually exclusive)
+@dataclass(frozen=True)
+class CSVLocator(LqpNode):
+    paths: Sequence[str]
+    inline_data: Optional[bytes]
+
+# CSVConfig(header_row::int, skip::int, new_line::string, delimiter::string, quotechar::string,
+#           escapechar::string, comment::string, missing_strings::string[], decimal_separator::string,
+#           encoding::string, compression::string)
+@dataclass(frozen=True)
+class CSVConfig(LqpNode):
+    header_row: int
+    skip: int
+    new_line: str
+    delimiter: str
+    quotechar: str
+    escapechar: str
+    comment: str
+    missing_strings: Sequence[str]
+    decimal_separator: str
+    encoding: str
+    compression: str
+
+# CSVColumn(column_name::string, target_id::RelationId, types::Type[])
+@dataclass(frozen=True)
+class CSVColumn(LqpNode):
+    column_name: str
+    target_id: RelationId
+    types: Sequence[Type]
+
 # --- Fragment Types ---
 
 # FragmentId(id::bytes)

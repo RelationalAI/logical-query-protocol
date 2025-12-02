@@ -245,11 +245,51 @@ def convert_betree_relation(rel: ir.BeTreeRelation) -> logic_pb2.BeTreeRelation:
         relation_info=convert_betree_info(rel.relation_info)
     )
 
+def convert_csv_locator(locator: ir.CSVLocator) -> logic_pb2.CSVLocator:
+    kwargs = {}
+    if locator.paths:
+        kwargs['paths'] = locator.paths
+    if locator.inline_data is not None:
+        kwargs['inline_data'] = locator.inline_data
+    return logic_pb2.CSVLocator(**kwargs)
+
+def convert_csv_config(config: ir.CSVConfig) -> logic_pb2.CSVConfig:
+    return logic_pb2.CSVConfig(
+        header_row=config.header_row,
+        skip=config.skip,
+        new_line=config.new_line,
+        delimiter=config.delimiter,
+        quotechar=config.quotechar,
+        escapechar=config.escapechar,
+        comment=config.comment,
+        missing_strings=list(config.missing_strings),
+        decimal_separator=config.decimal_separator,
+        encoding=config.encoding,
+        compression=config.compression
+    )
+
+def convert_csv_column(column: ir.CSVColumn) -> logic_pb2.CSVColumn:
+    return logic_pb2.CSVColumn(
+        column_name=column.column_name,
+        target_id=convert_relation_id(column.target_id),
+        types=[convert_type(t) for t in column.types]
+    )
+
+def convert_csv_relation(rel: ir.CSVRelation) -> logic_pb2.CSVRelation:
+    return logic_pb2.CSVRelation(
+        locator=convert_csv_locator(rel.locator),
+        config=convert_csv_config(rel.config),
+        columns=[convert_csv_column(col) for col in rel.columns],
+        asof=rel.asof
+    )
+
 def convert_data(data: ir.Data) -> logic_pb2.Data:
     if isinstance(data, ir.RelEDB):
         return logic_pb2.Data(rel_edb=convert_rel_edb(data))
     elif isinstance(data, ir.BeTreeRelation):
         return logic_pb2.Data(betree_relation=convert_betree_relation(data))
+    elif isinstance(data, ir.CSVRelation):
+        return logic_pb2.Data(csv_relation=convert_csv_relation(data))
     else:
         raise TypeError(f"Unsupported Data type: {type(data)}")
 

@@ -334,12 +334,14 @@ class Attribute(_message.Message):
     def __init__(self, name: _Optional[str] = ..., args: _Optional[_Iterable[_Union[Value, _Mapping]]] = ...) -> None: ...
 
 class Data(_message.Message):
-    __slots__ = ("rel_edb", "betree_relation")
+    __slots__ = ("rel_edb", "betree_relation", "csv_relation")
     REL_EDB_FIELD_NUMBER: _ClassVar[int]
     BETREE_RELATION_FIELD_NUMBER: _ClassVar[int]
+    CSV_RELATION_FIELD_NUMBER: _ClassVar[int]
     rel_edb: RelEDB
     betree_relation: BeTreeRelation
-    def __init__(self, rel_edb: _Optional[_Union[RelEDB, _Mapping]] = ..., betree_relation: _Optional[_Union[BeTreeRelation, _Mapping]] = ...) -> None: ...
+    csv_relation: CSVRelation
+    def __init__(self, rel_edb: _Optional[_Union[RelEDB, _Mapping]] = ..., betree_relation: _Optional[_Union[BeTreeRelation, _Mapping]] = ..., csv_relation: _Optional[_Union[CSVRelation, _Mapping]] = ...) -> None: ...
 
 class RelEDB(_message.Message):
     __slots__ = ("name", "path", "types")
@@ -394,6 +396,62 @@ class BeTreeLocator(_message.Message):
     element_count: int
     tree_height: int
     def __init__(self, root_pageid: _Optional[_Union[UInt128Value, _Mapping]] = ..., inline_data: _Optional[bytes] = ..., element_count: _Optional[int] = ..., tree_height: _Optional[int] = ...) -> None: ...
+
+class CSVRelation(_message.Message):
+    __slots__ = ("locator", "config", "columns", "asof")
+    LOCATOR_FIELD_NUMBER: _ClassVar[int]
+    CONFIG_FIELD_NUMBER: _ClassVar[int]
+    COLUMNS_FIELD_NUMBER: _ClassVar[int]
+    ASOF_FIELD_NUMBER: _ClassVar[int]
+    locator: CSVLocator
+    config: CSVConfig
+    columns: _containers.RepeatedCompositeFieldContainer[CSVColumn]
+    asof: str
+    def __init__(self, locator: _Optional[_Union[CSVLocator, _Mapping]] = ..., config: _Optional[_Union[CSVConfig, _Mapping]] = ..., columns: _Optional[_Iterable[_Union[CSVColumn, _Mapping]]] = ..., asof: _Optional[str] = ...) -> None: ...
+
+class CSVLocator(_message.Message):
+    __slots__ = ("paths", "inline_data")
+    PATHS_FIELD_NUMBER: _ClassVar[int]
+    INLINE_DATA_FIELD_NUMBER: _ClassVar[int]
+    paths: _containers.RepeatedScalarFieldContainer[str]
+    inline_data: bytes
+    def __init__(self, paths: _Optional[_Iterable[str]] = ..., inline_data: _Optional[bytes] = ...) -> None: ...
+
+class CSVConfig(_message.Message):
+    __slots__ = ("header_row", "skip", "new_line", "delimiter", "quotechar", "escapechar", "comment", "missing_strings", "decimal_separator", "encoding", "compression")
+    HEADER_ROW_FIELD_NUMBER: _ClassVar[int]
+    SKIP_FIELD_NUMBER: _ClassVar[int]
+    NEW_LINE_FIELD_NUMBER: _ClassVar[int]
+    DELIMITER_FIELD_NUMBER: _ClassVar[int]
+    QUOTECHAR_FIELD_NUMBER: _ClassVar[int]
+    ESCAPECHAR_FIELD_NUMBER: _ClassVar[int]
+    COMMENT_FIELD_NUMBER: _ClassVar[int]
+    MISSING_STRINGS_FIELD_NUMBER: _ClassVar[int]
+    DECIMAL_SEPARATOR_FIELD_NUMBER: _ClassVar[int]
+    ENCODING_FIELD_NUMBER: _ClassVar[int]
+    COMPRESSION_FIELD_NUMBER: _ClassVar[int]
+    header_row: int
+    skip: int
+    new_line: str
+    delimiter: str
+    quotechar: str
+    escapechar: str
+    comment: str
+    missing_strings: _containers.RepeatedScalarFieldContainer[str]
+    decimal_separator: str
+    encoding: str
+    compression: str
+    def __init__(self, header_row: _Optional[int] = ..., skip: _Optional[int] = ..., new_line: _Optional[str] = ..., delimiter: _Optional[str] = ..., quotechar: _Optional[str] = ..., escapechar: _Optional[str] = ..., comment: _Optional[str] = ..., missing_strings: _Optional[_Iterable[str]] = ..., decimal_separator: _Optional[str] = ..., encoding: _Optional[str] = ..., compression: _Optional[str] = ...) -> None: ...
+
+class CSVColumn(_message.Message):
+    __slots__ = ("column_name", "target_id", "types")
+    COLUMN_NAME_FIELD_NUMBER: _ClassVar[int]
+    TARGET_ID_FIELD_NUMBER: _ClassVar[int]
+    TYPES_FIELD_NUMBER: _ClassVar[int]
+    column_name: str
+    target_id: RelationId
+    types: _containers.RepeatedCompositeFieldContainer[Type]
+    def __init__(self, column_name: _Optional[str] = ..., target_id: _Optional[_Union[RelationId, _Mapping]] = ..., types: _Optional[_Iterable[_Union[Type, _Mapping]]] = ...) -> None: ...
 
 class RelationId(_message.Message):
     __slots__ = ("id_low", "id_high")
