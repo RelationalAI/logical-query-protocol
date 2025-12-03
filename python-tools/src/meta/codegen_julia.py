@@ -5,7 +5,7 @@ with proper keyword escaping and idiomatic Julia style.
 """
 
 from typing import Set
-from .target import TargetExpr, Wildcard, Var, Symbol, Call, Lambda, Let, FunDef, Type, BaseType, TupleType, ListType
+from .target import TargetExpr, Var, Symbol, Builtin, Constructor, Call, Lambda, Let, FunDef, Type, BaseType, TupleType, ListType
 
 
 # Julia keywords that need escaping
@@ -78,23 +78,29 @@ def generate_julia(expr: TargetExpr, indent: str = "") -> str:
     Returns:
         Julia code as a string
     """
-    if isinstance(expr, Wildcard):
-        return "_"
-
-    elif isinstance(expr, Var):
+    if isinstance(expr, Var):
         return escape_identifier(expr.name)
 
     elif isinstance(expr, Symbol):
         # Symbols in Julia use :name syntax
         return f":{expr.name}"
 
+    elif isinstance(expr, Constructor):
+        # Constructor reference
+        return f"{expr.name}"
+
+    elif isinstance(expr, Builtin):
+        # Builtin functions - Julia uses similar syntax
+        return expr.name
+
     elif isinstance(expr, Call):
-        func_name = escape_identifier(expr.name)
+        # Generate function expression (can be Var, Symbol, or arbitrary expression)
+        func_code = generate_julia(expr.func, indent)
         if not expr.args:
-            return f"{func_name}()"
+            return f"{func_code}()"
 
         args_code = ', '.join(generate_julia(arg, indent) for arg in expr.args)
-        return f"{func_name}({args_code})"
+        return f"{func_code}({args_code})"
 
     elif isinstance(expr, Lambda):
         # Generate anonymous function: (params...) -> body
@@ -115,9 +121,9 @@ def generate_julia(expr: TargetExpr, indent: str = "") -> str:
         # Generate Let-binding
         # Julia native: let x = e1; e2 end
         var_name = escape_identifier(expr.var)
-        expr1_code = generate_julia(expr.init, indent)
+        init_code = generate_julia(expr.init, indent)
 
-        # Check if expr2 is another Let (for proper nesting)
+        # Check if body is another Let (for proper nesting)
         if isinstance(expr.body, Let):
             # Nested Let: can use Julia's let with multiple bindings
             bindings = []
@@ -132,8 +138,8 @@ def generate_julia(expr: TargetExpr, indent: str = "") -> str:
             bindings_str = ", ".join(bindings)
             return f"let {bindings_str}; {body_code} end"
         else:
-            expr2_code = generate_julia(expr.body, indent)
-            return f"let {var_name} = {expr1_code}; {expr2_code} end"
+            body_code = generate_julia(expr.body, indent)
+            return f"let {var_name} = {init_code}; {body_code} end"
 
     elif isinstance(expr, FunDef):
         # Generate function definition

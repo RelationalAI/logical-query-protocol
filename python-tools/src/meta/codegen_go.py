@@ -5,7 +5,7 @@ with proper keyword escaping and idiomatic Go style.
 """
 
 from typing import Set
-from .target import TargetExpr, Wildcard, Var, Symbol, Call, Lambda, Let, FunDef, Type, BaseType, TupleType, ListType
+from .target import TargetExpr, Var, Symbol, Constructor, Call, Lambda, Let, FunDef, Type, BaseType, TupleType, ListType
 
 
 # Go keywords that need escaping
@@ -89,23 +89,25 @@ def generate_go(expr: TargetExpr, indent: str = "") -> str:
     Returns:
         Go code as a string
     """
-    if isinstance(expr, Wildcard):
-        return "_"
-
-    elif isinstance(expr, Var):
+    if isinstance(expr, Var):
         return escape_identifier(expr.name)
 
     elif isinstance(expr, Symbol):
         # Symbols as string literals (Go doesn't have Ruby-style symbols)
         return f'"{expr.name}"'
 
+    elif isinstance(expr, Constructor):
+        # Constructor reference
+        return f"{expr.name}"
+
     elif isinstance(expr, Call):
-        func_name = escape_identifier(expr.name)
+        # Generate function expression (can be Var, Symbol, or arbitrary expression)
+        func_code = generate_go(expr.func, indent)
         if not expr.args:
-            return f"{func_name}()"
+            return f"{func_code}()"
 
         args_code = ', '.join(generate_go(arg, indent) for arg in expr.args)
-        return f"{func_name}({args_code})"
+        return f"{func_code}({args_code})"
 
     elif isinstance(expr, Lambda):
         # Generate anonymous function: func(params...) ReturnType { return body }
@@ -128,17 +130,17 @@ def generate_go(expr: TargetExpr, indent: str = "") -> str:
         # Generate Let as variable declaration and evaluation
         # Go doesn't have let expressions, so we use a closure
         var_name = escape_identifier(expr.var)
-        expr1_code = generate_go(expr.init, indent)
+        init_code = generate_go(expr.init, indent)
 
-        # Check if expr2 is another Let
+        # Check if body is another Let
         if isinstance(expr.body, Let):
             # Nested Let: use IIFE (Immediately Invoked Function Expression)
             inner_code = generate_go_let_sequence(expr, indent + "\t")
             return f"func() interface{{}} {{\n{indent}\t{inner_code}\n{indent}}}()"
         else:
-            expr2_code = generate_go(expr.body, indent)
+            body_code = generate_go(expr.body, indent)
             # Simple let: wrap in IIFE
-            return f"func() interface{{}} {{\n{indent}\t{var_name} := {expr1_code}\n{indent}\treturn {expr2_code}\n{indent}}}()"
+            return f"func() interface{{}} {{\n{indent}\t{var_name} := {init_code}\n{indent}\treturn {body_code}\n{indent}}}()"
 
     elif isinstance(expr, FunDef):
         # Generate function definition
@@ -187,8 +189,8 @@ def generate_go_let_sequence(expr: Let, indent: str = "\t") -> str:
     # Collect all Let-bindings in sequence
     while isinstance(current, Let):
         var_name = escape_identifier(current.var)
-        expr1_code = generate_go(current.init, indent)
-        statements.append(f"{var_name} := {expr1_code}")
+        init_code = generate_go(current.init, indent)
+        statements.append(f"{var_name} := {init_code}")
         current = current.body
 
     # Generate the final expression (not a Let)

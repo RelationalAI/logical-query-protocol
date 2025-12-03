@@ -530,7 +530,7 @@ class GrammarGenerator:
 
         self.grammar.tokens.append(Token("SYMBOL", '/[a-zA-Z_][a-zA-Z0-9_.-]*/'))
         self.grammar.tokens.append(Token("MISSING", '"missing"', 1))
-        self.grammar.tokens.append(Token("STRING", 'ESCAPED_STRING'))
+        self.grammar.tokens.append(Token("STRING", '/"(?:[^"\\\\]|\\\\.)*"/'))
         self.grammar.tokens.append(Token("NUMBER", '/[-]?\\d+/'))
         self.grammar.tokens.append(Token("INT128", '/[-]?\\d+i128/'))
         self.grammar.tokens.append(Token("UINT128", '/0x[0-9a-fA-F]+/'))

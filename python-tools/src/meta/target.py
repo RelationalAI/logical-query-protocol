@@ -27,20 +27,21 @@ class TargetExpr(TargetNode):
 
 
 @dataclass
-class Wildcard(TargetExpr):
-    """Wildcard parameter (_) that ignores its value."""
-
-    def __str__(self) -> str:
-        return "_"
-
-
-@dataclass
 class Var(TargetExpr):
     """Variable reference."""
     name: str
 
     def __str__(self) -> str:
         return self.name
+
+
+@dataclass
+class Lit(TargetExpr):
+    """Literal value (string, number, boolean, None)."""
+    value: any
+
+    def __str__(self) -> str:
+        return repr(self.value)
 
 
 @dataclass
@@ -53,14 +54,44 @@ class Symbol(TargetExpr):
 
 
 @dataclass
-class Call(TargetExpr):
-    """Function call."""
+class Builtin(TargetExpr):
+    """Builtin function reference.
+
+    Represents a built-in function provided by the runtime/parser framework.
+    Examples: consume, consume_terminal, match_terminal, parse_X methods
+    Code generators map these to the appropriate syntax (e.g., self.consume in Python).
+    """
     name: str
+
+    def __str__(self) -> str:
+        return f"%{self.name}"
+
+
+@dataclass
+class Constructor(TargetExpr):
+    """Constructor call.
+
+    name: Name of the type/constructor
+    """
+    name: str
+
+    def __str__(self) -> str:
+        return f"@{self.name}"
+
+
+@dataclass
+class Call(TargetExpr):
+    """Function call.
+
+    func: Expression that evaluates to the function to call (typically Var or Symbol)
+    args: List of argument expressions
+    """
+    func: 'TargetExpr'
     args: List['TargetExpr'] = field(default_factory=list)
 
     def __str__(self) -> str:
         args_str = ', '.join(str(arg) for arg in self.args)
-        return f"{self.name}({args_str})"
+        return f"{self.func}({args_str})"
 
 
 @dataclass
@@ -91,6 +122,67 @@ class Let(TargetExpr):
     def __str__(self) -> str:
         type_str = f": {self.init_type}" if self.init_type else ""
         return f"let {self.var}{type_str} = {self.init} in {self.body}"
+
+
+@dataclass
+class IfElse(TargetExpr):
+    """If-else conditional expression."""
+    condition: TargetExpr
+    then_branch: TargetExpr
+    else_branch: Optional[TargetExpr] = None
+
+    def __str__(self) -> str:
+        if self.else_branch:
+            return f"if {self.condition} then {self.then_branch} else {self.else_branch}"
+        else:
+            return f"if {self.condition} then {self.then_branch}"
+
+
+@dataclass
+class Seq(TargetExpr):
+    """Sequence of expressions evaluated in order, returns last value."""
+    exprs: List['TargetExpr'] = field(default_factory=list)
+
+    def __str__(self) -> str:
+        return "; ".join(str(e) for e in self.exprs)
+
+
+@dataclass
+class While(TargetExpr):
+    """While loop: while condition do body."""
+    condition: TargetExpr
+    body: TargetExpr
+
+    def __str__(self) -> str:
+        return f"while {self.condition} do {self.body}"
+
+
+@dataclass
+class TryCatch(TargetExpr):
+    """Try-catch exception handling."""
+    try_body: TargetExpr
+    exception_type: Optional[str] = None
+    catch_body: Optional[TargetExpr] = None
+
+    def __str__(self) -> str:
+        if self.catch_body:
+            exc_str = f" {self.exception_type}" if self.exception_type else ""
+            return f"try {self.try_body} catch{exc_str} {self.catch_body}"
+        else:
+            return f"try {self.try_body}"
+
+
+@dataclass
+class Assign(TargetExpr):
+    """Assignment statement: var = expr.
+
+    Returns None after performing the assignment.
+    """
+    var: str
+    expr: TargetExpr
+
+    def __str__(self) -> str:
+        return f"{self.var} = {self.expr}"
 
 
 @dataclass
@@ -141,19 +233,62 @@ class FunDef(TargetNode):
         return f"def {self.name}({params_str}){ret_str}: {self.body}"
 
 
+@dataclass
+class ParseNonterminalDef(TargetNode):
+    """Parse method definition for a nonterminal.
+
+    Like FunDef but specifically for parser methods, with a Nonterminal
+    instead of a string name.
+    """
+    nonterminal: 'Nonterminal'
+    params: List[tuple[str, Type]] = field(default_factory=list)
+    return_type: Optional[Type] = None
+    body: Optional['TargetExpr'] = None
+
+    def __str__(self) -> str:
+        params_str = ', '.join(f"{name}: {typ}" for name, typ in self.params)
+        ret_str = f" -> {self.return_type}" if self.return_type else ""
+        return f"parse {self.nonterminal}({params_str}){ret_str}: {self.body}"
+
+
+@dataclass
+class ParseNonterminal(TargetExpr):
+    """Parse method call for a nonterminal.
+
+    Like Call but specifically for calling parser methods, with a Nonterminal
+    instead of an expression for the function.
+    """
+    nonterminal: 'Nonterminal'
+    args: List['TargetExpr'] = field(default_factory=list)
+
+    def __str__(self) -> str:
+        args_str = ', '.join(str(arg) for arg in self.args)
+        return f"parse {self.nonterminal}({args_str})"
+
+
 # Re-export all types for convenience
 __all__ = [
     'TargetNode',
     'TargetExpr',
-    'Wildcard',
     'Var',
+    'Lit',
     'Symbol',
+    'Builtin',
+    'Constructor',
     'Call',
     'Lambda',
     'Let',
+    'IsNone',
+    'IfElse',
+    'Seq',
+    'While',
+    'TryCatch',
+    'Assign',
     'Type',
     'BaseType',
     'TupleType',
     'ListType',
     'FunDef',
+    'ParseNonterminalDef',
+    'ParseNonterminal',
 ]

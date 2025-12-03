@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple
 
 # Import action AST types
-from .target import TargetExpr, Wildcard, Var, Symbol, Call, Lambda, Let
+from .target import TargetExpr, Var, Symbol, Call, Lambda, Let, Lit
 
 
 # Grammar RHS (right-hand side) elements
@@ -48,22 +48,15 @@ class Nonterminal(Rhs):
 
 
 @dataclass
-class Sequence(Rhs):
-    """Sequence of grammar symbols (concatenation)."""
-    elements: List['Rhs'] = field(default_factory=list)
-
-    def __str__(self) -> str:
-        return " ".join(str(e) for e in self.elements)
-
-
-@dataclass
 class Star(Rhs):
     """Zero or more repetitions (*)."""
     rhs: 'Rhs'
 
+    def __post_init__(self):
+        assert isinstance(self.rhs, Nonterminal) or isinstance(self.rhs, Terminal), \
+            f"Star child must be Nonterminal or Terminal, got {type(self.rhs).__name__}"
+
     def __str__(self) -> str:
-        if isinstance(self.rhs, Sequence):
-            return f"({self.rhs})*"
         return f"{self.rhs}*"
 
 
@@ -72,9 +65,11 @@ class Plus(Rhs):
     """One or more repetitions (+)."""
     rhs: 'Rhs'
 
+    def __post_init__(self):
+        assert isinstance(self.rhs, Nonterminal) or isinstance(self.rhs, Terminal), \
+            f"Plus child must be Nonterminal, got {type(self.rhs).__name__}"
+
     def __str__(self) -> str:
-        if isinstance(self.rhs, Sequence):
-            return f"({self.rhs})+"
         return f"{self.rhs}+"
 
 
@@ -83,9 +78,11 @@ class Option(Rhs):
     """Optional element (?)."""
     rhs: 'Rhs'
 
+    def __post_init__(self):
+        assert isinstance(self.rhs, Nonterminal) or isinstance(self.rhs, Terminal), \
+            f"Option child must be Nonterminal, got {type(self.rhs).__name__}"
+
     def __str__(self) -> str:
-        if isinstance(self.rhs, Sequence):
-            return f"({self.rhs})?"
         return f"{self.rhs}?"
 
 
@@ -95,15 +92,14 @@ class Option(Rhs):
 class Rule:
     """Grammar rule (production)."""
     lhs: Nonterminal
-    rhs: Rhs
+    rhs: List[Rhs]
     action: Optional['Lambda'] = None
-    grammar: Optional['Grammar'] = field(default=None, repr=False, compare=False)
     source_type: Optional[str] = None  # Track the protobuf type this rule came from
     skip_validation: bool = False  # Skip action parameter validation (for normalized grammars)
 
     def to_pattern(self, grammar: Optional['Grammar'] = None) -> str:
         """Convert RHS to pattern string."""
-        return str(self.rhs)
+        return ' '.join(str(elem) for elem in self.rhs)
 
     def get_action(self) -> Optional['Lambda']:
         """Get action as Lambda."""
@@ -122,10 +118,8 @@ class Token:
 class Grammar:
     """Complete grammar specification with normalization and left-factoring support."""
     rules: Dict[str, List[Rule]] = field(default_factory=dict)
-    rule_order: List[str] = field(default_factory=list)
     tokens: List[Token] = field(default_factory=list)
-    imports: List[str] = field(default_factory=list)
-    ignores: List[str] = field(default_factory=list)
+    start: Optional[str] = None  # Start nonterminal name
 
     def add_rule(self, rule: Rule) -> None:
         """Add a rule to the grammar."""
@@ -147,21 +141,71 @@ class Grammar:
         lhs_name = rule.lhs.name
         if lhs_name not in self.rules:
             self.rules[lhs_name] = []
-            self.rule_order.append(lhs_name)
+            # Set start symbol to first rule added if not already set
+            if self.start is None:
+                self.start = lhs_name
         self.rules[lhs_name].append(rule)
 
-    def _count_rhs_elements(self, rhs: Rhs) -> int:
+    def _count_rhs_elements(self, rhs: List[Rhs]) -> int:
         """Count the number of elements in an RHS that produce action parameters.
 
         This counts all RHS elements, as each position (including literals, options,
         stars, etc.) corresponds to a parameter in the action lambda.
         """
-        if isinstance(rhs, Sequence):
-            return sum(1 for elem in rhs.elements if not isinstance(elem, Literal))
-        elif isinstance(rhs, Literal):
-            return 0
-        else:
-            return 1
+        return sum(1 for elem in rhs if not isinstance(elem, Literal))
+
+    def traverse_rules_preorder(self, start: Optional[str] = None, reachable_only: bool = True) -> List[str]:
+        """Traverse rules in preorder starting from start symbol.
+
+        Returns list of nonterminal names in the order they should be printed.
+        If reachable_only is True, only includes reachable nonterminals.
+        """
+        if start is None:
+            start = self.start
+        if start is None:
+            # No start symbol, return all rules in arbitrary order
+            return sorted(self.rules.keys())
+
+        visited = set()
+        result = []
+
+        def collect_nonterminals_from_elem(rhs: Rhs) -> List[str]:
+            """Collect all nonterminals referenced in RHS."""
+            nts = []
+            if isinstance(rhs, Nonterminal):
+                nts.append(rhs.name)
+            elif isinstance(rhs, (Star, Plus, Option)):
+                nts.extend(collect_nonterminals_from_elem(rhs.rhs))
+            return nts
+
+        def collect_nonterminals(rhs: List[Rhs]) -> List[str]:
+            """Collect all nonterminals referenced in RHS."""
+            nts = []
+            for elem in rhs:
+                nts.extend(collect_nonterminals_from_elem(elem))
+            return nts
+
+        def visit(nt_name: str) -> None:
+            """Visit nonterminal and its dependencies in preorder."""
+            if nt_name in visited or nt_name not in self.rules:
+                return
+            visited.add(nt_name)
+            result.append(nt_name)
+
+            # Visit all nonterminals referenced in this rule's RHS
+            for rule in self.rules[nt_name]:
+                for ref_nt in collect_nonterminals(rule.rhs):
+                    visit(ref_nt)
+
+        visit(start)
+
+        # If not reachable_only, add any remaining rules
+        if not reachable_only:
+            for nt_name in sorted(self.rules.keys()):
+                if nt_name not in visited:
+                    visit(nt_name)
+
+        return result
 
     def get_rules(self, name: str) -> List[Rule]:
         """Get all rules with the given LHS name."""
@@ -178,36 +222,9 @@ class Grammar:
                 return True
         return False
 
-    def normalize(self) -> 'Grammar':
-        """
-        Normalize grammar by eliminating *, +, and ? operators.
 
-        Creates fresh nonterminals for each EBNF operator:
-        - A* becomes A_star with rules: A_star -> A A_star | epsilon
-        - A+ becomes A_plus with rules: A_plus -> A A_star
-        - A? becomes A_opt with rules: A_opt -> A | epsilon
 
-        Returns a new normalized Grammar instance.
-        """
-        from .normalize import normalize_grammar
-        return normalize_grammar(self)
 
-    def left_factor(self) -> 'Grammar':
-        """
-        Apply left-factoring to eliminate common prefixes.
-
-        For rules with common prefixes:
-          A -> α β₁ | α β₂
-        Becomes:
-          A -> α A'
-          A' -> β₁ | β₂
-
-        Semantic actions are updated to thread prefix results through.
-
-        Returns a new left-factored Grammar instance.
-        """
-        from .left_factor import left_factor_grammar
-        return left_factor_grammar(self)
 
     def check_reachability(self) -> Set[str]:
         """
@@ -283,7 +300,9 @@ class Grammar:
         lines.append("// Auto-generated grammar from protobuf specifications")
         lines.append("")
 
-        for lhs in self.rule_order:
+        # Traverse rules in preorder
+        rule_order = self.traverse_rules_preorder(reachable_only=(reachable is not None))
+        for lhs in rule_order:
             if reachable is not None and lhs not in reachable:
                 continue
             rules_list = self.rules[lhs]
@@ -295,6 +314,7 @@ class Grammar:
                 for alt in alternatives[1:]:
                     lines.append(f"    | {alt}")
 
+        # Print tokens at the end
         if self.rules and self.tokens:
             lines.append("")
 
@@ -304,16 +324,6 @@ class Grammar:
             else:
                 lines.append(f"{token.name}: {token.pattern}")
 
-        if self.ignores:
-            lines.append("")
-            for ignore in self.ignores:
-                lines.append(f"%ignore {ignore}")
-
-        if self.imports:
-            lines.append("")
-            for imp in self.imports:
-                lines.append(imp)
-
         return "\n".join(lines)
 
     def print_grammar_with_actions(self, reachable: Optional[Set[str]] = None) -> str:
@@ -322,7 +332,9 @@ class Grammar:
         lines.append("# Grammar with semantic actions")
         lines.append("")
 
-        for lhs in self.rule_order:
+        # Traverse rules in preorder
+        rule_order = self.traverse_rules_preorder(reachable_only=(reachable is not None))
+        for lhs in rule_order:
             if reachable is not None and lhs not in reachable:
                 continue
             rules_list = self.rules[lhs]
@@ -343,13 +355,47 @@ class Grammar:
 
         return "\n".join(lines)
 
-    def _rhs_to_name(self, rhs: Rhs) -> str:
+    def _rhs_to_name(self, rhs: List[Rhs]) -> str:
+        parts = [self._rhs_elem_to_name(elem) for elem in rhs]
+        return '_'.join(parts)
+
+    def _rhs_elem_to_name(self, rhs: Rhs) -> str:
         """Convert RHS to a short name for auxiliary rule generation."""
         if isinstance(rhs, Nonterminal):
             return rhs.name
         elif isinstance(rhs, Terminal):
             return rhs.name.lower()
         elif isinstance(rhs, Literal):
-            return re.sub(r'[^a-zA-Z0-9]', '', rhs.name)
+            name = rhs.name
+            name = name.replace(' ', '_')
+            name = name.replace('|', '_bar')
+            name = name.replace(':', '_colon')
+            name = name.replace('.', '_dot')
+            name = name.replace(',', '_comma')
+            name = name.replace(';', '_semi')
+            name = name.replace('!', '_bang')
+            name = name.replace('*', '_star')
+            name = name.replace('/', '_slash')
+            name = name.replace('&', '_amp')
+            name = name.replace('<', '_lt')
+            name = name.replace('>', '_gt')
+            name = name.replace('$', '_dollar')
+            name = name.replace('#', '_hash')
+            name = name.replace('(', '_lp')
+            name = name.replace(')', '_rp')
+            name = name.replace('[', '_lb')
+            name = name.replace(']', '_rb')
+            name = name.replace('{', '_lc')
+            name = name.replace('}', '_rc')
+            name = name.replace('-', '-')
+            name = re.sub(r'[^a-zA-Z0-9_]', '_X', name)
+            name = f'lit{name}'
+            return name
+        elif isinstance(rhs, Option):
+            return f"{self._rhs_elem_to_name(rhs.rhs)}_opt"
+        elif isinstance(rhs, Star):
+            return f"{self._rhs_elem_to_name(rhs.rhs)}_star"
+        elif isinstance(rhs, Plus):
+            return f"{self._rhs_elem_to_name(rhs.rhs)}_plus"
         else:
-            return "aux"
+            assert False

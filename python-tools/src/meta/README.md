@@ -14,7 +14,7 @@ The meta-language tooling converts protobuf message definitions into:
 ### Core Modules
 
 #### Grammar Representation (`grammar.py`)
-- **Data structures**: `Grammar`, `Rule`, `Token`, `Rhs` types (`Literal`, `Terminal`, `Nonterminal`, `Sequence`, `Star`, `Plus`, `Option`)
+- **Data structures**: `Grammar`, `Rule`, `Token`, `Rhs` types (`Literal`, `Terminal`, `Nonterminal`, `Star`, `Plus`, `Option`)
 - **Semantic actions**: `ActionExpr` types (`Function`, `Var`, `Call`, `Symbol`, `Wildcard`)
 - **Public API**: Grammar construction and manipulation
 

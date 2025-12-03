@@ -15,13 +15,13 @@ if __name__ == "__main__" and __package__ is None:
     sys.path.insert(0, str(Path(__file__).parent.parent))
     from meta.proto_parser import ProtoParser
     from meta.grammar_gen import GrammarGenerator, generate_grammar, generate_semantic_actions
-    from meta.parser_python import generate_parser_python
+    from meta.parser_gen_python import generate_parser_python
     from meta.printer_python import generate_pretty_printer_python
 else:
     # Running as module - use relative imports
     from .proto_parser import ProtoParser
     from .grammar_gen import GrammarGenerator, generate_grammar, generate_semantic_actions
-    from .parser_python import generate_parser_python
+    from .parser_gen_python import generate_parser_python
     from .printer_python import generate_pretty_printer_python
 
 
@@ -49,12 +49,7 @@ def main():
     parser.add_argument(
         "--grammar",
         action="store_true",
-        help="Generate Lark grammar"
-    )
-    parser.add_argument(
-        "--actions",
-        action="store_true",
-        help="Generate semantic actions (visitor)"
+        help="Output grammar"
     )
     parser.add_argument(
         "--parser",
@@ -66,21 +61,10 @@ def main():
         choices=["python"],
         help="Generate pretty printer in specified language"
     )
-    parser.add_argument(
-        "--normalized",
-        action="store_true",
-        help="Apply normalization (eliminate *, +, ?) before generating output"
-    )
-    parser.add_argument(
-        "--factored",
-        action="store_true",
-        help="Apply left-factoring (implies --normalized) before generating output"
-    )
-
     args = parser.parse_args()
 
-    if not any([args.grammar, args.actions, args.parser, args.pretty_printer]):
-        print("Error: At least one of --grammar, --actions, --parser, or --pretty-printer must be specified")
+    if not any([args.grammar, args.parser, args.pretty_printer]):
+        print("Error: At least one of --grammar, --parser, or --pretty-printer must be specified")
         return 1
 
     proto_parser = ProtoParser()
@@ -92,16 +76,6 @@ def main():
 
     generator = GrammarGenerator(proto_parser, verbose=True)
     grammar_obj = generator.generate(args.start)
-
-    # Apply transformations if requested
-    if args.factored:
-        from meta.normalize import normalize_grammar
-        from meta.left_factor import left_factor_grammar
-        grammar_obj = normalize_grammar(grammar_obj)
-        grammar_obj = left_factor_grammar(grammar_obj)
-    elif args.normalized:
-        from meta.normalize import normalize_grammar
-        grammar_obj = normalize_grammar(grammar_obj)
 
     reachable = grammar_obj.check_reachability()
     unreachable = grammar_obj.get_unreachable_rules()
@@ -115,12 +89,8 @@ def main():
     outputs = []
 
     if args.grammar:
-        grammar_text = generate_grammar(grammar_obj, reachable)
-        outputs.append(("grammar", grammar_text))
-
-    if args.actions:
         actions_text = generate_semantic_actions(grammar_obj, reachable)
-        outputs.append(("actions", actions_text))
+        outputs.append(("grammar", actions_text))
 
     if args.parser:
         if args.parser == "python":
