@@ -38,8 +38,9 @@ from .grammar import (
     Rule,
     Token,
     Rhs,
-    Literal,
     Terminal,
+    LitTerminal,
+    NamedTerminal,
     Nonterminal,
     Star,
     Plus,
@@ -103,8 +104,9 @@ __all__ = [
     'Rule',
     'Token',
     'Rhs',
-    'Literal',
     'Terminal',
+    'LitTerminal',
+    'NamedTerminal',
     'Nonterminal',
     'Star',
     'Plus',
@@ -122,8 +124,6 @@ __all__ = [
     'parse_action',
     'generate_grammar',
     'generate_semantic_actions',
-    # Transformations
-    'normalize_grammar',
     # Code generation from actions
     'generate_python',
     'escape_python_identifier',
@@ -133,9 +133,5 @@ __all__ = [
     'escape_go_identifier',
     # Parser and printer generation
     'generate_parser_python',
-    'generate_parser_julia',
-    'generate_parser_go',
     'generate_pretty_printer_python',
-    'generate_pretty_printer_julia',
-    'generate_pretty_printer_go',
 ]

@@ -9,12 +9,8 @@ recursive-descent parsers from grammars, including:
 
 from typing import Dict, List, Optional, Set, Tuple
 
-from .grammar import Grammar, Rule, Rhs, Literal, Terminal, Nonterminal, Star, Plus, Option
-from .target import Lambda, Call, ParseNonterminalDef, Var, Lit, Symbol, Builtin, Let, IfElse, FunDef, BaseType, ListType, TargetExpr, Seq, While, TryCatch, Assign, Type, ParseNonterminal, ParseNonterminalDef
-
-
-def is_epsilon(rhs):
-    return isinstance(rhs, list) and len(rhs) == 0
+from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Plus, Option, Terminal, is_epsilon, rhs_elements, Sequence
+from .target import Lambda, Call, ParseNonterminalDef, Var, Lit, Symbol, Builtin, Let, IfElse, FunDef, BaseType, ListType, TargetExpr, Seq, While, TryCatch, Assign, Type, ParseNonterminal, ParseNonterminalDef, apply
 
 
 def _make_call(func: TargetExpr, args: List[TargetExpr] = None) -> Call:
@@ -29,59 +25,25 @@ def _make_call(func: TargetExpr, args: List[TargetExpr] = None) -> Call:
     return Call(func, args)
 
 def generate_rules(grammar: Grammar) -> List[ParseNonterminalDef]:
-    reachable, is_ll2, conflicts, nullable, first, first_2, follow = prepare_grammar(grammar)
-
     # Generate parser methods as strings
     parser_methods = []
-    rule_order = grammar.traverse_rules_preorder(reachable_only=(reachable is not None))
-    for nt_name in rule_order:
-        if reachable is not None and nt_name not in reachable:
+    rule_order = grammar.traverse_rules_preorder(reachable_only=True)
+    reachable = grammar.check_reachability()
+    for nt in rule_order:
+        if reachable is not None and nt not in reachable:
             continue
 
-        rules = grammar.rules[nt_name]
+        rules = grammar.rules[nt]
 
-        method_code = _generate_parse_method(
-            nt_name, rules,
-            grammar, nullable, first_2, reachable
-        )
+        method_code = _generate_parse_method(nt, rules, grammar)
         parser_methods.append(method_code)
 
     return parser_methods
 
-
-def prepare_grammar(grammar: Grammar) -> Tuple[Set[str], bool, List[str], Dict[str, bool], Dict[str, Set[str]], Dict[str, Set[Tuple[str, ...]]], Dict[str, Set[str]]]:
-    """Prepare grammar for parser generation.
-
-    Returns:
-        - reachable: Set of reachable nonterminals
-        - is_ll2: Whether grammar is LL(2)
-        - conflicts: List of conflict messages
-        - nullable: Nullable set
-        - first: FIRST sets
-        - first_2: FIRST_2 sets
-        - follow: FOLLOW sets
-    """
-    reachable = grammar.check_reachability()
-
-    # Check LL(2)
-    is_ll2, conflicts = grammar.check_ll_k(k=2)
-
-    # Compute analysis sets
-    nullable = grammar.compute_nullable()
-    first = grammar.compute_first(nullable)
-    first_2 = grammar.compute_first_k(k=2, nullable=nullable)
-    follow = grammar.compute_follow(nullable, first)
-
-    return reachable, is_ll2, conflicts, nullable, first, first_2, follow
-
-
 def _generate_parse_method(
-    lhs: str,
+    lhs: Nonterminal,
     rules: List[Rule],
-    grammar: Grammar,
-    nullable,
-    first_2,
-    reachable) -> ParseNonterminalDef:
+    grammar: Grammar) -> ParseNonterminalDef:
 
     """Generate parse method code as string (preserving existing logic)."""
 
@@ -102,11 +64,14 @@ def _generate_parse_method(
         for (i, rule) in enumerate(rules):
             if is_epsilon(rule.rhs):
                 continue
-            tail = IfElse(Call(predictor, i), _generate_parse_rhs_ir(rule.rhs, rule, grammar), tail)
+            tail = IfElse(
+                Call(Builtin('equal'), [Call(predictor, []), Lit(i)]),
+                _generate_parse_rhs_ir(rule.rhs, rule, grammar),
+                tail)
 
         rhs = tail
 
-    return ParseNonterminalDef(Nonterminal(lhs), [], BaseType('Any'), rhs)
+    return ParseNonterminalDef(lhs, [], BaseType('Any'), rhs)
 
 def _build_predictor(grammar, lhs, rules):
     assert len(rules) > 1
@@ -115,7 +80,7 @@ def _build_predictor(grammar, lhs, rules):
         if is_epsilon(rule.rhs):
             continue
 
-    predictor = Call(Builtin('predict'), [Lit(lhs), Lit(len(rules))])
+    predictor = Call(Builtin('predict'), [Lit(lhs.name), Lit(len(rules))])
     return predictor
 
 def _generate_decision_tree(tail: TargetExpr, token_map: Dict, rules: List, nt_name: str,
@@ -193,76 +158,25 @@ def _generate_decision_tree(tail: TargetExpr, token_map: Dict, rules: List, nt_n
 
     return tail
 
-def _generate_parse_rhs_ir(rhs: List[Rhs], rule: Optional[Rule] = None, grammar: Optional[Grammar] = None) -> Optional[TargetExpr]:
+def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optional[Grammar] = None) -> TargetExpr:
     """Generate IR for parsing an RHS.
 
     Returns IR expression for leaf nodes (Literal, Terminal, Nonterminal).
     Returns None for complex cases that still use string generation.
     """
-    if not rhs:
-        # Empty sequence returns None
-        return Lit(None)
-
-    # Parse sequence
-    # Parse each element
-    literal_exprs = []  # Literals executed for side effects
-    arg_exprs = []  # Non-literal arguments to pass to Lambda
-    param_names = []  # Parameter names for Lambda
-
-    for i, elem in enumerate(rhs):
-        elem_ir = _generate_parse_rhs_ir1(elem, None, grammar)
-        if elem_ir is None:
-            # Element not yet supported in IR
-            return None
-
-        if isinstance(elem, Literal):
-            # Literal: execute for side effect
-            literal_exprs.append(elem_ir)
-        else:
-            # Non-literal: will be passed as argument
-            arg_exprs.append(elem_ir)
-            if rule and rule.action and i < len(rule.action.params):
-                param_names.append(rule.action.params[i - len(literal_exprs)])
-            else:
-                param_names.append(f"_arg{len(param_names)}")
-
-    # Build Lambda and Call
-    if rule and rule.action:
-        # Use the action's Lambda
-        action_lambda = rule.action
-    else:
-        # Create default Lambda that returns list of arguments
-        # Lambda([arg0, arg1, ...], MakeList([Var(arg0), Var(arg1), ...]))
-        list_expr = Call(Builtin('Tuple'), [Var(p) for p in param_names])
-        action_lambda = Lambda(param_names, list_expr)
-
-    # Call the Lambda with parsed arguments
-    lambda_call = Call(action_lambda, arg_exprs)
-
-    # Wrap in Seq if there are literals
-    if literal_exprs:
-        literal_exprs.append(lambda_call)
-        return Seq(literal_exprs)
-    else:
-        return lambda_call
-
-def _generate_parse_rhs_ir1(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optional[Grammar] = None) -> Optional[TargetExpr]:
-    """Generate IR for parsing an RHS.
-
-    Returns IR expression for leaf nodes (Literal, Terminal, Nonterminal).
-    Returns None for complex cases that still use string generation.
-    """
-    if isinstance(rhs, Literal):
+    if isinstance(rhs, Sequence):
+        return _generate_parse_rhs_ir_sequence(rhs, rule, grammar)
+    elif isinstance(rhs, LitTerminal):
         # Build IR: Call(Builtin('consume_literal'), [Lit(literal)])
         return Call(Builtin('consume_literal'), [Lit(rhs.name)])
-    elif isinstance(rhs, Terminal):
+    elif isinstance(rhs, NamedTerminal):
         # Build IR: Call(Builtin('consume_terminal'), [Lit(terminal.name)])
         return Call(Builtin('consume_terminal'), [Lit(rhs.name)])
     elif isinstance(rhs, Nonterminal):
         # Build IR: ParseNonterminal(nonterminal, [])
         return ParseNonterminal(rhs, [])
     elif isinstance(rhs, Option):
-        if isinstance(rhs.rhs, Terminal):
+        if isinstance(rhs.rhs, NamedTerminal):
             term = rhs.rhs
             return IfElse(
                 Call(Builtin('match_terminal'), [Lit(term.name)]),
@@ -273,11 +187,11 @@ def _generate_parse_rhs_ir1(rhs: Rhs, rule: Optional[Rule] = None, grammar: Opti
             assert isinstance(rhs.rhs, Nonterminal)
             return IfElse(
                 Call(Builtin('current'), [Lit(rhs.rhs.name)]),
-                _generate_parse_rhs_ir([rhs.rhs], None, grammar),
+                _generate_parse_rhs_ir(rhs.rhs, None, grammar),
                 Lit(None)
             )
     elif isinstance(rhs, Star):
-        if isinstance(rhs.rhs, Terminal):
+        if isinstance(rhs.rhs, NamedTerminal):
             term = rhs.rhs
             return While(
                 Call(Builtin('match_terminal'), [Lit(term.name)]),
@@ -292,7 +206,7 @@ def _generate_parse_rhs_ir1(rhs: Rhs, rule: Optional[Rule] = None, grammar: Opti
                         While(
                             Call(Builtin('current'), [Lit(rhs.rhs.name)]),
                             Let('x',
-                                _generate_parse_rhs_ir([rhs.rhs], None, grammar),
+                                _generate_parse_rhs_ir(rhs.rhs, None, grammar),
                                 Call(Builtin('append'), [Var('xs'), Var('x')])
                             )
                         ),
@@ -300,7 +214,65 @@ def _generate_parse_rhs_ir1(rhs: Rhs, rule: Optional[Rule] = None, grammar: Opti
                     ])
             )
     else:
-        assert False, f"Unsupported RHS type: {type(rhs)}"
+        assert False, f"Unsupported Rhs type: {type(rhs)}"
+
+def _generate_parse_rhs_ir_sequence(rhs: Sequence, rule: Optional[Rule] = None, grammar: Optional[Grammar] = None) -> TargetExpr:
+    if is_epsilon(rhs):
+        # Empty sequence returns None
+        return Lit(None)
+
+    # Parse sequence
+    # Parse each element
+    exprs = []  # All expressions in order
+    arg_vars = []  # Variables holding non-literal results
+    param_names = []  # Parameter names for Lambda
+
+    non_literal_count = 0
+    for i, elem in enumerate(rhs_elements(rhs)):
+        elem_ir = _generate_parse_rhs_ir(elem, None, grammar)
+
+        if isinstance(elem, LitTerminal):
+            # LitTerminal: execute for side effect
+            exprs.append(elem_ir)
+        else:
+            # Non-literal: bind to variable
+            if rule and rule.action and non_literal_count < len(rule.action.params):
+                var_name = rule.action.params[non_literal_count]
+            else:
+                var_name = f"_arg{non_literal_count}"
+            param_names.append(var_name)
+            exprs.append(Assign(var_name, elem_ir))
+            arg_vars.append(Var(var_name))
+            non_literal_count += 1
+
+    # Build Lambda and Call
+    if rule and rule.action:
+        # Use the action's Lambda
+        action_lambda = rule.action
+    else:
+        # Create default Lambda that returns list of arguments
+        # Lambda([arg0, arg1, ...], MakeList([Var(arg0), Var(arg1), ...]))
+        list_expr = Call(Builtin('Tuple'), arg_vars)
+        action_lambda = Lambda(param_names, list_expr)
+
+    # Call the Lambda with the variables
+    lambda_call = apply(action_lambda, arg_vars)
+
+    # Add lambda call to expression list
+    exprs.append(lambda_call)
+
+    # Return as sequence
+    if len(exprs) == 1:
+        return exprs[0]
+    else:
+        return Seq(exprs)
+
+def _generate_parse_rhs_ir1(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optional[Grammar] = None) -> Optional[TargetExpr]:
+    """Generate IR for parsing an RHS.
+
+    Returns IR expression for leaf nodes (LitTerminal, NamedTerminal, Nonterminal).
+    Returns None for complex cases that still use string generation.
+    """
 
 def _build_decision_tree_ir(token_map: Dict, rules: List[Rule], nt_name: str,
                             depth: int, max_depth: int, is_continuation: bool = False, grammar: Optional[Grammar] = None) -> TargetExpr:
@@ -491,7 +463,7 @@ def generate_parse_method_ir(nt_name: str, rules: List[Rule],
         body = _generate_parse_rhs_ir(Sequence(rule.rhs), rule, grammar)
     else:
         # Multiple rules - need decision tree
-        from .analysis import _compute_rhs_first_k
+        from .analysis import _compute_rhs_elem_first_k
 
         # Use fixed k=2 lookahead
         min_k = 2
@@ -501,7 +473,7 @@ def generate_parse_method_ir(nt_name: str, rules: List[Rule],
         first_token_to_rules = {}
 
         for rule_idx, rule in enumerate(rules):
-            sequences = _compute_rhs_first_k(Sequence(rule.rhs), first_k_final, nullable, min_k)
+            sequences = _compute_rhs_elem_first_k(rule.rhs, first_k_final, nullable, min_k)
 
             for seq in sequences:
                 if len(seq) == 0:

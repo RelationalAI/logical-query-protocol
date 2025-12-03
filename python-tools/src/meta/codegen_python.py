@@ -249,7 +249,7 @@ def generate_python(expr: TargetNode, indent: str = "", tail_position: bool = Fa
             type_hint = generate_python_type(param_type)
             params.append(f"{escaped_name}: {type_hint}")
 
-        params_str = ', '.join(params) if params else ''
+        params_str = ', '.join(params)
 
         # Generate return type hint
         ret_hint = f" -> {generate_python_type(expr.return_type)}" if expr.return_type else ""
@@ -261,7 +261,7 @@ def generate_python(expr: TargetNode, indent: str = "", tail_position: bool = Fa
             body_inner = generate_python(expr.body, indent + "    ", tail_position=True)
             body_code = f"{indent}    {body_inner}"
 
-        return f"def {func_name}({params_str}){ret_hint}:\n{body_code}"
+        return f"{indent}def {func_name}({params_str}){ret_hint}:\n{body_code}"
 
     elif isinstance(expr, ParseNonterminalDef):
         # Generate parse method definition
@@ -275,6 +275,8 @@ def generate_python(expr: TargetNode, indent: str = "", tail_position: bool = Fa
             params.append(f"{escaped_name}: {type_hint}")
 
         params_str = ', '.join(params) if params else ''
+        if params_str:
+            params_str = ', ' + params_str
 
         # Generate return type hint
         ret_hint = f" -> {generate_python_type(expr.return_type)}" if expr.return_type else ""
@@ -286,7 +288,7 @@ def generate_python(expr: TargetNode, indent: str = "", tail_position: bool = Fa
             body_inner = generate_python(expr.body, indent + "    ", tail_position=True)
             body_code = f"{indent}    {body_inner}"
 
-        return f"def {func_name}(self, {params_str}){ret_hint}:\n{body_code}"
+        return f"{indent}def {func_name}(self{params_str}){ret_hint}:\n{body_code}"
 
     elif isinstance(expr, ParseNonterminal):
         # Generate parse method call

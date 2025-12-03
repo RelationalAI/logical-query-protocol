@@ -1,17 +1,18 @@
-"""Abstract syntax tree for semantic actions.
+"""Abstract syntax tree for target language code.
 
-This module defines the AST for semantic actions that can be attached to
-grammar rules. Actions are expressions that compute values from parsed elements.
+This module defines the AST for target language expressions, including generated parser code,
+and semantic actions that can be attached to grammar rules.
 
-The action expression AST types represent the "least common denominator" for
+The target AST types represent the "least common denominator" for
 Python, Julia, and Go expressions. All constructs in this AST should be easily
-translatable to each of these target languages. This design ensures that semantic
-actions can be generated in any of the supported languages without loss of
-expressiveness or idiomatic style.
+translatable to each of these target languages.
 """
 
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Any, List, Optional, Sequence, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .grammar import Nonterminal
 
 
 @dataclass
@@ -34,15 +35,19 @@ class Var(TargetExpr):
     def __str__(self) -> str:
         return self.name
 
+    def __post_init__(self):
+        assert isinstance(self.name, str), f"Invalid name in {self}: {self.name}"
+        if not self.name.isidentifier():
+            raise ValueError(f"Invalid variable name: {self.name}")
+
 
 @dataclass
 class Lit(TargetExpr):
     """Literal value (string, number, boolean, None)."""
-    value: any
+    value: Any
 
     def __str__(self) -> str:
         return repr(self.value)
-
 
 @dataclass
 class Symbol(TargetExpr):
@@ -52,6 +57,10 @@ class Symbol(TargetExpr):
     def __str__(self) -> str:
         return f":{self.name}"
 
+    def __post_init__(self):
+        assert isinstance(self.name, str), f"Invalid name in {self}: {self.name}"
+        if not self.name.isidentifier():
+            raise ValueError(f"Invalid variable name: {self.name}")
 
 @dataclass
 class Builtin(TargetExpr):
@@ -66,6 +75,10 @@ class Builtin(TargetExpr):
     def __str__(self) -> str:
         return f"%{self.name}"
 
+    def __post_init__(self):
+        assert isinstance(self.name, str), f"Invalid name in {self}: {self.name}"
+        if not self.name.isidentifier():
+            raise ValueError(f"Invalid variable name: {self.name}")
 
 @dataclass
 class Constructor(TargetExpr):
@@ -78,6 +91,10 @@ class Constructor(TargetExpr):
     def __str__(self) -> str:
         return f"@{self.name}"
 
+    def __post_init__(self):
+        assert isinstance(self.name, str), f"Invalid name in {self}: {self.name}"
+        if not self.name.isidentifier():
+            raise ValueError(f"Invalid variable name: {self.name}")
 
 @dataclass
 class Call(TargetExpr):
@@ -87,18 +104,40 @@ class Call(TargetExpr):
     args: List of argument expressions
     """
     func: 'TargetExpr'
-    args: List['TargetExpr'] = field(default_factory=list)
+    args: Sequence['TargetExpr'] = field(default_factory=list)
 
     def __str__(self) -> str:
         args_str = ', '.join(str(arg) for arg in self.args)
         return f"{self.func}({args_str})"
 
+    def __post_init__(self):
+        assert isinstance(self.func, TargetExpr), f"Invalid function expression in {self}: {self.func}"
+        assert isinstance(self.args, list), f"Invalid argument list in {self}: {self.args}"
+        for arg in self.args:
+            assert isinstance(arg, TargetExpr), f"Invalid argument expression in {self}: {arg}"
+
+def apply(func: 'Lambda', args: Sequence['TargetExpr']) -> 'TargetExpr':
+    if len(args) == 0 and len(func.params) == 0:
+        return func.body
+    if len(func.params) > 0 and len(args) > 0:
+        body = apply(
+            Lambda(params=func.params[1:], body=func.body, return_type=func.return_type),
+            args[1:]
+        )
+        # TODO PR do substitution correctly
+        if isinstance(args[0], Var) and func.params[0] == args[0].name:
+            return body
+        return Let(func.params[0], args[0], body)
+    # TODO
+    # assert False, f"Invalid application of {func} to {args}"
+    return Call(func, args)
 
 @dataclass
 class Lambda(TargetExpr):
     """Lambda function (anonymous function)."""
-    params: List[str] = field(default_factory=list)
-    body: Optional['TargetExpr'] = None
+    # TODO: params should have types
+    params: Sequence[str]
+    body: 'TargetExpr'
     return_type: Optional['Type'] = None
 
     def __str__(self) -> str:
@@ -106,6 +145,12 @@ class Lambda(TargetExpr):
         ret_str = f" -> {self.return_type}" if self.return_type else ""
         return f"lambda {params_str}{ret_str}: {self.body}"
 
+    def __post_init__(self):
+        assert isinstance(self.body, TargetExpr), f"Invalid function expression in {self}: {self.body}"
+        if self.return_type is not None:
+            assert isinstance(self.return_type, Type), f"Invalid function return type in {self}: {self.return_type}"
+        for param in self.params:
+            assert isinstance(param, str), f"Invalid parameter name in {self}: {param}"
 
 @dataclass
 class Let(TargetExpr):
@@ -117,12 +162,18 @@ class Let(TargetExpr):
     var: str
     init: 'TargetExpr'
     body: 'TargetExpr'
+    # TODO PR make the Type non-optional
     init_type: Optional['Type'] = None  # Type of init
 
     def __str__(self) -> str:
         type_str = f": {self.init_type}" if self.init_type else ""
         return f"let {self.var}{type_str} = {self.init} in {self.body}"
 
+    def __post_init__(self):
+        assert isinstance(self.init, TargetExpr), f"Invalid let init expression in {self}: {self.init}"
+        assert isinstance(self.body, TargetExpr), f"Invalid let body expression in {self}: {self.body}"
+        if self.init_type is not None:
+            assert isinstance(self.init_type, Type), f"Invalid let init type in {self}: {self.init_type}"
 
 @dataclass
 class IfElse(TargetExpr):
@@ -137,14 +188,23 @@ class IfElse(TargetExpr):
         else:
             return f"if {self.condition} then {self.then_branch}"
 
+    def __post_init__(self):
+        assert isinstance(self.condition, TargetExpr), f"Invalid if condition expression in {self}: {self.condition}"
+        assert isinstance(self.then_branch, TargetExpr), f"Invalid if then expression in {self}: {self.then_branch}"
+        assert isinstance(self.else_branch, TargetExpr), f"Invalid if else expression in {self}: {self.else_branch}"
 
 @dataclass
 class Seq(TargetExpr):
     """Sequence of expressions evaluated in order, returns last value."""
-    exprs: List['TargetExpr'] = field(default_factory=list)
+    exprs: Sequence['TargetExpr'] = field(default_factory=list)
 
     def __str__(self) -> str:
         return "; ".join(str(e) for e in self.exprs)
+
+    def __post_init__(self):
+        assert isinstance(self.exprs, list), f"Invalid sequence of expressions in {self}: {self.exprs}"
+        for expr in self.exprs:
+            assert isinstance(expr, TargetExpr), f"Invalid expression in sequence: {expr}"
 
 
 @dataclass
@@ -156,6 +216,9 @@ class While(TargetExpr):
     def __str__(self) -> str:
         return f"while {self.condition} do {self.body}"
 
+    def __post_init__(self):
+        assert isinstance(self.condition, TargetExpr), f"Invalid while condition expression in {self}: {self.condition}"
+        assert isinstance(self.body, TargetExpr), f"Invalid while body expression in {self}: {self.body}"
 
 @dataclass
 class TryCatch(TargetExpr):
@@ -184,6 +247,10 @@ class Assign(TargetExpr):
     def __str__(self) -> str:
         return f"{self.var} = {self.expr}"
 
+    def __post_init__(self):
+        assert isinstance(self.var, str), f"Invalid assign LHS expression in {self}: {self.var}"
+        assert isinstance(self.expr, TargetExpr), f"Invalid assign RHS expression in {self}: {self.expr}"
+
 
 @dataclass
 class Type(TargetNode):
@@ -201,9 +268,18 @@ class BaseType(Type):
 
 
 @dataclass
+class MessageType(Type):
+    """Protobuf message types."""
+    name: str
+
+    def __str__(self) -> str:
+        return self.name
+
+
+@dataclass
 class TupleType(Type):
     """Tuple type with fixed number of element types."""
-    elements: List[Type] = field(default_factory=list)
+    elements: Sequence[Type] = field(default_factory=list)
 
     def __str__(self) -> str:
         elements_str = ', '.join(str(e) for e in self.elements)
@@ -223,7 +299,7 @@ class ListType(Type):
 class FunDef(TargetNode):
     """Function definition with parameters, return type, and body."""
     name: str
-    params: List[tuple[str, Type]] = field(default_factory=list)
+    params: Sequence[tuple[str, Type]] = field(default_factory=list)
     return_type: Optional[Type] = None
     body: Optional['TargetExpr'] = None
 
@@ -241,7 +317,7 @@ class ParseNonterminalDef(TargetNode):
     instead of a string name.
     """
     nonterminal: 'Nonterminal'
-    params: List[tuple[str, Type]] = field(default_factory=list)
+    params: Sequence[tuple[str, Type]] = field(default_factory=list)
     return_type: Optional[Type] = None
     body: Optional['TargetExpr'] = None
 
@@ -259,7 +335,7 @@ class ParseNonterminal(TargetExpr):
     instead of an expression for the function.
     """
     nonterminal: 'Nonterminal'
-    args: List['TargetExpr'] = field(default_factory=list)
+    args: Sequence['TargetExpr'] = field(default_factory=list)
 
     def __str__(self) -> str:
         args_str = ', '.join(str(arg) for arg in self.args)
@@ -278,7 +354,6 @@ __all__ = [
     'Call',
     'Lambda',
     'Let',
-    'IsNone',
     'IfElse',
     'Seq',
     'While',

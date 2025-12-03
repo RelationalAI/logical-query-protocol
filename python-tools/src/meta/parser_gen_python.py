@@ -9,17 +9,17 @@ Handles Python-specific code generation including:
 
 from typing import Dict, List, Optional, Set
 
-from .grammar import Grammar, Rule, Rhs, Literal, Terminal, Nonterminal, Star, Plus, Option
+from meta.analysis import check_ll_k
+
+from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Plus, Option, get_literals
 from .target import Lambda, Call
-from .analysis import _compute_rhs_first_k
 from .codegen_python import generate_python
-from .parser_gen import prepare_grammar, _generate_parse_rhs_ir, generate_rules
+from .parser_gen import  _generate_parse_rhs_ir, generate_rules
 
 
-def generate_parser_python(grammar: Grammar, reachable: Set[str]) -> str:
+def generate_parser_python(grammar: Grammar, reachable: Set[Nonterminal]) -> str:
     """Generate LL(k) recursive-descent parser in Python."""
-    # Prepare grammar
-    reachable, is_ll2, conflicts, nullable, first, first_2, follow = prepare_grammar(grammar)
+    is_ll2, conflicts = grammar.check_ll_k(2)
 
     # Generate prologue (lexer, token, error, helper classes)
     prologue = _generate_prologue(grammar, is_ll2, conflicts)
@@ -27,7 +27,9 @@ def generate_parser_python(grammar: Grammar, reachable: Set[str]) -> str:
     rules = generate_rules(grammar)    # Generate parser methods as strings
     lines = []
     for rule in rules:
+        lines.append("")
         lines.append(generate_python(rule, "    "))
+    lines.append("")
 
     # Generate epilogue (parse function)
     epilogue = _generate_epilogue()
@@ -35,7 +37,7 @@ def generate_parser_python(grammar: Grammar, reachable: Set[str]) -> str:
     return prologue + "\n".join(lines) + epilogue
 
 
-def _generate_prologue(grammar: Grammar, is_ll2: bool, conflicts: List[str]) -> str:
+def _generate_prologue(grammar: Grammar, is_ll2: bool, conflicts: List[Nonterminal]) -> str:
     """Generate parser prologue with imports, token class, lexer, and parser class start."""
     lines = []
     lines.append('"""')
@@ -215,24 +217,14 @@ def _generate_lexer(grammar: Grammar) -> List[str]:
     lines.append('        """Get all literal strings from the grammar."""')
 
     literals = set()
-    def extract_literals(rhs: List[Rhs]) -> None:
-        for elem in rhs:
-            extract_literals_from_elem(elem)
-
-    def extract_literals_from_elem(rhs: Rhs) -> None:
-        if isinstance(rhs, Literal):
-            literals.add(rhs.name)
-        elif isinstance(rhs, (Star, Plus, Option)):
-            extract_literals_from_elem(rhs.rhs)
-
     for rules_list in grammar.rules.values():
         for rule in rules_list:
-            extract_literals(rule.rhs)
+            literals.update(get_literals(rule.rhs))
 
-    sorted_literals = sorted(literals, key=len, reverse=True)
+    sorted_literals = sorted(literals, key=lambda x: len(x.name), reverse=True)
     lines.append("        return [")
     for lit in sorted_literals:
-        lines.append(f"            '{lit}',")
+        lines.append(f"            '{lit.name}',")
     lines.append("        ]")
     lines.append("")
     lines.append("")
