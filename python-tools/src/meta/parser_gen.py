@@ -11,7 +11,7 @@ from re import L
 from typing import Dict, List, Optional, Set, Tuple, Callable, Sequence as PySequence
 
 from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Plus, Option, Terminal, is_epsilon, rhs_elements, Sequence
-from .target import Lambda, Call, ParseNonterminalDef, Var, Lit, Symbol, Builtin, Let, IfElse, FunDef, BaseType, ListType, TargetExpr, Seq, While, TryCatch, Assign, Type, ParseNonterminal, ParseNonterminalDef, Return, Constructor
+from .target import Lambda, Call, ParseNonterminalDef, Var, Lit, Symbol, Builtin, Let, IfElse, FunDef, BaseType, ListType, TargetExpr, Seq, While, TryCatch, Assign, Type, ParseNonterminal, ParseNonterminalDef, Return, Constructor, gensym
 
 
 def generate_rules(grammar: Grammar) -> List[ParseNonterminalDef]:
@@ -43,6 +43,7 @@ def _generate_parse_method(
         rhs = _generate_parse_rhs_ir(rule.rhs, rule, grammar)
     else:
         predictor = _build_predictor(grammar, lhs, rules)
+        prediction = gensym("prediction")
 
         has_epsilon = any(is_epsilon(rule.rhs) for rule in rules)
 
@@ -55,13 +56,11 @@ def _generate_parse_method(
             if is_epsilon(rule.rhs):
                 continue
             tail = IfElse(
-                Call(Builtin('equal'), [predictor, Lit(i)]),
+                Call(Builtin('equal'), [Var(prediction), Lit(i)]),
                 _generate_parse_rhs_ir(rule.rhs, rule, grammar),
                 tail)
 
-        rhs = tail
-
-    rhs = _normalize(rhs, lambda x: Return(x))
+        rhs = Let(prediction, predictor, tail)
 
     return ParseNonterminalDef(lhs, [], BaseType('Any'), rhs)
 
@@ -185,7 +184,7 @@ def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optio
         return Call(Builtin('consume_terminal'), [Lit(rhs.name)])
     elif isinstance(rhs, Nonterminal):
         # Build IR: ParseNonterminal(nonterminal, [])
-        return ParseNonterminal(rhs, [])
+        return Call(ParseNonterminal(rhs), [])
     elif isinstance(rhs, Option):
         if isinstance(rhs.rhs, NamedTerminal):
             term = rhs.rhs
@@ -197,7 +196,7 @@ def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optio
         else:
             assert isinstance(rhs.rhs, Nonterminal)
             return IfElse(
-                Call(Builtin('current'), [Lit(rhs.rhs.name)]),
+                Call(Builtin('predict'), [Lit(rhs.rhs.name)]),
                 _generate_parse_rhs_ir(rhs.rhs, None, grammar),
                 Lit(None)
             )
@@ -210,18 +209,20 @@ def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optio
             )
         else:
             assert isinstance(rhs.rhs, Nonterminal)
+            x = gensym('x')
+            xs = gensym('xs')
             return Let(
-                    'xs',
-                    Call(Builtin('List'), []),
+                    xs,
+                    Call(Builtin('make_list'), []),
                     Seq([
                         While(
-                            Call(Builtin('current'), [Lit(rhs.rhs.name)]),
-                            Let('x',
+                            Call(Builtin('predict'), [Lit(rhs.rhs.name)]),
+                            Let(x,
                                 _generate_parse_rhs_ir(rhs.rhs, None, grammar),
-                                Call(Builtin('append'), [Var('xs'), Var('x')])
+                                Call(Builtin('list_push'), [Var(xs), Var(x)])
                             )
                         ),
-                        Var('xs')
+                        Var(xs)
                     ])
             )
     else:
@@ -247,10 +248,10 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, rule: Optional[Rule] = None, 
             exprs.append(elem_ir)
         else:
             # Non-literal: bind to variable
-            if rule and rule.action and non_literal_count < len(rule.action.params):
-                var_name = rule.action.params[non_literal_count]
+            if rule and non_literal_count < len(rule.action.params):
+                var_name = gensym(rule.action.params[non_literal_count])
             else:
-                var_name = f"_arg{non_literal_count}"
+                var_name = gensym("arg")
             param_names.append(var_name)
             exprs.append(Assign(var_name, elem_ir))
             arg_vars.append(Var(var_name))
@@ -442,6 +443,7 @@ def _build_backtracking_ir(rule_indices: List[int], rules: List[Rule], grammar: 
     last_idx = rule_indices[-1]
     last_rule = rules[last_idx]
     body = _generate_parse_rhs_ir(last_rule.rhs, last_rule, grammar)
+    pos = gensym('saved_pos')
 
     # Build try-catch chain in reverse
     for i in range(len(rule_indices) - 2, -1, -1):
@@ -450,7 +452,7 @@ def _build_backtracking_ir(rule_indices: List[int], rules: List[Rule], grammar: 
         try_body = _generate_parse_rhs_ir(rule.rhs, rule, grammar)
 
         # Restore position in catch
-        restore = Call(Builtin('restore_position'), [Var('saved_pos')])
+        restore = Call(Builtin('restore_position'), [Var(pos)])
 
         body = TryCatch(
             try_body=try_body,
@@ -459,6 +461,4 @@ def _build_backtracking_ir(rule_indices: List[int], rules: List[Rule], grammar: 
         )
 
     # Save position at the start
-    save = Assign(var='saved_pos', expr=Call(Builtin('save_position'), []))
-
-    return Seq([save, body])
+    return Let(pos, Call(Builtin('save_position'), []), body)

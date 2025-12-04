@@ -4,12 +4,9 @@ This module generates Python code from semantic action expressions,
 with proper keyword escaping and idiomatic Python style.
 """
 
-from typing import Set, Union
+from typing import Set, Union, List
 
-from meta.proto_ast import ProtoMessage
-from .target import TargetExpr, Var, Lit, Symbol, Builtin, Constructor, Call, Lambda, Let, IfElse, Seq, While, TryCatch, Assign, Return, Ok, Err, Try, FunDef, ParseNonterminalDef, ParseNonterminal, Type, BaseType, TupleType, ListType, ResultType, TargetNode
-from itertools import count
-from more_itertools import peekable
+from .target import TargetExpr, Var, Lit, Symbol, Builtin, Constructor, Call, Lambda, Let, IfElse, Seq, While, TryCatch, Assign, Return, Ok, Err, Try, FunDef, ParseNonterminalDef, ParseNonterminal, Type, BaseType, TupleType, ListType, ResultType, TargetNode, gensym
 
 
 # Python keywords that need escaping
@@ -73,203 +70,168 @@ def generate_python_type(typ: Type) -> str:
     else:
         raise ValueError(f"Unknown type: {type(typ)}")
 
-# id generator for Clusters
-_global_id = peekable(count(0))
-def next_id():
-    return next(_global_id)
+def generate_python_lines(expr: TargetExpr, lines: List[str], indent: str = "") -> str:
+    """Generate Python code from a target IR expression.
 
-def gensym(prefix: str = "_t") -> str:
-    return f"{prefix}{next_id()}"
-
-def generate_python(expr: TargetExpr, sink: str, indent: str = "") -> str:
-    """Generate Python code from an action expression.
+    Code with side effects (e.g., consuming tokens) should be appended to the lines list.
+    The function should then return a string containing Python value.
 
     Args:
-        expr: Action expression to generate code for
+        expr: Target expression for which to generate code
+        lines: List of lines to which to append side effecting statements
         indent: Current indentation level
 
     Returns:
-        Python code as a string
+        A Python value as a string
     """
     if isinstance(expr, Var):
-        return f"{sink} = {escape_identifier(expr.name)}"
+        return escape_identifier(expr.name)
 
     elif isinstance(expr, Lit):
-        return f"{sink} = {repr(expr.value)}"
+        return repr(expr.value)
 
     elif isinstance(expr, Symbol):
-        return f'{sink} = "{expr.name}"'
+        return f'"{expr.name}"'
 
     elif isinstance(expr, Constructor):
-        return f"{sink} = ir.{expr.name}"
+        return f"ir.{expr.name}"
+
+    elif isinstance(expr, Builtin):
+        assert expr.name != "list_concat"
+        assert expr.name != "make_list"
+        assert expr.name != "equal"
+        return f"self.{expr.name}"
+
+    elif isinstance(expr, ParseNonterminal):
+        return f"self.parse_{expr.nonterminal.name}"
 
     elif isinstance(expr, Call):
-        # Special case: Handle special builtins inline
+        # Handle some special cases that don't turn into python calls.
         if isinstance(expr.func, Builtin):
             if expr.func.name == "list_concat" and len(expr.args) == 2:
-                v1 = gensym()
-                v2 = gensym()
-                arg1 = generate_python(expr.args[0], v1, indent)
-                arg2 = generate_python(expr.args[1], v2, indent)
-                return f"{arg1}\n{indent}{arg2}\n{indent}{sink} = {v1} + {v2}"
-            elif expr.func.name == "make_list" and len(expr.args) == 1:
-                v = gensym()
-                arg = generate_python(expr.args[0], v, indent)
-                return f"{arg}\n{indent}{sink} = [{v}]"
-            elif expr.func.name == "consume_terminal" and len(expr.args) == 1:
-                v = gensym()
-                arg = generate_python(expr.args[0], v, indent)
-                return f"{arg}\n{indent}{sink} = self.consume_terminal({v})"
-            elif expr.func.name == "consume_literal" and len(expr.args) == 1:
-                v = gensym()
-                arg = generate_python(expr.args[0], v, indent)
-                return f"{arg}\n{indent}{sink} = self.consume_literal({v})"
-            else:
-                func_code = f"self.{expr.func.name}"
-                if not expr.args:
-                    return f"{sink} = {func_code}()"
-                else:
-                    vs = [gensym() for _ in expr.args]
-                    vs_code = ', '.join(vs)
-                    args = []
-                    for i in range(len(expr.args)):
-                        arg = generate_python(expr.args[i], vs[i], indent)
-                        args.append(arg)
-                    args_code = f"\n{indent}".join(args)
-                    return f"{args_code}\n{indent}{sink} = {func_code}({vs_code})"
-        elif isinstance(expr.func, Constructor):
-            func_code = f"{expr.func.name}"
-            if not expr.args:
-                return f"{sink} = {func_code}()"
-            else:
-                vs = [gensym() for _ in expr.args]
-                vs_code = ', '.join(vs)
+                arg1 = generate_python_lines(expr.args[0], lines, indent)
+                arg2 = generate_python_lines(expr.args[1], lines, indent)
+                return f"{arg1} + {arg2}"
+            if expr.func.name == "list_append" and len(expr.args) == 2:
+                arg1 = generate_python_lines(expr.args[0], lines, indent)
+                arg2 = generate_python_lines(expr.args[1], lines, indent)
+                return f"{arg1} + [{arg2}]"
+            if expr.func.name == "list_push" and len(expr.args) == 2:
+                arg1 = generate_python_lines(expr.args[0], lines, indent)
+                arg2 = generate_python_lines(expr.args[1], lines, indent)
+                lines.append(f"{indent}{arg1}.append({arg2})")
+                return "None"
+            elif expr.func.name == "make_list":
                 args = []
                 for i in range(len(expr.args)):
-                    arg = generate_python(expr.args[i], vs[i], indent)
+                    arg = generate_python_lines(expr.args[i], lines, indent)
                     args.append(arg)
-                args_code = f"\n{indent}".join(args)
-                return f"{args_code}\n{indent}{sink} = {func_code}({vs_code})"
-
-        assert isinstance(expr.func, (Lambda, Var)), f"Unexpected function type: {type(expr.func)}"
+                args_code = ', '.join(args)
+                return f"[{args_code}]"
+            elif expr.func.name == "equal" and len(expr.args) == 2:
+                arg1 = generate_python_lines(expr.args[0], lines, indent)
+                arg2 = generate_python_lines(expr.args[1], lines, indent)
+                return f"{arg1} == {arg2}"
+            elif expr.func.name == "match_terminal" and len(expr.args) == 1:
+                arg = generate_python_lines(expr.args[0], lines, indent)
+                return f"self.match_terminal({arg})"
+            elif expr.func.name == "match_literal" and len(expr.args) == 1:
+                arg = generate_python_lines(expr.args[0], lines, indent)
+                return f"self.match_literal({arg})"
 
         # Regular call
-        f = gensym()
-        func_code = generate_python(expr.func, f, indent)
+        f = generate_python_lines(expr.func, lines, indent)
 
-        if not expr.args:
-            return f"{func_code}\n{indent}{sink} = {f}()"
-        else:
-            vs = [gensym() for _ in expr.args]
-            vs_code = ', '.join(vs)
-            args = []
-            for i in range(len(expr.args)):
-                arg = generate_python(expr.args[i], vs[i], indent)
-                args.append(arg)
-            args_code = f"\n{indent}".join(args)
-            return f"{func_code}\n{indent}{args_code}\n{indent}{sink} = {f}({vs_code})"
+        args = []
+        for i in range(len(expr.args)):
+            arg = generate_python_lines(expr.args[i], lines, indent)
+            args.append(arg)
+        args_code = ', '.join(args)
+        tmp = gensym()
+        lines.append(f"{indent}{tmp} = {f}({args_code})")
+        return tmp
 
     elif isinstance(expr, Lambda):
         params = [escape_identifier(p) for p in expr.params]
         params_str = ', '.join(params) if params else ''
-        v = gensym()
-        body_code = generate_python(expr.body, v, indent)
         f = gensym()
-        return f"def {f}({params_str}):\n{indent}{body_code}\n{indent}return {v}\n{indent}{sink} = {f}"
+        body_lines = []
+        lines.append(f"{indent}def {f}({params_str}):")
+        v = generate_python_lines(expr.body, lines, indent + "    ")
+        lines.append(f"{indent}    return {v}")
+        return f
 
     elif isinstance(expr, Let):
         var_name = escape_identifier(expr.var)
-        init_code = generate_python(expr.init, var_name, indent)
-        body_code = generate_python(expr.body, sink, indent)
-        return f"{init_code}\n{indent}{body_code}"
+        tmp1 = generate_python_lines(expr.init, lines, indent)
+        lines.append(f"{indent}{var_name} = {tmp1}")
+        tmp2 = generate_python_lines(expr.body, lines, indent)
+        return tmp2
 
     elif isinstance(expr, IfElse):
-        cond = gensym()
-        cond_code = generate_python(expr.condition, cond, indent)
-        then_code = generate_python(expr.then_branch, sink, indent + "    ")
-        else_code = generate_python(expr.else_branch, sink, indent + "    ")
-        return f"{cond_code}\n{indent}if {cond}:\n{indent}    {then_code}\n{indent}else:\n{indent}    {else_code}"
+        cond_code = generate_python_lines(expr.condition, lines, indent)
+        tmp = gensym()
+        lines.append(f"{indent}if {cond_code}:")
+        then_code = generate_python_lines(expr.then_branch, lines, indent + "    ")
+        lines.append(f"{indent}    {tmp} = {then_code}")
+        lines.append(f"{indent}else:")
+        else_code = generate_python_lines(expr.else_branch, lines, indent + "    ")
+        lines.append(f"{indent}    {tmp} = {else_code}")
+        return tmp
 
     elif isinstance(expr, Seq):
-        if not expr.exprs:
-            return "pass"
-
-        lines = []
-        for i, e in enumerate(expr.exprs):
-            if i != len(expr.exprs) - 1:
-                v = gensym()
-                e_code = generate_python(e, v, indent)
-                lines.append(e_code)
-            else:
-                e_code = generate_python(e, sink, indent)
-                lines.append(e_code)
-
-        return f"\n{indent}".join(lines)
+        tmp = "None"
+        for e in expr.exprs:
+            tmp = generate_python_lines(e, lines, indent)
+        return tmp
 
     elif isinstance(expr, While):
-        cond_code = generate_python(expr.condition, indent)
-        body_code = generate_python(expr.body, indent + "    ")
-        return f"while {cond_code}:\n{indent}    {body_code}"
+        cond_code = generate_python_lines(expr.condition, lines, indent)
+        lines.append(f"{indent}while {cond_code}:")
+        then_code = generate_python_lines(expr.body, lines, indent + "    ")
+        cond_code2 = generate_python_lines(expr.condition, lines, indent + "    ")
+        lines.append(f"{indent}    {cond_code} = {cond_code2}")
+        return "None"
 
     elif isinstance(expr, TryCatch):
-        try_code = generate_python(expr.try_body, indent + "    ")
-
-        if expr.catch_body:
-            catch_code = generate_python(expr.catch_body, indent + "    ")
-            exc_type = expr.exception_type or "Exception"
-            return f"try:\n{indent}    {try_code}\n{indent}except {exc_type}:\n{indent}    {catch_code}"
-        else:
-            return f"try:\n{indent}    {try_code}\n{indent}except:\n{indent}    pass"
+        lines.append(f"{indent}try:")
+        tmp = gensym()
+        try_code = generate_python_lines(expr.try_body, lines, indent + "    ")
+        lines.append(f"{indent}    {tmp} = {try_code}")
+        exc_type = expr.exception_type or "Exception"
+        lines.append(f"{indent}catch {exc_type}:")
+        catch_code = generate_python_lines(expr.catch_body, lines, indent + "    ")
+        lines.append(f"{indent}    {tmp} = {catch_code}")
 
     elif isinstance(expr, Assign):
         var_name = escape_identifier(expr.var)
-        expr_code = generate_python(expr.expr, var_name, indent)
-        return f"{expr_code}\n{indent}{sink} = {var_name}"
+        expr_code = generate_python_lines(expr.expr, lines, indent)
+        lines.append(f"{indent}{var_name} = {expr_code}")
+        return "None"
 
     elif isinstance(expr, Return):
-        v = gensym()
-        expr_code = generate_python(expr.expr, v, indent)
-        return f"{expr_code}\n{indent}return {v}"
+        expr_code = generate_python_lines(expr.expr, lines, indent)
+        lines.append(f"{indent}return {expr_code}")
+        return "None"
 
     elif isinstance(expr, Ok):
-        v = gensym()
-        expr_code = generate_python(expr.expr, v, indent)
-        return f"{expr_code}\n{indent}{sink} = (True, {v})"
+        expr_code = generate_python_lines(expr.expr, lines, indent)
+        return f"(True, {expr_code})"
 
     elif isinstance(expr, Err):
-        v = gensym()
-        expr_code = generate_python(expr.expr, v, indent)
-        return f"{expr_code}\n{indent}{sink} = (False, {v})"
+        expr_code = generate_python_lines(expr.expr, lines, indent)
+        return f"(False, {expr_code})"
 
     elif isinstance(expr, Try):
-        v = gensym()
-        expr_code = generate_python(expr.expr, v, indent)
+        expr_code = generate_python_lines(expr.expr, lines, indent)
+        isok = gensym('isok')
+        unwrapped = gensym('unwrapped')
+        lines.append(f"{indent}{isok}, {unwrapped} = {expr_code}")
+        lines.append(f"{indent}if not {isok}:")
         if expr.rollback:
-            junk = gensym()
-            undo_code = generate_python(expr.rollback, junk, indent + "    ")
-            r = gensym()
-            u = gensym()
-            isok = gensym()
-            return f"{r} = {expr_code}\n{indent}{isok}, {u} = {r}\n{indent}if not {isok}:\n{indent}{undo_code}\n{indent}    return {r}\n{indent}else:{indent}    {sink} = {u}"
-        else:
-            r = gensym()
-            u = gensym()
-            isok = gensym()
-            return f"{r} = {expr_code}\n{indent}{isok}, {u} = {r}\n{indent}if not {isok}:\n{indent}    return {r}\n{indent}else:{indent}    {sink} = {u}"
-
-    elif isinstance(expr, ParseNonterminal):
-        func_name = f"self.parse_{expr.nonterminal.name}"
-        if not expr.args:
-            return f"{sink} = {func_name}()"
-        else:
-            vs = [gensym() for _ in expr.args]
-            vs_code = ', '.join(vs)
-            args = []
-            for i in range(len(expr.args)):
-                arg = generate_python(expr.args[i], vs[i], indent)
-                args.append(arg)
-            args_code = f"\n{indent}".join(args)
-            return f"{args_code}\n{indent}{sink} = {func_name}({vs_code})"
+            generate_python_lines(expr.rollback, lines, indent + "    ")
+        lines.append(f"{indent}    return {expr_code}")
+        return unwrapped
 
     else:
         raise ValueError(f"Unknown action expression type: {type(expr)}")
@@ -292,9 +254,10 @@ def generate_python_def(expr: Union[FunDef, ParseNonterminalDef], indent: str = 
         if expr.body is None:
             body_code = f"{indent}    pass"
         else:
-            v = gensym()
-            body_inner = generate_python(expr.body, v, indent + "    ")
-            body_code = f"{indent}    {body_inner}\n{indent}    return {v}"
+            lines = []
+            body_inner = generate_python_lines(expr.body, lines, indent + "    ")
+            lines.append(f"{indent}    return {body_inner}")
+            body_code = "\n".join(lines)
 
         return f"{indent}def {func_name}({params_str}){ret_hint}:\n{body_code}"
 
@@ -316,8 +279,10 @@ def generate_python_def(expr: Union[FunDef, ParseNonterminalDef], indent: str = 
         if expr.body is None:
             body_code = f"{indent}    pass"
         else:
-            body_inner = generate_python(Return(expr.body), indent + "    ")
-            body_code = f"{indent}    {body_inner}"
+            lines = []
+            body_inner = generate_python_lines(expr.body, lines, indent + "    ")
+            lines.append(f"{indent}    return {body_inner}")
+            body_code = "\n".join(lines)
 
         return f"{indent}def {func_name}(self{params_str}){ret_hint}:\n{body_code}"
 

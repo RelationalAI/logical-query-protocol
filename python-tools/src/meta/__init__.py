@@ -14,7 +14,7 @@ from .target import (
     Var,
     Lit,
     Symbol,
-    Builtin,
+    (Builtin),
     Call,
     Lambda,
     Let,
@@ -68,7 +68,7 @@ from .grammar_gen import (
 )
 
 # Code generation from actions
-from .codegen_python import generate_python, escape_identifier as escape_python_identifier
+from .codegen_python import generate_python_lines, escape_identifier as escape_python_identifier
 from .codegen_julia import generate_julia, escape_identifier as escape_julia_identifier
 from .codegen_go import generate_go, escape_identifier as escape_go_identifier
 

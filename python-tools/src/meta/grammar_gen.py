@@ -338,13 +338,13 @@ class GrammarGenerator:
         add_rule(Rule(
             lhs=Nonterminal("true"),
             rhs=Sequence([LitTerminal("("), LitTerminal("true"), LitTerminal(")")]),
-            action = Lambda(params=[], body=Call(Constructor('Conjunction'), [Call(Builtin('List'), [])])),
+            action = Lambda(params=[], body=Call(Constructor('Conjunction'), [Call(Builtin('make_list'), [])])),
 
         ))
         add_rule(Rule(
             lhs=Nonterminal("false"),
             rhs=Sequence([LitTerminal("("), LitTerminal("false"), LitTerminal(")")]),
-            action = Lambda(params=[], body=Call(Constructor('Disjunction'), [Call(Builtin('List'), [])])),
+            action = Lambda(params=[], body=Call(Constructor('Disjunction'), [Call(Builtin('make_list'), [])])),
 
         ))
         add_rule(Rule(

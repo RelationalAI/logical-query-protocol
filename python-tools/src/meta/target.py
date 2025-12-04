@@ -9,11 +9,16 @@ translatable to each of these target languages.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, List, Optional, Sequence, TYPE_CHECKING
+from typing import Any, List, Optional, Sequence
+from itertools import count
+from more_itertools import peekable
 
-if TYPE_CHECKING:
-    from .grammar import Nonterminal
+_global_id = peekable(count(0))
+def next_id():
+    return next(_global_id)
 
+def gensym(prefix: str = "_t") -> str:
+    return f"{prefix}{next_id()}"
 
 @dataclass
 class TargetNode:
@@ -243,7 +248,7 @@ class Return(TargetExpr):
         return f"return {self.expr}"
 
     def __post_init__(self):
-        assert isinstance(self.expr, TargetExpr), f"Invalid return expression in {self}: {self.expr}"
+        assert isinstance(self.expr, TargetExpr) and not isinstance(self.expr, Return), f"Invalid return expression in {self}: {self.expr}"
 
 
 @dataclass
@@ -373,7 +378,7 @@ class ParseNonterminalDef(TargetNode):
     def __str__(self) -> str:
         params_str = ', '.join(f"{name}: {typ}" for name, typ in self.params)
         ret_str = f" -> {self.return_type}" if self.return_type else ""
-        return f"parse {self.nonterminal}({params_str}){ret_str}: {self.body}"
+        return f"parse_{self.nonterminal.name}({params_str}){ret_str}: {self.body}"
 
 
 @dataclass
@@ -384,11 +389,9 @@ class ParseNonterminal(TargetExpr):
     instead of an expression for the function.
     """
     nonterminal: 'Nonterminal'
-    args: Sequence['TargetExpr'] = field(default_factory=list)
 
     def __str__(self) -> str:
-        args_str = ', '.join(str(arg) for arg in self.args)
-        return f"parse {self.nonterminal}({args_str})"
+        return f"parse_{self.nonterminal.name}"
 
 
 # Re-export all types for convenience
