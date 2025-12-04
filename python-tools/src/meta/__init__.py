@@ -14,7 +14,7 @@ from .target import (
     Var,
     Lit,
     Symbol,
-    (Builtin),
+    Builtin,
     Call,
     Lambda,
     Let,

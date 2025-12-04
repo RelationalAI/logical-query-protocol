@@ -138,6 +138,10 @@ def generate_python_lines(expr: TargetExpr, lines: List[str], indent: str = "") 
             elif expr.func.name == "match_literal" and len(expr.args) == 1:
                 arg = generate_python_lines(expr.args[0], lines, indent)
                 return f"self.match_literal({arg})"
+            elif expr.func.name == "consume_literal" and len(expr.args) == 1:
+                arg = generate_python_lines(expr.args[0], lines, indent)
+                lines.append(f"{indent}self.consume_literal({arg})")
+                return "None"
 
         # Regular call
         f = generate_python_lines(expr.func, lines, indent)
