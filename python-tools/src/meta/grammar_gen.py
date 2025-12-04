@@ -135,14 +135,14 @@ class GrammarGenerator:
             self._generate_message_rule(message_name)
 
         # TODO: We don't really want to parse the patterns to handle | (in FLOAT)
-        self.grammar.tokens.append(Token("SYMBOL", '/[a-zA-Z_][a-zA-Z0-9_.-]*/'))
-        self.grammar.tokens.append(Token("MISSING", '"missing"'))
-        self.grammar.tokens.append(Token("STRING", '/"(?:[^"\\\\]|\\\\.)*"/'))
-        self.grammar.tokens.append(Token("INT", '/[-]?\\d+/'))
-        self.grammar.tokens.append(Token("INT128", '/[-]?\\d+i128/'))
-        self.grammar.tokens.append(Token("UINT128", '/0x[0-9a-fA-F]+/'))
-        self.grammar.tokens.append(Token("FLOAT", '/[-]?\\d+\\.\\d+/ | "inf" | "nan"'))
-        self.grammar.tokens.append(Token("DECIMAL", '/[-]?\\d+\\.\\d+d\\d+/'))
+        self.grammar.tokens.append(Token("SYMBOL", '[a-zA-Z_][a-zA-Z0-9_.-]*', Lambda(params=['lexeme'], body=Call(Builtin('parse_symbol'), [Var('lexeme')]))))
+        self.grammar.tokens.append(Token("MISSING", 'missing', Lambda(params=['lexeme'], body=Call(Builtin('parse_missing'), [Var('lexeme')]))))
+        self.grammar.tokens.append(Token("STRING", '"(?:[^"\\\\]|\\\\.)*"', Lambda(params=['lexeme'], body=Call(Builtin('parse_string'), [Var('lexeme')]))))
+        self.grammar.tokens.append(Token("INT", '[-]?\\d+', Lambda(params=['lexeme'], body=Call(Builtin('parse_int'), [Var('lexeme')]))))
+        self.grammar.tokens.append(Token("INT128", '[-]?\\d+i128', Lambda(params=['lexeme'], body=Call(Builtin('parse_int128'), [Var('lexeme')]))))
+        self.grammar.tokens.append(Token("UINT128", '0x[0-9a-fA-F]+', Lambda(params=['lexeme'], body=Call(Builtin('parse_uint128'), [Var('lexeme')]))))
+        self.grammar.tokens.append(Token("FLOAT", '(?:[-]?\\d+\\.\\d+|inf|nan)', Lambda(params=['lexeme'], body=Call(Builtin('parse_float'), [Var('lexeme')]))))
+        self.grammar.tokens.append(Token("DECIMAL", '[-]?\\d+\\.\\d+d\\d+', Lambda(params=['lexeme'], body=Call(Builtin('parse_decimal'), [Var('lexeme')]))))
 
         self._post_process_grammar()
         return self.grammar
@@ -263,7 +263,6 @@ class GrammarGenerator:
             lhs=Nonterminal("value"),
             rhs=Sequence([LitTerminal("false")]),
             action=Lambda(params=[], body=Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("boolean_value"), Lit(False)])])),
-
         ))
 
         add_rule(Rule(
@@ -893,11 +892,11 @@ class GrammarGenerator:
         return PRIMITIVE_TYPES.get(type_name, 'SYMBOL')
 
 
-def generate_grammar(grammar_obj: Grammar, reachable: Set[str]) -> str:
+def generate_grammar(grammar: Grammar, reachable: Set[str]) -> str:
     """Generate grammar text."""
-    return grammar_obj.print_grammar(reachable=reachable)
+    return grammar.print_grammar(reachable=reachable)
 
 
-def generate_semantic_actions(grammar_obj: Grammar, reachable: Set[Nonterminal]) -> str:
+def generate_semantic_actions(grammar: Grammar, reachable: Set[Nonterminal]) -> str:
     """Generate semantic actions (visitor)."""
-    return grammar_obj.print_grammar_with_actions(reachable=reachable)
+    return grammar.print_grammar_with_actions(reachable=reachable)

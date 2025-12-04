@@ -282,7 +282,7 @@ def _compute_rhs_elem_follow(rhs: 'Rhs', lhs: Nonterminal,
     return result
 
 
-def check_ll_k(grammar: 'Grammar', k: int = 2) -> Tuple[bool, List[Nonterminal]]:
+def check_ll_k(grammar: 'Grammar', k: int = 2) -> Tuple[bool, List[str]]:
     """
     Check if grammar is LL(k).
 

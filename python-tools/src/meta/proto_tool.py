@@ -14,13 +14,13 @@ if __name__ == "__main__" and __package__ is None:
     # Running as script - add parent to path and use absolute imports
     sys.path.insert(0, str(Path(__file__).parent.parent))
     from meta.proto_parser import ProtoParser
-    from meta.grammar_gen import GrammarGenerator, generate_grammar, generate_semantic_actions
+    from meta.grammar_gen import GrammarGenerator, generate_semantic_actions
     from meta.parser_gen_python import generate_parser_python
     from meta.printer_python import generate_pretty_printer_python
 else:
     # Running as module - use relative imports
     from .proto_parser import ProtoParser
-    from .grammar_gen import GrammarGenerator, generate_grammar, generate_semantic_actions
+    from .grammar_gen import GrammarGenerator, generate_semantic_actions
     from .parser_gen_python import generate_parser_python
     from .printer_python import generate_pretty_printer_python
 

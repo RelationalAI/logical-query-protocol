@@ -8,9 +8,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from meta.grammar import (
-    Grammar, Rule, Nonterminal, Terminal, Literal, Sequence,
-    Token, Function, Var, Call
+    Grammar, Rule, Nonterminal, Sequence,
+    Token
 )
+from meta.target import Lambda, Var, Call, Builtin
 from meta.parser_python import generate_parser_python
 
 
@@ -69,7 +70,7 @@ def test_parser_with_left_factoring():
     ))
 
     # Add tokens
-    grammar.tokens.append(Token("NUMBER", r'\d+'))
+    grammar.tokens.append(Token("NUMBER", r'\d+', Lambda(params=['lexeme'], body=Call(Builtin('parse_number'), [Var('lexeme')]))))
 
     print("Generating parser...")
 
@@ -119,7 +120,7 @@ def test_parser_execution():
         grammar=grammar
     ))
 
-    grammar.tokens.append(Token("NUMBER", r'\d+'))
+    grammar.tokens.append(Token("NUMBER", r'\d+', Lambda(params=['lexeme'], body=Call(Builtin('parse_number'), [Var('lexeme')]))))
 
     print("\nGenerating and testing parser execution...")
 

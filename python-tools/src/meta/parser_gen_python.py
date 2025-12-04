@@ -9,8 +9,6 @@ Handles Python-specific code generation including:
 
 from typing import Dict, List, Optional, Set
 
-from meta.analysis import check_ll_k
-
 from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Plus, Option, get_literals
 from .target import Lambda, Call
 from .codegen_python import generate_python, generate_python_def
@@ -37,7 +35,7 @@ def generate_parser_python(grammar: Grammar, reachable: Set[Nonterminal]) -> str
     return prologue + "\n".join(lines) + epilogue
 
 
-def _generate_prologue(grammar: Grammar, is_ll2: bool, conflicts: List[Nonterminal]) -> str:
+def _generate_prologue(grammar: Grammar, is_ll2: bool, conflicts: List[str]) -> str:
     """Generate parser prologue with imports, token class, lexer, and parser class start."""
     lines = []
     lines.append('"""')
@@ -48,6 +46,7 @@ def _generate_prologue(grammar: Grammar, is_ll2: bool, conflicts: List[Nontermin
     lines.append("")
     lines.append("import re")
     lines.append("from typing import List, Optional, Any, Tuple")
+    lines.append("from decimal import Decimal")
     lines.append("")
     lines.append("import lqp.ir as ir")
     lines.append("")
@@ -56,7 +55,8 @@ def _generate_prologue(grammar: Grammar, is_ll2: bool, conflicts: List[Nontermin
     if not is_ll2:
         lines.append("# WARNING: Grammar is not LL(2). Conflicts detected:")
         for conflict in conflicts:
-            lines.append(f"# {conflict}")
+            for line in conflict.split("\n"):
+                lines.append(f"# {line}")
         lines.append("")
 
     lines.append("class ParseError(Exception):")
@@ -85,6 +85,7 @@ def _generate_prologue(grammar: Grammar, is_ll2: bool, conflicts: List[Nontermin
     lines.append("    def __init__(self, tokens: List[Token]):")
     lines.append("        self.tokens = tokens")
     lines.append("        self.pos = 0")
+    lines.append("        self.token_actions = self._create_token_actions()")
     lines.append("")
     lines.append("    def lookahead(self, k: int = 0) -> Token:")
     lines.append('        """Get lookahead token at offset k."""')
@@ -103,6 +104,17 @@ def _generate_prologue(grammar: Grammar, is_ll2: bool, conflicts: List[Nontermin
     lines.append('        """Restore position for backtracking."""')
     lines.append("        self.pos = pos")
     lines.append("")
+    lines.append("    def _create_token_actions(self):")
+    lines.append('        """Create token action functions."""')
+    lines.append("        return {")
+
+    # Generate token actions that call Lexer methods
+    for token in grammar.tokens:
+        parse_method = f"Lexer.parse_{token.name.lower()}"
+        lines.append(f"            '{token.name}': {parse_method},")
+
+    lines.append("        }")
+    lines.append("")
     lines.append("    def consume_literal(self, expected: str) -> None:")
     lines.append('        """Consume a literal token."""')
     lines.append("        if not self.match_literal(expected):")
@@ -110,13 +122,16 @@ def _generate_prologue(grammar: Grammar, is_ll2: bool, conflicts: List[Nontermin
     lines.append(f"            raise ParseError(f'Expected literal {{expected!r}} but got {{token.type}}={{token.value!r}} at position {{token.pos}}')")
     lines.append("        self.pos += 1")
     lines.append("")
-    lines.append("    def consume_terminal(self, expected: str) -> str:")
-    lines.append('        """Consume a terminal token and return its value."""')
+    lines.append("    def consume_terminal(self, expected: str) -> Any:")
+    lines.append('        """Consume a terminal token and return parsed value."""')
     lines.append("        if not self.match_terminal(expected):")
     lines.append("            token = self.current()")
     lines.append(f"            raise ParseError(f'Expected terminal {{expected}} but got {{token.type}} at position {{token.pos}}')")
     lines.append("        token = self.current()")
     lines.append("        self.pos += 1")
+    lines.append("        # Apply token action to parse lexeme")
+    lines.append("        if expected in self.token_actions:")
+    lines.append("            return self.token_actions[expected](token.value)")
     lines.append("        return token.value")
     lines.append("")
     lines.append("    def match_literal(self, literal: str) -> bool:")
@@ -157,16 +172,11 @@ def _generate_lexer(grammar: Grammar) -> List[str]:
     lines.append("    def _tokenize(self) -> None:")
     lines.append('        """Tokenize the input string."""')
 
-    token_patterns = []
-    for token in grammar.tokens:
-        pattern = token.pattern
-        if pattern.startswith('/') and pattern.endswith('/'):
-            pattern = pattern[1:-1]
-        token_patterns.append((token.name, pattern))
 
     lines.append("        token_specs = [")
-    for name, pattern in token_patterns:
-        lines.append(f"            ('{name}', r'{pattern}'),")
+    for token in grammar.tokens:
+        action = generate_python(token.action)
+        lines.append(f"            ('{token.name}', r'{token.pattern}', {action}),")
     lines.append("        ]")
     lines.append("")
     lines.append("        whitespace_re = re.compile(r'\\s+')")
@@ -184,12 +194,12 @@ def _generate_lexer(grammar: Grammar) -> List[str]:
     lines.append("                continue")
     lines.append("")
     lines.append("            matched = False")
-    lines.append("            for token_type, pattern in token_specs:")
+    lines.append("            for token_type, pattern, action in token_specs:")
     lines.append("                regex = re.compile(pattern)")
     lines.append("                match = regex.match(self.input, self.pos)")
     lines.append("                if match:")
     lines.append("                    value = match.group(0)")
-    lines.append("                    self.tokens.append(Token(token_type, value, self.pos))")
+    lines.append("                    self.tokens.append(Token(token_type, action(value), self.pos))")
     lines.append("                    self.pos = match.end()")
     lines.append("                    matched = True")
     lines.append("                    break")
@@ -225,6 +235,63 @@ def _generate_lexer(grammar: Grammar) -> List[str]:
     for lit in sorted_literals:
         lines.append(f"            '{lit.name}',")
     lines.append("        ]")
+    lines.append("")
+
+    # Add token parsing helper methods to Lexer
+    lines.append("    @staticmethod")
+    lines.append("    def parse_symbol(s: str) -> str:")
+    lines.append('        """Parse SYMBOL token."""')
+    lines.append("        return str(s)")
+    lines.append("")
+    lines.append("    @staticmethod")
+    lines.append("    def parse_string(s: str) -> str:")
+    lines.append('        """Parse STRING token."""')
+    lines.append("        return s[1:-1].encode().decode('unicode_escape')  # Strip quotes and process escaping")
+    lines.append("")
+    lines.append("    @staticmethod")
+    lines.append("    def parse_int(n: str) -> int:")
+    lines.append('        """Parse INT token."""')
+    lines.append("        return int(n)")
+    lines.append("")
+    lines.append("    @staticmethod")
+    lines.append("    def parse_float(f: str) -> float:")
+    lines.append('        """Parse FLOAT token."""')
+    lines.append("        if f == 'inf':")
+    lines.append("            return float('inf')")
+    lines.append("        elif f == 'nan':")
+    lines.append("            return float('nan')")
+    lines.append("        return float(f)")
+    lines.append("")
+    lines.append("    @staticmethod")
+    lines.append("    def parse_uint128(u: str) -> Any:")
+    lines.append('        """Parse UINT128 token."""')
+    lines.append("        uint128_val = int(u, 16)")
+    lines.append("        return ir.UInt128Value(value=uint128_val, meta=None)")
+    lines.append("")
+    lines.append("    @staticmethod")
+    lines.append("    def parse_int128(u: str) -> Any:")
+    lines.append('        """Parse INT128 token."""')
+    lines.append("        u = u[:-4]  # Remove the 'i128' suffix")
+    lines.append("        int128_val = int(u)")
+    lines.append("        return ir.Int128Value(value=int128_val, meta=None)")
+    lines.append("")
+    lines.append("    @staticmethod")
+    lines.append("    def parse_missing(m: str) -> Any:")
+    lines.append('        """Parse MISSING token."""')
+    lines.append("        return ir.MissingValue(meta=None)")
+    lines.append("")
+    lines.append("    @staticmethod")
+    lines.append("    def parse_decimal(d: str) -> Any:")
+    lines.append('        """Parse DECIMAL token."""')
+    lines.append("        # Decimal is a string like '123.456d12' where the last part after `d` is the")
+    lines.append("        # precision, and the scale is the number of digits between the decimal point and `d`")
+    lines.append("        parts = d.split('d')")
+    lines.append("        if len(parts) != 2:")
+    lines.append("            raise ValueError(f'Invalid decimal format: {d}')")
+    lines.append("        scale = len(parts[0].split('.')[1])")
+    lines.append("        precision = int(parts[1])")
+    lines.append("        value = Decimal(parts[0])")
+    lines.append("        return ir.DecimalValue(precision=precision, scale=scale, value=value, meta=None)")
     lines.append("")
     lines.append("")
 

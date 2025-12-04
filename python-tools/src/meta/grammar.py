@@ -134,6 +134,7 @@ class Token:
     """Token definition (terminal with regex pattern)."""
     name: str
     pattern: str
+    action: 'Lambda'
 
 @dataclass
 class Grammar:
@@ -277,7 +278,7 @@ class Grammar:
             self._follow_cache = compute_follow(self, self.compute_nullable(), self.compute_first())
         return self._follow_cache
 
-    def check_ll_k(self, k: int = 2) -> Tuple[bool, List[Nonterminal]]:
+    def check_ll_k(self, k: int = 2) -> Tuple[bool, List[str]]:
         """
         Check if grammar is LL(k).
 
@@ -377,7 +378,7 @@ class Grammar:
         # Traverse rules in preorder
         rule_order = self.traverse_rules_preorder(reachable_only=(reachable is not None))
         for lhs in rule_order:
-            if reachable is not None and lhs.name not in reachable:
+            if reachable is not None and lhs not in reachable:
                 continue
             rules_list = self.rules[lhs]
 
