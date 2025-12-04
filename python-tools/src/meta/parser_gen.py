@@ -7,11 +7,12 @@ recursive-descent parsers from grammars, including:
 - Grammar analysis and transformation
 """
 
+from dataclasses import is_dataclass
 from re import L
 from typing import Dict, List, Optional, Set, Tuple, Callable, Sequence as PySequence
 
 from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Plus, Option, Terminal, is_epsilon, rhs_elements, Sequence
-from .target import Lambda, Call, ParseNonterminalDef, Var, Lit, Symbol, Builtin, Let, IfElse, FunDef, BaseType, ListType, TargetExpr, Seq, While, TryCatch, Assign, Type, ParseNonterminal, ParseNonterminalDef, Return, Constructor, gensym
+from .target import Lambda, Call, ParseNonterminalDef, Var, Lit, Symbol, Builtin, Let, IfElse, Try, Ok, Err, FunDef, BaseType, ListType, TargetExpr, Seq, While, TryCatch, Assign, Type, ParseNonterminal, ParseNonterminalDef, Return, Constructor, gensym
 
 
 def generate_rules(grammar: Grammar) -> List[ParseNonterminalDef]:
@@ -46,7 +47,6 @@ def _generate_parse_method(
         prediction = gensym("prediction")
 
         has_epsilon = any(is_epsilon(rule.rhs) for rule in rules)
-
         if has_epsilon:
             tail = Lit(None)
         else:
@@ -87,11 +87,99 @@ def _normalize(expr: TargetExpr, k: Callable[[TargetExpr], TargetExpr] = lambda 
         return k(expr)
     return k(expr)
 
-def _build_predictor(grammar, lhs, rules):
+def _build_predictor(grammar: Grammar, lhs: Nonterminal, rules: List[Rule]) -> TargetExpr:
+    """Build a predictor expression that returns the index of the matching rule.
+
+    Uses FIRST_k lookahead to distinguish between alternatives. Builds a
+    decision tree that groups by token at each lookahead depth to avoid
+    redundant token checks.
+    """
     assert len(rules) > 1
-    # TODO PR Placeholder!
-    predictor = Call(Builtin('predict'), [Lit(lhs.name)])
-    return predictor
+
+    nullable = grammar.compute_nullable()
+    first_k = grammar.compute_first_k(2)
+
+    # Collect all (sequence, rule_index) pairs
+    seq_rule_pairs: List[Tuple[Tuple[Terminal, ...], int]] = []
+    for i, rule in enumerate(rules):
+        if is_epsilon(rule.rhs):
+            continue
+        from .analysis import _compute_rhs_elem_first_k
+        rule_first = _compute_rhs_elem_first_k(rule.rhs, first_k, nullable, 2)
+        for seq in rule_first:
+            if seq:  # Skip empty sequences
+                seq_rule_pairs.append((seq, i))
+
+    # Find epsilon rule index (if any)
+    epsilon_index = None
+    for i, rule in enumerate(rules):
+        if is_epsilon(rule.rhs):
+            epsilon_index = i
+            break
+
+    # Default: return epsilon index or -1
+    if epsilon_index is not None:
+        default = Lit(epsilon_index)
+    else:
+        default = Lit(-1)
+
+    return _build_predictor_tree(seq_rule_pairs, default, depth=0)
+
+
+def _build_predictor_tree(
+    seq_rule_pairs: List[Tuple[Tuple[Terminal, ...], int]],
+    default: TargetExpr,
+    depth: int
+) -> TargetExpr:
+    """Build a decision tree for predicting which rule matches.
+
+    Groups sequences by their token at the current depth, then recurses
+    for each group. This avoids redundant token checks.
+    """
+    if not seq_rule_pairs:
+        return default
+
+    # Group by token at current depth
+    groups: Dict[Terminal, List[Tuple[Tuple[Terminal, ...], int]]] = {}
+    for seq, rule_idx in seq_rule_pairs:
+        if depth < len(seq):
+            token = seq[depth]
+            if token not in groups:
+                groups[token] = []
+            groups[token].append((seq, rule_idx))
+
+    if not groups:
+        return default
+
+    # Build decision tree from groups
+    result = default
+    for token, items in groups.items():
+        # Build the check for this token
+        check = _build_token_check(token, depth)
+
+        # Find unique rule indices in this group
+        rule_indices = set(rule_idx for _, rule_idx in items)
+
+        if len(rule_indices) == 1:
+            # All sequences lead to the same rule
+            then_branch = Lit(rule_indices.pop())
+        else:
+            # Need to look at the next token - recurse
+            then_branch = _build_predictor_tree(items, default, depth + 1)
+
+        result = IfElse(check, then_branch, result)
+
+    return result
+
+
+def _build_token_check(term: Terminal, depth: int) -> TargetExpr:
+    """Build a check for a single token at a given lookahead depth."""
+    if isinstance(term, LitTerminal):
+        return Call(Builtin('match_lookahead_literal'), [Lit(term.name), Lit(depth)])
+    elif isinstance(term, NamedTerminal):
+        return Call(Builtin('match_lookahead_terminal'), [Lit(term.name), Lit(depth)])
+    else:
+        return Lit(False)
 
 def _generate_decision_tree(tail: TargetExpr, token_map: Dict, rules: List, nt_name: str,
                             depth: int, max_depth: int, is_continuation: bool, grammar: Grammar, first_2) -> TargetExpr:
@@ -200,6 +288,9 @@ def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optio
                 _generate_parse_rhs_ir(rhs.rhs, None, grammar),
                 Lit(None)
             )
+    elif isinstance(rhs, Plus):
+        # A+ is equivalent to A A*
+        return _generate_parse_rhs_ir(Sequence([rhs.rhs, Star(rhs.rhs)]), rule, grammar)
     elif isinstance(rhs, Star):
         if isinstance(rhs.rhs, NamedTerminal):
             term = rhs.rhs
@@ -209,22 +300,31 @@ def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optio
             )
         else:
             assert isinstance(rhs.rhs, Nonterminal)
+
+            def findfirst(predicate, iterable):
+                return next((i for i, x in enumerate(iterable) if predicate(x)), None)
+
+            lhs = rhs.rhs
+            rules = grammar.get_rules(lhs)
+            has_epsilon = any(is_epsilon(rule.rhs) for rule in rules)
+            if not has_epsilon:
+                rules = rules + [Rule(lhs, Sequence([]), Lambda(params=[], body=Lit(None)))]
+            epsilon_index = findfirst(lambda rule: is_epsilon(rule.rhs), rules)
+            predictor = _build_predictor(grammar, lhs, rules)
             x = gensym('x')
             xs = gensym('xs')
-            return Let(
+            body = Let(
                     xs,
                     Call(Builtin('make_list'), []),
                     Seq([
                         While(
-                            Call(Builtin('predict'), [Lit(rhs.rhs.name)]),
-                            Let(x,
-                                _generate_parse_rhs_ir(rhs.rhs, None, grammar),
-                                Call(Builtin('list_push'), [Var(xs), Var(x)])
-                            )
+                            Call(Builtin('not_equal'), [predictor, Lit(epsilon_index)]),
+                            Call(Builtin('list_push'), [Var(xs), _generate_parse_rhs_ir(rhs.rhs, None, grammar)])
                         ),
                         Var(xs)
                     ])
             )
+            return body
     else:
         assert False, f"Unsupported Rhs type: {type(rhs)}"
 
@@ -287,20 +387,43 @@ def _apply(func: 'Lambda', args: PySequence['TargetExpr']) -> 'TargetExpr':
             Lambda(params=func.params[1:], body=func.body, return_type=func.return_type),
             args[1:]
         )
-        # TODO PR do substitution correctly
-        if isinstance(args[0], Var) and func.params[0] == args[0].name:
-            return body
+        if isinstance(args[0], (Var, Lit)):
+            return _subst(body, func.params[0], args[0])
         return Let(func.params[0], args[0], body)
     # TODO
     # assert False, f"Invalid application of {func} to {args}"
     return Call(func, args)
 
-def _generate_parse_rhs_ir1(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optional[Grammar] = None) -> Optional[TargetExpr]:
-    """Generate IR for parsing an RHS.
-
-    Returns IR expression for leaf nodes (LitTerminal, NamedTerminal, Nonterminal).
-    Returns None for complex cases that still use string generation.
-    """
+def _subst(expr: 'TargetExpr', var: str, val: 'TargetExpr') -> 'TargetExpr':
+    if isinstance(expr, Var) and expr.name == var:
+        return val
+    elif isinstance(expr, Lambda):
+        if var in expr.params:
+            return expr
+        return Lambda(expr.params, _subst(expr.body, var, val), expr.return_type)
+    elif isinstance(expr, Let):
+        if expr.var == var:
+            return expr
+        return Let(expr.var, expr.init, _subst(expr.body, var, val))
+    elif isinstance(expr, Assign):
+        return Assign(expr.var, _subst(expr.expr, var, val))
+    elif isinstance(expr, Call):
+        return Call(_subst(expr.func, var, val), [_subst(arg, var, val) for arg in expr.args])
+    elif isinstance(expr, Seq):
+        return Seq([_subst(arg, var, val) for arg in expr.exprs])
+    elif isinstance(expr, IfElse):
+        return IfElse(_subst(expr.condition, var, val), _subst(expr.then_branch, var, val), _subst(expr.else_branch, var, val))
+    elif isinstance(expr, While):
+        return While(_subst(expr.condition, var, val), _subst(expr.body, var, val))
+    elif isinstance(expr, Try):
+        return Try(_subst(expr.expr, var, val), _subst(expr.rollback, var, val))
+    elif isinstance(expr, Ok):
+        return Ok(_subst(expr.expr, var, val))
+    elif isinstance(expr, Err):
+        return Err(_subst(expr.expr, var, val))
+    elif isinstance(expr, Return):
+        return Return(_subst(expr.expr, var, val))
+    return expr
 
 def _build_decision_tree_ir(token_map: Dict, rules: List[Rule], nt_name: str,
                             depth: int, max_depth: int, is_continuation: bool = False, grammar: Optional[Grammar] = None) -> TargetExpr:
@@ -318,6 +441,7 @@ def _build_decision_tree_ir(token_map: Dict, rules: List[Rule], nt_name: str,
         TargetExpr representing the decision tree (IfElse chain)
     """
     if depth >= max_depth:
+        assert False, f"Max depth exceeded for {nt_name}"
         # Beyond max depth - use first available rule
         # This shouldn't happen in well-formed grammars
         first_item = next(iter(token_map.values()))

@@ -121,6 +121,15 @@ def generate_python_lines(expr: TargetExpr, lines: List[str], indent: str = "") 
                 arg2 = generate_python_lines(expr.args[1], lines, indent)
                 lines.append(f"{indent}{arg1}.append({arg2})")
                 return "None"
+            if expr.func.name == "error" and len(expr.args) == 2:
+                arg1 = generate_python_lines(expr.args[0], lines, indent)
+                arg2 = generate_python_lines(expr.args[1], lines, indent)
+                lines.append(f"{indent}raise ParseError({arg1} + \": {{{arg2}}}\")")
+                return "None"
+            if expr.func.name == "error" and len(expr.args) == 1:
+                arg1 = generate_python_lines(expr.args[0], lines, indent)
+                lines.append(f"{indent}raise ParseError({arg1})")
+                return "None"
             elif expr.func.name == "make_list":
                 args = []
                 for i in range(len(expr.args)):
@@ -128,10 +137,36 @@ def generate_python_lines(expr: TargetExpr, lines: List[str], indent: str = "") 
                     args.append(arg)
                 args_code = ', '.join(args)
                 return f"[{args_code}]"
+            elif expr.func.name == "and" and len(expr.args) == 2:
+                arg1 = generate_python_lines(expr.args[0], lines, indent)
+                arg2 = generate_python_lines(expr.args[1], lines, indent)
+                return f"{arg1} and {arg2}"
+            elif expr.func.name == "or" and len(expr.args) == 2:
+                arg1 = generate_python_lines(expr.args[0], lines, indent)
+                arg2 = generate_python_lines(expr.args[1], lines, indent)
+                return f"{arg1} or {arg2}"
+            elif expr.func.name == "not" and len(expr.args) == 1:
+                arg1 = generate_python_lines(expr.args[0], lines, indent)
+                return f"not {arg1}"
             elif expr.func.name == "equal" and len(expr.args) == 2:
                 arg1 = generate_python_lines(expr.args[0], lines, indent)
                 arg2 = generate_python_lines(expr.args[1], lines, indent)
                 return f"{arg1} == {arg2}"
+            elif expr.func.name == "not_equal" and len(expr.args) == 2:
+                arg1 = generate_python_lines(expr.args[0], lines, indent)
+                arg2 = generate_python_lines(expr.args[1], lines, indent)
+                return f"{arg1} != {arg2}"
+            elif expr.func.name == "is_none" and len(expr.args) == 1:
+                arg = generate_python_lines(expr.args[0], lines, indent)
+                return f"{arg} is None"
+            elif expr.func.name == "match_lookahead_terminal" and len(expr.args) == 2:
+                arg1 = generate_python_lines(expr.args[0], lines, indent)
+                arg2 = generate_python_lines(expr.args[1], lines, indent)
+                return f"self.match_lookahead_terminal({arg1}, {arg2})"
+            elif expr.func.name == "match_lookahead_literal" and len(expr.args) == 2:
+                arg1 = generate_python_lines(expr.args[0], lines, indent)
+                arg2 = generate_python_lines(expr.args[1], lines, indent)
+                return f"self.match_lookahead_literal({arg1}, {arg2})"
             elif expr.func.name == "match_terminal" and len(expr.args) == 1:
                 arg = generate_python_lines(expr.args[0], lines, indent)
                 return f"self.match_terminal({arg})"
@@ -174,6 +209,13 @@ def generate_python_lines(expr: TargetExpr, lines: List[str], indent: str = "") 
 
     elif isinstance(expr, IfElse):
         cond_code = generate_python_lines(expr.condition, lines, indent)
+        # if expr.then_branch == Lit(True):
+        #     else_code = generate_python_lines(expr.else_branch, lines, indent + "    ")
+        #     return f"({cond_code} or {else_code})"
+        # if expr.else_branch == Lit(False):
+        #     then_code = generate_python_lines(expr.then_branch, lines, indent + "    ")
+        #     return f"({cond_code} and {then_code})"
+
         tmp = gensym()
         lines.append(f"{indent}if {cond_code}:")
         then_code = generate_python_lines(expr.then_branch, lines, indent + "    ")
