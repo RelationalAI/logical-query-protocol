@@ -5,7 +5,7 @@ message definitions into grammar rules with semantic actions.
 """
 
 import re
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Callable, Dict, List, Optional, Set, Tuple
 
 from .grammar import (
     Grammar, Rule, Token, Rhs, LitTerminal, NamedTerminal, Nonterminal,
@@ -88,6 +88,7 @@ class GrammarGenerator:
             "conjunction": "and",
             "disjunction": "or",
         }
+        self.rule_rewrites: Dict[str, Callable[[Rule], Rule]] = self._init_rule_rewrites()
 
     def _generate_action(self, message_name: str, rhs_elements: List[Rhs], field_names: Optional[List[str]] = None) -> Lambda:
         """Generate semantic action to construct protobuf message from parsed elements."""
@@ -122,8 +123,141 @@ class GrammarGenerator:
 
     def _add_rule(self, rule: Rule) -> None:
         """Add a rule to the grammar and track it in generated_rules."""
+        rewrite = self.rule_rewrites.get(rule.lhs.name)
+        if rewrite:
+            rule = rewrite(rule)
         self.generated_rules.add(rule.lhs.name)
         self.grammar.add_rule(rule)
+
+    def _init_rule_rewrites(self) -> Dict[str, Callable[[Rule], Rule]]:
+        """Initialize rule rewrite functions."""
+
+        def rewrite_string_to_name_optional(rule: Rule) -> Rule:
+            """Replace STRING with name? in output and abort rules."""
+            if isinstance(rule.rhs, Sequence):
+                for i, symbol in enumerate(rule.rhs.elements):
+                    if symbol == NamedTerminal('STRING'):
+                        rule.rhs.elements[i] = Option(Nonterminal('name'))
+            return rule
+
+        def rewrite_string_to_name(rule: Rule) -> Rule:
+            """Replace STRING with name."""
+            if isinstance(rule.rhs, Sequence):
+                for i, symbol in enumerate(rule.rhs.elements):
+                    if symbol == NamedTerminal('STRING'):
+                        rule.rhs.elements[i] = Nonterminal('name')
+            return rule
+
+        def rewrite_fragment_remove_debug_info(rule: Rule) -> Rule:
+            """Remove debug_info from fragment rules."""
+            if isinstance(rule.rhs, Sequence):
+                new_elements = []
+                for symbol in rule.rhs.elements:
+                    if symbol == Option(Nonterminal('debug_info')) or symbol == Nonterminal('debug_info'):
+                        continue
+                    new_elements.append(symbol)
+                rule.rhs.elements = new_elements
+                rule.action.params = rule.action.params[:-1]
+            return rule
+
+        def rewrite_terms_optional_to_star_term(rule: Rule) -> Rule:
+            """Replace terms? with term*."""
+            if isinstance(rule.rhs, Sequence):
+                for i, symbol in enumerate(rule.rhs.elements):
+                    if symbol == Option(Nonterminal('terms')):
+                        rule.rhs.elements[i] = Star(Nonterminal('term'))
+            return rule
+
+        def rewrite_terms_optional_to_star_relterm(rule: Rule) -> Rule:
+            """Replace terms? with relterm* and STRING with name."""
+            if isinstance(rule.rhs, Sequence):
+                for i, symbol in enumerate(rule.rhs.elements):
+                    if symbol == Option(Nonterminal('terms')):
+                        rule.rhs.elements[i] = Star(Nonterminal('relterm'))
+                    elif symbol == NamedTerminal('STRING'):
+                        rule.rhs.elements[i] = Nonterminal('name')
+            return rule
+
+        def rewrite_primitive_rule(rule: Rule) -> Rule:
+            """Replace STRING with name and term* with relterm* in primitive rules."""
+            if isinstance(rule.rhs, Sequence) and len(rule.rhs.elements) >= 2:
+                if (rule.rhs.elements[0] == LitTerminal('(') and
+                    rule.rhs.elements[1] == LitTerminal('primitive')):
+                    for i, symbol in enumerate(rule.rhs.elements):
+                        if symbol == NamedTerminal('STRING'):
+                            rule.rhs.elements[i] = Nonterminal('name')
+                        elif isinstance(symbol, Star):
+                            if symbol.rhs == Nonterminal('term'):
+                                rule.rhs.elements[i] = Star(Nonterminal('relterm'))
+            return rule
+
+        def rewrite_exists(rule: Rule) -> Rule:
+            """Rewrite exists rule to use bindings and formula instead of abstraction."""
+            if isinstance(rule.rhs, Sequence):
+                new_elements = []
+                for elem in rule.rhs.elements:
+                    if elem == Nonterminal('abstraction'):
+                        new_elements.append(Nonterminal('bindings'))
+                        new_elements.append(Nonterminal('formula'))
+                    else:
+                        new_elements.append(elem)
+                rule.rhs.elements = new_elements
+            return rule
+
+        def rewrite_drop_INT_from_instructions(rule: Rule) -> Rule:
+            """Drop INT argument from penultimate position."""
+            if isinstance(rule.rhs, Sequence) and len(rule.rhs.elements) >= 2:
+                penultimate_idx = len(rule.rhs.elements) - 2
+                if penultimate_idx >= 0:
+                    elem = rule.rhs.elements[penultimate_idx]
+                    if elem == NamedTerminal('INT'):
+                        rule.rhs.elements.pop(penultimate_idx)
+            return rule
+
+        def rewrite_relatom_rule(rule: Rule) -> Rule:
+            """Replace STRING with name and terms? with relterm*."""
+            if isinstance(rule.rhs, Sequence):
+                for i, symbol in enumerate(rule.rhs.elements):
+                    if symbol == NamedTerminal('STRING'):
+                        rule.rhs.elements[i] = Nonterminal('name')
+                    elif symbol == Option(Nonterminal('terms')):
+                        rule.rhs.elements[i] = Star(Nonterminal('relterm'))
+            return rule
+
+        def rewrite_attribute_rule(rule: Rule) -> Rule:
+            """Replace STRING with name and args? with value*."""
+            if isinstance(rule.rhs, Sequence):
+                for i, symbol in enumerate(rule.rhs.elements):
+                    if symbol == NamedTerminal('STRING'):
+                        rule.rhs.elements[i] = Nonterminal('name')
+                    elif symbol == Option(Nonterminal('args')):
+                        rule.rhs.elements[i] = Star(Nonterminal('value'))
+            return rule
+
+        def compose(*funcs: Callable[[Rule], Rule]) -> Callable[[Rule], Rule]:
+            """Compose multiple rewrite functions."""
+            def composed(rule: Rule) -> Rule:
+                for f in funcs:
+                    rule = f(rule)
+                return rule
+            return composed
+
+        return {
+            'output': rewrite_string_to_name_optional,
+            'abort': rewrite_string_to_name_optional,
+            'ffi': compose(rewrite_string_to_name, rewrite_terms_optional_to_star_term),
+            'pragma': compose(rewrite_string_to_name, rewrite_terms_optional_to_star_term),
+            'fragment': rewrite_fragment_remove_debug_info,
+            'atom': rewrite_terms_optional_to_star_term,
+            'rel_atom': rewrite_terms_optional_to_star_relterm,
+            'primitive': rewrite_primitive_rule,
+            'exists': rewrite_exists,
+            'upsert': rewrite_drop_INT_from_instructions,
+            'monoid_def': rewrite_drop_INT_from_instructions,
+            'monus_def': rewrite_drop_INT_from_instructions,
+            'relatom': rewrite_relatom_rule,
+            'attribute': rewrite_attribute_rule,
+        }
 
     def generate(self, start_message: str = "Transaction") -> Grammar:
         """Generate complete grammar with prepopulated and message-derived rules."""
@@ -278,6 +412,7 @@ class GrammarGenerator:
         ))
 
         # TODO PR can we just use the naive rules for these?
+        # Otherwise, we should at least loop over the monoid messages and add these cases.
         add_rule(Rule(
             lhs=Nonterminal("monoid"),
             rhs=Sequence([Nonterminal("type"), LitTerminal("::"), Nonterminal("monoid_op")]),
@@ -450,141 +585,16 @@ class GrammarGenerator:
             ), is_final=False)
 
     def _post_process_grammar(self) -> None:
-        """Apply grammar rewrite rules."""
-        self._rewrite_string_to_name_optional()
-        self._rewrite_string_to_name()
-        self._rewrite_fragment_remove_debug_info()
-        self._rewrite_terms_optional_to_star()
-        self._rewrite_primitive_rule()
-        self._rewrite_exists()
-        self._rewrite_drop_INT_from_instructions()
-        self._rewrite_relatom_rule()
-        self._rewrite_attribute_rule()
+        """Apply grammar post-processing."""
         self._combine_identical_rules()
 
         self.expected_unreachable.add("debug_info")
         self.expected_unreachable.add("debug_info_ids")
         self.expected_unreachable.add("ivmconfig")
-
-    def _rewrite_string_to_name_optional(self) -> None:
-        """Replace STRING with name? in output and abort rules."""
-        for rules_list in self.grammar.rules.values():
-            for rule in rules_list:
-                if rule.lhs.name in ['output', 'abort']:
-                    if isinstance(rule.rhs, Sequence):
-                        for i, symbol in enumerate(rule.rhs.elements):
-                            if symbol == NamedTerminal('STRING'):
-                                rule.rhs.elements[i] = Option(Nonterminal('name'))
-
-    def _rewrite_string_to_name(self) -> None:
-        """Replace STRING with name in ffi and pragma rules."""
-        for rules_list in self.grammar.rules.values():
-            for rule in rules_list:
-                if rule.lhs.name in ['ffi', 'pragma']:
-                    if isinstance(rule.rhs, Sequence):
-                        for i, symbol in enumerate(rule.rhs.elements):
-                            if isinstance(symbol, NamedTerminal) and symbol.name == 'STRING':
-                                rule.rhs.elements[i] = Nonterminal('name')
-
-    def _rewrite_fragment_remove_debug_info(self) -> None:
-        """Remove debug_info from fragment rules."""
-        for rules_list in self.grammar.rules.values():
-            for rule in rules_list:
-                if rule.lhs.name == 'fragment':
-                    if isinstance(rule.rhs, Sequence):
-                        new_elements = []
-                        for symbol in rule.rhs.elements:
-                            if isinstance(symbol, Option):
-                                if isinstance(symbol.rhs, Nonterminal) and symbol.rhs.name == 'debug_info':
-                                    continue
-                            elif isinstance(symbol, Nonterminal) and symbol.name == 'debug_info':
-                                continue
-                            new_elements.append(symbol)
-                        rule.rhs.elements = new_elements
-                        rule.action.params = rule.action.params[:-1]
-
-    def _rewrite_terms_optional_to_star(self) -> None:
-        """Replace terms? with term* in pragma, atom, ffi, and reduce rules, and with relterm* in rel_atom."""
-        for rules_list in self.grammar.rules.values():
-            for rule in rules_list:
-                if rule.lhs.name in ['pragma', 'atom', 'ffi']:
-                    if isinstance(rule.rhs, Sequence):
-                        for i, symbol in enumerate(rule.rhs.elements):
-                            if symbol == Option(Nonterminal('terms')):
-                                rule.rhs.elements[i] = Star(Nonterminal('term'))
-                elif rule.lhs.name == 'rel_atom':
-                    if isinstance(rule.rhs, Sequence):
-                        for i, symbol in enumerate(rule.rhs.elements):
-                            if symbol == Option(Nonterminal('terms')):
-                                rule.rhs.elements[i] = Star(Nonterminal('relterm'))
-                            elif symbol == NamedTerminal('STRING'):
-                                rule.rhs.elements[i] = Nonterminal('name')
-
-    def _rewrite_primitive_rule(self) -> None:
-        """Replace STRING with name and term* with relterm* in primitive rules."""
-        for rules_list in self.grammar.rules.values():
-            for rule in rules_list:
-                if rule.lhs.name == 'primitive':
-                    if isinstance(rule.rhs, Sequence) and len(rule.rhs.elements) >= 2:
-                        if (isinstance(rule.rhs.elements[0], LitTerminal) and rule.rhs.elements[0].name == '(' and
-                            isinstance(rule.rhs.elements[1], LitTerminal) and rule.rhs.elements[1].name == 'primitive'):
-                            for i, symbol in enumerate(rule.rhs.elements):
-                                if isinstance(symbol, NamedTerminal) and symbol.name == 'STRING':
-                                    rule.rhs.elements[i] = Nonterminal('name')
-                                elif isinstance(symbol, Star):
-                                    if isinstance(symbol.rhs, Nonterminal) and symbol.rhs.name == 'term':
-                                        rule.rhs.elements[i] = Star(Nonterminal('relterm'))
-
-    def _rewrite_exists(self) -> None:
-        """Rewrite exists rule to use bindings and formula instead of abstraction."""
-        for rules_list in self.grammar.rules.values():
-            for rule in rules_list:
-                if rule.lhs.name == 'exists':
-                    if isinstance(rule.rhs, Sequence):
-                        new_elements = []
-                        for elem in rule.rhs.elements:
-                            if elem == Nonterminal('abstraction'):
-                                new_elements.append(Nonterminal('bindings'))
-                                new_elements.append(Nonterminal('formula'))
-                            else:
-                                new_elements.append(elem)
-                        rule.rhs.elements = new_elements
-
-    def _rewrite_drop_INT_from_instructions(self) -> None:
-        """Drop INT argument from penultimate position in upsert, monoid_def, and monus_def rules."""
-        for rules_list in self.grammar.rules.values():
-            for rule in rules_list:
-                if rule.lhs.name in ['upsert', 'monoid_def', 'monus_def'] and isinstance(rule.rhs, Sequence):
-                    if len(rule.rhs.elements) >= 2:
-                        penultimate_idx = len(rule.rhs.elements) - 2
-                        if penultimate_idx >= 0:
-                            elem = rule.rhs.elements[penultimate_idx]
-                            if isinstance(elem, NamedTerminal) and elem.name == 'INT':
-                                rule.rhs.elements.pop(penultimate_idx)
-
-    def _rewrite_relatom_rule(self) -> None:
-        """Replace STRING with name and terms? with relterm* in relatom rules."""
-        for rules_list in self.grammar.rules.values():
-            for rule in rules_list:
-                if rule.lhs.name == 'relatom':
-                    if isinstance(rule.rhs, Sequence):
-                        for i, symbol in enumerate(rule.rhs.elements):
-                            if symbol == NamedTerminal('STRING'):
-                                rule.rhs.elements[i] = Nonterminal('name')
-                            elif symbol == Option(Nonterminal('terms')):
-                                rule.rhs.elements[i] = Star(Nonterminal('relterm'))
-
-    def _rewrite_attribute_rule(self) -> None:
-        """Replace STRING with name and args? with value* in attribute rules."""
-        for rules_list in self.grammar.rules.values():
-            for rule in rules_list:
-                if rule.lhs.name == 'attribute':
-                    if isinstance(rule.rhs, Sequence):
-                        for i, symbol in enumerate(rule.rhs.elements):
-                            if symbol == NamedTerminal('STRING'):
-                                rule.rhs.elements[i] = Nonterminal('name')
-                            elif symbol == Option(Nonterminal('args')):
-                                rule.rhs.elements[i] = Star(Nonterminal('value'))
+        self.expected_unreachable.add("min_monoid")
+        self.expected_unreachable.add("sum_monoid")
+        self.expected_unreachable.add("max_monoid")
+        self.expected_unreachable.add("or_monoid")
 
     def _combine_identical_rules(self) -> None:
         """Combine rules with identical RHS patterns into a single rule with multiple alternatives."""
