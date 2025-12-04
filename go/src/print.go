@@ -1,7 +1,6 @@
 package lqp
 
 import (
-	"encoding/hex"
 	"fmt"
 	"math"
 	"math/big"
@@ -117,30 +116,17 @@ func uint128ToString(low, high uint64) string {
 	return result.String()
 }
 
-// Convert uint128 to hex string (32 hex digits, zero-padded)
+// Convert uint128 to hex string (without unnecessary leading zeros)
 func uint128ToHexString(low, high uint64) string {
-	return fmt.Sprintf("%016x%016x", high, low)
+	if high == 0 {
+		return fmt.Sprintf("%x", low)
+	}
+	return fmt.Sprintf("%x%016x", high, low)
 }
 
 // Helper to convert relation ID to string
 func relationIdToString(rid *pb.RelationId) string {
 	return uint128ToString(rid.GetIdLow(), rid.GetIdHigh())
-}
-
-// ToString converts an LQP node to its string representation
-func ToString(node LqpNode, options map[string]bool) string {
-	if options == nil {
-		options = make(map[string]bool)
-	}
-
-	switch n := node.(type) {
-	case *pb.Transaction:
-		return programToStr(n, options)
-	case *pb.Fragment:
-		return fragmentToStr(n, 0, make(map[string]string), options)
-	default:
-		panic(fmt.Sprintf("ToString not implemented for top-level node type %T", node))
-	}
 }
 
 func programToStr(node *pb.Transaction, options map[string]bool) string {
@@ -201,6 +187,11 @@ func programToStr(node *pb.Transaction, options map[string]bool) string {
 	}
 
 	return s
+}
+
+// ProgramToStr is an exported wrapper for programToStr
+func ProgramToStr(node *pb.Transaction, options map[string]bool) string {
+	return programToStr(node, options)
 }
 
 func configDictToStr(config map[string]interface{}, indentLevel int, options map[string]bool, conf StyleConfig) string {
@@ -665,12 +656,12 @@ func toStr(node interface{}, indentLevel int, options map[string]bool, debugInfo
 		}
 
 	case *pb.FragmentId:
-		// Encode fragment ID as hex, but prefix with 'f' to ensure it's always a symbol
-		hexId := hex.EncodeToString(n.GetId())
-		if hexId == "" {
-			hexId = "empty"
+		// Decode fragment ID as string (it's stored as UTF-8 bytes)
+		idStr := string(n.GetId())
+		if idStr == "" {
+			idStr = "empty"
 		}
-		lqp += ind + ":" + conf.Uname("f"+hexId)
+		lqp += ind + ":" + conf.Uname(idStr)
 
 	case *pb.Read:
 		if demand := n.GetDemand(); demand != nil {
