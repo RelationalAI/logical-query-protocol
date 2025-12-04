@@ -291,17 +291,28 @@ def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optio
         return _generate_parse_rhs_ir_sequence(rhs, rule, grammar)
     elif isinstance(rhs, LitTerminal):
         # Build IR: Call(Builtin('consume_literal'), [Lit(literal)])
-        return Call(Builtin('consume_literal'), [Lit(rhs.name)])
+        parse_expr = Call(Builtin('consume_literal'), [Lit(rhs.name)])
+        if rule and rule.action:
+            return Seq([parse_expr, _apply(rule.action, [])])
+        return parse_expr
     elif isinstance(rhs, NamedTerminal):
         # Build IR: Call(Builtin('consume_terminal'), [Lit(terminal.name)])
-        return Call(Builtin('consume_terminal'), [Lit(rhs.name)])
+        parse_expr = Call(Builtin('consume_terminal'), [Lit(rhs.name)])
+        if rule and rule.action:
+            var_name = gensym(rule.action.params[0] if rule.action.params else "arg")
+            return Seq([Assign(var_name, parse_expr), _apply(rule.action, [Var(var_name)])])
+        return parse_expr
     elif isinstance(rhs, Nonterminal):
         # Build IR: ParseNonterminal(nonterminal, [])
-        return Call(ParseNonterminal(rhs), [])
+        parse_expr = Call(ParseNonterminal(rhs), [])
+        if rule and rule.action:
+            var_name = gensym(rule.action.params[0] if rule.action.params else "arg")
+            return Seq([Assign(var_name, parse_expr), _apply(rule.action, [Var(var_name)])])
+        return parse_expr
     elif isinstance(rhs, Option):
         if isinstance(rhs.rhs, NamedTerminal):
             term = rhs.rhs
-            return IfElse(
+            parse_expr = IfElse(
                 Call(Builtin('match_terminal'), [Lit(term.name)]),
                 Call(Builtin('consume_terminal'), [Lit(term.name)]),
                 Lit(None)
@@ -315,12 +326,15 @@ def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optio
                 rules = rules + [Rule(lhs, Sequence([]), Lambda(params=[], body=Lit(None)))]
             epsilon_index = findfirst(lambda rule: is_epsilon(rule.rhs), rules)
             predictor = _build_predictor(grammar, lhs, rules)
-            body = IfElse(
+            parse_expr = IfElse(
                 Call(Builtin('not_equal'), [predictor, Lit(epsilon_index)]),
                 _generate_parse_rhs_ir(rhs.rhs, None, grammar),
                 Lit(None)
             )
-            return body
+        if rule and rule.action:
+            var_name = gensym(rule.action.params[0] if rule.action.params else "arg")
+            return Seq([Assign(var_name, parse_expr), _apply(rule.action, [Var(var_name)])])
+        return parse_expr
 
 
     elif isinstance(rhs, Plus):
@@ -329,7 +343,7 @@ def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optio
     elif isinstance(rhs, Star):
         if isinstance(rhs.rhs, NamedTerminal):
             term = rhs.rhs
-            return While(
+            parse_expr = While(
                 Call(Builtin('match_terminal'), [Lit(term.name)]),
                 Call(Builtin('consume_terminal'), [Lit(term.name)])
             )
@@ -344,7 +358,7 @@ def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optio
             predictor = _build_predictor(grammar, lhs, rules)
             x = gensym('x')
             xs = gensym('xs')
-            body = Let(
+            parse_expr = Let(
                     xs,
                     Call(Builtin('make_list'), []),
                     Seq([
@@ -355,7 +369,10 @@ def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optio
                         Var(xs)
                     ])
             )
-            return body
+        if rule and rule.action:
+            var_name = gensym(rule.action.params[0] if rule.action.params else "arg")
+            return Seq([Assign(var_name, parse_expr), _apply(rule.action, [Var(var_name)])])
+        return parse_expr
     else:
         assert False, f"Unsupported Rhs type: {type(rhs)}"
 
