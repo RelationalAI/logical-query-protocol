@@ -111,24 +111,23 @@ class Rule:
     """Grammar rule (production)."""
     lhs: Nonterminal
     rhs: Rhs
-    action: Optional['TargetExpr'] = None
+    action: 'Lambda'
     source_type: Optional[str] = None  # Track the protobuf type this rule came from
 
     def to_pattern(self, grammar: Optional['Grammar'] = None) -> str:
         """Convert RHS to pattern string."""
         return str(self.rhs)
 
-    def get_action(self) -> Optional['TargetExpr']:
+    def get_action(self) -> Optional['Lambda']:
         """Get action as TargetExpr."""
         return self.action
 
     def __post_init__(self):
         assert isinstance(self.rhs, Rhs)
-        if isinstance(self.action, Lambda):
-            rhs_len = _count_nonliteral_rhs_elements(self.rhs)
-            action_params = len(self.action.params)
-            assert action_params == rhs_len, \
-                f"Action for {self.lhs.name} has {action_params} parameters but RHS has {rhs_len} non-literal element{'' if rhs_len == 1 else 's'}: {self.rhs}"
+        rhs_len = _count_nonliteral_rhs_elements(self.rhs)
+        action_params = len(self.action.params)
+        assert action_params == rhs_len, \
+            f"Action for {self.lhs.name} has {action_params} parameters but RHS has {rhs_len} non-literal element{'' if rhs_len == 1 else 's'}: {self.rhs}"
 
 @dataclass
 class Token:

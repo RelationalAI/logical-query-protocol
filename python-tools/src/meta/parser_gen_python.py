@@ -13,7 +13,7 @@ from meta.analysis import check_ll_k
 
 from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Plus, Option, get_literals
 from .target import Lambda, Call
-from .codegen_python import generate_python
+from .codegen_python import generate_python, generate_python_def
 from .parser_gen import  _generate_parse_rhs_ir, generate_rules
 
 
@@ -24,11 +24,11 @@ def generate_parser_python(grammar: Grammar, reachable: Set[Nonterminal]) -> str
     # Generate prologue (lexer, token, error, helper classes)
     prologue = _generate_prologue(grammar, is_ll2, conflicts)
 
-    rules = generate_rules(grammar)    # Generate parser methods as strings
+    defns = generate_rules(grammar)    # Generate parser methods as strings
     lines = []
-    for rule in rules:
+    for defn in defns:
         lines.append("")
-        lines.append(generate_python(rule, "    "))
+        lines.append(generate_python_def(defn, "    "))
     lines.append("")
 
     # Generate epilogue (parse function)
@@ -56,8 +56,7 @@ def _generate_prologue(grammar: Grammar, is_ll2: bool, conflicts: List[Nontermin
     if not is_ll2:
         lines.append("# WARNING: Grammar is not LL(2). Conflicts detected:")
         for conflict in conflicts:
-            for line in conflict.split('\n'):
-                lines.append(f"# {line}")
+            lines.append(f"# {conflict}")
         lines.append("")
 
     lines.append("class ParseError(Exception):")

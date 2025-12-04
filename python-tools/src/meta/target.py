@@ -27,6 +27,7 @@ class TargetExpr(TargetNode):
     pass
 
 
+
 @dataclass
 class Var(TargetExpr):
     """Variable reference."""
@@ -98,7 +99,7 @@ class Constructor(TargetExpr):
 
 @dataclass
 class Call(TargetExpr):
-    """Function call.
+    """Function call expression.
 
     func: Expression that evaluates to the function to call (typically Var or Symbol)
     args: List of argument expressions
@@ -116,21 +117,6 @@ class Call(TargetExpr):
         for arg in self.args:
             assert isinstance(arg, TargetExpr), f"Invalid argument expression in {self}: {arg}"
 
-def apply(func: 'Lambda', args: Sequence['TargetExpr']) -> 'TargetExpr':
-    if len(args) == 0 and len(func.params) == 0:
-        return func.body
-    if len(func.params) > 0 and len(args) > 0:
-        body = apply(
-            Lambda(params=func.params[1:], body=func.body, return_type=func.return_type),
-            args[1:]
-        )
-        # TODO PR do substitution correctly
-        if isinstance(args[0], Var) and func.params[0] == args[0].name:
-            return body
-        return Let(func.params[0], args[0], body)
-    # TODO
-    # assert False, f"Invalid application of {func} to {args}"
-    return Call(func, args)
 
 @dataclass
 class Lambda(TargetExpr):
@@ -180,13 +166,10 @@ class IfElse(TargetExpr):
     """If-else conditional expression."""
     condition: TargetExpr
     then_branch: TargetExpr
-    else_branch: Optional[TargetExpr] = None
+    else_branch: TargetExpr
 
     def __str__(self) -> str:
-        if self.else_branch:
-            return f"if {self.condition} then {self.then_branch} else {self.else_branch}"
-        else:
-            return f"if {self.condition} then {self.then_branch}"
+        return f"if {self.condition} then {self.then_branch} else {self.else_branch}"
 
     def __post_init__(self):
         assert isinstance(self.condition, TargetExpr), f"Invalid if condition expression in {self}: {self.condition}"
@@ -203,8 +186,10 @@ class Seq(TargetExpr):
 
     def __post_init__(self):
         assert isinstance(self.exprs, list), f"Invalid sequence of expressions in {self}: {self.exprs}"
-        for expr in self.exprs:
-            assert isinstance(expr, TargetExpr), f"Invalid expression in sequence: {expr}"
+        assert len(self.exprs) > 1, f"Sequence must contain at least two expressions"
+        for expr in self.exprs[:-1]:
+            assert isinstance(expr, TargetExpr), f"Invalid statement in sequence: {expr}"
+        assert isinstance(self.exprs[-1], TargetExpr), f"Invalid expression in sequence: {self.exprs[-1]}"
 
 
 @dataclass
@@ -224,15 +209,12 @@ class While(TargetExpr):
 class TryCatch(TargetExpr):
     """Try-catch exception handling."""
     try_body: TargetExpr
+    catch_body: TargetExpr
     exception_type: Optional[str] = None
-    catch_body: Optional[TargetExpr] = None
 
     def __str__(self) -> str:
-        if self.catch_body:
-            exc_str = f" {self.exception_type}" if self.exception_type else ""
-            return f"try {self.try_body} catch{exc_str} {self.catch_body}"
-        else:
-            return f"try {self.try_body}"
+        exc_str = f" {self.exception_type}" if self.exception_type else ""
+        return f"try {self.try_body} catch{exc_str} {self.catch_body}"
 
 
 @dataclass
@@ -250,6 +232,18 @@ class Assign(TargetExpr):
     def __post_init__(self):
         assert isinstance(self.var, str), f"Invalid assign LHS expression in {self}: {self.var}"
         assert isinstance(self.expr, TargetExpr), f"Invalid assign RHS expression in {self}: {self.expr}"
+
+
+@dataclass
+class Return(TargetExpr):
+    """Return statement: return expr."""
+    expr: TargetExpr
+
+    def __str__(self) -> str:
+        return f"return {self.expr}"
+
+    def __post_init__(self):
+        assert isinstance(self.expr, TargetExpr), f"Invalid return expression in {self}: {self.expr}"
 
 
 @dataclass
@@ -359,6 +353,7 @@ __all__ = [
     'While',
     'TryCatch',
     'Assign',
+    'Return',
     'Type',
     'BaseType',
     'TupleType',

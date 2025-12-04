@@ -89,7 +89,7 @@ class GrammarGenerator:
             "disjunction": "or",
         }
 
-    def _generate_action(self, message_name: str, rhs_elements: List[Rhs], field_names: Optional[List[str]] = None) -> TargetExpr:
+    def _generate_action(self, message_name: str, rhs_elements: List[Rhs], field_names: Optional[List[str]] = None) -> Lambda:
         """Generate semantic action to construct protobuf message from parsed elements."""
 
         # Create parameters for all RHS elements
@@ -852,27 +852,28 @@ class GrammarGenerator:
             if field.is_repeated:
                 should_inline = (message_name, field.name) in self.inline_fields
                 if should_inline:
-                    if self.grammar.has_rule(wrapper_rule_name):
+                    if self.grammar.has_rule(Nonterminal(wrapper_rule_name)):
                         return Nonterminal(wrapper_rule_name)
                     else:
                         return Star(Nonterminal(type_rule_name))
                 else:
                     literal_name = self.rule_literal_renames.get(field_rule_name, field_rule_name)
-                    if not self.grammar.has_rule(wrapper_rule_name):
+                    if not self.grammar.has_rule(Nonterminal(wrapper_rule_name)):
                         wrapper_rule = Rule(
                             lhs=Nonterminal(wrapper_rule_name),
                             rhs=Sequence([LitTerminal("("), LitTerminal(literal_name), Star(Nonterminal(type_rule_name)), LitTerminal(")")]),
+                            action=Lambda(params=['value'], body=Var('value')),
                             source_type=field.type
                         )
                         self._add_rule(wrapper_rule)
                     return Option(Nonterminal(wrapper_rule_name))
             elif field.is_optional:
-                if self.grammar.has_rule(wrapper_rule_name):
+                if self.grammar.has_rule(Nonterminal(wrapper_rule_name)):
                     return Option(Nonterminal(wrapper_rule_name))
                 else:
                     return Option(Nonterminal(type_rule_name))
             else:
-                if self.grammar.has_rule(wrapper_rule_name):
+                if self.grammar.has_rule(Nonterminal(wrapper_rule_name)):
                     return Nonterminal(wrapper_rule_name)
                 else:
                     return Nonterminal(type_rule_name)

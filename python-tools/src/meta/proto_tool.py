@@ -75,10 +75,10 @@ def main():
         proto_parser.parse_file(proto_file)
 
     generator = GrammarGenerator(proto_parser, verbose=True)
-    grammar_obj = generator.generate(args.start)
+    grammar = generator.generate(args.start)
 
-    reachable = grammar_obj.check_reachability()
-    unreachable = grammar_obj.get_unreachable_rules()
+    reachable = grammar.check_reachability()
+    unreachable = grammar.get_unreachable_rules()
     unexpected_unreachable = [r for r in unreachable if r not in generator.expected_unreachable]
     if unexpected_unreachable:
         print("Warning: Unreachable rules detected:")
@@ -89,18 +89,20 @@ def main():
     outputs = []
 
     if args.grammar:
-        actions_text = generate_semantic_actions(grammar_obj, reachable)
+        actions_text = generate_semantic_actions(grammar, reachable)
         outputs.append(("grammar", actions_text))
 
     if args.parser:
         if args.parser == "python":
-            parser_text = generate_parser_python(grammar_obj, reachable)
+            parser_text = generate_parser_python(grammar, reachable)
             outputs.append((f"parser-{args.parser}", parser_text))
 
     if args.pretty_printer:
         if args.pretty_printer == "python":
-            printer_text = generate_pretty_printer_python(grammar_obj, reachable)
-            outputs.append((f"pretty-printer-{args.pretty_printer}", printer_text))
+            # TODO PR
+            # printer_text = generate_pretty_printer_python(grammar)
+            # outputs.append((f"pretty-printer-{args.pretty_printer}", printer_text))
+            pass
 
     if args.output:
         if len(outputs) == 1:

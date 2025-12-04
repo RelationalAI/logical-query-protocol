@@ -7,22 +7,12 @@ recursive-descent parsers from grammars, including:
 - Grammar analysis and transformation
 """
 
-from typing import Dict, List, Optional, Set, Tuple
+from re import L
+from typing import Dict, List, Optional, Set, Tuple, Callable, Sequence as PySequence
 
 from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Plus, Option, Terminal, is_epsilon, rhs_elements, Sequence
-from .target import Lambda, Call, ParseNonterminalDef, Var, Lit, Symbol, Builtin, Let, IfElse, FunDef, BaseType, ListType, TargetExpr, Seq, While, TryCatch, Assign, Type, ParseNonterminal, ParseNonterminalDef, apply
+from .target import Lambda, Call, ParseNonterminalDef, Var, Lit, Symbol, Builtin, Let, IfElse, FunDef, BaseType, ListType, TargetExpr, Seq, While, TryCatch, Assign, Type, ParseNonterminal, ParseNonterminalDef, Return, Constructor
 
-
-def _make_call(func: TargetExpr, args: List[TargetExpr] = None) -> Call:
-    """Create a function call.
-
-    Args:
-        func: Function expression (typically Var or Symbol)
-        args: List of argument expressions
-    """
-    if args is None:
-        args = []
-    return Call(func, args)
 
 def generate_rules(grammar: Grammar) -> List[ParseNonterminalDef]:
     # Generate parser methods as strings
@@ -65,22 +55,43 @@ def _generate_parse_method(
             if is_epsilon(rule.rhs):
                 continue
             tail = IfElse(
-                Call(Builtin('equal'), [Call(predictor, []), Lit(i)]),
+                Call(Builtin('equal'), [predictor, Lit(i)]),
                 _generate_parse_rhs_ir(rule.rhs, rule, grammar),
                 tail)
 
         rhs = tail
 
+    rhs = _normalize(rhs, lambda x: Return(x))
+
     return ParseNonterminalDef(lhs, [], BaseType('Any'), rhs)
+
+def _normalize(expr: TargetExpr, k: Callable[[TargetExpr], TargetExpr] = lambda x: x) -> TargetExpr:
+    if isinstance(expr, Return):
+        return Return(_normalize(expr))
+    if isinstance(expr, Assign):
+        return _normalize(expr.expr, lambda rhs: k(Assign(expr.var, rhs)))
+    if isinstance(expr, Seq):
+        return Seq([_normalize(e) for e in expr.exprs[:-1]] + [_normalize(expr.exprs[-1], k)])
+    if isinstance(expr, IfElse):
+        return IfElse(_normalize(expr.condition), _normalize(expr.then_branch, k), _normalize(expr.else_branch, k))
+    if isinstance(expr, Let):
+        return Let(expr.var, _normalize(expr.init), _normalize(expr.body, k))
+    if isinstance(expr, TryCatch):
+        return TryCatch(_normalize(expr.try_body, k), _normalize(expr.catch_body, k), expr.exception_type)
+    if isinstance(expr, Call):
+        return k(Call(_normalize(expr.func), [_normalize(arg) for arg in expr.args]))
+    if isinstance(expr, Lambda):
+        return k(Lambda(expr.params, _normalize(expr.body), expr.return_type))
+    if isinstance(expr, While):
+        return k(While(_normalize(expr.condition), _normalize(expr.body)))
+    if isinstance(expr, (Var, Lit, Symbol, Constructor, Builtin)):
+        return k(expr)
+    return k(expr)
 
 def _build_predictor(grammar, lhs, rules):
     assert len(rules) > 1
-
-    for i, rule in enumerate(rules):
-        if is_epsilon(rule.rhs):
-            continue
-
-    predictor = Call(Builtin('predict'), [Lit(lhs.name), Lit(len(rules))])
+    # TODO PR Placeholder!
+    predictor = Call(Builtin('predict'), [Lit(lhs.name)])
     return predictor
 
 def _generate_decision_tree(tail: TargetExpr, token_map: Dict, rules: List, nt_name: str,
@@ -129,11 +140,11 @@ def _generate_decision_tree(tail: TargetExpr, token_map: Dict, rules: List, nt_n
             for bt_idx, rule_idx in enumerate(sorted(rule_indices)):
                 rule = rules[rule_idx]
                 try_parse = _generate_parse_rhs_ir(rule.rhs, rule, grammar)
-                lines = TryCatch(try_parse, 'ParseError', Seq([
+                lines = TryCatch(try_parse, Seq([
                     Call(Builtin('restore_position'), [Var('saved_pos')]),
-                    lines
-                ]))
-            body = Let(Var('saved_pos'), Call(Builtin('save_position'), []), lines)
+                    lines,
+                ]), 'ParseError')
+            body = Let('saved_pos', Call(Builtin('save_position'), []), lines)
         elif depth + 1 < max_depth:
             sub_map = {}
             for seq, rule_idx in items:
@@ -251,12 +262,12 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, rule: Optional[Rule] = None, 
         action_lambda = rule.action
     else:
         # Create default Lambda that returns list of arguments
-        # Lambda([arg0, arg1, ...], MakeList([Var(arg0), Var(arg1), ...]))
+        # Lambda([arg0, arg1, ...], Tuple([Var(arg0), Var(arg1), ...]))
         list_expr = Call(Builtin('Tuple'), arg_vars)
         action_lambda = Lambda(param_names, list_expr)
 
     # Call the Lambda with the variables
-    lambda_call = apply(action_lambda, arg_vars)
+    lambda_call = _apply(action_lambda, arg_vars)
 
     # Add lambda call to expression list
     exprs.append(lambda_call)
@@ -266,6 +277,22 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, rule: Optional[Rule] = None, 
         return exprs[0]
     else:
         return Seq(exprs)
+
+def _apply(func: 'Lambda', args: PySequence['TargetExpr']) -> 'TargetExpr':
+    if len(args) == 0 and len(func.params) == 0:
+        return func.body
+    if len(func.params) > 0 and len(args) > 0:
+        body = _apply(
+            Lambda(params=func.params[1:], body=func.body, return_type=func.return_type),
+            args[1:]
+        )
+        # TODO PR do substitution correctly
+        if isinstance(args[0], Var) and func.params[0] == args[0].name:
+            return body
+        return Let(func.params[0], args[0], body)
+    # TODO
+    # assert False, f"Invalid application of {func} to {args}"
+    return Call(func, args)
 
 def _generate_parse_rhs_ir1(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optional[Grammar] = None) -> Optional[TargetExpr]:
     """Generate IR for parsing an RHS.
@@ -370,7 +397,7 @@ def _build_decision_tree_ir(token_map: Dict, rules: List[Rule], nt_name: str,
 
     # Handle the final else case
     # Check if any rule is epsilon (empty list)
-    has_epsilon = any(len(rule.rhs) == 0 for rule in rules)
+    has_epsilon = any(is_epsilon(rule.rhs) for rule in rules)
 
     if has_epsilon:
         final_else = Lit(None)
@@ -420,76 +447,18 @@ def _build_backtracking_ir(rule_indices: List[int], rules: List[Rule], grammar: 
     for i in range(len(rule_indices) - 2, -1, -1):
         rule_idx = rule_indices[i]
         rule = rules[rule_idx]
-        try_body = _generate_parse_rhs_ir(Sequence(rule.rhs), rule, grammar)
+        try_body = _generate_parse_rhs_ir(rule.rhs, rule, grammar)
 
         # Restore position in catch
         restore = Call(Builtin('restore_position'), [Var('saved_pos')])
 
         body = TryCatch(
             try_body=try_body,
+            catch_body=Seq([restore, body]),
             exception_type='ParseError',
-            catch_body=Seq([restore, body])
         )
 
     # Save position at the start
     save = Assign(var='saved_pos', expr=Call(Builtin('save_position'), []))
 
     return Seq([save, body])
-
-
-def generate_parse_method_ir(nt_name: str, rules: List[Rule],
-                              is_continuation: bool, grammar: Grammar,
-                              nullable: Dict[str, bool]) -> FunDef:
-    """Generate parse method as FunDef IR.
-
-    Returns a FunDef with:
-    - name: parse_{nt_name}
-    - params: [(prefix_results, Type)] if is_continuation else []
-    - return_type: BaseType('Any')
-    - body: Seq of parse logic
-    """
-    func_name = f"parse_{nt_name}"
-
-    # Build parameters
-    if is_continuation:
-        params = [("prefix_results", ListType(BaseType('Any')))]
-    else:
-        params = []
-
-    # Build body
-    if len(rules) == 1:
-        # Single rule - simpler body
-        rule = rules[0]
-        body = _generate_parse_rhs_ir(Sequence(rule.rhs), rule, grammar)
-    else:
-        # Multiple rules - need decision tree
-        from .analysis import _compute_rhs_elem_first_k
-
-        # Use fixed k=2 lookahead
-        min_k = 2
-        first_k_final = grammar.compute_first_k(min_k, nullable)
-
-        # Collect sequences and group by tokens progressively
-        first_token_to_rules = {}
-
-        for rule_idx, rule in enumerate(rules):
-            sequences = _compute_rhs_elem_first_k(rule.rhs, first_k_final, nullable, min_k)
-
-            for seq in sequences:
-                if len(seq) == 0:
-                    continue
-                first_token = seq[0]
-
-                if first_token not in first_token_to_rules:
-                    first_token_to_rules[first_token] = []
-                first_token_to_rules[first_token].append((seq, rule_idx))
-
-        # Build decision tree as IR
-        body = _build_decision_tree_ir(first_token_to_rules, rules, nt_name, 0, min_k, is_continuation, grammar)
-
-    return FunDef(
-        name=func_name,
-        params=params,
-        return_type=BaseType('Any'),
-        body=body
-    )

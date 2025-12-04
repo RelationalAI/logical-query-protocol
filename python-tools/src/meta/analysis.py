@@ -112,9 +112,9 @@ def _compute_rhs_elem_first_k(rhs: 'Rhs', first_k: Dict[Nonterminal, Set[Tuple[T
     result: Set[Tuple[Terminal, ...]] = set()
 
     if isinstance(rhs, LitTerminal):
-        result.add((f'"{rhs.name}"',))
+        result.add((rhs,))
     elif isinstance(rhs, NamedTerminal):
-        result.add((rhs.name,))
+        result.add((rhs,))
     elif isinstance(rhs, Nonterminal):
         result.update(first_k.get(rhs, set()))
     elif isinstance(rhs, Sequence):
