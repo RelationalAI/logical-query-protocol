@@ -168,35 +168,6 @@ class GrammarGenerator:
             action=Lambda(params=['fragment'], body=Var('fragment'), return_type=MessageType('Fragment')),
         ))
 
-        # add_rule(Rule(
-        #     lhs=Nonterminal("monoid"),
-        #     rhs=Sequence([Nonterminal("type"), LitTerminal("::"), Nonterminal("monoid_name")]),
-        #     action=Lambda(['type', 'name'], Call(Var('name'), [Var('type')])),
-        #
-        # ))
-        # add_rule(Rule(
-        #     lhs=Nonterminal("monoid"),
-        #     rhs=Sequence([LitTerminal("BOOL"), LitTerminal("::"), LitTerminal("OR")]),
-        #     action=Lambda([], Call(Constructor('OrMonoid'), [])),
-        #
-        # ))
-
-        # add_rule(Rule(
-        #     lhs=Nonterminal("monoid_name"),
-        #     rhs=Sequence([LitTerminal("SUM")]),
-        #     action=Lambda([], Lambda(['type'], Call(Constructor('SumMonoid'), [Var('type')])))
-        # ))
-        # add_rule(Rule(
-        #     lhs=Nonterminal("monoid_name"),
-        #     rhs=Sequence([LitTerminal("MIN")]),
-        #     action=Lambda([], Lambda(['type'], Call(Constructor('MinMonoid'), [Var('type')])))
-        # ))
-        # add_rule(Rule(
-        #     lhs=Nonterminal("monoid_name"),
-        #     rhs=Sequence([LitTerminal("MAX")]),
-        #     action=Lambda([], Lambda(['type'], Call(Constructor('MaxMonoid'), [Var('type')])))
-        # ))
-
         add_rule(Rule(
             lhs=Nonterminal("value"),
             rhs=Sequence([Nonterminal('date')]),
@@ -304,6 +275,33 @@ class GrammarGenerator:
             lhs=Nonterminal("name"),
             rhs=Sequence([LitTerminal(":"), NamedTerminal("SYMBOL")]),
             action=Lambda(params=['symbol'], body=Call(Constructor('Name'), [Var('symbol')])),
+        ))
+
+        # TODO PR can we just use the naive rules for these?
+        add_rule(Rule(
+            lhs=Nonterminal("monoid"),
+            rhs=Sequence([Nonterminal("type"), LitTerminal("::"), Nonterminal("monoid_op")]),
+            action=Lambda(params=['type', 'op'], body=Call(Var('op'), [Var('type')])),
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("monoid_op"),
+            rhs=LitTerminal("OR"),
+            action=Lambda(params=[], body=Lambda(params=['type'], body=Call(Constructor("monoid"), [Call(Constructor("OneOf"), [Symbol("or_monoid"), Call(Constructor('OrMonoid'), [])])]))),
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("monoid_op"),
+            rhs=LitTerminal("MIN"),
+            action=Lambda(params=[], body=Lambda(params=['type'], body=Call(Constructor("monoid"), [Call(Constructor("OneOf"), [Symbol("min_monoid"), Call(Constructor('MinMonoid'), [Var('type')])])]))),
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("monoid_op"),
+            rhs=LitTerminal("MAX"),
+            action=Lambda(params=[], body=Lambda(params=['type'], body=Call(Constructor("monoid"), [Call(Constructor("OneOf"), [Symbol("max_monoid"), Call(Constructor('MaxMonoid'), [Var('type')])])]))),
+        ))
+        add_rule(Rule(
+            lhs=Nonterminal("monoid_op"),
+            rhs=LitTerminal("SUM"),
+            action=Lambda(params=[], body=Lambda(params=['type'], body=Call(Constructor("monoid"), [Call(Constructor("OneOf"), [Symbol("sum"), Call(Constructor('SumMonoid'), [Var('type')])])]))),
         ))
 
         add_rule(Rule(
@@ -453,7 +451,6 @@ class GrammarGenerator:
 
     def _post_process_grammar(self) -> None:
         """Apply grammar rewrite rules."""
-        self._rewrite_monoid_rules()
         self._rewrite_string_to_name_optional()
         self._rewrite_string_to_name()
         self._rewrite_fragment_remove_debug_info()
@@ -468,24 +465,6 @@ class GrammarGenerator:
         self.expected_unreachable.add("debug_info")
         self.expected_unreachable.add("debug_info_ids")
         self.expected_unreachable.add("ivmconfig")
-
-    def _rewrite_monoid_rules(self) -> None:
-        """Rewrite *_monoid rules to type "::" OPERATION format."""
-        monoid_pattern = re.compile(r'^(\w+)_monoid$')
-        for rules_list in self.grammar.rules.values():
-            for rule in rules_list:
-                match = monoid_pattern.match(rule.lhs.name)
-                if match:
-                    operation = match.group(1).upper()
-                    operation_name = match.group(1).capitalize()
-                    if rule.rhs == Sequence([LitTerminal('('), LitTerminal(rule.lhs.name), LitTerminal(')')]):
-                        # Rewrite to `BOOL :: <OP>` if RHS is `"(" <rule_name> ")"`
-                        rule.rhs = Sequence([LitTerminal('BOOL'), LitTerminal('::'), LitTerminal(operation)])
-                        rule.action = Lambda(params=[], body=Call(Var(f'{operation_name}Monoid'), []))
-                    elif rule.rhs == Sequence([LitTerminal('('), LitTerminal(rule.lhs.name), Nonterminal('type'),LitTerminal(')')]):
-                        # Rewrite to `type :: <OP>` if RHS is `"(" <rule_name> type ")"`
-                        rule.rhs = Sequence([Nonterminal('type'), LitTerminal('::'), LitTerminal(operation)])
-                        rule.action = Lambda(params=['type'], body=Call(Var(f'{operation_name}Monoid'), [Var('type')]))
 
     def _rewrite_string_to_name_optional(self) -> None:
         """Replace STRING with name? in output and abort rules."""
