@@ -87,28 +87,21 @@ def _normalize(expr: TargetExpr, k: Callable[[TargetExpr], TargetExpr] = lambda 
         return k(expr)
     return k(expr)
 
+MAX_LOOKAHEAD = 3
+
 def _build_predictor(grammar: Grammar, lhs: Nonterminal, rules: List[Rule]) -> TargetExpr:
     """Build a predictor expression that returns the index of the matching rule.
 
     Uses FIRST_k lookahead to distinguish between alternatives. Builds a
-    decision tree that groups by token at each lookahead depth to avoid
-    redundant token checks.
+    decision tree lazily, computing FIRST_k only as needed for rules that
+    require more lookahead.
     """
     assert len(rules) > 1
 
     nullable = grammar.compute_nullable()
-    first_k = grammar.compute_first_k(2)
 
-    # Collect all (sequence, rule_index) pairs
-    seq_rule_pairs: List[Tuple[Tuple[Terminal, ...], int]] = []
-    for i, rule in enumerate(rules):
-        if is_epsilon(rule.rhs):
-            continue
-        from .analysis import _compute_rhs_elem_first_k
-        rule_first = _compute_rhs_elem_first_k(rule.rhs, first_k, nullable, 2)
-        for seq in rule_first:
-            if seq:  # Skip empty sequences
-                seq_rule_pairs.append((seq, i))
+    # Start with non-epsilon rule indices
+    active_indices = [i for i, rule in enumerate(rules) if not is_epsilon(rule.rhs)]
 
     # Find epsilon rule index (if any)
     epsilon_index = None
@@ -117,55 +110,83 @@ def _build_predictor(grammar: Grammar, lhs: Nonterminal, rules: List[Rule]) -> T
             epsilon_index = i
             break
 
-    # Default: return epsilon index or -1
-    if epsilon_index is not None:
-        default = Lit(epsilon_index)
-    else:
-        default = Lit(-1)
+    default = Lit(epsilon_index) if epsilon_index is not None else Lit(-1)
 
-    return _build_predictor_tree(seq_rule_pairs, default, depth=0)
+    return _build_predictor_tree(grammar, rules, active_indices, nullable, default, depth=0)
 
 
 def _build_predictor_tree(
-    seq_rule_pairs: List[Tuple[Tuple[Terminal, ...], int]],
+    grammar: Grammar,
+    rules: List[Rule],
+    active_indices: List[int],
+    nullable: Dict[Nonterminal, bool],
     default: TargetExpr,
     depth: int
 ) -> TargetExpr:
     """Build a decision tree for predicting which rule matches.
 
-    Groups sequences by their token at the current depth, then recurses
-    for each group. This avoids redundant token checks.
+    Lazily computes FIRST_k at each depth, only for rules that need more
+    lookahead. Groups by token at current depth, then recurses.
     """
-    if not seq_rule_pairs:
+    if not active_indices:
         return default
 
-    # Group by token at current depth
-    groups: Dict[Terminal, List[Tuple[Tuple[Terminal, ...], int]]] = {}
-    for seq, rule_idx in seq_rule_pairs:
-        if depth < len(seq):
-            token = seq[depth]
+    if len(active_indices) == 1:
+        return Lit(active_indices[0])
+
+    if depth >= MAX_LOOKAHEAD:
+        conflict_rules = '\n  '.join(f"Rule {i}: {rules[i]}" for i in active_indices)
+        assert False, f"Grammar conflict at lookahead depth {depth}:\n  {conflict_rules}"
+
+    # Compute FIRST_{depth+1} to get tokens at position `depth`
+    first_k = grammar.compute_first_k(depth + 1)
+
+    # Group rules by token at current depth
+    groups: Dict[Terminal, List[int]] = {}
+    exhausted: Set[int] = set()
+
+    for rule_idx in active_indices:
+        rule = rules[rule_idx]
+        from .analysis import _compute_rhs_elem_first_k
+        rule_first = _compute_rhs_elem_first_k(rule.rhs, first_k, nullable, depth + 1)
+
+        tokens_at_depth: Set[Terminal] = set()
+        for seq in rule_first:
+            if len(seq) > depth:
+                tokens_at_depth.add(seq[depth])
+            else:
+                exhausted.add(rule_idx)
+
+        for token in tokens_at_depth:
             if token not in groups:
                 groups[token] = []
-            groups[token].append((seq, rule_idx))
+            groups[token].append(rule_idx)
+
+    # Handle exhausted rules
+    if len(exhausted) > 1:
+        # Multiple rules exhausted - try deeper lookahead
+        subtree_default = _build_predictor_tree(
+            grammar, rules, list(exhausted), nullable, default, depth + 1
+        )
+    elif len(exhausted) == 1:
+        subtree_default = Lit(exhausted.pop())
+    else:
+        subtree_default = default
 
     if not groups:
-        return default
+        return subtree_default
 
     # Build decision tree from groups
-    result = default
-    for token, items in groups.items():
-        # Build the check for this token
+    result = subtree_default
+    for token, indices in groups.items():
         check = _build_token_check(token, depth)
 
-        # Find unique rule indices in this group
-        rule_indices = set(rule_idx for _, rule_idx in items)
-
-        if len(rule_indices) == 1:
-            # All sequences lead to the same rule
-            then_branch = Lit(rule_indices.pop())
+        if len(indices) == 1:
+            then_branch = Lit(indices[0])
         else:
-            # Need to look at the next token - recurse
-            then_branch = _build_predictor_tree(items, default, depth + 1)
+            then_branch = _build_predictor_tree(
+                grammar, rules, indices, nullable, subtree_default, depth + 1
+            )
 
         result = IfElse(check, then_branch, result)
 
@@ -182,7 +203,7 @@ def _build_token_check(term: Terminal, depth: int) -> TargetExpr:
         return Lit(False)
 
 def _generate_decision_tree(tail: TargetExpr, token_map: Dict, rules: List, nt_name: str,
-                            depth: int, max_depth: int, is_continuation: bool, grammar: Grammar, first_2) -> TargetExpr:
+                            depth: int, max_depth: int, is_continuation: bool, grammar: Grammar) -> TargetExpr:
     """Generate decision tree for k-token lookahead."""
     if depth >= max_depth:
         return tail
@@ -242,7 +263,7 @@ def _generate_decision_tree(tail: TargetExpr, token_map: Dict, rules: List, nt_n
                     sub_map[next_token].append((seq, rule_idx))
 
             if sub_map:
-                body = _generate_decision_tree(tail, sub_map, rules, nt_name, depth + 1, max_depth, is_continuation, grammar, first_2)
+                body = _generate_decision_tree(tail, sub_map, rules, nt_name, depth + 1, max_depth, is_continuation, grammar)
             else:
                 rule_idx = items[0][1]
                 rule = rules[rule_idx]
@@ -255,6 +276,10 @@ def _generate_decision_tree(tail: TargetExpr, token_map: Dict, rules: List, nt_n
         tail = IfElse(check, body, tail)
 
     return tail
+
+def findfirst(predicate, iterable):
+    return next((i for i, x in enumerate(iterable) if predicate(x)), None)
+
 
 def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optional[Grammar] = None) -> TargetExpr:
     """Generate IR for parsing an RHS.
@@ -283,11 +308,21 @@ def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optio
             )
         else:
             assert isinstance(rhs.rhs, Nonterminal)
-            return IfElse(
-                Call(Builtin('predict'), [Lit(rhs.rhs.name)]),
+            lhs = rhs.rhs
+            rules = grammar.get_rules(lhs)
+            has_epsilon = any(is_epsilon(rule.rhs) for rule in rules)
+            if not has_epsilon:
+                rules = rules + [Rule(lhs, Sequence([]), Lambda(params=[], body=Lit(None)))]
+            epsilon_index = findfirst(lambda rule: is_epsilon(rule.rhs), rules)
+            predictor = _build_predictor(grammar, lhs, rules)
+            body = IfElse(
+                Call(Builtin('not_equal'), [predictor, Lit(epsilon_index)]),
                 _generate_parse_rhs_ir(rhs.rhs, None, grammar),
                 Lit(None)
             )
+            return body
+
+
     elif isinstance(rhs, Plus):
         # A+ is equivalent to A A*
         return _generate_parse_rhs_ir(Sequence([rhs.rhs, Star(rhs.rhs)]), rule, grammar)
@@ -300,10 +335,6 @@ def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optio
             )
         else:
             assert isinstance(rhs.rhs, Nonterminal)
-
-            def findfirst(predicate, iterable):
-                return next((i for i, x in enumerate(iterable) if predicate(x)), None)
-
             lhs = rhs.rhs
             rules = grammar.get_rules(lhs)
             has_epsilon = any(is_epsilon(rule.rhs) for rule in rules)
@@ -424,165 +455,3 @@ def _subst(expr: 'TargetExpr', var: str, val: 'TargetExpr') -> 'TargetExpr':
     elif isinstance(expr, Return):
         return Return(_subst(expr.expr, var, val))
     return expr
-
-def _build_decision_tree_ir(token_map: Dict, rules: List[Rule], nt_name: str,
-                            depth: int, max_depth: int, is_continuation: bool = False, grammar: Optional[Grammar] = None) -> TargetExpr:
-    """Build decision tree IR for k-token lookahead.
-
-    Args:
-        token_map: Map from tokens to (seq, rule_idx) pairs
-        rules: List of rules for this nonterminal
-        nt_name: Name of nonterminal being parsed
-        depth: Current lookahead depth
-        max_depth: Maximum lookahead depth
-        is_continuation: Whether this is a continuation rule
-
-    Returns:
-        TargetExpr representing the decision tree (IfElse chain)
-    """
-    if depth >= max_depth:
-        assert False, f"Max depth exceeded for {nt_name}"
-        # Beyond max depth - use first available rule
-        # This shouldn't happen in well-formed grammars
-        first_item = next(iter(token_map.values()))
-        if isinstance(first_item, list) and len(first_item) > 0:
-            _, rule_idx = first_item[0]
-            rule = rules[rule_idx]
-            return _generate_parse_rhs_ir(Sequence(rule.rhs), rule, grammar)
-        return Lit(None)
-
-    # Group alternatives by token at current depth
-    next_level = {}
-    for seq_or_token, alternatives in token_map.items():
-        if isinstance(alternatives, list) and len(alternatives) > 0 and isinstance(alternatives[0], tuple):
-            for seq, rule_idx in alternatives:
-                if len(seq) > depth:
-                    token_at_depth = seq[depth]
-                    if token_at_depth not in next_level:
-                        next_level[token_at_depth] = []
-                    next_level[token_at_depth].append((seq, rule_idx))
-        else:
-            next_level[seq_or_token] = alternatives
-
-    # Build list of (check, then_expr) pairs
-    checks_and_thens = []
-
-    for token, items in next_level.items():
-        # Build check for this token
-        if token.startswith('"'):
-            lit = token[1:-1]
-            if depth == 0:
-                check = Call(Builtin('match_literal'), [Lit(lit)])
-            else:
-                check = Call(Builtin('match_lookahead_literal'), [Lit(lit), Lit(depth)])
-        else:
-            if depth == 0:
-                check = Call(Builtin('match_terminal'), [Lit(token)])
-            else:
-                check = Call(Builtin('match_lookahead_terminal'), [Lit(token), Lit(depth)])
-
-        # Determine what to do when this check succeeds
-        rule_indices = set()
-        for seq, rule_idx in items:
-            rule_indices.add(rule_idx)
-
-        if len(rule_indices) == 1:
-            # Single rule - parse it
-            rule_idx = rule_indices.pop()
-            rule = rules[rule_idx]
-            then_expr = _generate_parse_rhs_ir(Sequence(rule.rhs), rule, grammar)
-        elif depth >= 2:
-            # Beyond 2 tokens - use backtracking
-            # Build try-catch chain
-            then_expr = _build_backtracking_ir(sorted(rule_indices), rules, grammar)
-        elif depth + 1 < max_depth:
-            # Recurse to next depth
-            sub_map = {}
-            for seq, rule_idx in items:
-                if len(seq) > depth + 1:
-                    next_token = seq[depth + 1]
-                    if next_token not in sub_map:
-                        sub_map[next_token] = []
-                    sub_map[next_token].append((seq, rule_idx))
-
-            if sub_map:
-                then_expr = _build_decision_tree_ir(sub_map, rules, nt_name, depth + 1, max_depth, is_continuation, grammar)
-            else:
-                # No further tokens - use first rule
-                rule_idx = items[0][1]
-                rule = rules[rule_idx]
-                then_expr = _generate_parse_rhs_ir(Sequence(rule.rhs), rule, grammar)
-        else:
-            # At max depth - use first rule
-            rule_idx = items[0][1]
-            rule = rules[rule_idx]
-            then_expr = _generate_parse_rhs_ir(Sequence(rule.rhs), rule, grammar)
-
-        checks_and_thens.append((check, then_expr))
-
-    # Handle the final else case
-    # Check if any rule is epsilon (empty list)
-    has_epsilon = any(is_epsilon(rule.rhs) for rule in rules)
-
-    if has_epsilon:
-        final_else = Lit(None)
-    else:
-        # Raise parse error
-        error_msg = f"Unexpected token in {nt_name}: {{self.current()}}"
-        final_else = Call(Builtin('raise_parse_error'), [Lit(error_msg)])
-
-    # Build if-elif-else chain from end to beginning
-    if not checks_and_thens:
-        return final_else
-
-    # Start with the final else
-    result = final_else
-
-    # Build chain backwards
-    for check, then_expr in reversed(checks_and_thens):
-        result = IfElse(condition=check, then_branch=then_expr, else_branch=result)
-
-    return result
-
-
-def _build_backtracking_ir(rule_indices: List[int], rules: List[Rule], grammar: Optional[Grammar] = None) -> TargetExpr:
-    """Build backtracking IR for multiple rules.
-
-    Generates:
-    saved_pos = save_position()
-    try:
-        parse_rule_0
-    except ParseError:
-        restore_position(saved_pos)
-        try:
-            parse_rule_1
-        except ParseError:
-            restore_position(saved_pos)
-            parse_rule_n
-    """
-    if not rule_indices:
-        return Lit(None)
-
-    # Start with the last rule (no try-catch)
-    last_idx = rule_indices[-1]
-    last_rule = rules[last_idx]
-    body = _generate_parse_rhs_ir(last_rule.rhs, last_rule, grammar)
-    pos = gensym('saved_pos')
-
-    # Build try-catch chain in reverse
-    for i in range(len(rule_indices) - 2, -1, -1):
-        rule_idx = rule_indices[i]
-        rule = rules[rule_idx]
-        try_body = _generate_parse_rhs_ir(rule.rhs, rule, grammar)
-
-        # Restore position in catch
-        restore = Call(Builtin('restore_position'), [Var(pos)])
-
-        body = TryCatch(
-            try_body=try_body,
-            catch_body=Seq([restore, body]),
-            exception_type='ParseError',
-        )
-
-    # Save position at the start
-    return Let(pos, Call(Builtin('save_position'), []), body)

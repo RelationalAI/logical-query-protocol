@@ -114,6 +114,9 @@ class Rule:
     action: 'Lambda'
     source_type: Optional[str] = None  # Track the protobuf type this rule came from
 
+    def __str__(self):
+        return f"{self.lhs.name} -> {self.rhs} {{{{ {self.action} }}}}"
+
     def to_pattern(self, grammar: Optional['Grammar'] = None) -> str:
         """Convert RHS to pattern string."""
         return str(self.rhs)

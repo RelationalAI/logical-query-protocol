@@ -161,13 +161,11 @@ class GrammarGenerator:
             lhs=Nonterminal("start"),
             rhs=Sequence([Nonterminal("transaction")]),
             action=Lambda(params=['transaction'], body=Var('transaction'), return_type=MessageType('Transaction')),
-
         ))
         add_rule(Rule(
             lhs=Nonterminal("start"),
             rhs=Sequence([Nonterminal("fragment")]),
             action=Lambda(params=['fragment'], body=Var('fragment'), return_type=MessageType('Fragment')),
-
         ))
 
         # add_rule(Rule(
@@ -203,61 +201,51 @@ class GrammarGenerator:
             lhs=Nonterminal("value"),
             rhs=Sequence([Nonterminal('date')]),
             action=Lambda(params=['value'], body=Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("date_value"), Var('value')])])),
-
         ))
         add_rule(Rule(
             lhs=Nonterminal("value"),
             rhs=Sequence([Nonterminal('datetime')]),
             action=Lambda(params=['value'], body=Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("datetime_value"), Var('value')])])),
-
         ))
         add_rule(Rule(
             lhs=Nonterminal("value"),
             rhs=Sequence([NamedTerminal('STRING')]),
             action=Lambda(params=['value'], body=Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("string_value"), Var('value')])])),
-
         ))
         add_rule(Rule(
             lhs=Nonterminal("value"),
             rhs=Sequence([NamedTerminal('INT')]),
             action=Lambda(params=['value'], body=Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("int_value"), Var('value')])])),
-
         ))
         add_rule(Rule(
             lhs=Nonterminal("value"),
             rhs=Sequence([NamedTerminal('FLOAT')]),
             action=Lambda(params=['value'], body=Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("float_value"), Var('value')])])),
-
         ))
         add_rule(Rule(
             lhs=Nonterminal("value"),
             rhs=Sequence([NamedTerminal('UINT128')]),
             action=Lambda(params=['value'], body=Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("uint128_value"), Var('value')])])),
-
         ))
         add_rule(Rule(
             lhs=Nonterminal("value"),
             rhs=Sequence([NamedTerminal('INT128')]),
             action=Lambda(params=['value'], body=Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("int128_value"), Var('value')])])),
-
         ))
         add_rule(Rule(
             lhs=Nonterminal("value"),
             rhs=Sequence([NamedTerminal('DECIMAL')]),
             action=Lambda(params=['value'], body=Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("decimal_value"), Var('value')])])),
-
         ))
         add_rule(Rule(
             lhs=Nonterminal("value"),
             rhs=Sequence([LitTerminal("missing")]),
             action=Lambda(params=[], body=Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("missing_value"), Call(Constructor("MissingValue"), [])])])),
-
         ))
         add_rule(Rule(
             lhs=Nonterminal("value"),
             rhs=Sequence([LitTerminal("true")]),
             action=Lambda(params=[], body=Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("boolean_value"), Lit(True)])])),
-
         ))
         add_rule(Rule(
             lhs=Nonterminal("value"),
@@ -269,25 +257,21 @@ class GrammarGenerator:
             lhs=Nonterminal("date"),
             rhs=Sequence([LitTerminal("("), LitTerminal("date"), NamedTerminal("INT"), NamedTerminal("INT"), NamedTerminal("INT"), LitTerminal(")")]),
             action=Lambda(params=['year', 'month', 'day'], body=Call(Constructor("DateValue"), [Var('year'), Var('month'), Var('day')])),
-
         ))
         add_rule(Rule(
             lhs=Nonterminal("datetime"),
             rhs=Sequence([LitTerminal("("), LitTerminal("datetime"), NamedTerminal("INT"), NamedTerminal("INT"), NamedTerminal("INT"), NamedTerminal("INT"), NamedTerminal("INT"), NamedTerminal("INT"), Option(NamedTerminal("INT")), LitTerminal(")")]),
             action=Lambda(params=['year', 'month', 'day', 'hour', 'minute', 'second', 'microsecond'], body=Call(Constructor("DateTimeValue"), [Var('year'), Var('month'), Var('day'), Var('hour'), Var('minute'), Var('second'), IfElse(Call(Builtin('is_none'),[Var('microsecond')]), Lit(0), Var('microsecond'))])),
-
         ))
         add_rule(Rule(
             lhs=Nonterminal("config_dict"),
             rhs=Sequence([LitTerminal("{"), Star(Nonterminal("config_key_value")), LitTerminal("}")]),
             action=Lambda(params=['config_key_value'], body=Var('config_key_value')),
-
         ))
         add_rule(Rule(
             lhs=Nonterminal("config_key_value"),
             rhs=Sequence([LitTerminal(":"), NamedTerminal("SYMBOL"), Nonterminal("value")]),
             action=Lambda(params=['symbol', 'value'], body=Call(Builtin("Tuple"), [Var('symbol'), Var('value')])),
-
         ))
 
         add_rule(Rule(
@@ -295,57 +279,48 @@ class GrammarGenerator:
             rhs=Sequence([LitTerminal("("), LitTerminal("transaction"), Option(Nonterminal("configure")), Option(Nonterminal("sync")), Star(Nonterminal("epoch")), LitTerminal(")")]),
             action=Lambda(params=['configure', 'sync', 'epochs'],
                           body=Call(Constructor('Transaction'), [Var('epochs'), Var('configure'), Var('sync')])),
-
         ))
         add_rule(Rule(
             lhs=Nonterminal("bindings"),
-            rhs=Sequence([LitTerminal("["), Star(Nonterminal("binding")), LitTerminal("]")]),
-            action=Lambda(params=['keys'], body=Call(Builtin('Tuple'), [Var('keys'), Lit(0)])),
-
+            rhs=Sequence([LitTerminal("["), Star(Nonterminal("binding")), Option(Nonterminal("value_bindings")), LitTerminal("]")]),
+            action=Lambda(params=['keys', 'values'], body=Call(Builtin('Tuple'), [Var('keys'), Var('values')])),
         ))
         add_rule(Rule(
-            lhs=Nonterminal("bindings"),
-            rhs=Sequence([LitTerminal("["), Star(Nonterminal("binding")), LitTerminal("|"), Star(Nonterminal("binding")), LitTerminal("]")]),
-            action=Lambda(params=['keys', 'values'], body=Call(Builtin('Tuple'), [Call(Builtin('Concat'), [Var('keys'), Var('values')]), Call(Builtin('length'), [Var('values')])])),
-
+            lhs=Nonterminal("value_bindings"),
+            rhs=Sequence([LitTerminal("|"), Star(Nonterminal("binding"))]),
+            action=Lambda(params=['values'], body=Call(Builtin('Tuple'), [Var('values'), Call(Builtin('length'), [Var('values')])])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("binding"),
             rhs=Sequence([NamedTerminal("SYMBOL"), LitTerminal("::"), Nonterminal("type")]),
             action=Lambda(params=['symbol', 'type'], body=Call(Constructor('Binding'), [Call(Constructor('Var'), [Var('symbol')]), Var('type')])),
-
         ))
         add_rule(Rule(
             lhs=Nonterminal("abstraction"),
             rhs=Sequence([LitTerminal("("), Nonterminal("bindings"), Nonterminal("formula"), LitTerminal(")")]),
             action=Lambda(params=['bindings', 'formula'], body=Call(Constructor('Abstraction'), [Var('bindings'), Var('formula')])),
-
         ))
         add_rule(Rule(
             lhs=Nonterminal("name"),
             rhs=Sequence([LitTerminal(":"), NamedTerminal("SYMBOL")]),
             action=Lambda(params=['symbol'], body=Call(Constructor('Name'), [Var('symbol')])),
-
         ))
 
         add_rule(Rule(
             lhs=Nonterminal("configure"),
             rhs=Sequence([LitTerminal("("), LitTerminal("configure"), Nonterminal("config_dict"), LitTerminal(")")]),
             action=Lambda(params=['config_dict'], body=Call(Constructor('Configure'), [Var('config_dict')])),
-
         ))
 
         add_rule(Rule(
             lhs=Nonterminal("true"),
             rhs=Sequence([LitTerminal("("), LitTerminal("true"), LitTerminal(")")]),
             action = Lambda(params=[], body=Call(Constructor('Conjunction'), [Call(Builtin('make_list'), [])])),
-
         ))
         add_rule(Rule(
             lhs=Nonterminal("false"),
             rhs=Sequence([LitTerminal("("), LitTerminal("false"), LitTerminal(")")]),
             action = Lambda(params=[], body=Call(Constructor('Disjunction'), [Call(Builtin('make_list'), [])])),
-
         ))
         add_rule(Rule(
             lhs=Nonterminal("formula"),
@@ -364,58 +339,49 @@ class GrammarGenerator:
             lhs=Nonterminal("export"),
             rhs=Sequence([LitTerminal("("), LitTerminal("export"), Nonterminal("export_csvconfig"), LitTerminal(")")]),
             action=Lambda(params=['config'], body=Call(Constructor('Export'), [Var('config')])),
-
         ))
 
         add_rule(Rule(
             lhs=Nonterminal("export_csvconfig"),
             rhs=Sequence([LitTerminal("("), LitTerminal("export_csvconfig"), Nonterminal("export_path"), Nonterminal("export_csvcolumns"), Nonterminal("config_dict"), LitTerminal(")")]),
             action=Lambda(params=['path', 'columns', 'config'], body=Call(Constructor('ExportCsvConfig'), [Var('path'), Var('columns'), Var('config')])),
-
         ))
         add_rule(Rule(
             lhs=Nonterminal("export_csvcolumns"),
             rhs=Sequence([LitTerminal("("), LitTerminal("columns"), Star(Nonterminal("export_csvcolumn")), LitTerminal(")")]),
             action=Lambda(params=['columns'], body=Call(Constructor('ExportCsvColumns'), [Var('columns')])),
-
         ))
         add_rule(Rule(
             lhs=Nonterminal("export_csvcolumn"),
             rhs=Sequence([LitTerminal("("), LitTerminal("column"), NamedTerminal("STRING"), Nonterminal("relation_id"), LitTerminal(")")]),
             action=Lambda(params=['name', 'relation_id'], body=Call(Constructor('ExportCsvColumn'), [Var('name'), Var('relation_id')])),
-
         ))
         add_rule(Rule(
             lhs=Nonterminal("export_path"),
             rhs=Sequence([LitTerminal("("), LitTerminal("path"), NamedTerminal("STRING"), LitTerminal(")")]),
             action=Lambda(params=['path'], body=Call(Constructor('ExportPath'), [Var('path')])),
-
         ))
 
         add_rule(Rule(
             lhs=Nonterminal("var"),
             rhs=Sequence([NamedTerminal("SYMBOL")]),
             action=Lambda(params=['symbol'], body=Call(Constructor('Var'), [Var('symbol')])),
-
         ))
 
         add_rule(Rule(
             lhs=Nonterminal("fragment_id"),
             rhs=Sequence([LitTerminal(":"), NamedTerminal("SYMBOL")]),
             action=Lambda(params=['symbol'], body=Call(Constructor('FragmentId'), [Var('symbol')])),
-
         ))
         add_rule(Rule(
             lhs=Nonterminal("relation_id"),
             rhs=Sequence([LitTerminal(":"), NamedTerminal("SYMBOL")]),
             action=Lambda(params=['symbol'], body=Call(Constructor('RelationId'), [Var('symbol')])),
-
         ))
         add_rule(Rule(
             lhs=Nonterminal("relation_id"),
             rhs=Sequence([NamedTerminal("INT")]),
             action=Lambda(params=['INT'], body=Call(Constructor('RelationId'), [Var('INT')])),
-
         ))
 
         add_rule(Rule(
