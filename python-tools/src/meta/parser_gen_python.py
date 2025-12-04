@@ -175,8 +175,7 @@ def _generate_lexer(grammar: Grammar) -> List[str]:
 
     lines.append("        token_specs = [")
     for token in grammar.tokens:
-        action = generate_python(token.action)
-        lines.append(f"            ('{token.name}', r'{token.pattern}', {action}),")
+        lines.append(f"            ('{token.name}', r'{token.pattern}', lambda x: self.parse_{token.name.lower()}(x)),")
     lines.append("        ]")
     lines.append("")
     lines.append("        whitespace_re = re.compile(r'\\s+')")
