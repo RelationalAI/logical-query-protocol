@@ -6,7 +6,7 @@ with proper keyword escaping and idiomatic Python style.
 
 from typing import Set, Union, List
 
-from .target import TargetExpr, Var, Lit, Symbol, Builtin, Constructor, Call, Lambda, Let, IfElse, Seq, While, Assign, Return, FunDef, ParseNonterminalDef, ParseNonterminal, Type, BaseType, TupleType, ListType, TargetNode, gensym
+from .target import TargetExpr, Var, Lit, Symbol, Builtin, Constructor, Call, Lambda, Let, IfElse, Seq, While, Assign, Return, FunDef, ParseNonterminalDef, ParseNonterminal, Type, BaseType, TupleType, ListType, OptionType, TargetNode, gensym
 
 
 # Python keywords that need escaping
@@ -61,6 +61,10 @@ def generate_python_type(typ: Type) -> str:
     elif isinstance(typ, ListType):
         element_type = generate_python_type(typ.element_type)
         return f"list[{element_type}]"
+
+    elif isinstance(typ, OptionType):
+        element_type = generate_python_type(typ.element_type)
+        return f"Optional[{element_type}]"
 
     else:
         raise ValueError(f"Unknown type: {type(typ)}")
@@ -132,15 +136,6 @@ def generate_python_lines(expr: TargetExpr, lines: List[str], indent: str = "") 
                     args.append(arg)
                 args_code = ', '.join(args)
                 return f"[{args_code}]"
-            elif expr.func.name == "and" and len(expr.args) == 2:
-                arg1 = generate_python_lines(expr.args[0], lines, indent)
-                arg2 = generate_python_lines(expr.args[1], lines, indent)
-                return f"{arg1} and {arg2}"
-            elif expr.func.name == "or" and len(expr.args) == 2:
-                arg1 = generate_python_lines(expr.args[0], lines, indent)
-                arg2 = generate_python_lines(expr.args[1], lines, indent)
-                return f"{arg1} or {arg2}"
-            elif expr.func.name == "not" and len(expr.args) == 1:
                 arg1 = generate_python_lines(expr.args[0], lines, indent)
                 return f"not {arg1}"
             elif expr.func.name == "equal" and len(expr.args) == 2:
@@ -154,6 +149,10 @@ def generate_python_lines(expr: TargetExpr, lines: List[str], indent: str = "") 
             elif expr.func.name == "is_none" and len(expr.args) == 1:
                 arg = generate_python_lines(expr.args[0], lines, indent)
                 return f"{arg} is None"
+            elif expr.func.name == "some" and len(expr.args) == 1:
+                # In Python, 'some' is just the identity function for Optional values
+                arg = generate_python_lines(expr.args[0], lines, indent)
+                return arg
             elif expr.func.name == "match_lookahead_terminal" and len(expr.args) == 2:
                 arg1 = generate_python_lines(expr.args[0], lines, indent)
                 arg2 = generate_python_lines(expr.args[1], lines, indent)

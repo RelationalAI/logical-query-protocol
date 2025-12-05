@@ -40,7 +40,7 @@ class Var(TargetExpr):
     type: 'Type'
 
     def __str__(self) -> str:
-        return self.name
+        return f"{self.name}::{self.type}"
 
     def __post_init__(self):
         assert isinstance(self.name, str), f"Invalid name in {self}: {self.name}"
@@ -291,6 +291,15 @@ class ListType(Type):
 
 
 @dataclass
+class OptionType(Type):
+    """Optional/Maybe type for values that may be None."""
+    element_type: Type
+
+    def __str__(self) -> str:
+        return f"Option[{self.element_type}]"
+
+
+@dataclass
 class FunctionType(Type):
     """Function type with parameter types and return type."""
     param_types: Sequence[Type]
@@ -350,10 +359,13 @@ __all__ = [
     'Return',
     'Type',
     'BaseType',
+    'MessageType',
     'TupleType',
     'ListType',
+    'OptionType',
     'FunctionType',
     'FunDef',
     'ParseNonterminalDef',
     'ParseNonterminal',
+    'gensym',
 ]

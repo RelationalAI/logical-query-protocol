@@ -12,7 +12,7 @@ from .grammar import (
     Star, Option, Sequence
 )
 from .target import (
-    Lambda, Call, Var, Symbol, TargetExpr, Lit, IfElse, Builtin, Constructor, BaseType, MessageType
+    Lambda, Call, Var, Symbol, TargetExpr, Lit, IfElse, Builtin, Constructor, BaseType, MessageType, OptionType
 )
 from .proto_ast import ProtoMessage, ProtoField, PRIMITIVE_TYPES
 from .proto_parser import ProtoParser
@@ -88,13 +88,13 @@ class GrammarGenerator:
                 if field_names and field_idx < len(field_names):
                     param_names.append(field_names[field_idx])
                 else:
-                    param_names.append(self._next_param_name(len([p for p in param_names])))
+                    assert False, f"Too many params for {message_name} semantic action"
 
                 # Get the type for this parameter
                 if field_types and field_idx < len(field_types):
                     param_types.append(self._get_type_for_name(field_types[field_idx]))
                 else:
-                    param_types.append(_any_type)
+                    assert False, f"Too many params for {message_name} semantic action"
 
                 field_idx += 1
 
@@ -295,79 +295,79 @@ class GrammarGenerator:
         add_rule(Rule(
             lhs=Nonterminal("start"),
             rhs=Sequence([Nonterminal("transaction")]),
-            action=_lambda(["transaction"], return_type=MessageType('Transaction'), body=Var('transaction', _any_type)),
+            action=Lambda([Var('transaction', MessageType('Transaction'))], return_type=MessageType('Transaction'), body=Var('transaction', MessageType('Transaction'))),
         ))
         add_rule(Rule(
             lhs=Nonterminal("start"),
             rhs=Sequence([Nonterminal("fragment")]),
-            action=_lambda(["fragment"], return_type=MessageType('Fragment'), body=Var('fragment', _any_type)),
+            action=Lambda([Var('fragment', MessageType('Fragment'))], return_type=MessageType('Fragment'), body=Var('fragment', MessageType('Fragment'))),
         ))
 
         add_rule(Rule(
             lhs=Nonterminal("value"),
             rhs=Sequence([Nonterminal('date')]),
-            action=_lambda(["value"], return_type=_any_type, body=Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("date_value"), Var('value', _any_type)])])),
+            action=Lambda([Var('value', MessageType('DateValue'))], MessageType('Value'), Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("date_value"), Var('value', MessageType('DateValue'))])])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("value"),
             rhs=Sequence([Nonterminal('datetime')]),
-            action=_lambda(["value"], return_type=_any_type, body=Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("datetime_value"), Var('value', _any_type)])])),
+            action=Lambda([Var('value', MessageType('DateTimeValue'))], MessageType('Value'), Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("datetime_value"), Var('value', MessageType('DateTimeValue'))])])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("value"),
             rhs=Sequence([NamedTerminal('STRING')]),
-            action=_lambda(["value"], return_type=_any_type, body=Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("string_value"), Var('value', _any_type)])])),
+            action=Lambda([Var('value', BaseType('String'))], MessageType('Value'), Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("string_value"), Var('value', BaseType('String'))])])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("value"),
             rhs=Sequence([NamedTerminal('INT')]),
-            action=_lambda(["value"], return_type=_any_type, body=Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("int_value"), Var('value', _any_type)])])),
+            action=Lambda([Var('value', BaseType('Int64'))], MessageType('Value'), Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("int_value"), Var('value', BaseType('Int64'))])])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("value"),
             rhs=Sequence([NamedTerminal('FLOAT')]),
-            action=_lambda(["value"], return_type=_any_type, body=Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("float_value"), Var('value', _any_type)])])),
+            action=Lambda([Var('value', BaseType('Float64'))], MessageType('Value'), Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("float_value"), Var('value', BaseType('Float64'))])])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("value"),
             rhs=Sequence([NamedTerminal('UINT128')]),
-            action=_lambda(["value"], return_type=_any_type, body=Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("uint128_value"), Var('value', _any_type)])])),
+            action=Lambda([Var('value', MessageType('UInt128Value'))], MessageType('Value'), Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("uint128_value"), Var('value', MessageType('UInt128Value'))])])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("value"),
             rhs=Sequence([NamedTerminal('INT128')]),
-            action=_lambda(["value"], return_type=_any_type, body=Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("int128_value"), Var('value', _any_type)])])),
+            action=Lambda([Var('value', MessageType('Int128Value'))], MessageType('Value'), Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("int128_value"), Var('value', MessageType('Int128Value'))])])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("value"),
             rhs=Sequence([NamedTerminal('DECIMAL')]),
-            action=_lambda(["value"], return_type=_any_type, body=Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("decimal_value"), Var('value', _any_type)])])),
+            action=Lambda([Var('value', MessageType('DecimalValue'))], MessageType('Value'), Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("decimal_value"), Var('value', MessageType('DecimalValue'))])])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("value"),
             rhs=Sequence([LitTerminal("missing")]),
-            action=_lambda([], return_type=_any_type, body=Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("missing_value"), Call(Constructor("MissingValue"), [])])])),
+            action=Lambda([], MessageType('Value'), Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("missing_value"), Call(Constructor("MissingValue"), [])])])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("value"),
             rhs=Sequence([LitTerminal("true")]),
-            action=_lambda([], return_type=_any_type, body=Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("boolean_value"), Lit(True)])])),
+            action=Lambda([], MessageType('Value'), Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("boolean_value"), Lit(True)])])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("value"),
             rhs=Sequence([LitTerminal("false")]),
-            action=_lambda([], return_type=_any_type, body=Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("boolean_value"), Lit(False)])])),
+            action=Lambda([], MessageType('Value'), Call(Constructor("Value"), [Call(Constructor("OneOf"), [Symbol("boolean_value"), Lit(False)])])),
         ))
 
         add_rule(Rule(
             lhs=Nonterminal("date"),
             rhs=Sequence([LitTerminal("("), LitTerminal("date"), NamedTerminal("INT"), NamedTerminal("INT"), NamedTerminal("INT"), LitTerminal(")")]),
-            action=_lambda(["year", "month", "day"], return_type=_any_type, body=Call(Constructor("DateValue"), [Var('year', _any_type), Var('month', _any_type), Var('day', _any_type)])),
+            action=Lambda([Var('year', BaseType('Int64')), Var('month', BaseType('Int64')), Var('day', BaseType('Int64'))], MessageType('DateValue'), Call(Constructor("DateValue"), [Var('year', BaseType('Int64')), Var('month', BaseType('Int64')), Var('day', BaseType('Int64'))])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("datetime"),
             rhs=Sequence([LitTerminal("("), LitTerminal("datetime"), NamedTerminal("INT"), NamedTerminal("INT"), NamedTerminal("INT"), NamedTerminal("INT"), NamedTerminal("INT"), NamedTerminal("INT"), Option(NamedTerminal("INT")), LitTerminal(")")]),
-            action=_lambda(["year", "month", "day", "hour", "minute", "second", "microsecond"], return_type=_any_type, body=Call(Constructor("DateTimeValue"), [Var('year', _any_type), Var('month', _any_type), Var('day', _any_type), Var('hour', _any_type), Var('minute', _any_type), Var('second', _any_type), IfElse(Call(Builtin('is_none'),[Var('microsecond', _any_type)]), Lit(0), Var('microsecond', _any_type))])),
+            action=Lambda([Var('year', BaseType('Int64')), Var('month', BaseType('Int64')), Var('day', BaseType('Int64')), Var('hour', BaseType('Int64')), Var('minute', BaseType('Int64')), Var('second', BaseType('Int64')), Var('microsecond', OptionType(BaseType('Int64')))], MessageType('DateTimeValue'), Call(Constructor("DateTimeValue"), [Var('year', BaseType('Int64')), Var('month', BaseType('Int64')), Var('day', BaseType('Int64')), Var('hour', BaseType('Int64')), Var('minute', BaseType('Int64')), Var('second', BaseType('Int64')), IfElse(Call(Builtin('is_none'),[Var('microsecond', OptionType(BaseType('Int64')))]), Lit(0), Call(Builtin('some'), [Var('microsecond', OptionType(BaseType('Int64')))]))])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("config_dict"),
@@ -410,7 +410,7 @@ class GrammarGenerator:
         add_rule(Rule(
             lhs=Nonterminal("name"),
             rhs=Sequence([LitTerminal(":"), NamedTerminal("SYMBOL")]),
-            action=_lambda(["symbol"], return_type=_any_type, body=Call(Constructor('Name'), [Var('symbol', _any_type)])),
+            action=Lambda([Var('symbol', BaseType('String'))], MessageType('Name'), Call(Constructor('Name'), [Var('symbol', BaseType('String'))])),
         ))
 
         # TODO PR can we just use the naive rules for these?
@@ -423,22 +423,22 @@ class GrammarGenerator:
         add_rule(Rule(
             lhs=Nonterminal("monoid_op"),
             rhs=LitTerminal("OR"),
-            action=_lambda([], return_type=_any_type, body=_lambda(["type"], return_type=_any_type, body=Call(Constructor("monoid"), [Call(Constructor("OneOf"), [Symbol("or_monoid"), Call(Constructor('OrMonoid'), [])])]))),
+            action=Lambda([], return_type=_any_type, body=_lambda(["type"], return_type=_any_type, body=Call(Constructor("monoid"), [Call(Constructor("OneOf"), [Symbol("or_monoid"), Call(Constructor('OrMonoid'), [])])]))),
         ))
         add_rule(Rule(
             lhs=Nonterminal("monoid_op"),
             rhs=LitTerminal("MIN"),
-            action=_lambda([], return_type=_any_type, body=_lambda(["type"], return_type=_any_type, body=Call(Constructor("monoid"), [Call(Constructor("OneOf"), [Symbol("min_monoid"), Call(Constructor('MinMonoid'), [Var('type', _any_type)])])]))),
+            action=Lambda([], return_type=_any_type, body=_lambda(["type"], return_type=_any_type, body=Call(Constructor("monoid"), [Call(Constructor("OneOf"), [Symbol("min_monoid"), Call(Constructor('MinMonoid'), [Var('type', _any_type)])])]))),
         ))
         add_rule(Rule(
             lhs=Nonterminal("monoid_op"),
             rhs=LitTerminal("MAX"),
-            action=_lambda([], return_type=_any_type, body=_lambda(["type"], return_type=_any_type, body=Call(Constructor("monoid"), [Call(Constructor("OneOf"), [Symbol("max_monoid"), Call(Constructor('MaxMonoid'), [Var('type', _any_type)])])]))),
+            action=Lambda([], return_type=_any_type, body=_lambda(["type"], return_type=_any_type, body=Call(Constructor("monoid"), [Call(Constructor("OneOf"), [Symbol("max_monoid"), Call(Constructor('MaxMonoid'), [Var('type', _any_type)])])]))),
         ))
         add_rule(Rule(
             lhs=Nonterminal("monoid_op"),
             rhs=LitTerminal("SUM"),
-            action=_lambda([], return_type=_any_type, body=_lambda(["type"], return_type=_any_type, body=Call(Constructor("monoid"), [Call(Constructor("OneOf"), [Symbol("sum"), Call(Constructor('SumMonoid'), [Var('type', _any_type)])])]))),
+            action=Lambda([], return_type=_any_type, body=_lambda(["type"], return_type=_any_type, body=Call(Constructor("monoid"), [Call(Constructor("OneOf"), [Symbol("sum"), Call(Constructor('SumMonoid'), [Var('type', _any_type)])])]))),
         ))
 
         add_rule(Rule(
@@ -450,94 +450,94 @@ class GrammarGenerator:
         add_rule(Rule(
             lhs=Nonterminal("true"),
             rhs=Sequence([LitTerminal("("), LitTerminal("true"), LitTerminal(")")]),
-            action = _lambda([], return_type=_any_type, body=Call(Constructor('Conjunction'), [Call(Builtin('make_list'), [])])),
+            action = Lambda([], MessageType('Conjunction'), Call(Constructor('Conjunction'), [Call(Builtin('make_list'), [])])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("false"),
             rhs=Sequence([LitTerminal("("), LitTerminal("false"), LitTerminal(")")]),
-            action = _lambda([], return_type=_any_type, body=Call(Constructor('Disjunction'), [Call(Builtin('make_list'), [])])),
+            action = Lambda([], MessageType('Disjunction'), Call(Constructor('Disjunction'), [Call(Builtin('make_list'), [])])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("formula"),
             rhs=Sequence([Nonterminal("true")]),
-            action=_lambda(["value"], return_type=_any_type, body=Call(Constructor('Formula'), [Call(Constructor('OneOf'), [Symbol('true'), Var('value', _any_type)])])),
+            action=Lambda([Var("value", MessageType('Conjunction'))], MessageType('Formula'), Call(Constructor('Formula'), [Call(Constructor('OneOf'), [Symbol('true'), Var('value', MessageType('Conjunction'))])])),
 
         ), is_final=False)
         add_rule(Rule(
             lhs=Nonterminal("formula"),
             rhs=Sequence([Nonterminal("false")]),
-            action=_lambda(["value"], return_type=_any_type, body=Call(Constructor('Formula'), [Call(Constructor('OneOf'), [Symbol('false'), Var('value', _any_type)])])),
+            action=Lambda([Var("value", MessageType('Disjunction'))], MessageType('Formula'), Call(Constructor('Formula'), [Call(Constructor('OneOf'), [Symbol('false'), Var('value', MessageType('Disjunction'))])])),
 
         ), is_final=False)
 
         add_rule(Rule(
             lhs=Nonterminal("export"),
             rhs=Sequence([LitTerminal("("), LitTerminal("export"), Nonterminal("export_csvconfig"), LitTerminal(")")]),
-            action=_lambda(["config"], return_type=_any_type, body=Call(Constructor('Export'), [Var('config', _any_type)])),
+            action=_lambda(["config"], return_type=MessageType('Export'), body=Call(Constructor('Export'), [Var('config', _any_type)])),
         ))
 
         add_rule(Rule(
             lhs=Nonterminal("export_csvconfig"),
             rhs=Sequence([LitTerminal("("), LitTerminal("export_csvconfig"), Nonterminal("export_path"), Nonterminal("export_csvcolumns"), Nonterminal("config_dict"), LitTerminal(")")]),
-            action=_lambda(["path", "columns", "config"], return_type=_any_type, body=Call(Constructor('ExportCsvConfig'), [Var('path', _any_type), Var('columns', _any_type), Var('config', _any_type)])),
+            action=_lambda(["path", "columns", "config"], return_type=MessageType('ExportCsvConfig'), body=Call(Constructor('ExportCsvConfig'), [Var('path', _any_type), Var('columns', _any_type), Var('config', _any_type)])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("export_csvcolumns"),
             rhs=Sequence([LitTerminal("("), LitTerminal("columns"), Star(Nonterminal("export_csvcolumn")), LitTerminal(")")]),
-            action=_lambda(["columns"], return_type=_any_type, body=Call(Constructor('ExportCsvColumns'), [Var('columns', _any_type)])),
+            action=_lambda(["columns"], return_type=MessageType('ExportCsvColumns'), body=Call(Constructor('ExportCsvColumns'), [Var('columns', _any_type)])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("export_csvcolumn"),
             rhs=Sequence([LitTerminal("("), LitTerminal("column"), NamedTerminal("STRING"), Nonterminal("relation_id"), LitTerminal(")")]),
-            action=_lambda(["name", "relation_id"], return_type=_any_type, body=Call(Constructor('ExportCsvColumn'), [Var('name', _any_type), Var('relation_id', _any_type)])),
+            action=_lambda(["name", "relation_id"], return_type=MessageType('ExportCsvColumn'), body=Call(Constructor('ExportCsvColumn'), [Var('name', _any_type), Var('relation_id', _any_type)])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("export_path"),
             rhs=Sequence([LitTerminal("("), LitTerminal("path"), NamedTerminal("STRING"), LitTerminal(")")]),
-            action=_lambda(["path"], return_type=_any_type, body=Call(Constructor('ExportPath'), [Var('path', _any_type)])),
+            action=Lambda([Var("path", BaseType('String'))], return_type=MessageType('ExportPath'), body=Call(Constructor('ExportPath'), [Var('path', BaseType('String'))])),
         ))
 
         add_rule(Rule(
             lhs=Nonterminal("var"),
             rhs=Sequence([NamedTerminal("SYMBOL")]),
-            action=_lambda(["symbol"], return_type=_any_type, body=Call(Constructor('Var'), [Var('symbol', _any_type)])),
+            action=Lambda([Var("symbol", BaseType('String'))], return_type=MessageType('Var'), body=Call(Constructor('Var'), [Var('symbol', BaseType('String'))])),
         ))
 
         add_rule(Rule(
             lhs=Nonterminal("fragment_id"),
             rhs=Sequence([LitTerminal(":"), NamedTerminal("SYMBOL")]),
-            action=_lambda(["symbol"], return_type=_any_type, body=Call(Constructor('FragmentId'), [Var('symbol', _any_type)])),
+            action=Lambda([Var("symbol", BaseType('String'))], return_type=MessageType('FragmentId'), body=Call(Constructor('FragmentId'), [Var('symbol', BaseType('String'))])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("relation_id"),
             rhs=Sequence([LitTerminal(":"), NamedTerminal("SYMBOL")]),
-            action=_lambda(["symbol"], return_type=_any_type, body=Call(Constructor('RelationId'), [Var('symbol', _any_type)])),
+            action=Lambda([Var('symbol', BaseType('String'))], return_type=_any_type, body=Call(Constructor('RelationId'), [Var('symbol', BaseType('String'))])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("relation_id"),
             rhs=Sequence([NamedTerminal("INT")]),
-            action=_lambda(["INT"], return_type=_any_type, body=Call(Constructor('RelationId'), [Var('INT', _any_type)])),
+            action=Lambda([Var("INT", BaseType('Int64'))], return_type=_any_type, body=Call(Constructor('RelationId'), [Var('INT', BaseType('Int64'))])),
         ))
 
         add_rule(Rule(
             lhs=Nonterminal("specialized_value"),
             rhs=Sequence([LitTerminal("#"), Nonterminal("value")]),
-            action=_lambda(["value"], return_type=_any_type, body=Call(Constructor('SpecializedValue'), [Var('value', _any_type)])),
+            action=Lambda([Var("value", MessageType('Value'))], MessageType('Value'), Var('value', MessageType('Value'))),
 
         ), is_final=True)
 
         type_rules = {
-            "unspecified_type": (LitTerminal("UNKNOWN"), _lambda([], return_type=_any_type, body=Call(Constructor('UnspecifiedType'), []))),
-            "string_type": (LitTerminal("STRING"), _lambda([], return_type=_any_type, body=Call(Constructor('StringType'), []))),
-            "int_type": (LitTerminal("INT"), _lambda([], return_type=_any_type, body=Call(Constructor('IntType'), []))),
-            "float_type": (LitTerminal("FLOAT"), _lambda([], return_type=_any_type, body=Call(Constructor('FloatType'), []))),
-            "uint128_type": (LitTerminal("UINT128"), _lambda([], return_type=_any_type, body=Call(Constructor('Uint128Type'), []))),
-            "int128_type": (LitTerminal("INT128"), _lambda([], return_type=_any_type, body=Call(Constructor('Int128Type'), []))),
-            "boolean_type": (LitTerminal("BOOLEAN"), _lambda([], return_type=_any_type, body=Call(Constructor('BooleanType'), []))),
-            "date_type": (LitTerminal("DATE"), _lambda([], return_type=_any_type, body=Call(Constructor('DateType'), []))),
-            "datetime_type": (LitTerminal("DATETIME"), _lambda([], return_type=_any_type, body=Call(Constructor('DatetimeType'), []))),
-            "missing_type": (LitTerminal("MISSING"), _lambda([], return_type=_any_type, body=Call(Constructor('MissingType'), []))),
-            "decimal_type": (Sequence([LitTerminal("("), LitTerminal("DECIMAL"), NamedTerminal("INT"), NamedTerminal("INT"), LitTerminal(")")]), _lambda(["precision", "scale"], return_type=_any_type, body=Call(Constructor('DecimalType'), [Var('precision', _any_type), Var('scale', _any_type)]))),
+            "unspecified_type": (LitTerminal("UNKNOWN"), Lambda([], MessageType('UnspecifiedType'), Call(Constructor('UnspecifiedType'), []))),
+            "string_type": (LitTerminal("STRING"), Lambda([], MessageType('StringType'), Call(Constructor('StringType'), []))),
+            "int_type": (LitTerminal("INT"), Lambda([], MessageType('IntType'), Call(Constructor('IntType'), []))),
+            "float_type": (LitTerminal("FLOAT"), Lambda([], MessageType('FloatType'), Call(Constructor('FloatType'), []))),
+            "uint128_type": (LitTerminal("UINT128"), Lambda([], MessageType('Uint128Type'), Call(Constructor('Uint128Type'), []))),
+            "int128_type": (LitTerminal("INT128"), Lambda([], MessageType('Int128Type'), Call(Constructor('Int128Type'), []))),
+            "boolean_type": (LitTerminal("BOOLEAN"), Lambda([], MessageType('BooleanType'), Call(Constructor('BooleanType'), []))),
+            "date_type": (LitTerminal("DATE"), Lambda([], MessageType('DateType'), Call(Constructor('DateType'), []))),
+            "datetime_type": (LitTerminal("DATETIME"), Lambda([], MessageType('DatetimeType'), Call(Constructor('DatetimeType'), []))),
+            "missing_type": (LitTerminal("MISSING"), Lambda([], MessageType('MissingType'), Call(Constructor('MissingType'), []))),
+            "decimal_type": (Sequence([LitTerminal("("), LitTerminal("DECIMAL"), NamedTerminal("INT"), NamedTerminal("INT"), LitTerminal(")")]), Lambda([Var("precision", BaseType('Int64')), Var("scale", BaseType('Int64'))], MessageType('DecimalType'), Call(Constructor('DecimalType'), [Var('precision', BaseType('Int64')), Var('scale', BaseType('Int64'))]))),
         }
         for lhs_name, (rhs, action) in type_rules.items():
             add_rule(Rule(
@@ -559,7 +559,7 @@ class GrammarGenerator:
             add_rule(Rule(
                 lhs=Nonterminal(name),
                 rhs=Sequence([LitTerminal("("), LitTerminal(op), Nonterminal("term"), Nonterminal("term"), LitTerminal(")")]),
-                action=_lambda(["left", "right"], return_type=_any_type, body=Call(Constructor('Primitive'), [Lit(prim), Var('left', _any_type), Var('right', _any_type)])),
+                action=Lambda([Var('left', MessageType('Term')), Var('right', MessageType('Term'))], MessageType('Primitive'), Call(Constructor('Primitive'), [Lit(prim), Var('left', MessageType('Term')), Var('right', MessageType('Term'))])),
 
             ))
 
@@ -574,7 +574,7 @@ class GrammarGenerator:
             add_rule(Rule(
                 lhs=Nonterminal(name),
                 rhs=Sequence([LitTerminal("("), LitTerminal(op), Nonterminal("term"), Nonterminal("term"), Nonterminal("term"), LitTerminal(")")]),
-                action=_lambda(["left", "right", "result"], return_type=_any_type, body=Call(Constructor('Primitive'), [Lit(prim), Var('left', _any_type), Var('right', _any_type), Var('result', _any_type)])),
+                action=Lambda([Var('left', MessageType('Term')), Var('right', MessageType('Term')), Var('result', MessageType('Term'))], MessageType('Primitive'), Call(Constructor('Primitive'), [Lit(prim), Var('left', MessageType('Term')), Var('right', MessageType('Term')), Var('result', MessageType('Term'))])),
 
             ))
 
@@ -582,7 +582,7 @@ class GrammarGenerator:
             add_rule(Rule(
                 lhs=Nonterminal("primitive"),
                 rhs=Sequence([Nonterminal(name)]),
-                action=_lambda(["op"], return_type=_any_type, body=Var('op', _any_type)),
+                action=Lambda([Var('op', MessageType('Primitive'))], MessageType('Primitive'), Var('op', MessageType('Primitive'))),
 
             ), is_final=False)
 
@@ -747,7 +747,7 @@ class GrammarGenerator:
                 # Create action: lambda value: MessageName(OneOf(:field, value))
                 oneof_call = Call(Constructor('OneOf'), [Symbol(field_name_snake), Var('value', field_type)])
                 wrapper_call = Call(Constructor(message_name), [oneof_call])
-                action = _lambda(["value"], return_type=MessageType(message_name), body=wrapper_call)
+                action = Lambda([Var('value', field_type)], MessageType(message_name), wrapper_call)
                 alt_rule = Rule(lhs=Nonterminal(rule_name), rhs=Sequence([Nonterminal(field_rule)]), action=action)
                 self._add_rule(alt_rule)
 
@@ -756,14 +756,14 @@ class GrammarGenerator:
                     if field_rule not in self.final_rules:
                         terminal_name = self._map_primitive_type(field.type)
                         field_type = self._get_type_for_name(field.type)
-                        field_to_type_rule = Rule(lhs=Nonterminal(field_rule), rhs=Sequence([NamedTerminal(terminal_name)]), action=_lambda(["x"], return_type=field_type, body=Var('x', field_type)))
+                        field_to_type_rule = Rule(lhs=Nonterminal(field_rule), rhs=Sequence([NamedTerminal(terminal_name)]), action=Lambda([Var('x', field_type)], field_type, Var('x', field_type)))
                         self._add_rule(field_to_type_rule)
                 else:
                     # For message types, generate rule mapping to type nonterminal
                     type_rule = self._get_rule_name(field.type)
                     if field_rule != type_rule and field_rule not in self.final_rules:
                         field_type = self._get_type_for_name(field.type)
-                        field_to_type_rule = Rule(lhs=Nonterminal(field_rule), rhs=Sequence([Nonterminal(type_rule)]), action=_lambda(["x"], return_type=field_type, body=Var('x', field_type)))
+                        field_to_type_rule = Rule(lhs=Nonterminal(field_rule), rhs=Sequence([Nonterminal(type_rule)]), action=Lambda([Var('x', field_type)], field_type, Var('x', field_type)))
                         self._add_rule(field_to_type_rule)
             for field in oneof.fields:
                 if self._is_message_type(field.type):
