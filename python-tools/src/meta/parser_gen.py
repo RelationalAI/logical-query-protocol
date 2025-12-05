@@ -64,27 +64,6 @@ def _generate_parse_method(
 
     return ParseNonterminalDef(lhs, [], BaseType('Any'), rhs)
 
-def _normalize(expr: TargetExpr, k: Callable[[TargetExpr], TargetExpr] = lambda x: x) -> TargetExpr:
-    if isinstance(expr, Return):
-        return Return(_normalize(expr))
-    if isinstance(expr, Assign):
-        return _normalize(expr.expr, lambda rhs: k(Assign(expr.var, rhs)))
-    if isinstance(expr, Seq):
-        return Seq([_normalize(e) for e in expr.exprs[:-1]] + [_normalize(expr.exprs[-1], k)])
-    if isinstance(expr, IfElse):
-        return IfElse(_normalize(expr.condition), _normalize(expr.then_branch, k), _normalize(expr.else_branch, k))
-    if isinstance(expr, Let):
-        return Let(expr.var, _normalize(expr.init), _normalize(expr.body, k))
-    if isinstance(expr, Call):
-        return k(Call(_normalize(expr.func), [_normalize(arg) for arg in expr.args]))
-    if isinstance(expr, Lambda):
-        return k(Lambda(expr.params, _normalize(expr.body), expr.return_type))
-    if isinstance(expr, While):
-        return k(While(_normalize(expr.condition), _normalize(expr.body)))
-    if isinstance(expr, (Var, Lit, Symbol, Constructor, Builtin)):
-        return k(expr)
-    return k(expr)
-
 MAX_LOOKAHEAD = 3
 
 def _build_predictor(grammar: Grammar, lhs: Nonterminal, rules: List[Rule]) -> TargetExpr:
