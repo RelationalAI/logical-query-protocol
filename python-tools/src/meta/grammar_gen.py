@@ -270,7 +270,6 @@ class GrammarGenerator:
 
         # TODO: We don't really want to parse the patterns to handle | (in FLOAT)
         self.grammar.tokens.append(Token("SYMBOL", '[a-zA-Z_][a-zA-Z0-9_.-]*', Lambda(params=['lexeme'], body=Call(Builtin('parse_symbol'), [Var('lexeme')]))))
-        self.grammar.tokens.append(Token("MISSING", 'missing', Lambda(params=['lexeme'], body=Call(Builtin('parse_missing'), [Var('lexeme')]))))
         self.grammar.tokens.append(Token("STRING", '"(?:[^"\\\\]|\\\\.)*"', Lambda(params=['lexeme'], body=Call(Builtin('parse_string'), [Var('lexeme')]))))
         self.grammar.tokens.append(Token("INT", '[-]?\\d+', Lambda(params=['lexeme'], body=Call(Builtin('parse_int'), [Var('lexeme')]))))
         self.grammar.tokens.append(Token("INT128", '[-]?\\d+i128', Lambda(params=['lexeme'], body=Call(Builtin('parse_int128'), [Var('lexeme')]))))
