@@ -113,7 +113,29 @@ func uint128ToString(low, high uint64) string {
 	result := new(big.Int).SetUint64(high)
 	result.Lsh(result, 64)
 	result.Add(result, new(big.Int).SetUint64(low))
+
 	return result.String()
+}
+
+// Helper to convert int128 (represented as two uint64s in two's complement) to string
+func int128ToString(low, high uint64) string {
+	// Check if the sign bit is set (high bit of high word)
+	isNegative := (high & 0x8000000000000000) != 0
+
+	if !isNegative {
+		// Positive number - same as uint128
+		return uint128ToString(low, high)
+	}
+
+	// Negative number - convert from two's complement
+	// Two's complement: flip all bits and add 1
+	result := new(big.Int).SetUint64(^high)
+	result.Lsh(result, 64)
+	result.Add(result, new(big.Int).SetUint64(^low))
+	result.Add(result, big.NewInt(1))
+
+	// Return with negative sign
+	return "-" + result.String()
 }
 
 // Convert uint128 to hex string (without unnecessary leading zeros)
@@ -709,7 +731,11 @@ func toStr(node interface{}, indentLevel int, options map[string]bool, debugInfo
 		configDict := make(map[string]interface{})
 		configDict["partition_size"] = n.GetPartitionSize()
 		configDict["compression"] = n.GetCompression()
-		configDict["syntax_header_row"] = n.GetSyntaxHeaderRow()
+		if n.GetSyntaxHeaderRow() {
+			configDict["syntax_header_row"] = 1
+		} else {
+			configDict["syntax_header_row"] = 0
+		}
 		configDict["syntax_missing_string"] = n.GetSyntaxMissingString()
 		configDict["syntax_delim"] = n.GetSyntaxDelim()
 		configDict["syntax_quotechar"] = n.GetSyntaxQuotechar()
@@ -774,7 +800,7 @@ func getTypeName(t *pb.Type) string {
 	case t.GetDecimalType() != nil:
 		return "DECIMAL"
 	case t.GetBooleanType() != nil:
-		return "BOOL"
+		return "BOOLEAN"
 	default:
 		return "UNKNOWN"
 	}
@@ -819,7 +845,7 @@ func valueToStr(value interface{}, indentLevel int, options map[string]bool, deb
 			return ind + "0x" + uint128ToHexString(uint128.GetLow(), uint128.GetHigh())
 		case *pb.Value_Int128Value:
 			int128 := v.GetInt128Value()
-			result := uint128ToString(int128.GetLow(), int128.GetHigh())
+			result := int128ToString(int128.GetLow(), int128.GetHigh())
 			return ind + result + "i128"
 		case *pb.Value_MissingValue:
 			return ind + "missing"
@@ -838,10 +864,16 @@ func valueToStr(value interface{}, indentLevel int, options map[string]bool, deb
 			decimal := v.GetDecimalValue()
 			int128Val := decimal.GetValue()
 			if int128Val != nil {
-				// Get the raw integer value
-				rawValue := uint128ToString(int128Val.GetLow(), int128Val.GetHigh())
+				// Get the raw integer value (using int128 for proper sign handling)
+				rawValue := int128ToString(int128Val.GetLow(), int128Val.GetHigh())
 				precision := decimal.GetPrecision()
 				scale := decimal.GetScale()
+
+				// Handle negative sign separately
+				isNegative := strings.HasPrefix(rawValue, "-")
+				if isNegative {
+					rawValue = rawValue[1:] // Remove the negative sign temporarily
+				}
 
 				// Format as decimal with proper placement of decimal point
 				// The raw value is the number * 10^scale
@@ -862,6 +894,12 @@ func valueToStr(value interface{}, indentLevel int, options map[string]bool, deb
 						decStr = rawValue[:insertPos] + "." + rawValue[insertPos:]
 					}
 				}
+
+				// Add back the negative sign if needed
+				if isNegative {
+					decStr = "-" + decStr
+				}
+
 				return ind + decStr + "d" + fmt.Sprintf("%d", precision)
 			}
 		case *pb.Value_BooleanValue:
@@ -892,6 +930,7 @@ func valueToStr(value interface{}, indentLevel int, options map[string]bool, deb
 
 func typeToStr(t *pb.Type, indentLevel int, options map[string]bool, debugInfo map[string]string, conf StyleConfig) string {
 	typeName := getTypeName(t)
+
 	params := getTypeParameters(t)
 
 	if len(params) == 0 {
