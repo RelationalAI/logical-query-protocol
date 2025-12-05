@@ -7,7 +7,7 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
-from meta.grammar import Grammar, Rule, Nonterminal, Literal, Terminal, Sequence, Star, Plus, Option
+from meta.grammar import Grammar, Rule, Nonterminal, LitTerminal, NamedTerminal, Sequence, Star, Option
 
 
 def test_normalize_star():
@@ -16,7 +16,7 @@ def test_normalize_star():
 
     rule = Rule(
         lhs=Nonterminal("A"),
-        rhs=Sequence([Literal("("), Star(Terminal("X")), Literal(")")]),
+        rhs=Sequence([LitTerminal("("), Star(NamedTerminal("X")), LitTerminal(")")]),
         grammar=grammar
     )
     grammar.add_rule(rule)
@@ -34,33 +34,13 @@ def test_normalize_star():
     print("✓ Star normalization works correctly")
 
 
-def test_normalize_plus():
-    """Test normalization of Plus operator."""
-    grammar = Grammar()
-
-    rule = Rule(
-        lhs=Nonterminal("B"),
-        rhs=Plus(Terminal("Y")),
-        grammar=grammar
-    )
-    grammar.add_rule(rule)
-
-    normalized = grammar.normalize()
-
-    # Should create auxiliary rules for Y+
-    aux_rules = [name for name in normalized.rules.keys() if '_plus_' in name or '_star_' in name]
-    assert len(aux_rules) > 0, "Should create auxiliary plus/star rules"
-
-    print("✓ Plus normalization works correctly")
-
-
 def test_normalize_option():
     """Test normalization of Option operator."""
     grammar = Grammar()
 
     rule = Rule(
         lhs=Nonterminal("C"),
-        rhs=Option(Terminal("Z")),
+        rhs=Option(NamedTerminal("Z")),
         grammar=grammar
     )
     grammar.add_rule(rule)
@@ -84,12 +64,12 @@ def test_normalize_preserves_other_rules():
 
     rule1 = Rule(
         lhs=Nonterminal("D"),
-        rhs=Sequence([Terminal("A"), Terminal("B")]),
+        rhs=Sequence([NamedTerminal("A"), NamedTerminal("B")]),
         grammar=grammar
     )
     rule2 = Rule(
         lhs=Nonterminal("E"),
-        rhs=Terminal("C"),
+        rhs=NamedTerminal("C"),
         grammar=grammar
     )
 
@@ -106,7 +86,6 @@ def test_normalize_preserves_other_rules():
 
 if __name__ == "__main__":
     test_normalize_star()
-    test_normalize_plus()
     test_normalize_option()
     test_normalize_preserves_other_rules()
     print("\n✓ All normalization tests passed")

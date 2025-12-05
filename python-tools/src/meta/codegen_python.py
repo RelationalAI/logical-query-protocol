@@ -111,7 +111,7 @@ def generate_python_lines(expr: TargetExpr, lines: List[str], indent: str = "") 
                 arg1 = generate_python_lines(expr.args[0], lines, indent)
                 arg2 = generate_python_lines(expr.args[1], lines, indent)
                 return f"{arg1} + [{arg2}]"
-            if expr.func.name == "list_push" and len(expr.args) == 2:
+            if expr.func.name == "list_push!" and len(expr.args) == 2:
                 arg1 = generate_python_lines(expr.args[0], lines, indent)
                 arg2 = generate_python_lines(expr.args[1], lines, indent)
                 lines.append(f"{indent}{arg1}.append({arg2})")
@@ -196,7 +196,7 @@ def generate_python_lines(expr: TargetExpr, lines: List[str], indent: str = "") 
         return f
 
     elif isinstance(expr, Let):
-        var_name = escape_identifier(expr.var)
+        var_name = escape_identifier(expr.var.name)
         tmp1 = generate_python_lines(expr.init, lines, indent)
         lines.append(f"{indent}{var_name} = {tmp1}")
         tmp2 = generate_python_lines(expr.body, lines, indent)
@@ -235,7 +235,7 @@ def generate_python_lines(expr: TargetExpr, lines: List[str], indent: str = "") 
         return "None"
 
     elif isinstance(expr, Assign):
-        var_name = escape_identifier(expr.var)
+        var_name = escape_identifier(expr.var.name)
         expr_code = generate_python_lines(expr.expr, lines, indent)
         lines.append(f"{indent}{var_name} = {expr_code}")
         return "None"

@@ -9,7 +9,7 @@ Handles Python-specific code generation including:
 
 from typing import Dict, List, Optional, Set
 
-from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Plus, Option, get_literals
+from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, get_literals
 from .target import Lambda, Call
 from .codegen_python import generate_python_lines, generate_python_def
 from .parser_gen import  _generate_parse_rhs_ir, generate_rules

@@ -11,8 +11,10 @@ from dataclasses import is_dataclass
 from re import L
 from typing import Dict, List, Optional, Set, Tuple, Callable, Sequence as PySequence
 
-from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Plus, Option, Terminal, is_epsilon, rhs_elements, Sequence
+from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Terminal, is_epsilon, rhs_elements, Sequence
 from .target import Lambda, Call, ParseNonterminalDef, Var, Lit, Symbol, Builtin, Let, IfElse, FunDef, BaseType, ListType, TargetExpr, Seq, While, Assign, Type, ParseNonterminal, ParseNonterminalDef, Return, Constructor, gensym
+
+_any_type = BaseType("Any")
 
 
 def generate_rules(grammar: Grammar) -> List[ParseNonterminalDef]:
@@ -56,11 +58,11 @@ def _generate_parse_method(
             if is_epsilon(rule.rhs):
                 continue
             tail = IfElse(
-                Call(Builtin('equal'), [Var(prediction), Lit(i)]),
+                Call(Builtin('equal'), [Var(prediction, _any_type), Lit(i)]),
                 _generate_parse_rhs_ir(rule.rhs, rule, grammar),
                 tail)
 
-        rhs = Let(prediction, predictor, tail)
+        rhs = Let(Var(prediction, _any_type), predictor, tail)
 
     return ParseNonterminalDef(lhs, [], BaseType('Any'), rhs)
 
@@ -202,14 +204,14 @@ def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optio
         parse_expr = Call(Builtin('consume_terminal'), [Lit(rhs.name)])
         if rule and rule.action:
             var_name = gensym(rule.action.params[0] if rule.action.params else "arg")
-            return Seq([Assign(var_name, parse_expr), _apply(rule.action, [Var(var_name)])])
+            return Seq([Assign(Var(var_name, _any_type), parse_expr), _apply(rule.action, [Var(var_name, _any_type)])])
         return parse_expr
     elif isinstance(rhs, Nonterminal):
         # Build IR: ParseNonterminal(nonterminal, [])
         parse_expr = Call(ParseNonterminal(rhs), [])
         if rule and rule.action:
             var_name = gensym(rule.action.params[0] if rule.action.params else "arg")
-            return Seq([Assign(var_name, parse_expr), _apply(rule.action, [Var(var_name)])])
+            return Seq([Assign(Var(var_name, _any_type), parse_expr), _apply(rule.action, [Var(var_name, _any_type)])])
         return parse_expr
     elif isinstance(rhs, Option):
         if isinstance(rhs.rhs, NamedTerminal):
@@ -225,7 +227,7 @@ def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optio
             rules = grammar.get_rules(lhs)
             has_epsilon = any(is_epsilon(rule.rhs) for rule in rules)
             if not has_epsilon:
-                rules = rules + [Rule(lhs, Sequence([]), Lambda(params=[], body=Lit(None)))]
+                rules = rules + [Rule(lhs, Sequence([]), Lambda(params=[], return_type=_any_type), body=Lit(None))]
             epsilon_index = findfirst(lambda rule: is_epsilon(rule.rhs), rules)
             if len(rules) > 1:
                 predictor = _build_predictor(grammar, lhs, rules)
@@ -238,13 +240,10 @@ def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optio
                 parse_expr = Lit(None)
         if rule and rule.action:
             var_name = gensym(rule.action.params[0] if rule.action.params else "arg")
-            return Seq([Assign(var_name, parse_expr), _apply(rule.action, [Var(var_name)])])
+            return Seq([Assign(Var(var_name, _any_type), parse_expr), _apply(rule.action, [Var(var_name, _any_type)])])
         return parse_expr
 
 
-    elif isinstance(rhs, Plus):
-        # A+ is equivalent to A A*
-        return _generate_parse_rhs_ir(Sequence([rhs.rhs, Star(rhs.rhs)]), rule, grammar)
     elif isinstance(rhs, Star):
         if isinstance(rhs.rhs, NamedTerminal):
             term = rhs.rhs
@@ -258,28 +257,28 @@ def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optio
             rules = grammar.get_rules(lhs)
             has_epsilon = any(is_epsilon(rule.rhs) for rule in rules)
             if not has_epsilon:
-                rules = rules + [Rule(lhs, Sequence([]), Lambda(params=[], body=Lit(None)))]
+                rules = rules + [Rule(lhs, Sequence([]), Lambda(params=[], return_type=_any_type), body=Lit(None))]
             epsilon_index = findfirst(lambda rule: is_epsilon(rule.rhs), rules)
             if len(rules) > 1:
                 predictor = _build_predictor(grammar, lhs, rules)
                 x = gensym('x')
                 xs = gensym('xs')
                 parse_expr = Let(
-                        xs,
+                        Var(xs, _any_type),
                         Call(Builtin('make_list'), []),
                         Seq([
                             While(
                                 Call(Builtin('not_equal'), [predictor, Lit(epsilon_index)]),
-                                Call(Builtin('list_push'), [Var(xs), _generate_parse_rhs_ir(rhs.rhs, None, grammar)])
+                                Call(Builtin('list_push!'), [Var(xs, _any_type), _generate_parse_rhs_ir(rhs.rhs, None, grammar)])
                             ),
-                            Var(xs)
+                            Var(xs, _any_type)
                         ])
                 )
             else:
                 parse_expr = Call(Builtin('make_list'), [])
         if rule and rule.action:
             var_name = gensym(rule.action.params[0] if rule.action.params else "arg")
-            return Seq([Assign(var_name, parse_expr), _apply(rule.action, [Var(var_name)])])
+            return Seq([Assign(Var(var_name, _any_type), parse_expr), _apply(rule.action, [Var(var_name, _any_type)])])
         return parse_expr
     else:
         assert False, f"Unsupported Rhs type: {type(rhs)}"
@@ -309,8 +308,8 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, rule: Optional[Rule] = None, 
             else:
                 var_name = gensym("arg")
             param_names.append(var_name)
-            exprs.append(Assign(var_name, elem_ir))
-            arg_vars.append(Var(var_name))
+            exprs.append(Assign(Var(var_name, _any_type), elem_ir))
+            arg_vars.append(Var(var_name, _any_type))
             non_literal_count += 1
 
     # Build Lambda and Call
@@ -319,9 +318,9 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, rule: Optional[Rule] = None, 
         action_lambda = rule.action
     else:
         # Create default Lambda that returns list of arguments
-        # Lambda([arg0, arg1, ...], Tuple([Var(arg0), Var(arg1), ...]))
+        # Lambda([arg0, arg1, ...], Tuple([Var(arg0, _any_type), Var(arg1, _any_type), ...]))
         list_expr = Call(Builtin('Tuple'), arg_vars)
-        action_lambda = Lambda(param_names, list_expr)
+        action_lambda = Lambda(param_names, list_expr, return_type=_any_type)
 
     # Call the Lambda with the variables
     lambda_call = _apply(action_lambda, arg_vars)
@@ -340,12 +339,12 @@ def _apply(func: 'Lambda', args: PySequence['TargetExpr']) -> 'TargetExpr':
         return func.body
     if len(func.params) > 0 and len(args) > 0:
         body = _apply(
-            Lambda(params=func.params[1:], body=func.body, return_type=func.return_type),
+            Lambda(params=func.params[1:], return_type=func.return_type, body=func.body),
             args[1:]
         )
         if isinstance(args[0], (Var, Lit)):
             return _subst(body, func.params[0], args[0])
-        return Let(func.params[0], args[0], body)
+        return Let(Var(func.params[0], _any_type), args[0], body)
     # TODO
     # assert False, f"Invalid application of {func} to {args}"
     return Call(func, args)
@@ -358,9 +357,9 @@ def _subst(expr: 'TargetExpr', var: str, val: 'TargetExpr') -> 'TargetExpr':
             return expr
         return Lambda(expr.params, _subst(expr.body, var, val), expr.return_type)
     elif isinstance(expr, Let):
-        if expr.var == var:
+        if expr.var.name == var:
             return expr
-        return Let(expr.var, expr.init, _subst(expr.body, var, val))
+        return Let(expr.var, _subst(expr.init, var, val), _subst(expr.body, var, val))
     elif isinstance(expr, Assign):
         return Assign(expr.var, _subst(expr.expr, var, val))
     elif isinstance(expr, Call):

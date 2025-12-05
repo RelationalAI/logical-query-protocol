@@ -11,8 +11,10 @@ from meta.grammar import (
     Grammar, Rule, Nonterminal, Sequence,
     Token
 )
-from meta.target import Lambda, Var, Call, Builtin
+from meta.target import Lambda, Var, Call, Builtin, BaseType
 from meta.parser_python import generate_parser_python
+
+_any_type = BaseType("Any")
 
 
 def test_parser_with_left_factoring():
@@ -38,7 +40,7 @@ def test_parser_with_left_factoring():
         ]),
         action=Lambda(
             params=['_', '_', 't1', 't2', '_'],
-            body=Call('Add', [Var('t1'), Var('t2')])
+            body=Call('Add', [Var('t1', _any_type), Var('t2', _any_type)])
         ),
         grammar=grammar
     )
@@ -54,7 +56,7 @@ def test_parser_with_left_factoring():
         ]),
         action=Lambda(
             params=['_', '_', 't1', 't2', '_'],
-            body=Call('Sub', [Var('t1'), Var('t2')])
+            body=Call('Sub', [Var('t1', _any_type), Var('t2', _any_type)])
         ),
         grammar=grammar
     )
@@ -70,7 +72,7 @@ def test_parser_with_left_factoring():
     ))
 
     # Add tokens
-    grammar.tokens.append(Token("NUMBER", r'\d+', Lambda(params=['lexeme'], body=Call(Builtin('parse_number'), [Var('lexeme')]))))
+    grammar.tokens.append(Token("NUMBER", r'\d+', Lambda(params=['lexeme'], body=Call(Builtin('parse_number'), [Var('lexeme', _any_type)]))))
 
     print("Generating parser...")
 
@@ -120,7 +122,7 @@ def test_parser_execution():
         grammar=grammar
     ))
 
-    grammar.tokens.append(Token("NUMBER", r'\d+', Lambda(params=['lexeme'], body=Call(Builtin('parse_number'), [Var('lexeme')]))))
+    grammar.tokens.append(Token("NUMBER", r'\d+', Lambda(params=['lexeme'], body=Call(Builtin('parse_number'), [Var('lexeme', _any_type)]))))
 
     print("\nGenerating and testing parser execution...")
 

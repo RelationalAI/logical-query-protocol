@@ -42,7 +42,6 @@ from .grammar import (
     NamedTerminal,
     Nonterminal,
     Star,
-    Plus,
     Option,
 )
 
@@ -107,7 +106,6 @@ __all__ = [
     'NamedTerminal',
     'Nonterminal',
     'Star',
-    'Plus',
     'Option',
     # Protobuf AST
     'PRIMITIVE_TYPES',

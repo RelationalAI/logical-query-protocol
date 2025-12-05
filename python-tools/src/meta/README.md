@@ -14,7 +14,7 @@ The meta-language tooling converts protobuf message definitions into:
 ### Core Modules
 
 #### Grammar Representation (`grammar.py`)
-- **Data structures**: `Grammar`, `Rule`, `Token`, `Rhs` types (`LitTerminal`, `NamedTerminal`, `Nonterminal`, `Star`, `Plus`, `Option`)
+- **Data structures**: `Grammar`, `Rule`, `Token`, `Rhs` types (`LitTerminal`, `NamedTerminal`, `Nonterminal`, `Star`, `Option`)
 - **Semantic actions**: `ActionExpr` types (`Function`, `Var`, `Call`, `Symbol`, `Wildcard`)
 - **Public API**: Grammar construction and manipulation
 
@@ -22,7 +22,6 @@ The meta-language tooling converts protobuf message definitions into:
 
 **`normalize.py`** - EBNF Operator Elimination
 - Converts `A*` → `A_star -> A A_star | ε`
-- Converts `A+` → `A_plus -> A A_star`
 - Converts `A?` → `A_opt -> A | ε`
 
 **`left_factor.py`** - Common Prefix Extraction

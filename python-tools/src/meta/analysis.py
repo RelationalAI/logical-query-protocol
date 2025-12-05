@@ -9,7 +9,7 @@ from typing import Dict, List, Optional, Set, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
     from .grammar import Grammar, Rhs, Rule
 
-from .grammar import LitTerminal, NamedTerminal, Nonterminal, Star, Plus, Option, Sequence, Terminal, get_nonterminals
+from .grammar import LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence, Terminal, get_nonterminals
 
 
 def check_reachability(grammar: 'Grammar') -> Set[Nonterminal]:
@@ -72,8 +72,6 @@ def _is_rhs_elem_nullable(rhs: 'Rhs', nullable: Dict[Nonterminal, bool]) -> bool
         return all(_is_rhs_elem_nullable(elem, nullable) for elem in rhs.elements)
     elif isinstance(rhs, Star) or isinstance(rhs, Option):
         return True
-    elif isinstance(rhs, Plus):
-        return _is_rhs_elem_nullable(rhs.rhs, nullable)
     else:
         return False
 
@@ -140,8 +138,6 @@ def _compute_rhs_elem_first_k(rhs: 'Rhs', first_k: Dict[Nonterminal, Set[Tuple[T
     elif isinstance(rhs, (Star, Option)):
         result.update(_compute_rhs_elem_first_k(rhs.rhs, first_k, nullable, k))
         result.add(())
-    elif isinstance(rhs, Plus):
-        result.update(_compute_rhs_elem_first_k(rhs.rhs, first_k, nullable, k))
 
     return result
 
@@ -189,8 +185,6 @@ def _compute_rhs_elem_first(rhs: 'Rhs', first: Dict[Nonterminal, Set[Terminal]],
             if not _is_rhs_elem_nullable(elem, nullable):
                 break
     elif isinstance(rhs, (Star, Option)):
-        result.update(_compute_rhs_elem_first(rhs.rhs, first, nullable))
-    elif isinstance(rhs, Plus):
         result.update(_compute_rhs_elem_first(rhs.rhs, first, nullable))
     return result
 
@@ -262,11 +256,11 @@ def _compute_rhs_elem_follow(rhs: 'Rhs', lhs: Nonterminal,
                 inner_follows = _compute_rhs_elem_follow(elem, lhs, first, nullable, follow)
                 for nt, terminals in inner_follows.items():
                     add_follow(nt, terminals)
-            elif isinstance(elem, (Star, Plus, Option)):
+            elif isinstance(elem, (Star, Option)):
                 inner_follows = _compute_rhs_elem_follow(elem, lhs, first, nullable, follow)
                 for nt, terminals in inner_follows.items():
                     add_follow(nt, terminals)
-    elif isinstance(rhs, (Star, Plus)):
+    elif isinstance(rhs, Star):
         inner_follows = _compute_rhs_elem_follow(rhs.rhs, lhs, first, nullable, follow)
         for nt, terminals in inner_follows.items():
             add_follow(nt, terminals)

@@ -37,6 +37,7 @@ class TargetExpr(TargetNode):
 class Var(TargetExpr):
     """Variable reference."""
     name: str
+    type: 'Type'
 
     def __str__(self) -> str:
         return self.name
@@ -45,6 +46,7 @@ class Var(TargetExpr):
         assert isinstance(self.name, str), f"Invalid name in {self}: {self.name}"
         if not self.name.isidentifier():
             raise ValueError(f"Invalid variable name: {self.name}")
+        assert isinstance(self.type, Type), f"Invalid type in {self}: {self.type}"
 
 
 @dataclass
@@ -102,6 +104,20 @@ class Constructor(TargetExpr):
         if not self.name.isidentifier():
             raise ValueError(f"Invalid variable name: {self.name}")
 
+
+@dataclass
+class ParseNonterminal(TargetExpr):
+    """Parse method call for a nonterminal.
+
+    Like Call but specifically for calling parser methods, with a Nonterminal
+    instead of an expression for the function.
+    """
+    nonterminal: 'Nonterminal'
+
+    def __str__(self) -> str:
+        return f"parse_{self.nonterminal.name}"
+
+
 @dataclass
 class Call(TargetExpr):
     """Function call expression.
@@ -128,18 +144,16 @@ class Lambda(TargetExpr):
     """Lambda function (anonymous function)."""
     # TODO: params should have types
     params: Sequence[str]
+    return_type: 'Type'
     body: 'TargetExpr'
-    return_type: Optional['Type'] = None
 
     def __str__(self) -> str:
         params_str = ', '.join(self.params)
-        ret_str = f" -> {self.return_type}" if self.return_type else ""
-        return f"lambda {params_str}{ret_str}: {self.body}"
+        return f"lambda {params_str} -> {self.return_type}: {self.body}"
 
     def __post_init__(self):
         assert isinstance(self.body, TargetExpr), f"Invalid function expression in {self}: {self.body}"
-        if self.return_type is not None:
-            assert isinstance(self.return_type, Type), f"Invalid function return type in {self}: {self.return_type}"
+        assert isinstance(self.return_type, Type), f"Invalid function return type in {self}: {self.return_type}"
         for param in self.params:
             assert isinstance(param, str), f"Invalid parameter name in {self}: {param}"
 
@@ -150,21 +164,18 @@ class Let(TargetExpr):
     Evaluates init, binds the result to var, then evaluates body
     in the extended environment.
     """
-    var: str
+    var: 'Var'
     init: 'TargetExpr'
     body: 'TargetExpr'
-    # TODO PR make the Type non-optional
-    init_type: Optional['Type'] = None  # Type of init
 
     def __str__(self) -> str:
-        type_str = f": {self.init_type}" if self.init_type else ""
-        return f"let {self.var}{type_str} = {self.init} in {self.body}"
+        type_str = f": {self.var.type}" if self.var.type else ""
+        return f"let {self.var.name}{type_str} = {self.init} in {self.body}"
 
     def __post_init__(self):
+        assert isinstance(self.var, Var), f"Invalid let var in {self}: {self.var}"
         assert isinstance(self.init, TargetExpr), f"Invalid let init expression in {self}: {self.init}"
         assert isinstance(self.body, TargetExpr), f"Invalid let body expression in {self}: {self.body}"
-        if self.init_type is not None:
-            assert isinstance(self.init_type, Type), f"Invalid let init type in {self}: {self.init_type}"
 
 @dataclass
 class IfElse(TargetExpr):
@@ -216,14 +227,14 @@ class Assign(TargetExpr):
 
     Returns None after performing the assignment.
     """
-    var: str
+    var: 'Var'
     expr: TargetExpr
 
     def __str__(self) -> str:
-        return f"{self.var} = {self.expr}"
+        return f"{self.var.name} = {self.expr}"
 
     def __post_init__(self):
-        assert isinstance(self.var, str), f"Invalid assign LHS expression in {self}: {self.var}"
+        assert isinstance(self.var, Var), f"Invalid assign LHS expression in {self}: {self.var}"
         assert isinstance(self.expr, TargetExpr), f"Invalid assign RHS expression in {self}: {self.expr}"
 
 
@@ -283,17 +294,27 @@ class ListType(Type):
 
 
 @dataclass
+class FunctionType(Type):
+    """Function type with parameter types and return type."""
+    param_types: Sequence[Type]
+    return_type: Type
+
+    def __str__(self) -> str:
+        params_str = ', '.join(str(t) for t in self.param_types)
+        return f"({params_str}) -> {self.return_type}"
+
+
+@dataclass
 class FunDef(TargetNode):
     """Function definition with parameters, return type, and body."""
     name: str
-    params: Sequence[tuple[str, Type]] = field(default_factory=list)
-    return_type: Optional[Type] = None
-    body: Optional['TargetExpr'] = None
+    params: Sequence[tuple[str, Type]]
+    return_type: Type
+    body: 'TargetExpr'
 
     def __str__(self) -> str:
         params_str = ', '.join(f"{name}: {typ}" for name, typ in self.params)
-        ret_str = f" -> {self.return_type}" if self.return_type else ""
-        return f"def {self.name}({params_str}){ret_str}: {self.body}"
+        return f"def {self.name}({params_str}) -> {self.return_type}: {self.body}"
 
 
 @dataclass
@@ -304,27 +325,13 @@ class ParseNonterminalDef(TargetNode):
     instead of a string name.
     """
     nonterminal: 'Nonterminal'
-    params: Sequence[tuple[str, Type]] = field(default_factory=list)
-    return_type: Optional[Type] = None
-    body: Optional['TargetExpr'] = None
+    params: Sequence[tuple[str, Type]]
+    return_type: Type
+    body: 'TargetExpr'
 
     def __str__(self) -> str:
         params_str = ', '.join(f"{name}: {typ}" for name, typ in self.params)
-        ret_str = f" -> {self.return_type}" if self.return_type else ""
-        return f"parse_{self.nonterminal.name}({params_str}){ret_str}: {self.body}"
-
-
-@dataclass
-class ParseNonterminal(TargetExpr):
-    """Parse method call for a nonterminal.
-
-    Like Call but specifically for calling parser methods, with a Nonterminal
-    instead of an expression for the function.
-    """
-    nonterminal: 'Nonterminal'
-
-    def __str__(self) -> str:
-        return f"parse_{self.nonterminal.name}"
+        return f"parse_{self.nonterminal.name}({params_str}) -> {self.return_type}: {self.body}"
 
 
 # Re-export all types for convenience
@@ -348,6 +355,7 @@ __all__ = [
     'BaseType',
     'TupleType',
     'ListType',
+    'FunctionType',
     'FunDef',
     'ParseNonterminalDef',
     'ParseNonterminal',

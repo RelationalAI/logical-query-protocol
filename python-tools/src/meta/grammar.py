@@ -65,19 +65,6 @@ class Star(Rhs):
 
 
 @dataclass
-class Plus(Rhs):
-    """One or more repetitions (+)."""
-    rhs: 'Rhs'
-
-    def __post_init__(self):
-        assert isinstance(self.rhs, Nonterminal) or isinstance(self.rhs, NamedTerminal), \
-            f"Plus child must be Nonterminal, got {type(self.rhs).__name__}"
-
-    def __str__(self) -> str:
-        return f"{self.rhs}+"
-
-
-@dataclass
 class Option(Rhs):
     """Optional element (?)."""
     rhs: 'Rhs'
@@ -307,8 +294,6 @@ class Grammar:
             return all(self.nullable(elem) for elem in rhs.elements)
         elif isinstance(rhs, Star) or isinstance(rhs, Option):
             return True
-        elif isinstance(rhs, Plus):
-            return self.nullable(rhs.rhs)
         else:
             return False
 
@@ -337,8 +322,6 @@ class Grammar:
                 if not self.nullable(elem):
                     break
         elif isinstance(rhs, Star) or isinstance(rhs, Option):
-            result.update(self.first(rhs.rhs))
-        elif isinstance(rhs, Plus):
             result.update(self.first(rhs.rhs))
 
         return result
@@ -446,8 +429,6 @@ class Grammar:
             return f"{self._rhs_elem_to_name(rhs.rhs)}_opt"
         elif isinstance(rhs, Star):
             return f"{self._rhs_elem_to_name(rhs.rhs)}_star"
-        elif isinstance(rhs, Plus):
-            return f"{self._rhs_elem_to_name(rhs.rhs)}_plus"
         else:
             assert False
 
@@ -463,7 +444,7 @@ def get_nonterminals(rhs: Rhs) -> Set[Nonterminal]:
     elif isinstance(rhs, Sequence):
         for elem in rhs.elements:
             nonterminals.update(get_nonterminals(elem))
-    elif isinstance(rhs, (Star, Plus, Option)):
+    elif isinstance(rhs, (Star, Option)):
         nonterminals.update(get_nonterminals(rhs.rhs))
 
     return nonterminals
@@ -478,7 +459,7 @@ def get_literals(rhs: Rhs) -> Set[LitTerminal]:
     elif isinstance(rhs, Sequence):
         for elem in rhs.elements:
             literals.update(get_literals(elem))
-    elif isinstance(rhs, (Star, Plus, Option)):
+    elif isinstance(rhs, (Star, Option)):
         literals.update(get_literals(rhs.rhs))
 
     return literals
@@ -507,5 +488,5 @@ def _count_nonliteral_rhs_elements(rhs: Rhs) -> int:
     elif isinstance(rhs, LitTerminal):
         return 0
     else:
-        assert isinstance(rhs, (NamedTerminal, Nonterminal, Option, Star, Plus)), f"found {type(rhs)}"
+        assert isinstance(rhs, (NamedTerminal, Nonterminal, Option, Star)), f"found {type(rhs)}"
         return 1
