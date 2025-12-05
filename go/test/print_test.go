@@ -8,6 +8,7 @@ import (
 
 	lqp "logical-query-protocol/src"
 	pb "logical-query-protocol/src/lqp/v1"
+
 	"google.golang.org/protobuf/proto"
 )
 
@@ -52,15 +53,9 @@ func TestPrintBinaryFiles(t *testing.T) {
 				t.Fatalf("Failed to unmarshal binary file %s: %v", entry.Name(), err)
 			}
 
-			// Print using programToStr with UglyConfig
-			// We need to use print_names=true and print_debug=false to match lqp_pretty_output
-			options := map[string]bool{
-				"styled":             false,
-				"print_names":        true,
-				"print_debug":        false,
-				"print_csv_filename": true,
-			}
-			printed := lqp.ProgramToStr(transaction, options)
+			// Print using programToStr
+			// Default behavior: print_names=true, print_debug=false, print_csv_filename=true
+			printed := lqp.ProgramToStr(transaction)
 
 			// Read expected output
 			expectedName := strings.Replace(entry.Name(), ".bin", ".lqp", 1)
