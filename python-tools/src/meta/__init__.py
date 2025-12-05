@@ -60,7 +60,6 @@ from .proto_parser import ProtoParser
 # Grammar generation
 from .grammar_gen import (
     GrammarGenerator,
-    parse_action,
     generate_grammar,
     generate_semantic_actions,
 )
