@@ -51,4 +51,7 @@ jobs:
       with:
         go-version: '1.25'
 
-    # TODO: populate go tests
+    - name: Run tests
+      run: |
+        cd go
+        go test -v ./test/print_test.go
