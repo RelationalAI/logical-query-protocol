@@ -227,7 +227,7 @@ def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optio
             rules = grammar.get_rules(lhs)
             has_epsilon = any(is_epsilon(rule.rhs) for rule in rules)
             if not has_epsilon:
-                rules = rules + [Rule(lhs, Sequence([]), Lambda(params=[], return_type=_any_type), body=Lit(None))]
+                rules = rules + [Rule(lhs, Sequence([]), Lambda(params=[], return_type=_any_type, body=Lit(None)))]
             epsilon_index = findfirst(lambda rule: is_epsilon(rule.rhs), rules)
             if len(rules) > 1:
                 predictor = _build_predictor(grammar, lhs, rules)
@@ -257,7 +257,7 @@ def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optio
             rules = grammar.get_rules(lhs)
             has_epsilon = any(is_epsilon(rule.rhs) for rule in rules)
             if not has_epsilon:
-                rules = rules + [Rule(lhs, Sequence([]), Lambda(params=[], return_type=_any_type), body=Lit(None))]
+                rules = rules + [Rule(lhs, Sequence([]), Lambda(params=[], return_type=_any_type, body=Lit(None)))]
             epsilon_index = findfirst(lambda rule: is_epsilon(rule.rhs), rules)
             if len(rules) > 1:
                 predictor = _build_predictor(grammar, lhs, rules)
@@ -355,7 +355,7 @@ def _subst(expr: 'TargetExpr', var: str, val: 'TargetExpr') -> 'TargetExpr':
     elif isinstance(expr, Lambda):
         if var in expr.params:
             return expr
-        return Lambda(expr.params, _subst(expr.body, var, val), expr.return_type)
+        return Lambda(params=expr.params, return_type=expr.return_type, body=_subst(expr.body, var, val))
     elif isinstance(expr, Let):
         if expr.var.name == var:
             return expr

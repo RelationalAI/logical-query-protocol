@@ -85,8 +85,6 @@ class Builtin(TargetExpr):
 
     def __post_init__(self):
         assert isinstance(self.name, str), f"Invalid name in {self}: {self.name}"
-        if not self.name.isidentifier():
-            raise ValueError(f"Invalid variable name: {self.name}")
 
 @dataclass
 class Constructor(TargetExpr):
@@ -152,7 +150,7 @@ class Lambda(TargetExpr):
         return f"lambda {params_str} -> {self.return_type}: {self.body}"
 
     def __post_init__(self):
-        assert isinstance(self.body, TargetExpr), f"Invalid function expression in {self}: {self.body}"
+        assert isinstance(self.body, TargetExpr), f"Invalid function expression in {self}: {self.body} :: {type(self.body)}"
         assert isinstance(self.return_type, Type), f"Invalid function return type in {self}: {self.return_type}"
         for param in self.params:
             assert isinstance(param, str), f"Invalid parameter name in {self}: {param}"
