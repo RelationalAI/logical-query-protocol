@@ -12,7 +12,7 @@ from .grammar import (
     Star, Option, Sequence
 )
 from .target import (
-    Lambda, Call, Var, Symbol, TargetExpr, Lit, IfElse, Builtin, Constructor, BaseType, MessageType, OptionType
+    Lambda, Call, Var, Symbol, TargetExpr, Lit, IfElse, Builtin, Constructor, BaseType, MessageType, OptionType, ListType
 )
 from .proto_ast import ProtoMessage, ProtoField, PRIMITIVE_TYPES
 from .proto_parser import ProtoParser
@@ -826,10 +826,11 @@ class GrammarGenerator:
                 else:
                     literal_name = self.rule_literal_renames.get(field_rule_name, field_rule_name)
                     if not self.grammar.has_rule(Nonterminal(wrapper_rule_name)):
+                        field_type = self._get_type_for_name(field.type)
                         wrapper_rule = Rule(
                             lhs=Nonterminal(wrapper_rule_name),
                             rhs=Sequence([LitTerminal("("), LitTerminal(literal_name), Star(Nonterminal(type_rule_name)), LitTerminal(")")]),
-                            action=_lambda(["value"], return_type=_any_type, body=Var('value', _any_type)),
+                            action=Lambda([Var('value', ListType(field_type))], ListType(field_type), Var('value', ListType(field_type))),
                             source_type=field.type
                         )
                         self._add_rule(wrapper_rule)
