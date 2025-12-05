@@ -140,20 +140,19 @@ class Call(TargetExpr):
 @dataclass
 class Lambda(TargetExpr):
     """Lambda function (anonymous function)."""
-    # TODO: params should have types
-    params: Sequence[str]
+    params: Sequence['Var']
     return_type: 'Type'
     body: 'TargetExpr'
 
     def __str__(self) -> str:
-        params_str = ', '.join(self.params)
+        params_str = ', '.join(str(p) for p in self.params)
         return f"lambda {params_str} -> {self.return_type}: {self.body}"
 
     def __post_init__(self):
         assert isinstance(self.body, TargetExpr), f"Invalid function expression in {self}: {self.body} :: {type(self.body)}"
         assert isinstance(self.return_type, Type), f"Invalid function return type in {self}: {self.return_type}"
         for param in self.params:
-            assert isinstance(param, str), f"Invalid parameter name in {self}: {param}"
+            assert isinstance(param, Var), f"Invalid parameter in {self}: {param}"
 
 @dataclass
 class Let(TargetExpr):
@@ -306,12 +305,12 @@ class FunctionType(Type):
 class FunDef(TargetNode):
     """Function definition with parameters, return type, and body."""
     name: str
-    params: Sequence[tuple[str, Type]]
+    params: Sequence['Var']
     return_type: Type
     body: 'TargetExpr'
 
     def __str__(self) -> str:
-        params_str = ', '.join(f"{name}: {typ}" for name, typ in self.params)
+        params_str = ', '.join(f"{p.name}: {p.type}" for p in self.params)
         return f"def {self.name}({params_str}) -> {self.return_type}: {self.body}"
 
 
@@ -323,12 +322,12 @@ class ParseNonterminalDef(TargetNode):
     instead of a string name.
     """
     nonterminal: 'Nonterminal'
-    params: Sequence[tuple[str, Type]]
+    params: Sequence['Var']
     return_type: Type
     body: 'TargetExpr'
 
     def __str__(self) -> str:
-        params_str = ', '.join(f"{name}: {typ}" for name, typ in self.params)
+        params_str = ', '.join(f"{p.name}: {p.type}" for p in self.params)
         return f"parse_{self.nonterminal.name}({params_str}) -> {self.return_type}: {self.body}"
 
 

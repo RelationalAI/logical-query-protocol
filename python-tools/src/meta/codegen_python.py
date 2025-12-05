@@ -186,7 +186,7 @@ def generate_python_lines(expr: TargetExpr, lines: List[str], indent: str = "") 
         return tmp
 
     elif isinstance(expr, Lambda):
-        params = [escape_identifier(p) for p in expr.params]
+        params = [escape_identifier(p.name) for p in expr.params]
         params_str = ', '.join(params) if params else ''
         f = gensym()
         body_lines = []
@@ -254,9 +254,9 @@ def generate_python_def(expr: Union[FunDef, ParseNonterminalDef], indent: str = 
         func_name = escape_identifier(expr.name)
 
         params = []
-        for param_name, param_type in expr.params:
-            escaped_name = escape_identifier(param_name)
-            type_hint = generate_python_type(param_type)
+        for param in expr.params:
+            escaped_name = escape_identifier(param.name)
+            type_hint = generate_python_type(param.type)
             params.append(f"{escaped_name}: {type_hint}")
 
         params_str = ', '.join(params)
@@ -277,9 +277,9 @@ def generate_python_def(expr: Union[FunDef, ParseNonterminalDef], indent: str = 
         func_name = f"parse_{expr.nonterminal.name}"
 
         params = []
-        for param_name, param_type in expr.params:
-            escaped_name = escape_identifier(param_name)
-            type_hint = generate_python_type(param_type)
+        for param in expr.params:
+            escaped_name = escape_identifier(param.name)
+            type_hint = generate_python_type(param.type)
             params.append(f"{escaped_name}: {type_hint}")
 
         params_str = ', '.join(params) if params else ''
@@ -297,6 +297,47 @@ def generate_python_def(expr: Union[FunDef, ParseNonterminalDef], indent: str = 
             body_code = "\n".join(lines)
 
         return f"{indent}def {func_name}(self{params_str}){ret_hint}:\n{body_code}"
+
+
+def generate_python(expr: TargetExpr, indent: str = "") -> str:
+    """Generate Python code for a single expression (inline style).
+
+    Args:
+        expr: Action expression to generate code for
+        indent: Indentation string (default: no indent)
+
+    Returns:
+        Python code as a string
+    """
+    if isinstance(expr, Var):
+        return escape_identifier(expr.name)
+    elif isinstance(expr, Lit):
+        return repr(expr.value)
+    elif isinstance(expr, Symbol):
+        return f'"{expr.name}"'
+    elif isinstance(expr, Call):
+        func_code = generate_python(expr.func, indent)
+        args_code = ', '.join(generate_python(arg, indent) for arg in expr.args)
+        return f"{func_code}({args_code})"
+    elif isinstance(expr, Lambda):
+        params = [escape_identifier(p.name) for p in expr.params]
+        params_str = ', '.join(params) if params else ''
+        body_code = generate_python(expr.body, indent)
+        return f"lambda {params_str}: {body_code}"
+    elif isinstance(expr, Let):
+        # For Let, we need multi-line
+        lines = []
+        result = generate_python_lines(expr, lines, indent)
+        if lines:
+            return '\n'.join(lines) + '\n' + result
+        return result
+    else:
+        # Fall back to generate_python_lines for complex expressions
+        lines = []
+        result = generate_python_lines(expr, lines, indent)
+        if lines:
+            return '\n'.join(lines) + '\n' + result
+        return result
 
 
 def generate_python_function_body(expr: TargetExpr, indent: str = "    ") -> str:

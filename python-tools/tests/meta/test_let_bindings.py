@@ -24,14 +24,14 @@ def test_let_binding_structure():
     rule1 = Rule(
         lhs=Nonterminal("A"),
         rhs=Sequence([Literal("("), Literal("foo"), Nonterminal("B")]),
-        action=Lambda(params=['_', '_', 'b'], body=Call('MakeA1', [Var('b', _any_type)])),
+        action=Lambda(params=[Var('_', _any_type), Var('_', _any_type), Var('b', _any_type)], body=Call('MakeA1', [Var('b', _any_type)])),
         grammar=grammar
     )
 
     rule2 = Rule(
         lhs=Nonterminal("A"),
         rhs=Sequence([Literal("("), Literal("foo"), Nonterminal("C")]),
-        action=Lambda(params=['_', '_', 'c'], body=Call('MakeA2', [Var('c', _any_type)])),
+        action=Lambda(params=[Var('_', _any_type), Var('_', _any_type), Var('c', _any_type)], body=Call('MakeA2', [Var('c', _any_type)])),
         grammar=grammar
     )
 
@@ -68,14 +68,14 @@ def test_continuation_receives_prefix_params():
     rule1 = Rule(
         lhs=Nonterminal("B"),
         rhs=Sequence([Literal("("), Literal("op"), Nonterminal("X")]),
-        action=Lambda(params=['_', '_', 'x'], body=Call('OpX', [Var('x', _any_type)])),
+        action=Lambda(params=[Var('_', _any_type), Var('_', _any_type), Var('x', _any_type)], body=Call('OpX', [Var('x', _any_type)])),
         grammar=grammar
     )
 
     rule2 = Rule(
         lhs=Nonterminal("B"),
         rhs=Sequence([Literal("("), Literal("op"), Nonterminal("Y")]),
-        action=Lambda(params=['_', '_', 'y'], body=Call('OpY', [Var('y', _any_type)])),
+        action=Lambda(params=[Var('_', _any_type), Var('_', _any_type), Var('y', _any_type)], body=Call('OpY', [Var('y', _any_type)])),
         grammar=grammar
     )
 
@@ -110,14 +110,14 @@ def test_let_with_no_common_prefix():
     rule1 = Rule(
         lhs=Nonterminal("C"),
         rhs=Sequence([Literal("x"), Nonterminal("A")]),
-        action=Lambda(params=['_', 'a'], body=Call('MakeC1', [Var('a', _any_type)])),
+        action=Lambda(params=[Var('_', _any_type), Var('a', _any_type)], body=Call('MakeC1', [Var('a', _any_type)])),
         grammar=grammar
     )
 
     rule2 = Rule(
         lhs=Nonterminal("C"),
         rhs=Sequence([Literal("y"), Nonterminal("B")]),
-        action=Lambda(params=['_', 'b'], body=Call('MakeC2', [Var('b', _any_type)])),
+        action=Lambda(params=[Var('_', _any_type), Var('b', _any_type)], body=Call('MakeC2', [Var('b', _any_type)])),
         grammar=grammar
     )
 
@@ -146,7 +146,7 @@ def test_let_bindings_preserve_semantics():
     rule = Rule(
         lhs=Nonterminal("D"),
         rhs=Sequence([Literal("("), Literal("add"), Nonterminal("N"), Nonterminal("N")]),
-        action=Lambda(params=['_', '_', 'n1', 'n2'], body=Call('Add', [Var('n1', _any_type), Var('n2', _any_type)])),
+        action=Lambda(params=[Var('_', _any_type), Var('_', _any_type), Var('n1', _any_type), Var('n2', _any_type)], body=Call('Add', [Var('n1', _any_type), Var('n2', _any_type)])),
         grammar=grammar
     )
 
@@ -154,7 +154,7 @@ def test_let_bindings_preserve_semantics():
     rule2 = Rule(
         lhs=Nonterminal("D"),
         rhs=Sequence([Literal("("), Literal("sub"), Nonterminal("N"), Nonterminal("N")]),
-        action=Lambda(params=['_', '_', 'n1', 'n2'], body=Call('Sub', [Var('n1', _any_type), Var('n2', _any_type)])),
+        action=Lambda(params=[Var('_', _any_type), Var('_', _any_type), Var('n1', _any_type), Var('n2', _any_type)], body=Call('Sub', [Var('n1', _any_type), Var('n2', _any_type)])),
         grammar=grammar
     )
 

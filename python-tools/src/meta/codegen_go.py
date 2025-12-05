@@ -111,7 +111,7 @@ def generate_go(expr: TargetExpr, indent: str = "") -> str:
 
     elif isinstance(expr, Lambda):
         # Generate anonymous function: func(params...) ReturnType { return body }
-        params = [escape_identifier(p) for p in expr.params]
+        params = [escape_identifier(p.name) for p in expr.params]
 
         if expr.body is None:
             body_code = "nil"
@@ -148,9 +148,9 @@ def generate_go(expr: TargetExpr, indent: str = "") -> str:
 
         # Generate parameters with types
         params = []
-        for param_name, param_type in expr.params:
-            escaped_name = escape_identifier(param_name)
-            go_type = generate_go_type(param_type)
+        for param in expr.params:
+            escaped_name = escape_identifier(param.name)
+            go_type = generate_go_type(param.type)
             params.append(f"{escaped_name} {go_type}")
 
         params_str = ', '.join(params) if params else ''

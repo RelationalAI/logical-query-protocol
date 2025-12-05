@@ -72,7 +72,7 @@ def test_parser_with_left_factoring():
     ))
 
     # Add tokens
-    grammar.tokens.append(Token("NUMBER", r'\d+', Lambda(params=['lexeme'], body=Call(Builtin('parse_number'), [Var('lexeme', _any_type)]))))
+    grammar.tokens.append(Token("NUMBER", r'\d+', Lambda(params=[Var('lexeme', _any_type)], body=Call(Builtin('parse_number'), [Var('lexeme', _any_type)]))))
 
     print("Generating parser...")
 
@@ -122,7 +122,7 @@ def test_parser_execution():
         grammar=grammar
     ))
 
-    grammar.tokens.append(Token("NUMBER", r'\d+', Lambda(params=['lexeme'], body=Call(Builtin('parse_number'), [Var('lexeme', _any_type)]))))
+    grammar.tokens.append(Token("NUMBER", r'\d+', Lambda(params=[Var('lexeme', _any_type)], body=Call(Builtin('parse_number'), [Var('lexeme', _any_type)]))))
 
     print("\nGenerating and testing parser execution...")
 

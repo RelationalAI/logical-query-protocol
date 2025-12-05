@@ -104,7 +104,7 @@ def generate_julia(expr: TargetExpr, indent: str = "") -> str:
 
     elif isinstance(expr, Lambda):
         # Generate anonymous function: (params...) -> body
-        params = [escape_identifier(p) for p in expr.params]
+        params = [escape_identifier(p.name) for p in expr.params]
         params_str = ', '.join(params) if params else ''
 
         if expr.body is None:
@@ -147,9 +147,9 @@ def generate_julia(expr: TargetExpr, indent: str = "") -> str:
 
         # Generate parameters with type annotations
         params = []
-        for param_name, param_type in expr.params:
-            escaped_name = escape_identifier(param_name)
-            type_annotation = generate_julia_type(param_type)
+        for param in expr.params:
+            escaped_name = escape_identifier(param.name)
+            type_annotation = generate_julia_type(param.type)
             params.append(f"{escaped_name}::{type_annotation}")
 
         params_str = ', '.join(params) if params else ''

@@ -203,7 +203,7 @@ def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optio
         # Build IR: Call(Builtin('consume_terminal'), [Lit(terminal.name)])
         parse_expr = Call(Builtin('consume_terminal'), [Lit(rhs.name)])
         if rule and rule.action:
-            var_name = gensym(rule.action.params[0] if rule.action.params else "arg")
+            var_name = gensym(rule.action.params[0].name if rule.action.params else "arg")
             return Seq([Assign(Var(var_name, _any_type), parse_expr), _apply(rule.action, [Var(var_name, _any_type)])])
         return parse_expr
     elif isinstance(rhs, Nonterminal):
@@ -304,7 +304,7 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, rule: Optional[Rule] = None, 
         else:
             # Non-literal: bind to variable
             if rule and non_literal_count < len(rule.action.params):
-                var_name = gensym(rule.action.params[non_literal_count])
+                var_name = gensym(rule.action.params[non_literal_count].name)
             else:
                 var_name = gensym("arg")
             param_names.append(var_name)
@@ -318,9 +318,10 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, rule: Optional[Rule] = None, 
         action_lambda = rule.action
     else:
         # Create default Lambda that returns list of arguments
-        # Lambda([arg0, arg1, ...], Tuple([Var(arg0, _any_type), Var(arg1, _any_type), ...]))
+        # Lambda([Var(arg0), Var(arg1), ...], Tuple([Var(arg0, _any_type), Var(arg1, _any_type), ...]))
+        param_vars = [Var(name, _any_type) for name in param_names]
         list_expr = Call(Builtin('Tuple'), arg_vars)
-        action_lambda = Lambda(param_names, list_expr, return_type=_any_type)
+        action_lambda = Lambda(param_vars, list_expr, return_type=_any_type)
 
     # Call the Lambda with the variables
     lambda_call = _apply(action_lambda, arg_vars)
@@ -343,8 +344,8 @@ def _apply(func: 'Lambda', args: PySequence['TargetExpr']) -> 'TargetExpr':
             args[1:]
         )
         if isinstance(args[0], (Var, Lit)):
-            return _subst(body, func.params[0], args[0])
-        return Let(Var(func.params[0], _any_type), args[0], body)
+            return _subst(body, func.params[0].name, args[0])
+        return Let(func.params[0], args[0], body)
     # TODO
     # assert False, f"Invalid application of {func} to {args}"
     return Call(func, args)
@@ -353,7 +354,7 @@ def _subst(expr: 'TargetExpr', var: str, val: 'TargetExpr') -> 'TargetExpr':
     if isinstance(expr, Var) and expr.name == var:
         return val
     elif isinstance(expr, Lambda):
-        if var in expr.params:
+        if var in [p.name for p in expr.params]:
             return expr
         return Lambda(params=expr.params, return_type=expr.return_type, body=_subst(expr.body, var, val))
     elif isinstance(expr, Let):
