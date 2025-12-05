@@ -40,48 +40,6 @@ _PRIMITIVE_TO_BASE_TYPE = {
     'bytes': 'String',
 }
 
-
-def parse_action(action_str: str) -> TargetExpr:
-    """Parse a lambda string into an TargetExpr AST."""
-    if not action_str.startswith('lambda '):
-        raise ValueError(f"Action must start with 'lambda': {action_str}")
-
-    # Extract params and body
-    colon_idx = action_str.index(':')
-    params_str = action_str[7:colon_idx].strip()
-    body_str = action_str[colon_idx+1:].strip()
-
-    param_names = [p.strip() for p in params_str.split(',')]
-
-    # Remove STATE parameter if present
-    if param_names and param_names[0] == 'STATE':
-        param_names = param_names[1:]
-
-    # Parse body - simple f-string parser
-    if body_str.startswith('f"') or body_str.startswith("f'"):
-        inner = body_str[2:-1]
-        # Extract function name and arguments
-        paren_idx = inner.index('(')
-        func_name = inner[:paren_idx]
-        args_str = inner[paren_idx+1:-1]  # Remove parens
-
-        # Parse arguments
-        call_args = []
-        if args_str:
-            for arg in re.findall(r'\{([^}]+)\}', args_str):
-                call_args.append(Var(arg, _any_type))
-
-        body = Call(Var(func_name, _any_type), call_args)
-    elif body_str == 'x' or body_str.isidentifier():
-        body = Var(body_str, _any_type)
-    else:
-        # Default fallback
-        body = Var('x', _any_type)
-
-    params = [Var(name, _any_type) for name in param_names]
-    return Lambda(params=params, return_type=_any_type, body=body)
-
-
 class GrammarGenerator:
     """Generator for grammars from protobuf specifications."""
     def __init__(self, parser: ProtoParser, verbose: bool = False):
