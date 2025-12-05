@@ -7,7 +7,7 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
-from meta.target import Wildcard, Var, Symbol, Call, Lambda, Let
+from meta.target import Var, Symbol, Call, Lambda, Let
 from meta.codegen_python import generate_python, escape_identifier as escape_python
 from meta.codegen_julia import generate_julia, escape_identifier as escape_julia
 from meta.codegen_go import generate_go, escape_identifier as escape_go

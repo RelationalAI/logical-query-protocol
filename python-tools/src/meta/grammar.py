@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple
 
 # Import action AST types
-from .target import TargetExpr, Var, Symbol, Call, Lambda, Let, Lit
+from .target import TargetExpr, Var, Symbol, Call, Lambda, Let, Lit, Type
 
 
 # Grammar RHS (right-hand side) elements
@@ -137,7 +137,7 @@ class Token:
     """Token definition (terminal with regex pattern)."""
     name: str
     pattern: str
-    action: 'Lambda'
+    type: Type
 
 @dataclass
 class Grammar:

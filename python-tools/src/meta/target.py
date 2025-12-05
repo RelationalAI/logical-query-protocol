@@ -211,18 +211,6 @@ class While(TargetExpr):
         assert isinstance(self.body, TargetExpr), f"Invalid while body expression in {self}: {self.body}"
 
 @dataclass
-class TryCatch(TargetExpr):
-    """Try-catch exception handling."""
-    try_body: TargetExpr
-    catch_body: TargetExpr
-    exception_type: Optional[str] = None
-
-    def __str__(self) -> str:
-        exc_str = f" {self.exception_type}" if self.exception_type else ""
-        return f"try {self.try_body} catch{exc_str} {self.catch_body}"
-
-
-@dataclass
 class Assign(TargetExpr):
     """Assignment statement: var = expr.
 
@@ -249,51 +237,6 @@ class Return(TargetExpr):
 
     def __post_init__(self):
         assert isinstance(self.expr, TargetExpr) and not isinstance(self.expr, Return), f"Invalid return expression in {self}: {self.expr}"
-
-
-@dataclass
-class Ok(TargetExpr):
-    """Ok constructor for Result type: Ok(expr)."""
-    expr: TargetExpr
-
-    def __str__(self) -> str:
-        return f"Ok({self.expr})"
-
-    def __post_init__(self):
-        assert isinstance(self.expr, TargetExpr), f"Invalid Ok expression in {self}: {self.expr}"
-
-
-@dataclass
-class Err(TargetExpr):
-    """Err constructor for Result type: Err(expr)."""
-    expr: TargetExpr
-
-    def __str__(self) -> str:
-        return f"Err({self.expr})"
-
-    def __post_init__(self):
-        assert isinstance(self.expr, TargetExpr), f"Invalid Err expression in {self}: {self.expr}"
-
-
-@dataclass
-class Try(TargetExpr):
-    """Try operator for Result type: Try(expr, rollback).
-
-    Unwraps expr if it's Ok, otherwise evaluates the rollback expr and returns the Err value.
-    """
-    expr: TargetExpr
-    rollback: Optional[TargetExpr] = None
-
-    def __str__(self) -> str:
-        if self.rollback is not None:
-            return f"Try({self.expr}, {self.rollback})"
-        else:
-            return f"Try({self.expr})"
-
-    def __post_init__(self):
-        assert isinstance(self.expr, TargetExpr), f"Invalid Try expression in {self}: {self.expr}"
-        if self.rollback is not None:
-            assert isinstance(self.rollback, TargetExpr), f"Invalid Try expression in {self}: {self.rollback}"
 
 
 @dataclass
@@ -337,16 +280,6 @@ class ListType(Type):
 
     def __str__(self) -> str:
         return f"List[{self.element_type}]"
-
-
-@dataclass
-class ResultType(Type):
-    """Parameterized Result type for error handling."""
-    ok_type: Type
-    err_type: Type
-
-    def __str__(self) -> str:
-        return f"Result[{self.ok_type}, {self.err_type}]"
 
 
 @dataclass
@@ -409,17 +342,12 @@ __all__ = [
     'IfElse',
     'Seq',
     'While',
-    'TryCatch',
     'Assign',
     'Return',
-    'Ok',
-    'Err',
-    'Try',
     'Type',
     'BaseType',
     'TupleType',
     'ListType',
-    'ResultType',
     'FunDef',
     'ParseNonterminalDef',
     'ParseNonterminal',

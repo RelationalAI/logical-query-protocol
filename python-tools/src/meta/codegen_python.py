@@ -6,7 +6,7 @@ with proper keyword escaping and idiomatic Python style.
 
 from typing import Set, Union, List
 
-from .target import TargetExpr, Var, Lit, Symbol, Builtin, Constructor, Call, Lambda, Let, IfElse, Seq, While, TryCatch, Assign, Return, Ok, Err, Try, FunDef, ParseNonterminalDef, ParseNonterminal, Type, BaseType, TupleType, ListType, ResultType, TargetNode, gensym
+from .target import TargetExpr, Var, Lit, Symbol, Builtin, Constructor, Call, Lambda, Let, IfElse, Seq, While, Assign, Return, FunDef, ParseNonterminalDef, ParseNonterminal, Type, BaseType, TupleType, ListType, TargetNode, gensym
 
 
 # Python keywords that need escaping
@@ -61,11 +61,6 @@ def generate_python_type(typ: Type) -> str:
     elif isinstance(typ, ListType):
         element_type = generate_python_type(typ.element_type)
         return f"list[{element_type}]"
-
-    elif isinstance(typ, ResultType):
-        ok_type = generate_python_type(typ.ok_type)
-        err_type = generate_python_type(typ.err_type)
-        return f"Tuple[bool, Union[{ok_type}, {err_type}]]"
 
     else:
         raise ValueError(f"Unknown type: {type(typ)}")
@@ -239,16 +234,6 @@ def generate_python_lines(expr: TargetExpr, lines: List[str], indent: str = "") 
         lines.append(f"{indent}    {cond_code} = {cond_code2}")
         return "None"
 
-    elif isinstance(expr, TryCatch):
-        lines.append(f"{indent}try:")
-        tmp = gensym()
-        try_code = generate_python_lines(expr.try_body, lines, indent + "    ")
-        lines.append(f"{indent}    {tmp} = {try_code}")
-        exc_type = expr.exception_type or "Exception"
-        lines.append(f"{indent}catch {exc_type}:")
-        catch_code = generate_python_lines(expr.catch_body, lines, indent + "    ")
-        lines.append(f"{indent}    {tmp} = {catch_code}")
-
     elif isinstance(expr, Assign):
         var_name = escape_identifier(expr.var)
         expr_code = generate_python_lines(expr.expr, lines, indent)
@@ -259,25 +244,6 @@ def generate_python_lines(expr: TargetExpr, lines: List[str], indent: str = "") 
         expr_code = generate_python_lines(expr.expr, lines, indent)
         lines.append(f"{indent}return {expr_code}")
         return "None"
-
-    elif isinstance(expr, Ok):
-        expr_code = generate_python_lines(expr.expr, lines, indent)
-        return f"(True, {expr_code})"
-
-    elif isinstance(expr, Err):
-        expr_code = generate_python_lines(expr.expr, lines, indent)
-        return f"(False, {expr_code})"
-
-    elif isinstance(expr, Try):
-        expr_code = generate_python_lines(expr.expr, lines, indent)
-        isok = gensym('isok')
-        unwrapped = gensym('unwrapped')
-        lines.append(f"{indent}{isok}, {unwrapped} = {expr_code}")
-        lines.append(f"{indent}if not {isok}:")
-        if expr.rollback:
-            generate_python_lines(expr.rollback, lines, indent + "    ")
-        lines.append(f"{indent}    return {expr_code}")
-        return unwrapped
 
     else:
         raise ValueError(f"Unknown action expression type: {type(expr)}")

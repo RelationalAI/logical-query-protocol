@@ -15,12 +15,12 @@ from .codegen_python import generate_python_lines, generate_python_def
 from .parser_gen import  _generate_parse_rhs_ir, generate_rules
 
 
-def generate_parser_python(grammar: Grammar, reachable: Set[Nonterminal]) -> str:
+def generate_parser_python(grammar: Grammar, reachable: Set[Nonterminal], command_line: Optional[str] = None) -> str:
     """Generate LL(k) recursive-descent parser in Python."""
     is_ll2, conflicts = grammar.check_ll_k(2)
 
     # Generate prologue (lexer, token, error, helper classes)
-    prologue = _generate_prologue(grammar, is_ll2, conflicts)
+    prologue = _generate_prologue(grammar, is_ll2, conflicts, command_line)
 
     defns = generate_rules(grammar)    # Generate parser methods as strings
     lines = []
@@ -35,13 +35,16 @@ def generate_parser_python(grammar: Grammar, reachable: Set[Nonterminal]) -> str
     return prologue + "\n".join(lines) + epilogue
 
 
-def _generate_prologue(grammar: Grammar, is_ll2: bool, conflicts: List[str]) -> str:
+def _generate_prologue(grammar: Grammar, is_ll2: bool, conflicts: List[str], command_line: Optional[str] = None) -> str:
     """Generate parser prologue with imports, token class, lexer, and parser class start."""
     lines = []
     lines.append('"""')
     lines.append("Auto-generated LL(k) recursive-descent parser.")
     lines.append("")
     lines.append("Generated from protobuf specifications.")
+    if command_line:
+        lines.append("")
+        lines.append(f"Command: {command_line}")
     lines.append('"""')
     lines.append("")
     lines.append("import re")
@@ -85,7 +88,6 @@ def _generate_prologue(grammar: Grammar, is_ll2: bool, conflicts: List[str]) -> 
     lines.append("    def __init__(self, tokens: List[Token]):")
     lines.append("        self.tokens = tokens")
     lines.append("        self.pos = 0")
-    lines.append("        self.token_actions = self._create_token_actions()")
     lines.append("")
     lines.append("    def lookahead(self, k: int = 0) -> Token:")
     lines.append('        """Get lookahead token at offset k."""')
@@ -95,25 +97,6 @@ def _generate_prologue(grammar: Grammar, is_ll2: bool, conflicts: List[str]) -> 
     lines.append("    def current(self) -> Token:")
     lines.append('        """Get current token."""')
     lines.append("        return self.lookahead(0)")
-    lines.append("")
-    lines.append("    def save_position(self) -> int:")
-    lines.append('        """Save current position for backtracking."""')
-    lines.append("        return self.pos")
-    lines.append("")
-    lines.append("    def restore_position(self, pos: int) -> None:")
-    lines.append('        """Restore position for backtracking."""')
-    lines.append("        self.pos = pos")
-    lines.append("")
-    lines.append("    def _create_token_actions(self):")
-    lines.append('        """Create token action functions."""')
-    lines.append("        return {")
-
-    # Generate token actions that call Lexer methods
-    for token in grammar.tokens:
-        parse_method = f"Lexer.parse_{token.name.lower()}"
-        lines.append(f"            '{token.name}': {parse_method},")
-
-    lines.append("        }")
     lines.append("")
     lines.append("    def consume_literal(self, expected: str) -> None:")
     lines.append('        """Consume a literal token."""')
@@ -129,9 +112,6 @@ def _generate_prologue(grammar: Grammar, is_ll2: bool, conflicts: List[str]) -> 
     lines.append(f"            raise ParseError(f'Expected terminal {{expected}} but got {{token.type}} at position {{token.pos}}')")
     lines.append("        token = self.current()")
     lines.append("        self.pos += 1")
-    lines.append("        # Apply token action to parse lexeme")
-    lines.append("        if expected in self.token_actions:")
-    lines.append("            return self.token_actions[expected](token.value)")
     lines.append("        return token.value")
     lines.append("")
     lines.append("    def match_literal(self, literal: str) -> bool:")
@@ -172,7 +152,7 @@ def _generate_lexer(grammar: Grammar) -> List[str]:
     lines.append("    def _tokenize(self) -> None:")
     lines.append('        """Tokenize the input string."""')
 
-
+    # It's important to preserve the order of the tokens from the grammar.
     lines.append("        token_specs = [")
     for token in grammar.tokens:
         lines.append(f"            ('{token.name}', r'{token.pattern}', lambda x: self.parse_{token.name.lower()}(x)),")
@@ -193,26 +173,29 @@ def _generate_lexer(grammar: Grammar) -> List[str]:
     lines.append("                continue")
     lines.append("")
     lines.append("            matched = False")
-    lines.append("            for token_type, pattern, action in token_specs:")
-    lines.append("                regex = re.compile(pattern)")
-    lines.append("                match = regex.match(self.input, self.pos)")
-    lines.append("                if match:")
-    lines.append("                    value = match.group(0)")
-    lines.append("                    self.tokens.append(Token(token_type, action(value), self.pos))")
-    lines.append("                    self.pos = match.end()")
+    lines.append("")
+    lines.append("            # Scan for literals first since they should have priority over symbols")
+    lines.append("            for literal in self._get_literals():")
+    lines.append("                if self.input[self.pos:].startswith(literal):")
+    lines.append("                    # Check word boundary for alphanumeric keywords")
+    lines.append("                    if literal[0].isalnum():")
+    lines.append("                        end_pos = self.pos + len(literal)")
+    lines.append("                        if end_pos < len(self.input) and self.input[end_pos].isalnum():")
+    lines.append("                            continue")
+    lines.append("                    self.tokens.append(Token('LITERAL', literal, self.pos))")
+    lines.append("                    self.pos += len(literal)")
     lines.append("                    matched = True")
     lines.append("                    break")
     lines.append("")
+    lines.append("            # Scan for other tokens")
     lines.append("            if not matched:")
-    lines.append("                for literal in self._get_literals():")
-    lines.append("                    if self.input[self.pos:].startswith(literal):")
-    lines.append("                        # Check word boundary for alphanumeric keywords")
-    lines.append("                        if literal[0].isalnum():")
-    lines.append("                            end_pos = self.pos + len(literal)")
-    lines.append("                            if end_pos < len(self.input) and self.input[end_pos].isalnum():")
-    lines.append("                                continue")
-    lines.append("                        self.tokens.append(Token('LITERAL', literal, self.pos))")
-    lines.append("                        self.pos += len(literal)")
+    lines.append("                for token_type, pattern, action in token_specs:")
+    lines.append("                    regex = re.compile(pattern)")
+    lines.append("                    match = regex.match(self.input, self.pos)")
+    lines.append("                    if match:")
+    lines.append("                        value = match.group(0)")
+    lines.append("                        self.tokens.append(Token(token_type, action(value), self.pos))")
+    lines.append("                        self.pos = match.end()")
     lines.append("                        matched = True")
     lines.append("                        break")
     lines.append("")

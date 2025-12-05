@@ -12,7 +12,7 @@ from re import L
 from typing import Dict, List, Optional, Set, Tuple, Callable, Sequence as PySequence
 
 from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Plus, Option, Terminal, is_epsilon, rhs_elements, Sequence
-from .target import Lambda, Call, ParseNonterminalDef, Var, Lit, Symbol, Builtin, Let, IfElse, Try, Ok, Err, FunDef, BaseType, ListType, TargetExpr, Seq, While, TryCatch, Assign, Type, ParseNonterminal, ParseNonterminalDef, Return, Constructor, gensym
+from .target import Lambda, Call, ParseNonterminalDef, Var, Lit, Symbol, Builtin, Let, IfElse, FunDef, BaseType, ListType, TargetExpr, Seq, While, Assign, Type, ParseNonterminal, ParseNonterminalDef, Return, Constructor, gensym
 
 
 def generate_rules(grammar: Grammar) -> List[ParseNonterminalDef]:
@@ -75,8 +75,6 @@ def _normalize(expr: TargetExpr, k: Callable[[TargetExpr], TargetExpr] = lambda 
         return IfElse(_normalize(expr.condition), _normalize(expr.then_branch, k), _normalize(expr.else_branch, k))
     if isinstance(expr, Let):
         return Let(expr.var, _normalize(expr.init), _normalize(expr.body, k))
-    if isinstance(expr, TryCatch):
-        return TryCatch(_normalize(expr.try_body, k), _normalize(expr.catch_body, k), expr.exception_type)
     if isinstance(expr, Call):
         return k(Call(_normalize(expr.func), [_normalize(arg) for arg in expr.args]))
     if isinstance(expr, Lambda):
@@ -202,81 +200,6 @@ def _build_token_check(term: Terminal, depth: int) -> TargetExpr:
     else:
         return Lit(False)
 
-def _generate_decision_tree(tail: TargetExpr, token_map: Dict, rules: List, nt_name: str,
-                            depth: int, max_depth: int, is_continuation: bool, grammar: Grammar) -> TargetExpr:
-    """Generate decision tree for k-token lookahead."""
-    if depth >= max_depth:
-        return tail
-
-    # TODO: I think we should very naively just generate a sequence of try/catch blocks for each rule
-    # using backtracking.
-
-    # Group alternatives by token at current depth
-    next_level = {}
-    for seq_or_token, alternatives in token_map.items():
-        if isinstance(alternatives, list) and len(alternatives) > 0 and isinstance(alternatives[0], tuple):
-            for seq, rule_idx in alternatives:
-                if len(seq) > depth:
-                    token_at_depth = seq[depth]
-                    if token_at_depth not in next_level:
-                        next_level[token_at_depth] = []
-                    next_level[token_at_depth].append((seq, rule_idx))
-        else:
-            next_level[seq_or_token] = alternatives
-
-    for idx, (token, items) in enumerate(next_level.items()):
-        # Generate check for this token
-        if token.startswith('"'):
-            lit = token[1:-1]
-            check = Call(Builtin("match_lookahead_literal"), [Lit(lit), Lit(depth)])
-        else:
-            check = Call(Builtin("match_lookahead_terminal"), [Lit(token), Lit(depth)])
-
-        # Check if all items lead to the same rule
-        rule_indices = set()
-        for seq, rule_idx in items:
-            rule_indices.add(rule_idx)
-
-        if len(rule_indices) == 1:
-            rule_idx = rule_indices.pop()
-            rule = rules[rule_idx]
-            body = _generate_parse_rhs_ir(rule.rhs, rule, grammar)
-        elif depth >= 2:
-            # Beyond 2 tokens, use backtracking
-            # TODO not sure the `tail` here is right!
-            lines = tail
-            for bt_idx, rule_idx in enumerate(sorted(rule_indices)):
-                rule = rules[rule_idx]
-                try_parse = _generate_parse_rhs_ir(rule.rhs, rule, grammar)
-                lines = TryCatch(try_parse, Seq([
-                    Call(Builtin('restore_position'), [Var('saved_pos')]),
-                    lines,
-                ]), 'ParseError')
-            body = Let('saved_pos', Call(Builtin('save_position'), []), lines)
-        elif depth + 1 < max_depth:
-            sub_map = {}
-            for seq, rule_idx in items:
-                if len(seq) > depth + 1:
-                    next_token = seq[depth + 1]
-                    if next_token not in sub_map:
-                        sub_map[next_token] = []
-                    sub_map[next_token].append((seq, rule_idx))
-
-            if sub_map:
-                body = _generate_decision_tree(tail, sub_map, rules, nt_name, depth + 1, max_depth, is_continuation, grammar)
-            else:
-                rule_idx = items[0][1]
-                rule = rules[rule_idx]
-                body = _generate_parse_rhs_ir(rule.rhs, rule, grammar)
-        else:
-            rule_idx = items[0][1]
-            rule = rules[rule_idx]
-            body = _generate_parse_rhs_ir(rule.rhs, rule, grammar)
-
-        tail = IfElse(check, body, tail)
-
-    return tail
-
 def findfirst(predicate, iterable):
     return next((i for i, x in enumerate(iterable) if predicate(x)), None)
 
@@ -325,12 +248,15 @@ def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optio
             if not has_epsilon:
                 rules = rules + [Rule(lhs, Sequence([]), Lambda(params=[], body=Lit(None)))]
             epsilon_index = findfirst(lambda rule: is_epsilon(rule.rhs), rules)
-            predictor = _build_predictor(grammar, lhs, rules)
-            parse_expr = IfElse(
-                Call(Builtin('not_equal'), [predictor, Lit(epsilon_index)]),
-                _generate_parse_rhs_ir(rhs.rhs, None, grammar),
-                Lit(None)
-            )
+            if len(rules) > 1:
+                predictor = _build_predictor(grammar, lhs, rules)
+                parse_expr = IfElse(
+                    Call(Builtin('not_equal'), [predictor, Lit(epsilon_index)]),
+                    _generate_parse_rhs_ir(rhs.rhs, None, grammar),
+                    Lit(None)
+                )
+            else:
+                parse_expr = Lit(None)
         if rule and rule.action:
             var_name = gensym(rule.action.params[0] if rule.action.params else "arg")
             return Seq([Assign(var_name, parse_expr), _apply(rule.action, [Var(var_name)])])
@@ -355,20 +281,23 @@ def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optio
             if not has_epsilon:
                 rules = rules + [Rule(lhs, Sequence([]), Lambda(params=[], body=Lit(None)))]
             epsilon_index = findfirst(lambda rule: is_epsilon(rule.rhs), rules)
-            predictor = _build_predictor(grammar, lhs, rules)
-            x = gensym('x')
-            xs = gensym('xs')
-            parse_expr = Let(
-                    xs,
-                    Call(Builtin('make_list'), []),
-                    Seq([
-                        While(
-                            Call(Builtin('not_equal'), [predictor, Lit(epsilon_index)]),
-                            Call(Builtin('list_push'), [Var(xs), _generate_parse_rhs_ir(rhs.rhs, None, grammar)])
-                        ),
-                        Var(xs)
-                    ])
-            )
+            if len(rules) > 1:
+                predictor = _build_predictor(grammar, lhs, rules)
+                x = gensym('x')
+                xs = gensym('xs')
+                parse_expr = Let(
+                        xs,
+                        Call(Builtin('make_list'), []),
+                        Seq([
+                            While(
+                                Call(Builtin('not_equal'), [predictor, Lit(epsilon_index)]),
+                                Call(Builtin('list_push'), [Var(xs), _generate_parse_rhs_ir(rhs.rhs, None, grammar)])
+                            ),
+                            Var(xs)
+                        ])
+                )
+            else:
+                parse_expr = Call(Builtin('make_list'), [])
         if rule and rule.action:
             var_name = gensym(rule.action.params[0] if rule.action.params else "arg")
             return Seq([Assign(var_name, parse_expr), _apply(rule.action, [Var(var_name)])])
@@ -463,12 +392,6 @@ def _subst(expr: 'TargetExpr', var: str, val: 'TargetExpr') -> 'TargetExpr':
         return IfElse(_subst(expr.condition, var, val), _subst(expr.then_branch, var, val), _subst(expr.else_branch, var, val))
     elif isinstance(expr, While):
         return While(_subst(expr.condition, var, val), _subst(expr.body, var, val))
-    elif isinstance(expr, Try):
-        return Try(_subst(expr.expr, var, val), _subst(expr.rollback, var, val))
-    elif isinstance(expr, Ok):
-        return Ok(_subst(expr.expr, var, val))
-    elif isinstance(expr, Err):
-        return Err(_subst(expr.expr, var, val))
     elif isinstance(expr, Return):
         return Return(_subst(expr.expr, var, val))
     return expr

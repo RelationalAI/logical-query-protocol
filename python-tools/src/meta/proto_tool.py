@@ -27,6 +27,9 @@ else:
 
 def main():
     """Main entry point for proto-to-tools."""
+    import sys
+    command_line = " ".join(sys.argv)
+
     parser = argparse.ArgumentParser(
         description="Generate tools from protobuf specifications"
     )
@@ -94,7 +97,7 @@ def main():
 
     if args.parser:
         if args.parser == "python":
-            parser_text = generate_parser_python(grammar, reachable)
+            parser_text = generate_parser_python(grammar, reachable, command_line)
             outputs.append((f"parser-{args.parser}", parser_text))
 
     if args.pretty_printer:
