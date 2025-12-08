@@ -1,6 +1,7 @@
 package lqp
 
 import (
+	"bytes"
 	"fmt"
 	"math"
 	"math/big"
@@ -12,18 +13,1032 @@ import (
 
 // PrettyParams holds parameters for pretty printing
 type PrettyParams struct {
-	DebugInfo map[string]string
-	indent    int
+	w           *bytes.Buffer
+	DebugInfo   map[string]string
+	indentlevel int
 }
 
 // Some helper methods for pretty printing
-func (p PrettyParams) SIND() string      { return "  " }
-func (p PrettyParams) LPAREN() string    { return "(" }
-func (p PrettyParams) RPAREN() string    { return ")" }
-func (p PrettyParams) LBRACKET() string  { return "[" }
-func (p PrettyParams) RBRACKET() string  { return "]" }
-func (p PrettyParams) INDENT() string    { return strings.Repeat("  ", p.indent) }
-func (p PrettyParams) INC() PrettyParams { return PrettyParams{p.DebugInfo, p.indent + 1} }
+func (pp PrettyParams) Write(s string) { pp.w.Write([]byte(s)) }
+
+func (pp PrettyParams) SPACE()   { pp.w.Write([]byte(" ")) }
+func (pp PrettyParams) NEWLINE() { pp.w.Write([]byte("\n")) }
+
+// Go doesn't allow hsep and vsep to be a method of pp because it is generic over T
+func hsep[T any](pp PrettyParams, x []T, sep string, f func(T)) {
+	for i, item := range x {
+		if i > 0 {
+			pp.Write(sep)
+		}
+		f(item)
+	}
+}
+func vsep[T any](pp PrettyParams, x []T, sep string, f func(T)) {
+	for i, item := range x {
+		if i > 0 {
+			pp.Write(sep)
+			pp.NEWLINE()
+		}
+		f(item)
+	}
+}
+
+func (pp PrettyParams) PARENS(f func(PrettyParams)) {
+	pp.Write("(")
+	f(pp)
+	pp.Write(")")
+}
+func (pp PrettyParams) BRACKET(f func(PrettyParams)) {
+	pp.Write("[")
+	f(pp)
+	pp.Write("]")
+}
+func (pp PrettyParams) BRACES(f func(PrettyParams)) {
+	pp.Write("{")
+	f(pp)
+	pp.Write("}")
+}
+func (pp PrettyParams) INDENT(n int, f func(PrettyParams)) {
+	indent := strings.Repeat(" ", n)
+
+	var innerBuf bytes.Buffer
+	innerPP := PrettyParams{&innerBuf, pp.DebugInfo, pp.indentlevel}
+	f(innerPP)
+
+	content := innerBuf.String()
+	indentStr := strings.Repeat(indent, pp.indentlevel+1)
+
+	lines := strings.Split(content, "\n")
+	for i, line := range lines {
+		if i > 0 {
+			pp.w.Write([]byte("\n"))
+		}
+		// Don't add trailing spaces for empty lines
+		if line != "" {
+			pp.w.Write([]byte(indentStr + line))
+		}
+	}
+}
+
+func (pp PrettyParams) Dump() string { return pp.w.String() }
+
+func (pp PrettyParams) idToName(rid *pb.RelationId) string {
+	idStr := relationIdToString(rid)
+	// Default behavior: print_names=true (use debug names if available)
+	if len(pp.DebugInfo) == 0 {
+		return idStr
+	}
+	if name, ok := pp.DebugInfo[idStr]; ok {
+		return ":" + name
+	}
+	return idStr
+}
+
+// Main pretty printing function
+func (pp PrettyParams) pprint(node interface{}) {
+	switch n := node.(type) {
+	case *pb.Transaction:
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("transaction")
+			pp.NEWLINE()
+			pp.INDENT(2, func(pp PrettyParams) {
+				if n.GetConfigure() != nil {
+					pp.pprint(n.GetConfigure())
+					pp.NEWLINE()
+				}
+				if n.GetSync() != nil {
+					pp.pprint(n.GetSync())
+					pp.NEWLINE()
+				}
+				for i, epoch := range n.GetEpochs() {
+					if i > 0 {
+						pp.NEWLINE()
+					}
+					pp.pprint(epoch)
+				}
+			})
+		})
+
+	case *pb.Configure:
+		configDict := make(map[string]interface{})
+		if n != nil {
+			configDict["semantics_version"] = n.GetSemanticsVersion()
+			ivmConfig := n.GetIvmConfig()
+			if ivmConfig != nil && ivmConfig.GetLevel() != pb.MaintenanceLevel_MAINTENANCE_LEVEL_UNSPECIFIED {
+				levelStr := ivmConfig.GetLevel().String()
+				levelStr = strings.ToLower(strings.TrimPrefix(levelStr, "MAINTENANCE_LEVEL_"))
+				configDict["ivm.maintenance_level"] = levelStr
+			}
+		}
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("configure")
+			pp.NEWLINE()
+			pp.INDENT(2, func(pp PrettyParams) {
+				pp.configDictToStr(configDict)
+			})
+		})
+
+	case *pb.Sync:
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("sync")
+			if len(n.GetFragments()) > 0 {
+				pp.SPACE()
+				hsep(pp, n.GetFragments(), " ", func(id *pb.FragmentId) {
+					pp.pprint(id)
+				})
+			}
+		})
+
+	case *pb.Declaration:
+		if def := n.GetDef(); def != nil {
+			pp.pprint(def)
+		} else if alg := n.GetAlgorithm(); alg != nil {
+			pp.pprint(alg)
+		} else if constraint := n.GetConstraint(); constraint != nil {
+			pp.pprint(constraint)
+		}
+
+	case *pb.Def:
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("def")
+			pp.SPACE()
+			pp.pprint(n.GetName())
+			pp.NEWLINE()
+			pp.INDENT(2, func(pp PrettyParams) {
+				pp.PARENS(func(pp PrettyParams) {
+					pp.pprint(n.GetBody())
+				})
+				if len(n.GetAttrs()) != 0 {
+					pp.NEWLINE()
+					pp.pprint(n.GetAttrs())
+				}
+			})
+		})
+
+	case *pb.Constraint:
+		if fd := n.GetFunctionalDependency(); fd != nil {
+			pp.pprint(fd)
+			return
+		}
+
+	case *pb.FunctionalDependency:
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("functional_dependency")
+			pp.NEWLINE()
+			pp.INDENT(2, func(pp PrettyParams) {
+				pp.PARENS(func(pp PrettyParams) {
+					pp.pprint(n.GetGuard())
+				})
+				pp.NEWLINE()
+				pp.PARENS(func(pp PrettyParams) {
+					pp.Write("keys")
+					if len(n.GetKeys()) > 0 {
+						pp.SPACE()
+						for i, v := range n.GetKeys() {
+							if i > 0 {
+								pp.SPACE()
+							}
+							pp.pprint(v)
+						}
+					}
+				})
+				pp.NEWLINE()
+				pp.PARENS(func(pp PrettyParams) {
+					pp.Write("values")
+					if len(n.GetValues()) > 0 {
+						pp.SPACE()
+						for i, v := range n.GetValues() {
+							if i > 0 {
+								pp.SPACE()
+							}
+							pp.pprint(v)
+						}
+					}
+				})
+			})
+		})
+
+	case *pb.Algorithm:
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("algorithm")
+			if len(n.GetGlobal()) > 0 {
+				pp.SPACE()
+				hsep(pp, n.GetGlobal(), " ", func(id *pb.RelationId) {
+					pp.pprint(id)
+				})
+			}
+			pp.NEWLINE()
+			pp.INDENT(2, func(pp PrettyParams) { pp.pprint(n.GetBody()) })
+		})
+
+	case *pb.Script:
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("script")
+			pp.NEWLINE()
+			pp.INDENT(2, func(pp PrettyParams) {
+				vsep(pp, n.GetConstructs(), "", func(id *pb.Construct) {
+					pp.pprint(id)
+				})
+			})
+		})
+
+	case *pb.Construct:
+		if loop := n.GetLoop(); loop != nil {
+			pp.pprint(loop)
+			return
+		} else if instr := n.GetInstruction(); instr != nil {
+			pp.pprint(instr)
+			return
+		}
+
+	case *pb.Loop:
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("loop")
+			pp.NEWLINE()
+			pp.INDENT(2, func(pp PrettyParams) {
+				pp.PARENS(func(pp PrettyParams) {
+					pp.Write("init")
+					if len(n.GetInit()) > 0 {
+						pp.NEWLINE()
+						pp.INDENT(2, func(pp PrettyParams) {
+							vsep(pp, n.GetInit(), "", func(id *pb.Instruction) {
+								pp.pprint(id)
+							})
+						})
+					}
+				})
+				pp.NEWLINE()
+				pp.pprint(n.GetBody())
+			})
+		})
+
+	case *pb.Instruction:
+		if assign := n.GetAssign(); assign != nil {
+			pp.pprint(assign)
+			return
+		} else if upsert := n.GetUpsert(); upsert != nil {
+			pp.pprint(upsert)
+			return
+		} else if brk := n.GetBreak(); brk != nil {
+			pp.pprint(brk)
+			return
+		} else if monoidDef := n.GetMonoidDef(); monoidDef != nil {
+			pp.pprint(monoidDef)
+			return
+		} else if monusDef := n.GetMonusDef(); monusDef != nil {
+			pp.pprint(monusDef)
+			return
+		}
+
+	case *pb.Assign:
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("assign")
+			pp.SPACE()
+			pp.pprint(n.GetName())
+			pp.NEWLINE()
+			pp.INDENT(2, func(pp PrettyParams) {
+				pp.PARENS(func(pp PrettyParams) {
+					pp.pprint(n.GetBody())
+				})
+				if len(n.GetAttrs()) > 0 {
+					pp.NEWLINE()
+					pp.pprint(n.GetAttrs())
+				}
+			})
+		})
+
+	case *pb.Break:
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("break")
+			pp.SPACE()
+			pp.pprint(n.GetName())
+			pp.NEWLINE()
+			pp.INDENT(2, func(pp PrettyParams) {
+				pp.PARENS(func(pp PrettyParams) {
+					pp.pprint(n.GetBody())
+				})
+				if len(n.GetAttrs()) > 0 {
+					pp.NEWLINE()
+					pp.pprint(n.GetAttrs())
+				}
+			})
+		})
+
+	case *pb.Upsert:
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("upsert")
+			pp.SPACE()
+			pp.pprint(n.GetName())
+			pp.NEWLINE()
+			pp.INDENT(2, func(pp PrettyParams) {
+				body := n.GetBody()
+				if n.GetValueArity() == 0 {
+					pp.PARENS(func(pp PrettyParams) {
+						pp.pprint(body)
+					})
+				} else {
+					partition := len(body.GetVars()) - int(n.GetValueArity())
+					lvars := body.GetVars()[:partition]
+					rvars := body.GetVars()[partition:]
+					pp.PARENS(func(pp PrettyParams) {
+						pp.BRACKET(func(pp PrettyParams) {
+							hsep(pp, lvars, " ", func(x *pb.Binding) { pp.pprint(x) })
+							pp.SPACE()
+							pp.Write("|")
+							pp.SPACE()
+							hsep(pp, rvars, " ", func(x *pb.Binding) { pp.pprint(x) })
+						})
+						pp.NEWLINE()
+						pp.INDENT(2, func(pp PrettyParams) {
+							pp.pprint(body.GetValue())
+						})
+					})
+				}
+				if len(n.GetAttrs()) > 0 {
+					pp.NEWLINE()
+					pp.pprint(n.GetAttrs())
+				}
+			})
+		})
+
+	case *pb.MonoidDef:
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("monoid")
+			pp.SPACE()
+			pp.pprint(n.GetMonoid())
+			pp.SPACE()
+			pp.pprint(n.GetName())
+			pp.NEWLINE()
+			pp.INDENT(2, func(pp PrettyParams) {
+				body := n.GetBody()
+				if n.GetValueArity() == 0 {
+					pp.PARENS(func(pp PrettyParams) {
+						pp.pprint(body)
+					})
+				} else {
+					partition := len(body.GetVars()) - int(n.GetValueArity())
+					lvars := body.GetVars()[:partition]
+					rvars := body.GetVars()[partition:]
+					pp.PARENS(func(pp PrettyParams) {
+						pp.BRACKET(func(pp PrettyParams) {
+							hsep(pp, lvars, " ", func(x *pb.Binding) { pp.pprint(x) })
+							pp.SPACE()
+							pp.Write("|")
+							pp.SPACE()
+							hsep(pp, rvars, " ", func(x *pb.Binding) { pp.pprint(x) })
+						})
+						pp.NEWLINE()
+						pp.INDENT(2, func(pp PrettyParams) {
+							pp.pprint(body.GetValue())
+						})
+					})
+				}
+				if len(n.GetAttrs()) > 0 {
+					pp.NEWLINE()
+					pp.pprint(n.GetAttrs())
+				}
+			})
+		})
+
+	case *pb.MonusDef:
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("monus")
+			pp.SPACE()
+			pp.pprint(n.GetMonoid())
+			pp.SPACE()
+			pp.pprint(n.GetName())
+			pp.NEWLINE()
+			pp.INDENT(2, func(pp PrettyParams) {
+				body := n.GetBody()
+				if n.GetValueArity() == 0 {
+					pp.PARENS(func(pp PrettyParams) {
+						pp.pprint(body)
+					})
+				} else {
+					partition := len(body.GetVars()) - int(n.GetValueArity())
+					lvars := body.GetVars()[:partition]
+					rvars := body.GetVars()[partition:]
+					pp.PARENS(func(pp PrettyParams) {
+						pp.BRACKET(func(pp PrettyParams) {
+							hsep(pp, lvars, " ", func(x *pb.Binding) { pp.pprint(x) })
+							pp.SPACE()
+							pp.Write("|")
+							pp.SPACE()
+							hsep(pp, rvars, " ", func(x *pb.Binding) { pp.pprint(x) })
+						})
+						pp.NEWLINE()
+						pp.INDENT(2, func(pp PrettyParams) {
+							pp.pprint(body.GetValue())
+						})
+					})
+				}
+				if len(n.GetAttrs()) > 0 {
+					pp.NEWLINE()
+					pp.pprint(n.GetAttrs())
+				}
+			})
+		})
+
+	case *pb.Monoid:
+		if n.GetOrMonoid() != nil {
+			pp.Write("BOOL")
+			pp.Write("::")
+			pp.Write("OR")
+		} else if minMonoid := n.GetMinMonoid(); minMonoid != nil {
+			pp.pprint(minMonoid.GetType())
+			pp.Write("::")
+			pp.Write("MIN")
+		} else if maxMonoid := n.GetMaxMonoid(); maxMonoid != nil {
+			pp.pprint(maxMonoid.GetType())
+			pp.Write("::")
+			pp.Write("MAX")
+		} else if sumMonoid := n.GetSumMonoid(); sumMonoid != nil {
+			pp.pprint(sumMonoid.GetType())
+			pp.Write("::")
+			pp.Write("SUM")
+		}
+
+	case *pb.Type:
+		switch {
+		case n.GetUnspecifiedType() != nil:
+			pp.Write("UNSPECIFIED")
+		case n.GetStringType() != nil:
+			pp.Write("STRING")
+		case n.GetIntType() != nil:
+			pp.Write("INT")
+		case n.GetFloatType() != nil:
+			pp.Write("FLOAT")
+		case n.GetUint128Type() != nil:
+			pp.Write("UINT128")
+		case n.GetInt128Type() != nil:
+			pp.Write("INT128")
+		case n.GetDateType() != nil:
+			pp.Write("DATE")
+		case n.GetDatetimeType() != nil:
+			pp.Write("DATETIME")
+		case n.GetMissingType() != nil:
+			pp.Write("MISSING")
+		case n.GetDecimalType() != nil:
+			pp.PARENS(func(pp PrettyParams) {
+				decType := n.GetDecimalType()
+				pp.Write("DECIMAL")
+				pp.SPACE()
+				pp.pprint(decType.GetPrecision())
+				pp.SPACE()
+				pp.pprint(decType.GetScale())
+			})
+		case n.GetBooleanType() != nil:
+			pp.Write("BOOLEAN")
+		default:
+			pp.Write("UNKNOWN")
+		}
+
+	case *pb.Abstraction:
+		pp.BRACKET(func(pp PrettyParams) {
+			hsep(pp, n.GetVars(), " ", func(x *pb.Binding) { pp.pprint(x) })
+		})
+		pp.NEWLINE()
+		pp.INDENT(2, func(pp PrettyParams) { pp.pprint(n.GetValue()) })
+	case *pb.Formula:
+		if exists := n.GetExists(); exists != nil {
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("exists")
+				pp.SPACE()
+				pp.BRACKET(func(pp PrettyParams) {
+					hsep(pp, exists.GetBody().GetVars(), " ", func(x *pb.Binding) {
+						pp.pprint(x)
+					})
+				})
+				pp.NEWLINE()
+				pp.INDENT(2, func(pp PrettyParams) {
+					pp.pprint(exists.GetBody().GetValue())
+				})
+			})
+		} else if reduce := n.GetReduce(); reduce != nil {
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("reduce")
+				pp.NEWLINE()
+				pp.INDENT(2, func(pp PrettyParams) {
+					pp.PARENS(func(pp PrettyParams) {
+						pp.pprint(reduce.GetOp())
+					})
+					pp.NEWLINE()
+					pp.PARENS(func(pp PrettyParams) {
+						pp.pprint(reduce.GetBody())
+					})
+					pp.NEWLINE()
+					pp.PARENS(func(pp PrettyParams) {
+						pp.Write("terms")
+						if len(reduce.GetTerms()) > 0 {
+							pp.SPACE()
+							hsep(pp, reduce.GetTerms(), " ", func(id *pb.Term) {
+								pp.pprint(id)
+							})
+						}
+					})
+				})
+			})
+		} else if conj := n.GetConjunction(); conj != nil {
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("and")
+				if len(conj.GetArgs()) > 0 {
+					pp.NEWLINE()
+					pp.INDENT(2, func(pp PrettyParams) {
+						vsep(pp, conj.GetArgs(), "", func(id *pb.Formula) {
+							pp.pprint(id)
+						})
+					})
+				}
+			})
+		} else if disj := n.GetDisjunction(); disj != nil {
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("or")
+				if len(disj.GetArgs()) > 0 {
+					pp.NEWLINE()
+					pp.INDENT(2, func(pp PrettyParams) {
+						vsep(pp, disj.GetArgs(), "", func(id *pb.Formula) {
+							pp.pprint(id)
+						})
+					})
+				}
+			})
+		} else if not := n.GetNot(); not != nil {
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("not")
+				pp.NEWLINE()
+				pp.INDENT(2, func(pp PrettyParams) {
+					pp.pprint(not.GetArg())
+				})
+			})
+		} else if ffi := n.GetFfi(); ffi != nil {
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("ffi")
+				pp.SPACE()
+				pp.Write(":")
+				pp.Write(ffi.GetName())
+				pp.NEWLINE()
+				pp.INDENT(2, func(pp PrettyParams) {
+					pp.PARENS(func(pp PrettyParams) {
+						pp.Write("args")
+						pp.NEWLINE()
+						pp.INDENT(2, func(pp PrettyParams) {
+							// Wrap each abstraction in PARENS
+							for i, arg := range ffi.GetArgs() {
+								if i > 0 {
+									pp.NEWLINE()
+								}
+								pp.PARENS(func(pp PrettyParams) {
+									pp.pprint(arg)
+								})
+							}
+						})
+					})
+					pp.NEWLINE()
+					pp.PARENS(func(pp PrettyParams) {
+						pp.Write("terms")
+						if len(ffi.GetTerms()) > 0 {
+							pp.SPACE()
+							hsep(pp, ffi.GetTerms(), " ", func(id *pb.Term) {
+								pp.pprint(id)
+							})
+						}
+					})
+				})
+			})
+		} else if atom := n.GetAtom(); atom != nil {
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("atom")
+				pp.SPACE()
+				pp.pprint(atom.GetName())
+				if len(atom.GetTerms()) > 4 {
+					pp.NEWLINE()
+					pp.INDENT(2, func(pp PrettyParams) {
+						vsep(pp, atom.GetTerms(), "", func(id *pb.Term) {
+							pp.pprint(id)
+						})
+					})
+				} else {
+					pp.SPACE()
+					hsep(pp, atom.GetTerms(), " ", func(id *pb.Term) {
+						pp.pprint(id)
+					})
+				}
+			})
+		} else if pragma := n.GetPragma(); pragma != nil {
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("pragma")
+				pp.SPACE()
+				pp.Write(":")
+				pp.Write(pragma.GetName())
+				if len(pragma.GetTerms()) > 4 {
+					pp.NEWLINE()
+					pp.INDENT(2, func(pp PrettyParams) {
+						vsep(pp, pragma.GetTerms(), "", func(id *pb.Term) {
+							pp.pprint(id)
+						})
+					})
+				} else {
+					pp.SPACE()
+					hsep(pp, pragma.GetTerms(), " ", func(id *pb.Term) {
+						pp.pprint(id)
+					})
+				}
+			})
+		} else if primitive := n.GetPrimitive(); primitive != nil {
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("primitive")
+				pp.SPACE()
+				pp.Write(":")
+				pp.Write(primitive.GetName())
+				if len(primitive.GetTerms()) > 4 {
+					pp.NEWLINE()
+					pp.INDENT(2, func(pp PrettyParams) {
+						vsep(pp, primitive.GetTerms(), "", func(id *pb.RelTerm) {
+							pp.pprint(id)
+						})
+					})
+				} else {
+					pp.SPACE()
+					hsep(pp, primitive.GetTerms(), " ", func(id *pb.RelTerm) {
+						pp.pprint(id)
+					})
+				}
+			})
+		} else if relAtom := n.GetRelAtom(); relAtom != nil {
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("relatom")
+				pp.SPACE()
+				pp.Write(":")
+				pp.Write(relAtom.GetName())
+				if len(relAtom.GetTerms()) > 4 {
+					pp.NEWLINE()
+					pp.INDENT(2, func(pp PrettyParams) {
+						vsep(pp, relAtom.GetTerms(), "", func(id *pb.RelTerm) {
+							pp.pprint(id)
+						})
+					})
+				} else {
+					pp.SPACE()
+					hsep(pp, relAtom.GetTerms(), " ", func(id *pb.RelTerm) {
+						pp.pprint(id)
+					})
+				}
+			})
+		} else if cast := n.GetCast(); cast != nil {
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("cast")
+				pp.SPACE()
+				pp.pprint(cast.GetInput())
+				pp.SPACE()
+				pp.pprint(cast.GetResult())
+			})
+		}
+
+	case *pb.Term:
+		if v := n.GetVar(); v != nil {
+			pp.Write(v.GetName())
+		} else if val := n.GetConstant(); val != nil {
+			pp.pprint(val)
+		}
+
+	case *pb.RelTerm:
+		if term := n.GetTerm(); term != nil {
+			pp.pprint(term)
+			return
+		} else if spec := n.GetSpecializedValue(); spec != nil {
+			pp.Write("#")
+			pp.pprint(spec)
+		}
+
+	case *pb.Attribute:
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("attribute")
+			pp.SPACE()
+			pp.Write(":")
+			pp.Write(n.GetName())
+			if len(n.GetArgs()) > 0 {
+				pp.SPACE()
+				hsep(pp, n.GetArgs(), " ", func(id *pb.Value) {
+					pp.pprint(id)
+				})
+			}
+		})
+	case *pb.RelationId:
+		name := pp.idToName(n)
+		pp.Write(name)
+
+	case *pb.Write:
+		if define := n.GetDefine(); define != nil {
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("define")
+				pp.NEWLINE()
+				pp.INDENT(2, func(pp PrettyParams) { pp.pprint(define.GetFragment()) })
+			})
+		} else if undef := n.GetUndefine(); undef != nil {
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("undefine")
+				pp.SPACE()
+				pp.pprint(undef.GetFragmentId())
+			})
+		} else if ctx := n.GetContext(); ctx != nil {
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("context")
+				pp.SPACE()
+				pp.BRACKET(func(pp PrettyParams) {
+					hsep(pp, ctx.GetRelations(), " ", func(id *pb.RelationId) {
+						pp.pprint(id)
+					})
+				})
+			})
+		}
+
+	case *pb.FragmentId:
+		// Decode fragment ID as string (it's stored as UTF-8 bytes)
+		idStr := string(n.GetId())
+		if idStr == "" {
+			idStr = "empty"
+		}
+		pp.Write(":")
+		pp.Write(idStr)
+
+	case *pb.Read:
+		if demand := n.GetDemand(); demand != nil {
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("demand")
+				pp.SPACE()
+				pp.pprint(demand.GetRelationId())
+			})
+		} else if output := n.GetOutput(); output != nil {
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("output")
+				pp.SPACE()
+				pp.Write(":")
+				pp.Write(output.GetName())
+				pp.SPACE()
+				pp.pprint(output.GetRelationId())
+			})
+		} else if export := n.GetExport(); export != nil {
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("export")
+				pp.NEWLINE()
+				pp.INDENT(2, func(pp PrettyParams) { pp.pprint(export.GetCsvConfig()) })
+			})
+		} else if whatIf := n.GetWhatIf(); whatIf != nil {
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("whatif")
+				pp.SPACE()
+				pp.Write(":")
+				pp.Write(whatIf.GetBranch())
+				pp.NEWLINE()
+				pp.INDENT(2, func(pp PrettyParams) { pp.pprint(whatIf.GetEpoch()) })
+			})
+		} else if abort := n.GetAbort(); abort != nil {
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("abort")
+				pp.SPACE()
+				pp.Write(":")
+				pp.Write(abort.GetName())
+				pp.SPACE()
+				pp.pprint(abort.GetRelationId())
+			})
+		}
+
+	case *pb.ExportCSVConfig:
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("export_csv_config")
+			pp.NEWLINE()
+			pp.INDENT(2, func(pp PrettyParams) {
+				pp.PARENS(func(pp PrettyParams) {
+					pp.Write("path")
+					pp.SPACE()
+					pp.pprint(n.GetPath())
+				})
+				pp.NEWLINE()
+				pp.PARENS(func(pp PrettyParams) {
+					pp.Write("columns")
+					pp.SPACE()
+					hsep(pp, n.GetDataColumns(), " ", func(x *pb.ExportCSVColumn) {
+						pp.pprint(x)
+					})
+				})
+				pp.NEWLINE()
+				configDict := make(map[string]interface{})
+				configDict["partition_size"] = n.GetPartitionSize()
+				configDict["compression"] = n.GetCompression()
+				if n.GetSyntaxHeaderRow() {
+					configDict["syntax_header_row"] = 1
+				} else {
+					configDict["syntax_header_row"] = 0
+				}
+				configDict["syntax_missing_string"] = n.GetSyntaxMissingString()
+				configDict["syntax_delim"] = n.GetSyntaxDelim()
+				configDict["syntax_quotechar"] = n.GetSyntaxQuotechar()
+				configDict["syntax_escapechar"] = n.GetSyntaxEscapechar()
+				pp.configDictToStr(configDict)
+			})
+		})
+
+	case *pb.ExportCSVColumn:
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("column")
+			pp.SPACE()
+			pp.pprint(n.GetColumnName())
+			pp.SPACE()
+			pp.pprint(n.GetColumnData())
+		})
+
+	case *pb.Epoch:
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("epoch")
+			pp.INDENT(2, func(pp PrettyParams) {
+				if len(n.GetWrites()) > 0 {
+					pp.NEWLINE()
+					pp.PARENS(func(pp PrettyParams) {
+						pp.Write("writes")
+						pp.NEWLINE()
+						pp.INDENT(2, func(pp PrettyParams) {
+							vsep(pp, n.GetWrites(), "", func(w *pb.Write) {
+								pp.pprint(w)
+							})
+						})
+					})
+				}
+				if len(n.GetReads()) > 0 {
+					pp.NEWLINE()
+					pp.PARENS(func(pp PrettyParams) {
+						pp.Write("reads")
+						pp.NEWLINE()
+						pp.INDENT(2, func(pp PrettyParams) {
+							vsep(pp, n.GetReads(), "", func(w *pb.Read) {
+								pp.pprint(w)
+							})
+						})
+					})
+				}
+			})
+		})
+
+	case *pb.Fragment:
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("fragment")
+			pp.SPACE()
+			pp.pprint(n.GetId())
+			pp.NEWLINE()
+			pp.INDENT(2, func(pp PrettyParams) {
+				vsep(pp, n.GetDeclarations(), "", func(id *pb.Declaration) {
+					pp.pprint(id)
+				})
+			})
+		})
+
+	case *pb.Binding:
+		pp.Write(n.GetVar().GetName())
+		pp.Write("::")
+		pp.pprint(n.GetType())
+
+	case *pb.Var:
+		pp.Write(n.GetName())
+
+	case *pb.Value:
+		// Handle Value oneof - check the actual oneof type
+		switch n.GetValue().(type) {
+		case *pb.Value_StringValue:
+			str := n.GetStringValue()
+			escaped := strings.ReplaceAll(str, "\\", "\\\\")
+			escaped = strings.ReplaceAll(escaped, "\"", "\\\"")
+			pp.Write("\"")
+			pp.Write(escaped)
+			pp.Write("\"")
+		case *pb.Value_IntValue:
+			pp.Write(fmt.Sprintf("%d", n.GetIntValue()))
+		case *pb.Value_FloatValue:
+			floatVal := n.GetFloatValue()
+			if math.IsInf(floatVal, 0) {
+				pp.Write("inf")
+			} else if math.IsNaN(floatVal) {
+				pp.Write("nan")
+			} else if floatVal == float64(int64(floatVal)) {
+				pp.Write(fmt.Sprintf("%.1f", floatVal))
+			} else {
+				pp.Write(fmt.Sprintf("%v", floatVal))
+			}
+		case *pb.Value_Uint128Value:
+			uint128 := n.GetUint128Value()
+			pp.Write("0x")
+			pp.Write(uint128ToHexString(uint128.GetLow(), uint128.GetHigh()))
+		case *pb.Value_Int128Value:
+			int128 := n.GetInt128Value()
+			result := int128ToString(int128.GetLow(), int128.GetHigh())
+			pp.Write(result)
+			pp.Write("i128")
+		case *pb.Value_MissingValue:
+			pp.Write("missing")
+		case *pb.Value_DateValue:
+			date := n.GetDateValue()
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("date")
+				pp.SPACE()
+				pp.Write(fmt.Sprintf("%d %d %d", date.GetYear(), date.GetMonth(), date.GetDay()))
+			})
+		case *pb.Value_DatetimeValue:
+			datetime := n.GetDatetimeValue()
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("datetime")
+				pp.SPACE()
+				pp.Write(fmt.Sprintf("%d %d %d %d %d %d %d",
+					datetime.GetYear(), datetime.GetMonth(), datetime.GetDay(),
+					datetime.GetHour(), datetime.GetMinute(), datetime.GetSecond(),
+					datetime.GetMicrosecond()))
+			})
+		case *pb.Value_DecimalValue:
+			decimal := n.GetDecimalValue()
+			int128Val := decimal.GetValue()
+			if int128Val != nil {
+				// Get the raw integer value (using int128 for proper sign handling)
+				rawValue := int128ToString(int128Val.GetLow(), int128Val.GetHigh())
+				precision := decimal.GetPrecision()
+				scale := decimal.GetScale()
+
+				// Handle negative sign separately
+				isNegative := strings.HasPrefix(rawValue, "-")
+				if isNegative {
+					rawValue = rawValue[1:] // Remove the negative sign temporarily
+				}
+
+				// Format as decimal with proper placement of decimal point
+				// The raw value is the number * 10^scale
+				// We need to insert a decimal point 'scale' digits from the right
+				var decStr string
+				if scale == 0 {
+					// No decimal point needed
+					decStr = rawValue
+				} else {
+					// Need to add decimal point
+					if len(rawValue) <= int(scale) {
+						// Need leading zeros: e.g., "5" with scale 3 -> "0.005"
+						leadingZeros := int(scale) - len(rawValue)
+						decStr = "0." + strings.Repeat("0", leadingZeros) + rawValue
+					} else {
+						// Insert decimal point: e.g., "12345" with scale 3 -> "12.345"
+						insertPos := len(rawValue) - int(scale)
+						decStr = rawValue[:insertPos] + "." + rawValue[insertPos:]
+					}
+				}
+
+				// Add back the negative sign if needed
+				if isNegative {
+					decStr = "-" + decStr
+				}
+
+				pp.Write(decStr)
+				pp.Write("d")
+				pp.Write(fmt.Sprintf("%d", precision))
+			}
+		case *pb.Value_BooleanValue:
+			if n.GetBooleanValue() {
+				pp.Write("true")
+			} else {
+				pp.Write("false")
+			}
+		}
+
+	case []*pb.Attribute:
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("attrs")
+			pp.NEWLINE()
+			pp.INDENT(2, func(pp PrettyParams) {
+				vsep(pp, n, "", func(id *pb.Attribute) {
+					pp.pprint(id)
+				})
+			})
+		})
+
+	case string:
+		escaped := strings.ReplaceAll(n, "\\", "\\\\")
+		escaped = strings.ReplaceAll(escaped, "\"", "\\\"")
+		pp.Write("\"")
+		pp.Write(escaped)
+		pp.Write("\"")
+
+	case int:
+		pp.Write(fmt.Sprintf("%d", n))
+
+	case int32:
+		pp.Write(fmt.Sprintf("%d", n))
+
+	case int64:
+		pp.Write(fmt.Sprintf("%d", n))
+
+	case uint32:
+		pp.Write(fmt.Sprintf("%d", n))
+
+	case uint64:
+		pp.Write(fmt.Sprintf("%d", n))
+
+	default:
+		panic(fmt.Sprintf("pprint not implemented for %T", node))
+	}
+}
 
 // Small traversal to collect DebugInfos
 func collectDebugInfos(node interface{}) map[string]string {
@@ -54,6 +1069,45 @@ func collectDebugInfos(node interface{}) map[string]string {
 	}
 
 	return debugInfos
+}
+
+func (pp PrettyParams) configDictToStr(config map[string]interface{}) {
+	keys := make([]string, 0, len(config))
+	for k := range config {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	pp.BRACES(func(pp PrettyParams) {
+		pp.SPACE()
+		for i, k := range keys {
+			if i > 0 {
+				pp.NEWLINE()
+				pp.INDENT(2, func(pp PrettyParams) {
+					pp.Write(":")
+					pp.Write(k)
+					pp.SPACE()
+					// Quote string values
+					v := config[k]
+					if s, ok := v.(string); ok {
+						pp.Write(fmt.Sprintf("%q", s))
+					} else {
+						pp.Write(fmt.Sprintf("%v", v))
+					}
+				})
+			} else {
+				pp.Write(":")
+				pp.Write(k)
+				pp.SPACE()
+				v := config[k]
+				if s, ok := v.(string); ok {
+					pp.Write(fmt.Sprintf("%q", s))
+				} else {
+					pp.Write(fmt.Sprintf("%v", v))
+				}
+			}
+		}
+	})
 }
 
 // Value-specific print functions
@@ -98,834 +1152,10 @@ func relationIdToString(rid *pb.RelationId) string {
 // Entry point
 func ProgramToStr(node *pb.Transaction) string {
 	debugInfo := collectDebugInfos(node)
-	pp := PrettyParams{debugInfo, 0}
-	return toStr(pp, node)
-}
-
-func configDictToStr(pp PrettyParams, config map[string]interface{}) string {
-	ind := pp.INDENT()
-
-	if len(config) == 0 {
-		return ind + "{}"
-	}
-
-	// Sort keys for deterministic output
-	keys := make([]string, 0, len(config))
-	for k := range config {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	configStr := ind + "{" + pp.SIND()[1:]
-	for i, k := range keys {
-		if i > 0 {
-			configStr += "\n" + ind + pp.SIND()
-		}
-		configStr += fmt.Sprintf(":%s %s", k, valueToStr(PrettyParams{make(map[string]string), 0}, config[k]))
-	}
-	configStr += "}"
-
-	return configStr
-}
-
-func toStr(pp PrettyParams, node interface{}) string {
-	ind := pp.INDENT()
-	lqp := ""
-
-	switch n := node.(type) {
-	case *pb.Transaction:
-		lqp += pp.LPAREN() + "transaction"
-		lqp += toStr(pp.INC(), n.GetConfigure())
-		lqp += toStr(pp.INC(), n.GetSync())
-		for _, epoch := range n.GetEpochs() {
-			lqp += toStr(pp.INC(), epoch)
-		}
-
-		lqp += pp.RPAREN()
-		lqp += "\n"
-
-		return lqp
-
-	case *pb.Configure:
-		configDict := make(map[string]interface{})
-		if n != nil {
-			configDict["semantics_version"] = n.GetSemanticsVersion()
-			ivmConfig := n.GetIvmConfig()
-			if ivmConfig != nil && ivmConfig.GetLevel() != pb.MaintenanceLevel_MAINTENANCE_LEVEL_UNSPECIFIED {
-				levelStr := ivmConfig.GetLevel().String()
-				levelStr = strings.ToLower(strings.TrimPrefix(levelStr, "MAINTENANCE_LEVEL_"))
-				configDict["ivm.maintenance_level"] = levelStr
-			}
-		}
-
-		lqp += "\n" + pp.INDENT() + pp.LPAREN() + "configure" + "\n"
-		lqp += configDictToStr(pp.INC(), configDict)
-		lqp += pp.RPAREN()
-		return lqp
-
-	case *pb.Sync:
-		if n == nil {
-			return ""
-		}
-
-		lqp += "\n" + pp.INDENT() + pp.LPAREN() + "sync"
-		if len(n.GetFragments()) > 0 {
-			lqp += " " + fragmentIdList(PrettyParams{pp.DebugInfo, 0}, n.GetFragments(), " ")
-		}
-		lqp += pp.RPAREN()
-		return lqp
-
-	case *pb.Declaration:
-		if def := n.GetDef(); def != nil {
-			return toStr(pp, def)
-		} else if alg := n.GetAlgorithm(); alg != nil {
-			return toStr(pp, alg)
-		} else if constraint := n.GetConstraint(); constraint != nil {
-			return toStr(pp, constraint)
-		}
-
-	case *pb.Def:
-		pp_ind := pp.INC()
-		lqp += ind + pp_ind.LPAREN() + "def" + " " + toStr(PrettyParams{pp_ind.DebugInfo, 0}, n.GetName()) + "\n"
-		lqp += toStr(pp_ind, n.GetBody())
-		if len(n.GetAttrs()) == 0 {
-			lqp += pp_ind.RPAREN()
-		} else {
-			lqp += "\n" + pp_ind.INDENT() + pp_ind.LPAREN() + "attrs" + "\n"
-			lqp += attributeList(pp_ind.INC(), n.GetAttrs(), "\n")
-			lqp += pp_ind.RPAREN() + pp_ind.RPAREN()
-		}
-
-	case *pb.Constraint:
-		if fd := n.GetFunctionalDependency(); fd != nil {
-			return toStr(pp, fd)
-		}
-
-	case *pb.FunctionalDependency:
-		lqp += ind + pp.LPAREN() + "functional_dependency" + "\n"
-		lqp += toStr(pp.INC(), n.GetGuard()) + "\n"
-		lqp += ind + pp.SIND() + pp.LPAREN() + "keys"
-		if len(n.GetKeys()) > 0 {
-			lqp += " "
-			for i, v := range n.GetKeys() {
-				if i > 0 {
-					lqp += " "
-				}
-				lqp += toStr(PrettyParams{pp.DebugInfo, 0}, v)
-			}
-		}
-		lqp += pp.RPAREN() + "\n"
-		lqp += ind + pp.SIND() + pp.LPAREN() + "values"
-		if len(n.GetValues()) > 0 {
-			lqp += " "
-			for i, v := range n.GetValues() {
-				if i > 0 {
-					lqp += " "
-				}
-				lqp += toStr(PrettyParams{pp.DebugInfo, 0}, v)
-			}
-		}
-		lqp += pp.RPAREN() + pp.RPAREN()
-
-	case *pb.Algorithm:
-		lqp += ind + pp.LPAREN() + "algorithm"
-		if len(n.GetGlobal()) > 4 {
-			lqp += "\n" + ind + pp.SIND() + relationIdList(PrettyParams{pp.DebugInfo, pp.indent + 2}, n.GetGlobal(), "\n") + "\n"
-		} else {
-			lqp += " " + relationIdList(PrettyParams{pp.DebugInfo, 0}, n.GetGlobal(), " ") + "\n"
-		}
-		lqp += toStr(pp.INC(), n.GetBody())
-		lqp += pp.RPAREN()
-
-	case *pb.Script:
-		lqp += ind + pp.LPAREN() + "script" + "\n"
-		lqp += constructList(pp.INC(), n.GetConstructs(), "\n")
-		lqp += pp.RPAREN()
-
-	case *pb.Construct:
-		if loop := n.GetLoop(); loop != nil {
-			return toStr(pp, loop)
-		} else if instr := n.GetInstruction(); instr != nil {
-			return toStr(pp, instr)
-		}
-
-	case *pb.Loop:
-		lqp += ind + pp.LPAREN() + "loop" + "\n"
-		lqp += ind + pp.SIND() + pp.LPAREN() + "init"
-		if len(n.GetInit()) > 0 {
-			lqp += "\n" + instructionList(PrettyParams{pp.DebugInfo, pp.indent + 2}, n.GetInit(), "\n")
-		}
-		lqp += pp.RPAREN() + "\n"
-		lqp += toStr(pp.INC(), n.GetBody())
-		lqp += pp.RPAREN()
-
-	case *pb.Instruction:
-		if assign := n.GetAssign(); assign != nil {
-			return toStr(pp, assign)
-		} else if upsert := n.GetUpsert(); upsert != nil {
-			return toStr(pp, upsert)
-		} else if brk := n.GetBreak(); brk != nil {
-			return toStr(pp, brk)
-		} else if monoidDef := n.GetMonoidDef(); monoidDef != nil {
-			return toStr(pp, monoidDef)
-		} else if monusDef := n.GetMonusDef(); monusDef != nil {
-			return toStr(pp, monusDef)
-		}
-
-	case *pb.Assign:
-		pp_ind := pp.INC()
-		lqp += ind + pp_ind.LPAREN() + "assign" + " " + toStr(PrettyParams{pp_ind.DebugInfo, 0}, n.GetName()) + "\n"
-		lqp += toStr(pp_ind, n.GetBody())
-		if len(n.GetAttrs()) == 0 {
-			lqp += pp_ind.RPAREN()
-		} else {
-			lqp += "\n" + pp_ind.INDENT() + pp_ind.LPAREN() + "attrs" + "\n"
-			lqp += attributeList(pp_ind.INC(), n.GetAttrs(), "\n")
-			lqp += pp_ind.RPAREN() + pp_ind.RPAREN()
-		}
-
-	case *pb.Break:
-		lqp += ind + pp.LPAREN() + "break" + " " + toStr(PrettyParams{pp.DebugInfo, 0}, n.GetName()) + "\n"
-		pp_ind := pp.INC()
-		lqp += toStr(pp_ind, n.GetBody())
-		if len(n.GetAttrs()) == 0 {
-			lqp += pp.RPAREN()
-		} else {
-			lqp += "\n" + pp_ind.INDENT() + pp.LPAREN() + "attrs" + "\n"
-			lqp += attributeList(PrettyParams{pp.DebugInfo, pp.indent + 2}, n.GetAttrs(), "\n")
-			lqp += pp.RPAREN() + pp.RPAREN()
-		}
-
-	case *pb.Upsert:
-		lqp += ind + pp.LPAREN() + "upsert" + " " + toStr(PrettyParams{pp.DebugInfo, 0}, n.GetName()) + "\n"
-		body := n.GetBody()
-		pp_ind := pp.INC()
-		if n.GetValueArity() == 0 {
-			lqp += toStr(pp_ind, body)
-		} else {
-			partition := len(body.GetVars()) - int(n.GetValueArity())
-			lvars := body.GetVars()[:partition]
-			rvars := body.GetVars()[partition:]
-			lqp += ind + PrettyParams{pp.DebugInfo, 1}.INDENT() + pp.LPAREN() + pp.LBRACKET()
-			lqp += varsToStr(lvars)
-			lqp += " | "
-			lqp += varsToStr(rvars)
-			lqp += pp.RBRACKET() + "\n"
-			lqp += toStr(PrettyParams{pp.DebugInfo, pp.indent + 2}, body.GetValue()) + pp.RPAREN()
-		}
-		if len(n.GetAttrs()) == 0 {
-			lqp += pp.RPAREN()
-		} else {
-			lqp += "\n" + pp_ind.INDENT() + pp.LPAREN() + "attrs" + "\n"
-			lqp += attributeList(PrettyParams{pp.DebugInfo, pp.indent + 2}, n.GetAttrs(), "\n")
-			lqp += pp.RPAREN() + pp.RPAREN()
-		}
-
-	case *pb.MonoidDef:
-		lqp += ind + pp.LPAREN() + "monoid" + " " +
-			toStr(PrettyParams{pp.DebugInfo, 0}, n.GetMonoid()) + " " +
-			toStr(PrettyParams{pp.DebugInfo, 0}, n.GetName()) + "\n"
-		body := n.GetBody()
-		pp_ind := pp.INC()
-		if n.GetValueArity() == 0 {
-			lqp += toStr(pp_ind, body)
-		} else {
-			partition := len(body.GetVars()) - int(n.GetValueArity())
-			lvars := body.GetVars()[:partition]
-			rvars := body.GetVars()[partition:]
-			lqp += ind + PrettyParams{pp.DebugInfo, 1}.INDENT() + pp.LPAREN() + pp.LBRACKET()
-			lqp += varsToStr(lvars)
-			lqp += " | "
-			lqp += varsToStr(rvars)
-			lqp += pp.RBRACKET() + "\n"
-			lqp += toStr(PrettyParams{pp.DebugInfo, pp.indent + 2}, body.GetValue()) + pp.RPAREN()
-		}
-		if len(n.GetAttrs()) == 0 {
-			lqp += pp.RPAREN()
-		} else {
-			lqp += "\n" + pp_ind.INDENT() + pp.LPAREN() + "attrs" + "\n"
-			lqp += attributeList(PrettyParams{pp.DebugInfo, pp.indent + 2}, n.GetAttrs(), "\n")
-			lqp += pp.RPAREN() + pp.RPAREN()
-		}
-
-	case *pb.MonusDef:
-		lqp += ind + pp.LPAREN() + "monus" + " " +
-			toStr(PrettyParams{pp.DebugInfo, 0}, n.GetMonoid()) + " " +
-			toStr(PrettyParams{pp.DebugInfo, 0}, n.GetName()) + "\n"
-		body := n.GetBody()
-		pp_ind := pp.INC()
-		if n.GetValueArity() == 0 {
-			lqp += toStr(pp_ind, body)
-		} else {
-			partition := len(body.GetVars()) - int(n.GetValueArity())
-			lvars := body.GetVars()[:partition]
-			rvars := body.GetVars()[partition:]
-			lqp += ind + PrettyParams{pp.DebugInfo, 1}.INDENT() + pp.LPAREN() + pp.LBRACKET()
-			lqp += varsToStr(lvars)
-			lqp += " | "
-			lqp += varsToStr(rvars)
-			lqp += pp.RBRACKET() + "\n"
-			lqp += toStr(PrettyParams{pp.DebugInfo, pp.indent + 2}, body.GetValue()) + pp.RPAREN()
-		}
-		if len(n.GetAttrs()) == 0 {
-			lqp += pp.RPAREN()
-		} else {
-			lqp += "\n" + pp_ind.INDENT() + pp.LPAREN() + "attrs" + "\n"
-			lqp += attributeList(PrettyParams{pp.DebugInfo, pp.indent + 2}, n.GetAttrs(), "\n")
-			lqp += pp.RPAREN() + pp.RPAREN()
-		}
-
-	case *pb.Monoid:
-		if n.GetOrMonoid() != nil {
-			lqp += "BOOL::OR"
-		} else if minMonoid := n.GetMinMonoid(); minMonoid != nil {
-			lqp += typeToStr(minMonoid.GetType()) + "::MIN"
-		} else if maxMonoid := n.GetMaxMonoid(); maxMonoid != nil {
-			lqp += typeToStr(maxMonoid.GetType()) + "::MAX"
-		} else if sumMonoid := n.GetSumMonoid(); sumMonoid != nil {
-			lqp += typeToStr(sumMonoid.GetType()) + "::SUM"
-		}
-
-	case *pb.Type:
-		// Get the type name as string
-		typeName := getTypeName(n)
-		params := getTypeParameters(n)
-
-		if len(params) == 0 {
-			lqp += typeName
-		} else {
-			lqp += pp.LPAREN() + typeName + " "
-			paramStrs := make([]string, len(params))
-			for i, p := range params {
-				paramStrs[i] = fmt.Sprintf("%d", p)
-			}
-			lqp += strings.Join(paramStrs, " ")
-			lqp += pp.RPAREN()
-		}
-
-	case *pb.Abstraction:
-		lqp += ind + pp.LPAREN() + pp.LBRACKET()
-		lqp += varsToStr(n.GetVars())
-		lqp += pp.RBRACKET() + "\n"
-		lqp += toStr(pp.INC(), n.GetValue()) + pp.RPAREN()
-
-	case *pb.Formula:
-		pp_ind := pp.INC()
-		if exists := n.GetExists(); exists != nil {
-			lqp += ind + pp.LPAREN() + "exists" + " " + pp.LBRACKET()
-			lqp += varsToStr(exists.GetBody().GetVars())
-			lqp += pp.RBRACKET() + "\n"
-			lqp += toStr(pp_ind, exists.GetBody().GetValue()) + pp.RPAREN()
-		} else if reduce := n.GetReduce(); reduce != nil {
-			lqp += ind + pp.LPAREN() + "reduce" + "\n"
-			lqp += toStr(pp_ind, reduce.GetOp()) + "\n"
-			lqp += toStr(pp_ind, reduce.GetBody()) + "\n"
-			lqp += termListToStr(pp_ind, reduce.GetTerms()) + pp.RPAREN()
-		} else if conj := n.GetConjunction(); conj != nil {
-			if len(conj.GetArgs()) == 0 {
-				lqp += ind + pp.LPAREN() + "and" + pp.RPAREN()
-			} else {
-				lqp += ind + pp.LPAREN() + "and" + "\n"
-				lqp += formulaList(pp_ind, conj.GetArgs(), "\n") + pp.RPAREN()
-			}
-		} else if disj := n.GetDisjunction(); disj != nil {
-			if len(disj.GetArgs()) == 0 {
-				lqp += ind + pp.LPAREN() + "or" + pp.RPAREN()
-			} else {
-				lqp += ind + pp.LPAREN() + "or" + "\n"
-				lqp += formulaList(pp_ind, disj.GetArgs(), "\n") + pp.RPAREN()
-			}
-		} else if not := n.GetNot(); not != nil {
-			lqp += ind + pp.LPAREN() + "not" + "\n"
-			lqp += toStr(pp_ind, not.GetArg()) + pp.RPAREN()
-		} else if ffi := n.GetFfi(); ffi != nil {
-			lqp += ind + pp.LPAREN() + "ffi" + " :" + ffi.GetName() + "\n"
-			lqp += ind + pp.SIND() + pp.LPAREN() + "args" + "\n"
-			lqp += abstractionList(PrettyParams{pp.DebugInfo, pp.indent + 2}, ffi.GetArgs(), "\n")
-			lqp += pp.RPAREN() + "\n"
-			lqp += termListToStr(pp_ind, ffi.GetTerms()) + pp.RPAREN()
-		} else if atom := n.GetAtom(); atom != nil {
-			if len(atom.GetTerms()) > 4 {
-				lqp += ind + pp.LPAREN() + "atom" + " " + toStr(PrettyParams{pp.DebugInfo, 0}, atom.GetName()) + "\n"
-				lqp += termList(pp_ind, atom.GetTerms(), "\n") + pp.RPAREN()
-			} else {
-				lqp += ind + pp.LPAREN() + "atom" + " " + toStr(PrettyParams{pp.DebugInfo, 0}, atom.GetName()) + " "
-				lqp += termList(PrettyParams{pp.DebugInfo, 0}, atom.GetTerms(), " ") + pp.RPAREN()
-			}
-		} else if pragma := n.GetPragma(); pragma != nil {
-			terms := termList(PrettyParams{pp.DebugInfo, 0}, pragma.GetTerms(), " ")
-			lqp += ind + pp.LPAREN() + "pragma" + " :" + pragma.GetName() + " " + terms + pp.RPAREN()
-		} else if primitive := n.GetPrimitive(); primitive != nil {
-			if len(primitive.GetTerms()) > 4 {
-				lqp += ind + pp.LPAREN() + "primitive" + " :" + primitive.GetName() + "\n"
-				lqp += relTermList(pp_ind, primitive.GetTerms(), "\n") + pp.RPAREN()
-			} else {
-				lqp += ind + pp.LPAREN() + "primitive" + " :" + primitive.GetName() + " "
-				lqp += relTermList(PrettyParams{pp.DebugInfo, 0}, primitive.GetTerms(), " ") + pp.RPAREN()
-			}
-		} else if relAtom := n.GetRelAtom(); relAtom != nil {
-			if len(relAtom.GetTerms()) > 4 {
-				lqp += ind + pp.LPAREN() + "relatom" + " :" + relAtom.GetName() + "\n"
-				lqp += relTermList(pp_ind, relAtom.GetTerms(), "\n") + pp.RPAREN()
-			} else {
-				lqp += ind + pp.LPAREN() + "relatom" + " :" + relAtom.GetName() + " "
-				lqp += relTermList(PrettyParams{pp.DebugInfo, 0}, relAtom.GetTerms(), " ") + pp.RPAREN()
-			}
-		} else if cast := n.GetCast(); cast != nil {
-			lqp += ind + pp.LPAREN() + "cast" + " " +
-				toStr(PrettyParams{pp.DebugInfo, 0}, cast.GetInput()) + " " +
-				toStr(PrettyParams{pp.DebugInfo, 0}, cast.GetResult()) + pp.RPAREN()
-		}
-
-	case *pb.Term:
-		if v := n.GetVar(); v != nil {
-			lqp += ind + v.GetName()
-		} else if val := n.GetConstant(); val != nil {
-			lqp += toStr(pp, val)
-		}
-
-	case *pb.RelTerm:
-		if term := n.GetTerm(); term != nil {
-			return toStr(pp, term)
-		} else if spec := n.GetSpecializedValue(); spec != nil {
-			lqp += "#" + toStr(PrettyParams{make(map[string]string), 0}, spec)
-		}
-
-	case *pb.Attribute:
-		argsStr := valueList(PrettyParams{pp.DebugInfo, 0}, n.GetArgs(), " ")
-		space := ""
-		if argsStr != "" {
-			space = " "
-		}
-		lqp += ind + pp.LPAREN() + "attribute" + " :" + n.GetName() + space + argsStr + pp.RPAREN()
-
-	case *pb.RelationId:
-		name := idToName(pp, n)
-		lqp += ind + name
-
-	case *pb.Write:
-		if define := n.GetDefine(); define != nil {
-			lqp += ind + pp.LPAREN() + "define" + "\n" +
-				toStr(pp.INC(), define.GetFragment()) + pp.RPAREN()
-		} else if undef := n.GetUndefine(); undef != nil {
-			lqp += ind + pp.LPAREN() + "undefine" + " " +
-				toStr(PrettyParams{pp.DebugInfo, 0}, undef.GetFragmentId()) + pp.RPAREN()
-		} else if ctx := n.GetContext(); ctx != nil {
-			lqp += ind + pp.LPAREN() + "context" + " " +
-				relationIdList(PrettyParams{pp.DebugInfo, 0}, ctx.GetRelations(), " ") + pp.RPAREN()
-		}
-
-	case *pb.FragmentId:
-		// Decode fragment ID as string (it's stored as UTF-8 bytes)
-		idStr := string(n.GetId())
-		if idStr == "" {
-			idStr = "empty"
-		}
-		lqp += ind + ":" + idStr
-
-	case *pb.Read:
-		if demand := n.GetDemand(); demand != nil {
-			lqp += ind + pp.LPAREN() + "demand" + " " +
-				toStr(PrettyParams{pp.DebugInfo, 0}, demand.GetRelationId()) + pp.RPAREN()
-		} else if output := n.GetOutput(); output != nil {
-			nameStr := ""
-			if output.GetName() != "" {
-				nameStr = ":" + output.GetName() + " "
-			}
-			lqp += ind + pp.LPAREN() + "output" + " " + nameStr +
-				toStr(PrettyParams{pp.DebugInfo, 0}, output.GetRelationId()) + pp.RPAREN()
-		} else if export := n.GetExport(); export != nil {
-			lqp += ind + pp.LPAREN() + "export" + "\n" +
-				toStr(pp.INC(), export.GetCsvConfig()) + pp.RPAREN()
-		} else if whatIf := n.GetWhatIf(); whatIf != nil {
-			branchStr := ""
-			if whatIf.GetBranch() != "" {
-				branchStr = ":" + whatIf.GetBranch() + " "
-			}
-			lqp += ind + pp.LPAREN() + "what_if" + " " + branchStr +
-				toStr(pp.INC(), whatIf.GetEpoch()) + pp.RPAREN()
-		} else if abort := n.GetAbort(); abort != nil {
-			nameStr := ""
-			if abort.GetName() != "" {
-				nameStr = ":" + abort.GetName() + " "
-			}
-			lqp += ind + pp.LPAREN() + "abort" + " " + nameStr +
-				toStr(PrettyParams{pp.DebugInfo, 0}, abort.GetRelationId()) + pp.RPAREN()
-		}
-
-	case *pb.ExportCSVConfig:
-		lqp += ind + pp.LPAREN() + "export_csv_config" + "\n"
-
-		// Default behavior: print_csv_filename=true (show the actual path)
-		pathValue := n.GetPath()
-		lqp += ind + pp.SIND() + pp.LPAREN() + "path" + " " +
-			valueToStr(PrettyParams{pp.DebugInfo, 0}, pathValue) + pp.RPAREN() + "\n"
-
-		lqp += ind + pp.SIND() + pp.LPAREN() + "columns" + " " +
-			exportCSVColumnList(PrettyParams{pp.DebugInfo, 0}, n.GetDataColumns(), " ") + pp.RPAREN() + "\n"
-
-		configDict := make(map[string]interface{})
-		configDict["partition_size"] = n.GetPartitionSize()
-		configDict["compression"] = n.GetCompression()
-		if n.GetSyntaxHeaderRow() {
-			configDict["syntax_header_row"] = 1
-		} else {
-			configDict["syntax_header_row"] = 0
-		}
-		configDict["syntax_missing_string"] = n.GetSyntaxMissingString()
-		configDict["syntax_delim"] = n.GetSyntaxDelim()
-		configDict["syntax_quotechar"] = n.GetSyntaxQuotechar()
-		configDict["syntax_escapechar"] = n.GetSyntaxEscapechar()
-
-		lqp += configDictToStr(pp.INC(), configDict)
-		lqp += pp.RPAREN()
-
-	case *pb.ExportCSVColumn:
-		lqp += ind + pp.LPAREN() + "column" + " " +
-			valueToStr(PrettyParams{pp.DebugInfo, 0}, n.GetColumnName()) + " " +
-			toStr(PrettyParams{pp.DebugInfo, 0}, n.GetColumnData()) + pp.RPAREN()
-
-	case *pb.Epoch:
-		if n == nil {
-			return ""
-		}
-
-		lqp += "\n" + pp.INDENT() + pp.LPAREN() + "epoch"
-
-		pp_ind := pp.INC()
-		if len(n.GetWrites()) > 0 {
-			lqp += "\n" + pp_ind.INDENT() + pp_ind.LPAREN() + "writes" + "\n"
-			lqp += writeList(pp_ind.INC(), n.GetWrites(), "\n")
-			lqp += pp_ind.RPAREN()
-		}
-
-		if len(n.GetReads()) > 0 {
-			lqp += "\n" + pp_ind.INDENT() + pp_ind.LPAREN() + "reads" + "\n"
-			lqp += readList(pp_ind.INC(), n.GetReads(), "\n")
-			lqp += pp_ind.RPAREN()
-		}
-
-		lqp += pp.RPAREN()
-		return lqp
-
-	case *pb.Fragment:
-		ind := pp.INDENT()
-
-		declarationsStr := declarationList(pp.INC(), n.GetDeclarations(), "\n")
-
-		lqp += ind + pp.LPAREN() + "fragment" + " " +
-			toStr(PrettyParams{pp.DebugInfo, 0}, n.GetId()) + "\n" +
-			declarationsStr +
-			pp.RPAREN()
-
-	case *pb.Var:
-		lqp += ind + n.GetName()
-
-	case *pb.Value:
-		// Handle Value oneof - check the actual oneof type
-		switch n.GetValue().(type) {
-		case *pb.Value_StringValue:
-			str := n.GetStringValue()
-			escaped := strings.ReplaceAll(str, "\\", "\\\\")
-			escaped = strings.ReplaceAll(escaped, "\"", "\\\"")
-			return ind + "\"" + escaped + "\""
-		case *pb.Value_IntValue:
-			return ind + fmt.Sprintf("%d", n.GetIntValue())
-		case *pb.Value_FloatValue:
-			floatVal := n.GetFloatValue()
-			if math.IsInf(floatVal, 0) {
-				return ind + "inf"
-			}
-			if math.IsNaN(floatVal) {
-				return ind + "nan"
-			}
-			if floatVal == float64(int64(floatVal)) {
-				return ind + fmt.Sprintf("%.1f", floatVal)
-			}
-			return ind + fmt.Sprintf("%v", floatVal)
-		case *pb.Value_Uint128Value:
-			uint128 := n.GetUint128Value()
-			return ind + "0x" + uint128ToHexString(uint128.GetLow(), uint128.GetHigh())
-		case *pb.Value_Int128Value:
-			int128 := n.GetInt128Value()
-			result := int128ToString(int128.GetLow(), int128.GetHigh())
-			return ind + result + "i128"
-		case *pb.Value_MissingValue:
-			return ind + "missing"
-		case *pb.Value_DateValue:
-			date := n.GetDateValue()
-			return ind + pp.LPAREN() + "date" + " " +
-				fmt.Sprintf("%d %d %d", date.GetYear(), date.GetMonth(), date.GetDay()) + pp.RPAREN()
-		case *pb.Value_DatetimeValue:
-			datetime := n.GetDatetimeValue()
-			return ind + pp.LPAREN() + "datetime" + " " +
-				fmt.Sprintf("%d %d %d %d %d %d %d",
-					datetime.GetYear(), datetime.GetMonth(), datetime.GetDay(),
-					datetime.GetHour(), datetime.GetMinute(), datetime.GetSecond(),
-					datetime.GetMicrosecond()) + pp.RPAREN()
-		case *pb.Value_DecimalValue:
-			decimal := n.GetDecimalValue()
-			int128Val := decimal.GetValue()
-			if int128Val != nil {
-				// Get the raw integer value (using int128 for proper sign handling)
-				rawValue := int128ToString(int128Val.GetLow(), int128Val.GetHigh())
-				precision := decimal.GetPrecision()
-				scale := decimal.GetScale()
-
-				// Handle negative sign separately
-				isNegative := strings.HasPrefix(rawValue, "-")
-				if isNegative {
-					rawValue = rawValue[1:] // Remove the negative sign temporarily
-				}
-
-				// Format as decimal with proper placement of decimal point
-				// The raw value is the number * 10^scale
-				// We need to insert a decimal point 'scale' digits from the right
-				var decStr string
-				if scale == 0 {
-					// No decimal point needed
-					decStr = rawValue
-				} else {
-					// Need to add decimal point
-					if len(rawValue) <= int(scale) {
-						// Need leading zeros: e.g., "5" with scale 3 -> "0.005"
-						leadingZeros := int(scale) - len(rawValue)
-						decStr = "0." + strings.Repeat("0", leadingZeros) + rawValue
-					} else {
-						// Insert decimal point: e.g., "12345" with scale 3 -> "12.345"
-						insertPos := len(rawValue) - int(scale)
-						decStr = rawValue[:insertPos] + "." + rawValue[insertPos:]
-					}
-				}
-
-				// Add back the negative sign if needed
-				if isNegative {
-					decStr = "-" + decStr
-				}
-
-				return ind + decStr + "d" + fmt.Sprintf("%d", precision)
-			}
-		case *pb.Value_BooleanValue:
-			if n.GetBooleanValue() {
-				return ind + "true"
-			}
-			return ind + "false"
-		}
-
-	case string:
-		escaped := strings.ReplaceAll(n, "\\", "\\\\")
-		escaped = strings.ReplaceAll(escaped, "\"", "\\\"")
-		return ind + "\"" + escaped + "\""
-	case int:
-		return ind + fmt.Sprintf("%d", n)
-	case int32:
-		return ind + fmt.Sprintf("%d", n)
-	case int64:
-		return ind + fmt.Sprintf("%d", n)
-	case uint32:
-		return ind + fmt.Sprintf("%d", n)
-	case uint64:
-		return ind + fmt.Sprintf("%d", n)
-
-	default:
-		panic(fmt.Sprintf("toStr not implemented for %T", node))
-	}
-
-	return lqp
-}
-
-// Helper function to get type name as string
-func getTypeName(t *pb.Type) string {
-	switch {
-	case t.GetUnspecifiedType() != nil:
-		return "UNSPECIFIED"
-	case t.GetStringType() != nil:
-		return "STRING"
-	case t.GetIntType() != nil:
-		return "INT"
-	case t.GetFloatType() != nil:
-		return "FLOAT"
-	case t.GetUint128Type() != nil:
-		return "UINT128"
-	case t.GetInt128Type() != nil:
-		return "INT128"
-	case t.GetDateType() != nil:
-		return "DATE"
-	case t.GetDatetimeType() != nil:
-		return "DATETIME"
-	case t.GetMissingType() != nil:
-		return "MISSING"
-	case t.GetDecimalType() != nil:
-		return "DECIMAL"
-	case t.GetBooleanType() != nil:
-		return "BOOLEAN"
-	default:
-		return "UNKNOWN"
-	}
-}
-
-// Helper function to get type parameters
-func getTypeParameters(t *pb.Type) []int32 {
-	if decType := t.GetDecimalType(); decType != nil {
-		return []int32{decType.GetPrecision(), decType.GetScale()}
-	}
-	return nil
-}
-
-func valueToStr(pp PrettyParams, value interface{}) string {
-	// valueToStr now just delegates to toStr for all supported types
-	// It exists for backward compatibility and for handling the default case
-	switch value.(type) {
-	case *pb.Value, string, int, int32, int64, uint32, uint64:
-		return toStr(pp, value)
-	default:
-		// Fallback for any other types (e.g., from config maps)
-		return pp.INDENT() + fmt.Sprintf("%v", value)
-	}
-}
-
-func typeToStr(t *pb.Type) string {
-	typeName := getTypeName(t)
-
-	params := getTypeParameters(t)
-
-	if len(params) == 0 {
-		return typeName
-	}
-
-	result := "(" + typeName + " "
-	paramStrs := make([]string, len(params))
-	for i, p := range params {
-		paramStrs[i] = fmt.Sprintf("%d", p)
-	}
-	result += strings.Join(paramStrs, " ")
-	result += ")"
-	return result
-}
-
-func varsToStr(vars []*pb.Binding) string {
-	parts := make([]string, len(vars))
-	for i, binding := range vars {
-		parts[i] = binding.GetVar().GetName() + "::" + typeToStr(binding.GetType())
-	}
-	return strings.Join(parts, " ")
-}
-
-func termListToStr(pp PrettyParams, terms []*pb.Term) string {
-	ind := pp.INDENT()
-
-	if len(terms) == 0 {
-		return ind + pp.LPAREN() + "terms" + pp.RPAREN()
-	}
-
-	return ind + pp.LPAREN() + "terms" + " " +
-		termList(PrettyParams{pp.DebugInfo, 0}, terms, " ") + pp.RPAREN()
-}
-
-func idToName(pp PrettyParams, rid *pb.RelationId) string {
-	idStr := relationIdToString(rid)
-	// Default behavior: print_names=true (use debug names if available)
-	if len(pp.DebugInfo) == 0 {
-		return idStr
-	}
-	if name, ok := pp.DebugInfo[idStr]; ok {
-		return ":" + name
-	}
-	return idStr
-}
-
-// Helper functions for list formatting
-// Generic list-to-string converter that works with any type
-// The formatter function determines how each item is converted to a string
-func listToStr[T any](items []T, indentLevel int, delim string, debugInfo map[string]string, formatter func(T, int, map[string]string) string) string {
-	parts := make([]string, len(items))
-	for i, item := range items {
-		parts[i] = formatter(item, indentLevel, debugInfo)
-	}
-	return strings.Join(parts, delim)
-}
-
-// Convenience wrappers for backward compatibility
-func declarationList(pp PrettyParams, items []*pb.Declaration, delim string) string {
-	return listToStr(items, pp.indent, delim, pp.DebugInfo, func(item *pb.Declaration, level int, debug map[string]string) string {
-		return toStr(PrettyParams{debug, level}, item)
-	})
-}
-
-func constructList(pp PrettyParams, items []*pb.Construct, delim string) string {
-	return listToStr(items, pp.indent, delim, pp.DebugInfo, func(item *pb.Construct, level int, debug map[string]string) string {
-		return toStr(PrettyParams{debug, level}, item)
-	})
-}
-
-func instructionList(pp PrettyParams, items []*pb.Instruction, delim string) string {
-	return listToStr(items, pp.indent, delim, pp.DebugInfo, func(item *pb.Instruction, level int, debug map[string]string) string {
-		return toStr(PrettyParams{debug, level}, item)
-	})
-}
-
-func formulaList(pp PrettyParams, items []*pb.Formula, delim string) string {
-	return listToStr(items, pp.indent, delim, pp.DebugInfo, func(item *pb.Formula, level int, debug map[string]string) string {
-		return toStr(PrettyParams{debug, level}, item)
-	})
-}
-
-func relTermList(pp PrettyParams, items []*pb.RelTerm, delim string) string {
-	return listToStr(items, pp.indent, delim, pp.DebugInfo, func(item *pb.RelTerm, level int, debug map[string]string) string {
-		return toStr(PrettyParams{debug, level}, item)
-	})
-}
-
-func termList(pp PrettyParams, items []*pb.Term, delim string) string {
-	return listToStr(items, pp.indent, delim, pp.DebugInfo, func(item *pb.Term, level int, debug map[string]string) string {
-		return toStr(PrettyParams{debug, level}, item)
-	})
-}
-
-func valueList(pp PrettyParams, items []*pb.Value, delim string) string {
-	return listToStr(items, pp.indent, delim, pp.DebugInfo, func(item *pb.Value, level int, debug map[string]string) string {
-		return toStr(PrettyParams{debug, level}, item)
-	})
-}
-
-func attributeList(pp PrettyParams, items []*pb.Attribute, delim string) string {
-	return listToStr(items, pp.indent, delim, pp.DebugInfo, func(item *pb.Attribute, level int, debug map[string]string) string {
-		return toStr(PrettyParams{debug, level}, item)
-	})
-}
-
-func abstractionList(pp PrettyParams, items []*pb.Abstraction, delim string) string {
-	return listToStr(items, pp.indent, delim, pp.DebugInfo, func(item *pb.Abstraction, level int, debug map[string]string) string {
-		return toStr(PrettyParams{debug, level}, item)
-	})
-}
-
-func relationIdList(pp PrettyParams, items []*pb.RelationId, delim string) string {
-	return listToStr(items, pp.indent, delim, pp.DebugInfo, func(item *pb.RelationId, level int, debug map[string]string) string {
-		return toStr(PrettyParams{debug, level}, item)
-	})
-}
-
-func fragmentIdList(pp PrettyParams, items []*pb.FragmentId, delim string) string {
-	return listToStr(items, pp.indent, delim, pp.DebugInfo, func(item *pb.FragmentId, level int, debug map[string]string) string {
-		return toStr(PrettyParams{debug, level}, item)
-	})
-}
-
-func writeList(pp PrettyParams, items []*pb.Write, delim string) string {
-	return listToStr(items, pp.indent, delim, pp.DebugInfo, func(item *pb.Write, level int, debug map[string]string) string {
-		return toStr(PrettyParams{debug, level}, item)
-	})
-}
-
-func readList(pp PrettyParams, items []*pb.Read, delim string) string {
-	return listToStr(items, pp.indent, delim, pp.DebugInfo, func(item *pb.Read, level int, debug map[string]string) string {
-		return toStr(PrettyParams{debug, level}, item)
-	})
-}
-
-func exportCSVColumnList(pp PrettyParams, items []*pb.ExportCSVColumn, delim string) string {
-	return listToStr(items, pp.indent, delim, pp.DebugInfo, func(item *pb.ExportCSVColumn, level int, debug map[string]string) string {
-		return toStr(PrettyParams{debug, level}, item)
-	})
+	var buf bytes.Buffer
+
+	pp := PrettyParams{&buf, debugInfo, 0}
+	pp.pprint(node)
+	pp.NEWLINE()
+	return pp.Dump()
 }
