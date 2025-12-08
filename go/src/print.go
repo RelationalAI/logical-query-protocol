@@ -15,7 +15,7 @@ import (
 type PrettyParams struct {
 	w           *bytes.Buffer
 	DebugInfo   map[string]string
-	indentlevel int
+	indentLevel int
 }
 
 // Some helper methods for pretty printing
@@ -62,11 +62,11 @@ func (pp PrettyParams) INDENT(n int, f func(PrettyParams)) {
 	indent := strings.Repeat(" ", n)
 
 	var innerBuf bytes.Buffer
-	innerPP := PrettyParams{&innerBuf, pp.DebugInfo, pp.indentlevel}
+	innerPP := PrettyParams{&innerBuf, pp.DebugInfo, pp.indentLevel}
 	f(innerPP)
 
 	content := innerBuf.String()
-	indentStr := strings.Repeat(indent, pp.indentlevel+1)
+	indentStr := strings.Repeat(indent, pp.indentLevel+1)
 
 	lines := strings.Split(content, "\n")
 	for i, line := range lines {
