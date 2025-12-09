@@ -12,19 +12,12 @@ from .grammar import (
     Star, Option, Sequence
 )
 from .target import (
-    Lambda, Call, Var, Symbol, TargetExpr, Lit, IfElse, Builtin, Constructor, BaseType, MessageType, OptionType, ListType
+    Lambda, Call, Var, Symbol, TargetExpr, Lit, IfElse, Builtin, Constructor, BaseType, MessageType, OptionType, ListType, FunctionType, TupleType
 )
 from .proto_ast import ProtoMessage, ProtoField, PRIMITIVE_TYPES
 from .proto_parser import ProtoParser
 
 _any_type = BaseType("Any")
-
-def _lambda(param_names: List[str], body: TargetExpr, return_type=None) -> Lambda:
-    """Helper to create Lambda with Var params from string names."""
-    if return_type is None:
-        return_type = _any_type
-    params = [Var(name, _any_type) for name in param_names]
-    return Lambda(params=params, return_type=return_type, body=body)
 
 # Mapping from protobuf primitive types to base type names
 _PRIMITIVE_TO_BASE_TYPE = {
@@ -372,40 +365,40 @@ class GrammarGenerator:
         add_rule(Rule(
             lhs=Nonterminal("config_dict"),
             rhs=Sequence([LitTerminal("{"), Star(Nonterminal("config_key_value")), LitTerminal("}")]),
-            action=_lambda(["config_key_value"], return_type=_any_type, body=Var('config_key_value', _any_type)),
+            action=Lambda([Var("config_key_value", _any_type)], return_type=_any_type, body=Var('config_key_value', _any_type)),
         ))
         add_rule(Rule(
             lhs=Nonterminal("config_key_value"),
             rhs=Sequence([LitTerminal(":"), NamedTerminal("SYMBOL"), Nonterminal("value")]),
-            action=_lambda(["symbol", "value"], return_type=_any_type, body=Call(Builtin("Tuple"), [Var('symbol', _any_type), Var('value', _any_type)])),
+            action=Lambda([Var('symbol', BaseType('String')), Var('value', MessageType('Value'))], _any_type, Call(Builtin("Tuple"), [Var('symbol', BaseType('String')), Var('value', MessageType('Value'))])),
         ))
 
         add_rule(Rule(
             lhs=Nonterminal("transaction"),
             rhs=Sequence([LitTerminal("("), LitTerminal("transaction"), Option(Nonterminal("configure")), Option(Nonterminal("sync")), Star(Nonterminal("epoch")), LitTerminal(")")]),
-            action=_lambda(["configure", "sync", "epochs"],
-                          body=Call(Constructor('Transaction'), [Var('epochs', _any_type), Var('configure', _any_type), Var('sync', _any_type)]),
-                          return_type=_any_type),
+            action=Lambda([Var('configure', OptionType(MessageType('Configure'))), Var('sync', OptionType(MessageType('Sync'))), Var('epochs', ListType(MessageType('Epoch')))],
+                          MessageType('Transaction'),
+                          Call(Constructor('Transaction'), [Var('epochs', ListType(MessageType('Epoch'))), Var('configure', OptionType(MessageType('Configure'))), Var('sync', OptionType(MessageType('Sync')))])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("bindings"),
             rhs=Sequence([LitTerminal("["), Star(Nonterminal("binding")), Option(Nonterminal("value_bindings")), LitTerminal("]")]),
-            action=_lambda(["keys", "values"], return_type=_any_type, body=Call(Builtin('Tuple'), [Var('keys', _any_type), Var('values', _any_type)])),
+            action=Lambda([Var('keys', ListType(MessageType('Binding'))), Var('values', OptionType(ListType(MessageType('Binding'))))], TupleType([ListType(MessageType('Binding')), ListType(MessageType('Binding'))]), Call(Builtin('Tuple'), [Var('keys', ListType(MessageType('Binding'))), Var('values', OptionType(ListType(MessageType('Binding'))))])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("value_bindings"),
             rhs=Sequence([LitTerminal("|"), Star(Nonterminal("binding"))]),
-            action=_lambda(["values"], return_type=_any_type, body=Call(Builtin('Tuple'), [Var('values', _any_type), Call(Builtin('length'), [Var('values', _any_type)])])),
+            action=Lambda([Var('values', ListType(MessageType('Binding')))], ListType(MessageType('Binding')), Var('values', ListType(MessageType('Binding')))),
         ))
         add_rule(Rule(
             lhs=Nonterminal("binding"),
             rhs=Sequence([NamedTerminal("SYMBOL"), LitTerminal("::"), Nonterminal("type")]),
-            action=_lambda(["symbol", "type"], return_type=_any_type, body=Call(Constructor('Binding'), [Call(Constructor('Var'), [Var('symbol', _any_type)]), Var('type', _any_type)])),
+            action=Lambda([Var('symbol', BaseType('String')), Var('type', MessageType('Type'))], MessageType('Binding'), Call(Constructor('Binding'), [Call(Constructor('Var'), [Var('symbol', BaseType('String'))]), Var('type', MessageType('Type'))])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("abstraction"),
             rhs=Sequence([LitTerminal("("), Nonterminal("bindings"), Nonterminal("formula"), LitTerminal(")")]),
-            action=_lambda(["bindings", "formula"], return_type=_any_type, body=Call(Constructor('Abstraction'), [Var('bindings', _any_type), Var('formula', _any_type)])),
+            action=Lambda([Var('bindings', TupleType([ListType(MessageType('Binding')), ListType(MessageType('Binding'))])), Var('formula', MessageType('Formula'))], TupleType([MessageType('Abstraction'), BaseType('Int64')]), Call(Builtin('Tuple'), [Call(Constructor('Abstraction'), [Call(Builtin('list_concat'), [Call(Builtin('fst'), [Var('bindings', TupleType([ListType(MessageType('Binding')), ListType(MessageType('Binding'))]))]), Call(Builtin('snd'), [Var('bindings', TupleType([ListType(MessageType('Binding')), ListType(MessageType('Binding'))]))])]), Var('formula', MessageType('Formula'))]), Call(Builtin('length'), [Call(Builtin('snd'), [Var('bindings', TupleType([ListType(MessageType('Binding')), ListType(MessageType('Binding'))]))])])])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("name"),
@@ -418,33 +411,33 @@ class GrammarGenerator:
         add_rule(Rule(
             lhs=Nonterminal("monoid"),
             rhs=Sequence([Nonterminal("type"), LitTerminal("::"), Nonterminal("monoid_op")]),
-            action=_lambda(["type", "op"], return_type=_any_type, body=Call(Var('op', _any_type), [Var('type', _any_type)])),
+            action=Lambda([Var("type", MessageType('Type')), Var("op", FunctionType([MessageType('Type')], MessageType('Monoid')))], return_type=MessageType('Monoid'), body=Call(Var('op', MessageType('MonoidOp')), [Var('type', MessageType('Type'))])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("monoid_op"),
             rhs=LitTerminal("OR"),
-            action=Lambda([], return_type=_any_type, body=_lambda(["type"], return_type=_any_type, body=Call(Constructor("monoid"), [Call(Constructor("OneOf"), [Symbol("or_monoid"), Call(Constructor('OrMonoid'), [])])]))),
+            action=Lambda([], return_type=FunctionType([MessageType('Type')], MessageType('Monoid')), body=Lambda([Var("type", MessageType('Type'))], return_type=MessageType("Monoid"), body=Call(Constructor("Monoid"), [Call(Constructor("OneOf"), [Symbol("or_monoid"), Call(Constructor('OrMonoid'), [])])]))),
         ))
         add_rule(Rule(
             lhs=Nonterminal("monoid_op"),
             rhs=LitTerminal("MIN"),
-            action=Lambda([], return_type=_any_type, body=_lambda(["type"], return_type=_any_type, body=Call(Constructor("monoid"), [Call(Constructor("OneOf"), [Symbol("min_monoid"), Call(Constructor('MinMonoid'), [Var('type', _any_type)])])]))),
+            action=Lambda([], return_type=FunctionType([MessageType('Type')], MessageType('Monoid')), body=Lambda([Var("type", MessageType('Type'))], return_type=MessageType("Monoid"), body=Call(Constructor("Monoid"), [Call(Constructor("OneOf"), [Symbol("min_monoid"), Call(Constructor('MinMonoid'), [Var('type', MessageType('Type'))])])]))),
         ))
         add_rule(Rule(
             lhs=Nonterminal("monoid_op"),
             rhs=LitTerminal("MAX"),
-            action=Lambda([], return_type=_any_type, body=_lambda(["type"], return_type=_any_type, body=Call(Constructor("monoid"), [Call(Constructor("OneOf"), [Symbol("max_monoid"), Call(Constructor('MaxMonoid'), [Var('type', _any_type)])])]))),
+            action=Lambda([], return_type=FunctionType([MessageType('Type')], MessageType('Monoid')), body=Lambda([Var("type", MessageType('Type'))], return_type=MessageType("Monoid"), body=Call(Constructor("Monoid"), [Call(Constructor("OneOf"), [Symbol("max_monoid"), Call(Constructor('MaxMonoid'), [Var('type', MessageType('Type'))])])]))),
         ))
         add_rule(Rule(
             lhs=Nonterminal("monoid_op"),
             rhs=LitTerminal("SUM"),
-            action=Lambda([], return_type=_any_type, body=_lambda(["type"], return_type=_any_type, body=Call(Constructor("monoid"), [Call(Constructor("OneOf"), [Symbol("sum"), Call(Constructor('SumMonoid'), [Var('type', _any_type)])])]))),
+            action=Lambda([], return_type=FunctionType([MessageType('Type')], MessageType('Monoid')), body=Lambda([Var("type", MessageType('Type'))], return_type=MessageType("Monoid"), body=Call(Constructor("Monoid"), [Call(Constructor("OneOf"), [Symbol("sum"), Call(Constructor('SumMonoid'), [Var('type', MessageType('Type'))])])]))),
         ))
 
         add_rule(Rule(
             lhs=Nonterminal("configure"),
             rhs=Sequence([LitTerminal("("), LitTerminal("configure"), Nonterminal("config_dict"), LitTerminal(")")]),
-            action=_lambda(["config_dict"], return_type=_any_type, body=Call(Constructor('Configure'), [Var('config_dict', _any_type)])),
+            action=Lambda([Var("config_dict", _any_type)], return_type=_any_type, body=Call(Constructor('Configure'), [Var('config_dict', _any_type)])),
         ))
 
         add_rule(Rule(
@@ -473,23 +466,23 @@ class GrammarGenerator:
         add_rule(Rule(
             lhs=Nonterminal("export"),
             rhs=Sequence([LitTerminal("("), LitTerminal("export"), Nonterminal("export_csvconfig"), LitTerminal(")")]),
-            action=_lambda(["config"], return_type=MessageType('Export'), body=Call(Constructor('Export'), [Var('config', _any_type)])),
+            action=Lambda([Var("config", MessageType('ExportCsvConfig'))], MessageType('Export'), Call(Constructor('Export'), [Var('config', MessageType('ExportCsvConfig'))])),
         ))
 
         add_rule(Rule(
             lhs=Nonterminal("export_csvconfig"),
             rhs=Sequence([LitTerminal("("), LitTerminal("export_csvconfig"), Nonterminal("export_path"), Nonterminal("export_csvcolumns"), Nonterminal("config_dict"), LitTerminal(")")]),
-            action=_lambda(["path", "columns", "config"], return_type=MessageType('ExportCsvConfig'), body=Call(Constructor('ExportCsvConfig'), [Var('path', _any_type), Var('columns', _any_type), Var('config', _any_type)])),
+            action=Lambda([Var("path", BaseType('String')), Var("columns", ListType(MessageType('ExportCsvColumn'))), Var("config", _any_type)], MessageType('ExportCsvConfig'), Call(Constructor('ExportCsvConfig'), [Var('path', BaseType('String')), Var('columns', ListType(MessageType('ExportCsvColumn'))), Var('config', _any_type)])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("export_csvcolumns"),
             rhs=Sequence([LitTerminal("("), LitTerminal("columns"), Star(Nonterminal("export_csvcolumn")), LitTerminal(")")]),
-            action=_lambda(["columns"], return_type=MessageType('ExportCsvColumns'), body=Call(Constructor('ExportCsvColumns'), [Var('columns', _any_type)])),
+            action=Lambda([Var("columns", ListType(MessageType('ExportCsvColumn')))], ListType(MessageType('ExportCsvColumn')), Var('columns', ListType(MessageType('ExportCsvColumn')))),
         ))
         add_rule(Rule(
             lhs=Nonterminal("export_csvcolumn"),
             rhs=Sequence([LitTerminal("("), LitTerminal("column"), NamedTerminal("STRING"), Nonterminal("relation_id"), LitTerminal(")")]),
-            action=_lambda(["name", "relation_id"], return_type=MessageType('ExportCsvColumn'), body=Call(Constructor('ExportCsvColumn'), [Var('name', _any_type), Var('relation_id', _any_type)])),
+            action=Lambda([Var("name", BaseType('String')), Var("relation_id", MessageType('RelationId'))], MessageType('ExportCsvColumn'), Call(Constructor('ExportCsvColumn'), [Var('name', BaseType('String')), Var('relation_id', MessageType('RelationId'))])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("export_path"),
