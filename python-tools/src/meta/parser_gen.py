@@ -40,10 +40,13 @@ def _generate_parse_method(
 
     """Generate parse method code as string (preserving existing logic)."""
 
+    return_type = None
+
     rhs = None
     if len(rules) == 1:
         rule = rules[0]
         rhs = _generate_parse_rhs_ir(rule.rhs, rule, grammar)
+        return_type = rule.action.return_type
     else:
         predictor = _build_predictor(grammar, lhs, rules)
         prediction = gensym("prediction")
@@ -55,6 +58,10 @@ def _generate_parse_method(
             tail = Call(Builtin('error'), [Lit(f'Unexpected token in {lhs}'), Call(Builtin('current_token'), [])])
 
         for (i, rule) in enumerate(rules):
+            if return_type is None:
+                return_type = rule.action.return_type
+            else:
+                assert return_type == rule.action.return_type, f"Return type mismatch at rule {i}: {return_type} != {rule.action.return_type}"
             if is_epsilon(rule.rhs):
                 continue
             tail = IfElse(
@@ -62,9 +69,10 @@ def _generate_parse_method(
                 _generate_parse_rhs_ir(rule.rhs, rule, grammar),
                 tail)
 
-        rhs = Let(Var(prediction, _any_type), predictor, tail)
+        rhs = Let(Var(prediction, BaseType('Int64')), predictor, tail)
 
-    return ParseNonterminalDef(lhs, [], BaseType('Any'), rhs)
+    assert return_type is not None
+    return ParseNonterminalDef(lhs, [], return_type, rhs)
 
 MAX_LOOKAHEAD = 3
 
