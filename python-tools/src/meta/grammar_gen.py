@@ -290,11 +290,11 @@ class GrammarGenerator:
             rhs=Sequence([Nonterminal("transaction")]),
             action=Lambda([Var('transaction', MessageType('Transaction'))], return_type=MessageType('Transaction'), body=Var('transaction', MessageType('Transaction'))),
         ))
-        add_rule(Rule(
-            lhs=Nonterminal("start"),
-            rhs=Sequence([Nonterminal("fragment")]),
-            action=Lambda([Var('fragment', MessageType('Fragment'))], return_type=MessageType('Fragment'), body=Var('fragment', MessageType('Fragment'))),
-        ))
+        # add_rule(Rule(
+        #     lhs=Nonterminal("start"),
+        #     rhs=Sequence([Nonterminal("fragment")]),
+        #     action=Lambda([Var('fragment', MessageType('Fragment'))], return_type=MessageType('Fragment'), body=Var('fragment', MessageType('Fragment'))),
+        # ))
 
         add_rule(Rule(
             lhs=Nonterminal("value"),
@@ -472,7 +472,7 @@ class GrammarGenerator:
         add_rule(Rule(
             lhs=Nonterminal("export_csvconfig"),
             rhs=Sequence([LitTerminal("("), LitTerminal("export_csvconfig"), Nonterminal("export_path"), Nonterminal("export_csvcolumns"), Nonterminal("config_dict"), LitTerminal(")")]),
-            action=Lambda([Var("path", BaseType('String')), Var("columns", ListType(MessageType('ExportCsvColumn'))), Var("config", ListType(TupleType([BaseType('String'), MessageType('Value')])))], MessageType('ExportCsvConfig'), Call(Constructor('ExportCsvConfig'), [Var('path', BaseType('String')), Var('columns', ListType(MessageType('ExportCsvColumn'))), Var('config', ListType(TupleType([BaseType('String'), MessageType('Value')])))])),
+            action=Lambda([Var("path", MessageType('ExportPath')), Var("columns", ListType(MessageType('ExportCsvColumn'))), Var("config", ListType(TupleType([BaseType('String'), MessageType('Value')])))], MessageType('ExportCsvConfig'), Call(Builtin('export_csv_config'), [Var('path', MessageType('ExportPath')), Var('columns', ListType(MessageType('ExportCsvColumn'))), Var('config', ListType(TupleType([BaseType('String'), MessageType('Value')])))])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("export_csvcolumns"),
@@ -499,7 +499,7 @@ class GrammarGenerator:
         add_rule(Rule(
             lhs=Nonterminal("fragment_id"),
             rhs=Sequence([LitTerminal(":"), NamedTerminal("SYMBOL")]),
-            action=Lambda([Var("symbol", BaseType('String'))], return_type=MessageType('FragmentId'), body=Call(Constructor('FragmentId'), [Var('symbol', BaseType('String'))])),
+            action=Lambda([Var("symbol", BaseType('String'))], return_type=MessageType('FragmentId'), body=Call(Builtin('fragment_id_from_string'), [Var('symbol', BaseType('String'))])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("relation_id"),
