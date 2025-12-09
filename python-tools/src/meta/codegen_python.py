@@ -6,7 +6,7 @@ with proper keyword escaping and idiomatic Python style.
 
 from typing import Set, Union, List
 
-from .target import TargetExpr, Var, Lit, Symbol, Builtin, Constructor, Call, Lambda, Let, IfElse, Seq, While, Assign, Return, FunDef, ParseNonterminalDef, ParseNonterminal, Type, BaseType, TupleType, ListType, OptionType, TargetNode, gensym
+from .target import TargetExpr, Var, Lit, Symbol, Builtin, Constructor, Call, Lambda, Let, IfElse, Seq, While, Assign, Return, FunDef, ParseNonterminalDef, ParseNonterminal, Type, BaseType, TupleType, ListType, OptionType, MessageType, FunctionType, TargetNode, gensym
 
 
 # Python keywords that need escaping
@@ -52,6 +52,9 @@ def generate_python_type(typ: Type) -> str:
         }
         return type_map.get(typ.name, typ.name)
 
+    elif isinstance(typ, MessageType):
+        return typ.name
+
     elif isinstance(typ, TupleType):
         if not typ.elements:
             return 'tuple[()]'
@@ -65,6 +68,11 @@ def generate_python_type(typ: Type) -> str:
     elif isinstance(typ, OptionType):
         element_type = generate_python_type(typ.element_type)
         return f"Optional[{element_type}]"
+
+    elif isinstance(typ, FunctionType):
+        param_types = ', '.join(generate_python_type(param_type) for param_type in typ.param_types)
+        return_type = generate_python_type(typ.return_type)
+        return f"Callable[[{param_types}], {return_type}]"
 
     else:
         raise ValueError(f"Unknown type: {type(typ)}")
