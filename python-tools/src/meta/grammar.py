@@ -435,34 +435,34 @@ class Grammar:
 
 # Helper functions
 
-def get_nonterminals(rhs: Rhs) -> Set[Nonterminal]:
-    """Return the set of all nonterminals referenced in a Rhs."""
-    nonterminals = set()
+def get_nonterminals(rhs: Rhs) -> List[Nonterminal]:
+    """Return the list of all nonterminals referenced in a Rhs."""
+    nonterminals = []
 
     if isinstance(rhs, Nonterminal):
-        nonterminals.add(rhs)
+        nonterminals.append(rhs)
     elif isinstance(rhs, Sequence):
         for elem in rhs.elements:
-            nonterminals.update(get_nonterminals(elem))
+            nonterminals.extend(get_nonterminals(elem))
     elif isinstance(rhs, (Star, Option)):
-        nonterminals.update(get_nonterminals(rhs.rhs))
+        nonterminals.extend(get_nonterminals(rhs.rhs))
 
-    return nonterminals
+    return list(dict.fromkeys(nonterminals))
 
 
-def get_literals(rhs: Rhs) -> Set[LitTerminal]:
-    """Return the set of all literals referenced in a Rhs."""
-    literals = set()
+def get_literals(rhs: Rhs) -> List[LitTerminal]:
+    """Return the list of all literals referenced in a Rhs."""
+    literals = []
 
     if isinstance(rhs, LitTerminal):
-        literals.add(rhs)
+        literals.append(rhs)
     elif isinstance(rhs, Sequence):
         for elem in rhs.elements:
-            literals.update(get_literals(elem))
+            literals.extend(get_literals(elem))
     elif isinstance(rhs, (Star, Option)):
-        literals.update(get_literals(rhs.rhs))
+        literals.extend(get_literals(rhs.rhs))
 
-    return literals
+    return list(dict.fromkeys(literals))
 
 
 def is_epsilon(rhs):
