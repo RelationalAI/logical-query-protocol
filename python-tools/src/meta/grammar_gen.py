@@ -365,12 +365,12 @@ class GrammarGenerator:
         add_rule(Rule(
             lhs=Nonterminal("config_dict"),
             rhs=Sequence([LitTerminal("{"), Star(Nonterminal("config_key_value")), LitTerminal("}")]),
-            action=Lambda([Var("config_key_value", _any_type)], return_type=_any_type, body=Var('config_key_value', _any_type)),
+            action=Lambda([Var("config_key_value", ListType(TupleType([BaseType('String'), MessageType('Value')])))], return_type=ListType(TupleType([BaseType('String'), MessageType('Value')])), body=Var('config_key_value', ListType(TupleType([BaseType('String'), MessageType('Value')])))),
         ))
         add_rule(Rule(
             lhs=Nonterminal("config_key_value"),
             rhs=Sequence([LitTerminal(":"), NamedTerminal("SYMBOL"), Nonterminal("value")]),
-            action=Lambda([Var('symbol', BaseType('String')), Var('value', MessageType('Value'))], _any_type, Call(Builtin("Tuple"), [Var('symbol', BaseType('String')), Var('value', MessageType('Value'))])),
+            action=Lambda([Var('symbol', BaseType('String')), Var('value', MessageType('Value'))], TupleType([BaseType('String'), MessageType('Value')]), Call(Builtin("Tuple"), [Var('symbol', BaseType('String')), Var('value', MessageType('Value'))])),
         ))
 
         add_rule(Rule(
@@ -437,7 +437,7 @@ class GrammarGenerator:
         add_rule(Rule(
             lhs=Nonterminal("configure"),
             rhs=Sequence([LitTerminal("("), LitTerminal("configure"), Nonterminal("config_dict"), LitTerminal(")")]),
-            action=Lambda([Var("config_dict", _any_type)], return_type=_any_type, body=Call(Constructor('Configure'), [Var('config_dict', _any_type)])),
+            action=Lambda([Var("config_dict", ListType(TupleType([BaseType('String'), MessageType('Value')])))], return_type=MessageType('Configure'), body=Call(Constructor('Configure'), [Var('config_dict', ListType(TupleType([BaseType('String'), MessageType('Value')])))])),
         ))
 
         add_rule(Rule(
@@ -472,7 +472,7 @@ class GrammarGenerator:
         add_rule(Rule(
             lhs=Nonterminal("export_csvconfig"),
             rhs=Sequence([LitTerminal("("), LitTerminal("export_csvconfig"), Nonterminal("export_path"), Nonterminal("export_csvcolumns"), Nonterminal("config_dict"), LitTerminal(")")]),
-            action=Lambda([Var("path", BaseType('String')), Var("columns", ListType(MessageType('ExportCsvColumn'))), Var("config", _any_type)], MessageType('ExportCsvConfig'), Call(Constructor('ExportCsvConfig'), [Var('path', BaseType('String')), Var('columns', ListType(MessageType('ExportCsvColumn'))), Var('config', _any_type)])),
+            action=Lambda([Var("path", BaseType('String')), Var("columns", ListType(MessageType('ExportCsvColumn'))), Var("config", ListType(TupleType([BaseType('String'), MessageType('Value')])))], MessageType('ExportCsvConfig'), Call(Constructor('ExportCsvConfig'), [Var('path', BaseType('String')), Var('columns', ListType(MessageType('ExportCsvColumn'))), Var('config', ListType(TupleType([BaseType('String'), MessageType('Value')])))])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("export_csvcolumns"),
@@ -504,12 +504,12 @@ class GrammarGenerator:
         add_rule(Rule(
             lhs=Nonterminal("relation_id"),
             rhs=Sequence([LitTerminal(":"), NamedTerminal("SYMBOL")]),
-            action=Lambda([Var('symbol', BaseType('String'))], return_type=_any_type, body=Call(Constructor('RelationId'), [Var('symbol', BaseType('String'))])),
+            action=Lambda([Var('symbol', BaseType('String'))], return_type=MessageType('RelationId'), body=Call(Builtin('relation_id_from_string'), [Var('symbol', BaseType('String'))])),
         ))
         add_rule(Rule(
             lhs=Nonterminal("relation_id"),
             rhs=Sequence([NamedTerminal("INT")]),
-            action=Lambda([Var("INT", BaseType('Int64'))], return_type=_any_type, body=Call(Constructor('RelationId'), [Var('INT', BaseType('Int64'))])),
+            action=Lambda([Var("INT", BaseType('Int64'))], return_type=MessageType('RelationId'), body=Call(Builtin('relation_id_from_int'), [Var('INT', BaseType('Int64'))])),
         ))
 
         add_rule(Rule(
