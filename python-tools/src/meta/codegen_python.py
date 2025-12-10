@@ -115,6 +115,15 @@ def generate_python_lines(expr: TargetExpr, lines: List[str], indent: str = "") 
     elif isinstance(expr, Call):
         # Handle some special cases that don't turn into python calls.
         if isinstance(expr.func, Builtin):
+            if expr.func.name == "fragment_id_from_string" and len(expr.args) == 1:
+                arg1 = generate_python_lines(expr.args[0], lines, indent)
+                return f"ir.FragmentId(id={arg1}.encode())"
+            if expr.func.name == "relation_id_from_string" and len(expr.args) == 1:
+                arg1 = generate_python_lines(expr.args[0], lines, indent)
+                return f"ir.RelationId(id=int(hashlib.sha256({arg1}.encode()).hexdigest()[:16], 16))"
+            if expr.func.name == "relation_id_from_int" and len(expr.args) == 1:
+                arg1 = generate_python_lines(expr.args[0], lines, indent)
+                return f"ir.RelationId(id={arg1})"
             if expr.func.name == "list_concat" and len(expr.args) == 2:
                 arg1 = generate_python_lines(expr.args[0], lines, indent)
                 arg2 = generate_python_lines(expr.args[1], lines, indent)

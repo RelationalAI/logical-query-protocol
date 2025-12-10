@@ -47,6 +47,7 @@ def _generate_prologue(grammar: Grammar, is_ll2: bool, conflicts: List[str], com
         lines.append(f"Command: {command_line}")
     lines.append('"""')
     lines.append("")
+    lines.append("import hashlib")
     lines.append("import re")
     lines.append("from typing import List, Optional, Any, Tuple")
     lines.append("from decimal import Decimal")
