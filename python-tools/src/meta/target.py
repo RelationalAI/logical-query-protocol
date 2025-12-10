@@ -20,20 +20,20 @@ def next_id():
 def gensym(prefix: str = "_t") -> str:
     return f"{prefix}{next_id()}"
 
-@dataclass
+@dataclass(frozen=True)
 class TargetNode:
     """Base class for all target language AST nodes."""
     pass
 
 
-@dataclass
+@dataclass(frozen=True)
 class TargetExpr(TargetNode):
     """Base class for target language expressions."""
     pass
 
 
 
-@dataclass
+@dataclass(frozen=True)
 class Var(TargetExpr):
     """Variable reference."""
     name: str
@@ -49,7 +49,7 @@ class Var(TargetExpr):
         assert isinstance(self.type, Type), f"Invalid type in {self}: {self.type}"
 
 
-@dataclass
+@dataclass(frozen=True)
 class Lit(TargetExpr):
     """Literal value (string, number, boolean, None)."""
     value: Any
@@ -57,7 +57,7 @@ class Lit(TargetExpr):
     def __str__(self) -> str:
         return repr(self.value)
 
-@dataclass
+@dataclass(frozen=True)
 class Symbol(TargetExpr):
     """Literal symbol (e.g., :cast)."""
     name: str
@@ -70,7 +70,7 @@ class Symbol(TargetExpr):
         if not self.name.isidentifier():
             raise ValueError(f"Invalid variable name: {self.name}")
 
-@dataclass
+@dataclass(frozen=True)
 class Builtin(TargetExpr):
     """Builtin function reference.
 
@@ -86,7 +86,7 @@ class Builtin(TargetExpr):
     def __post_init__(self):
         assert isinstance(self.name, str), f"Invalid name in {self}: {self.name}"
 
-@dataclass
+@dataclass(frozen=True)
 class Constructor(TargetExpr):
     """Constructor call.
 
@@ -103,7 +103,7 @@ class Constructor(TargetExpr):
             raise ValueError(f"Invalid variable name: {self.name}")
 
 
-@dataclass
+@dataclass(frozen=True)
 class ParseNonterminal(TargetExpr):
     """Parse method call for a nonterminal.
 
@@ -116,7 +116,7 @@ class ParseNonterminal(TargetExpr):
         return f"parse_{self.nonterminal.name}"
 
 
-@dataclass
+@dataclass(frozen=True)
 class Call(TargetExpr):
     """Function call expression.
 
@@ -124,7 +124,7 @@ class Call(TargetExpr):
     args: List of argument expressions
     """
     func: 'TargetExpr'
-    args: Sequence['TargetExpr'] = field(default_factory=list)
+    args: Sequence['TargetExpr'] = field(default_factory=tuple)
 
     def __str__(self) -> str:
         args_str = ', '.join(str(arg) for arg in self.args)
@@ -132,12 +132,14 @@ class Call(TargetExpr):
 
     def __post_init__(self):
         assert isinstance(self.func, TargetExpr), f"Invalid function expression in {self}: {self.func}"
-        assert isinstance(self.args, list), f"Invalid argument list in {self}: {self.args}"
+        if isinstance(self.args, list):
+            object.__setattr__(self, 'args', tuple(self.args))
+        assert isinstance(self.args, tuple), f"Invalid argument list in {self}: {self.args}"
         for arg in self.args:
             assert isinstance(arg, TargetExpr), f"Invalid argument expression in {self}: {arg}"
 
 
-@dataclass
+@dataclass(frozen=True)
 class Lambda(TargetExpr):
     """Lambda function (anonymous function)."""
     params: Sequence['Var']
@@ -149,12 +151,14 @@ class Lambda(TargetExpr):
         return f"lambda {params_str} -> {self.return_type}: {self.body}"
 
     def __post_init__(self):
+        if isinstance(self.params, list):
+            object.__setattr__(self, 'params', tuple(self.params))
         assert isinstance(self.body, TargetExpr), f"Invalid function expression in {self}: {self.body} :: {type(self.body)}"
         assert isinstance(self.return_type, Type), f"Invalid function return type in {self}: {self.return_type}"
         for param in self.params:
             assert isinstance(param, Var), f"Invalid parameter in {self}: {param}"
 
-@dataclass
+@dataclass(frozen=True)
 class Let(TargetExpr):
     """Let-binding: let var = init in body.
 
@@ -174,7 +178,7 @@ class Let(TargetExpr):
         assert isinstance(self.init, TargetExpr), f"Invalid let init expression in {self}: {self.init}"
         assert isinstance(self.body, TargetExpr), f"Invalid let body expression in {self}: {self.body}"
 
-@dataclass
+@dataclass(frozen=True)
 class IfElse(TargetExpr):
     """If-else conditional expression."""
     condition: TargetExpr
@@ -189,23 +193,25 @@ class IfElse(TargetExpr):
         assert isinstance(self.then_branch, TargetExpr), f"Invalid if then expression in {self}: {self.then_branch}"
         assert isinstance(self.else_branch, TargetExpr), f"Invalid if else expression in {self}: {self.else_branch}"
 
-@dataclass
+@dataclass(frozen=True)
 class Seq(TargetExpr):
     """Sequence of expressions evaluated in order, returns last value."""
-    exprs: Sequence['TargetExpr'] = field(default_factory=list)
+    exprs: Sequence['TargetExpr'] = field(default_factory=tuple)
 
     def __str__(self) -> str:
         return "; ".join(str(e) for e in self.exprs)
 
     def __post_init__(self):
-        assert isinstance(self.exprs, list), f"Invalid sequence of expressions in {self}: {self.exprs}"
+        if isinstance(self.exprs, list):
+            object.__setattr__(self, 'exprs', tuple(self.exprs))
+        assert isinstance(self.exprs, tuple), f"Invalid sequence of expressions in {self}: {self.exprs}"
         assert len(self.exprs) > 1, f"Sequence must contain at least two expressions"
         for expr in self.exprs[:-1]:
             assert isinstance(expr, TargetExpr), f"Invalid statement in sequence: {expr}"
         assert isinstance(self.exprs[-1], TargetExpr), f"Invalid expression in sequence: {self.exprs[-1]}"
 
 
-@dataclass
+@dataclass(frozen=True)
 class While(TargetExpr):
     """While loop: while condition do body."""
     condition: TargetExpr
@@ -218,7 +224,7 @@ class While(TargetExpr):
         assert isinstance(self.condition, TargetExpr), f"Invalid while condition expression in {self}: {self.condition}"
         assert isinstance(self.body, TargetExpr), f"Invalid while body expression in {self}: {self.body}"
 
-@dataclass
+@dataclass(frozen=True)
 class Assign(TargetExpr):
     """Assignment statement: var = expr.
 
@@ -235,7 +241,7 @@ class Assign(TargetExpr):
         assert isinstance(self.expr, TargetExpr), f"Invalid assign RHS expression in {self}: {self.expr}"
 
 
-@dataclass
+@dataclass(frozen=True)
 class Return(TargetExpr):
     """Return statement: return expr."""
     expr: TargetExpr
@@ -247,13 +253,13 @@ class Return(TargetExpr):
         assert isinstance(self.expr, TargetExpr) and not isinstance(self.expr, Return), f"Invalid return expression in {self}: {self.expr}"
 
 
-@dataclass
+@dataclass(frozen=True)
 class Type(TargetNode):
     """Base class for type expressions."""
     pass
 
 
-@dataclass
+@dataclass(frozen=True)
 class BaseType(Type):
     """Base types: Int64, Float64, String, Boolean."""
     name: str
@@ -262,7 +268,7 @@ class BaseType(Type):
         return self.name
 
 
-@dataclass
+@dataclass(frozen=True)
 class MessageType(Type):
     """Protobuf message types."""
     name: str
@@ -271,7 +277,7 @@ class MessageType(Type):
         return self.name
 
 
-@dataclass
+@dataclass(frozen=True)
 class TupleType(Type):
     """Tuple type with fixed number of element types."""
     elements: Sequence[Type]
@@ -280,8 +286,12 @@ class TupleType(Type):
         elements_str = ', '.join(str(e) for e in self.elements)
         return f"({elements_str})"
 
+    def __post_init__(self):
+        if isinstance(self.elements, list):
+            object.__setattr__(self, 'elements', tuple(self.elements))
 
-@dataclass
+
+@dataclass(frozen=True)
 class ListType(Type):
     """Parameterized list/array type."""
     element_type: Type
@@ -290,7 +300,7 @@ class ListType(Type):
         return f"List[{self.element_type}]"
 
 
-@dataclass
+@dataclass(frozen=True)
 class OptionType(Type):
     """Optional/Maybe type for values that may be None."""
     element_type: Type
@@ -299,7 +309,7 @@ class OptionType(Type):
         return f"Option[{self.element_type}]"
 
 
-@dataclass
+@dataclass(frozen=True)
 class FunctionType(Type):
     """Function type with parameter types and return type."""
     param_types: Sequence[Type]
@@ -309,8 +319,12 @@ class FunctionType(Type):
         params_str = ', '.join(str(t) for t in self.param_types)
         return f"({params_str}) -> {self.return_type}"
 
+    def __post_init__(self):
+        if isinstance(self.param_types, list):
+            object.__setattr__(self, 'param_types', tuple(self.param_types))
 
-@dataclass
+
+@dataclass(frozen=True)
 class FunDef(TargetNode):
     """Function definition with parameters, return type, and body."""
     name: str
@@ -322,8 +336,12 @@ class FunDef(TargetNode):
         params_str = ', '.join(f"{p.name}: {p.type}" for p in self.params)
         return f"def {self.name}({params_str}) -> {self.return_type}: {self.body}"
 
+    def __post_init__(self):
+        if isinstance(self.params, list):
+            object.__setattr__(self, 'params', tuple(self.params))
 
-@dataclass
+
+@dataclass(frozen=True)
 class ParseNonterminalDef(TargetNode):
     """Parse method definition for a nonterminal.
 
@@ -338,6 +356,10 @@ class ParseNonterminalDef(TargetNode):
     def __str__(self) -> str:
         params_str = ', '.join(f"{p.name}: {p.type}" for p in self.params)
         return f"parse_{self.nonterminal.name}({params_str}) -> {self.return_type}: {self.body}"
+
+    def __post_init__(self):
+        if isinstance(self.params, list):
+            object.__setattr__(self, 'params', tuple(self.params))
 
 
 # Re-export all types for convenience
