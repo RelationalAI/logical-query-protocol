@@ -234,11 +234,20 @@ def generate_python_lines(expr: TargetExpr, lines: List[str], indent: str = "") 
         return tmp
 
     elif isinstance(expr, While):
+        m = len(lines)
         cond_code = generate_python_lines(expr.condition, lines, indent)
+        non_trivial_cond = len(lines) > m
+        # TODO This is a bit hacky!
+        cond_code_is_lvalue = cond_code.isidentifier()
         lines.append(f"{indent}while {cond_code}:")
-        then_code = generate_python_lines(expr.body, lines, indent + "    ")
-        cond_code2 = generate_python_lines(expr.condition, lines, indent + "    ")
-        lines.append(f"{indent}    {cond_code} = {cond_code2}")
+        n = len(lines)
+        body_code = generate_python_lines(expr.body, lines, indent + "    ")
+        if len(lines) == n:
+            lines.append(f"{indent}    pass")
+        # Update the condition variable
+        if non_trivial_cond and cond_code_is_lvalue:
+            cond_code2 = generate_python_lines(expr.condition, lines, indent + "    ")
+            lines.append(f"{indent}    {cond_code} = {cond_code2}")
         return "None"
 
     elif isinstance(expr, Assign):

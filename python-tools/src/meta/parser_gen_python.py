@@ -12,7 +12,7 @@ from typing import Dict, List, Optional, Set
 from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, get_literals
 from .target import Lambda, Call
 from .codegen_python import generate_python_lines, generate_python_def
-from .parser_gen import  _generate_parse_rhs_ir, generate_rules
+from .parser_gen import  _generate_parse_rhs_ir, generate_parse_functions
 
 
 def generate_parser_python(grammar: Grammar, reachable: Set[Nonterminal], command_line: Optional[str] = None) -> str:
@@ -22,7 +22,7 @@ def generate_parser_python(grammar: Grammar, reachable: Set[Nonterminal], comman
     # Generate prologue (lexer, token, error, helper classes)
     prologue = _generate_prologue(grammar, is_ll2, conflicts, command_line)
 
-    defns = generate_rules(grammar)    # Generate parser methods as strings
+    defns = generate_parse_functions(grammar)    # Generate parser methods as strings
     lines = []
     for defn in defns:
         lines.append("")
@@ -30,7 +30,7 @@ def generate_parser_python(grammar: Grammar, reachable: Set[Nonterminal], comman
     lines.append("")
 
     # Generate epilogue (parse function)
-    epilogue = _generate_epilogue()
+    epilogue = _generate_epilogue(grammar.start)
 
     return prologue + "\n".join(lines) + epilogue
 
@@ -275,7 +275,7 @@ def _generate_lexer(grammar: Grammar) -> List[str]:
     return lines
 
 
-def _generate_epilogue() -> str:
+def _generate_epilogue(start: Nonterminal) -> str:
     """Generate parse function."""
     lines = []
     lines.append("")
@@ -283,6 +283,9 @@ def _generate_epilogue() -> str:
     lines.append('    """Parse input string and return parse tree."""')
     lines.append("    lexer = Lexer(input_str)")
     lines.append("    parser = Parser(lexer.tokens)")
-    lines.append("    return parser.parse_start()")
+    lines.append(f"    result = parser.parse_{start.name.lower()}()")
+    lines.append("    if parser.pos < len(parser.tokens):")
+    lines.append('        raise ParseError(f"Unexpected token at end of input: {parser.current()}")')
+    lines.append("    return result")
     lines.append("")
     return "\n".join(lines)

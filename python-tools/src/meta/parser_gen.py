@@ -17,7 +17,7 @@ from .target import Lambda, Call, ParseNonterminalDef, Var, Lit, Symbol, Builtin
 _any_type = BaseType("Any")
 
 
-def generate_rules(grammar: Grammar) -> List[ParseNonterminalDef]:
+def generate_parse_functions(grammar: Grammar) -> List[ParseNonterminalDef]:
     # Generate parser methods as strings
     parser_methods = []
     rule_order = grammar.traverse_rules_preorder(reachable_only=True)
@@ -118,9 +118,6 @@ def _build_predictor_tree(
     if not active_indices:
         return default
 
-    if len(active_indices) == 1:
-        return Lit(active_indices[0])
-
     if depth >= MAX_LOOKAHEAD:
         conflict_rules = '\n  '.join(f"Rule {i}: {rules[i]}" for i in active_indices)
         assert False, f"Grammar conflict at lookahead depth {depth}:\n  {conflict_rules}"
@@ -193,8 +190,14 @@ def findfirst(predicate, iterable):
     return next((i for i, x in enumerate(iterable) if predicate(x)), None)
 
 
-def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optional[Grammar] = None) -> TargetExpr:
+def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optional[Grammar] = None, following: Optional[Rhs] = None) -> TargetExpr:
     """Generate IR for parsing an RHS.
+
+    Args:
+        rhs: The RHS to parse
+        rule: The rule containing this RHS (for action)
+        grammar: The grammar
+        following: What follows this RHS in the sequence (for lookahead disambiguation)
 
     Returns IR expression for leaf nodes (Literal, Terminal, Nonterminal).
     Returns None for complex cases that still use string generation.
@@ -211,81 +214,115 @@ def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optio
         # Build IR: Call(Builtin('consume_terminal'), [Lit(terminal.name)])
         parse_expr = Call(Builtin('consume_terminal'), [Lit(rhs.name)])
         if rule and rule.action:
-            var_name = gensym(rule.action.params[0].name if rule.action.params else "arg")
+            param_name = rule.action.params[0].name if rule.action.params else "arg"
+            var_name = gensym(param_name)
             return Seq([Assign(Var(var_name, _any_type), parse_expr), _apply(rule.action, [Var(var_name, _any_type)])])
         return parse_expr
     elif isinstance(rhs, Nonterminal):
         # Build IR: ParseNonterminal(nonterminal, [])
         parse_expr = Call(ParseNonterminal(rhs), [])
         if rule and rule.action:
-            var_name = gensym(rule.action.params[0] if rule.action.params else "arg")
+            param_name = rule.action.params[0].name if rule.action.params else "arg"
+            var_name = gensym(param_name)
             return Seq([Assign(Var(var_name, _any_type), parse_expr), _apply(rule.action, [Var(var_name, _any_type)])])
         return parse_expr
     elif isinstance(rhs, Option):
-        if isinstance(rhs.rhs, NamedTerminal):
-            term = rhs.rhs
-            parse_expr = IfElse(
-                Call(Builtin('match_terminal'), [Lit(term.name)]),
-                Call(Builtin('consume_terminal'), [Lit(term.name)]),
-                Lit(None)
-            )
+        # Build predictor to distinguish optional element from what follows
+        # Create synthetic rules: one for parsing the optional, one for epsilon
+        assert grammar is not None
+
+        # Rule 0: parse the optional element followed by what comes after
+        # Flatten: combine rhs.rhs with following elements
+        if following:
+            elems_0 = [rhs.rhs] + rhs_elements(following)
+            synthetic_rhs_0 = Sequence(elems_0)
         else:
-            assert isinstance(rhs.rhs, Nonterminal)
-            lhs = rhs.rhs
-            rules = grammar.get_rules(lhs)
-            has_epsilon = any(is_epsilon(rule.rhs) for rule in rules)
-            if not has_epsilon:
-                rules = rules + [Rule(lhs, Sequence([]), Lambda(params=[], return_type=_any_type, body=Lit(None)))]
-            epsilon_index = findfirst(lambda rule: is_epsilon(rule.rhs), rules)
-            if len(rules) > 1:
-                predictor = _build_predictor(grammar, lhs, rules)
-                parse_expr = IfElse(
-                    Call(Builtin('not_equal'), [predictor, Lit(epsilon_index)]),
-                    _generate_parse_rhs_ir(rhs.rhs, None, grammar),
-                    Lit(None)
-                )
-            else:
-                parse_expr = Lit(None)
+            synthetic_rhs_0 = rhs.rhs
+
+        # Create dummy action with correct param count
+        num_params_0 = sum(1 for e in rhs_elements(synthetic_rhs_0) if not isinstance(e, LitTerminal))
+        params_0 = [Var(f"_p{i}", _any_type) for i in range(num_params_0)]
+        rule_0 = Rule(Nonterminal("_synthetic"), synthetic_rhs_0, Lambda(params=params_0, return_type=_any_type, body=Lit(0)))
+
+        # Rule 1: epsilon (skip optional) followed by what comes after
+        synthetic_rhs_1 = following if following else Sequence([])
+        num_params_1 = sum(1 for e in rhs_elements(synthetic_rhs_1) if not isinstance(e, LitTerminal))
+        params_1 = [Var(f"_p{i}", _any_type) for i in range(num_params_1)]
+        rule_1 = Rule(Nonterminal("_synthetic"), synthetic_rhs_1, Lambda(params=params_1, return_type=_any_type, body=Lit(1)))
+
+        synthetic_rules = [rule_0, rule_1]
+
+        # Build predictor
+        predictor = _build_predictor(grammar, Nonterminal("_synthetic"), synthetic_rules)
+
+        parse_expr = IfElse(
+            Call(Builtin('equal'), [predictor, Lit(0)]),
+            _generate_parse_rhs_ir(rhs.rhs, None, grammar, following),
+            Lit(None)
+        )
+
         if rule and rule.action:
-            var_name = gensym(rule.action.params[0] if rule.action.params else "arg")
+            param_name = rule.action.params[0].name if rule.action.params else "arg"
+            var_name = gensym(param_name)
             return Seq([Assign(Var(var_name, _any_type), parse_expr), _apply(rule.action, [Var(var_name, _any_type)])])
         return parse_expr
 
 
     elif isinstance(rhs, Star):
-        if isinstance(rhs.rhs, NamedTerminal):
-            term = rhs.rhs
-            parse_expr = While(
-                Call(Builtin('match_terminal'), [Lit(term.name)]),
-                Call(Builtin('consume_terminal'), [Lit(term.name)])
-            )
+        # Build predictor to distinguish repeated element from what follows
+        assert grammar is not None
+
+        # Rule 0: parse one more iteration of the star
+        # Flatten: combine rhs.rhs with following elements
+        if following:
+            elems_0 = [rhs.rhs] + rhs_elements(following)
+            synthetic_rhs_0 = Sequence(elems_0)
         else:
-            assert isinstance(rhs.rhs, Nonterminal)
-            lhs = rhs.rhs
-            rules = grammar.get_rules(lhs)
-            has_epsilon = any(is_epsilon(rule.rhs) for rule in rules)
-            if not has_epsilon:
-                rules = rules + [Rule(lhs, Sequence([]), Lambda(params=[], return_type=_any_type, body=Lit(None)))]
-            epsilon_index = findfirst(lambda rule: is_epsilon(rule.rhs), rules)
-            if len(rules) > 1:
-                predictor = _build_predictor(grammar, lhs, rules)
-                x = gensym('x')
-                xs = gensym('xs')
-                parse_expr = Let(
-                        Var(xs, _any_type),
-                        Call(Builtin('make_list'), []),
+            synthetic_rhs_0 = rhs.rhs
+
+        # Create dummy action with correct param count
+        num_params_0 = sum(1 for e in rhs_elements(synthetic_rhs_0) if not isinstance(e, LitTerminal))
+        params_0 = [Var(f"_p{i}", _any_type) for i in range(num_params_0)]
+        rule_0 = Rule(Nonterminal("_synthetic"), synthetic_rhs_0, Lambda(params=params_0, return_type=_any_type, body=Lit(0)))
+
+        # Rule 1: exit the star (epsilon followed by what comes after)
+        synthetic_rhs_1 = following if following else Sequence([])
+        num_params_1 = sum(1 for e in rhs_elements(synthetic_rhs_1) if not isinstance(e, LitTerminal))
+        params_1 = [Var(f"_p{i}", _any_type) for i in range(num_params_1)]
+        rule_1 = Rule(Nonterminal("_synthetic"), synthetic_rhs_1, Lambda(params=params_1, return_type=_any_type, body=Lit(1)))
+
+        synthetic_rules = [rule_0, rule_1]
+
+        # Build predictor for loop condition
+        predictor = _build_predictor(grammar, Nonterminal("_synthetic"), synthetic_rules)
+
+        xs = gensym('xs')
+        cond = gensym('cond')
+        cond_var = Var(cond, BaseType('Boolean'))
+        cond_expr = Call(Builtin('equal'), [predictor, Lit(0)])
+
+        parse_expr = Let(
+            Var(xs, _any_type),
+            Call(Builtin('make_list'), []),
+            Let(
+                cond_var,
+                cond_expr,
+                Seq([
+                    While(
+                        cond_var,
                         Seq([
-                            While(
-                                Call(Builtin('not_equal'), [predictor, Lit(epsilon_index)]),
-                                Call(Builtin('list_push!'), [Var(xs, _any_type), _generate_parse_rhs_ir(rhs.rhs, None, grammar)])
-                            ),
-                            Var(xs, _any_type)
+                            Call(Builtin('list_push!'), [Var(xs, _any_type), _generate_parse_rhs_ir(rhs.rhs, None, grammar, following)]),
+                            Assign(cond_var, cond_expr)
                         ])
-                )
-            else:
-                parse_expr = Call(Builtin('make_list'), [])
+                    ),
+                    Var(xs, _any_type)
+                ])
+            )
+        )
+
         if rule and rule.action:
-            var_name = gensym(rule.action.params[0] if rule.action.params else "arg")
+            param_name = rule.action.params[0].name if rule.action.params else "arg"
+            var_name = gensym(param_name)
             return Seq([Assign(Var(var_name, _any_type), parse_expr), _apply(rule.action, [Var(var_name, _any_type)])])
         return parse_expr
     else:
@@ -302,9 +339,14 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, rule: Optional[Rule] = None, 
     arg_vars = []  # Variables holding non-literal results
     param_names = []  # Parameter names for Lambda
 
+    elems = list(rhs_elements(rhs))
+
     non_literal_count = 0
-    for i, elem in enumerate(rhs_elements(rhs)):
-        elem_ir = _generate_parse_rhs_ir(elem, None, grammar)
+    for i, elem in enumerate(elems):
+        # Compute what follows this element for lookahead
+        following = Sequence(elems[i+1:]) if i+1 < len(elems) else None
+
+        elem_ir = _generate_parse_rhs_ir(elem, None, grammar, following)
 
         if isinstance(elem, LitTerminal):
             # LitTerminal: execute for side effect
@@ -326,10 +368,10 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, rule: Optional[Rule] = None, 
         action_lambda = rule.action
     else:
         # Create default Lambda that returns list of arguments
-        # Lambda([Var(arg0), Var(arg1), ...], Tuple([Var(arg0, _any_type), Var(arg1, _any_type), ...]))
+        # Lambda([Var(arg0), Var(arg1), ...], return_type, Tuple([Var(arg0, _any_type), Var(arg1, _any_type), ...]))
         param_vars = [Var(name, _any_type) for name in param_names]
         list_expr = Call(Builtin('Tuple'), arg_vars)
-        action_lambda = Lambda(param_vars, list_expr, return_type=_any_type)
+        action_lambda = Lambda(params=param_vars, return_type=_any_type, body=list_expr)
 
     # Call the Lambda with the variables
     lambda_call = _apply(action_lambda, arg_vars)

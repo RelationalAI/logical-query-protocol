@@ -37,8 +37,8 @@ class GrammarGenerator:
     """Generator for grammars from protobuf specifications."""
     def __init__(self, parser: ProtoParser, verbose: bool = False):
         self.parser = parser
-        self.generated_rules: Set[str] = set()
         self.final_rules: Set[str] = set()
+        self.generated_rules: Set[str] = set()
         self.expected_unreachable: Set[Nonterminal] = set()
         self.grammar = Grammar()
         self.verbose = verbose
@@ -115,11 +115,10 @@ class GrammarGenerator:
             assert False, f"Unknown type: {type_name}"
 
     def _add_rule(self, rule: Rule) -> None:
-        """Add a rule to the grammar and track it in generated_rules."""
+        """Add a rule to the grammar."""
         rewrite = self.rule_rewrites.get(rule.lhs.name)
         if rewrite:
             rule = rewrite(rule)
-        self.generated_rules.add(rule.lhs.name)
         self.grammar.add_rule(rule)
 
     def _init_rule_rewrites(self) -> Dict[str, Callable[[Rule], Rule]]:
@@ -254,8 +253,8 @@ class GrammarGenerator:
 
     def generate(self, start_message: str = "Transaction") -> Grammar:
         """Generate complete grammar with prepopulated and message-derived rules."""
-        self._add_all_prepopulated_rules()
 
+        self._add_all_prepopulated_rules()
         self._generate_message_rule(start_message)
 
         for message_name in sorted(self.parser.messages.keys()):
@@ -279,22 +278,15 @@ class GrammarGenerator:
         """Add manually-crafted rules that should not be auto-generated."""
         def add_rule(rule: Rule, is_final: bool = True) -> None:
             if is_final:
-                self.generated_rules.add(rule.lhs.name)
                 self.final_rules.add(rule.lhs.name)
             assert rule.action is not None
             self.grammar.add_rule(rule)
 
-
         add_rule(Rule(
-            lhs=Nonterminal("start"),
+            lhs=self.grammar.start,
             rhs=Sequence([Nonterminal("transaction")]),
             action=Lambda([Var('transaction', MessageType('Transaction'))], return_type=MessageType('Transaction'), body=Var('transaction', MessageType('Transaction'))),
         ))
-        # add_rule(Rule(
-        #     lhs=Nonterminal("start"),
-        #     rhs=Sequence([Nonterminal("fragment")]),
-        #     action=Lambda([Var('fragment', MessageType('Fragment'))], return_type=MessageType('Fragment'), body=Var('fragment', MessageType('Fragment'))),
-        # ))
 
         add_rule(Rule(
             lhs=Nonterminal("value"),
@@ -553,7 +545,6 @@ class GrammarGenerator:
                 lhs=Nonterminal(name),
                 rhs=Sequence([LitTerminal("("), LitTerminal(op), Nonterminal("term"), Nonterminal("term"), LitTerminal(")")]),
                 action=Lambda([Var('left', MessageType('Term')), Var('right', MessageType('Term'))], MessageType('Primitive'), Call(Constructor('Primitive'), [Lit(prim), Var('left', MessageType('Term')), Var('right', MessageType('Term'))])),
-
             ))
 
         # Arithmetic operators (ternary)
@@ -568,7 +559,6 @@ class GrammarGenerator:
                 lhs=Nonterminal(name),
                 rhs=Sequence([LitTerminal("("), LitTerminal(op), Nonterminal("term"), Nonterminal("term"), Nonterminal("term"), LitTerminal(")")]),
                 action=Lambda([Var('left', MessageType('Term')), Var('right', MessageType('Term')), Var('result', MessageType('Term'))], MessageType('Primitive'), Call(Constructor('Primitive'), [Lit(prim), Var('left', MessageType('Term')), Var('right', MessageType('Term')), Var('result', MessageType('Term'))])),
-
             ))
 
         for name, _op, _prim in comparison_ops + arithmetic_ops:
@@ -576,7 +566,6 @@ class GrammarGenerator:
                 lhs=Nonterminal("primitive"),
                 rhs=Sequence([Nonterminal(name)]),
                 action=Lambda([Var('op', MessageType('Primitive'))], MessageType('Primitive'), Var('op', MessageType('Primitive'))),
-
             ), is_final=False)
 
     def _post_process_grammar(self) -> None:
@@ -711,25 +700,23 @@ class GrammarGenerator:
             return
 
         rule_name = self._get_rule_name(message_name)
+        rule_lhs = Nonterminal(rule_name)
 
+        # Skip if already marked as final (prepopulated rules that are complete)
         if rule_name in self.final_rules:
-            if rule_name in self.generated_rules:
-                return
-            self.generated_rules.add(rule_name)
-            message = self.parser.messages[message_name]
-            if self._is_oneof_only_message(message):
-                for field in message.oneofs[0].fields:
-                    self._generate_message_rule(field.type)
-            else:
-                for field in message.fields:
-                    if self._is_message_type(field.type):
-                        self._generate_message_rule(field.type)
             return
 
+        # Skip if already generated from protobuf
         if rule_name in self.generated_rules:
             return
 
+        # Mark as generated to prevent infinite recursion
         self.generated_rules.add(rule_name)
+
+        # Add a placeholder empty rule list if not already there (from prepopulated rules)
+        if rule_lhs not in self.grammar.rules:
+            self.grammar.rules[rule_lhs] = []
+
         message = self.parser.messages[message_name]
         if self._is_oneof_only_message(message):
             oneof = message.oneofs[0]

@@ -8,7 +8,7 @@ from typing import Set
 from .grammar import Grammar
 
 
-def generate_pretty_printer_python(grammar_obj: Grammar, reachable: Set[str]) -> str:
+def generate_pretty_printer_python(grammar: Grammar, reachable: Set[str]) -> str:
     """Generate Python pretty printer stub."""
     lines = []
     lines.append("# Auto-generated pretty printer stub")
