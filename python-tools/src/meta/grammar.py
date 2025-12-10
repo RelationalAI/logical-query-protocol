@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple
 
 # Import action AST types
-from .target import TargetExpr, Var, Symbol, Call, Lambda, Let, Lit, Type
+from .target import TargetExpr, Var, Symbol, Call, Lambda, Let, Lit, Type, MessageType
 
 
 # Grammar RHS (right-hand side) elements
@@ -17,7 +17,10 @@ from .target import TargetExpr, Var, Symbol, Call, Lambda, Let, Lit, Type
 @dataclass
 class Rhs:
     """Base class for right-hand sides of grammar rules."""
-    pass
+
+    def target_type(self) -> Type:
+        """Return the target type for this RHS element."""
+        raise NotImplementedError(f"target_type not implemented for {type(self).__name__}")
 
 @dataclass
 class Terminal(Rhs):
@@ -32,23 +35,38 @@ class LitTerminal(Terminal):
     def __str__(self) -> str:
         return f'"{self.name}"'
 
+    def target_type(self) -> Type:
+        """Literals don't produce values, return empty tuple type."""
+        from .target import TupleType
+        return TupleType([])
+
 
 @dataclass(unsafe_hash=True)
 class NamedTerminal(Terminal):
     """Token terminal (unquoted uppercase name like SYMBOL, NUMBER)."""
     name: str
+    type: Type
 
     def __str__(self) -> str:
         return self.name
+
+    def target_type(self) -> Type:
+        """Return the type for this terminal."""
+        return self.type
 
 
 @dataclass(unsafe_hash=True)
 class Nonterminal(Rhs):
     """Nonterminal (rule name)."""
     name: str
+    type: Type
 
     def __str__(self) -> str:
         return self.name
+
+    def target_type(self) -> Type:
+        """Return the type for this nonterminal."""
+        return self.type
 
 
 @dataclass
@@ -63,6 +81,11 @@ class Star(Rhs):
     def __str__(self) -> str:
         return f"{self.rhs}*"
 
+    def target_type(self) -> Type:
+        """Return list type of the element type."""
+        from .target import ListType
+        return ListType(self.rhs.target_type())
+
 
 @dataclass
 class Option(Rhs):
@@ -75,6 +98,11 @@ class Option(Rhs):
 
     def __str__(self) -> str:
         return f"{self.rhs}?"
+
+    def target_type(self) -> Type:
+        """Return option type of the element type."""
+        from .target import OptionType
+        return OptionType(self.rhs.target_type())
 
 
 @dataclass
@@ -89,6 +117,17 @@ class Sequence(Rhs):
 
     def __str__(self) -> str:
         return " ".join(str(e) for e in self.elements)
+
+    def target_type(self) -> Type:
+        """Return tuple type of non-literal element types."""
+        from .target import TupleType
+        element_types = []
+        for elem in self.elements:
+            if not isinstance(elem, LitTerminal):
+                element_types.append(elem.target_type())
+        if len(element_types) == 1:
+            return element_types[0]
+        return TupleType(element_types)
 
 
 # Grammar rules and tokens
@@ -131,7 +170,7 @@ class Grammar:
     """Complete grammar specification with normalization and left-factoring support."""
     rules: Dict[Nonterminal, List[Rule]] = field(default_factory=dict)
     tokens: List[Token] = field(default_factory=list)
-    start: Nonterminal = field(default_factory=lambda: Nonterminal("start"))
+    start: Nonterminal = field(default_factory=lambda: Nonterminal("start", MessageType("Transaction")))
 
     # Cached analysis results
     _reachable_cache: Optional[Set[Nonterminal]] = field(default=None, init=False, repr=False)
