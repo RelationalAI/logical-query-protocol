@@ -274,7 +274,7 @@ class MessageType(Type):
 @dataclass
 class TupleType(Type):
     """Tuple type with fixed number of element types."""
-    elements: Sequence[Type] = field(default_factory=list)
+    elements: Sequence[Type]
 
     def __str__(self) -> str:
         elements_str = ', '.join(str(e) for e in self.elements)
