@@ -12,7 +12,7 @@ from .grammar import (
     Star, Option, Sequence
 )
 from .target import (
-    Lambda, Call, Var, Symbol, TargetExpr, Lit, IfElse, Builtin, Constructor, BaseType, MessageType, OptionType, ListType, FunctionType, TupleType
+    Lambda, Call, Var, Symbol, Let, Lit, IfElse, Builtin, Constructor, BaseType, MessageType, OptionType, ListType, FunctionType, TupleType
 )
 from .proto_ast import ProtoMessage, ProtoField, PRIMITIVE_TYPES
 from .proto_parser import ProtoParser
@@ -196,14 +196,28 @@ class GrammarGenerator:
                 rule.rhs.elements = new_elements
             return rule
 
-        def rewrite_drop_INT_from_instructions(rule: Rule) -> Rule:
-            """Drop INT argument from penultimate position."""
+        def rewrite_compute_value_arity(rule: Rule) -> Rule:
+            """Rewrite `abstraction ... INT` to `abstraction_with_arity ...`."""
             if isinstance(rule.rhs, Sequence) and len(rule.rhs.elements) >= 2:
-                penultimate_idx = len(rule.rhs.elements) - 2
-                if penultimate_idx >= 0:
-                    elem = rule.rhs.elements[penultimate_idx]
+                abstraction_idx = len(rule.rhs.elements) - 4
+                if abstraction_idx >= 0:
+                    elem = rule.rhs.elements[abstraction_idx]
+                    if elem == Nonterminal('abstraction'):
+                        rule.rhs.elements[abstraction_idx] = Nonterminal('abstraction_with_arity')
+                int_idx = len(rule.rhs.elements) - 2
+                if int_idx >= 0:
+                    elem = rule.rhs.elements[int_idx]
                     if elem == NamedTerminal('INT'):
-                        rule.rhs.elements.pop(penultimate_idx)
+                        rule.rhs.elements.pop(int_idx)
+                rule.action = Lambda(
+                    params=rule.action.params[0:-1],
+                    return_type=rule.action.return_type,
+                    body=Let(
+                        rule.action.params[-1],
+                        Call(Builtin('snd'), [rule.action.params[1]]),
+                        rule.action.body
+                    )
+                )
             return rule
 
         def rewrite_relatom_rule(rule: Rule) -> Rule:
@@ -244,9 +258,9 @@ class GrammarGenerator:
             'rel_atom': rewrite_terms_optional_to_star_relterm,
             'primitive': rewrite_primitive_rule,
             'exists': rewrite_exists,
-            'upsert': rewrite_drop_INT_from_instructions,
-            'monoid_def': rewrite_drop_INT_from_instructions,
-            'monus_def': rewrite_drop_INT_from_instructions,
+            'upsert': rewrite_compute_value_arity,
+            'monoid_def': rewrite_compute_value_arity,
+            'monus_def': rewrite_compute_value_arity,
             'relatom': rewrite_relatom_rule,
             'attribute': rewrite_attribute_rule,
         }
@@ -388,14 +402,60 @@ class GrammarGenerator:
             action=Lambda([Var('symbol', BaseType('String')), Var('type', MessageType('Type'))], MessageType('Binding'), Call(Constructor('Binding'), [Call(Constructor('Var'), [Var('symbol', BaseType('String'))]), Var('type', MessageType('Type'))])),
         ))
         add_rule(Rule(
+            lhs=Nonterminal("abstraction_with_arity"),
+            rhs=Sequence([LitTerminal("("), Nonterminal("bindings"), Nonterminal("formula"), LitTerminal(")")]),
+            action=Lambda(
+                params=[
+                    Var('bindings', TupleType([ListType(MessageType('Binding')), ListType(MessageType('Binding'))])),
+                    Var('formula', MessageType('Formula'))
+                ],
+                return_type=TupleType([MessageType('Abstraction'), BaseType('Int64')]),
+                body=Call(Builtin('Tuple'), [
+                    Call(Constructor('Abstraction'), [
+                        Call(Builtin('list_concat'), [
+                            Call(Builtin('fst'), [
+                                Var('bindings', TupleType([ListType(MessageType('Binding')), ListType(MessageType('Binding'))]))
+                            ]),
+                            Call(Builtin('snd'), [
+                                Var('bindings', TupleType([ListType(MessageType('Binding')), ListType(MessageType('Binding'))]))
+                            ])
+                        ]),
+                        Var('formula', MessageType('Formula'))
+                    ]),
+                    Call(Builtin('length'), [
+                        Call(Builtin('snd'), [
+                            Var('bindings', TupleType([ListType(MessageType('Binding')), ListType(MessageType('Binding'))]))
+                        ])
+                    ])
+                ])
+            ),
+        ))
+        add_rule(Rule(
             lhs=Nonterminal("abstraction"),
             rhs=Sequence([LitTerminal("("), Nonterminal("bindings"), Nonterminal("formula"), LitTerminal(")")]),
-            action=Lambda([Var('bindings', TupleType([ListType(MessageType('Binding')), ListType(MessageType('Binding'))])), Var('formula', MessageType('Formula'))], TupleType([MessageType('Abstraction'), BaseType('Int64')]), Call(Builtin('Tuple'), [Call(Constructor('Abstraction'), [Call(Builtin('list_concat'), [Call(Builtin('fst'), [Var('bindings', TupleType([ListType(MessageType('Binding')), ListType(MessageType('Binding'))]))]), Call(Builtin('snd'), [Var('bindings', TupleType([ListType(MessageType('Binding')), ListType(MessageType('Binding'))]))])]), Var('formula', MessageType('Formula'))]), Call(Builtin('length'), [Call(Builtin('snd'), [Var('bindings', TupleType([ListType(MessageType('Binding')), ListType(MessageType('Binding'))]))])])])),
+            action=Lambda(
+                params=[
+                    Var('bindings', TupleType([ListType(MessageType('Binding')), ListType(MessageType('Binding'))])),
+                    Var('formula', MessageType('Formula'))
+                ],
+                return_type=TupleType([MessageType('Abstraction'), BaseType('Int64')]),
+                body=Call(Constructor('Abstraction'), [
+                        Call(Builtin('list_concat'), [
+                            Call(Builtin('fst'), [
+                                Var('bindings', TupleType([ListType(MessageType('Binding')), ListType(MessageType('Binding'))]))
+                            ]),
+                            Call(Builtin('snd'), [
+                                Var('bindings', TupleType([ListType(MessageType('Binding')), ListType(MessageType('Binding'))]))
+                            ])
+                        ]),
+                        Var('formula', MessageType('Formula'))
+                    ])
+            ),
         ))
         add_rule(Rule(
             lhs=Nonterminal("name"),
             rhs=Sequence([LitTerminal(":"), NamedTerminal("SYMBOL")]),
-            action=Lambda([Var('symbol', BaseType('String'))], MessageType('Name'), Call(Constructor('Name'), [Var('symbol', BaseType('String'))])),
+            action=Lambda([Var('symbol', BaseType('String'))], BaseType('String'), Var('symbol', BaseType('String'))),
         ))
 
         # TODO PR can we just use the naive rules for these?

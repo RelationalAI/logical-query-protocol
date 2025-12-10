@@ -113,11 +113,25 @@ def generate_python_lines(expr: TargetExpr, lines: List[str], indent: str = "") 
         return f"self.parse_{expr.nonterminal.name}"
 
     elif isinstance(expr, Call):
+        # Special case: ir.Fragment construction with debug_info parameter
+        if isinstance(expr.func, Constructor) and expr.func.name == "Fragment":
+            # Check if one of the args is a Var named "debug_info"
+            for i, arg in enumerate(expr.args):
+                if isinstance(arg, Var) and arg.name == "debug_info":
+                    # Generate debug_info computation before constructing Fragment
+                    lines.append(f"{indent}debug_info = ir.DebugInfo(id_to_orig_name=self.id_to_debuginfo.get(id, {{}}), meta=self.meta(self.current()))")
+                    break
+
         # Handle some special cases that don't turn into python calls.
         if isinstance(expr.func, Builtin):
             if expr.func.name == "fragment_id_from_string" and len(expr.args) == 1:
                 arg1 = generate_python_lines(expr.args[0], lines, indent)
-                return f"ir.FragmentId(id={arg1}.encode())"
+                tmp = gensym()
+                lines.append(f"{indent}{tmp} = ir.FragmentId(id={arg1}.encode(), meta=None)")
+                lines.append(f"{indent}self._current_fragment_id = {tmp}")
+                lines.append(f"{indent}if {tmp} not in self.id_to_debuginfo:")
+                lines.append(f"{indent}    self.id_to_debuginfo[{tmp}] = {{}}")
+                return tmp
             if expr.func.name == "relation_id_from_string" and len(expr.args) == 1:
                 arg1 = generate_python_lines(expr.args[0], lines, indent)
                 return f"ir.RelationId(id=int(hashlib.sha256({arg1}.encode()).hexdigest()[:16], 16))"
