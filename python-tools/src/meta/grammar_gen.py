@@ -85,7 +85,14 @@ class GrammarGenerator:
 
                 # Get the type for this parameter
                 if field_types and field_idx < len(field_types):
-                    param_types.append(self._get_type_for_name(field_types[field_idx]))
+                    base_type = self._get_type_for_name(field_types[field_idx])
+                    # Wrap in OptionType if elem is Option, or ListType if elem is Star
+                    if isinstance(elem, Option):
+                        param_types.append(OptionType(base_type))
+                    elif isinstance(elem, Star):
+                        param_types.append(ListType(base_type))
+                    else:
+                        param_types.append(base_type)
                 else:
                     assert False, f"Too many params for {message_name} semantic action"
 
@@ -107,7 +114,7 @@ class GrammarGenerator:
     def _get_type_for_name(self, type_name: str):
         """Get the appropriate type (BaseType or MessageType) for a given type name."""
         if self._is_primitive_type(type_name):
-            base_type_name = _PRIMITIVE_TO_BASE_TYPE.get(type_name, 'String')
+            base_type_name = _PRIMITIVE_TO_BASE_TYPE[type_name]
             return BaseType(base_type_name)
         elif self._is_message_type(type_name):
             return MessageType(type_name)
