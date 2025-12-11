@@ -6,14 +6,73 @@ recursive-descent parsers from grammars, including:
 - Decision tree construction
 - Grammar analysis and transformation
 """
-from dataclasses import is_dataclass
+from dataclasses import dataclass, field
 from re import L
-from typing import Dict, List, Optional, Set, Tuple, Callable, Sequence as PySequence
+from typing import Dict, List, Optional, Set, Tuple, Sequence as PySequence
 from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Terminal, is_epsilon, rhs_elements, Sequence
 from .target import Lambda, Call, ParseNonterminalDef, Var, Lit, Symbol, Builtin, Let, IfElse, FunDef, BaseType, ListType, TargetExpr, Seq, While, Assign, Type, ParseNonterminal, ParseNonterminalDef, Return, Constructor, gensym
 _any_type = BaseType('Any')
 
 MAX_LOOKAHEAD = 3
+
+class TerminalSequenceSet:
+    """Abstract base class for lazily computing sets of terminal sequences."""
+
+    def get(self, k: int) -> Set[Tuple[Terminal, ...]]:
+        """Get sequences of length up to k, computing and caching if needed."""
+        raise NotImplementedError
+
+@dataclass
+class FollowSet(TerminalSequenceSet):
+    """Lazily computes and caches FOLLOW_k sets for a nonterminal."""
+
+    grammar: Grammar
+    lhs: Nonterminal
+    _cache: Dict[int, Set[Tuple[Terminal, ...]]] = field(default_factory=dict)
+
+    def get(self, k: int) -> Set[Tuple[Terminal, ...]]:
+        """Get FOLLOW_k set for the nonterminal, computing and caching if needed."""
+        if k not in self._cache:
+            self._cache[k] = self.grammar.follow_k(k, self.lhs)
+        return self._cache[k]
+
+@dataclass
+class ConcatSet(TerminalSequenceSet):
+    """Lazily computes FIRST_k(rhs) concatenated with a TerminalSequenceSet."""
+
+    grammar: Grammar
+    rhs: Rhs
+    follow: TerminalSequenceSet
+    _cache: Dict[int, Set[Tuple[Terminal, ...]]] = field(default_factory=dict)
+    _first_cache: Dict[int, Set[Tuple[Terminal, ...]]] = field(default_factory=dict)
+
+    def get(self, k: int) -> Set[Tuple[Terminal, ...]]:
+        """Get FIRST_k(rhs) concatenated with follow set."""
+        if k in self._cache:
+            return self._cache[k]
+
+        # Compute FIRST_k(rhs)
+        if k not in self._first_cache:
+            self._first_cache[k] = self.grammar.first_k(k, self.rhs)
+        first_of_rhs = self._first_cache[k]
+
+        # Determine how much of follow set we need based on shortest sequence
+        if first_of_rhs:
+            min_len = min(len(seq) for seq in first_of_rhs)
+            needed_follow_k = k - min_len
+            if needed_follow_k <= 0:
+                # All sequences are max length, don't need follow at all
+                result = first_of_rhs
+            else:
+                # Need follow_k where k = needed_follow_k
+                from .analysis import _concat_first_k_sets
+                follow_k = self.follow.get(needed_follow_k)
+                result = _concat_first_k_sets(first_of_rhs, follow_k, k)
+        else:
+            result = self.follow.get(k)
+
+        self._cache[k] = result
+        return result
 
 def generate_parse_functions(grammar: Grammar) -> List[ParseNonterminalDef]:
     parser_methods = []
@@ -31,10 +90,10 @@ def _generate_parse_method(lhs: Nonterminal, rules: List[Rule], grammar: Grammar
     """Generate parse method code as string (preserving existing logic)."""
     return_type = None
     rhs = None
+    follow_set = FollowSet(grammar, lhs)
     if len(rules) == 1:
         rule = rules[0]
-        follow = grammar.follow_k(MAX_LOOKAHEAD, lhs)
-        rhs = _generate_parse_rhs_ir(rule.rhs, lhs, follow, grammar, True, rule.action)
+        rhs = _generate_parse_rhs_ir(rule.rhs, grammar, follow_set, True, rule.action)
         return_type = rule.action.return_type
     else:
         predictor = _build_predictor(grammar, lhs, rules)
@@ -44,14 +103,13 @@ def _generate_parse_method(lhs: Nonterminal, rules: List[Rule], grammar: Grammar
             tail = Lit(None)
         else:
             tail = Call(Builtin('error'), [Lit(f'Unexpected token in {lhs}'), Call(Builtin('current_token'), [])])
-        follow = grammar.follow_k(MAX_LOOKAHEAD, lhs)
         for i, rule in enumerate(rules):
             # Ensure the return type is the same for all actions for this nonterminal.
             assert return_type is None or return_type == rule.action.return_type, f'Return type mismatch at rule {i}: {return_type} != {rule.action.return_type}'
             return_type = rule.action.return_type
             if is_epsilon(rule.rhs):
                 continue
-            tail = IfElse(Call(Builtin('equal'), [Var(prediction, BaseType('Int64')), Lit(i)]), _generate_parse_rhs_ir(rule.rhs, lhs, follow, grammar, True, rule.action), tail)
+            tail = IfElse(Call(Builtin('equal'), [Var(prediction, BaseType('Int64')), Lit(i)]), _generate_parse_rhs_ir(rule.rhs, grammar, follow_set, True, rule.action), tail)
         rhs = Let(Var(prediction, BaseType('Int64')), predictor, tail)
     assert return_type is not None
     return ParseNonterminalDef(lhs, [], return_type, rhs)
@@ -174,7 +232,7 @@ def _build_lookahead_check(token_sequences: Set[Tuple[Terminal, ...]], depth: in
         result = IfElse(result, Lit(True), cond)
     return result
 
-def _build_option_predictor(grammar: Grammar, element: Rhs, follow: Set[Tuple[Terminal, ...]], lhs: Nonterminal) -> TargetExpr:
+def _build_option_predictor(grammar: Grammar, element: Rhs, follow_set: TerminalSequenceSet) -> TargetExpr:
     """Build a predicate that checks if we should enter an Option or continue a Star.
 
     Returns a boolean expression that's true if the lookahead matches the element,
@@ -183,8 +241,7 @@ def _build_option_predictor(grammar: Grammar, element: Rhs, follow: Set[Tuple[Te
     # Find minimal k needed to distinguish element from follow
     for k in range(1, MAX_LOOKAHEAD + 1):
         element_first = grammar.first_k(k, element)
-        # Truncate follow set to k tokens
-        follow_k = {seq[:k] for seq in follow}
+        follow_k = follow_set.get(k)
         if not (element_first & follow_k):
             return _build_lookahead_check(element_first, depth=0)
 
@@ -193,14 +250,13 @@ def _build_option_predictor(grammar: Grammar, element: Rhs, follow: Set[Tuple[Te
     conflict_msg = f'Ambiguous Option/Star: FIRST_{MAX_LOOKAHEAD}({element}) and follow set overlap'
     assert False, conflict_msg
 
-def _generate_parse_rhs_ir(rhs: Rhs, lhs: Nonterminal, follow: Set[Tuple[Terminal, ...]], grammar: Grammar, apply_action: bool=False, action: Optional[Lambda]=None) -> TargetExpr:
+def _generate_parse_rhs_ir(rhs: Rhs, grammar: Grammar, follow_set: TerminalSequenceSet, apply_action: bool=False, action: Optional[Lambda]=None) -> TargetExpr:
     """Generate IR for parsing an RHS.
 
     Args:
         rhs: The RHS to parse
-        lhs: The LHS nonterminal (for computing FOLLOW_k)
-        follow: What follows this RHS in the sequence (for lookahead disambiguation)
         grammar: The grammar
+        follow_set: TerminalSequenceSet for computing follow lazily
         apply_action: Whether to apply the semantic action
         action: The semantic action to apply (required if apply_action is True)
 
@@ -208,7 +264,7 @@ def _generate_parse_rhs_ir(rhs: Rhs, lhs: Nonterminal, follow: Set[Tuple[Termina
     Returns None for complex cases that still use string generation.
     """
     if isinstance(rhs, Sequence):
-        return _generate_parse_rhs_ir_sequence(rhs, lhs, follow, grammar, apply_action, action)
+        return _generate_parse_rhs_ir_sequence(rhs, grammar, follow_set, apply_action, action)
     elif isinstance(rhs, LitTerminal):
         parse_expr = Call(Builtin('consume_literal'), [Lit(rhs.name)])
         if apply_action and action:
@@ -220,36 +276,34 @@ def _generate_parse_rhs_ir(rhs: Rhs, lhs: Nonterminal, follow: Set[Tuple[Termina
         return Call(ParseNonterminal(rhs), [])
     elif isinstance(rhs, Option):
         assert grammar is not None
-        assert lhs is not None
-        predictor = _build_option_predictor(grammar, rhs.rhs, follow, lhs)
-        return IfElse(predictor, _generate_parse_rhs_ir(rhs.rhs, lhs, follow, grammar, False, None), Lit(None))
+        predictor = _build_option_predictor(grammar, rhs.rhs, follow_set)
+        return IfElse(predictor, _generate_parse_rhs_ir(rhs.rhs, grammar, follow_set, False, None), Lit(None))
     elif isinstance(rhs, Star):
         assert grammar is not None
-        assert lhs is not None
         xs = gensym('xs')
         cond = gensym('cond')
         cond_var = Var(cond, BaseType('Boolean'))
-        predictor = _build_option_predictor(grammar, rhs.rhs, follow, lhs)
-        return Let(Var(xs, _any_type), Call(Builtin('make_list'), []), Let(cond_var, predictor, Seq([While(cond_var, Seq([Call(Builtin('list_push!'), [Var(xs, _any_type), _generate_parse_rhs_ir(rhs.rhs, lhs, follow, grammar, False, None)]), Assign(cond_var, predictor)])), Var(xs, _any_type)])))
+        predictor = _build_option_predictor(grammar, rhs.rhs, follow_set)
+        return Let(Var(xs, _any_type), Call(Builtin('make_list'), []), Let(cond_var, predictor, Seq([While(cond_var, Seq([Call(Builtin('list_push!'), [Var(xs, _any_type), _generate_parse_rhs_ir(rhs.rhs, grammar, follow_set, False, None)]), Assign(cond_var, predictor)])), Var(xs, _any_type)])))
     else:
         assert False, f'Unsupported Rhs type: {type(rhs)}'
 
-def _generate_parse_rhs_ir_sequence(rhs: Sequence, lhs: Nonterminal, follow: Set[Tuple[Terminal, ...]], grammar: Grammar, apply_action: bool=False, action: Optional[Lambda]=None) -> TargetExpr:
+def _generate_parse_rhs_ir_sequence(rhs: Sequence, grammar: Grammar, follow_set: TerminalSequenceSet, apply_action: bool=False, action: Optional[Lambda]=None) -> TargetExpr:
     if is_epsilon(rhs):
         return Lit(None)
+
     exprs = []
     arg_vars = []
     param_names = []
     elems = list(rhs_elements(rhs))
     non_literal_count = 0
     for i, elem in enumerate(elems):
-        following = Sequence(elems[i+1:]) if i+1 < len(elems) else None
-        if following:
-            from .analysis import _concat_first_k_sets
-            follow_i = _concat_first_k_sets(grammar.first_k(MAX_LOOKAHEAD, following), follow, MAX_LOOKAHEAD)
+        if i + 1 < len(elems):
+            following = Sequence(elems[i+1:])
+            follow_set_i = ConcatSet(grammar, following, follow_set)
         else:
-            follow_i = follow
-        elem_ir = _generate_parse_rhs_ir(elem, lhs, follow_i, grammar, False, None)
+            follow_set_i = follow_set
+        elem_ir = _generate_parse_rhs_ir(elem, grammar, follow_set_i, False, None)
         if isinstance(elem, LitTerminal):
             exprs.append(elem_ir)
         else:
