@@ -51,8 +51,8 @@ def main():
     )
     parser.add_argument(
         "--parser",
-        choices=["python"],
-        help="Generate parser in specified language"
+        choices=["python", "ir"],
+        help="Generate parser in specified language (or 'ir' to dump IR)"
     )
     parser.add_argument(
         "--pretty-printer",
@@ -94,6 +94,14 @@ def main():
         if args.parser == "python":
             parser_text = generate_parser_python(grammar, reachable, command_line)
             outputs.append((f"parser-{args.parser}", parser_text))
+        elif args.parser == "ir":
+            if __package__ is None:
+                from meta.parser_gen import generate_parse_functions
+            else:
+                from .parser_gen import generate_parse_functions
+            defns = generate_parse_functions(grammar)
+            ir_text = "\n\n".join(str(defn) for defn in defns)
+            outputs.append(("parser-ir", ir_text))
 
     if args.pretty_printer:
         if args.pretty_printer == "python":
