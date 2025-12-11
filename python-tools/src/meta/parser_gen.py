@@ -180,13 +180,18 @@ def _build_option_predictor(grammar: Grammar, element: Rhs, follow: Set[Tuple[Te
     Returns a boolean expression that's true if the lookahead matches the element,
     false if it matches what follows.
     """
+    # Find minimal k needed to distinguish element from follow
+    for k in range(1, MAX_LOOKAHEAD + 1):
+        element_first = grammar.first_k(k, element)
+        # Truncate follow set to k tokens
+        follow_k = {seq[:k] for seq in follow}
+        if not (element_first & follow_k):
+            return _build_lookahead_check(element_first, depth=0)
+
+    # Still conflicts at MAX_LOOKAHEAD
     element_first = grammar.first_k(MAX_LOOKAHEAD, element)
-
-    if element_first & follow:
-        conflict_msg = f'Ambiguous Option/Star: FIRST_{MAX_LOOKAHEAD}({element}) and follow set overlap'
-        assert False, conflict_msg
-
-    return _build_lookahead_check(element_first, depth=0)
+    conflict_msg = f'Ambiguous Option/Star: FIRST_{MAX_LOOKAHEAD}({element}) and follow set overlap'
+    assert False, conflict_msg
 
 def _generate_parse_rhs_ir(rhs: Rhs, lhs: Nonterminal, follow: Set[Tuple[Terminal, ...]], grammar: Grammar, apply_action: bool=False, action: Optional[Lambda]=None) -> TargetExpr:
     """Generate IR for parsing an RHS.
