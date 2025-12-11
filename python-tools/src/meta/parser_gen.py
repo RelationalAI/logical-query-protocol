@@ -83,13 +83,11 @@ def _build_predictor_tree(grammar: Grammar, rules: List[Rule], active_indices: L
     if depth >= MAX_LOOKAHEAD:
         conflict_rules = '\n  '.join((f'Rule {i}: {rules[i]}' for i in active_indices))
         assert False, f'Grammar conflict at lookahead depth {depth}:\n  {conflict_rules}'
-    first_k = grammar.compute_first_k(depth + 1)
     groups: Dict[Terminal, List[int]] = {}
     exhausted: Set[int] = set()
     for rule_idx in active_indices:
         rule = rules[rule_idx]
-        from .analysis import _compute_rhs_elem_first_k
-        rule_first = _compute_rhs_elem_first_k(rule.rhs, first_k, nullable, depth + 1)
+        rule_first = grammar.first_k(depth + 1, rule.rhs)
         tokens_at_depth: Set[Terminal] = set()
         for seq in rule_first:
             if len(seq) > depth:
@@ -130,6 +128,65 @@ def _build_token_check(term: Terminal, depth: int) -> TargetExpr:
 def findfirst(predicate, iterable):
     return next((i for i, x in enumerate(iterable) if predicate(x)), None)
 
+def _build_lookahead_check(token_sequences: Set[Tuple[Terminal, ...]], depth: int) -> TargetExpr:
+    """Build a boolean expression that checks if lookahead matches any of the token sequences.
+
+    Args:
+        token_sequences: Set of token sequences to match
+        depth: Current lookahead depth
+
+    Returns a boolean expression.
+    """
+    if not token_sequences:
+        return Lit(False)
+
+    groups: Dict[Terminal, Set[Tuple[Terminal, ...]]] = {}
+    short_sequences = False
+
+    for seq in token_sequences:
+        if len(seq) <= depth:
+            short_sequences = True
+        else:
+            token = seq[depth]
+            if token not in groups:
+                groups[token] = set()
+            groups[token].add(seq)
+
+    if short_sequences:
+        return Lit(True)
+
+    if not groups:
+        return Lit(False)
+
+    conditions = []
+    for token, subsequences in groups.items():
+        token_check = _build_token_check(token, depth)
+        deeper_check = _build_lookahead_check(subsequences, depth + 1)
+        if isinstance(deeper_check, Lit) and deeper_check.value is True:
+            conditions.append(token_check)
+        else:
+            conditions.append(IfElse(token_check, deeper_check, Lit(False)))
+
+    result = conditions[0]
+    for cond in conditions[1:]:
+        result = IfElse(result, Lit(True), cond)
+    return result
+
+def _build_option_predictor(grammar: Grammar, element: Rhs, following: Optional[Rhs], lhs: Nonterminal) -> TargetExpr:
+    """Build a predicate that checks if we should enter an Option or continue a Star.
+
+    Returns a boolean expression that's true if the lookahead matches the element,
+    false if it matches what follows.
+    """
+    element_first = grammar.first_k(MAX_LOOKAHEAD, element)
+    follow_first = grammar.first_k_with_follow(MAX_LOOKAHEAD, following, lhs)
+
+    if element_first & follow_first:
+        conflict_msg = f'Ambiguous Option/Star: FIRST_{MAX_LOOKAHEAD}({element}) and FIRST_{MAX_LOOKAHEAD}(following) ∪ FOLLOW_{MAX_LOOKAHEAD}({lhs.name}) overlap'
+        assert False, conflict_msg
+
+    return _build_lookahead_check(element_first, depth=0)
+
 def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule]=None, grammar: Optional[Grammar]=None, following: Optional[Rhs]=None) -> TargetExpr:
     """Generate IR for parsing an RHS.
 
@@ -165,19 +222,9 @@ def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule]=None, grammar: Optiona
         return parse_expr
     elif isinstance(rhs, Option):
         assert grammar is not None
-        if following:
-            elems_0 = [rhs.rhs] + rhs_elements(following)
-            synthetic_rhs_0 = Sequence(elems_0)
-        else:
-            synthetic_rhs_0 = rhs.rhs
-        params_0 = [Var(f'_t{i}', e.target_type()) for i, e in enumerate(rhs_elements(synthetic_rhs_0)) if not isinstance(e, LitTerminal)]
-        rule_0 = Rule(Nonterminal('_synthetic', BaseType('Int64')), synthetic_rhs_0, Lambda(params=params_0, return_type=BaseType('Int64'), body=Lit(0)))
-        synthetic_rhs_1 = following if following else Sequence(())
-        params_1 = [Var(f'_t{i}', e.target_type()) for i, e in enumerate(rhs_elements(synthetic_rhs_1)) if not isinstance(e, LitTerminal)]
-        rule_1 = Rule(Nonterminal('_synthetic', BaseType('Int64')), synthetic_rhs_1, Lambda(params=params_1, return_type=BaseType('Int64'), body=Lit(1)))
-        synthetic_rules = [rule_0, rule_1]
-        predictor = _build_predictor(grammar, Nonterminal('_synthetic', BaseType('Int64')), synthetic_rules)
-        parse_expr = IfElse(Call(Builtin('equal'), [predictor, Lit(0)]), _generate_parse_rhs_ir(rhs.rhs, None, grammar, following), Lit(None))
+        assert rule is not None
+        predictor = _build_option_predictor(grammar, rhs.rhs, following, rule.lhs)
+        parse_expr = IfElse(predictor, _generate_parse_rhs_ir(rhs.rhs, None, grammar, following), Lit(None))
         if rule and rule.action:
             param_name = rule.action.params[0].name if rule.action.params else 'arg'
             var_name = gensym(param_name)
@@ -185,23 +232,12 @@ def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule]=None, grammar: Optiona
         return parse_expr
     elif isinstance(rhs, Star):
         assert grammar is not None
-        if following:
-            elems_0 = [rhs.rhs] + rhs_elements(following)
-            synthetic_rhs_0 = Sequence(elems_0)
-        else:
-            synthetic_rhs_0 = rhs.rhs
-        params_0 = [Var(f'_t{i}', e.target_type()) for i, e in enumerate(rhs_elements(synthetic_rhs_0)) if not isinstance(e, LitTerminal)]
-        rule_0 = Rule(Nonterminal('_synthetic', BaseType('Int64')), synthetic_rhs_0, Lambda(params=params_0, return_type=BaseType('Int64'), body=Lit(0)))
-        synthetic_rhs_1 = following if following else Sequence(())
-        params_1 = [Var(f'_t{i}', e.target_type()) for i, e in enumerate(rhs_elements(synthetic_rhs_1)) if not isinstance(e, LitTerminal)]
-        rule_1 = Rule(Nonterminal('_synthetic', BaseType('Int64')), synthetic_rhs_1, Lambda(params=params_1, return_type=BaseType('Int64'), body=Lit(1)))
-        synthetic_rules = [rule_0, rule_1]
-        predictor = _build_predictor(grammar, Nonterminal('_synthetic', BaseType('Int64')), synthetic_rules)
+        assert rule is not None
         xs = gensym('xs')
         cond = gensym('cond')
         cond_var = Var(cond, BaseType('Boolean'))
-        cond_expr = Call(Builtin('equal'), [predictor, Lit(0)])
-        parse_expr = Let(Var(xs, _any_type), Call(Builtin('make_list'), []), Let(cond_var, cond_expr, Seq([While(cond_var, Seq([Call(Builtin('list_push!'), [Var(xs, _any_type), _generate_parse_rhs_ir(rhs.rhs, None, grammar, following)]), Assign(cond_var, cond_expr)])), Var(xs, _any_type)])))
+        predictor = _build_option_predictor(grammar, rhs.rhs, following, rule.lhs)
+        parse_expr = Let(Var(xs, _any_type), Call(Builtin('make_list'), []), Let(cond_var, predictor, Seq([While(cond_var, Seq([Call(Builtin('list_push!'), [Var(xs, _any_type), _generate_parse_rhs_ir(rhs.rhs, None, grammar, following)]), Assign(cond_var, predictor)])), Var(xs, _any_type)])))
         if rule and rule.action:
             param_name = rule.action.params[0].name if rule.action.params else 'arg'
             var_name = gensym(param_name)
@@ -220,7 +256,7 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, rule: Optional[Rule]=None, gr
     non_literal_count = 0
     for i, elem in enumerate(elems):
         following = Sequence(elems[i + 1:]) if i + 1 < len(elems) else None
-        elem_ir = _generate_parse_rhs_ir(elem, None, grammar, following)
+        elem_ir = _generate_parse_rhs_ir(elem, rule, grammar, following)
         if isinstance(elem, LitTerminal):
             exprs.append(elem_ir)
         else:

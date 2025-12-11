@@ -158,7 +158,7 @@ class Rule:
         assert action_params == rhs_len, \
             f"Action for {self.lhs.name} has {action_params} parameters but RHS has {rhs_len} non-literal element{'' if rhs_len == 1 else 's'}: {self.rhs}"
 
-@dataclass
+@dataclass(frozen=True)
 class Token:
     """Token definition (terminal with regex pattern)."""
     name: str
@@ -369,8 +369,82 @@ class Grammar:
 
         return result
 
+    def first_k(self, k: int, rhs: Rhs) -> Set[Tuple[Terminal, ...]]:
+        """
+        Compute FIRST_k set for an RHS.
+
+        FIRST_k(rhs) is the set of terminal sequences of length up to k that can begin strings derived from rhs.
+        Uses cached FIRST information for nonterminals.
+        """
+        # Special case: k=1 for Nonterminal can use the cached FIRST sets
+        if k == 1 and isinstance(rhs, Nonterminal):
+            first_set = self.first(rhs)
+            # Convert Set[Terminal] to Set[Tuple[Terminal, ...]]
+            return {(t,) for t in first_set}
+
+        from .analysis import _compute_rhs_elem_first_k
+
+        # Compute first_k sets for all nonterminals if not already cached
+        first_k_dict = self.compute_first_k(k)
+        nullable_dict = self.compute_nullable()
+
+        return _compute_rhs_elem_first_k(rhs, first_k_dict, nullable_dict, k)
+
+    def follow(self, nt: Nonterminal) -> Set[Terminal]:
+        """
+        Compute FOLLOW set for a nonterminal.
+
+        FOLLOW(A) is the set of terminals that can immediately follow A in any derivation.
+        Uses cached FOLLOW information for nonterminals.
+        """
+        follow_dict = self.compute_follow()
+        return follow_dict.get(nt, set())
+
+    def follow_k(self, k: int, rhs: Rhs) -> Set[Tuple[Terminal, ...]]:
+        """
+        Compute FOLLOW_k set for a nonterminal.
+
+        FOLLOW_k(A) is the set of terminal sequences of length up to k that can follow A.
+        Uses cached FOLLOW_k information for nonterminals.
+        """
+        # Special case: k=1 can use the cached FOLLOW sets
+        if isinstance(rhs, Nonterminal):
+            if k == 1:
+                follow_set = self.follow(rhs)
+                # Convert Set[Terminal] to Set[Tuple[Terminal, ...]]
+                return {(t,) for t in follow_set}
+
+            follow_k_dict = self.compute_follow_k(k)
+            return follow_k_dict.get(rhs, set())
+        elif isinstance(rhs, Option):
+            return self.follow_k(k, rhs.rhs)
+        elif isinstance(rhs, Star):
+            return self.follow_k(k, rhs.rhs)
+        else:
+            assert False, f"Unexpected rhs {rhs}: follow_k unimplemented"
+
+    def first_k_with_follow(self, k: int, following: Optional[Rhs], lhs: Nonterminal) -> Set[Tuple[Terminal, ...]]:
+        """
+        Compute FIRST_k(following) concatenated with FOLLOW_k(lhs).
+
+        This is used for Option and Star disambiguation: when exiting an Option or Star,
+        the tokens that can follow are FIRST_k(following) if following is present,
+        or FOLLOW_k(lhs) if at the end of the rule, or both if following is nullable.
+        """
+        from .analysis import _concat_first_k_sets
+
+        if following is None or (isinstance(following, Sequence) and len(following.elements) == 0):
+            return self.follow_k(k, lhs)
+
+        first_of_following = self.first_k(k, following)
+        if self.nullable(following):
+            follow_of_lhs = self.follow_k(k, lhs)
+            return _concat_first_k_sets(first_of_following, follow_of_lhs, k)
+        else:
+            return first_of_following
+
     def print_grammar(self, reachable: Optional[Set[str]] = None) -> str:
-        """Convert to Lark grammar format."""
+        """Convert to context-free grammar format."""
         lines = []
         lines.append("// Auto-generated grammar from protobuf specifications")
         lines.append("")

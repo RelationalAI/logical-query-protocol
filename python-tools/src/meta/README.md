@@ -5,7 +5,7 @@ This package provides tools for generating parsers and pretty-printers from prot
 ## Overview
 
 The meta-language tooling converts protobuf message definitions into:
-- **Lark grammars** for parsing S-expression representations
+- **Grammars** for parsing S-expression representations
 - **Recursive-descent parsers** in Python, Julia, and Go
 - **Pretty-printers** for converting protobuf bytes back to S-expressions
 
@@ -47,7 +47,7 @@ The meta-language tooling converts protobuf message definitions into:
 - Handles nested messages, oneofs, and enums
 
 **`grammar_gen.py`** - Grammar Generator
-- `GrammarGenerator` class converts protobuf specifications to Lark grammars
+- `GrammarGenerator` class converts protobuf specifications to context-free grammars
 - Generates prepopulated rules for transactions, bindings, operators
 - Maps protobuf types to grammar rules
 
@@ -79,8 +79,8 @@ The meta-language tooling converts protobuf message definitions into:
 ### Command Line
 
 ```bash
-# Generate Lark grammar
-python -m src.meta.proto_tool --grammar file.proto -o output.lark
+# Generate context-free grammar
+python -m src.meta.proto_tool --grammar file.proto -o output.g
 
 # Generate Python parser
 python -m src.meta.proto_tool --parser python file.proto -o parser.py

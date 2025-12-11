@@ -234,12 +234,12 @@ def generate_python_lines(expr: TargetExpr, lines: List[str], indent: str = "") 
 
     elif isinstance(expr, IfElse):
         cond_code = generate_python_lines(expr.condition, lines, indent)
-        # if expr.then_branch == Lit(True):
-        #     else_code = generate_python_lines(expr.else_branch, lines, indent + "    ")
-        #     return f"({cond_code} or {else_code})"
-        # if expr.else_branch == Lit(False):
-        #     then_code = generate_python_lines(expr.then_branch, lines, indent + "    ")
-        #     return f"({cond_code} and {then_code})"
+        if expr.then_branch == Lit(True):
+            else_code = generate_python_lines(expr.else_branch, lines, indent + "    ")
+            return f"({cond_code} or {else_code})"
+        if expr.else_branch == Lit(False):
+            then_code = generate_python_lines(expr.then_branch, lines, indent + "    ")
+            return f"({cond_code} and {then_code})"
 
         tmp = gensym()
         lines.append(f"{indent}if {cond_code}:")
