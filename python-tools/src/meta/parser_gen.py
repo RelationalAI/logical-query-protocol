@@ -240,20 +240,18 @@ def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optio
             synthetic_rhs_0 = rhs.rhs
 
         # Create dummy action with correct param count
-        num_params_0 = sum(1 for e in rhs_elements(synthetic_rhs_0) if not isinstance(e, LitTerminal))
-        params_0 = [Var(f"_p{i}", _any_type) for i in range(num_params_0)]
-        rule_0 = Rule(Nonterminal("_synthetic"), synthetic_rhs_0, Lambda(params=params_0, return_type=_any_type, body=Lit(0)))
+        params_0 = [Var(f"_t{i}", e.target_type()) for i, e in enumerate(rhs_elements(synthetic_rhs_0)) if not isinstance(e, LitTerminal)]
+        rule_0 = Rule(Nonterminal("_synthetic", BaseType('Int64')), synthetic_rhs_0, Lambda(params=params_0, return_type=BaseType('Int64'), body=Lit(0)))
 
         # Rule 1: epsilon (skip optional) followed by what comes after
         synthetic_rhs_1 = following if following else Sequence([])
-        num_params_1 = sum(1 for e in rhs_elements(synthetic_rhs_1) if not isinstance(e, LitTerminal))
-        params_1 = [Var(f"_p{i}", _any_type) for i in range(num_params_1)]
-        rule_1 = Rule(Nonterminal("_synthetic"), synthetic_rhs_1, Lambda(params=params_1, return_type=_any_type, body=Lit(1)))
+        params_1 = [Var(f"_t{i}", e.target_type()) for i, e in enumerate(rhs_elements(synthetic_rhs_1)) if not isinstance(e, LitTerminal)]
+        rule_1 = Rule(Nonterminal("_synthetic", BaseType('Int64')), synthetic_rhs_1, Lambda(params=params_1, return_type=BaseType('Int64'), body=Lit(1)))
 
         synthetic_rules = [rule_0, rule_1]
 
         # Build predictor
-        predictor = _build_predictor(grammar, Nonterminal("_synthetic"), synthetic_rules)
+        predictor = _build_predictor(grammar, Nonterminal("_synthetic", BaseType('Int64')), synthetic_rules)
 
         parse_expr = IfElse(
             Call(Builtin('equal'), [predictor, Lit(0)]),
@@ -281,20 +279,18 @@ def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule] = None, grammar: Optio
             synthetic_rhs_0 = rhs.rhs
 
         # Create dummy action with correct param count
-        num_params_0 = sum(1 for e in rhs_elements(synthetic_rhs_0) if not isinstance(e, LitTerminal))
-        params_0 = [Var(f"_p{i}", _any_type) for i in range(num_params_0)]
-        rule_0 = Rule(Nonterminal("_synthetic"), synthetic_rhs_0, Lambda(params=params_0, return_type=_any_type, body=Lit(0)))
+        params_0 = [Var(f"_t{i}", e.target_type()) for i, e in enumerate(rhs_elements(synthetic_rhs_0)) if not isinstance(e, LitTerminal)]
+        rule_0 = Rule(Nonterminal("_synthetic", BaseType('Int64')), synthetic_rhs_0, Lambda(params=params_0, return_type=BaseType('Int64'), body=Lit(0)))
 
         # Rule 1: exit the star (epsilon followed by what comes after)
         synthetic_rhs_1 = following if following else Sequence([])
-        num_params_1 = sum(1 for e in rhs_elements(synthetic_rhs_1) if not isinstance(e, LitTerminal))
-        params_1 = [Var(f"_p{i}", _any_type) for i in range(num_params_1)]
-        rule_1 = Rule(Nonterminal("_synthetic"), synthetic_rhs_1, Lambda(params=params_1, return_type=_any_type, body=Lit(1)))
+        params_1 = [Var(f"_t{i}", e.target_type()) for i, e in enumerate(rhs_elements(synthetic_rhs_1)) if not isinstance(e, LitTerminal)]
+        rule_1 = Rule(Nonterminal("_synthetic", BaseType('Int64')), synthetic_rhs_1, Lambda(params=params_1, return_type=BaseType('Int64'), body=Lit(1)))
 
         synthetic_rules = [rule_0, rule_1]
 
         # Build predictor for loop condition
-        predictor = _build_predictor(grammar, Nonterminal("_synthetic"), synthetic_rules)
+        predictor = _build_predictor(grammar, Nonterminal("_synthetic", BaseType('Int64')), synthetic_rules)
 
         xs = gensym('xs')
         cond = gensym('cond')

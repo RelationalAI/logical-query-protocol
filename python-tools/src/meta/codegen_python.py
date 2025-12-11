@@ -53,7 +53,7 @@ def generate_python_type(typ: Type) -> str:
         return type_map.get(typ.name, typ.name)
 
     elif isinstance(typ, MessageType):
-        return typ.name
+        return f"proto.{typ.name}"
 
     elif isinstance(typ, TupleType):
         if not typ.elements:
@@ -101,7 +101,7 @@ def generate_python_lines(expr: TargetExpr, lines: List[str], indent: str = "") 
         return f'"{expr.name}"'
 
     elif isinstance(expr, Constructor):
-        return f"ir.{expr.name}"
+        return f"proto.{expr.name}"
 
     elif isinstance(expr, Builtin):
         assert expr.name != "list_concat"
@@ -113,13 +113,13 @@ def generate_python_lines(expr: TargetExpr, lines: List[str], indent: str = "") 
         return f"self.parse_{expr.nonterminal.name}"
 
     elif isinstance(expr, Call):
-        # Special case: ir.Fragment construction with debug_info parameter
+        # Special case: proto.Fragment construction with debug_info parameter
         if isinstance(expr.func, Constructor) and expr.func.name == "Fragment":
             # Check if one of the args is a Var named "debug_info"
             for i, arg in enumerate(expr.args):
                 if isinstance(arg, Var) and arg.name == "debug_info":
                     # Generate debug_info computation before constructing Fragment
-                    lines.append(f"{indent}debug_info = ir.DebugInfo(id_to_orig_name=self.id_to_debuginfo.get(id, {{}}), meta=self.meta(self.current()))")
+                    lines.append(f"{indent}debug_info = proto.DebugInfo(id_to_orig_name=self.id_to_debuginfo.get(id, {{}}), meta=self.meta(self.current()))")
                     break
 
         # Handle some special cases that don't turn into python calls.
@@ -127,17 +127,17 @@ def generate_python_lines(expr: TargetExpr, lines: List[str], indent: str = "") 
             if expr.func.name == "fragment_id_from_string" and len(expr.args) == 1:
                 arg1 = generate_python_lines(expr.args[0], lines, indent)
                 tmp = gensym()
-                lines.append(f"{indent}{tmp} = ir.FragmentId(id={arg1}.encode(), meta=None)")
+                lines.append(f"{indent}{tmp} = proto.FragmentId(id={arg1}.encode(), meta=None)")
                 lines.append(f"{indent}self._current_fragment_id = {tmp}")
                 lines.append(f"{indent}if {tmp} not in self.id_to_debuginfo:")
                 lines.append(f"{indent}    self.id_to_debuginfo[{tmp}] = {{}}")
                 return tmp
             if expr.func.name == "relation_id_from_string" and len(expr.args) == 1:
                 arg1 = generate_python_lines(expr.args[0], lines, indent)
-                return f"ir.RelationId(id=int(hashlib.sha256({arg1}.encode()).hexdigest()[:16], 16))"
+                return f"proto.RelationId(id=int(hashlib.sha256({arg1}.encode()).hexdigest()[:16], 16))"
             if expr.func.name == "relation_id_from_int" and len(expr.args) == 1:
                 arg1 = generate_python_lines(expr.args[0], lines, indent)
-                return f"ir.RelationId(id={arg1})"
+                return f"proto.RelationId(id={arg1})"
             if expr.func.name == "list_concat" and len(expr.args) == 2:
                 arg1 = generate_python_lines(expr.args[0], lines, indent)
                 arg2 = generate_python_lines(expr.args[1], lines, indent)

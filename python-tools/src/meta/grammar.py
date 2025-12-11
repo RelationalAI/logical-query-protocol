@@ -168,15 +168,18 @@ class Token:
 @dataclass
 class Grammar:
     """Complete grammar specification with normalization and left-factoring support."""
+    start: Nonterminal
     rules: Dict[Nonterminal, List[Rule]] = field(default_factory=dict)
     tokens: List[Token] = field(default_factory=list)
-    start: Nonterminal = field(default_factory=lambda: Nonterminal("start", MessageType("Transaction")))
 
     # Cached analysis results
     _reachable_cache: Optional[Set[Nonterminal]] = field(default=None, init=False, repr=False)
     _nullable_cache: Optional[Dict[Nonterminal, bool]] = field(default=None, init=False, repr=False)
     _first_cache: Optional[Dict[Nonterminal, Set[Terminal]]] = field(default=None, init=False, repr=False)
     _follow_cache: Optional[Dict[Nonterminal, Set[Terminal]]] = field(default=None, init=False, repr=False)
+
+    def __post_init__(self):
+        self.rules = {self.start: []}
 
     def add_rule(self, rule: Rule) -> None:
         assert self._reachable_cache is None, "Grammar is already analyzed"

@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from .grammar import Grammar, Rhs, Rule
 
 from .grammar import LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence, Terminal, get_nonterminals
+from .target import BaseType
 
 
 def check_reachability(grammar: 'Grammar') -> Set[Nonterminal]:
@@ -206,9 +207,9 @@ def compute_follow(grammar: 'Grammar', nullable: Optional[Dict[Nonterminal, bool
     for nt in grammar.rules.keys():
         follow[nt] = set()
 
-    start_nt = Nonterminal('start')
+    start_nt = grammar.start
     if start_nt in grammar.rules:
-        follow[start_nt].add(NamedTerminal('$'))
+        follow[start_nt].add(NamedTerminal('$', BaseType('EOF')))
 
     changed = True
     while changed:

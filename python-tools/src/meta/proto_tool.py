@@ -45,11 +45,6 @@ def main():
         help="Output file for generated code"
     )
     parser.add_argument(
-        "-s", "--start",
-        default="Transaction",
-        help="Start message for the grammar"
-    )
-    parser.add_argument(
         "--grammar",
         action="store_true",
         help="Output grammar"
@@ -78,7 +73,7 @@ def main():
         proto_parser.parse_file(proto_file)
 
     generator = GrammarGenerator(proto_parser, verbose=True)
-    grammar = generator.generate(args.start)
+    grammar = generator.generate()
 
     reachable = grammar.check_reachability()
     unreachable = grammar.get_unreachable_rules()
