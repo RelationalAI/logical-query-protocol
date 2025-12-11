@@ -228,6 +228,113 @@ def compute_follow(grammar: 'Grammar', nullable: Optional[Dict[Nonterminal, bool
     return follow
 
 
+def compute_follow_k(grammar: 'Grammar', k: int = 2,
+                     nullable: Optional[Dict[Nonterminal, bool]] = None,
+                     first_k: Optional[Dict[Nonterminal, Set[Tuple[Terminal, ...]]]] = None) -> Dict[Nonterminal, Set[Tuple[Terminal, ...]]]:
+    """
+    Compute FOLLOW_k sets for all nonterminals.
+
+    FOLLOW_k(A) is the set of terminal sequences of length up to k that can follow A.
+    Returns dict mapping nonterminals to sets of terminal tuples.
+    """
+    if nullable is None:
+        nullable = compute_nullable(grammar)
+    if first_k is None:
+        first_k = compute_first_k(grammar, k, nullable)
+
+    follow_k: Dict[Nonterminal, Set[Tuple[Terminal, ...]]] = {}
+    for nt in grammar.rules.keys():
+        follow_k[nt] = set()
+
+    start_nt = grammar.start
+    if start_nt in grammar.rules:
+        follow_k[start_nt].add((NamedTerminal('$', BaseType('EOF')),))
+
+    changed = True
+    while changed:
+        changed = False
+        for nt, rules_list in grammar.rules.items():
+            for rule in rules_list:
+                new_follows = _compute_rhs_elem_follow_k(rule.rhs, rule.lhs, first_k, nullable, follow_k, k)
+                for nt, sequences in new_follows.items():
+                    if nt not in follow_k:
+                        follow_k[nt] = set()
+                    for seq in sequences:
+                        if seq not in follow_k[nt]:
+                            follow_k[nt].add(seq)
+                            changed = True
+
+    return follow_k
+
+
+def _compute_rhs_elem_follow_k(rhs: 'Rhs', lhs: Nonterminal,
+                               first_k: Dict[Nonterminal, Set[Tuple[Terminal, ...]]],
+                               nullable: Dict[Nonterminal, bool],
+                               follow_k: Dict[Nonterminal, Set[Tuple[Terminal, ...]]],
+                               k: int) -> Dict[Nonterminal, Set[Tuple[Terminal, ...]]]:
+    """Compute FOLLOW_k contributions from an RHS."""
+    result: Dict[Nonterminal, Set[Tuple[Terminal, ...]]] = {}
+
+    def add_follow_k(nt: Nonterminal, sequences: Set[Tuple[Terminal, ...]]) -> None:
+        if nt not in result:
+            result[nt] = set()
+        result[nt].update(sequences)
+
+    if isinstance(rhs, Nonterminal):
+        add_follow_k(rhs, follow_k.get(lhs, set()))
+    elif isinstance(rhs, Sequence):
+        for i, elem in enumerate(rhs.elements):
+            if isinstance(elem, Nonterminal):
+                following = rhs.elements[i+1:] if i+1 < len(rhs.elements) else ()
+                if following:
+                    first_k_of_following = _compute_rhs_elem_first_k(Sequence(following), first_k, nullable, k)
+                    add_follow_k(elem, first_k_of_following)
+                    if _is_rhs_elem_nullable(Sequence(following), nullable):
+                        lhs_follow = follow_k.get(lhs, set())
+                        combined = _concat_first_k_sets(first_k_of_following, lhs_follow, k)
+                        add_follow_k(elem, combined)
+                else:
+                    add_follow_k(elem, follow_k.get(lhs, set()))
+            elif isinstance(elem, Sequence):
+                inner_follows = _compute_rhs_elem_follow_k(elem, lhs, first_k, nullable, follow_k, k)
+                for nt, sequences in inner_follows.items():
+                    add_follow_k(nt, sequences)
+            elif isinstance(elem, (Star, Option)):
+                inner_follows = _compute_rhs_elem_follow_k(elem, lhs, first_k, nullable, follow_k, k)
+                for nt, sequences in inner_follows.items():
+                    add_follow_k(nt, sequences)
+    elif isinstance(rhs, Star):
+        inner_follows = _compute_rhs_elem_follow_k(rhs.rhs, lhs, first_k, nullable, follow_k, k)
+        for nt, sequences in inner_follows.items():
+            add_follow_k(nt, sequences)
+        first_k_of_inner = _compute_rhs_elem_first_k(rhs.rhs, first_k, nullable, k)
+        inner_nts = get_nonterminals(rhs.rhs)
+        for nt in inner_nts:
+            add_follow_k(nt, first_k_of_inner)
+    elif isinstance(rhs, Option):
+        inner_follows = _compute_rhs_elem_follow_k(rhs.rhs, lhs, first_k, nullable, follow_k, k)
+        for nt, sequences in inner_follows.items():
+            add_follow_k(nt, sequences)
+
+    return result
+
+
+def _concat_first_k_sets(set1: Set[Tuple[Terminal, ...]], set2: Set[Tuple[Terminal, ...]], k: int) -> Set[Tuple[Terminal, ...]]:
+    """Concatenate two FIRST_k sets, truncating to length k.
+
+    For each sequence in set1 and set2, concatenate them and take first k terminals.
+    """
+    result: Set[Tuple[Terminal, ...]] = set()
+    for seq1 in set1:
+        if len(seq1) >= k:
+            result.add(seq1[:k])
+        else:
+            for seq2 in set2:
+                combined = seq1 + seq2
+                result.add(combined[:k])
+    return result
+
+
 def _compute_rhs_elem_follow(rhs: 'Rhs', lhs: Nonterminal,
                         first: Dict[Nonterminal, Set[Terminal]],
                         nullable: Dict[Nonterminal, bool],
@@ -245,7 +352,7 @@ def _compute_rhs_elem_follow(rhs: 'Rhs', lhs: Nonterminal,
     elif isinstance(rhs, Sequence):
         for i, elem in enumerate(rhs.elements):
             if isinstance(elem, Nonterminal):
-                following = rhs.elements[i+1:] if i+1 < len(rhs.elements) else []
+                following = rhs.elements[i+1:] if i+1 < len(rhs.elements) else ()
                 if following:
                     first_of_following = _compute_rhs_elem_first(Sequence(following), first, nullable)
                     add_follow(elem, first_of_following)

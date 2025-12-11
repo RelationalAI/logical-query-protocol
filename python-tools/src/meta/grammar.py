@@ -14,7 +14,7 @@ from .target import TargetExpr, Var, Symbol, Call, Lambda, Let, Lit, Type, Messa
 
 # Grammar RHS (right-hand side) elements
 
-@dataclass
+@dataclass(frozen=True)
 class Rhs:
     """Base class for right-hand sides of grammar rules."""
 
@@ -22,12 +22,12 @@ class Rhs:
         """Return the target type for this RHS element."""
         raise NotImplementedError(f"target_type not implemented for {type(self).__name__}")
 
-@dataclass
+@dataclass(frozen=True)
 class Terminal(Rhs):
     """Base class for terminal symbols."""
     pass
 
-@dataclass(unsafe_hash=True)
+@dataclass(frozen=True, unsafe_hash=True)
 class LitTerminal(Terminal):
     """Literal terminal (quoted string in grammar)."""
     name: str
@@ -41,7 +41,7 @@ class LitTerminal(Terminal):
         return TupleType([])
 
 
-@dataclass(unsafe_hash=True)
+@dataclass(frozen=True, unsafe_hash=True)
 class NamedTerminal(Terminal):
     """Token terminal (unquoted uppercase name like SYMBOL, NUMBER)."""
     name: str
@@ -55,7 +55,7 @@ class NamedTerminal(Terminal):
         return self.type
 
 
-@dataclass(unsafe_hash=True)
+@dataclass(frozen=True, unsafe_hash=True)
 class Nonterminal(Rhs):
     """Nonterminal (rule name)."""
     name: str
@@ -69,7 +69,7 @@ class Nonterminal(Rhs):
         return self.type
 
 
-@dataclass
+@dataclass(frozen=True)
 class Star(Rhs):
     """Zero or more repetitions (*)."""
     rhs: 'Rhs'
@@ -87,7 +87,7 @@ class Star(Rhs):
         return ListType(self.rhs.target_type())
 
 
-@dataclass
+@dataclass(frozen=True)
 class Option(Rhs):
     """Optional element (?)."""
     rhs: 'Rhs'
@@ -105,10 +105,10 @@ class Option(Rhs):
         return OptionType(self.rhs.target_type())
 
 
-@dataclass
+@dataclass(frozen=True)
 class Sequence(Rhs):
     """Sequence of grammar symbols (concatenation)."""
-    elements: List['Rhs'] = field(default_factory=list)
+    elements: Tuple['Rhs', ...] = field(default_factory=tuple)
 
     def __post_init__(self):
         for elem in self.elements:
@@ -132,7 +132,7 @@ class Sequence(Rhs):
 
 # Grammar rules and tokens
 
-@dataclass
+@dataclass(frozen=True)
 class Rule:
     """Grammar rule (production)."""
     lhs: Nonterminal
@@ -309,6 +309,16 @@ class Grammar:
             from .analysis import compute_follow
             self._follow_cache = compute_follow(self, self.compute_nullable(), self.compute_first())
         return self._follow_cache
+
+    def compute_follow_k(self, k: int = 2) -> Dict[Nonterminal, Set[Tuple[Terminal, ...]]]:
+        """
+        Compute FOLLOW_k sets for all nonterminals.
+
+        FOLLOW_k(A) is the set of terminal sequences of length up to k that can follow A.
+        Returns dict mapping nonterminals to sets of terminal tuples.
+        """
+        from .analysis import compute_follow_k
+        return compute_follow_k(self, k, self.compute_nullable(), self.compute_first_k(k))
 
     def nullable(self, rhs: Rhs) -> bool:
         """
@@ -503,11 +513,11 @@ def is_epsilon(rhs):
     return isinstance(rhs, Sequence) and len(rhs.elements) == 0
 
 
-def rhs_elements(rhs: Rhs) -> List[Rhs]:
-    """Return elements of rhs. For Sequence, returns rhs.elements; otherwise returns [rhs]."""
+def rhs_elements(rhs: Rhs) -> Tuple[Rhs, ...]:
+    """Return elements of rhs. For Sequence, returns rhs.elements; otherwise returns (rhs,)."""
     if isinstance(rhs, Sequence):
         return rhs.elements
-    return [rhs]
+    return (rhs,)
 
 
 def _count_nonliteral_rhs_elements(rhs: Rhs) -> int:
