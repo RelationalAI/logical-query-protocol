@@ -112,10 +112,42 @@ class GrammarGenerator:
         self.grammar.add_rule(rule)
 
     def _init_rule_rewrites(self) -> Dict[str, Callable[[Rule], Rule]]:
-        """Initialize rule rewrite functions."""
+        """Initialize rule rewrite functions.
+
+        These rewrites transform grammar rules generated from protobuf definitions
+        into forms more suitable for parsing S-expressions. The rewrites address
+        several concerns:
+
+        1. **Token granularity**: Protobuf uses STRING tokens, but the S-expression
+           grammar parses names as structured nonterminals (SYMBOL tokens). Rewrites
+           like `rewrite_string_to_name` replace STRING terminals with `name` nonterminals.
+
+        2. **Optional vs repeated**: Protobuf `repeated` fields generate `terms?`
+           (optional list), but S-expressions use `term*` (zero-or-more). Rewrites
+           like `rewrite_terms_optional_to_star_term` make this transformation.
+
+        3. **Abstraction flattening**: The `exists` quantifier in protobuf has a
+           nested `abstraction` field, but S-expressions parse bindings and formula
+           separately. `rewrite_exists` flattens this structure.
+
+        4. **Arity extraction**: Some constructs (upsert, monoid_def, monus_def)
+           have an INT arity that follows an abstraction. `rewrite_compute_value_arity`
+           combines these into a single `abstraction_with_arity` nonterminal that
+           returns a tuple, avoiding lookahead issues.
+
+        5. **Debug info removal**: Fragment debug_info is computed at parse time,
+           not parsed from input. `rewrite_fragment_remove_debug_info` removes it.
+
+        Returns:
+            A dict mapping nonterminal names to their rewrite functions.
+        """
 
         def rewrite_string_to_name_optional(rule: Rule) -> Rule:
-            """Replace STRING with name? in output and abort rules."""
+            """Replace STRING with name? in output and abort rules.
+
+            Output and abort can have optional string labels that should be
+            parsed as name nonterminals (SYMBOL tokens) rather than STRING tokens.
+            """
             if isinstance(rule.rhs, Sequence):
                 new_elements = []
                 for symbol in rule.rhs.elements:
@@ -127,7 +159,11 @@ class GrammarGenerator:
             return rule
 
         def rewrite_string_to_name(rule: Rule) -> Rule:
-            """Replace STRING with name."""
+            """Replace STRING terminal with name nonterminal.
+
+            Used for rules where string literals should be parsed as symbolic
+            names (e.g., ffi, pragma).
+            """
             if isinstance(rule.rhs, Sequence):
                 new_elements = []
                 for symbol in rule.rhs.elements:
@@ -139,7 +175,12 @@ class GrammarGenerator:
             return rule
 
         def rewrite_fragment_remove_debug_info(rule: Rule) -> Rule:
-            """Remove debug_info from fragment rules."""
+            """Remove debug_info from fragment rules.
+
+            Debug info is computed during parsing (from source positions and
+            variable names), not parsed from input. This removes the debug_info
+            field from the grammar and adjusts the action accordingly.
+            """
             if isinstance(rule.rhs, Sequence):
                 new_elements = []
                 for symbol in rule.rhs.elements:
@@ -152,7 +193,13 @@ class GrammarGenerator:
             return rule
 
         def rewrite_terms_optional_to_star_term(rule: Rule) -> Rule:
-            """Replace terms? with term*."""
+            """Replace terms? with term*.
+
+            Protobuf repeated fields generate optional list nonterminals (terms?),
+            but S-expressions are parsed as zero-or-more individual terms (term*).
+            This allows parsing `(foo a b c)` as a sequence of terms rather than
+            requiring a separate list wrapper.
+            """
             if isinstance(rule.rhs, Sequence):
                 new_elements = []
                 for symbol in rule.rhs.elements:
@@ -164,7 +211,12 @@ class GrammarGenerator:
             return rule
 
         def rewrite_terms_optional_to_star_relterm(rule: Rule) -> Rule:
-            """Replace terms? with relterm* and STRING with name."""
+            """Replace terms? with relterm* and STRING with name.
+
+            Similar to rewrite_terms_optional_to_star_term, but uses relterm
+            (relation terms) instead of term. Also converts STRING to name.
+            Used for rel_atom rules.
+            """
             if isinstance(rule.rhs, Sequence):
                 new_elements = []
                 for symbol in rule.rhs.elements:
@@ -178,7 +230,11 @@ class GrammarGenerator:
             return rule
 
         def rewrite_primitive_rule(rule: Rule) -> Rule:
-            """Replace STRING with name and term* with relterm* in primitive rules."""
+            """Replace STRING with name and term* with relterm* in primitive rules.
+
+            Primitive expressions `(primitive name arg1 arg2 ...)` need symbolic
+            names and relation terms rather than string literals and generic terms.
+            """
             if isinstance(rule.rhs, Sequence) and len(rule.rhs.elements) >= 2:
                 if isinstance(rule.rhs.elements[0], LitTerminal) and rule.rhs.elements[0].name == '(' and isinstance(rule.rhs.elements[1], LitTerminal) and (rule.rhs.elements[1].name == 'primitive'):
                     new_elements = []
@@ -193,7 +249,14 @@ class GrammarGenerator:
             return rule
 
         def rewrite_exists(rule: Rule) -> Rule:
-            """Rewrite exists rule to use bindings and formula instead of abstraction."""
+            """Rewrite exists rule to use bindings and formula instead of abstraction.
+
+            The protobuf schema has `exists` with a nested `abstraction` field
+            containing bindings and a formula. But in S-expressions, we parse
+            `(exists (bindings...) formula)` directly. This rewrite:
+            1. Replaces the `abstraction` nonterminal with `bindings` and `formula`
+            2. Updates the action to construct the Abstraction from these parts
+            """
             if isinstance(rule.rhs, Sequence):
                 new_elements = []
                 abstraction_found = False
@@ -221,7 +284,16 @@ class GrammarGenerator:
             return rule
 
         def rewrite_compute_value_arity(rule: Rule) -> Rule:
-            """Rewrite `body ... INT` to `body_with_arity ...` where body is an Abstraction field."""
+            """Rewrite `body ... INT` to `body_with_arity ...` where body is an Abstraction field.
+
+            For upsert, monoid_def, and monus_def, the protobuf schema has an
+            abstraction followed by an integer arity. Parsing these separately
+            requires unbounded lookahead to know when the abstraction ends.
+
+            This rewrite combines them into `abstraction_with_arity` which returns
+            a tuple (Abstraction, Int64). The action is updated to extract the
+            components using fst() and snd().
+            """
             if isinstance(rule.rhs, Sequence) and len(rule.rhs.elements) >= 2:
                 new_elements = list(rule.rhs.elements)
                 abstraction_idx = None
@@ -266,7 +338,7 @@ class GrammarGenerator:
                         elif isinstance(expr, Call):
                             return Call(expr.func, [replace_vars(arg) for arg in expr.args])
                         elif isinstance(expr, Let):
-                            return Let(expr.var, replace_vars(expr.value), replace_vars(expr.body))
+                            return Let(expr.var, replace_vars(expr.init), replace_vars(expr.body))
                         return expr
 
                     new_body = replace_vars(rule.action.body)
@@ -275,7 +347,11 @@ class GrammarGenerator:
             return rule
 
         def rewrite_relatom_rule(rule: Rule) -> Rule:
-            """Replace STRING with name and terms? with relterm*."""
+            """Replace STRING with name and terms? with relterm*.
+
+            For relatom rules, convert string literals to symbolic names and
+            optional term lists to zero-or-more relation terms.
+            """
             if isinstance(rule.rhs, Sequence):
                 new_elements = []
                 for symbol in rule.rhs.elements:
@@ -289,7 +365,11 @@ class GrammarGenerator:
             return rule
 
         def rewrite_attribute_rule(rule: Rule) -> Rule:
-            """Replace STRING with name and args? with value*."""
+            """Replace STRING with name and args? with value*.
+
+            For attribute rules, convert string literals to symbolic names and
+            optional args to zero-or-more values.
+            """
             if isinstance(rule.rhs, Sequence):
                 new_elements = []
                 for symbol in rule.rhs.elements:
@@ -428,6 +508,8 @@ class GrammarGenerator:
         self.expected_unreachable.add(Nonterminal('int128_value', MessageType('Int128Value')))
         self.expected_unreachable.add(Nonterminal('missing_value', MessageType('MissingValue')))
         self.expected_unreachable.add(Nonterminal('uint128_value', MessageType('UInt128Value')))
+        self.expected_unreachable.add(Nonterminal('uint128_type', MessageType('UInt128Type')))
+        self.expected_unreachable.add(Nonterminal('datetime_type', MessageType('DateTimeType')))
 
     def _combine_identical_rules(self) -> None:
         """Combine rules with identical RHS patterns into a single rule with multiple alternatives."""

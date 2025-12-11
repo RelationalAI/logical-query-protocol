@@ -358,7 +358,7 @@ class Grammar:
         elif isinstance(rhs, Nonterminal):
             # first_dict maps Nonterminal -> Set[Terminal], need to extract names
             terminals = first_dict.get(rhs, set())
-            result.update(t for t in terminals)
+            result.update(terminals)
         elif isinstance(rhs, Sequence):
             for elem in rhs.elements:
                 result.update(self.first(elem))
@@ -533,7 +533,6 @@ class Grammar:
             name = name.replace(']', '_rb')
             name = name.replace('{', '_lc')
             name = name.replace('}', '_rc')
-            name = name.replace('-', '-')
             name = re.sub(r'[^a-zA-Z0-9_]', '_X', name)
             name = f'lit{name}'
             return name

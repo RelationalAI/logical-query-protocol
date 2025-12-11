@@ -219,12 +219,12 @@ def compute_follow(grammar: 'Grammar', nullable: Optional[Dict[Nonterminal, bool
         for nt, rules_list in grammar.rules.items():
             for rule in rules_list:
                 new_follows = _compute_rhs_elem_follow(rule.rhs, rule.lhs, first, nullable, follow)
-                for nt, terminals in new_follows.items():
-                    if nt not in follow:
-                        follow[nt] = set()
+                for follow_nt, terminals in new_follows.items():
+                    if follow_nt not in follow:
+                        follow[follow_nt] = set()
                     for term in terminals:
-                        if term not in follow[nt]:
-                            follow[nt].add(term)
+                        if term not in follow[follow_nt]:
+                            follow[follow_nt].add(term)
                             changed = True
 
     return follow
@@ -258,12 +258,12 @@ def compute_follow_k(grammar: 'Grammar', k: int = 2,
         for nt, rules_list in grammar.rules.items():
             for rule in rules_list:
                 new_follows = _compute_rhs_elem_follow_k(rule.rhs, rule.lhs, first_k, nullable, follow_k, k)
-                for nt, sequences in new_follows.items():
-                    if nt not in follow_k:
-                        follow_k[nt] = set()
+                for follow_nt, sequences in new_follows.items():
+                    if follow_nt not in follow_k:
+                        follow_k[follow_nt] = set()
                     for seq in sequences:
-                        if seq not in follow_k[nt]:
-                            follow_k[nt].add(seq)
+                        if seq not in follow_k[follow_nt]:
+                            follow_k[follow_nt].add(seq)
                             changed = True
 
     return follow_k

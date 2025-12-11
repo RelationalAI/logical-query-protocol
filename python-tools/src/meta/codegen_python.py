@@ -126,12 +126,7 @@ def generate_python_lines(expr: TargetExpr, lines: List[str], indent: str = "") 
         if isinstance(expr.func, Builtin):
             if expr.func.name == "fragment_id_from_string" and len(expr.args) == 1:
                 arg1 = generate_python_lines(expr.args[0], lines, indent)
-                tmp = gensym()
-                lines.append(f"{indent}{tmp} = proto.FragmentId(id={arg1}.encode(), meta=None)")
-                lines.append(f"{indent}self._current_fragment_id = {tmp}")
-                lines.append(f"{indent}if {tmp} not in self.id_to_debuginfo:")
-                lines.append(f"{indent}    self.id_to_debuginfo[{tmp}] = {{}}")
-                return tmp
+                return f"proto.FragmentId(id={arg1}.encode())"
             if expr.func.name == "relation_id_from_string" and len(expr.args) == 1:
                 arg1 = generate_python_lines(expr.args[0], lines, indent)
                 return f"proto.RelationId(id=int(hashlib.sha256({arg1}.encode()).hexdigest()[:16], 16))"
@@ -167,6 +162,7 @@ def generate_python_lines(expr: TargetExpr, lines: List[str], indent: str = "") 
                     args.append(arg)
                 args_code = ', '.join(args)
                 return f"[{args_code}]"
+            elif expr.func.name == "not" and len(expr.args) == 1:
                 arg1 = generate_python_lines(expr.args[0], lines, indent)
                 return f"not {arg1}"
             elif expr.func.name == "equal" and len(expr.args) == 2:
@@ -395,7 +391,7 @@ def generate_python_function_body(expr: TargetExpr, indent: str = "    ") -> str
 __all__ = [
     'escape_identifier',
     'generate_python',
-    'generate_python_let_sequence',
+    'generate_python_lines',
     'generate_python_function_body',
     'PYTHON_KEYWORDS',
 ]

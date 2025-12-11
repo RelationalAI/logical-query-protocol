@@ -16,13 +16,11 @@ if __name__ == "__main__" and __package__ is None:
     from meta.proto_parser import ProtoParser
     from meta.grammar_gen import GrammarGenerator, generate_semantic_actions
     from meta.parser_gen_python import generate_parser_python
-    from meta.printer_python import generate_pretty_printer_python
 else:
     # Running as module - use relative imports
     from .proto_parser import ProtoParser
     from .grammar_gen import GrammarGenerator, generate_semantic_actions
     from .parser_gen_python import generate_parser_python
-    from .printer_python import generate_pretty_printer_python
 
 
 def main():
@@ -54,15 +52,10 @@ def main():
         choices=["python", "ir"],
         help="Generate parser in specified language (or 'ir' to dump IR)"
     )
-    parser.add_argument(
-        "--pretty-printer",
-        choices=["python"],
-        help="Generate pretty printer in specified language"
-    )
     args = parser.parse_args()
 
-    if not any([args.grammar, args.parser, args.pretty_printer]):
-        print("Error: At least one of --grammar, --parser, or --pretty-printer must be specified")
+    if not any([args.grammar, args.parser]):
+        print("Error: At least one of --grammar or --parser must be specified")
         return 1
 
     proto_parser = ProtoParser()
@@ -102,13 +95,6 @@ def main():
             defns = generate_parse_functions(grammar)
             ir_text = "\n\n".join(str(defn) for defn in defns)
             outputs.append(("parser-ir", ir_text))
-
-    if args.pretty_printer:
-        if args.pretty_printer == "python":
-            # TODO PR
-            # printer_text = generate_pretty_printer_python(grammar)
-            # outputs.append((f"pretty-printer-{args.pretty_printer}", printer_text))
-            pass
 
     if args.output:
         if len(outputs) == 1:
