@@ -13,6 +13,8 @@ from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal
 from .target import Lambda, Call, ParseNonterminalDef, Var, Lit, Symbol, Builtin, Let, IfElse, FunDef, BaseType, ListType, TargetExpr, Seq, While, Assign, Type, ParseNonterminal, ParseNonterminalDef, Return, Constructor, gensym
 _any_type = BaseType('Any')
 
+MAX_LOOKAHEAD = 3
+
 def generate_parse_functions(grammar: Grammar) -> List[ParseNonterminalDef]:
     parser_methods = []
     rule_order = grammar.traverse_rules_preorder(reachable_only=True)
@@ -31,7 +33,8 @@ def _generate_parse_method(lhs: Nonterminal, rules: List[Rule], grammar: Grammar
     rhs = None
     if len(rules) == 1:
         rule = rules[0]
-        rhs = _generate_parse_rhs_ir(rule.rhs, rule, grammar)
+        follow = grammar.follow_k(MAX_LOOKAHEAD, lhs)
+        rhs = _generate_parse_rhs_ir(rule.rhs, lhs, follow, grammar, True, rule.action)
         return_type = rule.action.return_type
     else:
         predictor = _build_predictor(grammar, lhs, rules)
@@ -41,18 +44,17 @@ def _generate_parse_method(lhs: Nonterminal, rules: List[Rule], grammar: Grammar
             tail = Lit(None)
         else:
             tail = Call(Builtin('error'), [Lit(f'Unexpected token in {lhs}'), Call(Builtin('current_token'), [])])
+        follow = grammar.follow_k(MAX_LOOKAHEAD, lhs)
         for i, rule in enumerate(rules):
-            if return_type is None:
-                return_type = rule.action.return_type
-            else:
-                assert return_type == rule.action.return_type, f'Return type mismatch at rule {i}: {return_type} != {rule.action.return_type}'
+            # Ensure the return type is the same for all actions for this nonterminal.
+            assert return_type is None or return_type == rule.action.return_type, f'Return type mismatch at rule {i}: {return_type} != {rule.action.return_type}'
+            return_type = rule.action.return_type
             if is_epsilon(rule.rhs):
                 continue
-            tail = IfElse(Call(Builtin('equal'), [Var(prediction, _any_type), Lit(i)]), _generate_parse_rhs_ir(rule.rhs, rule, grammar), tail)
+            tail = IfElse(Call(Builtin('equal'), [Var(prediction, BaseType('Int64')), Lit(i)]), _generate_parse_rhs_ir(rule.rhs, lhs, follow, grammar, True, rule.action), tail)
         rhs = Let(Var(prediction, BaseType('Int64')), predictor, tail)
     assert return_type is not None
     return ParseNonterminalDef(lhs, [], return_type, rhs)
-MAX_LOOKAHEAD = 3
 
 def _build_predictor(grammar: Grammar, lhs: Nonterminal, rules: List[Rule]) -> TargetExpr:
     """Build a predictor expression that returns the index of the matching rule.
@@ -172,81 +174,62 @@ def _build_lookahead_check(token_sequences: Set[Tuple[Terminal, ...]], depth: in
         result = IfElse(result, Lit(True), cond)
     return result
 
-def _build_option_predictor(grammar: Grammar, element: Rhs, following: Optional[Rhs], lhs: Nonterminal) -> TargetExpr:
+def _build_option_predictor(grammar: Grammar, element: Rhs, follow: Set[Tuple[Terminal, ...]], lhs: Nonterminal) -> TargetExpr:
     """Build a predicate that checks if we should enter an Option or continue a Star.
 
     Returns a boolean expression that's true if the lookahead matches the element,
     false if it matches what follows.
     """
     element_first = grammar.first_k(MAX_LOOKAHEAD, element)
-    follow_first = grammar.first_k_with_follow(MAX_LOOKAHEAD, following, lhs)
 
-    if element_first & follow_first:
-        conflict_msg = f'Ambiguous Option/Star: FIRST_{MAX_LOOKAHEAD}({element}) and FIRST_{MAX_LOOKAHEAD}(following) ∪ FOLLOW_{MAX_LOOKAHEAD}({lhs.name}) overlap'
+    if element_first & follow:
+        conflict_msg = f'Ambiguous Option/Star: FIRST_{MAX_LOOKAHEAD}({element}) and follow set overlap'
         assert False, conflict_msg
 
     return _build_lookahead_check(element_first, depth=0)
 
-def _generate_parse_rhs_ir(rhs: Rhs, rule: Optional[Rule]=None, grammar: Optional[Grammar]=None, following: Optional[Rhs]=None) -> TargetExpr:
+def _generate_parse_rhs_ir(rhs: Rhs, lhs: Nonterminal, follow: Set[Tuple[Terminal, ...]], grammar: Grammar, apply_action: bool=False, action: Optional[Lambda]=None) -> TargetExpr:
     """Generate IR for parsing an RHS.
 
     Args:
         rhs: The RHS to parse
-        rule: The rule containing this RHS (for action)
+        lhs: The LHS nonterminal (for computing FOLLOW_k)
+        follow: What follows this RHS in the sequence (for lookahead disambiguation)
         grammar: The grammar
-        following: What follows this RHS in the sequence (for lookahead disambiguation)
+        apply_action: Whether to apply the semantic action
+        action: The semantic action to apply (required if apply_action is True)
 
     Returns IR expression for leaf nodes (Literal, Terminal, Nonterminal).
     Returns None for complex cases that still use string generation.
     """
     if isinstance(rhs, Sequence):
-        return _generate_parse_rhs_ir_sequence(rhs, rule, grammar)
+        return _generate_parse_rhs_ir_sequence(rhs, lhs, follow, grammar, apply_action, action)
     elif isinstance(rhs, LitTerminal):
         parse_expr = Call(Builtin('consume_literal'), [Lit(rhs.name)])
-        if rule and rule.action:
-            return Seq([parse_expr, _apply(rule.action, [])])
+        if apply_action and action:
+            return Seq([parse_expr, _apply(action, [])])
         return parse_expr
     elif isinstance(rhs, NamedTerminal):
-        parse_expr = Call(Builtin('consume_terminal'), [Lit(rhs.name)])
-        if rule and rule.action:
-            param_name = rule.action.params[0].name if rule.action.params else 'arg'
-            var_name = gensym(param_name)
-            return Seq([Assign(Var(var_name, _any_type), parse_expr), _apply(rule.action, [Var(var_name, _any_type)])])
-        return parse_expr
+        return Call(Builtin('consume_terminal'), [Lit(rhs.name)])
     elif isinstance(rhs, Nonterminal):
-        parse_expr = Call(ParseNonterminal(rhs), [])
-        if rule and rule.action:
-            param_name = rule.action.params[0].name if rule.action.params else 'arg'
-            var_name = gensym(param_name)
-            return Seq([Assign(Var(var_name, _any_type), parse_expr), _apply(rule.action, [Var(var_name, _any_type)])])
-        return parse_expr
+        return Call(ParseNonterminal(rhs), [])
     elif isinstance(rhs, Option):
         assert grammar is not None
-        assert rule is not None
-        predictor = _build_option_predictor(grammar, rhs.rhs, following, rule.lhs)
-        parse_expr = IfElse(predictor, _generate_parse_rhs_ir(rhs.rhs, None, grammar, following), Lit(None))
-        if rule and rule.action:
-            param_name = rule.action.params[0].name if rule.action.params else 'arg'
-            var_name = gensym(param_name)
-            return Seq([Assign(Var(var_name, _any_type), parse_expr), _apply(rule.action, [Var(var_name, _any_type)])])
-        return parse_expr
+        assert lhs is not None
+        predictor = _build_option_predictor(grammar, rhs.rhs, follow, lhs)
+        return IfElse(predictor, _generate_parse_rhs_ir(rhs.rhs, lhs, follow, grammar, False, None), Lit(None))
     elif isinstance(rhs, Star):
         assert grammar is not None
-        assert rule is not None
+        assert lhs is not None
         xs = gensym('xs')
         cond = gensym('cond')
         cond_var = Var(cond, BaseType('Boolean'))
-        predictor = _build_option_predictor(grammar, rhs.rhs, following, rule.lhs)
-        parse_expr = Let(Var(xs, _any_type), Call(Builtin('make_list'), []), Let(cond_var, predictor, Seq([While(cond_var, Seq([Call(Builtin('list_push!'), [Var(xs, _any_type), _generate_parse_rhs_ir(rhs.rhs, None, grammar, following)]), Assign(cond_var, predictor)])), Var(xs, _any_type)])))
-        if rule and rule.action:
-            param_name = rule.action.params[0].name if rule.action.params else 'arg'
-            var_name = gensym(param_name)
-            return Seq([Assign(Var(var_name, _any_type), parse_expr), _apply(rule.action, [Var(var_name, _any_type)])])
-        return parse_expr
+        predictor = _build_option_predictor(grammar, rhs.rhs, follow, lhs)
+        return Let(Var(xs, _any_type), Call(Builtin('make_list'), []), Let(cond_var, predictor, Seq([While(cond_var, Seq([Call(Builtin('list_push!'), [Var(xs, _any_type), _generate_parse_rhs_ir(rhs.rhs, lhs, follow, grammar, False, None)]), Assign(cond_var, predictor)])), Var(xs, _any_type)])))
     else:
         assert False, f'Unsupported Rhs type: {type(rhs)}'
 
-def _generate_parse_rhs_ir_sequence(rhs: Sequence, rule: Optional[Rule]=None, grammar: Optional[Grammar]=None) -> TargetExpr:
+def _generate_parse_rhs_ir_sequence(rhs: Sequence, lhs: Nonterminal, follow: Set[Tuple[Terminal, ...]], grammar: Grammar, apply_action: bool=False, action: Optional[Lambda]=None) -> TargetExpr:
     if is_epsilon(rhs):
         return Lit(None)
     exprs = []
@@ -255,27 +238,35 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, rule: Optional[Rule]=None, gr
     elems = list(rhs_elements(rhs))
     non_literal_count = 0
     for i, elem in enumerate(elems):
-        following = Sequence(elems[i + 1:]) if i + 1 < len(elems) else None
-        elem_ir = _generate_parse_rhs_ir(elem, rule, grammar, following)
+        following = Sequence(elems[i+1:]) if i+1 < len(elems) else None
+        if following:
+            from .analysis import _concat_first_k_sets
+            follow_i = _concat_first_k_sets(grammar.first_k(MAX_LOOKAHEAD, following), follow, MAX_LOOKAHEAD)
+        else:
+            follow_i = follow
+        elem_ir = _generate_parse_rhs_ir(elem, lhs, follow_i, grammar, False, None)
         if isinstance(elem, LitTerminal):
             exprs.append(elem_ir)
         else:
-            if rule and non_literal_count < len(rule.action.params):
-                var_name = gensym(rule.action.params[non_literal_count].name)
+            if action and non_literal_count < len(action.params):
+                var_name = gensym(action.params[non_literal_count].name)
             else:
                 var_name = gensym('arg')
             param_names.append(var_name)
             exprs.append(Assign(Var(var_name, _any_type), elem_ir))
             arg_vars.append(Var(var_name, _any_type))
             non_literal_count += 1
-    if rule and rule.action:
-        action_lambda = rule.action
-    else:
-        param_vars = [Var(name, _any_type) for name in param_names]
-        list_expr = Call(Builtin('Tuple'), arg_vars)
-        action_lambda = Lambda(params=param_vars, return_type=_any_type, body=list_expr)
-    lambda_call = _apply(action_lambda, arg_vars)
-    exprs.append(lambda_call)
+    if apply_action and action:
+        lambda_call = _apply(action, arg_vars)
+        exprs.append(lambda_call)
+    elif len(arg_vars) > 1:
+        # Multiple values - wrap in tuple
+        exprs.append(Call(Builtin('Tuple'), arg_vars))
+    elif len(arg_vars) == 1:
+        # Single value - just use it
+        pass  # Value already assigned
+    # else: no non-literal elements, return None
+
     if len(exprs) == 1:
         return exprs[0]
     else:

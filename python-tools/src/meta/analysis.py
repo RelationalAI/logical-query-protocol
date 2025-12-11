@@ -126,13 +126,15 @@ def _compute_rhs_elem_first_k(rhs: 'Rhs', first_k: Dict[Nonterminal, Set[Tuple[T
                 elem_first = _compute_rhs_elem_first_k(elem, first_k, nullable, k)
                 new_sequences = set()
                 for prefix in current_sequences:
-                    for suffix in elem_first:
-                        combined = prefix + suffix
-                        new_sequences.add(combined[:k])
+                    if len(prefix) >= k:
+                        new_sequences.add(prefix)
+                    else:
+                        for suffix in elem_first:
+                            combined = prefix + suffix
+                            new_sequences.add(combined[:k])
                 current_sequences = new_sequences
-                # Only stop if all current sequences have reached length k
+                # Only stop if element is not nullable and all sequences have reached length k
                 if not _is_rhs_elem_nullable(elem, nullable):
-                    # Check if all sequences are at length k
                     if all(len(seq) >= k for seq in current_sequences):
                         break
             result.update(current_sequences)

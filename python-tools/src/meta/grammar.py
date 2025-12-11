@@ -423,7 +423,7 @@ class Grammar:
         else:
             assert False, f"Unexpected rhs {rhs}: follow_k unimplemented"
 
-    def first_k_with_follow(self, k: int, following: Optional[Rhs], lhs: Nonterminal) -> Set[Tuple[Terminal, ...]]:
+    def first_k_with_follow(self, k: int, following: Rhs, lhs: Nonterminal) -> Set[Tuple[Terminal, ...]]:
         """
         Compute FIRST_k(following) concatenated with FOLLOW_k(lhs).
 
@@ -432,9 +432,6 @@ class Grammar:
         or FOLLOW_k(lhs) if at the end of the rule, or both if following is nullable.
         """
         from .analysis import _concat_first_k_sets
-
-        if following is None or (isinstance(following, Sequence) and len(following.elements) == 0):
-            return self.follow_k(k, lhs)
 
         first_of_following = self.first_k(k, following)
         if self.nullable(following):
