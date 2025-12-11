@@ -33,7 +33,7 @@ class GrammarGenerator:
         self.parser = parser
         self.final_rules: Set[str] = set()
         self.generated_rules: Set[str] = set()
-        self.expected_unreachable: Set[Nonterminal] = set()
+        self.expected_unreachable: Set[str] = set()
         self.grammar = Grammar(start=Nonterminal('transaction', MessageType('Transaction')))
         self.verbose = verbose
         self.inline_fields: Set[Tuple[str, str]] = {
@@ -495,21 +495,23 @@ class GrammarGenerator:
     def _post_process_grammar(self) -> None:
         """Apply grammar post-processing."""
         self._combine_identical_rules()
-        self.expected_unreachable.add(Nonterminal('debug_info', MessageType('DebugInfo')))
-        self.expected_unreachable.add(Nonterminal('debug_info_ids', ListType(BaseType('Int64'))))
-        self.expected_unreachable.add(Nonterminal('ivmconfig', MessageType('IvmConfig')))
-        self.expected_unreachable.add(Nonterminal('min_monoid', MessageType('MinMonoid')))
-        self.expected_unreachable.add(Nonterminal('sum_monoid', MessageType('SumMonoid')))
-        self.expected_unreachable.add(Nonterminal('max_monoid', MessageType('MaxMonoid')))
-        self.expected_unreachable.add(Nonterminal('or_monoid', MessageType('OrMonoid')))
-        self.expected_unreachable.add(Nonterminal('date_value', MessageType('DateValue')))
-        self.expected_unreachable.add(Nonterminal('datetime_value', MessageType('DateTimeValue')))
-        self.expected_unreachable.add(Nonterminal('decimal_value', MessageType('DecimalValue')))
-        self.expected_unreachable.add(Nonterminal('int128_value', MessageType('Int128Value')))
-        self.expected_unreachable.add(Nonterminal('missing_value', MessageType('MissingValue')))
-        self.expected_unreachable.add(Nonterminal('uint128_value', MessageType('UInt128Value')))
-        self.expected_unreachable.add(Nonterminal('uint128_type', MessageType('UInt128Type')))
-        self.expected_unreachable.add(Nonterminal('datetime_type', MessageType('DateTimeType')))
+        self.expected_unreachable.update([
+            'debug_info',
+            'debug_info_ids',
+            'ivmconfig',
+            'min_monoid',
+            'sum_monoid',
+            'max_monoid',
+            'or_monoid',
+            'date_value',
+            'datetime_value',
+            'decimal_value',
+            'int128_value',
+            'missing_value',
+            'uint128_value',
+            'uint128_type',
+            'datetime_type',
+        ])
 
     def _combine_identical_rules(self) -> None:
         """Combine rules with identical RHS patterns into a single rule with multiple alternatives."""

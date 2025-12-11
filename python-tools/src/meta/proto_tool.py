@@ -70,11 +70,11 @@ def main():
 
     reachable = grammar.check_reachability()
     unreachable = grammar.get_unreachable_rules()
-    unexpected_unreachable = [r for r in unreachable if r not in generator.expected_unreachable]
+    unexpected_unreachable = [r for r in unreachable if r.name not in generator.expected_unreachable]
     if unexpected_unreachable:
         print("Warning: Unreachable rules detected:")
-        for rule_name in unexpected_unreachable:
-            print(f"  {rule_name}")
+        for rule in unexpected_unreachable:
+            print(f"  {rule.name}")
         print()
 
     outputs = []
