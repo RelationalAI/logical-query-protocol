@@ -275,37 +275,3 @@ def _compute_rhs_elem_follow(rhs: 'Rhs', lhs: Nonterminal,
             add_follow(nt, terminals)
 
     return result
-
-
-def check_ll_k(grammar: 'Grammar', k: int = 2) -> Tuple[bool, List[str]]:
-    """
-    Check if grammar is LL(k).
-
-    Returns (is_ll_k, conflicts) where conflicts is a list of problematic nonterminals.
-    """
-    nullable = grammar.compute_nullable()
-    first_k = grammar.compute_first_k(k)
-
-    conflicts = []
-
-    for nt, rules_list in grammar.rules.items():
-        if len(rules_list) <= 1:
-            continue
-
-        # Check if FIRST_k sets are disjoint
-        seen_sequences: Dict[Tuple[Terminal, ...], Tuple[int, 'Rule']] = {}
-        for rule_idx, rule in enumerate(rules_list):
-            rule_first_k = _compute_rhs_elem_first_k(rule.rhs, first_k, nullable, k)
-
-            for seq in rule_first_k:
-                if seq in seen_sequences:
-                    prev_idx, prev_rule = seen_sequences[seq]
-                    conflicts.append(
-                        f"{nt}: FIRST_{k} conflict on {seq}\n" +
-                        f"  Rule {prev_idx}: {nt} -> {prev_rule.rhs}\n" +
-                        f"  Rule {rule_idx}: {nt} -> {rule.rhs}"
-                    )
-                else:
-                    seen_sequences[seq] = (rule_idx, rule)
-
-    return (len(conflicts) == 0, conflicts)

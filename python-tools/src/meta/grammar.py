@@ -310,15 +310,6 @@ class Grammar:
             self._follow_cache = compute_follow(self, self.compute_nullable(), self.compute_first())
         return self._follow_cache
 
-    def check_ll_k(self, k: int = 2) -> Tuple[bool, List[str]]:
-        """
-        Check if grammar is LL(k).
-
-        Returns (is_ll_k, conflicts) where conflicts is a list of problematic nonterminals.
-        """
-        from .analysis import check_ll_k
-        return check_ll_k(self, k)
-
     def nullable(self, rhs: Rhs) -> bool:
         """
         Check if an RHS is nullable.

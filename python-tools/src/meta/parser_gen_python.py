@@ -17,10 +17,8 @@ from .parser_gen import  _generate_parse_rhs_ir, generate_parse_functions
 
 def generate_parser_python(grammar: Grammar, reachable: Set[Nonterminal], command_line: Optional[str] = None) -> str:
     """Generate LL(k) recursive-descent parser in Python."""
-    is_ll2, conflicts = grammar.check_ll_k(2)
-
     # Generate prologue (lexer, token, error, helper classes)
-    prologue = _generate_prologue(grammar, is_ll2, conflicts, command_line)
+    prologue = _generate_prologue(grammar, command_line)
 
     defns = generate_parse_functions(grammar)    # Generate parser methods as strings
     lines = []
@@ -35,7 +33,7 @@ def generate_parser_python(grammar: Grammar, reachable: Set[Nonterminal], comman
     return prologue + "\n".join(lines) + epilogue
 
 
-def _generate_prologue(grammar: Grammar, is_ll2: bool, conflicts: List[str], command_line: Optional[str] = None) -> str:
+def _generate_prologue(grammar: Grammar, command_line: Optional[str] = None) -> str:
     """Generate parser prologue with imports, token class, lexer, and parser class start."""
     lines = []
     lines.append('"""')
@@ -55,14 +53,6 @@ def _generate_prologue(grammar: Grammar, is_ll2: bool, conflicts: List[str], com
     lines.append("from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2")
     lines.append("")
     lines.append("")
-
-    if not is_ll2:
-        lines.append("# WARNING: Grammar is not LL(2). Conflicts detected:")
-        for conflict in conflicts:
-            for line in conflict.split("\n"):
-                lines.append(f"# {line}")
-        lines.append("")
-
     lines.append("class ParseError(Exception):")
     lines.append('    """Parse error exception."""')
     lines.append("    pass")
