@@ -186,7 +186,12 @@ class IfElse(TargetExpr):
     else_branch: TargetExpr
 
     def __str__(self) -> str:
-        return f"if {self.condition} then {self.then_branch} else {self.else_branch}"
+        if self.then_branch == Lit(True):
+            return f"{self.condition} or {self.else_branch}"
+        elif self.else_branch == Lit(False):
+            return f"{self.condition} and {self.then_branch}"
+        else:
+            return f"if ({self.condition}) then {self.then_branch} else {self.else_branch}"
 
     def __post_init__(self):
         assert isinstance(self.condition, TargetExpr), f"Invalid if condition expression in {self}: {self.condition}"
@@ -218,7 +223,7 @@ class While(TargetExpr):
     body: TargetExpr
 
     def __str__(self) -> str:
-        return f"while {self.condition} do {self.body}"
+        return f"while ({self.condition}) {self.body}"
 
     def __post_init__(self):
         assert isinstance(self.condition, TargetExpr), f"Invalid while condition expression in {self}: {self.condition}"
