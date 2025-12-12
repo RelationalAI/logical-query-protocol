@@ -6,6 +6,8 @@ with proper keyword escaping and idiomatic Julia style.
 
 from typing import List, Optional, Set, Tuple, Union
 
+from lqp.proto.v1.logic_pb2 import Value
+
 from .codegen_base import CodeGenerator, BuiltinResult
 from .target import (
     TargetExpr, Var, Lit, Symbol, Builtin, Message, OneOf, Call, Lambda, Let, IfElse,
@@ -112,7 +114,8 @@ class JuliaCodeGenerator(CodeGenerator):
                 return BuiltinResult("nothing", [f'throw(ParseError({args[0]} * ": " * string({args[1]})))'])
             elif len(args) == 1:
                 return BuiltinResult("nothing", [f"throw(ParseError({args[0]}))"])
-            return None
+            else:
+                raise ValueError("Invalid number of arguments for `error`")
         self.register_builtin("error", -1, gen_error)
 
         self.register_builtin("construct_configure", 1,

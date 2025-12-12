@@ -9,9 +9,12 @@ translatable to each of these target languages.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence, TYPE_CHECKING
 from itertools import count
 from more_itertools import peekable
+
+if TYPE_CHECKING:
+    from .grammar import Nonterminal
 
 _global_id = peekable(count(0))
 def next_id():

@@ -312,7 +312,7 @@ class GrammarGenerator:
                     field_types.append(field.type)
             rhs_symbols.append(LitTerminal(')'))
             action = self._generate_action(message_name, rhs_symbols, field_names, field_types)
-            rule = Rule(lhs=Nonterminal(rule_name, message_type), rhs=Sequence(rhs_symbols), action=action, source_type=message_name)
+            rule = Rule(lhs=Nonterminal(rule_name, message_type), rhs=Sequence(tuple(rhs_symbols)), action=action, source_type=message_name)
             self._add_rule(rule)
             for field in message.fields:
                 if self._is_message_type(field.type):

@@ -6,6 +6,8 @@ with proper keyword escaping and idiomatic Python style.
 
 from typing import List, Optional, Set, Tuple, Union
 
+from lqp.proto.v1.logic_pb2 import Value
+
 from .codegen_base import CodeGenerator, BuiltinResult
 from .target import (
     TargetExpr, Var, Lit, Symbol, Builtin, Message, OneOf, Call, Lambda, Let,
@@ -87,10 +89,14 @@ class PythonCodeGenerator(CodeGenerator):
             lambda args, lines, indent: BuiltinResult(f"fragments_pb2.FragmentId(id={args[0]}.encode())", []))
 
         def gen_relation_id_from_string(args, lines, indent):
-            val = int(hashlib.sha256(args[0].encode()).hexdigest()[:16], 16)
-            id_low = val & 0xFFFFFFFFFFFFFFFF
-            id_high = (val >> 64) & 0xFFFFFFFFFFFFFFFF
-            return BuiltinResult(f"logic_pb2.RelationId(id_low={id_low}, id_high={id_high})", [])
+            val = gensym('val')
+            id_low = gensym('id_low')
+            id_high = gensym('id_high')
+            return BuiltinResult(f"logic_pb2.RelationId(id_low={id_low}, id_high={id_high})", [
+                f"{indent}{val} = int(hashlib.sha256({args[0]}.encode()).hexdigest()[:16], 16)",
+                f"{indent}{id_low} = {val} & 0xFFFFFFFFFFFFFFFF",
+                f"{indent}{id_high} = ({val} >> 64) & 0xFFFFFFFFFFFFFFFF",
+            ])
 
         self.register_builtin("relation_id_from_string", 1,
             lambda args, lines, indent: BuiltinResult(f"self.relation_id_from_string({args[0]})", []))
@@ -149,7 +155,8 @@ class PythonCodeGenerator(CodeGenerator):
                 return BuiltinResult("None", [f"raise ParseError({args[0]} + \": {{{args[1]}}}\")"])
             elif len(args) == 1:
                 return BuiltinResult("None", [f"raise ParseError({args[0]})"])
-            return None
+            else:
+                raise ValueError("Invalid number of arguments for builtin `error`.")
         self.register_builtin("error", -1, gen_error)
 
         self.register_builtin("construct_configure", 1,

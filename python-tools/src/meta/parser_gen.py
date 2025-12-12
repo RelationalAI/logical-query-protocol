@@ -308,7 +308,7 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, grammar: Grammar, follow_set:
     non_literal_count = 0
     for i, elem in enumerate(elems):
         if i + 1 < len(elems):
-            following = Sequence(elems[i+1:])
+            following = Sequence(tuple(elems[i+1:]))
             first_following = FirstSet(grammar, following)
             follow_set_i = ConcatSet(first_following, follow_set)
         else:

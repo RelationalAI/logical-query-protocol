@@ -18,7 +18,7 @@ def make_symbol_replacer(replacements: Dict[Rhs, Rhs]) -> Callable[[Rule], Rule]
     def rewrite(rule: Rule) -> Rule:
         if isinstance(rule.rhs, Sequence):
             new_elements = [replacements.get(elem, elem) for elem in rule.rhs.elements]
-            return Rule(lhs=rule.lhs, rhs=Sequence(new_elements), action=rule.action, source_type=rule.source_type)
+            return Rule(lhs=rule.lhs, rhs=Sequence(tuple(new_elements)), action=rule.action, source_type=rule.source_type)
         return rule
     return rewrite
 
@@ -55,27 +55,26 @@ def get_rule_rewrites() -> Dict[str, Callable[[Rule], Rule]]:
     terms_type = ListType(MessageType('logic', 'Term'))
 
     # Common replacement patterns
-    string_to_name = {
+    string_to_name: Dict[Rhs, Rhs] = {
         NamedTerminal('STRING', string_type): Nonterminal('name', string_type),
     }
-    string_to_name_optional = {
+    string_to_name_optional: Dict[Rhs, Rhs] = {
         NamedTerminal('STRING', string_type): Option(Nonterminal('name', string_type)),
     }
-    terms_optional_to_star_term = {
+    terms_optional_to_star_term: Dict[Rhs, Rhs] = {
         Option(Nonterminal('terms', terms_type)): Star(Nonterminal('term', terms_type)),
     }
-    terms_optional_to_star_relterm = {
+    terms_optional_to_star_relterm: Dict[Rhs, Rhs] = {
         Option(Nonterminal('terms', terms_type)): Star(Nonterminal('relterm', terms_type)),
     }
-    args_optional_to_star_value = {
+    args_optional_to_star_value: Dict[Rhs, Rhs] = {
         Option(Nonterminal('args', terms_type)): Star(Nonterminal('value', terms_type)),
     }
-    term_star_to_relterm_star = {
+    term_star_to_relterm_star: Dict[Rhs, Rhs] = {
         Star(Nonterminal('term', terms_type)): Star(Nonterminal('relterm', terms_type)),
     }
 
     rewrite_string_to_name_optional = make_symbol_replacer(string_to_name_optional)
-    rewrite_string_to_name = make_symbol_replacer(string_to_name)
     rewrite_terms_optional_to_star_term = make_symbol_replacer(terms_optional_to_star_term)
 
     rewrite_terms_optional_to_star_relterm = make_symbol_replacer(
@@ -154,7 +153,7 @@ def _rewrite_exists(rule: Rule) -> Rule:
                 return_type=rule.action.return_type,
                 body=Call(Message('logic', 'Exists'), [abstraction_construction])
             )
-            return Rule(lhs=rule.lhs, rhs=Sequence(new_elements), action=new_action, source_type=rule.source_type)
+            return Rule(lhs=rule.lhs, rhs=Sequence(tuple(new_elements)), action=new_action, source_type=rule.source_type)
     return rule
 
 
@@ -186,7 +185,7 @@ def _rewrite_compute_value_arity(rule: Rule) -> Rule:
         return rule
 
     elem = new_elements[abstraction_idx]
-    tuple_type = TupleType([elem.type, BaseType('Int64')])
+    tuple_type = TupleType([elem.target_type(), BaseType('Int64')])
     new_elements[abstraction_idx] = Nonterminal('abstraction_with_arity', tuple_type)
     new_elements.pop(int_idx)
 
@@ -194,11 +193,14 @@ def _rewrite_compute_value_arity(rule: Rule) -> Rule:
     abstraction_param_idx = None
     param_idx = 0
     for i, elem in enumerate(rule.rhs.elements):
-        if not isinstance(elem, LitTerminal):
-            if i == abstraction_idx:
-                abstraction_param_idx = param_idx
-                break
-            param_idx += 1
+        if isinstance(elem, LitTerminal):
+            continue
+        if i == abstraction_idx:
+            abstraction_param_idx = param_idx
+            break
+        param_idx += 1
+
+    assert abstraction_param_idx is not None, "Abstraction parameter not found"
 
     old_abstraction_param = rule.action.params[abstraction_param_idx]
     new_abstraction_param = Var(old_abstraction_param.name, tuple_type)
@@ -228,4 +230,4 @@ def _rewrite_compute_value_arity(rule: Rule) -> Rule:
 
     new_body = replace_vars(rule.action.body)
     new_action = Lambda(params=new_params, return_type=rule.action.return_type, body=new_body)
-    return Rule(lhs=rule.lhs, rhs=Sequence(new_elements), action=new_action, source_type=rule.source_type)
+    return Rule(lhs=rule.lhs, rhs=Sequence(tuple(new_elements)), action=new_action, source_type=rule.source_type)

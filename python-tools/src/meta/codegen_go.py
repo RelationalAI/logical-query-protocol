@@ -133,7 +133,8 @@ class GoCodeGenerator(CodeGenerator):
                 return BuiltinResult("nil", [f'panic(fmt.Sprintf("%s: %v", {args[0]}, {args[1]}))'])
             elif len(args) == 1:
                 return BuiltinResult("nil", [f"panic({args[0]})"])
-            return None
+            else:
+                raise ValueError("Invalid number of arguments for `error`")
         self.register_builtin("error", -1, gen_error)
 
     def escape_keyword(self, name: str) -> str:
@@ -155,7 +156,7 @@ class GoCodeGenerator(CodeGenerator):
     def gen_symbol(self, name: str) -> str:
         return f'"{name}"'
 
-    def gen_constructor(self, name: str) -> str:
+    def gen_constructor(self, module: str, name: str) -> str:
         return f"proto.{name}"
 
     def gen_builtin_ref(self, name: str) -> str:
@@ -166,7 +167,7 @@ class GoCodeGenerator(CodeGenerator):
 
     # --- Type generation ---
 
-    def gen_message_type(self, name: str) -> str:
+    def gen_message_type(self, module: str, name: str) -> str:
         return f"*proto.{name}"
 
     def gen_tuple_type(self, element_types: List[str]) -> str:
