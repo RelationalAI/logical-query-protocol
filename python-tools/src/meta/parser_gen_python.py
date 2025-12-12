@@ -171,6 +171,7 @@ class Parser:
         self.pos = 0
         self.id_to_debuginfo = {{}}
         self._current_fragment_id = None
+        self._relation_id_to_name = {{}}
 
     def lookahead(self, k: int = 0) -> Token:
         """Get lookahead token at offset k."""
@@ -202,6 +203,23 @@ class Parser:
         """Check if lookahead token at position k matches terminal."""
         token = self.lookahead(k)
         return token.type == terminal
+
+    def start_fragment(self, fragment_id: fragments_pb2.FragmentId) -> fragments_pb2.FragmentId:
+        """Set current fragment ID for debug info tracking."""
+        self._current_fragment_id = fragment_id.id
+        return fragment_id
+
+    def relation_id_from_string(self, name: str) -> Any:
+        """Create RelationId from string and track mapping for debug info."""
+        val = int(hashlib.sha256(name.encode()).hexdigest()[:16], 16)
+        id_low = val & 0xFFFFFFFFFFFFFFFF
+        id_high = (val >> 64) & 0xFFFFFFFFFFFFFFFF
+        relation_id = logic_pb2.RelationId(id_low=id_low, id_high=id_high)
+
+        # Store the mapping globally (using id_low as key since RelationId isn't hashable)
+        self._relation_id_to_name[id_low] = name
+
+        return relation_id
 
     def construct_configure(self, config_dict: List[Tuple[str, logic_pb2.Value]]) -> Any:
         """Construct Configure from config dictionary."""
@@ -282,15 +300,18 @@ class Parser:
 
     def construct_fragment(self, fragment_id: fragments_pb2.FragmentId, declarations: List[logic_pb2.Declaration]) -> fragments_pb2.Fragment:
         """Construct Fragment from fragment_id, declarations, and debug info from parser state."""
-        # Get the debug info dict for this fragment_id (use id bytes as key)
-        debug_info_dict = self.id_to_debuginfo.get(fragment_id.id, {{}})
-
-        # Convert dict to parallel arrays
+        # Extract relation IDs and names from declarations
         ids = []
         orig_names = []
-        for relation_id, orig_name in debug_info_dict.items():
-            ids.append(relation_id)
-            orig_names.append(orig_name)
+
+        for decl in declarations:
+            if decl.HasField('def'):
+                relation_id = getattr(decl, 'def').name
+                # Look up the original name from global mapping
+                orig_name = self._relation_id_to_name.get(relation_id.id_low)
+                if orig_name:
+                    ids.append(relation_id)
+                    orig_names.append(orig_name)
 
         # Create DebugInfo
         debug_info = fragments_pb2.DebugInfo(ids=ids, orig_names=orig_names)

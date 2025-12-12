@@ -93,8 +93,7 @@ class PythonCodeGenerator(CodeGenerator):
             return BuiltinResult(f"logic_pb2.RelationId(id_low={id_low}, id_high={id_high})", [])
 
         self.register_builtin("relation_id_from_string", 1,
-            lambda args, lines, indent: BuiltinResult(
-                f"logic_pb2.RelationId(id_low=int(hashlib.sha256({args[0]}.encode()).hexdigest()[:16], 16) & 0xFFFFFFFFFFFFFFFF, id_high=(int(hashlib.sha256({args[0]}.encode()).hexdigest()[:16], 16) >> 64) & 0xFFFFFFFFFFFFFFFF)", []))
+            lambda args, lines, indent: BuiltinResult(f"self.relation_id_from_string({args[0]})", []))
 
         self.register_builtin("relation_id_from_int", 1,
             lambda args, lines, indent: BuiltinResult(f"logic_pb2.RelationId(id_low={args[0]} & 0xFFFFFFFFFFFFFFFF, id_high=({args[0]} >> 64) & 0xFFFFFFFFFFFFFFFF)", []))
@@ -158,6 +157,9 @@ class PythonCodeGenerator(CodeGenerator):
 
         self.register_builtin("export_csv_config", 3,
             lambda args, lines, indent: BuiltinResult(f"self.export_csv_config({args[0]}, {args[1]}, {args[2]})", []))
+
+        self.register_builtin("start_fragment", 1,
+            lambda args, lines, indent: BuiltinResult(f"self.start_fragment({args[0]})", []))
 
         self.register_builtin("construct_fragment", 2,
             lambda args, lines, indent: BuiltinResult(f"self.construct_fragment({args[0]}, {args[1]})", []))
