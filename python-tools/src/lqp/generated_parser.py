@@ -2,6 +2,9 @@
 Auto-generated LL(k) recursive-descent parser.
 
 Generated from protobuf specifications.
+Do not modify this file! If you need to modify the parser, edit the generator code
+in `python-tools/src/meta` or edit the protobuf specification in `proto/v1`.
+
 
 Command: python-tools/src/meta/proto_tool.py proto/relationalai/lqp/v1/fragments.proto proto/relationalai/lqp/v1/logic.proto proto/relationalai/lqp/v1/transactions.proto --parser python -o python-tools/src/lqp/generated_parser.py
 """
@@ -227,14 +230,14 @@ class Lexer:
     def scan_uint128(u: str) -> Any:
         """Parse UINT128 token."""
         uint128_val = int(u, 16)
-        return logic_pb2.UInt128Value(value=uint128_val, meta=None)
+        return logic_pb2.UInt128Value(value=uint128_val)
 
     @staticmethod
     def scan_int128(u: str) -> Any:
         """Parse INT128 token."""
         u = u[:-4]  # Remove the 'i128' suffix
         int128_val = int(u)
-        return logic_pb2.Int128Value(value=int128_val, meta=None)
+        return logic_pb2.Int128Value(value=int128_val)
 
     @staticmethod
     def scan_decimal(d: str) -> Any:
@@ -247,7 +250,7 @@ class Lexer:
         scale = len(parts[0].split('.')[1])
         precision = int(parts[1])
         value = Decimal(parts[0])
-        return logic_pb2.DecimalValue(precision=precision, scale=scale, value=value, meta=None)
+        return logic_pb2.DecimalValue(precision=precision, scale=scale, value=value)
 
 
 class Parser:
@@ -1009,34 +1012,34 @@ class Parser:
                 if self.match_lookahead_literal('relatom', 1):
                     _t432 = 11
                 else:
-                    if self.match_lookahead_literal('>=', 1):
+                    if self.match_lookahead_literal('*', 1):
                         _t433 = 10
                     else:
-                        if self.match_lookahead_literal('>', 1):
+                        if self.match_lookahead_literal('<', 1):
                             _t434 = 10
                         else:
-                            if self.match_lookahead_literal('primitive', 1):
+                            if self.match_lookahead_literal('<=', 1):
                                 _t435 = 10
                             else:
-                                if self.match_lookahead_literal('=', 1):
+                                if self.match_lookahead_literal('+', 1):
                                     _t436 = 10
                                 else:
-                                    if self.match_lookahead_literal('<', 1):
+                                    if self.match_lookahead_literal('>', 1):
                                         _t437 = 10
                                     else:
-                                        if self.match_lookahead_literal('+', 1):
+                                        if self.match_lookahead_literal('/', 1):
                                             _t438 = 10
                                         else:
-                                            if self.match_lookahead_literal('/', 1):
+                                            if self.match_lookahead_literal('=', 1):
                                                 _t439 = 10
                                             else:
-                                                if self.match_lookahead_literal('*', 1):
+                                                if self.match_lookahead_literal('>=', 1):
                                                     _t440 = 10
                                                 else:
-                                                    if self.match_lookahead_literal('<=', 1):
+                                                    if self.match_lookahead_literal('-', 1):
                                                         _t441 = 10
                                                     else:
-                                                        if self.match_lookahead_literal('-', 1):
+                                                        if self.match_lookahead_literal('primitive', 1):
                                                             _t442 = 10
                                                         else:
                                                             if self.match_lookahead_literal('pragma', 1):
@@ -1236,44 +1239,44 @@ class Parser:
         self.consume_literal('(')
         self.consume_literal('terms')
         xs102 = []
-        cond103 = ((((((((((self.match_lookahead_terminal('FLOAT', 0) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_literal('false', 0)) or self.match_lookahead_terminal('UINT128', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_literal('(', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_terminal('SYMBOL', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_literal('true', 0)) or self.match_lookahead_terminal('STRING', 0))
+        cond103 = ((((((((((self.match_lookahead_literal('true', 0) or self.match_lookahead_terminal('STRING', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_terminal('SYMBOL', 0)) or self.match_lookahead_terminal('FLOAT', 0)) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_literal('(', 0)) or self.match_lookahead_terminal('UINT128', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_literal('false', 0))
         while cond103:
             _t504 = self.parse_term()
             xs102.append(_t504)
-            cond103 = ((((((((((self.match_lookahead_terminal('FLOAT', 0) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_literal('false', 0)) or self.match_lookahead_terminal('UINT128', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_literal('(', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_terminal('SYMBOL', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_literal('true', 0)) or self.match_lookahead_terminal('STRING', 0))
+            cond103 = ((((((((((self.match_lookahead_literal('true', 0) or self.match_lookahead_terminal('STRING', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_terminal('SYMBOL', 0)) or self.match_lookahead_terminal('FLOAT', 0)) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_literal('(', 0)) or self.match_lookahead_terminal('UINT128', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_literal('false', 0))
         value104 = xs102
         self.consume_literal(')')
         return value104
 
     def parse_term(self) -> logic_pb2.Term:
-        if self.match_lookahead_terminal('DECIMAL', 0):
+        if self.match_lookahead_terminal('UINT128', 0):
             _t1528 = 1
         else:
-            if self.match_lookahead_terminal('UINT128', 0):
+            if self.match_lookahead_terminal('INT', 0):
                 _t2040 = 1
             else:
-                if self.match_lookahead_terminal('STRING', 0):
+                if self.match_lookahead_literal('true', 0):
                     _t2296 = 1
                 else:
-                    if self.match_lookahead_terminal('INT', 0):
+                    if self.match_lookahead_literal('missing', 0):
                         _t2424 = 1
                     else:
-                        if self.match_lookahead_literal('(', 0):
+                        if self.match_lookahead_terminal('INT128', 0):
                             _t2488 = 1
                         else:
-                            if self.match_lookahead_terminal('INT128', 0):
+                            if self.match_lookahead_terminal('DECIMAL', 0):
                                 _t2520 = 1
                             else:
-                                if self.match_lookahead_literal('false', 0):
+                                if self.match_lookahead_terminal('STRING', 0):
                                     _t2536 = 1
                                 else:
-                                    if self.match_lookahead_literal('true', 0):
+                                    if self.match_lookahead_literal('false', 0):
                                         _t2544 = 1
                                     else:
                                         if self.match_lookahead_terminal('FLOAT', 0):
                                             _t2548 = 1
                                         else:
-                                            if self.match_lookahead_literal('missing', 0):
+                                            if self.match_lookahead_literal('(', 0):
                                                 _t2550 = 1
                                             else:
                                                 if self.match_lookahead_terminal('SYMBOL', 0):
@@ -1400,11 +1403,11 @@ class Parser:
         _t2573 = self.parse_relation_id()
         name124 = _t2573
         xs125 = []
-        cond126 = ((((((((((self.match_lookahead_terminal('FLOAT', 0) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_literal('false', 0)) or self.match_lookahead_terminal('UINT128', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_literal('(', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_terminal('SYMBOL', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_literal('true', 0)) or self.match_lookahead_terminal('STRING', 0))
+        cond126 = ((((((((((self.match_lookahead_literal('true', 0) or self.match_lookahead_terminal('STRING', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_terminal('SYMBOL', 0)) or self.match_lookahead_terminal('FLOAT', 0)) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_literal('(', 0)) or self.match_lookahead_terminal('UINT128', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_literal('false', 0))
         while cond126:
             _t2574 = self.parse_term()
             xs125.append(_t2574)
-            cond126 = ((((((((((self.match_lookahead_terminal('FLOAT', 0) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_literal('false', 0)) or self.match_lookahead_terminal('UINT128', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_literal('(', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_terminal('SYMBOL', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_literal('true', 0)) or self.match_lookahead_terminal('STRING', 0))
+            cond126 = ((((((((((self.match_lookahead_literal('true', 0) or self.match_lookahead_terminal('STRING', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_terminal('SYMBOL', 0)) or self.match_lookahead_terminal('FLOAT', 0)) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_literal('(', 0)) or self.match_lookahead_terminal('UINT128', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_literal('false', 0))
         terms127 = xs125
         self.consume_literal(')')
         _t2575 = logic_pb2.Atom(name124, terms127)
@@ -1416,11 +1419,11 @@ class Parser:
         _t2576 = self.parse_name()
         name128 = _t2576
         xs129 = []
-        cond130 = ((((((((((self.match_lookahead_terminal('FLOAT', 0) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_literal('false', 0)) or self.match_lookahead_terminal('UINT128', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_literal('(', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_terminal('SYMBOL', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_literal('true', 0)) or self.match_lookahead_terminal('STRING', 0))
+        cond130 = ((((((((((self.match_lookahead_literal('true', 0) or self.match_lookahead_terminal('STRING', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_terminal('SYMBOL', 0)) or self.match_lookahead_terminal('FLOAT', 0)) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_literal('(', 0)) or self.match_lookahead_terminal('UINT128', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_literal('false', 0))
         while cond130:
             _t2577 = self.parse_term()
             xs129.append(_t2577)
-            cond130 = ((((((((((self.match_lookahead_terminal('FLOAT', 0) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_literal('false', 0)) or self.match_lookahead_terminal('UINT128', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_literal('(', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_terminal('SYMBOL', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_literal('true', 0)) or self.match_lookahead_terminal('STRING', 0))
+            cond130 = ((((((((((self.match_lookahead_literal('true', 0) or self.match_lookahead_terminal('STRING', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_terminal('SYMBOL', 0)) or self.match_lookahead_terminal('FLOAT', 0)) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_literal('(', 0)) or self.match_lookahead_terminal('UINT128', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_literal('false', 0))
         terms131 = xs129
         self.consume_literal(')')
         _t2578 = logic_pb2.Pragma(name128, terms131)
@@ -1478,11 +1481,11 @@ class Parser:
             _t2592 = self.parse_name()
             name142 = _t2592
             xs143 = []
-            cond144 = (((((((((((self.match_lookahead_terminal('FLOAT', 0) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_literal('false', 0)) or self.match_lookahead_terminal('UINT128', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_literal('(', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_terminal('SYMBOL', 0)) or self.match_lookahead_literal('#', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_literal('true', 0)) or self.match_lookahead_terminal('STRING', 0))
+            cond144 = (((((((((((self.match_lookahead_literal('true', 0) or self.match_lookahead_terminal('STRING', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_terminal('SYMBOL', 0)) or self.match_lookahead_terminal('FLOAT', 0)) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_literal('(', 0)) or self.match_lookahead_terminal('UINT128', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_literal('#', 0)) or self.match_lookahead_literal('false', 0))
             while cond144:
                 _t2593 = self.parse_relterm()
                 xs143.append(_t2593)
-                cond144 = (((((((((((self.match_lookahead_terminal('FLOAT', 0) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_literal('false', 0)) or self.match_lookahead_terminal('UINT128', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_literal('(', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_terminal('SYMBOL', 0)) or self.match_lookahead_literal('#', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_literal('true', 0)) or self.match_lookahead_terminal('STRING', 0))
+                cond144 = (((((((((((self.match_lookahead_literal('true', 0) or self.match_lookahead_terminal('STRING', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_terminal('SYMBOL', 0)) or self.match_lookahead_terminal('FLOAT', 0)) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_literal('(', 0)) or self.match_lookahead_terminal('UINT128', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_literal('#', 0)) or self.match_lookahead_literal('false', 0))
             terms145 = xs143
             self.consume_literal(')')
             _t2594 = logic_pb2.Primitive(name142, terms145)
@@ -1654,37 +1657,37 @@ class Parser:
         return _t2643
 
     def parse_relterm(self) -> logic_pb2.RelTerm:
-        if self.match_lookahead_terminal('DECIMAL', 0):
+        if self.match_lookahead_terminal('UINT128', 0):
             _t4691 = 1
         else:
-            if self.match_lookahead_terminal('UINT128', 0):
+            if self.match_lookahead_terminal('SYMBOL', 0):
                 _t5715 = 1
             else:
-                if self.match_lookahead_terminal('STRING', 0):
+                if self.match_lookahead_terminal('INT', 0):
                     _t6227 = 1
                 else:
-                    if self.match_lookahead_terminal('INT', 0):
+                    if self.match_lookahead_literal('true', 0):
                         _t6483 = 1
                     else:
-                        if self.match_lookahead_terminal('SYMBOL', 0):
+                        if self.match_lookahead_literal('missing', 0):
                             _t6611 = 1
                         else:
-                            if self.match_lookahead_literal('(', 0):
+                            if self.match_lookahead_terminal('INT128', 0):
                                 _t6675 = 1
                             else:
-                                if self.match_lookahead_terminal('INT128', 0):
+                                if self.match_lookahead_terminal('DECIMAL', 0):
                                     _t6707 = 1
                                 else:
-                                    if self.match_lookahead_literal('false', 0):
+                                    if self.match_lookahead_terminal('STRING', 0):
                                         _t6723 = 1
                                     else:
-                                        if self.match_lookahead_literal('true', 0):
+                                        if self.match_lookahead_literal('false', 0):
                                             _t6731 = 1
                                         else:
                                             if self.match_lookahead_terminal('FLOAT', 0):
                                                 _t6735 = 1
                                             else:
-                                                if self.match_lookahead_literal('missing', 0):
+                                                if self.match_lookahead_literal('(', 0):
                                                     _t6737 = 1
                                                 else:
                                                     if self.match_lookahead_literal('#', 0):
@@ -1732,11 +1735,11 @@ class Parser:
         _t6746 = self.parse_name()
         name172 = _t6746
         xs173 = []
-        cond174 = (((((((((((self.match_lookahead_terminal('FLOAT', 0) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_literal('false', 0)) or self.match_lookahead_terminal('UINT128', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_literal('(', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_terminal('SYMBOL', 0)) or self.match_lookahead_literal('#', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_literal('true', 0)) or self.match_lookahead_terminal('STRING', 0))
+        cond174 = (((((((((((self.match_lookahead_literal('true', 0) or self.match_lookahead_terminal('STRING', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_terminal('SYMBOL', 0)) or self.match_lookahead_terminal('FLOAT', 0)) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_literal('(', 0)) or self.match_lookahead_terminal('UINT128', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_literal('#', 0)) or self.match_lookahead_literal('false', 0))
         while cond174:
             _t6747 = self.parse_relterm()
             xs173.append(_t6747)
-            cond174 = (((((((((((self.match_lookahead_terminal('FLOAT', 0) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_literal('false', 0)) or self.match_lookahead_terminal('UINT128', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_literal('(', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_terminal('SYMBOL', 0)) or self.match_lookahead_literal('#', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_literal('true', 0)) or self.match_lookahead_terminal('STRING', 0))
+            cond174 = (((((((((((self.match_lookahead_literal('true', 0) or self.match_lookahead_terminal('STRING', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_terminal('SYMBOL', 0)) or self.match_lookahead_terminal('FLOAT', 0)) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_literal('(', 0)) or self.match_lookahead_terminal('UINT128', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_literal('#', 0)) or self.match_lookahead_literal('false', 0))
         terms175 = xs173
         self.consume_literal(')')
         _t6748 = logic_pb2.RelAtom(name172, terms175)
@@ -1772,11 +1775,11 @@ class Parser:
         _t6753 = self.parse_name()
         name181 = _t6753
         xs182 = []
-        cond183 = (((((((((self.match_lookahead_terminal('FLOAT', 0) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_literal('false', 0)) or self.match_lookahead_terminal('UINT128', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_literal('(', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_literal('true', 0)) or self.match_lookahead_terminal('STRING', 0))
+        cond183 = (((((((((self.match_lookahead_literal('true', 0) or self.match_lookahead_terminal('STRING', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_terminal('FLOAT', 0)) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_literal('(', 0)) or self.match_lookahead_terminal('UINT128', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_literal('false', 0))
         while cond183:
             _t6754 = self.parse_value()
             xs182.append(_t6754)
-            cond183 = (((((((((self.match_lookahead_terminal('FLOAT', 0) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_literal('false', 0)) or self.match_lookahead_terminal('UINT128', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_literal('(', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_literal('true', 0)) or self.match_lookahead_terminal('STRING', 0))
+            cond183 = (((((((((self.match_lookahead_literal('true', 0) or self.match_lookahead_terminal('STRING', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_terminal('FLOAT', 0)) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_literal('(', 0)) or self.match_lookahead_terminal('UINT128', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_literal('false', 0))
         args184 = xs182
         self.consume_literal(')')
         _t6755 = logic_pb2.Attribute(name181, args184)
@@ -1814,19 +1817,19 @@ class Parser:
 
     def parse_construct(self) -> logic_pb2.Construct:
         if self.match_lookahead_literal('(', 0):
-            if self.match_lookahead_literal('break', 1):
+            if self.match_lookahead_literal('monoid', 1):
                 _t6793 = 1
             else:
                 if self.match_lookahead_literal('upsert', 1):
                     _t6809 = 1
                 else:
-                    if self.match_lookahead_literal('assign', 1):
+                    if self.match_lookahead_literal('break', 1):
                         _t6817 = 1
                     else:
-                        if self.match_lookahead_literal('monus', 1):
+                        if self.match_lookahead_literal('assign', 1):
                             _t6821 = 1
                         else:
-                            if self.match_lookahead_literal('monoid', 1):
+                            if self.match_lookahead_literal('monus', 1):
                                 _t6823 = 1
                             else:
                                 if self.match_lookahead_literal('loop', 1):
