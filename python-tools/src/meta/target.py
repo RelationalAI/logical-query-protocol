@@ -303,14 +303,6 @@ class MessageType(Type):
 
 
 @dataclass(frozen=True)
-class OneOfType(Type):
-    """OneOf discriminated union type."""
-
-    def __str__(self) -> str:
-        return "OneOf"
-
-
-@dataclass(frozen=True)
 class TupleType(Type):
     """Tuple type with fixed number of element types."""
     elements: Sequence[Type]
@@ -416,7 +408,6 @@ __all__ = [
     'Type',
     'BaseType',
     'MessageType',
-    'OneOfType',
     'TupleType',
     'ListType',
     'OptionType',
