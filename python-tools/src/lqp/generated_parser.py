@@ -1592,7 +1592,7 @@ class Parser:
         _t617 = logic_pb2.RelTerm(term=left156)
         _t618 = logic_pb2.RelTerm(term=right157)
         _t619 = logic_pb2.RelTerm(term=result158)
-        _t620 = logic_pb2.Primitive(name='rel_primitive_add', terms=[_t617, _t618, _t619])
+        _t620 = logic_pb2.Primitive(name='rel_primitive_add_monotype', terms=[_t617, _t618, _t619])
         return _t620
 
     def parse_minus(self) -> logic_pb2.Primitive:
@@ -1608,7 +1608,7 @@ class Parser:
         _t624 = logic_pb2.RelTerm(term=left159)
         _t625 = logic_pb2.RelTerm(term=right160)
         _t626 = logic_pb2.RelTerm(term=result161)
-        _t627 = logic_pb2.Primitive(name='rel_primitive_subtract', terms=[_t624, _t625, _t626])
+        _t627 = logic_pb2.Primitive(name='rel_primitive_subtract_monotype', terms=[_t624, _t625, _t626])
         return _t627
 
     def parse_multiply(self) -> logic_pb2.Primitive:
@@ -1624,7 +1624,7 @@ class Parser:
         _t631 = logic_pb2.RelTerm(term=left162)
         _t632 = logic_pb2.RelTerm(term=right163)
         _t633 = logic_pb2.RelTerm(term=result164)
-        _t634 = logic_pb2.Primitive(name='rel_primitive_multiply', terms=[_t631, _t632, _t633])
+        _t634 = logic_pb2.Primitive(name='rel_primitive_multiply_monotype', terms=[_t631, _t632, _t633])
         return _t634
 
     def parse_divide(self) -> logic_pb2.Primitive:
@@ -1640,7 +1640,7 @@ class Parser:
         _t638 = logic_pb2.RelTerm(term=left165)
         _t639 = logic_pb2.RelTerm(term=right166)
         _t640 = logic_pb2.RelTerm(term=result167)
-        _t641 = logic_pb2.Primitive(name='rel_primitive_divide', terms=[_t638, _t639, _t640])
+        _t641 = logic_pb2.Primitive(name='rel_primitive_divide_monotype', terms=[_t638, _t639, _t640])
         return _t641
 
     def parse_relterm(self) -> logic_pb2.RelTerm:

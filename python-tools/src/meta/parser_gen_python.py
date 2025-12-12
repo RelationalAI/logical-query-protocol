@@ -46,7 +46,7 @@ class Token:
         self.pos = pos
 
     def __repr__(self) -> str:
-        return f"Token({{{{self.type}}}}, {{{{self.value!r}}}}, {{{{self.pos}}}})"
+        return f"Token({{self.type}}, {{self.value!r}}, {{self.pos}})"
 
 
 class Lexer:
@@ -214,11 +214,16 @@ class Parser:
         maintenance_level_val = config.get('ivm.maintenance_level')
         if maintenance_level_val:
             if maintenance_level_val.HasField('string_value'):
-                maintenance_level = maintenance_level_val.string_value.upper()
+                level_str = maintenance_level_val.string_value.upper()
+                # Map short names to full enum names
+                if level_str in ('OFF', 'AUTO', 'ALL'):
+                    maintenance_level = f'MAINTENANCE_LEVEL_{{level_str}}'
+                else:
+                    maintenance_level = level_str
             else:
-                maintenance_level = 'OFF'
+                maintenance_level = 'MAINTENANCE_LEVEL_OFF'
         else:
-            maintenance_level = 'OFF'
+            maintenance_level = 'MAINTENANCE_LEVEL_OFF'
 
         # Extract semantics version
         semantics_version_val = config.get('semantics_version')
@@ -277,8 +282,8 @@ class Parser:
 
     def construct_fragment(self, fragment_id: fragments_pb2.FragmentId, declarations: List[logic_pb2.Declaration]) -> fragments_pb2.Fragment:
         """Construct Fragment from fragment_id, declarations, and debug info from parser state."""
-        # Get the debug info dict for this fragment_id
-        debug_info_dict = self.id_to_debuginfo.get(fragment_id, {{}})
+        # Get the debug info dict for this fragment_id (use id bytes as key)
+        debug_info_dict = self.id_to_debuginfo.get(fragment_id.id, {{}})
 
         # Convert dict to parallel arrays
         ids = []
@@ -301,8 +306,11 @@ def parse(input_str: str) -> Any:
     lexer = Lexer(input_str)
     parser = Parser(lexer.tokens)
     result = parser.parse_{start_name}()
+    # Check for unconsumed tokens (except EOF)
     if parser.pos < len(parser.tokens):
-        raise ParseError(f"Unexpected token at end of input: {{parser.lookahead(0)}}")
+        remaining_token = parser.lookahead(0)
+        if remaining_token.type != '$':
+            raise ParseError(f"Unexpected token at end of input: {{remaining_token}}")
     return result
 '''
 
