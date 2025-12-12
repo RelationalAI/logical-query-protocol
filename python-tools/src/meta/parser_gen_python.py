@@ -341,7 +341,7 @@ def _generate_prologue(grammar: Grammar, command_line: Optional[str] = None) -> 
     for rules_list in grammar.rules.values():
         for rule in rules_list:
             literals.update(get_literals(rule.rhs))
-    sorted_literals = sorted(literals, key=lambda x: len(x.name), reverse=True)
+    sorted_literals = sorted(literals, key=lambda x: (-len(x.name), x.name))
     literals_lines = [f"            '{lit.name}'," for lit in sorted_literals]
     literals_list = "\n".join(literals_lines) + "\n" if literals_lines else ""
 
