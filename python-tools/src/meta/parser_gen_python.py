@@ -307,17 +307,21 @@ def parse(input_str: str) -> Any:
 '''
 
 
-def generate_parser_python(grammar: Grammar, reachable: Set[Nonterminal], command_line: Optional[str] = None) -> str:
+def generate_parser_python(grammar: Grammar, reachable: Set[Nonterminal], command_line: Optional[str] = None, proto_messages=None) -> str:
     """Generate LL(k) recursive-descent parser in Python."""
     # Generate prologue (lexer, token, error, helper classes)
     prologue = _generate_prologue(grammar, command_line)
+
+    # Create code generator with proto message info
+    from .codegen_python import PythonCodeGenerator
+    codegen = PythonCodeGenerator(proto_messages=proto_messages)
 
     # Generate parser methods as strings
     defns = generate_parse_functions(grammar)
     lines = []
     for defn in defns:
         lines.append("")
-        lines.append(generate_python_def(defn, "    "))
+        lines.append(codegen.generate_def(defn, "    "))
     lines.append("")
 
     # Generate epilogue (parse function)

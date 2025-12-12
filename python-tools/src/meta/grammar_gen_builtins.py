@@ -643,7 +643,11 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
             action=Lambda(
                 [Var('left', MessageType('logic', 'Term')), Var('right', MessageType('logic', 'Term'))],
                 MessageType('logic', 'Primitive'),
-                Call(Message('logic', 'Primitive'), [Lit(prim), Var('left', MessageType('logic', 'Term')), Var('right', MessageType('logic', 'Term'))])
+                Call(Message('logic', 'Primitive'), [
+                    Lit(prim),
+                    Call(Message('logic', 'RelTerm'), [Call(OneOf(Symbol('term')), [Var('left', MessageType('logic', 'Term'))])]),
+                    Call(Message('logic', 'RelTerm'), [Call(OneOf(Symbol('term')), [Var('right', MessageType('logic', 'Term'))])])
+                ])
             )
         ))
 
@@ -673,9 +677,9 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
                 MessageType('logic', 'Primitive'),
                 Call(Message('logic', 'Primitive'), [
                     Lit(prim),
-                    Var('left', MessageType('logic', 'Term')),
-                    Var('right', MessageType('logic', 'Term')),
-                    Var('result', MessageType('logic', 'Term'))
+                    Call(Message('logic', 'RelTerm'), [Call(OneOf(Symbol('term')), [Var('left', MessageType('logic', 'Term'))])]),
+                    Call(Message('logic', 'RelTerm'), [Call(OneOf(Symbol('term')), [Var('right', MessageType('logic', 'Term'))])]),
+                    Call(Message('logic', 'RelTerm'), [Call(OneOf(Symbol('term')), [Var('result', MessageType('logic', 'Term'))])])
                 ])
             )
         ))

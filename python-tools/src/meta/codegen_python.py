@@ -36,9 +36,41 @@ class PythonCodeGenerator(CodeGenerator):
         'Boolean': 'bool',
     }
 
-    def __init__(self):
+    def __init__(self, proto_messages=None):
         self.builtin_registry = {}
+        self.proto_messages = proto_messages or {}
+        self._message_field_map = None
         self._register_builtins()
+
+    def _build_message_field_map(self):
+        """Build field mapping from proto message definitions.
+
+        Returns dict mapping (module, message_name) to list of (field_name, is_repeated).
+        """
+        if self._message_field_map is not None:
+            return self._message_field_map
+
+        field_map = {}
+        for (module, msg_name), proto_msg in self.proto_messages.items():
+            # Collect all oneof field names
+            oneof_field_names = set()
+            for oneof in proto_msg.oneofs:
+                oneof_field_names.update(f.name for f in oneof.fields)
+
+            # Only include messages with regular (non-oneof) fields
+            regular_fields = [(f.name, f.is_repeated) for f in proto_msg.fields if f.name not in oneof_field_names]
+            if regular_fields:
+                # Escape Python keywords and preserve repeated flag
+                escaped_fields = []
+                for fname, is_repeated in regular_fields:
+                    if fname in self.keywords:
+                        escaped_fields.append((fname + '_', is_repeated))
+                    else:
+                        escaped_fields.append((fname, is_repeated))
+                field_map[(module, msg_name)] = escaped_fields
+
+        self._message_field_map = field_map
+        return field_map
 
     def _register_builtins(self) -> None:
         """Register builtin generators."""
@@ -54,15 +86,21 @@ class PythonCodeGenerator(CodeGenerator):
         self.register_builtin("fragment_id_from_string", 1,
             lambda args, lines, indent: BuiltinResult(f"fragments_pb2.FragmentId(id={args[0]}.encode())", []))
 
+        def gen_relation_id_from_string(args, lines, indent):
+            val = int(hashlib.sha256(args[0].encode()).hexdigest()[:16], 16)
+            id_low = val & 0xFFFFFFFFFFFFFFFF
+            id_high = (val >> 64) & 0xFFFFFFFFFFFFFFFF
+            return BuiltinResult(f"logic_pb2.RelationId(id_low={id_low}, id_high={id_high})", [])
+
         self.register_builtin("relation_id_from_string", 1,
             lambda args, lines, indent: BuiltinResult(
-                f"logic_pb2.RelationId(id=int(hashlib.sha256({args[0]}.encode()).hexdigest()[:16], 16))", []))
+                f"logic_pb2.RelationId(id_low=int(hashlib.sha256({args[0]}.encode()).hexdigest()[:16], 16) & 0xFFFFFFFFFFFFFFFF, id_high=(int(hashlib.sha256({args[0]}.encode()).hexdigest()[:16], 16) >> 64) & 0xFFFFFFFFFFFFFFFF)", []))
 
         self.register_builtin("relation_id_from_int", 1,
-            lambda args, lines, indent: BuiltinResult(f"logic_pb2.RelationId(id={args[0]})", []))
+            lambda args, lines, indent: BuiltinResult(f"logic_pb2.RelationId(id_low={args[0]} & 0xFFFFFFFFFFFFFFFF, id_high=({args[0]} >> 64) & 0xFFFFFFFFFFFFFFFF)", []))
 
         self.register_builtin("list_concat", 2,
-            lambda args, lines, indent: BuiltinResult(f"{args[0]} + {args[1]}", []))
+            lambda args, lines, indent: BuiltinResult(f"({args[0]} + ({args[1]} if {args[1]} is not None else []))", []))
 
         self.register_builtin("list_append", 2,
             lambda args, lines, indent: BuiltinResult(f"{args[0]} + [{args[1]}]", []))
@@ -234,21 +272,77 @@ class PythonCodeGenerator(CodeGenerator):
         if isinstance(expr.func, Message):
             f = self.generate_lines(expr.func, lines, indent)
 
+            # Python protobuf requires keyword arguments
+            # Get field mapping from proto message definitions
+            message_field_map = self._build_message_field_map()
+
             # Process arguments, looking for Call(OneOf(...), [value]) patterns
             positional_args = []
             keyword_args = []
 
-            for arg in expr.args:
+            msg_key = (expr.func.module, expr.func.name)
+            field_specs = message_field_map.get(msg_key, [])
+            arg_idx = 0
+            field_idx = 0
+
+            while arg_idx < len(expr.args):
+                arg = expr.args[arg_idx]
+
                 if isinstance(arg, Call) and isinstance(arg.func, OneOf) and len(arg.args) == 1:
                     # Extract field name and value from Call(OneOf(Symbol), [value])
-                    field_name = self.escape_identifier(arg.func.field_name.name)
+                    # For Python keywords, use dictionary unpacking: **{'def': value}
+                    field_name = arg.func.field_name.name
                     field_value = self.generate_lines(arg.args[0], lines, indent)
-                    keyword_args.append(f"{field_name}={field_value}")
+                    if field_name in self.keywords:
+                        keyword_args.append(f"**{{'{field_name}': {field_value}}}")
+                    else:
+                        keyword_args.append(f"{field_name}={field_value}")
+                    arg_idx += 1
+                elif field_idx < len(field_specs):
+                    field_name, is_repeated = field_specs[field_idx]
+
+                    if is_repeated:
+                        # Determine how many args belong to this repeated field
+                        remaining_fields = len(field_specs) - field_idx - 1
+                        max_args_for_this_field = len(expr.args) - arg_idx - remaining_fields
+
+                        # If there's exactly one arg for this field, use it directly (it's already a list)
+                        # Otherwise, collect multiple args into a list
+                        if max_args_for_this_field == 1:
+                            field_value = self.generate_lines(arg, lines, indent)
+                            keyword_args.append(f"{field_name}={field_value}")
+                            arg_idx += 1
+                        else:
+                            # Collect multiple args into a list
+                            values = []
+                            while arg_idx < len(expr.args) and len(values) < max_args_for_this_field:
+                                next_arg = expr.args[arg_idx]
+                                # Stop if we encounter a oneof
+                                if isinstance(next_arg, Call) and isinstance(next_arg.func, OneOf):
+                                    break
+                                field_value = self.generate_lines(next_arg, lines, indent)
+                                values.append(field_value)
+                                arg_idx += 1
+
+                            if values:
+                                keyword_args.append(f"{field_name}=[{', '.join(values)}]")
+                            else:
+                                keyword_args.append(f"{field_name}=[]")
+                    else:
+                        field_value = self.generate_lines(arg, lines, indent)
+                        keyword_args.append(f"{field_name}={field_value}")
+                        arg_idx += 1
+
+                    field_idx += 1
                 else:
                     positional_args.append(self.generate_lines(arg, lines, indent))
+                    arg_idx += 1
 
-            # Build argument list
-            all_args = positional_args + keyword_args
+            # Build argument list - use keyword args if we have any
+            if keyword_args:
+                all_args = keyword_args
+            else:
+                all_args = positional_args + keyword_args
             args_code = ', '.join(all_args)
 
             tmp = gensym()

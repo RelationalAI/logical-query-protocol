@@ -85,7 +85,11 @@ def main():
 
     if args.parser:
         if args.parser == "python":
-            parser_text = generate_parser_python(grammar, reachable, command_line)
+            # Build message map for code generation
+            proto_messages = {}
+            for msg_name, msg in proto_parser.messages.items():
+                proto_messages[(msg.module, msg.name)] = msg
+            parser_text = generate_parser_python(grammar, reachable, command_line, proto_messages)
             outputs.append((f"parser-{args.parser}", parser_text))
         elif args.parser == "ir":
             if __package__ is None:
