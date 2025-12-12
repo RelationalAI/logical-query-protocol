@@ -160,12 +160,12 @@ def _build_predictor_tree(grammar: Grammar, rules: List[Rule], active_indices: L
         rule = rules[rule_idx]
         rule_first = grammar.first_k(depth + 1, rule.rhs)
         tokens_at_depth: Set[Terminal] = set()
-        for seq in rule_first:
+        for seq in sorted(rule_first, key=lambda s: tuple(str(t) for t in s)):
             if len(seq) > depth:
                 tokens_at_depth.add(seq[depth])
             else:
                 exhausted.add(rule_idx)
-        for token in tokens_at_depth:
+        for token in sorted(tokens_at_depth, key=str):
             if token not in groups:
                 groups[token] = []
             groups[token].append(rule_idx)
@@ -178,7 +178,7 @@ def _build_predictor_tree(grammar: Grammar, rules: List[Rule], active_indices: L
     if not groups:
         return subtree_default
     result = subtree_default
-    for token, indices in groups.items():
+    for token, indices in sorted(groups.items(), key=lambda item: str(item[0])):
         check = _build_token_check(token, depth)
         if len(indices) == 1:
             then_branch = Lit(indices[0])
@@ -214,7 +214,7 @@ def _build_lookahead_check(token_sequences: Set[Tuple[Terminal, ...]], depth: in
     groups: Dict[Terminal, Set[Tuple[Terminal, ...]]] = {}
     short_sequences = False
 
-    for seq in token_sequences:
+    for seq in sorted(token_sequences, key=lambda s: tuple(str(t) for t in s)):
         if len(seq) <= depth:
             short_sequences = True
         else:
@@ -230,7 +230,7 @@ def _build_lookahead_check(token_sequences: Set[Tuple[Terminal, ...]], depth: in
         return Lit(False)
 
     conditions = []
-    for token, subsequences in groups.items():
+    for token, subsequences in sorted(groups.items(), key=lambda item: str(item[0])):
         token_check = _build_token_check(token, depth)
         deeper_check = _build_lookahead_check(subsequences, depth + 1)
         if isinstance(deeper_check, Lit) and deeper_check.value is True:

@@ -56,7 +56,7 @@ class PythonCodeGenerator(CodeGenerator):
 
         self.register_builtin("relation_id_from_string", 1,
             lambda args, lines, indent: BuiltinResult(
-                f"proto.RelationId(id=int(hashlib.sha256({args[0]}.encode()).hexdigest()[:16], 16))", []))
+                f"logic_pb2.RelationId(id=int(hashlib.sha256({args[0]}.encode()).hexdigest()[:16], 16))", []))
 
         self.register_builtin("relation_id_from_int", 1,
             lambda args, lines, indent: BuiltinResult(f"logic_pb2.RelationId(id={args[0]})", []))
