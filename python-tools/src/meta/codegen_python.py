@@ -8,7 +8,7 @@ from typing import List, Optional, Set, Tuple, Union
 
 from .codegen_base import CodeGenerator, BuiltinResult
 from .target import (
-    TargetExpr, Var, Lit, Symbol, Builtin, Constructor, Call, Lambda, Let,
+    TargetExpr, Var, Lit, Symbol, Builtin, Message, Call, Lambda, Let,
     IfElse, FunDef, ParseNonterminalDef, gensym
 )
 
@@ -217,7 +217,7 @@ class PythonCodeGenerator(CodeGenerator):
 
     def generate_lines(self, expr: TargetExpr, lines: List[str], indent: str = "") -> str:
         # Special case: proto.Fragment construction with debug_info parameter
-        if isinstance(expr, Call) and isinstance(expr.func, Constructor) and expr.func.name == "Fragment":
+        if isinstance(expr, Call) and isinstance(expr.func, Message) and expr.func.name == "Fragment":
             for arg in expr.args:
                 if isinstance(arg, Var) and arg.name == "debug_info":
                     lines.append(f"{indent}debug_info = proto.DebugInfo(id_to_orig_name=self.id_to_debuginfo.get(id, {{}}), meta=self.meta(self.current_token()))")

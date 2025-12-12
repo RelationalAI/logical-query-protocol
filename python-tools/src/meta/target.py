@@ -87,10 +87,10 @@ class Builtin(TargetExpr):
         assert isinstance(self.name, str), f"Invalid name in {self}: {self.name}"
 
 @dataclass(frozen=True)
-class Constructor(TargetExpr):
-    """Constructor call.
+class Message(TargetExpr):
+    """Message constructor call.
 
-    name: Name of the type/constructor
+    name: Name of the message type
     """
     name: str
 
@@ -375,7 +375,7 @@ __all__ = [
     'Lit',
     'Symbol',
     'Builtin',
-    'Constructor',
+    'Message',
     'Call',
     'Lambda',
     'Let',

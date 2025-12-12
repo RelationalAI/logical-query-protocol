@@ -13,7 +13,7 @@ from meta.target import (
     # Types
     BaseType, MessageType, TupleType, ListType, OptionType, FunctionType,
     # Expressions
-    Var, Lit, Symbol, Builtin, Constructor, Call, Lambda, Let, IfElse,
+    Var, Lit, Symbol, Builtin, Message, Call, Lambda, Let, IfElse,
     Seq, While, Assign, Return,
     # Definitions
     FunDef,
@@ -292,26 +292,26 @@ class TestBuiltin:
         assert b.name == "some-builtin-123"
 
 
-class TestConstructor:
-    """Tests for Constructor."""
+class TestMessage:
+    """Tests for Message."""
 
     def test_construction(self):
-        """Test Constructor construction."""
-        c = Constructor("Transaction")
+        """Test Message construction."""
+        c = Message("Transaction")
         assert c.name == "Transaction"
 
     def test_str(self):
-        """Test Constructor string representation."""
-        c = Constructor("Formula")
+        """Test Message string representation."""
+        c = Message("Formula")
         assert str(c) == "@Formula"
 
     def test_invalid_name(self):
-        """Test Constructor with invalid name."""
+        """Test Message with invalid name."""
         with pytest.raises(ValueError, match="Invalid variable name"):
-            Constructor("123Invalid")
+            Message("123Invalid")
 
         with pytest.raises(ValueError, match="Invalid variable name"):
-            Constructor("with-dash")
+            Message("with-dash")
 
 
 class TestCall:
@@ -327,7 +327,7 @@ class TestCall:
 
     def test_construction_with_args(self):
         """Test Call with arguments."""
-        func = Constructor("Transaction")
+        func = Message("Transaction")
         arg1 = Var("x", BaseType("Int64"))
         arg2 = Var("y", BaseType("String"))
         call = Call(func, [arg1, arg2])
@@ -731,14 +731,14 @@ class TestComplexExpressions:
     def test_constructor_with_complex_args(self):
         """Test constructor call with complex arguments."""
         # Transaction(epochs, configure, sync)
-        ctor = Constructor("Transaction")
+        ctor = Message("Transaction")
         arg1 = Var("epochs", ListType(MessageType("Epoch")))
         arg2 = Var("configure", OptionType(MessageType("Configure")))
         arg3 = Var("sync", OptionType(MessageType("Sync")))
         call = Call(ctor, [arg1, arg2, arg3])
 
         assert len(call.args) == 3
-        assert isinstance(call.func, Constructor)
+        assert isinstance(call.func, Message)
         assert "@Transaction" in str(call)
 
     def test_function_returning_function(self):

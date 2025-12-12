@@ -7,7 +7,7 @@ into forms more suitable for parsing S-expressions.
 from typing import Callable, Dict, Optional
 
 from .grammar import Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
-from .target import Lambda, Call, Var, Builtin, Constructor, BaseType, MessageType, ListType, TupleType
+from .target import Lambda, Call, Var, Builtin, Message, BaseType, MessageType, ListType, TupleType
 
 
 def make_symbol_replacer(replacements: Dict[Rhs, Rhs]) -> Callable[[Rule], Rule]:
@@ -166,7 +166,7 @@ def _rewrite_exists(rule: Rule) -> Rule:
                     new_params.append(Var('formula', MessageType('Formula')))
             bindings_type = TupleType([ListType(MessageType('Binding')), ListType(MessageType('Binding'))])
             abstraction_construction = Call(
-                Constructor('Abstraction'),
+                Message('Abstraction'),
                 [
                     Call(Builtin('list_concat'), [
                         Call(Builtin('fst'), [Var('bindings', bindings_type)]),
@@ -178,7 +178,7 @@ def _rewrite_exists(rule: Rule) -> Rule:
             new_action = Lambda(
                 params=new_params,
                 return_type=rule.action.return_type,
-                body=Call(Constructor('Exists'), [abstraction_construction])
+                body=Call(Message('Exists'), [abstraction_construction])
             )
             return Rule(lhs=rule.lhs, rhs=Sequence(new_elements), action=new_action, source_type=rule.source_type)
     return rule

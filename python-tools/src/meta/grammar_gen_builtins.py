@@ -9,7 +9,7 @@ from typing import Dict, List, Tuple
 
 from .grammar import Rule, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
 from .target import (
-    Lambda, Call, Var, Symbol, Lit, IfElse, Builtin, Constructor,
+    Lambda, Call, Var, Symbol, Lit, IfElse, Builtin, Message,
     BaseType, MessageType, OptionType, ListType, FunctionType, TupleType
 )
 
@@ -43,7 +43,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('value', MessageType('DateValue'))],
             MessageType('Value'),
-            Call(Constructor('Value'), [Call(Constructor('OneOf'), [Symbol('date_value'), Var('value', MessageType('DateValue'))])])
+            Call(Message('Value'), [Call(Message('OneOf'), [Symbol('date_value'), Var('value', MessageType('DateValue'))])])
         )
     ))
 
@@ -53,7 +53,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('value', MessageType('DateTimeValue'))],
             MessageType('Value'),
-            Call(Constructor('Value'), [Call(Constructor('OneOf'), [Symbol('datetime_value'), Var('value', MessageType('DateTimeValue'))])])
+            Call(Message('Value'), [Call(Message('OneOf'), [Symbol('datetime_value'), Var('value', MessageType('DateTimeValue'))])])
         )
     ))
 
@@ -63,7 +63,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('value', BaseType('String'))],
             MessageType('Value'),
-            Call(Constructor('Value'), [Call(Constructor('OneOf'), [Symbol('string_value'), Var('value', BaseType('String'))])])
+            Call(Message('Value'), [Call(Message('OneOf'), [Symbol('string_value'), Var('value', BaseType('String'))])])
         )
     ))
 
@@ -73,7 +73,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('value', BaseType('Int64'))],
             MessageType('Value'),
-            Call(Constructor('Value'), [Call(Constructor('OneOf'), [Symbol('int_value'), Var('value', BaseType('Int64'))])])
+            Call(Message('Value'), [Call(Message('OneOf'), [Symbol('int_value'), Var('value', BaseType('Int64'))])])
         )
     ))
 
@@ -83,7 +83,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('value', BaseType('Float64'))],
             MessageType('Value'),
-            Call(Constructor('Value'), [Call(Constructor('OneOf'), [Symbol('float_value'), Var('value', BaseType('Float64'))])])
+            Call(Message('Value'), [Call(Message('OneOf'), [Symbol('float_value'), Var('value', BaseType('Float64'))])])
         )
     ))
 
@@ -93,7 +93,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('value', MessageType('UInt128Value'))],
             MessageType('Value'),
-            Call(Constructor('Value'), [Call(Constructor('OneOf'), [Symbol('uint128_value'), Var('value', MessageType('UInt128Value'))])])
+            Call(Message('Value'), [Call(Message('OneOf'), [Symbol('uint128_value'), Var('value', MessageType('UInt128Value'))])])
         )
     ))
 
@@ -103,7 +103,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('value', MessageType('Int128Value'))],
             MessageType('Value'),
-            Call(Constructor('Value'), [Call(Constructor('OneOf'), [Symbol('int128_value'), Var('value', MessageType('Int128Value'))])])
+            Call(Message('Value'), [Call(Message('OneOf'), [Symbol('int128_value'), Var('value', MessageType('Int128Value'))])])
         )
     ))
 
@@ -113,7 +113,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('value', MessageType('DecimalValue'))],
             MessageType('Value'),
-            Call(Constructor('Value'), [Call(Constructor('OneOf'), [Symbol('decimal_value'), Var('value', MessageType('DecimalValue'))])])
+            Call(Message('Value'), [Call(Message('OneOf'), [Symbol('decimal_value'), Var('value', MessageType('DecimalValue'))])])
         )
     ))
 
@@ -123,7 +123,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [],
             MessageType('Value'),
-            Call(Constructor('Value'), [Call(Constructor('OneOf'), [Symbol('missing_value'), Call(Constructor('MissingValue'), [])])])
+            Call(Message('Value'), [Call(Message('OneOf'), [Symbol('missing_value'), Call(Message('MissingValue'), [])])])
         )
     ))
 
@@ -133,7 +133,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [],
             MessageType('Value'),
-            Call(Constructor('Value'), [Call(Constructor('OneOf'), [Symbol('boolean_value'), Lit(True)])])
+            Call(Message('Value'), [Call(Message('OneOf'), [Symbol('boolean_value'), Lit(True)])])
         )
     ))
 
@@ -143,7 +143,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [],
             MessageType('Value'),
-            Call(Constructor('Value'), [Call(Constructor('OneOf'), [Symbol('boolean_value'), Lit(False)])])
+            Call(Message('Value'), [Call(Message('OneOf'), [Symbol('boolean_value'), Lit(False)])])
         )
     ))
 
@@ -160,7 +160,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('year', BaseType('Int64')), Var('month', BaseType('Int64')), Var('day', BaseType('Int64'))],
             MessageType('DateValue'),
-            Call(Constructor('DateValue'), [
+            Call(Message('DateValue'), [
                 Var('year', BaseType('Int64')),
                 Var('month', BaseType('Int64')),
                 Var('day', BaseType('Int64'))
@@ -192,7 +192,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
                 Var('microsecond', OptionType(BaseType('Int64')))
             ],
             MessageType('DateTimeValue'),
-            Call(Constructor('DateTimeValue'), [
+            Call(Message('DateTimeValue'), [
                 Var('year', BaseType('Int64')),
                 Var('month', BaseType('Int64')),
                 Var('day', BaseType('Int64')),
@@ -254,7 +254,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
                 Var('epochs', ListType(MessageType('Epoch')))
             ],
             MessageType('Transaction'),
-            Call(Constructor('Transaction'), [
+            Call(Message('Transaction'), [
                 Var('epochs', ListType(MessageType('Epoch'))),
                 Var('configure', OptionType(MessageType('Configure'))),
                 Var('sync', OptionType(MessageType('Sync')))
@@ -307,8 +307,8 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('symbol', BaseType('String')), Var('type', MessageType('Type'))],
             MessageType('Binding'),
-            Call(Constructor('Binding'), [
-                Call(Constructor('Var'), [Var('symbol', BaseType('String'))]),
+            Call(Message('Binding'), [
+                Call(Message('Var'), [Var('symbol', BaseType('String'))]),
                 Var('type', MessageType('Type'))
             ])
         )
@@ -327,7 +327,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
             params=[Var('bindings', _bindings_type), Var('formula', MessageType('Formula'))],
             return_type=_abstraction_with_arity_type,
             body=Call(Builtin('make_tuple'), [
-                Call(Constructor('Abstraction'), [
+                Call(Message('Abstraction'), [
                     Call(Builtin('list_concat'), [
                         Call(Builtin('fst'), [Var('bindings', _bindings_type)]),
                         Call(Builtin('snd'), [Var('bindings', _bindings_type)])
@@ -350,7 +350,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             params=[Var('bindings', _bindings_type), Var('formula', MessageType('Formula'))],
             return_type=MessageType('Abstraction'),
-            body=Call(Constructor('Abstraction'), [
+            body=Call(Message('Abstraction'), [
                 Call(Builtin('list_concat'), [
                     Call(Builtin('fst'), [Var('bindings', _bindings_type)]),
                     Call(Builtin('snd'), [Var('bindings', _bindings_type)])
@@ -388,17 +388,17 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
 
     def _make_monoid_op_rule(lit: str, symbol: str, constructor: str, has_type: bool) -> Rule:
         if has_type:
-            body = Call(Constructor('Monoid'), [
-                Call(Constructor('OneOf'), [
+            body = Call(Message('Monoid'), [
+                Call(Message('OneOf'), [
                     Symbol(symbol),
-                    Call(Constructor(constructor), [Var('type', MessageType('Type'))])
+                    Call(Message(constructor), [Var('type', MessageType('Type'))])
                 ])
             ])
         else:
-            body = Call(Constructor('Monoid'), [
-                Call(Constructor('OneOf'), [
+            body = Call(Message('Monoid'), [
+                Call(Message('OneOf'), [
                     Symbol(symbol),
-                    Call(Constructor(constructor), [])
+                    Call(Message(constructor), [])
                 ])
             ])
         return Rule(
@@ -427,7 +427,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('config_dict', _config_type)],
             return_type=MessageType('Configure'),
-            body=Call(Constructor('Configure'), [Var('config_dict', _config_type)])
+            body=Call(Message('Configure'), [Var('config_dict', _config_type)])
         )
     ))
 
@@ -435,13 +435,13 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     add_rule(Rule(
         lhs=Nonterminal('true', MessageType('Conjunction')),
         rhs=Sequence((LitTerminal('('), LitTerminal('true'), LitTerminal(')'))),
-        action=Lambda([], MessageType('Conjunction'), Call(Constructor('Conjunction'), [Call(Builtin('make_list'), [])]))
+        action=Lambda([], MessageType('Conjunction'), Call(Message('Conjunction'), [Call(Builtin('make_list'), [])]))
     ))
 
     add_rule(Rule(
         lhs=Nonterminal('false', MessageType('Disjunction')),
         rhs=Sequence((LitTerminal('('), LitTerminal('false'), LitTerminal(')'))),
-        action=Lambda([], MessageType('Disjunction'), Call(Constructor('Disjunction'), [Call(Builtin('make_list'), [])]))
+        action=Lambda([], MessageType('Disjunction'), Call(Message('Disjunction'), [Call(Builtin('make_list'), [])]))
     ))
 
     # Formula rules (not final - auto-generation can add more)
@@ -451,7 +451,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('value', MessageType('Conjunction'))],
             MessageType('Formula'),
-            Call(Constructor('Formula'), [Call(Constructor('OneOf'), [Symbol('true'), Var('value', MessageType('Conjunction'))])])
+            Call(Message('Formula'), [Call(Message('OneOf'), [Symbol('true'), Var('value', MessageType('Conjunction'))])])
         )
     ), is_final=False)
 
@@ -461,7 +461,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('value', MessageType('Disjunction'))],
             MessageType('Formula'),
-            Call(Constructor('Formula'), [Call(Constructor('OneOf'), [Symbol('false'), Var('value', MessageType('Disjunction'))])])
+            Call(Message('Formula'), [Call(Message('OneOf'), [Symbol('false'), Var('value', MessageType('Disjunction'))])])
         )
     ), is_final=False)
 
@@ -476,7 +476,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('config', MessageType('ExportCsvConfig'))],
             MessageType('Export'),
-            Call(Constructor('Export'), [Var('config', MessageType('ExportCsvConfig'))])
+            Call(Message('Export'), [Var('config', MessageType('ExportCsvConfig'))])
         )
     ))
 
@@ -529,7 +529,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('name', BaseType('String')), Var('relation_id', MessageType('RelationId'))],
             MessageType('ExportCsvColumn'),
-            Call(Constructor('ExportCsvColumn'), [
+            Call(Message('ExportCsvColumn'), [
                 Var('name', BaseType('String')),
                 Var('relation_id', MessageType('RelationId'))
             ])
@@ -546,7 +546,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('path', BaseType('String'))],
             return_type=MessageType('ExportPath'),
-            body=Call(Constructor('ExportPath'), [Var('path', BaseType('String'))])
+            body=Call(Message('ExportPath'), [Var('path', BaseType('String'))])
         )
     ))
 
@@ -557,7 +557,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('symbol', BaseType('String'))],
             return_type=MessageType('Var'),
-            body=Call(Constructor('Var'), [Var('symbol', BaseType('String'))])
+            body=Call(Message('Var'), [Var('symbol', BaseType('String'))])
         )
     ))
 
@@ -606,31 +606,31 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     # Type rules
     _type_rules = [
         ('unspecified_type', MessageType('UnspecifiedType'), LitTerminal('UNKNOWN'),
-         Lambda([], MessageType('UnspecifiedType'), Call(Constructor('UnspecifiedType'), []))),
+         Lambda([], MessageType('UnspecifiedType'), Call(Message('UnspecifiedType'), []))),
         ('string_type', MessageType('StringType'), LitTerminal('STRING'),
-         Lambda([], MessageType('StringType'), Call(Constructor('StringType'), []))),
+         Lambda([], MessageType('StringType'), Call(Message('StringType'), []))),
         ('int_type', MessageType('IntType'), LitTerminal('INT'),
-         Lambda([], MessageType('IntType'), Call(Constructor('IntType'), []))),
+         Lambda([], MessageType('IntType'), Call(Message('IntType'), []))),
         ('float_type', MessageType('FloatType'), LitTerminal('FLOAT'),
-         Lambda([], MessageType('FloatType'), Call(Constructor('FloatType'), []))),
+         Lambda([], MessageType('FloatType'), Call(Message('FloatType'), []))),
         ('uint128_type', MessageType('Uint128Type'), LitTerminal('UINT128'),
-         Lambda([], MessageType('Uint128Type'), Call(Constructor('Uint128Type'), []))),
+         Lambda([], MessageType('Uint128Type'), Call(Message('Uint128Type'), []))),
         ('int128_type', MessageType('Int128Type'), LitTerminal('INT128'),
-         Lambda([], MessageType('Int128Type'), Call(Constructor('Int128Type'), []))),
+         Lambda([], MessageType('Int128Type'), Call(Message('Int128Type'), []))),
         ('boolean_type', MessageType('BooleanType'), LitTerminal('BOOLEAN'),
-         Lambda([], MessageType('BooleanType'), Call(Constructor('BooleanType'), []))),
+         Lambda([], MessageType('BooleanType'), Call(Message('BooleanType'), []))),
         ('date_type', MessageType('DateType'), LitTerminal('DATE'),
-         Lambda([], MessageType('DateType'), Call(Constructor('DateType'), []))),
+         Lambda([], MessageType('DateType'), Call(Message('DateType'), []))),
         ('datetime_type', MessageType('DatetimeType'), LitTerminal('DATETIME'),
-         Lambda([], MessageType('DatetimeType'), Call(Constructor('DatetimeType'), []))),
+         Lambda([], MessageType('DatetimeType'), Call(Message('DatetimeType'), []))),
         ('missing_type', MessageType('MissingType'), LitTerminal('MISSING'),
-         Lambda([], MessageType('MissingType'), Call(Constructor('MissingType'), []))),
+         Lambda([], MessageType('MissingType'), Call(Message('MissingType'), []))),
         ('decimal_type', MessageType('DecimalType'),
          Sequence((LitTerminal('('), LitTerminal('DECIMAL'), NamedTerminal('INT', BaseType('Int64')), NamedTerminal('INT', BaseType('Int64')), LitTerminal(')'))),
          Lambda(
              [Var('precision', BaseType('Int64')), Var('scale', BaseType('Int64'))],
              MessageType('DecimalType'),
-             Call(Constructor('DecimalType'), [Var('precision', BaseType('Int64')), Var('scale', BaseType('Int64'))])
+             Call(Message('DecimalType'), [Var('precision', BaseType('Int64')), Var('scale', BaseType('Int64'))])
          )),
     ]
     for lhs_name, lhs_type, rhs, action in _type_rules:
@@ -656,7 +656,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
             action=Lambda(
                 [Var('left', MessageType('Term')), Var('right', MessageType('Term'))],
                 MessageType('Primitive'),
-                Call(Constructor('Primitive'), [Lit(prim), Var('left', MessageType('Term')), Var('right', MessageType('Term'))])
+                Call(Message('Primitive'), [Lit(prim), Var('left', MessageType('Term')), Var('right', MessageType('Term'))])
             )
         ))
 
@@ -684,7 +684,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
                     Var('result', MessageType('Term'))
                 ],
                 MessageType('Primitive'),
-                Call(Constructor('Primitive'), [
+                Call(Message('Primitive'), [
                     Lit(prim),
                     Var('left', MessageType('Term')),
                     Var('right', MessageType('Term')),

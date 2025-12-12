@@ -6,7 +6,7 @@ message definitions into grammar rules with semantic actions.
 import re
 from typing import Callable, Dict, List, Optional, Set, Tuple
 from .grammar import Grammar, Rule, Token, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
-from .target import Lambda, Call, Var, Symbol, Builtin, Constructor, BaseType, MessageType, OptionType, ListType
+from .target import Lambda, Call, Var, Symbol, Builtin, Message, BaseType, MessageType, OptionType, ListType
 from .proto_ast import ProtoMessage, ProtoField, PRIMITIVE_TYPES
 from .proto_parser import ProtoParser
 from .grammar_gen_builtins import get_builtin_rules
@@ -84,7 +84,7 @@ class GrammarGenerator:
                 args.append(Call(Builtin('unwrap_option_or'), [var, Call(Builtin('make_list'), [])]))
             else:
                 args.append(var)
-        body = Call(Constructor(message_name), args)
+        body = Call(Message(message_name), args)
         params = [Var(name, param_type) for name, param_type in zip(param_names, param_types)]
         return Lambda(params=params, return_type=MessageType(message_name), body=body)
 
@@ -276,8 +276,8 @@ class GrammarGenerator:
                 field_rule = self._get_rule_name(field.name)
                 field_name_snake = self._to_snake_case(field.name)
                 field_type = self._get_type_for_name(field.type)
-                oneof_call = Call(Constructor('OneOf'), [Symbol(field_name_snake), Var('value', field_type)])
-                wrapper_call = Call(Constructor(message_name), [oneof_call])
+                oneof_call = Call(Message('OneOf'), [Symbol(field_name_snake), Var('value', field_type)])
+                wrapper_call = Call(Message(message_name), [oneof_call])
                 action = Lambda([Var('value', field_type)], MessageType(message_name), wrapper_call)
                 alt_rule = Rule(lhs=Nonterminal(rule_name, message_type), rhs=Sequence((Nonterminal(field_rule, field_type),)), action=action)
                 self._add_rule(alt_rule)

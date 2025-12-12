@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
 from .target import (
-    TargetExpr, Var, Lit, Symbol, Builtin, Constructor, Call, Lambda, Let,
+    TargetExpr, Var, Lit, Symbol, Builtin, Message, Call, Lambda, Let,
     IfElse, Seq, While, Assign, Return, FunDef, ParseNonterminalDef,
     ParseNonterminal, Type, BaseType, TupleType, ListType, OptionType,
     MessageType, FunctionType, gensym
@@ -282,7 +282,7 @@ class CodeGenerator(ABC):
         elif isinstance(expr, Symbol):
             return self.gen_symbol(expr.name)
 
-        elif isinstance(expr, Constructor):
+        elif isinstance(expr, Message):
             return self.gen_constructor(expr.name)
 
         elif isinstance(expr, Builtin):
