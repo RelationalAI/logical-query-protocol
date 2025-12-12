@@ -142,37 +142,44 @@ class GrammarGenerator:
             A dict mapping nonterminal names to their rewrite functions.
         """
 
-        def rewrite_string_to_name_optional(rule: Rule) -> Rule:
-            """Replace STRING with name? in output and abort rules.
+        def make_symbol_replacer(replacements: Dict[Rhs, Rhs]) -> Callable[[Rule], Rule]:
+            """Create a rule rewriter that replaces symbols in the RHS.
 
-            Output and abort can have optional string labels that should be
-            parsed as name nonterminals (SYMBOL tokens) rather than STRING tokens.
+            replacements is a dict mapping old Rhs elements to new Rhs elements.
             """
-            if isinstance(rule.rhs, Sequence):
-                new_elements = []
-                for symbol in rule.rhs.elements:
-                    if isinstance(symbol, NamedTerminal) and symbol.name == 'STRING':
-                        new_elements.append(Option(Nonterminal('name', symbol.type)))
-                    else:
-                        new_elements.append(symbol)
-                return Rule(lhs=rule.lhs, rhs=Sequence(new_elements), action=rule.action, source_type=rule.source_type)
-            return rule
+            def rewrite(rule: Rule) -> Rule:
+                if isinstance(rule.rhs, Sequence):
+                    new_elements = [replacements.get(elem, elem) for elem in rule.rhs.elements]
+                    return Rule(lhs=rule.lhs, rhs=Sequence(new_elements), action=rule.action, source_type=rule.source_type)
+                return rule
+            return rewrite
 
-        def rewrite_string_to_name(rule: Rule) -> Rule:
-            """Replace STRING terminal with name nonterminal.
+        # Common replacement patterns
+        string_type = BaseType('String')
+        terms_type = ListType(MessageType('Term'))
 
-            Used for rules where string literals should be parsed as symbolic
-            names (e.g., ffi, pragma).
-            """
-            if isinstance(rule.rhs, Sequence):
-                new_elements = []
-                for symbol in rule.rhs.elements:
-                    if isinstance(symbol, NamedTerminal) and symbol.name == 'STRING':
-                        new_elements.append(Nonterminal('name', symbol.type))
-                    else:
-                        new_elements.append(symbol)
-                return Rule(lhs=rule.lhs, rhs=Sequence(new_elements), action=rule.action, source_type=rule.source_type)
-            return rule
+        string_to_name = {
+            NamedTerminal('STRING', string_type): Nonterminal('name', string_type),
+        }
+        string_to_name_optional = {
+            NamedTerminal('STRING', string_type): Option(Nonterminal('name', string_type)),
+        }
+        terms_optional_to_star_term = {
+            Option(Nonterminal('terms', terms_type)): Star(Nonterminal('term', terms_type)),
+        }
+        terms_optional_to_star_relterm = {
+            Option(Nonterminal('terms', terms_type)): Star(Nonterminal('relterm', terms_type)),
+        }
+        args_optional_to_star_value = {
+            Option(Nonterminal('args', terms_type)): Star(Nonterminal('value', terms_type)),
+        }
+        term_star_to_relterm_star = {
+            Star(Nonterminal('term', terms_type)): Star(Nonterminal('relterm', terms_type)),
+        }
+
+        rewrite_string_to_name_optional = make_symbol_replacer(string_to_name_optional)
+        rewrite_string_to_name = make_symbol_replacer(string_to_name)
+        rewrite_terms_optional_to_star_term = make_symbol_replacer(terms_optional_to_star_term)
 
         def rewrite_fragment_remove_debug_info(rule: Rule) -> Rule:
             """Remove debug_info from fragment rules.
@@ -181,72 +188,31 @@ class GrammarGenerator:
             variable names), not parsed from input. This removes the debug_info
             field from the grammar and adjusts the action accordingly.
             """
+            def remove_debug_info(elem: Rhs) -> Optional[Rhs]:
+                if isinstance(elem, Option) and isinstance(elem.rhs, Nonterminal) and elem.rhs.name == 'debug_info':
+                    return None  # Signal removal
+                if isinstance(elem, Nonterminal) and elem.name == 'debug_info':
+                    return None  # Signal removal
+                return elem  # Keep as-is (but return elem, not None)
+
             if isinstance(rule.rhs, Sequence):
-                new_elements = []
-                for symbol in rule.rhs.elements:
-                    if isinstance(symbol, Option) and isinstance(symbol.rhs, Nonterminal) and (symbol.rhs.name == 'debug_info') or (isinstance(symbol, Nonterminal) and symbol.name == 'debug_info'):
-                        continue
-                    new_elements.append(symbol)
+                new_elements = [e for e in rule.rhs.elements if remove_debug_info(e) is not None]
                 new_params = list(rule.action.params[:-1])
                 new_action = Lambda(params=new_params, return_type=rule.action.return_type, body=rule.action.body)
                 return Rule(lhs=rule.lhs, rhs=Sequence(new_elements), action=new_action, source_type=rule.source_type)
             return rule
 
-        def rewrite_terms_optional_to_star_term(rule: Rule) -> Rule:
-            """Replace terms? with term*.
+        rewrite_terms_optional_to_star_relterm = make_symbol_replacer(
+            {**terms_optional_to_star_relterm, **string_to_name})
 
-            Protobuf repeated fields generate optional list nonterminals (terms?),
-            but S-expressions are parsed as zero-or-more individual terms (term*).
-            This allows parsing `(foo a b c)` as a sequence of terms rather than
-            requiring a separate list wrapper.
-            """
-            if isinstance(rule.rhs, Sequence):
-                new_elements = []
-                for symbol in rule.rhs.elements:
-                    if isinstance(symbol, Option) and isinstance(symbol.rhs, Nonterminal) and (symbol.rhs.name == 'terms'):
-                        new_elements.append(Star(Nonterminal('term', symbol.rhs.type)))
-                    else:
-                        new_elements.append(symbol)
-                return Rule(lhs=rule.lhs, rhs=Sequence(new_elements), action=rule.action, source_type=rule.source_type)
-            return rule
+        rewrite_primitive_rule = make_symbol_replacer(
+            {**string_to_name, **term_star_to_relterm_star})
 
-        def rewrite_terms_optional_to_star_relterm(rule: Rule) -> Rule:
-            """Replace terms? with relterm* and STRING with name.
+        rewrite_relatom_rule = make_symbol_replacer(
+            {**string_to_name, **terms_optional_to_star_relterm})
 
-            Similar to rewrite_terms_optional_to_star_term, but uses relterm
-            (relation terms) instead of term. Also converts STRING to name.
-            Used for rel_atom rules.
-            """
-            if isinstance(rule.rhs, Sequence):
-                new_elements = []
-                for symbol in rule.rhs.elements:
-                    if isinstance(symbol, Option) and isinstance(symbol.rhs, Nonterminal) and (symbol.rhs.name == 'terms'):
-                        new_elements.append(Star(Nonterminal('relterm', symbol.rhs.type)))
-                    elif isinstance(symbol, NamedTerminal) and symbol.name == 'STRING':
-                        new_elements.append(Nonterminal('name', symbol.type))
-                    else:
-                        new_elements.append(symbol)
-                return Rule(lhs=rule.lhs, rhs=Sequence(new_elements), action=rule.action, source_type=rule.source_type)
-            return rule
-
-        def rewrite_primitive_rule(rule: Rule) -> Rule:
-            """Replace STRING with name and term* with relterm* in primitive rules.
-
-            Primitive expressions `(primitive name arg1 arg2 ...)` need symbolic
-            names and relation terms rather than string literals and generic terms.
-            """
-            if isinstance(rule.rhs, Sequence) and len(rule.rhs.elements) >= 2:
-                if isinstance(rule.rhs.elements[0], LitTerminal) and rule.rhs.elements[0].name == '(' and isinstance(rule.rhs.elements[1], LitTerminal) and (rule.rhs.elements[1].name == 'primitive'):
-                    new_elements = []
-                    for symbol in rule.rhs.elements:
-                        if isinstance(symbol, NamedTerminal) and symbol.name == 'STRING':
-                            new_elements.append(Nonterminal('name', symbol.type))
-                        elif isinstance(symbol, Star) and isinstance(symbol.rhs, Nonterminal) and (symbol.rhs.name == 'term'):
-                            new_elements.append(Star(Nonterminal('relterm', symbol.rhs.type)))
-                        else:
-                            new_elements.append(symbol)
-                    return Rule(lhs=rule.lhs, rhs=Sequence(new_elements), action=rule.action, source_type=rule.source_type)
-            return rule
+        rewrite_attribute_rule = make_symbol_replacer(
+            {**string_to_name, **args_optional_to_star_value})
 
         def rewrite_exists(rule: Rule) -> Rule:
             """Rewrite exists rule to use bindings and formula instead of abstraction.
@@ -346,56 +312,14 @@ class GrammarGenerator:
                     return Rule(lhs=rule.lhs, rhs=Sequence(new_elements), action=new_action, source_type=rule.source_type)
             return rule
 
-        def rewrite_relatom_rule(rule: Rule) -> Rule:
-            """Replace STRING with name and terms? with relterm*.
-
-            For relatom rules, convert string literals to symbolic names and
-            optional term lists to zero-or-more relation terms.
-            """
-            if isinstance(rule.rhs, Sequence):
-                new_elements = []
-                for symbol in rule.rhs.elements:
-                    if isinstance(symbol, NamedTerminal) and symbol.name == 'STRING':
-                        new_elements.append(Nonterminal('name', symbol.type))
-                    elif isinstance(symbol, Option) and isinstance(symbol.rhs, Nonterminal) and (symbol.rhs.name == 'terms'):
-                        new_elements.append(Star(Nonterminal('relterm', symbol.rhs.type)))
-                    else:
-                        new_elements.append(symbol)
-                return Rule(lhs=rule.lhs, rhs=Sequence(new_elements), action=rule.action, source_type=rule.source_type)
-            return rule
-
-        def rewrite_attribute_rule(rule: Rule) -> Rule:
-            """Replace STRING with name and args? with value*.
-
-            For attribute rules, convert string literals to symbolic names and
-            optional args to zero-or-more values.
-            """
-            if isinstance(rule.rhs, Sequence):
-                new_elements = []
-                for symbol in rule.rhs.elements:
-                    if isinstance(symbol, NamedTerminal) and symbol.name == 'STRING':
-                        new_elements.append(Nonterminal('name', symbol.type))
-                    elif isinstance(symbol, Option) and isinstance(symbol.rhs, Nonterminal) and (symbol.rhs.name == 'args'):
-                        new_elements.append(Star(Nonterminal('value', symbol.rhs.type)))
-                    else:
-                        new_elements.append(symbol)
-                return Rule(lhs=rule.lhs, rhs=Sequence(new_elements), action=rule.action, source_type=rule.source_type)
-            return rule
-
-        def compose(*funcs: Callable[[Rule], Rule]) -> Callable[[Rule], Rule]:
-            """Compose multiple rewrite functions."""
-
-            def composed(rule: Rule) -> Rule:
-                for f in funcs:
-                    rule = f(rule)
-                return rule
-            return composed
+        rewrite_ffi_pragma = make_symbol_replacer(
+            {**string_to_name, **terms_optional_to_star_term})
 
         return {
             'output': rewrite_string_to_name_optional,
             'abort': rewrite_string_to_name_optional,
-            'ffi': compose(rewrite_string_to_name, rewrite_terms_optional_to_star_term),
-            'pragma': compose(rewrite_string_to_name, rewrite_terms_optional_to_star_term),
+            'ffi': rewrite_ffi_pragma,
+            'pragma': rewrite_ffi_pragma,
             'fragment': rewrite_fragment_remove_debug_info,
             'atom': rewrite_terms_optional_to_star_term,
             'rel_atom': rewrite_terms_optional_to_star_relterm,

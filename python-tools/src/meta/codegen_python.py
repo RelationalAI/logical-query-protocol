@@ -36,6 +36,91 @@ class PythonCodeGenerator(CodeGenerator):
         'Boolean': 'bool',
     }
 
+    def __init__(self):
+        self.builtin_registry = {}
+        self._register_builtins()
+
+    def _register_builtins(self) -> None:
+        """Register builtin generators."""
+        self.register_builtin("some", 1,
+            lambda args, lines, indent: BuiltinResult(args[0], []))
+        self.register_builtin("not", 1,
+            lambda args, lines, indent: BuiltinResult(f"not {args[0]}", []))
+        self.register_builtin("equal", 2,
+            lambda args, lines, indent: BuiltinResult(f"{args[0]} == {args[1]}", []))
+        self.register_builtin("not_equal", 2,
+            lambda args, lines, indent: BuiltinResult(f"{args[0]} != {args[1]}", []))
+
+        self.register_builtin("fragment_id_from_string", 1,
+            lambda args, lines, indent: BuiltinResult(f"proto.FragmentId(id={args[0]}.encode())", []))
+
+        self.register_builtin("relation_id_from_string", 1,
+            lambda args, lines, indent: BuiltinResult(
+                f"proto.RelationId(id=int(hashlib.sha256({args[0]}.encode()).hexdigest()[:16], 16))", []))
+
+        self.register_builtin("relation_id_from_int", 1,
+            lambda args, lines, indent: BuiltinResult(f"proto.RelationId(id={args[0]})", []))
+
+        self.register_builtin("list_concat", 2,
+            lambda args, lines, indent: BuiltinResult(f"{args[0]} + {args[1]}", []))
+
+        self.register_builtin("list_append", 2,
+            lambda args, lines, indent: BuiltinResult(f"{args[0]} + [{args[1]}]", []))
+
+        self.register_builtin("list_push!", 2,
+            lambda args, lines, indent: BuiltinResult("None", [f"{args[0]}.append({args[1]})"]))
+
+        self.register_builtin("make_list", -1,
+            lambda args, lines, indent: BuiltinResult(f"[{', '.join(args)}]", []))
+
+        self.register_builtin("is_none", 1,
+            lambda args, lines, indent: BuiltinResult(f"{args[0]} is None", []))
+
+        self.register_builtin("fst", 1,
+            lambda args, lines, indent: BuiltinResult(f"{args[0]}[0]", []))
+
+        self.register_builtin("snd", 1,
+            lambda args, lines, indent: BuiltinResult(f"{args[0]}[1]", []))
+
+        self.register_builtin("Tuple", -1,
+            lambda args, lines, indent: BuiltinResult(f"({', '.join(args)},)", []))
+
+        self.register_builtin("length", 1,
+            lambda args, lines, indent: BuiltinResult(f"len({args[0]})", []))
+
+        self.register_builtin("unwrap_option_or", 2,
+            lambda args, lines, indent: BuiltinResult(f"({args[0]} if {args[0]} is not None else {args[1]})", []))
+
+        self.register_builtin("match_lookahead_terminal", 2,
+            lambda args, lines, indent: BuiltinResult(f"self.match_lookahead_terminal({args[0]}, {args[1]})", []))
+
+        self.register_builtin("match_lookahead_literal", 2,
+            lambda args, lines, indent: BuiltinResult(f"self.match_lookahead_literal({args[0]}, {args[1]})", []))
+
+        self.register_builtin("match_terminal", 1,
+            lambda args, lines, indent: BuiltinResult(f"self.match_terminal({args[0]})", []))
+
+        self.register_builtin("match_literal", 1,
+            lambda args, lines, indent: BuiltinResult(f"self.match_literal({args[0]})", []))
+
+        self.register_builtin("consume_literal", 1,
+            lambda args, lines, indent: BuiltinResult("None", [f"self.consume_literal({args[0]})"]))
+
+        self.register_builtin("consume_terminal", 1,
+            lambda args, lines, indent: BuiltinResult(f"self.consume_terminal({args[0]})", []))
+
+        self.register_builtin("current_token", 0,
+            lambda args, lines, indent: BuiltinResult("self.current()", []))
+
+        # error has two arities, so we use a custom generator
+        def gen_error(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
+            if len(args) == 2:
+                return BuiltinResult("None", [f"raise ParseError({args[0]} + \": {{{args[1]}}}\")"])
+            elif len(args) == 1:
+                return BuiltinResult("None", [f"raise ParseError({args[0]})"])
+            return None
+        self.register_builtin("error", -1, gen_error)
+
     def escape_keyword(self, name: str) -> str:
         return f"{name}_"
 
@@ -113,9 +198,6 @@ class PythonCodeGenerator(CodeGenerator):
         # Python doesn't need declaration, but we can use a placeholder
         return ""
 
-    def gen_not(self, arg: str) -> str:
-        return f"not {arg}"
-
     # --- Lambda and function definition syntax ---
 
     def gen_lambda_start(self, params: List[str], return_type: Optional[str]) -> Tuple[str, str]:
@@ -130,87 +212,6 @@ class PythonCodeGenerator(CodeGenerator):
 
     def gen_func_def_end(self) -> str:
         return ""  # Python uses indentation
-
-    # --- Builtin operations ---
-
-    def gen_builtin_call(self, name: str, args: List[str],
-                         lines: List[str], indent: str) -> Optional[BuiltinResult]:
-        # Check common builtins first
-        result = super().gen_builtin_call(name, args, lines, indent)
-        if result is not None:
-            return result
-
-        # Python-specific builtins
-        if name == "fragment_id_from_string" and len(args) == 1:
-            return BuiltinResult(f"proto.FragmentId(id={args[0]}.encode())", [])
-
-        if name == "relation_id_from_string" and len(args) == 1:
-            return BuiltinResult(
-                f"proto.RelationId(id=int(hashlib.sha256({args[0]}.encode()).hexdigest()[:16], 16))",
-                []
-            )
-
-        if name == "relation_id_from_int" and len(args) == 1:
-            return BuiltinResult(f"proto.RelationId(id={args[0]})", [])
-
-        if name == "list_concat" and len(args) == 2:
-            return BuiltinResult(f"{args[0]} + {args[1]}", [])
-
-        if name == "list_append" and len(args) == 2:
-            return BuiltinResult(f"{args[0]} + [{args[1]}]", [])
-
-        if name == "list_push!" and len(args) == 2:
-            return BuiltinResult("None", [f"{args[0]}.append({args[1]})"])
-
-        if name == "error" and len(args) == 2:
-            return BuiltinResult("None", [f"raise ParseError({args[0]} + \": {{{args[1]}}}\")"])
-
-        if name == "error" and len(args) == 1:
-            return BuiltinResult("None", [f"raise ParseError({args[0]})"])
-
-        if name == "make_list":
-            return BuiltinResult(f"[{', '.join(args)}]", [])
-
-        if name == "is_none" and len(args) == 1:
-            return BuiltinResult(f"{args[0]} is None", [])
-
-        if name == "fst" and len(args) == 1:
-            return BuiltinResult(f"{args[0]}[0]", [])
-
-        if name == "snd" and len(args) == 1:
-            return BuiltinResult(f"{args[0]}[1]", [])
-
-        if name == "Tuple" and len(args) >= 2:
-            return BuiltinResult(f"({', '.join(args)},)", [])
-
-        if name == "length" and len(args) == 1:
-            return BuiltinResult(f"len({args[0]})", [])
-
-        if name == "unwrap_option_or" and len(args) == 2:
-            return BuiltinResult(f"({args[0]} if {args[0]} is not None else {args[1]})", [])
-
-        if name == "match_lookahead_terminal" and len(args) == 2:
-            return BuiltinResult(f"self.match_lookahead_terminal({args[0]}, {args[1]})", [])
-
-        if name == "match_lookahead_literal" and len(args) == 2:
-            return BuiltinResult(f"self.match_lookahead_literal({args[0]}, {args[1]})", [])
-
-        if name == "match_terminal" and len(args) == 1:
-            return BuiltinResult(f"self.match_terminal({args[0]})", [])
-
-        if name == "match_literal" and len(args) == 1:
-            return BuiltinResult(f"self.match_literal({args[0]})", [])
-
-        if name == "consume_literal" and len(args) == 1:
-            return BuiltinResult("None", [f"self.consume_literal({args[0]})"])
-
-        if name == "consume_terminal" and len(args) == 1:
-            return BuiltinResult(f"self.consume_terminal({args[0]})", [])
-
-        if name == "current_token":
-            return BuiltinResult("self.current()", [])
-
-        return None
 
     # --- Override generate_lines for Python-specific special cases ---
 

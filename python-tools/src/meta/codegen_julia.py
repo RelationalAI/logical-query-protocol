@@ -37,6 +37,84 @@ class JuliaCodeGenerator(CodeGenerator):
         'Boolean': 'Bool',
     }
 
+    def __init__(self):
+        self.builtin_registry = {}
+        self._register_builtins()
+
+    def _register_builtins(self) -> None:
+        """Register builtin generators."""
+        self.register_builtin("some", 1,
+            lambda args, lines, indent: BuiltinResult(args[0], []))
+        self.register_builtin("not", 1,
+            lambda args, lines, indent: BuiltinResult(f"!{args[0]}", []))
+        self.register_builtin("equal", 2,
+            lambda args, lines, indent: BuiltinResult(f"{args[0]} == {args[1]}", []))
+        self.register_builtin("not_equal", 2,
+            lambda args, lines, indent: BuiltinResult(f"{args[0]} != {args[1]}", []))
+
+        self.register_builtin("fragment_id_from_string", 1,
+            lambda args, lines, indent: BuiltinResult(f"Proto.FragmentId(id=Vector{{UInt8}}({args[0]}))", []))
+
+        self.register_builtin("relation_id_from_string", 1,
+            lambda args, lines, indent: BuiltinResult(
+                f"Proto.RelationId(id=parse(UInt64, bytes2hex(sha256({args[0]})[1:8]), base=16))", []))
+
+        self.register_builtin("relation_id_from_int", 1,
+            lambda args, lines, indent: BuiltinResult(f"Proto.RelationId(id={args[0]})", []))
+
+        self.register_builtin("list_concat", 2,
+            lambda args, lines, indent: BuiltinResult(f"vcat({args[0]}, {args[1]})", []))
+
+        self.register_builtin("list_append", 2,
+            lambda args, lines, indent: BuiltinResult(f"vcat({args[0]}, [{args[1]}])", []))
+
+        self.register_builtin("list_push!", 2,
+            lambda args, lines, indent: BuiltinResult("nothing", [f"push!({args[0]}, {args[1]})"]))
+
+        self.register_builtin("make_list", -1,
+            lambda args, lines, indent: BuiltinResult(f"[{', '.join(args)}]", []))
+
+        self.register_builtin("is_none", 1,
+            lambda args, lines, indent: BuiltinResult(f"isnothing({args[0]})", []))
+
+        self.register_builtin("fst", 1,
+            lambda args, lines, indent: BuiltinResult(f"{args[0]}[1]", []))
+
+        self.register_builtin("snd", 1,
+            lambda args, lines, indent: BuiltinResult(f"{args[0]}[2]", []))
+
+        self.register_builtin("Tuple", -1,
+            lambda args, lines, indent: BuiltinResult(f"({', '.join(args)},)", []))
+
+        self.register_builtin("length", 1,
+            lambda args, lines, indent: BuiltinResult(f"length({args[0]})", []))
+
+        self.register_builtin("unwrap_option_or", 2,
+            lambda args, lines, indent: BuiltinResult(f"something({args[0]}, {args[1]})", []))
+
+        self.register_builtin("match_lookahead_terminal", 2,
+            lambda args, lines, indent: BuiltinResult(f"match_lookahead_terminal(parser, {args[0]}, {args[1]})", []))
+
+        self.register_builtin("match_lookahead_literal", 2,
+            lambda args, lines, indent: BuiltinResult(f"match_lookahead_literal(parser, {args[0]}, {args[1]})", []))
+
+        self.register_builtin("match_terminal", 1,
+            lambda args, lines, indent: BuiltinResult(f"match_terminal(parser, {args[0]})", []))
+
+        self.register_builtin("match_literal", 1,
+            lambda args, lines, indent: BuiltinResult(f"match_literal(parser, {args[0]})", []))
+
+        self.register_builtin("consume_literal", 1,
+            lambda args, lines, indent: BuiltinResult("nothing", [f"consume_literal(parser, {args[0]})"]))
+
+        def gen_error(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
+            if len(args) == 2:
+                return BuiltinResult("nothing", [f'throw(ParseError({args[0]} * ": " * string({args[1]})))'])
+            elif len(args) == 1:
+                return BuiltinResult("nothing", [f"throw(ParseError({args[0]}))"])
+            return None
+        self.register_builtin("error", -1, gen_error)
+
     def escape_keyword(self, name: str) -> str:
         return f'var"{name}"'
 
@@ -128,81 +206,6 @@ class JuliaCodeGenerator(CodeGenerator):
 
     def gen_func_def_end(self) -> str:
         return "end"
-
-    # --- Builtin operations ---
-
-    def gen_builtin_call(self, name: str, args: List[str],
-                         lines: List[str], indent: str) -> Optional[BuiltinResult]:
-        # Check common builtins first
-        result = super().gen_builtin_call(name, args, lines, indent)
-        if result is not None:
-            return result
-
-        # Julia-specific builtins
-        if name == "fragment_id_from_string" and len(args) == 1:
-            return BuiltinResult(f"Proto.FragmentId(id=Vector{{UInt8}}({args[0]}))", [])
-
-        if name == "relation_id_from_string" and len(args) == 1:
-            return BuiltinResult(
-                f"Proto.RelationId(id=parse(UInt64, bytes2hex(sha256({args[0]})[1:8]), base=16))",
-                []
-            )
-
-        if name == "relation_id_from_int" and len(args) == 1:
-            return BuiltinResult(f"Proto.RelationId(id={args[0]})", [])
-
-        if name == "list_concat" and len(args) == 2:
-            return BuiltinResult(f"vcat({args[0]}, {args[1]})", [])
-
-        if name == "list_append" and len(args) == 2:
-            return BuiltinResult(f"vcat({args[0]}, [{args[1]}])", [])
-
-        if name == "list_push!" and len(args) == 2:
-            return BuiltinResult("nothing", [f"push!({args[0]}, {args[1]})"])
-
-        if name == "error" and len(args) == 2:
-            return BuiltinResult("nothing", [f'throw(ParseError({args[0]} * ": " * string({args[1]})))'])
-
-        if name == "error" and len(args) == 1:
-            return BuiltinResult("nothing", [f"throw(ParseError({args[0]}))"])
-
-        if name == "make_list":
-            return BuiltinResult(f"[{', '.join(args)}]", [])
-
-        if name == "is_none" and len(args) == 1:
-            return BuiltinResult(f"isnothing({args[0]})", [])
-
-        if name == "fst" and len(args) == 1:
-            return BuiltinResult(f"{args[0]}[1]", [])
-
-        if name == "snd" and len(args) == 1:
-            return BuiltinResult(f"{args[0]}[2]", [])
-
-        if name == "Tuple" and len(args) >= 2:
-            return BuiltinResult(f"({', '.join(args)},)", [])
-
-        if name == "length" and len(args) == 1:
-            return BuiltinResult(f"length({args[0]})", [])
-
-        if name == "unwrap_option_or" and len(args) == 2:
-            return BuiltinResult(f"something({args[0]}, {args[1]})", [])
-
-        if name == "match_lookahead_terminal" and len(args) == 2:
-            return BuiltinResult(f"match_lookahead_terminal(parser, {args[0]}, {args[1]})", [])
-
-        if name == "match_lookahead_literal" and len(args) == 2:
-            return BuiltinResult(f"match_lookahead_literal(parser, {args[0]}, {args[1]})", [])
-
-        if name == "match_terminal" and len(args) == 1:
-            return BuiltinResult(f"match_terminal(parser, {args[0]})", [])
-
-        if name == "match_literal" and len(args) == 1:
-            return BuiltinResult(f"match_literal(parser, {args[0]})", [])
-
-        if name == "consume_literal" and len(args) == 1:
-            return BuiltinResult("nothing", [f"consume_literal(parser, {args[0]})"])
-
-        return None
 
     def _generate_if_else(self, expr: IfElse, lines: List[str], indent: str) -> str:
         """Override to skip var declaration (Julia doesn't need it)."""

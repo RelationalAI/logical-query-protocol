@@ -42,6 +42,100 @@ class GoCodeGenerator(CodeGenerator):
         'Boolean': 'bool',
     }
 
+    def __init__(self):
+        self.builtin_registry = {}
+        self._register_builtins()
+
+    def _register_builtins(self) -> None:
+        """Register builtin generators."""
+        self.register_builtin("some", 1,
+            lambda args, lines, indent: BuiltinResult(args[0], []))
+        self.register_builtin("not", 1,
+            lambda args, lines, indent: BuiltinResult(f"!{args[0]}", []))
+        self.register_builtin("equal", 2,
+            lambda args, lines, indent: BuiltinResult(f"{args[0]} == {args[1]}", []))
+        self.register_builtin("not_equal", 2,
+            lambda args, lines, indent: BuiltinResult(f"{args[0]} != {args[1]}", []))
+
+        self.register_builtin("fragment_id_from_string", 1,
+            lambda args, lines, indent: BuiltinResult(f"&proto.FragmentId{{Id: []byte({args[0]})}}", []))
+
+        def gen_relation_id_from_string(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
+            tmp = gensym()
+            return BuiltinResult(tmp, [
+                f"h := sha256.Sum256([]byte({args[0]}))",
+                f"{tmp} := &proto.RelationId{{Id: binary.BigEndian.Uint64(h[:8])}}"
+            ])
+        self.register_builtin("relation_id_from_string", 1, gen_relation_id_from_string)
+
+        self.register_builtin("relation_id_from_int", 1,
+            lambda args, lines, indent: BuiltinResult(f"&proto.RelationId{{Id: uint64({args[0]})}}", []))
+
+        self.register_builtin("list_concat", 2,
+            lambda args, lines, indent: BuiltinResult(f"append({args[0]}, {args[1]}...)", []))
+
+        self.register_builtin("list_append", 2,
+            lambda args, lines, indent: BuiltinResult(f"append({args[0]}, {args[1]})", []))
+
+        self.register_builtin("list_push!", 2,
+            lambda args, lines, indent: BuiltinResult("nil", [f"{args[0]} = append({args[0]}, {args[1]})"]))
+
+        def gen_make_list(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
+            if len(args) == 0:
+                return BuiltinResult("[]interface{}{}", [])
+            return BuiltinResult(f"[]interface{{{{}}}}{{{', '.join(args)}}}", [])
+        self.register_builtin("make_list", -1, gen_make_list)
+
+        self.register_builtin("is_none", 1,
+            lambda args, lines, indent: BuiltinResult(f"{args[0]} == nil", []))
+
+        self.register_builtin("fst", 1,
+            lambda args, lines, indent: BuiltinResult(f"{args[0]}.F0", []))
+
+        self.register_builtin("snd", 1,
+            lambda args, lines, indent: BuiltinResult(f"{args[0]}.F1", []))
+
+        def gen_tuple(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
+            fields = ', '.join(f"F{i}: {a}" for i, a in enumerate(args))
+            return BuiltinResult(f"struct{{{fields}}}", [])
+        self.register_builtin("Tuple", -1, gen_tuple)
+
+        self.register_builtin("length", 1,
+            lambda args, lines, indent: BuiltinResult(f"len({args[0]})", []))
+
+        def gen_unwrap_option_or(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
+            tmp = gensym()
+            return BuiltinResult(tmp, [
+                f"var {tmp} = {args[1]}",
+                f"if {args[0]} != nil {{",
+                f"\t{tmp} = *{args[0]}",
+                "}"
+            ])
+        self.register_builtin("unwrap_option_or", 2, gen_unwrap_option_or)
+
+        self.register_builtin("match_lookahead_terminal", 2,
+            lambda args, lines, indent: BuiltinResult(f"parser.matchLookaheadTerminal({args[0]}, {args[1]})", []))
+
+        self.register_builtin("match_lookahead_literal", 2,
+            lambda args, lines, indent: BuiltinResult(f"parser.matchLookaheadLiteral({args[0]}, {args[1]})", []))
+
+        self.register_builtin("match_terminal", 1,
+            lambda args, lines, indent: BuiltinResult(f"parser.matchTerminal({args[0]})", []))
+
+        self.register_builtin("match_literal", 1,
+            lambda args, lines, indent: BuiltinResult(f"parser.matchLiteral({args[0]})", []))
+
+        self.register_builtin("consume_literal", 1,
+            lambda args, lines, indent: BuiltinResult("nil", [f"parser.consumeLiteral({args[0]})"]))
+
+        def gen_error(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
+            if len(args) == 2:
+                return BuiltinResult("nil", [f'panic(fmt.Sprintf("%s: %v", {args[0]}, {args[1]}))'])
+            elif len(args) == 1:
+                return BuiltinResult("nil", [f"panic({args[0]})"])
+            return None
+        self.register_builtin("error", -1, gen_error)
+
     def escape_keyword(self, name: str) -> str:
         return f"{name}_"
 
@@ -136,91 +230,6 @@ class GoCodeGenerator(CodeGenerator):
 
     def gen_func_def_end(self) -> str:
         return "}"
-
-    # --- Builtin operations ---
-
-    def gen_builtin_call(self, name: str, args: List[str],
-                         lines: List[str], indent: str) -> Optional[BuiltinResult]:
-        # Check common builtins first
-        result = super().gen_builtin_call(name, args, lines, indent)
-        if result is not None:
-            return result
-
-        # Go-specific builtins
-        if name == "fragment_id_from_string" and len(args) == 1:
-            return BuiltinResult(f"&proto.FragmentId{{Id: []byte({args[0]})}}", [])
-
-        if name == "relation_id_from_string" and len(args) == 1:
-            tmp = gensym()
-            return BuiltinResult(tmp, [
-                f"h := sha256.Sum256([]byte({args[0]}))",
-                f"{tmp} := &proto.RelationId{{Id: binary.BigEndian.Uint64(h[:8])}}"
-            ])
-
-        if name == "relation_id_from_int" and len(args) == 1:
-            return BuiltinResult(f"&proto.RelationId{{Id: uint64({args[0]})}}", [])
-
-        if name == "list_concat" and len(args) == 2:
-            return BuiltinResult(f"append({args[0]}, {args[1]}...)", [])
-
-        if name == "list_append" and len(args) == 2:
-            return BuiltinResult(f"append({args[0]}, {args[1]})", [])
-
-        if name == "list_push!" and len(args) == 2:
-            return BuiltinResult("nil", [f"{args[0]} = append({args[0]}, {args[1]})"])
-
-        if name == "error" and len(args) == 2:
-            return BuiltinResult("nil", [f'panic(fmt.Sprintf("%s: %v", {args[0]}, {args[1]}))'])
-
-        if name == "error" and len(args) == 1:
-            return BuiltinResult("nil", [f"panic({args[0]})"])
-
-        if name == "make_list":
-            if len(args) == 0:
-                return BuiltinResult("[]interface{}{}", [])
-            return BuiltinResult(f"[]interface{{{{}}}}{{{', '.join(args)}}}", [])
-
-        if name == "is_none" and len(args) == 1:
-            return BuiltinResult(f"{args[0]} == nil", [])
-
-        if name == "fst" and len(args) == 1:
-            return BuiltinResult(f"{args[0]}.F0", [])
-
-        if name == "snd" and len(args) == 1:
-            return BuiltinResult(f"{args[0]}.F1", [])
-
-        if name == "Tuple" and len(args) >= 2:
-            fields = ', '.join(f"F{i}: {a}" for i, a in enumerate(args))
-            return BuiltinResult(f"struct{{{fields}}}", [])
-
-        if name == "length" and len(args) == 1:
-            return BuiltinResult(f"len({args[0]})", [])
-
-        if name == "unwrap_option_or" and len(args) == 2:
-            tmp = gensym()
-            return BuiltinResult(tmp, [
-                f"var {tmp} = {args[1]}",
-                f"if {args[0]} != nil {{",
-                f"\t{tmp} = *{args[0]}",
-                "}"
-            ])
-
-        if name == "match_lookahead_terminal" and len(args) == 2:
-            return BuiltinResult(f"parser.matchLookaheadTerminal({args[0]}, {args[1]})", [])
-
-        if name == "match_lookahead_literal" and len(args) == 2:
-            return BuiltinResult(f"parser.matchLookaheadLiteral({args[0]}, {args[1]})", [])
-
-        if name == "match_terminal" and len(args) == 1:
-            return BuiltinResult(f"parser.matchTerminal({args[0]})", [])
-
-        if name == "match_literal" and len(args) == 1:
-            return BuiltinResult(f"parser.matchLiteral({args[0]})", [])
-
-        if name == "consume_literal" and len(args) == 1:
-            return BuiltinResult("nil", [f"parser.consumeLiteral({args[0]})"])
-
-        return None
 
     def _generate_if_else(self, expr: IfElse, lines: List[str], indent: str) -> str:
         """Override for Go-specific if-else syntax."""

@@ -24,6 +24,24 @@ class BuiltinResult:
     statements: List[str]  # Statements to prepend (may be empty)
 
 
+# Type alias for builtin generator functions
+BuiltinGenerator = Callable[[List[str], List[str], str], BuiltinResult]
+
+
+@dataclass
+class BuiltinSpec:
+    """Specification for a builtin function.
+
+    name: Name of the builtin (e.g., "list_concat")
+    arity: Number of arguments (-1 for variadic)
+    generator: Function that generates code for this builtin.
+               Takes (args, lines, indent) and returns BuiltinResult.
+    """
+    name: str
+    arity: int
+    generator: BuiltinGenerator
+
+
 class CodeGenerator(ABC):
     """Abstract base class for language-specific code generators.
 
@@ -37,6 +55,10 @@ class CodeGenerator(ABC):
 
     # Type mappings: base type name -> target language type
     base_type_map: Dict[str, str] = {}
+
+    # Builtin registry: maps builtin name to BuiltinSpec
+    # Subclasses should populate this in __init__ or as a class attribute
+    builtin_registry: Dict[str, BuiltinSpec] = {}
 
     @abstractmethod
     def escape_keyword(self, name: str) -> str:
@@ -226,28 +248,23 @@ class CodeGenerator(ABC):
 
     # --- Builtin operations ---
 
+    def register_builtin(self, name: str, arity: int, generator: BuiltinGenerator) -> None:
+        """Register a builtin function generator."""
+        self.builtin_registry[name] = BuiltinSpec(name, arity, generator)
+
     def gen_builtin_call(self, name: str, args: List[str],
                          lines: List[str], indent: str) -> Optional[BuiltinResult]:
         """Generate code for a builtin function call.
 
         Returns BuiltinResult if handled, None if should use default call generation.
-        Subclasses should override to handle language-specific builtins.
-        """
-        # Common builtins that have similar patterns across languages
-        if name == "not" and len(args) == 1:
-            return BuiltinResult(self.gen_not(args[0]), [])
-        elif name == "equal" and len(args) == 2:
-            return BuiltinResult(f"{args[0]} == {args[1]}", [])
-        elif name == "not_equal" and len(args) == 2:
-            return BuiltinResult(f"{args[0]} != {args[1]}", [])
-        elif name == "some" and len(args) == 1:
-            # 'some' is identity for Optional values in most languages
-            return BuiltinResult(args[0], [])
-        return None
 
-    def gen_not(self, arg: str) -> str:
-        """Generate logical not. Override for language-specific syntax."""
-        return f"!{arg}"
+        Checks the builtin_registry. Subclasses can override to add additional handling.
+        """
+        if name in self.builtin_registry:
+            spec = self.builtin_registry[name]
+            if spec.arity == -1 or len(args) == spec.arity:
+                return spec.generator(args, lines, indent)
+        return None
 
     # --- Expression generation ---
 

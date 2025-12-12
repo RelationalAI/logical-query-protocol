@@ -382,13 +382,13 @@ class Grammar:
             # Convert Set[Terminal] to Set[Tuple[Terminal, ...]]
             return {(t,) for t in first_set}
 
-        from .analysis import _compute_rhs_elem_first_k
+        from .analysis import rhs_first_k
 
         # Compute first_k sets for all nonterminals if not already cached
         first_k_dict = self.compute_first_k(k)
         nullable_dict = self.compute_nullable()
 
-        return _compute_rhs_elem_first_k(rhs, first_k_dict, nullable_dict, k)
+        return rhs_first_k(rhs, first_k_dict, nullable_dict, k)
 
     def follow(self, nt: Nonterminal) -> Set[Terminal]:
         """
@@ -431,12 +431,12 @@ class Grammar:
         the tokens that can follow are FIRST_k(following) if following is present,
         or FOLLOW_k(lhs) if at the end of the rule, or both if following is nullable.
         """
-        from .analysis import _concat_first_k_sets
+        from .analysis import concat_k
 
         first_of_following = self.first_k(k, following)
         if self.nullable(following):
             follow_of_lhs = self.follow_k(k, lhs)
-            return _concat_first_k_sets(first_of_following, follow_of_lhs, k)
+            return concat_k(first_of_following, follow_of_lhs, k)
         else:
             return first_of_following
 
@@ -546,41 +546,8 @@ class Grammar:
             assert False
 
 
-# Helper functions
-
-def get_nonterminals(rhs: Rhs) -> List[Nonterminal]:
-    """Return the list of all nonterminals referenced in a Rhs."""
-    nonterminals = []
-
-    if isinstance(rhs, Nonterminal):
-        nonterminals.append(rhs)
-    elif isinstance(rhs, Sequence):
-        for elem in rhs.elements:
-            nonterminals.extend(get_nonterminals(elem))
-    elif isinstance(rhs, (Star, Option)):
-        nonterminals.extend(get_nonterminals(rhs.rhs))
-
-    return list(dict.fromkeys(nonterminals))
-
-
-def get_literals(rhs: Rhs) -> List[LitTerminal]:
-    """Return the list of all literals referenced in a Rhs."""
-    literals = []
-
-    if isinstance(rhs, LitTerminal):
-        literals.append(rhs)
-    elif isinstance(rhs, Sequence):
-        for elem in rhs.elements:
-            literals.extend(get_literals(elem))
-    elif isinstance(rhs, (Star, Option)):
-        literals.extend(get_literals(rhs.rhs))
-
-    return list(dict.fromkeys(literals))
-
-
-def is_epsilon(rhs):
-    """Check if rhs represents an epsilon production (empty sequence)."""
-    return isinstance(rhs, Sequence) and len(rhs.elements) == 0
+# Helper functions - re-exported from analysis module
+from .analysis import get_nonterminals, get_literals, is_epsilon
 
 
 def rhs_elements(rhs: Rhs) -> Tuple[Rhs, ...]:
