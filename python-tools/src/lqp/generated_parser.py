@@ -44,13 +44,13 @@ class Lexer:
     def _tokenize(self) -> None:
         """Tokenize the input string."""
         token_specs = [
-            ('STRING', r'"(?:[^"\\]|\\.)*"', lambda x: Lexer.scan_string(x)),
-            ('INT128', r'[-]?\d+i128', lambda x: Lexer.scan_int128(x)),
-            ('INT', r'[-]?\d+', lambda x: Lexer.scan_int(x)),
-            ('UINT128', r'0x[0-9a-fA-F]+', lambda x: Lexer.scan_uint128(x)),
-            ('DECIMAL', r'[-]?\d+\.\d+d\d+', lambda x: Lexer.scan_decimal(x)),
-            ('FLOAT', r'(?:[-]?\d+\.\d+|inf|nan)', lambda x: Lexer.scan_float(x)),
-            ('SYMBOL', r'[a-zA-Z_][a-zA-Z0-9_.-]*', lambda x: Lexer.scan_symbol(x)),
+            ('STRING', r'"(?:[^"\\]|\\.)*"', lambda x: self.scan_string(x)),
+            ('DECIMAL', r'[-]?\d+\.\d+d\d+', lambda x: self.scan_decimal(x)),
+            ('FLOAT', r'(?:[-]?\d+\.\d+|inf|nan)', lambda x: self.scan_float(x)),
+            ('INT128', r'[-]?\d+i128', lambda x: self.scan_int128(x)),
+            ('UINT128', r'0x[0-9a-fA-F]+', lambda x: self.scan_uint128(x)),
+            ('INT', r'[-]?\d+', lambda x: self.scan_int(x)),
+            ('SYMBOL', r'[a-zA-Z_][a-zA-Z0-9_.-]*', lambda x: self.scan_symbol(x)),
         ]
 
         whitespace_re = re.compile(r'\s+')
@@ -95,7 +95,7 @@ class Lexer:
                         break
 
             if not matched:
-                raise ParseError(f'Unexpected character at position {self.pos}: {self.input[self.pos]!r}')
+                raise ParseError(f'Unexpected character at position {{self.pos}}: {{self.input[self.pos]!r}}')
 
         self.tokens.append(Token('$', '', self.pos))
 
@@ -241,7 +241,7 @@ class Lexer:
         int128_val = int(u)
         low = int128_val & 0xFFFFFFFFFFFFFFFF
         high = (int128_val >> 64) & 0xFFFFFFFFFFFFFFFF
-        return logic_pb2.Int128Value(low=low, high=high)
+        return logic_pb2.Int128Value(low=int128_val, high=0)
 
     @staticmethod
     def scan_decimal(d: str) -> Any:

@@ -122,14 +122,14 @@ class GrammarGenerator:
             self._generate_message_rule(message_name)
 
         # Add the tokens to scan for. The order here matters! We go from most specific to least specific.
-        # Specifically, we want to be sure to return INT128 before INT and DECIMAL before FLOAT, and SYMBOL last.
+        # Specifically, we want to be sure to return INT128 before INT and DECIMAL before FLOAT before INT, and SYMBOL last.
         # The semantic action for these is defined in the target-specific lexer code. Here we just define value types.
         self.grammar.tokens.append(Token("STRING", '"(?:[^"\\\\]|\\\\.)*"', BaseType("String")))
-        self.grammar.tokens.append(Token("INT128", '[-]?\\d+i128', MessageType("logic", "Int128Value")))
-        self.grammar.tokens.append(Token("INT", '[-]?\\d+', BaseType("Int64")))
-        self.grammar.tokens.append(Token("UINT128", '0x[0-9a-fA-F]+', MessageType("logic", "UInt128Value")))
         self.grammar.tokens.append(Token("DECIMAL", '[-]?\\d+\\.\\d+d\\d+', MessageType("logic", "DecimalValue")))
         self.grammar.tokens.append(Token("FLOAT", '(?:[-]?\\d+\\.\\d+|inf|nan)', BaseType("Float64")))
+        self.grammar.tokens.append(Token("INT128", '[-]?\\d+i128', MessageType("logic", "Int128Value")))
+        self.grammar.tokens.append(Token("UINT128", '0x[0-9a-fA-F]+', MessageType("logic", "UInt128Value")))
+        self.grammar.tokens.append(Token("INT", '[-]?\\d+', BaseType("Int64")))
         self.grammar.tokens.append(Token("SYMBOL", '[a-zA-Z_][a-zA-Z0-9_.-]*', BaseType("String")))
 
         self._post_process_grammar()
