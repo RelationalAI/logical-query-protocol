@@ -293,12 +293,9 @@ class PythonCodeGenerator(CodeGenerator):
                 if isinstance(arg, Call) and isinstance(arg.func, OneOf) and len(arg.args) == 1:
                     # Extract field name and value from Call(OneOf(Symbol), [value])
                     # For Python keywords, use dictionary unpacking: **{'def': value}
-                    field_name = arg.func.field_name.name
+                    field_name = self.escape_identifier(arg.func.field_name.name)
                     field_value = self.generate_lines(arg.args[0], lines, indent)
-                    if field_name in self.keywords:
-                        keyword_args.append(f"**{{'{field_name}': {field_value}}}")
-                    else:
-                        keyword_args.append(f"{field_name}={field_value}")
+                    keyword_args.append(f"{field_name}={field_value}")
                     arg_idx += 1
                 elif field_idx < len(field_specs):
                     field_name, is_repeated = field_specs[field_idx]

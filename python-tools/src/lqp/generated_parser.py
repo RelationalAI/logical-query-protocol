@@ -761,7 +761,7 @@ class Parser:
                 if prediction48 == 0:
                     _t355 = self.parse_def()
                     value49 = _t355
-                    _t356 = logic_pb2.Declaration(**{'def': value49})
+                    _t356 = logic_pb2.Declaration(def_=value49)
                     _t354 = _t356
                 else:
                     raise ParseError('Unexpected token in declaration' + ": {self.lookahead(0)}")
@@ -1159,7 +1159,7 @@ class Parser:
                                 if prediction83 == 6:
                                     _t490 = self.parse_not()
                                     value90 = _t490
-                                    _t491 = logic_pb2.Formula(**{'not': value90})
+                                    _t491 = logic_pb2.Formula(not_=value90)
                                     _t489 = _t491
                                 else:
                                     if prediction83 == 5:
@@ -1931,7 +1931,7 @@ class Parser:
                 if prediction200 == 2:
                     _t4803 = self.parse_break()
                     value203 = _t4803
-                    _t4804 = logic_pb2.Instruction(**{'break': value203})
+                    _t4804 = logic_pb2.Instruction(break_=value203)
                     _t4802 = _t4804
                 else:
                     if prediction200 == 1:
@@ -2065,7 +2065,7 @@ class Parser:
             self.consume_literal('SUM')
             def _t4844(type):
                 _t4845 = logic_pb2.SumMonoid(type=type)
-                _t4846 = logic_pb2.Monoid(sum=_t4845)
+                _t4846 = logic_pb2.Monoid(sum_monoid=_t4845)
                 return _t4846
             _t4843 = _t4844
         else:

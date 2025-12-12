@@ -389,7 +389,10 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
-    def _make_monoid_op_rule(lit: str, symbol: str, constructor: str, has_type: bool) -> Rule:
+    def _make_monoid_op_rule(constructor: str, has_type: bool) -> Rule:
+        op = constructor.removesuffix('Monoid')
+        symbol = f'{op.lower()}_monoid'
+        lit = op.upper()
         if has_type:
             body = Call(Message('logic', 'Monoid'), [
                 Call(OneOf(Symbol(symbol)), [
@@ -412,10 +415,10 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
             )
         )
 
-    add_rule(_make_monoid_op_rule('OR', 'or_monoid', 'OrMonoid', False))
-    add_rule(_make_monoid_op_rule('MIN', 'min_monoid', 'MinMonoid', True))
-    add_rule(_make_monoid_op_rule('MAX', 'max_monoid', 'MaxMonoid', True))
-    add_rule(_make_monoid_op_rule('SUM', 'sum', 'SumMonoid', True))
+    add_rule(_make_monoid_op_rule('OrMonoid', False))
+    add_rule(_make_monoid_op_rule('MinMonoid', True))
+    add_rule(_make_monoid_op_rule('MaxMonoid', True))
+    add_rule(_make_monoid_op_rule('SumMonoid', True))
 
     # Configure rule
     add_rule(Rule(
