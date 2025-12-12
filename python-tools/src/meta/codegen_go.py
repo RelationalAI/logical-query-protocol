@@ -4,9 +4,13 @@ This module generates Go code from semantic action expressions,
 with proper keyword escaping and idiomatic Go style.
 """
 
-from typing import Set, Union, List
+from typing import List, Optional, Set, Tuple, Union
 
-from .target import TargetExpr, Var, Lit, Symbol, Builtin, Constructor, Call, Lambda, Let, IfElse, Seq, While, Assign, Return, FunDef, ParseNonterminalDef, ParseNonterminal, Type, BaseType, TupleType, ListType, OptionType, MessageType, FunctionType, gensym
+from .codegen_base import CodeGenerator, BuiltinResult
+from .target import (
+    TargetExpr, Var, Lit, Symbol, Call, Lambda, Let, IfElse,
+    FunDef, ParseNonterminalDef, gensym
+)
 
 
 # Go keywords that need escaping
@@ -25,326 +29,274 @@ GO_KEYWORDS: Set[str] = {
 }
 
 
-def escape_identifier(name: str) -> str:
-    """Escape a Go identifier if it's a keyword or predeclared.
+class GoCodeGenerator(CodeGenerator):
+    """Go code generator."""
 
-    Go doesn't have a special syntax for escaping keywords, so we append
-    an underscore to make the identifier valid.
-    """
-    if name in GO_KEYWORDS:
+    keywords = GO_KEYWORDS
+    indent_str = "\t"
+
+    base_type_map = {
+        'Int64': 'int64',
+        'Float64': 'float64',
+        'String': 'string',
+        'Boolean': 'bool',
+    }
+
+    def escape_keyword(self, name: str) -> str:
         return f"{name}_"
-    return name
 
+    # --- Literal generation ---
 
-def generate_go_type(typ: Type) -> str:
-    """Generate Go type from a Type expression."""
-    if isinstance(typ, BaseType):
-        type_map = {
-            'Int64': 'int64',
-            'Float64': 'float64',
-            'String': 'string',
-            'Boolean': 'bool',
-        }
-        return type_map.get(typ.name, typ.name)
+    def gen_none(self) -> str:
+        return "nil"
 
-    elif isinstance(typ, MessageType):
-        return f"*proto.{typ.name}"
+    def gen_bool(self, value: bool) -> str:
+        return "true" if value else "false"
 
-    elif isinstance(typ, TupleType):
-        if not typ.elements:
+    def gen_string(self, value: str) -> str:
+        return f'"{value}"'
+
+    # --- Symbol and constructor generation ---
+
+    def gen_symbol(self, name: str) -> str:
+        return f'"{name}"'
+
+    def gen_constructor(self, name: str) -> str:
+        return f"proto.{name}"
+
+    def gen_builtin_ref(self, name: str) -> str:
+        return f"parser.{name}"
+
+    def gen_parse_nonterminal_ref(self, name: str) -> str:
+        return f"parse{name.title().replace('_', '')}"
+
+    # --- Type generation ---
+
+    def gen_message_type(self, name: str) -> str:
+        return f"*proto.{name}"
+
+    def gen_tuple_type(self, element_types: List[str]) -> str:
+        if not element_types:
             return 'struct{}'
-        fields = []
-        for i, element_type in enumerate(typ.elements):
-            go_type = generate_go_type(element_type)
-            fields.append(f"F{i} {go_type}")
-        fields_str = '; '.join(fields)
-        return f"struct{{ {fields_str} }}"
+        fields = [f"F{i} {t}" for i, t in enumerate(element_types)]
+        return f"struct{{ {'; '.join(fields)} }}"
 
-    elif isinstance(typ, ListType):
-        element_type = generate_go_type(typ.element_type)
+    def gen_list_type(self, element_type: str) -> str:
         return f"[]{element_type}"
 
-    elif isinstance(typ, OptionType):
-        element_type = generate_go_type(typ.element_type)
+    def gen_option_type(self, element_type: str) -> str:
         return f"*{element_type}"  # Go uses pointers for optional values
 
-    elif isinstance(typ, FunctionType):
-        param_types = ', '.join(generate_go_type(pt) for pt in typ.param_types)
-        return_type = generate_go_type(typ.return_type)
-        return f"func({param_types}) {return_type}"
+    def gen_function_type(self, param_types: List[str], return_type: str) -> str:
+        return f"func({', '.join(param_types)}) {return_type}"
 
-    else:
-        raise ValueError(f"Unknown type: {type(typ)}")
+    # --- Control flow syntax ---
 
+    def gen_if_start(self, cond: str) -> str:
+        return f"if {cond} {{"
 
-def generate_go_lines(expr: TargetExpr, lines: List[str], indent: str = "") -> str:
-    """Generate Go code from a target IR expression.
+    def gen_else(self) -> str:
+        return "} else {"
 
-    Code with side effects should be appended to the lines list.
-    The function returns a string containing a Go value expression.
-    """
-    if isinstance(expr, Var):
-        return escape_identifier(expr.name)
+    def gen_if_end(self) -> str:
+        return "}"
 
-    elif isinstance(expr, Lit):
-        if expr.value is None:
-            return "nil"
-        elif isinstance(expr.value, bool):
-            return "true" if expr.value else "false"
-        elif isinstance(expr.value, str):
-            return f'"{expr.value}"'
-        else:
-            return repr(expr.value)
+    def gen_while_start(self, cond: str) -> str:
+        return f"for {cond} {{"
 
-    elif isinstance(expr, Symbol):
-        return f'"{expr.name}"'
+    def gen_while_end(self) -> str:
+        return "}"
 
-    elif isinstance(expr, Constructor):
-        return f"proto.{expr.name}"
+    def gen_empty_body(self) -> str:
+        return "// empty body"
 
-    elif isinstance(expr, Builtin):
-        return f"parser.{expr.name}"
+    def gen_assignment(self, var: str, value: str, is_declaration: bool = False) -> str:
+        if is_declaration:
+            return f"{var} := {value}"
+        return f"{var} = {value}"
 
-    elif isinstance(expr, ParseNonterminal):
-        return f"parse{expr.nonterminal.name.title().replace('_', '')}"
+    def gen_return(self, value: str) -> str:
+        return f"return {value}"
 
-    elif isinstance(expr, Call):
-        # Handle builtin special cases
-        if isinstance(expr.func, Builtin):
-            if expr.func.name == "fragment_id_from_string" and len(expr.args) == 1:
-                arg1 = generate_go_lines(expr.args[0], lines, indent)
-                return f"&proto.FragmentId{{Id: []byte({arg1})}}"
-            if expr.func.name == "relation_id_from_string" and len(expr.args) == 1:
-                arg1 = generate_go_lines(expr.args[0], lines, indent)
-                tmp = gensym()
-                lines.append(f"{indent}h := sha256.Sum256([]byte({arg1}))")
-                lines.append(f"{indent}{tmp} := &proto.RelationId{{Id: binary.BigEndian.Uint64(h[:8])}}")
-                return tmp
-            if expr.func.name == "relation_id_from_int" and len(expr.args) == 1:
-                arg1 = generate_go_lines(expr.args[0], lines, indent)
-                return f"&proto.RelationId{{Id: uint64({arg1})}}"
-            if expr.func.name == "list_concat" and len(expr.args) == 2:
-                arg1 = generate_go_lines(expr.args[0], lines, indent)
-                arg2 = generate_go_lines(expr.args[1], lines, indent)
-                return f"append({arg1}, {arg2}...)"
-            if expr.func.name == "list_append" and len(expr.args) == 2:
-                arg1 = generate_go_lines(expr.args[0], lines, indent)
-                arg2 = generate_go_lines(expr.args[1], lines, indent)
-                return f"append({arg1}, {arg2})"
-            if expr.func.name == "list_push!" and len(expr.args) == 2:
-                arg1 = generate_go_lines(expr.args[0], lines, indent)
-                arg2 = generate_go_lines(expr.args[1], lines, indent)
-                lines.append(f"{indent}{arg1} = append({arg1}, {arg2})")
-                return "nil"
-            if expr.func.name == "error" and len(expr.args) == 2:
-                arg1 = generate_go_lines(expr.args[0], lines, indent)
-                arg2 = generate_go_lines(expr.args[1], lines, indent)
-                lines.append(f'{indent}panic(fmt.Sprintf("%s: %v", {arg1}, {arg2}))')
-                return "nil"
-            if expr.func.name == "error" and len(expr.args) == 1:
-                arg1 = generate_go_lines(expr.args[0], lines, indent)
-                lines.append(f"{indent}panic({arg1})")
-                return "nil"
-            elif expr.func.name == "make_list":
-                if len(expr.args) == 0:
-                    return "[]interface{}{}"
-                args = []
-                for arg in expr.args:
-                    args.append(generate_go_lines(arg, lines, indent))
-                args_code = ', '.join(args)
-                return f"[]interface{{{{}}}}{{{args_code}}}"
-            elif expr.func.name == "not" and len(expr.args) == 1:
-                arg1 = generate_go_lines(expr.args[0], lines, indent)
-                return f"!{arg1}"
-            elif expr.func.name == "equal" and len(expr.args) == 2:
-                arg1 = generate_go_lines(expr.args[0], lines, indent)
-                arg2 = generate_go_lines(expr.args[1], lines, indent)
-                return f"{arg1} == {arg2}"
-            elif expr.func.name == "not_equal" and len(expr.args) == 2:
-                arg1 = generate_go_lines(expr.args[0], lines, indent)
-                arg2 = generate_go_lines(expr.args[1], lines, indent)
-                return f"{arg1} != {arg2}"
-            elif expr.func.name == "is_none" and len(expr.args) == 1:
-                arg = generate_go_lines(expr.args[0], lines, indent)
-                return f"{arg} == nil"
-            elif expr.func.name == "some" and len(expr.args) == 1:
-                arg = generate_go_lines(expr.args[0], lines, indent)
-                return arg
-            elif expr.func.name == "fst" and len(expr.args) == 1:
-                arg = generate_go_lines(expr.args[0], lines, indent)
-                return f"{arg}.F0"
-            elif expr.func.name == "snd" and len(expr.args) == 1:
-                arg = generate_go_lines(expr.args[0], lines, indent)
-                return f"{arg}.F1"
-            elif expr.func.name == "Tuple" and len(expr.args) >= 2:
-                args = [generate_go_lines(arg, lines, indent) for arg in expr.args]
-                fields = ', '.join(f"F{i}: {a}" for i, a in enumerate(args))
-                return f"struct{{{fields}}}"
-            elif expr.func.name == "length" and len(expr.args) == 1:
-                arg = generate_go_lines(expr.args[0], lines, indent)
-                return f"len({arg})"
-            elif expr.func.name == "unwrap_option_or" and len(expr.args) == 2:
-                arg1 = generate_go_lines(expr.args[0], lines, indent)
-                arg2 = generate_go_lines(expr.args[1], lines, indent)
-                tmp = gensym()
-                lines.append(f"{indent}var {tmp} = {arg2}")
-                lines.append(f"{indent}if {arg1} != nil {{")
-                lines.append(f"{indent}\t{tmp} = *{arg1}")
-                lines.append(f"{indent}}}")
-                return tmp
-            elif expr.func.name == "match_lookahead_terminal" and len(expr.args) == 2:
-                arg1 = generate_go_lines(expr.args[0], lines, indent)
-                arg2 = generate_go_lines(expr.args[1], lines, indent)
-                return f"parser.matchLookaheadTerminal({arg1}, {arg2})"
-            elif expr.func.name == "match_lookahead_literal" and len(expr.args) == 2:
-                arg1 = generate_go_lines(expr.args[0], lines, indent)
-                arg2 = generate_go_lines(expr.args[1], lines, indent)
-                return f"parser.matchLookaheadLiteral({arg1}, {arg2})"
-            elif expr.func.name == "match_terminal" and len(expr.args) == 1:
-                arg = generate_go_lines(expr.args[0], lines, indent)
-                return f"parser.matchTerminal({arg})"
-            elif expr.func.name == "match_literal" and len(expr.args) == 1:
-                arg = generate_go_lines(expr.args[0], lines, indent)
-                return f"parser.matchLiteral({arg})"
-            elif expr.func.name == "consume_literal" and len(expr.args) == 1:
-                arg = generate_go_lines(expr.args[0], lines, indent)
-                lines.append(f"{indent}parser.consumeLiteral({arg})")
-                return "nil"
+    def gen_var_declaration(self, var: str, type_hint: Optional[str] = None) -> str:
+        return f"var {var} interface{{}}"
 
-        # Regular call
-        f = generate_go_lines(expr.func, lines, indent)
+    # --- Lambda and function definition syntax ---
 
-        args = []
-        for arg in expr.args:
-            args.append(generate_go_lines(arg, lines, indent))
-        args_code = ', '.join(args)
-        tmp = gensym()
-        lines.append(f"{indent}{tmp} := {f}({args_code})")
-        return tmp
-
-    elif isinstance(expr, Lambda):
-        params = [escape_identifier(p.name) for p in expr.params]
-        f = gensym()
+    def gen_lambda_start(self, params: List[str], return_type: Optional[str]) -> Tuple[str, str]:
         param_list = ', '.join(f"{p} interface{{}}" for p in params)
-        ret_type = generate_go_type(expr.return_type) if expr.return_type else "interface{}"
-        lines.append(f"{indent}{f} := func({param_list}) {ret_type} {{")
-        v = generate_go_lines(expr.body, lines, indent + "\t")
-        lines.append(f"{indent}\treturn {v}")
-        lines.append(f"{indent}}}")
-        return f
+        ret_type = return_type if return_type else "interface{}"
+        return (f"__FUNC__ := func({param_list}) {ret_type} {{", "}")
 
-    elif isinstance(expr, Let):
-        var_name = escape_identifier(expr.var.name)
-        tmp1 = generate_go_lines(expr.init, lines, indent)
-        lines.append(f"{indent}{var_name} := {tmp1}")
-        tmp2 = generate_go_lines(expr.body, lines, indent)
-        return tmp2
+    def gen_func_def_header(self, name: str, params: List[Tuple[str, str]],
+                            return_type: Optional[str], is_method: bool = False) -> str:
+        params_str = ', '.join(f"{n} {t}" for n, t in params)
+        ret_type = return_type if return_type else "interface{}"
+        return f"func {name}({params_str}) {ret_type} {{"
 
-    elif isinstance(expr, IfElse):
-        cond_code = generate_go_lines(expr.condition, lines, indent)
+    def gen_func_def_end(self) -> str:
+        return "}"
+
+    # --- Builtin operations ---
+
+    def gen_builtin_call(self, name: str, args: List[str],
+                         lines: List[str], indent: str) -> Optional[BuiltinResult]:
+        # Check common builtins first
+        result = super().gen_builtin_call(name, args, lines, indent)
+        if result is not None:
+            return result
+
+        # Go-specific builtins
+        if name == "fragment_id_from_string" and len(args) == 1:
+            return BuiltinResult(f"&proto.FragmentId{{Id: []byte({args[0]})}}", [])
+
+        if name == "relation_id_from_string" and len(args) == 1:
+            tmp = gensym()
+            return BuiltinResult(tmp, [
+                f"h := sha256.Sum256([]byte({args[0]}))",
+                f"{tmp} := &proto.RelationId{{Id: binary.BigEndian.Uint64(h[:8])}}"
+            ])
+
+        if name == "relation_id_from_int" and len(args) == 1:
+            return BuiltinResult(f"&proto.RelationId{{Id: uint64({args[0]})}}", [])
+
+        if name == "list_concat" and len(args) == 2:
+            return BuiltinResult(f"append({args[0]}, {args[1]}...)", [])
+
+        if name == "list_append" and len(args) == 2:
+            return BuiltinResult(f"append({args[0]}, {args[1]})", [])
+
+        if name == "list_push!" and len(args) == 2:
+            return BuiltinResult("nil", [f"{args[0]} = append({args[0]}, {args[1]})"])
+
+        if name == "error" and len(args) == 2:
+            return BuiltinResult("nil", [f'panic(fmt.Sprintf("%s: %v", {args[0]}, {args[1]}))'])
+
+        if name == "error" and len(args) == 1:
+            return BuiltinResult("nil", [f"panic({args[0]})"])
+
+        if name == "make_list":
+            if len(args) == 0:
+                return BuiltinResult("[]interface{}{}", [])
+            return BuiltinResult(f"[]interface{{{{}}}}{{{', '.join(args)}}}", [])
+
+        if name == "is_none" and len(args) == 1:
+            return BuiltinResult(f"{args[0]} == nil", [])
+
+        if name == "fst" and len(args) == 1:
+            return BuiltinResult(f"{args[0]}.F0", [])
+
+        if name == "snd" and len(args) == 1:
+            return BuiltinResult(f"{args[0]}.F1", [])
+
+        if name == "Tuple" and len(args) >= 2:
+            fields = ', '.join(f"F{i}: {a}" for i, a in enumerate(args))
+            return BuiltinResult(f"struct{{{fields}}}", [])
+
+        if name == "length" and len(args) == 1:
+            return BuiltinResult(f"len({args[0]})", [])
+
+        if name == "unwrap_option_or" and len(args) == 2:
+            tmp = gensym()
+            return BuiltinResult(tmp, [
+                f"var {tmp} = {args[1]}",
+                f"if {args[0]} != nil {{",
+                f"\t{tmp} = *{args[0]}",
+                "}"
+            ])
+
+        if name == "match_lookahead_terminal" and len(args) == 2:
+            return BuiltinResult(f"parser.matchLookaheadTerminal({args[0]}, {args[1]})", [])
+
+        if name == "match_lookahead_literal" and len(args) == 2:
+            return BuiltinResult(f"parser.matchLookaheadLiteral({args[0]}, {args[1]})", [])
+
+        if name == "match_terminal" and len(args) == 1:
+            return BuiltinResult(f"parser.matchTerminal({args[0]})", [])
+
+        if name == "match_literal" and len(args) == 1:
+            return BuiltinResult(f"parser.matchLiteral({args[0]})", [])
+
+        if name == "consume_literal" and len(args) == 1:
+            return BuiltinResult("nil", [f"parser.consumeLiteral({args[0]})"])
+
+        return None
+
+    def _generate_if_else(self, expr: IfElse, lines: List[str], indent: str) -> str:
+        """Override for Go-specific if-else syntax."""
+        cond_code = self.generate_lines(expr.condition, lines, indent)
+
+        # Optimization: short-circuit for boolean literals
         if expr.then_branch == Lit(True):
-            else_code = generate_go_lines(expr.else_branch, lines, indent + "\t")
+            else_code = self.generate_lines(expr.else_branch, lines, indent + self.indent_str)
             return f"({cond_code} || {else_code})"
         if expr.else_branch == Lit(False):
-            then_code = generate_go_lines(expr.then_branch, lines, indent + "\t")
+            then_code = self.generate_lines(expr.then_branch, lines, indent + self.indent_str)
             return f"({cond_code} && {then_code})"
 
         tmp = gensym()
-        lines.append(f"{indent}var {tmp} interface{{}}")
-        lines.append(f"{indent}if {cond_code} {{")
-        then_code = generate_go_lines(expr.then_branch, lines, indent + "\t")
-        lines.append(f"{indent}\t{tmp} = {then_code}")
-        lines.append(f"{indent}}} else {{")
-        else_code = generate_go_lines(expr.else_branch, lines, indent + "\t")
-        lines.append(f"{indent}\t{tmp} = {else_code}")
-        lines.append(f"{indent}}}")
+        lines.append(f"{indent}{self.gen_var_declaration(tmp)}")
+        lines.append(f"{indent}{self.gen_if_start(cond_code)}")
+
+        body_indent = indent + self.indent_str
+        then_code = self.generate_lines(expr.then_branch, lines, body_indent)
+        lines.append(f"{body_indent}{self.gen_assignment(tmp, then_code)}")
+
+        lines.append(f"{indent}{self.gen_else()}")
+        else_code = self.generate_lines(expr.else_branch, lines, body_indent)
+        lines.append(f"{body_indent}{self.gen_assignment(tmp, else_code)}")
+
+        lines.append(f"{indent}{self.gen_if_end()}")
+
         return tmp
 
-    elif isinstance(expr, Seq):
-        tmp = "nil"
-        for e in expr.exprs:
-            tmp = generate_go_lines(e, lines, indent)
-        return tmp
+    def _generate_parse_def(self, expr: ParseNonterminalDef, indent: str) -> str:
+        """Generate a parse method definition."""
+        func_name = f"parse{expr.nonterminal.name.title().replace('_', '')}"
 
-    elif isinstance(expr, While):
-        m = len(lines)
-        cond_code = generate_go_lines(expr.condition, lines, indent)
-        non_trivial_cond = len(lines) > m
-        cond_code_is_lvalue = cond_code.isidentifier()
-        lines.append(f"{indent}for {cond_code} {{")
-        n = len(lines)
-        body_code = generate_go_lines(expr.body, lines, indent + "\t")
-        if len(lines) == n:
-            lines.append(f"{indent}\t// empty body")
-        # Update the condition variable
-        if non_trivial_cond and cond_code_is_lvalue:
-            cond_code2 = generate_go_lines(expr.condition, lines, indent + "\t")
-            lines.append(f"{indent}\t{cond_code} = {cond_code2}")
-        lines.append(f"{indent}}}")
-        return "nil"
+        params = [("parser", "*Parser")]
+        for param in expr.params:
+            escaped_name = self.escape_identifier(param.name)
+            go_type = self.gen_type(param.type)
+            params.append((escaped_name, go_type))
 
-    elif isinstance(expr, Assign):
-        var_name = escape_identifier(expr.var.name)
-        expr_code = generate_go_lines(expr.expr, lines, indent)
-        lines.append(f"{indent}{var_name} = {expr_code}")
-        return "nil"
+        params_str = ', '.join(f"{n} {t}" for n, t in params)
 
-    elif isinstance(expr, Return):
-        expr_code = generate_go_lines(expr.expr, lines, indent)
-        lines.append(f"{indent}return {expr_code}")
-        return "nil"
+        ret_type = self.gen_type(expr.return_type) if expr.return_type else "interface{}"
 
-    else:
-        raise ValueError(f"Unknown action expression type: {type(expr)}")
+        if expr.body is None:
+            body_code = f"{indent}\t// no body"
+        else:
+            body_lines: List[str] = []
+            body_inner = self.generate_lines(expr.body, body_lines, indent + "\t")
+            body_lines.append(f"{indent}\treturn {body_inner}")
+            body_code = "\n".join(body_lines)
+
+        return f"{indent}func {func_name}({params_str}) {ret_type} {{\n{body_code}\n{indent}}}"
+
+
+# Module-level instance for convenience
+_generator = GoCodeGenerator()
+
+
+def escape_identifier(name: str) -> str:
+    """Escape a Go identifier if it's a keyword or predeclared."""
+    return _generator.escape_identifier(name)
+
+
+def generate_go_type(typ) -> str:
+    """Generate Go type from a Type expression."""
+    return _generator.gen_type(typ)
+
+
+def generate_go_lines(expr: TargetExpr, lines: List[str], indent: str = "") -> str:
+    """Generate Go code from a target IR expression."""
+    return _generator.generate_lines(expr, lines, indent)
 
 
 def generate_go_def(expr: Union[FunDef, ParseNonterminalDef], indent: str = "") -> str:
     """Generate Go function definition."""
-    if isinstance(expr, FunDef):
-        func_name = escape_identifier(expr.name)
-
-        params = []
-        for param in expr.params:
-            escaped_name = escape_identifier(param.name)
-            go_type = generate_go_type(param.type)
-            params.append(f"{escaped_name} {go_type}")
-
-        params_str = ', '.join(params)
-
-        ret_type = generate_go_type(expr.return_type) if expr.return_type else "interface{}"
-
-        if expr.body is None:
-            body_code = f"{indent}\t// no body"
-        else:
-            lines = []
-            body_inner = generate_go_lines(expr.body, lines, indent + "\t")
-            lines.append(f"{indent}\treturn {body_inner}")
-            body_code = "\n".join(lines)
-
-        return f"{indent}func {func_name}({params_str}) {ret_type} {{\n{body_code}\n{indent}}}"
-
-    elif isinstance(expr, ParseNonterminalDef):
-        func_name = f"parse{expr.nonterminal.name.title().replace('_', '')}"
-
-        params = ["parser *Parser"]
-        for param in expr.params:
-            escaped_name = escape_identifier(param.name)
-            go_type = generate_go_type(param.type)
-            params.append(f"{escaped_name} {go_type}")
-
-        params_str = ', '.join(params)
-
-        ret_type = generate_go_type(expr.return_type) if expr.return_type else "interface{}"
-
-        if expr.body is None:
-            body_code = f"{indent}\t// no body"
-        else:
-            lines = []
-            body_inner = generate_go_lines(expr.body, lines, indent + "\t")
-            lines.append(f"{indent}\treturn {body_inner}")
-            body_code = "\n".join(lines)
-
-        return f"{indent}func {func_name}({params_str}) {ret_type} {{\n{body_code}\n{indent}}}"
+    return _generator.generate_def(expr, indent)
 
 
 def generate_go(expr: TargetExpr, indent: str = "") -> str:
@@ -369,10 +321,10 @@ def generate_go(expr: TargetExpr, indent: str = "") -> str:
         params = [escape_identifier(p.name) for p in expr.params]
         param_list = ', '.join(f"{p} interface{{}}" for p in params)
         body_code = generate_go(expr.body, indent)
-        ret_type = generate_go_type(expr.return_type) if expr.return_type else "interface{}"
+        ret_type = _generator.gen_type(expr.return_type) if expr.return_type else "interface{}"
         return f"func({param_list}) {ret_type} {{ return {body_code} }}"
     elif isinstance(expr, Let):
-        lines = []
+        lines: List[str] = []
         result = generate_go_lines(expr, lines, indent)
         if lines:
             return '\n'.join(lines) + '\n' + result
@@ -395,6 +347,8 @@ __all__ = [
     'generate_go',
     'generate_go_lines',
     'generate_go_def',
+    'generate_go_type',
     'generate_go_function_body',
     'GO_KEYWORDS',
+    'GoCodeGenerator',
 ]

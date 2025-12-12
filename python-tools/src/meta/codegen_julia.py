@@ -4,9 +4,13 @@ This module generates Julia code from semantic action expressions,
 with proper keyword escaping and idiomatic Julia style.
 """
 
-from typing import Set, Union, List
+from typing import List, Optional, Set, Tuple, Union
 
-from .target import TargetExpr, Var, Lit, Symbol, Builtin, Constructor, Call, Lambda, Let, IfElse, Seq, While, Assign, Return, FunDef, ParseNonterminalDef, ParseNonterminal, Type, BaseType, TupleType, ListType, OptionType, MessageType, FunctionType, gensym
+from .codegen_base import CodeGenerator, BuiltinResult
+from .target import (
+    TargetExpr, Var, Lit, Symbol, Call, Lambda, Let, IfElse,
+    FunDef, ParseNonterminalDef, gensym
+)
 
 
 # Julia keywords that need escaping
@@ -20,309 +24,260 @@ JULIA_KEYWORDS: Set[str] = {
 }
 
 
-def escape_identifier(name: str) -> str:
-    """Escape a Julia identifier if it's a keyword.
+class JuliaCodeGenerator(CodeGenerator):
+    """Julia code generator."""
 
-    In Julia, non-standard identifiers can be created using var"name" syntax.
-    """
-    if name in JULIA_KEYWORDS:
+    keywords = JULIA_KEYWORDS
+    indent_str = "    "
+
+    base_type_map = {
+        'Int64': 'Int64',
+        'Float64': 'Float64',
+        'String': 'String',
+        'Boolean': 'Bool',
+    }
+
+    def escape_keyword(self, name: str) -> str:
         return f'var"{name}"'
-    return name
 
+    # --- Literal generation ---
 
-def generate_julia_type(typ: Type) -> str:
-    """Generate Julia type annotation from a Type expression."""
-    if isinstance(typ, BaseType):
-        type_map = {
-            'Int64': 'Int64',
-            'Float64': 'Float64',
-            'String': 'String',
-            'Boolean': 'Bool',
-        }
-        return type_map.get(typ.name, typ.name)
+    def gen_none(self) -> str:
+        return "nothing"
 
-    elif isinstance(typ, MessageType):
-        return f"Proto.{typ.name}"
+    def gen_bool(self, value: bool) -> str:
+        return "true" if value else "false"
 
-    elif isinstance(typ, TupleType):
-        if not typ.elements:
+    def gen_string(self, value: str) -> str:
+        return repr(value)
+
+    # --- Symbol and constructor generation ---
+
+    def gen_symbol(self, name: str) -> str:
+        return f":{name}"
+
+    def gen_constructor(self, name: str) -> str:
+        return f"Proto.{name}"
+
+    def gen_builtin_ref(self, name: str) -> str:
+        return f"parser.{name}"
+
+    def gen_parse_nonterminal_ref(self, name: str) -> str:
+        return f"parse_{name}"
+
+    # --- Type generation ---
+
+    def gen_message_type(self, name: str) -> str:
+        return f"Proto.{name}"
+
+    def gen_tuple_type(self, element_types: List[str]) -> str:
+        if not element_types:
             return 'Tuple{}'
-        element_types = ', '.join(generate_julia_type(e) for e in typ.elements)
-        return f"Tuple{{{element_types}}}"
+        return f"Tuple{{{', '.join(element_types)}}}"
 
-    elif isinstance(typ, ListType):
-        element_type = generate_julia_type(typ.element_type)
+    def gen_list_type(self, element_type: str) -> str:
         return f"Vector{{{element_type}}}"
 
-    elif isinstance(typ, OptionType):
-        element_type = generate_julia_type(typ.element_type)
+    def gen_option_type(self, element_type: str) -> str:
         return f"Union{{Nothing, {element_type}}}"
 
-    elif isinstance(typ, FunctionType):
-        param_types = ', '.join(generate_julia_type(pt) for pt in typ.param_types)
-        return_type = generate_julia_type(typ.return_type)
-        return f"Function"  # Julia doesn't have precise function types
+    def gen_function_type(self, param_types: List[str], return_type: str) -> str:
+        return "Function"  # Julia doesn't have precise function types
 
-    else:
-        raise ValueError(f"Unknown type: {type(typ)}")
+    # --- Control flow syntax ---
 
+    def gen_if_start(self, cond: str) -> str:
+        return f"if {cond}"
 
-def generate_julia_lines(expr: TargetExpr, lines: List[str], indent: str = "") -> str:
-    """Generate Julia code from a target IR expression.
+    def gen_else(self) -> str:
+        return "else"
 
-    Code with side effects should be appended to the lines list.
-    The function returns a string containing a Julia value expression.
-    """
-    if isinstance(expr, Var):
-        return escape_identifier(expr.name)
+    def gen_if_end(self) -> str:
+        return "end"
 
-    elif isinstance(expr, Lit):
-        if expr.value is None:
-            return "nothing"
-        elif isinstance(expr.value, bool):
-            return "true" if expr.value else "false"
-        elif isinstance(expr.value, str):
-            return repr(expr.value)
-        else:
-            return repr(expr.value)
+    def gen_while_start(self, cond: str) -> str:
+        return f"while {cond}"
 
-    elif isinstance(expr, Symbol):
-        return f":{expr.name}"
+    def gen_while_end(self) -> str:
+        return "end"
 
-    elif isinstance(expr, Constructor):
-        return f"Proto.{expr.name}"
+    def gen_empty_body(self) -> str:
+        return "# empty body"
 
-    elif isinstance(expr, Builtin):
-        # These are handled specially in Call
-        return f"parser.{expr.name}"
+    def gen_assignment(self, var: str, value: str, is_declaration: bool = False) -> str:
+        return f"{var} = {value}"
 
-    elif isinstance(expr, ParseNonterminal):
-        return f"parse_{expr.nonterminal.name}"
+    def gen_return(self, value: str) -> str:
+        return f"return {value}"
 
-    elif isinstance(expr, Call):
-        # Handle builtin special cases
-        if isinstance(expr.func, Builtin):
-            if expr.func.name == "fragment_id_from_string" and len(expr.args) == 1:
-                arg1 = generate_julia_lines(expr.args[0], lines, indent)
-                return f"Proto.FragmentId(id=Vector{{UInt8}}({arg1}))"
-            if expr.func.name == "relation_id_from_string" and len(expr.args) == 1:
-                arg1 = generate_julia_lines(expr.args[0], lines, indent)
-                return f"Proto.RelationId(id=parse(UInt64, bytes2hex(sha256({arg1})[1:8]), base=16))"
-            if expr.func.name == "relation_id_from_int" and len(expr.args) == 1:
-                arg1 = generate_julia_lines(expr.args[0], lines, indent)
-                return f"Proto.RelationId(id={arg1})"
-            if expr.func.name == "list_concat" and len(expr.args) == 2:
-                arg1 = generate_julia_lines(expr.args[0], lines, indent)
-                arg2 = generate_julia_lines(expr.args[1], lines, indent)
-                return f"vcat({arg1}, {arg2})"
-            if expr.func.name == "list_append" and len(expr.args) == 2:
-                arg1 = generate_julia_lines(expr.args[0], lines, indent)
-                arg2 = generate_julia_lines(expr.args[1], lines, indent)
-                return f"vcat({arg1}, [{arg2}])"
-            if expr.func.name == "list_push!" and len(expr.args) == 2:
-                arg1 = generate_julia_lines(expr.args[0], lines, indent)
-                arg2 = generate_julia_lines(expr.args[1], lines, indent)
-                lines.append(f"{indent}push!({arg1}, {arg2})")
-                return "nothing"
-            if expr.func.name == "error" and len(expr.args) == 2:
-                arg1 = generate_julia_lines(expr.args[0], lines, indent)
-                arg2 = generate_julia_lines(expr.args[1], lines, indent)
-                lines.append(f"{indent}throw(ParseError({arg1} * \": \" * string({arg2})))")
-                return "nothing"
-            if expr.func.name == "error" and len(expr.args) == 1:
-                arg1 = generate_julia_lines(expr.args[0], lines, indent)
-                lines.append(f"{indent}throw(ParseError({arg1}))")
-                return "nothing"
-            elif expr.func.name == "make_list":
-                args = []
-                for arg in expr.args:
-                    args.append(generate_julia_lines(arg, lines, indent))
-                args_code = ', '.join(args)
-                return f"[{args_code}]"
-            elif expr.func.name == "not" and len(expr.args) == 1:
-                arg1 = generate_julia_lines(expr.args[0], lines, indent)
-                return f"!{arg1}"
-            elif expr.func.name == "equal" and len(expr.args) == 2:
-                arg1 = generate_julia_lines(expr.args[0], lines, indent)
-                arg2 = generate_julia_lines(expr.args[1], lines, indent)
-                return f"{arg1} == {arg2}"
-            elif expr.func.name == "not_equal" and len(expr.args) == 2:
-                arg1 = generate_julia_lines(expr.args[0], lines, indent)
-                arg2 = generate_julia_lines(expr.args[1], lines, indent)
-                return f"{arg1} != {arg2}"
-            elif expr.func.name == "is_none" and len(expr.args) == 1:
-                arg = generate_julia_lines(expr.args[0], lines, indent)
-                return f"isnothing({arg})"
-            elif expr.func.name == "some" and len(expr.args) == 1:
-                arg = generate_julia_lines(expr.args[0], lines, indent)
-                return arg
-            elif expr.func.name == "fst" and len(expr.args) == 1:
-                arg = generate_julia_lines(expr.args[0], lines, indent)
-                return f"{arg}[1]"
-            elif expr.func.name == "snd" and len(expr.args) == 1:
-                arg = generate_julia_lines(expr.args[0], lines, indent)
-                return f"{arg}[2]"
-            elif expr.func.name == "Tuple" and len(expr.args) >= 2:
-                args = [generate_julia_lines(arg, lines, indent) for arg in expr.args]
-                return f"({', '.join(args)},)"
-            elif expr.func.name == "length" and len(expr.args) == 1:
-                arg = generate_julia_lines(expr.args[0], lines, indent)
-                return f"length({arg})"
-            elif expr.func.name == "unwrap_option_or" and len(expr.args) == 2:
-                arg1 = generate_julia_lines(expr.args[0], lines, indent)
-                arg2 = generate_julia_lines(expr.args[1], lines, indent)
-                return f"something({arg1}, {arg2})"
-            elif expr.func.name == "match_lookahead_terminal" and len(expr.args) == 2:
-                arg1 = generate_julia_lines(expr.args[0], lines, indent)
-                arg2 = generate_julia_lines(expr.args[1], lines, indent)
-                return f"match_lookahead_terminal(parser, {arg1}, {arg2})"
-            elif expr.func.name == "match_lookahead_literal" and len(expr.args) == 2:
-                arg1 = generate_julia_lines(expr.args[0], lines, indent)
-                arg2 = generate_julia_lines(expr.args[1], lines, indent)
-                return f"match_lookahead_literal(parser, {arg1}, {arg2})"
-            elif expr.func.name == "match_terminal" and len(expr.args) == 1:
-                arg = generate_julia_lines(expr.args[0], lines, indent)
-                return f"match_terminal(parser, {arg})"
-            elif expr.func.name == "match_literal" and len(expr.args) == 1:
-                arg = generate_julia_lines(expr.args[0], lines, indent)
-                return f"match_literal(parser, {arg})"
-            elif expr.func.name == "consume_literal" and len(expr.args) == 1:
-                arg = generate_julia_lines(expr.args[0], lines, indent)
-                lines.append(f"{indent}consume_literal(parser, {arg})")
-                return "nothing"
+    def gen_var_declaration(self, var: str, type_hint: Optional[str] = None) -> str:
+        # Julia doesn't need explicit declaration
+        return ""
 
-        # Regular call
-        f = generate_julia_lines(expr.func, lines, indent)
+    # --- Lambda and function definition syntax ---
 
-        args = []
-        for arg in expr.args:
-            args.append(generate_julia_lines(arg, lines, indent))
-        args_code = ', '.join(args)
-        tmp = gensym()
-        lines.append(f"{indent}{tmp} = {f}({args_code})")
-        return tmp
-
-    elif isinstance(expr, Lambda):
-        params = [escape_identifier(p.name) for p in expr.params]
+    def gen_lambda_start(self, params: List[str], return_type: Optional[str]) -> Tuple[str, str]:
         params_str = ', '.join(params) if params else ''
-        f = gensym()
-        lines.append(f"{indent}function {f}({params_str})")
-        v = generate_julia_lines(expr.body, lines, indent + "    ")
-        lines.append(f"{indent}    return {v}")
-        lines.append(f"{indent}end")
-        return f
+        return (f"function __FUNC__({params_str})", "end")
 
-    elif isinstance(expr, Let):
-        var_name = escape_identifier(expr.var.name)
-        tmp1 = generate_julia_lines(expr.init, lines, indent)
-        lines.append(f"{indent}{var_name} = {tmp1}")
-        tmp2 = generate_julia_lines(expr.body, lines, indent)
-        return tmp2
+    def gen_func_def_header(self, name: str, params: List[Tuple[str, str]],
+                            return_type: Optional[str], is_method: bool = False) -> str:
+        params_str = ', '.join(f"{n}::{t}" for n, t in params)
+        ret_hint = f"::{return_type}" if return_type else ""
+        return f"function {name}({params_str}){ret_hint}"
 
-    elif isinstance(expr, IfElse):
-        cond_code = generate_julia_lines(expr.condition, lines, indent)
+    def gen_func_def_end(self) -> str:
+        return "end"
+
+    # --- Builtin operations ---
+
+    def gen_builtin_call(self, name: str, args: List[str],
+                         lines: List[str], indent: str) -> Optional[BuiltinResult]:
+        # Check common builtins first
+        result = super().gen_builtin_call(name, args, lines, indent)
+        if result is not None:
+            return result
+
+        # Julia-specific builtins
+        if name == "fragment_id_from_string" and len(args) == 1:
+            return BuiltinResult(f"Proto.FragmentId(id=Vector{{UInt8}}({args[0]}))", [])
+
+        if name == "relation_id_from_string" and len(args) == 1:
+            return BuiltinResult(
+                f"Proto.RelationId(id=parse(UInt64, bytes2hex(sha256({args[0]})[1:8]), base=16))",
+                []
+            )
+
+        if name == "relation_id_from_int" and len(args) == 1:
+            return BuiltinResult(f"Proto.RelationId(id={args[0]})", [])
+
+        if name == "list_concat" and len(args) == 2:
+            return BuiltinResult(f"vcat({args[0]}, {args[1]})", [])
+
+        if name == "list_append" and len(args) == 2:
+            return BuiltinResult(f"vcat({args[0]}, [{args[1]}])", [])
+
+        if name == "list_push!" and len(args) == 2:
+            return BuiltinResult("nothing", [f"push!({args[0]}, {args[1]})"])
+
+        if name == "error" and len(args) == 2:
+            return BuiltinResult("nothing", [f'throw(ParseError({args[0]} * ": " * string({args[1]})))'])
+
+        if name == "error" and len(args) == 1:
+            return BuiltinResult("nothing", [f"throw(ParseError({args[0]}))"])
+
+        if name == "make_list":
+            return BuiltinResult(f"[{', '.join(args)}]", [])
+
+        if name == "is_none" and len(args) == 1:
+            return BuiltinResult(f"isnothing({args[0]})", [])
+
+        if name == "fst" and len(args) == 1:
+            return BuiltinResult(f"{args[0]}[1]", [])
+
+        if name == "snd" and len(args) == 1:
+            return BuiltinResult(f"{args[0]}[2]", [])
+
+        if name == "Tuple" and len(args) >= 2:
+            return BuiltinResult(f"({', '.join(args)},)", [])
+
+        if name == "length" and len(args) == 1:
+            return BuiltinResult(f"length({args[0]})", [])
+
+        if name == "unwrap_option_or" and len(args) == 2:
+            return BuiltinResult(f"something({args[0]}, {args[1]})", [])
+
+        if name == "match_lookahead_terminal" and len(args) == 2:
+            return BuiltinResult(f"match_lookahead_terminal(parser, {args[0]}, {args[1]})", [])
+
+        if name == "match_lookahead_literal" and len(args) == 2:
+            return BuiltinResult(f"match_lookahead_literal(parser, {args[0]}, {args[1]})", [])
+
+        if name == "match_terminal" and len(args) == 1:
+            return BuiltinResult(f"match_terminal(parser, {args[0]})", [])
+
+        if name == "match_literal" and len(args) == 1:
+            return BuiltinResult(f"match_literal(parser, {args[0]})", [])
+
+        if name == "consume_literal" and len(args) == 1:
+            return BuiltinResult("nothing", [f"consume_literal(parser, {args[0]})"])
+
+        return None
+
+    def _generate_if_else(self, expr: IfElse, lines: List[str], indent: str) -> str:
+        """Override to skip var declaration (Julia doesn't need it)."""
+        cond_code = self.generate_lines(expr.condition, lines, indent)
+
+        # Optimization: short-circuit for boolean literals
         if expr.then_branch == Lit(True):
-            else_code = generate_julia_lines(expr.else_branch, lines, indent + "    ")
+            else_code = self.generate_lines(expr.else_branch, lines, indent + self.indent_str)
             return f"({cond_code} || {else_code})"
         if expr.else_branch == Lit(False):
-            then_code = generate_julia_lines(expr.then_branch, lines, indent + "    ")
+            then_code = self.generate_lines(expr.then_branch, lines, indent + self.indent_str)
             return f"({cond_code} && {then_code})"
 
         tmp = gensym()
-        lines.append(f"{indent}if {cond_code}")
-        then_code = generate_julia_lines(expr.then_branch, lines, indent + "    ")
-        lines.append(f"{indent}    {tmp} = {then_code}")
-        lines.append(f"{indent}else")
-        else_code = generate_julia_lines(expr.else_branch, lines, indent + "    ")
-        lines.append(f"{indent}    {tmp} = {else_code}")
-        lines.append(f"{indent}end")
+        lines.append(f"{indent}{self.gen_if_start(cond_code)}")
+
+        body_indent = indent + self.indent_str
+        then_code = self.generate_lines(expr.then_branch, lines, body_indent)
+        lines.append(f"{body_indent}{self.gen_assignment(tmp, then_code)}")
+
+        lines.append(f"{indent}{self.gen_else()}")
+        else_code = self.generate_lines(expr.else_branch, lines, body_indent)
+        lines.append(f"{body_indent}{self.gen_assignment(tmp, else_code)}")
+
+        lines.append(f"{indent}{self.gen_if_end()}")
+
         return tmp
 
-    elif isinstance(expr, Seq):
-        tmp = "nothing"
-        for e in expr.exprs:
-            tmp = generate_julia_lines(e, lines, indent)
-        return tmp
-
-    elif isinstance(expr, While):
-        m = len(lines)
-        cond_code = generate_julia_lines(expr.condition, lines, indent)
-        non_trivial_cond = len(lines) > m
-        cond_code_is_lvalue = cond_code.isidentifier()
-        lines.append(f"{indent}while {cond_code}")
-        n = len(lines)
-        body_code = generate_julia_lines(expr.body, lines, indent + "    ")
-        if len(lines) == n:
-            lines.append(f"{indent}    # empty body")
-        # Update the condition variable
-        if non_trivial_cond and cond_code_is_lvalue:
-            cond_code2 = generate_julia_lines(expr.condition, lines, indent + "    ")
-            lines.append(f"{indent}    {cond_code} = {cond_code2}")
-        lines.append(f"{indent}end")
-        return "nothing"
-
-    elif isinstance(expr, Assign):
-        var_name = escape_identifier(expr.var.name)
-        expr_code = generate_julia_lines(expr.expr, lines, indent)
-        lines.append(f"{indent}{var_name} = {expr_code}")
-        return "nothing"
-
-    elif isinstance(expr, Return):
-        expr_code = generate_julia_lines(expr.expr, lines, indent)
-        lines.append(f"{indent}return {expr_code}")
-        return "nothing"
-
-    else:
-        raise ValueError(f"Unknown action expression type: {type(expr)}")
-
-
-def generate_julia_def(expr: Union[FunDef, ParseNonterminalDef], indent: str = "") -> str:
-    """Generate Julia function definition."""
-    if isinstance(expr, FunDef):
-        func_name = escape_identifier(expr.name)
-
-        params = []
-        for param in expr.params:
-            escaped_name = escape_identifier(param.name)
-            type_hint = generate_julia_type(param.type)
-            params.append(f"{escaped_name}::{type_hint}")
-
-        params_str = ', '.join(params)
-
-        ret_hint = f"::{generate_julia_type(expr.return_type)}" if expr.return_type else ""
-
-        if expr.body is None:
-            body_code = f"{indent}    nothing"
-        else:
-            lines = []
-            body_inner = generate_julia_lines(expr.body, lines, indent + "    ")
-            lines.append(f"{indent}    return {body_inner}")
-            body_code = "\n".join(lines)
-
-        return f"{indent}function {func_name}({params_str}){ret_hint}\n{body_code}\n{indent}end"
-
-    elif isinstance(expr, ParseNonterminalDef):
+    def _generate_parse_def(self, expr: ParseNonterminalDef, indent: str) -> str:
+        """Generate a parse method definition."""
         func_name = f"parse_{expr.nonterminal.name}"
 
         params = ["parser::Parser"]
         for param in expr.params:
-            escaped_name = escape_identifier(param.name)
-            type_hint = generate_julia_type(param.type)
+            escaped_name = self.escape_identifier(param.name)
+            type_hint = self.gen_type(param.type)
             params.append(f"{escaped_name}::{type_hint}")
 
         params_str = ', '.join(params)
 
-        ret_hint = f"::{generate_julia_type(expr.return_type)}" if expr.return_type else ""
+        ret_hint = f"::{self.gen_type(expr.return_type)}" if expr.return_type else ""
 
         if expr.body is None:
             body_code = f"{indent}    nothing"
         else:
-            lines = []
-            body_inner = generate_julia_lines(expr.body, lines, indent + "    ")
-            lines.append(f"{indent}    return {body_inner}")
-            body_code = "\n".join(lines)
+            body_lines: List[str] = []
+            body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
+            body_lines.append(f"{indent}    return {body_inner}")
+            body_code = "\n".join(body_lines)
 
         return f"{indent}function {func_name}({params_str}){ret_hint}\n{body_code}\n{indent}end"
+
+
+# Module-level instance for convenience
+_generator = JuliaCodeGenerator()
+
+
+def escape_identifier(name: str) -> str:
+    """Escape a Julia identifier if it's a keyword."""
+    return _generator.escape_identifier(name)
+
+
+def generate_julia_type(typ) -> str:
+    """Generate Julia type annotation from a Type expression."""
+    return _generator.gen_type(typ)
+
+
+def generate_julia_lines(expr: TargetExpr, lines: List[str], indent: str = "") -> str:
+    """Generate Julia code from a target IR expression."""
+    return _generator.generate_lines(expr, lines, indent)
+
+
+def generate_julia_def(expr: Union[FunDef, ParseNonterminalDef], indent: str = "") -> str:
+    """Generate Julia function definition."""
+    return _generator.generate_def(expr, indent)
 
 
 def generate_julia(expr: TargetExpr, indent: str = "") -> str:
@@ -350,7 +305,7 @@ def generate_julia(expr: TargetExpr, indent: str = "") -> str:
         else:
             return f"() -> {body_code}"
     elif isinstance(expr, Let):
-        lines = []
+        lines: List[str] = []
         result = generate_julia_lines(expr, lines, indent)
         if lines:
             return '\n'.join(lines) + '\n' + result
@@ -373,6 +328,8 @@ __all__ = [
     'generate_julia',
     'generate_julia_lines',
     'generate_julia_def',
+    'generate_julia_type',
     'generate_julia_function_body',
     'JULIA_KEYWORDS',
+    'JuliaCodeGenerator',
 ]
