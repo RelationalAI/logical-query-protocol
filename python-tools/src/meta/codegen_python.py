@@ -82,7 +82,7 @@ class PythonCodeGenerator(CodeGenerator):
         self.register_builtin("snd", 1,
             lambda args, lines, indent: BuiltinResult(f"{args[0]}[1]", []))
 
-        self.register_builtin("Tuple", -1,
+        self.register_builtin("make_tuple", -1,
             lambda args, lines, indent: BuiltinResult(f"({', '.join(args)},)", []))
 
         self.register_builtin("length", 1,

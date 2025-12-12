@@ -233,7 +233,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('symbol', BaseType('String')), Var('value', MessageType('Value'))],
             TupleType([BaseType('String'), MessageType('Value')]),
-            Call(Builtin('Tuple'), [Var('symbol', BaseType('String')), Var('value', MessageType('Value'))])
+            Call(Builtin('make_tuple'), [Var('symbol', BaseType('String')), Var('value', MessageType('Value'))])
         )
     ))
 
@@ -277,7 +277,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
                 Var('values', OptionType(ListType(MessageType('Binding'))))
             ],
             _bindings_type,
-            Call(Builtin('Tuple'), [
+            Call(Builtin('make_tuple'), [
                 Var('keys', ListType(MessageType('Binding'))),
                 Var('values', OptionType(ListType(MessageType('Binding'))))
             ])
@@ -326,7 +326,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             params=[Var('bindings', _bindings_type), Var('formula', MessageType('Formula'))],
             return_type=_abstraction_with_arity_type,
-            body=Call(Builtin('Tuple'), [
+            body=Call(Builtin('make_tuple'), [
                 Call(Constructor('Abstraction'), [
                     Call(Builtin('list_concat'), [
                         Call(Builtin('fst'), [Var('bindings', _bindings_type)]),

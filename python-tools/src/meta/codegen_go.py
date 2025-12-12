@@ -95,10 +95,10 @@ class GoCodeGenerator(CodeGenerator):
         self.register_builtin("snd", 1,
             lambda args, lines, indent: BuiltinResult(f"{args[0]}.F1", []))
 
-        def gen_tuple(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
+        def gen_make_tuple(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
             fields = ', '.join(f"F{i}: {a}" for i, a in enumerate(args))
             return BuiltinResult(f"struct{{{fields}}}", [])
-        self.register_builtin("Tuple", -1, gen_tuple)
+        self.register_builtin("make_tuple", -1, gen_make_tuple)
 
         self.register_builtin("length", 1,
             lambda args, lines, indent: BuiltinResult(f"len({args[0]})", []))
