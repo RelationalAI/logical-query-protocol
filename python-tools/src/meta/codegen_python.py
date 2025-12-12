@@ -140,8 +140,8 @@ class PythonCodeGenerator(CodeGenerator):
     def gen_symbol(self, name: str) -> str:
         return f'"{name}"'
 
-    def gen_constructor(self, name: str) -> str:
-        return f"proto.{name}"
+    def gen_constructor(self, module: str, name: str) -> str:
+        return f"{module}_pb2.{name}"
 
     def gen_builtin_ref(self, name: str) -> str:
         return f"self.{name}"
@@ -151,8 +151,8 @@ class PythonCodeGenerator(CodeGenerator):
 
     # --- Type generation ---
 
-    def gen_message_type(self, name: str) -> str:
-        return f"proto.{name}"
+    def gen_message_type(self, module: str, name: str) -> str:
+        return f"{module}_pb2.{name}"
 
     def gen_tuple_type(self, element_types: List[str]) -> str:
         if not element_types:

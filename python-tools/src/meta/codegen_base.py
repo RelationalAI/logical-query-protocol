@@ -111,7 +111,7 @@ class CodeGenerator(ABC):
         pass
 
     @abstractmethod
-    def gen_constructor(self, name: str) -> str:
+    def gen_constructor(self, module: str, name: str) -> str:
         """Generate a constructor reference (e.g., proto.Name)."""
         pass
 
@@ -128,7 +128,7 @@ class CodeGenerator(ABC):
     # --- Type generation ---
 
     @abstractmethod
-    def gen_message_type(self, name: str) -> str:
+    def gen_message_type(self, module: str, name: str) -> str:
         """Generate a message/protobuf type reference."""
         pass
 
@@ -157,7 +157,7 @@ class CodeGenerator(ABC):
         if isinstance(typ, BaseType):
             return self.base_type_map.get(typ.name, typ.name)
         elif isinstance(typ, MessageType):
-            return self.gen_message_type(typ.name)
+            return self.gen_message_type(typ.module, typ.name)
         elif isinstance(typ, TupleType):
             element_types = [self.gen_type(e) for e in typ.elements]
             return self.gen_tuple_type(element_types)
@@ -283,7 +283,7 @@ class CodeGenerator(ABC):
             return self.gen_symbol(expr.name)
 
         elif isinstance(expr, Message):
-            return self.gen_constructor(expr.name)
+            return self.gen_constructor(expr.module, expr.name)
 
         elif isinstance(expr, Builtin):
             return self.gen_builtin_ref(expr.name)

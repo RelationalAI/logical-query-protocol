@@ -27,9 +27,11 @@ class ProtoParser:
     def __init__(self):
         self.messages: Dict[str, ProtoMessage] = {}
         self.enums: Dict[str, ProtoEnum] = {}
+        self.current_module: str = ""
 
     def parse_file(self, filepath: Path) -> None:
         """Parse protobuf file and add messages/enums to internal state."""
+        self.current_module = filepath.stem
         content = filepath.read_text()
         content = self._remove_comments(content)
         self._parse_content(content)
@@ -78,7 +80,7 @@ class ProtoParser:
 
     def _parse_message(self, name: str, body: str) -> ProtoMessage:
         """Parse message definition body into fields, oneofs, and nested enums."""
-        message = ProtoMessage(name=name)
+        message = ProtoMessage(name=name, module=self.current_module)
 
         # Parse oneofs and track their spans
         oneof_spans = []

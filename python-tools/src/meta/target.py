@@ -90,14 +90,17 @@ class Builtin(TargetExpr):
 class Message(TargetExpr):
     """Message constructor call.
 
+    module: Module name (protobuf file stem)
     name: Name of the message type
     """
+    module: str
     name: str
 
     def __str__(self) -> str:
-        return f"@{self.name}"
+        return f"@{self.module}.{self.name}"
 
     def __post_init__(self):
+        assert isinstance(self.module, str), f"Invalid module in {self}: {self.module}"
         assert isinstance(self.name, str), f"Invalid name in {self}: {self.name}"
         if not self.name.isidentifier():
             raise ValueError(f"Invalid variable name: {self.name}")
@@ -276,10 +279,11 @@ class BaseType(Type):
 @dataclass(frozen=True)
 class MessageType(Type):
     """Protobuf message types."""
+    module: str
     name: str
 
     def __str__(self) -> str:
-        return self.name
+        return f"{self.module}.{self.name}"
 
 
 @dataclass(frozen=True)

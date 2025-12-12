@@ -150,8 +150,8 @@ def _rewrite_exists(rule: Rule) -> Rule:
         abstraction_found = False
         for elem in rule.rhs.elements:
             if isinstance(elem, Nonterminal) and elem.name == 'abstraction':
-                new_elements.append(Nonterminal('bindings', TupleType([ListType(MessageType('Binding')), ListType(MessageType('Binding'))])))
-                new_elements.append(Nonterminal('formula', MessageType('Formula')))
+                new_elements.append(Nonterminal('bindings', TupleType([ListType(MessageType('logic', 'Binding')), ListType(MessageType('logic', 'Binding'))])))
+                new_elements.append(Nonterminal('formula', MessageType('logic', 'Formula')))
                 abstraction_found = True
             else:
                 new_elements.append(elem)
@@ -162,23 +162,23 @@ def _rewrite_exists(rule: Rule) -> Rule:
                 if param.name not in ('abstraction', 'x', 'body'):
                     new_params.append(param)
                 else:
-                    new_params.append(Var('bindings', TupleType([ListType(MessageType('Binding')), ListType(MessageType('Binding'))])))
-                    new_params.append(Var('formula', MessageType('Formula')))
-            bindings_type = TupleType([ListType(MessageType('Binding')), ListType(MessageType('Binding'))])
+                    new_params.append(Var('bindings', TupleType([ListType(MessageType('logic', 'Binding')), ListType(MessageType('logic', 'Binding'))])))
+                    new_params.append(Var('formula', MessageType('logic', 'Formula')))
+            bindings_type = TupleType([ListType(MessageType('logic', 'Binding')), ListType(MessageType('logic', 'Binding'))])
             abstraction_construction = Call(
-                Message('Abstraction'),
+                Message('logic', 'Abstraction'),
                 [
                     Call(Builtin('list_concat'), [
                         Call(Builtin('fst'), [Var('bindings', bindings_type)]),
                         Call(Builtin('snd'), [Var('bindings', bindings_type)])
                     ]),
-                    Var('formula', MessageType('Formula'))
+                    Var('formula', MessageType('logic', 'Formula'))
                 ]
             )
             new_action = Lambda(
                 params=new_params,
                 return_type=rule.action.return_type,
-                body=Call(Message('Exists'), [abstraction_construction])
+                body=Call(Message('logic', 'Exists'), [abstraction_construction])
             )
             return Rule(lhs=rule.lhs, rhs=Sequence(new_elements), action=new_action, source_type=rule.source_type)
     return rule

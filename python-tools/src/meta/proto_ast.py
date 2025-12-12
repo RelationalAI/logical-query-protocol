@@ -49,6 +49,7 @@ class ProtoEnum:
 class ProtoMessage:
     """Protobuf message definition."""
     name: str
+    module: str = ""
     fields: List[ProtoField] = field(default_factory=list)
     oneofs: List[ProtoOneof] = field(default_factory=list)
     enums: List[ProtoEnum] = field(default_factory=list)

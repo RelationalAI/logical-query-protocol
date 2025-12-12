@@ -34,7 +34,7 @@ class GrammarGenerator:
         self.final_rules: Set[str] = set()
         self.generated_rules: Set[str] = set()
         self.expected_unreachable: Set[str] = set()
-        self.grammar = Grammar(start=Nonterminal('transaction', MessageType('Transaction')))
+        self.grammar = Grammar(start=Nonterminal('transaction', MessageType('transactions', 'Transaction')))
         self.verbose = verbose
         self.inline_fields: Set[Tuple[str, str]] = {
             ("Script", "constructs"),
@@ -84,9 +84,10 @@ class GrammarGenerator:
                 args.append(Call(Builtin('unwrap_option_or'), [var, Call(Builtin('make_list'), [])]))
             else:
                 args.append(var)
-        body = Call(Message(message_name), args)
+        message = self.parser.messages[message_name]
+        body = Call(Message(message.module, message_name), args)
         params = [Var(name, param_type) for name, param_type in zip(param_names, param_types)]
-        return Lambda(params=params, return_type=MessageType(message_name), body=body)
+        return Lambda(params=params, return_type=MessageType(message.module, message_name), body=body)
 
     def _next_param_name(self, idx: int) -> str:
         """Generate parameter name for lambda (a, b, c, ...)."""
@@ -100,7 +101,8 @@ class GrammarGenerator:
             base_type_name = _PRIMITIVE_TO_BASE_TYPE[type_name]
             return BaseType(base_type_name)
         elif self._is_message_type(type_name):
-            return MessageType(type_name)
+            message = self.parser.messages[type_name]
+            return MessageType(message.module, type_name)
         else:
             assert False, f'Unknown type: {type_name}'
 
@@ -260,7 +262,8 @@ class GrammarGenerator:
         if message_name not in self.parser.messages:
             return
         rule_name = self._get_rule_name(message_name)
-        message_type = MessageType(message_name)
+        message = self.parser.messages[message_name]
+        message_type = MessageType(message.module, message_name)
         rule_lhs = Nonterminal(rule_name, message_type)
         if rule_name in self.final_rules:
             return
@@ -276,9 +279,9 @@ class GrammarGenerator:
                 field_rule = self._get_rule_name(field.name)
                 field_name_snake = self._to_snake_case(field.name)
                 field_type = self._get_type_for_name(field.type)
-                oneof_call = Call(Message('OneOf'), [Symbol(field_name_snake), Var('value', field_type)])
-                wrapper_call = Call(Message(message_name), [oneof_call])
-                action = Lambda([Var('value', field_type)], MessageType(message_name), wrapper_call)
+                oneof_call = Call(Message(message.module, 'OneOf'), [Symbol(field_name_snake), Var('value', field_type)])
+                wrapper_call = Call(Message(message.module, message_name), [oneof_call])
+                action = Lambda([Var('value', field_type)], MessageType(message.module, message_name), wrapper_call)
                 alt_rule = Rule(lhs=Nonterminal(rule_name, message_type), rhs=Sequence((Nonterminal(field_rule, field_type),)), action=action)
                 self._add_rule(alt_rule)
                 if self._is_primitive_type(field.type):
