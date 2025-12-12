@@ -12,8 +12,6 @@ from .proto_parser import ProtoParser
 from .grammar_gen_builtins import get_builtin_rules
 from .grammar_gen_rewrites import get_rule_rewrites
 
-_any_type = BaseType("Any")
-
 # Mapping from protobuf primitive types to base type names
 _PRIMITIVE_TO_BASE_TYPE = {
     'string': 'String',

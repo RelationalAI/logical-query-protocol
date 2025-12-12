@@ -10,20 +10,57 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple, Sequence as PySequence
 from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Terminal, is_epsilon, rhs_elements, Sequence
 from .target import Lambda, Call, ParseNonterminalDef, Var, Lit, Symbol, Builtin, Let, IfElse, FunDef, BaseType, ListType, TargetExpr, Seq, While, Assign, Type, ParseNonterminal, ParseNonterminalDef, Return, Constructor, gensym
-_any_type = BaseType('Any')
 
 MAX_LOOKAHEAD = 3
 
+# -----------------------------------------------------------------------------
+# Terminal Sequence Sets
+# -----------------------------------------------------------------------------
+#
+# These classes represent lazily-computed sets of terminal sequences used for
+# LL(k) lookahead decisions. In LL(k) parsing, we need to compute FIRST_k and
+# FOLLOW_k sets to decide which production to use.
+#
+# The key insight is that we often don't need the full k-length lookahead.
+# By computing these sets lazily (on demand for specific k values), we avoid
+# expensive computations when shorter lookahead suffices.
+#
+# Class hierarchy:
+#   TerminalSequenceSet (abstract)
+#     ├── FollowSet  - FOLLOW_k(nonterminal): what can follow a nonterminal
+#     ├── FirstSet   - FIRST_k(rhs): what can start an RHS
+#     └── ConcatSet  - Concatenation of two sets (for sequences like A B)
+#
+# When parsing a sequence "A B C", the follow set for A is FIRST(B C) ∘ FOLLOW(whole),
+# computed as ConcatSet(FirstSet(B C), follow_of_parent). This chains lazily.
+# -----------------------------------------------------------------------------
+
+
 class TerminalSequenceSet:
-    """Abstract base class for lazily computing sets of terminal sequences."""
+    """Abstract base for lazily-computed sets of terminal sequences.
+
+    A terminal sequence set represents the possible k-length prefixes of
+    terminal strings that can appear at a given position in the grammar.
+    These are used for LL(k) parsing decisions.
+
+    Subclasses implement different ways of computing these sets:
+    - FollowSet: computes FOLLOW_k for a nonterminal
+    - FirstSet: computes FIRST_k for an RHS element
+    - ConcatSet: concatenates two sets (for computing FIRST of sequences)
+    """
 
     def get(self, k: int) -> Set[Tuple[Terminal, ...]]:
         """Get sequences of length up to k, computing and caching if needed."""
         raise NotImplementedError
 
+
 @dataclass
 class FollowSet(TerminalSequenceSet):
-    """Lazily computes and caches FOLLOW_k sets for a nonterminal."""
+    """Lazily computes FOLLOW_k sets for a nonterminal.
+
+    FOLLOW_k(A) is the set of terminal sequences of length up to k that can
+    immediately follow nonterminal A in any sentential form.
+    """
 
     grammar: Grammar
     lhs: Nonterminal
@@ -35,9 +72,14 @@ class FollowSet(TerminalSequenceSet):
             self._cache[k] = self.grammar.follow_k(k, self.lhs)
         return self._cache[k]
 
+
 @dataclass
 class FirstSet(TerminalSequenceSet):
-    """Lazily computes and caches FIRST_k sets for an RHS."""
+    """Lazily computes FIRST_k sets for an RHS.
+
+    FIRST_k(α) is the set of terminal sequences of length up to k that can
+    begin strings derived from α.
+    """
 
     grammar: Grammar
     rhs: Rhs
@@ -49,9 +91,17 @@ class FirstSet(TerminalSequenceSet):
             self._cache[k] = self.grammar.first_k(k, self.rhs)
         return self._cache[k]
 
+
 @dataclass
 class ConcatSet(TerminalSequenceSet):
-    """Lazily concatenates two TerminalSequenceSets."""
+    """Lazily concatenates two TerminalSequenceSets.
+
+    Used when parsing sequences: if we're parsing "A B" and need to know
+    what can follow A, it's FIRST(B) concatenated with FOLLOW(whole sequence).
+
+    The concatenation is: {a ∘ b | a ∈ first, b ∈ second, |a ∘ b| ≤ k},
+    where ∘ means concatenation truncated to length k.
+    """
 
     first: TerminalSequenceSet
     second: TerminalSequenceSet
@@ -62,18 +112,16 @@ class ConcatSet(TerminalSequenceSet):
         if k in self._cache:
             return self._cache[k]
 
-        # Get first set
         first_set = self.first.get(k)
 
-        # Determine how much of second set we need based on shortest sequence in first
+        # Optimization: only fetch from second what we actually need
         if first_set:
             min_len = min(len(seq) for seq in first_set)
             needed_second_k = k - min_len
             if needed_second_k <= 0:
-                # All sequences are max length, don't need second at all
+                # All sequences in first are already max length
                 result = first_set
             else:
-                # Need second_k where k = needed_second_k
                 from .analysis import _concat_first_k_sets
                 second_set = self.second.get(needed_second_k)
                 result = _concat_first_k_sets(first_set, second_set, k)
@@ -289,11 +337,10 @@ def _generate_parse_rhs_ir(rhs: Rhs, grammar: Grammar, follow_set: TerminalSeque
         return IfElse(predictor, _generate_parse_rhs_ir(rhs.rhs, grammar, follow_set, False, None), Lit(None))
     elif isinstance(rhs, Star):
         assert grammar is not None
-        xs = gensym('xs')
-        cond = gensym('cond')
-        cond_var = Var(cond, BaseType('Boolean'))
+        xs = Var(gensym('xs'), ListType(rhs.rhs.target_type()))
+        cond = Var(gensym('cond'), BaseType('Boolean'))
         predictor = _build_option_predictor(grammar, rhs.rhs, follow_set)
-        return Let(Var(xs, _any_type), Call(Builtin('make_list'), []), Let(cond_var, predictor, Seq([While(cond_var, Seq([Call(Builtin('list_push!'), [Var(xs, _any_type), _generate_parse_rhs_ir(rhs.rhs, grammar, follow_set, False, None)]), Assign(cond_var, predictor)])), Var(xs, _any_type)])))
+        return Let(xs, Call(Builtin('make_list'), []), Let(cond, predictor, Seq([While(cond, Seq([Call(Builtin('list_push!'), [xs, _generate_parse_rhs_ir(rhs.rhs, grammar, follow_set, False, None)]), Assign(cond, predictor)])), xs])))
     else:
         assert False, f'Unsupported Rhs type: {type(rhs)}'
 
@@ -303,7 +350,6 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, grammar: Grammar, follow_set:
 
     exprs = []
     arg_vars = []
-    param_names = []
     elems = list(rhs_elements(rhs))
     non_literal_count = 0
     for i, elem in enumerate(elems):
@@ -321,9 +367,9 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, grammar: Grammar, follow_set:
                 var_name = gensym(action.params[non_literal_count].name)
             else:
                 var_name = gensym('arg')
-            param_names.append(var_name)
-            exprs.append(Assign(Var(var_name, _any_type), elem_ir))
-            arg_vars.append(Var(var_name, _any_type))
+            var = Var(var_name, elem.target_type())
+            exprs.append(Assign(var, elem_ir))
+            arg_vars.append(var)
             non_literal_count += 1
     if apply_action and action:
         lambda_call = _apply(action, arg_vars)
