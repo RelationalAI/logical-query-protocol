@@ -282,7 +282,10 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
             _bindings_type,
             Call(Builtin('make_tuple'), [
                 Var('keys', ListType(MessageType('logic', 'Binding'))),
-                Var('values', OptionType(ListType(MessageType('logic', 'Binding'))))
+                Call(Builtin('unwrap_option_or'), [
+                    Var('values', OptionType(ListType(MessageType('logic', 'Binding')))),
+                    Call(Builtin('make_list'), [])
+                ])
             ])
         )
     ))

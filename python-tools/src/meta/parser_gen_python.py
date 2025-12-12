@@ -141,14 +141,18 @@ class Lexer:
     def scan_uint128(u: str) -> Any:
         """Parse UINT128 token."""
         uint128_val = int(u, 16)
-        return logic_pb2.UInt128Value(value=uint128_val)
+        low = uint128_val & 0xFFFFFFFFFFFFFFFF
+        high = (uint128_val >> 64) & 0xFFFFFFFFFFFFFFFF
+        return logic_pb2.UInt128Value(low=uint128_val, high=0)
 
     @staticmethod
     def scan_int128(u: str) -> Any:
         """Parse INT128 token."""
         u = u[:-4]  # Remove the 'i128' suffix
         int128_val = int(u)
-        return logic_pb2.Int128Value(value=int128_val)
+        low = int128_val & 0xFFFFFFFFFFFFFFFF
+        high = (int128_val >> 64) & 0xFFFFFFFFFFFFFFFF
+        return logic_pb2.Int128Value(low=int128_val, high=0)
 
     @staticmethod
     def scan_decimal(d: str) -> Any:
@@ -160,7 +164,7 @@ class Lexer:
             raise ValueError(f'Invalid decimal format: {{{{d}}}}')
         scale = len(parts[0].split('.')[1])
         precision = int(parts[1])
-        value = Decimal(parts[0])
+        value = Lexer.scan_int128(parts[0].replace('.', ''))
         return logic_pb2.DecimalValue(precision=precision, scale=scale, value=value)
 
 
