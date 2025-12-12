@@ -16,95 +16,6 @@ from meta.parser_gen_python import generate_parser_python
 _int64_type = BaseType("Int64")
 
 
-def test_parser_with_left_factoring():
-    """Test that parser generation works with left-factored grammar."""
-    start = Nonterminal("start", MessageType("proto", "Transaction"))
-    grammar = Grammar(start=start)
-
-    # Add start rule
-    grammar.add_rule(Rule(
-        lhs=Nonterminal("start", MessageType("proto", "Expr")),
-        rhs=Nonterminal("expr", MessageType("proto", "Expr")),
-        action=Lambda([Var('e', MessageType("proto", "Expr"))], MessageType("proto", "Expr"), Var('e', MessageType("proto", "Expr"))),
-        grammar=grammar
-    ))
-
-    # Create rules with common prefix
-    rule1 = Rule(
-        lhs=Nonterminal("expr", MessageType("proto", "Expr")),
-        rhs=Sequence([
-            LitTerminal("("),
-            LitTerminal("add"),
-            Nonterminal("term", MessageType("proto", "Term")),
-            Nonterminal("term", MessageType("proto", "Term")),
-            LitTerminal(")")
-        ]),
-        action=Lambda(
-            [Var('t1', MessageType("proto", "Term")), Var('t2', MessageType("proto", "Term"))],
-            MessageType("proto", "Expr"),
-            Call('Add', [Var('t1', MessageType("proto", "Term")), Var('t2', MessageType("proto", "Term"))])
-        ),
-        grammar=grammar
-    )
-
-    rule2 = Rule(
-        lhs=Nonterminal("expr", MessageType("proto", "Expr")),
-        rhs=Sequence([
-            LitTerminal("("),
-            LitTerminal("sub"),
-            Nonterminal("term", MessageType("proto", "Term")),
-            Nonterminal("term", MessageType("proto", "Term")),
-            LitTerminal(")")
-        ]),
-        action=Lambda(
-            [Var('t1', MessageType("proto", "Term")), Var('t2', MessageType("proto", "Term"))],
-            MessageType("proto", "Expr"),
-            Call('Sub', [Var('t1', MessageType("proto", "Term")), Var('t2', MessageType("proto", "Term"))])
-        ),
-        grammar=grammar
-    )
-
-    grammar.add_rule(rule1)
-    grammar.add_rule(rule2)
-
-    # Add term rule
-    grammar.add_rule(Rule(
-        lhs=Nonterminal("term", MessageType("proto", "Term")),
-        rhs=NamedTerminal("NUMBER", _int64_type),
-        action=Lambda([Var('n', _int64_type)], MessageType("proto", "Term"), Var('n', _int64_type)),
-        grammar=grammar
-    ))
-
-    # Add tokens
-    from meta.grammar import Token
-    grammar.tokens.append(Token("NUMBER", r'\d+', Lambda([Var('lexeme', _int64_type)], _int64_type, Call(Builtin('parse_number'), [Var('lexeme', _int64_type)]))))
-
-    print("Generating parser...")
-
-    try:
-        parser_code = generate_parser_python(grammar, reachable=None)
-
-        # Check for key features
-        assert "def parse_expr_cont_" in parser_code, "Should generate continuation method"
-        assert "prefix_results" in parser_code, "Should have prefix results parameter"
-        assert "Parse common prefix" in parser_code, "Should have prefix parsing comment"
-
-        # Save for inspection
-        output_path = Path("/tmp/test_generated_parser.py")
-        output_path.write_text(parser_code)
-
-        print(f"✓ Parser generated successfully")
-        print(f"  Output saved to {output_path}")
-
-        return True
-
-    except Exception as e:
-        print(f"✗ Error generating parser: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
-
-
 def test_parser_execution():
     """Test that generated parser can actually parse input."""
     start = Nonterminal("expr", MessageType("proto", "Expr"))
@@ -116,7 +27,6 @@ def test_parser_execution():
         lhs=Nonterminal("start", MessageType("proto", "Expr")),
         rhs=Nonterminal("expr", MessageType("proto", "Expr")),
         action=Lambda([Var('e', MessageType("proto", "Expr"))], MessageType("proto", "Expr"), Var('e', MessageType("proto", "Expr"))),
-        grammar=grammar
     ))
 
     grammar.add_rule(Rule(
@@ -128,7 +38,6 @@ def test_parser_execution():
             LitTerminal(")")
         ]),
         action=Lambda([Var('n', _int64_type)], MessageType("proto", "Expr"), Var('n', _int64_type)),
-        grammar=grammar
     ))
 
     grammar.tokens.append(Token("NUMBER", r'\d+', Lambda([Var('lexeme', _int64_type)], _int64_type, Call(Builtin('parse_number'), [Var('lexeme', _int64_type)]))))

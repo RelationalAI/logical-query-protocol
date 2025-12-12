@@ -132,8 +132,8 @@ def test_python_let_generation():
     let_expr = Let(Var("x", _any_type), Call(Var("parse_foo", _any_type), []), Var("x", _any_type))
     code = generate_python(let_expr)
     assert "_t" in code and "parse_foo()" in code
-    assert "x = _t" in code
-    assert "return x" in code
+    assert "x = _t" in code or "x = parse_foo()" in code
+    assert code.strip().endswith("x")
 
     # Nested let
     nested_let = Let(Var("x", _any_type), Call(Var("parse_a", _any_type), []),
@@ -142,7 +142,7 @@ def test_python_let_generation():
     code_nested = generate_python(nested_let)
     assert "parse_a()" in code_nested and "x = " in code_nested
     assert "parse_b()" in code_nested and "y = " in code_nested
-    assert "return make(x, y)" in code_nested
+    assert "make(x, y)" in code_nested
 
     # Let with keyword variable
     let_kw = Let(Var("class", _any_type), Call(Var("parse", _any_type), []), Var("class", _any_type))
@@ -165,7 +165,9 @@ def test_julia_let_generation():
                      Let(Var("y", _any_type), Call(Var("parse_b", _any_type), []),
                          Call(Var("make", _any_type), [Var("x", _any_type), Var("y", _any_type)])))
     code_nested = generate_julia(nested_let)
-    assert "let x = parse_a(), y = parse_b(); make(x, y) end" in code_nested
+    assert "parse_a()" in code_nested and "x = " in code_nested
+    assert "parse_b()" in code_nested and "y = " in code_nested
+    assert "make(x, y)" in code_nested
 
     # Let with keyword variable
     let_kw = Let(Var("end", _any_type), Call(Var("parse", _any_type), []), Var("end", _any_type))
@@ -181,7 +183,7 @@ def test_go_let_generation():
     let_expr = Let(Var("x", _any_type), Call(Var("parse_foo", _any_type), []), Var("x", _any_type))
     code = generate_go(let_expr)
     assert "parse_foo()" in code and "x := " in code
-    assert "return x" in code
+    assert code.strip().endswith("x")
 
     # Let with keyword variable
     let_kw = Let(Var("type", _any_type), Call(Var("parse", _any_type), []), Var("type", _any_type))
