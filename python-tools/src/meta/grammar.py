@@ -4,7 +4,6 @@ This module defines the data structures for representing context-free grammars
 with semantic actions, including support for normalization and left-factoring.
 """
 
-import re
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -146,10 +145,6 @@ class Rule:
     def to_pattern(self, grammar: Optional['Grammar'] = None) -> str:
         """Convert RHS to pattern string."""
         return str(self.rhs)
-
-    def get_action(self) -> Optional['Lambda']:
-        """Get action as TargetExpr."""
-        return self.action
 
     def __post_init__(self):
         assert isinstance(self.rhs, Rhs)
@@ -497,53 +492,6 @@ class Grammar:
             lines.append("")
 
         return "\n".join(lines)
-
-    def _rhs_to_name(self, rhs: Rhs) -> str:
-        if isinstance(rhs, Sequence):
-            parts = [self._rhs_elem_to_name(elem) for elem in rhs.elements]
-            return '_'.join(parts)
-        else:
-            return self._rhs_elem_to_name(rhs)
-
-    def _rhs_elem_to_name(self, rhs: Rhs) -> str:
-        """Convert RHS to a short name for auxiliary rule generation."""
-        if isinstance(rhs, Nonterminal):
-            return rhs.name
-        elif isinstance(rhs, NamedTerminal):
-            return rhs.name.lower()
-        elif isinstance(rhs, LitTerminal):
-            name = rhs.name
-            name = name.replace(' ', '_')
-            name = name.replace('|', '_bar')
-            name = name.replace(':', '_colon')
-            name = name.replace('.', '_dot')
-            name = name.replace(',', '_comma')
-            name = name.replace(';', '_semi')
-            name = name.replace('!', '_bang')
-            name = name.replace('*', '_star')
-            name = name.replace('/', '_slash')
-            name = name.replace('&', '_amp')
-            name = name.replace('<', '_lt')
-            name = name.replace('>', '_gt')
-            name = name.replace('$', '_dollar')
-            name = name.replace('#', '_hash')
-            name = name.replace('(', '_lp')
-            name = name.replace(')', '_rp')
-            name = name.replace('[', '_lb')
-            name = name.replace(']', '_rb')
-            name = name.replace('{', '_lc')
-            name = name.replace('}', '_rc')
-            name = re.sub(r'[^a-zA-Z0-9_]', '_X', name)
-            name = f'lit{name}'
-            return name
-        elif isinstance(rhs, Sequence):
-            return self._rhs_to_name(rhs)
-        elif isinstance(rhs, Option):
-            return f"{self._rhs_elem_to_name(rhs.rhs)}_opt"
-        elif isinstance(rhs, Star):
-            return f"{self._rhs_elem_to_name(rhs.rhs)}_star"
-        else:
-            assert False
 
 
 # Helper functions - re-exported from analysis module

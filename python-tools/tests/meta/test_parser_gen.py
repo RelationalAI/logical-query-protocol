@@ -11,7 +11,7 @@ from meta.grammar import (
     Grammar, Rule, Nonterminal, Sequence, LitTerminal, NamedTerminal
 )
 from meta.target import Lambda, Var, Call, Builtin, BaseType, MessageType
-from meta.parser_python import generate_parser_python
+from meta.parser_gen_python import generate_parser_python
 
 _int64_type = BaseType("Int64")
 
