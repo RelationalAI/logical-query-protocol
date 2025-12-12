@@ -270,7 +270,7 @@ class Parser:
         if escape_val and escape_val.HasField('string_value'):
             kwargs['syntax_escapechar'] = escape_val.string_value
 
-        return transactions_pb2.ExportCsvConfig(path=path_str, data_columns=columns, **kwargs)
+        return transactions_pb2.ExportCSVConfig(path=path_str, data_columns=columns, **kwargs)
 
     def construct_fragment(self, fragment_id: fragments_pb2.FragmentId, declarations: List[logic_pb2.Declaration]) -> fragments_pb2.Fragment:
         """Construct Fragment from fragment_id, declarations, and debug info from parser state."""
