@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.scripts]
-lqp = "lqp.parser:main"
+lqp = "lqp.cli:main"
 
 [project.optional-dependencies]
 test = [
