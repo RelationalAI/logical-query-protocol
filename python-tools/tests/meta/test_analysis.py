@@ -37,26 +37,26 @@ def make_simple_grammar():
     A -> "a"
     B -> "b"
     """
-    s = Nonterminal("S", MessageType("S"))
-    a = Nonterminal("A", MessageType("A"))
-    b = Nonterminal("B", MessageType("B"))
+    s = Nonterminal("S", MessageType("proto", "S"))
+    a = Nonterminal("A", MessageType("proto", "A"))
+    b = Nonterminal("B", MessageType("proto", "B"))
     lit_a = LitTerminal("a")
     lit_b = LitTerminal("b")
 
     grammar = Grammar(s)
 
     # S -> A B
-    param_a = Var("x", MessageType("A"))
-    param_b = Var("y", MessageType("B"))
-    action_s = Lambda([param_a, param_b], MessageType("S"), param_a)
+    param_a = Var("x", MessageType("proto", "A"))
+    param_b = Var("y", MessageType("proto", "B"))
+    action_s = Lambda([param_a, param_b], MessageType("proto", "S"), param_a)
     grammar.add_rule(Rule(s, Sequence((a, b)), action_s))
 
     # A -> "a"
-    action_a = Lambda([], MessageType("A"), Var("x", MessageType("A")))
+    action_a = Lambda([], MessageType("proto", "A"), Var("x", MessageType("proto", "A")))
     grammar.add_rule(Rule(a, lit_a, action_a))
 
     # B -> "b"
-    action_b = Lambda([], MessageType("B"), Var("y", MessageType("B")))
+    action_b = Lambda([], MessageType("proto", "B"), Var("y", MessageType("proto", "B")))
     grammar.add_rule(Rule(b, lit_b, action_b))
 
     return grammar, s, a, b, lit_a, lit_b
@@ -69,30 +69,30 @@ def make_nullable_grammar():
     A -> "a" | epsilon
     B -> "b"
     """
-    s = Nonterminal("S", MessageType("S"))
-    a = Nonterminal("A", MessageType("A"))
-    b = Nonterminal("B", MessageType("B"))
+    s = Nonterminal("S", MessageType("proto", "S"))
+    a = Nonterminal("A", MessageType("proto", "A"))
+    b = Nonterminal("B", MessageType("proto", "B"))
     lit_a = LitTerminal("a")
     lit_b = LitTerminal("b")
 
     grammar = Grammar(s)
 
     # S -> A B
-    param_a = Var("x", MessageType("A"))
-    param_b = Var("y", MessageType("B"))
-    action_s = Lambda([param_a, param_b], MessageType("S"), param_a)
+    param_a = Var("x", MessageType("proto", "A"))
+    param_b = Var("y", MessageType("proto", "B"))
+    action_s = Lambda([param_a, param_b], MessageType("proto", "S"), param_a)
     grammar.add_rule(Rule(s, Sequence((a, b)), action_s))
 
     # A -> "a"
-    action_a1 = Lambda([], MessageType("A"), Var("x", MessageType("A")))
+    action_a1 = Lambda([], MessageType("proto", "A"), Var("x", MessageType("proto", "A")))
     grammar.add_rule(Rule(a, lit_a, action_a1))
 
     # A -> epsilon
-    action_a2 = Lambda([], MessageType("A"), Var("x", MessageType("A")))
+    action_a2 = Lambda([], MessageType("proto", "A"), Var("x", MessageType("proto", "A")))
     grammar.add_rule(Rule(a, Sequence(()), action_a2))
 
     # B -> "b"
-    action_b = Lambda([], MessageType("B"), Var("y", MessageType("B")))
+    action_b = Lambda([], MessageType("proto", "B"), Var("y", MessageType("proto", "B")))
     grammar.add_rule(Rule(b, lit_b, action_b))
 
     return grammar, s, a, b
@@ -104,27 +104,27 @@ def make_left_recursive_grammar():
     S -> S "+" T | T
     T -> "num"
     """
-    s = Nonterminal("S", MessageType("S"))
-    t = Nonterminal("T", MessageType("T"))
+    s = Nonterminal("S", MessageType("proto", "S"))
+    t = Nonterminal("T", MessageType("proto", "T"))
     plus = LitTerminal("+")
     num = NamedTerminal("NUM", BaseType("Int64"))
 
     grammar = Grammar(s)
 
     # S -> S "+" T
-    param_s = Var("x", MessageType("S"))
-    param_t1 = Var("y", MessageType("T"))
-    action_s1 = Lambda([param_s, param_t1], MessageType("S"), param_s)
+    param_s = Var("x", MessageType("proto", "S"))
+    param_t1 = Var("y", MessageType("proto", "T"))
+    action_s1 = Lambda([param_s, param_t1], MessageType("proto", "S"), param_s)
     grammar.add_rule(Rule(s, Sequence((s, plus, t)), action_s1))
 
     # S -> T
-    param_t2 = Var("z", MessageType("T"))
-    action_s2 = Lambda([param_t2], MessageType("S"), param_t2)
+    param_t2 = Var("z", MessageType("proto", "T"))
+    action_s2 = Lambda([param_t2], MessageType("proto", "S"), param_t2)
     grammar.add_rule(Rule(s, t, action_s2))
 
     # T -> NUM
     param_num = Var("n", BaseType("Int64"))
-    action_t = Lambda([param_num], MessageType("T"), param_num)
+    action_t = Lambda([param_num], MessageType("proto", "T"), param_num)
     grammar.add_rule(Rule(t, num, action_t))
 
     return grammar, s, t, num
@@ -137,25 +137,25 @@ def make_unreachable_grammar():
     A -> "a"
     B -> "b"  (unreachable)
     """
-    s = Nonterminal("S", MessageType("S"))
-    a = Nonterminal("A", MessageType("A"))
-    b = Nonterminal("B", MessageType("B"))
+    s = Nonterminal("S", MessageType("proto", "S"))
+    a = Nonterminal("A", MessageType("proto", "A"))
+    b = Nonterminal("B", MessageType("proto", "B"))
     lit_a = LitTerminal("a")
     lit_b = LitTerminal("b")
 
     grammar = Grammar(s)
 
     # S -> A
-    param_a = Var("x", MessageType("A"))
-    action_s = Lambda([param_a], MessageType("S"), param_a)
+    param_a = Var("x", MessageType("proto", "A"))
+    action_s = Lambda([param_a], MessageType("proto", "S"), param_a)
     grammar.add_rule(Rule(s, a, action_s))
 
     # A -> "a"
-    action_a = Lambda([], MessageType("A"), Var("y", MessageType("A")))
+    action_a = Lambda([], MessageType("proto", "A"), Var("y", MessageType("proto", "A")))
     grammar.add_rule(Rule(a, lit_a, action_a))
 
     # B -> "b" (unreachable)
-    action_b = Lambda([], MessageType("B"), Var("z", MessageType("B")))
+    action_b = Lambda([], MessageType("proto", "B"), Var("z", MessageType("proto", "B")))
     grammar.add_rule(Rule(b, lit_b, action_b))
 
     return grammar, s, a, b
@@ -184,7 +184,7 @@ class TestCheckReachability:
 
     def test_empty_grammar(self):
         """Test reachability with grammar that has no rules for start."""
-        s = Nonterminal("S", MessageType("S"))
+        s = Nonterminal("S", MessageType("proto", "S"))
         grammar = Grammar(s)
         reachable = check_reachability(grammar)
         # Start is always added to rules dict by Grammar constructor
@@ -193,10 +193,10 @@ class TestCheckReachability:
 
     def test_single_rule(self):
         """Test reachability with single rule."""
-        s = Nonterminal("S", MessageType("S"))
+        s = Nonterminal("S", MessageType("proto", "S"))
         lit = LitTerminal("a")
         grammar = Grammar(s)
-        action = Lambda([], MessageType("S"), Var("x", MessageType("S")))
+        action = Lambda([], MessageType("proto", "S"), Var("x", MessageType("proto", "S")))
         grammar.add_rule(Rule(s, lit, action))
         reachable = check_reachability(grammar)
         assert s in reachable
@@ -204,21 +204,21 @@ class TestCheckReachability:
 
     def test_indirect_reachability(self):
         """Test indirect reachability through multiple nonterminals."""
-        s = Nonterminal("S", MessageType("S"))
-        a = Nonterminal("A", MessageType("A"))
-        b = Nonterminal("B", MessageType("B"))
-        c = Nonterminal("C", MessageType("C"))
+        s = Nonterminal("S", MessageType("proto", "S"))
+        a = Nonterminal("A", MessageType("proto", "A"))
+        b = Nonterminal("B", MessageType("proto", "B"))
+        c = Nonterminal("C", MessageType("proto", "C"))
 
         grammar = Grammar(s)
 
         # S -> A, A -> B, B -> C
-        param_a = Var("x", MessageType("A"))
-        param_b = Var("y", MessageType("B"))
-        param_c = Var("z", MessageType("C"))
-        action_s = Lambda([param_a], MessageType("S"), param_a)
-        action_a = Lambda([param_b], MessageType("A"), param_b)
-        action_b = Lambda([param_c], MessageType("B"), param_c)
-        action_c = Lambda([param_c], MessageType("C"), param_c)
+        param_a = Var("x", MessageType("proto", "A"))
+        param_b = Var("y", MessageType("proto", "B"))
+        param_c = Var("z", MessageType("proto", "C"))
+        action_s = Lambda([param_a], MessageType("proto", "S"), param_a)
+        action_a = Lambda([param_b], MessageType("proto", "A"), param_b)
+        action_b = Lambda([param_c], MessageType("proto", "B"), param_c)
+        action_c = Lambda([param_c], MessageType("proto", "C"), param_c)
 
         grammar.add_rule(Rule(s, a, action_s))
         grammar.add_rule(Rule(a, b, action_a))
@@ -254,13 +254,13 @@ class TestComputeNullable:
 
     def test_star_makes_nullable(self):
         """Test that star makes sequence nullable."""
-        s = Nonterminal("S", MessageType("S"))
-        a = Nonterminal("A", MessageType("A"))
+        s = Nonterminal("S", MessageType("proto", "S"))
+        a = Nonterminal("A", MessageType("proto", "A"))
         star_a = Star(a)
 
         grammar = Grammar(s)
-        param = Var("x", MessageType("S"))
-        action = Lambda([param], MessageType("S"), param)
+        param = Var("x", MessageType("proto", "S"))
+        action = Lambda([param], MessageType("proto", "S"), param)
         grammar.add_rule(Rule(s, star_a, action))
 
         nullable = compute_nullable(grammar)
@@ -268,13 +268,13 @@ class TestComputeNullable:
 
     def test_option_makes_nullable(self):
         """Test that option makes nonterminal nullable."""
-        s = Nonterminal("S", MessageType("S"))
-        a = Nonterminal("A", MessageType("A"))
+        s = Nonterminal("S", MessageType("proto", "S"))
+        a = Nonterminal("A", MessageType("proto", "A"))
         opt_a = Option(a)
 
         grammar = Grammar(s)
-        param = Var("x", MessageType("S"))
-        action = Lambda([param], MessageType("S"), param)
+        param = Var("x", MessageType("proto", "S"))
+        action = Lambda([param], MessageType("proto", "S"), param)
         grammar.add_rule(Rule(s, opt_a, action))
 
         nullable = compute_nullable(grammar)
@@ -282,9 +282,9 @@ class TestComputeNullable:
 
     def test_empty_sequence_makes_nullable(self):
         """Test that empty sequence makes nonterminal nullable."""
-        s = Nonterminal("S", MessageType("S"))
+        s = Nonterminal("S", MessageType("proto", "S"))
         grammar = Grammar(s)
-        action = Lambda([], MessageType("S"), Var("x", MessageType("S")))
+        action = Lambda([], MessageType("proto", "S"), Var("x", MessageType("proto", "S")))
         grammar.add_rule(Rule(s, Sequence(()), action))
 
         nullable = compute_nullable(grammar)
@@ -292,18 +292,18 @@ class TestComputeNullable:
 
     def test_transitive_nullable(self):
         """Test transitive nullable through multiple nonterminals."""
-        s = Nonterminal("S", MessageType("S"))
-        a = Nonterminal("A", MessageType("A"))
-        b = Nonterminal("B", MessageType("B"))
+        s = Nonterminal("S", MessageType("proto", "S"))
+        a = Nonterminal("A", MessageType("proto", "A"))
+        b = Nonterminal("B", MessageType("proto", "B"))
 
         grammar = Grammar(s)
 
         # S -> A, A -> B, B -> epsilon
-        param_a = Var("x", MessageType("A"))
-        param_b = Var("y", MessageType("B"))
-        action_s = Lambda([param_a], MessageType("S"), param_a)
-        action_a = Lambda([param_b], MessageType("A"), param_b)
-        action_b = Lambda([], MessageType("B"), Var("z", MessageType("B")))
+        param_a = Var("x", MessageType("proto", "A"))
+        param_b = Var("y", MessageType("proto", "B"))
+        action_s = Lambda([param_a], MessageType("proto", "S"), param_a)
+        action_a = Lambda([param_b], MessageType("proto", "A"), param_b)
+        action_b = Lambda([], MessageType("proto", "B"), Var("z", MessageType("proto", "B")))
 
         grammar.add_rule(Rule(s, a, action_s))
         grammar.add_rule(Rule(a, b, action_a))
@@ -332,26 +332,26 @@ class TestIsRhsElemNullable:
 
     def test_nonterminal_nullable(self):
         """Test nonterminal nullable when in nullable set."""
-        nt = Nonterminal("A", MessageType("A"))
+        nt = Nonterminal("A", MessageType("proto", "A"))
         nullable = {nt: True}
         assert _is_rhs_elem_nullable(nt, nullable)
 
     def test_nonterminal_not_nullable(self):
         """Test nonterminal not nullable when not in set."""
-        nt = Nonterminal("A", MessageType("A"))
+        nt = Nonterminal("A", MessageType("proto", "A"))
         nullable = {nt: False}
         assert not _is_rhs_elem_nullable(nt, nullable)
 
     def test_star_nullable(self):
         """Test that star is always nullable."""
-        nt = Nonterminal("A", MessageType("A"))
+        nt = Nonterminal("A", MessageType("proto", "A"))
         star = Star(nt)
         nullable = {nt: False}
         assert _is_rhs_elem_nullable(star, nullable)
 
     def test_option_nullable(self):
         """Test that option is always nullable."""
-        nt = Nonterminal("A", MessageType("A"))
+        nt = Nonterminal("A", MessageType("proto", "A"))
         opt = Option(nt)
         nullable = {nt: False}
         assert _is_rhs_elem_nullable(opt, nullable)
@@ -364,16 +364,16 @@ class TestIsRhsElemNullable:
 
     def test_sequence_all_nullable(self):
         """Test sequence is nullable when all elements are nullable."""
-        a = Nonterminal("A", MessageType("A"))
-        b = Nonterminal("B", MessageType("B"))
+        a = Nonterminal("A", MessageType("proto", "A"))
+        b = Nonterminal("B", MessageType("proto", "B"))
         seq = Sequence((a, b))
         nullable = {a: True, b: True}
         assert _is_rhs_elem_nullable(seq, nullable)
 
     def test_sequence_one_not_nullable(self):
         """Test sequence is not nullable when one element is not nullable."""
-        a = Nonterminal("A", MessageType("A"))
-        b = Nonterminal("B", MessageType("B"))
+        a = Nonterminal("A", MessageType("proto", "A"))
+        b = Nonterminal("B", MessageType("proto", "B"))
         seq = Sequence((a, b))
         nullable = {a: True, b: False}
         assert not _is_rhs_elem_nullable(seq, nullable)
@@ -438,7 +438,7 @@ class TestComputeRhsElemFirst:
 
     def test_nonterminal(self):
         """Test FIRST of nonterminal."""
-        nt = Nonterminal("A", MessageType("A"))
+        nt = Nonterminal("A", MessageType("proto", "A"))
         lit = LitTerminal("a")
         first = {nt: {lit}}
         nullable = {nt: False}
@@ -447,8 +447,8 @@ class TestComputeRhsElemFirst:
 
     def test_sequence_all_first(self):
         """Test FIRST of sequence where first element is not nullable."""
-        a = Nonterminal("A", MessageType("A"))
-        b = Nonterminal("B", MessageType("B"))
+        a = Nonterminal("A", MessageType("proto", "A"))
+        b = Nonterminal("B", MessageType("proto", "B"))
         lit_a = LitTerminal("a")
         lit_b = LitTerminal("b")
         seq = Sequence((a, b))
@@ -461,8 +461,8 @@ class TestComputeRhsElemFirst:
 
     def test_sequence_nullable_first(self):
         """Test FIRST of sequence where first element is nullable."""
-        a = Nonterminal("A", MessageType("A"))
-        b = Nonterminal("B", MessageType("B"))
+        a = Nonterminal("A", MessageType("proto", "A"))
+        b = Nonterminal("B", MessageType("proto", "B"))
         lit_a = LitTerminal("a")
         lit_b = LitTerminal("b")
         seq = Sequence((a, b))
@@ -497,9 +497,9 @@ class TestComputeFirstK:
 
     def test_empty_sequence_gives_empty_tuple(self):
         """Test that empty production gives empty tuple."""
-        s = Nonterminal("S", MessageType("S"))
+        s = Nonterminal("S", MessageType("proto", "S"))
         grammar = Grammar(s)
-        action = Lambda([], MessageType("S"), Var("x", MessageType("S")))
+        action = Lambda([], MessageType("proto", "S"), Var("x", MessageType("proto", "S")))
         grammar.add_rule(Rule(s, Sequence(()), action))
 
         first_k = compute_first_k(grammar, k=2)
@@ -527,7 +527,7 @@ class TestComputeRhsElemFirstK:
 
     def test_nonterminal_k2(self):
         """Test FIRST_k of nonterminal."""
-        nt = Nonterminal("A", MessageType("A"))
+        nt = Nonterminal("A", MessageType("proto", "A"))
         lit = LitTerminal("a")
         first_k = {nt: {(lit,)}}
         nullable = {nt: False}
@@ -536,8 +536,8 @@ class TestComputeRhsElemFirstK:
 
     def test_sequence_concatenation_k2(self):
         """Test FIRST_k of sequence concatenates."""
-        a = Nonterminal("A", MessageType("A"))
-        b = Nonterminal("B", MessageType("B"))
+        a = Nonterminal("A", MessageType("proto", "A"))
+        b = Nonterminal("B", MessageType("proto", "B"))
         lit_a = LitTerminal("a")
         lit_b = LitTerminal("b")
         seq = Sequence((a, b))
@@ -549,9 +549,9 @@ class TestComputeRhsElemFirstK:
 
     def test_sequence_truncates_to_k(self):
         """Test FIRST_k truncates sequences to k."""
-        a = Nonterminal("A", MessageType("A"))
-        b = Nonterminal("B", MessageType("B"))
-        c = Nonterminal("C", MessageType("C"))
+        a = Nonterminal("A", MessageType("proto", "A"))
+        b = Nonterminal("B", MessageType("proto", "B"))
+        c = Nonterminal("C", MessageType("proto", "C"))
         lit_a = LitTerminal("a")
         lit_b = LitTerminal("b")
         lit_c = LitTerminal("c")
@@ -573,7 +573,7 @@ class TestComputeRhsElemFirstK:
 
     def test_star_includes_empty(self):
         """Test that star includes empty tuple."""
-        nt = Nonterminal("A", MessageType("A"))
+        nt = Nonterminal("A", MessageType("proto", "A"))
         lit = LitTerminal("a")
         star = Star(nt)
 
@@ -585,7 +585,7 @@ class TestComputeRhsElemFirstK:
 
     def test_option_includes_empty(self):
         """Test that option includes empty tuple."""
-        nt = Nonterminal("A", MessageType("A"))
+        nt = Nonterminal("A", MessageType("proto", "A"))
         lit = LitTerminal("a")
         opt = Option(nt)
 
@@ -612,25 +612,25 @@ class TestComputeFollow:
 
     def test_nullable_propagates_follow(self):
         """Test that nullable nonterminal propagates FOLLOW."""
-        s = Nonterminal("S", MessageType("S"))
-        a = Nonterminal("A", MessageType("A"))
-        b = Nonterminal("B", MessageType("B"))
+        s = Nonterminal("S", MessageType("proto", "S"))
+        a = Nonterminal("A", MessageType("proto", "A"))
+        b = Nonterminal("B", MessageType("proto", "B"))
         lit_b = LitTerminal("b")
 
         grammar = Grammar(s)
 
         # S -> A B
-        param_a = Var("x", MessageType("A"))
-        param_b = Var("y", MessageType("B"))
-        action_s = Lambda([param_a, param_b], MessageType("S"), param_a)
+        param_a = Var("x", MessageType("proto", "A"))
+        param_b = Var("y", MessageType("proto", "B"))
+        action_s = Lambda([param_a, param_b], MessageType("proto", "S"), param_a)
         grammar.add_rule(Rule(s, Sequence((a, b)), action_s))
 
         # A -> epsilon
-        action_a = Lambda([], MessageType("A"), Var("z", MessageType("A")))
+        action_a = Lambda([], MessageType("proto", "A"), Var("z", MessageType("proto", "A")))
         grammar.add_rule(Rule(a, Sequence(()), action_a))
 
         # B -> "b"
-        action_b = Lambda([], MessageType("B"), Var("w", MessageType("B")))
+        action_b = Lambda([], MessageType("proto", "B"), Var("w", MessageType("proto", "B")))
         grammar.add_rule(Rule(b, lit_b, action_b))
 
         follow = compute_follow(grammar)
@@ -646,8 +646,8 @@ class TestComputeRhsElemFollow:
 
     def test_nonterminal_at_end(self):
         """Test FOLLOW for nonterminal at end of production."""
-        lhs = Nonterminal("S", MessageType("S"))
-        a = Nonterminal("A", MessageType("A"))
+        lhs = Nonterminal("S", MessageType("proto", "S"))
+        a = Nonterminal("A", MessageType("proto", "A"))
         lit_a = LitTerminal("a")
 
         first = {a: {lit_a}}
@@ -660,9 +660,9 @@ class TestComputeRhsElemFollow:
 
     def test_nonterminal_followed_by_terminal(self):
         """Test FOLLOW for nonterminal followed by terminal."""
-        lhs = Nonterminal("S", MessageType("S"))
-        a = Nonterminal("A", MessageType("A"))
-        b = Nonterminal("B", MessageType("B"))
+        lhs = Nonterminal("S", MessageType("proto", "S"))
+        a = Nonterminal("A", MessageType("proto", "A"))
+        b = Nonterminal("B", MessageType("proto", "B"))
         lit_b = LitTerminal("b")
 
         seq = Sequence((a, lit_b))
@@ -804,30 +804,30 @@ class TestIntegration:
 
     def test_complex_grammar_analysis(self):
         """Test analysis on more complex grammar."""
-        s = Nonterminal("S", MessageType("S"))
-        a = Nonterminal("A", MessageType("A"))
-        b = Nonterminal("B", MessageType("B"))
+        s = Nonterminal("S", MessageType("proto", "S"))
+        a = Nonterminal("A", MessageType("proto", "A"))
+        b = Nonterminal("B", MessageType("proto", "B"))
         lit_a = LitTerminal("a")
         lit_b = LitTerminal("b")
 
         grammar = Grammar(s)
 
         # S -> A B | B
-        param_a = Var("x", MessageType("A"))
-        param_b = Var("y", MessageType("B"))
-        action1 = Lambda([param_a, param_b], MessageType("S"), param_a)
+        param_a = Var("x", MessageType("proto", "A"))
+        param_b = Var("y", MessageType("proto", "B"))
+        action1 = Lambda([param_a, param_b], MessageType("proto", "S"), param_a)
         grammar.add_rule(Rule(s, Sequence((a, b)), action1))
 
-        param_b2 = Var("z", MessageType("B"))
-        action2 = Lambda([param_b2], MessageType("S"), param_b2)
+        param_b2 = Var("z", MessageType("proto", "B"))
+        action2 = Lambda([param_b2], MessageType("proto", "S"), param_b2)
         grammar.add_rule(Rule(s, b, action2))
 
         # A -> "a"
-        action3 = Lambda([], MessageType("A"), Var("w", MessageType("A")))
+        action3 = Lambda([], MessageType("proto", "A"), Var("w", MessageType("proto", "A")))
         grammar.add_rule(Rule(a, lit_a, action3))
 
         # B -> "b"
-        action4 = Lambda([], MessageType("B"), Var("v", MessageType("B")))
+        action4 = Lambda([], MessageType("proto", "B"), Var("v", MessageType("proto", "B")))
         grammar.add_rule(Rule(b, lit_b, action4))
 
         # Check everything works together

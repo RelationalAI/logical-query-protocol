@@ -18,48 +18,48 @@ _int64_type = BaseType("Int64")
 
 def test_parser_with_left_factoring():
     """Test that parser generation works with left-factored grammar."""
-    start = Nonterminal("start", MessageType("Transaction"))
+    start = Nonterminal("start", MessageType("proto", "Transaction"))
     grammar = Grammar(start=start)
 
     # Add start rule
     grammar.add_rule(Rule(
-        lhs=Nonterminal("start", MessageType("Expr")),
-        rhs=Nonterminal("expr", MessageType("Expr")),
-        action=Lambda([Var('e', MessageType("Expr"))], MessageType("Expr"), Var('e', MessageType("Expr"))),
+        lhs=Nonterminal("start", MessageType("proto", "Expr")),
+        rhs=Nonterminal("expr", MessageType("proto", "Expr")),
+        action=Lambda([Var('e', MessageType("proto", "Expr"))], MessageType("proto", "Expr"), Var('e', MessageType("proto", "Expr"))),
         grammar=grammar
     ))
 
     # Create rules with common prefix
     rule1 = Rule(
-        lhs=Nonterminal("expr", MessageType("Expr")),
+        lhs=Nonterminal("expr", MessageType("proto", "Expr")),
         rhs=Sequence([
             LitTerminal("("),
             LitTerminal("add"),
-            Nonterminal("term", MessageType("Term")),
-            Nonterminal("term", MessageType("Term")),
+            Nonterminal("term", MessageType("proto", "Term")),
+            Nonterminal("term", MessageType("proto", "Term")),
             LitTerminal(")")
         ]),
         action=Lambda(
-            [Var('t1', MessageType("Term")), Var('t2', MessageType("Term"))],
-            MessageType("Expr"),
-            Call('Add', [Var('t1', MessageType("Term")), Var('t2', MessageType("Term"))])
+            [Var('t1', MessageType("proto", "Term")), Var('t2', MessageType("proto", "Term"))],
+            MessageType("proto", "Expr"),
+            Call('Add', [Var('t1', MessageType("proto", "Term")), Var('t2', MessageType("proto", "Term"))])
         ),
         grammar=grammar
     )
 
     rule2 = Rule(
-        lhs=Nonterminal("expr", MessageType("Expr")),
+        lhs=Nonterminal("expr", MessageType("proto", "Expr")),
         rhs=Sequence([
             LitTerminal("("),
             LitTerminal("sub"),
-            Nonterminal("term", MessageType("Term")),
-            Nonterminal("term", MessageType("Term")),
+            Nonterminal("term", MessageType("proto", "Term")),
+            Nonterminal("term", MessageType("proto", "Term")),
             LitTerminal(")")
         ]),
         action=Lambda(
-            [Var('t1', MessageType("Term")), Var('t2', MessageType("Term"))],
-            MessageType("Expr"),
-            Call('Sub', [Var('t1', MessageType("Term")), Var('t2', MessageType("Term"))])
+            [Var('t1', MessageType("proto", "Term")), Var('t2', MessageType("proto", "Term"))],
+            MessageType("proto", "Expr"),
+            Call('Sub', [Var('t1', MessageType("proto", "Term")), Var('t2', MessageType("proto", "Term"))])
         ),
         grammar=grammar
     )
@@ -69,9 +69,9 @@ def test_parser_with_left_factoring():
 
     # Add term rule
     grammar.add_rule(Rule(
-        lhs=Nonterminal("term", MessageType("Term")),
+        lhs=Nonterminal("term", MessageType("proto", "Term")),
         rhs=NamedTerminal("NUMBER", _int64_type),
-        action=Lambda([Var('n', _int64_type)], MessageType("Term"), Var('n', _int64_type)),
+        action=Lambda([Var('n', _int64_type)], MessageType("proto", "Term"), Var('n', _int64_type)),
         grammar=grammar
     ))
 
@@ -107,27 +107,27 @@ def test_parser_with_left_factoring():
 
 def test_parser_execution():
     """Test that generated parser can actually parse input."""
-    start = Nonterminal("expr", MessageType("Expr"))
+    start = Nonterminal("expr", MessageType("proto", "Expr"))
     grammar = Grammar(start=start)
     from meta.grammar import Token
 
     # Simple grammar: expr -> "(" "op" NUMBER ")"
     grammar.add_rule(Rule(
-        lhs=Nonterminal("start", MessageType("Expr")),
-        rhs=Nonterminal("expr", MessageType("Expr")),
-        action=Lambda([Var('e', MessageType("Expr"))], MessageType("Expr"), Var('e', MessageType("Expr"))),
+        lhs=Nonterminal("start", MessageType("proto", "Expr")),
+        rhs=Nonterminal("expr", MessageType("proto", "Expr")),
+        action=Lambda([Var('e', MessageType("proto", "Expr"))], MessageType("proto", "Expr"), Var('e', MessageType("proto", "Expr"))),
         grammar=grammar
     ))
 
     grammar.add_rule(Rule(
-        lhs=Nonterminal("expr", MessageType("Expr")),
+        lhs=Nonterminal("expr", MessageType("proto", "Expr")),
         rhs=Sequence([
             LitTerminal("("),
             LitTerminal("op"),
             NamedTerminal("NUMBER", _int64_type),
             LitTerminal(")")
         ]),
-        action=Lambda([Var('n', _int64_type)], MessageType("Expr"), Var('n', _int64_type)),
+        action=Lambda([Var('n', _int64_type)], MessageType("proto", "Expr"), Var('n', _int64_type)),
         grammar=grammar
     ))
 

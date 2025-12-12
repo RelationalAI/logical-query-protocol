@@ -53,19 +53,20 @@ class TestMessageType:
 
     def test_construction(self):
         """Test MessageType construction."""
-        t = MessageType("Transaction")
+        t = MessageType("proto", "Transaction")
         assert t.name == "Transaction"
+        assert t.module == "proto"
 
     def test_str(self):
         """Test MessageType string representation."""
-        t = MessageType("Formula")
-        assert str(t) == "Formula"
+        t = MessageType("proto", "Formula")
+        assert str(t) == "proto.Formula"
 
     def test_equality(self):
         """Test MessageType equality."""
-        t1 = MessageType("Term")
-        t2 = MessageType("Term")
-        t3 = MessageType("Value")
+        t1 = MessageType("proto", "Term")
+        t2 = MessageType("proto", "Term")
+        t3 = MessageType("proto", "Value")
         assert t1 == t2
         assert t1 != t3
 
@@ -123,8 +124,8 @@ class TestListType:
 
     def test_list_of_messages(self):
         """Test ListType with MessageType."""
-        t = ListType(MessageType("Term"))
-        assert str(t) == "List[Term]"
+        t = ListType(MessageType("proto", "Term"))
+        assert str(t) == "List[proto.Term]"
 
 
 class TestOptionType:
@@ -148,8 +149,8 @@ class TestOptionType:
 
     def test_option_of_message(self):
         """Test OptionType with MessageType."""
-        t = OptionType(MessageType("Formula"))
-        assert str(t) == "Option[Formula]"
+        t = OptionType(MessageType("proto", "Formula"))
+        assert str(t) == "Option[proto.Formula]"
 
 
 class TestFunctionType:
@@ -199,8 +200,8 @@ class TestVar:
 
     def test_str(self):
         """Test Var string representation."""
-        v = Var("result", MessageType("Formula"))
-        assert str(v) == "result::Formula"
+        v = Var("result", MessageType("proto", "Formula"))
+        assert str(v) == "result::proto.Formula"
 
     def test_invalid_name(self):
         """Test Var with invalid name."""
@@ -297,21 +298,22 @@ class TestMessage:
 
     def test_construction(self):
         """Test Message construction."""
-        c = Message("Transaction")
+        c = Message("proto", "Transaction")
         assert c.name == "Transaction"
+        assert c.module == "proto"
 
     def test_str(self):
         """Test Message string representation."""
-        c = Message("Formula")
-        assert str(c) == "@Formula"
+        c = Message("proto", "Formula")
+        assert str(c) == "@proto.Formula"
 
     def test_invalid_name(self):
         """Test Message with invalid name."""
         with pytest.raises(ValueError, match="Invalid variable name"):
-            Message("123Invalid")
+            Message("proto", "123Invalid")
 
         with pytest.raises(ValueError, match="Invalid variable name"):
-            Message("with-dash")
+            Message("proto", "with-dash")
 
 
 class TestCall:
@@ -327,7 +329,7 @@ class TestCall:
 
     def test_construction_with_args(self):
         """Test Call with arguments."""
-        func = Message("Transaction")
+        func = Message("proto", "Transaction")
         arg1 = Var("x", BaseType("Int64"))
         arg2 = Var("y", BaseType("String"))
         call = Call(func, [arg1, arg2])
@@ -475,14 +477,14 @@ class TestIfElse:
         then_br = Lit("yes")
         else_br = Lit("no")
         ifelse = IfElse(cond, then_br, else_br)
-        assert str(ifelse) == "if x::Boolean then 'yes' else 'no'"
+        assert str(ifelse) == "if (x::Boolean) then 'yes' else 'no'"
 
     def test_nested_ifelse(self):
         """Test nested IfElse."""
         cond1 = Var("a", BaseType("Boolean"))
         cond2 = Var("b", BaseType("Boolean"))
         inner = IfElse(cond2, Lit(2), Lit(3))
-        outer = IfElse(cond1, Lit(1), inner)
+        outer = IfElse(cond1, Lit("x"), inner)
         assert "if a" in str(outer)
         assert "if b" in str(outer)
 
@@ -555,7 +557,7 @@ class TestWhile:
         cond = Var("flag", BaseType("Boolean"))
         body = Lit(1)
         loop = While(cond, body)
-        assert str(loop) == "while flag::Boolean do 1"
+        assert str(loop) == "while (flag::Boolean) 1"
 
     def test_invalid_condition(self):
         """Test While with invalid condition."""
@@ -731,10 +733,10 @@ class TestComplexExpressions:
     def test_constructor_with_complex_args(self):
         """Test constructor call with complex arguments."""
         # Transaction(epochs, configure, sync)
-        ctor = Message("Transaction")
-        arg1 = Var("epochs", ListType(MessageType("Epoch")))
-        arg2 = Var("configure", OptionType(MessageType("Configure")))
-        arg3 = Var("sync", OptionType(MessageType("Sync")))
+        ctor = Message("proto", "Transaction")
+        arg1 = Var("epochs", ListType(MessageType("proto", "Epoch")))
+        arg2 = Var("configure", OptionType(MessageType("proto", "Configure")))
+        arg3 = Var("sync", OptionType(MessageType("proto", "Sync")))
         call = Call(ctor, [arg1, arg2, arg3])
 
         assert len(call.args) == 3
@@ -756,10 +758,10 @@ class TestComplexExpressions:
         t = TupleType([
             BaseType("Int64"),
             ListType(BaseType("String")),
-            OptionType(MessageType("Value")),
+            OptionType(MessageType("proto", "Value")),
             inner_tuple
         ])
 
         assert len(t.elements) == 4
         assert "List[String]" in str(t)
-        assert "Option[Value]" in str(t)
+        assert "Option[proto.Value]" in str(t)
