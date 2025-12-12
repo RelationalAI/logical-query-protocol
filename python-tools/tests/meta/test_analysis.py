@@ -13,7 +13,7 @@ from meta.grammar import (
     Star, Option, Sequence,
     Rule, Grammar,
 )
-from meta.analysis import (
+from meta.grammar_analysis import (
     check_reachability,
     compute_nullable,
     compute_first,

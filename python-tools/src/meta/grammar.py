@@ -240,7 +240,7 @@ class Grammar:
         Returns set of nonterminal names that can be reached.
         """
         if self._reachable_cache is None:
-            from .analysis import check_reachability
+            from .grammar_analysis import check_reachability
             reachable_names = check_reachability(self)
             self._reachable_cache = reachable_names
         return self._reachable_cache
@@ -267,7 +267,7 @@ class Grammar:
         Returns dict mapping nonterminals to boolean.
         """
         if self._nullable_cache is None:
-            from .analysis import compute_nullable
+            from .grammar_analysis import compute_nullable
             self._nullable_cache = compute_nullable(self)
         return self._nullable_cache
 
@@ -278,7 +278,7 @@ class Grammar:
         FIRST_k(A) is the set of terminal sequences of length up to k that can begin strings derived from A.
         Returns dict mapping nonterminals to sets of terminal tuples.
         """
-        from .analysis import compute_first_k
+        from .grammar_analysis import compute_first_k
         return compute_first_k(self, k, self.compute_nullable())
 
     def compute_first(self) -> Dict[Nonterminal, Set[Terminal]]:
@@ -289,7 +289,7 @@ class Grammar:
         Returns dict mapping nonterminals to sets of Terminals.
         """
         if self._first_cache is None:
-            from .analysis import compute_first
+            from .grammar_analysis import compute_first
             self._first_cache = compute_first(self, self.compute_nullable())
         return self._first_cache
 
@@ -301,7 +301,7 @@ class Grammar:
         Returns dict mapping nonterminals to sets of Terminals.
         """
         if self._follow_cache is None:
-            from .analysis import compute_follow
+            from .grammar_analysis import compute_follow
             self._follow_cache = compute_follow(self, self.compute_nullable(), self.compute_first())
         return self._follow_cache
 
@@ -312,7 +312,7 @@ class Grammar:
         FOLLOW_k(A) is the set of terminal sequences of length up to k that can follow A.
         Returns dict mapping nonterminals to sets of terminal tuples.
         """
-        from .analysis import compute_follow_k
+        from .grammar_analysis import compute_follow_k
         return compute_follow_k(self, k, self.compute_nullable(), self.compute_first_k(k))
 
     def nullable(self, rhs: Rhs) -> bool:
@@ -377,7 +377,7 @@ class Grammar:
             # Convert Set[Terminal] to Set[Tuple[Terminal, ...]]
             return {(t,) for t in first_set}
 
-        from .analysis import rhs_first_k
+        from .grammar_analysis import rhs_first_k
 
         # Compute first_k sets for all nonterminals if not already cached
         first_k_dict = self.compute_first_k(k)
@@ -426,7 +426,7 @@ class Grammar:
         the tokens that can follow are FIRST_k(following) if following is present,
         or FOLLOW_k(lhs) if at the end of the rule, or both if following is nullable.
         """
-        from .analysis import concat_k
+        from .grammar_analysis import concat_k
 
         first_of_following = self.first_k(k, following)
         if self.nullable(following):
@@ -495,7 +495,7 @@ class Grammar:
 
 
 # Helper functions - re-exported from analysis module
-from .analysis import get_nonterminals, get_literals, is_epsilon
+from .grammar_analysis import get_nonterminals, get_literals, is_epsilon
 
 
 def rhs_elements(rhs: Rhs) -> Tuple[Rhs, ...]:

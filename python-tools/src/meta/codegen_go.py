@@ -128,6 +128,9 @@ class GoCodeGenerator(CodeGenerator):
         self.register_builtin("consume_literal", 1,
             lambda args, lines, indent: BuiltinResult("nil", [f"parser.consumeLiteral({args[0]})"]))
 
+        self.register_builtin("consume_terminal", 1,
+            lambda args, lines, indent: BuiltinResult("nil", [f"parser.consumeTerminal({args[0]})"]))
+
         def gen_error(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
             if len(args) == 2:
                 return BuiltinResult("nil", [f'panic(fmt.Sprintf("%s: %v", {args[0]}, {args[1]}))'])

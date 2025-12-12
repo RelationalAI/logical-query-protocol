@@ -107,7 +107,7 @@ class PythonCodeGenerator(CodeGenerator):
             lambda args, lines, indent: BuiltinResult("None", [f"self.consume_literal({args[0]})"]))
 
         self.register_builtin("consume_terminal", 1,
-            lambda args, lines, indent: BuiltinResult(f"self.consume_terminal({args[0]})", []))
+            lambda args, lines, indent: BuiltinResult("None", [f"self.consume_terminal({args[0]})"]))
 
         self.register_builtin("current_token", 0,
             lambda args, lines, indent: BuiltinResult("self.current()", []))

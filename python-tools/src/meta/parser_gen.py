@@ -1,135 +1,89 @@
-"""Language-independent parser generation.
+"""Language-independent LL(k) parser generation.
 
-This module contains language-independent logic for generating LL(k)
-recursive-descent parsers from grammars, including:
-- IR generation for parsing logic
-- Decision tree construction
-- Grammar analysis and transformation
+This module generates recursive-descent parsers from context-free grammars.
+It produces a target-language-independent IR (intermediate representation)
+that can then be translated to Python, Julia, Go, or other languages.
+
+Overview
+--------
+The parser generator takes a Grammar and produces a list of ParseNonterminalDef
+objects, one for each reachable nonterminal. Each definition contains:
+- The nonterminal being parsed
+- Parameters (for parameterized nonterminals)
+- Return type
+- Body: an IR expression tree representing the parsing logic
+
+The generated parsers are LL(k) - they use up to k tokens of lookahead to
+decide which production to use. The value of k is determined automatically
+based on what's needed to distinguish alternatives.
+
+Key Concepts
+------------
+
+**Prediction**: When a nonterminal has multiple productions, we need to decide
+which one to use based on lookahead. The predictor builds a decision tree that
+examines tokens at increasing depths until alternatives can be distinguished.
+
+**FIRST and FOLLOW sets**: These classical grammar analysis sets determine what
+tokens can appear at various positions. FIRST_k(α) is the set of k-length
+terminal prefixes derivable from α. FOLLOW_k(A) is what can follow nonterminal A.
+
+**Lazy lookahead**: We compute FIRST_k and FOLLOW_k lazily, starting with k=1
+and only increasing if needed. This avoids expensive computation when simple
+lookahead suffices. See terminal_sequence_set.py for details.
+
+**Semantic actions**: Each production has a Lambda that constructs the result.
+The parser captures values from non-literal RHS elements and applies the action.
+
+IR Structure
+------------
+The generated IR uses these main constructs (from target.py):
+
+- Let(var, init, body): Bind a variable
+- IfElse(cond, then, else): Conditional
+- Call(func, args): Function/builtin call
+- Seq([exprs]): Sequence of expressions
+- While(cond, body): Loop (for Star elements)
+- Assign(var, expr): Assignment (for loop variables)
+
+Builtins used:
+- consume_literal(s): Consume a literal token, error if mismatch
+- consume_terminal(name): Consume a terminal, return its value
+- match_lookahead_literal(s, k): Check if lookahead[k] is literal s
+- match_lookahead_terminal(name, k): Check if lookahead[k] is terminal type
+- make_list(): Create empty list
+- list_push!(list, elem): Append to list (mutating)
+- equal(a, b): Equality check
+- error(msg, context): Raise parse error
+
+Example
+-------
+For grammar:
+    expr → term '+' expr | term
+    term → INT
+
+The generated IR for expr (simplified) would be:
+    let prediction = if match_lookahead_terminal("INT", 0) and
+                        match_lookahead_literal("+", 1)
+                     then 0  # first alternative
+                     else 1  # second alternative
+    if equal(prediction, 0) then
+        let t = parse_term()
+        consume_literal("+")
+        let e = parse_expr()
+        Expr(t, e)  # semantic action
+    else
+        let t = parse_term()
+        t  # semantic action
 """
-from dataclasses import dataclass, field
+
 from typing import Dict, List, Optional, Set, Tuple, Sequence as PySequence
 from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Terminal, is_epsilon, rhs_elements, Sequence
-from .target import Lambda, Call, ParseNonterminalDef, Var, Lit, Symbol, Builtin, Let, IfElse, FunDef, BaseType, ListType, TargetExpr, Seq, While, Assign, Type, ParseNonterminal, ParseNonterminalDef, Return, Constructor, gensym
+from .target import Lambda, Call, ParseNonterminalDef, Var, Lit, Symbol, Builtin, Let, IfElse, BaseType, ListType, TargetExpr, Seq, While, Assign, ParseNonterminal, Return, gensym
+from .terminal_sequence_set import TerminalSequenceSet, FollowSet, FirstSet, ConcatSet
 
 MAX_LOOKAHEAD = 3
 
-# -----------------------------------------------------------------------------
-# Terminal Sequence Sets
-# -----------------------------------------------------------------------------
-#
-# These classes represent lazily-computed sets of terminal sequences used for
-# LL(k) lookahead decisions. In LL(k) parsing, we need to compute FIRST_k and
-# FOLLOW_k sets to decide which production to use.
-#
-# The key insight is that we often don't need the full k-length lookahead.
-# By computing these sets lazily (on demand for specific k values), we avoid
-# expensive computations when shorter lookahead suffices.
-#
-# Class hierarchy:
-#   TerminalSequenceSet (abstract)
-#     ├── FollowSet  - FOLLOW_k(nonterminal): what can follow a nonterminal
-#     ├── FirstSet   - FIRST_k(rhs): what can start an RHS
-#     └── ConcatSet  - Concatenation of two sets (for sequences like A B)
-#
-# When parsing a sequence "A B C", the follow set for A is FIRST(B C) ∘ FOLLOW(whole),
-# computed as ConcatSet(FirstSet(B C), follow_of_parent). This chains lazily.
-# -----------------------------------------------------------------------------
-
-
-class TerminalSequenceSet:
-    """Abstract base for lazily-computed sets of terminal sequences.
-
-    A terminal sequence set represents the possible k-length prefixes of
-    terminal strings that can appear at a given position in the grammar.
-    These are used for LL(k) parsing decisions.
-
-    Subclasses implement different ways of computing these sets:
-    - FollowSet: computes FOLLOW_k for a nonterminal
-    - FirstSet: computes FIRST_k for an RHS element
-    - ConcatSet: concatenates two sets (for computing FIRST of sequences)
-    """
-
-    def get(self, k: int) -> Set[Tuple[Terminal, ...]]:
-        """Get sequences of length up to k, computing and caching if needed."""
-        raise NotImplementedError
-
-
-@dataclass
-class FollowSet(TerminalSequenceSet):
-    """Lazily computes FOLLOW_k sets for a nonterminal.
-
-    FOLLOW_k(A) is the set of terminal sequences of length up to k that can
-    immediately follow nonterminal A in any sentential form.
-    """
-
-    grammar: Grammar
-    lhs: Nonterminal
-    _cache: Dict[int, Set[Tuple[Terminal, ...]]] = field(default_factory=dict)
-
-    def get(self, k: int) -> Set[Tuple[Terminal, ...]]:
-        """Get FOLLOW_k set for the nonterminal, computing and caching if needed."""
-        if k not in self._cache:
-            self._cache[k] = self.grammar.follow_k(k, self.lhs)
-        return self._cache[k]
-
-
-@dataclass
-class FirstSet(TerminalSequenceSet):
-    """Lazily computes FIRST_k sets for an RHS.
-
-    FIRST_k(α) is the set of terminal sequences of length up to k that can
-    begin strings derived from α.
-    """
-
-    grammar: Grammar
-    rhs: Rhs
-    _cache: Dict[int, Set[Tuple[Terminal, ...]]] = field(default_factory=dict)
-
-    def get(self, k: int) -> Set[Tuple[Terminal, ...]]:
-        """Get FIRST_k set for the RHS, computing and caching if needed."""
-        if k not in self._cache:
-            self._cache[k] = self.grammar.first_k(k, self.rhs)
-        return self._cache[k]
-
-
-@dataclass
-class ConcatSet(TerminalSequenceSet):
-    """Lazily concatenates two TerminalSequenceSets.
-
-    Used when parsing sequences: if we're parsing "A B" and need to know
-    what can follow A, it's FIRST(B) concatenated with FOLLOW(whole sequence).
-
-    The concatenation is: {a ∘ b | a ∈ first, b ∈ second, |a ∘ b| ≤ k},
-    where ∘ means concatenation truncated to length k.
-    """
-
-    first: TerminalSequenceSet
-    second: TerminalSequenceSet
-    _cache: Dict[int, Set[Tuple[Terminal, ...]]] = field(default_factory=dict)
-
-    def get(self, k: int) -> Set[Tuple[Terminal, ...]]:
-        """Get concatenation of first and second sets, truncated to length k."""
-        if k in self._cache:
-            return self._cache[k]
-
-        first_set = self.first.get(k)
-
-        # Optimization: only fetch from second what we actually need
-        if first_set:
-            min_len = min(len(seq) for seq in first_set)
-            needed_second_k = k - min_len
-            if needed_second_k <= 0:
-                # All sequences in first are already max length
-                result = first_set
-            else:
-                from .analysis import _concat_first_k_sets
-                second_set = self.second.get(needed_second_k)
-                result = _concat_first_k_sets(first_set, second_set, k)
-        else:
-            result = self.second.get(k)
-
-        self._cache[k] = result
-        return result
 
 def generate_parse_functions(grammar: Grammar) -> List[ParseNonterminalDef]:
     parser_methods = []
