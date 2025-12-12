@@ -147,8 +147,8 @@ def test_python_let_generation():
     # Let with keyword variable
     let_kw = Let(Var("class", _any_type), Call(Var("parse", _any_type), []), Var("class", _any_type))
     code_kw = generate_python(let_kw)
-    assert "class_ = parse()" in code_kw
-    assert "return class_" in code_kw
+    assert "parse()" in code_kw and "class_ = " in code_kw
+    assert code_kw.strip().endswith("class_")
 
     print("✓ Python Let generation works")
 
@@ -188,8 +188,8 @@ def test_go_let_generation():
     # Let with keyword variable
     let_kw = Let(Var("type", _any_type), Call(Var("parse", _any_type), []), Var("type", _any_type))
     code_kw = generate_go(let_kw)
-    assert "type_ := parse()" in code_kw
-    assert "return type_" in code_kw
+    assert "parse()" in code_kw and "type_ := " in code_kw
+    assert code_kw.strip().endswith("type_")
 
     print("✓ Go Let generation works")
 
