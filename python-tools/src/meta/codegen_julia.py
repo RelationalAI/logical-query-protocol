@@ -39,9 +39,41 @@ class JuliaCodeGenerator(CodeGenerator):
         'Boolean': 'Bool',
     }
 
-    def __init__(self):
+    def __init__(self, proto_messages=None):
         self.builtin_registry = {}
+        self.proto_messages = proto_messages or {}
+        self._message_field_map = None
         self._register_builtins()
+
+    def _build_message_field_map(self):
+        """Build field mapping from proto message definitions.
+
+        Returns dict mapping (module, message_name) to list of (field_name, is_repeated).
+        """
+        if self._message_field_map is not None:
+            return self._message_field_map
+
+        field_map = {}
+        for (module, msg_name), proto_msg in self.proto_messages.items():
+            # Collect all oneof field names
+            oneof_field_names = set()
+            for oneof in proto_msg.oneofs:
+                oneof_field_names.update(f.name for f in oneof.fields)
+
+            # Only include messages with regular (non-oneof) fields
+            regular_fields = [(f.name, f.is_repeated) for f in proto_msg.fields if f.name not in oneof_field_names]
+            if regular_fields:
+                # Escape Julia keywords and preserve repeated flag
+                escaped_fields = []
+                for fname, is_repeated in regular_fields:
+                    if fname in self.keywords:
+                        escaped_fields.append((fname + '_', is_repeated))
+                    else:
+                        escaped_fields.append((fname, is_repeated))
+                field_map[(module, msg_name)] = escaped_fields
+
+        self._message_field_map = field_map
+        return field_map
 
     def _register_builtins(self) -> None:
         """Register builtin generators."""
@@ -123,6 +155,12 @@ class JuliaCodeGenerator(CodeGenerator):
 
         self.register_builtin("export_csv_config", 3,
             lambda args, lines, indent: BuiltinResult(f"export_csv_config(parser, {args[0]}, {args[1]}, {args[2]})", []))
+
+        self.register_builtin("start_fragment", 1,
+            lambda args, lines, indent: BuiltinResult(f"start_fragment(parser, {args[0]})", []))
+
+        self.register_builtin("construct_fragment", 2,
+            lambda args, lines, indent: BuiltinResult(f"construct_fragment(parser, {args[0]}, {args[1]})", []))
 
     def escape_keyword(self, name: str) -> str:
         return f'var"{name}"'
@@ -216,9 +254,98 @@ class JuliaCodeGenerator(CodeGenerator):
     def gen_func_def_end(self) -> str:
         return "end"
 
+    # --- Override generate_lines for Julia-specific special cases ---
+
+    def generate_lines(self, expr: TargetExpr, lines: List[str], indent: str = "") -> str:
+        # Special case: Proto.Fragment construction with debug_info parameter
+        if isinstance(expr, Call) and isinstance(expr.func, Message) and expr.func.name == "Fragment":
+            for arg in expr.args:
+                if isinstance(arg, Var) and arg.name == "debug_info":
+                    lines.append(f"{indent}debug_info = construct_debug_info(parser, get(parser.id_to_debuginfo, id, Dict()))")
+                    break
+
+        return super().generate_lines(expr, lines, indent)
+
     def _generate_call(self, expr: Call, lines: List[str], indent: str) -> str:
-        """Override to handle Call(OneOf(...), [value]) specially for Julia."""
-        # Check for Call(OneOf(Symbol), [value]) pattern
+        """Override to handle Message constructors and OneOf specially for Julia."""
+        # Check for Message constructor with OneOf call argument
+        if isinstance(expr.func, Message):
+            f = self.generate_lines(expr.func, lines, indent)
+
+            # Get field mapping from proto message definitions
+            message_field_map = self._build_message_field_map()
+
+            # Process arguments, looking for Call(OneOf(...), [value]) patterns
+            positional_args = []
+            keyword_args = []
+
+            msg_key = (expr.func.module, expr.func.name)
+            field_specs = message_field_map.get(msg_key, [])
+            arg_idx = 0
+            field_idx = 0
+
+            while arg_idx < len(expr.args):
+                arg = expr.args[arg_idx]
+
+                if isinstance(arg, Call) and isinstance(arg.func, OneOf) and len(arg.args) == 1:
+                    # Extract field name and value from Call(OneOf(Symbol), [value])
+                    field_name = self.escape_identifier(arg.func.field_name.name)
+                    field_value = self.generate_lines(arg.args[0], lines, indent)
+                    field_symbol = self.gen_symbol(arg.func.field_name.name)
+                    keyword_args.append(f"{field_name}=OneOf({field_symbol}, {field_value})")
+                    arg_idx += 1
+                elif field_idx < len(field_specs):
+                    field_name, is_repeated = field_specs[field_idx]
+
+                    if is_repeated:
+                        # Determine how many args belong to this repeated field
+                        remaining_fields = len(field_specs) - field_idx - 1
+                        max_args_for_this_field = len(expr.args) - arg_idx - remaining_fields
+
+                        # If there's exactly one arg for this field, use it directly (it's already a list)
+                        # Otherwise, collect multiple args into a list
+                        if max_args_for_this_field == 1:
+                            field_value = self.generate_lines(arg, lines, indent)
+                            keyword_args.append(f"{field_name}={field_value}")
+                            arg_idx += 1
+                        else:
+                            # Collect multiple args into a list
+                            values = []
+                            while arg_idx < len(expr.args) and len(values) < max_args_for_this_field:
+                                next_arg = expr.args[arg_idx]
+                                # Stop if we encounter a oneof
+                                if isinstance(next_arg, Call) and isinstance(next_arg.func, OneOf):
+                                    break
+                                field_value = self.generate_lines(next_arg, lines, indent)
+                                values.append(field_value)
+                                arg_idx += 1
+
+                            if values:
+                                keyword_args.append(f"{field_name}=[{', '.join(values)}]")
+                            else:
+                                keyword_args.append(f"{field_name}=[]")
+                    else:
+                        field_value = self.generate_lines(arg, lines, indent)
+                        keyword_args.append(f"{field_name}={field_value}")
+                        arg_idx += 1
+
+                    field_idx += 1
+                else:
+                    positional_args.append(self.generate_lines(arg, lines, indent))
+                    arg_idx += 1
+
+            # Build argument list - use keyword args if we have any
+            if keyword_args:
+                all_args = keyword_args
+            else:
+                all_args = positional_args + keyword_args
+            args_code = ', '.join(all_args)
+
+            tmp = gensym()
+            lines.append(f"{indent}{self.gen_assignment(tmp, f'{f}({args_code})', is_declaration=True)}")
+            return tmp
+
+        # Check for Call(OneOf(Symbol), [value]) pattern (not in Message constructor)
         if isinstance(expr.func, OneOf) and len(expr.args) == 1:
             field_symbol = self.gen_symbol(expr.func.field_name.name)
             field_value = self.generate_lines(expr.args[0], lines, indent)
