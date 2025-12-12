@@ -52,14 +52,14 @@ class PythonCodeGenerator(CodeGenerator):
             lambda args, lines, indent: BuiltinResult(f"{args[0]} != {args[1]}", []))
 
         self.register_builtin("fragment_id_from_string", 1,
-            lambda args, lines, indent: BuiltinResult(f"proto.FragmentId(id={args[0]}.encode())", []))
+            lambda args, lines, indent: BuiltinResult(f"fragments_pb2.FragmentId(id={args[0]}.encode())", []))
 
         self.register_builtin("relation_id_from_string", 1,
             lambda args, lines, indent: BuiltinResult(
                 f"proto.RelationId(id=int(hashlib.sha256({args[0]}.encode()).hexdigest()[:16], 16))", []))
 
         self.register_builtin("relation_id_from_int", 1,
-            lambda args, lines, indent: BuiltinResult(f"proto.RelationId(id={args[0]})", []))
+            lambda args, lines, indent: BuiltinResult(f"logic_pb2.RelationId(id={args[0]})", []))
 
         self.register_builtin("list_concat", 2,
             lambda args, lines, indent: BuiltinResult(f"{args[0]} + {args[1]}", []))
@@ -219,7 +219,7 @@ class PythonCodeGenerator(CodeGenerator):
     # --- Override generate_lines for Python-specific special cases ---
 
     def generate_lines(self, expr: TargetExpr, lines: List[str], indent: str = "") -> str:
-        # Special case: proto.Fragment construction with debug_info parameter
+        # Special case: fragments_pb2.Fragment construction with debug_info parameter
         if isinstance(expr, Call) and isinstance(expr.func, Message) and expr.func.name == "Fragment":
             for arg in expr.args:
                 if isinstance(arg, Var) and arg.name == "debug_info":

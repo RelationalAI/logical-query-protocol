@@ -138,14 +138,14 @@ class Lexer:
     def scan_uint128(u: str) -> Any:
         """Parse UINT128 token."""
         uint128_val = int(u, 16)
-        return proto.UInt128Value(value=uint128_val, meta=None)
+        return logic_pb2.UInt128Value(value=uint128_val, meta=None)
 
     @staticmethod
     def scan_int128(u: str) -> Any:
         """Parse INT128 token."""
         u = u[:-4]  # Remove the 'i128' suffix
         int128_val = int(u)
-        return proto.Int128Value(value=int128_val, meta=None)
+        return logic_pb2.Int128Value(value=int128_val, meta=None)
 
     @staticmethod
     def scan_decimal(d: str) -> Any:
@@ -158,7 +158,7 @@ class Lexer:
         scale = len(parts[0].split('.')[1])
         precision = int(parts[1])
         value = Decimal(parts[0])
-        return proto.DecimalValue(precision=precision, scale=scale, value=value, meta=None)
+        return logic_pb2.DecimalValue(precision=precision, scale=scale, value=value, meta=None)
 
 
 class Parser:
