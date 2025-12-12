@@ -95,7 +95,7 @@ class Lexer:
                         break
 
             if not matched:
-                raise ParseError(f'Unexpected character at position {{self.pos}}: {{self.input[self.pos]!r}}')
+                raise ParseError(f'Unexpected character at position {self.pos}: {self.input[self.pos]!r}')
 
         self.tokens.append(Token('$', '', self.pos))
 
