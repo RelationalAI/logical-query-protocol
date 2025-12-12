@@ -471,18 +471,18 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         lhs=Nonterminal('export', MessageType('transactions', 'Export')),
         rhs=Sequence((
             LitTerminal('('), LitTerminal('export'),
-            Nonterminal('export_csvconfig', MessageType('transactions', 'ExportCsvConfig')),
+            Nonterminal('export_csvconfig', MessageType('transactions', 'ExportCSVConfig')),
             LitTerminal(')')
         )),
         action=Lambda(
-            [Var('config', MessageType('transactions', 'ExportCsvConfig'))],
+            [Var('config', MessageType('transactions', 'ExportCSVConfig'))],
             MessageType('transactions', 'Export'),
-            Call(Message('transactions', 'Export'), [Var('config', MessageType('transactions', 'ExportCsvConfig'))])
+            Call(Message('transactions', 'Export'), [Var('config', MessageType('transactions', 'ExportCSVConfig'))])
         )
     ))
 
     add_rule(Rule(
-        lhs=Nonterminal('export_csvconfig', MessageType('transactions', 'ExportCsvConfig')),
+        lhs=Nonterminal('export_csvconfig', MessageType('transactions', 'ExportCSVConfig')),
         rhs=Sequence((
             LitTerminal('('), LitTerminal('export_csvconfig'),
             NamedTerminal('STRING', BaseType('String')),
@@ -496,7 +496,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
                 Var('columns', ListType(MessageType('transactions', 'ExportCsvColumn'))),
                 Var('config', _config_type)
             ],
-            MessageType('transactions', 'ExportCsvConfig'),
+            MessageType('transactions', 'ExportCSVConfig'),
             Call(Builtin('export_csv_config'), [
                 Var('path', BaseType('String')),
                 Var('columns', ListType(MessageType('transactions', 'ExportCsvColumn'))),
