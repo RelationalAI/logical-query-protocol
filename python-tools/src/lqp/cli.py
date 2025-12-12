@@ -120,13 +120,19 @@ def main():
     arg_parser.add_argument("--bin", action="store_true", help="encode emitted ProtoBuf into binary")
     arg_parser.add_argument("--json", action="store_true", help="encode emitted ProtoBuf into JSON")
     arg_parser.add_argument("--out", action="store_true", help="write emitted binary or JSON to stdout")
-    arg_parser.add_argument("--generated", action="store_true", help="use generated parser instead of Lark parser")
+
+    # Parser selection options (mutually exclusive)
+    parser_group = arg_parser.add_mutually_exclusive_group()
+    parser_group.add_argument("--generated", action="store_true", help="use generated parser instead of Lark parser")
+    parser_group.add_argument("--lark", action="store_true", help="use Lark parser (default)")
+
     args = arg_parser.parse_args()
 
     validate = not args.no_validation
     bin = args.bin
     json = args.json
-    use_generated = args.generated
+    # Default to generated parser unless --lark is explicitly specified
+    use_generated = not args.lark if args.lark else args.generated
 
     if os.path.isfile(args.input):
         filename = args.input
