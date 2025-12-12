@@ -241,7 +241,7 @@ class PythonCodeGenerator(CodeGenerator):
             for arg in expr.args:
                 if isinstance(arg, Call) and isinstance(arg.func, OneOf) and len(arg.args) == 1:
                     # Extract field name and value from Call(OneOf(Symbol), [value])
-                    field_name = arg.func.field_name.name
+                    field_name = self.escape_identifier(arg.func.field_name.name)
                     field_value = self.generate_lines(arg.args[0], lines, indent)
                     keyword_args.append(f"{field_name}={field_value}")
                 else:
