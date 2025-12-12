@@ -55,7 +55,7 @@ def get_rule_rewrites() -> Dict[str, Callable[[Rule], Rule]]:
     """
     # Common types
     string_type = BaseType('String')
-    terms_type = ListType(MessageType('Term'))
+    terms_type = ListType(MessageType('logic', 'Term'))
 
     # Common replacement patterns
     string_to_name = {

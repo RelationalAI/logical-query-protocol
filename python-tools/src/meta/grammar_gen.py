@@ -6,7 +6,7 @@ message definitions into grammar rules with semantic actions.
 import re
 from typing import Callable, Dict, List, Optional, Set, Tuple
 from .grammar import Grammar, Rule, Token, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
-from .target import Lambda, Call, Var, Symbol, Builtin, Message, BaseType, MessageType, OptionType, ListType
+from .target import Lambda, Call, Var, Symbol, Builtin, Message, OneOf, BaseType, MessageType, OptionType, ListType
 from .proto_ast import ProtoMessage, ProtoField, PRIMITIVE_TYPES
 from .proto_parser import ProtoParser
 from .grammar_gen_builtins import get_builtin_rules
@@ -125,10 +125,10 @@ class GrammarGenerator:
         # Specifically, we want to be sure to return INT128 before INT and DECIMAL before FLOAT, and SYMBOL last.
         # The semantic action for these is defined in the target-specific lexer code. Here we just define value types.
         self.grammar.tokens.append(Token("STRING", '"(?:[^"\\\\]|\\\\.)*"', BaseType("String")))
-        self.grammar.tokens.append(Token("INT128", '[-]?\\d+i128', MessageType("Int128Value")))
+        self.grammar.tokens.append(Token("INT128", '[-]?\\d+i128', MessageType("logic", "Int128Value")))
         self.grammar.tokens.append(Token("INT", '[-]?\\d+', BaseType("Int64")))
-        self.grammar.tokens.append(Token("UINT128", '0x[0-9a-fA-F]+', MessageType("UInt128Value")))
-        self.grammar.tokens.append(Token("DECIMAL", '[-]?\\d+\\.\\d+d\\d+', MessageType("DecimalValue")))
+        self.grammar.tokens.append(Token("UINT128", '0x[0-9a-fA-F]+', MessageType("logic", "UInt128Value")))
+        self.grammar.tokens.append(Token("DECIMAL", '[-]?\\d+\\.\\d+d\\d+', MessageType("logic", "DecimalValue")))
         self.grammar.tokens.append(Token("FLOAT", '(?:[-]?\\d+\\.\\d+|inf|nan)', BaseType("Float64")))
         self.grammar.tokens.append(Token("SYMBOL", '[a-zA-Z_][a-zA-Z0-9_.-]*', BaseType("String")))
 
@@ -279,7 +279,7 @@ class GrammarGenerator:
                 field_rule = self._get_rule_name(field.name)
                 field_name_snake = self._to_snake_case(field.name)
                 field_type = self._get_type_for_name(field.type)
-                oneof_call = Call(Message(message.module, 'OneOf'), [Symbol(field_name_snake), Var('value', field_type)])
+                oneof_call = Call(OneOf(Symbol(field_name_snake)), [Var('value', field_type)])
                 wrapper_call = Call(Message(message.module, message_name), [oneof_call])
                 action = Lambda([Var('value', field_type)], MessageType(message.module, message_name), wrapper_call)
                 alt_rule = Rule(lhs=Nonterminal(rule_name, message_type), rhs=Sequence((Nonterminal(field_rule, field_type),)), action=action)

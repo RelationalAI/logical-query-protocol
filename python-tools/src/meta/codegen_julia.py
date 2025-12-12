@@ -8,7 +8,7 @@ from typing import List, Optional, Set, Tuple, Union
 
 from .codegen_base import CodeGenerator, BuiltinResult
 from .target import (
-    TargetExpr, Var, Lit, Symbol, Call, Lambda, Let, IfElse,
+    TargetExpr, Var, Lit, Symbol, Builtin, Message, OneOf, Call, Lambda, Let, IfElse,
     FunDef, ParseNonterminalDef, gensym
 )
 
@@ -140,7 +140,7 @@ class JuliaCodeGenerator(CodeGenerator):
     def gen_symbol(self, name: str) -> str:
         return f":{name}"
 
-    def gen_constructor(self, name: str) -> str:
+    def gen_constructor(self, module: str, name: str) -> str:
         return f"Proto.{name}"
 
     def gen_builtin_ref(self, name: str) -> str:
@@ -151,7 +151,7 @@ class JuliaCodeGenerator(CodeGenerator):
 
     # --- Type generation ---
 
-    def gen_message_type(self, name: str) -> str:
+    def gen_message_type(self, module: str, name: str) -> str:
         return f"Proto.{name}"
 
     def gen_tuple_type(self, element_types: List[str]) -> str:
@@ -212,6 +212,27 @@ class JuliaCodeGenerator(CodeGenerator):
 
     def gen_func_def_end(self) -> str:
         return "end"
+
+    def _generate_call(self, expr: Call, lines: List[str], indent: str) -> str:
+        """Override to handle Call(OneOf(...), [value]) specially for Julia."""
+        # Check for Call(OneOf(Symbol), [value]) pattern
+        if isinstance(expr.func, OneOf) and len(expr.args) == 1:
+            field_symbol = self.gen_symbol(expr.func.field_name.name)
+            field_value = self.generate_lines(expr.args[0], lines, indent)
+            tmp = gensym()
+            lines.append(f"{indent}{self.gen_assignment(tmp, f'OneOf({field_symbol}, {field_value})', is_declaration=True)}")
+            return tmp
+
+        # Fall back to base implementation
+        return super()._generate_call(expr, lines, indent)
+
+    def _generate_oneof(self, expr: OneOf, lines: List[str], indent: str) -> str:
+        """Generate Julia OneOf reference.
+
+        OneOf should only appear as the function in Call(OneOf(...), [value]).
+        This method shouldn't normally be called.
+        """
+        raise ValueError(f"OneOf should only appear in Call(OneOf(...), [value]) pattern: {expr}")
 
     def _generate_if_else(self, expr: IfElse, lines: List[str], indent: str) -> str:
         """Override to skip var declaration (Julia doesn't need it)."""

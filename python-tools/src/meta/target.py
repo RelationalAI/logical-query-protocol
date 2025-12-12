@@ -107,6 +107,22 @@ class Message(TargetExpr):
 
 
 @dataclass(frozen=True)
+class OneOf(TargetExpr):
+    """OneOf field discriminator.
+
+    field_name: Symbol representing the field name
+    Call this with a value to create a oneof field: Call(OneOf(Symbol('field')), [value])
+    """
+    field_name: Symbol
+
+    def __str__(self) -> str:
+        return f"OneOf({self.field_name})"
+
+    def __post_init__(self):
+        assert isinstance(self.field_name, Symbol), f"Invalid field_name in {self}: {self.field_name}"
+
+
+@dataclass(frozen=True)
 class ParseNonterminal(TargetExpr):
     """Parse method call for a nonterminal.
 
@@ -287,6 +303,14 @@ class MessageType(Type):
 
 
 @dataclass(frozen=True)
+class OneOfType(Type):
+    """OneOf discriminated union type."""
+
+    def __str__(self) -> str:
+        return "OneOf"
+
+
+@dataclass(frozen=True)
 class TupleType(Type):
     """Tuple type with fixed number of element types."""
     elements: Sequence[Type]
@@ -380,6 +404,7 @@ __all__ = [
     'Symbol',
     'Builtin',
     'Message',
+    'OneOf',
     'Call',
     'Lambda',
     'Let',
@@ -391,6 +416,7 @@ __all__ = [
     'Type',
     'BaseType',
     'MessageType',
+    'OneOfType',
     'TupleType',
     'ListType',
     'OptionType',

@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
 from .target import (
-    TargetExpr, Var, Lit, Symbol, Builtin, Message, Call, Lambda, Let,
+    TargetExpr, Var, Lit, Symbol, Builtin, Message, OneOf, Call, Lambda, Let,
     IfElse, Seq, While, Assign, Return, FunDef, ParseNonterminalDef,
     ParseNonterminal, Type, BaseType, TupleType, ListType, OptionType,
     MessageType, FunctionType, gensym
@@ -291,6 +291,9 @@ class CodeGenerator(ABC):
         elif isinstance(expr, ParseNonterminal):
             return self.gen_parse_nonterminal_ref(expr.nonterminal.name)
 
+        elif isinstance(expr, OneOf):
+            return self._generate_oneof(expr, lines, indent)
+
         elif isinstance(expr, Call):
             return self._generate_call(expr, lines, indent)
 
@@ -338,6 +341,15 @@ class CodeGenerator(ABC):
         tmp = gensym()
         lines.append(f"{indent}{self.gen_assignment(tmp, f'{f}({args_code})', is_declaration=True)}")
         return tmp
+
+    def _generate_oneof(self, expr: OneOf, lines: List[str], indent: str) -> str:
+        """Generate code for a OneOf expression.
+
+        Default implementation treats it as an error since OneOf should only
+        appear as arguments to Message constructors. Subclasses should override
+        this to handle the language-specific semantics.
+        """
+        raise ValueError(f"OneOf should only appear as arguments to Message constructors: {expr}")
 
     def _generate_lambda(self, expr: Lambda, lines: List[str], indent: str) -> str:
         """Generate code for a lambda expression."""

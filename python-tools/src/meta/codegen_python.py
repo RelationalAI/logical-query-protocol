@@ -8,7 +8,7 @@ from typing import List, Optional, Set, Tuple, Union
 
 from .codegen_base import CodeGenerator, BuiltinResult
 from .target import (
-    TargetExpr, Var, Lit, Symbol, Builtin, Message, Call, Lambda, Let,
+    TargetExpr, Var, Lit, Symbol, Builtin, Message, OneOf, Call, Lambda, Let,
     IfElse, FunDef, ParseNonterminalDef, gensym
 )
 
@@ -224,6 +224,36 @@ class PythonCodeGenerator(CodeGenerator):
                     break
 
         return super().generate_lines(expr, lines, indent)
+
+    def _generate_call(self, expr: Call, lines: List[str], indent: str) -> str:
+        """Override to handle OneOf specially for Python protobuf."""
+        # Check for Message constructor with OneOf call argument
+        if isinstance(expr.func, Message):
+            f = self.generate_lines(expr.func, lines, indent)
+
+            # Process arguments, looking for Call(OneOf(...), [value]) patterns
+            positional_args = []
+            keyword_args = []
+
+            for arg in expr.args:
+                if isinstance(arg, Call) and isinstance(arg.func, OneOf) and len(arg.args) == 1:
+                    # Extract field name and value from Call(OneOf(Symbol), [value])
+                    field_name = arg.func.field_name.name
+                    field_value = self.generate_lines(arg.args[0], lines, indent)
+                    keyword_args.append(f"{field_name}={field_value}")
+                else:
+                    positional_args.append(self.generate_lines(arg, lines, indent))
+
+            # Build argument list
+            all_args = positional_args + keyword_args
+            args_code = ', '.join(all_args)
+
+            tmp = gensym()
+            lines.append(f"{indent}{self.gen_assignment(tmp, f'{f}({args_code})', is_declaration=True)}")
+            return tmp
+
+        # Fall back to base implementation for non-Message calls
+        return super()._generate_call(expr, lines, indent)
 
     def _generate_if_else(self, expr: IfElse, lines: List[str], indent: str) -> str:
         """Override to skip var declaration (Python doesn't need it)."""

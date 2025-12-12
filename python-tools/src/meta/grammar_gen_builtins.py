@@ -9,7 +9,7 @@ from typing import Dict, List, Tuple
 
 from .grammar import Rule, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
 from .target import (
-    Lambda, Call, Var, Symbol, Lit, IfElse, Builtin, Message,
+    Lambda, Call, Var, Symbol, Lit, IfElse, Builtin, Message, OneOf,
     BaseType, MessageType, OptionType, ListType, FunctionType, TupleType
 )
 
@@ -43,7 +43,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('value', MessageType('logic', 'DateValue'))],
             MessageType('logic', 'Value'),
-            Call(Message('logic', 'Value'), [Call(Message('logic', 'OneOf'), [Symbol('date_value'), Var('value', MessageType('logic', 'DateValue'))])])
+            Call(Message('logic', 'Value'), [Call(OneOf(Symbol('date_value')), [Var('value', MessageType('logic', 'DateValue'))])])
         )
     ))
 
@@ -53,7 +53,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('value', MessageType('logic', 'DateTimeValue'))],
             MessageType('logic', 'Value'),
-            Call(Message('logic', 'Value'), [Call(Message('logic', 'OneOf'), [Symbol('datetime_value'), Var('value', MessageType('logic', 'DateTimeValue'))])])
+            Call(Message('logic', 'Value'), [Call(OneOf(Symbol('datetime_value')), [Var('value', MessageType('logic', 'DateTimeValue'))])])
         )
     ))
 
@@ -63,7 +63,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('value', BaseType('String'))],
             MessageType('logic', 'Value'),
-            Call(Message('logic', 'Value'), [Call(Message('logic', 'OneOf'), [Symbol('string_value'), Var('value', BaseType('String'))])])
+            Call(Message('logic', 'Value'), [Call(OneOf(Symbol('string_value')), [Var('value', BaseType('String'))])])
         )
     ))
 
@@ -73,7 +73,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('value', BaseType('Int64'))],
             MessageType('logic', 'Value'),
-            Call(Message('logic', 'Value'), [Call(Message('logic', 'OneOf'), [Symbol('int_value'), Var('value', BaseType('Int64'))])])
+            Call(Message('logic', 'Value'), [Call(OneOf(Symbol('int_value')), [Var('value', BaseType('Int64'))])])
         )
     ))
 
@@ -83,7 +83,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('value', BaseType('Float64'))],
             MessageType('logic', 'Value'),
-            Call(Message('logic', 'Value'), [Call(Message('logic', 'OneOf'), [Symbol('float_value'), Var('value', BaseType('Float64'))])])
+            Call(Message('logic', 'Value'), [Call(OneOf(Symbol('float_value')), [Var('value', BaseType('Float64'))])])
         )
     ))
 
@@ -93,7 +93,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('value', MessageType('logic', 'UInt128Value'))],
             MessageType('logic', 'Value'),
-            Call(Message('logic', 'Value'), [Call(Message('logic', 'OneOf'), [Symbol('uint128_value'), Var('value', MessageType('logic', 'UInt128Value'))])])
+            Call(Message('logic', 'Value'), [Call(OneOf(Symbol('uint128_value')), [Var('value', MessageType('logic', 'UInt128Value'))])])
         )
     ))
 
@@ -103,7 +103,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('value', MessageType('logic', 'Int128Value'))],
             MessageType('logic', 'Value'),
-            Call(Message('logic', 'Value'), [Call(Message('logic', 'OneOf'), [Symbol('int128_value'), Var('value', MessageType('logic', 'Int128Value'))])])
+            Call(Message('logic', 'Value'), [Call(OneOf(Symbol('int128_value')), [Var('value', MessageType('logic', 'Int128Value'))])])
         )
     ))
 
@@ -113,7 +113,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('value', MessageType('logic', 'DecimalValue'))],
             MessageType('logic', 'Value'),
-            Call(Message('logic', 'Value'), [Call(Message('logic', 'OneOf'), [Symbol('decimal_value'), Var('value', MessageType('logic', 'DecimalValue'))])])
+            Call(Message('logic', 'Value'), [Call(OneOf(Symbol('decimal_value')), [Var('value', MessageType('logic', 'DecimalValue'))])])
         )
     ))
 
@@ -123,7 +123,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [],
             MessageType('logic', 'Value'),
-            Call(Message('logic', 'Value'), [Call(Message('logic', 'OneOf'), [Symbol('missing_value'), Call(Message('logic', 'MissingValue'), [])])])
+            Call(Message('logic', 'Value'), [Call(OneOf(Symbol('missing_value')), [Call(Message('logic', 'MissingValue'), [])])])
         )
     ))
 
@@ -133,7 +133,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [],
             MessageType('logic', 'Value'),
-            Call(Message('logic', 'Value'), [Call(Message('logic', 'OneOf'), [Symbol('boolean_value'), Lit(True)])])
+            Call(Message('logic', 'Value'), [Call(OneOf(Symbol('boolean_value')), [Lit(True)])])
         )
     ))
 
@@ -143,7 +143,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [],
             MessageType('logic', 'Value'),
-            Call(Message('logic', 'Value'), [Call(Message('logic', 'OneOf'), [Symbol('boolean_value'), Lit(False)])])
+            Call(Message('logic', 'Value'), [Call(OneOf(Symbol('boolean_value')), [Lit(False)])])
         )
     ))
 
@@ -389,15 +389,13 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     def _make_monoid_op_rule(lit: str, symbol: str, constructor: str, has_type: bool) -> Rule:
         if has_type:
             body = Call(Message('logic', 'Monoid'), [
-                Call(Message('logic', 'OneOf'), [
-                    Symbol(symbol),
+                Call(OneOf(Symbol(symbol)), [
                     Call(Message('logic', constructor), [Var('type', MessageType('logic', 'Type'))])
                 ])
             ])
         else:
             body = Call(Message('logic', 'Monoid'), [
-                Call(Message('logic', 'OneOf'), [
-                    Symbol(symbol),
+                Call(OneOf(Symbol(symbol)), [
                     Call(Message('logic', constructor), [])
                 ])
             ])
@@ -451,7 +449,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('value', MessageType('logic', 'Conjunction'))],
             MessageType('logic', 'Formula'),
-            Call(Message('logic', 'Formula'), [Call(Message('logic', 'OneOf'), [Symbol('true'), Var('value', MessageType('logic', 'Conjunction'))])])
+            Call(Message('logic', 'Formula'), [Call(OneOf(Symbol('true')), [Var('value', MessageType('logic', 'Conjunction'))])])
         )
     ), is_final=False)
 
@@ -461,7 +459,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('value', MessageType('logic', 'Disjunction'))],
             MessageType('logic', 'Formula'),
-            Call(Message('logic', 'Formula'), [Call(Message('logic', 'OneOf'), [Symbol('false'), Var('value', MessageType('logic', 'Disjunction'))])])
+            Call(Message('logic', 'Formula'), [Call(OneOf(Symbol('false')), [Var('value', MessageType('logic', 'Disjunction'))])])
         )
     ), is_final=False)
 
