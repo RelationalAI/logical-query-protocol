@@ -692,4 +692,26 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
             )
         ), is_final=False)
 
+    # Fragment rule with debug_info construction
+    add_rule(Rule(
+        lhs=Nonterminal('fragment', MessageType('fragments', 'Fragment')),
+        rhs=Sequence((
+            LitTerminal('('), LitTerminal('fragment'),
+            Nonterminal('fragment_id', MessageType('fragments', 'FragmentId')),
+            Star(Nonterminal('declaration', MessageType('logic', 'Declaration'))),
+            LitTerminal(')')
+        )),
+        action=Lambda(
+            [
+                Var('fragment_id', MessageType('fragments', 'FragmentId')),
+                Var('declarations', ListType(MessageType('logic', 'Declaration')))
+            ],
+            MessageType('fragments', 'Fragment'),
+            Call(Builtin('construct_fragment'), [
+                Var('fragment_id', MessageType('fragments', 'FragmentId')),
+                Var('declarations', ListType(MessageType('logic', 'Declaration')))
+            ])
+        )
+    ))
+
     return result

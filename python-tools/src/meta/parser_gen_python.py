@@ -174,35 +174,21 @@ class Parser:
         idx = self.pos + k
         return self.tokens[idx] if idx < len(self.tokens) else Token('$', '', -1)
 
-    def current_token(self) -> Token:
-        """Get current token."""
-        return self.lookahead(0)
-
     def consume_literal(self, expected: str) -> None:
         """Consume a literal token."""
-        if not self.match_literal(expected):
-            token = self.current_token()
+        if not self.match_lookahead_literal(expected, 0):
+            token = self.lookahead(0)
             raise ParseError(f'Expected literal {{{{expected!r}}}} but got {{{{token.type}}}}={{{{token.value!r}}}} at position {{{{token.pos}}}}')
         self.pos += 1
 
     def consume_terminal(self, expected: str) -> Any:
         """Consume a terminal token and return parsed value."""
-        if not self.match_terminal(expected):
-            token = self.current_token()
+        if not self.match_lookahead_terminal(expected, 0):
+            token = self.lookahead(0)
             raise ParseError(f'Expected terminal {{{{expected}}}} but got {{{{token.type}}}} at position {{{{token.pos}}}}')
-        token = self.current_token()
+        token = self.lookahead(0)
         self.pos += 1
         return token.value
-
-    def match_literal(self, literal: str) -> bool:
-        """Check if current token matches literal."""
-        token = self.current_token()
-        return token.type == 'LITERAL' and token.value == literal
-
-    def match_terminal(self, terminal: str) -> bool:
-        """Check if current token matches terminal."""
-        token = self.current_token()
-        return token.type == terminal
 
     def match_lookahead_literal(self, literal: str, k: int) -> bool:
         """Check if lookahead token at position k matches literal."""
@@ -285,6 +271,24 @@ class Parser:
             kwargs['syntax_escapechar'] = escape_val.string_value
 
         return transactions_pb2.ExportCsvConfig(path=path_str, data_columns=columns, **kwargs)
+
+    def construct_fragment(self, fragment_id: fragments_pb2.FragmentId, declarations: List[logic_pb2.Declaration]) -> fragments_pb2.Fragment:
+        """Construct Fragment from fragment_id, declarations, and debug info from parser state."""
+        # Get the debug info dict for this fragment_id
+        debug_info_dict = self.id_to_debuginfo.get(fragment_id, {{}})
+
+        # Convert dict to parallel arrays
+        ids = []
+        orig_names = []
+        for relation_id, orig_name in debug_info_dict.items():
+            ids.append(relation_id)
+            orig_names.append(orig_name)
+
+        # Create DebugInfo
+        debug_info = fragments_pb2.DebugInfo(ids=ids, orig_names=orig_names)
+
+        # Create and return Fragment
+        return fragments_pb2.Fragment(id=fragment_id, declarations=declarations, debug_info=debug_info)
 '''
 
 EPILOGUE_TEMPLATE = '''
@@ -295,7 +299,7 @@ def parse(input_str: str) -> Any:
     parser = Parser(lexer.tokens)
     result = parser.parse_{start_name}()
     if parser.pos < len(parser.tokens):
-        raise ParseError(f"Unexpected token at end of input: {{parser.current_token()}}")
+        raise ParseError(f"Unexpected token at end of input: {{parser.lookahead(0)}}")
     return result
 '''
 

@@ -97,12 +97,6 @@ class PythonCodeGenerator(CodeGenerator):
         self.register_builtin("match_lookahead_literal", 2,
             lambda args, lines, indent: BuiltinResult(f"self.match_lookahead_literal({args[0]}, {args[1]})", []))
 
-        self.register_builtin("match_terminal", 1,
-            lambda args, lines, indent: BuiltinResult(f"self.match_terminal({args[0]})", []))
-
-        self.register_builtin("match_literal", 1,
-            lambda args, lines, indent: BuiltinResult(f"self.match_literal({args[0]})", []))
-
         self.register_builtin("consume_literal", 1,
             lambda args, lines, indent: BuiltinResult("None", [f"self.consume_literal({args[0]})"]))
 
@@ -110,7 +104,7 @@ class PythonCodeGenerator(CodeGenerator):
             lambda args, lines, indent: BuiltinResult(f"self.consume_terminal({args[0]})", []))
 
         self.register_builtin("current_token", 0,
-            lambda args, lines, indent: BuiltinResult("self.current_token()", []))
+            lambda args, lines, indent: BuiltinResult("self.lookahead(0)", []))
 
         # error has two arities, so we use a custom generator
         def gen_error(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
@@ -126,6 +120,9 @@ class PythonCodeGenerator(CodeGenerator):
 
         self.register_builtin("export_csv_config", 3,
             lambda args, lines, indent: BuiltinResult(f"self.export_csv_config({args[0]}, {args[1]}, {args[2]})", []))
+
+        self.register_builtin("construct_fragment", 2,
+            lambda args, lines, indent: BuiltinResult(f"self.construct_fragment({args[0]}, {args[1]})", []))
 
     def escape_keyword(self, name: str) -> str:
         return f"{name}_"
@@ -226,7 +223,7 @@ class PythonCodeGenerator(CodeGenerator):
         if isinstance(expr, Call) and isinstance(expr.func, Message) and expr.func.name == "Fragment":
             for arg in expr.args:
                 if isinstance(arg, Var) and arg.name == "debug_info":
-                    lines.append(f"{indent}debug_info = proto.DebugInfo(id_to_orig_name=self.id_to_debuginfo.get(id, {{}}), meta=self.meta(self.current_token()))")
+                    lines.append(f"{indent}debug_info = self.construct_debug_info(self.id_to_debuginfo.get(id, {{}}))")
                     break
 
         return super().generate_lines(expr, lines, indent)

@@ -47,9 +47,6 @@ def get_rule_rewrites() -> Dict[str, Callable[[Rule], Rule]]:
        combines these into a single `abstraction_with_arity` nonterminal that
        returns a tuple, avoiding lookahead issues.
 
-    5. **Debug info removal**: Fragment debug_info is computed at parse time,
-       not parsed from input. `rewrite_fragment_remove_debug_info` removes it.
-
     Returns:
         A dict mapping nonterminal names to their rewrite functions.
     """
@@ -101,7 +98,6 @@ def get_rule_rewrites() -> Dict[str, Callable[[Rule], Rule]]:
         'abort': rewrite_string_to_name_optional,
         'ffi': rewrite_ffi_pragma,
         'pragma': rewrite_ffi_pragma,
-        'fragment': _rewrite_fragment_remove_debug_info,
         'atom': rewrite_terms_optional_to_star_term,
         'rel_atom': rewrite_terms_optional_to_star_relterm,
         'primitive': rewrite_primitive_rule,
@@ -112,28 +108,6 @@ def get_rule_rewrites() -> Dict[str, Callable[[Rule], Rule]]:
         'relatom': rewrite_relatom_rule,
         'attribute': rewrite_attribute_rule,
     }
-
-
-def _rewrite_fragment_remove_debug_info(rule: Rule) -> Rule:
-    """Remove debug_info from fragment rules.
-
-    Debug info is computed during parsing (from source positions and
-    variable names), not parsed from input. This removes the debug_info
-    field from the grammar and adjusts the action accordingly.
-    """
-    def remove_debug_info(elem: Rhs) -> Optional[Rhs]:
-        if isinstance(elem, Option) and isinstance(elem.rhs, Nonterminal) and elem.rhs.name == 'debug_info':
-            return None
-        if isinstance(elem, Nonterminal) and elem.name == 'debug_info':
-            return None
-        return elem
-
-    if isinstance(rule.rhs, Sequence):
-        new_elements = [e for e in rule.rhs.elements if remove_debug_info(e) is not None]
-        new_params = list(rule.action.params[:-1])
-        new_action = Lambda(params=new_params, return_type=rule.action.return_type, body=rule.action.body)
-        return Rule(lhs=rule.lhs, rhs=Sequence(new_elements), action=new_action, source_type=rule.source_type)
-    return rule
 
 
 def _rewrite_exists(rule: Rule) -> Rule:

@@ -119,12 +119,6 @@ class GoCodeGenerator(CodeGenerator):
         self.register_builtin("match_lookahead_literal", 2,
             lambda args, lines, indent: BuiltinResult(f"parser.matchLookaheadLiteral({args[0]}, {args[1]})", []))
 
-        self.register_builtin("match_terminal", 1,
-            lambda args, lines, indent: BuiltinResult(f"parser.matchTerminal({args[0]})", []))
-
-        self.register_builtin("match_literal", 1,
-            lambda args, lines, indent: BuiltinResult(f"parser.matchLiteral({args[0]})", []))
-
         self.register_builtin("consume_literal", 1,
             lambda args, lines, indent: BuiltinResult("nil", [f"parser.consumeLiteral({args[0]})"]))
 
