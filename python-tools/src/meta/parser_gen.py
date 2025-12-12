@@ -36,39 +36,49 @@ class FollowSet(TerminalSequenceSet):
         return self._cache[k]
 
 @dataclass
-class ConcatSet(TerminalSequenceSet):
-    """Lazily computes FIRST_k(rhs) concatenated with a TerminalSequenceSet."""
+class FirstSet(TerminalSequenceSet):
+    """Lazily computes and caches FIRST_k sets for an RHS."""
 
     grammar: Grammar
     rhs: Rhs
-    follow: TerminalSequenceSet
     _cache: Dict[int, Set[Tuple[Terminal, ...]]] = field(default_factory=dict)
-    _first_cache: Dict[int, Set[Tuple[Terminal, ...]]] = field(default_factory=dict)
 
     def get(self, k: int) -> Set[Tuple[Terminal, ...]]:
-        """Get FIRST_k(rhs) concatenated with follow set."""
+        """Get FIRST_k set for the RHS, computing and caching if needed."""
+        if k not in self._cache:
+            self._cache[k] = self.grammar.first_k(k, self.rhs)
+        return self._cache[k]
+
+@dataclass
+class ConcatSet(TerminalSequenceSet):
+    """Lazily concatenates two TerminalSequenceSets."""
+
+    first: TerminalSequenceSet
+    second: TerminalSequenceSet
+    _cache: Dict[int, Set[Tuple[Terminal, ...]]] = field(default_factory=dict)
+
+    def get(self, k: int) -> Set[Tuple[Terminal, ...]]:
+        """Get concatenation of first and second sets, truncated to length k."""
         if k in self._cache:
             return self._cache[k]
 
-        # Compute FIRST_k(rhs)
-        if k not in self._first_cache:
-            self._first_cache[k] = self.grammar.first_k(k, self.rhs)
-        first_of_rhs = self._first_cache[k]
+        # Get first set
+        first_set = self.first.get(k)
 
-        # Determine how much of follow set we need based on shortest sequence
-        if first_of_rhs:
-            min_len = min(len(seq) for seq in first_of_rhs)
-            needed_follow_k = k - min_len
-            if needed_follow_k <= 0:
-                # All sequences are max length, don't need follow at all
-                result = first_of_rhs
+        # Determine how much of second set we need based on shortest sequence in first
+        if first_set:
+            min_len = min(len(seq) for seq in first_set)
+            needed_second_k = k - min_len
+            if needed_second_k <= 0:
+                # All sequences are max length, don't need second at all
+                result = first_set
             else:
-                # Need follow_k where k = needed_follow_k
+                # Need second_k where k = needed_second_k
                 from .analysis import _concat_first_k_sets
-                follow_k = self.follow.get(needed_follow_k)
-                result = _concat_first_k_sets(first_of_rhs, follow_k, k)
+                second_set = self.second.get(needed_second_k)
+                result = _concat_first_k_sets(first_set, second_set, k)
         else:
-            result = self.follow.get(k)
+            result = self.second.get(k)
 
         self._cache[k] = result
         return result
@@ -299,7 +309,8 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, grammar: Grammar, follow_set:
     for i, elem in enumerate(elems):
         if i + 1 < len(elems):
             following = Sequence(elems[i+1:])
-            follow_set_i = ConcatSet(grammar, following, follow_set)
+            first_following = FirstSet(grammar, following)
+            follow_set_i = ConcatSet(first_following, follow_set)
         else:
             follow_set_i = follow_set
         elem_ir = _generate_parse_rhs_ir(elem, grammar, follow_set_i, False, None)
