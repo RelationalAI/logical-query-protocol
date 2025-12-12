@@ -653,10 +653,10 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
 
     # Arithmetic operator rules
     _arithmetic_ops = [
-        ('add', '+', 'rel_primitive_add'),
-        ('minus', '-', 'rel_primitive_subtract'),
-        ('multiply', '*', 'rel_primitive_multiply'),
-        ('divide', '/', 'rel_primitive_divide'),
+        ('add', '+', 'rel_primitive_add_monotype'),
+        ('minus', '-', 'rel_primitive_subtract_monotype'),
+        ('multiply', '*', 'rel_primitive_multiply_monotype'),
+        ('divide', '/', 'rel_primitive_divide_monotype'),
     ]
     for name, op, prim in _arithmetic_ops:
         add_rule(Rule(
