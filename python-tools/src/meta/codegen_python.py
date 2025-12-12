@@ -262,13 +262,18 @@ class PythonCodeGenerator(CodeGenerator):
         """Override to skip var declaration (Python doesn't need it)."""
         cond_code = self.generate_lines(expr.condition, lines, indent)
 
-        # Optimization: short-circuit for boolean literals
+        # Optimization: short-circuit for boolean literals.
+        # This is not needed, but makes the generated code more readable.
         if expr.then_branch == Lit(True):
-            else_code = self.generate_lines(expr.else_branch, lines, indent + self.indent_str)
-            return f"({cond_code} or {else_code})"
+            tmp_lines = []
+            else_code = self.generate_lines(expr.else_branch, tmp_lines, indent)
+            if not tmp_lines:
+                return f"({cond_code} or {else_code})"
         if expr.else_branch == Lit(False):
-            then_code = self.generate_lines(expr.then_branch, lines, indent + self.indent_str)
-            return f"({cond_code} and {then_code})"
+            tmp_lines = []
+            then_code = self.generate_lines(expr.then_branch, tmp_lines, indent)
+            if not tmp_lines:
+                return f"({cond_code} and {then_code})"
 
         tmp = gensym()
         lines.append(f"{indent}{self.gen_if_start(cond_code)}")
