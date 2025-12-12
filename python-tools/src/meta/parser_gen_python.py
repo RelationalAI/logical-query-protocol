@@ -143,7 +143,7 @@ class Lexer:
         uint128_val = int(u, 16)
         low = uint128_val & 0xFFFFFFFFFFFFFFFF
         high = (uint128_val >> 64) & 0xFFFFFFFFFFFFFFFF
-        return logic_pb2.UInt128Value(low=uint128_val, high=0)
+        return logic_pb2.UInt128Value(low=low, high=high)
 
     @staticmethod
     def scan_int128(u: str) -> Any:
@@ -152,7 +152,7 @@ class Lexer:
         int128_val = int(u)
         low = int128_val & 0xFFFFFFFFFFFFFFFF
         high = (int128_val >> 64) & 0xFFFFFFFFFFFFFFFF
-        return logic_pb2.Int128Value(low=int128_val, high=0)
+        return logic_pb2.Int128Value(low=low, high=high)
 
     @staticmethod
     def scan_decimal(d: str) -> Any:
@@ -372,7 +372,7 @@ def _generate_prologue(grammar: Grammar, command_line: Optional[str] = None) -> 
     token_specs_lines = []
     for token in grammar.tokens:
         token_specs_lines.append(
-            f"            ('{token.name}', r'{token.pattern}', lambda x: self.scan_{token.name.lower()}(x)),"
+            f"            ('{token.name}', r'{token.pattern}', lambda x: Lexer.scan_{token.name.lower()}(x)),"
         )
     token_specs = "\n".join(token_specs_lines) + "\n" if token_specs_lines else ""
 
