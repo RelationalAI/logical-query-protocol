@@ -110,6 +110,9 @@ class JuliaCodeGenerator(CodeGenerator):
         self.register_builtin("consume_terminal", 1,
             lambda args, lines, indent: BuiltinResult("nothing", [f"consume_terminal(parser, {args[0]})"]))
 
+        self.register_builtin("current_token", 0,
+            lambda args, lines, indent: BuiltinResult("current_token(parser)", []))
+
         def gen_error(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
             if len(args) == 2:
                 return BuiltinResult("nothing", [f'throw(ParseError({args[0]} * ": " * string({args[1]})))'])

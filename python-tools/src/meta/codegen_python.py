@@ -110,7 +110,7 @@ class PythonCodeGenerator(CodeGenerator):
             lambda args, lines, indent: BuiltinResult("None", [f"self.consume_terminal({args[0]})"]))
 
         self.register_builtin("current_token", 0,
-            lambda args, lines, indent: BuiltinResult("self.current()", []))
+            lambda args, lines, indent: BuiltinResult("self.current_token()", []))
 
         # error has two arities, so we use a custom generator
         def gen_error(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
@@ -220,7 +220,7 @@ class PythonCodeGenerator(CodeGenerator):
         if isinstance(expr, Call) and isinstance(expr.func, Constructor) and expr.func.name == "Fragment":
             for arg in expr.args:
                 if isinstance(arg, Var) and arg.name == "debug_info":
-                    lines.append(f"{indent}debug_info = proto.DebugInfo(id_to_orig_name=self.id_to_debuginfo.get(id, {{}}), meta=self.meta(self.current()))")
+                    lines.append(f"{indent}debug_info = proto.DebugInfo(id_to_orig_name=self.id_to_debuginfo.get(id, {{}}), meta=self.meta(self.current_token()))")
                     break
 
         return super().generate_lines(expr, lines, indent)

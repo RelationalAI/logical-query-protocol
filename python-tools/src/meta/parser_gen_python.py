@@ -174,34 +174,34 @@ class Parser:
         idx = self.pos + k
         return self.tokens[idx] if idx < len(self.tokens) else Token('$', '', -1)
 
-    def current(self) -> Token:
+    def current_token(self) -> Token:
         """Get current token."""
         return self.lookahead(0)
 
     def consume_literal(self, expected: str) -> None:
         """Consume a literal token."""
         if not self.match_literal(expected):
-            token = self.current()
+            token = self.current_token()
             raise ParseError(f'Expected literal {{expected!r}} but got {{token.type}}={{token.value!r}} at position {{token.pos}}')
         self.pos += 1
 
     def consume_terminal(self, expected: str) -> Any:
         """Consume a terminal token and return parsed value."""
         if not self.match_terminal(expected):
-            token = self.current()
+            token = self.current_token()
             raise ParseError(f'Expected terminal {{expected}} but got {{token.type}} at position {{token.pos}}')
-        token = self.current()
+        token = self.current_token()
         self.pos += 1
         return token.value
 
     def match_literal(self, literal: str) -> bool:
         """Check if current token matches literal."""
-        token = self.current()
+        token = self.current_token()
         return token.type == 'LITERAL' and token.value == literal
 
     def match_terminal(self, terminal: str) -> bool:
         """Check if current token matches terminal."""
-        token = self.current()
+        token = self.current_token()
         return token.type == terminal
 
     def match_lookahead_literal(self, literal: str, k: int) -> bool:
@@ -223,7 +223,7 @@ def parse(input_str: str) -> Any:
     parser = Parser(lexer.tokens)
     result = parser.parse_{start_name}()
     if parser.pos < len(parser.tokens):
-        raise ParseError(f"Unexpected token at end of input: {{parser.current()}}")
+        raise ParseError(f"Unexpected token at end of input: {{parser.current_token()}}")
     return result
 '''
 
