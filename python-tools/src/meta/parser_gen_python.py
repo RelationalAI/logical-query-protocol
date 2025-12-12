@@ -43,7 +43,7 @@ class Token:
         self.pos = pos
 
     def __repr__(self) -> str:
-        return f"Token({{self.type}}, {{self.value!r}}, {{self.pos}})"
+        return f"Token({{{{self.type}}}}, {{{{self.value!r}}}}, {{{{self.pos}}}})"
 
 
 class Lexer:
@@ -101,7 +101,7 @@ class Lexer:
                         break
 
             if not matched:
-                raise ParseError(f'Unexpected character at position {{self.pos}}: {{self.input[self.pos]!r}}')
+                raise ParseError(f'Unexpected character at position {{{{self.pos}}}}: {{{{self.input[self.pos]!r}}}}')
 
         self.tokens.append(Token('$', '', self.pos))
 
@@ -154,7 +154,7 @@ class Lexer:
         # precision, and the scale is the number of digits between the decimal point and `d`
         parts = d.split('d')
         if len(parts) != 2:
-            raise ValueError(f'Invalid decimal format: {{d}}')
+            raise ValueError(f'Invalid decimal format: {{{{d}}}}')
         scale = len(parts[0].split('.')[1])
         precision = int(parts[1])
         value = Decimal(parts[0])
@@ -182,14 +182,14 @@ class Parser:
         """Consume a literal token."""
         if not self.match_literal(expected):
             token = self.current_token()
-            raise ParseError(f'Expected literal {{expected!r}} but got {{token.type}}={{token.value!r}} at position {{token.pos}}')
+            raise ParseError(f'Expected literal {{{{expected!r}}}} but got {{{{token.type}}}}={{{{token.value!r}}}} at position {{{{token.pos}}}}')
         self.pos += 1
 
     def consume_terminal(self, expected: str) -> Any:
         """Consume a terminal token and return parsed value."""
         if not self.match_terminal(expected):
             token = self.current_token()
-            raise ParseError(f'Expected terminal {{expected}} but got {{token.type}} at position {{token.pos}}')
+            raise ParseError(f'Expected terminal {{{{expected}}}} but got {{{{token.type}}}} at position {{{{token.pos}}}}')
         token = self.current_token()
         self.pos += 1
         return token.value
@@ -213,6 +213,78 @@ class Parser:
         """Check if lookahead token at position k matches terminal."""
         token = self.lookahead(k)
         return token.type == terminal
+
+    def construct_configure(self, config_dict: List[Tuple[str, logic_pb2.Value]]) -> Any:
+        """Construct Configure from config dictionary."""
+        # Build a dict from the list
+        config = {{}}
+        for k, v in config_dict:
+            config[k] = v
+
+        # Extract maintenance level
+        maintenance_level_val = config.get('ivm.maintenance_level')
+        if maintenance_level_val:
+            if maintenance_level_val.HasField('string_value'):
+                maintenance_level = maintenance_level_val.string_value.upper()
+            else:
+                maintenance_level = 'OFF'
+        else:
+            maintenance_level = 'OFF'
+
+        # Extract semantics version
+        semantics_version_val = config.get('semantics_version')
+        if semantics_version_val and semantics_version_val.HasField('int_value'):
+            semantics_version = semantics_version_val.int_value
+        else:
+            semantics_version = 0
+
+        # Create IVMConfig and Configure
+        ivm_config = transactions_pb2.IVMConfig(level=maintenance_level)
+        return transactions_pb2.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
+
+    def export_csv_config(self, path: str, columns: List[Any], config_dict: List[Tuple[str, logic_pb2.Value]]) -> Any:
+        """Construct ExportCsvConfig from path, columns, and config dictionary."""
+        # Build a dict from the list
+        config = {{}}
+        for k, v in config_dict:
+            config[k] = v
+
+        # Extract path string
+        path_str = path
+
+        # Build kwargs dict for optional fields
+        kwargs = {{}}
+
+        # Extract optional fields
+        partition_size_val = config.get('partition_size')
+        if partition_size_val and partition_size_val.HasField('int_value'):
+            kwargs['partition_size'] = partition_size_val.int_value
+
+        compression_val = config.get('compression')
+        if compression_val and compression_val.HasField('string_value'):
+            kwargs['compression'] = compression_val.string_value
+
+        header_val = config.get('syntax_header_row')
+        if header_val and header_val.HasField('boolean_value'):
+            kwargs['syntax_header_row'] = header_val.boolean_value
+
+        missing_val = config.get('syntax_missing_string')
+        if missing_val and missing_val.HasField('string_value'):
+            kwargs['syntax_missing_string'] = missing_val.string_value
+
+        delim_val = config.get('syntax_delim')
+        if delim_val and delim_val.HasField('string_value'):
+            kwargs['syntax_delim'] = delim_val.string_value
+
+        quote_val = config.get('syntax_quotechar')
+        if quote_val and quote_val.HasField('string_value'):
+            kwargs['syntax_quotechar'] = quote_val.string_value
+
+        escape_val = config.get('syntax_escapechar')
+        if escape_val and escape_val.HasField('string_value'):
+            kwargs['syntax_escapechar'] = escape_val.string_value
+
+        return transactions_pb2.ExportCsvConfig(path=path_str, data_columns=columns, **kwargs)
 '''
 
 EPILOGUE_TEMPLATE = '''

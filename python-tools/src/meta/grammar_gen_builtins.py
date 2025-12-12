@@ -256,7 +256,10 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
             MessageType('transactions', 'Transaction'),
             Call(Message('transactions', 'Transaction'), [
                 Var('epochs', ListType(MessageType('transactions', 'Epoch'))),
-                Var('configure', OptionType(MessageType('transactions', 'Configure'))),
+                Call(Builtin('unwrap_option_or'), [
+                    Var('configure', OptionType(MessageType('transactions', 'Configure'))),
+                    Call(Builtin('construct_configure'), [Call(Builtin('make_list'), [])])
+                ]),
                 Var('sync', OptionType(MessageType('transactions', 'Sync')))
             ])
         )
@@ -425,7 +428,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('config_dict', _config_type)],
             return_type=MessageType('transactions', 'Configure'),
-            body=Call(Message('transactions', 'Configure'), [Var('config_dict', _config_type)])
+            body=Call(Builtin('construct_configure'), [Var('config_dict', _config_type)])
         )
     ))
 
@@ -482,20 +485,20 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         lhs=Nonterminal('export_csvconfig', MessageType('transactions', 'ExportCsvConfig')),
         rhs=Sequence((
             LitTerminal('('), LitTerminal('export_csvconfig'),
-            Nonterminal('export_path', MessageType('transactions', 'ExportPath')),
+            NamedTerminal('STRING', BaseType('String')),
             Nonterminal('export_csvcolumns', ListType(MessageType('transactions', 'ExportCsvColumn'))),
             Nonterminal('config_dict', _config_type),
             LitTerminal(')')
         )),
         action=Lambda(
             [
-                Var('path', MessageType('transactions', 'ExportPath')),
+                Var('path', BaseType('String')),
                 Var('columns', ListType(MessageType('transactions', 'ExportCsvColumn'))),
                 Var('config', _config_type)
             ],
             MessageType('transactions', 'ExportCsvConfig'),
             Call(Builtin('export_csv_config'), [
-                Var('path', MessageType('transactions', 'ExportPath')),
+                Var('path', BaseType('String')),
                 Var('columns', ListType(MessageType('transactions', 'ExportCsvColumn'))),
                 Var('config', _config_type)
             ])
@@ -531,20 +534,6 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
                 Var('name', BaseType('String')),
                 Var('relation_id', MessageType('logic', 'RelationId'))
             ])
-        )
-    ))
-
-    add_rule(Rule(
-        lhs=Nonterminal('export_path', MessageType('transactions', 'ExportPath')),
-        rhs=Sequence((
-            LitTerminal('('), LitTerminal('path'),
-            NamedTerminal('STRING', BaseType('String')),
-            LitTerminal(')')
-        )),
-        action=Lambda(
-            [Var('path', BaseType('String'))],
-            return_type=MessageType('transactions', 'ExportPath'),
-            body=Call(Message('transactions', 'ExportPath'), [Var('path', BaseType('String'))])
         )
     ))
 

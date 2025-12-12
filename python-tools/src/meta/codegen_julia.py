@@ -108,7 +108,7 @@ class JuliaCodeGenerator(CodeGenerator):
             lambda args, lines, indent: BuiltinResult("nothing", [f"consume_literal(parser, {args[0]})"]))
 
         self.register_builtin("consume_terminal", 1,
-            lambda args, lines, indent: BuiltinResult("nothing", [f"consume_terminal(parser, {args[0]})"]))
+            lambda args, lines, indent: BuiltinResult(f"consume_terminal(parser, {args[0]})", []))
 
         self.register_builtin("current_token", 0,
             lambda args, lines, indent: BuiltinResult("current_token(parser)", []))
@@ -120,6 +120,12 @@ class JuliaCodeGenerator(CodeGenerator):
                 return BuiltinResult("nothing", [f"throw(ParseError({args[0]}))"])
             return None
         self.register_builtin("error", -1, gen_error)
+
+        self.register_builtin("construct_configure", 1,
+            lambda args, lines, indent: BuiltinResult(f"construct_configure(parser, {args[0]})", []))
+
+        self.register_builtin("export_csv_config", 3,
+            lambda args, lines, indent: BuiltinResult(f"export_csv_config(parser, {args[0]}, {args[1]}, {args[2]})", []))
 
     def escape_keyword(self, name: str) -> str:
         return f'var"{name}"'

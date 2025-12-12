@@ -107,7 +107,7 @@ class PythonCodeGenerator(CodeGenerator):
             lambda args, lines, indent: BuiltinResult("None", [f"self.consume_literal({args[0]})"]))
 
         self.register_builtin("consume_terminal", 1,
-            lambda args, lines, indent: BuiltinResult("None", [f"self.consume_terminal({args[0]})"]))
+            lambda args, lines, indent: BuiltinResult(f"self.consume_terminal({args[0]})", []))
 
         self.register_builtin("current_token", 0,
             lambda args, lines, indent: BuiltinResult("self.current_token()", []))
@@ -120,6 +120,12 @@ class PythonCodeGenerator(CodeGenerator):
                 return BuiltinResult("None", [f"raise ParseError({args[0]})"])
             return None
         self.register_builtin("error", -1, gen_error)
+
+        self.register_builtin("construct_configure", 1,
+            lambda args, lines, indent: BuiltinResult(f"self.construct_configure({args[0]})", []))
+
+        self.register_builtin("export_csv_config", 3,
+            lambda args, lines, indent: BuiltinResult(f"self.export_csv_config({args[0]}, {args[1]}, {args[2]})", []))
 
     def escape_keyword(self, name: str) -> str:
         return f"{name}_"
