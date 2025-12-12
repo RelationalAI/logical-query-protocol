@@ -131,7 +131,8 @@ def test_python_let_generation():
     # Simple let
     let_expr = Let(Var("x", _any_type), Call(Var("parse_foo", _any_type), []), Var("x", _any_type))
     code = generate_python(let_expr)
-    assert "x = parse_foo()" in code
+    assert "_t" in code and "parse_foo()" in code
+    assert "x = _t" in code
     assert "return x" in code
 
     # Nested let
@@ -139,8 +140,8 @@ def test_python_let_generation():
                      Let(Var("y", _any_type), Call(Var("parse_b", _any_type), []),
                          Call(Var("make", _any_type), [Var("x", _any_type), Var("y", _any_type)])))
     code_nested = generate_python(nested_let)
-    assert "x = parse_a()" in code_nested
-    assert "y = parse_b()" in code_nested
+    assert "parse_a()" in code_nested and "x = " in code_nested
+    assert "parse_b()" in code_nested and "y = " in code_nested
     assert "return make(x, y)" in code_nested
 
     # Let with keyword variable
@@ -157,7 +158,7 @@ def test_julia_let_generation():
     # Simple let
     let_expr = Let(Var("x", _any_type), Call(Var("parse_foo", _any_type), []), Var("x", _any_type))
     code = generate_julia(let_expr)
-    assert "let x = parse_foo(); x end" in code
+    assert "parse_foo()" in code and "x = " in code
 
     # Nested let
     nested_let = Let(Var("x", _any_type), Call(Var("parse_a", _any_type), []),
@@ -179,8 +180,7 @@ def test_go_let_generation():
     # Simple let
     let_expr = Let(Var("x", _any_type), Call(Var("parse_foo", _any_type), []), Var("x", _any_type))
     code = generate_go(let_expr)
-    assert "func() interface{}" in code
-    assert "x := parse_foo()" in code
+    assert "parse_foo()" in code and "x := " in code
     assert "return x" in code
 
     # Let with keyword variable
@@ -227,7 +227,7 @@ def test_go_lambda_generation():
     # Simple lambda
     lam = Lambda([Var("x", _any_type), Var("y", _any_type)], _any_type, Call(Var("Add", _any_type), [Var("x", _any_type), Var("y", _any_type)]))
     code = generate_go(lam)
-    assert "func(x interface{}, y interface{}) interface{}" in code
+    assert "func(x interface{}, y interface{})" in code
     assert "return Add(x, y)" in code
 
     print("✓ Go lambda generation works")

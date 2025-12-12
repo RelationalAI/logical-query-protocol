@@ -485,8 +485,8 @@ class TestIfElse:
         cond2 = Var("b", BaseType("Boolean"))
         inner = IfElse(cond2, Lit(2), Lit(3))
         outer = IfElse(cond1, Lit("x"), inner)
-        assert "if a" in str(outer)
-        assert "if b" in str(outer)
+        assert "if (a" in str(outer)
+        assert "if (b" in str(outer)
 
     def test_invalid_condition(self):
         """Test IfElse with invalid condition."""
@@ -741,7 +741,7 @@ class TestComplexExpressions:
 
         assert len(call.args) == 3
         assert isinstance(call.func, Message)
-        assert "@Transaction" in str(call)
+        assert "@proto.Transaction" in str(call)
 
     def test_function_returning_function(self):
         """Test function type that returns a function."""
