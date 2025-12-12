@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
 from .target import (
-    TargetExpr, Var, Lit, Symbol, Builtin, Message, OneOf, Call, Lambda, Let,
+    TargetExpr, Var, Lit, Symbol, Builtin, Message, OneOf, ListExpr, Call, Lambda, Let,
     IfElse, Seq, While, Assign, Return, FunDef, ParseNonterminalDef,
     ParseNonterminal, Type, BaseType, TupleType, ListType, OptionType,
     MessageType, FunctionType, gensym
@@ -145,6 +145,11 @@ class CodeGenerator(ABC):
     @abstractmethod
     def gen_option_type(self, element_type: str) -> str:
         """Generate an optional type."""
+        pass
+
+    @abstractmethod
+    def gen_list_literal(self, elements: List[str], element_type: Type) -> str:
+        """Generate a list literal with the given elements (may be empty)."""
         pass
 
     @abstractmethod
@@ -294,6 +299,9 @@ class CodeGenerator(ABC):
         elif isinstance(expr, OneOf):
             return self._generate_oneof(expr, lines, indent)
 
+        elif isinstance(expr, ListExpr):
+            return self._generate_list_expr(expr, lines, indent)
+
         elif isinstance(expr, Call):
             return self._generate_call(expr, lines, indent)
 
@@ -350,6 +358,11 @@ class CodeGenerator(ABC):
         this to handle the language-specific semantics.
         """
         raise ValueError(f"OneOf should only appear as arguments to Message constructors: {expr}")
+
+    def _generate_list_expr(self, expr: ListExpr, lines: List[str], indent: str) -> str:
+        """Generate code for a list expression."""
+        elements = [self.generate_lines(elem, lines, indent) for elem in expr.elements]
+        return self.gen_list_literal(elements, expr.element_type)
 
     def _generate_lambda(self, expr: Lambda, lines: List[str], indent: str) -> str:
         """Generate code for a lambda expression."""

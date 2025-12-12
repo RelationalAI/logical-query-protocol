@@ -126,6 +126,30 @@ class OneOf(TargetExpr):
 
 
 @dataclass(frozen=True)
+class ListExpr(TargetExpr):
+    """List constructor expression.
+
+    Creates a list with the given elements and element type.
+    """
+    elements: Sequence['TargetExpr']
+    element_type: 'Type'
+
+    def __str__(self) -> str:
+        if not self.elements:
+            return f"List[{self.element_type}]()"
+        elements_str = ', '.join(str(e) for e in self.elements)
+        return f"List[{self.element_type}]({elements_str})"
+
+    def __post_init__(self):
+        if isinstance(self.elements, list):
+            object.__setattr__(self, 'elements', tuple(self.elements))
+        assert isinstance(self.elements, tuple), f"Invalid elements in {self}: {self.elements}"
+        for elem in self.elements:
+            assert isinstance(elem, TargetExpr), f"Invalid element in {self}: {elem}"
+        assert isinstance(self.element_type, Type), f"Invalid element_type in {self}: {self.element_type}"
+
+
+@dataclass(frozen=True)
 class ParseNonterminal(TargetExpr):
     """Parse method call for a nonterminal.
 
@@ -400,6 +424,7 @@ __all__ = [
     'Builtin',
     'Message',
     'OneOf',
+    'ListExpr',
     'Call',
     'Lambda',
     'Let',

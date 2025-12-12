@@ -6,7 +6,7 @@ message definitions into grammar rules with semantic actions.
 import re
 from typing import Callable, Dict, List, Optional, Set, Tuple
 from .grammar import Grammar, Rule, Token, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
-from .target import Lambda, Call, Var, Symbol, Builtin, Message, OneOf, BaseType, MessageType, OptionType, ListType
+from .target import Lambda, Call, Var, Symbol, Builtin, Message, OneOf, ListExpr, BaseType, MessageType, OptionType, ListType
 from .proto_ast import ProtoMessage, ProtoField, PRIMITIVE_TYPES
 from .proto_parser import ProtoParser
 from .grammar_gen_builtins import get_builtin_rules
@@ -81,7 +81,7 @@ class GrammarGenerator:
             var = Var(name, param_type)
             if isinstance(param_type, OptionType) and isinstance(param_type.element_type, ListType):
                 # Flatten Option[List[T]] to List[T]
-                args.append(Call(Builtin('unwrap_option_or'), [var, Call(Builtin('make_list'), [])]))
+                args.append(Call(Builtin('unwrap_option_or'), [var, ListExpr([], param_type.element_type.element_type)]))
             else:
                 args.append(var)
         message = self.parser.messages[message_name]

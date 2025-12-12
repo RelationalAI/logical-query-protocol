@@ -9,7 +9,7 @@ from typing import Dict, List, Tuple
 
 from .grammar import Rule, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
 from .target import (
-    Lambda, Call, Var, Symbol, Lit, IfElse, Builtin, Message, OneOf,
+    Lambda, Call, Var, Symbol, Lit, IfElse, Builtin, Message, OneOf, ListExpr,
     BaseType, MessageType, OptionType, ListType, FunctionType, TupleType
 )
 
@@ -258,7 +258,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
                 Var('epochs', ListType(MessageType('transactions', 'Epoch'))),
                 Call(Builtin('unwrap_option_or'), [
                     Var('configure', OptionType(MessageType('transactions', 'Configure'))),
-                    Call(Builtin('construct_configure'), [Call(Builtin('make_list'), [])])
+                    Call(Builtin('construct_configure'), [ListExpr([], TupleType([BaseType('String'), MessageType('logic', 'Value')]))])
                 ]),
                 Var('sync', OptionType(MessageType('transactions', 'Sync')))
             ])
@@ -284,7 +284,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
                 Var('keys', ListType(MessageType('logic', 'Binding'))),
                 Call(Builtin('unwrap_option_or'), [
                     Var('values', OptionType(ListType(MessageType('logic', 'Binding')))),
-                    Call(Builtin('make_list'), [])
+                    ListExpr([], MessageType('logic', 'Binding'))
                 ])
             ])
         )
@@ -442,13 +442,13 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     add_rule(Rule(
         lhs=Nonterminal('true', MessageType('logic', 'Conjunction')),
         rhs=Sequence((LitTerminal('('), LitTerminal('true'), LitTerminal(')'))),
-        action=Lambda([], MessageType('logic', 'Conjunction'), Call(Message('logic', 'Conjunction'), [Call(Builtin('make_list'), [])]))
+        action=Lambda([], MessageType('logic', 'Conjunction'), Call(Message('logic', 'Conjunction'), [ListExpr([], MessageType('logic', 'Formula'))]))
     ))
 
     add_rule(Rule(
         lhs=Nonterminal('false', MessageType('logic', 'Disjunction')),
         rhs=Sequence((LitTerminal('('), LitTerminal('false'), LitTerminal(')'))),
-        action=Lambda([], MessageType('logic', 'Disjunction'), Call(Message('logic', 'Disjunction'), [Call(Builtin('make_list'), [])]))
+        action=Lambda([], MessageType('logic', 'Disjunction'), Call(Message('logic', 'Disjunction'), [ListExpr([], MessageType('logic', 'Formula'))]))
     ))
 
     # Formula rules (not final - auto-generation can add more)

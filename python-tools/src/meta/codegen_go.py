@@ -8,7 +8,7 @@ from typing import List, Optional, Set, Tuple, Union
 
 from .codegen_base import CodeGenerator, BuiltinResult
 from .target import (
-    TargetExpr, Var, Lit, Symbol, Call, Lambda, Let, IfElse,
+    TargetExpr, Var, Lit, Symbol, ListExpr, Call, Lambda, Let, IfElse,
     FunDef, ParseNonterminalDef, gensym
 )
 
@@ -79,12 +79,6 @@ class GoCodeGenerator(CodeGenerator):
 
         self.register_builtin("list_push!", 2,
             lambda args, lines, indent: BuiltinResult("nil", [f"{args[0]} = append({args[0]}, {args[1]})"]))
-
-        def gen_make_list(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
-            if len(args) == 0:
-                return BuiltinResult("[]interface{}{}", [])
-            return BuiltinResult(f"[]interface{{{{}}}}{{{', '.join(args)}}}", [])
-        self.register_builtin("make_list", -1, gen_make_list)
 
         self.register_builtin("is_none", 1,
             lambda args, lines, indent: BuiltinResult(f"{args[0]} == nil", []))
@@ -181,6 +175,10 @@ class GoCodeGenerator(CodeGenerator):
 
     def gen_option_type(self, element_type: str) -> str:
         return f"*{element_type}"  # Go uses pointers for optional values
+
+    def gen_list_literal(self, elements: List[str], element_type) -> str:
+        type_code = self.gen_type(element_type)
+        return f"[]{type_code}{{{', '.join(elements)}}}"
 
     def gen_function_type(self, param_types: List[str], return_type: str) -> str:
         return f"func({', '.join(param_types)}) {return_type}"
@@ -323,6 +321,12 @@ def generate_go(expr: TargetExpr, indent: str = "") -> str:
         return repr(expr.value)
     elif isinstance(expr, Symbol):
         return f'"{expr.name}"'
+    elif isinstance(expr, ListExpr):
+        type_code = _generator.gen_type(expr.element_type)
+        if not expr.elements:
+            return f"[]{type_code}{{}}"
+        elements_code = ', '.join(generate_go(elem, indent) for elem in expr.elements)
+        return f"[]{type_code}{{{elements_code}}}"
     elif isinstance(expr, Call):
         func_code = generate_go(expr.func, indent)
         args_code = ', '.join(generate_go(arg, indent) for arg in expr.args)

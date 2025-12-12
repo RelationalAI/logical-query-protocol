@@ -10,7 +10,7 @@ from lqp.proto.v1.logic_pb2 import Value
 
 from .codegen_base import CodeGenerator, BuiltinResult
 from .target import (
-    TargetExpr, Var, Lit, Symbol, Builtin, Message, OneOf, Call, Lambda, Let, IfElse,
+    TargetExpr, Var, Lit, Symbol, Builtin, Message, OneOf, ListExpr, Call, Lambda, Let, IfElse,
     FunDef, ParseNonterminalDef, gensym
 )
 
@@ -104,9 +104,6 @@ class JuliaCodeGenerator(CodeGenerator):
 
         self.register_builtin("list_push!", 2,
             lambda args, lines, indent: BuiltinResult("nothing", [f"push!({args[0]}, {args[1]})"]))
-
-        self.register_builtin("make_list", -1,
-            lambda args, lines, indent: BuiltinResult(f"[{', '.join(args)}]", []))
 
         self.register_builtin("is_none", 1,
             lambda args, lines, indent: BuiltinResult(f"isnothing({args[0]})", []))
@@ -205,6 +202,10 @@ class JuliaCodeGenerator(CodeGenerator):
 
     def gen_option_type(self, element_type: str) -> str:
         return f"Union{{Nothing, {element_type}}}"
+
+    def gen_list_literal(self, elements: List[str], element_type) -> str:
+        type_code = self.gen_type(element_type)
+        return f"{type_code}[{', '.join(elements)}]"
 
     def gen_function_type(self, param_types: List[str], return_type: str) -> str:
         return "Function"  # Julia doesn't have precise function types
@@ -452,6 +453,11 @@ def generate_julia(expr: TargetExpr, indent: str = "") -> str:
         return repr(expr.value)
     elif isinstance(expr, Symbol):
         return f":{expr.name}"
+    elif isinstance(expr, ListExpr):
+        if not expr.elements:
+            return "[]"
+        elements_code = ', '.join(generate_julia(elem, indent) for elem in expr.elements)
+        return f"[{elements_code}]"
     elif isinstance(expr, Call):
         func_code = generate_julia(expr.func, indent)
         args_code = ', '.join(generate_julia(arg, indent) for arg in expr.args)

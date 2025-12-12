@@ -51,7 +51,6 @@ Builtins used:
 - consume_terminal(name): Consume a terminal, return its value
 - match_lookahead_literal(s, k): Check if lookahead[k] is literal s
 - match_lookahead_terminal(name, k): Check if lookahead[k] is terminal type
-- make_list(): Create empty list
 - list_push!(list, elem): Append to list (mutating)
 - equal(a, b): Equality check
 - error(msg, context): Raise parse error
@@ -79,7 +78,7 @@ The generated IR for expr (simplified) would be:
 
 from typing import Dict, List, Optional, Set, Tuple, Sequence as PySequence
 from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Terminal, is_epsilon, rhs_elements, Sequence
-from .target import Lambda, Call, ParseNonterminalDef, Var, Lit, Symbol, Builtin, Let, IfElse, BaseType, ListType, TargetExpr, Seq, While, Assign, ParseNonterminal, Return, gensym
+from .target import Lambda, Call, ParseNonterminalDef, Var, Lit, Symbol, Builtin, Let, IfElse, BaseType, ListType, ListExpr, TargetExpr, Seq, While, Assign, ParseNonterminal, Return, gensym
 from .terminal_sequence_set import TerminalSequenceSet, FollowSet, FirstSet, ConcatSet
 
 MAX_LOOKAHEAD = 3
@@ -294,7 +293,7 @@ def _generate_parse_rhs_ir(rhs: Rhs, grammar: Grammar, follow_set: TerminalSeque
         xs = Var(gensym('xs'), ListType(rhs.rhs.target_type()))
         cond = Var(gensym('cond'), BaseType('Boolean'))
         predictor = _build_option_predictor(grammar, rhs.rhs, follow_set)
-        return Let(xs, Call(Builtin('make_list'), []), Let(cond, predictor, Seq([While(cond, Seq([Call(Builtin('list_push!'), [xs, _generate_parse_rhs_ir(rhs.rhs, grammar, follow_set, False, None)]), Assign(cond, predictor)])), xs])))
+        return Let(xs, ListExpr([], rhs.rhs.target_type()), Let(cond, predictor, Seq([While(cond, Seq([Call(Builtin('list_push!'), [xs, _generate_parse_rhs_ir(rhs.rhs, grammar, follow_set, False, None)]), Assign(cond, predictor)])), xs])))
     else:
         assert False, f'Unsupported Rhs type: {type(rhs)}'
 
