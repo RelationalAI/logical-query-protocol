@@ -24,7 +24,7 @@ Generated from protobuf specifications.
 
 import hashlib
 import re
-from typing import List, Optional, Any, Tuple
+from typing import List, Optional, Any, Tuple, Callable
 from decimal import Decimal
 
 from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
