@@ -7,6 +7,7 @@ Handles Python-specific code generation including:
 - Epilogue (parse function)
 """
 
+import re
 from typing import List, Optional, Set
 
 from .grammar import Grammar, Nonterminal, get_literals
@@ -76,42 +77,24 @@ class Lexer:
                 self.pos = match.end()
                 continue
 
-            matched = False
+            # Collect all matching tokens
+            candidates = []
 
-            # Scan for literals first since they should have priority over symbols
-            for literal in self._get_literals():
-                if self.input[self.pos:].startswith(literal):
-                    # Check word boundary for alphanumeric keywords
-                    if literal[0].isalnum():
-                        end_pos = self.pos + len(literal)
-                        if end_pos < len(self.input) and self.input[end_pos].isalnum():
-                            continue
-                    self.tokens.append(Token('LITERAL', literal, self.pos))
-                    self.pos += len(literal)
-                    matched = True
-                    break
+            for token_type, regex, action in token_specs:
+                match = regex.match(self.input, self.pos)
+                if match:
+                    value = match.group(0)
+                    candidates.append((token_type, value, action, match.end()))
 
-            # Scan for other tokens
-            if not matched:
-                for token_type, pattern, action in token_specs:
-                    regex = re.compile(pattern)
-                    match = regex.match(self.input, self.pos)
-                    if match:
-                        value = match.group(0)
-                        self.tokens.append(Token(token_type, action(value), self.pos))
-                        self.pos = match.end()
-                        matched = True
-                        break
-
-            if not matched:
+            if not candidates:
                 raise ParseError(f'Unexpected character at position {{{{self.pos}}}}: {{{{self.input[self.pos]!r}}}}')
 
-        self.tokens.append(Token('$', '', self.pos))
+            # Pick the longest match
+            token_type, value, action, end_pos = max(candidates, key=lambda x: x[3])
+            self.tokens.append(Token(token_type, action(value), self.pos))
+            self.pos = end_pos
 
-    def _get_literals(self) -> List[str]:
-        """Get all literal strings from the grammar."""
-        return [
-{literals_list}        ]
+        self.tokens.append(Token('$', '', self.pos))
 
     @staticmethod
     def scan_symbol(s: str) -> str:
@@ -193,7 +176,7 @@ class Parser:
         """Consume a terminal token and return parsed value."""
         if not self.match_lookahead_terminal(expected, 0):
             token = self.lookahead(0)
-            raise ParseError(f'Expected terminal {{{{expected}}}} but got {{{{token.type}}}} at position {{{{token.pos}}}}')
+            raise ParseError(f'Expected terminal {{expected}} but got {{token.type}} ({{token.value}}) at position {{token.pos}}')
         token = self.lookahead(0)
         self.pos += 1
         return token.value
@@ -368,27 +351,41 @@ def _generate_prologue(grammar: Grammar, command_line: Optional[str] = None) -> 
     # Build command line comment
     command_line_comment = f"\nCommand: {command_line}\n" if command_line else ""
 
-    # Build token specs (preserving order from grammar)
-    token_specs_lines = []
-    for token in grammar.tokens:
-        token_specs_lines.append(
-            f"            ('{token.name}', r'{token.pattern}', lambda x: Lexer.scan_{token.name.lower()}(x)),"
-        )
-    token_specs = "\n".join(token_specs_lines) + "\n" if token_specs_lines else ""
-
-    # Build literals list (sorted by length, longest first)
+    # Collect literals (sorted by length, longest first)
     literals = set()
     for rules_list in grammar.rules.values():
         for rule in rules_list:
             literals.update(get_literals(rule.rhs))
     sorted_literals = sorted(literals, key=lambda x: (-len(x.name), x.name))
-    literals_lines = [f"            '{lit.name}'," for lit in sorted_literals]
-    literals_list = "\n".join(literals_lines) + "\n" if literals_lines else ""
+
+    # Build token specs with literals first, then other tokens
+    token_specs_lines = []
+
+    # Add literals to token_specs
+    for lit in sorted_literals:
+        # Escape regex special characters in literal
+        escaped = re.escape(lit.name)
+        # Check if literal is alphanumeric (needs word boundary check)
+        if lit.name[0].isalnum():
+            # Add word boundary check to pattern
+            pattern = f"{escaped}(?!\\w)"
+        else:
+            pattern = escaped
+        token_specs_lines.append(
+            f"            ('LITERAL', re.compile(r'{pattern}'), lambda x: x),"
+        )
+
+    # Add other tokens
+    for token in grammar.tokens:
+        token_specs_lines.append(
+            f"            ('{token.name}', re.compile(r'{token.pattern}'), lambda x: Lexer.scan_{token.name.lower()}(x)),"
+        )
+
+    token_specs = "\n".join(token_specs_lines) + "\n" if token_specs_lines else ""
 
     return PROLOGUE_TEMPLATE.format(
         command_line_comment=command_line_comment,
         token_specs=token_specs,
-        literals_list=literals_list,
     )
 
 

@@ -44,13 +44,111 @@ class Lexer:
     def _tokenize(self) -> None:
         """Tokenize the input string."""
         token_specs = [
-            ('STRING', r'"(?:[^"\\]|\\.)*"', lambda x: Lexer.scan_string(x)),
-            ('DECIMAL', r'[-]?\d+\.\d+d\d+', lambda x: Lexer.scan_decimal(x)),
-            ('FLOAT', r'(?:[-]?\d+\.\d+|inf|nan)', lambda x: Lexer.scan_float(x)),
-            ('INT128', r'[-]?\d+i128', lambda x: Lexer.scan_int128(x)),
-            ('UINT128', r'0x[0-9a-fA-F]+', lambda x: Lexer.scan_uint128(x)),
-            ('INT', r'[-]?\d+', lambda x: Lexer.scan_int(x)),
-            ('SYMBOL', r'[a-zA-Z_][a-zA-Z0-9_.-]*', lambda x: Lexer.scan_symbol(x)),
+            ('LITERAL', re.compile(r'functional_dependency(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'export_csvconfig(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'datetime_value(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'decimal_value(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'missing_value(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'uint128_value(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'int128_value(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'transaction(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'date_value(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'debug_info(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'max_monoid(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'min_monoid(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'sum_monoid(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'algorithm(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'attribute(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'configure(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'ivmconfig(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'or_monoid(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'primitive(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'DATETIME(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'datetime(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'fragment(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'undefine(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'BOOLEAN(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'DECIMAL(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'MISSING(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'UINT128(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'UNKNOWN(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'columns(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'context(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'missing(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'relatom(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'what_if(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'INT128(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'STRING(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'assign(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'column(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'define(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'demand(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'exists(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'export(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'monoid(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'output(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'pragma(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'reduce(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'script(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'upsert(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'values(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'writes(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'FLOAT(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'abort(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'attrs(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'break(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'epoch(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'false(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'monus(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'reads(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'terms(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'DATE(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'args(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'atom(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'cast(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'date(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'init(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'keys(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'loop(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'sync(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'true(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'INT(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'MAX(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'MIN(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'SUM(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'and(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'def(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'ffi(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'ids(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'not(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'::'), lambda x: x),
+            ('LITERAL', re.compile(r'<='), lambda x: x),
+            ('LITERAL', re.compile(r'>='), lambda x: x),
+            ('LITERAL', re.compile(r'OR(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'or(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'\#'), lambda x: x),
+            ('LITERAL', re.compile(r'\('), lambda x: x),
+            ('LITERAL', re.compile(r'\)'), lambda x: x),
+            ('LITERAL', re.compile(r'\*'), lambda x: x),
+            ('LITERAL', re.compile(r'\+'), lambda x: x),
+            ('LITERAL', re.compile(r'\-'), lambda x: x),
+            ('LITERAL', re.compile(r'/'), lambda x: x),
+            ('LITERAL', re.compile(r':'), lambda x: x),
+            ('LITERAL', re.compile(r'<'), lambda x: x),
+            ('LITERAL', re.compile(r'='), lambda x: x),
+            ('LITERAL', re.compile(r'>'), lambda x: x),
+            ('LITERAL', re.compile(r'\['), lambda x: x),
+            ('LITERAL', re.compile(r'\]'), lambda x: x),
+            ('LITERAL', re.compile(r'\{'), lambda x: x),
+            ('LITERAL', re.compile(r'\|'), lambda x: x),
+            ('LITERAL', re.compile(r'\}'), lambda x: x),
+            ('STRING', re.compile(r'"(?:[^"\\]|\\.)*"'), lambda x: Lexer.scan_string(x)),
+            ('DECIMAL', re.compile(r'[-]?\d+\.\d+d\d+'), lambda x: Lexer.scan_decimal(x)),
+            ('FLOAT', re.compile(r'(?:[-]?\d+\.\d+|inf|nan)'), lambda x: Lexer.scan_float(x)),
+            ('INT128', re.compile(r'[-]?\d+i128'), lambda x: Lexer.scan_int128(x)),
+            ('UINT128', re.compile(r'0x[0-9a-fA-F]+'), lambda x: Lexer.scan_uint128(x)),
+            ('INT', re.compile(r'[-]?\d+'), lambda x: Lexer.scan_int(x)),
+            ('SYMBOL', re.compile(r'[a-zA-Z_][a-zA-Z0-9_.-]*'), lambda x: Lexer.scan_symbol(x)),
         ]
 
         whitespace_re = re.compile(r'\s+')
@@ -67,140 +165,24 @@ class Lexer:
                 self.pos = match.end()
                 continue
 
-            matched = False
+            # Collect all matching tokens
+            candidates = []
 
-            # Scan for literals first since they should have priority over symbols
-            for literal in self._get_literals():
-                if self.input[self.pos:].startswith(literal):
-                    # Check word boundary for alphanumeric keywords
-                    if literal[0].isalnum():
-                        end_pos = self.pos + len(literal)
-                        if end_pos < len(self.input) and self.input[end_pos].isalnum():
-                            continue
-                    self.tokens.append(Token('LITERAL', literal, self.pos))
-                    self.pos += len(literal)
-                    matched = True
-                    break
+            for token_type, regex, action in token_specs:
+                match = regex.match(self.input, self.pos)
+                if match:
+                    value = match.group(0)
+                    candidates.append((token_type, value, action, match.end()))
 
-            # Scan for other tokens
-            if not matched:
-                for token_type, pattern, action in token_specs:
-                    regex = re.compile(pattern)
-                    match = regex.match(self.input, self.pos)
-                    if match:
-                        value = match.group(0)
-                        self.tokens.append(Token(token_type, action(value), self.pos))
-                        self.pos = match.end()
-                        matched = True
-                        break
-
-            if not matched:
+            if not candidates:
                 raise ParseError(f'Unexpected character at position {{self.pos}}: {{self.input[self.pos]!r}}')
 
-        self.tokens.append(Token('$', '', self.pos))
+            # Pick the longest match
+            token_type, value, action, end_pos = max(candidates, key=lambda x: x[3])
+            self.tokens.append(Token(token_type, action(value), self.pos))
+            self.pos = end_pos
 
-    def _get_literals(self) -> List[str]:
-        """Get all literal strings from the grammar."""
-        return [
-            'functional_dependency',
-            'export_csvconfig',
-            'datetime_value',
-            'decimal_value',
-            'missing_value',
-            'uint128_value',
-            'int128_value',
-            'transaction',
-            'date_value',
-            'debug_info',
-            'max_monoid',
-            'min_monoid',
-            'sum_monoid',
-            'algorithm',
-            'attribute',
-            'configure',
-            'ivmconfig',
-            'or_monoid',
-            'primitive',
-            'DATETIME',
-            'datetime',
-            'fragment',
-            'undefine',
-            'BOOLEAN',
-            'DECIMAL',
-            'MISSING',
-            'UINT128',
-            'UNKNOWN',
-            'columns',
-            'context',
-            'missing',
-            'relatom',
-            'what_if',
-            'INT128',
-            'STRING',
-            'assign',
-            'column',
-            'define',
-            'demand',
-            'exists',
-            'export',
-            'monoid',
-            'output',
-            'pragma',
-            'reduce',
-            'script',
-            'upsert',
-            'values',
-            'writes',
-            'FLOAT',
-            'abort',
-            'attrs',
-            'break',
-            'epoch',
-            'false',
-            'monus',
-            'reads',
-            'terms',
-            'DATE',
-            'args',
-            'atom',
-            'cast',
-            'date',
-            'init',
-            'keys',
-            'loop',
-            'sync',
-            'true',
-            'INT',
-            'MAX',
-            'MIN',
-            'SUM',
-            'and',
-            'def',
-            'ffi',
-            'ids',
-            'not',
-            '::',
-            '<=',
-            '>=',
-            'OR',
-            'or',
-            '#',
-            '(',
-            ')',
-            '*',
-            '+',
-            '-',
-            '/',
-            ':',
-            '<',
-            '=',
-            '>',
-            '[',
-            ']',
-            '{',
-            '|',
-            '}',
-        ]
+        self.tokens.append(Token('$', '', self.pos))
 
     @staticmethod
     def scan_symbol(s: str) -> str:
@@ -282,7 +264,7 @@ class Parser:
         """Consume a terminal token and return parsed value."""
         if not self.match_lookahead_terminal(expected, 0):
             token = self.lookahead(0)
-            raise ParseError(f'Expected terminal {{expected}} but got {{token.type}} at position {{token.pos}}')
+            raise ParseError(f'Expected terminal {expected} but got {token.type} ({token.value}) at position {token.pos}')
         token = self.lookahead(0)
         self.pos += 1
         return token.value
