@@ -765,7 +765,7 @@ class Parser:
                 if prediction48 == 0:
                     _t355 = self.parse_def()
                     value49 = _t355
-                    _t356 = logic_pb2.Declaration(def_=value49)
+                    _t356 = logic_pb2.Declaration(**{'def': value49})
                     _t354 = _t356
                 else:
                     raise ParseError('Unexpected token in declaration' + ": {self.lookahead(0)}")
@@ -1181,7 +1181,7 @@ class Parser:
                                 if prediction83 == 6:
                                     _t495 = self.parse_not()
                                     value90 = _t495
-                                    _t496 = logic_pb2.Formula(not_=value90)
+                                    _t496 = logic_pb2.Formula(**{'not': value90})
                                     _t494 = _t496
                                 else:
                                     if prediction83 == 5:
@@ -1953,7 +1953,7 @@ class Parser:
                 if prediction200 == 2:
                     _t4808 = self.parse_break()
                     value203 = _t4808
-                    _t4809 = logic_pb2.Instruction(break_=value203)
+                    _t4809 = logic_pb2.Instruction(**{'break': value203})
                     _t4807 = _t4809
                 else:
                     if prediction200 == 1:
