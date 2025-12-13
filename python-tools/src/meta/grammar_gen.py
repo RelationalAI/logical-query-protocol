@@ -131,6 +131,7 @@ class GrammarGenerator:
         self.grammar.tokens.append(Token("UINT128", '0x[0-9a-fA-F]+', MessageType("logic", "UInt128Value")))
         self.grammar.tokens.append(Token("INT", '[-]?\\d+', BaseType("Int64")))
         self.grammar.tokens.append(Token("SYMBOL", '[a-zA-Z_][a-zA-Z0-9_.-]*', BaseType("String")))
+        self.grammar.tokens.append(Token("COLON_SYMBOL", ':[a-zA-Z_][a-zA-Z0-9_.-]*', BaseType("String")))
 
         self._post_process_grammar()
         return self.grammar

@@ -100,6 +100,10 @@ class Lexer:
     def scan_symbol(s: str) -> str:
         """Parse SYMBOL token."""
         return s
+    @staticmethod
+    def scan_colon_symbol(s: str) -> str:
+        """Parse COLON_SYMBOL token."""
+        return s[1:]
 
     @staticmethod
     def scan_string(s: str) -> str:

@@ -226,8 +226,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     add_rule(Rule(
         lhs=Nonterminal('config_key_value', TupleType([BaseType('String'), MessageType('logic', 'Value')])),
         rhs=Sequence((
-            LitTerminal(':'),
-            NamedTerminal('SYMBOL', BaseType('String')),
+            NamedTerminal('COLON_SYMBOL', BaseType('String')),
             Nonterminal('value', MessageType('logic', 'Value'))
         )),
         action=Lambda(
@@ -369,7 +368,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     # Name rule
     add_rule(Rule(
         lhs=Nonterminal('name', BaseType('String')),
-        rhs=Sequence((LitTerminal(':'), NamedTerminal('SYMBOL', BaseType('String')))),
+        rhs=NamedTerminal('COLON_SYMBOL', BaseType('String')),
         action=Lambda(
             [Var('symbol', BaseType('String'))],
             BaseType('String'),
@@ -557,7 +556,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     # ID rules
     add_rule(Rule(
         lhs=Nonterminal('fragment_id', MessageType('fragments', 'FragmentId')),
-        rhs=Sequence((LitTerminal(':'), NamedTerminal('SYMBOL', BaseType('String')))),
+        rhs=NamedTerminal('COLON_SYMBOL', BaseType('String')),
         action=Lambda(
             [Var('symbol', BaseType('String'))],
             return_type=MessageType('fragments', 'FragmentId'),
@@ -567,7 +566,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
 
     add_rule(Rule(
         lhs=Nonterminal('relation_id', MessageType('logic', 'RelationId')),
-        rhs=Sequence((LitTerminal(':'), NamedTerminal('SYMBOL', BaseType('String')))),
+        rhs=NamedTerminal('COLON_SYMBOL', BaseType('String')),
         action=Lambda(
             [Var('symbol', BaseType('String'))],
             return_type=MessageType('logic', 'RelationId'),
