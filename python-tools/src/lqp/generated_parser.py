@@ -573,7 +573,7 @@ class Parser:
                                                     _t313 = logic_pb2.Value(date_value=value12)
                                                     _t311 = _t313
                                                 else:
-                                                    raise ParseError('Unexpected token in value' + ": {self.lookahead(0)}")
+                                                    raise ParseError('Unexpected token in value' + f": {self.lookahead(0)}")
                                                     _t311 = None
                                                 _t308 = _t311
                                             _t306 = _t308
@@ -706,7 +706,7 @@ class Parser:
                     _t340 = transactions_pb2.Write(define=value40)
                     _t338 = _t340
                 else:
-                    raise ParseError('Unexpected token in write' + ": {self.lookahead(0)}")
+                    raise ParseError('Unexpected token in write' + f": {self.lookahead(0)}")
                     _t338 = None
                 _t335 = _t338
             _t332 = _t335
@@ -768,7 +768,7 @@ class Parser:
                     _t356 = logic_pb2.Declaration(**{'def': value49})
                     _t354 = _t356
                 else:
-                    raise ParseError('Unexpected token in declaration' + ": {self.lookahead(0)}")
+                    raise ParseError('Unexpected token in declaration' + f": {self.lookahead(0)}")
                     _t354 = None
                 _t351 = _t354
             _t348 = _t351
@@ -810,7 +810,7 @@ class Parser:
                 symbol56 = self.consume_terminal('SYMBOL')
                 _t366 = self.relation_id_from_string(symbol56)
             else:
-                raise ParseError('Unexpected token in relation_id' + ": {self.lookahead(0)}")
+                raise ParseError('Unexpected token in relation_id' + f": {self.lookahead(0)}")
                 _t366 = None
             _t365 = _t366
         return _t365
@@ -964,7 +964,7 @@ class Parser:
                                                     _t427 = logic_pb2.Type(unspecified_type=value67)
                                                     _t425 = _t427
                                                 else:
-                                                    raise ParseError('Unexpected token in type' + ": {self.lookahead(0)}")
+                                                    raise ParseError('Unexpected token in type' + f": {self.lookahead(0)}")
                                                     _t425 = None
                                                 _t422 = _t425
                                             _t419 = _t422
@@ -1220,7 +1220,7 @@ class Parser:
                                                             _t514 = logic_pb2.Formula(true=value84)
                                                             _t512 = _t514
                                                         else:
-                                                            raise ParseError('Unexpected token in formula' + ": {self.lookahead(0)}")
+                                                            raise ParseError('Unexpected token in formula' + f": {self.lookahead(0)}")
                                                             _t512 = None
                                                         _t509 = _t512
                                                     _t506 = _t509
@@ -1314,7 +1314,7 @@ class Parser:
                 _t535 = logic_pb2.Term(var=value106)
                 _t533 = _t535
             else:
-                raise ParseError('Unexpected token in term' + ": {self.lookahead(0)}")
+                raise ParseError('Unexpected token in term' + f": {self.lookahead(0)}")
                 _t533 = None
             _t530 = _t533
         return _t530
@@ -1544,7 +1544,7 @@ class Parser:
                                                 op133 = _t593
                                                 _t592 = op133
                                             else:
-                                                raise ParseError('Unexpected token in primitive' + ": {self.lookahead(0)}")
+                                                raise ParseError('Unexpected token in primitive' + f": {self.lookahead(0)}")
                                                 _t592 = None
                                             _t590 = _t592
                                         _t588 = _t590
@@ -1748,7 +1748,7 @@ class Parser:
                 _t4747 = logic_pb2.RelTerm(specialized_value=value169)
                 _t4745 = _t4747
             else:
-                raise ParseError('Unexpected token in relterm' + ": {self.lookahead(0)}")
+                raise ParseError('Unexpected token in relterm' + f": {self.lookahead(0)}")
                 _t4745 = None
             _t4742 = _t4745
         return _t4742
@@ -1879,7 +1879,7 @@ class Parser:
                 _t4785 = logic_pb2.Construct(loop=value193)
                 _t4783 = _t4785
             else:
-                raise ParseError('Unexpected token in construct' + ": {self.lookahead(0)}")
+                raise ParseError('Unexpected token in construct' + f": {self.lookahead(0)}")
                 _t4783 = None
             _t4780 = _t4783
         return _t4780
@@ -1968,7 +1968,7 @@ class Parser:
                             _t4815 = logic_pb2.Instruction(assign=value201)
                             _t4813 = _t4815
                         else:
-                            raise ParseError('Unexpected token in instruction' + ": {self.lookahead(0)}")
+                            raise ParseError('Unexpected token in instruction' + f": {self.lookahead(0)}")
                             _t4813 = None
                         _t4810 = _t4813
                     _t4807 = _t4810
@@ -2115,7 +2115,7 @@ class Parser:
                             return _t4863
                         _t4860 = _t4861
                     else:
-                        raise ParseError('Unexpected token in monoid_op' + ": {self.lookahead(0)}")
+                        raise ParseError('Unexpected token in monoid_op' + f": {self.lookahead(0)}")
                         _t4860 = None
                     _t4856 = _t4860
                 _t4852 = _t4856
@@ -2286,7 +2286,7 @@ class Parser:
                             _t4908 = transactions_pb2.Read(demand=value246)
                             _t4906 = _t4908
                         else:
-                            raise ParseError('Unexpected token in read' + ": {self.lookahead(0)}")
+                            raise ParseError('Unexpected token in read' + f": {self.lookahead(0)}")
                             _t4906 = None
                         _t4903 = _t4906
                     _t4900 = _t4903
