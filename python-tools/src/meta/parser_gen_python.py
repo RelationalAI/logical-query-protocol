@@ -178,14 +178,14 @@ class Parser:
         """Consume a literal token."""
         if not self.match_lookahead_literal(expected, 0):
             token = self.lookahead(0)
-            raise ParseError(f'Expected literal {{expected!r}} but got {{token.type}}={{token.value!r}} at position {{token.pos}}')
+            raise ParseError(f'Expected literal {{expected!r}} but got {{token.type}}=`{{token.value!r}}` at position {{token.pos}}')
         self.pos += 1
 
     def consume_terminal(self, expected: str) -> Any:
         """Consume a terminal token and return parsed value."""
         if not self.match_lookahead_terminal(expected, 0):
             token = self.lookahead(0)
-            raise ParseError(f'Expected terminal {{expected}} but got {{token.type}} ({{token.value}}) at position {{token.pos}}')
+            raise ParseError(f'Expected terminal {{expected}} but got {{token.type}}=`{{token.value!r}}` at position {{token.pos}}')
         token = self.lookahead(0)
         self.pos += 1
         return token.value
