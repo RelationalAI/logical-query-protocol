@@ -4,7 +4,7 @@ This module provides functions for analyzing grammars including reachability,
 nullable computation, FIRST/FOLLOW sets, and LL(k) checking.
 """
 
-from typing import Dict, List, Mapping, Optional, Set, Tuple, TYPE_CHECKING
+from typing import Container, Dict, Iterable, List, Mapping, Optional, Set, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .grammar import Grammar, Rhs, Rule
@@ -90,7 +90,7 @@ def compute_nullable(grammar: 'Grammar') -> Dict[Nonterminal, bool]:
     return nullable
 
 
-def is_rhs_nullable(rhs: 'Rhs', nullable: Dict[Nonterminal, bool]) -> bool:
+def is_rhs_nullable(rhs: 'Rhs', nullable: Mapping[Nonterminal, bool]) -> bool:
     """Check if an RHS is nullable given current nullable set."""
     if isinstance(rhs, (LitTerminal, NamedTerminal)):
         return False
@@ -137,13 +137,13 @@ def compute_first_k(grammar: 'Grammar', k: int = 1,
     return first_k
 
 
-def rhs_first_k(rhs: 'Rhs', first_k: Mapping[Nonterminal, TerminalSeqSet],
+def rhs_first_k(rhs: 'Rhs', first_k: Mapping[Nonterminal, Iterable[TerminalSeq]],
                 nullable: Mapping[Nonterminal, bool], k: int) -> TerminalSeqSet:
     """Compute FIRST_k set for an RHS element."""
     if isinstance(rhs, (LitTerminal, NamedTerminal)):
         return {(rhs,)}
     elif isinstance(rhs, Nonterminal):
-        return first_k.get(rhs, set()).copy()
+        return set(first_k.get(rhs, set()))
     elif isinstance(rhs, Sequence):
         if not rhs.elements:
             return {()}
@@ -175,7 +175,7 @@ def compute_first(grammar: 'Grammar',
     return {nt: {seq[0] for seq in seqs if seq} for nt, seqs in first_k.items()}
 
 
-def rhs_first(rhs: 'Rhs', first: Mapping[Nonterminal, Set[Terminal]],
+def rhs_first(rhs: 'Rhs', first: Mapping[Nonterminal, Iterable[Terminal]],
               nullable: Mapping[Nonterminal, bool]) -> Set[Terminal]:
     """Compute FIRST set for an RHS element.
 
@@ -184,7 +184,7 @@ def rhs_first(rhs: 'Rhs', first: Mapping[Nonterminal, Set[Terminal]],
     if isinstance(rhs, (LitTerminal, NamedTerminal)):
         return {rhs}
     elif isinstance(rhs, Nonterminal):
-        return first.get(rhs, set()).copy()
+        return set(first.get(rhs, set()))
     elif isinstance(rhs, Sequence):
         result: Set[Terminal] = set()
         for elem in rhs.elements:
@@ -236,14 +236,14 @@ def compute_follow_k(grammar: 'Grammar', k: int = 1,
 
 
 def rhs_follow_k(rhs: 'Rhs', lhs: Nonterminal,
-                 first_k: Dict[Nonterminal, TerminalSeqSet],
-                 nullable: Dict[Nonterminal, bool],
-                 follow_k: Dict[Nonterminal, TerminalSeqSet],
+                 first_k: Mapping[Nonterminal, Iterable[TerminalSeq]],
+                 nullable: Mapping[Nonterminal, bool],
+                 follow_k: Mapping[Nonterminal, Iterable[TerminalSeq]],
                  k: int) -> Dict[Nonterminal, TerminalSeqSet]:
     """Compute FOLLOW_k contributions from an RHS."""
     result: Dict[Nonterminal, TerminalSeqSet] = {}
 
-    def add(nt: Nonterminal, sequences: TerminalSeqSet) -> None:
+    def add(nt: Nonterminal, sequences: Iterable[TerminalSeq]) -> None:
         if nt not in result:
             result[nt] = set()
         result[nt].update(sequences)
@@ -285,9 +285,9 @@ def rhs_follow_k(rhs: 'Rhs', lhs: Nonterminal,
 
 
 def rhs_follow(rhs: 'Rhs', lhs: Nonterminal,
-               first: Mapping[Nonterminal, Set[Terminal]],
+               first: Mapping[Nonterminal, Iterable[Terminal]],
                nullable: Mapping[Nonterminal, bool],
-               follow: Mapping[Nonterminal, Set[Terminal]]) -> Dict[Nonterminal, Set[Terminal]]:
+               follow: Mapping[Nonterminal, Iterable[Terminal]]) -> Dict[Nonterminal, Set[Terminal]]:
     """Compute FOLLOW contributions from an RHS.
 
     Convenience function for k=1 case, returning Dict[Nonterminal, Set[Terminal]].
@@ -322,7 +322,7 @@ def compute_follow(grammar: 'Grammar',
     return {nt: {seq[0] for seq in seqs if seq} for nt, seqs in follow_k.items()}
 
 
-def concat_k(set1: TerminalSeqSet, set2: TerminalSeqSet, k: int) -> TerminalSeqSet:
+def concat_k(set1: Iterable[Tuple[Terminal, ...]], set2: Iterable[Tuple[Terminal, ...]], k: int) -> TerminalSeqSet:
     """Concatenate two terminal sequence sets, truncating to length k."""
     result: TerminalSeqSet = set()
     for seq1 in set1:

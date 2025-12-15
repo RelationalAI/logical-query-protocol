@@ -126,18 +126,6 @@ class TestStar:
         star = Star(term)
         assert star.rhs == term
 
-    def test_construction_fails_with_literal(self):
-        """Test Star construction fails with LitTerminal."""
-        lit = LitTerminal("foo")
-        with pytest.raises(AssertionError, match="Star child must be"):
-            Star(lit)
-
-    def test_construction_fails_with_sequence(self):
-        """Test Star construction fails with Sequence."""
-        seq = Sequence((LitTerminal("a"),))
-        with pytest.raises(AssertionError, match="Star child must be"):
-            Star(seq)
-
     def test_str(self):
         """Test Star string representation."""
         nt = Nonterminal("Item", MessageType("proto", "Item"))
@@ -167,12 +155,6 @@ class TestOption:
         term = NamedTerminal("ID", BaseType("String"))
         opt = Option(term)
         assert opt.rhs == term
-
-    def test_construction_fails_with_literal(self):
-        """Test Option construction fails with LitTerminal."""
-        lit = LitTerminal("bar")
-        with pytest.raises(AssertionError, match="Option child must be"):
-            Option(lit)
 
     def test_str(self):
         """Test Option string representation."""
@@ -484,7 +466,7 @@ class TestGrammar:
         grammar = Grammar(start)
         a = Nonterminal("A", MessageType("proto", "A"))
         param = Var("x", MessageType("proto", "A"))
-        action = Lambda([param], MessageType("proto", "A"), param)
+        action = Lambda([param], MessageType("proto", "Start"), param)
         grammar.add_rule(Rule(start, a, action))
         output = grammar.print_grammar()
         assert "Start:" in output
@@ -496,7 +478,7 @@ class TestGrammar:
         grammar = Grammar(start)
         a = Nonterminal("A", MessageType("proto", "A"))
         param = Var("x", MessageType("proto", "A"))
-        action = Lambda([param], MessageType("proto", "A"), param)
+        action = Lambda([param], MessageType("proto", "Start"), param)
         rule = Rule(start, a, action)
 
         # Trigger cache

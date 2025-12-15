@@ -46,10 +46,8 @@ class Var(TargetExpr):
         return f"{self.name}::{self.type}"
 
     def __post_init__(self):
-        assert isinstance(self.name, str), f"Invalid name in {self}: {self.name}"
         if not self.name.isidentifier():
             raise ValueError(f"Invalid variable name: {self.name}")
-        assert isinstance(self.type, Type), f"Invalid type in {self}: {self.type}"
 
 
 @dataclass(frozen=True)

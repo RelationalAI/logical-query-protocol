@@ -231,9 +231,13 @@ class GrammarGenerator:
             new_elements = tuple(self._rename_in_rhs(elem, rename_map) for elem in rhs.elements)
             return Sequence(new_elements)
         elif isinstance(rhs, Star):
-            return Star(self._rename_in_rhs(rhs.rhs, rename_map))
+            renamed = self._rename_in_rhs(rhs.rhs, rename_map)
+            assert isinstance(renamed, (Nonterminal, NamedTerminal)), f"Star child must be Nonterminal or NamedTerminal, got {type(renamed)}"
+            return Star(renamed)
         elif isinstance(rhs, Option):
-            return Option(self._rename_in_rhs(rhs.rhs, rename_map))
+            renamed = self._rename_in_rhs(rhs.rhs, rename_map)
+            assert isinstance(renamed, (Nonterminal, NamedTerminal)), f"Option child must be Nonterminal or NamedTerminal, got {type(renamed)}"
+            return Option(renamed)
         else:
             return rhs
 

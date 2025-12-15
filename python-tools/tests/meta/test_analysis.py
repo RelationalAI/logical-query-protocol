@@ -3,13 +3,14 @@
 
 import sys
 from pathlib import Path
+from typing import cast
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from meta.grammar import (
-    LitTerminal, NamedTerminal, Nonterminal,
+    LitTerminal, NamedTerminal, Nonterminal, Terminal,
     Star, Option, Sequence,
     Rule, Grammar,
 )
@@ -254,12 +255,13 @@ class TestComputeNullable:
 
     def test_star_makes_nullable(self):
         """Test that star makes sequence nullable."""
+        from meta.target import ListType
         s = Nonterminal("S", MessageType("proto", "S"))
         a = Nonterminal("A", MessageType("proto", "A"))
         star_a = Star(a)
 
         grammar = Grammar(s)
-        param = Var("x", MessageType("proto", "S"))
+        param = Var("x", ListType(MessageType("proto", "A")))
         action = Lambda([param], MessageType("proto", "S"), param)
         grammar.add_rule(Rule(s, star_a, action))
 
@@ -268,12 +270,13 @@ class TestComputeNullable:
 
     def test_option_makes_nullable(self):
         """Test that option makes nonterminal nullable."""
+        from meta.target import OptionType
         s = Nonterminal("S", MessageType("proto", "S"))
         a = Nonterminal("A", MessageType("proto", "A"))
         opt_a = Option(a)
 
         grammar = Grammar(s)
-        param = Var("x", MessageType("proto", "S"))
+        param = Var("x", OptionType(MessageType("proto", "A")))
         action = Lambda([param], MessageType("proto", "S"), param)
         grammar.add_rule(Rule(s, opt_a, action))
 
@@ -440,7 +443,7 @@ class TestComputeRhsElemFirst:
         """Test FIRST of nonterminal."""
         nt = Nonterminal("A", MessageType("proto", "A"))
         lit = LitTerminal("a")
-        first = {nt: {lit}}
+        first = {nt: cast(set[Terminal], {lit})}
         nullable = {nt: False}
         result = _compute_rhs_elem_first(nt, first, nullable)
         assert lit in result
@@ -453,7 +456,7 @@ class TestComputeRhsElemFirst:
         lit_b = LitTerminal("b")
         seq = Sequence((a, b))
 
-        first = {a: {lit_a}, b: {lit_b}}
+        first = {a: cast(set[Terminal], {lit_a}), b: cast(set[Terminal], {lit_b})}
         nullable = {a: False, b: False}
         result = _compute_rhs_elem_first(seq, first, nullable)
         assert lit_a in result
@@ -467,7 +470,7 @@ class TestComputeRhsElemFirst:
         lit_b = LitTerminal("b")
         seq = Sequence((a, b))
 
-        first = {a: {lit_a}, b: {lit_b}}
+        first = {a: cast(set[Terminal], {lit_a}), b: cast(set[Terminal], {lit_b})}
         nullable = {a: True, b: False}
         result = _compute_rhs_elem_first(seq, first, nullable)
         assert lit_a in result
@@ -527,28 +530,31 @@ class TestComputeRhsElemFirstK:
 
     def test_nonterminal_k2(self):
         """Test FIRST_k of nonterminal."""
+        from meta.grammar_analysis import TerminalSeq
         nt = Nonterminal("A", MessageType("proto", "A"))
         lit = LitTerminal("a")
-        first_k = {nt: {(lit,)}}
+        first_k = {nt: cast(set[TerminalSeq], {(lit,)})}
         nullable = {nt: False}
         result = _compute_rhs_elem_first_k(nt, first_k, nullable, k=2)
         assert (lit,) in result
 
     def test_sequence_concatenation_k2(self):
         """Test FIRST_k of sequence concatenates."""
+        from meta.grammar_analysis import TerminalSeq
         a = Nonterminal("A", MessageType("proto", "A"))
         b = Nonterminal("B", MessageType("proto", "B"))
         lit_a = LitTerminal("a")
         lit_b = LitTerminal("b")
         seq = Sequence((a, b))
 
-        first_k = {a: {(lit_a,)}, b: {(lit_b,)}}
+        first_k = {a: cast(set[TerminalSeq], {(lit_a,)}), b: cast(set[TerminalSeq], {(lit_b,)})}
         nullable = {a: False, b: False}
         result = _compute_rhs_elem_first_k(seq, first_k, nullable, k=2)
         assert (lit_a, lit_b) in result
 
     def test_sequence_truncates_to_k(self):
         """Test FIRST_k truncates sequences to k."""
+        from meta.grammar_analysis import TerminalSeq
         a = Nonterminal("A", MessageType("proto", "A"))
         b = Nonterminal("B", MessageType("proto", "B"))
         c = Nonterminal("C", MessageType("proto", "C"))
@@ -557,7 +563,7 @@ class TestComputeRhsElemFirstK:
         lit_c = LitTerminal("c")
         seq = Sequence((a, b, c))
 
-        first_k = {a: {(lit_a,)}, b: {(lit_b,)}, c: {(lit_c,)}}
+        first_k = {a: cast(set[TerminalSeq], {(lit_a,)}), b: cast(set[TerminalSeq], {(lit_b,)}), c: cast(set[TerminalSeq], {(lit_c,)})}
         nullable = {a: False, b: False, c: False}
         result = _compute_rhs_elem_first_k(seq, first_k, nullable, k=2)
         assert (lit_a, lit_b) in result
@@ -577,7 +583,7 @@ class TestComputeRhsElemFirstK:
         lit = LitTerminal("a")
         star = Star(nt)
 
-        first_k = {nt: {(lit,)}}
+        first_k = {nt: {(lit,)}}  # type: ignore
         nullable = {nt: False}
         result = _compute_rhs_elem_first_k(star, first_k, nullable, k=2)
         assert (lit,) in result
@@ -589,7 +595,7 @@ class TestComputeRhsElemFirstK:
         lit = LitTerminal("a")
         opt = Option(nt)
 
-        first_k = {nt: {(lit,)}}
+        first_k = {nt: {(lit,)}}  # type: ignore
         nullable = {nt: False}
         result = _compute_rhs_elem_first_k(opt, first_k, nullable, k=2)
         assert (lit,) in result
@@ -650,9 +656,9 @@ class TestComputeRhsElemFollow:
         a = Nonterminal("A", MessageType("proto", "A"))
         lit_a = LitTerminal("a")
 
-        first = {a: {lit_a}}
+        first = {a: {lit_a}}  # type: ignore
         nullable = {a: False}
-        follow = {lhs: {lit_a}}
+        follow = {lhs: {lit_a}}  # type: ignore
 
         result = _compute_rhs_elem_follow(a, lhs, first, nullable, follow)
         assert a in result

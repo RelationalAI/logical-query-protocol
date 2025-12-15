@@ -214,7 +214,7 @@ class TestVar:
     def test_invalid_type(self):
         """Test Var with invalid type."""
         with pytest.raises(AssertionError):
-            Var("x", "not a type")
+            Var("x", "not a type")  # type: ignore
 
 
 class TestLit:
@@ -353,12 +353,12 @@ class TestCall:
     def test_invalid_func(self):
         """Test Call with invalid function."""
         with pytest.raises(AssertionError):
-            Call("not an expr", [])
+            Call("not an expr", [])  # type: ignore
 
     def test_invalid_arg(self):
         """Test Call with invalid argument."""
         with pytest.raises(AssertionError):
-            Call(Builtin("f"), ["not an expr"])
+            Call(Builtin("f"), ["not an expr"])  # type: ignore
 
 
 class TestLambda:
@@ -392,19 +392,19 @@ class TestLambda:
         param = Var("x", BaseType("Int64"))
         body = Lit(42)
         with pytest.raises(AssertionError):
-            Lambda([param], "not a type", body)
+            Lambda([param], "not a type", body)  # type: ignore
 
     def test_invalid_param(self):
         """Test Lambda with invalid parameter."""
         body = Lit(42)
         with pytest.raises(AssertionError):
-            Lambda(["not a var"], BaseType("Int64"), body)
+            Lambda(["not a var"], BaseType("Int64"), body)  # type: ignore
 
     def test_invalid_body(self):
         """Test Lambda with invalid body."""
         param = Var("x", BaseType("Int64"))
         with pytest.raises(AssertionError):
-            Lambda([param], BaseType("Int64"), "not an expr")
+            Lambda([param], BaseType("Int64"), "not an expr")  # type: ignore
 
 
 class TestLet:
@@ -443,19 +443,19 @@ class TestLet:
     def test_invalid_var(self):
         """Test Let with invalid var."""
         with pytest.raises((AssertionError, AttributeError)):
-            Let("not a var", Lit(42), Lit(0))
+            Let("not a var", Lit(42), Lit(0))  # type: ignore
 
     def test_invalid_init(self):
         """Test Let with invalid init."""
         var = Var("x", BaseType("Int64"))
         with pytest.raises(AssertionError):
-            Let(var, "not an expr", Lit(0))
+            Let(var, "not an expr", Lit(0))  # type: ignore
 
     def test_invalid_body(self):
         """Test Let with invalid body."""
         var = Var("x", BaseType("Int64"))
         with pytest.raises(AssertionError):
-            Let(var, Lit(42), "not an expr")
+            Let(var, Lit(42), "not an expr")  # type: ignore
 
 
 class TestIfElse:
@@ -491,19 +491,19 @@ class TestIfElse:
     def test_invalid_condition(self):
         """Test IfElse with invalid condition."""
         with pytest.raises(AssertionError):
-            IfElse("not an expr", Lit(1), Lit(2))
+            IfElse("not an expr", Lit(1), Lit(2))  # type: ignore
 
     def test_invalid_then_branch(self):
         """Test IfElse with invalid then branch."""
         cond = Var("x", BaseType("Boolean"))
         with pytest.raises(AssertionError):
-            IfElse(cond, "not an expr", Lit(2))
+            IfElse(cond, "not an expr", Lit(2))  # type: ignore
 
     def test_invalid_else_branch(self):
         """Test IfElse with invalid else branch."""
         cond = Var("x", BaseType("Boolean"))
         with pytest.raises(AssertionError):
-            IfElse(cond, Lit(1), "not an expr")
+            IfElse(cond, Lit(1), "not an expr")  # type: ignore
 
 
 class TestSeq:
@@ -538,7 +538,7 @@ class TestSeq:
     def test_invalid_expr(self):
         """Test Seq with invalid expression."""
         with pytest.raises(AssertionError):
-            Seq([Lit(1), "not an expr"])
+            Seq([Lit(1), "not an expr"])  # type: ignore
 
 
 class TestWhile:
@@ -562,13 +562,13 @@ class TestWhile:
     def test_invalid_condition(self):
         """Test While with invalid condition."""
         with pytest.raises(AssertionError):
-            While("not an expr", Lit(1))
+            While("not an expr", Lit(1))  # type: ignore
 
     def test_invalid_body(self):
         """Test While with invalid body."""
         cond = Var("x", BaseType("Boolean"))
         with pytest.raises(AssertionError):
-            While(cond, "not an expr")
+            While(cond, "not an expr")  # type: ignore
 
 
 class TestAssign:
@@ -592,13 +592,13 @@ class TestAssign:
     def test_invalid_var(self):
         """Test Assign with invalid var."""
         with pytest.raises((AssertionError, AttributeError)):
-            Assign("not a var", Lit(42))
+            Assign("not a var", Lit(42))  # type: ignore
 
     def test_invalid_expr(self):
         """Test Assign with invalid expr."""
         var = Var("x", BaseType("Int64"))
         with pytest.raises(AssertionError):
-            Assign(var, "not an expr")
+            Assign(var, "not an expr")  # type: ignore
 
 
 class TestReturn:
@@ -619,7 +619,7 @@ class TestReturn:
     def test_invalid_expr(self):
         """Test Return with invalid expr."""
         with pytest.raises(AssertionError):
-            Return("not an expr")
+            Return("not an expr")  # type: ignore
 
     def test_nested_return_fails(self):
         """Test that Return cannot contain another Return."""

@@ -71,11 +71,7 @@ class Nonterminal(Rhs):
 @dataclass(frozen=True)
 class Star(Rhs):
     """Zero or more repetitions (*)."""
-    rhs: 'Rhs'
-
-    def __post_init__(self):
-        assert isinstance(self.rhs, Nonterminal) or isinstance(self.rhs, NamedTerminal), \
-            f"Star child must be Nonterminal or NamedTerminal, got {type(self.rhs).__name__}"
+    rhs: 'Nonterminal | NamedTerminal'
 
     def __str__(self) -> str:
         return f"{self.rhs}*"
@@ -89,11 +85,7 @@ class Star(Rhs):
 @dataclass(frozen=True)
 class Option(Rhs):
     """Optional element (?)."""
-    rhs: 'Rhs'
-
-    def __post_init__(self):
-        assert isinstance(self.rhs, Nonterminal) or isinstance(self.rhs, NamedTerminal), \
-            f"Option child must be Nonterminal, got {type(self.rhs).__name__}"
+    rhs: 'Nonterminal | NamedTerminal'
 
     def __str__(self) -> str:
         return f"{self.rhs}?"
@@ -152,6 +144,16 @@ class Rule:
         action_params = len(self.action.params)
         assert action_params == rhs_len, \
             f"Action for {self.lhs.name} has {action_params} parameters but RHS has {rhs_len} non-literal element{'' if rhs_len == 1 else 's'}: {self.rhs}"
+
+        # Check that RHS types match action parameter types
+        rhs_types = _collect_nonliteral_rhs_types(self.rhs)
+        for i, (rhs_type, param) in enumerate(zip(rhs_types, self.action.params)):
+            assert rhs_type == param.type, \
+                f"Rule {self.lhs.name}: parameter {i} type mismatch: RHS has {rhs_type} but action parameter '{param.name}' has {param.type}"
+
+        # Check that action return type matches LHS type
+        assert self.action.return_type == self.lhs.type, \
+            f"Rule {self.lhs.name}: action return type {self.action.return_type} does not match LHS type {self.lhs.type}"
 
 @dataclass(frozen=True)
 class Token:
@@ -518,3 +520,16 @@ def _count_nonliteral_rhs_elements(rhs: Rhs) -> int:
     else:
         assert isinstance(rhs, (NamedTerminal, Nonterminal, Option, Star)), f"found {type(rhs)}"
         return 1
+
+
+def _collect_nonliteral_rhs_types(rhs: Rhs) -> List[Type]:
+    """Collect types from RHS elements that produce action parameters (skipping LitTerminals)."""
+    if isinstance(rhs, Sequence):
+        types = []
+        for elem in rhs.elements:
+            types.extend(_collect_nonliteral_rhs_types(elem))
+        return types
+    elif isinstance(rhs, LitTerminal):
+        return []
+    else:
+        return [rhs.target_type()]
