@@ -482,7 +482,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         action=Lambda(
             [Var('config', MessageType('transactions', 'ExportCSVConfig'))],
             MessageType('transactions', 'Export'),
-            Call(Message('transactions', 'Export'), [Var('config', MessageType('transactions', 'ExportCSVConfig'))])
+            Call(Message('transactions', 'Export'), [Call(OneOf(Symbol('csv_config')), [Var('config', MessageType('transactions', 'ExportCSVConfig'))])])
         )
     ))
 
@@ -490,7 +490,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         lhs=Nonterminal('export_csv_config', MessageType('transactions', 'ExportCSVConfig')),
         rhs=Sequence((
             LitTerminal('('), LitTerminal('export_csv_config'),
-            NamedTerminal('STRING', BaseType('String')),
+            LitTerminal('('), LitTerminal('path'), NamedTerminal('STRING', BaseType('String')), LitTerminal(')'),
             Nonterminal('export_csvcolumns', ListType(MessageType('transactions', 'ExportCSVColumn'))),
             Nonterminal('config_dict', _config_type),
             LitTerminal(')')

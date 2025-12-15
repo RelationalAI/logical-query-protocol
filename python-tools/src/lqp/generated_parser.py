@@ -110,6 +110,7 @@ class Lexer:
             ('LITERAL', re.compile(r'init(?!\w)'), lambda x: x),
             ('LITERAL', re.compile(r'keys(?!\w)'), lambda x: x),
             ('LITERAL', re.compile(r'loop(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'path(?!\w)'), lambda x: x),
             ('LITERAL', re.compile(r'sync(?!\w)'), lambda x: x),
             ('LITERAL', re.compile(r'true(?!\w)'), lambda x: x),
             ('LITERAL', re.compile(r'INT(?!\w)'), lambda x: x),
@@ -266,14 +267,14 @@ class Parser:
         """Consume a literal token."""
         if not self.match_lookahead_literal(expected, 0):
             token = self.lookahead(0)
-            raise ParseError(f'Expected literal {expected!r} but got {token.type}={token.value!r} at position {token.pos}')
+            raise ParseError(f'Expected literal {expected!r} but got {token.type}=`{token.value!r}` at position {token.pos}')
         self.pos += 1
 
     def consume_terminal(self, expected: str) -> Any:
         """Consume a terminal token and return parsed value."""
         if not self.match_lookahead_terminal(expected, 0):
             token = self.lookahead(0)
-            raise ParseError(f'Expected terminal {expected} but got {token.type} ({token.value}) at position {token.pos}')
+            raise ParseError(f'Expected terminal {expected} but got {token.type}=`{token.value!r}` at position {token.pos}')
         token = self.lookahead(0)
         self.pos += 1
         return token.value
@@ -2336,13 +2337,16 @@ class Parser:
         _t4921 = self.parse_export_csv_config()
         config258 = _t4921
         self.consume_literal(')')
-        _t4922 = transactions_pb2.Export(config258)
+        _t4922 = transactions_pb2.Export(csv_config=config258)
         return _t4922
 
     def parse_export_csv_config(self) -> transactions_pb2.ExportCSVConfig:
         self.consume_literal('(')
         self.consume_literal('export_csv_config')
+        self.consume_literal('(')
+        self.consume_literal('path')
         path259 = self.consume_terminal('STRING')
+        self.consume_literal(')')
         _t4923 = self.parse_export_csvcolumns()
         columns260 = _t4923
         _t4924 = self.parse_config_dict()
