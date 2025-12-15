@@ -613,6 +613,8 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
          Lambda([], MessageType('logic', 'Int128Type'), Call(Message('logic', 'Int128Type'), []))),
         ('boolean_type', MessageType('logic', 'BooleanType'), LitTerminal('BOOLEAN'),
          Lambda([], MessageType('logic', 'BooleanType'), Call(Message('logic', 'BooleanType'), []))),
+        ('boolean_type', MessageType('logic', 'BooleanType'), LitTerminal('BOOL'), # HACK: BOOL is only used in or_monoid
+         Lambda([], MessageType('logic', 'BooleanType'), Call(Message('logic', 'BooleanType'), []))),
         ('date_type', MessageType('logic', 'DateType'), LitTerminal('DATE'),
          Lambda([], MessageType('logic', 'DateType'), Call(Message('logic', 'DateType'), []))),
         ('datetime_type', MessageType('logic', 'DateTimeType'), LitTerminal('DATETIME'),
