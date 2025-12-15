@@ -67,7 +67,6 @@ class Symbol(TargetExpr):
         return f":{self.name}"
 
     def __post_init__(self):
-        assert isinstance(self.name, str), f"Invalid name in {self}: {self.name}"
         if not self.name.isidentifier():
             raise ValueError(f"Invalid variable name: {self.name}")
 
@@ -84,8 +83,6 @@ class Builtin(TargetExpr):
     def __str__(self) -> str:
         return f"%{self.name}"
 
-    def __post_init__(self):
-        assert isinstance(self.name, str), f"Invalid name in {self}: {self.name}"
 
 @dataclass(frozen=True)
 class Message(TargetExpr):
@@ -101,8 +98,6 @@ class Message(TargetExpr):
         return f"@{self.module}.{self.name}"
 
     def __post_init__(self):
-        assert isinstance(self.module, str), f"Invalid module in {self}: {self.module}"
-        assert isinstance(self.name, str), f"Invalid name in {self}: {self.name}"
         if not self.name.isidentifier():
             raise ValueError(f"Invalid variable name: {self.name}")
 
@@ -118,9 +113,6 @@ class OneOf(TargetExpr):
 
     def __str__(self) -> str:
         return f"OneOf({self.field_name})"
-
-    def __post_init__(self):
-        assert isinstance(self.field_name, Symbol), f"Invalid field_name in {self}: {self.field_name}"
 
 
 @dataclass(frozen=True)
@@ -141,10 +133,6 @@ class ListExpr(TargetExpr):
     def __post_init__(self):
         if isinstance(self.elements, list):
             object.__setattr__(self, 'elements', tuple(self.elements))
-        assert isinstance(self.elements, tuple), f"Invalid elements in {self}: {self.elements}"
-        for elem in self.elements:
-            assert isinstance(elem, TargetExpr), f"Invalid element in {self}: {elem}"
-        assert isinstance(self.element_type, Type), f"Invalid element_type in {self}: {self.element_type}"
 
 
 @dataclass(frozen=True)
@@ -175,12 +163,8 @@ class Call(TargetExpr):
         return f"{self.func}({args_str})"
 
     def __post_init__(self):
-        assert isinstance(self.func, TargetExpr), f"Invalid function expression in {self}: {self.func}"
         if isinstance(self.args, list):
             object.__setattr__(self, 'args', tuple(self.args))
-        assert isinstance(self.args, tuple), f"Invalid argument list in {self}: {self.args}"
-        for arg in self.args:
-            assert isinstance(arg, TargetExpr), f"Invalid argument expression in {self}: {arg}"
 
 
 @dataclass(frozen=True)
@@ -197,10 +181,6 @@ class Lambda(TargetExpr):
     def __post_init__(self):
         if isinstance(self.params, list):
             object.__setattr__(self, 'params', tuple(self.params))
-        assert isinstance(self.body, TargetExpr), f"Invalid function expression in {self}: {self.body} :: {type(self.body)}"
-        assert isinstance(self.return_type, Type), f"Invalid function return type in {self}: {self.return_type}"
-        for param in self.params:
-            assert isinstance(param, Var), f"Invalid parameter in {self}: {param}"
 
 @dataclass(frozen=True)
 class Let(TargetExpr):
@@ -217,10 +197,6 @@ class Let(TargetExpr):
         type_str = f": {self.var.type}" if self.var.type else ""
         return f"let {self.var.name}{type_str} = {self.init} in {self.body}"
 
-    def __post_init__(self):
-        assert isinstance(self.var, Var), f"Invalid let var in {self}: {self.var}"
-        assert isinstance(self.init, TargetExpr), f"Invalid let init expression in {self}: {self.init}"
-        assert isinstance(self.body, TargetExpr), f"Invalid let body expression in {self}: {self.body}"
 
 @dataclass(frozen=True)
 class IfElse(TargetExpr):
@@ -237,10 +213,6 @@ class IfElse(TargetExpr):
         else:
             return f"if ({self.condition}) then {self.then_branch} else {self.else_branch}"
 
-    def __post_init__(self):
-        assert isinstance(self.condition, TargetExpr), f"Invalid if condition expression in {self}: {self.condition}"
-        assert isinstance(self.then_branch, TargetExpr), f"Invalid if then expression in {self}: {self.then_branch}"
-        assert isinstance(self.else_branch, TargetExpr), f"Invalid if else expression in {self}: {self.else_branch}"
 
 @dataclass(frozen=True)
 class Seq(TargetExpr):
@@ -253,11 +225,7 @@ class Seq(TargetExpr):
     def __post_init__(self):
         if isinstance(self.exprs, list):
             object.__setattr__(self, 'exprs', tuple(self.exprs))
-        assert isinstance(self.exprs, tuple), f"Invalid sequence of expressions in {self}: {self.exprs}"
         assert len(self.exprs) > 1, f"Sequence must contain at least two expressions"
-        for expr in self.exprs[:-1]:
-            assert isinstance(expr, TargetExpr), f"Invalid statement in sequence: {expr}"
-        assert isinstance(self.exprs[-1], TargetExpr), f"Invalid expression in sequence: {self.exprs[-1]}"
 
 
 @dataclass(frozen=True)
@@ -268,10 +236,6 @@ class While(TargetExpr):
 
     def __str__(self) -> str:
         return f"while ({self.condition}) {self.body}"
-
-    def __post_init__(self):
-        assert isinstance(self.condition, TargetExpr), f"Invalid while condition expression in {self}: {self.condition}"
-        assert isinstance(self.body, TargetExpr), f"Invalid while body expression in {self}: {self.body}"
 
 @dataclass(frozen=True)
 class Assign(TargetExpr):
@@ -285,10 +249,6 @@ class Assign(TargetExpr):
     def __str__(self) -> str:
         return f"{self.var.name} = {self.expr}"
 
-    def __post_init__(self):
-        assert isinstance(self.var, Var), f"Invalid assign LHS expression in {self}: {self.var}"
-        assert isinstance(self.expr, TargetExpr), f"Invalid assign RHS expression in {self}: {self.expr}"
-
 
 @dataclass(frozen=True)
 class Return(TargetExpr):
@@ -299,7 +259,7 @@ class Return(TargetExpr):
         return f"return {self.expr}"
 
     def __post_init__(self):
-        assert isinstance(self.expr, TargetExpr) and not isinstance(self.expr, Return), f"Invalid return expression in {self}: {self.expr}"
+        assert not isinstance(self.expr, Return), f"Invalid return expression in {self}: {self.expr}"
 
 
 @dataclass(frozen=True)
