@@ -143,7 +143,7 @@ class PythonCodeGenerator(CodeGenerator):
         # error has two arities, so we use a custom generator
         def gen_error(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
             if len(args) == 2:
-                return BuiltinResult("None", [f"raise ParseError({args[0]} + f\": {{{{{args[1]}}}}}\")"])
+                return BuiltinResult("None", [f'raise ParseError(f"{{{args[0]}}}: {{{args[1]}.type}}=`{{{args[1]}.value}}`")'])
             elif len(args) == 1:
                 return BuiltinResult("None", [f"raise ParseError({args[0]})"])
             else:
