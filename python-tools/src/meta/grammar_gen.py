@@ -237,24 +237,29 @@ class GrammarGenerator:
         else:
             return rhs
 
-    def _get_rule_name(self, name: str) -> str:
+    @staticmethod
+    def _get_rule_name(name: str) -> str:
         """Convert message name to rule name."""
-        result = self._to_snake_case(name)
+        result = GrammarGenerator._to_snake_case(name)
         result = re.sub('rel_atom', 'relatom', result)
         result = re.sub('rel_term', 'relterm', result)
         result = re.sub('date_time', 'datetime', result)
+        result = re.sub('csvconfig', 'csv_config', result)
         return result
 
-    def _to_snake_case(self, name: str) -> str:
+    @staticmethod
+    def _to_snake_case(name: str) -> str:
         """Convert CamelCase to snake_case."""
         result = re.sub('([a-z\\d])([A-Z])', '\\1_\\2', name)
         return result.lower()
 
-    def _to_field_name(self, name: str) -> str:
+    @staticmethod
+    def _to_field_name(name: str) -> str:
         """Normalize field name to valid identifier."""
         return name.replace('-', '_').replace('.', '_')
 
-    def _is_oneof_only_message(self, message: ProtoMessage) -> bool:
+    @staticmethod
+    def _is_oneof_only_message(message: ProtoMessage) -> bool:
         """Check if a message contains only a single oneof and no other fields."""
         return len(message.oneofs) > 0 and len(message.fields) == 0
 

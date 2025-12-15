@@ -45,7 +45,7 @@ class Lexer:
         """Tokenize the input string."""
         token_specs = [
             ('LITERAL', re.compile(r'functional_dependency(?!\w)'), lambda x: x),
-            ('LITERAL', re.compile(r'export_csvconfig(?!\w)'), lambda x: x),
+            ('LITERAL', re.compile(r'export_csv_config(?!\w)'), lambda x: x),
             ('LITERAL', re.compile(r'datetime_value(?!\w)'), lambda x: x),
             ('LITERAL', re.compile(r'decimal_value(?!\w)'), lambda x: x),
             ('LITERAL', re.compile(r'missing_value(?!\w)'), lambda x: x),
@@ -2328,15 +2328,15 @@ class Parser:
     def parse_export(self) -> transactions_pb2.Export:
         self.consume_literal('(')
         self.consume_literal('export')
-        _t4921 = self.parse_export_csvconfig()
+        _t4921 = self.parse_export_csv_config()
         config258 = _t4921
         self.consume_literal(')')
         _t4922 = transactions_pb2.Export(config258)
         return _t4922
 
-    def parse_export_csvconfig(self) -> transactions_pb2.ExportCSVConfig:
+    def parse_export_csv_config(self) -> transactions_pb2.ExportCSVConfig:
         self.consume_literal('(')
-        self.consume_literal('export_csvconfig')
+        self.consume_literal('export_csv_config')
         path259 = self.consume_terminal('STRING')
         _t4923 = self.parse_export_csvcolumns()
         columns260 = _t4923
