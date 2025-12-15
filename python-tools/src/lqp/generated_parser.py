@@ -302,7 +302,7 @@ class Parser:
         relation_id = logic_pb2.RelationId(id_low=id_low, id_high=id_high)
 
         # Store the mapping globally (using id_low as key since RelationId isn't hashable)
-        self._relation_id_to_name[id_low] = name
+        self._relation_id_to_name[(relation_id.id_low, relation_id.id_high)] = name
 
         return relation_id
 
@@ -393,10 +393,19 @@ class Parser:
             if decl.HasField('def'):
                 relation_id = getattr(decl, 'def').name
                 # Look up the original name from global mapping
-                orig_name = self._relation_id_to_name.get(relation_id.id_low)
+                orig_name = self._relation_id_to_name.get((relation_id.id_low, relation_id.id_high))
                 if orig_name:
                     ids.append(relation_id)
                     orig_names.append(orig_name)
+
+            elif decl.HasField('algorithm'):
+                # Extract global relation IDs from algorithm
+                for relation_id in getattr(decl.algorithm, 'global'):
+                    orig_name = self._relation_id_to_name.get((relation_id.id_low, relation_id.id_high))
+                    if orig_name:
+                        ids.append(relation_id)
+                        orig_names.append(orig_name)
+
 
         # Create DebugInfo
         debug_info = fragments_pb2.DebugInfo(ids=ids, orig_names=orig_names)
