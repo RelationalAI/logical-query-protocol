@@ -270,30 +270,44 @@ class Parser:
         partition_size_val = config.get('partition_size')
         if partition_size_val and partition_size_val.HasField('int_value'):
             kwargs['partition_size'] = partition_size_val.int_value
+        else:
+            kwargs['partition_size'] = 0
 
         compression_val = config.get('compression')
         if compression_val and compression_val.HasField('string_value'):
             kwargs['compression'] = compression_val.string_value
+        else:
+            kwargs['compression'] = ''
 
         header_val = config.get('syntax_header_row')
         if header_val and header_val.HasField('boolean_value'):
             kwargs['syntax_header_row'] = header_val.boolean_value
+        else:
+            kwargs['syntax_header_row'] = True
 
         missing_val = config.get('syntax_missing_string')
         if missing_val and missing_val.HasField('string_value'):
             kwargs['syntax_missing_string'] = missing_val.string_value
+        else:
+            kwargs['syntax_missing_string'] = ''
 
         delim_val = config.get('syntax_delim')
         if delim_val and delim_val.HasField('string_value'):
             kwargs['syntax_delim'] = delim_val.string_value
+        else:
+            kwargs['syntax_delim'] = ','
 
         quote_val = config.get('syntax_quotechar')
         if quote_val and quote_val.HasField('string_value'):
             kwargs['syntax_quotechar'] = quote_val.string_value
+        else:
+            kwargs['syntax_quotechar'] = '"'
 
         escape_val = config.get('syntax_escapechar')
         if escape_val and escape_val.HasField('string_value'):
             kwargs['syntax_escapechar'] = escape_val.string_value
+        else:
+            kwargs['syntax_escapechar'] = '\\\\'
 
         return transactions_pb2.ExportCSVConfig(path=path_str, data_columns=columns, **kwargs)
 
