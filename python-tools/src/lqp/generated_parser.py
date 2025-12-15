@@ -239,7 +239,12 @@ class Lexer:
             raise ValueError(f'Invalid decimal format: {{d}}')
         scale = len(parts[0].split('.')[1])
         precision = int(parts[1])
-        value = Lexer.scan_int128(parts[0].replace('.', ''))
+        # Parse the integer value directly without calling scan_int128 which strips 'i128' suffix
+        int_str = parts[0].replace('.', '')
+        int128_val = int(int_str)
+        low = int128_val & 0xFFFFFFFFFFFFFFFF
+        high = (int128_val >> 64) & 0xFFFFFFFFFFFFFFFF
+        value = logic_pb2.Int128Value(low=low, high=high)
         return logic_pb2.DecimalValue(precision=precision, scale=scale, value=value)
 
 
@@ -261,7 +266,7 @@ class Parser:
         """Consume a literal token."""
         if not self.match_lookahead_literal(expected, 0):
             token = self.lookahead(0)
-            raise ParseError(f'Expected literal {{expected!r}} but got {{token.type}}={{token.value!r}} at position {{token.pos}}')
+            raise ParseError(f'Expected literal {expected!r} but got {token.type}={token.value!r} at position {token.pos}')
         self.pos += 1
 
     def consume_terminal(self, expected: str) -> Any:
