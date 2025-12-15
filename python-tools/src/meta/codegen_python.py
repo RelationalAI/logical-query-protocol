@@ -62,14 +62,8 @@ class PythonCodeGenerator(CodeGenerator):
             # Only include messages with regular (non-oneof) fields
             regular_fields = [(f.name, f.is_repeated) for f in proto_msg.fields if f.name not in oneof_field_names]
             if regular_fields:
-                # Escape Python keywords and preserve repeated flag
-                escaped_fields = []
-                for fname, is_repeated in regular_fields:
-                    if fname in self.keywords:
-                        escaped_fields.append((fname + '_', is_repeated))
-                    else:
-                        escaped_fields.append((fname, is_repeated))
-                field_map[(module, msg_name)] = escaped_fields
+                # Preserve original proto field name; handle keyword fields at call sites via **{...}.
+                field_map[(module, msg_name)] = list(regular_fields)
 
         self._message_field_map = field_map
         return field_map
@@ -149,7 +143,7 @@ class PythonCodeGenerator(CodeGenerator):
         # error has two arities, so we use a custom generator
         def gen_error(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
             if len(args) == 2:
-                return BuiltinResult("None", [f"raise ParseError({args[0]} + f\": {{{args[1]}}}\")"])
+                return BuiltinResult("None", [f"raise ParseError({args[0]} + f\": {{{{{args[1]}}}}}\")"])
             elif len(args) == 1:
                 return BuiltinResult("None", [f"raise ParseError({args[0]})"])
             else:
@@ -319,7 +313,10 @@ class PythonCodeGenerator(CodeGenerator):
                         # Otherwise, collect multiple args into a list
                         if max_args_for_this_field == 1:
                             field_value = self.generate_lines(arg, lines, indent)
-                            keyword_args.append(f"{field_name}={field_value}")
+                            if field_name in PYTHON_KEYWORDS:
+                                keyword_args.append(f"**{{'{field_name}': {field_value}}}")
+                            else:
+                                keyword_args.append(f"{field_name}={field_value}")
                             arg_idx += 1
                         else:
                             # Collect multiple args into a list
@@ -334,12 +331,19 @@ class PythonCodeGenerator(CodeGenerator):
                                 arg_idx += 1
 
                             if values:
-                                keyword_args.append(f"{field_name}=[{', '.join(values)}]")
+                                list_value = f"[{', '.join(values)}]"
                             else:
-                                keyword_args.append(f"{field_name}=[]")
+                                list_value = "[]"
+                            if field_name in PYTHON_KEYWORDS:
+                                keyword_args.append(f"**{{'{field_name}': {list_value}}}")
+                            else:
+                                keyword_args.append(f"{field_name}={list_value}")
                     else:
                         field_value = self.generate_lines(arg, lines, indent)
-                        keyword_args.append(f"{field_name}={field_value}")
+                        if field_name in PYTHON_KEYWORDS:
+                            keyword_args.append(f"**{{'{field_name}': {field_value}}}")
+                        else:
+                            keyword_args.append(f"{field_name}={field_value}")
                         arg_idx += 1
 
                     field_idx += 1

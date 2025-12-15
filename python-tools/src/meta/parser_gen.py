@@ -281,9 +281,23 @@ def _generate_parse_rhs_ir(rhs: Rhs, grammar: Grammar, follow_set: TerminalSeque
             return Seq([parse_expr, _apply(action, [])])
         return parse_expr
     elif isinstance(rhs, NamedTerminal):
-        return Call(Builtin('consume_terminal'), [Lit(rhs.name)])
+        parse_expr = Call(Builtin('consume_terminal'), [Lit(rhs.name)])
+        if apply_action and action:
+            if len(action.params) == 0:
+                return Seq([parse_expr, _apply(action, [])])
+            var_name = gensym(action.params[0].name)
+            var = Var(var_name, rhs.target_type())
+            return Let(var, parse_expr, _apply(action, [var]))
+        return parse_expr
     elif isinstance(rhs, Nonterminal):
-        return Call(ParseNonterminal(rhs), [])
+        parse_expr = Call(ParseNonterminal(rhs), [])
+        if apply_action and action:
+            if len(action.params) == 0:
+                return Seq([parse_expr, _apply(action, [])])
+            var_name = gensym(action.params[0].name)
+            var = Var(var_name, rhs.target_type())
+            return Let(var, parse_expr, _apply(action, [var]))
+        return parse_expr
     elif isinstance(rhs, Option):
         assert grammar is not None
         predictor = _build_option_predictor(grammar, rhs.rhs, follow_set)
