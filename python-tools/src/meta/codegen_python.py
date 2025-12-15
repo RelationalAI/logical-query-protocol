@@ -157,7 +157,7 @@ class PythonCodeGenerator(CodeGenerator):
             lambda args, lines, indent: BuiltinResult(f"self.export_csv_config({args[0]}, {args[1]}, {args[2]})", []))
 
         self.register_builtin("start_fragment", 1,
-            lambda args, lines, indent: BuiltinResult(f"self.start_fragment({args[0]})", []))
+            lambda args, lines, indent: BuiltinResult(args[0], [f"self.start_fragment({args[0]})"]))
 
         self.register_builtin("construct_fragment", 2,
             lambda args, lines, indent: BuiltinResult(f"self.construct_fragment({args[0]}, {args[1]})", []))

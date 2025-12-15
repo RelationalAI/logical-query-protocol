@@ -7,9 +7,11 @@ configuration syntax, bindings, abstractions, type literals, and operators.
 
 from typing import Dict, List, Tuple
 
+from meta.codegen_base import BuiltinGenerator
+
 from .grammar import Rule, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
 from .target import (
-    Lambda, Call, Var, Symbol, Lit, IfElse, Builtin, Message, OneOf, ListExpr,
+    Lambda, Call, Var, Symbol, Lit, Seq, IfElse, Builtin, Message, OneOf, ListExpr,
     BaseType, MessageType, OptionType, ListType, FunctionType, TupleType
 )
 
@@ -701,12 +703,27 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
             )
         ), is_final=False)
 
+    add_rule(Rule(
+        lhs=Nonterminal('new_fragment_id', MessageType('fragments', 'FragmentId')),
+        rhs=Nonterminal('fragment_id', MessageType('fragments', 'FragmentId')),
+        action=Lambda(
+            [
+                Var('fragment_id', MessageType('fragments', 'FragmentId')),
+            ],
+            MessageType('fragments', 'FragmentId'),
+            Seq([
+                Call(Builtin('start_fragment'), [Var('fragment_id', MessageType('fragments', 'FragmentId'))]),
+                Var('fragment_id', MessageType('fragments', 'FragmentId')),
+            ])
+        )
+    ))
+
     # Fragment rule with debug_info construction
     add_rule(Rule(
         lhs=Nonterminal('fragment', MessageType('fragments', 'Fragment')),
         rhs=Sequence((
             LitTerminal('('), LitTerminal('fragment'),
-            Nonterminal('fragment_id', MessageType('fragments', 'FragmentId')),
+            Nonterminal('new_fragment_id', MessageType('fragments', 'FragmentId')),
             Star(Nonterminal('declaration', MessageType('logic', 'Declaration'))),
             LitTerminal(')')
         )),

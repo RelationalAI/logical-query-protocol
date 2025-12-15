@@ -212,8 +212,11 @@ class Parser:
         id_high = (val >> 64) & 0xFFFFFFFFFFFFFFFF
         relation_id = logic_pb2.RelationId(id_low=id_low, id_high=id_high)
 
-        # Store the mapping globally (using id_low as key since RelationId isn't hashable)
-        self._relation_id_to_name[(relation_id.id_low, relation_id.id_high)] = name
+        # Store the mapping for the current fragment if we're inside one
+        if self._current_fragment_id is not None:
+            if self._current_fragment_id not in self.id_to_debuginfo:
+                self.id_to_debuginfo[self._current_fragment_id] = {{}}
+            self.id_to_debuginfo[self._current_fragment_id][(relation_id.id_low, relation_id.id_high)] = name
 
         return relation_id
 
@@ -296,30 +299,21 @@ class Parser:
 
     def construct_fragment(self, fragment_id: fragments_pb2.FragmentId, declarations: List[logic_pb2.Declaration]) -> fragments_pb2.Fragment:
         """Construct Fragment from fragment_id, declarations, and debug info from parser state."""
-        # Extract relation IDs and names from declarations
+        # Get the debug info for this fragment
+        debug_info_dict = self.id_to_debuginfo.get(fragment_id.id, {{}})
+
+        # Convert to DebugInfo protobuf
         ids = []
         orig_names = []
-
-        for decl in declarations:
-            if decl.HasField('def'):
-                relation_id = getattr(decl, 'def').name
-                # Look up the original name from global mapping
-                orig_name = self._relation_id_to_name.get((relation_id.id_low, relation_id.id_high))
-                if orig_name:
-                    ids.append(relation_id)
-                    orig_names.append(orig_name)
-
-            elif decl.HasField('algorithm'):
-                # Extract global relation IDs from algorithm
-                for relation_id in getattr(decl.algorithm, 'global'):
-                    orig_name = self._relation_id_to_name.get((relation_id.id_low, relation_id.id_high))
-                    if orig_name:
-                        ids.append(relation_id)
-                        orig_names.append(orig_name)
-
+        for (id_low, id_high), name in debug_info_dict.items():
+            ids.append(logic_pb2.RelationId(id_low=id_low, id_high=id_high))
+            orig_names.append(name)
 
         # Create DebugInfo
         debug_info = fragments_pb2.DebugInfo(ids=ids, orig_names=orig_names)
+
+        # Clear _current_fragment_id before the return
+        self._current_fragment_id = None
 
         # Create and return Fragment
         return fragments_pb2.Fragment(id=fragment_id, declarations=declarations, debug_info=debug_info)
