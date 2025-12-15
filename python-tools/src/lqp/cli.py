@@ -1,8 +1,7 @@
 """
-CLI entry point for LQP parser.
+CLI entry point for LQP validator and translation.
 
 This module provides file processing and command-line interface functionality.
-The actual parsing logic (grammar, parser, transformer) is in parser.py.
 """
 
 import argparse
