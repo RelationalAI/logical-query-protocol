@@ -126,6 +126,15 @@
   (epoch
     (writes
       (define
+        (fragment :car_purchase_fd
+          (functional_dependency
+            ([person_id::INT car_id::INT date::STRING amount::INT]
+              (atom :purchased_on_for person_id car_id date amount))
+            (keys car_id date)
+            (values person_id))))))
+  (epoch
+    (writes
+      (define
         (fragment :ownership_model
           (def :owns
             ([person_id::INT car_id::INT]
