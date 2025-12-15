@@ -161,7 +161,7 @@
             (values person_id))))))
   (epoch
     (writes
-      (undefine :employee_model)))
+      (undefine :emp_model)))
   (epoch
     (writes
       (define
