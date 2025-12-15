@@ -108,11 +108,6 @@
                   (= m "Toyota"))))
             (attrs
               (attribute :function "checked")))
-          (functional_dependency
-            ([person_id::INT car_id::INT]
-              (atom :owns person_id car_id))
-            (keys car_id)
-            (values person_id))
           (def :purchased_on_for
             ([person_id::INT car_id::INT date::STRING amount::INT]
               (or
