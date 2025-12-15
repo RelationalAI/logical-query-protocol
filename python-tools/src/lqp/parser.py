@@ -174,6 +174,7 @@ def desugar_to_raw_primitive(name, terms):
     """Convert primitive operators to raw primitive IR nodes."""
     # Convert terms to relterms
     return ir.Primitive(name=name, terms=terms, meta=None)
+
 @v_args(meta=True)
 class LQPTransformer(Transformer):
     """Transformer that converts Lark parse tree to LQP IR nodes."""
