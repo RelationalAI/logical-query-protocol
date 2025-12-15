@@ -44,7 +44,7 @@ def test_cli_parser_comparison(input_file):
         lark_output = run_cli_with_parser(input_file, use_generated=False)
         generated_output = run_cli_with_parser(input_file, use_generated=True)
 
-        assert lark_output == generated_output, (
+        assert generated_output == lark_output, (
             f"Parser outputs differ for {input_file}\n"
             f"Lark: {json.dumps(lark_output, indent=2)}\n"
             f"Generated: {json.dumps(generated_output, indent=2)}"
