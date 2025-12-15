@@ -1591,7 +1591,7 @@ class Parser:
         self.consume_literal(')')
         _t603 = logic_pb2.RelTerm(term=left149)
         _t604 = logic_pb2.RelTerm(term=right150)
-        _t605 = logic_pb2.Primitive(name='rel_primitive_lt', terms=[_t603, _t604])
+        _t605 = logic_pb2.Primitive(name='rel_primitive_lt_monotype', terms=[_t603, _t604])
         return _t605
 
     def parse_lt_eq(self) -> logic_pb2.Primitive:
@@ -1604,7 +1604,7 @@ class Parser:
         self.consume_literal(')')
         _t608 = logic_pb2.RelTerm(term=left151)
         _t609 = logic_pb2.RelTerm(term=right152)
-        _t610 = logic_pb2.Primitive(name='rel_primitive_lt_eq', terms=[_t608, _t609])
+        _t610 = logic_pb2.Primitive(name='rel_primitive_lt_eq_monotype', terms=[_t608, _t609])
         return _t610
 
     def parse_gt(self) -> logic_pb2.Primitive:
@@ -1617,7 +1617,7 @@ class Parser:
         self.consume_literal(')')
         _t613 = logic_pb2.RelTerm(term=left153)
         _t614 = logic_pb2.RelTerm(term=right154)
-        _t615 = logic_pb2.Primitive(name='rel_primitive_gt', terms=[_t613, _t614])
+        _t615 = logic_pb2.Primitive(name='rel_primitive_gt_monotype', terms=[_t613, _t614])
         return _t615
 
     def parse_gt_eq(self) -> logic_pb2.Primitive:
@@ -1630,7 +1630,7 @@ class Parser:
         self.consume_literal(')')
         _t618 = logic_pb2.RelTerm(term=left155)
         _t619 = logic_pb2.RelTerm(term=right156)
-        _t620 = logic_pb2.Primitive(name='rel_primitive_gt_eq', terms=[_t618, _t619])
+        _t620 = logic_pb2.Primitive(name='rel_primitive_gt_eq_monotype', terms=[_t618, _t619])
         return _t620
 
     def parse_add(self) -> logic_pb2.Primitive:

@@ -633,10 +633,10 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     # Comparison operator rules
     _comparison_ops = [
         ('eq', '=', 'rel_primitive_eq'),
-        ('lt', '<', 'rel_primitive_lt'),
-        ('lt_eq', '<=', 'rel_primitive_lt_eq'),
-        ('gt', '>', 'rel_primitive_gt'),
-        ('gt_eq', '>=', 'rel_primitive_gt_eq'),
+        ('lt', '<', 'rel_primitive_lt_monotype'),
+        ('lt_eq', '<=', 'rel_primitive_lt_eq_monotype'),
+        ('gt', '>', 'rel_primitive_gt_monotype'),
+        ('gt_eq', '>=', 'rel_primitive_gt_eq_monotype'),
     ]
     for name, op, prim in _comparison_ops:
         add_rule(Rule(
