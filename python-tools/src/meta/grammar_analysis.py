@@ -175,8 +175,8 @@ def compute_first(grammar: 'Grammar',
     return {nt: {seq[0] for seq in seqs if seq} for nt, seqs in first_k.items()}
 
 
-def rhs_first(rhs: 'Rhs', first: Dict[Nonterminal, Set[Terminal]],
-              nullable: Dict[Nonterminal, bool]) -> Set[Terminal]:
+def rhs_first(rhs: 'Rhs', first: Mapping[Nonterminal, Set[Terminal]],
+              nullable: Mapping[Nonterminal, bool]) -> Set[Terminal]:
     """Compute FIRST set for an RHS element.
 
     Convenience function for k=1 case, returning Set[Terminal].
@@ -285,9 +285,9 @@ def rhs_follow_k(rhs: 'Rhs', lhs: Nonterminal,
 
 
 def rhs_follow(rhs: 'Rhs', lhs: Nonterminal,
-               first: Dict[Nonterminal, Set[Terminal]],
-               nullable: Dict[Nonterminal, bool],
-               follow: Dict[Nonterminal, Set[Terminal]]) -> Dict[Nonterminal, Set[Terminal]]:
+               first: Mapping[Nonterminal, Set[Terminal]],
+               nullable: Mapping[Nonterminal, bool],
+               follow: Mapping[Nonterminal, Set[Terminal]]) -> Dict[Nonterminal, Set[Terminal]]:
     """Compute FOLLOW contributions from an RHS.
 
     Convenience function for k=1 case, returning Dict[Nonterminal, Set[Terminal]].
