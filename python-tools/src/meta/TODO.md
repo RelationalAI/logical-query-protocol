@@ -1,10 +1,11 @@
-- [ ] value arity in monus_def, monoid_def
-- [ ] add types to semantic actions, needed for Go (less so for pyright and Julia)
-- [ ] handle debug info, need to update state while parsing and then build the debug info in the semantic action for transaction
-- [ ] refactor code gen into classes/subclass
+- [x] protobuf constructors
+- [x] handle debug info, need to update state while parsing and then build the debug info in the semantic action for transaction
+- [x] config dicts, export csv dicts
+- [x] value arity in monus_def, monoid_def
+- [x] add types to semantic actions, needed for Go (less so for pyright and Julia)
+- [x] refactor code gen into classes/subclass
 - [ ] refactor parser generator into classes/subclasses
 - [ ] move inline Python code in parser_gen_python especially into template files
-- [ ] config dicts, export csv dicts
-- [ ] check for redundant entries in inline_fields
+- [x] check for redundant entries in inline_fields
 - [ ] Julia codegen is behind Python
-- [ ] Go codegen is behind Python
+- [x] Go codegen is behind Python
