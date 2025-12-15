@@ -7,7 +7,7 @@ into forms more suitable for parsing S-expressions.
 from typing import Callable, Dict, Optional
 
 from .grammar import Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
-from .target import Lambda, Call, Var, Builtin, Message, BaseType, MessageType, ListType, TupleType
+from .target import Lambda, Call, Var, Builtin, Message, BaseType, MessageType, ListType, TupleType, OptionType
 
 
 def make_symbol_replacer(replacements: Dict[Rhs, Rhs]) -> Callable[[Rule], Rule]:
@@ -18,6 +18,30 @@ def make_symbol_replacer(replacements: Dict[Rhs, Rhs]) -> Callable[[Rule], Rule]
     def rewrite(rule: Rule) -> Rule:
         if isinstance(rule.rhs, Sequence):
             new_elements = [replacements.get(elem, elem) for elem in rule.rhs.elements]
+
+            # Update action parameters if types changed
+            new_params = []
+            param_idx = 0
+            for elem in rule.rhs.elements:
+                if isinstance(elem, LitTerminal):
+                    continue
+
+                old_type = elem.target_type()
+                new_elem = replacements.get(elem, elem)
+                new_type = new_elem.target_type()
+
+                if param_idx < len(rule.action.params):
+                    param = rule.action.params[param_idx]
+                    if old_type != new_type:
+                        new_params.append(Var(param.name, new_type))
+                    else:
+                        new_params.append(param)
+                    param_idx += 1
+
+            if new_params and new_params != list(rule.action.params):
+                new_action = Lambda(params=new_params, return_type=rule.action.return_type, body=rule.action.body)
+                return Rule(lhs=rule.lhs, rhs=Sequence(tuple(new_elements)), action=new_action, source_type=rule.source_type)
+
             return Rule(lhs=rule.lhs, rhs=Sequence(tuple(new_elements)), action=rule.action, source_type=rule.source_type)
         return rule
     return rewrite
