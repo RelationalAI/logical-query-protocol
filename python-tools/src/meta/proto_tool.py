@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+"""CLI tool for generating grammar from protobuf specifications.
+
+This module provides the main command-line entry point for the proto-to-grammar
+generator.
+"""
+
+import argparse
+import sys
+from pathlib import Path
+
+# Handle both script and module execution
+if __name__ == "__main__" and __package__ is None:
+    # Running as script - add parent to path and use absolute imports
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from meta.proto_parser import ProtoParser
+    from meta.grammar_gen import GrammarGenerator, generate_semantic_actions
+else:
+    # Running as module - use relative imports
+    from .proto_parser import ProtoParser
+    from .grammar_gen import GrammarGenerator, generate_semantic_actions
+
+
+def main():
+    """Main entry point for proto-to-grammar."""
+    parser = argparse.ArgumentParser(
+        description="Generate grammar from protobuf specifications"
+    )
+    parser.add_argument(
+        "proto_files",
+        nargs="+",
+        type=Path,
+        help="Protobuf files to parse"
+    )
+    parser.add_argument(
+        "-o", "--output",
+        type=Path,
+        help="Output file for generated grammar"
+    )
+    args = parser.parse_args()
+
+    proto_parser = ProtoParser()
+    for proto_file in args.proto_files:
+        if not proto_file.exists():
+            print(f"Error: File not found: {proto_file}")
+            return 1
+        proto_parser.parse_file(proto_file)
+
+    generator = GrammarGenerator(proto_parser, verbose=True)
+    grammar = generator.generate()
+
+    reachable = grammar.check_reachability()
+    unreachable = grammar.get_unreachable_rules()
+    unexpected_unreachable = [r for r in unreachable if r.name not in generator.expected_unreachable]
+    if unexpected_unreachable:
+        print("Warning: Unreachable rules detected:")
+        for rule in unexpected_unreachable:
+            print(f"  {rule.name}")
+        print()
+
+    actions_text = generate_semantic_actions(grammar, reachable)
+
+    if args.output:
+        args.output.write_text(actions_text)
+        print(f"Generated grammar written to {args.output}")
+    else:
+        print(actions_text)
+
+    return 0
+
+
+if __name__ == "__main__":
+    exit(main())
