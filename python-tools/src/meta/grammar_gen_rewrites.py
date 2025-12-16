@@ -54,14 +54,6 @@ Example using `make_symbol_replacer()`:
         Nonterminal('name', MessageType('logic', 'Name'))
 })
 ```
-
-## Common Rewrite Patterns
-
-- **Symbol replacement**: Use `make_symbol_replacer()` for straightforward substitutions
-- **Quantifier changes**: Replace Option with Star, or vice versa
-- **Field flattening**: Replace nested message nonterminal with its constituent parts
-- **Type unwrapping**: Remove Option wrappers or flatten List types in actions
-- **Element merging**: Combine adjacent elements into composite nonterminals
 """
 
 from typing import Callable, Dict, Optional
