@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple
 
 # Import action AST types
-from .target import TargetExpr, Var, Symbol, Call, Lambda, Let, Lit, TargetType, MessageType
+from .target import TargetExpr, Var, Symbol, Call, Lambda, Let, Lit, TargetType
 
 
 # Grammar RHS (right-hand side) elements

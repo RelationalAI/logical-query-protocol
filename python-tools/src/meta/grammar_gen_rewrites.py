@@ -56,11 +56,10 @@ Example using `make_symbol_replacer()`:
 ```
 """
 
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict
 
 from .grammar import Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
 from .target import Lambda, Call, Var, Builtin, Message, BaseType, MessageType, ListType, TupleType, OptionType
-
 
 def make_symbol_replacer(replacements: Dict[Rhs, Rhs]) -> Callable[[Rule], Rule]:
     """Create a rule rewriter that replaces symbols in the RHS.
@@ -155,7 +154,7 @@ def get_rule_rewrites() -> Dict[str, Callable[[Rule], Rule]]:
     4. **Arity extraction**: Some constructs (upsert, monoid_def, monus_def)
        have an INT arity that follows an abstraction. `rewrite_compute_value_arity`
        combines these into a single `abstraction_with_arity` nonterminal that
-       returns a tuple, avoiding lookahead issues.
+       returns a tuple.
 
     Returns:
         A dict mapping nonterminal names to their rewrite functions.
