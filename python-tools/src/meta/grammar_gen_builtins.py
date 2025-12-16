@@ -3,9 +3,47 @@
 These rules define the grammar for constructs that cannot be auto-generated
 from protobuf definitions, such as value literals, date/datetime parsing,
 configuration syntax, bindings, abstractions, type literals, and operators.
+
+The `get_builtin_rules()` function returns a tuple of (rules_dict, final_nonterminals):
+- rules_dict maps nonterminals to lists of rules
+- final_nonterminals is the set of nonterminals that should not be auto-generated
+
+Multiple rules for the same nonterminal represent alternatives (like a oneof).
+
+## Adding New Builtin Rules
+
+To add a new builtin rule:
+
+1. Identify the nonterminal name (usually lowercase message name)
+2. Define the RHS using LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
+3. Create the semantic action Lambda with appropriate parameters and message construction
+4. Call `add_rule(rule)` to register it
+5. If the nonterminal should allow auto-generated alternatives, add its name to `non_final_names`
+6. Otherwise, it will be marked final automatically (no auto-generation)
+
+Example:
+
+```python
+# value ::= STRING
+add_rule(Rule(
+    lhs=Nonterminal('value', MessageType('logic', 'Value')),
+    rhs=Sequence((NamedTerminal('STRING', BaseType('String')),)),
+    action=Lambda(
+        [Var('value', BaseType('String'))],
+        MessageType('logic', 'Value'),
+        Call(Message('logic', 'Value'), [
+            Call(OneOf(Symbol('string_value')), [Var('value', BaseType('String'))])
+        ])
+    )
+))
+# Then add 'value' to non_final_names to allow auto-generated alternatives
+```
+
+Note: Each rule has a comment showing the production (lhs ::= rhs) and the
+semantic action signature (params => result).
 """
 
-from typing import Dict, List, Tuple
+from typing import Dict, List, Set, Tuple
 
 from .grammar import Rule, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
 from .target import (
@@ -14,21 +52,25 @@ from .target import (
 )
 
 
-def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
-    """Return dict mapping nonterminals to (rules, is_final).
+def get_builtin_rules() -> Tuple[Dict[Nonterminal, List[Rule]], Set[Nonterminal]]:
+    """Return builtin rules and the set of final nonterminals.
 
-    is_final=True means auto-generation should not add more rules for this nonterminal.
+    Returns:
+        A tuple of (rules_dict, final_nonterminals) where:
+        - rules_dict maps nonterminals to lists of rules
+        - final_nonterminals is the set of nonterminals that should not be auto-generated
     """
-    result: Dict[Nonterminal, Tuple[List[Rule], bool]] = {}
+    result: Dict[Nonterminal, List[Rule]] = {}
+    non_final_nonterminals: Set[Nonterminal] = set()
 
-    def add_rule(rule: Rule, is_final: bool = True) -> None:
+    def add_rule(rule: Rule) -> None:
         lhs = rule.lhs
         if lhs not in result:
-            result[lhs] = ([], is_final)
-        rules_list, existing_final = result[lhs]
-        rules_list.append(rule)
-        # is_final is True if any rule marks it as final
-        result[lhs] = (rules_list, existing_final or is_final)
+            result[lhs] = []
+        result[lhs].append(rule)
+
+    def mark_nonfinal(nt: Nonterminal) -> None:
+       non_final_nonterminals.add(nt)
 
     # Common types used throughout
     _config_type = ListType(TupleType([BaseType('String'), MessageType('logic', 'Value')]))
@@ -37,6 +79,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     _monoid_op_type = FunctionType([MessageType('logic', 'Type')], MessageType('logic', 'Monoid'))
 
     # Value literal rules
+    # value ::= date
     add_rule(Rule(
         lhs=Nonterminal('value', MessageType('logic', 'Value')),
         rhs=Sequence((Nonterminal('date', MessageType('logic', 'DateValue')),)),
@@ -47,6 +90,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
+    # value ::= datetime
     add_rule(Rule(
         lhs=Nonterminal('value', MessageType('logic', 'Value')),
         rhs=Sequence((Nonterminal('datetime', MessageType('logic', 'DateTimeValue')),)),
@@ -57,6 +101,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
+    # value ::= STRING
     add_rule(Rule(
         lhs=Nonterminal('value', MessageType('logic', 'Value')),
         rhs=Sequence((NamedTerminal('STRING', BaseType('String')),)),
@@ -67,6 +112,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
+    # value ::= INT
     add_rule(Rule(
         lhs=Nonterminal('value', MessageType('logic', 'Value')),
         rhs=Sequence((NamedTerminal('INT', BaseType('Int64')),)),
@@ -77,6 +123,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
+    # value ::= FLOAT
     add_rule(Rule(
         lhs=Nonterminal('value', MessageType('logic', 'Value')),
         rhs=Sequence((NamedTerminal('FLOAT', BaseType('Float64')),)),
@@ -87,6 +134,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
+    # value ::= UINT128
     add_rule(Rule(
         lhs=Nonterminal('value', MessageType('logic', 'Value')),
         rhs=Sequence((NamedTerminal('UINT128', MessageType('logic', 'UInt128Value')),)),
@@ -97,6 +145,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
+    # value ::= INT128
     add_rule(Rule(
         lhs=Nonterminal('value', MessageType('logic', 'Value')),
         rhs=Sequence((NamedTerminal('INT128', MessageType('logic', 'Int128Value')),)),
@@ -107,6 +156,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
+    # value ::= DECIMAL
     add_rule(Rule(
         lhs=Nonterminal('value', MessageType('logic', 'Value')),
         rhs=Sequence((NamedTerminal('DECIMAL', MessageType('logic', 'DecimalValue')),)),
@@ -117,6 +167,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
+    # value ::= "missing"
     add_rule(Rule(
         lhs=Nonterminal('value', MessageType('logic', 'Value')),
         rhs=Sequence((LitTerminal('missing'),)),
@@ -127,6 +178,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
+    # value ::= "true"
     add_rule(Rule(
         lhs=Nonterminal('value', MessageType('logic', 'Value')),
         rhs=Sequence((LitTerminal('true'),)),
@@ -137,6 +189,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
+    # value ::= "false"
     add_rule(Rule(
         lhs=Nonterminal('value', MessageType('logic', 'Value')),
         rhs=Sequence((LitTerminal('false'),)),
@@ -148,6 +201,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     ))
 
     # Date and datetime rules
+    # date ::= "("
     add_rule(Rule(
         lhs=Nonterminal('date', MessageType('logic', 'DateValue')),
         rhs=Sequence((
@@ -168,6 +222,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
+    # datetime ::= "("
     add_rule(Rule(
         lhs=Nonterminal('datetime', MessageType('logic', 'DateTimeValue')),
         rhs=Sequence((
@@ -209,6 +264,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     ))
 
     # Configuration rules
+    # config_dict ::= "{" config_key_value "}"
     add_rule(Rule(
         lhs=Nonterminal('config_dict', _config_type),
         rhs=Sequence((
@@ -223,6 +279,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
+    # config_key_value ::= COLON_SYMBOL value
     add_rule(Rule(
         lhs=Nonterminal('config_key_value', TupleType([BaseType('String'), MessageType('logic', 'Value')])),
         rhs=Sequence((
@@ -237,6 +294,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     ))
 
     # Transaction rule
+    # transaction ::= "("
     add_rule(Rule(
         lhs=Nonterminal('transaction', MessageType('transactions', 'Transaction')),
         rhs=Sequence((
@@ -265,6 +323,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     ))
 
     # Bindings rules
+    # bindings ::= "["
     add_rule(Rule(
         lhs=Nonterminal('bindings', _bindings_type),
         rhs=Sequence((
@@ -289,6 +348,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
+    # value_bindings ::= "|" binding
     add_rule(Rule(
         lhs=Nonterminal('value_bindings', ListType(MessageType('logic', 'Binding'))),
         rhs=Sequence((
@@ -302,6 +362,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
+    # binding ::= SYMBOL "::" type
     add_rule(Rule(
         lhs=Nonterminal('binding', MessageType('logic', 'Binding')),
         rhs=Sequence((
@@ -320,6 +381,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     ))
 
     # Abstraction rules
+    # abstraction_with_arity ::= "("
     add_rule(Rule(
         lhs=Nonterminal('abstraction_with_arity', _abstraction_with_arity_type),
         rhs=Sequence((
@@ -344,6 +406,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
+    # abstraction ::= "("
     add_rule(Rule(
         lhs=Nonterminal('abstraction', MessageType('logic', 'Abstraction')),
         rhs=Sequence((
@@ -366,6 +429,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     ))
 
     # Name rule
+    # name ::= COLON_SYMBOL
     add_rule(Rule(
         lhs=Nonterminal('name', BaseType('String')),
         rhs=NamedTerminal('COLON_SYMBOL', BaseType('String')),
@@ -377,6 +441,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     ))
 
     # Monoid rules
+    # monoid ::= type "::" monoid_op
     add_rule(Rule(
         lhs=Nonterminal('monoid', MessageType('logic', 'Monoid')),
         rhs=Sequence((
@@ -423,6 +488,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     add_rule(_make_monoid_op_rule('SumMonoid', True))
 
     # Configure rule
+    # configure ::= "("
     add_rule(Rule(
         lhs=Nonterminal('configure', MessageType('transactions', 'Configure')),
         rhs=Sequence((
@@ -438,12 +504,14 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     ))
 
     # True/false formula rules
+    # true ::= "("
     add_rule(Rule(
         lhs=Nonterminal('true', MessageType('logic', 'Conjunction')),
         rhs=Sequence((LitTerminal('('), LitTerminal('true'), LitTerminal(')'))),
         action=Lambda([], MessageType('logic', 'Conjunction'), Call(Message('logic', 'Conjunction'), [ListExpr([], MessageType('logic', 'Formula'))]))
     ))
 
+    # false ::= "("
     add_rule(Rule(
         lhs=Nonterminal('false', MessageType('logic', 'Disjunction')),
         rhs=Sequence((LitTerminal('('), LitTerminal('false'), LitTerminal(')'))),
@@ -451,6 +519,8 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     ))
 
     # Formula rules (not final - auto-generation can add more)
+    # formula ::= true
+    mark_nonfinal(Nonterminal('formula', MessageType('logic', 'Formula')))
     add_rule(Rule(
         lhs=Nonterminal('formula', MessageType('logic', 'Formula')),
         rhs=Sequence((Nonterminal('true', MessageType('logic', 'Conjunction')),)),
@@ -459,8 +529,9 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
             MessageType('logic', 'Formula'),
             Call(Message('logic', 'Formula'), [Call(OneOf(Symbol('true')), [Var('value', MessageType('logic', 'Conjunction'))])])
         )
-    ), is_final=False)
+    ))
 
+    # formula ::= false
     add_rule(Rule(
         lhs=Nonterminal('formula', MessageType('logic', 'Formula')),
         rhs=Sequence((Nonterminal('false', MessageType('logic', 'Disjunction')),)),
@@ -469,9 +540,10 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
             MessageType('logic', 'Formula'),
             Call(Message('logic', 'Formula'), [Call(OneOf(Symbol('false')), [Var('value', MessageType('logic', 'Disjunction'))])])
         )
-    ), is_final=False)
+    ))
 
     # Export rules
+    # export ::= "("
     add_rule(Rule(
         lhs=Nonterminal('export', MessageType('transactions', 'Export')),
         rhs=Sequence((
@@ -486,6 +558,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
+    # export_csv_config ::= "("
     add_rule(Rule(
         lhs=Nonterminal('export_csv_config', MessageType('transactions', 'ExportCSVConfig')),
         rhs=Sequence((
@@ -510,6 +583,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
+    # export_csvcolumns ::= "("
     add_rule(Rule(
         lhs=Nonterminal('export_csvcolumns', ListType(MessageType('transactions', 'ExportCSVColumn'))),
         rhs=Sequence((
@@ -524,6 +598,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
+    # export_csvcolumn ::= "("
     add_rule(Rule(
         lhs=Nonterminal('export_csvcolumn', MessageType('transactions', 'ExportCSVColumn')),
         rhs=Sequence((
@@ -543,6 +618,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     ))
 
     # Var rule
+    # var ::= SYMBOL
     add_rule(Rule(
         lhs=Nonterminal('var', MessageType('logic', 'Var')),
         rhs=Sequence((NamedTerminal('SYMBOL', BaseType('String')),)),
@@ -554,6 +630,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     ))
 
     # ID rules
+    # fragment_id ::= COLON_SYMBOL
     add_rule(Rule(
         lhs=Nonterminal('fragment_id', MessageType('fragments', 'FragmentId')),
         rhs=NamedTerminal('COLON_SYMBOL', BaseType('String')),
@@ -564,6 +641,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
+    # relation_id ::= COLON_SYMBOL
     add_rule(Rule(
         lhs=Nonterminal('relation_id', MessageType('logic', 'RelationId')),
         rhs=NamedTerminal('COLON_SYMBOL', BaseType('String')),
@@ -574,6 +652,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
+    # relation_id ::= INT
     add_rule(Rule(
         lhs=Nonterminal('relation_id', MessageType('logic', 'RelationId')),
         rhs=Sequence((NamedTerminal('INT', BaseType('Int64')),)),
@@ -585,6 +664,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     ))
 
     # Specialized value rule
+    # specialized_value ::= "#" value
     add_rule(Rule(
         lhs=Nonterminal('specialized_value', MessageType('logic', 'Value')),
         rhs=Sequence((LitTerminal('#'), Nonterminal('value', MessageType('logic', 'Value')))),
@@ -628,6 +708,8 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
          )),
     ]
     for lhs_name, lhs_type, rhs, action in _type_rules:
+        # ? ::= ?
+        #     ?
         add_rule(Rule(lhs=Nonterminal(lhs_name, lhs_type), rhs=rhs, action=action))
 
     # Comparison operator rules
@@ -639,6 +721,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         ('gt_eq', '>=', 'rel_primitive_gt_eq_monotype'),
     ]
     for name, op, prim in _comparison_ops:
+        # ? ::= "("
         add_rule(Rule(
             lhs=Nonterminal(name, MessageType('logic', 'Primitive')),
             rhs=Sequence((
@@ -666,6 +749,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         ('divide', '/', 'rel_primitive_divide_monotype'),
     ]
     for name, op, prim in _arithmetic_ops:
+        # ? ::= "("
         add_rule(Rule(
             lhs=Nonterminal(name, MessageType('logic', 'Primitive')),
             rhs=Sequence((
@@ -692,7 +776,9 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         ))
 
     # Primitive wrapper rules for operators (not final - auto-generation can add more)
+    mark_nonfinal(Nonterminal('primitive', MessageType('logic', 'Primitive')))
     for name, _op, _prim in _comparison_ops + _arithmetic_ops:
+        # primitive ::= ?
         add_rule(Rule(
             lhs=Nonterminal('primitive', MessageType('logic', 'Primitive')),
             rhs=Sequence((Nonterminal(name, MessageType('logic', 'Primitive')),)),
@@ -701,8 +787,9 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
                 MessageType('logic', 'Primitive'),
                 Var('op', MessageType('logic', 'Primitive'))
             )
-        ), is_final=False)
+        ))
 
+    # new_fragment_id ::= fragment_id
     add_rule(Rule(
         lhs=Nonterminal('new_fragment_id', MessageType('fragments', 'FragmentId')),
         rhs=Nonterminal('fragment_id', MessageType('fragments', 'FragmentId')),
@@ -719,6 +806,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     ))
 
     # Fragment rule with debug_info construction
+    # fragment ::= "("
     add_rule(Rule(
         lhs=Nonterminal('fragment', MessageType('fragments', 'Fragment')),
         rhs=Sequence((
@@ -740,4 +828,10 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
-    return result
+    # Mark all nonterminals as final except those in non_final_nonterminals
+    final_nonterminals: Set[Nonterminal] = set()
+    for nonterminal in result.keys():
+        if nonterminal not in non_final_nonterminals:
+            final_nonterminals.add(nonterminal)
+
+    return result, final_nonterminals

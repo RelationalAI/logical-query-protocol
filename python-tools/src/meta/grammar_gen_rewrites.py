@@ -2,6 +2,66 @@
 
 These rewrites transform grammar rules generated from protobuf definitions
 into forms more suitable for parsing S-expressions.
+
+## When to Use Rule Rewrites
+
+Rule rewrites are applied after auto-generation but before finalization. Use
+rewrites when the auto-generated rule is structurally correct but needs
+adjustment. Common scenarios:
+
+1. **Token granularity mismatch**: Protobuf uses `string` fields that become
+   STRING terminals, but the S-expression grammar parses structured names as
+   `name` nonterminals (SYMBOL tokens). Rewrites replace STRING with name.
+
+2. **Quantifier adjustments**: Protobuf `repeated` fields generate `terms?`
+   (optional list) because the field can be absent, but S-expressions use `term*`
+   (zero-or-more) for ergonomic parsing.
+
+3. **Structure flattening**: A protobuf message may have a nested field, but
+   the S-expression syntax parses the contents directly. For example, `exists`
+   has an `abstraction` field, but we parse bindings and formula separately.
+
+4. **Element combination**: Multiple grammar elements can be combined into
+   composite nonterminals. For example, abstractions followed by arity
+   become `abstraction_with_arity` to avoid lookahead issues.
+
+## How Rewrites Work
+
+A rewrite is a function `Callable[[Rule], Rule]` that takes a rule and returns
+a transformed version. Rewrites should:
+
+- Preserve the LHS nonterminal (the rule being defined)
+- Modify the RHS (the symbols to match)
+- Update the semantic action to match the new RHS structure
+- Maintain type correctness (action parameter types must match RHS element types)
+
+The `make_symbol_replacer()` helper creates rewrites that replace specific RHS
+elements with alternatives and automatically updates action parameter types.
+
+## Adding New Rewrites
+
+To add a new rewrite:
+
+1. Define the rewrite function of type `Rule -> Rule`
+2. Add it to the dict returned by `get_rule_rewrites()` with the nonterminal name as key
+3. The rewrite will be applied to all rules for that nonterminal
+
+Example using `make_symbol_replacer()`:
+
+```python
+'pragma': make_symbol_replacer({
+    NamedTerminal('STRING', BaseType('String')):
+        Nonterminal('name', MessageType('logic', 'Name'))
+})
+```
+
+## Common Rewrite Patterns
+
+- **Symbol replacement**: Use `make_symbol_replacer()` for straightforward substitutions
+- **Quantifier changes**: Replace Option with Star, or vice versa
+- **Field flattening**: Replace nested message nonterminal with its constituent parts
+- **Type unwrapping**: Remove Option wrappers or flatten List types in actions
+- **Element merging**: Combine adjacent elements into composite nonterminals
 """
 
 from typing import Callable, Dict, Optional
@@ -15,35 +75,69 @@ def make_symbol_replacer(replacements: Dict[Rhs, Rhs]) -> Callable[[Rule], Rule]
 
     replacements is a dict mapping old Rhs elements to new Rhs elements.
     """
-    def rewrite(rule: Rule) -> Rule:
-        if isinstance(rule.rhs, Sequence):
-            new_elements = [replacements.get(elem, elem) for elem in rule.rhs.elements]
+    def _rewrite_rhs(rhs: Rhs) -> Rhs:
+        """Rewrite an RHS by applying replacements."""
+        if rhs in replacements:
+            return replacements[rhs]
 
-            # Update action parameters if types changed
+        if isinstance(rhs, Sequence):
+            new_elements = [_rewrite_rhs(elem) for elem in rhs.elements]
+            return Sequence(tuple(new_elements))
+
+        if isinstance(rhs, Star):
+            new_element = _rewrite_rhs(rhs.rhs)
+            assert isinstance(new_element, (Nonterminal, NamedTerminal)), f"Invalid rewrite: cannot rewrite {rhs.rhs} to {new_element}"
+            return Star(new_element)
+
+        if isinstance(rhs, Option):
+            new_element = _rewrite_rhs(rhs.rhs)
+            assert isinstance(new_element, (Nonterminal, NamedTerminal)), f"Invalid rewrite: cannot rewrite {rhs.rhs} to {new_element}"
+            return Option(new_element)
+
+        return rhs
+
+    def _rewrite_action(old_rhs: Rhs, new_rhs: Rhs, action: Lambda) -> Lambda:
+        """Rewrite action parameters to match new RHS types."""
+        if isinstance(old_rhs, Sequence) and isinstance(new_rhs, Sequence) and len(old_rhs.elements) == len(new_rhs.elements):
             new_params = []
             param_idx = 0
-            for elem in rule.rhs.elements:
-                if isinstance(elem, LitTerminal):
+            for old_elem, new_elem in zip(old_rhs.elements, new_rhs.elements):
+                if isinstance(old_elem, LitTerminal):
                     continue
 
-                old_type = elem.target_type()
-                new_elem = replacements.get(elem, elem)
+                old_type = old_elem.target_type()
                 new_type = new_elem.target_type()
 
-                if param_idx < len(rule.action.params):
-                    param = rule.action.params[param_idx]
+                if param_idx < len(action.params):
+                    param = action.params[param_idx]
                     if old_type != new_type:
                         new_params.append(Var(param.name, new_type))
                     else:
                         new_params.append(param)
                     param_idx += 1
 
-            if new_params and new_params != list(rule.action.params):
-                new_action = Lambda(params=new_params, return_type=rule.action.return_type, body=rule.action.body)
-                return Rule(lhs=rule.lhs, rhs=Sequence(tuple(new_elements)), action=new_action, source_type=rule.source_type)
+            if new_params and new_params != list(action.params):
+                return Lambda(params=new_params, return_type=action.return_type, body=action.body)
 
-            return Rule(lhs=rule.lhs, rhs=Sequence(tuple(new_elements)), action=rule.action, source_type=rule.source_type)
+        else:
+            assert not isinstance(old_rhs, Sequence), f"Invalid rewrite: cannot rewrite sequence to non-sequence or sequence of a different length"
+            assert not isinstance(new_rhs, Sequence), f"Invalid rewrite: cannot rewrite non-sequence to sequence"
+            old_type = old_rhs.target_type()
+            new_type = new_rhs.target_type()
+            if old_type != new_type and len(action.params) > 0:
+                new_params = [Var(action.params[0].name, new_type)]
+                return Lambda(params=new_params, return_type=action.return_type, body=action.body)
+            return action
+
+        return action
+
+    def rewrite(rule: Rule) -> Rule:
+        new_rhs = _rewrite_rhs(rule.rhs)
+        if new_rhs != rule.rhs:
+            new_action = _rewrite_action(rule.rhs, new_rhs, rule.action)
+            return Rule(lhs=rule.lhs, rhs=new_rhs, action=new_action, source_type=rule.source_type)
         return rule
+
     return rewrite
 
 

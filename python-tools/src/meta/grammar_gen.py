@@ -2,6 +2,88 @@
 
 This module provides the GrammarGenerator class which converts protobuf
 message definitions into grammar rules with semantic actions.
+
+## Overview
+
+The grammar generator automatically creates parsing rules from protobuf message
+definitions. Each protobuf message becomes a nonterminal, and each field becomes
+part of the production rule. The generator also creates semantic actions (Lambda
+expressions) that construct the protobuf messages from parsed values.
+
+## How Grammar Generation Works
+
+1. **Message to Nonterminal Mapping**: Each protobuf message type becomes a
+   nonterminal in the grammar. For example, a `Fragment` message becomes
+   a `fragment` nonterminal.
+
+2. **Field to RHS Mapping**: Message fields are converted to grammar symbols:
+   - Primitive fields (string, int64, etc.) become terminals (SYMBOL, INT, etc.)
+   - Message fields become nonterminals referencing other messages
+   - `repeated` fields become Star (*) pseudo-nonterminals
+   - `optional` fields become Option (?) pseudo-nonterminals
+   - `oneof` fields generate multiple alternative productions
+
+3. **Semantic Actions**: Each production includes a Lambda that constructs the
+   protobuf message from parsed values. The Lambda parameters correspond to
+   non-literal RHS elements, and the body calls the Message constructor.
+
+4. **S-expression Syntax**: Productions include literal terminals for the
+   S-expression syntax: opening paren, message name as a literal, and closing paren.
+   For example: `"(" "and" formula* ")"`
+
+## Extension Points
+
+The grammar generator can be extended in two ways:
+
+### 1. Builtin Rules (grammar_gen_builtins.py)
+
+Builtin rules are manually specified productions for constructs that cannot be
+auto-generated from protobuf. Use builtins when:
+
+- The syntax doesn't directly correspond to a protobuf message structure
+- Multiple protobuf types share the same syntactic form (e.g., Value literals)
+- The production requires complex semantic actions with conditionals
+- You need to parse special syntax (dates, configuration, operators)
+
+To add builtin rules:
+1. Define the Rule with its LHS nonterminal, RHS, and semantic action
+2. Call `add_rule(rule, is_final=True)` to mark the nonterminal as complete
+3. Set `is_final=False` if auto-generation should add more alternatives
+
+### 2. Rule Rewrites (grammar_gen_rewrites.py)
+
+Rewrites transform auto-generated rules into more suitable forms. Use rewrites when:
+
+- The auto-generated rule is correct but needs adjustment for better parsing
+- You need to change token granularity (STRING → name nonterminal)
+- You need to flatten nested structures for simpler parsing
+- You need to combine multiple grammar elements (abstraction + arity)
+
+To add rewrites:
+1. Create a rewrite function: `Callable[[Rule], Rule]`
+2. Add it to the dict in `get_rule_rewrites()` with the nonterminal name as key
+3. The rewrite will be applied after auto-generation but before finalization
+
+Common rewrite patterns:
+- `make_symbol_replacer()`: Replace specific RHS symbols with alternatives
+- Field flattening: Transform nested message references into inline parsing
+- Type conversions: Adjust semantic action parameter types after RHS changes
+
+## Configuration
+
+The GrammarGenerator constructor accepts several configuration options:
+
+- `inline_fields`: Set of (message_name, field_name) tuples for fields that
+  should be inlined (expanded directly) rather than parsed as subnonterminals
+
+- `rule_literal_renames`: Dict mapping rule names to alternative literal names
+  used in the S-expression syntax (e.g., "conjunction" → "and")
+
+- `final_rules`: Set of rule names that should not be auto-generated (only
+  use builtin rules)
+
+- `expected_unreachable`: Set of rule names that are intentionally not
+  reachable from the start symbol
 """
 import re
 from typing import Callable, Dict, List, Optional, Set, Tuple
@@ -138,12 +220,13 @@ class GrammarGenerator:
 
     def _add_all_prepopulated_rules(self) -> None:
         """Add manually-crafted rules that should not be auto-generated."""
-        for lhs, (rules, is_final) in get_builtin_rules().items():
-            if is_final:
-                self.final_rules.add(lhs.name)
+        builtin_rules, final_nonterminals = get_builtin_rules()
+        for lhs, rules in builtin_rules.items():
             for rule in rules:
                 assert rule.action is not None
                 self.grammar.add_rule(rule)
+        for nonterminal in final_nonterminals:
+            self.final_rules.add(nonterminal.name)
 
     def _post_process_grammar(self) -> None:
         """Apply grammar post-processing."""
