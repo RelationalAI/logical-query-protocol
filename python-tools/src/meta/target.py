@@ -40,7 +40,7 @@ class TargetExpr(TargetNode):
 class Var(TargetExpr):
     """Variable reference."""
     name: str
-    type: 'Type'
+    type: 'TargetType'
 
     def __str__(self) -> str:
         return f"{self.name}::{self.type}"
@@ -99,7 +99,7 @@ class Message(TargetExpr):
 
     def __post_init__(self):
         if not self.name.isidentifier():
-            raise ValueError(f"Invalid variable name: {self.name}")
+            raise ValueError(f"Invalid message name: {self.name}")
 
 
 @dataclass(frozen=True)
@@ -122,7 +122,7 @@ class ListExpr(TargetExpr):
     Creates a list with the given elements and element type.
     """
     elements: Sequence['TargetExpr']
-    element_type: 'Type'
+    element_type: 'TargetType'
 
     def __str__(self) -> str:
         if not self.elements:
@@ -171,7 +171,7 @@ class Call(TargetExpr):
 class Lambda(TargetExpr):
     """Lambda function (anonymous function)."""
     params: Sequence['Var']
-    return_type: 'Type'
+    return_type: 'TargetType'
     body: 'TargetExpr'
 
     def __str__(self) -> str:
@@ -263,13 +263,13 @@ class Return(TargetExpr):
 
 
 @dataclass(frozen=True)
-class Type(TargetNode):
+class TargetType(TargetNode):
     """Base class for type expressions."""
     pass
 
 
 @dataclass(frozen=True)
-class BaseType(Type):
+class BaseType(TargetType):
     """Base types: Int64, Float64, String, Boolean."""
     name: str
 
@@ -278,7 +278,7 @@ class BaseType(Type):
 
 
 @dataclass(frozen=True)
-class MessageType(Type):
+class MessageType(TargetType):
     """Protobuf message types."""
     module: str
     name: str
@@ -288,9 +288,9 @@ class MessageType(Type):
 
 
 @dataclass(frozen=True)
-class TupleType(Type):
+class TupleType(TargetType):
     """Tuple type with fixed number of element types."""
-    elements: Sequence[Type]
+    elements: Sequence[TargetType]
 
     def __str__(self) -> str:
         elements_str = ', '.join(str(e) for e in self.elements)
@@ -302,28 +302,28 @@ class TupleType(Type):
 
 
 @dataclass(frozen=True)
-class ListType(Type):
+class ListType(TargetType):
     """Parameterized list/array type."""
-    element_type: Type
+    element_type: TargetType
 
     def __str__(self) -> str:
         return f"List[{self.element_type}]"
 
 
 @dataclass(frozen=True)
-class OptionType(Type):
+class OptionType(TargetType):
     """Optional/Maybe type for values that may be None."""
-    element_type: Type
+    element_type: TargetType
 
     def __str__(self) -> str:
         return f"Option[{self.element_type}]"
 
 
 @dataclass(frozen=True)
-class FunctionType(Type):
+class FunctionType(TargetType):
     """Function type with parameter types and return type."""
-    param_types: Sequence[Type]
-    return_type: Type
+    param_types: Sequence[TargetType]
+    return_type: TargetType
 
     def __str__(self) -> str:
         params_str = ', '.join(str(t) for t in self.param_types)
@@ -339,7 +339,7 @@ class FunDef(TargetNode):
     """Function definition with parameters, return type, and body."""
     name: str
     params: Sequence['Var']
-    return_type: Type
+    return_type: TargetType
     body: 'TargetExpr'
 
     def __str__(self) -> str:
@@ -360,7 +360,7 @@ class ParseNonterminalDef(TargetNode):
     """
     nonterminal: 'Nonterminal'
     params: Sequence['Var']
-    return_type: Type
+    return_type: TargetType
     body: 'TargetExpr'
 
     def __str__(self) -> str:
@@ -391,7 +391,7 @@ __all__ = [
     'While',
     'Assign',
     'Return',
-    'Type',
+    'TargetType',
     'BaseType',
     'MessageType',
     'TupleType',

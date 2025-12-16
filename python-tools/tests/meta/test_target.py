@@ -304,10 +304,10 @@ class TestMessage:
 
     def test_invalid_name(self):
         """Test Message with invalid name."""
-        with pytest.raises(ValueError, match="Invalid variable name"):
+        with pytest.raises(ValueError, match="Invalid message name"):
             Message("proto", "123Invalid")
 
-        with pytest.raises(ValueError, match="Invalid variable name"):
+        with pytest.raises(ValueError, match="Invalid message name"):
             Message("proto", "with-dash")
 
 

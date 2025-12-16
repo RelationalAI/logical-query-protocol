@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple
 
 # Import action AST types
-from .target import TargetExpr, Var, Symbol, Call, Lambda, Let, Lit, Type, MessageType
+from .target import TargetExpr, Var, Symbol, Call, Lambda, Let, Lit, TargetType, MessageType
 
 
 # Grammar RHS (right-hand side) elements
@@ -17,7 +17,7 @@ from .target import TargetExpr, Var, Symbol, Call, Lambda, Let, Lit, Type, Messa
 class Rhs:
     """Base class for right-hand sides of grammar rules."""
 
-    def target_type(self) -> Type:
+    def target_type(self) -> TargetType:
         """Return the target type for this RHS element."""
         raise NotImplementedError(f"target_type not implemented for {type(self).__name__}")
 
@@ -34,7 +34,7 @@ class LitTerminal(Terminal):
     def __str__(self) -> str:
         return f'"{self.name}"'
 
-    def target_type(self) -> Type:
+    def target_type(self) -> TargetType:
         """Literals don't produce values, return empty tuple type."""
         from .target import TupleType
         return TupleType([])
@@ -44,12 +44,12 @@ class LitTerminal(Terminal):
 class NamedTerminal(Terminal):
     """Token terminal (unquoted uppercase name like SYMBOL, NUMBER)."""
     name: str
-    type: Type
+    type: TargetType
 
     def __str__(self) -> str:
         return self.name
 
-    def target_type(self) -> Type:
+    def target_type(self) -> TargetType:
         """Return the type for this terminal."""
         return self.type
 
@@ -58,12 +58,12 @@ class NamedTerminal(Terminal):
 class Nonterminal(Rhs):
     """Nonterminal (rule name)."""
     name: str
-    type: Type
+    type: TargetType
 
     def __str__(self) -> str:
         return self.name
 
-    def target_type(self) -> Type:
+    def target_type(self) -> TargetType:
         """Return the type for this nonterminal."""
         return self.type
 
@@ -76,7 +76,7 @@ class Star(Rhs):
     def __str__(self) -> str:
         return f"{self.rhs}*"
 
-    def target_type(self) -> Type:
+    def target_type(self) -> TargetType:
         """Return list type of the element type."""
         from .target import ListType
         return ListType(self.rhs.target_type())
@@ -90,7 +90,7 @@ class Option(Rhs):
     def __str__(self) -> str:
         return f"{self.rhs}?"
 
-    def target_type(self) -> Type:
+    def target_type(self) -> TargetType:
         """Return option type of the element type."""
         from .target import OptionType
         return OptionType(self.rhs.target_type())
@@ -109,7 +109,7 @@ class Sequence(Rhs):
     def __str__(self) -> str:
         return " ".join(str(e) for e in self.elements)
 
-    def target_type(self) -> Type:
+    def target_type(self) -> TargetType:
         """Return tuple type of non-literal element types."""
         from .target import TupleType
         element_types = []
@@ -160,7 +160,7 @@ class Token:
     """Token definition (terminal with regex pattern)."""
     name: str
     pattern: str
-    type: Type
+    type: TargetType
 
 @dataclass
 class Grammar:
@@ -522,7 +522,7 @@ def _count_nonliteral_rhs_elements(rhs: Rhs) -> int:
         return 1
 
 
-def _collect_nonliteral_rhs_types(rhs: Rhs) -> List[Type]:
+def _collect_nonliteral_rhs_types(rhs: Rhs) -> List[TargetType]:
     """Collect types from RHS elements that produce action parameters (skipping LitTerminals)."""
     if isinstance(rhs, Sequence):
         types = []
