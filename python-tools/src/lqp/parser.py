@@ -1,17 +1,15 @@
-import argparse
-import os
+"""
+Lark-based parser for LQP S-expressions.
+
+This module contains the grammar, parser, and transformer that converts
+parse trees to IR nodes.
+"""
+
 import hashlib
-import shutil
-from dataclasses import dataclass
-import sys
 from lark import Lark, Transformer, v_args
 import lqp.ir as ir
-from lqp.emit import ir_to_proto
-from lqp.validator import validate_lqp
-from google.protobuf.json_format import MessageToJson
 from decimal import Decimal
 from datetime import date, datetime
-from importlib.metadata import version
 
 grammar = """
 start: transaction | fragment
@@ -150,6 +148,7 @@ COMMENT: /;;.*/  // Matches ;; followed by any characters except newline
 """
 
 def construct_configure(config_dict, meta):
+    """Construct a Configure IR node from config dictionary."""
     # Construct IVMConfig
     maintenance_level_value = config_dict.get("ivm.maintenance_level")
     if maintenance_level_value:
@@ -172,10 +171,14 @@ def construct_configure(config_dict, meta):
     )
 
 def desugar_to_raw_primitive(name, terms):
+    """Convert primitive operators to raw primitive IR nodes."""
     # Convert terms to relterms
     return ir.Primitive(name=name, terms=terms, meta=None)
+
 @v_args(meta=True)
 class LQPTransformer(Transformer):
+    """Transformer that converts Lark parse tree to LQP IR nodes."""
+
     def __init__(self, file: str):
         self.file = file
         self.id_to_debuginfo = {}
@@ -189,9 +192,9 @@ class LQPTransformer(Transformer):
 
     def TYPE_NAME(self, s):
         return getattr(ir.TypeName, s.upper())
+
     def type_(self, meta, items):
         return ir.Type(type_name=items[0], parameters=items[1:],  meta=self.meta(meta))
-
 
     #
     # Transactions
@@ -225,8 +228,10 @@ class LQPTransformer(Transformer):
 
     def writes(self, meta, items):
         return ("writes", items)
+
     def reads(self, meta, items):
         return ("reads", items)
+
     def write(self, meta, items):
         return ir.Write(write_type=items[0], meta=self.meta(meta))
 
@@ -244,6 +249,7 @@ class LQPTransformer(Transformer):
 
     def read(self, meta, items):
         return ir.Read(read_type=items[0], meta=self.meta(meta))
+
     def demand(self, meta, items):
         return ir.Demand(relation_id=items[0], meta=self.meta(meta))
 
@@ -295,7 +301,7 @@ class LQPTransformer(Transformer):
     #
     def fragment(self, meta, items):
         fragment_id = items[0]
-        debug_info = ir.DebugInfo(id_to_orig_name=self.id_to_debuginfo[fragment_id], meta=self.meta(meta))
+        debug_info = ir.DebugInfo(id_to_orig_name=dict(self.id_to_debuginfo[fragment_id]), meta=self.meta(meta))
         self._current_fragment_id = None
         return ir.Fragment(id=fragment_id, declarations=items[1:], debug_info=debug_info, meta=self.meta(meta))
 
@@ -308,6 +314,7 @@ class LQPTransformer(Transformer):
 
     def declaration(self, meta, items):
         return items[0]
+
     def def_(self, meta, items):
         name = items[0]
         body, value_arity = items[1]
@@ -317,6 +324,7 @@ class LQPTransformer(Transformer):
 
     def constraint(self, meta, items):
         return items[0]
+
     def functional_dependency(self, meta, items):
         guard, _ = items[0]
         keys = items[1]
@@ -327,13 +335,16 @@ class LQPTransformer(Transformer):
             values=values,
             meta=self.meta(meta)
         )
+
     def fd_keys(self, meta, items):
         return items
+
     def fd_values(self, meta, items):
         return items
 
     def algorithm(self, meta, items):
         return ir.Algorithm(global_=items[:-1], body=items[-1], meta=self.meta(meta))
+
     def script(self, meta, items):
         return ir.Script(constructs=items, meta=self.meta(meta))
 
@@ -344,6 +355,7 @@ class LQPTransformer(Transformer):
         init = items[0]
         script = items[1]
         return ir.Loop(init=init, body=script, meta=self.meta(meta))
+
     def init(self, meta, items):
         return items
 
@@ -356,23 +368,27 @@ class LQPTransformer(Transformer):
         assert value_arity == 0, f"Assigns should not have a value arity"
         attrs = items[2] if len(items) > 2 else []
         return ir.Assign(name=name, body=body, attrs=attrs, meta=self.meta(meta))
+
     def upsert(self, meta, items):
         name = items[0]
         body, value_arity = items[1]
         attrs = items[2] if len(items) > 2 else []
         return ir.Upsert(value_arity=value_arity, name=name, body=body, attrs=attrs, meta=self.meta(meta))
+
     def break_(self, meta, items):
         name = items[0]
         body, value_arity = items[1]
         assert value_arity == 0, f"Breaks should not have a value arity"
         attrs = items[2] if len(items) > 2 else []
         return ir.Break(name=name, body=body, attrs=attrs, meta=self.meta(meta))
+
     def monoid_def(self, meta, items):
         monoid = items[0]
         name = items[1]
         body, value_arity = items[2]
         attrs = items[3] if len(items) > 3 else []
         return ir.MonoidDef(value_arity=value_arity, monoid=monoid, name=name, body=body, attrs=attrs, meta=self.meta(meta))
+
     def monus_def(self, meta, items):
         monoid = items[0]
         name = items[1]
@@ -380,14 +396,18 @@ class LQPTransformer(Transformer):
         attrs = items[3] if len(items) > 3 else []
         return ir.MonusDef(value_arity=value_arity, monoid=monoid, name=name, body=body, attrs=attrs, meta=self.meta(meta))
 
-    def monoid(self, meta, items) :
+    def monoid(self, meta, items):
         return items[0]
+
     def or_monoid(self, meta, items):
         return ir.OrMonoid(meta=meta)
+
     def min_monoid(self, meta, items):
         return ir.MinMonoid(type=items[0], meta=meta)
+
     def max_monoid(self, meta, items):
         return ir.MaxMonoid(type=items[0], meta=meta)
+
     def sum_monoid(self, meta, items):
         return ir.SumMonoid(type=items[0], meta=meta)
 
@@ -401,6 +421,7 @@ class LQPTransformer(Transformer):
 
     def vars(self, meta, items):
         return items
+
     def bindings(self, meta, items):
         if len(items) == 1 : # Bindings do not indicate a value_arity
             return items[0], 0
@@ -408,15 +429,19 @@ class LQPTransformer(Transformer):
             left = items[0]
             right = items[1]
             return left+right, len(right)
+
     def left_bindings(self, meta, items):
         return items
+
     def right_bindings(self, meta, items):
         return items
+
     def attrs(self, meta, items):
         return items
 
     def formula(self, meta, items):
         return items[0]
+
     def true(self, _, meta):
         return ir.Conjunction(args=[], meta=self.meta(meta))
 
@@ -467,45 +492,60 @@ class LQPTransformer(Transformer):
         if isinstance(items[0], ir.Formula):
             return items[0]
         raise TypeError(f"Unexpected primitive type: {type(items[0])}")
+
     def raw_primitive(self, meta, items):
         return ir.Primitive(name=items[0], terms=items[1:], meta=self.meta(meta))
+
     def _make_primitive(self, name_symbol, terms, meta):
-         # Convert name symbol to string if needed, assuming self.name handles it
-         name_str = self.name([name_symbol], meta) if isinstance(name_symbol, str) else name_symbol
-         return ir.Primitive(name=name_str, terms=terms, meta=self.meta(meta))
+        # Convert name symbol to string if needed, assuming self.name handles it
+        name_str = self.name([name_symbol], meta) if isinstance(name_symbol, str) else name_symbol
+        return ir.Primitive(name=name_str, terms=terms, meta=self.meta(meta))
+
     def eq(self, meta, items):
         return desugar_to_raw_primitive(self.name(meta, ["rel_primitive_eq"]), items)
+
     def lt(self, meta, items):
         return desugar_to_raw_primitive(self.name(meta, ["rel_primitive_lt_monotype"]), items)
+
     def lt_eq(self, meta, items):
         return desugar_to_raw_primitive(self.name(meta, ["rel_primitive_lt_eq_monotype"]), items)
+
     def gt(self, meta, items):
         return desugar_to_raw_primitive(self.name(meta, ["rel_primitive_gt_monotype"]), items)
+
     def gt_eq(self, meta, items):
         return desugar_to_raw_primitive(self.name(meta, ["rel_primitive_gt_eq_monotype"]), items)
 
     def add(self, meta, items):
         return desugar_to_raw_primitive(self.name(meta, ["rel_primitive_add_monotype"]), items)
+
     def minus(self, meta, items):
         return desugar_to_raw_primitive(self.name(meta, ["rel_primitive_subtract_monotype"]), items)
+
     def multiply(self, meta, items):
         return desugar_to_raw_primitive(self.name(meta, ["rel_primitive_multiply_monotype"]), items)
+
     def divide(self, meta, items):
         return desugar_to_raw_primitive(self.name(meta, ["rel_primitive_divide_monotype"]), items)
 
     def args(self, meta, items):
         return [item[0] for item in items]
+
     def terms(self, meta, items):
         return items
 
     def relterm(self, meta, items):
         return items[0]
+
     def term(self, meta, items):
         return items[0]
+
     def var(self, meta, items):
         return ir.Var(name=items[0], meta=self.meta(meta))
+
     def constant(self, meta, items):
         return items[0]
+
     def specialized_value(self, meta, items):
         return ir.SpecializedValue(value=items[0], meta=self.meta(meta))
 
@@ -538,21 +578,28 @@ class LQPTransformer(Transformer):
 
     def STRING(self, s):
         return s[1:-1].encode().decode('unicode_escape') # Strip quotes and process escaping
+
     def NUMBER(self, n):
         return int(n)
+
     def FLOAT(self, f):
         return float(f)
+
     def SYMBOL(self, sym):
         return str(sym)
+
     def UINT128(self, u):
         uint128_val = int(u, 16)
         return ir.UInt128Value(value=uint128_val, meta=None)
+
     def INT128(self, u):
-        u= u[:-4]  # Remove the 'i128' suffix
+        u = u[:-4]  # Remove the 'i128' suffix
         int128_val = int(u)
         return ir.Int128Value(value=int128_val, meta=None)
+
     def MISSING(self, m):
         return ir.MissingValue(meta=None)
+
     def DECIMAL(self, d):
         # Decimal is a string like "123.456d12" where the last part after `d` is the
         # precision, and the scale is the number of digits between the decimal point and `d`
@@ -564,12 +611,15 @@ class LQPTransformer(Transformer):
         value = Decimal(parts[0])
 
         return ir.DecimalValue(precision=precision, scale=scale, value=value, meta=None)
+
     def BOOLEAN(self, b):
         return ir.BooleanValue(value=bool(b == "true"), meta=None)
+
     def date(self, meta, items):
         # Date is in the format (date YYYY MM DD)
         date_val = date(*items)
         return ir.DateValue(value=date_val, meta=None)
+
     def datetime(self, meta, items):
         # Date is in the format (datetime YYYY MM DD HH MM SS [MS])
         datetime_val = datetime(*items)
@@ -590,138 +640,12 @@ class LQPTransformer(Transformer):
 # uses a precomputed parse table, reducing runtime complexity to O(n) (linear in input
 # size), whereas Earley is O(n³) in the worst case (though often O(n²) or better for
 # practical grammars). The LQP grammar is relatively complex but unambiguous, making
-# LALR(1)’s speed advantage appealing for a CLI tool where quick parsing matters.
-parser = Lark(grammar, parser="lalr", propagate_positions=True)
+# LALR(1)'s speed advantage appealing for a CLI tool where quick parsing matters.
+lark_parser = Lark(grammar, parser="lalr", propagate_positions=True)
 
-def parse_lqp(file, text) -> ir.LqpNode:
-    """Parse LQP text and return an IR node that can be converted to protocol buffers"""
-    tree = parser.parse(text)
+def parse_lqp(file: str, text: str) -> ir.LqpNode:
+    """Parse LQP text and return an IR node that can be converted to protocol buffers."""
+    tree = lark_parser.parse(text)
     transformer = LQPTransformer(file)
     result = transformer.transform(tree)
     return result
-
-def process_file(filename, bin, json, validate=True):
-    with open(filename, "r") as f:
-        lqp_text = f.read()
-
-    lqp = parse_lqp(filename, lqp_text)
-    if validate:
-        validate_lqp(lqp) # type: ignore
-    lqp_proto = ir_to_proto(lqp)
-
-    # Write binary output to the configured directories, using the same filename.
-    if bin:
-        lqp_bin = lqp_proto.SerializeToString()
-        if bin == "-":
-            sys.stdout.buffer.write(lqp_bin)
-        else:
-            with open(bin, "wb") as f:
-                f.write(lqp_bin)
-            print(f"Successfully wrote {filename} to bin at {bin}")
-
-    # Write JSON output
-    if json:
-        lqp_json = MessageToJson(lqp_proto, preserving_proto_field_name=True)
-        if json == "-":
-            sys.stdout.write(lqp_json)
-        else:
-            with open(json, "w") as f:
-                f.write(lqp_json)
-            print(f"Successfully wrote {filename} to JSON at {json}")
-
-def process_directory(lqp_directory, bin, json, validate=True):
-    # Create bin directory at parent level if needed
-    bin_dir = None
-    if bin:
-        parent_dir = os.path.dirname(lqp_directory)
-        bin_dir = os.path.join(parent_dir, "bin")
-        os.makedirs(bin_dir, exist_ok=True)
-
-    # Create json directory at parent level if needed
-    json_dir = None
-    if json:
-        parent_dir = os.path.dirname(lqp_directory)
-        json_dir = os.path.join(parent_dir, "json")
-        os.makedirs(json_dir, exist_ok=True)
-
-    # Process each LQP file in the directory
-    for file in os.listdir(lqp_directory):
-        if not file.endswith(".lqp"):
-            continue
-
-        filename = os.path.join(lqp_directory, file)
-        basename = os.path.splitext(file)[0]
-
-        bin_output = os.path.join(bin_dir, basename + ".bin") if bin_dir else None
-        json_output = os.path.join(json_dir, basename + ".json") if json_dir else None
-
-        process_file(filename, bin_output, json_output, validate)
-
-def look_for_lqp_directory(directory):
-    for root, dirs, _ in os.walk(directory):
-        if "lqp" in dirs:
-            return os.path.join(root, "lqp")
-
-    # If we didn't find a 'lqp' directory, create one
-    lqp_dir = os.path.join(directory, "lqp")
-    os.makedirs(lqp_dir, exist_ok=True)
-    print(f"LQP home directory not found, created one at {directory}")
-    return lqp_dir
-
-def get_lqp_files(directory):
-    lqp_files = []
-    for file in os.listdir(directory):
-        if file.endswith(".lqp"):
-            lqp_files.append(os.path.join(directory, file))
-    return lqp_files
-
-def get_package_version():
-    """Get the version of the installed `lqp` package."""
-    return version("lqp")
-
-def main():
-    arg_parser = argparse.ArgumentParser(description="Parse LQP S-expression into Protobuf binary and JSON files.")
-    arg_parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {get_package_version()}", help="show program's version number and exit")
-    arg_parser.add_argument("input", help="directory holding .lqp files, or a single .lqp file")
-    arg_parser.add_argument("--no-validation", action="store_true", help="don't validate parsed LQP")
-    arg_parser.add_argument("--bin", action="store_true", help="encode emitted ProtoBuf into binary")
-    arg_parser.add_argument("--json", action="store_true", help="encode emitted ProtoBuf into JSON")
-    arg_parser.add_argument("--out", action="store_true", help="write emitted binary or JSON to stdout")
-    args = arg_parser.parse_args()
-
-    validate = not args.no_validation
-    bin = args.bin
-    json = args.json
-
-    if os.path.isfile(args.input): # Case if input is a file
-        filename = args.input
-        assert filename.endswith(".lqp") and os.path.isfile(filename), \
-            f"The input {filename} does not seem to be an LQP file"
-
-        if args.out:
-            assert not (args.bin and args.json), "Cannot specify both --bin and --json with --out option"
-
-        basename = os.path.splitext(filename)[0]
-
-        bin_name = None
-        json_name = None
-
-        if args.bin:
-            bin_name = "-" if args.out else basename + ".bin"
-
-        if args.json:
-            json_name = "-" if args.out else basename + ".json"
-
-        process_file(filename, bin_name, json_name, validate)
-    elif os.path.isdir(args.input):
-        lqp_directory = look_for_lqp_directory(args.input)
-        lqp_files = get_lqp_files(args.input)
-        for file in lqp_files:
-            shutil.move(file, lqp_directory)
-
-        process_directory(lqp_directory, bin, json, validate)
-    else:
-        print("Input is not a valid file nor directory")
-
-if __name__ == "__main__":
-    main()
