@@ -21,12 +21,12 @@ from meta.grammar_analysis import (
     compute_first_k,
     compute_follow,
     compute_follow_k,
-    _is_rhs_elem_nullable,
-    _compute_rhs_elem_first,
-    _compute_rhs_elem_first_k,
-    _compute_rhs_elem_follow,
-    _compute_rhs_elem_follow_k,
-    _concat_first_k_sets,
+    is_rhs_nullable,
+    rhs_first,
+    rhs_first_k,
+    rhs_follow,
+    rhs_follow_k,
+    concat_k,
 )
 from meta.target import BaseType, MessageType, Lambda, Var
 
@@ -318,52 +318,52 @@ class TestComputeNullable:
         assert nullable[b]
 
 
-class TestIsRhsElemNullable:
-    """Tests for _is_rhs_elem_nullable."""
+class TestIsRhsNullable:
+    """Tests for is_rhs_nullable."""
 
     def test_literal_not_nullable(self):
         """Test that literal is not nullable."""
         lit = LitTerminal("a")
         nullable = {}
-        assert not _is_rhs_elem_nullable(lit, nullable)
+        assert not is_rhs_nullable(lit, nullable)
 
     def test_terminal_not_nullable(self):
         """Test that terminal is not nullable."""
         term = NamedTerminal("TOK", BaseType("String"))
         nullable = {}
-        assert not _is_rhs_elem_nullable(term, nullable)
+        assert not is_rhs_nullable(term, nullable)
 
     def test_nonterminal_nullable(self):
         """Test nonterminal nullable when in nullable set."""
         nt = Nonterminal("A", MessageType("proto", "A"))
         nullable = {nt: True}
-        assert _is_rhs_elem_nullable(nt, nullable)
+        assert is_rhs_nullable(nt, nullable)
 
     def test_nonterminal_not_nullable(self):
         """Test nonterminal not nullable when not in set."""
         nt = Nonterminal("A", MessageType("proto", "A"))
         nullable = {nt: False}
-        assert not _is_rhs_elem_nullable(nt, nullable)
+        assert not is_rhs_nullable(nt, nullable)
 
     def test_star_nullable(self):
         """Test that star is always nullable."""
         nt = Nonterminal("A", MessageType("proto", "A"))
         star = Star(nt)
         nullable = {nt: False}
-        assert _is_rhs_elem_nullable(star, nullable)
+        assert is_rhs_nullable(star, nullable)
 
     def test_option_nullable(self):
         """Test that option is always nullable."""
         nt = Nonterminal("A", MessageType("proto", "A"))
         opt = Option(nt)
         nullable = {nt: False}
-        assert _is_rhs_elem_nullable(opt, nullable)
+        assert is_rhs_nullable(opt, nullable)
 
     def test_empty_sequence_nullable(self):
         """Test that empty sequence is nullable."""
         seq = Sequence(())
         nullable = {}
-        assert _is_rhs_elem_nullable(seq, nullable)
+        assert is_rhs_nullable(seq, nullable)
 
     def test_sequence_all_nullable(self):
         """Test sequence is nullable when all elements are nullable."""
@@ -371,7 +371,7 @@ class TestIsRhsElemNullable:
         b = Nonterminal("B", MessageType("proto", "B"))
         seq = Sequence((a, b))
         nullable = {a: True, b: True}
-        assert _is_rhs_elem_nullable(seq, nullable)
+        assert is_rhs_nullable(seq, nullable)
 
     def test_sequence_one_not_nullable(self):
         """Test sequence is not nullable when one element is not nullable."""
@@ -379,7 +379,7 @@ class TestIsRhsElemNullable:
         b = Nonterminal("B", MessageType("proto", "B"))
         seq = Sequence((a, b))
         nullable = {a: True, b: False}
-        assert not _is_rhs_elem_nullable(seq, nullable)
+        assert not is_rhs_nullable(seq, nullable)
 
 
 class TestComputeFirst:
@@ -420,15 +420,15 @@ class TestComputeFirst:
         assert num in first[t]
 
 
-class TestComputeRhsElemFirst:
-    """Tests for _compute_rhs_elem_first."""
+class TestRhsFirst:
+    """Tests for rhs_first."""
 
     def test_literal(self):
         """Test FIRST of literal."""
         lit = LitTerminal("a")
         first = {}
         nullable = {}
-        result = _compute_rhs_elem_first(lit, first, nullable)
+        result = rhs_first(lit, first, nullable)
         assert lit in result
 
     def test_terminal(self):
@@ -436,7 +436,7 @@ class TestComputeRhsElemFirst:
         term = NamedTerminal("NUM", BaseType("Int64"))
         first = {}
         nullable = {}
-        result = _compute_rhs_elem_first(term, first, nullable)
+        result = rhs_first(term, first, nullable)
         assert term in result
 
     def test_nonterminal(self):
@@ -445,7 +445,7 @@ class TestComputeRhsElemFirst:
         lit = LitTerminal("a")
         first = {nt: cast(set[Terminal], {lit})}
         nullable = {nt: False}
-        result = _compute_rhs_elem_first(nt, first, nullable)
+        result = rhs_first(nt, first, nullable)
         assert lit in result
 
     def test_sequence_all_first(self):
@@ -458,7 +458,7 @@ class TestComputeRhsElemFirst:
 
         first = {a: cast(set[Terminal], {lit_a}), b: cast(set[Terminal], {lit_b})}
         nullable = {a: False, b: False}
-        result = _compute_rhs_elem_first(seq, first, nullable)
+        result = rhs_first(seq, first, nullable)
         assert lit_a in result
         assert lit_b not in result
 
@@ -472,7 +472,7 @@ class TestComputeRhsElemFirst:
 
         first = {a: cast(set[Terminal], {lit_a}), b: cast(set[Terminal], {lit_b})}
         nullable = {a: True, b: False}
-        result = _compute_rhs_elem_first(seq, first, nullable)
+        result = rhs_first(seq, first, nullable)
         assert lit_a in result
         assert lit_b in result
 
@@ -509,15 +509,15 @@ class TestComputeFirstK:
         assert () in first_k[s]
 
 
-class TestComputeRhsElemFirstK:
-    """Tests for _compute_rhs_elem_first_k."""
+class TestRhsFirstK:
+    """Tests for rhs_first_k."""
 
     def test_literal_k2(self):
         """Test FIRST_k of literal."""
         lit = LitTerminal("a")
         first_k = {}
         nullable = {}
-        result = _compute_rhs_elem_first_k(lit, first_k, nullable, k=2)
+        result = rhs_first_k(lit, first_k, nullable, k=2)
         assert (lit,) in result
 
     def test_terminal_k2(self):
@@ -525,7 +525,7 @@ class TestComputeRhsElemFirstK:
         term = NamedTerminal("NUM", BaseType("Int64"))
         first_k = {}
         nullable = {}
-        result = _compute_rhs_elem_first_k(term, first_k, nullable, k=2)
+        result = rhs_first_k(term, first_k, nullable, k=2)
         assert (term,) in result
 
     def test_nonterminal_k2(self):
@@ -535,7 +535,7 @@ class TestComputeRhsElemFirstK:
         lit = LitTerminal("a")
         first_k = {nt: cast(set[TerminalSeq], {(lit,)})}
         nullable = {nt: False}
-        result = _compute_rhs_elem_first_k(nt, first_k, nullable, k=2)
+        result = rhs_first_k(nt, first_k, nullable, k=2)
         assert (lit,) in result
 
     def test_sequence_concatenation_k2(self):
@@ -549,7 +549,7 @@ class TestComputeRhsElemFirstK:
 
         first_k = {a: cast(set[TerminalSeq], {(lit_a,)}), b: cast(set[TerminalSeq], {(lit_b,)})}
         nullable = {a: False, b: False}
-        result = _compute_rhs_elem_first_k(seq, first_k, nullable, k=2)
+        result = rhs_first_k(seq, first_k, nullable, k=2)
         assert (lit_a, lit_b) in result
 
     def test_sequence_truncates_to_k(self):
@@ -565,7 +565,7 @@ class TestComputeRhsElemFirstK:
 
         first_k = {a: cast(set[TerminalSeq], {(lit_a,)}), b: cast(set[TerminalSeq], {(lit_b,)}), c: cast(set[TerminalSeq], {(lit_c,)})}
         nullable = {a: False, b: False, c: False}
-        result = _compute_rhs_elem_first_k(seq, first_k, nullable, k=2)
+        result = rhs_first_k(seq, first_k, nullable, k=2)
         assert (lit_a, lit_b) in result
         assert (lit_a, lit_b, lit_c) not in result
 
@@ -574,7 +574,7 @@ class TestComputeRhsElemFirstK:
         seq = Sequence(())
         first_k = {}
         nullable = {}
-        result = _compute_rhs_elem_first_k(seq, first_k, nullable, k=2)
+        result = rhs_first_k(seq, first_k, nullable, k=2)
         assert () in result
 
     def test_star_includes_empty(self):
@@ -585,7 +585,7 @@ class TestComputeRhsElemFirstK:
 
         first_k = {nt: {(lit,)}}  # type: ignore
         nullable = {nt: False}
-        result = _compute_rhs_elem_first_k(star, first_k, nullable, k=2)
+        result = rhs_first_k(star, first_k, nullable, k=2)
         assert (lit,) in result
         assert () in result
 
@@ -597,7 +597,7 @@ class TestComputeRhsElemFirstK:
 
         first_k = {nt: {(lit,)}}  # type: ignore
         nullable = {nt: False}
-        result = _compute_rhs_elem_first_k(opt, first_k, nullable, k=2)
+        result = rhs_first_k(opt, first_k, nullable, k=2)
         assert (lit,) in result
         assert () in result
 
@@ -647,8 +647,8 @@ class TestComputeFollow:
         # But in this case B is not nullable, so just {"b"}
 
 
-class TestComputeRhsElemFollow:
-    """Tests for _compute_rhs_elem_follow."""
+class TestRhsFollow:
+    """Tests for rhs_follow."""
 
     def test_nonterminal_at_end(self):
         """Test FOLLOW for nonterminal at end of production."""
@@ -660,7 +660,7 @@ class TestComputeRhsElemFollow:
         nullable = {a: False}
         follow = {lhs: {lit_a}}  # type: ignore
 
-        result = _compute_rhs_elem_follow(a, lhs, first, nullable, follow)
+        result = rhs_follow(a, lhs, first, nullable, follow)
         assert a in result
         assert lit_a in result[a]
 
@@ -676,7 +676,7 @@ class TestComputeRhsElemFollow:
         nullable = {a: False, b: False}
         follow = {lhs: set()}
 
-        result = _compute_rhs_elem_follow(seq, lhs, first, nullable, follow)
+        result = rhs_follow(seq, lhs, first, nullable, follow)
         assert a in result
         assert lit_b in result[a]
 
@@ -707,8 +707,8 @@ class TestComputeFollowK:
             assert follow_set == follow_k[nt]
 
 
-class TestConcatFirstKSets:
-    """Tests for _concat_first_k_sets."""
+class TestConcatK:
+    """Tests for concat_k."""
 
     def test_concatenate_two_single_element_sets(self):
         """Test concatenating two single-element sets."""
@@ -717,7 +717,7 @@ class TestConcatFirstKSets:
         set1 = {(lit_a,)}
         set2 = {(lit_b,)}
 
-        result = _concat_first_k_sets(set1, set2, k=2)
+        result = concat_k(set1, set2, k=2)
         assert (lit_a, lit_b) in result
 
     def test_truncate_to_k(self):
@@ -728,7 +728,7 @@ class TestConcatFirstKSets:
         set1 = {(lit_a,)}
         set2 = {(lit_b, lit_c)}
 
-        result = _concat_first_k_sets(set1, set2, k=2)
+        result = concat_k(set1, set2, k=2)
         assert (lit_a, lit_b) in result
         assert (lit_a, lit_b, lit_c) not in result
 
@@ -740,7 +740,7 @@ class TestConcatFirstKSets:
         set1 = {(lit_a, lit_b)}
         set2 = {(lit_c,)}
 
-        result = _concat_first_k_sets(set1, set2, k=2)
+        result = concat_k(set1, set2, k=2)
         assert (lit_a, lit_b) in result
 
     def test_empty_tuple_concatenation(self):
@@ -749,7 +749,7 @@ class TestConcatFirstKSets:
         set1 = {()}
         set2 = {(lit_a,)}
 
-        result = _concat_first_k_sets(set1, set2, k=2)
+        result = concat_k(set1, set2, k=2)
         assert (lit_a,) in result
 
     def test_multiple_sequences(self):
@@ -760,7 +760,7 @@ class TestConcatFirstKSets:
         set1 = {(lit_a,), (lit_b,)}
         set2 = {(lit_c,)}
 
-        result = _concat_first_k_sets(set1, set2, k=2)
+        result = concat_k(set1, set2, k=2)
         assert (lit_a, lit_c) in result
         assert (lit_b, lit_c) in result
 

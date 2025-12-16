@@ -333,12 +333,3 @@ def concat_k(set1: Iterable[Tuple[Terminal, ...]], set2: Iterable[Tuple[Terminal
                 combined = seq1 + seq2
                 result.add(combined[:k])
     return result
-
-
-# Legacy aliases for backwards compatibility
-_is_rhs_elem_nullable = is_rhs_nullable
-_compute_rhs_elem_first_k = rhs_first_k
-_compute_rhs_elem_first = rhs_first
-_compute_rhs_elem_follow = rhs_follow
-_compute_rhs_elem_follow_k = rhs_follow_k
-_concat_first_k_sets = concat_k
