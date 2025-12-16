@@ -636,14 +636,12 @@ class LQPTransformer(Transformer):
         assert len(items) == 2
         return (items[0], items[1])
 
-
 # LALR(1) is significantly faster than Earley for parsing, especially on larger inputs. It
 # uses a precomputed parse table, reducing runtime complexity to O(n) (linear in input
 # size), whereas Earley is O(n³) in the worst case (though often O(n²) or better for
 # practical grammars). The LQP grammar is relatively complex but unambiguous, making
 # LALR(1)'s speed advantage appealing for a CLI tool where quick parsing matters.
 lark_parser = Lark(grammar, parser="lalr", propagate_positions=True)
-
 
 def parse_lqp(file: str, text: str) -> ir.LqpNode:
     """Parse LQP text and return an IR node that can be converted to protocol buffers."""
