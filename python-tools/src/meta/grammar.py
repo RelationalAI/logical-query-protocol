@@ -140,6 +140,7 @@ class Rule:
 
     def __post_init__(self):
         assert isinstance(self.rhs, Rhs)
+        # Check that the action has a parameter for each non-literal on the RHS.
         rhs_len = _count_nonliteral_rhs_elements(self.rhs)
         action_params = len(self.action.params)
         assert action_params == rhs_len, \
@@ -151,7 +152,7 @@ class Rule:
             assert rhs_type == param.type, \
                 f"Rule {self.lhs.name}: parameter {i} type mismatch: RHS has {rhs_type} but action parameter '{param.name}' has {param.type}"
 
-        # Check that action return type matches LHS type
+        # Check that action return type matches the LHS type
         assert self.action.return_type == self.lhs.type, \
             f"Rule {self.lhs.name}: action return type {self.action.return_type} does not match LHS type {self.lhs.type}"
 
