@@ -636,7 +636,6 @@ class LQPTransformer(Transformer):
         assert len(items) == 2
         return (items[0], items[1])
 
-
 # LALR(1) is significantly faster than Earley for parsing, especially on larger inputs. It
 # uses a precomputed parse table, reducing runtime complexity to O(n) (linear in input
 # size), whereas Earley is O(n³) in the worst case (though often O(n²) or better for
