@@ -644,7 +644,6 @@ class LQPTransformer(Transformer):
 # LALR(1)'s speed advantage appealing for a CLI tool where quick parsing matters.
 lark_parser = Lark(grammar, parser="lalr", propagate_positions=True)
 
-
 def parse_lqp(file: str, text: str) -> ir.LqpNode:
     """Parse LQP text and return an IR node that can be converted to protocol buffers."""
     tree = lark_parser.parse(text)
