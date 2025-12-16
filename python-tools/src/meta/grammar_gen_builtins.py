@@ -78,7 +78,535 @@ def get_builtin_rules() -> Tuple[Dict[Nonterminal, List[Rule]], Set[Nonterminal]
     _abstraction_with_arity_type = TupleType([MessageType('logic', 'Abstraction'), BaseType('Int64')])
     _monoid_op_type = FunctionType([MessageType('logic', 'Type')], MessageType('logic', 'Monoid'))
 
-    # Value literal rules
+    # ========================================================================
+    # Transaction Rules
+    # ========================================================================
+
+    # transaction ::= "(" "transaction" configure? sync? epoch* ")"
+    add_rule(Rule(
+        lhs=Nonterminal('transaction', MessageType('transactions', 'Transaction')),
+        rhs=Sequence((
+            LitTerminal('('), LitTerminal('transaction'),
+            Option(Nonterminal('configure', MessageType('transactions', 'Configure'))),
+            Option(Nonterminal('sync', MessageType('transactions', 'Sync'))),
+            Star(Nonterminal('epoch', MessageType('transactions', 'Epoch'))),
+            LitTerminal(')')
+        )),
+        action=Lambda(
+            [
+                Var('configure', OptionType(MessageType('transactions', 'Configure'))),
+                Var('sync', OptionType(MessageType('transactions', 'Sync'))),
+                Var('epochs', ListType(MessageType('transactions', 'Epoch')))
+            ],
+            MessageType('transactions', 'Transaction'),
+            Call(Message('transactions', 'Transaction'), [
+                Var('epochs', ListType(MessageType('transactions', 'Epoch'))),
+                Call(Builtin('unwrap_option_or'), [
+                    Var('configure', OptionType(MessageType('transactions', 'Configure'))),
+                    Call(Builtin('construct_configure'), [ListExpr([], TupleType([BaseType('String'), MessageType('logic', 'Value')]))])
+                ]),
+                Var('sync', OptionType(MessageType('transactions', 'Sync')))
+            ])
+        )
+    ))
+
+    # configure ::= "(" "configure" config_dict ")"
+    add_rule(Rule(
+        lhs=Nonterminal('configure', MessageType('transactions', 'Configure')),
+        rhs=Sequence((
+            LitTerminal('('), LitTerminal('configure'),
+            Nonterminal('config_dict', _config_type),
+            LitTerminal(')')
+        )),
+        action=Lambda(
+            [Var('config_dict', _config_type)],
+            return_type=MessageType('transactions', 'Configure'),
+            body=Call(Builtin('construct_configure'), [Var('config_dict', _config_type)])
+        )
+    ))
+
+    # config_dict ::= "{" config_key_value* "}"
+    add_rule(Rule(
+        lhs=Nonterminal('config_dict', _config_type),
+        rhs=Sequence((
+            LitTerminal('{'),
+            Star(Nonterminal('config_key_value', TupleType([BaseType('String'), MessageType('logic', 'Value')]))),
+            LitTerminal('}')
+        )),
+        action=Lambda(
+            [Var('config_key_value', _config_type)],
+            return_type=_config_type,
+            body=Var('config_key_value', _config_type)
+        )
+    ))
+
+    # config_key_value ::= COLON_SYMBOL value
+    add_rule(Rule(
+        lhs=Nonterminal('config_key_value', TupleType([BaseType('String'), MessageType('logic', 'Value')])),
+        rhs=Sequence((
+            NamedTerminal('COLON_SYMBOL', BaseType('String')),
+            Nonterminal('value', MessageType('logic', 'Value'))
+        )),
+        action=Lambda(
+            [Var('symbol', BaseType('String')), Var('value', MessageType('logic', 'Value'))],
+            TupleType([BaseType('String'), MessageType('logic', 'Value')]),
+            Call(Builtin('make_tuple'), [Var('symbol', BaseType('String')), Var('value', MessageType('logic', 'Value'))])
+        )
+    ))
+
+    # ========================================================================
+    # Fragment Rules
+    # ========================================================================
+
+    # fragment ::= "(" "fragment" new_fragment_id declaration* ")"
+    add_rule(Rule(
+        lhs=Nonterminal('fragment', MessageType('fragments', 'Fragment')),
+        rhs=Sequence((
+            LitTerminal('('), LitTerminal('fragment'),
+            Nonterminal('new_fragment_id', MessageType('fragments', 'FragmentId')),
+            Star(Nonterminal('declaration', MessageType('logic', 'Declaration'))),
+            LitTerminal(')')
+        )),
+        action=Lambda(
+            [
+                Var('fragment_id', MessageType('fragments', 'FragmentId')),
+                Var('declarations', ListType(MessageType('logic', 'Declaration')))
+            ],
+            MessageType('fragments', 'Fragment'),
+            Call(Builtin('construct_fragment'), [
+                Var('fragment_id', MessageType('fragments', 'FragmentId')),
+                Var('declarations', ListType(MessageType('logic', 'Declaration')))
+            ])
+        )
+    ))
+
+    # new_fragment_id ::= fragment_id
+    add_rule(Rule(
+        lhs=Nonterminal('new_fragment_id', MessageType('fragments', 'FragmentId')),
+        rhs=Nonterminal('fragment_id', MessageType('fragments', 'FragmentId')),
+        action=Lambda(
+            [
+                Var('fragment_id', MessageType('fragments', 'FragmentId')),
+            ],
+            MessageType('fragments', 'FragmentId'),
+            Seq([
+                Call(Builtin('start_fragment'), [Var('fragment_id', MessageType('fragments', 'FragmentId'))]),
+                Var('fragment_id', MessageType('fragments', 'FragmentId')),
+            ])
+        )
+    ))
+
+    # fragment_id ::= COLON_SYMBOL
+    add_rule(Rule(
+        lhs=Nonterminal('fragment_id', MessageType('fragments', 'FragmentId')),
+        rhs=NamedTerminal('COLON_SYMBOL', BaseType('String')),
+        action=Lambda(
+            [Var('symbol', BaseType('String'))],
+            return_type=MessageType('fragments', 'FragmentId'),
+            body=Call(Builtin('fragment_id_from_string'), [Var('symbol', BaseType('String'))])
+        )
+    ))
+
+    # ========================================================================
+    # Export Rules
+    # ========================================================================
+
+    # export ::= "(" "export" export_csv_config ")"
+    add_rule(Rule(
+        lhs=Nonterminal('export', MessageType('transactions', 'Export')),
+        rhs=Sequence((
+            LitTerminal('('), LitTerminal('export'),
+            Nonterminal('export_csv_config', MessageType('transactions', 'ExportCSVConfig')),
+            LitTerminal(')')
+        )),
+        action=Lambda(
+            [Var('config', MessageType('transactions', 'ExportCSVConfig'))],
+            MessageType('transactions', 'Export'),
+            Call(Message('transactions', 'Export'), [Call(OneOf(Symbol('csv_config')), [Var('config', MessageType('transactions', 'ExportCSVConfig'))])])
+        )
+    ))
+
+    # export_csv_config ::= "(" "export_csv_config" "(" "path" STRING ")" export_csvcolumns config_dict ")"
+    add_rule(Rule(
+        lhs=Nonterminal('export_csv_config', MessageType('transactions', 'ExportCSVConfig')),
+        rhs=Sequence((
+            LitTerminal('('), LitTerminal('export_csv_config'),
+            LitTerminal('('), LitTerminal('path'), NamedTerminal('STRING', BaseType('String')), LitTerminal(')'),
+            Nonterminal('export_csvcolumns', ListType(MessageType('transactions', 'ExportCSVColumn'))),
+            Nonterminal('config_dict', _config_type),
+            LitTerminal(')')
+        )),
+        action=Lambda(
+            [
+                Var('path', BaseType('String')),
+                Var('columns', ListType(MessageType('transactions', 'ExportCSVColumn'))),
+                Var('config', _config_type)
+            ],
+            MessageType('transactions', 'ExportCSVConfig'),
+            Call(Builtin('export_csv_config'), [
+                Var('path', BaseType('String')),
+                Var('columns', ListType(MessageType('transactions', 'ExportCSVColumn'))),
+                Var('config', _config_type)
+            ])
+        )
+    ))
+
+    # export_csvcolumns ::= "(" "columns" export_csvcolumn* ")"
+    add_rule(Rule(
+        lhs=Nonterminal('export_csvcolumns', ListType(MessageType('transactions', 'ExportCSVColumn'))),
+        rhs=Sequence((
+            LitTerminal('('), LitTerminal('columns'),
+            Star(Nonterminal('export_csvcolumn', MessageType('transactions', 'ExportCSVColumn'))),
+            LitTerminal(')')
+        )),
+        action=Lambda(
+            [Var('columns', ListType(MessageType('transactions', 'ExportCSVColumn')))],
+            ListType(MessageType('transactions', 'ExportCSVColumn')),
+            Var('columns', ListType(MessageType('transactions', 'ExportCSVColumn')))
+        )
+    ))
+
+    # export_csvcolumn ::= "(" "column" STRING relation_id ")"
+    add_rule(Rule(
+        lhs=Nonterminal('export_csvcolumn', MessageType('transactions', 'ExportCSVColumn')),
+        rhs=Sequence((
+            LitTerminal('('), LitTerminal('column'),
+            NamedTerminal('STRING', BaseType('String')),
+            Nonterminal('relation_id', MessageType('logic', 'RelationId')),
+            LitTerminal(')')
+        )),
+        action=Lambda(
+            [Var('name', BaseType('String')), Var('relation_id', MessageType('logic', 'RelationId'))],
+            MessageType('transactions', 'ExportCSVColumn'),
+            Call(Message('transactions', 'ExportCSVColumn'), [
+                Var('name', BaseType('String')),
+                Var('relation_id', MessageType('logic', 'RelationId'))
+            ])
+        )
+    ))
+
+    # ========================================================================
+    # Formula Rules
+    # ========================================================================
+
+    # formula ::= true
+    mark_nonfinal(Nonterminal('formula', MessageType('logic', 'Formula')))
+    add_rule(Rule(
+        lhs=Nonterminal('formula', MessageType('logic', 'Formula')),
+        rhs=Sequence((Nonterminal('true', MessageType('logic', 'Conjunction')),)),
+        action=Lambda(
+            [Var('value', MessageType('logic', 'Conjunction'))],
+            MessageType('logic', 'Formula'),
+            Call(Message('logic', 'Formula'), [Call(OneOf(Symbol('true')), [Var('value', MessageType('logic', 'Conjunction'))])])
+        )
+    ))
+
+    # formula ::= false
+    add_rule(Rule(
+        lhs=Nonterminal('formula', MessageType('logic', 'Formula')),
+        rhs=Sequence((Nonterminal('false', MessageType('logic', 'Disjunction')),)),
+        action=Lambda(
+            [Var('value', MessageType('logic', 'Disjunction'))],
+            MessageType('logic', 'Formula'),
+            Call(Message('logic', 'Formula'), [Call(OneOf(Symbol('false')), [Var('value', MessageType('logic', 'Disjunction'))])])
+        )
+    ))
+
+    # true ::= "(" "true" ")"
+    add_rule(Rule(
+        lhs=Nonterminal('true', MessageType('logic', 'Conjunction')),
+        rhs=Sequence((LitTerminal('('), LitTerminal('true'), LitTerminal(')'))),
+        action=Lambda([], MessageType('logic', 'Conjunction'), Call(Message('logic', 'Conjunction'), [ListExpr([], MessageType('logic', 'Formula'))]))
+    ))
+
+    # false ::= "(" "false" ")"
+    add_rule(Rule(
+        lhs=Nonterminal('false', MessageType('logic', 'Disjunction')),
+        rhs=Sequence((LitTerminal('('), LitTerminal('false'), LitTerminal(')'))),
+        action=Lambda([], MessageType('logic', 'Disjunction'), Call(Message('logic', 'Disjunction'), [ListExpr([], MessageType('logic', 'Formula'))]))
+    ))
+
+    # ========================================================================
+    # Abstraction and Binding Rules
+    # ========================================================================
+
+    # abstraction ::= "(" bindings formula ")"
+    add_rule(Rule(
+        lhs=Nonterminal('abstraction', MessageType('logic', 'Abstraction')),
+        rhs=Sequence((
+            LitTerminal('('),
+            Nonterminal('bindings', _bindings_type),
+            Nonterminal('formula', MessageType('logic', 'Formula')),
+            LitTerminal(')')
+        )),
+        action=Lambda(
+            params=[Var('bindings', _bindings_type), Var('formula', MessageType('logic', 'Formula'))],
+            return_type=MessageType('logic', 'Abstraction'),
+            body=Call(Message('logic', 'Abstraction'), [
+                Call(Builtin('list_concat'), [
+                    Call(Builtin('fst'), [Var('bindings', _bindings_type)]),
+                    Call(Builtin('snd'), [Var('bindings', _bindings_type)])
+                ]),
+                Var('formula', MessageType('logic', 'Formula'))
+            ])
+        )
+    ))
+
+    # abstraction_with_arity ::= "(" bindings formula ")"
+    add_rule(Rule(
+        lhs=Nonterminal('abstraction_with_arity', _abstraction_with_arity_type),
+        rhs=Sequence((
+            LitTerminal('('),
+            Nonterminal('bindings', _bindings_type),
+            Nonterminal('formula', MessageType('logic', 'Formula')),
+            LitTerminal(')')
+        )),
+        action=Lambda(
+            params=[Var('bindings', _bindings_type), Var('formula', MessageType('logic', 'Formula'))],
+            return_type=_abstraction_with_arity_type,
+            body=Call(Builtin('make_tuple'), [
+                Call(Message('logic', 'Abstraction'), [
+                    Call(Builtin('list_concat'), [
+                        Call(Builtin('fst'), [Var('bindings', _bindings_type)]),
+                        Call(Builtin('snd'), [Var('bindings', _bindings_type)])
+                    ]),
+                    Var('formula', MessageType('logic', 'Formula'))
+                ]),
+                Call(Builtin('length'), [Call(Builtin('snd'), [Var('bindings', _bindings_type)])])
+            ])
+        )
+    ))
+
+    # bindings ::= "[" binding* value_bindings? "]"
+    add_rule(Rule(
+        lhs=Nonterminal('bindings', _bindings_type),
+        rhs=Sequence((
+            LitTerminal('['),
+            Star(Nonterminal('binding', MessageType('logic', 'Binding'))),
+            Option(Nonterminal('value_bindings', ListType(MessageType('logic', 'Binding')))),
+            LitTerminal(']')
+        )),
+        action=Lambda(
+            [
+                Var('keys', ListType(MessageType('logic', 'Binding'))),
+                Var('values', OptionType(ListType(MessageType('logic', 'Binding'))))
+            ],
+            _bindings_type,
+            Call(Builtin('make_tuple'), [
+                Var('keys', ListType(MessageType('logic', 'Binding'))),
+                Call(Builtin('unwrap_option_or'), [
+                    Var('values', OptionType(ListType(MessageType('logic', 'Binding')))),
+                    ListExpr([], MessageType('logic', 'Binding'))
+                ])
+            ])
+        )
+    ))
+
+    # value_bindings ::= "|" binding*
+    add_rule(Rule(
+        lhs=Nonterminal('value_bindings', ListType(MessageType('logic', 'Binding'))),
+        rhs=Sequence((
+            LitTerminal('|'),
+            Star(Nonterminal('binding', MessageType('logic', 'Binding')))
+        )),
+        action=Lambda(
+            [Var('values', ListType(MessageType('logic', 'Binding')))],
+            ListType(MessageType('logic', 'Binding')),
+            Var('values', ListType(MessageType('logic', 'Binding')))
+        )
+    ))
+
+    # binding ::= SYMBOL "::" type
+    add_rule(Rule(
+        lhs=Nonterminal('binding', MessageType('logic', 'Binding')),
+        rhs=Sequence((
+            NamedTerminal('SYMBOL', BaseType('String')),
+            LitTerminal('::'),
+            Nonterminal('type', MessageType('logic', 'Type'))
+        )),
+        action=Lambda(
+            [Var('symbol', BaseType('String')), Var('type', MessageType('logic', 'Type'))],
+            MessageType('logic', 'Binding'),
+            Call(Message('logic', 'Binding'), [
+                Call(Message('logic', 'Var'), [Var('symbol', BaseType('String'))]),
+                Var('type', MessageType('logic', 'Type'))
+            ])
+        )
+    ))
+
+    # ========================================================================
+    # Primitive Rules
+    # ========================================================================
+
+    # Comparison operator rules
+    _comparison_ops = [
+        ('eq', '=', 'rel_primitive_eq'),
+        ('lt', '<', 'rel_primitive_lt_monotype'),
+        ('lt_eq', '<=', 'rel_primitive_lt_eq_monotype'),
+        ('gt', '>', 'rel_primitive_gt_monotype'),
+        ('gt_eq', '>=', 'rel_primitive_gt_eq_monotype'),
+    ]
+    for name, op, prim in _comparison_ops:
+        # ? ::= "(" OP term term ")"
+        add_rule(Rule(
+            lhs=Nonterminal(name, MessageType('logic', 'Primitive')),
+            rhs=Sequence((
+                LitTerminal('('), LitTerminal(op),
+                Nonterminal('term', MessageType('logic', 'Term')),
+                Nonterminal('term', MessageType('logic', 'Term')),
+                LitTerminal(')')
+            )),
+            action=Lambda(
+                [Var('left', MessageType('logic', 'Term')), Var('right', MessageType('logic', 'Term'))],
+                MessageType('logic', 'Primitive'),
+                Call(Message('logic', 'Primitive'), [
+                    Lit(prim),
+                    Call(Message('logic', 'RelTerm'), [Call(OneOf(Symbol('term')), [Var('left', MessageType('logic', 'Term'))])]),
+                    Call(Message('logic', 'RelTerm'), [Call(OneOf(Symbol('term')), [Var('right', MessageType('logic', 'Term'))])])
+                ])
+            )
+        ))
+
+    # Arithmetic operator rules
+    _arithmetic_ops = [
+        ('add', '+', 'rel_primitive_add_monotype'),
+        ('minus', '-', 'rel_primitive_subtract_monotype'),
+        ('multiply', '*', 'rel_primitive_multiply_monotype'),
+        ('divide', '/', 'rel_primitive_divide_monotype'),
+    ]
+    for name, op, prim in _arithmetic_ops:
+        # ? ::= "(" OP term term term ")"
+        add_rule(Rule(
+            lhs=Nonterminal(name, MessageType('logic', 'Primitive')),
+            rhs=Sequence((
+                LitTerminal('('), LitTerminal(op),
+                Nonterminal('term', MessageType('logic', 'Term')),
+                Nonterminal('term', MessageType('logic', 'Term')),
+                Nonterminal('term', MessageType('logic', 'Term')),
+                LitTerminal(')')
+            )),
+            action=Lambda(
+                [
+                    Var('left', MessageType('logic', 'Term')),
+                    Var('right', MessageType('logic', 'Term')),
+                    Var('result', MessageType('logic', 'Term'))
+                ],
+                MessageType('logic', 'Primitive'),
+                Call(Message('logic', 'Primitive'), [
+                    Lit(prim),
+                    Call(Message('logic', 'RelTerm'), [Call(OneOf(Symbol('term')), [Var('left', MessageType('logic', 'Term'))])]),
+                    Call(Message('logic', 'RelTerm'), [Call(OneOf(Symbol('term')), [Var('right', MessageType('logic', 'Term'))])]),
+                    Call(Message('logic', 'RelTerm'), [Call(OneOf(Symbol('term')), [Var('result', MessageType('logic', 'Term'))])])
+                ])
+            )
+        ))
+
+    # Primitive wrapper rules for operators (not final - auto-generation can add more)
+    mark_nonfinal(Nonterminal('primitive', MessageType('logic', 'Primitive')))
+    for name, _op, _prim in _comparison_ops + _arithmetic_ops:
+        # primitive ::= ?
+        add_rule(Rule(
+            lhs=Nonterminal('primitive', MessageType('logic', 'Primitive')),
+            rhs=Sequence((Nonterminal(name, MessageType('logic', 'Primitive')),)),
+            action=Lambda(
+                [Var('op', MessageType('logic', 'Primitive'))],
+                MessageType('logic', 'Primitive'),
+                Var('op', MessageType('logic', 'Primitive'))
+            )
+        ))
+
+    # ========================================================================
+    # Type Rules
+    # ========================================================================
+
+    _type_rules = [
+        ('unspecified_type', MessageType('logic', 'UnspecifiedType'), LitTerminal('UNKNOWN'),
+         Lambda([], MessageType('logic', 'UnspecifiedType'), Call(Message('logic', 'UnspecifiedType'), []))),
+        ('string_type', MessageType('logic', 'StringType'), LitTerminal('STRING'),
+         Lambda([], MessageType('logic', 'StringType'), Call(Message('logic', 'StringType'), []))),
+        ('int_type', MessageType('logic', 'IntType'), LitTerminal('INT'),
+         Lambda([], MessageType('logic', 'IntType'), Call(Message('logic', 'IntType'), []))),
+        ('float_type', MessageType('logic', 'FloatType'), LitTerminal('FLOAT'),
+         Lambda([], MessageType('logic', 'FloatType'), Call(Message('logic', 'FloatType'), []))),
+        ('uint128_type', MessageType('logic', 'UInt128Type'), LitTerminal('UINT128'),
+         Lambda([], MessageType('logic', 'UInt128Type'), Call(Message('logic', 'UInt128Type'), []))),
+        ('int128_type', MessageType('logic', 'Int128Type'), LitTerminal('INT128'),
+         Lambda([], MessageType('logic', 'Int128Type'), Call(Message('logic', 'Int128Type'), []))),
+        ('boolean_type', MessageType('logic', 'BooleanType'), LitTerminal('BOOLEAN'),
+         Lambda([], MessageType('logic', 'BooleanType'), Call(Message('logic', 'BooleanType'), []))),
+        ('boolean_type', MessageType('logic', 'BooleanType'), LitTerminal('BOOL'), # HACK: BOOL is only used in or_monoid
+         Lambda([], MessageType('logic', 'BooleanType'), Call(Message('logic', 'BooleanType'), []))),
+        ('date_type', MessageType('logic', 'DateType'), LitTerminal('DATE'),
+         Lambda([], MessageType('logic', 'DateType'), Call(Message('logic', 'DateType'), []))),
+        ('datetime_type', MessageType('logic', 'DateTimeType'), LitTerminal('DATETIME'),
+         Lambda([], MessageType('logic', 'DateTimeType'), Call(Message('logic', 'DateTimeType'), []))),
+        ('missing_type', MessageType('logic', 'MissingType'), LitTerminal('MISSING'),
+         Lambda([], MessageType('logic', 'MissingType'), Call(Message('logic', 'MissingType'), []))),
+        ('decimal_type', MessageType('logic', 'DecimalType'),
+         Sequence((LitTerminal('('), LitTerminal('DECIMAL'), NamedTerminal('INT', BaseType('Int64')), NamedTerminal('INT', BaseType('Int64')), LitTerminal(')'))),
+         Lambda(
+             [Var('precision', BaseType('Int64')), Var('scale', BaseType('Int64'))],
+             MessageType('logic', 'DecimalType'),
+             Call(Message('logic', 'DecimalType'), [Var('precision', BaseType('Int64')), Var('scale', BaseType('Int64'))])
+         )),
+    ]
+    for lhs_name, lhs_type, rhs, action in _type_rules:
+        add_rule(Rule(lhs=Nonterminal(lhs_name, lhs_type), rhs=rhs, action=action))
+
+    # ========================================================================
+    # Monoid Rules
+    # ========================================================================
+
+    # monoid ::= type "::" monoid_op
+    add_rule(Rule(
+        lhs=Nonterminal('monoid', MessageType('logic', 'Monoid')),
+        rhs=Sequence((
+            Nonterminal('type', MessageType('logic', 'Type')),
+            LitTerminal('::'),
+            Nonterminal('monoid_op', _monoid_op_type)
+        )),
+        action=Lambda(
+            [Var('type', MessageType('logic', 'Type')), Var('op', _monoid_op_type)],
+            return_type=MessageType('logic', 'Monoid'),
+            body=Call(Var('op', _monoid_op_type), [Var('type', MessageType('logic', 'Type'))])
+        )
+    ))
+
+    def _make_monoid_op_rule(constructor: str, has_type: bool) -> Rule:
+        op = constructor.removesuffix('Monoid')
+        symbol = f'{op.lower()}_monoid'
+        lit = op.upper()
+        if has_type:
+            body = Call(Message('logic', 'Monoid'), [
+                Call(OneOf(Symbol(symbol)), [
+                    Call(Message('logic', constructor), [Var('type', MessageType('logic', 'Type'))])
+                ])
+            ])
+        else:
+            body = Call(Message('logic', 'Monoid'), [
+                Call(OneOf(Symbol(symbol)), [
+                    Call(Message('logic', constructor), [])
+                ])
+            ])
+        return Rule(
+            lhs=Nonterminal('monoid_op', _monoid_op_type),
+            rhs=LitTerminal(lit),
+            action=Lambda(
+                [],
+                return_type=_monoid_op_type,
+                body=Lambda([Var('type', MessageType('logic', 'Type'))], return_type=MessageType('logic', 'Monoid'), body=body)
+            )
+        )
+
+    add_rule(_make_monoid_op_rule('OrMonoid', False))
+    add_rule(_make_monoid_op_rule('MinMonoid', True))
+    add_rule(_make_monoid_op_rule('MaxMonoid', True))
+    add_rule(_make_monoid_op_rule('SumMonoid', True))
+
+    # ========================================================================
+    # Value Rules
+    # ========================================================================
+
     # value ::= date
     add_rule(Rule(
         lhs=Nonterminal('value', MessageType('logic', 'Value')),
@@ -200,8 +728,7 @@ def get_builtin_rules() -> Tuple[Dict[Nonterminal, List[Rule]], Set[Nonterminal]
         )
     ))
 
-    # Date and datetime rules
-    # date ::= "("
+    # date ::= "(" "date" INT INT INT ")"
     add_rule(Rule(
         lhs=Nonterminal('date', MessageType('logic', 'DateValue')),
         rhs=Sequence((
@@ -222,7 +749,7 @@ def get_builtin_rules() -> Tuple[Dict[Nonterminal, List[Rule]], Set[Nonterminal]
         )
     ))
 
-    # datetime ::= "("
+    # datetime ::= "(" "datetime" INT INT INT INT INT INT INT? ")"
     add_rule(Rule(
         lhs=Nonterminal('datetime', MessageType('logic', 'DateTimeValue')),
         rhs=Sequence((
@@ -263,172 +790,21 @@ def get_builtin_rules() -> Tuple[Dict[Nonterminal, List[Rule]], Set[Nonterminal]
         )
     ))
 
-    # Configuration rules
-    # config_dict ::= "{" config_key_value "}"
+    # specialized_value ::= "#" value
     add_rule(Rule(
-        lhs=Nonterminal('config_dict', _config_type),
-        rhs=Sequence((
-            LitTerminal('{'),
-            Star(Nonterminal('config_key_value', TupleType([BaseType('String'), MessageType('logic', 'Value')]))),
-            LitTerminal('}')
-        )),
+        lhs=Nonterminal('specialized_value', MessageType('logic', 'Value')),
+        rhs=Sequence((LitTerminal('#'), Nonterminal('value', MessageType('logic', 'Value')))),
         action=Lambda(
-            [Var('config_key_value', _config_type)],
-            return_type=_config_type,
-            body=Var('config_key_value', _config_type)
+            [Var('value', MessageType('logic', 'Value'))],
+            MessageType('logic', 'Value'),
+            Var('value', MessageType('logic', 'Value'))
         )
     ))
 
-    # config_key_value ::= COLON_SYMBOL value
-    add_rule(Rule(
-        lhs=Nonterminal('config_key_value', TupleType([BaseType('String'), MessageType('logic', 'Value')])),
-        rhs=Sequence((
-            NamedTerminal('COLON_SYMBOL', BaseType('String')),
-            Nonterminal('value', MessageType('logic', 'Value'))
-        )),
-        action=Lambda(
-            [Var('symbol', BaseType('String')), Var('value', MessageType('logic', 'Value'))],
-            TupleType([BaseType('String'), MessageType('logic', 'Value')]),
-            Call(Builtin('make_tuple'), [Var('symbol', BaseType('String')), Var('value', MessageType('logic', 'Value'))])
-        )
-    ))
+    # ========================================================================
+    # Miscellaneous Rules
+    # ========================================================================
 
-    # Transaction rule
-    # transaction ::= "("
-    add_rule(Rule(
-        lhs=Nonterminal('transaction', MessageType('transactions', 'Transaction')),
-        rhs=Sequence((
-            LitTerminal('('), LitTerminal('transaction'),
-            Option(Nonterminal('configure', MessageType('transactions', 'Configure'))),
-            Option(Nonterminal('sync', MessageType('transactions', 'Sync'))),
-            Star(Nonterminal('epoch', MessageType('transactions', 'Epoch'))),
-            LitTerminal(')')
-        )),
-        action=Lambda(
-            [
-                Var('configure', OptionType(MessageType('transactions', 'Configure'))),
-                Var('sync', OptionType(MessageType('transactions', 'Sync'))),
-                Var('epochs', ListType(MessageType('transactions', 'Epoch')))
-            ],
-            MessageType('transactions', 'Transaction'),
-            Call(Message('transactions', 'Transaction'), [
-                Var('epochs', ListType(MessageType('transactions', 'Epoch'))),
-                Call(Builtin('unwrap_option_or'), [
-                    Var('configure', OptionType(MessageType('transactions', 'Configure'))),
-                    Call(Builtin('construct_configure'), [ListExpr([], TupleType([BaseType('String'), MessageType('logic', 'Value')]))])
-                ]),
-                Var('sync', OptionType(MessageType('transactions', 'Sync')))
-            ])
-        )
-    ))
-
-    # Bindings rules
-    # bindings ::= "["
-    add_rule(Rule(
-        lhs=Nonterminal('bindings', _bindings_type),
-        rhs=Sequence((
-            LitTerminal('['),
-            Star(Nonterminal('binding', MessageType('logic', 'Binding'))),
-            Option(Nonterminal('value_bindings', ListType(MessageType('logic', 'Binding')))),
-            LitTerminal(']')
-        )),
-        action=Lambda(
-            [
-                Var('keys', ListType(MessageType('logic', 'Binding'))),
-                Var('values', OptionType(ListType(MessageType('logic', 'Binding'))))
-            ],
-            _bindings_type,
-            Call(Builtin('make_tuple'), [
-                Var('keys', ListType(MessageType('logic', 'Binding'))),
-                Call(Builtin('unwrap_option_or'), [
-                    Var('values', OptionType(ListType(MessageType('logic', 'Binding')))),
-                    ListExpr([], MessageType('logic', 'Binding'))
-                ])
-            ])
-        )
-    ))
-
-    # value_bindings ::= "|" binding
-    add_rule(Rule(
-        lhs=Nonterminal('value_bindings', ListType(MessageType('logic', 'Binding'))),
-        rhs=Sequence((
-            LitTerminal('|'),
-            Star(Nonterminal('binding', MessageType('logic', 'Binding')))
-        )),
-        action=Lambda(
-            [Var('values', ListType(MessageType('logic', 'Binding')))],
-            ListType(MessageType('logic', 'Binding')),
-            Var('values', ListType(MessageType('logic', 'Binding')))
-        )
-    ))
-
-    # binding ::= SYMBOL "::" type
-    add_rule(Rule(
-        lhs=Nonterminal('binding', MessageType('logic', 'Binding')),
-        rhs=Sequence((
-            NamedTerminal('SYMBOL', BaseType('String')),
-            LitTerminal('::'),
-            Nonterminal('type', MessageType('logic', 'Type'))
-        )),
-        action=Lambda(
-            [Var('symbol', BaseType('String')), Var('type', MessageType('logic', 'Type'))],
-            MessageType('logic', 'Binding'),
-            Call(Message('logic', 'Binding'), [
-                Call(Message('logic', 'Var'), [Var('symbol', BaseType('String'))]),
-                Var('type', MessageType('logic', 'Type'))
-            ])
-        )
-    ))
-
-    # Abstraction rules
-    # abstraction_with_arity ::= "("
-    add_rule(Rule(
-        lhs=Nonterminal('abstraction_with_arity', _abstraction_with_arity_type),
-        rhs=Sequence((
-            LitTerminal('('),
-            Nonterminal('bindings', _bindings_type),
-            Nonterminal('formula', MessageType('logic', 'Formula')),
-            LitTerminal(')')
-        )),
-        action=Lambda(
-            params=[Var('bindings', _bindings_type), Var('formula', MessageType('logic', 'Formula'))],
-            return_type=_abstraction_with_arity_type,
-            body=Call(Builtin('make_tuple'), [
-                Call(Message('logic', 'Abstraction'), [
-                    Call(Builtin('list_concat'), [
-                        Call(Builtin('fst'), [Var('bindings', _bindings_type)]),
-                        Call(Builtin('snd'), [Var('bindings', _bindings_type)])
-                    ]),
-                    Var('formula', MessageType('logic', 'Formula'))
-                ]),
-                Call(Builtin('length'), [Call(Builtin('snd'), [Var('bindings', _bindings_type)])])
-            ])
-        )
-    ))
-
-    # abstraction ::= "("
-    add_rule(Rule(
-        lhs=Nonterminal('abstraction', MessageType('logic', 'Abstraction')),
-        rhs=Sequence((
-            LitTerminal('('),
-            Nonterminal('bindings', _bindings_type),
-            Nonterminal('formula', MessageType('logic', 'Formula')),
-            LitTerminal(')')
-        )),
-        action=Lambda(
-            params=[Var('bindings', _bindings_type), Var('formula', MessageType('logic', 'Formula'))],
-            return_type=MessageType('logic', 'Abstraction'),
-            body=Call(Message('logic', 'Abstraction'), [
-                Call(Builtin('list_concat'), [
-                    Call(Builtin('fst'), [Var('bindings', _bindings_type)]),
-                    Call(Builtin('snd'), [Var('bindings', _bindings_type)])
-                ]),
-                Var('formula', MessageType('logic', 'Formula'))
-            ])
-        )
-    ))
-
-    # Name rule
     # name ::= COLON_SYMBOL
     add_rule(Rule(
         lhs=Nonterminal('name', BaseType('String')),
@@ -440,184 +816,6 @@ def get_builtin_rules() -> Tuple[Dict[Nonterminal, List[Rule]], Set[Nonterminal]
         )
     ))
 
-    # Monoid rules
-    # monoid ::= type "::" monoid_op
-    add_rule(Rule(
-        lhs=Nonterminal('monoid', MessageType('logic', 'Monoid')),
-        rhs=Sequence((
-            Nonterminal('type', MessageType('logic', 'Type')),
-            LitTerminal('::'),
-            Nonterminal('monoid_op', _monoid_op_type)
-        )),
-        action=Lambda(
-            [Var('type', MessageType('logic', 'Type')), Var('op', _monoid_op_type)],
-            return_type=MessageType('logic', 'Monoid'),
-            body=Call(Var('op', _monoid_op_type), [Var('type', MessageType('logic', 'Type'))])
-        )
-    ))
-
-    def _make_monoid_op_rule(constructor: str, has_type: bool) -> Rule:
-        op = constructor.removesuffix('Monoid')
-        symbol = f'{op.lower()}_monoid'
-        lit = op.upper()
-        if has_type:
-            body = Call(Message('logic', 'Monoid'), [
-                Call(OneOf(Symbol(symbol)), [
-                    Call(Message('logic', constructor), [Var('type', MessageType('logic', 'Type'))])
-                ])
-            ])
-        else:
-            body = Call(Message('logic', 'Monoid'), [
-                Call(OneOf(Symbol(symbol)), [
-                    Call(Message('logic', constructor), [])
-                ])
-            ])
-        return Rule(
-            lhs=Nonterminal('monoid_op', _monoid_op_type),
-            rhs=LitTerminal(lit),
-            action=Lambda(
-                [],
-                return_type=_monoid_op_type,
-                body=Lambda([Var('type', MessageType('logic', 'Type'))], return_type=MessageType('logic', 'Monoid'), body=body)
-            )
-        )
-
-    add_rule(_make_monoid_op_rule('OrMonoid', False))
-    add_rule(_make_monoid_op_rule('MinMonoid', True))
-    add_rule(_make_monoid_op_rule('MaxMonoid', True))
-    add_rule(_make_monoid_op_rule('SumMonoid', True))
-
-    # Configure rule
-    # configure ::= "("
-    add_rule(Rule(
-        lhs=Nonterminal('configure', MessageType('transactions', 'Configure')),
-        rhs=Sequence((
-            LitTerminal('('), LitTerminal('configure'),
-            Nonterminal('config_dict', _config_type),
-            LitTerminal(')')
-        )),
-        action=Lambda(
-            [Var('config_dict', _config_type)],
-            return_type=MessageType('transactions', 'Configure'),
-            body=Call(Builtin('construct_configure'), [Var('config_dict', _config_type)])
-        )
-    ))
-
-    # True/false formula rules
-    # true ::= "("
-    add_rule(Rule(
-        lhs=Nonterminal('true', MessageType('logic', 'Conjunction')),
-        rhs=Sequence((LitTerminal('('), LitTerminal('true'), LitTerminal(')'))),
-        action=Lambda([], MessageType('logic', 'Conjunction'), Call(Message('logic', 'Conjunction'), [ListExpr([], MessageType('logic', 'Formula'))]))
-    ))
-
-    # false ::= "("
-    add_rule(Rule(
-        lhs=Nonterminal('false', MessageType('logic', 'Disjunction')),
-        rhs=Sequence((LitTerminal('('), LitTerminal('false'), LitTerminal(')'))),
-        action=Lambda([], MessageType('logic', 'Disjunction'), Call(Message('logic', 'Disjunction'), [ListExpr([], MessageType('logic', 'Formula'))]))
-    ))
-
-    # Formula rules (not final - auto-generation can add more)
-    # formula ::= true
-    mark_nonfinal(Nonterminal('formula', MessageType('logic', 'Formula')))
-    add_rule(Rule(
-        lhs=Nonterminal('formula', MessageType('logic', 'Formula')),
-        rhs=Sequence((Nonterminal('true', MessageType('logic', 'Conjunction')),)),
-        action=Lambda(
-            [Var('value', MessageType('logic', 'Conjunction'))],
-            MessageType('logic', 'Formula'),
-            Call(Message('logic', 'Formula'), [Call(OneOf(Symbol('true')), [Var('value', MessageType('logic', 'Conjunction'))])])
-        )
-    ))
-
-    # formula ::= false
-    add_rule(Rule(
-        lhs=Nonterminal('formula', MessageType('logic', 'Formula')),
-        rhs=Sequence((Nonterminal('false', MessageType('logic', 'Disjunction')),)),
-        action=Lambda(
-            [Var('value', MessageType('logic', 'Disjunction'))],
-            MessageType('logic', 'Formula'),
-            Call(Message('logic', 'Formula'), [Call(OneOf(Symbol('false')), [Var('value', MessageType('logic', 'Disjunction'))])])
-        )
-    ))
-
-    # Export rules
-    # export ::= "("
-    add_rule(Rule(
-        lhs=Nonterminal('export', MessageType('transactions', 'Export')),
-        rhs=Sequence((
-            LitTerminal('('), LitTerminal('export'),
-            Nonterminal('export_csv_config', MessageType('transactions', 'ExportCSVConfig')),
-            LitTerminal(')')
-        )),
-        action=Lambda(
-            [Var('config', MessageType('transactions', 'ExportCSVConfig'))],
-            MessageType('transactions', 'Export'),
-            Call(Message('transactions', 'Export'), [Call(OneOf(Symbol('csv_config')), [Var('config', MessageType('transactions', 'ExportCSVConfig'))])])
-        )
-    ))
-
-    # export_csv_config ::= "("
-    add_rule(Rule(
-        lhs=Nonterminal('export_csv_config', MessageType('transactions', 'ExportCSVConfig')),
-        rhs=Sequence((
-            LitTerminal('('), LitTerminal('export_csv_config'),
-            LitTerminal('('), LitTerminal('path'), NamedTerminal('STRING', BaseType('String')), LitTerminal(')'),
-            Nonterminal('export_csvcolumns', ListType(MessageType('transactions', 'ExportCSVColumn'))),
-            Nonterminal('config_dict', _config_type),
-            LitTerminal(')')
-        )),
-        action=Lambda(
-            [
-                Var('path', BaseType('String')),
-                Var('columns', ListType(MessageType('transactions', 'ExportCSVColumn'))),
-                Var('config', _config_type)
-            ],
-            MessageType('transactions', 'ExportCSVConfig'),
-            Call(Builtin('export_csv_config'), [
-                Var('path', BaseType('String')),
-                Var('columns', ListType(MessageType('transactions', 'ExportCSVColumn'))),
-                Var('config', _config_type)
-            ])
-        )
-    ))
-
-    # export_csvcolumns ::= "("
-    add_rule(Rule(
-        lhs=Nonterminal('export_csvcolumns', ListType(MessageType('transactions', 'ExportCSVColumn'))),
-        rhs=Sequence((
-            LitTerminal('('), LitTerminal('columns'),
-            Star(Nonterminal('export_csvcolumn', MessageType('transactions', 'ExportCSVColumn'))),
-            LitTerminal(')')
-        )),
-        action=Lambda(
-            [Var('columns', ListType(MessageType('transactions', 'ExportCSVColumn')))],
-            ListType(MessageType('transactions', 'ExportCSVColumn')),
-            Var('columns', ListType(MessageType('transactions', 'ExportCSVColumn')))
-        )
-    ))
-
-    # export_csvcolumn ::= "("
-    add_rule(Rule(
-        lhs=Nonterminal('export_csvcolumn', MessageType('transactions', 'ExportCSVColumn')),
-        rhs=Sequence((
-            LitTerminal('('), LitTerminal('column'),
-            NamedTerminal('STRING', BaseType('String')),
-            Nonterminal('relation_id', MessageType('logic', 'RelationId')),
-            LitTerminal(')')
-        )),
-        action=Lambda(
-            [Var('name', BaseType('String')), Var('relation_id', MessageType('logic', 'RelationId'))],
-            MessageType('transactions', 'ExportCSVColumn'),
-            Call(Message('transactions', 'ExportCSVColumn'), [
-                Var('name', BaseType('String')),
-                Var('relation_id', MessageType('logic', 'RelationId'))
-            ])
-        )
-    ))
-
-    # Var rule
     # var ::= SYMBOL
     add_rule(Rule(
         lhs=Nonterminal('var', MessageType('logic', 'Var')),
@@ -626,18 +824,6 @@ def get_builtin_rules() -> Tuple[Dict[Nonterminal, List[Rule]], Set[Nonterminal]
             [Var('symbol', BaseType('String'))],
             return_type=MessageType('logic', 'Var'),
             body=Call(Message('logic', 'Var'), [Var('symbol', BaseType('String'))])
-        )
-    ))
-
-    # ID rules
-    # fragment_id ::= COLON_SYMBOL
-    add_rule(Rule(
-        lhs=Nonterminal('fragment_id', MessageType('fragments', 'FragmentId')),
-        rhs=NamedTerminal('COLON_SYMBOL', BaseType('String')),
-        action=Lambda(
-            [Var('symbol', BaseType('String'))],
-            return_type=MessageType('fragments', 'FragmentId'),
-            body=Call(Builtin('fragment_id_from_string'), [Var('symbol', BaseType('String'))])
         )
     ))
 
@@ -660,171 +846,6 @@ def get_builtin_rules() -> Tuple[Dict[Nonterminal, List[Rule]], Set[Nonterminal]
             [Var('INT', BaseType('Int64'))],
             return_type=MessageType('logic', 'RelationId'),
             body=Call(Builtin('relation_id_from_int'), [Var('INT', BaseType('Int64'))])
-        )
-    ))
-
-    # Specialized value rule
-    # specialized_value ::= "#" value
-    add_rule(Rule(
-        lhs=Nonterminal('specialized_value', MessageType('logic', 'Value')),
-        rhs=Sequence((LitTerminal('#'), Nonterminal('value', MessageType('logic', 'Value')))),
-        action=Lambda(
-            [Var('value', MessageType('logic', 'Value'))],
-            MessageType('logic', 'Value'),
-            Var('value', MessageType('logic', 'Value'))
-        )
-    ))
-
-    # Type rules
-    _type_rules = [
-        ('unspecified_type', MessageType('logic', 'UnspecifiedType'), LitTerminal('UNKNOWN'),
-         Lambda([], MessageType('logic', 'UnspecifiedType'), Call(Message('logic', 'UnspecifiedType'), []))),
-        ('string_type', MessageType('logic', 'StringType'), LitTerminal('STRING'),
-         Lambda([], MessageType('logic', 'StringType'), Call(Message('logic', 'StringType'), []))),
-        ('int_type', MessageType('logic', 'IntType'), LitTerminal('INT'),
-         Lambda([], MessageType('logic', 'IntType'), Call(Message('logic', 'IntType'), []))),
-        ('float_type', MessageType('logic', 'FloatType'), LitTerminal('FLOAT'),
-         Lambda([], MessageType('logic', 'FloatType'), Call(Message('logic', 'FloatType'), []))),
-        ('uint128_type', MessageType('logic', 'UInt128Type'), LitTerminal('UINT128'),
-         Lambda([], MessageType('logic', 'UInt128Type'), Call(Message('logic', 'UInt128Type'), []))),
-        ('int128_type', MessageType('logic', 'Int128Type'), LitTerminal('INT128'),
-         Lambda([], MessageType('logic', 'Int128Type'), Call(Message('logic', 'Int128Type'), []))),
-        ('boolean_type', MessageType('logic', 'BooleanType'), LitTerminal('BOOLEAN'),
-         Lambda([], MessageType('logic', 'BooleanType'), Call(Message('logic', 'BooleanType'), []))),
-        ('boolean_type', MessageType('logic', 'BooleanType'), LitTerminal('BOOL'), # HACK: BOOL is only used in or_monoid
-         Lambda([], MessageType('logic', 'BooleanType'), Call(Message('logic', 'BooleanType'), []))),
-        ('date_type', MessageType('logic', 'DateType'), LitTerminal('DATE'),
-         Lambda([], MessageType('logic', 'DateType'), Call(Message('logic', 'DateType'), []))),
-        ('datetime_type', MessageType('logic', 'DateTimeType'), LitTerminal('DATETIME'),
-         Lambda([], MessageType('logic', 'DateTimeType'), Call(Message('logic', 'DateTimeType'), []))),
-        ('missing_type', MessageType('logic', 'MissingType'), LitTerminal('MISSING'),
-         Lambda([], MessageType('logic', 'MissingType'), Call(Message('logic', 'MissingType'), []))),
-        ('decimal_type', MessageType('logic', 'DecimalType'),
-         Sequence((LitTerminal('('), LitTerminal('DECIMAL'), NamedTerminal('INT', BaseType('Int64')), NamedTerminal('INT', BaseType('Int64')), LitTerminal(')'))),
-         Lambda(
-             [Var('precision', BaseType('Int64')), Var('scale', BaseType('Int64'))],
-             MessageType('logic', 'DecimalType'),
-             Call(Message('logic', 'DecimalType'), [Var('precision', BaseType('Int64')), Var('scale', BaseType('Int64'))])
-         )),
-    ]
-    for lhs_name, lhs_type, rhs, action in _type_rules:
-        # ? ::= ?
-        #     ?
-        add_rule(Rule(lhs=Nonterminal(lhs_name, lhs_type), rhs=rhs, action=action))
-
-    # Comparison operator rules
-    _comparison_ops = [
-        ('eq', '=', 'rel_primitive_eq'),
-        ('lt', '<', 'rel_primitive_lt_monotype'),
-        ('lt_eq', '<=', 'rel_primitive_lt_eq_monotype'),
-        ('gt', '>', 'rel_primitive_gt_monotype'),
-        ('gt_eq', '>=', 'rel_primitive_gt_eq_monotype'),
-    ]
-    for name, op, prim in _comparison_ops:
-        # ? ::= "("
-        add_rule(Rule(
-            lhs=Nonterminal(name, MessageType('logic', 'Primitive')),
-            rhs=Sequence((
-                LitTerminal('('), LitTerminal(op),
-                Nonterminal('term', MessageType('logic', 'Term')),
-                Nonterminal('term', MessageType('logic', 'Term')),
-                LitTerminal(')')
-            )),
-            action=Lambda(
-                [Var('left', MessageType('logic', 'Term')), Var('right', MessageType('logic', 'Term'))],
-                MessageType('logic', 'Primitive'),
-                Call(Message('logic', 'Primitive'), [
-                    Lit(prim),
-                    Call(Message('logic', 'RelTerm'), [Call(OneOf(Symbol('term')), [Var('left', MessageType('logic', 'Term'))])]),
-                    Call(Message('logic', 'RelTerm'), [Call(OneOf(Symbol('term')), [Var('right', MessageType('logic', 'Term'))])])
-                ])
-            )
-        ))
-
-    # Arithmetic operator rules
-    _arithmetic_ops = [
-        ('add', '+', 'rel_primitive_add_monotype'),
-        ('minus', '-', 'rel_primitive_subtract_monotype'),
-        ('multiply', '*', 'rel_primitive_multiply_monotype'),
-        ('divide', '/', 'rel_primitive_divide_monotype'),
-    ]
-    for name, op, prim in _arithmetic_ops:
-        # ? ::= "("
-        add_rule(Rule(
-            lhs=Nonterminal(name, MessageType('logic', 'Primitive')),
-            rhs=Sequence((
-                LitTerminal('('), LitTerminal(op),
-                Nonterminal('term', MessageType('logic', 'Term')),
-                Nonterminal('term', MessageType('logic', 'Term')),
-                Nonterminal('term', MessageType('logic', 'Term')),
-                LitTerminal(')')
-            )),
-            action=Lambda(
-                [
-                    Var('left', MessageType('logic', 'Term')),
-                    Var('right', MessageType('logic', 'Term')),
-                    Var('result', MessageType('logic', 'Term'))
-                ],
-                MessageType('logic', 'Primitive'),
-                Call(Message('logic', 'Primitive'), [
-                    Lit(prim),
-                    Call(Message('logic', 'RelTerm'), [Call(OneOf(Symbol('term')), [Var('left', MessageType('logic', 'Term'))])]),
-                    Call(Message('logic', 'RelTerm'), [Call(OneOf(Symbol('term')), [Var('right', MessageType('logic', 'Term'))])]),
-                    Call(Message('logic', 'RelTerm'), [Call(OneOf(Symbol('term')), [Var('result', MessageType('logic', 'Term'))])])
-                ])
-            )
-        ))
-
-    # Primitive wrapper rules for operators (not final - auto-generation can add more)
-    mark_nonfinal(Nonterminal('primitive', MessageType('logic', 'Primitive')))
-    for name, _op, _prim in _comparison_ops + _arithmetic_ops:
-        # primitive ::= ?
-        add_rule(Rule(
-            lhs=Nonterminal('primitive', MessageType('logic', 'Primitive')),
-            rhs=Sequence((Nonterminal(name, MessageType('logic', 'Primitive')),)),
-            action=Lambda(
-                [Var('op', MessageType('logic', 'Primitive'))],
-                MessageType('logic', 'Primitive'),
-                Var('op', MessageType('logic', 'Primitive'))
-            )
-        ))
-
-    # new_fragment_id ::= fragment_id
-    add_rule(Rule(
-        lhs=Nonterminal('new_fragment_id', MessageType('fragments', 'FragmentId')),
-        rhs=Nonterminal('fragment_id', MessageType('fragments', 'FragmentId')),
-        action=Lambda(
-            [
-                Var('fragment_id', MessageType('fragments', 'FragmentId')),
-            ],
-            MessageType('fragments', 'FragmentId'),
-            Seq([
-                Call(Builtin('start_fragment'), [Var('fragment_id', MessageType('fragments', 'FragmentId'))]),
-                Var('fragment_id', MessageType('fragments', 'FragmentId')),
-            ])
-        )
-    ))
-
-    # Fragment rule with debug_info construction
-    # fragment ::= "("
-    add_rule(Rule(
-        lhs=Nonterminal('fragment', MessageType('fragments', 'Fragment')),
-        rhs=Sequence((
-            LitTerminal('('), LitTerminal('fragment'),
-            Nonterminal('new_fragment_id', MessageType('fragments', 'FragmentId')),
-            Star(Nonterminal('declaration', MessageType('logic', 'Declaration'))),
-            LitTerminal(')')
-        )),
-        action=Lambda(
-            [
-                Var('fragment_id', MessageType('fragments', 'FragmentId')),
-                Var('declarations', ListType(MessageType('logic', 'Declaration')))
-            ],
-            MessageType('fragments', 'Fragment'),
-            Call(Builtin('construct_fragment'), [
-                Var('fragment_id', MessageType('fragments', 'FragmentId')),
-                Var('declarations', ListType(MessageType('logic', 'Declaration')))
-            ])
         )
     ))
 
