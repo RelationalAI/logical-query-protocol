@@ -170,20 +170,10 @@ class Grammar:
     rules: Dict[Nonterminal, List[Rule]] = field(default_factory=dict)
     tokens: List[Token] = field(default_factory=list)
 
-    # Cached analysis results
-    _reachable_cache: Optional[Set[Nonterminal]] = field(default=None, init=False, repr=False)
-    _nullable_cache: Optional[Dict[Nonterminal, bool]] = field(default=None, init=False, repr=False)
-    _first_cache: Optional[Dict[Nonterminal, Set[Terminal]]] = field(default=None, init=False, repr=False)
-    _follow_cache: Optional[Dict[Nonterminal, Set[Terminal]]] = field(default=None, init=False, repr=False)
-
     def __post_init__(self):
         self.rules = {self.start: []}
 
     def add_rule(self, rule: Rule) -> None:
-        assert self._reachable_cache is None, "Grammar is already analyzed"
-        assert self._nullable_cache is None, "Grammar is already analyzed"
-        assert self._first_cache is None, "Grammar is already analyzed"
-        assert self._follow_cache is None, "Grammar is already analyzed"
 
         lhs = rule.lhs
         if lhs not in self.rules:
@@ -214,7 +204,7 @@ class Grammar:
 
             # Visit all nonterminals referenced in this rule's RHS
             for rule in self.rules[A]:
-                for B in get_nonterminals(rule.rhs):
+                for B in Grammar.get_nonterminals(rule.rhs):
                     visit(B)
 
         visit(self.start)
@@ -235,208 +225,43 @@ class Grammar:
         """Check if any rule has the given LHS name."""
         return name in self.rules
 
-
-    def check_reachability(self) -> Set[Nonterminal]:
+    def compute_reachability(self) -> Set[Nonterminal]:
         """
         Compute set of reachable nonterminals from start symbol.
 
         Returns set of nonterminal names that can be reached.
         """
-        if self._reachable_cache is None:
-            from .grammar_analysis import check_reachability
-            reachable_names = check_reachability(self)
-            self._reachable_cache = reachable_names
-        return self._reachable_cache
+        if self.start not in self.rules:
+            return set()
 
-    def get_unreachable_rules(self) -> List[Nonterminal]:
-        """
-        Find all rules that are unreachable from start symbol.
+        reachable: Set[Nonterminal] = set([self.start])
+        worklist = [self.start]
 
-        Returns list of rule names that cannot be reached.
+        while worklist:
+            current = worklist.pop()
+            if current in self.rules:
+                for rule in self.rules[current]:
+                    for nt in Grammar.get_nonterminals(rule.rhs):
+                        if nt not in reachable:
+                            reachable.add(nt)
+                            worklist.append(nt)
+
+        return reachable
+
+    def get_unreachable_nonterminals(self) -> List[Nonterminal]:
         """
-        reachable = self.check_reachability()
+        Find all nonterminals that are unreachable from start symbol.
+
+        Returns list of nonterminal names that cannot be reached.
+        """
+        reachable = self.compute_reachability()
         unreachable = []
-        for A in self.rules.keys():
-            if A not in reachable:
-                unreachable.append(A)
+        for nt in self.rules.keys():
+            if nt not in reachable:
+                unreachable.append(nt)
         return unreachable
 
 
-    def compute_nullable(self) -> Dict[Nonterminal, bool]:
-        """
-        Compute nullable set for all nonterminals.
-
-        A nonterminal is nullable if it can derive the empty string.
-        Returns dict mapping nonterminals to boolean.
-        """
-        if self._nullable_cache is None:
-            from .grammar_analysis import compute_nullable
-            self._nullable_cache = compute_nullable(self)
-        return self._nullable_cache
-
-    def compute_first_k(self, k: int = 2) -> Dict[Nonterminal, Set[Tuple[Terminal, ...]]]:
-        """
-        Compute FIRST_k sets for all nonterminals.
-
-        FIRST_k(A) is the set of terminal sequences of length up to k that can begin strings derived from A.
-        Returns dict mapping nonterminals to sets of terminal tuples.
-        """
-        from .grammar_analysis import compute_first_k
-        return compute_first_k(self, k, self.compute_nullable())
-
-    def compute_first(self) -> Dict[Nonterminal, Set[Terminal]]:
-        """
-        Compute FIRST sets for all nonterminals.
-
-        FIRST(A) is the set of terminals that can begin strings derived from A.
-        Returns dict mapping nonterminals to sets of Terminals.
-        """
-        if self._first_cache is None:
-            from .grammar_analysis import compute_first
-            self._first_cache = compute_first(self, self.compute_nullable())
-        return self._first_cache
-
-    def compute_follow(self) -> Dict[Nonterminal, Set[Terminal]]:
-        """
-        Compute FOLLOW sets for all nonterminals.
-
-        FOLLOW(A) is the set of terminals that can immediately follow A in any derivation.
-        Returns dict mapping nonterminals to sets of Terminals.
-        """
-        if self._follow_cache is None:
-            from .grammar_analysis import compute_follow
-            self._follow_cache = compute_follow(self, self.compute_nullable(), self.compute_first())
-        return self._follow_cache
-
-    def compute_follow_k(self, k: int = 2) -> Dict[Nonterminal, Set[Tuple[Terminal, ...]]]:
-        """
-        Compute FOLLOW_k sets for all nonterminals.
-
-        FOLLOW_k(A) is the set of terminal sequences of length up to k that can follow A.
-        Returns dict mapping nonterminals to sets of terminal tuples.
-        """
-        from .grammar_analysis import compute_follow_k
-        return compute_follow_k(self, k, self.compute_nullable(), self.compute_first_k(k))
-
-    def nullable(self, rhs: Rhs) -> bool:
-        """
-        Check if an RHS is nullable.
-
-        An RHS is nullable if it can derive the empty string.
-        Uses cached nullable information for nonterminals.
-        """
-
-        if isinstance(rhs, LitTerminal) or isinstance(rhs, NamedTerminal):
-            return False
-        elif isinstance(rhs, Nonterminal):
-            nullable_dict = self.compute_nullable()
-            return nullable_dict.get(rhs, False)
-        elif isinstance(rhs, Sequence):
-            return all(self.nullable(elem) for elem in rhs.elements)
-        elif isinstance(rhs, Star) or isinstance(rhs, Option):
-            return True
-        else:
-            return False
-
-    def first(self, rhs: Rhs) -> Set[Terminal]:
-        """
-        Compute FIRST set for an RHS.
-
-        FIRST(rhs) is the set of terminals that can begin strings derived from rhs.
-        Uses cached FIRST information for nonterminals.
-        """
-        first_dict = self.compute_first()
-
-        result: Set[Terminal] = set()
-
-        if isinstance(rhs, LitTerminal):
-            result.add(rhs)
-        elif isinstance(rhs, NamedTerminal):
-            result.add(rhs)
-        elif isinstance(rhs, Nonterminal):
-            # first_dict maps Nonterminal -> Set[Terminal], need to extract names
-            terminals = first_dict.get(rhs, set())
-            result.update(terminals)
-        elif isinstance(rhs, Sequence):
-            for elem in rhs.elements:
-                result.update(self.first(elem))
-                if not self.nullable(elem):
-                    break
-        elif isinstance(rhs, Star) or isinstance(rhs, Option):
-            result.update(self.first(rhs.rhs))
-
-        return result
-
-    def first_k(self, k: int, rhs: Rhs) -> Set[Tuple[Terminal, ...]]:
-        """
-        Compute FIRST_k set for an RHS.
-
-        FIRST_k(rhs) is the set of terminal sequences of length up to k that can begin strings derived from rhs.
-        Uses cached FIRST information for nonterminals.
-        """
-        # Special case: k=1 for Nonterminal can use the cached FIRST sets
-        if k == 1 and isinstance(rhs, Nonterminal):
-            first_set = self.first(rhs)
-            # Convert Set[Terminal] to Set[Tuple[Terminal, ...]]
-            return {(t,) for t in first_set}
-
-        from .grammar_analysis import rhs_first_k
-
-        # Compute first_k sets for all nonterminals if not already cached
-        first_k_dict = self.compute_first_k(k)
-        nullable_dict = self.compute_nullable()
-
-        return rhs_first_k(rhs, first_k_dict, nullable_dict, k)
-
-    def follow(self, nt: Nonterminal) -> Set[Terminal]:
-        """
-        Compute FOLLOW set for a nonterminal.
-
-        FOLLOW(A) is the set of terminals that can immediately follow A in any derivation.
-        Uses cached FOLLOW information for nonterminals.
-        """
-        follow_dict = self.compute_follow()
-        return follow_dict.get(nt, set())
-
-    def follow_k(self, k: int, rhs: Rhs) -> Set[Tuple[Terminal, ...]]:
-        """
-        Compute FOLLOW_k set for a nonterminal.
-
-        FOLLOW_k(A) is the set of terminal sequences of length up to k that can follow A.
-        Uses cached FOLLOW_k information for nonterminals.
-        """
-        # Special case: k=1 can use the cached FOLLOW sets
-        if isinstance(rhs, Nonterminal):
-            if k == 1:
-                follow_set = self.follow(rhs)
-                # Convert Set[Terminal] to Set[Tuple[Terminal, ...]]
-                return {(t,) for t in follow_set}
-
-            follow_k_dict = self.compute_follow_k(k)
-            return follow_k_dict.get(rhs, set())
-        elif isinstance(rhs, Option):
-            return self.follow_k(k, rhs.rhs)
-        elif isinstance(rhs, Star):
-            return self.follow_k(k, rhs.rhs)
-        else:
-            assert False, f"Unexpected rhs {rhs}: follow_k unimplemented"
-
-    def first_k_with_follow(self, k: int, following: Rhs, lhs: Nonterminal) -> Set[Tuple[Terminal, ...]]:
-        """
-        Compute FIRST_k(following) concatenated with FOLLOW_k(lhs).
-
-        This is used for Option and Star disambiguation: when exiting an Option or Star,
-        the tokens that can follow are FIRST_k(following) if following is present,
-        or FOLLOW_k(lhs) if at the end of the rule, or both if following is nullable.
-        """
-        from .grammar_analysis import concat_k
-
-        first_of_following = self.first_k(k, following)
-        if self.nullable(following):
-            follow_of_lhs = self.follow_k(k, lhs)
-            return concat_k(first_of_following, follow_of_lhs, k)
-        else:
-            return first_of_following
 
     def print_grammar(self, reachable: Optional[Set[str]] = None) -> str:
         """Convert to context-free grammar format."""
@@ -497,8 +322,46 @@ class Grammar:
         return "\n".join(lines)
 
 
-# Helper functions - re-exported from analysis module
-from .grammar_analysis import get_nonterminals, get_literals, is_epsilon
+    @staticmethod
+    def get_nonterminals(rhs: 'Rhs') -> List[Nonterminal]:
+        """Return the list of all nonterminals referenced in a Rhs."""
+        nonterminals = []
+
+        if isinstance(rhs, Nonterminal):
+            nonterminals.append(rhs)
+        elif isinstance(rhs, Sequence):
+            for elem in rhs.elements:
+                nonterminals.extend(Grammar.get_nonterminals(elem))
+        elif isinstance(rhs, (Star, Option)):
+            nonterminals.extend(Grammar.get_nonterminals(rhs.rhs))
+
+        return list(dict.fromkeys(nonterminals))
+
+    @staticmethod
+    def get_literals(rhs: 'Rhs') -> List[LitTerminal]:
+        """Return the list of all literals referenced in a Rhs."""
+        literals = []
+
+        if isinstance(rhs, LitTerminal):
+            literals.append(rhs)
+        elif isinstance(rhs, Sequence):
+            for elem in rhs.elements:
+                literals.extend(Grammar.get_literals(elem))
+        elif isinstance(rhs, (Star, Option)):
+            literals.extend(Grammar.get_literals(rhs.rhs))
+
+        return list(dict.fromkeys(literals))
+
+    @staticmethod
+    def is_epsilon(rhs: 'Rhs') -> bool:
+        """Check if rhs represents an epsilon production (empty sequence)."""
+        return isinstance(rhs, Sequence) and len(rhs.elements) == 0
+
+
+# Helper functions - re-exported for backward compatibility
+get_nonterminals = Grammar.get_nonterminals
+get_literals = Grammar.get_literals
+is_epsilon = Grammar.is_epsilon
 
 
 def rhs_elements(rhs: Rhs) -> Tuple[Rhs, ...]:

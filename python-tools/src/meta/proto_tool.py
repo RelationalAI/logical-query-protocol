@@ -49,8 +49,7 @@ def main():
     generator = GrammarGenerator(proto_parser, verbose=True)
     grammar = generator.generate()
 
-    reachable = grammar.check_reachability()
-    unreachable = grammar.get_unreachable_rules()
+    unreachable = grammar.get_unreachable_nonterminals()
     unexpected_unreachable = [r for r in unreachable if r.name not in generator.expected_unreachable]
     if unexpected_unreachable:
         print("Warning: Unreachable rules detected:")
@@ -58,7 +57,7 @@ def main():
             print(f"  {rule.name}")
         print()
 
-    actions_text = generate_semantic_actions(grammar, reachable)
+    actions_text = generate_semantic_actions(grammar, grammar.compute_reachability())
 
     if args.output:
         args.output.write_text(actions_text)

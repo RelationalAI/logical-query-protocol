@@ -430,36 +430,6 @@ class TestGrammar:
         assert order[2] == b
         assert order[3] == c
 
-    def test_nullable_literal(self):
-        """Test Grammar nullable for literal."""
-        start = Nonterminal("Start", MessageType("proto", "Start"))
-        grammar = Grammar(start)
-        lit = LitTerminal("foo")
-        assert not grammar.nullable(lit)
-
-    def test_nullable_star(self):
-        """Test Grammar nullable for star."""
-        start = Nonterminal("Start", MessageType("proto", "Start"))
-        grammar = Grammar(start)
-        nt = Nonterminal("A", MessageType("proto", "A"))
-        star = Star(nt)
-        assert grammar.nullable(star)
-
-    def test_nullable_option(self):
-        """Test Grammar nullable for option."""
-        start = Nonterminal("Start", MessageType("proto", "Start"))
-        grammar = Grammar(start)
-        nt = Nonterminal("A", MessageType("proto", "A"))
-        opt = Option(nt)
-        assert grammar.nullable(opt)
-
-    def test_nullable_empty_sequence(self):
-        """Test Grammar nullable for empty sequence."""
-        start = Nonterminal("Start", MessageType("proto", "Start"))
-        grammar = Grammar(start)
-        seq = Sequence(())
-        assert grammar.nullable(seq)
-
     def test_print_grammar(self):
         """Test Grammar print_grammar."""
         start = Nonterminal("Start", MessageType("proto", "Start"))
@@ -472,22 +442,6 @@ class TestGrammar:
         assert "Start:" in output
         assert "A" in output
 
-    def test_cache_invalidation_on_add_rule(self):
-        """Test that caches are not used after add_rule."""
-        start = Nonterminal("Start", MessageType("proto", "Start"))
-        grammar = Grammar(start)
-        a = Nonterminal("A", MessageType("proto", "A"))
-        param = Var("x", MessageType("proto", "A"))
-        action = Lambda([param], MessageType("proto", "Start"), param)
-        rule = Rule(start, a, action)
-
-        # Trigger cache
-        grammar.compute_nullable()
-        assert grammar._nullable_cache is not None
-
-        # This should fail because cache exists
-        with pytest.raises(AssertionError, match="already analyzed"):
-            grammar.add_rule(rule)
 
 
 class TestHelperFunctions:
