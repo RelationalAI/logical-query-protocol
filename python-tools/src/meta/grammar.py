@@ -1,7 +1,6 @@
 """Grammar data structures for meta-language tools.
 
 This module defines the data structures for representing context-free grammars
-with semantic actions, including support for normalization and left-factoring.
 """
 
 from dataclasses import dataclass, field
@@ -165,7 +164,7 @@ class Token:
 
 @dataclass
 class Grammar:
-    """Complete grammar specification with normalization and left-factoring support."""
+    """Complete grammar specification."""
     start: Nonterminal
     rules: Dict[Nonterminal, List[Rule]] = field(default_factory=dict)
     tokens: List[Token] = field(default_factory=list)
