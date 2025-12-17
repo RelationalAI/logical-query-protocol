@@ -649,3 +649,9 @@ def parse_lqp(file: str, text: str) -> ir.LqpNode:
     transformer = LQPTransformer(file)
     result = transformer.transform(tree)
     return result
+
+def parse_file(filepath: str) -> ir.LqpNode:
+    """Parse an LQP file and return an IR node that can be converted to protocol buffers."""
+    with open(filepath, 'r') as f:
+        text = f.read()
+    return parse_lqp(filepath, text)

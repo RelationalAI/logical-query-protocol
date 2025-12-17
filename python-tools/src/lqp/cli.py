@@ -13,6 +13,8 @@ from google.protobuf.json_format import MessageToJson
 
 from lqp.parser import parse_lqp
 from lqp.emit import ir_to_proto
+from lqp.proto.v1 import transactions_pb2
+from lqp.proto_validator import validate_lqp_proto
 from lqp.validator import validate_lqp
 import lqp.ir as ir
 
@@ -26,6 +28,8 @@ def process_file(filename, bin, json, validate=True):
     if validate and isinstance(lqp, ir.Transaction):
         validate_lqp(lqp)
     lqp_proto = ir_to_proto(lqp)
+    if validate and isinstance(lqp_proto, transactions_pb2.Transaction):
+        validate_lqp_proto(lqp_proto)
 
     # Write binary output to the configured directories, using the same filename.
     if bin:

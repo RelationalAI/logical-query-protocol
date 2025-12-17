@@ -475,3 +475,10 @@ def ir_to_proto(node: ir.LqpNode) -> Union[
         return convert_formula(node)
     else:
         raise TypeError(f"Unsupported top-level IR node type for conversion: {type(node)}")
+
+def emit_transaction(node: ir.LqpNode) -> bytes:
+    """Convert an IR node to protobuf bytes. The node must be a Transaction."""
+    proto = ir_to_proto(node)
+    if not isinstance(proto, transactions_pb2.Transaction):
+        raise TypeError(f"Expected Transaction, got {type(proto)}")
+    return proto.SerializeToString()
