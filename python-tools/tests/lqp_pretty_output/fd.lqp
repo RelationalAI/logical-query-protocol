@@ -5,16 +5,179 @@
   (epoch
     (writes
       (define
-        (fragment :fds
+        (fragment :person_model
+          (def :Person
+            ([id::INT]
+              (or
+                (primitive :rel_primitive_eq id 1)
+                (primitive :rel_primitive_eq id 2))))
+          (def :ssn
+            ([id::INT n::STRING]
+              (or
+                (and
+                  (primitive :rel_primitive_eq id 1)
+                  (primitive :rel_primitive_eq n "SSN#Alice"))
+                (and
+                  (primitive :rel_primitive_eq id 2)
+                  (primitive :rel_primitive_eq n "SSN#Bob"))))
+            (attrs
+              (attribute :function "checked")))
           (functional_dependency
-            ([a::INT b::INT c::INT]
-              (atom :r a b c))
-            (keys a b)
-            (values c))
+            ([n::STRING id::INT]
+              (atom :ssn id n))
+            (keys n)
+            (values id))
+          (def :first_name
+            ([id::INT fn::STRING]
+              (or
+                (and
+                  (primitive :rel_primitive_eq id 1)
+                  (primitive :rel_primitive_eq fn "Alice"))
+                (and
+                  (primitive :rel_primitive_eq id 2)
+                  (primitive :rel_primitive_eq fn "Bob"))))
+            (attrs
+              (attribute :function "checked")))
+          (def :last_name
+            ([id::INT ln::STRING]
+              (or
+                (and
+                  (primitive :rel_primitive_eq id 1)
+                  (primitive :rel_primitive_eq ln "Smith"))
+                (and
+                  (primitive :rel_primitive_eq id 2)
+                  (primitive :rel_primitive_eq ln "Johnson"))))
+            (attrs
+              (attribute :function "checked")))
           (functional_dependency
-            ([x::INT y::INT z::INT]
-              (atom :r x y z))
-            (keys y)
-            (values x z)))))
+            ([fn::STRING ln::STRING id::INT]
+              (and
+                (atom :first_name id fn)
+                (atom :last_name id ln)))
+            (keys fn ln)
+            (values id))))))
+  (epoch
+    (writes
+      (define
+        (fragment :emp_model
+          (def :Employee
+            ([id::INT]
+              (primitive :rel_primitive_eq id 1)))
+          (def :emp_id
+            ([id::INT eid::INT]
+              (and
+                (primitive :rel_primitive_eq id 1)
+                (primitive :rel_primitive_eq eid 1001)))
+            (attrs
+              (attribute :function "checked")))
+          (functional_dependency
+            ([eid::INT id::INT]
+              (atom :emp_id id eid))
+            (keys eid)
+            (values id))))))
+  (epoch
+    (writes
+      (define
+        (fragment :car_model
+          (def :Car
+            ([id::INT]
+              (or
+                (primitive :rel_primitive_eq id 3)
+                (primitive :rel_primitive_eq id 4))))
+          (def :vin
+            ([id::INT v::STRING]
+              (or
+                (and
+                  (primitive :rel_primitive_eq id 3)
+                  (primitive :rel_primitive_eq v "VIN#Honda"))
+                (and
+                  (primitive :rel_primitive_eq id 4)
+                  (primitive :rel_primitive_eq v "VIN#Toyota"))))
+            (attrs
+              (attribute :function "checked")))
+          (functional_dependency
+            ([v::STRING id::INT]
+              (atom :vin id v))
+            (keys v)
+            (values id))
+          (def :make
+            ([id::INT m::STRING]
+              (or
+                (and
+                  (primitive :rel_primitive_eq id 3)
+                  (primitive :rel_primitive_eq m "Honda"))
+                (and
+                  (primitive :rel_primitive_eq id 4)
+                  (primitive :rel_primitive_eq m "Toyota"))))
+            (attrs
+              (attribute :function "checked")))
+          (def :purchased_on_for
+            ([person_id::INT car_id::INT date::STRING amount::INT]
+              (or
+                (and
+                  (primitive :rel_primitive_eq person_id 1)
+                  (primitive :rel_primitive_eq car_id 3)
+                  (primitive :rel_primitive_eq date "2020-01-15")
+                  (primitive :rel_primitive_eq amount 20000))
+                (and
+                  (primitive :rel_primitive_eq person_id 2)
+                  (primitive :rel_primitive_eq car_id 4)
+                  (primitive :rel_primitive_eq date "2021-06-30")
+                  (primitive :rel_primitive_eq amount 25000))))
+            (attrs
+              (attribute :function "checked" 2)))))))
+  (epoch
+    (writes
+      (define
+        (fragment :car_purchase_fd
+          (functional_dependency
+            ([person_id::INT car_id::INT date::STRING amount::INT]
+              (atom :purchased_on_for person_id car_id date amount))
+            (keys car_id date)
+            (values person_id))))))
+  (epoch
+    (writes
+      (define
+        (fragment :ownership_model
+          (def :owns
+            ([person_id::INT car_id::INT]
+              (exists [date::STRING amount::INT]
+                (and
+                  (atom :purchased_on_for person_id car_id date amount)
+                  (primitive :rel_primitive_gt_eq_monotype amount 20000)))))
+          (functional_dependency
+            ([person_id::INT car_id::INT]
+              (atom :owns person_id car_id))
+            (keys person_id)
+            (values car_id))))))
+  (epoch
+    (writes
+      (define
+        (fragment :ownership_model
+          (def :owns
+            ([person_id::INT car_id::INT]
+              (exists [date::STRING amount::INT]
+                (atom :purchased_on_for person_id car_id date amount))))
+          (functional_dependency
+            ([person_id::INT car_id::INT]
+              (atom :owns person_id car_id))
+            (keys car_id)
+            (values person_id))))))
+  (epoch
+    (writes
+      (undefine :emp_model)))
+  (epoch
+    (writes
+      (define
+        (fragment :query_fragment
+          (def :query
+            ([n::STRING fn::STRING ln::STRING v::STRING]
+              (exists [person_id::INT car_id::INT]
+                (and
+                  (atom :ssn person_id n)
+                  (atom :first_name person_id fn)
+                  (atom :last_name person_id ln)
+                  (atom :owns person_id car_id)
+                  (atom :vin car_id v))))))))
     (reads
-      (output :output 1234567898765432123456789))))
+      (output :output :query))))

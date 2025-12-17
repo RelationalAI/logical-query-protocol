@@ -172,8 +172,8 @@ def construct_configure(config_dict, meta):
 
 def desugar_to_raw_primitive(name, terms):
     """Convert primitive operators to raw primitive IR nodes."""
+    # Convert terms to relterms
     return ir.Primitive(name=name, terms=terms, meta=None)
-
 
 @v_args(meta=True)
 class LQPTransformer(Transformer):
@@ -495,6 +495,7 @@ class LQPTransformer(Transformer):
         return ir.Primitive(name=items[0], terms=items[1:], meta=self.meta(meta))
 
     def _make_primitive(self, name_symbol, terms, meta):
+        # Convert name symbol to string if needed, assuming self.name handles it
         name_str = self.name([name_symbol], meta) if isinstance(name_symbol, str) else name_symbol
         return ir.Primitive(name=name_str, terms=terms, meta=self.meta(meta))
 
@@ -574,7 +575,7 @@ class LQPTransformer(Transformer):
         return ir.Value(value=items[0], meta=self.meta(meta))
 
     def STRING(self, s):
-        return s[1:-1].encode().decode('unicode_escape')
+        return s[1:-1].encode().decode('unicode_escape') # Strip quotes and process escaping
 
     def NUMBER(self, n):
         return int(n)
@@ -590,7 +591,7 @@ class LQPTransformer(Transformer):
         return ir.UInt128Value(value=uint128_val, meta=None)
 
     def INT128(self, u):
-        u = u[:-4]
+        u = u[:-4]  # Remove the 'i128' suffix
         int128_val = int(u)
         return ir.Int128Value(value=int128_val, meta=None)
 
