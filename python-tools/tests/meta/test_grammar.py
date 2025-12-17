@@ -483,7 +483,8 @@ class TestGrammar:
 
         # Trigger cache
         grammar.compute_nullable()
-        assert grammar._nullable_cache is not None
+        assert grammar._analysis is not None
+        assert grammar._analysis._nullable_cache is not None
 
         # This should fail because cache exists
         with pytest.raises(AssertionError, match="already analyzed"):

@@ -5,7 +5,10 @@ with semantic actions, including support for normalization and left-factoring.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .grammar_analysis import GrammarAnalysis
 
 # Import action AST types
 from .target import TargetExpr, Var, Symbol, Call, Lambda, Let, Lit, TargetType
