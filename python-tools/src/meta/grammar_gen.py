@@ -89,10 +89,24 @@ import re
 from typing import Callable, Dict, List, Optional, Set, Tuple
 from .grammar import Grammar, Rule, Token, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
 from .target import Lambda, Call, Var, Symbol, Builtin, Message, OneOf, ListExpr, BaseType, MessageType, OptionType, ListType
-from .proto_ast import ProtoMessage, ProtoField, PRIMITIVE_TYPES
+from .proto_ast import ProtoMessage, ProtoField
 from .proto_parser import ProtoParser
 from .grammar_gen_builtins import get_builtin_rules
 from .grammar_gen_rewrites import get_rule_rewrites
+
+# Mapping from protobuf primitive types to grammar terminal names
+_PRIMITIVE_TO_TERMINAL = {
+    'string': 'STRING',
+    'int32': 'INT',
+    'int64': 'INT',
+    'uint32': 'INT',
+    'uint64': 'INT',
+    'fixed64': 'INT',
+    'bool': 'BOOLEAN',
+    'double': 'FLOAT',
+    'float': 'FLOAT',
+    'bytes': 'STRING',
+}
 
 # Mapping from protobuf primitive types to base type names
 _PRIMITIVE_TO_BASE_TYPE = {
@@ -457,7 +471,7 @@ class GrammarGenerator:
 
     def _is_primitive_type(self, type_name: str) -> bool:
         """Check if type is a protobuf primitive."""
-        return type_name in PRIMITIVE_TYPES
+        return type_name in _PRIMITIVE_TO_TERMINAL
 
     def _is_message_type(self, type_name: str) -> bool:
         """Check if type is a protobuf message."""
@@ -465,7 +479,10 @@ class GrammarGenerator:
 
     def _map_primitive_type(self, type_name: str) -> str:
         """Map protobuf primitive to grammar terminal name."""
-        return PRIMITIVE_TYPES.get(type_name, 'SYMBOL')
+        if type_name in _PRIMITIVE_TO_TERMINAL:
+            return _PRIMITIVE_TO_TERMINAL[type_name]
+        else:
+            raise ValueError(f"Primitive type {type_name} not found")
 
 def generate_grammar(grammar: Grammar, reachable: Set[str]) -> str:
     """Generate grammar text."""

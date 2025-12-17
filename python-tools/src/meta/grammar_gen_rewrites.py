@@ -287,7 +287,7 @@ def _rewrite_compute_value_arity(rule: Rule) -> Rule:
     for i, elem in enumerate(new_elements):
         if isinstance(elem, Nonterminal) and elem.name in ('abstraction', 'body'):
             abstraction_idx = i
-        elif isinstance(elem, NamedTerminal) and elem.name in ('INT', 'NUMBER'):
+        elif isinstance(elem, NamedTerminal) and elem.name == 'INT':
             int_idx = i
 
     if abstraction_idx is None or int_idx is None:

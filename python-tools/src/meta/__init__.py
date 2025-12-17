@@ -46,7 +46,6 @@ from .grammar import (
 
 # Protobuf AST
 from .proto_ast import (
-    PRIMITIVE_TYPES,
     ProtoField,
     ProtoOneof,
     ProtoEnum,
@@ -97,7 +96,6 @@ __all__ = [
     'Star',
     'Option',
     # Protobuf AST
-    'PRIMITIVE_TYPES',
     'ProtoField',
     'ProtoOneof',
     'ProtoEnum',
