@@ -290,11 +290,12 @@ class AtomTypeCheckerProto(LqpProtoVisitor):
 
     def __init__(self, txn: transactions_pb2.Transaction):
         super().__init__()
+        relation_types: Dict[Tuple[int, int], List[str]] = {
+            (d.name.id_low, d.name.id_high) : AtomTypeCheckerProto.get_relation_sig(d)
+            for d in AtomTypeCheckerProto.collect_global_defs(txn)
+        }
         state = AtomTypeCheckerProto.State(
-            {
-                (d.name.id_low, d.name.id_high) : AtomTypeCheckerProto.get_relation_sig(d)
-                for d in AtomTypeCheckerProto.collect_global_defs(txn)
-            },
+            relation_types,
             # No variables declared yet.
             {},
         )
@@ -422,9 +423,10 @@ class LoopyUpdatesShouldBeAtomsProto(LqpProtoVisitor):
 class CSVConfigCheckerProto(LqpProtoVisitor):
     def __init__(self, txn: transactions_pb2.Transaction):
         super().__init__()
+        global_defs = AtomTypeCheckerProto.collect_global_defs(txn)
         self.relation_types: Dict[Tuple[int, int], List[str]] = {
             (d.name.id_low, d.name.id_high) : AtomTypeCheckerProto.get_relation_sig(d)
-            for d in AtomTypeCheckerProto.collect_global_defs(txn)
+            for d in global_defs
         }
         self.visit(txn)
 
@@ -446,11 +448,11 @@ class CSVConfigCheckerProto(LqpProtoVisitor):
         column_0_relation_id = None
         for column in node.data_columns:
             # If the column relation is not defined in this transaction, we can't check it.
-            col_rel_id = (column.column_data.id_low, column.column_data.id_high)
+            col_rel_id: Tuple[int, int] = (column.column_data.id_low, column.column_data.id_high)
             if col_rel_id not in self.relation_types:
                 continue
 
-            column_types = self.relation_types[col_rel_id]
+            column_types: List[str] = self.relation_types[col_rel_id]
             if len(column_types) < 1:
                 raise ValidationError(f"Data column relation must have at least one column, got zero columns in '{col_rel_id}'")
             key_types = column_types[:-1]
