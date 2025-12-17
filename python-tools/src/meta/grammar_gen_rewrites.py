@@ -280,10 +280,13 @@ def _rewrite_compute_value_arity(rule: Rule) -> Rule:
     if not isinstance(rule.rhs, Sequence) or len(rule.rhs.elements) < 2:
         return rule
 
+    # Type narrowing: rule.rhs is now known to be Sequence
+    rhs_seq: Sequence = rule.rhs
+
     abstraction_idx = None
     int_idx = None
 
-    for i, elem in enumerate(rule.rhs.elements):
+    for i, elem in enumerate(rhs_seq.elements):
         if isinstance(elem, Nonterminal) and elem.name in ('abstraction', 'body'):
             abstraction_idx = i
         elif isinstance(elem, NamedTerminal) and elem.name == 'INT':
@@ -292,16 +295,16 @@ def _rewrite_compute_value_arity(rule: Rule) -> Rule:
     if abstraction_idx is None or int_idx is None:
         return rule
 
-    elem = rule.rhs.elements[abstraction_idx]
+    elem = rhs_seq.elements[abstraction_idx]
     tuple_type = TupleType([elem.target_type(), BaseType('Int64')])
-    new_elements = list(rule.rhs.elements)
+    new_elements = list(rhs_seq.elements)
     new_elements[abstraction_idx] = Nonterminal('abstraction_with_arity', tuple_type)
     new_elements.pop(int_idx)
 
     # Find the parameter index for the abstraction
     abstraction_param_idx = None
     param_idx = 0
-    for i, elem in enumerate(rule.rhs.elements):
+    for i, elem in enumerate(rhs_seq.elements):
         if isinstance(elem, LitTerminal):
             continue
         if i == abstraction_idx:
