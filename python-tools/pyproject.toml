@@ -19,6 +19,7 @@ dependencies = [
 
 [project.scripts]
 lqp = "lqp.cli:main"
+lqp-meta-tool = "meta.cli:main"
 
 [project.optional-dependencies]
 test = [

@@ -8,15 +8,20 @@ generator.
 import argparse
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 # Handle both script and module execution
 if __name__ == "__main__" and __package__ is None:
     # Running as script - add parent to path and use absolute imports
     sys.path.insert(0, str(Path(__file__).parent.parent))
+
+if TYPE_CHECKING:
+    from .proto_parser import ProtoParser
+    from .grammar_gen import GrammarGenerator, generate_semantic_actions
+elif __name__ == "__main__" and __package__ is None:
     from meta.proto_parser import ProtoParser
     from meta.grammar_gen import GrammarGenerator, generate_semantic_actions
 else:
-    # Running as module - use relative imports
     from .proto_parser import ProtoParser
     from .grammar_gen import GrammarGenerator, generate_semantic_actions
 
