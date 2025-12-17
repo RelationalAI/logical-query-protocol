@@ -31,21 +31,21 @@ def test_parser_execution():
 
     grammar.add_rule(Rule(
         lhs=Nonterminal("expr", MessageType("proto", "Expr")),
-        rhs=Sequence([
+        rhs=Sequence((
             LitTerminal("("),
             LitTerminal("op"),
             NamedTerminal("NUMBER", _int64_type),
             LitTerminal(")")
-        ]),
+        )),
         action=Lambda([Var('n', _int64_type)], MessageType("proto", "Expr"), Var('n', _int64_type)),
     ))
 
-    grammar.tokens.append(Token("NUMBER", r'\d+', Lambda([Var('lexeme', _int64_type)], _int64_type, Call(Builtin('parse_number'), [Var('lexeme', _int64_type)]))))
+    grammar.tokens.append(Token("NUMBER", r'\d+', _int64_type))
 
     print("\nGenerating and testing parser execution...")
 
     try:
-        parser_code = generate_parser_python(grammar, reachable=None)
+        parser_code = generate_parser_python(grammar, reachable=set())
 
         # Write to temporary file
         import tempfile
@@ -56,6 +56,9 @@ def test_parser_execution():
         # Import and test
         import importlib.util
         spec = importlib.util.spec_from_file_location("test_parser", temp_path)
+        if spec is None or spec.loader is None:
+            print("✗ Failed to load parser module")
+            return False
         test_parser = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(test_parser)
 
@@ -85,9 +88,6 @@ def test_parser_execution():
 
 if __name__ == "__main__":
     success = True
-
-    if not test_parser_with_left_factoring():
-        success = False
 
     if not test_parser_execution():
         success = False

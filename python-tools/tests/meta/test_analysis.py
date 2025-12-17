@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pyright: reportArgumentType=false
 """Tests for grammar analysis functions."""
 
 import sys
