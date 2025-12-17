@@ -199,6 +199,9 @@ class GrammarGenerator:
         elif self._is_message_type(type_name):
             message = self.parser.messages[type_name]
             return MessageType(message.module, type_name)
+        elif self._is_enum_type(type_name):
+            # Enums are represented as Int64 in the target type system
+            return BaseType('Int64')
         else:
             assert False, f'Unknown type: {type_name}'
 
@@ -397,6 +400,11 @@ class GrammarGenerator:
                         field_type = self._get_type_for_name(field.type)
                         field_to_type_rule = Rule(lhs=Nonterminal(field_rule, field_type), rhs=Sequence((NamedTerminal(terminal_name, field_type),)), action=Lambda([Var('x', field_type)], field_type, Var('x', field_type)))
                         self._add_rule(field_to_type_rule)
+                elif self._is_enum_type(field.type):
+                    if field_rule not in self.final_rules:
+                        field_type = self._get_type_for_name(field.type)
+                        field_to_type_rule = Rule(lhs=Nonterminal(field_rule, field_type), rhs=Sequence((NamedTerminal('SYMBOL', field_type),)), action=Lambda([Var('x', field_type)], field_type, Var('x', field_type)))
+                        self._add_rule(field_to_type_rule)
                 else:
                     type_rule = self._get_rule_name(field.type)
                     if field_rule != type_rule and field_rule not in self.final_rules:
@@ -466,6 +474,18 @@ class GrammarGenerator:
                 return Nonterminal(wrapper_rule_name, field_type)
             else:
                 return Nonterminal(type_rule_name, field_type)
+        elif self._is_enum_type(field.type):
+            # Treat enum fields as SYMBOL terminals (enum values are parsed as symbols)
+            field_type = self._get_type_for_name(field.type)
+            base_symbol: NamedTerminal = NamedTerminal('SYMBOL', field_type)
+            if field.is_repeated:
+                base_terminal: NamedTerminal = base_symbol
+                return Star(base_terminal)
+            elif field.is_optional:
+                base_terminal: NamedTerminal = base_symbol
+                return Option(base_terminal)
+            else:
+                return base_symbol
         else:
             return None
 
@@ -476,6 +496,18 @@ class GrammarGenerator:
     def _is_message_type(self, type_name: str) -> bool:
         """Check if type is a protobuf message."""
         return type_name in self.parser.messages
+
+    def _is_enum_type(self, type_name: str) -> bool:
+        """Check if type is a protobuf enum (top-level or nested)."""
+        # Check top-level enums
+        if type_name in self.parser.enums:
+            return True
+        # Check nested enums in all messages
+        for message in self.parser.messages.values():
+            for enum in message.enums:
+                if enum.name == type_name:
+                    return True
+        return False
 
     def _map_primitive_type(self, type_name: str) -> str:
         """Map protobuf primitive to grammar terminal name."""
