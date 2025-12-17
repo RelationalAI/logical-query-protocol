@@ -52,9 +52,7 @@
                 (atom :first_name id fn)
                 (atom :last_name id ln)))
             (keys fn ln)
-            (values id))))))
-  (epoch
-    (writes
+            (values id))))
       (define
         (fragment :emp_model
           (def :Employee ([id::INT]
@@ -67,11 +65,29 @@
             (attrs
               (attribute :function "checked")))
           (functional_dependency
+            ([n::STRING id::INT]
+              (atom :ssn id n))
+            (keys n)
+            (values id))
+          (functional_dependency
             ([eid::INT id::INT]
               (atom :emp_id id eid))
             (keys eid)
             (values id))
-        ))))
+        ))
+      (define
+        (fragment :query1
+          (def :query1
+            ([n::STRING fn::STRING ln::STRING eid::INT]
+              (exists [person_id::INT]
+                (and
+                  (atom :ssn person_id n)
+                  (atom :first_name person_id fn)
+                  (atom :last_name person_id ln)
+                  (atom :emp_id person_id eid)
+                  (atom :Employee person_id))))))))
+    (reads
+      (output :output1 :query1)))
   (epoch
     (writes
       (define
@@ -131,9 +147,7 @@
             ([person_id::INT car_id::INT date::STRING amount::INT]
               (atom :purchased_on_for person_id car_id date amount))
             (keys car_id date)
-            (values person_id))))))
-  (epoch
-    (writes
+            (values person_id))))
       (define
         (fragment :ownership_model
           (def :owns
@@ -144,7 +158,9 @@
                   (>= amount 20000)))))
           (functional_dependency
             ([person_id::INT car_id::INT]
-              (atom :owns person_id car_id))
+              (and
+                (atom :owns person_id car_id)
+                (atom :Person person_id)))
             (keys person_id)
             (values car_id))))))
   (epoch
@@ -159,15 +175,13 @@
           ([person_id::INT car_id::INT]
             (atom :owns person_id car_id))
           (keys car_id)
-          (values person_id))))))
-  (epoch
-    (writes
+          (values person_id))))
       (undefine :emp_model)))
   (epoch
     (writes
       (define
-        (fragment :query_fragment
-          (def :query
+        (fragment :query2
+          (def :query2
             ([n::STRING fn::STRING ln::STRING v::STRING]
               (exists [person_id::INT car_id::INT]
                 (and
@@ -177,4 +191,4 @@
                   (atom :owns person_id car_id)
                   (atom :vin car_id v))))))))
     (reads
-      (output :output :query))))
+      (output :output2 :query2))))
