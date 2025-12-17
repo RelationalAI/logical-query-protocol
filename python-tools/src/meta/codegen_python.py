@@ -358,8 +358,12 @@ class PythonCodeGenerator(CodeGenerator):
                 all_args = positional_args + keyword_args
             args_code = ', '.join(all_args)
 
+            # Check if any keyword args use ** dict unpacking (for Python keywords)
+            has_dict_unpack = any('**{' in arg for arg in keyword_args)
+            type_ignore = '  # type: ignore' if has_dict_unpack else ''
+
             tmp = gensym()
-            lines.append(f"{indent}{self.gen_assignment(tmp, f'{f}({args_code})', is_declaration=True)}")
+            lines.append(f"{indent}{self.gen_assignment(tmp, f'{f}({args_code})', is_declaration=True)}{type_ignore}")
             return tmp
 
         # Fall back to base implementation for non-Message calls

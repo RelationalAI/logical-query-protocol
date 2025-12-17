@@ -26,7 +26,7 @@ def process_file(filename, bin, json, validate=True, use_generated_parser=False)
         lqp_proto = parse(lqp_text)
     else:
         lqp = parse_lqp(filename, lqp_text)
-        if validate and isinstance(lqp. ir.Transaction):
+        if validate and isinstance(lqp, ir.Transaction):
             validate_lqp(lqp)
         lqp_proto = ir_to_proto(lqp)
 

@@ -6,7 +6,7 @@ Do not modify this file! If you need to modify the parser, edit the generator co
 in `python-tools/src/meta` or edit the protobuf specification in `proto/v1`.
 
 
-Command: src/meta/proto_tool.py ../proto/relationalai/lqp/v1/fragments.proto ../proto/relationalai/lqp/v1/logic.proto ../proto/relationalai/lqp/v1/transactions.proto --parser python -o src/lqp/generated_parser.py
+Command: python-tools/src/meta/proto_tool.py proto/relationalai/lqp/v1/fragments.proto proto/relationalai/lqp/v1/logic.proto proto/relationalai/lqp/v1/transactions.proto --parser python -o python-tools/src/lqp/generated_parser.py
 """
 
 import hashlib
@@ -779,7 +779,7 @@ class Parser:
                 if prediction49 == 0:
                     _t358 = self.parse_def()
                     value50 = _t358
-                    _t359 = logic_pb2.Declaration(**{'def': value50})
+                    _t359 = logic_pb2.Declaration(**{'def': value50})  # type: ignore
                     _t357 = _t359
                 else:
                     raise ParseError(f"{'Unexpected token in declaration'}: {self.lookahead(0).type}=`{self.lookahead(0).value}`")
@@ -1214,7 +1214,7 @@ class Parser:
                                 if prediction85 == 6:
                                     _t504 = self.parse_not()
                                     value92 = _t504
-                                    _t505 = logic_pb2.Formula(**{'not': value92})
+                                    _t505 = logic_pb2.Formula(**{'not': value92})  # type: ignore
                                     _t503 = _t505
                                 else:
                                     if prediction85 == 5:
@@ -1860,7 +1860,7 @@ class Parser:
         _t4769 = self.parse_script()
         body190 = _t4769
         self.consume_literal(')')
-        _t4770 = logic_pb2.Algorithm(**{'global': global189}, body=body190)
+        _t4770 = logic_pb2.Algorithm(**{'global': global189}, body=body190)  # type: ignore
         return _t4770
 
     def parse_script(self) -> logic_pb2.Script:
@@ -1985,7 +1985,7 @@ class Parser:
                 if prediction202 == 2:
                     _t4817 = self.parse_break()
                     value205 = _t4817
-                    _t4818 = logic_pb2.Instruction(**{'break': value205})
+                    _t4818 = logic_pb2.Instruction(**{'break': value205})  # type: ignore
                     _t4816 = _t4818
                 else:
                     if prediction202 == 1:
