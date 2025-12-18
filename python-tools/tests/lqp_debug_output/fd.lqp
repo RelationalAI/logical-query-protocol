@@ -184,6 +184,14 @@
     (writes
       (define
         (fragment :query2
+          (functional_dependency
+            ([n::STRING car_id::INT person_id::INT v::STRING]
+              (and
+                (atom 17268489266876366576 person_id n)
+                (atom 9954426197261524399 car_id v)
+                (atom 12320303242364489664 person_id car_id)))
+            (keys n)
+            (values v))
           (def 3981596135330217082
             ([n::STRING fn::STRING ln::STRING v::STRING]
               (exists [person_id::INT car_id::INT]
@@ -199,12 +207,12 @@
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `3981596135330217082` -> `query2`
 ;; 	 ID `17268489266876366576` -> `ssn`
+;; 	 ID `9954426197261524399` -> `vin`
+;; 	 ID `12320303242364489664` -> `owns`
+;; 	 ID `3981596135330217082` -> `query2`
 ;; 	 ID `378706712368109145` -> `first_name`
 ;; 	 ID `2532914575784924444` -> `last_name`
-;; 	 ID `12320303242364489664` -> `owns`
-;; 	 ID `9954426197261524399` -> `vin`
 ;; 	 ID `2450621548305115752` -> `purchased_on_for`
 ;; 	 ID `6919740574510502700` -> `Person`
 ;; 	 ID `11947469809295382674` -> `Car`

@@ -184,6 +184,14 @@
     (writes
       (define
         (fragment :query2
+          (functional_dependency
+            ([n::STRING car_id::INT person_id::INT v::STRING]
+              (and
+                (atom 17268489266876366576 person_id n)
+                (atom 9954426197261524399 car_id v)
+                (atom 12320303242364489664 person_id car_id)))
+            (keys n)
+            (values v))
           (def 3981596135330217082
             ([n::STRING fn::STRING ln::STRING v::STRING]
               (exists [person_id::INT car_id::INT]

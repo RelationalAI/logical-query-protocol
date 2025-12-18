@@ -181,6 +181,14 @@
     (writes
       (define
         (fragment :query2
+          (functional_dependency
+            ([n::STRING car_id::INT person_id::INT v::STRING]
+              (and
+                (atom :ssn person_id n)
+                (atom :vin car_id v)
+                (atom :owns person_id car_id)))
+            (keys n)
+            (values v))
           (def :query2
             ([n::STRING fn::STRING ln::STRING v::STRING]
               (exists [person_id::INT car_id::INT]
