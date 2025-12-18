@@ -300,7 +300,3 @@ class TestProtoParser(unittest.TestCase):
         self.assertIn("Message2", parser.messages)
         self.assertEqual(parser.messages["Message1"].module, "file1")
         self.assertEqual(parser.messages["Message2"].module, "file2")
-
-
-if __name__ == "__main__":
-    unittest.main()
