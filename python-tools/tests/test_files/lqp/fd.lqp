@@ -187,8 +187,8 @@
                 (atom :ssn person_id n)
                 (atom :vin car_id v)
                 (atom :owns person_id car_id)))
-            (keys n)
-            (values v))
+            (keys v)
+            (values n))
           (def :query2
             ([n::STRING fn::STRING ln::STRING v::STRING]
               (exists [person_id::INT car_id::INT]
