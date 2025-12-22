@@ -35,408 +35,392 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         nonfinal_nonterminals.add(lhs)
 
     # Common types used throughout
-    _config_type = ListType(TupleType([BaseType('String'), MessageType('logic', 'Value')]))
-    _bindings_type = TupleType([ListType(MessageType('logic', 'Binding')), ListType(MessageType('logic', 'Binding'))])
-    _abstraction_with_arity_type = TupleType([MessageType('logic', 'Abstraction'), BaseType('Int64')])
-    _monoid_op_type = FunctionType([MessageType('logic', 'Type')], MessageType('logic', 'Monoid'))
+    _string_type = BaseType('String')
+    _int64_type = BaseType('Int64')
+    _float64_type = BaseType('Float64')
+    _bool_type = BaseType('Bool')
+    _value_type = MessageType('logic', 'Value')
+    _binding_type = MessageType('logic', 'Binding')
+    _formula_type = MessageType('logic', 'Formula')
+    _term_type = MessageType('logic', 'Term')
+    _abstraction_type = MessageType('logic', 'Abstraction')
+    _primitive_type = MessageType('logic', 'Primitive')
+    _relation_id_type = MessageType('logic', 'RelationId')
+    _relterm_type = MessageType('logic', 'RelTerm')
+    _attribute_type = MessageType('logic', 'Attribute')
+    _date_value_type = MessageType('logic', 'DateValue')
+    _datetime_value_type = MessageType('logic', 'DateTimeValue')
+    _uint128_value_type = MessageType('logic', 'UInt128Value')
+    _int128_value_type = MessageType('logic', 'Int128Value')
+    _decimal_value_type = MessageType('logic', 'DecimalValue')
+    _var_type = MessageType('logic', 'Var')
+    _type_type = MessageType('logic', 'Type')
+    _monoid_type = MessageType('logic', 'Monoid')
+    _conjunction_type = MessageType('logic', 'Conjunction')
+    _disjunction_type = MessageType('logic', 'Disjunction')
+    _declaration_type = MessageType('logic', 'Declaration')
+    _fragment_id_type = MessageType('fragments', 'FragmentId')
+    _fragment_type = MessageType('fragments', 'Fragment')
+    _transaction_type = MessageType('transactions', 'Transaction')
+    _configure_type = MessageType('transactions', 'Configure')
+    _sync_type = MessageType('transactions', 'Sync')
+    _epoch_type = MessageType('transactions', 'Epoch')
+    _output_type = MessageType('transactions', 'Output')
+    _abort_type = MessageType('transactions', 'Abort')
+    _export_type = MessageType('transactions', 'Export')
+    _export_csv_config_type = MessageType('transactions', 'ExportCSVConfig')
+    _export_csv_column_type = MessageType('transactions', 'ExportCSVColumn')
+
+    _config_type = ListType(TupleType([_string_type, _value_type]))
+    _bindings_type = TupleType([ListType(_binding_type), ListType(_binding_type)])
+    _abstraction_with_arity_type = TupleType([_abstraction_type, _int64_type])
+    _monoid_op_type = FunctionType([_type_type], _monoid_type)
+
+
+
+
+
+    # Common nonterminals
+    _value_nt = Nonterminal('value', _value_type)
+    _binding_nt = Nonterminal('binding', _binding_type)
+    _bindings_nt = Nonterminal('bindings', _bindings_type)
+    _formula_nt = Nonterminal('formula', _formula_type)
+    _term_nt = Nonterminal('term', _term_type)
+    _relterm_nt = Nonterminal('relterm', _relterm_type)
+    _abstraction_nt = Nonterminal('abstraction', _abstraction_type)
+    _primitive_nt = Nonterminal('primitive', _primitive_type)
+    _relation_id_nt = Nonterminal('relation_id', _relation_id_type)
+    _attribute_nt = Nonterminal('attribute', _attribute_type)
+    _type_nt = Nonterminal('type', _type_type)
+    _monoid_nt = Nonterminal('monoid', _monoid_type)
+    _declaration_nt = Nonterminal('declaration', _declaration_type)
+    _name_nt = Nonterminal('name', _string_type)
+    _config_dict_nt = Nonterminal('config_dict', _config_type)
+    _date_nt = Nonterminal('date', _date_value_type)
+    _datetime_nt = Nonterminal('datetime', _datetime_value_type)
+
+    # Common terminals
+    _string_terminal = NamedTerminal('STRING', _string_type)
+    _int_terminal = NamedTerminal('INT', _int64_type)
+    _float_terminal = NamedTerminal('FLOAT', _float64_type)
+    _symbol_terminal = NamedTerminal('SYMBOL', _string_type)
+    _colon_symbol_terminal = NamedTerminal('COLON_SYMBOL', _string_type)
+    _lparen = LitTerminal('(')
+    _rparen = LitTerminal(')')
+
+
+
+    # Common Var expressions
+    def _var_value(typ=_value_type):
+        return Var('value', typ)
+
+    def _var_msg(typ):
+        return Var('msg', typ)
+
+    def _var_symbol(typ=_string_type):
+        return Var('symbol', typ)
+
+    def _var_name(typ=_string_type):
+        return Var('name', typ)
+
+    # Common Builtin functions that return Call instances
+    def _builtin_equal(*args):
+        return Call(Builtin('equal'), list(args))
+
+    def _builtin_which_oneof(*args):
+        return Call(Builtin('WhichOneof'), list(args))
+
+    def _builtin_get_field(*args):
+        return Call(Builtin('get_field'), list(args))
+
+    def _builtin_some(*args):
+        return Call(Builtin('Some'), list(args))
+
+    def _builtin_make_tuple(*args):
+        return Call(Builtin('make_tuple'), list(args))
+
+    def _builtin_fst(*args):
+        return Call(Builtin('fst'), list(args))
+
+    def _builtin_snd(*args):
+        return Call(Builtin('snd'), list(args))
+
+    def _builtin_is_none(*args):
+        return Call(Builtin('is_none'), list(args))
+
+    def _builtin_is_empty(*args):
+        return Call(Builtin('is_empty'), list(args))
+
+    def _builtin_list_concat(*args):
+        return Call(Builtin('list_concat'), list(args))
+
+    def _builtin_length(*args):
+        return Call(Builtin('length'), list(args))
+
+    def _builtin_unwrap_option_or(*args):
+        return Call(Builtin('unwrap_option_or'), list(args))
+
+    # Common Message constructor functions that return Call instances
+    def _message_value(*args):
+        return Call(Message('logic', 'Value'), list(args))
+
+    def _message_binding(*args):
+        return Call(Message('logic', 'Binding'), list(args))
+
+    def _message_var(*args):
+        return Call(Message('logic', 'Var'), list(args))
+
+    def _message_abstraction(*args):
+        return Call(Message('logic', 'Abstraction'), list(args))
+
+    def _message_primitive(*args):
+        return Call(Message('logic', 'Primitive'), list(args))
+
+    def _message_relterm(*args):
+        return Call(Message('logic', 'RelTerm'), list(args))
+
+    def _message_date_value(*args):
+        return Call(Message('logic', 'DateValue'), list(args))
+
+    def _message_datetime_value(*args):
+        return Call(Message('logic', 'DateTimeValue'), list(args))
+
+    def _message_conjunction(*args):
+        return Call(Message('logic', 'Conjunction'), list(args))
+
+    def _message_disjunction(*args):
+        return Call(Message('logic', 'Disjunction'), list(args))
+
+    def _message_formula(*args):
+        return Call(Message('logic', 'Formula'), list(args))
+
+    # Helper functions for common patterns (these remain as they provide additional convenience)
+    def _which_oneof_call(msg_var, field_lit):
+        """Create Call(Builtin('WhichOneof'), [msg_var, field_lit])."""
+        return _builtin_which_oneof(msg_var, field_lit)
+
+    def _get_field_call(msg_var, field_lit):
+        """Create Call(Builtin('get_field'), [msg_var, field_lit])."""
+        return _builtin_get_field(msg_var, field_lit)
+
+    def _equal_call(left, right):
+        """Create Call(Builtin('equal'), [left, right])."""
+        return _builtin_equal(left, right)
+
+    def _some_call(arg):
+        """Create Call(Builtin('Some'), [arg])."""
+        return _builtin_some(arg)
+
+    def _make_tuple_call(args):
+        """Create Call(Builtin('make_tuple'), args)."""
+        return _builtin_make_tuple(*args)
+
+    def _value_oneof_deconstruct(msg_var, oneof_field_name, result_type):
+        """Create standard Value oneof deconstruct pattern."""
+        return IfElse(
+            _equal_call(
+                _which_oneof_call(msg_var, Lit('value_type')),
+                Lit(oneof_field_name)
+            ),
+            _some_call(_get_field_call(msg_var, Lit(oneof_field_name))),
+            Lit(None)
+        )
+
+    def _formula_oneof_deconstruct(msg_var, oneof_field_name, result_type, extra_check=None):
+        """Create standard Formula oneof deconstruct pattern."""
+        base_check = _equal_call(
+            _which_oneof_call(msg_var, Lit('formula_type')),
+            Lit(oneof_field_name)
+        )
+        if extra_check:
+            return IfElse(
+                base_check,
+                IfElse(extra_check, _some_call(_get_field_call(msg_var, Lit(oneof_field_name))), Lit(None)),
+                Lit(None)
+            )
+        return IfElse(
+            base_check,
+            _some_call(_get_field_call(msg_var, Lit(oneof_field_name))),
+            Lit(None)
+        )
+
+    # Helper function to generate Value oneof rules
+    def _make_value_oneof_rule(rhs, value_type, oneof_field_name):
+        """Create a rule for Value -> oneof field."""
+        var_value = Var('value', value_type)
+        msg_var = _var_msg(_value_type)
+        return Rule(
+            lhs=_value_nt,
+            rhs=rhs,
+            construct_action=Lambda(
+                [var_value],
+                _value_type,
+                _message_value(Call(OneOf(oneof_field_name), [var_value]))
+            ),
+            deconstruct_action=Lambda(
+                [msg_var],
+                OptionType(value_type),
+                _value_oneof_deconstruct(msg_var, oneof_field_name, value_type)
+            )
+        )
 
     # Value literal rules
-    add_rule(Rule(
-        lhs=Nonterminal('value', MessageType('logic', 'Value')),
-        rhs=Nonterminal('date', MessageType('logic', 'DateValue')),
-        construct_action=Lambda(
-            [Var('value', MessageType('logic', 'DateValue'))],
-            MessageType('logic', 'Value'),
-            Call(Message('logic', 'Value'), [Call(OneOf('date_value'), [Var('value', MessageType('logic', 'DateValue'))])])
-        ),
-        deconstruct_action=Lambda(
-            [Var('msg', MessageType('logic', 'Value'))],
-            OptionType(MessageType('logic', 'DateValue')),
-            IfElse(
-                Call(Builtin('equal'), [
-                    Call(Builtin('WhichOneof'), [Var('msg', MessageType('logic', 'Value')), Lit('value_type')]),
-                    Lit('date_value')
-                ]),
-                Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Value')), Lit('date_value')])]),
-                Lit(None)
-            )
-        )
-    ))
+    add_rule(_make_value_oneof_rule(_date_nt, _date_value_type, 'date_value'))
+    add_rule(_make_value_oneof_rule(_datetime_nt, _datetime_value_type, 'datetime_value'))
+    add_rule(_make_value_oneof_rule(_string_terminal, _string_type, 'string_value'))
+    add_rule(_make_value_oneof_rule(_int_terminal, _int64_type, 'int_value'))
+    add_rule(_make_value_oneof_rule(_float_terminal, _float64_type, 'float_value'))
+    add_rule(_make_value_oneof_rule(NamedTerminal('UINT128', _uint128_value_type), _uint128_value_type, 'uint128_value'))
+    add_rule(_make_value_oneof_rule(NamedTerminal('INT128', _int128_value_type), _int128_value_type, 'int128_value'))
+    add_rule(_make_value_oneof_rule(NamedTerminal('DECIMAL', _decimal_value_type), _decimal_value_type, 'decimal_value'))
 
+    # Special case: missing value
     add_rule(Rule(
-        lhs=Nonterminal('value', MessageType('logic', 'Value')),
-        rhs=Nonterminal('datetime', MessageType('logic', 'DateTimeValue')),
-        construct_action=Lambda(
-            [Var('value', MessageType('logic', 'DateTimeValue'))],
-            MessageType('logic', 'Value'),
-            Call(Message('logic', 'Value'), [Call(OneOf('datetime_value'), [Var('value', MessageType('logic', 'DateTimeValue'))])])
-        ),
-        deconstruct_action=Lambda(
-            [Var('msg', MessageType('logic', 'Value'))],
-            OptionType(MessageType('logic', 'DateTimeValue')),
-            IfElse(
-                Call(Builtin('equal'), [
-                    Call(Builtin('WhichOneof'), [Var('msg', MessageType('logic', 'Value')), Lit('value_type')]),
-                    Lit('datetime_value')
-                ]),
-                Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Value')), Lit('datetime_value')])]),
-                Lit(None)
-            )
-        )
-    ))
-
-    add_rule(Rule(
-        lhs=Nonterminal('value', MessageType('logic', 'Value')),
-        rhs=NamedTerminal('STRING', BaseType('String')),
-        construct_action=Lambda(
-            [Var('value', BaseType('String'))],
-            MessageType('logic', 'Value'),
-            Call(Message('logic', 'Value'), [Call(OneOf('string_value'), [Var('value', BaseType('String'))])])
-        ),
-        deconstruct_action=Lambda(
-            [Var('msg', MessageType('logic', 'Value'))],
-            OptionType(BaseType('String')),
-            IfElse(
-                Call(Builtin('equal'), [
-                    Call(Builtin('WhichOneof'), [Var('msg', MessageType('logic', 'Value')), Lit('value_type')]),
-                    Lit('string_value')
-                ]),
-                Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Value')), Lit('string_value')])]),
-                Lit(None)
-            )
-        )
-    ))
-
-    add_rule(Rule(
-        lhs=Nonterminal('value', MessageType('logic', 'Value')),
-        rhs=NamedTerminal('INT', BaseType('Int64')),
-        construct_action=Lambda(
-            [Var('value', BaseType('Int64'))],
-            MessageType('logic', 'Value'),
-            Call(Message('logic', 'Value'), [Call(OneOf('int_value'), [Var('value', BaseType('Int64'))])])
-        ),
-        deconstruct_action=Lambda(
-            [Var('msg', MessageType('logic', 'Value'))],
-            OptionType(BaseType('Int64')),
-            IfElse(
-                Call(Builtin('equal'), [
-                    Call(Builtin('WhichOneof'), [Var('msg', MessageType('logic', 'Value')), Lit('value_type')]),
-                    Lit('int_value')
-                ]),
-                Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Value')), Lit('int_value')])]),
-                Lit(None)
-            )
-        )
-    ))
-
-    add_rule(Rule(
-        lhs=Nonterminal('value', MessageType('logic', 'Value')),
-        rhs=NamedTerminal('FLOAT', BaseType('Float64')),
-        construct_action=Lambda(
-            [Var('value', BaseType('Float64'))],
-            MessageType('logic', 'Value'),
-            Call(Message('logic', 'Value'), [Call(OneOf('float_value'), [Var('value', BaseType('Float64'))])])
-        ),
-        deconstruct_action=Lambda(
-            [Var('msg', MessageType('logic', 'Value'))],
-            OptionType(BaseType('Float64')),
-            IfElse(
-                Call(Builtin('equal'), [
-                    Call(Builtin('WhichOneof'), [Var('msg', MessageType('logic', 'Value')), Lit('value_type')]),
-                    Lit('float_value')
-                ]),
-                Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Value')), Lit('float_value')])]),
-                Lit(None)
-            )
-        )
-    ))
-
-    add_rule(Rule(
-        lhs=Nonterminal('value', MessageType('logic', 'Value')),
-        rhs=NamedTerminal('UINT128', MessageType('logic', 'UInt128Value')),
-        construct_action=Lambda(
-            [Var('value', MessageType('logic', 'UInt128Value'))],
-            MessageType('logic', 'Value'),
-            Call(Message('logic', 'Value'), [Call(OneOf('uint128_value'), [Var('value', MessageType('logic', 'UInt128Value'))])])
-        ),
-        deconstruct_action=Lambda(
-            [Var('msg', MessageType('logic', 'Value'))],
-            OptionType(MessageType('logic', 'UInt128Value')),
-            IfElse(
-                Call(Builtin('equal'), [
-                    Call(Builtin('WhichOneof'), [Var('msg', MessageType('logic', 'Value')), Lit('value_type')]),
-                    Lit('uint128_value')
-                ]),
-                Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Value')), Lit('uint128_value')])]),
-                Lit(None)
-            )
-        )
-    ))
-
-    add_rule(Rule(
-        lhs=Nonterminal('value', MessageType('logic', 'Value')),
-        rhs=NamedTerminal('INT128', MessageType('logic', 'Int128Value')),
-        construct_action=Lambda(
-            [Var('value', MessageType('logic', 'Int128Value'))],
-            MessageType('logic', 'Value'),
-            Call(Message('logic', 'Value'), [Call(OneOf('int128_value'), [Var('value', MessageType('logic', 'Int128Value'))])])
-        ),
-        deconstruct_action=Lambda(
-            [Var('msg', MessageType('logic', 'Value'))],
-            OptionType(MessageType('logic', 'Int128Value')),
-            IfElse(
-                Call(Builtin('equal'), [
-                    Call(Builtin('WhichOneof'), [Var('msg', MessageType('logic', 'Value')), Lit('value_type')]),
-                    Lit('int128_value')
-                ]),
-                Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Value')), Lit('int128_value')])]),
-                Lit(None)
-            )
-        )
-    ))
-
-    add_rule(Rule(
-        lhs=Nonterminal('value', MessageType('logic', 'Value')),
-        rhs=NamedTerminal('DECIMAL', MessageType('logic', 'DecimalValue')),
-        construct_action=Lambda(
-            [Var('value', MessageType('logic', 'DecimalValue'))],
-            MessageType('logic', 'Value'),
-            Call(Message('logic', 'Value'), [Call(OneOf('decimal_value'), [Var('value', MessageType('logic', 'DecimalValue'))])])
-        ),
-        deconstruct_action=Lambda(
-            [Var('msg', MessageType('logic', 'Value'))],
-            OptionType(MessageType('logic', 'DecimalValue')),
-            IfElse(
-                Call(Builtin('equal'), [
-                    Call(Builtin('WhichOneof'), [Var('msg', MessageType('logic', 'Value')), Lit('value_type')]),
-                    Lit('decimal_value')
-                ]),
-                Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Value')), Lit('decimal_value')])]),
-                Lit(None)
-            )
-        )
-    ))
-
-    add_rule(Rule(
-        lhs=Nonterminal('value', MessageType('logic', 'Value')),
+        lhs=_value_nt,
         rhs=LitTerminal('missing'),
         construct_action=Lambda(
             [],
-            MessageType('logic', 'Value'),
-            Call(Message('logic', 'Value'), [Call(OneOf('missing_value'), [Call(Message('logic', 'MissingValue'), [])])])
+            _value_type,
+            _message_value(Call(OneOf('missing_value'), [Call(Message('logic', 'MissingValue'), [])]))
         ),
         deconstruct_action=Lambda(
-            [Var('msg', MessageType('logic', 'Value'))],
+            [_var_msg(_value_type)],
             OptionType(TupleType([])),
             IfElse(
-                Call(Builtin('equal'), [
-                    Call(Builtin('WhichOneof'), [Var('msg', MessageType('logic', 'Value')), Lit('value_type')]),
-                    Lit('missing_value')
-                ]),
-                Call(Builtin('Some'), [Call(Builtin('make_tuple'), [])]),
+                _equal_call(_which_oneof_call(_var_msg(_value_type), Lit('value_type')), Lit('missing_value')),
+                _some_call(_make_tuple_call([])),
                 Lit(None)
             )
         )
     ))
 
+    # Bool value rules
+    _bool_value_nt = Nonterminal('bool_value', _bool_type)
+    _var_bool_value = Var('value', _bool_type)
+
     add_rule(Rule(
-        lhs=Nonterminal('bool_value', BaseType('Bool')),
+        lhs=_bool_value_nt,
         rhs=LitTerminal('true'),
-        construct_action=Lambda(
-            [],
-            BaseType('Bool'),
-            Lit(True)
-        ),
+        construct_action=Lambda([], _bool_type, Lit(True)),
         deconstruct_action=Lambda(
-            [Var('value', BaseType('Bool'))],
+            [_var_bool_value],
             OptionType(TupleType([])),
-            IfElse(
-                Call(Builtin('equal'), [Var('value', BaseType('Bool')), Lit(True)]),
-                Call(Builtin('Some'), [Call(Builtin('make_tuple'), [])]),
-                Lit(None)
-            )
+            IfElse(_equal_call(_var_bool_value, Lit(True)), _some_call(_make_tuple_call([])), Lit(None))
         )
     ))
 
     add_rule(Rule(
-        lhs=Nonterminal('bool_value', BaseType('Bool')),
+        lhs=_bool_value_nt,
         rhs=LitTerminal('false'),
-        construct_action=Lambda(
-            [],
-            BaseType('Bool'),
-            Lit(False)
-        ),
+        construct_action=Lambda([], _bool_type, Lit(False)),
         deconstruct_action=Lambda(
-            [Var('value', BaseType('Bool'))],
+            [_var_bool_value],
             OptionType(TupleType([])),
-            IfElse(
-                Call(Builtin('equal'), [Var('value', BaseType('Bool')), Lit(False)]),
-                Call(Builtin('Some'), [Call(Builtin('make_tuple'), [])]),
-                Lit(None)
-            )
+            IfElse(_equal_call(_var_bool_value, Lit(False)), _some_call(_make_tuple_call([])), Lit(None))
         )
     ))
 
-    add_rule(Rule(
-        lhs=Nonterminal('value', MessageType('logic', 'Value')),
-        rhs=Nonterminal('bool_value', BaseType('Bool')),
-        construct_action=Lambda(
-            [Var('value', BaseType('Bool'))],
-            MessageType('logic', 'Value'),
-            Call(Message('logic', 'Value'), [Call(OneOf('boolean_value'), [Var('value', BaseType('Bool'))])])
-        ),
-        deconstruct_action=Lambda(
-            [Var('msg', MessageType('logic', 'Value'))],
-            OptionType(BaseType('Bool')),
-            IfElse(
-                Call(Builtin('equal'), [
-                    Call(Builtin('WhichOneof'), [Var('msg', MessageType('logic', 'Value')), Lit('value_type')]),
-                    Lit('boolean_value')
-                ]),
-                Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Value')), Lit('boolean_value')])]),
-                Lit(None)
-            )
-        )
-    ))
+    add_rule(_make_value_oneof_rule(_bool_value_nt, _bool_type, 'boolean_value'))
 
     # Date and datetime rules
+    _var_year = Var('year', _int64_type)
+    _var_month = Var('month', _int64_type)
+    _var_day = Var('day', _int64_type)
+    _var_hour = Var('hour', _int64_type)
+    _var_minute = Var('minute', _int64_type)
+    _var_second = Var('second', _int64_type)
+    _var_microsecond = Var('microsecond', OptionType(_int64_type))
+
     add_rule(Rule(
-        lhs=Nonterminal('date', MessageType('logic', 'DateValue')),
-        rhs=Sequence((
-            LitTerminal('('), LitTerminal('date'),
-            NamedTerminal('INT', BaseType('Int64')),
-            NamedTerminal('INT', BaseType('Int64')),
-            NamedTerminal('INT', BaseType('Int64')),
-            LitTerminal(')')
-        )),
+        lhs=_date_nt,
+        rhs=Sequence((_lparen, LitTerminal('date'), _int_terminal, _int_terminal, _int_terminal, _rparen)),
         construct_action=Lambda(
-            [Var('year', BaseType('Int64')), Var('month', BaseType('Int64')), Var('day', BaseType('Int64'))],
-            MessageType('logic', 'DateValue'),
-            Call(Message('logic', 'DateValue'), [
-                Var('year', BaseType('Int64')),
-                Var('month', BaseType('Int64')),
-                Var('day', BaseType('Int64'))
-            ])
+            [_var_year, _var_month, _var_day],
+            _date_value_type,
+            _message_date_value(_var_year, _var_month, _var_day)
         ),
         deconstruct_action=Lambda(
-            [Var('msg', MessageType('logic', 'DateValue'))],
-            OptionType(TupleType([BaseType('Int64'), BaseType('Int64'), BaseType('Int64')])),
-            Call(Builtin('Some'), [
-                Call(Builtin('make_tuple'), [
-                    Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'DateValue')), Lit('year')]),
-                    Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'DateValue')), Lit('month')]),
-                    Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'DateValue')), Lit('day')])
-                ])
-            ])
+            [_var_msg(_date_value_type)],
+            OptionType(TupleType([_int64_type, _int64_type, _int64_type])),
+            _some_call(_make_tuple_call([
+                _get_field_call(_var_msg(_date_value_type), Lit('year')),
+                _get_field_call(_var_msg(_date_value_type), Lit('month')),
+                _get_field_call(_var_msg(_date_value_type), Lit('day'))
+            ]))
         )
     ))
 
+    _datetime_tuple_type = TupleType([_int64_type, _int64_type, _int64_type, _int64_type, _int64_type, _int64_type, OptionType(_int64_type)])
+
     add_rule(Rule(
-        lhs=Nonterminal('datetime', MessageType('logic', 'DateTimeValue')),
+        lhs=_datetime_nt,
         rhs=Sequence((
-            LitTerminal('('), LitTerminal('datetime'),
-            NamedTerminal('INT', BaseType('Int64')),
-            NamedTerminal('INT', BaseType('Int64')),
-            NamedTerminal('INT', BaseType('Int64')),
-            NamedTerminal('INT', BaseType('Int64')),
-            NamedTerminal('INT', BaseType('Int64')),
-            NamedTerminal('INT', BaseType('Int64')),
-            Option(NamedTerminal('INT', BaseType('Int64'))),
-            LitTerminal(')')
+            _lparen, LitTerminal('datetime'),
+            _int_terminal, _int_terminal, _int_terminal,
+            _int_terminal, _int_terminal, _int_terminal,
+            Option(_int_terminal),
+            _rparen
         )),
         construct_action=Lambda(
-            [
-                Var('year', BaseType('Int64')),
-                Var('month', BaseType('Int64')),
-                Var('day', BaseType('Int64')),
-                Var('hour', BaseType('Int64')),
-                Var('minute', BaseType('Int64')),
-                Var('second', BaseType('Int64')),
-                Var('microsecond', OptionType(BaseType('Int64')))
-            ],
-            MessageType('logic', 'DateTimeValue'),
-            Call(Message('logic', 'DateTimeValue'), [
-                Var('year', BaseType('Int64')),
-                Var('month', BaseType('Int64')),
-                Var('day', BaseType('Int64')),
-                Var('hour', BaseType('Int64')),
-                Var('minute', BaseType('Int64')),
-                Var('second', BaseType('Int64')),
+            [_var_year, _var_month, _var_day, _var_hour, _var_minute, _var_second, _var_microsecond],
+            _datetime_value_type,
+            _message_datetime_value(
+                _var_year, _var_month, _var_day, _var_hour, _var_minute, _var_second,
                 IfElse(
-                    Call(Builtin('is_none'), [Var('microsecond', OptionType(BaseType('Int64')))]),
+                    _builtin_is_none(_var_microsecond),
                     Lit(0),
-                    Call(Builtin('Some'), [Var('microsecond', OptionType(BaseType('Int64')))])
+                    _builtin_some(_var_microsecond)
                 )
-            ])
+            )
         ),
         deconstruct_action=Lambda(
-            [Var('msg', MessageType('logic', 'DateTimeValue'))],
-            OptionType(TupleType([
-                BaseType('Int64'), BaseType('Int64'), BaseType('Int64'),
-                BaseType('Int64'), BaseType('Int64'), BaseType('Int64'),
-                OptionType(BaseType('Int64'))
-            ])),
-            Call(Builtin('Some'), [
-                Call(Builtin('make_tuple'), [
-                    Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'DateTimeValue')), Lit('year')]),
-                    Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'DateTimeValue')), Lit('month')]),
-                    Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'DateTimeValue')), Lit('day')]),
-                    Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'DateTimeValue')), Lit('hour')]),
-                    Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'DateTimeValue')), Lit('minute')]),
-                    Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'DateTimeValue')), Lit('second')]),
-                    IfElse(
-                        Call(Builtin('equal'), [
-                            Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'DateTimeValue')), Lit('microsecond')]),
-                            Lit(0)
-                        ]),
-                        Lit(None),
-                        Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'DateTimeValue')), Lit('microsecond')])])
-                    )
-                ])
-            ])
+            [_var_msg(_datetime_value_type)],
+            OptionType(_datetime_tuple_type),
+            _some_call(_make_tuple_call([
+                _get_field_call(_var_msg(_datetime_value_type), Lit('year')),
+                _get_field_call(_var_msg(_datetime_value_type), Lit('month')),
+                _get_field_call(_var_msg(_datetime_value_type), Lit('day')),
+                _get_field_call(_var_msg(_datetime_value_type), Lit('hour')),
+                _get_field_call(_var_msg(_datetime_value_type), Lit('minute')),
+                _get_field_call(_var_msg(_datetime_value_type), Lit('second')),
+                IfElse(
+                    _equal_call(_get_field_call(_var_msg(_datetime_value_type), Lit('microsecond')), Lit(0)),
+                    Lit(None),
+                    _some_call(_get_field_call(_var_msg(_datetime_value_type), Lit('microsecond')))
+                )
+            ]))
         )
     ))
 
     # Configuration rules
+    _config_key_value_type = TupleType([_string_type, _value_type])
+    _config_key_value_nt = Nonterminal('config_key_value', _config_key_value_type)
+    _var_config = Var('config', _config_type)
+    _var_config_key_value = Var('config_key_value', _config_type)
+    _var_tuple = Var('tuple', _config_key_value_type)
+
     add_rule(Rule(
-        lhs=Nonterminal('config_dict', _config_type),
-        rhs=Sequence((
-            LitTerminal('{'),
-            Star(Nonterminal('config_key_value', TupleType([BaseType('String'), MessageType('logic', 'Value')]))),
-            LitTerminal('}')
-        )),
-        construct_action=Lambda(
-            [Var('config_key_value', _config_type)],
-            return_type=_config_type,
-            body=Var('config_key_value', _config_type)
-        ),
-        deconstruct_action=Lambda(
-            [Var('config', _config_type)],
-            OptionType(_config_type),
-            Call(Builtin('Some'), [Var('config', _config_type)])
-        )
+        lhs=_config_dict_nt,
+        rhs=Sequence((LitTerminal('{'), Star(_config_key_value_nt), LitTerminal('}'))),
+        construct_action=Lambda([_var_config_key_value], return_type=_config_type, body=_var_config_key_value),
+        deconstruct_action=Lambda([_var_config], OptionType(_config_type), _some_call(_var_config))
     ))
 
     add_rule(Rule(
-        lhs=Nonterminal('config_key_value', TupleType([BaseType('String'), MessageType('logic', 'Value')])),
-        rhs=Sequence((
-            NamedTerminal('COLON_SYMBOL', BaseType('String')),
-            Nonterminal('value', MessageType('logic', 'Value'))
-        )),
+        lhs=_config_key_value_nt,
+        rhs=Sequence((_colon_symbol_terminal, _value_nt)),
         construct_action=Lambda(
-            [Var('symbol', BaseType('String')), Var('value', MessageType('logic', 'Value'))],
-            TupleType([BaseType('String'), MessageType('logic', 'Value')]),
-            Call(Builtin('make_tuple'), [Var('symbol', BaseType('String')), Var('value', MessageType('logic', 'Value'))])
+            [_var_symbol(), _var_value()],
+            _config_key_value_type,
+            _make_tuple_call([_var_symbol(), _var_value()])
         ),
         deconstruct_action=Lambda(
-            [Var('tuple', TupleType([BaseType('String'), MessageType('logic', 'Value')]))],
-            OptionType(TupleType([BaseType('String'), MessageType('logic', 'Value')])),
-            Call(Builtin('Some'), [
-                Call(Builtin('make_tuple'), [
-                    Call(Builtin('fst'), [Var('tuple', TupleType([BaseType('String'), MessageType('logic', 'Value')]))]),
-                    Call(Builtin('snd'), [Var('tuple', TupleType([BaseType('String'), MessageType('logic', 'Value')]))])
-                ])
-            ])
+            [_var_tuple],
+            OptionType(_config_key_value_type),
+            _some_call(_make_tuple_call([
+                _builtin_fst(_var_tuple),
+                _builtin_snd(_var_tuple)
+            ]))
         )
     ))
 
@@ -459,10 +443,10 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
             MessageType('transactions', 'Transaction'),
             Call(Message('transactions', 'Transaction'), [
                 Var('epochs', ListType(MessageType('transactions', 'Epoch'))),
-                Call(Builtin('unwrap_option_or'), [
+                _builtin_unwrap_option_or(
                     Var('configure', OptionType(MessageType('transactions', 'Configure'))),
                     Call(Builtin('construct_configure'), [ListExpr([], TupleType([BaseType('String'), MessageType('logic', 'Value')]))])
-                ]),
+                ),
                 Var('sync', OptionType(MessageType('transactions', 'Sync')))
             ])
         ),
@@ -473,186 +457,133 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
                 OptionType(MessageType('transactions', 'Sync')),
                 ListType(MessageType('transactions', 'Epoch'))
             ])),
-            Call(Builtin('Some'), [
-                Call(Builtin('make_tuple'), [
-                    Call(Builtin('deconstruct_configure'), [Call(Builtin('get_field'), [Var('msg', MessageType('transactions', 'Transaction')), Lit('configure')])]),
-                    Call(Builtin('get_field'), [Var('msg', MessageType('transactions', 'Transaction')), Lit('sync')]),
-                    Call(Builtin('get_field'), [Var('msg', MessageType('transactions', 'Transaction')), Lit('epochs')])
-                ])
-            ])
+            _builtin_some(_builtin_make_tuple(
+                Call(Builtin('deconstruct_configure'), [_builtin_get_field(Var('msg', MessageType('transactions', 'Transaction')), Lit('configure'))]),
+                _builtin_get_field(Var('msg', MessageType('transactions', 'Transaction')), Lit('sync')),
+                _builtin_get_field(Var('msg', MessageType('transactions', 'Transaction')), Lit('epochs'))
+            ))
         )
     ))
 
     # Bindings rules
+    _value_bindings_nt = Nonterminal('value_bindings', ListType(_binding_type))
+    _var_keys = Var('keys', ListType(_binding_type))
+    _var_values = Var('values', OptionType(ListType(_binding_type)))
+    _var_bindings_tuple = Var('tuple', _bindings_type)
+    _empty_binding_list = ListExpr([], _binding_type)
+
     add_rule(Rule(
-        lhs=Nonterminal('bindings', _bindings_type),
-        rhs=Sequence((
-            LitTerminal('['),
-            Star(Nonterminal('binding', MessageType('logic', 'Binding'))),
-            Option(Nonterminal('value_bindings', ListType(MessageType('logic', 'Binding')))),
-            LitTerminal(']')
-        )),
+        lhs=_bindings_nt,
+        rhs=Sequence((LitTerminal('['), Star(_binding_nt), Option(_value_bindings_nt), LitTerminal(']'))),
         construct_action=Lambda(
-            [
-                Var('keys', ListType(MessageType('logic', 'Binding'))),
-                Var('values', OptionType(ListType(MessageType('logic', 'Binding'))))
-            ],
+            [_var_keys, _var_values],
             _bindings_type,
-            Call(Builtin('make_tuple'), [
-                Var('keys', ListType(MessageType('logic', 'Binding'))),
-                Call(Builtin('unwrap_option_or'), [
-                    Var('values', OptionType(ListType(MessageType('logic', 'Binding')))),
-                    ListExpr([], MessageType('logic', 'Binding'))
-                ])
+            _make_tuple_call([
+                _var_keys,
+                _builtin_unwrap_option_or(_var_values, _empty_binding_list)
             ])
         ),
         deconstruct_action=Lambda(
-            [Var('tuple', _bindings_type)],
-            OptionType(TupleType([
-                ListType(MessageType('logic', 'Binding')),
-                OptionType(ListType(MessageType('logic', 'Binding')))
-            ])),
-            Call(Builtin('Some'), [
-                Call(Builtin('make_tuple'), [
-                    Call(Builtin('fst'), [Var('tuple', _bindings_type)]),
-                    IfElse(
-                        Call(Builtin('is_empty'), [Call(Builtin('snd'), [Var('tuple', _bindings_type)])]),
-                        Lit(None),
-                        Call(Builtin('Some'), [Call(Builtin('snd'), [Var('tuple', _bindings_type)])])
-                    )
-                ])
-            ])
+            [_var_bindings_tuple],
+            OptionType(TupleType([ListType(_binding_type), OptionType(ListType(_binding_type))])),
+            _some_call(_make_tuple_call([
+                _builtin_fst(_var_bindings_tuple),
+                IfElse(
+                    _builtin_is_empty(_builtin_snd(_var_bindings_tuple)),
+                    Lit(None),
+                    _some_call(_builtin_snd(_var_bindings_tuple))
+                )
+            ]))
         )
     ))
 
     add_rule(Rule(
-        lhs=Nonterminal('value_bindings', ListType(MessageType('logic', 'Binding'))),
-        rhs=Sequence((
-            LitTerminal('|'),
-            Star(Nonterminal('binding', MessageType('logic', 'Binding')))
-        )),
-        construct_action=Lambda(
-            [Var('values', ListType(MessageType('logic', 'Binding')))],
-            ListType(MessageType('logic', 'Binding')),
-            Var('values', ListType(MessageType('logic', 'Binding')))
-        ),
-        deconstruct_action=Lambda(
-            [Var('values', ListType(MessageType('logic', 'Binding')))],
-            OptionType(ListType(MessageType('logic', 'Binding'))),
-            Call(Builtin('Some'), [Var('values', ListType(MessageType('logic', 'Binding')))])
-        )
+        lhs=_value_bindings_nt,
+        rhs=Sequence((LitTerminal('|'), Star(_binding_nt))),
+        construct_action=Lambda([_var_values], ListType(_binding_type), _var_values),
+        deconstruct_action=Lambda([Var('values', ListType(_binding_type))], OptionType(ListType(_binding_type)), _some_call(Var('values', ListType(_binding_type))))
     ))
 
+    _type_var = Var('type', _type_type)
     add_rule(Rule(
-        lhs=Nonterminal('binding', MessageType('logic', 'Binding')),
-        rhs=Sequence((
-            NamedTerminal('SYMBOL', BaseType('String')),
-            LitTerminal('::'),
-            Nonterminal('type', MessageType('logic', 'Type'))
-        )),
+        lhs=_binding_nt,
+        rhs=Sequence((_symbol_terminal, LitTerminal('::'), _type_nt)),
         construct_action=Lambda(
-            [Var('symbol', BaseType('String')), Var('type', MessageType('logic', 'Type'))],
-            MessageType('logic', 'Binding'),
-            Call(Message('logic', 'Binding'), [
-                Call(Message('logic', 'Var'), [Var('symbol', BaseType('String'))]),
-                Var('type', MessageType('logic', 'Type'))
-            ])
+            [_var_symbol(_string_type), _type_var],
+            _binding_type,
+            _message_binding(_message_var(_var_symbol(_string_type)), _type_var)
         ),
         deconstruct_action=Lambda(
-            [Var('msg', MessageType('logic', 'Binding'))],
-            OptionType(TupleType([BaseType('String'), MessageType('logic', 'Type')])),
-            Call(Builtin('Some'), [
-                Call(Builtin('make_tuple'), [
-                    Call(Builtin('get_field'), [Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Binding')), Lit('var')]), Lit('symbol')]),
-                    Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Binding')), Lit('type')])
-                ])
-            ])
+            [_var_msg(_binding_type)],
+            OptionType(TupleType([_string_type, _type_type])),
+            _some_call(_make_tuple_call([
+                _get_field_call(_get_field_call(_var_msg(_binding_type), Lit('var')), Lit('symbol')),
+                _get_field_call(_var_msg(_binding_type), Lit('type'))
+            ]))
         )
     ))
 
     # Abstraction rules
+    _abstraction_with_arity_nt = Nonterminal('abstraction_with_arity', _abstraction_with_arity_type)
+    _var_bindings = Var('bindings', _bindings_type)
+    _var_formula = Var('formula', _formula_type)
+    _var_abstraction_tuple = Var('tuple', _abstraction_with_arity_type)
+
+    # Helper to concat bindings
+    def _concat_bindings(bindings_var):
+        return _builtin_list_concat(
+            _builtin_fst(bindings_var),
+            _builtin_snd(bindings_var)
+        )
+
     add_rule(Rule(
-        lhs=Nonterminal('abstraction_with_arity', _abstraction_with_arity_type),
-        rhs=Sequence((
-            LitTerminal('('),
-            Nonterminal('bindings', _bindings_type),
-            Nonterminal('formula', MessageType('logic', 'Formula')),
-            LitTerminal(')')
-        )),
+        lhs=_abstraction_with_arity_nt,
+        rhs=Sequence((_lparen, _bindings_nt, _formula_nt, _rparen)),
         construct_action=Lambda(
-            params=[Var('bindings', _bindings_type), Var('formula', MessageType('logic', 'Formula'))],
+            params=[_var_bindings, _var_formula],
             return_type=_abstraction_with_arity_type,
-            body=Call(Builtin('make_tuple'), [
-                Call(Message('logic', 'Abstraction'), [
-                    Call(Builtin('list_concat'), [
-                        Call(Builtin('fst'), [Var('bindings', _bindings_type)]),
-                        Call(Builtin('snd'), [Var('bindings', _bindings_type)])
-                    ]),
-                    Var('formula', MessageType('logic', 'Formula'))
-                ]),
-                Call(Builtin('length'), [Call(Builtin('snd'), [Var('bindings', _bindings_type)])])
+            body=_make_tuple_call([
+                _message_abstraction(_concat_bindings(_var_bindings), _var_formula),
+                _builtin_length(_builtin_snd(_var_bindings))
             ])
         ),
         deconstruct_action=Lambda(
-            [Var('tuple', _abstraction_with_arity_type)],
-            OptionType(TupleType([_bindings_type, MessageType('logic', 'Formula')])),
-            Call(Builtin('Some'), [
-                Call(Builtin('make_tuple'), [
-                    Call(Builtin('split_bindings'), [
-                        Call(Builtin('fst'), [Var('tuple', _abstraction_with_arity_type)]),
-                        Call(Builtin('snd'), [Var('tuple', _abstraction_with_arity_type)])
-                    ]),
-                    Call(Builtin('get_field'), [Call(Builtin('fst'), [Var('tuple', _abstraction_with_arity_type)]), Lit('formula')])
-                ])
-            ])
+            [_var_abstraction_tuple],
+            OptionType(TupleType([_bindings_type, _formula_type])),
+            _some_call(_make_tuple_call([
+                Call(Builtin('split_bindings'), [
+                    _builtin_fst(_var_abstraction_tuple),
+                    _builtin_snd(_var_abstraction_tuple)
+                ]),
+                _get_field_call(_builtin_fst(_var_abstraction_tuple), Lit('formula'))
+            ]))
         )
     ))
 
     add_rule(Rule(
-        lhs=Nonterminal('abstraction', MessageType('logic', 'Abstraction')),
-        rhs=Sequence((
-            LitTerminal('('),
-            Nonterminal('bindings', _bindings_type),
-            Nonterminal('formula', MessageType('logic', 'Formula')),
-            LitTerminal(')')
-        )),
+        lhs=_abstraction_nt,
+        rhs=Sequence((_lparen, _bindings_nt, _formula_nt, _rparen)),
         construct_action=Lambda(
-            params=[Var('bindings', _bindings_type), Var('formula', MessageType('logic', 'Formula'))],
-            return_type=MessageType('logic', 'Abstraction'),
-            body=Call(Message('logic', 'Abstraction'), [
-                Call(Builtin('list_concat'), [
-                    Call(Builtin('fst'), [Var('bindings', _bindings_type)]),
-                    Call(Builtin('snd'), [Var('bindings', _bindings_type)])
-                ]),
-                Var('formula', MessageType('logic', 'Formula'))
-            ])
+            params=[_var_bindings, _var_formula],
+            return_type=_abstraction_type,
+            body=_message_abstraction(_concat_bindings(_var_bindings), _var_formula)
         ),
         deconstruct_action=Lambda(
-            [Var('msg', MessageType('logic', 'Abstraction'))],
-            OptionType(TupleType([_bindings_type, MessageType('logic', 'Formula')])),
-            Call(Builtin('Some'), [
-                Call(Builtin('make_tuple'), [
-                    Call(Builtin('split_all_bindings'), [Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Abstraction')), Lit('bindings')])]),
-                    Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Abstraction')), Lit('formula')])
-                ])
-            ])
+            [_var_msg(_abstraction_type)],
+            OptionType(TupleType([_bindings_type, _formula_type])),
+            _some_call(_make_tuple_call([
+                Call(Builtin('split_all_bindings'), [_get_field_call(_var_msg(_abstraction_type), Lit('bindings'))]),
+                _get_field_call(_var_msg(_abstraction_type), Lit('formula'))
+            ]))
         )
     ))
 
     # Name rule
     add_rule(Rule(
-        lhs=Nonterminal('name', BaseType('String')),
-        rhs=NamedTerminal('COLON_SYMBOL', BaseType('String')),
-        construct_action=Lambda(
-            [Var('symbol', BaseType('String'))],
-            BaseType('String'),
-            Var('symbol', BaseType('String'))
-        ),
-        deconstruct_action=Lambda(
-            [Var('symbol', BaseType('String'))],
-            OptionType(BaseType('String')),
-            Call(Builtin('Some'), [Var('symbol', BaseType('String'))])
-        )
+        lhs=_name_nt,
+        rhs=_colon_symbol_terminal,
+        construct_action=Lambda([_var_symbol(_string_type)], _string_type, _var_symbol(_string_type)),
+        deconstruct_action=Lambda([_var_symbol(_string_type)], OptionType(_string_type), _some_call(_var_symbol(_string_type)))
     ))
 
     # Monoid rules
@@ -732,31 +663,37 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     ))
 
     # True/false formula rules
+    _true_nt = Nonterminal('true', _conjunction_type)
+    _false_nt = Nonterminal('false', _disjunction_type)
+    _empty_formula_list = ListExpr([], _formula_type)
+    _lit_formulas = Lit('formulas')
+    _empty_tuple_type = TupleType([])
+
     add_rule(Rule(
-        lhs=Nonterminal('true', MessageType('logic', 'Conjunction')),
-        rhs=Sequence((LitTerminal('('), LitTerminal('true'), LitTerminal(')'))),
-        construct_action=Lambda([], MessageType('logic', 'Conjunction'), Call(Message('logic', 'Conjunction'), [ListExpr([], MessageType('logic', 'Formula'))])),
+        lhs=_true_nt,
+        rhs=Sequence((_lparen, LitTerminal('true'), _rparen)),
+        construct_action=Lambda([], _conjunction_type, _message_conjunction(_empty_formula_list)),
         deconstruct_action=Lambda(
-            [Var('msg', MessageType('logic', 'Conjunction'))],
-            OptionType(TupleType([])),
+            [_var_msg(_conjunction_type)],
+            OptionType(_empty_tuple_type),
             IfElse(
-                Call(Builtin('is_empty'), [Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Conjunction')), Lit('formulas')])]),
-                Call(Builtin('Some'), [Call(Builtin('make_tuple'), [])]),
+                _builtin_is_empty(_get_field_call(_var_msg(_conjunction_type), _lit_formulas)),
+                _some_call(_make_tuple_call([])),
                 Lit(None)
             )
         )
     ))
 
     add_rule(Rule(
-        lhs=Nonterminal('false', MessageType('logic', 'Disjunction')),
-        rhs=Sequence((LitTerminal('('), LitTerminal('false'), LitTerminal(')'))),
-        construct_action=Lambda([], MessageType('logic', 'Disjunction'), Call(Message('logic', 'Disjunction'), [ListExpr([], MessageType('logic', 'Formula'))])),
+        lhs=_false_nt,
+        rhs=Sequence((_lparen, LitTerminal('false'), _rparen)),
+        construct_action=Lambda([], _disjunction_type, _message_disjunction(_empty_formula_list)),
         deconstruct_action=Lambda(
-            [Var('msg', MessageType('logic', 'Disjunction'))],
-            OptionType(TupleType([])),
+            [_var_msg(_disjunction_type)],
+            OptionType(_empty_tuple_type),
             IfElse(
-                Call(Builtin('is_empty'), [Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Disjunction')), Lit('formulas')])]),
-                Call(Builtin('Some'), [Call(Builtin('make_tuple'), [])]),
+                _builtin_is_empty(_get_field_call(_var_msg(_disjunction_type), _lit_formulas)),
+                _some_call(_make_tuple_call([])),
                 Lit(None)
             )
         )
@@ -764,56 +701,47 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
 
     # Formula rules (not final - auto-generation can add more)
     # True formula: checks for empty Conjunction in the 'conjunction' oneof field
-    mark_nonfinal(Nonterminal('formula', MessageType('logic', 'Formula')))
+    mark_nonfinal(_formula_nt)
+    _lit_conjunction = Lit('conjunction')
+    _lit_disjunction = Lit('disjunction')
+
     add_rule(Rule(
-        lhs=Nonterminal('formula', MessageType('logic', 'Formula')),
-        rhs=Nonterminal('true', MessageType('logic', 'Conjunction')),
+        lhs=_formula_nt,
+        rhs=_true_nt,
         construct_action=Lambda(
-            [Var('value', MessageType('logic', 'Conjunction'))],
-            MessageType('logic', 'Formula'),
-            Call(Message('logic', 'Formula'), [Call(OneOf('true'), [Var('value', MessageType('logic', 'Conjunction'))])])
+            [_var_value(_conjunction_type)],
+            _formula_type,
+            _message_formula(Call(OneOf('true'), [_var_value(_conjunction_type)]))
         ),
         deconstruct_action=Lambda(
-            [Var('msg', MessageType('logic', 'Formula'))],
-            OptionType(MessageType('logic', 'Conjunction')),
-            IfElse(
-                Call(Builtin('equal'), [
-                    Call(Builtin('WhichOneof'), [Var('msg', MessageType('logic', 'Formula')), Lit('formula_type')]),
-                    Lit('conjunction')
-                ]),
-                IfElse(
-                    Call(Builtin('is_empty'), [Call(Builtin('get_field'), [Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Formula')), Lit('conjunction')]), Lit('formulas')])]),
-                    Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Formula')), Lit('conjunction')])]),
-                    Lit(None)
-                ),
-                Lit(None)
+            [_var_msg(_formula_type)],
+            OptionType(_conjunction_type),
+            _formula_oneof_deconstruct(
+                _var_msg(_formula_type),
+                'conjunction',
+                _conjunction_type,
+                extra_check=_builtin_is_empty(_get_field_call(_get_field_call(_var_msg(_formula_type), _lit_conjunction), _lit_formulas))
             )
         )
     ))
 
     # False formula: checks for empty Disjunction in the 'disjunction' oneof field
     add_rule(Rule(
-        lhs=Nonterminal('formula', MessageType('logic', 'Formula')),
-        rhs=Nonterminal('false', MessageType('logic', 'Disjunction')),
+        lhs=_formula_nt,
+        rhs=_false_nt,
         construct_action=Lambda(
-            [Var('value', MessageType('logic', 'Disjunction'))],
-            MessageType('logic', 'Formula'),
-            Call(Message('logic', 'Formula'), [Call(OneOf('false'), [Var('value', MessageType('logic', 'Disjunction'))])])
+            [_var_value(_disjunction_type)],
+            _formula_type,
+            _message_formula(Call(OneOf('false'), [_var_value(_disjunction_type)]))
         ),
         deconstruct_action=Lambda(
-            [Var('msg', MessageType('logic', 'Formula'))],
-            OptionType(MessageType('logic', 'Disjunction')),
-            IfElse(
-                Call(Builtin('equal'), [
-                    Call(Builtin('WhichOneof'), [Var('msg', MessageType('logic', 'Formula')), Lit('formula_type')]),
-                    Lit('disjunction')
-                ]),
-                IfElse(
-                    Call(Builtin('is_empty'), [Call(Builtin('get_field'), [Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Formula')), Lit('disjunction')]), Lit('formulas')])]),
-                    Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Formula')), Lit('disjunction')])]),
-                    Lit(None)
-                ),
-                Lit(None)
+            [_var_msg(_formula_type)],
+            OptionType(_disjunction_type),
+            _formula_oneof_deconstruct(
+                _var_msg(_formula_type),
+                'disjunction',
+                _disjunction_type,
+                extra_check=_builtin_is_empty(_get_field_call(_get_field_call(_var_msg(_formula_type), _lit_disjunction), _lit_formulas))
             )
         )
     ))
@@ -835,11 +763,11 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
             [Var('msg', MessageType('transactions', 'Export'))],
             OptionType(MessageType('transactions', 'ExportCSVConfig')),
             IfElse(
-                Call(Builtin('equal'), [
-                    Call(Builtin('WhichOneof'), [Var('msg', MessageType('transactions', 'Export')), Lit('export_type')]),
+                _builtin_equal(
+                    _builtin_which_oneof(Var('msg', MessageType('transactions', 'Export')), Lit('export_type')),
                     Lit('csv_config')
-                ]),
-                Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType('transactions', 'Export')), Lit('csv_config')])]),
+                ),
+                _builtin_some(_builtin_get_field(Var('msg', MessageType('transactions', 'Export')), Lit('csv_config'))),
                 Lit(None)
             )
         )
@@ -893,7 +821,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         deconstruct_action=Lambda(
             [Var('columns', ListType(MessageType('transactions', 'ExportCSVColumn')))],
             OptionType(ListType(MessageType('transactions', 'ExportCSVColumn'))),
-            Call(Builtin('Some'), [Var('columns', ListType(MessageType('transactions', 'ExportCSVColumn')))])
+            _builtin_some(Var('columns', ListType(MessageType('transactions', 'ExportCSVColumn'))))
         )
     ))
 
@@ -916,28 +844,23 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         deconstruct_action=Lambda(
             [Var('msg', MessageType('transactions', 'ExportCSVColumn'))],
             OptionType(TupleType([BaseType('String'), MessageType('logic', 'RelationId')])),
-            Call(Builtin('Some'), [
-                Call(Builtin('make_tuple'), [
-                    Call(Builtin('get_field'), [Var('msg', MessageType('transactions', 'ExportCSVColumn')), Lit('name')]),
-                    Call(Builtin('get_field'), [Var('msg', MessageType('transactions', 'ExportCSVColumn')), Lit('relation_id')])
-                ])
-            ])
+            _builtin_some(_builtin_make_tuple(
+                _builtin_get_field(Var('msg', MessageType('transactions', 'ExportCSVColumn')), Lit('name')),
+                _builtin_get_field(Var('msg', MessageType('transactions', 'ExportCSVColumn')), Lit('relation_id'))
+            ))
         )
     ))
 
     # Var rule
+    _var_nt = Nonterminal('var', _var_type)
     add_rule(Rule(
-        lhs=Nonterminal('var', MessageType('logic', 'Var')),
-        rhs=NamedTerminal('SYMBOL', BaseType('String')),
-        construct_action=Lambda(
-            [Var('symbol', BaseType('String'))],
-            return_type=MessageType('logic', 'Var'),
-            body=Call(Message('logic', 'Var'), [Var('symbol', BaseType('String'))])
-        ),
+        lhs=_var_nt,
+        rhs=_symbol_terminal,
+        construct_action=Lambda([_var_symbol(_string_type)], _var_type, _message_var(_var_symbol(_string_type))),
         deconstruct_action=Lambda(
-            [Var('msg', MessageType('logic', 'Var'))],
-            OptionType(BaseType('String')),
-            Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Var')), Lit('symbol')])])
+            [_var_msg(_var_type)],
+            OptionType(_string_type),
+            _some_call(_get_field_call(_var_msg(_var_type), Lit('symbol')))
         )
     ))
 
@@ -999,7 +922,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         deconstruct_action=Lambda(
             [Var('value', MessageType('logic', 'Value'))],
             OptionType(MessageType('logic', 'Value')),
-            Call(Builtin('Some'), [Var('value', MessageType('logic', 'Value'))])
+            _builtin_some(Var('value', MessageType('logic', 'Value')))
         )
     ))
 
@@ -1045,12 +968,10 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
                 deconstruct_action=Lambda(
                     [Var('msg', lhs_type)],
                     OptionType(TupleType([BaseType('Int64'), BaseType('Int64')])),
-                    Call(Builtin('Some'), [
-                        Call(Builtin('make_tuple'), [
-                            Call(Builtin('get_field'), [Var('msg', lhs_type), Lit('precision')]),
-                            Call(Builtin('get_field'), [Var('msg', lhs_type), Lit('scale')])
-                        ])
-                    ])
+                    _builtin_some(_builtin_make_tuple(
+                        _builtin_get_field(Var('msg', lhs_type), Lit('precision')),
+                        _builtin_get_field(Var('msg', lhs_type), Lit('scale'))
+                    ))
                 )
             ))
         else:
@@ -1062,7 +983,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
                 deconstruct_action=Lambda(
                     [Var('msg', lhs_type)],
                     OptionType(TupleType([])),
-                    Call(Builtin('Some'), [Call(Builtin('make_tuple'), [])])
+                    _builtin_some(_builtin_make_tuple())
                 )
             ))
 
@@ -1074,38 +995,43 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         ('gt', '>', 'rel_primitive_gt_monotype'),
         ('gt_eq', '>=', 'rel_primitive_gt_eq_monotype'),
     ]
+
+    # Common vars for operators
+    _var_left = Var('left', _term_type)
+    _var_right = Var('right', _term_type)
+    _var_result = Var('result', _term_type)
+    _lit_op = Lit('op')
+    _lit_arg0 = Lit('arg0')
+    _lit_arg1 = Lit('arg1')
+    _lit_arg2 = Lit('arg2')
+    _lit_term = Lit('term')
+
+    # Helper to wrap term in RelTerm
+    def _wrap_relterm(term_var):
+        return _message_relterm(Call(OneOf('term'), [term_var]))
+
+    # Helper to extract term from arg
+    def _extract_term_from_arg(msg_var, arg_lit):
+        return _get_field_call(_get_field_call(msg_var, arg_lit), _lit_term)
+
     for name, op, prim in _comparison_ops:
         add_rule(Rule(
-            lhs=Nonterminal(name, MessageType('logic', 'Primitive')),
-            rhs=Sequence((
-                LitTerminal('('), LitTerminal(op),
-                Nonterminal('term', MessageType('logic', 'Term')),
-                Nonterminal('term', MessageType('logic', 'Term')),
-                LitTerminal(')')
-            )),
+            lhs=Nonterminal(name, _primitive_type),
+            rhs=Sequence((_lparen, LitTerminal(op), _term_nt, _term_nt, _rparen)),
             construct_action=Lambda(
-                [Var('left', MessageType('logic', 'Term')), Var('right', MessageType('logic', 'Term'))],
-                MessageType('logic', 'Primitive'),
-                Call(Message('logic', 'Primitive'), [
-                    Lit(prim),
-                    Call(Message('logic', 'RelTerm'), [Call(OneOf('term'), [Var('left', MessageType('logic', 'Term'))])]),
-                    Call(Message('logic', 'RelTerm'), [Call(OneOf('term'), [Var('right', MessageType('logic', 'Term'))])])
-                ])
+                [_var_left, _var_right],
+                _primitive_type,
+                _message_primitive(Lit(prim), _wrap_relterm(_var_left), _wrap_relterm(_var_right))
             ),
             deconstruct_action=Lambda(
-                [Var('msg', MessageType('logic', 'Primitive'))],
-                OptionType(TupleType([MessageType('logic', 'Term'), MessageType('logic', 'Term')])),
+                [_var_msg(_primitive_type)],
+                OptionType(TupleType([_term_type, _term_type])),
                 IfElse(
-                    Call(Builtin('equal'), [
-                        Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Primitive')), Lit('op')]),
-                        Lit(prim)
-                    ]),
-                    Call(Builtin('Some'), [
-                        Call(Builtin('make_tuple'), [
-                            Call(Builtin('get_field'), [Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Primitive')), Lit('arg0')]), Lit('term')]),
-                            Call(Builtin('get_field'), [Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Primitive')), Lit('arg1')]), Lit('term')])
-                        ])
-                    ]),
+                    _equal_call(_get_field_call(_var_msg(_primitive_type), _lit_op), Lit(prim)),
+                    _some_call(_make_tuple_call([
+                        _extract_term_from_arg(_var_msg(_primitive_type), _lit_arg0),
+                        _extract_term_from_arg(_var_msg(_primitive_type), _lit_arg1)
+                    ])),
                     Lit(None)
                 )
             )
@@ -1120,68 +1046,47 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     ]
     for name, op, prim in _arithmetic_ops:
         add_rule(Rule(
-            lhs=Nonterminal(name, MessageType('logic', 'Primitive')),
-            rhs=Sequence((
-                LitTerminal('('), LitTerminal(op),
-                Nonterminal('term', MessageType('logic', 'Term')),
-                Nonterminal('term', MessageType('logic', 'Term')),
-                Nonterminal('term', MessageType('logic', 'Term')),
-                LitTerminal(')')
-            )),
+            lhs=Nonterminal(name, _primitive_type),
+            rhs=Sequence((_lparen, LitTerminal(op), _term_nt, _term_nt, _term_nt, _rparen)),
             construct_action=Lambda(
-                [
-                    Var('left', MessageType('logic', 'Term')),
-                    Var('right', MessageType('logic', 'Term')),
-                    Var('result', MessageType('logic', 'Term'))
-                ],
-                MessageType('logic', 'Primitive'),
-                Call(Message('logic', 'Primitive'), [
+                [_var_left, _var_right, _var_result],
+                _primitive_type,
+                _message_primitive(
                     Lit(prim),
-                    Call(Message('logic', 'RelTerm'), [Call(OneOf('term'), [Var('left', MessageType('logic', 'Term'))])]),
-                    Call(Message('logic', 'RelTerm'), [Call(OneOf('term'), [Var('right', MessageType('logic', 'Term'))])]),
-                    Call(Message('logic', 'RelTerm'), [Call(OneOf('term'), [Var('result', MessageType('logic', 'Term'))])])
-                ])
+                    _wrap_relterm(_var_left),
+                    _wrap_relterm(_var_right),
+                    _wrap_relterm(_var_result)
+                )
             ),
             deconstruct_action=Lambda(
-                [Var('msg', MessageType('logic', 'Primitive'))],
-                OptionType(TupleType([MessageType('logic', 'Term'), MessageType('logic', 'Term'), MessageType('logic', 'Term')])),
+                [_var_msg(_primitive_type)],
+                OptionType(TupleType([_term_type, _term_type, _term_type])),
                 IfElse(
-                    Call(Builtin('equal'), [
-                        Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Primitive')), Lit('op')]),
-                        Lit(prim)
-                    ]),
-                    Call(Builtin('Some'), [
-                        Call(Builtin('make_tuple'), [
-                            Call(Builtin('get_field'), [Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Primitive')), Lit('arg0')]), Lit('term')]),
-                            Call(Builtin('get_field'), [Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Primitive')), Lit('arg1')]), Lit('term')]),
-                            Call(Builtin('get_field'), [Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Primitive')), Lit('arg2')]), Lit('term')])
-                        ])
-                    ]),
+                    _equal_call(_get_field_call(_var_msg(_primitive_type), _lit_op), Lit(prim)),
+                    _some_call(_make_tuple_call([
+                        _extract_term_from_arg(_var_msg(_primitive_type), _lit_arg0),
+                        _extract_term_from_arg(_var_msg(_primitive_type), _lit_arg1),
+                        _extract_term_from_arg(_var_msg(_primitive_type), _lit_arg2)
+                    ])),
                     Lit(None)
                 )
             )
         ))
 
     # Primitive wrapper rules for operators (not final - auto-generation can add more)
-    mark_nonfinal(Nonterminal('primitive', MessageType('logic', 'Primitive')))
+    mark_nonfinal(_primitive_nt)
+    _var_op = Var('op', _primitive_type)
     for name, _op, prim in _comparison_ops + _arithmetic_ops:
         add_rule(Rule(
-            lhs=Nonterminal('primitive', MessageType('logic', 'Primitive')),
-            rhs=Nonterminal(name, MessageType('logic', 'Primitive')),
-            construct_action=Lambda(
-                [Var('op', MessageType('logic', 'Primitive'))],
-                MessageType('logic', 'Primitive'),
-                Var('op', MessageType('logic', 'Primitive'))
-            ),
+            lhs=_primitive_nt,
+            rhs=Nonterminal(name, _primitive_type),
+            construct_action=Lambda([_var_op], _primitive_type, _var_op),
             deconstruct_action=Lambda(
-                [Var('msg', MessageType('logic', 'Primitive'))],
-                OptionType(MessageType('logic', 'Primitive')),
+                [_var_msg(_primitive_type)],
+                OptionType(_primitive_type),
                 IfElse(
-                    Call(Builtin('equal'), [
-                        Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Primitive')), Lit('op')]),
-                        Lit(prim)
-                    ]),
-                    Call(Builtin('Some'), [Var('msg', MessageType('logic', 'Primitive'))]),
+                    _equal_call(_get_field_call(_var_msg(_primitive_type), _lit_op), Lit(prim)),
+                    _some_call(_var_msg(_primitive_type)),
                     Lit(None)
                 )
             )
@@ -1203,7 +1108,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         deconstruct_action=Lambda(
             [Var('fragment_id', MessageType('fragments', 'FragmentId'))],
             OptionType(MessageType('fragments', 'FragmentId')),
-            Call(Builtin('Some'), [Var('fragment_id', MessageType('fragments', 'FragmentId'))])
+            _builtin_some(Var('fragment_id', MessageType('fragments', 'FragmentId')))
         )
     ))
 
@@ -1258,10 +1163,10 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         deconstruct_action=Lambda(
             [Var('msg', MessageType('transactions', 'Output'))],
             OptionType(TupleType([BaseType('String'), MessageType('logic', 'RelationId')])),
-            Call(Builtin('Some'), [Call(Builtin('make_tuple'), [
-                Call(Builtin('get_field'), [Var('msg', MessageType('transactions', 'Output')), Lit('name')]),
-                Call(Builtin('get_field'), [Var('msg', MessageType('transactions', 'Output')), Lit('relation_id')])
-            ])])
+            _builtin_some(_builtin_make_tuple(
+                _builtin_get_field(Var('msg', MessageType('transactions', 'Output')), Lit('name')),
+                _builtin_get_field(Var('msg', MessageType('transactions', 'Output')), Lit('relation_id'))
+            ))
         )
     ))
 
@@ -1282,10 +1187,10 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         deconstruct_action=Lambda(
             [Var('msg', MessageType('transactions', 'Abort'))],
             OptionType(TupleType([BaseType('String'), MessageType('logic', 'RelationId')])),
-            Call(Builtin('Some'), [Call(Builtin('make_tuple'), [
-                Call(Builtin('get_field'), [Var('msg', MessageType('transactions', 'Abort')), Lit('name')]),
-                Call(Builtin('get_field'), [Var('msg', MessageType('transactions', 'Abort')), Lit('relation_id')])
-            ])])
+            _builtin_some(_builtin_make_tuple(
+                _builtin_get_field(Var('msg', MessageType('transactions', 'Abort')), Lit('name')),
+                _builtin_get_field(Var('msg', MessageType('transactions', 'Abort')), Lit('relation_id'))
+            ))
         )
     ))
 
@@ -1311,11 +1216,11 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         deconstruct_action=Lambda(
             [Var('msg', MessageType('logic', 'FFI'))],
             OptionType(TupleType([BaseType('String'), ListType(MessageType('logic', 'Abstraction')), ListType(MessageType('logic', 'Term'))])),
-            Call(Builtin('Some'), [Call(Builtin('make_tuple'), [
-                Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'FFI')), Lit('name')]),
-                Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'FFI')), Lit('args')]),
-                Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'FFI')), Lit('terms')])
-            ])])
+            _builtin_some(_builtin_make_tuple(
+                _builtin_get_field(Var('msg', MessageType('logic', 'FFI')), Lit('name')),
+                _builtin_get_field(Var('msg', MessageType('logic', 'FFI')), Lit('args')),
+                _builtin_get_field(Var('msg', MessageType('logic', 'FFI')), Lit('terms'))
+            ))
         )
     ))
 
@@ -1336,10 +1241,10 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         deconstruct_action=Lambda(
             [Var('msg', MessageType('logic', 'Pragma'))],
             OptionType(TupleType([BaseType('String'), ListType(MessageType('logic', 'Term'))])),
-            Call(Builtin('Some'), [Call(Builtin('make_tuple'), [
-                Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Pragma')), Lit('name')]),
-                Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Pragma')), Lit('terms')])
-            ])])
+            _builtin_some(_builtin_make_tuple(
+                _builtin_get_field(Var('msg', MessageType('logic', 'Pragma')), Lit('name')),
+                _builtin_get_field(Var('msg', MessageType('logic', 'Pragma')), Lit('terms'))
+            ))
         )
     ))
 
@@ -1360,10 +1265,10 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         deconstruct_action=Lambda(
             [Var('msg', MessageType('logic', 'Atom'))],
             OptionType(TupleType([MessageType('logic', 'RelationId'), ListType(MessageType('logic', 'Term'))])),
-            Call(Builtin('Some'), [Call(Builtin('make_tuple'), [
-                Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Atom')), Lit('name')]),
-                Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Atom')), Lit('terms')])
-            ])])
+            _builtin_some(_builtin_make_tuple(
+                _builtin_get_field(Var('msg', MessageType('logic', 'Atom')), Lit('name')),
+                _builtin_get_field(Var('msg', MessageType('logic', 'Atom')), Lit('terms'))
+            ))
         )
     ))
 
@@ -1384,10 +1289,10 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         deconstruct_action=Lambda(
             [Var('msg', MessageType('logic', 'RelAtom'))],
             OptionType(TupleType([BaseType('String'), ListType(MessageType('logic', 'RelTerm'))])),
-            Call(Builtin('Some'), [Call(Builtin('make_tuple'), [
-                Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'RelAtom')), Lit('name')]),
-                Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'RelAtom')), Lit('terms')])
-            ])])
+            _builtin_some(_builtin_make_tuple(
+                _builtin_get_field(Var('msg', MessageType('logic', 'RelAtom')), Lit('name')),
+                _builtin_get_field(Var('msg', MessageType('logic', 'RelAtom')), Lit('terms'))
+            ))
         )
     ))
 
@@ -1403,15 +1308,15 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         construct_action=Lambda(
             [Var('name', BaseType('String')), Var('terms', ListType(MessageType('logic', 'RelTerm')))],
             MessageType('logic', 'Primitive'),
-            Call(Message('logic', 'Primitive'), [Var('name', BaseType('String')), Var('terms', ListType(MessageType('logic', 'RelTerm')))])
+            _message_primitive(Var('name', BaseType('String')), Var('terms', ListType(MessageType('logic', 'RelTerm'))))
         ),
         deconstruct_action=Lambda(
             [Var('msg', MessageType('logic', 'Primitive'))],
             OptionType(TupleType([BaseType('String'), ListType(MessageType('logic', 'RelTerm'))])),
-            Call(Builtin('Some'), [Call(Builtin('make_tuple'), [
-                Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Primitive')), Lit('name')]),
-                Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Primitive')), Lit('terms')])
-            ])])
+            _builtin_some(_builtin_make_tuple(
+                _builtin_get_field(Var('msg', MessageType('logic', 'Primitive')), Lit('name')),
+                _builtin_get_field(Var('msg', MessageType('logic', 'Primitive')), Lit('terms'))
+            ))
         )
     ))
 
@@ -1432,10 +1337,10 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         deconstruct_action=Lambda(
             [Var('msg', MessageType('logic', 'Attribute'))],
             OptionType(TupleType([BaseType('String'), ListType(MessageType('logic', 'Value'))])),
-            Call(Builtin('Some'), [Call(Builtin('make_tuple'), [
-                Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Attribute')), Lit('name')]),
-                Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Attribute')), Lit('args')])
-            ])])
+            _builtin_some(_builtin_make_tuple(
+                _builtin_get_field(Var('msg', MessageType('logic', 'Attribute')), Lit('name')),
+                _builtin_get_field(Var('msg', MessageType('logic', 'Attribute')), Lit('args'))
+            ))
         )
     ))
 
@@ -1452,13 +1357,13 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
             [Var('bindings', _bindings_type), Var('formula', MessageType('logic', 'Formula'))],
             MessageType('logic', 'Exists'),
             Call(Message('logic', 'Exists'), [
-                Call(Message('logic', 'Abstraction'), [
-                    Call(Builtin('list_concat'), [
-                        Call(Builtin('fst'), [Var('bindings', _bindings_type)]),
-                        Call(Builtin('snd'), [Var('bindings', _bindings_type)])
-                    ]),
+                _message_abstraction(
+                    _builtin_list_concat(
+                        _builtin_fst(Var('bindings', _bindings_type)),
+                        _builtin_snd(Var('bindings', _bindings_type))
+                    ),
                     Var('formula', MessageType('logic', 'Formula'))
-                ])
+                )
             ])
         ),
         deconstruct_action=Lambda(
@@ -1487,9 +1392,9 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
             MessageType('logic', 'Upsert'),
             Call(Message('logic', 'Upsert'), [
                 Var('name', MessageType('logic', 'RelationId')),
-                Call(Builtin('fst'), [Var('body_with_arity', _abstraction_with_arity_type)]),
+                _builtin_fst(Var('body_with_arity', _abstraction_with_arity_type)),
                 Var('attrs', ListType(MessageType('logic', 'Attribute'))),
-                Call(Builtin('snd'), [Var('body_with_arity', _abstraction_with_arity_type)])
+                _builtin_snd(Var('body_with_arity', _abstraction_with_arity_type))
             ])
         ),
         deconstruct_action=Lambda(
@@ -1499,14 +1404,14 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
                 _abstraction_with_arity_type,
                 ListType(MessageType('logic', 'Attribute'))
             ])),
-            Call(Builtin('Some'), [Call(Builtin('make_tuple'), [
-                Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Upsert')), Lit('name')]),
-                Call(Builtin('make_tuple'), [
-                    Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Upsert')), Lit('body')]),
-                    Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Upsert')), Lit('value_arity')])
-                ]),
-                Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'Upsert')), Lit('attrs')])
-            ])])
+            _builtin_some(_builtin_make_tuple(
+                _builtin_get_field(Var('msg', MessageType('logic', 'Upsert')), Lit('name')),
+                _builtin_make_tuple(
+                    _builtin_get_field(Var('msg', MessageType('logic', 'Upsert')), Lit('body')),
+                    _builtin_get_field(Var('msg', MessageType('logic', 'Upsert')), Lit('value_arity'))
+                ),
+                _builtin_get_field(Var('msg', MessageType('logic', 'Upsert')), Lit('attrs'))
+            ))
         )
     ))
 
@@ -1532,9 +1437,9 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
             Call(Message('logic', 'MonoidDef'), [
                 Var('monoid', MessageType('logic', 'Monoid')),
                 Var('name', MessageType('logic', 'RelationId')),
-                Call(Builtin('fst'), [Var('body_with_arity', _abstraction_with_arity_type)]),
+                _builtin_fst(Var('body_with_arity', _abstraction_with_arity_type)),
                 Var('attrs', ListType(MessageType('logic', 'Attribute'))),
-                Call(Builtin('snd'), [Var('body_with_arity', _abstraction_with_arity_type)])
+                _builtin_snd(Var('body_with_arity', _abstraction_with_arity_type))
             ])
         ),
         deconstruct_action=Lambda(
@@ -1545,15 +1450,15 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
                 _abstraction_with_arity_type,
                 ListType(MessageType('logic', 'Attribute'))
             ])),
-            Call(Builtin('Some'), [Call(Builtin('make_tuple'), [
-                Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'MonoidDef')), Lit('monoid')]),
-                Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'MonoidDef')), Lit('name')]),
-                Call(Builtin('make_tuple'), [
-                    Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'MonoidDef')), Lit('body')]),
-                    Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'MonoidDef')), Lit('value_arity')])
-                ]),
-                Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'MonoidDef')), Lit('attrs')])
-            ])])
+            _builtin_some(_builtin_make_tuple(
+                _builtin_get_field(Var('msg', MessageType('logic', 'MonoidDef')), Lit('monoid')),
+                _builtin_get_field(Var('msg', MessageType('logic', 'MonoidDef')), Lit('name')),
+                _builtin_make_tuple(
+                    _builtin_get_field(Var('msg', MessageType('logic', 'MonoidDef')), Lit('body')),
+                    _builtin_get_field(Var('msg', MessageType('logic', 'MonoidDef')), Lit('value_arity'))
+                ),
+                _builtin_get_field(Var('msg', MessageType('logic', 'MonoidDef')), Lit('attrs'))
+            ))
         )
     ))
 
@@ -1579,9 +1484,9 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
             Call(Message('logic', 'MonusDef'), [
                 Var('monoid', MessageType('logic', 'Monoid')),
                 Var('name', MessageType('logic', 'RelationId')),
-                Call(Builtin('fst'), [Var('body_with_arity', _abstraction_with_arity_type)]),
+                _builtin_fst(Var('body_with_arity', _abstraction_with_arity_type)),
                 Var('attrs', ListType(MessageType('logic', 'Attribute'))),
-                Call(Builtin('snd'), [Var('body_with_arity', _abstraction_with_arity_type)])
+                _builtin_snd(Var('body_with_arity', _abstraction_with_arity_type))
             ])
         ),
         deconstruct_action=Lambda(
@@ -1592,15 +1497,15 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
                 _abstraction_with_arity_type,
                 ListType(MessageType('logic', 'Attribute'))
             ])),
-            Call(Builtin('Some'), [Call(Builtin('make_tuple'), [
-                Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'MonusDef')), Lit('monoid')]),
-                Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'MonusDef')), Lit('name')]),
-                Call(Builtin('make_tuple'), [
-                    Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'MonusDef')), Lit('body')]),
-                    Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'MonusDef')), Lit('value_arity')])
-                ]),
-                Call(Builtin('get_field'), [Var('msg', MessageType('logic', 'MonusDef')), Lit('attrs')])
-            ])])
+            _builtin_some(_builtin_make_tuple(
+                _builtin_get_field(Var('msg', MessageType('logic', 'MonusDef')), Lit('monoid')),
+                _builtin_get_field(Var('msg', MessageType('logic', 'MonusDef')), Lit('name')),
+                _builtin_make_tuple(
+                    _builtin_get_field(Var('msg', MessageType('logic', 'MonusDef')), Lit('body')),
+                    _builtin_get_field(Var('msg', MessageType('logic', 'MonusDef')), Lit('value_arity'))
+                ),
+                _builtin_get_field(Var('msg', MessageType('logic', 'MonusDef')), Lit('attrs'))
+            ))
         )
     ))
 
