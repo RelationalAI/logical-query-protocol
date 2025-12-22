@@ -15,21 +15,20 @@ from meta.grammar import (
     Rule, Grammar,
 )
 from meta.grammar_analysis import GrammarAnalysis
+from meta.target import BaseType, MessageType, Lambda, Var, OptionType, TupleType, Lit
+from typing import Optional
 
-# Alias static methods for backward compatibility in tests
-compute_reachability = GrammarAnalysis.compute_reachability_static
-compute_nullable = GrammarAnalysis.compute_nullable_static
-compute_first = GrammarAnalysis.compute_first_static
-compute_first_k = GrammarAnalysis.compute_first_k_static
-compute_follow = GrammarAnalysis.compute_follow_static
-compute_follow_k = GrammarAnalysis.compute_follow_k_static
-is_rhs_nullable = GrammarAnalysis.is_rhs_nullable
-rhs_first = GrammarAnalysis.rhs_first
-rhs_first_k = GrammarAnalysis.rhs_first_k
-rhs_follow = GrammarAnalysis.rhs_follow
-rhs_follow_k = GrammarAnalysis.rhs_follow_k
-concat_k = GrammarAnalysis.concat_k
-from meta.target import BaseType, MessageType, Lambda, Var
+
+def make_dummy_deconstruct(lhs_type):
+    """Helper to create dummy deconstruct action that returns None."""
+    return Lambda([Var('x', lhs_type)], OptionType(TupleType([])), Lit(None))
+
+
+def make_rule(lhs: Nonterminal, rhs, construct_action: Lambda, deconstruct_action: Optional[Lambda] = None, source_type=None) -> Rule:
+    """Helper to create Rule with provided actions."""
+    if deconstruct_action is None:
+        deconstruct_action = make_dummy_deconstruct(lhs.target_type())
+    return Rule(lhs, rhs, construct_action, deconstruct_action, source_type)
 
 
 def make_simple_grammar():
@@ -50,16 +49,16 @@ def make_simple_grammar():
     # S -> A B
     param_a = Var("x", MessageType("proto", "A"))
     param_b = Var("y", MessageType("proto", "B"))
-    action_s = Lambda([param_a, param_b], MessageType("proto", "S"), param_a)
-    grammar.add_rule(Rule(s, Sequence((a, b)), action_s))
+    construct_action_s = Lambda([param_a, param_b], MessageType("proto", "S"), param_a)
+    grammar.add_rule(make_rule(s, Sequence((a, b)), construct_action_s))
 
     # A -> "a"
-    action_a = Lambda([], MessageType("proto", "A"), Var("x", MessageType("proto", "A")))
-    grammar.add_rule(Rule(a, lit_a, action_a))
+    construct_action_a = Lambda([], MessageType("proto", "A"), Var("x", MessageType("proto", "A")))
+    grammar.add_rule(make_rule(a, lit_a, construct_action_a))
 
     # B -> "b"
-    action_b = Lambda([], MessageType("proto", "B"), Var("y", MessageType("proto", "B")))
-    grammar.add_rule(Rule(b, lit_b, action_b))
+    construct_action_b = Lambda([], MessageType("proto", "B"), Var("y", MessageType("proto", "B")))
+    grammar.add_rule(make_rule(b, lit_b, construct_action_b))
 
     return grammar, s, a, b, lit_a, lit_b
 
@@ -82,20 +81,20 @@ def make_nullable_grammar():
     # S -> A B
     param_a = Var("x", MessageType("proto", "A"))
     param_b = Var("y", MessageType("proto", "B"))
-    action_s = Lambda([param_a, param_b], MessageType("proto", "S"), param_a)
-    grammar.add_rule(Rule(s, Sequence((a, b)), action_s))
+    construct_action_s = Lambda([param_a, param_b], MessageType("proto", "S"), param_a)
+    grammar.add_rule(make_rule(s, Sequence((a, b)), construct_action_s))
 
     # A -> "a"
-    action_a1 = Lambda([], MessageType("proto", "A"), Var("x", MessageType("proto", "A")))
-    grammar.add_rule(Rule(a, lit_a, action_a1))
+    construct_action_a1 = Lambda([], MessageType("proto", "A"), Var("x", MessageType("proto", "A")))
+    grammar.add_rule(make_rule(a, lit_a, construct_action_a1))
 
     # A -> epsilon
-    action_a2 = Lambda([], MessageType("proto", "A"), Var("x", MessageType("proto", "A")))
-    grammar.add_rule(Rule(a, Sequence(()), action_a2))
+    construct_action_a2 = Lambda([], MessageType("proto", "A"), Var("x", MessageType("proto", "A")))
+    grammar.add_rule(make_rule(a, Sequence(()), construct_action_a2))
 
     # B -> "b"
-    action_b = Lambda([], MessageType("proto", "B"), Var("y", MessageType("proto", "B")))
-    grammar.add_rule(Rule(b, lit_b, action_b))
+    construct_action_b = Lambda([], MessageType("proto", "B"), Var("y", MessageType("proto", "B")))
+    grammar.add_rule(make_rule(b, lit_b, construct_action_b))
 
     return grammar, s, a, b
 
@@ -116,18 +115,18 @@ def make_left_recursive_grammar():
     # S -> S "+" T
     param_s = Var("x", MessageType("proto", "S"))
     param_t1 = Var("y", MessageType("proto", "T"))
-    action_s1 = Lambda([param_s, param_t1], MessageType("proto", "S"), param_s)
-    grammar.add_rule(Rule(s, Sequence((s, plus, t)), action_s1))
+    construct_action_s1 = Lambda([param_s, param_t1], MessageType("proto", "S"), param_s)
+    grammar.add_rule(make_rule(s, Sequence((s, plus, t)), construct_action_s1))
 
     # S -> T
     param_t2 = Var("z", MessageType("proto", "T"))
-    action_s2 = Lambda([param_t2], MessageType("proto", "S"), param_t2)
-    grammar.add_rule(Rule(s, t, action_s2))
+    construct_action_s2 = Lambda([param_t2], MessageType("proto", "S"), param_t2)
+    grammar.add_rule(make_rule(s, t, construct_action_s2))
 
     # T -> NUM
     param_num = Var("n", BaseType("Int64"))
-    action_t = Lambda([param_num], MessageType("proto", "T"), param_num)
-    grammar.add_rule(Rule(t, num, action_t))
+    construct_action_t = Lambda([param_num], MessageType("proto", "T"), param_num)
+    grammar.add_rule(make_rule(t, num, construct_action_t))
 
     return grammar, s, t, num
 
@@ -149,16 +148,16 @@ def make_unreachable_grammar():
 
     # S -> A
     param_a = Var("x", MessageType("proto", "A"))
-    action_s = Lambda([param_a], MessageType("proto", "S"), param_a)
-    grammar.add_rule(Rule(s, a, action_s))
+    construct_action_s = Lambda([param_a], MessageType("proto", "S"), param_a)
+    grammar.add_rule(make_rule(s, a, construct_action_s))
 
     # A -> "a"
-    action_a = Lambda([], MessageType("proto", "A"), Var("y", MessageType("proto", "A")))
-    grammar.add_rule(Rule(a, lit_a, action_a))
+    construct_action_a = Lambda([], MessageType("proto", "A"), Var("y", MessageType("proto", "A")))
+    grammar.add_rule(make_rule(a, lit_a, construct_action_a))
 
     # B -> "b" (unreachable)
-    action_b = Lambda([], MessageType("proto", "B"), Var("z", MessageType("proto", "B")))
-    grammar.add_rule(Rule(b, lit_b, action_b))
+    construct_action_b = Lambda([], MessageType("proto", "B"), Var("z", MessageType("proto", "B")))
+    grammar.add_rule(make_rule(b, lit_b, construct_action_b))
 
     return grammar, s, a, b
 
@@ -169,7 +168,7 @@ class TestComputeReachability:
     def test_simple_grammar_all_reachable(self):
         """Test reachability in simple grammar where all nonterminals are reachable."""
         grammar, s, a, b, _, _ = make_simple_grammar()
-        reachable = compute_reachability(grammar)
+        reachable = GrammarAnalysis.compute_reachability_static(grammar)
         assert s in reachable
         assert a in reachable
         assert b in reachable
@@ -178,7 +177,7 @@ class TestComputeReachability:
     def test_unreachable_nonterminal(self):
         """Test reachability with unreachable nonterminal."""
         grammar, s, a, b = make_unreachable_grammar()
-        reachable = compute_reachability(grammar)
+        reachable = GrammarAnalysis.compute_reachability_static(grammar)
         assert s in reachable
         assert a in reachable
         assert b not in reachable
@@ -188,7 +187,7 @@ class TestComputeReachability:
         """Test reachability with grammar that has no rules for start."""
         s = Nonterminal("S", MessageType("proto", "S"))
         grammar = Grammar(s)
-        reachable = compute_reachability(grammar)
+        reachable = GrammarAnalysis.compute_reachability_static(grammar)
         # Start is always added to rules dict by Grammar constructor
         assert len(reachable) == 1
         assert s in reachable
@@ -198,9 +197,9 @@ class TestComputeReachability:
         s = Nonterminal("S", MessageType("proto", "S"))
         lit = LitTerminal("a")
         grammar = Grammar(s)
-        action = Lambda([], MessageType("proto", "S"), Var("x", MessageType("proto", "S")))
-        grammar.add_rule(Rule(s, lit, action))
-        reachable = compute_reachability(grammar)
+        construct_action = Lambda([], MessageType("proto", "S"), Var("x", MessageType("proto", "S")))
+        grammar.add_rule(make_rule(s, lit, construct_action))
+        reachable = GrammarAnalysis.compute_reachability_static(grammar)
         assert s in reachable
         assert len(reachable) == 1
 
@@ -217,17 +216,17 @@ class TestComputeReachability:
         param_a = Var("x", MessageType("proto", "A"))
         param_b = Var("y", MessageType("proto", "B"))
         param_c = Var("z", MessageType("proto", "C"))
-        action_s = Lambda([param_a], MessageType("proto", "S"), param_a)
-        action_a = Lambda([param_b], MessageType("proto", "A"), param_b)
-        action_b = Lambda([param_c], MessageType("proto", "B"), param_c)
-        action_c = Lambda([param_c], MessageType("proto", "C"), param_c)
+        construct_action_s = Lambda([param_a], MessageType("proto", "S"), param_a)
+        construct_action_a = Lambda([param_b], MessageType("proto", "A"), param_b)
+        construct_action_b = Lambda([param_c], MessageType("proto", "B"), param_c)
+        construct_action_c = Lambda([param_c], MessageType("proto", "C"), param_c)
 
-        grammar.add_rule(Rule(s, a, action_s))
-        grammar.add_rule(Rule(a, b, action_a))
-        grammar.add_rule(Rule(b, c, action_b))
-        grammar.add_rule(Rule(c, c, action_c))
+        grammar.add_rule(make_rule(s, a, construct_action_s))
+        grammar.add_rule(make_rule(a, b, construct_action_a))
+        grammar.add_rule(make_rule(b, c, construct_action_b))
+        grammar.add_rule(make_rule(c, c, construct_action_c))
 
-        reachable = compute_reachability(grammar)
+        reachable = GrammarAnalysis.compute_reachability_static(grammar)
         assert len(reachable) == 4
         assert s in reachable
         assert a in reachable
@@ -241,7 +240,7 @@ class TestComputeNullable:
     def test_simple_grammar_no_nullable(self):
         """Test nullable computation with no nullable nonterminals."""
         grammar, s, a, b, _, _ = make_simple_grammar()
-        nullable = compute_nullable(grammar)
+        nullable = GrammarAnalysis.compute_nullable_static(grammar)
         assert not nullable[s]
         assert not nullable[a]
         assert not nullable[b]
@@ -249,7 +248,7 @@ class TestComputeNullable:
     def test_nullable_grammar(self):
         """Test nullable computation with nullable nonterminal."""
         grammar, s, a, b = make_nullable_grammar()
-        nullable = compute_nullable(grammar)
+        nullable = GrammarAnalysis.compute_nullable_static(grammar)
         assert nullable[a]
         assert not nullable[b]
         assert not nullable[s]
@@ -263,10 +262,10 @@ class TestComputeNullable:
 
         grammar = Grammar(s)
         param = Var("x", ListType(MessageType("proto", "A")))
-        action = Lambda([param], MessageType("proto", "S"), param)
-        grammar.add_rule(Rule(s, star_a, action))
+        construct_action = Lambda([param], MessageType("proto", "S"), param)
+        grammar.add_rule(make_rule(s, star_a, construct_action))
 
-        nullable = compute_nullable(grammar)
+        nullable = GrammarAnalysis.compute_nullable_static(grammar)
         assert nullable[s]
 
     def test_option_makes_nullable(self):
@@ -278,20 +277,20 @@ class TestComputeNullable:
 
         grammar = Grammar(s)
         param = Var("x", OptionType(MessageType("proto", "A")))
-        action = Lambda([param], MessageType("proto", "S"), param)
-        grammar.add_rule(Rule(s, opt_a, action))
+        construct_action = Lambda([param], MessageType("proto", "S"), param)
+        grammar.add_rule(make_rule(s, opt_a, construct_action))
 
-        nullable = compute_nullable(grammar)
+        nullable = GrammarAnalysis.compute_nullable_static(grammar)
         assert nullable[s]
 
     def test_empty_sequence_makes_nullable(self):
         """Test that empty sequence makes nonterminal nullable."""
         s = Nonterminal("S", MessageType("proto", "S"))
         grammar = Grammar(s)
-        action = Lambda([], MessageType("proto", "S"), Var("x", MessageType("proto", "S")))
-        grammar.add_rule(Rule(s, Sequence(()), action))
+        construct_action = Lambda([], MessageType("proto", "S"), Var("x", MessageType("proto", "S")))
+        grammar.add_rule(make_rule(s, Sequence(()), construct_action))
 
-        nullable = compute_nullable(grammar)
+        nullable = GrammarAnalysis.compute_nullable_static(grammar)
         assert nullable[s]
 
     def test_transitive_nullable(self):
@@ -305,15 +304,15 @@ class TestComputeNullable:
         # S -> A, A -> B, B -> epsilon
         param_a = Var("x", MessageType("proto", "A"))
         param_b = Var("y", MessageType("proto", "B"))
-        action_s = Lambda([param_a], MessageType("proto", "S"), param_a)
-        action_a = Lambda([param_b], MessageType("proto", "A"), param_b)
-        action_b = Lambda([], MessageType("proto", "B"), Var("z", MessageType("proto", "B")))
+        construct_action_s = Lambda([param_a], MessageType("proto", "S"), param_a)
+        construct_action_a = Lambda([param_b], MessageType("proto", "A"), param_b)
+        construct_action_b = Lambda([], MessageType("proto", "B"), Var("z", MessageType("proto", "B")))
 
-        grammar.add_rule(Rule(s, a, action_s))
-        grammar.add_rule(Rule(a, b, action_a))
-        grammar.add_rule(Rule(b, Sequence(()), action_b))
+        grammar.add_rule(make_rule(s, a, construct_action_s))
+        grammar.add_rule(make_rule(a, b, construct_action_a))
+        grammar.add_rule(make_rule(b, Sequence(()), construct_action_b))
 
-        nullable = compute_nullable(grammar)
+        nullable = GrammarAnalysis.compute_nullable_static(grammar)
         assert nullable[s]
         assert nullable[a]
         assert nullable[b]
@@ -326,45 +325,45 @@ class TestIsRhsNullable:
         """Test that literal is not nullable."""
         lit = LitTerminal("a")
         nullable = {}
-        assert not is_rhs_nullable(lit, nullable)
+        assert not GrammarAnalysis.is_rhs_nullable(lit, nullable)
 
     def test_terminal_not_nullable(self):
         """Test that terminal is not nullable."""
         term = NamedTerminal("TOK", BaseType("String"))
         nullable = {}
-        assert not is_rhs_nullable(term, nullable)
+        assert not GrammarAnalysis.is_rhs_nullable(term, nullable)
 
     def test_nonterminal_nullable(self):
         """Test nonterminal nullable when in nullable set."""
         nt = Nonterminal("A", MessageType("proto", "A"))
         nullable = {nt: True}
-        assert is_rhs_nullable(nt, nullable)
+        assert GrammarAnalysis.is_rhs_nullable(nt, nullable)
 
     def test_nonterminal_not_nullable(self):
         """Test nonterminal not nullable when not in set."""
         nt = Nonterminal("A", MessageType("proto", "A"))
         nullable = {nt: False}
-        assert not is_rhs_nullable(nt, nullable)
+        assert not GrammarAnalysis.is_rhs_nullable(nt, nullable)
 
     def test_star_nullable(self):
         """Test that star is always nullable."""
         nt = Nonterminal("A", MessageType("proto", "A"))
         star = Star(nt)
         nullable = {nt: False}
-        assert is_rhs_nullable(star, nullable)
+        assert GrammarAnalysis.is_rhs_nullable(star, nullable)
 
     def test_option_nullable(self):
         """Test that option is always nullable."""
         nt = Nonterminal("A", MessageType("proto", "A"))
         opt = Option(nt)
         nullable = {nt: False}
-        assert is_rhs_nullable(opt, nullable)
+        assert GrammarAnalysis.is_rhs_nullable(opt, nullable)
 
     def test_empty_sequence_nullable(self):
         """Test that empty sequence is nullable."""
         seq = Sequence(())
         nullable = {}
-        assert is_rhs_nullable(seq, nullable)
+        assert GrammarAnalysis.is_rhs_nullable(seq, nullable)
 
     def test_sequence_all_nullable(self):
         """Test sequence is nullable when all elements are nullable."""
@@ -372,7 +371,7 @@ class TestIsRhsNullable:
         b = Nonterminal("B", MessageType("proto", "B"))
         seq = Sequence((a, b))
         nullable = {a: True, b: True}
-        assert is_rhs_nullable(seq, nullable)
+        assert GrammarAnalysis.is_rhs_nullable(seq, nullable)
 
     def test_sequence_one_not_nullable(self):
         """Test sequence is not nullable when one element is not nullable."""
@@ -380,7 +379,7 @@ class TestIsRhsNullable:
         b = Nonterminal("B", MessageType("proto", "B"))
         seq = Sequence((a, b))
         nullable = {a: True, b: False}
-        assert not is_rhs_nullable(seq, nullable)
+        assert not GrammarAnalysis.is_rhs_nullable(seq, nullable)
 
 
 class TestComputeFirst:
@@ -389,7 +388,8 @@ class TestComputeFirst:
     def test_simple_grammar(self):
         """Test FIRST computation for simple grammar."""
         grammar, s, a, b, lit_a, lit_b = make_simple_grammar()
-        first = compute_first(grammar)
+        nullable = GrammarAnalysis.compute_nullable_static(grammar)
+        first = GrammarAnalysis.compute_first_static(grammar, nullable)
 
         assert lit_a in first[a]
         assert lit_b in first[b]
@@ -398,7 +398,8 @@ class TestComputeFirst:
     def test_nullable_grammar(self):
         """Test FIRST with nullable nonterminal."""
         grammar, s, a, b = make_nullable_grammar()
-        first = compute_first(grammar)
+        nullable = GrammarAnalysis.compute_nullable_static(grammar)
+        first = GrammarAnalysis.compute_first_static(grammar, nullable)
 
         lit_a = LitTerminal("a")
         lit_b = LitTerminal("b")
@@ -414,7 +415,8 @@ class TestComputeFirst:
     def test_left_recursive_grammar(self):
         """Test FIRST with left recursion."""
         grammar, s, t, num = make_left_recursive_grammar()
-        first = compute_first(grammar)
+        nullable = GrammarAnalysis.compute_nullable_static(grammar)
+        first = GrammarAnalysis.compute_first_static(grammar, nullable)
 
         # Both S and T start with NUM
         assert num in first[s]
@@ -429,7 +431,7 @@ class TestRhsFirst:
         lit = LitTerminal("a")
         first = {}
         nullable = {}
-        result = rhs_first(lit, first, nullable)
+        result = GrammarAnalysis.rhs_first(lit, first, nullable)
         assert lit in result
 
     def test_terminal(self):
@@ -437,7 +439,7 @@ class TestRhsFirst:
         term = NamedTerminal("NUM", BaseType("Int64"))
         first = {}
         nullable = {}
-        result = rhs_first(term, first, nullable)
+        result = GrammarAnalysis.rhs_first(term, first, nullable)
         assert term in result
 
     def test_nonterminal(self):
@@ -446,7 +448,7 @@ class TestRhsFirst:
         lit = LitTerminal("a")
         first = {nt: cast(set[Terminal], {lit})}
         nullable = {nt: False}
-        result = rhs_first(nt, first, nullable)
+        result = GrammarAnalysis.rhs_first(nt, first, nullable)
         assert lit in result
 
     def test_sequence_all_first(self):
@@ -459,7 +461,7 @@ class TestRhsFirst:
 
         first = {a: cast(set[Terminal], {lit_a}), b: cast(set[Terminal], {lit_b})}
         nullable = {a: False, b: False}
-        result = rhs_first(seq, first, nullable)
+        result = GrammarAnalysis.rhs_first(seq, first, nullable)
         assert lit_a in result
         assert lit_b not in result
 
@@ -473,7 +475,7 @@ class TestRhsFirst:
 
         first = {a: cast(set[Terminal], {lit_a}), b: cast(set[Terminal], {lit_b})}
         nullable = {a: True, b: False}
-        result = rhs_first(seq, first, nullable)
+        result = GrammarAnalysis.rhs_first(seq, first, nullable)
         assert lit_a in result
         assert lit_b in result
 
@@ -484,7 +486,8 @@ class TestComputeFirstK:
     def test_simple_grammar_k2(self):
         """Test FIRST_2 for simple grammar."""
         grammar, s, a, b, lit_a, lit_b = make_simple_grammar()
-        first_k = compute_first_k(grammar, k=2)
+        nullable = GrammarAnalysis.compute_nullable_static(grammar)
+        first_k = GrammarAnalysis.compute_first_k_static(grammar, k=2, nullable=nullable)
 
         # S -> A B, so FIRST_2(S) = {("a", "b")}
         assert (lit_a, lit_b) in first_k[s]
@@ -492,8 +495,9 @@ class TestComputeFirstK:
     def test_k1_matches_first(self):
         """Test that FIRST_1 matches regular FIRST."""
         grammar, s, a, b, lit_a, lit_b = make_simple_grammar()
-        first = compute_first(grammar)
-        first_k = compute_first_k(grammar, k=1)
+        nullable = GrammarAnalysis.compute_nullable_static(grammar)
+        first = GrammarAnalysis.compute_first_static(grammar, nullable)
+        first_k = GrammarAnalysis.compute_first_k_static(grammar, k=1, nullable=nullable)
 
         for nt in [s, a, b]:
             first_set = {(t,) for t in first[nt]}
@@ -503,10 +507,11 @@ class TestComputeFirstK:
         """Test that empty production gives empty tuple."""
         s = Nonterminal("S", MessageType("proto", "S"))
         grammar = Grammar(s)
-        action = Lambda([], MessageType("proto", "S"), Var("x", MessageType("proto", "S")))
-        grammar.add_rule(Rule(s, Sequence(()), action))
+        construct_action = Lambda([], MessageType("proto", "S"), Var("x", MessageType("proto", "S")))
+        grammar.add_rule(make_rule(s, Sequence(()), construct_action))
 
-        first_k = compute_first_k(grammar, k=2)
+        nullable = GrammarAnalysis.compute_nullable_static(grammar)
+        first_k = GrammarAnalysis.compute_first_k_static(grammar, k=2, nullable=nullable)
         assert () in first_k[s]
 
 
@@ -518,7 +523,7 @@ class TestRhsFirstK:
         lit = LitTerminal("a")
         first_k = {}
         nullable = {}
-        result = rhs_first_k(lit, first_k, nullable, k=2)
+        result = GrammarAnalysis.rhs_first_k(lit, first_k, nullable, k=2)
         assert (lit,) in result
 
     def test_terminal_k2(self):
@@ -526,22 +531,22 @@ class TestRhsFirstK:
         term = NamedTerminal("NUM", BaseType("Int64"))
         first_k = {}
         nullable = {}
-        result = rhs_first_k(term, first_k, nullable, k=2)
+        result = GrammarAnalysis.rhs_first_k(term, first_k, nullable, k=2)
         assert (term,) in result
 
     def test_nonterminal_k2(self):
         """Test FIRST_k of nonterminal."""
-        from meta.grammar_analysis import TerminalSeq
+        from meta.grammar_analysis import TerminalSeq  # type: ignore[import-untyped]
         nt = Nonterminal("A", MessageType("proto", "A"))
         lit = LitTerminal("a")
         first_k = {nt: cast(set[TerminalSeq], {(lit,)})}
         nullable = {nt: False}
-        result = rhs_first_k(nt, first_k, nullable, k=2)
+        result = GrammarAnalysis.rhs_first_k(nt, first_k, nullable, k=2)
         assert (lit,) in result
 
     def test_sequence_concatenation_k2(self):
         """Test FIRST_k of sequence concatenates."""
-        from meta.grammar_analysis import TerminalSeq
+        from meta.grammar_analysis import TerminalSeq  # type: ignore[import-untyped]
         a = Nonterminal("A", MessageType("proto", "A"))
         b = Nonterminal("B", MessageType("proto", "B"))
         lit_a = LitTerminal("a")
@@ -550,12 +555,12 @@ class TestRhsFirstK:
 
         first_k = {a: cast(set[TerminalSeq], {(lit_a,)}), b: cast(set[TerminalSeq], {(lit_b,)})}
         nullable = {a: False, b: False}
-        result = rhs_first_k(seq, first_k, nullable, k=2)
+        result = GrammarAnalysis.rhs_first_k(seq, first_k, nullable, k=2)
         assert (lit_a, lit_b) in result
 
     def test_sequence_truncates_to_k(self):
         """Test FIRST_k truncates sequences to k."""
-        from meta.grammar_analysis import TerminalSeq
+        from meta.grammar_analysis import TerminalSeq  # type: ignore[import-untyped]
         a = Nonterminal("A", MessageType("proto", "A"))
         b = Nonterminal("B", MessageType("proto", "B"))
         c = Nonterminal("C", MessageType("proto", "C"))
@@ -566,7 +571,7 @@ class TestRhsFirstK:
 
         first_k = {a: cast(set[TerminalSeq], {(lit_a,)}), b: cast(set[TerminalSeq], {(lit_b,)}), c: cast(set[TerminalSeq], {(lit_c,)})}
         nullable = {a: False, b: False, c: False}
-        result = rhs_first_k(seq, first_k, nullable, k=2)
+        result = GrammarAnalysis.rhs_first_k(seq, first_k, nullable, k=2)
         assert (lit_a, lit_b) in result
         assert (lit_a, lit_b, lit_c) not in result
 
@@ -575,7 +580,7 @@ class TestRhsFirstK:
         seq = Sequence(())
         first_k = {}
         nullable = {}
-        result = rhs_first_k(seq, first_k, nullable, k=2)
+        result = GrammarAnalysis.rhs_first_k(seq, first_k, nullable, k=2)
         assert () in result
 
     def test_star_includes_empty(self):
@@ -586,7 +591,7 @@ class TestRhsFirstK:
 
         first_k = {nt: {(lit,)}}  # type: ignore
         nullable = {nt: False}
-        result = rhs_first_k(star, first_k, nullable, k=2)
+        result = GrammarAnalysis.rhs_first_k(star, first_k, nullable, k=2)
         assert (lit,) in result
         assert () in result
 
@@ -598,7 +603,7 @@ class TestRhsFirstK:
 
         first_k = {nt: {(lit,)}}  # type: ignore
         nullable = {nt: False}
-        result = rhs_first_k(opt, first_k, nullable, k=2)
+        result = GrammarAnalysis.rhs_first_k(opt, first_k, nullable, k=2)
         assert (lit,) in result
         assert () in result
 
@@ -609,7 +614,9 @@ class TestComputeFollow:
     def test_simple_grammar(self):
         """Test FOLLOW for simple grammar."""
         grammar, s, a, b, lit_a, lit_b = make_simple_grammar()
-        follow = compute_follow(grammar)
+        nullable = GrammarAnalysis.compute_nullable_static(grammar)
+        first = GrammarAnalysis.compute_first_static(grammar, nullable)
+        follow = GrammarAnalysis.compute_follow_static(grammar, nullable, first)
 
         # FOLLOW(A) includes FIRST(B) = {"b"}
         assert lit_b in follow[a]
@@ -629,18 +636,20 @@ class TestComputeFollow:
         # S -> A B
         param_a = Var("x", MessageType("proto", "A"))
         param_b = Var("y", MessageType("proto", "B"))
-        action_s = Lambda([param_a, param_b], MessageType("proto", "S"), param_a)
-        grammar.add_rule(Rule(s, Sequence((a, b)), action_s))
+        construct_action_s = Lambda([param_a, param_b], MessageType("proto", "S"), param_a)
+        grammar.add_rule(make_rule(s, Sequence((a, b)), construct_action_s))
 
         # A -> epsilon
-        action_a = Lambda([], MessageType("proto", "A"), Var("z", MessageType("proto", "A")))
-        grammar.add_rule(Rule(a, Sequence(()), action_a))
+        construct_action_a = Lambda([], MessageType("proto", "A"), Var("z", MessageType("proto", "A")))
+        grammar.add_rule(make_rule(a, Sequence(()), construct_action_a))
 
         # B -> "b"
-        action_b = Lambda([], MessageType("proto", "B"), Var("w", MessageType("proto", "B")))
-        grammar.add_rule(Rule(b, lit_b, action_b))
+        construct_action_b = Lambda([], MessageType("proto", "B"), Var("w", MessageType("proto", "B")))
+        grammar.add_rule(make_rule(b, lit_b, construct_action_b))
 
-        follow = compute_follow(grammar)
+        nullable = GrammarAnalysis.compute_nullable_static(grammar)
+        first = GrammarAnalysis.compute_first_static(grammar, nullable)
+        follow = GrammarAnalysis.compute_follow_static(grammar, nullable, first)
 
         # FOLLOW(A) includes FIRST(B) = {"b"}
         assert lit_b in follow[a]
@@ -661,7 +670,7 @@ class TestRhsFollow:
         nullable = {a: False}
         follow = {lhs: {lit_a}}  # type: ignore
 
-        result = rhs_follow(a, lhs, first, nullable, follow)
+        result = GrammarAnalysis.rhs_follow(a, lhs, first, nullable, follow)
         assert a in result
         assert lit_a in result[a]
 
@@ -677,7 +686,7 @@ class TestRhsFollow:
         nullable = {a: False, b: False}
         follow = {lhs: set()}
 
-        result = rhs_follow(seq, lhs, first, nullable, follow)
+        result = GrammarAnalysis.rhs_follow(seq, lhs, first, nullable, follow)
         assert a in result
         assert lit_b in result[a]
 
@@ -688,7 +697,9 @@ class TestComputeFollowK:
     def test_simple_grammar_k2(self):
         """Test FOLLOW_2 for simple grammar."""
         grammar, s, a, b, lit_a, lit_b = make_simple_grammar()
-        follow_k = compute_follow_k(grammar, k=2)
+        nullable = GrammarAnalysis.compute_nullable_static(grammar)
+        first_k = GrammarAnalysis.compute_first_k_static(grammar, k=2, nullable=nullable)
+        follow_k = GrammarAnalysis.compute_follow_k_static(grammar, k=2, nullable=nullable, first_k=first_k)
 
         # FOLLOW_2(A) includes FIRST_2(B) = {("b",)}
         assert (lit_b,) in follow_k[a]
@@ -700,8 +711,11 @@ class TestComputeFollowK:
     def test_k1_matches_follow(self):
         """Test that FOLLOW_1 matches regular FOLLOW."""
         grammar, s, a, b, lit_a, lit_b = make_simple_grammar()
-        follow = compute_follow(grammar)
-        follow_k = compute_follow_k(grammar, k=1)
+        nullable = GrammarAnalysis.compute_nullable_static(grammar)
+        first = GrammarAnalysis.compute_first_static(grammar, nullable)
+        follow = GrammarAnalysis.compute_follow_static(grammar, nullable, first)
+        first_k = GrammarAnalysis.compute_first_k_static(grammar, k=1, nullable=nullable)
+        follow_k = GrammarAnalysis.compute_follow_k_static(grammar, k=1, nullable=nullable, first_k=first_k)
 
         for nt in [s, a, b]:
             follow_set = {(t,) for t in follow[nt]}
@@ -718,7 +732,7 @@ class TestConcatK:
         set1 = {(lit_a,)}
         set2 = {(lit_b,)}
 
-        result = concat_k(set1, set2, k=2)
+        result = GrammarAnalysis.concat_k(set1, set2, k=2)
         assert (lit_a, lit_b) in result
 
     def test_truncate_to_k(self):
@@ -729,7 +743,7 @@ class TestConcatK:
         set1 = {(lit_a,)}
         set2 = {(lit_b, lit_c)}
 
-        result = concat_k(set1, set2, k=2)
+        result = GrammarAnalysis.concat_k(set1, set2, k=2)
         assert (lit_a, lit_b) in result
         assert (lit_a, lit_b, lit_c) not in result
 
@@ -741,7 +755,7 @@ class TestConcatK:
         set1 = {(lit_a, lit_b)}
         set2 = {(lit_c,)}
 
-        result = concat_k(set1, set2, k=2)
+        result = GrammarAnalysis.concat_k(set1, set2, k=2)
         assert (lit_a, lit_b) in result
 
     def test_empty_tuple_concatenation(self):
@@ -750,7 +764,7 @@ class TestConcatK:
         set1 = {()}
         set2 = {(lit_a,)}
 
-        result = concat_k(set1, set2, k=2)
+        result = GrammarAnalysis.concat_k(set1, set2, k=2)
         assert (lit_a,) in result
 
     def test_multiple_sequences(self):
@@ -761,7 +775,7 @@ class TestConcatK:
         set1 = {(lit_a,), (lit_b,)}
         set2 = {(lit_c,)}
 
-        result = concat_k(set1, set2, k=2)
+        result = GrammarAnalysis.concat_k(set1, set2, k=2)
         assert (lit_a, lit_c) in result
         assert (lit_b, lit_c) in result
 
@@ -794,19 +808,19 @@ class TestIntegration:
         grammar, s, a, b, lit_a, lit_b = make_simple_grammar()
 
         # Check reachability
-        reachable = compute_reachability(grammar)
+        reachable = GrammarAnalysis.compute_reachability_static(grammar)
         assert len(reachable) == 3
 
         # Compute nullable
-        nullable = compute_nullable(grammar)
+        nullable = GrammarAnalysis.compute_nullable_static(grammar)
         assert not any(nullable.values())
 
         # Compute FIRST
-        first = compute_first(grammar, nullable)
+        first = GrammarAnalysis.compute_first_static(grammar, nullable)
         assert lit_a in first[s]
 
         # Compute FOLLOW
-        follow = compute_follow(grammar, nullable, first)
+        follow = GrammarAnalysis.compute_follow_static(grammar, nullable, first)
         assert lit_b in follow[a]
 
     def test_complex_grammar_analysis(self):
@@ -822,26 +836,26 @@ class TestIntegration:
         # S -> A B | B
         param_a = Var("x", MessageType("proto", "A"))
         param_b = Var("y", MessageType("proto", "B"))
-        action1 = Lambda([param_a, param_b], MessageType("proto", "S"), param_a)
-        grammar.add_rule(Rule(s, Sequence((a, b)), action1))
+        construct_action1 = Lambda([param_a, param_b], MessageType("proto", "S"), param_a)
+        grammar.add_rule(make_rule(s, Sequence((a, b)), construct_action1))
 
         param_b2 = Var("z", MessageType("proto", "B"))
-        action2 = Lambda([param_b2], MessageType("proto", "S"), param_b2)
-        grammar.add_rule(Rule(s, b, action2))
+        construct_action2 = Lambda([param_b2], MessageType("proto", "S"), param_b2)
+        grammar.add_rule(make_rule(s, b, construct_action2))
 
         # A -> "a"
-        action3 = Lambda([], MessageType("proto", "A"), Var("w", MessageType("proto", "A")))
-        grammar.add_rule(Rule(a, lit_a, action3))
+        construct_action3 = Lambda([], MessageType("proto", "A"), Var("w", MessageType("proto", "A")))
+        grammar.add_rule(make_rule(a, lit_a, construct_action3))
 
         # B -> "b"
-        action4 = Lambda([], MessageType("proto", "B"), Var("v", MessageType("proto", "B")))
-        grammar.add_rule(Rule(b, lit_b, action4))
+        construct_action4 = Lambda([], MessageType("proto", "B"), Var("v", MessageType("proto", "B")))
+        grammar.add_rule(make_rule(b, lit_b, construct_action4))
 
         # Check everything works together
-        reachable = compute_reachability(grammar)
-        nullable = compute_nullable(grammar)
-        first = compute_first(grammar, nullable)
-        follow = compute_follow(grammar, nullable, first)
+        reachable = GrammarAnalysis.compute_reachability_static(grammar)
+        nullable = GrammarAnalysis.compute_nullable_static(grammar)
+        first = GrammarAnalysis.compute_first_static(grammar, nullable)
+        follow = GrammarAnalysis.compute_follow_static(grammar, nullable, first)
 
         assert len(reachable) == 3
         assert lit_a in first[s]

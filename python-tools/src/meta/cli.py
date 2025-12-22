@@ -54,7 +54,7 @@ def main():
     generator = GrammarGenerator(proto_parser, verbose=True)
     grammar = generator.generate()
 
-    unreachable = grammar.get_unreachable_nonterminals()
+    unreachable = grammar.get_unreachable_rules()
     unexpected_unreachable = [r for r in unreachable if r.name not in generator.expected_unreachable]
     if unexpected_unreachable:
         print("Warning: Unreachable rules detected:")

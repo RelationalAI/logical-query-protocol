@@ -26,8 +26,6 @@ from .target import (
     TupleType,
     ListType,
     FunDef,
-    ParseNonterminalDef,
-    ParseNonterminal,
 )
 
 # Grammar data structures
@@ -82,8 +80,6 @@ __all__ = [
     'TupleType',
     'ListType',
     'FunDef',
-    'ParseNonterminalDef',
-    'ParseNonterminal',
     # Grammar
     'Grammar',
     'Rule',

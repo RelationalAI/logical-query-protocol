@@ -9,14 +9,13 @@ translatable to each of these target languages.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, List, Optional, Sequence, TYPE_CHECKING
+from typing import Any, List, Mapping, Optional, Sequence, TYPE_CHECKING, Iterator
 from itertools import count
-from more_itertools import peekable
 
 if TYPE_CHECKING:
     from .grammar import Nonterminal
 
-_global_id = peekable(count(0))
+_global_id: Iterator[int] = count(0)
 def next_id():
     return next(_global_id)
 
@@ -28,13 +27,10 @@ class TargetNode:
     """Base class for all target language AST nodes."""
     pass
 
-
 @dataclass(frozen=True)
 class TargetExpr(TargetNode):
     """Base class for target language expressions."""
     pass
-
-
 
 @dataclass(frozen=True)
 class Var(TargetExpr):
@@ -48,7 +44,6 @@ class Var(TargetExpr):
     def __post_init__(self):
         if not self.name.isidentifier():
             raise ValueError(f"Invalid variable name: {self.name}")
-
 
 @dataclass(frozen=True)
 class Lit(TargetExpr):
@@ -98,6 +93,8 @@ class Message(TargetExpr):
         return f"@{self.module}.{self.name}"
 
     def __post_init__(self):
+        if not self.module.isidentifier():
+            raise ValueError(f"Invalid message module: {self.module}")
         if not self.name.isidentifier():
             raise ValueError(f"Invalid message name: {self.name}")
 
@@ -106,10 +103,10 @@ class Message(TargetExpr):
 class OneOf(TargetExpr):
     """OneOf field discriminator.
 
-    field_name: Symbol representing the field name
-    Call this with a value to create a oneof field: Call(OneOf(Symbol('field')), [value])
+    field_name: str representing the field name
+    Call this with a value to create a oneof field: Call(OneOf('field'), [value])
     """
-    field_name: Symbol
+    field_name: str
 
     def __str__(self) -> str:
         return f"OneOf({self.field_name})"
@@ -133,19 +130,21 @@ class ListExpr(TargetExpr):
     def __post_init__(self):
         if isinstance(self.elements, list):
             object.__setattr__(self, 'elements', tuple(self.elements))
+        assert isinstance(self.elements, tuple), f"Invalid elements in {self}: {self.elements}"
 
 
 @dataclass(frozen=True)
-class ParseNonterminal(TargetExpr):
-    """Parse method call for a nonterminal.
+class VisitNonterminal(TargetExpr):
+    """Visitor method call for a nonterminal.
 
-    Like Call but specifically for calling parser methods, with a Nonterminal
+    Like Call but specifically for calling visitor methods, with a Nonterminal
     instead of an expression for the function.
     """
+    visitor_name: str  # e.g., 'parse', 'pretty'
     nonterminal: 'Nonterminal'
 
     def __str__(self) -> str:
-        return f"parse_{self.nonterminal.name}"
+        return f"{self.visitor_name}_{self.nonterminal.name}"
 
 
 @dataclass(frozen=True)
@@ -165,6 +164,7 @@ class Call(TargetExpr):
     def __post_init__(self):
         if isinstance(self.args, list):
             object.__setattr__(self, 'args', tuple(self.args))
+        assert isinstance(self.args, tuple), f"Invalid argument list in {self}: {self.args}"
 
 
 @dataclass(frozen=True)
@@ -181,6 +181,7 @@ class Lambda(TargetExpr):
     def __post_init__(self):
         if isinstance(self.params, list):
             object.__setattr__(self, 'params', tuple(self.params))
+        assert isinstance(self.params, tuple), f"Invalid parameter list in {self}: {self.params}"
 
 @dataclass(frozen=True)
 class Let(TargetExpr):
@@ -225,6 +226,7 @@ class Seq(TargetExpr):
     def __post_init__(self):
         if isinstance(self.exprs, list):
             object.__setattr__(self, 'exprs', tuple(self.exprs))
+        assert isinstance(self.exprs, tuple), f"Invalid sequence of expressions in {self}: {self.exprs}"
         assert len(self.exprs) > 1, f"Sequence must contain at least two expressions"
 
 
@@ -238,6 +240,27 @@ class While(TargetExpr):
         return f"while ({self.condition}) {self.body}"
 
 @dataclass(frozen=True)
+class Foreach(TargetExpr):
+    """Foreach loop: for var in collection do body."""
+    var: 'Var'
+    collection: TargetExpr
+    body: TargetExpr
+
+    def __str__(self) -> str:
+        return f"for {self.var.name} in {self.collection} do {self.body}"
+
+@dataclass(frozen=True)
+class ForeachEnumerated(TargetExpr):
+    """Foreach loop with index: for index_var, var in enumerate(collection) do body."""
+    index_var: 'Var'
+    var: 'Var'
+    collection: TargetExpr
+    body: TargetExpr
+
+    def __str__(self) -> str:
+        return f"for {self.index_var.name}, {self.var.name} in enumerate({self.collection}) do {self.body}"
+
+@dataclass(frozen=True)
 class Assign(TargetExpr):
     """Assignment statement: var = expr.
 
@@ -249,7 +272,6 @@ class Assign(TargetExpr):
     def __str__(self) -> str:
         return f"{self.var.name} = {self.expr}"
 
-
 @dataclass(frozen=True)
 class Return(TargetExpr):
     """Return statement: return expr."""
@@ -259,7 +281,7 @@ class Return(TargetExpr):
         return f"return {self.expr}"
 
     def __post_init__(self):
-        assert not isinstance(self.expr, Return), f"Invalid return expression in {self}: {self.expr}"
+        assert isinstance(self.expr, TargetExpr) and not isinstance(self.expr, Return), f"Invalid return expression in {self}: {self.expr}"
 
 
 @dataclass(frozen=True)
@@ -299,6 +321,7 @@ class TupleType(TargetType):
     def __post_init__(self):
         if isinstance(self.elements, list):
             object.__setattr__(self, 'elements', tuple(self.elements))
+        assert isinstance(self.elements, tuple), f"Invalid tuple elements in {self}: {self.elements}"
 
 
 @dataclass(frozen=True)
@@ -332,6 +355,7 @@ class FunctionType(TargetType):
     def __post_init__(self):
         if isinstance(self.param_types, list):
             object.__setattr__(self, 'param_types', tuple(self.param_types))
+        assert isinstance(self.param_types, tuple), f"Invalid parameter types in {self}: {self.param_types}"
 
 
 @dataclass(frozen=True)
@@ -349,15 +373,17 @@ class FunDef(TargetNode):
     def __post_init__(self):
         if isinstance(self.params, list):
             object.__setattr__(self, 'params', tuple(self.params))
+        assert isinstance(self.params, tuple), f"Invalid params types in {self}: {self.params}"
 
 
 @dataclass(frozen=True)
-class ParseNonterminalDef(TargetNode):
-    """Parse method definition for a nonterminal.
+class VisitNonterminalDef(TargetNode):
+    """Visitor method definition for a nonterminal.
 
-    Like FunDef but specifically for parser methods, with a Nonterminal
+    Like FunDef but specifically for visitor methods, with a Nonterminal
     instead of a string name.
     """
+    visitor_name: str  # e.g., 'parse', 'pretty'
     nonterminal: 'Nonterminal'
     params: Sequence['Var']
     return_type: TargetType
@@ -365,14 +391,198 @@ class ParseNonterminalDef(TargetNode):
 
     def __str__(self) -> str:
         params_str = ', '.join(f"{p.name}: {p.type}" for p in self.params)
-        return f"parse_{self.nonterminal.name}({params_str}) -> {self.return_type}: {self.body}"
+        return f"{self.visitor_name}_{self.nonterminal.name}({params_str}) -> {self.return_type}: {self.body}"
 
     def __post_init__(self):
         if isinstance(self.params, list):
             object.__setattr__(self, 'params', tuple(self.params))
+        assert isinstance(self.params, tuple), f"Invalid params types in {self}: {self.params}"
+
+def create_identity_function(param_type: 'TargetType') -> 'Lambda':
+    """Create an identity function: lambda x -> x with the given type.
+
+    Args:
+        param_type: The type of the parameter and return value
+
+    Returns:
+        Lambda expression representing the identity function
+    """
+    param = Var('x', param_type)
+    return Lambda([param], param_type, param)
+
+def create_identity_option_function(param_type: 'TargetType') -> 'Lambda':
+    """Create an identity function: lambda x -> Some(x) with the given type.
+
+    Args:
+        param_type: The type of the parameter and return value element type
+
+    Returns:
+        Lambda expression representing the identity function
+    """
+    param = Var('x', param_type)
+    return Lambda([param], OptionType(param_type), Call(Builtin('Some'), [param]))
 
 
-# Re-export all types for convenience
+def _is_simple_expr(expr: 'TargetExpr') -> bool:
+    """Check if an expression is cheap to evaluate and has no side effects."""
+    if isinstance(expr, (Var, Lit)):
+        return True
+    if isinstance(expr, Call):
+        if not all(_is_simple_expr(arg) for arg in expr.args):
+            return False
+        if isinstance(expr.func, Builtin):
+            return expr.func.name in ('equal', 'greater', 'not_equal', 'Some', 'is_none', 'unwrap_option_or')
+    if isinstance(expr, IfElse):
+        return _is_simple_expr(expr.condition) and _is_simple_expr(expr.then_branch) and _is_simple_expr(expr.else_branch)
+    if isinstance(expr, Let):
+        return _is_simple_expr(expr.init) and _is_simple_expr(expr.body)
+    return False
+
+
+def _count_var_occurrences(expr: 'TargetExpr', var: str) -> int:
+    """Count occurrences of a variable in an expression."""
+    if isinstance(expr, Var) and expr.name == var:
+        return 1
+    elif isinstance(expr, Lambda):
+        if var in [p.name for p in expr.params]:
+            return 0
+        return _count_var_occurrences(expr.body, var)
+    elif isinstance(expr, Let):
+        if expr.var.name == var:
+            return _count_var_occurrences(expr.init, var)
+        return _count_var_occurrences(expr.init, var) + _count_var_occurrences(expr.body, var)
+    elif isinstance(expr, Foreach):
+        if expr.var.name == var:
+            return _count_var_occurrences(expr.collection, var)
+        return _count_var_occurrences(expr.collection, var) + _count_var_occurrences(expr.body, var)
+    elif isinstance(expr, ForeachEnumerated):
+        if expr.var.name == var or expr.index_var.name == var:
+            return _count_var_occurrences(expr.collection, var)
+        return _count_var_occurrences(expr.collection, var) + _count_var_occurrences(expr.body, var)
+    elif isinstance(expr, Assign):
+        return _count_var_occurrences(expr.expr, var)
+    elif isinstance(expr, Call):
+        count = _count_var_occurrences(expr.func, var)
+        for arg in expr.args:
+            count += _count_var_occurrences(arg, var)
+        return count
+    elif isinstance(expr, Seq):
+        count = 0
+        for e in expr.exprs:
+            count += _count_var_occurrences(e, var)
+        return count
+    elif isinstance(expr, IfElse):
+        return (_count_var_occurrences(expr.condition, var) +
+                _count_var_occurrences(expr.then_branch, var) +
+                _count_var_occurrences(expr.else_branch, var))
+    elif isinstance(expr, While):
+        return _count_var_occurrences(expr.condition, var) + _count_var_occurrences(expr.body, var)
+    elif isinstance(expr, Return):
+        return _count_var_occurrences(expr.expr, var)
+    return 0
+
+
+def _new_mapping(mapping: Mapping[str, 'TargetExpr'], shadowed: List[str]):
+    if shadowed:
+        return {k: v for k, v in mapping.items() if k not in shadowed}
+    return mapping
+
+
+def _subst_inner(expr: 'TargetExpr', mapping: Mapping[str, 'TargetExpr']) -> 'TargetExpr':
+    """Inner substitution helper - performs actual substitution."""
+    if isinstance(expr, Var) and expr.name in mapping:
+        return mapping[expr.name]
+    elif isinstance(expr, Lambda):
+        shadowed = [p.name for p in expr.params if p.name in mapping]
+        new_mapping = _new_mapping(mapping, shadowed)
+        return Lambda(params=expr.params, return_type=expr.return_type, body=_subst_inner(expr.body, new_mapping))
+    elif isinstance(expr, Let):
+        new_mapping = _new_mapping(mapping, [expr.var.name])
+        return Let(expr.var, _subst_inner(expr.init, mapping), _subst_inner(expr.body, new_mapping))
+    elif isinstance(expr, Foreach):
+        new_mapping = _new_mapping(mapping, [expr.var.name])
+        return Foreach(expr.var, _subst_inner(expr.collection, mapping), _subst_inner(expr.body, new_mapping))
+    elif isinstance(expr, ForeachEnumerated):
+        new_mapping = _new_mapping(mapping, [expr.var.name, expr.index_var.name])
+        return ForeachEnumerated(expr.index_var, expr.var, _subst_inner(expr.collection, mapping), _subst_inner(expr.body, new_mapping))
+    elif isinstance(expr, Assign):
+        return Assign(expr.var, _subst_inner(expr.expr, mapping))
+    elif isinstance(expr, Call):
+        return Call(_subst_inner(expr.func, mapping), [_subst_inner(arg, mapping) for arg in expr.args])
+    elif isinstance(expr, Seq):
+        return Seq([_subst_inner(arg, mapping) for arg in expr.exprs])
+    elif isinstance(expr, IfElse):
+        return IfElse(_subst_inner(expr.condition, mapping), _subst_inner(expr.then_branch, mapping), _subst_inner(expr.else_branch, mapping))
+    elif isinstance(expr, While):
+        return While(_subst_inner(expr.condition, mapping), _subst_inner(expr.body, mapping))
+    elif isinstance(expr, Return):
+        return Return(_subst_inner(expr.expr, mapping))
+    return expr
+
+
+def subst(expr: 'TargetExpr', mapping: Mapping[str, 'TargetExpr']) -> 'TargetExpr':
+    """Substitute variables with values in expression.
+
+    Args:
+        expr: Expression to substitute into
+        mapping: Map from variable names to replacement expressions
+
+    Returns:
+        Expression with substitutions applied. If a value has side effects
+        and its variable occurs more than once, introduces a Let binding
+        to avoid duplicating side effects.
+    """
+    if not mapping:
+        return expr
+
+    # Check for side effects and multiple occurrences
+    lets_needed = []
+    simple_mapping = {}
+
+    for var, val in mapping.items():
+        occurrences = _count_var_occurrences(expr, var)
+        if occurrences == 0:
+            continue
+        elif occurrences == 1 or _is_simple_expr(val):
+            simple_mapping[var] = val
+        else:
+            # Multiple occurrences and val has side effects - need Let
+            fresh_var = Var(gensym('subst'), val.type if isinstance(val, Var) else BaseType('Any'))
+            lets_needed.append((fresh_var, val))
+            simple_mapping[var] = fresh_var
+
+    result = _subst_inner(expr, simple_mapping)
+
+    # Wrap in Let bindings for side-effecting values
+    for fresh_var, val in lets_needed:
+        result = Let(fresh_var, val, result)
+
+    return result
+
+
+def apply_lambda(func: 'Lambda', args: Sequence['TargetExpr']) -> 'TargetExpr':
+    """Apply a lambda to arguments, inlining where possible.
+
+    If all args are simple (Var or Lit), substitutes directly.
+    Otherwise, generates Let bindings.
+
+    Args:
+        func: Lambda to apply
+        args: Arguments to apply
+
+    Returns:
+        Expression with lambda applied
+    """
+    if len(args) == 0 and len(func.params) == 0:
+        return func.body
+    if len(func.params) > 0 and len(args) > 0:
+        body = apply_lambda(Lambda(params=func.params[1:], return_type=func.return_type, body=func.body), args[1:])
+        if isinstance(args[0], (Var, Lit)):
+            return subst(body, {func.params[0].name: args[0]})
+        return Let(func.params[0], args[0], body)
+    return Call(func, args)
+
+
 __all__ = [
     'TargetNode',
     'TargetExpr',
@@ -389,6 +599,8 @@ __all__ = [
     'IfElse',
     'Seq',
     'While',
+    'Foreach',
+    'ForeachEnumerated',
     'Assign',
     'Return',
     'TargetType',
@@ -399,7 +611,11 @@ __all__ = [
     'OptionType',
     'FunctionType',
     'FunDef',
-    'ParseNonterminalDef',
-    'ParseNonterminal',
+    'VisitNonterminalDef',
+    'VisitNonterminal',
     'gensym',
+    'create_identity_function',
+    'create_identity_option_function',
+    'apply_lambda',
+    'subst',
 ]

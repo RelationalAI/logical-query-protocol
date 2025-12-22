@@ -2,111 +2,15 @@
 
 This module provides the GrammarGenerator class which converts protobuf
 message definitions into grammar rules with semantic actions.
-
-## Overview
-
-The grammar generator automatically creates parsing rules from protobuf message
-definitions. Each protobuf message becomes a nonterminal, and each field becomes
-part of the production rule. The generator also creates semantic actions (Lambda
-expressions) that construct the protobuf messages from parsed values.
-
-## How Grammar Generation Works
-
-1. **Message to Nonterminal Mapping**: Each protobuf message type becomes a
-   nonterminal in the grammar. For example, a `Fragment` message becomes
-   a `fragment` nonterminal.
-
-2. **Field to RHS Mapping**: Message fields are converted to grammar symbols:
-   - Primitive fields (string, int64, etc.) become terminals (SYMBOL, INT, etc.)
-   - Message fields become nonterminals referencing other messages
-   - `repeated` fields become Star (*) pseudo-nonterminals
-   - `optional` fields become Option (?) pseudo-nonterminals
-   - `oneof` fields generate multiple alternative productions
-
-3. **Semantic Actions**: Each production includes a Lambda that constructs the
-   protobuf message from parsed values. The Lambda parameters correspond to
-   non-literal RHS elements, and the body calls the Message constructor.
-
-4. **S-expression Syntax**: Productions include literal terminals for the
-   S-expression syntax: opening paren, message name as a literal, and closing paren.
-   For example: `"(" "and" formula* ")"`
-
-## Extension Points
-
-The grammar generator can be extended in two ways:
-
-### 1. Builtin Rules (grammar_gen_builtins.py)
-
-Builtin rules are manually specified productions for constructs that cannot be
-auto-generated from protobuf. Use builtins when:
-
-- The syntax doesn't directly correspond to a protobuf message structure
-- Multiple protobuf types share the same syntactic form (e.g., Value literals)
-- The production requires complex semantic actions with conditionals
-- You need to parse special syntax (dates, configuration, operators)
-
-To add builtin rules:
-1. Define the Rule with its LHS nonterminal, RHS, and semantic action
-2. Call `add_rule(rule, is_final=True)` to mark the nonterminal as complete
-3. Set `is_final=False` if auto-generation should add more alternatives
-
-### 2. Rule Rewrites (grammar_gen_rewrites.py)
-
-Rewrites transform auto-generated rules into more suitable forms. Use rewrites when:
-
-- The auto-generated rule is correct but needs adjustment for better parsing
-- You need to change token granularity (STRING → name nonterminal)
-- You need to flatten nested structures for simpler parsing
-- You need to combine multiple grammar elements (abstraction + arity)
-
-To add rewrites:
-1. Create a rewrite function: `Callable[[Rule], Rule]`
-2. Add it to the dict in `get_rule_rewrites()` with the nonterminal name as key
-3. The rewrite will be applied after auto-generation but before finalization
-
-Common rewrite patterns:
-- `make_symbol_replacer()`: Replace specific RHS symbols with alternatives
-- Field flattening: Transform nested message references into inline parsing
-- Type conversions: Adjust semantic action parameter types after RHS changes
-
-## Configuration
-
-The GrammarGenerator constructor accepts several configuration options:
-
-- `inline_fields`: Set of (message_name, field_name) tuples for fields that
-  should be inlined (expanded directly) rather than parsed as subnonterminals
-
-- `rule_literal_renames`: Dict mapping rule names to alternative literal names
-  used in the S-expression syntax (e.g., "conjunction" → "and")
-
-- `final_rules`: Set of rule names that should not be auto-generated (only
-  use builtin rules)
-
-- `expected_unreachable`: Set of rule names that are intentionally not
-  reachable from the start symbol
 """
 import re
-from typing import Callable, Dict, List, Optional, Set, Tuple
-from .grammar import Grammar, Rule, Token, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
-from .target import Lambda, Call, Var, Symbol, Builtin, Message, OneOf, ListExpr, BaseType, MessageType, OptionType, ListType
-from .proto_ast import ProtoMessage, ProtoField
+from typing import Dict, List, Optional, Set, Tuple
+from .grammar import Grammar, Rule, Token, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence, generate_deconstruct_action
+from .target import Lambda, Call, Var, Lit, IfElse, Symbol, Builtin, Message, OneOf, ListExpr, BaseType, MessageType, OptionType, ListType, TargetType, create_identity_function, create_identity_option_function
+from .proto_ast import ProtoMessage, ProtoField, PRIMITIVE_TYPES
 from .proto_parser import ProtoParser
 from .grammar_gen_builtins import get_builtin_rules
-from .grammar_gen_rewrites import get_rule_rewrites
 
-# Mapping from protobuf primitive types to grammar terminal names
-_PRIMITIVE_TO_TERMINAL = {
-    'string': 'STRING',
-    'int32': 'INT',
-    'int64': 'INT',
-    'uint32': 'INT',
-    'uint64': 'INT',
-    'fixed64': 'INT',
-    'bool': 'BOOLEAN',
-    'double': 'FLOAT',
-    'float': 'FLOAT',
-    'bytes': 'STRING',
-}
 
 # Mapping from protobuf primitive types to base type names
 _PRIMITIVE_TO_BASE_TYPE = {
@@ -153,7 +57,6 @@ class GrammarGenerator:
             "conjunction": "and",
             "disjunction": "or",
         }
-        self.rule_rewrites: Dict[str, Callable[[Rule], Rule]] = get_rule_rewrites()
 
     def _generate_action(self, message_name: str, rhs_elements: List[Rhs], field_names: Optional[List[str]]=None, field_types: Optional[List[str]]=None) -> Lambda:
         """Generate semantic action to construct protobuf message from parsed elements."""
@@ -185,12 +88,6 @@ class GrammarGenerator:
         params = [Var(name, param_type) for name, param_type in zip(param_names, param_types)]
         return Lambda(params=params, return_type=MessageType(message.module, message_name), body=body)
 
-    def _next_param_name(self, idx: int) -> str:
-        """Generate parameter name for lambda (a, b, c, ...)."""
-        if idx < 26:
-            return chr(ord('a') + idx)
-        return f'x{idx}'
-
     def _get_type_for_name(self, type_name: str):
         """Get the appropriate type (BaseType or MessageType) for a given type name."""
         if self._is_primitive_type(type_name):
@@ -203,10 +100,19 @@ class GrammarGenerator:
             assert False, f'Unknown type: {type_name}'
 
     def _add_rule(self, rule: Rule) -> None:
-        """Add a rule to the grammar."""
-        rewrite = self.rule_rewrites.get(rule.lhs.name)
-        if rewrite:
-            rule = rewrite(rule)
+        """Add a rule to the grammar.
+
+        If there are builtin rules for this nonterminal and it's marked as final,
+        assert that the generated rule is different from all builtin rules.
+        """
+        # Check if this nonterminal has final builtin rules
+        if rule.lhs.name in self.final_rules and rule.lhs in self.grammar.rules:
+            builtin_rules = self.grammar.rules[rule.lhs]
+            for builtin_rule in builtin_rules:
+                assert rule.rhs != builtin_rule.rhs, \
+                    f"Generated rule for final nonterminal '{rule.lhs.name}' has identical RHS to builtin rule: {rule.rhs}. " \
+                    f"Builtin rules should replace auto-generated rules, not duplicate them."
+
         self.grammar.add_rule(rule)
 
     def generate(self) -> Grammar:
@@ -234,13 +140,12 @@ class GrammarGenerator:
 
     def _add_all_prepopulated_rules(self) -> None:
         """Add manually-crafted rules that should not be auto-generated."""
-        builtin_rules, final_nonterminals = get_builtin_rules()
-        for lhs, rules in builtin_rules.items():
+        for lhs, (rules, is_final) in get_builtin_rules().items():
+            if is_final:
+                self.final_rules.add(lhs.name)
             for rule in rules:
-                assert rule.action is not None
+                assert rule.construct_action is not None
                 self.grammar.add_rule(rule)
-        for nonterminal in final_nonterminals:
-            self.final_rules.add(nonterminal.name)
 
     def _post_process_grammar(self) -> None:
         """Apply grammar post-processing."""
@@ -263,6 +168,7 @@ class GrammarGenerator:
             'datetime_type',
         ])
 
+    # TODO PR Check that the actions are also equal.
     def _combine_identical_rules(self) -> None:
         """Combine rules with identical RHS patterns into a single rule with multiple alternatives."""
         rhs_source_to_lhs: Dict[Tuple[str, Optional[str]], List[Nonterminal]] = {}
@@ -286,7 +192,15 @@ class GrammarGenerator:
                         if canonical_lhs != lhs_name:
                             rename_map[lhs_name] = canonical_lhs
                             old_rules = self.grammar.rules[lhs_name]
-                            new_rules = [Rule(lhs=canonical_lhs, rhs=rule.rhs, action=rule.action, source_type=rule.source_type) for rule in old_rules]
+                            new_rules = [
+                                Rule(
+                                    lhs=canonical_lhs,
+                                    rhs=rule.rhs,
+                                    construct_action=rule.construct_action,
+                                    deconstruct_action=rule.deconstruct_action,
+                                    source_type=rule.source_type
+                                ) for rule in old_rules
+                            ]
                             self.grammar.rules[canonical_lhs] = new_rules
                             del self.grammar.rules[lhs_name]
                     else:
@@ -315,7 +229,15 @@ class GrammarGenerator:
         """Replace all occurrences of old names with new names throughout the grammar."""
         new_rules = {}
         for lhs, rules_list in self.grammar.rules.items():
-            new_rules[lhs] = [Rule(lhs=rule.lhs, rhs=self._rename_in_rhs(rule.rhs, rename_map), action=rule.action, source_type=rule.source_type) for rule in rules_list]
+            new_rules[lhs] = [
+                Rule(
+                    lhs=rule.lhs,
+                    rhs=self._rename_in_rhs(rule.rhs, rename_map),
+                    construct_action=rule.construct_action,
+                    deconstruct_action=rule.deconstruct_action,
+                    source_type=rule.source_type
+                ) for rule in rules_list
+            ]
         self.grammar.rules = new_rules
 
     def _rename_in_rhs(self, rhs: Rhs, rename_map: Dict[Nonterminal, Nonterminal]) -> Rhs:
@@ -328,13 +250,9 @@ class GrammarGenerator:
             new_elements = tuple(self._rename_in_rhs(elem, rename_map) for elem in rhs.elements)
             return Sequence(new_elements)
         elif isinstance(rhs, Star):
-            renamed = self._rename_in_rhs(rhs.rhs, rename_map)
-            assert isinstance(renamed, (Nonterminal, NamedTerminal)), f"Star child must be Nonterminal or NamedTerminal, got {type(renamed)}"
-            return Star(renamed)
+            return Star(self._rename_in_rhs(rhs.rhs, rename_map))
         elif isinstance(rhs, Option):
-            renamed = self._rename_in_rhs(rhs.rhs, rename_map)
-            assert isinstance(renamed, (Nonterminal, NamedTerminal)), f"Option child must be Nonterminal or NamedTerminal, got {type(renamed)}"
-            return Option(renamed)
+            return Option(self._rename_in_rhs(rhs.rhs, rename_map))
         else:
             return rhs
 
@@ -384,24 +302,70 @@ class GrammarGenerator:
             oneof = message.oneofs[0]
             for field in oneof.fields:
                 field_rule = self._get_rule_name(field.name)
-                field_name_snake = self._to_snake_case(field.name)
                 field_type = self._get_type_for_name(field.type)
-                oneof_call = Call(OneOf(Symbol(field_name_snake)), [Var('value', field_type)])
+
+                # Create oneof wrapper action
+                oneof_call = Call(OneOf(field.name), [Var('value', field_type)])
                 wrapper_call = Call(Message(message.module, message_name), [oneof_call])
-                action = Lambda([Var('value', field_type)], MessageType(message.module, message_name), wrapper_call)
-                alt_rule = Rule(lhs=Nonterminal(rule_name, message_type), rhs=Sequence((Nonterminal(field_rule, field_type),)), action=action)
+                construct_action = Lambda(
+                    [Var('value', field_type)],
+                    MessageType(message.module, message_name),
+                    wrapper_call
+                )
+                deconstruct_action = Lambda(
+                    [Var('message', MessageType(message.module, message_name))],
+                    field_type,
+                    IfElse(
+                        Call(Builtin('equal'), [
+                            Call(Builtin('WhichOneof'), [Var('message', MessageType(message.module, message_name)), Lit(oneof.name)]),
+                            Lit(field.name),
+                        ]),
+                        Call(Builtin('get_field'), [
+                            Var('message', MessageType(message.module, message_name)),
+                            Lit(field.name),
+                        ]),
+                        Lit(None)
+                    )
+                )
+
+                # Create rule with both actions
+                rhs = Nonterminal(field_rule, field_type)
+                alt_rule = Rule(
+                    lhs=Nonterminal(rule_name, message_type),
+                    rhs=rhs,
+                    construct_action=construct_action,
+                    deconstruct_action=deconstruct_action
+                )
                 self._add_rule(alt_rule)
+
+                # Add field-to-type mapping rule if needed
                 if self._is_primitive_type(field.type):
                     if field_rule not in self.final_rules:
                         terminal_name = self._map_primitive_type(field.type)
                         field_type = self._get_type_for_name(field.type)
-                        field_to_type_rule = Rule(lhs=Nonterminal(field_rule, field_type), rhs=Sequence((NamedTerminal(terminal_name, field_type),)), action=Lambda([Var('x', field_type)], field_type, Var('x', field_type)))
+                        rhs = NamedTerminal(terminal_name, field_type)
+                        construct_action = create_identity_function(field_type)
+                        deconstruct_action = create_identity_option_function(field_type)
+                        field_to_type_rule = Rule(
+                            lhs=Nonterminal(field_rule, field_type),
+                            rhs=rhs,
+                            construct_action=construct_action,
+                            deconstruct_action=deconstruct_action
+                        )
                         self._add_rule(field_to_type_rule)
                 else:
                     type_rule = self._get_rule_name(field.type)
                     if field_rule != type_rule and field_rule not in self.final_rules:
                         field_type = self._get_type_for_name(field.type)
-                        field_to_type_rule = Rule(lhs=Nonterminal(field_rule, field_type), rhs=Sequence((Nonterminal(type_rule, field_type),)), action=Lambda([Var('x', field_type)], field_type, Var('x', field_type)))
+                        construct_action = create_identity_function(field_type)
+                        deconstruct_action = create_identity_option_function(field_type)
+                        rhs = Nonterminal(type_rule, field_type)
+                        field_to_type_rule = Rule(
+                            lhs=Nonterminal(field_rule, field_type),
+                            rhs=rhs,
+                            construct_action=construct_action,
+                            deconstruct_action=deconstruct_action
+                        )
                         self._add_rule(field_to_type_rule)
             for field in oneof.fields:
                 if self._is_message_type(field.type):
@@ -418,9 +382,20 @@ class GrammarGenerator:
                     field_names.append(field.name)
                     field_types.append(field.type)
             rhs_symbols.append(LitTerminal(')'))
-            action = self._generate_action(message_name, rhs_symbols, field_names, field_types)
-            rule = Rule(lhs=Nonterminal(rule_name, message_type), rhs=Sequence(tuple(rhs_symbols)), action=action, source_type=message_name)
+
+            # Generate construct action
+            construct_action = self._generate_action(message_name, rhs_symbols, field_names, field_types)
+            rhs = Sequence(tuple(rhs_symbols))
+
+            # Create rule with both actions
+            rule = self._create_rule_with_actions(
+                lhs=Nonterminal(rule_name, message_type),
+                rhs=rhs,
+                construct_action=construct_action,
+                source_type=message_name
+            )
             self._add_rule(rule)
+
             for field in message.fields:
                 if self._is_message_type(field.type):
                     self._generate_message_rule(field.type)
@@ -430,7 +405,7 @@ class GrammarGenerator:
         if self._is_primitive_type(field.type):
             terminal_name = self._map_primitive_type(field.type)
             field_type = self._get_type_for_name(field.type)
-            base_symbol: NamedTerminal = NamedTerminal(terminal_name, field_type)
+            base_symbol: Rhs = NamedTerminal(terminal_name, field_type)
             if field.is_repeated:
                 return Star(base_symbol)
             elif field.is_optional:
@@ -454,7 +429,16 @@ class GrammarGenerator:
                 else:
                     literal_name = self.rule_literal_renames.get(field_rule_name, field_rule_name)
                     if not self.grammar.has_rule(Nonterminal(wrapper_rule_name, wrapper_type)):
-                        wrapper_rule = Rule(lhs=Nonterminal(wrapper_rule_name, wrapper_type), rhs=Sequence((LitTerminal('('), LitTerminal(literal_name), Star(Nonterminal(type_rule_name, field_type)), LitTerminal(')'))), action=Lambda([Var('value', wrapper_type)], wrapper_type, Var('value', wrapper_type)), source_type=field.type)
+                        construct_action = create_identity_function(wrapper_type)
+                        deconstruct_action = create_identity_option_function(wrapper_type)
+                        rhs = Sequence((LitTerminal('('), LitTerminal(literal_name), Star(Nonterminal(type_rule_name, field_type)), LitTerminal(')')))
+                        wrapper_rule = Rule(
+                            lhs=Nonterminal(wrapper_rule_name, wrapper_type),
+                            rhs=rhs,
+                            construct_action=construct_action,
+                            deconstruct_action=deconstruct_action,
+                            source_type=field.type
+                        )
                         self._add_rule(wrapper_rule)
                     return Option(Nonterminal(wrapper_rule_name, wrapper_type))
             elif field.is_optional:
@@ -471,7 +455,7 @@ class GrammarGenerator:
 
     def _is_primitive_type(self, type_name: str) -> bool:
         """Check if type is a protobuf primitive."""
-        return type_name in _PRIMITIVE_TO_TERMINAL
+        return type_name in PRIMITIVE_TYPES
 
     def _is_message_type(self, type_name: str) -> bool:
         """Check if type is a protobuf message."""
@@ -479,10 +463,37 @@ class GrammarGenerator:
 
     def _map_primitive_type(self, type_name: str) -> str:
         """Map protobuf primitive to grammar terminal name."""
-        if type_name in _PRIMITIVE_TO_TERMINAL:
-            return _PRIMITIVE_TO_TERMINAL[type_name]
-        else:
-            raise ValueError(f"Primitive type {type_name} not found")
+        return PRIMITIVE_TYPES.get(type_name, 'SYMBOL')
+
+    def _create_rule_with_actions(
+        self,
+        lhs: Nonterminal,
+        rhs: Rhs,
+        construct_action: Lambda,
+        source_type: Optional[str] = None
+    ) -> Rule:
+        """Create a Rule with both construct and deconstruct actions.
+
+        The deconstruct_action is automatically generated from the construct_action.
+        This ensures symmetric treatment of both actions.
+
+        Args:
+            lhs: Left-hand side nonterminal
+            rhs: Right-hand side of the rule
+            construct_action: Action to construct result from RHS elements
+            source_type: Optional source protobuf type name
+
+        Returns:
+            Rule with both actions populated
+        """
+        deconstruct_action = generate_deconstruct_action(construct_action, rhs)
+        return Rule(
+            lhs=lhs,
+            rhs=rhs,
+            construct_action=construct_action,
+            deconstruct_action=deconstruct_action,
+            source_type=source_type
+        )
 
 def generate_grammar(grammar: Grammar, reachable: Set[str]) -> str:
     """Generate grammar text."""

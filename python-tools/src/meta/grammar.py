@@ -5,13 +5,10 @@ with semantic actions, including support for normalization and left-factoring.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Tuple, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from .grammar_analysis import GrammarAnalysis
+from typing import Dict, List, Optional, Set, Tuple
 
 # Import action AST types
-from .target import TargetExpr, Var, Symbol, Call, Lambda, Let, Lit, TargetType
+from .target import TargetExpr, Var, Symbol, Call, Lambda, Let, Lit, TargetType, MessageType
 
 
 # Grammar RHS (right-hand side) elements
@@ -74,7 +71,11 @@ class Nonterminal(Rhs):
 @dataclass(frozen=True)
 class Star(Rhs):
     """Zero or more repetitions (*)."""
-    rhs: 'Nonterminal | NamedTerminal'
+    rhs: 'Rhs'
+
+    def __post_init__(self):
+        assert isinstance(self.rhs, Nonterminal) or isinstance(self.rhs, NamedTerminal), \
+            f"Star child must be Nonterminal or NamedTerminal, got {type(self.rhs).__name__}"
 
     def __str__(self) -> str:
         return f"{self.rhs}*"
@@ -88,7 +89,11 @@ class Star(Rhs):
 @dataclass(frozen=True)
 class Option(Rhs):
     """Optional element (?)."""
-    rhs: 'Nonterminal | NamedTerminal'
+    rhs: 'Rhs'
+
+    def __post_init__(self):
+        assert isinstance(self.rhs, Nonterminal) or isinstance(self.rhs, NamedTerminal), \
+            f"Option child must be Nonterminal, got {type(self.rhs).__name__}"
 
     def __str__(self) -> str:
         return f"{self.rhs}?"
@@ -128,36 +133,67 @@ class Sequence(Rhs):
 
 @dataclass(frozen=True)
 class Rule:
-    """Grammar rule (production)."""
+    """Grammar rule (production).
+
+    The construct_action takes the values from parsing the RHS elements and constructs
+    the result message.
+
+    The deconstruct_action is the inverse - it takes a message of the LHS type and
+    extracts the component values that would be needed to reconstruct it. This is
+    used by the pretty-printer to deconstruct messages back into their components.
+    """
     lhs: Nonterminal
     rhs: Rhs
-    action: 'Lambda'
+    construct_action: 'Lambda'
+    deconstruct_action: 'Lambda'
     source_type: Optional[str] = None  # Track the protobuf type this rule came from
 
     def __str__(self):
-        return f"{self.lhs.name} -> {self.rhs} {{{{ {self.action} }}}}"
+        result = f"{self.lhs.name} -> {self.rhs} {{{{ {self.construct_action} }}}}"
+        result += f" [[ {self.deconstruct_action} ]]"
+        return result
 
     def to_pattern(self, grammar: Optional['Grammar'] = None) -> str:
         """Convert RHS to pattern string."""
         return str(self.rhs)
 
     def __post_init__(self):
+        from .target import OptionType, TupleType
+
         assert isinstance(self.rhs, Rhs)
-        # Check that the action has a parameter for each non-literal on the RHS.
         rhs_len = _count_nonliteral_rhs_elements(self.rhs)
-        action_params = len(self.action.params)
+        action_params = len(self.construct_action.params)
         assert action_params == rhs_len, \
             f"Action for {self.lhs.name} has {action_params} parameters but RHS has {rhs_len} non-literal element{'' if rhs_len == 1 else 's'}: {self.rhs}"
 
-        # Check that RHS types match action parameter types
-        rhs_types = _collect_nonliteral_rhs_types(self.rhs)
-        for i, (rhs_type, param) in enumerate(zip(rhs_types, self.action.params)):
-            assert rhs_type == param.type, \
-                f"Rule {self.lhs.name}: parameter {i} type mismatch: RHS has {rhs_type} but action parameter '{param.name}' has {param.type}"
+        # Check deconstruct_action has exactly one parameter with the LHS type
+        assert len(self.deconstruct_action.params) == 1, \
+            f"Deconstruct action for {self.lhs.name} must have exactly 1 parameter, has {len(self.deconstruct_action.params)}"
 
-        # Check that action return type matches the LHS type
-        assert self.action.return_type == self.lhs.type, \
-            f"Rule {self.lhs.name}: action return type {self.action.return_type} does not match LHS type {self.lhs.type}"
+        deconstruct_param_type = self.deconstruct_action.params[0].type
+        lhs_type = self.lhs.target_type()
+        assert deconstruct_param_type == lhs_type, \
+            f"Deconstruct action for {self.lhs.name} parameter type {deconstruct_param_type} must match LHS type {lhs_type}"
+
+        # # Check deconstruct_action return type is OptionType of tuple of RHS types
+        # assert isinstance(self.deconstruct_action.return_type, OptionType), \
+        #     f"Deconstruct action for {self.lhs.name} return type must be OptionType, got {self.deconstruct_action.return_type}"
+
+        # # Build expected tuple type from RHS
+        # rhs_types = [elem.target_type() for elem in rhs_elements(self.rhs) if not isinstance(elem, LitTerminal)]
+        # if len(rhs_types) == 0:
+        #     # No non-literal elements - should return OptionType of empty tuple
+        #     expected_inner_type = TupleType([])
+        # elif len(rhs_types) == 1:
+        #     # Single element - return that type directly, not a tuple
+        #     expected_inner_type = rhs_types[0]
+        # else:
+        #     # Multiple elements - return tuple
+        #     expected_inner_type = TupleType(rhs_types)
+
+        # actual_inner_type = self.deconstruct_action.return_type.element_type
+        # assert actual_inner_type == expected_inner_type, \
+        #     f"Deconstruct action for {self.lhs.name} return type {self.deconstruct_action.return_type} must be OptionType[{expected_inner_type}]"
 
 @dataclass(frozen=True)
 class Token:
@@ -173,20 +209,20 @@ class Grammar:
     rules: Dict[Nonterminal, List[Rule]] = field(default_factory=dict)
     tokens: List[Token] = field(default_factory=list)
 
-    # Grammar analysis helper
-    _analysis: Optional['GrammarAnalysis'] = field(default=None, init=False, repr=False)
+    # Cached analysis results
+    _reachable_cache: Optional[Set[Nonterminal]] = field(default=None, init=False, repr=False)
+    _nullable_cache: Optional[Dict[Nonterminal, bool]] = field(default=None, init=False, repr=False)
+    _first_cache: Optional[Dict[Nonterminal, Set[Terminal]]] = field(default=None, init=False, repr=False)
+    _follow_cache: Optional[Dict[Nonterminal, Set[Terminal]]] = field(default=None, init=False, repr=False)
 
     def __post_init__(self):
         self.rules = {self.start: []}
-        from .grammar_analysis import GrammarAnalysis
-        self._analysis = GrammarAnalysis(self)
 
     def add_rule(self, rule: Rule) -> None:
-        assert self._analysis is not None
-        assert self._analysis._reachable_cache is None, "Grammar is already analyzed"
-        assert self._analysis._nullable_cache is None, "Grammar is already analyzed"
-        assert self._analysis._first_cache is None, "Grammar is already analyzed"
-        assert self._analysis._follow_cache is None, "Grammar is already analyzed"
+        assert self._reachable_cache is None, "Grammar is already analyzed"
+        assert self._nullable_cache is None, "Grammar is already analyzed"
+        assert self._first_cache is None, "Grammar is already analyzed"
+        assert self._follow_cache is None, "Grammar is already analyzed"
 
         lhs = rule.lhs
         if lhs not in self.rules:
@@ -245,20 +281,23 @@ class Grammar:
 
         Returns set of nonterminal names that can be reached.
         """
-        assert self._analysis is not None
-        return self._analysis.compute_reachability()
+        if self._reachable_cache is None:
+            from .grammar_analysis import GrammarAnalysis
+            reachable_names = GrammarAnalysis.compute_reachability_static(self)
+            self._reachable_cache = reachable_names
+        return self._reachable_cache
 
-    def get_unreachable_nonterminals(self) -> List[Nonterminal]:
+    def get_unreachable_rules(self) -> List[Nonterminal]:
         """
-        Find all nonterminals that are unreachable from start symbol.
+        Find all rules that are unreachable from start symbol.
 
-        Returns list of nonterminal names that cannot be reached.
+        Returns list of rule names that cannot be reached.
         """
         reachable = self.compute_reachability()
         unreachable = []
-        for nt in self.rules.keys():
-            if nt not in reachable:
-                unreachable.append(nt)
+        for A in self.rules.keys():
+            if A not in reachable:
+                unreachable.append(A)
         return unreachable
 
 
@@ -269,8 +308,10 @@ class Grammar:
         A nonterminal is nullable if it can derive the empty string.
         Returns dict mapping nonterminals to boolean.
         """
-        assert self._analysis is not None
-        return self._analysis.compute_nullable()
+        if self._nullable_cache is None:
+            from .grammar_analysis import GrammarAnalysis
+            self._nullable_cache = GrammarAnalysis.compute_nullable_static(self)
+        return self._nullable_cache
 
     def compute_first_k(self, k: int = 2) -> Dict[Nonterminal, Set[Tuple[Terminal, ...]]]:
         """
@@ -279,8 +320,8 @@ class Grammar:
         FIRST_k(A) is the set of terminal sequences of length up to k that can begin strings derived from A.
         Returns dict mapping nonterminals to sets of terminal tuples.
         """
-        assert self._analysis is not None
-        return self._analysis.compute_first_k(k)
+        from .grammar_analysis import GrammarAnalysis
+        return GrammarAnalysis.compute_first_k_static(self, k, self.compute_nullable())
 
     def compute_first(self) -> Dict[Nonterminal, Set[Terminal]]:
         """
@@ -289,8 +330,10 @@ class Grammar:
         FIRST(A) is the set of terminals that can begin strings derived from A.
         Returns dict mapping nonterminals to sets of Terminals.
         """
-        assert self._analysis is not None
-        return self._analysis.compute_first()
+        if self._first_cache is None:
+            from .grammar_analysis import GrammarAnalysis
+            self._first_cache = GrammarAnalysis.compute_first_static(self, self.compute_nullable())
+        return self._first_cache
 
     def compute_follow(self) -> Dict[Nonterminal, Set[Terminal]]:
         """
@@ -299,8 +342,10 @@ class Grammar:
         FOLLOW(A) is the set of terminals that can immediately follow A in any derivation.
         Returns dict mapping nonterminals to sets of Terminals.
         """
-        assert self._analysis is not None
-        return self._analysis.compute_follow()
+        if self._follow_cache is None:
+            from .grammar_analysis import GrammarAnalysis
+            self._follow_cache = GrammarAnalysis.compute_follow_static(self, self.compute_nullable(), self.compute_first())
+        return self._follow_cache
 
     def compute_follow_k(self, k: int = 2) -> Dict[Nonterminal, Set[Tuple[Terminal, ...]]]:
         """
@@ -309,8 +354,8 @@ class Grammar:
         FOLLOW_k(A) is the set of terminal sequences of length up to k that can follow A.
         Returns dict mapping nonterminals to sets of terminal tuples.
         """
-        assert self._analysis is not None
-        return self._analysis.compute_follow_k(k)
+        from .grammar_analysis import GrammarAnalysis
+        return GrammarAnalysis.compute_follow_k_static(self, k, self.compute_nullable(), self.compute_first_k(k))
 
     def nullable(self, rhs: Rhs) -> bool:
         """
@@ -483,54 +528,19 @@ class Grammar:
                     else:
                         lines.append(f"    | {rule.rhs}")
 
-                if rule.action:
-                    lines.append(f"    {{{{ {rule.action} }}}}")
+                if rule.construct_action:
+                    lines.append(f"    {{{{ {rule.construct_action} }}}}")
 
             lines.append("")
 
         return "\n".join(lines)
 
 
-    @staticmethod
-    def get_nonterminals(rhs: 'Rhs') -> List[Nonterminal]:
-        """Return the list of all nonterminals referenced in a Rhs."""
-        nonterminals = []
-
-        if isinstance(rhs, Nonterminal):
-            nonterminals.append(rhs)
-        elif isinstance(rhs, Sequence):
-            for elem in rhs.elements:
-                nonterminals.extend(Grammar.get_nonterminals(elem))
-        elif isinstance(rhs, (Star, Option)):
-            nonterminals.extend(Grammar.get_nonterminals(rhs.rhs))
-
-        return list(dict.fromkeys(nonterminals))
-
-    @staticmethod
-    def get_literals(rhs: 'Rhs') -> List[LitTerminal]:
-        """Return the list of all literals referenced in a Rhs."""
-        literals = []
-
-        if isinstance(rhs, LitTerminal):
-            literals.append(rhs)
-        elif isinstance(rhs, Sequence):
-            for elem in rhs.elements:
-                literals.extend(Grammar.get_literals(elem))
-        elif isinstance(rhs, (Star, Option)):
-            literals.extend(Grammar.get_literals(rhs.rhs))
-
-        return list(dict.fromkeys(literals))
-
-    @staticmethod
-    def is_epsilon(rhs: 'Rhs') -> bool:
-        """Check if rhs represents an epsilon production (empty sequence)."""
-        return isinstance(rhs, Sequence) and len(rhs.elements) == 0
-
-
-# Helper functions - re-exported for backward compatibility
-get_nonterminals = Grammar.get_nonterminals
-get_literals = Grammar.get_literals
-is_epsilon = Grammar.is_epsilon
+# Helper functions - re-exported from analysis module
+from .grammar_analysis import GrammarAnalysis
+get_nonterminals = GrammarAnalysis.get_nonterminals
+get_literals = GrammarAnalysis.get_literals
+is_epsilon = GrammarAnalysis.is_epsilon
 
 
 def rhs_elements(rhs: Rhs) -> Tuple[Rhs, ...]:
@@ -555,14 +565,126 @@ def _count_nonliteral_rhs_elements(rhs: Rhs) -> int:
         return 1
 
 
-def _collect_nonliteral_rhs_types(rhs: Rhs) -> List[TargetType]:
-    """Collect types from RHS elements that produce action parameters (skipping LitTerminals)."""
-    if isinstance(rhs, Sequence):
-        types = []
-        for elem in rhs.elements:
-            types.extend(_collect_nonliteral_rhs_types(elem))
-        return types
-    elif isinstance(rhs, LitTerminal):
-        return []
+def generate_deconstruct_action(construct_action: Lambda, rhs: Rhs) -> Lambda:
+    """Generate a deconstruct_action that is the inverse of construct_action.
+
+    The deconstruct_action takes a message (of the construct_action's return type)
+    and returns the component values if the message matches this rule, or None otherwise.
+
+    For example, if construct_action is:
+        lambda x, y -> Message("Add")(x, y)
+
+    Then deconstruct_action would be:
+        lambda msg -> if has_field(msg, "add") then Some((msg.add.x, msg.add.y)) else None
+
+    For oneof fields, the deconstruct checks which variant is set and returns None
+    if it doesn't match this rule.
+    """
+    from .target import Builtin, Message, OneOf, TupleType, ListType, OptionType, IfElse
+
+    # The input parameter is the message to deconstruct
+    msg_type = construct_action.return_type
+    msg_param = Var('msg', msg_type)
+
+    # We need to extract the values that correspond to each parameter in construct_action
+    if not construct_action.params:
+        # No parameters - return empty tuple (always matches)
+        return Lambda(
+            params=[msg_param],
+            return_type=OptionType(TupleType([])),
+            body=Call(Builtin('Some'), [Call(Builtin('make_tuple'), [])])
+        )
+
+    # Analyze the construct_action body to understand the field mappings
+    # Also detect if this is a oneof rule
+    field_extractions = []
+    oneof_checks = []
+
+    for param in construct_action.params:
+        # Try to determine the field name from the parameter
+        field_name = param.name
+
+        # Extract the field from the message
+        # Check if this is inside a OneOf wrapper by analyzing construct_action.body
+        oneof_field = _extract_oneof_field_for_param(construct_action.body, param.name)
+
+        if oneof_field:
+            # This param is wrapped in a OneOf, so we need to:
+            # 1. Check that this oneof field is the one that's set
+            # 2. Extract from the oneof field
+
+            # Find the oneof group name by looking at the message structure
+            # For now, we'll check if the field exists
+            oneof_checks.append(Call(Builtin('has_field'), [msg_param, Lit(oneof_field)]))
+
+            field_expr = Call(Builtin('get_field'), [
+                Call(Builtin('get_field'), [msg_param, Lit(oneof_field)]),
+                Lit(field_name)
+            ])
+        else:
+            # Direct field access
+            field_expr = Call(Builtin('get_field'), [msg_param, Lit(field_name)])
+
+        field_extractions.append(field_expr)
+
+    # Determine the return type
+    if len(field_extractions) == 1:
+        # Single element - return it directly (not as tuple)
+        result_type = construct_action.params[0].type
+        result_expr = field_extractions[0]
     else:
-        return [rhs.target_type()]
+        # Multiple elements - return as tuple
+        result_type = TupleType([p.type for p in construct_action.params])
+        result_expr = Call(Builtin('make_tuple'), field_extractions)
+
+    # Wrap in Some
+    result_expr = Call(Builtin('Some'), [result_expr])
+
+    # If there are oneof checks, wrap in conditional
+    if oneof_checks:
+        # Combine all checks with AND
+        condition = oneof_checks[0]
+        for check in oneof_checks[1:]:
+            # condition AND check
+            condition = IfElse(condition, check, Lit(False))
+
+        # Return Some(result) if condition, else None
+        result_expr = IfElse(condition, result_expr, Lit(None))
+
+    return Lambda(
+        params=[msg_param],
+        return_type=OptionType(result_type),
+        body=result_expr
+    )
+
+
+def _extract_oneof_field_for_param(action_body: TargetExpr, param_name: str) -> Optional[str]:
+    """Extract the oneof field name if the parameter is wrapped in OneOf.
+
+    For actions like: Message(...)(OneOf(:field_name)(param))
+    This extracts 'field_name' for the given param.
+    """
+    from .target import Message, OneOf
+
+    def search_for_param(expr: TargetExpr) -> Optional[str]:
+        if isinstance(expr, Call):
+            # Check if this is OneOf(:field)(...) where the arg is our param
+            if isinstance(expr.func, OneOf):
+                if len(expr.args) == 1 and isinstance(expr.args[0], Var):
+                    if expr.args[0].name == param_name:
+                        # Found it - return the oneof field name
+                        if isinstance(expr.func.field_name, Symbol):
+                            return expr.func.field_name.name
+
+            # Recursively search in function and arguments
+            result = search_for_param(expr.func)
+            if result:
+                return result
+            for arg in expr.args:
+                result = search_for_param(arg)
+                if result:
+                    return result
+
+        return None
+
+    return search_for_param(action_body)

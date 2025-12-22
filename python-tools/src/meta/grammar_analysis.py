@@ -5,12 +5,8 @@ nullable computation, FIRST/FOLLOW sets, and LL(k) checking.
 """
 
 from dataclasses import dataclass, field
-from typing import Container, Dict, Iterable, List, Mapping, Optional, Set, Tuple, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from .grammar import Grammar, Rhs, Rule
-
-from .grammar import LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence, Terminal
+from typing import Dict, Iterable, List, Mapping, Optional, Set, Tuple
+from .grammar import Grammar, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence, Terminal
 from .target import BaseType
 
 # Type alias for terminal sequences used in FIRST_k and FOLLOW_k
