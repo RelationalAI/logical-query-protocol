@@ -32,6 +32,14 @@ class ProtoEnum:
 
 
 @dataclass
+class ProtoReserved:
+    """Reserved field numbers or names in a protobuf message."""
+    numbers: List[int] = field(default_factory=list)
+    ranges: List[Tuple[int, int]] = field(default_factory=list)
+    names: List[str] = field(default_factory=list)
+
+
+@dataclass
 class ProtoMessage:
     """Protobuf message definition."""
     name: str
@@ -39,3 +47,4 @@ class ProtoMessage:
     fields: List[ProtoField] = field(default_factory=list)
     oneofs: List[ProtoOneof] = field(default_factory=list)
     enums: List[ProtoEnum] = field(default_factory=list)
+    reserved: List[ProtoReserved] = field(default_factory=list)
