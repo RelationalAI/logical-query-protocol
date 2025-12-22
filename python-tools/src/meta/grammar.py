@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple
 
 # Import action AST types
-from .target import TargetExpr, Var, Symbol, Call, Lambda, Let, Lit, TargetType, MessageType
+from .target import TargetExpr, Var, Symbol, Call, Lambda, Lit, TargetType, ListType, OptionType
 
 
 # Grammar RHS (right-hand side) elements
@@ -76,36 +76,26 @@ class Nonterminal(RhsSymbol):
 @dataclass(frozen=True)
 class Star(Rhs):
     """Zero or more repetitions (*)."""
-    rhs: 'Rhs'
-
-    def __post_init__(self):
-        assert isinstance(self.rhs, Nonterminal) or isinstance(self.rhs, NamedTerminal), \
-            f"Star child must be Nonterminal or NamedTerminal, got {type(self.rhs).__name__}"
+    rhs: 'RhsSymbol'
 
     def __str__(self) -> str:
         return f"{self.rhs}*"
 
     def target_type(self) -> TargetType:
         """Return list type of the element type."""
-        from .target import ListType
         return ListType(self.rhs.target_type())
 
 
 @dataclass(frozen=True)
 class Option(Rhs):
     """Optional element (?)."""
-    rhs: 'Rhs'
-
-    def __post_init__(self):
-        assert isinstance(self.rhs, Nonterminal) or isinstance(self.rhs, NamedTerminal), \
-            f"Option child must be Nonterminal, got {type(self.rhs).__name__}"
+    rhs: 'RhsSymbol'
 
     def __str__(self) -> str:
         return f"{self.rhs}?"
 
     def target_type(self) -> TargetType:
         """Return option type of the element type."""
-        from .target import OptionType
         return OptionType(self.rhs.target_type())
 
 

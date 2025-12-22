@@ -4,25 +4,26 @@ This module provides the GrammarGenerator class which converts protobuf
 message definitions into grammar rules with semantic actions.
 """
 import re
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple, TypeVar, cast
 from .grammar import Grammar, Rule, Token, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence, generate_deconstruct_action
 from .target import Lambda, Call, Var, Lit, IfElse, Symbol, Builtin, Message, OneOf, ListExpr, BaseType, MessageType, OptionType, ListType, TargetType, create_identity_function, create_identity_option_function
 from .proto_ast import ProtoMessage, ProtoField, PRIMITIVE_TYPES
 from .proto_parser import ProtoParser
 from .grammar_gen_builtins import get_builtin_rules
 
+A = TypeVar('A', bound=Rhs)
 
 # Mapping from protobuf primitive types to base type names
 _PRIMITIVE_TO_BASE_TYPE = {
     'string': 'String',
-    'int32': 'Int64',
+    'int32': 'Int32',
     'int64': 'Int64',
-    'uint32': 'Int64',
-    'uint64': 'Int64',
+    'uint32': 'UInt32',
+    'uint64': 'UInt64',
     'fixed64': 'Int64',
     'bool': 'Boolean',
     'double': 'Float64',
-    'float': 'Float64',
+    'float': 'Float32',
     'bytes': 'String',
 }
 
@@ -240,7 +241,7 @@ class GrammarGenerator:
             ]
         self.grammar.rules = new_rules
 
-    def _rename_in_rhs(self, rhs: Rhs, rename_map: Dict[Nonterminal, Nonterminal]) -> Rhs:
+    def _rename_in_rhs(self, rhs: A, rename_map: Dict[Nonterminal, Nonterminal]) -> A:
         """Recursively rename nonterminals in RHS, returning new Rhs."""
         if isinstance(rhs, Nonterminal):
             if rhs in rename_map:
@@ -248,11 +249,11 @@ class GrammarGenerator:
             return rhs
         elif isinstance(rhs, Sequence):
             new_elements = tuple(self._rename_in_rhs(elem, rename_map) for elem in rhs.elements)
-            return Sequence(new_elements)
+            return cast(A, Sequence(new_elements))
         elif isinstance(rhs, Star):
-            return Star(self._rename_in_rhs(rhs.rhs, rename_map))
+            return cast(A, Star(self._rename_in_rhs(rhs.rhs, rename_map)))
         elif isinstance(rhs, Option):
-            return Option(self._rename_in_rhs(rhs.rhs, rename_map))
+            return cast(A, Option(self._rename_in_rhs(rhs.rhs, rename_map)))
         else:
             return rhs
 
