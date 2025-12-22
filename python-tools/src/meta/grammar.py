@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple
 
 # Import action AST types
-from .target import TargetExpr, Var, Symbol, Call, Lambda, Lit, TargetType, ListType, OptionType
+from .target import TargetExpr, Var, Symbol, Call, Lambda, Lit, TargetType, ListType, OptionType, TupleType
 
 
 # Grammar RHS (right-hand side) elements
@@ -114,7 +114,6 @@ class Sequence(Rhs):
 
     def target_type(self) -> TargetType:
         """Return tuple type of non-literal element types."""
-        from .target import TupleType
         element_types = []
         for elem in self.elements:
             if not isinstance(elem, LitTerminal):
