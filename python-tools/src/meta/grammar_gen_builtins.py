@@ -5,6 +5,7 @@ from protobuf definitions, such as value literals, date/datetime parsing,
 configuration syntax, bindings, abstractions, type literals, and operators.
 """
 
+from types import NoneType
 from typing import Dict, List, Set, Tuple
 
 from .grammar import Rule, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
@@ -20,15 +21,18 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     is_final=True means auto-generation should not add more rules for this nonterminal.
     """
     result: Dict[Nonterminal, Tuple[List[Rule], bool]] = {}
+    nonfinal_nonterminals: Set[Nonterminal] = set()
 
-    def add_rule(rule: Rule, is_final: bool = True) -> None:
+    def add_rule(rule: Rule) -> None:
         lhs = rule.lhs
         if lhs not in result:
-            result[lhs] = ([], is_final)
+            result[lhs] = ([], True)
         rules_list, existing_final = result[lhs]
         rules_list.append(rule)
-        # is_final is True if any rule marks it as final
-        result[lhs] = (rules_list, existing_final or is_final)
+        result[lhs] = (rules_list, existing_final)
+
+    def mark_nonfinal(lhs: Nonterminal) -> None:
+        nonfinal_nonterminals.add(lhs)
 
     # Common types used throughout
     _config_type = ListType(TupleType([BaseType('String'), MessageType('logic', 'Value')]))
@@ -760,6 +764,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
 
     # Formula rules (not final - auto-generation can add more)
     # True formula: checks for empty Conjunction in the 'conjunction' oneof field
+    mark_nonfinal(Nonterminal('formula', MessageType('logic', 'Formula')))
     add_rule(Rule(
         lhs=Nonterminal('formula', MessageType('logic', 'Formula')),
         rhs=Nonterminal('true', MessageType('logic', 'Conjunction')),
@@ -784,7 +789,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
                 Lit(None)
             )
         )
-    ), is_final=False)
+    ))
 
     # False formula: checks for empty Disjunction in the 'disjunction' oneof field
     add_rule(Rule(
@@ -811,7 +816,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
                 Lit(None)
             )
         )
-    ), is_final=False)
+    ))
 
     # Export rules
     add_rule(Rule(
@@ -1158,6 +1163,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         ))
 
     # Primitive wrapper rules for operators (not final - auto-generation can add more)
+    mark_nonfinal(Nonterminal('primitive', MessageType('logic', 'Primitive')))
     for name, _op, prim in _comparison_ops + _arithmetic_ops:
         add_rule(Rule(
             lhs=Nonterminal('primitive', MessageType('logic', 'Primitive')),
@@ -1179,7 +1185,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
                     Lit(None)
                 )
             )
-        ), is_final=False)
+        ))
 
     add_rule(Rule(
         lhs=Nonterminal('new_fragment_id', MessageType('fragments', 'FragmentId')),
@@ -1597,5 +1603,10 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
             ])])
         )
     ))
+
+    # Mark all the non-final rules as non-final
+    for lhs in nonfinal_nonterminals:
+        rules, _ = result[lhs]
+        result[lhs] = (rules, False)
 
     return result
