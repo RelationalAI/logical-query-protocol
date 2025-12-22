@@ -7,14 +7,32 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple
 
 # Import action AST types
-from .target import TargetExpr, Var, Symbol, Call, Lambda, Let, Lit, TargetType
+from .target import TargetExpr, Var, Symbol, Call, Lambda, Let, Lit, TargetType, TupleType, ListType, OptionType
 
 
 # Grammar RHS (right-hand side) elements
 
 @dataclass(frozen=True)
 class Rhs:
-    """Base class for right-hand sides of grammar rules."""
+    """Base class for right-hand sides of grammar rules.
+
+    RHS elements represent the right-hand side of a grammar production.
+    Each RHS element can be a terminal (literal or named token), nonterminal,
+    or a compound element (sequence, repetition, or option).
+
+    Example grammar rule: expr -> term "+" term
+    - The RHS is a Sequence containing: [Nonterminal('term'), LitTerminal('+'), Nonterminal('term')]
+    - Each element has a target type that determines what value it produces when parsed
+
+    The target_type() method returns the type of value this RHS element produces
+    during semantic analysis. For example:
+    - LitTerminal produces empty tuple (no value)
+    - NamedTerminal produces its declared type (e.g., String for SYMBOL)
+    - Nonterminal produces the type of the nonterminal
+    - Star produces a list of the element type
+    - Option produces an optional of the element type
+    - Sequence produces a tuple of non-literal element types
+    """
 
     def target_type(self) -> TargetType:
         """Return the target type for this RHS element."""
@@ -35,7 +53,6 @@ class LitTerminal(Terminal):
 
     def target_type(self) -> TargetType:
         """Literals don't produce values, return empty tuple type."""
-        from .target import TupleType
         return TupleType([])
 
 
@@ -77,7 +94,6 @@ class Star(Rhs):
 
     def target_type(self) -> TargetType:
         """Return list type of the element type."""
-        from .target import ListType
         return ListType(self.rhs.target_type())
 
 
@@ -124,7 +140,27 @@ class Sequence(Rhs):
 
 @dataclass(frozen=True)
 class Rule:
-    """Grammar rule (production)."""
+    """Grammar rule (production).
+
+    A Rule represents a single production in a context-free grammar with semantic actions.
+    It consists of a left-hand side (nonterminal), a right-hand side (pattern to match),
+    and a lambda expression that computes the semantic value.
+
+    Example textual form:
+        expr -> term "+" term {{ lambda t1 t2: (add t1 t2) }}
+
+    This represents:
+    - lhs: Nonterminal('expr', ExprType)
+    - rhs: Sequence([Nonterminal('term', TermType), LitTerminal('+'), Nonterminal('term', TermType)])
+    - action: Lambda with 2 parameters (t1, t2) returning a Call to 'add'
+
+    The action lambda must have exactly one parameter for each non-literal element in the RHS.
+    Literals like "+" don't produce values, so they don't get parameters.
+
+    The to_pattern() method converts the RHS to a string pattern for display.
+    The __post_init__ validates that the action parameters match the RHS structure
+    and that types are consistent.
+    """
     lhs: Nonterminal
     rhs: Rhs
     action: 'Lambda'
@@ -157,7 +193,21 @@ class Rule:
 
 @dataclass(frozen=True)
 class Token:
-    """Token definition (terminal with regex pattern)."""
+    """Token definition (terminal with regex pattern).
+
+    A Token defines a terminal symbol that matches a regular expression pattern.
+    Tokens are the lexical elements of the grammar, matched by a lexer before parsing.
+
+    Example:
+        Token(name='SYMBOL', pattern=r'[a-zA-Z_][a-zA-Z0-9_]*', type=BaseType('String'))
+
+    This defines a token named SYMBOL that matches identifiers and produces a String value.
+    In grammar rules, this token is referenced as a NamedTerminal:
+        expr -> SYMBOL
+
+    The pattern is a regular expression string compatible with the parser generator.
+    The type indicates what kind of value the token produces when matched.
+    """
     name: str
     pattern: str
     type: TargetType

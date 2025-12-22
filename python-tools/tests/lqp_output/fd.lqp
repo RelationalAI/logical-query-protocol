@@ -55,9 +55,7 @@
                 (atom 378706712368109145 id fn)
                 (atom 2532914575784924444 id ln)))
             (keys fn ln)
-            (values id))))))
-  (epoch
-    (writes
+            (values id))))
       (define
         (fragment :emp_model
           (def 1441519574368593801
@@ -71,10 +69,28 @@
             (attrs
               (attribute :function "checked")))
           (functional_dependency
+            ([n::STRING id::INT]
+              (atom 17268489266876366576 id n))
+            (keys n)
+            (values id))
+          (functional_dependency
             ([eid::INT id::INT]
               (atom 4787166673635998263 id eid))
             (keys eid)
-            (values id))))))
+            (values id))))
+      (define
+        (fragment :query1
+          (def 3352882180916130150
+            ([n::STRING fn::STRING ln::STRING eid::INT]
+              (exists [person_id::INT]
+                (and
+                  (atom 17268489266876366576 person_id n)
+                  (atom 378706712368109145 person_id fn)
+                  (atom 2532914575784924444 person_id ln)
+                  (atom 4787166673635998263 person_id eid)
+                  (atom 1441519574368593801 person_id))))))))
+    (reads
+      (output :output1 3352882180916130150)))
   (epoch
     (writes
       (define
@@ -134,9 +150,7 @@
             ([person_id::INT car_id::INT date::STRING amount::INT]
               (atom 2450621548305115752 person_id car_id date amount))
             (keys car_id date)
-            (values person_id))))))
-  (epoch
-    (writes
+            (values person_id))))
       (define
         (fragment :ownership_model
           (def 12320303242364489664
@@ -147,7 +161,9 @@
                   (primitive :rel_primitive_gt_eq_monotype amount 20000)))))
           (functional_dependency
             ([person_id::INT car_id::INT]
-              (atom 12320303242364489664 person_id car_id))
+              (and
+                (atom 12320303242364489664 person_id car_id)
+                (atom 6919740574510502700 person_id)))
             (keys person_id)
             (values car_id))))))
   (epoch
@@ -162,15 +178,21 @@
             ([person_id::INT car_id::INT]
               (atom 12320303242364489664 person_id car_id))
             (keys car_id)
-            (values person_id))))))
-  (epoch
-    (writes
+            (values person_id))))
       (undefine :emp_model)))
   (epoch
     (writes
       (define
-        (fragment :query_fragment
-          (def 12157310591182248420
+        (fragment :query2
+          (functional_dependency
+            ([n::STRING car_id::INT person_id::INT v::STRING]
+              (and
+                (atom 17268489266876366576 person_id n)
+                (atom 9954426197261524399 car_id v)
+                (atom 12320303242364489664 person_id car_id)))
+            (keys v)
+            (values n))
+          (def 3981596135330217082
             ([n::STRING fn::STRING ln::STRING v::STRING]
               (exists [person_id::INT car_id::INT]
                 (and
@@ -180,4 +202,4 @@
                   (atom 12320303242364489664 person_id car_id)
                   (atom 9954426197261524399 car_id v))))))))
     (reads
-      (output :output 12157310591182248420))))
+      (output :output2 3981596135330217082))))
