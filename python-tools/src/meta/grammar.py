@@ -22,7 +22,12 @@ class Rhs:
         raise NotImplementedError(f"target_type not implemented for {type(self).__name__}")
 
 @dataclass(frozen=True)
-class Terminal(Rhs):
+class RhsSymbol(Rhs):
+    """Base class for symbols occurring on the right-hand side of grammar rules."""
+    pass
+
+@dataclass(frozen=True)
+class Terminal(RhsSymbol):
     """Base class for terminal symbols."""
     pass
 
@@ -55,7 +60,7 @@ class NamedTerminal(Terminal):
 
 
 @dataclass(frozen=True, unsafe_hash=True)
-class Nonterminal(Rhs):
+class Nonterminal(RhsSymbol):
     """Nonterminal (rule name)."""
     name: str
     type: TargetType
