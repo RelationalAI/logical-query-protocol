@@ -42,6 +42,11 @@ def main():
         type=Path,
         help="Output file for generated grammar"
     )
+    parser.add_argument(
+        "--grammar",
+        action="store_true",
+        help="Output the grammar instead of semantic actions"
+    )
     args = parser.parse_args()
 
     proto_parser = ProtoParser()
@@ -62,13 +67,16 @@ def main():
             print(f"  {rule.name}")
         print()
 
-    actions_text = generate_semantic_actions(grammar, grammar.compute_reachability())
+    if args.grammar:
+        output_text = grammar.print_grammar(grammar.compute_reachability())
+    else:
+        output_text = generate_semantic_actions(grammar, grammar.compute_reachability())
 
     if args.output:
-        args.output.write_text(actions_text)
+        args.output.write_text(output_text)
         print(f"Generated grammar written to {args.output}")
     else:
-        print(actions_text)
+        print(output_text)
 
     return 0
 

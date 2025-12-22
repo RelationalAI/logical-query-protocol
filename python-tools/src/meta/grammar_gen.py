@@ -495,7 +495,7 @@ class GrammarGenerator:
             source_type=source_type
         )
 
-def generate_grammar(grammar: Grammar, reachable: Set[str]) -> str:
+def generate_grammar(grammar: Grammar, reachable: Set[Nonterminal]) -> str:
     """Generate grammar text."""
     return grammar.print_grammar(reachable=reachable)
 

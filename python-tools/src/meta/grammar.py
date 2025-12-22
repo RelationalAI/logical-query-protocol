@@ -477,7 +477,7 @@ class Grammar:
         else:
             return first_of_following
 
-    def print_grammar(self, reachable: Optional[Set[str]] = None) -> str:
+    def print_grammar(self, reachable: Optional[Set[Nonterminal]] = None) -> str:
         """Convert to context-free grammar format."""
         lines = []
         lines.append("// Auto-generated grammar from protobuf specifications")
