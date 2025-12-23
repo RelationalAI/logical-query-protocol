@@ -52,7 +52,7 @@ class GrammarGenerator:
         self.grammar = Grammar(start=Nonterminal('transaction', MessageType('transactions', 'Transaction')))
         self.verbose = verbose
         self.never_inline_fields: Set[Tuple[str, str]] = {
-            ("Attribute", "args"),
+            ("Attribute", "attrs"),
         }
         self.rule_literal_renames: Dict[str, str] = {
             "monoid_def": "monoid",
@@ -469,7 +469,7 @@ class GrammarGenerator:
         if message_name in self.parser.messages:
             message = self.parser.messages[message_name]
             repeated_fields = [f for f in message.fields if f.is_repeated]
-            if len(repeated_fields) == 1 and (message_name, field.name) not in self.never_inline_fields:
+            if len(repeated_fields) == 1 and (field.type, field.name) not in self.never_inline_fields:
                 return True
 
         return False

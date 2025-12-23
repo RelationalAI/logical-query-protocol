@@ -39,7 +39,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     _string_type = BaseType('String')
     _int64_type = BaseType('Int64')
     _float64_type = BaseType('Float64')
-    _bool_type = BaseType('Bool')
+    _boolean_type = BaseType('Boolean')
     _value_type = MessageType('logic', 'Value')
     _binding_type = MessageType('logic', 'Binding')
     _formula_type = MessageType('logic', 'Formula')
@@ -93,7 +93,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     _bindings_nt = Nonterminal('bindings', _bindings_type)
     _formula_nt = Nonterminal('formula', _formula_type)
     _term_nt = Nonterminal('term', _term_type)
-    _relterm_nt = Nonterminal('relterm', _relterm_type)
+    _relterm_nt = Nonterminal('rel_term', _relterm_type)
     _abstraction_nt = Nonterminal('abstraction', _abstraction_type)
     _primitive_nt = Nonterminal('primitive', _primitive_type)
     _relation_id_nt = Nonterminal('relation_id', _relation_id_type)
@@ -106,7 +106,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     _date_nt = Nonterminal('date', _date_value_type)
     _datetime_nt = Nonterminal('datetime', _datetime_value_type)
     _var_nt = Nonterminal('var', _var_type)
-    _bool_value_nt = Nonterminal('bool_value', _bool_type)
+    _boolean_value_nt = Nonterminal('boolean_value', _boolean_type)
     _config_key_value_nt = Nonterminal('config_key_value', _config_key_value_type)
     _value_bindings_nt = Nonterminal('value_bindings', ListType(_binding_type))
     _abstraction_with_arity_nt = Nonterminal('abstraction_with_arity', _abstraction_with_arity_type)
@@ -126,6 +126,24 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     _ffi_nt = Nonterminal('ffi', _ffi_type)
     _pragma_nt = Nonterminal('pragma', _pragma_type)
     _atom_nt = Nonterminal('atom', _atom_type)
+    _rel_atom_nt = Nonterminal('rel_atom', _rel_atom_type)
+    _exists_nt = Nonterminal('exists', _exists_type)
+    _upsert_nt = Nonterminal('upsert', _upsert_type)
+    _monoid_def_nt = Nonterminal('monoid_def', _monoid_def_type)
+    _monus_def_nt = Nonterminal('monus_def', _monus_def_type)
+    _monoid_op_nt = Nonterminal('monoid_op', _monoid_op_type)
+    _fragment_id_nt = Nonterminal('fragment_id', _fragment_id_type)
+    _new_fragment_id_nt = Nonterminal('new_fragment_id', _fragment_id_type)
+    _fragment_nt = Nonterminal('fragment', _fragment_type)
+    _specialized_value_nt = Nonterminal('specialized_value', _value_type)
+    _attrs_nt = Nonterminal('attrs', ListType(_attribute_type))
+
+    # Common terminals
+    _string_terminal = NamedTerminal('STRING', _string_type)
+    _int_terminal = NamedTerminal('INT', _int64_type)
+    _float_terminal = NamedTerminal('FLOAT', _float64_type)
+    _symbol_terminal = NamedTerminal('SYMBOL', _string_type)
+    _colon_symbol_terminal = NamedTerminal('COLON_SYMBOL', _string_type)
     _rel_atom_nt = Nonterminal('rel_atom', _rel_atom_type)
     _exists_nt = Nonterminal('exists', _exists_type)
     _upsert_nt = Nonterminal('upsert', _upsert_type)
@@ -235,21 +253,15 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
             Lit(None)
         )
 
-    def _formula_oneof_deconstruct(msg_var, oneof_field_name, result_type, extra_check=None):
+    def _formula_oneof_deconstruct(msg_var, oneof_field_name, result_type, extra_check):
         """Create standard Formula oneof deconstruct pattern."""
         base_check = _equal(
             _which_oneof(msg_var, Lit('formula_type')),
             Lit(oneof_field_name)
         )
-        if extra_check:
-            return IfElse(
-                base_check,
-                IfElse(extra_check, _some(_get_field(msg_var, Lit(oneof_field_name))), Lit(None)),
-                Lit(None)
-            )
         return IfElse(
             base_check,
-            _some(_get_field(msg_var, Lit(oneof_field_name))),
+            IfElse(extra_check, _some(_get_field(msg_var, Lit(oneof_field_name))), Lit(None)),
             Lit(None)
         )
 
@@ -304,12 +316,12 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     ))
 
     # Bool value rules
-    _var_bool_value = Var('value', _bool_type)
+    _var_bool_value = Var('value', _boolean_type)
 
     add_rule(Rule(
-        lhs=_bool_value_nt,
+        lhs=_boolean_value_nt,
         rhs=LitTerminal('true'),
-        construct_action=Lambda([], _bool_type, Lit(True)),
+        construct_action=Lambda([], _boolean_type, Lit(True)),
         deconstruct_action=Lambda(
             [_var_bool_value],
             OptionType(TupleType([])),
@@ -318,9 +330,9 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     ))
 
     add_rule(Rule(
-        lhs=_bool_value_nt,
+        lhs=_boolean_value_nt,
         rhs=LitTerminal('false'),
-        construct_action=Lambda([], _bool_type, Lit(False)),
+        construct_action=Lambda([], _boolean_type, Lit(False)),
         deconstruct_action=Lambda(
             [_var_bool_value],
             OptionType(TupleType([])),
@@ -328,7 +340,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
-    add_rule(_make_value_oneof_rule(_bool_value_nt, _bool_type, 'boolean_value'))
+    add_rule(_make_value_oneof_rule(_boolean_value_nt, _boolean_type, 'boolean_value'))
 
     # Date and datetime rules
     _var_year = Var('year', _int64_type)
@@ -606,22 +618,44 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
-    def _make_monoid_op_rule(constructor: str, has_type: bool) -> Rule:
+    body = Call(Message('logic', 'Monoid'), [
+        Call(OneOf('or_monoid'), [
+            Call(Message('logic', 'OrMonoid'), [])
+        ])
+    ])
+
+    add_rule(Rule(
+        lhs=_monoid_nt,
+        rhs=Sequence((
+            LitTerminal('BOOL'),
+            LitTerminal('::'),
+            LitTerminal('OR')
+        )),
+        construct_action = Lambda(
+            [],
+            return_type=_monoid_type,
+            body=Lambda([], return_type=_monoid_type, body=body)
+        ),
+        deconstruct_action=Lambda(
+            [Var('msg', _monoid_type)],
+            OptionType(TupleType([])),
+            IfElse(
+                _equal(_which_oneof('monoid_type'), Lit('or_monoid')),
+                _some(_make_tuple()),
+                Lit(None)
+            )
+        )
+    ))
+
+    def _make_monoid_op_rule(constructor: str) -> Rule:
         op = constructor.removesuffix('Monoid')
         symbol = f'{op.lower()}_monoid'
         lit = op.upper()
-        if has_type:
-            body = Call(Message('logic', 'Monoid'), [
-                Call(OneOf(symbol), [
-                    Call(Message('logic', constructor), [Var('type', _type_type)])
-                ])
+        body = Call(Message('logic', 'Monoid'), [
+            Call(OneOf(symbol), [
+                Call(Message('logic', constructor), [Var('type', _type_type)])
             ])
-        else:
-            body = Call(Message('logic', 'Monoid'), [
-                Call(OneOf(symbol), [
-                    Call(Message('logic', constructor), [])
-                ])
-            ])
+        ])
         rhs = LitTerminal(lit)
         construct_action = Lambda(
             [],
@@ -637,10 +671,9 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
             deconstruct_action=deconstruct_action
         )
 
-    add_rule(_make_monoid_op_rule('OrMonoid', False))
-    add_rule(_make_monoid_op_rule('MinMonoid', True))
-    add_rule(_make_monoid_op_rule('MaxMonoid', True))
-    add_rule(_make_monoid_op_rule('SumMonoid', True))
+    add_rule(_make_monoid_op_rule('MinMonoid'))
+    add_rule(_make_monoid_op_rule('MaxMonoid'))
+    add_rule(_make_monoid_op_rule('SumMonoid'))
 
     # Configure rule
     add_rule(Rule(
@@ -707,7 +740,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         construct_action=Lambda(
             [Var('value', _conjunction_type)],
             _formula_type,
-            _message_formula(Call(OneOf('true'), [Var('value', _conjunction_type)]))
+            _message_formula(Call(OneOf('conjunction'), [Var('value', _conjunction_type)]))
         ),
         deconstruct_action=Lambda(
             [Var('msg', _formula_type)],
@@ -728,7 +761,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         construct_action=Lambda(
             [Var('value', _disjunction_type)],
             _formula_type,
-            _message_formula(Call(OneOf('false'), [Var('value', _disjunction_type)]))
+            _message_formula(Call(OneOf('disjunction'), [Var('value', _disjunction_type)]))
         ),
         deconstruct_action=Lambda(
             [Var('msg', _formula_type)],
@@ -950,8 +983,6 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         ('int128_type', _int128_type_type, LitTerminal('INT128'),
          Lambda([], _int128_type_type, Call(Message('logic', 'Int128Type'), []))),
         ('boolean_type', _boolean_type_type, LitTerminal('BOOLEAN'),
-         Lambda([], _boolean_type_type, Call(Message('logic', 'BooleanType'), []))),
-        ('bool_type', _boolean_type_type, LitTerminal('BOOL'),
          Lambda([], _boolean_type_type, Call(Message('logic', 'BooleanType'), []))),
         ('date_type', _date_type_type, LitTerminal('DATE'),
          Lambda([], _date_type_type, Call(Message('logic', 'DateType'), []))),
