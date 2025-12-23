@@ -6,7 +6,8 @@ message definitions into grammar rules with semantic actions.
 import re
 from typing import Callable, Dict, List, Optional, Set, Tuple, TypeVar, cast
 from .grammar import Grammar, Rule, Token, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
-from .target import Lambda, Call, Var, Lit, IfElse, Symbol, Builtin, Message, OneOf, ListExpr, BaseType, MessageType, OptionType, ListType, TargetType, TargetExpr, TupleType, create_identity_function, create_identity_option_function
+from .target import Lambda, Call, Var, Lit, IfElse, Symbol, Builtin, Message, OneOf, ListExpr, BaseType, MessageType, OptionType, ListType, TargetType, TargetExpr, TupleType
+from .target_utils import create_identity_function, create_identity_option_function
 from .proto_ast import ProtoMessage, ProtoField
 from .proto_parser import ProtoParser
 from .grammar_gen_builtins import get_builtin_rules

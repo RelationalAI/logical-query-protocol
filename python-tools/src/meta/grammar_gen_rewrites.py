@@ -18,7 +18,8 @@ from .grammar import (
     Star,
 )
 
-from .target import BaseType, Lambda, Call, OptionType, TupleType, MessageType, Let, Var, IfElse, Builtin, Lit, apply_lambda
+from .target import BaseType, Lambda, Call, OptionType, TupleType, MessageType, Let, Var, IfElse, Builtin, Lit
+from .target_utils import apply_lambda
 
 def make_symbol_replacer(replacements: Dict[Rhs, Rhs]) -> Callable[[Rule], Optional[Rule]]:
     """Create a rule rewriter that replaces symbols in the RHS.
