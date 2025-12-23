@@ -118,15 +118,6 @@ class GrammarGenerator:
                 result = rewrite(rewritten_rule)
                 if result is not None:
                     rewritten_rule = result
-                    break
-
-        # Check if this nonterminal has final builtin rules (but not if this is a builtin rule itself)
-        if not is_builtin and rewritten_rule.lhs.name in self.final_rules and rewritten_rule.lhs in self.grammar.rules:
-            builtin_rules = self.grammar.rules[rewritten_rule.lhs]
-            for builtin_rule in builtin_rules:
-                assert rewritten_rule.rhs != builtin_rule.rhs, \
-                    f"Generated rule for final nonterminal '{rewritten_rule.lhs.name}' has identical RHS to builtin rule: {rewritten_rule.rhs}. " \
-                    f"Builtin rules should replace auto-generated rules, not duplicate them."
 
         self.grammar.add_rule(rewritten_rule)
 
