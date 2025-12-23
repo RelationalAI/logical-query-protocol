@@ -261,17 +261,17 @@ class GrammarGenerator:
     def _get_rule_name(name: str) -> str:
         """Convert message name to rule name."""
         result = GrammarGenerator._to_snake_case(name)
-        result = re.sub('rel_atom', 'relatom', result)
-        result = re.sub('rel_term', 'relterm', result)
-        result = re.sub('date_time', 'datetime', result)
-        result = re.sub('csvconfig', 'csv_config', result)
         return result
 
     @staticmethod
     def _to_snake_case(name: str) -> str:
         """Convert CamelCase to snake_case."""
         result = re.sub('([a-z\\d])([A-Z])', '\\1_\\2', name)
-        return result.lower()
+        result = result.lower()
+        result = re.sub('date_time', 'datetime', result)
+        result = re.sub('csvconfig', 'csv_config', result)
+        result = re.sub('csvcolumn', 'csv_column', result)
+        return result
 
     @staticmethod
     def _to_field_name(name: str) -> str:
