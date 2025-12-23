@@ -8,7 +8,7 @@ from typing import Callable, Dict, List, Optional, Set, Tuple, cast
 from .grammar import Grammar, Rule, Token, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
 from .target import Lambda, Call, Var, Lit, IfElse, Symbol, Builtin, Message, OneOf, ListExpr, BaseType, MessageType, OptionType, ListType, TargetType, TargetExpr, TupleType
 from .target_utils import create_identity_function, create_identity_option_function
-from .grammar_utils import rename_in_rhs, SomeRhs
+from .grammar_utils import rewrite_rule
 from .proto_ast import ProtoMessage, ProtoField
 from .proto_parser import ProtoParser
 from .grammar_gen_builtins import BuiltinRules
@@ -190,7 +190,7 @@ class GrammarGenerator:
                     if key not in rhs_source_to_lhs:
                         rhs_source_to_lhs[key] = []
                     rhs_source_to_lhs[key].append(lhs)
-        rename_map: Dict[Nonterminal, Nonterminal] = {}
+        rename_map: Dict[Rhs, Rhs] = {}
         for (rhs_pattern, source_type), lhs_names in rhs_source_to_lhs.items():
             if len(lhs_names) > 1:
                 canonical_lhs = self._find_canonical_name(lhs_names)
@@ -232,18 +232,13 @@ class GrammarGenerator:
                 return Nonterminal(last_parts[0], names[0].type)
         return names[0]
 
-    def _apply_renames(self, rename_map: Dict[Nonterminal, Nonterminal]) -> None:
+    def _apply_renames(self, rename_map: Dict[Rhs, Rhs]) -> None:
         """Replace all occurrences of old names with new names throughout the grammar."""
         new_rules = {}
         for lhs, rules_list in self.grammar.rules.items():
             new_rules[lhs] = [
-                Rule(
-                    lhs=rule.lhs,
-                    rhs=rename_in_rhs(rule.rhs, rename_map),
-                    construct_action=rule.construct_action,
-                    deconstruct_action=rule.deconstruct_action,
-                    source_type=rule.source_type
-                ) for rule in rules_list
+                rewrite_rule(rule, rename_map)
+                for rule in rules_list
             ]
         self.grammar.rules = new_rules
 

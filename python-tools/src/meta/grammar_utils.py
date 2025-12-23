@@ -5,22 +5,12 @@ from .grammar import Nonterminal, Sequence, Star, Option, Rhs, RhsSymbol, Rule
 
 SomeRhs = TypeVar('SomeRhs', bound=Rhs)
 
-def rename_in_rhs(rhs: SomeRhs, rename_map: Dict[Nonterminal, Nonterminal]) -> SomeRhs:
+def rewrite_rule(rule: Rule, rename_map: Dict[Rhs, Rhs]) -> Rule:
     """Recursively rename nonterminals in RHS, returning new Rhs."""
-    if isinstance(rhs, Nonterminal):
-        if rhs in rename_map:
-            return rename_map[rhs]
-        return rhs
-    elif isinstance(rhs, Sequence):
-        new_elements = tuple(rename_in_rhs(elem, rename_map) for elem in rhs.elements)
-        return cast(SomeRhs, Sequence(new_elements))
-    elif isinstance(rhs, Star):
-        return cast(SomeRhs, Star(rename_in_rhs(rhs.rhs, rename_map)))
-    elif isinstance(rhs, Option):
-        return cast(SomeRhs, Option(rename_in_rhs(rhs.rhs, rename_map)))
-    else:
-        return rhs
-
+    result = rewrite_rule_with_replacements(rule, rename_map)
+    if result is not None:
+        return result
+    return rule
 
 def rewrite_rhs_with_replacements(rhs: Rhs, replacements: Dict[Rhs, Rhs]) -> Optional[Rhs]:
     """Rewrite RHS by replacing symbols according to the mapping.
