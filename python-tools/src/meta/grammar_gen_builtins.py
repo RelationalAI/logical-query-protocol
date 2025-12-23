@@ -30,7 +30,6 @@ _abstraction_type = MessageType('logic', 'Abstraction')
 _primitive_type = MessageType('logic', 'Primitive')
 _relation_id_type = MessageType('logic', 'RelationId')
 _relterm_type = MessageType('logic', 'RelTerm')
-_attribute_type = MessageType('logic', 'Attribute')
 _date_value_type = MessageType('logic', 'DateValue')
 _datetime_value_type = MessageType('logic', 'DateTimeValue')
 _uint128_value_type = MessageType('logic', 'UInt128Value')
@@ -124,6 +123,82 @@ _lc = LitTerminal('{')
 _rc = LitTerminal('}')
 
 
+def _message_value(*args):
+    return Call(Message('logic', 'Value'), list(args))
+
+def _message_binding(*args):
+    return Call(Message('logic', 'Binding'), list(args))
+
+def _message_var(*args):
+    return Call(Message('logic', 'Var'), list(args))
+
+def _message_abstraction(*args):
+    return Call(Message('logic', 'Abstraction'), list(args))
+
+def _message_primitive(*args):
+    return Call(Message('logic', 'Primitive'), list(args))
+
+def _message_relterm(*args):
+    return Call(Message('logic', 'RelTerm'), list(args))
+
+def _message_date_value(*args):
+    return Call(Message('logic', 'DateValue'), list(args))
+
+def _message_datetime_value(*args):
+    return Call(Message('logic', 'DateTimeValue'), list(args))
+
+def _message_conjunction(*args):
+    return Call(Message('logic', 'Conjunction'), list(args))
+
+def _message_disjunction(*args):
+    return Call(Message('logic', 'Disjunction'), list(args))
+
+def _message_formula(*args):
+    return Call(Message('logic', 'Formula'), list(args))
+
+def _value_oneof_deconstruct(msg_var, oneof_field_name, result_type):
+    """Create standard Value oneof deconstruct pattern."""
+    return IfElse(
+        make_equal(
+            make_which_oneof(msg_var, Lit('value_type')),
+            Lit(oneof_field_name)
+        ),
+        make_some(make_get_field(msg_var, Lit(oneof_field_name))),
+        Lit(None)
+    )
+
+def _formula_oneof_deconstruct(msg_var, oneof_field_name, result_type, extra_check):
+    """Create standard Formula oneof deconstruct pattern."""
+    base_check = make_equal(
+        make_which_oneof(msg_var, Lit('formula_type')),
+        Lit(oneof_field_name)
+    )
+    return IfElse(
+        base_check,
+        IfElse(extra_check, make_some(make_get_field(msg_var, Lit(oneof_field_name))), Lit(None)),
+        Lit(None)
+    )
+
+def _make_value_oneof_rule(rhs, value_type, oneof_field_name):
+    """Create a rule for Value -> oneof field."""
+    var_value = Var('value', value_type)
+    msg_var = Var('msg', _value_type)
+    return Rule(
+        lhs=_value_nt,
+        rhs=rhs,
+        construct_action=Lambda(
+            [var_value],
+            _value_type,
+            _message_value(Call(OneOf(oneof_field_name), [var_value]))
+        ),
+        deconstruct_action=Lambda(
+            [msg_var],
+            OptionType(value_type),
+            _value_oneof_deconstruct(msg_var, oneof_field_name, value_type)
+        )
+    )
+
+
 @dataclass
 class BuiltinRules:
     forced: bool = False
@@ -151,109 +226,37 @@ class BuiltinRules:
     def mark_nonfinal(self, lhs: Nonterminal) -> None:
         self.nonfinal_nonterminals.add(lhs)
 
-    # Common Message constructor functions that return Call instances
-    @staticmethod
-    def _message_value(*args):
-        return Call(Message('logic', 'Value'), list(args))
-
-    @staticmethod
-    def _message_binding(*args):
-        return Call(Message('logic', 'Binding'), list(args))
-
-    @staticmethod
-    def _message_var(*args):
-        return Call(Message('logic', 'Var'), list(args))
-
-    @staticmethod
-    def _message_abstraction(*args):
-        return Call(Message('logic', 'Abstraction'), list(args))
-
-    @staticmethod
-    def _message_primitive(*args):
-        return Call(Message('logic', 'Primitive'), list(args))
-
-    @staticmethod
-    def _message_relterm(*args):
-        return Call(Message('logic', 'RelTerm'), list(args))
-
-    @staticmethod
-    def _message_date_value(*args):
-        return Call(Message('logic', 'DateValue'), list(args))
-
-    @staticmethod
-    def _message_datetime_value(*args):
-        return Call(Message('logic', 'DateTimeValue'), list(args))
-
-    @staticmethod
-    def _message_conjunction(*args):
-        return Call(Message('logic', 'Conjunction'), list(args))
-
-    @staticmethod
-    def _message_disjunction(*args):
-        return Call(Message('logic', 'Disjunction'), list(args))
-
-    @staticmethod
-    def _message_formula(*args):
-        return Call(Message('logic', 'Formula'), list(args))
-
-
-
-    @staticmethod
-    def _value_oneof_deconstruct(msg_var, oneof_field_name, result_type):
-        """Create standard Value oneof deconstruct pattern."""
-        return IfElse(
-            make_equal(
-                make_which_oneof(msg_var, Lit('value_type')),
-                Lit(oneof_field_name)
-            ),
-            make_some(make_get_field(msg_var, Lit(oneof_field_name))),
-            Lit(None)
-        )
-
-    @staticmethod
-    def _formula_oneof_deconstruct(msg_var, oneof_field_name, result_type, extra_check):
-        """Create standard Formula oneof deconstruct pattern."""
-        base_check = make_equal(
-            make_which_oneof(msg_var, Lit('formula_type')),
-            Lit(oneof_field_name)
-        )
-        return IfElse(
-            base_check,
-            IfElse(extra_check, make_some(make_get_field(msg_var, Lit(oneof_field_name))), Lit(None)),
-            Lit(None)
-        )
-
-    # Helper function to generate Value oneof rules
-    @staticmethod
-    def _make_value_oneof_rule(rhs, value_type, oneof_field_name):
-        """Create a rule for Value -> oneof field."""
-        var_value = Var('value', value_type)
-        msg_var = Var('msg', _value_type)
-        return Rule(
-            lhs=_value_nt,
-            rhs=rhs,
-            construct_action=Lambda(
-                [var_value],
-                _value_type,
-                BuiltinRules._message_value(Call(OneOf(oneof_field_name), [var_value]))
-            ),
-            deconstruct_action=Lambda(
-                [msg_var],
-                OptionType(value_type),
-                BuiltinRules._value_oneof_deconstruct(msg_var, oneof_field_name, value_type)
-            )
-        )
-
     def _add_rules(self) -> None:
+        """Add all builtin rules by calling themed rule methods."""
+        self._add_value_rules()
+        self._add_transaction_rules()
+        self._add_bindings_rules()
+        self._add_monoid_rules()
+        self._add_formula_rules()
+        self._add_export_rules()
+        self._add_id_rules()
+        self._add_type_rules()
+        self._add_operator_rules()
+        self._add_fragment_rules()
+        self._add_epoch_rules()
+        self._add_logic_rules()
+
+        # Mark all the non-final rules as non-final
+        for lhs in self.nonfinal_nonterminals:
+            rules, _ = self.result[lhs]
+            self.result[lhs] = (rules, False)
+
+    def _add_value_rules(self) -> None:
+        """Add rules for value literals, missing, boolean, date/datetime."""
         # Value literal rules
-        self.add_rule(self._make_value_oneof_rule(_date_nt, _date_value_type, 'date_value'))
-        self.add_rule(self._make_value_oneof_rule(_datetime_nt, _datetime_value_type, 'datetime_value'))
-        self.add_rule(self._make_value_oneof_rule(_string_terminal, STRING_TYPE, 'string_value'))
-        self.add_rule(self._make_value_oneof_rule(_int_terminal, INT64_TYPE, 'int_value'))
-        self.add_rule(self._make_value_oneof_rule(_float_terminal, FLOAT64_TYPE, 'float_value'))
-        self.add_rule(self._make_value_oneof_rule(_uint128_terminal, _uint128_value_type, 'uint128_value'))
-        self.add_rule(self._make_value_oneof_rule(_int128_terminal, _int128_value_type, 'int128_value'))
-        self.add_rule(self._make_value_oneof_rule(_decimal_terminal, _decimal_value_type, 'decimal_value'))
+        self.add_rule(_make_value_oneof_rule(_date_nt, _date_value_type, 'date_value'))
+        self.add_rule(_make_value_oneof_rule(_datetime_nt, _datetime_value_type, 'datetime_value'))
+        self.add_rule(_make_value_oneof_rule(_string_terminal, STRING_TYPE, 'string_value'))
+        self.add_rule(_make_value_oneof_rule(_int_terminal, INT64_TYPE, 'int_value'))
+        self.add_rule(_make_value_oneof_rule(_float_terminal, FLOAT64_TYPE, 'float_value'))
+        self.add_rule(_make_value_oneof_rule(_uint128_terminal, _uint128_value_type, 'uint128_value'))
+        self.add_rule(_make_value_oneof_rule(_int128_terminal, _int128_value_type, 'int128_value'))
+        self.add_rule(_make_value_oneof_rule(_decimal_terminal, _decimal_value_type, 'decimal_value'))
 
         # Special case: missing value
         self.add_rule(Rule(
@@ -262,7 +265,7 @@ class BuiltinRules:
             construct_action=Lambda(
                 [],
                 _value_type,
-                self._message_value(Call(OneOf('missing_value'), [Call(Message('logic', 'MissingValue'), [])]))
+                _message_value(Call(OneOf('missing_value'), [Call(Message('logic', 'MissingValue'), [])]))
             ),
             deconstruct_action=Lambda(
                 [Var('msg', _value_type)],
@@ -300,7 +303,7 @@ class BuiltinRules:
             )
         ))
 
-        self.add_rule(self._make_value_oneof_rule(_boolean_value_nt, BOOLEAN_TYPE, 'boolean_value'))
+        self.add_rule(_make_value_oneof_rule(_boolean_value_nt, BOOLEAN_TYPE, 'boolean_value'))
 
         # Date and datetime rules
         _var_year = Var('year', INT64_TYPE)
@@ -317,7 +320,7 @@ class BuiltinRules:
             construct_action=Lambda(
                 [_var_year, _var_month, _var_day],
                 _date_value_type,
-                self._message_date_value(_var_year, _var_month, _var_day)
+                _message_date_value(_var_year, _var_month, _var_day)
             ),
             deconstruct_action=Lambda(
                 [Var('msg', _date_value_type)],
@@ -344,7 +347,7 @@ class BuiltinRules:
             construct_action=Lambda(
                 [_var_year, _var_month, _var_day, _var_hour, _var_minute, _var_second, _var_microsecond],
                 _datetime_value_type,
-                self._message_datetime_value(
+                _message_datetime_value(
                     _var_year, _var_month, _var_day, _var_hour, _var_minute, _var_second,
                     make_unwrap_option_or(_var_microsecond, Lit(0))
                 )
@@ -368,6 +371,8 @@ class BuiltinRules:
             )
         ))
 
+    def _add_transaction_rules(self) -> None:
+        """Add rules for transactions, configuration, and exports."""
         # Configuration rules
         _var_tuple = Var('tuple', _config_key_value_type)
 
@@ -437,6 +442,8 @@ class BuiltinRules:
             )
         ))
 
+    def _add_bindings_rules(self) -> None:
+        """Add rules for bindings and abstractions."""
         # Bindings rules
         _var_keys = Var('keys', ListType(_binding_type))
         _var_values = Var('values', OptionType(ListType(_binding_type)))
@@ -482,7 +489,7 @@ class BuiltinRules:
             construct_action=Lambda(
                 [Var('symbol', STRING_TYPE), _type_var],
                 _binding_type,
-                self._message_binding(self._message_var(Var('symbol', STRING_TYPE)), _type_var)
+                _message_binding(_message_var(Var('symbol', STRING_TYPE)), _type_var)
             ),
             deconstruct_action=Lambda(
                 [Var('msg', _binding_type)],
@@ -513,7 +520,7 @@ class BuiltinRules:
                 params=[_var_bindings, _var_formula],
                 return_type=_abstraction_with_arity_type,
                 body=make_tuple(
-                    self._message_abstraction(_concat_bindings(_var_bindings), _var_formula),
+                    _message_abstraction(_concat_bindings(_var_bindings), _var_formula),
                     make_length(make_snd(_var_bindings))
                 )
             ),
@@ -536,7 +543,7 @@ class BuiltinRules:
             construct_action=Lambda(
                 params=[_var_bindings, _var_formula],
                 return_type=_abstraction_type,
-                body=self._message_abstraction(_concat_bindings(_var_bindings), _var_formula)
+                body=_message_abstraction(_concat_bindings(_var_bindings), _var_formula)
             ),
             deconstruct_action=Lambda(
                 [Var('msg', _abstraction_type)],
@@ -548,6 +555,8 @@ class BuiltinRules:
             )
         ))
 
+    def _add_monoid_rules(self) -> None:
+        """Add rules for monoid operators."""
         # Name rule
         self.add_rule(Rule(
             lhs=_name_nt,
@@ -633,6 +642,8 @@ class BuiltinRules:
         self.add_rule(_make_monoid_op_rule('MaxMonoid'))
         self.add_rule(_make_monoid_op_rule('SumMonoid'))
 
+    def _add_formula_rules(self) -> None:
+        """Add rules for formulas, true/false, and configure."""
         # Configure rule
         self.add_rule(Rule(
             lhs=_configure_nt,
@@ -661,7 +672,7 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_true_nt,
             rhs=Sequence((_lp, LitTerminal('true'), _rp)),
-            construct_action=Lambda([], _conjunction_type, self._message_conjunction(_empty_formula_list)),
+            construct_action=Lambda([], _conjunction_type, _message_conjunction(_empty_formula_list)),
             deconstruct_action=Lambda(
                 [Var('msg', _conjunction_type)],
                 OptionType(_empty_tuple_type),
@@ -676,7 +687,7 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_false_nt,
             rhs=Sequence((_lp, LitTerminal('false'), _rp)),
-            construct_action=Lambda([], _disjunction_type, self._message_disjunction(_empty_formula_list)),
+            construct_action=Lambda([], _disjunction_type, _message_disjunction(_empty_formula_list)),
             deconstruct_action=Lambda(
                 [Var('msg', _disjunction_type)],
                 OptionType(_empty_tuple_type),
@@ -698,12 +709,12 @@ class BuiltinRules:
             construct_action=Lambda(
                 [Var('value', _conjunction_type)],
                 _formula_type,
-                self._message_formula(Call(OneOf('conjunction'), [Var('value', _conjunction_type)]))
+                _message_formula(Call(OneOf('conjunction'), [Var('value', _conjunction_type)]))
             ),
             deconstruct_action=Lambda(
                 [Var('msg', _formula_type)],
                 OptionType(_conjunction_type),
-                self._formula_oneof_deconstruct(
+            _formula_oneof_deconstruct(
                     Var('msg', _formula_type),
                     'conjunction',
                     _conjunction_type,
@@ -719,12 +730,12 @@ class BuiltinRules:
             construct_action=Lambda(
                 [Var('value', _disjunction_type)],
                 _formula_type,
-                self._message_formula(Call(OneOf('disjunction'), [Var('value', _disjunction_type)]))
+                _message_formula(Call(OneOf('disjunction'), [Var('value', _disjunction_type)]))
             ),
             deconstruct_action=Lambda(
                 [Var('msg', _formula_type)],
                 OptionType(_disjunction_type),
-                self._formula_oneof_deconstruct(
+            _formula_oneof_deconstruct(
                     Var('msg', _formula_type),
                     'disjunction',
                     _disjunction_type,
@@ -733,6 +744,8 @@ class BuiltinRules:
             )
         ))
 
+    def _add_export_rules(self) -> None:
+        """Add rules for export and export CSV configuration."""
         # Export rules
         self.add_rule(Rule(
             lhs=_export_nt,
@@ -840,11 +853,13 @@ class BuiltinRules:
             )
         ))
 
+    def _add_id_rules(self) -> None:
+        """Add rules for vars, fragment IDs, relation IDs, and specialized values."""
         # Var rule
         self.add_rule(Rule(
             lhs=_var_nt,
             rhs=_symbol_terminal,
-            construct_action=Lambda([Var('symbol', STRING_TYPE)], _var_type, self._message_var(Var('symbol', STRING_TYPE))),
+            construct_action=Lambda([Var('symbol', STRING_TYPE)], _var_type, _message_var(Var('symbol', STRING_TYPE))),
             deconstruct_action=Lambda(
                 [Var('msg', _var_type)],
                 OptionType(STRING_TYPE),
@@ -914,6 +929,8 @@ class BuiltinRules:
             )
         ))
 
+    def _add_type_rules(self) -> None:
+        """Add rules for type literals."""
         # Type rules
         _unspecified_type_type = MessageType('logic', 'UnspecifiedType')
         STRING_TYPE_type = MessageType('logic', 'StringType')
@@ -985,6 +1002,8 @@ class BuiltinRules:
                     )
                 ))
 
+    def _add_operator_rules(self) -> None:
+        """Add rules for comparison and arithmetic operators."""
         # Comparison operator rules
         _comparison_ops = [
             ('eq', '=', 'rel_primitive_eq'),
@@ -1006,7 +1025,7 @@ class BuiltinRules:
 
         # Helper to wrap term in RelTerm
         def _wrap_relterm(term_var):
-            return self._message_relterm(Call(OneOf('term'), [term_var]))
+            return _message_relterm(Call(OneOf('term'), [term_var]))
 
         # Helper to extract term from arg
         def _extract_term_from_arg(msg_var, arg_lit):
@@ -1019,7 +1038,7 @@ class BuiltinRules:
                 construct_action=Lambda(
                     [_var_left, _var_right],
                     _primitive_type,
-                    self._message_primitive(Lit(prim), _wrap_relterm(_var_left), _wrap_relterm(_var_right))
+                    _message_primitive(Lit(prim), _wrap_relterm(_var_left), _wrap_relterm(_var_right))
                 ),
                 deconstruct_action=Lambda(
                     [Var('msg', _primitive_type)],
@@ -1049,7 +1068,7 @@ class BuiltinRules:
                 construct_action=Lambda(
                     [_var_left, _var_right, _var_result],
                     _primitive_type,
-                    self._message_primitive(
+                    _message_primitive(
                         Lit(prim),
                         _wrap_relterm(_var_left),
                         _wrap_relterm(_var_right),
@@ -1090,6 +1109,8 @@ class BuiltinRules:
                 )
             ))
 
+    def _add_fragment_rules(self) -> None:
+        """Add rules for fragments and new fragment IDs."""
         self.add_rule(Rule(
             lhs=_new_fragment_id_nt,
             rhs=_fragment_id_nt,
@@ -1140,6 +1161,8 @@ class BuiltinRules:
             )
         ))
 
+    def _add_epoch_rules(self) -> None:
+        """Add rules for output and abort."""
         # output: STRING -> name?
         self.add_rule(Rule(
             lhs=_output_nt,
@@ -1188,6 +1211,8 @@ class BuiltinRules:
             )
         ))
 
+    def _add_logic_rules(self) -> None:
+        """Add rules for ffi, rel_atom, primitive, and exists."""
         # ffi: STRING -> name, terms? -> term*
         self.add_rule(Rule(
             lhs=_ffi_nt,
@@ -1254,7 +1279,7 @@ class BuiltinRules:
             construct_action=Lambda(
                 [Var('name', STRING_TYPE), Var('terms', ListType(_relterm_type))],
                 _primitive_type,
-                self._message_primitive(Var('name', STRING_TYPE), Var('terms', ListType(_relterm_type)))
+                _message_primitive(Var('name', STRING_TYPE), Var('terms', ListType(_relterm_type)))
             ),
             deconstruct_action=Lambda(
                 [Var('msg', _primitive_type)],
@@ -1280,7 +1305,7 @@ class BuiltinRules:
                 [Var('bindings', _bindings_type), Var('formula', _formula_type)],
                 _exists_type,
                 Call(Message('logic', 'Exists'), [
-                    self._message_abstraction(
+                    _message_abstraction(
                         make_concat(
                             make_fst(Var('bindings', _bindings_type)),
                             make_snd(Var('bindings', _bindings_type))
@@ -1295,11 +1320,6 @@ class BuiltinRules:
                 Call(Builtin('deconstruct_exists'), [Var('msg', _exists_type)])
             )
         ))
-
-        # Mark all the non-final rules as non-final
-        for lhs in self.nonfinal_nonterminals:
-            rules, _ = self.result[lhs]
-            self.result[lhs] = (rules, False)
 
 
 def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
