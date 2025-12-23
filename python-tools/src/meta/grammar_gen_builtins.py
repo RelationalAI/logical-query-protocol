@@ -21,102 +21,6 @@ from .target_utils import (
     make_fst, make_snd, make_is_empty, make_concat, make_length, make_unwrap_option_or
 )
 
-# Common types used throughout
-_value_type = MessageType('logic', 'Value')
-_binding_type = MessageType('logic', 'Binding')
-_formula_type = MessageType('logic', 'Formula')
-_term_type = MessageType('logic', 'Term')
-_abstraction_type = MessageType('logic', 'Abstraction')
-_primitive_type = MessageType('logic', 'Primitive')
-_relation_id_type = MessageType('logic', 'RelationId')
-_relterm_type = MessageType('logic', 'RelTerm')
-_date_value_type = MessageType('logic', 'DateValue')
-_datetime_value_type = MessageType('logic', 'DateTimeValue')
-_uint128_value_type = MessageType('logic', 'UInt128Value')
-_int128_value_type = MessageType('logic', 'Int128Value')
-_decimal_value_type = MessageType('logic', 'DecimalValue')
-_var_type = MessageType('logic', 'Var')
-_type_type = MessageType('logic', 'Type')
-_monoid_type = MessageType('logic', 'Monoid')
-_conjunction_type = MessageType('logic', 'Conjunction')
-_disjunction_type = MessageType('logic', 'Disjunction')
-_declaration_type = MessageType('logic', 'Declaration')
-_fragment_id_type = MessageType('fragments', 'FragmentId')
-_fragment_type = MessageType('fragments', 'Fragment')
-_transaction_type = MessageType('transactions', 'Transaction')
-_configure_type = MessageType('transactions', 'Configure')
-_sync_type = MessageType('transactions', 'Sync')
-_epoch_type = MessageType('transactions', 'Epoch')
-_output_type = MessageType('transactions', 'Output')
-_abort_type = MessageType('transactions', 'Abort')
-_export_type = MessageType('transactions', 'Export')
-_export_csv_config_type = MessageType('transactions', 'ExportCSVConfig')
-_export_csv_column_type = MessageType('transactions', 'ExportCSVColumn')
-_ffi_type = MessageType('logic', 'FFI')
-_rel_atom_type = MessageType('logic', 'RelAtom')
-_exists_type = MessageType('logic', 'Exists')
-
-_config_key_value_type = TupleType([STRING_TYPE, _value_type])
-_config_type = ListType(_config_key_value_type)
-_bindings_type = TupleType([ListType(_binding_type), ListType(_binding_type)])
-_abstraction_with_arity_type = TupleType([_abstraction_type, INT64_TYPE])
-_monoid_op_type = FunctionType([_type_type], _monoid_type)
-
-
-# Common nonterminals
-_value_nt = Nonterminal('value', _value_type)
-_binding_nt = Nonterminal('binding', _binding_type)
-_bindings_nt = Nonterminal('bindings', _bindings_type)
-_formula_nt = Nonterminal('formula', _formula_type)
-_term_nt = Nonterminal('term', _term_type)
-_relterm_nt = Nonterminal('rel_term', _relterm_type)
-_abstraction_nt = Nonterminal('abstraction', _abstraction_type)
-_primitive_nt = Nonterminal('primitive', _primitive_type)
-_relation_id_nt = Nonterminal('relation_id', _relation_id_type)
-_type_nt = Nonterminal('type', _type_type)
-_monoid_nt = Nonterminal('monoid', _monoid_type)
-_declaration_nt = Nonterminal('declaration', _declaration_type)
-_name_nt = Nonterminal('name', STRING_TYPE)
-_config_dict_nt = Nonterminal('config_dict', _config_type)
-_date_nt = Nonterminal('date', _date_value_type)
-_datetime_nt = Nonterminal('datetime', _datetime_value_type)
-_var_nt = Nonterminal('var', _var_type)
-_boolean_value_nt = Nonterminal('boolean_value', BOOLEAN_TYPE)
-_config_key_value_nt = Nonterminal('config_key_value', _config_key_value_type)
-_value_bindings_nt = Nonterminal('value_bindings', ListType(_binding_type))
-_abstraction_with_arity_nt = Nonterminal('abstraction_with_arity', _abstraction_with_arity_type)
-_true_nt = Nonterminal('true', _conjunction_type)
-_false_nt = Nonterminal('false', _disjunction_type)
-_transaction_nt = Nonterminal('transaction', _transaction_type)
-_configure_nt = Nonterminal('configure', _configure_type)
-_sync_nt = Nonterminal('sync', _sync_type)
-_epoch_nt = Nonterminal('epoch', _epoch_type)
-_export_nt = Nonterminal('export', _export_type)
-_export_csv_config_nt = Nonterminal('export_csv_config', _export_csv_config_type)
-_export_csv_path_nt = Nonterminal('export_csv_path', STRING_TYPE)
-_export_csv_columns_nt = Nonterminal('export_csv_columns', ListType(_export_csv_column_type))
-_export_csv_column_nt = Nonterminal('export_csv_column', _export_csv_column_type)
-_output_nt = Nonterminal('output', _output_type)
-_abort_nt = Nonterminal('abort', _abort_type)
-_ffi_nt = Nonterminal('ffi', _ffi_type)
-_rel_atom_nt = Nonterminal('rel_atom', _rel_atom_type)
-_exists_nt = Nonterminal('exists', _exists_type)
-_monoid_op_nt = Nonterminal('monoid_op', _monoid_op_type)
-_fragment_id_nt = Nonterminal('fragment_id', _fragment_id_type)
-_new_fragment_id_nt = Nonterminal('new_fragment_id', _fragment_id_type)
-_fragment_nt = Nonterminal('fragment', _fragment_type)
-_specialized_value_nt = Nonterminal('specialized_value', _value_type)
-
-# Common terminals
-_string_terminal = NamedTerminal('STRING', STRING_TYPE)
-_int_terminal = NamedTerminal('INT', INT64_TYPE)
-_float_terminal = NamedTerminal('FLOAT', FLOAT64_TYPE)
-_symbol_terminal = NamedTerminal('SYMBOL', STRING_TYPE)
-_colon_symbol_terminal = NamedTerminal('COLON_SYMBOL', STRING_TYPE)
-_uint128_terminal = NamedTerminal('UINT128', _uint128_value_type)
-_int128_terminal = NamedTerminal('INT128', _int128_value_type)
-_decimal_terminal = NamedTerminal('DECIMAL', _decimal_value_type)
-
 _lp = LitTerminal('(')
 _rp = LitTerminal(')')
 _lc = LitTerminal('{')
@@ -181,7 +85,10 @@ def _formula_oneof_deconstruct(msg_var, oneof_field_name, result_type, extra_che
 
 def _make_value_oneof_rule(rhs, value_type, oneof_field_name):
     """Create a rule for Value -> oneof field."""
-    var_value = Var('value', value_type)
+    _value_type = MessageType('logic', 'Value')
+    _value_nt = Nonterminal('value', _value_type)
+
+    var_value = Var('value', _value_type)
     msg_var = Var('msg', _value_type)
     return Rule(
         lhs=_value_nt,
@@ -193,7 +100,7 @@ def _make_value_oneof_rule(rhs, value_type, oneof_field_name):
         ),
         deconstruct_action=Lambda(
             [msg_var],
-            OptionType(value_type),
+            OptionType(_value_type),
             _value_oneof_deconstruct(msg_var, oneof_field_name, value_type)
         )
     )
@@ -248,6 +155,29 @@ class BuiltinRules:
 
     def _add_value_rules(self) -> None:
         """Add rules for value literals, missing, boolean, date/datetime."""
+
+        # Common types used throughout
+        _value_type = MessageType('logic', 'Value')
+        _date_value_type = MessageType('logic', 'DateValue')
+        _datetime_value_type = MessageType('logic', 'DateTimeValue')
+        _uint128_value_type = MessageType('logic', 'UInt128Value')
+        _int128_value_type = MessageType('logic', 'Int128Value')
+        _decimal_value_type = MessageType('logic', 'DecimalValue')
+
+        # Common nonterminals
+        _value_nt = Nonterminal('value', _value_type)
+        _date_nt = Nonterminal('date', _date_value_type)
+        _datetime_nt = Nonterminal('datetime', _datetime_value_type)
+        _boolean_value_nt = Nonterminal('boolean_value', BOOLEAN_TYPE)
+
+        # Common terminals
+        _string_terminal = NamedTerminal('STRING', STRING_TYPE)
+        _int_terminal = NamedTerminal('INT', INT64_TYPE)
+        _float_terminal = NamedTerminal('FLOAT', FLOAT64_TYPE)
+        _uint128_terminal = NamedTerminal('UINT128', _uint128_value_type)
+        _int128_terminal = NamedTerminal('INT128', _int128_value_type)
+        _decimal_terminal = NamedTerminal('DECIMAL', _decimal_value_type)
+
         # Value literal rules
         self.add_rule(_make_value_oneof_rule(_date_nt, _date_value_type, 'date_value'))
         self.add_rule(_make_value_oneof_rule(_datetime_nt, _datetime_value_type, 'datetime_value'))
@@ -373,6 +303,61 @@ class BuiltinRules:
 
     def _add_transaction_rules(self) -> None:
         """Add rules for transactions, configuration, and exports."""
+
+        # Common types used throughout
+        _value_type = MessageType('logic', 'Value')
+        _binding_type = MessageType('logic', 'Binding')
+        _formula_type = MessageType('logic', 'Formula')
+        _term_type = MessageType('logic', 'Term')
+        _abstraction_type = MessageType('logic', 'Abstraction')
+        _primitive_type = MessageType('logic', 'Primitive')
+        _relation_id_type = MessageType('logic', 'RelationId')
+        _relterm_type = MessageType('logic', 'RelTerm')
+        _date_value_type = MessageType('logic', 'DateValue')
+        _datetime_value_type = MessageType('logic', 'DateTimeValue')
+        _uint128_value_type = MessageType('logic', 'UInt128Value')
+        _int128_value_type = MessageType('logic', 'Int128Value')
+        _decimal_value_type = MessageType('logic', 'DecimalValue')
+        _var_type = MessageType('logic', 'Var')
+        _type_type = MessageType('logic', 'Type')
+        _monoid_type = MessageType('logic', 'Monoid')
+        _conjunction_type = MessageType('logic', 'Conjunction')
+        _disjunction_type = MessageType('logic', 'Disjunction')
+        _declaration_type = MessageType('logic', 'Declaration')
+        _fragment_id_type = MessageType('fragments', 'FragmentId')
+        _fragment_type = MessageType('fragments', 'Fragment')
+        _transaction_type = MessageType('transactions', 'Transaction')
+        _configure_type = MessageType('transactions', 'Configure')
+        _sync_type = MessageType('transactions', 'Sync')
+        _epoch_type = MessageType('transactions', 'Epoch')
+        _output_type = MessageType('transactions', 'Output')
+        _abort_type = MessageType('transactions', 'Abort')
+        _export_type = MessageType('transactions', 'Export')
+        _export_csv_config_type = MessageType('transactions', 'ExportCSVConfig')
+        _export_csv_column_type = MessageType('transactions', 'ExportCSVColumn')
+        _ffi_type = MessageType('logic', 'FFI')
+        _rel_atom_type = MessageType('logic', 'RelAtom')
+        _exists_type = MessageType('logic', 'Exists')
+
+        _config_key_value_type = TupleType([STRING_TYPE, _value_type])
+        _config_type = ListType(_config_key_value_type)
+        _bindings_type = TupleType([ListType(_binding_type), ListType(_binding_type)])
+        _abstraction_with_arity_type = TupleType([_abstraction_type, INT64_TYPE])
+        _monoid_op_type = FunctionType([_type_type], _monoid_type)
+
+
+        # Common nonterminals
+        _value_nt = Nonterminal('value', _value_type)
+        _config_dict_nt = Nonterminal('config_dict', _config_type)
+        _config_key_value_nt = Nonterminal('config_key_value', _config_key_value_type)
+        _transaction_nt = Nonterminal('transaction', _transaction_type)
+        _configure_nt = Nonterminal('configure', _configure_type)
+        _sync_nt = Nonterminal('sync', _sync_type)
+        _epoch_nt = Nonterminal('epoch', _epoch_type)
+
+        # Common terminals
+        _colon_symbol_terminal = NamedTerminal('COLON_SYMBOL', STRING_TYPE)
+
         # Configuration rules
         _var_tuple = Var('tuple', _config_key_value_type)
 
@@ -444,6 +429,61 @@ class BuiltinRules:
 
     def _add_bindings_rules(self) -> None:
         """Add rules for bindings and abstractions."""
+
+        # Common types used throughout
+        _value_type = MessageType('logic', 'Value')
+        _binding_type = MessageType('logic', 'Binding')
+        _formula_type = MessageType('logic', 'Formula')
+        _term_type = MessageType('logic', 'Term')
+        _abstraction_type = MessageType('logic', 'Abstraction')
+        _primitive_type = MessageType('logic', 'Primitive')
+        _relation_id_type = MessageType('logic', 'RelationId')
+        _relterm_type = MessageType('logic', 'RelTerm')
+        _date_value_type = MessageType('logic', 'DateValue')
+        _datetime_value_type = MessageType('logic', 'DateTimeValue')
+        _uint128_value_type = MessageType('logic', 'UInt128Value')
+        _int128_value_type = MessageType('logic', 'Int128Value')
+        _decimal_value_type = MessageType('logic', 'DecimalValue')
+        _var_type = MessageType('logic', 'Var')
+        _type_type = MessageType('logic', 'Type')
+        _monoid_type = MessageType('logic', 'Monoid')
+        _conjunction_type = MessageType('logic', 'Conjunction')
+        _disjunction_type = MessageType('logic', 'Disjunction')
+        _declaration_type = MessageType('logic', 'Declaration')
+        _fragment_id_type = MessageType('fragments', 'FragmentId')
+        _fragment_type = MessageType('fragments', 'Fragment')
+        _transaction_type = MessageType('transactions', 'Transaction')
+        _configure_type = MessageType('transactions', 'Configure')
+        _sync_type = MessageType('transactions', 'Sync')
+        _epoch_type = MessageType('transactions', 'Epoch')
+        _output_type = MessageType('transactions', 'Output')
+        _abort_type = MessageType('transactions', 'Abort')
+        _export_type = MessageType('transactions', 'Export')
+        _export_csv_config_type = MessageType('transactions', 'ExportCSVConfig')
+        _export_csv_column_type = MessageType('transactions', 'ExportCSVColumn')
+        _ffi_type = MessageType('logic', 'FFI')
+        _rel_atom_type = MessageType('logic', 'RelAtom')
+        _exists_type = MessageType('logic', 'Exists')
+
+        _config_key_value_type = TupleType([STRING_TYPE, _value_type])
+        _config_type = ListType(_config_key_value_type)
+        _bindings_type = TupleType([ListType(_binding_type), ListType(_binding_type)])
+        _abstraction_with_arity_type = TupleType([_abstraction_type, INT64_TYPE])
+        _monoid_op_type = FunctionType([_type_type], _monoid_type)
+
+
+        # Common nonterminals
+        _binding_nt = Nonterminal('binding', _binding_type)
+        _bindings_nt = Nonterminal('bindings', _bindings_type)
+        _formula_nt = Nonterminal('formula', _formula_type)
+        _abstraction_nt = Nonterminal('abstraction', _abstraction_type)
+        _type_nt = Nonterminal('type', _type_type)
+        _value_bindings_nt = Nonterminal('value_bindings', ListType(_binding_type))
+        _abstraction_with_arity_nt = Nonterminal('abstraction_with_arity', _abstraction_with_arity_type)
+
+        # Common terminals
+        _symbol_terminal = NamedTerminal('SYMBOL', STRING_TYPE)
+
         # Bindings rules
         _var_keys = Var('keys', ListType(_binding_type))
         _var_values = Var('values', OptionType(ListType(_binding_type)))
@@ -557,6 +597,58 @@ class BuiltinRules:
 
     def _add_monoid_rules(self) -> None:
         """Add rules for monoid operators."""
+
+        # Common types used throughout
+        _value_type = MessageType('logic', 'Value')
+        _binding_type = MessageType('logic', 'Binding')
+        _formula_type = MessageType('logic', 'Formula')
+        _term_type = MessageType('logic', 'Term')
+        _abstraction_type = MessageType('logic', 'Abstraction')
+        _primitive_type = MessageType('logic', 'Primitive')
+        _relation_id_type = MessageType('logic', 'RelationId')
+        _relterm_type = MessageType('logic', 'RelTerm')
+        _date_value_type = MessageType('logic', 'DateValue')
+        _datetime_value_type = MessageType('logic', 'DateTimeValue')
+        _uint128_value_type = MessageType('logic', 'UInt128Value')
+        _int128_value_type = MessageType('logic', 'Int128Value')
+        _decimal_value_type = MessageType('logic', 'DecimalValue')
+        _var_type = MessageType('logic', 'Var')
+        _type_type = MessageType('logic', 'Type')
+        _monoid_type = MessageType('logic', 'Monoid')
+        _conjunction_type = MessageType('logic', 'Conjunction')
+        _disjunction_type = MessageType('logic', 'Disjunction')
+        _declaration_type = MessageType('logic', 'Declaration')
+        _fragment_id_type = MessageType('fragments', 'FragmentId')
+        _fragment_type = MessageType('fragments', 'Fragment')
+        _transaction_type = MessageType('transactions', 'Transaction')
+        _configure_type = MessageType('transactions', 'Configure')
+        _sync_type = MessageType('transactions', 'Sync')
+        _epoch_type = MessageType('transactions', 'Epoch')
+        _output_type = MessageType('transactions', 'Output')
+        _abort_type = MessageType('transactions', 'Abort')
+        _export_type = MessageType('transactions', 'Export')
+        _export_csv_config_type = MessageType('transactions', 'ExportCSVConfig')
+        _export_csv_column_type = MessageType('transactions', 'ExportCSVColumn')
+        _ffi_type = MessageType('logic', 'FFI')
+        _rel_atom_type = MessageType('logic', 'RelAtom')
+        _exists_type = MessageType('logic', 'Exists')
+
+        _config_key_value_type = TupleType([STRING_TYPE, _value_type])
+        _config_type = ListType(_config_key_value_type)
+        _bindings_type = TupleType([ListType(_binding_type), ListType(_binding_type)])
+        _abstraction_with_arity_type = TupleType([_abstraction_type, INT64_TYPE])
+        _monoid_op_type = FunctionType([_type_type], _monoid_type)
+
+
+        # Common nonterminals
+        _type_nt = Nonterminal('type', _type_type)
+        _monoid_nt = Nonterminal('monoid', _monoid_type)
+        _name_nt = Nonterminal('name', STRING_TYPE)
+        _monoid_op_nt = Nonterminal('monoid_op', _monoid_op_type)
+
+        # Common terminals
+        _colon_symbol_terminal = NamedTerminal('COLON_SYMBOL', STRING_TYPE)
+
         # Name rule
         self.add_rule(Rule(
             lhs=_name_nt,
@@ -644,6 +736,56 @@ class BuiltinRules:
 
     def _add_formula_rules(self) -> None:
         """Add rules for formulas, true/false, and configure."""
+
+        # Common types used throughout
+        _value_type = MessageType('logic', 'Value')
+        _binding_type = MessageType('logic', 'Binding')
+        _formula_type = MessageType('logic', 'Formula')
+        _term_type = MessageType('logic', 'Term')
+        _abstraction_type = MessageType('logic', 'Abstraction')
+        _primitive_type = MessageType('logic', 'Primitive')
+        _relation_id_type = MessageType('logic', 'RelationId')
+        _relterm_type = MessageType('logic', 'RelTerm')
+        _date_value_type = MessageType('logic', 'DateValue')
+        _datetime_value_type = MessageType('logic', 'DateTimeValue')
+        _uint128_value_type = MessageType('logic', 'UInt128Value')
+        _int128_value_type = MessageType('logic', 'Int128Value')
+        _decimal_value_type = MessageType('logic', 'DecimalValue')
+        _var_type = MessageType('logic', 'Var')
+        _type_type = MessageType('logic', 'Type')
+        _monoid_type = MessageType('logic', 'Monoid')
+        _conjunction_type = MessageType('logic', 'Conjunction')
+        _disjunction_type = MessageType('logic', 'Disjunction')
+        _declaration_type = MessageType('logic', 'Declaration')
+        _fragment_id_type = MessageType('fragments', 'FragmentId')
+        _fragment_type = MessageType('fragments', 'Fragment')
+        _transaction_type = MessageType('transactions', 'Transaction')
+        _configure_type = MessageType('transactions', 'Configure')
+        _sync_type = MessageType('transactions', 'Sync')
+        _epoch_type = MessageType('transactions', 'Epoch')
+        _output_type = MessageType('transactions', 'Output')
+        _abort_type = MessageType('transactions', 'Abort')
+        _export_type = MessageType('transactions', 'Export')
+        _export_csv_config_type = MessageType('transactions', 'ExportCSVConfig')
+        _export_csv_column_type = MessageType('transactions', 'ExportCSVColumn')
+        _ffi_type = MessageType('logic', 'FFI')
+        _rel_atom_type = MessageType('logic', 'RelAtom')
+        _exists_type = MessageType('logic', 'Exists')
+
+        _config_key_value_type = TupleType([STRING_TYPE, _value_type])
+        _config_type = ListType(_config_key_value_type)
+        _bindings_type = TupleType([ListType(_binding_type), ListType(_binding_type)])
+        _abstraction_with_arity_type = TupleType([_abstraction_type, INT64_TYPE])
+        _monoid_op_type = FunctionType([_type_type], _monoid_type)
+
+
+        # Common nonterminals
+        _formula_nt = Nonterminal('formula', _formula_type)
+        _config_dict_nt = Nonterminal('config_dict', _config_type)
+        _true_nt = Nonterminal('true', _conjunction_type)
+        _false_nt = Nonterminal('false', _disjunction_type)
+        _configure_nt = Nonterminal('configure', _configure_type)
+
         # Configure rule
         self.add_rule(Rule(
             lhs=_configure_nt,
@@ -746,6 +888,58 @@ class BuiltinRules:
 
     def _add_export_rules(self) -> None:
         """Add rules for export and export CSV configuration."""
+
+        # Common types used throughout
+        _value_type = MessageType('logic', 'Value')
+        _binding_type = MessageType('logic', 'Binding')
+        _formula_type = MessageType('logic', 'Formula')
+        _term_type = MessageType('logic', 'Term')
+        _abstraction_type = MessageType('logic', 'Abstraction')
+        _primitive_type = MessageType('logic', 'Primitive')
+        _relation_id_type = MessageType('logic', 'RelationId')
+        _relterm_type = MessageType('logic', 'RelTerm')
+        _date_value_type = MessageType('logic', 'DateValue')
+        _datetime_value_type = MessageType('logic', 'DateTimeValue')
+        _uint128_value_type = MessageType('logic', 'UInt128Value')
+        _int128_value_type = MessageType('logic', 'Int128Value')
+        _decimal_value_type = MessageType('logic', 'DecimalValue')
+        _var_type = MessageType('logic', 'Var')
+        _type_type = MessageType('logic', 'Type')
+        _monoid_type = MessageType('logic', 'Monoid')
+        _conjunction_type = MessageType('logic', 'Conjunction')
+        _disjunction_type = MessageType('logic', 'Disjunction')
+        _declaration_type = MessageType('logic', 'Declaration')
+        _fragment_id_type = MessageType('fragments', 'FragmentId')
+        _fragment_type = MessageType('fragments', 'Fragment')
+        _transaction_type = MessageType('transactions', 'Transaction')
+        _configure_type = MessageType('transactions', 'Configure')
+        _sync_type = MessageType('transactions', 'Sync')
+        _epoch_type = MessageType('transactions', 'Epoch')
+        _output_type = MessageType('transactions', 'Output')
+        _abort_type = MessageType('transactions', 'Abort')
+        _export_type = MessageType('transactions', 'Export')
+        _export_csv_config_type = MessageType('transactions', 'ExportCSVConfig')
+        _export_csv_column_type = MessageType('transactions', 'ExportCSVColumn')
+        _ffi_type = MessageType('logic', 'FFI')
+        _rel_atom_type = MessageType('logic', 'RelAtom')
+        _exists_type = MessageType('logic', 'Exists')
+
+        _config_key_value_type = TupleType([STRING_TYPE, _value_type])
+        _config_type = ListType(_config_key_value_type)
+        _bindings_type = TupleType([ListType(_binding_type), ListType(_binding_type)])
+        _abstraction_with_arity_type = TupleType([_abstraction_type, INT64_TYPE])
+        _monoid_op_type = FunctionType([_type_type], _monoid_type)
+
+
+        # Common nonterminals
+        _relation_id_nt = Nonterminal('relation_id', _relation_id_type)
+        _config_dict_nt = Nonterminal('config_dict', _config_type)
+        _export_nt = Nonterminal('export', _export_type)
+        _export_csv_config_nt = Nonterminal('export_csv_config', _export_csv_config_type)
+        _export_csv_path_nt = Nonterminal('export_csv_path', STRING_TYPE)
+        _export_csv_columns_nt = Nonterminal('export_csv_columns', ListType(_export_csv_column_type))
+        _export_csv_column_nt = Nonterminal('export_csv_column', _export_csv_column_type)
+
         # Export rules
         self.add_rule(Rule(
             lhs=_export_nt,
@@ -855,6 +1049,59 @@ class BuiltinRules:
 
     def _add_id_rules(self) -> None:
         """Add rules for vars, fragment IDs, relation IDs, and specialized values."""
+
+        # Common types used throughout
+        _value_type = MessageType('logic', 'Value')
+        _binding_type = MessageType('logic', 'Binding')
+        _formula_type = MessageType('logic', 'Formula')
+        _term_type = MessageType('logic', 'Term')
+        _abstraction_type = MessageType('logic', 'Abstraction')
+        _primitive_type = MessageType('logic', 'Primitive')
+        _relation_id_type = MessageType('logic', 'RelationId')
+        _relterm_type = MessageType('logic', 'RelTerm')
+        _date_value_type = MessageType('logic', 'DateValue')
+        _datetime_value_type = MessageType('logic', 'DateTimeValue')
+        _uint128_value_type = MessageType('logic', 'UInt128Value')
+        _int128_value_type = MessageType('logic', 'Int128Value')
+        _decimal_value_type = MessageType('logic', 'DecimalValue')
+        _var_type = MessageType('logic', 'Var')
+        _type_type = MessageType('logic', 'Type')
+        _monoid_type = MessageType('logic', 'Monoid')
+        _conjunction_type = MessageType('logic', 'Conjunction')
+        _disjunction_type = MessageType('logic', 'Disjunction')
+        _declaration_type = MessageType('logic', 'Declaration')
+        _fragment_id_type = MessageType('fragments', 'FragmentId')
+        _fragment_type = MessageType('fragments', 'Fragment')
+        _transaction_type = MessageType('transactions', 'Transaction')
+        _configure_type = MessageType('transactions', 'Configure')
+        _sync_type = MessageType('transactions', 'Sync')
+        _epoch_type = MessageType('transactions', 'Epoch')
+        _output_type = MessageType('transactions', 'Output')
+        _abort_type = MessageType('transactions', 'Abort')
+        _export_type = MessageType('transactions', 'Export')
+        _export_csv_config_type = MessageType('transactions', 'ExportCSVConfig')
+        _export_csv_column_type = MessageType('transactions', 'ExportCSVColumn')
+        _ffi_type = MessageType('logic', 'FFI')
+        _rel_atom_type = MessageType('logic', 'RelAtom')
+        _exists_type = MessageType('logic', 'Exists')
+
+        _config_key_value_type = TupleType([STRING_TYPE, _value_type])
+        _config_type = ListType(_config_key_value_type)
+        _bindings_type = TupleType([ListType(_binding_type), ListType(_binding_type)])
+        _abstraction_with_arity_type = TupleType([_abstraction_type, INT64_TYPE])
+        _monoid_op_type = FunctionType([_type_type], _monoid_type)
+
+
+        # Common nonterminals
+        _value_nt = Nonterminal('value', _value_type)
+        _relation_id_nt = Nonterminal('relation_id', _relation_id_type)
+        _var_nt = Nonterminal('var', _var_type)
+        _fragment_id_nt = Nonterminal('fragment_id', _fragment_id_type)
+        _specialized_value_nt = Nonterminal('specialized_value', _value_type)
+
+        # Common terminals
+        _symbol_terminal = NamedTerminal('SYMBOL', STRING_TYPE)
+
         # Var rule
         self.add_rule(Rule(
             lhs=_var_nt,
@@ -931,9 +1178,10 @@ class BuiltinRules:
 
     def _add_type_rules(self) -> None:
         """Add rules for type literals."""
+
         # Type rules
         _unspecified_type_type = MessageType('logic', 'UnspecifiedType')
-        STRING_TYPE_type = MessageType('logic', 'StringType')
+        _string_type_type = MessageType('logic', 'StringType')
         _int_type_type = MessageType('logic', 'IntType')
         _float_type_type = MessageType('logic', 'FloatType')
         _uint128_type_type = MessageType('logic', 'UInt128Type')
@@ -947,8 +1195,8 @@ class BuiltinRules:
         _type_rules = [
             ('unspecified_type', _unspecified_type_type, LitTerminal('UNKNOWN'),
              Lambda([], _unspecified_type_type, Call(Message('logic', 'UnspecifiedType'), []))),
-            ('string_type', STRING_TYPE_type, LitTerminal('STRING'),
-             Lambda([], STRING_TYPE_type, Call(Message('logic', 'StringType'), []))),
+            ('string_type', _string_type_type, LitTerminal('STRING'),
+             Lambda([], _string_type_type, Call(Message('logic', 'StringType'), []))),
             ('int_type', _int_type_type, LitTerminal('INT'),
              Lambda([], _int_type_type, Call(Message('logic', 'IntType'), []))),
             ('float_type', _float_type_type, LitTerminal('FLOAT'),
@@ -1004,6 +1252,15 @@ class BuiltinRules:
 
     def _add_operator_rules(self) -> None:
         """Add rules for comparison and arithmetic operators."""
+
+        # Common types used throughout
+        _term_type = MessageType('logic', 'Term')
+        _primitive_type = MessageType('logic', 'Primitive')
+
+        # Common nonterminals
+        _term_nt = Nonterminal('term', _term_type)
+        _primitive_nt = Nonterminal('primitive', _primitive_type)
+
         # Comparison operator rules
         _comparison_ops = [
             ('eq', '=', 'rel_primitive_eq'),
@@ -1111,6 +1368,18 @@ class BuiltinRules:
 
     def _add_fragment_rules(self) -> None:
         """Add rules for fragments and new fragment IDs."""
+
+        # Common types used throughout
+        _declaration_type = MessageType('logic', 'Declaration')
+        _fragment_id_type = MessageType('fragments', 'FragmentId')
+        _fragment_type = MessageType('fragments', 'Fragment')
+
+        # Common nonterminals
+        _declaration_nt = Nonterminal('declaration', _declaration_type)
+        _fragment_id_nt = Nonterminal('fragment_id', _fragment_id_type)
+        _new_fragment_id_nt = Nonterminal('new_fragment_id', _fragment_id_type)
+        _fragment_nt = Nonterminal('fragment', _fragment_type)
+
         self.add_rule(Rule(
             lhs=_new_fragment_id_nt,
             rhs=_fragment_id_nt,
@@ -1163,6 +1432,17 @@ class BuiltinRules:
 
     def _add_epoch_rules(self) -> None:
         """Add rules for output and abort."""
+
+        _relation_id_type = MessageType('logic', 'RelationId')
+        _output_type = MessageType('transactions', 'Output')
+        _abort_type = MessageType('transactions', 'Abort')
+
+        # Common nonterminals
+        _relation_id_nt = Nonterminal('relation_id', _relation_id_type)
+        _name_nt = Nonterminal('name', STRING_TYPE)
+        _output_nt = Nonterminal('output', _output_type)
+        _abort_nt = Nonterminal('abort', _abort_type)
+
         # output: STRING -> name?
         self.add_rule(Rule(
             lhs=_output_nt,
@@ -1213,6 +1493,32 @@ class BuiltinRules:
 
     def _add_logic_rules(self) -> None:
         """Add rules for ffi, rel_atom, primitive, and exists."""
+
+        # Common types used throughout
+        _value_type = MessageType('logic', 'Value')
+        _binding_type = MessageType('logic', 'Binding')
+        _formula_type = MessageType('logic', 'Formula')
+        _term_type = MessageType('logic', 'Term')
+        _abstraction_type = MessageType('logic', 'Abstraction')
+        _primitive_type = MessageType('logic', 'Primitive')
+        _relterm_type = MessageType('logic', 'RelTerm')
+        _ffi_type = MessageType('logic', 'FFI')
+        _rel_atom_type = MessageType('logic', 'RelAtom')
+        _exists_type = MessageType('logic', 'Exists')
+        _bindings_type = TupleType([ListType(_binding_type), ListType(_binding_type)])
+
+        # Common nonterminals
+        _bindings_nt = Nonterminal('bindings', _bindings_type)
+        _formula_nt = Nonterminal('formula', _formula_type)
+        _term_nt = Nonterminal('term', _term_type)
+        _relterm_nt = Nonterminal('rel_term', _relterm_type)
+        _abstraction_nt = Nonterminal('abstraction', _abstraction_type)
+        _primitive_nt = Nonterminal('primitive', _primitive_type)
+        _name_nt = Nonterminal('name', STRING_TYPE)
+        _ffi_nt = Nonterminal('ffi', _ffi_type)
+        _rel_atom_nt = Nonterminal('rel_atom', _rel_atom_type)
+        _exists_nt = Nonterminal('exists', _exists_type)
+
         # ffi: STRING -> name, terms? -> term*
         self.add_rule(Rule(
             lhs=_ffi_nt,
@@ -1290,7 +1596,6 @@ class BuiltinRules:
                 ))
             )
         ))
-
 
         # exists: abstraction -> (bindings formula)
         self.add_rule(Rule(
