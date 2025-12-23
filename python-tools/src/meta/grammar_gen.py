@@ -4,13 +4,14 @@ This module provides the GrammarGenerator class which converts protobuf
 message definitions into grammar rules with semantic actions.
 """
 import re
-from typing import Callable, Dict, List, Optional, Set, Tuple, TypeVar, cast
+from typing import Callable, Dict, List, Optional, Set, Tuple, cast
 from .grammar import Grammar, Rule, Token, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
 from .target import Lambda, Call, Var, Lit, IfElse, Symbol, Builtin, Message, OneOf, ListExpr, BaseType, MessageType, OptionType, ListType, TargetType, TargetExpr, TupleType
 from .target_utils import create_identity_function, create_identity_option_function
+from .grammar_utils import rename_in_rhs, SomeRhs
 from .proto_ast import ProtoMessage, ProtoField
 from .proto_parser import ProtoParser
-from .grammar_gen_builtins import get_builtin_rules
+from .grammar_gen_builtins import BuiltinRules
 from .grammar_gen_rewrites import get_rule_rewrites
 
 _PRIMITIVE_TO_GRAMMAR_SYMBOL = {
@@ -25,8 +26,6 @@ _PRIMITIVE_TO_GRAMMAR_SYMBOL = {
     'float': 'FLOAT',
     'bytes': 'STRING',
 }
-
-A = TypeVar('A', bound=Rhs)
 
 # Mapping from protobuf primitive types to base type names
 _PRIMITIVE_TO_BASE_TYPE = {
@@ -61,6 +60,7 @@ class GrammarGenerator:
             "conjunction": "and",
             "disjunction": "or",
         }
+        self.builtin_rules = BuiltinRules().get_builtin_rules()
         self.rewrite_rules: List[Callable[[Rule], Optional[Rule]]] = get_rule_rewrites()
 
     def _generate_action(self, message_name: str, rhs_elements: List[Rhs], field_names: Optional[List[str]]=None, field_types: Optional[List[str]]=None) -> Lambda:
@@ -147,7 +147,7 @@ class GrammarGenerator:
 
     def _add_all_prepopulated_rules(self) -> None:
         """Add manually-crafted rules that should not be auto-generated."""
-        for lhs, (rules, is_final) in get_builtin_rules().items():
+        for lhs, (rules, is_final) in self.builtin_rules.items():
             if is_final:
                 self.final_rules.add(lhs.name)
             for rule in rules:
@@ -239,29 +239,13 @@ class GrammarGenerator:
             new_rules[lhs] = [
                 Rule(
                     lhs=rule.lhs,
-                    rhs=self._rename_in_rhs(rule.rhs, rename_map),
+                    rhs=rename_in_rhs(rule.rhs, rename_map),
                     construct_action=rule.construct_action,
                     deconstruct_action=rule.deconstruct_action,
                     source_type=rule.source_type
                 ) for rule in rules_list
             ]
         self.grammar.rules = new_rules
-
-    def _rename_in_rhs(self, rhs: A, rename_map: Dict[Nonterminal, Nonterminal]) -> A:
-        """Recursively rename nonterminals in RHS, returning new Rhs."""
-        if isinstance(rhs, Nonterminal):
-            if rhs in rename_map:
-                return rename_map[rhs]
-            return rhs
-        elif isinstance(rhs, Sequence):
-            new_elements = tuple(self._rename_in_rhs(elem, rename_map) for elem in rhs.elements)
-            return cast(A, Sequence(new_elements))
-        elif isinstance(rhs, Star):
-            return cast(A, Star(self._rename_in_rhs(rhs.rhs, rename_map)))
-        elif isinstance(rhs, Option):
-            return cast(A, Option(self._rename_in_rhs(rhs.rhs, rename_map)))
-        else:
-            return rhs
 
     @staticmethod
     def _get_rule_name(name: str) -> str:

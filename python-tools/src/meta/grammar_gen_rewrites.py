@@ -4,7 +4,7 @@ These rewrites transform grammar rules generated from protobuf definitions
 into forms more suitable for parsing S-expressions.
 """
 
-from typing import Callable, Dict, List, Optional, cast
+from typing import Callable, Dict, List, Optional
 
 from .grammar import (
     NamedTerminal,
@@ -12,7 +12,6 @@ from .grammar import (
     Nonterminal,
     Option,
     Rhs,
-    RhsSymbol,
     Rule,
     Sequence,
     Star,
@@ -20,6 +19,7 @@ from .grammar import (
 
 from .target import BaseType, Lambda, Call, OptionType, TupleType, MessageType, Let, Var, IfElse, Builtin, Lit
 from .target_utils import apply_lambda
+from .grammar_utils import rewrite_rule_with_replacements
 
 def make_symbol_replacer(replacements: Dict[Rhs, Rhs]) -> Callable[[Rule], Optional[Rule]]:
     """Create a rule rewriter that replaces symbols in the RHS.
@@ -30,49 +30,9 @@ def make_symbol_replacer(replacements: Dict[Rhs, Rhs]) -> Callable[[Rule], Optio
     Returns:
         A rewrite function that replaces symbols according to the mapping.
     """
-    def rewrite_rhs(rhs: Rhs) -> Optional[Rhs]:
-        """Returns new_rhs if changed, None otherwise."""
-        if rhs in replacements:
-            assert replacements[rhs].target_type() == rhs.target_type()
-            return replacements[rhs]
-        elif isinstance(rhs, Sequence):
-            new_elements = []
-            changed = False
-            for elem in rhs.elements:
-                new_elem = rewrite_rhs(elem)
-                if new_elem is not None:
-                    new_elements.append(new_elem)
-                    changed = True
-                else:
-                    new_elements.append(elem)
-            if changed:
-                return Sequence(tuple(new_elements))
-            return None
-        elif isinstance(rhs, Star):
-            new_inner = rewrite_rhs(rhs.rhs)
-            if new_inner is not None:
-                return Star(cast(RhsSymbol, new_inner))
-            return None
-        elif isinstance(rhs, Option):
-            new_inner = rewrite_rhs(rhs.rhs)
-            if new_inner is not None:
-                return Option(cast(RhsSymbol, new_inner))
-            return None
-        else:
-            return None
-
     def rewrite(rule: Rule) -> Optional[Rule]:
         """Rewrite rule by replacing symbols in RHS."""
-        new_rhs = rewrite_rhs(rule.rhs)
-        if new_rhs is not None:
-            return Rule(
-                lhs=rule.lhs,
-                rhs=new_rhs,
-                construct_action=rule.construct_action,
-                deconstruct_action=rule.deconstruct_action,
-                source_type=rule.source_type
-            )
-        return None
+        return rewrite_rule_with_replacements(rule, replacements)
 
     return rewrite
 
