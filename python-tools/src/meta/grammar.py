@@ -472,7 +472,7 @@ class Grammar:
             return first_of_following
 
     def print_grammar(self, reachable: Optional[Set[Nonterminal]] = None) -> str:
-        """Convert to context-free grammar format."""
+        """Convert to context-free grammar format with actions."""
         lines = []
         lines.append("// Auto-generated grammar from protobuf specifications")
         lines.append("")
@@ -483,13 +483,19 @@ class Grammar:
             if reachable is not None and lhs not in reachable:
                 continue
             rules_list = self.rules[lhs]
-            if len(rules_list) == 1:
-                lines.append(f"{lhs}: {rules_list[0].to_pattern(self)}")
-            else:
-                alternatives = [rule.to_pattern(self) for rule in rules_list]
-                lines.append(f"{lhs}: {alternatives[0]}")
-                for alt in alternatives[1:]:
-                    lines.append(f"    | {alt}")
+            lines.append(f"{lhs}")
+            for idx, rule in enumerate(rules_list):
+                if idx == 0:
+                    lines.append(f"  : {rule.to_pattern(self)}")
+                else:
+                    lines.append(f"  | {rule.to_pattern(self)}")
+
+                if rule.construct_action:
+                    lines.append(f"    +{{{{ {rule.construct_action} }}}}")
+                if rule.deconstruct_action:
+                    lines.append(f"    -{{{{ {rule.deconstruct_action} }}}}")
+
+            lines.append("")
 
         # Print tokens at the end
         if self.rules and self.tokens:
