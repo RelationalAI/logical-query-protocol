@@ -1307,141 +1307,141 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
-    # upsert: abstraction INT -> abstraction_with_arity
-    add_rule(Rule(
-        lhs=_upsert_nt,
-        rhs=Sequence((
-            LitTerminal('('), LitTerminal('upsert'),
-            _relation_id_nt,
-            _abstraction_with_arity_nt,
-            Option(_attrs_nt),
-            LitTerminal(')')
-        )),
-        construct_action=Lambda(
-            [
-                Var('name', _relation_id_type),
-                Var('body_with_arity', _abstraction_with_arity_type),
-                Var('attrs', ListType(_attribute_type))
-            ],
-            _upsert_type,
-            Call(Message('logic', 'Upsert'), [
-                Var('name', _relation_id_type),
-                _fst(Var('body_with_arity', _abstraction_with_arity_type)),
-                _unwrap_option_or(Var('attrs', Option(ListType(_attribute_type))), []),
-                _snd(Var('body_with_arity', _abstraction_with_arity_type))
-            ])
-        ),
-        deconstruct_action=Lambda(
-            [Var('msg', _upsert_type)],
-            OptionType(TupleType([
-                _relation_id_type,
-                _abstraction_with_arity_type,
-                OptionType(ListType(_attribute_type))
-            ])),
-            _some(_make_tuple(
-                _get_field(Var('msg', _upsert_type), Lit('name')),
-                _make_tuple(
-                    _get_field(Var('msg', _upsert_type), Lit('body')),
-                    _get_field(Var('msg', _upsert_type), Lit('value_arity'))
-                ),
-                _some(_get_field(Var('msg', _upsert_type), Lit('attrs')))
-            ))
-        )
-    ))
+    # # upsert: abstraction INT -> abstraction_with_arity
+    # add_rule(Rule(
+    #     lhs=_upsert_nt,
+    #     rhs=Sequence((
+    #         LitTerminal('('), LitTerminal('upsert'),
+    #         _relation_id_nt,
+    #         _abstraction_with_arity_nt,
+    #         Option(_attrs_nt),
+    #         LitTerminal(')')
+    #     )),
+    #     construct_action=Lambda(
+    #         [
+    #             Var('name', _relation_id_type),
+    #             Var('body_with_arity', _abstraction_with_arity_type),
+    #             Var('attrs', ListType(_attribute_type))
+    #         ],
+    #         _upsert_type,
+    #         Call(Message('logic', 'Upsert'), [
+    #             Var('name', _relation_id_type),
+    #             _fst(Var('body_with_arity', _abstraction_with_arity_type)),
+    #             _unwrap_option_or(Var('attrs', Option(ListType(_attribute_type))), []),
+    #             _snd(Var('body_with_arity', _abstraction_with_arity_type))
+    #         ])
+    #     ),
+    #     deconstruct_action=Lambda(
+    #         [Var('msg', _upsert_type)],
+    #         OptionType(TupleType([
+    #             _relation_id_type,
+    #             _abstraction_with_arity_type,
+    #             OptionType(ListType(_attribute_type))
+    #         ])),
+    #         _some(_make_tuple(
+    #             _get_field(Var('msg', _upsert_type), Lit('name')),
+    #             _make_tuple(
+    #                 _get_field(Var('msg', _upsert_type), Lit('body')),
+    #                 _get_field(Var('msg', _upsert_type), Lit('value_arity'))
+    #             ),
+    #             _some(_get_field(Var('msg', _upsert_type), Lit('attrs')))
+    #         ))
+    #     )
+    # ))
 
-    # monoid_def: abstraction INT -> abstraction_with_arity
-    add_rule(Rule(
-        lhs=_monoid_def_nt,
-        rhs=Sequence((
-            LitTerminal('('), LitTerminal('monoid'),
-            _monoid_nt,
-            _relation_id_nt,
-            _abstraction_with_arity_nt,
-            Option(_attrs_nt),
-            LitTerminal(')')
-        )),
-        construct_action=Lambda(
-            [
-                Var('monoid', _monoid_type),
-                Var('name', _relation_id_type),
-                Var('body_with_arity', _abstraction_with_arity_type),
-                Var('attrs', OptionType(ListType(_attribute_type)))
-            ],
-            _monoid_def_type,
-            Call(Message('logic', 'MonoidDef'), [
-                Var('monoid', _monoid_type),
-                Var('name', _relation_id_type),
-                _fst(Var('body_with_arity', _abstraction_with_arity_type)),
-                _unwrap_option_or(Var('attrs', OptionType(ListType(_attribute_type))), []),
-                _snd(Var('body_with_arity', _abstraction_with_arity_type))
-            ])
-        ),
-        deconstruct_action=Lambda(
-            [Var('msg', _monoid_def_type)],
-            OptionType(TupleType([
-                _monoid_type,
-                _relation_id_type,
-                _abstraction_with_arity_type,
-                OptionType(ListType(_attribute_type))
-            ])),
-            _some(_make_tuple(
-                _get_field(Var('msg', _monoid_def_type), Lit('monoid')),
-                _get_field(Var('msg', _monoid_def_type), Lit('name')),
-                _make_tuple(
-                    _get_field(Var('msg', _monoid_def_type), Lit('body')),
-                    _get_field(Var('msg', _monoid_def_type), Lit('value_arity'))
-                ),
-                _some(_get_field(Var('msg', _monoid_def_type), Lit('attrs')))
-            ))
-        )
-    ))
+    # # monoid_def: abstraction INT -> abstraction_with_arity
+    # add_rule(Rule(
+    #     lhs=_monoid_def_nt,
+    #     rhs=Sequence((
+    #         LitTerminal('('), LitTerminal('monoid'),
+    #         _monoid_nt,
+    #         _relation_id_nt,
+    #         _abstraction_with_arity_nt,
+    #         Option(_attrs_nt),
+    #         LitTerminal(')')
+    #     )),
+    #     construct_action=Lambda(
+    #         [
+    #             Var('monoid', _monoid_type),
+    #             Var('name', _relation_id_type),
+    #             Var('body_with_arity', _abstraction_with_arity_type),
+    #             Var('attrs', OptionType(ListType(_attribute_type)))
+    #         ],
+    #         _monoid_def_type,
+    #         Call(Message('logic', 'MonoidDef'), [
+    #             Var('monoid', _monoid_type),
+    #             Var('name', _relation_id_type),
+    #             _fst(Var('body_with_arity', _abstraction_with_arity_type)),
+    #             _unwrap_option_or(Var('attrs', OptionType(ListType(_attribute_type))), []),
+    #             _snd(Var('body_with_arity', _abstraction_with_arity_type))
+    #         ])
+    #     ),
+    #     deconstruct_action=Lambda(
+    #         [Var('msg', _monoid_def_type)],
+    #         OptionType(TupleType([
+    #             _monoid_type,
+    #             _relation_id_type,
+    #             _abstraction_with_arity_type,
+    #             OptionType(ListType(_attribute_type))
+    #         ])),
+    #         _some(_make_tuple(
+    #             _get_field(Var('msg', _monoid_def_type), Lit('monoid')),
+    #             _get_field(Var('msg', _monoid_def_type), Lit('name')),
+    #             _make_tuple(
+    #                 _get_field(Var('msg', _monoid_def_type), Lit('body')),
+    #                 _get_field(Var('msg', _monoid_def_type), Lit('value_arity'))
+    #             ),
+    #             _some(_get_field(Var('msg', _monoid_def_type), Lit('attrs')))
+    #         ))
+    #     )
+    # ))
 
-    # monus_def: abstraction INT -> abstraction_with_arity
-    add_rule(Rule(
-        lhs=_monus_def_nt,
-        rhs=Sequence((
-            LitTerminal('('), LitTerminal('monus'),
-            _monoid_nt,
-            _relation_id_nt,
-            _abstraction_with_arity_nt,
-            Option(_attrs_nt),
-            LitTerminal(')')
-        )),
-        construct_action=Lambda(
-            [
-                Var('monoid', _monoid_type),
-                Var('name', _relation_id_type),
-                Var('body_with_arity', _abstraction_with_arity_type),
-                Var('attrs', OptionType(ListType(_attribute_type)))
-            ],
-            _monus_def_type,
-            Call(Message('logic', 'MonusDef'), [
-                Var('monoid', _monoid_type),
-                Var('name', _relation_id_type),
-                _fst(Var('body_with_arity', _abstraction_with_arity_type)),
-                _unwrap_option_or(Var('attrs', OptionType(ListType(_attribute_type))), []),
-                _snd(Var('body_with_arity', _abstraction_with_arity_type))
-            ])
-        ),
-        deconstruct_action=Lambda(
-            [Var('msg', _monus_def_type)],
-            OptionType(TupleType([
-                _monoid_type,
-                _relation_id_type,
-                _abstraction_with_arity_type,
-                OptionType(ListType(_attribute_type))
-            ])),
-            _some(_make_tuple(
-                _get_field(Var('msg', _monus_def_type), Lit('monoid')),
-                _get_field(Var('msg', _monus_def_type), Lit('name')),
-                _make_tuple(
-                    _get_field(Var('msg', _monus_def_type), Lit('body')),
-                    _get_field(Var('msg', _monus_def_type), Lit('value_arity'))
-                ),
-                _some(_get_field(Var('msg', _monus_def_type), Lit('attrs')))
-            ))
-        )
-    ))
+    # # monus_def: abstraction INT -> abstraction_with_arity
+    # add_rule(Rule(
+    #     lhs=_monus_def_nt,
+    #     rhs=Sequence((
+    #         LitTerminal('('), LitTerminal('monus'),
+    #         _monoid_nt,
+    #         _relation_id_nt,
+    #         _abstraction_with_arity_nt,
+    #         Option(_attrs_nt),
+    #         LitTerminal(')')
+    #     )),
+    #     construct_action=Lambda(
+    #         [
+    #             Var('monoid', _monoid_type),
+    #             Var('name', _relation_id_type),
+    #             Var('body_with_arity', _abstraction_with_arity_type),
+    #             Var('attrs', OptionType(ListType(_attribute_type)))
+    #         ],
+    #         _monus_def_type,
+    #         Call(Message('logic', 'MonusDef'), [
+    #             Var('monoid', _monoid_type),
+    #             Var('name', _relation_id_type),
+    #             _fst(Var('body_with_arity', _abstraction_with_arity_type)),
+    #             _unwrap_option_or(Var('attrs', OptionType(ListType(_attribute_type))), []),
+    #             _snd(Var('body_with_arity', _abstraction_with_arity_type))
+    #         ])
+    #     ),
+    #     deconstruct_action=Lambda(
+    #         [Var('msg', _monus_def_type)],
+    #         OptionType(TupleType([
+    #             _monoid_type,
+    #             _relation_id_type,
+    #             _abstraction_with_arity_type,
+    #             OptionType(ListType(_attribute_type))
+    #         ])),
+    #         _some(_make_tuple(
+    #             _get_field(Var('msg', _monus_def_type), Lit('monoid')),
+    #             _get_field(Var('msg', _monus_def_type), Lit('name')),
+    #             _make_tuple(
+    #                 _get_field(Var('msg', _monus_def_type), Lit('body')),
+    #                 _get_field(Var('msg', _monus_def_type), Lit('value_arity'))
+    #             ),
+    #             _some(_get_field(Var('msg', _monus_def_type), Lit('attrs')))
+    #         ))
+    #     )
+    # ))
 
     # Mark all the non-final rules as non-final
     for lhs in nonfinal_nonterminals:

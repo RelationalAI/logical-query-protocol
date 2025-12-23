@@ -47,7 +47,7 @@ class LitTerminal(Terminal):
 
 @dataclass(frozen=True, unsafe_hash=True)
 class NamedTerminal(Terminal):
-    """Token terminal (unquoted uppercase name like SYMBOL, NUMBER)."""
+    """Token terminal (unquoted uppercase name like SYMBOL, INT)."""
     name: str
     type: TargetType
 

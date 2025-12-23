@@ -7,19 +7,6 @@ definitions, including fields, oneofs, and enums.
 from dataclasses import dataclass, field
 from typing import List, Tuple
 
-PRIMITIVE_TYPES = {
-    'string': 'STRING',
-    'int32': 'NUMBER',
-    'int64': 'NUMBER',
-    'uint32': 'NUMBER',
-    'uint64': 'NUMBER',
-    'fixed64': 'NUMBER',
-    'bool': 'BOOLEAN',
-    'double': 'FLOAT',
-    'float': 'FLOAT',
-    'bytes': 'STRING',
-}
-
 @dataclass
 class ProtoField:
     """Field in a protobuf message."""

@@ -7,10 +7,23 @@ import re
 from typing import Callable, Dict, List, Optional, Set, Tuple, TypeVar, cast
 from .grammar import Grammar, Rule, Token, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
 from .target import Lambda, Call, Var, Lit, IfElse, Symbol, Builtin, Message, OneOf, ListExpr, BaseType, MessageType, OptionType, ListType, TargetType, TargetExpr, TupleType, create_identity_function, create_identity_option_function
-from .proto_ast import ProtoMessage, ProtoField, PRIMITIVE_TYPES
+from .proto_ast import ProtoMessage, ProtoField
 from .proto_parser import ProtoParser
 from .grammar_gen_builtins import get_builtin_rules
 from .grammar_gen_rewrites import get_rule_rewrites
+
+_PRIMITIVE_TO_GRAMMAR_SYMBOL = {
+    'string': 'STRING',
+    'int32': 'INT',
+    'int64': 'INT',
+    'uint32': 'INT',
+    'uint64': 'INT',
+    'fixed64': 'INT',
+    'bool': 'BOOLEAN',
+    'double': 'FLOAT',
+    'float': 'FLOAT',
+    'bytes': 'STRING',
+}
 
 A = TypeVar('A', bound=Rhs)
 
@@ -90,24 +103,25 @@ class GrammarGenerator:
         else:
             assert False, f'Unknown type: {type_name}'
 
-    def _add_rule(self, rule: Rule) -> None:
+    def _add_rule(self, rule: Rule, is_builtin: bool = False) -> None:
         """Add a rule to the grammar.
 
         If there are builtin rules for this nonterminal and it's marked as final,
         assert that the generated rule is different from all builtin rules.
 
-        Applies rewrite rules before adding to the grammar.
+        Applies rewrite rules to generated rules only, not builtin rules.
         """
-        # Apply rewrite rules
+        # Apply rewrite rules only to generated rules
         rewritten_rule = rule
-        for rewrite in self.rewrite_rules:
-            result = rewrite(rewritten_rule)
-            if result is not None:
-                rewritten_rule = result
-                break
+        if not is_builtin:
+            for rewrite in self.rewrite_rules:
+                result = rewrite(rewritten_rule)
+                if result is not None:
+                    rewritten_rule = result
+                    break
 
-        # Check if this nonterminal has final builtin rules
-        if rewritten_rule.lhs.name in self.final_rules and rewritten_rule.lhs in self.grammar.rules:
+        # Check if this nonterminal has final builtin rules (but not if this is a builtin rule itself)
+        if not is_builtin and rewritten_rule.lhs.name in self.final_rules and rewritten_rule.lhs in self.grammar.rules:
             builtin_rules = self.grammar.rules[rewritten_rule.lhs]
             for builtin_rule in builtin_rules:
                 assert rewritten_rule.rhs != builtin_rule.rhs, \
@@ -146,7 +160,7 @@ class GrammarGenerator:
                 self.final_rules.add(lhs.name)
             for rule in rules:
                 assert rule.construct_action is not None
-                self.grammar.add_rule(rule)
+                self._add_rule(rule, is_builtin=True)
 
     def _post_process_grammar(self) -> None:
         """Apply grammar post-processing."""
@@ -471,7 +485,7 @@ class GrammarGenerator:
 
     def _is_primitive_type(self, type_name: str) -> bool:
         """Check if type is a protobuf primitive."""
-        return type_name in PRIMITIVE_TYPES
+        return type_name in _PRIMITIVE_TO_GRAMMAR_SYMBOL
 
     def _is_message_type(self, type_name: str) -> bool:
         """Check if type is a protobuf message."""
@@ -479,7 +493,7 @@ class GrammarGenerator:
 
     def _map_primitive_type(self, type_name: str) -> str:
         """Map protobuf primitive to grammar terminal name."""
-        return PRIMITIVE_TYPES.get(type_name, 'SYMBOL')
+        return _PRIMITIVE_TO_GRAMMAR_SYMBOL.get(type_name, 'SYMBOL')
 
     def _generate_deconstruct_action(self, construct_action: Lambda, rhs: Rhs) -> Lambda:
         """Generate a deconstruct_action that is the inverse of construct_action.
@@ -557,33 +571,6 @@ class GrammarGenerator:
             return None
 
         return search_for_param(action_body)
-
-    def _rewrite_string_to_name(self, rule: Rule) -> Optional[Rule]:
-        """Rewrite NamedTerminal('STRING', ...) to Nonterminal('name', ...) in RHS."""
-        new_rhs = self._rewrite_string_to_name_in_rhs(rule.rhs)
-        if new_rhs != rule.rhs:
-            return Rule(
-                lhs=rule.lhs,
-                rhs=new_rhs,
-                construct_action=rule.construct_action,
-                deconstruct_action=rule.deconstruct_action,
-                source_type=rule.source_type
-            )
-        return None
-
-    def _rewrite_string_to_name_in_rhs(self, rhs: A) -> A:
-        """Recursively rewrite NamedTerminal('STRING') to Nonterminal('name') in RHS."""
-        if isinstance(rhs, NamedTerminal) and rhs.name == 'STRING':
-            return cast(A, Nonterminal('name', rhs.type))
-        elif isinstance(rhs, Sequence):
-            new_elements = tuple(self._rewrite_string_to_name_in_rhs(elem) for elem in rhs.elements)
-            return cast(A, Sequence(new_elements))
-        elif isinstance(rhs, Star):
-            return cast(A, Star(self._rewrite_string_to_name_in_rhs(rhs.rhs)))
-        elif isinstance(rhs, Option):
-            return cast(A, Option(self._rewrite_string_to_name_in_rhs(rhs.rhs)))
-        else:
-            return rhs
 
 def generate_grammar(grammar: Grammar, reachable: Set[Nonterminal]) -> str:
     """Generate grammar text."""
