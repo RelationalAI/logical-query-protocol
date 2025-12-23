@@ -136,6 +136,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
     _new_fragment_id_nt = Nonterminal('new_fragment_id', _fragment_id_type)
     _fragment_nt = Nonterminal('fragment', _fragment_type)
     _specialized_value_nt = Nonterminal('specialized_value', _value_type)
+    _attrs_nt = Nonterminal('attrs', ListType(_attribute_type))
 
     # Common terminals
     _string_terminal = NamedTerminal('STRING', _string_type)
@@ -1150,11 +1151,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
-    # Manually-specified rules that replace auto-generated proto rules
-    # These rules have been transformed for S-expression parsing
-    # (STRING -> name, terms? -> term*, abstraction -> bindings+formula, etc.)
-
-    # output: STRING -> name (optional)
+    # output: STRING -> name?
     add_rule(Rule(
         lhs=_output_nt,
         rhs=Sequence((
@@ -1178,7 +1175,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
-    # abort: STRING -> name (optional)
+    # abort: STRING -> name?
     add_rule(Rule(
         lhs=_abort_nt,
         rhs=Sequence((
@@ -1232,54 +1229,6 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
-    # pragma: STRING -> name, terms? -> term*
-    add_rule(Rule(
-        lhs=_pragma_nt,
-        rhs=Sequence((
-            _lp, LitTerminal('pragma'),
-            _name_nt,
-            Star(_term_nt),
-            _rp
-        )),
-        construct_action=Lambda(
-            [Var('name', _string_type), Var('terms', ListType(_term_type))],
-            _pragma_type,
-            Call(Message('logic', 'Pragma'), [Var('name', _string_type), Var('terms', ListType(_term_type))])
-        ),
-        deconstruct_action=Lambda(
-            [Var('msg', _pragma_type)],
-            OptionType(TupleType([_string_type, ListType(_term_type)])),
-            _some(_make_tuple(
-                _get_field(Var('msg', _pragma_type), Lit('name')),
-                _get_field(Var('msg', _pragma_type), Lit('terms'))
-            ))
-        )
-    ))
-
-    # atom: terms? -> term*
-    add_rule(Rule(
-        lhs=_atom_nt,
-        rhs=Sequence((
-            _lp, LitTerminal('atom'),
-            _relation_id_nt,
-            Star(_term_nt),
-            _rp
-        )),
-        construct_action=Lambda(
-            [Var('name', _relation_id_type), Var('terms', ListType(_term_type))],
-            _atom_type,
-            Call(Message('logic', 'Atom'), [Var('name', _relation_id_type), Var('terms', ListType(_term_type))])
-        ),
-        deconstruct_action=Lambda(
-            [Var('msg', _atom_type)],
-            OptionType(TupleType([_relation_id_type, ListType(_term_type)])),
-            _some(_make_tuple(
-                _get_field(Var('msg', _atom_type), Lit('name')),
-                _get_field(Var('msg', _atom_type), Lit('terms'))
-            ))
-        )
-    ))
-
     # rel_atom: STRING -> name, terms? -> relterm*
     add_rule(Rule(
         lhs=_rel_atom_nt,
@@ -1328,29 +1277,6 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
         )
     ))
 
-    # attribute: STRING -> name, args? -> value*
-    add_rule(Rule(
-        lhs=_attribute_nt,
-        rhs=Sequence((
-            LitTerminal('('), LitTerminal('attribute'),
-            _name_nt,
-            Star(_value_nt),
-            LitTerminal(')')
-        )),
-        construct_action=Lambda(
-            [Var('name', _string_type), Var('args', ListType(_value_type))],
-            _attribute_type,
-            Call(Message('logic', 'Attribute'), [Var('name', _string_type), Var('args', ListType(_value_type))])
-        ),
-        deconstruct_action=Lambda(
-            [Var('msg', _attribute_type)],
-            OptionType(TupleType([_string_type, ListType(_value_type)])),
-            _some(_make_tuple(
-                _get_field(Var('msg', _attribute_type), Lit('name')),
-                _get_field(Var('msg', _attribute_type), Lit('args'))
-            ))
-        )
-    ))
 
     # exists: abstraction -> (bindings formula)
     add_rule(Rule(
@@ -1388,7 +1314,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
             LitTerminal('('), LitTerminal('upsert'),
             _relation_id_nt,
             _abstraction_with_arity_nt,
-            Star(_attribute_nt),
+            Option(_attrs_nt),
             LitTerminal(')')
         )),
         construct_action=Lambda(
@@ -1401,7 +1327,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
             Call(Message('logic', 'Upsert'), [
                 Var('name', _relation_id_type),
                 _fst(Var('body_with_arity', _abstraction_with_arity_type)),
-                Var('attrs', ListType(_attribute_type)),
+                _unwrap_option_or(Var('attrs', Option(ListType(_attribute_type))), []),
                 _snd(Var('body_with_arity', _abstraction_with_arity_type))
             ])
         ),
@@ -1410,7 +1336,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
             OptionType(TupleType([
                 _relation_id_type,
                 _abstraction_with_arity_type,
-                ListType(_attribute_type)
+                OptionType(ListType(_attribute_type))
             ])),
             _some(_make_tuple(
                 _get_field(Var('msg', _upsert_type), Lit('name')),
@@ -1418,7 +1344,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
                     _get_field(Var('msg', _upsert_type), Lit('body')),
                     _get_field(Var('msg', _upsert_type), Lit('value_arity'))
                 ),
-                _get_field(Var('msg', _upsert_type), Lit('attrs'))
+                _some(_get_field(Var('msg', _upsert_type), Lit('attrs')))
             ))
         )
     ))
@@ -1431,7 +1357,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
             _monoid_nt,
             _relation_id_nt,
             _abstraction_with_arity_nt,
-            Star(_attribute_nt),
+            Option(_attrs_nt),
             LitTerminal(')')
         )),
         construct_action=Lambda(
@@ -1439,14 +1365,14 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
                 Var('monoid', _monoid_type),
                 Var('name', _relation_id_type),
                 Var('body_with_arity', _abstraction_with_arity_type),
-                Var('attrs', ListType(_attribute_type))
+                Var('attrs', OptionType(ListType(_attribute_type)))
             ],
             _monoid_def_type,
             Call(Message('logic', 'MonoidDef'), [
                 Var('monoid', _monoid_type),
                 Var('name', _relation_id_type),
                 _fst(Var('body_with_arity', _abstraction_with_arity_type)),
-                Var('attrs', ListType(_attribute_type)),
+                _unwrap_option_or(Var('attrs', OptionType(ListType(_attribute_type))), []),
                 _snd(Var('body_with_arity', _abstraction_with_arity_type))
             ])
         ),
@@ -1456,7 +1382,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
                 _monoid_type,
                 _relation_id_type,
                 _abstraction_with_arity_type,
-                ListType(_attribute_type)
+                OptionType(ListType(_attribute_type))
             ])),
             _some(_make_tuple(
                 _get_field(Var('msg', _monoid_def_type), Lit('monoid')),
@@ -1465,7 +1391,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
                     _get_field(Var('msg', _monoid_def_type), Lit('body')),
                     _get_field(Var('msg', _monoid_def_type), Lit('value_arity'))
                 ),
-                _get_field(Var('msg', _monoid_def_type), Lit('attrs'))
+                _some(_get_field(Var('msg', _monoid_def_type), Lit('attrs')))
             ))
         )
     ))
@@ -1478,7 +1404,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
             _monoid_nt,
             _relation_id_nt,
             _abstraction_with_arity_nt,
-            Star(_attribute_nt),
+            Option(_attrs_nt),
             LitTerminal(')')
         )),
         construct_action=Lambda(
@@ -1486,14 +1412,14 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
                 Var('monoid', _monoid_type),
                 Var('name', _relation_id_type),
                 Var('body_with_arity', _abstraction_with_arity_type),
-                Var('attrs', ListType(_attribute_type))
+                Var('attrs', OptionType(ListType(_attribute_type)))
             ],
             _monus_def_type,
             Call(Message('logic', 'MonusDef'), [
                 Var('monoid', _monoid_type),
                 Var('name', _relation_id_type),
                 _fst(Var('body_with_arity', _abstraction_with_arity_type)),
-                Var('attrs', ListType(_attribute_type)),
+                _unwrap_option_or(Var('attrs', OptionType(ListType(_attribute_type))), []),
                 _snd(Var('body_with_arity', _abstraction_with_arity_type))
             ])
         ),
@@ -1503,7 +1429,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
                 _monoid_type,
                 _relation_id_type,
                 _abstraction_with_arity_type,
-                ListType(_attribute_type)
+                OptionType(ListType(_attribute_type))
             ])),
             _some(_make_tuple(
                 _get_field(Var('msg', _monus_def_type), Lit('monoid')),
@@ -1512,7 +1438,7 @@ def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
                     _get_field(Var('msg', _monus_def_type), Lit('body')),
                     _get_field(Var('msg', _monus_def_type), Lit('value_arity'))
                 ),
-                _get_field(Var('msg', _monus_def_type), Lit('attrs'))
+                _some(_get_field(Var('msg', _monus_def_type), Lit('attrs')))
             ))
         )
     ))
