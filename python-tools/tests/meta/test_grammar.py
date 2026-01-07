@@ -12,9 +12,9 @@ from meta.grammar import (
     LitTerminal, NamedTerminal, Nonterminal,
     Star, Option, Sequence,
     Rule, Token, Grammar,
+
     get_nonterminals, get_literals, is_epsilon, rhs_elements,
     _count_nonliteral_rhs_elements,
-    generate_deconstruct_action,
 )
 from meta.target import BaseType, MessageType, TupleType, ListType, OptionType, Lambda, Var, Lit, Call, Builtin
 
@@ -499,7 +499,7 @@ class TestGrammar:
         start = Nonterminal("Start", MessageType("proto", "Start"))
         grammar = Grammar(start)
         lit = LitTerminal("foo")
-        assert not grammar.nullable(lit)
+        assert not grammar.analysis.nullable(lit)
 
     def test_nullable_star(self):
         """Test Grammar nullable for star."""
@@ -507,7 +507,7 @@ class TestGrammar:
         grammar = Grammar(start)
         nt = Nonterminal("A", MessageType("proto", "A"))
         star = Star(nt)
-        assert grammar.nullable(star)
+        assert grammar.analysis.nullable(star)
 
     def test_nullable_option(self):
         """Test Grammar nullable for option."""
@@ -515,14 +515,14 @@ class TestGrammar:
         grammar = Grammar(start)
         nt = Nonterminal("A", MessageType("proto", "A"))
         opt = Option(nt)
-        assert grammar.nullable(opt)
+        assert grammar.analysis.nullable(opt)
 
     def test_nullable_empty_sequence(self):
         """Test Grammar nullable for empty sequence."""
         start = Nonterminal("Start", MessageType("proto", "Start"))
         grammar = Grammar(start)
         seq = Sequence(())
-        assert grammar.nullable(seq)
+        assert grammar.analysis.nullable(seq)
 
     def test_print_grammar(self):
         """Test Grammar print_grammar."""
@@ -555,11 +555,11 @@ class TestGrammar:
         )
         rule = Rule(start, a, construct_action, deconstruct_action)
 
-        # Trigger cache
-        grammar.compute_nullable()
-        assert grammar._nullable_cache is not None
+        # Trigger analysis (creates _analysis object)
+        grammar.analysis.compute_nullable()
+        assert grammar._analysis is not None
 
-        # This should fail because cache exists
+        # This should fail because analysis exists
         with pytest.raises(AssertionError, match="already analyzed"):
             grammar.add_rule(rule)
 

@@ -897,23 +897,23 @@ class TestIntegration:
     """Integration tests combining multiple analysis functions."""
 
     def test_grammar_methods_cache_results(self):
-        """Test that Grammar methods properly cache results."""
+        """Test that GrammarAnalysis methods properly cache results."""
         grammar, s, a, b, _, _ = make_simple_grammar()
 
         # First call should compute
-        nullable1 = grammar.compute_nullable()
+        nullable1 = grammar.analysis.compute_nullable()
         # Second call should return cached value
-        nullable2 = grammar.compute_nullable()
+        nullable2 = grammar.analysis.compute_nullable()
         assert nullable1 is nullable2
 
         # Same for FIRST
-        first1 = grammar.compute_first()
-        first2 = grammar.compute_first()
+        first1 = grammar.analysis.compute_first()
+        first2 = grammar.analysis.compute_first()
         assert first1 is first2
 
         # Same for FOLLOW
-        follow1 = grammar.compute_follow()
-        follow2 = grammar.compute_follow()
+        follow1 = grammar.analysis.compute_follow()
+        follow2 = grammar.analysis.compute_follow()
         assert follow1 is follow2
 
     def test_complete_analysis_pipeline(self):

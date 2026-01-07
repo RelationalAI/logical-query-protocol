@@ -13,52 +13,6 @@ STRING_TYPE = BaseType('String')
 INT64_TYPE = BaseType('Int64')
 FLOAT64_TYPE = BaseType('Float64')
 BOOLEAN_TYPE = BaseType('Boolean')
-VALUE_TYPE = MessageType('logic', 'Value')
-BINDING_TYPE = MessageType('logic', 'Binding')
-FORMULA_TYPE = MessageType('logic', 'Formula')
-TERM_TYPE = MessageType('logic', 'Term')
-ABSTRACTION_TYPE = MessageType('logic', 'Abstraction')
-PRIMITIVE_TYPE = MessageType('logic', 'Primitive')
-RELATION_ID_TYPE = MessageType('logic', 'RelationId')
-RELTERM_TYPE = MessageType('logic', 'RelTerm')
-ATTRIBUTE_TYPE = MessageType('logic', 'Attribute')
-DATE_VALUE_TYPE = MessageType('logic', 'DateValue')
-DATETIME_VALUE_TYPE = MessageType('logic', 'DateTimeValue')
-UINT128_VALUE_TYPE = MessageType('logic', 'UInt128Value')
-INT128_VALUE_TYPE = MessageType('logic', 'Int128Value')
-DECIMAL_VALUE_TYPE = MessageType('logic', 'DecimalValue')
-VAR_TYPE = MessageType('logic', 'Var')
-TYPE_TYPE = MessageType('logic', 'Type')
-MONOID_TYPE = MessageType('logic', 'Monoid')
-CONJUNCTION_TYPE = MessageType('logic', 'Conjunction')
-DISJUNCTION_TYPE = MessageType('logic', 'Disjunction')
-DECLARATION_TYPE = MessageType('logic', 'Declaration')
-FRAGMENT_ID_TYPE = MessageType('fragments', 'FragmentId')
-FRAGMENT_TYPE = MessageType('fragments', 'Fragment')
-TRANSACTION_TYPE = MessageType('transactions', 'Transaction')
-CONFIGURE_TYPE = MessageType('transactions', 'Configure')
-SYNC_TYPE = MessageType('transactions', 'Sync')
-EPOCH_TYPE = MessageType('transactions', 'Epoch')
-OUTPUT_TYPE = MessageType('transactions', 'Output')
-ABORT_TYPE = MessageType('transactions', 'Abort')
-EXPORT_TYPE = MessageType('transactions', 'Export')
-EXPORT_CSV_CONFIG_TYPE = MessageType('transactions', 'ExportCSVConfig')
-EXPORT_CSV_COLUMN_TYPE = MessageType('transactions', 'ExportCSVColumn')
-FFI_TYPE = MessageType('logic', 'FFI')
-PRAGMA_TYPE = MessageType('logic', 'Pragma')
-ATOM_TYPE = MessageType('logic', 'Atom')
-REL_ATOM_TYPE = MessageType('logic', 'RelAtom')
-EXISTS_TYPE = MessageType('logic', 'Exists')
-UPSERT_TYPE = MessageType('logic', 'Upsert')
-MONOID_DEF_TYPE = MessageType('logic', 'MonoidDef')
-MONUS_DEF_TYPE = MessageType('logic', 'MonusDef')
-
-CONFIG_KEY_VALUE_TYPE = TupleType([STRING_TYPE, VALUE_TYPE])
-CONFIG_TYPE = ListType(CONFIG_KEY_VALUE_TYPE)
-BINDINGS_TYPE = TupleType([ListType(BINDING_TYPE), ListType(BINDING_TYPE)])
-ABSTRACTION_WITH_ARITY_TYPE = TupleType([ABSTRACTION_TYPE, INT64_TYPE])
-MONOID_OP_TYPE = FunctionType([TYPE_TYPE], MONOID_TYPE)
-
 
 def create_identity_function(param_type: TargetType) -> Lambda:
     """Create an identity function: lambda x -> x with the given type.
@@ -229,38 +183,38 @@ def subst(expr: TargetExpr, mapping: Mapping[str, TargetExpr]) -> TargetExpr:
 
 
 # Common Builtin functions that return Call instances
-def make_equal(*args):
-    return Call(Builtin('equal'), list(args))
+def make_equal(left, right):
+    return Call(Builtin('equal'), [left, right])
 
-def make_which_oneof(*args):
-    return Call(Builtin('WhichOneof'), list(args))
+def make_which_oneof(msg, oneof_name):
+    return Call(Builtin('WhichOneof'), [msg, oneof_name])
 
-def make_get_field(*args):
-    return Call(Builtin('get_field'), list(args))
+def make_get_field(obj, field_name):
+    return Call(Builtin('get_field'), [obj, field_name])
 
-def make_some(*args):
-    return Call(Builtin('Some'), list(args))
+def make_some(value):
+    return Call(Builtin('Some'), [value])
 
 def make_tuple(*args):
     return Call(Builtin('make_tuple'), list(args))
 
-def make_fst(*args):
-    return Call(Builtin('fst'), list(args))
+def make_fst(pair):
+    return Call(Builtin('fst'), [pair])
 
-def make_snd(*args):
-    return Call(Builtin('snd'), list(args))
+def make_snd(pair):
+    return Call(Builtin('snd'), [pair])
 
-def make_is_empty(*args):
-    return Call(Builtin('is_empty'), list(args))
+def make_is_empty(collection):
+    return Call(Builtin('is_empty'), [collection])
 
-def make_concat(*args):
-    return Call(Builtin('list_concat'), list(args))
+def make_concat(left, right):
+    return Call(Builtin('list_concat'), [left, right])
 
-def make_length(*args):
-    return Call(Builtin('length'), list(args))
+def make_length(collection):
+    return Call(Builtin('length'), [collection])
 
-def make_unwrap_option_or(*args):
-    return Call(Builtin('unwrap_option_or'), list(args))
+def make_unwrap_option_or(option, default):
+    return Call(Builtin('unwrap_option_or'), [option, default])
 
 
 def apply_lambda(func: Lambda, args: Sequence[TargetExpr]) -> TargetExpr:

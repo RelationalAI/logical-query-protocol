@@ -372,7 +372,7 @@ class GrammarGenerator:
 
             # Generate construct action
             construct_action = self._generate_action(message_name, rhs_symbols, field_names, field_types)
-            deconstruct_action = self._generate_deconstruct_action(construct_action, rhs)
+            deconstruct_action = self._generate_deconstruct_action(message_name, rhs_symbols, field_names, field_types)
 
             # Create rule with both actions
             rule = Rule(
@@ -466,16 +466,30 @@ class GrammarGenerator:
         """Map protobuf primitive to grammar terminal name."""
         return _PRIMITIVE_TO_GRAMMAR_SYMBOL.get(type_name, 'SYMBOL')
 
-    def _generate_deconstruct_action(self, construct_action: Lambda, rhs: Rhs) -> Lambda:
+    def _generate_deconstruct_action(self, message_name, rhs_symbols, field_names, field_types) -> Lambda:
         """Generate a deconstruct_action that is the inverse of construct_action.
 
         The deconstruct_action takes a message (of the construct_action's return type)
         and returns the component values if the message matches this rule, or None otherwise.
         """
-        msg_type = construct_action.return_type
+        param_names = []
+        param_types = []
+        field_idx = 0
+        for elem in rhs_symbols:
+            if isinstance(elem, LitTerminal):
+                continue
+            if field_names and field_idx < len(field_names):
+                param_names.append(field_names[field_idx])
+            else:
+                assert False, f'Too many params for {message_name} semantic action'
+            param_types.append(elem.target_type())
+            field_idx += 1
+        message = self.parser.messages[message_name]
+
+        msg_type = MessageType(message.module, message_name)
         msg_param = Var('msg', msg_type)
 
-        if not construct_action.params:
+        if not param_types:
             return Lambda(
                 params=[msg_param],
                 return_type=OptionType(TupleType([])),
@@ -483,65 +497,24 @@ class GrammarGenerator:
             )
 
         field_extractions = []
-        oneof_checks = []
-
-        for param in construct_action.params:
-            field_name = param.name
-            oneof_field = self._extract_oneof_field_for_param(construct_action.body, param.name)
-
-            if oneof_field:
-                oneof_checks.append(Call(Builtin('has_field'), [msg_param, Lit(oneof_field)]))
-                field_expr = Call(Builtin('get_field'), [
-                    Call(Builtin('get_field'), [msg_param, Lit(oneof_field)]),
-                    Lit(field_name)
-                ])
-            else:
-                field_expr = Call(Builtin('get_field'), [msg_param, Lit(field_name)])
-
+        for (field_name, param_type) in zip(param_names, param_types):
+            field_expr = Call(Builtin('get_field'), [msg_param, Lit(field_name)])
             field_extractions.append(field_expr)
 
         if len(field_extractions) == 1:
-            result_type = construct_action.params[0].type
+            result_type = param_types[0]
             result_expr = field_extractions[0]
         else:
-            result_type = TupleType([p.type for p in construct_action.params])
+            result_type = TupleType([p for p in param_types])
             result_expr = Call(Builtin('make_tuple'), field_extractions)
 
         result_expr = Call(Builtin('Some'), [result_expr])
-
-        if oneof_checks:
-            condition = oneof_checks[0]
-            for check in oneof_checks[1:]:
-                condition = IfElse(condition, check, Lit(False))
-            result_expr = IfElse(condition, result_expr, Lit(None))
 
         return Lambda(
             params=[msg_param],
             return_type=OptionType(result_type),
             body=result_expr
         )
-
-    def _extract_oneof_field_for_param(self, action_body: TargetExpr, param_name: str) -> Optional[str]:
-        """Extract the oneof field name if the parameter is wrapped in OneOf."""
-        def search_for_param(expr: TargetExpr) -> Optional[str]:
-            if isinstance(expr, Call):
-                if isinstance(expr.func, OneOf):
-                    if len(expr.args) == 1 and isinstance(expr.args[0], Var):
-                        if expr.args[0].name == param_name:
-                            if isinstance(expr.func.field_name, Symbol):
-                                return expr.func.field_name.name
-
-                result = search_for_param(expr.func)
-                if result:
-                    return result
-                for arg in expr.args:
-                    result = search_for_param(arg)
-                    if result:
-                        return result
-
-            return None
-
-        return search_for_param(action_body)
 
 def generate_grammar(grammar: Grammar, reachable: Set[Nonterminal]) -> str:
     """Generate grammar text."""

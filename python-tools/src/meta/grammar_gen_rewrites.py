@@ -19,7 +19,7 @@ from .grammar import (
 
 from .target import BaseType, Lambda, Call, OptionType, TupleType, MessageType, Let, Var, IfElse, Builtin, Lit
 from .target_utils import apply_lambda
-from .grammar_utils import rewrite_rule_with_replacements
+from .grammar_utils import rewrite_rule
 
 def make_symbol_replacer(replacements: Dict[Rhs, Rhs]) -> Callable[[Rule], Optional[Rule]]:
     """Create a rule rewriter that replaces symbols in the RHS.
@@ -32,7 +32,8 @@ def make_symbol_replacer(replacements: Dict[Rhs, Rhs]) -> Callable[[Rule], Optio
     """
     def rewrite(rule: Rule) -> Optional[Rule]:
         """Rewrite rule by replacing symbols in RHS."""
-        return rewrite_rule_with_replacements(rule, replacements)
+        result = rewrite_rule(rule, replacements)
+        return result if result is not rule else None
 
     return rewrite
 

@@ -62,6 +62,42 @@ class GrammarAnalysis:
             self.grammar, k, self.compute_nullable(), self.compute_first_k(k)
         )
 
+    def nullable(self, rhs: 'Rhs') -> bool:
+        """Check if an RHS is nullable."""
+        return GrammarAnalysis.is_rhs_nullable(rhs, self.compute_nullable())
+
+    def first(self, rhs: 'Rhs') -> Set[Terminal]:
+        """Compute FIRST set for an RHS."""
+        return GrammarAnalysis.rhs_first(rhs, self.compute_first(), self.compute_nullable())
+
+    def first_k(self, k: int, rhs: 'Rhs') -> TerminalSeqSet:
+        """Compute FIRST_k set for an RHS."""
+        return GrammarAnalysis.rhs_first_k(rhs, self.compute_first_k(k), self.compute_nullable(), k)
+
+    def follow(self, nt: Nonterminal) -> Set[Terminal]:
+        """Compute FOLLOW set for a nonterminal."""
+        return self.compute_follow().get(nt, set())
+
+    def follow_k(self, k: int, rhs: 'Rhs') -> TerminalSeqSet:
+        """Compute FOLLOW_k set for an RHS."""
+        if isinstance(rhs, Nonterminal):
+            return self.compute_follow_k(k).get(rhs, set())
+        elif isinstance(rhs, (Option, Star)):
+            return self.follow_k(k, rhs.rhs)
+        else:
+            raise ValueError(f"Unexpected rhs {rhs}: follow_k unimplemented")
+
+    def first_k_with_follow(self, k: int, following: 'Rhs', lhs: Nonterminal) -> TerminalSeqSet:
+        """Compute FIRST_k(following) concatenated with FOLLOW_k(lhs).
+
+        Used for Option and Star disambiguation.
+        """
+        first_of_following = self.first_k(k, following)
+        if self.nullable(following):
+            follow_of_lhs = self.follow_k(k, lhs)
+            return GrammarAnalysis.concat_k(first_of_following, follow_of_lhs, k)
+        return first_of_following
+
     @staticmethod
     def get_nonterminals(rhs: 'Rhs') -> List[Nonterminal]:
         """Return the list of all nonterminals referenced in a Rhs."""

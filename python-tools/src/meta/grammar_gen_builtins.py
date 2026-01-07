@@ -5,7 +5,6 @@ from protobuf definitions, such as value literals, date/datetime parsing,
 configuration syntax, bindings, abstractions, type literals, and operators.
 """
 
-from types import NoneType
 from typing import Dict, List, Set, Tuple
 from dataclasses import dataclass, field
 
@@ -1042,104 +1041,65 @@ class BuiltinRules:
     def _add_operator_rules(self) -> None:
         """Add rules for comparison and arithmetic operators."""
 
-        # Common types used throughout
         _term_type = MessageType('logic', 'Term')
         _primitive_type = MessageType('logic', 'Primitive')
-
-        # Common nonterminals
         _term_nt = Nonterminal('term', _term_type)
         _primitive_nt = Nonterminal('primitive', _primitive_type)
 
-        # Comparison operator rules
-        _comparison_ops = [
-            ('eq', '=', 'rel_primitive_eq'),
-            ('lt', '<', 'rel_primitive_lt_monotype'),
-            ('lt_eq', '<=', 'rel_primitive_lt_eq_monotype'),
-            ('gt', '>', 'rel_primitive_gt_monotype'),
-            ('gt_eq', '>=', 'rel_primitive_gt_eq_monotype'),
-        ]
-
-        # Common vars for operators
-        _var_left = Var('left', _term_type)
-        _var_right = Var('right', _term_type)
-        _var_result = Var('result', _term_type)
+        _var_names = ['left', 'right', 'result']
+        _arg_lits = [Lit('arg0'), Lit('arg1'), Lit('arg2')]
         _lit_op = Lit('op')
-        _lit_arg0 = Lit('arg0')
-        _lit_arg1 = Lit('arg1')
-        _lit_arg2 = Lit('arg2')
         _lit_term = Lit('term')
 
-        # Helper to wrap term in RelTerm
-        def _wrap_relterm(term_var):
-            return _message_relterm(Call(OneOf('term'), [term_var]))
+        def _make_operator_rule(name: str, op: str, prim: str, arity: int) -> Rule:
+            """Create an operator rule with the given arity (number of term operands)."""
+            params = [Var(_var_names[i], _term_type) for i in range(arity)]
+            rhs_terms = tuple(_term_nt for _ in range(arity))
+            msg_var = Var('msg', _primitive_type)
 
-        # Helper to extract term from arg
-        def _extract_term_from_arg(msg_var, arg_lit):
-            return make_get_field(make_get_field(msg_var, arg_lit), _lit_term)
+            wrapped_args = [_message_relterm(Call(OneOf('term'), [p])) for p in params]
+            extracted_args = [make_get_field(make_get_field(msg_var, _arg_lits[i]), _lit_term)
+                              for i in range(arity)]
 
-        for name, op, prim in _comparison_ops:
-            self.add_rule(Rule(
+            return Rule(
                 lhs=Nonterminal(name, _primitive_type),
-                rhs=Sequence((_lp, LitTerminal(op), _term_nt, _term_nt, _rp)),
+                rhs=Sequence((_lp, LitTerminal(op)) + rhs_terms + (_rp,)),
                 construct_action=Lambda(
-                    [_var_left, _var_right],
+                    params,
                     _primitive_type,
-                    _message_primitive(Lit(prim), _wrap_relterm(_var_left), _wrap_relterm(_var_right))
+                    _message_primitive(Lit(prim), *wrapped_args)
                 ),
                 deconstruct_action=Lambda(
-                    [Var('msg', _primitive_type)],
-                    OptionType(TupleType([_term_type, _term_type])),
+                    [msg_var],
+                    OptionType(TupleType([_term_type] * arity)),
                     IfElse(
-                        make_equal(make_get_field(Var('msg', _primitive_type), _lit_op), Lit(prim)),
-                        make_some(make_tuple(
-                            _extract_term_from_arg(Var('msg', _primitive_type), _lit_arg0),
-                            _extract_term_from_arg(Var('msg', _primitive_type), _lit_arg1)
-                        )),
+                        make_equal(make_get_field(msg_var, _lit_op), Lit(prim)),
+                        make_some(make_tuple(*extracted_args)),
                         Lit(None)
                     )
                 )
-            ))
+            )
 
-        # Arithmetic operator rules
-        _arithmetic_ops = [
-            ('add', '+', 'rel_primitive_add_monotype'),
-            ('minus', '-', 'rel_primitive_subtract_monotype'),
-            ('multiply', '*', 'rel_primitive_multiply_monotype'),
-            ('divide', '/', 'rel_primitive_divide_monotype'),
+        # (name, operator, primitive, arity)
+        _operators = [
+            ('eq', '=', 'rel_primitive_eq', 2),
+            ('lt', '<', 'rel_primitive_lt_monotype', 2),
+            ('lt_eq', '<=', 'rel_primitive_lt_eq_monotype', 2),
+            ('gt', '>', 'rel_primitive_gt_monotype', 2),
+            ('gt_eq', '>=', 'rel_primitive_gt_eq_monotype', 2),
+            ('add', '+', 'rel_primitive_add_monotype', 3),
+            ('minus', '-', 'rel_primitive_subtract_monotype', 3),
+            ('multiply', '*', 'rel_primitive_multiply_monotype', 3),
+            ('divide', '/', 'rel_primitive_divide_monotype', 3),
         ]
-        for name, op, prim in _arithmetic_ops:
-            self.add_rule(Rule(
-                lhs=Nonterminal(name, _primitive_type),
-                rhs=Sequence((_lp, LitTerminal(op), _term_nt, _term_nt, _term_nt, _rp)),
-                construct_action=Lambda(
-                    [_var_left, _var_right, _var_result],
-                    _primitive_type,
-                    _message_primitive(
-                        Lit(prim),
-                        _wrap_relterm(_var_left),
-                        _wrap_relterm(_var_right),
-                        _wrap_relterm(_var_result)
-                    )
-                ),
-                deconstruct_action=Lambda(
-                    [Var('msg', _primitive_type)],
-                    OptionType(TupleType([_term_type, _term_type, _term_type])),
-                    IfElse(
-                        make_equal(make_get_field(Var('msg', _primitive_type), _lit_op), Lit(prim)),
-                        make_some(make_tuple(
-                            _extract_term_from_arg(Var('msg', _primitive_type), _lit_arg0),
-                            _extract_term_from_arg(Var('msg', _primitive_type), _lit_arg1),
-                            _extract_term_from_arg(Var('msg', _primitive_type), _lit_arg2)
-                        )),
-                        Lit(None)
-                    )
-                )
-            ))
+
+        for name, op, prim, arity in _operators:
+            self.add_rule(_make_operator_rule(name, op, prim, arity))
 
         # Primitive wrapper rules for operators (not final - auto-generation can add more)
         self.mark_nonfinal(_primitive_nt)
         _var_op = Var('op', _primitive_type)
-        for name, _op, prim in _comparison_ops + _arithmetic_ops:
+        for name, _op, prim, _arity in _operators:
             self.add_rule(Rule(
                 lhs=_primitive_nt,
                 rhs=Nonterminal(name, _primitive_type),

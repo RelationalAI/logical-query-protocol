@@ -68,9 +68,9 @@ def main():
         print()
 
     if args.grammar:
-        output_text = grammar.print_grammar(grammar.compute_reachability())
+        output_text = grammar.print_grammar(grammar.analysis.compute_reachability())
     else:
-        output_text = generate_semantic_actions(grammar, grammar.compute_reachability())
+        output_text = generate_semantic_actions(grammar, grammar.analysis.compute_reachability())
 
     if args.output:
         args.output.write_text(output_text)
