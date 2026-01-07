@@ -1013,23 +1013,10 @@ class BuiltinRules:
             self.add_rule(_make_simple_type_rule(keyword, message_name))
 
         # Decimal type has parameters (precision, scale)
-        _decimal_type_type = MessageType('logic', 'DecimalType')
-        self.add_rule(Rule(
-            lhs=Nonterminal('decimal_type', _decimal_type_type),
+        self.add_rule(_make_simple_message_rule(
+            'decimal_type', 'logic', 'DecimalType',
             rhs=Sequence((_lp, LitTerminal('DECIMAL'), NamedTerminal('INT', INT64_TYPE), NamedTerminal('INT', INT64_TYPE), _rp)),
-            construct_action=Lambda(
-                [Var('precision', INT64_TYPE), Var('scale', INT64_TYPE)],
-                _decimal_type_type,
-                _msg('logic', 'DecimalType', Var('precision', INT64_TYPE), Var('scale', INT64_TYPE))
-            ),
-            deconstruct_action=Lambda(
-                [Var('msg', _decimal_type_type)],
-                OptionType(TupleType([INT64_TYPE, INT64_TYPE])),
-                make_some(make_tuple(
-                    make_get_field(Var('msg', _decimal_type_type), Lit('precision')),
-                    make_get_field(Var('msg', _decimal_type_type), Lit('scale'))
-                ))
-            )
+            fields=[('precision', INT64_TYPE), ('scale', INT64_TYPE)]
         ))
 
     def _add_operator_rules(self) -> None:
@@ -1229,7 +1216,6 @@ class BuiltinRules:
         _formula_type = MessageType('logic', 'Formula')
         _term_type = MessageType('logic', 'Term')
         _abstraction_type = MessageType('logic', 'Abstraction')
-        _primitive_type = MessageType('logic', 'Primitive')
         _relterm_type = MessageType('logic', 'RelTerm')
         _exists_type = MessageType('logic', 'Exists')
         _bindings_type = TupleType([ListType(_binding_type), ListType(_binding_type)])
@@ -1240,7 +1226,6 @@ class BuiltinRules:
         _term_nt = Nonterminal('term', _term_type)
         _relterm_nt = Nonterminal('rel_term', _relterm_type)
         _abstraction_nt = Nonterminal('abstraction', _abstraction_type)
-        _primitive_nt = Nonterminal('primitive', _primitive_type)
         _name_nt = Nonterminal('name', STRING_TYPE)
         _exists_nt = Nonterminal('exists', _exists_type)
 
@@ -1274,27 +1259,15 @@ class BuiltinRules:
         ))
 
         # primitive: STRING -> name, term* -> relterm*
-        self.add_rule(Rule(
-            lhs=_primitive_nt,
+        self.add_rule(_make_simple_message_rule(
+            'primitive', 'logic', 'Primitive',
             rhs=Sequence((
                 _lp, LitTerminal('primitive'),
                 _name_nt,
                 Star(_relterm_nt),
                 _rp
             )),
-            construct_action=Lambda(
-                [Var('name', STRING_TYPE), Var('terms', ListType(_relterm_type))],
-                _primitive_type,
-                _message_primitive(Var('name', STRING_TYPE), Var('terms', ListType(_relterm_type)))
-            ),
-            deconstruct_action=Lambda(
-                [Var('msg', _primitive_type)],
-                OptionType(TupleType([STRING_TYPE, ListType(_relterm_type)])),
-                make_some(make_tuple(
-                    make_get_field(Var('msg', _primitive_type), Lit('name')),
-                    make_get_field(Var('msg', _primitive_type), Lit('terms'))
-                ))
-            )
+            fields=[('name', STRING_TYPE), ('terms', ListType(_relterm_type))]
         ))
 
         # exists: abstraction -> (bindings formula)
