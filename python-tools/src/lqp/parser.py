@@ -376,7 +376,7 @@ class LQPTransformer(Transformer):
             else:
                 path.append(item)
         return ir.RelEDB(
-            name=name,
+            target_id=name,
             path=path,
             types=types,
             meta=self.meta(meta)

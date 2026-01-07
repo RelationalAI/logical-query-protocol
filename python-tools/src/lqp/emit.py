@@ -234,7 +234,7 @@ def convert_betree_info(info: ir.BeTreeInfo) -> logic_pb2.BeTreeInfo:
 
 def convert_rel_edb(rel: ir.RelEDB) -> logic_pb2.RelEDB:
     return logic_pb2.RelEDB(
-        name=convert_relation_id(rel.name),
+        target_id=convert_relation_id(rel.target_id),
         path=rel.path,
         types=[convert_type(t) for t in rel.types]
     )

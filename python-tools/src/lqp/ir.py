@@ -362,10 +362,10 @@ class BeTreeInfo(LqpNode):
 class Data(Declaration):
     pass
 
-# RelEDB(name::RelationId, path::string[], types::Type[])
+# RelEDB(target_id::RelationId, path::string[], types::Type[])
 @dataclass(frozen=True)
 class RelEDB(Data):
-    name: RelationId
+    target_id: RelationId
     path: Sequence[str]
     types: Sequence[Type]
 

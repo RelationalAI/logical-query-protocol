@@ -288,7 +288,7 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
         lqp += conf.RPAREN()
 
     elif isinstance(node, ir.RelEDB):
-        lqp += ind + conf.LPAREN() + conf.kw("rel_edb") + " " + to_str(node.name, 0, options, debug_info)
+        lqp += ind + conf.LPAREN() + conf.kw("rel_edb") + " " + to_str(node.target_id, 0, options, debug_info)
         lqp += " " + conf.LBRACKET()
         if len(node.path) > 0:
             lqp += list_to_str(node.path, 0, " ", options, debug_info)

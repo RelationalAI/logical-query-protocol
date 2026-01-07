@@ -344,14 +344,14 @@ class Data(_message.Message):
     def __init__(self, rel_edb: _Optional[_Union[RelEDB, _Mapping]] = ..., betree_relation: _Optional[_Union[BeTreeRelation, _Mapping]] = ..., csv_relation: _Optional[_Union[CSVData, _Mapping]] = ...) -> None: ...
 
 class RelEDB(_message.Message):
-    __slots__ = ("name", "path", "types")
-    NAME_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("target_id", "path", "types")
+    TARGET_ID_FIELD_NUMBER: _ClassVar[int]
     PATH_FIELD_NUMBER: _ClassVar[int]
     TYPES_FIELD_NUMBER: _ClassVar[int]
-    name: RelationId
+    target_id: RelationId
     path: _containers.RepeatedScalarFieldContainer[str]
     types: _containers.RepeatedCompositeFieldContainer[Type]
-    def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., path: _Optional[_Iterable[str]] = ..., types: _Optional[_Iterable[_Union[Type, _Mapping]]] = ...) -> None: ...
+    def __init__(self, target_id: _Optional[_Union[RelationId, _Mapping]] = ..., path: _Optional[_Iterable[str]] = ..., types: _Optional[_Iterable[_Union[Type, _Mapping]]] = ...) -> None: ...
 
 class BeTreeRelation(_message.Message):
     __slots__ = ("name", "relation_info")
