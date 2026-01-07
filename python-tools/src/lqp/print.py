@@ -134,7 +134,7 @@ def style_config(options: Dict) -> StyleConfig:
 
 # Call to_str on all nodes, each of which with indent_level, separating them
 # by delim.
-def list_to_str(nodes: Sequence[Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue]], indent_level: int, delim: str, options: Dict, debug_info: Dict = {}) -> str:
+def list_to_str(nodes: Sequence[Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, str, float]], indent_level: int, delim: str, options: Dict, debug_info: Dict = {}) -> str:
     return delim.join(map(lambda n: to_str(n, indent_level, options, debug_info), nodes))
 
 # Produces "(terms term1 term2 ...)" (all on one line) indented at indent_level.
@@ -156,7 +156,7 @@ def terms_to_str(terms: Sequence[Union[ir.RelTerm, ir.SpecializedValue]], indent
 # { :key1 value1
 #   :key2 value2
 #   ... }
-def config_dict_to_str(config: Dict[str, Union[str, int]], indent_level: int, options: Dict) -> str:
+def config_dict_to_str(config: Dict[str, Any], indent_level: int, options: Dict) -> str:
     conf = style_config(options)
     ind = conf.indentation(indent_level)
 
@@ -285,6 +285,121 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
             lqp += " "
             lqp += list_to_str(node.global_, 0, " ", options, debug_info) + "\n"
         lqp += to_str(node.body, indent_level + 1, options, debug_info)
+        lqp += conf.RPAREN()
+
+    elif isinstance(node, ir.RelEDB):
+        lqp += ind + conf.LPAREN() + conf.kw("rel_edb") + " " + to_str(node.target_id, 0, options, debug_info)
+        lqp += " " + conf.LBRACKET()
+        if len(node.path) > 0:
+            lqp += list_to_str(node.path, 0, " ", options, debug_info)
+        lqp += conf.RBRACKET()
+        lqp += " " + conf.LBRACKET()
+        if len(node.types) > 0:
+            lqp += list_to_str(node.types, 0, " ", options, debug_info)
+        lqp += conf.RBRACKET()
+        lqp += conf.RPAREN()
+
+    elif isinstance(node, ir.BeTreeRelation):
+        lqp += ind + conf.LPAREN() + conf.kw("betree_relation") + " " + to_str(node.name, 0, options, debug_info) + "\n"
+        lqp += to_str(node.relation_info, indent_level + 1, options, debug_info)
+        lqp += conf.RPAREN()
+
+    elif isinstance(node, ir.BeTreeInfo):
+        lqp += ind + conf.LPAREN() + conf.kw("betree_info") + "\n"
+        # Print key_types
+        lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("key_types")
+        if len(node.key_types) > 0:
+            lqp += " " + list_to_str(node.key_types, 0, " ", options, debug_info)
+        lqp += conf.RPAREN() + "\n"
+        # Print value_types
+        lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("value_types")
+        if len(node.value_types) > 0:
+            lqp += " " + list_to_str(node.value_types, 0, " ", options, debug_info)
+        lqp += conf.RPAREN() + "\n"
+        # Print config_dict combining storage_config and relation_locator
+        config_dict: dict[str, Any] = {}
+        config_dict['betree_config_epsilon'] = node.storage_config.epsilon
+        config_dict['betree_config_max_pivots'] = node.storage_config.max_pivots
+        config_dict['betree_config_max_deltas'] = node.storage_config.max_deltas
+        config_dict['betree_config_max_leaf'] = node.storage_config.max_leaf
+        # Handle oneof: only print the location field that is set
+        if node.relation_locator.root_pageid is not None:
+            config_dict['betree_locator_root_pageid'] = node.relation_locator.root_pageid
+        if node.relation_locator.inline_data is not None:
+            # Convert bytes back to string for printing
+            inline_data_str = node.relation_locator.inline_data.decode('utf-8')
+            config_dict['betree_locator_inline_data'] = inline_data_str
+        config_dict['betree_locator_element_count'] = node.relation_locator.element_count
+        config_dict['betree_locator_tree_height'] = node.relation_locator.tree_height
+        lqp += config_dict_to_str(config_dict, indent_level + 1, options)
+        lqp += conf.RPAREN()
+
+    elif isinstance(node, ir.CSVData):
+        lqp += ind + conf.LPAREN() + conf.kw("csv_data") + "\n"
+        lqp += to_str(node.locator, indent_level + 1, options, debug_info) + "\n"
+        lqp += to_str(node.config, indent_level + 1, options, debug_info) + "\n"
+        # Print columns
+        lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("columns") + "\n"
+        lqp += list_to_str(node.columns, indent_level + 2, "\n", options, debug_info)
+        lqp += conf.RPAREN() + "\n"
+        # Print asof
+        lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("asof") + " " + to_str(node.asof, 0, options, debug_info) + conf.RPAREN()
+        lqp += conf.RPAREN()
+
+    elif isinstance(node, ir.CSVLocator):
+        lqp += ind + conf.LPAREN() + conf.kw("csv_locator") + "\n"
+        # Print paths or inline_data (mutually exclusive)
+        if node.paths:
+            lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("paths")
+            if len(node.paths) > 0:
+                lqp += " " + list_to_str(node.paths, 0, " ", options, debug_info)
+            lqp += conf.RPAREN()
+        elif node.inline_data is not None:
+            # Convert bytes back to string for printing
+            inline_data_str = node.inline_data.decode('utf-8')
+            lqp += ind + conf.SIND() + conf.LPAREN() + conf.kw("inline_data") + " " + to_str(inline_data_str, 0, options, debug_info) + conf.RPAREN()
+        lqp += conf.RPAREN()
+
+    elif isinstance(node, ir.CSVConfig):
+        config_dict: dict[str, Any] = {}
+        # Always include all config values
+        config_dict['csv_header_row'] = node.header_row
+        config_dict['csv_skip'] = node.skip
+        if node.new_line != '':
+            config_dict['csv_new_line'] = node.new_line
+        config_dict['csv_delimiter'] = node.delimiter
+        config_dict['csv_quotechar'] = node.quotechar
+        config_dict['csv_escapechar'] = node.escapechar
+        if node.comment != '':
+            config_dict['csv_comment'] = node.comment
+        if node.missing_strings:
+            # For lists, we only support single string values in config dicts for now
+            # If there's only one missing string, output it as a single string
+            # Otherwise, we'll need to output just the first one (this is a limitation)
+            if len(node.missing_strings) == 1:
+                config_dict['csv_missing_strings'] = node.missing_strings[0]
+            else:
+                # For multiple missing strings, join them or just use first
+                # This is a temporary workaround - we may need a better solution
+                config_dict['csv_missing_strings'] = node.missing_strings[0]
+        config_dict['csv_decimal_separator'] = node.decimal_separator
+        config_dict['csv_encoding'] = node.encoding
+        config_dict['csv_compression'] = node.compression
+
+        lqp += ind + conf.LPAREN() + conf.kw("csv_config")
+        if len(config_dict) > 0:
+            lqp += "\n"
+        lqp += config_dict_to_str(config_dict, indent_level + 1, options)
+        lqp += conf.RPAREN()
+
+    elif isinstance(node, ir.CSVColumn):
+        lqp += ind + conf.LPAREN() + conf.kw("column") + " "
+        lqp += to_str(node.column_name, 0, options, debug_info) + " "
+        lqp += to_str(node.target_id, 0, options, debug_info)
+        lqp += " " + conf.LBRACKET()
+        if len(node.types) > 0:
+            lqp += list_to_str(node.types, 0, " ", options, debug_info)
+        lqp += conf.RBRACKET()
         lqp += conf.RPAREN()
 
     elif isinstance(node, ir.Script):
@@ -550,7 +665,7 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
             lqp += line_conf_f('path', '<hidden filename>') + "\n"
         lqp += line('columns', list_to_str(node.data_columns, 0, " ", options, debug_info)) + "\n"
 
-        config_dict: dict[str, Union[int, str]] = {}
+        config_dict: dict[str, Any] = {}
         config_dict['partition_size'] = node.partition_size if node.partition_size is not None else 0
         config_dict['compression'] = node.compression if node.compression is not None else "" #type: ignore
         config_dict['syntax_header_row'] = node.syntax_header_row if node.syntax_header_row is not None else 1
