@@ -335,7 +335,7 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
         lqp += conf.RPAREN()
 
     elif isinstance(node, ir.CSVData):
-        lqp += ind + conf.LPAREN() + conf.kw("csv_relation") + "\n"
+        lqp += ind + conf.LPAREN() + conf.kw("csv_data") + "\n"
         lqp += to_str(node.locator, indent_level + 1, options, debug_info) + "\n"
         lqp += to_str(node.config, indent_level + 1, options, debug_info) + "\n"
         # Print columns

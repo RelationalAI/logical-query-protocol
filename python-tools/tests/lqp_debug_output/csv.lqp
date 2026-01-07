@@ -6,7 +6,7 @@
     (writes
       (define
         (fragment :f1
-          (csv_relation
+          (csv_data
             (csv_locator
               (paths "s3://bucket/data/file1.csv" "s3://bucket/data/file2.csv"))
             (csv_config
@@ -23,7 +23,7 @@
               (column "name" 3318323897171887315 [STRING])
               (column "score" 15024169012464168155 [FLOAT]))
             (asof "2025-01-01T00:00:00Z"))
-          (csv_relation
+          (csv_data
             (csv_locator
               (paths "https://example.com/data.csv"))
             (csv_config
@@ -41,7 +41,7 @@
               (column "timestamp" 4948721473946711771 [DATETIME])
               (column "value" 10943683732806582112 [(DECIMAL 18 4)]))
             (asof "2025-01-15T12:00:00Z"))
-          (csv_relation
+          (csv_data
             (csv_locator
               (inline_data "user_id,name,score\n1,Alice,95.5\n2,Bob,87.3"))
             (csv_config
@@ -58,7 +58,7 @@
               (column "name" 2796314487109628035 [STRING])
               (column "score" 2286927111849837318 [FLOAT]))
             (asof "2025-01-01T00:00:00Z"))
-          (csv_relation
+          (csv_data
             (csv_locator
               (paths "/local/path/data.csv"))
             (csv_config
@@ -74,7 +74,7 @@
               (column "id" 13663055770000247273 [INT STRING])
               (column "data" 310947696548484702 [STRING FLOAT BOOLEAN]))
             (asof "2025-02-01T00:00:00Z"))
-          (csv_relation
+          (csv_data
             (csv_locator
               (paths "data/infer.csv"))
             (csv_config

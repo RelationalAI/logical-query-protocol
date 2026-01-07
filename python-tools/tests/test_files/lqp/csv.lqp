@@ -4,7 +4,7 @@
       (define
         (fragment :f1
           ;; Basic CSV relation with paths
-          (csv_relation
+          (csv_data
             (csv_locator
               (paths "s3://bucket/data/file1.csv" "s3://bucket/data/file2.csv"))
             (csv_config {})
@@ -15,7 +15,7 @@
             (asof "2025-01-01T00:00:00Z"))
 
           ;; CSV with custom config
-          (csv_relation
+          (csv_data
             (csv_locator
               (paths "https://example.com/data.csv"))
             (csv_config {
@@ -35,7 +35,7 @@
             (asof "2025-01-15T12:00:00Z"))
 
           ;; CSV with inline data
-          (csv_relation
+          (csv_data
             (csv_locator
               (inline_data "user_id,name,score\n1,Alice,95.5\n2,Bob,87.3"))
             (csv_config {})
@@ -46,7 +46,7 @@
             (asof "2025-01-01T00:00:00Z"))
 
           ;; CSV with multiple types per column
-          (csv_relation
+          (csv_data
             (csv_locator
               (paths "/local/path/data.csv"))
             (csv_config { :csv_delimiter "\t" })
@@ -56,7 +56,7 @@
             (asof "2025-02-01T00:00:00Z"))
 
           ;; CSV with empty types (schema inferred)
-          (csv_relation
+          (csv_data
             (csv_locator
               (paths "data/infer.csv"))
             (csv_config {})

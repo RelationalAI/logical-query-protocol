@@ -49,14 +49,14 @@ functional_dependency: "(functional_dependency" abstraction fd_keys fd_values ")
 fd_keys: "(keys" var* ")"
 fd_values: "(values" var* ")"
 
-data: rel_edb | betree_relation | csv_relation
+data: rel_edb | betree_relation | csv_data
 rel_edb: "(rel_edb" relation_id "[" STRING* "]" "[" type_* "]" ")"
 betree_relation: "(betree_relation" relation_id betree_info ")"
 betree_info: "(betree_info" key_types value_types config_dict ")"
 key_types: "(key_types" type_* ")"
 value_types: "(value_types" type_* ")"
 
-csv_relation: "(csv_relation" csv_locator csv_config csv_columns csv_asof ")"
+csv_data: "(csv_data" csv_locator csv_config csv_columns csv_asof ")"
 csv_locator: "(csv_locator" csv_paths? csv_inline_data? ")"
 csv_paths: "(paths" STRING* ")"
 csv_inline_data: "(inline_data" STRING ")"
@@ -434,7 +434,7 @@ class LQPTransformer(Transformer):
     def value_types(self, meta, items):
         return items
 
-    def csv_relation(self, meta, items):
+    def csv_data(self, meta, items):
         locator = items[0]
         config = items[1]
         columns = items[2]
