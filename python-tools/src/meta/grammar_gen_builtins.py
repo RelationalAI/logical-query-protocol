@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from .grammar import Rule, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
 from .target import (
     Lambda, Call, Var, Lit, Seq, IfElse, Builtin, Message, OneOf, ListExpr,
-    OptionType, ListType, TupleType, MessageType, FunctionType
+    OptionType, ListType, TupleType, MessageType, FunctionType, TargetType
 )
 from .target_utils import (
     STRING_TYPE, INT64_TYPE, FLOAT64_TYPE, BOOLEAN_TYPE,
@@ -89,6 +89,47 @@ def _oneof_deconstruct(msg_var, oneof_discriminator: str, oneof_field_name: str,
         IfElse(extra_check, make_some(field_value), Lit(None)),
         Lit(None)
     )
+
+def _make_simple_message_rule(
+    lhs_name: str,
+    module: str,
+    message_name: str,
+    rhs,
+    fields: List[Tuple[str, 'TargetType']]
+) -> Rule:
+    """Generate rule with symmetric construct/deconstruct from field spec.
+
+    Args:
+        lhs_name: Name of the LHS nonterminal
+        module: Protobuf module name (e.g., 'logic', 'transactions')
+        message_name: Protobuf message name
+        rhs: The RHS of the rule
+        fields: List of (field_name, field_type) tuples
+
+    Returns:
+        Rule where construct wraps fields in message, deconstruct extracts them.
+    """
+    msg_type = MessageType(module, message_name)
+    params = [Var(name, typ) for name, typ in fields]
+    msg_var = Var('msg', msg_type)
+
+    return Rule(
+        lhs=Nonterminal(lhs_name, msg_type),
+        rhs=rhs,
+        construct_action=Lambda(
+            params,
+            msg_type,
+            _msg(module, message_name, *params)
+        ),
+        deconstruct_action=Lambda(
+            [msg_var],
+            OptionType(TupleType([typ for _, typ in fields])),
+            make_some(make_tuple(*[
+                make_get_field(msg_var, Lit(name)) for name, _ in fields
+            ]))
+        )
+    )
+
 
 def _make_value_oneof_rule(rhs, rhs_type, oneof_field_name):
     """Create a rule for Value -> oneof field."""
@@ -244,6 +285,12 @@ class BuiltinRules:
         self.add_rule(_make_value_oneof_rule(_boolean_value_nt, BOOLEAN_TYPE, 'boolean_value'))
 
         # Date and datetime rules
+        self.add_rule(_make_simple_message_rule(
+            'date', 'logic', 'DateValue',
+            rhs=Sequence((_lp, LitTerminal('date'), _int_terminal, _int_terminal, _int_terminal, _rp)),
+            fields=[('year', INT64_TYPE), ('month', INT64_TYPE), ('day', INT64_TYPE)]
+        ))
+
         _var_year = Var('year', INT64_TYPE)
         _var_month = Var('month', INT64_TYPE)
         _var_day = Var('day', INT64_TYPE)
@@ -251,25 +298,6 @@ class BuiltinRules:
         _var_minute = Var('minute', INT64_TYPE)
         _var_second = Var('second', INT64_TYPE)
         _var_microsecond = Var('microsecond', OptionType(INT64_TYPE))
-
-        self.add_rule(Rule(
-            lhs=_date_nt,
-            rhs=Sequence((_lp, LitTerminal('date'), _int_terminal, _int_terminal, _int_terminal, _rp)),
-            construct_action=Lambda(
-                [_var_year, _var_month, _var_day],
-                _date_value_type,
-                _message_date_value(_var_year, _var_month, _var_day)
-            ),
-            deconstruct_action=Lambda(
-                [Var('msg', _date_value_type)],
-                OptionType(TupleType([INT64_TYPE, INT64_TYPE, INT64_TYPE])),
-                make_some(make_tuple(
-                    make_get_field(Var('msg', _date_value_type), Lit('year')),
-                    make_get_field(Var('msg', _date_value_type), Lit('month')),
-                    make_get_field(Var('msg', _date_value_type), Lit('day'))
-                ))
-            )
-        ))
 
         _datetime_tuple_type = TupleType([INT64_TYPE, INT64_TYPE, INT64_TYPE, INT64_TYPE, INT64_TYPE, INT64_TYPE, OptionType(INT64_TYPE)])
 
@@ -758,7 +786,6 @@ class BuiltinRules:
         _export_csv_config_nt = Nonterminal('export_csv_config', _export_csv_config_type)
         _export_csv_path_nt = Nonterminal('export_csv_path', STRING_TYPE)
         _export_csv_columns_nt = Nonterminal('export_csv_columns', ListType(_export_csv_column_type))
-        _export_csv_column_nt = Nonterminal('export_csv_column', _export_csv_column_type)
 
         # Export rules
         _msg_export_var = Var('msg', _export_type)
@@ -828,34 +855,22 @@ class BuiltinRules:
             lhs=_export_csv_columns_nt,
             rhs=Sequence((
                 _lp, LitTerminal('columns'),
-                Star(_export_csv_column_nt),
+                Star(Nonterminal('export_csv_column', _export_csv_column_type)),
                 _rp
             )),
             construct_action=create_identity_function(ListType(_export_csv_column_type)),
             deconstruct_action=create_identity_option_function(ListType(_export_csv_column_type))
         ))
 
-        self.add_rule(Rule(
-            lhs=_export_csv_column_nt,
+        self.add_rule(_make_simple_message_rule(
+            'export_csv_column', 'transactions', 'ExportCSVColumn',
             rhs=Sequence((
                 _lp, LitTerminal('column'),
                 NamedTerminal('STRING', STRING_TYPE),
                 _relation_id_nt,
                 _rp
             )),
-            construct_action=Lambda(
-                [Var('name', STRING_TYPE), Var('relation_id', _relation_id_type)],
-                _export_csv_column_type,
-                _msg('transactions', 'ExportCSVColumn', Var('name', STRING_TYPE), Var('relation_id', _relation_id_type))
-            ),
-            deconstruct_action=Lambda(
-                [Var('msg', _export_csv_column_type)],
-                OptionType(TupleType([STRING_TYPE, _relation_id_type])),
-                make_some(make_tuple(
-                    make_get_field(Var('msg', _export_csv_column_type), Lit('name')),
-                    make_get_field(Var('msg', _export_csv_column_type), Lit('relation_id'))
-                ))
-            )
+            fields=[('name', STRING_TYPE), ('relation_id', _relation_id_type)]
         ))
 
     def _add_id_rules(self) -> None:
@@ -1210,15 +1225,12 @@ class BuiltinRules:
         """Add rules for ffi, rel_atom, primitive, and exists."""
 
         # Common types used throughout
-        _value_type = MessageType('logic', 'Value')
         _binding_type = MessageType('logic', 'Binding')
         _formula_type = MessageType('logic', 'Formula')
         _term_type = MessageType('logic', 'Term')
         _abstraction_type = MessageType('logic', 'Abstraction')
         _primitive_type = MessageType('logic', 'Primitive')
         _relterm_type = MessageType('logic', 'RelTerm')
-        _ffi_type = MessageType('logic', 'FFI')
-        _rel_atom_type = MessageType('logic', 'RelAtom')
         _exists_type = MessageType('logic', 'Exists')
         _bindings_type = TupleType([ListType(_binding_type), ListType(_binding_type)])
 
@@ -1230,13 +1242,11 @@ class BuiltinRules:
         _abstraction_nt = Nonterminal('abstraction', _abstraction_type)
         _primitive_nt = Nonterminal('primitive', _primitive_type)
         _name_nt = Nonterminal('name', STRING_TYPE)
-        _ffi_nt = Nonterminal('ffi', _ffi_type)
-        _rel_atom_nt = Nonterminal('rel_atom', _rel_atom_type)
         _exists_nt = Nonterminal('exists', _exists_type)
 
         # ffi: STRING -> name, terms? -> term*
-        self.add_rule(Rule(
-            lhs=_ffi_nt,
+        self.add_rule(_make_simple_message_rule(
+            'ffi', 'logic', 'FFI',
             rhs=Sequence((
                 _lp, LitTerminal('ffi'),
                 _name_nt,
@@ -1244,48 +1254,23 @@ class BuiltinRules:
                 Star(_term_nt),
                 _rp
             )),
-            construct_action=Lambda(
-                [
-                    Var('name', STRING_TYPE),
-                    Var('args', ListType(_abstraction_type)),
-                    Var('terms', ListType(_term_type))
-                ],
-                _ffi_type,
-                _msg('logic', 'FFI', Var('name', STRING_TYPE), Var('args', ListType(_abstraction_type)), Var('terms', ListType(_term_type)))
-            ),
-            deconstruct_action=Lambda(
-                [Var('msg', _ffi_type)],
-                OptionType(TupleType([STRING_TYPE, ListType(_abstraction_type), ListType(_term_type)])),
-                make_some(make_tuple(
-                    make_get_field(Var('msg', _ffi_type), Lit('name')),
-                    make_get_field(Var('msg', _ffi_type), Lit('args')),
-                    make_get_field(Var('msg', _ffi_type), Lit('terms'))
-                ))
-            )
+            fields=[
+                ('name', STRING_TYPE),
+                ('args', ListType(_abstraction_type)),
+                ('terms', ListType(_term_type))
+            ]
         ))
 
         # rel_atom: STRING -> name, terms? -> relterm*
-        self.add_rule(Rule(
-            lhs=_rel_atom_nt,
+        self.add_rule(_make_simple_message_rule(
+            'rel_atom', 'logic', 'RelAtom',
             rhs=Sequence((
                 _lp, LitTerminal('rel_atom'),
                 _name_nt,
                 Star(_relterm_nt),
                 _rp
             )),
-            construct_action=Lambda(
-                [Var('name', STRING_TYPE), Var('terms', ListType(_relterm_type))],
-                _rel_atom_type,
-                _msg('logic', 'RelAtom', Var('name', STRING_TYPE), Var('terms', ListType(_relterm_type)))
-            ),
-            deconstruct_action=Lambda(
-                [Var('msg', _rel_atom_type)],
-                OptionType(TupleType([STRING_TYPE, ListType(_relterm_type)])),
-                make_some(make_tuple(
-                    make_get_field(Var('msg', _rel_atom_type), Lit('name')),
-                    make_get_field(Var('msg', _rel_atom_type), Lit('terms'))
-                ))
-            )
+            fields=[('name', STRING_TYPE), ('terms', ListType(_relterm_type))]
         ))
 
         # primitive: STRING -> name, term* -> relterm*
