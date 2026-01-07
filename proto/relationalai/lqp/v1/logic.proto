@@ -233,7 +233,7 @@ message Data {
   oneof data_type {
     RelEDB rel_edb = 1;
     BeTreeRelation betree_relation = 2;
-    CSVData csv_relation = 3;
+    CSVData csv_data = 3;
     // IcebergRelation iceberg_relation = 4;
   }
 }

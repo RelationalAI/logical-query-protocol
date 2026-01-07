@@ -289,7 +289,7 @@ def convert_data(data: ir.Data) -> logic_pb2.Data:
     elif isinstance(data, ir.BeTreeRelation):
         return logic_pb2.Data(betree_relation=convert_betree_relation(data))
     elif isinstance(data, ir.CSVData):
-        return logic_pb2.Data(csv_relation=convert_csv_relation(data))
+        return logic_pb2.Data(csv_data=convert_csv_relation(data))
     else:
         raise TypeError(f"Unsupported Data type: {type(data)}")
 

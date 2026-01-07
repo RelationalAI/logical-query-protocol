@@ -334,14 +334,14 @@ class Attribute(_message.Message):
     def __init__(self, name: _Optional[str] = ..., args: _Optional[_Iterable[_Union[Value, _Mapping]]] = ...) -> None: ...
 
 class Data(_message.Message):
-    __slots__ = ("rel_edb", "betree_relation", "csv_relation")
+    __slots__ = ("rel_edb", "betree_relation", "csv_data")
     REL_EDB_FIELD_NUMBER: _ClassVar[int]
     BETREE_RELATION_FIELD_NUMBER: _ClassVar[int]
-    CSV_RELATION_FIELD_NUMBER: _ClassVar[int]
+    CSV_DATA_FIELD_NUMBER: _ClassVar[int]
     rel_edb: RelEDB
     betree_relation: BeTreeRelation
-    csv_relation: CSVData
-    def __init__(self, rel_edb: _Optional[_Union[RelEDB, _Mapping]] = ..., betree_relation: _Optional[_Union[BeTreeRelation, _Mapping]] = ..., csv_relation: _Optional[_Union[CSVData, _Mapping]] = ...) -> None: ...
+    csv_data: CSVData
+    def __init__(self, rel_edb: _Optional[_Union[RelEDB, _Mapping]] = ..., betree_relation: _Optional[_Union[BeTreeRelation, _Mapping]] = ..., csv_data: _Optional[_Union[CSVData, _Mapping]] = ...) -> None: ...
 
 class RelEDB(_message.Message):
     __slots__ = ("target_id", "path", "types")
