@@ -3,7 +3,7 @@ along with tooling for several languages (Python, Go, and Julia) that we conside
 class".
 
 The protobuf specification is located in the `proto/` sub-directory. Auto-generated code by
-the protobuf compiler shoudl be in `gen/`.
+the protobuf compiler should be in `gen/`.
 
 Python tooling is in `python-tools/`. Check the `python-tools/README.md` for more
 instructions, e.g. how to verify your changes.
