@@ -233,7 +233,7 @@ message Data {
   oneof data_type {
     RelEDB rel_edb = 1;
     BeTreeRelation betree_relation = 2;
-    CSVRelation csv_relation = 3;
+    CSVData csv_relation = 3;
     // IcebergRelation iceberg_relation = 4;
   }
 }
@@ -273,7 +273,7 @@ message BeTreeLocator {
   int64 tree_height = 3;
 }
 
-message CSVRelation {
+message CSVData {
   CSVLocator locator = 1;
   CSVConfig config = 2;
   repeated CSVColumn columns = 3;

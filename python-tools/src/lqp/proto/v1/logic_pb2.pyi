@@ -340,8 +340,8 @@ class Data(_message.Message):
     CSV_RELATION_FIELD_NUMBER: _ClassVar[int]
     rel_edb: RelEDB
     betree_relation: BeTreeRelation
-    csv_relation: CSVRelation
-    def __init__(self, rel_edb: _Optional[_Union[RelEDB, _Mapping]] = ..., betree_relation: _Optional[_Union[BeTreeRelation, _Mapping]] = ..., csv_relation: _Optional[_Union[CSVRelation, _Mapping]] = ...) -> None: ...
+    csv_relation: CSVData
+    def __init__(self, rel_edb: _Optional[_Union[RelEDB, _Mapping]] = ..., betree_relation: _Optional[_Union[BeTreeRelation, _Mapping]] = ..., csv_relation: _Optional[_Union[CSVData, _Mapping]] = ...) -> None: ...
 
 class RelEDB(_message.Message):
     __slots__ = ("name", "path", "types")
@@ -397,7 +397,7 @@ class BeTreeLocator(_message.Message):
     tree_height: int
     def __init__(self, root_pageid: _Optional[_Union[UInt128Value, _Mapping]] = ..., inline_data: _Optional[bytes] = ..., element_count: _Optional[int] = ..., tree_height: _Optional[int] = ...) -> None: ...
 
-class CSVRelation(_message.Message):
+class CSVData(_message.Message):
     __slots__ = ("locator", "config", "columns", "asof")
     LOCATOR_FIELD_NUMBER: _ClassVar[int]
     CONFIG_FIELD_NUMBER: _ClassVar[int]

@@ -438,7 +438,7 @@ class LQPTransformer(Transformer):
         config = items[1]
         columns = items[2]
         asof = items[3]
-        return ir.CSVRelation(
+        return ir.CSVData(
             locator=locator,
             config=config,
             columns=columns,

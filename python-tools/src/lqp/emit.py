@@ -275,8 +275,8 @@ def convert_csv_column(column: ir.CSVColumn) -> logic_pb2.CSVColumn:
         types=[convert_type(t) for t in column.types]
     )
 
-def convert_csv_relation(rel: ir.CSVRelation) -> logic_pb2.CSVRelation:
-    return logic_pb2.CSVRelation(
+def convert_csv_relation(rel: ir.CSVData) -> logic_pb2.CSVData:
+    return logic_pb2.CSVData(
         locator=convert_csv_locator(rel.locator),
         config=convert_csv_config(rel.config),
         columns=[convert_csv_column(col) for col in rel.columns],
@@ -288,7 +288,7 @@ def convert_data(data: ir.Data) -> logic_pb2.Data:
         return logic_pb2.Data(rel_edb=convert_rel_edb(data))
     elif isinstance(data, ir.BeTreeRelation):
         return logic_pb2.Data(betree_relation=convert_betree_relation(data))
-    elif isinstance(data, ir.CSVRelation):
+    elif isinstance(data, ir.CSVData):
         return logic_pb2.Data(csv_relation=convert_csv_relation(data))
     else:
         raise TypeError(f"Unsupported Data type: {type(data)}")

@@ -357,7 +357,7 @@ class BeTreeInfo(LqpNode):
     storage_config: BeTreeConfig
     relation_locator: BeTreeLocator
 
-# Data := RelEDB | BeTreeRelation | CSVRelation | IcebergRelation
+# Data := RelEDB | BeTreeRelation | CSVData | IcebergRelation
 @dataclass(frozen=True)
 class Data(Declaration):
     pass
@@ -375,9 +375,9 @@ class BeTreeRelation(Data):
     name: RelationId
     relation_info: BeTreeInfo
 
-# CSVRelation(locator::CSVLocator, config::CSVConfig, columns::CSVColumn[], asof::string)
+# CSVData(locator::CSVLocator, config::CSVConfig, columns::CSVColumn[], asof::string)
 @dataclass(frozen=True)
-class CSVRelation(Data):
+class CSVData(Data):
     locator: 'CSVLocator'
     config: 'CSVConfig'
     columns: Sequence['CSVColumn']
