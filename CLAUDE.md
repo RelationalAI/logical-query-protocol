@@ -12,3 +12,5 @@ For each of the three first class languages, we intend to provide the following 
 1. A parser for the S-expression based human-readable representation of LQP.
 2. A pretty printer, to convert from proto messages to the human-readable representation.
 3. An IR.
+
+Check the `python-tools/README.md` for more instructions on how to verify your changes.

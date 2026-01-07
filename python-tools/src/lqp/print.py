@@ -134,7 +134,7 @@ def style_config(options: Dict) -> StyleConfig:
 
 # Call to_str on all nodes, each of which with indent_level, separating them
 # by delim.
-def list_to_str(nodes: Sequence[Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue]], indent_level: int, delim: str, options: Dict, debug_info: Dict = {}) -> str:
+def list_to_str(nodes: Sequence[Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, str, float]], indent_level: int, delim: str, options: Dict, debug_info: Dict = {}) -> str:
     return delim.join(map(lambda n: to_str(n, indent_level, options, debug_info), nodes))
 
 # Produces "(terms term1 term2 ...)" (all on one line) indented at indent_level.

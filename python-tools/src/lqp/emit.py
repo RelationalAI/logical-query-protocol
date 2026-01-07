@@ -214,7 +214,7 @@ def convert_betree_config(config: ir.BeTreeConfig) -> logic_pb2.BeTreeConfig:
 
 def convert_betree_locator(locator: ir.BeTreeLocator) -> logic_pb2.BeTreeLocator:
     # Handle oneof: only set the location field that is not None
-    kwargs = {
+    kwargs: Dict[str, Any] = {
         'element_count': locator.element_count,
         'tree_height': locator.tree_height
     }
@@ -246,7 +246,7 @@ def convert_betree_relation(rel: ir.BeTreeRelation) -> logic_pb2.BeTreeRelation:
     )
 
 def convert_csv_locator(locator: ir.CSVLocator) -> logic_pb2.CSVLocator:
-    kwargs = {}
+    kwargs: Dict[str, Any] = {}
     if locator.paths:
         kwargs['paths'] = locator.paths
     if locator.inline_data is not None:

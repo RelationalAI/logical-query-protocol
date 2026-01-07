@@ -10,6 +10,7 @@ from lark import Lark, Transformer, v_args
 import lqp.ir as ir
 from decimal import Decimal
 from datetime import date, datetime
+from typing import Dict, Any
 
 grammar = """
 start: transaction | fragment
@@ -473,7 +474,7 @@ class LQPTransformer(Transformer):
         config_dict = items[0] if items else {}
 
         # Extract CSV config fields with defaults
-        csv_config_dict = {
+        csv_config_dict: Dict[str, Any] = {
             'header_row': 1,
             'skip': 0,
             'new_line': '',
