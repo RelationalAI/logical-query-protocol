@@ -94,8 +94,9 @@ def _make_simple_message_rule(
     lhs_name: str,
     module: str,
     message_name: str,
-    rhs,
-    fields: List[Tuple[str, 'TargetType']]
+    rhs_inner: tuple,
+    fields: List[Tuple[str, 'TargetType']],
+    keyword: str = None
 ) -> Rule:
     """Generate rule with symmetric construct/deconstruct from field spec.
 
@@ -103,15 +104,19 @@ def _make_simple_message_rule(
         lhs_name: Name of the LHS nonterminal
         module: Protobuf module name (e.g., 'logic', 'transactions')
         message_name: Protobuf message name
-        rhs: The RHS of the rule
+        rhs_inner: Inner RHS elements (wrapped in '(' keyword ... ')')
         fields: List of (field_name, field_type) tuples
+        keyword: Keyword for the rule (defaults to lhs_name)
 
     Returns:
         Rule where construct wraps fields in message, deconstruct extracts them.
     """
+    if keyword is None:
+        keyword = lhs_name
     msg_type = MessageType(module, message_name)
     params = [Var(name, typ) for name, typ in fields]
     msg_var = Var('msg', msg_type)
+    rhs = Sequence((_lp, LitTerminal(keyword)) + rhs_inner + (_rp,))
 
     return Rule(
         lhs=Nonterminal(lhs_name, msg_type),
@@ -287,7 +292,7 @@ class BuiltinRules:
         # Date and datetime rules
         self.add_rule(_make_simple_message_rule(
             'date', 'logic', 'DateValue',
-            rhs=Sequence((_lp, LitTerminal('date'), _int_terminal, _int_terminal, _int_terminal, _rp)),
+            rhs_inner=(_int_terminal, _int_terminal, _int_terminal),
             fields=[('year', INT64_TYPE), ('month', INT64_TYPE), ('day', INT64_TYPE)]
         ))
 
@@ -864,13 +869,9 @@ class BuiltinRules:
 
         self.add_rule(_make_simple_message_rule(
             'export_csv_column', 'transactions', 'ExportCSVColumn',
-            rhs=Sequence((
-                _lp, LitTerminal('column'),
-                NamedTerminal('STRING', STRING_TYPE),
-                _relation_id_nt,
-                _rp
-            )),
-            fields=[('name', STRING_TYPE), ('relation_id', _relation_id_type)]
+            rhs_inner=(NamedTerminal('STRING', STRING_TYPE), _relation_id_nt),
+            fields=[('name', STRING_TYPE), ('relation_id', _relation_id_type)],
+            keyword='column'
         ))
 
     def _add_id_rules(self) -> None:
@@ -1015,8 +1016,9 @@ class BuiltinRules:
         # Decimal type has parameters (precision, scale)
         self.add_rule(_make_simple_message_rule(
             'decimal_type', 'logic', 'DecimalType',
-            rhs=Sequence((_lp, LitTerminal('DECIMAL'), NamedTerminal('INT', INT64_TYPE), NamedTerminal('INT', INT64_TYPE), _rp)),
-            fields=[('precision', INT64_TYPE), ('scale', INT64_TYPE)]
+            rhs_inner=(NamedTerminal('INT', INT64_TYPE), NamedTerminal('INT', INT64_TYPE)),
+            fields=[('precision', INT64_TYPE), ('scale', INT64_TYPE)],
+            keyword='DECIMAL'
         ))
 
     def _add_operator_rules(self) -> None:
@@ -1232,13 +1234,7 @@ class BuiltinRules:
         # ffi: STRING -> name, terms? -> term*
         self.add_rule(_make_simple_message_rule(
             'ffi', 'logic', 'FFI',
-            rhs=Sequence((
-                _lp, LitTerminal('ffi'),
-                _name_nt,
-                Star(_abstraction_nt),
-                Star(_term_nt),
-                _rp
-            )),
+            rhs_inner=(_name_nt, Star(_abstraction_nt), Star(_term_nt)),
             fields=[
                 ('name', STRING_TYPE),
                 ('args', ListType(_abstraction_type)),
@@ -1249,24 +1245,14 @@ class BuiltinRules:
         # rel_atom: STRING -> name, terms? -> relterm*
         self.add_rule(_make_simple_message_rule(
             'rel_atom', 'logic', 'RelAtom',
-            rhs=Sequence((
-                _lp, LitTerminal('rel_atom'),
-                _name_nt,
-                Star(_relterm_nt),
-                _rp
-            )),
+            rhs_inner=(_name_nt, Star(_relterm_nt)),
             fields=[('name', STRING_TYPE), ('terms', ListType(_relterm_type))]
         ))
 
         # primitive: STRING -> name, term* -> relterm*
         self.add_rule(_make_simple_message_rule(
             'primitive', 'logic', 'Primitive',
-            rhs=Sequence((
-                _lp, LitTerminal('primitive'),
-                _name_nt,
-                Star(_relterm_nt),
-                _rp
-            )),
+            rhs_inner=(_name_nt, Star(_relterm_nt)),
             fields=[('name', STRING_TYPE), ('terms', ListType(_relterm_type))]
         ))
 
