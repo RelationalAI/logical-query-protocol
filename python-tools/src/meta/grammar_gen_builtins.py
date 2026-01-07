@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 
 from .grammar import Rule, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
 from .target import (
-    Lambda, Call, Var, Symbol, Lit, Seq, IfElse, Builtin, Message, OneOf, ListExpr,
+    Lambda, Call, Var, Lit, Seq, IfElse, Builtin, Message, OneOf, ListExpr,
     OptionType, ListType, TupleType, MessageType, FunctionType
 )
 from .target_utils import (
@@ -90,12 +90,12 @@ def _oneof_deconstruct(msg_var, oneof_discriminator: str, oneof_field_name: str,
         Lit(None)
     )
 
-def _make_value_oneof_rule(rhs, value_type, oneof_field_name):
+def _make_value_oneof_rule(rhs, rhs_type, oneof_field_name):
     """Create a rule for Value -> oneof field."""
     _value_type = MessageType('logic', 'Value')
     _value_nt = Nonterminal('value', _value_type)
 
-    var_value = Var('value', _value_type)
+    var_value = Var('value', rhs_type)
     msg_var = Var('msg', _value_type)
     return Rule(
         lhs=_value_nt,
@@ -107,7 +107,7 @@ def _make_value_oneof_rule(rhs, value_type, oneof_field_name):
         ),
         deconstruct_action=Lambda(
             [msg_var],
-            OptionType(_value_type),
+            OptionType(rhs_type),
             _oneof_deconstruct(msg_var, 'value_type', oneof_field_name)
         )
     )
@@ -1292,10 +1292,10 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_primitive_nt,
             rhs=Sequence((
-                LitTerminal('('), LitTerminal('primitive'),
+                _lp, LitTerminal('primitive'),
                 _name_nt,
                 Star(_relterm_nt),
-                LitTerminal(')')
+                _rp
             )),
             construct_action=Lambda(
                 [Var('name', STRING_TYPE), Var('terms', ListType(_relterm_type))],
@@ -1316,10 +1316,10 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_exists_nt,
             rhs=Sequence((
-                LitTerminal('('), LitTerminal('exists'),
+                _lp, LitTerminal('exists'),
                 _bindings_nt,
                 _formula_nt,
-                LitTerminal(')')
+                _rp
             )),
             construct_action=Lambda(
                 [Var('bindings', _bindings_type), Var('formula', _formula_type)],
