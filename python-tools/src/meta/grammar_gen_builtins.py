@@ -26,59 +26,67 @@ _lc = LitTerminal('{')
 _rc = LitTerminal('}')
 
 
+def _msg(module: str, name: str, *args):
+    """Generic message constructor: Call(Message(module, name), [args])."""
+    return Call(Message(module, name), list(args))
+
+
+# Convenience aliases for common logic messages
 def _message_value(*args):
-    return Call(Message('logic', 'Value'), list(args))
+    return _msg('logic', 'Value', *args)
 
 def _message_binding(*args):
-    return Call(Message('logic', 'Binding'), list(args))
+    return _msg('logic', 'Binding', *args)
 
 def _message_var(*args):
-    return Call(Message('logic', 'Var'), list(args))
+    return _msg('logic', 'Var', *args)
 
 def _message_abstraction(*args):
-    return Call(Message('logic', 'Abstraction'), list(args))
+    return _msg('logic', 'Abstraction', *args)
 
 def _message_primitive(*args):
-    return Call(Message('logic', 'Primitive'), list(args))
+    return _msg('logic', 'Primitive', *args)
 
 def _message_relterm(*args):
-    return Call(Message('logic', 'RelTerm'), list(args))
+    return _msg('logic', 'RelTerm', *args)
 
 def _message_date_value(*args):
-    return Call(Message('logic', 'DateValue'), list(args))
+    return _msg('logic', 'DateValue', *args)
 
 def _message_datetime_value(*args):
-    return Call(Message('logic', 'DateTimeValue'), list(args))
+    return _msg('logic', 'DateTimeValue', *args)
 
 def _message_conjunction(*args):
-    return Call(Message('logic', 'Conjunction'), list(args))
+    return _msg('logic', 'Conjunction', *args)
 
 def _message_disjunction(*args):
-    return Call(Message('logic', 'Disjunction'), list(args))
+    return _msg('logic', 'Disjunction', *args)
 
 def _message_formula(*args):
-    return Call(Message('logic', 'Formula'), list(args))
+    return _msg('logic', 'Formula', *args)
 
-def _value_oneof_deconstruct(msg_var, oneof_field_name, result_type):
-    """Create standard Value oneof deconstruct pattern."""
-    return IfElse(
-        make_equal(
-            make_which_oneof(msg_var, Lit('value_type')),
-            Lit(oneof_field_name)
-        ),
-        make_some(make_get_field(msg_var, Lit(oneof_field_name))),
-        Lit(None)
-    )
+def _oneof_deconstruct(msg_var, oneof_discriminator: str, oneof_field_name: str, extra_check=None):
+    """Create standard oneof deconstruct pattern.
 
-def _formula_oneof_deconstruct(msg_var, oneof_field_name, result_type, extra_check):
-    """Create standard Formula oneof deconstruct pattern."""
+    Args:
+        msg_var: Variable for the message being deconstructed
+        oneof_discriminator: Name of the oneof field (e.g., 'value_type', 'formula_type')
+        oneof_field_name: Name of the specific variant field
+        extra_check: Optional additional condition to check after discriminator match
+
+    Returns:
+        IfElse expression that returns Some(field_value) if match, None otherwise
+    """
     base_check = make_equal(
-        make_which_oneof(msg_var, Lit('formula_type')),
+        make_which_oneof(msg_var, Lit(oneof_discriminator)),
         Lit(oneof_field_name)
     )
+    field_value = make_get_field(msg_var, Lit(oneof_field_name))
+    if extra_check is None:
+        return IfElse(base_check, make_some(field_value), Lit(None))
     return IfElse(
         base_check,
-        IfElse(extra_check, make_some(make_get_field(msg_var, Lit(oneof_field_name))), Lit(None)),
+        IfElse(extra_check, make_some(field_value), Lit(None)),
         Lit(None)
     )
 
@@ -100,7 +108,7 @@ def _make_value_oneof_rule(rhs, value_type, oneof_field_name):
         deconstruct_action=Lambda(
             [msg_var],
             OptionType(_value_type),
-            _value_oneof_deconstruct(msg_var, oneof_field_name, value_type)
+            _oneof_deconstruct(msg_var, 'value_type', oneof_field_name)
         )
     )
 
@@ -188,19 +196,20 @@ class BuiltinRules:
         self.add_rule(_make_value_oneof_rule(_decimal_terminal, _decimal_value_type, 'decimal_value'))
 
         # Special case: missing value
+        _msg_value_var = Var('msg', _value_type)
         self.add_rule(Rule(
             lhs=_value_nt,
             rhs=LitTerminal('missing'),
             construct_action=Lambda(
                 [],
                 _value_type,
-                _message_value(Call(OneOf('missing_value'), [Call(Message('logic', 'MissingValue'), [])]))
+                _message_value(Call(OneOf('missing_value'), [_msg('logic', 'MissingValue')]))
             ),
             deconstruct_action=Lambda(
-                [Var('msg', _value_type)],
+                [_msg_value_var],
                 OptionType(TupleType([])),
                 IfElse(
-                    make_equal(make_which_oneof(Var('msg', _value_type), Lit('value_type')), Lit('missing_value')),
+                    make_equal(make_which_oneof(_msg_value_var, Lit('value_type')), Lit('missing_value')),
                     make_some(make_tuple()),
                     Lit(None)
                 )
@@ -370,14 +379,14 @@ class BuiltinRules:
                     Var('epochs', ListType(_epoch_type))
                 ],
                 _transaction_type,
-                Call(Message('transactions', 'Transaction'), [
+                _msg('transactions', 'Transaction',
                     Var('epochs', ListType(_epoch_type)),
                     make_unwrap_option_or(
                         Var('configure', OptionType(_configure_type)),
                         Call(Builtin('construct_configure'), [ListExpr([], TupleType([STRING_TYPE, _value_type]))])
                     ),
                     Var('sync', OptionType(_sync_type))
-                ])
+                )
             ),
             deconstruct_action=Lambda(
                 [Var('msg', _transaction_type)],
@@ -582,12 +591,11 @@ class BuiltinRules:
             )
         ))
 
-        body = Call(Message('logic', 'Monoid'), [
-            Call(OneOf('or_monoid'), [
-                Call(Message('logic', 'OrMonoid'), [])
-            ])
-        ])
+        body = _msg('logic', 'Monoid',
+            Call(OneOf('or_monoid'), [_msg('logic', 'OrMonoid')])
+        )
 
+        _msg_monoid_var = Var('msg', _monoid_type)
         self.add_rule(Rule(
             lhs=_monoid_nt,
             rhs=Sequence((
@@ -601,10 +609,10 @@ class BuiltinRules:
                 body=Lambda([], return_type=_monoid_type, body=body)
             ),
             deconstruct_action=Lambda(
-                [Var('msg', _monoid_type)],
+                [_msg_monoid_var],
                 OptionType(TupleType([])),
                 IfElse(
-                    make_equal(make_which_oneof(Var('msg', _monoid_type), 'monoid_type'), Lit('or_monoid')),
+                    make_equal(make_which_oneof(_msg_monoid_var, Lit('monoid_type')), Lit('or_monoid')),
                     make_some(make_tuple()),
                     Lit(None)
                 )
@@ -615,11 +623,9 @@ class BuiltinRules:
             op = constructor.removesuffix('Monoid')
             symbol = f'{op.lower()}_monoid'
             lit = op.upper()
-            body = Call(Message('logic', 'Monoid'), [
-                Call(OneOf(symbol), [
-                    Call(Message('logic', constructor), [Var('type', _type_type)])
-                ])
-            ])
+            body = _msg('logic', 'Monoid',
+                Call(OneOf(symbol), [_msg('logic', constructor, Var('type', _type_type))])
+            )
             rhs = LitTerminal(lit)
             construct_action = Lambda(
                 [],
@@ -694,6 +700,7 @@ class BuiltinRules:
         # True formula: checks for empty Conjunction in the 'conjunction' oneof field
         self.mark_nonfinal(_formula_nt)
 
+        _msg_formula_var = Var('msg', _formula_type)
         self.add_rule(Rule(
             lhs=_formula_nt,
             rhs=_true_nt,
@@ -703,13 +710,11 @@ class BuiltinRules:
                 _message_formula(Call(OneOf('conjunction'), [Var('value', _conjunction_type)]))
             ),
             deconstruct_action=Lambda(
-                [Var('msg', _formula_type)],
+                [_msg_formula_var],
                 OptionType(_conjunction_type),
-            _formula_oneof_deconstruct(
-                    Var('msg', _formula_type),
-                    'conjunction',
-                    _conjunction_type,
-                    extra_check=make_is_empty(make_get_field(make_get_field(Var('msg', _formula_type), Lit('conjunction')), _lit_formulas))
+                _oneof_deconstruct(
+                    _msg_formula_var, 'formula_type', 'conjunction',
+                    extra_check=make_is_empty(make_get_field(make_get_field(_msg_formula_var, Lit('conjunction')), _lit_formulas))
                 )
             )
         ))
@@ -724,13 +729,11 @@ class BuiltinRules:
                 _message_formula(Call(OneOf('disjunction'), [Var('value', _disjunction_type)]))
             ),
             deconstruct_action=Lambda(
-                [Var('msg', _formula_type)],
+                [_msg_formula_var],
                 OptionType(_disjunction_type),
-            _formula_oneof_deconstruct(
-                    Var('msg', _formula_type),
-                    'disjunction',
-                    _disjunction_type,
-                    extra_check=make_is_empty(make_get_field(make_get_field(Var('msg', _formula_type), Lit('disjunction')), _lit_formulas))
+                _oneof_deconstruct(
+                    _msg_formula_var, 'formula_type', 'disjunction',
+                    extra_check=make_is_empty(make_get_field(make_get_field(_msg_formula_var, Lit('disjunction')), _lit_formulas))
                 )
             )
         ))
@@ -758,6 +761,7 @@ class BuiltinRules:
         _export_csv_column_nt = Nonterminal('export_csv_column', _export_csv_column_type)
 
         # Export rules
+        _msg_export_var = Var('msg', _export_type)
         self.add_rule(Rule(
             lhs=_export_nt,
             rhs=Sequence((
@@ -768,19 +772,12 @@ class BuiltinRules:
             construct_action=Lambda(
                 [Var('config', _export_csv_config_type)],
                 _export_type,
-                Call(Message('transactions', 'Export'), [Call(OneOf('csv_config'), [Var('config', _export_csv_config_type)])])
+                _msg('transactions', 'Export', Call(OneOf('csv_config'), [Var('config', _export_csv_config_type)]))
             ),
             deconstruct_action=Lambda(
-                [Var('msg', _export_type)],
+                [_msg_export_var],
                 OptionType(_export_csv_config_type),
-                IfElse(
-                    make_equal(
-                        make_which_oneof(Var('msg', _export_type), Lit('export_type')),
-                        Lit('csv_config')
-                    ),
-                    make_some(make_get_field(Var('msg', _export_type), Lit('csv_config'))),
-                    Lit(None)
-                )
+                _oneof_deconstruct(_msg_export_var, 'export_type', 'csv_config')
             )
         ))
 
@@ -849,10 +846,7 @@ class BuiltinRules:
             construct_action=Lambda(
                 [Var('name', STRING_TYPE), Var('relation_id', _relation_id_type)],
                 _export_csv_column_type,
-                Call(Message('transactions', 'ExportCSVColumn'), [
-                    Var('name', STRING_TYPE),
-                    Var('relation_id', _relation_id_type)
-                ])
+                _msg('transactions', 'ExportCSVColumn', Var('name', STRING_TYPE), Var('relation_id', _relation_id_type))
             ),
             deconstruct_action=Lambda(
                 [Var('msg', _export_csv_column_type)],
@@ -970,76 +964,58 @@ class BuiltinRules:
     def _add_type_rules(self) -> None:
         """Add rules for type literals."""
 
-        # Type rules
-        _unspecified_type_type = MessageType('logic', 'UnspecifiedType')
-        _string_type_type = MessageType('logic', 'StringType')
-        _int_type_type = MessageType('logic', 'IntType')
-        _float_type_type = MessageType('logic', 'FloatType')
-        _uint128_type_type = MessageType('logic', 'UInt128Type')
-        _int128_type_type = MessageType('logic', 'Int128Type')
-        _boolean_type_type = MessageType('logic', 'BooleanType')
-        _date_type_type = MessageType('logic', 'DateType')
-        _datetime_type_type = MessageType('logic', 'DateTimeType')
-        _missing_type_type = MessageType('logic', 'MissingType')
-        _decimal_type_type = MessageType('logic', 'DecimalType')
+        def _make_simple_type_rule(keyword: str, message_name: str) -> Rule:
+            """Create a rule for a simple type with no parameters."""
+            lhs_name = message_name[0].lower() + message_name[1:]  # e.g., 'UnspecifiedType' -> 'unspecifiedType'
+            lhs_name = lhs_name.replace('Type', '_type')  # e.g., 'unspecifiedType' -> 'unspecified_type'
+            msg_type = MessageType('logic', message_name)
+            return Rule(
+                lhs=Nonterminal(lhs_name, msg_type),
+                rhs=LitTerminal(keyword),
+                construct_action=Lambda([], msg_type, _msg('logic', message_name)),
+                deconstruct_action=Lambda(
+                    [Var('msg', msg_type)],
+                    OptionType(TupleType([])),
+                    make_some(make_tuple())
+                )
+            )
 
-        _type_rules = [
-            ('unspecified_type', _unspecified_type_type, LitTerminal('UNKNOWN'),
-             Lambda([], _unspecified_type_type, Call(Message('logic', 'UnspecifiedType'), []))),
-            ('string_type', _string_type_type, LitTerminal('STRING'),
-             Lambda([], _string_type_type, Call(Message('logic', 'StringType'), []))),
-            ('int_type', _int_type_type, LitTerminal('INT'),
-             Lambda([], _int_type_type, Call(Message('logic', 'IntType'), []))),
-            ('float_type', _float_type_type, LitTerminal('FLOAT'),
-             Lambda([], _float_type_type, Call(Message('logic', 'FloatType'), []))),
-            ('uint128_type', _uint128_type_type, LitTerminal('UINT128'),
-             Lambda([], _uint128_type_type, Call(Message('logic', 'UInt128Type'), []))),
-            ('int128_type', _int128_type_type, LitTerminal('INT128'),
-             Lambda([], _int128_type_type, Call(Message('logic', 'Int128Type'), []))),
-            ('boolean_type', _boolean_type_type, LitTerminal('BOOLEAN'),
-             Lambda([], _boolean_type_type, Call(Message('logic', 'BooleanType'), []))),
-            ('date_type', _date_type_type, LitTerminal('DATE'),
-             Lambda([], _date_type_type, Call(Message('logic', 'DateType'), []))),
-            ('datetime_type', _datetime_type_type, LitTerminal('DATETIME'),
-             Lambda([], _datetime_type_type, Call(Message('logic', 'DateTimeType'), []))),
-            ('missing_type', _missing_type_type, LitTerminal('MISSING'),
-             Lambda([], _missing_type_type, Call(Message('logic', 'MissingType'), []))),
-            ('decimal_type', _decimal_type_type,
-             Sequence((_lp, LitTerminal('DECIMAL'), NamedTerminal('INT', INT64_TYPE), NamedTerminal('INT', INT64_TYPE), _rp)),
-             Lambda(
-                 [Var('precision', INT64_TYPE), Var('scale', INT64_TYPE)],
-                 _decimal_type_type,
-                 Call(Message('logic', 'DecimalType'), [Var('precision', INT64_TYPE), Var('scale', INT64_TYPE)])
-             )),
+        # Simple types: (keyword, message_name)
+        _simple_types = [
+            ('UNKNOWN', 'UnspecifiedType'),
+            ('STRING', 'StringType'),
+            ('INT', 'IntType'),
+            ('FLOAT', 'FloatType'),
+            ('UINT128', 'UInt128Type'),
+            ('INT128', 'Int128Type'),
+            ('BOOLEAN', 'BooleanType'),
+            ('DATE', 'DateType'),
+            ('DATETIME', 'DateTimeType'),
+            ('MISSING', 'MissingType'),
         ]
-        for lhs_name, lhs_type, rhs, action in _type_rules:
-            if lhs_name == 'decimal_type':
-                # Decimal type has parameters
-                self.add_rule(Rule(
-                    lhs=Nonterminal(lhs_name, lhs_type),
-                    rhs=rhs,
-                    construct_action=action,
-                    deconstruct_action=Lambda(
-                        [Var('msg', lhs_type)],
-                        OptionType(TupleType([INT64_TYPE, INT64_TYPE])),
-                        make_some(make_tuple(
-                            make_get_field(Var('msg', lhs_type), Lit('precision')),
-                            make_get_field(Var('msg', lhs_type), Lit('scale'))
-                        ))
-                    )
+
+        for keyword, message_name in _simple_types:
+            self.add_rule(_make_simple_type_rule(keyword, message_name))
+
+        # Decimal type has parameters (precision, scale)
+        _decimal_type_type = MessageType('logic', 'DecimalType')
+        self.add_rule(Rule(
+            lhs=Nonterminal('decimal_type', _decimal_type_type),
+            rhs=Sequence((_lp, LitTerminal('DECIMAL'), NamedTerminal('INT', INT64_TYPE), NamedTerminal('INT', INT64_TYPE), _rp)),
+            construct_action=Lambda(
+                [Var('precision', INT64_TYPE), Var('scale', INT64_TYPE)],
+                _decimal_type_type,
+                _msg('logic', 'DecimalType', Var('precision', INT64_TYPE), Var('scale', INT64_TYPE))
+            ),
+            deconstruct_action=Lambda(
+                [Var('msg', _decimal_type_type)],
+                OptionType(TupleType([INT64_TYPE, INT64_TYPE])),
+                make_some(make_tuple(
+                    make_get_field(Var('msg', _decimal_type_type), Lit('precision')),
+                    make_get_field(Var('msg', _decimal_type_type), Lit('scale'))
                 ))
-            else:
-                # Other type rules have no parameters
-                self.add_rule(Rule(
-                    lhs=Nonterminal(lhs_name, lhs_type),
-                    rhs=rhs,
-                    construct_action=action,
-                    deconstruct_action=Lambda(
-                        [Var('msg', lhs_type)],
-                        OptionType(TupleType([])),
-                        make_some(make_tuple())
-                    )
-                ))
+            )
+        ))
 
     def _add_operator_rules(self) -> None:
         """Add rules for comparison and arithmetic operators."""
@@ -1054,8 +1030,8 @@ class BuiltinRules:
         _lit_op = Lit('op')
         _lit_term = Lit('term')
 
-        def _make_operator_rule(name: str, op: str, prim: str, arity: int) -> Rule:
-            """Create an operator rule with the given arity (number of term operands)."""
+        def _make_operator_rules(name: str, op: str, prim: str, arity: int) -> Tuple[Rule, Rule]:
+            """Create operator rule and its wrapper rule."""
             params = [Var(_var_names[i], _term_type) for i in range(arity)]
             rhs_terms = tuple(_term_nt for _ in range(arity))
             msg_var = Var('msg', _primitive_type)
@@ -1064,8 +1040,11 @@ class BuiltinRules:
             extracted_args = [make_get_field(make_get_field(msg_var, _arg_lits[i]), _lit_term)
                               for i in range(arity)]
 
-            return Rule(
-                lhs=Nonterminal(name, _primitive_type),
+            op_nt = Nonterminal(name, _primitive_type)
+
+            # The operator rule (e.g., eq -> '(' '=' term term ')')
+            op_rule = Rule(
+                lhs=op_nt,
                 rhs=Sequence((_lp, LitTerminal(op)) + rhs_terms + (_rp,)),
                 construct_action=Lambda(
                     params,
@@ -1083,6 +1062,24 @@ class BuiltinRules:
                 )
             )
 
+            # The wrapper rule (e.g., primitive -> eq)
+            wrapper_rule = Rule(
+                lhs=_primitive_nt,
+                rhs=op_nt,
+                construct_action=Lambda([Var('op', _primitive_type)], _primitive_type, Var('op', _primitive_type)),
+                deconstruct_action=Lambda(
+                    [msg_var],
+                    OptionType(_primitive_type),
+                    IfElse(
+                        make_equal(make_get_field(msg_var, _lit_op), Lit(prim)),
+                        make_some(msg_var),
+                        Lit(None)
+                    )
+                )
+            )
+
+            return op_rule, wrapper_rule
+
         # (name, operator, primitive, arity)
         _operators = [
             ('eq', '=', 'rel_primitive_eq', 2),
@@ -1096,27 +1093,11 @@ class BuiltinRules:
             ('divide', '/', 'rel_primitive_divide_monotype', 3),
         ]
 
-        for name, op, prim, arity in _operators:
-            self.add_rule(_make_operator_rule(name, op, prim, arity))
-
-        # Primitive wrapper rules for operators (not final - auto-generation can add more)
         self.mark_nonfinal(_primitive_nt)
-        _var_op = Var('op', _primitive_type)
-        for name, _op, prim, _arity in _operators:
-            self.add_rule(Rule(
-                lhs=_primitive_nt,
-                rhs=Nonterminal(name, _primitive_type),
-                construct_action=Lambda([_var_op], _primitive_type, _var_op),
-                deconstruct_action=Lambda(
-                    [Var('msg', _primitive_type)],
-                    OptionType(_primitive_type),
-                    IfElse(
-                        make_equal(make_get_field(Var('msg', _primitive_type), _lit_op), Lit(prim)),
-                        make_some(Var('msg', _primitive_type)),
-                        Lit(None)
-                    )
-                )
-            ))
+        for name, op, prim, arity in _operators:
+            op_rule, wrapper_rule = _make_operator_rules(name, op, prim, arity)
+            self.add_rule(op_rule)
+            self.add_rule(wrapper_rule)
 
     def _add_fragment_rules(self) -> None:
         """Add rules for fragments and new fragment IDs."""
@@ -1186,62 +1167,44 @@ class BuiltinRules:
         """Add rules for output and abort."""
 
         _relation_id_type = MessageType('logic', 'RelationId')
-        _output_type = MessageType('transactions', 'Output')
-        _abort_type = MessageType('transactions', 'Abort')
-
-        # Common nonterminals
         _relation_id_nt = Nonterminal('relation_id', _relation_id_type)
         _name_nt = Nonterminal('name', STRING_TYPE)
-        _output_nt = Nonterminal('output', _output_type)
-        _abort_nt = Nonterminal('abort', _abort_type)
 
-        # output: STRING -> name?
-        self.add_rule(Rule(
-            lhs=_output_nt,
-            rhs=Sequence((
-                _lp, LitTerminal('output'),
-                Option(_name_nt),
-                _relation_id_nt,
-                _rp
-            )),
-            construct_action=Lambda(
-                [Var('name', STRING_TYPE), Var('relation_id', _relation_id_type)],
-                _output_type,
-                Call(Message('transactions', 'Output'), [Var('name', STRING_TYPE), Var('relation_id', _relation_id_type)])
-            ),
-            deconstruct_action=Lambda(
-                [Var('msg', _output_type)],
-                OptionType(TupleType([STRING_TYPE, _relation_id_type])),
-                make_some(make_tuple(
-                    make_get_field(Var('msg', _output_type), Lit('name')),
-                    make_get_field(Var('msg', _output_type), Lit('relation_id'))
-                ))
-            )
-        ))
+        def _make_name_option_relation_rule(keyword: str, message_name: str) -> Rule:
+            """Create a rule for (keyword name? relation_id) -> Message(name, relation_id).
 
-        # abort: STRING -> name?
-        self.add_rule(Rule(
-            lhs=_abort_nt,
-            rhs=Sequence((
-                _lp, LitTerminal('abort'),
-                Option(_name_nt),
-                _relation_id_nt,
-                _rp
-            )),
-            construct_action=Lambda(
-                [Var('name', STRING_TYPE), Var('relation_id', _relation_id_type)],
-                _abort_type,
-                Call(Message('transactions', 'Abort'), [Var('name', STRING_TYPE), Var('relation_id', _relation_id_type)])
-            ),
-            deconstruct_action=Lambda(
-                [Var('msg', _abort_type)],
-                OptionType(TupleType([STRING_TYPE, _relation_id_type])),
-                make_some(make_tuple(
-                    make_get_field(Var('msg', _abort_type), Lit('name')),
-                    make_get_field(Var('msg', _abort_type), Lit('relation_id'))
-                ))
+            If name is missing, defaults to the keyword.
+            """
+            msg_type = MessageType('transactions', message_name)
+            msg_var = Var('msg', msg_type)
+            name_var = Var('name', OptionType(STRING_TYPE))
+            return Rule(
+                lhs=Nonterminal(keyword, msg_type),
+                rhs=Sequence((
+                    _lp, LitTerminal(keyword),
+                    Option(_name_nt),
+                    _relation_id_nt,
+                    _rp
+                )),
+                construct_action=Lambda(
+                    [name_var, Var('relation_id', _relation_id_type)],
+                    msg_type,
+                    _msg('transactions', message_name,
+                        make_unwrap_option_or(name_var, Lit(keyword)),
+                        Var('relation_id', _relation_id_type))
+                ),
+                deconstruct_action=Lambda(
+                    [msg_var],
+                    OptionType(TupleType([OptionType(STRING_TYPE), _relation_id_type])),
+                    make_some(make_tuple(
+                        make_some(make_get_field(msg_var, Lit('name'))),
+                        make_get_field(msg_var, Lit('relation_id'))
+                    ))
+                )
             )
-        ))
+
+        self.add_rule(_make_name_option_relation_rule('output', 'Output'))
+        self.add_rule(_make_name_option_relation_rule('abort', 'Abort'))
 
     def _add_logic_rules(self) -> None:
         """Add rules for ffi, rel_atom, primitive, and exists."""
@@ -1288,7 +1251,7 @@ class BuiltinRules:
                     Var('terms', ListType(_term_type))
                 ],
                 _ffi_type,
-                Call(Message('logic', 'FFI'), [Var('name', STRING_TYPE), Var('args', ListType(_abstraction_type)), Var('terms', ListType(_term_type))])
+                _msg('logic', 'FFI', Var('name', STRING_TYPE), Var('args', ListType(_abstraction_type)), Var('terms', ListType(_term_type)))
             ),
             deconstruct_action=Lambda(
                 [Var('msg', _ffi_type)],
@@ -1313,7 +1276,7 @@ class BuiltinRules:
             construct_action=Lambda(
                 [Var('name', STRING_TYPE), Var('terms', ListType(_relterm_type))],
                 _rel_atom_type,
-                Call(Message('logic', 'RelAtom'), [Var('name', STRING_TYPE), Var('terms', ListType(_relterm_type))])
+                _msg('logic', 'RelAtom', Var('name', STRING_TYPE), Var('terms', ListType(_relterm_type)))
             ),
             deconstruct_action=Lambda(
                 [Var('msg', _rel_atom_type)],
@@ -1361,7 +1324,7 @@ class BuiltinRules:
             construct_action=Lambda(
                 [Var('bindings', _bindings_type), Var('formula', _formula_type)],
                 _exists_type,
-                Call(Message('logic', 'Exists'), [
+                _msg('logic', 'Exists',
                     _message_abstraction(
                         make_concat(
                             make_fst(Var('bindings', _bindings_type)),
@@ -1369,7 +1332,7 @@ class BuiltinRules:
                         ),
                         Var('formula', _formula_type)
                     )
-                ])
+                )
             ),
             deconstruct_action=Lambda(
                 [Var('msg', _exists_type)],
