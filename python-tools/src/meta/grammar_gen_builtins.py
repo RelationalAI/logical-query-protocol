@@ -604,7 +604,7 @@ class BuiltinRules:
                 [Var('msg', _monoid_type)],
                 OptionType(TupleType([])),
                 IfElse(
-                    make_equal(make_which_oneof('monoid_type'), Lit('or_monoid')),
+                    make_equal(make_which_oneof(Var('msg', _monoid_type), 'monoid_type'), Lit('or_monoid')),
                     make_some(make_tuple()),
                     Lit(None)
                 )
@@ -626,8 +626,11 @@ class BuiltinRules:
                 return_type=_monoid_op_type,
                 body=Lambda([Var('type', _type_type)], return_type=_monoid_type, body=body)
             )
-            from .grammar import generate_deconstruct_action
-            deconstruct_action = generate_deconstruct_action(construct_action, rhs)
+            deconstruct_action = Lambda(
+                [Var('op', _monoid_op_type)],
+                return_type=OptionType(TupleType([])),
+                body=Call(Builtin('deconstruct_monoid_op'), [Var('op', _monoid_op_type), Lit(symbol)])
+            )
             return Rule(
                 lhs=_monoid_op_nt,
                 rhs=rhs,
