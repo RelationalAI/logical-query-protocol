@@ -1,9 +1,10 @@
-"""Meta-language tools for grammar generation.
+"""Meta-language tools for translating protobuf specification into parsers and pretty printers.
 
 This package provides tools for:
 - Parsing protobuf specifications
 - Generating context-free grammars with semantic actions
-- Grammar normalization and left-factoring
+- Generating parsers from the grammar
+- Generating pretty printers from the grammar
 """
 
 # Target language AST
