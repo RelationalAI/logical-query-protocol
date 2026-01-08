@@ -33,6 +33,17 @@ func hsep[T any](pp PrettyParams, x []T, sep string, f func(T)) {
 		f(item)
 	}
 }
+
+func (pp PrettyParams) writeEscapedString(s string) {
+	escaped := strings.ReplaceAll(s, "\\", "\\\\")
+	escaped = strings.ReplaceAll(escaped, "\"", "\\\"")
+	escaped = strings.ReplaceAll(escaped, "\n", "\\n")
+	escaped = strings.ReplaceAll(escaped, "\r", "\\r")
+	escaped = strings.ReplaceAll(escaped, "\t", "\\t")
+	pp.Write("\"")
+	pp.Write(escaped)
+	pp.Write("\"")
+}
 func vsep[T any](pp PrettyParams, x []T, sep string, f func(T)) {
 	for i, item := range x {
 		if i > 0 {
@@ -156,6 +167,8 @@ func (pp PrettyParams) pprint(node interface{}) {
 			pp.pprint(alg)
 		} else if constraint := n.GetConstraint(); constraint != nil {
 			pp.pprint(constraint)
+		} else if data := n.GetData(); data != nil {
+			pp.pprint(data)
 		}
 
 	case *pb.Def:
@@ -238,6 +251,204 @@ func (pp PrettyParams) pprint(node interface{}) {
 			pp.INDENT(2, func(pp PrettyParams) {
 				vsep(pp, n.GetConstructs(), "", func(id *pb.Construct) {
 					pp.pprint(id)
+				})
+			})
+		})
+
+	case *pb.Data:
+		if rel := n.GetRelEdb(); rel != nil {
+			pp.pprint(rel)
+		} else if betree := n.GetBetreeRelation(); betree != nil {
+			pp.pprint(betree)
+		} else if csv := n.GetCsvData(); csv != nil {
+			pp.pprint(csv)
+		}
+
+	case *pb.RelEDB:
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("rel_edb")
+			pp.SPACE()
+			pp.pprint(n.GetTargetId())
+			pp.SPACE()
+			pp.BRACKET(func(pp PrettyParams) {
+				hsep(pp, n.GetPath(), " ", func(path string) {
+					pp.pprint(path)
+				})
+			})
+			pp.SPACE()
+			pp.BRACKET(func(pp PrettyParams) {
+				hsep(pp, n.GetTypes(), " ", func(t *pb.Type) {
+					pp.pprint(t)
+				})
+			})
+		})
+
+	case *pb.BeTreeRelation:
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("betree_relation")
+			pp.SPACE()
+			pp.pprint(n.GetName())
+			info := n.GetRelationInfo()
+			if info != nil {
+				pp.NEWLINE()
+				pp.INDENT(2, func(pp PrettyParams) {
+					pp.pprint(info)
+				})
+			}
+		})
+
+	case *pb.BeTreeInfo:
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("betree_info")
+			pp.NEWLINE()
+			pp.INDENT(2, func(pp PrettyParams) {
+				pp.PARENS(func(pp PrettyParams) {
+					pp.Write("key_types")
+					if len(n.GetKeyTypes()) > 0 {
+						pp.SPACE()
+						hsep(pp, n.GetKeyTypes(), " ", func(t *pb.Type) {
+							pp.pprint(t)
+						})
+					}
+				})
+				pp.NEWLINE()
+				pp.PARENS(func(pp PrettyParams) {
+					pp.Write("value_types")
+					if len(n.GetValueTypes()) > 0 {
+						pp.SPACE()
+						hsep(pp, n.GetValueTypes(), " ", func(t *pb.Type) {
+							pp.pprint(t)
+						})
+					}
+				})
+				pp.NEWLINE()
+				configDict := make(map[string]interface{})
+				if storage := n.GetStorageConfig(); storage != nil {
+					configDict["betree_config_epsilon"] = storage.GetEpsilon()
+					configDict["betree_config_max_pivots"] = storage.GetMaxPivots()
+					configDict["betree_config_max_deltas"] = storage.GetMaxDeltas()
+					configDict["betree_config_max_leaf"] = storage.GetMaxLeaf()
+				}
+				if locator := n.GetRelationLocator(); locator != nil {
+					if root := locator.GetRootPageid(); root != nil {
+						configDict["betree_locator_root_pageid"] = rawString(fmt.Sprintf("0x%s", uint128ToHexString(root.GetLow(), root.GetHigh())))
+					}
+					inline := locator.GetInlineData()
+					if len(inline) > 0 {
+						configDict["betree_locator_inline_data"] = string(inline)
+					}
+					configDict["betree_locator_element_count"] = locator.GetElementCount()
+					configDict["betree_locator_tree_height"] = locator.GetTreeHeight()
+				}
+				pp.configDictToStr(configDict)
+			})
+		})
+
+	case *pb.CSVData:
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("csv_data")
+			pp.NEWLINE()
+			pp.INDENT(2, func(pp PrettyParams) {
+				printed := false
+				printSection := func(f func()) {
+					if printed {
+						pp.NEWLINE()
+					}
+					f()
+					printed = true
+				}
+				if locator := n.GetLocator(); locator != nil {
+					printSection(func() { pp.pprint(locator) })
+				}
+				if config := n.GetConfig(); config != nil {
+					printSection(func() { pp.pprint(config) })
+				}
+				printSection(func() {
+					pp.PARENS(func(pp PrettyParams) {
+						pp.Write("columns")
+						cols := n.GetColumns()
+						if len(cols) > 0 {
+							pp.NEWLINE()
+							pp.INDENT(2, func(pp PrettyParams) {
+								vsep(pp, cols, "", func(col *pb.CSVColumn) {
+									pp.pprint(col)
+								})
+							})
+						}
+					})
+				})
+				printSection(func() {
+					pp.PARENS(func(pp PrettyParams) {
+						pp.Write("asof")
+						pp.SPACE()
+						pp.pprint(n.GetAsof())
+					})
+				})
+			})
+		})
+
+	case *pb.CSVLocator:
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("csv_locator")
+			pp.NEWLINE()
+			pp.INDENT(2, func(pp PrettyParams) {
+				if len(n.GetPaths()) > 0 {
+					pp.PARENS(func(pp PrettyParams) {
+						pp.Write("paths")
+						pp.SPACE()
+						hsep(pp, n.GetPaths(), " ", func(path string) {
+							pp.pprint(path)
+						})
+					})
+				} else if inline := n.GetInlineData(); len(inline) > 0 {
+					pp.PARENS(func(pp PrettyParams) {
+						pp.Write("inline_data")
+						pp.SPACE()
+						pp.pprint(string(inline))
+					})
+				}
+			})
+		})
+
+	case *pb.CSVConfig:
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("csv_config")
+			pp.NEWLINE()
+			pp.INDENT(2, func(pp PrettyParams) {
+				configDict := make(map[string]interface{})
+				configDict["csv_header_row"] = n.GetHeaderRow()
+				configDict["csv_skip"] = n.GetSkip()
+				if n.GetNewLine() != "" {
+					configDict["csv_new_line"] = n.GetNewLine()
+				}
+				configDict["csv_delimiter"] = n.GetDelimiter()
+				configDict["csv_quotechar"] = n.GetQuotechar()
+				configDict["csv_escapechar"] = n.GetEscapechar()
+				if n.GetComment() != "" {
+					configDict["csv_comment"] = n.GetComment()
+				}
+				missingStrings := n.GetMissingStrings()
+				if len(missingStrings) > 0 {
+					configDict["csv_missing_strings"] = missingStrings[0]
+				}
+				configDict["csv_decimal_separator"] = n.GetDecimalSeparator()
+				configDict["csv_encoding"] = n.GetEncoding()
+				configDict["csv_compression"] = n.GetCompression()
+				pp.configDictToStr(configDict)
+			})
+		})
+
+	case *pb.CSVColumn:
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("column")
+			pp.SPACE()
+			pp.pprint(n.GetColumnName())
+			pp.SPACE()
+			pp.pprint(n.GetTargetId())
+			pp.SPACE()
+			pp.BRACKET(func(pp PrettyParams) {
+				hsep(pp, n.GetTypes(), " ", func(t *pb.Type) {
+					pp.pprint(t)
 				})
 			})
 		})
@@ -903,12 +1114,7 @@ func (pp PrettyParams) pprint(node interface{}) {
 		// Handle Value oneof - check the actual oneof type
 		switch n.GetValue().(type) {
 		case *pb.Value_StringValue:
-			str := n.GetStringValue()
-			escaped := strings.ReplaceAll(str, "\\", "\\\\")
-			escaped = strings.ReplaceAll(escaped, "\"", "\\\"")
-			pp.Write("\"")
-			pp.Write(escaped)
-			pp.Write("\"")
+			pp.writeEscapedString(n.GetStringValue())
 		case *pb.Value_IntValue:
 			pp.Write(fmt.Sprintf("%d", n.GetIntValue()))
 		case *pb.Value_FloatValue:
@@ -1014,11 +1220,7 @@ func (pp PrettyParams) pprint(node interface{}) {
 		})
 
 	case string:
-		escaped := strings.ReplaceAll(n, "\\", "\\\\")
-		escaped = strings.ReplaceAll(escaped, "\"", "\\\"")
-		pp.Write("\"")
-		pp.Write(escaped)
-		pp.Write("\"")
+		pp.writeEscapedString(n)
 
 	case int:
 		pp.Write(fmt.Sprintf("%d", n))
@@ -1071,6 +1273,19 @@ func collectDebugInfos(node interface{}) map[string]string {
 	return debugInfos
 }
 
+type rawString string
+
+func writeConfigValue(pp PrettyParams, value interface{}) {
+	switch v := value.(type) {
+	case rawString:
+		pp.Write(string(v))
+	case string:
+		pp.Write(fmt.Sprintf("%q", v))
+	default:
+		pp.Write(fmt.Sprintf("%v", v))
+	}
+}
+
 func (pp PrettyParams) configDictToStr(config map[string]interface{}) {
 	keys := make([]string, 0, len(config))
 	for k := range config {
@@ -1087,24 +1302,13 @@ func (pp PrettyParams) configDictToStr(config map[string]interface{}) {
 					pp.Write(":")
 					pp.Write(k)
 					pp.SPACE()
-					// Quote string values
-					v := config[k]
-					if s, ok := v.(string); ok {
-						pp.Write(fmt.Sprintf("%q", s))
-					} else {
-						pp.Write(fmt.Sprintf("%v", v))
-					}
+					writeConfigValue(pp, config[k])
 				})
 			} else {
 				pp.Write(":")
 				pp.Write(k)
 				pp.SPACE()
-				v := config[k]
-				if s, ok := v.(string); ok {
-					pp.Write(fmt.Sprintf("%q", s))
-				} else {
-					pp.Write(fmt.Sprintf("%v", v))
-				}
+				writeConfigValue(pp, config[k])
 			}
 		}
 	})

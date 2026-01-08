@@ -10,6 +10,7 @@ from lark import Lark, Transformer, v_args
 import lqp.ir as ir
 from decimal import Decimal
 from datetime import date, datetime
+from typing import Dict, Any
 
 grammar = """
 start: transaction | fragment
@@ -40,13 +41,29 @@ export_path: "(path" STRING ")"
 
 fragment: "(fragment" fragment_id declaration* ")"
 
-declaration: def_ | algorithm | constraint
+declaration: def_ | algorithm | constraint | data
 def_: "(def" relation_id abstraction attrs? ")"
 
 constraint: functional_dependency
 functional_dependency: "(functional_dependency" abstraction fd_keys fd_values ")"
 fd_keys: "(keys" var* ")"
 fd_values: "(values" var* ")"
+
+data: rel_edb | betree_relation | csv_data
+rel_edb: "(rel_edb" relation_id "[" STRING* "]" "[" type_* "]" ")"
+betree_relation: "(betree_relation" relation_id betree_info ")"
+betree_info: "(betree_info" key_types value_types config_dict ")"
+key_types: "(key_types" type_* ")"
+value_types: "(value_types" type_* ")"
+
+csv_data: "(csv_data" csv_locator csv_config csv_columns csv_asof ")"
+csv_locator: "(csv_locator" csv_paths? csv_inline_data? ")"
+csv_paths: "(paths" STRING* ")"
+csv_inline_data: "(inline_data" STRING ")"
+csv_config: "(csv_config" config_dict ")"
+csv_columns: "(columns" csv_column* ")"
+csv_column: "(column" STRING relation_id "[" type_* "]" ")"
+csv_asof: "(asof" STRING ")"
 
 algorithm: "(algorithm" relation_id* script ")"
 script: "(script" construct* ")"
@@ -123,10 +140,13 @@ value: STRING | NUMBER | FLOAT | UINT128 | INT128
 
 type_ : TYPE_NAME | "(" TYPE_NAME value* ")"
 
-TYPE_NAME: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
-         | "DATE" | "DATETIME" | "MISSING" | "DECIMAL" | "BOOLEAN"
+// The terminal symbols are sometimes ambiguous. We set explicit priorities to resolve them.
+// SYMBOL.0 is the lowest priority, which has the effect that other string terminals act
+// as keywords.
+TYPE_NAME.1: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
+           | "DATE" | "DATETIME" | "MISSING" | "DECIMAL" | "BOOLEAN"
 
-SYMBOL: /[a-zA-Z_][a-zA-Z0-9_.-]*/
+SYMBOL.0: /[a-zA-Z_][a-zA-Z0-9_.-]*/
 MISSING.1: "missing" // Set a higher priority so so it's MISSING instead of SYMBOL
 STRING: ESCAPED_STRING
 NUMBER: /[-]?\\d+/
@@ -341,6 +361,166 @@ class LQPTransformer(Transformer):
 
     def fd_values(self, meta, items):
         return items
+
+    def data(self, meta, items):
+        return items[0]
+
+    def rel_edb(self, meta, items):
+        name = items[0]
+        # items[1:] contains first the path strings, then the types
+        # We need to separate them - find where types start (they are ir.Type instances)
+        path = []
+        types = []
+        for item in items[1:]:
+            if isinstance(item, ir.Type):
+                types.append(item)
+            else:
+                path.append(item)
+        return ir.RelEDB(
+            target_id=name,
+            path=path,
+            types=types,
+            meta=self.meta(meta)
+        )
+
+    def betree_relation(self, meta, items):
+        name = items[0]
+        relation_info = items[1]
+        return ir.BeTreeRelation(name=name, relation_info=relation_info, meta=self.meta(meta))
+
+    def betree_info(self, meta, items):
+        key_types = items[0]
+        value_types = items[1]
+
+        storage_config = {}
+        relation_locator = {}
+        for i in items[2:]:
+            assert isinstance(i, dict)
+            for k, v in i.items():
+                # Extract raw value from ir.Value wrapper
+                raw_value = v.value if isinstance(v, ir.Value) else v
+
+                if k.startswith("betree_config_"):
+                    key = k.replace("betree_config_", "")
+                    storage_config[key] = raw_value
+                elif k.startswith("betree_locator_"):
+                    key = k.replace("betree_locator_", "")
+                    # Convert string to bytes for inline_data
+                    if key == "inline_data" and isinstance(raw_value, str):
+                        raw_value = raw_value.encode('utf-8')
+                    relation_locator[key] = raw_value
+
+        storage_config = ir.BeTreeConfig(**storage_config, meta=self.meta(meta))
+
+        # Handle oneof: set missing location field to None
+        if 'root_pageid' not in relation_locator:
+            relation_locator['root_pageid'] = None
+        if 'inline_data' not in relation_locator:
+            relation_locator['inline_data'] = None
+
+        relation_locator = ir.BeTreeLocator(**relation_locator, meta=self.meta(meta))
+
+        return ir.BeTreeInfo(
+            key_types=key_types,
+            value_types=value_types,
+            storage_config=storage_config,
+            relation_locator=relation_locator,
+            meta=self.meta(meta)
+        )
+
+    def key_types(self, meta, items):
+        return items
+
+    def value_types(self, meta, items):
+        return items
+
+    def csv_data(self, meta, items):
+        locator = items[0]
+        config = items[1]
+        columns = items[2]
+        asof = items[3]
+        return ir.CSVData(
+            locator=locator,
+            config=config,
+            columns=columns,
+            asof=asof,
+            meta=self.meta(meta)
+        )
+
+    def csv_locator(self, meta, items):
+        paths = []
+        inline_data = None
+
+        for item in items:
+            if isinstance(item, list):  # paths
+                paths = item
+            elif isinstance(item, bytes):  # inline_data
+                inline_data = item
+
+        return ir.CSVLocator(
+            paths=paths,
+            inline_data=inline_data,
+            meta=self.meta(meta)
+        )
+
+    def csv_paths(self, meta, items):
+        return items  # Return list of path strings
+
+    def csv_inline_data(self, meta, items):
+        # Convert string to bytes
+        return items[0].encode('utf-8')
+
+    def csv_config(self, meta, items):
+        config_dict = items[0] if items else {}
+
+        # Extract CSV config fields with defaults
+        csv_config_dict: Dict[str, Any] = {
+            'header_row': 1,
+            'skip': 0,
+            'new_line': '',
+            'delimiter': ',',
+            'quotechar': '"',
+            'escapechar': '"',
+            'comment': '',
+            'missing_strings': [],
+            'decimal_separator': '.',
+            'encoding': 'utf-8',
+            'compression': 'auto'
+        }
+
+        for k, v in config_dict.items():
+            if k.startswith('csv_'):
+                key = k.replace('csv_', '')
+                raw_value = v.value if isinstance(v, ir.Value) else v
+
+                # Handle special cases for types
+                if key == 'missing_strings':
+                    # If it's a single string, wrap it in a list
+                    if isinstance(raw_value, str):
+                        csv_config_dict[key] = [raw_value]
+                    else:
+                        csv_config_dict[key] = raw_value
+                else:
+                    csv_config_dict[key] = raw_value
+
+        return ir.CSVConfig(**csv_config_dict, meta=self.meta(meta))
+
+    def csv_columns(self, meta, items):
+        return items  # Return list of CSVColumn
+
+    def csv_column(self, meta, items):
+        column_name = items[0]
+        target_id = items[1]
+        types = items[2:]
+        return ir.CSVColumn(
+            column_name=column_name,
+            target_id=target_id,
+            types=types,
+            meta=self.meta(meta)
+        )
+
+    def csv_asof(self, meta, items):
+        return items[0]  # Return the asof string
 
     def algorithm(self, meta, items):
         return ir.Algorithm(global_=items[:-1], body=items[-1], meta=self.meta(meta))
