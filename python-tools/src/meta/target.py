@@ -9,32 +9,21 @@ translatable to each of these target languages.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, List, Optional, Sequence, TYPE_CHECKING
-from itertools import count
-from more_itertools import peekable
+from typing import Any, List, Mapping, Optional, Sequence, TYPE_CHECKING
+from .gensym import gensym
 
 if TYPE_CHECKING:
     from .grammar import Nonterminal
-
-_global_id = peekable(count(0))
-def next_id():
-    return next(_global_id)
-
-def gensym(prefix: str = "_t") -> str:
-    return f"{prefix}{next_id()}"
 
 @dataclass(frozen=True)
 class TargetNode:
     """Base class for all target language AST nodes."""
     pass
 
-
 @dataclass(frozen=True)
 class TargetExpr(TargetNode):
     """Base class for target language expressions."""
     pass
-
-
 
 @dataclass(frozen=True)
 class Var(TargetExpr):
@@ -48,7 +37,6 @@ class Var(TargetExpr):
     def __post_init__(self):
         if not self.name.isidentifier():
             raise ValueError(f"Invalid variable name: {self.name}")
-
 
 @dataclass(frozen=True)
 class Lit(TargetExpr):
@@ -98,6 +86,8 @@ class Message(TargetExpr):
         return f"@{self.module}.{self.name}"
 
     def __post_init__(self):
+        if not self.module.isidentifier():
+            raise ValueError(f"Invalid message module: {self.module}")
         if not self.name.isidentifier():
             raise ValueError(f"Invalid message name: {self.name}")
 
@@ -106,10 +96,10 @@ class Message(TargetExpr):
 class OneOf(TargetExpr):
     """OneOf field discriminator.
 
-    field_name: Symbol representing the field name
-    Call this with a value to create a oneof field: Call(OneOf(Symbol('field')), [value])
+    field_name: str representing the field name
+    Call this with a value to create a oneof field: Call(OneOf('field'), [value])
     """
-    field_name: Symbol
+    field_name: str
 
     def __str__(self) -> str:
         return f"OneOf({self.field_name})"
@@ -133,19 +123,21 @@ class ListExpr(TargetExpr):
     def __post_init__(self):
         if isinstance(self.elements, list):
             object.__setattr__(self, 'elements', tuple(self.elements))
+        assert isinstance(self.elements, tuple), f"Invalid elements in {self}: {self.elements}"
 
 
 @dataclass(frozen=True)
-class ParseNonterminal(TargetExpr):
-    """Parse method call for a nonterminal.
+class VisitNonterminal(TargetExpr):
+    """Visitor method call for a nonterminal.
 
-    Like Call but specifically for calling parser methods, with a Nonterminal
+    Like Call but specifically for calling visitor methods, with a Nonterminal
     instead of an expression for the function.
     """
+    visitor_name: str  # e.g., 'parse', 'pretty'
     nonterminal: 'Nonterminal'
 
     def __str__(self) -> str:
-        return f"parse_{self.nonterminal.name}"
+        return f"{self.visitor_name}_{self.nonterminal.name}"
 
 
 @dataclass(frozen=True)
@@ -165,6 +157,7 @@ class Call(TargetExpr):
     def __post_init__(self):
         if isinstance(self.args, list):
             object.__setattr__(self, 'args', tuple(self.args))
+        assert isinstance(self.args, tuple), f"Invalid argument list in {self}: {self.args}"
 
 
 @dataclass(frozen=True)
@@ -181,6 +174,7 @@ class Lambda(TargetExpr):
     def __post_init__(self):
         if isinstance(self.params, list):
             object.__setattr__(self, 'params', tuple(self.params))
+        assert isinstance(self.params, tuple), f"Invalid parameter list in {self}: {self.params}"
 
 @dataclass(frozen=True)
 class Let(TargetExpr):
@@ -225,6 +219,7 @@ class Seq(TargetExpr):
     def __post_init__(self):
         if isinstance(self.exprs, list):
             object.__setattr__(self, 'exprs', tuple(self.exprs))
+        assert isinstance(self.exprs, tuple), f"Invalid sequence of expressions in {self}: {self.exprs}"
         assert len(self.exprs) > 1, f"Sequence must contain at least two expressions"
 
 
@@ -238,6 +233,27 @@ class While(TargetExpr):
         return f"while ({self.condition}) {self.body}"
 
 @dataclass(frozen=True)
+class Foreach(TargetExpr):
+    """Foreach loop: for var in collection do body."""
+    var: 'Var'
+    collection: TargetExpr
+    body: TargetExpr
+
+    def __str__(self) -> str:
+        return f"for {self.var.name} in {self.collection} do {self.body}"
+
+@dataclass(frozen=True)
+class ForeachEnumerated(TargetExpr):
+    """Foreach loop with index: for index_var, var in enumerate(collection) do body."""
+    index_var: 'Var'
+    var: 'Var'
+    collection: TargetExpr
+    body: TargetExpr
+
+    def __str__(self) -> str:
+        return f"for {self.index_var.name}, {self.var.name} in enumerate({self.collection}) do {self.body}"
+
+@dataclass(frozen=True)
 class Assign(TargetExpr):
     """Assignment statement: var = expr.
 
@@ -249,7 +265,6 @@ class Assign(TargetExpr):
     def __str__(self) -> str:
         return f"{self.var.name} = {self.expr}"
 
-
 @dataclass(frozen=True)
 class Return(TargetExpr):
     """Return statement: return expr."""
@@ -259,7 +274,7 @@ class Return(TargetExpr):
         return f"return {self.expr}"
 
     def __post_init__(self):
-        assert not isinstance(self.expr, Return), f"Invalid return expression in {self}: {self.expr}"
+        assert isinstance(self.expr, TargetExpr) and not isinstance(self.expr, Return), f"Invalid return expression in {self}: {self.expr}"
 
 
 @dataclass(frozen=True)
@@ -299,6 +314,7 @@ class TupleType(TargetType):
     def __post_init__(self):
         if isinstance(self.elements, list):
             object.__setattr__(self, 'elements', tuple(self.elements))
+        assert isinstance(self.elements, tuple), f"Invalid tuple elements in {self}: {self.elements}"
 
 
 @dataclass(frozen=True)
@@ -332,6 +348,7 @@ class FunctionType(TargetType):
     def __post_init__(self):
         if isinstance(self.param_types, list):
             object.__setattr__(self, 'param_types', tuple(self.param_types))
+        assert isinstance(self.param_types, tuple), f"Invalid parameter types in {self}: {self.param_types}"
 
 
 @dataclass(frozen=True)
@@ -349,15 +366,17 @@ class FunDef(TargetNode):
     def __post_init__(self):
         if isinstance(self.params, list):
             object.__setattr__(self, 'params', tuple(self.params))
+        assert isinstance(self.params, tuple), f"Invalid params types in {self}: {self.params}"
 
 
 @dataclass(frozen=True)
-class ParseNonterminalDef(TargetNode):
-    """Parse method definition for a nonterminal.
+class VisitNonterminalDef(TargetNode):
+    """Visitor method definition for a nonterminal.
 
-    Like FunDef but specifically for parser methods, with a Nonterminal
+    Like FunDef but specifically for visitor methods, with a Nonterminal
     instead of a string name.
     """
+    visitor_name: str  # e.g., 'parse', 'pretty'
     nonterminal: 'Nonterminal'
     params: Sequence['Var']
     return_type: TargetType
@@ -365,14 +384,14 @@ class ParseNonterminalDef(TargetNode):
 
     def __str__(self) -> str:
         params_str = ', '.join(f"{p.name}: {p.type}" for p in self.params)
-        return f"parse_{self.nonterminal.name}({params_str}) -> {self.return_type}: {self.body}"
+        return f"{self.visitor_name}_{self.nonterminal.name}({params_str}) -> {self.return_type}: {self.body}"
 
     def __post_init__(self):
         if isinstance(self.params, list):
             object.__setattr__(self, 'params', tuple(self.params))
+        assert isinstance(self.params, tuple), f"Invalid params types in {self}: {self.params}"
 
 
-# Re-export all types for convenience
 __all__ = [
     'TargetNode',
     'TargetExpr',
@@ -389,6 +408,8 @@ __all__ = [
     'IfElse',
     'Seq',
     'While',
+    'Foreach',
+    'ForeachEnumerated',
     'Assign',
     'Return',
     'TargetType',
@@ -399,7 +420,7 @@ __all__ = [
     'OptionType',
     'FunctionType',
     'FunDef',
-    'ParseNonterminalDef',
-    'ParseNonterminal',
+    'VisitNonterminalDef',
+    'VisitNonterminal',
     'gensym',
 ]

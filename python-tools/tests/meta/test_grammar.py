@@ -12,10 +12,11 @@ from meta.grammar import (
     LitTerminal, NamedTerminal, Nonterminal,
     Star, Option, Sequence,
     Rule, Token, Grammar,
+
     get_nonterminals, get_literals, is_epsilon, rhs_elements,
     _count_nonliteral_rhs_elements,
 )
-from meta.target import BaseType, MessageType, TupleType, ListType, OptionType, Lambda, Var, Lit
+from meta.target import BaseType, MessageType, TupleType, ListType, OptionType, Lambda, Var, Lit, Call, Builtin
 
 
 class TestLitTerminal:
@@ -257,11 +258,16 @@ class TestRule:
         nt = Nonterminal("B", MessageType("proto", "B"))
         rhs = nt
         param = Var("x", MessageType("proto", "B"))
-        action = Lambda([param], MessageType("proto", "A"), param)
-        rule = Rule(lhs, rhs, action)
+        construct_action = Lambda([param], MessageType("proto", "A"), param)
+        deconstruct_action = Lambda(
+            [Var('msg', MessageType("proto", "A"))],
+            OptionType(MessageType("proto", "B")),
+            Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('b')])])
+        )
+        rule = Rule(lhs, rhs, construct_action)
         assert rule.lhs == lhs
         assert rule.rhs == rhs
-        assert rule.action == action
+        assert rule.construct_action == construct_action
 
     def test_construction_with_sequence(self):
         """Test Rule construction with sequence RHS."""
@@ -271,9 +277,17 @@ class TestRule:
         rhs = Sequence((nt1, nt2))
         param1 = Var("x", MessageType("proto", "B"))
         param2 = Var("y", MessageType("proto", "C"))
-        action = Lambda([param1, param2], MessageType("proto", "A"), param1)
-        rule = Rule(lhs, rhs, action)
-        assert len(rule.action.params) == 2
+        construct_action = Lambda([param1, param2], MessageType("proto", "A"), param1)
+        deconstruct_action = Lambda(
+            [Var('msg', MessageType("proto", "A"))],
+            OptionType(TupleType([MessageType("proto", "B"), MessageType("proto", "C")])),
+            Call(Builtin('Some'), [Call(Builtin('make_tuple'), [
+                Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('b')]),
+                Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('c')])
+            ])])
+        )
+        rule = Rule(lhs, rhs, construct_action)
+        assert len(rule.construct_action.params) == 2
 
     def test_construction_filters_literals(self):
         """Test Rule construction with literals in RHS."""
@@ -282,9 +296,14 @@ class TestRule:
         lit = LitTerminal("foo")
         rhs = Sequence((nt, lit))
         param = Var("x", MessageType("proto", "B"))
-        action = Lambda([param], MessageType("proto", "A"), param)
-        rule = Rule(lhs, rhs, action)
-        assert len(rule.action.params) == 1
+        construct_action = Lambda([param], MessageType("proto", "A"), param)
+        deconstruct_action = Lambda(
+            [Var('msg', MessageType("proto", "A"))],
+            OptionType(MessageType("proto", "B")),
+            Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('b')])])
+        )
+        rule = Rule(lhs, rhs, construct_action)
+        assert len(rule.construct_action.params) == 1
 
     def test_construction_fails_with_wrong_param_count(self):
         """Test Rule construction fails with mismatched parameter count."""
@@ -293,17 +312,27 @@ class TestRule:
         nt2 = Nonterminal("C", MessageType("proto", "C"))
         rhs = Sequence((nt1, nt2))
         param = Var("x", MessageType("proto", "B"))
-        action = Lambda([param], MessageType("proto", "A"), param)
+        construct_action = Lambda([param], MessageType("proto", "A"), param)
+        deconstruct_action = Lambda(
+            [Var('msg', MessageType("proto", "A"))],
+            OptionType(MessageType("proto", "B")),
+            Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('b')])])
+        )
         with pytest.raises(AssertionError, match="Action for A has 1 parameter"):
-            Rule(lhs, rhs, action)
+            Rule(lhs, rhs, construct_action)
 
     def test_str(self):
         """Test Rule string representation."""
         lhs = Nonterminal("A", MessageType("proto", "A"))
         nt = Nonterminal("B", MessageType("proto", "B"))
         param = Var("x", MessageType("proto", "B"))
-        action = Lambda([param], MessageType("proto", "A"), param)
-        rule = Rule(lhs, nt, action)
+        construct_action = Lambda([param], MessageType("proto", "A"), param)
+        deconstruct_action = Lambda(
+            [Var('msg', MessageType("proto", "A"))],
+            OptionType(MessageType("proto", "B")),
+            Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('b')])])
+        )
+        rule = Rule(lhs, nt, construct_action)
         result = str(rule)
         assert "A ->" in result
         assert "B" in result
@@ -313,8 +342,8 @@ class TestRule:
         lhs = Nonterminal("A", MessageType("proto", "A"))
         nt = Nonterminal("B", MessageType("proto", "B"))
         param = Var("x", MessageType("proto", "B"))
-        action = Lambda([param], MessageType("proto", "A"), param)
-        rule = Rule(lhs, nt, action, source_type="SomeProtoType")
+        construct_action = Lambda([param], MessageType("proto", "A"), param)
+        rule = Rule(lhs, nt, construct_action, source_type="SomeProtoType")
         assert rule.source_type == "SomeProtoType"
 
 
@@ -345,8 +374,13 @@ class TestGrammar:
         grammar = Grammar(start)
         nt = Nonterminal("A", MessageType("proto", "A"))
         param = Var("x", MessageType("proto", "A"))
-        action = Lambda([param], MessageType("proto", "A"), param)
-        rule = Rule(nt, nt, action)
+        construct_action = Lambda([param], MessageType("proto", "A"), param)
+        deconstruct_action = Lambda(
+            [Var('msg', MessageType("proto", "A"))],
+            OptionType(MessageType("proto", "A")),
+            Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('a')])])
+        )
+        rule = Rule(nt, nt, construct_action)
         grammar.add_rule(rule)
         assert nt in grammar.rules
         assert len(grammar.rules[nt]) == 1
@@ -360,10 +394,20 @@ class TestGrammar:
         nt_c = Nonterminal("C", MessageType("proto", "C"))
         param_b = Var("x", MessageType("proto", "B"))
         param_c = Var("y", MessageType("proto", "C"))
-        action_b = Lambda([param_b], MessageType("proto", "A"), param_b)
-        action_c = Lambda([param_c], MessageType("proto", "A"), param_c)
-        rule1 = Rule(nt, nt_b, action_b)
-        rule2 = Rule(nt, nt_c, action_c)
+        construct_action_b = Lambda([param_b], MessageType("proto", "A"), param_b)
+        construct_action_c = Lambda([param_c], MessageType("proto", "A"), param_c)
+        deconstruct_action_b = Lambda(
+            [Var('msg', MessageType("proto", "A"))],
+            OptionType(MessageType("proto", "B")),
+            Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('b')])])
+        )
+        deconstruct_action_c = Lambda(
+            [Var('msg', MessageType("proto", "A"))],
+            OptionType(MessageType("proto", "C")),
+            Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('c')])])
+        )
+        rule1 = Rule(nt, nt_b, construct_action_b)
+        rule2 = Rule(nt, nt_c, construct_action_c)
         grammar.add_rule(rule1)
         grammar.add_rule(rule2)
         assert len(grammar.rules[nt]) == 2
@@ -374,8 +418,13 @@ class TestGrammar:
         grammar = Grammar(start)
         nt = Nonterminal("A", MessageType("proto", "A"))
         param = Var("x", MessageType("proto", "A"))
-        action = Lambda([param], MessageType("proto", "A"), param)
-        rule = Rule(nt, nt, action)
+        construct_action = Lambda([param], MessageType("proto", "A"), param)
+        deconstruct_action = Lambda(
+            [Var('msg', MessageType("proto", "A"))],
+            OptionType(MessageType("proto", "A")),
+            Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('a')])])
+        )
+        rule = Rule(nt, nt, construct_action)
         grammar.add_rule(rule)
         rules = grammar.get_rules(nt)
         assert len(rules) == 1
@@ -395,8 +444,13 @@ class TestGrammar:
         grammar = Grammar(start)
         nt = Nonterminal("A", MessageType("proto", "A"))
         param = Var("x", MessageType("proto", "A"))
-        action = Lambda([param], MessageType("proto", "A"), param)
-        rule = Rule(nt, nt, action)
+        construct_action = Lambda([param], MessageType("proto", "A"), param)
+        deconstruct_action = Lambda(
+            [Var('msg', MessageType("proto", "A"))],
+            OptionType(MessageType("proto", "A")),
+            Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('a')])])
+        )
+        rule = Rule(nt, nt, construct_action)
         grammar.add_rule(rule)
         assert grammar.has_rule(nt)
         other = Nonterminal("B", MessageType("proto", "B"))
@@ -414,15 +468,20 @@ class TestGrammar:
         param_a = Var("x", MessageType("proto", "A"))
         param_b = Var("y", MessageType("proto", "B"))
         param_c = Var("z", MessageType("proto", "C"))
-        action_start = Lambda([param_a], MessageType("proto", "Start"), param_a)
-        action_a = Lambda([param_b], MessageType("proto", "A"), param_b)
-        action_b = Lambda([param_c], MessageType("proto", "B"), param_c)
-        action_c = Lambda([param_c], MessageType("proto", "C"), param_c)
+        construct_action_start = Lambda([param_a], MessageType("proto", "Start"), param_a)
+        construct_action_a = Lambda([param_b], MessageType("proto", "A"), param_b)
+        construct_action_b = Lambda([param_c], MessageType("proto", "B"), param_c)
+        construct_action_c = Lambda([param_c], MessageType("proto", "C"), param_c)
 
-        grammar.add_rule(Rule(start, a, action_start))
-        grammar.add_rule(Rule(a, b, action_a))
-        grammar.add_rule(Rule(b, c, action_b))
-        grammar.add_rule(Rule(c, c, action_c))
+        deconstruct_action_start = Lambda([Var('msg', MessageType("proto", "Start"))], OptionType(MessageType("proto", "A")), Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "Start")), Lit('a')])]))
+        deconstruct_action_a = Lambda([Var('msg', MessageType("proto", "A"))], OptionType(MessageType("proto", "B")), Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('b')])]))
+        deconstruct_action_b = Lambda([Var('msg', MessageType("proto", "B"))], OptionType(MessageType("proto", "C")), Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "B")), Lit('c')])]))
+        deconstruct_action_c = Lambda([Var('msg', MessageType("proto", "C"))], OptionType(MessageType("proto", "C")), Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "C")), Lit('c')])]))
+
+        grammar.add_rule(Rule(start, a, construct_action_start))
+        grammar.add_rule(Rule(a, b, construct_action_a))
+        grammar.add_rule(Rule(b, c, construct_action_b))
+        grammar.add_rule(Rule(c, c, construct_action_c))
 
         order = grammar.traverse_rules_preorder()
         assert order[0] == start
@@ -430,17 +489,20 @@ class TestGrammar:
         assert order[2] == b
         assert order[3] == c
 
+
+
     def test_print_grammar(self):
         """Test Grammar print_grammar."""
         start = Nonterminal("Start", MessageType("proto", "Start"))
         grammar = Grammar(start)
         a = Nonterminal("A", MessageType("proto", "A"))
         param = Var("x", MessageType("proto", "A"))
-        action = Lambda([param], MessageType("proto", "Start"), param)
-        grammar.add_rule(Rule(start, a, action))
+        construct_action = Lambda([param], MessageType("proto", "Start"), param)
+        grammar.add_rule(Rule(start, a, construct_action))
         output = grammar.print_grammar()
         assert "Start:" in output
         assert "A" in output
+
 
 
 

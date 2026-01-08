@@ -300,3 +300,158 @@ class TestProtoParser(unittest.TestCase):
         self.assertIn("Message2", parser.messages)
         self.assertEqual(parser.messages["Message1"].module, "file1")
         self.assertEqual(parser.messages["Message2"].module, "file2")
+
+    def test_parse_reserved_single_number(self):
+        """Test parsing reserved with a single field number."""
+        proto_content = """
+        message ReservedTest {
+          reserved 4;
+          string name = 1;
+          int32 id = 2;
+        }
+        """
+        proto_file = self.test_dir_path / "reserved_single.proto"
+        proto_file.write_text(proto_content)
+
+        parser = ProtoParser()
+        parser.parse_file(proto_file)
+
+        msg = parser.messages["ReservedTest"]
+        self.assertEqual(len(msg.reserved), 1)
+        self.assertEqual(msg.reserved[0].numbers, [4])
+        self.assertEqual(msg.reserved[0].ranges, [])
+        self.assertEqual(msg.reserved[0].names, [])
+        self.assertEqual(len(msg.fields), 2)
+
+    def test_parse_reserved_multiple_numbers(self):
+        """Test parsing reserved with multiple field numbers."""
+        proto_content = """
+        message ReservedTest {
+          reserved 2, 3, 5;
+          string name = 1;
+          int32 id = 4;
+        }
+        """
+        proto_file = self.test_dir_path / "reserved_multiple.proto"
+        proto_file.write_text(proto_content)
+
+        parser = ProtoParser()
+        parser.parse_file(proto_file)
+
+        msg = parser.messages["ReservedTest"]
+        self.assertEqual(len(msg.reserved), 1)
+        self.assertEqual(msg.reserved[0].numbers, [2, 3, 5])
+        self.assertEqual(msg.reserved[0].ranges, [])
+        self.assertEqual(msg.reserved[0].names, [])
+
+    def test_parse_reserved_range(self):
+        """Test parsing reserved with a field number range."""
+        proto_content = """
+        message ReservedTest {
+          reserved 9 to 11;
+          string name = 1;
+          int32 id = 2;
+        }
+        """
+        proto_file = self.test_dir_path / "reserved_range.proto"
+        proto_file.write_text(proto_content)
+
+        parser = ProtoParser()
+        parser.parse_file(proto_file)
+
+        msg = parser.messages["ReservedTest"]
+        self.assertEqual(len(msg.reserved), 1)
+        self.assertEqual(msg.reserved[0].numbers, [])
+        self.assertEqual(msg.reserved[0].ranges, [(9, 11)])
+        self.assertEqual(msg.reserved[0].names, [])
+
+    def test_parse_reserved_names(self):
+        """Test parsing reserved with field names."""
+        proto_content = """
+        message ReservedTest {
+          reserved "foo", "bar";
+          string name = 1;
+          int32 id = 2;
+        }
+        """
+        proto_file = self.test_dir_path / "reserved_names.proto"
+        proto_file.write_text(proto_content)
+
+        parser = ProtoParser()
+        parser.parse_file(proto_file)
+
+        msg = parser.messages["ReservedTest"]
+        self.assertEqual(len(msg.reserved), 1)
+        self.assertEqual(msg.reserved[0].numbers, [])
+        self.assertEqual(msg.reserved[0].ranges, [])
+        self.assertEqual(msg.reserved[0].names, ["foo", "bar"])
+
+    def test_parse_reserved_mixed(self):
+        """Test parsing reserved with mixed numbers and ranges."""
+        proto_content = """
+        message ReservedTest {
+          reserved 2, 9 to 11, 15;
+          string name = 1;
+          int32 id = 3;
+        }
+        """
+        proto_file = self.test_dir_path / "reserved_mixed.proto"
+        proto_file.write_text(proto_content)
+
+        parser = ProtoParser()
+        parser.parse_file(proto_file)
+
+        msg = parser.messages["ReservedTest"]
+        self.assertEqual(len(msg.reserved), 1)
+        self.assertEqual(msg.reserved[0].numbers, [2, 15])
+        self.assertEqual(msg.reserved[0].ranges, [(9, 11)])
+        self.assertEqual(msg.reserved[0].names, [])
+
+    def test_parse_reserved_with_oneof(self):
+        """Test parsing reserved in a message with oneof."""
+        proto_content = """
+        message ReservedTest {
+          reserved 4;
+          string name = 1;
+          oneof kind {
+            string text = 2;
+            int32 number = 3;
+          }
+          int32 id = 5;
+        }
+        """
+        proto_file = self.test_dir_path / "reserved_oneof.proto"
+        proto_file.write_text(proto_content)
+
+        parser = ProtoParser()
+        parser.parse_file(proto_file)
+
+        msg = parser.messages["ReservedTest"]
+        self.assertEqual(len(msg.reserved), 1)
+        self.assertEqual(msg.reserved[0].numbers, [4])
+        self.assertEqual(len(msg.fields), 2)
+        self.assertEqual(len(msg.oneofs), 1)
+        self.assertEqual(len(msg.oneofs[0].fields), 2)
+
+    def test_parse_reserved_multiple_statements(self):
+        """Test parsing multiple reserved statements."""
+        proto_content = """
+        message ReservedTest {
+          reserved 2, 3;
+          reserved 9 to 11;
+          reserved "foo", "bar";
+          string name = 1;
+          int32 id = 4;
+        }
+        """
+        proto_file = self.test_dir_path / "reserved_multi_stmt.proto"
+        proto_file.write_text(proto_content)
+
+        parser = ProtoParser()
+        parser.parse_file(proto_file)
+
+        msg = parser.messages["ReservedTest"]
+        self.assertEqual(len(msg.reserved), 3)
+        self.assertEqual(msg.reserved[0].numbers, [2, 3])
+        self.assertEqual(msg.reserved[1].ranges, [(9, 11)])
+        self.assertEqual(msg.reserved[2].names, ["foo", "bar"])
