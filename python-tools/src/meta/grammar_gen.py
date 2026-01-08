@@ -443,10 +443,10 @@ class GrammarGenerator:
 
 
 
-def generate_grammar(grammar: Grammar, reachable: Set[Nonterminal]) -> str:
+def generate_grammar(grammar: Grammar) -> str:
     """Generate grammar text."""
-    return grammar.print_grammar(reachable=reachable)
+    return grammar.print_grammar()
 
-def generate_semantic_actions(grammar: Grammar, reachable: Set[Nonterminal]) -> str:
+def generate_semantic_actions(grammar: Grammar) -> str:
     """Generate semantic actions (visitor)."""
-    return grammar.print_grammar_with_actions(reachable=reachable)
+    return grammar.print_grammar_with_actions()

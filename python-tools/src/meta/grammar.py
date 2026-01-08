@@ -15,7 +15,37 @@ from .target import TargetExpr, Var, Symbol, Call, Lambda, Lit, TargetType, List
 
 @dataclass(frozen=True)
 class Rhs:
-    """Base class for right-hand sides of grammar rules."""
+    """Base class for right-hand sides of grammar rules.
+
+    Rhs nodes represent the right-hand side of a grammar production rule.
+    They form a tree structure that describes the syntax pattern to match.
+
+    Subclasses:
+        - Terminal: Base class for terminal symbols
+            - LitTerminal: Literal keywords like "if", "("
+            - NamedTerminal: Token types like SYMBOL, INT
+        - Nonterminal: References to other grammar rules
+        - Star: Zero-or-more repetition (e.g., expr*)
+        - Option: Optional element (e.g., expr?)
+        - Sequence: Concatenation of multiple Rhs elements
+
+    The target_type() method returns the type of value produced when parsing
+    this Rhs element. For example:
+        - LitTerminal("if") produces no value (empty tuple type)
+        - NamedTerminal("INT", Int64) produces Int64
+        - Star(expr) produces List[expr.target_type()]
+        - Option(expr) produces Option[expr.target_type()]
+
+    Example:
+        # Grammar rule: expr -> "(" SYMBOL expr* ")"
+        rhs = Sequence((
+            LitTerminal("("),
+            NamedTerminal("SYMBOL", BaseType("String")),
+            Star(Nonterminal("expr", MessageType("proto", "Expr"))),
+            LitTerminal(")")
+        ))
+        # rhs.target_type() returns TupleType([String, List[proto.Expr]])
+    """
 
     def target_type(self) -> TargetType:
         """Return the target type for this RHS element."""
@@ -41,7 +71,6 @@ class LitTerminal(Terminal):
 
     def target_type(self) -> TargetType:
         """Literals don't produce values, return empty tuple type."""
-        from .target import TupleType
         return TupleType([])
 
 
@@ -75,8 +104,12 @@ class Nonterminal(RhsSymbol):
 
 @dataclass(frozen=True)
 class Star(Rhs):
-    """Zero or more repetitions (*)."""
-    rhs: 'RhsSymbol'
+    """Zero or more repetitions (*).
+
+    Only Nonterminal and NamedTerminal are allowed since LitTerminal
+    produces no value, making Star(LitTerminal) semantically meaningless.
+    """
+    rhs: 'Nonterminal | NamedTerminal'
 
     def __str__(self) -> str:
         return f"{self.rhs}*"
@@ -88,8 +121,12 @@ class Star(Rhs):
 
 @dataclass(frozen=True)
 class Option(Rhs):
-    """Optional element (?)."""
-    rhs: 'RhsSymbol'
+    """Optional element (?).
+
+    Only Nonterminal and NamedTerminal are allowed since LitTerminal
+    produces no value, making Option(LitTerminal) semantically meaningless.
+    """
+    rhs: 'Nonterminal | NamedTerminal'
 
     def __str__(self) -> str:
         return f"{self.rhs}?"
@@ -129,8 +166,37 @@ class Sequence(Rhs):
 class Rule:
     """Grammar rule (production).
 
-    The construct_action takes the values from parsing the RHS elements and constructs
-    the result message.
+    A Rule represents a grammar production of the form:
+        lhs -> rhs { construct_action }
+
+    The construct_action is a Lambda that takes the values parsed from the
+    non-literal RHS elements and constructs the result value. Literal terminals
+    (like keywords) don't produce values and are skipped when binding parameters.
+
+    Attributes:
+        lhs: The nonterminal being defined
+        rhs: The right-hand side pattern to match
+        construct_action: Lambda to construct result from parsed values
+        source_type: Optional protobuf type name this rule was generated from
+
+    Example:
+        # Rule: value -> "(" "date" INT INT INT ")"
+        # Parses: (date 2024 1 15) -> DateValue(year=2024, month=1, day=15)
+        rule = Rule(
+            lhs=Nonterminal("value", MessageType("proto", "DateValue")),
+            rhs=Sequence((
+                LitTerminal("("), LitTerminal("date"),
+                NamedTerminal("INT", BaseType("Int64")),  # year
+                NamedTerminal("INT", BaseType("Int64")),  # month
+                NamedTerminal("INT", BaseType("Int64")),  # day
+                LitTerminal(")")
+            )),
+            construct_action=Lambda(
+                params=[Var("year", Int64), Var("month", Int64), Var("day", Int64)],
+                return_type=MessageType("proto", "DateValue"),
+                body=Call(Message("proto", "DateValue"), [year, month, day])
+            )
+        )
     """
     lhs: Nonterminal
     rhs: Rhs
@@ -154,7 +220,22 @@ class Rule:
 
 @dataclass(frozen=True)
 class Token:
-    """Token definition (terminal with regex pattern)."""
+    """Token definition (terminal with regex pattern).
+
+    A Token defines a lexical token that can be recognized by the lexer.
+    It maps a regex pattern to a named terminal with an associated type.
+
+    Attributes:
+        name: The token name (e.g., "INT", "SYMBOL", "STRING")
+        pattern: Regex pattern to match the token
+        type: The type of value produced when this token is scanned
+
+    Example:
+        # Define tokens for a simple expression language
+        int_token = Token("INT", r'[-]?\\d+', BaseType("Int64"))
+        symbol_token = Token("SYMBOL", r'[a-zA-Z_][a-zA-Z0-9_]*', BaseType("String"))
+        string_token = Token("STRING", r'"[^"]*"', BaseType("String"))
+    """
     name: str
     pattern: str
     type: TargetType
@@ -178,37 +259,34 @@ class Grammar:
                 self.start = lhs
         self.rules[lhs].append(rule)
 
-    def traverse_rules_preorder(self, reachable_only: bool = True) -> List[Nonterminal]:
-        """Traverse rules in preorder starting from start symbol.
+    def partition_nonterminals(self) -> Tuple[List[Nonterminal], List[Nonterminal]]:
+        """Partition nonterminals into reachable and unreachable.
 
-        Returns list of nonterminal names in the order they should be printed.
-        If reachable_only is True, only includes reachable nonterminals.
+        Returns a tuple of:
+            - reachable: List of reachable nonterminals in preorder traversal
+            - unreachable: List of unreachable nonterminals (sorted by name)
         """
-        visited = set()
-        result = []
+        visited: Set[Nonterminal] = set()
+        reachable: List[Nonterminal] = []
 
         def visit(A: Nonterminal) -> None:
             """Visit nonterminal and its dependencies in preorder."""
             if A in visited or A not in self.rules:
-                # Skip visited nonterminals and those that do not appear in the grammar.
                 return
             visited.add(A)
-            result.append(A)
-
-            # Visit all nonterminals referenced in this rule's RHS
+            reachable.append(A)
             for rule in self.rules[A]:
                 for B in get_nonterminals(rule.rhs):
                     visit(B)
 
         visit(self.start)
 
-        # If not reachable_only, add any remaining rules
-        if not reachable_only:
-            for nt_name in sorted(self.rules.keys(), key=lambda nt: nt.name):
-                if nt_name not in visited:
-                    visit(nt_name)
+        unreachable = sorted(
+            [nt for nt in self.rules.keys() if nt not in visited],
+            key=lambda nt: nt.name
+        )
 
-        return result
+        return reachable, unreachable
 
     def get_rules(self, nt: Nonterminal) -> List[Rule]:
         """Get all rules with the given LHS name."""
@@ -218,50 +296,16 @@ class Grammar:
         """Check if any rule has the given LHS name."""
         return name in self.rules
 
-
-    def compute_reachability(self) -> Set[Nonterminal]:
-        """Compute set of reachable nonterminals from start symbol."""
-        if self.start not in self.rules:
-            return set()
-
-        reachable: Set[Nonterminal] = set([self.start])
-        worklist = [self.start]
-
-        while worklist:
-            current = worklist.pop()
-            if current in self.rules:
-                for rule in self.rules[current]:
-                    for nt in get_nonterminals(rule.rhs):
-                        if nt not in reachable:
-                            reachable.add(nt)
-                            worklist.append(nt)
-
-        return reachable
-
-    def get_unreachable_nonterminals(self) -> List[Nonterminal]:
-        """
-        Find all nonterminals that are unreachable from start symbol.
-
-        Returns list of nonterminal names that cannot be reached.
-        """
-        reachable = self.compute_reachability()
-        unreachable = []
-        for A in self.rules.keys():
-            if A not in reachable:
-                unreachable.append(A)
-        return unreachable
-
-    def print_grammar(self, reachable: Optional[Set[Nonterminal]] = None) -> str:
+    def print_grammar(self, reachable_only: bool = True) -> str:
         """Convert to context-free grammar format with actions."""
         lines = []
         lines.append("// Auto-generated grammar from protobuf specifications")
         lines.append("")
 
-        # Traverse rules in preorder
-        rule_order = self.traverse_rules_preorder(reachable_only=(reachable is not None))
+        reachable, unreachable = self.partition_nonterminals()
+        rule_order = reachable if reachable_only else reachable + unreachable
+
         for lhs in rule_order:
-            if reachable is not None and lhs not in reachable:
-                continue
             rules_list = self.rules[lhs]
             lines.append(f"{lhs}")
             for idx, rule in enumerate(rules_list):
@@ -284,17 +328,16 @@ class Grammar:
 
         return "\n".join(lines)
 
-    def print_grammar_with_actions(self, reachable: Optional[Set[Nonterminal]] = None) -> str:
+    def print_grammar_with_actions(self, reachable_only: bool = True) -> str:
         """Generate grammar with semantic actions in original form."""
         lines = []
         lines.append("# Grammar with semantic actions")
         lines.append("")
 
-        # Traverse rules in preorder
-        rule_order = self.traverse_rules_preorder(reachable_only=(reachable is not None))
+        reachable, unreachable = self.partition_nonterminals()
+        rule_order = reachable if reachable_only else reachable + unreachable
+
         for lhs in rule_order:
-            if reachable is not None and lhs not in reachable:
-                continue
             rules_list = self.rules[lhs]
 
             for idx, rule in enumerate(rules_list):

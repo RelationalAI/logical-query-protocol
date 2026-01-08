@@ -1,7 +1,7 @@
 """Utility functions for grammar manipulation."""
 
-from typing import Dict, Optional, cast
-from .grammar import Sequence, Star, Option, Rhs, RhsSymbol, Rule
+from typing import Dict, Optional, Union, cast
+from .grammar import Sequence, Star, Option, Rhs, Nonterminal, NamedTerminal, Rule
 
 
 def _rewrite_rhs(rhs: Rhs, replacements: Dict[Rhs, Rhs]) -> Optional[Rhs]:
@@ -28,12 +28,12 @@ def _rewrite_rhs(rhs: Rhs, replacements: Dict[Rhs, Rhs]) -> Optional[Rhs]:
     elif isinstance(rhs, Star):
         new_inner = _rewrite_rhs(rhs.rhs, replacements)
         if new_inner is not None:
-            return Star(cast(RhsSymbol, new_inner))
+            return Star(cast(Union[Nonterminal, NamedTerminal], new_inner))
         return None
     elif isinstance(rhs, Option):
         new_inner = _rewrite_rhs(rhs.rhs, replacements)
         if new_inner is not None:
-            return Option(cast(RhsSymbol, new_inner))
+            return Option(cast(Union[Nonterminal, NamedTerminal], new_inner))
         return None
     else:
         return None

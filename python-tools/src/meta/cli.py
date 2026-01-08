@@ -86,7 +86,7 @@ def main():
     generator = GrammarGenerator(proto_parser, verbose=True)
     grammar = generator.generate()
 
-    unreachable = grammar.get_unreachable_nonterminals()
+    _, unreachable = grammar.partition_nonterminals()
     unexpected_unreachable = [r for r in unreachable if r.name not in generator.expected_unreachable]
     if unexpected_unreachable:
         print("Warning: Unreachable nonterminals detected:")
@@ -95,9 +95,9 @@ def main():
         print()
 
     if args.grammar:
-        output_text = grammar.print_grammar(grammar.compute_reachability())
+        output_text = grammar.print_grammar()
     else:
-        output_text = generate_semantic_actions(grammar, grammar.compute_reachability())
+        output_text = generate_semantic_actions(grammar)
 
     if args.output:
         args.output.write_text(output_text)
