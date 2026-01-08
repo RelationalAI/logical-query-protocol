@@ -736,8 +736,8 @@ class BuiltinRules:
 
         def _make_simple_type_rule(keyword: str, message_name: str) -> Rule:
             """Create a rule for a simple type with no parameters."""
-            lhs_name = message_name[0].lower() + message_name[1:]  # e.g., 'UnspecifiedType' -> 'unspecifiedType'
-            lhs_name = lhs_name.replace('Type', '_type')  # e.g., 'unspecifiedType' -> 'unspecified_type'
+            from .grammar_gen import GrammarGenerator
+            lhs_name = GrammarGenerator._get_rule_name(message_name)
             return _make_simple_message_rule(lhs_name, 'logic', message_name, fields=[], keyword=keyword)
 
         # Simple types: (keyword, message_name)

@@ -286,7 +286,7 @@ class GrammarGenerator:
         if self._is_oneof_only_message(message):
             oneof = message.oneofs[0]
             for field in oneof.fields:
-                field_rule = self._get_rule_name(field.type)
+                field_rule = self._get_rule_name(field.name)
                 field_type = self._get_type_for_name(field.type)
 
                 # Create oneof wrapper action
