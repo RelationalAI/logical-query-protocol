@@ -359,34 +359,8 @@ class Grammar:
 
 # Helper functions
 
-def get_nonterminals(rhs: Rhs) -> List[Nonterminal]:
-    """Return the list of all nonterminals referenced in a Rhs."""
-    nonterminals = []
-
-    if isinstance(rhs, Nonterminal):
-        nonterminals.append(rhs)
-    elif isinstance(rhs, Sequence):
-        for elem in rhs.elements:
-            nonterminals.extend(get_nonterminals(elem))
-    elif isinstance(rhs, (Star, Option)):
-        nonterminals.extend(get_nonterminals(rhs.rhs))
-
-    return list(dict.fromkeys(nonterminals))
-
-
-def get_literals(rhs: Rhs) -> List[LitTerminal]:
-    """Return the list of all literals referenced in a Rhs."""
-    literals = []
-
-    if isinstance(rhs, LitTerminal):
-        literals.append(rhs)
-    elif isinstance(rhs, Sequence):
-        for elem in rhs.elements:
-            literals.extend(get_literals(elem))
-    elif isinstance(rhs, (Star, Option)):
-        literals.extend(get_literals(rhs.rhs))
-
-    return list(dict.fromkeys(literals))
+# Import traversal utilities here to avoid circular imports
+from .grammar_utils import get_nonterminals, get_literals, collect  # noqa: E402
 
 
 def is_epsilon(rhs: Rhs) -> bool:

@@ -1,7 +1,38 @@
 """Utility functions for grammar manipulation."""
 
-from typing import Dict, Optional, Union, cast
-from .grammar import Sequence, Star, Option, Rhs, Nonterminal, NamedTerminal, Rule
+from typing import Dict, List, Optional, Type, TypeVar, Union, cast
+from .grammar import Sequence, Star, Option, Rhs, Nonterminal, NamedTerminal, LitTerminal, Rule
+
+T = TypeVar('T', bound=Rhs)
+
+
+def collect(rhs: Rhs, target_type: Type[T]) -> List[T]:
+    """Collect all instances of target_type from the Rhs tree.
+
+    Traverses the Rhs structure and returns a deduplicated list of all
+    nodes matching the given type, preserving first-occurrence order.
+    """
+    results: List[T] = []
+
+    if isinstance(rhs, target_type):
+        results.append(rhs)
+    if isinstance(rhs, Sequence):
+        for elem in rhs.elements:
+            results.extend(collect(elem, target_type))
+    elif isinstance(rhs, (Star, Option)):
+        results.extend(collect(rhs.rhs, target_type))
+
+    return list(dict.fromkeys(results))
+
+
+def get_nonterminals(rhs: Rhs) -> List[Nonterminal]:
+    """Return the list of all nonterminals referenced in a Rhs."""
+    return collect(rhs, Nonterminal)
+
+
+def get_literals(rhs: Rhs) -> List[LitTerminal]:
+    """Return the list of all literals referenced in a Rhs."""
+    return collect(rhs, LitTerminal)
 
 
 def _rewrite_rhs(rhs: Rhs, replacements: Dict[Rhs, Rhs]) -> Optional[Rhs]:
