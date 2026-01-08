@@ -93,7 +93,7 @@ class GrammarGenerator:
         params = [Var(name, param_type) for name, param_type in zip(param_names, param_types)]
         return Lambda(params=params, return_type=MessageType(message.module, message_name), body=body)
 
-    def _get_type_for_name(self, type_name: str):
+    def _get_type_for_name(self, type_name: str) -> TargetType:
         """Get the appropriate type (BaseType or MessageType) for a given type name."""
         if self._is_primitive_type(type_name):
             base_type_name = _PRIMITIVE_TO_BASE_TYPE[type_name]
@@ -175,7 +175,7 @@ class GrammarGenerator:
             'datetime_type',
         ])
 
-    # TODO PR Check that the actions are also equal.
+    # TODO Check that the actions are also equal (up to alpha equivalence).
     def _combine_identical_rules(self) -> None:
         """Combine rules with identical RHS patterns into a single rule with multiple alternatives."""
         rhs_source_to_lhs: Dict[Tuple[str, Optional[str]], List[Nonterminal]] = {}

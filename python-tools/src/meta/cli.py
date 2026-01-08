@@ -12,6 +12,7 @@ from pathlib import Path
 from .proto_parser import ProtoParser
 from .grammar_gen import GrammarGenerator, generate_semantic_actions
 
+
 def format_message(msg, indent=0):
     """Format a ProtoMessage for display."""
     prefix = "  " * indent
@@ -78,7 +79,7 @@ def main():
     proto_parser = ProtoParser()
     for proto_file in args.proto_files:
         if not proto_file.exists():
-            print(f"Error: File not found: {proto_file}")
+            print(f"Error: File not found: {proto_file}", file=sys.stderr)
             return 1
         proto_parser.parse_file(proto_file)
 
