@@ -8,18 +8,6 @@ Naming Conventions
 
 Protobuf message names (CamelCase) are converted to grammar rule names
 (snake_case).
-
-Insert underscore before each uppercase letter that follows a lowercase
-letter or digit, then convert to lowercase. We special case a few
-names for consistency with other tools.
-
-Examples:
-    Fragment           -> fragment
-    FunctionalDependency -> functional_dependency
-    RelKey             -> rel_key
-    Int128Value        -> int128_value
-    CSVConfig          -> csv_config
-    DateTime           -> datetime
 """
 import re
 from typing import Callable, Dict, List, Optional, Set, Tuple, cast
@@ -68,7 +56,20 @@ _SNAKE_CASE_OVERRIDES = {
 
 
 def _to_snake_case(name: str) -> str:
-    """Convert CamelCase to snake_case."""
+    """Convert CamelCase to snake_case.
+
+    Insert underscore before each uppercase letter that follows a lowercase
+    letter or digit, then convert to lowercase. We special case a few
+    names for consistency with other tools.
+
+    Examples:
+        Fragment           -> fragment
+        FunctionalDependency -> functional_dependency
+        RelKey             -> rel_key
+        Int128Value        -> int128_value
+        CSVConfig          -> csv_config
+        DateTime           -> datetime
+    """
     result = re.sub('([a-z\\d])([A-Z])', '\\1_\\2', name)
     result = result.lower()
     for old, new in _SNAKE_CASE_OVERRIDES.items():
