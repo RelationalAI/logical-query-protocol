@@ -15,6 +15,18 @@ from .gensym import gensym
 if TYPE_CHECKING:
     from .grammar import Nonterminal
 
+
+def _freeze_sequence(obj: object, attr: str) -> None:
+    """Convert a list attribute to tuple and validate it's a tuple.
+
+    Used in __post_init__ to ensure sequence fields are immutable tuples.
+    """
+    val = getattr(obj, attr)
+    if isinstance(val, list):
+        object.__setattr__(obj, attr, tuple(val))
+        val = getattr(obj, attr)
+    assert isinstance(val, tuple), f"Invalid {attr} in {obj}: {val}"
+
 @dataclass(frozen=True)
 class TargetNode:
     """Base class for all target language AST nodes."""
@@ -121,9 +133,7 @@ class ListExpr(TargetExpr):
         return f"List[{self.element_type}]({elements_str})"
 
     def __post_init__(self):
-        if isinstance(self.elements, list):
-            object.__setattr__(self, 'elements', tuple(self.elements))
-        assert isinstance(self.elements, tuple), f"Invalid elements in {self}: {self.elements}"
+        _freeze_sequence(self, 'elements')
 
 
 @dataclass(frozen=True)
@@ -155,9 +165,7 @@ class Call(TargetExpr):
         return f"{self.func}({args_str})"
 
     def __post_init__(self):
-        if isinstance(self.args, list):
-            object.__setattr__(self, 'args', tuple(self.args))
-        assert isinstance(self.args, tuple), f"Invalid argument list in {self}: {self.args}"
+        _freeze_sequence(self, 'args')
 
 
 @dataclass(frozen=True)
@@ -172,9 +180,7 @@ class Lambda(TargetExpr):
         return f"lambda {params_str} -> {self.return_type}: {self.body}"
 
     def __post_init__(self):
-        if isinstance(self.params, list):
-            object.__setattr__(self, 'params', tuple(self.params))
-        assert isinstance(self.params, tuple), f"Invalid parameter list in {self}: {self.params}"
+        _freeze_sequence(self, 'params')
 
 @dataclass(frozen=True)
 class Let(TargetExpr):
@@ -217,10 +223,8 @@ class Seq(TargetExpr):
         return "; ".join(str(e) for e in self.exprs)
 
     def __post_init__(self):
-        if isinstance(self.exprs, list):
-            object.__setattr__(self, 'exprs', tuple(self.exprs))
-        assert isinstance(self.exprs, tuple), f"Invalid sequence of expressions in {self}: {self.exprs}"
-        assert len(self.exprs) > 1, f"Sequence must contain at least two expressions"
+        _freeze_sequence(self, 'exprs')
+        assert len(self.exprs) > 1, "Sequence must contain at least two expressions"
 
 
 @dataclass(frozen=True)
@@ -312,9 +316,7 @@ class TupleType(TargetType):
         return f"({elements_str})"
 
     def __post_init__(self):
-        if isinstance(self.elements, list):
-            object.__setattr__(self, 'elements', tuple(self.elements))
-        assert isinstance(self.elements, tuple), f"Invalid tuple elements in {self}: {self.elements}"
+        _freeze_sequence(self, 'elements')
 
 
 @dataclass(frozen=True)
@@ -346,9 +348,7 @@ class FunctionType(TargetType):
         return f"({params_str}) -> {self.return_type}"
 
     def __post_init__(self):
-        if isinstance(self.param_types, list):
-            object.__setattr__(self, 'param_types', tuple(self.param_types))
-        assert isinstance(self.param_types, tuple), f"Invalid parameter types in {self}: {self.param_types}"
+        _freeze_sequence(self, 'param_types')
 
 
 @dataclass(frozen=True)
@@ -364,9 +364,7 @@ class FunDef(TargetNode):
         return f"def {self.name}({params_str}) -> {self.return_type}: {self.body}"
 
     def __post_init__(self):
-        if isinstance(self.params, list):
-            object.__setattr__(self, 'params', tuple(self.params))
-        assert isinstance(self.params, tuple), f"Invalid params types in {self}: {self.params}"
+        _freeze_sequence(self, 'params')
 
 
 @dataclass(frozen=True)
@@ -387,9 +385,7 @@ class VisitNonterminalDef(TargetNode):
         return f"{self.visitor_name}_{self.nonterminal.name}({params_str}) -> {self.return_type}: {self.body}"
 
     def __post_init__(self):
-        if isinstance(self.params, list):
-            object.__setattr__(self, 'params', tuple(self.params))
-        assert isinstance(self.params, tuple), f"Invalid params types in {self}: {self.params}"
+        _freeze_sequence(self, 'params')
 
 
 __all__ = [

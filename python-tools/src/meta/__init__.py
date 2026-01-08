@@ -58,7 +58,6 @@ from .proto_parser import ProtoParser
 from .grammar_gen import (
     GrammarGenerator,
     generate_grammar,
-    generate_semantic_actions,
 )
 
 __all__ = [
@@ -102,5 +101,4 @@ __all__ = [
     # Grammar generation
     'GrammarGenerator',
     'generate_grammar',
-    'generate_semantic_actions',
 ]

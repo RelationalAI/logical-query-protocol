@@ -41,6 +41,28 @@ _PRIMITIVE_TO_BASE_TYPE = {
     'bytes': 'String',
 }
 
+# Special case mappings for snake_case conversion
+_SNAKE_CASE_OVERRIDES = {
+    'date_time': 'datetime',
+    'csvconfig': 'csv_config',
+    'csvcolumn': 'csv_column',
+}
+
+
+def _to_snake_case(name: str) -> str:
+    """Convert CamelCase to snake_case."""
+    result = re.sub('([a-z\\d])([A-Z])', '\\1_\\2', name)
+    result = result.lower()
+    for old, new in _SNAKE_CASE_OVERRIDES.items():
+        result = result.replace(old, new)
+    return result
+
+
+def _get_rule_name(name: str) -> str:
+    """Convert message name to rule name."""
+    return _to_snake_case(name)
+
+
 class GrammarGenerator:
     """Generator for grammars from protobuf specifications."""
 
@@ -72,14 +94,13 @@ class GrammarGenerator:
         field_idx = 0
         for elem in rhs_elements:
             if isinstance(elem, LitTerminal):
-                pass
+                continue
+            if field_names and field_idx < len(field_names):
+                param_names.append(field_names[field_idx])
             else:
-                if field_names and field_idx < len(field_names):
-                    param_names.append(field_names[field_idx])
-                else:
-                    assert False, f'Too many params for {message_name} semantic action'
-                param_types.append(elem.target_type())
-                field_idx += 1
+                assert False, f'Too many params for {message_name} semantic action'
+            param_types.append(elem.target_type())
+            field_idx += 1
         args = []
         for name, param_type in zip(param_names, param_types):
             var = Var(name, param_type)
@@ -242,22 +263,6 @@ class GrammarGenerator:
         self.grammar.rules = new_rules
 
     @staticmethod
-    def _get_rule_name(name: str) -> str:
-        """Convert message name to rule name."""
-        result = GrammarGenerator._to_snake_case(name)
-        return result
-
-    @staticmethod
-    def _to_snake_case(name: str) -> str:
-        """Convert CamelCase to snake_case."""
-        result = re.sub('([a-z\\d])([A-Z])', '\\1_\\2', name)
-        result = result.lower()
-        result = re.sub('date_time', 'datetime', result)
-        result = re.sub('csvconfig', 'csv_config', result)
-        result = re.sub('csvcolumn', 'csv_column', result)
-        return result
-
-    @staticmethod
     def _to_field_name(name: str) -> str:
         """Normalize field name to valid identifier."""
         return name.replace('-', '_').replace('.', '_')
@@ -271,7 +276,7 @@ class GrammarGenerator:
         """Generate grammar rules for a protobuf message and recursively for its fields."""
         if message_name not in self.parser.messages:
             return
-        rule_name = self._get_rule_name(message_name)
+        rule_name = _get_rule_name(message_name)
         message = self.parser.messages[message_name]
         message_type = MessageType(message.module, message_name)
         rule_lhs = Nonterminal(rule_name, message_type)
@@ -286,7 +291,7 @@ class GrammarGenerator:
         if self._is_oneof_only_message(message):
             oneof = message.oneofs[0]
             for field in oneof.fields:
-                field_rule = self._get_rule_name(field.name)
+                field_rule = _get_rule_name(field.name)
                 field_type = self._get_type_for_name(field.type)
 
                 # Create oneof wrapper action
@@ -321,7 +326,7 @@ class GrammarGenerator:
                         )
                         self._add_rule(field_to_type_rule)
                 else:
-                    type_rule = self._get_rule_name(field.type)
+                    type_rule = _get_rule_name(field.type)
                     if field_rule != type_rule and field_rule not in self.final_rules:
                         field_type = self._get_type_for_name(field.type)
                         construct_action = create_identity_function(field_type)
@@ -378,9 +383,9 @@ class GrammarGenerator:
             else:
                 return base_symbol
         elif self._is_message_type(field.type):
-            type_rule_name = self._get_rule_name(field.type)
+            type_rule_name = _get_rule_name(field.type)
             field_type = self._get_type_for_name(field.type)
-            message_rule_name = self._get_rule_name(message_name)
+            message_rule_name = _get_rule_name(message_name)
             field_rule_name = self._to_field_name(field.name)
             wrapper_rule_name = f'{message_rule_name}_{field_rule_name}'
             wrapper_type = ListType(field_type)
@@ -446,7 +451,3 @@ class GrammarGenerator:
 def generate_grammar(grammar: Grammar) -> str:
     """Generate grammar text."""
     return grammar.print_grammar()
-
-def generate_semantic_actions(grammar: Grammar) -> str:
-    """Generate semantic actions (visitor)."""
-    return grammar.print_grammar_with_actions()

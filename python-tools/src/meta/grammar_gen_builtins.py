@@ -20,10 +20,10 @@ from .target_utils import (
     make_fst, make_snd, make_is_empty, make_concat, make_length, make_unwrap_option_or
 )
 
-_lp = LitTerminal('(')
-_rp = LitTerminal(')')
-_lc = LitTerminal('{')
-_rc = LitTerminal('}')
+LPAREN = LitTerminal('(')
+RPAREN = LitTerminal(')')
+LBRACE = LitTerminal('{')
+RBRACE = LitTerminal('}')
 
 
 def _msg(module: str, name: str, *args):
@@ -100,7 +100,7 @@ def _make_simple_message_rule(
     msg_var = Var('msg', msg_type)
 
     if rhs_inner:
-        rhs = Sequence((_lp, LitTerminal(keyword)) + rhs_inner + (_rp,))
+        rhs = Sequence((LPAREN, LitTerminal(keyword)) + rhs_inner + (RPAREN,))
     else:
         rhs = LitTerminal(keyword)
 
@@ -258,11 +258,11 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_datetime_nt,
             rhs=Sequence((
-                _lp, LitTerminal('datetime'),
+                LPAREN, LitTerminal('datetime'),
                 _int_terminal, _int_terminal, _int_terminal,
                 _int_terminal, _int_terminal, _int_terminal,
                 Option(_int_terminal),
-                _rp
+                RPAREN
             )),
             construct_action=Lambda(
                 [_var_year, _var_month, _var_day, _var_hour, _var_minute, _var_second, _var_microsecond],
@@ -304,7 +304,7 @@ class BuiltinRules:
 
         self.add_rule(_make_identity_rule(
             'config_dict', _config_type,
-            rhs=Sequence((_lc, Star(_config_key_value_nt), _rc))
+            rhs=Sequence((LBRACE, Star(_config_key_value_nt), RBRACE))
         ))
 
         self.add_rule(Rule(
@@ -322,11 +322,11 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_transaction_nt,
             rhs=Sequence((
-                _lp, LitTerminal('transaction'),
+                LPAREN, LitTerminal('transaction'),
                 Option(_configure_nt),
                 Option(_sync_nt),
                 Star(_epoch_nt),
-                _rp
+                RPAREN
             )),
             construct_action=Lambda(
                 [
@@ -351,9 +351,9 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_configure_nt,
             rhs=Sequence((
-                _lp, LitTerminal('configure'),
+                LPAREN, LitTerminal('configure'),
                 _config_dict_nt,
-                _rp
+                RPAREN
             )),
             construct_action=Lambda(
                 [Var('config_dict', _config_type)],
@@ -438,7 +438,7 @@ class BuiltinRules:
 
         self.add_rule(Rule(
             lhs=_abstraction_with_arity_nt,
-            rhs=Sequence((_lp, _bindings_nt, _formula_nt, _rp)),
+            rhs=Sequence((LPAREN, _bindings_nt, _formula_nt, RPAREN)),
             construct_action=Lambda(
                 params=[_var_bindings, _var_formula],
                 return_type=_abstraction_with_arity_type,
@@ -452,7 +452,7 @@ class BuiltinRules:
 
         self.add_rule(Rule(
             lhs=_abstraction_nt,
-            rhs=Sequence((_lp, _bindings_nt, _formula_nt, _rp)),
+            rhs=Sequence((LPAREN, _bindings_nt, _formula_nt, RPAREN)),
             construct_action=Lambda(
                 params=[_var_bindings, _var_formula],
                 return_type=_abstraction_type,
@@ -554,14 +554,14 @@ class BuiltinRules:
 
         self.add_rule(Rule(
             lhs=_true_nt,
-            rhs=Sequence((_lp, LitTerminal('true'), _rp)),
+            rhs=Sequence((LPAREN, LitTerminal('true'), RPAREN)),
             construct_action=Lambda([], _conjunction_type, _msg('logic', 'Conjunction', _empty_formula_list))
 
         ))
 
         self.add_rule(Rule(
             lhs=_false_nt,
-            rhs=Sequence((_lp, LitTerminal('false'), _rp)),
+            rhs=Sequence((LPAREN, LitTerminal('false'), RPAREN)),
             construct_action=Lambda([], _disjunction_type, _msg('logic', 'Disjunction', _empty_formula_list))
 
         ))
@@ -620,9 +620,9 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_export_nt,
             rhs=Sequence((
-                _lp, LitTerminal('export'),
+                LPAREN, LitTerminal('export'),
                 _export_csv_config_nt,
-                _rp
+                RPAREN
             )),
             construct_action=Lambda(
                 [Var('config', _export_csv_config_type)],
@@ -635,17 +635,17 @@ class BuiltinRules:
         # Export CSV path rule
         self.add_rule(_make_identity_rule(
             'export_csv_path', STRING_TYPE,
-            rhs=Sequence((_lp, LitTerminal('path'), NamedTerminal('STRING', STRING_TYPE), _rp))
+            rhs=Sequence((LPAREN, LitTerminal('path'), NamedTerminal('STRING', STRING_TYPE), RPAREN))
         ))
 
         self.add_rule(Rule(
             lhs=_export_csv_config_nt,
             rhs=Sequence((
-                _lp, LitTerminal('export_csv_config'),
+                LPAREN, LitTerminal('export_csv_config'),
                 _export_csv_path_nt,
                 _export_csv_columns_nt,
                 _config_dict_nt,
-                _rp
+                RPAREN
             )),
             construct_action=Lambda(
                 [
@@ -666,9 +666,9 @@ class BuiltinRules:
         self.add_rule(_make_identity_rule(
             'export_csv_columns', ListType(_export_csv_column_type),
             rhs=Sequence((
-                _lp, LitTerminal('columns'),
+                LPAREN, LitTerminal('columns'),
                 Star(Nonterminal('export_csv_column', _export_csv_column_type)),
-                _rp
+                RPAREN
             ))
         ))
 
@@ -736,8 +736,8 @@ class BuiltinRules:
 
         def _make_simple_type_rule(keyword: str, message_name: str) -> Rule:
             """Create a rule for a simple type with no parameters."""
-            from .grammar_gen import GrammarGenerator
-            lhs_name = GrammarGenerator._get_rule_name(message_name)
+            from .grammar_gen import _get_rule_name
+            lhs_name = _get_rule_name(message_name)
             return _make_simple_message_rule(lhs_name, 'logic', message_name, fields=[], keyword=keyword)
 
         # Simple types: (keyword, message_name)
@@ -793,7 +793,7 @@ class BuiltinRules:
             # The operator rule (e.g., eq -> '(' '=' term term ')')
             op_rule = Rule(
                 lhs=op_nt,
-                rhs=Sequence((_lp, LitTerminal(op)) + rhs_terms + (_rp,)),
+                rhs=Sequence((LPAREN, LitTerminal(op)) + rhs_terms + (RPAREN,)),
                 construct_action=Lambda(
                     params,
                     _primitive_type,
@@ -865,10 +865,10 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_fragment_nt,
             rhs=Sequence((
-                _lp, LitTerminal('fragment'),
+                LPAREN, LitTerminal('fragment'),
                 _new_fragment_id_nt,
                 Star(_declaration_nt),
-                _rp
+                RPAREN
             )),
             construct_action=Lambda(
                 [
@@ -902,10 +902,10 @@ class BuiltinRules:
             return Rule(
                 lhs=Nonterminal(keyword, msg_type),
                 rhs=Sequence((
-                    _lp, LitTerminal(keyword),
+                    LPAREN, LitTerminal(keyword),
                     Option(_name_nt),
                     _relation_id_nt,
-                    _rp
+                    RPAREN
                 )),
                 construct_action=Lambda(
                     [name_var, Var('relation_id', _relation_id_type)],
@@ -970,10 +970,10 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_exists_nt,
             rhs=Sequence((
-                _lp, LitTerminal('exists'),
+                LPAREN, LitTerminal('exists'),
                 _bindings_nt,
                 _formula_nt,
-                _rp
+                RPAREN
             )),
             construct_action=Lambda(
                 [Var('bindings', _bindings_type), Var('formula', _formula_type)],

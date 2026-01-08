@@ -328,34 +328,6 @@ class Grammar:
 
         return "\n".join(lines)
 
-    def print_grammar_with_actions(self, reachable_only: bool = True) -> str:
-        """Generate grammar with semantic actions in original form."""
-        lines = []
-        lines.append("# Grammar with semantic actions")
-        lines.append("")
-
-        reachable, unreachable = self.partition_nonterminals()
-        rule_order = reachable if reachable_only else reachable + unreachable
-
-        for lhs in rule_order:
-            rules_list = self.rules[lhs]
-
-            for idx, rule in enumerate(rules_list):
-                if len(rules_list) == 1:
-                    lines.append(f"{lhs}: {rule.rhs}")
-                else:
-                    if idx == 0:
-                        lines.append(f"{lhs}: {rule.rhs}")
-                    else:
-                        lines.append(f"    | {rule.rhs}")
-
-                if rule.construct_action:
-                    lines.append(f"    {{{{ {rule.construct_action} }}}}")
-
-            lines.append("")
-
-        return "\n".join(lines)
-
 
 # Helper functions
 

@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 from .proto_parser import ProtoParser
-from .grammar_gen import GrammarGenerator, generate_semantic_actions
+from .grammar_gen import GrammarGenerator
 
 
 def format_message(msg, indent=0):
@@ -96,14 +96,11 @@ def main():
 
     if args.grammar:
         output_text = grammar.print_grammar()
-    else:
-        output_text = generate_semantic_actions(grammar)
-
-    if args.output:
-        args.output.write_text(output_text)
-        print(f"Generated grammar written to {args.output}")
-    else:
-        print(output_text)
+        if args.output:
+            args.output.write_text(output_text)
+            print(f"Generated grammar written to {args.output}")
+        else:
+            print(output_text)
 
     return 0
 
