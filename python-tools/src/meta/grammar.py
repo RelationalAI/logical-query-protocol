@@ -403,9 +403,12 @@ class Grammar:
         return "\n".join(lines)
 
 
-# Helper functions - re-exported from utils module
+# Helper functions - re-exported from utils and analysis modules
 from .grammar_utils import get_nonterminals, get_literals
 from .grammar_analysis import GrammarAnalysis
+
+# Re-export is_epsilon for backward compatibility
+is_epsilon = GrammarAnalysis.is_epsilon
 
 
 def rhs_elements(rhs: Rhs) -> Tuple[Rhs, ...]:

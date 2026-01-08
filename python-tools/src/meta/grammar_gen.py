@@ -518,8 +518,8 @@ class GrammarGenerator:
 
 def generate_grammar(grammar: Grammar, reachable: Set[Nonterminal]) -> str:
     """Generate grammar text."""
-    return grammar.print_grammar(reachable=reachable)
+    return grammar.print_grammar(reachable_only=True)
 
 def generate_semantic_actions(grammar: Grammar, reachable: Set[Nonterminal]) -> str:
     """Generate semantic actions (visitor)."""
-    return grammar.print_grammar_with_actions(reachable=reachable)
+    return grammar.print_grammar(reachable_only=True)
