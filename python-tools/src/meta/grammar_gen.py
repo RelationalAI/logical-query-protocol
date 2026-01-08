@@ -2,6 +2,24 @@
 
 This module provides the GrammarGenerator class which converts protobuf
 message definitions into grammar rules with semantic actions.
+
+Naming Conventions
+------------------
+
+Protobuf message names (CamelCase) are converted to grammar rule names
+(snake_case).
+
+Insert underscore before each uppercase letter that follows a lowercase
+letter or digit, then convert to lowercase. We special case a few
+names for consistency with other tools.
+
+Examples:
+    Fragment           -> fragment
+    FunctionalDependency -> functional_dependency
+    RelKey             -> rel_key
+    Int128Value        -> int128_value
+    CSVConfig          -> csv_config
+    DateTime           -> datetime
 """
 import re
 from typing import Callable, Dict, List, Optional, Set, Tuple, cast
