@@ -45,8 +45,8 @@ def introduce_abstraction_with_arity(rule: Rule) -> Optional[Rule]:
 
     elems = rule.rhs.elements
 
-    abstraction_idx = None
-    arity_idx = None
+    abstraction_idx: Optional[int] = None
+    arity_idx: Optional[int] = None
     literals_before_abstraction = 0
     literals_before_arity = 0
     for i, elem in enumerate(elems):
