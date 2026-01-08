@@ -96,10 +96,14 @@ __all__ = [
     'ProtoOneof',
     'ProtoEnum',
     'ProtoMessage',
+<<<<<<< HEAD
     # Protobuf parser
     'ProtoParser',
     # Grammar generation
     'GrammarGenerator',
     'generate_grammar',
     'generate_semantic_actions',
+=======
+    'ProtoParser',
+>>>>>>> origin/main
 ]

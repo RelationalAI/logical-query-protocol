@@ -330,6 +330,90 @@ class Type(LqpNode):
     type_name: TypeName
     parameters: Sequence[Value]
 
+# --- Data Types (Base Relations, BeTree Config) ---
+
+# BeTreeConfig(epsilon::float, max_pivots::int, max_deltas::int, max_leaf::int)
+@dataclass(frozen=True)
+class BeTreeConfig(LqpNode):
+    epsilon: float
+    max_pivots: int
+    max_deltas: int
+    max_leaf: int
+
+# BeTreeLocator(root_pageid::UInt128Value?, inline_data::bytes?, element_count::int, tree_height::int)
+# Note: Exactly one of root_pageid or inline_data must be set (oneof in protobuf)
+@dataclass(frozen=True)
+class BeTreeLocator(LqpNode):
+    root_pageid: Optional[UInt128Value]
+    inline_data: Optional[bytes]
+    element_count: int
+    tree_height: int
+
+# BeTreeInfo(key_types::Type[], value_types::Type[], storage_config::BeTreeConfig, relation_locator::BeTreeLocator)
+@dataclass(frozen=True)
+class BeTreeInfo(LqpNode):
+    key_types: Sequence[Type]
+    value_types: Sequence[Type]
+    storage_config: BeTreeConfig
+    relation_locator: BeTreeLocator
+
+# Data := RelEDB | BeTreeRelation | CSVData | IcebergRelation
+@dataclass(frozen=True)
+class Data(Declaration):
+    pass
+
+# RelEDB(target_id::RelationId, path::string[], types::Type[])
+@dataclass(frozen=True)
+class RelEDB(Data):
+    target_id: RelationId
+    path: Sequence[str]
+    types: Sequence[Type]
+
+# BeTreeRelation(name::RelationId, relation_info::BeTreeInfo)
+@dataclass(frozen=True)
+class BeTreeRelation(Data):
+    name: RelationId
+    relation_info: BeTreeInfo
+
+# CSVData(locator::CSVLocator, config::CSVConfig, columns::CSVColumn[], asof::string)
+@dataclass(frozen=True)
+class CSVData(Data):
+    locator: 'CSVLocator'
+    config: 'CSVConfig'
+    columns: Sequence['CSVColumn']
+    asof: str
+
+# CSVLocator(paths::string[], inline_data::bytes?)
+# Note: Exactly one of paths or inline_data should be set (mutually exclusive)
+@dataclass(frozen=True)
+class CSVLocator(LqpNode):
+    paths: Sequence[str]
+    inline_data: Optional[bytes]
+
+# CSVConfig(header_row::int, skip::int, new_line::string, delimiter::string, quotechar::string,
+#           escapechar::string, comment::string, missing_strings::string[], decimal_separator::string,
+#           encoding::string, compression::string)
+@dataclass(frozen=True)
+class CSVConfig(LqpNode):
+    header_row: int
+    skip: int
+    new_line: str
+    delimiter: str
+    quotechar: str
+    escapechar: str
+    comment: str
+    missing_strings: Sequence[str]
+    decimal_separator: str
+    encoding: str
+    compression: str
+
+# CSVColumn(column_name::string, target_id::RelationId, types::Type[])
+@dataclass(frozen=True)
+class CSVColumn(LqpNode):
+    column_name: str
+    target_id: RelationId
+    types: Sequence[Type]
+
 # --- Fragment Types ---
 
 # FragmentId(id::bytes)
