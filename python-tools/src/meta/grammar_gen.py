@@ -426,7 +426,7 @@ class GrammarGenerator:
         if self._is_primitive_type(field.type):
             field_type = self._get_type_for_name(field.type)
             terminal_name = self._map_primitive_type(field.type)
-            base_symbol: Rhs = NamedTerminal(terminal_name, field_type)
+            base_symbol = NamedTerminal(terminal_name, field_type)
             if field.is_repeated:
                 return Star(base_symbol)
             elif field.is_optional:
