@@ -167,16 +167,16 @@ class Rule:
     """Grammar rule (production).
 
     A Rule represents a grammar production of the form:
-        lhs -> rhs { construct_action }
+        lhs -> rhs { constructor }
 
-    The construct_action is a Lambda that takes the values parsed from the
+    The constructor is a Lambda that takes the values parsed from the
     non-literal RHS elements and constructs the result value. Literal terminals
     (like keywords) don't produce values and are skipped when binding parameters.
 
     Attributes:
         lhs: The nonterminal being defined
         rhs: The right-hand side pattern to match
-        construct_action: Lambda to construct result from parsed values
+        constructor: Lambda to construct result from parsed values
         source_type: Optional protobuf type name this rule was generated from
 
     Example:
@@ -191,7 +191,7 @@ class Rule:
                 NamedTerminal("INT", BaseType("Int64")),  # day
                 LitTerminal(")")
             )),
-            construct_action=Lambda(
+            constructor=Lambda(
                 params=[Var("year", Int64), Var("month", Int64), Var("day", Int64)],
                 return_type=MessageType("proto", "DateValue"),
                 body=Call(Message("proto", "DateValue"), [year, month, day])
@@ -200,11 +200,11 @@ class Rule:
     """
     lhs: Nonterminal
     rhs: Rhs
-    construct_action: 'Lambda'
+    constructor: 'Lambda'
     source_type: Optional[str] = None  # Track the protobuf type this rule came from
 
     def __str__(self):
-        result = f"{self.lhs.name} -> {self.rhs} {{{{ {self.construct_action} }}}}"
+        result = f"{self.lhs.name} -> {self.rhs} {{{{ {self.constructor} }}}}"
         return result
 
     def to_pattern(self, grammar: Optional['Grammar'] = None) -> str:
@@ -214,7 +214,7 @@ class Rule:
     def __post_init__(self):
         assert isinstance(self.rhs, Rhs)
         rhs_len = _count_nonliteral_rhs_elements(self.rhs)
-        action_params = len(self.construct_action.params)
+        action_params = len(self.constructor.params)
         assert action_params == rhs_len, \
             f"Action for {self.lhs.name} has {action_params} parameters but RHS has {rhs_len} non-literal element{'' if rhs_len == 1 else 's'}: {self.rhs}"
 
@@ -314,8 +314,8 @@ class Grammar:
                 else:
                     lines.append(f"  | {rule.to_pattern(self)}")
 
-                if rule.construct_action:
-                    lines.append(f"    +{{{{ {rule.construct_action} }}}}")
+                if rule.constructor:
+                    lines.append(f"    +{{{{ {rule.constructor} }}}}")
 
             lines.append("")
 

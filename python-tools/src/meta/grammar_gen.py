@@ -223,7 +223,7 @@ class GrammarGenerator:
             if is_final:
                 self.final_rules.add(lhs.name)
             for rule in rules:
-                assert rule.construct_action is not None
+                assert rule.constructor is not None
                 self._add_rule(rule, is_builtin=True)
 
     def _post_process_grammar(self) -> None:
@@ -275,7 +275,7 @@ class GrammarGenerator:
                                 Rule(
                                     lhs=canonical_lhs,
                                     rhs=rule.rhs,
-                                    construct_action=rule.construct_action,
+                                    constructor=rule.constructor,
                                     source_type=rule.source_type
                                 ) for rule in old_rules
                             ]
@@ -348,7 +348,7 @@ class GrammarGenerator:
                 # Create oneof wrapper action
                 oneof_call = Call(OneOf(field.name), [Var('value', field_type)])
                 wrapper_call = Call(Message(message.module, message_name), [oneof_call])
-                construct_action = Lambda(
+                constructor = Lambda(
                     [Var('value', field_type)],
                     MessageType(message.module, message_name),
                     wrapper_call
@@ -359,7 +359,7 @@ class GrammarGenerator:
                 alt_rule = Rule(
                     lhs=Nonterminal(rule_name, message_type),
                     rhs=rhs,
-                    construct_action=construct_action
+                    constructor=constructor
                 )
                 self._add_rule(alt_rule)
 
@@ -369,23 +369,23 @@ class GrammarGenerator:
                         terminal_name = self._map_primitive_type(field.type)
                         field_type = self._get_type_for_name(field.type)
                         rhs = NamedTerminal(terminal_name, field_type)
-                        construct_action = create_identity_function(field_type)
+                        constructor = create_identity_function(field_type)
                         field_to_type_rule = Rule(
                             lhs=Nonterminal(field_rule, field_type),
                             rhs=rhs,
-                            construct_action=construct_action
+                            constructor=constructor
                         )
                         self._add_rule(field_to_type_rule)
                 else:
                     type_rule = _get_rule_name(field.type)
                     if field_rule != type_rule and field_rule not in self.final_rules:
                         field_type = self._get_type_for_name(field.type)
-                        construct_action = create_identity_function(field_type)
+                        constructor = create_identity_function(field_type)
                         rhs = Nonterminal(type_rule, field_type)
                         field_to_type_rule = Rule(
                             lhs=Nonterminal(field_rule, field_type),
                             rhs=rhs,
-                            construct_action=construct_action
+                            constructor=constructor
                         )
                         self._add_rule(field_to_type_rule)
             for field in oneof.fields:
@@ -406,13 +406,13 @@ class GrammarGenerator:
             rhs = Sequence(tuple(rhs_symbols))
 
             # Generate construct action
-            construct_action = self._generate_action(message_name, rhs_symbols, field_names, field_types)
+            constructor = self._generate_action(message_name, rhs_symbols, field_names, field_types)
 
             # Create rule
             rule = Rule(
                 lhs=Nonterminal(rule_name, message_type),
                 rhs=rhs,
-                construct_action=construct_action,
+                constructor=constructor,
                 source_type=message_name
             )
             self._add_rule(rule)
@@ -449,12 +449,12 @@ class GrammarGenerator:
                 else:
                     literal_name = self.rule_literal_renames.get(field_rule_name, field_rule_name)
                     if not self.grammar.has_rule(Nonterminal(wrapper_rule_name, wrapper_type)):
-                        construct_action = create_identity_function(wrapper_type)
+                        constructor = create_identity_function(wrapper_type)
                         rhs = Sequence((LitTerminal('('), LitTerminal(literal_name), Star(Nonterminal(type_rule_name, field_type)), LitTerminal(')')))
                         wrapper_rule = Rule(
                             lhs=Nonterminal(wrapper_rule_name, wrapper_type),
                             rhs=rhs,
-                            construct_action=construct_action,
+                            constructor=constructor,
                             source_type=field.type
                         )
                         self._add_rule(wrapper_rule)

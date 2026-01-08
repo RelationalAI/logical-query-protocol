@@ -79,14 +79,14 @@ def introduce_abstraction_with_arity(rule: Rule) -> Optional[Rule]:
     arity_param_idx = arity_idx - literals_before_arity
 
     # Create new construct action: takes tuple parameter, unpacks it, calls original body
-    new_params = list(rule.construct_action.params)
+    new_params = list(rule.constructor.params)
     tuple_param = Var('abstraction_with_arity', abstraction_with_arity_type)
     new_params[abstraction_param_idx] = tuple_param
     new_params.pop(arity_param_idx)
 
     abstraction_var = Var('abstraction', MessageType('logic', 'Abstraction'))
     arity_var = Var('arity', BaseType('Int64'))
-    old_params_substituted = list(rule.construct_action.params)
+    old_params_substituted = list(rule.constructor.params)
     old_params_substituted[abstraction_param_idx] = abstraction_var
     old_params_substituted[arity_param_idx] = arity_var
 
@@ -96,20 +96,20 @@ def introduce_abstraction_with_arity(rule: Rule) -> Optional[Rule]:
         body=Let(
             var=arity_var,
             init=Call(Builtin('get_tuple_element'), [tuple_param, Lit(1)]),
-            body=apply_lambda(rule.construct_action, old_params_substituted)
+            body=apply_lambda(rule.constructor, old_params_substituted)
         )
     )
 
-    new_construct_action = Lambda(
+    new_constructor = Lambda(
         params=new_params,
-        return_type=rule.construct_action.return_type,
+        return_type=rule.constructor.return_type,
         body=new_construct_body
     )
 
     return Rule(
         lhs=rule.lhs,
         rhs=new_rhs,
-        construct_action=new_construct_action,
+        constructor=new_constructor,
         source_type=rule.source_type
     )
 

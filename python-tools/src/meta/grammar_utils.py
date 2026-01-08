@@ -80,7 +80,7 @@ def rewrite_rule(rule: Rule, replacements: Dict[Rhs, Rhs]) -> Rule:
         return Rule(
             lhs=rule.lhs,
             rhs=new_rhs,
-            construct_action=rule.construct_action,
+            constructor=rule.constructor,
             source_type=rule.source_type
         )
     return rule
