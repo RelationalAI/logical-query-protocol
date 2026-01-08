@@ -61,8 +61,8 @@ def _make_identity_rule(lhs_name: str, lhs_type: TargetType, rhs) -> Rule:
     return Rule(
         lhs=Nonterminal(lhs_name, lhs_type),
         rhs=rhs,
-        construct_action=create_identity_function(lhs_type),
-        deconstruct_action=create_identity_option_function(lhs_type)
+        constructor=create_identity_function(lhs_type),
+        deconstructor=create_identity_option_function(lhs_type)
     )
 
 
@@ -88,12 +88,12 @@ def _make_id_from_terminal_rule(
     return Rule(
         lhs=Nonterminal(lhs_name, msg_type),
         rhs=NamedTerminal(terminal_name, terminal_type),
-        construct_action=Lambda(
+        constructor=Lambda(
             [param_var],
             return_type=msg_type,
             body=Call(Builtin(f'{lhs_name}_from_{type_suffix}'), [param_var])
         ),
-        deconstruct_action=Lambda(
+        deconstructor=Lambda(
             [msg_var],
             OptionType(terminal_type),
             Call(Builtin(f'{lhs_name}_to_{type_suffix}'), [msg_var])
@@ -137,12 +137,12 @@ def _make_simple_message_rule(
     return Rule(
         lhs=Nonterminal(lhs_name, msg_type),
         rhs=rhs,
-        construct_action=Lambda(
+        constructor=Lambda(
             params,
             msg_type,
             _msg(module, message_name, *params)
         ),
-        deconstruct_action=Lambda(
+        deconstructor=Lambda(
             [msg_var],
             OptionType(TupleType([typ for _, typ in fields])),
             make_some(make_tuple(*[
@@ -162,12 +162,12 @@ def _make_value_oneof_rule(rhs, rhs_type, oneof_field_name):
     return Rule(
         lhs=_value_nt,
         rhs=rhs,
-        construct_action=Lambda(
+        constructor=Lambda(
             [var_value],
             _value_type,
             _msg('logic', 'Value', Call(OneOf(oneof_field_name), [var_value]))
         ),
-        deconstruct_action=Lambda(
+        deconstructor=Lambda(
             [msg_var],
             OptionType(rhs_type),
             _oneof_deconstruct(msg_var, 'value_type', oneof_field_name)
@@ -262,12 +262,12 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_value_nt,
             rhs=LitTerminal('missing'),
-            construct_action=Lambda(
+            constructor=Lambda(
                 [],
                 _value_type,
                 _msg('logic', 'Value', Call(OneOf('missing_value'), [_msg('logic', 'MissingValue')]))
             ),
-            deconstruct_action=Lambda(
+            deconstructor=Lambda(
                 [_msg_value_var],
                 OptionType(TupleType([])),
                 IfElse(
@@ -284,8 +284,8 @@ class BuiltinRules:
             self.add_rule(Rule(
                 lhs=_boolean_value_nt,
                 rhs=LitTerminal(keyword),
-                construct_action=Lambda([], BOOLEAN_TYPE, Lit(value)),
-                deconstruct_action=Lambda(
+                constructor=Lambda([], BOOLEAN_TYPE, Lit(value)),
+                deconstructor=Lambda(
                     [_var_bool_value],
                     OptionType(TupleType([])),
                     IfElse(make_equal(_var_bool_value, Lit(value)), make_some(make_tuple()), Lit(None))
@@ -320,7 +320,7 @@ class BuiltinRules:
                 Option(_int_terminal),
                 _rp
             )),
-            construct_action=Lambda(
+            constructor=Lambda(
                 [_var_year, _var_month, _var_day, _var_hour, _var_minute, _var_second, _var_microsecond],
                 _datetime_value_type,
                 _msg('logic', 'DateTimeValue',
@@ -328,7 +328,7 @@ class BuiltinRules:
                     make_unwrap_option_or(_var_microsecond, Lit(0))
                 )
             ),
-            deconstruct_action=Lambda(
+            deconstructor=Lambda(
                 [Var('msg', _datetime_value_type)],
                 OptionType(_datetime_tuple_type),
                 make_some(make_tuple(
@@ -383,12 +383,12 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_config_key_value_nt,
             rhs=Sequence((_colon_symbol_terminal, _value_nt)),
-            construct_action=Lambda(
+            constructor=Lambda(
                 [Var('symbol', STRING_TYPE), Var('value', _value_type)],
                 _config_key_value_type,
                 make_tuple(Var('symbol', STRING_TYPE), Var('value', _value_type))
             ),
-            deconstruct_action=Lambda(
+            deconstructor=Lambda(
                 [_var_tuple],
                 OptionType(_config_key_value_type),
                 make_some(make_tuple(
@@ -408,7 +408,7 @@ class BuiltinRules:
                 Star(_epoch_nt),
                 _rp
             )),
-            construct_action=Lambda(
+            constructor=Lambda(
                 [
                     Var('configure', OptionType(_configure_type)),
                     Var('sync', OptionType(_sync_type)),
@@ -424,7 +424,7 @@ class BuiltinRules:
                     Var('sync', OptionType(_sync_type))
                 )
             ),
-            deconstruct_action=Lambda(
+            deconstructor=Lambda(
                 [Var('msg', _transaction_type)],
                 OptionType(TupleType([
                     OptionType(_configure_type),
@@ -447,12 +447,12 @@ class BuiltinRules:
                 _config_dict_nt,
                 _rp
             )),
-            construct_action=Lambda(
+            constructor=Lambda(
                 [Var('config_dict', _config_type)],
                 return_type=_configure_type,
                 body=Call(Builtin('construct_configure'), [Var('config_dict', _config_type)])
             ),
-            deconstruct_action=Lambda(
+            deconstructor=Lambda(
                 [Var('msg', _configure_type)],
                 OptionType(_config_type),
                 Call(Builtin('deconstruct_configure_to_dict'), [Var('msg', _configure_type)])
@@ -492,7 +492,7 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_bindings_nt,
             rhs=Sequence((LitTerminal('['), Star(_binding_nt), Option(_value_bindings_nt), LitTerminal(']'))),
-            construct_action=Lambda(
+            constructor=Lambda(
                 [_var_keys, _var_values],
                 _bindings_type,
                 make_tuple(
@@ -500,7 +500,7 @@ class BuiltinRules:
                     make_unwrap_option_or(_var_values, _empty_binding_list)
                 )
             ),
-            deconstruct_action=Lambda(
+            deconstructor=Lambda(
                 [_var_bindings_tuple],
                 OptionType(TupleType([ListType(_binding_type), OptionType(ListType(_binding_type))])),
                 make_some(make_tuple(
@@ -523,12 +523,12 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_binding_nt,
             rhs=Sequence((_symbol_terminal, LitTerminal('::'), _type_nt)),
-            construct_action=Lambda(
+            constructor=Lambda(
                 [Var('symbol', STRING_TYPE), _type_var],
                 _binding_type,
                 _msg('logic', 'Binding', _msg('logic', 'Var', Var('symbol', STRING_TYPE)), _type_var)
             ),
-            deconstruct_action=Lambda(
+            deconstructor=Lambda(
                 [Var('msg', _binding_type)],
                 OptionType(TupleType([STRING_TYPE, _type_type])),
                 make_some(make_tuple(
@@ -553,7 +553,7 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_abstraction_with_arity_nt,
             rhs=Sequence((_lp, _bindings_nt, _formula_nt, _rp)),
-            construct_action=Lambda(
+            constructor=Lambda(
                 params=[_var_bindings, _var_formula],
                 return_type=_abstraction_with_arity_type,
                 body=make_tuple(
@@ -561,7 +561,7 @@ class BuiltinRules:
                     make_length(make_snd(_var_bindings))
                 )
             ),
-            deconstruct_action=Lambda(
+            deconstructor=Lambda(
                 [_var_abstraction_tuple],
                 OptionType(TupleType([_bindings_type, _formula_type])),
                 make_some(make_tuple(
@@ -577,12 +577,12 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_abstraction_nt,
             rhs=Sequence((_lp, _bindings_nt, _formula_nt, _rp)),
-            construct_action=Lambda(
+            constructor=Lambda(
                 params=[_var_bindings, _var_formula],
                 return_type=_abstraction_type,
                 body=_msg('logic', 'Abstraction', _concat_bindings(_var_bindings), _var_formula)
             ),
-            deconstruct_action=Lambda(
+            deconstructor=Lambda(
                 [Var('msg', _abstraction_type)],
                 OptionType(TupleType([_bindings_type, _formula_type])),
                 make_some(make_tuple(
@@ -613,12 +613,12 @@ class BuiltinRules:
                 LitTerminal('::'),
                 _monoid_op_nt
             )),
-            construct_action=Lambda(
+            constructor=Lambda(
                 [Var('type', _type_type), Var('op', _monoid_op_type)],
                 return_type=_monoid_type,
                 body=Call(Var('op', _monoid_op_type), [Var('type', _type_type)])
             ),
-            deconstruct_action=Lambda(
+            deconstructor=Lambda(
                 [Var('msg', _monoid_type)],
                 OptionType(TupleType([_type_type, _monoid_op_type])),
                 Call(Builtin('deconstruct_monoid'), [Var('msg', _monoid_type)])
@@ -637,12 +637,12 @@ class BuiltinRules:
                 LitTerminal('::'),
                 LitTerminal('OR')
             )),
-            construct_action = Lambda(
+            constructor = Lambda(
                 [],
                 return_type=_monoid_type,
                 body=Lambda([], return_type=_monoid_type, body=body)
             ),
-            deconstruct_action=Lambda(
+            deconstructor=Lambda(
                 [_msg_monoid_var],
                 OptionType(TupleType([])),
                 IfElse(
@@ -653,20 +653,20 @@ class BuiltinRules:
             )
         ))
 
-        def _make_monoid_op_rule(constructor: str) -> Rule:
-            op = constructor.removesuffix('Monoid')
+        def _make_monoid_op_rule(message: str) -> Rule:
+            op = message.removesuffix('Monoid')
             symbol = f'{op.lower()}_monoid'
             lit = op.upper()
             body = _msg('logic', 'Monoid',
-                Call(OneOf(symbol), [_msg('logic', constructor, Var('type', _type_type))])
+                Call(OneOf(symbol), [_msg('logic', message, Var('type', _type_type))])
             )
             rhs = LitTerminal(lit)
-            construct_action = Lambda(
+            constructor = Lambda(
                 [],
                 return_type=_monoid_op_type,
                 body=Lambda([Var('type', _type_type)], return_type=_monoid_type, body=body)
             )
-            deconstruct_action = Lambda(
+            deconstructor = Lambda(
                 [Var('op', _monoid_op_type)],
                 return_type=OptionType(TupleType([])),
                 body=Call(Builtin('deconstruct_monoid_op'), [Var('op', _monoid_op_type), Lit(symbol)])
@@ -674,8 +674,8 @@ class BuiltinRules:
             return Rule(
                 lhs=_monoid_op_nt,
                 rhs=rhs,
-                construct_action=construct_action,
-                deconstruct_action=deconstruct_action
+                constructor=constructor,
+                deconstructor=deconstructor
             )
 
         self.add_rule(_make_monoid_op_rule('MinMonoid'))
@@ -703,8 +703,8 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_true_nt,
             rhs=Sequence((_lp, LitTerminal('true'), _rp)),
-            construct_action=Lambda([], _conjunction_type, _msg('logic', 'Conjunction', _empty_formula_list)),
-            deconstruct_action=Lambda(
+            constructor=Lambda([], _conjunction_type, _msg('logic', 'Conjunction', _empty_formula_list)),
+            deconstructor=Lambda(
                 [Var('msg', _conjunction_type)],
                 OptionType(_empty_tuple_type),
                 IfElse(
@@ -718,8 +718,8 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_false_nt,
             rhs=Sequence((_lp, LitTerminal('false'), _rp)),
-            construct_action=Lambda([], _disjunction_type, _msg('logic', 'Disjunction', _empty_formula_list)),
-            deconstruct_action=Lambda(
+            constructor=Lambda([], _disjunction_type, _msg('logic', 'Disjunction', _empty_formula_list)),
+            deconstructor=Lambda(
                 [Var('msg', _disjunction_type)],
                 OptionType(_empty_tuple_type),
                 IfElse(
@@ -738,12 +738,12 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_formula_nt,
             rhs=_true_nt,
-            construct_action=Lambda(
+            constructor=Lambda(
                 [Var('value', _conjunction_type)],
                 _formula_type,
                 _msg('logic', 'Formula', Call(OneOf('conjunction'), [Var('value', _conjunction_type)]))
             ),
-            deconstruct_action=Lambda(
+            deconstructor=Lambda(
                 [_msg_formula_var],
                 OptionType(_conjunction_type),
                 _oneof_deconstruct(
@@ -757,12 +757,12 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_formula_nt,
             rhs=_false_nt,
-            construct_action=Lambda(
+            constructor=Lambda(
                 [Var('value', _disjunction_type)],
                 _formula_type,
                 _msg('logic', 'Formula', Call(OneOf('disjunction'), [Var('value', _disjunction_type)]))
             ),
-            deconstruct_action=Lambda(
+            deconstructor=Lambda(
                 [_msg_formula_var],
                 OptionType(_disjunction_type),
                 _oneof_deconstruct(
@@ -789,9 +789,9 @@ class BuiltinRules:
         _relation_id_nt = Nonterminal('relation_id', _relation_id_type)
         _config_dict_nt = Nonterminal('config_dict', _config_type)
         _export_nt = Nonterminal('export', _export_type)
-        _export_csv_config_nt = Nonterminal('export_csv_config', _export_csv_config_type)
-        _export_csv_path_nt = Nonterminal('export_csv_path', STRING_TYPE)
-        _export_csv_columns_nt = Nonterminal('export_csv_columns', ListType(_export_csv_column_type))
+        _export_csv_config_nt = Nonterminal('export_csvconfig', _export_csv_config_type)
+        _export_csv_path_nt = Nonterminal('export_csvpath', STRING_TYPE)
+        _export_csv_columns_nt = Nonterminal('export_csvcolumns', ListType(_export_csv_column_type))
 
         # Export rules
         _msg_export_var = Var('msg', _export_type)
@@ -802,12 +802,12 @@ class BuiltinRules:
                 _export_csv_config_nt,
                 _rp
             )),
-            construct_action=Lambda(
+            constructor=Lambda(
                 [Var('config', _export_csv_config_type)],
                 _export_type,
                 _msg('transactions', 'Export', Call(OneOf('csv_config'), [Var('config', _export_csv_config_type)]))
             ),
-            deconstruct_action=Lambda(
+            deconstructor=Lambda(
                 [_msg_export_var],
                 OptionType(_export_csv_config_type),
                 _oneof_deconstruct(_msg_export_var, 'export_type', 'csv_config')
@@ -829,7 +829,7 @@ class BuiltinRules:
                 _config_dict_nt,
                 _rp
             )),
-            construct_action=Lambda(
+            constructor=Lambda(
                 [
                     Var('path', STRING_TYPE),
                     Var('columns', ListType(_export_csv_column_type)),
@@ -842,7 +842,7 @@ class BuiltinRules:
                     Var('config', _config_type)
                 ])
             ),
-            deconstruct_action=Lambda(
+            deconstructor=Lambda(
                 [Var('msg', _export_csv_config_type)],
                 OptionType(TupleType([
                     STRING_TYPE,
@@ -897,8 +897,8 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_var_nt,
             rhs=_symbol_terminal,
-            construct_action=Lambda([Var('symbol', STRING_TYPE)], _var_type, _msg('logic', 'Var', Var('symbol', STRING_TYPE))),
-            deconstruct_action=Lambda(
+            constructor=Lambda([Var('symbol', STRING_TYPE)], _var_type, _msg('logic', 'Var', Var('symbol', STRING_TYPE))),
+            deconstructor=Lambda(
                 [Var('msg', _var_type)],
                 OptionType(STRING_TYPE),
                 make_some(make_get_field(Var('msg', _var_type), Lit('symbol')))
@@ -917,12 +917,12 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_specialized_value_nt,
             rhs=Sequence((LitTerminal('#'), _value_nt)),
-            construct_action=Lambda(
+            constructor=Lambda(
                 [Var('value', _value_type)],
                 _value_type,
                 Var('value', _value_type)
             ),
-            deconstruct_action=Lambda(
+            deconstructor=Lambda(
                 [Var('value', _value_type)],
                 OptionType(_value_type),
                 make_some(Var('value', _value_type))
@@ -992,12 +992,12 @@ class BuiltinRules:
             op_rule = Rule(
                 lhs=op_nt,
                 rhs=Sequence((_lp, LitTerminal(op)) + rhs_terms + (_rp,)),
-                construct_action=Lambda(
+                constructor=Lambda(
                     params,
                     _primitive_type,
                     _msg('logic', 'Primitive', Lit(prim), *wrapped_args)
                 ),
-                deconstruct_action=Lambda(
+                deconstructor=Lambda(
                     [msg_var],
                     OptionType(TupleType([_term_type] * arity)),
                     IfElse(
@@ -1012,8 +1012,8 @@ class BuiltinRules:
             wrapper_rule = Rule(
                 lhs=_primitive_nt,
                 rhs=op_nt,
-                construct_action=Lambda([Var('op', _primitive_type)], _primitive_type, Var('op', _primitive_type)),
-                deconstruct_action=Lambda(
+                constructor=Lambda([Var('op', _primitive_type)], _primitive_type, Var('op', _primitive_type)),
+                deconstructor=Lambda(
                     [msg_var],
                     OptionType(_primitive_type),
                     IfElse(
@@ -1062,7 +1062,7 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_new_fragment_id_nt,
             rhs=_fragment_id_nt,
-            construct_action=Lambda(
+            constructor=Lambda(
                 [
                     Var('fragment_id', _fragment_id_type),
                 ],
@@ -1072,7 +1072,7 @@ class BuiltinRules:
                     Var('fragment_id', _fragment_id_type),
                 ])
             ),
-            deconstruct_action=Lambda(
+            deconstructor=Lambda(
                 [Var('fragment_id', _fragment_id_type)],
                 OptionType(_fragment_id_type),
                 make_some(Var('fragment_id', _fragment_id_type))
@@ -1088,7 +1088,7 @@ class BuiltinRules:
                 Star(_declaration_nt),
                 _rp
             )),
-            construct_action=Lambda(
+            constructor=Lambda(
                 [
                     Var('fragment_id', _fragment_id_type),
                     Var('declarations', ListType(_declaration_type))
@@ -1099,7 +1099,7 @@ class BuiltinRules:
                     Var('declarations', ListType(_declaration_type))
                 ])
             ),
-            deconstruct_action=Lambda(
+            deconstructor=Lambda(
                 [Var('msg', _fragment_type)],
                 OptionType(TupleType([
                     _fragment_id_type,
@@ -1132,14 +1132,14 @@ class BuiltinRules:
                     _relation_id_nt,
                     _rp
                 )),
-                construct_action=Lambda(
+                constructor=Lambda(
                     [name_var, Var('relation_id', _relation_id_type)],
                     msg_type,
                     _msg('transactions', message_name,
                         make_unwrap_option_or(name_var, Lit(keyword)),
                         Var('relation_id', _relation_id_type))
                 ),
-                deconstruct_action=Lambda(
+                deconstructor=Lambda(
                     [msg_var],
                     OptionType(TupleType([OptionType(STRING_TYPE), _relation_id_type])),
                     make_some(make_tuple(
@@ -1207,7 +1207,7 @@ class BuiltinRules:
                 _formula_nt,
                 _rp
             )),
-            construct_action=Lambda(
+            constructor=Lambda(
                 [Var('bindings', _bindings_type), Var('formula', _formula_type)],
                 _exists_type,
                 _msg('logic', 'Exists',
@@ -1220,7 +1220,7 @@ class BuiltinRules:
                     )
                 )
             ),
-            deconstruct_action=Lambda(
+            deconstructor=Lambda(
                 [Var('msg', _exists_type)],
                 OptionType(TupleType([_bindings_type, _formula_type])),
                 Call(Builtin('deconstruct_exists'), [Var('msg', _exists_type)])

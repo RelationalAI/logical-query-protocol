@@ -151,7 +151,7 @@ class GrammarGenerator:
             if is_final:
                 self.final_rules.add(lhs.name)
             for rule in rules:
-                assert rule.construct_action is not None
+                assert rule.constructor is not None
                 self._add_rule(rule, is_builtin=True)
 
     def _post_process_grammar(self) -> None:
@@ -203,8 +203,8 @@ class GrammarGenerator:
                                 Rule(
                                     lhs=canonical_lhs,
                                     rhs=rule.rhs,
-                                    construct_action=rule.construct_action,
-                                    deconstruct_action=rule.deconstruct_action,
+                                    constructor=rule.constructor,
+                                    deconstructor=rule.deconstructor,
                                     source_type=rule.source_type
                                 ) for rule in old_rules
                             ]
@@ -293,14 +293,14 @@ class GrammarGenerator:
                 # Create oneof wrapper action
                 oneof_call = Call(OneOf(field.name), [Var('value', field_type)])
                 wrapper_call = Call(Message(message.module, message_name), [oneof_call])
-                construct_action = Lambda(
+                constructor = Lambda(
                     [Var('value', field_type)],
                     MessageType(message.module, message_name),
                     wrapper_call
                 )
-                deconstruct_action = Lambda(
+                deconstructor = Lambda(
                     [Var('message', MessageType(message.module, message_name))],
-                    field_type,
+                    OptionType(field_type),
                     IfElse(
                         Call(Builtin('equal'), [
                             Call(Builtin('WhichOneof'), [Var('message', MessageType(message.module, message_name)), Lit(oneof.name)]),
@@ -319,8 +319,8 @@ class GrammarGenerator:
                 alt_rule = Rule(
                     lhs=Nonterminal(rule_name, message_type),
                     rhs=rhs,
-                    construct_action=construct_action,
-                    deconstruct_action=deconstruct_action
+                    constructor=constructor,
+                    deconstructor=deconstructor
                 )
                 self._add_rule(alt_rule)
 
@@ -330,27 +330,27 @@ class GrammarGenerator:
                         terminal_name = self._map_primitive_type(field.type)
                         field_type = self._get_type_for_name(field.type)
                         rhs = NamedTerminal(terminal_name, field_type)
-                        construct_action = create_identity_function(field_type)
-                        deconstruct_action = create_identity_option_function(field_type)
+                        constructor = create_identity_function(field_type)
+                        deconstructor = create_identity_option_function(field_type)
                         field_to_type_rule = Rule(
                             lhs=Nonterminal(field_rule, field_type),
                             rhs=rhs,
-                            construct_action=construct_action,
-                            deconstruct_action=deconstruct_action
+                            constructor=constructor,
+                            deconstructor=deconstructor
                         )
                         self._add_rule(field_to_type_rule)
                 else:
                     type_rule = self._get_rule_name(field.type)
                     if field_rule != type_rule and field_rule not in self.final_rules:
                         field_type = self._get_type_for_name(field.type)
-                        construct_action = create_identity_function(field_type)
-                        deconstruct_action = create_identity_option_function(field_type)
+                        constructor = create_identity_function(field_type)
+                        deconstructor = create_identity_option_function(field_type)
                         rhs = Nonterminal(type_rule, field_type)
                         field_to_type_rule = Rule(
                             lhs=Nonterminal(field_rule, field_type),
                             rhs=rhs,
-                            construct_action=construct_action,
-                            deconstruct_action=deconstruct_action
+                            constructor=constructor,
+                            deconstructor=deconstructor
                         )
                         self._add_rule(field_to_type_rule)
             for field in oneof.fields:
@@ -371,15 +371,15 @@ class GrammarGenerator:
             rhs = Sequence(tuple(rhs_symbols))
 
             # Generate construct action
-            construct_action = self._generate_action(message_name, rhs_symbols, field_names, field_types)
-            deconstruct_action = self._generate_deconstruct_action(message_name, rhs_symbols, field_names, field_types)
+            constructor = self._generate_action(message_name, rhs_symbols, field_names, field_types)
+            deconstructor = self._generate_deconstructor(message_name, rhs_symbols, field_names, field_types)
 
             # Create rule with both actions
             rule = Rule(
                 lhs=Nonterminal(rule_name, message_type),
                 rhs=rhs,
-                construct_action=construct_action,
-                deconstruct_action=deconstruct_action,
+                constructor=constructor,
+                deconstructor=deconstructor,
                 source_type=message_name
             )
             self._add_rule(rule)
@@ -416,14 +416,14 @@ class GrammarGenerator:
                 else:
                     literal_name = self.rule_literal_renames.get(field_rule_name, field_rule_name)
                     if not self.grammar.has_rule(Nonterminal(wrapper_rule_name, wrapper_type)):
-                        construct_action = create_identity_function(wrapper_type)
-                        deconstruct_action = create_identity_option_function(wrapper_type)
+                        constructor = create_identity_function(wrapper_type)
+                        deconstructor = create_identity_option_function(wrapper_type)
                         rhs = Sequence((LitTerminal('('), LitTerminal(literal_name), Star(Nonterminal(type_rule_name, field_type)), LitTerminal(')')))
                         wrapper_rule = Rule(
                             lhs=Nonterminal(wrapper_rule_name, wrapper_type),
                             rhs=rhs,
-                            construct_action=construct_action,
-                            deconstruct_action=deconstruct_action,
+                            constructor=constructor,
+                            deconstructor=deconstructor,
                             source_type=field.type
                         )
                         self._add_rule(wrapper_rule)
@@ -466,10 +466,10 @@ class GrammarGenerator:
         """Map protobuf primitive to grammar terminal name."""
         return _PRIMITIVE_TO_GRAMMAR_SYMBOL.get(type_name, 'SYMBOL')
 
-    def _generate_deconstruct_action(self, message_name, rhs_symbols, field_names, field_types) -> Lambda:
-        """Generate a deconstruct_action that is the inverse of construct_action.
+    def _generate_deconstructor(self, message_name, rhs_symbols, field_names, field_types) -> Lambda:
+        """Generate a deconstructor that is the inverse of constructor.
 
-        The deconstruct_action takes a message (of the construct_action's return type)
+        The deconstructor takes a message (of the constructor's return type)
         and returns the component values if the message matches this rule, or None otherwise.
         """
         param_names = []

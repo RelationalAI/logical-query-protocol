@@ -15,7 +15,37 @@ from .target import TargetExpr, Var, Symbol, Call, Lambda, Lit, TargetType, List
 
 @dataclass(frozen=True)
 class Rhs:
-    """Base class for right-hand sides of grammar rules."""
+    """Base class for right-hand sides of grammar rules.
+
+    Rhs nodes represent the right-hand side of a grammar production rule.
+    They form a tree structure that describes the syntax pattern to match.
+
+    Subclasses:
+        - Terminal: Base class for terminal symbols
+            - LitTerminal: Literal keywords like "if", "("
+            - NamedTerminal: Token types like SYMBOL, INT
+        - Nonterminal: References to other grammar rules
+        - Star: Zero-or-more repetition (e.g., expr*)
+        - Option: Optional element (e.g., expr?)
+        - Sequence: Concatenation of multiple Rhs elements
+
+    The target_type() method returns the type of value produced when parsing
+    this Rhs element. For example:
+        - LitTerminal("if") produces no value (empty tuple type)
+        - NamedTerminal("INT", Int64) produces Int64
+        - Star(expr) produces List[expr.target_type()]
+        - Option(expr) produces Option[expr.target_type()]
+
+    Example:
+        # Grammar rule: expr -> "(" SYMBOL expr* ")"
+        rhs = Sequence((
+            LitTerminal("("),
+            NamedTerminal("SYMBOL", BaseType("String")),
+            Star(Nonterminal("expr", MessageType("proto", "Expr"))),
+            LitTerminal(")")
+        ))
+        # rhs.target_type() returns TupleType([String, List[proto.Expr]])
+    """
 
     def target_type(self) -> TargetType:
         """Return the target type for this RHS element."""
@@ -41,7 +71,6 @@ class LitTerminal(Terminal):
 
     def target_type(self) -> TargetType:
         """Literals don't produce values, return empty tuple type."""
-        from .target import TupleType
         return TupleType([])
 
 
@@ -75,8 +104,12 @@ class Nonterminal(RhsSymbol):
 
 @dataclass(frozen=True)
 class Star(Rhs):
-    """Zero or more repetitions (*)."""
-    rhs: 'RhsSymbol'
+    """Zero or more repetitions (*).
+
+    Only Nonterminal and NamedTerminal are allowed since LitTerminal
+    produces no value, making Star(LitTerminal) semantically meaningless.
+    """
+    rhs: 'Nonterminal | NamedTerminal'
 
     def __str__(self) -> str:
         return f"{self.rhs}*"
@@ -88,8 +121,12 @@ class Star(Rhs):
 
 @dataclass(frozen=True)
 class Option(Rhs):
-    """Optional element (?)."""
-    rhs: 'RhsSymbol'
+    """Optional element (?).
+
+    Only Nonterminal and NamedTerminal are allowed since LitTerminal
+    produces no value, making Option(LitTerminal) semantically meaningless.
+    """
+    rhs: 'Nonterminal | NamedTerminal'
 
     def __str__(self) -> str:
         return f"{self.rhs}?"
@@ -129,22 +166,57 @@ class Sequence(Rhs):
 class Rule:
     """Grammar rule (production).
 
-    The construct_action takes the values from parsing the RHS elements and constructs
-    the result message.
+    A Rule represents a grammar production of the form:
+        lhs -> rhs { constructor } [[ deconstructor ]]
 
-    The deconstruct_action is the inverse - it takes a message of the LHS type and
+    The constructor is a Lambda that takes the values parsed from the
+    non-literal RHS elements and constructs the result value. Literal terminals
+    (like keywords) don't produce values and are skipped when binding parameters.
+
+    The deconstructor is the inverse - it takes a message of the LHS type and
     extracts the component values that would be needed to reconstruct it. This is
     used by the pretty-printer to deconstruct messages back into their components.
+
+    Attributes:
+        lhs: The nonterminal being defined
+        rhs: The right-hand side pattern to match
+        constructor: Lambda to construct result from parsed values
+        deconstructor: Lambda to extract component values from a message
+        source_type: Optional protobuf type name this rule was generated from
+
+    Example:
+        # Rule: value -> "(" "date" INT INT INT ")"
+        # Parses: (date 2024 1 15) -> DateValue(year=2024, month=1, day=15)
+        rule = Rule(
+            lhs=Nonterminal("value", MessageType("proto", "DateValue")),
+            rhs=Sequence((
+                LitTerminal("("), LitTerminal("date"),
+                NamedTerminal("INT", BaseType("Int64")),  # year
+                NamedTerminal("INT", BaseType("Int64")),  # month
+                NamedTerminal("INT", BaseType("Int64")),  # day
+                LitTerminal(")")
+            )),
+            constructor=Lambda(
+                params=[Var("year", Int64), Var("month", Int64), Var("day", Int64)],
+                return_type=MessageType("proto", "DateValue"),
+                body=Call(Message("proto", "DateValue"), [year, month, day])
+            ),
+            deconstructor=Lambda(
+                params=[Var("msg", MessageType("proto", "DateValue"))],
+                return_type=OptionType(TupleType([Int64, Int64, Int64])),
+                body=Some((msg.year, msg.month, msg.day))
+            )
+        )
     """
     lhs: Nonterminal
     rhs: Rhs
-    construct_action: 'Lambda'
-    deconstruct_action: 'Lambda'
+    constructor: 'Lambda'
+    deconstructor: 'Lambda'
     source_type: Optional[str] = None  # Track the protobuf type this rule came from
 
     def __str__(self):
-        result = f"{self.lhs.name} -> {self.rhs} {{{{ {self.construct_action} }}}}"
-        result += f" [[ {self.deconstruct_action} ]]"
+        result = f"{self.lhs.name} -> {self.rhs} {{{{ {self.constructor} }}}}"
+        result += f" [[ {self.deconstructor} ]]"
         return result
 
     def to_pattern(self, grammar: Optional['Grammar'] = None) -> str:
@@ -156,15 +228,15 @@ class Rule:
 
         assert isinstance(self.rhs, Rhs)
         rhs_len = _count_nonliteral_rhs_elements(self.rhs)
-        action_params = len(self.construct_action.params)
+        action_params = len(self.constructor.params)
         assert action_params == rhs_len, \
             f"Action for {self.lhs.name} has {action_params} parameters but RHS has {rhs_len} non-literal element{'' if rhs_len == 1 else 's'}: {self.rhs}"
 
-        # Check deconstruct_action has exactly one parameter with the LHS type
-        assert len(self.deconstruct_action.params) == 1, \
-            f"Deconstruct action for {self.lhs.name} must have exactly 1 parameter, has {len(self.deconstruct_action.params)}"
+        # Check deconstructor has exactly one parameter with the LHS type
+        assert len(self.deconstructor.params) == 1, \
+            f"Deconstruct action for {self.lhs.name} must have exactly 1 parameter, has {len(self.deconstructor.params)}"
 
-        deconstruct_param_type = self.deconstruct_action.params[0].type
+        deconstruct_param_type = self.deconstructor.params[0].type
         lhs_type = self.lhs.target_type()
         assert deconstruct_param_type == lhs_type, \
             f"Deconstruct action for {self.lhs.name} parameter type {deconstruct_param_type} must match LHS type {lhs_type}"
@@ -191,7 +263,22 @@ class Rule:
 
 @dataclass(frozen=True)
 class Token:
-    """Token definition (terminal with regex pattern)."""
+    """Token definition (terminal with regex pattern).
+
+    A Token defines a lexical token that can be recognized by the lexer.
+    It maps a regex pattern to a named terminal with an associated type.
+
+    Attributes:
+        name: The token name (e.g., "INT", "SYMBOL", "STRING")
+        pattern: Regex pattern to match the token
+        type: The type of value produced when this token is scanned
+
+    Example:
+        # Define tokens for a simple expression language
+        int_token = Token("INT", r'[-]?\\d+', BaseType("Int64"))
+        symbol_token = Token("SYMBOL", r'[a-zA-Z_][a-zA-Z0-9_]*', BaseType("String"))
+        string_token = Token("STRING", r'"[^"]*"', BaseType("String"))
+    """
     name: str
     pattern: str
     type: TargetType
@@ -228,37 +315,45 @@ class Grammar:
                 self.start = lhs
         self.rules[lhs].append(rule)
 
-    def traverse_rules_preorder(self, reachable_only: bool = True) -> List[Nonterminal]:
-        """Traverse rules in preorder starting from start symbol.
+    def partition_nonterminals(self) -> Tuple[List[Nonterminal], List[Nonterminal]]:
+        """Partition nonterminals into reachable and unreachable.
 
-        Returns list of nonterminal names in the order they should be printed.
-        If reachable_only is True, only includes reachable nonterminals.
+        Returns a tuple of:
+            - reachable: List of reachable nonterminals in preorder traversal
+            - unreachable: List of unreachable nonterminals (sorted by name)
         """
-        visited = set()
-        result = []
+        visited: Set[Nonterminal] = set()
+        reachable: List[Nonterminal] = []
 
         def visit(A: Nonterminal) -> None:
             """Visit nonterminal and its dependencies in preorder."""
             if A in visited or A not in self.rules:
-                # Skip visited nonterminals and those that do not appear in the grammar.
                 return
             visited.add(A)
-            result.append(A)
-
-            # Visit all nonterminals referenced in this rule's RHS
+            reachable.append(A)
             for rule in self.rules[A]:
                 for B in get_nonterminals(rule.rhs):
                     visit(B)
 
         visit(self.start)
 
-        # If not reachable_only, add any remaining rules
-        if not reachable_only:
-            for nt_name in sorted(self.rules.keys(), key=lambda nt: nt.name):
-                if nt_name not in visited:
-                    visit(nt_name)
+        unreachable = sorted(
+            [nt for nt in self.rules.keys() if nt not in visited],
+            key=lambda nt: nt.name
+        )
 
-        return result
+        return reachable, unreachable
+
+    def traverse_rules_preorder(self, reachable_only: bool = True) -> List[Nonterminal]:
+        """Traverse rules in preorder starting from start symbol.
+
+        Returns list of nonterminal names in the order they should be printed.
+        If reachable_only is True, only includes reachable nonterminals.
+        """
+        reachable, unreachable = self.partition_nonterminals()
+        if reachable_only:
+            return reachable
+        return reachable + unreachable
 
     def get_rules(self, nt: Nonterminal) -> List[Rule]:
         """Get all rules with the given LHS name."""
@@ -268,31 +363,21 @@ class Grammar:
         """Check if any rule has the given LHS name."""
         return name in self.rules
 
-
     def get_unreachable_rules(self) -> List[Nonterminal]:
-        """
-        Find all rules that are unreachable from start symbol.
-
-        Returns list of rule names that cannot be reached.
-        """
-        reachable = self.analysis.compute_reachability()
-        unreachable = []
-        for A in self.rules.keys():
-            if A not in reachable:
-                unreachable.append(A)
+        """Find all rules that are unreachable from start symbol."""
+        _, unreachable = self.partition_nonterminals()
         return unreachable
 
-    def print_grammar(self, reachable: Optional[Set[Nonterminal]] = None) -> str:
+    def print_grammar(self, reachable_only: bool = True) -> str:
         """Convert to context-free grammar format with actions."""
         lines = []
         lines.append("// Auto-generated grammar from protobuf specifications")
         lines.append("")
 
-        # Traverse rules in preorder
-        rule_order = self.traverse_rules_preorder(reachable_only=(reachable is not None))
+        reachable, unreachable = self.partition_nonterminals()
+        rule_order = reachable if reachable_only else reachable + unreachable
+
         for lhs in rule_order:
-            if reachable is not None and lhs not in reachable:
-                continue
             rules_list = self.rules[lhs]
             lines.append(f"{lhs}")
             for idx, rule in enumerate(rules_list):
@@ -301,10 +386,10 @@ class Grammar:
                 else:
                     lines.append(f"  | {rule.to_pattern(self)}")
 
-                if rule.construct_action:
-                    lines.append(f"    +{{{{ {rule.construct_action} }}}}")
-                if rule.deconstruct_action:
-                    lines.append(f"    -{{{{ {rule.deconstruct_action} }}}}")
+                if rule.constructor:
+                    lines.append(f"    +{{{{ {rule.constructor} }}}}")
+                if rule.deconstructor:
+                    lines.append(f"    -{{{{ {rule.deconstructor} }}}}")
 
             lines.append("")
 
@@ -317,41 +402,10 @@ class Grammar:
 
         return "\n".join(lines)
 
-    def print_grammar_with_actions(self, reachable: Optional[Set[Nonterminal]] = None) -> str:
-        """Generate grammar with semantic actions in original form."""
-        lines = []
-        lines.append("# Grammar with semantic actions")
-        lines.append("")
 
-        # Traverse rules in preorder
-        rule_order = self.traverse_rules_preorder(reachable_only=(reachable is not None))
-        for lhs in rule_order:
-            if reachable is not None and lhs not in reachable:
-                continue
-            rules_list = self.rules[lhs]
-
-            for idx, rule in enumerate(rules_list):
-                if len(rules_list) == 1:
-                    lines.append(f"{lhs}: {rule.rhs}")
-                else:
-                    if idx == 0:
-                        lines.append(f"{lhs}: {rule.rhs}")
-                    else:
-                        lines.append(f"    | {rule.rhs}")
-
-                if rule.construct_action:
-                    lines.append(f"    {{{{ {rule.construct_action} }}}}")
-
-            lines.append("")
-
-        return "\n".join(lines)
-
-
-# Helper functions - re-exported from analysis module
+# Helper functions - re-exported from utils module
+from .grammar_utils import get_nonterminals, get_literals
 from .grammar_analysis import GrammarAnalysis
-get_nonterminals = GrammarAnalysis.get_nonterminals
-get_literals = GrammarAnalysis.get_literals
-is_epsilon = GrammarAnalysis.is_epsilon
 
 
 def rhs_elements(rhs: Rhs) -> Tuple[Rhs, ...]:
@@ -374,5 +428,3 @@ def _count_nonliteral_rhs_elements(rhs: Rhs) -> int:
     else:
         assert isinstance(rhs, (NamedTerminal, Nonterminal, Option, Star)), f"found {type(rhs)}"
         return 1
-
-

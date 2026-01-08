@@ -258,13 +258,13 @@ class TestComputeReachability:
         s = Nonterminal("S", MessageType("proto", "S"))
         lit = LitTerminal("a")
         grammar = Grammar(s)
-        construct_action = Lambda([], MessageType("proto", "S"), Var("x", MessageType("proto", "S")))
-        deconstruct_action = Lambda(
+        constructor = Lambda([], MessageType("proto", "S"), Var("x", MessageType("proto", "S")))
+        deconstructor = Lambda(
             [Var('msg', MessageType("proto", "S"))],
             OptionType(TupleType([])),
             Call(Builtin('Some'), [Call(Builtin('make_tuple'), [])])
         )
-        grammar.add_rule(Rule(s, lit, construct_action, deconstruct_action))
+        grammar.add_rule(Rule(s, lit, constructor, deconstructor))
         reachable = GrammarAnalysis.compute_reachability_static(grammar)
         assert s in reachable
         assert len(reachable) == 1
@@ -333,13 +333,13 @@ class TestComputeNullable:
 
         grammar = Grammar(s)
         param = Var("x", ListType(MessageType("proto", "A")))
-        construct_action = Lambda([param], MessageType("proto", "S"), param)
-        deconstruct_action = Lambda(
+        constructor = Lambda([param], MessageType("proto", "S"), param)
+        deconstructor = Lambda(
             [Var('msg', MessageType("proto", "S"))],
             OptionType(ListType(MessageType("proto", "A"))),
             Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "S")), Lit('list')])])
         )
-        grammar.add_rule(Rule(s, star_a, construct_action, deconstruct_action))
+        grammar.add_rule(Rule(s, star_a, constructor, deconstructor))
 
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
         assert nullable[s]
@@ -353,13 +353,13 @@ class TestComputeNullable:
 
         grammar = Grammar(s)
         param = Var("x", OptionType(MessageType("proto", "A")))
-        construct_action = Lambda([param], MessageType("proto", "S"), param)
-        deconstruct_action = Lambda(
+        constructor = Lambda([param], MessageType("proto", "S"), param)
+        deconstructor = Lambda(
             [Var('msg', MessageType("proto", "S"))],
             OptionType(OptionType(MessageType("proto", "A"))),
             Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "S")), Lit('opt')])])
         )
-        grammar.add_rule(Rule(s, opt_a, construct_action, deconstruct_action))
+        grammar.add_rule(Rule(s, opt_a, constructor, deconstructor))
 
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
         assert nullable[s]
@@ -368,13 +368,13 @@ class TestComputeNullable:
         """Test that empty sequence makes nonterminal nullable."""
         s = Nonterminal("S", MessageType("proto", "S"))
         grammar = Grammar(s)
-        construct_action = Lambda([], MessageType("proto", "S"), Var("x", MessageType("proto", "S")))
-        deconstruct_action = Lambda(
+        constructor = Lambda([], MessageType("proto", "S"), Var("x", MessageType("proto", "S")))
+        deconstructor = Lambda(
             [Var('msg', MessageType("proto", "S"))],
             OptionType(TupleType([])),
             Call(Builtin('Some'), [Call(Builtin('make_tuple'), [])])
         )
-        grammar.add_rule(Rule(s, Sequence(()), construct_action, deconstruct_action))
+        grammar.add_rule(Rule(s, Sequence(()), constructor, deconstructor))
 
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
         assert nullable[s]
@@ -597,13 +597,13 @@ class TestComputeFirstK:
         """Test that empty production gives empty tuple."""
         s = Nonterminal("S", MessageType("proto", "S"))
         grammar = Grammar(s)
-        construct_action = Lambda([], MessageType("proto", "S"), Var("x", MessageType("proto", "S")))
-        deconstruct_action = Lambda(
+        constructor = Lambda([], MessageType("proto", "S"), Var("x", MessageType("proto", "S")))
+        deconstructor = Lambda(
             [Var('msg', MessageType("proto", "S"))],
             OptionType(TupleType([])),
             Call(Builtin('Some'), [Call(Builtin('make_tuple'), [])])
         )
-        grammar.add_rule(Rule(s, Sequence(()), construct_action, deconstruct_action))
+        grammar.add_rule(Rule(s, Sequence(()), constructor, deconstructor))
 
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
         first_k = GrammarAnalysis.compute_first_k_static(grammar, k=2, nullable=nullable)

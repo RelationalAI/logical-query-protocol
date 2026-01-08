@@ -79,14 +79,14 @@ def introduce_abstraction_with_arity(rule: Rule) -> Optional[Rule]:
     arity_idx -= literals_before_arity
 
     # Create new construct action: takes tuple parameter, unpacks it, calls original body
-    new_params = list(rule.construct_action.params)
+    new_params = list(rule.constructor.params)
     tuple_param = Var('abstraction_with_arity', abstraction_with_arity_type)
     new_params[abstraction_idx] = tuple_param
     new_params.pop(arity_idx)
 
     abstraction_var = Var('abstraction', MessageType('logic', 'Abstraction'))
     arity_var = Var('arity', BaseType('Int64'))
-    old_params_substituted = list(rule.construct_action.params)
+    old_params_substituted = list(rule.constructor.params)
     old_params_substituted[abstraction_idx] = abstraction_var
     old_params_substituted[arity_idx] = arity_var
 
@@ -96,19 +96,19 @@ def introduce_abstraction_with_arity(rule: Rule) -> Optional[Rule]:
         body=Let(
             var=arity_var,
             init=Call(Builtin('get_tuple_element'), [tuple_param, Lit(1)]),
-            body=apply_lambda(rule.construct_action, old_params_substituted)
+            body=apply_lambda(rule.constructor, old_params_substituted)
         )
     )
 
-    new_construct_action = Lambda(
+    new_constructor = Lambda(
         params=new_params,
-        return_type=rule.construct_action.return_type,
+        return_type=rule.constructor.return_type,
         body=new_construct_body
     )
 
     # Create new deconstruct action: runs original body, packs abstraction and arity into tuple
-    assert isinstance(rule.deconstruct_action.return_type, OptionType)
-    old_wrapped_type = rule.deconstruct_action.return_type.element_type
+    assert isinstance(rule.deconstructor.return_type, OptionType)
+    old_wrapped_type = rule.deconstructor.return_type.element_type
     assert isinstance(old_wrapped_type, TupleType)
 
     new_wrapped_elements = list(old_wrapped_type.elements)
@@ -117,8 +117,8 @@ def introduce_abstraction_with_arity(rule: Rule) -> Optional[Rule]:
     new_wrapped_type = TupleType(new_wrapped_elements)
     new_deconstruct_return_type = OptionType(new_wrapped_type)
 
-    old_deconstruct_body = rule.deconstruct_action.body
-    old_result_var = Var('old_result', rule.deconstruct_action.return_type)
+    old_deconstruct_body = rule.deconstructor.body
+    old_result_var = Var('old_result', rule.deconstructor.return_type)
     old_tuple_var = Var('old_tuple', old_wrapped_type)
 
     new_tuple_elements = []
@@ -150,8 +150,8 @@ def introduce_abstraction_with_arity(rule: Rule) -> Optional[Rule]:
         )
     )
 
-    new_deconstruct_action = Lambda(
-        params=rule.deconstruct_action.params,
+    new_deconstructor = Lambda(
+        params=rule.deconstructor.params,
         return_type=new_deconstruct_return_type,
         body=new_deconstruct_body
     )
@@ -159,8 +159,8 @@ def introduce_abstraction_with_arity(rule: Rule) -> Optional[Rule]:
     return Rule(
         lhs=rule.lhs,
         rhs=new_rhs,
-        construct_action=new_construct_action,
-        deconstruct_action=new_deconstruct_action,
+        constructor=new_constructor,
+        deconstructor=new_deconstructor,
         source_type=rule.source_type
     )
 
