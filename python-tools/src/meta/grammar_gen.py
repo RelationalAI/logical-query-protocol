@@ -3,11 +3,43 @@
 This module provides the GrammarGenerator class which converts protobuf
 message definitions into grammar rules with semantic actions.
 
-Naming Conventions
-------------------
-
 Protobuf message names (CamelCase) are converted to grammar rule names
 (snake_case).
+
+Examples
+--------
+
+Message with nested message type and attributes:
+
+    message Def {
+        RelationId name = 1;
+        Abstraction body = 2;
+        repeated Attribute attrs = 3;
+    }
+
+Generates rule:
+
+    def -> '(' 'def' relation_id abstraction attrs? ')'
+    attrs -> '(' 'attrs' attribute* ')'
+
+Oneof-only message:
+
+    message Declaration {
+        oneof declaration_type {
+            Def def = 1;
+            Algorithm algorithm = 2;
+            Constraint constraint = 3;
+            Data data = 4;
+        }
+    }
+
+Generates alternative rules:
+
+    declaration -> def
+                 | algorithm
+                 | constraint
+                 | data
+
 """
 import re
 from typing import Callable, Dict, List, Optional, Set, Tuple, cast
