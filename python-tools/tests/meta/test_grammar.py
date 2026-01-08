@@ -12,9 +12,10 @@ from meta.grammar import (
     LitTerminal, NamedTerminal, Nonterminal,
     Star, Option, Sequence,
     Rule, Token, Grammar,
-
+)
+from meta.grammar_utils import (
     get_nonterminals, get_literals, is_epsilon, rhs_elements,
-    _count_nonliteral_rhs_elements,
+    count_nonliteral_rhs_elements,
 )
 from meta.target import BaseType, MessageType, TupleType, ListType, OptionType, Lambda, Var, Lit, Call, Builtin
 
@@ -666,37 +667,37 @@ class TestHelperFunctions:
         assert result == (nt,)
 
     def test_count_nonliteral_rhs_elements_single_nonterminal(self):
-        """Test _count_nonliteral_rhs_elements with nonterminal."""
+        """Test count_nonliteral_rhs_elements with nonterminal."""
         nt = Nonterminal("A", MessageType("proto", "A"))
-        assert _count_nonliteral_rhs_elements(nt) == 1
+        assert count_nonliteral_rhs_elements(nt) == 1
 
     def test_count_nonliteral_rhs_elements_terminal(self):
-        """Test _count_nonliteral_rhs_elements with terminal."""
+        """Test count_nonliteral_rhs_elements with terminal."""
         term = NamedTerminal("TOK", BaseType("String"))
-        assert _count_nonliteral_rhs_elements(term) == 1
+        assert count_nonliteral_rhs_elements(term) == 1
 
     def test_count_nonliteral_rhs_elements_literal(self):
-        """Test _count_nonliteral_rhs_elements with literal."""
+        """Test count_nonliteral_rhs_elements with literal."""
         lit = LitTerminal("foo")
-        assert _count_nonliteral_rhs_elements(lit) == 0
+        assert count_nonliteral_rhs_elements(lit) == 0
 
     def test_count_nonliteral_rhs_elements_star(self):
-        """Test _count_nonliteral_rhs_elements with star."""
+        """Test count_nonliteral_rhs_elements with star."""
         nt = Nonterminal("A", MessageType("proto", "A"))
         star = Star(nt)
-        assert _count_nonliteral_rhs_elements(star) == 1
+        assert count_nonliteral_rhs_elements(star) == 1
 
     def test_count_nonliteral_rhs_elements_option(self):
-        """Test _count_nonliteral_rhs_elements with option."""
+        """Test count_nonliteral_rhs_elements with option."""
         nt = Nonterminal("A", MessageType("proto", "A"))
         opt = Option(nt)
-        assert _count_nonliteral_rhs_elements(opt) == 1
+        assert count_nonliteral_rhs_elements(opt) == 1
 
     def test_count_nonliteral_rhs_elements_sequence(self):
-        """Test _count_nonliteral_rhs_elements with sequence."""
+        """Test count_nonliteral_rhs_elements with sequence."""
         nt1 = Nonterminal("A", MessageType("proto", "A"))
         lit = LitTerminal("foo")
         nt2 = Nonterminal("B", MessageType("proto", "B"))
         term = NamedTerminal("TOK", BaseType("String"))
         seq = Sequence((nt1, lit, nt2, term))
-        assert _count_nonliteral_rhs_elements(seq) == 3
+        assert count_nonliteral_rhs_elements(seq) == 3

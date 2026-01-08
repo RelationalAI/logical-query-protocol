@@ -35,6 +35,33 @@ def get_literals(rhs: Rhs) -> List[LitTerminal]:
     return collect(rhs, LitTerminal)
 
 
+def is_epsilon(rhs: Rhs) -> bool:
+    """Check if rhs represents an epsilon production (empty sequence)."""
+    return isinstance(rhs, Sequence) and len(rhs.elements) == 0
+
+
+def rhs_elements(rhs: Rhs) -> tuple:
+    """Return elements of rhs. For Sequence, returns rhs.elements; otherwise returns (rhs,)."""
+    if isinstance(rhs, Sequence):
+        return rhs.elements
+    return (rhs,)
+
+
+def count_nonliteral_rhs_elements(rhs: Rhs) -> int:
+    """Count the number of elements in an RHS that produce action parameters.
+
+    This counts all RHS elements except literals, as each non-literal position
+    corresponds to a parameter in the action lambda.
+    """
+    if isinstance(rhs, Sequence):
+        return sum(count_nonliteral_rhs_elements(elem) for elem in rhs.elements)
+    elif isinstance(rhs, LitTerminal):
+        return 0
+    else:
+        assert isinstance(rhs, (NamedTerminal, Nonterminal, Option, Star)), f"found {type(rhs)}"
+        return 1
+
+
 def _rewrite_rhs(rhs: Rhs, replacements: Dict[Rhs, Rhs]) -> Optional[Rhs]:
     """Rewrite RHS by replacing symbols according to the mapping.
 

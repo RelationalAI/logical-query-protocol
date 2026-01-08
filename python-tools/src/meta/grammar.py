@@ -225,9 +225,10 @@ class Rule:
 
     def __post_init__(self):
         from .target import OptionType, TupleType
+        from .grammar_utils import count_nonliteral_rhs_elements
 
         assert isinstance(self.rhs, Rhs)
-        rhs_len = _count_nonliteral_rhs_elements(self.rhs)
+        rhs_len = count_nonliteral_rhs_elements(self.rhs)
         action_params = len(self.constructor.params)
         assert action_params == rhs_len, \
             f"Action for {self.lhs.name} has {action_params} parameters but RHS has {rhs_len} non-literal element{'' if rhs_len == 1 else 's'}: {self.rhs}"
@@ -404,30 +405,5 @@ class Grammar:
 
 
 # Helper functions - re-exported from utils and analysis modules
-from .grammar_utils import get_nonterminals, get_literals
+from .grammar_utils import get_nonterminals, get_literals, is_epsilon, rhs_elements
 from .grammar_analysis import GrammarAnalysis
-
-# Re-export is_epsilon for backward compatibility
-is_epsilon = GrammarAnalysis.is_epsilon
-
-
-def rhs_elements(rhs: Rhs) -> Tuple[Rhs, ...]:
-    """Return elements of rhs. For Sequence, returns rhs.elements; otherwise returns (rhs,)."""
-    if isinstance(rhs, Sequence):
-        return rhs.elements
-    return (rhs,)
-
-
-def _count_nonliteral_rhs_elements(rhs: Rhs) -> int:
-    """Count the number of elements in an RHS that produce action parameters.
-
-    This counts all RHS elements, as each position (including literals, options,
-    stars, etc.) corresponds to a parameter in the action lambda.
-    """
-    if isinstance(rhs, Sequence):
-        return sum(_count_nonliteral_rhs_elements(elem) for elem in rhs.elements)
-    elif isinstance(rhs, LitTerminal):
-        return 0
-    else:
-        assert isinstance(rhs, (NamedTerminal, Nonterminal, Option, Star)), f"found {type(rhs)}"
-        return 1
