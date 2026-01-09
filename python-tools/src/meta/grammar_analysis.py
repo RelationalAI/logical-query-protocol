@@ -416,8 +416,8 @@ class GrammarAnalysis:
         Convenience function for k=1 case, returning Dict[Nonterminal, Set[Terminal]].
         """
         # Convert to k=1 format
-        first_k = {nt: {(t,) for t in terms} for nt, terms in first.items()}
-        follow_k = {nt: {(t,) for t in terms} for nt, terms in follow.items()}
+        first_k: Dict[Nonterminal, TerminalSeqSet] = {nt: {(t,) for t in terms} for nt, terms in first.items()}
+        follow_k: Dict[Nonterminal, TerminalSeqSet] = {nt: {(t,) for t in terms} for nt, terms in follow.items()}
 
         result_k = GrammarAnalysis.rhs_follow_k(rhs, lhs, first_k, nullable, follow_k, k=1)
 
