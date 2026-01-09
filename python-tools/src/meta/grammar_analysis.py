@@ -324,7 +324,7 @@ class GrammarAnalysis:
     def rhs_follow_k(rhs: 'Rhs', lhs: Nonterminal,
                      first_k: Mapping[Nonterminal, Iterable[TerminalSeq]],
                      nullable: Mapping[Nonterminal, bool],
-                     follow_k: Mapping[Nonterminal, Iterable[TerminalSeq]],
+                     follow_k: Dict[Nonterminal, TerminalSeqSet],
                      k: int) -> Dict[Nonterminal, TerminalSeqSet]:
         """Compute FOLLOW_k contributions from an RHS."""
         result: Dict[Nonterminal, TerminalSeqSet] = {}
