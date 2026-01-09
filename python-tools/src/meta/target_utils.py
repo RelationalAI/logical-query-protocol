@@ -27,17 +27,7 @@ def create_identity_function(param_type: TargetType) -> Lambda:
     return Lambda([param], param_type, param)
 
 
-def create_identity_option_function(param_type: TargetType) -> Lambda:
-    """Create an identity function: lambda x -> Some(x) with the given type.
 
-    Args:
-        param_type: The type of the parameter and return value element type
-
-    Returns:
-        Lambda expression representing the identity function
-    """
-    param = Var('x', param_type)
-    return Lambda([param], OptionType(param_type), Call(Builtin('Some'), [param]))
 
 
 def _is_simple_expr(expr: TargetExpr) -> bool:
