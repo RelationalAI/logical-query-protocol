@@ -106,61 +106,10 @@ def introduce_abstraction_with_arity(rule: Rule) -> Optional[Rule]:
         body=new_construct_body
     )
 
-    # Create new deconstruct action: runs original body, packs abstraction and arity into tuple
-    assert isinstance(rule.deconstructor.return_type, OptionType)
-    old_wrapped_type = rule.deconstructor.return_type.element_type
-    assert isinstance(old_wrapped_type, TupleType)
-
-    new_wrapped_elements = list(old_wrapped_type.elements)
-    new_wrapped_elements[abstraction_idx] = abstraction_with_arity_type
-    new_wrapped_elements.pop(arity_idx)
-    new_wrapped_type = TupleType(new_wrapped_elements)
-    new_deconstruct_return_type = OptionType(new_wrapped_type)
-
-    old_deconstruct_body = rule.deconstructor.body
-    old_result_var = Var('old_result', rule.deconstructor.return_type)
-    old_tuple_var = Var('old_tuple', old_wrapped_type)
-
-    new_tuple_elements = []
-    for i in range(abstraction_idx):
-        new_tuple_elements.append(Call(Builtin('get_tuple_element'), [old_tuple_var, Lit(i)]))
-    packed_tuple = Call(Builtin('make_tuple'), [
-        Call(Builtin('get_tuple_element'), [old_tuple_var, Lit(abstraction_idx)]),
-        Call(Builtin('get_tuple_element'), [old_tuple_var, Lit(arity_idx)])
-    ])
-    new_tuple_elements.append(packed_tuple)
-    for i in range(abstraction_idx+1, arity_idx):
-        new_tuple_elements.append(Call(Builtin('get_tuple_element'), [old_tuple_var, Lit(i)]))
-    for i in range(arity_idx+1, len(old_wrapped_type.elements)):
-        new_tuple_elements.append(Call(Builtin('get_tuple_element'), [old_tuple_var, Lit(i)]))
-
-    new_tuple = Call(Builtin('make_tuple'), new_tuple_elements)
-
-    new_deconstruct_body = Let(
-        var=old_result_var,
-        init=old_deconstruct_body,
-        body=IfElse(
-            condition=Call(Builtin('is_none'), [old_result_var]),
-            then_branch=Lit(None),
-            else_branch=Let(
-                var=old_tuple_var,
-                init=Call(Builtin('unwrap_option'), [old_result_var]),
-                body=Call(Builtin('Some'), [new_tuple])
-            )
-        )
-    )
-
-    new_deconstructor = Lambda(
-        params=rule.deconstructor.params,
-        return_type=new_deconstruct_return_type,
-        body=new_deconstruct_body
-    )
-
     return Rule(
         lhs=rule.lhs,
         rhs=new_rhs,
         constructor=new_constructor,
-        deconstructor=new_deconstructor,
         source_type=rule.source_type
     )
 

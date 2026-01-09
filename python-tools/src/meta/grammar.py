@@ -167,21 +167,16 @@ class Rule:
     """Grammar rule (production).
 
     A Rule represents a grammar production of the form:
-        lhs -> rhs { constructor } [[ deconstructor ]]
+        lhs -> rhs { constructor }
 
     The constructor is a Lambda that takes the values parsed from the
     non-literal RHS elements and constructs the result value. Literal terminals
     (like keywords) don't produce values and are skipped when binding parameters.
 
-    The deconstructor is the inverse - it takes a message of the LHS type and
-    extracts the component values that would be needed to reconstruct it. This is
-    used by the pretty-printer to deconstruct messages back into their components.
-
     Attributes:
         lhs: The nonterminal being defined
         rhs: The right-hand side pattern to match
         constructor: Lambda to construct result from parsed values
-        deconstructor: Lambda to extract component values from a message
         source_type: Optional protobuf type name this rule was generated from
 
     Example:
@@ -200,23 +195,16 @@ class Rule:
                 params=[Var("year", Int64), Var("month", Int64), Var("day", Int64)],
                 return_type=MessageType("proto", "DateValue"),
                 body=Call(Message("proto", "DateValue"), [year, month, day])
-            ),
-            deconstructor=Lambda(
-                params=[Var("msg", MessageType("proto", "DateValue"))],
-                return_type=OptionType(TupleType([Int64, Int64, Int64])),
-                body=Some((msg.year, msg.month, msg.day))
             )
         )
     """
     lhs: Nonterminal
     rhs: Rhs
     constructor: 'Lambda'
-    deconstructor: 'Lambda'
     source_type: Optional[str] = None  # Track the protobuf type this rule came from
 
     def __str__(self):
         result = f"{self.lhs.name} -> {self.rhs} {{{{ {self.constructor} }}}}"
-        result += f" [[ {self.deconstructor} ]]"
         return result
 
     def to_pattern(self, grammar: Optional['Grammar'] = None) -> str:
@@ -224,7 +212,6 @@ class Rule:
         return str(self.rhs)
 
     def __post_init__(self):
-        from .target import OptionType, TupleType
         from .grammar_utils import count_nonliteral_rhs_elements
 
         assert isinstance(self.rhs, Rhs)
@@ -232,35 +219,6 @@ class Rule:
         action_params = len(self.constructor.params)
         assert action_params == rhs_len, \
             f"Action for {self.lhs.name} has {action_params} parameters but RHS has {rhs_len} non-literal element{'' if rhs_len == 1 else 's'}: {self.rhs}"
-
-        # Check deconstructor has exactly one parameter with the LHS type
-        assert len(self.deconstructor.params) == 1, \
-            f"Deconstruct action for {self.lhs.name} must have exactly 1 parameter, has {len(self.deconstructor.params)}"
-
-        deconstruct_param_type = self.deconstructor.params[0].type
-        lhs_type = self.lhs.target_type()
-        assert deconstruct_param_type == lhs_type, \
-            f"Deconstruct action for {self.lhs.name} parameter type {deconstruct_param_type} must match LHS type {lhs_type}"
-
-        # # Check deconstruct_action return type is OptionType of tuple of RHS types
-        # assert isinstance(self.deconstruct_action.return_type, OptionType), \
-        #     f"Deconstruct action for {self.lhs.name} return type must be OptionType, got {self.deconstruct_action.return_type}"
-
-        # # Build expected tuple type from RHS
-        # rhs_types = [elem.target_type() for elem in rhs_elements(self.rhs) if not isinstance(elem, LitTerminal)]
-        # if len(rhs_types) == 0:
-        #     # No non-literal elements - should return OptionType of empty tuple
-        #     expected_inner_type = TupleType([])
-        # elif len(rhs_types) == 1:
-        #     # Single element - return that type directly, not a tuple
-        #     expected_inner_type = rhs_types[0]
-        # else:
-        #     # Multiple elements - return tuple
-        #     expected_inner_type = TupleType(rhs_types)
-
-        # actual_inner_type = self.deconstruct_action.return_type.element_type
-        # assert actual_inner_type == expected_inner_type, \
-        #     f"Deconstruct action for {self.lhs.name} return type {self.deconstruct_action.return_type} must be OptionType[{expected_inner_type}]"
 
 @dataclass(frozen=True)
 class Token:
@@ -389,8 +347,6 @@ class Grammar:
 
                 if rule.constructor:
                     lines.append(f"    +{{{{ {rule.constructor} }}}}")
-                if rule.deconstructor:
-                    lines.append(f"    -{{{{ {rule.deconstructor} }}}}")
 
             lines.append("")
 

@@ -204,7 +204,6 @@ class GrammarGenerator:
                                     lhs=canonical_lhs,
                                     rhs=rule.rhs,
                                     constructor=rule.constructor,
-                                    deconstructor=rule.deconstructor,
                                     source_type=rule.source_type
                                 ) for rule in old_rules
                             ]
@@ -319,8 +318,7 @@ class GrammarGenerator:
                 alt_rule = Rule(
                     lhs=Nonterminal(rule_name, message_type),
                     rhs=rhs,
-                    constructor=constructor,
-                    deconstructor=deconstructor
+                    constructor=constructor
                 )
                 self._add_rule(alt_rule)
 
@@ -335,8 +333,7 @@ class GrammarGenerator:
                         field_to_type_rule = Rule(
                             lhs=Nonterminal(field_rule, field_type),
                             rhs=rhs,
-                            constructor=constructor,
-                            deconstructor=deconstructor
+                            constructor=constructor
                         )
                         self._add_rule(field_to_type_rule)
                 else:
@@ -349,8 +346,7 @@ class GrammarGenerator:
                         field_to_type_rule = Rule(
                             lhs=Nonterminal(field_rule, field_type),
                             rhs=rhs,
-                            constructor=constructor,
-                            deconstructor=deconstructor
+                            constructor=constructor
                         )
                         self._add_rule(field_to_type_rule)
             for field in oneof.fields:
@@ -379,7 +375,6 @@ class GrammarGenerator:
                 lhs=Nonterminal(rule_name, message_type),
                 rhs=rhs,
                 constructor=constructor,
-                deconstructor=deconstructor,
                 source_type=message_name
             )
             self._add_rule(rule)
@@ -423,7 +418,6 @@ class GrammarGenerator:
                             lhs=Nonterminal(wrapper_rule_name, wrapper_type),
                             rhs=rhs,
                             constructor=constructor,
-                            deconstructor=deconstructor,
                             source_type=field.type
                         )
                         self._add_rule(wrapper_rule)

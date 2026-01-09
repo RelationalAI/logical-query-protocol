@@ -37,33 +37,15 @@ def make_simple_grammar():
     param_a = Var("x", MessageType("proto", "A"))
     param_b = Var("y", MessageType("proto", "B"))
     construct_action_s = Lambda([param_a, param_b], MessageType("proto", "S"), param_a)
-    deconstruct_action_s = Lambda(
-        [Var('msg', MessageType("proto", "S"))],
-        OptionType(TupleType([MessageType("proto", "A"), MessageType("proto", "B")])),
-        Call(Builtin('Some'), [Call(Builtin('make_tuple'), [
-            Call(Builtin('get_field'), [Var('msg', MessageType("proto", "S")), Lit('a')]),
-            Call(Builtin('get_field'), [Var('msg', MessageType("proto", "S")), Lit('b')])
-        ])])
-    )
-    grammar.add_rule(Rule(s, Sequence((a, b)), construct_action_s, deconstruct_action_s))
+    grammar.add_rule(Rule(s, Sequence((a, b)), construct_action_s))
 
     # A -> "a"
     construct_action_a = Lambda([], MessageType("proto", "A"), Var("x", MessageType("proto", "A")))
-    deconstruct_action_a = Lambda(
-        [Var('msg', MessageType("proto", "A"))],
-        OptionType(TupleType([])),
-        Call(Builtin('Some'), [Call(Builtin('make_tuple'), [])])
-    )
-    grammar.add_rule(Rule(a, lit_a, construct_action_a, deconstruct_action_a))
+    grammar.add_rule(Rule(a, lit_a, construct_action_a))
 
     # B -> "b"
     construct_action_b = Lambda([], MessageType("proto", "B"), Var("y", MessageType("proto", "B")))
-    deconstruct_action_b = Lambda(
-        [Var('msg', MessageType("proto", "B"))],
-        OptionType(TupleType([])),
-        Call(Builtin('Some'), [Call(Builtin('make_tuple'), [])])
-    )
-    grammar.add_rule(Rule(b, lit_b, construct_action_b, deconstruct_action_b))
+    grammar.add_rule(Rule(b, lit_b, construct_action_b))
 
     return grammar, s, a, b, lit_a, lit_b
 
@@ -87,42 +69,19 @@ def make_nullable_grammar():
     param_a = Var("x", MessageType("proto", "A"))
     param_b = Var("y", MessageType("proto", "B"))
     construct_action_s = Lambda([param_a, param_b], MessageType("proto", "S"), param_a)
-    deconstruct_action_s = Lambda(
-        [Var('msg', MessageType("proto", "S"))],
-        OptionType(TupleType([MessageType("proto", "A"), MessageType("proto", "B")])),
-        Call(Builtin('Some'), [Call(Builtin('make_tuple'), [
-            Call(Builtin('get_field'), [Var('msg', MessageType("proto", "S")), Lit('a')]),
-            Call(Builtin('get_field'), [Var('msg', MessageType("proto", "S")), Lit('b')])
-        ])])
-    )
-    grammar.add_rule(Rule(s, Sequence((a, b)), construct_action_s, deconstruct_action_s))
+    grammar.add_rule(Rule(s, Sequence((a, b)), construct_action_s))
 
     # A -> "a"
     construct_action_a1 = Lambda([], MessageType("proto", "A"), Var("x", MessageType("proto", "A")))
-    deconstruct_action_a1 = Lambda(
-        [Var('msg', MessageType("proto", "A"))],
-        OptionType(TupleType([])),
-        Call(Builtin('Some'), [Call(Builtin('make_tuple'), [])])
-    )
-    grammar.add_rule(Rule(a, lit_a, construct_action_a1, deconstruct_action_a1))
+    grammar.add_rule(Rule(a, lit_a, construct_action_a1))
 
     # A -> epsilon
     construct_action_a2 = Lambda([], MessageType("proto", "A"), Var("x", MessageType("proto", "A")))
-    deconstruct_action_a2 = Lambda(
-        [Var('msg', MessageType("proto", "A"))],
-        OptionType(TupleType([])),
-        Call(Builtin('Some'), [Call(Builtin('make_tuple'), [])])
-    )
-    grammar.add_rule(Rule(a, Sequence(()), construct_action_a2, deconstruct_action_a2))
+    grammar.add_rule(Rule(a, Sequence(()), construct_action_a2))
 
     # B -> "b"
     construct_action_b = Lambda([], MessageType("proto", "B"), Var("y", MessageType("proto", "B")))
-    deconstruct_action_b = Lambda(
-        [Var('msg', MessageType("proto", "B"))],
-        OptionType(TupleType([])),
-        Call(Builtin('Some'), [Call(Builtin('make_tuple'), [])])
-    )
-    grammar.add_rule(Rule(b, lit_b, construct_action_b, deconstruct_action_b))
+    grammar.add_rule(Rule(b, lit_b, construct_action_b))
 
     return grammar, s, a, b
 
@@ -144,35 +103,17 @@ def make_left_recursive_grammar():
     param_s = Var("x", MessageType("proto", "S"))
     param_t1 = Var("y", MessageType("proto", "T"))
     construct_action_s1 = Lambda([param_s, param_t1], MessageType("proto", "S"), param_s)
-    deconstruct_action_s1 = Lambda(
-        [Var('msg', MessageType("proto", "S"))],
-        OptionType(TupleType([MessageType("proto", "S"), MessageType("proto", "T")])),
-        Call(Builtin('Some'), [Call(Builtin('make_tuple'), [
-            Call(Builtin('get_field'), [Var('msg', MessageType("proto", "S")), Lit('s')]),
-            Call(Builtin('get_field'), [Var('msg', MessageType("proto", "S")), Lit('t')])
-        ])])
-    )
-    grammar.add_rule(Rule(s, Sequence((s, plus, t)), construct_action_s1, deconstruct_action_s1))
+    grammar.add_rule(Rule(s, Sequence((s, plus, t)), construct_action_s1))
 
     # S -> T
     param_t2 = Var("z", MessageType("proto", "T"))
     construct_action_s2 = Lambda([param_t2], MessageType("proto", "S"), param_t2)
-    deconstruct_action_s2 = Lambda(
-        [Var('msg', MessageType("proto", "S"))],
-        OptionType(MessageType("proto", "T")),
-        Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "S")), Lit('t')])])
-    )
-    grammar.add_rule(Rule(s, t, construct_action_s2, deconstruct_action_s2))
+    grammar.add_rule(Rule(s, t, construct_action_s2))
 
     # T -> NUM
     param_num = Var("n", BaseType("Int64"))
     construct_action_t = Lambda([param_num], MessageType("proto", "T"), param_num)
-    deconstruct_action_t = Lambda(
-        [Var('msg', MessageType("proto", "T"))],
-        OptionType(BaseType("Int64")),
-        Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "T")), Lit('n')])])
-    )
-    grammar.add_rule(Rule(t, num, construct_action_t, deconstruct_action_t))
+    grammar.add_rule(Rule(t, num, construct_action_t))
 
     return grammar, s, t, num
 
@@ -195,30 +136,15 @@ def make_unreachable_grammar():
     # S -> A
     param_a = Var("x", MessageType("proto", "A"))
     construct_action_s = Lambda([param_a], MessageType("proto", "S"), param_a)
-    deconstruct_action_s = Lambda(
-        [Var('msg', MessageType("proto", "S"))],
-        OptionType(MessageType("proto", "A")),
-        Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "S")), Lit('a')])])
-    )
-    grammar.add_rule(Rule(s, a, construct_action_s, deconstruct_action_s))
+    grammar.add_rule(Rule(s, a, construct_action_s))
 
     # A -> "a"
     construct_action_a = Lambda([], MessageType("proto", "A"), Var("y", MessageType("proto", "A")))
-    deconstruct_action_a = Lambda(
-        [Var('msg', MessageType("proto", "A"))],
-        OptionType(TupleType([])),
-        Call(Builtin('Some'), [Call(Builtin('make_tuple'), [])])
-    )
-    grammar.add_rule(Rule(a, lit_a, construct_action_a, deconstruct_action_a))
+    grammar.add_rule(Rule(a, lit_a, construct_action_a))
 
     # B -> "b" (unreachable)
     construct_action_b = Lambda([], MessageType("proto", "B"), Var("z", MessageType("proto", "B")))
-    deconstruct_action_b = Lambda(
-        [Var('msg', MessageType("proto", "B"))],
-        OptionType(TupleType([])),
-        Call(Builtin('Some'), [Call(Builtin('make_tuple'), [])])
-    )
-    grammar.add_rule(Rule(b, lit_b, construct_action_b, deconstruct_action_b))
+    grammar.add_rule(Rule(b, lit_b, construct_action_b))
 
     return grammar, s, a, b
 
@@ -259,12 +185,7 @@ class TestComputeReachability:
         lit = LitTerminal("a")
         grammar = Grammar(s)
         constructor = Lambda([], MessageType("proto", "S"), Var("x", MessageType("proto", "S")))
-        deconstructor = Lambda(
-            [Var('msg', MessageType("proto", "S"))],
-            OptionType(TupleType([])),
-            Call(Builtin('Some'), [Call(Builtin('make_tuple'), [])])
-        )
-        grammar.add_rule(Rule(s, lit, constructor, deconstructor))
+        grammar.add_rule(Rule(s, lit, constructor))
         reachable = GrammarAnalysis.compute_reachability_static(grammar)
         assert s in reachable
         assert len(reachable) == 1
@@ -287,15 +208,10 @@ class TestComputeReachability:
         construct_action_b = Lambda([param_c], MessageType("proto", "B"), param_c)
         construct_action_c = Lambda([param_c], MessageType("proto", "C"), param_c)
 
-        deconstruct_action_s = Lambda([Var('msg', MessageType("proto", "S"))], OptionType(MessageType("proto", "A")), Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "S")), Lit('a')])]))
-        deconstruct_action_a = Lambda([Var('msg', MessageType("proto", "A"))], OptionType(MessageType("proto", "B")), Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('b')])]))
-        deconstruct_action_b = Lambda([Var('msg', MessageType("proto", "B"))], OptionType(MessageType("proto", "C")), Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "B")), Lit('c')])]))
-        deconstruct_action_c = Lambda([Var('msg', MessageType("proto", "C"))], OptionType(MessageType("proto", "C")), Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "C")), Lit('c')])]))
-
-        grammar.add_rule(Rule(s, a, construct_action_s, deconstruct_action_s))
-        grammar.add_rule(Rule(a, b, construct_action_a, deconstruct_action_a))
-        grammar.add_rule(Rule(b, c, construct_action_b, deconstruct_action_b))
-        grammar.add_rule(Rule(c, c, construct_action_c, deconstruct_action_c))
+        grammar.add_rule(Rule(s, a, construct_action_s))
+        grammar.add_rule(Rule(a, b, construct_action_a))
+        grammar.add_rule(Rule(b, c, construct_action_b))
+        grammar.add_rule(Rule(c, c, construct_action_c))
 
         reachable = GrammarAnalysis.compute_reachability_static(grammar)
         assert len(reachable) == 4
@@ -334,12 +250,7 @@ class TestComputeNullable:
         grammar = Grammar(s)
         param = Var("x", ListType(MessageType("proto", "A")))
         constructor = Lambda([param], MessageType("proto", "S"), param)
-        deconstructor = Lambda(
-            [Var('msg', MessageType("proto", "S"))],
-            OptionType(ListType(MessageType("proto", "A"))),
-            Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "S")), Lit('list')])])
-        )
-        grammar.add_rule(Rule(s, star_a, constructor, deconstructor))
+        grammar.add_rule(Rule(s, star_a, constructor))
 
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
         assert nullable[s]
@@ -354,12 +265,7 @@ class TestComputeNullable:
         grammar = Grammar(s)
         param = Var("x", OptionType(MessageType("proto", "A")))
         constructor = Lambda([param], MessageType("proto", "S"), param)
-        deconstructor = Lambda(
-            [Var('msg', MessageType("proto", "S"))],
-            OptionType(OptionType(MessageType("proto", "A"))),
-            Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "S")), Lit('opt')])])
-        )
-        grammar.add_rule(Rule(s, opt_a, constructor, deconstructor))
+        grammar.add_rule(Rule(s, opt_a, constructor))
 
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
         assert nullable[s]
@@ -369,12 +275,7 @@ class TestComputeNullable:
         s = Nonterminal("S", MessageType("proto", "S"))
         grammar = Grammar(s)
         constructor = Lambda([], MessageType("proto", "S"), Var("x", MessageType("proto", "S")))
-        deconstructor = Lambda(
-            [Var('msg', MessageType("proto", "S"))],
-            OptionType(TupleType([])),
-            Call(Builtin('Some'), [Call(Builtin('make_tuple'), [])])
-        )
-        grammar.add_rule(Rule(s, Sequence(()), constructor, deconstructor))
+        grammar.add_rule(Rule(s, Sequence(()), constructor))
 
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
         assert nullable[s]
@@ -394,13 +295,9 @@ class TestComputeNullable:
         construct_action_a = Lambda([param_b], MessageType("proto", "A"), param_b)
         construct_action_b = Lambda([], MessageType("proto", "B"), Var("z", MessageType("proto", "B")))
 
-        deconstruct_action_s = Lambda([Var('msg', MessageType("proto", "S"))], OptionType(MessageType("proto", "A")), Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "S")), Lit('a')])]))
-        deconstruct_action_a = Lambda([Var('msg', MessageType("proto", "A"))], OptionType(MessageType("proto", "B")), Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('b')])]))
-        deconstruct_action_b = Lambda([Var('msg', MessageType("proto", "B"))], OptionType(TupleType([])), Call(Builtin('Some'), [Call(Builtin('make_tuple'), [])]))
-
-        grammar.add_rule(Rule(s, a, construct_action_s, deconstruct_action_s))
-        grammar.add_rule(Rule(a, b, construct_action_a, deconstruct_action_a))
-        grammar.add_rule(Rule(b, Sequence(()), construct_action_b, deconstruct_action_b))
+        grammar.add_rule(Rule(s, a, construct_action_s))
+        grammar.add_rule(Rule(a, b, construct_action_a))
+        grammar.add_rule(Rule(b, Sequence(()), construct_action_b))
 
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
         assert nullable[s]
@@ -598,12 +495,7 @@ class TestComputeFirstK:
         s = Nonterminal("S", MessageType("proto", "S"))
         grammar = Grammar(s)
         constructor = Lambda([], MessageType("proto", "S"), Var("x", MessageType("proto", "S")))
-        deconstructor = Lambda(
-            [Var('msg', MessageType("proto", "S"))],
-            OptionType(TupleType([])),
-            Call(Builtin('Some'), [Call(Builtin('make_tuple'), [])])
-        )
-        grammar.add_rule(Rule(s, Sequence(()), constructor, deconstructor))
+        grammar.add_rule(Rule(s, Sequence(()), constructor))
 
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
         first_k = GrammarAnalysis.compute_first_k_static(grammar, k=2, nullable=nullable)
@@ -732,33 +624,15 @@ class TestComputeFollow:
         param_a = Var("x", MessageType("proto", "A"))
         param_b = Var("y", MessageType("proto", "B"))
         construct_action_s = Lambda([param_a, param_b], MessageType("proto", "S"), param_a)
-        deconstruct_action_s = Lambda(
-            [Var('msg', MessageType("proto", "S"))],
-            OptionType(TupleType([MessageType("proto", "A"), MessageType("proto", "B")])),
-            Call(Builtin('Some'), [Call(Builtin('make_tuple'), [
-                Call(Builtin('get_field'), [Var('msg', MessageType("proto", "S")), Lit('a')]),
-                Call(Builtin('get_field'), [Var('msg', MessageType("proto", "S")), Lit('b')])
-            ])])
-        )
-        grammar.add_rule(Rule(s, Sequence((a, b)), construct_action_s, deconstruct_action_s))
+        grammar.add_rule(Rule(s, Sequence((a, b)), construct_action_s))
 
         # A -> epsilon
         construct_action_a = Lambda([], MessageType("proto", "A"), Var("z", MessageType("proto", "A")))
-        deconstruct_action_a = Lambda(
-            [Var('msg', MessageType("proto", "A"))],
-            OptionType(TupleType([])),
-            Call(Builtin('Some'), [Call(Builtin('make_tuple'), [])])
-        )
-        grammar.add_rule(Rule(a, Sequence(()), construct_action_a, deconstruct_action_a))
+        grammar.add_rule(Rule(a, Sequence(()), construct_action_a))
 
         # B -> "b"
         construct_action_b = Lambda([], MessageType("proto", "B"), Var("w", MessageType("proto", "B")))
-        deconstruct_action_b = Lambda(
-            [Var('msg', MessageType("proto", "B"))],
-            OptionType(TupleType([])),
-            Call(Builtin('Some'), [Call(Builtin('make_tuple'), [])])
-        )
-        grammar.add_rule(Rule(b, lit_b, construct_action_b, deconstruct_action_b))
+        grammar.add_rule(Rule(b, lit_b, construct_action_b))
 
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
         first = GrammarAnalysis.compute_first_static(grammar, nullable)
@@ -950,42 +824,19 @@ class TestIntegration:
         param_a = Var("x", MessageType("proto", "A"))
         param_b = Var("y", MessageType("proto", "B"))
         construct_action1 = Lambda([param_a, param_b], MessageType("proto", "S"), param_a)
-        deconstruct_action1 = Lambda(
-            [Var('msg', MessageType("proto", "S"))],
-            OptionType(TupleType([MessageType("proto", "A"), MessageType("proto", "B")])),
-            Call(Builtin('Some'), [Call(Builtin('make_tuple'), [
-                Call(Builtin('get_field'), [Var('msg', MessageType("proto", "S")), Lit('a')]),
-                Call(Builtin('get_field'), [Var('msg', MessageType("proto", "S")), Lit('b')])
-            ])])
-        )
-        grammar.add_rule(Rule(s, Sequence((a, b)), construct_action1, deconstruct_action1))
+        grammar.add_rule(Rule(s, Sequence((a, b)), construct_action1))
 
         param_b2 = Var("z", MessageType("proto", "B"))
         construct_action2 = Lambda([param_b2], MessageType("proto", "S"), param_b2)
-        deconstruct_action2 = Lambda(
-            [Var('msg', MessageType("proto", "S"))],
-            OptionType(MessageType("proto", "B")),
-            Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "S")), Lit('b')])])
-        )
-        grammar.add_rule(Rule(s, b, construct_action2, deconstruct_action2))
+        grammar.add_rule(Rule(s, b, construct_action2))
 
         # A -> "a"
         construct_action3 = Lambda([], MessageType("proto", "A"), Var("w", MessageType("proto", "A")))
-        deconstruct_action3 = Lambda(
-            [Var('msg', MessageType("proto", "A"))],
-            OptionType(TupleType([])),
-            Call(Builtin('Some'), [Call(Builtin('make_tuple'), [])])
-        )
-        grammar.add_rule(Rule(a, lit_a, construct_action3, deconstruct_action3))
+        grammar.add_rule(Rule(a, lit_a, construct_action3))
 
         # B -> "b"
         construct_action4 = Lambda([], MessageType("proto", "B"), Var("v", MessageType("proto", "B")))
-        deconstruct_action4 = Lambda(
-            [Var('msg', MessageType("proto", "B"))],
-            OptionType(TupleType([])),
-            Call(Builtin('Some'), [Call(Builtin('make_tuple'), [])])
-        )
-        grammar.add_rule(Rule(b, lit_b, construct_action4, deconstruct_action4))
+        grammar.add_rule(Rule(b, lit_b, construct_action4))
 
         # Check everything works together
         reachable = GrammarAnalysis.compute_reachability_static(grammar)
