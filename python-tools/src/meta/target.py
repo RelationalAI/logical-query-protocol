@@ -9,11 +9,9 @@ translatable to each of these target languages.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, List, Mapping, Optional, Sequence, TYPE_CHECKING
+from typing import Any, Sequence
 from .gensym import gensym
-
-if TYPE_CHECKING:
-    from .grammar import Nonterminal
+from .grammar import Nonterminal
 
 @dataclass(frozen=True)
 class TargetNode:
