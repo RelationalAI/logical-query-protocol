@@ -151,7 +151,9 @@ class BuiltinRules:
         if lhs not in self.result:
             self.result[lhs] = ([], True)
         rules_list, existing_final = self.result[lhs]
-        rules_list.append(rule)
+        # Skip duplicate rules
+        if rule not in rules_list:
+            rules_list.append(rule)
         self.result[lhs] = (rules_list, existing_final)
 
     def mark_nonfinal(self, lhs: Nonterminal) -> None:
@@ -947,13 +949,6 @@ class BuiltinRules:
         # rel_atom: STRING -> name, terms? -> relterm*
         self.add_rule(_make_simple_message_rule(
             'rel_atom', 'logic', 'RelAtom',
-            fields=[('name', STRING_TYPE), ('terms', ListType(_relterm_type))],
-            rhs_inner=(_name_nt, Star(_relterm_nt))
-        ))
-
-        # primitive: STRING -> name, term* -> relterm*
-        self.add_rule(_make_simple_message_rule(
-            'primitive', 'logic', 'Primitive',
             fields=[('name', STRING_TYPE), ('terms', ListType(_relterm_type))],
             rhs_inner=(_name_nt, Star(_relterm_nt))
         ))

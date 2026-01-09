@@ -274,7 +274,10 @@ class Grammar:
             # Set start symbol to first rule added if default
             if self.start.name == "start" and len(self.rules) == 0:
                 self.start = lhs
-        self.rules[lhs].append(rule)
+
+        # Skip duplicate rules
+        if rule not in self.rules[lhs]:
+            self.rules[lhs].append(rule)
 
     def get_rules(self, nt: Nonterminal) -> List[Rule]:
         """Get all rules with the given LHS name."""
