@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CLI tool for generating grammar from protobuf specifications.
+"""CLI tool for generating tools from protobuf specifications.
 
 This module provides the main command-line entry point for the proto-to-grammar
 generator.
@@ -8,28 +8,16 @@ generator.
 import argparse
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING
 
-# Handle both script and module execution
-if __name__ == "__main__" and __package__ is None:
-    # Running as script - add parent to path and use absolute imports
-    sys.path.insert(0, str(Path(__file__).parent.parent))
-
-if TYPE_CHECKING:
-    from .proto_parser import ProtoParser
-    from .grammar_gen import GrammarGenerator
-elif __name__ == "__main__" and __package__ is None:
-    from meta.proto_parser import ProtoParser
-    from meta.grammar_gen import GrammarGenerator
-else:
-    from .proto_parser import ProtoParser
-    from .grammar_gen import GrammarGenerator
+from .proto_parser import ProtoParser
+from .grammar_gen import GrammarGenerator
+from .proto_print import format_message, format_enum
 
 
 def main():
-    """Main entry point for proto-to-grammar."""
+    """Main entry point for protobuf parser."""
     parser = argparse.ArgumentParser(
-        description="Generate grammar from protobuf specifications"
+        description="Parse protobuf specifications and generate tools"
     )
     parser.add_argument(
         "proto_files",
@@ -40,34 +28,56 @@ def main():
     parser.add_argument(
         "-o", "--output",
         type=Path,
-        help="Output file for generated grammar"
+        help="Output file"
     )
     parser.add_argument(
         "--grammar",
         action="store_true",
         help="Output the grammar"
     )
+    parser.add_argument(
+        "--proto",
+        action="store_true",
+        help="Output the parsed protobuf specification"
+    )
     args = parser.parse_args()
 
     proto_parser = ProtoParser()
     for proto_file in args.proto_files:
         if not proto_file.exists():
-            print(f"Error: File not found: {proto_file}")
+            print(f"Error: File not found: {proto_file}", file=sys.stderr)
             return 1
         proto_parser.parse_file(proto_file)
 
-    generator = GrammarGenerator(proto_parser, verbose=True)
-    grammar = generator.generate()
+    if args.proto:
+        # Output parsed proto specification
+        lines = []
+        for msg_name, msg in sorted(proto_parser.messages.items()):
+            lines.append(format_message(msg))
+            lines.append("")
 
-    _, unreachable = grammar.partition_nonterminals()
-    unexpected_unreachable = [r for r in unreachable if r.name not in generator.expected_unreachable]
-    if unexpected_unreachable:
-        print("Warning: Unreachable nonterminals detected:")
-        for rule in unexpected_unreachable:
-            print(f"  {rule.name}")
-        print()
+        for enum_name, enum in sorted(proto_parser.enums.items()):
+            lines.append(format_enum(enum))
+            lines.append("")
 
-    if args.grammar:
+        output_text = "\n".join(lines)
+        if args.output:
+            args.output.write_text(output_text)
+            print(f"Parsed proto specification written to {args.output}")
+        else:
+            print(output_text)
+    elif args.grammar:
+        generator = GrammarGenerator(proto_parser, verbose=True)
+        grammar = generator.generate()
+
+        _, unreachable = grammar.partition_nonterminals()
+        unexpected_unreachable = [r for r in unreachable if r.name not in generator.expected_unreachable]
+        if unexpected_unreachable:
+            print("Warning: Unreachable nonterminals detected:")
+            for rule in unexpected_unreachable:
+                print(f"  {rule.name}")
+            print()
+
         output_text = grammar.print_grammar()
         if args.output:
             args.output.write_text(output_text)
