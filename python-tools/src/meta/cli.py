@@ -12,6 +12,7 @@ from pathlib import Path
 from .proto_parser import ProtoParser
 from .grammar_gen import GrammarGenerator
 from .proto_print import print_proto_spec
+from .parser_gen import generate_parse_functions
 from .parser_gen_python import generate_parser_python
 from .parser_gen_go import generate_parser_go
 from .parser_gen_julia import generate_parser_julia
@@ -45,8 +46,8 @@ def main():
     )
     parser.add_argument(
         "--parser",
-        choices=["python", "go", "julia"],
-        help="Generate a parser in the specified language"
+        choices=["python", "go", "julia", "ir"],
+        help="Generate a parser in the specified language (or 'ir' to dump target IR)"
     )
     args = parser.parse_args()
 
@@ -95,6 +96,9 @@ def main():
             output_text = generate_parser_go(grammar)
         elif args.parser == "julia":
             output_text = generate_parser_julia(grammar)
+        elif args.parser == "ir":
+            defns = generate_parse_functions(grammar)
+            output_text = "\n\n".join(str(defn) for defn in defns)
         else:
             print(f"Error: Unknown parser language: {args.parser}", file=sys.stderr)
             return 1
