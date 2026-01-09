@@ -42,9 +42,9 @@ Generates alternative rules:
 
 """
 import re
-from typing import Callable, Dict, List, Optional, Set, Tuple, cast
+from typing import Callable, Dict, List, Optional, Set, Tuple
 from .grammar import Grammar, Rule, Token, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
-from .target import Lambda, Call, Var, Lit, IfElse, Symbol, Builtin, Message, OneOf, ListExpr, BaseType, MessageType, OptionType, ListType, TargetType, TargetExpr, TupleType
+from .target import Lambda, Call, Var, Builtin, Message, OneOf, ListExpr, BaseType, MessageType, OptionType, ListType, TargetType
 from .target_utils import create_identity_function
 from .grammar_utils import rewrite_rule
 from .proto_ast import ProtoMessage, ProtoField

@@ -3,8 +3,7 @@
 from typing import Mapping, Sequence
 
 from .target import (
-    BaseType, MessageType, OptionType, ListType, FunctionType, TupleType,
-    Lambda, Var, Lit, Call, Builtin, TargetExpr, TargetType
+    BaseType, Lambda, Var, Lit, Call, Builtin, TargetExpr, TargetType
 )
 
 

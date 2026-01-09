@@ -10,14 +10,12 @@ from .grammar import (
     NamedTerminal,
     LitTerminal,
     Nonterminal,
-    Option,
     Rhs,
     Rule,
     Sequence,
-    Star,
 )
 
-from .target import BaseType, Lambda, Call, OptionType, TupleType, MessageType, Let, Var, IfElse, Builtin, Lit
+from .target import BaseType, Lambda, Call, TupleType, MessageType, Let, Var, Builtin, Lit
 from .target_utils import apply_lambda
 from .grammar_utils import rewrite_rule
 

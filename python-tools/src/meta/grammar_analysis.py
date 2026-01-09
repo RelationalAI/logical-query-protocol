@@ -133,6 +133,35 @@ class GrammarAnalysis:
         """Check if rhs represents an epsilon production (empty sequence)."""
         return isinstance(rhs, Sequence) and len(rhs.elements) == 0
 
+    def partition_nonterminals_by_reachability(self) -> Tuple[List[Nonterminal], List[Nonterminal]]:
+        """Partition nonterminals into reachable and unreachable.
+
+        Returns a tuple of:
+            - reachable: List of reachable nonterminals in preorder traversal
+            - unreachable: List of unreachable nonterminals (sorted by name)
+        """
+        visited: Set[Nonterminal] = set()
+        reachable: List[Nonterminal] = []
+
+        def visit(A: Nonterminal) -> None:
+            """Visit nonterminal and its dependencies in preorder."""
+            if A in visited or A not in self.grammar.rules:
+                return
+            visited.add(A)
+            reachable.append(A)
+            for rule in self.grammar.rules[A]:
+                for B in GrammarAnalysis.get_nonterminals(rule.rhs):
+                    visit(B)
+
+        visit(self.grammar.start)
+
+        unreachable = sorted(
+            [nt for nt in self.grammar.rules.keys() if nt not in visited],
+            key=lambda nt: nt.name
+        )
+
+        return reachable, unreachable
+
     @staticmethod
     def compute_reachability_static(grammar: 'Grammar') -> Set[Nonterminal]:
         """Compute set of reachable nonterminals from start symbol."""

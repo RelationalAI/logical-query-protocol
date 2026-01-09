@@ -10,14 +10,13 @@ from dataclasses import dataclass, field
 
 from .grammar import Rule, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
 from .target import (
-    Lambda, Call, Var, Lit, Seq, IfElse, Builtin, Message, OneOf, ListExpr,
+    Lambda, Call, Var, Lit, Seq, Builtin, Message, OneOf, ListExpr,
     OptionType, ListType, TupleType, MessageType, FunctionType, TargetType
 )
 from .target_utils import (
     STRING_TYPE, INT64_TYPE, FLOAT64_TYPE, BOOLEAN_TYPE,
     create_identity_function,
-    make_equal, make_which_oneof, make_get_field, make_some, make_tuple,
-    make_fst, make_snd, make_is_empty, make_concat, make_length, make_unwrap_option_or
+    make_tuple, make_fst, make_snd, make_concat, make_length, make_unwrap_option_or
 )
 
 LPAREN = LitTerminal('(')
@@ -97,7 +96,6 @@ def _make_simple_message_rule(
         keyword = lhs_name
     msg_type = MessageType(module, message_name)
     params = [Var(name, typ) for name, typ in fields]
-    msg_var = Var('msg', msg_type)
 
     if rhs_inner:
         rhs = Sequence((LPAREN, LitTerminal(keyword)) + rhs_inner + (RPAREN,))
@@ -121,7 +119,6 @@ def _make_value_oneof_rule(rhs, rhs_type, oneof_field_name):
     _value_nt = Nonterminal('value', _value_type)
 
     var_value = Var('value', rhs_type)
-    msg_var = Var('msg', _value_type)
     return Rule(
         lhs=_value_nt,
         rhs=rhs,
@@ -782,11 +779,8 @@ class BuiltinRules:
             """Create operator rule and its wrapper rule."""
             params = [Var(_var_names[i], _term_type) for i in range(arity)]
             rhs_terms = tuple(_term_nt for _ in range(arity))
-            msg_var = Var('msg', _primitive_type)
 
             wrapped_args = [_msg('logic', 'RelTerm', Call(OneOf('term'), [p])) for p in params]
-            extracted_args = [make_get_field(make_get_field(msg_var, _arg_lits[i]), _lit_term)
-                              for i in range(arity)]
 
             op_nt = Nonterminal(name, _primitive_type)
 
@@ -807,7 +801,6 @@ class BuiltinRules:
                 lhs=_primitive_nt,
                 rhs=op_nt,
                 constructor=Lambda([Var('op', _primitive_type)], _primitive_type, Var('op', _primitive_type))
-
             )
 
             return op_rule, wrapper_rule
@@ -897,7 +890,6 @@ class BuiltinRules:
             If name is missing, defaults to the keyword.
             """
             msg_type = MessageType('transactions', message_name)
-            msg_var = Var('msg', msg_type)
             name_var = Var('name', OptionType(STRING_TYPE))
             return Rule(
                 lhs=Nonterminal(keyword, msg_type),

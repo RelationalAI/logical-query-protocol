@@ -272,35 +272,6 @@ class Grammar:
                 self.start = lhs
         self.rules[lhs].append(rule)
 
-    def partition_nonterminals(self) -> Tuple[List[Nonterminal], List[Nonterminal]]:
-        """Partition nonterminals into reachable and unreachable.
-
-        Returns a tuple of:
-            - reachable: List of reachable nonterminals in preorder traversal
-            - unreachable: List of unreachable nonterminals (sorted by name)
-        """
-        visited: Set[Nonterminal] = set()
-        reachable: List[Nonterminal] = []
-
-        def visit(A: Nonterminal) -> None:
-            """Visit nonterminal and its dependencies in preorder."""
-            if A in visited or A not in self.rules:
-                return
-            visited.add(A)
-            reachable.append(A)
-            for rule in self.rules[A]:
-                for B in get_nonterminals(rule.rhs):
-                    visit(B)
-
-        visit(self.start)
-
-        unreachable = sorted(
-            [nt for nt in self.rules.keys() if nt not in visited],
-            key=lambda nt: nt.name
-        )
-
-        return reachable, unreachable
-
     def get_rules(self, nt: Nonterminal) -> List[Rule]:
         """Get all rules with the given LHS name."""
         return self.rules.get(nt, [])
@@ -311,7 +282,7 @@ class Grammar:
 
     def get_unreachable_rules(self) -> List[Nonterminal]:
         """Find all rules that are unreachable from start symbol."""
-        _, unreachable = self.partition_nonterminals()
+        _, unreachable = self.analysis.partition_nonterminals_by_reachability()
         return unreachable
 
     def print_grammar(self, reachable_only: bool = True) -> str:
@@ -320,7 +291,7 @@ class Grammar:
         lines.append("// Auto-generated grammar from protobuf specifications")
         lines.append("")
 
-        reachable, unreachable = self.partition_nonterminals()
+        reachable, unreachable = self.analysis.partition_nonterminals_by_reachability()
         rule_order = reachable if reachable_only else reachable + unreachable
 
         for lhs in rule_order:
@@ -345,8 +316,3 @@ class Grammar:
             lines.append(f"{token.name}: {token.pattern}")
 
         return "\n".join(lines)
-
-
-# Helper functions - re-exported from utils and analysis modules
-from .grammar_utils import get_nonterminals, get_literals, is_epsilon, rhs_elements
-from .grammar_analysis import GrammarAnalysis
