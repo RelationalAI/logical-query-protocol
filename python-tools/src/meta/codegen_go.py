@@ -9,8 +9,9 @@ from typing import List, Optional, Set, Tuple, Union
 from .codegen_base import CodeGenerator, BuiltinResult
 from .target import (
     TargetExpr, Var, Lit, Symbol, ListExpr, Call, Lambda, Let, IfElse,
-    FunDef, ParseNonterminalDef, gensym
+    FunDef, VisitNonterminalDef
 )
+from .gensym import gensym
 
 
 # Go keywords that need escaping
@@ -258,7 +259,7 @@ class GoCodeGenerator(CodeGenerator):
 
         return tmp
 
-    def _generate_parse_def(self, expr: ParseNonterminalDef, indent: str) -> str:
+    def _generate_parse_def(self, expr: VisitNonterminalDef, indent: str) -> str:
         """Generate a parse method definition."""
         func_name = f"parse{expr.nonterminal.name.title().replace('_', '')}"
 
@@ -302,7 +303,7 @@ def generate_go_lines(expr: TargetExpr, lines: List[str], indent: str = "") -> s
     return _generator.generate_lines(expr, lines, indent)
 
 
-def generate_go_def(expr: Union[FunDef, ParseNonterminalDef], indent: str = "") -> str:
+def generate_go_def(expr: Union[FunDef, VisitNonterminalDef], indent: str = "") -> str:
     """Generate Go function definition."""
     return _generator.generate_def(expr, indent)
 

@@ -11,8 +11,9 @@ from lqp.proto.v1.logic_pb2 import Value
 from .codegen_base import CodeGenerator, BuiltinResult
 from .target import (
     TargetExpr, Var, Lit, Symbol, Builtin, Message, OneOf, ListExpr, Call, Lambda, Let, IfElse,
-    FunDef, ParseNonterminalDef, gensym
+    FunDef, VisitNonterminalDef
 )
+from .gensym import gensym
 
 
 # Julia keywords that need escaping
@@ -290,9 +291,9 @@ class JuliaCodeGenerator(CodeGenerator):
 
                 if isinstance(arg, Call) and isinstance(arg.func, OneOf) and len(arg.args) == 1:
                     # Extract field name and value from Call(OneOf(Symbol), [value])
-                    field_name = self.escape_identifier(arg.func.field_name.name)
+                    field_name = self.escape_identifier(arg.func.field_name)
                     field_value = self.generate_lines(arg.args[0], lines, indent)
-                    field_symbol = self.gen_symbol(arg.func.field_name.name)
+                    field_symbol = self.gen_symbol(arg.func.field_name)
                     keyword_args.append(f"{field_name}=OneOf({field_symbol}, {field_value})")
                     arg_idx += 1
                 elif field_idx < len(field_specs):
@@ -348,7 +349,7 @@ class JuliaCodeGenerator(CodeGenerator):
 
         # Check for Call(OneOf(Symbol), [value]) pattern (not in Message constructor)
         if isinstance(expr.func, OneOf) and len(expr.args) == 1:
-            field_symbol = self.gen_symbol(expr.func.field_name.name)
+            field_symbol = self.gen_symbol(expr.func.field_name)
             field_value = self.generate_lines(expr.args[0], lines, indent)
             tmp = gensym()
             lines.append(f"{indent}{self.gen_assignment(tmp, f'OneOf({field_symbol}, {field_value})', is_declaration=True)}")
@@ -392,7 +393,7 @@ class JuliaCodeGenerator(CodeGenerator):
 
         return tmp
 
-    def _generate_parse_def(self, expr: ParseNonterminalDef, indent: str) -> str:
+    def _generate_parse_def(self, expr: VisitNonterminalDef, indent: str) -> str:
         """Generate a parse method definition."""
         func_name = f"parse_{expr.nonterminal.name}"
 
@@ -436,7 +437,7 @@ def generate_julia_lines(expr: TargetExpr, lines: List[str], indent: str = "") -
     return _generator.generate_lines(expr, lines, indent)
 
 
-def generate_julia_def(expr: Union[FunDef, ParseNonterminalDef], indent: str = "") -> str:
+def generate_julia_def(expr: Union[FunDef, VisitNonterminalDef], indent: str = "") -> str:
     """Generate Julia function definition."""
     return _generator.generate_def(expr, indent)
 

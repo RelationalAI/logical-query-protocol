@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 from typing import Dict
 
-from .proto_ast import ProtoMessage, ProtoEnum, ProtoField, ProtoOneof
+from .proto_ast import ProtoMessage, ProtoEnum, ProtoField, ProtoOneof, ProtoReserved
 
 # Regex patterns for parsing protobuf syntax
 _LINE_COMMENT_PATTERN = re.compile(r'//.*?\n')
@@ -20,6 +20,7 @@ _ONEOF_PATTERN = re.compile(r'oneof\s+(\w+)\s*\{((?:[^{}]|\{[^}]*\})*)\}')
 _FIELD_PATTERN = re.compile(r'(repeated|optional)?\s*(\w+)\s+(\w+)\s*=\s*(\d+);')
 _ONEOF_FIELD_PATTERN = re.compile(r'(\w+)\s+(\w+)\s*=\s*(\d+);')
 _ENUM_VALUE_PATTERN = re.compile(r'(\w+)\s*=\s*(\d+);')
+_RESERVED_PATTERN = re.compile(r'reserved\s+([^;]+);')
 
 
 class ProtoParser:
@@ -78,6 +79,25 @@ class ProtoParser:
             i += 1
         return content[start:i-1], i
 
+    def _parse_reserved(self, content: str) -> ProtoReserved:
+        """Parse reserved statement content into numbers, ranges, and names."""
+        reserved = ProtoReserved()
+        parts = [p.strip() for p in content.split(',')]
+
+        for part in parts:
+            if '"' in part:
+                name = part.strip('"').strip("'")
+                reserved.names.append(name)
+            elif ' to ' in part:
+                range_parts = part.split(' to ')
+                start = int(range_parts[0].strip())
+                end = int(range_parts[1].strip())
+                reserved.ranges.append((start, end))
+            else:
+                reserved.numbers.append(int(part.strip()))
+
+        return reserved
+
     def _parse_message(self, name: str, body: str) -> ProtoMessage:
         """Parse message definition body into fields, oneofs, and nested enums."""
         message = ProtoMessage(name=name, module=self.current_module)
@@ -102,19 +122,25 @@ class ProtoParser:
                 )
                 oneof.fields.append(proto_field)
 
-        # Parse regular fields (excluding those inside oneofs)
+        # Parse reserved statements and track their spans
+        reserved_spans = []
+        for match in _RESERVED_PATTERN.finditer(body):
+            reserved_spans.append((match.start(), match.end()))
+            reserved_content = match.group(1)
+            reserved = self._parse_reserved(reserved_content)
+            message.reserved.append(reserved)
+
+        # Parse regular fields (excluding those inside oneofs and reserved)
+        excluded_spans = oneof_spans + reserved_spans
         for match in _FIELD_PATTERN.finditer(body):
             if any(start <= match.start() and match.end() <= end
-                   for start, end in oneof_spans):
+                   for start, end in excluded_spans):
                 continue
 
             modifier = match.group(1)
             field_type = match.group(2)
             field_name = match.group(3)
             field_number = int(match.group(4))
-
-            if field_type == 'reserved':
-                continue
 
             proto_field = ProtoField(
                 name=field_name,

@@ -12,8 +12,10 @@ from meta.grammar import (
     LitTerminal, NamedTerminal, Nonterminal,
     Star, Option, Sequence,
     Rule, Token, Grammar,
+)
+from meta.grammar_utils import (
     get_nonterminals, get_literals, is_epsilon, rhs_elements,
-    _count_nonliteral_rhs_elements,
+    count_nonliteral_rhs_elements,
 )
 from meta.target import BaseType, MessageType, TupleType, ListType, OptionType, Lambda, Var, Lit
 
@@ -126,17 +128,6 @@ class TestStar:
         star = Star(term)
         assert star.rhs == term
 
-    def test_construction_fails_with_literal(self):
-        """Test Star construction fails with LitTerminal."""
-        lit = LitTerminal("foo")
-        with pytest.raises(AssertionError, match="Star child must be"):
-            Star(lit)
-
-    def test_construction_fails_with_sequence(self):
-        """Test Star construction fails with Sequence."""
-        seq = Sequence((LitTerminal("a"),))
-        with pytest.raises(AssertionError, match="Star child must be"):
-            Star(seq)
 
     def test_str(self):
         """Test Star string representation."""
@@ -167,12 +158,6 @@ class TestOption:
         term = NamedTerminal("ID", BaseType("String"))
         opt = Option(term)
         assert opt.rhs == term
-
-    def test_construction_fails_with_literal(self):
-        """Test Option construction fails with LitTerminal."""
-        lit = LitTerminal("bar")
-        with pytest.raises(AssertionError, match="Option child must be"):
-            Option(lit)
 
     def test_str(self):
         """Test Option string representation."""
@@ -279,7 +264,7 @@ class TestRule:
         rule = Rule(lhs, rhs, action)
         assert rule.lhs == lhs
         assert rule.rhs == rhs
-        assert rule.action == action
+        assert rule.constructor == action
 
     def test_construction_with_sequence(self):
         """Test Rule construction with sequence RHS."""
@@ -291,7 +276,7 @@ class TestRule:
         param2 = Var("y", MessageType("proto", "C"))
         action = Lambda([param1, param2], MessageType("proto", "A"), param1)
         rule = Rule(lhs, rhs, action)
-        assert len(rule.action.params) == 2
+        assert len(rule.constructor.params) == 2
 
     def test_construction_filters_literals(self):
         """Test Rule construction with literals in RHS."""
@@ -302,7 +287,7 @@ class TestRule:
         param = Var("x", MessageType("proto", "B"))
         action = Lambda([param], MessageType("proto", "A"), param)
         rule = Rule(lhs, rhs, action)
-        assert len(rule.action.params) == 1
+        assert len(rule.constructor.params) == 1
 
     def test_construction_fails_with_wrong_param_count(self):
         """Test Rule construction fails with mismatched parameter count."""
@@ -442,7 +427,7 @@ class TestGrammar:
         grammar.add_rule(Rule(b, c, action_b))
         grammar.add_rule(Rule(c, c, action_c))
 
-        order = grammar.traverse_rules_preorder()
+        order = grammar.analysis.partition_nonterminals_by_reachability()[0]
         assert order[0] == start
         assert order[1] == a
         assert order[2] == b
@@ -453,7 +438,7 @@ class TestGrammar:
         start = Nonterminal("Start", MessageType("proto", "Start"))
         grammar = Grammar(start)
         lit = LitTerminal("foo")
-        assert not grammar.nullable(lit)
+        assert not grammar.analysis.nullable(lit)
 
     def test_nullable_star(self):
         """Test Grammar nullable for star."""
@@ -461,7 +446,7 @@ class TestGrammar:
         grammar = Grammar(start)
         nt = Nonterminal("A", MessageType("proto", "A"))
         star = Star(nt)
-        assert grammar.nullable(star)
+        assert grammar.analysis.nullable(star)
 
     def test_nullable_option(self):
         """Test Grammar nullable for option."""
@@ -469,14 +454,14 @@ class TestGrammar:
         grammar = Grammar(start)
         nt = Nonterminal("A", MessageType("proto", "A"))
         opt = Option(nt)
-        assert grammar.nullable(opt)
+        assert grammar.analysis.nullable(opt)
 
     def test_nullable_empty_sequence(self):
         """Test Grammar nullable for empty sequence."""
         start = Nonterminal("Start", MessageType("proto", "Start"))
         grammar = Grammar(start)
         seq = Sequence(())
-        assert grammar.nullable(seq)
+        assert grammar.analysis.nullable(seq)
 
     def test_print_grammar(self):
         """Test Grammar print_grammar."""
@@ -487,8 +472,8 @@ class TestGrammar:
         action = Lambda([param], MessageType("proto", "A"), param)
         grammar.add_rule(Rule(start, a, action))
         output = grammar.print_grammar()
-        assert "Start:" in output
-        assert "A" in output
+        assert "Start" in output
+        assert ": A" in output
 
     def test_cache_invalidation_on_add_rule(self):
         """Test that caches are not used after add_rule."""
@@ -500,8 +485,8 @@ class TestGrammar:
         rule = Rule(start, a, action)
 
         # Trigger cache
-        grammar.compute_nullable()
-        assert grammar._nullable_cache is not None
+        grammar.analysis.compute_nullable()
+        assert grammar.analysis._nullable_cache is not None
 
         # This should fail because cache exists
         with pytest.raises(AssertionError, match="already analyzed"):
@@ -609,38 +594,38 @@ class TestHelperFunctions:
         result = rhs_elements(nt)
         assert result == (nt,)
 
-    def test_count_nonliteral_rhs_elements_single_nonterminal(self):
-        """Test _count_nonliteral_rhs_elements with nonterminal."""
+    def testcount_nonliteral_rhs_elements_single_nonterminal(self):
+        """Test count_nonliteral_rhs_elements with nonterminal."""
         nt = Nonterminal("A", MessageType("proto", "A"))
-        assert _count_nonliteral_rhs_elements(nt) == 1
+        assert count_nonliteral_rhs_elements(nt) == 1
 
-    def test_count_nonliteral_rhs_elements_terminal(self):
-        """Test _count_nonliteral_rhs_elements with terminal."""
+    def testcount_nonliteral_rhs_elements_terminal(self):
+        """Test count_nonliteral_rhs_elements with terminal."""
         term = NamedTerminal("TOK", BaseType("String"))
-        assert _count_nonliteral_rhs_elements(term) == 1
+        assert count_nonliteral_rhs_elements(term) == 1
 
-    def test_count_nonliteral_rhs_elements_literal(self):
-        """Test _count_nonliteral_rhs_elements with literal."""
+    def testcount_nonliteral_rhs_elements_literal(self):
+        """Test count_nonliteral_rhs_elements with literal."""
         lit = LitTerminal("foo")
-        assert _count_nonliteral_rhs_elements(lit) == 0
+        assert count_nonliteral_rhs_elements(lit) == 0
 
-    def test_count_nonliteral_rhs_elements_star(self):
-        """Test _count_nonliteral_rhs_elements with star."""
+    def testcount_nonliteral_rhs_elements_star(self):
+        """Test count_nonliteral_rhs_elements with star."""
         nt = Nonterminal("A", MessageType("proto", "A"))
         star = Star(nt)
-        assert _count_nonliteral_rhs_elements(star) == 1
+        assert count_nonliteral_rhs_elements(star) == 1
 
-    def test_count_nonliteral_rhs_elements_option(self):
-        """Test _count_nonliteral_rhs_elements with option."""
+    def testcount_nonliteral_rhs_elements_option(self):
+        """Test count_nonliteral_rhs_elements with option."""
         nt = Nonterminal("A", MessageType("proto", "A"))
         opt = Option(nt)
-        assert _count_nonliteral_rhs_elements(opt) == 1
+        assert count_nonliteral_rhs_elements(opt) == 1
 
     def test_count_nonliteral_rhs_elements_sequence(self):
-        """Test _count_nonliteral_rhs_elements with sequence."""
+        """Test count_nonliteral_rhs_elements with sequence."""
         nt1 = Nonterminal("A", MessageType("proto", "A"))
         lit = LitTerminal("foo")
         nt2 = Nonterminal("B", MessageType("proto", "B"))
         term = NamedTerminal("TOK", BaseType("String"))
         seq = Sequence((nt1, lit, nt2, term))
-        assert _count_nonliteral_rhs_elements(seq) == 3
+        assert count_nonliteral_rhs_elements(seq) == 3

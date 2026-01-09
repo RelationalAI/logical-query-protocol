@@ -11,10 +11,11 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
 from .target import (
     TargetExpr, Var, Lit, Symbol, Builtin, Message, OneOf, ListExpr, Call, Lambda, Let,
-    IfElse, Seq, While, Assign, Return, FunDef, ParseNonterminalDef,
-    ParseNonterminal, Type, BaseType, TupleType, ListType, OptionType,
-    MessageType, FunctionType, gensym
+    IfElse, Seq, While, Assign, Return, FunDef, VisitNonterminalDef,
+    VisitNonterminal, TargetType, BaseType, TupleType, ListType, OptionType,
+    MessageType, FunctionType
 )
+from .gensym import gensym
 
 
 @dataclass
@@ -148,7 +149,7 @@ class CodeGenerator(ABC):
         pass
 
     @abstractmethod
-    def gen_list_literal(self, elements: List[str], element_type: Type) -> str:
+    def gen_list_literal(self, elements: List[str], element_type: TargetType) -> str:
         """Generate a list literal with the given elements (may be empty)."""
         pass
 
@@ -157,7 +158,7 @@ class CodeGenerator(ABC):
         """Generate a function type."""
         pass
 
-    def gen_type(self, typ: Type) -> str:
+    def gen_type(self, typ: TargetType) -> str:
         """Generate a type expression."""
         if isinstance(typ, BaseType):
             return self.base_type_map.get(typ.name, typ.name)
@@ -293,7 +294,7 @@ class CodeGenerator(ABC):
         elif isinstance(expr, Builtin):
             return self.gen_builtin_ref(expr.name)
 
-        elif isinstance(expr, ParseNonterminal):
+        elif isinstance(expr, VisitNonterminal):
             return self.gen_parse_nonterminal_ref(expr.nonterminal.name)
 
         elif isinstance(expr, OneOf):
@@ -468,11 +469,11 @@ class CodeGenerator(ABC):
 
     # --- Function definition generation ---
 
-    def generate_def(self, expr: Union[FunDef, ParseNonterminalDef], indent: str = "") -> str:
+    def generate_def(self, expr: Union[FunDef, VisitNonterminalDef], indent: str = "") -> str:
         """Generate a function definition."""
         if isinstance(expr, FunDef):
             return self._generate_fun_def(expr, indent)
-        elif isinstance(expr, ParseNonterminalDef):
+        elif isinstance(expr, VisitNonterminalDef):
             return self._generate_parse_def(expr, indent)
         else:
             raise ValueError(f"Unknown definition type: {type(expr)}")
@@ -499,6 +500,6 @@ class CodeGenerator(ABC):
         return f"{indent}{header}\n{body_code}"
 
     @abstractmethod
-    def _generate_parse_def(self, expr: ParseNonterminalDef, indent: str) -> str:
+    def _generate_parse_def(self, expr: VisitNonterminalDef, indent: str) -> str:
         """Generate a parse method definition. Language-specific due to method syntax."""
         pass

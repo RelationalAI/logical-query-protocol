@@ -11,8 +11,9 @@ from lqp.proto.v1.logic_pb2 import Value
 from .codegen_base import CodeGenerator, BuiltinResult
 from .target import (
     TargetExpr, Var, Lit, Symbol, Builtin, Message, OneOf, ListExpr, Call, Lambda, Let,
-    IfElse, FunDef, ParseNonterminalDef, gensym
+    IfElse, FunDef, VisitNonterminalDef
 )
+from .gensym import gensym
 
 
 # Python keywords that need escaping
@@ -294,7 +295,7 @@ class PythonCodeGenerator(CodeGenerator):
                 if isinstance(arg, Call) and isinstance(arg.func, OneOf) and len(arg.args) == 1:
                     # Extract field name and value from Call(OneOf(Symbol), [value])
                     # For Python keywords, use dictionary unpacking: **{'def': value}
-                    field_name = arg.func.field_name.name
+                    field_name = arg.func.field_name
                     field_value = self.generate_lines(arg.args[0], lines, indent)
                     if field_name in PYTHON_KEYWORDS:
                         keyword_args.append(f"**{{'{field_name}': {field_value}}}")
@@ -395,7 +396,7 @@ class PythonCodeGenerator(CodeGenerator):
 
         return tmp
 
-    def _generate_parse_def(self, expr: ParseNonterminalDef, indent: str) -> str:
+    def _generate_parse_def(self, expr: VisitNonterminalDef, indent: str) -> str:
         """Generate a parse method definition."""
         func_name = f"parse_{expr.nonterminal.name}"
 
@@ -441,7 +442,7 @@ def generate_python_lines(expr: TargetExpr, lines: List[str], indent: str = "") 
     return _generator.generate_lines(expr, lines, indent)
 
 
-def generate_python_def(expr: Union[FunDef, ParseNonterminalDef], indent: str = "") -> str:
+def generate_python_def(expr: Union[FunDef, VisitNonterminalDef], indent: str = "") -> str:
     """Generate Python function definition."""
     return _generator.generate_def(expr, indent)
 

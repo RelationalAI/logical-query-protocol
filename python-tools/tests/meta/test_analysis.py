@@ -13,20 +13,7 @@ from meta.grammar import (
     Star, Option, Sequence,
     Rule, Grammar,
 )
-from meta.grammar_analysis import (
-    check_reachability,
-    compute_nullable,
-    compute_first,
-    compute_first_k,
-    compute_follow,
-    compute_follow_k,
-    _is_rhs_elem_nullable,
-    _compute_rhs_elem_first,
-    _compute_rhs_elem_first_k,
-    _compute_rhs_elem_follow,
-    _compute_rhs_elem_follow_k,
-    _concat_first_k_sets,
-)
+from meta.grammar_analysis import GrammarAnalysis as GA
 from meta.target import BaseType, MessageType, Lambda, Var
 
 
@@ -167,7 +154,7 @@ class TestCheckReachability:
     def test_simple_grammar_all_reachable(self):
         """Test reachability in simple grammar where all nonterminals are reachable."""
         grammar, s, a, b, _, _ = make_simple_grammar()
-        reachable = check_reachability(grammar)
+        reachable = grammar.analysis.compute_reachability()
         assert s in reachable
         assert a in reachable
         assert b in reachable
@@ -176,7 +163,7 @@ class TestCheckReachability:
     def test_unreachable_nonterminal(self):
         """Test reachability with unreachable nonterminal."""
         grammar, s, a, b = make_unreachable_grammar()
-        reachable = check_reachability(grammar)
+        reachable = grammar.analysis.compute_reachability()
         assert s in reachable
         assert a in reachable
         assert b not in reachable
@@ -186,7 +173,7 @@ class TestCheckReachability:
         """Test reachability with grammar that has no rules for start."""
         s = Nonterminal("S", MessageType("proto", "S"))
         grammar = Grammar(s)
-        reachable = check_reachability(grammar)
+        reachable = grammar.analysis.compute_reachability()
         # Start is always added to rules dict by Grammar constructor
         assert len(reachable) == 1
         assert s in reachable
@@ -198,7 +185,7 @@ class TestCheckReachability:
         grammar = Grammar(s)
         action = Lambda([], MessageType("proto", "S"), Var("x", MessageType("proto", "S")))
         grammar.add_rule(Rule(s, lit, action))
-        reachable = check_reachability(grammar)
+        reachable = grammar.analysis.compute_reachability()
         assert s in reachable
         assert len(reachable) == 1
 
@@ -225,7 +212,7 @@ class TestCheckReachability:
         grammar.add_rule(Rule(b, c, action_b))
         grammar.add_rule(Rule(c, c, action_c))
 
-        reachable = check_reachability(grammar)
+        reachable = grammar.analysis.compute_reachability()
         assert len(reachable) == 4
         assert s in reachable
         assert a in reachable
@@ -239,7 +226,7 @@ class TestComputeNullable:
     def test_simple_grammar_no_nullable(self):
         """Test nullable computation with no nullable nonterminals."""
         grammar, s, a, b, _, _ = make_simple_grammar()
-        nullable = compute_nullable(grammar)
+        nullable = grammar.analysis.compute_nullable()
         assert not nullable[s]
         assert not nullable[a]
         assert not nullable[b]
@@ -247,7 +234,7 @@ class TestComputeNullable:
     def test_nullable_grammar(self):
         """Test nullable computation with nullable nonterminal."""
         grammar, s, a, b = make_nullable_grammar()
-        nullable = compute_nullable(grammar)
+        nullable = grammar.analysis.compute_nullable()
         assert nullable[a]
         assert not nullable[b]
         assert not nullable[s]
@@ -263,7 +250,7 @@ class TestComputeNullable:
         action = Lambda([param], MessageType("proto", "S"), param)
         grammar.add_rule(Rule(s, star_a, action))
 
-        nullable = compute_nullable(grammar)
+        nullable = grammar.analysis.compute_nullable()
         assert nullable[s]
 
     def test_option_makes_nullable(self):
@@ -277,7 +264,7 @@ class TestComputeNullable:
         action = Lambda([param], MessageType("proto", "S"), param)
         grammar.add_rule(Rule(s, opt_a, action))
 
-        nullable = compute_nullable(grammar)
+        nullable = grammar.analysis.compute_nullable()
         assert nullable[s]
 
     def test_empty_sequence_makes_nullable(self):
@@ -287,7 +274,7 @@ class TestComputeNullable:
         action = Lambda([], MessageType("proto", "S"), Var("x", MessageType("proto", "S")))
         grammar.add_rule(Rule(s, Sequence(()), action))
 
-        nullable = compute_nullable(grammar)
+        nullable = grammar.analysis.compute_nullable()
         assert nullable[s]
 
     def test_transitive_nullable(self):
@@ -309,58 +296,58 @@ class TestComputeNullable:
         grammar.add_rule(Rule(a, b, action_a))
         grammar.add_rule(Rule(b, Sequence(()), action_b))
 
-        nullable = compute_nullable(grammar)
+        nullable = grammar.analysis.compute_nullable()
         assert nullable[s]
         assert nullable[a]
         assert nullable[b]
 
 
 class TestIsRhsElemNullable:
-    """Tests for _is_rhs_elem_nullable."""
+    """Tests for GA.is_rhs_nullable."""
 
     def test_literal_not_nullable(self):
         """Test that literal is not nullable."""
         lit = LitTerminal("a")
         nullable = {}
-        assert not _is_rhs_elem_nullable(lit, nullable)
+        assert not GA.is_rhs_nullable(lit, nullable)
 
     def test_terminal_not_nullable(self):
         """Test that terminal is not nullable."""
         term = NamedTerminal("TOK", BaseType("String"))
         nullable = {}
-        assert not _is_rhs_elem_nullable(term, nullable)
+        assert not GA.is_rhs_nullable(term, nullable)
 
     def test_nonterminal_nullable(self):
         """Test nonterminal nullable when in nullable set."""
         nt = Nonterminal("A", MessageType("proto", "A"))
         nullable = {nt: True}
-        assert _is_rhs_elem_nullable(nt, nullable)
+        assert GA.is_rhs_nullable(nt, nullable)
 
     def test_nonterminal_not_nullable(self):
         """Test nonterminal not nullable when not in set."""
         nt = Nonterminal("A", MessageType("proto", "A"))
         nullable = {nt: False}
-        assert not _is_rhs_elem_nullable(nt, nullable)
+        assert not GA.is_rhs_nullable(nt, nullable)
 
     def test_star_nullable(self):
         """Test that star is always nullable."""
         nt = Nonterminal("A", MessageType("proto", "A"))
         star = Star(nt)
         nullable = {nt: False}
-        assert _is_rhs_elem_nullable(star, nullable)
+        assert GA.is_rhs_nullable(star, nullable)
 
     def test_option_nullable(self):
         """Test that option is always nullable."""
         nt = Nonterminal("A", MessageType("proto", "A"))
         opt = Option(nt)
         nullable = {nt: False}
-        assert _is_rhs_elem_nullable(opt, nullable)
+        assert GA.is_rhs_nullable(opt, nullable)
 
     def test_empty_sequence_nullable(self):
         """Test that empty sequence is nullable."""
         seq = Sequence(())
         nullable = {}
-        assert _is_rhs_elem_nullable(seq, nullable)
+        assert GA.is_rhs_nullable(seq, nullable)
 
     def test_sequence_all_nullable(self):
         """Test sequence is nullable when all elements are nullable."""
@@ -368,7 +355,7 @@ class TestIsRhsElemNullable:
         b = Nonterminal("B", MessageType("proto", "B"))
         seq = Sequence((a, b))
         nullable = {a: True, b: True}
-        assert _is_rhs_elem_nullable(seq, nullable)
+        assert GA.is_rhs_nullable(seq, nullable)
 
     def test_sequence_one_not_nullable(self):
         """Test sequence is not nullable when one element is not nullable."""
@@ -376,7 +363,7 @@ class TestIsRhsElemNullable:
         b = Nonterminal("B", MessageType("proto", "B"))
         seq = Sequence((a, b))
         nullable = {a: True, b: False}
-        assert not _is_rhs_elem_nullable(seq, nullable)
+        assert not GA.is_rhs_nullable(seq, nullable)
 
 
 class TestComputeFirst:
@@ -385,7 +372,7 @@ class TestComputeFirst:
     def test_simple_grammar(self):
         """Test FIRST computation for simple grammar."""
         grammar, s, a, b, lit_a, lit_b = make_simple_grammar()
-        first = compute_first(grammar)
+        first = grammar.analysis.compute_first()
 
         assert lit_a in first[a]
         assert lit_b in first[b]
@@ -394,7 +381,7 @@ class TestComputeFirst:
     def test_nullable_grammar(self):
         """Test FIRST with nullable nonterminal."""
         grammar, s, a, b = make_nullable_grammar()
-        first = compute_first(grammar)
+        first = grammar.analysis.compute_first()
 
         lit_a = LitTerminal("a")
         lit_b = LitTerminal("b")
@@ -410,7 +397,7 @@ class TestComputeFirst:
     def test_left_recursive_grammar(self):
         """Test FIRST with left recursion."""
         grammar, s, t, num = make_left_recursive_grammar()
-        first = compute_first(grammar)
+        first = grammar.analysis.compute_first()
 
         # Both S and T start with NUM
         assert num in first[s]
@@ -418,14 +405,14 @@ class TestComputeFirst:
 
 
 class TestComputeRhsElemFirst:
-    """Tests for _compute_rhs_elem_first."""
+    """Tests for GA.rhs_first."""
 
     def test_literal(self):
         """Test FIRST of literal."""
         lit = LitTerminal("a")
         first = {}
         nullable = {}
-        result = _compute_rhs_elem_first(lit, first, nullable)
+        result = GA.rhs_first(lit, first, nullable)
         assert lit in result
 
     def test_terminal(self):
@@ -433,7 +420,7 @@ class TestComputeRhsElemFirst:
         term = NamedTerminal("NUM", BaseType("Int64"))
         first = {}
         nullable = {}
-        result = _compute_rhs_elem_first(term, first, nullable)
+        result = GA.rhs_first(term, first, nullable)
         assert term in result
 
     def test_nonterminal(self):
@@ -442,7 +429,7 @@ class TestComputeRhsElemFirst:
         lit = LitTerminal("a")
         first = {nt: {lit}}
         nullable = {nt: False}
-        result = _compute_rhs_elem_first(nt, first, nullable)
+        result = GA.rhs_first(nt, first, nullable)
         assert lit in result
 
     def test_sequence_all_first(self):
@@ -455,7 +442,7 @@ class TestComputeRhsElemFirst:
 
         first = {a: {lit_a}, b: {lit_b}}
         nullable = {a: False, b: False}
-        result = _compute_rhs_elem_first(seq, first, nullable)
+        result = GA.rhs_first(seq, first, nullable)
         assert lit_a in result
         assert lit_b not in result
 
@@ -469,7 +456,7 @@ class TestComputeRhsElemFirst:
 
         first = {a: {lit_a}, b: {lit_b}}
         nullable = {a: True, b: False}
-        result = _compute_rhs_elem_first(seq, first, nullable)
+        result = GA.rhs_first(seq, first, nullable)
         assert lit_a in result
         assert lit_b in result
 
@@ -480,7 +467,7 @@ class TestComputeFirstK:
     def test_simple_grammar_k2(self):
         """Test FIRST_2 for simple grammar."""
         grammar, s, a, b, lit_a, lit_b = make_simple_grammar()
-        first_k = compute_first_k(grammar, k=2)
+        first_k = grammar.analysis.compute_first_k(k=2)
 
         # S -> A B, so FIRST_2(S) = {("a", "b")}
         assert (lit_a, lit_b) in first_k[s]
@@ -488,8 +475,8 @@ class TestComputeFirstK:
     def test_k1_matches_first(self):
         """Test that FIRST_1 matches regular FIRST."""
         grammar, s, a, b, lit_a, lit_b = make_simple_grammar()
-        first = compute_first(grammar)
-        first_k = compute_first_k(grammar, k=1)
+        first = grammar.analysis.compute_first()
+        first_k = grammar.analysis.compute_first_k(k=1)
 
         for nt in [s, a, b]:
             first_set = {(t,) for t in first[nt]}
@@ -502,19 +489,19 @@ class TestComputeFirstK:
         action = Lambda([], MessageType("proto", "S"), Var("x", MessageType("proto", "S")))
         grammar.add_rule(Rule(s, Sequence(()), action))
 
-        first_k = compute_first_k(grammar, k=2)
+        first_k = grammar.analysis.compute_first_k(k=2)
         assert () in first_k[s]
 
 
 class TestComputeRhsElemFirstK:
-    """Tests for _compute_rhs_elem_first_k."""
+    """Tests for GA.rhs_first_k."""
 
     def test_literal_k2(self):
         """Test FIRST_k of literal."""
         lit = LitTerminal("a")
         first_k = {}
         nullable = {}
-        result = _compute_rhs_elem_first_k(lit, first_k, nullable, k=2)
+        result = GA.rhs_first_k(lit, first_k, nullable, k=2)
         assert (lit,) in result
 
     def test_terminal_k2(self):
@@ -522,7 +509,7 @@ class TestComputeRhsElemFirstK:
         term = NamedTerminal("NUM", BaseType("Int64"))
         first_k = {}
         nullable = {}
-        result = _compute_rhs_elem_first_k(term, first_k, nullable, k=2)
+        result = GA.rhs_first_k(term, first_k, nullable, k=2)
         assert (term,) in result
 
     def test_nonterminal_k2(self):
@@ -531,7 +518,7 @@ class TestComputeRhsElemFirstK:
         lit = LitTerminal("a")
         first_k = {nt: {(lit,)}}
         nullable = {nt: False}
-        result = _compute_rhs_elem_first_k(nt, first_k, nullable, k=2)
+        result = GA.rhs_first_k(nt, first_k, nullable, k=2)
         assert (lit,) in result
 
     def test_sequence_concatenation_k2(self):
@@ -544,7 +531,7 @@ class TestComputeRhsElemFirstK:
 
         first_k = {a: {(lit_a,)}, b: {(lit_b,)}}
         nullable = {a: False, b: False}
-        result = _compute_rhs_elem_first_k(seq, first_k, nullable, k=2)
+        result = GA.rhs_first_k(seq, first_k, nullable, k=2)
         assert (lit_a, lit_b) in result
 
     def test_sequence_truncates_to_k(self):
@@ -559,7 +546,7 @@ class TestComputeRhsElemFirstK:
 
         first_k = {a: {(lit_a,)}, b: {(lit_b,)}, c: {(lit_c,)}}
         nullable = {a: False, b: False, c: False}
-        result = _compute_rhs_elem_first_k(seq, first_k, nullable, k=2)
+        result = GA.rhs_first_k(seq, first_k, nullable, k=2)
         assert (lit_a, lit_b) in result
         assert (lit_a, lit_b, lit_c) not in result
 
@@ -568,7 +555,7 @@ class TestComputeRhsElemFirstK:
         seq = Sequence(())
         first_k = {}
         nullable = {}
-        result = _compute_rhs_elem_first_k(seq, first_k, nullable, k=2)
+        result = GA.rhs_first_k(seq, first_k, nullable, k=2)
         assert () in result
 
     def test_star_includes_empty(self):
@@ -579,7 +566,7 @@ class TestComputeRhsElemFirstK:
 
         first_k = {nt: {(lit,)}}
         nullable = {nt: False}
-        result = _compute_rhs_elem_first_k(star, first_k, nullable, k=2)
+        result = GA.rhs_first_k(star, first_k, nullable, k=2)
         assert (lit,) in result
         assert () in result
 
@@ -591,7 +578,7 @@ class TestComputeRhsElemFirstK:
 
         first_k = {nt: {(lit,)}}
         nullable = {nt: False}
-        result = _compute_rhs_elem_first_k(opt, first_k, nullable, k=2)
+        result = GA.rhs_first_k(opt, first_k, nullable, k=2)
         assert (lit,) in result
         assert () in result
 
@@ -602,7 +589,7 @@ class TestComputeFollow:
     def test_simple_grammar(self):
         """Test FOLLOW for simple grammar."""
         grammar, s, a, b, lit_a, lit_b = make_simple_grammar()
-        follow = compute_follow(grammar)
+        follow = grammar.analysis.compute_follow()
 
         # FOLLOW(A) includes FIRST(B) = {"b"}
         assert lit_b in follow[a]
@@ -633,7 +620,7 @@ class TestComputeFollow:
         action_b = Lambda([], MessageType("proto", "B"), Var("w", MessageType("proto", "B")))
         grammar.add_rule(Rule(b, lit_b, action_b))
 
-        follow = compute_follow(grammar)
+        follow = grammar.analysis.compute_follow()
 
         # FOLLOW(A) includes FIRST(B) = {"b"}
         assert lit_b in follow[a]
@@ -642,7 +629,7 @@ class TestComputeFollow:
 
 
 class TestComputeRhsElemFollow:
-    """Tests for _compute_rhs_elem_follow."""
+    """Tests for GA.rhs_follow."""
 
     def test_nonterminal_at_end(self):
         """Test FOLLOW for nonterminal at end of production."""
@@ -654,7 +641,7 @@ class TestComputeRhsElemFollow:
         nullable = {a: False}
         follow = {lhs: {lit_a}}
 
-        result = _compute_rhs_elem_follow(a, lhs, first, nullable, follow)
+        result = GA.rhs_follow(a, lhs, first, nullable, follow)
         assert a in result
         assert lit_a in result[a]
 
@@ -670,7 +657,7 @@ class TestComputeRhsElemFollow:
         nullable = {a: False, b: False}
         follow = {lhs: set()}
 
-        result = _compute_rhs_elem_follow(seq, lhs, first, nullable, follow)
+        result = GA.rhs_follow(seq, lhs, first, nullable, follow)
         assert a in result
         assert lit_b in result[a]
 
@@ -681,7 +668,7 @@ class TestComputeFollowK:
     def test_simple_grammar_k2(self):
         """Test FOLLOW_2 for simple grammar."""
         grammar, s, a, b, lit_a, lit_b = make_simple_grammar()
-        follow_k = compute_follow_k(grammar, k=2)
+        follow_k = grammar.analysis.compute_follow_k(k=2)
 
         # FOLLOW_2(A) includes FIRST_2(B) = {("b",)}
         assert (lit_b,) in follow_k[a]
@@ -693,8 +680,8 @@ class TestComputeFollowK:
     def test_k1_matches_follow(self):
         """Test that FOLLOW_1 matches regular FOLLOW."""
         grammar, s, a, b, lit_a, lit_b = make_simple_grammar()
-        follow = compute_follow(grammar)
-        follow_k = compute_follow_k(grammar, k=1)
+        follow = grammar.analysis.compute_follow()
+        follow_k = grammar.analysis.compute_follow_k(k=1)
 
         for nt in [s, a, b]:
             follow_set = {(t,) for t in follow[nt]}
@@ -702,7 +689,7 @@ class TestComputeFollowK:
 
 
 class TestConcatFirstKSets:
-    """Tests for _concat_first_k_sets."""
+    """Tests for GA.concat_k."""
 
     def test_concatenate_two_single_element_sets(self):
         """Test concatenating two single-element sets."""
@@ -711,7 +698,7 @@ class TestConcatFirstKSets:
         set1 = {(lit_a,)}
         set2 = {(lit_b,)}
 
-        result = _concat_first_k_sets(set1, set2, k=2)
+        result = GA.concat_k(set1, set2, k=2)
         assert (lit_a, lit_b) in result
 
     def test_truncate_to_k(self):
@@ -722,7 +709,7 @@ class TestConcatFirstKSets:
         set1 = {(lit_a,)}
         set2 = {(lit_b, lit_c)}
 
-        result = _concat_first_k_sets(set1, set2, k=2)
+        result = GA.concat_k(set1, set2, k=2)
         assert (lit_a, lit_b) in result
         assert (lit_a, lit_b, lit_c) not in result
 
@@ -734,7 +721,7 @@ class TestConcatFirstKSets:
         set1 = {(lit_a, lit_b)}
         set2 = {(lit_c,)}
 
-        result = _concat_first_k_sets(set1, set2, k=2)
+        result = GA.concat_k(set1, set2, k=2)
         assert (lit_a, lit_b) in result
 
     def test_empty_tuple_concatenation(self):
@@ -743,7 +730,7 @@ class TestConcatFirstKSets:
         set1 = {()}
         set2 = {(lit_a,)}
 
-        result = _concat_first_k_sets(set1, set2, k=2)
+        result = GA.concat_k(set1, set2, k=2)
         assert (lit_a,) in result
 
     def test_multiple_sequences(self):
@@ -754,7 +741,7 @@ class TestConcatFirstKSets:
         set1 = {(lit_a,), (lit_b,)}
         set2 = {(lit_c,)}
 
-        result = _concat_first_k_sets(set1, set2, k=2)
+        result = GA.concat_k(set1, set2, k=2)
         assert (lit_a, lit_c) in result
         assert (lit_b, lit_c) in result
 
@@ -763,43 +750,43 @@ class TestIntegration:
     """Integration tests combining multiple analysis functions."""
 
     def test_grammar_methods_cache_results(self):
-        """Test that Grammar methods properly cache results."""
-        grammar, s, a, b, _, _ = make_simple_grammar()
+        """Test that Grammar.analysis methods properly cache results."""
+        grammar, _, _, _, _, _ = make_simple_grammar()
 
         # First call should compute
-        nullable1 = grammar.compute_nullable()
+        nullable1 = grammar.analysis.compute_nullable()
         # Second call should return cached value
-        nullable2 = grammar.compute_nullable()
+        nullable2 = grammar.analysis.compute_nullable()
         assert nullable1 is nullable2
 
         # Same for FIRST
-        first1 = grammar.compute_first()
-        first2 = grammar.compute_first()
+        first1 = grammar.analysis.compute_first()
+        first2 = grammar.analysis.compute_first()
         assert first1 is first2
 
         # Same for FOLLOW
-        follow1 = grammar.compute_follow()
-        follow2 = grammar.compute_follow()
+        follow1 = grammar.analysis.compute_follow()
+        follow2 = grammar.analysis.compute_follow()
         assert follow1 is follow2
 
     def test_complete_analysis_pipeline(self):
         """Test complete analysis pipeline."""
-        grammar, s, a, b, lit_a, lit_b = make_simple_grammar()
+        grammar, s, a, _, lit_a, lit_b = make_simple_grammar()
 
         # Check reachability
-        reachable = check_reachability(grammar)
+        reachable = grammar.analysis.compute_reachability()
         assert len(reachable) == 3
 
         # Compute nullable
-        nullable = compute_nullable(grammar)
+        nullable = grammar.analysis.compute_nullable()
         assert not any(nullable.values())
 
         # Compute FIRST
-        first = compute_first(grammar, nullable)
+        first = grammar.analysis.compute_first()
         assert lit_a in first[s]
 
         # Compute FOLLOW
-        follow = compute_follow(grammar, nullable, first)
+        follow = grammar.analysis.compute_follow()
         assert lit_b in follow[a]
 
     def test_complex_grammar_analysis(self):
@@ -831,10 +818,10 @@ class TestIntegration:
         grammar.add_rule(Rule(b, lit_b, action4))
 
         # Check everything works together
-        reachable = check_reachability(grammar)
-        nullable = compute_nullable(grammar)
-        first = compute_first(grammar, nullable)
-        follow = compute_follow(grammar, nullable, first)
+        reachable = grammar.analysis.compute_reachability()
+        grammar.analysis.compute_nullable()  # ensure it runs
+        first = grammar.analysis.compute_first()
+        grammar.analysis.compute_follow()  # ensure it runs
 
         assert len(reachable) == 3
         assert lit_a in first[s]

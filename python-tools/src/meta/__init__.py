@@ -22,13 +22,13 @@ from .target import (
     Seq,
     While,
     Assign,
-    Type,
+    TargetType,
     BaseType,
     TupleType,
     ListType,
     FunDef,
-    ParseNonterminalDef,
-    ParseNonterminal,
+    VisitNonterminalDef,
+    VisitNonterminal,
 )
 
 # Grammar data structures
@@ -47,7 +47,6 @@ from .grammar import (
 
 # Protobuf AST
 from .proto_ast import (
-    PRIMITIVE_TYPES,
     ProtoField,
     ProtoOneof,
     ProtoEnum,
@@ -61,7 +60,6 @@ from .proto_parser import ProtoParser
 from .grammar_gen import (
     GrammarGenerator,
     generate_grammar,
-    generate_semantic_actions,
 )
 
 # Code generation from actions
@@ -89,13 +87,13 @@ __all__ = [
     'Seq',
     'While',
     'Assign',
-    'Type',
+    'TargetType',
     'BaseType',
     'TupleType',
     'ListType',
     'FunDef',
-    'ParseNonterminalDef',
-    'ParseNonterminal',
+    'VisitNonterminalDef',
+    'VisitNonterminal',
     # Grammar
     'Grammar',
     'Rule',
@@ -108,7 +106,6 @@ __all__ = [
     'Star',
     'Option',
     # Protobuf AST
-    'PRIMITIVE_TYPES',
     'ProtoField',
     'ProtoOneof',
     'ProtoEnum',
@@ -118,7 +115,6 @@ __all__ = [
     # Grammar generation
     'GrammarGenerator',
     'generate_grammar',
-    'generate_semantic_actions',
     # Code generation from actions
     'generate_python_lines',
     'generate_python',

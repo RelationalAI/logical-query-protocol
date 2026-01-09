@@ -90,7 +90,7 @@ class FollowSet(TerminalSequenceSet):
     def get(self, k: int) -> Set[Tuple['Terminal', ...]]:
         """Get FOLLOW_k set for the nonterminal, computing and caching if needed."""
         if k not in self._cache:
-            self._cache[k] = self.grammar.follow_k(k, self.lhs)
+            self._cache[k] = self.grammar.analysis.follow_k(k, self.lhs)
         return self._cache[k]
 
 
@@ -119,7 +119,7 @@ class FirstSet(TerminalSequenceSet):
     def get(self, k: int) -> Set[Tuple['Terminal', ...]]:
         """Get FIRST_k set for the RHS, computing and caching if needed."""
         if k not in self._cache:
-            self._cache[k] = self.grammar.first_k(k, self.rhs)
+            self._cache[k] = self.grammar.analysis.first_k(k, self.rhs)
         return self._cache[k]
 
 
@@ -160,9 +160,9 @@ class ConcatSet(TerminalSequenceSet):
                 # All sequences in first are already max length
                 result = first_set
             else:
-                from .grammar_analysis import _concat_first_k_sets
+                from .grammar_analysis import GrammarAnalysis
                 second_set = self.second.get(needed_second_k)
-                result = _concat_first_k_sets(first_set, second_set, k)
+                result = GrammarAnalysis.concat_k(first_set, second_set, k)
         else:
             result = self.second.get(k)
 

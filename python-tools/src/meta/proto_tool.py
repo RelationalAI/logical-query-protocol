@@ -14,12 +14,12 @@ if __name__ == "__main__" and __package__ is None:
     # Running as script - add parent to path and use absolute imports
     sys.path.insert(0, str(Path(__file__).parent.parent))
     from meta.proto_parser import ProtoParser
-    from meta.grammar_gen import GrammarGenerator, generate_semantic_actions
+    from meta.grammar_gen import GrammarGenerator
     from meta.parser_gen_python import generate_parser_python
 else:
     # Running as module - use relative imports
     from .proto_parser import ProtoParser
-    from .grammar_gen import GrammarGenerator, generate_semantic_actions
+    from .grammar_gen import GrammarGenerator
     from .parser_gen_python import generate_parser_python
 
 
@@ -68,8 +68,8 @@ def main():
     generator = GrammarGenerator(proto_parser, verbose=True)
     grammar = generator.generate()
 
-    reachable = grammar.check_reachability()
-    unreachable = grammar.get_unreachable_rules()
+    reachable, unreachable = grammar.analysis.partition_nonterminals_by_reachability()
+    reachable_set = set(reachable)
     unexpected_unreachable = [r for r in unreachable if r.name not in generator.expected_unreachable]
     if unexpected_unreachable:
         print("Warning: Unreachable rules detected:")
@@ -80,8 +80,8 @@ def main():
     outputs = []
 
     if args.grammar:
-        actions_text = generate_semantic_actions(grammar, reachable)
-        outputs.append(("grammar", actions_text))
+        grammar_text = grammar.print_grammar()
+        outputs.append(("grammar", grammar_text))
 
     if args.parser:
         if args.parser == "python":
@@ -89,7 +89,7 @@ def main():
             proto_messages = {}
             for msg_name, msg in proto_parser.messages.items():
                 proto_messages[(msg.module, msg.name)] = msg
-            parser_text = generate_parser_python(grammar, reachable, command_line, proto_messages)
+            parser_text = generate_parser_python(grammar, reachable_set, command_line, proto_messages)
             outputs.append((f"parser-{args.parser}", parser_text))
         elif args.parser == "ir":
             if __package__ is None:

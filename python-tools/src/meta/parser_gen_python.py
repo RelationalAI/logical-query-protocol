@@ -10,7 +10,8 @@ Handles Python-specific code generation including:
 import re
 from typing import List, Optional, Set
 
-from .grammar import Grammar, Nonterminal, get_literals
+from .grammar import Grammar, Nonterminal
+from .grammar_utils import get_literals
 from .codegen_python import generate_python_def
 from .parser_gen import generate_parse_functions
 

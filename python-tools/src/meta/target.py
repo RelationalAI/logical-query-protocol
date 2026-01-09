@@ -9,48 +9,47 @@ translatable to each of these target languages.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, List, Optional, Sequence, TYPE_CHECKING
-from itertools import count
-from more_itertools import peekable
+from typing import Any, Sequence, TYPE_CHECKING
+from .gensym import gensym
 
+# Guard import to avoid circular dependencies
 if TYPE_CHECKING:
     from .grammar import Nonterminal
 
-_global_id = peekable(count(0))
-def next_id():
-    return next(_global_id)
 
-def gensym(prefix: str = "_t") -> str:
-    return f"{prefix}{next_id()}"
+def _freeze_sequence(obj: object, attr: str) -> None:
+    """Convert a list attribute to tuple and validate it's a tuple.
+
+    Used in __post_init__ to ensure sequence fields are immutable tuples.
+    """
+    val = getattr(obj, attr)
+    if isinstance(val, list):
+        object.__setattr__(obj, attr, tuple(val))
+        val = getattr(obj, attr)
+    assert isinstance(val, tuple), f"Invalid {attr} in {obj}: {val}"
 
 @dataclass(frozen=True)
 class TargetNode:
     """Base class for all target language AST nodes."""
     pass
 
-
 @dataclass(frozen=True)
 class TargetExpr(TargetNode):
     """Base class for target language expressions."""
     pass
 
-
-
 @dataclass(frozen=True)
 class Var(TargetExpr):
     """Variable reference."""
     name: str
-    type: 'Type'
+    type: 'TargetType'
 
     def __str__(self) -> str:
         return f"{self.name}::{self.type}"
 
     def __post_init__(self):
-        assert isinstance(self.name, str), f"Invalid name in {self}: {self.name}"
         if not self.name.isidentifier():
             raise ValueError(f"Invalid variable name: {self.name}")
-        assert isinstance(self.type, Type), f"Invalid type in {self}: {self.type}"
-
 
 @dataclass(frozen=True)
 class Lit(TargetExpr):
@@ -69,7 +68,6 @@ class Symbol(TargetExpr):
         return f":{self.name}"
 
     def __post_init__(self):
-        assert isinstance(self.name, str), f"Invalid name in {self}: {self.name}"
         if not self.name.isidentifier():
             raise ValueError(f"Invalid variable name: {self.name}")
 
@@ -86,8 +84,6 @@ class Builtin(TargetExpr):
     def __str__(self) -> str:
         return f"%{self.name}"
 
-    def __post_init__(self):
-        assert isinstance(self.name, str), f"Invalid name in {self}: {self.name}"
 
 @dataclass(frozen=True)
 class Message(TargetExpr):
@@ -103,26 +99,23 @@ class Message(TargetExpr):
         return f"@{self.module}.{self.name}"
 
     def __post_init__(self):
-        assert isinstance(self.module, str), f"Invalid module in {self}: {self.module}"
-        assert isinstance(self.name, str), f"Invalid name in {self}: {self.name}"
+        if not self.module.isidentifier():
+            raise ValueError(f"Invalid message module: {self.module}")
         if not self.name.isidentifier():
-            raise ValueError(f"Invalid variable name: {self.name}")
+            raise ValueError(f"Invalid message name: {self.name}")
 
 
 @dataclass(frozen=True)
 class OneOf(TargetExpr):
     """OneOf field discriminator.
 
-    field_name: Symbol representing the field name
-    Call this with a value to create a oneof field: Call(OneOf(Symbol('field')), [value])
+    field_name: str representing the field name
+    Call this with a value to create a oneof field: Call(OneOf('field'), [value])
     """
-    field_name: Symbol
+    field_name: str
 
     def __str__(self) -> str:
         return f"OneOf({self.field_name})"
-
-    def __post_init__(self):
-        assert isinstance(self.field_name, Symbol), f"Invalid field_name in {self}: {self.field_name}"
 
 
 @dataclass(frozen=True)
@@ -132,7 +125,7 @@ class ListExpr(TargetExpr):
     Creates a list with the given elements and element type.
     """
     elements: Sequence['TargetExpr']
-    element_type: 'Type'
+    element_type: 'TargetType'
 
     def __str__(self) -> str:
         if not self.elements:
@@ -141,25 +134,21 @@ class ListExpr(TargetExpr):
         return f"List[{self.element_type}]({elements_str})"
 
     def __post_init__(self):
-        if isinstance(self.elements, list):
-            object.__setattr__(self, 'elements', tuple(self.elements))
-        assert isinstance(self.elements, tuple), f"Invalid elements in {self}: {self.elements}"
-        for elem in self.elements:
-            assert isinstance(elem, TargetExpr), f"Invalid element in {self}: {elem}"
-        assert isinstance(self.element_type, Type), f"Invalid element_type in {self}: {self.element_type}"
+        _freeze_sequence(self, 'elements')
 
 
 @dataclass(frozen=True)
-class ParseNonterminal(TargetExpr):
-    """Parse method call for a nonterminal.
+class VisitNonterminal(TargetExpr):
+    """Visitor method call for a nonterminal.
 
-    Like Call but specifically for calling parser methods, with a Nonterminal
+    Like Call but specifically for calling visitor methods, with a Nonterminal
     instead of an expression for the function.
     """
+    visitor_name: str  # e.g., 'parse', 'pretty'
     nonterminal: 'Nonterminal'
 
     def __str__(self) -> str:
-        return f"parse_{self.nonterminal.name}"
+        return f"{self.visitor_name}_{self.nonterminal.name}"
 
 
 @dataclass(frozen=True)
@@ -177,19 +166,14 @@ class Call(TargetExpr):
         return f"{self.func}({args_str})"
 
     def __post_init__(self):
-        assert isinstance(self.func, TargetExpr), f"Invalid function expression in {self}: {self.func}"
-        if isinstance(self.args, list):
-            object.__setattr__(self, 'args', tuple(self.args))
-        assert isinstance(self.args, tuple), f"Invalid argument list in {self}: {self.args}"
-        for arg in self.args:
-            assert isinstance(arg, TargetExpr), f"Invalid argument expression in {self}: {arg}"
+        _freeze_sequence(self, 'args')
 
 
 @dataclass(frozen=True)
 class Lambda(TargetExpr):
     """Lambda function (anonymous function)."""
     params: Sequence['Var']
-    return_type: 'Type'
+    return_type: 'TargetType'
     body: 'TargetExpr'
 
     def __str__(self) -> str:
@@ -197,12 +181,7 @@ class Lambda(TargetExpr):
         return f"lambda {params_str} -> {self.return_type}: {self.body}"
 
     def __post_init__(self):
-        if isinstance(self.params, list):
-            object.__setattr__(self, 'params', tuple(self.params))
-        assert isinstance(self.body, TargetExpr), f"Invalid function expression in {self}: {self.body} :: {type(self.body)}"
-        assert isinstance(self.return_type, Type), f"Invalid function return type in {self}: {self.return_type}"
-        for param in self.params:
-            assert isinstance(param, Var), f"Invalid parameter in {self}: {param}"
+        _freeze_sequence(self, 'params')
 
 @dataclass(frozen=True)
 class Let(TargetExpr):
@@ -219,10 +198,6 @@ class Let(TargetExpr):
         type_str = f": {self.var.type}" if self.var.type else ""
         return f"let {self.var.name}{type_str} = {self.init} in {self.body}"
 
-    def __post_init__(self):
-        assert isinstance(self.var, Var), f"Invalid let var in {self}: {self.var}"
-        assert isinstance(self.init, TargetExpr), f"Invalid let init expression in {self}: {self.init}"
-        assert isinstance(self.body, TargetExpr), f"Invalid let body expression in {self}: {self.body}"
 
 @dataclass(frozen=True)
 class IfElse(TargetExpr):
@@ -239,10 +214,6 @@ class IfElse(TargetExpr):
         else:
             return f"if ({self.condition}) then {self.then_branch} else {self.else_branch}"
 
-    def __post_init__(self):
-        assert isinstance(self.condition, TargetExpr), f"Invalid if condition expression in {self}: {self.condition}"
-        assert isinstance(self.then_branch, TargetExpr), f"Invalid if then expression in {self}: {self.then_branch}"
-        assert isinstance(self.else_branch, TargetExpr), f"Invalid if else expression in {self}: {self.else_branch}"
 
 @dataclass(frozen=True)
 class Seq(TargetExpr):
@@ -253,13 +224,8 @@ class Seq(TargetExpr):
         return "; ".join(str(e) for e in self.exprs)
 
     def __post_init__(self):
-        if isinstance(self.exprs, list):
-            object.__setattr__(self, 'exprs', tuple(self.exprs))
-        assert isinstance(self.exprs, tuple), f"Invalid sequence of expressions in {self}: {self.exprs}"
-        assert len(self.exprs) > 1, f"Sequence must contain at least two expressions"
-        for expr in self.exprs[:-1]:
-            assert isinstance(expr, TargetExpr), f"Invalid statement in sequence: {expr}"
-        assert isinstance(self.exprs[-1], TargetExpr), f"Invalid expression in sequence: {self.exprs[-1]}"
+        _freeze_sequence(self, 'exprs')
+        assert len(self.exprs) > 1, "Sequence must contain at least two expressions"
 
 
 @dataclass(frozen=True)
@@ -271,9 +237,26 @@ class While(TargetExpr):
     def __str__(self) -> str:
         return f"while ({self.condition}) {self.body}"
 
-    def __post_init__(self):
-        assert isinstance(self.condition, TargetExpr), f"Invalid while condition expression in {self}: {self.condition}"
-        assert isinstance(self.body, TargetExpr), f"Invalid while body expression in {self}: {self.body}"
+@dataclass(frozen=True)
+class Foreach(TargetExpr):
+    """Foreach loop: for var in collection do body."""
+    var: 'Var'
+    collection: TargetExpr
+    body: TargetExpr
+
+    def __str__(self) -> str:
+        return f"for {self.var.name} in {self.collection} do {self.body}"
+
+@dataclass(frozen=True)
+class ForeachEnumerated(TargetExpr):
+    """Foreach loop with index: for index_var, var in enumerate(collection) do body."""
+    index_var: 'Var'
+    var: 'Var'
+    collection: TargetExpr
+    body: TargetExpr
+
+    def __str__(self) -> str:
+        return f"for {self.index_var.name}, {self.var.name} in enumerate({self.collection}) do {self.body}"
 
 @dataclass(frozen=True)
 class Assign(TargetExpr):
@@ -286,11 +269,6 @@ class Assign(TargetExpr):
 
     def __str__(self) -> str:
         return f"{self.var.name} = {self.expr}"
-
-    def __post_init__(self):
-        assert isinstance(self.var, Var), f"Invalid assign LHS expression in {self}: {self.var}"
-        assert isinstance(self.expr, TargetExpr), f"Invalid assign RHS expression in {self}: {self.expr}"
-
 
 @dataclass(frozen=True)
 class Return(TargetExpr):
@@ -305,13 +283,13 @@ class Return(TargetExpr):
 
 
 @dataclass(frozen=True)
-class Type(TargetNode):
+class TargetType(TargetNode):
     """Base class for type expressions."""
     pass
 
 
 @dataclass(frozen=True)
-class BaseType(Type):
+class BaseType(TargetType):
     """Base types: Int64, Float64, String, Boolean."""
     name: str
 
@@ -320,7 +298,7 @@ class BaseType(Type):
 
 
 @dataclass(frozen=True)
-class MessageType(Type):
+class MessageType(TargetType):
     """Protobuf message types."""
     module: str
     name: str
@@ -330,50 +308,48 @@ class MessageType(Type):
 
 
 @dataclass(frozen=True)
-class TupleType(Type):
+class TupleType(TargetType):
     """Tuple type with fixed number of element types."""
-    elements: Sequence[Type]
+    elements: Sequence[TargetType]
 
     def __str__(self) -> str:
         elements_str = ', '.join(str(e) for e in self.elements)
         return f"({elements_str})"
 
     def __post_init__(self):
-        if isinstance(self.elements, list):
-            object.__setattr__(self, 'elements', tuple(self.elements))
+        _freeze_sequence(self, 'elements')
 
 
 @dataclass(frozen=True)
-class ListType(Type):
+class ListType(TargetType):
     """Parameterized list/array type."""
-    element_type: Type
+    element_type: TargetType
 
     def __str__(self) -> str:
         return f"List[{self.element_type}]"
 
 
 @dataclass(frozen=True)
-class OptionType(Type):
+class OptionType(TargetType):
     """Optional/Maybe type for values that may be None."""
-    element_type: Type
+    element_type: TargetType
 
     def __str__(self) -> str:
         return f"Option[{self.element_type}]"
 
 
 @dataclass(frozen=True)
-class FunctionType(Type):
+class FunctionType(TargetType):
     """Function type with parameter types and return type."""
-    param_types: Sequence[Type]
-    return_type: Type
+    param_types: Sequence[TargetType]
+    return_type: TargetType
 
     def __str__(self) -> str:
         params_str = ', '.join(str(t) for t in self.param_types)
         return f"({params_str}) -> {self.return_type}"
 
     def __post_init__(self):
-        if isinstance(self.param_types, list):
-            object.__setattr__(self, 'param_types', tuple(self.param_types))
+        _freeze_sequence(self, 'param_types')
 
 
 @dataclass(frozen=True)
@@ -381,7 +357,7 @@ class FunDef(TargetNode):
     """Function definition with parameters, return type, and body."""
     name: str
     params: Sequence['Var']
-    return_type: Type
+    return_type: TargetType
     body: 'TargetExpr'
 
     def __str__(self) -> str:
@@ -389,32 +365,30 @@ class FunDef(TargetNode):
         return f"def {self.name}({params_str}) -> {self.return_type}: {self.body}"
 
     def __post_init__(self):
-        if isinstance(self.params, list):
-            object.__setattr__(self, 'params', tuple(self.params))
+        _freeze_sequence(self, 'params')
 
 
 @dataclass(frozen=True)
-class ParseNonterminalDef(TargetNode):
-    """Parse method definition for a nonterminal.
+class VisitNonterminalDef(TargetNode):
+    """Visitor method definition for a nonterminal.
 
-    Like FunDef but specifically for parser methods, with a Nonterminal
+    Like FunDef but specifically for visitor methods, with a Nonterminal
     instead of a string name.
     """
+    visitor_name: str  # e.g., 'parse', 'pretty'
     nonterminal: 'Nonterminal'
     params: Sequence['Var']
-    return_type: Type
+    return_type: TargetType
     body: 'TargetExpr'
 
     def __str__(self) -> str:
         params_str = ', '.join(f"{p.name}: {p.type}" for p in self.params)
-        return f"parse_{self.nonterminal.name}({params_str}) -> {self.return_type}: {self.body}"
+        return f"{self.visitor_name}_{self.nonterminal.name}({params_str}) -> {self.return_type}: {self.body}"
 
     def __post_init__(self):
-        if isinstance(self.params, list):
-            object.__setattr__(self, 'params', tuple(self.params))
+        _freeze_sequence(self, 'params')
 
 
-# Re-export all types for convenience
 __all__ = [
     'TargetNode',
     'TargetExpr',
@@ -431,9 +405,11 @@ __all__ = [
     'IfElse',
     'Seq',
     'While',
+    'Foreach',
+    'ForeachEnumerated',
     'Assign',
     'Return',
-    'Type',
+    'TargetType',
     'BaseType',
     'MessageType',
     'TupleType',
@@ -441,7 +417,7 @@ __all__ = [
     'OptionType',
     'FunctionType',
     'FunDef',
-    'ParseNonterminalDef',
-    'ParseNonterminal',
+    'VisitNonterminalDef',
+    'VisitNonterminal',
     'gensym',
 ]

@@ -6,7 +6,7 @@ that can then be translated to Python, Julia, Go, or other languages.
 
 Overview
 --------
-The parser generator takes a Grammar and produces a list of ParseNonterminalDef
+The parser generator takes a Grammar and produces a list of VisitNonterminalDef
 objects, one for each reachable nonterminal. Each definition contains:
 - The nonterminal being parsed
 - Parameters (for parameterized nonterminals)
@@ -77,34 +77,33 @@ The generated IR for expr (simplified) would be:
 """
 
 from typing import Dict, List, Optional, Set, Tuple, Sequence as PySequence
-from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Terminal, is_epsilon, rhs_elements, Sequence
-from .target import Lambda, Call, ParseNonterminalDef, Var, Lit, Symbol, Builtin, Let, IfElse, BaseType, ListType, ListExpr, TargetExpr, Seq, While, Assign, ParseNonterminal, Return, gensym
+from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Terminal, Sequence
+from .grammar_utils import is_epsilon, rhs_elements
+from .target import Lambda, Call, VisitNonterminalDef, Var, Lit, Symbol, Builtin, Let, IfElse, BaseType, ListType, ListExpr, TargetExpr, Seq, While, Assign, VisitNonterminal, Return
+from .gensym import gensym
 from .terminal_sequence_set import TerminalSequenceSet, FollowSet, FirstSet, ConcatSet
 
 MAX_LOOKAHEAD = 3
 
 
-def generate_parse_functions(grammar: Grammar) -> List[ParseNonterminalDef]:
+def generate_parse_functions(grammar: Grammar) -> List[VisitNonterminalDef]:
     parser_methods = []
-    rule_order = grammar.traverse_rules_preorder(reachable_only=True)
-    reachable = grammar.check_reachability()
-    for nt in rule_order:
-        if reachable is not None and nt not in reachable:
-            continue
+    reachable, _ = grammar.analysis.partition_nonterminals_by_reachability()
+    for nt in reachable:
         rules = grammar.rules[nt]
         method_code = _generate_parse_method(nt, rules, grammar)
         parser_methods.append(method_code)
     return parser_methods
 
-def _generate_parse_method(lhs: Nonterminal, rules: List[Rule], grammar: Grammar) -> ParseNonterminalDef:
+def _generate_parse_method(lhs: Nonterminal, rules: List[Rule], grammar: Grammar) -> VisitNonterminalDef:
     """Generate parse method code as string (preserving existing logic)."""
     return_type = None
     rhs = None
     follow_set = FollowSet(grammar, lhs)
     if len(rules) == 1:
         rule = rules[0]
-        rhs = _generate_parse_rhs_ir(rule.rhs, grammar, follow_set, True, rule.action)
-        return_type = rule.action.return_type
+        rhs = _generate_parse_rhs_ir(rule.rhs, grammar, follow_set, True, rule.constructor)
+        return_type = rule.constructor.return_type
     else:
         predictor = _build_predictor(grammar, lhs, rules)
         prediction = gensym('prediction')
@@ -115,14 +114,14 @@ def _generate_parse_method(lhs: Nonterminal, rules: List[Rule], grammar: Grammar
             tail = Call(Builtin('error'), [Lit(f'Unexpected token in {lhs}'), Call(Builtin('current_token'), [])])
         for i, rule in enumerate(rules):
             # Ensure the return type is the same for all actions for this nonterminal.
-            assert return_type is None or return_type == rule.action.return_type, f'Return type mismatch at rule {i}: {return_type} != {rule.action.return_type}'
-            return_type = rule.action.return_type
+            assert return_type is None or return_type == rule.constructor.return_type, f'Return type mismatch at rule {i}: {return_type} != {rule.constructor.return_type}'
+            return_type = rule.constructor.return_type
             if is_epsilon(rule.rhs):
                 continue
-            tail = IfElse(Call(Builtin('equal'), [Var(prediction, BaseType('Int64')), Lit(i)]), _generate_parse_rhs_ir(rule.rhs, grammar, follow_set, True, rule.action), tail)
+            tail = IfElse(Call(Builtin('equal'), [Var(prediction, BaseType('Int64')), Lit(i)]), _generate_parse_rhs_ir(rule.rhs, grammar, follow_set, True, rule.constructor), tail)
         rhs = Let(Var(prediction, BaseType('Int64')), predictor, tail)
     assert return_type is not None
-    return ParseNonterminalDef(lhs, [], return_type, rhs)
+    return VisitNonterminalDef('parse', lhs, [], return_type, rhs)
 
 def _build_predictor(grammar: Grammar, lhs: Nonterminal, rules: List[Rule]) -> TargetExpr:
     """Build a predictor expression that returns the index of the matching rule.
@@ -132,7 +131,7 @@ def _build_predictor(grammar: Grammar, lhs: Nonterminal, rules: List[Rule]) -> T
     require more lookahead.
     """
     assert len(rules) > 1
-    nullable = grammar.compute_nullable()
+    nullable = grammar.analysis.compute_nullable()
     active_indices = [i for i, rule in enumerate(rules) if not is_epsilon(rule.rhs)]
     epsilon_index = None
     for i, rule in enumerate(rules):
@@ -157,7 +156,7 @@ def _build_predictor_tree(grammar: Grammar, rules: List[Rule], active_indices: L
     exhausted: Set[int] = set()
     for rule_idx in active_indices:
         rule = rules[rule_idx]
-        rule_first = grammar.first_k(depth + 1, rule.rhs)
+        rule_first = grammar.analysis.first_k(depth + 1, rule.rhs)
         tokens_at_depth: Set[Terminal] = set()
         for seq in sorted(rule_first, key=lambda s: tuple(str(t) for t in s)):
             if len(seq) > depth:
@@ -250,13 +249,13 @@ def _build_option_predictor(grammar: Grammar, element: Rhs, follow_set: Terminal
     """
     # Find minimal k needed to distinguish element from follow
     for k in range(1, MAX_LOOKAHEAD + 1):
-        element_first = grammar.first_k(k, element)
+        element_first = grammar.analysis.first_k(k, element)
         follow_k = follow_set.get(k)
         if not (element_first & follow_k):
             return _build_lookahead_check(element_first, depth=0)
 
     # Still conflicts at MAX_LOOKAHEAD
-    element_first = grammar.first_k(MAX_LOOKAHEAD, element)
+    element_first = grammar.analysis.first_k(MAX_LOOKAHEAD, element)
     conflict_msg = f'Ambiguous Option/Star: FIRST_{MAX_LOOKAHEAD}({element}) and follow set overlap'
     assert False, conflict_msg
 
@@ -290,7 +289,7 @@ def _generate_parse_rhs_ir(rhs: Rhs, grammar: Grammar, follow_set: TerminalSeque
             return Let(var, parse_expr, _apply(action, [var]))
         return parse_expr
     elif isinstance(rhs, Nonterminal):
-        parse_expr = Call(ParseNonterminal(rhs), [])
+        parse_expr = Call(VisitNonterminal('parse', rhs), [])
         if apply_action and action:
             if len(action.params) == 0:
                 return Seq([parse_expr, _apply(action, [])])

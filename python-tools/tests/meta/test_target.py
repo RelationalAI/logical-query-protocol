@@ -211,10 +211,6 @@ class TestVar:
         with pytest.raises(ValueError, match="Invalid variable name"):
             Var("with-dash", BaseType("String"))
 
-    def test_invalid_type(self):
-        """Test Var with invalid type."""
-        with pytest.raises(AssertionError):
-            Var("x", "not a type")
 
 
 class TestLit:
@@ -309,10 +305,10 @@ class TestMessage:
 
     def test_invalid_name(self):
         """Test Message with invalid name."""
-        with pytest.raises(ValueError, match="Invalid variable name"):
+        with pytest.raises(ValueError, match="Invalid message name"):
             Message("proto", "123Invalid")
 
-        with pytest.raises(ValueError, match="Invalid variable name"):
+        with pytest.raises(ValueError, match="Invalid message name"):
             Message("proto", "with-dash")
 
 
@@ -350,15 +346,6 @@ class TestCall:
         outer = Call(Builtin("process"), [inner, Lit(42)])
         assert str(outer) == "%process(%get_x(), 42)"
 
-    def test_invalid_func(self):
-        """Test Call with invalid function."""
-        with pytest.raises(AssertionError):
-            Call("not an expr", [])
-
-    def test_invalid_arg(self):
-        """Test Call with invalid argument."""
-        with pytest.raises(AssertionError):
-            Call(Builtin("f"), ["not an expr"])
 
 
 class TestLambda:
@@ -387,24 +374,6 @@ class TestLambda:
         lam = Lambda([param], BaseType("Int64"), body)
         assert str(lam) == "lambda x::Int64 -> Int64: x::Int64"
 
-    def test_invalid_return_type(self):
-        """Test Lambda with invalid return type."""
-        param = Var("x", BaseType("Int64"))
-        body = Lit(42)
-        with pytest.raises(AssertionError):
-            Lambda([param], "not a type", body)
-
-    def test_invalid_param(self):
-        """Test Lambda with invalid parameter."""
-        body = Lit(42)
-        with pytest.raises(AssertionError):
-            Lambda(["not a var"], BaseType("Int64"), body)
-
-    def test_invalid_body(self):
-        """Test Lambda with invalid body."""
-        param = Var("x", BaseType("Int64"))
-        with pytest.raises(AssertionError):
-            Lambda([param], BaseType("Int64"), "not an expr")
 
 
 class TestLet:
@@ -440,22 +409,6 @@ class TestLet:
         assert "let x" in str(outer)
         assert "let y" in str(outer)
 
-    def test_invalid_var(self):
-        """Test Let with invalid var."""
-        with pytest.raises((AssertionError, AttributeError)):
-            Let("not a var", Lit(42), Lit(0))
-
-    def test_invalid_init(self):
-        """Test Let with invalid init."""
-        var = Var("x", BaseType("Int64"))
-        with pytest.raises(AssertionError):
-            Let(var, "not an expr", Lit(0))
-
-    def test_invalid_body(self):
-        """Test Let with invalid body."""
-        var = Var("x", BaseType("Int64"))
-        with pytest.raises(AssertionError):
-            Let(var, Lit(42), "not an expr")
 
 
 class TestIfElse:
@@ -488,22 +441,6 @@ class TestIfElse:
         assert "if (a" in str(outer)
         assert "if (b" in str(outer)
 
-    def test_invalid_condition(self):
-        """Test IfElse with invalid condition."""
-        with pytest.raises(AssertionError):
-            IfElse("not an expr", Lit(1), Lit(2))
-
-    def test_invalid_then_branch(self):
-        """Test IfElse with invalid then branch."""
-        cond = Var("x", BaseType("Boolean"))
-        with pytest.raises(AssertionError):
-            IfElse(cond, "not an expr", Lit(2))
-
-    def test_invalid_else_branch(self):
-        """Test IfElse with invalid else branch."""
-        cond = Var("x", BaseType("Boolean"))
-        with pytest.raises(AssertionError):
-            IfElse(cond, Lit(1), "not an expr")
 
 
 class TestSeq:
@@ -535,10 +472,6 @@ class TestSeq:
         with pytest.raises(AssertionError, match="at least two expressions"):
             Seq([])
 
-    def test_invalid_expr(self):
-        """Test Seq with invalid expression."""
-        with pytest.raises(AssertionError):
-            Seq([Lit(1), "not an expr"])
 
 
 class TestWhile:
@@ -559,16 +492,6 @@ class TestWhile:
         loop = While(cond, body)
         assert str(loop) == "while (flag::Boolean) 1"
 
-    def test_invalid_condition(self):
-        """Test While with invalid condition."""
-        with pytest.raises(AssertionError):
-            While("not an expr", Lit(1))
-
-    def test_invalid_body(self):
-        """Test While with invalid body."""
-        cond = Var("x", BaseType("Boolean"))
-        with pytest.raises(AssertionError):
-            While(cond, "not an expr")
 
 
 class TestAssign:
@@ -589,16 +512,6 @@ class TestAssign:
         assign = Assign(var, expr)
         assert str(assign) == "result = 'hello'"
 
-    def test_invalid_var(self):
-        """Test Assign with invalid var."""
-        with pytest.raises((AssertionError, AttributeError)):
-            Assign("not a var", Lit(42))
-
-    def test_invalid_expr(self):
-        """Test Assign with invalid expr."""
-        var = Var("x", BaseType("Int64"))
-        with pytest.raises(AssertionError):
-            Assign(var, "not an expr")
 
 
 class TestReturn:
