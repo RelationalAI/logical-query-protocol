@@ -17,13 +17,13 @@ if __name__ == "__main__" and __package__ is None:
 
 if TYPE_CHECKING:
     from .proto_parser import ProtoParser
-    from .grammar_gen import GrammarGenerator, generate_semantic_actions
+    from .grammar_gen import GrammarGenerator
 elif __name__ == "__main__" and __package__ is None:
     from meta.proto_parser import ProtoParser
-    from meta.grammar_gen import GrammarGenerator, generate_semantic_actions
+    from meta.grammar_gen import GrammarGenerator
 else:
     from .proto_parser import ProtoParser
-    from .grammar_gen import GrammarGenerator, generate_semantic_actions
+    from .grammar_gen import GrammarGenerator
 
 
 def main():
@@ -45,7 +45,7 @@ def main():
     parser.add_argument(
         "--grammar",
         action="store_true",
-        help="Output the grammar instead of semantic actions"
+        help="Output the grammar"
     )
     args = parser.parse_args()
 
@@ -59,24 +59,21 @@ def main():
     generator = GrammarGenerator(proto_parser, verbose=True)
     grammar = generator.generate()
 
-    unreachable = grammar.get_unreachable_rules()
+    _, unreachable = grammar.partition_nonterminals()
     unexpected_unreachable = [r for r in unreachable if r.name not in generator.expected_unreachable]
     if unexpected_unreachable:
-        print("Warning: Unreachable rules detected:")
+        print("Warning: Unreachable nonterminals detected:")
         for rule in unexpected_unreachable:
             print(f"  {rule.name}")
         print()
 
     if args.grammar:
-        output_text = grammar.print_grammar(reachable_only=True)
-    else:
-        output_text = generate_semantic_actions(grammar, grammar.analysis.compute_reachability())
-
-    if args.output:
-        args.output.write_text(output_text)
-        print(f"Generated grammar written to {args.output}")
-    else:
-        print(output_text)
+        output_text = grammar.print_grammar()
+        if args.output:
+            args.output.write_text(output_text)
+            print(f"Generated grammar written to {args.output}")
+        else:
+            print(output_text)
 
     return 0
 
