@@ -225,7 +225,7 @@ class Seq(TargetExpr):
 
     def __post_init__(self):
         _freeze_sequence(self, 'exprs')
-        assert len(self.exprs) > 1, f"Sequence must contain at least two expressions"
+        assert len(self.exprs) > 1, "Sequence must contain at least two expressions"
 
 
 @dataclass(frozen=True)
