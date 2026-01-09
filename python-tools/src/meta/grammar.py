@@ -8,8 +8,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple
 
 # Import action AST types
-from .target import TargetExpr, Var, Symbol, Call, Lambda, Lit, TargetType, ListType, OptionType, TupleType
-
+from .target import Lambda, TargetType, ListType, OptionType, TupleType
 
 # Grammar RHS (right-hand side) elements
 
@@ -213,7 +212,6 @@ class Rule:
 
     def __post_init__(self):
         from .grammar_utils import count_nonliteral_rhs_elements
-
         assert isinstance(self.rhs, Rhs)
         rhs_len = count_nonliteral_rhs_elements(self.rhs)
         action_params = len(self.constructor.params)
