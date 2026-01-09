@@ -301,17 +301,6 @@ class Grammar:
 
         return reachable, unreachable
 
-    def traverse_rules_preorder(self, reachable_only: bool = True) -> List[Nonterminal]:
-        """Traverse rules in preorder starting from start symbol.
-
-        Returns list of nonterminal names in the order they should be printed.
-        If reachable_only is True, only includes reachable nonterminals.
-        """
-        reachable, unreachable = self.partition_nonterminals()
-        if reachable_only:
-            return reachable
-        return reachable + unreachable
-
     def get_rules(self, nt: Nonterminal) -> List[Rule]:
         """Get all rules with the given LHS name."""
         return self.rules.get(nt, [])

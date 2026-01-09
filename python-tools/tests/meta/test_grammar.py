@@ -404,33 +404,46 @@ class TestGrammar:
         other = Nonterminal("B", MessageType("proto", "B"))
         assert not grammar.has_rule(other)
 
-    def test_traverse_rules_preorder(self):
-        """Test Grammar traverse_rules_preorder."""
+    def test_partition_nonterminals(self):
+        """Test Grammar partition_nonterminals with unreachable rules."""
         start = Nonterminal("Start", MessageType("proto", "Start"))
         grammar = Grammar(start)
         a = Nonterminal("A", MessageType("proto", "A"))
         b = Nonterminal("B", MessageType("proto", "B"))
         c = Nonterminal("C", MessageType("proto", "C"))
+        d = Nonterminal("D", MessageType("proto", "D"))
+        e = Nonterminal("E", MessageType("proto", "E"))
 
         # Start -> A, A -> B, B -> C
+        # D -> E (unreachable)
         param_a = Var("x", MessageType("proto", "A"))
         param_b = Var("y", MessageType("proto", "B"))
         param_c = Var("z", MessageType("proto", "C"))
+        param_d = Var("w", MessageType("proto", "D"))
+        param_e = Var("v", MessageType("proto", "E"))
         construct_action_start = Lambda([param_a], MessageType("proto", "Start"), param_a)
         construct_action_a = Lambda([param_b], MessageType("proto", "A"), param_b)
         construct_action_b = Lambda([param_c], MessageType("proto", "B"), param_c)
         construct_action_c = Lambda([param_c], MessageType("proto", "C"), param_c)
+        construct_action_d = Lambda([param_e], MessageType("proto", "D"), param_e)
+        construct_action_e = Lambda([param_e], MessageType("proto", "E"), param_e)
 
-        grammar.add_rule(Rule(start, a, construct_action_start))
-        grammar.add_rule(Rule(a, b, construct_action_a))
-        grammar.add_rule(Rule(b, c, construct_action_b))
+        # Add rules in non-preorder
         grammar.add_rule(Rule(c, c, construct_action_c))
+        grammar.add_rule(Rule(e, e, construct_action_e))
+        grammar.add_rule(Rule(a, b, construct_action_a))
+        grammar.add_rule(Rule(d, e, construct_action_d))
+        grammar.add_rule(Rule(start, a, construct_action_start))
+        grammar.add_rule(Rule(b, c, construct_action_b))
 
-        order = grammar.traverse_rules_preorder()
-        assert order[0] == start
-        assert order[1] == a
-        assert order[2] == b
-        assert order[3] == c
+        reachable, unreachable = grammar.partition_nonterminals()
+        assert reachable[0] == start
+        assert reachable[1] == a
+        assert reachable[2] == b
+        assert reachable[3] == c
+        assert len(unreachable) == 2
+        assert d in unreachable
+        assert e in unreachable
 
     def test_nullable_literal(self):
         """Test Grammar nullable for literal."""
