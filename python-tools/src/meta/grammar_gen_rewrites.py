@@ -45,8 +45,8 @@ def introduce_abstraction_with_arity(rule: Rule) -> Optional[Rule]:
 
     elems = rule.rhs.elements
 
-    abstraction_idx = None
-    arity_idx = None
+    abstraction_idx: Optional[int] = None
+    arity_idx: Optional[int] = None
     literals_before_abstraction = 0
     literals_before_arity = 0
     for i, elem in enumerate(elems):
@@ -75,20 +75,20 @@ def introduce_abstraction_with_arity(rule: Rule) -> Optional[Rule]:
     new_rhs = Sequence(tuple(new_elems))
 
     # Now correct the indices to work with action parameters
-    abstraction_idx -= literals_before_abstraction
-    arity_idx -= literals_before_arity
+    abstraction_param_idx = abstraction_idx - literals_before_abstraction
+    arity_param_idx = arity_idx - literals_before_arity
 
     # Create new construct action: takes tuple parameter, unpacks it, calls original body
     new_params = list(rule.constructor.params)
     tuple_param = Var('abstraction_with_arity', abstraction_with_arity_type)
-    new_params[abstraction_idx] = tuple_param
-    new_params.pop(arity_idx)
+    new_params[abstraction_param_idx] = tuple_param
+    new_params.pop(arity_param_idx)
 
     abstraction_var = Var('abstraction', MessageType('logic', 'Abstraction'))
     arity_var = Var('arity', BaseType('Int64'))
     old_params_substituted = list(rule.constructor.params)
-    old_params_substituted[abstraction_idx] = abstraction_var
-    old_params_substituted[arity_idx] = arity_var
+    old_params_substituted[abstraction_param_idx] = abstraction_var
+    old_params_substituted[arity_param_idx] = arity_var
 
     new_construct_body = Let(
         var=abstraction_var,
