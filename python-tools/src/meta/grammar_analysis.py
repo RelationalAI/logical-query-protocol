@@ -366,7 +366,7 @@ class GrammarAnalysis:
             changed = False
             for nt, rules_list in grammar.rules.items():
                 for rule in rules_list:
-                    updates = GrammarAnalysis.rhs_follow_k(rule.rhs, rule.lhs, first_k, nullable, follow_k, k)
+                    updates: Dict[Nonterminal, TerminalSeqSet] = GrammarAnalysis.rhs_follow_k(rule.rhs, rule.lhs, first_k, nullable, follow_k, k)
                     for follow_nt, sequences in updates.items():
                         if follow_nt not in follow_k:
                             follow_k[follow_nt] = set()
