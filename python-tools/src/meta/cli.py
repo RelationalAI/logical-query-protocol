@@ -11,7 +11,7 @@ from pathlib import Path
 
 from .proto_parser import ProtoParser
 from .grammar_gen import GrammarGenerator
-from .proto_print import format_message, format_enum
+from .proto_print import print_proto_spec
 
 
 def main():
@@ -51,16 +51,7 @@ def main():
 
     if args.proto:
         # Output parsed proto specification
-        lines = []
-        for msg_name, msg in sorted(proto_parser.messages.items()):
-            lines.append(format_message(msg))
-            lines.append("")
-
-        for enum_name, enum in sorted(proto_parser.enums.items()):
-            lines.append(format_enum(enum))
-            lines.append("")
-
-        output_text = "\n".join(lines)
+        output_text = print_proto_spec(proto_parser)
         if args.output:
             args.output.write_text(output_text)
             print(f"Parsed proto specification written to {args.output}")

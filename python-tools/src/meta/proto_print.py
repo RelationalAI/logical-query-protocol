@@ -39,3 +39,24 @@ def format_enum(enum, indent=0):
         lines.append(f"{prefix}  {value_name} = {value_number};")
     lines.append(f"{prefix}}}")
     return "\n".join(lines)
+
+
+def print_proto_spec(proto_parser):
+    """Format a ProtoParser's parsed specification for display.
+
+    Args:
+        proto_parser: ProtoParser instance with parsed messages and enums
+
+    Returns:
+        Formatted string representation of all messages and enums
+    """
+    lines = []
+    for msg_name, msg in sorted(proto_parser.messages.items()):
+        lines.append(format_message(msg))
+        lines.append("")
+
+    for enum_name, enum in sorted(proto_parser.enums.items()):
+        lines.append(format_enum(enum))
+        lines.append("")
+
+    return "\n".join(lines)
