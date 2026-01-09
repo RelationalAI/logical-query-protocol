@@ -15,15 +15,15 @@ from .target import (
 )
 from .target_utils import (
     STRING_TYPE, INT64_TYPE, FLOAT64_TYPE, BOOLEAN_TYPE,
-    create_identity_function, create_identity_option_function,
+    create_identity_function,
     make_equal, make_which_oneof, make_get_field, make_some, make_tuple,
     make_fst, make_snd, make_is_empty, make_concat, make_length, make_unwrap_option_or
 )
 
-_lp = LitTerminal('(')
-_rp = LitTerminal(')')
-_lc = LitTerminal('{')
-_rc = LitTerminal('}')
+LPAREN = LitTerminal('(')
+RPAREN = LitTerminal(')')
+LBRACE = LitTerminal('{')
+RBRACE = LitTerminal('}')
 
 
 def _msg(module: str, name: str, *args):
@@ -31,30 +31,7 @@ def _msg(module: str, name: str, *args):
     return Call(Message(module, name), list(args))
 
 
-def _oneof_deconstruct(msg_var, oneof_discriminator: str, oneof_field_name: str, extra_check=None):
-    """Create standard oneof deconstruct pattern.
 
-    Args:
-        msg_var: Variable for the message being deconstructed
-        oneof_discriminator: Name of the oneof field (e.g., 'value_type', 'formula_type')
-        oneof_field_name: Name of the specific variant field
-        extra_check: Optional additional condition to check after discriminator match
-
-    Returns:
-        IfElse expression that returns Some(field_value) if match, None otherwise
-    """
-    base_check = make_equal(
-        make_which_oneof(msg_var, Lit(oneof_discriminator)),
-        Lit(oneof_field_name)
-    )
-    field_value = make_get_field(msg_var, Lit(oneof_field_name))
-    if extra_check is None:
-        return IfElse(base_check, make_some(field_value), Lit(None))
-    return IfElse(
-        base_check,
-        IfElse(extra_check, make_some(field_value), Lit(None)),
-        Lit(None)
-    )
 
 def _make_identity_rule(lhs_name: str, lhs_type: TargetType, rhs) -> Rule:
     """Create a rule where the value passes through unchanged."""
@@ -83,7 +60,6 @@ def _make_id_from_terminal_rule(
     """
     var_name = 'symbol' if type_suffix == 'string' else terminal_name
     param_var = Var(var_name, terminal_type)
-    msg_var = Var('msg', msg_type)
     return Rule(
         lhs=Nonterminal(lhs_name, msg_type),
         rhs=NamedTerminal(terminal_name, terminal_type),
@@ -103,7 +79,7 @@ def _make_simple_message_rule(
     rhs_inner: tuple = (),
     keyword: str | None = None
 ) -> Rule:
-    """Generate rule with symmetric construct/deconstruct from field spec.
+    """Generate rule with symmetric constructors from field spec.
 
     Args:
         lhs_name: Name of the LHS nonterminal
@@ -115,7 +91,7 @@ def _make_simple_message_rule(
         keyword: Keyword for the rule (defaults to lhs_name)
 
     Returns:
-        Rule where construct wraps fields in message, deconstruct extracts them.
+        Rule where construct action wraps fields in message.
     """
     if keyword is None:
         keyword = lhs_name
@@ -124,7 +100,7 @@ def _make_simple_message_rule(
     msg_var = Var('msg', msg_type)
 
     if rhs_inner:
-        rhs = Sequence((_lp, LitTerminal(keyword)) + rhs_inner + (_rp,))
+        rhs = Sequence((LPAREN, LitTerminal(keyword)) + rhs_inner + (RPAREN,))
     else:
         rhs = LitTerminal(keyword)
 
@@ -282,11 +258,11 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_datetime_nt,
             rhs=Sequence((
-                _lp, LitTerminal('datetime'),
+                LPAREN, LitTerminal('datetime'),
                 _int_terminal, _int_terminal, _int_terminal,
                 _int_terminal, _int_terminal, _int_terminal,
                 Option(_int_terminal),
-                _rp
+                RPAREN
             )),
             constructor=Lambda(
                 [_var_year, _var_month, _var_day, _var_hour, _var_minute, _var_second, _var_microsecond],
@@ -328,7 +304,7 @@ class BuiltinRules:
 
         self.add_rule(_make_identity_rule(
             'config_dict', _config_type,
-            rhs=Sequence((_lc, Star(_config_key_value_nt), _rc))
+            rhs=Sequence((LBRACE, Star(_config_key_value_nt), RBRACE))
         ))
 
         self.add_rule(Rule(
@@ -339,17 +315,18 @@ class BuiltinRules:
                 _config_key_value_type,
                 make_tuple(Var('symbol', STRING_TYPE), Var('value', _value_type))
             )
+
         ))
 
         # Transaction rule
         self.add_rule(Rule(
             lhs=_transaction_nt,
             rhs=Sequence((
-                _lp, LitTerminal('transaction'),
+                LPAREN, LitTerminal('transaction'),
                 Option(_configure_nt),
                 Option(_sync_nt),
                 Star(_epoch_nt),
-                _rp
+                RPAREN
             )),
             constructor=Lambda(
                 [
@@ -367,21 +344,23 @@ class BuiltinRules:
                     Var('sync', OptionType(_sync_type))
                 )
             )
+
         ))
 
         # Configure rule
         self.add_rule(Rule(
             lhs=_configure_nt,
             rhs=Sequence((
-                _lp, LitTerminal('configure'),
+                LPAREN, LitTerminal('configure'),
                 _config_dict_nt,
-                _rp
+                RPAREN
             )),
             constructor=Lambda(
                 [Var('config_dict', _config_type)],
                 return_type=_configure_type,
                 body=Call(Builtin('construct_configure'), [Var('config_dict', _config_type)])
             )
+
         ))
 
     def _add_bindings_rules(self) -> None:
@@ -425,6 +404,7 @@ class BuiltinRules:
                     make_unwrap_option_or(_var_values, _empty_binding_list)
                 )
             )
+
         ))
 
         self.add_rule(_make_identity_rule(
@@ -441,6 +421,7 @@ class BuiltinRules:
                 _binding_type,
                 _msg('logic', 'Binding', _msg('logic', 'Var', Var('symbol', STRING_TYPE)), _type_var)
             )
+
         ))
 
         # Abstraction rules
@@ -457,7 +438,7 @@ class BuiltinRules:
 
         self.add_rule(Rule(
             lhs=_abstraction_with_arity_nt,
-            rhs=Sequence((_lp, _bindings_nt, _formula_nt, _rp)),
+            rhs=Sequence((LPAREN, _bindings_nt, _formula_nt, RPAREN)),
             constructor=Lambda(
                 params=[_var_bindings, _var_formula],
                 return_type=_abstraction_with_arity_type,
@@ -466,16 +447,18 @@ class BuiltinRules:
                     make_length(make_snd(_var_bindings))
                 )
             )
+
         ))
 
         self.add_rule(Rule(
             lhs=_abstraction_nt,
-            rhs=Sequence((_lp, _bindings_nt, _formula_nt, _rp)),
+            rhs=Sequence((LPAREN, _bindings_nt, _formula_nt, RPAREN)),
             constructor=Lambda(
                 params=[_var_bindings, _var_formula],
                 return_type=_abstraction_type,
                 body=_msg('logic', 'Abstraction', _concat_bindings(_var_bindings), _var_formula)
             )
+
         ))
 
     def _add_monoid_rules(self) -> None:
@@ -504,6 +487,7 @@ class BuiltinRules:
                 return_type=_monoid_type,
                 body=Call(Var('op', _monoid_op_type), [Var('type', _type_type)])
             )
+
         ))
 
         body = _msg('logic', 'Monoid',
@@ -523,6 +507,7 @@ class BuiltinRules:
                 return_type=_monoid_type,
                 body=Lambda([], return_type=_monoid_type, body=body)
             )
+
         ))
 
         def _make_monoid_op_rule(message: str) -> Rule:
@@ -538,15 +523,11 @@ class BuiltinRules:
                 return_type=_monoid_op_type,
                 body=Lambda([Var('type', _type_type)], return_type=_monoid_type, body=body)
             )
-            deconstructor = Lambda(
-                [Var('op', _monoid_op_type)],
-                return_type=OptionType(TupleType([])),
-                body=Call(Builtin('deconstruct_monoid_op'), [Var('op', _monoid_op_type), Lit(symbol)])
-            )
             return Rule(
                 lhs=_monoid_op_nt,
                 rhs=rhs,
                 constructor=constructor
+
             )
 
         self.add_rule(_make_monoid_op_rule('MinMonoid'))
@@ -573,14 +554,16 @@ class BuiltinRules:
 
         self.add_rule(Rule(
             lhs=_true_nt,
-            rhs=Sequence((_lp, LitTerminal('true'), _rp)),
+            rhs=Sequence((LPAREN, LitTerminal('true'), RPAREN)),
             constructor=Lambda([], _conjunction_type, _msg('logic', 'Conjunction', _empty_formula_list))
+
         ))
 
         self.add_rule(Rule(
             lhs=_false_nt,
-            rhs=Sequence((_lp, LitTerminal('false'), _rp)),
+            rhs=Sequence((LPAREN, LitTerminal('false'), RPAREN)),
             constructor=Lambda([], _disjunction_type, _msg('logic', 'Disjunction', _empty_formula_list))
+
         ))
 
         # Formula rules (not final - auto-generation can add more)
@@ -596,6 +579,7 @@ class BuiltinRules:
                 _formula_type,
                 _msg('logic', 'Formula', Call(OneOf('conjunction'), [Var('value', _conjunction_type)]))
             )
+
         ))
 
         # False formula: checks for empty Disjunction in the 'disjunction' oneof field
@@ -607,6 +591,7 @@ class BuiltinRules:
                 _formula_type,
                 _msg('logic', 'Formula', Call(OneOf('disjunction'), [Var('value', _disjunction_type)]))
             )
+
         ))
 
     def _add_export_rules(self) -> None:
@@ -635,31 +620,32 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_export_nt,
             rhs=Sequence((
-                _lp, LitTerminal('export'),
+                LPAREN, LitTerminal('export'),
                 _export_csv_config_nt,
-                _rp
+                RPAREN
             )),
             constructor=Lambda(
                 [Var('config', _export_csv_config_type)],
                 _export_type,
                 _msg('transactions', 'Export', Call(OneOf('csv_config'), [Var('config', _export_csv_config_type)]))
             )
+
         ))
 
         # Export CSV path rule
         self.add_rule(_make_identity_rule(
             'export_csv_path', STRING_TYPE,
-            rhs=Sequence((_lp, LitTerminal('path'), NamedTerminal('STRING', STRING_TYPE), _rp))
+            rhs=Sequence((LPAREN, LitTerminal('path'), NamedTerminal('STRING', STRING_TYPE), RPAREN))
         ))
 
         self.add_rule(Rule(
             lhs=_export_csv_config_nt,
             rhs=Sequence((
-                _lp, LitTerminal('export_csv_config'),
+                LPAREN, LitTerminal('export_csv_config'),
                 _export_csv_path_nt,
                 _export_csv_columns_nt,
                 _config_dict_nt,
-                _rp
+                RPAREN
             )),
             constructor=Lambda(
                 [
@@ -674,14 +660,15 @@ class BuiltinRules:
                     Var('config', _config_type)
                 ])
             )
+
         ))
 
         self.add_rule(_make_identity_rule(
             'export_csv_columns', ListType(_export_csv_column_type),
             rhs=Sequence((
-                _lp, LitTerminal('columns'),
+                LPAREN, LitTerminal('columns'),
                 Star(Nonterminal('export_csv_column', _export_csv_column_type)),
-                _rp
+                RPAREN
             ))
         ))
 
@@ -721,6 +708,7 @@ class BuiltinRules:
             lhs=_var_nt,
             rhs=_symbol_terminal,
             constructor=Lambda([Var('symbol', STRING_TYPE)], _var_type, _msg('logic', 'Var', Var('symbol', STRING_TYPE)))
+
         ))
 
         # ID rules
@@ -740,6 +728,7 @@ class BuiltinRules:
                 _value_type,
                 Var('value', _value_type)
             )
+
         ))
 
     def _add_type_rules(self) -> None:
@@ -747,8 +736,8 @@ class BuiltinRules:
 
         def _make_simple_type_rule(keyword: str, message_name: str) -> Rule:
             """Create a rule for a simple type with no parameters."""
-            lhs_name = message_name[0].lower() + message_name[1:]  # e.g., 'UnspecifiedType' -> 'unspecifiedType'
-            lhs_name = lhs_name.replace('Type', '_type')  # e.g., 'unspecifiedType' -> 'unspecified_type'
+            from .grammar_gen import _get_rule_name
+            lhs_name = _get_rule_name(message_name)
             return _make_simple_message_rule(lhs_name, 'logic', message_name, fields=[], keyword=keyword)
 
         # Simple types: (keyword, message_name)
@@ -804,12 +793,13 @@ class BuiltinRules:
             # The operator rule (e.g., eq -> '(' '=' term term ')')
             op_rule = Rule(
                 lhs=op_nt,
-                rhs=Sequence((_lp, LitTerminal(op)) + rhs_terms + (_rp,)),
+                rhs=Sequence((LPAREN, LitTerminal(op)) + rhs_terms + (RPAREN,)),
                 constructor=Lambda(
                     params,
                     _primitive_type,
                     _msg('logic', 'Primitive', Lit(prim), *wrapped_args)
                 )
+
             )
 
             # The wrapper rule (e.g., primitive -> eq)
@@ -817,6 +807,7 @@ class BuiltinRules:
                 lhs=_primitive_nt,
                 rhs=op_nt,
                 constructor=Lambda([Var('op', _primitive_type)], _primitive_type, Var('op', _primitive_type))
+
             )
 
             return op_rule, wrapper_rule
@@ -867,16 +858,17 @@ class BuiltinRules:
                     Var('fragment_id', _fragment_id_type),
                 ])
             )
+
         ))
 
         # Fragment rule with debug_info construction
         self.add_rule(Rule(
             lhs=_fragment_nt,
             rhs=Sequence((
-                _lp, LitTerminal('fragment'),
+                LPAREN, LitTerminal('fragment'),
                 _new_fragment_id_nt,
                 Star(_declaration_nt),
-                _rp
+                RPAREN
             )),
             constructor=Lambda(
                 [
@@ -889,6 +881,7 @@ class BuiltinRules:
                     Var('declarations', ListType(_declaration_type))
                 ])
             )
+
         ))
 
     def _add_epoch_rules(self) -> None:
@@ -909,10 +902,10 @@ class BuiltinRules:
             return Rule(
                 lhs=Nonterminal(keyword, msg_type),
                 rhs=Sequence((
-                    _lp, LitTerminal(keyword),
+                    LPAREN, LitTerminal(keyword),
                     Option(_name_nt),
                     _relation_id_nt,
-                    _rp
+                    RPAREN
                 )),
                 constructor=Lambda(
                     [name_var, Var('relation_id', _relation_id_type)],
@@ -921,6 +914,7 @@ class BuiltinRules:
                         make_unwrap_option_or(name_var, Lit(keyword)),
                         Var('relation_id', _relation_id_type))
                 )
+
             )
 
         self.add_rule(_make_name_option_relation_rule('output', 'Output'))
@@ -976,10 +970,10 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_exists_nt,
             rhs=Sequence((
-                _lp, LitTerminal('exists'),
+                LPAREN, LitTerminal('exists'),
                 _bindings_nt,
                 _formula_nt,
-                _rp
+                RPAREN
             )),
             constructor=Lambda(
                 [Var('bindings', _bindings_type), Var('formula', _formula_type)],
@@ -994,6 +988,7 @@ class BuiltinRules:
                     )
                 )
             )
+
         ))
 
 
