@@ -362,7 +362,7 @@ class LoopyBadBreakFinder(LqpVisitor):
                     f"Break rule found outside of body at {i.meta}: '{original_name}'"
                 )
 
-# Loopy contract: Algorithm globals cannot be in loop body unless they were already in init
+# Loopy contract: Algorithm globals are either the head of a top-level instruction or in the init block of a loop
 class LoopyBadGlobalFinder(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
         super().__init__()
@@ -370,20 +370,26 @@ class LoopyBadGlobalFinder(LqpVisitor):
         self.init: Set[ir.RelationId] = set()
         self.visit(txn)
 
+    Instruction = (ir.Assign, ir.Upsert, ir.MonoidDef, ir.MonusDef)
+
     def visit_Algorithm(self, node: ir.Algorithm, *args: Any) -> None:
         self.globals = self.globals.union(node.global_)
-        self.visit(node.body)
+        for decl in node.body.constructs:
+            if isinstance(decl, self.Instruction):
+                self.init.add(decl.name)
+            elif isinstance(decl, ir.Loop):
+                self.visit(decl)
         self.globals.clear()
 
     def visit_Loop(self, node: ir.Loop, *args: Any) -> None:
-        self.init = {x.name for x in node.init if isinstance(x, (ir.Break, ir.Assign, ir.Upsert))}
+        self.init |= {x.name for x in node.init if isinstance(x, (ir.Break, ir.Assign, ir.Upsert))}
         for i in node.body.constructs:
             if isinstance(i, (ir.Break, ir.Assign, ir.Upsert)):
                 if (i.name in self.globals) and (i.name not in self.init):
                     original_name = self.get_original_name(i.name)
                     raise ValidationError(
                         f"Global rule found in body at {i.meta}: '{original_name}'"
-                    )
+                    )        
 
 class LoopyUpdatesShouldBeAtoms(LqpVisitor):
     def __init__(self, txn: ir.Transaction):

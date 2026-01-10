@@ -1,0 +1,33 @@
+; See Slack for bug description: https://relationalai.slack.com/archives/C07B7610FM5/p1768060611900579
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :frag
+          (algorithm :reachable
+            (script
+              (assign :reachable
+                ([n::INT128]
+                  (primitive :rel_primitive_eq n 1i128)))
+              (loop
+                (init)
+                (script
+                  (assign :Next
+                    ([n_3::INT128]
+                      (exists [n_2::INT128]
+                        (or
+                          (and
+                            (atom :reachable n_2)
+                            (atom :edge n_2 n_3))
+                          (atom :reachable n_3)))))
+                  (break :break_1
+                    ([]
+                      (not
+                        (exists [n_4::INT128]
+                          (and
+                            (atom :next n_4)
+                            (not
+                              (atom :reachable n_4)))))))
+                  (assign :reachable
+                    ([n_5::INT128]
+                      (atom :next n_5))))))))))))
