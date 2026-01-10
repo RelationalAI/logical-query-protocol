@@ -1,4 +1,4 @@
-; See Slack for bug description: https://relationalai.slack.com/archives/C07B7610FM5/p1768060611900579
+;; See Slack for bug description: https://relationalai.slack.com/archives/C07B7610FM5/p1768060611900579
 (transaction
   (epoch
     (writes
