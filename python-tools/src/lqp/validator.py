@@ -389,7 +389,7 @@ class LoopyBadGlobalFinder(LqpVisitor):
                     original_name = self.get_original_name(i.name)
                     raise ValidationError(
                         f"Global rule found in body at {i.meta}: '{original_name}'"
-                    )        
+                    )
 
 class LoopyUpdatesShouldBeAtoms(LqpVisitor):
     def __init__(self, txn: ir.Transaction):
