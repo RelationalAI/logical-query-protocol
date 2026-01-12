@@ -484,16 +484,16 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
             lqp += f"{conf.RPAREN()}{conf.RPAREN()}"
 
     elif isinstance(node, ir.OrMonoid):
-        lqp += "BOOL::OR"
+        lqp += "(or)"
 
     elif isinstance(node, ir.MinMonoid):
-        lqp += to_str(node.type, 0, options, debug_info) + "::MIN"
+        lqp += "(min " + to_str(node.type, 0, options, debug_info) + ")"
 
     elif isinstance(node, ir.MaxMonoid):
-        lqp += to_str(node.type, 0, options, debug_info) + "::MAX"
+        lqp += "(max " + to_str(node.type, 0, options, debug_info) + ")"
 
     elif isinstance(node, ir.SumMonoid):
-        lqp += to_str(node.type, 0, options, debug_info) + "::SUM"
+        lqp += "(sum " + to_str(node.type, 0, options, debug_info) + ")"
 
     elif isinstance(node, ir.Type):
         if len(node.parameters) == 0:
