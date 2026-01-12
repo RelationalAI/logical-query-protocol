@@ -117,6 +117,12 @@ class PythonCodeGenerator(CodeGenerator):
         self.register_builtin("snd", 1,
             lambda args, lines, indent: BuiltinResult(f"{args[0]}[1]", []))
 
+        self.register_builtin("encode_string", 1,
+            lambda args, lines, indent: BuiltinResult(f"{args[0]}.encode()", []))
+
+        self.register_builtin("get_tuple_element", 2,
+            lambda args, lines, indent: BuiltinResult(f"{args[0]}[{args[1]}]", []))
+
         self.register_builtin("make_tuple", -1,
             lambda args, lines, indent: BuiltinResult(f"({', '.join(args)},)", []))
 
@@ -156,6 +162,12 @@ class PythonCodeGenerator(CodeGenerator):
 
         self.register_builtin("export_csv_config", 3,
             lambda args, lines, indent: BuiltinResult(f"self.export_csv_config({args[0]}, {args[1]}, {args[2]})", []))
+
+        self.register_builtin("construct_betree_info", 3,
+            lambda args, lines, indent: BuiltinResult(f"self.construct_betree_info({args[0]}, {args[1]}, {args[2]})", []))
+
+        self.register_builtin("construct_csv_config", 1,
+            lambda args, lines, indent: BuiltinResult(f"self.construct_csv_config({args[0]})", []))
 
         self.register_builtin("start_fragment", 1,
             lambda args, lines, indent: BuiltinResult(args[0], [f"self.start_fragment({args[0]})"]))

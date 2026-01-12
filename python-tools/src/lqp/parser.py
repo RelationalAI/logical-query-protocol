@@ -40,7 +40,31 @@ export_path: "(path" STRING ")"
 
 fragment: "(fragment" fragment_id declaration* ")"
 
-declaration: def_ | algorithm | constraint
+declaration: def_ | algorithm | constraint | data
+
+data: csv_data | betree_relation | rel_edb
+
+// CSV Data
+csv_data: "(csv_data" csv_locator csv_config csv_columns csv_asof ")"
+csv_locator: "(csv_locator" csv_locator_content ")"
+csv_locator_content: csv_paths | csv_inline_data
+csv_paths: "(paths" STRING* ")"
+csv_inline_data: "(inline_data" STRING ")"
+csv_config: "(csv_config" config_dict ")"
+csv_columns: "(columns" csv_column* ")"
+csv_column: "(column" STRING relation_id type_list ")"
+csv_asof: "(asof" STRING ")"
+type_list: "[" type_* "]"
+
+// BeTree Relation
+betree_relation: "(betree_relation" relation_id betree_info ")"
+betree_info: "(betree_info" betree_key_types betree_value_types config_dict ")"
+betree_key_types: "(key_types" type_* ")"
+betree_value_types: "(value_types" type_* ")"
+
+// Rel EDB (Base Relation Path)
+rel_edb: "(rel_edb" relation_id string_list type_list ")"
+string_list: "[" STRING* "]"
 def_: "(def" relation_id abstraction attrs? ")"
 
 constraint: functional_dependency
@@ -123,8 +147,8 @@ value: STRING | NUMBER | FLOAT | UINT128 | INT128
 
 type_ : TYPE_NAME | "(" TYPE_NAME value* ")"
 
-TYPE_NAME: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
-         | "DATE" | "DATETIME" | "MISSING" | "DECIMAL" | "BOOLEAN"
+TYPE_NAME.3: "STRING" | "INT" | "FLOAT" | "UINT128" | "INT128"
+           | "DATE" | "DATETIME" | "MISSING" | "DECIMAL" | "BOOLEAN"
 
 SYMBOL: /[a-zA-Z_][a-zA-Z0-9_.-]*/
 MISSING.1: "missing" // Set a higher priority so so it's MISSING instead of SYMBOL
@@ -339,6 +363,133 @@ class LQPTransformer(Transformer):
         return items
 
     def fd_values(self, meta, items):
+        return items
+
+    #
+    # Data declarations
+    #
+    def data(self, meta, items):
+        return items[0]
+
+    def csv_data(self, meta, items):
+        locator = items[0]
+        config = items[1]
+        columns = items[2]
+        asof = items[3]
+        return ir.CSVData(locator=locator, config=config, columns=columns, asof=asof, meta=self.meta(meta))
+
+    def csv_locator(self, meta, items):
+        return items[0]
+
+    def csv_locator_content(self, meta, items):
+        return items[0]
+
+    def csv_paths(self, meta, items):
+        return ir.CSVLocator(paths=items, inline_data=None, meta=self.meta(meta))
+
+    def csv_inline_data(self, meta, items):
+        return ir.CSVLocator(paths=[], inline_data=items[0].encode(), meta=self.meta(meta))
+
+    def csv_config(self, meta, items):
+        config_dict = items[0] if items else {}
+        return ir.CSVConfig(
+            header_row=config_dict.get('csv_header_row', ir.Value(value=1, meta=None)).value if 'csv_header_row' in config_dict else 1,
+            skip=config_dict.get('csv_skip', ir.Value(value=0, meta=None)).value if 'csv_skip' in config_dict else 0,
+            new_line=config_dict.get('csv_new_line', ir.Value(value='', meta=None)).value if 'csv_new_line' in config_dict else '',
+            delimiter=config_dict.get('csv_delimiter', ir.Value(value=',', meta=None)).value if 'csv_delimiter' in config_dict else ',',
+            quotechar=config_dict.get('csv_quotechar', ir.Value(value='"', meta=None)).value if 'csv_quotechar' in config_dict else '"',
+            escapechar=config_dict.get('csv_escapechar', ir.Value(value='"', meta=None)).value if 'csv_escapechar' in config_dict else '"',
+            comment=config_dict.get('csv_comment', ir.Value(value='', meta=None)).value if 'csv_comment' in config_dict else '',
+            missing_strings=[config_dict['csv_missing_strings'].value] if 'csv_missing_strings' in config_dict else [],
+            decimal_separator=config_dict.get('csv_decimal_separator', ir.Value(value='.', meta=None)).value if 'csv_decimal_separator' in config_dict else '.',
+            encoding=config_dict.get('csv_encoding', ir.Value(value='utf-8', meta=None)).value if 'csv_encoding' in config_dict else 'utf-8',
+            compression=config_dict.get('csv_compression', ir.Value(value='auto', meta=None)).value if 'csv_compression' in config_dict else 'auto',
+            meta=self.meta(meta)
+        )
+
+    def csv_columns(self, meta, items):
+        return items
+
+    def csv_column(self, meta, items):
+        column_name = items[0]
+        target_id = items[1]
+        types = items[2]
+        return ir.CSVColumn(column_name=column_name, target_id=target_id, types=types, meta=self.meta(meta))
+
+    def csv_asof(self, meta, items):
+        return items[0]
+
+    def type_list(self, meta, items):
+        return items
+
+    def betree_relation(self, meta, items):
+        name = items[0]
+        relation_info = items[1]
+        return ir.BeTreeRelation(name=name, relation_info=relation_info, meta=self.meta(meta))
+
+    def betree_info(self, meta, items):
+        key_types = items[0]
+        value_types = items[1]
+        config_dict = items[2] if len(items) > 2 else {}
+
+        # Parse BeTreeConfig
+        epsilon = config_dict.get('betree_config_epsilon', ir.Value(value=0.5, meta=None)).value if 'betree_config_epsilon' in config_dict else 0.5
+        max_pivots = config_dict.get('betree_config_max_pivots', ir.Value(value=4, meta=None)).value if 'betree_config_max_pivots' in config_dict else 4
+        max_deltas = config_dict.get('betree_config_max_deltas', ir.Value(value=16, meta=None)).value if 'betree_config_max_deltas' in config_dict else 16
+        max_leaf = config_dict.get('betree_config_max_leaf', ir.Value(value=16, meta=None)).value if 'betree_config_max_leaf' in config_dict else 16
+
+        storage_config = ir.BeTreeConfig(
+            epsilon=epsilon,
+            max_pivots=max_pivots,
+            max_deltas=max_deltas,
+            max_leaf=max_leaf,
+            meta=self.meta(meta)
+        )
+
+        # Parse BeTreeLocator
+        root_pageid = None
+        inline_data = None
+        if 'betree_locator_root_pageid' in config_dict:
+            pageid_val = config_dict['betree_locator_root_pageid'].value
+            if isinstance(pageid_val, ir.UInt128Value):
+                root_pageid = pageid_val
+            else:
+                root_pageid = ir.UInt128Value(value=pageid_val, meta=None)
+        if 'betree_locator_inline_data' in config_dict:
+            inline_data = config_dict['betree_locator_inline_data'].value.encode() if isinstance(config_dict['betree_locator_inline_data'].value, str) else config_dict['betree_locator_inline_data'].value
+
+        element_count = config_dict.get('betree_locator_element_count', ir.Value(value=0, meta=None)).value if 'betree_locator_element_count' in config_dict else 0
+        tree_height = config_dict.get('betree_locator_tree_height', ir.Value(value=0, meta=None)).value if 'betree_locator_tree_height' in config_dict else 0
+
+        relation_locator = ir.BeTreeLocator(
+            root_pageid=root_pageid,
+            inline_data=inline_data,
+            element_count=element_count,
+            tree_height=tree_height,
+            meta=self.meta(meta)
+        )
+
+        return ir.BeTreeInfo(
+            key_types=key_types,
+            value_types=value_types,
+            storage_config=storage_config,
+            relation_locator=relation_locator,
+            meta=self.meta(meta)
+        )
+
+    def betree_key_types(self, meta, items):
+        return items
+
+    def betree_value_types(self, meta, items):
+        return items
+
+    def rel_edb(self, meta, items):
+        target_id = items[0]
+        path = items[1]
+        types = items[2]
+        return ir.RelEDB(target_id=target_id, path=path, types=types, meta=self.meta(meta))
+
+    def string_list(self, meta, items):
         return items
 
     def algorithm(self, meta, items):

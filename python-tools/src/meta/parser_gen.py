@@ -176,7 +176,17 @@ def _build_predictor_tree(grammar: Grammar, rules: List[Rule], active_indices: L
     if not groups:
         return subtree_default
     result = subtree_default
-    for token, indices in sorted(groups.items(), key=lambda item: str(item[0])):
+    # Sort so LitTerminals come AFTER NamedTerminals in iteration order.
+    # Since we build the IfElse chain from the end, this means LitTerminals
+    # will be checked FIRST at runtime (soft keywords before SYMBOL).
+    def token_sort_key(item):
+        token = item[0]
+        # LitTerminals get sort key 1, NamedTerminals get sort key 0
+        # This puts NamedTerminals first in iteration, so LitTerminals
+        # end up as the outermost (first-checked) conditions.
+        priority = 1 if isinstance(token, LitTerminal) else 0
+        return (priority, str(token))
+    for token, indices in sorted(groups.items(), key=token_sort_key):
         check = _build_token_check(token, depth)
         if len(indices) == 1:
             then_branch = Lit(indices[0])

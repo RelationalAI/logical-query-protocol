@@ -91,7 +91,11 @@ def main():
         if args.parser == "python":
             reachable, _ = grammar.analysis.partition_nonterminals_by_reachability()
             reachable_set = set(reachable)
-            output_text = generate_parser_python(grammar, reachable_set)
+            # Build proto_messages dict for codegen keyword argument generation
+            proto_messages = {}
+            for msg_name, msg in proto_parser.messages.items():
+                proto_messages[(msg.module, msg.name)] = msg
+            output_text = generate_parser_python(grammar, reachable_set, proto_messages=proto_messages)
         elif args.parser == "go":
             output_text = generate_parser_go(grammar)
         elif args.parser == "julia":

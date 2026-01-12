@@ -101,6 +101,7 @@ class Lexer:
     def scan_symbol(s: str) -> str:
         """Parse SYMBOL token."""
         return s
+
     @staticmethod
     def scan_colon_symbol(s: str) -> str:
         """Parse COLON_SYMBOL token."""
@@ -192,9 +193,17 @@ class Parser:
         return token.value
 
     def match_lookahead_literal(self, literal: str, k: int) -> bool:
-        """Check if lookahead token at position k matches literal."""
+        """Check if lookahead token at position k matches literal.
+
+        Supports soft keywords: alphanumeric literals are lexed as SYMBOL tokens,
+        so we check both LITERAL and SYMBOL token types.
+        """
         token = self.lookahead(k)
-        return token.type == 'LITERAL' and token.value == literal
+        if token.type == 'LITERAL' and token.value == literal:
+            return True
+        if token.type == 'SYMBOL' and token.value == literal:
+            return True
+        return False
 
     def match_lookahead_terminal(self, terminal: str, k: int) -> bool:
         """Check if lookahead token at position k matches terminal."""
@@ -312,6 +321,100 @@ class Parser:
 
         return transactions_pb2.ExportCSVConfig(path=path_str, data_columns=columns, **kwargs)
 
+    def construct_betree_info(self, key_types: List[Any], value_types: List[Any], config_dict: List[Tuple[str, Any]]) -> Any:
+        """Construct BeTreeInfo from key_types, value_types, and config dictionary."""
+        # Build a dict from the list
+        config = {{}}
+        for k, v in config_dict:
+            config[k] = v
+
+        # Helper to extract int value
+        def get_int(key, default):
+            val = config.get(key)
+            if val and val.HasField('int_value'):
+                return val.int_value
+            return default
+
+        # Helper to extract float value
+        def get_float(key, default):
+            val = config.get(key)
+            if val and val.HasField('float_value'):
+                return val.float_value
+            return default
+
+        # Parse BeTreeConfig
+        storage_config = logic_pb2.BeTreeConfig(
+            epsilon=get_float('betree_config_epsilon', 0.5),
+            max_pivots=get_int('betree_config_max_pivots', 4),
+            max_deltas=get_int('betree_config_max_deltas', 16),
+            max_leaf=get_int('betree_config_max_leaf', 16)
+        )
+
+        # Parse BeTreeLocator
+        root_pageid = None
+        inline_data = None
+        if 'betree_locator_root_pageid' in config:
+            pageid_val = config['betree_locator_root_pageid']
+            if hasattr(pageid_val, 'uint128_value') and pageid_val.HasField('uint128_value'):
+                root_pageid = pageid_val.uint128_value
+            else:
+                root_pageid = pageid_val
+        if 'betree_locator_inline_data' in config:
+            data_val = config['betree_locator_inline_data']
+            if hasattr(data_val, 'string_value') and data_val.HasField('string_value'):
+                inline_data = data_val.string_value.encode()
+            else:
+                inline_data = data_val
+
+        relation_locator = logic_pb2.BeTreeLocator(
+            root_pageid=root_pageid,
+            inline_data=inline_data,
+            element_count=get_int('betree_locator_element_count', 0),
+            tree_height=get_int('betree_locator_tree_height', 0)
+        )
+
+        return logic_pb2.BeTreeInfo(
+            key_types=key_types,
+            value_types=value_types,
+            storage_config=storage_config,
+            relation_locator=relation_locator
+        )
+
+    def construct_csv_config(self, config_dict: List[Tuple[str, Any]]) -> Any:
+        """Construct CSVConfig from config dictionary."""
+        # Build a dict from the list
+        config = {{}}
+        for k, v in config_dict:
+            config[k] = v
+
+        # Helper to extract string value
+        def get_str(key, default):
+            val = config.get(key)
+            if val and val.HasField('string_value'):
+                return val.string_value
+            return default
+
+        # Helper to extract int value
+        def get_int(key, default):
+            val = config.get(key)
+            if val and val.HasField('int_value'):
+                return val.int_value
+            return default
+
+        return logic_pb2.CSVConfig(
+            header_row=get_int('csv_header_row', 1),
+            skip=get_int('csv_skip', 0),
+            new_line=get_str('csv_new_line', ''),
+            delimiter=get_str('csv_delimiter', ','),
+            quotechar=get_str('csv_quotechar', '"'),
+            escapechar=get_str('csv_escapechar', '"'),
+            comment=get_str('csv_comment', ''),
+            missing_strings=[config['csv_missing_strings'].string_value] if 'csv_missing_strings' in config and config['csv_missing_strings'].HasField('string_value') else [],
+            decimal_separator=get_str('csv_decimal_separator', '.'),
+            encoding=get_str('csv_encoding', 'utf-8'),
+            compression=get_str('csv_compression', 'auto')
+        )
+
     def construct_fragment(self, fragment_id: fragments_pb2.FragmentId, declarations: List[logic_pb2.Declaration]) -> fragments_pb2.Fragment:
         """Construct Fragment from fragment_id, declarations, and debug info from parser state."""
         # Get the debug info for this fragment
@@ -389,17 +492,17 @@ def _generate_prologue(grammar: Grammar, command_line: Optional[str] = None) -> 
     token_specs_lines = []
 
     # Add literals to token_specs
+    # Only add non-alphanumeric literals (punctuation) as LITERAL tokens.
+    # Alphanumeric keywords become "soft keywords" - they're lexed as SYMBOL
+    # and matched by value in match_lookahead_literal.
     for lit in sorted_literals:
+        # Skip alphanumeric literals - they'll be lexed as SYMBOL tokens
+        if lit.name[0].isalnum():
+            continue
         # Escape regex special characters in literal
         escaped = re.escape(lit.name)
-        # Check if literal is alphanumeric (needs word boundary check)
-        if lit.name[0].isalnum():
-            # Add word boundary check to pattern
-            pattern = f"{escaped}(?!\\w)"
-        else:
-            pattern = escaped
         token_specs_lines.append(
-            f"            ('LITERAL', re.compile(r'{pattern}'), lambda x: x),"
+            f"            ('LITERAL', re.compile(r'{escaped}'), lambda x: x),"
         )
 
     # Add other tokens

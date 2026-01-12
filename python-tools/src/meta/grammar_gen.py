@@ -84,6 +84,9 @@ _SNAKE_CASE_OVERRIDES = {
     'date_time': 'datetime',
     'csvconfig': 'csv_config',
     'csvcolumn': 'csv_column',
+    'csvdata': 'csv_data',
+    'be_tree_relation': 'betree_relation',
+    'be_tree_info': 'betree_info',
 }
 
 
@@ -126,12 +129,18 @@ class GrammarGenerator:
         self.verbose = verbose
         self.never_inline_fields: Set[Tuple[str, str]] = {
             ("Attribute", "attrs"),
+            ("Instruction", "init"),  # Loop.init needs (init ...) wrapper
         }
         self.rule_literal_renames: Dict[str, str] = {
             "monoid_def": "monoid",
             "monus_def": "monus",
             "conjunction": "and",
             "disjunction": "or",
+            "rel_atom": "relatom",
+        }
+        # Map (message_name, field_name) to builtin rule name to use instead of inlining
+        self.field_uses_builtin: Dict[Tuple[str, str], str] = {
+            ("Reduce", "terms"): "terms",  # Use FFI's (terms ...) wrapper syntax
         }
         self.builtin_rules = BuiltinRules().get_builtin_rules()
         self.rewrite_rules: List[Callable[[Rule], Optional[Rule]]] = get_rule_rewrites()
@@ -245,6 +254,7 @@ class GrammarGenerator:
             'uint128_value',
             'uint128_type',
             'datetime_type',
+            'export_csv_config',  # proto-generated rule replaced by builtin
         ])
 
     # TODO Check that the actions are also equal (up to alpha equivalence).
@@ -441,6 +451,11 @@ class GrammarGenerator:
             wrapper_rule_name = f'{message_rule_name}_{field_rule_name}'
             wrapper_type = ListType(field_type)
             if field.is_repeated:
+                # Check if this field should use a specific builtin rule
+                builtin_key = (message_name, field.name)
+                if builtin_key in self.field_uses_builtin:
+                    builtin_name = self.field_uses_builtin[builtin_key]
+                    return Nonterminal(builtin_name, wrapper_type)
                 if self._should_inline_repeated_field(message_name, field):
                     if self.grammar.has_rule(Nonterminal(wrapper_rule_name, wrapper_type)):
                         return Nonterminal(wrapper_rule_name, wrapper_type)
