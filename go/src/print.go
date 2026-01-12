@@ -654,15 +654,18 @@ func (pp PrettyParams) pprint(node interface{}) {
 		if n.GetOrMonoid() != nil {
 			pp.Write("(or)")
 		} else if minMonoid := n.GetMinMonoid(); minMonoid != nil {
-			pp.Write("(min ")
+			pp.Write("(min")
+			pp.SPACE()
 			pp.pprint(minMonoid.GetType())
 			pp.Write(")")
 		} else if maxMonoid := n.GetMaxMonoid(); maxMonoid != nil {
-			pp.Write("(max ")
+			pp.Write("(max")
+			pp.SPACE()
 			pp.pprint(maxMonoid.GetType())
 			pp.Write(")")
 		} else if sumMonoid := n.GetSumMonoid(); sumMonoid != nil {
-			pp.Write("(sum ")
+			pp.Write("(sum")
+			pp.SPACE()
 			pp.pprint(sumMonoid.GetType())
 			pp.Write(")")
 		}
