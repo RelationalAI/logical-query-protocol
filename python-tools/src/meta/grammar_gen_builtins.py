@@ -10,8 +10,8 @@ from dataclasses import dataclass, field
 
 from .grammar import Rule, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
 from .target import (
-    Lambda, Call, Var, Lit, Seq, IfElse, Builtin, Message, OneOf, ListExpr,
-    OptionType, ListType, TupleType, MessageType, FunctionType, TargetType
+    Lambda, Call, Var, Lit, Seq, Builtin, Message, OneOf, ListExpr,
+    OptionType, ListType, TupleType, MessageType, TargetType
 )
 from .target_utils import (
     STRING_TYPE, INT64_TYPE, FLOAT64_TYPE, BOOLEAN_TYPE,
@@ -165,7 +165,6 @@ class BuiltinRules:
         self._add_value_rules()
         self._add_transaction_rules()
         self._add_bindings_rules()
-        self._add_monoid_rules()
         self._add_formula_rules()
         self._add_export_rules()
         self._add_id_rules()
@@ -460,79 +459,6 @@ class BuiltinRules:
             )
 
         ))
-
-    def _add_monoid_rules(self) -> None:
-        """Add rules for monoid operators."""
-
-        # Common types used throughout
-        _type_type = MessageType('logic', 'Type')
-        _monoid_type = MessageType('logic', 'Monoid')
-        _monoid_op_type = FunctionType([_type_type], _monoid_type)
-
-        # Common nonterminals
-        _type_nt = Nonterminal('type', _type_type)
-        _monoid_nt = Nonterminal('monoid', _monoid_type)
-        _monoid_op_nt = Nonterminal('monoid_op', _monoid_op_type)
-
-        # Monoid rules
-        self.add_rule(Rule(
-            lhs=_monoid_nt,
-            rhs=Sequence((
-                _type_nt,
-                LitTerminal('::'),
-                _monoid_op_nt
-            )),
-            constructor=Lambda(
-                [Var('type', _type_type), Var('op', _monoid_op_type)],
-                return_type=_monoid_type,
-                body=Call(Var('op', _monoid_op_type), [Var('type', _type_type)])
-            )
-
-        ))
-
-        body = _msg('logic', 'Monoid',
-            Call(OneOf('or_monoid'), [_msg('logic', 'OrMonoid')])
-        )
-
-        _msg_monoid_var = Var('msg', _monoid_type)
-        self.add_rule(Rule(
-            lhs=_monoid_nt,
-            rhs=Sequence((
-                LitTerminal('BOOL'),
-                LitTerminal('::'),
-                LitTerminal('OR')
-            )),
-            constructor = Lambda(
-                [],
-                return_type=_monoid_type,
-                body=Lambda([], return_type=_monoid_type, body=body)
-            )
-
-        ))
-
-        def _make_monoid_op_rule(message: str) -> Rule:
-            op = message.removesuffix('Monoid')
-            symbol = f'{op.lower()}_monoid'
-            lit = op.upper()
-            body = _msg('logic', 'Monoid',
-                Call(OneOf(symbol), [_msg('logic', message, Var('type', _type_type))])
-            )
-            rhs = LitTerminal(lit)
-            constructor = Lambda(
-                [],
-                return_type=_monoid_op_type,
-                body=Lambda([Var('type', _type_type)], return_type=_monoid_type, body=body)
-            )
-            return Rule(
-                lhs=_monoid_op_nt,
-                rhs=rhs,
-                constructor=constructor
-
-            )
-
-        self.add_rule(_make_monoid_op_rule('MinMonoid'))
-        self.add_rule(_make_monoid_op_rule('MaxMonoid'))
-        self.add_rule(_make_monoid_op_rule('SumMonoid'))
 
     def _add_formula_rules(self) -> None:
         """Add rules for formulas, true/false, and configure."""
