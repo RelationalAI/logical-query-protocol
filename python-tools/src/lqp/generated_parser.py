@@ -68,7 +68,6 @@ class Lexer:
             ('INT', re.compile(r'[-]?\d+'), lambda x: Lexer.scan_int(x)),
             ('SYMBOL', re.compile(r'[a-zA-Z_][a-zA-Z0-9_.-]*'), lambda x: Lexer.scan_symbol(x)),
             ('COLON_SYMBOL', re.compile(r':[a-zA-Z_][a-zA-Z0-9_.-]*'), lambda x: Lexer.scan_colon_symbol(x)),
-
         ]
 
         whitespace_re = re.compile(r'\s+')
@@ -237,148 +236,103 @@ class Parser:
 
         return relation_id
 
+    @staticmethod
+    def _extract_value(val: Any, value_type: str, default: Any) -> Any:
+        """Extract typed value from a protobuf Value wrapper."""
+        if val is None:
+            return default
+        if value_type == 'int':
+            return val.int_value if val.HasField('int_value') else default
+        elif value_type == 'float':
+            return val.float_value if val.HasField('float_value') else default
+        elif value_type == 'str':
+            return val.string_value if val.HasField('string_value') else default
+        elif value_type == 'bool':
+            return val.boolean_value if val.HasField('boolean_value') else default
+        elif value_type == 'uint128':
+            if hasattr(val, 'uint128_value') and val.HasField('uint128_value'):
+                return val.uint128_value
+            return val if val is not None else default
+        elif value_type == 'bytes':
+            if hasattr(val, 'string_value') and val.HasField('string_value'):
+                return val.string_value.encode()
+            return val if val is not None else default
+        elif value_type == 'str_list':
+            if val.HasField('string_value'):
+                return [val.string_value]
+            return default
+        return default
+
+    @staticmethod
+    def _construct_from_schema(config_list: List[Tuple[str, Any]], schema: List[Tuple[str, str, str, Any]], message_class: type) -> Any:
+        """Construct a protobuf message from config using a schema.
+
+        Args:
+            config_list: List of (key, value) tuples from parsing
+            schema: List of (config_key, proto_field, value_type, default) tuples
+            message_class: The protobuf message class to construct
+
+        Returns:
+            An instance of message_class with fields populated from config
+        """
+        config = {k: v for k, v in config_list}
+        kwargs = {}
+        for config_key, proto_field, value_type, default in schema:
+            val = config.get(config_key)
+            kwargs[proto_field] = Parser._extract_value(val, value_type, default)
+        return message_class(**kwargs)
+
     def construct_configure(self, config_dict: List[Tuple[str, logic_pb2.Value]]) -> Any:
         """Construct Configure from config dictionary."""
-        # Build a dict from the list
-        config = {}
-        for k, v in config_dict:
-            config[k] = v
+        config = {k: v for k, v in config_dict}
 
-        # Extract maintenance level
+        # Special handling for maintenance level enum
+        maintenance_level = 'MAINTENANCE_LEVEL_OFF'
         maintenance_level_val = config.get('ivm.maintenance_level')
-        if maintenance_level_val:
-            if maintenance_level_val.HasField('string_value'):
-                level_str = maintenance_level_val.string_value.upper()
-                # Map short names to full enum names
-                if level_str in ('OFF', 'AUTO', 'ALL'):
-                    maintenance_level = f'MAINTENANCE_LEVEL_{level_str}'
-                else:
-                    maintenance_level = level_str
+        if maintenance_level_val and maintenance_level_val.HasField('string_value'):
+            level_str = maintenance_level_val.string_value.upper()
+            if level_str in ('OFF', 'AUTO', 'ALL'):
+                maintenance_level = f'MAINTENANCE_LEVEL_{level_str}'
             else:
-                maintenance_level = 'MAINTENANCE_LEVEL_OFF'
-        else:
-            maintenance_level = 'MAINTENANCE_LEVEL_OFF'
+                maintenance_level = level_str
 
-        # Extract semantics version
-        semantics_version_val = config.get('semantics_version')
-        if semantics_version_val and semantics_version_val.HasField('int_value'):
-            semantics_version = semantics_version_val.int_value
-        else:
-            semantics_version = 0
-
-        # Create IVMConfig and Configure
         ivm_config = transactions_pb2.IVMConfig(level=maintenance_level)
+        semantics_version = self._extract_value(config.get('semantics_version'), 'int', 0)
         return transactions_pb2.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
 
     def export_csv_config(self, path: str, columns: List[Any], config_dict: List[Tuple[str, logic_pb2.Value]]) -> Any:
         """Construct ExportCsvConfig from path, columns, and config dictionary."""
-        # Build a dict from the list
-        config = {}
-        for k, v in config_dict:
-            config[k] = v
-
-        # Extract path string
-        path_str = path
-
-        # Build kwargs dict for optional fields
-        kwargs = {}
-
-        # Extract optional fields
-        partition_size_val = config.get('partition_size')
-        if partition_size_val and partition_size_val.HasField('int_value'):
-            kwargs['partition_size'] = partition_size_val.int_value
-        else:
-            kwargs['partition_size'] = 0
-
-        compression_val = config.get('compression')
-        if compression_val and compression_val.HasField('string_value'):
-            kwargs['compression'] = compression_val.string_value
-        else:
-            kwargs['compression'] = ''
-
-        header_val = config.get('syntax_header_row')
-        if header_val and header_val.HasField('boolean_value'):
-            kwargs['syntax_header_row'] = header_val.boolean_value
-        else:
-            kwargs['syntax_header_row'] = True
-
-        missing_val = config.get('syntax_missing_string')
-        if missing_val and missing_val.HasField('string_value'):
-            kwargs['syntax_missing_string'] = missing_val.string_value
-        else:
-            kwargs['syntax_missing_string'] = ''
-
-        delim_val = config.get('syntax_delim')
-        if delim_val and delim_val.HasField('string_value'):
-            kwargs['syntax_delim'] = delim_val.string_value
-        else:
-            kwargs['syntax_delim'] = ','
-
-        quote_val = config.get('syntax_quotechar')
-        if quote_val and quote_val.HasField('string_value'):
-            kwargs['syntax_quotechar'] = quote_val.string_value
-        else:
-            kwargs['syntax_quotechar'] = '"'
-
-        escape_val = config.get('syntax_escapechar')
-        if escape_val and escape_val.HasField('string_value'):
-            kwargs['syntax_escapechar'] = escape_val.string_value
-        else:
-            kwargs['syntax_escapechar'] = '\\'
-
-        return transactions_pb2.ExportCSVConfig(path=path_str, data_columns=columns, **kwargs)
+        schema = [
+            ('partition_size', 'partition_size', 'int', 0),
+            ('compression', 'compression', 'str', ''),
+            ('syntax_header_row', 'syntax_header_row', 'bool', True),
+            ('syntax_missing_string', 'syntax_missing_string', 'str', ''),
+            ('syntax_delim', 'syntax_delim', 'str', ','),
+            ('syntax_quotechar', 'syntax_quotechar', 'str', '"'),
+            ('syntax_escapechar', 'syntax_escapechar', 'str', '\\'),
+        ]
+        msg = self._construct_from_schema(config_dict, schema, transactions_pb2.ExportCSVConfig)
+        msg.path = path
+        msg.data_columns.extend(columns)
+        return msg
 
     def construct_betree_info(self, key_types: List[Any], value_types: List[Any], config_dict: List[Tuple[str, Any]]) -> Any:
         """Construct BeTreeInfo from key_types, value_types, and config dictionary."""
-        # Build a dict from the list
-        config = {}
-        for k, v in config_dict:
-            config[k] = v
+        config_schema = [
+            ('betree_config_epsilon', 'epsilon', 'float', 0.5),
+            ('betree_config_max_pivots', 'max_pivots', 'int', 4),
+            ('betree_config_max_deltas', 'max_deltas', 'int', 16),
+            ('betree_config_max_leaf', 'max_leaf', 'int', 16),
+        ]
+        storage_config = self._construct_from_schema(config_dict, config_schema, logic_pb2.BeTreeConfig)
 
-        # Helper to extract int value
-        def get_int(key, default):
-            val = config.get(key)
-            if val and val.HasField('int_value'):
-                return val.int_value
-            return default
-
-        # Helper to extract float value
-        def get_float(key, default):
-            val = config.get(key)
-            if val and val.HasField('float_value'):
-                return val.float_value
-            return default
-
-        # Parse BeTreeConfig
-        storage_config = logic_pb2.BeTreeConfig(
-            epsilon=get_float('betree_config_epsilon', 0.5),
-            max_pivots=get_int('betree_config_max_pivots', 4),
-            max_deltas=get_int('betree_config_max_deltas', 16),
-            max_leaf=get_int('betree_config_max_leaf', 16)
-        )
-
-        # Parse BeTreeLocator
-        root_pageid = None
-        inline_data = None
-        if 'betree_locator_root_pageid' in config:
-            pageid_val = config['betree_locator_root_pageid']
-            if hasattr(pageid_val, 'uint128_value') and pageid_val.HasField('uint128_value'):
-                root_pageid = pageid_val.uint128_value
-            else:
-                root_pageid = pageid_val
-        if 'betree_locator_inline_data' in config:
-            data_val = config['betree_locator_inline_data']
-            if hasattr(data_val, 'string_value') and data_val.HasField('string_value'):
-                inline_data = data_val.string_value.encode()
-            else:
-                inline_data = data_val
-
-        relation_locator = logic_pb2.BeTreeLocator(
-            root_pageid=root_pageid,
-            inline_data=inline_data,
-            element_count=get_int('betree_locator_element_count', 0),
-            tree_height=get_int('betree_locator_tree_height', 0)
-        )
+        locator_schema = [
+            ('betree_locator_root_pageid', 'root_pageid', 'uint128', None),
+            ('betree_locator_inline_data', 'inline_data', 'bytes', None),
+            ('betree_locator_element_count', 'element_count', 'int', 0),
+            ('betree_locator_tree_height', 'tree_height', 'int', 0),
+        ]
+        relation_locator = self._construct_from_schema(config_dict, locator_schema, logic_pb2.BeTreeLocator)
 
         return logic_pb2.BeTreeInfo(
             key_types=key_types,
@@ -389,38 +343,20 @@ class Parser:
 
     def construct_csv_config(self, config_dict: List[Tuple[str, Any]]) -> Any:
         """Construct CSVConfig from config dictionary."""
-        # Build a dict from the list
-        config = {}
-        for k, v in config_dict:
-            config[k] = v
-
-        # Helper to extract string value
-        def get_str(key, default):
-            val = config.get(key)
-            if val and val.HasField('string_value'):
-                return val.string_value
-            return default
-
-        # Helper to extract int value
-        def get_int(key, default):
-            val = config.get(key)
-            if val and val.HasField('int_value'):
-                return val.int_value
-            return default
-
-        return logic_pb2.CSVConfig(
-            header_row=get_int('csv_header_row', 1),
-            skip=get_int('csv_skip', 0),
-            new_line=get_str('csv_new_line', ''),
-            delimiter=get_str('csv_delimiter', ','),
-            quotechar=get_str('csv_quotechar', '"'),
-            escapechar=get_str('csv_escapechar', '"'),
-            comment=get_str('csv_comment', ''),
-            missing_strings=[config['csv_missing_strings'].string_value] if 'csv_missing_strings' in config and config['csv_missing_strings'].HasField('string_value') else [],
-            decimal_separator=get_str('csv_decimal_separator', '.'),
-            encoding=get_str('csv_encoding', 'utf-8'),
-            compression=get_str('csv_compression', 'auto')
-        )
+        schema = [
+            ('csv_header_row', 'header_row', 'int', 1),
+            ('csv_skip', 'skip', 'int', 0),
+            ('csv_new_line', 'new_line', 'str', ''),
+            ('csv_delimiter', 'delimiter', 'str', ','),
+            ('csv_quotechar', 'quotechar', 'str', '"'),
+            ('csv_escapechar', 'escapechar', 'str', '"'),
+            ('csv_comment', 'comment', 'str', ''),
+            ('csv_missing_strings', 'missing_strings', 'str_list', []),
+            ('csv_decimal_separator', 'decimal_separator', 'str', '.'),
+            ('csv_encoding', 'encoding', 'str', 'utf-8'),
+            ('csv_compression', 'compression', 'str', 'auto'),
+        ]
+        return self._construct_from_schema(config_dict, schema, logic_pb2.CSVConfig)
 
     def construct_fragment(self, fragment_id: fragments_pb2.FragmentId, declarations: List[logic_pb2.Declaration]) -> fragments_pb2.Fragment:
         """Construct Fragment from fragment_id, declarations, and debug info from parser state."""
