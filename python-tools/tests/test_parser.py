@@ -49,7 +49,7 @@ def test_valid_validator_files():
         with open(validator_file, "r") as f:
             content = f.read()
         try:
-            result = parse_lqp(validator_file, content)
+            result = parse_lqp(str(validator_file), content)
             assert result is not None, f"Failed to parse {validator_file}"
             assert isinstance(result, ir.Transaction), f"{validator_file} does not contain a transaction"
             validate_lqp(result)

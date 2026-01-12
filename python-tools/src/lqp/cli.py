@@ -15,6 +15,7 @@ from google.protobuf.json_format import MessageToJson
 from lqp.parser import parse_lqp
 from lqp.emit import ir_to_proto
 from lqp.validator import validate_lqp
+import lqp.ir as ir
 
 
 def process_file(filename, bin, json, validate=True, use_generated=False):
@@ -29,7 +30,7 @@ def process_file(filename, bin, json, validate=True, use_generated=False):
             validate_lqp(lqp_proto)
     else:
         lqp = parse_lqp(filename, lqp_text)
-        if validate:
+        if validate and isinstance(lqp, ir.Transaction):
             validate_lqp(lqp)
         lqp_proto = ir_to_proto(lqp)
 

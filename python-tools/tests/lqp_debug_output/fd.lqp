@@ -5,21 +5,218 @@
   (epoch
     (writes
       (define
-        (fragment :fds
+        (fragment :person_model
+          (def 6919740574510502700
+            ([id::INT]
+              (or
+                (primitive :rel_primitive_eq id 1)
+                (primitive :rel_primitive_eq id 2))))
+          (def 17268489266876366576
+            ([id::INT n::STRING]
+              (or
+                (and
+                  (primitive :rel_primitive_eq id 1)
+                  (primitive :rel_primitive_eq n "SSN#Alice"))
+                (and
+                  (primitive :rel_primitive_eq id 2)
+                  (primitive :rel_primitive_eq n "SSN#Bob"))))
+            (attrs
+              (attribute :function "checked")))
           (functional_dependency
-            ([a::INT b::INT c::INT]
-              (atom 4990914056244187799 a b c))
-            (keys a b)
-            (values c))
+            ([n::STRING id::INT]
+              (atom 17268489266876366576 id n))
+            (keys n)
+            (values id))
+          (def 378706712368109145
+            ([id::INT fn::STRING]
+              (or
+                (and
+                  (primitive :rel_primitive_eq id 1)
+                  (primitive :rel_primitive_eq fn "Alice"))
+                (and
+                  (primitive :rel_primitive_eq id 2)
+                  (primitive :rel_primitive_eq fn "Bob"))))
+            (attrs
+              (attribute :function "checked")))
+          (def 2532914575784924444
+            ([id::INT ln::STRING]
+              (or
+                (and
+                  (primitive :rel_primitive_eq id 1)
+                  (primitive :rel_primitive_eq ln "Smith"))
+                (and
+                  (primitive :rel_primitive_eq id 2)
+                  (primitive :rel_primitive_eq ln "Johnson"))))
+            (attrs
+              (attribute :function "checked")))
           (functional_dependency
-            ([x::INT y::INT z::INT]
-              (atom 4990914056244187799 x y z))
-            (keys y)
-            (values x z)))))
+            ([fn::STRING ln::STRING id::INT]
+              (and
+                (atom 378706712368109145 id fn)
+                (atom 2532914575784924444 id ln)))
+            (keys fn ln)
+            (values id))))
+      (define
+        (fragment :emp_model
+          (def 1441519574368593801
+            ([id::INT]
+              (primitive :rel_primitive_eq id 1)))
+          (def 4787166673635998263
+            ([id::INT eid::INT]
+              (and
+                (primitive :rel_primitive_eq id 1)
+                (primitive :rel_primitive_eq eid 1001)))
+            (attrs
+              (attribute :function "checked")))
+          (functional_dependency
+            ([n::STRING id::INT]
+              (atom 17268489266876366576 id n))
+            (keys n)
+            (values id))
+          (functional_dependency
+            ([eid::INT id::INT]
+              (atom 4787166673635998263 id eid))
+            (keys eid)
+            (values id))))
+      (define
+        (fragment :query1
+          (def 3352882180916130150
+            ([n::STRING fn::STRING ln::STRING eid::INT]
+              (exists [person_id::INT]
+                (and
+                  (atom 17268489266876366576 person_id n)
+                  (atom 378706712368109145 person_id fn)
+                  (atom 2532914575784924444 person_id ln)
+                  (atom 4787166673635998263 person_id eid)
+                  (atom 1441519574368593801 person_id))))))))
     (reads
-      (output :output 1234567898765432123456789))))
+      (output :output1 3352882180916130150)))
+  (epoch
+    (writes
+      (define
+        (fragment :car_model
+          (def 11947469809295382674
+            ([id::INT]
+              (or
+                (primitive :rel_primitive_eq id 3)
+                (primitive :rel_primitive_eq id 4))))
+          (def 9954426197261524399
+            ([id::INT v::STRING]
+              (or
+                (and
+                  (primitive :rel_primitive_eq id 3)
+                  (primitive :rel_primitive_eq v "VIN#Honda"))
+                (and
+                  (primitive :rel_primitive_eq id 4)
+                  (primitive :rel_primitive_eq v "VIN#Toyota"))))
+            (attrs
+              (attribute :function "checked")))
+          (functional_dependency
+            ([v::STRING id::INT]
+              (atom 9954426197261524399 id v))
+            (keys v)
+            (values id))
+          (def 15013491121772020750
+            ([id::INT m::STRING]
+              (or
+                (and
+                  (primitive :rel_primitive_eq id 3)
+                  (primitive :rel_primitive_eq m "Honda"))
+                (and
+                  (primitive :rel_primitive_eq id 4)
+                  (primitive :rel_primitive_eq m "Toyota"))))
+            (attrs
+              (attribute :function "checked")))
+          (def 2450621548305115752
+            ([person_id::INT car_id::INT date::STRING amount::INT]
+              (or
+                (and
+                  (primitive :rel_primitive_eq person_id 1)
+                  (primitive :rel_primitive_eq car_id 3)
+                  (primitive :rel_primitive_eq date "2020-01-15")
+                  (primitive :rel_primitive_eq amount 20000))
+                (and
+                  (primitive :rel_primitive_eq person_id 2)
+                  (primitive :rel_primitive_eq car_id 4)
+                  (primitive :rel_primitive_eq date "2021-06-30")
+                  (primitive :rel_primitive_eq amount 25000))))
+            (attrs
+              (attribute :function "checked" 2)))))))
+  (epoch
+    (writes
+      (define
+        (fragment :car_purchase_fd
+          (functional_dependency
+            ([person_id::INT car_id::INT date::STRING amount::INT]
+              (atom 2450621548305115752 person_id car_id date amount))
+            (keys car_id date)
+            (values person_id))))
+      (define
+        (fragment :ownership_model
+          (def 12320303242364489664
+            ([person_id::INT car_id::INT]
+              (exists [date::STRING amount::INT]
+                (and
+                  (atom 2450621548305115752 person_id car_id date amount)
+                  (primitive :rel_primitive_gt_eq_monotype amount 20000)))))
+          (functional_dependency
+            ([person_id::INT car_id::INT]
+              (and
+                (atom 12320303242364489664 person_id car_id)
+                (atom 6919740574510502700 person_id)))
+            (keys person_id)
+            (values car_id))))))
+  (epoch
+    (writes
+      (define
+        (fragment :ownership_model
+          (def 12320303242364489664
+            ([person_id::INT car_id::INT]
+              (exists [date::STRING amount::INT]
+                (atom 2450621548305115752 person_id car_id date amount))))
+          (functional_dependency
+            ([person_id::INT car_id::INT]
+              (atom 12320303242364489664 person_id car_id))
+            (keys car_id)
+            (values person_id))))
+      (undefine :emp_model)))
+  (epoch
+    (writes
+      (define
+        (fragment :query2
+          (functional_dependency
+            ([n::STRING car_id::INT person_id::INT v::STRING]
+              (and
+                (atom 17268489266876366576 person_id n)
+                (atom 9954426197261524399 car_id v)
+                (atom 12320303242364489664 person_id car_id)))
+            (keys v)
+            (values n))
+          (def 3981596135330217082
+            ([n::STRING fn::STRING ln::STRING v::STRING]
+              (exists [person_id::INT car_id::INT]
+                (and
+                  (atom 17268489266876366576 person_id n)
+                  (atom 378706712368109145 person_id fn)
+                  (atom 2532914575784924444 person_id ln)
+                  (atom 12320303242364489664 person_id car_id)
+                  (atom 9954426197261524399 car_id v))))))))
+    (reads
+      (output :output2 3981596135330217082))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `4990914056244187799` -> `r`
+;; 	 ID `17268489266876366576` -> `ssn`
+;; 	 ID `9954426197261524399` -> `vin`
+;; 	 ID `12320303242364489664` -> `owns`
+;; 	 ID `3981596135330217082` -> `query2`
+;; 	 ID `378706712368109145` -> `first_name`
+;; 	 ID `2532914575784924444` -> `last_name`
+;; 	 ID `2450621548305115752` -> `purchased_on_for`
+;; 	 ID `6919740574510502700` -> `Person`
+;; 	 ID `11947469809295382674` -> `Car`
+;; 	 ID `15013491121772020750` -> `make`
+;; 	 ID `3352882180916130150` -> `query1`
+;; 	 ID `4787166673635998263` -> `emp_id`
+;; 	 ID `1441519574368593801` -> `Employee`

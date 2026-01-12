@@ -9,6 +9,7 @@ message Declaration {
     Def def = 1;
     Algorithm algorithm = 2;
     Constraint constraint = 3;
+    Data data = 4;
   }
 }
 
@@ -225,6 +226,99 @@ message Attribute {
   repeated Value args = 2;
 }
 
+//
+// Input data (base relations, CSVs)
+//
+message Data {
+  oneof data_type {
+    RelEDB rel_edb = 1;
+    BeTreeRelation betree_relation = 2;
+    CSVData csv_data = 3;
+    // IcebergRelation iceberg_relation = 4;
+  }
+}
+
+message RelEDB {
+  RelationId target_id = 1;
+  repeated string path = 2;
+  repeated Type types = 3;
+}
+
+message BeTreeRelation {
+  RelationId name = 1;
+  BeTreeInfo relation_info = 2;
+}
+
+message BeTreeInfo {
+  reserved 3; // potentially needed for relation_identifier
+  repeated Type key_types = 1;
+  repeated Type value_types = 2;
+  BeTreeConfig storage_config = 4;
+  BeTreeLocator relation_locator = 5;
+}
+
+message BeTreeConfig {
+  double epsilon = 1;
+  int64 max_pivots = 2;
+  int64 max_deltas = 3;
+  int64 max_leaf = 4;
+}
+
+message BeTreeLocator {
+  oneof location {
+    UInt128Value root_pageid = 1;
+    bytes inline_data = 4;
+  }
+  int64 element_count = 2;
+  int64 tree_height = 3;
+}
+
+message CSVData {
+  CSVLocator locator = 1;
+  CSVConfig config = 2;
+  repeated CSVColumn columns = 3;
+  string asof = 4; // Blob storage timestamp for freshness requirements
+}
+
+message CSVLocator {
+  repeated string paths = 1; // URL(s) or filesystem path(s) for partitioned loading
+  bytes inline_data = 2; // Inline CSV content (mutually exclusive with paths)
+}
+
+message CSVConfig {
+  // Header and structure
+  int32 header_row = 1; // Row number for headers (< 1 means no header)
+  int64 skip = 2; // Lines to skip at start (default: 0)
+  string new_line = 3; // Newline char(s) (default: auto-detect)
+
+  // Delimiters and quotes
+  string delimiter = 4; // Column delimiter (default: ",")
+  string quotechar = 5; // Quote character (default: "\"")
+  string escapechar = 6; // Escape character (default: "\"")
+  string comment = 7; // Comment initiator (default: none)
+
+  // NULL handling
+  repeated string missing_strings = 8; // Strings to treat as NULL/missing
+
+  // Numeric formatting
+  string decimal_separator = 9; // Decimal point (default: ".")
+
+  // Encoding
+  string encoding = 10; // Character encoding (default: "utf-8")
+
+  // Compression
+  string compression = 11; // "none", "gzip", "zstd", "auto" (default: "auto")
+}
+
+message CSVColumn {
+  string column_name = 1; // Name in CSV file
+  RelationId target_id = 2; // Target relation
+  repeated Type types = 3; // Relation signature (key types + value types)
+}
+
+//
+// Relation identifiers and types
+//
 message RelationId {
   fixed64 id_low = 1; // Lower 64 bits of UInt128
   fixed64 id_high = 2; // Upper 64 bits of UInt128

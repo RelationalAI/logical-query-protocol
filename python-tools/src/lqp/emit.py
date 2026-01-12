@@ -204,6 +204,95 @@ def convert_formula(f: ir.Formula) -> logic_pb2.Formula:
     else:
         raise TypeError(f"Unsupported Formula type: {type(f)}")
 
+def convert_betree_config(config: ir.BeTreeConfig) -> logic_pb2.BeTreeConfig:
+    return logic_pb2.BeTreeConfig(
+        epsilon=config.epsilon,
+        max_pivots=config.max_pivots,
+        max_deltas=config.max_deltas,
+        max_leaf=config.max_leaf
+    )
+
+def convert_betree_locator(locator: ir.BeTreeLocator) -> logic_pb2.BeTreeLocator:
+    # Handle oneof: only set the location field that is not None
+    kwargs: Dict[str, Any] = {
+        'element_count': locator.element_count,
+        'tree_height': locator.tree_height
+    }
+    if locator.root_pageid is not None:
+        kwargs['root_pageid'] = convert_uint128(locator.root_pageid)
+    if locator.inline_data is not None:
+        kwargs['inline_data'] = locator.inline_data
+    return logic_pb2.BeTreeLocator(**kwargs)
+
+def convert_betree_info(info: ir.BeTreeInfo) -> logic_pb2.BeTreeInfo:
+    return logic_pb2.BeTreeInfo(
+        key_types=[convert_type(kt) for kt in info.key_types],
+        value_types=[convert_type(vt) for vt in info.value_types],
+        storage_config=convert_betree_config(info.storage_config),
+        relation_locator=convert_betree_locator(info.relation_locator)
+    )
+
+def convert_rel_edb(rel: ir.RelEDB) -> logic_pb2.RelEDB:
+    return logic_pb2.RelEDB(
+        target_id=convert_relation_id(rel.target_id),
+        path=rel.path,
+        types=[convert_type(t) for t in rel.types]
+    )
+
+def convert_betree_relation(rel: ir.BeTreeRelation) -> logic_pb2.BeTreeRelation:
+    return logic_pb2.BeTreeRelation(
+        name=convert_relation_id(rel.name),
+        relation_info=convert_betree_info(rel.relation_info)
+    )
+
+def convert_csv_locator(locator: ir.CSVLocator) -> logic_pb2.CSVLocator:
+    kwargs: Dict[str, Any] = {}
+    if locator.paths:
+        kwargs['paths'] = locator.paths
+    if locator.inline_data is not None:
+        kwargs['inline_data'] = locator.inline_data
+    return logic_pb2.CSVLocator(**kwargs)
+
+def convert_csv_config(config: ir.CSVConfig) -> logic_pb2.CSVConfig:
+    return logic_pb2.CSVConfig(
+        header_row=config.header_row,
+        skip=config.skip,
+        new_line=config.new_line,
+        delimiter=config.delimiter,
+        quotechar=config.quotechar,
+        escapechar=config.escapechar,
+        comment=config.comment,
+        missing_strings=list(config.missing_strings),
+        decimal_separator=config.decimal_separator,
+        encoding=config.encoding,
+        compression=config.compression
+    )
+
+def convert_csv_column(column: ir.CSVColumn) -> logic_pb2.CSVColumn:
+    return logic_pb2.CSVColumn(
+        column_name=column.column_name,
+        target_id=convert_relation_id(column.target_id),
+        types=[convert_type(t) for t in column.types]
+    )
+
+def convert_csv_relation(rel: ir.CSVData) -> logic_pb2.CSVData:
+    return logic_pb2.CSVData(
+        locator=convert_csv_locator(rel.locator),
+        config=convert_csv_config(rel.config),
+        columns=[convert_csv_column(col) for col in rel.columns],
+        asof=rel.asof
+    )
+
+def convert_data(data: ir.Data) -> logic_pb2.Data:
+    if isinstance(data, ir.RelEDB):
+        return logic_pb2.Data(rel_edb=convert_rel_edb(data))
+    elif isinstance(data, ir.BeTreeRelation):
+        return logic_pb2.Data(betree_relation=convert_betree_relation(data))
+    elif isinstance(data, ir.CSVData):
+        return logic_pb2.Data(csv_data=convert_csv_relation(data))
+    else:
+        raise TypeError(f"Unsupported Data type: {type(data)}")
+
 def convert_def(d: ir.Def) -> logic_pb2.Def:
     return logic_pb2.Def(
         name=convert_relation_id(d.name),
@@ -228,6 +317,9 @@ def convert_declaration(decl: ir.Declaration) -> logic_pb2.Declaration:
     elif isinstance(decl, ir.Constraint):
         constraint_dict: Dict[str, Any] = {'constraint': convert_constraint(decl)}
         return logic_pb2.Declaration(**constraint_dict)
+    elif isinstance(decl, ir.Data):
+        data_dict: Dict[str, Any] = {'data': convert_data(decl)}
+        return logic_pb2.Declaration(**data_dict)  # type: ignore
     else:
         raise TypeError(f"Unsupported Declaration type: {type(decl)}")
 
