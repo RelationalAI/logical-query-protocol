@@ -136,6 +136,10 @@ class GrammarGenerator:
             "monus_def": "monus",
             "conjunction": "and",
             "disjunction": "or",
+            "or_monoid": "or",
+            "min_monoid": "min",
+            "max_monoid": "max",
+            "sum_monoid": "sum",
             "rel_atom": "relatom",
         }
         # Map (message_name, field_name) to builtin rule name to use instead of inlining
@@ -242,10 +246,6 @@ class GrammarGenerator:
             'debug_info',
             'debug_info_ids',
             'ivmconfig',
-            'min_monoid',
-            'sum_monoid',
-            'max_monoid',
-            'or_monoid',
             'date_value',
             'datetime_value',
             'decimal_value',

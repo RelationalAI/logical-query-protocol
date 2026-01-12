@@ -61,20 +61,20 @@
                     ([]
                       (or))))
                 (script
-                  (monoid INT::MIN 12074491928194973989
+                  (monoid (min INT) 12074491928194973989
                     ([x::INT | y::INT]
                       (atom 11697277356358429352 x y))
                     (attrs
                       (attribute :function)))
-                  (monoid BOOL::OR 15443881159395485941
+                  (monoid (or) 15443881159395485941
                     ([x::INT y::INT]
                       (atom 11697277356358429352 x y)))
-                  (monus BOOL::OR 151923326135382205
+                  (monus (or) 151923326135382205
                     ([x::INT | y::INT]
                       (atom 11697277356358429352 x y))
                     (attrs
                       (attribute :function)))
-                  (monus INT::SUM 17041058638615872964
+                  (monus (sum INT) 17041058638615872964
                     ([x::INT | y::INT]
                       (atom 11697277356358429352 x y))
                     (attrs
