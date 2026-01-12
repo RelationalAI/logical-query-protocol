@@ -81,10 +81,10 @@ monoid_def : "(monoid" monoid relation_id abstraction attrs? ")"
 monus_def : "(monus" monoid relation_id abstraction attrs? ")"
 
 monoid : or_monoid | min_monoid | max_monoid | sum_monoid
-or_monoid : "BOOL" "::" "OR"
-min_monoid : type_ "::" "MIN"
-max_monoid : type_ "::" "MAX"
-sum_monoid : type_ "::" "SUM"
+or_monoid : "(or)"
+min_monoid : "(min" type_ ")"
+max_monoid : "(max" type_ ")"
+sum_monoid : "(sum" type_ ")"
 
 abstraction: "(" bindings formula ")"
 bindings: "[" left_bindings ("|" right_bindings)? "]"
