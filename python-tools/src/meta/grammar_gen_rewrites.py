@@ -2,8 +2,6 @@
 
 These rewrites transform grammar rules generated from protobuf definitions
 into forms more suitable for parsing S-expressions.
-<<<<<<< HEAD
-=======
 
 Rewrites are applied after rules are generated from protobuf but before
 the grammar is finalized. Each rewrite is a function that takes a Rule
@@ -28,7 +26,6 @@ Usage:
     ...     new_rule = rewrite(original_rule)
     ...     if new_rule:
     ...         original_rule = new_rule
->>>>>>> origin/main
 """
 
 from typing import Callable, Dict, List, Optional
@@ -65,9 +62,6 @@ def make_symbol_replacer(replacements: Dict[Rhs, Rhs]) -> Callable[[Rule], Optio
     return rewrite
 
 def introduce_abstraction_with_arity(rule: Rule) -> Optional[Rule]:
-<<<<<<< HEAD
-    """For any rules with abstraction INT on the RHS, replace with abstraction_with_arity tuple."""
-=======
     """For any rules with abstraction INT on the RHS, replace with abstraction_with_arity tuple.
 
     Many rules have both an abstraction and an INT (arity) elements.
@@ -87,7 +81,6 @@ def introduce_abstraction_with_arity(rule: Rule) -> Optional[Rule]:
                 { lambda tup, body -> let abs = tup[0] in let arity = tup[1] in
                   LambdaExpr(abs, arity, body) }
     """
->>>>>>> origin/main
 
     if not isinstance(rule.rhs, Sequence):
         return None

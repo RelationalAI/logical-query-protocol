@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-"""Utility functions and common type definitions for target language constructs."""
-=======
 """Utility functions and common type definitions for target language constructs.
 
 This module provides utilities for working with the target language AST,
@@ -22,7 +19,6 @@ Example:
     >>> subst(expr, {'x': Lit("hello")})
     Call(Builtin('print'), [Lit("hello")])
 """
->>>>>>> origin/main
 
 from typing import Mapping, Sequence
 
@@ -33,18 +29,11 @@ from .target import (
 
 
 # Common types used throughout grammar generation
-<<<<<<< HEAD
-STRING_TYPE = BaseType('String')
-INT64_TYPE = BaseType('Int64')
-FLOAT64_TYPE = BaseType('Float64')
-BOOLEAN_TYPE = BaseType('Boolean')
-=======
 # These correspond to protobuf primitive types
 STRING_TYPE = BaseType('String')     # string, bytes
 INT64_TYPE = BaseType('Int64')       # int32, int64, uint32, uint64, fixed64
 FLOAT64_TYPE = BaseType('Float64')   # double, float
 BOOLEAN_TYPE = BaseType('Boolean')   # bool
->>>>>>> origin/main
 
 def create_identity_function(param_type: TargetType) -> Lambda:
     """Create an identity function: lambda x -> x with the given type.
@@ -205,39 +194,6 @@ def subst(expr: TargetExpr, mapping: Mapping[str, TargetExpr]) -> TargetExpr:
 
 
 # Common Builtin functions that return Call instances
-<<<<<<< HEAD
-def make_equal(left, right):
-    return Call(Builtin('equal'), [left, right])
-
-def make_which_oneof(msg, oneof_name):
-    return Call(Builtin('WhichOneof'), [msg, oneof_name])
-
-def make_get_field(obj, field_name):
-    return Call(Builtin('get_field'), [obj, field_name])
-
-def make_some(value):
-    return Call(Builtin('Some'), [value])
-
-def make_tuple(*args):
-    return Call(Builtin('make_tuple'), list(args))
-
-def make_fst(pair):
-    return Call(Builtin('fst'), [pair])
-
-def make_snd(pair):
-    return Call(Builtin('snd'), [pair])
-
-def make_is_empty(collection):
-    return Call(Builtin('is_empty'), [collection])
-
-def make_concat(left, right):
-    return Call(Builtin('list_concat'), [left, right])
-
-def make_length(collection):
-    return Call(Builtin('length'), [collection])
-
-def make_unwrap_option_or(option, default):
-=======
 # These functions construct calls to builtin operations that must be
 # implemented by the target language runtime
 
@@ -283,7 +239,6 @@ def make_length(collection):
 
 def make_unwrap_option_or(option, default):
     """Unwrap Option with default: option if Some(x) else default."""
->>>>>>> origin/main
     return Call(Builtin('unwrap_option_or'), [option, default])
 
 
