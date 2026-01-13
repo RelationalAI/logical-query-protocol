@@ -1,7 +1,30 @@
 #!/usr/bin/env python3
-"""CLI tool for parsing protobuf specifications.
+"""CLI tool for generating tools from protobuf specifications.
 
-This module provides the main command-line entry point for the protobuf parser.
+This module provides the main command-line entry point for the proto-to-grammar
+generator.
+
+The CLI parses one or more .proto files and generates a context-free grammar
+with semantic actions. The grammar can be used to generate parsers and pretty
+printers for the protobuf-defined message types.
+
+Usage:
+    python -m meta.cli example.proto --grammar -o output.txt
+
+Options:
+    proto_files: One or more .proto files to parse
+    --grammar: Output the generated grammar
+    -o, --output: Output file (stdout if not specified)
+
+Example:
+    $ python -m meta.cli proto/logic.proto proto/transactions.proto --grammar
+    # Outputs the generated grammar showing all rules and semantic actions
+
+The tool performs the following steps:
+1. Parse all .proto files using ProtoParser
+2. Generate grammar rules using GrammarGenerator
+3. Detect and warn about unexpected unreachable nonterminals
+4. Output the grammar in a readable format
 """
 
 import argparse
@@ -9,6 +32,7 @@ import sys
 from pathlib import Path
 
 from .proto_parser import ProtoParser
+from .grammar_gen import GrammarGenerator
 
 
 def format_message(msg, indent=0):
@@ -51,10 +75,10 @@ def format_enum(enum, indent=0):
     return "\n".join(lines)
 
 
-def main():
-    """Main entry point for protobuf parser."""
+def parse_args():
+    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
-        description="Parse protobuf specifications"
+        description="Parse protobuf specifications and generate tools"
     )
     parser.add_argument(
         "proto_files",
@@ -65,10 +89,18 @@ def main():
     parser.add_argument(
         "-o", "--output",
         type=Path,
-        help="Output file for parsed protobuf specifications"
+        help="Output file"
     )
-    args = parser.parse_args()
+    parser.add_argument(
+        "--grammar",
+        action="store_true",
+        help="Output the grammar"
+    )
+    return parser.parse_args()
 
+
+def run(args) -> int:
+    """Execute the CLI command specified by args."""
     proto_parser = ProtoParser()
     for proto_file in args.proto_files:
         if not proto_file.exists():
@@ -76,24 +108,31 @@ def main():
             return 1
         proto_parser.parse_file(proto_file)
 
-    output_lines = []
-    for msg in proto_parser.messages.values():
-        output_lines.append(format_message(msg))
-        output_lines.append("")
+    generator = GrammarGenerator(proto_parser, verbose=True)
+    grammar = generator.generate()
 
-    for enum in proto_parser.enums.values():
-        output_lines.append(format_enum(enum))
-        output_lines.append("")
+    _, unreachable = grammar.partition_nonterminals()
+    unexpected_unreachable = [r for r in unreachable if r.name not in generator.expected_unreachable]
+    if unexpected_unreachable:
+        print("Warning: Unreachable nonterminals detected:")
+        for rule in unexpected_unreachable:
+            print(f"  {rule.name}")
+        print()
 
-    output = "\n".join(output_lines)
-
-    if args.output:
-        args.output.write_text(output)
-        print(f"Parsed protobuf written to {args.output}", file=sys.stderr)
-    else:
-        print(output)
+    if args.grammar:
+        output_text = grammar.print_grammar()
+        if args.output:
+            args.output.write_text(output_text)
+            print(f"Generated grammar written to {args.output}")
+        else:
+            print(output_text)
 
     return 0
+
+
+def main():
+    """Main entry point for protobuf parser."""
+    return run(parse_args())
 
 
 if __name__ == "__main__":
