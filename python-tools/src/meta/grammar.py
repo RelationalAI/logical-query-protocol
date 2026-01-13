@@ -215,8 +215,10 @@ class Rule:
         assert isinstance(self.rhs, Rhs)
         rhs_len = _count_nonliteral_rhs_elements(self.rhs)
         action_params = len(self.constructor.params)
-        assert action_params == rhs_len, \
-            f"Action for {self.lhs.name} has {action_params} parameters but RHS has {rhs_len} non-literal element{'' if rhs_len == 1 else 's'}: {self.rhs}"
+        assert action_params == rhs_len, (
+            f"Action for {self.lhs.name} has {action_params} parameter(s) "
+            f"but RHS has {rhs_len} non-literal element(s): {self.rhs}"
+        )
 
 @dataclass(frozen=True)
 class Token:
@@ -258,6 +260,7 @@ class Grammar:
             if self.start.name == "start" and len(self.rules) == 0:
                 self.start = lhs
         self.rules[lhs].append(rule)
+        return None
 
     def partition_nonterminals(self) -> Tuple[List[Nonterminal], List[Nonterminal]]:
         """Partition nonterminals into reachable and unreachable.
@@ -272,12 +275,13 @@ class Grammar:
         def visit(A: Nonterminal) -> None:
             """Visit nonterminal and its dependencies in preorder."""
             if A in visited or A not in self.rules:
-                return
+                return None
             visited.add(A)
             reachable.append(A)
             for rule in self.rules[A]:
                 for B in get_nonterminals(rule.rhs):
                     visit(B)
+            return None
 
         visit(self.start)
 

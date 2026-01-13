@@ -610,10 +610,13 @@ class TestGensym:
         assert sym2 == "_t101"
 
 
+<<<<<<< HEAD
 # ============================================================================
 # Integration Tests
 # ============================================================================
 
+=======
+>>>>>>> origin/main
 class TestComplexExpressions:
     """Tests for complex nested expressions."""
 

@@ -39,7 +39,18 @@ class TargetExpr(TargetNode):
 
 @dataclass(frozen=True)
 class Var(TargetExpr):
+<<<<<<< HEAD
     """Variable reference."""
+=======
+    """Variable reference.
+
+    Represents a reference to a variable by name with an associated type.
+
+    Example:
+        Var("x", BaseType("Int64"))  # x :: Int64
+        Var("msg", MessageType("logic", "Expr"))  # msg :: logic.Expr
+    """
+>>>>>>> origin/main
     name: str
     type: 'TargetType'
 
@@ -52,7 +63,18 @@ class Var(TargetExpr):
 
 @dataclass(frozen=True)
 class Lit(TargetExpr):
+<<<<<<< HEAD
     """Literal value (string, number, boolean, None)."""
+=======
+    """Literal value (string, number, boolean, None).
+
+    Example:
+        Lit(42)         # integer literal
+        Lit("hello")    # string literal
+        Lit(True)       # boolean literal
+        Lit(None)       # None/null literal
+    """
+>>>>>>> origin/main
     value: Any
 
     def __str__(self) -> str:
@@ -60,7 +82,20 @@ class Lit(TargetExpr):
 
 @dataclass(frozen=True)
 class Symbol(TargetExpr):
+<<<<<<< HEAD
     """Literal symbol (e.g., :cast)."""
+=======
+    """Literal symbol (e.g., :cast).
+
+    Symbols are used as enumeration-like values or tags in the target language.
+    Similar to keywords or atoms in Lisp-like languages.
+
+    Example:
+        Symbol("add")       # :add
+        Symbol("multiply")  # :multiply
+        Symbol("cast")      # :cast
+    """
+>>>>>>> origin/main
     name: str
 
     def __str__(self) -> str:
@@ -170,7 +205,20 @@ class Call(TargetExpr):
 
 @dataclass(frozen=True)
 class Lambda(TargetExpr):
+<<<<<<< HEAD
     """Lambda function (anonymous function)."""
+=======
+    """Lambda function (anonymous function).
+
+    Example:
+        # lambda x, y -> Int64: x + y
+        Lambda(
+            params=[Var("x", INT64_TYPE), Var("y", INT64_TYPE)],
+            return_type=INT64_TYPE,
+            body=Call(Builtin("add"), [Var("x", INT64_TYPE), Var("y", INT64_TYPE)])
+        )
+    """
+>>>>>>> origin/main
     params: Sequence['Var']
     return_type: 'TargetType'
     body: 'TargetExpr'
@@ -188,6 +236,17 @@ class Let(TargetExpr):
 
     Evaluates init, binds the result to var, then evaluates body
     in the extended environment.
+<<<<<<< HEAD
+=======
+
+    Example:
+        # let x = 42 in x + 1
+        Let(
+            var=Var("x", INT64_TYPE),
+            init=Lit(42),
+            body=Call(Builtin("add"), [Var("x", INT64_TYPE), Lit(1)])
+        )
+>>>>>>> origin/main
     """
     var: 'Var'
     init: 'TargetExpr'
@@ -289,7 +348,17 @@ class TargetType(TargetNode):
 
 @dataclass(frozen=True)
 class BaseType(TargetType):
+<<<<<<< HEAD
     """Base types: Int64, Float64, String, Boolean."""
+=======
+    """Base types: Int64, Float64, String, Boolean.
+
+    Example:
+        BaseType("Int64")
+        BaseType("String")
+        BaseType("Boolean")
+    """
+>>>>>>> origin/main
     name: str
 
     def __str__(self) -> str:
@@ -298,7 +367,16 @@ class BaseType(TargetType):
 
 @dataclass(frozen=True)
 class MessageType(TargetType):
+<<<<<<< HEAD
     """Protobuf message types."""
+=======
+    """Protobuf message types.
+
+    Example:
+        MessageType("logic", "Expr")       # logic.Expr
+        MessageType("transactions", "Transaction")  # transactions.Transaction
+    """
+>>>>>>> origin/main
     module: str
     name: str
 
@@ -321,7 +399,16 @@ class TupleType(TargetType):
 
 @dataclass(frozen=True)
 class ListType(TargetType):
+<<<<<<< HEAD
     """Parameterized list/array type."""
+=======
+    """Parameterized list/array type.
+
+    Example:
+        ListType(BaseType("Int64"))              # List[Int64]
+        ListType(MessageType("logic", "Expr"))   # List[logic.Expr]
+    """
+>>>>>>> origin/main
     element_type: TargetType
 
     def __str__(self) -> str:
@@ -330,7 +417,16 @@ class ListType(TargetType):
 
 @dataclass(frozen=True)
 class OptionType(TargetType):
+<<<<<<< HEAD
     """Optional/Maybe type for values that may be None."""
+=======
+    """Optional/Maybe type for values that may be None.
+
+    Example:
+        OptionType(BaseType("String"))          # Option[String]
+        OptionType(MessageType("logic", "Expr")) # Option[logic.Expr]
+    """
+>>>>>>> origin/main
     element_type: TargetType
 
     def __str__(self) -> str:
