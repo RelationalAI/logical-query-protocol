@@ -5,14 +5,14 @@ structures (Rhs, Rule) and to load grammar configuration files.
 
 RHS syntax:
     "literal"                       -> LitTerminal("literal")
-    (nt name Type)                  -> Nonterminal(name, type)
+    (nonterm name Type)             -> Nonterminal(name, type)
     (term NAME Type)                -> NamedTerminal(NAME, type)
     (star rhs)                      -> Star(rhs)
     (option rhs)                    -> Option(rhs)
     (seq rhs1 rhs2 ...)             -> Sequence([rhs1, rhs2, ...])
 
 Rule syntax:
-    (rule lhs_name LhsType rhs constructor)
+    (rule (lhs lhs_name LhsType) (rhs rhs...) constructor)
 
 Config file directives:
     (rule ...)                      -> add rule
@@ -62,9 +62,9 @@ def sexp_to_rhs(sexp: SExpr) -> Rhs:
 
     tag = head.value
 
-    if tag == "nt":
+    if tag == "nonterm":
         if len(sexp) != 3:
-            raise GrammarConversionError(f"nt requires name and type: {sexp}")
+            raise GrammarConversionError(f"nonterm requires name and type: {sexp}")
         name = _expect_symbol(sexp[1], "nonterminal name")
         typ = sexp_to_type(sexp[2])
         return Nonterminal(name, typ)
@@ -81,7 +81,7 @@ def sexp_to_rhs(sexp: SExpr) -> Rhs:
             raise GrammarConversionError(f"star requires one RHS element: {sexp}")
         inner = sexp_to_rhs(sexp[1])
         if not isinstance(inner, (Nonterminal, NamedTerminal)):
-            raise GrammarConversionError(f"star inner must be nt or term: {sexp}")
+            raise GrammarConversionError(f"star inner must be nonterm or term: {sexp}")
         return Star(inner)
 
     elif tag == "option":
@@ -89,7 +89,7 @@ def sexp_to_rhs(sexp: SExpr) -> Rhs:
             raise GrammarConversionError(f"option requires one RHS element: {sexp}")
         inner = sexp_to_rhs(sexp[1])
         if not isinstance(inner, (Nonterminal, NamedTerminal)):
-            raise GrammarConversionError(f"option inner must be nt or term: {sexp}")
+            raise GrammarConversionError(f"option inner must be nonterm or term: {sexp}")
         return Option(inner)
 
     elif tag == "seq":
@@ -106,7 +106,7 @@ def sexp_to_rule(sexp: SExpr) -> Rule:
     """Convert an s-expression to a Rule.
 
     Args:
-        sexp: S-expression of the form (rule lhs_name LhsType rhs constructor)
+        sexp: S-expression of the form (rule (lhs name Type) (rhs rhs...) constructor)
 
     Returns:
         Corresponding Rule object
@@ -114,17 +114,37 @@ def sexp_to_rule(sexp: SExpr) -> Rule:
     Raises:
         GrammarConversionError: If the s-expression is not a valid rule
     """
-    if not isinstance(sexp, SList) or len(sexp) != 5:
-        raise GrammarConversionError(f"rule requires lhs_name, LhsType, rhs, constructor: {sexp}")
+    if not isinstance(sexp, SList) or len(sexp) != 4:
+        raise GrammarConversionError(f"rule requires (lhs ...), (rhs ...), constructor: {sexp}")
 
     head = sexp.head()
     if not isinstance(head, SAtom) or head.value != "rule":
         raise GrammarConversionError(f"Expected rule, got: {head}")
 
-    lhs_name = _expect_symbol(sexp[1], "rule LHS name")
-    lhs_type = sexp_to_type(sexp[2])
-    rhs = sexp_to_rhs(sexp[3])
-    constructor_expr = sexp_to_expr(sexp[4])
+    # Parse (lhs name Type)
+    lhs_sexp = sexp[1]
+    if not isinstance(lhs_sexp, SList) or len(lhs_sexp) != 3:
+        raise GrammarConversionError(f"lhs requires name and type: {lhs_sexp}")
+    lhs_head = lhs_sexp.head()
+    if not isinstance(lhs_head, SAtom) or lhs_head.value != "lhs":
+        raise GrammarConversionError(f"Expected (lhs ...), got: {lhs_sexp}")
+    lhs_name = _expect_symbol(lhs_sexp[1], "rule LHS name")
+    lhs_type = sexp_to_type(lhs_sexp[2])
+
+    # Parse (rhs rhs...)
+    rhs_sexp = sexp[2]
+    if not isinstance(rhs_sexp, SList) or len(rhs_sexp) < 1:
+        raise GrammarConversionError(f"rhs must be a list: {rhs_sexp}")
+    rhs_head = rhs_sexp.head()
+    if not isinstance(rhs_head, SAtom) or rhs_head.value != "rhs":
+        raise GrammarConversionError(f"Expected (rhs ...), got: {rhs_sexp}")
+    rhs_elements = [sexp_to_rhs(e) for e in rhs_sexp.elements[1:]]
+    if len(rhs_elements) == 1:
+        rhs = rhs_elements[0]
+    else:
+        rhs = Sequence(tuple(rhs_elements))
+
+    constructor_expr = sexp_to_expr(sexp[3])
 
     if not isinstance(constructor_expr, Lambda):
         raise GrammarConversionError(f"Rule constructor must be a lambda: {constructor_expr}")
@@ -149,7 +169,7 @@ def rhs_to_sexp(rhs: Rhs) -> SExpr:
         return SList((SAtom("term"), SAtom(rhs.name), type_to_sexp(rhs.type)))
 
     elif isinstance(rhs, Nonterminal):
-        return SList((SAtom("nt"), SAtom(rhs.name), type_to_sexp(rhs.type)))
+        return SList((SAtom("nonterm"), SAtom(rhs.name), type_to_sexp(rhs.type)))
 
     elif isinstance(rhs, Star):
         return SList((SAtom("star"), rhs_to_sexp(rhs.rhs)))
@@ -171,13 +191,25 @@ def rule_to_sexp(rule: Rule) -> SExpr:
         rule: Rule to convert
 
     Returns:
-        S-expression of the form (rule lhs_name LhsType rhs constructor)
+        S-expression of the form (rule (lhs name Type) (rhs rhs...) constructor)
     """
+    lhs_sexp = SList((
+        SAtom("lhs"),
+        SAtom(rule.lhs.name),
+        type_to_sexp(rule.lhs.type)
+    ))
+
+    # Flatten sequences into the rhs form
+    if isinstance(rule.rhs, Sequence):
+        rhs_elements = tuple(rhs_to_sexp(e) for e in rule.rhs.elements)
+    else:
+        rhs_elements = (rhs_to_sexp(rule.rhs),)
+    rhs_sexp = SList((SAtom("rhs"),) + rhs_elements)
+
     return SList((
         SAtom("rule"),
-        SAtom(rule.lhs.name),
-        type_to_sexp(rule.lhs.type),
-        rhs_to_sexp(rule.rhs),
+        lhs_sexp,
+        rhs_sexp,
         expr_to_sexp(rule.constructor)
     ))
 
@@ -252,6 +284,9 @@ def _expect_symbol(sexp: SExpr, context: str) -> str:
         raise GrammarConversionError(f"{context} must be a symbol, got: {sexp}")
     if sexp.quoted:
         raise GrammarConversionError(f"{context} must be unquoted symbol, got string: {sexp}")
+    # Handle booleans (true/false parsed as Python booleans)
+    if isinstance(sexp.value, bool):
+        return "true" if sexp.value else "false"
     if not isinstance(sexp.value, str):
         raise GrammarConversionError(f"{context} must be a symbol, got: {sexp}")
     return sexp.value

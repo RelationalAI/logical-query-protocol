@@ -165,8 +165,8 @@ def sexp_to_expr(sexp: SExpr) -> TargetExpr:
         return Call(func, args)
 
     elif tag == "lambda":
-        if len(sexp) != 4:
-            raise SExprConversionError(f"lambda requires params, return type, and body: {sexp}")
+        if len(sexp) not in (3, 4):
+            raise SExprConversionError(f"lambda requires params, [return type], and body: {sexp}")
         params_sexp = sexp[1]
         if not isinstance(params_sexp, SList):
             raise SExprConversionError(f"lambda params must be a list: {params_sexp}")
@@ -177,8 +177,13 @@ def sexp_to_expr(sexp: SExpr) -> TargetExpr:
             name = _expect_symbol(p[0], "param name")
             typ = sexp_to_type(p[1])
             params.append(Var(name, typ))
-        return_type = sexp_to_type(sexp[2])
-        body = sexp_to_expr(sexp[3])
+        if len(sexp) == 4:
+            return_type = sexp_to_type(sexp[2])
+            body = sexp_to_expr(sexp[3])
+        else:
+            # No explicit return type - use a placeholder
+            return_type = BaseType("Inferred")
+            body = sexp_to_expr(sexp[2])
         return Lambda(params, return_type, body)
 
     elif tag == "let":

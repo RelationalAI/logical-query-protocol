@@ -35,11 +35,11 @@ class TestSexpToRhs:
         assert result == LitTerminal("(")
 
     def test_nonterminal(self):
-        result = sexp_to_rhs(parse_sexp("(nt value (Message logic Value))"))
+        result = sexp_to_rhs(parse_sexp("(nonterm value (Message logic Value))"))
         assert result == Nonterminal("value", MessageType("logic", "Value"))
 
     def test_nonterminal_base_type(self):
-        result = sexp_to_rhs(parse_sexp("(nt name String)"))
+        result = sexp_to_rhs(parse_sexp("(nonterm name String)"))
         assert result == Nonterminal("name", BaseType("String"))
 
     def test_named_terminal(self):
@@ -51,7 +51,7 @@ class TestSexpToRhs:
         assert result == NamedTerminal("INT", BaseType("Int64"))
 
     def test_star_nonterminal(self):
-        result = sexp_to_rhs(parse_sexp("(star (nt binding (Message logic Binding)))"))
+        result = sexp_to_rhs(parse_sexp("(star (nonterm binding (Message logic Binding)))"))
         assert result == Star(Nonterminal("binding", MessageType("logic", "Binding")))
 
     def test_star_terminal(self):
@@ -59,7 +59,7 @@ class TestSexpToRhs:
         assert result == Star(NamedTerminal("INT", BaseType("Int64")))
 
     def test_option_nonterminal(self):
-        result = sexp_to_rhs(parse_sexp("(option (nt sync (Message transactions Sync)))"))
+        result = sexp_to_rhs(parse_sexp("(option (nonterm sync (Message transactions Sync)))"))
         assert result == Option(Nonterminal("sync", MessageType("transactions", "Sync")))
 
     def test_option_terminal(self):
@@ -83,7 +83,7 @@ class TestSexpToRhs:
         assert result == expected
 
     def test_sequence_with_nonterminals(self):
-        result = sexp_to_rhs(parse_sexp('(seq "(" "rule" (nt name String) (nt value (Message logic Value)) ")")'))
+        result = sexp_to_rhs(parse_sexp('(seq "(" "rule" (nonterm name String) (nonterm value (Message logic Value)) ")")'))
         expected = Sequence((
             LitTerminal("("),
             LitTerminal("rule"),
@@ -94,7 +94,7 @@ class TestSexpToRhs:
         assert result == expected
 
     def test_sequence_with_star_and_option(self):
-        result = sexp_to_rhs(parse_sexp('(seq "[" (star (nt binding (Message logic Binding))) (option (nt values (List (Message logic Binding)))) "]")'))
+        result = sexp_to_rhs(parse_sexp('(seq "[" (star (nonterm binding (Message logic Binding))) (option (nonterm values (List (Message logic Binding)))) "]")'))
         expected = Sequence((
             LitTerminal("["),
             Star(Nonterminal("binding", MessageType("logic", "Binding"))),
@@ -121,8 +121,8 @@ class TestSexpToRule:
 
     def test_simple_rule_lit_terminal(self):
         sexp = parse_sexp('''
-            (rule boolean_value Boolean
-                "true"
+            (rule (lhs boolean_value Boolean)
+                (rhs "true")
                 (lambda () Boolean (lit true)))
         ''')
         result = sexp_to_rule(sexp)
@@ -134,8 +134,8 @@ class TestSexpToRule:
 
     def test_rule_with_nonterminal(self):
         sexp = parse_sexp('''
-            (rule value (Message logic Value)
-                (nt date (Message logic DateValue))
+            (rule (lhs value (Message logic Value))
+                (rhs (nonterm date (Message logic DateValue)))
                 (lambda ((value (Message logic DateValue))) (Message logic Value)
                     (call (message logic Value)
                         (call (oneof date_value) (var value (Message logic DateValue))))))
@@ -148,8 +148,8 @@ class TestSexpToRule:
 
     def test_rule_with_sequence(self):
         sexp = parse_sexp('''
-            (rule date (Message logic DateValue)
-                (seq "(" "date" (term INT Int64) (term INT Int64) (term INT Int64) ")")
+            (rule (lhs date (Message logic DateValue))
+                (rhs "(" "date" (term INT Int64) (term INT Int64) (term INT Int64) ")")
                 (lambda ((year Int64) (month Int64) (day Int64)) (Message logic DateValue)
                     (call (message logic DateValue)
                         (var year Int64) (var month Int64) (var day Int64))))
@@ -162,8 +162,8 @@ class TestSexpToRule:
 
     def test_rule_with_star(self):
         sexp = parse_sexp('''
-            (rule config_dict (List (Tuple String (Message logic Value)))
-                (seq "{" (star (nt config_key_value (Tuple String (Message logic Value)))) "}")
+            (rule (lhs config_dict (List (Tuple String (Message logic Value))))
+                (rhs "{" (star (nonterm config_key_value (Tuple String (Message logic Value)))) "}")
                 (lambda ((x (List (Tuple String (Message logic Value))))) (List (Tuple String (Message logic Value)))
                     (var x (List (Tuple String (Message logic Value))))))
         ''')
@@ -178,7 +178,7 @@ class TestSexpToRule:
 
     def test_invalid_rule_non_lambda_constructor(self):
         with pytest.raises(GrammarConversionError):
-            sexp_to_rule(parse_sexp('(rule foo String "bar" (lit 42))'))
+            sexp_to_rule(parse_sexp('(rule (lhs foo String) (rhs "bar") (lit 42))'))
 
 
 class TestRhsToSexp:
@@ -195,7 +195,7 @@ class TestRhsToSexp:
     def test_nonterminal(self):
         result = rhs_to_sexp(Nonterminal("value", MessageType("logic", "Value")))
         expected = SList((
-            SAtom("nt"),
+            SAtom("nonterm"),
             SAtom("value"),
             SList((SAtom("Message"), SAtom("logic"), SAtom("Value")))
         ))
@@ -206,7 +206,7 @@ class TestRhsToSexp:
         expected = SList((
             SAtom("star"),
             SList((
-                SAtom("nt"),
+                SAtom("nonterm"),
                 SAtom("binding"),
                 SList((SAtom("Message"), SAtom("logic"), SAtom("Binding")))
             ))
@@ -239,7 +239,13 @@ class TestRuleToSexp:
         result = rule_to_sexp(rule)
         assert isinstance(result, SList)
         assert result[0] == SAtom("rule")
-        assert result[1] == SAtom("boolean_value")
+        # result[1] is (lhs boolean_value Boolean)
+        assert isinstance(result[1], SList)
+        assert result[1][0] == SAtom("lhs")
+        assert result[1][1] == SAtom("boolean_value")
+        # result[2] is (rhs "true")
+        assert isinstance(result[2], SList)
+        assert result[2][0] == SAtom("rhs")
 
     def test_rule_with_params(self):
         rule = Rule(
@@ -254,6 +260,8 @@ class TestRuleToSexp:
         result = rule_to_sexp(rule)
         assert isinstance(result, SList)
         assert result[0] == SAtom("rule")
+        assert isinstance(result[1], SList)
+        assert result[1][0] == SAtom("lhs")
 
 
 class TestRhsRoundTrip:
@@ -377,8 +385,8 @@ class TestLoadGrammarConfig:
 
     def test_load_single_rule(self):
         config = '''
-            (rule boolean_value Boolean
-                "true"
+            (rule (lhs boolean_value Boolean)
+                (rhs "true")
                 (lambda () Boolean (lit true)))
         '''
         result = load_grammar_config(config)
@@ -391,11 +399,11 @@ class TestLoadGrammarConfig:
 
     def test_load_multiple_rules_same_lhs(self):
         config = '''
-            (rule boolean_value Boolean
-                "true"
+            (rule (lhs boolean_value Boolean)
+                (rhs "true")
                 (lambda () Boolean (lit true)))
-            (rule boolean_value Boolean
-                "false"
+            (rule (lhs boolean_value Boolean)
+                (rhs "false")
                 (lambda () Boolean (lit false)))
         '''
         result = load_grammar_config(config)
@@ -406,11 +414,11 @@ class TestLoadGrammarConfig:
 
     def test_load_multiple_rules_different_lhs(self):
         config = '''
-            (rule boolean_value Boolean
-                "true"
+            (rule (lhs boolean_value Boolean)
+                (rhs "true")
                 (lambda () Boolean (lit true)))
-            (rule name String
-                (term COLON_SYMBOL String)
+            (rule (lhs name String)
+                (rhs (term COLON_SYMBOL String))
                 (lambda ((x String)) String (var x String)))
         '''
         result = load_grammar_config(config)
@@ -418,8 +426,8 @@ class TestLoadGrammarConfig:
 
     def test_load_with_mark_nonfinal(self):
         config = '''
-            (rule formula (Message logic Formula)
-                (nt conjunction (Message logic Conjunction))
+            (rule (lhs formula (Message logic Formula))
+                (rhs (nonterm conjunction (Message logic Conjunction)))
                 (lambda ((value (Message logic Conjunction))) (Message logic Formula)
                     (call (message logic Formula)
                         (call (oneof conjunction) (var value (Message logic Conjunction))))))
@@ -434,8 +442,8 @@ class TestLoadGrammarConfig:
     def test_load_with_comments(self):
         config = '''
             ; This is a comment
-            (rule boolean_value Boolean
-                "true"
+            (rule (lhs boolean_value Boolean)
+                (rhs "true")
                 (lambda () Boolean (lit true)))
             ; Another comment
         '''
