@@ -1,10 +1,5 @@
 """Tests for the s-expression pretty printer."""
 
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
-
 from meta.sexp import SAtom, SList, slist, symbol, string, atom
 from meta.sexp_pretty import pretty_print, compact_print
 from meta.sexp_parser import parse_sexp
