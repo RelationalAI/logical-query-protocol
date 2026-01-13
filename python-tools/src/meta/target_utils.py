@@ -1,4 +1,24 @@
-"""Utility functions and common type definitions for target language constructs."""
+"""Utility functions and common type definitions for target language constructs.
+
+This module provides utilities for working with the target language AST,
+including:
+- Common type constants (STRING_TYPE, INT64_TYPE, etc.)
+- Expression substitution with proper handling of side effects
+- Helper functions for constructing common builtin calls
+- Lambda application with inlining optimization
+
+The substitution function is particularly important for grammar transformations,
+as it correctly handles variables with multiple occurrences and side-effecting
+expressions by introducing Let bindings when necessary.
+
+Example:
+    >>> from meta.target import Var, Lit, Call, Builtin
+    >>> from meta.target_utils import subst, make_equal, STRING_TYPE
+    >>> # Substitute variable 'x' with literal "hello"
+    >>> expr = Call(Builtin('print'), [Var('x', STRING_TYPE)])
+    >>> subst(expr, {'x': Lit("hello")})
+    Call(Builtin('print'), [Lit("hello")])
+"""
 
 from typing import Mapping, Sequence
 
@@ -9,10 +29,11 @@ from .target import (
 
 
 # Common types used throughout grammar generation
-STRING_TYPE = BaseType('String')
-INT64_TYPE = BaseType('Int64')
-FLOAT64_TYPE = BaseType('Float64')
-BOOLEAN_TYPE = BaseType('Boolean')
+# These correspond to protobuf primitive types
+STRING_TYPE = BaseType('String')     # string, bytes
+INT64_TYPE = BaseType('Int64')       # int32, int64, uint32, uint64, fixed64
+FLOAT64_TYPE = BaseType('Float64')   # double, float
+BOOLEAN_TYPE = BaseType('Boolean')   # bool
 
 def create_identity_function(param_type: TargetType) -> Lambda:
     """Create an identity function: lambda x -> x with the given type.
@@ -173,37 +194,51 @@ def subst(expr: TargetExpr, mapping: Mapping[str, TargetExpr]) -> TargetExpr:
 
 
 # Common Builtin functions that return Call instances
+# These functions construct calls to builtin operations that must be
+# implemented by the target language runtime
+
 def make_equal(left, right):
+    """Construct equality test: left == right."""
     return Call(Builtin('equal'), [left, right])
 
 def make_which_oneof(msg, oneof_name):
+    """Get which field is set in a oneof group."""
     return Call(Builtin('WhichOneof'), [msg, oneof_name])
 
 def make_get_field(obj, field_name):
+    """Get field value from message: obj.field_name."""
     return Call(Builtin('get_field'), [obj, field_name])
 
 def make_some(value):
+    """Wrap value in Option/Maybe: Some(value)."""
     return Call(Builtin('Some'), [value])
 
 def make_tuple(*args):
+    """Construct tuple from values: (arg1, arg2, ...)."""
     return Call(Builtin('make_tuple'), list(args))
 
 def make_fst(pair):
+    """Extract first element of tuple: pair[0]."""
     return Call(Builtin('fst'), [pair])
 
 def make_snd(pair):
+    """Extract second element of tuple: pair[1]."""
     return Call(Builtin('snd'), [pair])
 
 def make_is_empty(collection):
+    """Check if collection is empty: len(collection) == 0."""
     return Call(Builtin('is_empty'), [collection])
 
 def make_concat(left, right):
+    """Concatenate two lists: left + right."""
     return Call(Builtin('list_concat'), [left, right])
 
 def make_length(collection):
+    """Get collection length: len(collection)."""
     return Call(Builtin('length'), [collection])
 
 def make_unwrap_option_or(option, default):
+    """Unwrap Option with default: option if Some(x) else default."""
     return Call(Builtin('unwrap_option_or'), [option, default])
 
 

@@ -2,6 +2,30 @@
 
 These rewrites transform grammar rules generated from protobuf definitions
 into forms more suitable for parsing S-expressions.
+
+Rewrites are applied after rules are generated from protobuf but before
+the grammar is finalized. Each rewrite is a function that takes a Rule
+and returns either:
+- A transformed Rule if the rewrite applies
+- None if the rewrite doesn't apply (rule unchanged)
+
+Current rewrites:
+1. Symbol replacement: Replace STRING terminals with 'name' nonterminal
+   for better grammar structure
+2. Abstraction with arity: Combine abstraction + INT into a single tuple
+   to simplify rules that use both together
+
+Example rewrite:
+    Before: expr -> '(' 'lambda' abstraction INT expr ')'
+    After:  expr -> '(' 'lambda' abstraction_with_arity expr ')'
+    Where abstraction_with_arity produces a (Abstraction, Int64) tuple.
+
+Usage:
+    >>> rewrites = get_rule_rewrites()
+    >>> for rewrite in rewrites:
+    ...     new_rule = rewrite(original_rule)
+    ...     if new_rule:
+    ...         original_rule = new_rule
 """
 
 from typing import Callable, Dict, List, Optional
@@ -38,7 +62,25 @@ def make_symbol_replacer(replacements: Dict[Rhs, Rhs]) -> Callable[[Rule], Optio
     return rewrite
 
 def introduce_abstraction_with_arity(rule: Rule) -> Optional[Rule]:
-    """For any rules with abstraction INT on the RHS, replace with abstraction_with_arity tuple."""
+    """For any rules with abstraction INT on the RHS, replace with abstraction_with_arity tuple.
+
+    Many rules have both an abstraction and an INT (arity) elements.
+    This rewrite combines them into a single nonterminal that produces a tuple,
+    simplifying the rule structure.
+
+    Args:
+        rule: Rule to potentially rewrite
+
+    Returns:
+        Rewritten rule if abstraction + INT pattern found, None otherwise
+
+    Example:
+        Before: lambda_expr -> abstraction body INT
+                { lambda abs, body, arity -> LambdaExpr(abs, arity, body) }
+        After:  lambda_expr -> abstraction_with_arity body
+                { lambda tup, body -> let abs = tup[0] in let arity = tup[1] in
+                  LambdaExpr(abs, arity, body) }
+    """
 
     if not isinstance(rule.rhs, Sequence):
         return None
