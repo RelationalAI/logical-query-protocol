@@ -5,10 +5,14 @@ with semantic actions, including support for normalization and left-factoring.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple, TYPE_CHECKING
 
 # Import action AST types
 from .target import TargetExpr, Var, Symbol, Call, Lambda, Lit, TargetType, ListType, OptionType, TupleType
+
+if TYPE_CHECKING:
+    from .grammar_analysis import GrammarAnalysis
+    from .grammar_utils import count_nonliteral_rhs_elements
 
 
 # Grammar RHS (right-hand side) elements
@@ -212,8 +216,9 @@ class Rule:
         return str(self.rhs)
 
     def __post_init__(self):
+        from .grammar_utils import count_nonliteral_rhs_elements
         assert isinstance(self.rhs, Rhs)
-        rhs_len = _count_nonliteral_rhs_elements(self.rhs)
+        rhs_len = count_nonliteral_rhs_elements(self.rhs)
         action_params = len(self.constructor.params)
         assert action_params == rhs_len, (
             f"Action for {self.lhs.name} has {action_params} parameter(s) "
@@ -282,6 +287,7 @@ class Grammar:
             - reachable: List of reachable nonterminals in preorder traversal
             - unreachable: List of unreachable nonterminals (sorted by name)
         """
+        from .grammar_utils import get_nonterminals
         visited: Set[Nonterminal] = set()
         reachable: List[Nonterminal] = []
 
