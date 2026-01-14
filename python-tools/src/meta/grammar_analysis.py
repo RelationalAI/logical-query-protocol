@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from typing import Dict, Iterable, List, Mapping, Optional, Set, Tuple
 from .grammar import Grammar, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence, Terminal
 from .target import BaseType
+from .grammar_utils import get_nonterminals
 
 # Type alias for terminal sequences used in FIRST_k and FOLLOW_k
 TerminalSeq = Tuple[Terminal, ...]
@@ -98,40 +99,7 @@ class GrammarAnalysis:
             return GrammarAnalysis.concat_k(first_of_following, follow_of_lhs, k)
         return first_of_following
 
-    @staticmethod
-    def get_nonterminals(rhs: 'Rhs') -> List[Nonterminal]:
-        """Return the list of all nonterminals referenced in a Rhs."""
-        nonterminals = []
 
-        if isinstance(rhs, Nonterminal):
-            nonterminals.append(rhs)
-        elif isinstance(rhs, Sequence):
-            for elem in rhs.elements:
-                nonterminals.extend(GrammarAnalysis.get_nonterminals(elem))
-        elif isinstance(rhs, (Star, Option)):
-            nonterminals.extend(GrammarAnalysis.get_nonterminals(rhs.rhs))
-
-        return list(dict.fromkeys(nonterminals))
-
-    @staticmethod
-    def get_literals(rhs: 'Rhs') -> List[LitTerminal]:
-        """Return the list of all literals referenced in a Rhs."""
-        literals = []
-
-        if isinstance(rhs, LitTerminal):
-            literals.append(rhs)
-        elif isinstance(rhs, Sequence):
-            for elem in rhs.elements:
-                literals.extend(GrammarAnalysis.get_literals(elem))
-        elif isinstance(rhs, (Star, Option)):
-            literals.extend(GrammarAnalysis.get_literals(rhs.rhs))
-
-        return list(dict.fromkeys(literals))
-
-    @staticmethod
-    def is_epsilon(rhs: 'Rhs') -> bool:
-        """Check if rhs represents an epsilon production (empty sequence)."""
-        return isinstance(rhs, Sequence) and len(rhs.elements) == 0
 
     def partition_nonterminals_by_reachability(self) -> Tuple[List[Nonterminal], List[Nonterminal]]:
         """Partition nonterminals into reachable and unreachable.
@@ -150,7 +118,7 @@ class GrammarAnalysis:
             visited.add(A)
             reachable.append(A)
             for rule in self.grammar.rules[A]:
-                for B in GrammarAnalysis.get_nonterminals(rule.rhs):
+                for B in get_nonterminals(rule.rhs):
                     visit(B)
 
         visit(self.grammar.start)
@@ -175,7 +143,7 @@ class GrammarAnalysis:
             current = worklist.pop()
             if current in grammar.rules:
                 for rule in grammar.rules[current]:
-                    for nt in GrammarAnalysis.get_nonterminals(rule.rhs):
+                    for nt in get_nonterminals(rule.rhs):
                         if nt not in reachable:
                             reachable.add(nt)
                             worklist.append(nt)
@@ -360,7 +328,7 @@ class GrammarAnalysis:
                 add(nt, seqs)
             # Elements in Star can be followed by more elements
             first_of_inner = GrammarAnalysis.rhs_first_k(rhs.rhs, first_k, nullable, k)
-            for nt in GrammarAnalysis.get_nonterminals(rhs.rhs):
+            for nt in get_nonterminals(rhs.rhs):
                 add(nt, first_of_inner)
         elif isinstance(rhs, Option):
             inner = GrammarAnalysis.rhs_follow_k(rhs.rhs, lhs, first_k, nullable, follow_k, k)
