@@ -5,14 +5,11 @@ with semantic actions, including support for normalization and left-factoring.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import Dict, List, Optional, Set, Tuple
 
 # Import action AST types
-from .target import Lambda, TargetType, ListType, OptionType, TupleType
+from .target import TargetExpr, Var, Symbol, Call, Lambda, Lit, TargetType, ListType, OptionType, TupleType
 
-# Guard to avoid circular imports
-if TYPE_CHECKING:
-    from .grammar_analysis import GrammarAnalysis
 
 # Grammar RHS (right-hand side) elements
 
@@ -215,12 +212,13 @@ class Rule:
         return str(self.rhs)
 
     def __post_init__(self):
-        from .grammar_utils import count_nonliteral_rhs_elements
         assert isinstance(self.rhs, Rhs)
-        rhs_len = count_nonliteral_rhs_elements(self.rhs)
+        rhs_len = _count_nonliteral_rhs_elements(self.rhs)
         action_params = len(self.constructor.params)
-        assert action_params == rhs_len, \
-            f"Action for {self.lhs.name} has {action_params} parameters but RHS has {rhs_len} non-literal element{'' if rhs_len == 1 else 's'}: {self.rhs}"
+        assert action_params == rhs_len, (
+            f"Action for {self.lhs.name} has {action_params} parameter(s) "
+            f"but RHS has {rhs_len} non-literal element(s): {self.rhs}"
+        )
 
 @dataclass(frozen=True)
 class Token:
@@ -275,6 +273,37 @@ class Grammar:
             if self.start.name == "start" and len(self.rules) == 0:
                 self.start = lhs
         self.rules[lhs].append(rule)
+        return None
+
+    def partition_nonterminals(self) -> Tuple[List[Nonterminal], List[Nonterminal]]:
+        """Partition nonterminals into reachable and unreachable.
+
+        Returns a tuple of:
+            - reachable: List of reachable nonterminals in preorder traversal
+            - unreachable: List of unreachable nonterminals (sorted by name)
+        """
+        visited: Set[Nonterminal] = set()
+        reachable: List[Nonterminal] = []
+
+        def visit(A: Nonterminal) -> None:
+            """Visit nonterminal and its dependencies in preorder."""
+            if A in visited or A not in self.rules:
+                return None
+            visited.add(A)
+            reachable.append(A)
+            for rule in self.rules[A]:
+                for B in get_nonterminals(rule.rhs):
+                    visit(B)
+            return None
+
+        visit(self.start)
+
+        unreachable = sorted(
+            [nt for nt in self.rules.keys() if nt not in visited],
+            key=lambda nt: nt.name
+        )
+
+        return reachable, unreachable
 
     def get_rules(self, nt: Nonterminal) -> List[Rule]:
         """Get all rules with the given LHS name."""

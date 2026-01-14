@@ -1,10 +1,20 @@
 """Grammar generation from protobuf specifications.
 
 This module provides the GrammarGenerator class which converts protobuf
-message definitions into grammar rules with semantic actions.
+message definitions into grammar rules with semantic actions. The generator
+produces context-free grammars suitable for parsing S-expression syntax.
 
 Protobuf message names (CamelCase) are converted to grammar rule names
 (snake_case).
+
+The generation process:
+1. Parse protobuf files to build ProtoMessage AST
+2. Generate grammar rules for each message:
+   - Regular messages: (keyword field1 field2 ...)
+   - Oneof-only messages: Alternatives for each variant
+3. Apply builtin rules for primitives, dates, operators, etc.
+4. Apply rewrite passes to optimize/transform rules
+5. Combine identical rules with different names
 
 Examples
 --------
@@ -17,12 +27,15 @@ Message with nested message type and attributes:
         repeated Attribute attrs = 3;
     }
 
-Generates rule:
+Generates rules:
 
-    def -> '(' 'def' relation_id abstraction attrs? ')'
-    attrs -> '(' 'attrs' attribute* ')'
+    def -> '(' 'def' relation_id abstraction def_attrs? ')'
+         { lambda name, body, attrs -> Def(name, body, unwrap_option_or(attrs, [])) }
 
-Oneof-only message:
+    def_attrs -> '(' 'attrs' attribute* ')'
+         { lambda attrs -> attrs }
+
+Oneof-only message (discriminated union):
 
     message Declaration {
         oneof declaration_type {
@@ -35,16 +48,22 @@ Oneof-only message:
 
 Generates alternative rules:
 
-    declaration -> def
-                 | algorithm
-                 | constraint
-                 | data
+    declaration -> def         { lambda value -> Declaration(OneOf('def')(value)) }
+                 | algorithm   { lambda value -> Declaration(OneOf('algorithm')(value)) }
+                 | constraint  { lambda value -> Declaration(OneOf('constraint')(value)) }
+                 | data        { lambda value -> Declaration(OneOf('data')(value)) }
+
+Field type handling:
+- Protobuf primitives (string, int64, bool): Map to terminals (STRING, INT, BOOLEAN)
+- Protobuf message types: Generate nonterminals and recurse
+- repeated: Becomes Star(field_symbol) or wrapped in (keyword field*)
+- optional: Becomes Option(field_symbol)
 
 """
 import re
-from typing import Callable, Dict, List, Optional, Set, Tuple
+from typing import Callable, Dict, List, Optional, Set, Tuple, cast
 from .grammar import Grammar, Rule, Token, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
-from .target import Lambda, Call, Var, Builtin, Message, OneOf, ListExpr, BaseType, MessageType, OptionType, ListType, TargetType
+from .target import Lambda, Call, Var, Lit, IfElse, Symbol, Builtin, Message, OneOf, ListExpr, BaseType, MessageType, OptionType, ListType, TargetType, TargetExpr, TupleType
 from .target_utils import create_identity_function
 from .grammar_utils import rewrite_rule
 from .proto_ast import ProtoMessage, ProtoField
@@ -94,6 +113,12 @@ def _to_snake_case(name: str) -> str:
     letter or digit, then convert to lowercase. We special case a few
     names for consistency with other tools.
 
+    Args:
+        name: CamelCase identifier
+
+    Returns:
+        snake_case identifier
+
     Examples:
         Fragment           -> fragment
         FunctionalDependency -> functional_dependency
@@ -115,7 +140,29 @@ def _get_rule_name(name: str) -> str:
 
 
 class GrammarGenerator:
-    """Generator for grammars from protobuf specifications."""
+    """Generator for grammars from protobuf specifications.
+
+    The generator takes a ProtoParser containing parsed protobuf messages
+    and produces a Grammar with rules and semantic actions.
+
+    Key attributes:
+        parser: ProtoParser with messages/enums from .proto files
+        final_rules: Rule names that should not be auto-generated (builtin)
+        generated_rules: Rule names already generated (prevents duplication)
+        expected_unreachable: Rules known to be unreachable (not errors)
+        grammar: The Grammar being constructed
+        never_inline_fields: (message, field) pairs that should not be inlined
+        rule_literal_renames: Map rule names to different S-expression keywords
+        builtin_rules: Manually-specified rules for primitives, operators, etc.
+        rewrite_rules: Post-generation transformation passes
+
+    Usage:
+        >>> parser = ProtoParser()
+        >>> parser.parse_file(Path("example.proto"))
+        >>> generator = GrammarGenerator(parser)
+        >>> grammar = generator.generate()
+        >>> print(grammar.print_grammar())
+    """
 
     def __init__(self, parser: ProtoParser, verbose: bool=False):
         self.parser = parser
@@ -124,9 +171,11 @@ class GrammarGenerator:
         self.expected_unreachable: Set[str] = set()
         self.grammar = Grammar(start=Nonterminal('transaction', MessageType('transactions', 'Transaction')))
         self.verbose = verbose
+        # Fields that should not be inlined even if they're the only repeated field
         self.never_inline_fields: Set[Tuple[str, str]] = {
             ("Attribute", "attrs"),
         }
+        # Map rule names to different S-expression keywords for readability
         self.rule_literal_renames: Dict[str, str] = {
             "monoid_def": "monoid",
             "monus_def": "monus",
@@ -141,7 +190,26 @@ class GrammarGenerator:
         self.rewrite_rules: List[Callable[[Rule], Optional[Rule]]] = get_rule_rewrites()
 
     def _generate_action(self, message_name: str, rhs_elements: List[Rhs], field_names: Optional[List[str]]=None, field_types: Optional[List[str]]=None) -> Lambda:
-        """Generate semantic action to construct protobuf message from parsed elements."""
+        """Generate semantic action to construct protobuf message from parsed elements.
+
+        Creates a Lambda that takes values from non-literal RHS elements and
+        constructs a protobuf message instance.
+
+        Args:
+            message_name: The protobuf message type name
+            rhs_elements: List of RHS symbols (terminals, nonterminals, stars, options)
+            field_names: Names of fields in the message (parallel to non-literal RHS elements)
+            field_types: Types of fields in the message
+
+        Returns:
+            Lambda expression with parameters for each non-literal RHS element and
+            body that constructs the message.
+
+        Example:
+            For message Person { string name = 1; int32 age = 2; }
+            With RHS: "(" "person" STRING INT ")"
+            Generates: lambda name, age -> Person(name, age)
+        """
 
         # Create parameters for all RHS elements
         param_names = []
@@ -170,7 +238,18 @@ class GrammarGenerator:
         return Lambda(params=params, return_type=MessageType(message.module, message_name), body=body)
 
     def _get_type_for_name(self, type_name: str) -> TargetType:
-        """Get the appropriate type (BaseType or MessageType) for a given type name."""
+        """Get the appropriate type (BaseType or MessageType) for a given type name.
+
+        Args:
+            type_name: Protobuf type name (e.g., "string", "int64", "Expr")
+
+        Returns:
+            BaseType for primitives, MessageType for messages
+
+        Example:
+            _get_type_for_name("string") -> BaseType("String")
+            _get_type_for_name("Expr") -> MessageType("logic", "Expr")
+        """
         if self._is_primitive_type(type_name):
             base_type_name = _PRIMITIVE_TO_BASE_TYPE[type_name]
             return BaseType(base_type_name)
@@ -197,9 +276,28 @@ class GrammarGenerator:
                     rewritten_rule = result
 
         self.grammar.add_rule(rewritten_rule)
+        return None
 
     def generate(self) -> Grammar:
-        """Generate complete grammar with prepopulated and message-derived rules."""
+        """Generate complete grammar with prepopulated and message-derived rules.
+
+        This is the main entry point for grammar generation. It:
+        1. Adds builtin rules (primitives, operators, dates, etc.)
+        2. Generates rules for all protobuf messages
+        3. Defines lexer tokens with precedence ordering
+        4. Post-processes to combine identical rules
+
+        Returns:
+            Complete Grammar with rules, tokens, and semantic actions
+
+        Example:
+            >>> parser = ProtoParser()
+            >>> parser.parse_file(Path("logic.proto"))
+            >>> generator = GrammarGenerator(parser)
+            >>> grammar = generator.generate()
+            >>> grammar.start.name
+            'transaction'
+        """
 
         self._add_all_prepopulated_rules()
 
@@ -229,6 +327,7 @@ class GrammarGenerator:
             for rule in rules:
                 assert rule.constructor is not None
                 self._add_rule(rule, is_builtin=True)
+        return None
 
     def _post_process_grammar(self) -> None:
         """Apply grammar post-processing."""
@@ -246,10 +345,20 @@ class GrammarGenerator:
             'uint128_type',
             'datetime_type',
         ])
+        return None
 
     # TODO Check that the actions are also equal (up to alpha equivalence).
     def _combine_identical_rules(self) -> None:
-        """Combine rules with identical RHS patterns into a single rule with multiple alternatives."""
+        """Combine rules with identical RHS patterns into a single rule with multiple alternatives.
+
+        When multiple protobuf messages map to the same syntax pattern, combine
+        them into a single grammar rule. This reduces duplication and improves
+        grammar readability.
+
+        Example:
+            If IntValue and StringValue both map to '(' SYMBOL ')' with same source,
+            combine into a single 'value' rule instead of 'int_value' and 'string_value'.
+        """
         rhs_source_to_lhs: Dict[Tuple[str, Optional[str]], List[Nonterminal]] = {}
         for lhs in self.grammar.rules.keys():
             rules_list = self.grammar.rules[lhs]
@@ -287,6 +396,7 @@ class GrammarGenerator:
                             del self.grammar.rules[lhs_name]
         if rename_map:
             self._apply_renames(rename_map)
+        return None
 
     def _find_canonical_name(self, names: List[Nonterminal]) -> Nonterminal:
         """Find canonical name for a group of rules with identical RHS.
@@ -312,6 +422,7 @@ class GrammarGenerator:
                 for rule in rules_list
             ]
         self.grammar.rules = new_rules
+        return None
 
     @staticmethod
     def _to_field_name(name: str) -> str:
@@ -324,7 +435,21 @@ class GrammarGenerator:
         return len(message.oneofs) > 0 and len(message.fields) == 0
 
     def _generate_message_rule(self, message_name: str) -> None:
-        """Generate grammar rules for a protobuf message and recursively for its fields."""
+        """Generate grammar rules for a protobuf message and recursively for its fields.
+
+        Handles two message patterns:
+        1. Oneof-only messages: Generate alternative rules for each variant
+        2. Regular messages: Generate S-expression rule (keyword field1 field2 ...)
+
+        Recursively generates rules for message-typed fields.
+
+        Args:
+            message_name: Protobuf message type name (CamelCase)
+
+        Example:
+            For: message Point { int32 x = 1; int32 y = 2; }
+            Generates: point -> '(' 'point' INT INT ')' { lambda x, y -> Point(x, y) }
+        """
         if message_name not in self.parser.messages:
             return
         rule_name = _get_rule_name(message_name)
@@ -420,9 +545,29 @@ class GrammarGenerator:
             for field in message.fields:
                 if self._is_message_type(field.type):
                     self._generate_message_rule(field.type)
+        return None
 
     def _generate_field_symbol(self, field: ProtoField, message_name: str='') -> Optional[Rhs]:
-        """Generate grammar symbol for a protobuf field, handling repeated/optional modifiers."""
+        """Generate grammar symbol for a protobuf field, handling repeated/optional modifiers.
+
+        Handles:
+        - Primitives: Map to terminals (STRING, INT, etc.)
+        - Message types: Map to nonterminals
+        - repeated: Wrap in Star or create wrapper rule (keyword field*)
+        - optional: Wrap in Option
+
+        Args:
+            field: ProtoField from message definition
+            message_name: Parent message name for generating wrapper rules
+
+        Returns:
+            Rhs symbol (Terminal, Nonterminal, Star, Option) or None
+
+        Example:
+            repeated int32 values -> Star(NamedTerminal("INT", Int64))
+            optional string name -> Option(NamedTerminal("STRING", String))
+            Expr expr -> Nonterminal("expr", MessageType("logic", "Expr"))
+        """
         if self._is_primitive_type(field.type):
             field_type = self._get_type_for_name(field.type)
             terminal_name = self._map_primitive_type(field.type)

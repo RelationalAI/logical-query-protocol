@@ -3,6 +3,32 @@
 These rules define the grammar for constructs that cannot be auto-generated
 from protobuf definitions, such as value literals, date/datetime parsing,
 configuration syntax, bindings, abstractions, type literals, and operators.
+
+The builtin rules cover:
+- Value literals: IntValue, StringValue, BooleanValue, etc.
+- Date/time: DateValue, DateTimeValue with parsing logic
+- Collections: Lists, sets, tuples with various element types
+- Bindings: Variable bindings and parameter lists
+- Abstractions: Lambda abstractions with arity
+- Type literals: Primitive types, relation types, etc.
+- Operators: Arithmetic, comparison, logical operators
+- Configuration: CSV, IVM, and other config syntax
+
+Each builtin rule includes:
+- Nonterminal name and type
+- Grammar pattern (RHS)
+- Semantic action (Lambda) to construct the result
+- is_final flag indicating if auto-generation should be blocked
+
+Usage:
+    >>> builtins = BuiltinRules()
+    >>> rules_dict = builtins.get_builtin_rules()
+    >>> # rules_dict maps Nonterminal -> (List[Rule], is_final)
+
+Example builtin rule:
+    # boolean_value -> 'true' | 'false'
+    boolean_value -> '(' 'true' ')'  { lambda -> BooleanValue(true) }
+    boolean_value -> '(' 'false' ')' { lambda -> BooleanValue(false) }
 """
 
 from typing import Dict, List, Set, Tuple
@@ -16,7 +42,8 @@ from .target import (
 from .target_utils import (
     STRING_TYPE, INT64_TYPE, FLOAT64_TYPE, BOOLEAN_TYPE,
     create_identity_function,
-    make_tuple, make_fst, make_snd, make_concat, make_length, make_unwrap_option_or
+    make_equal, make_which_oneof, make_get_field, make_some, make_tuple,
+    make_fst, make_snd, make_is_empty, make_concat, make_length, make_unwrap_option_or
 )
 
 LPAREN = LitTerminal('(')
@@ -96,6 +123,7 @@ def _make_simple_message_rule(
         keyword = lhs_name
     msg_type = MessageType(module, message_name)
     params = [Var(name, typ) for name, typ in fields]
+    msg_var = Var('msg', msg_type)
 
     if rhs_inner:
         rhs = Sequence((LPAREN, LitTerminal(keyword)) + rhs_inner + (RPAREN,))
@@ -119,6 +147,7 @@ def _make_value_oneof_rule(rhs, rhs_type, oneof_field_name):
     _value_nt = Nonterminal('value', _value_type)
 
     var_value = Var('value', rhs_type)
+    msg_var = Var('msg', _value_type)
     return Rule(
         lhs=_value_nt,
         rhs=rhs,
@@ -132,6 +161,24 @@ def _make_value_oneof_rule(rhs, rhs_type, oneof_field_name):
 
 @dataclass
 class BuiltinRules:
+    """Container for manually-specified grammar rules.
+
+    Builtin rules are organized by theme and added through specialized methods.
+    Each nonterminal is marked as final (blocking auto-generation) or non-final
+    (allowing additional auto-generated rules).
+
+    Attributes:
+        forced: If True, rules have already been added (used for caching)
+        result: Map from Nonterminal to (rules, is_final) pairs
+        nonfinal_nonterminals: Set of nonterminals that can have auto-generated rules
+
+    Example:
+        >>> builtins = BuiltinRules()
+        >>> rules = builtins.get_builtin_rules()
+        >>> value_rules, is_final = rules[Nonterminal("value", MessageType("logic", "Value"))]
+        >>> len(value_rules)  # Multiple alternatives for value
+        10
+    """
     forced: bool = False
     result: Dict[Nonterminal, Tuple[List[Rule], bool]] = field(default_factory=dict)
     nonfinal_nonterminals: Set[Nonterminal] = field(default_factory=set)
@@ -140,6 +187,10 @@ class BuiltinRules:
         """Return dict mapping nonterminals to (rules, is_final).
 
         is_final=True means auto-generation should not add more rules for this nonterminal.
+        Lazily generates rules on first call.
+
+        Returns:
+            Dict mapping Nonterminal -> (List[Rule], is_final)
         """
 
         if not self.forced:
@@ -147,18 +198,46 @@ class BuiltinRules:
         return self.result
 
     def add_rule(self, rule: Rule) -> None:
+        """Add a rule to the builtin rule set.
+
+        By default, rules are marked as final (blocking auto-generation).
+        Use mark_nonfinal to allow additional auto-generated alternatives.
+
+        Args:
+            rule: Rule to add with LHS nonterminal and semantic action
+        """
         lhs = rule.lhs
         if lhs not in self.result:
             self.result[lhs] = ([], True)
         rules_list, existing_final = self.result[lhs]
         rules_list.append(rule)
         self.result[lhs] = (rules_list, existing_final)
+        return None
 
     def mark_nonfinal(self, lhs: Nonterminal) -> None:
+        """Mark a nonterminal as non-final, allowing auto-generated rules.
+
+        Args:
+            lhs: Nonterminal to mark as non-final
+        """
         self.nonfinal_nonterminals.add(lhs)
+        return None
 
     def _add_rules(self) -> None:
-        """Add all builtin rules by calling themed rule methods."""
+        """Add all builtin rules by calling themed rule methods.
+
+        Rules are organized into categories:
+        - value_rules: Literals and primitive values
+        - transaction_rules: Transaction-level constructs
+        - bindings_rules: Variable bindings and parameters
+        - formula_rules: Logical formulas and operators
+        - export_rules: Export declarations
+        - id_rules: Identifier types (fragment_id, relation_id, etc.)
+        - type_rules: Type literals
+        - operator_rules: Arithmetic, comparison, logical operators
+        - fragment_rules: Fragment-specific constructs
+        - misc_rules: Everything else (dates, configs, etc.)
+        """
         self._add_value_rules()
         self._add_transaction_rules()
         self._add_bindings_rules()
@@ -175,6 +254,7 @@ class BuiltinRules:
         for lhs in self.nonfinal_nonterminals:
             rules, _ = self.result[lhs]
             self.result[lhs] = (rules, False)
+        return None
 
     def _add_value_rules(self) -> None:
         """Add rules for value literals, missing, boolean, date/datetime."""
@@ -269,6 +349,7 @@ class BuiltinRules:
                 )
             )
         ))
+        return None
 
     def _add_transaction_rules(self) -> None:
         """Add rules for transactions, configuration, and exports."""
@@ -358,6 +439,7 @@ class BuiltinRules:
             )
 
         ))
+        return None
 
     def _add_bindings_rules(self) -> None:
         """Add rules for bindings and abstractions."""
@@ -456,6 +538,7 @@ class BuiltinRules:
             )
 
         ))
+        return None
 
     def _add_formula_rules(self) -> None:
         """Add rules for formulas, true/false, and configure."""
@@ -516,6 +599,7 @@ class BuiltinRules:
             )
 
         ))
+        return None
 
     def _add_export_rules(self) -> None:
         """Add rules for export and export CSV configuration."""
@@ -601,6 +685,7 @@ class BuiltinRules:
             rhs_inner=(NamedTerminal('STRING', STRING_TYPE), _relation_id_nt),
             keyword='column'
         ))
+        return None
 
     def _add_id_rules(self) -> None:
         """Add rules for vars, fragment IDs, relation IDs, and specialized values."""
@@ -653,6 +738,7 @@ class BuiltinRules:
             )
 
         ))
+        return None
 
     def _add_type_rules(self) -> None:
         """Add rules for type literals."""
@@ -687,6 +773,7 @@ class BuiltinRules:
             rhs_inner=(NamedTerminal('INT', INT64_TYPE), NamedTerminal('INT', INT64_TYPE)),
             keyword='DECIMAL'
         ))
+        return None
 
     def _add_operator_rules(self) -> None:
         """Add rules for comparison and arithmetic operators."""
@@ -705,8 +792,11 @@ class BuiltinRules:
             """Create operator rule and its wrapper rule."""
             params = [Var(_var_names[i], _term_type) for i in range(arity)]
             rhs_terms = tuple(_term_nt for _ in range(arity))
+            msg_var = Var('msg', _primitive_type)
 
             wrapped_args = [_msg('logic', 'RelTerm', Call(OneOf('term'), [p])) for p in params]
+            extracted_args = [make_get_field(make_get_field(msg_var, _arg_lits[i]), _lit_term)
+                              for i in range(arity)]
 
             op_nt = Nonterminal(name, _primitive_type)
 
@@ -727,6 +817,7 @@ class BuiltinRules:
                 lhs=_primitive_nt,
                 rhs=op_nt,
                 constructor=Lambda([Var('op', _primitive_type)], _primitive_type, Var('op', _primitive_type))
+
             )
 
             return op_rule, wrapper_rule
@@ -749,6 +840,7 @@ class BuiltinRules:
             op_rule, wrapper_rule = _make_operator_rules(name, op, prim, arity)
             self.add_rule(op_rule)
             self.add_rule(wrapper_rule)
+        return None
 
     def _add_fragment_rules(self) -> None:
         """Add rules for fragments and new fragment IDs."""
@@ -802,6 +894,7 @@ class BuiltinRules:
             )
 
         ))
+        return None
 
     def _add_epoch_rules(self) -> None:
         """Add rules for output and abort."""
@@ -816,6 +909,7 @@ class BuiltinRules:
             If name is missing, defaults to the keyword.
             """
             msg_type = MessageType('transactions', message_name)
+            msg_var = Var('msg', msg_type)
             name_var = Var('name', OptionType(STRING_TYPE))
             return Rule(
                 lhs=Nonterminal(keyword, msg_type),
@@ -837,6 +931,7 @@ class BuiltinRules:
 
         self.add_rule(_make_name_option_relation_rule('output', 'Output'))
         self.add_rule(_make_name_option_relation_rule('abort', 'Abort'))
+        return None
 
     def _add_logic_rules(self) -> None:
         """Add rules for ffi, rel_atom, primitive, and exists."""
@@ -908,6 +1003,7 @@ class BuiltinRules:
             )
 
         ))
+        return None
 
 
 def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
