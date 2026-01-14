@@ -185,7 +185,7 @@ class GrammarAnalysis:
     @staticmethod
     def is_rhs_nullable(rhs: 'Rhs', nullable: Mapping[Nonterminal, bool]) -> bool:
         """Check if an RHS is nullable given current nullable set."""
-        if isinstance(rhs, (LitTerminal, NamedTerminal)):
+        if isinstance(rhs, Terminal):
             return False
         elif isinstance(rhs, Nonterminal):
             return nullable.get(rhs, False)
@@ -235,7 +235,7 @@ class GrammarAnalysis:
     def rhs_first_k(rhs: 'Rhs', first_k: Mapping[Nonterminal, Iterable[TerminalSeq]],
                     nullable: Mapping[Nonterminal, bool], k: int) -> TerminalSeqSet:
         """Compute FIRST_k set for an RHS element."""
-        if isinstance(rhs, (LitTerminal, NamedTerminal)):
+        if isinstance(rhs, Terminal):
             return {(rhs,)}
         elif isinstance(rhs, Nonterminal):
             return set(first_k.get(rhs, set()))
@@ -293,7 +293,7 @@ class GrammarAnalysis:
 
         Convenience function for k=1 case, returning Set[Terminal].
         """
-        if isinstance(rhs, (LitTerminal, NamedTerminal)):
+        if isinstance(rhs, Terminal):
             return {rhs}
         elif isinstance(rhs, Nonterminal):
             return set(first.get(rhs, set()))
