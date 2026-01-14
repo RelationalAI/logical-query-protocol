@@ -405,9 +405,14 @@ class GrammarAnalysis:
             nullable = GrammarAnalysis.compute_nullable_static(grammar)
 
         # Convert first to first_k format if provided
+        # Must include empty tuple () for nullable nonterminals
         first_k: Optional[Dict[Nonterminal, TerminalSeqSet]] = None
         if first is not None:
-            first_k = {nt: {(t,) for t in terms} for nt, terms in first.items()}
+            first_k = {}
+            for nt, terms in first.items():
+                first_k[nt] = {(t,) for t in terms}
+                if nullable.get(nt, False):
+                    first_k[nt].add(())
 
         follow_k = GrammarAnalysis.compute_follow_k_static(grammar, k=1, nullable=nullable, first_k=first_k)
         return {nt: {seq[0] for seq in seqs if seq} for nt, seqs in follow_k.items()}
