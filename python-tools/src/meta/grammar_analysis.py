@@ -283,7 +283,10 @@ class GrammarAnalysis:
             for elem in rhs.elements:
                 elem_first = GrammarAnalysis.rhs_first_k(elem, first_k, nullable, k)
                 current = GrammarAnalysis.concat_k(current, elem_first, k)
-                # Stop early if element is not nullable and all sequences are full
+                # Stop early if element is not nullable and all sequences are full.
+                # We check nullable explicitly rather than checking if () is in elem_first because
+                # during fixed-point iteration, () may not yet have propagated to elem_first even
+                # though elem is nullable. The precomputed nullable mapping is always correct.
                 if not GrammarAnalysis.is_rhs_nullable(elem, nullable) and all(len(seq) >= k for seq in current):
                     break
             return current
