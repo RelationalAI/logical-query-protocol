@@ -262,10 +262,14 @@ class GrammarAnalysis:
         Returns:
             Set of terminal sequences of length up to k that can begin strings derived from rhs.
 
-        Example:
-            For a sequence A B where FIRST_k(A) = {(t1,), (t2, t3)} and FIRST_k(B) = {(t4,)}:
-            - If A is nullable: FIRST_k(A B) includes (t1, t4), (t2, t3), and (t4,)
-            - If A is not nullable: FIRST_k(A B) includes (t1, t4) and (t2, t3)
+        Examples:
+            Sequence A B where A is not nullable:
+            - FIRST_k(A) = {(t1,), (t2, t3)}, FIRST_k(B) = {(t4,)}
+            - FIRST_k(A B) = {(t1, t4), (t2, t3)} (B contributes only after A's sequences are full)
+
+            Sequence A B where A is nullable:
+            - FIRST_k(A) = {(t1,), ()}, FIRST_k(B) = {(t4,)}
+            - FIRST_k(A B) = {(t1, t4), (t4,)} (includes sequences from B because A can derive ε)
         """
         if isinstance(rhs, Terminal):
             return {(rhs,)}
