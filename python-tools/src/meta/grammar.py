@@ -332,6 +332,42 @@ class Grammar:
 
         return "\n".join(lines)
 
+    def print_grammar_sexp(self, reachable_only: bool = True) -> str:
+        """Convert to s-expression grammar format.
+
+        Returns the grammar as a sequence of s-expressions that can be
+        loaded with load_grammar_config().
+        """
+        from .sexp_grammar import rule_to_sexp
+        from .sexp_pretty import pretty_print
+
+        lines = []
+        lines.append(";; Auto-generated grammar from protobuf specifications")
+        lines.append("")
+
+        reachable, unreachable = self.partition_nonterminals()
+        rule_order = reachable if reachable_only else reachable + unreachable
+
+        nonfinal_nonterminals: Set[str] = set()
+
+        for lhs in rule_order:
+            rules_list = self.rules[lhs]
+
+            for rule in rules_list:
+                lines.append(f";; {lhs.name} ::= {rule.rhs}")
+                sexp = rule_to_sexp(rule)
+                lines.append(pretty_print(sexp, width=100))
+
+            if len(rules_list) > 1:
+                nonfinal_nonterminals.add(lhs.name)
+
+            lines.append("")
+
+        for nt_name in sorted(nonfinal_nonterminals):
+            lines.append(f"(mark-nonfinal {nt_name})")
+
+        return "\n".join(lines)
+
 
 # Helper functions
 

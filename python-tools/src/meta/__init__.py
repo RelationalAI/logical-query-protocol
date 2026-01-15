@@ -54,12 +54,6 @@ from .proto_ast import (
 # Protobuf parser
 from .proto_parser import ProtoParser
 
-# Grammar generation
-from .grammar_gen import (
-    GrammarGenerator,
-    generate_grammar,
-)
-
 __all__ = [
     # Target language AST
     'TargetNode',
@@ -98,7 +92,4 @@ __all__ = [
     'ProtoMessage',
     # Protobuf parser
     'ProtoParser',
-    # Grammar generation
-    'GrammarGenerator',
-    'generate_grammar',
 ]

@@ -1,30 +1,27 @@
 #!/usr/bin/env python3
-"""CLI tool for generating tools from protobuf specifications.
+"""CLI tool for validating grammar against protobuf specifications.
 
-This module provides the main command-line entry point for the proto-to-grammar
-generator.
-
-The CLI parses one or more .proto files and generates a context-free grammar
-with semantic actions. The grammar can be used to generate parsers and pretty
-printers for the protobuf-defined message types.
+This module provides the main command-line entry point for loading and
+validating the grammar defined in grammar.sexp.
 
 Usage:
-    python -m meta.cli example.proto --grammar -o output.txt
+    python -m meta.cli example.proto --validate
 
 Options:
     proto_files: One or more .proto files to parse
-    --grammar: Output the generated grammar
+    --grammar: Output the grammar
+    --validate: Validate grammar covers protobuf spec
     -o, --output: Output file (stdout if not specified)
 
 Example:
-    $ python -m meta.cli proto/logic.proto proto/transactions.proto --grammar
-    # Outputs the generated grammar showing all rules and semantic actions
+    $ python -m meta.cli proto/logic.proto proto/transactions.proto --validate
+    # Validates the grammar in grammar.sexp against the protobuf specifications
 
 The tool performs the following steps:
-1. Parse all .proto files using ProtoParser
-2. Generate grammar rules using GrammarGenerator
-3. Detect and warn about unexpected unreachable nonterminals
-4. Output the grammar in a readable format
+1. Load grammar from grammar.sexp
+2. Parse all .proto files using ProtoParser
+3. Validate grammar against protobuf specification
+4. Output the grammar if requested
 """
 
 import argparse
@@ -32,7 +29,10 @@ import sys
 from pathlib import Path
 
 from .proto_parser import ProtoParser
-from .grammar_gen import GrammarGenerator
+from .grammar_validator import validate_grammar
+from .grammar import Grammar, Nonterminal
+from .sexp_grammar import load_grammar_config_file
+from .target import MessageType
 
 
 def format_message(msg, indent=0):
@@ -96,11 +96,50 @@ def parse_args():
         action="store_true",
         help="Output the grammar"
     )
+    parser.add_argument(
+        "--validate",
+        action="store_true",
+        help="Validate grammar covers protobuf spec"
+    )
     return parser.parse_args()
 
 
 def run(args) -> int:
     """Execute the CLI command specified by args."""
+    # Load grammar from grammar.sexp
+    grammar_path = Path(__file__).parent / "grammar.sexp"
+    if not grammar_path.exists():
+        print(f"Error: Grammar file not found: {grammar_path}", file=sys.stderr)
+        return 1
+
+    # Load grammar rules from grammar.sexp
+    grammar_config = load_grammar_config_file(grammar_path)
+
+    # Build Grammar object from loaded config
+    # Extract final rules and create grammar
+    final_rules = {lhs.name for lhs, (_, is_final) in grammar_config.items() if is_final}
+    start = Nonterminal('transaction', MessageType('transactions', 'Transaction'))
+    grammar = Grammar(start=start)
+    for lhs, (rules, _) in grammar_config.items():
+        for rule in rules:
+            grammar.add_rule(rule)
+
+    # Expected unreachable nonterminals (hardcoded from generator)
+    expected_unreachable = {
+        'debug_info',
+        'debug_info_ids',
+        'ivmconfig',
+        'date_value',
+        'datetime_value',
+        'decimal_value',
+        'int128_value',
+        'missing_value',
+        'uint128_value',
+        'uint128_type',
+        'datetime_type',
+    }
+
+    # Parse protobuf files for validation
     proto_parser = ProtoParser()
     for proto_file in args.proto_files:
         if not proto_file.exists():
@@ -108,22 +147,25 @@ def run(args) -> int:
             return 1
         proto_parser.parse_file(proto_file)
 
-    generator = GrammarGenerator(proto_parser, verbose=True)
-    grammar = generator.generate()
+    # Run validation (always run, but only print if requested or has errors)
+    validation_result = validate_grammar(
+        grammar,
+        proto_parser,
+        final_rules,
+        expected_unreachable,
+    )
 
-    _, unreachable = grammar.partition_nonterminals()
-    unexpected_unreachable = [r for r in unreachable if r.name not in generator.expected_unreachable]
-    if unexpected_unreachable:
-        print("Warning: Unreachable nonterminals detected:")
-        for rule in unexpected_unreachable:
-            print(f"  {rule.name}")
+    if args.validate or not validation_result.is_valid:
+        print(validation_result.summary())
         print()
+        if not validation_result.is_valid:
+            return 1
 
     if args.grammar:
-        output_text = grammar.print_grammar()
+        output_text = grammar.print_grammar_sexp()
         if args.output:
             args.output.write_text(output_text)
-            print(f"Generated grammar written to {args.output}")
+            print(f"Grammar written to {args.output}")
         else:
             print(output_text)
 

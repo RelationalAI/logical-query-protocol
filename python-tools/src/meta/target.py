@@ -6,6 +6,36 @@ and semantic actions that can be attached to grammar rules.
 The target AST types represent the "least common denominator" for
 Python, Julia, and Go expressions. All constructs in this AST should be easily
 translatable to each of these target languages.
+
+Expression types (TargetExpr subclasses):
+    Var                 - Variable reference
+    Lit                 - Literal value (string, number, boolean, None)
+    Symbol              - Literal symbol (e.g., :cast)
+    Builtin             - Builtin function reference
+    Message             - Message constructor call
+    OneOf               - OneOf field discriminator
+    ListExpr            - List constructor expression
+    VisitNonterminal    - Visitor method call for a nonterminal
+    Call                - Function call expression
+    GetField            - Field access expression
+    Lambda              - Lambda function (anonymous function)
+    Let                 - Let-binding: let var = init in body
+    IfElse              - If-else conditional expression
+    Seq                 - Sequence of expressions evaluated in order
+    While               - While loop: while condition do body
+    Foreach             - Foreach loop: for var in collection do body
+    ForeachEnumerated   - Foreach loop with index: for index_var, var in enumerate(collection) do body
+    Assign              - Assignment statement: var = expr
+    Return              - Return statement: return expr
+
+Type expressions (TargetType subclasses):
+    BaseType            - Base types: Int64, Float64, String, Boolean
+    VarType             - Type variable for polymorphic types
+    MessageType         - Protobuf message types
+    TupleType           - Tuple type with fixed number of element types
+    ListType            - Parameterized list/array type
+    OptionType          - Optional/Maybe type for values that may be None
+    FunctionType        - Function type with parameter types and return type
 """
 
 from dataclasses import dataclass, field
@@ -192,6 +222,25 @@ class Call(TargetExpr):
 
 
 @dataclass(frozen=True)
+class GetField(TargetExpr):
+    """Field access expression.
+
+    Accesses a field from an object (typically a message).
+
+    object: Expression evaluating to the object
+    field_name: Name of the field to access (string)
+
+    Example:
+        GetField(Var("msg", MessageType("logic", "Expr")), "term")
+    """
+    object: 'TargetExpr'
+    field_name: str
+
+    def __str__(self) -> str:
+        return f"{self.object}.{self.field_name}"
+
+
+@dataclass(frozen=True)
 class Lambda(TargetExpr):
     """Lambda function (anonymous function).
 
@@ -343,6 +392,24 @@ class BaseType(TargetType):
 
 
 @dataclass(frozen=True)
+class VarType(TargetType):
+    """Type variable for polymorphic types.
+
+    Represents a type parameter in polymorphic function signatures.
+    Used for builtins like fst, snd, unwrap_option_or, etc.
+
+    Example:
+        VarType("T")    # Type variable T
+        VarType("T1")   # Type variable T1
+        VarType("T2")   # Type variable T2
+    """
+    name: str
+
+    def __str__(self) -> str:
+        return self.name
+
+
+@dataclass(frozen=True)
 class MessageType(TargetType):
     """Protobuf message types.
 
@@ -460,6 +527,7 @@ __all__ = [
     'OneOf',
     'ListExpr',
     'Call',
+    'GetField',
     'Lambda',
     'Let',
     'IfElse',
@@ -471,6 +539,7 @@ __all__ = [
     'Return',
     'TargetType',
     'BaseType',
+    'VarType',
     'MessageType',
     'TupleType',
     'ListType',

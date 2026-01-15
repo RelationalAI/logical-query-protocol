@@ -25,8 +25,16 @@ Expression syntax:
     (message module name)           -> Message(module, name)
     (oneof field)                   -> OneOf(field)
     (list type elems...)            -> ListExpr(elems, type)
+    (get-field object field)        -> GetField(object, field)
     (:symbol)                       -> Symbol("symbol")
     (seq e1 e2 ...)                 -> Seq([e1, e2, ...])
+    (while cond body)               -> While(cond, body)
+    (foreach (var type) coll body)  -> Foreach(Var(var,type), coll, body)
+    (assign (var type) expr)        -> Assign(Var(var,type), expr)
+    (return expr)                   -> Return(expr)
+
+Note: VisitNonterminal and ForeachEnumerated are expression types that are typically
+constructed programmatically and not parsed from s-expressions.
 """
 
 from typing import List
@@ -35,7 +43,7 @@ from .sexp import SAtom, SList, SExpr
 from .target import (
     TargetType, BaseType, MessageType, ListType, OptionType, TupleType, FunctionType,
     TargetExpr, Var, Lit, Symbol, Builtin, Message, OneOf, ListExpr, Call, Lambda,
-    Let, IfElse, Seq, While, Foreach, ForeachEnumerated, Assign, Return
+    Let, IfElse, Seq, While, Foreach, ForeachEnumerated, Assign, Return, GetField
 )
 
 
@@ -165,8 +173,8 @@ def sexp_to_expr(sexp: SExpr) -> TargetExpr:
         return Call(func, args)
 
     elif tag == "lambda":
-        if len(sexp) not in (3, 4):
-            raise SExprConversionError(f"lambda requires params, [return type], and body: {sexp}")
+        if len(sexp) != 4:
+            raise SExprConversionError(f"lambda requires params, return type, and body: {sexp}")
         params_sexp = sexp[1]
         if not isinstance(params_sexp, SList):
             raise SExprConversionError(f"lambda params must be a list: {params_sexp}")
@@ -177,13 +185,8 @@ def sexp_to_expr(sexp: SExpr) -> TargetExpr:
             name = _expect_symbol(p[0], "param name")
             typ = sexp_to_type(p[1])
             params.append(Var(name, typ))
-        if len(sexp) == 4:
-            return_type = sexp_to_type(sexp[2])
-            body = sexp_to_expr(sexp[3])
-        else:
-            # No explicit return type - use a placeholder
-            return_type = BaseType("Inferred")
-            body = sexp_to_expr(sexp[2])
+        return_type = sexp_to_type(sexp[2])
+        body = sexp_to_expr(sexp[3])
         return Lambda(params, return_type, body)
 
     elif tag == "let":
@@ -231,6 +234,13 @@ def sexp_to_expr(sexp: SExpr) -> TargetExpr:
         elem_type = sexp_to_type(sexp[1])
         elements = [sexp_to_expr(e) for e in sexp.elements[2:]]
         return ListExpr(elements, elem_type)
+
+    elif tag == "get-field":
+        if len(sexp) != 3:
+            raise SExprConversionError(f"get-field requires object and field name: {sexp}")
+        obj = sexp_to_expr(sexp[1])
+        field_name = _expect_symbol(sexp[2], "field name")
+        return GetField(obj, field_name)
 
     elif tag == "seq":
         if len(sexp) < 3:
@@ -349,6 +359,9 @@ def expr_to_sexp(expr: TargetExpr) -> SExpr:
     elif isinstance(expr, ListExpr):
         return SList((SAtom("list"), type_to_sexp(expr.element_type)) +
                      tuple(expr_to_sexp(e) for e in expr.elements))
+
+    elif isinstance(expr, GetField):
+        return SList((SAtom("get-field"), expr_to_sexp(expr.object), SAtom(expr.field_name)))
 
     elif isinstance(expr, Call):
         return SList((SAtom("call"), expr_to_sexp(expr.func)) +
