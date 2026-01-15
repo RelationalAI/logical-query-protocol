@@ -602,10 +602,6 @@ class TestGensym:
         assert len(set(symbols)) == 100
 
 
-# ============================================================================
-# Integration Tests
-# ============================================================================
-
 class TestComplexExpressions:
     """Tests for complex nested expressions."""
 

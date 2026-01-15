@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from typing import Dict, Iterable, List, Mapping, Optional, Set, Tuple
 from .grammar import Grammar, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence, Terminal
 from .target import BaseType
+from .grammar_utils import get_nonterminals
 
 # Type alias for terminal sequences used in FIRST_k and FOLLOW_k
 TerminalSeq = Tuple[Terminal, ...]
@@ -98,40 +99,7 @@ class GrammarAnalysis:
             return GrammarAnalysis.concat_k(first_of_following, follow_of_lhs, k)
         return first_of_following
 
-    @staticmethod
-    def get_nonterminals(rhs: 'Rhs') -> List[Nonterminal]:
-        """Return the list of all nonterminals referenced in a Rhs."""
-        nonterminals = []
 
-        if isinstance(rhs, Nonterminal):
-            nonterminals.append(rhs)
-        elif isinstance(rhs, Sequence):
-            for elem in rhs.elements:
-                nonterminals.extend(GrammarAnalysis.get_nonterminals(elem))
-        elif isinstance(rhs, (Star, Option)):
-            nonterminals.extend(GrammarAnalysis.get_nonterminals(rhs.rhs))
-
-        return list(dict.fromkeys(nonterminals))
-
-    @staticmethod
-    def get_literals(rhs: 'Rhs') -> List[LitTerminal]:
-        """Return the list of all literals referenced in a Rhs."""
-        literals = []
-
-        if isinstance(rhs, LitTerminal):
-            literals.append(rhs)
-        elif isinstance(rhs, Sequence):
-            for elem in rhs.elements:
-                literals.extend(GrammarAnalysis.get_literals(elem))
-        elif isinstance(rhs, (Star, Option)):
-            literals.extend(GrammarAnalysis.get_literals(rhs.rhs))
-
-        return list(dict.fromkeys(literals))
-
-    @staticmethod
-    def is_epsilon(rhs: 'Rhs') -> bool:
-        """Check if rhs represents an epsilon production (empty sequence)."""
-        return isinstance(rhs, Sequence) and len(rhs.elements) == 0
 
     def partition_nonterminals_by_reachability(self) -> Tuple[List[Nonterminal], List[Nonterminal]]:
         """Partition nonterminals into reachable and unreachable.
@@ -150,7 +118,7 @@ class GrammarAnalysis:
             visited.add(A)
             reachable.append(A)
             for rule in self.grammar.rules[A]:
-                for B in GrammarAnalysis.get_nonterminals(rule.rhs):
+                for B in get_nonterminals(rule.rhs):
                     visit(B)
 
         visit(self.grammar.start)
@@ -164,7 +132,22 @@ class GrammarAnalysis:
 
     @staticmethod
     def compute_reachability_static(grammar: 'Grammar') -> Set[Nonterminal]:
-        """Compute set of reachable nonterminals from start symbol."""
+        """Compute set of reachable nonterminals from start symbol.
+
+        A nonterminal is reachable if there exists a derivation from the start symbol
+        that includes that nonterminal.
+
+        Args:
+            grammar: Grammar to analyze
+
+        Returns:
+            Set of all nonterminals reachable from the grammar's start symbol.
+
+        Example:
+            For grammar with rules S -> A B, A -> "a", B -> C, C -> "c", D -> "d":
+            - Reachable: {S, A, B, C}
+            - Unreachable: {D}
+        """
         if grammar.start not in grammar.rules:
             return set()
 
@@ -175,7 +158,7 @@ class GrammarAnalysis:
             current = worklist.pop()
             if current in grammar.rules:
                 for rule in grammar.rules[current]:
-                    for nt in GrammarAnalysis.get_nonterminals(rule.rhs):
+                    for nt in get_nonterminals(rule.rhs):
                         if nt not in reachable:
                             reachable.add(nt)
                             worklist.append(nt)
@@ -184,8 +167,25 @@ class GrammarAnalysis:
 
     @staticmethod
     def is_rhs_nullable(rhs: 'Rhs', nullable: Mapping[Nonterminal, bool]) -> bool:
-        """Check if an RHS is nullable given current nullable set."""
-        if isinstance(rhs, (LitTerminal, NamedTerminal)):
+        """Check if an RHS is nullable given current nullable set.
+
+        An RHS is nullable if it can derive the empty string.
+
+        Args:
+            rhs: RHS element to check (Terminal, Nonterminal, Sequence, Star, or Option)
+            nullable: Precomputed nullable information for nonterminals
+
+        Returns:
+            True if rhs can derive the empty string, False otherwise.
+
+        Example:
+            - Terminal: always False
+            - Nonterminal: True if nonterminal is in nullable set
+            - Sequence [A, B]: True if both A and B are nullable
+            - Star A*: always True (can match zero times)
+            - Option A?: always True (can be omitted)
+        """
+        if isinstance(rhs, Terminal):
             return False
         elif isinstance(rhs, Nonterminal):
             return nullable.get(rhs, False)
@@ -220,7 +220,24 @@ class GrammarAnalysis:
 
     @staticmethod
     def concat_k(set1: Iterable[Tuple[Terminal, ...]], set2: Iterable[Tuple[Terminal, ...]], k: int) -> TerminalSeqSet:
-        """Concatenate two terminal sequence sets, truncating to length k."""
+        """Concatenate two terminal sequence sets, truncating to length k.
+
+        Args:
+            set1: First set of terminal sequences
+            set2: Second set of terminal sequences
+            k: Maximum length of result sequences
+
+        Returns:
+            Set of all concatenations of seq1+seq2 for seq1 in set1, seq2 in set2,
+            truncated to length k. If seq1 already has length k or more, seq2 is ignored.
+
+        Example:
+            >>> t1, t2, t3 = LitTerminal('a'), LitTerminal('b'), LitTerminal('c')
+            >>> set1 = {(t1,), (t1, t2)}
+            >>> set2 = {(t2,), (t3,)}
+            >>> result = concat_k(set1, set2, k=2)
+            >>> # Result: {(t1, t2), (t1, t3)} where (t1,)+(t2,) and (t1,)+(t3,) and (t1,t2)+(t2,) and (t1,t2)+(t3,) are truncated to k=2
+        """
         result: TerminalSeqSet = set()
         for seq1 in set1:
             if len(seq1) >= k:
@@ -234,8 +251,27 @@ class GrammarAnalysis:
     @staticmethod
     def rhs_first_k(rhs: 'Rhs', first_k: Mapping[Nonterminal, Iterable[TerminalSeq]],
                     nullable: Mapping[Nonterminal, bool], k: int) -> TerminalSeqSet:
-        """Compute FIRST_k set for an RHS element."""
-        if isinstance(rhs, (LitTerminal, NamedTerminal)):
+        """Compute FIRST_k set for an RHS element.
+
+        Args:
+            rhs: RHS element to analyze (Terminal, Nonterminal, Sequence, Star, or Option)
+            first_k: Precomputed FIRST_k sets for nonterminals
+            nullable: Precomputed nullable information for nonterminals
+            k: Maximum lookahead length
+
+        Returns:
+            Set of terminal sequences of length up to k that can begin strings derived from rhs.
+
+        Examples:
+            Sequence A B where A is not nullable:
+            - FIRST_k(A) = {(t1,), (t2, t3)}, FIRST_k(B) = {(t4,)}
+            - FIRST_k(A B) = {(t1, t4), (t2, t3)} (B contributes only after A's sequences are full)
+
+            Sequence A B where A is nullable:
+            - FIRST_k(A) = {(t1,), ()}, FIRST_k(B) = {(t4,)}
+            - FIRST_k(A B) = {(t1, t4), (t4,)} (includes sequences from B because A can derive ε)
+        """
+        if isinstance(rhs, Terminal):
             return {(rhs,)}
         elif isinstance(rhs, Nonterminal):
             return set(first_k.get(rhs, set()))
@@ -247,7 +283,10 @@ class GrammarAnalysis:
             for elem in rhs.elements:
                 elem_first = GrammarAnalysis.rhs_first_k(elem, first_k, nullable, k)
                 current = GrammarAnalysis.concat_k(current, elem_first, k)
-                # Stop early if element is not nullable and all sequences are full
+                # Stop early if element is not nullable and all sequences are full.
+                # We check nullable explicitly rather than checking if () is in elem_first because
+                # during fixed-point iteration, () may not yet have propagated to elem_first even
+                # though elem is nullable. The precomputed nullable mapping is always correct.
                 if not GrammarAnalysis.is_rhs_nullable(elem, nullable) and all(len(seq) >= k for seq in current):
                     break
             return current
@@ -266,7 +305,20 @@ class GrammarAnalysis:
         FIRST_k(A) is the set of terminal sequences of length up to k that can
         begin strings derived from A.
 
-        When k=1, this is equivalent to traditional FIRST sets (wrapped in tuples).
+        Args:
+            grammar: Grammar to analyze
+            k: Maximum lookahead length (default 1)
+            nullable: Precomputed nullable information (computed if not provided)
+
+        Returns:
+            Dictionary mapping each nonterminal to its FIRST_k set.
+
+        Example:
+            For grammar with rules A -> "x" B, B -> "y" | ε:
+            - FIRST_1(A) = {("x",)}
+            - FIRST_1(B) = {("y",), ()}
+            - FIRST_2(A) = {("x", "y"), ("x",)}
+            - k=1 is equivalent to traditional FIRST sets (wrapped in tuples)
         """
         if nullable is None:
             nullable = GrammarAnalysis.compute_nullable_static(grammar)
@@ -293,7 +345,7 @@ class GrammarAnalysis:
 
         Convenience function for k=1 case, returning Set[Terminal].
         """
-        if isinstance(rhs, (LitTerminal, NamedTerminal)):
+        if isinstance(rhs, Terminal):
             return {rhs}
         elif isinstance(rhs, Nonterminal):
             return set(first.get(rhs, set()))
@@ -326,7 +378,31 @@ class GrammarAnalysis:
                      nullable: Mapping[Nonterminal, bool],
                      follow_k: Dict[Nonterminal, TerminalSeqSet],
                      k: int) -> Dict[Nonterminal, TerminalSeqSet]:
-        """Compute FOLLOW_k contributions from an RHS."""
+        """Compute FOLLOW_k contributions from an RHS.
+
+        Analyzes an RHS and determines what terminal sequences can follow each nonterminal
+        appearing in that RHS.
+
+        Args:
+            rhs: RHS element to analyze
+            lhs: Left-hand side nonterminal of the rule containing this RHS
+            first_k: Precomputed FIRST_k sets for nonterminals
+            nullable: Precomputed nullable information for nonterminals
+            follow_k: Current FOLLOW_k sets (being computed iteratively)
+            k: Maximum lookahead length
+
+        Returns:
+            Dictionary mapping nonterminals in rhs to sets of terminal sequences
+            that can follow them.
+
+        Example:
+            For rule S -> A B C:
+            - FOLLOW_k(A) includes FIRST_k(B C)
+            - If B C is nullable, FOLLOW_k(A) also includes FOLLOW_k(S)
+            - FOLLOW_k(B) includes FIRST_k(C)
+            - If C is nullable, FOLLOW_k(B) also includes FOLLOW_k(S)
+            - FOLLOW_k(C) includes FOLLOW_k(S)
+        """
         result: Dict[Nonterminal, TerminalSeqSet] = {}
 
         def add(nt: Nonterminal, sequences: Iterable[TerminalSeq]) -> None:
@@ -360,7 +436,7 @@ class GrammarAnalysis:
                 add(nt, seqs)
             # Elements in Star can be followed by more elements
             first_of_inner = GrammarAnalysis.rhs_first_k(rhs.rhs, first_k, nullable, k)
-            for nt in GrammarAnalysis.get_nonterminals(rhs.rhs):
+            for nt in get_nonterminals(rhs.rhs):
                 add(nt, first_of_inner)
         elif isinstance(rhs, Option):
             inner = GrammarAnalysis.rhs_follow_k(rhs.rhs, lhs, first_k, nullable, follow_k, k)
@@ -375,9 +451,24 @@ class GrammarAnalysis:
                                 first_k: Optional[Dict[Nonterminal, TerminalSeqSet]] = None) -> Dict[Nonterminal, TerminalSeqSet]:
         """Compute FOLLOW_k sets for all nonterminals.
 
-        FOLLOW_k(A) is the set of terminal sequences of length up to k that can follow A.
+        FOLLOW_k(A) is the set of terminal sequences of length up to k that can follow A
+        in any derivation from the start symbol.
 
-        When k=1, this is equivalent to traditional FOLLOW sets (wrapped in tuples).
+        Args:
+            grammar: Grammar to analyze
+            k: Maximum lookahead length (default 1)
+            nullable: Precomputed nullable information (computed if not provided)
+            first_k: Precomputed FIRST_k sets (computed if not provided)
+
+        Returns:
+            Dictionary mapping each nonterminal to its FOLLOW_k set.
+
+        Example:
+            For grammar with rules S -> A B $, A -> "a", B -> "b":
+            - FOLLOW_1(A) = {("b",)}
+            - FOLLOW_1(B) = {($,)}  where $ is EOF
+            - FOLLOW_2(A) = {("b", $)}
+            - k=1 is equivalent to traditional FOLLOW sets (wrapped in tuples)
         """
         if nullable is None:
             nullable = GrammarAnalysis.compute_nullable_static(grammar)
@@ -437,9 +528,14 @@ class GrammarAnalysis:
             nullable = GrammarAnalysis.compute_nullable_static(grammar)
 
         # Convert first to first_k format if provided
+        # Must include empty tuple () for nullable nonterminals
         first_k: Optional[Dict[Nonterminal, TerminalSeqSet]] = None
         if first is not None:
-            first_k = {nt: {(t,) for t in terms} for nt, terms in first.items()}
+            first_k = {}
+            for nt, terms in first.items():
+                first_k[nt] = {(t,) for t in terms}
+                if nullable.get(nt, False):
+                    first_k[nt].add(())
 
         follow_k = GrammarAnalysis.compute_follow_k_static(grammar, k=1, nullable=nullable, first_k=first_k)
         return {nt: {seq[0] for seq in seqs if seq} for nt, seqs in follow_k.items()}

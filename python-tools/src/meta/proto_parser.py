@@ -1,7 +1,30 @@
 """Protobuf file parser.
 
 This module provides a parser for protobuf (.proto) files, extracting
-message and enum definitions.
+message and enum definitions into a structured AST representation.
+
+The parser uses regex patterns to extract protobuf syntax elements:
+- Message definitions with fields, oneofs, and nested enums
+- Enum definitions with values
+- Field modifiers (repeated, optional)
+- Reserved field numbers and names
+
+The parser handles:
+- C-style comments (// and /* */)
+- Nested braces in message bodies
+- Oneof groups
+- Reserved statements
+
+Example:
+    >>> from pathlib import Path
+    >>> from meta.proto_parser import ProtoParser
+    >>> parser = ProtoParser()
+    >>> parser.parse_file(Path("example.proto"))
+    >>> msg = parser.messages["Person"]
+    >>> msg.name
+    'Person'
+    >>> [f.name for f in msg.fields]
+    ['name', 'age', 'emails']
 """
 
 import re
@@ -24,7 +47,26 @@ _RESERVED_PATTERN = re.compile(r'reserved\s+([^;]+);')
 
 
 class ProtoParser:
-    """Parser for protobuf files."""
+    """Parser for protobuf files.
+
+    Maintains state across multiple file parses, accumulating all parsed
+    messages and enums. The current_module is set to the file stem during
+    parsing and attached to each message.
+
+    Attributes:
+        messages: Dictionary mapping message names to ProtoMessage objects
+        enums: Dictionary mapping enum names to ProtoEnum objects
+        current_module: Current file stem (set during parse_file)
+
+    Example:
+        >>> parser = ProtoParser()
+        >>> parser.parse_file(Path("logic.proto"))
+        >>> parser.parse_file(Path("transactions.proto"))
+        >>> "Expr" in parser.messages
+        True
+        >>> parser.messages["Expr"].module
+        'logic'
+    """
     def __init__(self):
         self.messages: Dict[str, ProtoMessage] = {}
         self.enums: Dict[str, ProtoEnum] = {}

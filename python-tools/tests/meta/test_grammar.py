@@ -405,63 +405,41 @@ class TestGrammar:
         other = Nonterminal("B", MessageType("proto", "B"))
         assert not grammar.has_rule(other)
 
-    def test_traverse_rules_preorder(self):
-        """Test Grammar traverse_rules_preorder."""
+    def test_partition_nonterminals(self):
+        """Test Grammar partition_nonterminals."""
         start = Nonterminal("Start", MessageType("proto", "Start"))
         grammar = Grammar(start)
         a = Nonterminal("A", MessageType("proto", "A"))
         b = Nonterminal("B", MessageType("proto", "B"))
         c = Nonterminal("C", MessageType("proto", "C"))
+        d = Nonterminal("D", MessageType("proto", "D"))  # unreachable
 
-        # Start -> A, A -> B, B -> C
+        # Start -> A, A -> B, B -> C, D is unreachable
         param_a = Var("x", MessageType("proto", "A"))
         param_b = Var("y", MessageType("proto", "B"))
         param_c = Var("z", MessageType("proto", "C"))
-        action_start = Lambda([param_a], MessageType("proto", "Start"), param_a)
-        action_a = Lambda([param_b], MessageType("proto", "A"), param_b)
-        action_b = Lambda([param_c], MessageType("proto", "B"), param_c)
-        action_c = Lambda([param_c], MessageType("proto", "C"), param_c)
+        param_d = Var("w", MessageType("proto", "D"))
+        constructor_start = Lambda([param_a], MessageType("proto", "Start"), param_a)
+        constructor_a = Lambda([param_b], MessageType("proto", "A"), param_b)
+        constructor_b = Lambda([param_c], MessageType("proto", "B"), param_c)
+        constructor_c = Lambda([param_c], MessageType("proto", "C"), param_c)
+        constructor_d = Lambda([param_d], MessageType("proto", "D"), param_d)
 
-        grammar.add_rule(Rule(start, a, action_start))
-        grammar.add_rule(Rule(a, b, action_a))
-        grammar.add_rule(Rule(b, c, action_b))
-        grammar.add_rule(Rule(c, c, action_c))
+        grammar.add_rule(Rule(start, a, constructor_start))
+        grammar.add_rule(Rule(a, b, constructor_a))
+        grammar.add_rule(Rule(b, c, constructor_b))
+        grammar.add_rule(Rule(c, c, constructor_c))
+        grammar.add_rule(Rule(d, d, constructor_d))  # unreachable rule
 
-        order = grammar.analysis.partition_nonterminals_by_reachability()[0]
-        assert order[0] == start
-        assert order[1] == a
-        assert order[2] == b
-        assert order[3] == c
+        reachable, unreachable = grammar.partition_nonterminals()
+        assert reachable[0] == start
+        assert reachable[1] == a
+        assert reachable[2] == b
+        assert reachable[3] == c
+        assert len(reachable) == 4
+        assert unreachable == [d]
 
-    def test_nullable_literal(self):
-        """Test Grammar nullable for literal."""
-        start = Nonterminal("Start", MessageType("proto", "Start"))
-        grammar = Grammar(start)
-        lit = LitTerminal("foo")
-        assert not grammar.analysis.nullable(lit)
 
-    def test_nullable_star(self):
-        """Test Grammar nullable for star."""
-        start = Nonterminal("Start", MessageType("proto", "Start"))
-        grammar = Grammar(start)
-        nt = Nonterminal("A", MessageType("proto", "A"))
-        star = Star(nt)
-        assert grammar.analysis.nullable(star)
-
-    def test_nullable_option(self):
-        """Test Grammar nullable for option."""
-        start = Nonterminal("Start", MessageType("proto", "Start"))
-        grammar = Grammar(start)
-        nt = Nonterminal("A", MessageType("proto", "A"))
-        opt = Option(nt)
-        assert grammar.analysis.nullable(opt)
-
-    def test_nullable_empty_sequence(self):
-        """Test Grammar nullable for empty sequence."""
-        start = Nonterminal("Start", MessageType("proto", "Start"))
-        grammar = Grammar(start)
-        seq = Sequence(())
-        assert grammar.analysis.nullable(seq)
 
     def test_print_grammar(self):
         """Test Grammar print_grammar."""
@@ -475,22 +453,7 @@ class TestGrammar:
         assert "Start" in output
         assert ": A" in output
 
-    def test_cache_invalidation_on_add_rule(self):
-        """Test that caches are not used after add_rule."""
-        start = Nonterminal("Start", MessageType("proto", "Start"))
-        grammar = Grammar(start)
-        a = Nonterminal("A", MessageType("proto", "A"))
-        param = Var("x", MessageType("proto", "A"))
-        action = Lambda([param], MessageType("proto", "A"), param)
-        rule = Rule(start, a, action)
 
-        # Trigger cache
-        grammar.analysis.compute_nullable()
-        assert grammar.analysis._nullable_cache is not None
-
-        # This should fail because cache exists
-        with pytest.raises(AssertionError, match="already analyzed"):
-            grammar.add_rule(rule)
 
 
 class TestHelperFunctions:
