@@ -16,11 +16,10 @@ Rule syntax:
 
 Config file directives:
     (rule ...)                      -> add rule
-    (mark-nonfinal nonterminal)     -> mark as non-final
 """
 
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List
 
 from .sexp import SAtom, SList, SExpr
 from .sexp_parser import parse_sexp_file
@@ -214,24 +213,21 @@ def rule_to_sexp(rule: Rule) -> SExpr:
     ))
 
 
-def load_grammar_config(text: str) -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
+def load_grammar_config(text: str) -> Dict[Nonterminal, List[Rule]]:
     """Load grammar rules from s-expression config text.
 
     The config file contains:
     - (rule ...) directives that define grammar rules
-    - (mark-nonfinal nt_name) directives that mark nonterminals as non-final
 
     Args:
         text: Config file content as text
 
     Returns:
-        Dict mapping nonterminals to (rules, is_final) tuples.
-        is_final=True means auto-generation should not add more rules.
+        Dict mapping nonterminals to lists of rules.
     """
     sexps = parse_sexp_file(text)
 
-    result: Dict[Nonterminal, Tuple[List[Rule], bool]] = {}
-    nonfinal_nonterminals: Set[str] = set()
+    result: Dict[Nonterminal, List[Rule]] = {}
 
     for sexp in sexps:
         if not isinstance(sexp, SList) or len(sexp) == 0:
@@ -245,35 +241,23 @@ def load_grammar_config(text: str) -> Dict[Nonterminal, Tuple[List[Rule], bool]]
             rule = sexp_to_rule(sexp)
             lhs = rule.lhs
             if lhs not in result:
-                result[lhs] = ([], True)
-            rules_list, _ = result[lhs]
-            rules_list.append(rule)
-
-        elif head.value == "mark-nonfinal":
-            if len(sexp) != 2:
-                raise GrammarConversionError(f"mark-nonfinal requires nonterminal name: {sexp}")
-            nt_name = _expect_symbol(sexp[1], "nonterminal name")
-            nonfinal_nonterminals.add(nt_name)
+                result[lhs] = []
+            result[lhs].append(rule)
 
         else:
             raise GrammarConversionError(f"Unknown config directive: {head.value}")
 
-    # Apply non-final markers
-    for lhs, (rules, _) in result.items():
-        is_final = lhs.name not in nonfinal_nonterminals
-        result[lhs] = (rules, is_final)
-
     return result
 
 
-def load_grammar_config_file(path: Path) -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
+def load_grammar_config_file(path: Path) -> Dict[Nonterminal, List[Rule]]:
     """Load grammar rules from an s-expression config file.
 
     Args:
         path: Path to the config file
 
     Returns:
-        Dict mapping nonterminals to (rules, is_final) tuples.
+        Dict mapping nonterminals to lists of rules.
     """
     return load_grammar_config(path.read_text())
 

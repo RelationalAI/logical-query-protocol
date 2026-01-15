@@ -255,3 +255,73 @@ class TestHelperFunctions:
     def test_slist_empty(self):
         result = slist()
         assert result == SList(())
+
+
+class TestEstimateWidth:
+    """Tests for _estimate_width helper function."""
+
+    def test_estimate_width_unquoted_atom(self):
+        """Estimate width of unquoted atom."""
+        from meta.sexp_pretty import _estimate_width
+        atom = SAtom("foo")
+        assert _estimate_width(atom) == 3
+
+    def test_estimate_width_quoted_atom(self):
+        """Estimate width of quoted atom includes quotes."""
+        from meta.sexp_pretty import _estimate_width
+        atom = SAtom("hello", quoted=True)
+        assert _estimate_width(atom) == 7  # len("hello") + 2 for quotes
+
+    def test_estimate_width_empty_list(self):
+        """Estimate width of empty list is 2 for parentheses."""
+        from meta.sexp_pretty import _estimate_width
+        lst = SList(())
+        assert _estimate_width(lst) == 2
+
+    def test_estimate_width_single_element_list(self):
+        """Estimate width of list with single element."""
+        from meta.sexp_pretty import _estimate_width
+        lst = SList((SAtom("foo"),))
+        assert _estimate_width(lst) == 5  # "(foo)" = 2 + 3
+
+    def test_estimate_width_multiple_elements(self):
+        """Estimate width of list with multiple elements includes spaces."""
+        from meta.sexp_pretty import _estimate_width
+        lst = SList((SAtom("a"), SAtom("b"), SAtom("c")))
+        # "(a b c)" = 2 (parens) + 1 + 1 + 1 (letters) + 2 (spaces)
+        assert _estimate_width(lst) == 7
+
+
+class TestPrettyPrintEdgeCases:
+    """Tests for edge cases in pretty_print formatting."""
+
+    def test_pretty_print_first_element_too_long_for_head_line(self):
+        """Test case where first element doesn't fit on same line as head."""
+        # Create a structure where head is short but first element is long
+        # This should trigger line 84 (append to new line instead of same line as head)
+        long_first_elem = SList((SAtom("inner"),) * 10)  # Very long nested list
+        expr = SList((SAtom("short"), long_first_elem))
+        result = pretty_print(expr, width=30)
+        # The long first element should be on its own line
+        lines = result.split("\n")
+        assert len(lines) > 1
+        assert lines[0] == "(short"
+
+    def test_pretty_print_multiline_with_narrow_width(self):
+        """Test pretty printing with very narrow width."""
+        expr = SList((SAtom("define"), SAtom("x"), SAtom("y"), SAtom("z")))
+        result = pretty_print(expr, width=10)
+        lines = result.split("\n")
+        # Should break across multiple lines
+        assert len(lines) > 1
+
+    def test_pretty_print_nested_with_indentation(self):
+        """Test that nested structures are properly indented."""
+        inner = SList((SAtom("inner"), SAtom("value")))
+        outer = SList((SAtom("outer"), inner))
+        result = pretty_print(outer, width=15)
+        # Should have proper indentation for nested structure
+        assert "\n" in result
+        lines = result.split("\n")
+        # Check indentation exists in nested parts
+        assert any(line.startswith(" ") for line in lines[1:])

@@ -388,9 +388,8 @@ class TestLoadGrammarConfig:
         assert len(result) == 1
         nt = Nonterminal("boolean_value", BaseType("Boolean"))
         assert nt in result
-        rules, is_final = result[nt]
+        rules = result[nt]
         assert len(rules) == 1
-        assert is_final is True
 
     def test_load_multiple_rules_same_lhs(self):
         config = '''
@@ -403,9 +402,8 @@ class TestLoadGrammarConfig:
         '''
         result = load_grammar_config(config)
         nt = Nonterminal("boolean_value", BaseType("Boolean"))
-        rules, is_final = result[nt]
+        rules = result[nt]
         assert len(rules) == 2
-        assert is_final is True
 
     def test_load_multiple_rules_different_lhs(self):
         config = '''
@@ -418,21 +416,6 @@ class TestLoadGrammarConfig:
         '''
         result = load_grammar_config(config)
         assert len(result) == 2
-
-    def test_load_with_mark_nonfinal(self):
-        config = '''
-            (rule (lhs formula (Message logic Formula))
-                (rhs (nonterm conjunction (Message logic Conjunction)))
-                (lambda ((value (Message logic Conjunction))) (Message logic Formula)
-                    (call (message logic Formula)
-                        (call (oneof conjunction) (var value (Message logic Conjunction))))))
-            (mark-nonfinal formula)
-        '''
-        result = load_grammar_config(config)
-        nt = Nonterminal("formula", MessageType("logic", "Formula"))
-        rules, is_final = result[nt]
-        assert len(rules) == 1
-        assert is_final is False
 
     def test_load_with_comments(self):
         config = '''
@@ -463,3 +446,189 @@ class TestLoadGrammarConfig:
         '''
         with pytest.raises(GrammarConversionError):
             load_grammar_config(config)
+
+
+class TestSexpToRhsErrors:
+    """Tests for error handling in sexp_to_rhs."""
+
+    def test_empty_list_error(self):
+        """Empty list is not a valid RHS."""
+        with pytest.raises(GrammarConversionError, match="Invalid RHS expression"):
+            sexp_to_rhs(SList(()))
+
+    def test_list_with_quoted_head_error(self):
+        """List with quoted head is not valid."""
+        with pytest.raises(GrammarConversionError, match="RHS expression must start with a symbol"):
+            sexp_to_rhs(SList((SAtom("nonterm", quoted=True), SAtom("foo"))))
+
+    def test_nonterm_wrong_arity(self):
+        """nonterm requires exactly 2 arguments."""
+        with pytest.raises(GrammarConversionError, match="nonterm requires name and type"):
+            sexp_to_rhs(parse_sexp("(nonterm foo)"))
+
+    def test_term_wrong_arity(self):
+        """term requires exactly 2 arguments."""
+        with pytest.raises(GrammarConversionError, match="term requires name and type"):
+            sexp_to_rhs(parse_sexp("(term INT)"))
+
+    def test_star_wrong_arity(self):
+        """star requires exactly 1 argument."""
+        with pytest.raises(GrammarConversionError, match="star requires one RHS element"):
+            sexp_to_rhs(parse_sexp("(star)"))
+
+    def test_option_wrong_arity(self):
+        """option requires exactly 1 argument."""
+        with pytest.raises(GrammarConversionError, match="option requires one RHS element"):
+            sexp_to_rhs(parse_sexp("(option)"))
+
+    def test_option_invalid_inner(self):
+        """option inner must be nonterm or term."""
+        with pytest.raises(GrammarConversionError, match="option inner must be nonterm or term"):
+            sexp_to_rhs(parse_sexp('(option "literal")'))
+
+    def test_seq_empty(self):
+        """seq requires at least one element."""
+        with pytest.raises(GrammarConversionError, match="seq requires at least one element"):
+            sexp_to_rhs(parse_sexp("(seq)"))
+
+
+class TestSexpToRuleErrors:
+    """Tests for error handling in sexp_to_rule."""
+
+    def test_rule_not_list(self):
+        """Rule must be a list."""
+        with pytest.raises(GrammarConversionError, match="rule requires"):
+            sexp_to_rule(SAtom("foo"))
+
+    def test_rule_wrong_element_count_too_few(self):
+        """Rule requires exactly 4 elements."""
+        with pytest.raises(GrammarConversionError, match="rule requires"):
+            sexp_to_rule(parse_sexp("(rule (lhs foo String) (rhs \"x\"))"))
+
+    def test_rule_head_not_rule(self):
+        """Rule head must be 'rule'."""
+        with pytest.raises(GrammarConversionError, match="Expected rule"):
+            sexp_to_rule(parse_sexp('(notarule (lhs foo String) (rhs "x") (lambda ((x String)) String x))'))
+
+    def test_rule_lhs_not_list(self):
+        """Rule lhs must be a list."""
+        with pytest.raises(GrammarConversionError, match="lhs requires name and type"):
+            sexp_to_rule(parse_sexp('(rule foo (rhs "x") (lambda ((x String)) String x))'))
+
+    def test_rule_lhs_wrong_element_count(self):
+        """Rule lhs must have exactly 3 elements."""
+        with pytest.raises(GrammarConversionError, match="lhs requires name and type"):
+            sexp_to_rule(parse_sexp('(rule (lhs foo) (rhs "x") (lambda ((x String)) String x))'))
+
+    def test_rule_lhs_head_not_lhs(self):
+        """Rule lhs head must be 'lhs'."""
+        with pytest.raises(GrammarConversionError, match="Expected \\(lhs ...\\)"):
+            sexp_to_rule(parse_sexp('(rule (notlhs foo String) (rhs "x") (lambda ((x String)) String x))'))
+
+    def test_rule_rhs_not_list(self):
+        """Rule rhs must be a list."""
+        with pytest.raises(GrammarConversionError, match="rhs must be a list"):
+            sexp_to_rule(parse_sexp('(rule (lhs foo String) notalist (lambda ((x String)) String x))'))
+
+    def test_rule_rhs_empty_list(self):
+        """Rule rhs must be a non-empty list."""
+        with pytest.raises(GrammarConversionError, match="rhs must be a list"):
+            sexp_to_rule(parse_sexp('(rule (lhs foo String) () (lambda ((x String)) String x))'))
+
+    def test_rule_rhs_head_not_rhs(self):
+        """Rule rhs head must be 'rhs'."""
+        with pytest.raises(GrammarConversionError, match="Expected \\(rhs ...\\)"):
+            sexp_to_rule(parse_sexp('(rule (lhs foo String) (notrhs "x") (lambda ((x String)) String x))'))
+
+
+class TestExpectSymbolErrors:
+    """Tests for _expect_symbol error handling."""
+
+    def test_expect_symbol_non_atom(self):
+        """_expect_symbol requires an atom."""
+        from meta.sexp_grammar import _expect_symbol
+        with pytest.raises(GrammarConversionError, match="must be a symbol"):
+            _expect_symbol(SList((SAtom("foo"),)), "test")
+
+    def test_expect_symbol_quoted(self):
+        """_expect_symbol requires unquoted symbol."""
+        from meta.sexp_grammar import _expect_symbol
+        with pytest.raises(GrammarConversionError, match="must be unquoted symbol"):
+            _expect_symbol(SAtom("foo", quoted=True), "test")
+
+    def test_expect_symbol_non_string(self):
+        """_expect_symbol requires string value."""
+        from meta.sexp_grammar import _expect_symbol
+        with pytest.raises(GrammarConversionError, match="must be a symbol"):
+            _expect_symbol(SAtom(123), "test")
+
+
+class TestLoadGrammarConfigErrors:
+    """Tests for load_grammar_config error handling."""
+
+    def test_load_invalid_top_level_atom(self):
+        """Top-level atoms are invalid."""
+        with pytest.raises(GrammarConversionError, match="Invalid config directive"):
+            load_grammar_config("foo")
+
+    def test_load_invalid_top_level_list_no_head(self):
+        """Top-level lists must have a symbol head."""
+        with pytest.raises(GrammarConversionError, match="Config directive must start with symbol"):
+            load_grammar_config('(("nested") foo)')
+
+
+class TestRhsToSexpErrors:
+    """Tests for rhs_to_sexp error handling."""
+
+    def test_unknown_rhs_type(self):
+        """Unknown RHS type raises error."""
+        # Create a custom RHS type that doesn't match any known types
+        class FakeRhs:
+            pass
+        with pytest.raises(GrammarConversionError, match="Unknown RHS type"):
+            rhs_to_sexp(FakeRhs())
+
+
+class TestLoadGrammarConfigFile:
+    """Tests for load_grammar_config_file function."""
+
+    def test_load_grammar_from_file(self):
+        """Load grammar from file path."""
+        import tempfile
+        from pathlib import Path
+        from meta.sexp_grammar import load_grammar_config_file
+
+        config_text = '''
+        (rule
+          (lhs test String)
+          (rhs (term STRING String))
+          (lambda ((x String)) String (var x String)))
+        '''
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.sexp', delete=False) as f:
+            f.write(config_text)
+            f.flush()
+            path = Path(f.name)
+
+        try:
+            result = load_grammar_config_file(path)
+            assert len(result) == 1
+        finally:
+            path.unlink()
+
+
+class TestExpectSymbolBooleans:
+    """Tests for _expect_symbol boolean handling."""
+
+    def test_expect_symbol_true_boolean(self):
+        """_expect_symbol handles true boolean."""
+        from meta.sexp_grammar import _expect_symbol
+        # Python booleans should be converted to "true"/"false" strings
+        result = _expect_symbol(SAtom(True), "test")
+        assert result == "true"
+
+    def test_expect_symbol_false_boolean(self):
+        """_expect_symbol handles false boolean."""
+        from meta.sexp_grammar import _expect_symbol
+        result = _expect_symbol(SAtom(False), "test")
+        assert result == "false"

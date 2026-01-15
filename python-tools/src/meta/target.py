@@ -18,6 +18,7 @@ Expression types (TargetExpr subclasses):
     VisitNonterminal    - Visitor method call for a nonterminal
     Call                - Function call expression
     GetField            - Field access expression
+    GetElement          - Tuple element access with constant integer index
     Lambda              - Lambda function (anonymous function)
     Let                 - Let-binding: let var = init in body
     IfElse              - If-else conditional expression
@@ -238,6 +239,35 @@ class GetField(TargetExpr):
 
     def __str__(self) -> str:
         return f"{self.object}.{self.field_name}"
+
+
+@dataclass(frozen=True)
+class GetElement(TargetExpr):
+    """Tuple element access with constant integer index.
+
+    Accesses an element from a tuple expression using a compile-time constant index.
+    This is a specialized form of get_tuple_element that uses an integer literal
+    rather than an arbitrary expression for the index.
+
+    tuple_expr: Expression evaluating to a tuple
+    index: Constant integer index (0-based)
+
+    Example:
+        GetElement(Var("pair", TupleType([INT64, STRING])), 0)  # pair[0]
+        GetElement(Var("pair", TupleType([INT64, STRING])), 1)  # pair[1]
+
+    Replaces the fst and snd builtins:
+        fst(x) -> GetElement(x, 0)
+        snd(x) -> GetElement(x, 1)
+    """
+    tuple_expr: 'TargetExpr'
+    index: int
+
+    def __str__(self) -> str:
+        return f"{self.tuple_expr}[{self.index}]"
+
+    def __post_init__(self):
+        assert isinstance(self.index, int) and self.index >= 0, f"GetElement index must be non-negative integer: {self.index}"
 
 
 @dataclass(frozen=True)

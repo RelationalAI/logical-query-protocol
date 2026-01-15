@@ -516,3 +516,216 @@ class TestExprRoundTrip:
         sexp = expr_to_sexp(original)
         recovered = sexp_to_expr(sexp)
         assert recovered == original
+
+
+class TestSexpToTypeErrors:
+    """Tests for error handling in sexp_to_type."""
+
+    def test_quoted_string_error(self):
+        """Quoted string is not a valid type."""
+        with pytest.raises(SExprConversionError, match="Unexpected string literal in type"):
+            sexp_to_type(SAtom(value="foo", quoted=True))
+
+    def test_invalid_type_atom(self):
+        """Non-string atom is not a valid type."""
+        with pytest.raises(SExprConversionError, match="Invalid type atom"):
+            sexp_to_type(SAtom(value=42, quoted=False))
+
+    def test_empty_list_error(self):
+        """Empty list is not a valid type."""
+        with pytest.raises(SExprConversionError, match="Invalid type expression"):
+            sexp_to_type(SList([]))
+
+    def test_type_with_quoted_head(self):
+        """Type expression must start with symbol, not string."""
+        with pytest.raises(SExprConversionError, match="Type expression must start with a symbol"):
+            sexp_to_type(SList([SAtom(value="Message", quoted=True), SAtom(value="test", quoted=False)]))
+
+    def test_typevar_wrong_arity(self):
+        """TypeVar requires exactly one argument."""
+        with pytest.raises(SExprConversionError, match="TypeVar requires name"):
+            sexp_to_type(parse_sexp("(TypeVar)"))
+
+    def test_message_wrong_arity(self):
+        """Message type requires module and name."""
+        with pytest.raises(SExprConversionError, match="Message type requires module and name"):
+            sexp_to_type(parse_sexp("(Message test)"))
+
+    def test_list_wrong_arity(self):
+        """List type requires element type."""
+        with pytest.raises(SExprConversionError, match="List type requires element type"):
+            sexp_to_type(parse_sexp("(List)"))
+
+    def test_option_wrong_arity(self):
+        """Option type requires element type."""
+        with pytest.raises(SExprConversionError, match="Option type requires element type"):
+            sexp_to_type(parse_sexp("(Option)"))
+
+    def test_function_wrong_arity(self):
+        """Function type requires param types and return type."""
+        with pytest.raises(SExprConversionError, match="Function type requires param types and return type"):
+            sexp_to_type(parse_sexp("(Function ())"))
+
+    def test_function_params_not_list(self):
+        """Function param types must be a list."""
+        with pytest.raises(SExprConversionError, match="Function param types must be a list"):
+            sexp_to_type(parse_sexp("(Function Int64 String)"))
+
+    def test_unknown_type_constructor(self):
+        """Unknown type constructor raises error."""
+        with pytest.raises(SExprConversionError, match="Unknown type constructor"):
+            sexp_to_type(parse_sexp("(UnknownType foo)"))
+
+
+class TestSexpToExprErrors:
+    """Tests for error handling in sexp_to_expr."""
+
+    def test_untyped_symbol_error(self):
+        """Untyped symbol (not starting with :) is not allowed."""
+        with pytest.raises(SExprConversionError, match="Untyped symbol in expression context"):
+            sexp_to_expr(SAtom(value="foo", quoted=False))
+
+    def test_empty_list_error(self):
+        """Empty list is not a valid expression."""
+        with pytest.raises(SExprConversionError, match="Invalid expression"):
+            sexp_to_expr(SList([]))
+
+    def test_expr_with_quoted_head(self):
+        """Expression must start with symbol, not string."""
+        with pytest.raises(SExprConversionError, match="Expression must start with a symbol"):
+            sexp_to_expr(SList([SAtom(value="var", quoted=True)]))
+
+    def test_var_wrong_arity(self):
+        """var requires name and type."""
+        with pytest.raises(SExprConversionError, match="var requires name and type"):
+            sexp_to_expr(parse_sexp("(var x)"))
+
+    def test_lit_wrong_arity(self):
+        """lit requires a value."""
+        with pytest.raises(SExprConversionError, match="lit requires a value"):
+            sexp_to_expr(parse_sexp("(lit)"))
+
+    def test_lit_non_atom_value(self):
+        """lit value must be an atom."""
+        with pytest.raises(SExprConversionError, match="lit value must be an atom"):
+            sexp_to_expr(parse_sexp("(lit (foo))"))
+
+    def test_call_missing_function(self):
+        """call requires function."""
+        with pytest.raises(SExprConversionError, match="call requires function"):
+            sexp_to_expr(parse_sexp("(call)"))
+
+    def test_lambda_wrong_arity(self):
+        """lambda requires params, return type, and body."""
+        with pytest.raises(SExprConversionError, match="lambda requires params, return type, and body"):
+            sexp_to_expr(parse_sexp("(lambda () Int64)"))
+
+    def test_lambda_params_not_list(self):
+        """lambda params must be a list."""
+        with pytest.raises(SExprConversionError, match="lambda params must be a list"):
+            sexp_to_expr(parse_sexp("(lambda x Int64 42)"))
+
+    def test_lambda_param_wrong_format(self):
+        """lambda param must be (name type)."""
+        with pytest.raises(SExprConversionError, match="lambda param must be \\(name type\\)"):
+            sexp_to_expr(parse_sexp("(lambda (x) Int64 42)"))
+
+    def test_let_wrong_arity(self):
+        """let requires (name type), init, and body."""
+        with pytest.raises(SExprConversionError, match="let requires \\(name type\\), init, and body"):
+            sexp_to_expr(parse_sexp("(let (x Int64) 42)"))
+
+    def test_let_binding_wrong_format(self):
+        """let binding must be (name type)."""
+        with pytest.raises(SExprConversionError, match="let binding must be \\(name type\\)"):
+            sexp_to_expr(parse_sexp("(let x 42 x)"))
+
+    def test_if_wrong_arity(self):
+        """if requires condition, then, and else."""
+        with pytest.raises(SExprConversionError, match="if requires condition, then, and else"):
+            sexp_to_expr(parse_sexp("(if true 1)"))
+
+    def test_builtin_wrong_arity(self):
+        """builtin requires name."""
+        with pytest.raises(SExprConversionError, match="builtin requires name"):
+            sexp_to_expr(parse_sexp("(builtin)"))
+
+    def test_message_wrong_arity(self):
+        """message requires module and name."""
+        with pytest.raises(SExprConversionError, match="message requires module and name"):
+            sexp_to_expr(parse_sexp("(message test)"))
+
+    def test_oneof_wrong_arity(self):
+        """oneof requires field name."""
+        with pytest.raises(SExprConversionError, match="oneof requires field name"):
+            sexp_to_expr(parse_sexp("(oneof)"))
+
+    def test_list_wrong_arity(self):
+        """list requires element type."""
+        with pytest.raises(SExprConversionError, match="list requires element type"):
+            sexp_to_expr(parse_sexp("(list)"))
+
+    def test_get_field_wrong_arity(self):
+        """get-field requires object and field name."""
+        with pytest.raises(SExprConversionError, match="get-field requires object and field name"):
+            sexp_to_expr(parse_sexp("(get-field (var x String))"))
+
+    def test_get_element_wrong_arity(self):
+        """get-element requires tuple and index."""
+        with pytest.raises(SExprConversionError, match="get-element requires tuple and index"):
+            sexp_to_expr(parse_sexp("(get-element (var x (Tuple Int64 String)))"))
+
+    def test_get_element_non_int_index(self):
+        """get-element index must be an integer literal."""
+        with pytest.raises(SExprConversionError, match="get-element index must be an integer literal"):
+            sexp_to_expr(parse_sexp('(get-element (var x (Tuple Int64 String)) "not-an-int")'))
+
+    def test_seq_too_few_args(self):
+        """seq requires at least 2 expressions."""
+        with pytest.raises(SExprConversionError, match="seq requires at least 2 expressions"):
+            sexp_to_expr(parse_sexp("(seq 1)"))
+
+    def test_while_wrong_arity(self):
+        """while requires condition and body."""
+        with pytest.raises(SExprConversionError, match="while requires condition and body"):
+            sexp_to_expr(parse_sexp("(while true)"))
+
+    def test_foreach_wrong_arity(self):
+        """foreach requires (var type), collection, and body."""
+        with pytest.raises(SExprConversionError, match="foreach requires \\(var type\\), collection, and body"):
+            sexp_to_expr(parse_sexp("(foreach (x Int64) (list Int64))"))
+
+    def test_foreach_binding_wrong_format(self):
+        """foreach var must be (name type)."""
+        with pytest.raises(SExprConversionError, match="foreach var must be \\(name type\\)"):
+            sexp_to_expr(parse_sexp("(foreach x (list Int64) x)"))
+
+    def test_foreach_enumerated_wrong_arity(self):
+        """foreach-enumerated requires (idx type), (var type), collection, and body."""
+        with pytest.raises(SExprConversionError, match="foreach-enumerated requires \\(idx type\\), \\(var type\\), collection, and body"):
+            sexp_to_expr(parse_sexp("(foreach-enumerated (i Int64) (x String) (list String))"))
+
+    def test_foreach_enumerated_binding_wrong_format(self):
+        """foreach-enumerated index var must be (name type)."""
+        with pytest.raises(SExprConversionError, match="foreach-enumerated index var must be \\(name type\\)"):
+            sexp_to_expr(parse_sexp("(foreach-enumerated i (x String) (list String) x)"))
+
+    def test_assign_wrong_arity(self):
+        """assign requires (var type) and expr."""
+        with pytest.raises(SExprConversionError, match="assign requires \\(var type\\) and expr"):
+            sexp_to_expr(parse_sexp("(assign (x Int64))"))
+
+    def test_assign_binding_wrong_format(self):
+        """assign var must be (name type)."""
+        with pytest.raises(SExprConversionError, match="assign var must be \\(name type\\)"):
+            sexp_to_expr(parse_sexp("(assign x 42)"))
+
+    def test_return_wrong_arity(self):
+        """return requires expr."""
+        with pytest.raises(SExprConversionError, match="return requires expr"):
+            sexp_to_expr(parse_sexp("(return)"))
+
+    def test_unknown_expr_form(self):
+        """Unknown expression form raises error."""
+        with pytest.raises(SExprConversionError, match="Unknown expression form"):
+            sexp_to_expr(parse_sexp("(unknown-form 123)"))

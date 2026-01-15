@@ -8,7 +8,7 @@ from meta.target import (
     BaseType, MessageType, TupleType, ListType, OptionType, FunctionType,
     # Expressions
     Var, Lit, Symbol, Builtin, Message, Call, Lambda, Let, IfElse,
-    Seq, While, Assign, Return,
+    Seq, While, Assign, Return, GetElement,
     # Definitions
     FunDef,
     # Utilities
@@ -521,6 +521,69 @@ class TestReturn:
         inner = Return(Lit(42))
         with pytest.raises(AssertionError):
             Return(inner)
+
+
+class TestGetElement:
+    """Tests for GetElement."""
+
+    def test_construction(self):
+        """Test GetElement construction."""
+        tuple_expr = Var("pair", TupleType([BaseType("Int64"), BaseType("String")]))
+        elem = GetElement(tuple_expr, 0)
+        assert elem.tuple_expr == tuple_expr
+        assert elem.index == 0
+
+    def test_construction_second_element(self):
+        """Test GetElement construction for second element."""
+        tuple_expr = Var("triple", TupleType([BaseType("Int64"), BaseType("String"), BaseType("Boolean")]))
+        elem = GetElement(tuple_expr, 2)
+        assert elem.index == 2
+
+    def test_str(self):
+        """Test GetElement string representation."""
+        tuple_expr = Var("pair", TupleType([BaseType("Int64"), BaseType("String")]))
+        elem = GetElement(tuple_expr, 0)
+        assert str(elem) == "pair::(Int64, String)[0]"
+
+    def test_str_second_element(self):
+        """Test GetElement string representation for second element."""
+        tuple_expr = Var("pair", TupleType([BaseType("Int64"), BaseType("String")]))
+        elem = GetElement(tuple_expr, 1)
+        assert str(elem) == "pair::(Int64, String)[1]"
+
+    def test_negative_index_fails(self):
+        """Test GetElement with negative index raises error."""
+        tuple_expr = Var("pair", TupleType([BaseType("Int64"), BaseType("String")]))
+        # GetElement validates index at construction time
+        with pytest.raises(AssertionError, match="GetElement index must be non-negative integer"):
+            GetElement(tuple_expr, -1)
+
+    def test_nested_tuple_access(self):
+        """Test GetElement with nested tuple."""
+        inner_tuple = TupleType([BaseType("Int64"), BaseType("String")])
+        outer_tuple = TupleType([inner_tuple, BaseType("Boolean")])
+        tuple_expr = Var("nested", outer_tuple)
+        elem = GetElement(tuple_expr, 0)
+        assert elem.index == 0
+
+    def test_chained_access(self):
+        """Test chained GetElement for nested tuples."""
+        inner_tuple = TupleType([BaseType("Int64"), BaseType("String")])
+        outer_tuple = TupleType([inner_tuple, BaseType("Boolean")])
+        tuple_expr = Var("nested", outer_tuple)
+        first = GetElement(tuple_expr, 0)
+        second = GetElement(first, 1)
+        assert isinstance(second.tuple_expr, GetElement)
+        assert str(second) == "nested::((Int64, String), Boolean)[0][1]"
+
+    def test_equality(self):
+        """Test GetElement equality."""
+        tuple_expr = Var("pair", TupleType([BaseType("Int64"), BaseType("String")]))
+        elem1 = GetElement(tuple_expr, 0)
+        elem2 = GetElement(tuple_expr, 0)
+        elem3 = GetElement(tuple_expr, 1)
+        assert elem1 == elem2
+        assert elem1 != elem3
 
 
 # ============================================================================

@@ -8,6 +8,7 @@ Type syntax:
     Int64                           -> BaseType("Int64")
     Float64                         -> BaseType("Float64")
     Boolean                         -> BaseType("Boolean")
+    (TypeVar name)                  -> VarType(name)
     (Message module name)           -> MessageType(module, name)
     (List elem_type)                -> ListType(elem_type)
     (Option elem_type)              -> OptionType(elem_type)
@@ -15,36 +16,38 @@ Type syntax:
     (Function (param_types...) ret) -> FunctionType(param_types, ret)
 
 Expression syntax:
-    (var name type)                 -> Var(name, type)
-    (lit value)                     -> Lit(value)
-    (call func args...)             -> Call(func, args)
-    (lambda ((p1 T1) ...) RT body)  -> Lambda([Var(p1,T1)...], RT, body)
-    (let (name type) init body)     -> Let(Var(name,type), init, body)
-    (if cond then else)             -> IfElse(cond, then, else)
-    (builtin name)                  -> Builtin(name)
-    (message module name)           -> Message(module, name)
-    (oneof field)                   -> OneOf(field)
-    (list type elems...)            -> ListExpr(elems, type)
-    (get-field object field)        -> GetField(object, field)
-    (:symbol)                       -> Symbol("symbol")
-    (seq e1 e2 ...)                 -> Seq([e1, e2, ...])
-    (while cond body)               -> While(cond, body)
-    (foreach (var type) coll body)  -> Foreach(Var(var,type), coll, body)
-    (assign (var type) expr)        -> Assign(Var(var,type), expr)
-    (return expr)                   -> Return(expr)
-
-Note: VisitNonterminal and ForeachEnumerated are expression types that are typically
-constructed programmatically and not parsed from s-expressions.
+    (var name type)                             -> Var(name, type)
+    (lit value)                                 -> Lit(value)
+    (call func args...)                         -> Call(func, args)
+    (lambda ((p1 T1) ...) RT body)              -> Lambda([Var(p1,T1)...], RT, body)
+    (let (name type) init body)                 -> Let(Var(name,type), init, body)
+    (if cond then else)                         -> IfElse(cond, then, else)
+    (builtin name)                              -> Builtin(name)
+    (message module name)                       -> Message(module, name)
+    (oneof field)                               -> OneOf(field)
+    (list type elems...)                        -> ListExpr(elems, type)
+    (get-field object field)                    -> GetField(object, field)
+    (get-element tuple index)                   -> GetElement(tuple, index)
+    (visit-nonterminal visitor_name nt_name T)  -> VisitNonterminal(visitor_name, Nonterminal(nt_name, T))
+    (:symbol)                                   -> Symbol("symbol")
+    (seq e1 e2 ...)                             -> Seq([e1, e2, ...])
+    (while cond body)                           -> While(cond, body)
+    (foreach (var type) coll body)              -> Foreach(Var(var,type), coll, body)
+    (foreach-enumerated (idx T1) (var T2) c b)  -> ForeachEnumerated(Var(idx,T1), Var(var,T2), c, b)
+    (assign (var type) expr)                    -> Assign(Var(var,type), expr)
+    (return expr)                               -> Return(expr)
 """
 
 from typing import List
 
 from .sexp import SAtom, SList, SExpr
 from .target import (
-    TargetType, BaseType, MessageType, ListType, OptionType, TupleType, FunctionType,
+    TargetType, BaseType, VarType, MessageType, ListType, OptionType, TupleType, FunctionType,
     TargetExpr, Var, Lit, Symbol, Builtin, Message, OneOf, ListExpr, Call, Lambda,
-    Let, IfElse, Seq, While, Foreach, ForeachEnumerated, Assign, Return, GetField
+    Let, IfElse, Seq, While, Foreach, ForeachEnumerated, Assign, Return, GetField,
+    GetElement, VisitNonterminal
 )
+from .grammar import Nonterminal
 
 
 class SExprConversionError(Exception):
@@ -80,7 +83,13 @@ def sexp_to_type(sexp: SExpr) -> TargetType:
 
     tag = head.value
 
-    if tag == "Message":
+    if tag == "TypeVar":
+        if len(sexp) != 2:
+            raise SExprConversionError(f"TypeVar requires name: {sexp}")
+        name = _expect_symbol(sexp[1], "TypeVar name")
+        return VarType(name)
+
+    elif tag == "Message":
         if len(sexp) != 3:
             raise SExprConversionError(f"Message type requires module and name: {sexp}")
         module = _expect_symbol(sexp[1], "Message module")
@@ -242,6 +251,15 @@ def sexp_to_expr(sexp: SExpr) -> TargetExpr:
         field_name = _expect_symbol(sexp[2], "field name")
         return GetField(obj, field_name)
 
+    elif tag == "get-element":
+        if len(sexp) != 3:
+            raise SExprConversionError(f"get-element requires tuple and index: {sexp}")
+        tuple_expr = sexp_to_expr(sexp[1])
+        index_sexp = sexp[2]
+        if not isinstance(index_sexp, SAtom) or not isinstance(index_sexp.value, int):
+            raise SExprConversionError(f"get-element index must be an integer literal: {index_sexp}")
+        return GetElement(tuple_expr, index_sexp.value)
+
     elif tag == "seq":
         if len(sexp) < 3:
             raise SExprConversionError(f"seq requires at least 2 expressions: {sexp}")
@@ -266,6 +284,31 @@ def sexp_to_expr(sexp: SExpr) -> TargetExpr:
         collection = sexp_to_expr(sexp[2])
         body = sexp_to_expr(sexp[3])
         return Foreach(Var(name, typ), collection, body)
+
+    elif tag == "foreach-enumerated":
+        if len(sexp) != 5:
+            raise SExprConversionError(f"foreach-enumerated requires (idx type), (var type), collection, and body: {sexp}")
+        idx_sexp = sexp[1]
+        if not isinstance(idx_sexp, SList) or len(idx_sexp) != 2:
+            raise SExprConversionError(f"foreach-enumerated index var must be (name type): {idx_sexp}")
+        idx_name = _expect_symbol(idx_sexp[0], "foreach-enumerated index variable name")
+        idx_type = sexp_to_type(idx_sexp[1])
+        var_sexp = sexp[2]
+        if not isinstance(var_sexp, SList) or len(var_sexp) != 2:
+            raise SExprConversionError(f"foreach-enumerated var must be (name type): {var_sexp}")
+        var_name = _expect_symbol(var_sexp[0], "foreach-enumerated variable name")
+        var_type = sexp_to_type(var_sexp[1])
+        collection = sexp_to_expr(sexp[3])
+        body = sexp_to_expr(sexp[4])
+        return ForeachEnumerated(Var(idx_name, idx_type), Var(var_name, var_type), collection, body)
+
+    elif tag == "visit-nonterminal":
+        if len(sexp) != 4:
+            raise SExprConversionError(f"visit-nonterminal requires visitor_name, nonterminal name, and type: {sexp}")
+        visitor_name = _expect_symbol(sexp[1], "visitor name")
+        nt_name = _expect_symbol(sexp[2], "nonterminal name")
+        nt_type = sexp_to_type(sexp[3])
+        return VisitNonterminal(visitor_name, Nonterminal(nt_name, nt_type))
 
     elif tag == "assign":
         if len(sexp) != 3:
@@ -301,6 +344,9 @@ def type_to_sexp(typ: TargetType) -> SExpr:
 
     if isinstance(typ, BaseType):
         return SAtom(typ.name)
+
+    elif isinstance(typ, VarType):
+        return SList((SAtom("TypeVar"), SAtom(typ.name)))
 
     elif isinstance(typ, MessageType):
         return SList((SAtom("Message"), SAtom(typ.module), SAtom(typ.name)))
@@ -363,6 +409,9 @@ def expr_to_sexp(expr: TargetExpr) -> SExpr:
     elif isinstance(expr, GetField):
         return SList((SAtom("get-field"), expr_to_sexp(expr.object), SAtom(expr.field_name)))
 
+    elif isinstance(expr, GetElement):
+        return SList((SAtom("get-element"), expr_to_sexp(expr.tuple_expr), SAtom(expr.index)))
+
     elif isinstance(expr, Call):
         return SList((SAtom("call"), expr_to_sexp(expr.func)) +
                      tuple(expr_to_sexp(a) for a in expr.args))
@@ -398,8 +447,12 @@ def expr_to_sexp(expr: TargetExpr) -> SExpr:
     elif isinstance(expr, ForeachEnumerated):
         idx_sexp = SList((SAtom(expr.index_var.name), type_to_sexp(expr.index_var.type)))
         var_sexp = SList((SAtom(expr.var.name), type_to_sexp(expr.var.type)))
-        return SList((SAtom("foreach_enumerated"), idx_sexp, var_sexp,
+        return SList((SAtom("foreach-enumerated"), idx_sexp, var_sexp,
                       expr_to_sexp(expr.collection), expr_to_sexp(expr.body)))
+
+    elif isinstance(expr, VisitNonterminal):
+        return SList((SAtom("visit-nonterminal"), SAtom(expr.visitor_name),
+                      SAtom(expr.nonterminal.name), type_to_sexp(expr.nonterminal.type)))
 
     elif isinstance(expr, Assign):
         var_sexp = SList((SAtom(expr.var.name), type_to_sexp(expr.var.type)))

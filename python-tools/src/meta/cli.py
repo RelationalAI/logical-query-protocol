@@ -2,26 +2,29 @@
 """CLI tool for validating grammar against protobuf specifications.
 
 This module provides the main command-line entry point for loading and
-validating the grammar defined in grammar.sexp.
+validating a grammar file.
 
 Usage:
-    python -m meta.cli example.proto --validate
+    python -m meta.cli --grammar example.sexp example.proto --validate
 
 Options:
     proto_files: One or more .proto files to parse
-    --grammar: Output the grammar
+    --grammar: Path to grammar file (defaults to src/meta/grammar.sexp)
     --validate: Validate grammar covers protobuf spec
-    -o, --output: Output file (stdout if not specified)
+    -o, --output: Output file for writing the grammar in s-expression format (stdout if not specified)
 
 Example:
-    $ python -m meta.cli proto/logic.proto proto/transactions.proto --validate
-    # Validates the grammar in grammar.sexp against the protobuf specifications
+    $ python -m meta.cli --grammar grammar.sexp proto/logic.proto proto/transactions.proto --validate
+    # Validates the grammar against the protobuf specifications
+
+    $ python -m meta.cli --grammar my_grammar.sexp proto/logic.proto --validate -o output.sexp
+    # Validates a custom grammar file and outputs it
 
 The tool performs the following steps:
-1. Load grammar from grammar.sexp
+1. Load grammar from the specified file (or default location)
 2. Parse all .proto files using ProtoParser
 3. Validate grammar against protobuf specification
-4. Output the grammar if requested
+4. Output the grammar if -o is specified
 """
 
 import argparse
@@ -78,7 +81,7 @@ def format_enum(enum, indent=0):
 def parse_args():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
-        description="Parse protobuf specifications and generate tools"
+        description="Parse protobuf specifications and validate grammar"
     )
     parser.add_argument(
         "proto_files",
@@ -89,12 +92,12 @@ def parse_args():
     parser.add_argument(
         "-o", "--output",
         type=Path,
-        help="Output file"
+        help="Output file for grammar in s-expression format"
     )
     parser.add_argument(
         "--grammar",
-        action="store_true",
-        help="Output the grammar"
+        type=Path,
+        help="Path to grammar file (defaults to src/meta/grammar.sexp)"
     )
     parser.add_argument(
         "--validate",
@@ -106,21 +109,23 @@ def parse_args():
 
 def run(args) -> int:
     """Execute the CLI command specified by args."""
-    # Load grammar from grammar.sexp
-    grammar_path = Path(__file__).parent / "grammar.sexp"
+    # Determine grammar file path
+    if args.grammar:
+        grammar_path = args.grammar
+    else:
+        grammar_path = Path(__file__).parent / "grammar.sexp"
+
     if not grammar_path.exists():
         print(f"Error: Grammar file not found: {grammar_path}", file=sys.stderr)
         return 1
 
-    # Load grammar rules from grammar.sexp
+    # Load grammar rules from file
     grammar_config = load_grammar_config_file(grammar_path)
 
     # Build Grammar object from loaded config
-    # Extract final rules and create grammar
-    final_rules = {lhs.name for lhs, (_, is_final) in grammar_config.items() if is_final}
     start = Nonterminal('transaction', MessageType('transactions', 'Transaction'))
     grammar = Grammar(start=start)
-    for lhs, (rules, _) in grammar_config.items():
+    for lhs, rules in grammar_config.items():
         for rule in rules:
             grammar.add_rule(rule)
 
@@ -151,7 +156,6 @@ def run(args) -> int:
     validation_result = validate_grammar(
         grammar,
         proto_parser,
-        final_rules,
         expected_unreachable,
     )
 
@@ -161,13 +165,11 @@ def run(args) -> int:
         if not validation_result.is_valid:
             return 1
 
-    if args.grammar:
+    # Output grammar if -o is specified
+    if args.output:
         output_text = grammar.print_grammar_sexp()
-        if args.output:
-            args.output.write_text(output_text)
-            print(f"Grammar written to {args.output}")
-        else:
-            print(output_text)
+        args.output.write_text(output_text)
+        print(f"Grammar written to {args.output}")
 
     return 0
 

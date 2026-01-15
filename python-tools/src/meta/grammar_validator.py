@@ -22,7 +22,7 @@ from .proto_parser import ProtoParser
 from .proto_ast import ProtoMessage, ProtoField
 from .target import (
     TargetType, TargetExpr, Call, Message, Builtin, Var, IfElse, Let, Seq, ListExpr, GetField,
-    BaseType, VarType, MessageType, ListType, OptionType, TupleType, FunctionType, Lambda
+    GetElement, BaseType, VarType, MessageType, ListType, OptionType, TupleType, FunctionType, Lambda, OneOf
 )
 
 
@@ -164,12 +164,6 @@ class TypeEnv:
         self._builtin_types["snd"] = FunctionType(
             param_types=[TupleType([T1, T2])],
             return_type=T2
-        )
-
-        # get_tuple_element: (Tuple, Int64) -> T
-        self._builtin_types["get_tuple_element"] = FunctionType(
-            param_types=[TupleType([]), BaseType("Int64")],
-            return_type=T
         )
 
         # make_tuple: (T1, T2, ...) -> (T1, T2, ...)
@@ -399,12 +393,10 @@ class GrammarValidator:
         self,
         grammar: Grammar,
         parser: ProtoParser,
-        final_rules: Set[str],
         expected_unreachable: Set[str],
     ):
         self.grammar = grammar
         self.parser = parser
-        self.final_rules = final_rules
         self.expected_unreachable = expected_unreachable
         self.result = ValidationResult()
 
@@ -577,6 +569,26 @@ class GrammarValidator:
             self._check_expr_types(expr.object, context)
             # field_name is a string, no need to check
 
+        elif isinstance(expr, GetElement):
+            # Check the tuple expression
+            self._check_expr_types(expr.tuple_expr, context)
+            # Check that tuple_expr has tuple type
+            tuple_type = self._infer_expr_type(expr.tuple_expr)
+            if tuple_type is not None and not isinstance(tuple_type, TupleType):
+                self.result.add_error(
+                    "type_tuple_element",
+                    f"In {context}: GetElement expects tuple type, got {tuple_type}",
+                    rule_name=context
+                )
+            # Check index bounds
+            if isinstance(tuple_type, TupleType):
+                if expr.index < 0 or expr.index >= len(tuple_type.elements):
+                    self.result.add_error(
+                        "type_tuple_element",
+                        f"In {context}: GetElement index {expr.index} out of bounds for tuple with {len(tuple_type.elements)} elements",
+                        rule_name=context
+                    )
+
         # Other expression types (Var, Lit, Symbol, Builtin, Message, etc.) are leaves
         return None
 
@@ -665,57 +677,6 @@ class GrammarValidator:
                             f"In {context}: builtin 'unwrap_option_or' arg 1 has type {arg1_type}, expected {arg0_type.element_type}",
                             rule_name=context
                         )
-
-        elif name == "fst":
-            # (T1, T2) -> T1
-            if len(args) != 1:
-                self.result.add_error(
-                    "type_builtin_arity",
-                    f"In {context}: builtin 'fst' expects 1 arg, got {len(args)}",
-                    rule_name=context
-                )
-            else:
-                arg_type = self._infer_expr_type(args[0])
-                if arg_type is not None and not isinstance(arg_type, TupleType):
-                    self.result.add_error(
-                        "type_builtin_arg",
-                        f"In {context}: builtin 'fst' arg has type {arg_type}, expected tuple type",
-                        rule_name=context
-                    )
-
-        elif name == "snd":
-            # (T1, T2) -> T2
-            if len(args) != 1:
-                self.result.add_error(
-                    "type_builtin_arity",
-                    f"In {context}: builtin 'snd' expects 1 arg, got {len(args)}",
-                    rule_name=context
-                )
-            else:
-                arg_type = self._infer_expr_type(args[0])
-                if arg_type is not None and not isinstance(arg_type, TupleType):
-                    self.result.add_error(
-                        "type_builtin_arg",
-                        f"In {context}: builtin 'snd' arg has type {arg_type}, expected tuple type",
-                        rule_name=context
-                    )
-
-        elif name == "get_tuple_element":
-            # (tuple, Int64) -> T
-            if len(args) != 2:
-                self.result.add_error(
-                    "type_builtin_arity",
-                    f"In {context}: builtin 'get_tuple_element' expects 2 args, got {len(args)}",
-                    rule_name=context
-                )
-            else:
-                arg0_type = self._infer_expr_type(args[0])
-                if arg0_type is not None and not isinstance(arg0_type, TupleType):
-                    self.result.add_error(
-                        "type_builtin_arg",
-                        f"In {context}: builtin 'get_tuple_element' arg 0 has type {arg0_type}, expected tuple type",
-                        rule_name=context
-                    )
 
         elif name == "make_tuple":
             # (T1, T2, ...) -> (T1, T2, ...)
@@ -819,6 +780,13 @@ class GrammarValidator:
             # Would need to look up field type in object's message definition
             # For now, return None (could be enhanced with field type lookup)
             return None
+        elif isinstance(expr, GetElement):
+            # Infer return type from tuple type and index
+            tuple_type = self._infer_expr_type(expr.tuple_expr)
+            if isinstance(tuple_type, TupleType):
+                if 0 <= expr.index < len(tuple_type.elements):
+                    return tuple_type.elements[expr.index]
+            return None
         else:
             # Other cases: Lit, Symbol, etc.
             return None
@@ -857,9 +825,6 @@ class GrammarValidator:
         for message_name in self._message_names:
             rule_name = _to_snake_case(message_name)
 
-            # Skip messages that are expected to be handled by builtins
-            if rule_name in self.final_rules:
-                continue
 
             # Skip messages marked as expected unreachable
             if rule_name in self.expected_unreachable:
@@ -913,13 +878,11 @@ class GrammarValidator:
 
             if not constructors:
                 # No rule constructs this message - might use a builtin
-                # Only warn if it's not a final rule
-                if rule_name not in self.final_rules:
-                    self.result.add_warning(
-                        "field_coverage",
-                        f"No rule constructs Message({message.module}, {message_name})",
-                        proto_type=message_name
-                    )
+                self.result.add_warning(
+                    "field_coverage",
+                    f"No rule constructs Message({message.module}, {message_name})",
+                    proto_type=message_name
+                )
                 continue
 
             # Check each constructor has the right number of arguments
@@ -974,6 +937,37 @@ class GrammarValidator:
         visit(expr)
         return results
 
+    def _expr_constructs_oneof_variant(self, expr: TargetExpr, variant_name: str) -> bool:
+        """Check if expression constructs a oneof variant."""
+        if isinstance(expr, Call):
+            if isinstance(expr.func, OneOf) and expr.func.field_name == variant_name:
+                return True
+            # Check func and args recursively
+            if self._expr_constructs_oneof_variant(expr.func, variant_name):
+                return True
+            for arg in expr.args:
+                if self._expr_constructs_oneof_variant(arg, variant_name):
+                    return True
+        elif isinstance(expr, Lambda):
+            return self._expr_constructs_oneof_variant(expr.body, variant_name)
+        elif isinstance(expr, Let):
+            if self._expr_constructs_oneof_variant(expr.init, variant_name):
+                return True
+            return self._expr_constructs_oneof_variant(expr.body, variant_name)
+        elif isinstance(expr, IfElse):
+            if self._expr_constructs_oneof_variant(expr.condition, variant_name):
+                return True
+            if self._expr_constructs_oneof_variant(expr.then_branch, variant_name):
+                return True
+            return self._expr_constructs_oneof_variant(expr.else_branch, variant_name)
+        elif isinstance(expr, ListExpr):
+            for elem in expr.elements:
+                if self._expr_constructs_oneof_variant(elem, variant_name):
+                    return True
+        elif isinstance(expr, GetElement):
+            return self._expr_constructs_oneof_variant(expr.tuple_expr, variant_name)
+        return False
+
     def _check_oneof_coverage(self) -> None:
         """Check that every oneof variant has an alternative production."""
         for message_name, message in self.parser.messages.items():
@@ -981,10 +975,6 @@ class GrammarValidator:
                 continue
 
             rule_name = _to_snake_case(message_name)
-
-            # Skip builtin rules
-            if rule_name in self.final_rules:
-                continue
 
             # Skip expected unreachable
             if rule_name in self.expected_unreachable:
@@ -999,14 +989,13 @@ class GrammarValidator:
             # Get all oneof variant names
             for oneof in message.oneofs:
                 for variant in oneof.fields:
-                    variant_rule_name = _to_snake_case(variant.name)
-                    variant_type_rule_name = _to_snake_case(variant.type)
+                    variant_name = variant.name
 
-                    # Check if there's a rule alternative for this variant
+                    # Check if there's a rule that constructs this variant
                     found = False
                     for rule in rules:
-                        rhs_refs = self._get_rhs_nonterminal_names(rule.rhs)
-                        if variant_rule_name in rhs_refs or variant_type_rule_name in rhs_refs:
+                        # Check if constructor constructs this oneof variant
+                        if self._expr_constructs_oneof_variant(rule.constructor, variant_name):
                             found = True
                             break
 
@@ -1062,7 +1051,6 @@ class GrammarValidator:
             "attrs",
         }
         expected_rules.update(known_auxiliary_rules)
-        expected_rules.update(self.final_rules)
 
         # Check each grammar rule
         for rule_nt in self.grammar.rules.keys():
@@ -1134,7 +1122,6 @@ class GrammarValidator:
 def validate_grammar(
     grammar: Grammar,
     parser: ProtoParser,
-    final_rules: Set[str],
     expected_unreachable: Set[str],
 ) -> ValidationResult:
     """Validate grammar against protobuf specification.
@@ -1142,11 +1129,10 @@ def validate_grammar(
     Args:
         grammar: The generated grammar
         parser: ProtoParser with message definitions
-        final_rules: Rule names that are manually defined (builtins)
         expected_unreachable: Rule names known to be unreachable
 
     Returns:
         ValidationResult with any issues found
     """
-    validator = GrammarValidator(grammar, parser, final_rules, expected_unreachable)
+    validator = GrammarValidator(grammar, parser, expected_unreachable)
     return validator.validate()
