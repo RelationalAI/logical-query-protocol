@@ -27,6 +27,8 @@ from .target import (
     TupleType,
     ListType,
     FunDef,
+    VisitNonterminalDef,
+    VisitNonterminal,
 )
 
 # Grammar data structures
@@ -67,6 +69,9 @@ from .codegen_python import (
     escape_identifier as escape_python_identifier,
 )
 
+# Parser generation
+from .parser_gen import generate_parse_functions
+
 __all__ = [
     # Target language AST
     'TargetNode',
@@ -87,6 +92,8 @@ __all__ = [
     'TupleType',
     'ListType',
     'FunDef',
+    'VisitNonterminalDef',
+    'VisitNonterminal',
     # Grammar
     'Grammar',
     'Rule',
@@ -112,4 +119,6 @@ __all__ = [
     'generate_python',
     'generate_python_lines',
     'escape_python_identifier',
+    # Parser generation
+    'generate_parse_functions',
 ]
