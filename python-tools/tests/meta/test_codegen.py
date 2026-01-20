@@ -10,7 +10,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 from meta.target import Var, Symbol, Call, Lambda, Let, BaseType
 from meta.codegen_python import generate_python, escape_identifier as escape_python
 from meta.codegen_julia import generate_julia, escape_identifier as escape_julia
-from meta.codegen_go import generate_go, escape_identifier as escape_go
 
 _any_type = BaseType("Any")
 
@@ -53,29 +52,6 @@ def test_julia_keyword_escaping():
     print("✓ Julia keyword escaping works")
 
 
-def test_go_keyword_escaping():
-    """Test that Go keywords are properly escaped."""
-    # Test keyword variables
-    assert escape_go("func") == "func_"
-    assert escape_go("type") == "type_"
-    assert escape_go("var") == "var_"
-
-    # Test predeclared identifiers
-    assert escape_go("string") == "string_"
-    assert escape_go("int") == "int_"
-
-    # Test non-keywords
-    assert escape_go("foo") == "foo"
-    assert escape_go("myVar") == "myVar"
-
-    # Test in expressions
-    var = Var("type", _any_type)
-    code = generate_go(var)
-    assert code == "type_"
-
-    print("✓ Go keyword escaping works")
-
-
 def test_python_call_generation():
     """Test Python function call generation."""
     # Simple call
@@ -109,21 +85,6 @@ def test_julia_call_generation():
     assert code_kw == 'var"function"(arg)'
 
     print("✓ Julia call generation works")
-
-
-def test_go_call_generation():
-    """Test Go function call generation."""
-    # Simple call
-    call = Call(Var("foo", _any_type), [Var("x", _any_type), Var("y", _any_type)])
-    code = generate_go(call)
-    assert code == "foo(x, y)"
-
-    # Call with keyword function name
-    call_kw = Call(Var("func", _any_type), [Var("arg", _any_type)])
-    code_kw = generate_go(call_kw)
-    assert code_kw == "func_(arg)"
-
-    print("✓ Go call generation works")
 
 
 def test_python_let_generation():
@@ -177,23 +138,6 @@ def test_julia_let_generation():
     print("✓ Julia Let generation works")
 
 
-def test_go_let_generation():
-    """Test Go Let-binding generation (as IIFE)."""
-    # Simple let
-    let_expr = Let(Var("x", _any_type), Call(Var("parse_foo", _any_type), []), Var("x", _any_type))
-    code = generate_go(let_expr)
-    assert "parse_foo()" in code and "x := " in code
-    assert code.strip().endswith("x")
-
-    # Let with keyword variable
-    let_kw = Let(Var("type", _any_type), Call(Var("parse", _any_type), []), Var("type", _any_type))
-    code_kw = generate_go(let_kw)
-    assert "parse()" in code_kw and "type_ := " in code_kw
-    assert code_kw.strip().endswith("type_")
-
-    print("✓ Go Let generation works")
-
-
 def test_python_lambda_generation():
     """Test Python lambda generation."""
     # Simple lambda
@@ -224,28 +168,13 @@ def test_julia_lambda_generation():
     print("✓ Julia lambda generation works")
 
 
-def test_go_lambda_generation():
-    """Test Go anonymous function generation."""
-    # Simple lambda
-    lam = Lambda([Var("x", _any_type), Var("y", _any_type)], _any_type, Call(Var("Add", _any_type), [Var("x", _any_type), Var("y", _any_type)]))
-    code = generate_go(lam)
-    assert "func(x interface{}, y interface{})" in code
-    assert "return Add(x, y)" in code
-
-    print("✓ Go lambda generation works")
-
-
 if __name__ == "__main__":
     test_python_keyword_escaping()
     test_julia_keyword_escaping()
-    test_go_keyword_escaping()
     test_python_call_generation()
     test_julia_call_generation()
-    test_go_call_generation()
     test_python_let_generation()
     test_julia_let_generation()
-    test_go_let_generation()
     test_python_lambda_generation()
     test_julia_lambda_generation()
-    test_go_lambda_generation()
     print("\n✓ All code generation tests passed")

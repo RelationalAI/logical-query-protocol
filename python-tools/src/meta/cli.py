@@ -36,7 +36,6 @@ from .grammar_gen import GrammarGenerator
 from .proto_print import print_proto_spec
 from .parser_gen import generate_parse_functions
 from .parser_gen_python import generate_parser_python
-from .parser_gen_go import generate_parser_go
 from .parser_gen_julia import generate_parser_julia
 
 
@@ -68,7 +67,7 @@ def parse_args():
     )
     parser.add_argument(
         "--parser",
-        choices=["python", "go", "julia", "ir"],
+        choices=["python", "julia", "ir"],
         help="Generate a parser in the specified language (or 'ir' to dump target IR)"
     )
     return parser.parse_args()
@@ -140,8 +139,6 @@ def run(args) -> int:
             for msg_name, msg in proto_parser.messages.items():
                 proto_messages[(msg.module, msg.name)] = msg
             output_text = generate_parser_python(grammar, reachable_set, proto_messages=proto_messages)
-        elif args.parser == "go":
-            output_text = generate_parser_go(grammar)
         elif args.parser == "julia":
             reachable, _ = grammar.analysis.partition_nonterminals_by_reachability()
             reachable_set = set(reachable)
