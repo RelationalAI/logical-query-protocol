@@ -1,40 +1,39 @@
 # Meta-Language Tooling
 
-This package provides tools for generating parsers and pretty-printers from protobuf specifications.
+This package provides tools for generating parsers from protobuf specifications.
 
 ## Overview
 
 The meta-language tooling converts protobuf message definitions into:
 - **Grammars** for parsing S-expression representations
-- **Recursive-descent parsers** in Python, Julia, and Go
-- **Pretty-printers** for converting protobuf bytes back to S-expressions
+- **Recursive-descent parsers** in Python and Julia
 
 ## Architecture
 
 ### Core Modules
 
 #### Grammar Representation (`grammar.py`)
-- **Data structures**: `Grammar`, `Rule`, `Token`, `Rhs` types (`LitTerminal`, `NamedTerminal`, `Nonterminal`, `Star`, `Option`)
-- **Semantic actions**: `ActionExpr` types (`Function`, `Var`, `Call`, `Symbol`, `Wildcard`)
+- **Data structures**: `Grammar`, `Rule`, `Rhs` types (`LitTerminal`, `NamedTerminal`, `Nonterminal`, `Star`, `Option`, `Sequence`)
+- **Semantic actions**: `Lambda` for result construction
 - **Public API**: Grammar construction and manipulation
 
-#### Grammar Transformations
+#### Grammar Analysis
 
-**`normalize.py`** - EBNF Operator Elimination
-- Converts `A*` → `A_star -> A A_star | ε`
-- Converts `A?` → `A_opt -> A | ε`
-
-**`left_factor.py`** - Common Prefix Extraction
-- Transforms `A -> α β₁ | α β₂` into `A -> α A'` and `A' -> β₁ | β₂`
-- Stores metadata for semantic action reconstruction
-- Enables LL(k) parsing of grammars with common prefixes
-
-**`analysis.py`** - Grammar Analysis
+**`grammar_analysis.py`** - Grammar Analysis
+- `GrammarAnalysis` class with cached analysis results
 - Reachability analysis
 - Nullable set computation
 - FIRST and FIRST_k sets
-- FOLLOW sets
+- FOLLOW and FOLLOW_k sets
 - LL(k) conflict detection
+
+**`grammar_utils.py`** - Grammar Utilities
+- Helper functions for extracting nonterminals and terminals
+- Sequence manipulation utilities
+
+**`terminal_sequence_set.py`** - Terminal Sequence Sets
+- Lazy computation of FIRST_k and FOLLOW_k sets
+- Incremental k-depth expansion for LL(k) analysis
 
 #### Protobuf Processing
 
@@ -46,32 +45,72 @@ The meta-language tooling converts protobuf message definitions into:
 - `ProtoParser` class for extracting message/enum definitions from .proto files
 - Handles nested messages, oneofs, and enums
 
+**`proto_print.py`** - Protobuf Formatting
+- Format parsed protobuf specifications for display
+
 **`grammar_gen.py`** - Grammar Generator
 - `GrammarGenerator` class converts protobuf specifications to context-free grammars
-- Generates prepopulated rules for transactions, bindings, operators
 - Maps protobuf types to grammar rules
+
+**`grammar_gen_builtins.py`** - Built-in Grammar Rules
+- Prepopulated rules for transactions, bindings, operators
+- S-expression structure rules
+
+**`grammar_gen_rewrites.py`** - Grammar Rule Rewrites
+- Transform protobuf-generated rules for better parsing
+- Symbol replacement, abstraction rewrites
+
+#### Target IR (Intermediate Representation)
+
+**`target.py`** - IR Type Definitions
+- Expression types: `Var`, `Lit`, `Symbol`, `Builtin`, `Call`, `Lambda`, `Let`, `IfElse`, `Seq`, `While`, `Assign`, `Return`
+- Data structure types: `Message`, `OneOf`, `ListExpr`
+- Type system: `BaseType`, `TupleType`, `ListType`, `OptionType`, `MessageType`, `FunctionType`
+- Function definitions: `FunDef`, `VisitNonterminalDef`, `VisitNonterminal`
+
+**`target_utils.py`** - IR Utilities
+- Helper functions for IR manipulation and construction
+
+#### Parser Generation
+
+**`parser_gen.py`** - Language-Independent Parser Generation
+- Generates LL(k) recursive-descent parser IR
+- Decision tree generation for alternative selection
+- Handles EBNF operators (Star, Option)
+- Semantic action integration
+
+**`parser_gen_python.py`** - Python Parser Generator
+- Translates IR to Python code via `codegen_python.py`
+- Generates complete parser with lexer
+
+**`parser_gen_julia.py`** - Julia Parser Generator
+- Translates IR to Julia code via `codegen_julia.py`
+- Generates complete parser with lexer
 
 #### Code Generation
 
-**`parser_python.py`** - Python Parser Generator
-- Generates LL(k) recursive-descent parser with backtracking
-- Lexer generation with token patterns and literals
-- Decision tree generation for multiple alternatives
-- Support for left-factored rules with continuation methods
-- Semantic action threading through prefix/suffix combinations
+**`codegen_base.py`** - Base Code Generator
+- Abstract base class for language-specific code generators
+- Shared logic for IR-to-code translation
 
-**`parser_julia.py`** - Julia Parser Generator (stub)
-**`parser_go.py`** - Go Parser Generator (stub)
+**`codegen_python.py`** - Python Code Generator
+- Translates target IR to Python
+- Implements language-specific builtins and syntax
 
-**`printer_python.py`** - Python Pretty Printer (stub)
-**`printer_julia.py`** - Julia Pretty Printer (stub)
-**`printer_go.py`** - Go Pretty Printer (stub)
+**`codegen_julia.py`** - Julia Code Generator
+- Translates target IR to Julia
+- Implements language-specific builtins and syntax
+
+#### Utilities
+
+**`gensym.py`** - Symbol Generation
+- Generate unique variable and function names
 
 #### CLI Tool
 
-**`proto_tool.py`** - Command-Line Interface
+**`cli.py`** - Command-Line Interface
 - Parse protobuf files
-- Generate grammars, parsers, and pretty-printers
+- Generate grammars and parsers
 - Multiple output format support
 
 ## Usage
@@ -79,21 +118,29 @@ The meta-language tooling converts protobuf message definitions into:
 ### Command Line
 
 ```bash
-# Generate context-free grammar
-python -m src.meta.proto_tool --grammar file.proto -o output.g
+# Display parsed protobuf specification
+python -m meta.cli file.proto
+
+# Generate and display grammar
+python -m meta.cli file.proto --grammar
 
 # Generate Python parser
-python -m src.meta.proto_tool --parser python file.proto -o parser.py
+python -m meta.cli file.proto --parser python -o parser.py
 
-# Generate semantic actions
-python -m src.meta.proto_tool --actions file.proto -o visitor.py
+# Generate Julia parser
+python -m meta.cli file.proto --parser julia -o parser.jl
+
+# Specify start message
+python -m meta.cli file.proto --grammar --start Transaction
 ```
 
 ### Programmatic API
 
 ```python
-from meta import Grammar, ProtoParser, GrammarGenerator
-from meta.parser_python import generate_parser_python
+from meta.proto_parser import ProtoParser
+from meta.grammar_gen import GrammarGenerator
+from meta.parser_gen import generate_parse_functions
+from meta.parser_gen_python import generate_parser_python
 
 # Parse protobuf files
 parser = ProtoParser()
@@ -101,80 +148,60 @@ parser.parse_file('messages.proto')
 
 # Generate grammar
 generator = GrammarGenerator(parser, verbose=True)
-grammar = generator.generate(start_message='Transaction')
+grammar = generator.generate()
 
-# Apply transformations
-normalized = grammar.normalize()
-factored = normalized.left_factor()
+# Generate parser IR
+parse_functions = generate_parse_functions(grammar)
 
-# Generate parser
-parser_code = generate_parser_python(factored, reachable=None)
+# Generate Python code
+parser_code = generate_parser_python(parse_functions)
 
 with open('parser.py', 'w') as f:
     f.write(parser_code)
 ```
 
-## Grammar Transformation Pipeline
+## Parser Generation Pipeline
 
-The parser generation applies two key transformations:
+The parser generator produces LL(k) recursive-descent parsers:
 
-### 1. Normalization
+### 1. IR Generation (`parser_gen.py`)
 
-Eliminates EBNF operators to produce a pure context-free grammar:
+Generates target-independent intermediate representation:
+- Computes FIRST_k and FOLLOW_k sets for LL(k) analysis
+- Builds decision trees to select production alternatives
+- Handles EBNF operators (Star, Option) with loops and conditionals
+- Integrates semantic actions (Lambda expressions)
 
-**Before:**
-```
-list -> "(" "list" item* ")"
-```
+### 2. Code Generation
 
-**After:**
-```
-list -> "(" "list" item_star_0 ")"
-item_star_0 -> item item_star_0
-item_star_0 -> ε
-```
+Language-specific generators translate IR to code:
+- `codegen_python.py` - Python code generation
+- `codegen_julia.py` - Julia code generation
 
-### 2. Left-Factoring
+### EBNF Operators
 
-Extracts common prefixes to enable LL(k) parsing:
+Star and Option are handled directly without grammar transformation:
 
-**Before:**
-```
-expr -> "(" "add" term term ")"
-expr -> "(" "sub" term term ")"
-```
+**Star (A*)**: Generated as a while loop collecting results into a list
 
-**After:**
-```
-expr -> "(" expr_cont_0
-expr_cont_0 -> "add" term term ")"
-expr_cont_0 -> "sub" term term ")"
-```
+**Option (A?)**: Generated as an if statement with lookahead check
 
-The generated parser threads parsed prefix results through continuation methods:
+### LL(k) Prediction
+
+When multiple productions exist, decision trees use lookahead:
 
 ```python
-def parse_expr(self):
-    # Parse common prefix
-    prefix_results = []
-    self.consume('(')
-    prefix_results.append(None)
-    
-    # Parse continuation with prefix context
-    suffix_result = self.parse_expr_cont_0(prefix_results)
-    return suffix_result
+# Grammar: expr -> "(" "add" term term ")" | "(" "sub" term term ")"
+# Generated decision logic:
 
-def parse_expr_cont_0(self, prefix_results):
-    if self.match_literal('add'):
-        # Parse 'add' alternative
-        suffix_results = []
-        # ... parse suffix elements ...
-        all_results = prefix_results + suffix_results
-        return all_results
-    elif self.match_literal('sub'):
-        # Parse 'sub' alternative
-        ...
+if lookahead(0) == "(":
+    if lookahead(1) == "add":
+        # Parse first alternative
+    elif lookahead(1) == "sub":
+        # Parse second alternative
 ```
+
+The value of k increases incrementally until alternatives can be distinguished.
 
 ## Testing
 
@@ -184,62 +211,72 @@ Run the test suite:
 # All tests
 python -m pytest tests/meta/
 
-# Individual test modules
-python tests/meta/test_normalize.py
-python tests/meta/test_left_factor.py
-python tests/meta/test_parser_gen.py
+# Grammar generation tests
+python -m pytest tests/meta/test_grammar.py
+python -m pytest tests/meta/test_grammar_gen.py
+
+# Parser generation tests
+python -m pytest tests/meta/test_parser_gen.py
 ```
 
 ## Module Dependencies
 
 ```
-proto_tool.py
+cli.py
   ├── proto_parser.py
   │   └── proto_ast.py
+  ├── proto_print.py
   ├── grammar_gen.py
-  │   ├── proto_ast.py
   │   ├── proto_parser.py
-  │   └── grammar.py
-  └── parser_python.py
-      ├── grammar.py
-      │   ├── normalize.py
-      │   ├── left_factor.py
-      │   └── analysis.py
-      └── analysis.py
+  │   ├── proto_ast.py
+  │   ├── grammar.py
+  │   ├── grammar_gen_builtins.py
+  │   └── grammar_gen_rewrites.py
+  ├── parser_gen.py
+  │   ├── grammar.py
+  │   ├── grammar_analysis.py
+  │   ├── grammar_utils.py
+  │   ├── terminal_sequence_set.py
+  │   ├── target.py
+  │   └── gensym.py
+  ├── parser_gen_python.py
+  │   ├── parser_gen.py
+  │   └── codegen_python.py
+  └── parser_gen_julia.py
+      ├── parser_gen.py
+      └── codegen_julia.py
 ```
 
 ## Implementation Notes
 
-### Left-Factoring and Semantic Actions
+### Target IR
 
-Continuation rules store metadata to reconstruct semantic actions:
-- `original_rules` - References to pre-factored rules
-- `original_action` - Original semantic action
-- `original_rule_index` - Index of corresponding original rule
-- `prefix_length` - Length of factored prefix
+Parser generation uses a two-stage approach:
+1. Generate language-independent IR (target.py)
+2. Translate IR to target language (codegen_*.py)
 
-Parser generation combines prefix and suffix parse results to match the parameters expected by original semantic actions.
+This enables:
+- Shared parser generation logic
+- Easier addition of new target languages
+- Language-specific optimization opportunities
 
-### LL(k) Conflict Detection
+### LL(k) Analysis
 
-The parser generator computes FIRST_k sets and detects conflicts:
-- LL(2) checking by default
-- Decision trees up to depth k=7 for complex cases
-- Backtracking as fallback for remaining ambiguities
+The `terminal_sequence_set.py` module provides lazy LL(k) computation:
+- Starts with k=1
+- Incrementally expands to higher k when needed
+- Avoids expensive computation when simple lookahead suffices
 
-### Parser Features
+### Grammar Analysis
 
-Generated parsers include:
-- Lexer with regex-based tokenization
-- Lookahead methods for k-token predictions
-- Position save/restore for backtracking
-- Error reporting with position information
-- Support for left-factored continuation nonterminals
+The `grammar_analysis.py` module uses `@cached_property` for lazy evaluation:
+- Reachability, nullable, FIRST, and FOLLOW computed on demand
+- Results cached for efficiency
+- Static methods available for testing
 
 ## Future Work
 
-- Complete Julia and Go parser generators
+- Complete Julia parser generator testing
 - Implement pretty-printer generators
-- Add incremental parsing support
+- Add error recovery mechanisms
 - Optimize decision tree generation
-- Generate parser tables for table-driven parsing
