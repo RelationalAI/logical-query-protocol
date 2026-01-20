@@ -474,10 +474,10 @@ class TestComputeFirstK:
         """Test FIRST_2 for simple grammar."""
         grammar, s, a, b, lit_a, lit_b = make_simple_grammar()
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
-        first_k = GrammarAnalysis.compute_first_k_static(grammar, k=2, nullable=nullable)
+        first_2 = GrammarAnalysis.compute_first_k_static(grammar, k=2, nullable=nullable)
 
         # S -> A B, so FIRST_2(S) = {("a", "b")}
-        assert (lit_a, lit_b) in first_k[s]
+        assert (lit_a, lit_b) in first_2[s]
 
     def test_k1_matches_first(self):
         """Test that FIRST_1 matches regular FIRST."""
@@ -498,8 +498,8 @@ class TestComputeFirstK:
         grammar.add_rule(Rule(s, Sequence(()), constructor))
 
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
-        first_k = GrammarAnalysis.compute_first_k_static(grammar, k=2, nullable=nullable)
-        assert () in first_k[s]
+        first_2 = GrammarAnalysis.compute_first_k_static(grammar, k=2, nullable=nullable)
+        assert () in first_2[s]
 
 
 class TestRhsFirstK:
@@ -685,15 +685,15 @@ class TestComputeFollowK:
         """Test FOLLOW_2 for simple grammar."""
         grammar, s, a, b, lit_a, lit_b = make_simple_grammar()
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
-        first_k = GrammarAnalysis.compute_first_k_static(grammar, k=2, nullable=nullable)
-        follow_k = GrammarAnalysis.compute_follow_k_static(grammar, k=2, nullable=nullable, first_k=first_k)
+        first_2 = GrammarAnalysis.compute_first_k_static(grammar, k=2, nullable=nullable)
+        follow_2 = GrammarAnalysis.compute_follow_k_static(grammar, k=2, nullable=nullable, first_k=first_2)
 
         # FOLLOW_2(A) includes FIRST_2(B) = {("b",)}
-        assert (lit_b,) in follow_k[a]
+        assert (lit_b,) in follow_2[a]
 
         # FOLLOW_2(S) includes {("$",)}
         eof = NamedTerminal('$', BaseType('EOF'))
-        assert (eof,) in follow_k[s]
+        assert (eof,) in follow_2[s]
 
     def test_k1_matches_follow(self):
         """Test that FOLLOW_1 matches regular FOLLOW."""
@@ -1367,11 +1367,11 @@ class TestDragonBookExamples:
         assert lit_b in first[s]
 
         # With k=3, we can distinguish: FIRST_3(S) = {(a,a,a), (a,b,a), (b,a,b), (b,b,b)}
-        first_k = GrammarAnalysis.compute_first_k_static(grammar, k=3, nullable=nullable)
-        assert (lit_a, lit_a, lit_a) in first_k[s]
-        assert (lit_a, lit_b, lit_a) in first_k[s]
-        assert (lit_b, lit_a, lit_b) in first_k[s]
-        assert (lit_b, lit_b, lit_b) in first_k[s]
+        first_3 = GrammarAnalysis.compute_first_k_static(grammar, k=3, nullable=nullable)
+        assert (lit_a, lit_a, lit_a) in first_3[s]
+        assert (lit_a, lit_b, lit_a) in first_3[s]
+        assert (lit_b, lit_a, lit_b) in first_3[s]
+        assert (lit_b, lit_b, lit_b) in first_3[s]
 
     def test_dragon_book_dangling_else_with_follow_k(self):
         """Test dangling else ambiguity with FOLLOW_k.
@@ -1418,14 +1418,14 @@ class TestDragonBookExamples:
                             Lambda([], MessageType("proto", "E"), Var("z", MessageType("proto", "E")))))
 
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
-        first_k = GrammarAnalysis.compute_first_k_static(grammar, k=2, nullable=nullable)
-        follow_k = GrammarAnalysis.compute_follow_k_static(grammar, k=2, nullable=nullable, first_k=first_k)
+        first_2 = GrammarAnalysis.compute_first_k_static(grammar, k=2, nullable=nullable)
+        follow_2 = GrammarAnalysis.compute_follow_k_static(grammar, k=2, nullable=nullable, first_k=first_2)
 
         # FOLLOW_2(S') should include EOF and pairs with else
         eof = NamedTerminal('$', BaseType('EOF'))
-        assert (eof,) in follow_k[s_prime]
-        assert (else_tok, if_tok) in follow_k[s_prime]
-        assert (else_tok, other_tok) in follow_k[s_prime]
+        assert (eof,) in follow_2[s_prime]
+        assert (else_tok, if_tok) in follow_2[s_prime]
+        assert (else_tok, other_tok) in follow_2[s_prime]
 
 
 class TestIntegration:
@@ -1603,6 +1603,27 @@ class TestAppelChapter3Examples:
 
         # FOLLOW(Z) = {$}
         assert eof in follow[z], "FOLLOW(Z) should contain '$'"
+
+        # Compute FIRST_k with k=2 to test LL(2) disambiguation
+        first_2 = GrammarAnalysis.compute_first_k_static(grammar, k=2, nullable=nullable)
+
+        # FIRST_2(X) includes: (a,), (c,), ()
+        assert (lit_a,) in first_2[x]
+        assert (lit_c,) in first_2[x]
+        assert () in first_2[x]  # X is nullable via X -> Y -> epsilon
+
+        # FIRST_2(Y) includes: (c,), ()
+        assert (lit_c,) in first_2[y]
+        assert () in first_2[y]
+
+        # FIRST_2(Z) includes: (d,), and combinations from X Y Z
+        assert (lit_d,) in first_2[z]
+        assert (lit_a, lit_a) in first_2[z]  # X=a, Y=eps, Z starts with a
+        assert (lit_a, lit_c) in first_2[z]  # X=a, Y=c or X=a, Y=eps, Z starts with c
+        assert (lit_a, lit_d) in first_2[z]  # X=a, Y=eps, Z=d
+        assert (lit_c, lit_a) in first_2[z]  # X=Y=c, Z starts with a
+        assert (lit_c, lit_c) in first_2[z]  # X=Y=c, Z starts with c
+        assert (lit_c, lit_d) in first_2[z]  # X=Y=c, Z=d
 
     def test_grammar_3_12_with_option(self):
         """Test Grammar 3.12 using Option construct.
@@ -1897,132 +1918,6 @@ class TestAppelChapter3Examples:
         # FIRST(CommaE) = {,}
         assert comma in first[commae]
 
-    def test_grammar_3_8_expression_precedence(self):
-        """Test expression grammar with precedence from Grammar 3.8 (page 45).
-
-        Grammar:
-        E -> E + T | T
-        T -> T * F | F
-        F -> id | ( E )
-
-        Using left-recursion eliminated version:
-        E -> T E'
-        E' -> + T E' | epsilon
-        T -> F T'
-        T' -> * F T' | epsilon
-        F -> id | ( E )
-        """
-        e = Nonterminal("E", MessageType("proto", "E"))
-        e_prime = Nonterminal("E'", MessageType("proto", "EPrime"))
-        t = Nonterminal("T", MessageType("proto", "T"))
-        t_prime = Nonterminal("T'", MessageType("proto", "TPrime"))
-        f = Nonterminal("F", MessageType("proto", "F"))
-
-        plus = LitTerminal("+")
-        star = LitTerminal("*")
-        id_tok = NamedTerminal("id", BaseType("String"))
-        lparen = LitTerminal("(")
-        rparen = LitTerminal(")")
-
-        grammar = Grammar(e)
-
-        # E -> T E' (2 non-literal elements)
-        p_t = Var("t", MessageType("proto", "T"))
-        p_ep = Var("ep", MessageType("proto", "EPrime"))
-        grammar.add_rule(Rule(e, Sequence((t, e_prime)),
-                            Lambda([p_t, p_ep], MessageType("proto", "E"), p_t)))
-
-        # E' -> + T E' (2 non-literal elements)
-        p_t2 = Var("t2", MessageType("proto", "T"))
-        p_ep2 = Var("ep2", MessageType("proto", "EPrime"))
-        grammar.add_rule(Rule(e_prime, Sequence((plus, t, e_prime)),
-                            Lambda([p_t2, p_ep2], MessageType("proto", "EPrime"), p_t2)))
-
-        # E' -> epsilon
-        grammar.add_rule(Rule(e_prime, Sequence(()),
-                            Lambda([], MessageType("proto", "EPrime"), Var("z", MessageType("proto", "EPrime")))))
-
-        # T -> F T' (2 non-literal elements)
-        p_f = Var("f", MessageType("proto", "F"))
-        p_tp = Var("tp", MessageType("proto", "TPrime"))
-        grammar.add_rule(Rule(t, Sequence((f, t_prime)),
-                            Lambda([p_f, p_tp], MessageType("proto", "T"), p_f)))
-
-        # T' -> * F T' (2 non-literal elements)
-        p_f2 = Var("f2", MessageType("proto", "F"))
-        p_tp2 = Var("tp2", MessageType("proto", "TPrime"))
-        grammar.add_rule(Rule(t_prime, Sequence((star, f, t_prime)),
-                            Lambda([p_f2, p_tp2], MessageType("proto", "TPrime"), p_f2)))
-
-        # T' -> epsilon
-        grammar.add_rule(Rule(t_prime, Sequence(()),
-                            Lambda([], MessageType("proto", "TPrime"), Var("u", MessageType("proto", "TPrime")))))
-
-        # F -> id (1 non-literal element)
-        p_id = Var("id", BaseType("String"))
-        grammar.add_rule(Rule(f, id_tok,
-                            Lambda([p_id], MessageType("proto", "F"), p_id)))
-
-        # F -> ( E ) (1 non-literal element)
-        p_e = Var("e", MessageType("proto", "E"))
-        grammar.add_rule(Rule(f, Sequence((lparen, e, rparen)),
-                            Lambda([p_e], MessageType("proto", "F"), p_e)))
-
-        # Compute nullable
-        nullable = GrammarAnalysis.compute_nullable_static(grammar)
-        assert nullable[e_prime], "E' should be nullable"
-        assert nullable[t_prime], "T' should be nullable"
-        assert not nullable[e], "E should not be nullable"
-        assert not nullable[t], "T should not be nullable"
-        assert not nullable[f], "F should not be nullable"
-
-        # Compute FIRST
-        first = GrammarAnalysis.compute_first_static(grammar, nullable)
-
-        # FIRST(F) = {id, (}
-        assert id_tok in first[f]
-        assert lparen in first[f]
-        assert len(first[f]) == 2
-
-        # FIRST(T) = FIRST(F) = {id, (}
-        assert id_tok in first[t]
-        assert lparen in first[t]
-
-        # FIRST(E) = FIRST(T) = {id, (}
-        assert id_tok in first[e]
-        assert lparen in first[e]
-
-        # FIRST(E') = {+}
-        assert plus in first[e_prime]
-        assert len(first[e_prime]) == 1
-
-        # FIRST(T') = {*}
-        assert star in first[t_prime]
-        assert len(first[t_prime]) == 1
-
-        # Compute FOLLOW
-        follow = GrammarAnalysis.compute_follow_static(grammar, nullable, first)
-        eof = NamedTerminal('$', BaseType('EOF'))
-
-        # FOLLOW(E) = {$, )}
-        assert eof in follow[e]
-        assert rparen in follow[e]
-
-        # FOLLOW(E') = FOLLOW(E) = {$, )}
-        assert eof in follow[e_prime]
-        assert rparen in follow[e_prime]
-
-        # FOLLOW(T) includes FIRST(E') = {+} and FOLLOW(E) since E' is nullable
-        assert plus in follow[t]
-        assert eof in follow[t]
-        assert rparen in follow[t]
-
-        # FOLLOW(T') = FOLLOW(T)
-        assert plus in follow[t_prime]
-
-        # FOLLOW(F) includes FIRST(T') = {*} and FOLLOW(T) since T' is nullable
-        assert star in follow[f]
-
     def test_grammar_3_20_sexp(self):
         """Test S-expression grammar from Grammar 3.20 (page 62).
 
@@ -2136,75 +2031,6 @@ class TestAppelChapter3Examples:
         # FOLLOW(S) = {a, $}
         assert lit_a in follow[s]
         assert eof in follow[s]
-
-    def test_first_k_grammar_3_12(self):
-        """Test FIRST_k for Grammar 3.12 from Appel's book.
-
-        Grammar (LL(2)):
-        Z -> d | X Y Z
-        Y -> epsilon | c
-        X -> Y | a
-
-        With k=2, we can distinguish more productions.
-        """
-        z = Nonterminal("Z", MessageType("proto", "Z"))
-        y = Nonterminal("Y", MessageType("proto", "Y"))
-        x = Nonterminal("X", MessageType("proto", "X"))
-
-        lit_a = LitTerminal("a")
-        lit_c = LitTerminal("c")
-        lit_d = LitTerminal("d")
-
-        grammar = Grammar(z)
-
-        # Z -> d (0 non-literal elements)
-        grammar.add_rule(Rule(z, lit_d,
-                            Lambda([], MessageType("proto", "Z"), Var("v", MessageType("proto", "Z")))))
-
-        # Z -> X Y Z (3 non-literal elements)
-        p_x = Var("x", MessageType("proto", "X"))
-        p_y = Var("y", MessageType("proto", "Y"))
-        p_z = Var("z", MessageType("proto", "Z"))
-        grammar.add_rule(Rule(z, Sequence((x, y, z)),
-                            Lambda([p_x, p_y, p_z], MessageType("proto", "Z"), p_x)))
-
-        # Y -> epsilon
-        grammar.add_rule(Rule(y, Sequence(()),
-                            Lambda([], MessageType("proto", "Y"), Var("u", MessageType("proto", "Y")))))
-
-        # Y -> c (0 non-literal elements)
-        grammar.add_rule(Rule(y, lit_c,
-                            Lambda([], MessageType("proto", "Y"), Var("t", MessageType("proto", "Y")))))
-
-        # X -> Y (1 non-literal element)
-        p_y2 = Var("y2", MessageType("proto", "Y"))
-        grammar.add_rule(Rule(x, y,
-                            Lambda([p_y2], MessageType("proto", "X"), p_y2)))
-
-        # X -> a (0 non-literal elements)
-        grammar.add_rule(Rule(x, lit_a,
-                            Lambda([], MessageType("proto", "X"), Var("r", MessageType("proto", "X")))))
-
-        nullable = GrammarAnalysis.compute_nullable_static(grammar)
-        first_k = GrammarAnalysis.compute_first_k_static(grammar, k=2, nullable=nullable)
-
-        # FIRST_2(X) includes: (a,), (c,), ()
-        assert (lit_a,) in first_k[x]
-        assert (lit_c,) in first_k[x]
-        assert () in first_k[x]  # X is nullable via X -> Y -> epsilon
-
-        # FIRST_2(Y) includes: (c,), ()
-        assert (lit_c,) in first_k[y]
-        assert () in first_k[y]
-
-        # FIRST_2(Z) includes: (d,), and combinations from X Y Z
-        assert (lit_d,) in first_k[z]
-        assert (lit_a, lit_a) in first_k[z]  # X=a, Y=eps, Z starts with a
-        assert (lit_a, lit_c) in first_k[z]  # X=a, Y=c or X=a, Y=eps, Z starts with c
-        assert (lit_a, lit_d) in first_k[z]  # X=a, Y=eps, Z=d
-        assert (lit_c, lit_a) in first_k[z]  # X=Y=c, Z starts with a
-        assert (lit_c, lit_c) in first_k[z]  # X=Y=c, Z starts with c
-        assert (lit_c, lit_d) in first_k[z]  # X=Y=c, Z=d
 
 
 class TestStarAndOptionConstructs:
@@ -2400,10 +2226,10 @@ class TestStarAndOptionConstructs:
         assert lit_a in first[s]
         assert len(first[s]) == 1
 
-        first_k = GrammarAnalysis.compute_first_k_static(grammar, k=2, nullable=nullable)
+        first_2 = GrammarAnalysis.compute_first_k_static(grammar, k=2, nullable=nullable)
 
         # FIRST_2(S) = {(a, a)}
-        assert (lit_a, lit_a) in first_k[s]
+        assert (lit_a, lit_a) in first_2[s]
 
 
 class TestNonLLkGrammars:
@@ -2441,11 +2267,11 @@ class TestNonLLkGrammars:
         assert lit_a in first[s]
         assert len(first[s]) == 1
 
-        first_k = GrammarAnalysis.compute_first_k_static(grammar, k=2, nullable=nullable)
+        first_2 = GrammarAnalysis.compute_first_k_static(grammar, k=2, nullable=nullable)
 
         # FIRST_2(S) = {(a,), (a, a)}
-        assert (lit_a,) in first_k[s]
-        assert (lit_a, lit_a) in first_k[s]
+        assert (lit_a,) in first_2[s]
+        assert (lit_a, lit_a) in first_2[s]
 
         # Note: This grammar is not LL(k) because both alternatives have
         # overlapping FIRST_k sets for any k.

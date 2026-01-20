@@ -272,6 +272,11 @@ class Grammar:
         return self._analysis
 
     def add_rule(self, rule: Rule) -> None:
+        """Add a rule to the grammar.
+
+        The grammar must not have been analyzed yet. Once the .analysis property
+        is accessed, the grammar is frozen and no more rules can be added.
+        """
         assert self._analysis is None, "Grammar is already analyzed"
 
         lhs = rule.lhs
@@ -283,37 +288,6 @@ class Grammar:
         self.rules[lhs].append(rule)
         return None
 
-    def partition_nonterminals(self) -> Tuple[List[Nonterminal], List[Nonterminal]]:
-        """Partition nonterminals into reachable and unreachable.
-
-        Returns a tuple of:
-            - reachable: List of reachable nonterminals in preorder traversal
-            - unreachable: List of unreachable nonterminals (sorted by name)
-        """
-        from .grammar_utils import get_nonterminals
-        visited: Set[Nonterminal] = set()
-        reachable: List[Nonterminal] = []
-
-        def visit(A: Nonterminal) -> None:
-            """Visit nonterminal and its dependencies in preorder."""
-            if A in visited or A not in self.rules:
-                return None
-            visited.add(A)
-            reachable.append(A)
-            for rule in self.rules[A]:
-                for B in get_nonterminals(rule.rhs):
-                    visit(B)
-            return None
-
-        visit(self.start)
-
-        unreachable = sorted(
-            [nt for nt in self.rules.keys() if nt not in visited],
-            key=lambda nt: nt.name
-        )
-
-        return reachable, unreachable
-
     def get_rules(self, nt: Nonterminal) -> List[Rule]:
         """Get all rules with the given LHS name."""
         return self.rules.get(nt, [])
@@ -322,8 +296,8 @@ class Grammar:
         """Check if any rule has the given LHS name."""
         return name in self.rules
 
-    def get_unreachable_rules(self) -> List[Nonterminal]:
-        """Find all rules that are unreachable from start symbol."""
+    def get_unreachable_nonterminals(self) -> List[Nonterminal]:
+        """Find all nonterminals that are unreachable from start symbol."""
         _, unreachable = self.analysis.partition_nonterminals_by_reachability()
         return unreachable
 

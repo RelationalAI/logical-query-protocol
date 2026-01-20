@@ -440,7 +440,7 @@ class TestGrammar:
         grammar.add_rule(Rule(c, c, constructor_c))
         grammar.add_rule(Rule(d, d, constructor_d))  # unreachable rule
 
-        reachable, unreachable = grammar.partition_nonterminals()
+        reachable, unreachable = grammar.analysis.partition_nonterminals_by_reachability()
         assert reachable[0] == start
         assert reachable[1] == a
         assert reachable[2] == b

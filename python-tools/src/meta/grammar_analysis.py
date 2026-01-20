@@ -294,8 +294,7 @@ class GrammarAnalysis:
             return current
         elif isinstance(rhs, (Star, Option)):
             result = GrammarAnalysis.rhs_first_k(rhs.rhs, first_k, nullable, k)
-            result.add(())  # Can also derive empty
-            return result
+            return result | {()}  # Can also derive empty
         else:
             return set()
 
