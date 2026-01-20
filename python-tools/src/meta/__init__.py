@@ -72,6 +72,7 @@ from .codegen_julia import (
 
 # Parser generation
 from .parser_gen import generate_parse_functions
+from .parser_gen_julia import generate_parser_julia
 
 __all__ = [
     # Target language AST
@@ -123,4 +124,5 @@ __all__ = [
     'escape_julia_identifier',
     # Parser generation
     'generate_parse_functions',
+    'generate_parser_julia',
 ]
