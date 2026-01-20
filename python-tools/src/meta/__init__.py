@@ -27,6 +27,8 @@ from .target import (
     TupleType,
     ListType,
     FunDef,
+    VisitNonterminalDef,
+    VisitNonterminal,
 )
 
 # Grammar data structures
@@ -68,6 +70,9 @@ from .codegen_julia import (
     escape_identifier as escape_julia_identifier,
 )
 
+# Parser generation
+from .parser_gen import generate_parse_functions
+
 __all__ = [
     # Target language AST
     'TargetNode',
@@ -88,6 +93,8 @@ __all__ = [
     'TupleType',
     'ListType',
     'FunDef',
+    'VisitNonterminalDef',
+    'VisitNonterminal',
     # Grammar
     'Grammar',
     'Rule',
@@ -114,4 +121,6 @@ __all__ = [
     'generate_julia_lines',
     'generate_julia_def',
     'escape_julia_identifier',
+    # Parser generation
+    'generate_parse_functions',
 ]
