@@ -71,7 +71,7 @@ def parse_args():
         choices=["python", "go", "julia", "ir"],
         help="Generate a parser in the specified language (or 'ir' to dump target IR)"
     )
-    args = parser.parse_args()
+    return parser.parse_args()
 
 
 def run(args) -> int:
@@ -125,7 +125,13 @@ def run(args) -> int:
         elif args.parser == "go":
             output_text = generate_parser_go(grammar)
         elif args.parser == "julia":
-            output_text = generate_parser_julia(grammar)
+            reachable, _ = grammar.analysis.partition_nonterminals_by_reachability()
+            reachable_set = set(reachable)
+            # Build proto_messages dict for codegen keyword argument generation
+            proto_messages = {}
+            for msg_name, msg in proto_parser.messages.items():
+                proto_messages[(msg.module, msg.name)] = msg
+            output_text = generate_parser_julia(grammar, reachable_set, proto_messages=proto_messages)
         elif args.parser == "ir":
             defns = generate_parse_functions(grammar)
             output_text = "\n\n".join(str(defn) for defn in defns)
@@ -140,6 +146,12 @@ def run(args) -> int:
             print(output_text)
 
     return 0
+
+
+def main() -> int:
+    """Main entry point."""
+    args = parse_args()
+    return run(args)
 
 
 if __name__ == "__main__":

@@ -11,12 +11,12 @@ from lqp.proto.v1.logic_pb2 import Value
 from .codegen_base import CodeGenerator, BuiltinResult
 from .target import (
     TargetExpr, Var, Lit, Symbol, Builtin, Message, OneOf, ListExpr, Call, Lambda, Let, IfElse,
-    FunDef, VisitNonterminalDef
+    FunDef, VisitNonterminalDef, VisitNonterminal
 )
 from .gensym import gensym
 
 
-# Julia keywords that need escaping
+# Julia keywords and reserved names that need escaping
 JULIA_KEYWORDS: Set[str] = {
     'abstract', 'baremodule', 'begin', 'break', 'catch', 'const', 'continue',
     'do', 'else', 'elseif', 'end', 'export', 'false', 'finally', 'for',
@@ -24,6 +24,8 @@ JULIA_KEYWORDS: Set[str] = {
     'quote', 'return', 'struct', 'true', 'try', 'type', 'using', 'while',
     # Soft keywords (contextual)
     'as', 'in', 'isa', 'where', 'mutable', 'primitive', 'outer',
+    # Built-in types that conflict (capitalized)
+    'Type',
 }
 
 
@@ -88,14 +90,14 @@ class JuliaCodeGenerator(CodeGenerator):
             lambda args, lines, indent: BuiltinResult(f"{args[0]} != {args[1]}", []))
 
         self.register_builtin("fragment_id_from_string", 1,
-            lambda args, lines, indent: BuiltinResult(f"Proto.FragmentId(id=Vector{{UInt8}}({args[0]}))", []))
+            lambda args, lines, indent: BuiltinResult(f"Proto.FragmentId(Vector{{UInt8}}({args[0]}))", []))
 
         self.register_builtin("relation_id_from_string", 1,
             lambda args, lines, indent: BuiltinResult(
-                f"Proto.RelationId(id=parse(UInt64, bytes2hex(sha256({args[0]})[1:8]), base=16))", []))
+                f"Proto.RelationId(Base.parse(UInt64, bytes2hex(sha256({args[0]})[1:8]), base=16), 0)", []))
 
         self.register_builtin("relation_id_from_int", 1,
-            lambda args, lines, indent: BuiltinResult(f"Proto.RelationId(id={args[0]})", []))
+            lambda args, lines, indent: BuiltinResult(f"Proto.RelationId({args[0]}, 0)", []))
 
         self.register_builtin("list_concat", 2,
             lambda args, lines, indent: BuiltinResult(f"vcat({args[0]}, {args[1]})", []))
@@ -131,10 +133,10 @@ class JuliaCodeGenerator(CodeGenerator):
             lambda args, lines, indent: BuiltinResult(f"match_lookahead_literal(parser, {args[0]}, {args[1]})", []))
 
         self.register_builtin("consume_literal", 1,
-            lambda args, lines, indent: BuiltinResult("nothing", [f"consume_literal(parser, {args[0]})"]))
+            lambda args, lines, indent: BuiltinResult("nothing", [f"consume_literal!(parser, {args[0]})"]))
 
         self.register_builtin("consume_terminal", 1,
-            lambda args, lines, indent: BuiltinResult(f"consume_terminal(parser, {args[0]})", []))
+            lambda args, lines, indent: BuiltinResult(f"consume_terminal!(parser, {args[0]})", []))
 
         self.register_builtin("current_token", 0,
             lambda args, lines, indent: BuiltinResult("current_token(parser)", []))
@@ -172,7 +174,10 @@ class JuliaCodeGenerator(CodeGenerator):
         return "true" if value else "false"
 
     def gen_string(self, value: str) -> str:
-        return repr(value)
+        # Julia uses double quotes for strings (single quotes are for characters)
+        # Escape backslashes and double quotes
+        escaped = value.replace('\\', '\\\\').replace('"', '\\"')
+        return f'"{escaped}"'
 
     # --- Symbol and constructor generation ---
 
@@ -180,6 +185,9 @@ class JuliaCodeGenerator(CodeGenerator):
         return f":{name}"
 
     def gen_constructor(self, module: str, name: str) -> str:
+        # Escape Julia keywords
+        if name in self.keywords:
+            return f'Proto.var"#{name}"'
         return f"Proto.{name}"
 
     def gen_builtin_ref(self, name: str) -> str:
@@ -191,6 +199,9 @@ class JuliaCodeGenerator(CodeGenerator):
     # --- Type generation ---
 
     def gen_message_type(self, module: str, name: str) -> str:
+        # Escape Julia keywords
+        if name in self.keywords:
+            return f'Proto.var"#{name}"'
         return f"Proto.{name}"
 
     def gen_tuple_type(self, element_types: List[str]) -> str:
@@ -336,11 +347,18 @@ class JuliaCodeGenerator(CodeGenerator):
                     positional_args.append(self.generate_lines(arg, lines, indent))
                     arg_idx += 1
 
-            # Build argument list - use keyword args if we have any
-            if keyword_args:
-                all_args = keyword_args
-            else:
-                all_args = positional_args + keyword_args
+            # Build argument list - Julia protobuf uses positional args only
+            # Combine keyword args (formatted as "name=value") into just values for positional calling
+            positional_values = []
+            for kw in keyword_args:
+                # Extract value from "name=value"
+                if '=' in kw:
+                    value = kw.split('=', 1)[1]
+                    positional_values.append(value)
+                else:
+                    positional_values.append(kw)
+
+            all_args = positional_args + positional_values
             args_code = ', '.join(all_args)
 
             tmp = gensym()
@@ -353,6 +371,17 @@ class JuliaCodeGenerator(CodeGenerator):
             field_value = self.generate_lines(expr.args[0], lines, indent)
             tmp = gensym()
             lines.append(f"{indent}{self.gen_assignment(tmp, f'OneOf({field_symbol}, {field_value})', is_declaration=True)}")
+            return tmp
+
+        # Check for VisitNonterminal calls - need to add parser as first argument
+        if isinstance(expr.func, VisitNonterminal):
+            f = self.generate_lines(expr.func, lines, indent)
+            args = [self.generate_lines(arg, lines, indent) for arg in expr.args]
+            # Prepend parser as first argument
+            all_args = ["parser"] + args
+            args_code = ', '.join(all_args)
+            tmp = gensym()
+            lines.append(f"{indent}{self.gen_assignment(tmp, f'{f}({args_code})', is_declaration=True)}")
             return tmp
 
         # Fall back to base implementation

@@ -13,8 +13,8 @@ from meta.grammar import (
     Star, Option, Sequence,
     Rule, Grammar,
 )
-from meta.grammar_analysis import GrammarAnalysis as GA
-from meta.target import BaseType, MessageType, Lambda, Var
+from meta.grammar_analysis import GrammarAnalysis as GA, GrammarAnalysis
+from meta.target import BaseType, MessageType, Lambda, Var, OptionType, Call, Builtin
 
 
 def make_simple_grammar():
