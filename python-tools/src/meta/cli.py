@@ -34,6 +34,8 @@ from pathlib import Path
 from .proto_parser import ProtoParser
 from .grammar_gen import GrammarGenerator
 from .proto_print import print_proto_spec
+from .parser_gen import generate_parse_functions
+from .parser_gen_julia import generate_parser_julia
 
 
 def parse_args():
@@ -61,6 +63,11 @@ def parse_args():
         "--grammar",
         action="store_true",
         help="Output the grammar"
+    )
+    parser.add_argument(
+        "--parser",
+        choices=["julia", "ir"],
+        help="Generate a parser in the specified language (or 'ir' to dump target IR)"
     )
     return parser.parse_args()
 
@@ -119,13 +126,38 @@ def run(args) -> int:
 
         output_text = grammar.print_grammar()
         write_output(output_text, args.output, f"Generated grammar written to {args.output}")
+    elif args.parser:
+        generator = GrammarGenerator(proto_parser, verbose=True)
+        grammar = generator.generate()
+
+        if args.parser == "julia":
+            reachable, _ = grammar.analysis.partition_nonterminals_by_reachability()
+            reachable_set = set(reachable)
+            # Build proto_messages dict for codegen keyword argument generation
+            proto_messages = {}
+            for _, msg in proto_parser.messages.items():
+                proto_messages[(msg.module, msg.name)] = msg
+            output_text = generate_parser_julia(grammar, reachable_set, proto_messages=proto_messages)
+        elif args.parser == "ir":
+            defns = generate_parse_functions(grammar)
+            output_text = "\n\n".join(str(defn) for defn in defns)
+        else:
+            print(f"Error: Unknown parser language: {args.parser}", file=sys.stderr)
+            return 1
+
+        if args.output:
+            args.output.write_text(output_text)
+            print(f"Generated {args.parser} parser written to {args.output}")
+        else:
+            print(output_text)
 
     return 0
 
 
-def main():
-    """Main entry point for protobuf parser."""
-    return run(parse_args())
+def main() -> int:
+    """Main entry point."""
+    args = parse_args()
+    return run(args)
 
 
 if __name__ == "__main__":
