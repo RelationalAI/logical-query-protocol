@@ -60,6 +60,14 @@ from .grammar_gen import (
     generate_grammar,
 )
 
+# Julia code generation
+from .codegen_julia import (
+    generate_julia,
+    generate_julia_lines,
+    generate_julia_def,
+    escape_identifier as escape_julia_identifier,
+)
+
 __all__ = [
     # Target language AST
     'TargetNode',
@@ -101,4 +109,9 @@ __all__ = [
     # Grammar generation
     'GrammarGenerator',
     'generate_grammar',
+    # Julia code generation
+    'generate_julia',
+    'generate_julia_lines',
+    'generate_julia_def',
+    'escape_julia_identifier',
 ]
