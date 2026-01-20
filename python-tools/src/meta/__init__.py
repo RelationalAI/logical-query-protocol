@@ -71,6 +71,7 @@ from .codegen_python import (
 
 # Parser generation
 from .parser_gen import generate_parse_functions
+from .parser_gen_python import generate_parser_python
 
 __all__ = [
     # Target language AST
@@ -121,4 +122,5 @@ __all__ = [
     'escape_python_identifier',
     # Parser generation
     'generate_parse_functions',
+    'generate_parser_python',
 ]
