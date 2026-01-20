@@ -532,7 +532,7 @@ class TestReturn:
     def test_invalid_expr(self):
         """Test Return with invalid expr."""
         with pytest.raises(AssertionError):
-            Return("not an expr")
+            Return("not an expr")  # type: ignore
 
     def test_nested_return_fails(self):
         """Test that Return cannot contain another Return."""

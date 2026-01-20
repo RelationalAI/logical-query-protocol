@@ -131,7 +131,7 @@ def _build_predictor(grammar: Grammar, lhs: Nonterminal, rules: List[Rule]) -> T
     require more lookahead.
     """
     assert len(rules) > 1
-    nullable = grammar.analysis.compute_nullable()
+    nullable = grammar.analysis.nullable
     active_indices = [i for i, rule in enumerate(rules) if not is_epsilon(rule.rhs)]
     epsilon_index = None
     for i, rule in enumerate(rules):
@@ -156,7 +156,7 @@ def _build_predictor_tree(grammar: Grammar, rules: List[Rule], active_indices: L
     exhausted: Set[int] = set()
     for rule_idx in active_indices:
         rule = rules[rule_idx]
-        rule_first = grammar.analysis.first_k(depth + 1, rule.rhs)
+        rule_first = grammar.analysis.first_k_of(depth + 1, rule.rhs)
         tokens_at_depth: Set[Terminal] = set()
         for seq in sorted(rule_first, key=lambda s: tuple(str(t) for t in s)):
             if len(seq) > depth:
@@ -259,13 +259,13 @@ def _build_option_predictor(grammar: Grammar, element: Rhs, follow_set: Terminal
     """
     # Find minimal k needed to distinguish element from follow
     for k in range(1, MAX_LOOKAHEAD + 1):
-        element_first = grammar.analysis.first_k(k, element)
+        element_first = grammar.analysis.first_k_of(k, element)
         follow_k = follow_set.get(k)
         if not (element_first & follow_k):
             return _build_lookahead_check(element_first, depth=0)
 
     # Still conflicts at MAX_LOOKAHEAD
-    element_first = grammar.analysis.first_k(MAX_LOOKAHEAD, element)
+    element_first = grammar.analysis.first_k_of(MAX_LOOKAHEAD, element)
     conflict_msg = f'Ambiguous Option/Star: FIRST_{MAX_LOOKAHEAD}({element}) and follow set overlap'
     assert False, conflict_msg
 

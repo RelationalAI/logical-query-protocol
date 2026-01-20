@@ -90,7 +90,7 @@ class FollowSet(TerminalSequenceSet):
     def get(self, k: int) -> Set[Tuple['Terminal', ...]]:
         """Get FOLLOW_k set for the nonterminal, computing and caching if needed."""
         if k not in self._cache:
-            self._cache[k] = self.grammar.analysis.follow_k(k, self.lhs)
+            self._cache[k] = self.grammar.analysis.follow_k_of(k, self.lhs)
         return self._cache[k]
 
 
@@ -119,7 +119,7 @@ class FirstSet(TerminalSequenceSet):
     def get(self, k: int) -> Set[Tuple['Terminal', ...]]:
         """Get FIRST_k set for the RHS, computing and caching if needed."""
         if k not in self._cache:
-            self._cache[k] = self.grammar.analysis.first_k(k, self.rhs)
+            self._cache[k] = self.grammar.analysis.first_k_of(k, self.rhs)
         return self._cache[k]
 
 

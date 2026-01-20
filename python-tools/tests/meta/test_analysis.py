@@ -185,7 +185,7 @@ class TestCheckReachability:
         lit = LitTerminal("a")
         grammar = Grammar(s)
         constructor= Lambda([], MessageType("proto", "S"), Var("x", MessageType("proto", "S")))
-        grammar.add_rule(Rule(s, lit, action))
+        grammar.add_rule(Rule(s, lit, constructor))
         reachable = grammar.analysis.reachability
         assert s in reachable
         assert len(reachable) == 1
@@ -249,7 +249,7 @@ class TestComputeNullable:
         grammar = Grammar(s)
         param = Var("x", MessageType("proto", "S"))
         constructor= Lambda([param], MessageType("proto", "S"), param)
-        grammar.add_rule(Rule(s, star_a, action))
+        grammar.add_rule(Rule(s, star_a, constructor))
 
         nullable = grammar.analysis.nullable
         assert nullable[s]
@@ -263,7 +263,7 @@ class TestComputeNullable:
         grammar = Grammar(s)
         param = Var("x", MessageType("proto", "S"))
         constructor= Lambda([param], MessageType("proto", "S"), param)
-        grammar.add_rule(Rule(s, opt_a, action))
+        grammar.add_rule(Rule(s, opt_a, constructor))
 
         nullable = grammar.analysis.nullable
         assert nullable[s]
@@ -273,7 +273,7 @@ class TestComputeNullable:
         s = Nonterminal("S", MessageType("proto", "S"))
         grammar = Grammar(s)
         constructor= Lambda([], MessageType("proto", "S"), Var("x", MessageType("proto", "S")))
-        grammar.add_rule(Rule(s, Sequence(()), action))
+        grammar.add_rule(Rule(s, Sequence(()), constructor))
 
         nullable = grammar.analysis.nullable
         assert nullable[s]
@@ -488,7 +488,7 @@ class TestComputeFirstK:
         s = Nonterminal("S", MessageType("proto", "S"))
         grammar = Grammar(s)
         constructor= Lambda([], MessageType("proto", "S"), Var("x", MessageType("proto", "S")))
-        grammar.add_rule(Rule(s, Sequence(()), action))
+        grammar.add_rule(Rule(s, Sequence(()), constructor))
 
         first_k = grammar.analysis.compute_first_k(k=2)
         assert () in first_k[s]
