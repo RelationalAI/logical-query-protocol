@@ -255,16 +255,16 @@ class TestRule:
     """Tests for Rule."""
 
     def test_construction_simple(self):
-        """Test Rule construction with matching action parameters."""
+        """Test Rule construction with matching constructor parameters."""
         lhs = Nonterminal("A", MessageType("proto", "A"))
         nt = Nonterminal("B", MessageType("proto", "B"))
         rhs = nt
         param = Var("x", MessageType("proto", "B"))
-        action = Lambda([param], MessageType("proto", "A"), param)
-        rule = Rule(lhs, rhs, action)
+        constructor = Lambda([param], MessageType("proto", "A"), param)
+        rule = Rule(lhs, rhs, constructor)
         assert rule.lhs == lhs
         assert rule.rhs == rhs
-        assert rule.constructor == action
+        assert rule.constructor == constructor
 
     def test_construction_with_sequence(self):
         """Test Rule construction with sequence RHS."""
@@ -274,8 +274,8 @@ class TestRule:
         rhs = Sequence((nt1, nt2))
         param1 = Var("x", MessageType("proto", "B"))
         param2 = Var("y", MessageType("proto", "C"))
-        action = Lambda([param1, param2], MessageType("proto", "A"), param1)
-        rule = Rule(lhs, rhs, action)
+        constructor = Lambda([param1, param2], MessageType("proto", "A"), param1)
+        rule = Rule(lhs, rhs, constructor)
         assert len(rule.constructor.params) == 2
 
     def test_construction_filters_literals(self):
@@ -285,8 +285,8 @@ class TestRule:
         lit = LitTerminal("foo")
         rhs = Sequence((nt, lit))
         param = Var("x", MessageType("proto", "B"))
-        action = Lambda([param], MessageType("proto", "A"), param)
-        rule = Rule(lhs, rhs, action)
+        constructor = Lambda([param], MessageType("proto", "A"), param)
+        rule = Rule(lhs, rhs, constructor)
         assert len(rule.constructor.params) == 1
 
     def test_construction_fails_with_wrong_param_count(self):
@@ -296,17 +296,17 @@ class TestRule:
         nt2 = Nonterminal("C", MessageType("proto", "C"))
         rhs = Sequence((nt1, nt2))
         param = Var("x", MessageType("proto", "B"))
-        action = Lambda([param], MessageType("proto", "A"), param)
+        constructor = Lambda([param], MessageType("proto", "A"), param)
         with pytest.raises(AssertionError, match="Action for A has 1 parameter"):
-            Rule(lhs, rhs, action)
+            Rule(lhs, rhs, constructor)
 
     def test_str(self):
         """Test Rule string representation."""
         lhs = Nonterminal("A", MessageType("proto", "A"))
         nt = Nonterminal("B", MessageType("proto", "B"))
         param = Var("x", MessageType("proto", "B"))
-        action = Lambda([param], MessageType("proto", "A"), param)
-        rule = Rule(lhs, nt, action)
+        constructor = Lambda([param], MessageType("proto", "A"), param)
+        rule = Rule(lhs, nt, constructor)
         result = str(rule)
         assert "A ->" in result
         assert "B" in result
@@ -316,8 +316,8 @@ class TestRule:
         lhs = Nonterminal("A", MessageType("proto", "A"))
         nt = Nonterminal("B", MessageType("proto", "B"))
         param = Var("x", MessageType("proto", "B"))
-        action = Lambda([param], MessageType("proto", "A"), param)
-        rule = Rule(lhs, nt, action, source_type="SomeProtoType")
+        constructor = Lambda([param], MessageType("proto", "A"), param)
+        rule = Rule(lhs, nt, constructor, source_type="SomeProtoType")
         assert rule.source_type == "SomeProtoType"
 
 
@@ -348,8 +348,8 @@ class TestGrammar:
         grammar = Grammar(start)
         nt = Nonterminal("A", MessageType("proto", "A"))
         param = Var("x", MessageType("proto", "A"))
-        action = Lambda([param], MessageType("proto", "A"), param)
-        rule = Rule(nt, nt, action)
+        constructor = Lambda([param], MessageType("proto", "A"), param)
+        rule = Rule(nt, nt, constructor)
         grammar.add_rule(rule)
         assert nt in grammar.rules
         assert len(grammar.rules[nt]) == 1
@@ -363,10 +363,10 @@ class TestGrammar:
         nt_c = Nonterminal("C", MessageType("proto", "C"))
         param_b = Var("x", MessageType("proto", "B"))
         param_c = Var("y", MessageType("proto", "C"))
-        action_b = Lambda([param_b], MessageType("proto", "A"), param_b)
-        action_c = Lambda([param_c], MessageType("proto", "A"), param_c)
-        rule1 = Rule(nt, nt_b, action_b)
-        rule2 = Rule(nt, nt_c, action_c)
+        constructor_b = Lambda([param_b], MessageType("proto", "A"), param_b)
+        constructor_c = Lambda([param_c], MessageType("proto", "A"), param_c)
+        rule1 = Rule(nt, nt_b, constructor_b)
+        rule2 = Rule(nt, nt_c, constructor_c)
         grammar.add_rule(rule1)
         grammar.add_rule(rule2)
         assert len(grammar.rules[nt]) == 2
@@ -377,8 +377,8 @@ class TestGrammar:
         grammar = Grammar(start)
         nt = Nonterminal("A", MessageType("proto", "A"))
         param = Var("x", MessageType("proto", "A"))
-        action = Lambda([param], MessageType("proto", "A"), param)
-        rule = Rule(nt, nt, action)
+        constructor = Lambda([param], MessageType("proto", "A"), param)
+        rule = Rule(nt, nt, constructor)
         grammar.add_rule(rule)
         rules = grammar.get_rules(nt)
         assert len(rules) == 1
@@ -398,8 +398,8 @@ class TestGrammar:
         grammar = Grammar(start)
         nt = Nonterminal("A", MessageType("proto", "A"))
         param = Var("x", MessageType("proto", "A"))
-        action = Lambda([param], MessageType("proto", "A"), param)
-        rule = Rule(nt, nt, action)
+        constructor = Lambda([param], MessageType("proto", "A"), param)
+        rule = Rule(nt, nt, constructor)
         grammar.add_rule(rule)
         assert grammar.has_rule(nt)
         other = Nonterminal("B", MessageType("proto", "B"))
@@ -447,8 +447,8 @@ class TestGrammar:
         grammar = Grammar(start)
         a = Nonterminal("A", MessageType("proto", "A"))
         param = Var("x", MessageType("proto", "A"))
-        action = Lambda([param], MessageType("proto", "A"), param)
-        grammar.add_rule(Rule(start, a, action))
+        constructor = Lambda([param], MessageType("proto", "A"), param)
+        grammar.add_rule(Rule(start, a, constructor))
         output = grammar.print_grammar()
         assert "Start" in output
         assert ": A" in output
@@ -557,28 +557,28 @@ class TestHelperFunctions:
         result = rhs_elements(nt)
         assert result == (nt,)
 
-    def testcount_nonliteral_rhs_elements_single_nonterminal(self):
+    def test_count_nonliteral_rhs_elements_single_nonterminal(self):
         """Test count_nonliteral_rhs_elements with nonterminal."""
         nt = Nonterminal("A", MessageType("proto", "A"))
         assert count_nonliteral_rhs_elements(nt) == 1
 
-    def testcount_nonliteral_rhs_elements_terminal(self):
+    def test_count_nonliteral_rhs_elements_terminal(self):
         """Test count_nonliteral_rhs_elements with terminal."""
         term = NamedTerminal("TOK", BaseType("String"))
         assert count_nonliteral_rhs_elements(term) == 1
 
-    def testcount_nonliteral_rhs_elements_literal(self):
+    def test_count_nonliteral_rhs_elements_literal(self):
         """Test count_nonliteral_rhs_elements with literal."""
         lit = LitTerminal("foo")
         assert count_nonliteral_rhs_elements(lit) == 0
 
-    def testcount_nonliteral_rhs_elements_star(self):
+    def test_count_nonliteral_rhs_elements_star(self):
         """Test count_nonliteral_rhs_elements with star."""
         nt = Nonterminal("A", MessageType("proto", "A"))
         star = Star(nt)
         assert count_nonliteral_rhs_elements(star) == 1
 
-    def testcount_nonliteral_rhs_elements_option(self):
+    def test_count_nonliteral_rhs_elements_option(self):
         """Test count_nonliteral_rhs_elements with option."""
         nt = Nonterminal("A", MessageType("proto", "A"))
         opt = Option(nt)

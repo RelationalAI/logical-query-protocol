@@ -215,6 +215,11 @@ class TestGrammarGenBuiltins:
         generator = GrammarGenerator(parser, verbose=False)
         grammar = generator.generate()
 
+        # Expected grammar:
+        # container -> int_value | str_value
+        # int_value -> INT64
+        # str_value -> STRING
+
         # Check that container nonterminal exists
         container_nt = Nonterminal("container", MessageType("test", "Container"))
         assert grammar.has_rule(container_nt)
@@ -434,6 +439,11 @@ class TestGrammarGenRewrites:
           Configure configure = 2;
           optional Sync sync = 3;
         }
+
+        This test validates grammar generation for:
+        - repeated fields (epochs)
+        - required nested messages (configure)
+        - optional nested messages (sync)
         """
         # Create proto AST for supporting messages
         epoch_msg = ProtoMessage(name="Epoch", module="transactions", fields=[])

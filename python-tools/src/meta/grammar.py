@@ -10,6 +10,9 @@ from typing import Dict, List, Optional, Set, Tuple, TYPE_CHECKING
 # Import action AST types
 from .target import TargetExpr, Var, Symbol, Call, Lambda, Lit, TargetType, ListType, OptionType, TupleType
 
+# Use TYPE_CHECKING to avoid circular import: GrammarAnalysis imports Grammar,
+# but we need GrammarAnalysis type hints here. These imports only exist during
+# type checking, not at runtime.
 if TYPE_CHECKING:
     from .grammar_analysis import GrammarAnalysis
     from .grammar_utils import count_nonliteral_rhs_elements
@@ -110,10 +113,10 @@ class Nonterminal(RhsSymbol):
 class Star(Rhs):
     """Zero or more repetitions (*).
 
-    Only Nonterminal and NamedTerminal are allowed since LitTerminal
+    Any Rhs can be used except LitTerminal, since LitTerminal
     produces no value, making Star(LitTerminal) semantically meaningless.
     """
-    rhs: 'Nonterminal | NamedTerminal'
+    rhs: Rhs
 
     def __str__(self) -> str:
         return f"{self.rhs}*"
@@ -127,10 +130,10 @@ class Star(Rhs):
 class Option(Rhs):
     """Optional element (?).
 
-    Only Nonterminal and NamedTerminal are allowed since LitTerminal
+    Any Rhs can be used except LitTerminal, since LitTerminal
     produces no value, making Option(LitTerminal) semantically meaningless.
     """
-    rhs: 'Nonterminal | NamedTerminal'
+    rhs: Rhs
 
     def __str__(self) -> str:
         return f"{self.rhs}?"
@@ -269,6 +272,11 @@ class Grammar:
         return self._analysis
 
     def add_rule(self, rule: Rule) -> None:
+        """Add a rule to the grammar.
+
+        The grammar must not have been analyzed yet. Once the .analysis property
+        is accessed, the grammar is frozen and no more rules can be added.
+        """
         assert self._analysis is None, "Grammar is already analyzed"
 
         lhs = rule.lhs
@@ -278,9 +286,8 @@ class Grammar:
             if self.start.name == "start" and len(self.rules) == 0:
                 self.start = lhs
 
-        # Skip duplicate rules
-        if rule not in self.rules[lhs]:
-            self.rules[lhs].append(rule)
+        self.rules[lhs].append(rule)
+
 
     def get_rules(self, nt: Nonterminal) -> List[Rule]:
         """Get all rules with the given LHS name."""
@@ -290,8 +297,8 @@ class Grammar:
         """Check if any rule has the given LHS name."""
         return name in self.rules
 
-    def get_unreachable_rules(self) -> List[Nonterminal]:
-        """Find all rules that are unreachable from start symbol."""
+    def get_unreachable_nonterminals(self) -> List[Nonterminal]:
+        """Find all nonterminals that are unreachable from start symbol."""
         _, unreachable = self.analysis.partition_nonterminals_by_reachability()
         return unreachable
 
