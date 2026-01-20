@@ -27,6 +27,8 @@ from .target import (
     TupleType,
     ListType,
     FunDef,
+    VisitNonterminalDef,
+    VisitNonterminal,
 )
 
 # Grammar data structures
@@ -60,6 +62,9 @@ from .grammar_gen import (
     generate_grammar,
 )
 
+# Parser generation
+from .parser_gen import generate_parse_functions
+
 __all__ = [
     # Target language AST
     'TargetNode',
@@ -80,6 +85,8 @@ __all__ = [
     'TupleType',
     'ListType',
     'FunDef',
+    'VisitNonterminalDef',
+    'VisitNonterminal',
     # Grammar
     'Grammar',
     'Rule',
@@ -101,4 +108,6 @@ __all__ = [
     # Grammar generation
     'GrammarGenerator',
     'generate_grammar',
+    # Parser generation
+    'generate_parse_functions',
 ]
