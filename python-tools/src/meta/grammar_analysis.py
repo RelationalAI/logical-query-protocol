@@ -5,6 +5,7 @@ nullable computation, FIRST/FOLLOW sets, and LL(k) checking.
 """
 
 from dataclasses import dataclass, field
+from functools import cached_property
 from typing import Dict, Iterable, List, Mapping, Optional, Set, Tuple
 from .grammar import Grammar, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence, Terminal
 from .target import BaseType
@@ -19,72 +20,66 @@ TerminalSeqSet = Set[TerminalSeq]
 class GrammarAnalysis:
     grammar: 'Grammar'
 
-    # Cached analysis results
-    _reachable_cache: Optional[Set[Nonterminal]] = field(default=None, init=False, repr=False)
-    _nullable_cache: Optional[Dict[Nonterminal, bool]] = field(default=None, init=False, repr=False)
-    _first_cache: Optional[Dict[Nonterminal, Set[Terminal]]] = field(default=None, init=False, repr=False)
-    _follow_cache: Optional[Dict[Nonterminal, Set[Terminal]]] = field(default=None, init=False, repr=False)
+    # Analysis computations use a two-tier pattern:
+    # 1. Static methods (compute_X_static) are pure functions for testing
+    # 2. Instance properties (X) provide lazy-loaded cached results
+    #
+    # Properties: reachability, nullable, first, follow (cached via @cached_property)
+    # Methods: compute_first_k(k), compute_follow_k(k) (not cached, vary by k)
+    # Helpers: is_nullable(rhs), first_of(rhs), etc. (convenience wrappers)
 
-    # Instance methods that use caching and delegate to static methods
+    @cached_property
+    def reachability(self) -> Set[Nonterminal]:
+        """Compute set of reachable nonterminals from start symbol (cached via @cached_property)."""
+        return GrammarAnalysis.compute_reachability_static(self.grammar)
 
-    def compute_reachability(self) -> Set[Nonterminal]:
-        """Compute set of reachable nonterminals from start symbol (cached)."""
-        if self._reachable_cache is None:
-            self._reachable_cache = GrammarAnalysis.compute_reachability_static(self.grammar)
-        return self._reachable_cache
+    @cached_property
+    def nullable(self) -> Dict[Nonterminal, bool]:
+        """Compute nullable set for all nonterminals (cached via @cached_property)."""
+        return GrammarAnalysis.compute_nullable_static(self.grammar)
 
-    def compute_nullable(self) -> Dict[Nonterminal, bool]:
-        """Compute nullable set for all nonterminals (cached)."""
-        if self._nullable_cache is None:
-            self._nullable_cache = GrammarAnalysis.compute_nullable_static(self.grammar)
-        return self._nullable_cache
+    @cached_property
+    def first(self) -> Dict[Nonterminal, Set[Terminal]]:
+        """Compute FIRST sets for all nonterminals (cached via @cached_property)."""
+        return GrammarAnalysis.compute_first_static(self.grammar, self.nullable)
 
-    def compute_first(self) -> Dict[Nonterminal, Set[Terminal]]:
-        """Compute FIRST sets for all nonterminals (cached)."""
-        if self._first_cache is None:
-            self._first_cache = GrammarAnalysis.compute_first_static(self.grammar, self.compute_nullable())
-        return self._first_cache
-
-    def compute_follow(self) -> Dict[Nonterminal, Set[Terminal]]:
-        """Compute FOLLOW sets for all nonterminals (cached)."""
-        if self._follow_cache is None:
-            self._follow_cache = GrammarAnalysis.compute_follow_static(
-                self.grammar, self.compute_nullable(), self.compute_first()
-            )
-        return self._follow_cache
+    @cached_property
+    def follow(self) -> Dict[Nonterminal, Set[Terminal]]:
+        """Compute FOLLOW sets for all nonterminals (cached via @cached_property)."""
+        return GrammarAnalysis.compute_follow_static(self.grammar, self.nullable, self.first)
 
     def compute_first_k(self, k: int = 2) -> Dict[Nonterminal, TerminalSeqSet]:
         """Compute FIRST_k sets for all nonterminals (not cached for k>1)."""
-        return GrammarAnalysis.compute_first_k_static(self.grammar, k, self.compute_nullable())
+        return GrammarAnalysis.compute_first_k_static(self.grammar, k, self.nullable)
 
     def compute_follow_k(self, k: int = 2) -> Dict[Nonterminal, TerminalSeqSet]:
         """Compute FOLLOW_k sets for all nonterminals (not cached for k>1)."""
         return GrammarAnalysis.compute_follow_k_static(
-            self.grammar, k, self.compute_nullable(), self.compute_first_k(k)
+            self.grammar, k, self.nullable, self.compute_first_k(k)
         )
 
-    def nullable(self, rhs: 'Rhs') -> bool:
+    def is_nullable(self, rhs: 'Rhs') -> bool:
         """Check if an RHS is nullable."""
-        return GrammarAnalysis.is_rhs_nullable(rhs, self.compute_nullable())
+        return GrammarAnalysis.is_rhs_nullable(rhs, self.nullable)
 
-    def first(self, rhs: 'Rhs') -> Set[Terminal]:
+    def first_of(self, rhs: 'Rhs') -> Set[Terminal]:
         """Compute FIRST set for an RHS."""
-        return GrammarAnalysis.rhs_first(rhs, self.compute_first(), self.compute_nullable())
+        return GrammarAnalysis.rhs_first(rhs, self.first, self.nullable)
 
-    def first_k(self, k: int, rhs: 'Rhs') -> TerminalSeqSet:
+    def first_k_of(self, k: int, rhs: 'Rhs') -> TerminalSeqSet:
         """Compute FIRST_k set for an RHS."""
-        return GrammarAnalysis.rhs_first_k(rhs, self.compute_first_k(k), self.compute_nullable(), k)
+        return GrammarAnalysis.rhs_first_k(rhs, self.compute_first_k(k), self.nullable, k)
 
-    def follow(self, nt: Nonterminal) -> Set[Terminal]:
+    def follow_of(self, nt: Nonterminal) -> Set[Terminal]:
         """Compute FOLLOW set for a nonterminal."""
-        return self.compute_follow().get(nt, set())
+        return self.follow.get(nt, set())
 
-    def follow_k(self, k: int, rhs: 'Rhs') -> TerminalSeqSet:
+    def follow_k_of(self, k: int, rhs: 'Rhs') -> TerminalSeqSet:
         """Compute FOLLOW_k set for an RHS."""
         if isinstance(rhs, Nonterminal):
             return self.compute_follow_k(k).get(rhs, set())
         elif isinstance(rhs, (Option, Star)):
-            return self.follow_k(k, rhs.rhs)
+            return self.follow_k_of(k, rhs.rhs)
         else:
             raise ValueError(f"Unexpected rhs {rhs}: follow_k unimplemented")
 
@@ -93,9 +88,9 @@ class GrammarAnalysis:
 
         Used for Option and Star disambiguation.
         """
-        first_of_following = self.first_k(k, following)
-        if self.nullable(following):
-            follow_of_lhs = self.follow_k(k, lhs)
+        first_of_following = self.first_k_of(k, following)
+        if self.is_nullable(following):
+            follow_of_lhs = self.follow_k_of(k, lhs)
             return GrammarAnalysis.concat_k(first_of_following, follow_of_lhs, k)
         return first_of_following
 
@@ -171,6 +166,10 @@ class GrammarAnalysis:
 
         An RHS is nullable if it can derive the empty string.
 
+        This is a pure checking function - it does not modify the nullable map.
+        The nullable map is computed by compute_nullable_static() using fixed-point
+        iteration, which repeatedly calls this function until no changes occur.
+
         Args:
             rhs: RHS element to check (Terminal, Nonterminal, Sequence, Star, or Option)
             nullable: Precomputed nullable information for nonterminals
@@ -201,6 +200,9 @@ class GrammarAnalysis:
         """Compute nullable set for all nonterminals.
 
         A nonterminal is nullable if it can derive the empty string.
+
+        Uses fixed-point iteration: repeatedly checks each rule's RHS with
+        is_rhs_nullable() and updates the nullable map until no changes occur.
         """
         nullable: Dict[Nonterminal, bool] = {nt: False for nt in grammar.rules.keys()}
 
@@ -234,18 +236,18 @@ class GrammarAnalysis:
         Example:
             >>> t1, t2, t3 = LitTerminal('a'), LitTerminal('b'), LitTerminal('c')
             >>> set1 = {(t1,), (t1, t2)}
-            >>> set2 = {(t2,), (t3,)}
+            >>> set2 = {(t1,), (t2,)}
             >>> result = concat_k(set1, set2, k=2)
-            >>> # Result: {(t1, t2), (t1, t3)} where (t1,)+(t2,) and (t1,)+(t3,) and (t1,t2)+(t2,) and (t1,t2)+(t3,) are truncated to k=2
+            >>> # Result: {(t1, t1), (t1, t2)} from (t1,)+(t1,), (t1,)+(t2,); (t1,t2) already at k=2 length
         """
         result: TerminalSeqSet = set()
         for seq1 in set1:
             if len(seq1) >= k:
                 result.add(seq1[:k])
-            else:
-                for seq2 in set2:
-                    combined = seq1 + seq2
-                    result.add(combined[:k])
+                continue
+            needed = k - len(seq1)
+            for seq2 in set2:
+                result.add(seq1 + seq2[:needed])
         return result
 
     @staticmethod
@@ -314,7 +316,7 @@ class GrammarAnalysis:
             Dictionary mapping each nonterminal to its FIRST_k set.
 
         Example:
-            For grammar with rules A -> "x" B, B -> "y" | ε:
+            For grammar with rules A -> "x" B; B -> "y" | ε:
             - FIRST_1(A) = {("x",)}
             - FIRST_1(B) = {("y",), ()}
             - FIRST_2(A) = {("x", "y"), ("x",)}
@@ -343,7 +345,9 @@ class GrammarAnalysis:
                   nullable: Mapping[Nonterminal, bool]) -> Set[Terminal]:
         """Compute FIRST set for an RHS element.
 
-        Convenience function for k=1 case, returning Set[Terminal].
+        Convenience function for k=1 case, returning Set[Terminal] instead of
+        Set[Tuple[Terminal, ...]]. Provides a simpler interface for the common
+        single-token lookahead case.
         """
         if isinstance(rhs, Terminal):
             return {rhs}
@@ -402,6 +406,9 @@ class GrammarAnalysis:
             - FOLLOW_k(B) includes FIRST_k(C)
             - If C is nullable, FOLLOW_k(B) also includes FOLLOW_k(S)
             - FOLLOW_k(C) includes FOLLOW_k(S)
+
+        Note: FOLLOW_k(X) is the union of contributions from all rules where X appears
+        in the RHS, computed iteratively until a fixed point is reached.
         """
         result: Dict[Nonterminal, TerminalSeqSet] = {}
 

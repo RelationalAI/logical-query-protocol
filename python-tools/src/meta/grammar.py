@@ -10,6 +10,9 @@ from typing import Dict, List, Optional, Set, Tuple, TYPE_CHECKING
 # Import action AST types
 from .target import TargetExpr, Var, Symbol, Call, Lambda, Lit, TargetType, ListType, OptionType, TupleType
 
+# Use TYPE_CHECKING to avoid circular import: GrammarAnalysis imports Grammar,
+# but we need GrammarAnalysis type hints here. These imports only exist during
+# type checking, not at runtime.
 if TYPE_CHECKING:
     from .grammar_analysis import GrammarAnalysis
     from .grammar_utils import count_nonliteral_rhs_elements
@@ -110,10 +113,10 @@ class Nonterminal(RhsSymbol):
 class Star(Rhs):
     """Zero or more repetitions (*).
 
-    Only Nonterminal and NamedTerminal are allowed since LitTerminal
+    Any Rhs can be used except LitTerminal, since LitTerminal
     produces no value, making Star(LitTerminal) semantically meaningless.
     """
-    rhs: 'Nonterminal | NamedTerminal'
+    rhs: Rhs
 
     def __str__(self) -> str:
         return f"{self.rhs}*"
@@ -127,10 +130,10 @@ class Star(Rhs):
 class Option(Rhs):
     """Optional element (?).
 
-    Only Nonterminal and NamedTerminal are allowed since LitTerminal
+    Any Rhs can be used except LitTerminal, since LitTerminal
     produces no value, making Option(LitTerminal) semantically meaningless.
     """
-    rhs: 'Nonterminal | NamedTerminal'
+    rhs: Rhs
 
     def __str__(self) -> str:
         return f"{self.rhs}?"

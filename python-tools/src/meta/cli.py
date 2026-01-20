@@ -65,6 +65,39 @@ def parse_args():
     return parser.parse_args()
 
 
+def check_unreachable_nonterminals(grammar, generator):
+    """Check for unexpected unreachable nonterminals and report warnings.
+
+    Args:
+        grammar: The generated grammar to analyze
+        generator: The GrammarGenerator used to create the grammar
+
+    Prints warnings to stdout if unexpected unreachable nonterminals are found.
+    """
+    _, unreachable = grammar.partition_nonterminals()
+    unexpected_unreachable = [r for r in unreachable if r.name not in generator.expected_unreachable]
+    if unexpected_unreachable:
+        print("Warning: Unreachable nonterminals detected:")
+        for rule in unexpected_unreachable:
+            print(f"  {rule.name}")
+        print()
+
+
+def write_output(text, output_path, success_msg):
+    """Write text to output file or stdout.
+
+    Args:
+        text: The text content to write
+        output_path: Path object for output file, or None for stdout
+        success_msg: Message to print on successful file write
+    """
+    if output_path:
+        output_path.write_text(text)
+        print(success_msg)
+    else:
+        print(text)
+
+
 def run(args) -> int:
     """Execute the CLI command specified by args."""
     proto_parser = ProtoParser()
@@ -76,29 +109,16 @@ def run(args) -> int:
 
     if args.proto:
         output_text = print_proto_spec(proto_parser)
-        if args.output:
-            args.output.write_text(output_text)
-            print(f"Protobuf spec written to {args.output}")
-        else:
-            print(output_text)
+        write_output(output_text, args.output, f"Protobuf spec written to {args.output}")
 
     if args.grammar:
         generator = GrammarGenerator(proto_parser, verbose=True)
         grammar = generator.generate()
 
-        _, unreachable = grammar.partition_nonterminals()
-        unexpected_unreachable = [r for r in unreachable if r.name not in generator.expected_unreachable]
-        if unexpected_unreachable:
-            print("Warning: Unreachable nonterminals detected:")
-            for rule in unexpected_unreachable:
-                print(f"  {rule.name}")
-            print()
+        check_unreachable_nonterminals(grammar, generator)
+
         output_text = grammar.print_grammar()
-        if args.output:
-            args.output.write_text(output_text)
-            print(f"Generated grammar written to {args.output}")
-        else:
-            print(output_text)
+        write_output(output_text, args.output, f"Generated grammar written to {args.output}")
 
     return 0
 
