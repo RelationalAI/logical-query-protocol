@@ -5,10 +5,17 @@ with semantic actions, including support for normalization and left-factoring.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple, TYPE_CHECKING
 
 # Import action AST types
 from .target import TargetExpr, Var, Symbol, Call, Lambda, Lit, TargetType, ListType, OptionType, TupleType
+
+# Use TYPE_CHECKING to avoid circular import: GrammarAnalysis imports Grammar,
+# but we need GrammarAnalysis type hints here. These imports only exist during
+# type checking, not at runtime.
+if TYPE_CHECKING:
+    from .grammar_analysis import GrammarAnalysis
+    from .grammar_utils import count_nonliteral_rhs_elements
 
 
 # Grammar RHS (right-hand side) elements
@@ -106,10 +113,10 @@ class Nonterminal(RhsSymbol):
 class Star(Rhs):
     """Zero or more repetitions (*).
 
-    Only Nonterminal and NamedTerminal are allowed since LitTerminal
+    Any Rhs can be used except LitTerminal, since LitTerminal
     produces no value, making Star(LitTerminal) semantically meaningless.
     """
-    rhs: 'Nonterminal | NamedTerminal'
+    rhs: Rhs
 
     def __str__(self) -> str:
         return f"{self.rhs}*"
@@ -123,10 +130,10 @@ class Star(Rhs):
 class Option(Rhs):
     """Optional element (?).
 
-    Only Nonterminal and NamedTerminal are allowed since LitTerminal
+    Any Rhs can be used except LitTerminal, since LitTerminal
     produces no value, making Option(LitTerminal) semantically meaningless.
     """
-    rhs: 'Nonterminal | NamedTerminal'
+    rhs: Rhs
 
     def __str__(self) -> str:
         return f"{self.rhs}?"
@@ -212,8 +219,9 @@ class Rule:
         return str(self.rhs)
 
     def __post_init__(self):
+        from .grammar_utils import count_nonliteral_rhs_elements
         assert isinstance(self.rhs, Rhs)
-        rhs_len = _count_nonliteral_rhs_elements(self.rhs)
+        rhs_len = count_nonliteral_rhs_elements(self.rhs)
         action_params = len(self.constructor.params)
         assert action_params == rhs_len, (
             f"Action for {self.lhs.name} has {action_params} parameter(s) "
@@ -249,10 +257,28 @@ class Grammar:
     rules: Dict[Nonterminal, List[Rule]] = field(default_factory=dict)
     tokens: List[Token] = field(default_factory=list)
 
+    # Lazily created analysis object (holds cached results)
+    _analysis: Optional['GrammarAnalysis'] = field(default=None, init=False, repr=False)
+
     def __post_init__(self):
         self.rules = {self.start: []}
 
+    @property
+    def analysis(self) -> 'GrammarAnalysis':
+        """Get or create the grammar analysis object."""
+        if self._analysis is None:
+            from .grammar_analysis import GrammarAnalysis
+            self._analysis = GrammarAnalysis(self)
+        return self._analysis
+
     def add_rule(self, rule: Rule) -> None:
+        """Add a rule to the grammar.
+
+        The grammar must not have been analyzed yet. Once the .analysis property
+        is accessed, the grammar is frozen and no more rules can be added.
+        """
+        assert self._analysis is None, "Grammar is already analyzed"
+
         lhs = rule.lhs
         if lhs not in self.rules:
             self.rules[lhs] = []
@@ -262,36 +288,6 @@ class Grammar:
         self.rules[lhs].append(rule)
         return None
 
-    def partition_nonterminals(self) -> Tuple[List[Nonterminal], List[Nonterminal]]:
-        """Partition nonterminals into reachable and unreachable.
-
-        Returns a tuple of:
-            - reachable: List of reachable nonterminals in preorder traversal
-            - unreachable: List of unreachable nonterminals (sorted by name)
-        """
-        visited: Set[Nonterminal] = set()
-        reachable: List[Nonterminal] = []
-
-        def visit(A: Nonterminal) -> None:
-            """Visit nonterminal and its dependencies in preorder."""
-            if A in visited or A not in self.rules:
-                return None
-            visited.add(A)
-            reachable.append(A)
-            for rule in self.rules[A]:
-                for B in get_nonterminals(rule.rhs):
-                    visit(B)
-            return None
-
-        visit(self.start)
-
-        unreachable = sorted(
-            [nt for nt in self.rules.keys() if nt not in visited],
-            key=lambda nt: nt.name
-        )
-
-        return reachable, unreachable
-
     def get_rules(self, nt: Nonterminal) -> List[Rule]:
         """Get all rules with the given LHS name."""
         return self.rules.get(nt, [])
@@ -300,13 +296,18 @@ class Grammar:
         """Check if any rule has the given LHS name."""
         return name in self.rules
 
+    def get_unreachable_nonterminals(self) -> List[Nonterminal]:
+        """Find all nonterminals that are unreachable from start symbol."""
+        _, unreachable = self.analysis.partition_nonterminals_by_reachability()
+        return unreachable
+
     def print_grammar(self, reachable_only: bool = True) -> str:
         """Convert to context-free grammar format with actions."""
         lines = []
         lines.append("// Auto-generated grammar from protobuf specifications")
         lines.append("")
 
-        reachable, unreachable = self.partition_nonterminals()
+        reachable, unreachable = self.analysis.partition_nonterminals_by_reachability()
         rule_order = reachable if reachable_only else reachable + unreachable
 
         for lhs in rule_order:
@@ -331,36 +332,3 @@ class Grammar:
             lines.append(f"{token.name}: {token.pattern}")
 
         return "\n".join(lines)
-
-
-# Helper functions
-
-# Import traversal utilities here to avoid circular imports
-from .grammar_utils import get_nonterminals, get_literals, collect  # noqa: E402
-
-
-def is_epsilon(rhs: Rhs) -> bool:
-    """Check if rhs represents an epsilon production (empty sequence)."""
-    return isinstance(rhs, Sequence) and len(rhs.elements) == 0
-
-
-def rhs_elements(rhs: Rhs) -> Tuple[Rhs, ...]:
-    """Return elements of rhs. For Sequence, returns rhs.elements; otherwise returns (rhs,)."""
-    if isinstance(rhs, Sequence):
-        return rhs.elements
-    return (rhs,)
-
-
-def _count_nonliteral_rhs_elements(rhs: Rhs) -> int:
-    """Count the number of elements in an RHS that produce action parameters.
-
-    This counts all RHS elements, as each position (including literals, options,
-    stars, etc.) corresponds to a parameter in the action lambda.
-    """
-    if isinstance(rhs, Sequence):
-        return sum(_count_nonliteral_rhs_elements(elem) for elem in rhs.elements)
-    elif isinstance(rhs, LitTerminal):
-        return 0
-    else:
-        assert isinstance(rhs, (NamedTerminal, Nonterminal, Option, Star)), f"found {type(rhs)}"
-        return 1

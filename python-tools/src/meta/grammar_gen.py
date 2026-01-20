@@ -149,7 +149,11 @@ class GrammarGenerator:
         parser: ProtoParser with messages/enums from .proto files
         final_rules: Rule names that should not be auto-generated (builtin)
         generated_rules: Rule names already generated (prevents duplication)
-        expected_unreachable: Rules known to be unreachable (not errors)
+        expected_unreachable: Rules known to be unreachable from start symbol.
+            These are valid rules that exist in the grammar but are not reachable
+            through any path from the start symbol. They are expected to be
+            unreachable (e.g., debug info, deprecated features) and should not
+            be reported as errors during grammar validation.
         grammar: The Grammar being constructed
         never_inline_fields: (message, field) pairs that should not be inlined
         rule_literal_renames: Map rule names to different S-expression keywords

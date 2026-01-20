@@ -33,46 +33,7 @@ from pathlib import Path
 
 from .proto_parser import ProtoParser
 from .grammar_gen import GrammarGenerator
-
-
-def format_message(msg, indent=0):
-    """Format a ProtoMessage for display."""
-    prefix = "  " * indent
-    lines = [f"{prefix}message {msg.name} {{"]
-
-    for enum in msg.enums:
-        lines.append(f"{prefix}  enum {enum.name} {{")
-        for value_name, value_number in enum.values:
-            lines.append(f"{prefix}    {value_name} = {value_number};")
-        lines.append(f"{prefix}  }}")
-
-    for oneof in msg.oneofs:
-        lines.append(f"{prefix}  oneof {oneof.name} {{")
-        for field in oneof.fields:
-            lines.append(f"{prefix}    {field.type} {field.name} = {field.number};")
-        lines.append(f"{prefix}  }}")
-
-    for field in msg.fields:
-        modifiers = []
-        if field.is_repeated:
-            modifiers.append("repeated")
-        if field.is_optional:
-            modifiers.append("optional")
-        modifier_str = " ".join(modifiers) + " " if modifiers else ""
-        lines.append(f"{prefix}  {modifier_str}{field.type} {field.name} = {field.number};")
-
-    lines.append(f"{prefix}}}")
-    return "\n".join(lines)
-
-
-def format_enum(enum, indent=0):
-    """Format a ProtoEnum for display."""
-    prefix = "  " * indent
-    lines = [f"{prefix}enum {enum.name} {{"]
-    for value_name, value_number in enum.values:
-        lines.append(f"{prefix}  {value_name} = {value_number};")
-    lines.append(f"{prefix}}}")
-    return "\n".join(lines)
+from .proto_print import print_proto_spec
 
 
 def parse_args():
@@ -92,11 +53,49 @@ def parse_args():
         help="Output file"
     )
     parser.add_argument(
+        "--proto",
+        action="store_true",
+        help="Output the parsed protobuf specification"
+    )
+    parser.add_argument(
         "--grammar",
         action="store_true",
         help="Output the grammar"
     )
     return parser.parse_args()
+
+
+def check_unreachable_nonterminals(grammar, generator):
+    """Check for unexpected unreachable nonterminals and report warnings.
+
+    Args:
+        grammar: The generated grammar to analyze
+        generator: The GrammarGenerator used to create the grammar
+
+    Prints warnings to stdout if unexpected unreachable nonterminals are found.
+    """
+    _, unreachable = grammar.analysis.partition_nonterminals_by_reachability()
+    unexpected_unreachable = [r for r in unreachable if r.name not in generator.expected_unreachable]
+    if unexpected_unreachable:
+        print("Warning: Unreachable nonterminals detected:")
+        for rule in unexpected_unreachable:
+            print(f"  {rule.name}")
+        print()
+
+
+def write_output(text, output_path, success_msg):
+    """Write text to output file or stdout.
+
+    Args:
+        text: The text content to write
+        output_path: Path object for output file, or None for stdout
+        success_msg: Message to print on successful file write
+    """
+    if output_path:
+        output_path.write_text(text)
+        print(success_msg)
+    else:
+        print(text)
 
 
 def run(args) -> int:
@@ -108,24 +107,18 @@ def run(args) -> int:
             return 1
         proto_parser.parse_file(proto_file)
 
-    generator = GrammarGenerator(proto_parser, verbose=True)
-    grammar = generator.generate()
-
-    _, unreachable = grammar.partition_nonterminals()
-    unexpected_unreachable = [r for r in unreachable if r.name not in generator.expected_unreachable]
-    if unexpected_unreachable:
-        print("Warning: Unreachable nonterminals detected:")
-        for rule in unexpected_unreachable:
-            print(f"  {rule.name}")
-        print()
+    if args.proto:
+        output_text = print_proto_spec(proto_parser)
+        write_output(output_text, args.output, f"Protobuf spec written to {args.output}")
 
     if args.grammar:
+        generator = GrammarGenerator(proto_parser, verbose=True)
+        grammar = generator.generate()
+
+        check_unreachable_nonterminals(grammar, generator)
+
         output_text = grammar.print_grammar()
-        if args.output:
-            args.output.write_text(output_text)
-            print(f"Generated grammar written to {args.output}")
-        else:
-            print(output_text)
+        write_output(output_text, args.output, f"Generated grammar written to {args.output}")
 
     return 0
 
