@@ -228,7 +228,7 @@ class GrammarGenerator:
                 assert False, f'Too many params for {message_name} semantic action'
             param_types.append(elem.target_type())
             field_idx += 1
-        args = []
+        args: list[TargetExpr] = []
         for name, param_type in zip(param_names, param_types):
             var = Var(name, param_type)
             if isinstance(param_type, OptionType) and isinstance(param_type.element_type, ListType):
