@@ -68,7 +68,7 @@
                 (primitive :rel_primitive_eq eid 1001)))
             (attrs
               (attribute :function "checked")))
-          (functional_dependency 2566656504947375162
+          (functional_dependency 16552413153559885111
             ([n::STRING id::INT]
               (atom 17268489266876366576 id n))
             (keys n)

@@ -64,7 +64,7 @@
                 (= eid 1001)))
             (attrs
               (attribute :function "checked")))
-          (functional_dependency :snn_is_employee_key
+          (functional_dependency :ssn_is_employee_key
             ([n::STRING id::INT]
               (atom :ssn id n))
             (keys n)
