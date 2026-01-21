@@ -39,6 +39,7 @@ class Def(Declaration):
 # Constraint := FunctionalDependency
 @dataclass(frozen=True)
 class Constraint(Declaration):
+    id: RelationId
     pass
 
 # FunctionalDependency(guard::Abstraction, x::Var[], y::Var[])

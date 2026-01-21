@@ -4,7 +4,7 @@
     (writes
       (define
         (fragment :fds
-          (functional_dependency
+          (functional_dependency :fd_1
             ([a::INT b::INT c::INT]
               (atom :r a b c))
             (keys a d)

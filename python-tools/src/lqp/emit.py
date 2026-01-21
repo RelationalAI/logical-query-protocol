@@ -325,12 +325,14 @@ def convert_declaration(decl: ir.Declaration) -> logic_pb2.Declaration:
 
 def convert_constraint(constraint: ir.Constraint) -> logic_pb2.Constraint:
     if isinstance(constraint, ir.FunctionalDependency):
+        fd_dict: Dict[str, Any] = {
+            'guard': convert_abstraction(constraint.guard),
+            'keys': [convert_var(v) for v in constraint.keys],
+            'values': [convert_var(v) for v in constraint.values],
+        }
         return logic_pb2.Constraint(
-            functional_dependency=logic_pb2.FunctionalDependency(
-                guard=convert_abstraction(constraint.guard),
-                keys=[convert_var(v) for v in constraint.keys],
-                values=[convert_var(v) for v in constraint.values],
-            )
+            id=convert_relation_id(constraint.id),
+            functional_dependency=logic_pb2.FunctionalDependency(**fd_dict)
         )
     else:
         raise TypeError(f"Unsupported Constraint type: {type(constraint)}")

@@ -22,7 +22,7 @@
                   (primitive :rel_primitive_eq n "SSN#Bob"))))
             (attrs
               (attribute :function "checked")))
-          (functional_dependency
+          (functional_dependency 10269182389050116318
             ([n::STRING id::INT]
               (atom 17268489266876366576 id n))
             (keys n)
@@ -49,7 +49,7 @@
                   (primitive :rel_primitive_eq ln "Johnson"))))
             (attrs
               (attribute :function "checked")))
-          (functional_dependency
+          (functional_dependency 882519611387004518
             ([fn::STRING ln::STRING id::INT]
               (and
                 (atom 378706712368109145 id fn)
@@ -68,12 +68,12 @@
                 (primitive :rel_primitive_eq eid 1001)))
             (attrs
               (attribute :function "checked")))
-          (functional_dependency
+          (functional_dependency 2566656504947375162
             ([n::STRING id::INT]
               (atom 17268489266876366576 id n))
             (keys n)
             (values id))
-          (functional_dependency
+          (functional_dependency 8517456109436970268
             ([eid::INT id::INT]
               (atom 4787166673635998263 id eid))
             (keys eid)
@@ -111,7 +111,7 @@
                   (primitive :rel_primitive_eq v "VIN#Toyota"))))
             (attrs
               (attribute :function "checked")))
-          (functional_dependency
+          (functional_dependency 13590578710748435052
             ([v::STRING id::INT]
               (atom 9954426197261524399 id v))
             (keys v)
@@ -146,7 +146,7 @@
     (writes
       (define
         (fragment :car_purchase_fd
-          (functional_dependency
+          (functional_dependency 16691780794364909551
             ([person_id::INT car_id::INT date::STRING amount::INT]
               (atom 2450621548305115752 person_id car_id date amount))
             (keys car_id date)
@@ -159,7 +159,7 @@
                 (and
                   (atom 2450621548305115752 person_id car_id date amount)
                   (primitive :rel_primitive_gt_eq_monotype amount 20000)))))
-          (functional_dependency
+          (functional_dependency 13287355746881327704
             ([person_id::INT car_id::INT]
               (and
                 (atom 12320303242364489664 person_id car_id)
@@ -174,7 +174,7 @@
             ([person_id::INT car_id::INT]
               (exists [date::STRING amount::INT]
                 (atom 2450621548305115752 person_id car_id date amount))))
-          (functional_dependency
+          (functional_dependency 15790463256600539800
             ([person_id::INT car_id::INT]
               (atom 12320303242364489664 person_id car_id))
             (keys car_id)
@@ -184,7 +184,7 @@
     (writes
       (define
         (fragment :query2
-          (functional_dependency
+          (functional_dependency 16281709611803049790
             ([n::STRING car_id::INT person_id::INT v::STRING]
               (and
                 (atom 17268489266876366576 person_id n)
@@ -207,6 +207,7 @@
 ;; Debug information
 ;; -----------------------
 ;; Original names
+;; 	 ID `16281709611803049790` -> `vin_determines_owner`
 ;; 	 ID `17268489266876366576` -> `ssn`
 ;; 	 ID `9954426197261524399` -> `vin`
 ;; 	 ID `12320303242364489664` -> `owns`
@@ -214,9 +215,17 @@
 ;; 	 ID `378706712368109145` -> `first_name`
 ;; 	 ID `2532914575784924444` -> `last_name`
 ;; 	 ID `2450621548305115752` -> `purchased_on_for`
+;; 	 ID `13287355746881327704` -> `car_determines_owner`
 ;; 	 ID `6919740574510502700` -> `Person`
+;; 	 ID `15790463256600539800` -> `car_has_at_most_one_owner`
+;; 	 ID `16691780794364909551` -> `date_and_car_determine_person`
 ;; 	 ID `11947469809295382674` -> `Car`
+;; 	 ID `13590578710748435052` -> `vin_is_car_key`
 ;; 	 ID `15013491121772020750` -> `make`
 ;; 	 ID `3352882180916130150` -> `query1`
 ;; 	 ID `4787166673635998263` -> `emp_id`
 ;; 	 ID `1441519574368593801` -> `Employee`
+;; 	 ID `2566656504947375162` -> `snn_is_employee_key`
+;; 	 ID `8517456109436970268` -> `emp_id_is_employee_key`
+;; 	 ID `10269182389050116318` -> `ssn_is_person_key`
+;; 	 ID `882519611387004518` -> `name_is_person_key`
