@@ -358,10 +358,10 @@ class LQPTransformer(Transformer):
             meta=self.meta(meta)
         )
 
-    def fd_keys(self, _, items):
+    def fd_keys(self, meta, items):
         return items
 
-    def fd_values(self, _, items):
+    def fd_values(self, meta, items):
         return items
 
     def data(self, meta, items):
