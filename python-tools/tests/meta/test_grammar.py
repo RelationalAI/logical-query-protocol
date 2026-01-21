@@ -17,7 +17,7 @@ from meta.grammar_utils import (
     get_nonterminals, get_literals, is_epsilon, rhs_elements,
     count_nonliteral_rhs_elements,
 )
-from meta.target import BaseType, MessageType, TupleType, ListType, OptionType, Lambda, Var, Lit
+from meta.target import BaseType, MessageType, TupleType, ListType, OptionType, Lambda, Var, Lit, Call, Builtin
 
 
 class TestLitTerminal:
@@ -127,7 +127,6 @@ class TestStar:
         term = NamedTerminal("NUMBER", BaseType("Int64"))
         star = Star(term)
         assert star.rhs == term
-
 
     def test_str(self):
         """Test Star string representation."""
@@ -255,7 +254,7 @@ class TestRule:
     """Tests for Rule."""
 
     def test_construction_simple(self):
-        """Test Rule construction with matching constructor parameters."""
+        """Test Rule construction with matching action parameters."""
         lhs = Nonterminal("A", MessageType("proto", "A"))
         nt = Nonterminal("B", MessageType("proto", "B"))
         rhs = nt
@@ -378,6 +377,11 @@ class TestGrammar:
         nt = Nonterminal("A", MessageType("proto", "A"))
         param = Var("x", MessageType("proto", "A"))
         constructor = Lambda([param], MessageType("proto", "A"), param)
+        deconstructor = Lambda(
+            [Var('msg', MessageType("proto", "A"))],
+            OptionType(MessageType("proto", "A")),
+            Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('a')])])
+        )
         rule = Rule(nt, nt, constructor)
         grammar.add_rule(rule)
         rules = grammar.get_rules(nt)
@@ -399,6 +403,11 @@ class TestGrammar:
         nt = Nonterminal("A", MessageType("proto", "A"))
         param = Var("x", MessageType("proto", "A"))
         constructor = Lambda([param], MessageType("proto", "A"), param)
+        deconstructor = Lambda(
+            [Var('msg', MessageType("proto", "A"))],
+            OptionType(MessageType("proto", "A")),
+            Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('a')])])
+        )
         rule = Rule(nt, nt, constructor)
         grammar.add_rule(rule)
         assert grammar.has_rule(nt)
@@ -447,11 +456,11 @@ class TestGrammar:
         grammar = Grammar(start)
         a = Nonterminal("A", MessageType("proto", "A"))
         param = Var("x", MessageType("proto", "A"))
-        constructor = Lambda([param], MessageType("proto", "A"), param)
+        constructor = Lambda([param], MessageType("proto", "Start"), param)
         grammar.add_rule(Rule(start, a, constructor))
         output = grammar.print_grammar()
-        assert "Start" in output
-        assert ": A" in output
+        assert "Start:" in output
+        assert "A" in output
 
 
 
