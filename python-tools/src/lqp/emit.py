@@ -331,7 +331,7 @@ def convert_constraint(constraint: ir.Constraint) -> logic_pb2.Constraint:
             'values': [convert_var(v) for v in constraint.values],
         }
         return logic_pb2.Constraint(
-            id=convert_relation_id(constraint.id),
+            name=convert_relation_id(constraint.name),
             functional_dependency=logic_pb2.FunctionalDependency(**fd_dict)
         )
     else:

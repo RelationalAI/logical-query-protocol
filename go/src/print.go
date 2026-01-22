@@ -193,7 +193,7 @@ func (pp PrettyParams) pprint(node interface{}) {
 			pp.PARENS(func(pp PrettyParams) {
 				pp.Write("functional_dependency")
 				pp.SPACE()
-				pp.pprint(n.GetId())
+				pp.pprint(n.GetName())
 				pp.NEWLINE()
 				pp.INDENT(2, func(pp PrettyParams) {
 					pp.PARENS(func(pp PrettyParams) {

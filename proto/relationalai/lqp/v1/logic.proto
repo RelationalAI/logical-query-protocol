@@ -20,7 +20,7 @@ message Def {
 }
 
 message Constraint {
-  RelationId id = 2;
+  RelationId name = 2;
   oneof constraint_type {
     FunctionalDependency functional_dependency = 1;
   }

@@ -28,12 +28,12 @@ class Def(_message.Message):
     def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
 
 class Constraint(_message.Message):
-    __slots__ = ("id", "functional_dependency")
-    ID_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("name", "functional_dependency")
+    NAME_FIELD_NUMBER: _ClassVar[int]
     FUNCTIONAL_DEPENDENCY_FIELD_NUMBER: _ClassVar[int]
-    id: RelationId
+    name: RelationId
     functional_dependency: FunctionalDependency
-    def __init__(self, id: _Optional[_Union[RelationId, _Mapping]] = ..., functional_dependency: _Optional[_Union[FunctionalDependency, _Mapping]] = ...) -> None: ...
+    def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., functional_dependency: _Optional[_Union[FunctionalDependency, _Mapping]] = ...) -> None: ...
 
 class FunctionalDependency(_message.Message):
     __slots__ = ("guard", "keys", "values")

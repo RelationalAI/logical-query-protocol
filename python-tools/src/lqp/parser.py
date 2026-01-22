@@ -346,12 +346,12 @@ class LQPTransformer(Transformer):
         return items[0]
 
     def functional_dependency(self, meta, items):
-        id = items[0]
+        name = items[0]
         guard, _ = items[1]
         keys = items[2]
         values = items[3]
         return ir.FunctionalDependency(
-            id=id,
+            name=name,
             guard=guard,
             keys=keys,
             values=values,
