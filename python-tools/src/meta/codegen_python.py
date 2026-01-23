@@ -24,6 +24,16 @@ PYTHON_KEYWORDS: Set[str] = {
 }
 
 
+def _format_parse_error_with_token(message_expr: str, token_expr: str) -> str:
+    """Format a ParseError raise statement with token information."""
+    return (
+        "raise ParseError("
+        f"f\\\"{{{message_expr}}}: "
+        f"{{{token_expr}.type}}=`{{{token_expr}.value}}`\\\""
+        ")"
+    )
+
+
 class PythonCodeGenerator(CodeGenerator):
     """Python code generator."""
 
@@ -139,7 +149,7 @@ class PythonCodeGenerator(CodeGenerator):
         # error has two arities, so we use a custom generator
         def gen_error(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
             if len(args) == 2:
-                return BuiltinResult("None", [f'raise ParseError(f"{{{args[0]}}}: {{{args[1]}.type}}=`{{{args[1]}.value}}`")'])
+                return BuiltinResult("None", [_format_parse_error_with_token(args[0], args[1])])
             elif len(args) == 1:
                 return BuiltinResult("None", [f"raise ParseError({args[0]})"])
             else:
@@ -266,7 +276,11 @@ class PythonCodeGenerator(CodeGenerator):
         if isinstance(expr, Call) and isinstance(expr.func, Message) and expr.func.name == "Fragment":
             for arg in expr.args:
                 if isinstance(arg, Var) and arg.name == "debug_info":
-                    lines.append(f"{indent}debug_info = self.construct_debug_info(self.id_to_debuginfo.get(id, {{}}))")
+                    # Fragment constructor args are: id (FragmentId), declarations, debug_info
+                    # Extract the fragment_id from the first argument
+                    if len(expr.args) >= 1:
+                        fragment_id_expr = self.generate_lines(expr.args[0], lines, indent)
+                        lines.append(f"{indent}debug_info = self.construct_debug_info(self.id_to_debuginfo.get({fragment_id_expr}.id, {{}}))")
                     break
 
         return super().generate_lines(expr, lines, indent)

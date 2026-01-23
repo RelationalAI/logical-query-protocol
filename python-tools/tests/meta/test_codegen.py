@@ -69,7 +69,7 @@ def test_python_let_generation():
     let_expr = Let(Var("x", _any_type), Call(Var("parse_foo", _any_type), []), Var("x", _any_type))
     code = generate_python(let_expr)
     assert "_t" in code and "parse_foo()" in code
-    assert "x = _t" in code or "x = parse_foo()" in code
+    assert any(s in code for s in ("x = _t", "x = parse_foo()"))
     assert code.strip().endswith("x")
 
     # Nested let
