@@ -43,8 +43,6 @@ def test_julia_keyword_escaping():
     code = generate_julia(var)
     assert code == 'var"function"'
 
-    print("✓ Julia keyword escaping works")
-
 
 def test_julia_call_generation():
     """Test Julia function call generation."""
@@ -57,8 +55,6 @@ def test_julia_call_generation():
     call_kw = Call(Var("function", _any_type), [Var("arg", _any_type)])
     code_kw = generate_julia(call_kw)
     assert code_kw == 'var"function"(arg)'
-
-    print("✓ Julia call generation works")
 
 
 def test_julia_let_generation():
@@ -82,8 +78,6 @@ def test_julia_let_generation():
     code_kw = generate_julia(let_kw)
     assert 'var"end"' in code_kw
 
-    print("✓ Julia Let generation works")
-
 
 def test_julia_lambda_generation():
     """Test Julia anonymous function generation."""
@@ -96,8 +90,6 @@ def test_julia_lambda_generation():
     lam_kw = Lambda([Var("struct", _any_type), Var("value", _any_type)], _any_type, Var("value", _any_type))
     code_kw = generate_julia(lam_kw)
     assert 'var"struct"' in code_kw
-
-    print("✓ Julia lambda generation works")
 
 
 def test_python_keyword_escaping():
@@ -511,7 +503,6 @@ if __name__ == "__main__":
     test_julia_call_generation()
     test_julia_let_generation()
     test_julia_lambda_generation()
-    print("\n✓ All Julia code generation tests passed")
 
     test_python_keyword_escaping()
     test_python_call_generation()
@@ -531,4 +522,3 @@ if __name__ == "__main__":
     test_python_visit_nonterminal_def_generation()
     test_python_type_generation()
     test_generator_instance_isolation()
-    print("\n✓ All Python code generation tests passed")
