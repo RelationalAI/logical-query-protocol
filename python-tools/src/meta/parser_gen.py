@@ -191,11 +191,12 @@ def _build_predictor_tree(grammar: Grammar, rules: List[Rule], active_indices: L
     if not groups:
         return subtree_default
     result = subtree_default
-    # Build IfElse chain with specific ordering for soft keywords.
+    # Build IfElse chain with specific ordering for literal string matching.
     # We iterate through tokens and wrap each new condition around the previous result:
     #   result = IfElse(check_token_n, ..., result)
     # This means the LAST token processed becomes the FIRST condition checked.
-    # We want LitTerminals (soft keywords like "let", "if") checked before NamedTerminals (SYMBOL).
+    # We want LitTerminals (literal strings like "let", "if", "(") checked before
+    # NamedTerminals (token types like SYMBOL, INT).
     # So we sort with LitTerminals AFTER NamedTerminals in iteration order.
     def token_sort_key(item):
         token = item[0]
