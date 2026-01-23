@@ -50,6 +50,8 @@ LPAREN = LitTerminal('(')
 RPAREN = LitTerminal(')')
 LBRACE = LitTerminal('{')
 RBRACE = LitTerminal('}')
+LBRACKET = LitTerminal('[')
+RBRACKET = LitTerminal(']')
 
 
 def _msg(module: str, name: str, *args):
@@ -210,7 +212,9 @@ class BuiltinRules:
         if lhs not in self.result:
             self.result[lhs] = ([], True)
         rules_list, existing_final = self.result[lhs]
-        rules_list.append(rule)
+        # Skip duplicate rules
+        if rule not in rules_list:
+            rules_list.append(rule)
         self.result[lhs] = (rules_list, existing_final)
         return None
 
@@ -249,6 +253,7 @@ class BuiltinRules:
         self._add_fragment_rules()
         self._add_epoch_rules()
         self._add_logic_rules()
+        self._add_data_rules()
 
         # Mark all the non-final rules as non-final
         for lhs in self.nonfinal_nonterminals:
@@ -619,8 +624,8 @@ class BuiltinRules:
         _config_dict_nt = Nonterminal('config_dict', _config_type)
         _export_nt = Nonterminal('export', _export_type)
         _export_csv_config_nt = Nonterminal('export_csvconfig', _export_csv_config_type)
-        _export_csv_path_nt = Nonterminal('export_csvpath', STRING_TYPE)
-        _export_csv_columns_nt = Nonterminal('export_csvcolumns', ListType(_export_csv_column_type))
+        _export_csv_path_nt = Nonterminal('export_csv_path', STRING_TYPE)
+        _export_csv_columns_nt = Nonterminal('export_csv_columns', ListType(_export_csv_column_type))
 
         # Export rules
         _msg_export_var = Var('msg', _export_type)
@@ -954,29 +959,56 @@ class BuiltinRules:
         _name_nt = Nonterminal('name', STRING_TYPE)
         _exists_nt = Nonterminal('exists', _exists_type)
 
-        # ffi: STRING -> name, terms? -> term*
-        self.add_rule(_make_simple_message_rule(
-            'ffi', 'logic', 'FFI',
-            fields=[
-                ('name', STRING_TYPE),
-                ('args', ListType(_abstraction_type)),
-                ('terms', ListType(_term_type))
-            ],
-            rhs_inner=(_name_nt, Star(_abstraction_nt), Star(_term_nt))
+        # ffi: with (args ...) and (terms ...) wrappers
+        _ffi_args_type = ListType(_abstraction_type)
+        _ffi_terms_type = ListType(_term_type)
+        _ffi_args_nt = Nonterminal('ffi_args', _ffi_args_type)
+        _ffi_terms_nt = Nonterminal('terms', _ffi_terms_type)
+
+        # ffi_args rule: (args abstraction*)
+        self.add_rule(_make_identity_rule(
+            'ffi_args', _ffi_args_type,
+            rhs=Sequence((LPAREN, LitTerminal('args'), Star(_abstraction_nt), RPAREN))
+        ))
+
+        # terms rule: (terms term*)
+        self.add_rule(_make_identity_rule(
+            'terms', _ffi_terms_type,
+            rhs=Sequence((LPAREN, LitTerminal('terms'), Star(_term_nt), RPAREN))
+        ))
+
+        # ffi rule with wrapper syntax
+        _ffi_type = MessageType('logic', 'FFI')
+        self.add_rule(Rule(
+            lhs=Nonterminal('ffi', _ffi_type),
+            rhs=Sequence((
+                LPAREN, LitTerminal('ffi'),
+                _name_nt,
+                Option(_ffi_args_nt),
+                Option(_ffi_terms_nt),
+                RPAREN
+            )),
+            constructor=Lambda(
+                [
+                    Var('name', STRING_TYPE),
+                    Var('args', OptionType(_ffi_args_type)),
+                    Var('terms', OptionType(_ffi_terms_type))
+                ],
+                _ffi_type,
+                _msg('logic', 'FFI',
+                    Var('name', STRING_TYPE),
+                    make_unwrap_option_or(Var('args', OptionType(_ffi_args_type)), ListExpr([], _abstraction_type)),
+                    make_unwrap_option_or(Var('terms', OptionType(_ffi_terms_type)), ListExpr([], _term_type))
+                )
+            )
         ))
 
         # rel_atom: STRING -> name, terms? -> relterm*
         self.add_rule(_make_simple_message_rule(
             'rel_atom', 'logic', 'RelAtom',
             fields=[('name', STRING_TYPE), ('terms', ListType(_relterm_type))],
-            rhs_inner=(_name_nt, Star(_relterm_nt))
-        ))
-
-        # primitive: STRING -> name, term* -> relterm*
-        self.add_rule(_make_simple_message_rule(
-            'primitive', 'logic', 'Primitive',
-            fields=[('name', STRING_TYPE), ('terms', ListType(_relterm_type))],
-            rhs_inner=(_name_nt, Star(_relterm_nt))
+            rhs_inner=(_name_nt, Star(_relterm_nt)),
+            keyword='relatom'
         ))
 
         # exists: abstraction -> (bindings formula)
@@ -1004,6 +1036,316 @@ class BuiltinRules:
 
         ))
         return None
+
+    def _add_data_rules(self) -> None:
+        """Add rules for data declarations (CSV, BTree, RelEDB)."""
+
+        # Common types
+        _type_type = MessageType('logic', 'Type')
+        _relation_id_type = MessageType('logic', 'RelationId')
+        _value_type = MessageType('logic', 'Value')
+        _config_key_value_type = TupleType([STRING_TYPE, _value_type])
+        _config_type = ListType(_config_key_value_type)
+
+        # BeTree types
+        _betree_info_type = MessageType('logic', 'BeTreeInfo')
+        _betree_relation_type = MessageType('logic', 'BeTreeRelation')
+
+        # CSV types
+        _csv_data_type = MessageType('logic', 'CSVData')
+        _csv_config_type = MessageType('logic', 'CSVConfig')
+        _csv_locator_type = MessageType('logic', 'CSVLocator')
+        _csv_column_type = MessageType('logic', 'CSVColumn')
+
+        # RelEDB type
+        _rel_edb_type = MessageType('logic', 'RelEDB')
+
+        # Data type (oneof wrapper)
+        _data_type = MessageType('logic', 'Data')
+
+        # Common nonterminals
+        _type_nt = Nonterminal('type', _type_type)
+        _relation_id_nt = Nonterminal('relation_id', _relation_id_type)
+        _config_dict_nt = Nonterminal('config_dict', _config_type)
+
+        # BeTree nonterminals
+        _betree_info_nt = Nonterminal('betree_info', _betree_info_type)
+        _betree_key_types_nt = Nonterminal('betree_key_types', ListType(_type_type))
+        _betree_value_types_nt = Nonterminal('betree_value_types', ListType(_type_type))
+        _betree_relation_nt = Nonterminal('betree_relation', _betree_relation_type)
+
+        # CSV nonterminals
+        _csv_data_nt = Nonterminal('csv_data', _csv_data_type)
+        _csv_config_nt = Nonterminal('csv_config', _csv_config_type)
+        _csv_locator_nt = Nonterminal('csv_locator', _csv_locator_type)
+        _csv_columns_nt = Nonterminal('csv_columns', ListType(_csv_column_type))
+        _csv_column_nt = Nonterminal('csv_column', _csv_column_type)
+        _csv_asof_nt = Nonterminal('csv_asof', STRING_TYPE)
+
+        # RelEDB nonterminal
+        _rel_edb_nt = Nonterminal('rel_edb', _rel_edb_type)
+
+        # Data nonterminal
+        _data_nt = Nonterminal('data', _data_type)
+
+        # --- BeTree rules ---
+
+        # betree_key_types: (key_types type*)
+        self.add_rule(_make_identity_rule(
+            'betree_key_types', ListType(_type_type),
+            rhs=Sequence((LPAREN, LitTerminal('key_types'), Star(_type_nt), RPAREN))
+        ))
+
+        # betree_value_types: (value_types type*)
+        self.add_rule(_make_identity_rule(
+            'betree_value_types', ListType(_type_type),
+            rhs=Sequence((LPAREN, LitTerminal('value_types'), Star(_type_nt), RPAREN))
+        ))
+
+        # betree_info: (betree_info betree_key_types betree_value_types config_dict)
+        self.add_rule(Rule(
+            lhs=_betree_info_nt,
+            rhs=Sequence((
+                LPAREN, LitTerminal('betree_info'),
+                _betree_key_types_nt,
+                _betree_value_types_nt,
+                _config_dict_nt,
+                RPAREN
+            )),
+            constructor=Lambda(
+                [
+                    Var('key_types', ListType(_type_type)),
+                    Var('value_types', ListType(_type_type)),
+                    Var('config', _config_type)
+                ],
+                _betree_info_type,
+                Call(Builtin('construct_betree_info'), [
+                    Var('key_types', ListType(_type_type)),
+                    Var('value_types', ListType(_type_type)),
+                    Var('config', _config_type)
+                ])
+            )
+        ))
+
+        # betree_relation: (betree_relation relation_id betree_info)
+        self.add_rule(Rule(
+            lhs=_betree_relation_nt,
+            rhs=Sequence((
+                LPAREN, LitTerminal('betree_relation'),
+                _relation_id_nt,
+                _betree_info_nt,
+                RPAREN
+            )),
+            constructor=Lambda(
+                [Var('name', _relation_id_type), Var('info', _betree_info_type)],
+                _betree_relation_type,
+                _msg('logic', 'BeTreeRelation',
+                    Var('name', _relation_id_type),
+                    Var('info', _betree_info_type)
+                )
+            )
+        ))
+
+        # --- CSV rules ---
+
+        # csv_config: (csv_config config_dict)
+        self.add_rule(Rule(
+            lhs=_csv_config_nt,
+            rhs=Sequence((
+                LPAREN, LitTerminal('csv_config'),
+                _config_dict_nt,
+                RPAREN
+            )),
+            constructor=Lambda(
+                [Var('config', _config_type)],
+                _csv_config_type,
+                Call(Builtin('construct_csv_config'), [Var('config', _config_type)])
+            )
+        ))
+
+        # csv_locator_content: csv_paths | csv_inline_data
+        # Factor choice into separate nonterminal for lower lookahead requirement
+        _csv_locator_content_nt = Nonterminal('csv_locator_content', _csv_locator_type)
+
+        # csv_paths: (paths STRING*)
+        self.add_rule(Rule(
+            lhs=_csv_locator_content_nt,
+            rhs=Sequence((
+                LPAREN, LitTerminal('paths'),
+                Star(NamedTerminal('STRING', STRING_TYPE)),
+                RPAREN
+            )),
+            constructor=Lambda(
+                [Var('paths', ListType(STRING_TYPE))],
+                _csv_locator_type,
+                _msg('logic', 'CSVLocator',
+                    Var('paths', ListType(STRING_TYPE)),
+                    Lit(None)  # inline_data = None
+                )
+            )
+        ))
+
+        # csv_inline_data: (inline_data STRING)
+        self.add_rule(Rule(
+            lhs=_csv_locator_content_nt,
+            rhs=Sequence((
+                LPAREN, LitTerminal('inline_data'),
+                NamedTerminal('STRING', STRING_TYPE),
+                RPAREN
+            )),
+            constructor=Lambda(
+                [Var('data', STRING_TYPE)],
+                _csv_locator_type,
+                _msg('logic', 'CSVLocator',
+                    ListExpr([], STRING_TYPE),  # paths = []
+                    Call(Builtin('encode_string'), [Var('data', STRING_TYPE)])
+                )
+            )
+        ))
+
+        # csv_locator: (csv_locator csv_locator_content)
+        self.add_rule(_make_identity_rule(
+            'csv_locator', _csv_locator_type,
+            rhs=Sequence((LPAREN, LitTerminal('csv_locator'), _csv_locator_content_nt, RPAREN))
+        ))
+
+        # csv_column: (column STRING relation_id [type*])
+        _type_list_nt = Nonterminal('type_list', ListType(_type_type))
+        self.add_rule(_make_identity_rule(
+            'type_list', ListType(_type_type),
+            rhs=Sequence((LBRACKET, Star(_type_nt), RBRACKET))
+        ))
+
+        self.add_rule(Rule(
+            lhs=_csv_column_nt,
+            rhs=Sequence((
+                LPAREN, LitTerminal('column'),
+                NamedTerminal('STRING', STRING_TYPE),
+                _relation_id_nt,
+                _type_list_nt,
+                RPAREN
+            )),
+            constructor=Lambda(
+                [
+                    Var('column_name', STRING_TYPE),
+                    Var('target_id', _relation_id_type),
+                    Var('types', ListType(_type_type))
+                ],
+                _csv_column_type,
+                _msg('logic', 'CSVColumn',
+                    Var('column_name', STRING_TYPE),
+                    Var('target_id', _relation_id_type),
+                    Var('types', ListType(_type_type))
+                )
+            )
+        ))
+
+        # csv_columns: (columns csv_column*)
+        self.add_rule(_make_identity_rule(
+            'csv_columns', ListType(_csv_column_type),
+            rhs=Sequence((LPAREN, LitTerminal('columns'), Star(_csv_column_nt), RPAREN))
+        ))
+
+        # csv_asof: (asof STRING)
+        self.add_rule(_make_identity_rule(
+            'csv_asof', STRING_TYPE,
+            rhs=Sequence((LPAREN, LitTerminal('asof'), NamedTerminal('STRING', STRING_TYPE), RPAREN))
+        ))
+
+        # csv_data: (csv_data csv_locator csv_config csv_columns csv_asof)
+        self.add_rule(Rule(
+            lhs=_csv_data_nt,
+            rhs=Sequence((
+                LPAREN, LitTerminal('csv_data'),
+                _csv_locator_nt,
+                _csv_config_nt,
+                _csv_columns_nt,
+                _csv_asof_nt,
+                RPAREN
+            )),
+            constructor=Lambda(
+                [
+                    Var('locator', _csv_locator_type),
+                    Var('config', _csv_config_type),
+                    Var('columns', ListType(_csv_column_type)),
+                    Var('asof', STRING_TYPE)
+                ],
+                _csv_data_type,
+                _msg('logic', 'CSVData',
+                    Var('locator', _csv_locator_type),
+                    Var('config', _csv_config_type),
+                    Var('columns', ListType(_csv_column_type)),
+                    Var('asof', STRING_TYPE)
+                )
+            )
+        ))
+
+        # --- RelEDB rule ---
+
+        # string_list: [STRING*]
+        _string_list_nt = Nonterminal('string_list', ListType(STRING_TYPE))
+        self.add_rule(_make_identity_rule(
+            'string_list', ListType(STRING_TYPE),
+            rhs=Sequence((LBRACKET, Star(NamedTerminal('STRING', STRING_TYPE)), RBRACKET))
+        ))
+
+        # rel_edb: (rel_edb relation_id [STRING*] [type*])
+        self.add_rule(Rule(
+            lhs=_rel_edb_nt,
+            rhs=Sequence((
+                LPAREN, LitTerminal('rel_edb'),
+                _relation_id_nt,
+                _string_list_nt,
+                _type_list_nt,
+                RPAREN
+            )),
+            constructor=Lambda(
+                [
+                    Var('target_id', _relation_id_type),
+                    Var('path', ListType(STRING_TYPE)),
+                    Var('types', ListType(_type_type))
+                ],
+                _rel_edb_type,
+                _msg('logic', 'RelEDB',
+                    Var('target_id', _relation_id_type),
+                    Var('path', ListType(STRING_TYPE)),
+                    Var('types', ListType(_type_type))
+                )
+            )
+        ))
+
+        # --- Data rule (alternative for all data types) ---
+
+        # data -> csv_data | betree_relation | rel_edb
+        self.add_rule(Rule(
+            lhs=_data_nt,
+            rhs=_csv_data_nt,
+            constructor=Lambda(
+                [Var('csv_data', _csv_data_type)],
+                _data_type,
+                _msg('logic', 'Data', Call(OneOf('csv_data'), [Var('csv_data', _csv_data_type)]))
+            )
+        ))
+
+        self.add_rule(Rule(
+            lhs=_data_nt,
+            rhs=_betree_relation_nt,
+            constructor=Lambda(
+                [Var('betree_relation', _betree_relation_type)],
+                _data_type,
+                _msg('logic', 'Data', Call(OneOf('betree_relation'), [Var('betree_relation', _betree_relation_type)]))
+            )
+        ))
+
+        self.add_rule(Rule(
+            lhs=_data_nt,
+            rhs=_rel_edb_nt,
+            constructor=Lambda(
+                [Var('rel_edb', _rel_edb_type)],
+                _data_type,
+                _msg('logic', 'Data', Call(OneOf('rel_edb'), [Var('rel_edb', _rel_edb_type)]))
+            )
+        ))
 
 
 def get_builtin_rules() -> Dict[Nonterminal, Tuple[List[Rule], bool]]:
