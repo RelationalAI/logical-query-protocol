@@ -212,7 +212,6 @@ class TestVar:
             Var("with-dash", BaseType("String"))
 
 
-
 class TestLit:
     """Tests for Lit."""
 
@@ -347,7 +346,6 @@ class TestCall:
         assert str(outer) == "%process(%get_x(), 42)"
 
 
-
 class TestLambda:
     """Tests for Lambda."""
 
@@ -373,7 +371,6 @@ class TestLambda:
         body = Var("x", BaseType("Int64"))
         lam = Lambda([param], BaseType("Int64"), body)
         assert str(lam) == "lambda x::Int64 -> Int64: x::Int64"
-
 
 
 class TestLet:
@@ -410,7 +407,6 @@ class TestLet:
         assert "let y" in str(outer)
 
 
-
 class TestIfElse:
     """Tests for IfElse."""
 
@@ -440,7 +436,6 @@ class TestIfElse:
         outer = IfElse(cond1, Lit("x"), inner)
         assert "if (a" in str(outer)
         assert "if (b" in str(outer)
-
 
 
 class TestSeq:
@@ -473,7 +468,6 @@ class TestSeq:
             Seq([])
 
 
-
 class TestWhile:
     """Tests for While."""
 
@@ -493,7 +487,6 @@ class TestWhile:
         assert str(loop) == "while (flag::Boolean) 1"
 
 
-
 class TestAssign:
     """Tests for Assign."""
 
@@ -511,7 +504,6 @@ class TestAssign:
         expr = Lit("hello")
         assign = Assign(var, expr)
         assert str(assign) == "result = 'hello'"
-
 
 
 class TestReturn:

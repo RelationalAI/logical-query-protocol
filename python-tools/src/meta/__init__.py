@@ -63,7 +63,7 @@ from .grammar_gen import (
 )
 
 # Parser generation
-from .parser_gen import generate_parse_functions
+from .parser_gen import generate_parse_functions, GrammarConflictError, AmbiguousGrammarError
 
 # Python code generation
 from .codegen_python import (
@@ -117,6 +117,8 @@ __all__ = [
     'generate_grammar',
     # Parser generation
     'generate_parse_functions',
+    'GrammarConflictError',
+    'AmbiguousGrammarError',
     # Python code generation
     'generate_python',
     'generate_python_lines',

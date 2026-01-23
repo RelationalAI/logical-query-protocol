@@ -83,7 +83,22 @@ from .target import Lambda, Call, VisitNonterminalDef, Var, Lit, Symbol, Builtin
 from .gensym import gensym
 from .terminal_sequence_set import TerminalSequenceSet, FollowSet, FirstSet, ConcatSet
 
+# Maximum lookahead depth for LL(k) parsing.
+# Set to 3 because this is sufficient for parsing S-expressions in LQP.
+# S-expressions require k=3 to distinguish alternatives like:
+#   (op arg1 arg2)  vs  (op arg1)  vs  (op)
+# where we need to look at: "(" token[0], operator token[1], first-arg token[2]
 MAX_LOOKAHEAD = 3
+
+
+class GrammarConflictError(Exception):
+    """Raised when grammar has LL(k) conflicts that cannot be resolved within MAX_LOOKAHEAD."""
+    pass
+
+
+class AmbiguousGrammarError(Exception):
+    """Raised when Option or Star cannot be distinguished from follow set."""
+    pass
 
 
 def generate_parse_functions(grammar: Grammar) -> List[VisitNonterminalDef]:
@@ -151,7 +166,7 @@ def _build_predictor_tree(grammar: Grammar, rules: List[Rule], active_indices: L
         return default
     if depth >= MAX_LOOKAHEAD:
         conflict_rules = '\n  '.join((f'Rule {i}: {rules[i]}' for i in active_indices))
-        assert False, f'Grammar conflict at lookahead depth {depth}:\n  {conflict_rules}'
+        raise GrammarConflictError(f'Grammar conflict at lookahead depth {depth}:\n  {conflict_rules}')
     groups: Dict[Terminal, List[int]] = {}
     exhausted: Set[int] = set()
     for rule_idx in active_indices:
@@ -176,16 +191,19 @@ def _build_predictor_tree(grammar: Grammar, rules: List[Rule], active_indices: L
     if not groups:
         return subtree_default
     result = subtree_default
-    # Sort so LitTerminals come AFTER NamedTerminals in iteration order.
-    # Since we build the IfElse chain from the end, this means LitTerminals
-    # will be checked FIRST at runtime (soft keywords before SYMBOL).
+    # Build IfElse chain with specific ordering for soft keywords.
+    # We iterate through tokens and wrap each new condition around the previous result:
+    #   result = IfElse(check_token_n, ..., result)
+    # This means the LAST token processed becomes the FIRST condition checked.
+    # We want LitTerminals (soft keywords like "let", "if") checked before NamedTerminals (SYMBOL).
+    # So we sort with LitTerminals AFTER NamedTerminals in iteration order.
     def token_sort_key(item):
         token = item[0]
-        # LitTerminals get sort key 1, NamedTerminals get sort key 0
-        # This puts NamedTerminals first in iteration, so LitTerminals
-        # end up as the outermost (first-checked) conditions.
-        priority = 1 if isinstance(token, LitTerminal) else 0
-        return (priority, str(token))
+        # Iteration order (lower processed first):
+        #   0 = NamedTerminals (processed first, become inner conditions)
+        #   1 = LitTerminals (processed last, become outer/first-checked conditions)
+        iteration_order = 1 if isinstance(token, LitTerminal) else 0
+        return (iteration_order, str(token))
     for token, indices in sorted(groups.items(), key=token_sort_key):
         check = _build_token_check(token, depth)
         if len(indices) == 1:
@@ -203,9 +221,6 @@ def _build_token_check(term: Terminal, depth: int) -> TargetExpr:
         return Call(Builtin('match_lookahead_terminal'), [Lit(term.name), Lit(depth)])
     else:
         return Lit(False)
-
-def findfirst(predicate, iterable):
-    return next((i for i, x in enumerate(iterable) if predicate(x)), None)
 
 def _build_lookahead_check(token_sequences: Set[Tuple[Terminal, ...]], depth: int) -> TargetExpr:
     """Build a boolean expression that checks if lookahead matches any of the token sequences.
@@ -267,7 +282,7 @@ def _build_option_predictor(grammar: Grammar, element: Rhs, follow_set: Terminal
     # Still conflicts at MAX_LOOKAHEAD
     element_first = grammar.analysis.first_k_of(MAX_LOOKAHEAD, element)
     conflict_msg = f'Ambiguous Option/Star: FIRST_{MAX_LOOKAHEAD}({element}) and follow set overlap'
-    assert False, conflict_msg
+    raise AmbiguousGrammarError(conflict_msg)
 
 def _generate_parse_rhs_ir(rhs: Rhs, grammar: Grammar, follow_set: TerminalSequenceSet, apply_action: bool=False, action: Optional[Lambda]=None) -> TargetExpr:
     """Generate IR for parsing an RHS.
@@ -318,7 +333,7 @@ def _generate_parse_rhs_ir(rhs: Rhs, grammar: Grammar, follow_set: TerminalSeque
         predictor = _build_option_predictor(grammar, rhs.rhs, follow_set)
         return Let(xs, ListExpr([], rhs.rhs.target_type()), Let(cond, predictor, Seq([While(cond, Seq([Call(Builtin('list_push!'), [xs, _generate_parse_rhs_ir(rhs.rhs, grammar, follow_set, False, None)]), Assign(cond, predictor)])), xs])))
     else:
-        assert False, f'Unsupported Rhs type: {type(rhs)}'
+        raise NotImplementedError(f'Unsupported Rhs type: {type(rhs)}')
 
 def _generate_parse_rhs_ir_sequence(rhs: Sequence, grammar: Grammar, follow_set: TerminalSequenceSet, apply_action: bool=False, action: Optional[Lambda]=None) -> TargetExpr:
     if is_epsilon(rhs):
