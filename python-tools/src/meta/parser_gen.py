@@ -370,8 +370,8 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, grammar: Grammar, follow_set:
         # Multiple values - wrap in tuple
         exprs.append(Call(Builtin('make_tuple'), arg_vars))
     elif len(arg_vars) == 1:
-        # Single value - just use it
-        pass  # Value already assigned
+        # Single value case: already in exprs as the last Assign
+        pass
     # else: no non-literal elements, return None
 
     if len(exprs) == 1:
