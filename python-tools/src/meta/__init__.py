@@ -65,6 +65,13 @@ from .grammar_gen import (
 # Parser generation
 from .parser_gen import generate_parse_functions
 
+# Python code generation
+from .codegen_python import (
+    generate_python,
+    generate_python_lines,
+    escape_identifier as escape_python_identifier,
+)
+
 __all__ = [
     # Target language AST
     'TargetNode',
@@ -110,4 +117,8 @@ __all__ = [
     'generate_grammar',
     # Parser generation
     'generate_parse_functions',
+    # Python code generation
+    'generate_python',
+    'generate_python_lines',
+    'escape_python_identifier',
 ]
