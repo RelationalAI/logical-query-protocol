@@ -22,7 +22,7 @@ def test_generate_parse_functions_simple():
 
     grammar = Grammar(start=s)
     action = Lambda([], s_type, Var("result", s_type))
-    grammar.add_rule(Rule(s, lit_a, action, action))
+    grammar.add_rule(Rule(s, lit_a, action))
 
     # Generate parse functions
     defs = generate_parse_functions(grammar)
@@ -43,8 +43,8 @@ def test_generate_parse_functions_multiple_alternatives():
 
     grammar = Grammar(start=s)
     action = Lambda([], s_type, Var("result", s_type))
-    grammar.add_rule(Rule(s, lit_a, action, action))
-    grammar.add_rule(Rule(s, lit_b, action, action))
+    grammar.add_rule(Rule(s, lit_a, action))
+    grammar.add_rule(Rule(s, lit_b, action))
 
     defs = generate_parse_functions(grammar)
 
@@ -64,8 +64,8 @@ def test_generate_parse_functions_with_nonterminal():
     grammar = Grammar(start=s)
     action_s = Lambda([Var("x", a_type)], s_type, Var("x", a_type))
     action_a = Lambda([], a_type, Var("result", a_type))
-    grammar.add_rule(Rule(s, a, action_s, action_s))
-    grammar.add_rule(Rule(a, lit_a, action_a, action_a))
+    grammar.add_rule(Rule(s, a, action_s))
+    grammar.add_rule(Rule(a, lit_a, action_a))
 
     defs = generate_parse_functions(grammar)
 
@@ -87,12 +87,12 @@ def test_generate_parse_functions_with_option():
 
     grammar = Grammar(start=s)
     action_a = Lambda([], a_type, Var("result", a_type))
-    grammar.add_rule(Rule(a, lit_b, action_a, action_a))
+    grammar.add_rule(Rule(a, lit_b, action_a))
 
     # S -> "a" A?
     rhs = Sequence((lit_a, Option(a)))
     action_s = Lambda([Var("opt", a_type)], s_type, Var("opt", a_type))
-    grammar.add_rule(Rule(s, rhs, action_s, action_s))
+    grammar.add_rule(Rule(s, rhs, action_s))
 
     defs = generate_parse_functions(grammar)
 
@@ -112,13 +112,13 @@ def test_generate_parse_functions_with_star():
 
     grammar = Grammar(start=s)
     action_a = Lambda([], a_type, Var("result", a_type))
-    grammar.add_rule(Rule(a, lit_a, action_a, action_a))
+    grammar.add_rule(Rule(a, lit_a, action_a))
 
     # S -> A*
     rhs = Star(a)
     list_type = ListType(a_type)
     action_s = Lambda([Var("list", list_type)], s_type, Var("list", list_type))
-    grammar.add_rule(Rule(s, rhs, action_s, action_s))
+    grammar.add_rule(Rule(s, rhs, action_s))
 
     defs = generate_parse_functions(grammar)
 
@@ -142,11 +142,11 @@ def test_generate_parse_functions_ll2():
 
     # S -> "a" "b"
     rhs1 = Sequence((lit_a, lit_b))
-    grammar.add_rule(Rule(s, rhs1, action, action))
+    grammar.add_rule(Rule(s, rhs1, action))
 
     # S -> "a" "c"
     rhs2 = Sequence((lit_a, lit_c))
-    grammar.add_rule(Rule(s, rhs2, action, action))
+    grammar.add_rule(Rule(s, rhs2, action))
 
     defs = generate_parse_functions(grammar)
 
@@ -170,11 +170,11 @@ def test_generate_parse_functions_ll3():
 
     # S -> "a" "b" "c"
     rhs1 = Sequence((lit_a, lit_b, lit_c))
-    grammar.add_rule(Rule(s, rhs1, action, action))
+    grammar.add_rule(Rule(s, rhs1, action))
 
     # S -> "a" "b" "d"
     rhs2 = Sequence((lit_a, lit_b, lit_d))
-    grammar.add_rule(Rule(s, rhs2, action, action))
+    grammar.add_rule(Rule(s, rhs2, action))
 
     defs = generate_parse_functions(grammar)
 
@@ -193,11 +193,11 @@ def test_generate_parse_functions_with_epsilon():
     action = Lambda([], s_type, Var("result", s_type))
 
     # S -> "a"
-    grammar.add_rule(Rule(s, lit_a, action, action))
+    grammar.add_rule(Rule(s, lit_a, action))
 
     # S -> ε
     epsilon = Sequence(())
-    grammar.add_rule(Rule(s, epsilon, action, action))
+    grammar.add_rule(Rule(s, epsilon, action))
 
     defs = generate_parse_functions(grammar)
 
@@ -214,7 +214,7 @@ def test_generate_parse_functions_with_named_terminal():
 
     grammar = Grammar(start=s)
     action = Lambda([Var("id", BaseType("String"))], s_type, Var("id", BaseType("String")))
-    grammar.add_rule(Rule(s, id_terminal, action, action))
+    grammar.add_rule(Rule(s, id_terminal, action))
 
     defs = generate_parse_functions(grammar)
 
@@ -235,8 +235,8 @@ def test_generate_parse_functions_unreachable_nonterminal():
     grammar = Grammar(start=s)
     action_s = Lambda([], s_type, Var("result", s_type))
     action_b = Lambda([], b_type, Var("result", b_type))
-    grammar.add_rule(Rule(s, lit_a, action_s, action_s))
-    grammar.add_rule(Rule(b, lit_b, action_b, action_b))
+    grammar.add_rule(Rule(s, lit_a, action_s))
+    grammar.add_rule(Rule(b, lit_b, action_b))
 
     defs = generate_parse_functions(grammar)
 
@@ -260,11 +260,11 @@ def test_ll4_conflict_detection():
 
     # S -> "a" "a" "a" "b"
     rhs1 = Sequence((lit_a, lit_a, lit_a, lit_b))
-    grammar.add_rule(Rule(s, rhs1, action, action))
+    grammar.add_rule(Rule(s, rhs1, action))
 
     # S -> "a" "a" "a" "c"
     rhs2 = Sequence((lit_a, lit_a, lit_a, lit_c))
-    grammar.add_rule(Rule(s, rhs2, action, action))
+    grammar.add_rule(Rule(s, rhs2, action))
 
     # This should raise a GrammarConflictError
     with pytest.raises(GrammarConflictError, match="Grammar conflict"):
@@ -284,12 +284,12 @@ def test_complex_star_sequence():
 
     grammar = Grammar(start=s)
     action_a = Lambda([], a_type, Var("result", a_type))
-    grammar.add_rule(Rule(a, lit_a, action_a, action_a))
+    grammar.add_rule(Rule(a, lit_a, action_a))
 
     # S -> "(" A* ")"
     rhs = Sequence((lit_lparen, Star(a), lit_rparen))
     action_s = Lambda([Var("list", ListType(a_type))], s_type, Var("list", ListType(a_type)))
-    grammar.add_rule(Rule(s, rhs, action_s, action_s))
+    grammar.add_rule(Rule(s, rhs, action_s))
 
     # Should generate successfully since ")" provides clear boundary
     defs = generate_parse_functions(grammar)
