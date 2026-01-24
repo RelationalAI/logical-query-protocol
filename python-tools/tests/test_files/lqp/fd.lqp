@@ -85,9 +85,7 @@
                   (atom :first_name person_id fn)
                   (atom :last_name person_id ln)
                   (atom :emp_id person_id eid)
-                  (atom :Employee person_id))))))))
-    (reads
-      (output :output1 :query1)))
+                  (atom :Employee person_id)))))))))
   (epoch
     (writes
       (define

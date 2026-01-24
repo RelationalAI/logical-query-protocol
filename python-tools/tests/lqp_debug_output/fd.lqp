@@ -88,9 +88,7 @@
                   (atom 378706712368109145 person_id fn)
                   (atom 2532914575784924444 person_id ln)
                   (atom 4787166673635998263 person_id eid)
-                  (atom 1441519574368593801 person_id))))))))
-    (reads
-      (output :output1 3352882180916130150)))
+                  (atom 1441519574368593801 person_id)))))))))
   (epoch
     (writes
       (define
