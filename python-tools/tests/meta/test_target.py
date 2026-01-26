@@ -20,6 +20,7 @@ from meta.target import (
     # Utilities
     gensym,
 )
+from meta.gensym import reset as reset_gensym
 
 
 # ============================================================================
@@ -582,22 +583,23 @@ class TestGensym:
 
     def test_default_prefix(self):
         """Test gensym with default prefix."""
+        reset_gensym(0)
         sym1 = gensym()
         sym2 = gensym()
-        assert sym1.startswith("_t")
-        assert sym2.startswith("_t")
-        assert sym1 != sym2
+        assert sym1 == "_t0"
+        assert sym2 == "_t1"
 
     def test_custom_prefix(self):
         """Test gensym with custom prefix."""
+        reset_gensym(0)
         sym1 = gensym("temp")
         sym2 = gensym("temp")
-        assert sym1.startswith("temp")
-        assert sym2.startswith("temp")
-        assert sym1 != sym2
+        assert sym1 == "temp0"
+        assert sym2 == "temp1"
 
     def test_unique_symbols(self):
         """Test that gensym generates unique symbols."""
+        reset_gensym(0)
         symbols = [gensym() for _ in range(100)]
         assert len(set(symbols)) == 100
 

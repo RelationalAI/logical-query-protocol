@@ -2,17 +2,15 @@
 
 This module generates LL(k) recursive-descent parsers in Python from grammars.
 Handles Python-specific code generation including:
-- Prologue (imports, Token, Lexer, Parser class with helpers)
+- Prologue (imports, Token, Lexer, Parser class with helpers, parse function)
 - Parse method generation
-- Epilogue (parse function)
 """
 
 import re
-from typing import List, Optional, Set
+from typing import Optional
 
-from .grammar import Grammar, Nonterminal
+from .grammar import Grammar
 from .grammar_utils import get_literals
-from .codegen_python import generate_python_def
 from .parser_gen import generate_parse_functions
 
 
@@ -372,9 +370,7 @@ class Parser:
 
         # Create and return Fragment
         return fragments_pb2.Fragment(id=fragment_id, declarations=declarations, debug_info=debug_info)
-'''
 
-EPILOGUE_TEMPLATE = '''
 
 def parse(input_str: str) -> Any:
     """Parse input string and return parse tree."""
@@ -390,9 +386,9 @@ def parse(input_str: str) -> Any:
 '''
 
 
-def generate_parser_python(grammar: Grammar, reachable: Set[Nonterminal], command_line: Optional[str] = None, proto_messages=None) -> str:
+def generate_parser_python(grammar: Grammar, command_line: Optional[str] = None, proto_messages=None) -> str:
     """Generate LL(k) recursive-descent parser in Python."""
-    # Generate prologue (lexer, token, error, helper classes)
+    # Generate prologue (lexer, token, error, helper classes, parse function)
     prologue = _generate_prologue(grammar, command_line)
 
     # Create code generator with proto message info
@@ -407,14 +403,11 @@ def generate_parser_python(grammar: Grammar, reachable: Set[Nonterminal], comman
         lines.append(codegen.generate_def(defn, "    "))
     lines.append("")
 
-    # Generate epilogue (parse function)
-    epilogue = _generate_epilogue(grammar.start)
-
-    return prologue + "\n".join(lines) + epilogue
+    return prologue + "\n".join(lines)
 
 
 def _generate_prologue(grammar: Grammar, command_line: Optional[str] = None) -> str:
-    """Generate parser prologue with imports, token class, lexer, and parser class start."""
+    """Generate parser prologue with imports, token class, lexer, parser class, and parse function."""
     # Build command line comment
     command_line_comment = f"\nCommand: {command_line}\n" if command_line else ""
 
@@ -453,9 +446,5 @@ def _generate_prologue(grammar: Grammar, command_line: Optional[str] = None) -> 
     return PROLOGUE_TEMPLATE.format(
         command_line_comment=command_line_comment,
         token_specs=token_specs,
+        start_name=grammar.start.name.lower(),
     )
-
-
-def _generate_epilogue(start: Nonterminal) -> str:
-    """Generate parse function."""
-    return EPILOGUE_TEMPLATE.format(start_name=start.name.lower())

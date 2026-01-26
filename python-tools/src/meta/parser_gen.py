@@ -338,7 +338,10 @@ def _generate_parse_rhs_ir(rhs: Rhs, grammar: Grammar, follow_set: TerminalSeque
         xs = Var(gensym('xs'), ListType(rhs.rhs.target_type()))
         cond = Var(gensym('cond'), BaseType('Boolean'))
         predictor = _build_option_predictor(grammar, rhs.rhs, follow_set)
-        return Let(xs, ListExpr([], rhs.rhs.target_type()), Let(cond, predictor, Seq([While(cond, Seq([Call(Builtin('list_push!'), [xs, _generate_parse_rhs_ir(rhs.rhs, grammar, follow_set, False, None)]), Assign(cond, predictor)])), xs])))
+        parse_item = _generate_parse_rhs_ir(rhs.rhs, grammar, follow_set, False, None)
+        loop_body = Seq([Call(Builtin('list_push!'), [xs, parse_item]), Assign(cond, predictor)])
+        return Let(xs, ListExpr([], rhs.rhs.target_type()),
+                   Let(cond, predictor, Seq([While(cond, loop_body), xs])))
     else:
         raise NotImplementedError(f'Unsupported Rhs type: {type(rhs)}')
 
@@ -435,7 +438,7 @@ def _subst(expr: 'TargetExpr', var: str, val: 'TargetExpr') -> 'TargetExpr':
         return ListExpr([_subst(elem, var, val) for elem in expr.elements], expr.element_type)
     elif isinstance(expr, Return):
         return Return(_subst(expr.expr, var, val))
-    elif isinstance(expr, (Lit, Symbol, Builtin, Message, OneOf, VisitNonterminal)):
-        # These don't contain variables, return unchanged
+    elif isinstance(expr, (Var, Lit, Symbol, Builtin, Message, OneOf, VisitNonterminal)):
+        # Var not matching, or types that don't contain variables - return unchanged
         return expr
-    return expr
+    raise ValueError(f"Unknown expression type in _subst: {type(expr).__name__}")
