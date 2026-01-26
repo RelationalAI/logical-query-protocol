@@ -294,3 +294,19 @@ def test_complex_star_sequence():
     # Should generate successfully since ")" provides clear boundary
     defs = generate_parse_functions(grammar)
     assert len(defs) == 2
+
+
+if __name__ == "__main__":
+    test_generate_parse_functions_simple()
+    test_generate_parse_functions_multiple_alternatives()
+    test_generate_parse_functions_with_nonterminal()
+    test_generate_parse_functions_with_option()
+    test_generate_parse_functions_with_star()
+    test_generate_parse_functions_ll2()
+    test_generate_parse_functions_ll3()
+    test_generate_parse_functions_with_epsilon()
+    test_generate_parse_functions_with_named_terminal()
+    test_generate_parse_functions_unreachable_nonterminal()
+    test_ll4_conflict_detection()
+    test_complex_star_sequence()
+    print("\n✓ All parser generation IR tests passed")
