@@ -79,7 +79,7 @@ The generated IR for expr (simplified) would be:
 from typing import Dict, List, Optional, Set, Tuple, Sequence as PySequence
 from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Terminal, Sequence
 from .grammar_utils import is_epsilon, rhs_elements
-from .target import Lambda, Call, VisitNonterminalDef, Var, Lit, Symbol, Builtin, Let, IfElse, BaseType, ListType, ListExpr, TargetExpr, Seq, While, Assign, VisitNonterminal, Return
+from .target import Lambda, Call, VisitNonterminalDef, Var, Lit, Builtin, Let, IfElse, BaseType, ListType, ListExpr, TargetExpr, Seq, While, Assign, VisitNonterminal, Return
 from .gensym import gensym
 from .terminal_sequence_set import TerminalSequenceSet, FollowSet, FirstSet, ConcatSet
 
@@ -120,7 +120,7 @@ def _generate_parse_method(lhs: Nonterminal, rules: List[Rule], grammar: Grammar
         rhs = _generate_parse_rhs_ir(rule.rhs, grammar, follow_set, True, rule.constructor)
         return_type = rule.constructor.return_type
     else:
-        predictor = _build_predictor(grammar, lhs, rules)
+        predictor = _build_predictor(grammar, rules)
         prediction = gensym('prediction')
         has_epsilon = any((is_epsilon(rule.rhs) for rule in rules))
         if has_epsilon:
@@ -138,7 +138,7 @@ def _generate_parse_method(lhs: Nonterminal, rules: List[Rule], grammar: Grammar
     assert return_type is not None
     return VisitNonterminalDef('parse', lhs, [], return_type, rhs)
 
-def _build_predictor(grammar: Grammar, lhs: Nonterminal, rules: List[Rule]) -> TargetExpr:
+def _build_predictor(grammar: Grammar, rules: List[Rule]) -> TargetExpr:
     """Build a predictor expression that returns the index of the matching rule.
 
     Uses FIRST_k lookahead to distinguish between alternatives. Builds a
@@ -183,9 +183,15 @@ def _build_predictor_tree(grammar: Grammar, rules: List[Rule], active_indices: L
                 groups[token] = []
             groups[token].append(rule_idx)
     if len(exhausted) > 1:
-        subtree_default = _build_predictor_tree(grammar, rules, list(exhausted), nullable, default, depth + 1)
+        conflict_rules = '\n  '.join(
+            (f'Rule {i}: {rules[i]}' for i in sorted(exhausted))
+        )
+        raise GrammarConflictError(
+            f'Grammar conflict: multiple rules fully consumed at lookahead depth {depth}:\n  {conflict_rules}'
+        )
     elif len(exhausted) == 1:
-        subtree_default = Lit(exhausted.pop())
+        exhausted_idx = next(iter(exhausted))
+        subtree_default = Lit(exhausted_idx)
     else:
         subtree_default = default
     if not groups:
@@ -358,6 +364,11 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, grammar: Grammar, follow_set:
             if action and non_literal_count < len(action.params):
                 var_name = gensym(action.params[non_literal_count].name)
             else:
+                if action is not None and non_literal_count >= len(action.params):
+                    raise ValueError(
+                        f'Action parameter count mismatch: action has {len(action.params)} params '
+                        f'but sequence has at least {non_literal_count + 1} non-literal elements'
+                    )
                 var_name = gensym('arg')
             var = Var(var_name, elem.target_type())
             exprs.append(Assign(var, elem_ir))
@@ -370,8 +381,8 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, grammar: Grammar, follow_set:
         # Multiple values - wrap in tuple
         exprs.append(Call(Builtin('make_tuple'), arg_vars))
     elif len(arg_vars) == 1:
-        # Single value - just use it
-        pass  # Value already assigned
+        # Single value case: already in exprs as the last Assign
+        pass
     # else: no non-literal elements, return None
 
     if len(exprs) == 1:
