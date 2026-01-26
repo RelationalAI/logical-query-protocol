@@ -383,7 +383,9 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, grammar: Grammar, follow_set:
     elif len(arg_vars) == 1:
         # Single value - return the variable
         exprs.append(arg_vars[0])
-    # else: no non-literal elements, return None
+    else
+        # no non-literal elements, return None
+        return Lit(None)
 
     if len(exprs) == 1:
         return exprs[0]
