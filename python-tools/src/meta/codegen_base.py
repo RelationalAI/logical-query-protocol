@@ -57,9 +57,9 @@ class CodeGenerator(ABC):
     # Type mappings: base type name -> target language type
     base_type_map: Dict[str, str] = {}
 
-    # Builtin registry: maps builtin name to BuiltinSpec
-    # Subclasses should populate this in __init__ or as a class attribute
-    builtin_registry: Dict[str, BuiltinSpec] = {}
+    def __init__(self) -> None:
+        # Instance-level builtin registry to avoid shared mutable state
+        self.builtin_registry: Dict[str, BuiltinSpec] = {}
 
     @abstractmethod
     def escape_keyword(self, name: str) -> str:

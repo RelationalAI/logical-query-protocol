@@ -6,8 +6,6 @@ with proper keyword escaping and idiomatic Python style.
 
 from typing import List, Optional, Set, Tuple, Union
 
-from lqp.proto.v1.logic_pb2 import Value
-
 from .codegen_base import CodeGenerator, BuiltinResult
 from .target import (
     TargetExpr, Var, Lit, Symbol, Builtin, Message, OneOf, ListExpr, Call, Lambda, Let,
@@ -26,6 +24,16 @@ PYTHON_KEYWORDS: Set[str] = {
 }
 
 
+def _format_parse_error_with_token(message_expr: str, token_expr: str) -> str:
+    """Format a ParseError raise statement with token information."""
+    return (
+        "raise ParseError("
+        f"f\\\"{{{message_expr}}}: "
+        f"{{{token_expr}.type}}=`{{{token_expr}.value}}`\\\""
+        ")"
+    )
+
+
 class PythonCodeGenerator(CodeGenerator):
     """Python code generator."""
 
@@ -33,6 +41,7 @@ class PythonCodeGenerator(CodeGenerator):
     indent_str = "    "
 
     base_type_map = {
+        'Int32': 'int',
         'Int64': 'int',
         'Float64': 'float',
         'String': 'str',
@@ -40,9 +49,9 @@ class PythonCodeGenerator(CodeGenerator):
     }
 
     def __init__(self, proto_messages=None):
-        self.builtin_registry = {}
+        super().__init__()
         self.proto_messages = proto_messages or {}
-        self._message_field_map = None
+        self._message_field_map: dict | None = None
         self._register_builtins()
 
     def _build_message_field_map(self):
@@ -82,16 +91,6 @@ class PythonCodeGenerator(CodeGenerator):
 
         self.register_builtin("fragment_id_from_string", 1,
             lambda args, lines, indent: BuiltinResult(f"fragments_pb2.FragmentId(id={args[0]}.encode())", []))
-
-        def gen_relation_id_from_string(args, lines, indent):
-            val = gensym('val')
-            id_low = gensym('id_low')
-            id_high = gensym('id_high')
-            return BuiltinResult(f"logic_pb2.RelationId(id_low={id_low}, id_high={id_high})", [
-                f"{indent}{val} = int(hashlib.sha256({args[0]}.encode()).hexdigest()[:16], 16)",
-                f"{indent}{id_low} = {val} & 0xFFFFFFFFFFFFFFFF",
-                f"{indent}{id_high} = ({val} >> 64) & 0xFFFFFFFFFFFFFFFF",
-            ])
 
         self.register_builtin("relation_id_from_string", 1,
             lambda args, lines, indent: BuiltinResult(f"self.relation_id_from_string({args[0]})", []))
@@ -150,7 +149,7 @@ class PythonCodeGenerator(CodeGenerator):
         # error has two arities, so we use a custom generator
         def gen_error(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
             if len(args) == 2:
-                return BuiltinResult("None", [f'raise ParseError(f"{{{args[0]}}}: {{{args[1]}.type}}=`{{{args[1]}.value}}`")'])
+                return BuiltinResult("None", [_format_parse_error_with_token(args[0], args[1])])
             elif len(args) == 1:
                 return BuiltinResult("None", [f"raise ParseError({args[0]})"])
             else:
@@ -277,7 +276,11 @@ class PythonCodeGenerator(CodeGenerator):
         if isinstance(expr, Call) and isinstance(expr.func, Message) and expr.func.name == "Fragment":
             for arg in expr.args:
                 if isinstance(arg, Var) and arg.name == "debug_info":
-                    lines.append(f"{indent}debug_info = self.construct_debug_info(self.id_to_debuginfo.get(id, {{}}))")
+                    # Fragment constructor args are: id (FragmentId), declarations, debug_info
+                    # Extract the fragment_id from the first argument
+                    if len(expr.args) >= 1:
+                        fragment_id_expr = self.generate_lines(expr.args[0], lines, indent)
+                        lines.append(f"{indent}debug_info = self.construct_debug_info(self.id_to_debuginfo.get({fragment_id_expr}.id, {{}}))")
                     break
 
         return super().generate_lines(expr, lines, indent)
@@ -435,28 +438,45 @@ class PythonCodeGenerator(CodeGenerator):
         return f"{indent}def {func_name}(self{params_str}){ret_hint}:\n{body_code}"
 
 
-# Module-level instance for convenience
-_generator = PythonCodeGenerator()
-
-
 def escape_identifier(name: str) -> str:
     """Escape a Python identifier if it's a keyword."""
-    return _generator.escape_identifier(name)
+    if name in PYTHON_KEYWORDS:
+        return f"{name}_"
+    return name
 
 
-def generate_python_type(typ) -> str:
+def generate_python_type(typ, generator: Optional[PythonCodeGenerator] = None) -> str:
     """Generate Python type hint from a Type expression."""
-    return _generator.gen_type(typ)
+    if generator is None:
+        generator = PythonCodeGenerator()
+    return generator.gen_type(typ)
 
 
-def generate_python_lines(expr: TargetExpr, lines: List[str], indent: str = "") -> str:
-    """Generate Python code from a target IR expression."""
-    return _generator.generate_lines(expr, lines, indent)
+def generate_python_lines(
+    expr: TargetExpr,
+    lines: List[str],
+    indent: str = "",
+    generator: Optional[PythonCodeGenerator] = None,
+) -> str:
+    """Generate Python code from a target IR expression.
+
+    For Message construction with field mapping, pass a generator initialized
+    with proto_messages.
+    """
+    if generator is None:
+        generator = PythonCodeGenerator()
+    return generator.generate_lines(expr, lines, indent)
 
 
-def generate_python_def(expr: Union[FunDef, VisitNonterminalDef], indent: str = "") -> str:
+def generate_python_def(
+    expr: Union[FunDef, VisitNonterminalDef],
+    indent: str = "",
+    generator: Optional[PythonCodeGenerator] = None,
+) -> str:
     """Generate Python function definition."""
-    return _generator.generate_def(expr, indent)
+    if generator is None:
+        generator = PythonCodeGenerator()
+    return generator.generate_def(expr, indent)
 
 
 def generate_python(expr: TargetExpr, indent: str = "") -> str:

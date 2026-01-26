@@ -62,6 +62,9 @@ from .grammar_gen import (
     generate_grammar,
 )
 
+# Parser generation
+from .parser_gen import generate_parse_functions, GrammarConflictError, AmbiguousGrammarError
+
 # Python code generation
 from .codegen_python import (
     generate_python,
@@ -69,8 +72,6 @@ from .codegen_python import (
     escape_identifier as escape_python_identifier,
 )
 
-# Parser generation
-from .parser_gen import generate_parse_functions
 from .parser_gen_python import generate_parser_python
 
 __all__ = [
@@ -116,11 +117,13 @@ __all__ = [
     # Grammar generation
     'GrammarGenerator',
     'generate_grammar',
+    # Parser generation
+    'generate_parse_functions',
+    'GrammarConflictError',
+    'AmbiguousGrammarError',
+    'generate_parser_python',
     # Python code generation
     'generate_python',
     'generate_python_lines',
     'escape_python_identifier',
-    # Parser generation
-    'generate_parse_functions',
-    'generate_parser_python',
 ]
