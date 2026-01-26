@@ -20,6 +20,7 @@ from meta.target import (
     # Utilities
     gensym,
 )
+from meta.gensym import reset as gensym_reset
 
 
 # ============================================================================
@@ -572,26 +573,46 @@ class TestFunDef:
 class TestGensym:
     """Tests for gensym utility."""
 
+    def setup_method(self):
+        """Reset gensym counter before each test."""
+        gensym_reset()
+
     def test_default_prefix(self):
         """Test gensym with default prefix."""
         sym1 = gensym()
         sym2 = gensym()
-        assert sym1.startswith("_t")
-        assert sym2.startswith("_t")
-        assert sym1 != sym2
+        assert sym1 == "_t0"
+        assert sym2 == "_t1"
 
     def test_custom_prefix(self):
         """Test gensym with custom prefix."""
         sym1 = gensym("temp")
         sym2 = gensym("temp")
-        assert sym1.startswith("temp")
-        assert sym2.startswith("temp")
-        assert sym1 != sym2
+        assert sym1 == "temp0"
+        assert sym2 == "temp1"
 
     def test_unique_symbols(self):
         """Test that gensym generates unique symbols."""
         symbols = [gensym() for _ in range(100)]
         assert len(set(symbols)) == 100
+
+    def test_reset(self):
+        """Test that reset restarts the counter."""
+        sym1 = gensym()
+        sym2 = gensym()
+        assert sym1 == "_t0"
+        assert sym2 == "_t1"
+        gensym_reset()
+        sym3 = gensym()
+        assert sym3 == "_t0"
+
+    def test_reset_with_start(self):
+        """Test that reset can start from a specific value."""
+        gensym_reset(100)
+        sym1 = gensym()
+        sym2 = gensym()
+        assert sym1 == "_t100"
+        assert sym2 == "_t101"
 
 
 class TestComplexExpressions:

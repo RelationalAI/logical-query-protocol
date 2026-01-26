@@ -79,7 +79,7 @@ The generated IR for expr (simplified) would be:
 from typing import Dict, List, Optional, Set, Tuple, Sequence as PySequence
 from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Terminal, Sequence
 from .grammar_utils import is_epsilon, rhs_elements
-from .target import Lambda, Call, VisitNonterminalDef, Var, Lit, Builtin, Let, IfElse, BaseType, ListType, ListExpr, TargetExpr, Seq, While, Assign, VisitNonterminal, Return
+from .target import Lambda, Call, VisitNonterminalDef, Var, Lit, Symbol, Builtin, Message, OneOf, Let, IfElse, BaseType, ListType, ListExpr, TargetExpr, Seq, While, Foreach, ForeachEnumerated, Assign, VisitNonterminal, Return
 from .gensym import gensym
 from .terminal_sequence_set import TerminalSequenceSet, FollowSet, FirstSet, ConcatSet
 
@@ -381,8 +381,8 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, grammar: Grammar, follow_set:
         # Multiple values - wrap in tuple
         exprs.append(Call(Builtin('make_tuple'), arg_vars))
     elif len(arg_vars) == 1:
-        # Single value case: already in exprs as the last Assign
-        pass
+        # Single value - return the variable
+        exprs.append(arg_vars[0])
     # else: no non-literal elements, return None
 
     if len(exprs) == 1:
@@ -421,6 +421,19 @@ def _subst(expr: 'TargetExpr', var: str, val: 'TargetExpr') -> 'TargetExpr':
         return IfElse(_subst(expr.condition, var, val), _subst(expr.then_branch, var, val), _subst(expr.else_branch, var, val))
     elif isinstance(expr, While):
         return While(_subst(expr.condition, var, val), _subst(expr.body, var, val))
+    elif isinstance(expr, Foreach):
+        if expr.var.name == var:
+            return expr
+        return Foreach(expr.var, _subst(expr.collection, var, val), _subst(expr.body, var, val))
+    elif isinstance(expr, ForeachEnumerated):
+        if expr.index_var.name == var or expr.var.name == var:
+            return expr
+        return ForeachEnumerated(expr.index_var, expr.var, _subst(expr.collection, var, val), _subst(expr.body, var, val))
+    elif isinstance(expr, ListExpr):
+        return ListExpr([_subst(elem, var, val) for elem in expr.elements], expr.element_type)
     elif isinstance(expr, Return):
         return Return(_subst(expr.expr, var, val))
+    elif isinstance(expr, (Lit, Symbol, Builtin, Message, OneOf, VisitNonterminal)):
+        # These don't contain variables, return unchanged
+        return expr
     return expr
