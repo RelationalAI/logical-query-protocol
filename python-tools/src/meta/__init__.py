@@ -27,6 +27,8 @@ from .target import (
     TupleType,
     ListType,
     FunDef,
+    VisitNonterminalDef,
+    VisitNonterminal,
 )
 
 # Grammar data structures
@@ -60,6 +62,9 @@ from .grammar_gen import (
     generate_grammar,
 )
 
+# Parser generation
+from .parser_gen import generate_parse_functions, GrammarConflictError, AmbiguousGrammarError
+
 # Python code generation
 from .codegen_python import (
     generate_python,
@@ -87,6 +92,8 @@ __all__ = [
     'TupleType',
     'ListType',
     'FunDef',
+    'VisitNonterminalDef',
+    'VisitNonterminal',
     # Grammar
     'Grammar',
     'Rule',
@@ -108,6 +115,10 @@ __all__ = [
     # Grammar generation
     'GrammarGenerator',
     'generate_grammar',
+    # Parser generation
+    'generate_parse_functions',
+    'GrammarConflictError',
+    'AmbiguousGrammarError',
     # Python code generation
     'generate_python',
     'generate_python_lines',
