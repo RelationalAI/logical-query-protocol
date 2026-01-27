@@ -26,12 +26,7 @@ PYTHON_KEYWORDS: Set[str] = {
 
 def _format_parse_error_with_token(message_expr: str, token_expr: str) -> str:
     """Format a ParseError raise statement with token information."""
-    return (
-        "raise ParseError("
-        f"f\\\"{{{message_expr}}}: "
-        f"{{{token_expr}.type}}=`{{{token_expr}.value}}`\\\""
-        ")"
-    )
+    return f'raise ParseError(f"{{{message_expr}}}: {{{token_expr}.type}}=`{{{token_expr}.value}}`")'
 
 
 class PythonCodeGenerator(CodeGenerator):
