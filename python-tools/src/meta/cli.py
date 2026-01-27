@@ -13,12 +13,20 @@ Usage:
 
 Options:
     proto_files: One or more .proto files to parse
+    --proto: Output the parsed protobuf specification
     --grammar: Output the generated grammar
+    --parser {ir,python}: Output the generated parser (as IR or Python)
     -o, --output: Output file (stdout if not specified)
 
 Example:
     $ python -m meta.cli proto/logic.proto proto/transactions.proto --grammar
     # Outputs the generated grammar showing all rules and semantic actions
+
+    $ python -m meta.cli proto/logic.proto --parser python -o parser.py
+    # Generates a Python parser and writes it to parser.py
+
+    $ python -m meta.cli proto/logic.proto --parser ir
+    # Outputs the parser intermediate representation
 
 The tool performs the following steps:
 1. Parse all .proto files using ProtoParser
@@ -61,6 +69,12 @@ def parse_args():
         "--grammar",
         action="store_true",
         help="Output the grammar"
+    )
+    parser.add_argument(
+        "--parser",
+        type=str,
+        choices=["ir", "python"],
+        help="Output the generated parser (ir or python)"
     )
     return parser.parse_args()
 
@@ -119,6 +133,29 @@ def run(args) -> int:
 
         output_text = grammar.print_grammar()
         write_output(output_text, args.output, f"Generated grammar written to {args.output}")
+
+    if args.parser:
+        generator = GrammarGenerator(proto_parser, verbose=True)
+        grammar = generator.generate()
+
+        check_unreachable_nonterminals(grammar, generator)
+
+        if args.parser == "ir":
+            from .parser_gen import generate_parse_functions
+            parse_functions = generate_parse_functions(grammar)
+            output_lines = []
+            for defn in parse_functions:
+                output_lines.append(str(defn))
+                output_lines.append("")
+            output_text = "\n".join(output_lines)
+            write_output(output_text, args.output, f"Generated parser IR written to {args.output}")
+        elif args.parser == "python":
+            from .parser_gen_python import generate_parser_python
+            command_line = " ".join(["python -m meta.cli"] + [str(f) for f in args.proto_files] + ["--parser", "python"])
+            # Transform messages dict from {name: ProtoMessage} to {(module, name): ProtoMessage}
+            proto_messages = {(msg.module, name): msg for name, msg in proto_parser.messages.items()}
+            output_text = generate_parser_python(grammar, command_line, proto_messages)
+            write_output(output_text, args.output, f"Generated parser written to {args.output}")
 
     return 0
 
