@@ -6,7 +6,7 @@ from meta.sexp import SAtom, SList
 from meta.sexp_parser import parse_sexp
 from meta.sexp_grammar import (
     sexp_to_rhs, sexp_to_rule, rhs_to_sexp, rule_to_sexp,
-    load_grammar_config, GrammarConversionError
+    load_grammar_config, GrammarConversionError, TypeContext
 )
 from meta.grammar import (
     LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence, Rule
@@ -111,6 +111,65 @@ class TestSexpToRhs:
             sexp_to_rhs(parse_sexp('(star "literal")'))
 
 
+class TestSexpToRhsWithContext:
+    """Tests for converting s-expressions to Rhs with TypeContext.
+
+    With context, bare symbols are looked up as terminals or nonterminals.
+    """
+
+    @pytest.fixture
+    def ctx(self):
+        return TypeContext(
+            terminals={
+                "STRING": BaseType("String"),
+                "INT": BaseType("Int64"),
+                "FLOAT": BaseType("Float64"),
+            },
+            nonterminals={
+                "value": MessageType("logic", "Value"),
+                "binding": MessageType("logic", "Binding"),
+                "sync": MessageType("transactions", "Sync"),
+            }
+        )
+
+    def test_lit_terminal(self, ctx):
+        result = sexp_to_rhs(parse_sexp('"missing"'), ctx)
+        assert result == LitTerminal("missing")
+
+    def test_nonterminal_bare_symbol(self, ctx):
+        """Bare symbol is looked up as nonterminal."""
+        result = sexp_to_rhs(parse_sexp("value"), ctx)
+        assert result == Nonterminal("value", MessageType("logic", "Value"))
+
+    def test_terminal_bare_symbol(self, ctx):
+        """Bare symbol is looked up as terminal."""
+        result = sexp_to_rhs(parse_sexp("STRING"), ctx)
+        assert result == NamedTerminal("STRING", BaseType("String"))
+
+    def test_star_with_bare_symbol(self, ctx):
+        result = sexp_to_rhs(parse_sexp("(star binding)"), ctx)
+        assert result == Star(Nonterminal("binding", MessageType("logic", "Binding")))
+
+    def test_option_with_bare_symbol(self, ctx):
+        result = sexp_to_rhs(parse_sexp("(option INT)"), ctx)
+        assert result == Option(NamedTerminal("INT", BaseType("Int64")))
+
+    def test_sequence_with_bare_symbols(self, ctx):
+        result = sexp_to_rhs(parse_sexp('(seq "(" INT value ")")'), ctx)
+        expected = Sequence((
+            LitTerminal("("),
+            NamedTerminal("INT", BaseType("Int64")),
+            Nonterminal("value", MessageType("logic", "Value")),
+            LitTerminal(")")
+        ))
+        assert result == expected
+
+    def test_unknown_symbol_error(self, ctx):
+        """Unknown bare symbol raises error."""
+        with pytest.raises(GrammarConversionError, match="unknown symbol"):
+            sexp_to_rhs(parse_sexp("unknown_name"), ctx)
+
+
 class TestSexpToRule:
     """Tests for converting s-expressions to Rule."""
 
@@ -132,8 +191,8 @@ class TestSexpToRule:
             (rule (lhs value (Message logic Value))
                 (rhs (nonterm date (Message logic DateValue)))
                 (lambda ((value (Message logic DateValue))) (Message logic Value)
-                    (call (message logic Value)
-                        (call (oneof date_value) (var value (Message logic DateValue))))))
+                    (new-message logic Value
+                        (value (call (oneof date_value) (var value (Message logic DateValue)))))))
         ''')
         result = sexp_to_rule(sexp)
         assert result.lhs == Nonterminal("value", MessageType("logic", "Value"))
@@ -146,8 +205,8 @@ class TestSexpToRule:
             (rule (lhs date (Message logic DateValue))
                 (rhs "(" "date" (term INT Int64) (term INT Int64) (term INT Int64) ")")
                 (lambda ((year Int64) (month Int64) (day Int64)) (Message logic DateValue)
-                    (call (message logic DateValue)
-                        (var year Int64) (var month Int64) (var day Int64))))
+                    (new-message logic DateValue
+                        (year (var year Int64)) (month (var month Int64)) (day (var day Int64)))))
         ''')
         result = sexp_to_rule(sexp)
         assert result.lhs == Nonterminal("date", MessageType("logic", "DateValue"))
@@ -177,7 +236,11 @@ class TestSexpToRule:
 
 
 class TestRhsToSexp:
-    """Tests for converting Rhs to s-expressions."""
+    """Tests for converting Rhs to s-expressions.
+
+    Terminals and nonterminals are output as bare symbols.
+    Types are declared separately via terminal declarations and rule LHS.
+    """
 
     def test_lit_terminal(self):
         result = rhs_to_sexp(LitTerminal("missing"))
@@ -185,35 +248,22 @@ class TestRhsToSexp:
 
     def test_named_terminal(self):
         result = rhs_to_sexp(NamedTerminal("STRING", BaseType("String")))
-        assert result == SList((SAtom("term"), SAtom("STRING"), SAtom("String")))
+        # Bare symbol for terminals
+        assert result == SAtom("STRING")
 
     def test_nonterminal(self):
         result = rhs_to_sexp(Nonterminal("value", MessageType("logic", "Value")))
-        expected = SList((
-            SAtom("nonterm"),
-            SAtom("value"),
-            SList((SAtom("Message"), SAtom("logic"), SAtom("Value")))
-        ))
-        assert result == expected
+        # Bare symbol for nonterminals
+        assert result == SAtom("value")
 
     def test_star(self):
         result = rhs_to_sexp(Star(Nonterminal("binding", MessageType("logic", "Binding"))))
-        expected = SList((
-            SAtom("star"),
-            SList((
-                SAtom("nonterm"),
-                SAtom("binding"),
-                SList((SAtom("Message"), SAtom("logic"), SAtom("Binding")))
-            ))
-        ))
+        expected = SList((SAtom("star"), SAtom("binding")))
         assert result == expected
 
     def test_option(self):
         result = rhs_to_sexp(Option(NamedTerminal("INT", BaseType("Int64"))))
-        expected = SList((
-            SAtom("option"),
-            SList((SAtom("term"), SAtom("INT"), SAtom("Int64")))
-        ))
+        expected = SList((SAtom("option"), SAtom("INT")))
         assert result == expected
 
     def test_sequence(self):
@@ -260,9 +310,14 @@ class TestRuleToSexp:
 
 
 class TestRhsRoundTrip:
-    """Tests for Rhs conversion round-tripping."""
+    """Tests for Rhs conversion round-tripping.
+
+    Round-tripping requires a TypeContext because rhs_to_sexp does not
+    include types, so sexp_to_rhs needs to look them up from context.
+    """
 
     def test_roundtrip_lit_terminal(self):
+        # Lit terminals don't need context
         original = LitTerminal("missing")
         sexp = rhs_to_sexp(original)
         recovered = sexp_to_rhs(sexp)
@@ -270,26 +325,42 @@ class TestRhsRoundTrip:
 
     def test_roundtrip_named_terminal(self):
         original = NamedTerminal("STRING", BaseType("String"))
+        ctx = TypeContext(
+            terminals={"STRING": BaseType("String")},
+            nonterminals={}
+        )
         sexp = rhs_to_sexp(original)
-        recovered = sexp_to_rhs(sexp)
+        recovered = sexp_to_rhs(sexp, ctx)
         assert recovered == original
 
     def test_roundtrip_nonterminal(self):
         original = Nonterminal("value", MessageType("logic", "Value"))
+        ctx = TypeContext(
+            terminals={},
+            nonterminals={"value": MessageType("logic", "Value")}
+        )
         sexp = rhs_to_sexp(original)
-        recovered = sexp_to_rhs(sexp)
+        recovered = sexp_to_rhs(sexp, ctx)
         assert recovered == original
 
     def test_roundtrip_star(self):
         original = Star(Nonterminal("binding", MessageType("logic", "Binding")))
+        ctx = TypeContext(
+            terminals={},
+            nonterminals={"binding": MessageType("logic", "Binding")}
+        )
         sexp = rhs_to_sexp(original)
-        recovered = sexp_to_rhs(sexp)
+        recovered = sexp_to_rhs(sexp, ctx)
         assert recovered == original
 
     def test_roundtrip_option(self):
         original = Option(NamedTerminal("INT", BaseType("Int64")))
+        ctx = TypeContext(
+            terminals={"INT": BaseType("Int64")},
+            nonterminals={}
+        )
         sexp = rhs_to_sexp(original)
-        recovered = sexp_to_rhs(sexp)
+        recovered = sexp_to_rhs(sexp, ctx)
         assert recovered == original
 
     def test_roundtrip_sequence(self):
@@ -301,8 +372,12 @@ class TestRhsRoundTrip:
             NamedTerminal("INT", BaseType("Int64")),
             LitTerminal(")")
         ))
+        ctx = TypeContext(
+            terminals={"INT": BaseType("Int64")},
+            nonterminals={}
+        )
         sexp = rhs_to_sexp(original)
-        recovered = sexp_to_rhs(sexp)
+        recovered = sexp_to_rhs(sexp, ctx)
         assert recovered == original
 
     def test_roundtrip_complex_sequence(self):
@@ -312,15 +387,27 @@ class TestRhsRoundTrip:
             Option(Nonterminal("values", ListType(MessageType("logic", "Binding")))),
             LitTerminal("]")
         ))
+        ctx = TypeContext(
+            terminals={},
+            nonterminals={
+                "binding": MessageType("logic", "Binding"),
+                "values": ListType(MessageType("logic", "Binding"))
+            }
+        )
         sexp = rhs_to_sexp(original)
-        recovered = sexp_to_rhs(sexp)
+        recovered = sexp_to_rhs(sexp, ctx)
         assert recovered == original
 
 
 class TestRuleRoundTrip:
-    """Tests for Rule conversion round-tripping."""
+    """Tests for Rule conversion round-tripping.
+
+    Round-tripping requires a TypeContext because rhs_to_sexp does not
+    include types, so sexp_to_rule needs context to look them up.
+    """
 
     def test_roundtrip_simple_rule(self):
+        # Lit terminals don't need context
         original = Rule(
             lhs=Nonterminal("boolean_value", BaseType("Boolean")),
             rhs=LitTerminal("true"),
@@ -342,8 +429,12 @@ class TestRuleRoundTrip:
                 Var("x", BaseType("String"))
             )
         )
+        ctx = TypeContext(
+            terminals={"COLON_SYMBOL": BaseType("String")},
+            nonterminals={"name": BaseType("String")}
+        )
         sexp = rule_to_sexp(original)
-        recovered = sexp_to_rule(sexp)
+        recovered = sexp_to_rule(sexp, ctx)
         assert recovered.lhs == original.lhs
         assert recovered.rhs == original.rhs
         assert recovered.constructor == original.constructor
@@ -368,8 +459,12 @@ class TestRuleRoundTrip:
                 )
             )
         )
+        ctx = TypeContext(
+            terminals={"INT": BaseType("Int64")},
+            nonterminals={"date": MessageType("logic", "DateValue")}
+        )
         sexp = rule_to_sexp(original)
-        recovered = sexp_to_rule(sexp)
+        recovered = sexp_to_rule(sexp, ctx)
         assert recovered.lhs == original.lhs
         assert recovered.rhs == original.rhs
         assert recovered.constructor == original.constructor
@@ -385,10 +480,10 @@ class TestLoadGrammarConfig:
                 (lambda () Boolean (lit true)))
         '''
         result = load_grammar_config(config)
-        assert len(result) == 1
+        assert len(result.rules) == 1
         nt = Nonterminal("boolean_value", BaseType("Boolean"))
-        assert nt in result
-        rules = result[nt]
+        assert nt in result.rules
+        rules = result.rules[nt]
         assert len(rules) == 1
 
     def test_load_multiple_rules_same_lhs(self):
@@ -402,20 +497,21 @@ class TestLoadGrammarConfig:
         '''
         result = load_grammar_config(config)
         nt = Nonterminal("boolean_value", BaseType("Boolean"))
-        rules = result[nt]
+        rules = result.rules[nt]
         assert len(rules) == 2
 
     def test_load_multiple_rules_different_lhs(self):
         config = '''
+            (terminal COLON_SYMBOL String)
             (rule (lhs boolean_value Boolean)
                 (rhs "true")
                 (lambda () Boolean (lit true)))
             (rule (lhs name String)
-                (rhs (term COLON_SYMBOL String))
+                (rhs COLON_SYMBOL)
                 (lambda ((x String)) String (var x String)))
         '''
         result = load_grammar_config(config)
-        assert len(result) == 2
+        assert len(result.rules) == 2
 
     def test_load_with_comments(self):
         config = '''
@@ -426,11 +522,12 @@ class TestLoadGrammarConfig:
             ; Another comment
         '''
         result = load_grammar_config(config)
-        assert len(result) == 1
+        assert len(result.rules) == 1
 
     def test_load_empty_config(self):
         result = load_grammar_config("")
-        assert len(result) == 0
+        assert len(result.rules) == 0
+        assert len(result.terminals) == 0
 
     def test_load_comments_only(self):
         config = '''
@@ -438,13 +535,62 @@ class TestLoadGrammarConfig:
             ; No rules
         '''
         result = load_grammar_config(config)
-        assert len(result) == 0
+        assert len(result.rules) == 0
 
     def test_load_invalid_directive(self):
         config = '''
             (unknown_directive foo bar)
         '''
         with pytest.raises(GrammarConversionError):
+            load_grammar_config(config)
+
+    def test_load_with_terminal_declarations(self):
+        """Test loading config with terminal declarations."""
+        config = '''
+            (terminal STRING String)
+            (terminal INT Int64)
+            (rule (lhs name String)
+                (rhs STRING)
+                (lambda ((x String)) String (var x String)))
+        '''
+        result = load_grammar_config(config)
+        assert len(result.terminals) == 2
+        assert "STRING" in result.terminals
+        assert "INT" in result.terminals
+        assert result.terminals["STRING"] == BaseType("String")
+        assert result.terminals["INT"] == BaseType("Int64")
+        assert len(result.rules) == 1
+
+    def test_load_with_nonterminal_in_rhs(self):
+        """Test that nonterminal types are looked up from rule LHS."""
+        config = '''
+            (rule (lhs outer String)
+                (rhs inner)
+                (lambda ((x String)) String (var x String)))
+            (rule (lhs inner String)
+                (rhs "foo")
+                (lambda () String (lit "foo")))
+        '''
+        result = load_grammar_config(config)
+        assert len(result.rules) == 2
+
+    def test_load_duplicate_terminal_error(self):
+        """Duplicate terminal declarations are an error."""
+        config = '''
+            (terminal STRING String)
+            (terminal STRING Int64)
+        '''
+        with pytest.raises(GrammarConversionError, match="duplicate terminal"):
+            load_grammar_config(config)
+
+    def test_load_unknown_symbol_error(self):
+        """Using undeclared symbol is an error."""
+        config = '''
+            (rule (lhs name String)
+                (rhs UNKNOWN)
+                (lambda ((x String)) String (var x String)))
+        '''
+        with pytest.raises(GrammarConversionError, match="unknown symbol"):
             load_grammar_config(config)
 
 
@@ -461,15 +607,29 @@ class TestSexpToRhsErrors:
         with pytest.raises(GrammarConversionError, match="RHS expression must start with a symbol"):
             sexp_to_rhs(SList((SAtom("nonterm", quoted=True), SAtom("foo"))))
 
-    def test_nonterm_wrong_arity(self):
-        """nonterm requires exactly 2 arguments."""
+    def test_nonterm_wrong_arity_without_context(self):
+        """Without context, nonterm requires name and type."""
         with pytest.raises(GrammarConversionError, match="nonterm requires name and type"):
             sexp_to_rhs(parse_sexp("(nonterm foo)"))
 
-    def test_term_wrong_arity(self):
-        """term requires exactly 2 arguments."""
+    def test_nonterm_inline_type_with_context(self):
+        """With context, inline type is allowed as an override."""
+        ctx = TypeContext(terminals={}, nonterminals={"foo": BaseType("String")})
+        # Inline type overrides context
+        result = sexp_to_rhs(parse_sexp("(nonterm foo Int64)"), ctx)
+        assert result == Nonterminal("foo", BaseType("Int64"))
+
+    def test_term_wrong_arity_without_context(self):
+        """Without context, term requires name and type."""
         with pytest.raises(GrammarConversionError, match="term requires name and type"):
             sexp_to_rhs(parse_sexp("(term INT)"))
+
+    def test_term_inline_type_with_context(self):
+        """With context, inline type is allowed as an override."""
+        ctx = TypeContext(terminals={"INT": BaseType("Int64")}, nonterminals={})
+        # Inline type overrides context
+        result = sexp_to_rhs(parse_sexp("(term INT Int32)"), ctx)
+        assert result == NamedTerminal("INT", BaseType("Int32"))
 
     def test_star_wrong_arity(self):
         """star requires exactly 1 argument."""
@@ -599,9 +759,10 @@ class TestLoadGrammarConfigFile:
         from meta.sexp_grammar import load_grammar_config_file
 
         config_text = '''
+        (terminal STRING String)
         (rule
           (lhs test String)
-          (rhs (term STRING String))
+          (rhs STRING)
           (lambda ((x String)) String (var x String)))
         '''
 
@@ -612,7 +773,8 @@ class TestLoadGrammarConfigFile:
 
         try:
             result = load_grammar_config_file(path)
-            assert len(result) == 1
+            assert len(result.rules) == 1
+            assert len(result.terminals) == 1
         finally:
             path.unlink()
 

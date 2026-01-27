@@ -5,7 +5,7 @@ with semantic actions, including support for normalization and left-factoring.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Tuple, TYPE_CHECKING
+from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 
 # Import action AST types
 from .target import TargetExpr, Var, Symbol, Call, Lambda, Lit, TargetType, ListType, OptionType, TupleType
@@ -339,7 +339,7 @@ class Grammar:
         Returns the grammar as a sequence of s-expressions that can be
         loaded with load_grammar_config().
         """
-        from .sexp_grammar import rule_to_sexp
+        from .sexp_grammar import rule_to_sexp, terminal_to_sexp
         from .sexp_pretty import pretty_print
 
         lines = []
@@ -349,7 +349,22 @@ class Grammar:
         reachable, unreachable = self.analysis.partition_nonterminals_by_reachability()
         rule_order = reachable if reachable_only else reachable + unreachable
 
-        nonfinal_nonterminals: Set[str] = set()
+        # Collect all named terminals from rules
+        terminals: Dict[str, NamedTerminal] = {}
+        for lhs in rule_order:
+            for rule in self.rules[lhs]:
+                for term in collect(rule.rhs, NamedTerminal):
+                    if term.name not in terminals:
+                        terminals[term.name] = term
+
+        # Emit terminal declarations
+        if terminals:
+            lines.append(";; Terminal declarations")
+            for name in sorted(terminals.keys()):
+                term = terminals[name]
+                sexp = terminal_to_sexp(name, term.type)
+                lines.append(pretty_print(sexp, width=100))
+            lines.append("")
 
         for lhs in rule_order:
             rules_list = self.rules[lhs]
@@ -359,13 +374,7 @@ class Grammar:
                 sexp = rule_to_sexp(rule)
                 lines.append(pretty_print(sexp, width=100))
 
-            if len(rules_list) > 1:
-                nonfinal_nonterminals.add(lhs.name)
-
             lines.append("")
-
-        for nt_name in sorted(nonfinal_nonterminals):
-            lines.append(f"(mark-nonfinal {nt_name})")
 
         return "\n".join(lines)
 

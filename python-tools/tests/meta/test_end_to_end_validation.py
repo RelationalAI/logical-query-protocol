@@ -45,7 +45,7 @@ def parse_and_validate(grammar_content: str, proto_content: str, expected_unreac
 
         # Determine start symbol from grammar
         start = None
-        for lhs in grammar_config.keys():
+        for lhs in grammar_config.rules.keys():
             start = lhs
             break
 
@@ -53,7 +53,7 @@ def parse_and_validate(grammar_content: str, proto_content: str, expected_unreac
             raise ValueError("Grammar has no rules")
 
         grammar = Grammar(start=start)
-        for lhs, rules in grammar_config.items():
+        for lhs, rules in grammar_config.rules.items():
             for rule in rules:
                 grammar.add_rule(rule)
 

@@ -1,12 +1,22 @@
+; Terminal declarations
+(terminal COLON_SYMBOL String)
+(terminal DECIMAL (Message logic DecimalValue))
+(terminal FLOAT Float64)
+(terminal INT Int64)
+(terminal INT128 (Message logic Int128Value))
+(terminal STRING String)
+(terminal SYMBOL String)
+(terminal UINT128 (Message logic UInt128Value))
+
 (rule
   (lhs transaction (Message transactions Transaction))
   (rhs
     "("
     "transaction"
     (option
-      (nonterm configure (Message transactions Configure)))
-    (option (nonterm sync (Message transactions Sync)))
-    (star (nonterm epoch (Message transactions Epoch)))
+      configure)
+    (option sync)
+    (star epoch)
     ")")
   (lambda
     ((configure (Option (Message transactions Configure)))
@@ -31,9 +41,7 @@
   (rhs
     "("
     "configure"
-    (nonterm
-      config_dict
-      (List (Tuple String (Message logic Value))))
+    config_dict
     ")")
   (lambda
     ((config_dict (List (Tuple String (Message logic Value)))))
@@ -51,9 +59,7 @@
   (rhs
     "{"
     (star
-      (nonterm
-        config_key_value
-        (Tuple String (Message logic Value))))
+      config_key_value)
     "}")
   (lambda
     ((x (List (Tuple String (Message logic Value)))))
@@ -63,8 +69,8 @@
 (rule
   (lhs config_key_value (Tuple String (Message logic Value)))
   (rhs
-    (term COLON_SYMBOL String)
-    (nonterm value (Message logic Value)))
+    COLON_SYMBOL
+    value)
   (lambda
     ((symbol String) (value (Message logic Value)))
     (Tuple String (Message logic Value))
@@ -75,7 +81,7 @@
 
 (rule
   (lhs value (Message logic Value))
-  (rhs (nonterm date (Message logic DateValue)))
+  (rhs date)
   (lambda
     ((value (Message logic DateValue)))
     (Message logic Value)
@@ -89,7 +95,7 @@
 
 (rule
   (lhs value (Message logic Value))
-  (rhs (nonterm datetime (Message logic DateTimeValue)))
+  (rhs datetime)
   (lambda
     ((value (Message logic DateTimeValue)))
     (Message logic Value)
@@ -103,7 +109,7 @@
 
 (rule
   (lhs value (Message logic Value))
-  (rhs (term STRING String))
+  (rhs STRING)
   (lambda
     ((value String))
     (Message logic Value)
@@ -114,7 +120,7 @@
 
 (rule
   (lhs value (Message logic Value))
-  (rhs (term INT Int64))
+  (rhs INT)
   (lambda
     ((value Int64))
     (Message logic Value)
@@ -125,7 +131,7 @@
 
 (rule
   (lhs value (Message logic Value))
-  (rhs (term FLOAT Float64))
+  (rhs FLOAT)
   (lambda
     ((value Float64))
     (Message logic Value)
@@ -136,7 +142,7 @@
 
 (rule
   (lhs value (Message logic Value))
-  (rhs (term UINT128 (Message logic UInt128Value)))
+  (rhs UINT128)
   (lambda
     ((value (Message logic UInt128Value)))
     (Message logic Value)
@@ -150,7 +156,7 @@
 
 (rule
   (lhs value (Message logic Value))
-  (rhs (term INT128 (Message logic Int128Value)))
+  (rhs INT128)
   (lambda
     ((value (Message logic Int128Value)))
     (Message logic Value)
@@ -164,7 +170,7 @@
 
 (rule
   (lhs value (Message logic Value))
-  (rhs (term DECIMAL (Message logic DecimalValue)))
+  (rhs DECIMAL)
   (lambda
     ((value (Message logic DecimalValue)))
     (Message logic Value)
@@ -192,7 +198,7 @@
 
 (rule
   (lhs value (Message logic Value))
-  (rhs (nonterm boolean_value Boolean))
+  (rhs boolean_value)
   (lambda
     ((value Boolean))
     (Message logic Value)
@@ -206,9 +212,9 @@
   (rhs
     "("
     "date"
-    (term INT Int64)
-    (term INT Int64)
-    (term INT Int64)
+    INT
+    INT
+    INT
     ")")
   (lambda
     ((year Int64) (month Int64) (day Int64))
@@ -225,13 +231,13 @@
   (rhs
     "("
     "datetime"
-    (term INT Int64)
-    (term INT Int64)
-    (term INT Int64)
-    (term INT Int64)
-    (term INT Int64)
-    (term INT Int64)
-    (option (term INT Int64))
+    INT
+    INT
+    INT
+    INT
+    INT
+    INT
+    (option INT)
     ")")
   (lambda
     ((year Int64)
@@ -268,7 +274,7 @@
   (rhs
     "("
     "sync"
-    (star (nonterm fragment_id (Message fragments FragmentId)))
+    (star fragment_id)
     ")")
   (lambda
     ((fragments (List (Message fragments FragmentId))))
@@ -281,7 +287,7 @@
 
 (rule
   (lhs fragment_id (Message fragments FragmentId))
-  (rhs (term COLON_SYMBOL String))
+  (rhs COLON_SYMBOL)
   (lambda
     ((symbol String))
     (Message fragments FragmentId)
@@ -293,9 +299,9 @@
     "("
     "epoch"
     (option
-      (nonterm epoch_writes (List (Message transactions Write))))
+      epoch_writes)
     (option
-      (nonterm epoch_reads (List (Message transactions Read))))
+      epoch_reads)
     ")")
   (lambda
     ((writes (Option (List (Message transactions Write))))
@@ -320,7 +326,7 @@
   (rhs
     "("
     "writes"
-    (star (nonterm write (Message transactions Write)))
+    (star write)
     ")")
   (lambda
     ((x (List (Message transactions Write))))
@@ -329,7 +335,7 @@
 
 (rule
   (lhs write (Message transactions Write))
-  (rhs (nonterm define (Message transactions Define)))
+  (rhs define)
   (lambda
     ((value (Message transactions Define)))
     (Message transactions Write)
@@ -343,7 +349,7 @@
 
 (rule
   (lhs write (Message transactions Write))
-  (rhs (nonterm undefine (Message transactions Undefine)))
+  (rhs undefine)
   (lambda
     ((value (Message transactions Undefine)))
     (Message transactions Write)
@@ -357,7 +363,7 @@
 
 (rule
   (lhs write (Message transactions Write))
-  (rhs (nonterm context (Message transactions Context)))
+  (rhs context)
   (lambda
     ((value (Message transactions Context)))
     (Message transactions Write)
@@ -374,7 +380,7 @@
   (rhs
     "("
     "define"
-    (nonterm fragment (Message fragments Fragment))
+    fragment
     ")")
   (lambda
     ((fragment (Message fragments Fragment)))
@@ -389,8 +395,8 @@
   (rhs
     "("
     "fragment"
-    (nonterm new_fragment_id (Message fragments FragmentId))
-    (star (nonterm declaration (Message logic Declaration)))
+    new_fragment_id
+    (star declaration)
     ")")
   (lambda
     ((fragment_id (Message fragments FragmentId))
@@ -403,7 +409,7 @@
 
 (rule
   (lhs new_fragment_id (Message fragments FragmentId))
-  (rhs (nonterm fragment_id (Message fragments FragmentId)))
+  (rhs fragment_id)
   (lambda
     ((fragment_id (Message fragments FragmentId)))
     (Message fragments FragmentId)
@@ -415,7 +421,7 @@
 
 (rule
   (lhs declaration (Message logic Declaration))
-  (rhs (nonterm def (Message logic Def)))
+  (rhs def)
   (lambda
     ((value (Message logic Def)))
     (Message logic Declaration)
@@ -427,7 +433,7 @@
 
 (rule
   (lhs declaration (Message logic Declaration))
-  (rhs (nonterm algorithm (Message logic Algorithm)))
+  (rhs algorithm)
   (lambda
     ((value (Message logic Algorithm)))
     (Message logic Declaration)
@@ -441,7 +447,7 @@
 
 (rule
   (lhs declaration (Message logic Declaration))
-  (rhs (nonterm constraint (Message logic Constraint)))
+  (rhs constraint)
   (lambda
     ((value (Message logic Constraint)))
     (Message logic Declaration)
@@ -455,7 +461,7 @@
 
 (rule
   (lhs declaration (Message logic Declaration))
-  (rhs (nonterm data (Message logic Data)))
+  (rhs data)
   (lambda
     ((value (Message logic Data)))
     (Message logic Declaration)
@@ -470,9 +476,9 @@
   (rhs
     "("
     "def"
-    (nonterm relation_id (Message logic RelationId))
-    (nonterm abstraction (Message logic Abstraction))
-    (option (nonterm attrs (List (Message logic Attribute))))
+    relation_id
+    abstraction
+    (option attrs)
     ")")
   (lambda
     ((name (Message logic RelationId))
@@ -492,7 +498,7 @@
 
 (rule
   (lhs relation_id (Message logic RelationId))
-  (rhs (term COLON_SYMBOL String))
+  (rhs COLON_SYMBOL)
   (lambda
     ((symbol String))
     (Message logic RelationId)
@@ -500,7 +506,7 @@
 
 (rule
   (lhs relation_id (Message logic RelationId))
-  (rhs (term INT Int64))
+  (rhs INT)
   (lambda
     ((INT Int64))
     (Message logic RelationId)
@@ -510,12 +516,8 @@
   (lhs abstraction (Message logic Abstraction))
   (rhs
     "("
-    (nonterm
-      bindings
-      (Tuple
-        (List (Message logic Binding))
-        (List (Message logic Binding))))
-    (nonterm formula (Message logic Formula))
+    bindings
+    formula
     ")")
   (lambda
     ((bindings
@@ -554,9 +556,9 @@
       (List (Message logic Binding))))
   (rhs
     "["
-    (star (nonterm binding (Message logic Binding)))
+    (star binding)
     (option
-      (nonterm value_bindings (List (Message logic Binding))))
+      value_bindings)
     "]")
   (lambda
     ((keys (List (Message logic Binding)))
@@ -575,9 +577,9 @@
 (rule
   (lhs binding (Message logic Binding))
   (rhs
-    (term SYMBOL String)
+    SYMBOL
     "::"
-    (nonterm type (Message logic Type)))
+    type)
   (lambda
     ((symbol String) (type (Message logic Type)))
     (Message logic Binding)
@@ -590,7 +592,7 @@
 (rule
   (lhs type (Message logic Type))
   (rhs
-    (nonterm unspecified_type (Message logic UnspecifiedType)))
+    unspecified_type)
   (lambda
     ((value (Message logic UnspecifiedType)))
     (Message logic Type)
@@ -604,7 +606,7 @@
 
 (rule
   (lhs type (Message logic Type))
-  (rhs (nonterm string_type (Message logic StringType)))
+  (rhs string_type)
   (lambda
     ((value (Message logic StringType)))
     (Message logic Type)
@@ -618,7 +620,7 @@
 
 (rule
   (lhs type (Message logic Type))
-  (rhs (nonterm int_type (Message logic IntType)))
+  (rhs int_type)
   (lambda
     ((value (Message logic IntType)))
     (Message logic Type)
@@ -630,7 +632,7 @@
 
 (rule
   (lhs type (Message logic Type))
-  (rhs (nonterm float_type (Message logic FloatType)))
+  (rhs float_type)
   (lambda
     ((value (Message logic FloatType)))
     (Message logic Type)
@@ -644,7 +646,7 @@
 
 (rule
   (lhs type (Message logic Type))
-  (rhs (nonterm uint128_type (Message logic UInt128Type)))
+  (rhs uint128_type)
   (lambda
     ((value (Message logic UInt128Type)))
     (Message logic Type)
@@ -658,7 +660,7 @@
 
 (rule
   (lhs type (Message logic Type))
-  (rhs (nonterm int128_type (Message logic Int128Type)))
+  (rhs int128_type)
   (lambda
     ((value (Message logic Int128Type)))
     (Message logic Type)
@@ -672,7 +674,7 @@
 
 (rule
   (lhs type (Message logic Type))
-  (rhs (nonterm date_type (Message logic DateType)))
+  (rhs date_type)
   (lambda
     ((value (Message logic DateType)))
     (Message logic Type)
@@ -686,7 +688,7 @@
 
 (rule
   (lhs type (Message logic Type))
-  (rhs (nonterm datetime_type (Message logic DateTimeType)))
+  (rhs datetime_type)
   (lambda
     ((value (Message logic DateTimeType)))
     (Message logic Type)
@@ -700,7 +702,7 @@
 
 (rule
   (lhs type (Message logic Type))
-  (rhs (nonterm missing_type (Message logic MissingType)))
+  (rhs missing_type)
   (lambda
     ((value (Message logic MissingType)))
     (Message logic Type)
@@ -714,7 +716,7 @@
 
 (rule
   (lhs type (Message logic Type))
-  (rhs (nonterm decimal_type (Message logic DecimalType)))
+  (rhs decimal_type)
   (lambda
     ((value (Message logic DecimalType)))
     (Message logic Type)
@@ -728,7 +730,7 @@
 
 (rule
   (lhs type (Message logic Type))
-  (rhs (nonterm boolean_type (Message logic BooleanType)))
+  (rhs boolean_type)
   (lambda
     ((value (Message logic BooleanType)))
     (Message logic Type)
@@ -814,7 +816,7 @@
 
 (rule
   (lhs decimal_type (Message logic DecimalType))
-  (rhs "(" "DECIMAL" (term INT Int64) (term INT Int64) ")")
+  (rhs "(" "DECIMAL" INT INT ")")
   (lambda
     ((precision Int64) (scale Int64))
     (Message logic DecimalType)
@@ -835,7 +837,7 @@
 
 (rule
   (lhs value_bindings (List (Message logic Binding)))
-  (rhs "|" (star (nonterm binding (Message logic Binding))))
+  (rhs "|" (star binding))
   (lambda
     ((x (List (Message logic Binding))))
     (List (Message logic Binding))
@@ -843,7 +845,7 @@
 
 (rule
   (lhs formula (Message logic Formula))
-  (rhs (nonterm true (Message logic Conjunction)))
+  (rhs true)
   (lambda
     ((value (Message logic Conjunction)))
     (Message logic Formula)
@@ -857,7 +859,7 @@
 
 (rule
   (lhs formula (Message logic Formula))
-  (rhs (nonterm false (Message logic Disjunction)))
+  (rhs false)
   (lambda
     ((value (Message logic Disjunction)))
     (Message logic Formula)
@@ -871,7 +873,7 @@
 
 (rule
   (lhs formula (Message logic Formula))
-  (rhs (nonterm exists (Message logic Exists)))
+  (rhs exists)
   (lambda
     ((value (Message logic Exists)))
     (Message logic Formula)
@@ -883,7 +885,7 @@
 
 (rule
   (lhs formula (Message logic Formula))
-  (rhs (nonterm reduce (Message logic Reduce)))
+  (rhs reduce)
   (lambda
     ((value (Message logic Reduce)))
     (Message logic Formula)
@@ -895,7 +897,7 @@
 
 (rule
   (lhs formula (Message logic Formula))
-  (rhs (nonterm conjunction (Message logic Conjunction)))
+  (rhs conjunction)
   (lambda
     ((value (Message logic Conjunction)))
     (Message logic Formula)
@@ -909,7 +911,7 @@
 
 (rule
   (lhs formula (Message logic Formula))
-  (rhs (nonterm disjunction (Message logic Disjunction)))
+  (rhs disjunction)
   (lambda
     ((value (Message logic Disjunction)))
     (Message logic Formula)
@@ -923,7 +925,7 @@
 
 (rule
   (lhs formula (Message logic Formula))
-  (rhs (nonterm not (Message logic Not)))
+  (rhs not)
   (lambda
     ((value (Message logic Not)))
     (Message logic Formula)
@@ -935,7 +937,7 @@
 
 (rule
   (lhs formula (Message logic Formula))
-  (rhs (nonterm ffi (Message logic FFI)))
+  (rhs ffi)
   (lambda
     ((value (Message logic FFI)))
     (Message logic Formula)
@@ -947,7 +949,7 @@
 
 (rule
   (lhs formula (Message logic Formula))
-  (rhs (nonterm atom (Message logic Atom)))
+  (rhs atom)
   (lambda
     ((value (Message logic Atom)))
     (Message logic Formula)
@@ -959,7 +961,7 @@
 
 (rule
   (lhs formula (Message logic Formula))
-  (rhs (nonterm pragma (Message logic Pragma)))
+  (rhs pragma)
   (lambda
     ((value (Message logic Pragma)))
     (Message logic Formula)
@@ -971,7 +973,7 @@
 
 (rule
   (lhs formula (Message logic Formula))
-  (rhs (nonterm primitive (Message logic Primitive)))
+  (rhs primitive)
   (lambda
     ((value (Message logic Primitive)))
     (Message logic Formula)
@@ -985,7 +987,7 @@
 
 (rule
   (lhs formula (Message logic Formula))
-  (rhs (nonterm rel_atom (Message logic RelAtom)))
+  (rhs rel_atom)
   (lambda
     ((value (Message logic RelAtom)))
     (Message logic Formula)
@@ -997,7 +999,7 @@
 
 (rule
   (lhs formula (Message logic Formula))
-  (rhs (nonterm cast (Message logic Cast)))
+  (rhs cast)
   (lambda
     ((value (Message logic Cast)))
     (Message logic Formula)
@@ -1034,12 +1036,8 @@
   (rhs
     "("
     "exists"
-    (nonterm
-      bindings
-      (Tuple
-        (List (Message logic Binding))
-        (List (Message logic Binding))))
-    (nonterm formula (Message logic Formula))
+    bindings
+    formula
     ")")
   (lambda
     ((bindings
@@ -1079,9 +1077,9 @@
   (rhs
     "("
     "reduce"
-    (nonterm abstraction (Message logic Abstraction))
-    (nonterm abstraction (Message logic Abstraction))
-    (nonterm terms (List (Message logic Term)))
+    abstraction
+    abstraction
+    terms
     ")")
   (lambda
     ((op (Message logic Abstraction))
@@ -1097,7 +1095,7 @@
 
 (rule
   (lhs term (Message logic Term))
-  (rhs (nonterm var (Message logic Var)))
+  (rhs var)
   (lambda
     ((value (Message logic Var)))
     (Message logic Term)
@@ -1109,7 +1107,7 @@
 
 (rule
   (lhs term (Message logic Term))
-  (rhs (nonterm constant (Message logic Value)))
+  (rhs constant)
   (lambda
     ((value (Message logic Value)))
     (Message logic Term)
@@ -1121,7 +1119,7 @@
 
 (rule
   (lhs var (Message logic Var))
-  (rhs (term SYMBOL String))
+  (rhs SYMBOL)
   (lambda
     ((symbol String))
     (Message logic Var)
@@ -1129,7 +1127,7 @@
 
 (rule
   (lhs constant (Message logic Value))
-  (rhs (nonterm value (Message logic Value)))
+  (rhs value)
   (lambda
     ((x (Message logic Value)))
     (Message logic Value)
@@ -1140,7 +1138,7 @@
   (rhs
     "("
     "and"
-    (star (nonterm formula (Message logic Formula)))
+    (star formula)
     ")")
   (lambda
     ((args (List (Message logic Formula))))
@@ -1155,7 +1153,7 @@
   (rhs
     "("
     "or"
-    (star (nonterm formula (Message logic Formula)))
+    (star formula)
     ")")
   (lambda
     ((args (List (Message logic Formula))))
@@ -1170,7 +1168,7 @@
   (rhs
     "("
     "not"
-    (nonterm formula (Message logic Formula))
+    formula
     ")")
   (lambda
     ((arg (Message logic Formula)))
@@ -1185,9 +1183,9 @@
   (rhs
     "("
     "ffi"
-    (nonterm name String)
-    (nonterm ffi_args (List (Message logic Abstraction)))
-    (nonterm terms (List (Message logic Term)))
+    name
+    ffi_args
+    terms
     ")")
   (lambda
     ((name String)
@@ -1206,7 +1204,7 @@
   (rhs
     "("
     "args"
-    (star (nonterm abstraction (Message logic Abstraction)))
+    (star abstraction)
     ")")
   (lambda
     ((x (List (Message logic Abstraction))))
@@ -1218,7 +1216,7 @@
   (rhs
     "("
     "terms"
-    (star (nonterm term (Message logic Term)))
+    (star term)
     ")")
   (lambda
     ((x (List (Message logic Term))))
@@ -1227,7 +1225,7 @@
 
 (rule
   (lhs name String)
-  (rhs (term COLON_SYMBOL String))
+  (rhs COLON_SYMBOL)
   (lambda ((x String)) String (var x String)))
 
 (rule
@@ -1235,8 +1233,8 @@
   (rhs
     "("
     "atom"
-    (nonterm relation_id (Message logic RelationId))
-    (star (nonterm term (Message logic Term)))
+    relation_id
+    (star term)
     ")")
   (lambda
     ((name (Message logic RelationId))
@@ -1253,8 +1251,8 @@
   (rhs
     "("
     "pragma"
-    (nonterm name String)
-    (star (nonterm term (Message logic Term)))
+    name
+    (star term)
     ")")
   (lambda
     ((name String) (terms (List (Message logic Term))))
@@ -1267,7 +1265,7 @@
 
 (rule
   (lhs primitive (Message logic Primitive))
-  (rhs (nonterm eq (Message logic Primitive)))
+  (rhs eq)
   (lambda
     ((op (Message logic Primitive)))
     (Message logic Primitive)
@@ -1275,7 +1273,7 @@
 
 (rule
   (lhs primitive (Message logic Primitive))
-  (rhs (nonterm lt (Message logic Primitive)))
+  (rhs lt)
   (lambda
     ((op (Message logic Primitive)))
     (Message logic Primitive)
@@ -1283,7 +1281,7 @@
 
 (rule
   (lhs primitive (Message logic Primitive))
-  (rhs (nonterm lt_eq (Message logic Primitive)))
+  (rhs lt_eq)
   (lambda
     ((op (Message logic Primitive)))
     (Message logic Primitive)
@@ -1291,7 +1289,7 @@
 
 (rule
   (lhs primitive (Message logic Primitive))
-  (rhs (nonterm gt (Message logic Primitive)))
+  (rhs gt)
   (lambda
     ((op (Message logic Primitive)))
     (Message logic Primitive)
@@ -1299,7 +1297,7 @@
 
 (rule
   (lhs primitive (Message logic Primitive))
-  (rhs (nonterm gt_eq (Message logic Primitive)))
+  (rhs gt_eq)
   (lambda
     ((op (Message logic Primitive)))
     (Message logic Primitive)
@@ -1307,7 +1305,7 @@
 
 (rule
   (lhs primitive (Message logic Primitive))
-  (rhs (nonterm add (Message logic Primitive)))
+  (rhs add)
   (lambda
     ((op (Message logic Primitive)))
     (Message logic Primitive)
@@ -1315,7 +1313,7 @@
 
 (rule
   (lhs primitive (Message logic Primitive))
-  (rhs (nonterm minus (Message logic Primitive)))
+  (rhs minus)
   (lambda
     ((op (Message logic Primitive)))
     (Message logic Primitive)
@@ -1323,7 +1321,7 @@
 
 (rule
   (lhs primitive (Message logic Primitive))
-  (rhs (nonterm multiply (Message logic Primitive)))
+  (rhs multiply)
   (lambda
     ((op (Message logic Primitive)))
     (Message logic Primitive)
@@ -1331,7 +1329,7 @@
 
 (rule
   (lhs primitive (Message logic Primitive))
-  (rhs (nonterm divide (Message logic Primitive)))
+  (rhs divide)
   (lambda
     ((op (Message logic Primitive)))
     (Message logic Primitive)
@@ -1342,8 +1340,8 @@
   (rhs
     "("
     "primitive"
-    (nonterm name String)
-    (star (nonterm rel_term (Message logic RelTerm)))
+    name
+    (star rel_term)
     ")")
   (lambda
     ((name String) (terms (List (Message logic RelTerm))))
@@ -1359,8 +1357,8 @@
   (rhs
     "("
     "primitive"
-    (nonterm name String)
-    (star (nonterm rel_term (Message logic RelTerm)))
+    name
+    (star rel_term)
     ")")
   (lambda
     ((name String) (terms (List (Message logic RelTerm))))
@@ -1376,8 +1374,8 @@
   (rhs
     "("
     "="
-    (nonterm term (Message logic Term))
-    (nonterm term (Message logic Term))
+    term
+    term
     ")")
   (lambda
     ((left (Message logic Term)) (right (Message logic Term)))
@@ -1405,8 +1403,8 @@
   (rhs
     "("
     "<"
-    (nonterm term (Message logic Term))
-    (nonterm term (Message logic Term))
+    term
+    term
     ")")
   (lambda
     ((left (Message logic Term)) (right (Message logic Term)))
@@ -1434,8 +1432,8 @@
   (rhs
     "("
     "<="
-    (nonterm term (Message logic Term))
-    (nonterm term (Message logic Term))
+    term
+    term
     ")")
   (lambda
     ((left (Message logic Term)) (right (Message logic Term)))
@@ -1463,8 +1461,8 @@
   (rhs
     "("
     ">"
-    (nonterm term (Message logic Term))
-    (nonterm term (Message logic Term))
+    term
+    term
     ")")
   (lambda
     ((left (Message logic Term)) (right (Message logic Term)))
@@ -1492,8 +1490,8 @@
   (rhs
     "("
     ">="
-    (nonterm term (Message logic Term))
-    (nonterm term (Message logic Term))
+    term
+    term
     ")")
   (lambda
     ((left (Message logic Term)) (right (Message logic Term)))
@@ -1521,9 +1519,9 @@
   (rhs
     "("
     "+"
-    (nonterm term (Message logic Term))
-    (nonterm term (Message logic Term))
-    (nonterm term (Message logic Term))
+    term
+    term
+    term
     ")")
   (lambda
     ((left (Message logic Term))
@@ -1558,9 +1556,9 @@
   (rhs
     "("
     "-"
-    (nonterm term (Message logic Term))
-    (nonterm term (Message logic Term))
-    (nonterm term (Message logic Term))
+    term
+    term
+    term
     ")")
   (lambda
     ((left (Message logic Term))
@@ -1595,9 +1593,9 @@
   (rhs
     "("
     "*"
-    (nonterm term (Message logic Term))
-    (nonterm term (Message logic Term))
-    (nonterm term (Message logic Term))
+    term
+    term
+    term
     ")")
   (lambda
     ((left (Message logic Term))
@@ -1632,9 +1630,9 @@
   (rhs
     "("
     "/"
-    (nonterm term (Message logic Term))
-    (nonterm term (Message logic Term))
-    (nonterm term (Message logic Term))
+    term
+    term
+    term
     ")")
   (lambda
     ((left (Message logic Term))
@@ -1666,7 +1664,7 @@
 
 (rule
   (lhs rel_term (Message logic RelTerm))
-  (rhs (nonterm specialized_value (Message logic Value)))
+  (rhs specialized_value)
   (lambda
     ((value (Message logic Value)))
     (Message logic RelTerm)
@@ -1680,7 +1678,7 @@
 
 (rule
   (lhs rel_term (Message logic RelTerm))
-  (rhs (nonterm term (Message logic Term)))
+  (rhs term)
   (lambda
     ((value (Message logic Term)))
     (Message logic RelTerm)
@@ -1692,7 +1690,7 @@
 
 (rule
   (lhs specialized_value (Message logic Value))
-  (rhs "#" (nonterm value (Message logic Value)))
+  (rhs "#" value)
   (lambda
     ((value (Message logic Value)))
     (Message logic Value)
@@ -1703,8 +1701,8 @@
   (rhs
     "("
     "rel_atom"
-    (nonterm name String)
-    (star (nonterm rel_term (Message logic RelTerm)))
+    name
+    (star rel_term)
     ")")
   (lambda
     ((name String) (terms (List (Message logic RelTerm))))
@@ -1720,8 +1718,8 @@
   (rhs
     "("
     "cast"
-    (nonterm term (Message logic Term))
-    (nonterm term (Message logic Term))
+    term
+    term
     ")")
   (lambda
     ((input (Message logic Term)) (result (Message logic Term)))
@@ -1737,7 +1735,7 @@
   (rhs
     "("
     "attrs"
-    (star (nonterm attribute (Message logic Attribute)))
+    (star attribute)
     ")")
   (lambda
     ((x (List (Message logic Attribute))))
@@ -1749,8 +1747,8 @@
   (rhs
     "("
     "attribute"
-    (nonterm name String)
-    (star (nonterm value (Message logic Value)))
+    name
+    (star value)
     ")")
   (lambda
     ((name String) (args (List (Message logic Value))))
@@ -1766,8 +1764,8 @@
   (rhs
     "("
     "algorithm"
-    (star (nonterm relation_id (Message logic RelationId)))
-    (nonterm script (Message logic Script))
+    (star relation_id)
+    script
     ")")
   (lambda
     ((global (List (Message logic RelationId)))
@@ -1784,7 +1782,7 @@
   (rhs
     "("
     "script"
-    (star (nonterm construct (Message logic Construct)))
+    (star construct)
     ")")
   (lambda
     ((constructs (List (Message logic Construct))))
@@ -1797,7 +1795,7 @@
 
 (rule
   (lhs construct (Message logic Construct))
-  (rhs (nonterm loop (Message logic Loop)))
+  (rhs loop)
   (lambda
     ((value (Message logic Loop)))
     (Message logic Construct)
@@ -1809,7 +1807,7 @@
 
 (rule
   (lhs construct (Message logic Construct))
-  (rhs (nonterm instruction (Message logic Instruction)))
+  (rhs instruction)
   (lambda
     ((value (Message logic Instruction)))
     (Message logic Construct)
@@ -1826,8 +1824,8 @@
   (rhs
     "("
     "loop"
-    (nonterm init (List (Message logic Instruction)))
-    (nonterm script (Message logic Script))
+    init
+    script
     ")")
   (lambda
     ((init (List (Message logic Instruction)))
@@ -1844,7 +1842,7 @@
   (rhs
     "("
     "init"
-    (star (nonterm instruction (Message logic Instruction)))
+    (star instruction)
     ")")
   (lambda
     ((x (List (Message logic Instruction))))
@@ -1853,7 +1851,7 @@
 
 (rule
   (lhs instruction (Message logic Instruction))
-  (rhs (nonterm assign (Message logic Assign)))
+  (rhs assign)
   (lambda
     ((value (Message logic Assign)))
     (Message logic Instruction)
@@ -1865,7 +1863,7 @@
 
 (rule
   (lhs instruction (Message logic Instruction))
-  (rhs (nonterm upsert (Message logic Upsert)))
+  (rhs upsert)
   (lambda
     ((value (Message logic Upsert)))
     (Message logic Instruction)
@@ -1877,7 +1875,7 @@
 
 (rule
   (lhs instruction (Message logic Instruction))
-  (rhs (nonterm break (Message logic Break)))
+  (rhs break)
   (lambda
     ((value (Message logic Break)))
     (Message logic Instruction)
@@ -1889,7 +1887,7 @@
 
 (rule
   (lhs instruction (Message logic Instruction))
-  (rhs (nonterm monoid_def (Message logic MonoidDef)))
+  (rhs monoid_def)
   (lambda
     ((value (Message logic MonoidDef)))
     (Message logic Instruction)
@@ -1903,7 +1901,7 @@
 
 (rule
   (lhs instruction (Message logic Instruction))
-  (rhs (nonterm monus_def (Message logic MonusDef)))
+  (rhs monus_def)
   (lambda
     ((value (Message logic MonusDef)))
     (Message logic Instruction)
@@ -1920,9 +1918,9 @@
   (rhs
     "("
     "assign"
-    (nonterm relation_id (Message logic RelationId))
-    (nonterm abstraction (Message logic Abstraction))
-    (option (nonterm attrs (List (Message logic Attribute))))
+    relation_id
+    abstraction
+    (option attrs)
     ")")
   (lambda
     ((name (Message logic RelationId))
@@ -1945,11 +1943,9 @@
   (rhs
     "("
     "upsert"
-    (nonterm relation_id (Message logic RelationId))
-    (nonterm
-      abstraction_with_arity
-      (Tuple (Message logic Abstraction) Int64))
-    (option (nonterm attrs (List (Message logic Attribute))))
+    relation_id
+    abstraction_with_arity
+    (option attrs)
     ")")
   (lambda
     ((name (Message logic RelationId))
@@ -1989,12 +1985,8 @@
     (Tuple (Message logic Abstraction) Int64))
   (rhs
     "("
-    (nonterm
-      bindings
-      (Tuple
-        (List (Message logic Binding))
-        (List (Message logic Binding))))
-    (nonterm formula (Message logic Formula))
+    bindings
+    formula
     ")")
   (lambda
     ((bindings
@@ -2041,9 +2033,9 @@
   (rhs
     "("
     "break"
-    (nonterm relation_id (Message logic RelationId))
-    (nonterm abstraction (Message logic Abstraction))
-    (option (nonterm attrs (List (Message logic Attribute))))
+    relation_id
+    abstraction
+    (option attrs)
     ")")
   (lambda
     ((name (Message logic RelationId))
@@ -2066,12 +2058,10 @@
   (rhs
     "("
     "monoid"
-    (nonterm monoid (Message logic Monoid))
-    (nonterm relation_id (Message logic RelationId))
-    (nonterm
-      abstraction_with_arity
-      (Tuple (Message logic Abstraction) Int64))
-    (option (nonterm attrs (List (Message logic Attribute))))
+    monoid
+    relation_id
+    abstraction_with_arity
+    (option attrs)
     ")")
   (lambda
     ((monoid (Message logic Monoid))
@@ -2109,7 +2099,7 @@
 
 (rule
   (lhs monoid (Message logic Monoid))
-  (rhs (nonterm or_monoid (Message logic OrMonoid)))
+  (rhs or_monoid)
   (lambda
     ((value (Message logic OrMonoid)))
     (Message logic Monoid)
@@ -2123,7 +2113,7 @@
 
 (rule
   (lhs monoid (Message logic Monoid))
-  (rhs (nonterm min_monoid (Message logic MinMonoid)))
+  (rhs min_monoid)
   (lambda
     ((value (Message logic MinMonoid)))
     (Message logic Monoid)
@@ -2137,7 +2127,7 @@
 
 (rule
   (lhs monoid (Message logic Monoid))
-  (rhs (nonterm max_monoid (Message logic MaxMonoid)))
+  (rhs max_monoid)
   (lambda
     ((value (Message logic MaxMonoid)))
     (Message logic Monoid)
@@ -2151,7 +2141,7 @@
 
 (rule
   (lhs monoid (Message logic Monoid))
-  (rhs (nonterm sum_monoid (Message logic SumMonoid)))
+  (rhs sum_monoid)
   (lambda
     ((value (Message logic SumMonoid)))
     (Message logic Monoid)
@@ -2173,7 +2163,7 @@
 
 (rule
   (lhs min_monoid (Message logic MinMonoid))
-  (rhs "(" "min" (nonterm type (Message logic Type)) ")")
+  (rhs "(" "min" type ")")
   (lambda
     ((type (Message logic Type)))
     (Message logic MinMonoid)
@@ -2184,7 +2174,7 @@
 
 (rule
   (lhs max_monoid (Message logic MaxMonoid))
-  (rhs "(" "max" (nonterm type (Message logic Type)) ")")
+  (rhs "(" "max" type ")")
   (lambda
     ((type (Message logic Type)))
     (Message logic MaxMonoid)
@@ -2195,7 +2185,7 @@
 
 (rule
   (lhs sum_monoid (Message logic SumMonoid))
-  (rhs "(" "sum" (nonterm type (Message logic Type)) ")")
+  (rhs "(" "sum" type ")")
   (lambda
     ((type (Message logic Type)))
     (Message logic SumMonoid)
@@ -2209,12 +2199,10 @@
   (rhs
     "("
     "monus"
-    (nonterm monoid (Message logic Monoid))
-    (nonterm relation_id (Message logic RelationId))
-    (nonterm
-      abstraction_with_arity
-      (Tuple (Message logic Abstraction) Int64))
-    (option (nonterm attrs (List (Message logic Attribute))))
+    monoid
+    relation_id
+    abstraction_with_arity
+    (option attrs)
     ")")
   (lambda
     ((monoid (Message logic Monoid))
@@ -2253,9 +2241,7 @@
 (rule
   (lhs constraint (Message logic Constraint))
   (rhs
-    (nonterm
-      functional_dependency
-      (Message logic FunctionalDependency)))
+    functional_dependency)
   (lambda
     ((value (Message logic FunctionalDependency)))
     (Message logic Constraint)
@@ -2274,15 +2260,11 @@
   (rhs
     "("
     "functional_dependency"
-    (nonterm abstraction (Message logic Abstraction))
+    abstraction
     (option
-      (nonterm
-        functional_dependency_keys
-        (List (Message logic Var))))
+      functional_dependency_keys)
     (option
-      (nonterm
-        functional_dependency_values
-        (List (Message logic Var))))
+      functional_dependency_values)
     ")")
   (lambda
     ((guard (Message logic Abstraction))
@@ -2309,7 +2291,7 @@
   (rhs
     "("
     "keys"
-    (star (nonterm var (Message logic Var)))
+    (star var)
     ")")
   (lambda
     ((x (List (Message logic Var))))
@@ -2323,7 +2305,7 @@
   (rhs
     "("
     "values"
-    (star (nonterm var (Message logic Var)))
+    (star var)
     ")")
   (lambda
     ((x (List (Message logic Var))))
@@ -2332,7 +2314,7 @@
 
 (rule
   (lhs data (Message logic Data))
-  (rhs (nonterm rel_edb (Message logic RelEDB)))
+  (rhs rel_edb)
   (lambda
     ((value (Message logic RelEDB)))
     (Message logic Data)
@@ -2345,7 +2327,7 @@
 (rule
   (lhs data (Message logic Data))
   (rhs
-    (nonterm betree_relation (Message logic BeTreeRelation)))
+    betree_relation)
   (lambda
     ((value (Message logic BeTreeRelation)))
     (Message logic Data)
@@ -2359,7 +2341,7 @@
 
 (rule
   (lhs data (Message logic Data))
-  (rhs (nonterm csv_data (Message logic CSVData)))
+  (rhs csv_data)
   (lambda
     ((value (Message logic CSVData)))
     (Message logic Data)
@@ -2374,9 +2356,9 @@
   (rhs
     "("
     "rel_edb"
-    (nonterm relation_id (Message logic RelationId))
-    (star (nonterm name String))
-    (option (nonterm rel_edb_types (List (Message logic Type))))
+    relation_id
+    (star name)
+    (option rel_edb_types)
     ")")
   (lambda
     ((target_id (Message logic RelationId))
@@ -2399,7 +2381,7 @@
   (rhs
     "("
     "types"
-    (star (nonterm type (Message logic Type)))
+    (star type)
     ")")
   (lambda
     ((x (List (Message logic Type))))
@@ -2409,7 +2391,7 @@
 (rule
   (lhs betree_relation (Message logic BeTreeRelation))
   (rhs
-    (nonterm be_tree_relation (Message logic BeTreeRelation)))
+    be_tree_relation)
   (lambda
     ((x (Message logic BeTreeRelation)))
     (Message logic BeTreeRelation)
@@ -2420,8 +2402,8 @@
   (rhs
     "("
     "be_tree_relation"
-    (nonterm relation_id (Message logic RelationId))
-    (nonterm be_tree_info (Message logic BeTreeInfo))
+    relation_id
+    be_tree_info
     ")")
   (lambda
     ((name (Message logic RelationId))
@@ -2440,13 +2422,11 @@
     "("
     "be_tree_info"
     (option
-      (nonterm be_tree_info_key_types (List (Message logic Type))))
+      be_tree_info_key_types)
     (option
-      (nonterm
-        be_tree_info_value_types
-        (List (Message logic Type))))
-    (nonterm be_tree_config (Message logic BeTreeConfig))
-    (nonterm be_tree_locator (Message logic BeTreeLocator))
+      be_tree_info_value_types)
+    be_tree_config
+    be_tree_locator
     ")")
   (lambda
     ((key_types (Option (List (Message logic Type))))
@@ -2477,7 +2457,7 @@
   (rhs
     "("
     "key_types"
-    (star (nonterm type (Message logic Type)))
+    (star type)
     ")")
   (lambda
     ((x (List (Message logic Type))))
@@ -2489,7 +2469,7 @@
   (rhs
     "("
     "value_types"
-    (star (nonterm type (Message logic Type)))
+    (star type)
     ")")
   (lambda
     ((x (List (Message logic Type))))
@@ -2501,10 +2481,10 @@
   (rhs
     "("
     "be_tree_config"
-    (term FLOAT Float64)
-    (term INT Int64)
-    (term INT Int64)
-    (term INT Int64)
+    FLOAT
+    INT
+    INT
+    INT
     ")")
   (lambda
     ((epsilon Float64)
@@ -2525,8 +2505,8 @@
   (rhs
     "("
     "be_tree_locator"
-    (term INT Int64)
-    (term INT Int64)
+    INT
+    INT
     ")")
   (lambda
     ((element_count Int64) (tree_height Int64))
@@ -2539,7 +2519,7 @@
 
 (rule
   (lhs csv_data (Message logic CSVData))
-  (rhs (nonterm csvdata (Message logic CSVData)))
+  (rhs csvdata)
   (lambda
     ((x (Message logic CSVData)))
     (Message logic CSVData)
@@ -2550,10 +2530,10 @@
   (rhs
     "("
     "csvdata"
-    (nonterm csvlocator (Message logic CSVLocator))
-    (nonterm csv_config (Message logic CSVConfig))
-    (star (nonterm csv_column (Message logic CSVColumn)))
-    (nonterm name String)
+    csvlocator
+    csv_config
+    (star csv_column)
+    name
     ")")
   (lambda
     ((locator (Message logic CSVLocator))
@@ -2574,8 +2554,8 @@
   (rhs
     "("
     "csvlocator"
-    (star (nonterm name String))
-    (nonterm name String)
+    (star name)
+    name
     ")")
   (lambda
     ((paths (List String)) (inline_data String))
@@ -2592,16 +2572,16 @@
     "("
     "csv_config"
     (term INT Int32)
-    (term INT Int64)
-    (nonterm name String)
-    (nonterm name String)
-    (nonterm name String)
-    (nonterm name String)
-    (nonterm name String)
-    (star (nonterm name String))
-    (nonterm name String)
-    (nonterm name String)
-    (nonterm name String)
+    INT
+    name
+    name
+    name
+    name
+    name
+    (star name)
+    name
+    name
+    name
     ")")
   (lambda
     ((header_row Int32)
@@ -2636,9 +2616,9 @@
   (rhs
     "("
     "csv_column"
-    (nonterm name String)
-    (nonterm relation_id (Message logic RelationId))
-    (star (nonterm type (Message logic Type)))
+    name
+    relation_id
+    (star type)
     ")")
   (lambda
     ((column_name String)
@@ -2657,7 +2637,7 @@
   (rhs
     "("
     "undefine"
-    (nonterm fragment_id (Message fragments FragmentId))
+    fragment_id
     ")")
   (lambda
     ((fragment_id (Message fragments FragmentId)))
@@ -2673,7 +2653,7 @@
   (rhs
     "("
     "context"
-    (star (nonterm relation_id (Message logic RelationId)))
+    (star relation_id)
     ")")
   (lambda
     ((relations (List (Message logic RelationId))))
@@ -2689,7 +2669,7 @@
   (rhs
     "("
     "reads"
-    (star (nonterm read (Message transactions Read)))
+    (star read)
     ")")
   (lambda
     ((x (List (Message transactions Read))))
@@ -2698,7 +2678,7 @@
 
 (rule
   (lhs read (Message transactions Read))
-  (rhs (nonterm demand (Message transactions Demand)))
+  (rhs demand)
   (lambda
     ((value (Message transactions Demand)))
     (Message transactions Read)
@@ -2712,7 +2692,7 @@
 
 (rule
   (lhs read (Message transactions Read))
-  (rhs (nonterm output (Message transactions Output)))
+  (rhs output)
   (lambda
     ((value (Message transactions Output)))
     (Message transactions Read)
@@ -2726,7 +2706,7 @@
 
 (rule
   (lhs read (Message transactions Read))
-  (rhs (nonterm what_if (Message transactions WhatIf)))
+  (rhs what_if)
   (lambda
     ((value (Message transactions WhatIf)))
     (Message transactions Read)
@@ -2740,7 +2720,7 @@
 
 (rule
   (lhs read (Message transactions Read))
-  (rhs (nonterm abort (Message transactions Abort)))
+  (rhs abort)
   (lambda
     ((value (Message transactions Abort)))
     (Message transactions Read)
@@ -2754,7 +2734,7 @@
 
 (rule
   (lhs read (Message transactions Read))
-  (rhs (nonterm export (Message transactions Export)))
+  (rhs export)
   (lambda
     ((value (Message transactions Export)))
     (Message transactions Read)
@@ -2771,7 +2751,7 @@
   (rhs
     "("
     "demand"
-    (nonterm relation_id (Message logic RelationId))
+    relation_id
     ")")
   (lambda
     ((relation_id (Message logic RelationId)))
@@ -2786,8 +2766,8 @@
   (rhs
     "("
     "output"
-    (option (nonterm name String))
-    (nonterm relation_id (Message logic RelationId))
+    (option name)
+    relation_id
     ")")
   (lambda
     ((name (Option String))
@@ -2808,8 +2788,8 @@
   (rhs
     "("
     "what_if"
-    (nonterm name String)
-    (nonterm epoch (Message transactions Epoch))
+    name
+    epoch
     ")")
   (lambda
     ((branch String) (epoch (Message transactions Epoch)))
@@ -2825,8 +2805,8 @@
   (rhs
     "("
     "abort"
-    (option (nonterm name String))
-    (nonterm relation_id (Message logic RelationId))
+    (option name)
+    relation_id
     ")")
   (lambda
     ((name (Option String))
@@ -2847,9 +2827,7 @@
   (rhs
     "("
     "export"
-    (nonterm
-      export_csv_config
-      (Message transactions ExportCSVConfig))
+    export_csv_config
     ")")
   (lambda
     ((config (Message transactions ExportCSVConfig)))
@@ -2869,13 +2847,9 @@
   (rhs
     "("
     "export_csv_config"
-    (nonterm export_csv_path String)
-    (nonterm
-      export_csv_columns
-      (List (Message transactions ExportCSVColumn)))
-    (nonterm
-      config_dict
-      (List (Tuple String (Message logic Value))))
+    export_csv_path
+    export_csv_columns
+    config_dict
     ")")
   (lambda
     ((path String)
@@ -2890,7 +2864,7 @@
 
 (rule
   (lhs export_csv_path String)
-  (rhs "(" "path" (term STRING String) ")")
+  (rhs "(" "path" STRING ")")
   (lambda ((x String)) String (var x String)))
 
 (rule
@@ -2901,9 +2875,7 @@
     "("
     "columns"
     (star
-      (nonterm
-        export_csv_column
-        (Message transactions ExportCSVColumn)))
+      export_csv_column)
     ")")
   (lambda
     ((x (List (Message transactions ExportCSVColumn))))
@@ -2917,8 +2889,8 @@
   (rhs
     "("
     "column"
-    (term STRING String)
-    (nonterm relation_id (Message logic RelationId))
+    STRING
+    relation_id
     ")")
   (lambda
     ((name String) (relation_id (Message logic RelationId)))
@@ -2928,33 +2900,3 @@
       ExportCSVColumn
       (column_name (var name String))
       (column_data (var relation_id (Message logic RelationId))))))
-
-(mark-nonfinal boolean_value)
-
-(mark-nonfinal construct)
-
-(mark-nonfinal data)
-
-(mark-nonfinal declaration)
-
-(mark-nonfinal formula)
-
-(mark-nonfinal instruction)
-
-(mark-nonfinal monoid)
-
-(mark-nonfinal primitive)
-
-(mark-nonfinal read)
-
-(mark-nonfinal rel_term)
-
-(mark-nonfinal relation_id)
-
-(mark-nonfinal term)
-
-(mark-nonfinal type)
-
-(mark-nonfinal value)
-
-(mark-nonfinal write)

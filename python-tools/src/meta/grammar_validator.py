@@ -420,7 +420,7 @@ class GrammarValidator:
 
     def _check_unreachable(self) -> None:
         """Check for unexpected unreachable nonterminals."""
-        _, unreachable = self.grammar.partition_nonterminals()
+        _, unreachable = self.grammar.analysis.partition_nonterminals_by_reachability()
         for nt in unreachable:
             if nt.name not in self.expected_unreachable:
                 self.result.add_warning(

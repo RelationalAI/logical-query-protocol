@@ -163,7 +163,7 @@ def run(args) -> int:
     # Build Grammar object from loaded config
     start = Nonterminal('transaction', MessageType('transactions', 'Transaction'))
     grammar = Grammar(start=start)
-    for lhs, rules in grammar_config.items():
+    for lhs, rules in grammar_config.rules.items():
         for rule in rules:
             grammar.add_rule(rule)
 
