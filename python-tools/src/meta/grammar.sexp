@@ -152,7 +152,7 @@
 
 (rule (lhs exists (Message logic Exists)) (rhs "(" "exists" (nonterm bindings (Tuple (List (Message logic Binding)) (List (Message logic Binding)))) (nonterm formula (Message logic Formula)) ")") (lambda ((bindings (Tuple (List (Message logic Binding)) (List (Message logic Binding)))) (formula (Message logic Formula))) (Message logic Exists) (call (message logic Exists) (call (message logic Abstraction) (call (builtin list_concat) (get-element (var bindings (Tuple (List (Message logic Binding)) (List (Message logic Binding)))) 0) (get-element (var bindings (Tuple (List (Message logic Binding)) (List (Message logic Binding)))) 1)) (var formula (Message logic Formula))))))
 
-(rule (lhs reduce (Message logic Reduce)) (rhs "(" "reduce" (nonterm abstraction (Message logic Abstraction)) (nonterm abstraction (Message logic Abstraction)) (star (nonterm term (Message logic Term))) ")") (lambda ((op (Message logic Abstraction)) (body (Message logic Abstraction)) (terms (List (Message logic Term)))) (Message logic Reduce) (call (message logic Reduce) (var op (Message logic Abstraction)) (var body (Message logic Abstraction)) (var terms (List (Message logic Term))))))
+(rule (lhs reduce (Message logic Reduce)) (rhs "(" "reduce" (nonterm abstraction (Message logic Abstraction)) (nonterm abstraction (Message logic Abstraction)) (nonterm terms (List (Message logic Term))) ")") (lambda ((op (Message logic Abstraction)) (body (Message logic Abstraction)) (terms (List (Message logic Term)))) (Message logic Reduce) (call (message logic Reduce) (var op (Message logic Abstraction)) (var body (Message logic Abstraction)) (var terms (List (Message logic Term))))))
 
 (rule (lhs term (Message logic Term)) (rhs (nonterm var (Message logic Var))) (lambda ((value (Message logic Var))) (Message logic Term) (call (message logic Term) (call (oneof var) (var value (Message logic Var))))))
 
@@ -168,7 +168,11 @@
 
 (rule (lhs not (Message logic Not)) (rhs "(" "not" (nonterm formula (Message logic Formula)) ")") (lambda ((arg (Message logic Formula))) (Message logic Not) (call (message logic Not) (var arg (Message logic Formula)))))
 
-(rule (lhs ffi (Message logic FFI)) (rhs "(" "ffi" (nonterm name String) (star (nonterm abstraction (Message logic Abstraction))) (star (nonterm term (Message logic Term))) ")") (lambda ((name String) (args (List (Message logic Abstraction))) (terms (List (Message logic Term)))) (Message logic FFI) (call (message logic FFI) (var name String) (var args (List (Message logic Abstraction))) (var terms (List (Message logic Term))))))
+(rule (lhs ffi (Message logic FFI)) (rhs "(" "ffi" (nonterm name String) (nonterm ffi_args (List (Message logic Abstraction))) (nonterm terms (List (Message logic Term))) ")") (lambda ((name String) (args (List (Message logic Abstraction))) (terms (List (Message logic Term)))) (Message logic FFI) (call (message logic FFI) (var name String) (var args (List (Message logic Abstraction))) (var terms (List (Message logic Term))))))
+
+(rule (lhs ffi_args (List (Message logic Abstraction))) (rhs "(" "args" (star (nonterm abstraction (Message logic Abstraction))) ")") (lambda ((x (List (Message logic Abstraction)))) (List (Message logic Abstraction)) (var x (List (Message logic Abstraction)))))
+
+(rule (lhs terms (List (Message logic Term))) (rhs "(" "terms" (star (nonterm term (Message logic Term))) ")") (lambda ((x (List (Message logic Term)))) (List (Message logic Term)) (var x (List (Message logic Term)))))
 
 (rule (lhs name String) (rhs (term COLON_SYMBOL String)) (lambda ((x String)) String (var x String)))
 
@@ -238,7 +242,9 @@
 
 (rule (lhs construct (Message logic Construct)) (rhs (nonterm instruction (Message logic Instruction))) (lambda ((value (Message logic Instruction))) (Message logic Construct) (call (message logic Construct) (call (oneof instruction) (var value (Message logic Instruction))))))
 
-(rule (lhs loop (Message logic Loop)) (rhs "(" "loop" (star (nonterm instruction (Message logic Instruction))) (nonterm script (Message logic Script)) ")") (lambda ((init (List (Message logic Instruction))) (body (Message logic Script))) (Message logic Loop) (call (message logic Loop) (var init (List (Message logic Instruction))) (var body (Message logic Script)))))
+(rule (lhs loop (Message logic Loop)) (rhs "(" "loop" (nonterm init (List (Message logic Instruction))) (nonterm script (Message logic Script)) ")") (lambda ((init (List (Message logic Instruction))) (body (Message logic Script))) (Message logic Loop) (call (message logic Loop) (var init (List (Message logic Instruction))) (var body (Message logic Script)))))
+
+(rule (lhs init (List (Message logic Instruction))) (rhs "(" "init" (star (nonterm instruction (Message logic Instruction))) ")") (lambda ((x (List (Message logic Instruction)))) (List (Message logic Instruction)) (var x (List (Message logic Instruction)))))
 
 (rule (lhs instruction (Message logic Instruction)) (rhs (nonterm assign (Message logic Assign))) (lambda ((value (Message logic Assign))) (Message logic Instruction) (call (message logic Instruction) (call (oneof assign) (var value (Message logic Assign))))))
 
