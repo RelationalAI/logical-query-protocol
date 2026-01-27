@@ -281,7 +281,7 @@ class TestExprToSexp:
 
     def test_lit_boolean(self):
         result = expr_to_sexp(Lit(True))
-        assert result == SList((SAtom("lit"), SAtom(True)))
+        assert result == SList((SAtom("lit"), SAtom("true")))
 
     def test_symbol(self):
         result = expr_to_sexp(Symbol("foo"))
@@ -352,7 +352,7 @@ class TestExprToSexp:
         result = expr_to_sexp(IfElse(Lit(True), Lit(1), Lit(0)))
         expected = SList((
             SAtom("if"),
-            SList((SAtom("lit"), SAtom(True))),
+            SList((SAtom("lit"), SAtom("true"))),
             SList((SAtom("lit"), SAtom(1))),
             SList((SAtom("lit"), SAtom(0)))
         ))
@@ -659,10 +659,10 @@ class TestSexpToExprErrors:
         with pytest.raises(SExprConversionError, match="builtin requires name"):
             sexp_to_expr(parse_sexp("(builtin)"))
 
-    def test_message_wrong_arity(self):
-        """message requires module and name."""
-        with pytest.raises(SExprConversionError, match="message requires module and name"):
-            sexp_to_expr(parse_sexp("(message test)"))
+    def test_new_message_wrong_arity(self):
+        """new-message requires module, name, and fields."""
+        with pytest.raises(SExprConversionError, match="new-message requires module, name, and fields"):
+            sexp_to_expr(parse_sexp("(new-message test)"))
 
     def test_oneof_wrong_arity(self):
         """oneof requires field name."""

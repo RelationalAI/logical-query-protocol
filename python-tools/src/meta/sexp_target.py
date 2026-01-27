@@ -171,7 +171,13 @@ def sexp_to_expr(sexp: SExpr) -> TargetExpr:
             raise SExprConversionError(f"lit requires a value: {sexp}")
         val_sexp = sexp[1]
         if isinstance(val_sexp, SAtom):
-            return Lit(val_sexp.value)
+            value = val_sexp.value
+            # Convert string "true"/"false" to Python booleans
+            if value == "true":
+                return Lit(True)
+            if value == "false":
+                return Lit(False)
+            return Lit(value)
         raise SExprConversionError(f"lit value must be an atom: {val_sexp}")
 
     elif tag == "call":
@@ -394,7 +400,8 @@ def expr_to_sexp(expr: TargetExpr) -> SExpr:
         if isinstance(expr.value, str):
             return SList((SAtom("lit"), SAtom(expr.value, quoted=True)))
         elif isinstance(expr.value, bool):
-            return SList((SAtom("lit"), SAtom(expr.value)))
+            # Serialize booleans as unquoted symbols "true" or "false"
+            return SList((SAtom("lit"), SAtom("true" if expr.value else "false")))
         else:
             return SList((SAtom("lit"), SAtom(expr.value)))
 
