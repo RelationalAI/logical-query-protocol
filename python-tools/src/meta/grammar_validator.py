@@ -21,7 +21,7 @@ from .grammar import Grammar, Rule, Nonterminal, Rhs, LitTerminal, NamedTerminal
 from .proto_parser import ProtoParser
 from .proto_ast import ProtoMessage, ProtoField
 from .target import (
-    TargetType, TargetExpr, Call, Message, Builtin, Var, IfElse, Let, Seq, ListExpr, GetField,
+    TargetType, TargetExpr, Call, NewMessage, Builtin, Var, IfElse, Let, Seq, ListExpr, GetField,
     GetElement, BaseType, VarType, MessageType, ListType, OptionType, TupleType, FunctionType, Lambda, OneOf
 )
 
@@ -536,9 +536,7 @@ class GrammarValidator:
         - Builtin calls have correct argument types
         """
         if isinstance(expr, Call):
-            if isinstance(expr.func, Message):
-                self._check_message_call_types(expr.func, expr.args, context)
-            elif isinstance(expr.func, Builtin):
+            if isinstance(expr.func, Builtin):
                 self._check_builtin_call_types(expr.func, expr.args, context)
             else:
                 # Recursively check function and args
@@ -589,52 +587,86 @@ class GrammarValidator:
                         rule_name=context
                     )
 
-        # Other expression types (Var, Lit, Symbol, Builtin, Message, etc.) are leaves
+        elif isinstance(expr, NewMessage):
+            # Check field names and types against proto spec
+            self._check_new_message_types(expr, context)
+            # Recursively check field expressions
+            for _, field_expr in expr.fields:
+                self._check_expr_types(field_expr, context)
+
+        # Other expression types (Var, Lit, Symbol, Builtin, etc.) are leaves
         return None
 
-    def _check_message_call_types(self, message: Message, args: PySequence[TargetExpr], context: str) -> None:
-        """Check that Message constructor call has correct argument types.
+    def _check_new_message_types(self, new_msg: NewMessage, context: str) -> None:
+        """Check that NewMessage has correct field names and types.
 
         Args:
-            message: Message constructor (module, name)
-            args: Arguments to the constructor
+            new_msg: NewMessage node to validate
             context: Rule name or other context for error messages
         """
-        expected_types = self.type_env.get_message_field_types(message.module, message.name)
-        if expected_types is None:
-            # Message not found in proto spec - will be caught by other validation
-            return None
+        # Get the proto message (messages are keyed by name only, not module.name)
+        proto_message = self.parser.messages.get(new_msg.name)
 
-        # Check if this is a oneof-only message
-        if self.type_env.is_oneof_message(message.module, message.name):
-            # Oneof-only messages take exactly 1 argument: Call(OneOf(...), [...])
-            if len(args) != 1:
-                self.result.add_error(
-                    "type_message_arity",
-                    f"In {context}: Oneof-only message {message.name} expects 1 arg, got {len(args)}",
-                    proto_type=message.name,
-                    rule_name=context
-                )
-            # Type of the argument is validated by the OneOf wrapper
-            return None
-
-        if len(args) != len(expected_types):
+        if proto_message is None:
             self.result.add_error(
-                "type_message_arity",
-                f"In {context}: Message({message.module}, {message.name}) expects {len(expected_types)} args, got {len(args)}",
-                proto_type=message.name,
+                "completeness",
+                f"In {context}: NewMessage refers to unknown message {new_msg.name}",
+                proto_type=new_msg.name,
                 rule_name=context
             )
             return None
 
-        # Check each argument type
-        for i, (arg, expected_type) in enumerate(zip(args, expected_types)):
-            arg_type = self._infer_expr_type(arg)
-            if arg_type is not None and not self._types_compatible(arg_type, expected_type):
+        # Build map of proto fields by name (both regular fields and oneofs)
+        proto_fields_by_name: Dict[str, ProtoField] = {
+            field.name: field for field in proto_message.fields
+        }
+        # Add oneof names as valid fields (oneofs can be set as a whole)
+        oneof_names: Set[str] = {oneof.name for oneof in proto_message.oneofs}
+
+        # Track which proto fields were provided
+        provided_fields: Set[str] = set()
+
+        # Check each grammar field
+        for field_name, field_expr in new_msg.fields:
+            provided_fields.add(field_name)
+
+            # Check if field exists in proto (either as regular field or oneof)
+            if field_name not in proto_fields_by_name and field_name not in oneof_names:
                 self.result.add_error(
-                    "type_message_arg",
-                    f"In {context}: Message({message.module}, {message.name}) arg {i} has type {arg_type}, expected {expected_type}",
-                    proto_type=message.name,
+                    "field_name",
+                    f"In {context}: NewMessage {new_msg.name} has unknown field '{field_name}'",
+                    proto_type=new_msg.name,
+                    rule_name=context
+                )
+                continue
+
+            # Skip type checking for oneof fields (they're handled specially)
+            if field_name in oneof_names:
+                continue
+
+            # Get expected field type from proto
+            proto_field = proto_fields_by_name[field_name]
+            expected_type = self.type_env._proto_type_to_target(proto_field)
+
+            # Infer actual type from expression
+            actual_type = self._infer_expr_type(field_expr)
+
+            if actual_type is not None and not self._types_compatible(actual_type, expected_type):
+                self.result.add_error(
+                    "field_type",
+                    f"In {context}: NewMessage {new_msg.name} field '{field_name}' has type {actual_type}, expected {expected_type}",
+                    proto_type=new_msg.name,
+                    rule_name=context
+                )
+
+        # Check for missing fields (non-repeated, non-optional fields)
+        for field in proto_message.fields:
+            if field.name not in provided_fields:
+                # In proto3, all fields are optional, but we still want to warn about missing fields
+                self.result.add_warning(
+                    "field_coverage",
+                    f"In {context}: NewMessage {new_msg.name} missing field '{field.name}'",
+                    proto_type=new_msg.name,
                     rule_name=context
                 )
 
@@ -760,10 +792,10 @@ class GrammarValidator:
         """
         if isinstance(expr, Var):
             return expr.type
+        elif isinstance(expr, NewMessage):
+            return MessageType(expr.module, expr.name)
         elif isinstance(expr, Call):
-            if isinstance(expr.func, Message):
-                return MessageType(expr.func.module, expr.func.name)
-            elif isinstance(expr.func, Builtin):
+            if isinstance(expr.func, Builtin):
                 # Infer return type for known builtins
                 name = expr.func.name
                 if name == "int64_to_int32":
@@ -842,100 +874,10 @@ class GrammarValidator:
     def _check_field_coverage(self) -> None:
         """Check field coverage by analyzing constructor bodies.
 
-        For each proto message:
-        1. Find all rules whose constructors call Message(module, name) for this message
-        2. Verify each such call has the correct number of arguments for the fields
-        3. Ensure at least one rule constructs each non-oneof message
+        With NewMessage, field coverage is checked in _check_new_message_types.
+        This method is kept as a no-op for backward compatibility with the validation flow.
         """
-        # Collect all Message constructor calls from all rules
-        # Maps (module, message_name) -> list of (rule_name, arg_count)
-        message_constructors: dict[tuple[str, str], list[tuple[str, int]]] = {}
-
-        for rules in self.grammar.rules.values():
-            for rule in rules:
-                calls = self._find_message_calls(rule.constructor.body)
-                for module, name, arg_count in calls:
-                    key = (module, name)
-                    if key not in message_constructors:
-                        message_constructors[key] = []
-                    message_constructors[key].append((rule.lhs.name, arg_count))
-
-        # Check each non-oneof proto message
-        for message_name, message in self.parser.messages.items():
-            # Skip oneof-only messages (they wrap inner messages)
-            if self._is_oneof_only_message(message):
-                continue
-
-            rule_name = _to_snake_case(message_name)
-
-            # Skip expected unreachable
-            if rule_name in self.expected_unreachable:
-                continue
-
-            # Find constructors for this message
-            key = (message.module, message_name)
-            constructors = message_constructors.get(key, [])
-
-            if not constructors:
-                # No rule constructs this message - might use a builtin
-                self.result.add_warning(
-                    "field_coverage",
-                    f"No rule constructs Message({message.module}, {message_name})",
-                    proto_type=message_name
-                )
-                continue
-
-            # Check each constructor has the right number of arguments
-            expected_field_count = len(message.fields)
-            for constructor_rule, arg_count in constructors:
-                if arg_count != expected_field_count:
-                    self.result.add_warning(
-                        "field_coverage",
-                        f"Rule '{constructor_rule}' constructs {message_name} with {arg_count} args, expected {expected_field_count} fields",
-                        proto_type=message_name,
-                        rule_name=constructor_rule
-                    )
         return None
-
-    def _find_message_calls(self, expr: TargetExpr) -> List[tuple[str, str, int]]:
-        """Find all Message constructor calls in an expression.
-
-        Returns list of (module, name, arg_count) tuples.
-        """
-        results: List[tuple[str, str, int]] = []
-
-        def visit(e: TargetExpr) -> None:
-            if isinstance(e, Call):
-                if isinstance(e.func, Message):
-                    results.append((e.func.module, e.func.name, len(e.args)))
-                # Recurse into function and args
-                visit(e.func)
-                for arg in e.args:
-                    visit(arg)
-            elif isinstance(e, Var):
-                pass  # Leaf
-            elif isinstance(e, Message):
-                pass  # Message without Call - shouldn't happen in well-formed code
-            elif isinstance(e, Builtin):
-                pass  # Leaf
-            elif isinstance(e, IfElse):
-                visit(e.condition)
-                visit(e.then_branch)
-                visit(e.else_branch)
-            elif isinstance(e, Let):
-                visit(e.init)
-                visit(e.body)
-            elif isinstance(e, Seq):
-                for sub in e.exprs:
-                    visit(sub)
-            elif isinstance(e, ListExpr):
-                for elem in e.elements:
-                    visit(elem)
-            # Other cases: Lit, Symbol, OneOf, etc. - no sub-expressions to visit
-            return None
-
-        visit(expr)
-        return results
 
     def _expr_constructs_oneof_variant(self, expr: TargetExpr, variant_name: str) -> bool:
         """Check if expression constructs a oneof variant."""
@@ -947,6 +889,11 @@ class GrammarValidator:
                 return True
             for arg in expr.args:
                 if self._expr_constructs_oneof_variant(arg, variant_name):
+                    return True
+        elif isinstance(expr, NewMessage):
+            # Check all field expressions in NewMessage
+            for _, field_expr in expr.fields:
+                if self._expr_constructs_oneof_variant(field_expr, variant_name):
                     return True
         elif isinstance(expr, Lambda):
             return self._expr_constructs_oneof_variant(expr.body, variant_name)

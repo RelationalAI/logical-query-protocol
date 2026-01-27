@@ -5,7 +5,7 @@ import pytest
 
 from meta.target import (
     BaseType, MessageType, TupleType, ListType, OptionType, FunctionType,
-    Var, GetElement, Call, Builtin, Message, Lambda, Lit, IfElse, Let, ListExpr
+    Var, GetElement, Call, Builtin, NewMessage, Lambda, Lit, IfElse, Let, ListExpr
 )
 from meta.grammar import (
     Grammar, Nonterminal, Rule, LitTerminal, NamedTerminal,
@@ -328,7 +328,7 @@ class TestMessageCoverage:
 
         start = Nonterminal('test_message', MessageType('proto', 'TestMessage'))
         grammar = Grammar(start=start)
-        constructor = Lambda([], MessageType('proto', 'TestMessage'), Call(Message('proto', 'TestMessage'), []))
+        constructor = Lambda([], MessageType('proto', 'TestMessage'), Call(NewMessage('proto', 'TestMessage', ()), []))
         rule = Rule(start, LitTerminal('test'), constructor)
         grammar.rules[start] = [rule]
 
@@ -382,13 +382,13 @@ class TestFieldCoverage:
 
         name_var = Var('name', BaseType('String'))
         age_var = Var('age', BaseType('Int32'))
-        body = Call(Message('proto', 'Person'), [name_var, age_var])
+        body = NewMessage('proto', 'Person', (('name', name_var), ('age', age_var)))
         constructor = Lambda([name_var, age_var], MessageType('proto', 'Person'), body)
         rule = Rule(start, Sequence((NamedTerminal('STRING', BaseType('String')), NamedTerminal('INT', BaseType('Int32')))), constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser, set())
-        validator._check_field_coverage()
+        validator._check_types()  # Field validation now happens in type checking
         assert validator.result.is_valid
 
     def test_message_with_wrong_field_count(self):
@@ -405,15 +405,15 @@ class TestFieldCoverage:
         grammar = Grammar(start=start)
 
         name_var = Var('name', BaseType('String'))
-        body = Call(Message('proto', 'Person'), [name_var])  # Missing age field
+        body = NewMessage('proto', 'Person', (('name', name_var),))  # Missing age field
         constructor = Lambda([name_var], MessageType('proto', 'Person'), body)
         rule = Rule(start, NamedTerminal('STRING', BaseType('String')), constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser, set())
-        validator._check_field_coverage()
+        validator._check_types()  # Field validation now happens in type checking
         assert len(validator.result.warnings) > 0
-        assert any("Person" in w.message and "1 args" in w.message for w in validator.result.warnings)
+        assert any('missing field' in w.message.lower() for w in validator.result.warnings)
 
 
 class TestTypeChecking:
@@ -424,7 +424,7 @@ class TestTypeChecking:
         # Setup type env with a test message
         validator.type_env._message_field_types[('proto', 'TestMsg')] = [BaseType('String'), BaseType('Int64')]
 
-        msg = Message('proto', 'TestMsg')
+        msg = NewMessage('proto', 'TestMsg', ())
         args = [Var('s', BaseType('String')), Var('i', BaseType('Int64'))]
 
         validator._check_message_call_types(msg, args, 'test_rule')
@@ -434,7 +434,7 @@ class TestTypeChecking:
         """Test Message call with wrong number of arguments."""
         validator.type_env._message_field_types[('proto', 'TestMsg')] = [BaseType('String'), BaseType('Int64')]
 
-        msg = Message('proto', 'TestMsg')
+        msg = NewMessage('proto', 'TestMsg', ())
         args = [Var('s', BaseType('String'))]  # Missing one arg
 
         validator._check_message_call_types(msg, args, 'test_rule')
@@ -445,7 +445,7 @@ class TestTypeChecking:
         """Test Message call with wrong argument type."""
         validator.type_env._message_field_types[('proto', 'TestMsg')] = [BaseType('String'), BaseType('Int64')]
 
-        msg = Message('proto', 'TestMsg')
+        msg = NewMessage('proto', 'TestMsg', ())
         args = [Var('s', BaseType('String')), Var('i', BaseType('String'))]  # Second arg should be Int64
 
         validator._check_message_call_types(msg, args, 'test_rule')
@@ -565,7 +565,7 @@ class TestRuleTypeChecking:
 
         param = Var('s', BaseType('String'))
         rhs = NamedTerminal('STRING', BaseType('String'))
-        body = Call(Message('proto', 'TestMsg'), [param])
+        body = Call(NewMessage('proto', 'TestMsg', ()), [param])
         constructor = Lambda([param], msg_type, body)
         rule = Rule(start, rhs, constructor)
         grammar.rules[start] = [rule]
@@ -693,7 +693,7 @@ class TestSoundness:
 
         start = Nonterminal('test_message', MessageType('proto', 'TestMessage'))
         grammar = Grammar(start=start)
-        constructor = Lambda([], MessageType('proto', 'TestMessage'), Call(Message('proto', 'TestMessage'), []))
+        constructor = Lambda([], MessageType('proto', 'TestMessage'), Call(NewMessage('proto', 'TestMessage', ()), []))
         rule = Rule(start, LitTerminal('test'), constructor)
         grammar.rules[start] = [rule]
 
@@ -728,7 +728,7 @@ class TestTypeInference:
 
     def test_infer_message_call_type(self, validator):
         """Test type inference for Message constructor call."""
-        call = Call(Message('proto', 'TestMsg'), [])
+        call = Call(NewMessage('proto', 'TestMsg', ()), [])
         inferred = validator._infer_expr_type(call)
         assert inferred == MessageType('proto', 'TestMsg')
 

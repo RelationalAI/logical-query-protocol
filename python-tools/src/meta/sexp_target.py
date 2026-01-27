@@ -23,7 +23,7 @@ Expression syntax:
     (let (name type) init body)                 -> Let(Var(name,type), init, body)
     (if cond then else)                         -> IfElse(cond, then, else)
     (builtin name)                              -> Builtin(name)
-    (message module name)                       -> Message(module, name)
+    (new-message module name (f1 e1) ...)       -> NewMessage(module, name, [(f1,e1)...])
     (oneof field)                               -> OneOf(field)
     (list type elems...)                        -> ListExpr(elems, type)
     (get-field object field)                    -> GetField(object, field)
@@ -43,7 +43,7 @@ from typing import List
 from .sexp import SAtom, SList, SExpr
 from .target import (
     TargetType, BaseType, VarType, MessageType, ListType, OptionType, TupleType, FunctionType,
-    TargetExpr, Var, Lit, Symbol, Builtin, Message, OneOf, ListExpr, Call, Lambda,
+    TargetExpr, Var, Lit, Symbol, Builtin, NewMessage, OneOf, ListExpr, Call, Lambda,
     Let, IfElse, Seq, While, Foreach, ForeachEnumerated, Assign, Return, GetField,
     GetElement, VisitNonterminal
 )
@@ -224,12 +224,20 @@ def sexp_to_expr(sexp: SExpr) -> TargetExpr:
         name = _expect_symbol(sexp[1], "builtin name")
         return Builtin(name)
 
-    elif tag == "message":
-        if len(sexp) != 3:
-            raise SExprConversionError(f"message requires module and name: {sexp}")
-        module = _expect_symbol(sexp[1], "message module")
-        name = _expect_symbol(sexp[2], "message name")
-        return Message(module, name)
+    elif tag == "new-message":
+        if len(sexp) < 3:
+            raise SExprConversionError(f"new-message requires module, name, and fields: {sexp}")
+        module = _expect_symbol(sexp[1], "new-message module")
+        name = _expect_symbol(sexp[2], "new-message name")
+        fields = []
+        for i in range(3, len(sexp)):
+            field_sexp = sexp[i]
+            if not isinstance(field_sexp, SList) or len(field_sexp) != 2:
+                raise SExprConversionError(f"new-message field must be (field_name expr): {field_sexp}")
+            field_name = _expect_symbol(field_sexp[0], "field name")
+            field_expr = sexp_to_expr(field_sexp[1])
+            fields.append((field_name, field_expr))
+        return NewMessage(module, name, tuple(fields))
 
     elif tag == "oneof":
         if len(sexp) != 2:
@@ -396,8 +404,12 @@ def expr_to_sexp(expr: TargetExpr) -> SExpr:
     elif isinstance(expr, Builtin):
         return SList((SAtom("builtin"), SAtom(expr.name)))
 
-    elif isinstance(expr, Message):
-        return SList((SAtom("message"), SAtom(expr.module), SAtom(expr.name)))
+    elif isinstance(expr, NewMessage):
+        field_sexps = tuple(
+            SList((SAtom(field_name), expr_to_sexp(field_expr)))
+            for field_name, field_expr in expr.fields
+        )
+        return SList((SAtom("new-message"), SAtom(expr.module), SAtom(expr.name)) + field_sexps)
 
     elif isinstance(expr, OneOf):
         return SList((SAtom("oneof"), SAtom(expr.field_name)))

@@ -93,7 +93,7 @@ class TestCompletenessErrors:
           (lhs person (Message test Person))
           (rhs (term STRING String))
           (lambda ((name String)) (Message test Person)
-            (call (message test Person) (var name String))))
+            (new-message test Person (name (var name String)))))
         """
 
         result = parse_and_validate(grammar_content, proto_content)
@@ -148,9 +148,9 @@ class TestTypeErrors:
           (lambda ((first String) (second String)) (Message test Pair)
             (let (tuple (Tuple String String))
               (call (builtin make_tuple) (var first String) (var second String))
-              (call (message test Pair)
-                (get-element (var tuple (Tuple String String)) 5)
-                (var second String)))))
+              (new-message test Pair
+                (first (get-element (var tuple (Tuple String String)) 5))
+                (second (var second String))))))
         """
 
         result = parse_and_validate(grammar_content, proto_content)
@@ -174,8 +174,8 @@ class TestTypeErrors:
           (lhs record (Message test Record))
           (rhs (term STRING String))
           (lambda ((value String)) (Message test Record)
-            (call (message test Record)
-              (get-element (var value String) 0))))
+            (new-message test Record
+              (value (get-element (var value String) 0)))))
         """
 
         result = parse_and_validate(grammar_content, proto_content)
@@ -184,7 +184,7 @@ class TestTypeErrors:
         assert any("expects tuple type" in e.message for e in result.errors)
 
     def test_message_constructor_arity_error(self):
-        """Test message constructor with wrong number of arguments."""
+        """Test message constructor with missing fields generates warning."""
         proto_content = """
         syntax = "proto3";
         package test;
@@ -196,17 +196,19 @@ class TestTypeErrors:
         """
 
         grammar_content = """
-        ;; Message expects 2 args but only 1 provided
+        ;; Message with only 1 field provided (age field missing)
         (rule
           (lhs person (Message test Person))
           (rhs (term STRING String))
           (lambda ((name String)) (Message test Person)
-            (call (message test Person) (var name String))))
+            (new-message test Person (name (var name String)))))
         """
 
         result = parse_and_validate(grammar_content, proto_content)
-        assert not result.is_valid
-        assert any(e.category == "type_message_arity" for e in result.errors)
+        # With NewMessage, missing fields are warnings, not errors
+        assert result.is_valid
+        assert any(w.category == "field_coverage" for w in result.warnings)
+        assert any("age" in w.message for w in result.warnings)
 
     def test_builtin_unwrap_option_or_non_option_arg(self):
         """Test unwrap_option_or with non-option argument."""
@@ -224,8 +226,8 @@ class TestTypeErrors:
           (lhs record (Message test Record))
           (rhs (term STRING String))
           (lambda ((value String)) (Message test Record)
-            (call (message test Record)
-              (call (builtin unwrap_option_or) (var value String) (lit "default")))))
+            (new-message test Record
+              (value (call (builtin unwrap_option_or) (var value String) (lit "default"))))))
         """
 
         result = parse_and_validate(grammar_content, proto_content)
@@ -249,8 +251,8 @@ class TestTypeErrors:
           (lhs record (Message test Record))
           (rhs (term STRING String))
           (lambda ((value String)) (Message test Record)
-            (call (message test Record)
-              (call (builtin length) (var value String)))))
+            (new-message test Record
+              (count (call (builtin length) (var value String))))))
         """
 
         result = parse_and_validate(grammar_content, proto_content)
@@ -282,8 +284,8 @@ class TestOneofCoverage:
           (lhs value (Message test Value))
           (rhs (term STRING String))
           (lambda ((text String)) (Message test Value)
-            (call (message test Value)
-              (call (oneof text) (var text String)))))
+            (new-message test Value
+              (kind (call (oneof text) (var text String))))))
         """
 
         result = parse_and_validate(grammar_content, proto_content)
@@ -311,7 +313,7 @@ class TestSoundnessWarnings:
           (lhs person (Message test Person))
           (rhs (term STRING String))
           (lambda ((name String)) (Message test Person)
-            (call (message test Person) (var name String))))
+            (new-message test Person (name (var name String)))))
 
         ;; This rule has no proto backing
         (rule
@@ -349,14 +351,14 @@ class TestUnreachableRules:
           (lhs start (Message test Start))
           (rhs (term STRING String))
           (lambda ((value String)) (Message test Start)
-            (call (message test Start) (var value String))))
+            (new-message test Start (value (var value String)))))
 
         ;; This rule is never referenced from start
         (rule
           (lhs orphan (Message test Orphan))
           (rhs (term STRING String))
           (lambda ((data String)) (Message test Orphan)
-            (call (message test Orphan) (var data String))))
+            (new-message test Orphan (data (var data String)))))
         """
 
         result = parse_and_validate(grammar_content, proto_content)
@@ -383,13 +385,13 @@ class TestUnreachableRules:
           (lhs start (Message test Start))
           (rhs (term STRING String))
           (lambda ((value String)) (Message test Start)
-            (call (message test Start) (var value String))))
+            (new-message test Start (value (var value String)))))
 
         (rule
           (lhs orphan (Message test Orphan))
           (rhs (term STRING String))
           (lambda ((data String)) (Message test Orphan)
-            (call (message test Orphan) (var data String))))
+            (new-message test Orphan (data (var data String)))))
         """
 
         result = parse_and_validate(grammar_content, proto_content, expected_unreachable={'orphan'})
@@ -417,7 +419,7 @@ class TestValidGrammar:
           (lhs person (Message test Person))
           (rhs (term STRING String) (term INT Int64))
           (lambda ((name String) (age Int64)) (Message test Person)
-            (call (message test Person) (var name String) (call (builtin int64_to_int32) (var age Int64)))))
+            (new-message test Person (name (var name String)) (age (call (builtin int64_to_int32) (var age Int64))))))
         """
 
         result = parse_and_validate(grammar_content, proto_content)
@@ -443,15 +445,15 @@ class TestValidGrammar:
           (lhs value (Message test Value))
           (rhs (term STRING String))
           (lambda ((text String)) (Message test Value)
-            (call (message test Value)
-              (call (oneof text) (var text String)))))
+            (new-message test Value
+              (kind (call (oneof text) (var text String))))))
 
         (rule
           (lhs value (Message test Value))
           (rhs (term INT Int64))
           (lambda ((number Int64)) (Message test Value)
-            (call (message test Value)
-              (call (oneof number) (var number Int64)))))
+            (new-message test Value
+              (kind (call (oneof number) (var number Int64))))))
         """
 
         result = parse_and_validate(grammar_content, proto_content)
@@ -474,7 +476,7 @@ class TestValidGrammar:
           (lhs record (Message test Record))
           (rhs (star (term STRING String)))
           (lambda ((values (List String))) (Message test Record)
-            (call (message test Record) (var values (List String)))))
+            (new-message test Record (values (var values (List String))))))
         """
 
         result = parse_and_validate(grammar_content, proto_content)
@@ -497,7 +499,7 @@ class TestValidGrammar:
           (lhs record (Message test Record))
           (rhs (option (term STRING String)))
           (lambda ((opt_value (Option String))) (Message test Record)
-            (call (message test Record) (var opt_value (Option String)))))
+            (new-message test Record (value (var opt_value (Option String))))))
         """
 
         result = parse_and_validate(grammar_content, proto_content)
@@ -525,13 +527,13 @@ class TestValidGrammar:
           (lhs person (Message test Person))
           (rhs (term STRING String) (nonterm address (Message test Address)))
           (lambda ((name String) (addr (Message test Address))) (Message test Person)
-            (call (message test Person) (var name String) (var addr (Message test Address)))))
+            (new-message test Person (name (var name String)) (address (var addr (Message test Address))))))
 
         (rule
           (lhs address (Message test Address))
           (rhs (term STRING String))
           (lambda ((street String)) (Message test Address)
-            (call (message test Address) (var street String))))
+            (new-message test Address (street (var street String)))))
         """
 
         result = parse_and_validate(grammar_content, proto_content)
@@ -595,9 +597,9 @@ class TestComplexValidationScenarios:
           (lambda ((first String) (second String)) (Message test Pair)
             (let (tuple (Tuple String String))
               (call (builtin make_tuple) (var first String) (var second String))
-              (call (message test Pair)
-                (get-element (var tuple (Tuple String String)) 0)
-                (get-element (var tuple (Tuple String String)) 1)))))
+              (new-message test Pair
+                (first (get-element (var tuple (Tuple String String)) 0))
+                (second (get-element (var tuple (Tuple String String)) 1))))))
         """
 
         result = parse_and_validate(grammar_content, proto_content)

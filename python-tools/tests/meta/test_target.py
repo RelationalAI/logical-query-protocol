@@ -7,7 +7,7 @@ from meta.target import (
     # Types
     BaseType, MessageType, TupleType, ListType, OptionType, FunctionType,
     # Expressions
-    Var, Lit, Symbol, Builtin, Message, Call, Lambda, Let, IfElse,
+    Var, Lit, Symbol, Builtin, NewMessage, Call, Lambda, Let, IfElse,
     Seq, While, Assign, Return, GetElement,
     # Definitions
     FunDef,
@@ -288,22 +288,22 @@ class TestMessage:
 
     def test_construction(self):
         """Test Message construction."""
-        c = Message("proto", "Transaction")
+        c = NewMessage("proto", "Transaction", ())
         assert c.name == "Transaction"
         assert c.module == "proto"
 
     def test_str(self):
         """Test Message string representation."""
-        c = Message("proto", "Formula")
+        c = NewMessage("proto", "Formula", ())
         assert str(c) == "@proto.Formula"
 
     def test_invalid_name(self):
         """Test Message with invalid name."""
         with pytest.raises(ValueError, match="Invalid message name"):
-            Message("proto", "123Invalid")
+            NewMessage("proto", "123Invalid", ())
 
         with pytest.raises(ValueError, match="Invalid message name"):
-            Message("proto", "with-dash")
+            NewMessage("proto", "with-dash", ())
 
 
 class TestCall:
@@ -319,7 +319,7 @@ class TestCall:
 
     def test_construction_with_args(self):
         """Test Call with arguments."""
-        func = Message("proto", "Transaction")
+        func = NewMessage("proto", "Transaction", ())
         arg1 = Var("x", BaseType("Int64"))
         arg2 = Var("y", BaseType("String"))
         call = Call(func, [arg1, arg2])
@@ -712,7 +712,7 @@ class TestComplexExpressions:
     def test_constructor_with_complex_args(self):
         """Test constructor call with complex arguments."""
         # Transaction(epochs, configure, sync)
-        ctor = Message("proto", "Transaction")
+        ctor = NewMessage("proto", "Transaction", ())
         arg1 = Var("epochs", ListType(MessageType("proto", "Epoch")))
         arg2 = Var("configure", OptionType(MessageType("proto", "Configure")))
         arg3 = Var("sync", OptionType(MessageType("proto", "Sync")))

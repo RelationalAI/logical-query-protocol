@@ -12,7 +12,7 @@ Expression types (TargetExpr subclasses):
     Lit                 - Literal value (string, number, boolean, None)
     Symbol              - Literal symbol (e.g., :cast)
     Builtin             - Builtin function reference
-    Message             - Message constructor call
+    NewMessage          - Message constructor with field names
     OneOf               - OneOf field discriminator
     ListExpr            - List constructor expression
     VisitNonterminal    - Visitor method call for a nonterminal
@@ -139,23 +139,35 @@ class Builtin(TargetExpr):
 
 
 @dataclass(frozen=True)
-class Message(TargetExpr):
-    """Message constructor call.
+class NewMessage(TargetExpr):
+    """Message constructor with explicit field names.
+
+    Constructs a protobuf message with named fields.
+    This allows field name validation during grammar validation.
 
     module: Module name (protobuf file stem)
     name: Name of the message type
+    fields: Sequence of (field_name, field_expr) pairs
     """
     module: str
     name: str
+    fields: Sequence[tuple[str, 'TargetExpr']]
 
     def __str__(self) -> str:
-        return f"@{self.module}.{self.name}"
+        if not self.fields:
+            return f"@{self.module}.{self.name}()"
+        fields_str = ', '.join(f"{name}={expr}" for name, expr in self.fields)
+        return f"@{self.module}.{self.name}({fields_str})"
 
     def __post_init__(self):
         if not self.module.isidentifier():
             raise ValueError(f"Invalid message module: {self.module}")
         if not self.name.isidentifier():
             raise ValueError(f"Invalid message name: {self.name}")
+        for field_name, _ in self.fields:
+            if not isinstance(field_name, str) or not field_name.isidentifier():
+                raise ValueError(f"Invalid field name: {field_name}")
+        _freeze_sequence(self, 'fields')
 
 
 @dataclass(frozen=True)
@@ -553,7 +565,7 @@ __all__ = [
     'Lit',
     'Symbol',
     'Builtin',
-    'Message',
+    'NewMessage',
     'OneOf',
     'ListExpr',
     'Call',

@@ -10,7 +10,7 @@ from meta.sexp_target import (
 )
 from meta.target import (
     BaseType, MessageType, ListType, OptionType, TupleType, FunctionType,
-    Var, Lit, Symbol, Builtin, Message, OneOf, ListExpr, Call, Lambda,
+    Var, Lit, Symbol, Builtin, NewMessage, OneOf, ListExpr, Call, Lambda,
     Let, IfElse, Seq, While, Foreach, Assign, Return
 )
 
@@ -130,9 +130,13 @@ class TestSexpToExpr:
         result = sexp_to_expr(parse_sexp("(builtin make_tuple)"))
         assert result == Builtin("make_tuple")
 
-    def test_message(self):
-        result = sexp_to_expr(parse_sexp("(message logic Value)"))
-        assert result == Message("logic", "Value")
+    def test_new_message_empty(self):
+        result = sexp_to_expr(parse_sexp("(new-message logic Value)"))
+        assert result == NewMessage("logic", "Value", ())
+
+    def test_new_message_with_fields(self):
+        result = sexp_to_expr(parse_sexp("(new-message logic Value (name (var x String)) (age (lit 42)))"))
+        assert result == NewMessage("logic", "Value", (("name", Var("x", BaseType("String"))), ("age", Lit(42))))
 
     def test_oneof(self):
         result = sexp_to_expr(parse_sexp("(oneof string_value)"))
@@ -154,9 +158,9 @@ class TestSexpToExpr:
         result = sexp_to_expr(parse_sexp("(call (builtin add) (var x Int64) (var y Int64))"))
         assert result == Call(Builtin("add"), [Var("x", BaseType("Int64")), Var("y", BaseType("Int64"))])
 
-    def test_call_message_constructor(self):
-        result = sexp_to_expr(parse_sexp("(call (message logic Value) (var x String))"))
-        assert result == Call(Message("logic", "Value"), [Var("x", BaseType("String"))])
+    def test_call_new_message_constructor(self):
+        result = sexp_to_expr(parse_sexp("(call (new-message logic Value) (var x String))"))
+        assert result == Call(NewMessage("logic", "Value", ()), [Var("x", BaseType("String"))])
 
     def test_lambda_no_params(self):
         result = sexp_to_expr(parse_sexp("(lambda () Int64 (lit 42))"))
@@ -287,9 +291,14 @@ class TestExprToSexp:
         result = expr_to_sexp(Builtin("make_tuple"))
         assert result == SList((SAtom("builtin"), SAtom("make_tuple")))
 
-    def test_message(self):
-        result = expr_to_sexp(Message("logic", "Value"))
-        assert result == SList((SAtom("message"), SAtom("logic"), SAtom("Value")))
+    def test_new_message_empty(self):
+        result = expr_to_sexp(NewMessage("logic", "Value", ()))
+        assert result == SList((SAtom("new-message"), SAtom("logic"), SAtom("Value")))
+
+    def test_new_message_with_fields(self):
+        result = expr_to_sexp(NewMessage("logic", "Person", (("name", Var("x", BaseType("String"))), ("age", Lit(42)))))
+        expected = parse_sexp("(new-message logic Person (name (var x String)) (age (lit 42)))")
+        assert result == expected
 
     def test_oneof(self):
         result = expr_to_sexp(OneOf("string_value"))
@@ -448,7 +457,7 @@ class TestExprRoundTrip:
         assert recovered == original
 
     def test_roundtrip_message(self):
-        original = Message("logic", "Value")
+        original = NewMessage("logic", "Value", ())
         sexp = expr_to_sexp(original)
         recovered = sexp_to_expr(sexp)
         assert recovered == original
