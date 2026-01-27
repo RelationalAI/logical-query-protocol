@@ -131,12 +131,6 @@ class SExprParser:
 
         token = self.text[start:self.pos]
 
-        # Try to parse as boolean
-        if token == "true":
-            return SAtom(True)
-        if token == "false":
-            return SAtom(False)
-
         # Try to parse as integer
         try:
             return SAtom(int(token))

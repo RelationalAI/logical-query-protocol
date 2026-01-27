@@ -777,20 +777,3 @@ class TestLoadGrammarConfigFile:
             assert len(result.terminals) == 1
         finally:
             path.unlink()
-
-
-class TestExpectSymbolBooleans:
-    """Tests for _expect_symbol boolean handling."""
-
-    def test_expect_symbol_true_boolean(self):
-        """_expect_symbol handles true boolean."""
-        from meta.sexp_grammar import _expect_symbol
-        # Python booleans should be converted to "true"/"false" strings
-        result = _expect_symbol(SAtom(True), "test")
-        assert result == "true"
-
-    def test_expect_symbol_false_boolean(self):
-        """_expect_symbol handles false boolean."""
-        from meta.sexp_grammar import _expect_symbol
-        result = _expect_symbol(SAtom(False), "test")
-        assert result == "false"

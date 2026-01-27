@@ -64,14 +64,8 @@ def sexp_to_rhs(sexp: SExpr, ctx: Optional[TypeContext] = None) -> Rhs:
         if sexp.quoted:
             return LitTerminal(str(sexp.value))
         # Bare symbol - look up in context
-        if ctx is not None:
-            # Handle booleans (true/false parsed as Python booleans)
-            if isinstance(sexp.value, bool):
-                name = "true" if sexp.value else "false"
-            elif isinstance(sexp.value, str):
-                name = sexp.value
-            else:
-                raise GrammarConversionError(f"Unquoted atom must be symbol: {sexp}")
+        if ctx is not None and isinstance(sexp.value, str):
+            name = sexp.value
             if name in ctx.terminals:
                 return NamedTerminal(name, ctx.terminals[name])
             if name in ctx.nonterminals:
@@ -379,9 +373,6 @@ def _expect_symbol(sexp: SExpr, context: str) -> str:
         raise GrammarConversionError(f"{context} must be a symbol, got: {sexp}")
     if sexp.quoted:
         raise GrammarConversionError(f"{context} must be unquoted symbol, got string: {sexp}")
-    # Handle booleans (true/false parsed as Python booleans)
-    if isinstance(sexp.value, bool):
-        return "true" if sexp.value else "false"
     if not isinstance(sexp.value, str):
         raise GrammarConversionError(f"{context} must be a symbol, got: {sexp}")
     return sexp.value
