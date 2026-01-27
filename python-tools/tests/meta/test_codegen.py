@@ -43,7 +43,6 @@ def test_python_keyword_escaping():
     assert code == "class_"
 
 
-
 def test_python_call_generation():
     """Test Python function call generation."""
     # Simple call
@@ -60,7 +59,6 @@ def test_python_call_generation():
     nested = Call(Var("outer", _any_type), [Call(Var("inner", _any_type), [Var("z", _any_type)])])
     code_nested = generate_python(nested)
     assert code_nested == "outer(inner(z))"
-
 
 
 def test_python_let_generation():
@@ -92,7 +90,6 @@ def test_python_let_generation():
     assert code_kw.strip().endswith("class_")
 
 
-
 def test_python_lambda_generation():
     """Test Python lambda generation."""
     # Simple lambda
@@ -104,7 +101,6 @@ def test_python_lambda_generation():
     lam_kw = Lambda([Var("class", _any_type), Var("value", _any_type)], _any_type, Var("value", _any_type))
     code_kw = generate_python(lam_kw)
     assert code_kw == "lambda class_, value: value"
-
 
 
 def test_python_builtin_generation():

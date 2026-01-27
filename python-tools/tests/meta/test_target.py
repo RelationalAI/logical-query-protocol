@@ -20,7 +20,7 @@ from meta.target import (
     # Utilities
     gensym,
 )
-from meta.gensym import reset as reset_gensym
+from meta.gensym import reset as gensym_reset
 
 
 # ============================================================================
@@ -213,7 +213,6 @@ class TestVar:
             Var("with-dash", BaseType("String"))
 
 
-
 class TestLit:
     """Tests for Lit."""
 
@@ -348,7 +347,6 @@ class TestCall:
         assert str(outer) == "%process(%get_x(), 42)"
 
 
-
 class TestLambda:
     """Tests for Lambda."""
 
@@ -374,7 +372,6 @@ class TestLambda:
         body = Var("x", BaseType("Int64"))
         lam = Lambda([param], BaseType("Int64"), body)
         assert str(lam) == "lambda x::Int64 -> Int64: x::Int64"
-
 
 
 class TestLet:
@@ -411,7 +408,6 @@ class TestLet:
         assert "let y" in str(outer)
 
 
-
 class TestIfElse:
     """Tests for IfElse."""
 
@@ -441,7 +437,6 @@ class TestIfElse:
         outer = IfElse(cond1, Lit("x"), inner)
         assert "if (a" in str(outer)
         assert "if (b" in str(outer)
-
 
 
 class TestSeq:
@@ -474,7 +469,6 @@ class TestSeq:
             Seq([])
 
 
-
 class TestWhile:
     """Tests for While."""
 
@@ -494,7 +488,6 @@ class TestWhile:
         assert str(loop) == "while (flag::Boolean) 1"
 
 
-
 class TestAssign:
     """Tests for Assign."""
 
@@ -512,7 +505,6 @@ class TestAssign:
         expr = Lit("hello")
         assign = Assign(var, expr)
         assert str(assign) == "result = 'hello'"
-
 
 
 class TestReturn:
@@ -581,9 +573,12 @@ class TestFunDef:
 class TestGensym:
     """Tests for gensym utility."""
 
+    def setup_method(self):
+        """Reset gensym counter before each test."""
+        gensym_reset()
+
     def test_default_prefix(self):
         """Test gensym with default prefix."""
-        reset_gensym(0)
         sym1 = gensym()
         sym2 = gensym()
         assert sym1 == "_t0"
@@ -591,7 +586,6 @@ class TestGensym:
 
     def test_custom_prefix(self):
         """Test gensym with custom prefix."""
-        reset_gensym(0)
         sym1 = gensym("temp")
         sym2 = gensym("temp")
         assert sym1 == "temp0"
@@ -599,9 +593,26 @@ class TestGensym:
 
     def test_unique_symbols(self):
         """Test that gensym generates unique symbols."""
-        reset_gensym(0)
         symbols = [gensym() for _ in range(100)]
         assert len(set(symbols)) == 100
+
+    def test_reset(self):
+        """Test that reset restarts the counter."""
+        sym1 = gensym()
+        sym2 = gensym()
+        assert sym1 == "_t0"
+        assert sym2 == "_t1"
+        gensym_reset()
+        sym3 = gensym()
+        assert sym3 == "_t0"
+
+    def test_reset_with_start(self):
+        """Test that reset can start from a specific value."""
+        gensym_reset(100)
+        sym1 = gensym()
+        sym2 = gensym()
+        assert sym1 == "_t100"
+        assert sym2 == "_t101"
 
 
 class TestComplexExpressions:
