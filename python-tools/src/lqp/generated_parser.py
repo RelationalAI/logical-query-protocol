@@ -381,19 +381,6 @@ class Parser:
         # Create and return Fragment
         return fragments_pb2.Fragment(id=fragment_id, declarations=declarations, debug_info=debug_info)
 
-
-def parse(input_str: str) -> Any:
-    """Parse input string and return parse tree."""
-    lexer = Lexer(input_str)
-    parser = Parser(lexer.tokens)
-    result = parser.parse_transaction()
-    # Check for unconsumed tokens (except EOF)
-    if parser.pos < len(parser.tokens):
-        remaining_token = parser.lookahead(0)
-        if remaining_token.type != '$':
-            raise ParseError(f"Unexpected token at end of input: {remaining_token}")
-    return result
-
     def parse_transaction(self) -> transactions_pb2.Transaction:
         self.consume_literal('(')
         self.consume_literal('transaction')
@@ -2596,3 +2583,16 @@ def parse(input_str: str) -> Any:
         self.consume_literal(')')
         _t1010 = transactions_pb2.ExportCSVColumn(column_name=name308, column_data=relation_id309)
         return _t1010
+
+
+def parse(input_str: str) -> Any:
+    """Parse input string and return parse tree."""
+    lexer = Lexer(input_str)
+    parser = Parser(lexer.tokens)
+    result = parser.parse_transaction()
+    # Check for unconsumed tokens (except EOF)
+    if parser.pos < len(parser.tokens):
+        remaining_token = parser.lookahead(0)
+        if remaining_token.type != '$':
+            raise ParseError(f"Unexpected token at end of input: {remaining_token}")
+    return result
