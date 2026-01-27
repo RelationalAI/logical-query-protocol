@@ -7,11 +7,12 @@ from meta.grammar import (
     LitTerminal, NamedTerminal, Nonterminal,
     Star, Option, Sequence,
     Rule, Token, Grammar,
-
-    get_nonterminals, get_literals, is_epsilon, rhs_elements,
-    _count_nonliteral_rhs_elements,
 )
-from meta.target import BaseType, MessageType, TupleType, ListType, OptionType, Lambda, Var, Lit, Call, Builtin
+from meta.grammar_utils import (
+    get_nonterminals, get_literals, is_epsilon, rhs_elements,
+    count_nonliteral_rhs_elements,
+)
+from meta.target import BaseType, MessageType, TupleType, ListType, OptionType, Lambda, Var, Lit
 
 
 class TestLitTerminal:
@@ -121,6 +122,7 @@ class TestStar:
         term = NamedTerminal("NUMBER", BaseType("Int64"))
         star = Star(term)
         assert star.rhs == term
+
 
     def test_str(self):
         """Test Star string representation."""
@@ -248,17 +250,12 @@ class TestRule:
     """Tests for Rule."""
 
     def test_construction_simple(self):
-        """Test Rule construction with matching action parameters."""
+        """Test Rule construction with matching constructor parameters."""
         lhs = Nonterminal("A", MessageType("proto", "A"))
         nt = Nonterminal("B", MessageType("proto", "B"))
         rhs = nt
         param = Var("x", MessageType("proto", "B"))
         constructor = Lambda([param], MessageType("proto", "A"), param)
-        deconstructor = Lambda(
-            [Var('msg', MessageType("proto", "A"))],
-            OptionType(MessageType("proto", "B")),
-            Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('b')])])
-        )
         rule = Rule(lhs, rhs, constructor)
         assert rule.lhs == lhs
         assert rule.rhs == rhs
@@ -273,14 +270,6 @@ class TestRule:
         param1 = Var("x", MessageType("proto", "B"))
         param2 = Var("y", MessageType("proto", "C"))
         constructor = Lambda([param1, param2], MessageType("proto", "A"), param1)
-        deconstructor = Lambda(
-            [Var('msg', MessageType("proto", "A"))],
-            OptionType(TupleType([MessageType("proto", "B"), MessageType("proto", "C")])),
-            Call(Builtin('Some'), [Call(Builtin('make_tuple'), [
-                Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('b')]),
-                Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('c')])
-            ])])
-        )
         rule = Rule(lhs, rhs, constructor)
         assert len(rule.constructor.params) == 2
 
@@ -292,11 +281,6 @@ class TestRule:
         rhs = Sequence((nt, lit))
         param = Var("x", MessageType("proto", "B"))
         constructor = Lambda([param], MessageType("proto", "A"), param)
-        deconstructor = Lambda(
-            [Var('msg', MessageType("proto", "A"))],
-            OptionType(MessageType("proto", "B")),
-            Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('b')])])
-        )
         rule = Rule(lhs, rhs, constructor)
         assert len(rule.constructor.params) == 1
 
@@ -308,11 +292,6 @@ class TestRule:
         rhs = Sequence((nt1, nt2))
         param = Var("x", MessageType("proto", "B"))
         constructor = Lambda([param], MessageType("proto", "A"), param)
-        deconstructor = Lambda(
-            [Var('msg', MessageType("proto", "A"))],
-            OptionType(MessageType("proto", "B")),
-            Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('b')])])
-        )
         with pytest.raises(AssertionError, match="Action for A has 1 parameter"):
             Rule(lhs, rhs, constructor)
 
@@ -322,11 +301,6 @@ class TestRule:
         nt = Nonterminal("B", MessageType("proto", "B"))
         param = Var("x", MessageType("proto", "B"))
         constructor = Lambda([param], MessageType("proto", "A"), param)
-        deconstructor = Lambda(
-            [Var('msg', MessageType("proto", "A"))],
-            OptionType(MessageType("proto", "B")),
-            Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('b')])])
-        )
         rule = Rule(lhs, nt, constructor)
         result = str(rule)
         assert "A ->" in result
@@ -370,11 +344,6 @@ class TestGrammar:
         nt = Nonterminal("A", MessageType("proto", "A"))
         param = Var("x", MessageType("proto", "A"))
         constructor = Lambda([param], MessageType("proto", "A"), param)
-        deconstructor = Lambda(
-            [Var('msg', MessageType("proto", "A"))],
-            OptionType(MessageType("proto", "A")),
-            Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('a')])])
-        )
         rule = Rule(nt, nt, constructor)
         grammar.add_rule(rule)
         assert nt in grammar.rules
@@ -391,16 +360,6 @@ class TestGrammar:
         param_c = Var("y", MessageType("proto", "C"))
         constructor_b = Lambda([param_b], MessageType("proto", "A"), param_b)
         constructor_c = Lambda([param_c], MessageType("proto", "A"), param_c)
-        deconstructor_b = Lambda(
-            [Var('msg', MessageType("proto", "A"))],
-            OptionType(MessageType("proto", "B")),
-            Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('b')])])
-        )
-        deconstructor_c = Lambda(
-            [Var('msg', MessageType("proto", "A"))],
-            OptionType(MessageType("proto", "C")),
-            Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('c')])])
-        )
         rule1 = Rule(nt, nt_b, constructor_b)
         rule2 = Rule(nt, nt_c, constructor_c)
         grammar.add_rule(rule1)
@@ -414,11 +373,6 @@ class TestGrammar:
         nt = Nonterminal("A", MessageType("proto", "A"))
         param = Var("x", MessageType("proto", "A"))
         constructor = Lambda([param], MessageType("proto", "A"), param)
-        deconstructor = Lambda(
-            [Var('msg', MessageType("proto", "A"))],
-            OptionType(MessageType("proto", "A")),
-            Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('a')])])
-        )
         rule = Rule(nt, nt, constructor)
         grammar.add_rule(rule)
         rules = grammar.get_rules(nt)
@@ -440,11 +394,6 @@ class TestGrammar:
         nt = Nonterminal("A", MessageType("proto", "A"))
         param = Var("x", MessageType("proto", "A"))
         constructor = Lambda([param], MessageType("proto", "A"), param)
-        deconstructor = Lambda(
-            [Var('msg', MessageType("proto", "A"))],
-            OptionType(MessageType("proto", "A")),
-            Call(Builtin('Some'), [Call(Builtin('get_field'), [Var('msg', MessageType("proto", "A")), Lit('a')])])
-        )
         rule = Rule(nt, nt, constructor)
         grammar.add_rule(rule)
         assert grammar.has_rule(nt)
@@ -477,7 +426,7 @@ class TestGrammar:
         grammar.add_rule(Rule(c, c, constructor_c))
         grammar.add_rule(Rule(d, d, constructor_d))  # unreachable rule
 
-        reachable, unreachable = grammar.partition_nonterminals()
+        reachable, unreachable = grammar.analysis.partition_nonterminals_by_reachability()
         assert reachable[0] == start
         assert reachable[1] == a
         assert reachable[2] == b
@@ -493,11 +442,11 @@ class TestGrammar:
         grammar = Grammar(start)
         a = Nonterminal("A", MessageType("proto", "A"))
         param = Var("x", MessageType("proto", "A"))
-        constructor = Lambda([param], MessageType("proto", "Start"), param)
+        constructor = Lambda([param], MessageType("proto", "A"), param)
         grammar.add_rule(Rule(start, a, constructor))
         output = grammar.print_grammar()
-        assert "Start:" in output
-        assert "A" in output
+        assert "Start" in output
+        assert ": A" in output
 
 
 
@@ -604,37 +553,37 @@ class TestHelperFunctions:
         assert result == (nt,)
 
     def test_count_nonliteral_rhs_elements_single_nonterminal(self):
-        """Test _count_nonliteral_rhs_elements with nonterminal."""
+        """Test count_nonliteral_rhs_elements with nonterminal."""
         nt = Nonterminal("A", MessageType("proto", "A"))
-        assert _count_nonliteral_rhs_elements(nt) == 1
+        assert count_nonliteral_rhs_elements(nt) == 1
 
     def test_count_nonliteral_rhs_elements_terminal(self):
-        """Test _count_nonliteral_rhs_elements with terminal."""
+        """Test count_nonliteral_rhs_elements with terminal."""
         term = NamedTerminal("TOK", BaseType("String"))
-        assert _count_nonliteral_rhs_elements(term) == 1
+        assert count_nonliteral_rhs_elements(term) == 1
 
     def test_count_nonliteral_rhs_elements_literal(self):
-        """Test _count_nonliteral_rhs_elements with literal."""
+        """Test count_nonliteral_rhs_elements with literal."""
         lit = LitTerminal("foo")
-        assert _count_nonliteral_rhs_elements(lit) == 0
+        assert count_nonliteral_rhs_elements(lit) == 0
 
     def test_count_nonliteral_rhs_elements_star(self):
-        """Test _count_nonliteral_rhs_elements with star."""
+        """Test count_nonliteral_rhs_elements with star."""
         nt = Nonterminal("A", MessageType("proto", "A"))
         star = Star(nt)
-        assert _count_nonliteral_rhs_elements(star) == 1
+        assert count_nonliteral_rhs_elements(star) == 1
 
     def test_count_nonliteral_rhs_elements_option(self):
-        """Test _count_nonliteral_rhs_elements with option."""
+        """Test count_nonliteral_rhs_elements with option."""
         nt = Nonterminal("A", MessageType("proto", "A"))
         opt = Option(nt)
-        assert _count_nonliteral_rhs_elements(opt) == 1
+        assert count_nonliteral_rhs_elements(opt) == 1
 
     def test_count_nonliteral_rhs_elements_sequence(self):
-        """Test _count_nonliteral_rhs_elements with sequence."""
+        """Test count_nonliteral_rhs_elements with sequence."""
         nt1 = Nonterminal("A", MessageType("proto", "A"))
         lit = LitTerminal("foo")
         nt2 = Nonterminal("B", MessageType("proto", "B"))
         term = NamedTerminal("TOK", BaseType("String"))
         seq = Sequence((nt1, lit, nt2, term))
-        assert _count_nonliteral_rhs_elements(seq) == 3
+        assert count_nonliteral_rhs_elements(seq) == 3

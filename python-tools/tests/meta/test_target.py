@@ -516,6 +516,11 @@ class TestReturn:
         ret = Return(expr)
         assert str(ret) == "return result::Int64"
 
+    def test_return_validates_expr_type(self):
+        """Test Return validates that expr is a TargetExpr."""
+        with pytest.raises(AssertionError):
+            Return("not an expr")  # type: ignore
+
     def test_nested_return_fails(self):
         """Test that Return cannot contain another Return."""
         inner = Return(Lit(42))

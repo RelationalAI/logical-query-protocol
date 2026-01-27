@@ -1,7 +1,8 @@
 from google.protobuf.internal import containers as _containers
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Mapping, Optional as _Optional, Union as _Union
+from collections.abc import Iterable as _Iterable, Mapping as _Mapping
+from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -27,10 +28,12 @@ class Def(_message.Message):
     def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
 
 class Constraint(_message.Message):
-    __slots__ = ("functional_dependency",)
+    __slots__ = ("name", "functional_dependency")
+    NAME_FIELD_NUMBER: _ClassVar[int]
     FUNCTIONAL_DEPENDENCY_FIELD_NUMBER: _ClassVar[int]
+    name: RelationId
     functional_dependency: FunctionalDependency
-    def __init__(self, functional_dependency: _Optional[_Union[FunctionalDependency, _Mapping]] = ...) -> None: ...
+    def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., functional_dependency: _Optional[_Union[FunctionalDependency, _Mapping]] = ...) -> None: ...
 
 class FunctionalDependency(_message.Message):
     __slots__ = ("guard", "keys", "values")
@@ -557,7 +560,7 @@ class Value(_message.Message):
     datetime_value: DateTimeValue
     decimal_value: DecimalValue
     boolean_value: bool
-    def __init__(self, string_value: _Optional[str] = ..., int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128Value, _Mapping]] = ..., int128_value: _Optional[_Union[Int128Value, _Mapping]] = ..., missing_value: _Optional[_Union[MissingValue, _Mapping]] = ..., date_value: _Optional[_Union[DateValue, _Mapping]] = ..., datetime_value: _Optional[_Union[DateTimeValue, _Mapping]] = ..., decimal_value: _Optional[_Union[DecimalValue, _Mapping]] = ..., boolean_value: bool = ...) -> None: ...
+    def __init__(self, string_value: _Optional[str] = ..., int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128Value, _Mapping]] = ..., int128_value: _Optional[_Union[Int128Value, _Mapping]] = ..., missing_value: _Optional[_Union[MissingValue, _Mapping]] = ..., date_value: _Optional[_Union[DateValue, _Mapping]] = ..., datetime_value: _Optional[_Union[DateTimeValue, _Mapping]] = ..., decimal_value: _Optional[_Union[DecimalValue, _Mapping]] = ..., boolean_value: _Optional[bool] = ...) -> None: ...
 
 class UInt128Value(_message.Message):
     __slots__ = ("low", "high")

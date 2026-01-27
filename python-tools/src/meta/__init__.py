@@ -27,6 +27,8 @@ from .target import (
     TupleType,
     ListType,
     FunDef,
+    VisitNonterminalDef,
+    VisitNonterminal,
 )
 
 # Grammar data structures
@@ -74,6 +76,8 @@ __all__ = [
     'TupleType',
     'ListType',
     'FunDef',
+    'VisitNonterminalDef',
+    'VisitNonterminal',
     # Grammar
     'Grammar',
     'Rule',

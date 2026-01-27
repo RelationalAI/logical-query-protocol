@@ -95,6 +95,11 @@ def parse_args():
         help="Output file for grammar in s-expression format"
     )
     parser.add_argument(
+        "--proto",
+        action="store_true",
+        help="Output the parsed protobuf specification"
+    )
+    parser.add_argument(
         "--grammar",
         type=Path,
         help="Path to grammar file (defaults to src/meta/grammar.sexp)"
@@ -105,6 +110,39 @@ def parse_args():
         help="Validate grammar covers protobuf spec"
     )
     return parser.parse_args()
+
+
+def check_unreachable_nonterminals(grammar, generator):
+    """Check for unexpected unreachable nonterminals and report warnings.
+
+    Args:
+        grammar: The generated grammar to analyze
+        generator: The GrammarGenerator used to create the grammar
+
+    Prints warnings to stdout if unexpected unreachable nonterminals are found.
+    """
+    _, unreachable = grammar.analysis.partition_nonterminals_by_reachability()
+    unexpected_unreachable = [r for r in unreachable if r.name not in generator.expected_unreachable]
+    if unexpected_unreachable:
+        print("Warning: Unreachable nonterminals detected:")
+        for rule in unexpected_unreachable:
+            print(f"  {rule.name}")
+        print()
+
+
+def write_output(text, output_path, success_msg):
+    """Write text to output file or stdout.
+
+    Args:
+        text: The text content to write
+        output_path: Path object for output file, or None for stdout
+        success_msg: Message to print on successful file write
+    """
+    if output_path:
+        output_path.write_text(text)
+        print(success_msg)
+    else:
+        print(text)
 
 
 def run(args) -> int:
