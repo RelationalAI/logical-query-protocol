@@ -22,26 +22,25 @@ PROLOGUE_TEMPLATE = _TEMPLATE_PATH.read_text()
 
 def generate_parser_python(grammar: Grammar, command_line: Optional[str] = None, proto_messages=None) -> str:
     """Generate LL(k) recursive-descent parser in Python."""
-    # Generate prologue (lexer, token, error, helper classes, parse function)
-    prologue = _generate_prologue(grammar, command_line)
-
     # Create code generator with proto message info
     from .codegen_python import PythonCodeGenerator
     codegen = PythonCodeGenerator(proto_messages=proto_messages)
 
-    # Generate parser methods as strings
-    defns = generate_parse_functions(grammar)
+    # Generate parser methods as strings (indent one level for class methods)
+    defns = generate_parse_functions(grammar, indent="    ")
     lines = []
     for defn in defns:
         lines.append("")
-        lines.append(codegen.generate_def(defn, "    "))
+        lines.append(codegen.generate_def(defn, defn.indent))
     lines.append("")
+    parse_nonterminal_defns = "\n".join(lines)
 
-    return prologue + "\n".join(lines)
+    # Generate full parser from template
+    return _generate_from_template(grammar, command_line, parse_nonterminal_defns)
 
 
-def _generate_prologue(grammar: Grammar, command_line: Optional[str] = None) -> str:
-    """Generate parser prologue with imports, token class, lexer, parser class, and parse function."""
+def _generate_from_template(grammar: Grammar, command_line: Optional[str] = None, parse_nonterminal_defns: str = "") -> str:
+    """Generate parser from template with imports, token class, lexer, parser class, and parse function."""
     # Build command line comment
     command_line_comment = f"\nCommand: {command_line}\n" if command_line else ""
 
@@ -81,4 +80,5 @@ def _generate_prologue(grammar: Grammar, command_line: Optional[str] = None) -> 
         command_line_comment=command_line_comment,
         token_specs=token_specs,
         start_name=grammar.start.name.lower(),
+        parse_nonterminal_defns=parse_nonterminal_defns,
     )

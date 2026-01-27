@@ -101,16 +101,16 @@ class AmbiguousGrammarError(Exception):
     pass
 
 
-def generate_parse_functions(grammar: Grammar) -> List[VisitNonterminalDef]:
+def generate_parse_functions(grammar: Grammar, indent: str = "") -> List[VisitNonterminalDef]:
     parser_methods = []
     reachable, _ = grammar.analysis.partition_nonterminals_by_reachability()
     for nt in reachable:
         rules = grammar.rules[nt]
-        method_code = _generate_parse_method(nt, rules, grammar)
+        method_code = _generate_parse_method(nt, rules, grammar, indent)
         parser_methods.append(method_code)
     return parser_methods
 
-def _generate_parse_method(lhs: Nonterminal, rules: List[Rule], grammar: Grammar) -> VisitNonterminalDef:
+def _generate_parse_method(lhs: Nonterminal, rules: List[Rule], grammar: Grammar, indent: str = "") -> VisitNonterminalDef:
     """Generate parse method code as string (preserving existing logic)."""
     return_type = None
     rhs = None
@@ -136,7 +136,7 @@ def _generate_parse_method(lhs: Nonterminal, rules: List[Rule], grammar: Grammar
             tail = IfElse(Call(Builtin('equal'), [Var(prediction, BaseType('Int64')), Lit(i)]), _generate_parse_rhs_ir(rule.rhs, grammar, follow_set, True, rule.constructor), tail)
         rhs = Let(Var(prediction, BaseType('Int64')), predictor, tail)
     assert return_type is not None
-    return VisitNonterminalDef('parse', lhs, [], return_type, rhs)
+    return VisitNonterminalDef('parse', lhs, [], return_type, rhs, indent)
 
 def _build_predictor(grammar: Grammar, rules: List[Rule]) -> TargetExpr:
     """Build a predictor expression that returns the index of the matching rule.

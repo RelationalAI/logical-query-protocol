@@ -352,7 +352,7 @@ class Parser:
 
         # Create and return Fragment
         return fragments_pb2.Fragment(id=fragment_id, declarations=declarations, debug_info=debug_info)
-
+{parse_nonterminal_defns}
 
 def parse(input_str: str) -> Any:
     """Parse input string and return parse tree."""
