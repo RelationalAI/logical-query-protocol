@@ -18,7 +18,7 @@
     (option sync)
     (star epoch)
     ")")
-  (lambda
+  (construct
     ((configure (Option (Message transactions Configure)))
       (sync (Option (Message transactions Sync)))
       (epochs (List (Message transactions Epoch))))
@@ -43,7 +43,7 @@
     "configure"
     config_dict
     ")")
-  (lambda
+  (construct
     ((config_dict (List (Tuple String (Message logic Value)))))
     (Message transactions Configure)
     (call
@@ -61,7 +61,7 @@
     (star
       config_key_value)
     "}")
-  (lambda
+  (construct
     ((x (List (Tuple String (Message logic Value)))))
     (List (Tuple String (Message logic Value)))
     (var x (List (Tuple String (Message logic Value))))))
@@ -71,7 +71,7 @@
   (rhs
     COLON_SYMBOL
     value)
-  (lambda
+  (construct
     ((symbol String) (value (Message logic Value)))
     (Tuple String (Message logic Value))
     (call
@@ -82,7 +82,7 @@
 (rule
   (lhs value (Message logic Value))
   (rhs date)
-  (lambda
+  (construct
     ((value (Message logic DateValue)))
     (Message logic Value)
     (new-message
@@ -96,7 +96,7 @@
 (rule
   (lhs value (Message logic Value))
   (rhs datetime)
-  (lambda
+  (construct
     ((value (Message logic DateTimeValue)))
     (Message logic Value)
     (new-message
@@ -110,7 +110,7 @@
 (rule
   (lhs value (Message logic Value))
   (rhs STRING)
-  (lambda
+  (construct
     ((value String))
     (Message logic Value)
     (new-message
@@ -121,7 +121,7 @@
 (rule
   (lhs value (Message logic Value))
   (rhs INT)
-  (lambda
+  (construct
     ((value Int64))
     (Message logic Value)
     (new-message
@@ -132,7 +132,7 @@
 (rule
   (lhs value (Message logic Value))
   (rhs FLOAT)
-  (lambda
+  (construct
     ((value Float64))
     (Message logic Value)
     (new-message
@@ -143,7 +143,7 @@
 (rule
   (lhs value (Message logic Value))
   (rhs UINT128)
-  (lambda
+  (construct
     ((value (Message logic UInt128Value)))
     (Message logic Value)
     (new-message
@@ -157,7 +157,7 @@
 (rule
   (lhs value (Message logic Value))
   (rhs INT128)
-  (lambda
+  (construct
     ((value (Message logic Int128Value)))
     (Message logic Value)
     (new-message
@@ -171,7 +171,7 @@
 (rule
   (lhs value (Message logic Value))
   (rhs DECIMAL)
-  (lambda
+  (construct
     ((value (Message logic DecimalValue)))
     (Message logic Value)
     (new-message
@@ -185,7 +185,7 @@
 (rule
   (lhs value (Message logic Value))
   (rhs "missing")
-  (lambda
+  (construct
     ()
     (Message logic Value)
     (new-message
@@ -199,7 +199,7 @@
 (rule
   (lhs value (Message logic Value))
   (rhs boolean_value)
-  (lambda
+  (construct
     ((value Boolean))
     (Message logic Value)
     (new-message
@@ -216,7 +216,7 @@
     INT
     INT
     ")")
-  (lambda
+  (construct
     ((year Int64) (month Int64) (day Int64))
     (Message logic DateValue)
     (new-message
@@ -239,7 +239,7 @@
     INT
     (option INT)
     ")")
-  (lambda
+  (construct
     ((year Int64)
       (month Int64)
       (day Int64)
@@ -265,9 +265,9 @@
             (var microsecond (Option Int64))
             (lit 0)))))))
 
-(rule (lhs boolean_value Boolean) (rhs "true") (lambda () Boolean (lit true)))
+(rule (lhs boolean_value Boolean) (rhs "true") (construct () Boolean (lit true)))
 
-(rule (lhs boolean_value Boolean) (rhs "false") (lambda () Boolean (lit false)))
+(rule (lhs boolean_value Boolean) (rhs "false") (construct () Boolean (lit false)))
 
 (rule
   (lhs sync (Message transactions Sync))
@@ -276,7 +276,7 @@
     "sync"
     (star fragment_id)
     ")")
-  (lambda
+  (construct
     ((fragments (List (Message fragments FragmentId))))
     (Message transactions Sync)
     (new-message
@@ -288,7 +288,7 @@
 (rule
   (lhs fragment_id (Message fragments FragmentId))
   (rhs COLON_SYMBOL)
-  (lambda
+  (construct
     ((symbol String))
     (Message fragments FragmentId)
     (call (builtin fragment_id_from_string) (var symbol String))))
@@ -303,7 +303,7 @@
     (option
       epoch_reads)
     ")")
-  (lambda
+  (construct
     ((writes (Option (List (Message transactions Write))))
       (reads (Option (List (Message transactions Read)))))
     (Message transactions Epoch)
@@ -328,7 +328,7 @@
     "writes"
     (star write)
     ")")
-  (lambda
+  (construct
     ((x (List (Message transactions Write))))
     (List (Message transactions Write))
     (var x (List (Message transactions Write)))))
@@ -336,7 +336,7 @@
 (rule
   (lhs write (Message transactions Write))
   (rhs define)
-  (lambda
+  (construct
     ((value (Message transactions Define)))
     (Message transactions Write)
     (new-message
@@ -350,7 +350,7 @@
 (rule
   (lhs write (Message transactions Write))
   (rhs undefine)
-  (lambda
+  (construct
     ((value (Message transactions Undefine)))
     (Message transactions Write)
     (new-message
@@ -364,7 +364,7 @@
 (rule
   (lhs write (Message transactions Write))
   (rhs context)
-  (lambda
+  (construct
     ((value (Message transactions Context)))
     (Message transactions Write)
     (new-message
@@ -382,7 +382,7 @@
     "define"
     fragment
     ")")
-  (lambda
+  (construct
     ((fragment (Message fragments Fragment)))
     (Message transactions Define)
     (new-message
@@ -398,7 +398,7 @@
     new_fragment_id
     (star declaration)
     ")")
-  (lambda
+  (construct
     ((fragment_id (Message fragments FragmentId))
       (declarations (List (Message logic Declaration))))
     (Message fragments Fragment)
@@ -410,7 +410,7 @@
 (rule
   (lhs new_fragment_id (Message fragments FragmentId))
   (rhs fragment_id)
-  (lambda
+  (construct
     ((fragment_id (Message fragments FragmentId)))
     (Message fragments FragmentId)
     (seq
@@ -422,7 +422,7 @@
 (rule
   (lhs declaration (Message logic Declaration))
   (rhs def)
-  (lambda
+  (construct
     ((value (Message logic Def)))
     (Message logic Declaration)
     (new-message
@@ -434,7 +434,7 @@
 (rule
   (lhs declaration (Message logic Declaration))
   (rhs algorithm)
-  (lambda
+  (construct
     ((value (Message logic Algorithm)))
     (Message logic Declaration)
     (new-message
@@ -448,7 +448,7 @@
 (rule
   (lhs declaration (Message logic Declaration))
   (rhs constraint)
-  (lambda
+  (construct
     ((value (Message logic Constraint)))
     (Message logic Declaration)
     (new-message
@@ -462,7 +462,7 @@
 (rule
   (lhs declaration (Message logic Declaration))
   (rhs data)
-  (lambda
+  (construct
     ((value (Message logic Data)))
     (Message logic Declaration)
     (new-message
@@ -480,7 +480,7 @@
     abstraction
     (option attrs)
     ")")
-  (lambda
+  (construct
     ((name (Message logic RelationId))
       (body (Message logic Abstraction))
       (attrs (Option (List (Message logic Attribute)))))
@@ -499,7 +499,7 @@
 (rule
   (lhs relation_id (Message logic RelationId))
   (rhs COLON_SYMBOL)
-  (lambda
+  (construct
     ((symbol String))
     (Message logic RelationId)
     (call (builtin relation_id_from_string) (var symbol String))))
@@ -507,7 +507,7 @@
 (rule
   (lhs relation_id (Message logic RelationId))
   (rhs INT)
-  (lambda
+  (construct
     ((INT Int64))
     (Message logic RelationId)
     (call (builtin relation_id_from_int) (var INT Int64))))
@@ -519,7 +519,7 @@
     bindings
     formula
     ")")
-  (lambda
+  (construct
     ((bindings
       (Tuple
         (List (Message logic Binding))
@@ -560,7 +560,7 @@
     (option
       value_bindings)
     "]")
-  (lambda
+  (construct
     ((keys (List (Message logic Binding)))
       (values (Option (List (Message logic Binding)))))
     (Tuple
@@ -580,7 +580,7 @@
     SYMBOL
     "::"
     type)
-  (lambda
+  (construct
     ((symbol String) (type (Message logic Type)))
     (Message logic Binding)
     (new-message
@@ -593,7 +593,7 @@
   (lhs type (Message logic Type))
   (rhs
     unspecified_type)
-  (lambda
+  (construct
     ((value (Message logic UnspecifiedType)))
     (Message logic Type)
     (new-message
@@ -607,7 +607,7 @@
 (rule
   (lhs type (Message logic Type))
   (rhs string_type)
-  (lambda
+  (construct
     ((value (Message logic StringType)))
     (Message logic Type)
     (new-message
@@ -621,7 +621,7 @@
 (rule
   (lhs type (Message logic Type))
   (rhs int_type)
-  (lambda
+  (construct
     ((value (Message logic IntType)))
     (Message logic Type)
     (new-message
@@ -633,7 +633,7 @@
 (rule
   (lhs type (Message logic Type))
   (rhs float_type)
-  (lambda
+  (construct
     ((value (Message logic FloatType)))
     (Message logic Type)
     (new-message
@@ -647,7 +647,7 @@
 (rule
   (lhs type (Message logic Type))
   (rhs uint128_type)
-  (lambda
+  (construct
     ((value (Message logic UInt128Type)))
     (Message logic Type)
     (new-message
@@ -661,7 +661,7 @@
 (rule
   (lhs type (Message logic Type))
   (rhs int128_type)
-  (lambda
+  (construct
     ((value (Message logic Int128Type)))
     (Message logic Type)
     (new-message
@@ -675,7 +675,7 @@
 (rule
   (lhs type (Message logic Type))
   (rhs date_type)
-  (lambda
+  (construct
     ((value (Message logic DateType)))
     (Message logic Type)
     (new-message
@@ -689,7 +689,7 @@
 (rule
   (lhs type (Message logic Type))
   (rhs datetime_type)
-  (lambda
+  (construct
     ((value (Message logic DateTimeType)))
     (Message logic Type)
     (new-message
@@ -703,7 +703,7 @@
 (rule
   (lhs type (Message logic Type))
   (rhs missing_type)
-  (lambda
+  (construct
     ((value (Message logic MissingType)))
     (Message logic Type)
     (new-message
@@ -717,7 +717,7 @@
 (rule
   (lhs type (Message logic Type))
   (rhs decimal_type)
-  (lambda
+  (construct
     ((value (Message logic DecimalType)))
     (Message logic Type)
     (new-message
@@ -731,7 +731,7 @@
 (rule
   (lhs type (Message logic Type))
   (rhs boolean_type)
-  (lambda
+  (construct
     ((value (Message logic BooleanType)))
     (Message logic Type)
     (new-message
@@ -745,7 +745,7 @@
 (rule
   (lhs unspecified_type (Message logic UnspecifiedType))
   (rhs "UNKNOWN")
-  (lambda
+  (construct
     ()
     (Message logic UnspecifiedType)
     (new-message logic UnspecifiedType)))
@@ -753,7 +753,7 @@
 (rule
   (lhs string_type (Message logic StringType))
   (rhs "STRING")
-  (lambda
+  (construct
     ()
     (Message logic StringType)
     (new-message logic StringType)))
@@ -761,7 +761,7 @@
 (rule
   (lhs int_type (Message logic IntType))
   (rhs "INT")
-  (lambda
+  (construct
     ()
     (Message logic IntType)
     (new-message logic IntType)))
@@ -769,7 +769,7 @@
 (rule
   (lhs float_type (Message logic FloatType))
   (rhs "FLOAT")
-  (lambda
+  (construct
     ()
     (Message logic FloatType)
     (new-message logic FloatType)))
@@ -777,7 +777,7 @@
 (rule
   (lhs uint128_type (Message logic UInt128Type))
   (rhs "UINT128")
-  (lambda
+  (construct
     ()
     (Message logic UInt128Type)
     (new-message logic UInt128Type)))
@@ -785,7 +785,7 @@
 (rule
   (lhs int128_type (Message logic Int128Type))
   (rhs "INT128")
-  (lambda
+  (construct
     ()
     (Message logic Int128Type)
     (new-message logic Int128Type)))
@@ -793,7 +793,7 @@
 (rule
   (lhs date_type (Message logic DateType))
   (rhs "DATE")
-  (lambda
+  (construct
     ()
     (Message logic DateType)
     (new-message logic DateType)))
@@ -801,7 +801,7 @@
 (rule
   (lhs datetime_type (Message logic DateTimeType))
   (rhs "DATETIME")
-  (lambda
+  (construct
     ()
     (Message logic DateTimeType)
     (new-message logic DateTimeType)))
@@ -809,7 +809,7 @@
 (rule
   (lhs missing_type (Message logic MissingType))
   (rhs "MISSING")
-  (lambda
+  (construct
     ()
     (Message logic MissingType)
     (new-message logic MissingType)))
@@ -817,7 +817,7 @@
 (rule
   (lhs decimal_type (Message logic DecimalType))
   (rhs "(" "DECIMAL" INT INT ")")
-  (lambda
+  (construct
     ((precision Int64) (scale Int64))
     (Message logic DecimalType)
     (new-message
@@ -830,7 +830,7 @@
 (rule
   (lhs boolean_type (Message logic BooleanType))
   (rhs "BOOLEAN")
-  (lambda
+  (construct
     ()
     (Message logic BooleanType)
     (new-message logic BooleanType)))
@@ -838,7 +838,7 @@
 (rule
   (lhs value_bindings (List (Message logic Binding)))
   (rhs "|" (star binding))
-  (lambda
+  (construct
     ((x (List (Message logic Binding))))
     (List (Message logic Binding))
     (var x (List (Message logic Binding)))))
@@ -846,7 +846,7 @@
 (rule
   (lhs formula (Message logic Formula))
   (rhs true)
-  (lambda
+  (construct
     ((value (Message logic Conjunction)))
     (Message logic Formula)
     (new-message
@@ -860,7 +860,7 @@
 (rule
   (lhs formula (Message logic Formula))
   (rhs false)
-  (lambda
+  (construct
     ((value (Message logic Disjunction)))
     (Message logic Formula)
     (new-message
@@ -874,7 +874,7 @@
 (rule
   (lhs formula (Message logic Formula))
   (rhs exists)
-  (lambda
+  (construct
     ((value (Message logic Exists)))
     (Message logic Formula)
     (new-message
@@ -886,7 +886,7 @@
 (rule
   (lhs formula (Message logic Formula))
   (rhs reduce)
-  (lambda
+  (construct
     ((value (Message logic Reduce)))
     (Message logic Formula)
     (new-message
@@ -898,7 +898,7 @@
 (rule
   (lhs formula (Message logic Formula))
   (rhs conjunction)
-  (lambda
+  (construct
     ((value (Message logic Conjunction)))
     (Message logic Formula)
     (new-message
@@ -912,7 +912,7 @@
 (rule
   (lhs formula (Message logic Formula))
   (rhs disjunction)
-  (lambda
+  (construct
     ((value (Message logic Disjunction)))
     (Message logic Formula)
     (new-message
@@ -926,7 +926,7 @@
 (rule
   (lhs formula (Message logic Formula))
   (rhs not)
-  (lambda
+  (construct
     ((value (Message logic Not)))
     (Message logic Formula)
     (new-message
@@ -938,7 +938,7 @@
 (rule
   (lhs formula (Message logic Formula))
   (rhs ffi)
-  (lambda
+  (construct
     ((value (Message logic FFI)))
     (Message logic Formula)
     (new-message
@@ -950,7 +950,7 @@
 (rule
   (lhs formula (Message logic Formula))
   (rhs atom)
-  (lambda
+  (construct
     ((value (Message logic Atom)))
     (Message logic Formula)
     (new-message
@@ -962,7 +962,7 @@
 (rule
   (lhs formula (Message logic Formula))
   (rhs pragma)
-  (lambda
+  (construct
     ((value (Message logic Pragma)))
     (Message logic Formula)
     (new-message
@@ -974,7 +974,7 @@
 (rule
   (lhs formula (Message logic Formula))
   (rhs primitive)
-  (lambda
+  (construct
     ((value (Message logic Primitive)))
     (Message logic Formula)
     (new-message
@@ -988,7 +988,7 @@
 (rule
   (lhs formula (Message logic Formula))
   (rhs rel_atom)
-  (lambda
+  (construct
     ((value (Message logic RelAtom)))
     (Message logic Formula)
     (new-message
@@ -1000,7 +1000,7 @@
 (rule
   (lhs formula (Message logic Formula))
   (rhs cast)
-  (lambda
+  (construct
     ((value (Message logic Cast)))
     (Message logic Formula)
     (new-message
@@ -1012,7 +1012,7 @@
 (rule
   (lhs true (Message logic Conjunction))
   (rhs "(" "true" ")")
-  (lambda
+  (construct
     ()
     (Message logic Conjunction)
     (new-message
@@ -1023,7 +1023,7 @@
 (rule
   (lhs false (Message logic Disjunction))
   (rhs "(" "false" ")")
-  (lambda
+  (construct
     ()
     (Message logic Disjunction)
     (new-message
@@ -1039,7 +1039,7 @@
     bindings
     formula
     ")")
-  (lambda
+  (construct
     ((bindings
       (Tuple
         (List (Message logic Binding))
@@ -1081,7 +1081,7 @@
     abstraction
     terms
     ")")
-  (lambda
+  (construct
     ((op (Message logic Abstraction))
       (body (Message logic Abstraction))
       (terms (List (Message logic Term))))
@@ -1096,7 +1096,7 @@
 (rule
   (lhs term (Message logic Term))
   (rhs var)
-  (lambda
+  (construct
     ((value (Message logic Var)))
     (Message logic Term)
     (new-message
@@ -1108,7 +1108,7 @@
 (rule
   (lhs term (Message logic Term))
   (rhs constant)
-  (lambda
+  (construct
     ((value (Message logic Value)))
     (Message logic Term)
     (new-message
@@ -1120,7 +1120,7 @@
 (rule
   (lhs var (Message logic Var))
   (rhs SYMBOL)
-  (lambda
+  (construct
     ((symbol String))
     (Message logic Var)
     (new-message logic Var (name (var symbol String)))))
@@ -1128,7 +1128,7 @@
 (rule
   (lhs constant (Message logic Value))
   (rhs value)
-  (lambda
+  (construct
     ((x (Message logic Value)))
     (Message logic Value)
     (var x (Message logic Value))))
@@ -1140,7 +1140,7 @@
     "and"
     (star formula)
     ")")
-  (lambda
+  (construct
     ((args (List (Message logic Formula))))
     (Message logic Conjunction)
     (new-message
@@ -1155,7 +1155,7 @@
     "or"
     (star formula)
     ")")
-  (lambda
+  (construct
     ((args (List (Message logic Formula))))
     (Message logic Disjunction)
     (new-message
@@ -1170,7 +1170,7 @@
     "not"
     formula
     ")")
-  (lambda
+  (construct
     ((arg (Message logic Formula)))
     (Message logic Not)
     (new-message
@@ -1187,7 +1187,7 @@
     ffi_args
     terms
     ")")
-  (lambda
+  (construct
     ((name String)
       (args (List (Message logic Abstraction)))
       (terms (List (Message logic Term))))
@@ -1206,7 +1206,7 @@
     "args"
     (star abstraction)
     ")")
-  (lambda
+  (construct
     ((x (List (Message logic Abstraction))))
     (List (Message logic Abstraction))
     (var x (List (Message logic Abstraction)))))
@@ -1218,7 +1218,7 @@
     "terms"
     (star term)
     ")")
-  (lambda
+  (construct
     ((x (List (Message logic Term))))
     (List (Message logic Term))
     (var x (List (Message logic Term)))))
@@ -1226,7 +1226,7 @@
 (rule
   (lhs name String)
   (rhs COLON_SYMBOL)
-  (lambda ((x String)) String (var x String)))
+  (construct ((x String)) String (var x String)))
 
 (rule
   (lhs atom (Message logic Atom))
@@ -1236,7 +1236,7 @@
     relation_id
     (star term)
     ")")
-  (lambda
+  (construct
     ((name (Message logic RelationId))
       (terms (List (Message logic Term))))
     (Message logic Atom)
@@ -1254,7 +1254,7 @@
     name
     (star term)
     ")")
-  (lambda
+  (construct
     ((name String) (terms (List (Message logic Term))))
     (Message logic Pragma)
     (new-message
@@ -1266,7 +1266,7 @@
 (rule
   (lhs primitive (Message logic Primitive))
   (rhs eq)
-  (lambda
+  (construct
     ((op (Message logic Primitive)))
     (Message logic Primitive)
     (var op (Message logic Primitive))))
@@ -1274,7 +1274,7 @@
 (rule
   (lhs primitive (Message logic Primitive))
   (rhs lt)
-  (lambda
+  (construct
     ((op (Message logic Primitive)))
     (Message logic Primitive)
     (var op (Message logic Primitive))))
@@ -1282,7 +1282,7 @@
 (rule
   (lhs primitive (Message logic Primitive))
   (rhs lt_eq)
-  (lambda
+  (construct
     ((op (Message logic Primitive)))
     (Message logic Primitive)
     (var op (Message logic Primitive))))
@@ -1290,7 +1290,7 @@
 (rule
   (lhs primitive (Message logic Primitive))
   (rhs gt)
-  (lambda
+  (construct
     ((op (Message logic Primitive)))
     (Message logic Primitive)
     (var op (Message logic Primitive))))
@@ -1298,7 +1298,7 @@
 (rule
   (lhs primitive (Message logic Primitive))
   (rhs gt_eq)
-  (lambda
+  (construct
     ((op (Message logic Primitive)))
     (Message logic Primitive)
     (var op (Message logic Primitive))))
@@ -1306,7 +1306,7 @@
 (rule
   (lhs primitive (Message logic Primitive))
   (rhs add)
-  (lambda
+  (construct
     ((op (Message logic Primitive)))
     (Message logic Primitive)
     (var op (Message logic Primitive))))
@@ -1314,7 +1314,7 @@
 (rule
   (lhs primitive (Message logic Primitive))
   (rhs minus)
-  (lambda
+  (construct
     ((op (Message logic Primitive)))
     (Message logic Primitive)
     (var op (Message logic Primitive))))
@@ -1322,7 +1322,7 @@
 (rule
   (lhs primitive (Message logic Primitive))
   (rhs multiply)
-  (lambda
+  (construct
     ((op (Message logic Primitive)))
     (Message logic Primitive)
     (var op (Message logic Primitive))))
@@ -1330,7 +1330,7 @@
 (rule
   (lhs primitive (Message logic Primitive))
   (rhs divide)
-  (lambda
+  (construct
     ((op (Message logic Primitive)))
     (Message logic Primitive)
     (var op (Message logic Primitive))))
@@ -1343,7 +1343,7 @@
     name
     (star rel_term)
     ")")
-  (lambda
+  (construct
     ((name String) (terms (List (Message logic RelTerm))))
     (Message logic Primitive)
     (new-message
@@ -1360,7 +1360,7 @@
     name
     (star rel_term)
     ")")
-  (lambda
+  (construct
     ((name String) (terms (List (Message logic RelTerm))))
     (Message logic Primitive)
     (new-message
@@ -1377,7 +1377,7 @@
     term
     term
     ")")
-  (lambda
+  (construct
     ((left (Message logic Term)) (right (Message logic Term)))
     (Message logic Primitive)
     (new-message
@@ -1406,7 +1406,7 @@
     term
     term
     ")")
-  (lambda
+  (construct
     ((left (Message logic Term)) (right (Message logic Term)))
     (Message logic Primitive)
     (new-message
@@ -1435,7 +1435,7 @@
     term
     term
     ")")
-  (lambda
+  (construct
     ((left (Message logic Term)) (right (Message logic Term)))
     (Message logic Primitive)
     (new-message
@@ -1464,7 +1464,7 @@
     term
     term
     ")")
-  (lambda
+  (construct
     ((left (Message logic Term)) (right (Message logic Term)))
     (Message logic Primitive)
     (new-message
@@ -1493,7 +1493,7 @@
     term
     term
     ")")
-  (lambda
+  (construct
     ((left (Message logic Term)) (right (Message logic Term)))
     (Message logic Primitive)
     (new-message
@@ -1523,7 +1523,7 @@
     term
     term
     ")")
-  (lambda
+  (construct
     ((left (Message logic Term))
       (right (Message logic Term))
       (result (Message logic Term)))
@@ -1560,7 +1560,7 @@
     term
     term
     ")")
-  (lambda
+  (construct
     ((left (Message logic Term))
       (right (Message logic Term))
       (result (Message logic Term)))
@@ -1597,7 +1597,7 @@
     term
     term
     ")")
-  (lambda
+  (construct
     ((left (Message logic Term))
       (right (Message logic Term))
       (result (Message logic Term)))
@@ -1634,7 +1634,7 @@
     term
     term
     ")")
-  (lambda
+  (construct
     ((left (Message logic Term))
       (right (Message logic Term))
       (result (Message logic Term)))
@@ -1665,7 +1665,7 @@
 (rule
   (lhs rel_term (Message logic RelTerm))
   (rhs specialized_value)
-  (lambda
+  (construct
     ((value (Message logic Value)))
     (Message logic RelTerm)
     (new-message
@@ -1679,7 +1679,7 @@
 (rule
   (lhs rel_term (Message logic RelTerm))
   (rhs term)
-  (lambda
+  (construct
     ((value (Message logic Term)))
     (Message logic RelTerm)
     (new-message
@@ -1691,7 +1691,7 @@
 (rule
   (lhs specialized_value (Message logic Value))
   (rhs "#" value)
-  (lambda
+  (construct
     ((value (Message logic Value)))
     (Message logic Value)
     (var value (Message logic Value))))
@@ -1704,7 +1704,7 @@
     name
     (star rel_term)
     ")")
-  (lambda
+  (construct
     ((name String) (terms (List (Message logic RelTerm))))
     (Message logic RelAtom)
     (new-message
@@ -1721,7 +1721,7 @@
     term
     term
     ")")
-  (lambda
+  (construct
     ((input (Message logic Term)) (result (Message logic Term)))
     (Message logic Cast)
     (new-message
@@ -1737,7 +1737,7 @@
     "attrs"
     (star attribute)
     ")")
-  (lambda
+  (construct
     ((x (List (Message logic Attribute))))
     (List (Message logic Attribute))
     (var x (List (Message logic Attribute)))))
@@ -1750,7 +1750,7 @@
     name
     (star value)
     ")")
-  (lambda
+  (construct
     ((name String) (args (List (Message logic Value))))
     (Message logic Attribute)
     (new-message
@@ -1767,7 +1767,7 @@
     (star relation_id)
     script
     ")")
-  (lambda
+  (construct
     ((global (List (Message logic RelationId)))
       (body (Message logic Script)))
     (Message logic Algorithm)
@@ -1784,7 +1784,7 @@
     "script"
     (star construct)
     ")")
-  (lambda
+  (construct
     ((constructs (List (Message logic Construct))))
     (Message logic Script)
     (new-message
@@ -1796,7 +1796,7 @@
 (rule
   (lhs construct (Message logic Construct))
   (rhs loop)
-  (lambda
+  (construct
     ((value (Message logic Loop)))
     (Message logic Construct)
     (new-message
@@ -1808,7 +1808,7 @@
 (rule
   (lhs construct (Message logic Construct))
   (rhs instruction)
-  (lambda
+  (construct
     ((value (Message logic Instruction)))
     (Message logic Construct)
     (new-message
@@ -1827,7 +1827,7 @@
     init
     script
     ")")
-  (lambda
+  (construct
     ((init (List (Message logic Instruction)))
       (body (Message logic Script)))
     (Message logic Loop)
@@ -1844,7 +1844,7 @@
     "init"
     (star instruction)
     ")")
-  (lambda
+  (construct
     ((x (List (Message logic Instruction))))
     (List (Message logic Instruction))
     (var x (List (Message logic Instruction)))))
@@ -1852,7 +1852,7 @@
 (rule
   (lhs instruction (Message logic Instruction))
   (rhs assign)
-  (lambda
+  (construct
     ((value (Message logic Assign)))
     (Message logic Instruction)
     (new-message
@@ -1864,7 +1864,7 @@
 (rule
   (lhs instruction (Message logic Instruction))
   (rhs upsert)
-  (lambda
+  (construct
     ((value (Message logic Upsert)))
     (Message logic Instruction)
     (new-message
@@ -1876,7 +1876,7 @@
 (rule
   (lhs instruction (Message logic Instruction))
   (rhs break)
-  (lambda
+  (construct
     ((value (Message logic Break)))
     (Message logic Instruction)
     (new-message
@@ -1888,7 +1888,7 @@
 (rule
   (lhs instruction (Message logic Instruction))
   (rhs monoid_def)
-  (lambda
+  (construct
     ((value (Message logic MonoidDef)))
     (Message logic Instruction)
     (new-message
@@ -1902,7 +1902,7 @@
 (rule
   (lhs instruction (Message logic Instruction))
   (rhs monus_def)
-  (lambda
+  (construct
     ((value (Message logic MonusDef)))
     (Message logic Instruction)
     (new-message
@@ -1922,7 +1922,7 @@
     abstraction
     (option attrs)
     ")")
-  (lambda
+  (construct
     ((name (Message logic RelationId))
       (body (Message logic Abstraction))
       (attrs (Option (List (Message logic Attribute)))))
@@ -1947,7 +1947,7 @@
     abstraction_with_arity
     (option attrs)
     ")")
-  (lambda
+  (construct
     ((name (Message logic RelationId))
       (abstraction_with_arity
         (Tuple (Message logic Abstraction) Int64))
@@ -1988,7 +1988,7 @@
     bindings
     formula
     ")")
-  (lambda
+  (construct
     ((bindings
       (Tuple
         (List (Message logic Binding))
@@ -2037,7 +2037,7 @@
     abstraction
     (option attrs)
     ")")
-  (lambda
+  (construct
     ((name (Message logic RelationId))
       (body (Message logic Abstraction))
       (attrs (Option (List (Message logic Attribute)))))
@@ -2063,7 +2063,7 @@
     abstraction_with_arity
     (option attrs)
     ")")
-  (lambda
+  (construct
     ((monoid (Message logic Monoid))
       (name (Message logic RelationId))
       (abstraction_with_arity
@@ -2100,7 +2100,7 @@
 (rule
   (lhs monoid (Message logic Monoid))
   (rhs or_monoid)
-  (lambda
+  (construct
     ((value (Message logic OrMonoid)))
     (Message logic Monoid)
     (new-message
@@ -2114,7 +2114,7 @@
 (rule
   (lhs monoid (Message logic Monoid))
   (rhs min_monoid)
-  (lambda
+  (construct
     ((value (Message logic MinMonoid)))
     (Message logic Monoid)
     (new-message
@@ -2128,7 +2128,7 @@
 (rule
   (lhs monoid (Message logic Monoid))
   (rhs max_monoid)
-  (lambda
+  (construct
     ((value (Message logic MaxMonoid)))
     (Message logic Monoid)
     (new-message
@@ -2142,7 +2142,7 @@
 (rule
   (lhs monoid (Message logic Monoid))
   (rhs sum_monoid)
-  (lambda
+  (construct
     ((value (Message logic SumMonoid)))
     (Message logic Monoid)
     (new-message
@@ -2156,7 +2156,7 @@
 (rule
   (lhs or_monoid (Message logic OrMonoid))
   (rhs "(" "or" ")")
-  (lambda
+  (construct
     ()
     (Message logic OrMonoid)
     (new-message logic OrMonoid)))
@@ -2164,7 +2164,7 @@
 (rule
   (lhs min_monoid (Message logic MinMonoid))
   (rhs "(" "min" type ")")
-  (lambda
+  (construct
     ((type (Message logic Type)))
     (Message logic MinMonoid)
     (new-message
@@ -2175,7 +2175,7 @@
 (rule
   (lhs max_monoid (Message logic MaxMonoid))
   (rhs "(" "max" type ")")
-  (lambda
+  (construct
     ((type (Message logic Type)))
     (Message logic MaxMonoid)
     (new-message
@@ -2186,7 +2186,7 @@
 (rule
   (lhs sum_monoid (Message logic SumMonoid))
   (rhs "(" "sum" type ")")
-  (lambda
+  (construct
     ((type (Message logic Type)))
     (Message logic SumMonoid)
     (new-message
@@ -2204,7 +2204,7 @@
     abstraction_with_arity
     (option attrs)
     ")")
-  (lambda
+  (construct
     ((monoid (Message logic Monoid))
       (name (Message logic RelationId))
       (abstraction_with_arity
@@ -2242,7 +2242,7 @@
   (lhs constraint (Message logic Constraint))
   (rhs
     functional_dependency)
-  (lambda
+  (construct
     ((value (Message logic FunctionalDependency)))
     (Message logic Constraint)
     (new-message
@@ -2266,7 +2266,7 @@
     (option
       functional_dependency_values)
     ")")
-  (lambda
+  (construct
     ((guard (Message logic Abstraction))
       (keys (Option (List (Message logic Var))))
       (values (Option (List (Message logic Var)))))
@@ -2293,7 +2293,7 @@
     "keys"
     (star var)
     ")")
-  (lambda
+  (construct
     ((x (List (Message logic Var))))
     (List (Message logic Var))
     (var x (List (Message logic Var)))))
@@ -2307,7 +2307,7 @@
     "values"
     (star var)
     ")")
-  (lambda
+  (construct
     ((x (List (Message logic Var))))
     (List (Message logic Var))
     (var x (List (Message logic Var)))))
@@ -2315,7 +2315,7 @@
 (rule
   (lhs data (Message logic Data))
   (rhs rel_edb)
-  (lambda
+  (construct
     ((value (Message logic RelEDB)))
     (Message logic Data)
     (new-message
@@ -2328,7 +2328,7 @@
   (lhs data (Message logic Data))
   (rhs
     betree_relation)
-  (lambda
+  (construct
     ((value (Message logic BeTreeRelation)))
     (Message logic Data)
     (new-message
@@ -2342,7 +2342,7 @@
 (rule
   (lhs data (Message logic Data))
   (rhs csv_data)
-  (lambda
+  (construct
     ((value (Message logic CSVData)))
     (Message logic Data)
     (new-message
@@ -2360,7 +2360,7 @@
     (star name)
     (option rel_edb_types)
     ")")
-  (lambda
+  (construct
     ((target_id (Message logic RelationId))
       (path (List String))
       (types (Option (List (Message logic Type)))))
@@ -2383,7 +2383,7 @@
     "types"
     (star type)
     ")")
-  (lambda
+  (construct
     ((x (List (Message logic Type))))
     (List (Message logic Type))
     (var x (List (Message logic Type)))))
@@ -2392,7 +2392,7 @@
   (lhs betree_relation (Message logic BeTreeRelation))
   (rhs
     be_tree_relation)
-  (lambda
+  (construct
     ((x (Message logic BeTreeRelation)))
     (Message logic BeTreeRelation)
     (var x (Message logic BeTreeRelation))))
@@ -2405,7 +2405,7 @@
     relation_id
     be_tree_info
     ")")
-  (lambda
+  (construct
     ((name (Message logic RelationId))
       (relation_info (Message logic BeTreeInfo)))
     (Message logic BeTreeRelation)
@@ -2428,7 +2428,7 @@
     be_tree_config
     be_tree_locator
     ")")
-  (lambda
+  (construct
     ((key_types (Option (List (Message logic Type))))
       (value_types (Option (List (Message logic Type))))
       (storage_config (Message logic BeTreeConfig))
@@ -2459,7 +2459,7 @@
     "key_types"
     (star type)
     ")")
-  (lambda
+  (construct
     ((x (List (Message logic Type))))
     (List (Message logic Type))
     (var x (List (Message logic Type)))))
@@ -2471,7 +2471,7 @@
     "value_types"
     (star type)
     ")")
-  (lambda
+  (construct
     ((x (List (Message logic Type))))
     (List (Message logic Type))
     (var x (List (Message logic Type)))))
@@ -2486,7 +2486,7 @@
     INT
     INT
     ")")
-  (lambda
+  (construct
     ((epsilon Float64)
       (max_pivots Int64)
       (max_deltas Int64)
@@ -2508,7 +2508,7 @@
     INT
     INT
     ")")
-  (lambda
+  (construct
     ((element_count Int64) (tree_height Int64))
     (Message logic BeTreeLocator)
     (new-message
@@ -2520,7 +2520,7 @@
 (rule
   (lhs csv_data (Message logic CSVData))
   (rhs csvdata)
-  (lambda
+  (construct
     ((x (Message logic CSVData)))
     (Message logic CSVData)
     (var x (Message logic CSVData))))
@@ -2535,7 +2535,7 @@
     (star csv_column)
     name
     ")")
-  (lambda
+  (construct
     ((locator (Message logic CSVLocator))
       (config (Message logic CSVConfig))
       (columns (List (Message logic CSVColumn)))
@@ -2557,7 +2557,7 @@
     (star name)
     name
     ")")
-  (lambda
+  (construct
     ((paths (List String)) (inline_data String))
     (Message logic CSVLocator)
     (new-message
@@ -2583,7 +2583,7 @@
     name
     name
     ")")
-  (lambda
+  (construct
     ((header_row Int32)
       (skip Int64)
       (new_line String)
@@ -2620,7 +2620,7 @@
     relation_id
     (star type)
     ")")
-  (lambda
+  (construct
     ((column_name String)
       (target_id (Message logic RelationId))
       (types (List (Message logic Type))))
@@ -2639,7 +2639,7 @@
     "undefine"
     fragment_id
     ")")
-  (lambda
+  (construct
     ((fragment_id (Message fragments FragmentId)))
     (Message transactions Undefine)
     (new-message
@@ -2655,7 +2655,7 @@
     "context"
     (star relation_id)
     ")")
-  (lambda
+  (construct
     ((relations (List (Message logic RelationId))))
     (Message transactions Context)
     (new-message
@@ -2671,7 +2671,7 @@
     "reads"
     (star read)
     ")")
-  (lambda
+  (construct
     ((x (List (Message transactions Read))))
     (List (Message transactions Read))
     (var x (List (Message transactions Read)))))
@@ -2679,7 +2679,7 @@
 (rule
   (lhs read (Message transactions Read))
   (rhs demand)
-  (lambda
+  (construct
     ((value (Message transactions Demand)))
     (Message transactions Read)
     (new-message
@@ -2693,7 +2693,7 @@
 (rule
   (lhs read (Message transactions Read))
   (rhs output)
-  (lambda
+  (construct
     ((value (Message transactions Output)))
     (Message transactions Read)
     (new-message
@@ -2707,7 +2707,7 @@
 (rule
   (lhs read (Message transactions Read))
   (rhs what_if)
-  (lambda
+  (construct
     ((value (Message transactions WhatIf)))
     (Message transactions Read)
     (new-message
@@ -2721,7 +2721,7 @@
 (rule
   (lhs read (Message transactions Read))
   (rhs abort)
-  (lambda
+  (construct
     ((value (Message transactions Abort)))
     (Message transactions Read)
     (new-message
@@ -2735,7 +2735,7 @@
 (rule
   (lhs read (Message transactions Read))
   (rhs export)
-  (lambda
+  (construct
     ((value (Message transactions Export)))
     (Message transactions Read)
     (new-message
@@ -2753,7 +2753,7 @@
     "demand"
     relation_id
     ")")
-  (lambda
+  (construct
     ((relation_id (Message logic RelationId)))
     (Message transactions Demand)
     (new-message
@@ -2769,7 +2769,7 @@
     (option name)
     relation_id
     ")")
-  (lambda
+  (construct
     ((name (Option String))
       (relation_id (Message logic RelationId)))
     (Message transactions Output)
@@ -2791,7 +2791,7 @@
     name
     epoch
     ")")
-  (lambda
+  (construct
     ((branch String) (epoch (Message transactions Epoch)))
     (Message transactions WhatIf)
     (new-message
@@ -2808,7 +2808,7 @@
     (option name)
     relation_id
     ")")
-  (lambda
+  (construct
     ((name (Option String))
       (relation_id (Message logic RelationId)))
     (Message transactions Abort)
@@ -2829,7 +2829,7 @@
     "export"
     export_csv_config
     ")")
-  (lambda
+  (construct
     ((config (Message transactions ExportCSVConfig)))
     (Message transactions Export)
     (new-message
@@ -2851,7 +2851,7 @@
     export_csv_columns
     config_dict
     ")")
-  (lambda
+  (construct
     ((path String)
       (columns (List (Message transactions ExportCSVColumn)))
       (config (List (Tuple String (Message logic Value)))))
@@ -2865,7 +2865,7 @@
 (rule
   (lhs export_csv_path String)
   (rhs "(" "path" STRING ")")
-  (lambda ((x String)) String (var x String)))
+  (construct ((x String)) String (var x String)))
 
 (rule
   (lhs
@@ -2877,7 +2877,7 @@
     (star
       export_csv_column)
     ")")
-  (lambda
+  (construct
     ((x (List (Message transactions ExportCSVColumn))))
     (List (Message transactions ExportCSVColumn))
     (var x (List (Message transactions ExportCSVColumn)))))
@@ -2892,7 +2892,7 @@
     STRING
     relation_id
     ")")
-  (lambda
+  (construct
     ((name String) (relation_id (Message logic RelationId)))
     (Message transactions ExportCSVColumn)
     (new-message

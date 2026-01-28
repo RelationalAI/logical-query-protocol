@@ -20,6 +20,7 @@ Expression syntax:
     (lit value)                                 -> Lit(value)
     (call func args...)                         -> Call(func, args)
     (lambda ((p1 T1) ...) RT body)              -> Lambda([Var(p1,T1)...], RT, body)
+    (construct ((p1 T1) ...) RT body)           -> Lambda (alias for rule constructors)
     (let (name type) init body)                 -> Let(Var(name,type), init, body)
     (if cond then else)                         -> IfElse(cond, then, else)
     (builtin name)                              -> Builtin(name)
@@ -187,16 +188,16 @@ def sexp_to_expr(sexp: SExpr) -> TargetExpr:
         args = [sexp_to_expr(a) for a in sexp.elements[2:]]
         return Call(func, args)
 
-    elif tag == "lambda":
+    elif tag == "lambda" or tag == "construct":
         if len(sexp) != 4:
-            raise SExprConversionError(f"lambda requires params, return type, and body: {sexp}")
+            raise SExprConversionError(f"{tag} requires params, return type, and body: {sexp}")
         params_sexp = sexp[1]
         if not isinstance(params_sexp, SList):
-            raise SExprConversionError(f"lambda params must be a list: {params_sexp}")
+            raise SExprConversionError(f"{tag} params must be a list: {params_sexp}")
         params: List[Var] = []
         for p in params_sexp.elements:
             if not isinstance(p, SList) or len(p) != 2:
-                raise SExprConversionError(f"lambda param must be (name type): {p}")
+                raise SExprConversionError(f"{tag} param must be (name type): {p}")
             name = _expect_symbol(p[0], "param name")
             typ = sexp_to_type(p[1])
             params.append(Var(name, typ))
@@ -484,6 +485,27 @@ def expr_to_sexp(expr: TargetExpr) -> SExpr:
         raise SExprConversionError(f"Unknown expression: {type(expr).__name__}")
 
 
+def constructor_to_sexp(expr: Lambda) -> SExpr:
+    """Convert a Lambda to an s-expression using 'construct' keyword.
+
+    This is used for rule constructors, which use the 'construct' keyword
+    instead of 'lambda' in the s-expression syntax.
+
+    Args:
+        expr: Lambda expression to convert
+
+    Returns:
+        S-expression using (construct ...) form
+    """
+    from .sexp import SAtom, SList
+
+    params = SList(tuple(
+        SList((SAtom(p.name), type_to_sexp(p.type))) for p in expr.params
+    ))
+    return SList((SAtom("construct"), params, type_to_sexp(expr.return_type),
+                  expr_to_sexp(expr.body)))
+
+
 def _expect_symbol(sexp: SExpr, context: str) -> str:
     """Expect an unquoted symbol and return its string value."""
     if not isinstance(sexp, SAtom):
@@ -501,4 +523,5 @@ __all__ = [
     'sexp_to_expr',
     'type_to_sexp',
     'expr_to_sexp',
+    'constructor_to_sexp',
 ]

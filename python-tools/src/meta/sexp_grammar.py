@@ -27,7 +27,7 @@ from typing import Dict, List, Optional
 
 from .sexp import SAtom, SList, SExpr
 from .sexp_parser import parse_sexp_file
-from .sexp_target import sexp_to_type, sexp_to_expr, type_to_sexp, expr_to_sexp, SExprConversionError
+from .sexp_target import sexp_to_type, sexp_to_expr, type_to_sexp, constructor_to_sexp, SExprConversionError
 from .grammar import (
     Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence, Rule
 )
@@ -255,7 +255,7 @@ def rule_to_sexp(rule: Rule) -> SExpr:
         SAtom("rule"),
         lhs_sexp,
         rhs_sexp,
-        expr_to_sexp(rule.constructor)
+        constructor_to_sexp(rule.constructor)
     ))
 
 

@@ -8,7 +8,7 @@ from typing import List, Optional, Set, Tuple, Union
 
 from .codegen_base import CodeGenerator, BuiltinResult
 from .target import (
-    TargetExpr, Var, Lit, Symbol, Message, OneOf, ListExpr, Call, Lambda, Let,
+    TargetExpr, Var, Lit, Symbol, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
     IfElse, FunDef, VisitNonterminalDef
 )
 from .gensym import gensym
