@@ -9,8 +9,10 @@ from pathlib import Path
 import tempfile
 from textwrap import dedent
 
+from typing import Optional, Set
+
 from meta.proto_parser import ProtoParser
-from meta.grammar_validator import validate_grammar
+from meta.grammar_validator import validate_grammar, ValidationResult
 from meta.sexp_grammar import load_grammar_config_file
 from meta.grammar import Grammar
 
@@ -23,15 +25,16 @@ def create_temp_file(content: str, suffix: str = ".txt") -> Path:
     return Path(path)
 
 
-def parse_and_validate(grammar_content: str, proto_content: str, expected_unreachable=None):
+def parse_and_validate(grammar_content: str, proto_content: str, expected_unreachable: Optional[Set[str]] = None) -> ValidationResult:
     """Parse grammar and proto files and run validation."""
+    import shutil
+    import tempfile
+
     if expected_unreachable is None:
         expected_unreachable = set()
 
     # Create temporary files with consistent names
     # Use "test" as the module name by using test.proto as the filename
-    import os
-    import tempfile
     temp_dir = tempfile.mkdtemp()
     grammar_file = Path(temp_dir) / "grammar.sexp"
     proto_file = Path(temp_dir) / "test.proto"
@@ -39,6 +42,7 @@ def parse_and_validate(grammar_content: str, proto_content: str, expected_unreac
     grammar_file.write_text(dedent(grammar_content))
     proto_file.write_text(dedent(proto_content))
 
+    result: ValidationResult
     try:
         # Load grammar
         grammar_config = load_grammar_config_file(grammar_file)
@@ -63,10 +67,9 @@ def parse_and_validate(grammar_content: str, proto_content: str, expected_unreac
 
         # Validate
         result = validate_grammar(grammar, proto_parser, expected_unreachable)
-        return result
     finally:
-        import shutil
         shutil.rmtree(temp_dir, ignore_errors=True)
+    return result
 
 
 class TestCompletenessErrors:

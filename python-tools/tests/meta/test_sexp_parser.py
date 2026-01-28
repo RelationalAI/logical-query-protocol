@@ -12,7 +12,7 @@ class TestParseAtoms:
     def test_parse_symbol(self):
         result = parse_sexp("foo")
         assert result == SAtom("foo")
-        assert not result.quoted
+        assert isinstance(result, SAtom) and not result.quoted
 
     def test_parse_symbol_with_special_chars(self):
         result = parse_sexp("foo-bar")
@@ -37,7 +37,7 @@ class TestParseAtoms:
     def test_parse_integer_positive(self):
         result = parse_sexp("42")
         assert result == SAtom(42)
-        assert isinstance(result.value, int)
+        assert isinstance(result, SAtom) and isinstance(result.value, int)
 
     def test_parse_integer_negative(self):
         result = parse_sexp("-17")
@@ -50,7 +50,7 @@ class TestParseAtoms:
     def test_parse_float_simple(self):
         result = parse_sexp("3.14")
         assert result == SAtom(3.14)
-        assert isinstance(result.value, float)
+        assert isinstance(result, SAtom) and isinstance(result.value, float)
 
     def test_parse_float_negative(self):
         result = parse_sexp("-2.5")
@@ -68,18 +68,18 @@ class TestParseAtoms:
         # true is parsed as a symbol, not a boolean
         result = parse_sexp("true")
         assert result == SAtom("true")
-        assert result.value == "true"
+        assert isinstance(result, SAtom) and result.value == "true"
 
     def test_parse_boolean_false(self):
         # false is parsed as a symbol, not a boolean
         result = parse_sexp("false")
         assert result == SAtom("false")
-        assert result.value == "false"
+        assert isinstance(result, SAtom) and result.value == "false"
 
     def test_parse_string_simple(self):
         result = parse_sexp('"hello"')
         assert result == SAtom("hello", quoted=True)
-        assert result.quoted
+        assert isinstance(result, SAtom) and result.quoted
 
     def test_parse_string_with_spaces(self):
         result = parse_sexp('"hello world"')
@@ -112,7 +112,7 @@ class TestParseLists:
     def test_parse_empty_list(self):
         result = parse_sexp("()")
         assert result == SList(())
-        assert len(result) == 0
+        assert isinstance(result, SList) and len(result) == 0
 
     def test_parse_single_element_list(self):
         result = parse_sexp("(foo)")

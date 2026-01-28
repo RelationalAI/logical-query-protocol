@@ -420,7 +420,7 @@ class TestIsSimpleExpr:
         result = subst(expr, {'x': replacement})
         # equal builtin is simple, so no Let needed
         assert isinstance(result, Call)
-        assert result.func.name == 'f'
+        assert isinstance(result.func, Builtin) and result.func.name == 'f'
 
     def test_call_non_builtin_is_not_simple(self):
         """Non-simple builtin needs Let for multiple uses."""
@@ -437,7 +437,7 @@ class TestIsSimpleExpr:
         result = subst(expr, {'x': replacement})
         # IfElse with all literals is simple
         assert isinstance(result, Call)
-        assert result.func.name == 'f'
+        assert isinstance(result.func, Builtin) and result.func.name == 'f'
 
     def test_let_with_simple_parts_is_simple(self):
         """Let with simple parts is simple."""
@@ -447,7 +447,7 @@ class TestIsSimpleExpr:
         result = subst(expr, {'x': replacement})
         # Let with literal init is simple
         assert isinstance(result, Call)
-        assert result.func.name == 'f'
+        assert isinstance(result.func, Builtin) and result.func.name == 'f'
 
 
 class TestCountVarOccurrences:

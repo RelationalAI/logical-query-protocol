@@ -746,7 +746,7 @@ class TestRhsToSexpErrors:
         class FakeRhs:
             pass
         with pytest.raises(GrammarConversionError, match="Unknown RHS type"):
-            rhs_to_sexp(FakeRhs())
+            rhs_to_sexp(FakeRhs())  # type: ignore[arg-type]
 
 
 class TestLoadGrammarConfigFile:

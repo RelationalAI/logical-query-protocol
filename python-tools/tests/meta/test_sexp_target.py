@@ -543,12 +543,12 @@ class TestSexpToTypeErrors:
     def test_empty_list_error(self):
         """Empty list is not a valid type."""
         with pytest.raises(SExprConversionError, match="Invalid type expression"):
-            sexp_to_type(SList([]))
+            sexp_to_type(SList(()))
 
     def test_type_with_quoted_head(self):
         """Type expression must start with symbol, not string."""
         with pytest.raises(SExprConversionError, match="Type expression must start with a symbol"):
-            sexp_to_type(SList([SAtom(value="Message", quoted=True), SAtom(value="test", quoted=False)]))
+            sexp_to_type(SList((SAtom(value="Message", quoted=True), SAtom(value="test", quoted=False))))
 
     def test_typevar_wrong_arity(self):
         """TypeVar requires exactly one argument."""
@@ -597,12 +597,12 @@ class TestSexpToExprErrors:
     def test_empty_list_error(self):
         """Empty list is not a valid expression."""
         with pytest.raises(SExprConversionError, match="Invalid expression"):
-            sexp_to_expr(SList([]))
+            sexp_to_expr(SList(()))
 
     def test_expr_with_quoted_head(self):
         """Expression must start with symbol, not string."""
         with pytest.raises(SExprConversionError, match="Expression must start with a symbol"):
-            sexp_to_expr(SList([SAtom(value="var", quoted=True)]))
+            sexp_to_expr(SList((SAtom(value="var", quoted=True),)))
 
     def test_var_wrong_arity(self):
         """var requires name and type."""
