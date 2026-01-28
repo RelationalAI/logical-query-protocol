@@ -295,7 +295,7 @@ class TestMessage:
     def test_str(self):
         """Test Message string representation."""
         c = NewMessage("proto", "Formula", ())
-        assert str(c) == "@proto.Formula"
+        assert str(c) == "@proto.Formula()"
 
     def test_invalid_name(self):
         """Test Message with invalid name."""
@@ -719,7 +719,7 @@ class TestComplexExpressions:
         call = Call(ctor, [arg1, arg2, arg3])
 
         assert len(call.args) == 3
-        assert isinstance(call.func, Message)
+        assert isinstance(call.func, NewMessage)
         assert "@proto.Transaction" in str(call)
 
     def test_function_returning_function(self):

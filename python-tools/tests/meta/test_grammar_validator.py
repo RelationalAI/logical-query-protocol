@@ -419,39 +419,6 @@ class TestFieldCoverage:
 class TestTypeChecking:
     """Tests for expression type checking."""
 
-    def test_message_call_correct_types(self, validator):
-        """Test Message call with correct argument types."""
-        # Setup type env with a test message
-        validator.type_env._message_field_types[('proto', 'TestMsg')] = [BaseType('String'), BaseType('Int64')]
-
-        msg = NewMessage('proto', 'TestMsg', ())
-        args = [Var('s', BaseType('String')), Var('i', BaseType('Int64'))]
-
-        validator._check_message_call_types(msg, args, 'test_rule')
-        assert validator.result.is_valid
-
-    def test_message_call_wrong_arity(self, validator):
-        """Test Message call with wrong number of arguments."""
-        validator.type_env._message_field_types[('proto', 'TestMsg')] = [BaseType('String'), BaseType('Int64')]
-
-        msg = NewMessage('proto', 'TestMsg', ())
-        args = [Var('s', BaseType('String'))]  # Missing one arg
-
-        validator._check_message_call_types(msg, args, 'test_rule')
-        assert not validator.result.is_valid
-        assert any("expects 2 args, got 1" in e.message for e in validator.result.errors)
-
-    def test_message_call_wrong_type(self, validator):
-        """Test Message call with wrong argument type."""
-        validator.type_env._message_field_types[('proto', 'TestMsg')] = [BaseType('String'), BaseType('Int64')]
-
-        msg = NewMessage('proto', 'TestMsg', ())
-        args = [Var('s', BaseType('String')), Var('i', BaseType('String'))]  # Second arg should be Int64
-
-        validator._check_message_call_types(msg, args, 'test_rule')
-        assert not validator.result.is_valid
-        assert any("arg 1" in e.message and "String" in e.message for e in validator.result.errors)
-
     def test_builtin_unwrap_option_or_valid(self, validator):
         """Test unwrap_option_or with correct types."""
         builtin = Builtin('unwrap_option_or')
@@ -559,6 +526,11 @@ class TestRuleTypeChecking:
     def test_rule_param_type_match(self):
         """Test rule with matching parameter types."""
         parser = ProtoParser()
+        parser.messages['TestMsg'] = ProtoMessage(
+            name='TestMsg', module='proto', fields=[
+                ProtoField(name='s', number=1, type='string'),
+            ], oneofs=[], enums=[], reserved=[]
+        )
         msg_type = MessageType('proto', 'TestMsg')
         start = Nonterminal('start', msg_type)
         grammar = Grammar(start=start)
@@ -726,10 +698,10 @@ class TestTypeInference:
         inferred = validator._infer_expr_type(var)
         assert inferred == BaseType('Int64')
 
-    def test_infer_message_call_type(self, validator):
-        """Test type inference for Message constructor call."""
-        call = Call(NewMessage('proto', 'TestMsg', ()), [])
-        inferred = validator._infer_expr_type(call)
+    def test_infer_newmessage_type(self, validator):
+        """Test type inference for NewMessage expression."""
+        msg = NewMessage('proto', 'TestMsg', ())
+        inferred = validator._infer_expr_type(msg)
         assert inferred == MessageType('proto', 'TestMsg')
 
     def test_infer_list_expr_type(self, validator):

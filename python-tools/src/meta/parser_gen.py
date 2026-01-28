@@ -435,7 +435,7 @@ def _subst(expr: 'TargetExpr', var: str, val: 'TargetExpr') -> 'TargetExpr':
         return ListExpr([_subst(elem, var, val) for elem in expr.elements], expr.element_type)
     elif isinstance(expr, Return):
         return Return(_subst(expr.expr, var, val))
-    elif isinstance(expr, (Lit, Symbol, Builtin, Message, OneOf, VisitNonterminal)):
+    elif isinstance(expr, (Lit, Symbol, Builtin, NewMessage, OneOf, VisitNonterminal)):
         # These don't contain variables, return unchanged
         return expr
     return expr

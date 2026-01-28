@@ -288,7 +288,7 @@ class CodeGenerator(ABC):
         elif isinstance(expr, Symbol):
             return self.gen_symbol(expr.name)
 
-        elif isinstance(expr, Message):
+        elif isinstance(expr, NewMessage):
             return self.gen_constructor(expr.module, expr.name)
 
         elif isinstance(expr, Builtin):

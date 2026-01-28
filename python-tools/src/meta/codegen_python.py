@@ -273,7 +273,7 @@ class PythonCodeGenerator(CodeGenerator):
 
     def generate_lines(self, expr: TargetExpr, lines: List[str], indent: str = "") -> str:
         # Special case: fragments_pb2.Fragment construction with debug_info parameter
-        if isinstance(expr, Call) and isinstance(expr.func, Message) and expr.func.name == "Fragment":
+        if isinstance(expr, Call) and isinstance(expr.func, NewMessage) and expr.func.name == "Fragment":
             for arg in expr.args:
                 if isinstance(arg, Var) and arg.name == "debug_info":
                     # Fragment constructor args are: id (FragmentId), declarations, debug_info
@@ -288,7 +288,7 @@ class PythonCodeGenerator(CodeGenerator):
     def _generate_call(self, expr: Call, lines: List[str], indent: str) -> str:
         """Override to handle OneOf specially for Python protobuf."""
         # Check for Message constructor with OneOf call argument
-        if isinstance(expr.func, Message):
+        if isinstance(expr.func, NewMessage):
             f = self.generate_lines(expr.func, lines, indent)
 
             # Python protobuf requires keyword arguments
@@ -299,7 +299,7 @@ class PythonCodeGenerator(CodeGenerator):
             positional_args = []
             keyword_args = []
 
-            msg_key = (expr.func.module, expr.func.name)
+            msg_key = (expr.func.module, expr.func.name)  # type: ignore[union-attr]
             field_specs = message_field_map.get(msg_key, [])
             arg_idx = 0
             field_idx = 0

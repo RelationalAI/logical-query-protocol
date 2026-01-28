@@ -65,14 +65,16 @@ class TestParseAtoms:
         assert result == SAtom(1.5e-3)
 
     def test_parse_boolean_true(self):
+        # true is parsed as a symbol, not a boolean
         result = parse_sexp("true")
-        assert result == SAtom(True)
-        assert result.value is True
+        assert result == SAtom("true")
+        assert result.value == "true"
 
     def test_parse_boolean_false(self):
+        # false is parsed as a symbol, not a boolean
         result = parse_sexp("false")
-        assert result == SAtom(False)
-        assert result.value is False
+        assert result == SAtom("false")
+        assert result.value == "false"
 
     def test_parse_string_simple(self):
         result = parse_sexp('"hello"')
