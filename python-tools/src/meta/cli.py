@@ -11,7 +11,9 @@ Options:
     proto_files: One or more .proto files to parse
     --grammar: Path to grammar file (defaults to src/meta/grammar.sexp)
     --validate: Validate grammar covers protobuf spec
-    -o, --output: Output file for writing the grammar in s-expression format (stdout if not specified)
+    --proto: Output the parsed protobuf specification
+    --parser {ir,python}: Output the generated parser (as IR or Python)
+    -o, --output: Output file (stdout if not specified)
 
 Example:
     $ python -m meta.cli --grammar grammar.sexp proto/logic.proto proto/transactions.proto --validate
@@ -19,6 +21,12 @@ Example:
 
     $ python -m meta.cli --grammar my_grammar.sexp proto/logic.proto --validate -o output.sexp
     # Validates a custom grammar file and outputs it
+
+    $ python -m meta.cli proto/logic.proto --parser python -o parser.py
+    # Generates a Python parser and writes it to parser.py
+
+    $ python -m meta.cli proto/logic.proto --parser ir
+    # Outputs the parser intermediate representation
 
 The tool performs the following steps:
 1. Load grammar from the specified file (or default location)
@@ -109,20 +117,26 @@ def parse_args():
         action="store_true",
         help="Validate grammar covers protobuf spec"
     )
+    parser.add_argument(
+        "--parser",
+        type=str,
+        choices=["ir", "python"],
+        help="Output the generated parser (ir or python)"
+    )
     return parser.parse_args()
 
 
-def check_unreachable_nonterminals(grammar, generator):
+def check_unreachable_nonterminals(grammar, expected_unreachable):
     """Check for unexpected unreachable nonterminals and report warnings.
 
     Args:
-        grammar: The generated grammar to analyze
-        generator: The GrammarGenerator used to create the grammar
+        grammar: The grammar to analyze
+        expected_unreachable: Set of nonterminal names expected to be unreachable
 
     Prints warnings to stdout if unexpected unreachable nonterminals are found.
     """
     _, unreachable = grammar.analysis.partition_nonterminals_by_reachability()
-    unexpected_unreachable = [r for r in unreachable if r.name not in generator.expected_unreachable]
+    unexpected_unreachable = [r for r in unreachable if r.name not in expected_unreachable]
     if unexpected_unreachable:
         print("Warning: Unreachable nonterminals detected:")
         for rule in unexpected_unreachable:
@@ -208,6 +222,26 @@ def run(args) -> int:
         output_text = grammar.print_grammar_sexp()
         args.output.write_text(output_text)
         print(f"Grammar written to {args.output}")
+
+    if args.parser:
+        check_unreachable_nonterminals(grammar, expected_unreachable)
+
+        if args.parser == "ir":
+            from .parser_gen import generate_parse_functions
+            parse_functions = generate_parse_functions(grammar)
+            output_lines = []
+            for defn in parse_functions:
+                output_lines.append(str(defn))
+                output_lines.append("")
+            output_text = "\n".join(output_lines)
+            write_output(output_text, args.output, f"Generated parser IR written to {args.output}")
+        elif args.parser == "python":
+            from .parser_gen_python import generate_parser_python
+            command_line = " ".join(["python -m meta.cli"] + [str(f) for f in args.proto_files] + ["--parser", "python"])
+            # Transform messages dict from {name: ProtoMessage} to {(module, name): ProtoMessage}
+            proto_messages = {(msg.module, name): msg for name, msg in proto_parser.messages.items()}
+            output_text = generate_parser_python(grammar, command_line, proto_messages)
+            write_output(output_text, args.output, f"Generated parser written to {args.output}")
 
     return 0
 

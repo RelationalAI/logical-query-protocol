@@ -549,6 +549,7 @@ class VisitNonterminalDef(TargetNode):
     params: Sequence['Var']
     return_type: TargetType
     body: 'TargetExpr'
+    indent: str = ""  # base indentation for code generation
 
     def __str__(self) -> str:
         params_str = ', '.join(f"{p.name}: {p.type}" for p in self.params)

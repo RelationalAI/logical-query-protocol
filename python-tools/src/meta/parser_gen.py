@@ -101,16 +101,16 @@ class AmbiguousGrammarError(Exception):
     pass
 
 
-def generate_parse_functions(grammar: Grammar) -> List[VisitNonterminalDef]:
+def generate_parse_functions(grammar: Grammar, indent: str = "") -> List[VisitNonterminalDef]:
     parser_methods = []
     reachable, _ = grammar.analysis.partition_nonterminals_by_reachability()
     for nt in reachable:
         rules = grammar.rules[nt]
-        method_code = _generate_parse_method(nt, rules, grammar)
+        method_code = _generate_parse_method(nt, rules, grammar, indent)
         parser_methods.append(method_code)
     return parser_methods
 
-def _generate_parse_method(lhs: Nonterminal, rules: List[Rule], grammar: Grammar) -> VisitNonterminalDef:
+def _generate_parse_method(lhs: Nonterminal, rules: List[Rule], grammar: Grammar, indent: str = "") -> VisitNonterminalDef:
     """Generate parse method code as string (preserving existing logic)."""
     return_type = None
     rhs = None
@@ -136,7 +136,7 @@ def _generate_parse_method(lhs: Nonterminal, rules: List[Rule], grammar: Grammar
             tail = IfElse(Call(Builtin('equal'), [Var(prediction, BaseType('Int64')), Lit(i)]), _generate_parse_rhs_ir(rule.rhs, grammar, follow_set, True, rule.constructor), tail)
         rhs = Let(Var(prediction, BaseType('Int64')), predictor, tail)
     assert return_type is not None
-    return VisitNonterminalDef('parse', lhs, [], return_type, rhs)
+    return VisitNonterminalDef('parse', lhs, [], return_type, rhs, indent)
 
 def _build_predictor(grammar: Grammar, rules: List[Rule]) -> TargetExpr:
     """Build a predictor expression that returns the index of the matching rule.
@@ -338,7 +338,10 @@ def _generate_parse_rhs_ir(rhs: Rhs, grammar: Grammar, follow_set: TerminalSeque
         xs = Var(gensym('xs'), ListType(rhs.rhs.target_type()))
         cond = Var(gensym('cond'), BaseType('Boolean'))
         predictor = _build_option_predictor(grammar, rhs.rhs, follow_set)
-        return Let(xs, ListExpr([], rhs.rhs.target_type()), Let(cond, predictor, Seq([While(cond, Seq([Call(Builtin('list_push!'), [xs, _generate_parse_rhs_ir(rhs.rhs, grammar, follow_set, False, None)]), Assign(cond, predictor)])), xs])))
+        parse_item = _generate_parse_rhs_ir(rhs.rhs, grammar, follow_set, False, None)
+        loop_body = Seq([Call(Builtin('list_push!'), [xs, parse_item]), Assign(cond, predictor)])
+        return Let(xs, ListExpr([], rhs.rhs.target_type()),
+                   Let(cond, predictor, Seq([While(cond, loop_body), xs])))
     else:
         raise NotImplementedError(f'Unsupported Rhs type: {type(rhs)}')
 
@@ -438,4 +441,4 @@ def _subst(expr: 'TargetExpr', var: str, val: 'TargetExpr') -> 'TargetExpr':
     elif isinstance(expr, (Lit, Symbol, Builtin, NewMessage, OneOf, VisitNonterminal)):
         # These don't contain variables, return unchanged
         return expr
-    return expr
+    raise ValueError(f"Unknown expression type in _subst: {type(expr).__name__}")

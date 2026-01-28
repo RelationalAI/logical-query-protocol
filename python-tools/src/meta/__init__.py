@@ -56,6 +56,18 @@ from .proto_ast import (
 # Protobuf parser
 from .proto_parser import ProtoParser
 
+# Parser generation
+from .parser_gen import generate_parse_functions, GrammarConflictError, AmbiguousGrammarError
+
+# Python code generation
+from .codegen_python import (
+    generate_python,
+    generate_python_lines,
+    escape_identifier as escape_python_identifier,
+)
+
+from .parser_gen_python import generate_parser_python
+
 __all__ = [
     # Target language AST
     'TargetNode',
@@ -96,4 +108,13 @@ __all__ = [
     'ProtoMessage',
     # Protobuf parser
     'ProtoParser',
+    # Parser generation
+    'generate_parse_functions',
+    'GrammarConflictError',
+    'AmbiguousGrammarError',
+    'generate_parser_python',
+    # Python code generation
+    'generate_python',
+    'generate_python_lines',
+    'escape_python_identifier',
 ]

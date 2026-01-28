@@ -285,12 +285,14 @@ class TestRuleToSexp:
         assert isinstance(result, SList)
         assert result[0] == SAtom("rule")
         # result[1] is (lhs boolean_value Boolean)
-        assert isinstance(result[1], SList)
-        assert result[1][0] == SAtom("lhs")
-        assert result[1][1] == SAtom("boolean_value")
+        lhs_sexp = result[1]
+        assert isinstance(lhs_sexp, SList)
+        assert lhs_sexp[0] == SAtom("lhs")
+        assert lhs_sexp[1] == SAtom("boolean_value")
         # result[2] is (rhs "true")
-        assert isinstance(result[2], SList)
-        assert result[2][0] == SAtom("rhs")
+        rhs_sexp = result[2]
+        assert isinstance(rhs_sexp, SList)
+        assert rhs_sexp[0] == SAtom("rhs")
 
     def test_rule_with_params(self):
         rule = Rule(
@@ -305,8 +307,9 @@ class TestRuleToSexp:
         result = rule_to_sexp(rule)
         assert isinstance(result, SList)
         assert result[0] == SAtom("rule")
-        assert isinstance(result[1], SList)
-        assert result[1][0] == SAtom("lhs")
+        lhs_sexp = result[1]
+        assert isinstance(lhs_sexp, SList)
+        assert lhs_sexp[0] == SAtom("lhs")
 
 
 class TestRhsRoundTrip:
