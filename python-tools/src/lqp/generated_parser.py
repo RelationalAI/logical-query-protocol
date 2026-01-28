@@ -766,7 +766,8 @@ class Parser:
                     if prediction51 == 0:
                         _t406 = self.parse_def()
                         value52 = _t406
-                        _t407 = logic_pb2.Declaration(**{'def': value52})
+                        _t407 = logic_pb2.Declaration()
+                        getattr(_t407, 'def').CopyFrom(value52)
                         _t405 = _t407
                     else:
                         raise ParseError(f"{'Unexpected token in declaration'}: {self.lookahead(0).type}=`{self.lookahead(0).value}`")
@@ -1182,7 +1183,8 @@ class Parser:
                                 if prediction87 == 6:
                                     _t546 = self.parse_not()
                                     value94 = _t546
-                                    _t547 = logic_pb2.Formula(**{'not': value94})
+                                    _t547 = logic_pb2.Formula()
+                                    getattr(_t547, 'not').CopyFrom(value94)
                                     _t545 = _t547
                                 else:
                                     if prediction87 == 5:
@@ -1812,7 +1814,8 @@ class Parser:
         _t806 = self.parse_script()
         body192 = _t806
         self.consume_literal(')')
-        _t807 = logic_pb2.Algorithm(**{'global': global191}, body=body192)
+        _t807 = logic_pb2.Algorithm(body=body192)
+        getattr(_t807, 'global').extend(global191)
         return _t807
 
     def parse_script(self) -> logic_pb2.Script:
@@ -1937,7 +1940,8 @@ class Parser:
                 if prediction204 == 2:
                     _t854 = self.parse_break()
                     value207 = _t854
-                    _t855 = logic_pb2.Instruction(**{'break': value207})
+                    _t855 = logic_pb2.Instruction()
+                    getattr(_t855, 'break').CopyFrom(value207)
                     _t853 = _t855
                 else:
                     if prediction204 == 1:
@@ -2596,4 +2600,3 @@ def parse(input_str: str) -> Any:
         if remaining_token.type != '$':
             raise ParseError(f"Unexpected token at end of input: {remaining_token}")
     return result
-
