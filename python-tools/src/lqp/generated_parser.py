@@ -176,7 +176,7 @@ class Parser:
         self.tokens = tokens
         self.pos = 0
         self.id_to_debuginfo = {}
-        self._current_fragment_id = None
+        self._current_fragment_id: bytes | None = None
         self._relation_id_to_name = {}
 
     def lookahead(self, k: int = 0) -> Token:
