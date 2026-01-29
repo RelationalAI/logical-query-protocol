@@ -258,8 +258,6 @@ class GetElement(TargetExpr):
     """Tuple element access with constant integer index.
 
     Accesses an element from a tuple expression using a compile-time constant index.
-    This is a specialized form of get_tuple_element that uses an integer literal
-    rather than an arbitrary expression for the index.
 
     tuple_expr: Expression evaluating to a tuple
     index: Constant integer index (0-based)
@@ -268,9 +266,9 @@ class GetElement(TargetExpr):
         GetElement(Var("pair", TupleType([INT64, STRING])), 0)  # pair[0]
         GetElement(Var("pair", TupleType([INT64, STRING])), 1)  # pair[1]
 
-    Replaces the fst and snd builtins:
-        fst(x) -> GetElement(x, 0)
-        snd(x) -> GetElement(x, 1)
+    Can also use the get_tuple_element builtin:
+        Call(Builtin("get_tuple_element"), [x, Lit(0)])  # x[0]
+        Call(Builtin("get_tuple_element"), [x, Lit(1)])  # x[1]
     """
     tuple_expr: 'TargetExpr'
     index: int
@@ -438,7 +436,7 @@ class VarType(TargetType):
     """Type variable for polymorphic types.
 
     Represents a type parameter in polymorphic function signatures.
-    Used for builtins like fst, snd, unwrap_option_or, etc.
+    Used for builtins like unwrap_option_or, get_tuple_element, etc.
 
     Example:
         VarType("T")    # Type variable T

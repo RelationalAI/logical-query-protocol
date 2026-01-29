@@ -105,12 +105,6 @@ class PythonCodeGenerator(CodeGenerator):
         self.register_builtin("is_none", 1,
             lambda args, lines, indent: BuiltinResult(f"{args[0]} is None", []))
 
-        self.register_builtin("fst", 1,
-            lambda args, lines, indent: BuiltinResult(f"{args[0]}[0]", []))
-
-        self.register_builtin("snd", 1,
-            lambda args, lines, indent: BuiltinResult(f"{args[0]}[1]", []))
-
         self.register_builtin("encode_string", 1,
             lambda args, lines, indent: BuiltinResult(f"{args[0]}.encode()", []))
 

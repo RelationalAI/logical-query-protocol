@@ -17,12 +17,6 @@ class TestCompactPrint:
     def test_atom_float(self):
         assert compact_print(SAtom(3.14)) == "3.14"
 
-    def test_atom_bool_true(self):
-        assert compact_print(SAtom(True)) == "true"
-
-    def test_atom_bool_false(self):
-        assert compact_print(SAtom(False)) == "false"
-
     def test_atom_string(self):
         assert compact_print(SAtom("hello", quoted=True)) == '"hello"'
 

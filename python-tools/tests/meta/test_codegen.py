@@ -136,16 +136,16 @@ def test_python_builtin_generation():
     result = gen.generate_lines(expr, lines, "")
     assert result == "x is None"
 
-    # Test 'fst' and 'snd' builtins
+    # Test 'get_tuple_element' builtin
     reset_gensym()
     lines = []
-    expr = Call(Builtin("fst"), [Var("pair", _any_type)])
+    expr = Call(Builtin("get_tuple_element"), [Var("pair", _any_type), Lit(0)])
     result = gen.generate_lines(expr, lines, "")
     assert result == "pair[0]"
 
     reset_gensym()
     lines = []
-    expr = Call(Builtin("snd"), [Var("pair", _any_type)])
+    expr = Call(Builtin("get_tuple_element"), [Var("pair", _any_type), Lit(1)])
     result = gen.generate_lines(expr, lines, "")
     assert result == "pair[1]"
 

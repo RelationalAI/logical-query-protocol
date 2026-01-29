@@ -20,7 +20,6 @@ Note: This validator does NOT check if the grammar is LL(k) for any k.
 Grammar ambiguity and lookahead conflicts are detected by the parser generator.
 """
 
-import re
 from dataclasses import dataclass, field as dataclass_field
 from typing import List, Optional, Set, Sequence as PySequence, Dict
 
@@ -47,19 +46,6 @@ _PRIMITIVE_TO_BASE_TYPE = {
     'bytes': 'String',
 }
 
-
-def _to_snake_case(name: str) -> str:
-    """Convert CamelCase to snake_case."""
-    result = re.sub('([a-z\\d])([A-Z])', '\\1_\\2', name)
-    result = result.lower()
-    overrides = {
-        'date_time': 'datetime',
-        'csvconfig': 'csv_config',
-        'csvcolumn': 'csv_column',
-    }
-    for old, new in overrides.items():
-        result = result.replace(old, new)
-    return result
 
 
 class TypeEnv:
@@ -152,25 +138,11 @@ class TypeEnv:
         """Initialize builtin function type signatures."""
         # Type variables for polymorphic builtins
         T = VarType("T")
-        T1 = VarType("T1")
-        T2 = VarType("T2")
 
         # unwrap_option_or: (Option[T], T) -> T
         self._builtin_types["unwrap_option_or"] = FunctionType(
             param_types=[OptionType(T), T],
             return_type=T
-        )
-
-        # fst: (T1, T2) -> T1
-        self._builtin_types["fst"] = FunctionType(
-            param_types=[TupleType([T1, T2])],
-            return_type=T1
-        )
-
-        # snd: (T1, T2) -> T2
-        self._builtin_types["snd"] = FunctionType(
-            param_types=[TupleType([T1, T2])],
-            return_type=T2
         )
 
         # make_tuple: (T1, T2, ...) -> (T1, T2, ...)
@@ -861,16 +833,22 @@ class GrammarValidator:
         return t1 == t2
 
     def _check_message_coverage(self) -> None:
-        """Check that every proto message has a corresponding grammar rule."""
+        """Check that every proto message has at least one grammar rule producing it."""
         for message_name in self._message_names:
-            rule_name = _to_snake_case(message_name)
+            message = self.parser.messages[message_name]
+            message_type = MessageType(message.module, message_name)
 
-            if rule_name not in self._rule_names:
+            # Find all rules whose LHS type matches this message type
+            rules_for_message = []
+            for nt, rules in self.grammar.rules.items():
+                if nt.type == message_type:
+                    rules_for_message.extend(rules)
+
+            if not rules_for_message:
                 self.result.add_error(
                     "completeness",
-                    f"Proto message '{message_name}' has no grammar rule '{rule_name}'",
-                    proto_type=message_name,
-                    rule_name=rule_name
+                    f"Proto message '{message_name}' has no grammar rule producing it",
+                    proto_type=message_name
                 )
         return None
 
@@ -921,12 +899,15 @@ class GrammarValidator:
             if not self._is_oneof_only_message(message):
                 continue
 
-            rule_name = _to_snake_case(message_name)
-            rule_nt = self._find_nonterminal(rule_name)
-            if rule_nt is None:
+            message_type = MessageType(message.module, message_name)
+            rule_nts = self._find_nonterminals_by_type(message_type)
+            if not rule_nts:
                 continue
 
-            rules = self.grammar.rules.get(rule_nt, [])
+            # Collect all rules for this message type
+            rules = []
+            for rule_nt in rule_nts:
+                rules.extend(self.grammar.rules.get(rule_nt, []))
 
             # Collect all variant names from all oneofs
             all_variants = []
@@ -955,7 +936,7 @@ class GrammarValidator:
                         "oneof_coverage",
                         f"Rule for '{message_name}' constructs multiple oneof variants: {', '.join(constructed_variants)}",
                         proto_type=message_name,
-                        rule_name=rule_name
+                        rule_name=rule.lhs.name
                     )
 
             # Check each variant has at least one rule
@@ -965,8 +946,7 @@ class GrammarValidator:
                     self.result.add_error(
                         "oneof_coverage",
                         f"Oneof variant '{message_name}.{variant_name}' has no grammar alternative",
-                        proto_type=message_name,
-                        rule_name=rule_name
+                        proto_type=message_name
                     )
 
             # Check for rules that don't construct any variant
@@ -974,68 +954,44 @@ class GrammarValidator:
                 self.result.add_error(
                     "oneof_coverage",
                     f"Message '{message_name}' has {len(rules_without_variant)} rule(s) that don't construct any oneof variant",
-                    proto_type=message_name,
-                    rule_name=rule_name
+                    proto_type=message_name
                 )
 
         return None
 
     def _check_soundness(self) -> None:
-        """Check that every grammar rule traces to a proto construct."""
-        # Build set of expected rule names from proto
-        expected_rules: Set[str] = set()
+        """Check that every grammar rule has a valid type."""
+        # Build set of valid proto types
+        valid_types: Set[TargetType] = set()
 
+        # Add all message types
         for message_name, message in self.parser.messages.items():
-            rule_name = _to_snake_case(message_name)
-            expected_rules.add(rule_name)
+            valid_types.add(MessageType(message.module, message_name))
 
-            # Add wrapper rules for repeated fields
-            for proto_field in message.fields:
-                if proto_field.is_repeated and self._is_message_type(proto_field.type):
-                    wrapper_name = f"{rule_name}_{proto_field.name}"
-                    expected_rules.add(wrapper_name)
+        # Add all base types
+        valid_types.update([
+            BaseType("String"),
+            BaseType("Int"),
+            BaseType("Float"),
+            BaseType("Bool"),
+            BaseType("Bytes"),
+        ])
 
-            # Add oneof variant rules
-            for oneof in message.oneofs:
-                for variant in oneof.fields:
-                    variant_rule_name = _to_snake_case(variant.name)
-                    expected_rules.add(variant_rule_name)
-
-        # Known auxiliary rules that don't map directly to proto messages
-        known_auxiliary_rules: Set[str] = {
-            # Builtin/manual rules
-            "value", "date", "datetime", "boolean_value",
-            "config_dict", "config_key_value",
-            "bindings", "binding", "value_bindings",
-            "abstraction", "abstraction_with_arity",
-            "true", "false",
-            "name", "var", "fragment_id", "relation_id",
-            "specialized_value",
-            "export_csvpath", "export_csvconfig", "export_csvcolumns", "export_csvcolumn",
-            "new_fragment_id",
-            # Operator rules
-            "eq", "lt", "lt_eq", "gt", "gt_eq", "add", "minus", "multiply", "divide",
-            # Type rules
-            "unspecified_type", "string_type", "int_type", "float_type",
-            "uint128_type", "int128_type", "boolean_type", "date_type",
-            "datetime_type", "missing_type", "decimal_type",
-            # Attribute wrapper
-            "attrs",
-        }
-        expected_rules.update(known_auxiliary_rules)
-
-        # Check each grammar rule
+        # Check each grammar rule's LHS type
         for rule_nt in self.grammar.rules.keys():
-            rule_name = rule_nt.name
+            lhs_type = rule_nt.type
 
-            if rule_name not in expected_rules:
-                # Check if it's a wrapper rule pattern (message_field)
-                if not self._is_likely_wrapper_rule(rule_name):
-                    self.result.add_warning(
-                        "soundness",
-                        f"Grammar rule '{rule_name}' has no obvious proto backing",
-                        rule_name=rule_name
-                    )
+            # Check if LHS type is valid
+            if lhs_type not in valid_types:
+                # Also check if it's a list type wrapping a valid type
+                if isinstance(lhs_type, ListType) and lhs_type.element_type in valid_types:
+                    continue
+
+                self.result.add_warning(
+                    "soundness",
+                    f"Grammar rule '{rule_nt.name}' has LHS type {lhs_type} which doesn't correspond to a proto type",
+                    rule_name=rule_nt.name
+                )
         return None
 
     def _is_oneof_only_message(self, message: ProtoMessage) -> bool:
@@ -1052,6 +1008,14 @@ class GrammarValidator:
             if nt.name == name:
                 return nt
         return None
+
+    def _find_nonterminals_by_type(self, target_type: TargetType) -> List[Nonterminal]:
+        """Find all nonterminals with the given type."""
+        result = []
+        for nt in self.grammar.rules.keys():
+            if nt.type == target_type:
+                result.append(nt)
+        return result
 
     def _get_rhs_nonterminal_names(self, rhs: Rhs) -> Set[str]:
         """Get all nonterminal names referenced in RHS."""
@@ -1071,21 +1035,6 @@ class GrammarValidator:
 
         visit(rhs)
         return names
-
-    def _is_likely_wrapper_rule(self, rule_name: str) -> bool:
-        """Check if rule name looks like a wrapper rule (message_field pattern)."""
-        parts = rule_name.split('_')
-        if len(parts) < 2:
-            return False
-
-        # Try to find a message that matches the prefix
-        for i in range(1, len(parts)):
-            prefix = '_'.join(parts[:i])
-            for message_name in self._message_names:
-                if _to_snake_case(message_name) == prefix:
-                    return True
-        return False
-
 
 def validate_grammar(
     grammar: Grammar,

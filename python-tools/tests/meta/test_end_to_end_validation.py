@@ -103,6 +103,35 @@ class TestCompletenessErrors:
         assert any("Address" in e.message for e in result.errors)
         assert any(e.category == "completeness" for e in result.errors)
 
+    def test_rule_name_can_be_anything(self):
+        """Test that rule name doesn't matter - only the type matters."""
+        proto_content = """
+        syntax = "proto3";
+        package test;
+
+        message Person {
+            string name = 1;
+        }
+        """
+
+        grammar_content = """
+        (terminal STRING String)
+
+        ;; Rule for Person with unconventional name (not 'person')
+        (rule
+          (lhs my_custom_person_rule (Message test Person))
+          (rhs STRING)
+          (construct
+            ((name String))
+            (Message test Person)
+            (new-message test Person (name (var name String)))))
+        """
+
+        result = parse_and_validate(grammar_content, proto_content)
+        # Should pass completeness check even though rule name is not 'person'
+        assert not any(e.category == "completeness" for e in result.errors)
+        # May have other warnings/errors (like soundness), but not completeness
+
 
 class TestTypeErrors:
     """Tests for type checking errors."""
@@ -328,7 +357,7 @@ class TestSoundnessWarnings:
     """Tests for soundness warnings (rules without proto backing)."""
 
     def test_rule_without_proto_backing(self):
-        """Test warning for rule without corresponding proto message."""
+        """Test warning for rule with type that doesn't correspond to a proto message."""
         proto_content = """
         syntax = "proto3";
         package test;
@@ -349,19 +378,19 @@ class TestSoundnessWarnings:
             (Message test Person)
             (new-message test Person (name (var name String)))))
 
-        ;; This rule has no proto backing
+        ;; This rule has a type that doesn't exist in proto
         (rule
-          (lhs unknown_rule String)
+          (lhs unknown_rule (Message test NonExistentMessage))
           (rhs STRING)
           (construct
             ((value String))
-            String
-            (var value String)))
+            (Message test NonExistentMessage)
+            (new-message test NonExistentMessage (name (var value String)))))
         """
 
         result = parse_and_validate(grammar_content, proto_content)
         assert any(w.category == "soundness" for w in result.warnings)
-        assert any("unknown_rule" in w.message for w in result.warnings)
+        assert any("unknown_rule" in w.message and "doesn't correspond to a proto type" in w.message for w in result.warnings)
 
 
 class TestUnreachableRules:

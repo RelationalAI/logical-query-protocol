@@ -35,17 +35,18 @@ def create_test_files():
     proto_path.write_text(proto_content)
 
     # Create a complete grammar that covers the Transaction message
+    # Note: module name comes from filename stem (test), not package name
     grammar_content = dedent("""
     (terminal STRING String)
     (terminal INT Int32)
 
     (rule
-      (lhs transaction (Message transactions Transaction))
+      (lhs transaction (Message test Transaction))
       (rhs "(" "transaction" STRING INT ")")
       (construct
         ((name String) (value Int32))
-        (Message transactions Transaction)
-        (new-message transactions Transaction
+        (Message test Transaction)
+        (new-message test Transaction
           (name (var name String))
           (value (var value Int32)))))
     """)
@@ -89,27 +90,28 @@ def create_invalid_grammar():
     proto_path.write_text(proto_content)
 
     # Grammar only covers Transaction with Person, not Address (validation failure)
+    # Note: module name comes from filename stem (test), not package name
     grammar_content = dedent("""
     (terminal STRING String)
 
     (rule
-      (lhs transaction (Message transactions Transaction))
+      (lhs transaction (Message test Transaction))
       (rhs "(" "person" STRING ")")
       (construct
         ((name String))
-        (Message transactions Transaction)
-        (new-message transactions Transaction
+        (Message test Transaction)
+        (new-message test Transaction
           (data (call (oneof person)
-            (new-message transactions Person
+            (new-message test Person
               (name (var name String))))))))
 
     (rule
-      (lhs person (Message transactions Person))
+      (lhs person (Message test Person))
       (rhs "(" "person" STRING ")")
       (construct
         ((name String))
-        (Message transactions Person)
-        (new-message transactions Person (name (var name String)))))
+        (Message test Person)
+        (new-message test Person (name (var name String)))))
     """)
 
     grammar_path = temp_dir / "grammar.sexp"

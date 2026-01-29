@@ -640,19 +640,21 @@ class TestSoundness:
         assert validator.result.is_valid
 
     def test_rule_without_proto_backing(self):
-        """Test rule without proto backing generates warning."""
+        """Test rule with invalid type generates warning."""
         parser = ProtoParser()
 
-        start = Nonterminal('unknown_rule', BaseType('String'))
+        # Create a rule with a MessageType that doesn't exist in the proto spec
+        invalid_type = MessageType('proto', 'NonExistentMessage')
+        start = Nonterminal('unknown_rule', invalid_type)
         grammar = Grammar(start=start)
-        constructor = Lambda([], BaseType('String'), Lit("test"))
+        constructor = Lambda([], invalid_type, Call(NewMessage('proto', 'NonExistentMessage', ()), []))
         rule = Rule(start, LitTerminal('test'), constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
         validator._check_soundness()
         assert len(validator.result.warnings) > 0
-        assert any("unknown_rule" in w.message and "no obvious proto backing" in w.message for w in validator.result.warnings)
+        assert any("unknown_rule" in w.message and "doesn't correspond to a proto type" in w.message for w in validator.result.warnings)
 
 
 class TestTypeInference:

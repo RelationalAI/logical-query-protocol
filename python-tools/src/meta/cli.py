@@ -24,9 +24,8 @@ from pathlib import Path
 
 from .proto_parser import ProtoParser
 from .grammar_validator import validate_grammar
-from .grammar import Grammar, Nonterminal
+from .grammar import Grammar
 from .sexp_grammar import load_grammar_config_file
-from .target import MessageType
 
 
 def format_message(msg, indent=0):
@@ -166,7 +165,12 @@ def run(args) -> int:
     grammar_config = load_grammar_config_file(grammar_path)
 
     # Build Grammar object from loaded config
-    start = Nonterminal('transaction', MessageType('transactions', 'Transaction'))
+    # Use the first nonterminal in the grammar as the start symbol
+    if not grammar_config.rules:
+        print("Error: Grammar file contains no rules", file=sys.stderr)
+        return 1
+
+    start = next(iter(grammar_config.rules.keys()))
     grammar = Grammar(start=start)
     for _, rules in grammar_config.rules.items():
         for rule in rules:

@@ -2554,7 +2554,7 @@
   (rhs
     "("
     "csv_config"
-    (term INT Int32)
+    INT
     INT
     name
     name
@@ -2567,7 +2567,7 @@
     name
     ")")
   (construct
-    ((header_row Int32)
+    ((header_row Int64)
       (skip Int64)
       (new_line String)
       (delimiter String)
@@ -2582,7 +2582,7 @@
     (new-message
       logic
       CSVConfig
-      (header_row (var header_row Int32))
+      (header_row (call (builtin int64_to_int32) (var header_row Int64)))
       (skip (var skip Int64))
       (new_line (var new_line String))
       (delimiter (var delimiter String))
