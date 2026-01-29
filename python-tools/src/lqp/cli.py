@@ -17,15 +17,21 @@ from lqp.validator import validate_lqp
 import lqp.ir as ir
 
 
-def process_file(filename, bin, json, validate=True):
+def process_file(filename, bin, json, validate=True, use_generated=False):
     """Process a single LQP file and output binary and/or JSON."""
     with open(filename, "r") as f:
         lqp_text = f.read()
 
-    lqp = parse_lqp(filename, lqp_text)
-    if validate and isinstance(lqp, ir.Transaction):
-        validate_lqp(lqp)
-    lqp_proto = ir_to_proto(lqp)
+    if use_generated:
+        from lqp.generated_parser import parse
+        lqp_proto = parse(lqp_text)
+        if validate:
+            validate_lqp(lqp_proto)
+    else:
+        lqp = parse_lqp(filename, lqp_text)
+        if validate and isinstance(lqp, ir.Transaction):
+            validate_lqp(lqp)
+        lqp_proto = ir_to_proto(lqp)
 
     # Write binary output to the configured directories, using the same filename.
     if bin:
@@ -48,7 +54,7 @@ def process_file(filename, bin, json, validate=True):
             print(f"Successfully wrote {filename} to JSON at {json}")
 
 
-def process_directory(lqp_directory, bin, json, validate=True):
+def process_directory(lqp_directory, bin, json, validate=True, use_generated=False):
     """Process all LQP files in a directory."""
     # Create bin directory at parent level if needed
     bin_dir = None
@@ -75,7 +81,7 @@ def process_directory(lqp_directory, bin, json, validate=True):
         bin_output = os.path.join(bin_dir, basename + ".bin") if bin_dir else None
         json_output = os.path.join(json_dir, basename + ".json") if json_dir else None
 
-        process_file(filename, bin_output, json_output, validate)
+        process_file(filename, bin_output, json_output, validate, use_generated)
 
 
 def look_for_lqp_directory(directory):
@@ -115,11 +121,18 @@ def main():
     arg_parser.add_argument("--json", action="store_true", help="encode emitted ProtoBuf into JSON")
     arg_parser.add_argument("--out", action="store_true", help="write emitted binary or JSON to stdout")
 
+    # Parser selection options (mutually exclusive)
+    parser_group = arg_parser.add_mutually_exclusive_group()
+    parser_group.add_argument("--generated", action="store_true", help="use generated parser instead of Lark parser")
+    parser_group.add_argument("--lark", action="store_true", help="use Lark parser (default)")
+
     args = arg_parser.parse_args()
 
     validate = not args.no_validation
     bin = args.bin
     json = args.json
+    # Default to generated parser unless --lark is explicitly specified
+    use_generated = not args.lark if args.lark else args.generated
 
     if os.path.isfile(args.input):
         filename = args.input
@@ -140,14 +153,14 @@ def main():
         if args.json:
             json_name = "-" if args.out else basename + ".json"
 
-        process_file(filename, bin_name, json_name, validate)
+        process_file(filename, bin_name, json_name, validate, use_generated)
     elif os.path.isdir(args.input):
         lqp_directory = look_for_lqp_directory(args.input)
         lqp_files = get_lqp_files(args.input)
         for file in lqp_files:
             shutil.move(file, lqp_directory)
 
-        process_directory(lqp_directory, bin, json, validate)
+        process_directory(lqp_directory, bin, json, validate, use_generated)
     else:
         print("Input is not a valid file nor directory")
 

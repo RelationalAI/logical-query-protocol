@@ -22,7 +22,7 @@
                   (primitive :rel_primitive_eq n "SSN#Bob"))))
             (attrs
               (attribute :function "checked")))
-          (functional_dependency
+          (functional_dependency :ssn_is_person_key
             ([n::STRING id::INT]
               (atom :ssn id n))
             (keys n)
@@ -49,7 +49,7 @@
                   (primitive :rel_primitive_eq ln "Johnson"))))
             (attrs
               (attribute :function "checked")))
-          (functional_dependency
+          (functional_dependency :name_is_person_key
             ([fn::STRING ln::STRING id::INT]
               (and
                 (atom :first_name id fn)
@@ -68,12 +68,12 @@
                 (primitive :rel_primitive_eq eid 1001)))
             (attrs
               (attribute :function "checked")))
-          (functional_dependency
+          (functional_dependency :ssn_is_employee_key
             ([n::STRING id::INT]
               (atom :ssn id n))
             (keys n)
             (values id))
-          (functional_dependency
+          (functional_dependency :emp_id_is_employee_key
             ([eid::INT id::INT]
               (atom :emp_id id eid))
             (keys eid)
@@ -111,7 +111,7 @@
                   (primitive :rel_primitive_eq v "VIN#Toyota"))))
             (attrs
               (attribute :function "checked")))
-          (functional_dependency
+          (functional_dependency :vin_is_car_key
             ([v::STRING id::INT]
               (atom :vin id v))
             (keys v)
@@ -146,7 +146,7 @@
     (writes
       (define
         (fragment :car_purchase_fd
-          (functional_dependency
+          (functional_dependency :date_and_car_determine_person
             ([person_id::INT car_id::INT date::STRING amount::INT]
               (atom :purchased_on_for person_id car_id date amount))
             (keys car_id date)
@@ -159,7 +159,7 @@
                 (and
                   (atom :purchased_on_for person_id car_id date amount)
                   (primitive :rel_primitive_gt_eq_monotype amount 20000)))))
-          (functional_dependency
+          (functional_dependency :car_determines_owner
             ([person_id::INT car_id::INT]
               (and
                 (atom :owns person_id car_id)
@@ -174,7 +174,7 @@
             ([person_id::INT car_id::INT]
               (exists [date::STRING amount::INT]
                 (atom :purchased_on_for person_id car_id date amount))))
-          (functional_dependency
+          (functional_dependency :car_has_at_most_one_owner
             ([person_id::INT car_id::INT]
               (atom :owns person_id car_id))
             (keys car_id)
@@ -184,7 +184,7 @@
     (writes
       (define
         (fragment :query2
-          (functional_dependency
+          (functional_dependency :vin_determines_owner
             ([n::STRING car_id::INT person_id::INT v::STRING]
               (and
                 (atom :ssn person_id n)

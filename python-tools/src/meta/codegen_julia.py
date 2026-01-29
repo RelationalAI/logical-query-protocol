@@ -45,7 +45,7 @@ class JuliaCodeGenerator(CodeGenerator):
     def __init__(self, proto_messages=None):
         self.builtin_registry = {}
         self.proto_messages = proto_messages or {}
-        self._message_field_map = None
+        self._message_field_map: Optional[dict[tuple[str, str], list[tuple[str, bool]]]] = None
         self._register_builtins()
 
     def _build_message_field_map(self):

@@ -237,7 +237,7 @@ class GrammarGenerator:
                 assert False, f'Too many params for {message_name} semantic action'
             param_types.append(elem.target_type())
             field_idx += 1
-        args = []
+        args: list[TargetExpr] = []
         for name, param_type in zip(param_names, param_types):
             var = Var(name, param_type)
             if isinstance(param_type, OptionType) and isinstance(param_type.element_type, ListType):
@@ -358,6 +358,12 @@ class GrammarGenerator:
             'uint128_type',
             'datetime_type',
             'export_csv_config',  # proto-generated rule replaced by builtin
+            'csvlocator',  # replaced by custom csv_locator rule
+            'be_tree_config',  # skipped, handled via config_dict in betree_info
+            'be_tree_locator',  # skipped, not used in S-expression syntax
+            'functional_dependency',  # oneof field in message with regular fields (not yet supported)
+            'functional_dependency_keys',  # child of functional_dependency
+            'functional_dependency_values',  # child of functional_dependency
         ])
         return None
 

@@ -529,8 +529,8 @@ class TestReturn:
         ret = Return(expr)
         assert str(ret) == "return result::Int64"
 
-    def test_invalid_expr(self):
-        """Test Return with invalid expr."""
+    def test_return_validates_expr_type(self):
+        """Test Return validates that expr is a TargetExpr."""
         with pytest.raises(AssertionError):
             Return("not an expr")  # type: ignore
 
