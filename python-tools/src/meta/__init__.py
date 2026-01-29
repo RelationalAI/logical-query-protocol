@@ -72,6 +72,8 @@ from .codegen_python import (
     escape_identifier as escape_python_identifier,
 )
 
+from .parser_gen_python import generate_parser_python
+
 __all__ = [
     # Target language AST
     'TargetNode',
@@ -119,6 +121,7 @@ __all__ = [
     'generate_parse_functions',
     'GrammarConflictError',
     'AmbiguousGrammarError',
+    'generate_parser_python',
     # Python code generation
     'generate_python',
     'generate_python_lines',

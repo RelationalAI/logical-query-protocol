@@ -26,12 +26,7 @@ PYTHON_KEYWORDS: Set[str] = {
 
 def _format_parse_error_with_token(message_expr: str, token_expr: str) -> str:
     """Format a ParseError raise statement with token information."""
-    return (
-        "raise ParseError("
-        f"f\\\"{{{message_expr}}}: "
-        f"{{{token_expr}.type}}=`{{{token_expr}.value}}`\\\""
-        ")"
-    )
+    return f'raise ParseError(f"{{{message_expr}}}: {{{token_expr}.type}}=`{{{token_expr}.value}}`")'
 
 
 class PythonCodeGenerator(CodeGenerator):
@@ -304,16 +299,21 @@ class PythonCodeGenerator(CodeGenerator):
             arg_idx = 0
             field_idx = 0
 
+            # Track keyword fields that need post-construction assignment
+            # Each entry is (field_name, field_value, is_repeated)
+            keyword_field_assignments: List[Tuple[str, str, bool]] = []
+
             while arg_idx < len(expr.args):
                 arg = expr.args[arg_idx]
 
                 if isinstance(arg, Call) and isinstance(arg.func, OneOf) and len(arg.args) == 1:
                     # Extract field name and value from Call(OneOf(Symbol), [value])
-                    # For Python keywords, use dictionary unpacking: **{'def': value}
+                    # For Python keywords, defer assignment to after construction
+                    # Oneof fields are never repeated
                     field_name = arg.func.field_name
                     field_value = self.generate_lines(arg.args[0], lines, indent)
                     if field_name in PYTHON_KEYWORDS:
-                        keyword_args.append(f"**{{'{field_name}': {field_value}}}")
+                        keyword_field_assignments.append((field_name, field_value, False))
                     else:
                         keyword_args.append(f"{field_name}={field_value}")
                     arg_idx += 1
@@ -330,7 +330,7 @@ class PythonCodeGenerator(CodeGenerator):
                         if max_args_for_this_field == 1:
                             field_value = self.generate_lines(arg, lines, indent)
                             if field_name in PYTHON_KEYWORDS:
-                                keyword_args.append(f"**{{'{field_name}': {field_value}}}")
+                                keyword_field_assignments.append((field_name, field_value, True))
                             else:
                                 keyword_args.append(f"{field_name}={field_value}")
                             arg_idx += 1
@@ -351,13 +351,13 @@ class PythonCodeGenerator(CodeGenerator):
                             else:
                                 list_value = "[]"
                             if field_name in PYTHON_KEYWORDS:
-                                keyword_args.append(f"**{{'{field_name}': {list_value}}}")
+                                keyword_field_assignments.append((field_name, list_value, True))
                             else:
                                 keyword_args.append(f"{field_name}={list_value}")
                     else:
                         field_value = self.generate_lines(arg, lines, indent)
                         if field_name in PYTHON_KEYWORDS:
-                            keyword_args.append(f"**{{'{field_name}': {field_value}}}")
+                            keyword_field_assignments.append((field_name, field_value, False))
                         else:
                             keyword_args.append(f"{field_name}={field_value}")
                         arg_idx += 1
@@ -376,6 +376,15 @@ class PythonCodeGenerator(CodeGenerator):
 
             tmp = gensym()
             lines.append(f"{indent}{self.gen_assignment(tmp, f'{f}({args_code})', is_declaration=True)}")
+
+            # Handle keyword field assignments via getattr()
+            # Use extend() for repeated fields, CopyFrom() for singular message fields
+            for field_name, field_value, is_repeated in keyword_field_assignments:
+                if is_repeated:
+                    lines.append(f"{indent}getattr({tmp}, '{field_name}').extend({field_value})")
+                else:
+                    lines.append(f"{indent}getattr({tmp}, '{field_name}').CopyFrom({field_value})")
+
             return tmp
 
         # Fall back to base implementation for non-Message calls
