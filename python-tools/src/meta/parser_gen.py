@@ -79,7 +79,7 @@ The generated IR for expr (simplified) would be:
 from typing import Dict, List, Optional, Set, Tuple, Sequence as PySequence
 from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Terminal, Sequence
 from .grammar_utils import is_epsilon, rhs_elements
-from .target import Lambda, Call, VisitNonterminalDef, Var, Lit, Symbol, Builtin, NewMessage, OneOf, Let, IfElse, BaseType, ListType, ListExpr, TargetExpr, Seq, While, Foreach, ForeachEnumerated, Assign, VisitNonterminal, Return
+from .target import Lambda, Call, VisitNonterminalDef, Var, Lit, Symbol, Builtin, NewMessage, OneOf, Let, IfElse, BaseType, ListType, ListExpr, TargetExpr, Seq, While, Foreach, ForeachEnumerated, Assign, VisitNonterminal, Return, GetField, GetElement
 from .gensym import gensym
 from .terminal_sequence_set import TerminalSequenceSet, FollowSet, FirstSet, ConcatSet
 
@@ -406,8 +406,11 @@ def _apply(func: 'Lambda', args: PySequence['TargetExpr']) -> 'TargetExpr':
     return Call(func, args)
 
 def _subst(expr: 'TargetExpr', var: str, val: 'TargetExpr') -> 'TargetExpr':
-    if isinstance(expr, Var) and expr.name == var:
-        return val
+    if isinstance(expr, Var):
+        if expr.name == var:
+            return val
+        else:
+            return expr
     elif isinstance(expr, Lambda):
         if var in [p.name for p in expr.params]:
             return expr
@@ -438,6 +441,10 @@ def _subst(expr: 'TargetExpr', var: str, val: 'TargetExpr') -> 'TargetExpr':
         return ListExpr([_subst(elem, var, val) for elem in expr.elements], expr.element_type)
     elif isinstance(expr, Return):
         return Return(_subst(expr.expr, var, val))
+    elif isinstance(expr, GetField):
+        return GetField(_subst(expr.obj, var, val), expr.field_name)
+    elif isinstance(expr, GetElement):
+        return GetElement(_subst(expr.tuple_expr, var, val), expr.index)
     elif isinstance(expr, (Lit, Symbol, Builtin, NewMessage, OneOf, VisitNonterminal)):
         # These don't contain variables, return unchanged
         return expr

@@ -171,7 +171,7 @@ class TestCLIValidation:
             )
 
             assert returncode != 0, "Expected validation to fail"
-            assert "Address" in stdout or "Address" in stderr
+            assert "address" in stdout or "address" in stderr
         finally:
             import shutil
             shutil.rmtree(temp_dir, ignore_errors=True)

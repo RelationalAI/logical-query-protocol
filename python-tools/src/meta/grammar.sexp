@@ -2224,50 +2224,32 @@
 (rule
   (lhs constraint (Message logic Constraint))
   (rhs
-    functional_dependency)
+    "("
+    "functional_dependency"
+    relation_id
+    abstraction
+    functional_dependency_keys
+    functional_dependency_values
+    ")")
   (construct
-    ((value (Message logic FunctionalDependency)))
+    ((name (Message logic RelationId))
+      (guard (Message logic Abstraction))
+      (keys (List (Message logic Var)))
+      (values (List (Message logic Var))))
     (Message logic Constraint)
     (new-message
       logic
       Constraint
+      (name (var name (Message logic RelationId)))
       (constraint_type
         (call
           (oneof functional_dependency)
-          (var value (Message logic FunctionalDependency)))))))
-
-(rule
-  (lhs
-    functional_dependency
-    (Message logic FunctionalDependency))
-  (rhs
-    "("
-    "functional_dependency"
-    abstraction
-    (option
-      functional_dependency_keys)
-    (option
-      functional_dependency_values)
-    ")")
-  (construct
-    ((guard (Message logic Abstraction))
-      (keys (Option (List (Message logic Var))))
-      (values (Option (List (Message logic Var)))))
-    (Message logic FunctionalDependency)
-    (new-message
-      logic
-      FunctionalDependency
-      (guard (var guard (Message logic Abstraction)))
-      (keys
-        (call
-          (builtin unwrap_option_or)
-          (var keys (Option (List (Message logic Var))))
-          (list (Message logic Var))))
-      (values
-        (call
-          (builtin unwrap_option_or)
-          (var values (Option (List (Message logic Var))))
-          (list (Message logic Var)))))))
+          (new-message
+            logic
+            FunctionalDependency
+            (guard (var guard (Message logic Abstraction)))
+            (keys (var keys (List (Message logic Var))))
+            (values (var values (List (Message logic Var))))))))))
 
 (rule
   (lhs functional_dependency_keys (List (Message logic Var)))

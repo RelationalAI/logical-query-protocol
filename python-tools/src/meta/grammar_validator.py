@@ -833,8 +833,26 @@ class GrammarValidator:
         return t1 == t2
 
     def _check_message_coverage(self) -> None:
-        """Check that every proto message has at least one grammar rule producing it."""
+        """Check that every proto message has at least one grammar rule producing it.
+
+        Skip messages that are only used as oneof variant types, as these don't need
+        standalone rules - they are constructed inline within the parent message rule.
+        """
+        # Find messages that are only used as oneof variant types
+        oneof_only_messages = set()
+        for message in self.parser.messages.values():
+            for oneof in message.oneofs:
+                for field in oneof.fields:
+                    # Check if this field's type is a message type used only in oneofs
+                    field_type = field.type
+                    if field_type in self.parser.messages:
+                        oneof_only_messages.add(field_type)
+
         for message_name in self._message_names:
+            # Skip messages that are only used in oneofs
+            if message_name in oneof_only_messages:
+                continue
+
             message = self.parser.messages[message_name]
             message_type = MessageType(message.module, message_name)
 

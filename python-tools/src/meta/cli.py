@@ -26,46 +26,7 @@ from .proto_parser import ProtoParser
 from .grammar_validator import validate_grammar
 from .grammar import Grammar
 from .sexp_grammar import load_grammar_config_file
-
-
-def format_message(msg, indent=0):
-    """Format a ProtoMessage for display."""
-    prefix = "  " * indent
-    lines = [f"{prefix}message {msg.name} {{"]
-
-    for enum in msg.enums:
-        lines.append(f"{prefix}  enum {enum.name} {{")
-        for value_name, value_number in enum.values:
-            lines.append(f"{prefix}    {value_name} = {value_number};")
-        lines.append(f"{prefix}  }}")
-
-    for oneof in msg.oneofs:
-        lines.append(f"{prefix}  oneof {oneof.name} {{")
-        for field in oneof.fields:
-            lines.append(f"{prefix}    {field.type} {field.name} = {field.number};")
-        lines.append(f"{prefix}  }}")
-
-    for field in msg.fields:
-        modifiers = []
-        if field.is_repeated:
-            modifiers.append("repeated")
-        if field.is_optional:
-            modifiers.append("optional")
-        modifier_str = " ".join(modifiers) + " " if modifiers else ""
-        lines.append(f"{prefix}  {modifier_str}{field.type} {field.name} = {field.number};")
-
-    lines.append(f"{prefix}}}")
-    return "\n".join(lines)
-
-
-def format_enum(enum, indent=0):
-    """Format a ProtoEnum for display."""
-    prefix = "  " * indent
-    lines = [f"{prefix}enum {enum.name} {{"]
-    for value_name, value_number in enum.values:
-        lines.append(f"{prefix}  {value_name} = {value_number};")
-    lines.append(f"{prefix}}}")
-    return "\n".join(lines)
+from .proto_print import format_message, format_enum
 
 
 def parse_args():
@@ -183,9 +144,9 @@ def run(args) -> int:
         print(validation_result.summary())
         print()
 
-    # Block parser generation if there are any validation issues (errors or warnings)
-    if args.parser and validation_result.has_any_issues:
-        print("Error: Cannot generate parser due to validation failures", file=sys.stderr)
+    # Block parser generation if there are validation errors (but allow warnings)
+    if args.parser and not validation_result.is_valid:
+        print("Error: Cannot generate parser due to validation errors", file=sys.stderr)
         return 1
 
     # Return error code if validation has errors (not just warnings)

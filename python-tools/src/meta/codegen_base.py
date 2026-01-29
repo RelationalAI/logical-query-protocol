@@ -13,7 +13,7 @@ from .target import (
     TargetExpr, Var, Lit, Symbol, Builtin, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
     IfElse, Seq, While, Assign, Return, FunDef, VisitNonterminalDef,
     VisitNonterminal, TargetType, BaseType, TupleType, ListType, OptionType,
-    MessageType, FunctionType
+    MessageType, FunctionType, GetField, GetElement
 )
 from .gensym import gensym
 
@@ -302,6 +302,16 @@ class CodeGenerator(ABC):
 
         elif isinstance(expr, ListExpr):
             return self._generate_list_expr(expr, lines, indent)
+
+        elif isinstance(expr, GetField):
+            # GetField(obj, field_name) -> obj.field_name
+            obj_code = self.generate_lines(expr.obj, lines, indent)
+            return f"{obj_code}.{expr.field_name}"
+
+        elif isinstance(expr, GetElement):
+            # GetElement(tuple_expr, index) -> tuple_expr[index]
+            tuple_code = self.generate_lines(expr.tuple_expr, lines, indent)
+            return f"{tuple_code}[{expr.index}]"
 
         elif isinstance(expr, Call):
             return self._generate_call(expr, lines, indent)
