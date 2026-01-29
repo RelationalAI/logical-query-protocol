@@ -27,6 +27,8 @@ from .target import (
     TupleType,
     ListType,
     FunDef,
+    VisitNonterminalDef,
+    VisitNonterminal,
 )
 
 # Grammar data structures
@@ -60,6 +62,9 @@ from .grammar_gen import (
     generate_grammar,
 )
 
+# Parser generation
+from .parser_gen import generate_parse_functions, GrammarConflictError, AmbiguousGrammarError
+
 # Python code generation
 from .codegen_python import (
     generate_python,
@@ -74,6 +79,8 @@ from .codegen_julia import (
     generate_julia_def,
     escape_identifier as escape_julia_identifier,
 )
+
+from .parser_gen_python import generate_parser_python
 
 __all__ = [
     # Target language AST
@@ -95,6 +102,8 @@ __all__ = [
     'TupleType',
     'ListType',
     'FunDef',
+    'VisitNonterminalDef',
+    'VisitNonterminal',
     # Grammar
     'Grammar',
     'Rule',
@@ -116,6 +125,11 @@ __all__ = [
     # Grammar generation
     'GrammarGenerator',
     'generate_grammar',
+    # Parser generation
+    'generate_parse_functions',
+    'GrammarConflictError',
+    'AmbiguousGrammarError',
+    'generate_parser_python',
     # Python code generation
     'generate_python',
     'generate_python_lines',
