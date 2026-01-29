@@ -169,14 +169,21 @@ def run(args) -> int:
         for rule in rules:
             grammar.add_rule(rule)
 
-    # Run validation (always run, but only print if requested or has errors)
+    # Run validation (always run, but only print if requested or has issues)
     validation_result = validate_grammar(grammar, proto_parser)
 
-    if args.validate or not validation_result.is_valid:
+    if args.validate or validation_result.has_any_issues:
         print(validation_result.summary())
         print()
-        if not validation_result.is_valid:
-            return 1
+
+    # Block parser generation if there are any validation issues (errors or warnings)
+    if args.parser and validation_result.has_any_issues:
+        print("Error: Cannot generate parser due to validation failures", file=sys.stderr)
+        return 1
+
+    # Return error code if validation has errors (not just warnings)
+    if not validation_result.is_valid:
+        return 1
 
     # Output grammar if -o is specified and not generating parser
     if args.output and not args.parser:

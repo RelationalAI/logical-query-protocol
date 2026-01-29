@@ -2,15 +2,22 @@
 
 This module validates that the generated grammar:
 1. Covers all protobuf messages (completeness)
-2. Covers all fields of each message
-3. Covers all oneof variants
+2. Correctly types all message constructions, including field coverage
+3. Covers all oneof variants with at least one rule per variant
 4. Contains no orphan rules without protobuf backing (soundness)
+5. Has no unreachable nonterminals
+6. Has valid structure (Star/Option children, no nested Sequence)
 
 The validation criteria are:
-- Completeness: For every proto message, there exists a grammar rule that produces it
-- Field coverage: Every field in a message appears in the grammar rule's RHS
-- Oneof coverage: Every oneof variant has an alternative production
+- Completeness: Every proto message has a corresponding grammar rule
+- Type checking: All expressions are well-typed, including NewMessage field coverage
+- Oneof coverage: Every oneof variant has at least one alternative production
 - Soundness: Every grammar rule corresponds to a proto construct or known builtin
+- Reachability: All nonterminals are reachable from the start symbol
+- Structure: Grammar elements follow structural constraints
+
+Note: This validator does NOT check if the grammar is LL(k) for any k.
+Grammar ambiguity and lookahead conflicts are detected by the parser generator.
 """
 
 import re
@@ -340,8 +347,13 @@ class ValidationResult:
 
     @property
     def is_valid(self) -> bool:
-        """True if no errors (warnings are acceptable)."""
+        """True if no errors (warnings are acceptable for some use cases)."""
         return not any(i.severity == "error" for i in self.issues)
+
+    @property
+    def has_any_issues(self) -> bool:
+        """True if there are any errors or warnings."""
+        return len(self.issues) > 0
 
     @property
     def errors(self) -> List[ValidationIssue]:
@@ -411,7 +423,6 @@ class GrammarValidator:
         self._check_structure()
         self._check_types()
         self._check_message_coverage()
-        self._check_field_coverage()
         self._check_oneof_coverage()
         self._check_soundness()
         return self.result
@@ -863,14 +874,6 @@ class GrammarValidator:
                 )
         return None
 
-    def _check_field_coverage(self) -> None:
-        """Check field coverage by analyzing constructor bodies.
-
-        With NewMessage, field coverage is checked in _check_new_message_types.
-        This method is kept as a no-op for backward compatibility with the validation flow.
-        """
-        return None
-
     def _expr_constructs_oneof_variant(self, expr: TargetExpr, variant_name: str) -> bool:
         """Check if expression constructs a oneof variant."""
         if isinstance(expr, Call):
@@ -908,7 +911,12 @@ class GrammarValidator:
         return False
 
     def _check_oneof_coverage(self) -> None:
-        """Check that every oneof variant has an alternative production."""
+        """Check that every oneof variant has at least one alternative production.
+
+        For oneof-only messages, there should be at least one rule per variant.
+        Multiple rules for the same variant are allowed (e.g., 'true' and 'conjunction'
+        both constructing the conjunction variant).
+        """
         for message_name, message in self.parser.messages.items():
             if not self._is_oneof_only_message(message):
                 continue
@@ -920,26 +928,56 @@ class GrammarValidator:
 
             rules = self.grammar.rules.get(rule_nt, [])
 
-            # Get all oneof variant names
+            # Collect all variant names from all oneofs
+            all_variants = []
             for oneof in message.oneofs:
                 for variant in oneof.fields:
-                    variant_name = variant.name
+                    all_variants.append(variant.name)
 
-                    # Check if there's a rule that constructs this variant
-                    found = False
-                    for rule in rules:
-                        # Check if constructor constructs this oneof variant
-                        if self._expr_constructs_oneof_variant(rule.constructor, variant_name):
-                            found = True
-                            break
+            # Map each variant to the rules that construct it
+            variant_to_rules = {v: [] for v in all_variants}
+            rules_without_variant = []
 
-                    if not found:
-                        self.result.add_error(
-                            "oneof_coverage",
-                            f"Oneof variant '{message_name}.{oneof.name}.{variant.name}' has no grammar alternative",
-                            proto_type=message_name,
-                            rule_name=rule_name
-                        )
+            for rule in rules:
+                # Find which variant(s) this rule constructs
+                constructed_variants = []
+                for variant_name in all_variants:
+                    if self._expr_constructs_oneof_variant(rule.constructor, variant_name):
+                        constructed_variants.append(variant_name)
+
+                if len(constructed_variants) == 0:
+                    rules_without_variant.append(rule)
+                elif len(constructed_variants) == 1:
+                    variant_to_rules[constructed_variants[0]].append(rule)
+                else:
+                    # Rule constructs multiple variants - error
+                    self.result.add_error(
+                        "oneof_coverage",
+                        f"Rule for '{message_name}' constructs multiple oneof variants: {', '.join(constructed_variants)}",
+                        proto_type=message_name,
+                        rule_name=rule_name
+                    )
+
+            # Check each variant has at least one rule
+            for variant_name in all_variants:
+                rules_for_variant = variant_to_rules[variant_name]
+                if len(rules_for_variant) == 0:
+                    self.result.add_error(
+                        "oneof_coverage",
+                        f"Oneof variant '{message_name}.{variant_name}' has no grammar alternative",
+                        proto_type=message_name,
+                        rule_name=rule_name
+                    )
+
+            # Check for rules that don't construct any variant
+            if rules_without_variant:
+                self.result.add_error(
+                    "oneof_coverage",
+                    f"Message '{message_name}' has {len(rules_without_variant)} rule(s) that don't construct any oneof variant",
+                    proto_type=message_name,
+                    rule_name=rule_name
+                )
+
         return None
 
     def _check_soundness(self) -> None:
