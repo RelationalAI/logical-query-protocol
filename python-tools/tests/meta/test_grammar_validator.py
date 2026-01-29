@@ -398,8 +398,8 @@ class TestFieldCoverage:
 
         validator = GrammarValidator(grammar, parser)
         validator._check_types()  # Field validation now happens in type checking
-        assert len(validator.result.warnings) > 0
-        assert any('missing field' in w.message.lower() for w in validator.result.warnings)
+        assert len(validator.result.errors) > 0
+        assert any('missing field' in e.message.lower() for e in validator.result.errors)
 
 
 class TestTypeChecking:
@@ -523,7 +523,7 @@ class TestRuleTypeChecking:
 
         param = Var('s', BaseType('String'))
         rhs = NamedTerminal('STRING', BaseType('String'))
-        body = Call(NewMessage('proto', 'TestMsg', ()), [param])
+        body = NewMessage('proto', 'TestMsg', (('s', param),))
         constructor = Lambda([param], msg_type, body)
         rule = Rule(start, rhs, constructor)
         grammar.rules[start] = [rule]
@@ -595,7 +595,7 @@ class TestUnreachableRules:
 
         validator = GrammarValidator(grammar, parser)
         validator._check_unreachable()
-        assert len(validator.result.warnings) == 0
+        assert len(validator.result.errors) == 0
 
     def test_unreachable_rule(self):
         """Test that unreachable rules generate errors."""
@@ -653,8 +653,8 @@ class TestSoundness:
 
         validator = GrammarValidator(grammar, parser)
         validator._check_soundness()
-        assert len(validator.result.warnings) > 0
-        assert any("unknown_rule" in w.message and "doesn't correspond to a proto type" in w.message for w in validator.result.warnings)
+        assert len(validator.result.errors) > 0
+        assert any("unknown_rule" in e.message and "is not a valid type" in e.message for e in validator.result.errors)
 
 
 class TestTypeInference:

@@ -256,6 +256,7 @@ class Grammar:
     start: Nonterminal
     rules: Dict[Nonterminal, List[Rule]] = field(default_factory=dict)
     tokens: List[Token] = field(default_factory=list)
+    ignored_completeness: List[str] = field(default_factory=list)  # Message names to ignore in completeness checks
 
     # Lazily created analysis object (holds cached results)
     _analysis: Optional['GrammarAnalysis'] = field(default=None, init=False, repr=False)

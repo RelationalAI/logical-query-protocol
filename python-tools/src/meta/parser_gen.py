@@ -442,10 +442,16 @@ def _subst(expr: 'TargetExpr', var: str, val: 'TargetExpr') -> 'TargetExpr':
     elif isinstance(expr, Return):
         return Return(_subst(expr.expr, var, val))
     elif isinstance(expr, GetField):
-        return GetField(_subst(expr.obj, var, val), expr.field_name)
+        return GetField(_subst(expr.object, var, val), expr.field_name)
     elif isinstance(expr, GetElement):
         return GetElement(_subst(expr.tuple_expr, var, val), expr.index)
-    elif isinstance(expr, (Lit, Symbol, Builtin, NewMessage, OneOf, VisitNonterminal)):
+    elif isinstance(expr, NewMessage):
+        # NewMessage can have fields that contain variables
+        if expr.fields:
+            new_fields = tuple((name, _subst(field_expr, var, val)) for name, field_expr in expr.fields)
+            return NewMessage(expr.module, expr.name, new_fields)
+        return expr
+    elif isinstance(expr, (Lit, Symbol, Builtin, OneOf, VisitNonterminal)):
         # These don't contain variables, return unchanged
         return expr
     raise ValueError(f"Unknown expression type in _subst: {type(expr).__name__}")

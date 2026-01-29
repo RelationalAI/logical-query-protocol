@@ -1,3 +1,7 @@
+; Messages that are constructed imperatively by the parser, not parsed from grammar
+(ignore-completeness DebugInfo)
+(ignore-completeness IVMConfig)
+
 ; Terminal declarations
 (terminal COLON_SYMBOL String)
 (terminal DECIMAL (Message logic DecimalValue))

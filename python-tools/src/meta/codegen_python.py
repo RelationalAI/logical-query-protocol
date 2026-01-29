@@ -272,7 +272,53 @@ class PythonCodeGenerator(CodeGenerator):
                         lines.append(f"{indent}debug_info = self.construct_debug_info(self.id_to_debuginfo.get({fragment_id_expr}.id, {{}}))")
                     break
 
+        # Handle NewMessage with fields (which may contain OneOf calls)
+        if isinstance(expr, NewMessage):
+            return self._generate_newmessage(expr, lines, indent)
+
         return super().generate_lines(expr, lines, indent)
+
+    def _generate_newmessage(self, expr: NewMessage, lines: List[str], indent: str) -> str:
+        """Override to handle NewMessage with fields containing OneOf calls."""
+        if not expr.fields:
+            # No fields - return constructor reference
+            return self.gen_constructor(expr.module, expr.name)
+
+        # NewMessage with fields - need to handle OneOf specially
+        ctor = self.gen_constructor(expr.module, expr.name)
+        keyword_args = []
+        keyword_field_assignments: List[Tuple[str, str, bool]] = []
+
+        for field_name, field_expr in expr.fields:
+            # Check if this field is a Call(OneOf, [value])
+            if isinstance(field_expr, Call) and isinstance(field_expr.func, OneOf) and len(field_expr.args) == 1:
+                # OneOf field
+                oneof_field_name = field_expr.func.field_name
+                field_value = self.generate_lines(field_expr.args[0], lines, indent)
+                if oneof_field_name in PYTHON_KEYWORDS:
+                    keyword_field_assignments.append((oneof_field_name, field_value, False))
+                else:
+                    keyword_args.append(f"{oneof_field_name}={field_value}")
+            else:
+                # Regular field
+                field_value = self.generate_lines(field_expr, lines, indent)
+                if field_name in PYTHON_KEYWORDS:
+                    keyword_field_assignments.append((field_name, field_value, False))
+                else:
+                    keyword_args.append(f"{field_name}={field_value}")
+
+        args_code = ', '.join(keyword_args)
+        tmp = gensym()
+        lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}({args_code})', is_declaration=True)}")
+
+        # Handle keyword field assignments via getattr()
+        for field_name, field_value, is_repeated in keyword_field_assignments:
+            if is_repeated:
+                lines.append(f"{indent}getattr({tmp}, '{field_name}').extend({field_value})")
+            else:
+                lines.append(f"{indent}getattr({tmp}, '{field_name}').CopyFrom({field_value})")
+
+        return tmp
 
     def _generate_call(self, expr: Call, lines: List[str], indent: str) -> str:
         """Override to handle OneOf specially for Python protobuf."""

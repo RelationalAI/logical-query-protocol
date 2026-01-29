@@ -253,10 +253,10 @@ class TestTypeErrors:
         """
 
         result = parse_and_validate(grammar_content, proto_content)
-        # With NewMessage, missing fields are warnings, not errors
-        assert result.is_valid
-        assert any(w.category == "field_coverage" for w in result.warnings)
-        assert any("age" in w.message for w in result.warnings)
+        # With NewMessage, missing fields are errors
+        assert not result.is_valid
+        assert any(e.category == "field_coverage" for e in result.errors)
+        assert any("age" in e.message for e in result.errors)
 
     def test_builtin_unwrap_option_or_non_option_arg(self):
         """Test unwrap_option_or with non-option argument."""
@@ -390,8 +390,8 @@ class TestSoundnessWarnings:
         """
 
         result = parse_and_validate(grammar_content, proto_content)
-        assert any(w.category == "soundness" for w in result.warnings)
-        assert any("unknown_rule" in w.message and "doesn't correspond to a proto type" in w.message for w in result.warnings)
+        assert any(e.category == "soundness" for e in result.errors)
+        assert any("unknown_rule" in e.message and "is not a valid type" in e.message for e in result.errors)
 
 
 class TestUnreachableRules:

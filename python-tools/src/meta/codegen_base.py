@@ -289,7 +289,21 @@ class CodeGenerator(ABC):
             return self.gen_symbol(expr.name)
 
         elif isinstance(expr, NewMessage):
-            return self.gen_constructor(expr.module, expr.name)
+            # NewMessage with fields generates instantiation directly
+            # NewMessage without fields is a constructor reference for use in Call
+            if expr.fields:
+                ctor = self.gen_constructor(expr.module, expr.name)
+                field_args = []
+                for field_name, field_expr in expr.fields:
+                    field_val = self.generate_lines(field_expr, lines, indent)
+                    field_args.append(f"{field_name}={field_val}")
+                args_code = ', '.join(field_args)
+                tmp = gensym()
+                lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}({args_code})', is_declaration=True)}")
+                return tmp
+            else:
+                # No fields - return constructor reference for use in Call expressions
+                return self.gen_constructor(expr.module, expr.name)
 
         elif isinstance(expr, Builtin):
             return self.gen_builtin_ref(expr.name)
@@ -304,8 +318,8 @@ class CodeGenerator(ABC):
             return self._generate_list_expr(expr, lines, indent)
 
         elif isinstance(expr, GetField):
-            # GetField(obj, field_name) -> obj.field_name
-            obj_code = self.generate_lines(expr.obj, lines, indent)
+            # GetField(object, field_name) -> object.field_name
+            obj_code = self.generate_lines(expr.object, lines, indent)
             return f"{obj_code}.{expr.field_name}"
 
         elif isinstance(expr, GetElement):

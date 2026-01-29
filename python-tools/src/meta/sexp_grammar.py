@@ -21,7 +21,7 @@ Config file directives:
     (rule ...)                      -> add rule
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -230,6 +230,7 @@ class GrammarConfig:
     """Result of loading a grammar config file."""
     terminals: Dict[str, TargetType]
     rules: Dict[Nonterminal, List[Rule]]
+    ignored_completeness: List[str] = field(default_factory=list)  # Message names to ignore in completeness checks
 
 
 def load_grammar_config(text: str) -> GrammarConfig:
@@ -237,6 +238,7 @@ def load_grammar_config(text: str) -> GrammarConfig:
 
     The config file contains:
     - (terminal NAME Type) directives that declare terminal types
+    - (ignore-completeness MessageName) directives to ignore messages in completeness checks
     - (rule ...) directives that define grammar rules
 
     Two-pass parsing:
@@ -254,6 +256,7 @@ def load_grammar_config(text: str) -> GrammarConfig:
     # First pass: collect terminal declarations and nonterminal types from rule LHS
     terminals: Dict[str, TargetType] = {}
     nonterminals: Dict[str, TargetType] = {}
+    ignored_completeness: List[str] = []
     rule_sexps: List[SExpr] = []
 
     for sexp in sexps:
@@ -272,6 +275,12 @@ def load_grammar_config(text: str) -> GrammarConfig:
             if name in terminals:
                 raise GrammarConversionError(f"duplicate terminal declaration: {name}")
             terminals[name] = typ
+
+        elif head.value == "ignore-completeness":
+            if len(sexp) != 2:
+                raise GrammarConversionError(f"ignore-completeness requires message name: {sexp}")
+            msg_name = _expect_symbol(sexp[1], "message name")
+            ignored_completeness.append(msg_name)
 
         elif head.value == "rule":
             rule_sexps.append(sexp)
@@ -305,7 +314,7 @@ def load_grammar_config(text: str) -> GrammarConfig:
             result[lhs] = []
         result[lhs].append(rule)
 
-    return GrammarConfig(terminals=terminals, rules=result)
+    return GrammarConfig(terminals=terminals, rules=result, ignored_completeness=ignored_completeness)
 
 
 def load_grammar_config_file(path: Path) -> GrammarConfig:

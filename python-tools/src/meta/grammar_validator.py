@@ -24,7 +24,7 @@ from typing import List, Optional, Set, Sequence as PySequence, Dict
 
 from .grammar import Grammar, Rule, Nonterminal, Rhs, LitTerminal, NamedTerminal, Star, Option, Sequence
 from .proto_parser import ProtoParser
-from .proto_ast import ProtoMessage
+from .proto_ast import ProtoMessage, ProtoField
 from .target import (
     TargetType, TargetExpr, Call, NewMessage, Builtin, Var, IfElse, Let, Seq, ListExpr, GetField,
     GetElement, BaseType, VarType, MessageType, ListType, OptionType, TupleType, FunctionType, Lambda, OneOf
@@ -251,12 +251,14 @@ class GrammarValidator:
         proto_message = self.parser.messages.get(new_msg.name)
 
         if proto_message is None:
-            self.result.add_error(
-                "completeness",
-                f"In {context}: NewMessage refers to unknown message {new_msg.name}",
-                proto_type=new_msg.name,
-                rule_name=context
-            )
+            # Skip if message is in ignored list
+            if new_msg.name not in self.grammar.ignored_completeness:
+                self.result.add_error(
+                    "completeness",
+                    f"In {context}: NewMessage refers to unknown message {new_msg.name}",
+                    proto_type=new_msg.name,
+                    rule_name=context
+                )
             return None
 
         # Build map of proto fields by name (both regular fields and oneofs)
@@ -305,8 +307,8 @@ class GrammarValidator:
         # Check for missing fields (non-repeated, non-optional fields)
         for field in proto_message.fields:
             if field.name not in provided_fields:
-                # In proto3, all fields are optional, but we still want to warn about missing fields
-                self.result.add_warning(
+                # In proto3, all fields are optional, but we check for missing fields
+                self.result.add_error(
                     "field_coverage",
                     f"In {context}: NewMessage {new_msg.name} missing field '{field.name}'",
                     proto_type=new_msg.name,
@@ -526,11 +528,13 @@ class GrammarValidator:
                     rules_for_message.extend(rules)
 
             if not rules_for_message:
-                self.result.add_error(
-                    "completeness",
-                    f"Proto message '{message_name}' has no grammar rule producing it",
-                    proto_type=message_name
-                )
+                # Skip if message is in ignored list
+                if message_name not in self.grammar.ignored_completeness:
+                    self.result.add_error(
+                        "completeness",
+                        f"Proto message '{message_name}' has no grammar rule producing it",
+                        proto_type=message_name
+                    )
         return None
 
     def _expr_constructs_oneof_variant(self, expr: TargetExpr, variant_name: str) -> bool:
@@ -630,47 +634,65 @@ class GrammarValidator:
                         proto_type=message_name
                     )
 
-            # Check for rules that don't construct any variant
-            if rules_without_variant:
-                self.result.add_error(
-                    "oneof_coverage",
-                    f"Message '{message_name}' has {len(rules_without_variant)} rule(s) that don't construct any oneof variant",
-                    proto_type=message_name
-                )
+            # Note: We don't report an error for rules that don't construct any variant.
+            # Pass-through rules (that just return a value from another nonterminal) are
+            # legitimate as long as all variants have at least one rule that constructs them.
 
         return None
 
+    def _is_valid_type(self, typ: TargetType) -> bool:
+        """Check if a type is valid.
+
+        A type is valid if:
+        - It's a BaseType (primitive like String, Int64, Boolean, etc.)
+        - It's a MessageType that exists in the proto spec
+        - It's a ListType where the element type is valid
+        - It's an OptionType where the element type is valid
+        - It's a TupleType where all element types are valid
+        """
+        if isinstance(typ, BaseType):
+            # All base types are valid primitives
+            return True
+
+        if isinstance(typ, MessageType):
+            # Check if message exists in proto spec
+            # ProtoParser.messages is a flat dict mapping message_name -> ProtoMessage
+            # where ProtoMessage has a module attribute
+            msg = self.parser.messages.get(typ.name)
+            if msg and msg.module == typ.module:
+                return True
+            return False
+
+        if isinstance(typ, ListType):
+            # List is valid if element type is valid
+            return self._is_valid_type(typ.element_type)
+
+        if isinstance(typ, OptionType):
+            # Option is valid if element type is valid
+            return self._is_valid_type(typ.element_type)
+
+        if isinstance(typ, TupleType):
+            # Tuple is valid if all element types are valid
+            return all(self._is_valid_type(elem_type) for elem_type in typ.elements)
+
+        # VarType, FunctionType, etc. are not directly valid for nonterminal LHS types
+        return False
+
     def _check_soundness(self) -> None:
-        """Check that every grammar rule has a valid type."""
-        # Build set of valid proto types
-        valid_types: Set[TargetType] = set()
+        """Check that all grammar rules have valid types.
 
-        # Add all message types
-        for message_name, message in self.parser.messages.items():
-            valid_types.add(MessageType(message.module, message_name))
-
-        # Add all base types
-        valid_types.update([
-            BaseType("String"),
-            BaseType("Int"),
-            BaseType("Float"),
-            BaseType("Bool"),
-            BaseType("Bytes"),
-        ])
-
-        # Check each grammar rule's LHS type
+        A rule's LHS type is valid if it's composed of:
+        - Base types (primitives)
+        - Proto message types
+        - Lists, Options, or Tuples of valid types
+        """
+        # Check each nonterminal
         for rule_nt in self.grammar.rules.keys():
             lhs_type = rule_nt.type
-
-            # Check if LHS type is valid
-            if lhs_type not in valid_types:
-                # Also check if it's a list type wrapping a valid type
-                if isinstance(lhs_type, ListType) and lhs_type.element_type in valid_types:
-                    continue
-
-                self.result.add_warning(
+            if not self._is_valid_type(lhs_type):
+                self.result.add_error(
                     "soundness",
-                    f"Grammar rule '{rule_nt.name}' has LHS type {lhs_type} which doesn't correspond to a proto type",
+                    f"Grammar rule '{rule_nt.name}' has LHS type {lhs_type} which is not a valid type",
                     rule_name=rule_nt.name
                 )
         return None
