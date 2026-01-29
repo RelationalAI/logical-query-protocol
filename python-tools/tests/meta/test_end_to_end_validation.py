@@ -10,7 +10,8 @@ import tempfile
 from textwrap import dedent
 
 from meta.proto_parser import ProtoParser
-from meta.grammar_validator import validate_grammar, ValidationResult
+from meta.grammar_validator import validate_grammar
+from meta.validation_result import ValidationResult
 from meta.sexp_grammar import load_grammar_config_file
 from meta.grammar import Grammar
 
