@@ -145,12 +145,15 @@ def run(args) -> int:
 
     # Handle --proto: output parsed protobuf specification
     if args.proto:
+        output_lines = []
         for msg in proto_parser.messages.values():
-            print(format_message(msg))
-            print()
+            output_lines.append(format_message(msg))
+            output_lines.append("")
         for enum in proto_parser.enums.values():
-            print(format_enum(enum))
-            print()
+            output_lines.append(format_enum(enum))
+            output_lines.append("")
+        output_text = "\n".join(output_lines)
+        write_output(output_text, args.output, f"Protobuf specification written to {args.output}")
         return 0
 
     # From here on, --grammar is required (enforced by parse_args)

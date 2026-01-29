@@ -86,11 +86,15 @@ class TestCompletenessErrors:
         """
 
         grammar_content = """
+        (terminal STRING String)
+
         ;; Only define rule for Person, not Address
         (rule
           (lhs person (Message test Person))
-          (rhs (term STRING String))
-          (lambda ((name String)) (Message test Person)
+          (rhs STRING)
+          (construct
+            ((name String))
+            (Message test Person)
             (new-message test Person (name (var name String)))))
         """
 
@@ -115,11 +119,15 @@ class TestTypeErrors:
         """
 
         grammar_content = """
-        ;; Lambda returns String but nonterminal expects test.Record
+        (terminal STRING String)
+
+        ;; Construct returns String but nonterminal expects test.Record
         (rule
           (lhs record (Message test Record))
-          (rhs (term STRING String))
-          (lambda ((value String)) String
+          (rhs STRING)
+          (construct
+            ((value String))
+            String
             (var value String)))
         """
 
@@ -140,10 +148,14 @@ class TestTypeErrors:
         """
 
         grammar_content = """
+        (terminal STRING String)
+
         (rule
           (lhs pair (Message test Pair))
-          (rhs (term STRING String) (term STRING String))
-          (lambda ((first String) (second String)) (Message test Pair)
+          (rhs STRING STRING)
+          (construct
+            ((first String) (second String))
+            (Message test Pair)
             (let (tuple (Tuple String String))
               (call (builtin make_tuple) (var first String) (var second String))
               (new-message test Pair
@@ -168,10 +180,14 @@ class TestTypeErrors:
         """
 
         grammar_content = """
+        (terminal STRING String)
+
         (rule
           (lhs record (Message test Record))
-          (rhs (term STRING String))
-          (lambda ((value String)) (Message test Record)
+          (rhs STRING)
+          (construct
+            ((value String))
+            (Message test Record)
             (new-message test Record
               (value (get-element (var value String) 0)))))
         """
@@ -194,11 +210,15 @@ class TestTypeErrors:
         """
 
         grammar_content = """
+        (terminal STRING String)
+
         ;; Message with only 1 field provided (age field missing)
         (rule
           (lhs person (Message test Person))
-          (rhs (term STRING String))
-          (lambda ((name String)) (Message test Person)
+          (rhs STRING)
+          (construct
+            ((name String))
+            (Message test Person)
             (new-message test Person (name (var name String)))))
         """
 
@@ -220,10 +240,14 @@ class TestTypeErrors:
         """
 
         grammar_content = """
+        (terminal STRING String)
+
         (rule
           (lhs record (Message test Record))
-          (rhs (term STRING String))
-          (lambda ((value String)) (Message test Record)
+          (rhs STRING)
+          (construct
+            ((value String))
+            (Message test Record)
             (new-message test Record
               (value (call (builtin unwrap_option_or) (var value String) (lit "default"))))))
         """
@@ -245,10 +269,14 @@ class TestTypeErrors:
         """
 
         grammar_content = """
+        (terminal STRING String)
+
         (rule
           (lhs record (Message test Record))
-          (rhs (term STRING String))
-          (lambda ((value String)) (Message test Record)
+          (rhs STRING)
+          (construct
+            ((value String))
+            (Message test Record)
             (new-message test Record
               (count (call (builtin length) (var value String))))))
         """
@@ -277,11 +305,15 @@ class TestOneofCoverage:
         """
 
         grammar_content = """
+        (terminal STRING String)
+
         ;; Only handle text variant, missing number variant
         (rule
           (lhs value (Message test Value))
-          (rhs (term STRING String))
-          (lambda ((text String)) (Message test Value)
+          (rhs STRING)
+          (construct
+            ((text String))
+            (Message test Value)
             (new-message test Value
               (kind (call (oneof text) (var text String))))))
         """
@@ -307,17 +339,23 @@ class TestSoundnessWarnings:
         """
 
         grammar_content = """
+        (terminal STRING String)
+
         (rule
           (lhs person (Message test Person))
-          (rhs (term STRING String))
-          (lambda ((name String)) (Message test Person)
+          (rhs STRING)
+          (construct
+            ((name String))
+            (Message test Person)
             (new-message test Person (name (var name String)))))
 
         ;; This rule has no proto backing
         (rule
           (lhs unknown_rule String)
-          (rhs (term STRING String))
-          (lambda ((value String)) String
+          (rhs STRING)
+          (construct
+            ((value String))
+            String
             (var value String)))
         """
 
@@ -345,17 +383,23 @@ class TestUnreachableRules:
         """
 
         grammar_content = """
+        (terminal STRING String)
+
         (rule
           (lhs start (Message test Start))
-          (rhs (term STRING String))
-          (lambda ((value String)) (Message test Start)
+          (rhs STRING)
+          (construct
+            ((value String))
+            (Message test Start)
             (new-message test Start (value (var value String)))))
 
         ;; This rule is never referenced from start
         (rule
           (lhs orphan (Message test Orphan))
-          (rhs (term STRING String))
-          (lambda ((data String)) (Message test Orphan)
+          (rhs STRING)
+          (construct
+            ((data String))
+            (Message test Orphan)
             (new-message test Orphan (data (var data String)))))
         """
 
@@ -380,10 +424,15 @@ class TestValidGrammar:
         """
 
         grammar_content = """
+        (terminal STRING String)
+        (terminal INT Int64)
+
         (rule
           (lhs person (Message test Person))
-          (rhs (term STRING String) (term INT Int64))
-          (lambda ((name String) (age Int64)) (Message test Person)
+          (rhs STRING INT)
+          (construct
+            ((name String) (age Int64))
+            (Message test Person)
             (new-message test Person (name (var name String)) (age (call (builtin int64_to_int32) (var age Int64))))))
         """
 
@@ -406,17 +455,24 @@ class TestValidGrammar:
         """
 
         grammar_content = """
+        (terminal STRING String)
+        (terminal INT Int64)
+
         (rule
           (lhs value (Message test Value))
-          (rhs (term STRING String))
-          (lambda ((text String)) (Message test Value)
+          (rhs STRING)
+          (construct
+            ((text String))
+            (Message test Value)
             (new-message test Value
               (kind (call (oneof text) (var text String))))))
 
         (rule
           (lhs value (Message test Value))
-          (rhs (term INT Int64))
-          (lambda ((number Int64)) (Message test Value)
+          (rhs INT)
+          (construct
+            ((number Int64))
+            (Message test Value)
             (new-message test Value
               (kind (call (oneof number) (var number Int64))))))
         """
@@ -437,10 +493,14 @@ class TestValidGrammar:
         """
 
         grammar_content = """
+        (terminal STRING String)
+
         (rule
           (lhs record (Message test Record))
-          (rhs (star (term STRING String)))
-          (lambda ((values (List String))) (Message test Record)
+          (rhs (star STRING))
+          (construct
+            ((values (List String)))
+            (Message test Record)
             (new-message test Record (values (var values (List String))))))
         """
 
@@ -460,10 +520,14 @@ class TestValidGrammar:
         """
 
         grammar_content = """
+        (terminal STRING String)
+
         (rule
           (lhs record (Message test Record))
-          (rhs (option (term STRING String)))
-          (lambda ((opt_value (Option String))) (Message test Record)
+          (rhs (option STRING))
+          (construct
+            ((opt_value (Option String)))
+            (Message test Record)
             (new-message test Record (value (var opt_value (Option String))))))
         """
 
@@ -488,16 +552,22 @@ class TestValidGrammar:
         """
 
         grammar_content = """
+        (terminal STRING String)
+
         (rule
           (lhs person (Message test Person))
-          (rhs (term STRING String) (nonterm address (Message test Address)))
-          (lambda ((name String) (addr (Message test Address))) (Message test Person)
+          (rhs STRING address)
+          (construct
+            ((name String) (addr (Message test Address)))
+            (Message test Person)
             (new-message test Person (name (var name String)) (address (var addr (Message test Address))))))
 
         (rule
           (lhs address (Message test Address))
-          (rhs (term STRING String))
-          (lambda ((street String)) (Message test Address)
+          (rhs STRING)
+          (construct
+            ((street String))
+            (Message test Address)
             (new-message test Address (street (var street String)))))
         """
 
@@ -526,11 +596,16 @@ class TestComplexValidationScenarios:
         """
 
         grammar_content = """
+        (terminal STRING String)
+        (terminal INT Int64)
+
         ;; Wrong return type
         (rule
           (lhs person (Message test Person))
-          (rhs (term STRING String) (term INT Int64))
-          (lambda ((name String) (age Int64)) String
+          (rhs STRING INT)
+          (construct
+            ((name String) (age Int64))
+            String
             (var name String)))
 
         ;; Missing rule for Address
@@ -556,10 +631,14 @@ class TestComplexValidationScenarios:
         """
 
         grammar_content = """
+        (terminal STRING String)
+
         (rule
           (lhs pair (Message test Pair))
-          (rhs (term STRING String) (term STRING String))
-          (lambda ((first String) (second String)) (Message test Pair)
+          (rhs STRING STRING)
+          (construct
+            ((first String) (second String))
+            (Message test Pair)
             (let (tuple (Tuple String String))
               (call (builtin make_tuple) (var first String) (var second String))
               (new-message test Pair

@@ -82,41 +82,7 @@ def sexp_to_rhs(sexp: SExpr, ctx: Optional[TypeContext] = None) -> Rhs:
 
     tag = head.value
 
-    if tag == "nonterm":
-        if len(sexp) == 2:
-            # New syntax: (nonterm name) - lookup type from context
-            name = _expect_symbol(sexp[1], "nonterminal name")
-            if ctx is None:
-                raise GrammarConversionError(f"nonterm requires name and type: {sexp}")
-            if name not in ctx.nonterminals:
-                raise GrammarConversionError(f"unknown nonterminal: {name}")
-            typ = ctx.nonterminals[name]
-        elif len(sexp) == 3:
-            # Old syntax: (nonterm name Type) - inline type
-            name = _expect_symbol(sexp[1], "nonterminal name")
-            typ = sexp_to_type(sexp[2])
-        else:
-            raise GrammarConversionError(f"nonterm requires name and optional type: {sexp}")
-        return Nonterminal(name, typ)
-
-    elif tag == "term":
-        if len(sexp) == 2:
-            # New syntax: (term NAME) - lookup type from context
-            name = _expect_symbol(sexp[1], "terminal name")
-            if ctx is None:
-                raise GrammarConversionError(f"term requires name and type: {sexp}")
-            if name not in ctx.terminals:
-                raise GrammarConversionError(f"unknown terminal: {name}")
-            typ = ctx.terminals[name]
-        elif len(sexp) == 3:
-            # Old syntax: (term NAME Type) - inline type (override)
-            name = _expect_symbol(sexp[1], "terminal name")
-            typ = sexp_to_type(sexp[2])
-        else:
-            raise GrammarConversionError(f"term requires name and optional type: {sexp}")
-        return NamedTerminal(name, typ)
-
-    elif tag == "star":
+    if tag == "star":
         if len(sexp) != 2:
             raise GrammarConversionError(f"star requires one RHS element: {sexp}")
         inner = sexp_to_rhs(sexp[1], ctx)

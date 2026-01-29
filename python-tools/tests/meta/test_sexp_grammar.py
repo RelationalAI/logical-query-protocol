@@ -30,73 +30,63 @@ class TestSexpToRhs:
         assert result == LitTerminal("(")
 
     def test_nonterminal(self):
-        result = sexp_to_rhs(parse_sexp("(nonterm value (Message logic Value))"))
-        assert result == Nonterminal("value", MessageType("logic", "Value"))
+        """Test that old (nonterm ...) syntax is rejected."""
+        with pytest.raises(GrammarConversionError, match=r"\(nonterm \.\.\.\) syntax is no longer supported"):
+            sexp_to_rhs(parse_sexp("(nonterm value (Message logic Value))"))
 
     def test_nonterminal_base_type(self):
-        result = sexp_to_rhs(parse_sexp("(nonterm name String)"))
-        assert result == Nonterminal("name", BaseType("String"))
+        """Test that old (nonterm ...) syntax is rejected."""
+        with pytest.raises(GrammarConversionError, match=r"\(nonterm \.\.\.\) syntax is no longer supported"):
+            sexp_to_rhs(parse_sexp("(nonterm name String)"))
 
     def test_named_terminal(self):
-        result = sexp_to_rhs(parse_sexp("(term STRING String)"))
-        assert result == NamedTerminal("STRING", BaseType("String"))
+        """Test that old (term ...) syntax is rejected."""
+        with pytest.raises(GrammarConversionError, match=r"\(term \.\.\.\) syntax is no longer supported"):
+            sexp_to_rhs(parse_sexp("(term STRING String)"))
 
     def test_named_terminal_int(self):
-        result = sexp_to_rhs(parse_sexp("(term INT Int64)"))
-        assert result == NamedTerminal("INT", BaseType("Int64"))
+        """Test that old (term ...) syntax is rejected."""
+        with pytest.raises(GrammarConversionError, match=r"\(term \.\.\.\) syntax is no longer supported"):
+            sexp_to_rhs(parse_sexp("(term INT Int64)"))
 
     def test_star_nonterminal(self):
-        result = sexp_to_rhs(parse_sexp("(star (nonterm binding (Message logic Binding)))"))
-        assert result == Star(Nonterminal("binding", MessageType("logic", "Binding")))
+        """Test that old (nonterm ...) syntax is rejected in star."""
+        with pytest.raises(GrammarConversionError, match=r"\(nonterm \.\.\.\) syntax is no longer supported"):
+            sexp_to_rhs(parse_sexp("(star (nonterm binding (Message logic Binding)))"))
 
     def test_star_terminal(self):
-        result = sexp_to_rhs(parse_sexp("(star (term INT Int64))"))
-        assert result == Star(NamedTerminal("INT", BaseType("Int64")))
+        """Test that old (term ...) syntax is rejected in star."""
+        with pytest.raises(GrammarConversionError, match=r"\(term \.\.\.\) syntax is no longer supported"):
+            sexp_to_rhs(parse_sexp("(star (term INT Int64))"))
 
     def test_option_nonterminal(self):
-        result = sexp_to_rhs(parse_sexp("(option (nonterm sync (Message transactions Sync)))"))
-        assert result == Option(Nonterminal("sync", MessageType("transactions", "Sync")))
+        """Test that old (nonterm ...) syntax is rejected in option."""
+        with pytest.raises(GrammarConversionError, match=r"\(nonterm \.\.\.\) syntax is no longer supported"):
+            sexp_to_rhs(parse_sexp("(option (nonterm sync (Message transactions Sync)))"))
 
     def test_option_terminal(self):
-        result = sexp_to_rhs(parse_sexp("(option (term INT Int64))"))
-        assert result == Option(NamedTerminal("INT", BaseType("Int64")))
+        """Test that old (term ...) syntax is rejected in option."""
+        with pytest.raises(GrammarConversionError, match=r"\(term \.\.\.\) syntax is no longer supported"):
+            sexp_to_rhs(parse_sexp("(option (term INT Int64))"))
 
     def test_sequence_simple(self):
         result = sexp_to_rhs(parse_sexp('(seq "(" ")" )'))
         assert result == Sequence((LitTerminal("("), LitTerminal(")")))
 
     def test_sequence_mixed(self):
-        result = sexp_to_rhs(parse_sexp('(seq "(" "date" (term INT Int64) (term INT Int64) (term INT Int64) ")")'))
-        expected = Sequence((
-            LitTerminal("("),
-            LitTerminal("date"),
-            NamedTerminal("INT", BaseType("Int64")),
-            NamedTerminal("INT", BaseType("Int64")),
-            NamedTerminal("INT", BaseType("Int64")),
-            LitTerminal(")")
-        ))
-        assert result == expected
+        """Test that old (term ...) syntax is rejected in sequence."""
+        with pytest.raises(GrammarConversionError, match=r"\(term \.\.\.\) syntax is no longer supported"):
+            sexp_to_rhs(parse_sexp('(seq "(" "date" (term INT Int64) (term INT Int64) (term INT Int64) ")")'))
 
     def test_sequence_with_nonterminals(self):
-        result = sexp_to_rhs(parse_sexp('(seq "(" "rule" (nonterm name String) (nonterm value (Message logic Value)) ")")'))
-        expected = Sequence((
-            LitTerminal("("),
-            LitTerminal("rule"),
-            Nonterminal("name", BaseType("String")),
-            Nonterminal("value", MessageType("logic", "Value")),
-            LitTerminal(")")
-        ))
-        assert result == expected
+        """Test that old (nonterm ...) syntax is rejected in sequence."""
+        with pytest.raises(GrammarConversionError, match=r"\(nonterm \.\.\.\) syntax is no longer supported"):
+            sexp_to_rhs(parse_sexp('(seq "(" "rule" (nonterm name String) (nonterm value (Message logic Value)) ")")'))
 
     def test_sequence_with_star_and_option(self):
-        result = sexp_to_rhs(parse_sexp('(seq "[" (star (nonterm binding (Message logic Binding))) (option (nonterm values (List (Message logic Binding)))) "]")'))
-        expected = Sequence((
-            LitTerminal("["),
-            Star(Nonterminal("binding", MessageType("logic", "Binding"))),
-            Option(Nonterminal("values", ListType(MessageType("logic", "Binding")))),
-            LitTerminal("]")
-        ))
-        assert result == expected
+        """Test that old (nonterm ...) syntax is rejected in sequence with star and option."""
+        with pytest.raises(GrammarConversionError, match=r"\(nonterm \.\.\.\) syntax is no longer supported"):
+            sexp_to_rhs(parse_sexp('(seq "[" (star (nonterm binding (Message logic Binding))) (option (nonterm values (List (Message logic Binding)))) "]")'))
 
     def test_invalid_rhs_unquoted_atom(self):
         with pytest.raises(GrammarConversionError):
@@ -187,6 +177,7 @@ class TestSexpToRule:
         assert result.constructor.body == Lit(True)
 
     def test_rule_with_nonterminal(self):
+        """Test that old (nonterm ...) syntax is rejected in rule."""
         sexp = parse_sexp('''
             (rule (lhs value (Message logic Value))
                 (rhs (nonterm date (Message logic DateValue)))
@@ -194,13 +185,11 @@ class TestSexpToRule:
                     (new-message logic Value
                         (value (call (oneof date_value) (var value (Message logic DateValue)))))))
         ''')
-        result = sexp_to_rule(sexp)
-        assert result.lhs == Nonterminal("value", MessageType("logic", "Value"))
-        assert result.rhs == Nonterminal("date", MessageType("logic", "DateValue"))
-        assert len(result.constructor.params) == 1
-        assert result.constructor.params[0].name == "value"
+        with pytest.raises(GrammarConversionError, match=r"\(nonterm \.\.\.\) syntax is no longer supported"):
+            sexp_to_rule(sexp)
 
     def test_rule_with_sequence(self):
+        """Test that old (term ...) syntax is rejected in rule with sequence."""
         sexp = parse_sexp('''
             (rule (lhs date (Message logic DateValue))
                 (rhs "(" "date" (term INT Int64) (term INT Int64) (term INT Int64) ")")
@@ -208,23 +197,19 @@ class TestSexpToRule:
                     (new-message logic DateValue
                         (year (var year Int64)) (month (var month Int64)) (day (var day Int64)))))
         ''')
-        result = sexp_to_rule(sexp)
-        assert result.lhs == Nonterminal("date", MessageType("logic", "DateValue"))
-        assert isinstance(result.rhs, Sequence)
-        assert len(result.rhs.elements) == 6
-        assert len(result.constructor.params) == 3
+        with pytest.raises(GrammarConversionError, match=r"\(term \.\.\.\) syntax is no longer supported"):
+            sexp_to_rule(sexp)
 
     def test_rule_with_star(self):
+        """Test that old (nonterm ...) syntax is rejected in rule with star."""
         sexp = parse_sexp('''
             (rule (lhs config_dict (List (Tuple String (Message logic Value))))
                 (rhs "{" (star (nonterm config_key_value (Tuple String (Message logic Value)))) "}")
                 (lambda ((x (List (Tuple String (Message logic Value))))) (List (Tuple String (Message logic Value)))
                     (var x (List (Tuple String (Message logic Value))))))
         ''')
-        result = sexp_to_rule(sexp)
-        assert result.lhs.name == "config_dict"
-        assert isinstance(result.rhs, Sequence)
-        assert isinstance(result.rhs.elements[1], Star)
+        with pytest.raises(GrammarConversionError, match=r"\(nonterm \.\.\.\) syntax is no longer supported"):
+            sexp_to_rule(sexp)
 
     def test_invalid_rule_wrong_element_count(self):
         with pytest.raises(GrammarConversionError):
@@ -611,28 +596,26 @@ class TestSexpToRhsErrors:
             sexp_to_rhs(SList((SAtom("nonterm", quoted=True), SAtom("foo"))))
 
     def test_nonterm_wrong_arity_without_context(self):
-        """Without context, nonterm requires name and type."""
-        with pytest.raises(GrammarConversionError, match="nonterm requires name and type"):
+        """(nonterm ...) syntax is no longer supported."""
+        with pytest.raises(GrammarConversionError, match=r"\(nonterm \.\.\.\) syntax is no longer supported"):
             sexp_to_rhs(parse_sexp("(nonterm foo)"))
 
     def test_nonterm_inline_type_with_context(self):
-        """With context, inline type is allowed as an override."""
+        """(nonterm ...) syntax is no longer supported, even with context."""
         ctx = TypeContext(terminals={}, nonterminals={"foo": BaseType("String")})
-        # Inline type overrides context
-        result = sexp_to_rhs(parse_sexp("(nonterm foo Int64)"), ctx)
-        assert result == Nonterminal("foo", BaseType("Int64"))
+        with pytest.raises(GrammarConversionError, match=r"\(nonterm \.\.\.\) syntax is no longer supported"):
+            sexp_to_rhs(parse_sexp("(nonterm foo Int64)"), ctx)
 
     def test_term_wrong_arity_without_context(self):
-        """Without context, term requires name and type."""
-        with pytest.raises(GrammarConversionError, match="term requires name and type"):
+        """(term ...) syntax is no longer supported."""
+        with pytest.raises(GrammarConversionError, match=r"\(term \.\.\.\) syntax is no longer supported"):
             sexp_to_rhs(parse_sexp("(term INT)"))
 
     def test_term_inline_type_with_context(self):
-        """With context, inline type is allowed as an override."""
+        """(term ...) syntax is no longer supported, even with context."""
         ctx = TypeContext(terminals={"INT": BaseType("Int64")}, nonterminals={})
-        # Inline type overrides context
-        result = sexp_to_rhs(parse_sexp("(term INT Int32)"), ctx)
-        assert result == NamedTerminal("INT", BaseType("Int32"))
+        with pytest.raises(GrammarConversionError, match=r"\(term \.\.\.\) syntax is no longer supported"):
+            sexp_to_rhs(parse_sexp("(term INT Int32)"), ctx)
 
     def test_star_wrong_arity(self):
         """star requires exactly 1 argument."""
