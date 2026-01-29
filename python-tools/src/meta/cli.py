@@ -1,38 +1,21 @@
 #!/usr/bin/env python3
-"""CLI tool for validating grammar against protobuf specifications.
+"""CLI tool for generating parsers from protobuf specifications.
 
-This module provides the main command-line entry point for loading and
-validating a grammar file.
+Loads a protobuf spec and a grammar file, validates the grammar file against
+the protobuf spec, then generates a parser from the grammar.
 
-Usage:
-    python -m meta.cli --grammar example.sexp example.proto --validate
+Examples:
+    # Validate grammar against protobuf specs
+    python -m meta.cli --grammar grammar.sexp proto/logic.proto proto/transactions.proto --validate
 
-Options:
-    proto_files: One or more .proto files to parse
-    --grammar: Path to grammar file (defaults to src/meta/grammar.sexp)
-    --validate: Validate grammar covers protobuf spec
-    --proto: Output the parsed protobuf specification
-    --parser {ir,python}: Output the generated parser (as IR or Python)
-    -o, --output: Output file (stdout if not specified)
+    # Generate a Python parser
+    python -m meta.cli --grammar grammar.sexp proto/logic.proto --parser python -o parser.py
 
-Example:
-    $ python -m meta.cli --grammar grammar.sexp proto/logic.proto proto/transactions.proto --validate
-    # Validates the grammar against the protobuf specifications
+    # Output parser intermediate representation
+    python -m meta.cli --grammar grammar.sexp proto/logic.proto --parser ir
 
-    $ python -m meta.cli --grammar my_grammar.sexp proto/logic.proto --validate -o output.sexp
-    # Validates a custom grammar file and outputs it
-
-    $ python -m meta.cli proto/logic.proto --parser python -o parser.py
-    # Generates a Python parser and writes it to parser.py
-
-    $ python -m meta.cli proto/logic.proto --parser ir
-    # Outputs the parser intermediate representation
-
-The tool performs the following steps:
-1. Load grammar from the specified file (or default location)
-2. Parse all .proto files using ProtoParser
-3. Validate grammar against protobuf specification
-4. Output the grammar if -o is specified
+    # Output parsed protobuf specification
+    python -m meta.cli --grammar grammar.sexp proto/logic.proto --proto
 """
 
 import argparse
@@ -110,7 +93,8 @@ def parse_args():
     parser.add_argument(
         "--grammar",
         type=Path,
-        help="Path to grammar file (defaults to src/meta/grammar.sexp)"
+        required=True,
+        help="Path to grammar file"
     )
     parser.add_argument(
         "--validate",
@@ -161,12 +145,7 @@ def write_output(text, output_path, success_msg):
 
 def run(args) -> int:
     """Execute the CLI command specified by args."""
-    # Determine grammar file path
-    if args.grammar:
-        grammar_path = args.grammar
-    else:
-        grammar_path = Path(__file__).parent / "grammar.sexp"
-
+    grammar_path = args.grammar
     if not grammar_path.exists():
         print(f"Error: Grammar file not found: {grammar_path}", file=sys.stderr)
         return 1
