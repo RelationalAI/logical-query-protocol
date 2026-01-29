@@ -1353,23 +1353,6 @@
       (terms (var terms (List (Message logic RelTerm)))))))
 
 (rule
-  (lhs primitive (Message logic Primitive))
-  (rhs
-    "("
-    "primitive"
-    name
-    (star rel_term)
-    ")")
-  (construct
-    ((name String) (terms (List (Message logic RelTerm))))
-    (Message logic Primitive)
-    (new-message
-      logic
-      Primitive
-      (name (var name String))
-      (terms (var terms (List (Message logic RelTerm)))))))
-
-(rule
   (lhs eq (Message logic Primitive))
   (rhs
     "("

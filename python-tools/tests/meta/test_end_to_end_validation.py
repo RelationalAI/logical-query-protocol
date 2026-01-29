@@ -9,8 +9,6 @@ from pathlib import Path
 import tempfile
 from textwrap import dedent
 
-from typing import Optional, Set
-
 from meta.proto_parser import ProtoParser
 from meta.grammar_validator import validate_grammar, ValidationResult
 from meta.sexp_grammar import load_grammar_config_file
@@ -25,13 +23,10 @@ def create_temp_file(content: str, suffix: str = ".txt") -> Path:
     return Path(path)
 
 
-def parse_and_validate(grammar_content: str, proto_content: str, expected_unreachable: Optional[Set[str]] = None) -> ValidationResult:
+def parse_and_validate(grammar_content: str, proto_content: str) -> ValidationResult:
     """Parse grammar and proto files and run validation."""
     import shutil
     import tempfile
-
-    if expected_unreachable is None:
-        expected_unreachable = set()
 
     # Create temporary files with consistent names
     # Use "test" as the module name by using test.proto as the filename
@@ -66,7 +61,7 @@ def parse_and_validate(grammar_content: str, proto_content: str, expected_unreac
         proto_parser.parse_file(proto_file)
 
         # Validate
-        result = validate_grammar(grammar, proto_parser, expected_unreachable)
+        result = validate_grammar(grammar, proto_parser)
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)
     return result
@@ -334,8 +329,8 @@ class TestSoundnessWarnings:
 class TestUnreachableRules:
     """Tests for unreachable rule detection."""
 
-    def test_unreachable_rule_warning(self):
-        """Test warning for unreachable rule."""
+    def test_unreachable_rule_error(self):
+        """Test error for unreachable rule."""
         proto_content = """
         syntax = "proto3";
         package test;
@@ -365,41 +360,8 @@ class TestUnreachableRules:
         """
 
         result = parse_and_validate(grammar_content, proto_content)
-        assert any(w.category == "unreachable" for w in result.warnings)
-        assert any("orphan" in w.message for w in result.warnings)
-
-    def test_expected_unreachable_no_warning(self):
-        """Test that expected unreachable rules don't produce warnings."""
-        proto_content = """
-        syntax = "proto3";
-        package test;
-
-        message Start {
-            string value = 1;
-        }
-
-        message Orphan {
-            string data = 1;
-        }
-        """
-
-        grammar_content = """
-        (rule
-          (lhs start (Message test Start))
-          (rhs (term STRING String))
-          (lambda ((value String)) (Message test Start)
-            (new-message test Start (value (var value String)))))
-
-        (rule
-          (lhs orphan (Message test Orphan))
-          (rhs (term STRING String))
-          (lambda ((data String)) (Message test Orphan)
-            (new-message test Orphan (data (var data String)))))
-        """
-
-        result = parse_and_validate(grammar_content, proto_content, expected_unreachable={'orphan'})
-        # Should not have unreachable warning for orphan
-        assert not any("orphan" in w.message and w.category == "unreachable" for w in result.warnings)
+        assert any(e.category == "unreachable" for e in result.errors)
+        assert any("orphan" in e.message for e in result.errors)
 
 
 class TestValidGrammar:

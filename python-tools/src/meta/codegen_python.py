@@ -284,7 +284,8 @@ class PythonCodeGenerator(CodeGenerator):
         """Override to handle OneOf specially for Python protobuf."""
         # Check for Message constructor with OneOf call argument
         if isinstance(expr.func, NewMessage):
-            f = self.generate_lines(expr.func, lines, indent)
+            func = expr.func  # Narrow the type
+            f = self.generate_lines(func, lines, indent)
 
             # Python protobuf requires keyword arguments
             # Get field mapping from proto message definitions
@@ -294,7 +295,7 @@ class PythonCodeGenerator(CodeGenerator):
             positional_args = []
             keyword_args = []
 
-            msg_key = (expr.func.module, expr.func.name)  # type: ignore[union-attr]
+            msg_key = (func.module, func.name)
             field_specs = message_field_map.get(msg_key, [])
             arg_idx = 0
             field_idx = 0

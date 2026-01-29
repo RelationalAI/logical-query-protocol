@@ -36,7 +36,6 @@ def validator(empty_grammar, empty_proto_parser):
     return GrammarValidator(
         grammar=empty_grammar,
         parser=empty_proto_parser,
-        expected_unreachable=set()
     )
 
 
@@ -264,7 +263,7 @@ class TestStructureValidation:
         rule = Rule(start, rhs, constructor)
         grammar.rules[start] = [rule]
 
-        validator = GrammarValidator(grammar, parser, set())
+        validator = GrammarValidator(grammar, parser)
         validator._check_structure()
         assert validator.result.is_valid
 
@@ -281,7 +280,7 @@ class TestStructureValidation:
         rule = Rule(start, rhs, constructor)
         grammar.rules[start] = [rule]
 
-        validator = GrammarValidator(grammar, parser, set())
+        validator = GrammarValidator(grammar, parser)
         validator._check_structure()
         assert validator.result.is_valid
 
@@ -305,7 +304,7 @@ class TestStructureValidation:
         rule = Rule(start, rhs, constructor)
         grammar.rules[start] = [rule]
 
-        validator = GrammarValidator(grammar, parser, set())
+        validator = GrammarValidator(grammar, parser)
         validator._check_structure()
         assert validator.result.is_valid
 
@@ -332,7 +331,7 @@ class TestMessageCoverage:
         rule = Rule(start, LitTerminal('test'), constructor)
         grammar.rules[start] = [rule]
 
-        validator = GrammarValidator(grammar, parser, set())
+        validator = GrammarValidator(grammar, parser)
         validator._check_message_coverage()
         assert validator.result.is_valid
 
@@ -345,23 +344,10 @@ class TestMessageCoverage:
         start = Nonterminal('start', BaseType('Unit'))
         grammar = Grammar(start=start)
 
-        validator = GrammarValidator(grammar, parser, set())
+        validator = GrammarValidator(grammar, parser)
         validator._check_message_coverage()
         assert not validator.result.is_valid
         assert any("MissingMessage" in e.message for e in validator.result.errors)
-
-    def test_message_in_expected_unreachable_skipped(self):
-        """Test message in expected_unreachable is not required."""
-        parser = ProtoParser()
-        msg = ProtoMessage(name='UnreachableMessage', module='proto')
-        parser.messages['UnreachableMessage'] = msg
-
-        start = Nonterminal('start', BaseType('Unit'))
-        grammar = Grammar(start=start)
-
-        validator = GrammarValidator(grammar, parser, {'unreachable_message'})
-        validator._check_message_coverage()
-        assert validator.result.is_valid
 
 
 class TestFieldCoverage:
@@ -387,7 +373,7 @@ class TestFieldCoverage:
         rule = Rule(start, Sequence((NamedTerminal('STRING', BaseType('String')), NamedTerminal('INT', BaseType('Int32')))), constructor)
         grammar.rules[start] = [rule]
 
-        validator = GrammarValidator(grammar, parser, set())
+        validator = GrammarValidator(grammar, parser)
         validator._check_types()  # Field validation now happens in type checking
         assert validator.result.is_valid
 
@@ -410,7 +396,7 @@ class TestFieldCoverage:
         rule = Rule(start, NamedTerminal('STRING', BaseType('String')), constructor)
         grammar.rules[start] = [rule]
 
-        validator = GrammarValidator(grammar, parser, set())
+        validator = GrammarValidator(grammar, parser)
         validator._check_types()  # Field validation now happens in type checking
         assert len(validator.result.warnings) > 0
         assert any('missing field' in w.message.lower() for w in validator.result.warnings)
@@ -507,7 +493,7 @@ class TestRuleTypeChecking:
         constructor = Lambda([param1, param2], BaseType('Unit'), Lit(None))
         rule = Rule(start, rhs, constructor)
 
-        validator = GrammarValidator(grammar, parser, set())
+        validator = GrammarValidator(grammar, parser)
         validator._check_rule_types(rule)
         assert validator.result.is_valid
 
@@ -519,7 +505,7 @@ class TestRuleTypeChecking:
 
         # Can't construct Rule with arity mismatch due to assertion
         # Just verify the validator would catch it
-        validator = GrammarValidator(grammar, parser, set())
+        validator = GrammarValidator(grammar, parser)
         validator.result.add_error('type_arity', "lambda has 1 params but RHS has 2 non-literal elements")
         assert not validator.result.is_valid
 
@@ -542,7 +528,7 @@ class TestRuleTypeChecking:
         rule = Rule(start, rhs, constructor)
         grammar.rules[start] = [rule]
 
-        validator = GrammarValidator(grammar, parser, set())
+        validator = GrammarValidator(grammar, parser)
         validator._check_rule_types(rule)
         assert validator.result.is_valid
 
@@ -558,7 +544,7 @@ class TestRuleTypeChecking:
         rule = Rule(start, rhs, constructor)
         grammar.rules[start] = [rule]
 
-        validator = GrammarValidator(grammar, parser, set())
+        validator = GrammarValidator(grammar, parser)
         validator._check_rule_types(rule)
         assert validator.result.is_valid
 
@@ -580,7 +566,7 @@ class TestRuleTypeChecking:
         rule = Rule(start, rhs, constructor)
         grammar.rules[start] = [rule]
 
-        validator = GrammarValidator(grammar, parser, set())
+        validator = GrammarValidator(grammar, parser)
         validator._check_rule_types(rule)
         assert not validator.result.is_valid
         assert any("out of bounds" in e.message for e in validator.result.errors)
@@ -607,12 +593,12 @@ class TestUnreachableRules:
         rule2 = Rule(child, LitTerminal('test'), constructor2)
         grammar.rules[child] = [rule2]
 
-        validator = GrammarValidator(grammar, parser, set())
+        validator = GrammarValidator(grammar, parser)
         validator._check_unreachable()
         assert len(validator.result.warnings) == 0
 
     def test_unreachable_rule(self):
-        """Test that unreachable rules generate warnings."""
+        """Test that unreachable rules generate errors."""
         parser = ProtoParser()
         start = Nonterminal('start', BaseType('Unit'))
         orphan = Nonterminal('orphan', BaseType('String'))
@@ -628,30 +614,10 @@ class TestUnreachableRules:
         rule2 = Rule(orphan, LitTerminal('orphan'), constructor2)
         grammar.rules[orphan] = [rule2]
 
-        validator = GrammarValidator(grammar, parser, set())
+        validator = GrammarValidator(grammar, parser)
         validator._check_unreachable()
-        assert len(validator.result.warnings) > 0
-        assert any("orphan" in w.message and "unreachable" in w.message for w in validator.result.warnings)
-
-    def test_expected_unreachable_no_warning(self):
-        """Test that expected unreachable rules don't generate warnings."""
-        parser = ProtoParser()
-        start = Nonterminal('start', BaseType('Unit'))
-        orphan = Nonterminal('orphan', BaseType('String'))
-        grammar = Grammar(start=start)
-
-        constructor1 = Lambda([], BaseType('Unit'), Lit(None))
-        rule1 = Rule(start, LitTerminal('test'), constructor1)
-        grammar.rules[start] = [rule1]
-
-        constructor2 = Lambda([], BaseType('String'), Lit("orphan"))
-        rule2 = Rule(orphan, LitTerminal('orphan'), constructor2)
-        grammar.rules[orphan] = [rule2]
-
-        # Mark orphan as expected unreachable
-        validator = GrammarValidator(grammar, parser, {'orphan'})
-        validator._check_unreachable()
-        assert len(validator.result.warnings) == 0
+        assert len(validator.result.errors) > 0
+        assert any("orphan" in e.message and "unreachable" in e.message for e in validator.result.errors)
 
 
 class TestSoundness:
@@ -669,7 +635,7 @@ class TestSoundness:
         rule = Rule(start, LitTerminal('test'), constructor)
         grammar.rules[start] = [rule]
 
-        validator = GrammarValidator(grammar, parser, set())
+        validator = GrammarValidator(grammar, parser)
         validator._check_soundness()
         assert validator.result.is_valid
 
@@ -683,7 +649,7 @@ class TestSoundness:
         rule = Rule(start, LitTerminal('test'), constructor)
         grammar.rules[start] = [rule]
 
-        validator = GrammarValidator(grammar, parser, set())
+        validator = GrammarValidator(grammar, parser)
         validator._check_soundness()
         assert len(validator.result.warnings) > 0
         assert any("unknown_rule" in w.message and "no obvious proto backing" in w.message for w in validator.result.warnings)

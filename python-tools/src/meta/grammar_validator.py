@@ -393,11 +393,9 @@ class GrammarValidator:
         self,
         grammar: Grammar,
         parser: ProtoParser,
-        expected_unreachable: Set[str],
     ):
         self.grammar = grammar
         self.parser = parser
-        self.expected_unreachable = expected_unreachable
         self.result = ValidationResult()
 
         # Build lookup structures
@@ -419,15 +417,14 @@ class GrammarValidator:
         return self.result
 
     def _check_unreachable(self) -> None:
-        """Check for unexpected unreachable nonterminals."""
+        """Check for unreachable nonterminals."""
         _, unreachable = self.grammar.analysis.partition_nonterminals_by_reachability()
         for nt in unreachable:
-            if nt.name not in self.expected_unreachable:
-                self.result.add_warning(
-                    "unreachable",
-                    f"Grammar rule '{nt.name}' is unreachable from start symbol",
-                    rule_name=nt.name
-                )
+            self.result.add_error(
+                "unreachable",
+                f"Grammar rule '{nt.name}' is unreachable from start symbol",
+                rule_name=nt.name
+            )
         return None
 
     def _check_structure(self) -> None:
@@ -857,11 +854,6 @@ class GrammarValidator:
         for message_name in self._message_names:
             rule_name = _to_snake_case(message_name)
 
-
-            # Skip messages marked as expected unreachable
-            if rule_name in self.expected_unreachable:
-                continue
-
             if rule_name not in self._rule_names:
                 self.result.add_error(
                     "completeness",
@@ -922,11 +914,6 @@ class GrammarValidator:
                 continue
 
             rule_name = _to_snake_case(message_name)
-
-            # Skip expected unreachable
-            if rule_name in self.expected_unreachable:
-                continue
-
             rule_nt = self._find_nonterminal(rule_name)
             if rule_nt is None:
                 continue
@@ -1003,10 +990,6 @@ class GrammarValidator:
         for rule_nt in self.grammar.rules.keys():
             rule_name = rule_nt.name
 
-            # Skip expected unreachable
-            if rule_name in self.expected_unreachable:
-                continue
-
             if rule_name not in expected_rules:
                 # Check if it's a wrapper rule pattern (message_field)
                 if not self._is_likely_wrapper_rule(rule_name):
@@ -1069,17 +1052,15 @@ class GrammarValidator:
 def validate_grammar(
     grammar: Grammar,
     parser: ProtoParser,
-    expected_unreachable: Set[str],
 ) -> ValidationResult:
     """Validate grammar against protobuf specification.
 
     Args:
         grammar: The generated grammar
         parser: ProtoParser with message definitions
-        expected_unreachable: Rule names known to be unreachable
 
     Returns:
         ValidationResult with any issues found
     """
-    validator = GrammarValidator(grammar, parser, expected_unreachable)
+    validator = GrammarValidator(grammar, parser)
     return validator.validate()

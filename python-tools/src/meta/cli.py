@@ -81,51 +81,41 @@ def parse_args():
         help="Protobuf files to parse"
     )
     parser.add_argument(
-        "-o", "--output",
-        type=Path,
-        help="Output file for grammar in s-expression format"
-    )
-    parser.add_argument(
-        "--proto",
-        action="store_true",
-        help="Output the parsed protobuf specification"
-    )
-    parser.add_argument(
         "--grammar",
         type=Path,
-        required=True,
-        help="Path to grammar file"
+        help="Path to grammar file (required for --validate or --parser)"
     )
     parser.add_argument(
         "--validate",
         action="store_true",
         help="Validate grammar covers protobuf spec"
     )
-    parser.add_argument(
+
+    output_group = parser.add_argument_group("output options")
+    output_group.add_argument(
+        "-o", "--output",
+        type=Path,
+        help="Output file (default: stdout)"
+    )
+    output_group.add_argument(
+        "--proto",
+        action="store_true",
+        help="Output the parsed protobuf specification"
+    )
+    output_group.add_argument(
         "--parser",
         type=str,
         choices=["ir", "python"],
         help="Output the generated parser (ir or python)"
     )
-    return parser.parse_args()
 
+    args = parser.parse_args()
 
-def check_unreachable_nonterminals(grammar, expected_unreachable):
-    """Check for unexpected unreachable nonterminals and report warnings.
+    # --grammar is required if --validate or --parser is given
+    if (args.validate or args.parser) and not args.grammar:
+        parser.error("--grammar is required when using --validate or --parser")
 
-    Args:
-        grammar: The grammar to analyze
-        expected_unreachable: Set of nonterminal names expected to be unreachable
-
-    Prints warnings to stdout if unexpected unreachable nonterminals are found.
-    """
-    _, unreachable = grammar.analysis.partition_nonterminals_by_reachability()
-    unexpected_unreachable = [r for r in unreachable if r.name not in expected_unreachable]
-    if unexpected_unreachable:
-        print("Warning: Unreachable nonterminals detected:")
-        for rule in unexpected_unreachable:
-            print(f"  {rule.name}")
-        print()
+    return args
 
 
 def write_output(text, output_path, success_msg):
@@ -145,8 +135,27 @@ def write_output(text, output_path, success_msg):
 
 def run(args) -> int:
     """Execute the CLI command specified by args."""
+    # Parse protobuf files first (needed for --proto, validation, and parser gen)
+    proto_parser = ProtoParser()
+    for proto_file in args.proto_files:
+        if not proto_file.exists():
+            print(f"Error: File not found: {proto_file}", file=sys.stderr)
+            return 1
+        proto_parser.parse_file(proto_file)
+
+    # Handle --proto: output parsed protobuf specification
+    if args.proto:
+        for msg in proto_parser.messages.values():
+            print(format_message(msg))
+            print()
+        for enum in proto_parser.enums.values():
+            print(format_enum(enum))
+            print()
+        return 0
+
+    # From here on, --grammar is required (enforced by parse_args)
     grammar_path = args.grammar
-    if not grammar_path.exists():
+    if not grammar_path or not grammar_path.exists():
         print(f"Error: Grammar file not found: {grammar_path}", file=sys.stderr)
         return 1
 
@@ -160,35 +169,8 @@ def run(args) -> int:
         for rule in rules:
             grammar.add_rule(rule)
 
-    # Expected unreachable nonterminals (hardcoded from generator)
-    expected_unreachable = {
-        'debug_info',
-        'debug_info_ids',
-        'ivmconfig',
-        'date_value',
-        'datetime_value',
-        'decimal_value',
-        'int128_value',
-        'missing_value',
-        'uint128_value',
-        'uint128_type',
-        'datetime_type',
-    }
-
-    # Parse protobuf files for validation
-    proto_parser = ProtoParser()
-    for proto_file in args.proto_files:
-        if not proto_file.exists():
-            print(f"Error: File not found: {proto_file}", file=sys.stderr)
-            return 1
-        proto_parser.parse_file(proto_file)
-
     # Run validation (always run, but only print if requested or has errors)
-    validation_result = validate_grammar(
-        grammar,
-        proto_parser,
-        expected_unreachable,
-    )
+    validation_result = validate_grammar(grammar, proto_parser)
 
     if args.validate or not validation_result.is_valid:
         print(validation_result.summary())
@@ -196,15 +178,13 @@ def run(args) -> int:
         if not validation_result.is_valid:
             return 1
 
-    # Output grammar if -o is specified
-    if args.output:
+    # Output grammar if -o is specified and not generating parser
+    if args.output and not args.parser:
         output_text = grammar.print_grammar_sexp()
         args.output.write_text(output_text)
         print(f"Grammar written to {args.output}")
 
     if args.parser:
-        check_unreachable_nonterminals(grammar, expected_unreachable)
-
         if args.parser == "ir":
             from .parser_gen import generate_parse_functions
             parse_functions = generate_parse_functions(grammar)
