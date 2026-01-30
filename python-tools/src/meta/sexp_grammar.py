@@ -31,7 +31,7 @@ from .sexp_target import sexp_to_type, sexp_to_expr, type_to_sexp, constructor_t
 from .grammar import (
     Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence, Rule
 )
-from .target import Lambda, TargetType
+from .target import Lambda, TargetType, FunDef, Var
 
 
 @dataclass
@@ -231,6 +231,7 @@ class GrammarConfig:
     terminals: Dict[str, TargetType]
     rules: Dict[Nonterminal, List[Rule]]
     ignored_completeness: List[str] = field(default_factory=list)  # Message names to ignore in completeness checks
+    function_defs: Dict[str, 'FunDef'] = field(default_factory=dict)  # User-defined functions with IR bodies
 
 
 def load_grammar_config(text: str) -> GrammarConfig:
@@ -258,6 +259,7 @@ def load_grammar_config(text: str) -> GrammarConfig:
     nonterminals: Dict[str, TargetType] = {}
     ignored_completeness: List[str] = []
     rule_sexps: List[SExpr] = []
+    function_defs: Dict[str, FunDef] = {}
 
     for sexp in sexps:
         if not isinstance(sexp, SList) or len(sexp) == 0:
@@ -281,6 +283,24 @@ def load_grammar_config(text: str) -> GrammarConfig:
                 raise GrammarConversionError(f"ignore-completeness requires message name: {sexp}")
             msg_name = _expect_symbol(sexp[1], "message name")
             ignored_completeness.append(msg_name)
+
+        elif head.value == "def":
+            if len(sexp) != 5:
+                raise GrammarConversionError(f"def requires name, params, return type, and body: {sexp}")
+            name = _expect_symbol(sexp[1], "function name")
+            params_sexp = sexp[2]
+            if not isinstance(params_sexp, SList):
+                raise GrammarConversionError(f"def params must be a list: {params_sexp}")
+            params: List[Var] = []
+            for p in params_sexp.elements:
+                if not isinstance(p, SList) or len(p) != 2:
+                    raise GrammarConversionError(f"def param must be (name type): {p}")
+                param_name = _expect_symbol(p[0], "param name")
+                param_type = sexp_to_type(p[1])
+                params.append(Var(param_name, param_type))
+            return_type = sexp_to_type(sexp[3])
+            body = sexp_to_expr(sexp[4])
+            function_defs[name] = FunDef(name, tuple(params), return_type, body)
 
         elif head.value == "rule":
             rule_sexps.append(sexp)
@@ -314,7 +334,12 @@ def load_grammar_config(text: str) -> GrammarConfig:
             result[lhs] = []
         result[lhs].append(rule)
 
-    return GrammarConfig(terminals=terminals, rules=result, ignored_completeness=ignored_completeness)
+    return GrammarConfig(
+        terminals=terminals,
+        rules=result,
+        ignored_completeness=ignored_completeness,
+        function_defs=function_defs
+    )
 
 
 def load_grammar_config_file(path: Path) -> GrammarConfig:

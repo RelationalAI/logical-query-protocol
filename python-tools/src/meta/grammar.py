@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 
 # Import action AST types
-from .target import TargetExpr, Var, Symbol, Call, Lambda, Lit, TargetType, ListType, OptionType, TupleType
+from .target import TargetExpr, Var, Symbol, Call, Lambda, Lit, TargetType, ListType, OptionType, TupleType, FunDef
 
 # Use TYPE_CHECKING to avoid circular import: GrammarAnalysis imports Grammar,
 # but we need GrammarAnalysis type hints here. These imports only exist during
@@ -257,6 +257,7 @@ class Grammar:
     rules: Dict[Nonterminal, List[Rule]] = field(default_factory=dict)
     tokens: List[Token] = field(default_factory=list)
     ignored_completeness: List[str] = field(default_factory=list)  # Message names to ignore in completeness checks
+    function_defs: Dict[str, 'FunDef'] = field(default_factory=dict)  # User-defined functions with IR bodies
 
     # Lazily created analysis object (holds cached results)
     _analysis: Optional['GrammarAnalysis'] = field(default=None, init=False, repr=False)

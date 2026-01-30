@@ -11,6 +11,7 @@ Type syntax:
     (TypeVar name)                  -> VarType(name)
     (Message module name)           -> MessageType(module, name)
     (List elem_type)                -> ListType(elem_type)
+    (Dict key_type value_type)      -> DictType(key_type, value_type)
     (Option elem_type)              -> OptionType(elem_type)
     (Tuple type1 type2 ...)         -> TupleType([type1, type2, ...])
     (Function (param_types...) ret) -> FunctionType(param_types, ret)
@@ -29,6 +30,9 @@ Expression syntax:
     (list type elems...)                        -> ListExpr(elems, type)
     (get-field object field)                    -> GetField(object, field)
     (get-element tuple index)                   -> GetElement(tuple, index)
+    (dict-from-list pairs key_type value_type)  -> DictFromList(pairs, key_type, value_type)
+    (dict-lookup dict key [default])            -> DictLookup(dict, key, default)
+    (has-field message field_name)              -> HasField(message, field_name)
     (visit-nonterminal visitor_name nt_name T)  -> VisitNonterminal(visitor_name, Nonterminal(nt_name, T))
     (:symbol)                                   -> Symbol("symbol")
     (seq e1 e2 ...)                             -> Seq([e1, e2, ...])
@@ -43,12 +47,13 @@ from typing import List
 
 from .sexp import SAtom, SList, SExpr
 from .target import (
-    TargetType, BaseType, VarType, MessageType, ListType, OptionType, TupleType, FunctionType,
-    TargetExpr, Var, Lit, Symbol, Builtin, NewMessage, OneOf, ListExpr, Call, Lambda,
+    TargetType, BaseType, VarType, MessageType, ListType, DictType, OptionType, TupleType, FunctionType,
+    TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, OneOf, ListExpr, Call, Lambda,
     Let, IfElse, Seq, While, Foreach, ForeachEnumerated, Assign, Return, GetField,
-    GetElement, VisitNonterminal
+    GetElement, DictFromList, DictLookup, HasField, VisitNonterminal
 )
 from .grammar import Nonterminal
+from .target_builtins import is_builtin, validate_builtin_call
 
 
 class SExprConversionError(Exception):
@@ -101,6 +106,11 @@ def sexp_to_type(sexp: SExpr) -> TargetType:
         if len(sexp) != 2:
             raise SExprConversionError(f"List type requires element type: {sexp}")
         return ListType(sexp_to_type(sexp[1]))
+
+    elif tag == "Dict":
+        if len(sexp) != 3:
+            raise SExprConversionError(f"Dict type requires key and value types: {sexp}")
+        return DictType(sexp_to_type(sexp[1]), sexp_to_type(sexp[2]))
 
     elif tag == "Option":
         if len(sexp) != 2:
@@ -186,6 +196,11 @@ def sexp_to_expr(sexp: SExpr) -> TargetExpr:
             raise SExprConversionError(f"call requires function: {sexp}")
         func = sexp_to_expr(sexp[1])
         args = [sexp_to_expr(a) for a in sexp.elements[2:]]
+        # Validate builtin calls
+        if isinstance(func, Builtin):
+            error = validate_builtin_call(func.name, len(args))
+            if error:
+                raise SExprConversionError(f"In call expression: {error}")
         return Call(func, args)
 
     elif tag == "lambda" or tag == "construct":
@@ -206,30 +221,83 @@ def sexp_to_expr(sexp: SExpr) -> TargetExpr:
         return Lambda(params, return_type, body)
 
     elif tag == "let":
-        if len(sexp) != 4:
-            raise SExprConversionError(f"let requires (name type), init, and body: {sexp}")
-        var_sexp = sexp[1]
-        if not isinstance(var_sexp, SList) or len(var_sexp) != 2:
-            raise SExprConversionError(f"let binding must be (name type): {var_sexp}")
-        name = _expect_symbol(var_sexp[0], "let variable name")
-        typ = sexp_to_type(var_sexp[1])
-        init = sexp_to_expr(sexp[2])
-        body = sexp_to_expr(sexp[3])
-        return Let(Var(name, typ), init, body)
+        # Support multiple bindings: (let (name1 type1) init1 (name2 type2) init2 ... body)
+        # Desugar into nested lets: (let (name1 type1) init1 (let (name2 type2) init2 ... body))
+        if len(sexp) < 4:
+            raise SExprConversionError(f"let requires at least (name type), init, and body: {sexp}")
+
+        # Parse bindings (pairs of (name type) and init)
+        # The structure is: (let (name1 type1) init1 (name2 type2) init2 ... body)
+        # Bindings come in pairs until we reach the body (last element)
+        elements = sexp.elements[1:]  # Skip 'let' keyword
+
+        # Check if we have an odd number of elements (binding pairs + body)
+        if len(elements) < 3 or len(elements) % 2 == 0:
+            raise SExprConversionError(
+                f"let requires pairs of (name type) and init, followed by body: {sexp}")
+
+        # Parse all bindings
+        bindings = []
+        i = 0
+        while i < len(elements) - 1:  # Last element is body
+            var_sexp = elements[i]
+            if not isinstance(var_sexp, SList) or len(var_sexp) != 2:
+                raise SExprConversionError(f"let binding must be (name type): {var_sexp}")
+            name = _expect_symbol(var_sexp[0], "let variable name")
+            typ = sexp_to_type(var_sexp[1])
+
+            if i + 1 >= len(elements):
+                raise SExprConversionError(f"let binding missing init expression: {var_sexp}")
+            init = sexp_to_expr(elements[i + 1])
+
+            bindings.append((Var(name, typ), init))
+            i += 2
+
+        # Parse body (last element)
+        body = sexp_to_expr(elements[-1])
+
+        # Desugar into nested lets from right to left
+        result = body
+        for var, init in reversed(bindings):
+            result = Let(var, init, result)
+
+        return result
 
     elif tag == "if":
-        if len(sexp) != 4:
-            raise SExprConversionError(f"if requires condition, then, and else: {sexp}")
-        cond = sexp_to_expr(sexp[1])
-        then_branch = sexp_to_expr(sexp[2])
-        else_branch = sexp_to_expr(sexp[3])
-        return IfElse(cond, then_branch, else_branch)
+        # Support both forms:
+        # (if cond then-branch else-branch) - 3 arguments
+        # (if cond then-branch) - 2 arguments, desugars to (if cond then-branch (lit true))
+        if len(sexp) == 3:
+            # Two-argument form: (if cond then)
+            # Desugar to: (if cond then true) - equivalent to (cond and then)
+            cond = sexp_to_expr(sexp[1])
+            then_branch = sexp_to_expr(sexp[2])
+            else_branch = Lit(True)  # Default else branch
+            return IfElse(cond, then_branch, else_branch)
+        elif len(sexp) == 4:
+            # Three-argument form: (if cond then else)
+            cond = sexp_to_expr(sexp[1])
+            then_branch = sexp_to_expr(sexp[2])
+            else_branch = sexp_to_expr(sexp[3])
+            return IfElse(cond, then_branch, else_branch)
+        else:
+            raise SExprConversionError(f"if requires 2 or 3 arguments (cond, then, [else]): {sexp}")
 
     elif tag == "builtin":
         if len(sexp) != 2:
             raise SExprConversionError(f"builtin requires name: {sexp}")
         name = _expect_symbol(sexp[1], "builtin name")
+        # Validate builtin exists (warning only for now to not break existing code)
+        if not is_builtin(name):
+            # For now just warn, don't error - allows defining new builtins in grammar
+            pass
         return Builtin(name)
+
+    elif tag == "named-fun":
+        if len(sexp) != 2:
+            raise SExprConversionError(f"named-fun requires name: {sexp}")
+        name = _expect_symbol(sexp[1], "named-fun name")
+        return NamedFun(name)
 
     elif tag == "new-message":
         if len(sexp) < 3:
@@ -342,6 +410,34 @@ def sexp_to_expr(sexp: SExpr) -> TargetExpr:
         expr = sexp_to_expr(sexp[1])
         return Return(expr)
 
+    elif tag == "dict-from-list":
+        if len(sexp) != 4:
+            raise SExprConversionError(f"dict-from-list requires pairs, key type, and value type: {sexp}")
+        pairs = sexp_to_expr(sexp[1])
+        key_type = sexp_to_type(sexp[2])
+        value_type = sexp_to_type(sexp[3])
+        return DictFromList(pairs, key_type, value_type)
+
+    elif tag == "dict-lookup":
+        if len(sexp) == 3:
+            dict_expr = sexp_to_expr(sexp[1])
+            key = sexp_to_expr(sexp[2])
+            return DictLookup(dict_expr, key, None)
+        elif len(sexp) == 4:
+            dict_expr = sexp_to_expr(sexp[1])
+            key = sexp_to_expr(sexp[2])
+            default = sexp_to_expr(sexp[3])
+            return DictLookup(dict_expr, key, default)
+        else:
+            raise SExprConversionError(f"dict-lookup requires dict, key, and optional default: {sexp}")
+
+    elif tag == "has-field":
+        if len(sexp) != 3:
+            raise SExprConversionError(f"has-field requires message and field name: {sexp}")
+        message = sexp_to_expr(sexp[1])
+        field_name = _expect_symbol(sexp[2], "field name")
+        return HasField(message, field_name)
+
     else:
         raise SExprConversionError(f"Unknown expression form: {tag}")
 
@@ -368,6 +464,9 @@ def type_to_sexp(typ: TargetType) -> SExpr:
 
     elif isinstance(typ, ListType):
         return SList((SAtom("List"), type_to_sexp(typ.element_type)))
+
+    elif isinstance(typ, DictType):
+        return SList((SAtom("Dict"), type_to_sexp(typ.key_type), type_to_sexp(typ.value_type)))
 
     elif isinstance(typ, OptionType):
         return SList((SAtom("Option"), type_to_sexp(typ.element_type)))
@@ -480,6 +579,22 @@ def expr_to_sexp(expr: TargetExpr) -> SExpr:
 
     elif isinstance(expr, Return):
         return SList((SAtom("return"), expr_to_sexp(expr.expr)))
+
+    elif isinstance(expr, DictFromList):
+        return SList((SAtom("dict-from-list"), expr_to_sexp(expr.pairs),
+                      type_to_sexp(expr.key_type), type_to_sexp(expr.value_type)))
+
+    elif isinstance(expr, DictLookup):
+        if expr.default is None:
+            return SList((SAtom("dict-lookup"), expr_to_sexp(expr.dict_expr),
+                          expr_to_sexp(expr.key)))
+        else:
+            return SList((SAtom("dict-lookup"), expr_to_sexp(expr.dict_expr),
+                          expr_to_sexp(expr.key), expr_to_sexp(expr.default)))
+
+    elif isinstance(expr, HasField):
+        return SList((SAtom("has-field"), expr_to_sexp(expr.message),
+                      SAtom(expr.field_name)))
 
     else:
         raise SExprConversionError(f"Unknown expression: {type(expr).__name__}")

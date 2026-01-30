@@ -41,6 +41,7 @@ class PythonCodeGenerator(CodeGenerator):
         'Float64': 'float',
         'String': 'str',
         'Boolean': 'bool',
+        'Bytes': 'bytes',
     }
 
     def __init__(self, proto_messages=None):
@@ -79,10 +80,16 @@ class PythonCodeGenerator(CodeGenerator):
             lambda args, lines, indent: BuiltinResult(args[0], []))
         self.register_builtin("not", 1,
             lambda args, lines, indent: BuiltinResult(f"not {args[0]}", []))
+        self.register_builtin("and", 2,
+            lambda args, lines, indent: BuiltinResult(f"({args[0]} and {args[1]})", []))
+        self.register_builtin("or", 2,
+            lambda args, lines, indent: BuiltinResult(f"({args[0]} or {args[1]})", []))
         self.register_builtin("equal", 2,
             lambda args, lines, indent: BuiltinResult(f"{args[0]} == {args[1]}", []))
         self.register_builtin("not_equal", 2,
             lambda args, lines, indent: BuiltinResult(f"{args[0]} != {args[1]}", []))
+        self.register_builtin("add", 2,
+            lambda args, lines, indent: BuiltinResult(f"({args[0]} + {args[1]})", []))
 
         self.register_builtin("fragment_id_from_string", 1,
             lambda args, lines, indent: BuiltinResult(f"fragments_pb2.FragmentId(id={args[0]}.encode())", []))
@@ -102,8 +109,32 @@ class PythonCodeGenerator(CodeGenerator):
         self.register_builtin("list_push!", 2,
             lambda args, lines, indent: BuiltinResult("None", [f"{args[0]}.append({args[1]})"]))
 
+        self.register_builtin("map", 2,
+            lambda args, lines, indent: BuiltinResult(f"[{args[0]}(x) for x in {args[1]}]", []))
+
         self.register_builtin("is_none", 1,
             lambda args, lines, indent: BuiltinResult(f"{args[0]} is None", []))
+
+        self.register_builtin("is_some", 1,
+            lambda args, lines, indent: BuiltinResult(f"{args[0]} is not None", []))
+
+        self.register_builtin("unwrap_option", 1,
+            lambda args, lines, indent: BuiltinResult(args[0], []))
+
+        self.register_builtin("none", 0,
+            lambda args, lines, indent: BuiltinResult("None", []))
+
+        self.register_builtin("make_empty_bytes", 0,
+            lambda args, lines, indent: BuiltinResult("b''", []))
+
+        self.register_builtin("string_to_upper", 1,
+            lambda args, lines, indent: BuiltinResult(f"{args[0]}.upper()", []))
+
+        self.register_builtin("string_in_list", 2,
+            lambda args, lines, indent: BuiltinResult(f"{args[0]} in {args[1]}", []))
+
+        self.register_builtin("string_concat", 2,
+            lambda args, lines, indent: BuiltinResult(f"({args[0]} + {args[1]})", []))
 
         self.register_builtin("encode_string", 1,
             lambda args, lines, indent: BuiltinResult(f"{args[0]}.encode()", []))
@@ -151,9 +182,6 @@ class PythonCodeGenerator(CodeGenerator):
         self.register_builtin("construct_configure", 1,
             lambda args, lines, indent: BuiltinResult(f"self.construct_configure({args[0]})", []))
 
-        self.register_builtin("export_csv_config", 3,
-            lambda args, lines, indent: BuiltinResult(f"self.export_csv_config({args[0]}, {args[1]}, {args[2]})", []))
-
         self.register_builtin("construct_betree_info", 3,
             lambda args, lines, indent: BuiltinResult(f"self.construct_betree_info({args[0]}, {args[1]}, {args[2]})", []))
 
@@ -191,6 +219,9 @@ class PythonCodeGenerator(CodeGenerator):
     def gen_builtin_ref(self, name: str) -> str:
         return f"self.{name}"
 
+    def gen_named_fun_ref(self, name: str) -> str:
+        return f"self.{name}"
+
     def gen_parse_nonterminal_ref(self, name: str) -> str:
         return f"self.parse_{name}"
 
@@ -210,8 +241,22 @@ class PythonCodeGenerator(CodeGenerator):
     def gen_option_type(self, element_type: str) -> str:
         return f"Optional[{element_type}]"
 
+    def gen_dict_type(self, key_type: str, value_type: str) -> str:
+        return f"dict[{key_type}, {value_type}]"
+
     def gen_list_literal(self, elements: List[str], element_type) -> str:
         return f"[{', '.join(elements)}]"
+
+    def gen_dict_from_list(self, pairs: str) -> str:
+        return f"dict({pairs})"
+
+    def gen_dict_lookup(self, dict_expr: str, key: str, default: Optional[str]) -> str:
+        if default is None:
+            return f"{dict_expr}.get({key})"
+        return f"{dict_expr}.get({key}, {default})"
+
+    def gen_has_field(self, message: str, field_name: str) -> str:
+        return f"{message}.HasField({repr(field_name)})"
 
     def gen_function_type(self, param_types: List[str], return_type: str) -> str:
         return f"Callable[[{', '.join(param_types)}], {return_type}]"
@@ -474,6 +519,32 @@ class PythonCodeGenerator(CodeGenerator):
     def _generate_parse_def(self, expr: VisitNonterminalDef, indent: str) -> str:
         """Generate a parse method definition."""
         func_name = f"parse_{expr.nonterminal.name}"
+
+        params = []
+        for param in expr.params:
+            escaped_name = self.escape_identifier(param.name)
+            type_hint = self.gen_type(param.type)
+            params.append(f"{escaped_name}: {type_hint}")
+
+        params_str = ', '.join(params) if params else ''
+        if params_str:
+            params_str = ', ' + params_str
+
+        ret_hint = f" -> {self.gen_type(expr.return_type)}" if expr.return_type else ""
+
+        if expr.body is None:
+            body_code = f"{indent}    pass"
+        else:
+            body_lines: List[str] = []
+            body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
+            body_lines.append(f"{indent}    return {body_inner}")
+            body_code = "\n".join(body_lines)
+
+        return f"{indent}def {func_name}(self{params_str}){ret_hint}:\n{body_code}"
+
+    def _generate_builtin_method_def(self, expr: FunDef, indent: str) -> str:
+        """Generate a builtin method definition (adds self parameter)."""
+        func_name = self.escape_identifier(expr.name)
 
         params = []
         for param in expr.params:
