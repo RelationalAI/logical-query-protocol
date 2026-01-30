@@ -6,6 +6,37 @@ and semantic actions that can be attached to grammar rules.
 The target AST types represent the "least common denominator" for
 Python, Julia, and Go expressions. All constructs in this AST should be easily
 translatable to each of these target languages.
+
+Expression types (TargetExpr subclasses):
+    Var                 - Variable reference
+    Lit                 - Literal value (string, number, boolean, None)
+    Symbol              - Literal symbol (e.g., :cast)
+    Builtin             - Builtin function reference
+    NewMessage          - Message constructor with field names
+    OneOf               - OneOf field discriminator
+    ListExpr            - List constructor expression
+    VisitNonterminal    - Visitor method call for a nonterminal
+    Call                - Function call expression
+    GetField            - Field access expression
+    GetElement          - Tuple element access with constant integer index
+    Lambda              - Lambda function (anonymous function)
+    Let                 - Let-binding: let var = init in body
+    IfElse              - If-else conditional expression
+    Seq                 - Sequence of expressions evaluated in order
+    While               - While loop: while condition do body
+    Foreach             - Foreach loop: for var in collection do body
+    ForeachEnumerated   - Foreach loop with index: for index_var, var in enumerate(collection) do body
+    Assign              - Assignment statement: var = expr
+    Return              - Return statement: return expr
+
+Type expressions (TargetType subclasses):
+    BaseType            - Base types: Int64, Float64, String, Boolean
+    VarType             - Type variable for polymorphic types
+    MessageType         - Protobuf message types
+    TupleType           - Tuple type with fixed number of element types
+    ListType            - Parameterized list/array type
+    OptionType          - Optional/Maybe type for values that may be None
+    FunctionType        - Function type with parameter types and return type
 """
 
 from dataclasses import dataclass, field
@@ -108,23 +139,35 @@ class Builtin(TargetExpr):
 
 
 @dataclass(frozen=True)
-class Message(TargetExpr):
-    """Message constructor call.
+class NewMessage(TargetExpr):
+    """Message constructor with explicit field names.
+
+    Constructs a protobuf message with named fields.
+    This allows field name validation during grammar validation.
 
     module: Module name (protobuf file stem)
     name: Name of the message type
+    fields: Sequence of (field_name, field_expr) pairs
     """
     module: str
     name: str
+    fields: Sequence[tuple[str, 'TargetExpr']]
 
     def __str__(self) -> str:
-        return f"@{self.module}.{self.name}"
+        if not self.fields:
+            return f"@{self.module}.{self.name}()"
+        fields_str = ', '.join(f"{name}={expr}" for name, expr in self.fields)
+        return f"@{self.module}.{self.name}({fields_str})"
 
     def __post_init__(self):
         if not self.module.isidentifier():
             raise ValueError(f"Invalid message module: {self.module}")
         if not self.name.isidentifier():
             raise ValueError(f"Invalid message name: {self.name}")
+        for field_name, _ in self.fields:
+            if not isinstance(field_name, str) or not field_name.isidentifier():
+                raise ValueError(f"Invalid field name: {field_name}")
+        _freeze_sequence(self, 'fields')
 
 
 @dataclass(frozen=True)
@@ -189,6 +232,52 @@ class Call(TargetExpr):
 
     def __post_init__(self):
         _freeze_sequence(self, 'args')
+
+
+@dataclass(frozen=True)
+class GetField(TargetExpr):
+    """Field access expression.
+
+    Accesses a field from an object (typically a message).
+
+    object: Expression evaluating to the object
+    field_name: Name of the field to access (string)
+
+    Example:
+        GetField(Var("msg", MessageType("logic", "Expr")), "term")
+    """
+    object: 'TargetExpr'
+    field_name: str
+
+    def __str__(self) -> str:
+        return f"{self.object}.{self.field_name}"
+
+
+@dataclass(frozen=True)
+class GetElement(TargetExpr):
+    """Tuple element access with constant integer index.
+
+    Accesses an element from a tuple expression using a compile-time constant index.
+
+    tuple_expr: Expression evaluating to a tuple
+    index: Constant integer index (0-based)
+
+    Example:
+        GetElement(Var("pair", TupleType([INT64, STRING])), 0)  # pair[0]
+        GetElement(Var("pair", TupleType([INT64, STRING])), 1)  # pair[1]
+
+    Can also use the get_tuple_element builtin:
+        Call(Builtin("get_tuple_element"), [x, Lit(0)])  # x[0]
+        Call(Builtin("get_tuple_element"), [x, Lit(1)])  # x[1]
+    """
+    tuple_expr: 'TargetExpr'
+    index: int
+
+    def __str__(self) -> str:
+        return f"{self.tuple_expr}[{self.index}]"
+
+    def __post_init__(self):
+        assert isinstance(self.index, int) and self.index >= 0, f"GetElement index must be non-negative integer: {self.index}"
 
 
 @dataclass(frozen=True)
@@ -343,6 +432,24 @@ class BaseType(TargetType):
 
 
 @dataclass(frozen=True)
+class VarType(TargetType):
+    """Type variable for polymorphic types.
+
+    Represents a type parameter in polymorphic function signatures.
+    Used for builtins like unwrap_option_or, get_tuple_element, etc.
+
+    Example:
+        VarType("T")    # Type variable T
+        VarType("T1")   # Type variable T1
+        VarType("T2")   # Type variable T2
+    """
+    name: str
+
+    def __str__(self) -> str:
+        return self.name
+
+
+@dataclass(frozen=True)
 class MessageType(TargetType):
     """Protobuf message types.
 
@@ -457,10 +564,11 @@ __all__ = [
     'Lit',
     'Symbol',
     'Builtin',
-    'Message',
+    'NewMessage',
     'OneOf',
     'ListExpr',
     'Call',
+    'GetField',
     'Lambda',
     'Let',
     'IfElse',
@@ -472,6 +580,7 @@ __all__ = [
     'Return',
     'TargetType',
     'BaseType',
+    'VarType',
     'MessageType',
     'TupleType',
     'ListType',

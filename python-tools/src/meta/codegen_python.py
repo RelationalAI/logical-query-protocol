@@ -8,7 +8,7 @@ from typing import List, Optional, Set, Tuple, Union
 
 from .codegen_base import CodeGenerator, BuiltinResult
 from .target import (
-    TargetExpr, Var, Lit, Symbol, Message, OneOf, ListExpr, Call, Lambda, Let,
+    TargetExpr, Var, Lit, Symbol, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
     IfElse, FunDef, VisitNonterminalDef
 )
 from .gensym import gensym
@@ -105,12 +105,6 @@ class PythonCodeGenerator(CodeGenerator):
         self.register_builtin("is_none", 1,
             lambda args, lines, indent: BuiltinResult(f"{args[0]} is None", []))
 
-        self.register_builtin("fst", 1,
-            lambda args, lines, indent: BuiltinResult(f"{args[0]}[0]", []))
-
-        self.register_builtin("snd", 1,
-            lambda args, lines, indent: BuiltinResult(f"{args[0]}[1]", []))
-
         self.register_builtin("encode_string", 1,
             lambda args, lines, indent: BuiltinResult(f"{args[0]}.encode()", []))
 
@@ -125,6 +119,9 @@ class PythonCodeGenerator(CodeGenerator):
 
         self.register_builtin("unwrap_option_or", 2,
             lambda args, lines, indent: BuiltinResult(f"({args[0]} if {args[0]} is not None else {args[1]})", []))
+
+        self.register_builtin("int64_to_int32", 1,
+            lambda args, lines, indent: BuiltinResult(f"int({args[0]})", []))
 
         self.register_builtin("match_lookahead_terminal", 2,
             lambda args, lines, indent: BuiltinResult(f"self.match_lookahead_terminal({args[0]}, {args[1]})", []))
@@ -268,7 +265,7 @@ class PythonCodeGenerator(CodeGenerator):
 
     def generate_lines(self, expr: TargetExpr, lines: List[str], indent: str = "") -> str:
         # Special case: fragments_pb2.Fragment construction with debug_info parameter
-        if isinstance(expr, Call) and isinstance(expr.func, Message) and expr.func.name == "Fragment":
+        if isinstance(expr, Call) and isinstance(expr.func, NewMessage) and expr.func.name == "Fragment":
             for arg in expr.args:
                 if isinstance(arg, Var) and arg.name == "debug_info":
                     # Fragment constructor args are: id (FragmentId), declarations, debug_info
@@ -278,13 +275,67 @@ class PythonCodeGenerator(CodeGenerator):
                         lines.append(f"{indent}debug_info = self.construct_debug_info(self.id_to_debuginfo.get({fragment_id_expr}.id, {{}}))")
                     break
 
+        # Handle NewMessage with fields (which may contain OneOf calls)
+        if isinstance(expr, NewMessage):
+            return self._generate_newmessage(expr, lines, indent)
+
         return super().generate_lines(expr, lines, indent)
+
+    def _generate_newmessage(self, expr: NewMessage, lines: List[str], indent: str) -> str:
+        """Override to handle NewMessage with fields containing OneOf calls."""
+        if not expr.fields:
+            # No fields - return instance with no arguments
+            return f"{self.gen_constructor(expr.module, expr.name)}()"
+
+        # NewMessage with fields - need to handle OneOf specially
+        ctor = self.gen_constructor(expr.module, expr.name)
+        keyword_args = []
+        keyword_field_assignments: List[Tuple[str, str, bool]] = []
+
+        # Get field info from proto message definitions
+        field_map = self._build_message_field_map()
+        message_fields = field_map.get((expr.module, expr.name), [])
+        field_is_repeated = {name: is_rep for name, is_rep in message_fields}
+
+        for field_name, field_expr in expr.fields:
+            # Check if this field is a Call(OneOf, [value])
+            if isinstance(field_expr, Call) and isinstance(field_expr.func, OneOf) and len(field_expr.args) == 1:
+                # OneOf field
+                oneof_field_name = field_expr.func.field_name
+                field_value = self.generate_lines(field_expr.args[0], lines, indent)
+                is_repeated = field_is_repeated.get(oneof_field_name, False)
+                if oneof_field_name in PYTHON_KEYWORDS:
+                    keyword_field_assignments.append((oneof_field_name, field_value, is_repeated))
+                else:
+                    keyword_args.append(f"{oneof_field_name}={field_value}")
+            else:
+                # Regular field
+                field_value = self.generate_lines(field_expr, lines, indent)
+                is_repeated = field_is_repeated.get(field_name, False)
+                if field_name in PYTHON_KEYWORDS:
+                    keyword_field_assignments.append((field_name, field_value, is_repeated))
+                else:
+                    keyword_args.append(f"{field_name}={field_value}")
+
+        args_code = ', '.join(keyword_args)
+        tmp = gensym()
+        lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}({args_code})', is_declaration=True)}")
+
+        # Handle keyword field assignments via getattr()
+        for field_name, field_value, is_repeated in keyword_field_assignments:
+            if is_repeated:
+                lines.append(f"{indent}getattr({tmp}, '{field_name}').extend({field_value})")
+            else:
+                lines.append(f"{indent}getattr({tmp}, '{field_name}').CopyFrom({field_value})")
+
+        return tmp
 
     def _generate_call(self, expr: Call, lines: List[str], indent: str) -> str:
         """Override to handle OneOf specially for Python protobuf."""
         # Check for Message constructor with OneOf call argument
-        if isinstance(expr.func, Message):
-            f = self.generate_lines(expr.func, lines, indent)
+        if isinstance(expr.func, NewMessage):
+            func = expr.func  # Narrow the type
+            f = self.generate_lines(func, lines, indent)
 
             # Python protobuf requires keyword arguments
             # Get field mapping from proto message definitions
@@ -294,7 +345,7 @@ class PythonCodeGenerator(CodeGenerator):
             positional_args = []
             keyword_args = []
 
-            msg_key = (expr.func.module, expr.func.name)
+            msg_key = (func.module, func.name)
             field_specs = message_field_map.get(msg_key, [])
             arg_idx = 0
             field_idx = 0

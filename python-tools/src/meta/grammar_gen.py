@@ -63,7 +63,7 @@ Field type handling:
 import re
 from typing import Callable, Dict, List, Optional, Set, Tuple, cast
 from .grammar import Grammar, Rule, Token, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
-from .target import Lambda, Call, Var, Lit, IfElse, Symbol, Builtin, Message, OneOf, ListExpr, BaseType, MessageType, OptionType, ListType, TargetType, TargetExpr, TupleType
+from .target import Lambda, Call, Var, Lit, IfElse, Symbol, Builtin, NewMessage, OneOf, ListExpr, BaseType, MessageType, OptionType, ListType, TargetType, TargetExpr, TupleType
 from .target_utils import create_identity_function
 from .grammar_utils import rewrite_rule
 from .proto_ast import ProtoMessage, ProtoField
@@ -237,16 +237,16 @@ class GrammarGenerator:
                 assert False, f'Too many params for {message_name} semantic action'
             param_types.append(elem.target_type())
             field_idx += 1
-        args: list[TargetExpr] = []
+        fields: list[tuple[str, TargetExpr]] = []
         for name, param_type in zip(param_names, param_types):
             var = Var(name, param_type)
             if isinstance(param_type, OptionType) and isinstance(param_type.element_type, ListType):
                 # Flatten Option[List[T]] to List[T]
-                args.append(Call(Builtin('unwrap_option_or'), [var, ListExpr([], param_type.element_type.element_type)]))
+                fields.append((name, Call(Builtin('unwrap_option_or'), [var, ListExpr([], param_type.element_type.element_type)])))
             else:
-                args.append(var)
+                fields.append((name, var))
         message = self.parser.messages[message_name]
-        body = Call(Message(message.module, message_name), args)
+        body = NewMessage(message.module, message_name, fields)
         params = [Var(name, param_type) for name, param_type in zip(param_names, param_types)]
         return Lambda(params=params, return_type=MessageType(message.module, message_name), body=body)
 
@@ -491,8 +491,9 @@ class GrammarGenerator:
                 field_type = self._get_type_for_name(field.type)
 
                 # Create oneof wrapper action
+                # Use oneof's name as the field name, wrap value with OneOf discriminator
                 oneof_call = Call(OneOf(field.name), [Var('value', field_type)])
-                wrapper_call = Call(Message(message.module, message_name), [oneof_call])
+                wrapper_call = NewMessage(message.module, message_name, [(oneof.name, oneof_call)])
                 constructor = Lambda(
                     [Var('value', field_type)],
                     MessageType(message.module, message_name),

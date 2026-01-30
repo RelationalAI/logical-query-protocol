@@ -8,7 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from meta.target import (
-    Var, Lit, Symbol, Builtin, Message, OneOf, ListExpr, Call, Lambda, Let,
+    Var, Lit, Symbol, Builtin, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
     IfElse, Seq, While, Assign, Return, FunDef, VisitNonterminalDef,
     BaseType, MessageType, ListType, OptionType,
 )
@@ -136,16 +136,16 @@ def test_python_builtin_generation():
     result = gen.generate_lines(expr, lines, "")
     assert result == "x is None"
 
-    # Test 'fst' and 'snd' builtins
+    # Test 'get_tuple_element' builtin
     reset_gensym()
     lines = []
-    expr = Call(Builtin("fst"), [Var("pair", _any_type)])
+    expr = Call(Builtin("get_tuple_element"), [Var("pair", _any_type), Lit(0)])
     result = gen.generate_lines(expr, lines, "")
     assert result == "pair[0]"
 
     reset_gensym()
     lines = []
-    expr = Call(Builtin("snd"), [Var("pair", _any_type)])
+    expr = Call(Builtin("get_tuple_element"), [Var("pair", _any_type), Lit(1)])
     result = gen.generate_lines(expr, lines, "")
     assert result == "pair[1]"
 
@@ -306,14 +306,14 @@ def test_python_message_generation():
     # Simple message reference
     reset_gensym()
     lines = []
-    expr = Message("logic", "Expr")
+    expr = NewMessage("logic", "Expr", [])
     result = gen.generate_lines(expr, lines, "")
-    assert result == "logic_pb2.Expr"
+    assert result == "logic_pb2.Expr()"
 
     # Message call without field mapping
     reset_gensym()
     lines = []
-    expr = Call(Message("logic", "Expr"), [Var("value", _any_type)])
+    expr = Call(NewMessage("logic", "Expr", []), [Var("value", _any_type)])
     result = gen.generate_lines(expr, lines, "")
     assert "logic_pb2.Expr" in "\n".join(lines)
 
@@ -326,7 +326,7 @@ def test_python_oneof_generation():
     reset_gensym()
     lines = []
     oneof_call = Call(OneOf("literal"), [Lit("hello")])
-    expr = Call(Message("logic", "Value"), [oneof_call])
+    expr = Call(NewMessage("logic", "Value", []), [oneof_call])
     result = gen.generate_lines(expr, lines, "")
     code = "\n".join(lines)
     assert "literal='hello'" in code or "literal=" in code
@@ -375,7 +375,7 @@ def test_python_visit_nonterminal_def_generation():
         nonterminal=nt,
         params=[],
         return_type=MessageType("logic", "Expr"),
-        body=Call(Message("logic", "Expr"), []),
+        body=Call(NewMessage("logic", "Expr", []), []),
     )
     code = gen.generate_def(parse_def)
     assert "def parse_expr(self) -> logic_pb2.Expr:" in code

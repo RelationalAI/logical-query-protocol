@@ -42,6 +42,7 @@ from pathlib import Path
 from .proto_parser import ProtoParser
 from .grammar_gen import GrammarGenerator
 from .proto_print import print_proto_spec
+from .grammar_validator import GrammarValidator
 
 
 def parse_args():
@@ -75,6 +76,11 @@ def parse_args():
         type=str,
         choices=["ir", "python"],
         help="Output the generated parser (ir or python)"
+    )
+    parser.add_argument(
+        "--validate",
+        action="store_true",
+        help="Validate the generated grammar against protobuf spec"
     )
     return parser.parse_args()
 
@@ -156,6 +162,27 @@ def run(args) -> int:
             proto_messages = {(msg.module, name): msg for name, msg in proto_parser.messages.items()}
             output_text = generate_parser_python(grammar, command_line, proto_messages)
             write_output(output_text, args.output, f"Generated parser written to {args.output}")
+
+    if args.validate:
+        generator = GrammarGenerator(proto_parser, verbose=False)
+        grammar = generator.generate()
+
+        validator = GrammarValidator(grammar, proto_parser)
+        result = validator.validate()
+
+        # Filter out expected unreachable nonterminals
+        expected_unreachable = generator.expected_unreachable
+        errors = [e for e in result.errors
+                  if not (e.category == "unreachable" and
+                          e.rule_name in expected_unreachable)]
+
+        if errors:
+            print("Validation errors:", file=sys.stderr)
+            for error in errors:
+                print(f"  [{error.category}] {error.message}", file=sys.stderr)
+            return 1
+        else:
+            print("Validation passed.")
 
     return 0
 

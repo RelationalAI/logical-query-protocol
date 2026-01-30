@@ -5,7 +5,7 @@ with semantic actions, including support for normalization and left-factoring.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Tuple, TYPE_CHECKING
+from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 
 # Import action AST types
 from .target import TargetExpr, Var, Symbol, Call, Lambda, Lit, TargetType, ListType, OptionType, TupleType
@@ -256,6 +256,7 @@ class Grammar:
     start: Nonterminal
     rules: Dict[Nonterminal, List[Rule]] = field(default_factory=dict)
     tokens: List[Token] = field(default_factory=list)
+    ignored_completeness: List[str] = field(default_factory=list)  # Message names to ignore in completeness checks
 
     # Lazily created analysis object (holds cached results)
     _analysis: Optional['GrammarAnalysis'] = field(default=None, init=False, repr=False)
@@ -332,3 +333,81 @@ class Grammar:
             lines.append(f"{token.name}: {token.pattern}")
 
         return "\n".join(lines)
+
+    def print_grammar_sexp(self, reachable_only: bool = True) -> str:
+        """Convert to s-expression grammar format.
+
+        Returns the grammar as a sequence of s-expressions that can be
+        loaded with load_grammar_config().
+        """
+        from .sexp_grammar import rule_to_sexp, terminal_to_sexp
+        from .sexp_pretty import pretty_print
+
+        lines = []
+        lines.append(";; Auto-generated grammar from protobuf specifications")
+        lines.append("")
+
+        reachable, unreachable = self.analysis.partition_nonterminals_by_reachability()
+        rule_order = reachable if reachable_only else reachable + unreachable
+
+        # Collect all named terminals from rules
+        terminals: Dict[str, NamedTerminal] = {}
+        for lhs in rule_order:
+            for rule in self.rules[lhs]:
+                for term in collect(rule.rhs, NamedTerminal):
+                    if term.name not in terminals:
+                        terminals[term.name] = term
+
+        # Emit terminal declarations
+        if terminals:
+            lines.append(";; Terminal declarations")
+            for name in sorted(terminals.keys()):
+                term = terminals[name]
+                sexp = terminal_to_sexp(name, term.type)
+                lines.append(pretty_print(sexp, width=100))
+            lines.append("")
+
+        for lhs in rule_order:
+            rules_list = self.rules[lhs]
+
+            for rule in rules_list:
+                lines.append(f";; {lhs.name} ::= {rule.rhs}")
+                sexp = rule_to_sexp(rule)
+                lines.append(pretty_print(sexp, width=100))
+
+            lines.append("")
+
+        return "\n".join(lines)
+
+
+# Helper functions
+
+# Import traversal utilities here to avoid circular imports
+from .grammar_utils import get_nonterminals, get_literals, collect  # noqa: E402
+
+
+def is_epsilon(rhs: Rhs) -> bool:
+    """Check if rhs represents an epsilon production (empty sequence)."""
+    return isinstance(rhs, Sequence) and len(rhs.elements) == 0
+
+
+def rhs_elements(rhs: Rhs) -> Tuple[Rhs, ...]:
+    """Return elements of rhs. For Sequence, returns rhs.elements; otherwise returns (rhs,)."""
+    if isinstance(rhs, Sequence):
+        return rhs.elements
+    return (rhs,)
+
+
+def _count_nonliteral_rhs_elements(rhs: Rhs) -> int:
+    """Count the number of elements in an RHS that produce action parameters.
+
+    This counts all RHS elements, as each position (including literals, options,
+    stars, etc.) corresponds to a parameter in the action lambda.
+    """
+    if isinstance(rhs, Sequence):
+        return sum(_count_nonliteral_rhs_elements(elem) for elem in rhs.elements)
+    elif isinstance(rhs, LitTerminal):
+        return 0
+    else:
+        assert isinstance(rhs, (NamedTerminal, Nonterminal, Option, Star)), f"found {type(rhs)}"
+        return 1
