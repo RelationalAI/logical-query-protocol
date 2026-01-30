@@ -308,7 +308,7 @@ def test_python_message_generation():
     lines = []
     expr = NewMessage("logic", "Expr", [])
     result = gen.generate_lines(expr, lines, "")
-    assert result == "logic_pb2.Expr"
+    assert result == "logic_pb2.Expr()"
 
     # Message call without field mapping
     reset_gensym()

@@ -1687,7 +1687,7 @@
   (lhs rel_atom (Message logic RelAtom))
   (rhs
     "("
-    "rel_atom"
+    "relatom"
     name
     (star rel_term)
     ")")
@@ -2370,7 +2370,7 @@
   (lhs be_tree_relation (Message logic BeTreeRelation))
   (rhs
     "("
-    "be_tree_relation"
+    "betree_relation"
     relation_id
     be_tree_info
     ")")
@@ -2498,7 +2498,7 @@
   (lhs csvdata (Message logic CSVData))
   (rhs
     "("
-    "csvdata"
+    "csv_data"
     csvlocator
     csv_config
     (star csv_column)
@@ -2522,7 +2522,7 @@
   (lhs csvlocator (Message logic CSVLocator))
   (rhs
     "("
-    "csvlocator"
+    "csv_locator"
     (star name)
     name
     ")")
@@ -2533,7 +2533,7 @@
       logic
       CSVLocator
       (paths (var paths (List String)))
-      (inline_data (var inline_data String)))))
+      (inline_data (call (builtin encode_string) (var inline_data String))))))
 
 (rule
   (lhs csv_config (Message logic CSVConfig))

@@ -68,7 +68,7 @@ class Lexer:
                     candidates.append((token_type, value, action, match.end()))
 
             if not candidates:
-                raise ParseError(f'Unexpected character at position {{{{self.pos}}}}: {{{{self.input[self.pos]!r}}}}')
+                raise ParseError(f'Unexpected character at position {{self.pos}}: {{self.input[self.pos]!r}}')
 
             # Pick the longest match
             token_type, value, action, end_pos = max(candidates, key=lambda x: x[3])
@@ -130,7 +130,7 @@ class Lexer:
         # precision, and the scale is the number of digits between the decimal point and `d`
         parts = d.split('d')
         if len(parts) != 2:
-            raise ValueError(f'Invalid decimal format: {{{{d}}}}')
+            raise ValueError(f'Invalid decimal format: {{d}}')
         scale = len(parts[0].split('.')[1])
         precision = int(parts[1])
         # Parse the integer value directly without calling scan_int128 which strips 'i128' suffix

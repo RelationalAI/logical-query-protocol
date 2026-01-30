@@ -120,6 +120,9 @@ class PythonCodeGenerator(CodeGenerator):
         self.register_builtin("unwrap_option_or", 2,
             lambda args, lines, indent: BuiltinResult(f"({args[0]} if {args[0]} is not None else {args[1]})", []))
 
+        self.register_builtin("int64_to_int32", 1,
+            lambda args, lines, indent: BuiltinResult(f"int({args[0]})", []))
+
         self.register_builtin("match_lookahead_terminal", 2,
             lambda args, lines, indent: BuiltinResult(f"self.match_lookahead_terminal({args[0]}, {args[1]})", []))
 
@@ -281,13 +284,18 @@ class PythonCodeGenerator(CodeGenerator):
     def _generate_newmessage(self, expr: NewMessage, lines: List[str], indent: str) -> str:
         """Override to handle NewMessage with fields containing OneOf calls."""
         if not expr.fields:
-            # No fields - return constructor reference
-            return self.gen_constructor(expr.module, expr.name)
+            # No fields - return instance with no arguments
+            return f"{self.gen_constructor(expr.module, expr.name)}()"
 
         # NewMessage with fields - need to handle OneOf specially
         ctor = self.gen_constructor(expr.module, expr.name)
         keyword_args = []
         keyword_field_assignments: List[Tuple[str, str, bool]] = []
+
+        # Get field info from proto message definitions
+        field_map = self._build_message_field_map()
+        message_fields = field_map.get((expr.module, expr.name), [])
+        field_is_repeated = {name: is_rep for name, is_rep in message_fields}
 
         for field_name, field_expr in expr.fields:
             # Check if this field is a Call(OneOf, [value])
@@ -295,15 +303,17 @@ class PythonCodeGenerator(CodeGenerator):
                 # OneOf field
                 oneof_field_name = field_expr.func.field_name
                 field_value = self.generate_lines(field_expr.args[0], lines, indent)
+                is_repeated = field_is_repeated.get(oneof_field_name, False)
                 if oneof_field_name in PYTHON_KEYWORDS:
-                    keyword_field_assignments.append((oneof_field_name, field_value, False))
+                    keyword_field_assignments.append((oneof_field_name, field_value, is_repeated))
                 else:
                     keyword_args.append(f"{oneof_field_name}={field_value}")
             else:
                 # Regular field
                 field_value = self.generate_lines(field_expr, lines, indent)
+                is_repeated = field_is_repeated.get(field_name, False)
                 if field_name in PYTHON_KEYWORDS:
-                    keyword_field_assignments.append((field_name, field_value, False))
+                    keyword_field_assignments.append((field_name, field_value, is_repeated))
                 else:
                     keyword_args.append(f"{field_name}={field_value}")
 

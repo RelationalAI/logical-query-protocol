@@ -137,6 +137,24 @@ def run(args) -> int:
         for rule in rules:
             grammar.add_rule(rule)
 
+    # Add tokens with patterns from terminal declarations
+    # Map terminal names to their regex patterns (from Lark grammar)
+    from .grammar import Token
+    default_patterns = {
+        'SYMBOL': r'[a-zA-Z_][a-zA-Z0-9_.-]*',
+        'COLON_SYMBOL': r':[a-zA-Z_][a-zA-Z0-9_.-]*',
+        'STRING': r'"(?:[^"\\]|\\.)*"',  # ESCAPED_STRING pattern
+        'INT': r'[-]?\d+',
+        'INT128': r'[-]?\d+i128',
+        'UINT128': r'0x[0-9a-fA-F]+',
+        'FLOAT': r'[-]?\d+\.\d+|inf|nan',
+        'DECIMAL': r'[-]?\d+\.\d+d\d+',
+    }
+    for terminal_name, terminal_type in grammar_config.terminals.items():
+        pattern = default_patterns.get(terminal_name)
+        if pattern:
+            grammar.tokens.append(Token(terminal_name, pattern, terminal_type))
+
     # Run validation (always run, but only print if requested or has issues)
     validation_result = validate_grammar(grammar, proto_parser)
 
