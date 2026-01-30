@@ -1,6 +1,14 @@
-; Messages that are constructed imperatively by the parser, not parsed from grammar
+; Messages that are constructed imperatively by the parser, not parsed from grammar rules.
+; These protobuf message types are excluded from completeness validation because they are
+; built programmatically by builtin functions (like construct_betree_info, construct_csv_config)
+; or by parser internals, rather than being directly produced by grammar production rules.
+; Without these directives, the validator would report errors that these message types have
+; no grammar rules producing them.
 (ignore-completeness DebugInfo)
 (ignore-completeness IVMConfig)
+(ignore-completeness BeTreeConfig)
+(ignore-completeness BeTreeLocator)
+(ignore-completeness CSVConfig)
 
 ; Terminal declarations
 (terminal COLON_SYMBOL String)
@@ -2321,12 +2329,34 @@
         (call (oneof csv_data) (var value (Message logic CSVData)))))))
 
 (rule
+  (lhs rel_edb_path (List String))
+  (rhs
+    "["
+    (star STRING)
+    "]")
+  (construct
+    ((x (List String)))
+    (List String)
+    (var x (List String))))
+
+(rule
+  (lhs rel_edb_types (List (Message logic Type)))
+  (rhs
+    "["
+    (star type)
+    "]")
+  (construct
+    ((x (List (Message logic Type))))
+    (List (Message logic Type))
+    (var x (List (Message logic Type)))))
+
+(rule
   (lhs rel_edb (Message logic RelEDB))
   (rhs
     "("
     "rel_edb"
     relation_id
-    (star name)
+    rel_edb_path
     (option rel_edb_types)
     ")")
   (construct
@@ -2344,18 +2374,6 @@
           (builtin unwrap_option_or)
           (var types (Option (List (Message logic Type))))
           (list (Message logic Type)))))))
-
-(rule
-  (lhs rel_edb_types (List (Message logic Type)))
-  (rhs
-    "("
-    "types"
-    (star type)
-    ")")
-  (construct
-    ((x (List (Message logic Type))))
-    (List (Message logic Type))
-    (var x (List (Message logic Type)))))
 
 (rule
   (lhs betree_relation (Message logic BeTreeRelation))
@@ -2389,37 +2407,29 @@
   (lhs be_tree_info (Message logic BeTreeInfo))
   (rhs
     "("
-    "be_tree_info"
+    "betree_info"
     (option
       be_tree_info_key_types)
     (option
       be_tree_info_value_types)
-    be_tree_config
-    be_tree_locator
+    config_dict
     ")")
   (construct
     ((key_types (Option (List (Message logic Type))))
       (value_types (Option (List (Message logic Type))))
-      (storage_config (Message logic BeTreeConfig))
-      (relation_locator (Message logic BeTreeLocator)))
+      (config_dict (List (Tuple String (Message logic Value)))))
     (Message logic BeTreeInfo)
-    (new-message
-      logic
-      BeTreeInfo
-      (key_types
-        (call
-          (builtin unwrap_option_or)
-          (var key_types (Option (List (Message logic Type))))
-          (list (Message logic Type))))
-      (value_types
-        (call
-          (builtin unwrap_option_or)
-          (var value_types (Option (List (Message logic Type))))
-          (list (Message logic Type))))
-      (storage_config
-        (var storage_config (Message logic BeTreeConfig)))
-      (relation_locator
-        (var relation_locator (Message logic BeTreeLocator))))))
+    (call
+      (builtin construct_betree_info)
+      (call
+        (builtin unwrap_option_or)
+        (var key_types (Option (List (Message logic Type))))
+        (list (Message logic Type)))
+      (call
+        (builtin unwrap_option_or)
+        (var value_types (Option (List (Message logic Type))))
+        (list (Message logic Type)))
+      (var config_dict (List (Tuple String (Message logic Value)))))))
 
 (rule
   (lhs be_tree_info_key_types (List (Message logic Type)))
@@ -2446,47 +2456,6 @@
     (var x (List (Message logic Type)))))
 
 (rule
-  (lhs be_tree_config (Message logic BeTreeConfig))
-  (rhs
-    "("
-    "be_tree_config"
-    FLOAT
-    INT
-    INT
-    INT
-    ")")
-  (construct
-    ((epsilon Float64)
-      (max_pivots Int64)
-      (max_deltas Int64)
-      (max_leaf Int64))
-    (Message logic BeTreeConfig)
-    (new-message
-      logic
-      BeTreeConfig
-      (epsilon (var epsilon Float64))
-      (max_pivots (var max_pivots Int64))
-      (max_deltas (var max_deltas Int64))
-      (max_leaf (var max_leaf Int64)))))
-
-(rule
-  (lhs be_tree_locator (Message logic BeTreeLocator))
-  (rhs
-    "("
-    "be_tree_locator"
-    INT
-    INT
-    ")")
-  (construct
-    ((element_count Int64) (tree_height Int64))
-    (Message logic BeTreeLocator)
-    (new-message
-      logic
-      BeTreeLocator
-      (element_count (var element_count Int64))
-      (tree_height (var tree_height Int64)))))
-
-(rule
   (lhs csv_data (Message logic CSVData))
   (rhs csvdata)
   (construct
@@ -2495,14 +2464,38 @@
     (var x (Message logic CSVData))))
 
 (rule
+  (lhs csv_columns (List (Message logic CSVColumn)))
+  (rhs
+    "("
+    "columns"
+    (star csv_column)
+    ")")
+  (construct
+    ((x (List (Message logic CSVColumn))))
+    (List (Message logic CSVColumn))
+    (var x (List (Message logic CSVColumn)))))
+
+(rule
+  (lhs csv_asof String)
+  (rhs
+    "("
+    "asof"
+    STRING
+    ")")
+  (construct
+    ((x String))
+    String
+    (var x String)))
+
+(rule
   (lhs csvdata (Message logic CSVData))
   (rhs
     "("
     "csv_data"
     csvlocator
     csv_config
-    (star csv_column)
-    name
+    csv_columns
+    csv_asof
     ")")
   (construct
     ((locator (Message logic CSVLocator))
@@ -2519,75 +2512,80 @@
       (asof (var asof String)))))
 
 (rule
+  (lhs csv_locator_paths (List String))
+  (rhs
+    "("
+    "paths"
+    (star STRING)
+    ")")
+  (construct
+    ((x (List String)))
+    (List String)
+    (var x (List String))))
+
+(rule
+  (lhs csv_locator_inline_data String)
+  (rhs
+    "("
+    "inline_data"
+    STRING
+    ")")
+  (construct
+    ((x String))
+    String
+    (var x String)))
+
+(rule
   (lhs csvlocator (Message logic CSVLocator))
   (rhs
     "("
     "csv_locator"
-    (star name)
-    name
+    (option csv_locator_paths)
+    (option csv_locator_inline_data)
     ")")
   (construct
-    ((paths (List String)) (inline_data String))
+    ((paths (Option (List String))) (inline_data (Option String)))
     (Message logic CSVLocator)
     (new-message
       logic
       CSVLocator
-      (paths (var paths (List String)))
-      (inline_data (call (builtin encode_string) (var inline_data String))))))
+      (paths
+        (call
+          (builtin unwrap_option_or)
+          (var paths (Option (List String)))
+          (list String)))
+      (inline_data
+        (call
+          (builtin encode_string)
+          (call
+            (builtin unwrap_option_or)
+            (var inline_data (Option String))
+            (lit "")))))))
 
 (rule
   (lhs csv_config (Message logic CSVConfig))
   (rhs
     "("
     "csv_config"
-    INT
-    INT
-    name
-    name
-    name
-    name
-    name
-    (star name)
-    name
-    name
-    name
+    config_dict
     ")")
   (construct
-    ((header_row Int64)
-      (skip Int64)
-      (new_line String)
-      (delimiter String)
-      (quotechar String)
-      (escapechar String)
-      (comment String)
-      (missing_strings (List String))
-      (decimal_separator String)
-      (encoding String)
-      (compression String))
+    ((config_dict (List (Tuple String (Message logic Value)))))
     (Message logic CSVConfig)
-    (new-message
-      logic
-      CSVConfig
-      (header_row (call (builtin int64_to_int32) (var header_row Int64)))
-      (skip (var skip Int64))
-      (new_line (var new_line String))
-      (delimiter (var delimiter String))
-      (quotechar (var quotechar String))
-      (escapechar (var escapechar String))
-      (comment (var comment String))
-      (missing_strings (var missing_strings (List String)))
-      (decimal_separator (var decimal_separator String))
-      (encoding (var encoding String))
-      (compression (var compression String)))))
+    (call
+      (builtin construct_csv_config)
+      (var config_dict (List (Tuple String (Message logic Value)))))))
 
 (rule
   (lhs csv_column (Message logic CSVColumn))
   (rhs
     "("
-    "csv_column"
-    name
+    "column"
+    STRING
     relation_id
+    "["
     (star type)
+    "]"
     ")")
   (construct
     ((column_name String)
