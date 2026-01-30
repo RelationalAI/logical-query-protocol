@@ -259,9 +259,10 @@ class Parser:
         # Create and return Fragment
         return fragments_pb2.Fragment(id=fragment_id, declarations=declarations, debug_info=debug_info)
 
-    # --- Builtin methods ---
+    # --- Helper functions ---
 
-    def _extract_value_int64(self, value: Optional[logic_pb2.Value], default: int) -> int:
+    @staticmethod
+    def _extract_value_int64(value: Optional[logic_pb2.Value], default: int) -> int:
         if value is None:
             _t1019 = default
         else:
@@ -273,7 +274,8 @@ class Parser:
             _t1019 = _t1020
         return _t1019
 
-    def _extract_value_float64(self, value: Optional[logic_pb2.Value], default: float) -> float:
+    @staticmethod
+    def _extract_value_float64(value: Optional[logic_pb2.Value], default: float) -> float:
         if value is None:
             _t1021 = default
         else:
@@ -285,7 +287,8 @@ class Parser:
             _t1021 = _t1022
         return _t1021
 
-    def _extract_value_string(self, value: Optional[logic_pb2.Value], default: str) -> str:
+    @staticmethod
+    def _extract_value_string(value: Optional[logic_pb2.Value], default: str) -> str:
         if value is None:
             _t1023 = default
         else:
@@ -297,7 +300,8 @@ class Parser:
             _t1023 = _t1024
         return _t1023
 
-    def _extract_value_boolean(self, value: Optional[logic_pb2.Value], default: bool) -> bool:
+    @staticmethod
+    def _extract_value_boolean(value: Optional[logic_pb2.Value], default: bool) -> bool:
         if value is None:
             _t1025 = default
         else:
@@ -309,7 +313,8 @@ class Parser:
             _t1025 = _t1026
         return _t1025
 
-    def _extract_value_bytes(self, value: Optional[logic_pb2.Value], default: bytes) -> bytes:
+    @staticmethod
+    def _extract_value_bytes(value: Optional[logic_pb2.Value], default: bytes) -> bytes:
         if value is None:
             _t1027 = default
         else:
@@ -321,7 +326,8 @@ class Parser:
             _t1027 = _t1028
         return _t1027
 
-    def _extract_value_uint128(self, value: Optional[logic_pb2.Value], default: logic_pb2.UInt128Value) -> logic_pb2.UInt128Value:
+    @staticmethod
+    def _extract_value_uint128(value: Optional[logic_pb2.Value], default: logic_pb2.UInt128Value) -> logic_pb2.UInt128Value:
         if value is None:
             _t1029 = default
         else:
@@ -333,7 +339,8 @@ class Parser:
             _t1029 = _t1030
         return _t1029
 
-    def _extract_value_string_list(self, value: Optional[logic_pb2.Value], default: list[str]) -> list[str]:
+    @staticmethod
+    def _extract_value_string_list(value: Optional[logic_pb2.Value], default: list[str]) -> list[str]:
         if value is None:
             _t1031 = default
         else:
@@ -345,59 +352,62 @@ class Parser:
             _t1031 = _t1032
         return _t1031
 
-    def construct_csv_config(self, config_dict: list[tuple[str, logic_pb2.Value]]) -> logic_pb2.CSVConfig:
+    @staticmethod
+    def construct_csv_config(config_dict: list[tuple[str, logic_pb2.Value]]) -> logic_pb2.CSVConfig:
         config = dict(config_dict)
-        _t1033 = self._extract_value_int64(config.get('csv_header_row'), 1)
+        _t1033 = Parser._extract_value_int64(config.get('csv_header_row'), 1)
         header_row = _t1033
-        _t1034 = self._extract_value_int64(config.get('csv_skip'), 0)
+        _t1034 = Parser._extract_value_int64(config.get('csv_skip'), 0)
         skip = _t1034
-        _t1035 = self._extract_value_string(config.get('csv_new_line'), '')
+        _t1035 = Parser._extract_value_string(config.get('csv_new_line'), '')
         new_line = _t1035
-        _t1036 = self._extract_value_string(config.get('csv_delimiter'), ',')
+        _t1036 = Parser._extract_value_string(config.get('csv_delimiter'), ',')
         delimiter = _t1036
-        _t1037 = self._extract_value_string(config.get('csv_quotechar'), '"')
+        _t1037 = Parser._extract_value_string(config.get('csv_quotechar'), '"')
         quotechar = _t1037
-        _t1038 = self._extract_value_string(config.get('csv_escapechar'), '"')
+        _t1038 = Parser._extract_value_string(config.get('csv_escapechar'), '"')
         escapechar = _t1038
-        _t1039 = self._extract_value_string(config.get('csv_comment'), '')
+        _t1039 = Parser._extract_value_string(config.get('csv_comment'), '')
         comment = _t1039
-        _t1040 = self._extract_value_string_list(config.get('csv_missing_strings'), [])
+        _t1040 = Parser._extract_value_string_list(config.get('csv_missing_strings'), [])
         missing_strings = _t1040
-        _t1041 = self._extract_value_string(config.get('csv_decimal_separator'), '.')
+        _t1041 = Parser._extract_value_string(config.get('csv_decimal_separator'), '.')
         decimal_separator = _t1041
-        _t1042 = self._extract_value_string(config.get('csv_encoding'), 'utf-8')
+        _t1042 = Parser._extract_value_string(config.get('csv_encoding'), 'utf-8')
         encoding = _t1042
-        _t1043 = self._extract_value_string(config.get('csv_compression'), 'auto')
+        _t1043 = Parser._extract_value_string(config.get('csv_compression'), 'auto')
         compression = _t1043
         _t1044 = logic_pb2.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression)
         return _t1044
 
-    def construct_betree_info(self, key_types: list[Any], value_types: list[Any], config_dict: list[tuple[str, logic_pb2.Value]]) -> logic_pb2.BeTreeInfo:
+    @staticmethod
+    def construct_betree_info(key_types: list[Any], value_types: list[Any], config_dict: list[tuple[str, logic_pb2.Value]]) -> logic_pb2.BeTreeInfo:
         config = dict(config_dict)
-        _t1045 = self._extract_value_float64(config.get('betree_config_epsilon'), 0.5)
+        _t1045 = Parser._extract_value_float64(config.get('betree_config_epsilon'), 0.5)
         epsilon = _t1045
-        _t1046 = self._extract_value_int64(config.get('betree_config_max_pivots'), 4)
+        _t1046 = Parser._extract_value_int64(config.get('betree_config_max_pivots'), 4)
         max_pivots = _t1046
-        _t1047 = self._extract_value_int64(config.get('betree_config_max_deltas'), 16)
+        _t1047 = Parser._extract_value_int64(config.get('betree_config_max_deltas'), 16)
         max_deltas = _t1047
-        _t1048 = self._extract_value_int64(config.get('betree_config_max_leaf'), 16)
+        _t1048 = Parser._extract_value_int64(config.get('betree_config_max_leaf'), 16)
         max_leaf = _t1048
         _t1049 = logic_pb2.BeTreeConfig(epsilon=epsilon, max_pivots=max_pivots, max_deltas=max_deltas, max_leaf=max_leaf)
         storage_config = _t1049
-        _t1050 = self._extract_value_uint128(config.get('betree_locator_root_pageid'), None)
+        _t1050 = Parser._extract_value_uint128(config.get('betree_locator_root_pageid'), None)
         root_pageid = _t1050
-        _t1051 = self._extract_value_bytes(config.get('betree_locator_inline_data'), None)
+        _t1051 = Parser._extract_value_bytes(config.get('betree_locator_inline_data'), None)
         inline_data = _t1051
-        _t1052 = self._extract_value_int64(config.get('betree_locator_element_count'), 0)
+        _t1052 = Parser._extract_value_int64(config.get('betree_locator_element_count'), 0)
         element_count = _t1052
-        _t1053 = self._extract_value_int64(config.get('betree_locator_tree_height'), 0)
+        _t1053 = Parser._extract_value_int64(config.get('betree_locator_tree_height'), 0)
         tree_height = _t1053
         _t1054 = logic_pb2.BeTreeLocator(root_pageid=root_pageid, inline_data=inline_data, element_count=element_count, tree_height=tree_height)
         relation_locator = _t1054
         _t1055 = logic_pb2.BeTreeInfo(key_types=key_types, value_types=value_types, storage_config=storage_config, relation_locator=relation_locator)
         return _t1055
 
-    def construct_configure(self, config_dict: list[tuple[str, logic_pb2.Value]]) -> transactions_pb2.Configure:
+    @staticmethod
+    def construct_configure(config_dict: list[tuple[str, logic_pb2.Value]]) -> transactions_pb2.Configure:
         config = dict(config_dict)
         maintenance_level_val = config.get('ivm.maintenance_level')
         if (maintenance_level_val is not None and maintenance_level_val.HasField('string_value')):
@@ -412,26 +422,27 @@ class Parser:
         maintenance_level = _t1056
         _t1058 = transactions_pb2.IVMConfig(level=maintenance_level)
         ivm_config = _t1058
-        _t1059 = self._extract_value_int64(config.get('semantics_version'), 0)
+        _t1059 = Parser._extract_value_int64(config.get('semantics_version'), 0)
         semantics_version = _t1059
         _t1060 = transactions_pb2.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
         return _t1060
 
-    def export_csv_config(self, path: str, columns: list[Any], config_dict: list[tuple[str, logic_pb2.Value]]) -> transactions_pb2.ExportCSVConfig:
+    @staticmethod
+    def export_csv_config(path: str, columns: list[Any], config_dict: list[tuple[str, logic_pb2.Value]]) -> transactions_pb2.ExportCSVConfig:
         config = dict(config_dict)
-        _t1061 = self._extract_value_int64(config.get('partition_size'), 0)
+        _t1061 = Parser._extract_value_int64(config.get('partition_size'), 0)
         partition_size = _t1061
-        _t1062 = self._extract_value_string(config.get('compression'), '')
+        _t1062 = Parser._extract_value_string(config.get('compression'), '')
         compression = _t1062
-        _t1063 = self._extract_value_boolean(config.get('syntax_header_row'), True)
+        _t1063 = Parser._extract_value_boolean(config.get('syntax_header_row'), True)
         syntax_header_row = _t1063
-        _t1064 = self._extract_value_string(config.get('syntax_missing_string'), '')
+        _t1064 = Parser._extract_value_string(config.get('syntax_missing_string'), '')
         syntax_missing_string = _t1064
-        _t1065 = self._extract_value_string(config.get('syntax_delim'), ',')
+        _t1065 = Parser._extract_value_string(config.get('syntax_delim'), ',')
         syntax_delim = _t1065
-        _t1066 = self._extract_value_string(config.get('syntax_quotechar'), '"')
+        _t1066 = Parser._extract_value_string(config.get('syntax_quotechar'), '"')
         syntax_quotechar = _t1066
-        _t1067 = self._extract_value_string(config.get('syntax_escapechar'), '\\')
+        _t1067 = Parser._extract_value_string(config.get('syntax_escapechar'), '\\')
         syntax_escapechar = _t1067
         _t1068 = transactions_pb2.ExportCSVConfig(path=path, data_columns=columns, partition_size=partition_size, compression=compression, syntax_header_row=syntax_header_row, syntax_missing_string=syntax_missing_string, syntax_delim=syntax_delim, syntax_quotechar=syntax_quotechar, syntax_escapechar=syntax_escapechar)
         return _t1068

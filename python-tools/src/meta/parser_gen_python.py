@@ -40,13 +40,13 @@ def generate_parser_python(grammar: Grammar, command_line: Optional[str] = None,
     for name, fundef in grammar.function_defs.items():
         function_lines.append("")
         function_lines.append(codegen._generate_builtin_method_def(fundef, "    "))
-    function_method_defns = "\n".join(function_lines) if function_lines else ""
+    named_function_defns = "\n".join(function_lines) if function_lines else ""
 
     # Generate full parser from template
-    return _generate_from_template(grammar, command_line, parse_nonterminal_defns, function_method_defns)
+    return _generate_from_template(grammar, command_line, parse_nonterminal_defns, named_function_defns)
 
 
-def _generate_from_template(grammar: Grammar, command_line: Optional[str] = None, parse_nonterminal_defns: str = "", function_method_defns: str = "") -> str:
+def _generate_from_template(grammar: Grammar, command_line: Optional[str] = None, parse_nonterminal_defns: str = "", named_function_defns: str = "") -> str:
     """Generate parser from template with imports, token class, lexer, parser class, and parse function."""
     # Build command line comment
     command_line_comment = f"\nCommand: {command_line}\n" if command_line else ""
@@ -88,5 +88,5 @@ def _generate_from_template(grammar: Grammar, command_line: Optional[str] = None
         token_specs=token_specs,
         start_name=grammar.start.name.lower(),
         parse_nonterminal_defns=parse_nonterminal_defns,
-        builtin_method_defns=function_method_defns,
+        named_function_defns=named_function_defns,
     )

@@ -220,7 +220,7 @@ class PythonCodeGenerator(CodeGenerator):
         return f"self.{name}"
 
     def gen_named_fun_ref(self, name: str) -> str:
-        return f"self.{name}"
+        return f"Parser.{name}"
 
     def gen_parse_nonterminal_ref(self, name: str) -> str:
         return f"self.parse_{name}"
@@ -543,7 +543,7 @@ class PythonCodeGenerator(CodeGenerator):
         return f"{indent}def {func_name}(self{params_str}){ret_hint}:\n{body_code}"
 
     def _generate_builtin_method_def(self, expr: FunDef, indent: str) -> str:
-        """Generate a builtin method definition (adds self parameter)."""
+        """Generate a builtin method definition as a static method."""
         func_name = self.escape_identifier(expr.name)
 
         params = []
@@ -553,8 +553,6 @@ class PythonCodeGenerator(CodeGenerator):
             params.append(f"{escaped_name}: {type_hint}")
 
         params_str = ', '.join(params) if params else ''
-        if params_str:
-            params_str = ', ' + params_str
 
         ret_hint = f" -> {self.gen_type(expr.return_type)}" if expr.return_type else ""
 
@@ -566,7 +564,7 @@ class PythonCodeGenerator(CodeGenerator):
             body_lines.append(f"{indent}    return {body_inner}")
             body_code = "\n".join(body_lines)
 
-        return f"{indent}def {func_name}(self{params_str}){ret_hint}:\n{body_code}"
+        return f"{indent}@staticmethod\n{indent}def {func_name}({params_str}){ret_hint}:\n{body_code}"
 
 
 def escape_identifier(name: str) -> str:

@@ -231,8 +231,8 @@ class Parser:
         # Create and return Fragment
         return fragments_pb2.Fragment(id=fragment_id, declarations=declarations, debug_info=debug_info)
 
-    # --- Builtin methods ---
-{builtin_method_defns}
+    # --- Helper functions ---
+{named_function_defns}
 
     # --- Parse methods ---
 {parse_nonterminal_defns}
