@@ -71,32 +71,35 @@ class TestExtractValueFunctions:
     def test_extract_value_bytes_with_string(self):
         """Test _extract_value_bytes encodes string from Value message."""
         value = logic_pb2.Value(string_value="test data")
-        result = Parser._extract_value_bytes(value, None)
+        result = Parser._extract_value_bytes(value, b"default")
         assert result == b"test data"
 
     def test_extract_value_bytes_with_none(self):
         """Test _extract_value_bytes returns default when value is None."""
-        result = Parser._extract_value_bytes(None, None)
-        assert result is None
+        result = Parser._extract_value_bytes(None, b"default")
+        assert result == b"default"
 
     def test_extract_value_bytes_with_wrong_field(self):
         """Test _extract_value_bytes returns default when wrong field is set."""
         value = logic_pb2.Value(int_value=42)
-        result = Parser._extract_value_bytes(value, None)
-        assert result is None
+        result = Parser._extract_value_bytes(value, b"default")
+        assert result == b"default"
 
     def test_extract_value_uint128_with_value(self):
         """Test _extract_value_uint128 extracts UInt128Value from Value message."""
         uint128 = logic_pb2.UInt128Value(low=123, high=456)
         value = logic_pb2.Value(uint128_value=uint128)
-        result = Parser._extract_value_uint128(value, None)
+        default = logic_pb2.UInt128Value(low=0, high=0)
+        result = Parser._extract_value_uint128(value, default)
         assert result.low == 123
         assert result.high == 456
 
     def test_extract_value_uint128_with_none(self):
         """Test _extract_value_uint128 returns default when value is None."""
-        result = Parser._extract_value_uint128(None, None)
-        assert result is None
+        default = logic_pb2.UInt128Value(low=999, high=888)
+        result = Parser._extract_value_uint128(None, default)
+        assert result.low == 999
+        assert result.high == 888
 
     def test_extract_value_string_list_with_value(self):
         """Test _extract_value_string_list extracts list from Value message."""

@@ -6,7 +6,7 @@ Do not modify this file! If you need to modify the parser, edit the generator co
 in `python-tools/src/meta` or edit the protobuf specification in `proto/v1`.
 
 
-Command: python -m meta.cli ../proto/relationalai/lqp/v1/logic.proto ../proto/relationalai/lqp/v1/transactions.proto ../proto/relationalai/lqp/v1/fragments.proto --parser python
+Command: python -m meta.cli /Users/nystrom/rai/nn-meta-2-sexp-all/proto/relationalai/lqp/v1/logic.proto /Users/nystrom/rai/nn-meta-2-sexp-all/proto/relationalai/lqp/v1/transactions.proto /Users/nystrom/rai/nn-meta-2-sexp-all/proto/relationalai/lqp/v1/fragments.proto --parser python
 """
 
 import hashlib
@@ -393,18 +393,29 @@ class Parser:
         max_leaf = _t1048
         _t1049 = logic_pb2.BeTreeConfig(epsilon=epsilon, max_pivots=max_pivots, max_deltas=max_deltas, max_leaf=max_leaf)
         storage_config = _t1049
-        _t1050 = Parser._extract_value_uint128(config.get('betree_locator_root_pageid'), None)
+        root_pageid_val = config.get('betree_locator_root_pageid')
+        if root_pageid_val is None:
+            _t1050 = None
+        else:
+            _t1051 = logic_pb2.UInt128Value(low=0, high=0)
+            _t1052 = Parser._extract_value_uint128(root_pageid_val, _t1051)
+            _t1050 = _t1052
         root_pageid = _t1050
-        _t1051 = Parser._extract_value_bytes(config.get('betree_locator_inline_data'), None)
-        inline_data = _t1051
-        _t1052 = Parser._extract_value_int64(config.get('betree_locator_element_count'), 0)
-        element_count = _t1052
-        _t1053 = Parser._extract_value_int64(config.get('betree_locator_tree_height'), 0)
-        tree_height = _t1053
-        _t1054 = logic_pb2.BeTreeLocator(root_pageid=root_pageid, inline_data=inline_data, element_count=element_count, tree_height=tree_height)
-        relation_locator = _t1054
-        _t1055 = logic_pb2.BeTreeInfo(key_types=key_types, value_types=value_types, storage_config=storage_config, relation_locator=relation_locator)
-        return _t1055
+        inline_data_val = config.get('betree_locator_inline_data')
+        if inline_data_val is None:
+            _t1053 = None
+        else:
+            _t1054 = Parser._extract_value_bytes(inline_data_val, b'')
+            _t1053 = _t1054
+        inline_data = _t1053
+        _t1055 = Parser._extract_value_int64(config.get('betree_locator_element_count'), 0)
+        element_count = _t1055
+        _t1056 = Parser._extract_value_int64(config.get('betree_locator_tree_height'), 0)
+        tree_height = _t1056
+        _t1057 = logic_pb2.BeTreeLocator(root_pageid=root_pageid, inline_data=inline_data, element_count=element_count, tree_height=tree_height)
+        relation_locator = _t1057
+        _t1058 = logic_pb2.BeTreeInfo(key_types=key_types, value_types=value_types, storage_config=storage_config, relation_locator=relation_locator)
+        return _t1058
 
     @staticmethod
     def construct_configure(config_dict: list[tuple[str, logic_pb2.Value]]) -> transactions_pb2.Configure:
@@ -413,39 +424,39 @@ class Parser:
         if (maintenance_level_val is not None and maintenance_level_val.HasField('string_value')):
             level_str = maintenance_level_val.string_value.upper()
             if level_str in ['OFF', 'AUTO', 'ALL']:
-                _t1057 = ('MAINTENANCE_LEVEL_' + level_str)
+                _t1060 = ('MAINTENANCE_LEVEL_' + level_str)
             else:
-                _t1057 = level_str
-            _t1056 = _t1057
+                _t1060 = level_str
+            _t1059 = _t1060
         else:
-            _t1056 = 'MAINTENANCE_LEVEL_OFF'
-        maintenance_level = _t1056
-        _t1058 = transactions_pb2.IVMConfig(level=maintenance_level)
-        ivm_config = _t1058
-        _t1059 = Parser._extract_value_int64(config.get('semantics_version'), 0)
-        semantics_version = _t1059
-        _t1060 = transactions_pb2.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
-        return _t1060
+            _t1059 = 'MAINTENANCE_LEVEL_OFF'
+        maintenance_level = _t1059
+        _t1061 = transactions_pb2.IVMConfig(level=maintenance_level)
+        ivm_config = _t1061
+        _t1062 = Parser._extract_value_int64(config.get('semantics_version'), 0)
+        semantics_version = _t1062
+        _t1063 = transactions_pb2.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
+        return _t1063
 
     @staticmethod
     def export_csv_config(path: str, columns: list[Any], config_dict: list[tuple[str, logic_pb2.Value]]) -> transactions_pb2.ExportCSVConfig:
         config = dict(config_dict)
-        _t1061 = Parser._extract_value_int64(config.get('partition_size'), 0)
-        partition_size = _t1061
-        _t1062 = Parser._extract_value_string(config.get('compression'), '')
-        compression = _t1062
-        _t1063 = Parser._extract_value_boolean(config.get('syntax_header_row'), True)
-        syntax_header_row = _t1063
-        _t1064 = Parser._extract_value_string(config.get('syntax_missing_string'), '')
-        syntax_missing_string = _t1064
-        _t1065 = Parser._extract_value_string(config.get('syntax_delim'), ',')
-        syntax_delim = _t1065
-        _t1066 = Parser._extract_value_string(config.get('syntax_quotechar'), '"')
-        syntax_quotechar = _t1066
-        _t1067 = Parser._extract_value_string(config.get('syntax_escapechar'), '\\')
-        syntax_escapechar = _t1067
-        _t1068 = transactions_pb2.ExportCSVConfig(path=path, data_columns=columns, partition_size=partition_size, compression=compression, syntax_header_row=syntax_header_row, syntax_missing_string=syntax_missing_string, syntax_delim=syntax_delim, syntax_quotechar=syntax_quotechar, syntax_escapechar=syntax_escapechar)
-        return _t1068
+        _t1064 = Parser._extract_value_int64(config.get('partition_size'), 0)
+        partition_size = _t1064
+        _t1065 = Parser._extract_value_string(config.get('compression'), '')
+        compression = _t1065
+        _t1066 = Parser._extract_value_boolean(config.get('syntax_header_row'), True)
+        syntax_header_row = _t1066
+        _t1067 = Parser._extract_value_string(config.get('syntax_missing_string'), '')
+        syntax_missing_string = _t1067
+        _t1068 = Parser._extract_value_string(config.get('syntax_delim'), ',')
+        syntax_delim = _t1068
+        _t1069 = Parser._extract_value_string(config.get('syntax_quotechar'), '"')
+        syntax_quotechar = _t1069
+        _t1070 = Parser._extract_value_string(config.get('syntax_escapechar'), '\\')
+        syntax_escapechar = _t1070
+        _t1071 = transactions_pb2.ExportCSVConfig(path=path, data_columns=columns, partition_size=partition_size, compression=compression, syntax_header_row=syntax_header_row, syntax_missing_string=syntax_missing_string, syntax_delim=syntax_delim, syntax_quotechar=syntax_quotechar, syntax_escapechar=syntax_escapechar)
+        return _t1071
 
     # --- Parse methods ---
 
