@@ -44,13 +44,11 @@ class TestCollect:
         seq = Sequence((nt, nt))
         result = collect(seq, Nonterminal)
         assert result == [nt]
-        assert len(result) == 1
 
     def test_collect_preserves_order(self):
         """Collect preserves first-occurrence order."""
         nt1 = Nonterminal('Foo', MessageType('test', 'Foo'))
         nt2 = Nonterminal('Bar', MessageType('test', 'Bar'))
-        # nt1 appears twice but should only be in result once at first position
         seq = Sequence((nt1, nt2, nt1))
         result = collect(seq, Nonterminal)
         assert result == [nt1, nt2]
@@ -59,7 +57,6 @@ class TestCollect:
         """Collect from complex nested structures."""
         nt1 = Nonterminal('Foo', MessageType('test', 'Foo'))
         nt2 = Nonterminal('Bar', MessageType('test', 'Bar'))
-        # Star and Option can contain sequences, but sequences can't contain sequences
         star = Star(nt1)
         seq = Sequence((star, nt2))
         result = collect(seq, Nonterminal)
