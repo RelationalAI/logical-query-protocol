@@ -10,10 +10,10 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
 from .target import (
-    TargetExpr, Var, Lit, Symbol, Builtin, Message, OneOf, ListExpr, Call, Lambda, Let,
+    TargetExpr, Var, Lit, Symbol, Builtin, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
     IfElse, Seq, While, Assign, Return, FunDef, VisitNonterminalDef,
     VisitNonterminal, TargetType, BaseType, TupleType, ListType, OptionType,
-    MessageType, FunctionType
+    MessageType, FunctionType, GetField, GetElement
 )
 from .gensym import gensym
 
@@ -288,8 +288,23 @@ class CodeGenerator(ABC):
         elif isinstance(expr, Symbol):
             return self.gen_symbol(expr.name)
 
-        elif isinstance(expr, Message):
-            return self.gen_constructor(expr.module, expr.name)
+        elif isinstance(expr, NewMessage):
+            # NewMessage generates instantiation (with or without fields)
+            ctor = self.gen_constructor(expr.module, expr.name)
+            if expr.fields:
+                field_args = []
+                for field_name, field_expr in expr.fields:
+                    field_val = self.generate_lines(field_expr, lines, indent)
+                    field_args.append(f"{field_name}={field_val}")
+                args_code = ', '.join(field_args)
+                tmp = gensym()
+                lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}({args_code})', is_declaration=True)}")
+                return tmp
+            else:
+                # No fields - generate empty instantiation
+                tmp = gensym()
+                lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}()', is_declaration=True)}")
+                return tmp
 
         elif isinstance(expr, Builtin):
             return self.gen_builtin_ref(expr.name)
@@ -302,6 +317,16 @@ class CodeGenerator(ABC):
 
         elif isinstance(expr, ListExpr):
             return self._generate_list_expr(expr, lines, indent)
+
+        elif isinstance(expr, GetField):
+            # GetField(object, field_name) -> object.field_name
+            obj_code = self.generate_lines(expr.object, lines, indent)
+            return f"{obj_code}.{expr.field_name}"
+
+        elif isinstance(expr, GetElement):
+            # GetElement(tuple_expr, index) -> tuple_expr[index]
+            tuple_code = self.generate_lines(expr.tuple_expr, lines, indent)
+            return f"{tuple_code}[{expr.index}]"
 
         elif isinstance(expr, Call):
             return self._generate_call(expr, lines, indent)
