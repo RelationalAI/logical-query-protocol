@@ -283,22 +283,22 @@ class TestBuiltin:
         assert b.name == "some-builtin-123"
 
 
-class TestMessage:
-    """Tests for Message."""
+class TestNewMessage:
+    """Tests for NewMessage."""
 
     def test_construction(self):
-        """Test Message construction."""
+        """Test NewMessage construction."""
         c = NewMessage("proto", "Transaction", ())
         assert c.name == "Transaction"
         assert c.module == "proto"
 
     def test_str(self):
-        """Test Message string representation."""
+        """Test NewMessage string representation."""
         c = NewMessage("proto", "Formula", ())
         assert str(c) == "@proto.Formula()"
 
     def test_invalid_name(self):
-        """Test Message with invalid name."""
+        """Test NewMessage with invalid name."""
         with pytest.raises(ValueError, match="Invalid message name"):
             NewMessage("proto", "123Invalid", ())
 
@@ -319,7 +319,7 @@ class TestCall:
 
     def test_construction_with_args(self):
         """Test Call with arguments."""
-        func = NewMessage("proto", "Transaction", ())
+        func = Builtin("process")
         arg1 = Var("x", BaseType("Int64"))
         arg2 = Var("y", BaseType("String"))
         call = Call(func, [arg1, arg2])
@@ -710,17 +710,16 @@ class TestComplexExpressions:
         assert str(outermost) == "%f(%g(%h(42)))"
 
     def test_constructor_with_complex_args(self):
-        """Test constructor call with complex arguments."""
-        # Transaction(epochs, configure, sync)
-        ctor = NewMessage("proto", "Transaction", ())
+        """Test constructor with complex arguments."""
+        # Transaction(epochs=..., configure=..., sync=...)
         arg1 = Var("epochs", ListType(MessageType("proto", "Epoch")))
         arg2 = Var("configure", OptionType(MessageType("proto", "Configure")))
         arg3 = Var("sync", OptionType(MessageType("proto", "Sync")))
-        call = Call(ctor, [arg1, arg2, arg3])
+        ctor = NewMessage("proto", "Transaction", (("epochs", arg1), ("configure", arg2), ("sync", arg3)))
 
-        assert len(call.args) == 3
-        assert isinstance(call.func, NewMessage)
-        assert "@proto.Transaction" in str(call)
+        assert len(ctor.fields) == 3
+        assert ctor.name == "Transaction"
+        assert "@proto.Transaction" in str(ctor)
 
     def test_function_returning_function(self):
         """Test function type that returns a function."""

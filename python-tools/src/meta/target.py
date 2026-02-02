@@ -40,7 +40,7 @@ Type expressions (TargetType subclasses):
 """
 
 from dataclasses import dataclass, field
-from typing import Any, List, Mapping, Optional, Sequence, TYPE_CHECKING
+from typing import Any, Sequence, TYPE_CHECKING
 from .gensym import gensym
 
 if TYPE_CHECKING:
@@ -265,10 +265,6 @@ class GetElement(TargetExpr):
     Example:
         GetElement(Var("pair", TupleType([INT64, STRING])), 0)  # pair[0]
         GetElement(Var("pair", TupleType([INT64, STRING])), 1)  # pair[1]
-
-    Can also use the get_tuple_element builtin:
-        Call(Builtin("get_tuple_element"), [x, Lit(0)])  # x[0]
-        Call(Builtin("get_tuple_element"), [x, Lit(1)])  # x[1]
     """
     tuple_expr: 'TargetExpr'
     index: int
@@ -569,6 +565,7 @@ __all__ = [
     'ListExpr',
     'Call',
     'GetField',
+    'GetElement',
     'Lambda',
     'Let',
     'IfElse',

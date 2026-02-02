@@ -332,7 +332,7 @@ class PythonCodeGenerator(CodeGenerator):
 
     def _generate_call(self, expr: Call, lines: List[str], indent: str) -> str:
         """Override to handle OneOf specially for Python protobuf."""
-        # Check for Message constructor with OneOf call argument
+        # Check for NewMessage constructor with OneOf call argument
         if isinstance(expr.func, NewMessage):
             func = expr.func  # Narrow the type
             f = self.generate_lines(func, lines, indent)
