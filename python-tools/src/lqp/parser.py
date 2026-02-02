@@ -5,6 +5,7 @@ This module contains the grammar, parser, and transformer that converts
 parse trees to IR nodes.
 """
 
+import ast
 import hashlib
 from lark import Lark, Transformer, v_args
 import lqp.ir as ir
@@ -759,7 +760,7 @@ class LQPTransformer(Transformer):
         return ir.Value(value=items[0], meta=self.meta(meta))
 
     def STRING(self, s):
-        return s[1:-1].encode().decode('unicode_escape') # Strip quotes and process escaping
+        return ast.literal_eval(s)
 
     def NUMBER(self, n):
         return int(n)
