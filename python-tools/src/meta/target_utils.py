@@ -207,7 +207,11 @@ def make_which_oneof(msg, oneof_name):
 
 def make_get_field(obj, field_name):
     """Get field value from message: obj.field_name."""
-    return Call(Builtin('get_field'), [obj, field_name])
+    from .target import GetField
+    # If field_name is a Lit, extract the string value
+    if isinstance(field_name, Lit):
+        field_name = field_name.value
+    return GetField(obj, field_name)
 
 def make_some(value):
     """Wrap value in Option/Maybe: Some(value)."""
@@ -217,13 +221,10 @@ def make_tuple(*args):
     """Construct tuple from values: (arg1, arg2, ...)."""
     return Call(Builtin('make_tuple'), list(args))
 
-def make_fst(pair):
-    """Extract first element of tuple: pair[0]."""
-    return Call(Builtin('fst'), [pair])
-
-def make_snd(pair):
-    """Extract second element of tuple: pair[1]."""
-    return Call(Builtin('snd'), [pair])
+def make_get_element(tuple_expr, index):
+    """Extract element from tuple at constant index: tuple_expr[index]."""
+    from .target import GetElement
+    return GetElement(tuple_expr, index)
 
 def make_is_empty(collection):
     """Check if collection is empty: len(collection) == 0."""

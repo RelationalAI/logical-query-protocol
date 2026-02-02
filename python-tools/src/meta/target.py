@@ -9,7 +9,7 @@ translatable to each of these target languages.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, List, Mapping, Optional, Sequence, TYPE_CHECKING
+from typing import Any, Sequence, TYPE_CHECKING
 from .gensym import gensym
 
 if TYPE_CHECKING:
@@ -108,23 +108,35 @@ class Builtin(TargetExpr):
 
 
 @dataclass(frozen=True)
-class Message(TargetExpr):
-    """Message constructor call.
+class NewMessage(TargetExpr):
+    """Message constructor with explicit field names.
+
+    Constructs a protobuf message with named fields.
+    This allows field name validation during grammar validation.
 
     module: Module name (protobuf file stem)
     name: Name of the message type
+    fields: Sequence of (field_name, field_expr) pairs
     """
     module: str
     name: str
+    fields: Sequence[tuple[str, 'TargetExpr']]
 
     def __str__(self) -> str:
-        return f"@{self.module}.{self.name}"
+        if not self.fields:
+            return f"@{self.module}.{self.name}()"
+        fields_str = ', '.join(f"{name}={expr}" for name, expr in self.fields)
+        return f"@{self.module}.{self.name}({fields_str})"
 
     def __post_init__(self):
         if not self.module.isidentifier():
             raise ValueError(f"Invalid message module: {self.module}")
         if not self.name.isidentifier():
             raise ValueError(f"Invalid message name: {self.name}")
+        for field_name, _ in self.fields:
+            if not isinstance(field_name, str) or not field_name.isidentifier():
+                raise ValueError(f"Invalid field name: {field_name}")
+        _freeze_sequence(self, 'fields')
 
 
 @dataclass(frozen=True)
@@ -189,6 +201,48 @@ class Call(TargetExpr):
 
     def __post_init__(self):
         _freeze_sequence(self, 'args')
+
+
+@dataclass(frozen=True)
+class GetField(TargetExpr):
+    """Field access expression.
+
+    Accesses a field from an object (typically a message).
+
+    object: Expression evaluating to the object
+    field_name: Name of the field to access (string)
+
+    Example:
+        GetField(Var("msg", MessageType("logic", "Expr")), "term")
+    """
+    object: 'TargetExpr'
+    field_name: str
+
+    def __str__(self) -> str:
+        return f"{self.object}.{self.field_name}"
+
+
+@dataclass(frozen=True)
+class GetElement(TargetExpr):
+    """Tuple element access with constant integer index.
+
+    Accesses an element from a tuple expression using a compile-time constant index.
+
+    tuple_expr: Expression evaluating to a tuple
+    index: Constant integer index (0-based)
+
+    Example:
+        GetElement(Var("pair", TupleType([INT64, STRING])), 0)  # pair[0]
+        GetElement(Var("pair", TupleType([INT64, STRING])), 1)  # pair[1]
+    """
+    tuple_expr: 'TargetExpr'
+    index: int
+
+    def __str__(self) -> str:
+        return f"{self.tuple_expr}[{self.index}]"
+
+    def __post_init__(self):
+        assert isinstance(self.index, int) and self.index >= 0, f"GetElement index must be non-negative integer: {self.index}"
 
 
 @dataclass(frozen=True)
@@ -343,6 +397,24 @@ class BaseType(TargetType):
 
 
 @dataclass(frozen=True)
+class VarType(TargetType):
+    """Type variable for polymorphic types.
+
+    Represents a type parameter in polymorphic function signatures.
+    Used for builtins like unwrap_option_or, get_tuple_element, etc.
+
+    Example:
+        VarType("T")    # Type variable T
+        VarType("T1")   # Type variable T1
+        VarType("T2")   # Type variable T2
+    """
+    name: str
+
+    def __str__(self) -> str:
+        return self.name
+
+
+@dataclass(frozen=True)
 class MessageType(TargetType):
     """Protobuf message types.
 
@@ -457,10 +529,12 @@ __all__ = [
     'Lit',
     'Symbol',
     'Builtin',
-    'Message',
+    'NewMessage',
     'OneOf',
     'ListExpr',
     'Call',
+    'GetField',
+    'GetElement',
     'Lambda',
     'Let',
     'IfElse',
@@ -472,6 +546,7 @@ __all__ = [
     'Return',
     'TargetType',
     'BaseType',
+    'VarType',
     'MessageType',
     'TupleType',
     'ListType',
