@@ -130,16 +130,17 @@ def test_python_builtin_generation():
     result = gen.generate_lines(expr, lines, "")
     assert result == "x is None"
 
-    # Test 'fst' and 'snd' builtins
+    # Test GetElement (replaces fst and snd builtins)
     reset_gensym()
     lines = []
-    expr = Call(Builtin("fst"), [Var("pair", _any_type)])
+    from meta.target import GetElement
+    expr = GetElement(Var("pair", _any_type), 0)
     result = gen.generate_lines(expr, lines, "")
     assert result == "pair[0]"
 
     reset_gensym()
     lines = []
-    expr = Call(Builtin("snd"), [Var("pair", _any_type)])
+    expr = GetElement(Var("pair", _any_type), 1)
     result = gen.generate_lines(expr, lines, "")
     assert result == "pair[1]"
 
@@ -297,12 +298,12 @@ def test_python_message_generation():
     """Test Python NewMessage constructor code generation."""
     gen = PythonCodeGenerator()
 
-    # Simple message reference (no fields)
+    # Simple message reference (no fields) - returns constructor reference
     reset_gensym()
     lines = []
     expr = NewMessage("logic", "Expr", ())
     result = gen.generate_lines(expr, lines, "")
-    assert result == "logic_pb2.Expr()"
+    assert result == "logic_pb2.Expr"
 
     # NewMessage call without field mapping
     reset_gensym()

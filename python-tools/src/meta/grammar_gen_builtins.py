@@ -36,14 +36,14 @@ from dataclasses import dataclass, field
 
 from .grammar import Rule, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
 from .target import (
-    Lambda, Call, Var, Lit, Seq, Builtin, Message, OneOf, ListExpr,
+    Lambda, Call, Var, Lit, Seq, Builtin, NewMessage, OneOf, ListExpr,
     OptionType, ListType, TupleType, MessageType, TargetType
 )
 from .target_utils import (
     STRING_TYPE, INT64_TYPE, FLOAT64_TYPE, BOOLEAN_TYPE,
     create_identity_function,
     make_equal, make_which_oneof, make_get_field, make_some, make_tuple,
-    make_fst, make_snd, make_is_empty, make_concat, make_length, make_unwrap_option_or
+    make_get_element, make_fst, make_snd, make_is_empty, make_concat, make_length, make_unwrap_option_or
 )
 
 LPAREN = LitTerminal('(')
@@ -55,8 +55,8 @@ RBRACKET = LitTerminal(']')
 
 
 def _msg(module: str, name: str, *args):
-    """Generic message constructor: Call(Message(module, name), [args])."""
-    return Call(Message(module, name), list(args))
+    """Generic message constructor: Call(NewMessage(module, name, []), [args])."""
+    return Call(NewMessage(module, name, []), list(args))
 
 
 
