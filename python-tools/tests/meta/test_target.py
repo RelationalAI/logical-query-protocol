@@ -319,7 +319,7 @@ class TestCall:
 
     def test_construction_with_args(self):
         """Test Call with arguments."""
-        func = NewMessage("proto", "Transaction", ())
+        func = Builtin("process")
         arg1 = Var("x", BaseType("Int64"))
         arg2 = Var("y", BaseType("String"))
         call = Call(func, [arg1, arg2])
@@ -709,17 +709,16 @@ class TestComplexExpressions:
         assert str(outermost) == "%f(%g(%h(42)))"
 
     def test_constructor_with_complex_args(self):
-        """Test constructor call with complex arguments."""
-        # Transaction(epochs, configure, sync)
-        ctor = NewMessage("proto", "Transaction", ())
+        """Test constructor with complex arguments."""
+        # Transaction(epochs=..., configure=..., sync=...)
         arg1 = Var("epochs", ListType(MessageType("proto", "Epoch")))
         arg2 = Var("configure", OptionType(MessageType("proto", "Configure")))
         arg3 = Var("sync", OptionType(MessageType("proto", "Sync")))
-        call = Call(ctor, [arg1, arg2, arg3])
+        ctor = NewMessage("proto", "Transaction", (("epochs", arg1), ("configure", arg2), ("sync", arg3)))
 
-        assert len(call.args) == 3
-        assert isinstance(call.func, NewMessage)
-        assert "@proto.Transaction" in str(call)
+        assert len(ctor.fields) == 3
+        assert ctor.name == "Transaction"
+        assert "@proto.Transaction" in str(ctor)
 
     def test_function_returning_function(self):
         """Test function type that returns a function."""

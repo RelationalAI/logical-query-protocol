@@ -2,7 +2,7 @@
 """Tests for Python code generation from action AST."""
 
 from meta.target import (
-    Var, Lit, Symbol, Builtin, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
+    Var, Lit, Symbol, Builtin, NewMessage, ListExpr, Call, Lambda, Let,
     IfElse, Seq, While, Assign, Return, FunDef, VisitNonterminalDef,
     BaseType, MessageType, ListType, OptionType,
 )
@@ -298,17 +298,18 @@ def test_python_message_generation():
     """Test Python NewMessage constructor code generation."""
     gen = PythonCodeGenerator()
 
-    # Simple message reference (no fields) - returns constructor reference
+    # Simple message with no fields
     reset_gensym()
     lines = []
     expr = NewMessage("logic", "Expr", ())
     result = gen.generate_lines(expr, lines, "")
-    assert result == "logic_pb2.Expr"
+    assert result == "_t0"
+    assert "logic_pb2.Expr()" in "\n".join(lines)
 
-    # NewMessage call without field mapping
+    # NewMessage with field
     reset_gensym()
     lines = []
-    expr = Call(NewMessage("logic", "Expr", ()), [Var("value", _any_type)])
+    expr = NewMessage("logic", "Expr", (("value", Var("value", _any_type)),))
     result = gen.generate_lines(expr, lines, "")
     assert "logic_pb2.Expr" in "\n".join(lines)
 
@@ -317,11 +318,10 @@ def test_python_oneof_generation():
     """Test Python OneOf field code generation."""
     gen = PythonCodeGenerator()
 
-    # OneOf in NewMessage constructor call
+    # OneOf in NewMessage constructor
     reset_gensym()
     lines = []
-    oneof_call = Call(OneOf("literal"), [Lit("hello")])
-    expr = Call(NewMessage("logic", "Value", ()), [oneof_call])
+    expr = NewMessage("logic", "Value", (("literal", Lit("hello")),))
     result = gen.generate_lines(expr, lines, "")
     code = "\n".join(lines)
     assert "literal='hello'" in code or "literal=" in code
@@ -370,7 +370,7 @@ def test_python_visit_nonterminal_def_generation():
         nonterminal=nt,
         params=[],
         return_type=MessageType("logic", "Expr"),
-        body=Call(NewMessage("logic", "Expr", ()), []),
+        body=NewMessage("logic", "Expr", ()),
     )
     code = gen.generate_def(parse_def)
     assert "def parse_expr(self) -> logic_pb2.Expr:" in code
