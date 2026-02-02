@@ -583,7 +583,13 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
         lqp += to_str(node.value, indent_level, options, debug_info)
 
     elif isinstance(node, str):
-        lqp += ind + "\"" + node.encode('unicode_escape').replace(b'"', b'\\"').decode() + "\""
+        # Escape special characters but preserve UTF-8
+        escaped = node.replace('\\', '\\\\')
+        escaped = escaped.replace('"', '\\"')
+        escaped = escaped.replace('\n', '\\n')
+        escaped = escaped.replace('\r', '\\r')
+        escaped = escaped.replace('\t', '\\t')
+        lqp += ind + '"' + escaped + '"'
     elif isinstance(node, ir.UInt128Value):
         lqp += f"{ind}{hex(node.value)}"
     elif isinstance(node, ir.Int128Value):
