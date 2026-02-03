@@ -45,7 +45,6 @@ Action syntax (Python-like):
     module.Message(f1=e1, ...)  -> message constructor
     func(args)          -> function call
     [e1, e2, ...]       -> list literal
-    let x = e1 in e2    -> let binding
     "string"            -> string literal
     123                 -> integer literal
     true, false         -> boolean literals
@@ -208,10 +207,13 @@ def parse_rhs_element(text: str, ctx: TypeContext) -> Rhs:
 
     Syntax:
         "literal"           -> LitTerminal
-        TERMINAL_NAME       -> NamedTerminal (uppercase or in terminals)
-        nonterminal_name    -> Nonterminal (lowercase or in nonterminals)
+        name                -> NamedTerminal (if declared with %token)
+        name                -> Nonterminal (if declared with %type)
         element*            -> Star(element)
         element?            -> Option(element)
+
+    Symbol types are determined by their declarations (%token or %type),
+    not by naming conventions.
     """
     text = text.strip()
 
@@ -235,17 +237,14 @@ def parse_rhs_element(text: str, ctx: TypeContext) -> Rhs:
     if text.startswith('"') and text.endswith('"'):
         return LitTerminal(text[1:-1])
 
-    # Look up in context
+    # Look up in context based on declarations
     if text in ctx.terminals:
         return NamedTerminal(text, ctx.terminals[text])
     if text in ctx.nonterminals:
         return Nonterminal(text, ctx.nonterminals[text])
 
-    # Heuristic: uppercase = terminal, lowercase = nonterminal
-    if text.isupper():
-        raise YaccGrammarError(f"Unknown terminal: {text}")
-    else:
-        raise YaccGrammarError(f"Unknown nonterminal: {text}")
+    # Symbol not declared
+    raise YaccGrammarError(f"Unknown symbol '{text}': must be declared with %token or %type")
 
 
 def tokenize_rhs(text: str) -> List[str]:
@@ -471,13 +470,9 @@ def _convert_node(node: ast.AST, param_types: List[Optional[TargetType]], ctx: T
         return ListExpr(elements, _infer_type(elements[0]))
 
     elif isinstance(node, ast.BinOp):
-        # Handle let expressions parsed as comparison: let x = e1 in e2
-        # This would be preprocessed
         raise YaccGrammarError(f"Binary operations not supported: {ast.dump(node)}", line)
 
     elif isinstance(node, ast.Compare):
-        # Handle let binding: let x = e1 in e2
-        # Preprocessed as: (x, e1, e2) with op being special
         raise YaccGrammarError(f"Comparison not supported: {ast.dump(node)}", line)
 
     elif isinstance(node, ast.IfExp):
@@ -572,7 +567,7 @@ def parse_action(text: str, rhs: Rhs, ctx: TypeContext, line: Optional[int] = No
     # Build parameter list with names from RHS symbols
     params = _build_params(rhs)
 
-    # Parse the expression (handles let expressions recursively)
+    # Parse the expression
     # Pass param info so $N references can be resolved to named parameters
     param_info = _get_rhs_param_info(rhs)
     body = parse_action_expr(preprocessed, param_info, params, ctx, line)
@@ -585,7 +580,7 @@ def parse_action(text: str, rhs: Rhs, ctx: TypeContext, line: Optional[int] = No
 def parse_action_expr(text: str, param_info: List[Tuple[Optional[str], Optional[TargetType]]],
                       params: List[Var], ctx: TypeContext,
                       line: Optional[int], extra_vars: Optional[Dict[str, TargetType]] = None) -> TargetExpr:
-    """Parse an action expression, handling let expressions recursively.
+    """Parse an action expression.
 
     Args:
         text: The expression text to parse
@@ -593,30 +588,12 @@ def parse_action_expr(text: str, param_info: List[Tuple[Optional[str], Optional[
         params: The actual parameter Vars (non-literal elements only)
         ctx: Type context for looking up functions
         line: Line number for error messages
-        extra_vars: Additional variables in scope (from let bindings)
+        extra_vars: Additional variables in scope
     """
     text = text.strip()
     extra_vars = extra_vars or {}
 
-    # Handle let expressions: let VAR = EXPR in BODY
-    let_match = re.match(r'let\s+(\w+)\s*=\s*(.+?)\s+in\s+(.+)$', text, re.DOTALL)
-    if let_match:
-        var_name = let_match.group(1)
-        init_text = let_match.group(2)
-        body_text = let_match.group(3)
-
-        # Parse init expression
-        init_expr = parse_action_expr(init_text, param_info, params, ctx, line, extra_vars)
-        init_type = _infer_type(init_expr)
-
-        # Parse body with the let-bound variable in scope
-        new_extra_vars = dict(extra_vars)
-        new_extra_vars[var_name] = init_type
-        body_expr = parse_action_expr(body_text, param_info, params, ctx, line, new_extra_vars)
-
-        return Let(Var(var_name, init_type), init_expr, body_expr)
-
-    # Parse as regular Python expression
+    # Parse as Python expression
     try:
         tree = ast.parse(text, mode='eval')
     except SyntaxError as e:
@@ -674,7 +651,7 @@ def _unsupported_node_error(node: ast.AST, line: Optional[int], reason: str = ""
     base_msg += ("\n\n  Note: Action expressions use a restricted subset of Python that can be "
                  "translated to Julia and Go.\n  Supported constructs: literals, variables, "
                  "function calls, message constructors,\n  list literals, conditional expressions "
-                 "(x if cond else y), let expressions,\n  and tuple indexing (x[0]).")
+                 "(x if cond else y), and tuple indexing (x[0]).")
 
     return YaccGrammarError(base_msg, line)
 
@@ -694,7 +671,7 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
         params: The actual parameter Vars (non-literal elements only)
         ctx: Type context for looking up functions
         line: Line number for error messages
-        extra_vars: Additional variables in scope (from let bindings)
+        extra_vars: Additional variables in scope
     """
 
     def convert(n: ast.AST) -> TargetExpr:
@@ -731,8 +708,7 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
                 return Builtin(name)
             raise YaccGrammarError(
                 f"Unknown variable or function: '{name}'\n"
-                f"  Variables must be declared with types (e.g., in 'let x = expr in ...').\n"
-                f"  Functions must be defined in %functions section or be builtins.",
+                f"  Functions must be defined in the helper functions section or be builtins.",
                 line)
 
     elif isinstance(node, ast.Subscript):

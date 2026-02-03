@@ -442,7 +442,7 @@ assign
 
 upsert
     : "(" "upsert" relation_id abstraction_with_arity attrs? ")"
-    { let abstraction = $4[0] in let arity = $4[1] in logic.Upsert(name=$3, body=abstraction, attrs=unwrap_option_or($5, []), value_arity=arity) }
+    { logic.Upsert(name=$3, body=$4[0], attrs=unwrap_option_or($5, []), value_arity=$4[1]) }
 
 abstraction_with_arity
     : "(" bindings formula ")"
@@ -454,7 +454,7 @@ break
 
 monoid_def
     : "(" "monoid" monoid relation_id abstraction_with_arity attrs? ")"
-    { let abstraction = $5[0] in let arity = $5[1] in logic.MonoidDef(monoid=$3, name=$4, body=abstraction, attrs=unwrap_option_or($6, []), value_arity=arity) }
+    { logic.MonoidDef(monoid=$3, name=$4, body=$5[0], attrs=unwrap_option_or($6, []), value_arity=$5[1]) }
 
 monoid
     : or_monoid { logic.Monoid(or_monoid=$1) }
@@ -469,7 +469,7 @@ sum_monoid : "(" "sum" type ")" { logic.SumMonoid(type=$3) }
 
 monus_def
     : "(" "monus" monoid relation_id abstraction_with_arity attrs? ")"
-    { let abstraction = $5[0] in let arity = $5[1] in logic.MonusDef(monoid=$3, name=$4, body=abstraction, attrs=unwrap_option_or($6, []), value_arity=arity) }
+    { logic.MonusDef(monoid=$3, name=$4, body=$5[0], attrs=unwrap_option_or($6, []), value_arity=$5[1]) }
 
 constraint
     : "(" "functional_dependency" relation_id abstraction functional_dependency_keys functional_dependency_values ")"
