@@ -43,7 +43,7 @@ from .target_utils import (
     STRING_TYPE, INT64_TYPE, FLOAT64_TYPE, BOOLEAN_TYPE,
     create_identity_function,
     make_equal, make_which_oneof, make_get_field, make_some, make_tuple,
-    make_fst, make_snd, make_is_empty, make_concat, make_length, make_unwrap_option_or
+    make_get_element, make_fst, make_snd, make_is_empty, make_concat, make_length, make_unwrap_option_or
 )
 
 LPAREN = LitTerminal('(')

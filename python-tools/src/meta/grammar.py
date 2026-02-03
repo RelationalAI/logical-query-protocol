@@ -340,8 +340,8 @@ class Grammar:
         Returns the grammar as a sequence of s-expressions that can be
         loaded with load_grammar_config().
         """
-        from .sexp_grammar import rule_to_sexp, terminal_to_sexp
-        from .sexp_pretty import pretty_print
+        from .sexp_grammar import rule_to_sexp, terminal_to_sexp  # type: ignore[import-not-found]
+        from .sexp_pretty import pretty_print  # type: ignore[import-not-found]
 
         lines = []
         lines.append(";; Auto-generated grammar from protobuf specifications")

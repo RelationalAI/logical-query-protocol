@@ -284,8 +284,11 @@ class PythonCodeGenerator(CodeGenerator):
     def _generate_newmessage(self, expr: NewMessage, lines: List[str], indent: str) -> str:
         """Override to handle NewMessage with fields containing OneOf calls."""
         if not expr.fields:
-            # No fields - return instance with no arguments
-            return f"{self.gen_constructor(expr.module, expr.name)}()"
+            # No fields - generate empty instantiation with temp variable
+            ctor = self.gen_constructor(expr.module, expr.name)
+            tmp = gensym()
+            lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}()', is_declaration=True)}")
+            return tmp
 
         # NewMessage with fields - need to handle OneOf specially
         ctor = self.gen_constructor(expr.module, expr.name)
@@ -332,7 +335,7 @@ class PythonCodeGenerator(CodeGenerator):
 
     def _generate_call(self, expr: Call, lines: List[str], indent: str) -> str:
         """Override to handle OneOf specially for Python protobuf."""
-        # Check for Message constructor with OneOf call argument
+        # Check for NewMessage constructor with OneOf call argument
         if isinstance(expr.func, NewMessage):
             func = expr.func  # Narrow the type
             f = self.generate_lines(func, lines, indent)
