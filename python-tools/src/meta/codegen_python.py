@@ -142,7 +142,7 @@ class PythonCodeGenerator(CodeGenerator):
         self.register_builtin("get_tuple_element", 2,
             lambda args, lines, indent: BuiltinResult(f"{args[0]}[{args[1]}]", []))
 
-        self.register_builtin("make_tuple", -1,
+        self.register_builtin("tuple", -1,
             lambda args, lines, indent: BuiltinResult(f"({', '.join(args)},)", []))
 
         self.register_builtin("length", 1,

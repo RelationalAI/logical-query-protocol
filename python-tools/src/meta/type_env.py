@@ -121,9 +121,9 @@ class TypeEnv:
             return_type=T
         )
 
-        # make_tuple: (T1, T2, ...) -> (T1, T2, ...)
+        # tuple: (T1, T2, ...) -> (T1, T2, ...)
         # Variable arity - we'll check structurally
-        self._builtin_types["make_tuple"] = FunctionType(
+        self._builtin_types["tuple"] = FunctionType(
             param_types=[],  # Variable arity
             return_type=TupleType([])
         )

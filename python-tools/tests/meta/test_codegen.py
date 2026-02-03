@@ -157,10 +157,10 @@ def test_python_builtin_generation():
     result = gen.generate_lines(expr, lines, "")
     assert result == "len(lst)"
 
-    # Test 'make_tuple' builtin (variadic)
+    # Test 'tuple' builtin (variadic)
     reset_gensym()
     lines = []
-    expr = Call(Builtin("make_tuple"), [Var("a", _int_type), Var("b", _str_type)])
+    expr = Call(Builtin("tuple"), [Var("a", _int_type), Var("b", _str_type)])
     result = gen.generate_lines(expr, lines, "")
     assert result == "(a, b,)"
 

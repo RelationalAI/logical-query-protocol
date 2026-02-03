@@ -219,7 +219,7 @@ def make_some(value):
 
 def make_tuple(*args):
     """Construct tuple from values: (arg1, arg2, ...)."""
-    return Call(Builtin('make_tuple'), list(args))
+    return Call(Builtin('tuple'), list(args))
 
 def make_get_element(tuple_expr, index):
     """Extract element from tuple at constant index: tuple_expr[index]."""

@@ -359,7 +359,7 @@ class GrammarValidator:
                             rule_name=context
                         )
 
-        elif name == "make_tuple":
+        elif name == "tuple":
             # (T1, T2, ...) -> (T1, T2, ...)
             # Any number of args is valid
             pass

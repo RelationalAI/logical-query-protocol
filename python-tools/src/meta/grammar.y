@@ -173,7 +173,7 @@ config_dict
 
 config_key_value
     : ":" SYMBOL value
-    { make_tuple($2, $3) }
+    { tuple($2, $3) }
 
 value
     : date { logic.Value(date_value=$1) }
@@ -252,7 +252,7 @@ abstraction
 
 bindings
     : "[" binding* value_bindings? "]"
-    { make_tuple($2, unwrap_option_or($3, [])) }
+    { tuple($2, unwrap_option_or($3, [])) }
 
 binding
     : SYMBOL "::" type
@@ -446,7 +446,7 @@ upsert
 
 abstraction_with_arity
     : "(" bindings formula ")"
-    { make_tuple(logic.Abstraction(vars=list_concat($2[0], $2[1]), value=$3), length($2[1])) }
+    { tuple(logic.Abstraction(vars=list_concat($2[0], $2[1]), value=$3), length($2[1])) }
 
 break
     : "(" "break" relation_id abstraction attrs? ")"

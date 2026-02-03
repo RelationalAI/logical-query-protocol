@@ -576,9 +576,68 @@ def parse_action_expr(text: str, param_types: List[Optional[TargetType]], ctx: T
     return _convert_node_with_vars(tree.body, param_types, ctx, line, extra_vars)
 
 
+def _unsupported_node_error(node: ast.AST, line: Optional[int], reason: str = "") -> YaccGrammarError:
+    """Create an error for unsupported Python syntax with helpful diagnostics."""
+    node_type = type(node).__name__
+
+    # Map AST node types to user-friendly descriptions and suggestions
+    node_explanations = {
+        'UnaryOp': "Unary operators (like -x, +x, ~x, not x) are not supported. "
+                   "Use builtin functions instead (e.g., 'subtract(0, x)' for negation).",
+        'BinOp': "Binary operators (+, -, *, /, etc.) are not supported. "
+                 "Use builtin functions instead (e.g., 'add(x, y)', 'multiply(x, y)').",
+        'BoolOp': "Boolean operators (and, or) are not supported directly. "
+                  "Use builtin functions instead (e.g., 'and(x, y)', 'or(x, y)').",
+        'Compare': "Comparison operators (==, !=, <, >, etc.) are not supported. "
+                   "Use builtin functions instead (e.g., 'equal(x, y)', 'less_than(x, y)').",
+        'Lambda': "Python lambda expressions are not supported in actions. "
+                  "Define named functions in the %functions section instead.",
+        'Dict': "Dictionary literals are not supported. "
+                "Use 'dict(pairs)' with a list of tuples instead.",
+        'Set': "Set literals are not supported.",
+        'ListComp': "List comprehensions are not supported. "
+                    "Use explicit loops or map() instead.",
+        'DictComp': "Dictionary comprehensions are not supported.",
+        'SetComp': "Set comprehensions are not supported.",
+        'GeneratorExp': "Generator expressions are not supported.",
+        'Await': "Async/await is not supported.",
+        'Yield': "Yield expressions are not supported.",
+        'YieldFrom': "Yield from expressions are not supported.",
+        'FormattedValue': "F-string formatting is not supported. "
+                          "Use string_concat() for string building.",
+        'JoinedStr': "F-strings are not supported. Use string_concat() instead.",
+        'Starred': "Starred expressions (*args) are not supported.",
+        'Slice': "Slice expressions (x[a:b]) are not supported. "
+                 "Only constant integer indexing is allowed.",
+        'NamedExpr': "Walrus operator (:=) is not supported.",
+        'Tuple': "Tuple literals are not directly supported. "
+                 "Use tuple(a, b, ...) builtin instead.",
+    }
+
+    base_msg = f"Cannot convert Python '{node_type}' to target IR"
+    if reason:
+        base_msg += f": {reason}"
+
+    explanation = node_explanations.get(node_type, "")
+    if explanation:
+        base_msg += f"\n  {explanation}"
+
+    base_msg += ("\n\n  Note: Action expressions use a restricted subset of Python that can be "
+                 "translated to Julia and Go.\n  Supported constructs: literals, variables, "
+                 "function calls, message constructors,\n  list literals, conditional expressions "
+                 "(x if cond else y), let expressions,\n  and tuple indexing (x[0]).")
+
+    return YaccGrammarError(base_msg, line)
+
+
 def _convert_node_with_vars(node: ast.AST, param_types: List[Optional[TargetType]], ctx: TypeContext,
                             line: Optional[int], extra_vars: Dict[str, TargetType]) -> TargetExpr:
-    """Convert AST node with extra variable bindings."""
+    """Convert AST node with extra variable bindings.
+
+    This function translates Python AST nodes into target IR expressions.
+    Only a restricted subset of Python is supported because the IR must be
+    translatable to multiple target languages (Python, Julia, Go).
+    """
 
     if isinstance(node, ast.Constant):
         return Lit(node.value)
@@ -606,20 +665,30 @@ def _convert_node_with_vars(node: ast.AST, param_types: List[Optional[TargetType
             from .target_builtins import is_builtin
             if is_builtin(name):
                 return Builtin(name)
-            raise YaccGrammarError(f"Unknown variable or function: {name}", line)
+            raise YaccGrammarError(
+                f"Unknown variable or function: '{name}'\n"
+                f"  Variables must be declared with types (e.g., in 'let x = expr in ...').\n"
+                f"  Functions must be defined in %functions section or be builtins.",
+                line)
 
     elif isinstance(node, ast.Subscript):
         value = _convert_node_with_vars(node.value, param_types, ctx, line, extra_vars)
         if isinstance(node.slice, ast.Constant) and isinstance(node.slice.value, int):
             return GetElement(value, node.slice.value)
-        raise YaccGrammarError(f"Subscript must use integer literal index", line)
+        raise YaccGrammarError(
+            f"Subscript must use integer literal index (e.g., x[0], x[1]).\n"
+            f"  Dynamic indexing and slices are not supported.",
+            line)
 
     elif isinstance(node, ast.Attribute):
         if isinstance(node.value, ast.Name):
             # module.Message reference
             return NewMessage(node.value.id, node.attr, ())
-        obj = _convert_node_with_vars(node.value, param_types, ctx, line, extra_vars)
-        raise YaccGrammarError(f"Field access not supported", line)
+        raise YaccGrammarError(
+            f"Field access on expressions is not supported.\n"
+            f"  Only 'module.MessageName' for message constructors is allowed.\n"
+            f"  Use GetField in target IR for field access on messages.",
+            line)
 
     elif isinstance(node, ast.Call):
         func = node.func
@@ -632,7 +701,10 @@ def _convert_node_with_vars(node: ast.AST, param_types: List[Optional[TargetType
             fields = []
             for kw in node.keywords:
                 if kw.arg is None:
-                    raise YaccGrammarError(f"**kwargs not supported", line)
+                    raise YaccGrammarError(
+                        f"**kwargs syntax is not supported in message constructors.\n"
+                        f"  Use explicit keyword arguments: module.Msg(field1=val1, field2=val2)",
+                        line)
                 field_name = kw.arg
                 # Restore original field name if it was escaped
                 if field_name.startswith('_kw_') and field_name.endswith('_'):
@@ -652,7 +724,13 @@ def _convert_node_with_vars(node: ast.AST, param_types: List[Optional[TargetType
                 return Call(Builtin(func_name), args)
             if func_name in ctx.functions:
                 return Call(NamedFun(func_name), args)
-            raise YaccGrammarError(f"Unknown function: {func_name}", line)
+            raise YaccGrammarError(
+                f"Unknown function: '{func_name}'\n"
+                f"  Functions must be either:\n"
+                f"    - Builtins (see target_builtins.py for available builtins)\n"
+                f"    - Defined in the %functions section of the grammar\n"
+                f"  Note: Python standard library functions are not available.",
+                line)
 
         func_expr = _convert_node_with_vars(func, param_types, ctx, line, extra_vars)
         return Call(func_expr, args)
@@ -672,7 +750,7 @@ def _convert_node_with_vars(node: ast.AST, param_types: List[Optional[TargetType
         return IfElse(cond, then_branch, else_branch)
 
     else:
-        raise YaccGrammarError(f"Unsupported AST node: {type(node).__name__}", line)
+        raise _unsupported_node_error(node, line)
 
 
 def _build_params(rhs: Rhs) -> List[Var]:

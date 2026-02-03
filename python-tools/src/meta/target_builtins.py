@@ -114,7 +114,7 @@ register_builtin("map", [FunctionType([T1], T2), ListType(T1)], ListType(T2))
 
 # === Tuple operations ===
 register_builtin("get_tuple_element", [TupleType([T1, T2]), INT64], T)
-register_builtin("make_tuple", -1, T)  # Variadic: makes tuple from arguments
+register_builtin("tuple", -1, T)  # Variadic: makes tuple from arguments
 
 # === String operations ===
 register_builtin("string_concat", [STRING, STRING], STRING)

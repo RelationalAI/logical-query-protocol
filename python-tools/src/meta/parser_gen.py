@@ -382,7 +382,7 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, grammar: Grammar, follow_set:
         exprs.append(lambda_call)
     elif len(arg_vars) > 1:
         # Multiple values - wrap in tuple
-        exprs.append(Call(Builtin('make_tuple'), arg_vars))
+        exprs.append(Call(Builtin('tuple'), arg_vars))
     elif len(arg_vars) == 1:
         # Single value - return the variable
         exprs.append(arg_vars[0])
