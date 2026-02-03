@@ -2,9 +2,9 @@
 """Tests for Python code generation from action AST."""
 
 from meta.target import (
-    Var, Lit, Symbol, Builtin, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
+    Var, Lit, Symbol, Builtin, NewMessage, ListExpr, Call, Lambda, Let,
     IfElse, Seq, While, Assign, Return, FunDef, VisitNonterminalDef,
-    BaseType, MessageType, ListType, OptionType, GetElement,
+    BaseType, MessageType, ListType, OptionType,
 )
 from meta.grammar import Nonterminal
 from meta.codegen_python import (
@@ -130,9 +130,10 @@ def test_python_builtin_generation():
     result = gen.generate_lines(expr, lines, "")
     assert result == "x is None"
 
-    # Test GetElement for tuple access
+    # Test GetElement (replaces fst and snd builtins)
     reset_gensym()
     lines = []
+    from meta.target import GetElement
     expr = GetElement(Var("pair", _any_type), 0)
     result = gen.generate_lines(expr, lines, "")
     assert result == "pair[0]"
@@ -142,13 +143,6 @@ def test_python_builtin_generation():
     expr = GetElement(Var("pair", _any_type), 1)
     result = gen.generate_lines(expr, lines, "")
     assert result == "pair[1]"
-
-    # Test 'get_tuple_element' builtin (alternative approach)
-    reset_gensym()
-    lines = []
-    expr = Call(Builtin("get_tuple_element"), [Var("pair", _any_type), Lit(0)])
-    result = gen.generate_lines(expr, lines, "")
-    assert result == "pair[0]"
 
     # Test 'length' builtin
     reset_gensym()

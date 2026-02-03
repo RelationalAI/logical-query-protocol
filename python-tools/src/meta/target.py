@@ -6,37 +6,6 @@ and semantic actions that can be attached to grammar rules.
 The target AST types represent the "least common denominator" for
 Python, Julia, and Go expressions. All constructs in this AST should be easily
 translatable to each of these target languages.
-
-Expression types (TargetExpr subclasses):
-    Var                 - Variable reference
-    Lit                 - Literal value (string, number, boolean, None)
-    Symbol              - Literal symbol (e.g., :cast)
-    Builtin             - Builtin function reference
-    NewMessage          - Message constructor with field names
-    OneOf               - OneOf field discriminator
-    ListExpr            - List constructor expression
-    VisitNonterminal    - Visitor method call for a nonterminal
-    Call                - Function call expression
-    GetField            - Field access expression
-    GetElement          - Tuple element access with constant integer index
-    Lambda              - Lambda function (anonymous function)
-    Let                 - Let-binding: let var = init in body
-    IfElse              - If-else conditional expression
-    Seq                 - Sequence of expressions evaluated in order
-    While               - While loop: while condition do body
-    Foreach             - Foreach loop: for var in collection do body
-    ForeachEnumerated   - Foreach loop with index: for index_var, var in enumerate(collection) do body
-    Assign              - Assignment statement: var = expr
-    Return              - Return statement: return expr
-
-Type expressions (TargetType subclasses):
-    BaseType            - Base types: Int64, Float64, String, Boolean
-    VarType             - Type variable for polymorphic types
-    MessageType         - Protobuf message types
-    TupleType           - Tuple type with fixed number of element types
-    ListType            - Parameterized list/array type
-    OptionType          - Optional/Maybe type for values that may be None
-    FunctionType        - Function type with parameter types and return type
 """
 
 from dataclasses import dataclass, field
@@ -265,10 +234,6 @@ class GetElement(TargetExpr):
     Example:
         GetElement(Var("pair", TupleType([INT64, STRING])), 0)  # pair[0]
         GetElement(Var("pair", TupleType([INT64, STRING])), 1)  # pair[1]
-
-    Can also use the get_tuple_element builtin:
-        Call(Builtin("get_tuple_element"), [x, Lit(0)])  # x[0]
-        Call(Builtin("get_tuple_element"), [x, Lit(1)])  # x[1]
     """
     tuple_expr: 'TargetExpr'
     index: int
