@@ -265,6 +265,10 @@ class GrammarValidator:
         proto_fields_by_name: Dict[str, ProtoField] = {
             field.name: field for field in proto_message.fields
         }
+        # Add oneof variant fields to the map
+        for oneof in proto_message.oneofs:
+            for variant_field in oneof.fields:
+                proto_fields_by_name[variant_field.name] = variant_field
         # Add oneof names as valid fields (oneofs can be set as a whole)
         oneof_names: Set[str] = {oneof.name for oneof in proto_message.oneofs}
 
@@ -492,10 +496,31 @@ class GrammarValidator:
     def _types_compatible(self, t1: TargetType, t2: TargetType) -> bool:
         """Check if two types are compatible.
 
-        Currently checks for exact equality. Could be extended to handle
-        subtyping or coercion rules if needed.
+        Handles:
+        - Exact equality
+        - List[Unknown] is compatible with any List[T]
+        - Option[Unknown] is compatible with any Option[T]
+        - Unknown is compatible with any type (bottom type behavior)
         """
-        return t1 == t2
+        if t1 == t2:
+            return True
+        # Unknown is compatible with anything (acts as bottom type)
+        if isinstance(t1, BaseType) and t1.name == "Unknown":
+            return True
+        if isinstance(t2, BaseType) and t2.name == "Unknown":
+            return True
+        # List[Unknown] is compatible with any List[T]
+        if isinstance(t1, ListType) and isinstance(t2, ListType):
+            return self._types_compatible(t1.element_type, t2.element_type)
+        # Option[Unknown] is compatible with any Option[T]
+        if isinstance(t1, OptionType) and isinstance(t2, OptionType):
+            return self._types_compatible(t1.element_type, t2.element_type)
+        # Tuple types - check element-wise
+        if isinstance(t1, TupleType) and isinstance(t2, TupleType):
+            if len(t1.elements) != len(t2.elements):
+                return False
+            return all(self._types_compatible(e1, e2) for e1, e2 in zip(t1.elements, t2.elements))
+        return False
 
     def _check_message_coverage(self) -> None:
         """Check that every proto message has at least one grammar rule producing it.
@@ -549,8 +574,11 @@ class GrammarValidator:
                 if self._expr_constructs_oneof_variant(arg, variant_name):
                     return True
         elif isinstance(expr, NewMessage):
-            # Check all field expressions in NewMessage
-            for _, field_expr in expr.fields:
+            # Check if this NewMessage directly sets the variant field
+            for field_name, field_expr in expr.fields:
+                if field_name == variant_name:
+                    return True
+                # Also check recursively in field expressions
                 if self._expr_constructs_oneof_variant(field_expr, variant_name):
                     return True
         elif isinstance(expr, Lambda):

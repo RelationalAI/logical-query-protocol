@@ -40,7 +40,7 @@ Type expressions (TargetType subclasses):
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Sequence, TYPE_CHECKING
+from typing import Any, Optional, Sequence, TYPE_CHECKING
 from .gensym import gensym
 
 if TYPE_CHECKING:

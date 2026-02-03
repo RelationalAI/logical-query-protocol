@@ -335,17 +335,16 @@ class Grammar:
 
         return "\n".join(lines)
 
-    def print_grammar_sexp(self, reachable_only: bool = True) -> str:
-        """Convert to s-expression grammar format.
+    def print_grammar_yacc(self, reachable_only: bool = True) -> str:
+        """Convert to yacc-like grammar format.
 
-        Returns the grammar as a sequence of s-expressions that can be
-        loaded with load_grammar_config().
+        Returns the grammar in the yacc-like format that can be
+        loaded with load_yacc_grammar().
         """
-        from .sexp_grammar import rule_to_sexp, terminal_to_sexp
-        from .sexp_pretty import pretty_print
+        from .target_print import type_to_str, expr_to_str
 
         lines = []
-        lines.append(";; Auto-generated grammar from protobuf specifications")
+        lines.append("# Auto-generated grammar from protobuf specifications")
         lines.append("")
 
         reachable, unreachable = self.analysis.partition_nonterminals_by_reachability()
@@ -361,24 +360,80 @@ class Grammar:
 
         # Emit terminal declarations
         if terminals:
-            lines.append(";; Terminal declarations")
             for name in sorted(terminals.keys()):
                 term = terminals[name]
-                sexp = terminal_to_sexp(name, term.type)
-                lines.append(pretty_print(sexp, width=100))
+                lines.append(f"%token {name} {type_to_str(term.type)}")
             lines.append("")
 
+        # Emit nonterminal type declarations
+        for lhs in rule_order:
+            lines.append(f"%type {lhs.name} {type_to_str(lhs.type)}")
+        lines.append("")
+
+        # Emit ignored completeness directives
+        for msg_name in self.ignored_completeness:
+            lines.append(f"%validator_ignore_completeness {msg_name}")
+        if self.ignored_completeness:
+            lines.append("")
+
+        lines.append("%%")
+        lines.append("")
+
+        # Emit rules
         for lhs in rule_order:
             rules_list = self.rules[lhs]
+            lines.append(lhs.name)
 
-            for rule in rules_list:
-                lines.append(f";; {lhs.name} ::= {rule.rhs}")
-                sexp = rule_to_sexp(rule)
-                lines.append(pretty_print(sexp, width=100))
+            for i, rule in enumerate(rules_list):
+                prefix = "    : " if i == 0 else "    | "
+                rhs_str = self._rhs_to_str(rule.rhs)
+                action_str = expr_to_str(rule.constructor.body)
+                lines.append(f"{prefix}{rhs_str}")
+                lines.append(f"    {{ {action_str} }}")
 
+            lines.append("")
+
+        lines.append("%%")
+        lines.append("")
+
+        # Emit function definitions
+        for name, func_def in self.function_defs.items():
+            params_str = ", ".join(f"{p.name}: {type_to_str(p.type)}" for p in func_def.params)
+            lines.append(f"def {name}({params_str}) -> {type_to_str(func_def.return_type)}:")
+            lines.append(f"    return {expr_to_str(func_def.body)}")
             lines.append("")
 
         return "\n".join(lines)
+
+    def _rhs_to_str(self, rhs: Rhs) -> str:
+        """Convert RHS to yacc-format string."""
+        if isinstance(rhs, LitTerminal):
+            return f'"{rhs.value}"'
+        elif isinstance(rhs, NamedTerminal):
+            return rhs.name
+        elif isinstance(rhs, Nonterminal):
+            return rhs.name
+        elif isinstance(rhs, Star):
+            return f"{self._rhs_to_str(rhs.rhs)}*"
+        elif isinstance(rhs, Option):
+            return f"{self._rhs_to_str(rhs.rhs)}?"
+        elif isinstance(rhs, Sequence):
+            return " ".join(self._rhs_to_str(e) for e in rhs.elements)
+        else:
+            return str(rhs)
+
+
+@dataclass
+class GrammarConfig:
+    """Result of loading a grammar config file.
+
+    This is a simpler representation than Grammar, used when loading
+    grammar files before building the full Grammar object.
+    """
+    terminals: Dict[str, TargetType]
+    rules: Dict[Nonterminal, List[Rule]]
+    ignored_completeness: List[str] = field(default_factory=list)
+    function_defs: Dict[str, FunDef] = field(default_factory=dict)
 
 
 # Helper functions

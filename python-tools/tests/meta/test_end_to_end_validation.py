@@ -32,7 +32,7 @@ def parse_and_validate(grammar_content: str, proto_content: str) -> ValidationRe
     # Create temporary files with consistent names
     # Use "test" as the module name by using test.proto as the filename
     temp_dir = tempfile.mkdtemp()
-    grammar_file = Path(temp_dir) / "grammar.sexp"
+    grammar_file = Path(temp_dir) / "grammar.y"
     proto_file = Path(temp_dir) / "test.proto"
 
     grammar_file.write_text(dedent(grammar_content))

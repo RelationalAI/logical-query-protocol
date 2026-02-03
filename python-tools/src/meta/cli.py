@@ -6,16 +6,16 @@ the protobuf spec, then generates a parser from the grammar.
 
 Examples:
     # Validate grammar against protobuf specs
-    python -m meta.cli --grammar grammar.sexp proto/logic.proto proto/transactions.proto --validate
+    python -m meta.cli --grammar grammar.y proto/logic.proto proto/transactions.proto --validate
 
     # Generate a Python parser
-    python -m meta.cli --grammar grammar.sexp proto/logic.proto --parser python -o parser.py
+    python -m meta.cli --grammar grammar.y proto/logic.proto --parser python -o parser.py
 
     # Output parser intermediate representation
-    python -m meta.cli --grammar grammar.sexp proto/logic.proto --parser ir
+    python -m meta.cli --grammar grammar.y proto/logic.proto --parser ir
 
     # Output parsed protobuf specification
-    python -m meta.cli --grammar grammar.sexp proto/logic.proto --proto
+    python -m meta.cli --grammar grammar.y proto/logic.proto --proto
 """
 
 import argparse
@@ -25,7 +25,7 @@ from pathlib import Path
 from .proto_parser import ProtoParser
 from .grammar_validator import validate_grammar
 from .grammar import Grammar
-from .sexp_grammar import load_grammar_config_file
+from .yacc_grammar import load_yacc_grammar_file
 from .proto_print import format_message, format_enum
 
 
@@ -67,6 +67,11 @@ def parse_args():
         type=str,
         choices=["ir", "python"],
         help="Output the generated parser (ir or python)"
+    )
+    output_group.add_argument(
+        "--force",
+        action="store_true",
+        help="Generate parser even if validation fails"
     )
 
     args = parser.parse_args()
@@ -122,8 +127,8 @@ def run(args) -> int:
         print(f"Error: Grammar file not found: {grammar_path}", file=sys.stderr)
         return 1
 
-    # Load grammar rules from file
-    grammar_config = load_grammar_config_file(grammar_path)
+    # Load grammar rules from file (yacc format)
+    grammar_config = load_yacc_grammar_file(grammar_path)
 
     # Build Grammar object from loaded config
     # Use the first nonterminal in the grammar as the start symbol
@@ -166,9 +171,9 @@ def run(args) -> int:
         print(validation_result.summary())
         print()
 
-    # Block parser generation if there are validation errors (but allow warnings)
-    if args.parser and not validation_result.is_valid:
-        print("Error: Cannot generate parser due to validation errors", file=sys.stderr)
+    # Block parser generation if there are validation errors (unless --force)
+    if args.parser and not validation_result.is_valid and not args.force:
+        print("Error: Cannot generate parser due to validation errors (use --force to override)", file=sys.stderr)
         return 1
 
     # Return error code if validation has errors (not just warnings)
@@ -177,7 +182,7 @@ def run(args) -> int:
 
     # Output grammar if -o is specified and not generating parser
     if args.output and not args.parser:
-        output_text = grammar.print_grammar_sexp()
+        output_text = grammar.print_grammar_yacc()
         args.output.write_text(output_text)
         print(f"Grammar written to {args.output}")
 

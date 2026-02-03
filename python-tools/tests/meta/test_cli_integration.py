@@ -51,7 +51,7 @@ def create_test_files():
           (value (var value Int32)))))
     """)
 
-    grammar_path = temp_dir / "grammar.sexp"
+    grammar_path = temp_dir / "grammar.y"
     grammar_path.write_text(grammar_content)
 
     return proto_path, grammar_path, temp_dir
@@ -114,7 +114,7 @@ def create_invalid_grammar():
         (new-message test Person (name (var name String)))))
     """)
 
-    grammar_path = temp_dir / "grammar.sexp"
+    grammar_path = temp_dir / "grammar.y"
     grammar_path.write_text(grammar_content)
 
     return proto_path, grammar_path, temp_dir
