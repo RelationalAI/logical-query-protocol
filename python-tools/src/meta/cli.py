@@ -176,8 +176,8 @@ def run(args) -> int:
         print("Error: Cannot generate parser due to validation errors (use --force to override)", file=sys.stderr)
         return 1
 
-    # Return error code if validation has errors (not just warnings)
-    if not validation_result.is_valid:
+    # Return error code if validation has errors (not just warnings), unless --force
+    if not validation_result.is_valid and not args.force:
         return 1
 
     # Output grammar if -o is specified and not generating parser

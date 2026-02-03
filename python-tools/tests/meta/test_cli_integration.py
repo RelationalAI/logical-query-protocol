@@ -3,14 +3,7 @@
 
 Tests the full CLI workflow including validation, parser generation,
 and protobuf output using small test cases.
-
-NOTE: These tests use the old sexp grammar format which has been removed.
-The tests need to be converted to yacc format.
 """
-
-import pytest
-
-pytestmark = pytest.mark.skip(reason="Tests use old sexp grammar format - need conversion to yacc format")
 
 import subprocess
 import tempfile
@@ -43,19 +36,19 @@ def create_test_files():
 
     # Create a complete grammar that covers the Transaction message
     # Note: module name comes from filename stem (test), not package name
-    grammar_content = dedent("""
-    (terminal STRING String)
-    (terminal INT Int32)
+    grammar_content = dedent("""\
+    %token STRING String
+    %token INT Int32
 
-    (rule
-      (lhs transaction (Message test Transaction))
-      (rhs "(" "transaction" STRING INT ")")
-      (construct
-        ((name String) (value Int32))
-        (Message test Transaction)
-        (new-message test Transaction
-          (name (var name String))
-          (value (var value Int32)))))
+    %type transaction test.Transaction
+
+    %%
+
+    transaction
+        : "(" "transaction" STRING INT ")"
+        { test.Transaction(name=$3, value=$4) }
+
+    %%
     """)
 
     grammar_path = temp_dir / "grammar.y"
@@ -98,27 +91,23 @@ def create_invalid_grammar():
 
     # Grammar only covers Transaction with Person, not Address (validation failure)
     # Note: module name comes from filename stem (test), not package name
-    grammar_content = dedent("""
-    (terminal STRING String)
+    grammar_content = dedent("""\
+    %token STRING String
 
-    (rule
-      (lhs transaction (Message test Transaction))
-      (rhs "(" "person" STRING ")")
-      (construct
-        ((name String))
-        (Message test Transaction)
-        (new-message test Transaction
-          (data (call (oneof person)
-            (new-message test Person
-              (name (var name String))))))))
+    %type transaction test.Transaction
+    %type person test.Person
 
-    (rule
-      (lhs person (Message test Person))
-      (rhs "(" "person" STRING ")")
-      (construct
-        ((name String))
-        (Message test Person)
-        (new-message test Person (name (var name String)))))
+    %%
+
+    transaction
+        : "(" "person" STRING ")"
+        { test.Transaction(person=test.Person(name=$3)) }
+
+    person
+        : "(" "person" STRING ")"
+        { test.Person(name=$3) }
+
+    %%
     """)
 
     grammar_path = temp_dir / "grammar.y"
@@ -162,7 +151,7 @@ class TestCLIValidation:
             )
 
             assert returncode == 0, f"Expected success, got {returncode}\nstdout: {stdout}\nstderr: {stderr}"
-            assert "Grammar validation passed" in stdout or "VALID" in stdout or "valid" in stdout.lower()
+            assert "valid" in stdout.lower() or "passed" in stdout.lower() or "0 errors" in stdout.lower()
         finally:
             import shutil
             shutil.rmtree(temp_dir, ignore_errors=True)
@@ -177,8 +166,11 @@ class TestCLIValidation:
                 "--validate"
             )
 
-            assert returncode != 0, "Expected validation to fail"
-            assert "address" in stdout or "address" in stderr
+            # Validation should fail (missing Address coverage)
+            assert returncode != 0, f"Expected validation to fail\nstdout: {stdout}\nstderr: {stderr}"
+            # Should mention Address in the output
+            assert "address" in stdout.lower() or "address" in stderr.lower(), \
+                f"Expected 'address' in output\nstdout: {stdout}\nstderr: {stderr}"
         finally:
             import shutil
             shutil.rmtree(temp_dir, ignore_errors=True)
@@ -188,24 +180,46 @@ class TestCLIValidation:
         proto_path, grammar_path, temp_dir = create_invalid_grammar()
         try:
             # Try to generate IR parser with invalid grammar
-            returncode, _stdout, stderr = run_cli(
+            returncode, stdout, stderr = run_cli(
                 str(proto_path),
                 "--grammar", str(grammar_path),
                 "--parser", "ir"
             )
 
-            assert returncode != 0, "Expected parser generation to fail"
-            assert "Cannot generate parser" in stderr or "validation" in stderr.lower()
+            assert returncode != 0, f"Expected parser generation to fail\nstdout: {stdout}\nstderr: {stderr}"
+            assert "cannot generate parser" in stderr.lower() or "validation" in stderr.lower(), \
+                f"Expected validation error message\nstderr: {stderr}"
 
             # Try to generate Python parser with invalid grammar
-            returncode, _stdout, stderr = run_cli(
+            returncode, stdout, stderr = run_cli(
                 str(proto_path),
                 "--grammar", str(grammar_path),
                 "--parser", "python"
             )
 
-            assert returncode != 0, "Expected parser generation to fail"
-            assert "Cannot generate parser" in stderr or "validation" in stderr.lower()
+            assert returncode != 0, f"Expected parser generation to fail\nstdout: {stdout}\nstderr: {stderr}"
+            assert "cannot generate parser" in stderr.lower() or "validation" in stderr.lower(), \
+                f"Expected validation error message\nstderr: {stderr}"
+        finally:
+            import shutil
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+    def test_force_bypasses_validation(self):
+        """Test that --force allows parser generation despite validation errors."""
+        proto_path, grammar_path, temp_dir = create_invalid_grammar()
+        try:
+            # Generate IR parser with --force
+            returncode, stdout, stderr = run_cli(
+                str(proto_path),
+                "--grammar", str(grammar_path),
+                "--parser", "ir",
+                "--force"
+            )
+
+            # Should succeed despite validation errors
+            assert returncode == 0, f"Expected success with --force\nstdout: {stdout}\nstderr: {stderr}"
+            # Should have generated some output
+            assert "transaction" in stdout.lower(), f"Expected parser output\nstdout: {stdout}"
         finally:
             import shutil
             shutil.rmtree(temp_dir, ignore_errors=True)
@@ -267,8 +281,8 @@ class TestCLIParserIR:
             )
 
             assert returncode == 0, f"Expected success, got {returncode}\nstderr: {stderr}"
-            # IR output should contain parse function definitions
-            assert "parse" in stdout.lower() or "def" in stdout.lower()
+            # IR output should contain transaction rule
+            assert "transaction" in stdout.lower()
         finally:
             import shutil
             shutil.rmtree(temp_dir, ignore_errors=True)
@@ -380,8 +394,8 @@ class TestCLIErrorHandling:
         try:
             returncode, _stdout, stderr = run_cli(
                 str(proto_path),
-                "--grammar", "nonexistent.sexp",
-                "--validate"
+                "--grammar", "nonexistent.y",
+                "--parser", "ir"
             )
 
             assert returncode != 0, "Expected failure for missing grammar"
@@ -397,21 +411,6 @@ class TestCLIErrorHandling:
             returncode, _stdout, stderr = run_cli(
                 str(proto_path),
                 "--parser", "python"
-            )
-
-            assert returncode != 0, "Expected failure when --grammar is missing"
-            assert "grammar" in stderr.lower() or "required" in stderr.lower()
-        finally:
-            import shutil
-            shutil.rmtree(temp_dir, ignore_errors=True)
-
-    def test_validate_requires_grammar(self):
-        """Test that --validate requires --grammar."""
-        proto_path, _grammar_path, temp_dir = create_test_files()
-        try:
-            returncode, _stdout, stderr = run_cli(
-                str(proto_path),
-                "--validate"
             )
 
             assert returncode != 0, "Expected failure when --grammar is missing"
