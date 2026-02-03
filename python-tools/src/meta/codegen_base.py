@@ -357,6 +357,10 @@ class CodeGenerator(ABC):
 
     def _generate_call(self, expr: Call, lines: List[str], indent: str) -> str:
         """Generate code for a function call."""
+        # NewMessage should be handled directly, not wrapped in Call
+        assert not isinstance(expr.func, NewMessage), \
+            f"Call(NewMessage, ...) should not occur in target IR; use NewMessage with fields instead: {expr}"
+
         # First, check for builtin special cases
         if isinstance(expr.func, Builtin):
             # Evaluate arguments
