@@ -543,7 +543,51 @@ class PythonCodeGenerator(CodeGenerator):
         return f"{indent}def {func_name}(self{params_str}){ret_hint}:\n{body_code}"
 
     def _generate_builtin_method_def(self, expr: FunDef, indent: str) -> str:
-        """Generate a builtin method definition as a static method."""
+        """Generate a builtin method definition as a static method.
+
+        If raw_python_source is available on the FunDef, use it directly.
+        Otherwise generate from the target IR body.
+        """
+        # If raw Python source is available, use it directly (with proper indentation)
+        if expr.raw_python_source is not None:
+            # Transform the raw source to match the generated parser context:
+            # 1. Replace module references (logic. -> logic_pb2., etc.)
+            # 2. Replace bare helper function calls with qualified calls (Parser.xxx)
+            source = expr.raw_python_source
+            source = source.replace('logic.', 'logic_pb2.')
+            source = source.replace('transactions.', 'transactions_pb2.')
+            source = source.replace('fragments.', 'fragments_pb2.')
+
+            # Replace bare calls to helper functions with Parser.xxx
+            # These are functions that start with underscore and are defined in grammar.y
+            import re
+            helper_funcs = [
+                '_extract_value_int64',
+                '_extract_value_float64',
+                '_extract_value_string',
+                '_extract_value_boolean',
+                '_extract_value_bytes',
+                '_extract_value_uint128',
+                '_extract_value_string_list',
+            ]
+            for func_name in helper_funcs:
+                # Match function name at word boundary that's not already prefixed
+                # Exclude function definitions (preceded by 'def ')
+                source = re.sub(rf'(?<!Parser\.)(?<!\.)(?<![a-zA-Z_])(?<!def ){func_name}\(', f'Parser.{func_name}(', source)
+
+            # The raw source includes the function definition and body
+            # We need to re-indent it to match the target indent level
+            source_lines = source.split('\n')
+            # Add @staticmethod decorator and re-indent all lines
+            result_lines = [f"{indent}@staticmethod"]
+            for line in source_lines:
+                if line.strip():  # Non-empty lines get the indent
+                    result_lines.append(f"{indent}{line}")
+                else:
+                    result_lines.append("")  # Preserve empty lines
+            return '\n'.join(result_lines)
+
+        # Otherwise, generate from the FunDef fields
         func_name = self.escape_identifier(expr.name)
 
         params = []

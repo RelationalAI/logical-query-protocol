@@ -156,4 +156,7 @@ def expr_to_str(expr: TargetExpr) -> str:
 def fundef_to_str(func: FunDef) -> str:
     """Convert a FunDef to a Python-style function definition string."""
     params = ", ".join(f"{p.name}: {type_to_str(p.type)}" for p in func.params)
-    return f"def {func.name}({params}) -> {type_to_str(func.return_type)}:\n    return {expr_to_str(func.body)}"
+    if func.body is not None:
+        return f"def {func.name}({params}) -> {type_to_str(func.return_type)}:\n    return {expr_to_str(func.body)}"
+    else:
+        return f"def {func.name}({params}) -> {type_to_str(func.return_type)}:\n    ..."

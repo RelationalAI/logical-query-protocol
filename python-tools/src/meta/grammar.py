@@ -400,7 +400,10 @@ class Grammar:
         for name, func_def in self.function_defs.items():
             params_str = ", ".join(f"{p.name}: {type_to_str(p.type)}" for p in func_def.params)
             lines.append(f"def {name}({params_str}) -> {type_to_str(func_def.return_type)}:")
-            lines.append(f"    return {expr_to_str(func_def.body)}")
+            if func_def.body is not None:
+                lines.append(f"    return {expr_to_str(func_def.body)}")
+            else:
+                lines.append("    ...")
             lines.append("")
 
         return "\n".join(lines)
@@ -408,7 +411,7 @@ class Grammar:
     def _rhs_to_str(self, rhs: Rhs) -> str:
         """Convert RHS to yacc-format string."""
         if isinstance(rhs, LitTerminal):
-            return f'"{rhs.value}"'
+            return f'"{rhs.name}"'
         elif isinstance(rhs, NamedTerminal):
             return rhs.name
         elif isinstance(rhs, Nonterminal):

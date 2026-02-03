@@ -27,7 +27,7 @@ from .proto_parser import ProtoParser
 from .proto_ast import ProtoMessage, ProtoField
 from .target import (
     TargetType, TargetExpr, Call, NewMessage, Builtin, Var, IfElse, Let, Seq, ListExpr, GetField,
-    GetElement, BaseType, VarType, MessageType, ListType, OptionType, TupleType, FunctionType, Lambda, OneOf
+    GetElement, BaseType, VarType, MessageType, ListType, OptionType, TupleType, FunctionType, Lambda, OneOf, Lit
 )
 from .type_env import TypeEnv
 from .validation_result import ValidationResult
@@ -158,11 +158,15 @@ class GrammarValidator:
 
         # Check return type matches LHS type
         lhs_type = rule.lhs.type
-        return_type = rule.constructor.return_type
-        if not self._types_compatible(return_type, lhs_type):
+
+        # Infer the actual type of the body expression
+        body_type = self._infer_expr_type(rule.constructor.body)
+
+        # If we can infer the body type, check it matches the declared return type
+        if body_type is not None and not self._types_compatible(body_type, lhs_type):
             self.result.add_error(
                 "type_return",
-                f"Rule '{rule_name}': lambda returns {return_type} but LHS expects {lhs_type}",
+                f"Rule '{rule_name}': lambda body has type {body_type} but LHS expects {lhs_type}",
                 rule_name=rule_name
             )
 
@@ -451,6 +455,12 @@ class GrammarValidator:
                     return BaseType("Int32")
                 elif name == "length":
                     return BaseType("Int64")
+                elif name == "tuple":
+                    # Infer tuple type from argument types
+                    arg_types = [self._infer_expr_type(arg) for arg in expr.args]
+                    if all(t is not None for t in arg_types):
+                        return TupleType(tuple(t for t in arg_types if t is not None))
+                    return None
                 # For other builtins, would need to implement full type inference
                 return None
             else:
@@ -468,8 +478,19 @@ class GrammarValidator:
                 if 0 <= expr.index < len(tuple_type.elements):
                     return tuple_type.elements[expr.index]
             return None
+        elif isinstance(expr, Lit):
+            # Infer type from literal value
+            if isinstance(expr.value, bool):
+                return BaseType("Boolean")
+            elif isinstance(expr.value, int):
+                return BaseType("Int64")
+            elif isinstance(expr.value, float):
+                return BaseType("Float64")
+            elif isinstance(expr.value, str):
+                return BaseType("String")
+            return None
         else:
-            # Other cases: Lit, Symbol, etc.
+            # Other cases: Symbol, etc.
             return None
 
     def _get_rhs_element_types(self, rhs: Rhs) -> List[TargetType]:

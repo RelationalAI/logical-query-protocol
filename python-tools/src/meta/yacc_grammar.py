@@ -64,7 +64,7 @@ from .grammar import (
 from .target import (
     TargetType, BaseType, MessageType, ListType, OptionType, TupleType,
     TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, Call, Lambda,
-    Let, IfElse, Seq, ListExpr, GetElement, FunDef
+    Let, IfElse, Seq, ListExpr, GetElement, FunDef, OneOf
 )
 
 
@@ -318,24 +318,57 @@ def python_ast_to_target(node: ast.AST, rhs: Rhs, ctx: TypeContext, line: Option
     return convert(node)
 
 
+def _get_rhs_element_name(elem: Rhs) -> Optional[str]:
+    """Get the name of an RHS element for use as a parameter name.
+
+    Returns the symbol name for terminals and nonterminals, unwrapping
+    Star and Option wrappers. Returns None for literals.
+    """
+    if isinstance(elem, LitTerminal):
+        return None
+    elif isinstance(elem, NamedTerminal):
+        return elem.name.lower()  # e.g., SYMBOL -> symbol
+    elif isinstance(elem, Nonterminal):
+        return elem.name
+    elif isinstance(elem, Star):
+        # Use plural form of the inner element name
+        inner_name = _get_rhs_element_name(elem.rhs)
+        if inner_name:
+            return inner_name + "s" if not inner_name.endswith("s") else inner_name
+        return None
+    elif isinstance(elem, Option):
+        return _get_rhs_element_name(elem.rhs)
+    else:
+        return None
+
+
+def _get_rhs_param_info(rhs: Rhs) -> List[Tuple[Optional[str], Optional[TargetType]]]:
+    """Get parameter names and types from an RHS.
+
+    Returns a list of (name, type) tuples, one per RHS element.
+    Literals are represented as (None, None).
+    """
+    if isinstance(rhs, Sequence):
+        result: List[Tuple[Optional[str], Optional[TargetType]]] = []
+        for elem in rhs.elements:
+            if isinstance(elem, LitTerminal):
+                result.append((None, None))
+            else:
+                result.append((_get_rhs_element_name(elem), elem.target_type()))
+        return result
+    elif isinstance(rhs, LitTerminal):
+        return [(None, None)]
+    else:
+        return [(_get_rhs_element_name(rhs), rhs.target_type())]
+
+
 def _get_rhs_param_types(rhs: Rhs) -> List[Optional[TargetType]]:
     """Get the types of parameters from an RHS (including literals as None).
 
     Returns a list with one entry per RHS element. Literals are represented
     as None since they cannot be meaningfully referenced in actions.
     """
-    if isinstance(rhs, Sequence):
-        types: List[Optional[TargetType]] = []
-        for elem in rhs.elements:
-            if isinstance(elem, LitTerminal):
-                types.append(None)  # Literals have no meaningful type
-            else:
-                types.append(elem.target_type())
-        return types
-    elif isinstance(rhs, LitTerminal):
-        return [None]
-    else:
-        return [rhs.target_type()]
+    return [t for _, t in _get_rhs_param_info(rhs)]
 
 
 def _convert_node(node: ast.AST, param_types: List[Optional[TargetType]], ctx: TypeContext, line: Optional[int]) -> TargetExpr:
@@ -411,7 +444,11 @@ def _convert_node(node: ast.AST, param_types: List[Optional[TargetType]], ctx: T
 
         # Handle regular function call
         if isinstance(func, ast.Name):
-            func_name = func.name if hasattr(func, 'name') else func.id
+            func_name = func.id
+            # Check for oneof_VARIANT pattern
+            if func_name.startswith('oneof_'):
+                variant_name = func_name[6:]  # Remove 'oneof_' prefix
+                return Call(OneOf(variant_name), args)
             # Check if it's a builtin
             from .target_builtins import is_builtin
             if is_builtin(func_name):
@@ -532,20 +569,32 @@ def parse_action(text: str, rhs: Rhs, ctx: TypeContext, line: Optional[int] = No
     # Preprocess to handle $N references and Python keyword escaping
     preprocessed = preprocess_action(text.strip())
 
-    # Parse the expression (handles let expressions recursively)
-    param_types = _get_rhs_param_types(rhs)
-    body = parse_action_expr(preprocessed, param_types, ctx, line)
-
-    # Build the lambda
+    # Build parameter list with names from RHS symbols
     params = _build_params(rhs)
+
+    # Parse the expression (handles let expressions recursively)
+    # Pass param info so $N references can be resolved to named parameters
+    param_info = _get_rhs_param_info(rhs)
+    body = parse_action_expr(preprocessed, param_info, params, ctx, line)
+
     # Use expected return type from %type declaration if provided, otherwise infer
     return_type = expected_return_type if expected_return_type is not None else _infer_type(body)
     return Lambda(params, return_type, body)
 
 
-def parse_action_expr(text: str, param_types: List[Optional[TargetType]], ctx: TypeContext,
+def parse_action_expr(text: str, param_info: List[Tuple[Optional[str], Optional[TargetType]]],
+                      params: List[Var], ctx: TypeContext,
                       line: Optional[int], extra_vars: Optional[Dict[str, TargetType]] = None) -> TargetExpr:
-    """Parse an action expression, handling let expressions recursively."""
+    """Parse an action expression, handling let expressions recursively.
+
+    Args:
+        text: The expression text to parse
+        param_info: List of (name, type) for each RHS element (None for literals)
+        params: The actual parameter Vars (non-literal elements only)
+        ctx: Type context for looking up functions
+        line: Line number for error messages
+        extra_vars: Additional variables in scope (from let bindings)
+    """
     text = text.strip()
     extra_vars = extra_vars or {}
 
@@ -557,13 +606,13 @@ def parse_action_expr(text: str, param_types: List[Optional[TargetType]], ctx: T
         body_text = let_match.group(3)
 
         # Parse init expression
-        init_expr = parse_action_expr(init_text, param_types, ctx, line, extra_vars)
+        init_expr = parse_action_expr(init_text, param_info, params, ctx, line, extra_vars)
         init_type = _infer_type(init_expr)
 
         # Parse body with the let-bound variable in scope
         new_extra_vars = dict(extra_vars)
         new_extra_vars[var_name] = init_type
-        body_expr = parse_action_expr(body_text, param_types, ctx, line, new_extra_vars)
+        body_expr = parse_action_expr(body_text, param_info, params, ctx, line, new_extra_vars)
 
         return Let(Var(var_name, init_type), init_expr, body_expr)
 
@@ -573,7 +622,7 @@ def parse_action_expr(text: str, param_types: List[Optional[TargetType]], ctx: T
     except SyntaxError as e:
         raise YaccGrammarError(f"Syntax error in action: {e}", line)
 
-    return _convert_node_with_vars(tree.body, param_types, ctx, line, extra_vars)
+    return _convert_node_with_vars(tree.body, param_info, params, ctx, line, extra_vars)
 
 
 def _unsupported_node_error(node: ast.AST, line: Optional[int], reason: str = "") -> YaccGrammarError:
@@ -630,14 +679,26 @@ def _unsupported_node_error(node: ast.AST, line: Optional[int], reason: str = ""
     return YaccGrammarError(base_msg, line)
 
 
-def _convert_node_with_vars(node: ast.AST, param_types: List[Optional[TargetType]], ctx: TypeContext,
+def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str], Optional[TargetType]]],
+                            params: List[Var], ctx: TypeContext,
                             line: Optional[int], extra_vars: Dict[str, TargetType]) -> TargetExpr:
     """Convert AST node with extra variable bindings.
 
     This function translates Python AST nodes into target IR expressions.
     Only a restricted subset of Python is supported because the IR must be
     translatable to multiple target languages (Python, Julia, Go).
+
+    Args:
+        node: The AST node to convert
+        param_info: List of (name, type) for each RHS element (None for literals)
+        params: The actual parameter Vars (non-literal elements only)
+        ctx: Type context for looking up functions
+        line: Line number for error messages
+        extra_vars: Additional variables in scope (from let bindings)
     """
+
+    def convert(n: ast.AST) -> TargetExpr:
+        return _convert_node_with_vars(n, param_info, params, ctx, line, extra_vars)
 
     if isinstance(node, ast.Constant):
         return Lit(node.value)
@@ -649,13 +710,16 @@ def _convert_node_with_vars(node: ast.AST, param_types: List[Optional[TargetType
         elif name == 'false':
             return Lit(False)
         elif name.startswith('_dollar_'):
-            idx = int(name[8:]) - 1
-            if idx < 0 or idx >= len(param_types):
+            # $N reference - map to the corresponding parameter
+            idx = int(name[8:]) - 1  # Convert 1-indexed to 0-indexed
+            if idx < 0 or idx >= len(param_info):
                 raise YaccGrammarError(f"Invalid parameter reference ${idx+1}", line)
-            param_type = param_types[idx]
+            _, param_type = param_info[idx]
             if param_type is None:
                 raise YaccGrammarError(f"Cannot reference literal at position ${idx+1}", line)
-            return Var(f"_{idx}", param_type)
+            # Find the parameter for this position (skipping literals)
+            param_idx = sum(1 for _, t in param_info[:idx] if t is not None)
+            return params[param_idx]
         elif name in extra_vars:
             return Var(name, extra_vars[name])
         elif name in ctx.functions:
@@ -672,7 +736,7 @@ def _convert_node_with_vars(node: ast.AST, param_types: List[Optional[TargetType
                 line)
 
     elif isinstance(node, ast.Subscript):
-        value = _convert_node_with_vars(node.value, param_types, ctx, line, extra_vars)
+        value = convert(node.value)
         if isinstance(node.slice, ast.Constant) and isinstance(node.slice.value, int):
             return GetElement(value, node.slice.value)
         raise YaccGrammarError(
@@ -692,7 +756,7 @@ def _convert_node_with_vars(node: ast.AST, param_types: List[Optional[TargetType
 
     elif isinstance(node, ast.Call):
         func = node.func
-        args = [_convert_node_with_vars(a, param_types, ctx, line, extra_vars) for a in node.args]
+        args = [convert(a) for a in node.args]
 
         # Message constructor
         if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name):
@@ -709,7 +773,7 @@ def _convert_node_with_vars(node: ast.AST, param_types: List[Optional[TargetType
                 # Restore original field name if it was escaped
                 if field_name.startswith('_kw_') and field_name.endswith('_'):
                     field_name = field_name[4:-1]
-                field_expr = _convert_node_with_vars(kw.value, param_types, ctx, line, extra_vars)
+                field_expr = convert(kw.value)
                 fields.append((field_name, field_expr))
             return NewMessage(module_name, msg_name, tuple(fields))
 
@@ -719,6 +783,10 @@ def _convert_node_with_vars(node: ast.AST, param_types: List[Optional[TargetType
             # Handle special forms
             if func_name == 'seq':
                 return Seq(args)
+            # Check for oneof_VARIANT pattern
+            if func_name.startswith('oneof_'):
+                variant_name = func_name[6:]  # Remove 'oneof_' prefix
+                return Call(OneOf(variant_name), args)
             from .target_builtins import is_builtin
             if is_builtin(func_name):
                 return Call(Builtin(func_name), args)
@@ -732,11 +800,11 @@ def _convert_node_with_vars(node: ast.AST, param_types: List[Optional[TargetType
                 f"  Note: Python standard library functions are not available.",
                 line)
 
-        func_expr = _convert_node_with_vars(func, param_types, ctx, line, extra_vars)
+        func_expr = convert(func)
         return Call(func_expr, args)
 
     elif isinstance(node, ast.List):
-        elements = [_convert_node_with_vars(e, param_types, ctx, line, extra_vars) for e in node.elts]
+        elements = [convert(e) for e in node.elts]
         if elements:
             elem_type = _infer_type(elements[0])
         else:
@@ -744,9 +812,9 @@ def _convert_node_with_vars(node: ast.AST, param_types: List[Optional[TargetType
         return ListExpr(elements, elem_type)
 
     elif isinstance(node, ast.IfExp):
-        cond = _convert_node_with_vars(node.test, param_types, ctx, line, extra_vars)
-        then_branch = _convert_node_with_vars(node.body, param_types, ctx, line, extra_vars)
-        else_branch = _convert_node_with_vars(node.orelse, param_types, ctx, line, extra_vars)
+        cond = convert(node.test)
+        then_branch = convert(node.body)
+        else_branch = convert(node.orelse)
         return IfElse(cond, then_branch, else_branch)
 
     else:
@@ -754,14 +822,26 @@ def _convert_node_with_vars(node: ast.AST, param_types: List[Optional[TargetType
 
 
 def _build_params(rhs: Rhs) -> List[Var]:
-    """Build parameter list from RHS (non-literal elements only)."""
-    param_types = _get_rhs_param_types(rhs)
+    """Build parameter list from RHS (non-literal elements only).
+
+    Uses the symbol name from the RHS element as the parameter name.
+    For example, a rule like:
+        transaction : "(" "transaction" configure? sync? epoch* ")"
+    will produce parameters named: configure, sync, epochs
+    with types: Optional[...], Optional[...], List[...]
+    """
+    param_info = _get_rhs_param_info(rhs)
     params = []
-    param_idx = 0
-    for i, t in enumerate(param_types):
+    used_names: Set[str] = set()
+    for i, (name, t) in enumerate(param_info):
         if t is not None:
-            params.append(Var(f"_{i}", t))
-            param_idx += 1
+            # Use the element name, or fall back to positional name
+            param_name = name if name else f"_{i}"
+            # Handle duplicate names by appending index
+            if param_name in used_names:
+                param_name = f"{param_name}_{i}"
+            used_names.add(param_name)
+            params.append(Var(param_name, t))
     return params
 
 
@@ -781,7 +861,7 @@ def parse_rules(lines: List[str], start_line: int, ctx: TypeContext) -> Tuple[Li
     def flush_alternative():
         """Process accumulated alternative lines."""
         nonlocal current_alt_lines
-        if current_alt_lines and current_lhs is not None:
+        if current_alt_lines and current_lhs is not None and current_lhs_type is not None:
             text = ' '.join(current_alt_lines)
             rule = _parse_alternative(current_lhs, current_lhs_type, text, ctx, current_alt_start_line)
             rules.append(rule)
@@ -941,13 +1021,13 @@ def parse_helper_functions(lines: List[str], start_line: int, ctx: TypeContext) 
 
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef):
-            func_def = _convert_function_def(node, ctx, start_line)
+            func_def = _convert_function_def(node, ctx, start_line, text)
             functions[func_def.name] = func_def
 
     return functions
 
 
-def _convert_function_def(node: ast.FunctionDef, ctx: TypeContext, base_line: int) -> FunDef:
+def _convert_function_def(node: ast.FunctionDef, ctx: TypeContext, base_line: int, source_text: str) -> FunDef:
     """Convert a Python function definition to FunDef."""
     name = node.name
 
@@ -967,12 +1047,14 @@ def _convert_function_def(node: ast.FunctionDef, ctx: TypeContext, base_line: in
                                base_line + node.lineno)
     return_type = _annotation_to_type(node.returns, base_line + node.lineno)
 
-    # For now, we'll store the body as None and handle it separately
-    # Full conversion of function bodies is complex
-    # TODO: Convert function body to target IR
+    # Extract raw Python source for the function body
+    # We use ast.get_source_segment (Python 3.8+) to get the original source
+    raw_python_source = ast.get_source_segment(source_text, node)
+
+    # Body is set to None since we're using raw_python_source instead
     body = None
 
-    return FunDef(name, tuple(params), return_type, body)
+    return FunDef(name, tuple(params), return_type, body, raw_python_source)
 
 
 def _annotation_to_type(node: ast.AST, line: int) -> TargetType:

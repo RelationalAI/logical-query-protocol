@@ -578,7 +578,7 @@ export_csv_column
 %%
 
 
-def _extract_value_int64(value: Optional[Value], default: int) -> int:
+def _extract_value_int64(value: Optional[logic.Value], default: int) -> int:
     if value is None:
         return default
     if value.HasField('int_value'):
@@ -586,7 +586,7 @@ def _extract_value_int64(value: Optional[Value], default: int) -> int:
     return default
 
 
-def _extract_value_float64(value: Optional[Value], default: float) -> float:
+def _extract_value_float64(value: Optional[logic.Value], default: float) -> float:
     if value is None:
         return default
     if value.HasField('float_value'):
@@ -594,7 +594,7 @@ def _extract_value_float64(value: Optional[Value], default: float) -> float:
     return default
 
 
-def _extract_value_string(value: Optional[Value], default: str) -> str:
+def _extract_value_string(value: Optional[logic.Value], default: str) -> str:
     if value is None:
         return default
     if value.HasField('string_value'):
@@ -602,7 +602,7 @@ def _extract_value_string(value: Optional[Value], default: str) -> str:
     return default
 
 
-def _extract_value_boolean(value: Optional[Value], default: bool) -> bool:
+def _extract_value_boolean(value: Optional[logic.Value], default: bool) -> bool:
     if value is None:
         return default
     if value.HasField('boolean_value'):
@@ -610,7 +610,7 @@ def _extract_value_boolean(value: Optional[Value], default: bool) -> bool:
     return default
 
 
-def _extract_value_bytes(value: Optional[Value], default: bytes) -> bytes:
+def _extract_value_bytes(value: Optional[logic.Value], default: bytes) -> bytes:
     if value is None:
         return default
     if value.HasField('string_value'):
@@ -618,7 +618,7 @@ def _extract_value_bytes(value: Optional[Value], default: bytes) -> bytes:
     return default
 
 
-def _extract_value_uint128(value: Optional[Value], default: UInt128Value) -> UInt128Value:
+def _extract_value_uint128(value: Optional[logic.Value], default: logic.UInt128Value) -> logic.UInt128Value:
     if value is None:
         return default
     if value.HasField('uint128_value'):
@@ -626,7 +626,7 @@ def _extract_value_uint128(value: Optional[Value], default: UInt128Value) -> UIn
     return default
 
 
-def _extract_value_string_list(value: Optional[Value], default: list[str]) -> list[str]:
+def _extract_value_string_list(value: Optional[logic.Value], default: list[str]) -> list[str]:
     if value is None:
         return default
     if value.HasField('string_value'):
@@ -634,7 +634,7 @@ def _extract_value_string_list(value: Optional[Value], default: list[str]) -> li
     return default
 
 
-def construct_csv_config(config_dict: list[tuple[str, Value]]) -> CSVConfig:
+def construct_csv_config(config_dict: list[tuple[str, logic.Value]]) -> logic.CSVConfig:
     config = dict(config_dict)
     header_row = _extract_value_int64(config.get("csv_header_row"), 1)
     skip = _extract_value_int64(config.get("csv_skip"), 0)
@@ -647,7 +647,7 @@ def construct_csv_config(config_dict: list[tuple[str, Value]]) -> CSVConfig:
     decimal_separator = _extract_value_string(config.get("csv_decimal_separator"), ".")
     encoding = _extract_value_string(config.get("csv_encoding"), "utf-8")
     compression = _extract_value_string(config.get("csv_compression"), "auto")
-    return CSVConfig(
+    return logic.CSVConfig(
         header_row=header_row,
         skip=skip,
         new_line=new_line,
@@ -663,27 +663,27 @@ def construct_csv_config(config_dict: list[tuple[str, Value]]) -> CSVConfig:
 
 
 def construct_betree_info(
-    key_types: list[Type],
-    value_types: list[Type],
-    config_dict: list[tuple[str, Value]],
-) -> BeTreeInfo:
+    key_types: list[logic.Type],
+    value_types: list[logic.Type],
+    config_dict: list[tuple[str, logic.Value]],
+) -> logic.BeTreeInfo:
     config = dict(config_dict)
     epsilon = _extract_value_float64(config.get("betree_config_epsilon"), 0.5)
     max_pivots = _extract_value_int64(config.get("betree_config_max_pivots"), 4)
     max_deltas = _extract_value_int64(config.get("betree_config_max_deltas"), 16)
     max_leaf = _extract_value_int64(config.get("betree_config_max_leaf"), 16)
-    storage_config = BeTreeConfig(
+    storage_config = logic.BeTreeConfig(
         epsilon=epsilon,
         max_pivots=max_pivots,
         max_deltas=max_deltas,
         max_leaf=max_leaf,
     )
     root_pageid_val = config.get("betree_locator_root_pageid")
-    root_pageid: Optional[UInt128Value] = None
+    root_pageid: Optional[logic.UInt128Value] = None
     if root_pageid_val is not None:
         root_pageid = _extract_value_uint128(
             root_pageid_val,
-            UInt128Value(low=0, high=0),
+            logic.UInt128Value(low=0, high=0),
         )
     inline_data_val = config.get("betree_locator_inline_data")
     inline_data: Optional[bytes] = None
@@ -691,13 +691,13 @@ def construct_betree_info(
         inline_data = _extract_value_bytes(inline_data_val, b"")
     element_count = _extract_value_int64(config.get("betree_locator_element_count"), 0)
     tree_height = _extract_value_int64(config.get("betree_locator_tree_height"), 0)
-    relation_locator = BeTreeLocator(
+    relation_locator = logic.BeTreeLocator(
         root_pageid=root_pageid,
         inline_data=inline_data,
         element_count=element_count,
         tree_height=tree_height,
     )
-    return BeTreeInfo(
+    return logic.BeTreeInfo(
         key_types=key_types,
         value_types=value_types,
         storage_config=storage_config,
@@ -705,7 +705,7 @@ def construct_betree_info(
     )
 
 
-def construct_configure(config_dict: list[tuple[str, Value]]) -> Configure:
+def construct_configure(config_dict: list[tuple[str, logic.Value]]) -> transactions.Configure:
     config = dict(config_dict)
     maintenance_level_val = config.get("ivm.maintenance_level")
     maintenance_level: str
@@ -718,9 +718,9 @@ def construct_configure(config_dict: list[tuple[str, Value]]) -> Configure:
             maintenance_level = level_str
     else:
         maintenance_level = "MAINTENANCE_LEVEL_OFF"
-    ivm_config = IVMConfig(level=maintenance_level)
+    ivm_config = transactions.IVMConfig(level=maintenance_level)
     semantics_version = _extract_value_int64(config.get("semantics_version"), 0)
-    return Configure(
+    return transactions.Configure(
         semantics_version=semantics_version,
         ivm_config=ivm_config,
     )
@@ -728,9 +728,9 @@ def construct_configure(config_dict: list[tuple[str, Value]]) -> Configure:
 
 def export_csv_config(
     path: str,
-    columns: list[ExportCSVColumn],
-    config_dict: list[tuple[str, Value]],
-) -> ExportCSVConfig:
+    columns: list[transactions.ExportCSVColumn],
+    config_dict: list[tuple[str, logic.Value]],
+) -> transactions.ExportCSVConfig:
     config = dict(config_dict)
     partition_size = _extract_value_int64(config.get("partition_size"), 0)
     compression = _extract_value_string(config.get("compression"), "")
@@ -739,7 +739,7 @@ def export_csv_config(
     syntax_delim = _extract_value_string(config.get("syntax_delim"), ",")
     syntax_quotechar = _extract_value_string(config.get("syntax_quotechar"), '"')
     syntax_escapechar = _extract_value_string(config.get("syntax_escapechar"), "\\")
-    return ExportCSVConfig(
+    return transactions.ExportCSVConfig(
         path=path,
         data_columns=columns,
         partition_size=partition_size,

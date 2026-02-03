@@ -3,14 +3,7 @@
 
 These tests validate complete grammar files against protobuf specifications,
 testing all validation error and warning cases.
-
-NOTE: These tests use the old sexp grammar format which has been removed.
-The tests need to be converted to yacc format.
 """
-
-import pytest
-
-pytestmark = pytest.mark.skip(reason="Tests use old sexp grammar format - need conversion to yacc format")
 
 from pathlib import Path
 import tempfile
@@ -93,18 +86,17 @@ class TestCompletenessErrors:
         }
         """
 
-        grammar_content = """
-        (terminal STRING String)
+        grammar_content = """\
+%token STRING String
 
-        ;; Only define rule for Person, not Address
-        (rule
-          (lhs person (Message test Person))
-          (rhs STRING)
-          (construct
-            ((name String))
-            (Message test Person)
-            (new-message test Person (name (var name String)))))
-        """
+%type person test.Person
+
+%%
+
+person : STRING { test.Person(name=$1) }
+
+%%
+"""
 
         result = parse_and_validate(grammar_content, proto_content)
         assert not result.is_valid
@@ -122,18 +114,17 @@ class TestCompletenessErrors:
         }
         """
 
-        grammar_content = """
-        (terminal STRING String)
+        grammar_content = """\
+%token STRING String
 
-        ;; Rule for Person with unconventional name (not 'person')
-        (rule
-          (lhs my_custom_person_rule (Message test Person))
-          (rhs STRING)
-          (construct
-            ((name String))
-            (Message test Person)
-            (new-message test Person (name (var name String)))))
-        """
+%type my_custom_person_rule test.Person
+
+%%
+
+my_custom_person_rule : STRING { test.Person(name=$1) }
+
+%%
+"""
 
         result = parse_and_validate(grammar_content, proto_content)
         # Should pass completeness check even though rule name is not 'person'
@@ -155,18 +146,17 @@ class TestTypeErrors:
         }
         """
 
-        grammar_content = """
-        (terminal STRING String)
+        grammar_content = """\
+%token STRING String
 
-        ;; Construct returns String but nonterminal expects test.Record
-        (rule
-          (lhs record (Message test Record))
-          (rhs STRING)
-          (construct
-            ((value String))
-            String
-            (var value String)))
-        """
+%type record test.Record
+
+%%
+
+record : STRING { $1 }
+
+%%
+"""
 
         result = parse_and_validate(grammar_content, proto_content)
         assert not result.is_valid
@@ -184,21 +174,17 @@ class TestTypeErrors:
         }
         """
 
-        grammar_content = """
-        (terminal STRING String)
+        grammar_content = """\
+%token STRING String
 
-        (rule
-          (lhs pair (Message test Pair))
-          (rhs STRING STRING)
-          (construct
-            ((first String) (second String))
-            (Message test Pair)
-            (let (tuple (Tuple String String))
-              (call (builtin tuple) (var first String) (var second String))
-              (new-message test Pair
-                (first (get-element (var tuple (Tuple String String)) 5))
-                (second (var second String))))))
-        """
+%type pair test.Pair
+
+%%
+
+pair : STRING STRING { test.Pair(first=tuple($1, $2)[5], second=$2) }
+
+%%
+"""
 
         result = parse_and_validate(grammar_content, proto_content)
         assert not result.is_valid, f"Expected errors but got: {result.summary()}"
@@ -216,18 +202,17 @@ class TestTypeErrors:
         }
         """
 
-        grammar_content = """
-        (terminal STRING String)
+        grammar_content = """\
+%token STRING String
 
-        (rule
-          (lhs record (Message test Record))
-          (rhs STRING)
-          (construct
-            ((value String))
-            (Message test Record)
-            (new-message test Record
-              (value (get-element (var value String) 0)))))
-        """
+%type record test.Record
+
+%%
+
+record : STRING { test.Record(value=$1[0]) }
+
+%%
+"""
 
         result = parse_and_validate(grammar_content, proto_content)
         assert not result.is_valid
@@ -246,18 +231,17 @@ class TestTypeErrors:
         }
         """
 
-        grammar_content = """
-        (terminal STRING String)
+        grammar_content = """\
+%token STRING String
 
-        ;; Message with only 1 field provided (age field missing)
-        (rule
-          (lhs person (Message test Person))
-          (rhs STRING)
-          (construct
-            ((name String))
-            (Message test Person)
-            (new-message test Person (name (var name String)))))
-        """
+%type person test.Person
+
+%%
+
+person : STRING { test.Person(name=$1) }
+
+%%
+"""
 
         result = parse_and_validate(grammar_content, proto_content)
         # With NewMessage, missing fields are errors
@@ -276,18 +260,17 @@ class TestTypeErrors:
         }
         """
 
-        grammar_content = """
-        (terminal STRING String)
+        grammar_content = """\
+%token STRING String
 
-        (rule
-          (lhs record (Message test Record))
-          (rhs STRING)
-          (construct
-            ((value String))
-            (Message test Record)
-            (new-message test Record
-              (value (call (builtin unwrap_option_or) (var value String) (lit "default"))))))
-        """
+%type record test.Record
+
+%%
+
+record : STRING { test.Record(value=unwrap_option_or($1, "default")) }
+
+%%
+"""
 
         result = parse_and_validate(grammar_content, proto_content)
         assert not result.is_valid
@@ -305,18 +288,17 @@ class TestTypeErrors:
         }
         """
 
-        grammar_content = """
-        (terminal STRING String)
+        grammar_content = """\
+%token STRING String
 
-        (rule
-          (lhs record (Message test Record))
-          (rhs STRING)
-          (construct
-            ((value String))
-            (Message test Record)
-            (new-message test Record
-              (count (call (builtin length) (var value String))))))
-        """
+%type record test.Record
+
+%%
+
+record : STRING { test.Record(count=length($1)) }
+
+%%
+"""
 
         result = parse_and_validate(grammar_content, proto_content)
         assert not result.is_valid
@@ -341,19 +323,17 @@ class TestOneofCoverage:
         }
         """
 
-        grammar_content = """
-        (terminal STRING String)
+        grammar_content = """\
+%token STRING String
 
-        ;; Only handle text variant, missing number variant
-        (rule
-          (lhs value (Message test Value))
-          (rhs STRING)
-          (construct
-            ((text String))
-            (Message test Value)
-            (new-message test Value
-              (kind (call (oneof text) (var text String))))))
-        """
+%type value test.Value
+
+%%
+
+value : STRING { test.Value(kind=oneof_text($1)) }
+
+%%
+"""
 
         result = parse_and_validate(grammar_content, proto_content)
         assert not result.is_valid
@@ -375,26 +355,20 @@ class TestSoundnessWarnings:
         }
         """
 
-        grammar_content = """
-        (terminal STRING String)
+        grammar_content = """\
+%token STRING String
 
-        (rule
-          (lhs person (Message test Person))
-          (rhs STRING)
-          (construct
-            ((name String))
-            (Message test Person)
-            (new-message test Person (name (var name String)))))
+%type person test.Person
+%type unknown_rule test.NonExistentMessage
 
-        ;; This rule has a type that doesn't exist in proto
-        (rule
-          (lhs unknown_rule (Message test NonExistentMessage))
-          (rhs STRING)
-          (construct
-            ((value String))
-            (Message test NonExistentMessage)
-            (new-message test NonExistentMessage (name (var value String)))))
-        """
+%%
+
+person : STRING { test.Person(name=$1) }
+
+unknown_rule : STRING { test.NonExistentMessage(name=$1) }
+
+%%
+"""
 
         result = parse_and_validate(grammar_content, proto_content)
         assert any(e.category == "soundness" for e in result.errors)
@@ -419,26 +393,20 @@ class TestUnreachableRules:
         }
         """
 
-        grammar_content = """
-        (terminal STRING String)
+        grammar_content = """\
+%token STRING String
 
-        (rule
-          (lhs start (Message test Start))
-          (rhs STRING)
-          (construct
-            ((value String))
-            (Message test Start)
-            (new-message test Start (value (var value String)))))
+%type start test.Start
+%type orphan test.Orphan
 
-        ;; This rule is never referenced from start
-        (rule
-          (lhs orphan (Message test Orphan))
-          (rhs STRING)
-          (construct
-            ((data String))
-            (Message test Orphan)
-            (new-message test Orphan (data (var data String)))))
-        """
+%%
+
+start : STRING { test.Start(value=$1) }
+
+orphan : STRING { test.Orphan(data=$1) }
+
+%%
+"""
 
         result = parse_and_validate(grammar_content, proto_content)
         assert any(e.category == "unreachable" for e in result.errors)
@@ -460,18 +428,18 @@ class TestValidGrammar:
         }
         """
 
-        grammar_content = """
-        (terminal STRING String)
-        (terminal INT Int64)
+        grammar_content = """\
+%token STRING String
+%token INT Int64
 
-        (rule
-          (lhs person (Message test Person))
-          (rhs STRING INT)
-          (construct
-            ((name String) (age Int64))
-            (Message test Person)
-            (new-message test Person (name (var name String)) (age (call (builtin int64_to_int32) (var age Int64))))))
-        """
+%type person test.Person
+
+%%
+
+person : STRING INT { test.Person(name=$1, age=int64_to_int32($2)) }
+
+%%
+"""
 
         result = parse_and_validate(grammar_content, proto_content)
         assert result.is_valid
@@ -491,28 +459,20 @@ class TestValidGrammar:
         }
         """
 
-        grammar_content = """
-        (terminal STRING String)
-        (terminal INT Int64)
+        grammar_content = """\
+%token STRING String
+%token INT Int64
 
-        (rule
-          (lhs value (Message test Value))
-          (rhs STRING)
-          (construct
-            ((text String))
-            (Message test Value)
-            (new-message test Value
-              (kind (call (oneof text) (var text String))))))
+%type value test.Value
 
-        (rule
-          (lhs value (Message test Value))
-          (rhs INT)
-          (construct
-            ((number Int64))
-            (Message test Value)
-            (new-message test Value
-              (kind (call (oneof number) (var number Int64))))))
-        """
+%%
+
+value
+    : STRING { test.Value(kind=oneof_text($1)) }
+    | INT { test.Value(kind=oneof_number($1)) }
+
+%%
+"""
 
         result = parse_and_validate(grammar_content, proto_content)
         assert result.is_valid
@@ -529,17 +489,17 @@ class TestValidGrammar:
         }
         """
 
-        grammar_content = """
-        (terminal STRING String)
+        grammar_content = """\
+%token STRING String
 
-        (rule
-          (lhs record (Message test Record))
-          (rhs (star STRING))
-          (construct
-            ((values (List String)))
-            (Message test Record)
-            (new-message test Record (values (var values (List String))))))
-        """
+%type record test.Record
+
+%%
+
+record : STRING* { test.Record(values=$1) }
+
+%%
+"""
 
         result = parse_and_validate(grammar_content, proto_content)
         assert result.is_valid
@@ -556,17 +516,17 @@ class TestValidGrammar:
         }
         """
 
-        grammar_content = """
-        (terminal STRING String)
+        grammar_content = """\
+%token STRING String
 
-        (rule
-          (lhs record (Message test Record))
-          (rhs (option STRING))
-          (construct
-            ((opt_value (Option String)))
-            (Message test Record)
-            (new-message test Record (value (var opt_value (Option String))))))
-        """
+%type record test.Record
+
+%%
+
+record : STRING? { test.Record(value=$1) }
+
+%%
+"""
 
         result = parse_and_validate(grammar_content, proto_content)
         assert result.is_valid
@@ -588,25 +548,20 @@ class TestValidGrammar:
         }
         """
 
-        grammar_content = """
-        (terminal STRING String)
+        grammar_content = """\
+%token STRING String
 
-        (rule
-          (lhs person (Message test Person))
-          (rhs STRING address)
-          (construct
-            ((name String) (addr (Message test Address)))
-            (Message test Person)
-            (new-message test Person (name (var name String)) (address (var addr (Message test Address))))))
+%type person test.Person
+%type address test.Address
 
-        (rule
-          (lhs address (Message test Address))
-          (rhs STRING)
-          (construct
-            ((street String))
-            (Message test Address)
-            (new-message test Address (street (var street String)))))
-        """
+%%
+
+person : STRING address { test.Person(name=$1, address=$2) }
+
+address : STRING { test.Address(street=$1) }
+
+%%
+"""
 
         result = parse_and_validate(grammar_content, proto_content)
         assert result.is_valid
@@ -632,21 +587,18 @@ class TestComplexValidationScenarios:
         }
         """
 
-        grammar_content = """
-        (terminal STRING String)
-        (terminal INT Int64)
+        grammar_content = """\
+%token STRING String
+%token INT Int64
 
-        ;; Wrong return type
-        (rule
-          (lhs person (Message test Person))
-          (rhs STRING INT)
-          (construct
-            ((name String) (age Int64))
-            String
-            (var name String)))
+%type person test.Person
 
-        ;; Missing rule for Address
-        """
+%%
+
+person : STRING INT { $1 }
+
+%%
+"""
 
         result = parse_and_validate(grammar_content, proto_content)
         assert not result.is_valid
@@ -667,21 +619,17 @@ class TestComplexValidationScenarios:
         }
         """
 
-        grammar_content = """
-        (terminal STRING String)
+        grammar_content = """\
+%token STRING String
 
-        (rule
-          (lhs pair (Message test Pair))
-          (rhs STRING STRING)
-          (construct
-            ((first String) (second String))
-            (Message test Pair)
-            (let (tuple (Tuple String String))
-              (call (builtin tuple) (var first String) (var second String))
-              (new-message test Pair
-                (first (get-element (var tuple (Tuple String String)) 0))
-                (second (get-element (var tuple (Tuple String String)) 1))))))
-        """
+%type pair test.Pair
+
+%%
+
+pair : STRING STRING { test.Pair(first=tuple($1, $2)[0], second=tuple($1, $2)[1]) }
+
+%%
+"""
 
         result = parse_and_validate(grammar_content, proto_content)
         assert result.is_valid

@@ -624,11 +624,14 @@ class FunDef(TargetNode):
     """Function definition with parameters, return type, and body.
 
     If body is None, this represents a builtin signature (primitive without implementation).
+    raw_python_source can be set to provide raw Python code for the function body when
+    generating Python output, avoiding the need to convert complex Python code to target IR.
     """
     name: str
     params: Sequence['Var']
     return_type: TargetType
     body: Optional['TargetExpr']
+    raw_python_source: Optional[str] = None
 
     def __str__(self) -> str:
         params_str = ', '.join(f"{p.name}: {p.type}" for p in self.params)

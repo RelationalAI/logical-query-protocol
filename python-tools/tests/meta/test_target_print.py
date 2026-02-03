@@ -16,12 +16,34 @@ from meta.target import (
     Seq, ListExpr, GetElement,
 )
 from meta.target_print import expr_to_str, type_to_str
-from meta.yacc_grammar import parse_action_expr, TypeContext
+from meta.yacc_grammar import TypeContext
+from meta.target import Var
+import ast
 
 
 def make_ctx() -> TypeContext:
     """Create an empty TypeContext for parsing."""
     return TypeContext()
+
+
+def parse_expr(text: str, ctx: TypeContext, extra_vars: Optional[dict] = None) -> 'TargetExpr':
+    """Parse a simple expression for testing.
+
+    This is a simplified wrapper that doesn't use $N parameter references,
+    just extra_vars for variable bindings.
+    """
+    from meta.yacc_grammar import _convert_node_with_vars
+    if extra_vars is None:
+        extra_vars = {}
+
+    # Parse as Python expression
+    tree = ast.parse(text, mode='eval')
+
+    # Create empty param_info and params (no $N references in tests)
+    param_info = []
+    params = []
+
+    return _convert_node_with_vars(tree.body, param_info, params, ctx, None, extra_vars)
 
 
 class TestTypeRoundtrip:
@@ -114,7 +136,7 @@ class TestExprRoundtrip:
     def test_literals(self, expr_str: str):
         """Test literal roundtrips."""
         ctx = make_ctx()
-        expr = parse_action_expr(expr_str, [], ctx, None)
+        expr = parse_expr(expr_str, ctx)
         result = expr_to_str(expr)
         # Normalize: double quotes become single, true/false are lowercase
         expected = expr_str.replace('"', "'")
@@ -124,66 +146,66 @@ class TestExprRoundtrip:
         """Test variable roundtrip."""
         ctx = make_ctx()
         extra_vars = {"x": BaseType("Int64")}
-        expr = parse_action_expr("x", [], ctx, None, extra_vars)
+        expr = parse_expr("x", ctx, extra_vars)
         assert expr_to_str(expr) == "x"
 
     def test_builtin_call(self):
         """Test builtin function call roundtrip."""
         ctx = make_ctx()
         extra_vars = {"x": ListType(BaseType("Int64"))}
-        expr = parse_action_expr("list_append(x, 1)", [], ctx, None, extra_vars)
+        expr = parse_expr("list_append(x, 1)", ctx, extra_vars)
         assert expr_to_str(expr) == "list_append(x, 1)"
 
     def test_builtin_call_no_args(self):
         """Test builtin function call with no args."""
         ctx = make_ctx()
-        expr = parse_action_expr("none()", [], ctx, None)
+        expr = parse_expr("none()", ctx)
         assert expr_to_str(expr) == "none()"
 
     def test_message_constructor_no_fields(self):
         """Test message constructor with no fields."""
         ctx = make_ctx()
-        expr = parse_action_expr("logic.Value()", [], ctx, None)
+        expr = parse_expr("logic.Value()", ctx)
         assert expr_to_str(expr) == "logic.Value()"
 
     def test_message_constructor_with_fields(self):
         """Test message constructor with fields."""
         ctx = make_ctx()
         extra_vars = {"x": BaseType("Int64")}
-        expr = parse_action_expr("logic.Value(int_value=x)", [], ctx, None, extra_vars)
+        expr = parse_expr("logic.Value(int_value=x)", ctx, extra_vars)
         assert expr_to_str(expr) == "logic.Value(int_value=x)"
 
     def test_message_constructor_multiple_fields(self):
         """Test message constructor with multiple fields."""
         ctx = make_ctx()
         extra_vars = {"x": BaseType("Int64"), "y": BaseType("String")}
-        expr = parse_action_expr("proto.Pair(first=x, second=y)", [], ctx, None, extra_vars)
+        expr = parse_expr("proto.Pair(first=x, second=y)", ctx, extra_vars)
         assert expr_to_str(expr) == "proto.Pair(first=x, second=y)"
 
     def test_empty_list(self):
         """Test empty list roundtrip."""
         ctx = make_ctx()
-        expr = parse_action_expr("[]", [], ctx, None)
+        expr = parse_expr("[]", ctx)
         assert expr_to_str(expr) == "[]"
 
     def test_list_with_elements(self):
         """Test list with elements."""
         ctx = make_ctx()
         extra_vars = {"x": BaseType("Int64"), "y": BaseType("Int64")}
-        expr = parse_action_expr("[x, y]", [], ctx, None, extra_vars)
+        expr = parse_expr("[x, y]", ctx, extra_vars)
         assert expr_to_str(expr) == "[x, y]"
 
     def test_list_with_literals(self):
         """Test list with literal elements."""
         ctx = make_ctx()
-        expr = parse_action_expr("[1, 2, 3]", [], ctx, None)
+        expr = parse_expr("[1, 2, 3]", ctx)
         assert expr_to_str(expr) == "[1, 2, 3]"
 
     def test_conditional_expression(self):
         """Test conditional (ternary) expression."""
         ctx = make_ctx()
         extra_vars = {"cond": BaseType("Boolean"), "x": BaseType("Int64"), "y": BaseType("Int64")}
-        expr = parse_action_expr("x if cond else y", [], ctx, None, extra_vars)
+        expr = parse_expr("x if cond else y", ctx, extra_vars)
         assert expr_to_str(expr) == "(x if cond else y)"
 
     def test_nested_conditional(self):
@@ -196,56 +218,42 @@ class TestExprRoundtrip:
             "y": BaseType("Int64"),
             "z": BaseType("Int64"),
         }
-        expr = parse_action_expr("x if a else (y if b else z)", [], ctx, None, extra_vars)
+        expr = parse_expr("x if a else (y if b else z)", ctx, extra_vars)
         assert expr_to_str(expr) == "(x if a else (y if b else z))"
-
-    def test_let_expression(self):
-        """Test let expression roundtrip."""
-        ctx = make_ctx()
-        extra_vars = {"x": BaseType("Int64")}
-        expr = parse_action_expr("let y = x in y", [], ctx, None, extra_vars)
-        assert expr_to_str(expr) == "(let y = x in y)"
-
-    def test_nested_let_expression(self):
-        """Test nested let expression."""
-        ctx = make_ctx()
-        expr = parse_action_expr("let x = 1 in let y = 2 in x", [], ctx, None)
-        assert expr_to_str(expr) == "(let x = 1 in (let y = x in x))" or \
-               expr_to_str(expr) == "(let x = 1 in (let y = 2 in x))"
 
     def test_seq_expression(self):
         """Test seq expression roundtrip."""
         ctx = make_ctx()
         extra_vars = {"x": BaseType("Int64"), "y": BaseType("Int64")}
-        expr = parse_action_expr("seq(x, y)", [], ctx, None, extra_vars)
+        expr = parse_expr("seq(x, y)", ctx, extra_vars)
         assert expr_to_str(expr) == "seq(x; y)"
 
     def test_seq_multiple_expressions(self):
         """Test seq with multiple expressions."""
         ctx = make_ctx()
         extra_vars = {"x": BaseType("Int64"), "y": BaseType("Int64"), "z": BaseType("Int64")}
-        expr = parse_action_expr("seq(x, y, z)", [], ctx, None, extra_vars)
+        expr = parse_expr("seq(x, y, z)", ctx, extra_vars)
         assert expr_to_str(expr) == "seq(x; y; z)"
 
     def test_tuple_element_access(self):
         """Test tuple element access."""
         ctx = make_ctx()
         extra_vars = {"pair": TupleType([BaseType("Int64"), BaseType("String")])}
-        expr = parse_action_expr("pair[0]", [], ctx, None, extra_vars)
+        expr = parse_expr("pair[0]", ctx, extra_vars)
         assert expr_to_str(expr) == "pair[0]"
 
     def test_tuple_second_element(self):
         """Test tuple second element access."""
         ctx = make_ctx()
         extra_vars = {"pair": TupleType([BaseType("Int64"), BaseType("String")])}
-        expr = parse_action_expr("pair[1]", [], ctx, None, extra_vars)
+        expr = parse_expr("pair[1]", ctx, extra_vars)
         assert expr_to_str(expr) == "pair[1]"
 
     def test_nested_call(self):
         """Test nested function calls."""
         ctx = make_ctx()
         extra_vars = {"x": ListType(BaseType("Int64"))}
-        expr = parse_action_expr("list_append(list_append(x, 1), 2)", [], ctx, None, extra_vars)
+        expr = parse_expr("list_append(list_append(x, 1), 2)", ctx, extra_vars)
         assert expr_to_str(expr) == "list_append(list_append(x, 1), 2)"
 
 
