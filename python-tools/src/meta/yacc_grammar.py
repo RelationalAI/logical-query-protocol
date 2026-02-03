@@ -19,9 +19,9 @@ Directive syntax:
 Type syntax:
     String, Int64, Float64, Boolean    -> BaseType
     module.MessageName                 -> MessageType
-    (List Type)                        -> ListType
-    (Tuple Type1 Type2 ...)            -> TupleType
-    (Option Type)                      -> OptionType
+    List[Type]                         -> ListType
+    Tuple[Type1, Type2, ...]           -> TupleType
+    Optional[Type]                     -> OptionType
 
 Rule syntax:
     name
