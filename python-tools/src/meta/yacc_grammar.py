@@ -61,9 +61,9 @@ from .grammar import (
     GrammarConfig
 )
 from .target import (
-    TargetType, BaseType, MessageType, ListType, OptionType, TupleType,
+    TargetType, BaseType, MessageType, ListType, OptionType, TupleType, DictType,
     TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, Call, Lambda,
-    Let, IfElse, Seq, ListExpr, GetElement, FunDef, OneOf
+    Let, IfElse, Seq, ListExpr, GetElement, FunDef, OneOf, Assign, Return
 )
 
 
@@ -993,22 +993,33 @@ def parse_helper_functions(lines: List[str], start_line: int, ctx: TypeContext) 
     except SyntaxError as e:
         raise YaccGrammarError(f"Syntax error in helper functions: {e}", start_line + (e.lineno or 1))
 
-    functions: Dict[str, FunDef] = {}
+    # Two-pass approach: first collect all function signatures, then convert bodies
+    # This allows functions to call each other without forward declaration issues
 
+    # Pass 1: Collect function signatures
+    func_nodes: List[ast.FunctionDef] = []
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef):
-            func_def = _convert_function_def(node, ctx, start_line, text)
-            functions[func_def.name] = func_def
+            func_nodes.append(node)
+            # Add function name to context so other functions can reference it
+            ctx.functions[node.name] = None  # type: ignore
+
+    # Pass 2: Convert function bodies
+    functions: Dict[str, FunDef] = {}
+    for node in func_nodes:
+        func_def = _convert_function_def(node, ctx, start_line)
+        functions[func_def.name] = func_def
 
     return functions
 
 
-def _convert_function_def(node: ast.FunctionDef, ctx: TypeContext, base_line: int, source_text: str) -> FunDef:
+def _convert_function_def(node: ast.FunctionDef, ctx: TypeContext, base_line: int) -> FunDef:
     """Convert a Python function definition to FunDef."""
     name = node.name
 
     # Parse parameters with type annotations
     params = []
+    param_vars: Dict[str, TargetType] = {}
     for arg in node.args.args:
         param_name = arg.arg
         if arg.annotation is None:
@@ -1016,6 +1027,7 @@ def _convert_function_def(node: ast.FunctionDef, ctx: TypeContext, base_line: in
                                    base_line + node.lineno)
         param_type = _annotation_to_type(arg.annotation, base_line + node.lineno)
         params.append(Var(param_name, param_type))
+        param_vars[param_name] = param_type
 
     # Parse return type
     if node.returns is None:
@@ -1023,14 +1035,240 @@ def _convert_function_def(node: ast.FunctionDef, ctx: TypeContext, base_line: in
                                base_line + node.lineno)
     return_type = _annotation_to_type(node.returns, base_line + node.lineno)
 
-    # Extract raw Python source for the function body
-    # We use ast.get_source_segment (Python 3.8+) to get the original source
-    raw_python_source = ast.get_source_segment(source_text, node)
+    # Convert function body statements to target IR
+    body = _convert_function_body(node.body, ctx, base_line + node.lineno, param_vars)
 
-    # Body is set to None since we're using raw_python_source instead
-    body = None
+    return FunDef(name, tuple(params), return_type, body)
 
-    return FunDef(name, tuple(params), return_type, body, raw_python_source)
+
+def _convert_function_body(stmts: List[ast.stmt], ctx: TypeContext, line: int,
+                           local_vars: Dict[str, TargetType]) -> TargetExpr:
+    """Convert a list of Python statements to target IR.
+
+    Returns a Seq of converted statements.
+    """
+    converted = []
+    for stmt in stmts:
+        converted.append(_convert_stmt(stmt, ctx, line, local_vars))
+    if len(converted) == 1:
+        return converted[0]
+    return Seq(tuple(converted))
+
+
+def _convert_stmt(stmt: ast.stmt, ctx: TypeContext, line: int,
+                  local_vars: Dict[str, TargetType]) -> TargetExpr:
+    """Convert a single Python statement to target IR."""
+    if isinstance(stmt, ast.Return):
+        if stmt.value is None:
+            return Return(Lit(None))
+        return Return(_convert_func_expr(stmt.value, ctx, line, local_vars))
+
+    elif isinstance(stmt, ast.If):
+        cond = _convert_func_expr(stmt.test, ctx, line, local_vars)
+        then_body = _convert_function_body(stmt.body, ctx, line, local_vars)
+        if stmt.orelse:
+            else_body = _convert_function_body(stmt.orelse, ctx, line, local_vars)
+        else:
+            else_body = Lit(None)
+        return IfElse(cond, then_body, else_body)
+
+    elif isinstance(stmt, ast.Assign):
+        # Simple assignment: x = expr
+        if len(stmt.targets) != 1:
+            raise YaccGrammarError(f"Multiple assignment targets not supported", line)
+        target = stmt.targets[0]
+        if not isinstance(target, ast.Name):
+            raise YaccGrammarError(f"Only simple variable assignment supported", line)
+        var_name = target.id
+        value = _convert_func_expr(stmt.value, ctx, line, local_vars)
+        var_type = _infer_type(value)
+        local_vars[var_name] = var_type
+        return Assign(Var(var_name, var_type), value)
+
+    elif isinstance(stmt, ast.AnnAssign):
+        # Annotated assignment: x: Type = expr
+        if not isinstance(stmt.target, ast.Name):
+            raise YaccGrammarError(f"Only simple variable assignment supported", line)
+        var_name = stmt.target.id
+        var_type = _annotation_to_type(stmt.annotation, line)
+        local_vars[var_name] = var_type
+        if stmt.value is None:
+            # Declaration without initialization - use None
+            return Assign(Var(var_name, var_type), Lit(None))
+        value = _convert_func_expr(stmt.value, ctx, line, local_vars)
+        return Assign(Var(var_name, var_type), value)
+
+    elif isinstance(stmt, ast.Expr):
+        # Expression statement (e.g., function call with side effects)
+        return _convert_func_expr(stmt.value, ctx, line, local_vars)
+
+    else:
+        raise YaccGrammarError(f"Unsupported statement type: {type(stmt).__name__}", line)
+
+
+def _convert_func_expr(node: ast.expr, ctx: TypeContext, line: int,
+                       local_vars: Dict[str, TargetType]) -> TargetExpr:
+    """Convert a Python expression in a function body to target IR."""
+    if isinstance(node, ast.Constant):
+        return Lit(node.value)
+
+    elif isinstance(node, ast.Name):
+        name = node.id
+        if name == 'true':
+            return Lit(True)
+        elif name == 'false':
+            return Lit(False)
+        elif name == 'None':
+            return Lit(None)
+        elif name in local_vars:
+            return Var(name, local_vars[name])
+        elif name in ctx.functions:
+            return NamedFun(name)
+        else:
+            from .target_builtins import is_builtin
+            if is_builtin(name):
+                return Builtin(name)
+            raise YaccGrammarError(f"Unknown variable: {name}", line)
+
+    elif isinstance(node, ast.Attribute):
+        # Handle module.Message or obj.field
+        if isinstance(node.value, ast.Name):
+            # Could be module.Message constructor or local_var.field
+            if node.value.id in local_vars:
+                # Field access on a variable
+                obj = Var(node.value.id, local_vars[node.value.id])
+                from .target import GetField
+                return GetField(obj, node.attr)
+            else:
+                # Assume it's a message constructor reference
+                return NewMessage(node.value.id, node.attr, ())
+        else:
+            # Field access on a more complex expression
+            obj = _convert_func_expr(node.value, ctx, line, local_vars)
+            from .target import GetField
+            return GetField(obj, node.attr)
+
+    elif isinstance(node, ast.Call):
+        func = node.func
+        args = [_convert_func_expr(a, ctx, line, local_vars) for a in node.args]
+
+        # Handle message constructor or method call: module.Message(field=value, ...) or obj.method(args)
+        if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name):
+            obj_name = func.value.id
+            method_name = func.attr
+            # Check if obj_name is a local variable (method call)
+            if obj_name in local_vars:
+                # Method call: obj.method(args)
+                obj = Var(obj_name, local_vars[obj_name])
+                from .target import GetField
+                method_ref = GetField(obj, method_name)
+                return Call(method_ref, args)
+            else:
+                # Message constructor
+                fields = []
+                for kw in node.keywords:
+                    if kw.arg is None:
+                        raise YaccGrammarError(f"**kwargs not supported", line)
+                    field_expr = _convert_func_expr(kw.value, ctx, line, local_vars)
+                    fields.append((kw.arg, field_expr))
+                return NewMessage(obj_name, method_name, tuple(fields))
+
+        # Handle regular function call
+        if isinstance(func, ast.Name):
+            func_name = func.id
+            # Check for dict() builtin
+            if func_name == 'dict':
+                from .target import DictFromList
+                if len(args) == 1:
+                    # Infer key/value types from argument type
+                    arg_type = _infer_type(args[0])
+                    if isinstance(arg_type, ListType) and isinstance(arg_type.element_type, TupleType):
+                        tuple_elems = arg_type.element_type.elements
+                        if len(tuple_elems) >= 2:
+                            return DictFromList(args[0], tuple_elems[0], tuple_elems[1])
+                    # Fall back to unknown types
+                    return DictFromList(args[0], BaseType("Unknown"), BaseType("Unknown"))
+                raise YaccGrammarError(f"dict() requires exactly one argument", line)
+            # User-defined functions take precedence over builtins
+            if func_name in ctx.functions:
+                return Call(NamedFun(func_name), args)
+            from .target_builtins import is_builtin
+            if is_builtin(func_name):
+                return Call(Builtin(func_name), args)
+            raise YaccGrammarError(f"Unknown function: {func_name}", line)
+
+        func_expr = _convert_func_expr(func, ctx, line, local_vars)
+        return Call(func_expr, args)
+
+    elif isinstance(node, ast.List):
+        elements = [_convert_func_expr(e, ctx, line, local_vars) for e in node.elts]
+        if elements:
+            elem_type = _infer_type(elements[0])
+        else:
+            elem_type = BaseType("Unknown")
+        return ListExpr(elements, elem_type)
+
+    elif isinstance(node, ast.IfExp):
+        cond = _convert_func_expr(node.test, ctx, line, local_vars)
+        then_branch = _convert_func_expr(node.body, ctx, line, local_vars)
+        else_branch = _convert_func_expr(node.orelse, ctx, line, local_vars)
+        return IfElse(cond, then_branch, else_branch)
+
+    elif isinstance(node, ast.Compare):
+        # Handle comparisons: x is None, x is not None, x == y, x in y
+        if len(node.ops) == 1 and len(node.comparators) == 1:
+            left = _convert_func_expr(node.left, ctx, line, local_vars)
+            right = _convert_func_expr(node.comparators[0], ctx, line, local_vars)
+            op = node.ops[0]
+            if isinstance(op, ast.Is):
+                if isinstance(node.comparators[0], ast.Constant) and node.comparators[0].value is None:
+                    return Call(Builtin("is_none"), [left])
+                return Call(Builtin("equal"), [left, right])
+            elif isinstance(op, ast.IsNot):
+                if isinstance(node.comparators[0], ast.Constant) and node.comparators[0].value is None:
+                    return Call(Builtin("is_some"), [left])
+                return Call(Builtin("not_equal"), [left, right])
+            elif isinstance(op, ast.Eq):
+                return Call(Builtin("equal"), [left, right])
+            elif isinstance(op, ast.NotEq):
+                return Call(Builtin("not_equal"), [left, right])
+            elif isinstance(op, ast.In):
+                return Call(Builtin("string_in_list"), [left, right])
+            elif isinstance(op, ast.NotIn):
+                return Call(Builtin("not"), [Call(Builtin("string_in_list"), [left, right])])
+        raise YaccGrammarError(f"Unsupported comparison: {ast.dump(node)}", line)
+
+    elif isinstance(node, ast.BoolOp):
+        # Handle 'and' and 'or'
+        if isinstance(node.op, ast.And):
+            result = _convert_func_expr(node.values[0], ctx, line, local_vars)
+            for val in node.values[1:]:
+                result = Call(Builtin("and"), [result, _convert_func_expr(val, ctx, line, local_vars)])
+            return result
+        elif isinstance(node, ast.Or):
+            result = _convert_func_expr(node.values[0], ctx, line, local_vars)
+            for val in node.values[1:]:
+                result = Call(Builtin("or"), [result, _convert_func_expr(val, ctx, line, local_vars)])
+            return result
+        raise YaccGrammarError(f"Unsupported boolean operation", line)
+
+    elif isinstance(node, ast.BinOp):
+        left = _convert_func_expr(node.left, ctx, line, local_vars)
+        right = _convert_func_expr(node.right, ctx, line, local_vars)
+        if isinstance(node.op, ast.Add):
+            # Could be numeric add or string concat - use string_concat for strings
+            return Call(Builtin("string_concat"), [left, right])
+        raise YaccGrammarError(f"Unsupported binary operation: {type(node.op).__name__}", line)
+
+    elif isinstance(node, ast.Subscript):
+        # Handle dict.get() result or tuple indexing
+        value = _convert_func_expr(node.value, ctx, line, local_vars)
+        if isinstance(node.slice, ast.Constant) and isinstance(node.slice.value, int):
+            return GetElement(value, node.slice.value)
+        raise YaccGrammarError(f"Only constant integer subscripts supported", line)
+
+    else:
+        raise YaccGrammarError(f"Unsupported expression type: {type(node).__name__}: {ast.dump(node)}", line)
 
 
 def _annotation_to_type(node: ast.AST, line: int) -> TargetType:
@@ -1056,6 +1294,12 @@ def _annotation_to_type(node: ast.AST, line: int) -> TargetType:
                 else:
                     elem_types = [_annotation_to_type(node.slice, line)]
                 return TupleType(tuple(elem_types))
+            elif container == 'Dict' or container == 'dict':
+                if isinstance(node.slice, ast.Tuple) and len(node.slice.elts) == 2:
+                    key_type = _annotation_to_type(node.slice.elts[0], line)
+                    value_type = _annotation_to_type(node.slice.elts[1], line)
+                    return DictType(key_type, value_type)
+                raise YaccGrammarError(f"dict type requires exactly 2 type arguments", line)
         raise YaccGrammarError(f"Invalid type annotation: {ast.dump(node)}", line)
     else:
         raise YaccGrammarError(f"Invalid type annotation: {ast.dump(node)}", line)

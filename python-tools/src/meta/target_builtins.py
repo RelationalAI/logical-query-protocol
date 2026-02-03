@@ -140,6 +140,7 @@ register_builtin("current_token", [], ANY)
 register_builtin("error", -1, BaseType("Never"))  # Variadic: 1 or 2 args
 
 # === Protobuf-specific ===
+register_builtin("has_field", [ANY, STRING], BOOLEAN)  # Check if protobuf message has field set
 register_builtin("fragment_id_from_string", [STRING], MessageType("fragments", "FragmentId"))
 register_builtin("relation_id_from_string", [STRING], MessageType("logic", "RelationId"))
 register_builtin("relation_id_from_int", [INT64], MessageType("logic", "RelationId"))
@@ -163,31 +164,9 @@ register_builtin("export_csv_config",
                  [STRING, ListType(ANY), ListType(TupleType([STRING, MessageType("logic", "Value")]))],
                  MessageType("transactions", "ExportCSVConfig"))
 
-# === Config helper functions (specialized extractors with IR implementations) ===
-register_builtin("_extract_value_int64",
-                 [OptionType(MessageType("logic", "Value")), INT64],
-                 INT64, is_primitive=False)
-register_builtin("_extract_value_int32",
-                 [OptionType(MessageType("logic", "Value")), INT32],
-                 INT32, is_primitive=False)
-register_builtin("_extract_value_float64",
-                 [OptionType(MessageType("logic", "Value")), FLOAT64],
-                 FLOAT64, is_primitive=False)
-register_builtin("_extract_value_string",
-                 [OptionType(MessageType("logic", "Value")), STRING],
-                 STRING, is_primitive=False)
-register_builtin("_extract_value_boolean",
-                 [OptionType(MessageType("logic", "Value")), BOOLEAN],
-                 BOOLEAN, is_primitive=False)
-register_builtin("_extract_value_bytes",
-                 [OptionType(MessageType("logic", "Value")), BYTES],
-                 BYTES, is_primitive=False)
-register_builtin("_extract_value_uint128",
-                 [OptionType(MessageType("logic", "Value")), MessageType("logic", "UInt128Value")],
-                 MessageType("logic", "UInt128Value"), is_primitive=False)
-register_builtin("_extract_value_string_list",
-                 [OptionType(MessageType("logic", "Value")), ListType(STRING)],
-                 ListType(STRING), is_primitive=False)
+# === Dict operations ===
+register_builtin("dict_from_list", [ListType(TupleType([K, V]))], DictType(K, V))
+register_builtin("dict_get", [DictType(K, V), K], OptionType(V))
 
 # === General helpers ===
 register_builtin("none", [], OptionType(T))  # Returns None/null
