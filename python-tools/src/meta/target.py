@@ -139,6 +139,20 @@ class Builtin(TargetExpr):
 
 
 @dataclass(frozen=True)
+class NamedFun(TargetExpr):
+    """Named function reference.
+
+    Represents a user-defined function from the grammar (defined with 'def').
+    Unlike Builtin, these have IR definitions and are generated as methods.
+    Code generators map these to method calls (e.g., self.function_name in Python).
+    """
+    name: str
+
+    def __str__(self) -> str:
+        return f"@{self.name}"
+
+
+@dataclass(frozen=True)
 class NewMessage(TargetExpr):
     """Message constructor with explicit field names.
 
@@ -274,6 +288,81 @@ class GetElement(TargetExpr):
 
     def __post_init__(self):
         assert isinstance(self.index, int) and self.index >= 0, f"GetElement index must be non-negative integer: {self.index}"
+
+
+@dataclass(frozen=True)
+class DictFromList(TargetExpr):
+    """Construct dictionary from list of (key, value) tuples: dict(pairs).
+
+    Converts a list of tuples into a dictionary/map.
+
+    pairs: Expression evaluating to a list of (key, value) tuples
+    key_type: Type of dictionary keys
+    value_type: Type of dictionary values
+
+    Example:
+        DictFromList(
+            Var("pairs", ListType(TupleType([STRING, INT64]))),
+            BaseType("String"),
+            BaseType("Int64")
+        )
+    """
+    pairs: 'TargetExpr'
+    key_type: 'TargetType'
+    value_type: 'TargetType'
+
+    def __str__(self) -> str:
+        return f"dict({self.pairs})"
+
+
+@dataclass(frozen=True)
+class DictLookup(TargetExpr):
+    """Dictionary lookup with optional default: dict.get(key, default).
+
+    Looks up a key in a dictionary, returning a default value if not found.
+
+    dict_expr: Expression evaluating to a dictionary
+    key: Expression for the key to lookup
+    default: Optional default value if key not found (None means return None)
+
+    Example:
+        DictLookup(
+            Var("config", DictType(STRING, INT64)),
+            Lit("timeout"),
+            Lit(30)
+        )
+    """
+    dict_expr: 'TargetExpr'
+    key: 'TargetExpr'
+    default: Optional['TargetExpr'] = None
+
+    def __str__(self) -> str:
+        if self.default is None:
+            return f"{self.dict_expr}.get({self.key})"
+        return f"{self.dict_expr}.get({self.key}, {self.default})"
+
+
+@dataclass(frozen=True)
+class HasField(TargetExpr):
+    """Check if protobuf message has field set (for oneOf): msg.HasField(field_name).
+
+    Checks whether a protobuf message has a particular field set, typically used
+    for oneOf discriminators.
+
+    message: Expression evaluating to a protobuf message
+    field_name: Name of the field to check (string literal)
+
+    Example:
+        HasField(
+            Var("msg", MessageType("logic", "Value")),
+            "string_value"
+        )
+    """
+    message: 'TargetExpr'
+    field_name: str
+
+    def __str__(self) -> str:
+        return f"{self.message}.HasField({repr(self.field_name)})"
 
 
 @dataclass(frozen=True)
@@ -488,6 +577,21 @@ class ListType(TargetType):
 
 
 @dataclass(frozen=True)
+class DictType(TargetType):
+    """Parameterized dictionary/map type.
+
+    Example:
+        DictType(BaseType("String"), BaseType("Int64"))     # Dict[String, Int64]
+        DictType(BaseType("String"), MessageType("logic", "Value"))  # Dict[String, logic.Value]
+    """
+    key_type: TargetType
+    value_type: TargetType
+
+    def __str__(self) -> str:
+        return f"Dict[{self.key_type}, {self.value_type}]"
+
+
+@dataclass(frozen=True)
 class OptionType(TargetType):
     """Optional/Maybe type for values that may be None.
 
@@ -517,14 +621,19 @@ class FunctionType(TargetType):
 
 @dataclass(frozen=True)
 class FunDef(TargetNode):
-    """Function definition with parameters, return type, and body."""
+    """Function definition with parameters, return type, and body.
+
+    If body is None, this represents a builtin signature (primitive without implementation).
+    """
     name: str
     params: Sequence['Var']
     return_type: TargetType
-    body: 'TargetExpr'
+    body: Optional['TargetExpr']
 
     def __str__(self) -> str:
         params_str = ', '.join(f"{p.name}: {p.type}" for p in self.params)
+        if self.body is None:
+            return f"def {self.name}({params_str}) -> {self.return_type}"
         return f"def {self.name}({params_str}) -> {self.return_type}: {self.body}"
 
     def __post_init__(self):
@@ -566,6 +675,9 @@ __all__ = [
     'Call',
     'GetField',
     'GetElement',
+    'DictFromList',
+    'DictLookup',
+    'HasField',
     'Lambda',
     'Let',
     'IfElse',
@@ -581,6 +693,7 @@ __all__ = [
     'MessageType',
     'TupleType',
     'ListType',
+    'DictType',
     'OptionType',
     'FunctionType',
     'FunDef',

@@ -132,7 +132,11 @@ def run(args) -> int:
         return 1
 
     start = next(iter(grammar_config.rules.keys()))
-    grammar = Grammar(start=start, ignored_completeness=grammar_config.ignored_completeness)
+    grammar = Grammar(
+        start=start,
+        ignored_completeness=grammar_config.ignored_completeness,
+        function_defs=grammar_config.function_defs
+    )
     for _, rules in grammar_config.rules.items():
         for rule in rules:
             grammar.add_rule(rule)

@@ -640,8 +640,8 @@ class TestSexpToExprErrors:
             sexp_to_expr(parse_sexp("(lambda (x) Int64 42)"))
 
     def test_let_wrong_arity(self):
-        """let requires (name type), init, and body."""
-        with pytest.raises(SExprConversionError, match="let requires \\(name type\\), init, and body"):
+        """let requires at least (name type), init, and body."""
+        with pytest.raises(SExprConversionError, match="let requires at least \\(name type\\), init, and body"):
             sexp_to_expr(parse_sexp("(let (x Int64) 42)"))
 
     def test_let_binding_wrong_format(self):
@@ -650,9 +650,9 @@ class TestSexpToExprErrors:
             sexp_to_expr(parse_sexp("(let x 42 x)"))
 
     def test_if_wrong_arity(self):
-        """if requires condition, then, and else."""
-        with pytest.raises(SExprConversionError, match="if requires condition, then, and else"):
-            sexp_to_expr(parse_sexp("(if true 1)"))
+        """if requires 2 or 3 arguments."""
+        with pytest.raises(SExprConversionError, match="if requires 2 or 3 arguments"):
+            sexp_to_expr(parse_sexp("(if true)"))
 
     def test_builtin_wrong_arity(self):
         """builtin requires name."""
