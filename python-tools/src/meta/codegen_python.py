@@ -338,8 +338,11 @@ class PythonCodeGenerator(CodeGenerator):
     def _generate_newmessage(self, expr: NewMessage, lines: List[str], indent: str) -> str:
         """Override to handle NewMessage with fields containing OneOf calls."""
         if not expr.fields:
-            # No fields - return instance with no arguments
-            return f"{self.gen_constructor(expr.module, expr.name)}()"
+            # No fields - generate empty instantiation with temp variable
+            ctor = self.gen_constructor(expr.module, expr.name)
+            tmp = gensym()
+            lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}()', is_declaration=True)}")
+            return tmp
 
         # NewMessage with fields - need to handle OneOf specially
         ctor = self.gen_constructor(expr.module, expr.name)
@@ -384,116 +387,6 @@ class PythonCodeGenerator(CodeGenerator):
 
         return tmp
 
-    def _generate_call(self, expr: Call, lines: List[str], indent: str) -> str:
-        """Override to handle OneOf specially for Python protobuf."""
-        # Check for NewMessage constructor with OneOf call argument
-        if isinstance(expr.func, NewMessage):
-            func = expr.func  # Narrow the type
-            f = self.generate_lines(func, lines, indent)
-
-            # Python protobuf requires keyword arguments
-            # Get field mapping from proto message definitions
-            message_field_map = self._build_message_field_map()
-
-            # Process arguments, looking for Call(OneOf(...), [value]) patterns
-            positional_args = []
-            keyword_args = []
-
-            msg_key = (func.module, func.name)
-            field_specs = message_field_map.get(msg_key, [])
-            arg_idx = 0
-            field_idx = 0
-
-            # Track keyword fields that need post-construction assignment
-            # Each entry is (field_name, field_value, is_repeated)
-            keyword_field_assignments: List[Tuple[str, str, bool]] = []
-
-            while arg_idx < len(expr.args):
-                arg = expr.args[arg_idx]
-
-                if isinstance(arg, Call) and isinstance(arg.func, OneOf) and len(arg.args) == 1:
-                    # Extract field name and value from Call(OneOf(Symbol), [value])
-                    # For Python keywords, defer assignment to after construction
-                    # Oneof fields are never repeated
-                    field_name = arg.func.field_name
-                    field_value = self.generate_lines(arg.args[0], lines, indent)
-                    if field_name in PYTHON_KEYWORDS:
-                        keyword_field_assignments.append((field_name, field_value, False))
-                    else:
-                        keyword_args.append(f"{field_name}={field_value}")
-                    arg_idx += 1
-                elif field_idx < len(field_specs):
-                    field_name, is_repeated = field_specs[field_idx]
-
-                    if is_repeated:
-                        # Determine how many args belong to this repeated field
-                        remaining_fields = len(field_specs) - field_idx - 1
-                        max_args_for_this_field = len(expr.args) - arg_idx - remaining_fields
-
-                        # If there's exactly one arg for this field, use it directly (it's already a list)
-                        # Otherwise, collect multiple args into a list
-                        if max_args_for_this_field == 1:
-                            field_value = self.generate_lines(arg, lines, indent)
-                            if field_name in PYTHON_KEYWORDS:
-                                keyword_field_assignments.append((field_name, field_value, True))
-                            else:
-                                keyword_args.append(f"{field_name}={field_value}")
-                            arg_idx += 1
-                        else:
-                            # Collect multiple args into a list
-                            values = []
-                            while arg_idx < len(expr.args) and len(values) < max_args_for_this_field:
-                                next_arg = expr.args[arg_idx]
-                                # Stop if we encounter a oneof
-                                if isinstance(next_arg, Call) and isinstance(next_arg.func, OneOf):
-                                    break
-                                field_value = self.generate_lines(next_arg, lines, indent)
-                                values.append(field_value)
-                                arg_idx += 1
-
-                            if values:
-                                list_value = f"[{', '.join(values)}]"
-                            else:
-                                list_value = "[]"
-                            if field_name in PYTHON_KEYWORDS:
-                                keyword_field_assignments.append((field_name, list_value, True))
-                            else:
-                                keyword_args.append(f"{field_name}={list_value}")
-                    else:
-                        field_value = self.generate_lines(arg, lines, indent)
-                        if field_name in PYTHON_KEYWORDS:
-                            keyword_field_assignments.append((field_name, field_value, False))
-                        else:
-                            keyword_args.append(f"{field_name}={field_value}")
-                        arg_idx += 1
-
-                    field_idx += 1
-                else:
-                    positional_args.append(self.generate_lines(arg, lines, indent))
-                    arg_idx += 1
-
-            # Build argument list - use keyword args if we have any
-            if keyword_args:
-                all_args = keyword_args
-            else:
-                all_args = positional_args + keyword_args
-            args_code = ', '.join(all_args)
-
-            tmp = gensym()
-            lines.append(f"{indent}{self.gen_assignment(tmp, f'{f}({args_code})', is_declaration=True)}")
-
-            # Handle keyword field assignments via getattr()
-            # Use extend() for repeated fields, CopyFrom() for singular message fields
-            for field_name, field_value, is_repeated in keyword_field_assignments:
-                if is_repeated:
-                    lines.append(f"{indent}getattr({tmp}, '{field_name}').extend({field_value})")
-                else:
-                    lines.append(f"{indent}getattr({tmp}, '{field_name}').CopyFrom({field_value})")
-
-            return tmp
-
-        # Fall back to base implementation for non-Message calls
-        return super()._generate_call(expr, lines, indent)
 
     def _generate_if_else(self, expr: IfElse, lines: List[str], indent: str) -> str:
         """Override to skip var declaration (Python doesn't need it)."""
