@@ -487,8 +487,8 @@ rel_edb_path : "[" STRING* "]" { $2 }
 rel_edb_types : "[" type* "]" { $2 }
 
 rel_edb
-    : "(" "rel_edb" relation_id rel_edb_path rel_edb_types? ")"
-    { logic.RelEDB(target_id=$3, path=$4, types=unwrap_option_or($5, [])) }
+    : "(" "rel_edb" relation_id rel_edb_path rel_edb_types ")"
+    { logic.RelEDB(target_id=$3, path=$4, types=$5) }
 
 betree_relation : be_tree_relation { $1 }
 
@@ -497,8 +497,8 @@ be_tree_relation
     { logic.BeTreeRelation(name=$3, relation_info=$4) }
 
 be_tree_info
-    : "(" "betree_info" be_tree_info_key_types? be_tree_info_value_types? config_dict ")"
-    { construct_betree_info(unwrap_option_or($3, []), unwrap_option_or($4, []), $5) }
+    : "(" "betree_info" be_tree_info_key_types be_tree_info_value_types config_dict ")"
+    { construct_betree_info($3, $4, $5) }
 
 be_tree_info_key_types : "(" "key_types" type* ")" { $3 }
 be_tree_info_value_types : "(" "value_types" type* ")" { $3 }

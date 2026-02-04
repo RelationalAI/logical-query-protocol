@@ -146,12 +146,10 @@ class TestCLIValidation:
         try:
             returncode, stdout, stderr = run_cli(
                 str(proto_path),
-                "--grammar", str(grammar_path),
-                "--validate"
+                "--grammar", str(grammar_path)
             )
 
             assert returncode == 0, f"Expected success, got {returncode}\nstdout: {stdout}\nstderr: {stderr}"
-            assert "valid" in stdout.lower() or "passed" in stdout.lower() or "0 errors" in stdout.lower()
         finally:
             import shutil
             shutil.rmtree(temp_dir, ignore_errors=True)
@@ -162,8 +160,7 @@ class TestCLIValidation:
         try:
             returncode, stdout, stderr = run_cli(
                 str(proto_path),
-                "--grammar", str(grammar_path),
-                "--validate"
+                "--grammar", str(grammar_path)
             )
 
             # Validation should fail (missing Address coverage)
@@ -204,20 +201,20 @@ class TestCLIValidation:
             import shutil
             shutil.rmtree(temp_dir, ignore_errors=True)
 
-    def test_force_bypasses_validation(self):
-        """Test that --force allows parser generation despite validation errors."""
+    def test_no_validate_bypasses_validation(self):
+        """Test that --no-validate allows parser generation despite validation errors."""
         proto_path, grammar_path, temp_dir = create_invalid_grammar()
         try:
-            # Generate IR parser with --force
+            # Generate IR parser with --no-validate
             returncode, stdout, stderr = run_cli(
                 str(proto_path),
                 "--grammar", str(grammar_path),
                 "--parser", "ir",
-                "--force"
+                "--no-validate"
             )
 
-            # Should succeed despite validation errors
-            assert returncode == 0, f"Expected success with --force\nstdout: {stdout}\nstderr: {stderr}"
+            # Should succeed since validation is skipped
+            assert returncode == 0, f"Expected success with --no-validate\nstdout: {stdout}\nstderr: {stderr}"
             # Should have generated some output
             assert "transaction" in stdout.lower(), f"Expected parser output\nstdout: {stdout}"
         finally:

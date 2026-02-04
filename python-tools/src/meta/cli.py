@@ -5,17 +5,20 @@ Loads a protobuf spec and a grammar file, validates the grammar file against
 the protobuf spec, then generates a parser from the grammar.
 
 Examples:
-    # Validate grammar against protobuf specs
-    python -m meta.cli --grammar grammar.y proto/logic.proto proto/transactions.proto --validate
+    # Validate grammar against protobuf specs (--grammar implies validation)
+    python -m meta.cli --grammar grammar.y proto/logic.proto proto/transactions.proto
 
-    # Generate a Python parser
+    # Generate a Python parser (validates first)
     python -m meta.cli --grammar grammar.y proto/logic.proto --parser python -o parser.py
 
     # Output parser intermediate representation
     python -m meta.cli --grammar grammar.y proto/logic.proto --parser ir
 
-    # Output parsed protobuf specification
-    python -m meta.cli --grammar grammar.y proto/logic.proto --proto
+    # Output parsed protobuf specification (no grammar needed)
+    python -m meta.cli proto/logic.proto --proto
+
+    # Skip validation when generating parser
+    python -m meta.cli --grammar grammar.y proto/logic.proto --parser python --no-validate
 """
 
 import argparse
@@ -43,12 +46,12 @@ def parse_args():
     parser.add_argument(
         "--grammar",
         type=Path,
-        help="Path to grammar file (required for --validate or --parser)"
+        help="Path to grammar file (required for --parser)"
     )
     parser.add_argument(
-        "--validate",
+        "--no-validate",
         action="store_true",
-        help="Validate grammar covers protobuf spec"
+        help="Skip grammar validation"
     )
 
     output_group = parser.add_argument_group("output options")
@@ -68,17 +71,12 @@ def parse_args():
         choices=["ir", "python"],
         help="Output the generated parser (ir or python)"
     )
-    output_group.add_argument(
-        "--force",
-        action="store_true",
-        help="Generate parser even if validation fails"
-    )
 
     args = parser.parse_args()
 
-    # --grammar is required if --validate or --parser is given
-    if (args.validate or args.parser) and not args.grammar:
-        parser.error("--grammar is required when using --validate or --parser")
+    # --grammar is required for --parser
+    if args.parser and not args.grammar:
+        parser.error("--grammar is required when using --parser")
 
     return args
 
@@ -121,9 +119,13 @@ def run(args) -> int:
         write_output(output_text, args.output, f"Protobuf specification written to {args.output}")
         return 0
 
-    # From here on, --grammar is required (enforced by parse_args)
+    # If no --grammar provided and not --proto, nothing to do
+    if not args.grammar:
+        print("Nothing to do. Use --grammar to validate or --proto to output protobuf spec.", file=sys.stderr)
+        return 0
+
     grammar_path = args.grammar
-    if not grammar_path or not grammar_path.exists():
+    if not grammar_path.exists():
         print(f"Error: Grammar file not found: {grammar_path}", file=sys.stderr)
         return 1
 
@@ -164,21 +166,22 @@ def run(args) -> int:
         if pattern:
             grammar.tokens.append(Token(terminal_name, pattern, terminal_type))
 
-    # Run validation (always run, but only print if requested or has issues)
-    validation_result = validate_grammar(grammar, proto_parser)
+    # Run validation if --grammar is provided (unless --no-validate)
+    if args.grammar and not args.no_validate:
+        validation_result = validate_grammar(grammar, proto_parser)
 
-    if args.validate or validation_result.has_any_issues:
-        print(validation_result.summary())
-        print()
+        if validation_result.has_any_issues:
+            print(validation_result.summary())
+            print()
 
-    # Block parser generation if there are validation errors (unless --force)
-    if args.parser and not validation_result.is_valid and not args.force:
-        print("Error: Cannot generate parser due to validation errors (use --force to override)", file=sys.stderr)
-        return 1
+        # Block parser generation if there are validation errors
+        if args.parser and not validation_result.is_valid:
+            print("Error: Cannot generate parser due to validation errors (use --no-validate to skip)", file=sys.stderr)
+            return 1
 
-    # Return error code if validation has errors (not just warnings), unless --force
-    if not validation_result.is_valid and not args.force:
-        return 1
+        # Return error code if validation has errors (not just warnings)
+        if not validation_result.is_valid:
+            return 1
 
     # Output grammar if -o is specified and not generating parser
     if args.output and not args.parser:
