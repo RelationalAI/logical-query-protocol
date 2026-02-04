@@ -521,7 +521,7 @@ class VarType(TargetType):
     """Type variable for polymorphic types.
 
     Represents a type parameter in polymorphic function signatures.
-    Used for builtins like unwrap_option_or, get_tuple_element, etc.
+    Used for builtins like unwrap_option_or, etc.
 
     Example:
         VarType("T")    # Type variable T

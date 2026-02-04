@@ -108,12 +108,11 @@ register_builtin("unwrap_option_or", [OptionType(T), T], T)
 # === List operations ===
 register_builtin("list_concat", [ListType(T), ListType(T)], ListType(T))
 register_builtin("list_append", [ListType(T), T], ListType(T))
-register_builtin("list_push!", [ListType(T), T], BaseType("None"))  # Mutating operation
+register_builtin("list_push", [ListType(T), T], BaseType("None"))  # Mutating operation
 register_builtin("length", [ListType(T)], INT64)
 register_builtin("map", [FunctionType([T1], T2), ListType(T1)], ListType(T2))
 
 # === Tuple operations ===
-register_builtin("get_tuple_element", [TupleType([T1, T2]), INT64], T)
 register_builtin("tuple", -1, T)  # Variadic: makes tuple from arguments
 
 # === String operations ===
@@ -140,7 +139,6 @@ register_builtin("current_token", [], ANY)
 register_builtin("error", -1, BaseType("Never"))  # Variadic: 1 or 2 args
 
 # === Protobuf-specific ===
-register_builtin("has_field", [ANY, STRING], BOOLEAN)  # Check if protobuf message has field set
 register_builtin("fragment_id_from_string", [STRING], MessageType("fragments", "FragmentId"))
 register_builtin("relation_id_from_string", [STRING], MessageType("logic", "RelationId"))
 register_builtin("relation_id_from_int", [INT64], MessageType("logic", "RelationId"))

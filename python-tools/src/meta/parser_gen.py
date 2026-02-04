@@ -51,7 +51,7 @@ Builtins used:
 - consume_terminal(name): Consume a terminal, return its value
 - match_lookahead_literal(s, k): Check if lookahead[k] is literal s
 - match_lookahead_terminal(name, k): Check if lookahead[k] is terminal type
-- list_push!(list, elem): Append to list (mutating)
+- list_push(list, elem): Append to list (mutating)
 - equal(a, b): Equality check
 - error(msg, context): Raise parse error
 
@@ -339,7 +339,7 @@ def _generate_parse_rhs_ir(rhs: Rhs, grammar: Grammar, follow_set: TerminalSeque
         cond = Var(gensym('cond'), BaseType('Boolean'))
         predictor = _build_option_predictor(grammar, rhs.rhs, follow_set)
         parse_item = _generate_parse_rhs_ir(rhs.rhs, grammar, follow_set, False, None)
-        loop_body = Seq([Call(Builtin('list_push!'), [xs, parse_item]), Assign(cond, predictor)])
+        loop_body = Seq([Call(Builtin('list_push'), [xs, parse_item]), Assign(cond, predictor)])
         return Let(xs, ListExpr([], rhs.rhs.target_type()),
                    Let(cond, predictor, Seq([While(cond, loop_body), xs])))
     else:

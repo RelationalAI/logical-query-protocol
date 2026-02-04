@@ -106,7 +106,7 @@ class PythonCodeGenerator(CodeGenerator):
         self.register_builtin("list_append", 2,
             lambda args, lines, indent: BuiltinResult(f"{args[0]} + [{args[1]}]", []))
 
-        self.register_builtin("list_push!", 2,
+        self.register_builtin("list_push", 2,
             lambda args, lines, indent: BuiltinResult("None", [f"{args[0]}.append({args[1]})"]))
 
         self.register_builtin("map", 2,
@@ -145,9 +145,6 @@ class PythonCodeGenerator(CodeGenerator):
         self.register_builtin("encode_string", 1,
             lambda args, lines, indent: BuiltinResult(f"{args[0]}.encode()", []))
 
-        self.register_builtin("get_tuple_element", 2,
-            lambda args, lines, indent: BuiltinResult(f"{args[0]}[{args[1]}]", []))
-
         self.register_builtin("tuple", -1,
             lambda args, lines, indent: BuiltinResult(f"({', '.join(args)},)", []))
 
@@ -184,9 +181,6 @@ class PythonCodeGenerator(CodeGenerator):
             else:
                 raise ValueError("Invalid number of arguments for builtin `error`.")
         self.register_builtin("error", -1, gen_error)
-
-        self.register_builtin("has_field", 2,
-            lambda args, lines, indent: BuiltinResult(f"{args[0]}.HasField({args[1]})", []))
 
         self.register_builtin("construct_configure", 1,
             lambda args, lines, indent: BuiltinResult(f"self.construct_configure({args[0]})", []))

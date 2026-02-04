@@ -130,7 +130,7 @@ def test_python_builtin_generation():
     result = gen.generate_lines(expr, lines, "")
     assert result == "x is None"
 
-    # Test GetElement (also accessible via get_tuple_element builtin)
+    # Test GetElement
     reset_gensym()
     lines = []
     expr = GetElement(Var("pair", _any_type), 0)
@@ -142,13 +142,6 @@ def test_python_builtin_generation():
     expr = GetElement(Var("pair", _any_type), 1)
     result = gen.generate_lines(expr, lines, "")
     assert result == "pair[1]"
-
-    # Test get_tuple_element builtin (alternative to GetElement)
-    reset_gensym()
-    lines = []
-    expr = Call(Builtin("get_tuple_element"), [Var("pair", _any_type), Lit(0)])
-    result = gen.generate_lines(expr, lines, "")
-    assert result == "pair[0]"
 
     # Test 'length' builtin
     reset_gensym()
@@ -164,10 +157,10 @@ def test_python_builtin_generation():
     result = gen.generate_lines(expr, lines, "")
     assert result == "(a, b,)"
 
-    # Test builtin with side effects ('list_push!')
+    # Test builtin with side effects ('list_push')
     reset_gensym()
     lines = []
-    expr = Call(Builtin("list_push!"), [Var("lst", ListType(_int_type)), Var("item", _int_type)])
+    expr = Call(Builtin("list_push"), [Var("lst", ListType(_int_type)), Var("item", _int_type)])
     result = gen.generate_lines(expr, lines, "")
     assert result == "None"
     assert len(lines) == 1

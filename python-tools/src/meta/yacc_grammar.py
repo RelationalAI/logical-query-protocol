@@ -63,7 +63,7 @@ from .grammar import (
 from .target import (
     TargetType, BaseType, MessageType, ListType, OptionType, TupleType, DictType,
     TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, Call, Lambda,
-    Let, IfElse, Seq, ListExpr, GetElement, FunDef, OneOf, Assign, Return
+    Let, IfElse, Seq, ListExpr, GetElement, FunDef, OneOf, Assign, Return, HasField
 )
 
 
@@ -448,6 +448,13 @@ def _convert_node(node: ast.AST, param_types: List[Optional[TargetType]], ctx: T
             if func_name.startswith('oneof_'):
                 variant_name = func_name[6:]  # Remove 'oneof_' prefix
                 return Call(OneOf(variant_name), args)
+            # has_field(msg, field_name) -> HasField node
+            if func_name == 'has_field':
+                if len(args) != 2:
+                    raise YaccGrammarError(f"has_field requires exactly 2 arguments", line)
+                if not isinstance(args[1], Lit) or not isinstance(args[1].value, str):
+                    raise YaccGrammarError(f"has_field second argument must be a string literal", line)
+                return HasField(args[0], args[1].value)
             # Check if it's a builtin
             from .target_builtins import is_builtin
             if is_builtin(func_name):
@@ -763,6 +770,13 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
             if func_name.startswith('oneof_'):
                 variant_name = func_name[6:]  # Remove 'oneof_' prefix
                 return Call(OneOf(variant_name), args)
+            # has_field(msg, field_name) -> HasField node
+            if func_name == 'has_field':
+                if len(args) != 2:
+                    raise YaccGrammarError(f"has_field requires exactly 2 arguments", line)
+                if not isinstance(args[1], Lit) or not isinstance(args[1].value, str):
+                    raise YaccGrammarError(f"has_field second argument must be a string literal", line)
+                return HasField(args[0], args[1].value)
             from .target_builtins import is_builtin
             if is_builtin(func_name):
                 return Call(Builtin(func_name), args)
@@ -1192,6 +1206,13 @@ def _convert_func_expr(node: ast.expr, ctx: TypeContext, line: int,
             # User-defined functions take precedence over builtins
             if func_name in ctx.functions:
                 return Call(NamedFun(func_name), args)
+            # has_field(msg, field_name) -> HasField node
+            if func_name == 'has_field':
+                if len(args) != 2:
+                    raise YaccGrammarError(f"has_field requires exactly 2 arguments", line)
+                if not isinstance(args[1], Lit) or not isinstance(args[1].value, str):
+                    raise YaccGrammarError(f"has_field second argument must be a string literal", line)
+                return HasField(args[0], args[1].value)
             from .target_builtins import is_builtin
             if is_builtin(func_name):
                 return Call(Builtin(func_name), args)
