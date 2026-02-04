@@ -30,7 +30,6 @@ class ValidationResult:
 
     def add_error(self, category: str, message: str, proto_type: Optional[str] = None, rule_name: Optional[str] = None) -> None:
         self.errors.append(ValidationError(category, message, proto_type, rule_name))
-        return None
 
     def summary(self) -> str:
         """Return a summary of validation results."""

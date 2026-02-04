@@ -188,6 +188,7 @@ def run(args) -> int:
         output_text = grammar.print_grammar_yacc()
         args.output.write_text(output_text)
         print(f"Grammar written to {args.output}")
+        return 0
 
     if args.parser:
         if args.parser == "ir":
