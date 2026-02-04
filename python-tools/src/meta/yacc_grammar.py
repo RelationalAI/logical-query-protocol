@@ -58,12 +58,12 @@ from typing import Dict, List, Optional, Tuple, Set
 
 from .grammar import (
     Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence, Rule,
-    GrammarConfig
+    GrammarConfig, TerminalDef
 )
 from .target import (
-    TargetType, BaseType, MessageType, ListType, OptionType, TupleType, DictType,
+    TargetType, BaseType, BottomType, MessageType, ListType, OptionType, TupleType, DictType,
     TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, Call, Lambda,
-    Let, IfElse, Seq, ListExpr, GetElement, FunDef, OneOf, Assign, Return, HasField
+    Let, IfElse, Seq, ListExpr, GetElement, GetField, FunDef, OneOf, Assign, Return, HasField
 )
 
 
@@ -77,9 +77,18 @@ class YaccGrammarError(Exception):
 
 
 @dataclass
+class TerminalInfo:
+    """Information about a terminal symbol."""
+    type: TargetType
+    pattern: Optional[str] = None
+    is_regex: bool = True  # True for r'...' patterns, False for '...' literals
+
+
+@dataclass
 class TypeContext:
     """Context for looking up types of terminals and nonterminals."""
     terminals: Dict[str, TargetType] = field(default_factory=dict)
+    terminal_info: Dict[str, TerminalInfo] = field(default_factory=dict)
     nonterminals: Dict[str, TargetType] = field(default_factory=dict)
     functions: Dict[str, FunDef] = field(default_factory=dict)
 
@@ -153,6 +162,37 @@ def _split_bracket_type_args(text: str) -> List[str]:
     return [a for a in args if a]
 
 
+def _parse_token_pattern(rest: str) -> Tuple[str, Optional[str], bool]:
+    """Parse type and optional pattern from %token directive.
+
+    Args:
+        rest: The part after '%token NAME', e.g. "Type r'pattern'" or "Type"
+
+    Returns:
+        (type_str, pattern, is_regex)
+        pattern is None if not specified
+        is_regex is True for r'...' patterns, False for '...' literals
+    """
+    rest = rest.strip()
+
+    # Check for r'...' pattern (regex)
+    regex_match = re.search(r"\s+r'([^']*)'$", rest)
+    if regex_match:
+        type_str = rest[:regex_match.start()].strip()
+        pattern = regex_match.group(1)
+        return type_str, pattern, True
+
+    # Check for '...' pattern (fixed string)
+    literal_match = re.search(r"\s+'([^']*)'$", rest)
+    if literal_match:
+        type_str = rest[:literal_match.start()].strip()
+        pattern = literal_match.group(1)
+        return type_str, pattern, False
+
+    # No pattern
+    return rest, None, True
+
+
 def parse_directives(lines: List[str]) -> Tuple[TypeContext, List[str], int]:
     """Parse directives section until %%.
 
@@ -177,13 +217,26 @@ def parse_directives(lines: List[str]) -> Tuple[TypeContext, List[str], int]:
 
         # Parse directive
         if line.startswith('%token'):
-            parts = line[6:].strip().split(None, 1)
-            if len(parts) != 2:
+            rest = line[6:].strip()
+            # Split name from type+pattern
+            space_idx = rest.find(' ')
+            if space_idx == -1:
                 raise YaccGrammarError(f"Invalid %token directive: {line}", i)
-            name, type_str = parts
+            name = rest[:space_idx]
+            type_and_pattern = rest[space_idx+1:]
+            type_str, pattern, is_regex = _parse_token_pattern(type_and_pattern)
             ctx.terminals[name] = parse_type(type_str)
+            ctx.terminal_info[name] = TerminalInfo(parse_type(type_str), pattern, is_regex)
+
+        elif line.startswith('%nonterm'):
+            parts = line[8:].strip().split(None, 1)
+            if len(parts) != 2:
+                raise YaccGrammarError(f"Invalid %nonterm directive: {line}", i)
+            name, type_str = parts
+            ctx.nonterminals[name] = parse_type(type_str)
 
         elif line.startswith('%type'):
+            # Support %type as alias for %nonterm for backwards compatibility
             parts = line[5:].strip().split(None, 1)
             if len(parts) != 2:
                 raise YaccGrammarError(f"Invalid %type directive: {line}", i)
@@ -472,9 +525,8 @@ def _convert_node(node: ast.AST, param_types: List[Optional[TargetType]], ctx: T
             # Empty list - need element type from context
             raise YaccGrammarError(f"Empty list literal needs type annotation", line)
         elements = [_convert_node(e, param_types, ctx, line) for e in node.elts]
-        # Infer element type from first element (simplified)
-        # In practice, we'd need proper type inference
-        return ListExpr(elements, _infer_type(elements[0]))
+        # Infer element type from first element
+        return ListExpr(elements, _infer_type(elements[0], line, ctx))
 
     elif isinstance(node, ast.BinOp):
         raise YaccGrammarError(f"Binary operations not supported: {ast.dump(node)}", line)
@@ -492,8 +544,17 @@ def _convert_node(node: ast.AST, param_types: List[Optional[TargetType]], ctx: T
         raise YaccGrammarError(f"Unsupported Python AST node: {type(node).__name__}: {ast.dump(node)}", line)
 
 
-def _infer_type(expr: TargetExpr) -> TargetType:
-    """Infer the type of an expression (simplified)."""
+def _infer_type(expr: TargetExpr, line: Optional[int] = None,
+                ctx: Optional['TypeContext'] = None) -> TargetType:
+    """Infer the type of an expression.
+
+    Args:
+        expr: The expression to infer the type of
+        line: Line number for error messages
+        ctx: Type context for looking up function return types
+
+    Raises YaccGrammarError if type cannot be inferred.
+    """
     if isinstance(expr, Var):
         return expr.type
     elif isinstance(expr, Lit):
@@ -505,31 +566,47 @@ def _infer_type(expr: TargetExpr) -> TargetType:
             return BaseType("String")
         elif isinstance(expr.value, bool):
             return BaseType("Boolean")
+        elif expr.value is None:
+            # None literal has type Optional[Bottom]
+            # With covariance: Optional[Bottom] <: Optional[T] for any T
+            return OptionType(BottomType())
+        raise YaccGrammarError(f"Cannot infer type of literal: {expr.value!r}", line)
     elif isinstance(expr, NewMessage):
         return MessageType(expr.module, expr.name)
     elif isinstance(expr, ListExpr):
         return ListType(expr.element_type)
     elif isinstance(expr, GetElement):
         # Infer tuple element type
-        tuple_type = _infer_type(expr.tuple_expr)
+        tuple_type = _infer_type(expr.tuple_expr, line, ctx)
         if isinstance(tuple_type, TupleType) and 0 <= expr.index < len(tuple_type.elements):
             return tuple_type.elements[expr.index]
+        raise YaccGrammarError(f"Cannot infer type of tuple element access: {expr}", line)
+    elif isinstance(expr, GetField):
+        # GetField accesses a field from a message - we can't know the type without proto schema
+        # Return Any since the context (function return type) will provide the actual type
+        return BaseType("Any")
     elif isinstance(expr, Let):
         # Let expression has the type of its body
-        return _infer_type(expr.body)
+        return _infer_type(expr.body, line, ctx)
     elif isinstance(expr, IfElse):
         # Conditional has the type of its branches (assume they're the same)
-        return _infer_type(expr.then_branch)
+        return _infer_type(expr.then_branch, line, ctx)
     elif isinstance(expr, Seq):
         # Sequence has the type of its last expression
         if expr.exprs:
-            return _infer_type(expr.exprs[-1])
+            return _infer_type(expr.exprs[-1], line, ctx)
+        raise YaccGrammarError("Cannot infer type of empty sequence", line)
     elif isinstance(expr, Call):
-        # For builtins and named functions, we'd need type signatures
-        # For now, return Unknown
-        pass
-    # Default fallback
-    return BaseType("Unknown")
+        # Try to infer return type from the called function
+        if isinstance(expr.func, NamedFun):
+            # User-defined function - look up return type
+            if ctx is not None and expr.func.name in ctx.functions:
+                func_def = ctx.functions[expr.func.name]
+                if func_def is not None:
+                    return func_def.return_type
+        # For builtins or unknown functions, return Any
+        return BaseType("Any")
+    raise YaccGrammarError(f"Cannot infer type of expression: {type(expr).__name__}", line)
 
 
 # Python keywords that might be used as field names in the grammar
@@ -580,7 +657,7 @@ def parse_action(text: str, rhs: Rhs, ctx: TypeContext, line: Optional[int] = No
     body = parse_action_expr(preprocessed, param_info, params, ctx, line)
 
     # Use expected return type from %type declaration if provided, otherwise infer
-    return_type = expected_return_type if expected_return_type is not None else _infer_type(body)
+    return_type = expected_return_type if expected_return_type is not None else _infer_type(body, line, ctx)
     return Lambda(params, return_type, body)
 
 
@@ -796,9 +873,11 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
     elif isinstance(node, ast.List):
         elements = [convert(e) for e in node.elts]
         if elements:
-            elem_type = _infer_type(elements[0])
+            elem_type = _infer_type(elements[0], line, ctx)
         else:
-            elem_type = BaseType("Unknown")
+            # Empty list has type List[Bottom]
+            # With covariance: List[Bottom] <: List[T] for any T
+            elem_type = BottomType()
         return ListExpr(elements, elem_type)
 
     elif isinstance(node, ast.IfExp):
@@ -1095,7 +1174,7 @@ def _convert_stmt(stmt: ast.stmt, ctx: TypeContext, line: int,
             raise YaccGrammarError(f"Only simple variable assignment supported", line)
         var_name = target.id
         value = _convert_func_expr(stmt.value, ctx, line, local_vars)
-        var_type = _infer_type(value)
+        var_type = _infer_type(value, line, ctx)
         local_vars[var_name] = var_type
         return Assign(Var(var_name, var_type), value)
 
@@ -1195,13 +1274,13 @@ def _convert_func_expr(node: ast.expr, ctx: TypeContext, line: int,
                 from .target import DictFromList
                 if len(args) == 1:
                     # Infer key/value types from argument type
-                    arg_type = _infer_type(args[0])
+                    arg_type = _infer_type(args[0], line, ctx)
                     if isinstance(arg_type, ListType) and isinstance(arg_type.element_type, TupleType):
                         tuple_elems = arg_type.element_type.elements
                         if len(tuple_elems) >= 2:
                             return DictFromList(args[0], tuple_elems[0], tuple_elems[1])
-                    # Fall back to unknown types
-                    return DictFromList(args[0], BaseType("Unknown"), BaseType("Unknown"))
+                    # Fall back to Any types when we can't determine precise types
+                    return DictFromList(args[0], BaseType("Any"), BaseType("Any"))
                 raise YaccGrammarError(f"dict() requires exactly one argument", line)
             # User-defined functions take precedence over builtins
             if func_name in ctx.functions:
@@ -1224,9 +1303,11 @@ def _convert_func_expr(node: ast.expr, ctx: TypeContext, line: int,
     elif isinstance(node, ast.List):
         elements = [_convert_func_expr(e, ctx, line, local_vars) for e in node.elts]
         if elements:
-            elem_type = _infer_type(elements[0])
+            elem_type = _infer_type(elements[0], line, ctx)
         else:
-            elem_type = BaseType("Unknown")
+            # Empty list has type List[Bottom]
+            # With covariance: List[Bottom] <: List[T] for any T
+            elem_type = BottomType()
         return ListExpr(elements, elem_type)
 
     elif isinstance(node, ast.IfExp):
@@ -1358,8 +1439,15 @@ def load_yacc_grammar(text: str) -> GrammarConfig:
             rules_dict[rule.lhs] = []
         rules_dict[rule.lhs].append(rule)
 
+    # Build terminal_patterns from terminal_info
+    terminal_patterns = {
+        name: TerminalDef(info.type, info.pattern, info.is_regex)
+        for name, info in ctx.terminal_info.items()
+    }
+
     return GrammarConfig(
         terminals=ctx.terminals,
+        terminal_patterns=terminal_patterns,
         rules=rules_dict,
         ignored_completeness=ignored_completeness,
         function_defs=functions

@@ -244,10 +244,10 @@ person : STRING { test.Person(name=$1) }
 """
 
         result = parse_and_validate(grammar_content, proto_content)
-        # With NewMessage, missing fields are errors
-        assert not result.is_valid
-        assert any(e.category == "field_coverage" for e in result.errors)
-        assert any("age" in e.message for e in result.errors)
+        # With NewMessage, missing fields are warnings (not errors)
+        assert result.is_valid
+        assert any(w.category == "field_coverage" for w in result.warnings)
+        assert any("age" in w.message for w in result.warnings)
 
     def test_builtin_unwrap_option_or_non_option_arg(self):
         """Test unwrap_option_or with non-option argument."""

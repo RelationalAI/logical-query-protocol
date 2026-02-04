@@ -398,8 +398,10 @@ class TestFieldCoverage:
 
         validator = GrammarValidator(grammar, parser)
         validator._check_types()  # Field validation now happens in type checking
-        assert len(validator.result.errors) > 0
-        assert any('missing field' in e.message.lower() for e in validator.result.errors)
+        # Missing fields are warnings, not errors
+        assert validator.result.is_valid
+        assert len(validator.result.warnings) > 0
+        assert any('missing field' in w.message.lower() for w in validator.result.warnings)
 
 
 class TestTypeChecking:
@@ -458,7 +460,7 @@ class TestTypeChecking:
 
         validator._check_builtin_call_types(builtin, args, 'test_rule')
         assert not validator.result.is_valid
-        assert any("incompatible" in e.message for e in validator.result.errors)
+        assert any("no common supertype" in e.message for e in validator.result.errors)
 
     def test_builtin_length_valid(self, validator):
         """Test length with list type."""

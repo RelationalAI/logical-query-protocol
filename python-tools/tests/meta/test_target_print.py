@@ -152,9 +152,9 @@ class TestExprRoundtrip:
     def test_builtin_call(self):
         """Test builtin function call roundtrip."""
         ctx = make_ctx()
-        extra_vars = {"x": ListType(BaseType("Int64"))}
-        expr = parse_expr("list_append(x, 1)", ctx, extra_vars)
-        assert expr_to_str(expr) == "list_append(x, 1)"
+        extra_vars = {"x": ListType(BaseType("Int64")), "y": ListType(BaseType("Int64"))}
+        expr = parse_expr("list_concat(x, y)", ctx, extra_vars)
+        assert expr_to_str(expr) == "list_concat(x, y)"
 
     def test_builtin_call_no_args(self):
         """Test builtin function call with no args."""
@@ -252,9 +252,9 @@ class TestExprRoundtrip:
     def test_nested_call(self):
         """Test nested function calls."""
         ctx = make_ctx()
-        extra_vars = {"x": ListType(BaseType("Int64"))}
-        expr = parse_expr("list_append(list_append(x, 1), 2)", ctx, extra_vars)
-        assert expr_to_str(expr) == "list_append(list_append(x, 1), 2)"
+        extra_vars = {"x": ListType(BaseType("Int64")), "y": ListType(BaseType("Int64")), "z": ListType(BaseType("Int64"))}
+        expr = parse_expr("list_concat(list_concat(x, y), z)", ctx, extra_vars)
+        assert expr_to_str(expr) == "list_concat(list_concat(x, y), z)"
 
 
 class TestExprDirect:

@@ -517,6 +517,23 @@ class BaseType(TargetType):
 
 
 @dataclass(frozen=True)
+class BottomType(TargetType):
+    """The bottom type (empty type with no values).
+
+    Bottom is a subtype of every type. Used for:
+    - None literal has type Optional[Bottom]
+    - Empty list [] has type List[Bottom]
+
+    With covariant type constructors:
+    - Optional[Bottom] <: Optional[T] for any T
+    - List[Bottom] <: List[T] for any T
+    """
+
+    def __str__(self) -> str:
+        return "Bottom"
+
+
+@dataclass(frozen=True)
 class VarType(TargetType):
     """Type variable for polymorphic types.
 
@@ -669,6 +686,7 @@ __all__ = [
     'Lit',
     'Symbol',
     'Builtin',
+    'NamedFun',
     'NewMessage',
     'OneOf',
     'ListExpr',
@@ -689,6 +707,7 @@ __all__ = [
     'Return',
     'TargetType',
     'BaseType',
+    'BottomType',
     'VarType',
     'MessageType',
     'TupleType',

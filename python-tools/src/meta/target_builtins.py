@@ -107,8 +107,6 @@ register_builtin("unwrap_option_or", [OptionType(T), T], T)
 
 # === List operations ===
 register_builtin("list_concat", [ListType(T), ListType(T)], ListType(T))
-register_builtin("list_append", [ListType(T), T], ListType(T))
-register_builtin("list_push", [ListType(T), T], BaseType("None"))  # Mutating operation
 register_builtin("length", [ListType(T)], INT64)
 register_builtin("map", [FunctionType([T1], T2), ListType(T1)], ListType(T2))
 

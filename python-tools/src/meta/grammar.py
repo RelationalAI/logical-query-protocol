@@ -427,6 +427,14 @@ class Grammar:
 
 
 @dataclass
+class TerminalDef:
+    """Definition of a terminal symbol with type and optional pattern."""
+    type: TargetType
+    pattern: Optional[str] = None  # Regex pattern or fixed string
+    is_regex: bool = True  # True for r'...' patterns, False for '...' literals
+
+
+@dataclass
 class GrammarConfig:
     """Result of loading a grammar config file.
 
@@ -434,7 +442,8 @@ class GrammarConfig:
     grammar files before building the full Grammar object.
     """
     terminals: Dict[str, TargetType]
-    rules: Dict[Nonterminal, List[Rule]]
+    terminal_patterns: Dict[str, TerminalDef] = field(default_factory=dict)
+    rules: Dict[Nonterminal, List[Rule]] = field(default_factory=dict)
     ignored_completeness: List[str] = field(default_factory=list)
     function_defs: Dict[str, FunDef] = field(default_factory=dict)
 

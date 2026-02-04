@@ -27,7 +27,7 @@ from .proto_parser import ProtoParser
 from .proto_ast import ProtoMessage, ProtoField
 from .target import (
     TargetType, TargetExpr, Call, NewMessage, Builtin, Var, IfElse, Let, Seq, ListExpr, GetField,
-    GetElement, BaseType, VarType, MessageType, ListType, OptionType, TupleType, FunctionType, Lambda, OneOf, Lit
+    GetElement, BaseType, BottomType, VarType, MessageType, ListType, OptionType, TupleType, FunctionType, Lambda, OneOf, Lit
 )
 from .type_env import TypeEnv
 from .validation_result import ValidationResult
@@ -147,8 +147,9 @@ class GrammarValidator:
             return None  # Can't check types if arity mismatch
 
         # Check each parameter type matches corresponding RHS element type
+        # RHS element type should be a subtype of param type (rhs_type <: param_type)
         for i, (param_type, rhs_type) in enumerate(zip(param_types, rhs_types)):
-            if not self._types_compatible(param_type, rhs_type):
+            if not self._is_subtype(rhs_type, param_type):
                 param_name = rule.constructor.params[i].name
                 self.result.add_error(
                     "type_param",
@@ -162,8 +163,8 @@ class GrammarValidator:
         # Infer the actual type of the body expression
         body_type = self._infer_expr_type(rule.constructor.body)
 
-        # If we can infer the body type, check it matches the declared return type
-        if body_type is not None and not self._types_compatible(body_type, lhs_type):
+        # If we can infer the body type, check it is a subtype of the declared return type
+        if body_type is not None and not self._is_subtype(body_type, lhs_type):
             self.result.add_error(
                 "type_return",
                 f"Rule '{rule_name}': lambda body has type {body_type} but LHS expects {lhs_type}",
@@ -304,7 +305,8 @@ class GrammarValidator:
             # Infer actual type from expression
             actual_type = self._infer_expr_type(field_expr)
 
-            if actual_type is not None and not self._types_compatible(actual_type, expected_type):
+            # Check actual type is a subtype of expected type (actual_type <: expected_type)
+            if actual_type is not None and not self._is_subtype(actual_type, expected_type):
                 self.result.add_error(
                     "field_type",
                     f"In {context}: NewMessage {new_msg.name} field '{field_name}' has type {actual_type}, expected {expected_type}",
@@ -313,10 +315,10 @@ class GrammarValidator:
                 )
 
         # Check for missing fields (non-repeated, non-optional fields)
+        # In proto3, all fields are optional, so missing fields are warnings not errors
         for field in proto_message.fields:
             if field.name not in provided_fields:
-                # In proto3, all fields are optional, but we check for missing fields
-                self.result.add_error(
+                self.result.add_warning(
                     "field_coverage",
                     f"In {context}: NewMessage {new_msg.name} missing field '{field.name}'",
                     proto_type=new_msg.name,
@@ -339,7 +341,8 @@ class GrammarValidator:
         # Some builtins are polymorphic, so we do best-effort checking
 
         if name == "unwrap_option_or":
-            # (Option[T], T) -> T
+            # (Option[T], U) -> Join[T, U] where Join is the common supertype
+            # Valid if T <: U or U <: T (types have a common supertype)
             if len(args) != 2:
                 self.result.add_error(
                     "type_builtin_arity",
@@ -356,10 +359,13 @@ class GrammarValidator:
                         rule_name=context
                     )
                 if arg0_type is not None and arg1_type is not None and isinstance(arg0_type, OptionType):
-                    if not self._types_compatible(arg1_type, arg0_type.element_type):
+                    # Check that types have a common supertype
+                    t = arg0_type.element_type
+                    u = arg1_type
+                    if not self._types_compatible(t, u):
                         self.result.add_error(
                             "type_builtin_arg",
-                            f"In {context}: builtin 'unwrap_option_or' arg 1 has type {arg1_type}, expected {arg0_type.element_type}",
+                            f"In {context}: builtin 'unwrap_option_or' types {t} and {u} have no common supertype",
                             rule_name=context
                         )
 
@@ -369,7 +375,7 @@ class GrammarValidator:
             pass
 
         elif name == "list_concat":
-            # (List[T], List[T]) -> List[T]
+            # (List[T], List[U]) -> List[Join[T, U]] where Join is the common supertype
             if len(args) != 2:
                 self.result.add_error(
                     "type_builtin_arity",
@@ -392,10 +398,13 @@ class GrammarValidator:
                         rule_name=context
                     )
                 if arg0_type is not None and arg1_type is not None and isinstance(arg0_type, ListType) and isinstance(arg1_type, ListType):
-                    if not self._types_compatible(arg0_type.element_type, arg1_type.element_type):
+                    # Check that element types have a common supertype
+                    t = arg0_type.element_type
+                    u = arg1_type.element_type
+                    if not self._types_compatible(t, u):
                         self.result.add_error(
                             "type_builtin_arg",
-                            f"In {context}: builtin 'list_concat' arg types incompatible: {arg0_type} vs {arg1_type}",
+                            f"In {context}: builtin 'list_concat' element types {t} and {u} have no common supertype",
                             rule_name=context
                         )
 
@@ -514,34 +523,45 @@ class GrammarValidator:
         visit(rhs)
         return types
 
-    def _types_compatible(self, t1: TargetType, t2: TargetType) -> bool:
-        """Check if two types are compatible.
+    def _is_subtype(self, t1: TargetType, t2: TargetType) -> bool:
+        """Check if t1 is a subtype of t2 (t1 <: t2).
 
-        Handles:
-        - Exact equality
-        - List[Unknown] is compatible with any List[T]
-        - Option[Unknown] is compatible with any Option[T]
-        - Unknown is compatible with any type (bottom type behavior)
+        Subtyping rules:
+        - Reflexivity: T <: T
+        - Bottom <: T for all T (Bottom is the empty type)
+        - T <: Any for all T (Any is the top type)
+        - List is covariant: List[A] <: List[B] if A <: B
+        - Option is covariant: Option[A] <: Option[B] if A <: B
+        - Tuple is covariant: (A1, A2, ...) <: (B1, B2, ...) if Ai <: Bi for all i
         """
         if t1 == t2:
             return True
-        # Unknown is compatible with anything (acts as bottom type)
-        if isinstance(t1, BaseType) and t1.name == "Unknown":
+        # Bottom is a subtype of everything
+        if isinstance(t1, BottomType):
             return True
-        if isinstance(t2, BaseType) and t2.name == "Unknown":
+        # T <: Any for all T (Any is the top type)
+        if isinstance(t2, BaseType) and t2.name == "Any":
             return True
-        # List[Unknown] is compatible with any List[T]
+        # List is covariant: List[A] <: List[B] if A <: B
         if isinstance(t1, ListType) and isinstance(t2, ListType):
-            return self._types_compatible(t1.element_type, t2.element_type)
-        # Option[Unknown] is compatible with any Option[T]
+            return self._is_subtype(t1.element_type, t2.element_type)
+        # Option is covariant: Option[A] <: Option[B] if A <: B
         if isinstance(t1, OptionType) and isinstance(t2, OptionType):
-            return self._types_compatible(t1.element_type, t2.element_type)
-        # Tuple types - check element-wise
+            return self._is_subtype(t1.element_type, t2.element_type)
+        # Tuple is covariant: check element-wise
         if isinstance(t1, TupleType) and isinstance(t2, TupleType):
             if len(t1.elements) != len(t2.elements):
                 return False
-            return all(self._types_compatible(e1, e2) for e1, e2 in zip(t1.elements, t2.elements))
+            return all(self._is_subtype(e1, e2) for e1, e2 in zip(t1.elements, t2.elements))
         return False
+
+    def _types_compatible(self, t1: TargetType, t2: TargetType) -> bool:
+        """Check if types are compatible (t1 <: t2 or t2 <: t1).
+
+        Two types are compatible if one is a subtype of the other,
+        meaning they have a common supertype.
+        """
+        return self._is_subtype(t1, t2) or self._is_subtype(t2, t1)
 
     def _check_message_coverage(self) -> None:
         """Check that every proto message has at least one grammar rule producing it.

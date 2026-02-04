@@ -13,135 +13,136 @@
 # We translate this restricted Python into actual Python, Julia, and Go.
 
 
-# Token declarations
-%token DECIMAL logic.DecimalValue
-%token FLOAT Float64
-%token INT Int64
-%token INT128 logic.Int128Value
-%token STRING String
-%token SYMBOL String
-%token UINT128 logic.UInt128Value
+# Token declarations: %token NAME Type PATTERN
+# PATTERN can be r'...' for regex or '...' for fixed string
+%token DECIMAL logic.DecimalValue r'[-]?\d+\.\d+d\d+'
+%token FLOAT Float64 r'[-]?\d+\.\d+|inf|nan'
+%token INT Int64 r'[-]?\d+'
+%token INT128 logic.Int128Value r'[-]?\d+i128'
+%token STRING String r'"(?:[^"\\]|\\.)*"'
+%token SYMBOL String r'[a-zA-Z_][a-zA-Z0-9_.-]*'
+%token UINT128 logic.UInt128Value r'0x[0-9a-fA-F]+'
 
 # Type declarations for rules
-%type abstraction logic.Abstraction
-%type abstraction_with_arity Tuple[logic.Abstraction, Int64]
-%type add logic.Primitive
-%type algorithm logic.Algorithm
-%type assign logic.Assign
-%type atom logic.Atom
-%type attribute logic.Attribute
-%type attrs List[logic.Attribute]
-%type be_tree_info logic.BeTreeInfo
-%type be_tree_info_key_types List[logic.Type]
-%type be_tree_info_value_types List[logic.Type]
-%type be_tree_relation logic.BeTreeRelation
-%type betree_relation logic.BeTreeRelation
-%type binding logic.Binding
-%type bindings Tuple[List[logic.Binding], List[logic.Binding]]
-%type boolean_type logic.BooleanType
-%type boolean_value Boolean
-%type break logic.Break
-%type cast logic.Cast
-%type config_dict List[Tuple[String, logic.Value]]
-%type config_key_value Tuple[String, logic.Value]
-%type configure transactions.Configure
-%type conjunction logic.Conjunction
-%type constant logic.Value
-%type constraint logic.Constraint
-%type construct logic.Construct
-%type context transactions.Context
-%type csv_asof String
-%type csv_column logic.CSVColumn
-%type csv_columns List[logic.CSVColumn]
-%type csv_config logic.CSVConfig
-%type csv_data logic.CSVData
-%type csv_locator_inline_data String
-%type csv_locator_paths List[String]
-%type csvdata logic.CSVData
-%type csvlocator logic.CSVLocator
-%type data logic.Data
-%type date logic.DateValue
-%type date_type logic.DateType
-%type datetime logic.DateTimeValue
-%type datetime_type logic.DateTimeType
-%type decimal_type logic.DecimalType
-%type declaration logic.Declaration
-%type def logic.Def
-%type define transactions.Define
-%type demand transactions.Demand
-%type disjunction logic.Disjunction
-%type divide logic.Primitive
-%type abort transactions.Abort
-%type epoch transactions.Epoch
-%type epoch_reads List[transactions.Read]
-%type epoch_writes List[transactions.Write]
-%type eq logic.Primitive
-%type exists logic.Exists
-%type export transactions.Export
-%type export_csv_column transactions.ExportCSVColumn
-%type export_csv_columns List[transactions.ExportCSVColumn]
-%type export_csv_config transactions.ExportCSVConfig
-%type export_csv_path String
-%type false logic.Disjunction
-%type ffi logic.FFI
-%type ffi_args List[logic.Abstraction]
-%type float_type logic.FloatType
-%type formula logic.Formula
-%type fragment fragments.Fragment
-%type fragment_id fragments.FragmentId
-%type functional_dependency_keys List[logic.Var]
-%type functional_dependency_values List[logic.Var]
-%type gt logic.Primitive
-%type gt_eq logic.Primitive
-%type init List[logic.Instruction]
-%type instruction logic.Instruction
-%type int_type logic.IntType
-%type int128_type logic.Int128Type
-%type loop logic.Loop
-%type lt logic.Primitive
-%type lt_eq logic.Primitive
-%type max_monoid logic.MaxMonoid
-%type min_monoid logic.MinMonoid
-%type minus logic.Primitive
-%type missing_type logic.MissingType
-%type monoid logic.Monoid
-%type monoid_def logic.MonoidDef
-%type monus_def logic.MonusDef
-%type multiply logic.Primitive
-%type name String
-%type new_fragment_id fragments.FragmentId
-%type not logic.Not
-%type or_monoid logic.OrMonoid
-%type output transactions.Output
-%type pragma logic.Pragma
-%type primitive logic.Primitive
-%type read transactions.Read
-%type reduce logic.Reduce
-%type rel_atom logic.RelAtom
-%type rel_edb logic.RelEDB
-%type rel_edb_path List[String]
-%type rel_edb_types List[logic.Type]
-%type rel_term logic.RelTerm
-%type relation_id logic.RelationId
-%type script logic.Script
-%type specialized_value logic.Value
-%type string_type logic.StringType
-%type sum_monoid logic.SumMonoid
-%type sync transactions.Sync
-%type term logic.Term
-%type terms List[logic.Term]
-%type transaction transactions.Transaction
-%type true logic.Conjunction
-%type type logic.Type
-%type uint128_type logic.UInt128Type
-%type undefine transactions.Undefine
-%type unspecified_type logic.UnspecifiedType
-%type upsert logic.Upsert
-%type value logic.Value
-%type value_bindings List[logic.Binding]
-%type var logic.Var
-%type what_if transactions.WhatIf
-%type write transactions.Write
+%nonterm abstraction logic.Abstraction
+%nonterm abstraction_with_arity Tuple[logic.Abstraction, Int64]
+%nonterm add logic.Primitive
+%nonterm algorithm logic.Algorithm
+%nonterm assign logic.Assign
+%nonterm atom logic.Atom
+%nonterm attribute logic.Attribute
+%nonterm attrs List[logic.Attribute]
+%nonterm be_tree_info logic.BeTreeInfo
+%nonterm be_tree_info_key_types List[logic.Type]
+%nonterm be_tree_info_value_types List[logic.Type]
+%nonterm be_tree_relation logic.BeTreeRelation
+%nonterm betree_relation logic.BeTreeRelation
+%nonterm binding logic.Binding
+%nonterm bindings Tuple[List[logic.Binding], List[logic.Binding]]
+%nonterm boolean_type logic.BooleanType
+%nonterm boolean_value Boolean
+%nonterm break logic.Break
+%nonterm cast logic.Cast
+%nonterm config_dict List[Tuple[String, logic.Value]]
+%nonterm config_key_value Tuple[String, logic.Value]
+%nonterm configure transactions.Configure
+%nonterm conjunction logic.Conjunction
+%nonterm constant logic.Value
+%nonterm constraint logic.Constraint
+%nonterm construct logic.Construct
+%nonterm context transactions.Context
+%nonterm csv_asof String
+%nonterm csv_column logic.CSVColumn
+%nonterm csv_columns List[logic.CSVColumn]
+%nonterm csv_config logic.CSVConfig
+%nonterm csv_data logic.CSVData
+%nonterm csv_locator_inline_data String
+%nonterm csv_locator_paths List[String]
+%nonterm csvdata logic.CSVData
+%nonterm csvlocator logic.CSVLocator
+%nonterm data logic.Data
+%nonterm date logic.DateValue
+%nonterm date_type logic.DateType
+%nonterm datetime logic.DateTimeValue
+%nonterm datetime_type logic.DateTimeType
+%nonterm decimal_type logic.DecimalType
+%nonterm declaration logic.Declaration
+%nonterm def logic.Def
+%nonterm define transactions.Define
+%nonterm demand transactions.Demand
+%nonterm disjunction logic.Disjunction
+%nonterm divide logic.Primitive
+%nonterm abort transactions.Abort
+%nonterm epoch transactions.Epoch
+%nonterm epoch_reads List[transactions.Read]
+%nonterm epoch_writes List[transactions.Write]
+%nonterm eq logic.Primitive
+%nonterm exists logic.Exists
+%nonterm export transactions.Export
+%nonterm export_csv_column transactions.ExportCSVColumn
+%nonterm export_csv_columns List[transactions.ExportCSVColumn]
+%nonterm export_csv_config transactions.ExportCSVConfig
+%nonterm export_csv_path String
+%nonterm false logic.Disjunction
+%nonterm ffi logic.FFI
+%nonterm ffi_args List[logic.Abstraction]
+%nonterm float_type logic.FloatType
+%nonterm formula logic.Formula
+%nonterm fragment fragments.Fragment
+%nonterm fragment_id fragments.FragmentId
+%nonterm functional_dependency_keys List[logic.Var]
+%nonterm functional_dependency_values List[logic.Var]
+%nonterm gt logic.Primitive
+%nonterm gt_eq logic.Primitive
+%nonterm init List[logic.Instruction]
+%nonterm instruction logic.Instruction
+%nonterm int_type logic.IntType
+%nonterm int128_type logic.Int128Type
+%nonterm loop logic.Loop
+%nonterm lt logic.Primitive
+%nonterm lt_eq logic.Primitive
+%nonterm max_monoid logic.MaxMonoid
+%nonterm min_monoid logic.MinMonoid
+%nonterm minus logic.Primitive
+%nonterm missing_type logic.MissingType
+%nonterm monoid logic.Monoid
+%nonterm monoid_def logic.MonoidDef
+%nonterm monus_def logic.MonusDef
+%nonterm multiply logic.Primitive
+%nonterm name String
+%nonterm new_fragment_id fragments.FragmentId
+%nonterm not logic.Not
+%nonterm or_monoid logic.OrMonoid
+%nonterm output transactions.Output
+%nonterm pragma logic.Pragma
+%nonterm primitive logic.Primitive
+%nonterm read transactions.Read
+%nonterm reduce logic.Reduce
+%nonterm rel_atom logic.RelAtom
+%nonterm rel_edb logic.RelEDB
+%nonterm rel_edb_path List[String]
+%nonterm rel_edb_types List[logic.Type]
+%nonterm rel_term logic.RelTerm
+%nonterm relation_id logic.RelationId
+%nonterm script logic.Script
+%nonterm specialized_value logic.Value
+%nonterm string_type logic.StringType
+%nonterm sum_monoid logic.SumMonoid
+%nonterm sync transactions.Sync
+%nonterm term logic.Term
+%nonterm terms List[logic.Term]
+%nonterm transaction transactions.Transaction
+%nonterm true logic.Conjunction
+%nonterm type logic.Type
+%nonterm uint128_type logic.UInt128Type
+%nonterm undefine transactions.Undefine
+%nonterm unspecified_type logic.UnspecifiedType
+%nonterm upsert logic.Upsert
+%nonterm value logic.Value
+%nonterm value_bindings List[logic.Binding]
+%nonterm var logic.Var
+%nonterm what_if transactions.WhatIf
+%nonterm write transactions.Write
 
 # Messages that are constructed imperatively by the parser, not parsed from grammar rules.
 # These protobuf message types are excluded from completeness validation because they are
