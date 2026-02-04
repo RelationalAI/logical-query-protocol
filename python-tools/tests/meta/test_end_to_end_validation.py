@@ -2,7 +2,7 @@
 """End-to-end tests for grammar validation.
 
 These tests validate complete grammar files against protobuf specifications,
-testing all validation error and warning cases.
+testing all validation error cases.
 """
 
 from pathlib import Path
@@ -220,7 +220,7 @@ record : STRING { test.Record(value=$1[0]) }
         assert any("expects tuple type" in e.message for e in result.errors)
 
     def test_message_constructor_arity_error(self):
-        """Test message constructor with missing fields generates warning."""
+        """Test message constructor with missing fields generates error."""
         proto_content = """
         syntax = "proto3";
         package test;
@@ -244,10 +244,10 @@ person : STRING { test.Person(name=$1) }
 """
 
         result = parse_and_validate(grammar_content, proto_content)
-        # With NewMessage, missing fields are warnings (not errors)
-        assert result.is_valid
-        assert any(w.category == "field_coverage" for w in result.warnings)
-        assert any("age" in w.message for w in result.warnings)
+        # Missing fields are errors
+        assert not result.is_valid
+        assert any(e.category == "field_coverage" for e in result.errors)
+        assert any("age" in e.message for e in result.errors)
 
     def test_builtin_unwrap_option_or_non_option_arg(self):
         """Test unwrap_option_or with non-option argument."""
@@ -341,11 +341,11 @@ value : STRING { test.Value(kind=oneof_text($1)) }
         assert any("number" in e.message for e in result.errors)
 
 
-class TestSoundnessWarnings:
-    """Tests for soundness warnings (rules without proto backing)."""
+class TestSoundnessErrors:
+    """Tests for soundness errors (rules without proto backing)."""
 
     def test_rule_without_proto_backing(self):
-        """Test warning for rule with type that doesn't correspond to a proto message."""
+        """Test error for rule with type that doesn't correspond to a proto message."""
         proto_content = """
         syntax = "proto3";
         package test;

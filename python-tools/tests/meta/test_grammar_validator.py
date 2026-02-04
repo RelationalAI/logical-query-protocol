@@ -398,10 +398,10 @@ class TestFieldCoverage:
 
         validator = GrammarValidator(grammar, parser)
         validator._check_types()  # Field validation now happens in type checking
-        # Missing fields are warnings, not errors
-        assert validator.result.is_valid
-        assert len(validator.result.warnings) > 0
-        assert any('missing field' in w.message.lower() for w in validator.result.warnings)
+        # Missing fields are errors
+        assert not validator.result.is_valid
+        assert any(e.category == 'field_coverage' for e in validator.result.errors)
+        assert any('missing field' in e.message.lower() for e in validator.result.errors)
 
 
 class TestTypeChecking:
@@ -578,7 +578,7 @@ class TestUnreachableRules:
     """Tests for unreachable rule detection."""
 
     def test_reachable_rule(self):
-        """Test that reachable rules don't generate warnings."""
+        """Test that reachable rules don't generate errors."""
         parser = ProtoParser()
         start = Nonterminal('start', BaseType('Unit'))
         child = Nonterminal('child', BaseType('String'))
@@ -642,7 +642,7 @@ class TestSoundness:
         assert validator.result.is_valid
 
     def test_rule_without_proto_backing(self):
-        """Test rule with invalid type generates warning."""
+        """Test rule with invalid type generates error."""
         parser = ProtoParser()
 
         # Create a rule with a MessageType that doesn't exist in the proto spec

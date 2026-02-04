@@ -314,11 +314,10 @@ class GrammarValidator:
                     rule_name=context
                 )
 
-        # Check for missing fields (non-repeated, non-optional fields)
-        # In proto3, all fields are optional, so missing fields are warnings not errors
+        # Check for missing fields
         for field in proto_message.fields:
             if field.name not in provided_fields:
-                self.result.add_warning(
+                self.result.add_error(
                     "field_coverage",
                     f"In {context}: NewMessage {new_msg.name} missing field '{field.name}'",
                     proto_type=new_msg.name,

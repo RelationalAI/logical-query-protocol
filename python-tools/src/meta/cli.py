@@ -158,17 +158,14 @@ def run(args) -> int:
     if args.grammar and not args.no_validate:
         validation_result = validate_grammar(grammar, proto_parser)
 
-        if validation_result.has_any_issues:
+        if not validation_result.is_valid:
             print(validation_result.summary())
             print()
 
-        # Block parser generation if there are validation errors
-        if args.parser and not validation_result.is_valid:
-            print("Error: Cannot generate parser due to validation errors (use --no-validate to skip)", file=sys.stderr)
-            return 1
+            # Block parser generation if there are validation errors
+            if args.parser:
+                print("Error: Cannot generate parser due to validation errors (use --no-validate to skip)", file=sys.stderr)
 
-        # Return error code if validation has errors (not just warnings)
-        if not validation_result.is_valid:
             return 1
 
     # Output grammar if -o is specified and not generating parser
