@@ -626,7 +626,7 @@ def _extract_value_uint128(value: Optional[logic.Value], default: logic.UInt128V
     return default
 
 
-def _extract_value_string_list(value: Optional[logic.Value], default: list[str]) -> list[str]:
+def _extract_value_string_list(value: Optional[logic.Value], default: List[String]) -> List[String]:
     if value is None:
         return default
     if has_field(value, 'string_value'):
@@ -634,8 +634,8 @@ def _extract_value_string_list(value: Optional[logic.Value], default: list[str])
     return default
 
 
-def construct_csv_config(config_dict: list[tuple[str, logic.Value]]) -> logic.CSVConfig:
-    config: dict[str, logic.Value] = dict_from_list(config_dict)
+def construct_csv_config(config_dict: List[Tuple[String, logic.Value]]) -> logic.CSVConfig:
+    config: Dict[String, logic.Value] = dict_from_list(config_dict)
     header_row = _extract_value_int64(dict_get(config, "csv_header_row"), 1)
     skip = _extract_value_int64(dict_get(config, "csv_skip"), 0)
     new_line = _extract_value_string(dict_get(config, "csv_new_line"), "")
@@ -663,11 +663,11 @@ def construct_csv_config(config_dict: list[tuple[str, logic.Value]]) -> logic.CS
 
 
 def construct_betree_info(
-    key_types: list[logic.Type],
-    value_types: list[logic.Type],
-    config_dict: list[tuple[str, logic.Value]],
+    key_types: List[logic.Type],
+    value_types: List[logic.Type],
+    config_dict: List[Tuple[String, logic.Value]],
 ) -> logic.BeTreeInfo:
-    config: dict[str, logic.Value] = dict_from_list(config_dict)
+    config: Dict[String, logic.Value] = dict_from_list(config_dict)
     epsilon = _extract_value_float64(dict_get(config, "betree_config_epsilon"), 0.5)
     max_pivots = _extract_value_int64(dict_get(config, "betree_config_max_pivots"), 4)
     max_deltas = _extract_value_int64(dict_get(config, "betree_config_max_deltas"), 16)
@@ -705,8 +705,8 @@ def construct_betree_info(
     )
 
 
-def construct_configure(config_dict: list[tuple[str, logic.Value]]) -> transactions.Configure:
-    config: dict[str, logic.Value] = dict_from_list(config_dict)
+def construct_configure(config_dict: List[Tuple[String, logic.Value]]) -> transactions.Configure:
+    config: Dict[String, logic.Value] = dict_from_list(config_dict)
     maintenance_level_val = dict_get(config, "ivm.maintenance_level")
     maintenance_level: str
     if (maintenance_level_val is not None
@@ -727,11 +727,11 @@ def construct_configure(config_dict: list[tuple[str, logic.Value]]) -> transacti
 
 
 def export_csv_config(
-    path: str,
-    columns: list[transactions.ExportCSVColumn],
-    config_dict: list[tuple[str, logic.Value]],
+    path: String,
+    columns: List[transactions.ExportCSVColumn],
+    config_dict: List[Tuple[String, logic.Value]],
 ) -> transactions.ExportCSVConfig:
-    config: dict[str, logic.Value] = dict_from_list(config_dict)
+    config: Dict[String, logic.Value] = dict_from_list(config_dict)
     partition_size = _extract_value_int64(dict_get(config, "partition_size"), 0)
     compression = _extract_value_string(dict_get(config, "compression"), "")
     syntax_header_row = _extract_value_boolean(dict_get(config, "syntax_header_row"), True)
