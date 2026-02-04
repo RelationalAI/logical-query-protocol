@@ -338,11 +338,9 @@ class PythonCodeGenerator(CodeGenerator):
     def _generate_newmessage(self, expr: NewMessage, lines: List[str], indent: str) -> str:
         """Override to handle NewMessage with fields containing OneOf calls."""
         if not expr.fields:
-            # No fields - generate empty instantiation with temp variable
+            # No fields - return constructor directly
             ctor = self.gen_constructor(expr.module, expr.name)
-            tmp = gensym()
-            lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}()', is_declaration=True)}")
-            return tmp
+            return f"{ctor}()"
 
         # NewMessage with fields - need to handle OneOf specially
         ctor = self.gen_constructor(expr.module, expr.name)
