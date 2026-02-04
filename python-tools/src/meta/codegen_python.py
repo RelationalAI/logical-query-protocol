@@ -6,7 +6,7 @@ with proper keyword escaping and idiomatic Python style.
 
 from typing import List, Optional, Set, Tuple, Union
 
-from .codegen_base import CodeGenerator, BuiltinResult
+from .codegen_base import CodeGenerator, BuiltinResult, ALREADY_RETURNED
 from .target import (
     TargetExpr, Var, Lit, Symbol, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
     IfElse, FunDef, VisitNonterminalDef
@@ -502,7 +502,7 @@ class PythonCodeGenerator(CodeGenerator):
         # Optimization: short-circuit for boolean literals.
         # This is not needed, but makes the generated code more readable.
         if expr.then_branch == Lit(True):
-            tmp_lines = []
+            tmp_lines: List[str] = []
             else_code = self.generate_lines(expr.else_branch, tmp_lines, indent)
             if not tmp_lines:
                 return f"({cond_code} or {else_code})"
@@ -517,11 +517,19 @@ class PythonCodeGenerator(CodeGenerator):
 
         body_indent = indent + self.indent_str
         then_code = self.generate_lines(expr.then_branch, lines, body_indent)
-        lines.append(f"{body_indent}{self.gen_assignment(tmp, then_code)}")
+        # Only assign if the branch didn't already return
+        if then_code != ALREADY_RETURNED:
+            lines.append(f"{body_indent}{self.gen_assignment(tmp, then_code)}")
 
         lines.append(f"{indent}{self.gen_else()}")
         else_code = self.generate_lines(expr.else_branch, lines, body_indent)
-        lines.append(f"{body_indent}{self.gen_assignment(tmp, else_code)}")
+        # Only assign if the branch didn't already return
+        if else_code != ALREADY_RETURNED:
+            lines.append(f"{body_indent}{self.gen_assignment(tmp, else_code)}")
+
+        # If both branches returned, propagate the sentinel
+        if then_code == ALREADY_RETURNED and else_code == ALREADY_RETURNED:
+            return ALREADY_RETURNED
 
         return tmp
 
@@ -546,7 +554,9 @@ class PythonCodeGenerator(CodeGenerator):
         else:
             body_lines: List[str] = []
             body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
-            body_lines.append(f"{indent}    return {body_inner}")
+            # Only add return if the body didn't already return
+            if body_inner != ALREADY_RETURNED:
+                body_lines.append(f"{indent}    return {body_inner}")
             body_code = "\n".join(body_lines)
 
         return f"{indent}def {func_name}(self{params_str}){ret_hint}:\n{body_code}"
@@ -570,7 +580,9 @@ class PythonCodeGenerator(CodeGenerator):
         else:
             body_lines: List[str] = []
             body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
-            body_lines.append(f"{indent}    return {body_inner}")
+            # Only add return if the body didn't already return
+            if body_inner != ALREADY_RETURNED:
+                body_lines.append(f"{indent}    return {body_inner}")
             body_code = "\n".join(body_lines)
 
         return f"{indent}@staticmethod\n{indent}def {func_name}({params_str}){ret_hint}:\n{body_code}"

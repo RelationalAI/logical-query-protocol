@@ -25,6 +25,11 @@ class BuiltinResult:
     statements: List[str]  # Statements to prepend (may be empty)
 
 
+# Sentinel value indicating that the expression has already returned.
+# When generate_lines returns this, the caller should NOT add another return statement.
+ALREADY_RETURNED = "__ALREADY_RETURNED__"
+
+
 # Type alias for builtin generator functions
 BuiltinGenerator = Callable[[List[str], List[str], str], BuiltinResult]
 
@@ -485,10 +490,16 @@ class CodeGenerator(ABC):
         return tmp
 
     def _generate_seq(self, expr: Seq, lines: List[str], indent: str) -> str:
-        """Generate code for a sequence of expressions."""
+        """Generate code for a sequence of expressions.
+
+        If any expression returns ALREADY_RETURNED, stop processing and propagate
+        the sentinel (subsequent expressions are unreachable).
+        """
         result = self.gen_none()
         for e in expr.exprs:
             result = self.generate_lines(e, lines, indent)
+            if result == ALREADY_RETURNED:
+                break
         return result
 
     def _generate_while(self, expr: While, lines: List[str], indent: str) -> str:
@@ -526,10 +537,14 @@ class CodeGenerator(ABC):
         return self.gen_none()
 
     def _generate_return(self, expr: Return, lines: List[str], indent: str) -> str:
-        """Generate code for a return statement."""
+        """Generate code for a return statement.
+
+        Returns ALREADY_RETURNED sentinel to indicate that the caller should not
+        add another return statement.
+        """
         expr_code = self.generate_lines(expr.expr, lines, indent)
         lines.append(f"{indent}{self.gen_return(expr_code)}")
-        return self.gen_none()
+        return ALREADY_RETURNED
 
     def _generate_dict_from_list(self, expr: DictFromList, lines: List[str], indent: str) -> str:
         """Generate code for dict-from-list.

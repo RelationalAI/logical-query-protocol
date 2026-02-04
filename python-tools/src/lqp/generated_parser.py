@@ -265,107 +265,86 @@ class Parser:
     def _extract_value_int64(value: Optional[logic_pb2.Value], default: int) -> int:
         if value is None:
             return default
-            _t1017 = None
         else:
             _t1017 = None
         if value.HasField('int_value'):
             return value.int_value
-            _t1018 = None
         else:
             _t1018 = None
         return default
-        return None
 
     @staticmethod
     def _extract_value_float64(value: Optional[logic_pb2.Value], default: float) -> float:
         if value is None:
             return default
-            _t1019 = None
         else:
             _t1019 = None
         if value.HasField('float_value'):
             return value.float_value
-            _t1020 = None
         else:
             _t1020 = None
         return default
-        return None
 
     @staticmethod
     def _extract_value_string(value: Optional[logic_pb2.Value], default: str) -> str:
         if value is None:
             return default
-            _t1021 = None
         else:
             _t1021 = None
         if value.HasField('string_value'):
             return value.string_value
-            _t1022 = None
         else:
             _t1022 = None
         return default
-        return None
 
     @staticmethod
     def _extract_value_boolean(value: Optional[logic_pb2.Value], default: bool) -> bool:
         if value is None:
             return default
-            _t1023 = None
         else:
             _t1023 = None
         if value.HasField('boolean_value'):
             return value.boolean_value
-            _t1024 = None
         else:
             _t1024 = None
         return default
-        return None
 
     @staticmethod
     def _extract_value_bytes(value: Optional[logic_pb2.Value], default: bytes) -> bytes:
         if value is None:
             return default
-            _t1025 = None
         else:
             _t1025 = None
         if value.HasField('string_value'):
             _t1027 = value.string_value.encode()
             return _t1027
-            _t1026 = None
         else:
             _t1026 = None
         return default
-        return None
 
     @staticmethod
     def _extract_value_uint128(value: Optional[logic_pb2.Value], default: logic_pb2.UInt128Value) -> logic_pb2.UInt128Value:
         if value is None:
             return default
-            _t1028 = None
         else:
             _t1028 = None
         if value.HasField('uint128_value'):
             return value.uint128_value
-            _t1029 = None
         else:
             _t1029 = None
         return default
-        return None
 
     @staticmethod
     def _extract_value_string_list(value: Optional[logic_pb2.Value], default: list[str]) -> list[str]:
         if value is None:
             return default
-            _t1030 = None
         else:
             _t1030 = None
         if value.HasField('string_value'):
             return [value.string_value]
-            _t1031 = None
         else:
             _t1031 = None
         return default
-        return None
 
     @staticmethod
     def construct_csv_config(config_dict: list[tuple[str, logic_pb2.Value]]) -> logic_pb2.CSVConfig:
@@ -394,7 +373,6 @@ class Parser:
         compression = _t1042
         _t1043 = logic_pb2.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression)
         return _t1043
-        return None
 
     @staticmethod
     def construct_betree_info(key_types: list[logic_pb2.Type], value_types: list[logic_pb2.Type], config_dict: list[tuple[str, logic_pb2.Value]]) -> logic_pb2.BeTreeInfo:
@@ -434,7 +412,6 @@ class Parser:
         relation_locator = _t1056
         _t1057 = logic_pb2.BeTreeInfo(key_types=key_types, value_types=value_types, storage_config=storage_config, relation_locator=relation_locator)
         return _t1057
-        return None
 
     @staticmethod
     def construct_configure(config_dict: list[tuple[str, logic_pb2.Value]]) -> transactions_pb2.Configure:
@@ -460,7 +437,6 @@ class Parser:
         semantics_version = _t1062
         _t1063 = transactions_pb2.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
         return _t1063
-        return None
 
     @staticmethod
     def export_csv_config(path: str, columns: list[transactions_pb2.ExportCSVColumn], config_dict: list[tuple[str, logic_pb2.Value]]) -> transactions_pb2.ExportCSVConfig:
@@ -481,7 +457,6 @@ class Parser:
         syntax_escapechar = _t1070
         _t1071 = transactions_pb2.ExportCSVConfig(path=path, data_columns=columns, partition_size=partition_size, compression=compression, syntax_header_row=syntax_header_row, syntax_missing_string=syntax_missing_string, syntax_delim=syntax_delim, syntax_quotechar=syntax_quotechar, syntax_escapechar=syntax_escapechar)
         return _t1071
-        return None
 
     # --- Parse methods ---
 

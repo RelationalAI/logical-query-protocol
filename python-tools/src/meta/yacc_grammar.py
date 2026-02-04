@@ -1245,7 +1245,7 @@ def _convert_func_expr(node: ast.expr, ctx: TypeContext, line: int,
             for val in node.values[1:]:
                 result = Call(Builtin("and"), [result, _convert_func_expr(val, ctx, line, local_vars)])
             return result
-        elif isinstance(node, ast.Or):
+        elif isinstance(node.op, ast.Or):
             result = _convert_func_expr(node.values[0], ctx, line, local_vars)
             for val in node.values[1:]:
                 result = Call(Builtin("or"), [result, _convert_func_expr(val, ctx, line, local_vars)])
