@@ -39,7 +39,7 @@ def create_test_files():
     grammar_content = dedent("""\
     %start transaction
     %token STRING String r'"[^"]*"'
-    %token INT Int32 r'[-]?\d+'
+    %token INT Int32 r'[-]?\\d+'
 
     %nonterm transaction test.Transaction
 

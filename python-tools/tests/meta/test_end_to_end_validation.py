@@ -468,7 +468,7 @@ class TestValidGrammar:
         grammar_content = """\
 %start person
 %token STRING String r'"[^"]*"'
-%token INT Int64 r'[-]?\d+'
+%token INT Int64 r'[-]?\\d+'
 
 %nonterm person test.Person
 
@@ -502,7 +502,7 @@ person
         grammar_content = """\
 %start value
 %token STRING String r'"[^"]*"'
-%token INT Int64 r'[-]?\d+'
+%token INT Int64 r'[-]?\\d+'
 
 %nonterm value test.Value
 
@@ -644,7 +644,7 @@ class TestComplexValidationScenarios:
         grammar_content = """\
 %start person
 %token STRING String r'"[^"]*"'
-%token INT Int64 r'[-]?\d+'
+%token INT Int64 r'[-]?\\d+'
 
 %nonterm person test.Person
 
