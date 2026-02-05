@@ -70,7 +70,7 @@ def expr_to_str(expr: TargetExpr) -> str:
         if isinstance(expr.value, str):
             return repr(expr.value)
         elif isinstance(expr.value, bool):
-            return "true" if expr.value else "false"
+            return "True" if expr.value else "False"
         else:
             return str(expr.value)
 

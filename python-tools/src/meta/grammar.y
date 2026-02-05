@@ -162,420 +162,606 @@
 
 transaction
     : "(" "transaction" configure? sync? epoch* ")"
-    { transactions.Transaction(epochs=$5, configure=builtin.unwrap_option_or($3, construct_configure([])), sync=$4) }
+      construct: transactions.Transaction(epochs=$5, configure=builtin.unwrap_option_or($3, construct_configure([])), sync=$4)
 
 configure
     : "(" "configure" config_dict ")"
-    { construct_configure($3) }
+      construct: construct_configure($3)
 
 config_dict
     : "{" config_key_value* "}"
-    { $2 }
+      construct: $2
 
 config_key_value
     : ":" SYMBOL value
-    { builtin.tuple($2, $3) }
+      construct: builtin.tuple($2, $3)
 
 value
-    : date { logic.Value(date_value=$1) }
-    | datetime { logic.Value(datetime_value=$1) }
-    | STRING { logic.Value(string_value=$1) }
-    | INT { logic.Value(int_value=$1) }
-    | FLOAT { logic.Value(float_value=$1) }
-    | UINT128 { logic.Value(uint128_value=$1) }
-    | INT128 { logic.Value(int128_value=$1) }
-    | DECIMAL { logic.Value(decimal_value=$1) }
-    | "missing" { logic.Value(missing_value=logic.MissingValue()) }
-    | boolean_value { logic.Value(boolean_value=$1) }
+    : date
+      construct: logic.Value(date_value=$1)
+    | datetime
+      construct: logic.Value(datetime_value=$1)
+    | STRING
+      construct: logic.Value(string_value=$1)
+    | INT
+      construct: logic.Value(int_value=$1)
+    | FLOAT
+      construct: logic.Value(float_value=$1)
+    | UINT128
+      construct: logic.Value(uint128_value=$1)
+    | INT128
+      construct: logic.Value(int128_value=$1)
+    | DECIMAL
+      construct: logic.Value(decimal_value=$1)
+    | "missing"
+      construct: logic.Value(missing_value=logic.MissingValue())
+    | boolean_value
+      construct: logic.Value(boolean_value=$1)
 
 date
     : "(" "date" INT INT INT ")"
-    { logic.DateValue(year=builtin.int64_to_int32($3), month=builtin.int64_to_int32($4), day=builtin.int64_to_int32($5)) }
+      construct: logic.DateValue(year=builtin.int64_to_int32($3), month=builtin.int64_to_int32($4), day=builtin.int64_to_int32($5))
 
 datetime
     : "(" "datetime" INT INT INT INT INT INT INT? ")"
-    { logic.DateTimeValue(year=builtin.int64_to_int32($3), month=builtin.int64_to_int32($4), day=builtin.int64_to_int32($5), hour=builtin.int64_to_int32($6), minute=builtin.int64_to_int32($7), second=builtin.int64_to_int32($8), microsecond=builtin.int64_to_int32(builtin.unwrap_option_or($9, 0))) }
+      construct: logic.DateTimeValue(year=builtin.int64_to_int32($3), month=builtin.int64_to_int32($4), day=builtin.int64_to_int32($5), hour=builtin.int64_to_int32($6), minute=builtin.int64_to_int32($7), second=builtin.int64_to_int32($8), microsecond=builtin.int64_to_int32(builtin.unwrap_option_or($9, 0)))
 
 boolean_value
-    : "true" { true }
-    | "false" { false }
+    : "true"
+      construct: True
+    | "false"
+      construct: False
 
 sync
     : "(" "sync" fragment_id* ")"
-    { transactions.Sync(fragments=$3) }
+      construct: transactions.Sync(fragments=$3)
 
 fragment_id
     : ":" SYMBOL
-    { builtin.fragment_id_from_string($2) }
+      construct: builtin.fragment_id_from_string($2)
 
 epoch
     : "(" "epoch" epoch_writes? epoch_reads? ")"
-    { transactions.Epoch(writes=builtin.unwrap_option_or($3, []), reads=builtin.unwrap_option_or($4, [])) }
+      construct: transactions.Epoch(writes=builtin.unwrap_option_or($3, []), reads=builtin.unwrap_option_or($4, []))
 
 epoch_writes
     : "(" "writes" write* ")"
-    { $3 }
+      construct: $3
 
 write
-    : define { transactions.Write(define=$1) }
-    | undefine { transactions.Write(undefine=$1) }
-    | context { transactions.Write(context=$1) }
+    : define
+      construct: transactions.Write(define=$1)
+    | undefine
+      construct: transactions.Write(undefine=$1)
+    | context
+      construct: transactions.Write(context=$1)
 
 define
     : "(" "define" fragment ")"
-    { transactions.Define(fragment=$3) }
+      construct: transactions.Define(fragment=$3)
 
 fragment
     : "(" "fragment" new_fragment_id declaration* ")"
-    { builtin.construct_fragment($3, $4) }
+      construct: builtin.construct_fragment($3, $4)
 
 new_fragment_id
     : fragment_id
-    { builtin.start_fragment($1)
-      $1
-    }
+      construct:
+        builtin.start_fragment($1)
+        $1
 
 declaration
-    : def { logic.Declaration(def=$1) }
-    | algorithm { logic.Declaration(algorithm=$1) }
-    | constraint { logic.Declaration(constraint=$1) }
-    | data { logic.Declaration(data=$1) }
+    : def
+      construct: logic.Declaration(def=$1)
+    | algorithm
+      construct: logic.Declaration(algorithm=$1)
+    | constraint
+      construct: logic.Declaration(constraint=$1)
+    | data
+      construct: logic.Declaration(data=$1)
 
 def
     : "(" "def" relation_id abstraction attrs? ")"
-    { logic.Def(name=$3, body=$4, attrs=builtin.unwrap_option_or($5, [])) }
+      construct: logic.Def(name=$3, body=$4, attrs=builtin.unwrap_option_or($5, []))
 
 relation_id
-    : ":" SYMBOL { builtin.relation_id_from_string($2) }
-    | INT { builtin.relation_id_from_int($1) }
+    : ":" SYMBOL
+      construct: builtin.relation_id_from_string($2)
+    | INT
+      construct: builtin.relation_id_from_int($1)
 
 abstraction
     : "(" bindings formula ")"
-    { logic.Abstraction(vars=builtin.list_concat($2[0], $2[1]), value=$3) }
+      construct: logic.Abstraction(vars=builtin.list_concat($2[0], $2[1]), value=$3)
 
 bindings
     : "[" binding* value_bindings? "]"
-    { builtin.tuple($2, builtin.unwrap_option_or($3, [])) }
+      construct: builtin.tuple($2, builtin.unwrap_option_or($3, []))
 
 binding
     : SYMBOL "::" type
-    { logic.Binding(var=logic.Var(name=$1), type=$3) }
+      construct: logic.Binding(var=logic.Var(name=$1), type=$3)
 
 type
-    : unspecified_type { logic.Type(unspecified_type=$1) }
-    | string_type { logic.Type(string_type=$1) }
-    | int_type { logic.Type(int_type=$1) }
-    | float_type { logic.Type(float_type=$1) }
-    | uint128_type { logic.Type(uint128_type=$1) }
-    | int128_type { logic.Type(int128_type=$1) }
-    | date_type { logic.Type(date_type=$1) }
-    | datetime_type { logic.Type(datetime_type=$1) }
-    | missing_type { logic.Type(missing_type=$1) }
-    | decimal_type { logic.Type(decimal_type=$1) }
-    | boolean_type { logic.Type(boolean_type=$1) }
+    : unspecified_type
+      construct: logic.Type(unspecified_type=$1)
+    | string_type
+      construct: logic.Type(string_type=$1)
+    | int_type
+      construct: logic.Type(int_type=$1)
+    | float_type
+      construct: logic.Type(float_type=$1)
+    | uint128_type
+      construct: logic.Type(uint128_type=$1)
+    | int128_type
+      construct: logic.Type(int128_type=$1)
+    | date_type
+      construct: logic.Type(date_type=$1)
+    | datetime_type
+      construct: logic.Type(datetime_type=$1)
+    | missing_type
+      construct: logic.Type(missing_type=$1)
+    | decimal_type
+      construct: logic.Type(decimal_type=$1)
+    | boolean_type
+      construct: logic.Type(boolean_type=$1)
 
-unspecified_type : "UNKNOWN" { logic.UnspecifiedType() }
-string_type : "STRING" { logic.StringType() }
-int_type : "INT" { logic.IntType() }
-float_type : "FLOAT" { logic.FloatType() }
-uint128_type : "UINT128" { logic.UInt128Type() }
-int128_type : "INT128" { logic.Int128Type() }
-date_type : "DATE" { logic.DateType() }
-datetime_type : "DATETIME" { logic.DateTimeType() }
-missing_type : "MISSING" { logic.MissingType() }
+unspecified_type
+    : "UNKNOWN"
+      construct: logic.UnspecifiedType()
+
+string_type
+    : "STRING"
+      construct: logic.StringType()
+
+int_type
+    : "INT"
+      construct: logic.IntType()
+
+float_type
+    : "FLOAT"
+      construct: logic.FloatType()
+
+uint128_type
+    : "UINT128"
+      construct: logic.UInt128Type()
+
+int128_type
+    : "INT128"
+      construct: logic.Int128Type()
+
+date_type
+    : "DATE"
+      construct: logic.DateType()
+
+datetime_type
+    : "DATETIME"
+      construct: logic.DateTimeType()
+
+missing_type
+    : "MISSING"
+      construct: logic.MissingType()
 
 decimal_type
     : "(" "DECIMAL" INT INT ")"
-    { logic.DecimalType(precision=builtin.int64_to_int32($3), scale=builtin.int64_to_int32($4)) }
+      construct: logic.DecimalType(precision=builtin.int64_to_int32($3), scale=builtin.int64_to_int32($4))
 
-boolean_type : "BOOLEAN" { logic.BooleanType() }
+boolean_type
+    : "BOOLEAN"
+      construct: logic.BooleanType()
 
 value_bindings
     : "|" binding*
-    { $2 }
+      construct: $2
 
 formula
-    : true { logic.Formula(conjunction=$1) }
-    | false { logic.Formula(disjunction=$1) }
-    | exists { logic.Formula(exists=$1) }
-    | reduce { logic.Formula(reduce=$1) }
-    | conjunction { logic.Formula(conjunction=$1) }
-    | disjunction { logic.Formula(disjunction=$1) }
-    | not { logic.Formula(not=$1) }
-    | ffi { logic.Formula(ffi=$1) }
-    | atom { logic.Formula(atom=$1) }
-    | pragma { logic.Formula(pragma=$1) }
-    | primitive { logic.Formula(primitive=$1) }
-    | rel_atom { logic.Formula(rel_atom=$1) }
-    | cast { logic.Formula(cast=$1) }
+    : true
+      construct: logic.Formula(conjunction=$1)
+    | false
+      construct: logic.Formula(disjunction=$1)
+    | exists
+      construct: logic.Formula(exists=$1)
+    | reduce
+      construct: logic.Formula(reduce=$1)
+    | conjunction
+      construct: logic.Formula(conjunction=$1)
+    | disjunction
+      construct: logic.Formula(disjunction=$1)
+    | not
+      construct: logic.Formula(not=$1)
+    | ffi
+      construct: logic.Formula(ffi=$1)
+    | atom
+      construct: logic.Formula(atom=$1)
+    | pragma
+      construct: logic.Formula(pragma=$1)
+    | primitive
+      construct: logic.Formula(primitive=$1)
+    | rel_atom
+      construct: logic.Formula(rel_atom=$1)
+    | cast
+      construct: logic.Formula(cast=$1)
 
-true : "(" "true" ")" { logic.Conjunction(args=[]) }
-false : "(" "false" ")" { logic.Disjunction(args=[]) }
+true
+    : "(" "true" ")"
+      construct: logic.Conjunction(args=[])
+
+false
+    : "(" "false" ")"
+      construct: logic.Disjunction(args=[])
 
 exists
     : "(" "exists" bindings formula ")"
-    { logic.Exists(body=logic.Abstraction(vars=builtin.list_concat($3[0], $3[1]), value=$4)) }
+      construct: logic.Exists(body=logic.Abstraction(vars=builtin.list_concat($3[0], $3[1]), value=$4))
 
 reduce
     : "(" "reduce" abstraction abstraction terms ")"
-    { logic.Reduce(op=$3, body=$4, terms=$5) }
+      construct: logic.Reduce(op=$3, body=$4, terms=$5)
 
 term
-    : var { logic.Term(var=$1) }
-    | constant { logic.Term(constant=$1) }
+    : var
+      construct: logic.Term(var=$1)
+    | constant
+      construct: logic.Term(constant=$1)
 
-var : SYMBOL { logic.Var(name=$1) }
-constant : value { $1 }
+var
+    : SYMBOL
+      construct: logic.Var(name=$1)
 
-conjunction : "(" "and" formula* ")" { logic.Conjunction(args=$3) }
-disjunction : "(" "or" formula* ")" { logic.Disjunction(args=$3) }
-not : "(" "not" formula ")" { logic.Not(arg=$3) }
+constant
+    : value
+      construct: $1
+
+conjunction
+    : "(" "and" formula* ")"
+      construct: logic.Conjunction(args=$3)
+
+disjunction
+    : "(" "or" formula* ")"
+      construct: logic.Disjunction(args=$3)
+
+not
+    : "(" "not" formula ")"
+      construct: logic.Not(arg=$3)
 
 ffi
     : "(" "ffi" name ffi_args terms ")"
-    { logic.FFI(name=$3, args=$4, terms=$5) }
+      construct: logic.FFI(name=$3, args=$4, terms=$5)
 
-ffi_args : "(" "args" abstraction* ")" { $3 }
-terms : "(" "terms" term* ")" { $3 }
-name : ":" SYMBOL { $2 }
+ffi_args
+    : "(" "args" abstraction* ")"
+      construct: $3
+
+terms
+    : "(" "terms" term* ")"
+      construct: $3
+
+name
+    : ":" SYMBOL
+      construct: $2
 
 atom
     : "(" "atom" relation_id term* ")"
-    { logic.Atom(name=$3, terms=$4) }
+      construct: logic.Atom(name=$3, terms=$4)
 
 pragma
     : "(" "pragma" name term* ")"
-    { logic.Pragma(name=$3, terms=$4) }
+      construct: logic.Pragma(name=$3, terms=$4)
 
 primitive
-    : eq { $1 }
-    | lt { $1 }
-    | lt_eq { $1 }
-    | gt { $1 }
-    | gt_eq { $1 }
-    | add { $1 }
-    | minus { $1 }
-    | multiply { $1 }
-    | divide { $1 }
+    : eq
+      construct: $1
+    | lt
+      construct: $1
+    | lt_eq
+      construct: $1
+    | gt
+      construct: $1
+    | gt_eq
+      construct: $1
+    | add
+      construct: $1
+    | minus
+      construct: $1
+    | multiply
+      construct: $1
+    | divide
+      construct: $1
     | "(" "primitive" name rel_term* ")"
-    { logic.Primitive(name=$3, terms=$4) }
+      construct: logic.Primitive(name=$3, terms=$4)
 
 eq
     : "(" "=" term term ")"
-    { logic.Primitive(name="rel_primitive_eq", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4)]) }
+      construct: logic.Primitive(name="rel_primitive_eq", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4)])
 
 lt
     : "(" "<" term term ")"
-    { logic.Primitive(name="rel_primitive_lt_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4)]) }
+      construct: logic.Primitive(name="rel_primitive_lt_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4)])
 
 lt_eq
     : "(" "<=" term term ")"
-    { logic.Primitive(name="rel_primitive_lt_eq_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4)]) }
+      construct: logic.Primitive(name="rel_primitive_lt_eq_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4)])
 
 gt
     : "(" ">" term term ")"
-    { logic.Primitive(name="rel_primitive_gt_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4)]) }
+      construct: logic.Primitive(name="rel_primitive_gt_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4)])
 
 gt_eq
     : "(" ">=" term term ")"
-    { logic.Primitive(name="rel_primitive_gt_eq_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4)]) }
+      construct: logic.Primitive(name="rel_primitive_gt_eq_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4)])
 
 add
     : "(" "+" term term term ")"
-    { logic.Primitive(name="rel_primitive_add_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4), logic.RelTerm(term=$5)]) }
+      construct: logic.Primitive(name="rel_primitive_add_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4), logic.RelTerm(term=$5)])
 
 minus
     : "(" "-" term term term ")"
-    { logic.Primitive(name="rel_primitive_subtract_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4), logic.RelTerm(term=$5)]) }
+      construct: logic.Primitive(name="rel_primitive_subtract_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4), logic.RelTerm(term=$5)])
 
 multiply
     : "(" "*" term term term ")"
-    { logic.Primitive(name="rel_primitive_multiply_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4), logic.RelTerm(term=$5)]) }
+      construct: logic.Primitive(name="rel_primitive_multiply_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4), logic.RelTerm(term=$5)])
 
 divide
     : "(" "/" term term term ")"
-    { logic.Primitive(name="rel_primitive_divide_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4), logic.RelTerm(term=$5)]) }
+      construct: logic.Primitive(name="rel_primitive_divide_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4), logic.RelTerm(term=$5)])
 
 rel_term
-    : specialized_value { logic.RelTerm(specialized_value=$1) }
-    | term { logic.RelTerm(term=$1) }
+    : specialized_value
+      construct: logic.RelTerm(specialized_value=$1)
+    | term
+      construct: logic.RelTerm(term=$1)
 
-specialized_value : "#" value { $2 }
+specialized_value
+    : "#" value
+      construct: $2
 
 rel_atom
     : "(" "relatom" name rel_term* ")"
-    { logic.RelAtom(name=$3, terms=$4) }
+      construct: logic.RelAtom(name=$3, terms=$4)
 
 cast
     : "(" "cast" term term ")"
-    { logic.Cast(input=$3, result=$4) }
+      construct: logic.Cast(input=$3, result=$4)
 
-attrs : "(" "attrs" attribute* ")" { $3 }
+attrs
+    : "(" "attrs" attribute* ")"
+      construct: $3
 
 attribute
     : "(" "attribute" name value* ")"
-    { logic.Attribute(name=$3, args=$4) }
+      construct: logic.Attribute(name=$3, args=$4)
 
 algorithm
     : "(" "algorithm" relation_id* script ")"
-    { logic.Algorithm(global=$3, body=$4) }
+      construct: logic.Algorithm(global=$3, body=$4)
 
-script : "(" "script" construct* ")" { logic.Script(constructs=$3) }
+script
+    : "(" "script" construct* ")"
+      construct: logic.Script(constructs=$3)
 
 construct
-    : loop { logic.Construct(loop=$1) }
-    | instruction { logic.Construct(instruction=$1) }
+    : loop
+      construct: logic.Construct(loop=$1)
+    | instruction
+      construct: logic.Construct(instruction=$1)
 
 loop
     : "(" "loop" init script ")"
-    { logic.Loop(init=$3, body=$4) }
+      construct: logic.Loop(init=$3, body=$4)
 
-init : "(" "init" instruction* ")" { $3 }
+init
+    : "(" "init" instruction* ")"
+      construct: $3
 
 instruction
-    : assign { logic.Instruction(assign=$1) }
-    | upsert { logic.Instruction(upsert=$1) }
-    | break { logic.Instruction(break=$1) }
-    | monoid_def { logic.Instruction(monoid_def=$1) }
-    | monus_def { logic.Instruction(monus_def=$1) }
+    : assign
+      construct: logic.Instruction(assign=$1)
+    | upsert
+      construct: logic.Instruction(upsert=$1)
+    | break
+      construct: logic.Instruction(break=$1)
+    | monoid_def
+      construct: logic.Instruction(monoid_def=$1)
+    | monus_def
+      construct: logic.Instruction(monus_def=$1)
 
 assign
     : "(" "assign" relation_id abstraction attrs? ")"
-    { logic.Assign(name=$3, body=$4, attrs=builtin.unwrap_option_or($5, [])) }
+      construct: logic.Assign(name=$3, body=$4, attrs=builtin.unwrap_option_or($5, []))
 
 upsert
     : "(" "upsert" relation_id abstraction_with_arity attrs? ")"
-    { logic.Upsert(name=$3, body=$4[0], attrs=builtin.unwrap_option_or($5, []), value_arity=$4[1]) }
+      construct: logic.Upsert(name=$3, body=$4[0], attrs=builtin.unwrap_option_or($5, []), value_arity=$4[1])
 
 abstraction_with_arity
     : "(" bindings formula ")"
-    { builtin.tuple(logic.Abstraction(vars=builtin.list_concat($2[0], $2[1]), value=$3), builtin.length($2[1])) }
+      construct: builtin.tuple(logic.Abstraction(vars=builtin.list_concat($2[0], $2[1]), value=$3), builtin.length($2[1]))
 
 break
     : "(" "break" relation_id abstraction attrs? ")"
-    { logic.Break(name=$3, body=$4, attrs=builtin.unwrap_option_or($5, [])) }
+      construct: logic.Break(name=$3, body=$4, attrs=builtin.unwrap_option_or($5, []))
 
 monoid_def
     : "(" "monoid" monoid relation_id abstraction_with_arity attrs? ")"
-    { logic.MonoidDef(monoid=$3, name=$4, body=$5[0], attrs=builtin.unwrap_option_or($6, []), value_arity=$5[1]) }
+      construct: logic.MonoidDef(monoid=$3, name=$4, body=$5[0], attrs=builtin.unwrap_option_or($6, []), value_arity=$5[1])
 
 monoid
-    : or_monoid { logic.Monoid(or_monoid=$1) }
-    | min_monoid { logic.Monoid(min_monoid=$1) }
-    | max_monoid { logic.Monoid(max_monoid=$1) }
-    | sum_monoid { logic.Monoid(sum_monoid=$1) }
+    : or_monoid
+      construct: logic.Monoid(or_monoid=$1)
+    | min_monoid
+      construct: logic.Monoid(min_monoid=$1)
+    | max_monoid
+      construct: logic.Monoid(max_monoid=$1)
+    | sum_monoid
+      construct: logic.Monoid(sum_monoid=$1)
 
-or_monoid : "(" "or" ")" { logic.OrMonoid() }
-min_monoid : "(" "min" type ")" { logic.MinMonoid(type=$3) }
-max_monoid : "(" "max" type ")" { logic.MaxMonoid(type=$3) }
-sum_monoid : "(" "sum" type ")" { logic.SumMonoid(type=$3) }
+or_monoid
+    : "(" "or" ")"
+      construct: logic.OrMonoid()
+
+min_monoid
+    : "(" "min" type ")"
+      construct: logic.MinMonoid(type=$3)
+max_monoid
+    : "(" "max" type ")"
+      construct: logic.MaxMonoid(type=$3)
+
+sum_monoid
+    : "(" "sum" type ")"
+      construct: logic.SumMonoid(type=$3)
 
 monus_def
     : "(" "monus" monoid relation_id abstraction_with_arity attrs? ")"
-    { logic.MonusDef(monoid=$3, name=$4, body=$5[0], attrs=builtin.unwrap_option_or($6, []), value_arity=$5[1]) }
+      construct: logic.MonusDef(monoid=$3, name=$4, body=$5[0], attrs=builtin.unwrap_option_or($6, []), value_arity=$5[1])
 
 constraint
     : "(" "functional_dependency" relation_id abstraction functional_dependency_keys functional_dependency_values ")"
-    { logic.Constraint(name=$3, functional_dependency=logic.FunctionalDependency(guard=$4, keys=$5, values=$6)) }
+      construct: logic.Constraint(name=$3, functional_dependency=logic.FunctionalDependency(guard=$4, keys=$5, values=$6))
 
-functional_dependency_keys : "(" "keys" var* ")" { $3 }
-functional_dependency_values : "(" "values" var* ")" { $3 }
+functional_dependency_keys
+    : "(" "keys" var* ")"
+      construct: $3
+
+functional_dependency_values
+    : "(" "values" var* ")"
+      construct: $3
 
 data
-    : rel_edb { logic.Data(rel_edb=$1) }
-    | betree_relation { logic.Data(betree_relation=$1) }
-    | csv_data { logic.Data(csv_data=$1) }
+    : rel_edb
+      construct: logic.Data(rel_edb=$1)
+    | betree_relation
+      construct: logic.Data(betree_relation=$1)
+    | csv_data
+      construct: logic.Data(csv_data=$1)
 
-rel_edb_path : "[" STRING* "]" { $2 }
-rel_edb_types : "[" type* "]" { $2 }
+rel_edb_path
+    : "[" STRING* "]"
+      construct: $2
+
+rel_edb_types
+    : "[" type* "]"
+      construct: $2
 
 rel_edb
     : "(" "rel_edb" relation_id rel_edb_path rel_edb_types ")"
-    { logic.RelEDB(target_id=$3, path=$4, types=$5) }
+      construct: logic.RelEDB(target_id=$3, path=$4, types=$5)
 
-betree_relation : be_tree_relation { $1 }
+betree_relation
+    : be_tree_relation
+      construct: $1
 
 be_tree_relation
     : "(" "betree_relation" relation_id be_tree_info ")"
-    { logic.BeTreeRelation(name=$3, relation_info=$4) }
+      construct: logic.BeTreeRelation(name=$3, relation_info=$4)
 
 be_tree_info
     : "(" "betree_info" be_tree_info_key_types be_tree_info_value_types config_dict ")"
-    { construct_betree_info($3, $4, $5) }
+      construct: construct_betree_info($3, $4, $5)
 
-be_tree_info_key_types : "(" "key_types" type* ")" { $3 }
-be_tree_info_value_types : "(" "value_types" type* ")" { $3 }
+be_tree_info_key_types
+    : "(" "key_types" type* ")"
+      construct: $3
 
-csv_data : csvdata { $1 }
-csv_columns : "(" "columns" csv_column* ")" { $3 }
-csv_asof : "(" "asof" STRING ")" { $3 }
+be_tree_info_value_types
+    : "(" "value_types" type* ")"
+      construct: $3
+
+csv_data
+    : csvdata
+      construct: $1
+
+csv_columns
+    : "(" "columns" csv_column* ")"
+      construct: $3
+
+csv_asof
+    : "(" "asof" STRING ")"
+      construct: $3
 
 csvdata
     : "(" "csv_data" csvlocator csv_config csv_columns csv_asof ")"
-    { logic.CSVData(locator=$3, config=$4, columns=$5, asof=$6) }
+      construct: logic.CSVData(locator=$3, config=$4, columns=$5, asof=$6)
 
-csv_locator_paths : "(" "paths" STRING* ")" { $3 }
-csv_locator_inline_data : "(" "inline_data" STRING ")" { $3 }
+csv_locator_paths
+    : "(" "paths" STRING* ")"
+      construct: $3
+
+csv_locator_inline_data
+    : "(" "inline_data" STRING ")"
+      construct: $3
 
 csvlocator
     : "(" "csv_locator" csv_locator_paths? csv_locator_inline_data? ")"
-    { logic.CSVLocator(paths=builtin.unwrap_option_or($3, []), inline_data=builtin.encode_string(builtin.unwrap_option_or($4, ""))) }
+      construct: logic.CSVLocator(paths=builtin.unwrap_option_or($3, []), inline_data=builtin.encode_string(builtin.unwrap_option_or($4, "")))
 
 csv_config
     : "(" "csv_config" config_dict ")"
-    { construct_csv_config($3) }
+      construct: construct_csv_config($3)
 
 csv_column
     : "(" "column" STRING relation_id "[" type* "]" ")"
-    { logic.CSVColumn(column_name=$3, target_id=$4, types=$6) }
+      construct: logic.CSVColumn(column_name=$3, target_id=$4, types=$6)
 
 undefine
     : "(" "undefine" fragment_id ")"
-    { transactions.Undefine(fragment_id=$3) }
+      construct: transactions.Undefine(fragment_id=$3)
 
 context
     : "(" "context" relation_id* ")"
-    { transactions.Context(relations=$3) }
+      construct: transactions.Context(relations=$3)
 
-epoch_reads : "(" "reads" read* ")" { $3 }
+epoch_reads
+    : "(" "reads" read* ")"
+      construct: $3
 
 read
-    : demand { transactions.Read(demand=$1) }
-    | output { transactions.Read(output=$1) }
-    | what_if { transactions.Read(what_if=$1) }
-    | abort { transactions.Read(abort=$1) }
-    | export { transactions.Read(export=$1) }
+    : demand
+      construct: transactions.Read(demand=$1)
+    | output
+      construct: transactions.Read(output=$1)
+    | what_if
+      construct: transactions.Read(what_if=$1)
+    | abort
+      construct: transactions.Read(abort=$1)
+    | export
+      construct: transactions.Read(export=$1)
 
 demand
     : "(" "demand" relation_id ")"
-    { transactions.Demand(relation_id=$3) }
+      construct: transactions.Demand(relation_id=$3)
 
 output
     : "(" "output" name? relation_id ")"
-    { transactions.Output(name=builtin.unwrap_option_or($3, "output"), relation_id=$4) }
+      construct: transactions.Output(name=builtin.unwrap_option_or($3, "output"), relation_id=$4)
 
 what_if
     : "(" "what_if" name epoch ")"
-    { transactions.WhatIf(branch=$3, epoch=$4) }
+      construct: transactions.WhatIf(branch=$3, epoch=$4)
 
 abort
     : "(" "abort" name? relation_id ")"
-    { transactions.Abort(name=builtin.unwrap_option_or($3, "abort"), relation_id=$4) }
+      construct: transactions.Abort(name=builtin.unwrap_option_or($3, "abort"), relation_id=$4)
 
 export
     : "(" "export" export_csv_config ")"
-    { transactions.Export(csv_config=$3) }
+      construct: transactions.Export(csv_config=$3)
 
 export_csv_config
     : "(" "export_csv_config" export_csv_path export_csv_columns config_dict ")"
-    { export_csv_config($3, $4, $5) }
+      construct: export_csv_config($3, $4, $5)
 
-export_csv_path : "(" "path" STRING ")" { $3 }
-export_csv_columns : "(" "columns" export_csv_column* ")" { $3 }
+export_csv_path
+    : "(" "path" STRING ")"
+      construct: $3
+
+export_csv_columns
+    : "(" "columns" export_csv_column* ")"
+      construct: $3
 
 export_csv_column
     : "(" "column" STRING relation_id ")"
-    { transactions.ExportCSVColumn(column_name=$3, column_data=$4) }
+      construct: transactions.ExportCSVColumn(column_name=$3, column_data=$4)
 
 
 %%

@@ -130,15 +130,15 @@ class TestExprRoundtrip:
         "3.14",
         "'hello'",
         "\"world\"",
-        "true",
-        "false",
+        "True",
+        "False",
     ])
     def test_literals(self, expr_str: str):
         """Test literal roundtrips."""
         ctx = make_ctx()
         expr = parse_expr(expr_str, ctx)
         result = expr_to_str(expr)
-        # Normalize: double quotes become single, true/false are lowercase
+        # Normalize: double quotes become single
         expected = expr_str.replace('"', "'")
         assert result == expected
 

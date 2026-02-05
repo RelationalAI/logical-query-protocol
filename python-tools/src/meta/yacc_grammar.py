@@ -47,7 +47,7 @@ Action syntax (Python-like):
     [e1, e2, ...]       -> list literal
     "string"            -> string literal
     123                 -> integer literal
-    true, false         -> boolean literals
+    True, False         -> boolean literals
 """
 
 import ast
@@ -432,9 +432,9 @@ def _convert_node(node: ast.AST, param_types: List[Optional[TargetType]], ctx: T
     elif isinstance(node, ast.Name):
         name = node.id
         # Handle special names
-        if name == 'true':
+        if name == 'True':
             return Lit(True)
-        elif name == 'false':
+        elif name == 'False':
             return Lit(False)
         # Handle $N references (stored as _dollar_N during preprocessing)
         if name.startswith('_dollar_'):
@@ -795,9 +795,9 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
 
     elif isinstance(node, ast.Name):
         name = node.id
-        if name == 'true':
+        if name == 'True':
             return Lit(True)
-        elif name == 'false':
+        elif name == 'False':
             return Lit(False)
         elif name.startswith('_dollar_'):
             # $N reference - map to the corresponding parameter
@@ -955,8 +955,24 @@ def _build_params(rhs: Rhs) -> List[Var]:
     return params
 
 
+def _get_indent(line: str) -> int:
+    """Get the indentation level (number of leading spaces) of a line."""
+    return len(line) - len(line.lstrip())
+
+
 def parse_rules(lines: List[str], start_line: int, ctx: TypeContext) -> Tuple[List[Rule], int]:
     """Parse rules section until %%.
+
+    Rules use 'construct:' to introduce semantic actions:
+        rule
+            : rhs
+            construct: single_line_expression
+
+        rule
+            : rhs
+            construct:
+                multi_line
+                action_code
 
     Returns:
         (rules, end_line_index)
@@ -965,32 +981,53 @@ def parse_rules(lines: List[str], start_line: int, ctx: TypeContext) -> Tuple[Li
     i = 0
     current_lhs: Optional[str] = None
     current_lhs_type: Optional[TargetType] = None
-    current_alt_lines: List[str] = []  # Accumulate lines for current alternative
+    current_rhs_lines: List[str] = []  # Accumulate RHS lines
+    current_action_lines: List[str] = []  # Accumulate action lines
     current_alt_start_line: int = 0
+    in_action: bool = False
+    action_base_indent: int = 0  # Indentation level of the 'construct:' line
 
     def flush_alternative():
-        """Process accumulated alternative lines."""
-        nonlocal current_alt_lines
-        if current_alt_lines and current_lhs is not None and current_lhs_type is not None:
-            text = '\n'.join(current_alt_lines)
-            rule = _parse_alternative(current_lhs, current_lhs_type, text, ctx, current_alt_start_line)
+        """Process accumulated alternative."""
+        nonlocal current_rhs_lines, current_action_lines, in_action
+        if current_rhs_lines and current_lhs is not None and current_lhs_type is not None:
+            rhs_text = '\n'.join(current_rhs_lines)
+            action_text = '\n'.join(current_action_lines)
+            rule = _parse_alternative(current_lhs, current_lhs_type, rhs_text, action_text, ctx, current_alt_start_line)
             rules.append(rule)
-        current_alt_lines = []
+        current_rhs_lines = []
+        current_action_lines = []
+        in_action = False
 
     while i < len(lines):
         line = lines[i]
         line_num = start_line + i
         stripped = line.strip()
+        indent = _get_indent(line)
         i += 1
 
-        # Skip empty lines and comments
+        # Skip empty lines and comments (but preserve them in action blocks)
         if not stripped or stripped.startswith('#'):
+            if in_action and current_action_lines:
+                # Preserve empty lines within action blocks
+                current_action_lines.append('')
             continue
 
         # Check for section separator
         if stripped == '%%':
             flush_alternative()
             return rules, i
+
+        # If we're in an action block, check if we should exit
+        if in_action:
+            if indent <= action_base_indent and not stripped.startswith('construct:'):
+                # Indentation decreased - end of action block
+                in_action = False
+                # Don't consume this line, process it below
+            else:
+                # Continue action block
+                current_action_lines.append(stripped)
+                continue
 
         # Check for new rule (name at start of line, not indented)
         if line and (line[0].isalpha() or line[0] == '_'):
@@ -1007,7 +1044,7 @@ def parse_rules(lines: List[str], start_line: int, ctx: TypeContext) -> Tuple[Li
 
                 rest = parts[1].strip()
                 if rest:
-                    current_alt_lines = [rest]
+                    current_rhs_lines = [rest]
                     current_alt_start_line = line_num
             else:
                 # Just the name, colon on next line
@@ -1025,12 +1062,27 @@ def parse_rules(lines: List[str], start_line: int, ctx: TypeContext) -> Tuple[Li
 
             rest = stripped[1:].strip()
             if rest:
-                current_alt_lines = [rest]
+                # Check if this line incorrectly contains 'construct:' inline
+                if ' construct:' in rest or rest.endswith(' construct'):
+                    raise YaccGrammarError(f"'construct:' must be on a separate line from the RHS", line_num)
+                current_rhs_lines = [rest]
                 current_alt_start_line = line_num
 
-        elif line and line[0].isspace() and current_alt_lines:
-            # Continuation of current alternative (indented line)
-            current_alt_lines.append(stripped)
+        elif stripped.startswith('construct:'):
+            # Start of semantic action
+            action_base_indent = indent
+            rest = stripped[len('construct:'):].strip()
+            if rest:
+                # Single-line action
+                current_action_lines = [rest]
+            else:
+                # Multi-line action follows
+                in_action = True
+                current_action_lines = []
+
+        elif line and line[0].isspace() and current_rhs_lines:
+            # Continuation of RHS (indented line, not yet in action)
+            current_rhs_lines.append(stripped)
 
         else:
             raise YaccGrammarError(f"Unexpected line in rules section: {stripped}", line_num)
@@ -1038,66 +1090,20 @@ def parse_rules(lines: List[str], start_line: int, ctx: TypeContext) -> Tuple[Li
     raise YaccGrammarError("Unexpected end of file, expected %%")
 
 
-def _find_action_braces(text: str) -> Tuple[int, int]:
-    """Find the action braces in rule text, ignoring braces inside string literals.
-
-    Returns (brace_start, brace_end) indices, or (-1, -1) if not found.
-    """
-    i = 0
-    while i < len(text):
-        c = text[i]
-        if c == '"':
-            # Skip string literal
-            i += 1
-            while i < len(text) and text[i] != '"':
-                if text[i] == '\\':
-                    i += 2
-                else:
-                    i += 1
-            i += 1  # Skip closing quote
-        elif c == '{':
-            # Found the action start
-            brace_start = i
-            # Find matching close brace
-            depth = 1
-            i += 1
-            while i < len(text) and depth > 0:
-                if text[i] == '{':
-                    depth += 1
-                elif text[i] == '}':
-                    depth -= 1
-                elif text[i] == '"':
-                    # Skip string literal inside action
-                    i += 1
-                    while i < len(text) and text[i] != '"':
-                        if text[i] == '\\':
-                            i += 2
-                        else:
-                            i += 1
-                i += 1
-            if depth == 0:
-                return brace_start, i - 1
-            return brace_start, -1
-        else:
-            i += 1
-    return -1, -1
-
-
-def _parse_alternative(lhs_name: str, lhs_type: TargetType, text: str,
-                       ctx: TypeContext, line: int) -> Rule:
+def _parse_alternative(lhs_name: str, lhs_type: TargetType, rhs_text: str,
+                       action_text: str, ctx: TypeContext, line: int) -> Rule:
     """Parse a single rule alternative.
 
-    Format: rhs { action }
+    Args:
+        lhs_name: Name of the left-hand side nonterminal
+        lhs_type: Type of the left-hand side
+        rhs_text: The right-hand side pattern text
+        action_text: The semantic action text (from construct: block)
+        ctx: Type context
+        line: Line number for error messages
     """
-    # Find the action in braces, skipping string literals
-    brace_start, brace_end = _find_action_braces(text)
-    if brace_start == -1:
-        raise YaccGrammarError(f"Missing action in rule: {text}", line)
-    if brace_end == -1:
-        raise YaccGrammarError(f"Unbalanced braces in rule: {text}", line)
-
-    rhs_text = text[:brace_start].strip()
-    action_text = text[brace_start+1:brace_end].strip()
+    if not action_text:
+        raise YaccGrammarError(f"Missing construct: action for rule: {rhs_text}", line)
 
     # Parse RHS
     rhs = parse_rhs(rhs_text, ctx)
@@ -1248,9 +1254,9 @@ def _convert_func_expr(node: ast.expr, ctx: TypeContext, line: int,
 
     elif isinstance(node, ast.Name):
         name = node.id
-        if name == 'true':
+        if name == 'True':
             return Lit(True)
-        elif name == 'false':
+        elif name == 'False':
             return Lit(False)
         elif name == 'None':
             return Lit(None)
@@ -1470,6 +1476,11 @@ def load_yacc_grammar(text: str) -> GrammarConfig:
         GrammarConfig with terminals, rules, and function definitions
     """
     lines = text.split('\n')
+
+    # Check for tabs - they are not allowed
+    for line_num, line in enumerate(lines, 1):
+        if '\t' in line:
+            raise YaccGrammarError(f"Tabs are not allowed in grammar files. Semantic actions are sensitive to indentation.", line_num)
 
     # Parse directives
     ctx, ignored_completeness, rules_start = parse_directives(lines)

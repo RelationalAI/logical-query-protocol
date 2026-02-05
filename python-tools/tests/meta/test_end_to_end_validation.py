@@ -89,11 +89,13 @@ class TestCompletenessErrors:
         grammar_content = """\
 %token STRING String
 
-%type person test.Person
+%nonterm person test.Person
 
 %%
 
-person : STRING { test.Person(name=$1) }
+person
+    : STRING
+      construct: test.Person(name=$1)
 
 %%
 """
@@ -117,11 +119,13 @@ person : STRING { test.Person(name=$1) }
         grammar_content = """\
 %token STRING String
 
-%type my_custom_person_rule test.Person
+%nonterm my_custom_person_rule test.Person
 
 %%
 
-my_custom_person_rule : STRING { test.Person(name=$1) }
+my_custom_person_rule
+    : STRING
+      construct: test.Person(name=$1)
 
 %%
 """
@@ -149,11 +153,13 @@ class TestTypeErrors:
         grammar_content = """\
 %token STRING String
 
-%type record test.Record
+%nonterm record test.Record
 
 %%
 
-record : STRING { $1 }
+record
+    : STRING
+      construct: $1
 
 %%
 """
@@ -177,11 +183,13 @@ record : STRING { $1 }
         grammar_content = """\
 %token STRING String
 
-%type pair test.Pair
+%nonterm pair test.Pair
 
 %%
 
-pair : STRING STRING { test.Pair(first=tuple($1, $2)[5], second=$2) }
+pair
+    : STRING STRING
+      construct: test.Pair(first=builtin.tuple($1, $2)[5], second=$2)
 
 %%
 """
@@ -205,11 +213,13 @@ pair : STRING STRING { test.Pair(first=tuple($1, $2)[5], second=$2) }
         grammar_content = """\
 %token STRING String
 
-%type record test.Record
+%nonterm record test.Record
 
 %%
 
-record : STRING { test.Record(value=$1[0]) }
+record
+    : STRING
+      construct: test.Record(value=$1[0])
 
 %%
 """
@@ -234,11 +244,13 @@ record : STRING { test.Record(value=$1[0]) }
         grammar_content = """\
 %token STRING String
 
-%type person test.Person
+%nonterm person test.Person
 
 %%
 
-person : STRING { test.Person(name=$1) }
+person
+    : STRING
+      construct: test.Person(name=$1)
 
 %%
 """
@@ -263,11 +275,13 @@ person : STRING { test.Person(name=$1) }
         grammar_content = """\
 %token STRING String
 
-%type record test.Record
+%nonterm record test.Record
 
 %%
 
-record : STRING { test.Record(value=unwrap_option_or($1, "default")) }
+record
+    : STRING
+      construct: test.Record(value=builtin.unwrap_option_or($1, "default"))
 
 %%
 """
@@ -291,11 +305,13 @@ record : STRING { test.Record(value=unwrap_option_or($1, "default")) }
         grammar_content = """\
 %token STRING String
 
-%type record test.Record
+%nonterm record test.Record
 
 %%
 
-record : STRING { test.Record(count=length($1)) }
+record
+    : STRING
+      construct: test.Record(count=builtin.length($1))
 
 %%
 """
@@ -326,11 +342,13 @@ class TestOneofCoverage:
         grammar_content = """\
 %token STRING String
 
-%type value test.Value
+%nonterm value test.Value
 
 %%
 
-value : STRING { test.Value(kind=oneof_text($1)) }
+value
+    : STRING
+      construct: test.Value(kind=oneof_text($1))
 
 %%
 """
@@ -358,14 +376,18 @@ class TestSoundnessErrors:
         grammar_content = """\
 %token STRING String
 
-%type person test.Person
-%type unknown_rule test.NonExistentMessage
+%nonterm person test.Person
+%nonterm unknown_rule test.NonExistentMessage
 
 %%
 
-person : STRING { test.Person(name=$1) }
+person
+    : STRING
+      construct: test.Person(name=$1)
 
-unknown_rule : STRING { test.NonExistentMessage(name=$1) }
+unknown_rule
+    : STRING
+      construct: test.NonExistentMessage(name=$1)
 
 %%
 """
@@ -396,14 +418,18 @@ class TestUnreachableRules:
         grammar_content = """\
 %token STRING String
 
-%type start test.Start
-%type orphan test.Orphan
+%nonterm start test.Start
+%nonterm orphan test.Orphan
 
 %%
 
-start : STRING { test.Start(value=$1) }
+start
+    : STRING
+      construct: test.Start(value=$1)
 
-orphan : STRING { test.Orphan(data=$1) }
+orphan
+    : STRING
+      construct: test.Orphan(data=$1)
 
 %%
 """
@@ -432,11 +458,13 @@ class TestValidGrammar:
 %token STRING String
 %token INT Int64
 
-%type person test.Person
+%nonterm person test.Person
 
 %%
 
-person : STRING INT { test.Person(name=$1, age=int64_to_int32($2)) }
+person
+    : STRING INT
+      construct: test.Person(name=$1, age=builtin.int64_to_int32($2))
 
 %%
 """
@@ -463,13 +491,15 @@ person : STRING INT { test.Person(name=$1, age=int64_to_int32($2)) }
 %token STRING String
 %token INT Int64
 
-%type value test.Value
+%nonterm value test.Value
 
 %%
 
 value
-    : STRING { test.Value(kind=oneof_text($1)) }
-    | INT { test.Value(kind=oneof_number($1)) }
+    : STRING
+      construct: test.Value(kind=oneof_text($1))
+    | INT
+      construct: test.Value(kind=oneof_number($1))
 
 %%
 """
@@ -492,11 +522,13 @@ value
         grammar_content = """\
 %token STRING String
 
-%type record test.Record
+%nonterm record test.Record
 
 %%
 
-record : STRING* { test.Record(values=$1) }
+record
+    : STRING*
+      construct: test.Record(values=$1)
 
 %%
 """
@@ -519,11 +551,13 @@ record : STRING* { test.Record(values=$1) }
         grammar_content = """\
 %token STRING String
 
-%type record test.Record
+%nonterm record test.Record
 
 %%
 
-record : STRING? { test.Record(value=$1) }
+record
+    : STRING?
+      construct: test.Record(value=$1)
 
 %%
 """
@@ -551,14 +585,18 @@ record : STRING? { test.Record(value=$1) }
         grammar_content = """\
 %token STRING String
 
-%type person test.Person
-%type address test.Address
+%nonterm person test.Person
+%nonterm address test.Address
 
 %%
 
-person : STRING address { test.Person(name=$1, address=$2) }
+person
+    : STRING address
+      construct: test.Person(name=$1, address=$2)
 
-address : STRING { test.Address(street=$1) }
+address
+    : STRING
+      construct: test.Address(street=$1)
 
 %%
 """
@@ -591,11 +629,13 @@ class TestComplexValidationScenarios:
 %token STRING String
 %token INT Int64
 
-%type person test.Person
+%nonterm person test.Person
 
 %%
 
-person : STRING INT { $1 }
+person
+    : STRING INT
+      construct: $1
 
 %%
 """
@@ -622,11 +662,13 @@ person : STRING INT { $1 }
         grammar_content = """\
 %token STRING String
 
-%type pair test.Pair
+%nonterm pair test.Pair
 
 %%
 
-pair : STRING STRING { test.Pair(first=tuple($1, $2)[0], second=tuple($1, $2)[1]) }
+pair
+    : STRING STRING
+      construct: test.Pair(first=builtin.tuple($1, $2)[0], second=builtin.tuple($1, $2)[1])
 
 %%
 """

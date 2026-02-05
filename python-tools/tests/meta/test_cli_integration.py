@@ -40,13 +40,13 @@ def create_test_files():
     %token STRING String
     %token INT Int32
 
-    %type transaction test.Transaction
+    %nonterm transaction test.Transaction
 
     %%
 
     transaction
         : "(" "transaction" STRING INT ")"
-        { test.Transaction(name=$3, value=$4) }
+        construct: test.Transaction(name=$3, value=$4)
 
     %%
     """)
@@ -94,18 +94,18 @@ def create_invalid_grammar():
     grammar_content = dedent("""\
     %token STRING String
 
-    %type transaction test.Transaction
-    %type person test.Person
+    %nonterm transaction test.Transaction
+    %nonterm person test.Person
 
     %%
 
     transaction
         : "(" "person" STRING ")"
-        { test.Transaction(person=test.Person(name=$3)) }
+        construct: test.Transaction(person=test.Person(name=$3))
 
     person
         : "(" "person" STRING ")"
-        { test.Person(name=$3) }
+        construct: test.Person(name=$3)
 
     %%
     """)
