@@ -448,7 +448,7 @@ def _subst(expr: 'TargetExpr', var: str, val: 'TargetExpr') -> 'TargetExpr':
     elif isinstance(expr, Return):
         return Return(_subst(expr.expr, var, val))
     elif isinstance(expr, GetField):
-        return GetField(_subst(expr.object, var, val), expr.field_name)
+        return GetField(_subst(expr.object, var, val), expr.field_name, expr.message_type, expr.field_type)
     elif isinstance(expr, GetElement):
         return GetElement(_subst(expr.tuple_expr, var, val), expr.index)
     elif isinstance(expr, NewMessage):

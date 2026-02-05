@@ -289,17 +289,20 @@ class TestExprDirect:
 
     def test_get_field(self):
         """Test field access expression."""
-        from meta.target import GetField
-        obj = Var("msg", MessageType("logic", "Value"))
-        field = GetField(obj, "int_value")
+        from meta.target import GetField, BaseType
+        msg_type = MessageType("logic", "Value")
+        obj = Var("msg", msg_type)
+        field = GetField(obj, "int_value", msg_type, BaseType("Int64"))
         assert expr_to_str(field) == "msg.int_value"
 
     def test_nested_get_field(self):
         """Test nested field access."""
         from meta.target import GetField
-        obj = Var("msg", MessageType("logic", "Outer"))
-        inner = GetField(obj, "inner")
-        outer = GetField(inner, "value")
+        outer_type = MessageType("logic", "Outer")
+        inner_type = MessageType("logic", "Inner")
+        obj = Var("msg", outer_type)
+        inner = GetField(obj, "inner", outer_type, inner_type)
+        outer = GetField(inner, "value", inner_type, BaseType("String"))
         assert expr_to_str(outer) == "msg.inner.value"
 
     def test_has_proto_field(self):

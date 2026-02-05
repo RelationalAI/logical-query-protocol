@@ -308,15 +308,27 @@ class GetField(TargetExpr):
 
     object: Expression evaluating to the object
     field_name: Name of the field to access (string)
+    message_type: The expected message type of the object
+    field_type: The type of the field being accessed
 
     Example:
-        GetField(Var("msg", MessageType("logic", "Expr")), "term")
+        GetField(
+            Var("msg", MessageType("logic", "Expr")),
+            "term",
+            MessageType("logic", "Expr"),
+            MessageType("logic", "Term")
+        )
     """
     object: 'TargetExpr'
     field_name: str
+    message_type: 'MessageType'
+    field_type: 'TargetType'
 
     def __str__(self) -> str:
         return f"{self.object}.{self.field_name}"
+
+    def target_type(self) -> 'TargetType':
+        return self.field_type
 
 
 @dataclass(frozen=True)
@@ -720,6 +732,10 @@ class VisitNonterminalDef(TargetNode):
 
     def __post_init__(self):
         _freeze_sequence(self, 'params')
+
+    def function_type(self) -> 'FunctionType':
+        """Return the function type of this visitor method."""
+        return FunctionType([p.type for p in self.params], self.return_type)
 
 
 __all__ = [

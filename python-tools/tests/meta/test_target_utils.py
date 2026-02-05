@@ -258,18 +258,26 @@ class TestBuiltinHelpers:
         assert result.args == (msg, oneof_name)
 
     def test_make_get_field_with_string(self):
-        obj = Var('obj', MessageType('test', 'Foo'))
-        result = make_get_field(obj, 'field_name')
+        msg_type = MessageType('test', 'Foo')
+        field_type = BaseType('String')
+        obj = Var('obj', msg_type)
+        result = make_get_field(obj, 'field_name', msg_type, field_type)
         assert isinstance(result, GetField)
         assert result.object == obj
         assert result.field_name == 'field_name'
+        assert result.message_type == msg_type
+        assert result.field_type == field_type
 
     def test_make_get_field_with_lit(self):
         """GetField unwraps Lit field names."""
-        obj = Var('obj', MessageType('test', 'Foo'))
-        result = make_get_field(obj, Lit('field_name'))
+        msg_type = MessageType('test', 'Foo')
+        field_type = BaseType('Int64')
+        obj = Var('obj', msg_type)
+        result = make_get_field(obj, Lit('field_name'), msg_type, field_type)
         assert isinstance(result, GetField)
         assert result.field_name == 'field_name'
+        assert result.message_type == msg_type
+        assert result.field_type == field_type
 
     def test_make_some(self):
         value = Lit(42)

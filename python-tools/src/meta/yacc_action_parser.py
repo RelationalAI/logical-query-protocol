@@ -644,6 +644,21 @@ def _convert_stmt(stmt: ast.stmt, ctx: 'TypeContext', line: int,
         raise YaccGrammarError(f"Unsupported statement type: {type(stmt).__name__}", line)
 
 
+def _make_get_field(obj: TargetExpr, field_name: str, ctx: 'TypeContext', line: Optional[int] = None) -> GetField:
+    """Create a GetField expression, looking up field type if possible."""
+    obj_type = obj.target_type()
+    if not isinstance(obj_type, MessageType):
+        raise YaccGrammarError(f"Cannot access field '{field_name}' on non-message type {obj_type}", line)
+    message_type = obj_type
+    # Try to look up field type
+    field_type: TargetType = BaseType("Unknown")
+    if ctx.field_type_lookup is not None:
+        looked_up = ctx.field_type_lookup(message_type, field_name)
+        if looked_up is not None:
+            field_type = looked_up
+    return GetField(obj, field_name, message_type, field_type)
+
+
 def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
                        local_vars: Dict[str, TargetType]) -> TargetExpr:
     """Convert a Python expression in a function body to target IR."""
@@ -678,14 +693,14 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
             if node.value.id in local_vars:
                 # Field access on a variable
                 obj = Var(node.value.id, local_vars[node.value.id])
-                return GetField(obj, node.attr)
+                return _make_get_field(obj, node.attr, ctx, line)
             else:
                 # Assume it's a message constructor reference
                 return NewMessage(node.value.id, node.attr, ())
         else:
             # Field access on a more complex expression
             obj = _convert_func_expr(node.value, ctx, line, local_vars)
-            return GetField(obj, node.attr)
+            return _make_get_field(obj, node.attr, ctx, line)
 
     elif isinstance(node, ast.Call):
         func = node.func
@@ -704,7 +719,7 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
             if obj_name in local_vars:
                 # Method call: obj.method(args)
                 obj = Var(obj_name, local_vars[obj_name])
-                method_ref = GetField(obj, method_name)
+                method_ref = _make_get_field(obj, method_name, ctx, line)
                 return Call(method_ref, args)
             else:
                 # Message constructor
@@ -852,6 +867,8 @@ def _annotation_to_type(node: ast.AST, line: int) -> TargetType:
 # re-exported from yacc_parser for convenience.
 from dataclasses import dataclass, field
 
+from typing import Callable
+
 @dataclass
 class TypeContext:
     """Context for looking up types of terminals and nonterminals."""
@@ -860,6 +877,9 @@ class TypeContext:
     nonterminals: Dict[str, TargetType] = field(default_factory=dict)
     functions: Dict[str, FunDef] = field(default_factory=dict)
     start_symbol: Optional[str] = None
+    # Callback to look up field type: (message_type, field_name) -> field_type
+    # If None, field types cannot be resolved (use Unknown placeholder)
+    field_type_lookup: Optional[Callable[[MessageType, str], Optional[TargetType]]] = None
 
 
 @dataclass

@@ -496,13 +496,13 @@ class TestRuleTypeChecking:
     def test_rule_arity_match(self):
         """Test rule with matching parameter and RHS element counts."""
         parser = ProtoParser()
-        start = Nonterminal('start', BaseType('Unit'))
+        start = Nonterminal('start', BaseType('String'))
         grammar = Grammar(start=start)
 
         param1 = Var('x', BaseType('String'))
         param2 = Var('y', BaseType('Int64'))
         rhs = Sequence((NamedTerminal('STRING', BaseType('String')), NamedTerminal('INT', BaseType('Int64'))))
-        constructor = Lambda([param1, param2], BaseType('Unit'), Lit(None))
+        constructor = Lambda([param1, param2], BaseType('String'), param1)
         rule = Rule(start, rhs, constructor)
 
         validator = GrammarValidator(grammar, parser)
@@ -738,6 +738,51 @@ class TestComplexExpressions:
         inner = Call(make_builtin('length'), [Var('list', ListType(BaseType('String')))])
         outer = Call(make_builtin('int64_to_int32'), [inner])
 
+        validator._check_expr_types(outer, 'test_rule')
+        assert validator.result.is_valid
+
+
+class TestGetFieldTypeChecking:
+    """Tests for GetField type validation."""
+
+    def test_getfield_correct_message_type(self, validator):
+        """Test GetField with correct message type passes."""
+        from meta.target import GetField
+        msg_type = MessageType('proto', 'TestMsg')
+        obj = Var('msg', msg_type)
+        field = GetField(obj, 'field_name', msg_type, BaseType('String'))
+        validator._check_expr_types(field, 'test_rule')
+        assert validator.result.is_valid
+
+    def test_getfield_wrong_message_type(self, validator):
+        """Test GetField with wrong message type fails."""
+        from meta.target import GetField
+        actual_type = MessageType('proto', 'ActualMsg')
+        expected_type = MessageType('proto', 'ExpectedMsg')
+        obj = Var('msg', actual_type)
+        field = GetField(obj, 'field_name', expected_type, BaseType('String'))
+        validator._check_expr_types(field, 'test_rule')
+        assert not validator.result.is_valid
+        assert any('type_field_access' == e.category for e in validator.result.errors)
+        assert any('ExpectedMsg' in e.message and 'ActualMsg' in e.message for e in validator.result.errors)
+
+    def test_getfield_target_type(self):
+        """Test GetField.target_type() returns field_type."""
+        from meta.target import GetField
+        msg_type = MessageType('proto', 'TestMsg')
+        field_type = BaseType('Int64')
+        obj = Var('msg', msg_type)
+        field = GetField(obj, 'value', msg_type, field_type)
+        assert field.target_type() == field_type
+
+    def test_getfield_nested_correct_types(self, validator):
+        """Test nested GetField with correct types passes."""
+        from meta.target import GetField
+        outer_type = MessageType('proto', 'Outer')
+        inner_type = MessageType('proto', 'Inner')
+        obj = Var('msg', outer_type)
+        inner = GetField(obj, 'inner', outer_type, inner_type)
+        outer = GetField(inner, 'value', inner_type, BaseType('String'))
         validator._check_expr_types(outer, 'test_rule')
         assert validator.result.is_valid
 

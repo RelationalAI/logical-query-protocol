@@ -246,13 +246,13 @@ def make_which_oneof(msg, oneof_name):
     """Get which field is set in a oneof group."""
     return Call(make_builtin('which_one_of'), [msg, oneof_name])
 
-def make_get_field(obj, field_name):
+def make_get_field(obj, field_name, message_type, field_type):
     """Get field value from message: obj.field_name."""
     from .target import GetField
     # If field_name is a Lit, extract the string value
     if isinstance(field_name, Lit):
         field_name = field_name.value
-    return GetField(obj, field_name)
+    return GetField(obj, field_name, message_type, field_type)
 
 def make_some(value):
     """Wrap value in Option/Maybe: Some(value)."""
