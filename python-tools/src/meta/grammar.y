@@ -170,7 +170,6 @@ configure
 
 config_dict
     : "{" config_key_value* "}"
-      construct: $2
 
 config_key_value
     : ":" SYMBOL value
@@ -226,7 +225,6 @@ epoch
 
 epoch_writes
     : "(" "writes" write* ")"
-      construct: $3
 
 write
     : define
@@ -352,7 +350,6 @@ boolean_type
 
 value_bindings
     : "|" binding*
-      construct: $2
 
 formula
     : true
@@ -410,7 +407,6 @@ var
 
 constant
     : value
-      construct: $1
 
 conjunction
     : "(" "and" formula* ")"
@@ -430,15 +426,12 @@ ffi
 
 ffi_args
     : "(" "args" abstraction* ")"
-      construct: $3
 
 terms
     : "(" "terms" term* ")"
-      construct: $3
 
 name
     : ":" SYMBOL
-      construct: $2
 
 atom
     : "(" "atom" relation_id term* ")"
@@ -450,23 +443,14 @@ pragma
 
 primitive
     : eq
-      construct: $1
     | lt
-      construct: $1
     | lt_eq
-      construct: $1
     | gt
-      construct: $1
     | gt_eq
-      construct: $1
     | add
-      construct: $1
     | minus
-      construct: $1
     | multiply
-      construct: $1
     | divide
-      construct: $1
     | "(" "primitive" name rel_term* ")"
       construct: logic.Primitive(name=$3, terms=$4)
 
@@ -514,7 +498,6 @@ rel_term
 
 specialized_value
     : "#" value
-      construct: $2
 
 rel_atom
     : "(" "relatom" name rel_term* ")"
@@ -526,7 +509,6 @@ cast
 
 attrs
     : "(" "attrs" attribute* ")"
-      construct: $3
 
 attribute
     : "(" "attribute" name value* ")"
@@ -552,7 +534,6 @@ loop
 
 init
     : "(" "init" instruction* ")"
-      construct: $3
 
 instruction
     : assign
@@ -621,11 +602,9 @@ constraint
 
 functional_dependency_keys
     : "(" "keys" var* ")"
-      construct: $3
 
 functional_dependency_values
     : "(" "values" var* ")"
-      construct: $3
 
 data
     : rel_edb
@@ -637,11 +616,9 @@ data
 
 rel_edb_path
     : "[" STRING* "]"
-      construct: $2
 
 rel_edb_types
     : "[" type* "]"
-      construct: $2
 
 rel_edb
     : "(" "rel_edb" relation_id rel_edb_path rel_edb_types ")"
@@ -649,7 +626,6 @@ rel_edb
 
 betree_relation
     : be_tree_relation
-      construct: $1
 
 be_tree_relation
     : "(" "betree_relation" relation_id be_tree_info ")"
@@ -661,23 +637,18 @@ be_tree_info
 
 be_tree_info_key_types
     : "(" "key_types" type* ")"
-      construct: $3
 
 be_tree_info_value_types
     : "(" "value_types" type* ")"
-      construct: $3
 
 csv_data
     : csvdata
-      construct: $1
 
 csv_columns
     : "(" "columns" csv_column* ")"
-      construct: $3
 
 csv_asof
     : "(" "asof" STRING ")"
-      construct: $3
 
 csvdata
     : "(" "csv_data" csvlocator csv_config csv_columns csv_asof ")"
@@ -685,11 +656,9 @@ csvdata
 
 csv_locator_paths
     : "(" "paths" STRING* ")"
-      construct: $3
 
 csv_locator_inline_data
     : "(" "inline_data" STRING ")"
-      construct: $3
 
 csvlocator
     : "(" "csv_locator" csv_locator_paths? csv_locator_inline_data? ")"
@@ -713,7 +682,6 @@ context
 
 epoch_reads
     : "(" "reads" read* ")"
-      construct: $3
 
 read
     : demand
@@ -753,11 +721,9 @@ export_csv_config
 
 export_csv_path
     : "(" "path" STRING ")"
-      construct: $3
 
 export_csv_columns
     : "(" "columns" export_csv_column* ")"
-      construct: $3
 
 export_csv_column
     : "(" "column" STRING relation_id ")"

@@ -1090,6 +1090,25 @@ def parse_rules(lines: List[str], start_line: int, ctx: TypeContext) -> Tuple[Li
     raise YaccGrammarError("Unexpected end of file, expected %%")
 
 
+def _find_non_literal_indices(rhs: Rhs) -> List[int]:
+    """Find 1-indexed positions of non-literal elements in an RHS.
+
+    A literal element is a LitTerminal (quoted string like "(" or "transaction").
+    Non-literal elements are NamedTerminal, Nonterminal, Star, Option, etc.
+
+    Returns:
+        List of 1-indexed positions of non-literal elements.
+    """
+    indices = []
+    if isinstance(rhs, Sequence):
+        for i, elem in enumerate(rhs.elements):
+            if not isinstance(elem, LitTerminal):
+                indices.append(i + 1)  # 1-indexed
+    elif not isinstance(rhs, LitTerminal):
+        indices.append(1)
+    return indices
+
+
 def _parse_alternative(lhs_name: str, lhs_type: TargetType, rhs_text: str,
                        action_text: str, ctx: TypeContext, line: int) -> Rule:
     """Parse a single rule alternative.
@@ -1098,15 +1117,28 @@ def _parse_alternative(lhs_name: str, lhs_type: TargetType, rhs_text: str,
         lhs_name: Name of the left-hand side nonterminal
         lhs_type: Type of the left-hand side
         rhs_text: The right-hand side pattern text
-        action_text: The semantic action text (from construct: block)
+        action_text: The semantic action text (from construct: block), or empty for default
         ctx: Type context
         line: Line number for error messages
     """
-    if not action_text:
-        raise YaccGrammarError(f"Missing construct: action for rule: {rhs_text}", line)
-
-    # Parse RHS
+    # Parse RHS first so we can check for default action
     rhs = parse_rhs(rhs_text, ctx)
+
+    # If no action provided, try to infer default
+    if not action_text:
+        non_literal_indices = _find_non_literal_indices(rhs)
+        if len(non_literal_indices) == 0:
+            raise YaccGrammarError(
+                f"Missing construct: for rule with no non-literal elements: {rhs_text}",
+                line)
+        elif len(non_literal_indices) > 1:
+            raise YaccGrammarError(
+                f"Missing construct: for rule with multiple non-literal elements "
+                f"(at positions {non_literal_indices}): {rhs_text}",
+                line)
+        else:
+            # Exactly one non-literal - default to $n
+            action_text = f"${non_literal_indices[0]}"
 
     # Parse action, using LHS type as expected return type
     constructor = parse_action(action_text, rhs, ctx, line, expected_return_type=lhs_type)
