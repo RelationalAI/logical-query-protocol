@@ -6,9 +6,10 @@ Do not modify this file! If you need to modify the parser, edit the generator co
 in `python-tools/src/meta` or edit the protobuf specification in `proto/v1`.
 
 
-Command: python -m meta.cli ../proto/relationalai/lqp/v1/fragments.proto ../proto/relationalai/lqp/v1/logic.proto ../proto/relationalai/lqp/v1/transactions.proto --parser python
+Command: python -m meta.cli proto/relationalai/lqp/v1/fragments.proto proto/relationalai/lqp/v1/logic.proto proto/relationalai/lqp/v1/transactions.proto --parser python
 """
 
+import ast
 import hashlib
 import re
 from typing import List, Optional, Any, Tuple, Callable
@@ -118,7 +119,7 @@ class Lexer:
     @staticmethod
     def scan_string(s: str) -> str:
         """Parse STRING token."""
-        return s[1:-1].encode().decode('unicode_escape')  # Strip quotes and process escaping
+        return ast.literal_eval(s)
 
     @staticmethod
     def scan_int(n: str) -> int:
