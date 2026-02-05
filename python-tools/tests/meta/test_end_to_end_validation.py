@@ -12,7 +12,7 @@ from textwrap import dedent
 from meta.proto_parser import ProtoParser
 from meta.grammar_validator import validate_grammar
 from meta.validation_result import ValidationResult
-from meta.yacc_grammar import load_yacc_grammar_file
+from meta.yacc_parser import load_yacc_grammar_file
 from meta.grammar import Grammar
 
 

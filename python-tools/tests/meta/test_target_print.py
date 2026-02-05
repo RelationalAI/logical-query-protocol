@@ -16,7 +16,7 @@ from meta.target import (
     Seq, ListExpr, GetElement,
 )
 from meta.target_print import expr_to_str, type_to_str
-from meta.yacc_grammar import TypeContext
+from meta.yacc_action_parser import TypeContext
 from meta.target import Var
 import ast
 
@@ -32,7 +32,7 @@ def parse_expr(text: str, ctx: TypeContext, extra_vars: Optional[dict] = None) -
     This is a simplified wrapper that doesn't use $N parameter references,
     just extra_vars for variable bindings.
     """
-    from meta.yacc_grammar import _convert_node_with_vars
+    from meta.yacc_action_parser import _convert_node_with_vars
     if extra_vars is None:
         extra_vars = {}
 
