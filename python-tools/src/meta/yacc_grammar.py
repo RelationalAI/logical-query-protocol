@@ -63,7 +63,7 @@ from .grammar import (
 from .target import (
     TargetType, BaseType, BottomType, MessageType, ListType, OptionType, TupleType, DictType,
     TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, Call, Lambda,
-    Let, IfElse, Seq, ListExpr, GetElement, GetField, FunDef, OneOf, Assign, Return, HasProtoField
+    Let, IfElse, Seq, ListExpr, GetElement, GetField, FunDef, OneOf, Assign, Return
 )
 
 
@@ -498,13 +498,6 @@ def _convert_node(node: ast.AST, param_types: List[Optional[TargetType]], ctx: T
         # Handle builtin.foo(...) syntax for builtins
         if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name):
             if func.value.id == "builtin":
-                # Special handling for has_proto_field -> HasProtoField node
-                if func.attr == "has_proto_field":
-                    if len(args) != 2:
-                        raise YaccGrammarError(f"has_proto_field requires exactly 2 arguments", line)
-                    if not isinstance(args[1], Lit) or not isinstance(args[1].value, str):
-                        raise YaccGrammarError(f"has_proto_field second argument must be a string literal", line)
-                    return HasProtoField(args[0], args[1].value)
                 return Call(Builtin(func.attr), args)
 
         # Handle message constructor: module.Message(field=value, ...)
@@ -531,13 +524,9 @@ def _convert_node(node: ast.AST, param_types: List[Optional[TargetType]], ctx: T
             if func_name.startswith('oneof_'):
                 variant_name = func_name[6:]  # Remove 'oneof_' prefix
                 return Call(OneOf(variant_name), args)
-            # has_field(msg, field_name) -> HasProtoField node
+            # has_field(msg, field_name) -> has_proto_field builtin
             if func_name == 'has_field':
-                if len(args) != 2:
-                    raise YaccGrammarError(f"has_field requires exactly 2 arguments", line)
-                if not isinstance(args[1], Lit) or not isinstance(args[1].value, str):
-                    raise YaccGrammarError(f"has_field second argument must be a string literal", line)
-                return HasProtoField(args[0], args[1].value)
+                return Call(Builtin('has_proto_field'), args)
             # Check if it's a builtin
             from .target_builtins import is_builtin
             if is_builtin(func_name):
@@ -868,13 +857,6 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
         # Handle builtin.foo(...) syntax for builtins
         if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name):
             if func.value.id == "builtin":
-                # Special handling for has_proto_field -> HasProtoField node
-                if func.attr == "has_proto_field":
-                    if len(args) != 2:
-                        raise YaccGrammarError(f"has_proto_field requires exactly 2 arguments", line)
-                    if not isinstance(args[1], Lit) or not isinstance(args[1].value, str):
-                        raise YaccGrammarError(f"has_proto_field second argument must be a string literal", line)
-                    return HasProtoField(args[0], args[1].value)
                 return Call(Builtin(func.attr), args)
 
         # Message constructor
@@ -906,13 +888,9 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
             if func_name.startswith('oneof_'):
                 variant_name = func_name[6:]  # Remove 'oneof_' prefix
                 return Call(OneOf(variant_name), args)
-            # has_field(msg, field_name) -> HasProtoField node
+            # has_field(msg, field_name) -> has_proto_field builtin
             if func_name == 'has_field':
-                if len(args) != 2:
-                    raise YaccGrammarError(f"has_field requires exactly 2 arguments", line)
-                if not isinstance(args[1], Lit) or not isinstance(args[1].value, str):
-                    raise YaccGrammarError(f"has_field second argument must be a string literal", line)
-                return HasProtoField(args[0], args[1].value)
+                return Call(Builtin('has_proto_field'), args)
             from .target_builtins import is_builtin
             if is_builtin(func_name):
                 return Call(Builtin(func_name), args)
@@ -1366,13 +1344,6 @@ def _convert_func_expr(node: ast.expr, ctx: TypeContext, line: int,
         # Handle builtin.foo(...) syntax for builtins
         if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name):
             if func.value.id == "builtin":
-                # Special handling for has_proto_field -> HasProtoField node
-                if func.attr == "has_proto_field":
-                    if len(args) != 2:
-                        raise YaccGrammarError(f"has_proto_field requires exactly 2 arguments", line)
-                    if not isinstance(args[1], Lit) or not isinstance(args[1].value, str):
-                        raise YaccGrammarError(f"has_proto_field second argument must be a string literal", line)
-                    return HasProtoField(args[0], args[1].value)
                 return Call(Builtin(func.attr), args)
 
         # Handle message constructor or method call: module.Message(field=value, ...) or obj.method(args)
@@ -1401,27 +1372,15 @@ def _convert_func_expr(node: ast.expr, ctx: TypeContext, line: int,
             func_name = func.id
             # Check for dict() builtin
             if func_name == 'dict':
-                from .target import DictFromList
                 if len(args) == 1:
-                    # Infer key/value types from argument type
-                    arg_type = _infer_type(args[0], line, ctx)
-                    if isinstance(arg_type, ListType) and isinstance(arg_type.element_type, TupleType):
-                        tuple_elems = arg_type.element_type.elements
-                        if len(tuple_elems) >= 2:
-                            return DictFromList(args[0], tuple_elems[0], tuple_elems[1])
-                    # Fall back to Any types when we can't determine precise types
-                    return DictFromList(args[0], BaseType("Any"), BaseType("Any"))
+                    return Call(Builtin('dict_from_list'), args)
                 raise YaccGrammarError(f"dict() requires exactly one argument", line)
             # User-defined functions take precedence over builtins
             if func_name in ctx.functions:
                 return Call(NamedFun(func_name), args)
-            # has_field(msg, field_name) -> HasProtoField node
+            # has_field(msg, field_name) -> has_proto_field builtin
             if func_name == 'has_field':
-                if len(args) != 2:
-                    raise YaccGrammarError(f"has_field requires exactly 2 arguments", line)
-                if not isinstance(args[1], Lit) or not isinstance(args[1].value, str):
-                    raise YaccGrammarError(f"has_field second argument must be a string literal", line)
-                return HasProtoField(args[0], args[1].value)
+                return Call(Builtin('has_proto_field'), args)
             from .target_builtins import is_builtin
             if is_builtin(func_name):
                 return Call(Builtin(func_name), args)

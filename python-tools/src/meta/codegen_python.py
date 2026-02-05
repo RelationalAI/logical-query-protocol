@@ -9,7 +9,7 @@ from typing import List, Optional, Set, Tuple, Union
 from .codegen_base import CodeGenerator, BuiltinResult, ALREADY_RETURNED
 from .target import (
     TargetExpr, Var, Lit, Symbol, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
-    IfElse, FunDef, VisitNonterminalDef, Assign, Builtin
+    IfElse, FunDef, VisitNonterminalDef
 )
 from .gensym import gensym
 
@@ -126,6 +126,9 @@ class PythonCodeGenerator(CodeGenerator):
 
         self.register_builtin("dict_get", 2,
             lambda args, lines, indent: BuiltinResult(f"{args[0]}.get({args[1]})", []))
+
+        self.register_builtin("has_proto_field", 2,
+            lambda args, lines, indent: BuiltinResult(f"{args[0]}.HasField({args[1]})", []))
 
         self.register_builtin("string_to_upper", 1,
             lambda args, lines, indent: BuiltinResult(f"{args[0]}.upper()", []))
@@ -246,17 +249,6 @@ class PythonCodeGenerator(CodeGenerator):
 
     def gen_list_literal(self, elements: List[str], element_type) -> str:
         return f"[{', '.join(elements)}]"
-
-    def gen_dict_from_list(self, pairs: str) -> str:
-        return f"dict({pairs})"
-
-    def gen_dict_lookup(self, dict_expr: str, key: str, default: Optional[str]) -> str:
-        if default is None:
-            return f"{dict_expr}.get({key})"
-        return f"{dict_expr}.get({key}, {default})"
-
-    def gen_has_field(self, message: str, field_name: str) -> str:
-        return f"{message}.HasField({repr(field_name)})"
 
     def gen_function_type(self, param_types: List[str], return_type: str) -> str:
         return f"Callable[[{', '.join(param_types)}], {return_type}]"
@@ -468,40 +460,6 @@ class PythonCodeGenerator(CodeGenerator):
             body_code = "\n".join(body_lines)
 
         return f"{indent}@staticmethod\n{indent}def {func_name}({params_str}){ret_hint}:\n{body_code}"
-
-    def _generate_assign(self, expr: Assign, lines: List[str], indent: str) -> str:
-        """Generate code for an assignment, with list_concat optimization.
-
-        Optimizes `xs = list_concat(xs, ys)` to use mutation:
-        - `xs = list_concat(xs, [item])` -> `xs.append(item)`
-        - `xs = list_concat(xs, ys)` -> `xs.extend(ys)`
-        """
-        var_name = self.escape_identifier(expr.var.name)
-
-        # Check for list_concat optimization pattern
-        if isinstance(expr.expr, Call) and isinstance(expr.expr.func, Builtin):
-            if expr.expr.func.name == 'list_concat' and len(expr.expr.args) == 2:
-                first_arg = expr.expr.args[0]
-                second_arg = expr.expr.args[1]
-
-                # Check if first arg is the same variable being assigned
-                if isinstance(first_arg, Var) and first_arg.name == expr.var.name:
-                    # Check if second arg is a singleton list literal
-                    if isinstance(second_arg, ListExpr) and len(second_arg.elements) == 1:
-                        # xs = list_concat(xs, [item]) -> xs.append(item)
-                        item_code = self.generate_lines(second_arg.elements[0], lines, indent)
-                        lines.append(f"{indent}{var_name}.append({item_code})")
-                        return self.gen_none()
-                    else:
-                        # xs = list_concat(xs, ys) -> xs.extend(ys)
-                        ys_code = self.generate_lines(second_arg, lines, indent)
-                        lines.append(f"{indent}{var_name}.extend({ys_code})")
-                        return self.gen_none()
-
-        # Fall back to base implementation
-        expr_code = self.generate_lines(expr.expr, lines, indent)
-        lines.append(f"{indent}{self.gen_assignment(var_name, expr_code)}")
-        return self.gen_none()
 
 
 def escape_identifier(name: str) -> str:

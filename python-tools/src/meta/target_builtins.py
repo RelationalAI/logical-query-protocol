@@ -164,6 +164,9 @@ register_builtin("export_csv_config",
 register_builtin("dict_from_list", [ListType(TupleType([K, V]))], DictType(K, V))
 register_builtin("dict_get", [DictType(K, V), K], OptionType(V))
 
+# === Protobuf operations ===
+register_builtin("has_proto_field", [T, STRING], BOOLEAN)  # msg.HasField(field_name)
+
 # === General helpers ===
 register_builtin("none", [], OptionType(T))  # Returns None/null
 register_builtin("make_empty_bytes", [], BYTES)  # Returns empty bytes b''

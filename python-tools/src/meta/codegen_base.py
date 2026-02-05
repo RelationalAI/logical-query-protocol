@@ -13,7 +13,7 @@ from .target import (
     TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
     IfElse, Seq, While, Assign, Return, FunDef, VisitNonterminalDef,
     VisitNonterminal, TargetType, BaseType, TupleType, ListType, DictType, OptionType,
-    MessageType, FunctionType, GetField, GetElement, DictFromList, DictLookup, HasProtoField
+    MessageType, FunctionType, GetField, GetElement
 )
 from .gensym import gensym
 
@@ -166,21 +166,6 @@ class CodeGenerator(ABC):
     @abstractmethod
     def gen_list_literal(self, elements: List[str], element_type: TargetType) -> str:
         """Generate a list literal with the given elements (may be empty)."""
-        pass
-
-    @abstractmethod
-    def gen_dict_from_list(self, pairs: str) -> str:
-        """Generate code to convert list of (key, value) tuples to dictionary."""
-        pass
-
-    @abstractmethod
-    def gen_dict_lookup(self, dict_expr: str, key: str, default: Optional[str]) -> str:
-        """Generate code for dictionary lookup with optional default."""
-        pass
-
-    @abstractmethod
-    def gen_has_field(self, message: str, field_name: str) -> str:
-        """Generate code to check if protobuf message has field set."""
         pass
 
     @abstractmethod
@@ -363,15 +348,6 @@ class CodeGenerator(ABC):
             tuple_code = self.generate_lines(expr.tuple_expr, lines, indent)
             return f"{tuple_code}[{expr.index}]"
 
-        elif isinstance(expr, DictFromList):
-            return self._generate_dict_from_list(expr, lines, indent)
-
-        elif isinstance(expr, DictLookup):
-            return self._generate_dict_lookup(expr, lines, indent)
-
-        elif isinstance(expr, HasProtoField):
-            return self._generate_has_proto_field(expr, lines, indent)
-
         elif isinstance(expr, Call):
             return self._generate_call(expr, lines, indent)
 
@@ -549,37 +525,6 @@ class CodeGenerator(ABC):
         expr_code = self.generate_lines(expr.expr, lines, indent)
         lines.append(f"{indent}{self.gen_return(expr_code)}")
         return ALREADY_RETURNED
-
-    def _generate_dict_from_list(self, expr: DictFromList, lines: List[str], indent: str) -> str:
-        """Generate code for dict-from-list.
-
-        Converts a list of (key, value) tuples to a dictionary.
-        Default implementation generates dict(pairs) for Python-like languages.
-        """
-        pairs_code = self.generate_lines(expr.pairs, lines, indent)
-        return self.gen_dict_from_list(pairs_code)
-
-    def _generate_dict_lookup(self, expr: DictLookup, lines: List[str], indent: str) -> str:
-        """Generate code for dict-lookup.
-
-        Looks up a key in a dictionary with optional default.
-        Default implementation generates dict.get(key, default).
-        """
-        dict_code = self.generate_lines(expr.dict_expr, lines, indent)
-        key_code = self.generate_lines(expr.key, lines, indent)
-        if expr.default is None:
-            return self.gen_dict_lookup(dict_code, key_code, None)
-        default_code = self.generate_lines(expr.default, lines, indent)
-        return self.gen_dict_lookup(dict_code, key_code, default_code)
-
-    def _generate_has_proto_field(self, expr: HasProtoField, lines: List[str], indent: str) -> str:
-        """Generate code for has-field.
-
-        Checks if a protobuf message has a field set (for oneOf).
-        Default implementation generates msg.HasField(field_name).
-        """
-        message_code = self.generate_lines(expr.message, lines, indent)
-        return self.gen_has_field(message_code, expr.field_name)
 
     # --- Function definition generation ---
 

@@ -304,35 +304,26 @@ class TestExprDirect:
         assert expr_to_str(outer) == "msg.inner.value"
 
     def test_has_proto_field(self):
-        """Test HasProtoField expression."""
-        from meta.target import HasProtoField
+        """Test has_proto_field builtin call."""
+        from meta.target import Call, Builtin
         obj = Var("msg", MessageType("logic", "Value"))
-        has = HasProtoField(obj, "int_value")
-        assert expr_to_str(has) == "msg.HasField('int_value')"
+        has = Call(Builtin("has_proto_field"), [obj, Lit("int_value")])
+        assert expr_to_str(has) == "builtin.has_proto_field(msg, 'int_value')"
 
     def test_dict_from_list(self):
-        """Test DictFromList expression."""
-        from meta.target import DictFromList
+        """Test dict_from_list builtin call."""
+        from meta.target import Call, Builtin
         pairs = Var("pairs", ListType(TupleType([BaseType("String"), BaseType("Int64")])))
-        d = DictFromList(pairs, BaseType("String"), BaseType("Int64"))
-        assert expr_to_str(d) == "dict(pairs)"
+        d = Call(Builtin("dict_from_list"), [pairs])
+        assert expr_to_str(d) == "builtin.dict_from_list(pairs)"
 
     def test_dict_lookup(self):
-        """Test DictLookup expression."""
-        from meta.target import DictLookup
+        """Test dict_get builtin call."""
+        from meta.target import Call, Builtin
         d = Var("d", DictType(BaseType("String"), BaseType("Int64")))
         key = Lit("key")
-        lookup = DictLookup(d, key, None)
-        assert expr_to_str(lookup) == "d.get('key')"
-
-    def test_dict_lookup_with_default(self):
-        """Test DictLookup with default."""
-        from meta.target import DictLookup
-        d = Var("d", DictType(BaseType("String"), BaseType("Int64")))
-        key = Lit("key")
-        default = Lit(0)
-        lookup = DictLookup(d, key, default)
-        assert expr_to_str(lookup) == "d.get('key', 0)"
+        lookup = Call(Builtin("dict_get"), [d, key])
+        assert expr_to_str(lookup) == "builtin.dict_get(d, 'key')"
 
     def test_assign(self):
         """Test assignment expression."""
