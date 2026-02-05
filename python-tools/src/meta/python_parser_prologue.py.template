@@ -7,6 +7,7 @@ in `python-tools/src/meta` or edit the protobuf specification in `proto/v1`.
 
 {command_line_comment}"""
 
+import ast
 import hashlib
 import re
 from typing import List, Optional, Any, Tuple, Callable
@@ -90,7 +91,7 @@ class Lexer:
     @staticmethod
     def scan_string(s: str) -> str:
         """Parse STRING token."""
-        return s[1:-1].encode().decode('unicode_escape')  # Strip quotes and process escaping
+        return ast.literal_eval(s)
 
     @staticmethod
     def scan_int(n: str) -> int:
