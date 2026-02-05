@@ -17,10 +17,7 @@ from .utils import get_lqp_input_files, get_all_files, PARENT_DIR
 # Files that use unsupported features in the generated parser.
 # When these start passing, remove them from this set.
 KNOWN_UNSUPPORTED = {
-    # functional_dependency not yet supported (see grammar_gen.py)
-    'fd.lqp',
-    'fail_fd_key_variable.lqp',
-    'fail_fd_value_variable.lqp',
+    # (empty - all previously unsupported features are now supported)
 }
 
 

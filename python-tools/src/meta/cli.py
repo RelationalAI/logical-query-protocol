@@ -1,38 +1,24 @@
 #!/usr/bin/env python3
-"""CLI tool for generating tools from protobuf specifications.
+"""CLI tool for generating parsers from protobuf specifications.
 
-This module provides the main command-line entry point for the proto-to-grammar
-generator.
+Loads a protobuf spec and a grammar file, validates the grammar file against
+the protobuf spec, then generates a parser from the grammar.
 
-The CLI parses one or more .proto files and generates a context-free grammar
-with semantic actions. The grammar can be used to generate parsers and pretty
-printers for the protobuf-defined message types.
+Examples:
+    # Validate grammar against protobuf specs (--grammar implies validation)
+    python -m meta.cli --grammar grammar.y proto/logic.proto proto/transactions.proto
 
-Usage:
-    python -m meta.cli example.proto --grammar -o output.txt
+    # Generate a Python parser (validates first)
+    python -m meta.cli --grammar grammar.y proto/logic.proto --parser python -o parser.py
 
-Options:
-    proto_files: One or more .proto files to parse
-    --proto: Output the parsed protobuf specification
-    --grammar: Output the generated grammar
-    --parser {ir,python}: Output the generated parser (as IR or Python)
-    -o, --output: Output file (stdout if not specified)
+    # Output parser intermediate representation
+    python -m meta.cli --grammar grammar.y proto/logic.proto --parser ir
 
-Example:
-    $ python -m meta.cli proto/logic.proto proto/transactions.proto --grammar
-    # Outputs the generated grammar showing all rules and semantic actions
+    # Output parsed protobuf specification (no grammar needed)
+    python -m meta.cli proto/logic.proto --proto
 
-    $ python -m meta.cli proto/logic.proto --parser python -o parser.py
-    # Generates a Python parser and writes it to parser.py
-
-    $ python -m meta.cli proto/logic.proto --parser ir
-    # Outputs the parser intermediate representation
-
-The tool performs the following steps:
-1. Parse all .proto files using ProtoParser
-2. Generate grammar rules using GrammarGenerator
-3. Detect and warn about unexpected unreachable nonterminals
-4. Output the grammar in a readable format
+    # Skip validation when generating parser
+    python -m meta.cli --grammar grammar.y proto/logic.proto --parser python --no-validate
 """
 
 import argparse
@@ -40,14 +26,16 @@ import sys
 from pathlib import Path
 
 from .proto_parser import ProtoParser
-from .grammar_gen import GrammarGenerator
-from .proto_print import print_proto_spec
+from .grammar_validator import validate_grammar
+from .grammar import Grammar
+from .yacc_parser import load_yacc_grammar_file
+from .proto_print import format_message, format_enum
 
 
 def parse_args():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
-        description="Parse protobuf specifications and generate tools"
+        description="Parse protobuf specifications and validate grammar"
     )
     parser.add_argument(
         "proto_files",
@@ -56,45 +44,41 @@ def parse_args():
         help="Protobuf files to parse"
     )
     parser.add_argument(
-        "-o", "--output",
+        "--grammar",
         type=Path,
-        help="Output file"
+        help="Path to grammar file (required for --parser)"
     )
     parser.add_argument(
+        "--no-validate",
+        action="store_true",
+        help="Skip grammar validation"
+    )
+
+    output_group = parser.add_argument_group("output options")
+    output_group.add_argument(
+        "-o", "--output",
+        type=Path,
+        help="Output file (default: stdout)"
+    )
+    output_group.add_argument(
         "--proto",
         action="store_true",
         help="Output the parsed protobuf specification"
     )
-    parser.add_argument(
-        "--grammar",
-        action="store_true",
-        help="Output the grammar"
-    )
-    parser.add_argument(
+    output_group.add_argument(
         "--parser",
         type=str,
         choices=["ir", "python"],
         help="Output the generated parser (ir or python)"
     )
-    return parser.parse_args()
 
+    args = parser.parse_args()
 
-def check_unreachable_nonterminals(grammar, generator):
-    """Check for unexpected unreachable nonterminals and report warnings.
+    # --grammar is required for --parser
+    if args.parser and not args.grammar:
+        parser.error("--grammar is required when using --parser")
 
-    Args:
-        grammar: The generated grammar to analyze
-        generator: The GrammarGenerator used to create the grammar
-
-    Prints warnings to stdout if unexpected unreachable nonterminals are found.
-    """
-    _, unreachable = grammar.analysis.partition_nonterminals_by_reachability()
-    unexpected_unreachable = [r for r in unreachable if r.name not in generator.expected_unreachable]
-    if unexpected_unreachable:
-        print("Warning: Unreachable nonterminals detected:")
-        for rule in unexpected_unreachable:
-            print(f"  {rule.name}")
-        print()
+    return args
 
 
 def write_output(text, output_path, success_msg):
@@ -114,6 +98,7 @@ def write_output(text, output_path, success_msg):
 
 def run(args) -> int:
     """Execute the CLI command specified by args."""
+    # Parse protobuf files first (needed for --proto, validation, and parser gen)
     proto_parser = ProtoParser()
     for proto_file in args.proto_files:
         if not proto_file.exists():
@@ -121,25 +106,83 @@ def run(args) -> int:
             return 1
         proto_parser.parse_file(proto_file)
 
+    # Handle --proto: output parsed protobuf specification
     if args.proto:
-        output_text = print_proto_spec(proto_parser)
-        write_output(output_text, args.output, f"Protobuf spec written to {args.output}")
+        output_lines = []
+        for msg in proto_parser.messages.values():
+            output_lines.append(format_message(msg))
+            output_lines.append("")
+        for enum in proto_parser.enums.values():
+            output_lines.append(format_enum(enum))
+            output_lines.append("")
+        output_text = "\n".join(output_lines)
+        write_output(output_text, args.output, f"Protobuf specification written to {args.output}")
+        return 0
 
-    if args.grammar:
-        generator = GrammarGenerator(proto_parser, verbose=True)
-        grammar = generator.generate()
+    # If no --grammar provided and not --proto, nothing to do
+    if not args.grammar:
+        print("Nothing to do. Use --grammar to validate or --proto to output protobuf spec.", file=sys.stderr)
+        return 0
 
-        check_unreachable_nonterminals(grammar, generator)
+    grammar_path = args.grammar
+    if not grammar_path.exists():
+        print(f"Error: Grammar file not found: {grammar_path}", file=sys.stderr)
+        return 1
 
-        output_text = grammar.print_grammar()
-        write_output(output_text, args.output, f"Generated grammar written to {args.output}")
+    # Load grammar rules from file (yacc format)
+    grammar_config = load_yacc_grammar_file(grammar_path)
+
+    # Build Grammar object from loaded config
+    if not grammar_config.rules:
+        print("Error: Grammar file contains no rules", file=sys.stderr)
+        return 1
+
+    # Find the start nonterminal
+    start = None
+    for nt in grammar_config.rules.keys():
+        if nt.name == grammar_config.start_symbol:
+            start = nt
+            break
+    if start is None:
+        print(f"Error: Start symbol '{grammar_config.start_symbol}' has no rules", file=sys.stderr)
+        return 1
+    grammar = Grammar(
+        start=start,
+        ignored_completeness=grammar_config.ignored_completeness,
+        function_defs=grammar_config.function_defs
+    )
+    for _, rules in grammar_config.rules.items():
+        for rule in rules:
+            grammar.add_rule(rule)
+
+    # Add tokens with patterns from terminal declarations in grammar file
+    from .grammar import Token
+    for terminal_name, terminal_def in grammar_config.terminal_patterns.items():
+        if terminal_def.pattern is not None:
+            grammar.tokens.append(Token(terminal_name, terminal_def.pattern, terminal_def.type))
+
+    # Run validation if --grammar is provided (unless --no-validate)
+    if args.grammar and not args.no_validate:
+        validation_result = validate_grammar(grammar, proto_parser)
+
+        if not validation_result.is_valid:
+            print(validation_result.summary())
+            print()
+
+            # Block parser generation if there are validation errors
+            if args.parser:
+                print("Error: Cannot generate parser due to validation errors (use --no-validate to skip)", file=sys.stderr)
+
+            return 1
+
+    # Output grammar if -o is specified and not generating parser
+    if args.output and not args.parser:
+        output_text = grammar.print_grammar_yacc()
+        args.output.write_text(output_text)
+        print(f"Grammar written to {args.output}")
+        return 0
 
     if args.parser:
-        generator = GrammarGenerator(proto_parser, verbose=True)
-        grammar = generator.generate()
-
-        check_unreachable_nonterminals(grammar, generator)
-
         if args.parser == "ir":
             from .parser_gen import generate_parse_functions
             parse_functions = generate_parse_functions(grammar)

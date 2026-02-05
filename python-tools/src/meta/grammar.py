@@ -5,10 +5,10 @@ with semantic actions, including support for normalization and left-factoring.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Tuple, TYPE_CHECKING
+from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 
 # Import action AST types
-from .target import TargetExpr, Var, Symbol, Call, Lambda, Lit, TargetType, ListType, OptionType, TupleType
+from .target import TargetExpr, Var, Symbol, Call, Lambda, Lit, TargetType, ListType, OptionType, TupleType, FunDef
 
 # Use TYPE_CHECKING to avoid circular import: GrammarAnalysis imports Grammar,
 # but we need GrammarAnalysis type hints here. These imports only exist during
@@ -256,6 +256,8 @@ class Grammar:
     start: Nonterminal
     rules: Dict[Nonterminal, List[Rule]] = field(default_factory=dict)
     tokens: List[Token] = field(default_factory=list)
+    ignored_completeness: List[str] = field(default_factory=list)  # Message names to ignore in completeness checks
+    function_defs: Dict[str, 'FunDef'] = field(default_factory=dict)  # User-defined functions with IR bodies
 
     # Lazily created analysis object (holds cached results)
     _analysis: Optional['GrammarAnalysis'] = field(default=None, init=False, repr=False)
@@ -332,3 +334,149 @@ class Grammar:
             lines.append(f"{token.name}: {token.pattern}")
 
         return "\n".join(lines)
+
+    def print_grammar_yacc(self, reachable_only: bool = True) -> str:
+        """Convert to yacc-like grammar format.
+
+        Returns the grammar in the yacc-like format that can be
+        loaded with load_yacc_grammar().
+        """
+        from .target_print import type_to_str, expr_to_str
+
+        lines = []
+        lines.append("# Auto-generated grammar from protobuf specifications")
+        lines.append("")
+
+        reachable, unreachable = self.analysis.partition_nonterminals_by_reachability()
+        rule_order = reachable if reachable_only else reachable + unreachable
+
+        # Collect all named terminals from rules
+        terminals: Dict[str, NamedTerminal] = {}
+        for lhs in rule_order:
+            for rule in self.rules[lhs]:
+                for term in collect(rule.rhs, NamedTerminal):
+                    if term.name not in terminals:
+                        terminals[term.name] = term
+
+        # Emit terminal declarations
+        if terminals:
+            for name in sorted(terminals.keys()):
+                term = terminals[name]
+                lines.append(f"%token {name} {type_to_str(term.type)}")
+            lines.append("")
+
+        # Emit nonterminal type declarations
+        for lhs in rule_order:
+            lines.append(f"%type {lhs.name} {type_to_str(lhs.type)}")
+        lines.append("")
+
+        # Emit ignored completeness directives
+        for msg_name in self.ignored_completeness:
+            lines.append(f"%validator_ignore_completeness {msg_name}")
+        if self.ignored_completeness:
+            lines.append("")
+
+        lines.append("%%")
+        lines.append("")
+
+        # Emit rules
+        for lhs in rule_order:
+            rules_list = self.rules[lhs]
+            lines.append(lhs.name)
+
+            for i, rule in enumerate(rules_list):
+                prefix = "    : " if i == 0 else "    | "
+                rhs_str = self._rhs_to_str(rule.rhs)
+                action_str = expr_to_str(rule.constructor.body)
+                lines.append(f"{prefix}{rhs_str}")
+                lines.append(f"    {{ {action_str} }}")
+
+            lines.append("")
+
+        lines.append("%%")
+        lines.append("")
+
+        # Emit function definitions
+        for name, func_def in self.function_defs.items():
+            params_str = ", ".join(f"{p.name}: {type_to_str(p.type)}" for p in func_def.params)
+            lines.append(f"def {name}({params_str}) -> {type_to_str(func_def.return_type)}:")
+            if func_def.body is not None:
+                lines.append(f"    return {expr_to_str(func_def.body)}")
+            else:
+                lines.append("    ...")
+            lines.append("")
+
+        return "\n".join(lines)
+
+    def _rhs_to_str(self, rhs: Rhs) -> str:
+        """Convert RHS to yacc-format string."""
+        if isinstance(rhs, LitTerminal):
+            return f'"{rhs.name}"'
+        elif isinstance(rhs, NamedTerminal):
+            return rhs.name
+        elif isinstance(rhs, Nonterminal):
+            return rhs.name
+        elif isinstance(rhs, Star):
+            return f"{self._rhs_to_str(rhs.rhs)}*"
+        elif isinstance(rhs, Option):
+            return f"{self._rhs_to_str(rhs.rhs)}?"
+        elif isinstance(rhs, Sequence):
+            return " ".join(self._rhs_to_str(e) for e in rhs.elements)
+        else:
+            return str(rhs)
+
+
+@dataclass
+class TerminalDef:
+    """Definition of a terminal symbol with type and optional pattern."""
+    type: TargetType
+    pattern: Optional[str] = None  # Regex pattern or fixed string
+    is_regex: bool = True  # True for r'...' patterns, False for '...' literals
+
+
+@dataclass
+class GrammarConfig:
+    """Result of loading a grammar config file.
+
+    This is a simpler representation than Grammar, used when loading
+    grammar files before building the full Grammar object.
+    """
+    terminals: Dict[str, TargetType]
+    start_symbol: str
+    terminal_patterns: Dict[str, TerminalDef] = field(default_factory=dict)
+    rules: Dict[Nonterminal, List[Rule]] = field(default_factory=dict)
+    ignored_completeness: List[str] = field(default_factory=list)
+    function_defs: Dict[str, FunDef] = field(default_factory=dict)
+
+
+# Helper functions
+
+# Import traversal utilities here to avoid circular imports
+from .grammar_utils import get_nonterminals, get_literals, collect  # noqa: E402
+
+
+def is_epsilon(rhs: Rhs) -> bool:
+    """Check if rhs represents an epsilon production (empty sequence)."""
+    return isinstance(rhs, Sequence) and len(rhs.elements) == 0
+
+
+def rhs_elements(rhs: Rhs) -> Tuple[Rhs, ...]:
+    """Return elements of rhs. For Sequence, returns rhs.elements; otherwise returns (rhs,)."""
+    if isinstance(rhs, Sequence):
+        return rhs.elements
+    return (rhs,)
+
+
+def _count_nonliteral_rhs_elements(rhs: Rhs) -> int:
+    """Count the number of elements in an RHS that produce action parameters.
+
+    This counts all RHS elements, as each position (including literals, options,
+    stars, etc.) corresponds to a parameter in the action lambda.
+    """
+    if isinstance(rhs, Sequence):
+        return sum(_count_nonliteral_rhs_elements(elem) for elem in rhs.elements)
+    elif isinstance(rhs, LitTerminal):
+        return 0
+    else:
+        assert isinstance(rhs, (NamedTerminal, Nonterminal, Option, Star)), f"found {type(rhs)}"
+        return 1

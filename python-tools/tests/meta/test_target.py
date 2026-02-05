@@ -14,7 +14,17 @@ from meta.target import (
     # Utilities
     gensym,
 )
+from meta.target_builtins import make_builtin
 from meta.gensym import reset as gensym_reset
+
+# Dummy type for test builtins
+_ANY = BaseType("Any")
+_DUMMY_FN_TYPE = FunctionType([], _ANY)
+
+
+def _test_builtin(name: str) -> Builtin:
+    """Create a test builtin with a dummy type."""
+    return Builtin(name, _DUMMY_FN_TYPE)
 
 
 # ============================================================================
@@ -269,17 +279,17 @@ class TestBuiltin:
 
     def test_construction(self):
         """Test Builtin construction."""
-        b = Builtin("consume")
+        b = make_builtin("consume")
         assert b.name == "consume"
 
     def test_str(self):
         """Test Builtin string representation."""
-        b = Builtin("is_none")
+        b = make_builtin("is_none")
         assert str(b) == "%is_none"
 
     def test_any_string_allowed(self):
-        """Test that Builtin accepts any string."""
-        b = Builtin("some-builtin-123")
+        """Test that Builtin accepts any string (with type)."""
+        b = _test_builtin("some-builtin-123")
         assert b.name == "some-builtin-123"
 
 
@@ -311,7 +321,7 @@ class TestCall:
 
     def test_construction_no_args(self):
         """Test Call with no arguments."""
-        func = Builtin("get_value")
+        func = _test_builtin("get_value")
         call = Call(func, [])
         assert call.func == func
         assert len(call.args) == 0
@@ -319,7 +329,7 @@ class TestCall:
 
     def test_construction_with_args(self):
         """Test Call with arguments."""
-        func = Builtin("process")
+        func = _test_builtin("process")
         arg1 = Var("x", BaseType("Int64"))
         arg2 = Var("y", BaseType("String"))
         call = Call(func, [arg1, arg2])
@@ -328,7 +338,7 @@ class TestCall:
 
     def test_str(self):
         """Test Call string representation."""
-        func = Builtin("add")
+        func = make_builtin("add")
         arg1 = Lit(1)
         arg2 = Lit(2)
         call = Call(func, [arg1, arg2])
@@ -336,8 +346,8 @@ class TestCall:
 
     def test_nested_call(self):
         """Test nested Call."""
-        inner = Call(Builtin("get_x"), [])
-        outer = Call(Builtin("process"), [inner, Lit(42)])
+        inner = Call(_test_builtin("get_x"), [])
+        outer = Call(_test_builtin("process"), [inner, Lit(42)])
         assert str(outer) == "%process(%get_x(), 42)"
 
 
@@ -559,6 +569,7 @@ class TestGetElement:
     def test_negative_index_fails(self):
         """Test GetElement with negative index raises error."""
         tuple_expr = Var("pair", TupleType([BaseType("Int64"), BaseType("String")]))
+        # GetElement validates index at construction time
         with pytest.raises(AssertionError, match="GetElement index must be non-negative integer"):
             GetElement(tuple_expr, -1)
 
@@ -691,7 +702,7 @@ class TestComplexExpressions:
         """Test let expression with function call."""
         # let x = f(42) in x
         var = Var("x", BaseType("Int64"))
-        init = Call(Builtin("f"), [Lit(42)])
+        init = Call(_test_builtin("f"), [Lit(42)])
         body = Var("x", BaseType("Int64"))
         let = Let(var, init, body)
 
@@ -701,9 +712,9 @@ class TestComplexExpressions:
     def test_nested_calls(self):
         """Test deeply nested function calls."""
         # f(g(h(42)))
-        innermost = Call(Builtin("h"), [Lit(42)])
-        middle = Call(Builtin("g"), [innermost])
-        outermost = Call(Builtin("f"), [middle])
+        innermost = Call(_test_builtin("h"), [Lit(42)])
+        middle = Call(_test_builtin("g"), [innermost])
+        outermost = Call(_test_builtin("f"), [middle])
 
         assert isinstance(outermost.args[0], Call)
         assert str(outermost) == "%f(%g(%h(42)))"

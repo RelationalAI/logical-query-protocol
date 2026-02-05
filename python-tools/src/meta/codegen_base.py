@@ -10,18 +10,19 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
 from .target import (
-    TargetExpr, Var, Lit, Symbol, Builtin, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
+    TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
     IfElse, Seq, While, Assign, Return, FunDef, VisitNonterminalDef,
-    VisitNonterminal, TargetType, BaseType, TupleType, ListType, OptionType,
+    VisitNonterminal, TargetType, BaseType, TupleType, ListType, DictType, OptionType,
     MessageType, FunctionType, GetField, GetElement
 )
+from .target_builtins import get_builtin
 from .gensym import gensym
 
 
 @dataclass
 class BuiltinResult:
     """Result of generating a builtin call."""
-    value: str  # The value expression to return
+    value: Optional[str]  # The value expression to return, or None if the builtin does not return
     statements: List[str]  # Statements to prepend (may be empty)
 
 
@@ -34,12 +35,12 @@ class BuiltinSpec:
     """Specification for a builtin function.
 
     name: Name of the builtin (e.g., "list_concat")
-    arity: Number of arguments (-1 for variadic)
     generator: Function that generates code for this builtin.
                Takes (args, lines, indent) and returns BuiltinResult.
+
+    Arity is looked up from target_builtins.BUILTIN_REGISTRY.
     """
     name: str
-    arity: int
     generator: BuiltinGenerator
 
 
@@ -122,6 +123,11 @@ class CodeGenerator(ABC):
         pass
 
     @abstractmethod
+    def gen_named_fun_ref(self, name: str) -> str:
+        """Generate a reference to a user-defined named function."""
+        pass
+
+    @abstractmethod
     def gen_parse_nonterminal_ref(self, name: str) -> str:
         """Generate a reference to a parse method for a nonterminal."""
         pass
@@ -149,6 +155,11 @@ class CodeGenerator(ABC):
         pass
 
     @abstractmethod
+    def gen_dict_type(self, key_type: str, value_type: str) -> str:
+        """Generate a dictionary/map type."""
+        pass
+
+    @abstractmethod
     def gen_list_literal(self, elements: List[str], element_type: TargetType) -> str:
         """Generate a list literal with the given elements (may be empty)."""
         pass
@@ -169,6 +180,8 @@ class CodeGenerator(ABC):
             return self.gen_tuple_type(element_types)
         elif isinstance(typ, ListType):
             return self.gen_list_type(self.gen_type(typ.element_type))
+        elif isinstance(typ, DictType):
+            return self.gen_dict_type(self.gen_type(typ.key_type), self.gen_type(typ.value_type))
         elif isinstance(typ, OptionType):
             return self.gen_option_type(self.gen_type(typ.element_type))
         elif isinstance(typ, FunctionType):
@@ -254,9 +267,12 @@ class CodeGenerator(ABC):
 
     # --- Builtin operations ---
 
-    def register_builtin(self, name: str, arity: int, generator: BuiltinGenerator) -> None:
-        """Register a builtin function generator."""
-        self.builtin_registry[name] = BuiltinSpec(name, arity, generator)
+    def register_builtin(self, name: str, generator: BuiltinGenerator) -> None:
+        """Register a builtin function generator.
+
+        Arity is looked up from target_builtins.BUILTIN_REGISTRY.
+        """
+        self.builtin_registry[name] = BuiltinSpec(name, generator)
 
     def gen_builtin_call(self, name: str, args: List[str],
                          lines: List[str], indent: str) -> Optional[BuiltinResult]:
@@ -264,20 +280,23 @@ class CodeGenerator(ABC):
 
         Returns BuiltinResult if handled, None if should use default call generation.
 
-        Checks the builtin_registry. Subclasses can override to add additional handling.
+        Checks the builtin_registry. Arity validation uses target_builtins.
         """
         if name in self.builtin_registry:
             spec = self.builtin_registry[name]
-            if spec.arity == -1 or len(args) == spec.arity:
+            # Look up arity from the central builtin registry
+            builtin_sig = get_builtin(name)
+            if builtin_sig is None or builtin_sig.is_variadic() or len(args) == builtin_sig.arity:
                 return spec.generator(args, lines, indent)
         return None
 
     # --- Expression generation ---
 
-    def generate_lines(self, expr: TargetExpr, lines: List[str], indent: str = "") -> str:
+    def generate_lines(self, expr: TargetExpr, lines: List[str], indent: str = "") -> Optional[str]:
         """Generate code for an expression, appending statements to lines.
 
-        Returns the value expression as a string.
+        Returns the value expression as a string, or None if the expression
+        returns (i.e., contains a Return node that was executed).
         """
         if isinstance(expr, Var):
             return self.escape_identifier(expr.name)
@@ -308,6 +327,9 @@ class CodeGenerator(ABC):
 
         elif isinstance(expr, Builtin):
             return self.gen_builtin_ref(expr.name)
+
+        elif isinstance(expr, NamedFun):
+            return self.gen_named_fun_ref(expr.name)
 
         elif isinstance(expr, VisitNonterminal):
             return self.gen_parse_nonterminal_ref(expr.nonterminal.name)
@@ -355,7 +377,7 @@ class CodeGenerator(ABC):
         else:
             raise ValueError(f"Unknown expression type: {type(expr)}")
 
-    def _generate_call(self, expr: Call, lines: List[str], indent: str) -> str:
+    def _generate_call(self, expr: Call, lines: List[str], indent: str) -> Optional[str]:
         """Generate code for a function call."""
         # NewMessage should be handled directly, not wrapped in Call
         assert not isinstance(expr.func, NewMessage), \
@@ -363,17 +385,26 @@ class CodeGenerator(ABC):
 
         # First, check for builtin special cases
         if isinstance(expr.func, Builtin):
-            # Evaluate arguments
-            args = [self.generate_lines(arg, lines, indent) for arg in expr.args]
+            # Evaluate arguments (they should not contain return statements)
+            args: List[str] = []
+            for arg in expr.args:
+                arg_code = self.generate_lines(arg, lines, indent)
+                assert arg_code is not None, "Function argument should not contain a return"
+                args.append(arg_code)
             result = self.gen_builtin_call(expr.func.name, args, lines, indent)
             if result is not None:
                 for stmt in result.statements:
                     lines.append(f"{indent}{stmt}")
-                return result.value
+                return result.value  # May be None for non-returning builtins
 
         # Regular call
         f = self.generate_lines(expr.func, lines, indent)
-        args = [self.generate_lines(arg, lines, indent) for arg in expr.args]
+        assert f is not None, "Function expression should not contain a return"
+        args = []
+        for arg in expr.args:
+            arg_code = self.generate_lines(arg, lines, indent)
+            assert arg_code is not None, "Function argument should not contain a return"
+            args.append(arg_code)
         args_code = ', '.join(args)
 
         tmp = gensym()
@@ -391,7 +422,11 @@ class CodeGenerator(ABC):
 
     def _generate_list_expr(self, expr: ListExpr, lines: List[str], indent: str) -> str:
         """Generate code for a list expression."""
-        elements = [self.generate_lines(elem, lines, indent) for elem in expr.elements]
+        elements: List[str] = []
+        for elem in expr.elements:
+            elem_code = self.generate_lines(elem, lines, indent)
+            assert elem_code is not None, "List element should not contain a return"
+            elements.append(elem_code)
         return self.gen_list_literal(elements, expr.element_type)
 
     def _generate_lambda(self, expr: Lambda, lines: List[str], indent: str) -> str:
@@ -407,28 +442,34 @@ class CodeGenerator(ABC):
         lines.append(f"{indent}{before}")
         body_indent = indent + self.indent_str
         v = self.generate_lines(expr.body, lines, body_indent)
-        lines.append(f"{body_indent}{self.gen_return(v)}")
+        # Only add return if the body didn't already return
+        if v is not None:
+            lines.append(f"{body_indent}{self.gen_return(v)}")
         if after:
             lines.append(f"{indent}{after}")
         return f
 
-    def _generate_let(self, expr: Let, lines: List[str], indent: str) -> str:
+    def _generate_let(self, expr: Let, lines: List[str], indent: str) -> Optional[str]:
         """Generate code for a let binding."""
         var_name = self.escape_identifier(expr.var.name)
         init_val = self.generate_lines(expr.init, lines, indent)
+        assert init_val is not None, "Let initializer should not contain a return"
         lines.append(f"{indent}{self.gen_assignment(var_name, init_val, is_declaration=True)}")
         return self.generate_lines(expr.body, lines, indent)
 
-    def _generate_if_else(self, expr: IfElse, lines: List[str], indent: str) -> str:
+    def _generate_if_else(self, expr: IfElse, lines: List[str], indent: str) -> Optional[str]:
         """Generate code for an if-else expression."""
         cond_code = self.generate_lines(expr.condition, lines, indent)
+        assert cond_code is not None, "If condition should not contain a return"
 
         # Optimization: short-circuit for boolean literals
         if expr.then_branch == Lit(True):
             else_code = self.generate_lines(expr.else_branch, lines, indent + self.indent_str)
+            assert else_code is not None, "Short-circuit else branch should not return"
             return f"({cond_code} || {else_code})"
         if expr.else_branch == Lit(False):
             then_code = self.generate_lines(expr.then_branch, lines, indent + self.indent_str)
+            assert then_code is not None, "Short-circuit then branch should not return"
             return f"({cond_code} && {then_code})"
 
         tmp = gensym()
@@ -437,29 +478,42 @@ class CodeGenerator(ABC):
 
         body_indent = indent + self.indent_str
         then_code = self.generate_lines(expr.then_branch, lines, body_indent)
-        lines.append(f"{body_indent}{self.gen_assignment(tmp, then_code)}")
+        if then_code is not None:
+            lines.append(f"{body_indent}{self.gen_assignment(tmp, then_code)}")
 
         lines.append(f"{indent}{self.gen_else()}")
         else_code = self.generate_lines(expr.else_branch, lines, body_indent)
-        lines.append(f"{body_indent}{self.gen_assignment(tmp, else_code)}")
+        if else_code is not None:
+            lines.append(f"{body_indent}{self.gen_assignment(tmp, else_code)}")
 
         end = self.gen_if_end()
         if end:
             lines.append(f"{indent}{end}")
 
+        # If both branches returned, propagate None
+        if then_code is None and else_code is None:
+            return None
+
         return tmp
 
-    def _generate_seq(self, expr: Seq, lines: List[str], indent: str) -> str:
-        """Generate code for a sequence of expressions."""
-        result = self.gen_none()
+    def _generate_seq(self, expr: Seq, lines: List[str], indent: str) -> Optional[str]:
+        """Generate code for a sequence of expressions.
+
+        If any expression returns None (indicating a return statement was executed),
+        stop processing and propagate None (subsequent expressions are unreachable).
+        """
+        result: Optional[str] = self.gen_none()
         for e in expr.exprs:
             result = self.generate_lines(e, lines, indent)
+            if result is None:
+                break
         return result
 
     def _generate_while(self, expr: While, lines: List[str], indent: str) -> str:
         """Generate code for a while loop."""
         m = len(lines)
         cond_code = self.generate_lines(expr.condition, lines, indent)
+        assert cond_code is not None, "While condition should not contain a return"
         non_trivial_cond = len(lines) > m
         cond_code_is_lvalue = cond_code.isidentifier()
 
@@ -475,6 +529,7 @@ class CodeGenerator(ABC):
         # Update the condition variable if needed
         if non_trivial_cond and cond_code_is_lvalue:
             cond_code2 = self.generate_lines(expr.condition, lines, body_indent)
+            assert cond_code2 is not None, "While condition should not contain a return"
             lines.append(f"{body_indent}{self.gen_assignment(cond_code, cond_code2)}")
 
         end = self.gen_while_end()
@@ -487,14 +542,20 @@ class CodeGenerator(ABC):
         """Generate code for an assignment."""
         var_name = self.escape_identifier(expr.var.name)
         expr_code = self.generate_lines(expr.expr, lines, indent)
+        assert expr_code is not None, "Assignment expression should not contain a return"
         lines.append(f"{indent}{self.gen_assignment(var_name, expr_code)}")
         return self.gen_none()
 
-    def _generate_return(self, expr: Return, lines: List[str], indent: str) -> str:
-        """Generate code for a return statement."""
+    def _generate_return(self, expr: Return, lines: List[str], indent: str) -> None:
+        """Generate code for a return statement.
+
+        Returns None to indicate that the caller should not add another return
+        statement.
+        """
         expr_code = self.generate_lines(expr.expr, lines, indent)
+        assert expr_code is not None, "Return expression should not itself contain a return"
         lines.append(f"{indent}{self.gen_return(expr_code)}")
-        return self.gen_none()
+        return None
 
     # --- Function definition generation ---
 
@@ -520,7 +581,9 @@ class CodeGenerator(ABC):
         else:
             lines: List[str] = []
             body_inner = self.generate_lines(expr.body, lines, indent + self.indent_str)
-            lines.append(f"{indent}{self.indent_str}{self.gen_return(body_inner)}")
+            # Only add return if the body didn't already return
+            if body_inner is not None:
+                lines.append(f"{indent}{self.indent_str}{self.gen_return(body_inner)}")
             body_code = "\n".join(lines)
 
         end = self.gen_func_def_end()
