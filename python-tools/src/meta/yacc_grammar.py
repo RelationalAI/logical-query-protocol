@@ -163,35 +163,44 @@ def _split_bracket_type_args(text: str) -> List[str]:
     return [a for a in args if a]
 
 
-def _parse_token_pattern(rest: str) -> Tuple[str, Optional[str], bool]:
-    """Parse type and optional pattern from %token directive.
+def _parse_token_pattern(rest: str, token_name: str) -> Tuple[str, str, bool]:
+    """Parse type and required pattern from %token directive.
 
     Args:
-        rest: The part after '%token NAME', e.g. "Type r'pattern'" or "Type"
+        rest: The part after '%token NAME', e.g. "Type r'pattern'"
+        token_name: Name of the token (for error messages)
 
     Returns:
         (type_str, pattern, is_regex)
-        pattern is None if not specified
         is_regex is True for r'...' patterns, False for '...' literals
+
+    Raises:
+        YaccGrammarError: If pattern is missing or invalid
     """
     rest = rest.strip()
 
-    # Check for r'...' pattern (regex)
-    regex_match = re.search(r"\s+r'([^']*)'$", rest)
-    if regex_match:
-        type_str = rest[:regex_match.start()].strip()
-        pattern = regex_match.group(1)
-        return type_str, pattern, True
+    # Find the pattern - look for r'...' or '...' at the end
+    # Use regex to find where the string literal starts
+    pattern_match = re.search(r"\s+(r?['\"])(.*)$", rest)
+    if not pattern_match:
+        raise YaccGrammarError(f"%token {token_name} requires a pattern (r'...' or '...')")
 
-    # Check for '...' pattern (fixed string)
-    literal_match = re.search(r"\s+'([^']*)'$", rest)
-    if literal_match:
-        type_str = rest[:literal_match.start()].strip()
-        pattern = literal_match.group(1)
-        return type_str, pattern, False
+    type_str = rest[:pattern_match.start()].strip()
+    pattern_literal = pattern_match.group(0).strip()  # e.g., r'pattern' or 'pattern'
 
-    # No pattern
-    return rest, None, True
+    # Use ast.literal_eval to parse and validate the string literal
+    try:
+        pattern = ast.literal_eval(pattern_literal)
+    except (ValueError, SyntaxError) as e:
+        raise YaccGrammarError(f"%token {token_name} has invalid pattern {pattern_literal!r}: {e}")
+
+    if not isinstance(pattern, str):
+        raise YaccGrammarError(f"%token {token_name} pattern must be a string, got {type(pattern).__name__}")
+
+    # Determine if it's a raw string (regex) or regular string (literal)
+    is_regex = pattern_literal.startswith('r')
+
+    return type_str, pattern, is_regex
 
 
 def parse_directives(lines: List[str]) -> Tuple[TypeContext, List[str], int]:
@@ -231,7 +240,7 @@ def parse_directives(lines: List[str]) -> Tuple[TypeContext, List[str], int]:
             if name in ctx.terminals:
                 raise YaccGrammarError(f"Duplicate token declaration: {name}", i)
             type_and_pattern = rest[space_idx+1:]
-            type_str, pattern, is_regex = _parse_token_pattern(type_and_pattern)
+            type_str, pattern, is_regex = _parse_token_pattern(type_and_pattern, name)
             ctx.terminals[name] = parse_type(type_str)
             ctx.terminal_info[name] = TerminalInfo(parse_type(type_str), pattern, is_regex)
 
@@ -1570,6 +1579,10 @@ def load_yacc_grammar(text: str) -> GrammarConfig:
         name: TerminalDef(info.type, info.pattern, info.is_regex)
         for name, info in ctx.terminal_info.items()
     }
+
+    # start_symbol should have been set in the header section
+    if ctx.start_symbol is None:
+        raise YaccGrammarError("Missing %start directive - no start symbol declared", 0)
 
     return GrammarConfig(
         terminals=ctx.terminals,

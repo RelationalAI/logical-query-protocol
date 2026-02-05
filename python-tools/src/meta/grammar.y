@@ -807,17 +807,17 @@ def _try_extract_value_string_list(value: Optional[logic.Value]) -> Optional[Lis
 
 def construct_csv_config(config_dict: List[Tuple[String, logic.Value]]) -> logic.CSVConfig:
     config: Dict[String, logic.Value] = builtin.dict_from_list(config_dict)
-    header_row: Optional[int] = _try_extract_value_int64(builtin.dict_get(config, "csv_header_row"))
-    skip: Optional[int] = _try_extract_value_int64(builtin.dict_get(config, "csv_skip"))
-    new_line: Optional[str] = _try_extract_value_string(builtin.dict_get(config, "csv_new_line"))
-    delimiter: Optional[str] = _try_extract_value_string(builtin.dict_get(config, "csv_delimiter"))
-    quotechar: Optional[str] = _try_extract_value_string(builtin.dict_get(config, "csv_quotechar"))
-    escapechar: Optional[str] = _try_extract_value_string(builtin.dict_get(config, "csv_escapechar"))
-    comment: Optional[str] = _try_extract_value_string(builtin.dict_get(config, "csv_comment"))
-    missing_strings: Optional[List[String]] = _try_extract_value_string_list(builtin.dict_get(config, "csv_missing_strings"))
-    decimal_separator: Optional[str] = _try_extract_value_string(builtin.dict_get(config, "csv_decimal_separator"))
-    encoding: Optional[str] = _try_extract_value_string(builtin.dict_get(config, "csv_encoding"))
-    compression: Optional[str] = _try_extract_value_string(builtin.dict_get(config, "csv_compression"))
+    header_row: int = _extract_value_int64(builtin.dict_get(config, "csv_header_row"), 1)
+    skip: int = _extract_value_int64(builtin.dict_get(config, "csv_skip"), 0)
+    new_line: str = _extract_value_string(builtin.dict_get(config, "csv_new_line"), "")
+    delimiter: str = _extract_value_string(builtin.dict_get(config, "csv_delimiter"), ",")
+    quotechar: str = _extract_value_string(builtin.dict_get(config, "csv_quotechar"), "\"")
+    escapechar: str = _extract_value_string(builtin.dict_get(config, "csv_escapechar"), "\"")
+    comment: str = _extract_value_string(builtin.dict_get(config, "csv_comment"), "")
+    missing_strings: List[String] = _extract_value_string_list(builtin.dict_get(config, "csv_missing_strings"), [])
+    decimal_separator: str = _extract_value_string(builtin.dict_get(config, "csv_decimal_separator"), ".")
+    encoding: str = _extract_value_string(builtin.dict_get(config, "csv_encoding"), "utf-8")
+    compression: str = _extract_value_string(builtin.dict_get(config, "csv_compression"), "auto")
     return logic.CSVConfig(
         header_row=header_row,
         skip=skip,

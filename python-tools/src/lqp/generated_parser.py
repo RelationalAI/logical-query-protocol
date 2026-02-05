@@ -6,7 +6,7 @@ Do not modify this file! If you need to modify the parser, edit the generator co
 in `python-tools/src/meta` or edit the protobuf specification in `proto/v1`.
 
 
-Command: python -m meta.cli ../proto/relationalai/lqp/v1/fragments.proto ../proto/relationalai/lqp/v1/logic.proto ../proto/relationalai/lqp/v1/transactions.proto --parser python
+Command: python -m meta.cli ../proto/relationalai/lqp/v1/logic.proto ../proto/relationalai/lqp/v1/transactions.proto ../proto/relationalai/lqp/v1/fragments.proto --parser python
 """
 
 import ast
@@ -371,27 +371,27 @@ class Parser:
     @staticmethod
     def construct_csv_config(config_dict: list[tuple[str, logic_pb2.Value]]) -> logic_pb2.CSVConfig:
         config = dict(config_dict)
-        _t1056 = Parser._try_extract_value_int64(config.get('csv_header_row'))
+        _t1056 = Parser._extract_value_int64(config.get('csv_header_row'), 1)
         header_row = _t1056
-        _t1057 = Parser._try_extract_value_int64(config.get('csv_skip'))
+        _t1057 = Parser._extract_value_int64(config.get('csv_skip'), 0)
         skip = _t1057
-        _t1058 = Parser._try_extract_value_string(config.get('csv_new_line'))
+        _t1058 = Parser._extract_value_string(config.get('csv_new_line'), '')
         new_line = _t1058
-        _t1059 = Parser._try_extract_value_string(config.get('csv_delimiter'))
+        _t1059 = Parser._extract_value_string(config.get('csv_delimiter'), ',')
         delimiter = _t1059
-        _t1060 = Parser._try_extract_value_string(config.get('csv_quotechar'))
+        _t1060 = Parser._extract_value_string(config.get('csv_quotechar'), '"')
         quotechar = _t1060
-        _t1061 = Parser._try_extract_value_string(config.get('csv_escapechar'))
+        _t1061 = Parser._extract_value_string(config.get('csv_escapechar'), '"')
         escapechar = _t1061
-        _t1062 = Parser._try_extract_value_string(config.get('csv_comment'))
+        _t1062 = Parser._extract_value_string(config.get('csv_comment'), '')
         comment = _t1062
-        _t1063 = Parser._try_extract_value_string_list(config.get('csv_missing_strings'))
+        _t1063 = Parser._extract_value_string_list(config.get('csv_missing_strings'), [])
         missing_strings = _t1063
-        _t1064 = Parser._try_extract_value_string(config.get('csv_decimal_separator'))
+        _t1064 = Parser._extract_value_string(config.get('csv_decimal_separator'), '.')
         decimal_separator = _t1064
-        _t1065 = Parser._try_extract_value_string(config.get('csv_encoding'))
+        _t1065 = Parser._extract_value_string(config.get('csv_encoding'), 'utf-8')
         encoding = _t1065
-        _t1066 = Parser._try_extract_value_string(config.get('csv_compression'))
+        _t1066 = Parser._extract_value_string(config.get('csv_compression'), 'auto')
         compression = _t1066
         _t1067 = logic_pb2.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression)
         return _t1067

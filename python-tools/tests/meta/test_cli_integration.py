@@ -37,8 +37,9 @@ def create_test_files():
     # Create a complete grammar that covers the Transaction message
     # Note: module name comes from filename stem (test), not package name
     grammar_content = dedent("""\
-    %token STRING String
-    %token INT Int32
+    %start transaction
+    %token STRING String r'"[^"]*"'
+    %token INT Int32 r'[-]?\d+'
 
     %nonterm transaction test.Transaction
 
@@ -92,7 +93,8 @@ def create_invalid_grammar():
     # Grammar only covers Transaction with Person, not Address (validation failure)
     # Note: module name comes from filename stem (test), not package name
     grammar_content = dedent("""\
-    %token STRING String
+    %start transaction
+    %token STRING String r'"[^"]*"'
 
     %nonterm transaction test.Transaction
     %nonterm person test.Person
