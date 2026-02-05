@@ -100,10 +100,10 @@ JULIA_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "int64_to_int32": BuiltinTemplate("Int32({0})"),
     "map": BuiltinTemplate("map({0}, {1})"),
     "list_concat": BuiltinTemplate("vcat({0}, !isnothing({1}) ? {1} : [])"),
-    "fragment_id_from_string": BuiltinTemplate("Proto.FragmentId(Vector{{UInt8}}({0}))"),
+    "fragment_id_from_string": BuiltinTemplate("Proto.FragmentId(; id=Vector{{UInt8}}({0}))"),
     "relation_id_from_string": BuiltinTemplate("relation_id_from_string(parser, {0})"),
     "relation_id_from_int": BuiltinTemplate(
-        "Proto.RelationId({0} & 0xFFFFFFFFFFFFFFFF, ({0} >> 64) & 0xFFFFFFFFFFFFFFFF)"
+        "Proto.RelationId(; id_low={0} & 0xFFFFFFFFFFFFFFFF, id_high=({0} >> 64) & 0xFFFFFFFFFFFFFFFF)"
     ),
     "match_lookahead_terminal": BuiltinTemplate("match_lookahead_terminal(parser, {0}, {1})"),
     "match_lookahead_literal": BuiltinTemplate("match_lookahead_literal(parser, {0}, {1})"),

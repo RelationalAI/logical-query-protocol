@@ -7,7 +7,10 @@ inherit from CodeGenerator and provide language-specific implementations.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tuple, Union
+
+if TYPE_CHECKING:
+    from .proto_ast import ProtoMessage
 
 from .target import (
     TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
@@ -59,8 +62,50 @@ class CodeGenerator(ABC):
     # Type mappings: base type name -> target language type
     base_type_map: Dict[str, str] = {}
 
-    def __init__(self) -> None:
+    def __init__(self, proto_messages: Optional[Dict[Tuple[str, str], Any]] = None) -> None:
         self.builtin_registry: Dict[str, BuiltinSpec] = {}
+        self.proto_messages = proto_messages or {}
+        self._message_field_map: Optional[Dict[Tuple[str, str], List[Tuple[str, bool]]]] = None
+
+    def _build_message_field_map(self) -> Dict[Tuple[str, str], List[Tuple[str, bool]]]:
+        """Build field mapping from proto message definitions.
+
+        Returns dict mapping (module, message_name) to list of (field_name, is_repeated).
+        Caches the result for subsequent calls.
+        """
+        if self._message_field_map is not None:
+            return self._message_field_map
+
+        field_map: Dict[Tuple[str, str], List[Tuple[str, bool]]] = {}
+        for (module, msg_name), proto_msg in self.proto_messages.items():
+            # Collect all oneof field names
+            oneof_field_names: Set[str] = set()
+            for oneof in proto_msg.oneofs:
+                oneof_field_names.update(f.name for f in oneof.fields)
+
+            # Only include messages with regular (non-oneof) fields
+            regular_fields = [
+                (f.name, f.is_repeated)
+                for f in proto_msg.fields
+                if f.name not in oneof_field_names
+            ]
+            if regular_fields:
+                escaped_fields = [
+                    (self._escape_field_for_map(fname), is_rep)
+                    for fname, is_rep in regular_fields
+                ]
+                field_map[(module, msg_name)] = escaped_fields
+
+        self._message_field_map = field_map
+        return field_map
+
+    def _escape_field_for_map(self, field_name: str) -> str:
+        """Escape a field name for the message field map.
+
+        Subclasses can override this to apply language-specific escaping.
+        Default implementation returns the field name unchanged.
+        """
+        return field_name
 
     @abstractmethod
     def escape_keyword(self, name: str) -> str:
@@ -364,22 +409,7 @@ class CodeGenerator(ABC):
             return self.gen_symbol(expr.name)
 
         elif isinstance(expr, NewMessage):
-            # NewMessage generates instantiation (with or without fields)
-            ctor = self.gen_constructor(expr.module, expr.name)
-            if expr.fields:
-                field_args = []
-                for field_name, field_expr in expr.fields:
-                    field_val = self.generate_lines(field_expr, lines, indent)
-                    field_args.append(f"{field_name}={field_val}")
-                args_code = ', '.join(field_args)
-                tmp = gensym()
-                lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}({args_code})', is_declaration=True)}")
-                return tmp
-            else:
-                # No fields - generate empty instantiation
-                tmp = gensym()
-                lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}()', is_declaration=True)}")
-                return tmp
+            return self._generate_newmessage(expr, lines, indent)
 
         elif isinstance(expr, Builtin):
             return self.gen_builtin_ref(expr.name)
@@ -402,9 +432,7 @@ class CodeGenerator(ABC):
             return f"{obj_code}.{expr.field_name}"
 
         elif isinstance(expr, GetElement):
-            # GetElement(tuple_expr, index) -> tuple_expr[index]
-            tuple_code = self.generate_lines(expr.tuple_expr, lines, indent)
-            return f"{tuple_code}[{expr.index}]"
+            return self._generate_get_element(expr, lines, indent)
 
         elif isinstance(expr, Call):
             return self._generate_call(expr, lines, indent)
@@ -470,6 +498,37 @@ class CodeGenerator(ABC):
         tmp = gensym()
         lines.append(f"{indent}{self.gen_assignment(tmp, f'{f}({args_code})', is_declaration=True)}")
         return tmp
+
+    def _generate_newmessage(self, expr: NewMessage, lines: List[str], indent: str) -> str:
+        """Generate code for a NewMessage expression.
+
+        Default implementation generates a simple constructor call with keyword arguments.
+        Subclasses should override this to handle language-specific semantics
+        (e.g., OneOf fields, keyword escaping).
+        """
+        ctor = self.gen_constructor(expr.module, expr.name)
+        if expr.fields:
+            field_args = []
+            for field_name, field_expr in expr.fields:
+                field_val = self.generate_lines(field_expr, lines, indent)
+                field_args.append(f"{field_name}={field_val}")
+            args_code = ', '.join(field_args)
+            tmp = gensym()
+            lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}({args_code})', is_declaration=True)}")
+            return tmp
+        else:
+            tmp = gensym()
+            lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}()', is_declaration=True)}")
+            return tmp
+
+    def _generate_get_element(self, expr: GetElement, lines: List[str], indent: str) -> str:
+        """Generate code for a GetElement expression.
+
+        Default implementation uses 0-based indexing.
+        Subclasses can override for different indexing (e.g., Julia uses 1-based).
+        """
+        tuple_code = self.generate_lines(expr.tuple_expr, lines, indent)
+        return f"{tuple_code}[{expr.index}]"
 
     def _generate_oneof(self, expr: OneOf, lines: List[str], indent: str) -> str:
         """Generate code for a OneOf expression.

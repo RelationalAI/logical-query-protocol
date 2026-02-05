@@ -41,34 +41,8 @@ class PythonCodeGenerator(CodeGenerator):
     }
 
     def __init__(self, proto_messages=None):
-        super().__init__()
-        self.proto_messages = proto_messages or {}
-        self._message_field_map: dict | None = None
+        super().__init__(proto_messages)
         self._register_builtins()
-
-    def _build_message_field_map(self):
-        """Build field mapping from proto message definitions.
-
-        Returns dict mapping (module, message_name) to list of (field_name, is_repeated).
-        """
-        if self._message_field_map is not None:
-            return self._message_field_map
-
-        field_map = {}
-        for (module, msg_name), proto_msg in self.proto_messages.items():
-            # Collect all oneof field names
-            oneof_field_names = set()
-            for oneof in proto_msg.oneofs:
-                oneof_field_names.update(f.name for f in oneof.fields)
-
-            # Only include messages with regular (non-oneof) fields
-            regular_fields = [(f.name, f.is_repeated) for f in proto_msg.fields if f.name not in oneof_field_names]
-            if regular_fields:
-                # Preserve original proto field name; handle keyword fields at call sites via **{...}.
-                field_map[(module, msg_name)] = list(regular_fields)
-
-        self._message_field_map = field_map
-        return field_map
 
     def _register_builtins(self) -> None:
         """Register builtin generators from templates."""

@@ -44,40 +44,14 @@ class JuliaCodeGenerator(CodeGenerator):
     }
 
     def __init__(self, proto_messages=None):
-        self.builtin_registry = {}
-        self.proto_messages = proto_messages or {}
-        self._message_field_map: Optional[dict[tuple[str, str], list[tuple[str, bool]]]] = None
+        super().__init__(proto_messages)
         self._register_builtins()
 
-    def _build_message_field_map(self):
-        """Build field mapping from proto message definitions.
-
-        Returns dict mapping (module, message_name) to list of (field_name, is_repeated).
-        """
-        if self._message_field_map is not None:
-            return self._message_field_map
-
-        field_map = {}
-        for (module, msg_name), proto_msg in self.proto_messages.items():
-            # Collect all oneof field names
-            oneof_field_names = set()
-            for oneof in proto_msg.oneofs:
-                oneof_field_names.update(f.name for f in oneof.fields)
-
-            # Only include messages with regular (non-oneof) fields
-            regular_fields = [(f.name, f.is_repeated) for f in proto_msg.fields if f.name not in oneof_field_names]
-            if regular_fields:
-                # Escape Julia keywords and preserve repeated flag
-                escaped_fields = []
-                for fname, is_repeated in regular_fields:
-                    if fname in self.keywords:
-                        escaped_fields.append((fname + '_', is_repeated))
-                    else:
-                        escaped_fields.append((fname, is_repeated))
-                field_map[(module, msg_name)] = escaped_fields
-
-        self._message_field_map = field_map
-        return field_map
+    def _escape_field_for_map(self, field_name: str) -> str:
+        """Escape Julia keywords in field names by adding underscore suffix."""
+        if field_name in self.keywords:
+            return field_name + '_'
+        return field_name
 
     def _register_builtins(self) -> None:
         """Register builtin generators from templates."""
@@ -178,7 +152,7 @@ class JuliaCodeGenerator(CodeGenerator):
         return "end"
 
     def gen_empty_body(self) -> str:
-        return "# empty body"
+        return "nothing"
 
     def gen_assignment(self, var: str, value: str, is_declaration: bool = False) -> str:
         return f"{var} = {value}"
@@ -205,21 +179,11 @@ class JuliaCodeGenerator(CodeGenerator):
     def gen_func_def_end(self) -> str:
         return "end"
 
-    # --- Override generate_lines for Julia-specific special cases ---
-
-    def generate_lines(self, expr: TargetExpr, lines: List[str], indent: str = "") -> Optional[str]:
-        # Handle NewMessage with fields (which may contain OneOf calls)
-        if isinstance(expr, NewMessage):
-            return self._generate_newmessage(expr, lines, indent)
-
-        # Julia uses 1-based indexing, so convert GetElement indices
-        if isinstance(expr, GetElement):
-            tuple_code = self.generate_lines(expr.tuple_expr, lines, indent)
-            # Convert 0-based index to 1-based
-            julia_index = expr.index + 1
-            return f"{tuple_code}[{julia_index}]"
-
-        return super().generate_lines(expr, lines, indent)
+    def _generate_get_element(self, expr: GetElement, lines: List[str], indent: str) -> str:
+        """Julia uses 1-based indexing."""
+        tuple_code = self.generate_lines(expr.tuple_expr, lines, indent)
+        julia_index = expr.index + 1
+        return f"{tuple_code}[{julia_index}]"
 
     def _generate_newmessage(self, expr: NewMessage, lines: List[str], indent: str) -> str:
         """Generate Julia code for NewMessage with fields containing OneOf calls."""
@@ -231,9 +195,8 @@ class JuliaCodeGenerator(CodeGenerator):
             lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}()', is_declaration=True)}")
             return tmp
 
-        # NewMessage with fields - need to handle OneOf specially
-        # Julia protobuf uses positional args in field order
-        positional_args = []
+        # NewMessage with fields - use keyword arguments
+        keyword_args = []
 
         for field_name, field_expr in expr.fields:
             # Check if this field is a Call(OneOf, [value])
@@ -243,17 +206,25 @@ class JuliaCodeGenerator(CodeGenerator):
                 field_value = self.generate_lines(field_expr.args[0], lines, indent)
                 assert field_value is not None
                 field_symbol = self.gen_symbol(oneof_field_name)
-                positional_args.append(f"OneOf({field_symbol}, {field_value})")
+                escaped_name = self._escape_field_name(oneof_field_name)
+                keyword_args.append(f"{escaped_name}=OneOf({field_symbol}, {field_value})")
             else:
                 # Regular field
                 field_value = self.generate_lines(field_expr, lines, indent)
                 assert field_value is not None
-                positional_args.append(field_value)
+                escaped_name = self._escape_field_name(field_name)
+                keyword_args.append(f"{escaped_name}={field_value}")
 
-        args_code = ', '.join(positional_args)
+        args_code = ', '.join(keyword_args)
         tmp = gensym()
-        lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}({args_code})', is_declaration=True)}")
+        lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}(; {args_code})', is_declaration=True)}")
         return tmp
+
+    def _escape_field_name(self, name: str) -> str:
+        """Escape a field name if it's a Julia keyword."""
+        if name in self.keywords:
+            return name + '_'
+        return name
 
     def _generate_call(self, expr: Call, lines: List[str], indent: str) -> Optional[str]:
         """Override to handle OneOf and VisitNonterminal specially for Julia."""
@@ -316,28 +287,6 @@ class JuliaCodeGenerator(CodeGenerator):
             body_code = "\n".join(body_lines)
 
         return f"{indent}function {func_name}({params_str}){ret_hint}\n{body_code}\n{indent}end"
-
-    def _generate_fun_def(self, expr: FunDef, indent: str) -> str:
-        """Generate a regular function definition (helper function from grammar)."""
-        func_name = self.escape_identifier(expr.name)
-        params = [(self.escape_identifier(p.name), self.gen_type(p.type)) for p in expr.params]
-        ret_type = self.gen_type(expr.return_type) if expr.return_type else None
-
-        header = self.gen_func_def_header(func_name, params, ret_type)
-
-        if expr.body is None:
-            body_code = f"{indent}{self.indent_str}nothing"
-        else:
-            lines: List[str] = []
-            body_inner = self.generate_lines(expr.body, lines, indent + self.indent_str)
-            # Only add return if the body didn't already return
-            if body_inner is not None:
-                lines.append(f"{indent}{self.indent_str}{self.gen_return(body_inner)}")
-            body_code = "\n".join(lines)
-
-        end = self.gen_func_def_end()
-        return f"{indent}{header}\n{body_code}\n{indent}{end}"
-
 
 # Module-level instance for convenience
 _generator = JuliaCodeGenerator()
