@@ -162,7 +162,7 @@
 
 transaction
     : "(" "transaction" configure? sync? epoch* ")"
-    { transactions.Transaction(epochs=$5, configure=unwrap_option_or($3, construct_configure([])), sync=$4) }
+    { transactions.Transaction(epochs=$5, configure=builtin.unwrap_option_or($3, construct_configure([])), sync=$4) }
 
 configure
     : "(" "configure" config_dict ")"
@@ -174,7 +174,7 @@ config_dict
 
 config_key_value
     : ":" SYMBOL value
-    { tuple($2, $3) }
+    { builtin.tuple($2, $3) }
 
 value
     : date { logic.Value(date_value=$1) }
@@ -190,11 +190,11 @@ value
 
 date
     : "(" "date" INT INT INT ")"
-    { logic.DateValue(year=int64_to_int32($3), month=int64_to_int32($4), day=int64_to_int32($5)) }
+    { logic.DateValue(year=builtin.int64_to_int32($3), month=builtin.int64_to_int32($4), day=builtin.int64_to_int32($5)) }
 
 datetime
     : "(" "datetime" INT INT INT INT INT INT INT? ")"
-    { logic.DateTimeValue(year=int64_to_int32($3), month=int64_to_int32($4), day=int64_to_int32($5), hour=int64_to_int32($6), minute=int64_to_int32($7), second=int64_to_int32($8), microsecond=int64_to_int32(unwrap_option_or($9, 0))) }
+    { logic.DateTimeValue(year=builtin.int64_to_int32($3), month=builtin.int64_to_int32($4), day=builtin.int64_to_int32($5), hour=builtin.int64_to_int32($6), minute=builtin.int64_to_int32($7), second=builtin.int64_to_int32($8), microsecond=builtin.int64_to_int32(builtin.unwrap_option_or($9, 0))) }
 
 boolean_value
     : "true" { true }
@@ -206,11 +206,11 @@ sync
 
 fragment_id
     : ":" SYMBOL
-    { fragment_id_from_string($2) }
+    { builtin.fragment_id_from_string($2) }
 
 epoch
     : "(" "epoch" epoch_writes? epoch_reads? ")"
-    { transactions.Epoch(writes=unwrap_option_or($3, []), reads=unwrap_option_or($4, [])) }
+    { transactions.Epoch(writes=builtin.unwrap_option_or($3, []), reads=builtin.unwrap_option_or($4, [])) }
 
 epoch_writes
     : "(" "writes" write* ")"
@@ -227,11 +227,13 @@ define
 
 fragment
     : "(" "fragment" new_fragment_id declaration* ")"
-    { construct_fragment($3, $4) }
+    { builtin.construct_fragment($3, $4) }
 
 new_fragment_id
     : fragment_id
-    { seq(start_fragment($1), $1) }
+    { builtin.start_fragment($1)
+      $1
+    }
 
 declaration
     : def { logic.Declaration(def=$1) }
@@ -241,19 +243,19 @@ declaration
 
 def
     : "(" "def" relation_id abstraction attrs? ")"
-    { logic.Def(name=$3, body=$4, attrs=unwrap_option_or($5, [])) }
+    { logic.Def(name=$3, body=$4, attrs=builtin.unwrap_option_or($5, [])) }
 
 relation_id
-    : ":" SYMBOL { relation_id_from_string($2) }
-    | INT { relation_id_from_int($1) }
+    : ":" SYMBOL { builtin.relation_id_from_string($2) }
+    | INT { builtin.relation_id_from_int($1) }
 
 abstraction
     : "(" bindings formula ")"
-    { logic.Abstraction(vars=list_concat($2[0], $2[1]), value=$3) }
+    { logic.Abstraction(vars=builtin.list_concat($2[0], $2[1]), value=$3) }
 
 bindings
     : "[" binding* value_bindings? "]"
-    { tuple($2, unwrap_option_or($3, [])) }
+    { builtin.tuple($2, builtin.unwrap_option_or($3, [])) }
 
 binding
     : SYMBOL "::" type
@@ -284,7 +286,7 @@ missing_type : "MISSING" { logic.MissingType() }
 
 decimal_type
     : "(" "DECIMAL" INT INT ")"
-    { logic.DecimalType(precision=int64_to_int32($3), scale=int64_to_int32($4)) }
+    { logic.DecimalType(precision=builtin.int64_to_int32($3), scale=builtin.int64_to_int32($4)) }
 
 boolean_type : "BOOLEAN" { logic.BooleanType() }
 
@@ -312,7 +314,7 @@ false : "(" "false" ")" { logic.Disjunction(args=[]) }
 
 exists
     : "(" "exists" bindings formula ")"
-    { logic.Exists(body=logic.Abstraction(vars=list_concat($3[0], $3[1]), value=$4)) }
+    { logic.Exists(body=logic.Abstraction(vars=builtin.list_concat($3[0], $3[1]), value=$4)) }
 
 reduce
     : "(" "reduce" abstraction abstraction terms ")"
@@ -439,23 +441,23 @@ instruction
 
 assign
     : "(" "assign" relation_id abstraction attrs? ")"
-    { logic.Assign(name=$3, body=$4, attrs=unwrap_option_or($5, [])) }
+    { logic.Assign(name=$3, body=$4, attrs=builtin.unwrap_option_or($5, [])) }
 
 upsert
     : "(" "upsert" relation_id abstraction_with_arity attrs? ")"
-    { logic.Upsert(name=$3, body=$4[0], attrs=unwrap_option_or($5, []), value_arity=$4[1]) }
+    { logic.Upsert(name=$3, body=$4[0], attrs=builtin.unwrap_option_or($5, []), value_arity=$4[1]) }
 
 abstraction_with_arity
     : "(" bindings formula ")"
-    { tuple(logic.Abstraction(vars=list_concat($2[0], $2[1]), value=$3), length($2[1])) }
+    { builtin.tuple(logic.Abstraction(vars=builtin.list_concat($2[0], $2[1]), value=$3), builtin.length($2[1])) }
 
 break
     : "(" "break" relation_id abstraction attrs? ")"
-    { logic.Break(name=$3, body=$4, attrs=unwrap_option_or($5, [])) }
+    { logic.Break(name=$3, body=$4, attrs=builtin.unwrap_option_or($5, [])) }
 
 monoid_def
     : "(" "monoid" monoid relation_id abstraction_with_arity attrs? ")"
-    { logic.MonoidDef(monoid=$3, name=$4, body=$5[0], attrs=unwrap_option_or($6, []), value_arity=$5[1]) }
+    { logic.MonoidDef(monoid=$3, name=$4, body=$5[0], attrs=builtin.unwrap_option_or($6, []), value_arity=$5[1]) }
 
 monoid
     : or_monoid { logic.Monoid(or_monoid=$1) }
@@ -470,7 +472,7 @@ sum_monoid : "(" "sum" type ")" { logic.SumMonoid(type=$3) }
 
 monus_def
     : "(" "monus" monoid relation_id abstraction_with_arity attrs? ")"
-    { logic.MonusDef(monoid=$3, name=$4, body=$5[0], attrs=unwrap_option_or($6, []), value_arity=$5[1]) }
+    { logic.MonusDef(monoid=$3, name=$4, body=$5[0], attrs=builtin.unwrap_option_or($6, []), value_arity=$5[1]) }
 
 constraint
     : "(" "functional_dependency" relation_id abstraction functional_dependency_keys functional_dependency_values ")"
@@ -517,7 +519,7 @@ csv_locator_inline_data : "(" "inline_data" STRING ")" { $3 }
 
 csvlocator
     : "(" "csv_locator" csv_locator_paths? csv_locator_inline_data? ")"
-    { logic.CSVLocator(paths=unwrap_option_or($3, []), inline_data=encode_string(unwrap_option_or($4, ""))) }
+    { logic.CSVLocator(paths=builtin.unwrap_option_or($3, []), inline_data=builtin.encode_string(builtin.unwrap_option_or($4, ""))) }
 
 csv_config
     : "(" "csv_config" config_dict ")"
@@ -550,7 +552,7 @@ demand
 
 output
     : "(" "output" name? relation_id ")"
-    { transactions.Output(name=unwrap_option_or($3, "output"), relation_id=$4) }
+    { transactions.Output(name=builtin.unwrap_option_or($3, "output"), relation_id=$4) }
 
 what_if
     : "(" "what_if" name epoch ")"
@@ -558,7 +560,7 @@ what_if
 
 abort
     : "(" "abort" name? relation_id ")"
-    { transactions.Abort(name=unwrap_option_or($3, "abort"), relation_id=$4) }
+    { transactions.Abort(name=builtin.unwrap_option_or($3, "abort"), relation_id=$4) }
 
 export
     : "(" "export" export_csv_config ")"
@@ -582,7 +584,7 @@ export_csv_column
 def _extract_value_int64(value: Optional[logic.Value], default: int) -> int:
     if value is None:
         return default
-    if has_field(value, 'int_value'):
+    if builtin.has_proto_field(value, 'int_value'):
         return value.int_value
     return default
 
@@ -590,7 +592,7 @@ def _extract_value_int64(value: Optional[logic.Value], default: int) -> int:
 def _extract_value_float64(value: Optional[logic.Value], default: float) -> float:
     if value is None:
         return default
-    if has_field(value, 'float_value'):
+    if builtin.has_proto_field(value, 'float_value'):
         return value.float_value
     return default
 
@@ -598,7 +600,7 @@ def _extract_value_float64(value: Optional[logic.Value], default: float) -> floa
 def _extract_value_string(value: Optional[logic.Value], default: str) -> str:
     if value is None:
         return default
-    if has_field(value, 'string_value'):
+    if builtin.has_proto_field(value, 'string_value'):
         return value.string_value
     return default
 
@@ -606,7 +608,7 @@ def _extract_value_string(value: Optional[logic.Value], default: str) -> str:
 def _extract_value_boolean(value: Optional[logic.Value], default: bool) -> bool:
     if value is None:
         return default
-    if has_field(value, 'boolean_value'):
+    if builtin.has_proto_field(value, 'boolean_value'):
         return value.boolean_value
     return default
 
@@ -614,7 +616,7 @@ def _extract_value_boolean(value: Optional[logic.Value], default: bool) -> bool:
 def _extract_value_bytes(value: Optional[logic.Value], default: bytes) -> bytes:
     if value is None:
         return default
-    if has_field(value, 'string_value'):
+    if builtin.has_proto_field(value, 'string_value'):
         return value.string_value.encode()
     return default
 
@@ -622,7 +624,7 @@ def _extract_value_bytes(value: Optional[logic.Value], default: bytes) -> bytes:
 def _extract_value_uint128(value: Optional[logic.Value], default: logic.UInt128Value) -> logic.UInt128Value:
     if value is None:
         return default
-    if has_field(value, 'uint128_value'):
+    if builtin.has_proto_field(value, 'uint128_value'):
         return value.uint128_value
     return default
 
@@ -630,24 +632,24 @@ def _extract_value_uint128(value: Optional[logic.Value], default: logic.UInt128V
 def _extract_value_string_list(value: Optional[logic.Value], default: List[String]) -> List[String]:
     if value is None:
         return default
-    if has_field(value, 'string_value'):
+    if builtin.has_proto_field(value, 'string_value'):
         return [value.string_value]
     return default
 
 
 def construct_csv_config(config_dict: List[Tuple[String, logic.Value]]) -> logic.CSVConfig:
-    config: Dict[String, logic.Value] = dict_from_list(config_dict)
-    header_row = _extract_value_int64(dict_get(config, "csv_header_row"), 1)
-    skip = _extract_value_int64(dict_get(config, "csv_skip"), 0)
-    new_line = _extract_value_string(dict_get(config, "csv_new_line"), "")
-    delimiter = _extract_value_string(dict_get(config, "csv_delimiter"), ",")
-    quotechar = _extract_value_string(dict_get(config, "csv_quotechar"), '"')
-    escapechar = _extract_value_string(dict_get(config, "csv_escapechar"), '"')
-    comment = _extract_value_string(dict_get(config, "csv_comment"), "")
-    missing_strings = _extract_value_string_list(dict_get(config, "csv_missing_strings"), [])
-    decimal_separator = _extract_value_string(dict_get(config, "csv_decimal_separator"), ".")
-    encoding = _extract_value_string(dict_get(config, "csv_encoding"), "utf-8")
-    compression = _extract_value_string(dict_get(config, "csv_compression"), "auto")
+    config: Dict[String, logic.Value] = builtin.dict_from_list(config_dict)
+    header_row = _extract_value_int64(builtin.dict_get(config, "csv_header_row"), 1)
+    skip = _extract_value_int64(builtin.dict_get(config, "csv_skip"), 0)
+    new_line = _extract_value_string(builtin.dict_get(config, "csv_new_line"), "")
+    delimiter = _extract_value_string(builtin.dict_get(config, "csv_delimiter"), ",")
+    quotechar = _extract_value_string(builtin.dict_get(config, "csv_quotechar"), '"')
+    escapechar = _extract_value_string(builtin.dict_get(config, "csv_escapechar"), '"')
+    comment = _extract_value_string(builtin.dict_get(config, "csv_comment"), "")
+    missing_strings = _extract_value_string_list(builtin.dict_get(config, "csv_missing_strings"), [])
+    decimal_separator = _extract_value_string(builtin.dict_get(config, "csv_decimal_separator"), ".")
+    encoding = _extract_value_string(builtin.dict_get(config, "csv_encoding"), "utf-8")
+    compression = _extract_value_string(builtin.dict_get(config, "csv_compression"), "auto")
     return logic.CSVConfig(
         header_row=header_row,
         skip=skip,
@@ -668,30 +670,30 @@ def construct_betree_info(
     value_types: List[logic.Type],
     config_dict: List[Tuple[String, logic.Value]],
 ) -> logic.BeTreeInfo:
-    config: Dict[String, logic.Value] = dict_from_list(config_dict)
-    epsilon = _extract_value_float64(dict_get(config, "betree_config_epsilon"), 0.5)
-    max_pivots = _extract_value_int64(dict_get(config, "betree_config_max_pivots"), 4)
-    max_deltas = _extract_value_int64(dict_get(config, "betree_config_max_deltas"), 16)
-    max_leaf = _extract_value_int64(dict_get(config, "betree_config_max_leaf"), 16)
+    config: Dict[String, logic.Value] = builtin.dict_from_list(config_dict)
+    epsilon = _extract_value_float64(builtin.dict_get(config, "betree_config_epsilon"), 0.5)
+    max_pivots = _extract_value_int64(builtin.dict_get(config, "betree_config_max_pivots"), 4)
+    max_deltas = _extract_value_int64(builtin.dict_get(config, "betree_config_max_deltas"), 16)
+    max_leaf = _extract_value_int64(builtin.dict_get(config, "betree_config_max_leaf"), 16)
     storage_config = logic.BeTreeConfig(
         epsilon=epsilon,
         max_pivots=max_pivots,
         max_deltas=max_deltas,
         max_leaf=max_leaf,
     )
-    root_pageid_val = dict_get(config, "betree_locator_root_pageid")
+    root_pageid_val = builtin.dict_get(config, "betree_locator_root_pageid")
     root_pageid: Optional[logic.UInt128Value] = None
     if root_pageid_val is not None:
         root_pageid = _extract_value_uint128(
             root_pageid_val,
             logic.UInt128Value(low=0, high=0),
         )
-    inline_data_val = dict_get(config, "betree_locator_inline_data")
+    inline_data_val = builtin.dict_get(config, "betree_locator_inline_data")
     inline_data: Optional[bytes] = None
     if inline_data_val is not None:
         inline_data = _extract_value_bytes(inline_data_val, b"")
-    element_count = _extract_value_int64(dict_get(config, "betree_locator_element_count"), 0)
-    tree_height = _extract_value_int64(dict_get(config, "betree_locator_tree_height"), 0)
+    element_count = _extract_value_int64(builtin.dict_get(config, "betree_locator_element_count"), 0)
+    tree_height = _extract_value_int64(builtin.dict_get(config, "betree_locator_tree_height"), 0)
     relation_locator = logic.BeTreeLocator(
         root_pageid=root_pageid,
         inline_data=inline_data,
@@ -707,11 +709,11 @@ def construct_betree_info(
 
 
 def construct_configure(config_dict: List[Tuple[String, logic.Value]]) -> transactions.Configure:
-    config: Dict[String, logic.Value] = dict_from_list(config_dict)
-    maintenance_level_val = dict_get(config, "ivm.maintenance_level")
+    config: Dict[String, logic.Value] = builtin.dict_from_list(config_dict)
+    maintenance_level_val = builtin.dict_get(config, "ivm.maintenance_level")
     maintenance_level: str
     if (maintenance_level_val is not None
-            and has_field(maintenance_level_val, 'string_value')):
+            and builtin.has_proto_field(maintenance_level_val, 'string_value')):
         level_str = maintenance_level_val.string_value.upper()
         if level_str in ["OFF", "AUTO", "ALL"]:
             maintenance_level = "MAINTENANCE_LEVEL_" + level_str
@@ -720,7 +722,7 @@ def construct_configure(config_dict: List[Tuple[String, logic.Value]]) -> transa
     else:
         maintenance_level = "MAINTENANCE_LEVEL_OFF"
     ivm_config = transactions.IVMConfig(level=maintenance_level)
-    semantics_version = _extract_value_int64(dict_get(config, "semantics_version"), 0)
+    semantics_version = _extract_value_int64(builtin.dict_get(config, "semantics_version"), 0)
     return transactions.Configure(
         semantics_version=semantics_version,
         ivm_config=ivm_config,
@@ -732,14 +734,14 @@ def export_csv_config(
     columns: List[transactions.ExportCSVColumn],
     config_dict: List[Tuple[String, logic.Value]],
 ) -> transactions.ExportCSVConfig:
-    config: Dict[String, logic.Value] = dict_from_list(config_dict)
-    partition_size = _extract_value_int64(dict_get(config, "partition_size"), 0)
-    compression = _extract_value_string(dict_get(config, "compression"), "")
-    syntax_header_row = _extract_value_boolean(dict_get(config, "syntax_header_row"), True)
-    syntax_missing_string = _extract_value_string(dict_get(config, "syntax_missing_string"), "")
-    syntax_delim = _extract_value_string(dict_get(config, "syntax_delim"), ",")
-    syntax_quotechar = _extract_value_string(dict_get(config, "syntax_quotechar"), '"')
-    syntax_escapechar = _extract_value_string(dict_get(config, "syntax_escapechar"), "\\")
+    config: Dict[String, logic.Value] = builtin.dict_from_list(config_dict)
+    partition_size = _extract_value_int64(builtin.dict_get(config, "partition_size"), 0)
+    compression = _extract_value_string(builtin.dict_get(config, "compression"), "")
+    syntax_header_row = _extract_value_boolean(builtin.dict_get(config, "syntax_header_row"), True)
+    syntax_missing_string = _extract_value_string(builtin.dict_get(config, "syntax_missing_string"), "")
+    syntax_delim = _extract_value_string(builtin.dict_get(config, "syntax_delim"), ",")
+    syntax_quotechar = _extract_value_string(builtin.dict_get(config, "syntax_quotechar"), '"')
+    syntax_escapechar = _extract_value_string(builtin.dict_get(config, "syntax_escapechar"), "\\")
     return transactions.ExportCSVConfig(
         path=path,
         data_columns=columns,

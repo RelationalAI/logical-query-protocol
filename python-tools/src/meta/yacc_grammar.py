@@ -63,7 +63,7 @@ from .grammar import (
 from .target import (
     TargetType, BaseType, BottomType, MessageType, ListType, OptionType, TupleType, DictType,
     TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, Call, Lambda,
-    Let, IfElse, Seq, ListExpr, GetElement, GetField, FunDef, OneOf, Assign, Return, HasField
+    Let, IfElse, Seq, ListExpr, GetElement, GetField, FunDef, OneOf, Assign, Return, HasProtoField
 )
 
 
@@ -477,6 +477,18 @@ def _convert_node(node: ast.AST, param_types: List[Optional[TargetType]], ctx: T
         func = node.func
         args = [_convert_node(a, param_types, ctx, line) for a in node.args]
 
+        # Handle builtin.foo(...) syntax for builtins
+        if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name):
+            if func.value.id == "builtin":
+                # Special handling for has_proto_field -> HasProtoField node
+                if func.attr == "has_proto_field":
+                    if len(args) != 2:
+                        raise YaccGrammarError(f"has_proto_field requires exactly 2 arguments", line)
+                    if not isinstance(args[1], Lit) or not isinstance(args[1].value, str):
+                        raise YaccGrammarError(f"has_proto_field second argument must be a string literal", line)
+                    return HasProtoField(args[0], args[1].value)
+                return Call(Builtin(func.attr), args)
+
         # Handle message constructor: module.Message(field=value, ...)
         if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name):
             module_name = func.value.id
@@ -501,13 +513,13 @@ def _convert_node(node: ast.AST, param_types: List[Optional[TargetType]], ctx: T
             if func_name.startswith('oneof_'):
                 variant_name = func_name[6:]  # Remove 'oneof_' prefix
                 return Call(OneOf(variant_name), args)
-            # has_field(msg, field_name) -> HasField node
+            # has_field(msg, field_name) -> HasProtoField node
             if func_name == 'has_field':
                 if len(args) != 2:
                     raise YaccGrammarError(f"has_field requires exactly 2 arguments", line)
                 if not isinstance(args[1], Lit) or not isinstance(args[1].value, str):
                     raise YaccGrammarError(f"has_field second argument must be a string literal", line)
-                return HasField(args[0], args[1].value)
+                return HasProtoField(args[0], args[1].value)
             # Check if it's a builtin
             from .target_builtins import is_builtin
             if is_builtin(func_name):
@@ -677,13 +689,30 @@ def parse_action_expr(text: str, param_info: List[Tuple[Optional[str], Optional[
     text = text.strip()
     extra_vars = extra_vars or {}
 
-    # Parse as Python expression
+    # Try parsing as a single Python expression first
     try:
         tree = ast.parse(text, mode='eval')
+        return _convert_node_with_vars(tree.body, param_info, params, ctx, line, extra_vars)
+    except SyntaxError:
+        pass
+
+    # If that fails, try parsing as multiple statements (for multi-line actions)
+    try:
+        tree = ast.parse(text, mode='exec')
     except SyntaxError as e:
         raise YaccGrammarError(f"Syntax error in action: {e}", line)
 
-    return _convert_node_with_vars(tree.body, param_info, params, ctx, line, extra_vars)
+    # Convert each statement to a target expression
+    exprs = []
+    for stmt in tree.body:
+        if isinstance(stmt, ast.Expr):
+            exprs.append(_convert_node_with_vars(stmt.value, param_info, params, ctx, line, extra_vars))
+        else:
+            raise YaccGrammarError(f"Unsupported statement in action block: {type(stmt).__name__}", line)
+
+    if len(exprs) == 1:
+        return exprs[0]
+    return Seq(tuple(exprs))
 
 
 def _unsupported_node_error(node: ast.AST, line: Optional[int], reason: str = "") -> YaccGrammarError:
@@ -818,6 +847,18 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
         func = node.func
         args = [convert(a) for a in node.args]
 
+        # Handle builtin.foo(...) syntax for builtins
+        if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name):
+            if func.value.id == "builtin":
+                # Special handling for has_proto_field -> HasProtoField node
+                if func.attr == "has_proto_field":
+                    if len(args) != 2:
+                        raise YaccGrammarError(f"has_proto_field requires exactly 2 arguments", line)
+                    if not isinstance(args[1], Lit) or not isinstance(args[1].value, str):
+                        raise YaccGrammarError(f"has_proto_field second argument must be a string literal", line)
+                    return HasProtoField(args[0], args[1].value)
+                return Call(Builtin(func.attr), args)
+
         # Message constructor
         if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name):
             module_name = func.value.id
@@ -847,13 +888,13 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
             if func_name.startswith('oneof_'):
                 variant_name = func_name[6:]  # Remove 'oneof_' prefix
                 return Call(OneOf(variant_name), args)
-            # has_field(msg, field_name) -> HasField node
+            # has_field(msg, field_name) -> HasProtoField node
             if func_name == 'has_field':
                 if len(args) != 2:
                     raise YaccGrammarError(f"has_field requires exactly 2 arguments", line)
                 if not isinstance(args[1], Lit) or not isinstance(args[1].value, str):
                     raise YaccGrammarError(f"has_field second argument must be a string literal", line)
-                return HasField(args[0], args[1].value)
+                return HasProtoField(args[0], args[1].value)
             from .target_builtins import is_builtin
             if is_builtin(func_name):
                 return Call(Builtin(func_name), args)
@@ -931,7 +972,7 @@ def parse_rules(lines: List[str], start_line: int, ctx: TypeContext) -> Tuple[Li
         """Process accumulated alternative lines."""
         nonlocal current_alt_lines
         if current_alt_lines and current_lhs is not None and current_lhs_type is not None:
-            text = ' '.join(current_alt_lines)
+            text = '\n'.join(current_alt_lines)
             rule = _parse_alternative(current_lhs, current_lhs_type, text, ctx, current_alt_start_line)
             rules.append(rule)
         current_alt_lines = []
@@ -1245,6 +1286,18 @@ def _convert_func_expr(node: ast.expr, ctx: TypeContext, line: int,
         func = node.func
         args = [_convert_func_expr(a, ctx, line, local_vars) for a in node.args]
 
+        # Handle builtin.foo(...) syntax for builtins
+        if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name):
+            if func.value.id == "builtin":
+                # Special handling for has_proto_field -> HasProtoField node
+                if func.attr == "has_proto_field":
+                    if len(args) != 2:
+                        raise YaccGrammarError(f"has_proto_field requires exactly 2 arguments", line)
+                    if not isinstance(args[1], Lit) or not isinstance(args[1].value, str):
+                        raise YaccGrammarError(f"has_proto_field second argument must be a string literal", line)
+                    return HasProtoField(args[0], args[1].value)
+                return Call(Builtin(func.attr), args)
+
         # Handle message constructor or method call: module.Message(field=value, ...) or obj.method(args)
         if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name):
             obj_name = func.value.id
@@ -1285,13 +1338,13 @@ def _convert_func_expr(node: ast.expr, ctx: TypeContext, line: int,
             # User-defined functions take precedence over builtins
             if func_name in ctx.functions:
                 return Call(NamedFun(func_name), args)
-            # has_field(msg, field_name) -> HasField node
+            # has_field(msg, field_name) -> HasProtoField node
             if func_name == 'has_field':
                 if len(args) != 2:
                     raise YaccGrammarError(f"has_field requires exactly 2 arguments", line)
                 if not isinstance(args[1], Lit) or not isinstance(args[1].value, str):
                     raise YaccGrammarError(f"has_field second argument must be a string literal", line)
-                return HasField(args[0], args[1].value)
+                return HasProtoField(args[0], args[1].value)
             from .target_builtins import is_builtin
             if is_builtin(func_name):
                 return Call(Builtin(func_name), args)

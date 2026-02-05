@@ -154,13 +154,13 @@ class TestExprRoundtrip:
         ctx = make_ctx()
         extra_vars = {"x": ListType(BaseType("Int64")), "y": ListType(BaseType("Int64"))}
         expr = parse_expr("list_concat(x, y)", ctx, extra_vars)
-        assert expr_to_str(expr) == "list_concat(x, y)"
+        assert expr_to_str(expr) == "builtin.list_concat(x, y)"
 
     def test_builtin_call_no_args(self):
         """Test builtin function call with no args."""
         ctx = make_ctx()
         expr = parse_expr("none()", ctx)
-        assert expr_to_str(expr) == "none()"
+        assert expr_to_str(expr) == "builtin.none()"
 
     def test_message_constructor_no_fields(self):
         """Test message constructor with no fields."""
@@ -254,7 +254,7 @@ class TestExprRoundtrip:
         ctx = make_ctx()
         extra_vars = {"x": ListType(BaseType("Int64")), "y": ListType(BaseType("Int64")), "z": ListType(BaseType("Int64"))}
         expr = parse_expr("list_concat(list_concat(x, y), z)", ctx, extra_vars)
-        assert expr_to_str(expr) == "list_concat(list_concat(x, y), z)"
+        assert expr_to_str(expr) == "builtin.list_concat(builtin.list_concat(x, y), z)"
 
 
 class TestExprDirect:
@@ -280,7 +280,7 @@ class TestExprDirect:
         param = Var("x", BaseType("Int64"))
         body = Call(Builtin("append"), [Var("x", BaseType("Int64")), Lit(1)])
         lam = Lambda([param], ListType(BaseType("Int64")), body)
-        assert expr_to_str(lam) == "lambda x: append(x, 1)"
+        assert expr_to_str(lam) == "lambda x: builtin.append(x, 1)"
 
     def test_symbol(self):
         """Test symbol expression."""
@@ -303,11 +303,11 @@ class TestExprDirect:
         outer = GetField(inner, "value")
         assert expr_to_str(outer) == "msg.inner.value"
 
-    def test_has_field(self):
-        """Test HasField expression."""
-        from meta.target import HasField
+    def test_has_proto_field(self):
+        """Test HasProtoField expression."""
+        from meta.target import HasProtoField
         obj = Var("msg", MessageType("logic", "Value"))
-        has = HasField(obj, "int_value")
+        has = HasProtoField(obj, "int_value")
         assert expr_to_str(has) == "msg.HasField('int_value')"
 
     def test_dict_from_list(self):
@@ -391,7 +391,7 @@ class TestExprDirect:
     def test_builtin(self):
         """Test builtin function reference."""
         b = Builtin("append")
-        assert expr_to_str(b) == "append"
+        assert expr_to_str(b) == "builtin.append"
 
 
 class TestFunDefPrint:

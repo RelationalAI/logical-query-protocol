@@ -9,7 +9,7 @@ from .target import (
     OptionType, TupleType, FunctionType,
     TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, OneOf,
     ListExpr, Call, Lambda, Let, IfElse, Seq, While, Foreach, ForeachEnumerated,
-    Assign, Return, GetField, GetElement, DictFromList, DictLookup, HasField,
+    Assign, Return, GetField, GetElement, DictFromList, DictLookup, HasProtoField,
     VisitNonterminal, FunDef
 )
 
@@ -78,7 +78,7 @@ def expr_to_str(expr: TargetExpr) -> str:
         return f":{expr.name}"
 
     elif isinstance(expr, Builtin):
-        return expr.name
+        return f"builtin.{expr.name}"
 
     elif isinstance(expr, NamedFun):
         return expr.name
@@ -143,7 +143,7 @@ def expr_to_str(expr: TargetExpr) -> str:
         else:
             return f"{expr_to_str(expr.dict_expr)}.get({expr_to_str(expr.key)})"
 
-    elif isinstance(expr, HasField):
+    elif isinstance(expr, HasProtoField):
         return f"{expr_to_str(expr.message)}.HasField({repr(expr.field_name)})"
 
     elif isinstance(expr, VisitNonterminal):

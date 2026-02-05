@@ -6,7 +6,7 @@ Do not modify this file! If you need to modify the parser, edit the generator co
 in `python-tools/src/meta` or edit the protobuf specification in `proto/v1`.
 
 
-Command: python -m meta.cli ../proto/relationalai/lqp/v1/logic.proto ../proto/relationalai/lqp/v1/fragments.proto ../proto/relationalai/lqp/v1/transactions.proto --parser python
+Command: python -m meta.cli ../proto/relationalai/lqp/v1/fragments.proto ../proto/relationalai/lqp/v1/logic.proto ../proto/relationalai/lqp/v1/transactions.proto --parser python
 """
 
 import hashlib

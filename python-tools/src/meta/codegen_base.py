@@ -13,7 +13,7 @@ from .target import (
     TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
     IfElse, Seq, While, Assign, Return, FunDef, VisitNonterminalDef,
     VisitNonterminal, TargetType, BaseType, TupleType, ListType, DictType, OptionType,
-    MessageType, FunctionType, GetField, GetElement, DictFromList, DictLookup, HasField
+    MessageType, FunctionType, GetField, GetElement, DictFromList, DictLookup, HasProtoField
 )
 from .gensym import gensym
 
@@ -369,8 +369,8 @@ class CodeGenerator(ABC):
         elif isinstance(expr, DictLookup):
             return self._generate_dict_lookup(expr, lines, indent)
 
-        elif isinstance(expr, HasField):
-            return self._generate_has_field(expr, lines, indent)
+        elif isinstance(expr, HasProtoField):
+            return self._generate_has_proto_field(expr, lines, indent)
 
         elif isinstance(expr, Call):
             return self._generate_call(expr, lines, indent)
@@ -572,7 +572,7 @@ class CodeGenerator(ABC):
         default_code = self.generate_lines(expr.default, lines, indent)
         return self.gen_dict_lookup(dict_code, key_code, default_code)
 
-    def _generate_has_field(self, expr: HasField, lines: List[str], indent: str) -> str:
+    def _generate_has_proto_field(self, expr: HasProtoField, lines: List[str], indent: str) -> str:
         """Generate code for has-field.
 
         Checks if a protobuf message has a field set (for oneOf).

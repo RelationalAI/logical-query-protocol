@@ -343,7 +343,7 @@ class DictLookup(TargetExpr):
 
 
 @dataclass(frozen=True)
-class HasField(TargetExpr):
+class HasProtoField(TargetExpr):
     """Check if protobuf message has field set (for oneOf): msg.HasField(field_name).
 
     Checks whether a protobuf message has a particular field set, typically used
@@ -353,7 +353,7 @@ class HasField(TargetExpr):
     field_name: Name of the field to check (string literal)
 
     Example:
-        HasField(
+        HasProtoField(
             Var("msg", MessageType("logic", "Value")),
             "string_value"
         )
@@ -695,7 +695,7 @@ __all__ = [
     'GetElement',
     'DictFromList',
     'DictLookup',
-    'HasField',
+    'HasProtoField',
     'Lambda',
     'Let',
     'IfElse',
