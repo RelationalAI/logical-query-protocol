@@ -19,12 +19,6 @@ class BuiltinTemplate:
     statement_templates: List[str] = field(default_factory=list)
 
 
-@dataclass
-class VariadicBuiltinTemplate:
-    """Variadic builtin with different templates per arity."""
-    templates_by_arity: Dict[int, BuiltinTemplate]
-
-
 # Python builtin templates
 PYTHON_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "some": BuiltinTemplate("{0}"),
@@ -119,7 +113,6 @@ JULIA_TEMPLATES: Dict[str, BuiltinTemplate] = {
 
 __all__ = [
     'BuiltinTemplate',
-    'VariadicBuiltinTemplate',
     'PYTHON_TEMPLATES',
     'JULIA_TEMPLATES',
 ]
