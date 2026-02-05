@@ -126,7 +126,7 @@ def _generate_parse_method(lhs: Nonterminal, rules: List[Rule], grammar: Grammar
         if has_epsilon:
             tail = Lit(None)
         else:
-            tail = Call(Builtin('error'), [Lit(f'Unexpected token in {lhs}'), Call(Builtin('current_token'), [])])
+            tail = Call(Builtin('error_with_token'), [Lit(f'Unexpected token in {lhs}'), Call(Builtin('current_token'), [])])
         for i, rule in enumerate(rules):
             # Ensure the return type is the same for all actions for this nonterminal.
             assert return_type is None or return_type == rule.constructor.return_type, f'Return type mismatch at rule {i}: {return_type} != {rule.constructor.return_type}'

@@ -134,7 +134,8 @@ register_builtin("consume_terminal", [STRING], ANY)
 register_builtin("current_token", [], ANY)
 
 # === Error handling ===
-register_builtin("error", -1, BaseType("Never"))  # Variadic: 1 or 2 args
+register_builtin("error", [STRING], BaseType("Never"))
+register_builtin("error_with_token", [STRING, ANY], BaseType("Never"))
 
 # === Protobuf-specific ===
 register_builtin("fragment_id_from_string", [STRING], MessageType("fragments", "FragmentId"))

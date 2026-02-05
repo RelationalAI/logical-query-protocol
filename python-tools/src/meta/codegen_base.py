@@ -17,6 +17,7 @@ from .target import (
 )
 from .target_builtins import get_builtin
 from .gensym import gensym
+from .codegen_templates import BuiltinTemplate, VariadicBuiltinTemplate
 
 
 @dataclass
@@ -273,6 +274,62 @@ class CodeGenerator(ABC):
         """
         self.builtin_registry[name] = BuiltinSpec(name, generator)
 
+    def register_builtin_from_template(self, name: str, template: BuiltinTemplate) -> None:
+        """Register a builtin from a template."""
+        def generator(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
+            # Handle variadic {args} placeholder
+            if "{args}" in template.value_template:
+                value = template.value_template.replace("{args}", ", ".join(args))
+            else:
+                value = template.value_template.format(*args)
+
+            statements = []
+            for stmt_template in template.statement_templates:
+                if "{args}" in stmt_template:
+                    statements.append(stmt_template.replace("{args}", ", ".join(args)))
+                else:
+                    statements.append(stmt_template.format(*args))
+
+            return BuiltinResult(value, statements)
+
+        self.register_builtin(name, generator)
+
+    def register_variadic_builtin(self, name: str, variadic: VariadicBuiltinTemplate) -> None:
+        """Register a variadic builtin with different templates per arity."""
+        def generator(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
+            arity = len(args)
+            if arity not in variadic.templates_by_arity:
+                raise ValueError(f"Invalid number of arguments ({arity}) for builtin `{name}`.")
+            template = variadic.templates_by_arity[arity]
+
+            if "{args}" in template.value_template:
+                value = template.value_template.replace("{args}", ", ".join(args))
+            else:
+                value = template.value_template.format(*args)
+
+            statements = []
+            for stmt_template in template.statement_templates:
+                if "{args}" in stmt_template:
+                    statements.append(stmt_template.replace("{args}", ", ".join(args)))
+                else:
+                    statements.append(stmt_template.format(*args))
+
+            return BuiltinResult(value, statements)
+
+        self.register_builtin(name, generator)
+
+    def register_builtins_from_templates(
+        self,
+        templates: Dict[str, BuiltinTemplate],
+        variadic_templates: Optional[Dict[str, VariadicBuiltinTemplate]] = None
+    ) -> None:
+        """Register builtins from template dictionaries."""
+        for name, template in templates.items():
+            self.register_builtin_from_template(name, template)
+        if variadic_templates:
+            for name, variadic in variadic_templates.items():
+                self.register_variadic_builtin(name, variadic)
+
     def gen_builtin_call(self, name: str, args: List[str],
                          lines: List[str], indent: str) -> Optional[BuiltinResult]:
         """Generate code for a builtin function call.
@@ -376,7 +433,7 @@ class CodeGenerator(ABC):
         else:
             raise ValueError(f"Unknown expression type: {type(expr)}")
 
-    def _generate_call(self, expr: Call, lines: List[str], indent: str) -> str:
+    def _generate_call(self, expr: Call, lines: List[str], indent: str) -> Optional[str]:
         """Generate code for a function call."""
         # NewMessage should be handled directly, not wrapped in Call
         assert not isinstance(expr.func, NewMessage), \
@@ -394,6 +451,10 @@ class CodeGenerator(ABC):
             if result is not None:
                 for stmt in result.statements:
                     lines.append(f"{indent}{stmt}")
+                # Check if builtin returns Never (like error builtins)
+                builtin_sig = get_builtin(expr.func.name)
+                if builtin_sig is not None and builtin_sig.return_type == BaseType("Never"):
+                    return None
                 return result.value
 
         # Regular call
@@ -461,15 +522,24 @@ class CodeGenerator(ABC):
         cond_code = self.generate_lines(expr.condition, lines, indent)
         assert cond_code is not None, "If condition should not contain a return"
 
-        # Optimization: short-circuit for boolean literals
+        # Optimization: short-circuit for boolean literals using and/or builtins.
+        # `if cond then True else x` -> or(cond, x)
         if expr.then_branch == Lit(True):
-            else_code = self.generate_lines(expr.else_branch, lines, indent + self.indent_str)
-            assert else_code is not None, "Short-circuit else branch should not return"
-            return f"({cond_code} || {else_code})"
+            tmp_lines: List[str] = []
+            else_code = self.generate_lines(expr.else_branch, tmp_lines, indent)
+            if not tmp_lines and else_code is not None:
+                result = self.gen_builtin_call("or", [cond_code, else_code], lines, indent)
+                if result is not None:
+                    return result.value
+
+        # `if cond then x else False` -> and(cond, x)
         if expr.else_branch == Lit(False):
-            then_code = self.generate_lines(expr.then_branch, lines, indent + self.indent_str)
-            assert then_code is not None, "Short-circuit then branch should not return"
-            return f"({cond_code} && {then_code})"
+            tmp_lines = []
+            then_code = self.generate_lines(expr.then_branch, tmp_lines, indent)
+            if not tmp_lines and then_code is not None:
+                result = self.gen_builtin_call("and", [cond_code, then_code], lines, indent)
+                if result is not None:
+                    return result.value
 
         tmp = gensym()
         lines.append(f"{indent}{self.gen_var_declaration(tmp)}")

@@ -3,6 +3,7 @@
 
 from meta.codegen_python import PythonCodeGenerator
 from meta.codegen_base import BuiltinResult
+from meta.codegen_templates import PYTHON_TEMPLATES, JULIA_TEMPLATES
 
 
 def test_generator_instance_isolation():
@@ -21,5 +22,18 @@ def test_generator_instance_isolation():
     assert "custom_op" not in gen2.builtin_registry
 
 
+def test_template_dictionaries_have_matching_keys():
+    """Test that Python and Julia template dictionaries have the same keys."""
+    python_keys = set(PYTHON_TEMPLATES.keys())
+    julia_keys = set(JULIA_TEMPLATES.keys())
+
+    missing_in_julia = python_keys - julia_keys
+    missing_in_python = julia_keys - python_keys
+
+    assert not missing_in_julia, f"Templates missing in Julia: {missing_in_julia}"
+    assert not missing_in_python, f"Templates missing in Python: {missing_in_python}"
+
+
 if __name__ == "__main__":
     test_generator_instance_isolation()
+    test_template_dictionaries_have_matching_keys()
