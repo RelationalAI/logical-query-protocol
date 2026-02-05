@@ -131,19 +131,6 @@ def test_python_builtin_generation():
     result = gen.generate_lines(expr, lines, "")
     assert result == "x is None"
 
-    # Test GetElement
-    reset_gensym()
-    lines = []
-    expr = GetElement(Var("pair", _any_type), 0)
-    result = gen.generate_lines(expr, lines, "")
-    assert result == "pair[0]"
-
-    reset_gensym()
-    lines = []
-    expr = GetElement(Var("pair", _any_type), 1)
-    result = gen.generate_lines(expr, lines, "")
-    assert result == "pair[1]"
-
     # Test 'length' builtin
     reset_gensym()
     lines = []
@@ -157,6 +144,24 @@ def test_python_builtin_generation():
     expr = Call(make_builtin("tuple"), [Var("a", _int_type), Var("b", _str_type)])
     result = gen.generate_lines(expr, lines, "")
     assert result == "(a, b,)"
+
+
+def test_python_get_element_generation():
+    """Test Python GetElement with 0-based indexing."""
+    gen = PythonCodeGenerator()
+
+    # GetElement uses 0-based indexing in Python
+    reset_gensym()
+    lines = []
+    expr = GetElement(Var("pair", _any_type), 0)
+    result = gen.generate_lines(expr, lines, "")
+    assert result == "pair[0]"
+
+    reset_gensym()
+    lines = []
+    expr = GetElement(Var("pair", _any_type), 1)
+    result = gen.generate_lines(expr, lines, "")
+    assert result == "pair[1]"
 
 
 def test_python_if_else_generation():
@@ -519,6 +524,7 @@ if __name__ == "__main__":
     test_python_let_generation()
     test_python_lambda_generation()
     test_python_builtin_generation()
+    test_python_get_element_generation()
     test_python_if_else_generation()
     test_python_while_generation()
     test_python_seq_generation()

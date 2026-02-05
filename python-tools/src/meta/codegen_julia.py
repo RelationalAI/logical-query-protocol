@@ -224,7 +224,7 @@ class JuliaCodeGenerator(CodeGenerator):
 
         return super().generate_lines(expr, lines, indent)
 
-    def _generate_call(self, expr: Call, lines: List[str], indent: str) -> str:
+    def _generate_call(self, expr: Call, lines: List[str], indent: str) -> Optional[str]:
         """Override to handle Message constructors and OneOf specially for Julia."""
         # Check for Message constructor with OneOf call argument
         if isinstance(expr.func, NewMessage):

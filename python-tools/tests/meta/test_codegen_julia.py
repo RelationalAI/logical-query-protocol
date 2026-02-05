@@ -2,10 +2,11 @@
 """Tests for Julia code generation from action AST."""
 
 from meta.target import (
-    Var, Lit, Symbol, Builtin, NamedFun, NewMessage, ListExpr, Call, Lambda, Let,
-    IfElse, Seq, Assign, Return, FunDef, VisitNonterminalDef,
-    BaseType, MessageType, ListType, OptionType, GetElement,
+    Var, Lit, Symbol, NamedFun, NewMessage, ListExpr, Call, Lambda, Let,
+    IfElse, Seq, While, Assign, Return, FunDef, VisitNonterminalDef,
+    BaseType, MessageType, ListType, OptionType, GetElement, FunctionType,
 )
+from meta.target_builtins import make_builtin
 from meta.grammar import Nonterminal
 from meta.codegen_julia import (
     generate_julia,
@@ -48,6 +49,11 @@ def test_julia_call_generation():
     call_kw = Call(Var("function", _any_type), [Var("arg", _any_type)])
     code_kw = generate_julia(call_kw)
     assert code_kw == 'var"function"(arg)'
+
+    # Nested call
+    nested = Call(Var("wrap", _any_type), [Call(Var("inner", _any_type), [Var("z", _any_type)])])
+    code_nested = generate_julia(nested)
+    assert code_nested == "wrap(inner(z))"
 
 
 def test_julia_let_generation():
@@ -92,7 +98,7 @@ def test_julia_builtin_generation():
     # Test 'not' builtin
     reset_gensym()
     lines = []
-    expr = Call(Builtin("not"), [Var("x", _bool_type)])
+    expr = Call(make_builtin("not"), [Var("x", _bool_type)])
     result = gen.generate_lines(expr, lines, "")
     assert result == "!x"
     assert len(lines) == 0
@@ -100,63 +106,63 @@ def test_julia_builtin_generation():
     # Test 'equal' builtin
     reset_gensym()
     lines = []
-    expr = Call(Builtin("equal"), [Var("a", _any_type), Var("b", _any_type)])
+    expr = Call(make_builtin("equal"), [Var("a", _any_type), Var("b", _any_type)])
     result = gen.generate_lines(expr, lines, "")
     assert result == "a == b"
 
     # Test 'list_concat' builtin (handles None second argument like Python)
     reset_gensym()
     lines = []
-    expr = Call(Builtin("list_concat"), [Var("lst", ListType(_int_type)), Var("other", ListType(_int_type))])
+    expr = Call(make_builtin("list_concat"), [Var("lst", ListType(_int_type)), Var("other", ListType(_int_type))])
     result = gen.generate_lines(expr, lines, "")
     assert result == "vcat(lst, !isnothing(other) ? other : [])"
 
     # Test 'is_none' builtin
     reset_gensym()
     lines = []
-    expr = Call(Builtin("is_none"), [Var("x", OptionType(_int_type))])
+    expr = Call(make_builtin("is_none"), [Var("x", OptionType(_int_type))])
     result = gen.generate_lines(expr, lines, "")
     assert result == "isnothing(x)"
 
     # Test 'is_some' builtin
     reset_gensym()
     lines = []
-    expr = Call(Builtin("is_some"), [Var("x", OptionType(_int_type))])
+    expr = Call(make_builtin("is_some"), [Var("x", OptionType(_int_type))])
     result = gen.generate_lines(expr, lines, "")
     assert result == "!isnothing(x)"
 
     # Test 'and' builtin
     reset_gensym()
     lines = []
-    expr = Call(Builtin("and"), [Var("a", _bool_type), Var("b", _bool_type)])
+    expr = Call(make_builtin("and"), [Var("a", _bool_type), Var("b", _bool_type)])
     result = gen.generate_lines(expr, lines, "")
     assert result == "(a && b)"
 
     # Test 'or' builtin
     reset_gensym()
     lines = []
-    expr = Call(Builtin("or"), [Var("a", _bool_type), Var("b", _bool_type)])
+    expr = Call(make_builtin("or"), [Var("a", _bool_type), Var("b", _bool_type)])
     result = gen.generate_lines(expr, lines, "")
     assert result == "(a || b)"
 
     # Test 'add' builtin
     reset_gensym()
     lines = []
-    expr = Call(Builtin("add"), [Var("x", _int_type), Var("y", _int_type)])
+    expr = Call(make_builtin("add"), [Var("x", _int_type), Var("y", _int_type)])
     result = gen.generate_lines(expr, lines, "")
     assert result == "(x + y)"
 
     # Test 'length' builtin
     reset_gensym()
     lines = []
-    expr = Call(Builtin("length"), [Var("lst", ListType(_int_type))])
+    expr = Call(make_builtin("length"), [Var("lst", ListType(_int_type))])
     result = gen.generate_lines(expr, lines, "")
     assert result == "length(lst)"
 
     # Test 'tuple' builtin (variadic)
     reset_gensym()
     lines = []
-    expr = Call(Builtin("tuple"), [Var("a", _int_type), Var("b", _str_type)])
+    expr = Call(make_builtin("tuple"), [Var("a", _int_type), Var("b", _str_type)])
     result = gen.generate_lines(expr, lines, "")
     assert result == "(a, b,)"
 
@@ -193,6 +199,7 @@ def test_julia_if_else_generation():
     assert "else" in code
     assert "end" in code
     # Result should be a temp variable
+    assert result is not None
     assert result.startswith("_t")
 
     # Short-circuit optimization: cond or else_value
@@ -200,6 +207,7 @@ def test_julia_if_else_generation():
     lines = []
     expr = IfElse(Var("cond", _bool_type), Lit(True), Var("default", _bool_type))
     result = gen.generate_lines(expr, lines, "")
+    assert result is not None
     assert "||" in result or "cond" in result
 
     # Short-circuit optimization: cond and then_value
@@ -207,6 +215,7 @@ def test_julia_if_else_generation():
     lines = []
     expr = IfElse(Var("cond", _bool_type), Var("value", _bool_type), Lit(False))
     result = gen.generate_lines(expr, lines, "")
+    assert result is not None
     assert "&&" in result or "cond" in result
 
 
@@ -230,6 +239,7 @@ def test_julia_list_expr_generation():
     lines = []
     expr = ListExpr([], _int_type)
     result = gen.generate_lines(expr, lines, "")
+    assert result is not None
     assert "Int64[]" in result
 
     # List with elements
@@ -237,6 +247,7 @@ def test_julia_list_expr_generation():
     lines = []
     expr = ListExpr([Lit(1), Lit(2), Lit(3)], _int_type)
     result = gen.generate_lines(expr, lines, "")
+    assert result is not None
     assert "Int64[1, 2, 3]" in result
 
 
@@ -272,7 +283,7 @@ def test_julia_fun_def_generation():
         name="add",
         params=[Var("x", _int_type), Var("y", _int_type)],
         return_type=_int_type,
-        body=Call(Builtin("add"), [Var("x", _int_type), Var("y", _int_type)]),
+        body=Call(make_builtin("add"), [Var("x", _int_type), Var("y", _int_type)]),
     )
     code = gen.generate_def(func)
     assert "function add(x::Int64, y::Int64)::Int64" in code
@@ -313,6 +324,18 @@ def test_julia_visit_nonterminal_def_generation():
     assert "return" in code
     assert "end" in code
 
+    # Parse method with parameters
+    reset_gensym()
+    parse_def = VisitNonterminalDef(
+        visitor_name="parse",
+        nonterminal=nt,
+        params=[Var("context", _str_type)],
+        return_type=MessageType("logic", "Expr"),
+        body=Var("result", MessageType("logic", "Expr")),
+    )
+    code = gen.generate_def(parse_def)
+    assert "function parse_expr(parser::Parser, context::String)::Proto.Expr" in code
+
 
 def test_julia_return_generation():
     """Test Julia return statement code generation."""
@@ -339,6 +362,13 @@ def test_julia_assign_generation():
     assert result == "nothing"
     assert "x = 42" in lines[0]
 
+    # Assign with keyword variable
+    reset_gensym()
+    lines = []
+    expr = Assign(Var("function", _str_type), Lit("MyFunc"))
+    result = gen.generate_lines(expr, lines, "")
+    assert 'var"function" = "MyFunc"' in lines[0]
+
 
 def test_julia_seq_generation():
     """Test Julia sequence expression code generation."""
@@ -359,6 +389,150 @@ def test_julia_seq_generation():
     assert "process()" in code
 
 
+def test_julia_while_generation():
+    """Test Julia while loop code generation."""
+    gen = JuliaCodeGenerator()
+
+    # Simple while loop
+    reset_gensym()
+    lines = []
+    expr = While(Var("running", _bool_type), Call(Var("do_work", _any_type), []))
+    result = gen.generate_lines(expr, lines, "")
+    assert result == "nothing"
+    code = "\n".join(lines)
+    assert "while running" in code
+    assert "do_work()" in code
+    assert "end" in code
+
+
+def test_julia_message_generation():
+    """Test Julia NewMessage constructor code generation."""
+    gen = JuliaCodeGenerator()
+
+    # Simple message with no fields
+    reset_gensym()
+    lines = []
+    expr = NewMessage("logic", "Expr", ())
+    result = gen.generate_lines(expr, lines, "")
+    assert result is not None
+    code = "\n".join(lines)
+    assert "Proto.Expr()" in code
+
+    # NewMessage with field
+    reset_gensym()
+    lines = []
+    expr = NewMessage("logic", "Expr", (("value", Var("value", _any_type)),))
+    result = gen.generate_lines(expr, lines, "")
+    assert result is not None
+    code = "\n".join(lines)
+    assert "Proto.Expr" in code
+
+
+def test_julia_oneof_generation():
+    """Test Julia OneOf field code generation."""
+    gen = JuliaCodeGenerator()
+
+    # OneOf in NewMessage constructor
+    reset_gensym()
+    lines = []
+    expr = NewMessage("logic", "Value", (("literal", Lit("hello")),))
+    result = gen.generate_lines(expr, lines, "")
+    assert result is not None
+    code = "\n".join(lines)
+    assert "Proto.Value" in code
+
+
+def test_julia_helper_function_simple():
+    """Test Julia code generation for a simple helper function."""
+    gen = JuliaCodeGenerator()
+    reset_gensym()
+
+    # Equivalent to: function add_one(x::Int64)::Int64 return x + 1 end
+    func = FunDef(
+        name="add_one",
+        params=[Var("x", _int_type)],
+        return_type=_int_type,
+        body=Call(make_builtin("add"), [Var("x", _int_type), Lit(1)]),
+    )
+    code = gen.generate_def(func)
+    assert "function add_one(x::Int64)::Int64" in code
+    assert "return (x + 1)" in code
+
+
+def test_julia_helper_function_with_if():
+    """Test Julia code generation for helper function with if-else."""
+    gen = JuliaCodeGenerator()
+    reset_gensym()
+
+    # Equivalent to:
+    # function check_value(v::Union{Nothing, Int64}, default::Int64)::Int64
+    #     if isnothing(v)
+    #         return default
+    #     end
+    #     return v
+    # end
+    func = FunDef(
+        name="check_value",
+        params=[Var("v", OptionType(_int_type)), Var("default", _int_type)],
+        return_type=_int_type,
+        body=IfElse(
+            Call(make_builtin("is_none"), [Var("v", OptionType(_int_type))]),
+            Return(Var("default", _int_type)),
+            Return(Var("v", OptionType(_int_type))),
+        ),
+    )
+    code = gen.generate_def(func)
+    assert "function check_value(v::Union{Nothing, Int64}, default::Int64)::Int64" in code
+    assert "if isnothing(v)" in code
+    assert "return default" in code
+    assert "return v" in code
+
+
+def test_julia_helper_function_with_assignment():
+    """Test Julia code generation for helper function with variable assignment."""
+    gen = JuliaCodeGenerator()
+    reset_gensym()
+
+    # Equivalent to:
+    # function transform(x::Int64)::Int64
+    #     result = x
+    #     return result
+    # end
+    func = FunDef(
+        name="transform",
+        params=[Var("x", _int_type)],
+        return_type=_int_type,
+        body=Seq([
+            Assign(Var("result", _int_type), Var("x", _int_type)),
+            Return(Var("result", _int_type)),
+        ]),
+    )
+    code = gen.generate_def(func)
+    assert "function transform(x::Int64)::Int64" in code
+    assert "result = x" in code
+    assert "return result" in code
+
+
+def test_julia_helper_function_message_constructor():
+    """Test Julia code generation for helper function constructing a message."""
+    gen = JuliaCodeGenerator()
+    reset_gensym()
+
+    # Equivalent to:
+    # function make_value(x::Int64)::Proto.Value
+    #     return Proto.Value(int_value=x)
+    # end
+    func = FunDef(
+        name="make_value",
+        params=[Var("x", _int_type)],
+        return_type=MessageType("logic", "Value"),
+        body=NewMessage("logic", "Value", (("int_value", Var("x", _int_type)),)),
+    )
+    code = gen.generate_def(func)
+    assert "function make_value(x::Int64)::Proto.Value" in code
+    assert "Proto.Value" in code
+
+
 def test_julia_helper_function_calling_another():
     """Test Julia code generation for helper function calling another function."""
     gen = JuliaCodeGenerator()
@@ -372,7 +546,7 @@ def test_julia_helper_function_calling_another():
         name="wrapper",
         params=[Var("x", _int_type)],
         return_type=_int_type,
-        body=Call(NamedFun("helper"), [Var("x", _int_type)]),
+        body=Call(NamedFun("helper", FunctionType([_int_type], _int_type)), [Var("x", _int_type)]),
     )
     code = gen.generate_def(func)
     assert "function wrapper(x::Int64)::Int64" in code
@@ -387,6 +561,7 @@ if __name__ == "__main__":
     test_julia_builtin_generation()
     test_julia_get_element_generation()
     test_julia_if_else_generation()
+    test_julia_while_generation()
     test_julia_symbol_generation()
     test_julia_list_expr_generation()
     test_julia_type_generation()
@@ -395,4 +570,10 @@ if __name__ == "__main__":
     test_julia_return_generation()
     test_julia_assign_generation()
     test_julia_seq_generation()
+    test_julia_message_generation()
+    test_julia_oneof_generation()
+    test_julia_helper_function_simple()
+    test_julia_helper_function_with_if()
+    test_julia_helper_function_with_assignment()
+    test_julia_helper_function_message_constructor()
     test_julia_helper_function_calling_another()
