@@ -18,7 +18,7 @@ from .parser_gen import generate_parse_functions
 
 
 # Load template at module level
-_TEMPLATE_PATH = Path(__file__).parent / "julia_parser_prologue.jl.template"
+_TEMPLATE_PATH = Path(__file__).parent / "templates" / "parser.jl.template"
 PROLOGUE_TEMPLATE = _TEMPLATE_PATH.read_text()
 
 
