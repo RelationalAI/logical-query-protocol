@@ -3,7 +3,8 @@
 from meta.target import (
     BaseType, MessageType, ListType, OptionType, TupleType, FunctionType,
     Var, Lit, Call, Builtin, Lambda, Let, IfElse, Seq, While,
-    Return, Assign, Foreach, ForeachEnumerated, GetField, GetElement
+    Return, Assign, Foreach, ForeachEnumerated, GetField, GetElement,
+    TargetType,
 )
 from meta.target_builtins import make_builtin
 from meta.target_utils import (
@@ -19,9 +20,8 @@ _ANY = BaseType("Any")
 _DUMMY_FN_TYPE = FunctionType([], _ANY)
 
 
-def _test_builtin(name: str, return_type: 'TargetType' = _ANY) -> Builtin:
+def _test_builtin(name: str, return_type: TargetType = _ANY) -> Builtin:
     """Create a test builtin with specified return type (default Any)."""
-    from meta.target import TargetType
     return Builtin(name, FunctionType([], return_type))
 
 
