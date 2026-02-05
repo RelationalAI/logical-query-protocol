@@ -6,12 +6,10 @@ with proper keyword escaping and idiomatic Julia style.
 
 from typing import List, Optional, Set, Tuple, Union
 
-from lqp.proto.v1.logic_pb2 import Value
-
-from .codegen_base import CodeGenerator, BuiltinResult
+from .codegen_base import CodeGenerator, BuiltinResult, ALREADY_RETURNED
 from .target import (
-    TargetExpr, Var, Lit, Symbol, Builtin, Message, OneOf, ListExpr, Call, Lambda, Let, IfElse,
-    FunDef, VisitNonterminalDef, VisitNonterminal
+    TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
+    IfElse, Seq, While, Assign, Return, FunDef, VisitNonterminalDef, VisitNonterminal, GetElement
 )
 from .gensym import gensym
 
@@ -36,10 +34,12 @@ class JuliaCodeGenerator(CodeGenerator):
     indent_str = "    "
 
     base_type_map = {
+        'Int32': 'Int32',
         'Int64': 'Int64',
         'Float64': 'Float64',
         'String': 'String',
         'Boolean': 'Bool',
+        'Bytes': 'Vector{UInt8}',
     }
 
     def __init__(self, proto_messages=None):
@@ -162,6 +162,62 @@ class JuliaCodeGenerator(CodeGenerator):
         self.register_builtin("construct_fragment", 2,
             lambda args, lines, indent: BuiltinResult(f"construct_fragment(parser, {args[0]}, {args[1]})", []))
 
+        # Logical operators
+        self.register_builtin("and", 2,
+            lambda args, lines, indent: BuiltinResult(f"({args[0]} && {args[1]})", []))
+        self.register_builtin("or", 2,
+            lambda args, lines, indent: BuiltinResult(f"({args[0]} || {args[1]})", []))
+
+        # Arithmetic
+        self.register_builtin("add", 2,
+            lambda args, lines, indent: BuiltinResult(f"({args[0]} + {args[1]})", []))
+
+        # Collections
+        self.register_builtin("map", 2,
+            lambda args, lines, indent: BuiltinResult(f"map({args[0]}, {args[1]})", []))
+
+        # Option handling
+        self.register_builtin("is_some", 1,
+            lambda args, lines, indent: BuiltinResult(f"!isnothing({args[0]})", []))
+        self.register_builtin("unwrap_option", 1,
+            lambda args, lines, indent: BuiltinResult(args[0], []))
+        self.register_builtin("none", 0,
+            lambda args, lines, indent: BuiltinResult("nothing", []))
+
+        # Bytes
+        self.register_builtin("make_empty_bytes", 0,
+            lambda args, lines, indent: BuiltinResult("UInt8[]", []))
+
+        # Dictionary operations
+        self.register_builtin("dict_from_list", 1,
+            lambda args, lines, indent: BuiltinResult(f"Dict({args[0]})", []))
+        self.register_builtin("dict_get", 2,
+            lambda args, lines, indent: BuiltinResult(f"get({args[0]}, {args[1]}, nothing)", []))
+
+        # String operations
+        self.register_builtin("string_to_upper", 1,
+            lambda args, lines, indent: BuiltinResult(f"uppercase({args[0]})", []))
+        self.register_builtin("string_in_list", 2,
+            lambda args, lines, indent: BuiltinResult(f"({args[0]} in {args[1]})", []))
+        self.register_builtin("string_concat", 2,
+            lambda args, lines, indent: BuiltinResult(f"({args[0]} * {args[1]})", []))
+        self.register_builtin("encode_string", 1,
+            lambda args, lines, indent: BuiltinResult(f"Vector{{UInt8}}({args[0]})", []))
+
+        # Tuple creation (variadic)
+        self.register_builtin("tuple", -1,
+            lambda args, lines, indent: BuiltinResult(f"({', '.join(args)},)", []))
+
+        # Type conversions
+        self.register_builtin("int64_to_int32", 1,
+            lambda args, lines, indent: BuiltinResult(f"Int32({args[0]})", []))
+
+        # Additional helper builtins
+        self.register_builtin("construct_betree_info", 3,
+            lambda args, lines, indent: BuiltinResult(f"construct_betree_info(parser, {args[0]}, {args[1]}, {args[2]})", []))
+        self.register_builtin("construct_csv_config", 1,
+            lambda args, lines, indent: BuiltinResult(f"construct_csv_config(parser, {args[0]})", []))
+
     def escape_keyword(self, name: str) -> str:
         return f'var"{name}"'
 
@@ -193,6 +249,9 @@ class JuliaCodeGenerator(CodeGenerator):
     def gen_builtin_ref(self, name: str) -> str:
         return f"parser.{name}"
 
+    def gen_named_fun_ref(self, name: str) -> str:
+        return f"Parser.{name}"
+
     def gen_parse_nonterminal_ref(self, name: str) -> str:
         return f"parse_{name}"
 
@@ -218,6 +277,20 @@ class JuliaCodeGenerator(CodeGenerator):
     def gen_list_literal(self, elements: List[str], element_type) -> str:
         type_code = self.gen_type(element_type)
         return f"{type_code}[{', '.join(elements)}]"
+
+    def gen_dict_type(self, key_type: str, value_type: str) -> str:
+        return f"Dict{{{key_type},{value_type}}}"
+
+    def gen_dict_from_list(self, pairs: str) -> str:
+        return f"Dict({pairs})"
+
+    def gen_dict_lookup(self, dict_expr: str, key: str, default: Optional[str]) -> str:
+        if default is None:
+            return f"get({dict_expr}, {key}, nothing)"
+        return f"get({dict_expr}, {key}, {default})"
+
+    def gen_has_field(self, message: str, field_name: str) -> str:
+        return f"hasproperty({message}, :{field_name}) && !isnothing(getproperty({message}, :{field_name}))"
 
     def gen_function_type(self, param_types: List[str], return_type: str) -> str:
         return "Function"  # Julia doesn't have precise function types
@@ -271,18 +344,25 @@ class JuliaCodeGenerator(CodeGenerator):
 
     def generate_lines(self, expr: TargetExpr, lines: List[str], indent: str = "") -> str:
         # Special case: Proto.Fragment construction with debug_info parameter
-        if isinstance(expr, Call) and isinstance(expr.func, Message) and expr.func.name == "Fragment":
+        if isinstance(expr, Call) and isinstance(expr.func, NewMessage) and expr.func.name == "Fragment":
             for arg in expr.args:
                 if isinstance(arg, Var) and arg.name == "debug_info":
                     lines.append(f"{indent}debug_info = construct_debug_info(parser, get(parser.id_to_debuginfo, id, Dict()))")
                     break
+
+        # Julia uses 1-based indexing, so convert GetElement indices
+        if isinstance(expr, GetElement):
+            tuple_code = self.generate_lines(expr.tuple_expr, lines, indent)
+            # Convert 0-based index to 1-based
+            julia_index = expr.index + 1
+            return f"{tuple_code}[{julia_index}]"
 
         return super().generate_lines(expr, lines, indent)
 
     def _generate_call(self, expr: Call, lines: List[str], indent: str) -> str:
         """Override to handle Message constructors and OneOf specially for Julia."""
         # Check for Message constructor with OneOf call argument
-        if isinstance(expr.func, Message):
+        if isinstance(expr.func, NewMessage):
             f = self.generate_lines(expr.func, lines, indent)
 
             # Get field mapping from proto message definitions
@@ -401,24 +481,36 @@ class JuliaCodeGenerator(CodeGenerator):
 
         # Optimization: short-circuit for boolean literals
         if expr.then_branch == Lit(True):
-            else_code = self.generate_lines(expr.else_branch, lines, indent + self.indent_str)
-            return f"({cond_code} || {else_code})"
+            tmp_lines: List[str] = []
+            else_code = self.generate_lines(expr.else_branch, tmp_lines, indent)
+            if not tmp_lines:
+                return f"({cond_code} || {else_code})"
         if expr.else_branch == Lit(False):
-            then_code = self.generate_lines(expr.then_branch, lines, indent + self.indent_str)
-            return f"({cond_code} && {then_code})"
+            tmp_lines = []
+            then_code = self.generate_lines(expr.then_branch, tmp_lines, indent)
+            if not tmp_lines:
+                return f"({cond_code} && {then_code})"
 
         tmp = gensym()
         lines.append(f"{indent}{self.gen_if_start(cond_code)}")
 
         body_indent = indent + self.indent_str
         then_code = self.generate_lines(expr.then_branch, lines, body_indent)
-        lines.append(f"{body_indent}{self.gen_assignment(tmp, then_code)}")
+        # Only assign if the branch didn't already return
+        if then_code != ALREADY_RETURNED:
+            lines.append(f"{body_indent}{self.gen_assignment(tmp, then_code)}")
 
         lines.append(f"{indent}{self.gen_else()}")
         else_code = self.generate_lines(expr.else_branch, lines, body_indent)
-        lines.append(f"{body_indent}{self.gen_assignment(tmp, else_code)}")
+        # Only assign if the branch didn't already return
+        if else_code != ALREADY_RETURNED:
+            lines.append(f"{body_indent}{self.gen_assignment(tmp, else_code)}")
 
         lines.append(f"{indent}{self.gen_if_end()}")
+
+        # If both branches returned, propagate the sentinel
+        if then_code == ALREADY_RETURNED and else_code == ALREADY_RETURNED:
+            return ALREADY_RETURNED
 
         return tmp
 
@@ -441,10 +533,33 @@ class JuliaCodeGenerator(CodeGenerator):
         else:
             body_lines: List[str] = []
             body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
-            body_lines.append(f"{indent}    return {body_inner}")
+            # Only add return if the body didn't already return
+            if body_inner != ALREADY_RETURNED:
+                body_lines.append(f"{indent}    return {body_inner}")
             body_code = "\n".join(body_lines)
 
         return f"{indent}function {func_name}({params_str}){ret_hint}\n{body_code}\n{indent}end"
+
+    def _generate_fun_def(self, expr: FunDef, indent: str) -> str:
+        """Generate a regular function definition (helper function from grammar)."""
+        func_name = self.escape_identifier(expr.name)
+        params = [(self.escape_identifier(p.name), self.gen_type(p.type)) for p in expr.params]
+        ret_type = self.gen_type(expr.return_type) if expr.return_type else None
+
+        header = self.gen_func_def_header(func_name, params, ret_type)
+
+        if expr.body is None:
+            body_code = f"{indent}{self.indent_str}nothing"
+        else:
+            lines: List[str] = []
+            body_inner = self.generate_lines(expr.body, lines, indent + self.indent_str)
+            # Only add return if the body didn't already return
+            if body_inner != ALREADY_RETURNED:
+                lines.append(f"{indent}{self.indent_str}{self.gen_return(body_inner)}")
+            body_code = "\n".join(lines)
+
+        end = self.gen_func_def_end()
+        return f"{indent}{header}\n{body_code}\n{indent}{end}"
 
 
 # Module-level instance for convenience

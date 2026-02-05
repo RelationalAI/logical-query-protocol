@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Tests for Julia and Python code generation from action AST."""
+"""Tests for Python code generation from action AST."""
 
 from meta.target import (
-    Var, Lit, Symbol, Builtin, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
+    Var, Lit, Symbol, Builtin, NamedFun, NewMessage, ListExpr, Call, Lambda, Let,
     IfElse, Seq, While, Assign, Return, FunDef, VisitNonterminalDef,
     BaseType, MessageType, ListType, OptionType, GetElement,
 )
@@ -12,78 +12,13 @@ from meta.codegen_python import (
     escape_identifier as escape_python,
     PythonCodeGenerator,
 )
-from meta.codegen_julia import generate_julia, escape_identifier as escape_julia
+from meta.codegen_base import ALREADY_RETURNED
 from meta.gensym import reset as reset_gensym
 
 _any_type = BaseType("Any")
 _int_type = BaseType("Int64")
 _str_type = BaseType("String")
 _bool_type = BaseType("Boolean")
-
-
-def test_julia_keyword_escaping():
-    """Test that Julia keywords are properly escaped."""
-    # Test keyword variables
-    assert escape_julia("function") == 'var"function"'
-    assert escape_julia("end") == 'var"end"'
-    assert escape_julia("let") == 'var"let"'
-
-    # Test non-keywords
-    assert escape_julia("foo") == "foo"
-    assert escape_julia("my_var") == "my_var"
-
-    # Test in expressions
-    var = Var("function", _any_type)
-    code = generate_julia(var)
-    assert code == 'var"function"'
-
-
-def test_julia_call_generation():
-    """Test Julia function call generation."""
-    # Simple call
-    call = Call(Var("foo", _any_type), [Var("x", _any_type), Var("y", _any_type)])
-    code = generate_julia(call)
-    assert code == "foo(x, y)"
-
-    # Call with keyword function name
-    call_kw = Call(Var("function", _any_type), [Var("arg", _any_type)])
-    code_kw = generate_julia(call_kw)
-    assert code_kw == 'var"function"(arg)'
-
-
-def test_julia_let_generation():
-    """Test Julia Let-binding generation."""
-    # Simple let
-    let_expr = Let(Var("x", _any_type), Call(Var("parse_foo", _any_type), []), Var("x", _any_type))
-    code = generate_julia(let_expr)
-    assert "parse_foo()" in code and "x = " in code
-
-    # Nested let
-    nested_let = Let(Var("x", _any_type), Call(Var("parse_a", _any_type), []),
-                     Let(Var("y", _any_type), Call(Var("parse_b", _any_type), []),
-                         Call(Var("make", _any_type), [Var("x", _any_type), Var("y", _any_type)])))
-    code_nested = generate_julia(nested_let)
-    assert "parse_a()" in code_nested and "x = " in code_nested
-    assert "parse_b()" in code_nested and "y = " in code_nested
-    assert "make(x, y)" in code_nested
-
-    # Let with keyword variable
-    let_kw = Let(Var("end", _any_type), Call(Var("parse", _any_type), []), Var("end", _any_type))
-    code_kw = generate_julia(let_kw)
-    assert 'var"end"' in code_kw
-
-
-def test_julia_lambda_generation():
-    """Test Julia anonymous function generation."""
-    # Simple lambda
-    lam = Lambda([Var("x", _any_type), Var("y", _any_type)], _any_type, Call(Var("Add", _any_type), [Var("x", _any_type), Var("y", _any_type)]))
-    code = generate_julia(lam)
-    assert code == "(x, y) -> Add(x, y)"
-
-    # Lambda with keyword parameter
-    lam_kw = Lambda([Var("struct", _any_type), Var("value", _any_type)], _any_type, Var("value", _any_type))
-    code_kw = generate_julia(lam_kw)
-    assert 'var"struct"' in code_kw
 
 
 def test_python_keyword_escaping():
@@ -310,7 +245,6 @@ def test_python_assign_generation():
 
 def test_python_return_generation():
     """Test Python return statement code generation."""
-    from src.meta.codegen_base import ALREADY_RETURNED
     gen = PythonCodeGenerator()
 
     reset_gensym()
@@ -469,23 +403,6 @@ def test_python_type_generation():
     assert gen.gen_type(OptionType(BaseType("String"))) == "Optional[str]"
 
 
-def test_generator_instance_isolation():
-    """Test that generator instances don't share state."""
-    gen1 = PythonCodeGenerator()
-    gen2 = PythonCodeGenerator()
-
-    # Register a custom builtin on gen1
-    from meta.codegen_base import BuiltinResult
-    gen1.register_builtin("custom_op", 1,
-        lambda args, lines, indent: BuiltinResult(f"custom({args[0]})", []))
-
-    # gen1 should have the custom builtin
-    assert "custom_op" in gen1.builtin_registry
-
-    # gen2 should NOT have the custom builtin
-    assert "custom_op" not in gen2.builtin_registry
-
-
 # Tests for helper function codegen (FunDef from yacc grammar)
 
 def test_python_helper_function_simple():
@@ -579,7 +496,6 @@ def test_python_helper_function_message_constructor():
 
 def test_python_helper_function_calling_another():
     """Test Python code generation for helper function calling another function."""
-    from meta.target import NamedFun
     gen = PythonCodeGenerator()
     reset_gensym()
 
@@ -598,11 +514,6 @@ def test_python_helper_function_calling_another():
 
 
 if __name__ == "__main__":
-    test_julia_keyword_escaping()
-    test_julia_call_generation()
-    test_julia_let_generation()
-    test_julia_lambda_generation()
-
     test_python_keyword_escaping()
     test_python_call_generation()
     test_python_let_generation()
@@ -620,7 +531,6 @@ if __name__ == "__main__":
     test_python_fun_def_generation()
     test_python_visit_nonterminal_def_generation()
     test_python_type_generation()
-    test_generator_instance_isolation()
     test_python_helper_function_simple()
     test_python_helper_function_with_if()
     test_python_helper_function_with_assignment()
