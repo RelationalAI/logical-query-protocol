@@ -190,46 +190,45 @@ func (pp PrettyParams) pprint(node interface{}) {
 
 	case *pb.Constraint:
 		if fd := n.GetFunctionalDependency(); fd != nil {
-			pp.pprint(fd)
-			return
-		}
-
-	case *pb.FunctionalDependency:
-		pp.PARENS(func(pp PrettyParams) {
-			pp.Write("functional_dependency")
-			pp.NEWLINE()
-			pp.INDENT(2, func(pp PrettyParams) {
-				pp.PARENS(func(pp PrettyParams) {
-					pp.pprint(n.GetGuard())
-				})
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("functional_dependency")
+				pp.SPACE()
+				pp.pprint(n.GetName())
 				pp.NEWLINE()
-				pp.PARENS(func(pp PrettyParams) {
-					pp.Write("keys")
-					if len(n.GetKeys()) > 0 {
-						pp.SPACE()
-						for i, v := range n.GetKeys() {
-							if i > 0 {
-								pp.SPACE()
+				pp.INDENT(2, func(pp PrettyParams) {
+					pp.PARENS(func(pp PrettyParams) {
+						pp.pprint(fd.GetGuard())
+					})
+					pp.NEWLINE()
+					pp.PARENS(func(pp PrettyParams) {
+						pp.Write("keys")
+						if len(fd.GetKeys()) > 0 {
+							pp.SPACE()
+							for i, v := range fd.GetKeys() {
+								if i > 0 {
+									pp.SPACE()
+								}
+								pp.pprint(v)
 							}
-							pp.pprint(v)
 						}
-					}
-				})
-				pp.NEWLINE()
-				pp.PARENS(func(pp PrettyParams) {
-					pp.Write("values")
-					if len(n.GetValues()) > 0 {
-						pp.SPACE()
-						for i, v := range n.GetValues() {
-							if i > 0 {
-								pp.SPACE()
+					})
+					pp.NEWLINE()
+					pp.PARENS(func(pp PrettyParams) {
+						pp.Write("values")
+						if len(fd.GetValues()) > 0 {
+							pp.SPACE()
+							for i, v := range fd.GetValues() {
+								if i > 0 {
+									pp.SPACE()
+								}
+								pp.pprint(v)
 							}
-							pp.pprint(v)
 						}
-					}
+					})
 				})
 			})
-		})
+			return
+		}
 
 	case *pb.Algorithm:
 		pp.PARENS(func(pp PrettyParams) {

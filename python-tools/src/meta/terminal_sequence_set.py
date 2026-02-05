@@ -160,6 +160,7 @@ class ConcatSet(TerminalSequenceSet):
                 # All sequences in first are already max length
                 result = first_set
             else:
+                # Import locally to avoid circular dependency with grammar_analysis
                 from .grammar_analysis import GrammarAnalysis
                 second_set = self.second.get(needed_second_k)
                 result = GrammarAnalysis.concat_k(first_set, second_set, k)

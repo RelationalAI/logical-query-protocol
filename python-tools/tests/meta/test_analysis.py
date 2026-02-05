@@ -15,7 +15,8 @@ from meta.grammar import (
     Rule, Grammar,
 )
 from meta.grammar_analysis import GrammarAnalysis
-from meta.target import BaseType, MessageType, Lambda, Var, OptionType, TupleType, Lit, Call, Builtin
+from meta.target import BaseType, MessageType, Lambda, Var, OptionType, TupleType, Lit, Call
+from meta.target_builtins import make_builtin
 
 
 def make_simple_grammar():
@@ -791,12 +792,12 @@ class TestDragonBookExamples:
         param_ep2 = Var("ep2", OptionType(exp_type))
         grammar.add_rule(Rule(e_prime, Sequence((plus, t, e_prime)),
                             Lambda([param_t2, param_ep2], OptionType(exp_type),
-                                   Call(Builtin('Some'), [param_t2]))))
+                                   Call(make_builtin('some'), [param_t2]))))
 
         # E' -> epsilon
         grammar.add_rule(Rule(e_prime, Sequence(()),
                             Lambda([], OptionType(exp_type),
-                                   Call(Builtin('None'), []))))
+                                   Call(make_builtin('none'), []))))
 
         # T -> F T'
         param_f = Var("f", exp_type)
@@ -809,12 +810,12 @@ class TestDragonBookExamples:
         param_tp2 = Var("tp2", OptionType(exp_type))
         grammar.add_rule(Rule(t_prime, Sequence((star, f, t_prime)),
                             Lambda([param_f2, param_tp2], OptionType(exp_type),
-                                   Call(Builtin('Some'), [param_f2]))))
+                                   Call(make_builtin('some'), [param_f2]))))
 
         # T' -> epsilon
         grammar.add_rule(Rule(t_prime, Sequence(()),
                             Lambda([], OptionType(exp_type),
-                                   Call(Builtin('None'), []))))
+                                   Call(make_builtin('none'), []))))
 
         # F -> ( E )
         param_e = Var("e", exp_type)

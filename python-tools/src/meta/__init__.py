@@ -56,10 +56,14 @@ from .proto_ast import (
 # Protobuf parser
 from .proto_parser import ProtoParser
 
-# Grammar generation
-from .grammar_gen import (
-    GrammarGenerator,
-    generate_grammar,
+# Parser generation
+from .parser_gen import generate_parse_functions, GrammarConflictError, AmbiguousGrammarError
+
+# Python code generation
+from .codegen_python import (
+    generate_python,
+    generate_python_lines,
+    escape_identifier as escape_python_identifier,
 )
 
 # Julia code generation
@@ -70,8 +74,7 @@ from .codegen_julia import (
     escape_identifier as escape_julia_identifier,
 )
 
-# Parser generation
-from .parser_gen import generate_parse_functions
+from .parser_gen_python import generate_parser_python
 from .parser_gen_julia import generate_parser_julia
 
 __all__ = [
@@ -114,15 +117,19 @@ __all__ = [
     'ProtoMessage',
     # Protobuf parser
     'ProtoParser',
-    # Grammar generation
-    'GrammarGenerator',
-    'generate_grammar',
+    # Parser generation
+    'generate_parse_functions',
+    'GrammarConflictError',
+    'AmbiguousGrammarError',
+    'generate_parser_python',
+    'generate_parser_julia',
+    # Python code generation
+    'generate_python',
+    'generate_python_lines',
+    'escape_python_identifier',
     # Julia code generation
     'generate_julia',
     'generate_julia_lines',
     'generate_julia_def',
     'escape_julia_identifier',
-    # Parser generation
-    'generate_parse_functions',
-    'generate_parser_julia',
 ]
