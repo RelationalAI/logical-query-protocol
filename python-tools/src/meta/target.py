@@ -6,10 +6,41 @@ and semantic actions that can be attached to grammar rules.
 The target AST types represent the "least common denominator" for
 Python, Julia, and Go expressions. All constructs in this AST should be easily
 translatable to each of these target languages.
+
+Expression types (TargetExpr subclasses):
+    Var                 - Variable reference
+    Lit                 - Literal value (string, number, boolean, None)
+    Symbol              - Literal symbol (e.g., :cast)
+    Builtin             - Builtin function reference
+    NewMessage          - Message constructor with field names
+    OneOf               - OneOf field discriminator
+    ListExpr            - List constructor expression
+    VisitNonterminal    - Visitor method call for a nonterminal
+    Call                - Function call expression
+    GetField            - Field access expression
+    GetElement          - Tuple element access with constant integer index
+    Lambda              - Lambda function (anonymous function)
+    Let                 - Let-binding: let var = init in body
+    IfElse              - If-else conditional expression
+    Seq                 - Sequence of expressions evaluated in order
+    While               - While loop: while condition do body
+    Foreach             - Foreach loop: for var in collection do body
+    ForeachEnumerated   - Foreach loop with index: for index_var, var in enumerate(collection) do body
+    Assign              - Assignment statement: var = expr
+    Return              - Return statement: return expr
+
+Type expressions (TargetType subclasses):
+    BaseType            - Base types: Int64, Float64, String, Boolean
+    VarType             - Type variable for polymorphic types
+    MessageType         - Protobuf message types
+    TupleType           - Tuple type with fixed number of element types
+    ListType            - Parameterized list/array type
+    OptionType          - Optional/Maybe type for values that may be None
+    FunctionType        - Function type with parameter types and return type
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Sequence, TYPE_CHECKING
+from typing import Any, Optional, Sequence, TYPE_CHECKING
 from .gensym import gensym
 
 if TYPE_CHECKING:
@@ -105,6 +136,20 @@ class Builtin(TargetExpr):
 
     def __str__(self) -> str:
         return f"%{self.name}"
+
+
+@dataclass(frozen=True)
+class NamedFun(TargetExpr):
+    """Named function reference.
+
+    Represents a user-defined function from the grammar (defined with 'def').
+    Unlike Builtin, these have IR definitions and are generated as methods.
+    Code generators map these to method calls (e.g., self.function_name in Python).
+    """
+    name: str
+
+    def __str__(self) -> str:
+        return f"@{self.name}"
 
 
 @dataclass(frozen=True)
@@ -243,6 +288,81 @@ class GetElement(TargetExpr):
 
     def __post_init__(self):
         assert isinstance(self.index, int) and self.index >= 0, f"GetElement index must be non-negative integer: {self.index}"
+
+
+@dataclass(frozen=True)
+class DictFromList(TargetExpr):
+    """Construct dictionary from list of (key, value) tuples: dict(pairs).
+
+    Converts a list of tuples into a dictionary/map.
+
+    pairs: Expression evaluating to a list of (key, value) tuples
+    key_type: Type of dictionary keys
+    value_type: Type of dictionary values
+
+    Example:
+        DictFromList(
+            Var("pairs", ListType(TupleType([STRING, INT64]))),
+            BaseType("String"),
+            BaseType("Int64")
+        )
+    """
+    pairs: 'TargetExpr'
+    key_type: 'TargetType'
+    value_type: 'TargetType'
+
+    def __str__(self) -> str:
+        return f"dict({self.pairs})"
+
+
+@dataclass(frozen=True)
+class DictLookup(TargetExpr):
+    """Dictionary lookup with optional default: dict.get(key, default).
+
+    Looks up a key in a dictionary, returning a default value if not found.
+
+    dict_expr: Expression evaluating to a dictionary
+    key: Expression for the key to lookup
+    default: Optional default value if key not found (None means return None)
+
+    Example:
+        DictLookup(
+            Var("config", DictType(STRING, INT64)),
+            Lit("timeout"),
+            Lit(30)
+        )
+    """
+    dict_expr: 'TargetExpr'
+    key: 'TargetExpr'
+    default: Optional['TargetExpr'] = None
+
+    def __str__(self) -> str:
+        if self.default is None:
+            return f"{self.dict_expr}.get({self.key})"
+        return f"{self.dict_expr}.get({self.key}, {self.default})"
+
+
+@dataclass(frozen=True)
+class HasProtoField(TargetExpr):
+    """Check if protobuf message has field set (for oneOf): msg.HasField(field_name).
+
+    Checks whether a protobuf message has a particular field set, typically used
+    for oneOf discriminators.
+
+    message: Expression evaluating to a protobuf message
+    field_name: Name of the field to check (string literal)
+
+    Example:
+        HasProtoField(
+            Var("msg", MessageType("logic", "Value")),
+            "string_value"
+        )
+    """
+    message: 'TargetExpr'
+    field_name: str
+
+    def __str__(self) -> str:
+        return f"{self.message}.HasField({repr(self.field_name)})"
 
 
 @dataclass(frozen=True)
@@ -397,11 +517,28 @@ class BaseType(TargetType):
 
 
 @dataclass(frozen=True)
+class BottomType(TargetType):
+    """The bottom type (empty type with no values).
+
+    Bottom is a subtype of every type. Used for:
+    - None literal has type Optional[Bottom]
+    - Empty list [] has type List[Bottom]
+
+    With covariant type constructors:
+    - Optional[Bottom] <: Optional[T] for any T
+    - List[Bottom] <: List[T] for any T
+    """
+
+    def __str__(self) -> str:
+        return "Bottom"
+
+
+@dataclass(frozen=True)
 class VarType(TargetType):
     """Type variable for polymorphic types.
 
     Represents a type parameter in polymorphic function signatures.
-    Used for builtins like unwrap_option_or, get_tuple_element, etc.
+    Used for builtins like unwrap_option_or, etc.
 
     Example:
         VarType("T")    # Type variable T
@@ -457,6 +594,21 @@ class ListType(TargetType):
 
 
 @dataclass(frozen=True)
+class DictType(TargetType):
+    """Parameterized dictionary/map type.
+
+    Example:
+        DictType(BaseType("String"), BaseType("Int64"))     # Dict[String, Int64]
+        DictType(BaseType("String"), MessageType("logic", "Value"))  # Dict[String, logic.Value]
+    """
+    key_type: TargetType
+    value_type: TargetType
+
+    def __str__(self) -> str:
+        return f"Dict[{self.key_type}, {self.value_type}]"
+
+
+@dataclass(frozen=True)
 class OptionType(TargetType):
     """Optional/Maybe type for values that may be None.
 
@@ -486,14 +638,19 @@ class FunctionType(TargetType):
 
 @dataclass(frozen=True)
 class FunDef(TargetNode):
-    """Function definition with parameters, return type, and body."""
+    """Function definition with parameters, return type, and body.
+
+    If body is None, this represents a builtin signature (primitive without implementation).
+    """
     name: str
     params: Sequence['Var']
     return_type: TargetType
-    body: 'TargetExpr'
+    body: Optional['TargetExpr']
 
     def __str__(self) -> str:
         params_str = ', '.join(f"{p.name}: {p.type}" for p in self.params)
+        if self.body is None:
+            return f"def {self.name}({params_str}) -> {self.return_type}"
         return f"def {self.name}({params_str}) -> {self.return_type}: {self.body}"
 
     def __post_init__(self):
@@ -529,12 +686,16 @@ __all__ = [
     'Lit',
     'Symbol',
     'Builtin',
+    'NamedFun',
     'NewMessage',
     'OneOf',
     'ListExpr',
     'Call',
     'GetField',
     'GetElement',
+    'DictFromList',
+    'DictLookup',
+    'HasProtoField',
     'Lambda',
     'Let',
     'IfElse',
@@ -546,10 +707,12 @@ __all__ = [
     'Return',
     'TargetType',
     'BaseType',
+    'BottomType',
     'VarType',
     'MessageType',
     'TupleType',
     'ListType',
+    'DictType',
     'OptionType',
     'FunctionType',
     'FunDef',

@@ -2,9 +2,9 @@
 """Tests for Julia and Python code generation from action AST."""
 
 from meta.target import (
-    Var, Lit, Symbol, Builtin, NewMessage, ListExpr, Call, Lambda, Let,
+    Var, Lit, Symbol, Builtin, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
     IfElse, Seq, While, Assign, Return, FunDef, VisitNonterminalDef,
-    BaseType, MessageType, ListType, OptionType,
+    BaseType, MessageType, ListType, OptionType, GetElement,
 )
 from meta.grammar import Nonterminal
 from meta.codegen_python import (
@@ -182,12 +182,12 @@ def test_python_builtin_generation():
     result = gen.generate_lines(expr, lines, "")
     assert result == "a == b"
 
-    # Test 'list_append' builtin
+    # Test 'list_concat' builtin
     reset_gensym()
     lines = []
-    expr = Call(Builtin("list_append"), [Var("lst", ListType(_int_type)), Var("item", _int_type)])
+    expr = Call(Builtin("list_concat"), [Var("lst", ListType(_int_type)), Var("other", ListType(_int_type))])
     result = gen.generate_lines(expr, lines, "")
-    assert result == "lst + [item]"
+    assert result == "(lst + (other if other is not None else []))"
 
     # Test 'is_none' builtin
     reset_gensym()
@@ -196,10 +196,9 @@ def test_python_builtin_generation():
     result = gen.generate_lines(expr, lines, "")
     assert result == "x is None"
 
-    # Test GetElement (replaces fst and snd builtins)
+    # Test GetElement
     reset_gensym()
     lines = []
-    from meta.target import GetElement
     expr = GetElement(Var("pair", _any_type), 0)
     result = gen.generate_lines(expr, lines, "")
     assert result == "pair[0]"
@@ -217,21 +216,12 @@ def test_python_builtin_generation():
     result = gen.generate_lines(expr, lines, "")
     assert result == "len(lst)"
 
-    # Test 'make_tuple' builtin (variadic)
+    # Test 'tuple' builtin (variadic)
     reset_gensym()
     lines = []
-    expr = Call(Builtin("make_tuple"), [Var("a", _int_type), Var("b", _str_type)])
+    expr = Call(Builtin("tuple"), [Var("a", _int_type), Var("b", _str_type)])
     result = gen.generate_lines(expr, lines, "")
     assert result == "(a, b,)"
-
-    # Test builtin with side effects ('list_push!')
-    reset_gensym()
-    lines = []
-    expr = Call(Builtin("list_push!"), [Var("lst", ListType(_int_type)), Var("item", _int_type)])
-    result = gen.generate_lines(expr, lines, "")
-    assert result == "None"
-    assert len(lines) == 1
-    assert "lst.append(item)" in lines[0]
 
 
 def test_python_if_else_generation():
@@ -320,13 +310,16 @@ def test_python_assign_generation():
 
 def test_python_return_generation():
     """Test Python return statement code generation."""
+    from src.meta.codegen_base import ALREADY_RETURNED
     gen = PythonCodeGenerator()
 
     reset_gensym()
     lines = []
     expr = Return(Var("result", _any_type))
     result = gen.generate_lines(expr, lines, "")
-    assert result == "None"
+    # Return generates a return statement and returns ALREADY_RETURNED sentinel
+    # to indicate that the caller should not add another return
+    assert result == ALREADY_RETURNED
     assert "return result" in lines[0]
 
 
@@ -369,8 +362,8 @@ def test_python_message_generation():
     lines = []
     expr = NewMessage("logic", "Expr", ())
     result = gen.generate_lines(expr, lines, "")
-    assert result == "_t0"
-    assert "logic_pb2.Expr()" in "\n".join(lines)
+    # Python codegen returns constructor directly for empty NewMessage
+    assert result == "logic_pb2.Expr()"
 
     # NewMessage with field
     reset_gensym()
@@ -493,6 +486,117 @@ def test_generator_instance_isolation():
     assert "custom_op" not in gen2.builtin_registry
 
 
+# Tests for helper function codegen (FunDef from yacc grammar)
+
+def test_python_helper_function_simple():
+    """Test Python code generation for a simple helper function."""
+    gen = PythonCodeGenerator()
+    reset_gensym()
+
+    # Equivalent to: def add_one(x: int) -> int: return x + 1
+    # Using builtin add
+    func = FunDef(
+        name="add_one",
+        params=[Var("x", _int_type)],
+        return_type=_int_type,
+        body=Call(Builtin("add"), [Var("x", _int_type), Lit(1)]),
+    )
+    code = gen.generate_def(func)
+    assert "def add_one(x: int) -> int:" in code
+    assert "return (x + 1)" in code
+
+
+def test_python_helper_function_with_if():
+    """Test Python code generation for helper function with if-else."""
+    gen = PythonCodeGenerator()
+    reset_gensym()
+
+    # Equivalent to:
+    # def check_value(v: Optional[int], default: int) -> int:
+    #     if v is None:
+    #         return default
+    #     return v
+    func = FunDef(
+        name="check_value",
+        params=[Var("v", OptionType(_int_type)), Var("default", _int_type)],
+        return_type=_int_type,
+        body=IfElse(
+            Call(Builtin("is_none"), [Var("v", OptionType(_int_type))]),
+            Return(Var("default", _int_type)),
+            Return(Var("v", OptionType(_int_type))),
+        ),
+    )
+    code = gen.generate_def(func)
+    assert "def check_value(v: Optional[int], default: int) -> int:" in code
+    assert "if v is None:" in code
+    assert "return default" in code
+    assert "return v" in code
+
+
+def test_python_helper_function_with_assignment():
+    """Test Python code generation for helper function with variable assignment."""
+    gen = PythonCodeGenerator()
+    reset_gensym()
+
+    # Equivalent to:
+    # def transform(x: int) -> int:
+    #     result = x
+    #     return result
+    func = FunDef(
+        name="transform",
+        params=[Var("x", _int_type)],
+        return_type=_int_type,
+        body=Seq([
+            Assign(Var("result", _int_type), Var("x", _int_type)),
+            Return(Var("result", _int_type)),
+        ]),
+    )
+    code = gen.generate_def(func)
+    assert "def transform(x: int) -> int:" in code
+    assert "result = x" in code
+    assert "return result" in code
+
+
+def test_python_helper_function_message_constructor():
+    """Test Python code generation for helper function constructing a message."""
+    gen = PythonCodeGenerator()
+    reset_gensym()
+
+    # Equivalent to:
+    # def make_value(x: int) -> logic.Value:
+    #     return logic.Value(int_value=x)
+    func = FunDef(
+        name="make_value",
+        params=[Var("x", _int_type)],
+        return_type=MessageType("logic", "Value"),
+        body=NewMessage("logic", "Value", (("int_value", Var("x", _int_type)),)),
+    )
+    code = gen.generate_def(func)
+    assert "def make_value(x: int) -> logic_pb2.Value:" in code
+    assert "logic_pb2.Value" in code
+    assert "int_value=" in code
+
+
+def test_python_helper_function_calling_another():
+    """Test Python code generation for helper function calling another function."""
+    from meta.target import NamedFun
+    gen = PythonCodeGenerator()
+    reset_gensym()
+
+    # Equivalent to:
+    # def wrapper(x: int) -> int:
+    #     return helper(x)
+    func = FunDef(
+        name="wrapper",
+        params=[Var("x", _int_type)],
+        return_type=_int_type,
+        body=Call(NamedFun("helper"), [Var("x", _int_type)]),
+    )
+    code = gen.generate_def(func)
+    assert "def wrapper(x: int) -> int:" in code
+    assert "Parser.helper(x)" in code
+
+
 if __name__ == "__main__":
     test_julia_keyword_escaping()
     test_julia_call_generation()
@@ -517,3 +621,8 @@ if __name__ == "__main__":
     test_python_visit_nonterminal_def_generation()
     test_python_type_generation()
     test_generator_instance_isolation()
+    test_python_helper_function_simple()
+    test_python_helper_function_with_if()
+    test_python_helper_function_with_assignment()
+    test_python_helper_function_message_constructor()
+    test_python_helper_function_calling_another()

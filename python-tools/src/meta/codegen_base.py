@@ -10,10 +10,10 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
 from .target import (
-    TargetExpr, Var, Lit, Symbol, Builtin, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
+    TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
     IfElse, Seq, While, Assign, Return, FunDef, VisitNonterminalDef,
-    VisitNonterminal, TargetType, BaseType, TupleType, ListType, OptionType,
-    MessageType, FunctionType, GetField, GetElement
+    VisitNonterminal, TargetType, BaseType, TupleType, ListType, DictType, OptionType,
+    MessageType, FunctionType, GetField, GetElement, DictFromList, DictLookup, HasProtoField
 )
 from .gensym import gensym
 
@@ -23,6 +23,11 @@ class BuiltinResult:
     """Result of generating a builtin call."""
     value: str  # The value expression to return
     statements: List[str]  # Statements to prepend (may be empty)
+
+
+# Sentinel value indicating that the expression has already returned.
+# When generate_lines returns this, the caller should NOT add another return statement.
+ALREADY_RETURNED = "__ALREADY_RETURNED__"
 
 
 # Type alias for builtin generator functions
@@ -121,6 +126,11 @@ class CodeGenerator(ABC):
         pass
 
     @abstractmethod
+    def gen_named_fun_ref(self, name: str) -> str:
+        """Generate a reference to a user-defined named function."""
+        pass
+
+    @abstractmethod
     def gen_parse_nonterminal_ref(self, name: str) -> str:
         """Generate a reference to a parse method for a nonterminal."""
         pass
@@ -148,8 +158,28 @@ class CodeGenerator(ABC):
         pass
 
     @abstractmethod
+    def gen_dict_type(self, key_type: str, value_type: str) -> str:
+        """Generate a dictionary/map type."""
+        pass
+
+    @abstractmethod
     def gen_list_literal(self, elements: List[str], element_type: TargetType) -> str:
         """Generate a list literal with the given elements (may be empty)."""
+        pass
+
+    @abstractmethod
+    def gen_dict_from_list(self, pairs: str) -> str:
+        """Generate code to convert list of (key, value) tuples to dictionary."""
+        pass
+
+    @abstractmethod
+    def gen_dict_lookup(self, dict_expr: str, key: str, default: Optional[str]) -> str:
+        """Generate code for dictionary lookup with optional default."""
+        pass
+
+    @abstractmethod
+    def gen_has_field(self, message: str, field_name: str) -> str:
+        """Generate code to check if protobuf message has field set."""
         pass
 
     @abstractmethod
@@ -168,6 +198,8 @@ class CodeGenerator(ABC):
             return self.gen_tuple_type(element_types)
         elif isinstance(typ, ListType):
             return self.gen_list_type(self.gen_type(typ.element_type))
+        elif isinstance(typ, DictType):
+            return self.gen_dict_type(self.gen_type(typ.key_type), self.gen_type(typ.value_type))
         elif isinstance(typ, OptionType):
             return self.gen_option_type(self.gen_type(typ.element_type))
         elif isinstance(typ, FunctionType):
@@ -308,6 +340,9 @@ class CodeGenerator(ABC):
         elif isinstance(expr, Builtin):
             return self.gen_builtin_ref(expr.name)
 
+        elif isinstance(expr, NamedFun):
+            return self.gen_named_fun_ref(expr.name)
+
         elif isinstance(expr, VisitNonterminal):
             return self.gen_parse_nonterminal_ref(expr.nonterminal.name)
 
@@ -326,6 +361,15 @@ class CodeGenerator(ABC):
             # GetElement(tuple_expr, index) -> tuple_expr[index]
             tuple_code = self.generate_lines(expr.tuple_expr, lines, indent)
             return f"{tuple_code}[{expr.index}]"
+
+        elif isinstance(expr, DictFromList):
+            return self._generate_dict_from_list(expr, lines, indent)
+
+        elif isinstance(expr, DictLookup):
+            return self._generate_dict_lookup(expr, lines, indent)
+
+        elif isinstance(expr, HasProtoField):
+            return self._generate_has_proto_field(expr, lines, indent)
 
         elif isinstance(expr, Call):
             return self._generate_call(expr, lines, indent)
@@ -449,10 +493,16 @@ class CodeGenerator(ABC):
         return tmp
 
     def _generate_seq(self, expr: Seq, lines: List[str], indent: str) -> str:
-        """Generate code for a sequence of expressions."""
+        """Generate code for a sequence of expressions.
+
+        If any expression returns ALREADY_RETURNED, stop processing and propagate
+        the sentinel (subsequent expressions are unreachable).
+        """
         result = self.gen_none()
         for e in expr.exprs:
             result = self.generate_lines(e, lines, indent)
+            if result == ALREADY_RETURNED:
+                break
         return result
 
     def _generate_while(self, expr: While, lines: List[str], indent: str) -> str:
@@ -490,10 +540,45 @@ class CodeGenerator(ABC):
         return self.gen_none()
 
     def _generate_return(self, expr: Return, lines: List[str], indent: str) -> str:
-        """Generate code for a return statement."""
+        """Generate code for a return statement.
+
+        Returns ALREADY_RETURNED sentinel to indicate that the caller should not
+        add another return statement.
+        """
         expr_code = self.generate_lines(expr.expr, lines, indent)
         lines.append(f"{indent}{self.gen_return(expr_code)}")
-        return self.gen_none()
+        return ALREADY_RETURNED
+
+    def _generate_dict_from_list(self, expr: DictFromList, lines: List[str], indent: str) -> str:
+        """Generate code for dict-from-list.
+
+        Converts a list of (key, value) tuples to a dictionary.
+        Default implementation generates dict(pairs) for Python-like languages.
+        """
+        pairs_code = self.generate_lines(expr.pairs, lines, indent)
+        return self.gen_dict_from_list(pairs_code)
+
+    def _generate_dict_lookup(self, expr: DictLookup, lines: List[str], indent: str) -> str:
+        """Generate code for dict-lookup.
+
+        Looks up a key in a dictionary with optional default.
+        Default implementation generates dict.get(key, default).
+        """
+        dict_code = self.generate_lines(expr.dict_expr, lines, indent)
+        key_code = self.generate_lines(expr.key, lines, indent)
+        if expr.default is None:
+            return self.gen_dict_lookup(dict_code, key_code, None)
+        default_code = self.generate_lines(expr.default, lines, indent)
+        return self.gen_dict_lookup(dict_code, key_code, default_code)
+
+    def _generate_has_proto_field(self, expr: HasProtoField, lines: List[str], indent: str) -> str:
+        """Generate code for has-field.
+
+        Checks if a protobuf message has a field set (for oneOf).
+        Default implementation generates msg.HasField(field_name).
+        """
+        message_code = self.generate_lines(expr.message, lines, indent)
+        return self.gen_has_field(message_code, expr.field_name)
 
     # --- Function definition generation ---
 

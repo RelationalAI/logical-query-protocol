@@ -272,7 +272,7 @@ class TestBuiltinHelpers:
         result = make_tuple(Lit(1), Lit(2), Lit(3))
         assert isinstance(result, Call)
         assert isinstance(result.func, Builtin)
-        assert result.func.name == 'make_tuple'
+        assert result.func.name == 'tuple'
         assert len(result.args) == 3
 
     def test_make_get_element(self):

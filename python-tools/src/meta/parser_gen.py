@@ -51,7 +51,7 @@ Builtins used:
 - consume_terminal(name): Consume a terminal, return its value
 - match_lookahead_literal(s, k): Check if lookahead[k] is literal s
 - match_lookahead_terminal(name, k): Check if lookahead[k] is terminal type
-- list_push!(list, elem): Append to list (mutating)
+- list_concat(list1, list2): Concatenate two lists (returns new list)
 - equal(a, b): Equality check
 - error(msg, context): Raise parse error
 
@@ -79,7 +79,7 @@ The generated IR for expr (simplified) would be:
 from typing import Dict, List, Optional, Set, Tuple, Sequence as PySequence
 from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Terminal, Sequence
 from .grammar_utils import is_epsilon, rhs_elements
-from .target import Lambda, Call, VisitNonterminalDef, Var, Lit, Symbol, Builtin, NewMessage, OneOf, Let, IfElse, BaseType, ListType, ListExpr, TargetExpr, Seq, While, Foreach, ForeachEnumerated, Assign, VisitNonterminal, Return
+from .target import Lambda, Call, VisitNonterminalDef, Var, Lit, Symbol, Builtin, NewMessage, OneOf, Let, IfElse, BaseType, ListType, ListExpr, TargetExpr, Seq, While, Foreach, ForeachEnumerated, Assign, VisitNonterminal, Return, GetField, GetElement
 from .gensym import gensym
 from .terminal_sequence_set import TerminalSequenceSet, FollowSet, FirstSet, ConcatSet
 
@@ -339,7 +339,12 @@ def _generate_parse_rhs_ir(rhs: Rhs, grammar: Grammar, follow_set: TerminalSeque
         cond = Var(gensym('cond'), BaseType('Boolean'))
         predictor = _build_option_predictor(grammar, rhs.rhs, follow_set)
         parse_item = _generate_parse_rhs_ir(rhs.rhs, grammar, follow_set, False, None)
-        loop_body = Seq([Call(Builtin('list_push!'), [xs, parse_item]), Assign(cond, predictor)])
+        item = Var(gensym('item'), rhs.rhs.target_type())
+        loop_body = Seq([
+            Assign(item, parse_item),
+            Assign(xs, Call(Builtin('list_concat'), [xs, ListExpr([item], rhs.rhs.target_type())])),
+            Assign(cond, predictor)
+        ])
         return Let(xs, ListExpr([], rhs.rhs.target_type()),
                    Let(cond, predictor, Seq([While(cond, loop_body), xs])))
     else:
@@ -382,7 +387,7 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, grammar: Grammar, follow_set:
         exprs.append(lambda_call)
     elif len(arg_vars) > 1:
         # Multiple values - wrap in tuple
-        exprs.append(Call(Builtin('make_tuple'), arg_vars))
+        exprs.append(Call(Builtin('tuple'), arg_vars))
     elif len(arg_vars) == 1:
         # Single value - return the variable
         exprs.append(arg_vars[0])
@@ -406,8 +411,11 @@ def _apply(func: 'Lambda', args: PySequence['TargetExpr']) -> 'TargetExpr':
     return Call(func, args)
 
 def _subst(expr: 'TargetExpr', var: str, val: 'TargetExpr') -> 'TargetExpr':
-    if isinstance(expr, Var) and expr.name == var:
-        return val
+    if isinstance(expr, Var):
+        if expr.name == var:
+            return val
+        else:
+            return expr
     elif isinstance(expr, Lambda):
         if var in [p.name for p in expr.params]:
             return expr
@@ -438,7 +446,17 @@ def _subst(expr: 'TargetExpr', var: str, val: 'TargetExpr') -> 'TargetExpr':
         return ListExpr([_subst(elem, var, val) for elem in expr.elements], expr.element_type)
     elif isinstance(expr, Return):
         return Return(_subst(expr.expr, var, val))
-    elif isinstance(expr, (Var, Lit, Symbol, Builtin, NewMessage, OneOf, VisitNonterminal)):
-        # Var not matching, or types that don't contain variables - return unchanged
+    elif isinstance(expr, GetField):
+        return GetField(_subst(expr.object, var, val), expr.field_name)
+    elif isinstance(expr, GetElement):
+        return GetElement(_subst(expr.tuple_expr, var, val), expr.index)
+    elif isinstance(expr, NewMessage):
+        # NewMessage can have fields that contain variables
+        if expr.fields:
+            new_fields = tuple((name, _subst(field_expr, var, val)) for name, field_expr in expr.fields)
+            return NewMessage(expr.module, expr.name, new_fields)
+        return expr
+    elif isinstance(expr, (Lit, Symbol, Builtin, OneOf, VisitNonterminal)):
+        # These don't contain variables, return unchanged
         return expr
     raise ValueError(f"Unknown expression type in _subst: {type(expr).__name__}")

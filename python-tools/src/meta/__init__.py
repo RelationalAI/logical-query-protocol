@@ -56,12 +56,6 @@ from .proto_ast import (
 # Protobuf parser
 from .proto_parser import ProtoParser
 
-# Grammar generation
-from .grammar_gen import (
-    GrammarGenerator,
-    generate_grammar,
-)
-
 # Parser generation
 from .parser_gen import generate_parse_functions, GrammarConflictError, AmbiguousGrammarError
 
@@ -122,9 +116,6 @@ __all__ = [
     'ProtoMessage',
     # Protobuf parser
     'ProtoParser',
-    # Grammar generation
-    'GrammarGenerator',
-    'generate_grammar',
     # Parser generation
     'generate_parse_functions',
     'GrammarConflictError',

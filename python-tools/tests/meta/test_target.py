@@ -559,6 +559,7 @@ class TestGetElement:
     def test_negative_index_fails(self):
         """Test GetElement with negative index raises error."""
         tuple_expr = Var("pair", TupleType([BaseType("Int64"), BaseType("String")]))
+        # GetElement validates index at construction time
         with pytest.raises(AssertionError, match="GetElement index must be non-negative integer"):
             GetElement(tuple_expr, -1)
 
