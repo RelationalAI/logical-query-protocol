@@ -204,7 +204,7 @@ def run(args) -> int:
             command_line = " ".join(["python -m meta.cli"] + [str(f) for f in args.proto_files] + ["--parser", "julia"])
             # Transform messages dict from {name: ProtoMessage} to {(module, name): ProtoMessage}
             proto_messages = {(msg.module, name): msg for name, msg in proto_parser.messages.items()}
-            output_text = generate_parser_julia(grammar, None, command_line, proto_messages)
+            output_text = generate_parser_julia(grammar, command_line, proto_messages)
             write_output(output_text, args.output, f"Generated parser written to {args.output}")
 
     return 0

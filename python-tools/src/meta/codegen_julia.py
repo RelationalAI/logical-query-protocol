@@ -279,6 +279,32 @@ class JuliaCodeGenerator(CodeGenerator):
 
         return f"{indent}function {func_name}({params_str}){ret_hint}\n{body_code}\n{indent}end"
 
+    def _generate_builtin_method_def(self, expr: FunDef, indent: str) -> str:
+        """Generate a builtin/helper function definition."""
+        func_name = self.escape_identifier(expr.name)
+
+        params = ["parser::Parser"]
+        for param in expr.params:
+            escaped_name = self.escape_identifier(param.name)
+            type_hint = self.gen_type(param.type)
+            params.append(f"{escaped_name}::{type_hint}")
+
+        params_str = ', '.join(params)
+
+        ret_hint = f"::{self.gen_type(expr.return_type)}" if expr.return_type else ""
+
+        if expr.body is None:
+            body_code = f"{indent}    nothing"
+        else:
+            body_lines: List[str] = []
+            body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
+            # Only add return if the body didn't already return
+            if body_inner is not None:
+                body_lines.append(f"{indent}    return {body_inner}")
+            body_code = "\n".join(body_lines)
+
+        return f"{indent}function {func_name}({params_str}){ret_hint}\n{body_code}\n{indent}end"
+
 # Module-level instance for convenience
 _generator = JuliaCodeGenerator()
 
