@@ -128,9 +128,6 @@ class JuliaCodeGenerator(CodeGenerator):
             return f"get({dict_expr}, {key}, nothing)"
         return f"get({dict_expr}, {key}, {default})"
 
-    def gen_has_field(self, message: str, field_name: str) -> str:
-        return f"hasproperty({message}, :{field_name}) && !isnothing(getproperty({message}, :{field_name}))"
-
     def gen_function_type(self, param_types: List[str], return_type: str) -> str:
         return "Function"  # Julia doesn't have precise function types
 
@@ -206,25 +203,19 @@ class JuliaCodeGenerator(CodeGenerator):
                 field_value = self.generate_lines(field_expr.args[0], lines, indent)
                 assert field_value is not None
                 field_symbol = self.gen_symbol(oneof_field_name)
-                escaped_name = self._escape_field_name(oneof_field_name)
+                escaped_name = self._escape_field_for_map(oneof_field_name)
                 keyword_args.append(f"{escaped_name}=OneOf({field_symbol}, {field_value})")
             else:
                 # Regular field
                 field_value = self.generate_lines(field_expr, lines, indent)
                 assert field_value is not None
-                escaped_name = self._escape_field_name(field_name)
+                escaped_name = self._escape_field_for_map(field_name)
                 keyword_args.append(f"{escaped_name}={field_value}")
 
         args_code = ', '.join(keyword_args)
         tmp = gensym()
         lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}(; {args_code})', is_declaration=True)}")
         return tmp
-
-    def _escape_field_name(self, name: str) -> str:
-        """Escape a field name if it's a Julia keyword."""
-        if name in self.keywords:
-            return name + '_'
-        return name
 
     def _generate_call(self, expr: Call, lines: List[str], indent: str) -> Optional[str]:
         """Override to handle OneOf and VisitNonterminal specially for Julia."""

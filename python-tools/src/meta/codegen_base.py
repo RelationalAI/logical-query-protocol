@@ -322,8 +322,11 @@ class CodeGenerator(ABC):
     def register_builtin_from_template(self, name: str, template: BuiltinTemplate) -> None:
         """Register a builtin from a template."""
         def generator(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
-            # Handle variadic {args} placeholder
-            if "{args}" in template.value_template:
+            # Handle None value (non-returning builtins like error)
+            if template.value_template is None:
+                value = None
+            elif "{args}" in template.value_template:
+                # Handle variadic {args} placeholder
                 value = template.value_template.replace("{args}", ", ".join(args))
             else:
                 value = template.value_template.format(*args)
