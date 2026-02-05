@@ -14,6 +14,9 @@
 # We translate this restricted Python into actual Python, Julia, and Go.
 
 
+# Start symbol
+%start transaction
+
 # Token declarations: %token NAME Type PATTERN
 # PATTERN can be r'...' for regex or '...' for fixed string
 %token DECIMAL logic.DecimalValue r'[-]?\d+\.\d+d\d+'
@@ -33,10 +36,9 @@
 %nonterm atom logic.Atom
 %nonterm attribute logic.Attribute
 %nonterm attrs List[logic.Attribute]
-%nonterm be_tree_info logic.BeTreeInfo
-%nonterm be_tree_info_key_types List[logic.Type]
-%nonterm be_tree_info_value_types List[logic.Type]
-%nonterm be_tree_relation logic.BeTreeRelation
+%nonterm betree_info logic.BeTreeInfo
+%nonterm betree_info_key_types List[logic.Type]
+%nonterm betree_info_value_types List[logic.Type]
 %nonterm betree_relation logic.BeTreeRelation
 %nonterm binding logic.Binding
 %nonterm bindings Tuple[List[logic.Binding], List[logic.Binding]]
@@ -59,7 +61,6 @@
 %nonterm csv_data logic.CSVData
 %nonterm csv_locator_inline_data String
 %nonterm csv_locator_paths List[String]
-%nonterm csvdata logic.CSVData
 %nonterm csvlocator logic.CSVLocator
 %nonterm data logic.Data
 %nonterm date logic.DateValue
@@ -626,24 +627,18 @@ rel_edb
       construct: logic.RelEDB(target_id=$3, path=$4, types=$5)
 
 betree_relation
-    : be_tree_relation
-
-be_tree_relation
-    : "(" "betree_relation" relation_id be_tree_info ")"
+    : "(" "betree_relation" relation_id betree_info ")"
       construct: logic.BeTreeRelation(name=$3, relation_info=$4)
 
-be_tree_info
-    : "(" "betree_info" be_tree_info_key_types be_tree_info_value_types config_dict ")"
+betree_info
+    : "(" "betree_info" betree_info_key_types betree_info_value_types config_dict ")"
       construct: construct_betree_info($3, $4, $5)
 
-be_tree_info_key_types
+betree_info_key_types
     : "(" "key_types" type* ")"
 
-be_tree_info_value_types
+betree_info_value_types
     : "(" "value_types" type* ")"
-
-csv_data
-    : csvdata
 
 csv_columns
     : "(" "columns" csv_column* ")"
@@ -651,7 +646,7 @@ csv_columns
 csv_asof
     : "(" "asof" STRING ")"
 
-csvdata
+csv_data
     : "(" "csv_data" csvlocator csv_config csv_columns csv_asof ")"
       construct: logic.CSVData(locator=$3, config=$4, columns=$5, asof=$6)
 
@@ -735,74 +730,94 @@ export_csv_column
 
 
 def _extract_value_int64(value: Optional[logic.Value], default: int) -> int:
-    if value is None:
-        return default
-    if builtin.has_proto_field(value, 'int_value'):
+    if value is not None and builtin.has_proto_field(value, 'int_value'):
         return value.int_value
     return default
 
 
 def _extract_value_float64(value: Optional[logic.Value], default: float) -> float:
-    if value is None:
-        return default
-    if builtin.has_proto_field(value, 'float_value'):
+    if value is not None and builtin.has_proto_field(value, 'float_value'):
         return value.float_value
     return default
 
 
 def _extract_value_string(value: Optional[logic.Value], default: str) -> str:
-    if value is None:
-        return default
-    if builtin.has_proto_field(value, 'string_value'):
+    if value is not None and builtin.has_proto_field(value, 'string_value'):
         return value.string_value
     return default
 
 
 def _extract_value_boolean(value: Optional[logic.Value], default: bool) -> bool:
-    if value is None:
-        return default
-    if builtin.has_proto_field(value, 'boolean_value'):
+    if value is not None and builtin.has_proto_field(value, 'boolean_value'):
         return value.boolean_value
     return default
 
 
 def _extract_value_bytes(value: Optional[logic.Value], default: bytes) -> bytes:
-    if value is None:
-        return default
-    if builtin.has_proto_field(value, 'string_value'):
+    if value is not None and builtin.has_proto_field(value, 'string_value'):
         return value.string_value.encode()
     return default
 
 
 def _extract_value_uint128(value: Optional[logic.Value], default: logic.UInt128Value) -> logic.UInt128Value:
-    if value is None:
-        return default
-    if builtin.has_proto_field(value, 'uint128_value'):
+    if value is not None and builtin.has_proto_field(value, 'uint128_value'):
         return value.uint128_value
     return default
 
-
 def _extract_value_string_list(value: Optional[logic.Value], default: List[String]) -> List[String]:
-    if value is None:
-        return default
-    if builtin.has_proto_field(value, 'string_value'):
+    if value is not None and builtin.has_proto_field(value, 'string_value'):
         return [value.string_value]
     return default
+
+def _try_extract_value_int64(value: Optional[logic.Value]) -> Optional[int]:
+    if value is not None and builtin.has_proto_field(value, 'int_value'):
+        return value.int_value
+    return None
+
+
+def _try_extract_value_float64(value: Optional[logic.Value]) -> Optional[float]:
+    if value is not None and builtin.has_proto_field(value, 'float_value'):
+        return value.float_value
+    return None
+
+
+def _try_extract_value_string(value: Optional[logic.Value]) -> Optional[str]:
+    if value is not None and builtin.has_proto_field(value, 'string_value'):
+        return value.string_value
+    return None
+
+
+def _try_extract_value_bytes(value: Optional[logic.Value]) -> Optional[bytes]:
+    if value is not None and builtin.has_proto_field(value, 'string_value'):
+        return value.string_value.encode()
+    return None
+
+
+def _try_extract_value_uint128(value: Optional[logic.Value]) -> Optional[logic.UInt128Value]:
+    if value is not None and builtin.has_proto_field(value, 'uint128_value'):
+        return value.uint128_value
+    return None
+
+
+def _try_extract_value_string_list(value: Optional[logic.Value]) -> Optional[List[String]]:
+    if value is not None and builtin.has_proto_field(value, 'string_value'):
+        return [value.string_value]
+    return None
 
 
 def construct_csv_config(config_dict: List[Tuple[String, logic.Value]]) -> logic.CSVConfig:
     config: Dict[String, logic.Value] = builtin.dict_from_list(config_dict)
-    header_row: int = _extract_value_int64(builtin.dict_get(config, "csv_header_row"), 1)
-    skip: int = _extract_value_int64(builtin.dict_get(config, "csv_skip"), 0)
-    new_line: str = _extract_value_string(builtin.dict_get(config, "csv_new_line"), "")
-    delimiter: str = _extract_value_string(builtin.dict_get(config, "csv_delimiter"), ",")
-    quotechar: str = _extract_value_string(builtin.dict_get(config, "csv_quotechar"), '"')
-    escapechar: str = _extract_value_string(builtin.dict_get(config, "csv_escapechar"), '"')
-    comment: str = _extract_value_string(builtin.dict_get(config, "csv_comment"), "")
-    missing_strings: List[String] = _extract_value_string_list(builtin.dict_get(config, "csv_missing_strings"), [])
-    decimal_separator: str = _extract_value_string(builtin.dict_get(config, "csv_decimal_separator"), ".")
-    encoding: str = _extract_value_string(builtin.dict_get(config, "csv_encoding"), "utf-8")
-    compression: str = _extract_value_string(builtin.dict_get(config, "csv_compression"), "auto")
+    header_row: Optional[int] = _try_extract_value_int64(builtin.dict_get(config, "csv_header_row"))
+    skip: Optional[int] = _try_extract_value_int64(builtin.dict_get(config, "csv_skip"))
+    new_line: Optional[str] = _try_extract_value_string(builtin.dict_get(config, "csv_new_line"))
+    delimiter: Optional[str] = _try_extract_value_string(builtin.dict_get(config, "csv_delimiter"))
+    quotechar: Optional[str] = _try_extract_value_string(builtin.dict_get(config, "csv_quotechar"))
+    escapechar: Optional[str] = _try_extract_value_string(builtin.dict_get(config, "csv_escapechar"))
+    comment: Optional[str] = _try_extract_value_string(builtin.dict_get(config, "csv_comment"))
+    missing_strings: Optional[List[String]] = _try_extract_value_string_list(builtin.dict_get(config, "csv_missing_strings"))
+    decimal_separator: Optional[str] = _try_extract_value_string(builtin.dict_get(config, "csv_decimal_separator"))
+    encoding: Optional[str] = _try_extract_value_string(builtin.dict_get(config, "csv_encoding"))
+    compression: Optional[str] = _try_extract_value_string(builtin.dict_get(config, "csv_compression"))
     return logic.CSVConfig(
         header_row=header_row,
         skip=skip,
@@ -824,29 +839,20 @@ def construct_betree_info(
     config_dict: List[Tuple[String, logic.Value]],
 ) -> logic.BeTreeInfo:
     config: Dict[String, logic.Value] = builtin.dict_from_list(config_dict)
-    epsilon: float = _extract_value_float64(builtin.dict_get(config, "betree_config_epsilon"), 0.5)
-    max_pivots: int = _extract_value_int64(builtin.dict_get(config, "betree_config_max_pivots"), 4)
-    max_deltas: int = _extract_value_int64(builtin.dict_get(config, "betree_config_max_deltas"), 16)
-    max_leaf: int = _extract_value_int64(builtin.dict_get(config, "betree_config_max_leaf"), 16)
+    epsilon: Optional[float] = _try_extract_value_float64(builtin.dict_get(config, "betree_config_epsilon"))
+    max_pivots: Optional[int] = _try_extract_value_int64(builtin.dict_get(config, "betree_config_max_pivots"))
+    max_deltas: Optional[int] = _try_extract_value_int64(builtin.dict_get(config, "betree_config_max_deltas"))
+    max_leaf: Optional[int] = _try_extract_value_int64(builtin.dict_get(config, "betree_config_max_leaf"))
     storage_config: logic.BeTreeConfig = logic.BeTreeConfig(
         epsilon=epsilon,
         max_pivots=max_pivots,
         max_deltas=max_deltas,
         max_leaf=max_leaf,
     )
-    root_pageid_val: Optional[logic.Value] = builtin.dict_get(config, "betree_locator_root_pageid")
-    root_pageid: Optional[logic.UInt128Value] = None
-    if root_pageid_val is not None:
-        root_pageid = _extract_value_uint128(
-            root_pageid_val,
-            logic.UInt128Value(low=0, high=0),
-        )
-    inline_data_val: Optional[logic.Value] = builtin.dict_get(config, "betree_locator_inline_data")
-    inline_data: Optional[bytes] = None
-    if inline_data_val is not None:
-        inline_data = _extract_value_bytes(inline_data_val, b"")
-    element_count: int = _extract_value_int64(builtin.dict_get(config, "betree_locator_element_count"), 0)
-    tree_height: int = _extract_value_int64(builtin.dict_get(config, "betree_locator_tree_height"), 0)
+    root_pageid: Optional[logic.UInt128Value] = _try_extract_value_uint128(builtin.dict_get(config, "betree_locator_root_pageid"))
+    inline_data: Optional[bytes] = _try_extract_value_bytes(builtin.dict_get(config, "betree_locator_inline_data"))
+    element_count: Optional[int] = _try_extract_value_int64(builtin.dict_get(config, "betree_locator_element_count"))
+    tree_height: Optional[int] = _try_extract_value_int64(builtin.dict_get(config, "betree_locator_tree_height"))
     relation_locator: logic.BeTreeLocator = logic.BeTreeLocator(
         root_pageid=root_pageid,
         inline_data=inline_data,

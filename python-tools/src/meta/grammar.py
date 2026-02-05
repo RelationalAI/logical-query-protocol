@@ -442,6 +442,7 @@ class GrammarConfig:
     grammar files before building the full Grammar object.
     """
     terminals: Dict[str, TargetType]
+    start_symbol: str
     terminal_patterns: Dict[str, TerminalDef] = field(default_factory=dict)
     rules: Dict[Nonterminal, List[Rule]] = field(default_factory=dict)
     ignored_completeness: List[str] = field(default_factory=list)

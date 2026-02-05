@@ -91,6 +91,7 @@ class TypeContext:
     terminal_info: Dict[str, TerminalInfo] = field(default_factory=dict)
     nonterminals: Dict[str, TargetType] = field(default_factory=dict)
     functions: Dict[str, FunDef] = field(default_factory=dict)
+    start_symbol: Optional[str] = None
 
 
 def parse_type(text: str) -> TargetType:
@@ -213,6 +214,10 @@ def parse_directives(lines: List[str]) -> Tuple[TypeContext, List[str], int]:
 
         # Check for section separator
         if line == '%%':
+            if ctx.start_symbol is None:
+                raise YaccGrammarError("Missing required %start directive", i)
+            if ctx.start_symbol not in ctx.nonterminals:
+                raise YaccGrammarError(f"Start symbol '{ctx.start_symbol}' is not a declared nonterminal", i)
             return ctx, ignored_completeness, i
 
         # Parse directive
@@ -223,6 +228,8 @@ def parse_directives(lines: List[str]) -> Tuple[TypeContext, List[str], int]:
             if space_idx == -1:
                 raise YaccGrammarError(f"Invalid %token directive: {line}", i)
             name = rest[:space_idx]
+            if name in ctx.terminals:
+                raise YaccGrammarError(f"Duplicate token declaration: {name}", i)
             type_and_pattern = rest[space_idx+1:]
             type_str, pattern, is_regex = _parse_token_pattern(type_and_pattern)
             ctx.terminals[name] = parse_type(type_str)
@@ -233,15 +240,17 @@ def parse_directives(lines: List[str]) -> Tuple[TypeContext, List[str], int]:
             if len(parts) != 2:
                 raise YaccGrammarError(f"Invalid %nonterm directive: {line}", i)
             name, type_str = parts
+            if name in ctx.nonterminals:
+                raise YaccGrammarError(f"Duplicate nonterminal declaration: {name}", i)
             ctx.nonterminals[name] = parse_type(type_str)
 
-        elif line.startswith('%type'):
-            # Support %type as alias for %nonterm for backwards compatibility
-            parts = line[5:].strip().split(None, 1)
-            if len(parts) != 2:
-                raise YaccGrammarError(f"Invalid %type directive: {line}", i)
-            name, type_str = parts
-            ctx.nonterminals[name] = parse_type(type_str)
+        elif line.startswith('%start'):
+            name = line[6:].strip()
+            if not name:
+                raise YaccGrammarError(f"Invalid %start directive: {line}", i)
+            if ctx.start_symbol is not None:
+                raise YaccGrammarError(f"Duplicate %start directive: {line}", i)
+            ctx.start_symbol = name
 
         elif line.startswith('%validator_ignore_completeness'):
             name = line[30:].strip()
@@ -1260,16 +1269,22 @@ def _convert_stmt(stmt: ast.stmt, ctx: TypeContext, line: int,
         return IfElse(cond, then_body, else_body)
 
     elif isinstance(stmt, ast.Assign):
-        # Simple assignment: x = expr
+        # Simple assignment without type annotation: x = expr
+        # Only allowed if re-assigning to an already-declared variable
         if len(stmt.targets) != 1:
             raise YaccGrammarError(f"Multiple assignment targets not supported", line)
         target = stmt.targets[0]
         if not isinstance(target, ast.Name):
             raise YaccGrammarError(f"Only simple variable assignment supported", line)
         var_name = target.id
+        if var_name not in local_vars:
+            raise YaccGrammarError(
+                f"Local variable '{var_name}' must have a type annotation. "
+                f"Use '{var_name}: Type = ...' instead of '{var_name} = ...'",
+                line)
+        # Re-assignment to already-declared variable
+        var_type = local_vars[var_name]
         value = _convert_func_expr(stmt.value, ctx, line, local_vars)
-        var_type = _infer_type(value, line, ctx)
-        local_vars[var_name] = var_type
         return Assign(Var(var_name, var_type), value)
 
     elif isinstance(stmt, ast.AnnAssign):
@@ -1558,6 +1573,7 @@ def load_yacc_grammar(text: str) -> GrammarConfig:
 
     return GrammarConfig(
         terminals=ctx.terminals,
+        start_symbol=ctx.start_symbol,
         terminal_patterns=terminal_patterns,
         rules=rules_dict,
         ignored_completeness=ignored_completeness,

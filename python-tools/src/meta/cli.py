@@ -133,12 +133,19 @@ def run(args) -> int:
     grammar_config = load_yacc_grammar_file(grammar_path)
 
     # Build Grammar object from loaded config
-    # Use the first nonterminal in the grammar as the start symbol
     if not grammar_config.rules:
         print("Error: Grammar file contains no rules", file=sys.stderr)
         return 1
 
-    start = next(iter(grammar_config.rules.keys()))
+    # Find the start nonterminal
+    start = None
+    for nt in grammar_config.rules.keys():
+        if nt.name == grammar_config.start_symbol:
+            start = nt
+            break
+    if start is None:
+        print(f"Error: Start symbol '{grammar_config.start_symbol}' has no rules", file=sys.stderr)
+        return 1
     grammar = Grammar(
         start=start,
         ignored_completeness=grammar_config.ignored_completeness,
