@@ -15,6 +15,7 @@ from .target import (
     VisitNonterminal, TargetType, BaseType, TupleType, ListType, DictType, OptionType,
     MessageType, FunctionType, GetField, GetElement
 )
+from .target_builtins import get_builtin
 from .gensym import gensym
 
 
@@ -39,12 +40,12 @@ class BuiltinSpec:
     """Specification for a builtin function.
 
     name: Name of the builtin (e.g., "list_concat")
-    arity: Number of arguments (-1 for variadic)
     generator: Function that generates code for this builtin.
                Takes (args, lines, indent) and returns BuiltinResult.
+
+    Arity is looked up from target_builtins.BUILTIN_REGISTRY.
     """
     name: str
-    arity: int
     generator: BuiltinGenerator
 
 
@@ -271,9 +272,12 @@ class CodeGenerator(ABC):
 
     # --- Builtin operations ---
 
-    def register_builtin(self, name: str, arity: int, generator: BuiltinGenerator) -> None:
-        """Register a builtin function generator."""
-        self.builtin_registry[name] = BuiltinSpec(name, arity, generator)
+    def register_builtin(self, name: str, generator: BuiltinGenerator) -> None:
+        """Register a builtin function generator.
+
+        Arity is looked up from target_builtins.BUILTIN_REGISTRY.
+        """
+        self.builtin_registry[name] = BuiltinSpec(name, generator)
 
     def gen_builtin_call(self, name: str, args: List[str],
                          lines: List[str], indent: str) -> Optional[BuiltinResult]:
@@ -281,11 +285,13 @@ class CodeGenerator(ABC):
 
         Returns BuiltinResult if handled, None if should use default call generation.
 
-        Checks the builtin_registry. Subclasses can override to add additional handling.
+        Checks the builtin_registry. Arity validation uses target_builtins.
         """
         if name in self.builtin_registry:
             spec = self.builtin_registry[name]
-            if spec.arity == -1 or len(args) == spec.arity:
+            # Look up arity from the central builtin registry
+            builtin_sig = get_builtin(name)
+            if builtin_sig is None or builtin_sig.is_variadic() or len(args) == builtin_sig.arity:
                 return spec.generator(args, lines, indent)
         return None
 

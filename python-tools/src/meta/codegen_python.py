@@ -75,101 +75,104 @@ class PythonCodeGenerator(CodeGenerator):
         return field_map
 
     def _register_builtins(self) -> None:
-        """Register builtin generators."""
-        self.register_builtin("some", 1,
+        """Register builtin generators.
+
+        Arity is looked up from target_builtins.BUILTIN_REGISTRY.
+        """
+        self.register_builtin("some",
             lambda args, lines, indent: BuiltinResult(args[0], []))
-        self.register_builtin("not", 1,
+        self.register_builtin("not",
             lambda args, lines, indent: BuiltinResult(f"not {args[0]}", []))
-        self.register_builtin("and", 2,
+        self.register_builtin("and",
             lambda args, lines, indent: BuiltinResult(f"({args[0]} and {args[1]})", []))
-        self.register_builtin("or", 2,
+        self.register_builtin("or",
             lambda args, lines, indent: BuiltinResult(f"({args[0]} or {args[1]})", []))
-        self.register_builtin("equal", 2,
+        self.register_builtin("equal",
             lambda args, lines, indent: BuiltinResult(f"{args[0]} == {args[1]}", []))
-        self.register_builtin("not_equal", 2,
+        self.register_builtin("not_equal",
             lambda args, lines, indent: BuiltinResult(f"{args[0]} != {args[1]}", []))
-        self.register_builtin("add", 2,
+        self.register_builtin("add",
             lambda args, lines, indent: BuiltinResult(f"({args[0]} + {args[1]})", []))
 
-        self.register_builtin("fragment_id_from_string", 1,
+        self.register_builtin("fragment_id_from_string",
             lambda args, lines, indent: BuiltinResult(f"fragments_pb2.FragmentId(id={args[0]}.encode())", []))
 
-        self.register_builtin("relation_id_from_string", 1,
+        self.register_builtin("relation_id_from_string",
             lambda args, lines, indent: BuiltinResult(f"self.relation_id_from_string({args[0]})", []))
 
-        self.register_builtin("relation_id_from_int", 1,
+        self.register_builtin("relation_id_from_int",
             lambda args, lines, indent: BuiltinResult(f"logic_pb2.RelationId(id_low={args[0]} & 0xFFFFFFFFFFFFFFFF, id_high=({args[0]} >> 64) & 0xFFFFFFFFFFFFFFFF)", []))
 
-        self.register_builtin("list_concat", 2,
+        self.register_builtin("list_concat",
             lambda args, lines, indent: BuiltinResult(f"({args[0]} + ({args[1]} if {args[1]} is not None else []))", []))
 
-        self.register_builtin("map", 2,
+        self.register_builtin("map",
             lambda args, lines, indent: BuiltinResult(f"[{args[0]}(x) for x in {args[1]}]", []))
 
-        self.register_builtin("is_none", 1,
+        self.register_builtin("is_none",
             lambda args, lines, indent: BuiltinResult(f"{args[0]} is None", []))
 
-        self.register_builtin("is_some", 1,
+        self.register_builtin("is_some",
             lambda args, lines, indent: BuiltinResult(f"{args[0]} is not None", []))
 
-        self.register_builtin("unwrap_option", 1,
+        self.register_builtin("unwrap_option",
             lambda args, lines, indent: BuiltinResult(args[0], []))
 
-        self.register_builtin("none", 0,
+        self.register_builtin("none",
             lambda args, lines, indent: BuiltinResult("None", []))
 
-        self.register_builtin("make_empty_bytes", 0,
+        self.register_builtin("make_empty_bytes",
             lambda args, lines, indent: BuiltinResult("b''", []))
 
-        self.register_builtin("dict_from_list", 1,
+        self.register_builtin("dict_from_list",
             lambda args, lines, indent: BuiltinResult(f"dict({args[0]})", []))
 
-        self.register_builtin("dict_get", 2,
+        self.register_builtin("dict_get",
             lambda args, lines, indent: BuiltinResult(f"{args[0]}.get({args[1]})", []))
 
-        self.register_builtin("has_proto_field", 2,
+        self.register_builtin("has_proto_field",
             lambda args, lines, indent: BuiltinResult(f"{args[0]}.HasField({args[1]})", []))
 
-        self.register_builtin("string_to_upper", 1,
+        self.register_builtin("string_to_upper",
             lambda args, lines, indent: BuiltinResult(f"{args[0]}.upper()", []))
 
-        self.register_builtin("string_in_list", 2,
+        self.register_builtin("string_in_list",
             lambda args, lines, indent: BuiltinResult(f"{args[0]} in {args[1]}", []))
 
-        self.register_builtin("string_concat", 2,
+        self.register_builtin("string_concat",
             lambda args, lines, indent: BuiltinResult(f"({args[0]} + {args[1]})", []))
 
-        self.register_builtin("encode_string", 1,
+        self.register_builtin("encode_string",
             lambda args, lines, indent: BuiltinResult(f"{args[0]}.encode()", []))
 
-        self.register_builtin("tuple", -1,
+        self.register_builtin("tuple",
             lambda args, lines, indent: BuiltinResult(f"({', '.join(args)},)", []))
 
-        self.register_builtin("length", 1,
+        self.register_builtin("length",
             lambda args, lines, indent: BuiltinResult(f"len({args[0]})", []))
 
-        self.register_builtin("unwrap_option_or", 2,
+        self.register_builtin("unwrap_option_or",
             lambda args, lines, indent: BuiltinResult(f"({args[0]} if {args[0]} is not None else {args[1]})", []))
 
-        self.register_builtin("int64_to_int32", 1,
+        self.register_builtin("int64_to_int32",
             lambda args, lines, indent: BuiltinResult(f"int({args[0]})", []))
 
-        self.register_builtin("match_lookahead_terminal", 2,
+        self.register_builtin("match_lookahead_terminal",
             lambda args, lines, indent: BuiltinResult(f"self.match_lookahead_terminal({args[0]}, {args[1]})", []))
 
-        self.register_builtin("match_lookahead_literal", 2,
+        self.register_builtin("match_lookahead_literal",
             lambda args, lines, indent: BuiltinResult(f"self.match_lookahead_literal({args[0]}, {args[1]})", []))
 
-        self.register_builtin("consume_literal", 1,
+        self.register_builtin("consume_literal",
             lambda args, lines, indent: BuiltinResult("None", [f"self.consume_literal({args[0]})"]))
 
-        self.register_builtin("consume_terminal", 1,
+        self.register_builtin("consume_terminal",
             lambda args, lines, indent: BuiltinResult(f"self.consume_terminal({args[0]})", []))
 
-        self.register_builtin("current_token", 0,
+        self.register_builtin("current_token",
             lambda args, lines, indent: BuiltinResult("self.lookahead(0)", []))
 
-        # error has two arities, so we use a custom generator
+        # error is variadic (1 or 2 args)
         def gen_error(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
             if len(args) == 2:
                 return BuiltinResult("None", [_format_parse_error_with_token(args[0], args[1])])
@@ -177,24 +180,24 @@ class PythonCodeGenerator(CodeGenerator):
                 return BuiltinResult("None", [f"raise ParseError({args[0]})"])
             else:
                 raise ValueError("Invalid number of arguments for builtin `error`.")
-        self.register_builtin("error", -1, gen_error)
+        self.register_builtin("error", gen_error)
 
-        self.register_builtin("construct_configure", 1,
+        self.register_builtin("construct_configure",
             lambda args, lines, indent: BuiltinResult(f"self.construct_configure({args[0]})", []))
 
-        self.register_builtin("construct_betree_info", 3,
+        self.register_builtin("construct_betree_info",
             lambda args, lines, indent: BuiltinResult(f"self.construct_betree_info({args[0]}, {args[1]}, {args[2]})", []))
 
-        self.register_builtin("construct_csv_config", 1,
+        self.register_builtin("construct_csv_config",
             lambda args, lines, indent: BuiltinResult(f"self.construct_csv_config({args[0]})", []))
 
-        self.register_builtin("start_fragment", 1,
+        self.register_builtin("start_fragment",
             lambda args, lines, indent: BuiltinResult(args[0], [f"self.start_fragment({args[0]})"]))
 
-        self.register_builtin("construct_fragment", 2,
+        self.register_builtin("construct_fragment",
             lambda args, lines, indent: BuiltinResult(f"self.construct_fragment({args[0]}, {args[1]})", []))
 
-        self.register_builtin("export_csv_config", 3,
+        self.register_builtin("export_csv_config",
             lambda args, lines, indent: BuiltinResult(f"self.export_csv_config({args[0]}, {args[1]}, {args[2]})", []))
 
     def escape_keyword(self, name: str) -> str:

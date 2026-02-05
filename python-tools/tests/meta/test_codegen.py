@@ -410,7 +410,7 @@ def test_generator_instance_isolation():
 
     # Register a custom builtin on gen1
     from meta.codegen_base import BuiltinResult
-    gen1.register_builtin("custom_op", 1,
+    gen1.register_builtin("custom_op",
         lambda args, lines, indent: BuiltinResult(f"custom({args[0]})", []))
 
     # gen1 should have the custom builtin
