@@ -873,11 +873,14 @@ def construct_configure(config_dict: List[Tuple[String, logic.Value]]) -> transa
     maintenance_level: str
     if (maintenance_level_val is not None
             and builtin.has_proto_field(maintenance_level_val, 'string_value')):
-        level_str: str = maintenance_level_val.string_value.upper()
-        if level_str in ["OFF", "AUTO", "ALL"]:
-            maintenance_level = "MAINTENANCE_LEVEL_" + level_str
+        if maintenance_level_val.string_value == "off":
+            maintenance_level = "MAINTENANCE_LEVEL_OFF"
+        elif maintenance_level_val.string_value == "auto":
+            maintenance_level = "MAINTENANCE_LEVEL_AUTO"
+        elif maintenance_level_val.string_value == "all":
+            maintenance_level = "MAINTENANCE_LEVEL_ALL"
         else:
-            maintenance_level = level_str
+            maintenance_level = "MAINTENANCE_LEVEL_OFF"
     else:
         maintenance_level = "MAINTENANCE_LEVEL_OFF"
     ivm_config: transactions.IVMConfig = transactions.IVMConfig(level=maintenance_level)

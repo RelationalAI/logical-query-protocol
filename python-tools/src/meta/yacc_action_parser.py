@@ -798,6 +798,24 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
                 return Call(make_builtin(func_name), args)
             raise YaccGrammarError(f"Unknown function: {func_name}", line)
 
+        # Handle method calls on expressions: expr.method(args)
+        if isinstance(func, ast.Attribute):
+            obj = _convert_func_expr(func.value, ctx, line, local_vars)
+            method_name = func.attr
+            # String methods
+            if method_name == "upper":
+                return Call(make_builtin("string_to_upper"), [obj] + args)
+            elif method_name == "lower":
+                return Call(make_builtin("string_to_lower"), [obj] + args)
+            # For message types, treat as field access (method reference)
+            obj_type = obj.target_type()
+            if isinstance(obj_type, OptionType):
+                obj_type = obj_type.element_type
+            if isinstance(obj_type, MessageType):
+                method_ref = _make_get_field(obj, method_name, ctx, line)
+                return Call(method_ref, args)
+            raise YaccGrammarError(f"Cannot call method '{method_name}' on type {obj_type}", line)
+
         func_expr = _convert_func_expr(func, ctx, line, local_vars)
         return Call(func_expr, args)
 
