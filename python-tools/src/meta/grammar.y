@@ -792,17 +792,17 @@ def _extract_value_string_list(value: Optional[logic.Value], default: List[Strin
 
 def construct_csv_config(config_dict: List[Tuple[String, logic.Value]]) -> logic.CSVConfig:
     config: Dict[String, logic.Value] = builtin.dict_from_list(config_dict)
-    header_row = _extract_value_int64(builtin.dict_get(config, "csv_header_row"), 1)
-    skip = _extract_value_int64(builtin.dict_get(config, "csv_skip"), 0)
-    new_line = _extract_value_string(builtin.dict_get(config, "csv_new_line"), "")
-    delimiter = _extract_value_string(builtin.dict_get(config, "csv_delimiter"), ",")
-    quotechar = _extract_value_string(builtin.dict_get(config, "csv_quotechar"), '"')
-    escapechar = _extract_value_string(builtin.dict_get(config, "csv_escapechar"), '"')
-    comment = _extract_value_string(builtin.dict_get(config, "csv_comment"), "")
-    missing_strings = _extract_value_string_list(builtin.dict_get(config, "csv_missing_strings"), [])
-    decimal_separator = _extract_value_string(builtin.dict_get(config, "csv_decimal_separator"), ".")
-    encoding = _extract_value_string(builtin.dict_get(config, "csv_encoding"), "utf-8")
-    compression = _extract_value_string(builtin.dict_get(config, "csv_compression"), "auto")
+    header_row: int = _extract_value_int64(builtin.dict_get(config, "csv_header_row"), 1)
+    skip: int = _extract_value_int64(builtin.dict_get(config, "csv_skip"), 0)
+    new_line: str = _extract_value_string(builtin.dict_get(config, "csv_new_line"), "")
+    delimiter: str = _extract_value_string(builtin.dict_get(config, "csv_delimiter"), ",")
+    quotechar: str = _extract_value_string(builtin.dict_get(config, "csv_quotechar"), '"')
+    escapechar: str = _extract_value_string(builtin.dict_get(config, "csv_escapechar"), '"')
+    comment: str = _extract_value_string(builtin.dict_get(config, "csv_comment"), "")
+    missing_strings: List[String] = _extract_value_string_list(builtin.dict_get(config, "csv_missing_strings"), [])
+    decimal_separator: str = _extract_value_string(builtin.dict_get(config, "csv_decimal_separator"), ".")
+    encoding: str = _extract_value_string(builtin.dict_get(config, "csv_encoding"), "utf-8")
+    compression: str = _extract_value_string(builtin.dict_get(config, "csv_compression"), "auto")
     return logic.CSVConfig(
         header_row=header_row,
         skip=skip,
@@ -824,30 +824,30 @@ def construct_betree_info(
     config_dict: List[Tuple[String, logic.Value]],
 ) -> logic.BeTreeInfo:
     config: Dict[String, logic.Value] = builtin.dict_from_list(config_dict)
-    epsilon = _extract_value_float64(builtin.dict_get(config, "betree_config_epsilon"), 0.5)
-    max_pivots = _extract_value_int64(builtin.dict_get(config, "betree_config_max_pivots"), 4)
-    max_deltas = _extract_value_int64(builtin.dict_get(config, "betree_config_max_deltas"), 16)
-    max_leaf = _extract_value_int64(builtin.dict_get(config, "betree_config_max_leaf"), 16)
-    storage_config = logic.BeTreeConfig(
+    epsilon: float = _extract_value_float64(builtin.dict_get(config, "betree_config_epsilon"), 0.5)
+    max_pivots: int = _extract_value_int64(builtin.dict_get(config, "betree_config_max_pivots"), 4)
+    max_deltas: int = _extract_value_int64(builtin.dict_get(config, "betree_config_max_deltas"), 16)
+    max_leaf: int = _extract_value_int64(builtin.dict_get(config, "betree_config_max_leaf"), 16)
+    storage_config: logic.BeTreeConfig = logic.BeTreeConfig(
         epsilon=epsilon,
         max_pivots=max_pivots,
         max_deltas=max_deltas,
         max_leaf=max_leaf,
     )
-    root_pageid_val = builtin.dict_get(config, "betree_locator_root_pageid")
+    root_pageid_val: Optional[logic.Value] = builtin.dict_get(config, "betree_locator_root_pageid")
     root_pageid: Optional[logic.UInt128Value] = None
     if root_pageid_val is not None:
         root_pageid = _extract_value_uint128(
             root_pageid_val,
             logic.UInt128Value(low=0, high=0),
         )
-    inline_data_val = builtin.dict_get(config, "betree_locator_inline_data")
+    inline_data_val: Optional[logic.Value] = builtin.dict_get(config, "betree_locator_inline_data")
     inline_data: Optional[bytes] = None
     if inline_data_val is not None:
         inline_data = _extract_value_bytes(inline_data_val, b"")
-    element_count = _extract_value_int64(builtin.dict_get(config, "betree_locator_element_count"), 0)
-    tree_height = _extract_value_int64(builtin.dict_get(config, "betree_locator_tree_height"), 0)
-    relation_locator = logic.BeTreeLocator(
+    element_count: int = _extract_value_int64(builtin.dict_get(config, "betree_locator_element_count"), 0)
+    tree_height: int = _extract_value_int64(builtin.dict_get(config, "betree_locator_tree_height"), 0)
+    relation_locator: logic.BeTreeLocator = logic.BeTreeLocator(
         root_pageid=root_pageid,
         inline_data=inline_data,
         element_count=element_count,
@@ -863,19 +863,19 @@ def construct_betree_info(
 
 def construct_configure(config_dict: List[Tuple[String, logic.Value]]) -> transactions.Configure:
     config: Dict[String, logic.Value] = builtin.dict_from_list(config_dict)
-    maintenance_level_val = builtin.dict_get(config, "ivm.maintenance_level")
+    maintenance_level_val: Optional[logic.Value] = builtin.dict_get(config, "ivm.maintenance_level")
     maintenance_level: str
     if (maintenance_level_val is not None
             and builtin.has_proto_field(maintenance_level_val, 'string_value')):
-        level_str = maintenance_level_val.string_value.upper()
+        level_str: str = maintenance_level_val.string_value.upper()
         if level_str in ["OFF", "AUTO", "ALL"]:
             maintenance_level = "MAINTENANCE_LEVEL_" + level_str
         else:
             maintenance_level = level_str
     else:
         maintenance_level = "MAINTENANCE_LEVEL_OFF"
-    ivm_config = transactions.IVMConfig(level=maintenance_level)
-    semantics_version = _extract_value_int64(builtin.dict_get(config, "semantics_version"), 0)
+    ivm_config: transactions.IVMConfig = transactions.IVMConfig(level=maintenance_level)
+    semantics_version: int = _extract_value_int64(builtin.dict_get(config, "semantics_version"), 0)
     return transactions.Configure(
         semantics_version=semantics_version,
         ivm_config=ivm_config,
@@ -888,13 +888,13 @@ def export_csv_config(
     config_dict: List[Tuple[String, logic.Value]],
 ) -> transactions.ExportCSVConfig:
     config: Dict[String, logic.Value] = builtin.dict_from_list(config_dict)
-    partition_size = _extract_value_int64(builtin.dict_get(config, "partition_size"), 0)
-    compression = _extract_value_string(builtin.dict_get(config, "compression"), "")
-    syntax_header_row = _extract_value_boolean(builtin.dict_get(config, "syntax_header_row"), True)
-    syntax_missing_string = _extract_value_string(builtin.dict_get(config, "syntax_missing_string"), "")
-    syntax_delim = _extract_value_string(builtin.dict_get(config, "syntax_delim"), ",")
-    syntax_quotechar = _extract_value_string(builtin.dict_get(config, "syntax_quotechar"), '"')
-    syntax_escapechar = _extract_value_string(builtin.dict_get(config, "syntax_escapechar"), "\\")
+    partition_size: int = _extract_value_int64(builtin.dict_get(config, "partition_size"), 0)
+    compression: str = _extract_value_string(builtin.dict_get(config, "compression"), "")
+    syntax_header_row: bool = _extract_value_boolean(builtin.dict_get(config, "syntax_header_row"), True)
+    syntax_missing_string: str = _extract_value_string(builtin.dict_get(config, "syntax_missing_string"), "")
+    syntax_delim: str = _extract_value_string(builtin.dict_get(config, "syntax_delim"), ",")
+    syntax_quotechar: str = _extract_value_string(builtin.dict_get(config, "syntax_quotechar"), '"')
+    syntax_escapechar: str = _extract_value_string(builtin.dict_get(config, "syntax_escapechar"), "\\")
     return transactions.ExportCSVConfig(
         path=path,
         data_columns=columns,
