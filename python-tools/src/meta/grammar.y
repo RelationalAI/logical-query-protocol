@@ -9,7 +9,8 @@
 #
 # Actions and helper functions are written in a restricted Python.
 # Type annotations are required.
-# Not all expression forms are supported.
+# Not all expression forms are supported. Indeed, one can only call helper
+# functions declared below and builtin functions via `builtin.func(...)`.
 # We translate this restricted Python into actual Python, Julia, and Go.
 
 

@@ -927,6 +927,21 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
         else_branch = convert(node.orelse)
         return IfElse(cond, then_branch, else_branch)
 
+    elif isinstance(node, ast.Compare):
+        # Handle comparisons: x is None, x is not None
+        if len(node.ops) == 1 and len(node.comparators) == 1:
+            left = convert(node.left)
+            op = node.ops[0]
+            if isinstance(op, ast.Is):
+                if isinstance(node.comparators[0], ast.Constant) and node.comparators[0].value is None:
+                    return Call(Builtin("is_none"), [left])
+            elif isinstance(op, ast.IsNot):
+                if isinstance(node.comparators[0], ast.Constant) and node.comparators[0].value is None:
+                    return Call(Builtin("is_some"), [left])
+        raise YaccGrammarError(
+            f"Unsupported comparison. Only 'x is None' and 'x is not None' are supported in actions.",
+            line)
+
     else:
         raise _unsupported_node_error(node, line)
 
