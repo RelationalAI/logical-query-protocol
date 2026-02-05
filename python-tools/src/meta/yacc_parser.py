@@ -575,12 +575,9 @@ def load_yacc_grammar(text: str) -> GrammarConfig:
     # Parse rules
     rule_list, helpers_start = parse_rules(rules_lines, rules_start + 1, ctx)
 
-    # Parse helper functions
+    # Parse helper functions (also updates ctx.functions with FunctionTypes)
     helpers_lines = rules_lines[helpers_start:]
     functions = parse_helper_functions(helpers_lines, rules_start + helpers_start + 1, ctx)
-
-    # Update context with functions
-    ctx.functions.update(functions)
 
     # Build rules dictionary
     rules_dict: Dict[Nonterminal, List[Rule]] = {}

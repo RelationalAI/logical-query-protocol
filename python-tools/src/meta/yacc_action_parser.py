@@ -89,10 +89,9 @@ def _get_rhs_param_types(rhs: Rhs) -> List[Optional[TargetType]]:
     return [t for _, t in _get_rhs_param_info(rhs)]
 
 
-def _make_named_fun(func_def: FunDef) -> NamedFun:
-    """Create a NamedFun from a FunDef with the proper FunctionType."""
-    func_type = FunctionType([p.type for p in func_def.params], func_def.return_type)
-    return NamedFun(func_def.name, func_type)
+def _make_named_fun(name: str, func_type: FunctionType) -> NamedFun:
+    """Create a NamedFun with the given name and type."""
+    return NamedFun(name, func_type)
 
 
 def _infer_type(expr: TargetExpr, line: Optional[int] = None,
@@ -276,10 +275,7 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
         elif name in extra_vars:
             return Var(name, extra_vars[name])
         elif name in ctx.functions:
-            func_def = ctx.functions[name]
-            if func_def is not None:
-                return _make_named_fun(func_def)
-            raise YaccGrammarError(f"Function '{name}' referenced before definition", line)
+            return _make_named_fun(name, ctx.functions[name])
         else:
             # Check builtins
             from .target_builtins import is_builtin
@@ -359,14 +355,7 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
             if is_builtin(func_name):
                 return Call(make_builtin(func_name), args)
             if func_name in ctx.functions:
-                func_def = ctx.functions[func_name]
-                if func_def is not None:
-                    return Call(_make_named_fun(func_def), args)
-                # Function is pre-scanned but not yet parsed - create forward reference
-                # Use a placeholder type that will be validated later
-                from .target import VarType
-                placeholder_type = FunctionType([], VarType("T"))
-                return Call(NamedFun(func_name, placeholder_type), args)
+                return Call(_make_named_fun(func_name, ctx.functions[func_name]), args)
             raise YaccGrammarError(
                 f"Unknown function: '{func_name}'\n"
                 f"  Functions must be either:\n"
@@ -512,10 +501,9 @@ def parse_action_expr(text: str, param_info: List[Tuple[Optional[str], Optional[
 # Helper function parsing
 
 def prescan_helper_function_names(lines: List[str], start_line: int, ctx: 'TypeContext') -> None:
-    """Pre-scan helper functions section to register function names.
+    """Pre-scan helper functions section to register function signatures.
 
     This allows rules to reference helper functions before they are fully parsed.
-    The function names are added to ctx.functions as None placeholders.
     """
     text = '\n'.join(lines)
     if not text.strip():
@@ -529,7 +517,13 @@ def prescan_helper_function_names(lines: List[str], start_line: int, ctx: 'TypeC
 
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef):
-            ctx.functions[node.name] = None  # type: ignore
+            try:
+                params, return_type = _extract_function_signature(node, start_line)
+                func_type = FunctionType([p.type for p in params], return_type)
+                ctx.functions[node.name] = func_type
+            except YaccGrammarError:
+                # Ignore errors here - they'll be reported during full parsing
+                pass
 
 
 def parse_helper_functions(lines: List[str], start_line: int, ctx: 'TypeContext') -> Dict[str, FunDef]:
@@ -551,25 +545,24 @@ def parse_helper_functions(lines: List[str], start_line: int, ctx: 'TypeContext'
         raise YaccGrammarError(f"Syntax error in helper functions: {e}", start_line + (e.lineno or 1))
 
     # Two-pass approach:
-    # Pass 1: Extract all function signatures and register them in ctx.functions
+    # Pass 1: Extract function signatures (if not already done by prescan)
     # Pass 2: Convert function bodies using the complete type environment
 
-    # Pass 1: Extract function signatures
+    # Pass 1: Extract function signatures and register types in ctx.functions
     func_nodes: List[ast.FunctionDef] = []
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef):
             func_nodes.append(node)
-            # Extract signature and create placeholder FunDef with Lit(None) body
-            params, return_type = _extract_function_signature(node, start_line)
-            placeholder = FunDef(node.name, params, return_type, Lit(None))
-            ctx.functions[node.name] = placeholder
+            if node.name not in ctx.functions:
+                params, return_type = _extract_function_signature(node, start_line)
+                func_type = FunctionType([p.type for p in params], return_type)
+                ctx.functions[node.name] = func_type
 
     # Pass 2: Convert function bodies with complete type environment
     functions: Dict[str, FunDef] = {}
     for node in func_nodes:
         func_def = _convert_function_def(node, ctx, start_line)
         functions[func_def.name] = func_def
-        ctx.functions[func_def.name] = func_def
 
     return functions
 
@@ -734,10 +727,7 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
         elif name in local_vars:
             return Var(name, local_vars[name])
         elif name in ctx.functions:
-            func_def = ctx.functions[name]
-            if func_def is not None:
-                return _make_named_fun(func_def)
-            raise YaccGrammarError(f"Function '{name}' referenced before definition", line)
+            return _make_named_fun(name, ctx.functions[name])
         else:
             from .target_builtins import is_builtin
             if is_builtin(name):
@@ -799,10 +789,7 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
                 raise YaccGrammarError(f"dict() requires exactly one argument", line)
             # User-defined functions take precedence over builtins
             if func_name in ctx.functions:
-                func_def = ctx.functions[func_name]
-                if func_def is not None:
-                    return Call(_make_named_fun(func_def), args)
-                raise YaccGrammarError(f"Function '{func_name}' referenced before definition", line)
+                return Call(_make_named_fun(func_name, ctx.functions[func_name]), args)
             # has_field(msg, field_name) -> has_proto_field builtin
             if func_name == 'has_field':
                 return Call(make_builtin('has_proto_field'), args)
@@ -933,7 +920,7 @@ class TypeContext:
     terminals: Dict[str, TargetType] = field(default_factory=dict)
     terminal_info: Dict[str, 'TerminalInfo'] = field(default_factory=dict)
     nonterminals: Dict[str, TargetType] = field(default_factory=dict)
-    functions: Dict[str, FunDef] = field(default_factory=dict)
+    functions: Dict[str, FunctionType] = field(default_factory=dict)
     start_symbol: Optional[str] = None
     # Callback to look up field type: (message_type, field_name) -> field_type
     # If None, field types cannot be resolved (use Unknown placeholder)

@@ -172,24 +172,12 @@ class PythonCodeGenerator(CodeGenerator):
         self.register_builtin("current_token",
             lambda args, lines, indent: BuiltinResult("self.lookahead(0)", []))
 
-        # error is variadic (1 or 2 args)
-        def gen_error(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
-            if len(args) == 2:
-                return BuiltinResult("None", [_format_parse_error_with_token(args[0], args[1])])
-            elif len(args) == 1:
-                return BuiltinResult("None", [f"raise ParseError({args[0]})"])
-            else:
-                raise ValueError("Invalid number of arguments for builtin `error`.")
-        self.register_builtin("error", gen_error)
+        # error builtins do not return
+        self.register_builtin("error",
+            lambda args, lines, indent: BuiltinResult(None, [f"raise ParseError({args[0]})"]))
 
-        self.register_builtin("construct_configure",
-            lambda args, lines, indent: BuiltinResult(f"self.construct_configure({args[0]})", []))
-
-        self.register_builtin("construct_betree_info",
-            lambda args, lines, indent: BuiltinResult(f"self.construct_betree_info({args[0]}, {args[1]}, {args[2]})", []))
-
-        self.register_builtin("construct_csv_config",
-            lambda args, lines, indent: BuiltinResult(f"self.construct_csv_config({args[0]})", []))
+        self.register_builtin("error_with_token",
+            lambda args, lines, indent: BuiltinResult(None, [_format_parse_error_with_token(args[0], args[1])]))
 
         self.register_builtin("start_fragment",
             lambda args, lines, indent: BuiltinResult(args[0], [f"self.start_fragment({args[0]})"]))

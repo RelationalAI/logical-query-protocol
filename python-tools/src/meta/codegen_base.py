@@ -22,7 +22,7 @@ from .gensym import gensym
 @dataclass
 class BuiltinResult:
     """Result of generating a builtin call."""
-    value: str  # The value expression to return
+    value: Optional[str]  # The value expression to return, or None if the builtin does not return
     statements: List[str]  # Statements to prepend (may be empty)
 
 
@@ -377,7 +377,7 @@ class CodeGenerator(ABC):
         else:
             raise ValueError(f"Unknown expression type: {type(expr)}")
 
-    def _generate_call(self, expr: Call, lines: List[str], indent: str) -> str:
+    def _generate_call(self, expr: Call, lines: List[str], indent: str) -> Optional[str]:
         """Generate code for a function call."""
         # NewMessage should be handled directly, not wrapped in Call
         assert not isinstance(expr.func, NewMessage), \
@@ -395,7 +395,7 @@ class CodeGenerator(ABC):
             if result is not None:
                 for stmt in result.statements:
                     lines.append(f"{indent}{stmt}")
-                return result.value
+                return result.value  # May be None for non-returning builtins
 
         # Regular call
         f = self.generate_lines(expr.func, lines, indent)
