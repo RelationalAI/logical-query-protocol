@@ -6,10 +6,11 @@ with proper keyword escaping and idiomatic Python style.
 
 from typing import List, Optional, Set, Tuple, Union
 
-from .codegen_base import CodeGenerator, BuiltinResult
+from .codegen_base import CodeGenerator
+from .codegen_templates import PYTHON_TEMPLATES
 from .target import (
-    TargetExpr, Var, Lit, Symbol, Message, OneOf, ListExpr, Call, Lambda, Let,
-    IfElse, FunDef, VisitNonterminalDef
+    TargetExpr, Var, Lit, Symbol, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
+    FunDef, VisitNonterminalDef
 )
 from .gensym import gensym
 
@@ -24,11 +25,6 @@ PYTHON_KEYWORDS: Set[str] = {
 }
 
 
-def _format_parse_error_with_token(message_expr: str, token_expr: str) -> str:
-    """Format a ParseError raise statement with token information."""
-    return f'raise ParseError(f"{{{message_expr}}}: {{{token_expr}.type}}=`{{{token_expr}.value}}`")'
-
-
 class PythonCodeGenerator(CodeGenerator):
     """Python code generator."""
 
@@ -41,133 +37,16 @@ class PythonCodeGenerator(CodeGenerator):
         'Float64': 'float',
         'String': 'str',
         'Boolean': 'bool',
+        'Bytes': 'bytes',
     }
 
     def __init__(self, proto_messages=None):
-        super().__init__()
-        self.proto_messages = proto_messages or {}
-        self._message_field_map: dict | None = None
+        super().__init__(proto_messages)
         self._register_builtins()
 
-    def _build_message_field_map(self):
-        """Build field mapping from proto message definitions.
-
-        Returns dict mapping (module, message_name) to list of (field_name, is_repeated).
-        """
-        if self._message_field_map is not None:
-            return self._message_field_map
-
-        field_map = {}
-        for (module, msg_name), proto_msg in self.proto_messages.items():
-            # Collect all oneof field names
-            oneof_field_names = set()
-            for oneof in proto_msg.oneofs:
-                oneof_field_names.update(f.name for f in oneof.fields)
-
-            # Only include messages with regular (non-oneof) fields
-            regular_fields = [(f.name, f.is_repeated) for f in proto_msg.fields if f.name not in oneof_field_names]
-            if regular_fields:
-                # Preserve original proto field name; handle keyword fields at call sites via **{...}.
-                field_map[(module, msg_name)] = list(regular_fields)
-
-        self._message_field_map = field_map
-        return field_map
-
     def _register_builtins(self) -> None:
-        """Register builtin generators."""
-        self.register_builtin("some", 1,
-            lambda args, lines, indent: BuiltinResult(args[0], []))
-        self.register_builtin("not", 1,
-            lambda args, lines, indent: BuiltinResult(f"not {args[0]}", []))
-        self.register_builtin("equal", 2,
-            lambda args, lines, indent: BuiltinResult(f"{args[0]} == {args[1]}", []))
-        self.register_builtin("not_equal", 2,
-            lambda args, lines, indent: BuiltinResult(f"{args[0]} != {args[1]}", []))
-
-        self.register_builtin("fragment_id_from_string", 1,
-            lambda args, lines, indent: BuiltinResult(f"fragments_pb2.FragmentId(id={args[0]}.encode())", []))
-
-        self.register_builtin("relation_id_from_string", 1,
-            lambda args, lines, indent: BuiltinResult(f"self.relation_id_from_string({args[0]})", []))
-
-        self.register_builtin("relation_id_from_int", 1,
-            lambda args, lines, indent: BuiltinResult(f"logic_pb2.RelationId(id_low={args[0]} & 0xFFFFFFFFFFFFFFFF, id_high=({args[0]} >> 64) & 0xFFFFFFFFFFFFFFFF)", []))
-
-        self.register_builtin("list_concat", 2,
-            lambda args, lines, indent: BuiltinResult(f"({args[0]} + ({args[1]} if {args[1]} is not None else []))", []))
-
-        self.register_builtin("list_append", 2,
-            lambda args, lines, indent: BuiltinResult(f"{args[0]} + [{args[1]}]", []))
-
-        self.register_builtin("list_push!", 2,
-            lambda args, lines, indent: BuiltinResult("None", [f"{args[0]}.append({args[1]})"]))
-
-        self.register_builtin("is_none", 1,
-            lambda args, lines, indent: BuiltinResult(f"{args[0]} is None", []))
-
-        self.register_builtin("fst", 1,
-            lambda args, lines, indent: BuiltinResult(f"{args[0]}[0]", []))
-
-        self.register_builtin("snd", 1,
-            lambda args, lines, indent: BuiltinResult(f"{args[0]}[1]", []))
-
-        self.register_builtin("encode_string", 1,
-            lambda args, lines, indent: BuiltinResult(f"{args[0]}.encode()", []))
-
-        self.register_builtin("get_tuple_element", 2,
-            lambda args, lines, indent: BuiltinResult(f"{args[0]}[{args[1]}]", []))
-
-        self.register_builtin("make_tuple", -1,
-            lambda args, lines, indent: BuiltinResult(f"({', '.join(args)},)", []))
-
-        self.register_builtin("length", 1,
-            lambda args, lines, indent: BuiltinResult(f"len({args[0]})", []))
-
-        self.register_builtin("unwrap_option_or", 2,
-            lambda args, lines, indent: BuiltinResult(f"({args[0]} if {args[0]} is not None else {args[1]})", []))
-
-        self.register_builtin("match_lookahead_terminal", 2,
-            lambda args, lines, indent: BuiltinResult(f"self.match_lookahead_terminal({args[0]}, {args[1]})", []))
-
-        self.register_builtin("match_lookahead_literal", 2,
-            lambda args, lines, indent: BuiltinResult(f"self.match_lookahead_literal({args[0]}, {args[1]})", []))
-
-        self.register_builtin("consume_literal", 1,
-            lambda args, lines, indent: BuiltinResult("None", [f"self.consume_literal({args[0]})"]))
-
-        self.register_builtin("consume_terminal", 1,
-            lambda args, lines, indent: BuiltinResult(f"self.consume_terminal({args[0]})", []))
-
-        self.register_builtin("current_token", 0,
-            lambda args, lines, indent: BuiltinResult("self.lookahead(0)", []))
-
-        # error has two arities, so we use a custom generator
-        def gen_error(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
-            if len(args) == 2:
-                return BuiltinResult("None", [_format_parse_error_with_token(args[0], args[1])])
-            elif len(args) == 1:
-                return BuiltinResult("None", [f"raise ParseError({args[0]})"])
-            else:
-                raise ValueError("Invalid number of arguments for builtin `error`.")
-        self.register_builtin("error", -1, gen_error)
-
-        self.register_builtin("construct_configure", 1,
-            lambda args, lines, indent: BuiltinResult(f"self.construct_configure({args[0]})", []))
-
-        self.register_builtin("export_csv_config", 3,
-            lambda args, lines, indent: BuiltinResult(f"self.export_csv_config({args[0]}, {args[1]}, {args[2]})", []))
-
-        self.register_builtin("construct_betree_info", 3,
-            lambda args, lines, indent: BuiltinResult(f"self.construct_betree_info({args[0]}, {args[1]}, {args[2]})", []))
-
-        self.register_builtin("construct_csv_config", 1,
-            lambda args, lines, indent: BuiltinResult(f"self.construct_csv_config({args[0]})", []))
-
-        self.register_builtin("start_fragment", 1,
-            lambda args, lines, indent: BuiltinResult(args[0], [f"self.start_fragment({args[0]})"]))
-
-        self.register_builtin("construct_fragment", 2,
-            lambda args, lines, indent: BuiltinResult(f"self.construct_fragment({args[0]}, {args[1]})", []))
+        """Register builtin generators from templates."""
+        self.register_builtins_from_templates(PYTHON_TEMPLATES)
 
     def escape_keyword(self, name: str) -> str:
         return f"{name}_"
@@ -194,6 +73,9 @@ class PythonCodeGenerator(CodeGenerator):
     def gen_builtin_ref(self, name: str) -> str:
         return f"self.{name}"
 
+    def gen_named_fun_ref(self, name: str) -> str:
+        return f"Parser.{name}"
+
     def gen_parse_nonterminal_ref(self, name: str) -> str:
         return f"self.parse_{name}"
 
@@ -212,6 +94,9 @@ class PythonCodeGenerator(CodeGenerator):
 
     def gen_option_type(self, element_type: str) -> str:
         return f"Optional[{element_type}]"
+
+    def gen_dict_type(self, key_type: str, value_type: str) -> str:
+        return f"dict[{key_type}, {value_type}]"
 
     def gen_list_literal(self, elements: List[str], element_type) -> str:
         return f"[{', '.join(elements)}]"
@@ -266,157 +151,62 @@ class PythonCodeGenerator(CodeGenerator):
 
     # --- Override generate_lines for Python-specific special cases ---
 
-    def generate_lines(self, expr: TargetExpr, lines: List[str], indent: str = "") -> str:
-        # Special case: fragments_pb2.Fragment construction with debug_info parameter
-        if isinstance(expr, Call) and isinstance(expr.func, Message) and expr.func.name == "Fragment":
-            for arg in expr.args:
-                if isinstance(arg, Var) and arg.name == "debug_info":
-                    # Fragment constructor args are: id (FragmentId), declarations, debug_info
-                    # Extract the fragment_id from the first argument
-                    if len(expr.args) >= 1:
-                        fragment_id_expr = self.generate_lines(expr.args[0], lines, indent)
-                        lines.append(f"{indent}debug_info = self.construct_debug_info(self.id_to_debuginfo.get({fragment_id_expr}.id, {{}}))")
-                    break
+    def generate_lines(self, expr: TargetExpr, lines: List[str], indent: str = "") -> Optional[str]:
+        # Handle NewMessage with fields (which may contain OneOf calls)
+        if isinstance(expr, NewMessage):
+            return self._generate_newmessage(expr, lines, indent)
 
         return super().generate_lines(expr, lines, indent)
 
-    def _generate_call(self, expr: Call, lines: List[str], indent: str) -> str:
-        """Override to handle OneOf specially for Python protobuf."""
-        # Check for Message constructor with OneOf call argument
-        if isinstance(expr.func, Message):
-            f = self.generate_lines(expr.func, lines, indent)
+    def _generate_newmessage(self, expr: NewMessage, lines: List[str], indent: str) -> str:
+        """Override to handle NewMessage with fields containing OneOf calls."""
+        if not expr.fields:
+            # No fields - return constructor directly
+            ctor = self.gen_constructor(expr.module, expr.name)
+            return f"{ctor}()"
 
-            # Python protobuf requires keyword arguments
-            # Get field mapping from proto message definitions
-            message_field_map = self._build_message_field_map()
+        # NewMessage with fields - need to handle OneOf specially
+        ctor = self.gen_constructor(expr.module, expr.name)
+        keyword_args = []
+        keyword_field_assignments: List[Tuple[str, str, bool]] = []
 
-            # Process arguments, looking for Call(OneOf(...), [value]) patterns
-            positional_args = []
-            keyword_args = []
+        # Get field info from proto message definitions
+        field_map = self._build_message_field_map()
+        message_fields = field_map.get((expr.module, expr.name), [])
+        field_is_repeated = {name: is_rep for name, is_rep in message_fields}
 
-            msg_key = (expr.func.module, expr.func.name)
-            field_specs = message_field_map.get(msg_key, [])
-            arg_idx = 0
-            field_idx = 0
-
-            # Track keyword fields that need post-construction assignment
-            # Each entry is (field_name, field_value, is_repeated)
-            keyword_field_assignments: List[Tuple[str, str, bool]] = []
-
-            while arg_idx < len(expr.args):
-                arg = expr.args[arg_idx]
-
-                if isinstance(arg, Call) and isinstance(arg.func, OneOf) and len(arg.args) == 1:
-                    # Extract field name and value from Call(OneOf(Symbol), [value])
-                    # For Python keywords, defer assignment to after construction
-                    # Oneof fields are never repeated
-                    field_name = arg.func.field_name
-                    field_value = self.generate_lines(arg.args[0], lines, indent)
-                    if field_name in PYTHON_KEYWORDS:
-                        keyword_field_assignments.append((field_name, field_value, False))
-                    else:
-                        keyword_args.append(f"{field_name}={field_value}")
-                    arg_idx += 1
-                elif field_idx < len(field_specs):
-                    field_name, is_repeated = field_specs[field_idx]
-
-                    if is_repeated:
-                        # Determine how many args belong to this repeated field
-                        remaining_fields = len(field_specs) - field_idx - 1
-                        max_args_for_this_field = len(expr.args) - arg_idx - remaining_fields
-
-                        # If there's exactly one arg for this field, use it directly (it's already a list)
-                        # Otherwise, collect multiple args into a list
-                        if max_args_for_this_field == 1:
-                            field_value = self.generate_lines(arg, lines, indent)
-                            if field_name in PYTHON_KEYWORDS:
-                                keyword_field_assignments.append((field_name, field_value, True))
-                            else:
-                                keyword_args.append(f"{field_name}={field_value}")
-                            arg_idx += 1
-                        else:
-                            # Collect multiple args into a list
-                            values = []
-                            while arg_idx < len(expr.args) and len(values) < max_args_for_this_field:
-                                next_arg = expr.args[arg_idx]
-                                # Stop if we encounter a oneof
-                                if isinstance(next_arg, Call) and isinstance(next_arg.func, OneOf):
-                                    break
-                                field_value = self.generate_lines(next_arg, lines, indent)
-                                values.append(field_value)
-                                arg_idx += 1
-
-                            if values:
-                                list_value = f"[{', '.join(values)}]"
-                            else:
-                                list_value = "[]"
-                            if field_name in PYTHON_KEYWORDS:
-                                keyword_field_assignments.append((field_name, list_value, True))
-                            else:
-                                keyword_args.append(f"{field_name}={list_value}")
-                    else:
-                        field_value = self.generate_lines(arg, lines, indent)
-                        if field_name in PYTHON_KEYWORDS:
-                            keyword_field_assignments.append((field_name, field_value, False))
-                        else:
-                            keyword_args.append(f"{field_name}={field_value}")
-                        arg_idx += 1
-
-                    field_idx += 1
+        for field_name, field_expr in expr.fields:
+            # Check if this field is a Call(OneOf, [value])
+            if isinstance(field_expr, Call) and isinstance(field_expr.func, OneOf) and len(field_expr.args) == 1:
+                # OneOf field
+                oneof_field_name = field_expr.func.field_name
+                field_value = self.generate_lines(field_expr.args[0], lines, indent)
+                assert field_value is not None
+                is_repeated = field_is_repeated.get(oneof_field_name, False)
+                if oneof_field_name in PYTHON_KEYWORDS:
+                    keyword_field_assignments.append((oneof_field_name, field_value, is_repeated))
                 else:
-                    positional_args.append(self.generate_lines(arg, lines, indent))
-                    arg_idx += 1
-
-            # Build argument list - use keyword args if we have any
-            if keyword_args:
-                all_args = keyword_args
+                    keyword_args.append(f"{oneof_field_name}={field_value}")
             else:
-                all_args = positional_args + keyword_args
-            args_code = ', '.join(all_args)
-
-            tmp = gensym()
-            lines.append(f"{indent}{self.gen_assignment(tmp, f'{f}({args_code})', is_declaration=True)}")
-
-            # Handle keyword field assignments via getattr()
-            # Use extend() for repeated fields, CopyFrom() for singular message fields
-            for field_name, field_value, is_repeated in keyword_field_assignments:
-                if is_repeated:
-                    lines.append(f"{indent}getattr({tmp}, '{field_name}').extend({field_value})")
+                # Regular field
+                field_value = self.generate_lines(field_expr, lines, indent)
+                assert field_value is not None
+                is_repeated = field_is_repeated.get(field_name, False)
+                if field_name in PYTHON_KEYWORDS:
+                    keyword_field_assignments.append((field_name, field_value, is_repeated))
                 else:
-                    lines.append(f"{indent}getattr({tmp}, '{field_name}').CopyFrom({field_value})")
+                    keyword_args.append(f"{field_name}={field_value}")
 
-            return tmp
-
-        # Fall back to base implementation for non-Message calls
-        return super()._generate_call(expr, lines, indent)
-
-    def _generate_if_else(self, expr: IfElse, lines: List[str], indent: str) -> str:
-        """Override to skip var declaration (Python doesn't need it)."""
-        cond_code = self.generate_lines(expr.condition, lines, indent)
-
-        # Optimization: short-circuit for boolean literals.
-        # This is not needed, but makes the generated code more readable.
-        if expr.then_branch == Lit(True):
-            tmp_lines = []
-            else_code = self.generate_lines(expr.else_branch, tmp_lines, indent)
-            if not tmp_lines:
-                return f"({cond_code} or {else_code})"
-        if expr.else_branch == Lit(False):
-            tmp_lines = []
-            then_code = self.generate_lines(expr.then_branch, tmp_lines, indent)
-            if not tmp_lines:
-                return f"({cond_code} and {then_code})"
-
+        args_code = ', '.join(keyword_args)
         tmp = gensym()
-        lines.append(f"{indent}{self.gen_if_start(cond_code)}")
+        lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}({args_code})', is_declaration=True)}")
 
-        body_indent = indent + self.indent_str
-        then_code = self.generate_lines(expr.then_branch, lines, body_indent)
-        lines.append(f"{body_indent}{self.gen_assignment(tmp, then_code)}")
-
-        lines.append(f"{indent}{self.gen_else()}")
-        else_code = self.generate_lines(expr.else_branch, lines, body_indent)
-        lines.append(f"{body_indent}{self.gen_assignment(tmp, else_code)}")
+        # Handle keyword field assignments via getattr()
+        for field_name, field_value, is_repeated in keyword_field_assignments:
+            if is_repeated:
+                lines.append(f"{indent}getattr({tmp}, '{field_name}').extend({field_value})")
+            else:
+                lines.append(f"{indent}getattr({tmp}, '{field_name}').CopyFrom({field_value})")
 
         return tmp
 
@@ -436,15 +226,40 @@ class PythonCodeGenerator(CodeGenerator):
 
         ret_hint = f" -> {self.gen_type(expr.return_type)}" if expr.return_type else ""
 
+        body_lines: List[str] = []
+        body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
+        # Only add return if the body didn't already return
+        if body_inner is not None:
+            body_lines.append(f"{indent}    return {body_inner}")
+        body_code = "\n".join(body_lines)
+
+        return f"{indent}def {func_name}(self{params_str}){ret_hint}:\n{body_code}"
+
+    def _generate_builtin_method_def(self, expr: FunDef, indent: str) -> str:
+        """Generate a builtin method definition as a static method."""
+        func_name = self.escape_identifier(expr.name)
+
+        params = []
+        for param in expr.params:
+            escaped_name = self.escape_identifier(param.name)
+            type_hint = self.gen_type(param.type)
+            params.append(f"{escaped_name}: {type_hint}")
+
+        params_str = ', '.join(params) if params else ''
+
+        ret_hint = f" -> {self.gen_type(expr.return_type)}" if expr.return_type else ""
+
         if expr.body is None:
             body_code = f"{indent}    pass"
         else:
             body_lines: List[str] = []
             body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
-            body_lines.append(f"{indent}    return {body_inner}")
+            # Only add return if the body didn't already return
+            if body_inner is not None:
+                body_lines.append(f"{indent}    return {body_inner}")
             body_code = "\n".join(body_lines)
 
-        return f"{indent}def {func_name}(self{params_str}){ret_hint}:\n{body_code}"
+        return f"{indent}@staticmethod\n{indent}def {func_name}({params_str}){ret_hint}:\n{body_code}"
 
 
 def escape_identifier(name: str) -> str:
@@ -466,8 +281,11 @@ def generate_python_lines(
     lines: List[str],
     indent: str = "",
     generator: Optional[PythonCodeGenerator] = None,
-) -> str:
+) -> Optional[str]:
     """Generate Python code from a target IR expression.
+
+    Returns the value expression as a string, or None if the expression
+    contains a Return statement.
 
     For Message construction with field mapping, pass a generator initialized
     with proto_messages.
@@ -513,12 +331,14 @@ def generate_python(expr: TargetExpr, indent: str = "") -> str:
     elif isinstance(expr, Let):
         lines: List[str] = []
         result = generate_python_lines(expr, lines, indent)
+        assert result is not None
         if lines:
             return '\n'.join(lines) + '\n' + result
         return result
     else:
         lines = []
         result = generate_python_lines(expr, lines, indent)
+        assert result is not None
         if lines:
             return '\n'.join(lines) + '\n' + result
         return result

@@ -6,12 +6,11 @@ with proper keyword escaping and idiomatic Julia style.
 
 from typing import List, Optional, Set, Tuple, Union
 
-from lqp.proto.v1.logic_pb2 import Value
-
-from .codegen_base import CodeGenerator, BuiltinResult
+from .codegen_base import CodeGenerator
+from .codegen_templates import JULIA_TEMPLATES
 from .target import (
-    TargetExpr, Var, Lit, Symbol, Builtin, Message, OneOf, ListExpr, Call, Lambda, Let, IfElse,
-    FunDef, VisitNonterminalDef, VisitNonterminal
+    TargetExpr, Var, Lit, Symbol, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
+    FunDef, VisitNonterminalDef, VisitNonterminal, GetElement,
 )
 from .gensym import gensym
 
@@ -36,131 +35,27 @@ class JuliaCodeGenerator(CodeGenerator):
     indent_str = "    "
 
     base_type_map = {
+        'Int32': 'Int32',
         'Int64': 'Int64',
         'Float64': 'Float64',
         'String': 'String',
         'Boolean': 'Bool',
+        'Bytes': 'Vector{UInt8}',
     }
 
     def __init__(self, proto_messages=None):
-        self.builtin_registry = {}
-        self.proto_messages = proto_messages or {}
-        self._message_field_map: Optional[dict[tuple[str, str], list[tuple[str, bool]]]] = None
+        super().__init__(proto_messages)
         self._register_builtins()
 
-    def _build_message_field_map(self):
-        """Build field mapping from proto message definitions.
-
-        Returns dict mapping (module, message_name) to list of (field_name, is_repeated).
-        """
-        if self._message_field_map is not None:
-            return self._message_field_map
-
-        field_map = {}
-        for (module, msg_name), proto_msg in self.proto_messages.items():
-            # Collect all oneof field names
-            oneof_field_names = set()
-            for oneof in proto_msg.oneofs:
-                oneof_field_names.update(f.name for f in oneof.fields)
-
-            # Only include messages with regular (non-oneof) fields
-            regular_fields = [(f.name, f.is_repeated) for f in proto_msg.fields if f.name not in oneof_field_names]
-            if regular_fields:
-                # Escape Julia keywords and preserve repeated flag
-                escaped_fields = []
-                for fname, is_repeated in regular_fields:
-                    if fname in self.keywords:
-                        escaped_fields.append((fname + '_', is_repeated))
-                    else:
-                        escaped_fields.append((fname, is_repeated))
-                field_map[(module, msg_name)] = escaped_fields
-
-        self._message_field_map = field_map
-        return field_map
+    def _escape_field_for_map(self, field_name: str) -> str:
+        """Escape Julia keywords in field names by adding underscore suffix."""
+        if field_name in self.keywords:
+            return field_name + '_'
+        return field_name
 
     def _register_builtins(self) -> None:
-        """Register builtin generators."""
-        self.register_builtin("some", 1,
-            lambda args, lines, indent: BuiltinResult(args[0], []))
-        self.register_builtin("not", 1,
-            lambda args, lines, indent: BuiltinResult(f"!{args[0]}", []))
-        self.register_builtin("equal", 2,
-            lambda args, lines, indent: BuiltinResult(f"{args[0]} == {args[1]}", []))
-        self.register_builtin("not_equal", 2,
-            lambda args, lines, indent: BuiltinResult(f"{args[0]} != {args[1]}", []))
-
-        self.register_builtin("fragment_id_from_string", 1,
-            lambda args, lines, indent: BuiltinResult(f"Proto.FragmentId(Vector{{UInt8}}({args[0]}))", []))
-
-        self.register_builtin("relation_id_from_string", 1,
-            lambda args, lines, indent: BuiltinResult(
-                f"Proto.RelationId(Base.parse(UInt64, bytes2hex(sha256({args[0]})[1:8]), base=16), 0)", []))
-
-        self.register_builtin("relation_id_from_int", 1,
-            lambda args, lines, indent: BuiltinResult(f"Proto.RelationId({args[0]}, 0)", []))
-
-        self.register_builtin("list_concat", 2,
-            lambda args, lines, indent: BuiltinResult(f"vcat({args[0]}, {args[1]})", []))
-
-        self.register_builtin("list_append", 2,
-            lambda args, lines, indent: BuiltinResult(f"vcat({args[0]}, [{args[1]}])", []))
-
-        self.register_builtin("list_push!", 2,
-            lambda args, lines, indent: BuiltinResult("nothing", [f"push!({args[0]}, {args[1]})"]))
-
-        self.register_builtin("is_none", 1,
-            lambda args, lines, indent: BuiltinResult(f"isnothing({args[0]})", []))
-
-        self.register_builtin("fst", 1,
-            lambda args, lines, indent: BuiltinResult(f"{args[0]}[1]", []))
-
-        self.register_builtin("snd", 1,
-            lambda args, lines, indent: BuiltinResult(f"{args[0]}[2]", []))
-
-        self.register_builtin("make_tuple", -1,
-            lambda args, lines, indent: BuiltinResult(f"({', '.join(args)},)", []))
-
-        self.register_builtin("length", 1,
-            lambda args, lines, indent: BuiltinResult(f"length({args[0]})", []))
-
-        self.register_builtin("unwrap_option_or", 2,
-            lambda args, lines, indent: BuiltinResult(f"something({args[0]}, {args[1]})", []))
-
-        self.register_builtin("match_lookahead_terminal", 2,
-            lambda args, lines, indent: BuiltinResult(f"match_lookahead_terminal(parser, {args[0]}, {args[1]})", []))
-
-        self.register_builtin("match_lookahead_literal", 2,
-            lambda args, lines, indent: BuiltinResult(f"match_lookahead_literal(parser, {args[0]}, {args[1]})", []))
-
-        self.register_builtin("consume_literal", 1,
-            lambda args, lines, indent: BuiltinResult("nothing", [f"consume_literal!(parser, {args[0]})"]))
-
-        self.register_builtin("consume_terminal", 1,
-            lambda args, lines, indent: BuiltinResult(f"consume_terminal!(parser, {args[0]})", []))
-
-        self.register_builtin("current_token", 0,
-            lambda args, lines, indent: BuiltinResult("current_token(parser)", []))
-
-        def gen_error(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
-            if len(args) == 2:
-                return BuiltinResult("nothing", [f'throw(ParseError({args[0]} * ": " * string({args[1]})))'])
-            elif len(args) == 1:
-                return BuiltinResult("nothing", [f"throw(ParseError({args[0]}))"])
-            else:
-                raise ValueError("Invalid number of arguments for `error`")
-        self.register_builtin("error", -1, gen_error)
-
-        self.register_builtin("construct_configure", 1,
-            lambda args, lines, indent: BuiltinResult(f"construct_configure(parser, {args[0]})", []))
-
-        self.register_builtin("export_csv_config", 3,
-            lambda args, lines, indent: BuiltinResult(f"export_csv_config(parser, {args[0]}, {args[1]}, {args[2]})", []))
-
-        self.register_builtin("start_fragment", 1,
-            lambda args, lines, indent: BuiltinResult(f"start_fragment(parser, {args[0]})", []))
-
-        self.register_builtin("construct_fragment", 2,
-            lambda args, lines, indent: BuiltinResult(f"construct_fragment(parser, {args[0]}, {args[1]})", []))
+        """Register builtin generators from templates."""
+        self.register_builtins_from_templates(JULIA_TEMPLATES)
 
     def escape_keyword(self, name: str) -> str:
         return f'var"{name}"'
@@ -193,6 +88,9 @@ class JuliaCodeGenerator(CodeGenerator):
     def gen_builtin_ref(self, name: str) -> str:
         return f"parser.{name}"
 
+    def gen_named_fun_ref(self, name: str) -> str:
+        return f"Parser.{name}"
+
     def gen_parse_nonterminal_ref(self, name: str) -> str:
         return f"parse_{name}"
 
@@ -219,6 +117,20 @@ class JuliaCodeGenerator(CodeGenerator):
         type_code = self.gen_type(element_type)
         return f"{type_code}[{', '.join(elements)}]"
 
+    def gen_dict_type(self, key_type: str, value_type: str) -> str:
+        return f"Dict{{{key_type},{value_type}}}"
+
+    def gen_dict_from_list(self, pairs: str) -> str:
+        return f"Dict({pairs})"
+
+    def gen_dict_lookup(self, dict_expr: str, key: str, default: Optional[str]) -> str:
+        if default is None:
+            return f"get({dict_expr}, {key}, nothing)"
+        return f"get({dict_expr}, {key}, {default})"
+
+    def gen_has_field(self, message: str, field_name: str) -> str:
+        return f"hasproperty({message}, :{field_name}) && !isnothing(getproperty({message}, :{field_name}))"
+
     def gen_function_type(self, param_types: List[str], return_type: str) -> str:
         return "Function"  # Julia doesn't have precise function types
 
@@ -240,7 +152,7 @@ class JuliaCodeGenerator(CodeGenerator):
         return "end"
 
     def gen_empty_body(self) -> str:
-        return "# empty body"
+        return "nothing"
 
     def gen_assignment(self, var: str, value: str, is_declaration: bool = False) -> str:
         return f"{var} = {value}"
@@ -267,104 +179,55 @@ class JuliaCodeGenerator(CodeGenerator):
     def gen_func_def_end(self) -> str:
         return "end"
 
-    # --- Override generate_lines for Julia-specific special cases ---
+    def _generate_get_element(self, expr: GetElement, lines: List[str], indent: str) -> str:
+        """Julia uses 1-based indexing."""
+        tuple_code = self.generate_lines(expr.tuple_expr, lines, indent)
+        julia_index = expr.index + 1
+        return f"{tuple_code}[{julia_index}]"
 
-    def generate_lines(self, expr: TargetExpr, lines: List[str], indent: str = "") -> str:
-        # Special case: Proto.Fragment construction with debug_info parameter
-        if isinstance(expr, Call) and isinstance(expr.func, Message) and expr.func.name == "Fragment":
-            for arg in expr.args:
-                if isinstance(arg, Var) and arg.name == "debug_info":
-                    lines.append(f"{indent}debug_info = construct_debug_info(parser, get(parser.id_to_debuginfo, id, Dict()))")
-                    break
+    def _generate_newmessage(self, expr: NewMessage, lines: List[str], indent: str) -> str:
+        """Generate Julia code for NewMessage with fields containing OneOf calls."""
+        ctor = self.gen_constructor(expr.module, expr.name)
 
-        return super().generate_lines(expr, lines, indent)
-
-    def _generate_call(self, expr: Call, lines: List[str], indent: str) -> str:
-        """Override to handle Message constructors and OneOf specially for Julia."""
-        # Check for Message constructor with OneOf call argument
-        if isinstance(expr.func, Message):
-            f = self.generate_lines(expr.func, lines, indent)
-
-            # Get field mapping from proto message definitions
-            message_field_map = self._build_message_field_map()
-
-            # Process arguments, looking for Call(OneOf(...), [value]) patterns
-            positional_args = []
-            keyword_args = []
-
-            msg_key = (expr.func.module, expr.func.name)
-            field_specs = message_field_map.get(msg_key, [])
-            arg_idx = 0
-            field_idx = 0
-
-            while arg_idx < len(expr.args):
-                arg = expr.args[arg_idx]
-
-                if isinstance(arg, Call) and isinstance(arg.func, OneOf) and len(arg.args) == 1:
-                    # Extract field name and value from Call(OneOf(Symbol), [value])
-                    field_name = self.escape_identifier(arg.func.field_name)
-                    field_value = self.generate_lines(arg.args[0], lines, indent)
-                    field_symbol = self.gen_symbol(arg.func.field_name)
-                    keyword_args.append(f"{field_name}=OneOf({field_symbol}, {field_value})")
-                    arg_idx += 1
-                elif field_idx < len(field_specs):
-                    field_name, is_repeated = field_specs[field_idx]
-
-                    if is_repeated:
-                        # Determine how many args belong to this repeated field
-                        remaining_fields = len(field_specs) - field_idx - 1
-                        max_args_for_this_field = len(expr.args) - arg_idx - remaining_fields
-
-                        # If there's exactly one arg for this field, use it directly (it's already a list)
-                        # Otherwise, collect multiple args into a list
-                        if max_args_for_this_field == 1:
-                            field_value = self.generate_lines(arg, lines, indent)
-                            keyword_args.append(f"{field_name}={field_value}")
-                            arg_idx += 1
-                        else:
-                            # Collect multiple args into a list
-                            values = []
-                            while arg_idx < len(expr.args) and len(values) < max_args_for_this_field:
-                                next_arg = expr.args[arg_idx]
-                                # Stop if we encounter a oneof
-                                if isinstance(next_arg, Call) and isinstance(next_arg.func, OneOf):
-                                    break
-                                field_value = self.generate_lines(next_arg, lines, indent)
-                                values.append(field_value)
-                                arg_idx += 1
-
-                            if values:
-                                keyword_args.append(f"{field_name}=[{', '.join(values)}]")
-                            else:
-                                keyword_args.append(f"{field_name}=[]")
-                    else:
-                        field_value = self.generate_lines(arg, lines, indent)
-                        keyword_args.append(f"{field_name}={field_value}")
-                        arg_idx += 1
-
-                    field_idx += 1
-                else:
-                    positional_args.append(self.generate_lines(arg, lines, indent))
-                    arg_idx += 1
-
-            # Build argument list - Julia protobuf uses positional args only
-            # Combine keyword args (formatted as "name=value") into just values for positional calling
-            positional_values = []
-            for kw in keyword_args:
-                # Extract value from "name=value"
-                if '=' in kw:
-                    value = kw.split('=', 1)[1]
-                    positional_values.append(value)
-                else:
-                    positional_values.append(kw)
-
-            all_args = positional_args + positional_values
-            args_code = ', '.join(all_args)
-
+        if not expr.fields:
+            # No fields - return constructor directly
             tmp = gensym()
-            lines.append(f"{indent}{self.gen_assignment(tmp, f'{f}({args_code})', is_declaration=True)}")
+            lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}()', is_declaration=True)}")
             return tmp
 
+        # NewMessage with fields - use keyword arguments
+        keyword_args = []
+
+        for field_name, field_expr in expr.fields:
+            # Check if this field is a Call(OneOf, [value])
+            if isinstance(field_expr, Call) and isinstance(field_expr.func, OneOf) and len(field_expr.args) == 1:
+                # OneOf field - wrap in OneOf(symbol, value)
+                oneof_field_name = field_expr.func.field_name
+                field_value = self.generate_lines(field_expr.args[0], lines, indent)
+                assert field_value is not None
+                field_symbol = self.gen_symbol(oneof_field_name)
+                escaped_name = self._escape_field_name(oneof_field_name)
+                keyword_args.append(f"{escaped_name}=OneOf({field_symbol}, {field_value})")
+            else:
+                # Regular field
+                field_value = self.generate_lines(field_expr, lines, indent)
+                assert field_value is not None
+                escaped_name = self._escape_field_name(field_name)
+                keyword_args.append(f"{escaped_name}={field_value}")
+
+        args_code = ', '.join(keyword_args)
+        tmp = gensym()
+        lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}(; {args_code})', is_declaration=True)}")
+        return tmp
+
+    def _escape_field_name(self, name: str) -> str:
+        """Escape a field name if it's a Julia keyword."""
+        if name in self.keywords:
+            return name + '_'
+        return name
+
+    def _generate_call(self, expr: Call, lines: List[str], indent: str) -> Optional[str]:
+        """Override to handle OneOf and VisitNonterminal specially for Julia."""
         # Check for Call(OneOf(Symbol), [value]) pattern (not in Message constructor)
         if isinstance(expr.func, OneOf) and len(expr.args) == 1:
             field_symbol = self.gen_symbol(expr.func.field_name)
@@ -376,7 +239,11 @@ class JuliaCodeGenerator(CodeGenerator):
         # Check for VisitNonterminal calls - need to add parser as first argument
         if isinstance(expr.func, VisitNonterminal):
             f = self.generate_lines(expr.func, lines, indent)
-            args = [self.generate_lines(arg, lines, indent) for arg in expr.args]
+            args: List[str] = []
+            for arg in expr.args:
+                arg_code = self.generate_lines(arg, lines, indent)
+                assert arg_code is not None, "Function argument should not contain a return"
+                args.append(arg_code)
             # Prepend parser as first argument
             all_args = ["parser"] + args
             args_code = ', '.join(all_args)
@@ -394,33 +261,6 @@ class JuliaCodeGenerator(CodeGenerator):
         This method shouldn't normally be called.
         """
         raise ValueError(f"OneOf should only appear in Call(OneOf(...), [value]) pattern: {expr}")
-
-    def _generate_if_else(self, expr: IfElse, lines: List[str], indent: str) -> str:
-        """Override to skip var declaration (Julia doesn't need it)."""
-        cond_code = self.generate_lines(expr.condition, lines, indent)
-
-        # Optimization: short-circuit for boolean literals
-        if expr.then_branch == Lit(True):
-            else_code = self.generate_lines(expr.else_branch, lines, indent + self.indent_str)
-            return f"({cond_code} || {else_code})"
-        if expr.else_branch == Lit(False):
-            then_code = self.generate_lines(expr.then_branch, lines, indent + self.indent_str)
-            return f"({cond_code} && {then_code})"
-
-        tmp = gensym()
-        lines.append(f"{indent}{self.gen_if_start(cond_code)}")
-
-        body_indent = indent + self.indent_str
-        then_code = self.generate_lines(expr.then_branch, lines, body_indent)
-        lines.append(f"{body_indent}{self.gen_assignment(tmp, then_code)}")
-
-        lines.append(f"{indent}{self.gen_else()}")
-        else_code = self.generate_lines(expr.else_branch, lines, body_indent)
-        lines.append(f"{body_indent}{self.gen_assignment(tmp, else_code)}")
-
-        lines.append(f"{indent}{self.gen_if_end()}")
-
-        return tmp
 
     def _generate_parse_def(self, expr: VisitNonterminalDef, indent: str) -> str:
         """Generate a parse method definition."""
@@ -441,11 +281,12 @@ class JuliaCodeGenerator(CodeGenerator):
         else:
             body_lines: List[str] = []
             body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
-            body_lines.append(f"{indent}    return {body_inner}")
+            # Only add return if the body didn't already return
+            if body_inner is not None:
+                body_lines.append(f"{indent}    return {body_inner}")
             body_code = "\n".join(body_lines)
 
         return f"{indent}function {func_name}({params_str}){ret_hint}\n{body_code}\n{indent}end"
-
 
 # Module-level instance for convenience
 _generator = JuliaCodeGenerator()
@@ -461,7 +302,7 @@ def generate_julia_type(typ) -> str:
     return _generator.gen_type(typ)
 
 
-def generate_julia_lines(expr: TargetExpr, lines: List[str], indent: str = "") -> str:
+def generate_julia_lines(expr: TargetExpr, lines: List[str], indent: str = "") -> Optional[str]:
     """Generate Julia code from a target IR expression."""
     return _generator.generate_lines(expr, lines, indent)
 
@@ -503,15 +344,17 @@ def generate_julia(expr: TargetExpr, indent: str = "") -> str:
     elif isinstance(expr, Let):
         lines: List[str] = []
         result = generate_julia_lines(expr, lines, indent)
+        result_str = result if result is not None else ""
         if lines:
-            return '\n'.join(lines) + '\n' + result
-        return result
+            return '\n'.join(lines) + '\n' + result_str
+        return result_str
     else:
         lines = []
         result = generate_julia_lines(expr, lines, indent)
+        result_str = result if result is not None else ""
         if lines:
-            return '\n'.join(lines) + '\n' + result
-        return result
+            return '\n'.join(lines) + '\n' + result_str
+        return result_str
 
 
 def generate_julia_function_body(expr: TargetExpr, indent: str = "    ") -> str:

@@ -1,25 +1,30 @@
 #!/usr/bin/env python3
 """Tests for target IR (intermediate representation)."""
 
-import sys
-from pathlib import Path
-
 import pytest
-
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from meta.target import (
     # Types
     BaseType, MessageType, TupleType, ListType, OptionType, FunctionType,
     # Expressions
-    Var, Lit, Symbol, Builtin, Message, Call, Lambda, Let, IfElse,
-    Seq, While, Assign, Return,
+    Var, Lit, Symbol, Builtin, NewMessage, Call, Lambda, Let, IfElse,
+    Seq, While, Assign, Return, GetElement,
     # Definitions
     FunDef,
     # Utilities
     gensym,
 )
+from meta.target_builtins import make_builtin
+from meta.gensym import reset as gensym_reset
+
+# Dummy type for test builtins
+_ANY = BaseType("Any")
+_DUMMY_FN_TYPE = FunctionType([], _ANY)
+
+
+def _test_builtin(name: str) -> Builtin:
+    """Create a test builtin with a dummy type."""
+    return Builtin(name, _DUMMY_FN_TYPE)
 
 
 # ============================================================================
@@ -275,41 +280,41 @@ class TestBuiltin:
 
     def test_construction(self):
         """Test Builtin construction."""
-        b = Builtin("consume")
+        b = make_builtin("consume")
         assert b.name == "consume"
 
     def test_str(self):
         """Test Builtin string representation."""
-        b = Builtin("is_none")
+        b = make_builtin("is_none")
         assert str(b) == "%is_none"
 
     def test_any_string_allowed(self):
-        """Test that Builtin accepts any string."""
-        b = Builtin("some-builtin-123")
+        """Test that Builtin accepts any string (with type)."""
+        b = _test_builtin("some-builtin-123")
         assert b.name == "some-builtin-123"
 
 
-class TestMessage:
-    """Tests for Message."""
+class TestNewMessage:
+    """Tests for NewMessage."""
 
     def test_construction(self):
-        """Test Message construction."""
-        c = Message("proto", "Transaction")
+        """Test NewMessage construction."""
+        c = NewMessage("proto", "Transaction", ())
         assert c.name == "Transaction"
         assert c.module == "proto"
 
     def test_str(self):
-        """Test Message string representation."""
-        c = Message("proto", "Formula")
-        assert str(c) == "@proto.Formula"
+        """Test NewMessage string representation."""
+        c = NewMessage("proto", "Formula", ())
+        assert str(c) == "@proto.Formula()"
 
     def test_invalid_name(self):
-        """Test Message with invalid name."""
+        """Test NewMessage with invalid name."""
         with pytest.raises(ValueError, match="Invalid message name"):
-            Message("proto", "123Invalid")
+            NewMessage("proto", "123Invalid", ())
 
         with pytest.raises(ValueError, match="Invalid message name"):
-            Message("proto", "with-dash")
+            NewMessage("proto", "with-dash", ())
 
 
 class TestCall:
@@ -317,7 +322,7 @@ class TestCall:
 
     def test_construction_no_args(self):
         """Test Call with no arguments."""
-        func = Builtin("get_value")
+        func = _test_builtin("get_value")
         call = Call(func, [])
         assert call.func == func
         assert len(call.args) == 0
@@ -325,7 +330,7 @@ class TestCall:
 
     def test_construction_with_args(self):
         """Test Call with arguments."""
-        func = Message("proto", "Transaction")
+        func = _test_builtin("process")
         arg1 = Var("x", BaseType("Int64"))
         arg2 = Var("y", BaseType("String"))
         call = Call(func, [arg1, arg2])
@@ -334,7 +339,7 @@ class TestCall:
 
     def test_str(self):
         """Test Call string representation."""
-        func = Builtin("add")
+        func = make_builtin("add")
         arg1 = Lit(1)
         arg2 = Lit(2)
         call = Call(func, [arg1, arg2])
@@ -342,8 +347,8 @@ class TestCall:
 
     def test_nested_call(self):
         """Test nested Call."""
-        inner = Call(Builtin("get_x"), [])
-        outer = Call(Builtin("process"), [inner, Lit(42)])
+        inner = Call(_test_builtin("get_x"), [])
+        outer = Call(_test_builtin("process"), [inner, Lit(42)])
         assert str(outer) == "%process(%get_x(), 42)"
 
 
@@ -541,6 +546,69 @@ class TestReturn:
             Return(inner)
 
 
+class TestGetElement:
+    """Tests for GetElement."""
+
+    def test_construction(self):
+        """Test GetElement construction."""
+        tuple_expr = Var("pair", TupleType([BaseType("Int64"), BaseType("String")]))
+        elem = GetElement(tuple_expr, 0)
+        assert elem.tuple_expr == tuple_expr
+        assert elem.index == 0
+
+    def test_construction_second_element(self):
+        """Test GetElement construction for second element."""
+        tuple_expr = Var("triple", TupleType([BaseType("Int64"), BaseType("String"), BaseType("Boolean")]))
+        elem = GetElement(tuple_expr, 2)
+        assert elem.index == 2
+
+    def test_str(self):
+        """Test GetElement string representation."""
+        tuple_expr = Var("pair", TupleType([BaseType("Int64"), BaseType("String")]))
+        elem = GetElement(tuple_expr, 0)
+        assert str(elem) == "pair::(Int64, String)[0]"
+
+    def test_str_second_element(self):
+        """Test GetElement string representation for second element."""
+        tuple_expr = Var("pair", TupleType([BaseType("Int64"), BaseType("String")]))
+        elem = GetElement(tuple_expr, 1)
+        assert str(elem) == "pair::(Int64, String)[1]"
+
+    def test_negative_index_fails(self):
+        """Test GetElement with negative index raises error."""
+        tuple_expr = Var("pair", TupleType([BaseType("Int64"), BaseType("String")]))
+        # GetElement validates index at construction time
+        with pytest.raises(AssertionError, match="GetElement index must be non-negative integer"):
+            GetElement(tuple_expr, -1)
+
+    def test_nested_tuple_access(self):
+        """Test GetElement with nested tuple."""
+        inner_tuple = TupleType([BaseType("Int64"), BaseType("String")])
+        outer_tuple = TupleType([inner_tuple, BaseType("Boolean")])
+        tuple_expr = Var("nested", outer_tuple)
+        elem = GetElement(tuple_expr, 0)
+        assert elem.index == 0
+
+    def test_chained_access(self):
+        """Test chained GetElement for nested tuples."""
+        inner_tuple = TupleType([BaseType("Int64"), BaseType("String")])
+        outer_tuple = TupleType([inner_tuple, BaseType("Boolean")])
+        tuple_expr = Var("nested", outer_tuple)
+        first = GetElement(tuple_expr, 0)
+        second = GetElement(first, 1)
+        assert isinstance(second.tuple_expr, GetElement)
+        assert str(second) == "nested::((Int64, String), Boolean)[0][1]"
+
+    def test_equality(self):
+        """Test GetElement equality."""
+        tuple_expr = Var("pair", TupleType([BaseType("Int64"), BaseType("String")]))
+        elem1 = GetElement(tuple_expr, 0)
+        elem2 = GetElement(tuple_expr, 0)
+        elem3 = GetElement(tuple_expr, 1)
+        assert elem1 == elem2
+        assert elem1 != elem3
+
+
 # ============================================================================
 # Definition Tests
 # ============================================================================
@@ -622,7 +690,7 @@ class TestComplexExpressions:
         """Test let expression with function call."""
         # let x = f(42) in x
         var = Var("x", BaseType("Int64"))
-        init = Call(Builtin("f"), [Lit(42)])
+        init = Call(_test_builtin("f"), [Lit(42)])
         body = Var("x", BaseType("Int64"))
         let = Let(var, init, body)
 
@@ -632,25 +700,24 @@ class TestComplexExpressions:
     def test_nested_calls(self):
         """Test deeply nested function calls."""
         # f(g(h(42)))
-        innermost = Call(Builtin("h"), [Lit(42)])
-        middle = Call(Builtin("g"), [innermost])
-        outermost = Call(Builtin("f"), [middle])
+        innermost = Call(_test_builtin("h"), [Lit(42)])
+        middle = Call(_test_builtin("g"), [innermost])
+        outermost = Call(_test_builtin("f"), [middle])
 
         assert isinstance(outermost.args[0], Call)
         assert str(outermost) == "%f(%g(%h(42)))"
 
     def test_constructor_with_complex_args(self):
-        """Test constructor call with complex arguments."""
-        # Transaction(epochs, configure, sync)
-        ctor = Message("proto", "Transaction")
+        """Test constructor with complex arguments."""
+        # Transaction(epochs=..., configure=..., sync=...)
         arg1 = Var("epochs", ListType(MessageType("proto", "Epoch")))
         arg2 = Var("configure", OptionType(MessageType("proto", "Configure")))
         arg3 = Var("sync", OptionType(MessageType("proto", "Sync")))
-        call = Call(ctor, [arg1, arg2, arg3])
+        ctor = NewMessage("proto", "Transaction", (("epochs", arg1), ("configure", arg2), ("sync", arg3)))
 
-        assert len(call.args) == 3
-        assert isinstance(call.func, Message)
-        assert "@proto.Transaction" in str(call)
+        assert len(ctor.fields) == 3
+        assert ctor.name == "Transaction"
+        assert "@proto.Transaction" in str(ctor)
 
     def test_function_returning_function(self):
         """Test function type that returns a function."""

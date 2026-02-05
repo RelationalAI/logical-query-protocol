@@ -1,95 +1,24 @@
 #!/usr/bin/env python3
-"""Tests for Julia and Python code generation from action AST."""
-
-import sys
-from pathlib import Path
-
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
+"""Tests for Python code generation from action AST."""
 
 from meta.target import (
-    Var, Lit, Symbol, Builtin, Message, OneOf, ListExpr, Call, Lambda, Let,
+    Var, Lit, Symbol, NamedFun, NewMessage, ListExpr, Call, Lambda, Let,
     IfElse, Seq, While, Assign, Return, FunDef, VisitNonterminalDef,
-    BaseType, MessageType, ListType, OptionType,
+    BaseType, MessageType, ListType, OptionType, GetElement, FunctionType,
 )
+from meta.target_builtins import make_builtin
 from meta.grammar import Nonterminal
 from meta.codegen_python import (
     generate_python,
     escape_identifier as escape_python,
     PythonCodeGenerator,
 )
-from meta.codegen_julia import generate_julia, escape_identifier as escape_julia
 from meta.gensym import reset as reset_gensym
 
 _any_type = BaseType("Any")
 _int_type = BaseType("Int64")
 _str_type = BaseType("String")
 _bool_type = BaseType("Boolean")
-
-
-def test_julia_keyword_escaping():
-    """Test that Julia keywords are properly escaped."""
-    # Test keyword variables
-    assert escape_julia("function") == 'var"function"'
-    assert escape_julia("end") == 'var"end"'
-    assert escape_julia("let") == 'var"let"'
-
-    # Test non-keywords
-    assert escape_julia("foo") == "foo"
-    assert escape_julia("my_var") == "my_var"
-
-    # Test in expressions
-    var = Var("function", _any_type)
-    code = generate_julia(var)
-    assert code == 'var"function"'
-
-
-def test_julia_call_generation():
-    """Test Julia function call generation."""
-    # Simple call
-    call = Call(Var("foo", _any_type), [Var("x", _any_type), Var("y", _any_type)])
-    code = generate_julia(call)
-    assert code == "foo(x, y)"
-
-    # Call with keyword function name
-    call_kw = Call(Var("function", _any_type), [Var("arg", _any_type)])
-    code_kw = generate_julia(call_kw)
-    assert code_kw == 'var"function"(arg)'
-
-
-def test_julia_let_generation():
-    """Test Julia Let-binding generation."""
-    # Simple let
-    let_expr = Let(Var("x", _any_type), Call(Var("parse_foo", _any_type), []), Var("x", _any_type))
-    code = generate_julia(let_expr)
-    assert "parse_foo()" in code and "x = " in code
-
-    # Nested let
-    nested_let = Let(Var("x", _any_type), Call(Var("parse_a", _any_type), []),
-                     Let(Var("y", _any_type), Call(Var("parse_b", _any_type), []),
-                         Call(Var("make", _any_type), [Var("x", _any_type), Var("y", _any_type)])))
-    code_nested = generate_julia(nested_let)
-    assert "parse_a()" in code_nested and "x = " in code_nested
-    assert "parse_b()" in code_nested and "y = " in code_nested
-    assert "make(x, y)" in code_nested
-
-    # Let with keyword variable
-    let_kw = Let(Var("end", _any_type), Call(Var("parse", _any_type), []), Var("end", _any_type))
-    code_kw = generate_julia(let_kw)
-    assert 'var"end"' in code_kw
-
-
-def test_julia_lambda_generation():
-    """Test Julia anonymous function generation."""
-    # Simple lambda
-    lam = Lambda([Var("x", _any_type), Var("y", _any_type)], _any_type, Call(Var("Add", _any_type), [Var("x", _any_type), Var("y", _any_type)]))
-    code = generate_julia(lam)
-    assert code == "(x, y) -> Add(x, y)"
-
-    # Lambda with keyword parameter
-    lam_kw = Lambda([Var("struct", _any_type), Var("value", _any_type)], _any_type, Var("value", _any_type))
-    code_kw = generate_julia(lam_kw)
-    assert 'var"struct"' in code_kw
 
 
 def test_python_keyword_escaping():
@@ -176,7 +105,7 @@ def test_python_builtin_generation():
     # Test 'not' builtin
     reset_gensym()
     lines = []
-    expr = Call(Builtin("not"), [Var("x", _bool_type)])
+    expr = Call(make_builtin("not"), [Var("x", _bool_type)])
     result = gen.generate_lines(expr, lines, "")
     assert result == "not x"
     assert len(lines) == 0
@@ -184,59 +113,55 @@ def test_python_builtin_generation():
     # Test 'equal' builtin
     reset_gensym()
     lines = []
-    expr = Call(Builtin("equal"), [Var("a", _any_type), Var("b", _any_type)])
+    expr = Call(make_builtin("equal"), [Var("a", _any_type), Var("b", _any_type)])
     result = gen.generate_lines(expr, lines, "")
     assert result == "a == b"
 
-    # Test 'list_append' builtin
+    # Test 'list_concat' builtin
     reset_gensym()
     lines = []
-    expr = Call(Builtin("list_append"), [Var("lst", ListType(_int_type)), Var("item", _int_type)])
+    expr = Call(make_builtin("list_concat"), [Var("lst", ListType(_int_type)), Var("other", ListType(_int_type))])
     result = gen.generate_lines(expr, lines, "")
-    assert result == "lst + [item]"
+    assert result == "(lst + (other if other is not None else []))"
 
     # Test 'is_none' builtin
     reset_gensym()
     lines = []
-    expr = Call(Builtin("is_none"), [Var("x", OptionType(_int_type))])
+    expr = Call(make_builtin("is_none"), [Var("x", OptionType(_int_type))])
     result = gen.generate_lines(expr, lines, "")
     assert result == "x is None"
 
-    # Test 'fst' and 'snd' builtins
+    # Test 'length' builtin
     reset_gensym()
     lines = []
-    expr = Call(Builtin("fst"), [Var("pair", _any_type)])
+    expr = Call(make_builtin("length"), [Var("lst", ListType(_int_type))])
+    result = gen.generate_lines(expr, lines, "")
+    assert result == "len(lst)"
+
+    # Test 'tuple' builtin (variadic)
+    reset_gensym()
+    lines = []
+    expr = Call(make_builtin("tuple"), [Var("a", _int_type), Var("b", _str_type)])
+    result = gen.generate_lines(expr, lines, "")
+    assert result == "(a, b,)"
+
+
+def test_python_get_element_generation():
+    """Test Python GetElement with 0-based indexing."""
+    gen = PythonCodeGenerator()
+
+    # GetElement uses 0-based indexing in Python
+    reset_gensym()
+    lines = []
+    expr = GetElement(Var("pair", _any_type), 0)
     result = gen.generate_lines(expr, lines, "")
     assert result == "pair[0]"
 
     reset_gensym()
     lines = []
-    expr = Call(Builtin("snd"), [Var("pair", _any_type)])
+    expr = GetElement(Var("pair", _any_type), 1)
     result = gen.generate_lines(expr, lines, "")
     assert result == "pair[1]"
-
-    # Test 'length' builtin
-    reset_gensym()
-    lines = []
-    expr = Call(Builtin("length"), [Var("lst", ListType(_int_type))])
-    result = gen.generate_lines(expr, lines, "")
-    assert result == "len(lst)"
-
-    # Test 'make_tuple' builtin (variadic)
-    reset_gensym()
-    lines = []
-    expr = Call(Builtin("make_tuple"), [Var("a", _int_type), Var("b", _str_type)])
-    result = gen.generate_lines(expr, lines, "")
-    assert result == "(a, b,)"
-
-    # Test builtin with side effects ('list_push!')
-    reset_gensym()
-    lines = []
-    expr = Call(Builtin("list_push!"), [Var("lst", ListType(_int_type)), Var("item", _int_type)])
-    result = gen.generate_lines(expr, lines, "")
-    assert result == "None"
-    assert len(lines) == 1
-    assert "lst.append(item)" in lines[0]
 
 
 def test_python_if_else_generation():
@@ -251,14 +176,14 @@ def test_python_if_else_generation():
     assert "if cond:" in "\n".join(lines)
     assert "else:" in "\n".join(lines)
     # Result should be a temp variable
-    assert result.startswith("_t")
+    assert result is not None and result.startswith("_t")
 
     # Short-circuit optimization: cond or else_value
     reset_gensym()
     lines = []
     expr = IfElse(Var("cond", _bool_type), Lit(True), Var("default", _bool_type))
     result = gen.generate_lines(expr, lines, "")
-    assert "cond or default" in result
+    assert result is not None and "cond or default" in result
     assert len(lines) == 0
 
     # Short-circuit optimization: cond and then_value
@@ -266,7 +191,7 @@ def test_python_if_else_generation():
     lines = []
     expr = IfElse(Var("cond", _bool_type), Var("value", _bool_type), Lit(False))
     result = gen.generate_lines(expr, lines, "")
-    assert "cond and value" in result
+    assert result is not None and "cond and value" in result
     assert len(lines) == 0
 
 
@@ -331,7 +256,9 @@ def test_python_return_generation():
     lines = []
     expr = Return(Var("result", _any_type))
     result = gen.generate_lines(expr, lines, "")
-    assert result == "None"
+    # Return generates a return statement and returns None
+    # to indicate that the caller should not add another return
+    assert result is None
     assert "return result" in lines[0]
 
 
@@ -366,20 +293,21 @@ def test_python_symbol_generation():
 
 
 def test_python_message_generation():
-    """Test Python Message constructor code generation."""
+    """Test Python NewMessage constructor code generation."""
     gen = PythonCodeGenerator()
 
-    # Simple message reference
+    # Simple message with no fields
     reset_gensym()
     lines = []
-    expr = Message("logic", "Expr")
+    expr = NewMessage("logic", "Expr", ())
     result = gen.generate_lines(expr, lines, "")
-    assert result == "logic_pb2.Expr"
+    # Python codegen returns constructor directly for empty NewMessage
+    assert result == "logic_pb2.Expr()"
 
-    # Message call without field mapping
+    # NewMessage with field
     reset_gensym()
     lines = []
-    expr = Call(Message("logic", "Expr"), [Var("value", _any_type)])
+    expr = NewMessage("logic", "Expr", (("value", Var("value", _any_type)),))
     result = gen.generate_lines(expr, lines, "")
     assert "logic_pb2.Expr" in "\n".join(lines)
 
@@ -388,11 +316,10 @@ def test_python_oneof_generation():
     """Test Python OneOf field code generation."""
     gen = PythonCodeGenerator()
 
-    # OneOf in Message constructor call
+    # OneOf in NewMessage constructor
     reset_gensym()
     lines = []
-    oneof_call = Call(OneOf("literal"), [Lit("hello")])
-    expr = Call(Message("logic", "Value"), [oneof_call])
+    expr = NewMessage("logic", "Value", (("literal", Lit("hello")),))
     result = gen.generate_lines(expr, lines, "")
     code = "\n".join(lines)
     assert "literal='hello'" in code or "literal=" in code
@@ -408,7 +335,7 @@ def test_python_fun_def_generation():
         name="add",
         params=[Var("x", _int_type), Var("y", _int_type)],
         return_type=_int_type,
-        body=Call(Builtin("add"), [Var("x", _int_type), Var("y", _int_type)]),
+        body=Call(make_builtin("add"), [Var("x", _int_type), Var("y", _int_type)]),
     )
     code = gen.generate_def(func)
     assert "def add(x: int, y: int) -> int:" in code
@@ -441,7 +368,7 @@ def test_python_visit_nonterminal_def_generation():
         nonterminal=nt,
         params=[],
         return_type=MessageType("logic", "Expr"),
-        body=Call(Message("logic", "Expr"), []),
+        body=NewMessage("logic", "Expr", ()),
     )
     code = gen.generate_def(parse_def)
     assert "def parse_expr(self) -> logic_pb2.Expr:" in code
@@ -481,35 +408,123 @@ def test_python_type_generation():
     assert gen.gen_type(OptionType(BaseType("String"))) == "Optional[str]"
 
 
-def test_generator_instance_isolation():
-    """Test that generator instances don't share state."""
-    gen1 = PythonCodeGenerator()
-    gen2 = PythonCodeGenerator()
+# Tests for helper function codegen (FunDef from yacc grammar)
 
-    # Register a custom builtin on gen1
-    from meta.codegen_base import BuiltinResult
-    gen1.register_builtin("custom_op", 1,
-        lambda args, lines, indent: BuiltinResult(f"custom({args[0]})", []))
+def test_python_helper_function_simple():
+    """Test Python code generation for a simple helper function."""
+    gen = PythonCodeGenerator()
+    reset_gensym()
 
-    # gen1 should have the custom builtin
-    assert "custom_op" in gen1.builtin_registry
+    # Equivalent to: def add_one(x: int) -> int: return x + 1
+    # Using builtin add
+    func = FunDef(
+        name="add_one",
+        params=[Var("x", _int_type)],
+        return_type=_int_type,
+        body=Call(make_builtin("add"), [Var("x", _int_type), Lit(1)]),
+    )
+    code = gen.generate_def(func)
+    assert "def add_one(x: int) -> int:" in code
+    assert "return (x + 1)" in code
 
-    # gen2 should NOT have the custom builtin
-    assert "custom_op" not in gen2.builtin_registry
->>>>>>> origin/nn-meta-6-julia-codegen
+
+def test_python_helper_function_with_if():
+    """Test Python code generation for helper function with if-else."""
+    gen = PythonCodeGenerator()
+    reset_gensym()
+
+    # Equivalent to:
+    # def check_value(v: Optional[int], default: int) -> int:
+    #     if v is None:
+    #         return default
+    #     return v
+    func = FunDef(
+        name="check_value",
+        params=[Var("v", OptionType(_int_type)), Var("default", _int_type)],
+        return_type=_int_type,
+        body=IfElse(
+            Call(make_builtin("is_none"), [Var("v", OptionType(_int_type))]),
+            Return(Var("default", _int_type)),
+            Return(Var("v", OptionType(_int_type))),
+        ),
+    )
+    code = gen.generate_def(func)
+    assert "def check_value(v: Optional[int], default: int) -> int:" in code
+    assert "if v is None:" in code
+    assert "return default" in code
+    assert "return v" in code
+
+
+def test_python_helper_function_with_assignment():
+    """Test Python code generation for helper function with variable assignment."""
+    gen = PythonCodeGenerator()
+    reset_gensym()
+
+    # Equivalent to:
+    # def transform(x: int) -> int:
+    #     result = x
+    #     return result
+    func = FunDef(
+        name="transform",
+        params=[Var("x", _int_type)],
+        return_type=_int_type,
+        body=Seq([
+            Assign(Var("result", _int_type), Var("x", _int_type)),
+            Return(Var("result", _int_type)),
+        ]),
+    )
+    code = gen.generate_def(func)
+    assert "def transform(x: int) -> int:" in code
+    assert "result = x" in code
+    assert "return result" in code
+
+
+def test_python_helper_function_message_constructor():
+    """Test Python code generation for helper function constructing a message."""
+    gen = PythonCodeGenerator()
+    reset_gensym()
+
+    # Equivalent to:
+    # def make_value(x: int) -> logic.Value:
+    #     return logic.Value(int_value=x)
+    func = FunDef(
+        name="make_value",
+        params=[Var("x", _int_type)],
+        return_type=MessageType("logic", "Value"),
+        body=NewMessage("logic", "Value", (("int_value", Var("x", _int_type)),)),
+    )
+    code = gen.generate_def(func)
+    assert "def make_value(x: int) -> logic_pb2.Value:" in code
+    assert "logic_pb2.Value" in code
+    assert "int_value=" in code
+
+
+def test_python_helper_function_calling_another():
+    """Test Python code generation for helper function calling another function."""
+    gen = PythonCodeGenerator()
+    reset_gensym()
+
+    # Equivalent to:
+    # def wrapper(x: int) -> int:
+    #     return helper(x)
+    func = FunDef(
+        name="wrapper",
+        params=[Var("x", _int_type)],
+        return_type=_int_type,
+        body=Call(NamedFun("helper", FunctionType([_int_type], _int_type)), [Var("x", _int_type)]),
+    )
+    code = gen.generate_def(func)
+    assert "def wrapper(x: int) -> int:" in code
+    assert "Parser.helper(x)" in code
 
 
 if __name__ == "__main__":
-    test_julia_keyword_escaping()
-    test_julia_call_generation()
-    test_julia_let_generation()
-    test_julia_lambda_generation()
-
     test_python_keyword_escaping()
     test_python_call_generation()
     test_python_let_generation()
     test_python_lambda_generation()
     test_python_builtin_generation()
+    test_python_get_element_generation()
     test_python_if_else_generation()
     test_python_while_generation()
     test_python_seq_generation()
@@ -522,4 +537,8 @@ if __name__ == "__main__":
     test_python_fun_def_generation()
     test_python_visit_nonterminal_def_generation()
     test_python_type_generation()
-    test_generator_instance_isolation()
+    test_python_helper_function_simple()
+    test_python_helper_function_with_if()
+    test_python_helper_function_with_assignment()
+    test_python_helper_function_message_constructor()
+    test_python_helper_function_calling_another()
