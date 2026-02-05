@@ -1,10 +1,12 @@
 """Tests for target_utils module."""
 
 from meta.target import (
-    BaseType, MessageType, ListType, OptionType, TupleType,
+    BaseType, MessageType, ListType, OptionType, TupleType, FunctionType,
     Var, Lit, Call, Builtin, Lambda, Let, IfElse, Seq, While,
-    Return, Assign, Foreach, ForeachEnumerated, GetField, GetElement
+    Return, Assign, Foreach, ForeachEnumerated, GetField, GetElement,
+    TargetType,
 )
+from meta.target_builtins import make_builtin
 from meta.target_utils import (
     STRING_TYPE, INT64_TYPE, FLOAT64_TYPE, BOOLEAN_TYPE,
     create_identity_function, subst,
@@ -12,6 +14,15 @@ from meta.target_utils import (
     make_tuple, make_get_element, make_is_empty, make_concat,
     make_length, make_unwrap_option_or, apply_lambda
 )
+
+# Dummy type for test builtins
+_ANY = BaseType("Any")
+_DUMMY_FN_TYPE = FunctionType([], _ANY)
+
+
+def _test_builtin(name: str, return_type: TargetType = _ANY) -> Builtin:
+    """Create a test builtin with specified return type (default Any)."""
+    return Builtin(name, FunctionType([], return_type))
 
 
 class TestCommonTypes:
@@ -78,7 +89,7 @@ class TestSubstitution:
 
     def test_subst_in_call(self):
         """Substitute variable in call arguments."""
-        expr = Call(Builtin('print'), [Var('x', STRING_TYPE)])
+        expr = Call(_test_builtin('print'), [Var('x', STRING_TYPE)])
         result = subst(expr, {'x': Lit("hello")})
         assert isinstance(result, Call)
         assert result.args[0] == Lit("hello")
@@ -87,13 +98,13 @@ class TestSubstitution:
         """Single occurrence with side effect substitutes directly."""
         expr = Var('x', STRING_TYPE)
         # Call has potential side effects
-        replacement = Call(Builtin('get_value'), [])
+        replacement = Call(_test_builtin('get_value', STRING_TYPE), [])
         result = subst(expr, {'x': replacement})
         assert result == replacement
 
     def test_subst_multiple_occurrences_simple(self):
         """Multiple occurrences of simple value substitutes directly."""
-        expr = Call(Builtin('concat'), [Var('x', STRING_TYPE), Var('x', STRING_TYPE)])
+        expr = Call(_test_builtin('concat'), [Var('x', STRING_TYPE), Var('x', STRING_TYPE)])
         result = subst(expr, {'x': Lit("hello")})
         assert isinstance(result, Call)
         assert result.args[0] == Lit("hello")
@@ -101,8 +112,8 @@ class TestSubstitution:
 
     def test_subst_multiple_occurrences_side_effect(self):
         """Multiple occurrences with side effect introduces Let binding."""
-        expr = Call(Builtin('concat'), [Var('x', STRING_TYPE), Var('x', STRING_TYPE)])
-        replacement = Call(Builtin('get_value'), [])
+        expr = Call(_test_builtin('concat'), [Var('x', STRING_TYPE), Var('x', STRING_TYPE)])
+        replacement = Call(_test_builtin('get_value', STRING_TYPE), [])
         result = subst(expr, {'x': replacement})
         # Should wrap in Let to avoid duplicating side effect
         assert isinstance(result, Let)
@@ -114,7 +125,7 @@ class TestSubstitution:
         """Substitute in lambda body when parameter doesn't shadow."""
         x_var = Var('x', STRING_TYPE)
         y_var = Var('y', INT64_TYPE)
-        expr = Lambda([x_var], STRING_TYPE, Call(Builtin('f'), [x_var, y_var]))
+        expr = Lambda([x_var], STRING_TYPE, Call(_test_builtin('f'), [x_var, y_var]))
         result = subst(expr, {'y': Lit(42)})
         assert isinstance(result, Lambda)
         assert isinstance(result.body, Call)
@@ -202,7 +213,7 @@ class TestSubstitution:
         x_var = Var('x', STRING_TYPE)
         items_var = Var('items', ListType(STRING_TYPE))
         expr = Foreach(x_var, items_var, x_var)
-        result = subst(expr, {'items': Call(Builtin('get_list'), [])})
+        result = subst(expr, {'items': Call(_test_builtin('get_list', ListType(STRING_TYPE)), [])})
         assert isinstance(result, Foreach)
         assert isinstance(result.collection, Call)
         # Loop variable shadows itself in body
@@ -214,7 +225,7 @@ class TestSubstitution:
         x_var = Var('x', STRING_TYPE)
         items_var = Var('items', ListType(STRING_TYPE))
         expr = ForeachEnumerated(i_var, x_var, items_var, x_var)
-        result = subst(expr, {'items': Call(Builtin('get_list'), [])})
+        result = subst(expr, {'items': Call(_test_builtin('get_list', ListType(STRING_TYPE)), [])})
         assert isinstance(result, ForeachEnumerated)
         assert isinstance(result.collection, Call)
 
@@ -243,29 +254,37 @@ class TestBuiltinHelpers:
         result = make_which_oneof(msg, oneof_name)
         assert isinstance(result, Call)
         assert isinstance(result.func, Builtin)
-        assert result.func.name == 'WhichOneof'
+        assert result.func.name == 'which_one_of'
         assert result.args == (msg, oneof_name)
 
     def test_make_get_field_with_string(self):
-        obj = Var('obj', MessageType('test', 'Foo'))
-        result = make_get_field(obj, 'field_name')
+        msg_type = MessageType('test', 'Foo')
+        field_type = BaseType('String')
+        obj = Var('obj', msg_type)
+        result = make_get_field(obj, 'field_name', msg_type, field_type)
         assert isinstance(result, GetField)
         assert result.object == obj
         assert result.field_name == 'field_name'
+        assert result.message_type == msg_type
+        assert result.field_type == field_type
 
     def test_make_get_field_with_lit(self):
         """GetField unwraps Lit field names."""
-        obj = Var('obj', MessageType('test', 'Foo'))
-        result = make_get_field(obj, Lit('field_name'))
+        msg_type = MessageType('test', 'Foo')
+        field_type = BaseType('Int64')
+        obj = Var('obj', msg_type)
+        result = make_get_field(obj, Lit('field_name'), msg_type, field_type)
         assert isinstance(result, GetField)
         assert result.field_name == 'field_name'
+        assert result.message_type == msg_type
+        assert result.field_type == field_type
 
     def test_make_some(self):
         value = Lit(42)
         result = make_some(value)
         assert isinstance(result, Call)
         assert isinstance(result.func, Builtin)
-        assert result.func.name == 'Some'
+        assert result.func.name == 'some'
         assert result.args == (value,)
 
     def test_make_tuple(self):
@@ -347,7 +366,7 @@ class TestApplyLambda:
         """Lambda with Call argument introduces Let binding."""
         param = Var('x', INT64_TYPE)
         func = Lambda([param], INT64_TYPE, param)
-        arg = Call(Builtin('f'), [])
+        arg = Call(_test_builtin('f'), [])
         result = apply_lambda(func, [arg])
         assert isinstance(result, Let)
         assert result.var == param
@@ -357,7 +376,7 @@ class TestApplyLambda:
         """Multiple parameters with simple arguments."""
         x = Var('x', INT64_TYPE)
         y = Var('y', INT64_TYPE)
-        func = Lambda([x, y], INT64_TYPE, Call(Builtin('add'), [x, y]))
+        func = Lambda([x, y], INT64_TYPE, Call(_test_builtin('add'), [x, y]))
         result = apply_lambda(func, [Lit(1), Lit(2)])
         # Should substitute both
         assert isinstance(result, Call)
@@ -368,8 +387,8 @@ class TestApplyLambda:
         """Multiple parameters with non-simple arguments."""
         x = Var('x', INT64_TYPE)
         y = Var('y', INT64_TYPE)
-        func = Lambda([x, y], INT64_TYPE, Call(Builtin('add'), [x, y]))
-        call_arg = Call(Builtin('f'), [])
+        func = Lambda([x, y], INT64_TYPE, Call(_test_builtin('add'), [x, y]))
+        call_arg = Call(_test_builtin('f'), [])
         result = apply_lambda(func, [call_arg, Lit(2)])
         # Should introduce Let for first arg
         assert isinstance(result, Let)
@@ -379,7 +398,7 @@ class TestApplyLambda:
         """Lambda with fewer arguments returns Call."""
         x = Var('x', INT64_TYPE)
         y = Var('y', INT64_TYPE)
-        func = Lambda([x, y], INT64_TYPE, Call(Builtin('add'), [x, y]))
+        func = Lambda([x, y], INT64_TYPE, Call(_test_builtin('add'), [x, y]))
         result = apply_lambda(func, [])
         assert isinstance(result, Call)
         assert result.func == func
@@ -388,7 +407,7 @@ class TestApplyLambda:
     def test_apply_lambda_body_uses_param_multiple_times(self):
         """Lambda body uses parameter multiple times."""
         x = Var('x', INT64_TYPE)
-        func = Lambda([x], INT64_TYPE, Call(Builtin('add'), [x, x]))
+        func = Lambda([x], INT64_TYPE, Call(_test_builtin('add'), [x, x]))
         result = apply_lambda(func, [Lit(5)])
         # Should substitute literal directly even with multiple uses
         assert isinstance(result, Call)
@@ -400,7 +419,7 @@ class TestIsSimpleExpr:
 
     def test_var_is_simple(self):
         """Var is simple - no Let needed for multiple uses."""
-        expr = Call(Builtin('f'), [Var('x', INT64_TYPE), Var('x', INT64_TYPE)])
+        expr = Call(_test_builtin('f'), [Var('x', INT64_TYPE), Var('x', INT64_TYPE)])
         result = subst(expr, {'x': Var('y', INT64_TYPE)})
         # Should substitute directly without Let
         assert isinstance(result, Call)
@@ -408,15 +427,15 @@ class TestIsSimpleExpr:
 
     def test_lit_is_simple(self):
         """Lit is simple - no Let needed for multiple uses."""
-        expr = Call(Builtin('f'), [Var('x', INT64_TYPE), Var('x', INT64_TYPE)])
+        expr = Call(_test_builtin('f'), [Var('x', INT64_TYPE), Var('x', INT64_TYPE)])
         result = subst(expr, {'x': Lit(42)})
         assert isinstance(result, Call)
         assert not isinstance(result, Let)
 
     def test_call_builtin_equal_is_simple(self):
         """Builtin 'equal' is considered simple."""
-        expr = Call(Builtin('f'), [Var('x', BOOLEAN_TYPE), Var('x', BOOLEAN_TYPE)])
-        replacement = Call(Builtin('equal'), [Lit(1), Lit(2)])
+        expr = Call(_test_builtin('f'), [Var('x', BOOLEAN_TYPE), Var('x', BOOLEAN_TYPE)])
+        replacement = Call(_test_builtin('equal', BOOLEAN_TYPE), [Lit(1), Lit(2)])
         result = subst(expr, {'x': replacement})
         # equal builtin is simple, so no Let needed
         assert isinstance(result, Call)
@@ -424,15 +443,15 @@ class TestIsSimpleExpr:
 
     def test_call_non_builtin_is_not_simple(self):
         """Non-simple builtin needs Let for multiple uses."""
-        expr = Call(Builtin('f'), [Var('x', INT64_TYPE), Var('x', INT64_TYPE)])
-        replacement = Call(Builtin('compute'), [])
+        expr = Call(_test_builtin('f'), [Var('x', INT64_TYPE), Var('x', INT64_TYPE)])
+        replacement = Call(_test_builtin('compute', INT64_TYPE), [])
         result = subst(expr, {'x': replacement})
         # Should introduce Let
         assert isinstance(result, Let)
 
     def test_ifelse_with_simple_parts_is_simple(self):
         """IfElse with all simple parts is simple."""
-        expr = Call(Builtin('f'), [Var('x', INT64_TYPE), Var('x', INT64_TYPE)])
+        expr = Call(_test_builtin('f'), [Var('x', INT64_TYPE), Var('x', INT64_TYPE)])
         replacement = IfElse(Lit(True), Lit(1), Lit(2))
         result = subst(expr, {'x': replacement})
         # IfElse with all literals is simple
@@ -441,7 +460,7 @@ class TestIsSimpleExpr:
 
     def test_let_with_simple_parts_is_simple(self):
         """Let with simple parts is simple."""
-        expr = Call(Builtin('f'), [Var('x', INT64_TYPE), Var('x', INT64_TYPE)])
+        expr = Call(_test_builtin('f'), [Var('x', INT64_TYPE), Var('x', INT64_TYPE)])
         y_var = Var('y', INT64_TYPE)
         replacement = Let(y_var, Lit(5), y_var)
         result = subst(expr, {'x': replacement})
@@ -456,14 +475,14 @@ class TestCountVarOccurrences:
     def test_zero_occurrences(self):
         """Variable with zero occurrences not substituted."""
         expr = Lit(42)
-        result = subst(expr, {'x': Call(Builtin('expensive'), [])})
+        result = subst(expr, {'x': Call(_test_builtin('expensive'), [])})
         # Since x doesn't appear, expensive call is not used
         assert result == expr
 
     def test_occurrence_in_nested_call(self):
         """Count variable in nested call structures."""
-        expr = Call(Builtin('f'), [Call(Builtin('g'), [Var('x', INT64_TYPE)])])
-        replacement = Call(Builtin('expensive'), [])
+        expr = Call(_test_builtin('f'), [Call(_test_builtin('g'), [Var('x', INT64_TYPE)])])
+        replacement = Call(_test_builtin('expensive', INT64_TYPE), [])
         result = subst(expr, {'x': replacement})
         # Single occurrence, so substitutes directly
         assert isinstance(result, Call)

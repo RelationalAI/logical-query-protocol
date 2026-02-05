@@ -21,7 +21,7 @@ _PRIMITIVE_TO_BASE_TYPE = {
     'bool': 'Boolean',
     'double': 'Float64',
     'float': 'Float32',
-    'bytes': 'String',
+    'bytes': 'Bytes',
 }
 
 
@@ -93,8 +93,7 @@ class TypeEnv:
             message = self.parser.messages[proto_field.type]
             base_type = MessageType(message.module, proto_field.type)
         else:
-            # Unknown type
-            base_type = BaseType("Unknown")
+            raise ValueError(f"Unknown proto type: {proto_field.type}")
 
         # Wrap in Option if optional
         if proto_field.is_optional:

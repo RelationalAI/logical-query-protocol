@@ -68,6 +68,7 @@ from .yacc_action_parser import (
     TerminalInfo,
     parse_action,
     parse_helper_functions,
+    prescan_helper_function_names,
 )
 
 
@@ -558,16 +559,25 @@ def load_yacc_grammar(text: str) -> GrammarConfig:
     # Parse directives
     ctx, ignored_completeness, rules_start = parse_directives(lines)
 
-    # Parse rules
+    # Find the %% separator between rules and helper functions
     rules_lines = lines[rules_start:]
+    helpers_sep_idx = None
+    for i, line in enumerate(rules_lines):
+        if line.strip() == '%%':
+            helpers_sep_idx = i
+            break
+
+    # Pre-scan helper function names so rules can reference them
+    if helpers_sep_idx is not None:
+        helpers_lines = rules_lines[helpers_sep_idx + 1:]
+        prescan_helper_function_names(helpers_lines, rules_start + helpers_sep_idx + 2, ctx)
+
+    # Parse rules
     rule_list, helpers_start = parse_rules(rules_lines, rules_start + 1, ctx)
 
-    # Parse helper functions
+    # Parse helper functions (also updates ctx.functions with FunctionTypes)
     helpers_lines = rules_lines[helpers_start:]
     functions = parse_helper_functions(helpers_lines, rules_start + helpers_start + 1, ctx)
-
-    # Update context with functions
-    ctx.functions.update(functions)
 
     # Build rules dictionary
     rules_dict: Dict[Nonterminal, List[Rule]] = {}

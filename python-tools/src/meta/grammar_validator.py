@@ -27,7 +27,7 @@ from .proto_parser import ProtoParser
 from .proto_ast import ProtoMessage, ProtoField
 from .target import (
     TargetType, TargetExpr, Call, NewMessage, Builtin, Var, IfElse, Let, Seq, ListExpr, GetField,
-    GetElement, BaseType, BottomType, VarType, MessageType, ListType, OptionType, TupleType, FunctionType, Lambda, OneOf, Lit
+    GetElement, BaseType, VarType, MessageType, ListType, OptionType, TupleType, FunctionType, Lambda, OneOf, Lit
 )
 from .type_env import TypeEnv
 from .validation_result import ValidationResult
@@ -213,7 +213,14 @@ class GrammarValidator:
         elif isinstance(expr, GetField):
             # Check the object expression
             self._check_expr_types(expr.object, context)
-            # field_name is a string, no need to check
+            # Check that object type matches expected message_type
+            obj_type = self._infer_expr_type(expr.object)
+            if obj_type is not None and not self._is_subtype(obj_type, expr.message_type):
+                self.result.add_error(
+                    "type_field_access",
+                    f"In {context}: GetField expects object of type {expr.message_type}, got {obj_type}",
+                    rule_name=context
+                )
 
         elif isinstance(expr, GetElement):
             # Check the tuple expression
@@ -449,56 +456,22 @@ class GrammarValidator:
         """Infer the type of an expression.
 
         Returns:
-            The type of the expression, or None if it cannot be inferred
+            The type of the expression, or None if it cannot be inferred.
         """
-        if isinstance(expr, Var):
-            return expr.type
-        elif isinstance(expr, NewMessage):
-            return MessageType(expr.module, expr.name)
-        elif isinstance(expr, Call):
-            if isinstance(expr.func, Builtin):
-                # Infer return type for known builtins
-                name = expr.func.name
-                if name == "int64_to_int32":
-                    return BaseType("Int32")
-                elif name == "length":
-                    return BaseType("Int64")
-                elif name == "tuple":
-                    # Infer tuple type from argument types
-                    arg_types = [self._infer_expr_type(arg) for arg in expr.args]
-                    if all(t is not None for t in arg_types):
-                        return TupleType(tuple(t for t in arg_types if t is not None))
-                    return None
-                # For other builtins, would need to implement full type inference
+        # Special case for tuple builtin - need to compute TupleType from args
+        if isinstance(expr, Call) and isinstance(expr.func, Builtin) and expr.func.name == "tuple":
+            arg_types = [self._infer_expr_type(arg) for arg in expr.args]
+            if all(t is not None for t in arg_types):
+                return TupleType(tuple(t for t in arg_types if t is not None))
+            return None
+
+        try:
+            result = expr.target_type()
+            # Don't return VarType - treat as unknown
+            if isinstance(result, VarType):
                 return None
-            else:
-                return None
-        elif isinstance(expr, ListExpr):
-            return ListType(expr.element_type)
-        elif isinstance(expr, GetField):
-            # Would need to look up field type in object's message definition
-            # For now, return None (could be enhanced with field type lookup)
-            return None
-        elif isinstance(expr, GetElement):
-            # Infer return type from tuple type and index
-            tuple_type = self._infer_expr_type(expr.tuple_expr)
-            if isinstance(tuple_type, TupleType):
-                if 0 <= expr.index < len(tuple_type.elements):
-                    return tuple_type.elements[expr.index]
-            return None
-        elif isinstance(expr, Lit):
-            # Infer type from literal value
-            if isinstance(expr.value, bool):
-                return BaseType("Boolean")
-            elif isinstance(expr.value, int):
-                return BaseType("Int64")
-            elif isinstance(expr.value, float):
-                return BaseType("Float64")
-            elif isinstance(expr.value, str):
-                return BaseType("String")
-            return None
-        else:
-            # Other cases: Symbol, etc.
+            return result
+        except (NotImplementedError, ValueError):
             return None
 
     def _get_rhs_element_types(self, rhs: Rhs) -> List[TargetType]:
@@ -527,7 +500,7 @@ class GrammarValidator:
 
         Subtyping rules:
         - Reflexivity: T <: T
-        - Bottom <: T for all T (Bottom is the empty type)
+        - Never <: T for all T (Never is the bottom type)
         - T <: Any for all T (Any is the top type)
         - List is covariant: List[A] <: List[B] if A <: B
         - Option is covariant: Option[A] <: Option[B] if A <: B
@@ -535,8 +508,8 @@ class GrammarValidator:
         """
         if t1 == t2:
             return True
-        # Bottom is a subtype of everything
-        if isinstance(t1, BottomType):
+        # Never is a subtype of everything (bottom type)
+        if isinstance(t1, BaseType) and t1.name == "Never":
             return True
         # T <: Any for all T (Any is the top type)
         if isinstance(t2, BaseType) and t2.name == "Any":

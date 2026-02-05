@@ -79,7 +79,8 @@ The generated IR for expr (simplified) would be:
 from typing import Dict, List, Optional, Set, Tuple, Sequence as PySequence
 from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Terminal, Sequence
 from .grammar_utils import is_epsilon, rhs_elements
-from .target import Lambda, Call, VisitNonterminalDef, Var, Lit, Symbol, Builtin, NewMessage, OneOf, Let, IfElse, BaseType, ListType, ListExpr, TargetExpr, Seq, While, Foreach, ForeachEnumerated, Assign, VisitNonterminal, Return, GetField, GetElement
+from .target import Lambda, Call, VisitNonterminalDef, Var, Lit, Symbol, Builtin, NewMessage, OneOf, Let, IfElse, BaseType, ListType, ListExpr, TargetExpr, Seq, While, Foreach, ForeachEnumerated, Assign, VisitNonterminal, Return, GetField, GetElement, NamedFun
+from .target_builtins import make_builtin
 from .gensym import gensym
 from .terminal_sequence_set import TerminalSequenceSet, FollowSet, FirstSet, ConcatSet
 
@@ -126,14 +127,14 @@ def _generate_parse_method(lhs: Nonterminal, rules: List[Rule], grammar: Grammar
         if has_epsilon:
             tail = Lit(None)
         else:
-            tail = Call(Builtin('error_with_token'), [Lit(f'Unexpected token in {lhs}'), Call(Builtin('current_token'), [])])
+            tail = Call(make_builtin('error_with_token'), [Lit(f'Unexpected token in {lhs}'), Call(make_builtin('current_token'), [])])
         for i, rule in enumerate(rules):
             # Ensure the return type is the same for all actions for this nonterminal.
             assert return_type is None or return_type == rule.constructor.return_type, f'Return type mismatch at rule {i}: {return_type} != {rule.constructor.return_type}'
             return_type = rule.constructor.return_type
             if is_epsilon(rule.rhs):
                 continue
-            tail = IfElse(Call(Builtin('equal'), [Var(prediction, BaseType('Int64')), Lit(i)]), _generate_parse_rhs_ir(rule.rhs, grammar, follow_set, True, rule.constructor), tail)
+            tail = IfElse(Call(make_builtin('equal'), [Var(prediction, BaseType('Int64')), Lit(i)]), _generate_parse_rhs_ir(rule.rhs, grammar, follow_set, True, rule.constructor), tail)
         rhs = Let(Var(prediction, BaseType('Int64')), predictor, tail)
     assert return_type is not None
     return VisitNonterminalDef('parse', lhs, [], return_type, rhs, indent)
@@ -223,9 +224,9 @@ def _build_predictor_tree(grammar: Grammar, rules: List[Rule], active_indices: L
 def _build_token_check(term: Terminal, depth: int) -> TargetExpr:
     """Build a check for a single token at a given lookahead depth."""
     if isinstance(term, LitTerminal):
-        return Call(Builtin('match_lookahead_literal'), [Lit(term.name), Lit(depth)])
+        return Call(make_builtin('match_lookahead_literal'), [Lit(term.name), Lit(depth)])
     elif isinstance(term, NamedTerminal):
-        return Call(Builtin('match_lookahead_terminal'), [Lit(term.name), Lit(depth)])
+        return Call(make_builtin('match_lookahead_terminal'), [Lit(term.name), Lit(depth)])
     else:
         return Lit(False)
 
@@ -307,12 +308,12 @@ def _generate_parse_rhs_ir(rhs: Rhs, grammar: Grammar, follow_set: TerminalSeque
     if isinstance(rhs, Sequence):
         return _generate_parse_rhs_ir_sequence(rhs, grammar, follow_set, apply_action, action)
     elif isinstance(rhs, LitTerminal):
-        parse_expr = Call(Builtin('consume_literal'), [Lit(rhs.name)])
+        parse_expr = Call(make_builtin('consume_literal'), [Lit(rhs.name)])
         if apply_action and action:
             return Seq([parse_expr, _apply(action, [])])
         return parse_expr
     elif isinstance(rhs, NamedTerminal):
-        parse_expr = Call(Builtin('consume_terminal'), [Lit(rhs.name)])
+        parse_expr = Call(make_builtin('consume_terminal'), [Lit(rhs.name)])
         if apply_action and action:
             if len(action.params) == 0:
                 return Seq([parse_expr, _apply(action, [])])
@@ -342,7 +343,7 @@ def _generate_parse_rhs_ir(rhs: Rhs, grammar: Grammar, follow_set: TerminalSeque
         item = Var(gensym('item'), rhs.rhs.target_type())
         loop_body = Seq([
             Assign(item, parse_item),
-            Assign(xs, Call(Builtin('list_concat'), [xs, ListExpr([item], rhs.rhs.target_type())])),
+            Assign(xs, Call(make_builtin('list_concat'), [xs, ListExpr([item], rhs.rhs.target_type())])),
             Assign(cond, predictor)
         ])
         return Let(xs, ListExpr([], rhs.rhs.target_type()),
@@ -387,7 +388,7 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, grammar: Grammar, follow_set:
         exprs.append(lambda_call)
     elif len(arg_vars) > 1:
         # Multiple values - wrap in tuple
-        exprs.append(Call(Builtin('tuple'), arg_vars))
+        exprs.append(Call(make_builtin('tuple'), arg_vars))
     elif len(arg_vars) == 1:
         # Single value - return the variable
         exprs.append(arg_vars[0])
@@ -447,7 +448,7 @@ def _subst(expr: 'TargetExpr', var: str, val: 'TargetExpr') -> 'TargetExpr':
     elif isinstance(expr, Return):
         return Return(_subst(expr.expr, var, val))
     elif isinstance(expr, GetField):
-        return GetField(_subst(expr.object, var, val), expr.field_name)
+        return GetField(_subst(expr.object, var, val), expr.field_name, expr.message_type, expr.field_type)
     elif isinstance(expr, GetElement):
         return GetElement(_subst(expr.tuple_expr, var, val), expr.index)
     elif isinstance(expr, NewMessage):
@@ -456,7 +457,7 @@ def _subst(expr: 'TargetExpr', var: str, val: 'TargetExpr') -> 'TargetExpr':
             new_fields = tuple((name, _subst(field_expr, var, val)) for name, field_expr in expr.fields)
             return NewMessage(expr.module, expr.name, new_fields)
         return expr
-    elif isinstance(expr, (Lit, Symbol, Builtin, OneOf, VisitNonterminal)):
+    elif isinstance(expr, (Lit, Symbol, Builtin, OneOf, VisitNonterminal, NamedFun)):
         # These don't contain variables, return unchanged
         return expr
     raise ValueError(f"Unknown expression type in _subst: {type(expr).__name__}")

@@ -730,78 +730,78 @@ export_csv_column
 
 
 def _extract_value_int64(value: Optional[logic.Value], default: int) -> int:
-    if value is not None and builtin.has_proto_field(value, 'int_value'):
-        return value.int_value
+    if value is not None and builtin.has_proto_field(builtin.unwrap_option(value), 'int_value'):
+        return builtin.unwrap_option(value).int_value
     return default
 
 
 def _extract_value_float64(value: Optional[logic.Value], default: float) -> float:
-    if value is not None and builtin.has_proto_field(value, 'float_value'):
-        return value.float_value
+    if value is not None and builtin.has_proto_field(builtin.unwrap_option(value), 'float_value'):
+        return builtin.unwrap_option(value).float_value
     return default
 
 
 def _extract_value_string(value: Optional[logic.Value], default: str) -> str:
-    if value is not None and builtin.has_proto_field(value, 'string_value'):
-        return value.string_value
+    if value is not None and builtin.has_proto_field(builtin.unwrap_option(value), 'string_value'):
+        return builtin.unwrap_option(value).string_value
     return default
 
 
 def _extract_value_boolean(value: Optional[logic.Value], default: bool) -> bool:
-    if value is not None and builtin.has_proto_field(value, 'boolean_value'):
-        return value.boolean_value
+    if value is not None and builtin.has_proto_field(builtin.unwrap_option(value), 'boolean_value'):
+        return builtin.unwrap_option(value).boolean_value
     return default
 
 
 def _extract_value_bytes(value: Optional[logic.Value], default: bytes) -> bytes:
-    if value is not None and builtin.has_proto_field(value, 'string_value'):
-        return value.string_value.encode()
+    if value is not None and builtin.has_proto_field(builtin.unwrap_option(value), 'string_value'):
+        return builtin.encode_string(builtin.unwrap_option(value).string_value)
     return default
 
 
 def _extract_value_uint128(value: Optional[logic.Value], default: logic.UInt128Value) -> logic.UInt128Value:
-    if value is not None and builtin.has_proto_field(value, 'uint128_value'):
-        return value.uint128_value
+    if value is not None and builtin.has_proto_field(builtin.unwrap_option(value), 'uint128_value'):
+        return builtin.unwrap_option(value).uint128_value
     return default
 
 def _extract_value_string_list(value: Optional[logic.Value], default: List[String]) -> List[String]:
-    if value is not None and builtin.has_proto_field(value, 'string_value'):
-        return [value.string_value]
+    if value is not None and builtin.has_proto_field(builtin.unwrap_option(value), 'string_value'):
+        return [builtin.unwrap_option(value).string_value]
     return default
 
 def _try_extract_value_int64(value: Optional[logic.Value]) -> Optional[int]:
-    if value is not None and builtin.has_proto_field(value, 'int_value'):
-        return value.int_value
+    if value is not None and builtin.has_proto_field(builtin.unwrap_option(value), 'int_value'):
+        return builtin.unwrap_option(value).int_value
     return None
 
 
 def _try_extract_value_float64(value: Optional[logic.Value]) -> Optional[float]:
-    if value is not None and builtin.has_proto_field(value, 'float_value'):
-        return value.float_value
+    if value is not None and builtin.has_proto_field(builtin.unwrap_option(value), 'float_value'):
+        return builtin.unwrap_option(value).float_value
     return None
 
 
 def _try_extract_value_string(value: Optional[logic.Value]) -> Optional[str]:
-    if value is not None and builtin.has_proto_field(value, 'string_value'):
-        return value.string_value
+    if value is not None and builtin.has_proto_field(builtin.unwrap_option(value), 'string_value'):
+        return builtin.unwrap_option(value).string_value
     return None
 
 
 def _try_extract_value_bytes(value: Optional[logic.Value]) -> Optional[bytes]:
-    if value is not None and builtin.has_proto_field(value, 'string_value'):
-        return value.string_value.encode()
+    if value is not None and builtin.has_proto_field(builtin.unwrap_option(value), 'string_value'):
+        return builtin.encode_string(builtin.unwrap_option(value).string_value)
     return None
 
 
 def _try_extract_value_uint128(value: Optional[logic.Value]) -> Optional[logic.UInt128Value]:
-    if value is not None and builtin.has_proto_field(value, 'uint128_value'):
-        return value.uint128_value
+    if value is not None and builtin.has_proto_field(builtin.unwrap_option(value), 'uint128_value'):
+        return builtin.unwrap_option(value).uint128_value
     return None
 
 
 def _try_extract_value_string_list(value: Optional[logic.Value]) -> Optional[List[String]]:
-    if value is not None and builtin.has_proto_field(value, 'string_value'):
-        return [value.string_value]
+    if value is not None and builtin.has_proto_field(builtin.unwrap_option(value), 'string_value'):
+        return [builtin.unwrap_option(value).string_value]
     return None
 
 
@@ -873,11 +873,14 @@ def construct_configure(config_dict: List[Tuple[String, logic.Value]]) -> transa
     maintenance_level: str
     if (maintenance_level_val is not None
             and builtin.has_proto_field(maintenance_level_val, 'string_value')):
-        level_str: str = maintenance_level_val.string_value.upper()
-        if level_str in ["OFF", "AUTO", "ALL"]:
-            maintenance_level = "MAINTENANCE_LEVEL_" + level_str
+        if maintenance_level_val.string_value == "off":
+            maintenance_level = "MAINTENANCE_LEVEL_OFF"
+        elif maintenance_level_val.string_value == "auto":
+            maintenance_level = "MAINTENANCE_LEVEL_AUTO"
+        elif maintenance_level_val.string_value == "all":
+            maintenance_level = "MAINTENANCE_LEVEL_ALL"
         else:
-            maintenance_level = level_str
+            maintenance_level = "MAINTENANCE_LEVEL_OFF"
     else:
         maintenance_level = "MAINTENANCE_LEVEL_OFF"
     ivm_config: transactions.IVMConfig = transactions.IVMConfig(level=maintenance_level)

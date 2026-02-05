@@ -23,7 +23,7 @@ from .codegen_templates import BuiltinTemplate, VariadicBuiltinTemplate
 @dataclass
 class BuiltinResult:
     """Result of generating a builtin call."""
-    value: str  # The value expression to return
+    value: Optional[str]  # The value expression to return, or None if the builtin does not return
     statements: List[str]  # Statements to prepend (may be empty)
 
 
