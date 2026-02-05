@@ -5,7 +5,8 @@ import pytest
 
 from meta.target import (
     BaseType, MessageType, TupleType, ListType, OptionType, FunctionType,
-    Var, GetElement, Call, Builtin, NewMessage, Lambda, Lit, IfElse, Let, ListExpr
+    Var, GetElement, Call, Builtin, NewMessage, Lambda, Lit, IfElse, Let, ListExpr,
+    NamedFun, FunDef
 )
 from meta.target_builtins import make_builtin
 from meta.grammar import (
@@ -739,6 +740,96 @@ class TestComplexExpressions:
         outer = Call(make_builtin('int64_to_int32'), [inner])
 
         validator._check_expr_types(outer, 'test_rule')
+        assert validator.result.is_valid
+
+
+class TestHelperFunctionCalls:
+    """Tests for calling helper functions defined in grammar."""
+
+    def test_call_helper_function(self):
+        """Test that calling a helper function in a rule passes validation."""
+        parser = ProtoParser()
+        start = Nonterminal('start', BaseType('String'))
+        grammar = Grammar(start=start)
+
+        # Define a helper function: def my_helper(x: String) -> String: x
+        helper_param = Var('x', BaseType('String'))
+        helper_body = helper_param
+        helper_def = FunDef('my_helper', [helper_param], BaseType('String'), helper_body)
+        grammar.function_defs['my_helper'] = helper_def
+
+        # Rule that calls the helper: start -> STRING { my_helper($1) }
+        param = Var('s', BaseType('String'))
+        helper_type = FunctionType([BaseType('String')], BaseType('String'))
+        body = Call(NamedFun('my_helper', helper_type), [param])
+        constructor = Lambda([param], BaseType('String'), body)
+        rule = Rule(start, NamedTerminal('STRING', BaseType('String')), constructor)
+        grammar.rules[start] = [rule]
+
+        validator = GrammarValidator(grammar, parser)
+        validator._check_rule_types(rule)
+        assert validator.result.is_valid
+
+    def test_call_helper_function_in_expression(self, validator):
+        """Test calling a helper function within an expression."""
+        # Call to a named function with type Int64 -> String
+        fn_type = FunctionType([BaseType('Int64')], BaseType('String'))
+        call = Call(NamedFun('some_helper', fn_type), [Lit(42)])
+        # Should pass - validator doesn't check if function exists
+        validator._check_expr_types(call, 'test_rule')
+        assert validator.result.is_valid
+
+    def test_helper_function_as_argument(self):
+        """Test helper function result used as argument to another call."""
+        parser = ProtoParser()
+        start = Nonterminal('start', ListType(BaseType('String')))
+        grammar = Grammar(start=start)
+
+        # Define helper: def wrap(x: String) -> String: x
+        helper_param = Var('x', BaseType('String'))
+        helper_def = FunDef('wrap', [helper_param], BaseType('String'), helper_param)
+        grammar.function_defs['wrap'] = helper_def
+
+        # Rule: start -> STRING { [wrap($1)] }
+        param = Var('s', BaseType('String'))
+        wrap_type = FunctionType([BaseType('String')], BaseType('String'))
+        helper_call = Call(NamedFun('wrap', wrap_type), [param])
+        body = ListExpr([helper_call], BaseType('String'))
+        constructor = Lambda([param], ListType(BaseType('String')), body)
+        rule = Rule(start, NamedTerminal('STRING', BaseType('String')), constructor)
+        grammar.rules[start] = [rule]
+
+        validator = GrammarValidator(grammar, parser)
+        validator._check_rule_types(rule)
+        assert validator.result.is_valid
+
+    def test_nested_helper_function_calls(self):
+        """Test nested calls to helper functions."""
+        parser = ProtoParser()
+        start = Nonterminal('start', BaseType('String'))
+        grammar = Grammar(start=start)
+
+        # Define helpers
+        str_to_str = FunctionType([BaseType('String')], BaseType('String'))
+
+        inner_param = Var('x', BaseType('String'))
+        inner_def = FunDef('inner', [inner_param], BaseType('String'), inner_param)
+        grammar.function_defs['inner'] = inner_def
+
+        outer_param = Var('y', BaseType('String'))
+        outer_body = Call(NamedFun('inner', str_to_str), [outer_param])
+        outer_def = FunDef('outer', [outer_param], BaseType('String'), outer_body)
+        grammar.function_defs['outer'] = outer_def
+
+        # Rule: start -> STRING { outer($1) }
+        param = Var('s', BaseType('String'))
+        body = Call(NamedFun('outer', str_to_str), [param])
+        constructor = Lambda([param], BaseType('String'), body)
+        rule = Rule(start, NamedTerminal('STRING', BaseType('String')), constructor)
+        grammar.rules[start] = [rule]
+
+        validator = GrammarValidator(grammar, parser)
+        validator._check_rule_types(rule)
         assert validator.result.is_valid
 
 

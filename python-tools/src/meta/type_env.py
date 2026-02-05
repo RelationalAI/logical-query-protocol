@@ -21,7 +21,7 @@ _PRIMITIVE_TO_BASE_TYPE = {
     'bool': 'Boolean',
     'double': 'Float64',
     'float': 'Float32',
-    'bytes': 'String',
+    'bytes': 'Bytes',
 }
 
 

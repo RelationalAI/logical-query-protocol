@@ -362,7 +362,11 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
                 func_def = ctx.functions[func_name]
                 if func_def is not None:
                     return Call(_make_named_fun(func_def), args)
-                raise YaccGrammarError(f"Function '{func_name}' referenced before definition", line)
+                # Function is pre-scanned but not yet parsed - create forward reference
+                # Use a placeholder type that will be validated later
+                from .target import VarType
+                placeholder_type = FunctionType([], VarType("T"))
+                return Call(NamedFun(func_name, placeholder_type), args)
             raise YaccGrammarError(
                 f"Unknown function: '{func_name}'\n"
                 f"  Functions must be either:\n"
@@ -507,6 +511,27 @@ def parse_action_expr(text: str, param_info: List[Tuple[Optional[str], Optional[
 
 # Helper function parsing
 
+def prescan_helper_function_names(lines: List[str], start_line: int, ctx: 'TypeContext') -> None:
+    """Pre-scan helper functions section to register function names.
+
+    This allows rules to reference helper functions before they are fully parsed.
+    The function names are added to ctx.functions as None placeholders.
+    """
+    text = '\n'.join(lines)
+    if not text.strip():
+        return
+
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        # Ignore syntax errors here - they'll be reported during full parsing
+        return
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef):
+            ctx.functions[node.name] = None  # type: ignore
+
+
 def parse_helper_functions(lines: List[str], start_line: int, ctx: 'TypeContext') -> Dict[str, FunDef]:
     """Parse helper functions section (Python code).
 
@@ -525,24 +550,54 @@ def parse_helper_functions(lines: List[str], start_line: int, ctx: 'TypeContext'
     except SyntaxError as e:
         raise YaccGrammarError(f"Syntax error in helper functions: {e}", start_line + (e.lineno or 1))
 
-    # Two-pass approach: first collect all function signatures, then convert bodies
-    # This allows functions to call each other without forward declaration issues
+    # Two-pass approach:
+    # Pass 1: Extract all function signatures and register them in ctx.functions
+    # Pass 2: Convert function bodies using the complete type environment
 
-    # Pass 1: Collect function signatures
+    # Pass 1: Extract function signatures
     func_nodes: List[ast.FunctionDef] = []
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef):
             func_nodes.append(node)
-            # Add function name to context so other functions can reference it
-            ctx.functions[node.name] = None  # type: ignore
+            # Extract signature and create placeholder FunDef with Lit(None) body
+            params, return_type = _extract_function_signature(node, start_line)
+            placeholder = FunDef(node.name, params, return_type, Lit(None))
+            ctx.functions[node.name] = placeholder
 
-    # Pass 2: Convert function bodies
+    # Pass 2: Convert function bodies with complete type environment
     functions: Dict[str, FunDef] = {}
     for node in func_nodes:
         func_def = _convert_function_def(node, ctx, start_line)
         functions[func_def.name] = func_def
+        ctx.functions[func_def.name] = func_def
 
     return functions
+
+
+def _extract_function_signature(node: ast.FunctionDef, base_line: int) -> Tuple[Tuple[Var, ...], TargetType]:
+    """Extract function signature (params, return type) without converting body.
+
+    Returns (params, return_type). The function name is available from node.name.
+    """
+    name = node.name
+
+    # Parse parameters with type annotations
+    params = []
+    for arg in node.args.args:
+        param_name = arg.arg
+        if arg.annotation is None:
+            raise YaccGrammarError(f"Parameter {param_name} in {name} missing type annotation",
+                                   base_line + node.lineno)
+        param_type = _annotation_to_type(arg.annotation, base_line + node.lineno)
+        params.append(Var(param_name, param_type))
+
+    # Parse return type
+    if node.returns is None:
+        raise YaccGrammarError(f"Function {name} missing return type annotation",
+                               base_line + node.lineno)
+    return_type = _annotation_to_type(node.returns, base_line + node.lineno)
+
+    return tuple(params), return_type
 
 
 def _convert_function_def(node: ast.FunctionDef, ctx: 'TypeContext', base_line: int) -> FunDef:
@@ -647,6 +702,9 @@ def _convert_stmt(stmt: ast.stmt, ctx: 'TypeContext', line: int,
 def _make_get_field(obj: TargetExpr, field_name: str, ctx: 'TypeContext', line: Optional[int] = None) -> GetField:
     """Create a GetField expression, looking up field type if possible."""
     obj_type = obj.target_type()
+    # Unwrap OptionType - we assume caller has checked for None
+    if isinstance(obj_type, OptionType):
+        obj_type = obj_type.element_type
     if not isinstance(obj_type, MessageType):
         raise YaccGrammarError(f"Cannot access field '{field_name}' on non-message type {obj_type}", line)
     message_type = obj_type
@@ -897,6 +955,7 @@ __all__ = [
     'parse_action',
     'parse_action_expr',
     'parse_helper_functions',
+    'prescan_helper_function_names',
     'preprocess_action',
     '_get_rhs_param_info',
     '_get_rhs_param_types',

@@ -79,7 +79,7 @@ The generated IR for expr (simplified) would be:
 from typing import Dict, List, Optional, Set, Tuple, Sequence as PySequence
 from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Terminal, Sequence
 from .grammar_utils import is_epsilon, rhs_elements
-from .target import Lambda, Call, VisitNonterminalDef, Var, Lit, Symbol, Builtin, NewMessage, OneOf, Let, IfElse, BaseType, ListType, ListExpr, TargetExpr, Seq, While, Foreach, ForeachEnumerated, Assign, VisitNonterminal, Return, GetField, GetElement
+from .target import Lambda, Call, VisitNonterminalDef, Var, Lit, Symbol, Builtin, NewMessage, OneOf, Let, IfElse, BaseType, ListType, ListExpr, TargetExpr, Seq, While, Foreach, ForeachEnumerated, Assign, VisitNonterminal, Return, GetField, GetElement, NamedFun
 from .target_builtins import make_builtin
 from .gensym import gensym
 from .terminal_sequence_set import TerminalSequenceSet, FollowSet, FirstSet, ConcatSet
@@ -457,7 +457,7 @@ def _subst(expr: 'TargetExpr', var: str, val: 'TargetExpr') -> 'TargetExpr':
             new_fields = tuple((name, _subst(field_expr, var, val)) for name, field_expr in expr.fields)
             return NewMessage(expr.module, expr.name, new_fields)
         return expr
-    elif isinstance(expr, (Lit, Symbol, Builtin, OneOf, VisitNonterminal)):
+    elif isinstance(expr, (Lit, Symbol, Builtin, OneOf, VisitNonterminal, NamedFun)):
         # These don't contain variables, return unchanged
         return expr
     raise ValueError(f"Unknown expression type in _subst: {type(expr).__name__}")
