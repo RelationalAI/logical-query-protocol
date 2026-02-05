@@ -36,14 +36,14 @@ from dataclasses import dataclass, field
 
 from .grammar import Rule, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
 from .target import (
-    Lambda, Call, Var, Lit, Seq, Builtin, Message, OneOf, ListExpr,
+    Lambda, Call, Var, Lit, Seq, Builtin, NewMessage, OneOf, ListExpr,
     OptionType, ListType, TupleType, MessageType, TargetType
 )
 from .target_utils import (
     STRING_TYPE, INT64_TYPE, FLOAT64_TYPE, BOOLEAN_TYPE,
     create_identity_function,
     make_equal, make_which_oneof, make_get_field, make_some, make_tuple,
-    make_fst, make_snd, make_is_empty, make_concat, make_length, make_unwrap_option_or
+    make_get_element, make_fst, make_snd, make_is_empty, make_concat, make_length, make_unwrap_option_or
 )
 
 LPAREN = LitTerminal('(')
@@ -54,9 +54,9 @@ LBRACKET = LitTerminal('[')
 RBRACKET = LitTerminal(']')
 
 
-def _msg(module: str, name: str, *args):
-    """Generic message constructor: Call(Message(module, name), [args])."""
-    return Call(Message(module, name), list(args))
+def _msg(proto_module: str, proto_name: str, **fields):
+    """Generic message constructor with named fields."""
+    return NewMessage(proto_module, proto_name, list(fields.items()))
 
 
 
@@ -132,13 +132,15 @@ def _make_simple_message_rule(
     else:
         rhs = LitTerminal(keyword)
 
+    # Build field assignments from params (param names match field names)
+    field_kwargs = {name: Var(name, typ) for name, typ in fields}
     return Rule(
         lhs=Nonterminal(lhs_name, msg_type),
         rhs=rhs,
         constructor=Lambda(
             params,
             msg_type,
-            _msg(module, message_name, *params)
+            _msg(module, message_name, **field_kwargs)
         )
     )
 
@@ -149,14 +151,14 @@ def _make_value_oneof_rule(rhs, rhs_type, oneof_field_name):
     _value_nt = Nonterminal('value', _value_type)
 
     var_value = Var('value', rhs_type)
-    msg_var = Var('msg', _value_type)
     return Rule(
         lhs=_value_nt,
         rhs=rhs,
         constructor=Lambda(
             [var_value],
             _value_type,
-            _msg('logic', 'Value', Call(OneOf(oneof_field_name), [var_value]))
+            # Value's oneof field is named 'value'
+            _msg('logic', 'Value', value=Call(OneOf(oneof_field_name), [var_value]))
         )
     )
 
@@ -304,7 +306,7 @@ class BuiltinRules:
             constructor=Lambda(
                 [],
                 _value_type,
-                _msg('logic', 'Value', Call(OneOf('missing_value'), [_msg('logic', 'MissingValue')]))
+                _msg('logic', 'Value', value=Call(OneOf('missing_value'), [_msg('logic', 'MissingValue')]))
             )
         ))
 
@@ -349,8 +351,9 @@ class BuiltinRules:
                 [_var_year, _var_month, _var_day, _var_hour, _var_minute, _var_second, _var_microsecond],
                 _datetime_value_type,
                 _msg('logic', 'DateTimeValue',
-                    _var_year, _var_month, _var_day, _var_hour, _var_minute, _var_second,
-                    make_unwrap_option_or(_var_microsecond, Lit(0))
+                    year=_var_year, month=_var_month, day=_var_day,
+                    hour=_var_hour, minute=_var_minute, second=_var_second,
+                    microsecond=make_unwrap_option_or(_var_microsecond, Lit(0))
                 )
             )
         ))
@@ -418,12 +421,12 @@ class BuiltinRules:
                 ],
                 _transaction_type,
                 _msg('transactions', 'Transaction',
-                    Var('epochs', ListType(_epoch_type)),
-                    make_unwrap_option_or(
+                    epochs=Var('epochs', ListType(_epoch_type)),
+                    configure=make_unwrap_option_or(
                         Var('configure', OptionType(_configure_type)),
                         Call(Builtin('construct_configure'), [ListExpr([], TupleType([STRING_TYPE, _value_type]))])
                     ),
-                    Var('sync', OptionType(_sync_type))
+                    sync=Var('sync', OptionType(_sync_type))
                 )
             )
 
@@ -502,7 +505,7 @@ class BuiltinRules:
             constructor=Lambda(
                 [Var('symbol', STRING_TYPE), _type_var],
                 _binding_type,
-                _msg('logic', 'Binding', _msg('logic', 'Var', Var('symbol', STRING_TYPE)), _type_var)
+                _msg('logic', 'Binding', var=_msg('logic', 'Var', name=Var('symbol', STRING_TYPE)), type=_type_var)
             )
 
         ))
@@ -526,7 +529,7 @@ class BuiltinRules:
                 params=[_var_bindings, _var_formula],
                 return_type=_abstraction_with_arity_type,
                 body=make_tuple(
-                    _msg('logic', 'Abstraction', _concat_bindings(_var_bindings), _var_formula),
+                    _msg('logic', 'Abstraction', vars=_concat_bindings(_var_bindings), value=_var_formula),
                     make_length(make_snd(_var_bindings))
                 )
             )
@@ -539,7 +542,7 @@ class BuiltinRules:
             constructor=Lambda(
                 params=[_var_bindings, _var_formula],
                 return_type=_abstraction_type,
-                body=_msg('logic', 'Abstraction', _concat_bindings(_var_bindings), _var_formula)
+                body=_msg('logic', 'Abstraction', vars=_concat_bindings(_var_bindings), value=_var_formula)
             )
 
         ))
@@ -566,14 +569,14 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_true_nt,
             rhs=Sequence((LPAREN, LitTerminal('true'), RPAREN)),
-            constructor=Lambda([], _conjunction_type, _msg('logic', 'Conjunction', _empty_formula_list))
+            constructor=Lambda([], _conjunction_type, _msg('logic', 'Conjunction', args=_empty_formula_list))
 
         ))
 
         self.add_rule(Rule(
             lhs=_false_nt,
             rhs=Sequence((LPAREN, LitTerminal('false'), RPAREN)),
-            constructor=Lambda([], _disjunction_type, _msg('logic', 'Disjunction', _empty_formula_list))
+            constructor=Lambda([], _disjunction_type, _msg('logic', 'Disjunction', args=_empty_formula_list))
 
         ))
 
@@ -588,7 +591,7 @@ class BuiltinRules:
             constructor=Lambda(
                 [Var('value', _conjunction_type)],
                 _formula_type,
-                _msg('logic', 'Formula', Call(OneOf('conjunction'), [Var('value', _conjunction_type)]))
+                _msg('logic', 'Formula', formula_type=Call(OneOf('conjunction'), [Var('value', _conjunction_type)]))
             )
 
         ))
@@ -600,7 +603,7 @@ class BuiltinRules:
             constructor=Lambda(
                 [Var('value', _disjunction_type)],
                 _formula_type,
-                _msg('logic', 'Formula', Call(OneOf('disjunction'), [Var('value', _disjunction_type)]))
+                _msg('logic', 'Formula', formula_type=Call(OneOf('disjunction'), [Var('value', _disjunction_type)]))
             )
 
         ))
@@ -639,7 +642,7 @@ class BuiltinRules:
             constructor=Lambda(
                 [Var('config', _export_csv_config_type)],
                 _export_type,
-                _msg('transactions', 'Export', Call(OneOf('csv_config'), [Var('config', _export_csv_config_type)]))
+                _msg('transactions', 'Export', export_config=Call(OneOf('csv_config'), [Var('config', _export_csv_config_type)]))
             )
 
         ))
@@ -720,7 +723,7 @@ class BuiltinRules:
         self.add_rule(Rule(
             lhs=_var_nt,
             rhs=_symbol_terminal,
-            constructor=Lambda([Var('symbol', STRING_TYPE)], _var_type, _msg('logic', 'Var', Var('symbol', STRING_TYPE)))
+            constructor=Lambda([Var('symbol', STRING_TYPE)], _var_type, _msg('logic', 'Var', name=Var('symbol', STRING_TYPE)))
 
         ))
 
@@ -784,6 +787,7 @@ class BuiltinRules:
         """Add rules for comparison and arithmetic operators."""
 
         _term_type = MessageType('logic', 'Term')
+        _rel_term_type = MessageType('logic', 'RelTerm')
         _primitive_type = MessageType('logic', 'Primitive')
         _term_nt = Nonterminal('term', _term_type)
         _primitive_nt = Nonterminal('primitive', _primitive_type)
@@ -799,7 +803,7 @@ class BuiltinRules:
             rhs_terms = tuple(_term_nt for _ in range(arity))
             msg_var = Var('msg', _primitive_type)
 
-            wrapped_args = [_msg('logic', 'RelTerm', Call(OneOf('term'), [p])) for p in params]
+            wrapped_args = [_msg('logic', 'RelTerm', rel_term_type=Call(OneOf('term'), [p])) for p in params]
             extracted_args = [make_get_field(make_get_field(msg_var, _arg_lits[i]), _lit_term)
                               for i in range(arity)]
 
@@ -812,7 +816,7 @@ class BuiltinRules:
                 constructor=Lambda(
                     params,
                     _primitive_type,
-                    _msg('logic', 'Primitive', Lit(prim), *wrapped_args)
+                    _msg('logic', 'Primitive', name=Lit(prim), terms=ListExpr(wrapped_args, _rel_term_type))
                 )
 
             )
@@ -928,8 +932,8 @@ class BuiltinRules:
                     [name_var, Var('relation_id', _relation_id_type)],
                     msg_type,
                     _msg('transactions', message_name,
-                        make_unwrap_option_or(name_var, Lit(keyword)),
-                        Var('relation_id', _relation_id_type))
+                        name=make_unwrap_option_or(name_var, Lit(keyword)),
+                        relation_id=Var('relation_id', _relation_id_type))
                 )
 
             )
@@ -996,9 +1000,9 @@ class BuiltinRules:
                 ],
                 _ffi_type,
                 _msg('logic', 'FFI',
-                    Var('name', STRING_TYPE),
-                    make_unwrap_option_or(Var('args', OptionType(_ffi_args_type)), ListExpr([], _abstraction_type)),
-                    make_unwrap_option_or(Var('terms', OptionType(_ffi_terms_type)), ListExpr([], _term_type))
+                    name=Var('name', STRING_TYPE),
+                    args=make_unwrap_option_or(Var('args', OptionType(_ffi_args_type)), ListExpr([], _abstraction_type)),
+                    terms=make_unwrap_option_or(Var('terms', OptionType(_ffi_terms_type)), ListExpr([], _term_type))
                 )
             )
         ))
@@ -1024,12 +1028,12 @@ class BuiltinRules:
                 [Var('bindings', _bindings_type), Var('formula', _formula_type)],
                 _exists_type,
                 _msg('logic', 'Exists',
-                    _msg('logic', 'Abstraction',
-                        make_concat(
+                    body=_msg('logic', 'Abstraction',
+                        vars=make_concat(
                             make_fst(Var('bindings', _bindings_type)),
                             make_snd(Var('bindings', _bindings_type))
                         ),
-                        Var('formula', _formula_type)
+                        value=Var('formula', _formula_type)
                     )
                 )
             )
@@ -1140,8 +1144,8 @@ class BuiltinRules:
                 [Var('name', _relation_id_type), Var('info', _betree_info_type)],
                 _betree_relation_type,
                 _msg('logic', 'BeTreeRelation',
-                    Var('name', _relation_id_type),
-                    Var('info', _betree_info_type)
+                    name=Var('name', _relation_id_type),
+                    relation_info=Var('info', _betree_info_type)
                 )
             )
         ))
@@ -1179,8 +1183,8 @@ class BuiltinRules:
                 [Var('paths', ListType(STRING_TYPE))],
                 _csv_locator_type,
                 _msg('logic', 'CSVLocator',
-                    Var('paths', ListType(STRING_TYPE)),
-                    Lit(None)  # inline_data = None
+                    paths=Var('paths', ListType(STRING_TYPE)),
+                    inline_data=Lit(None)  # inline_data = None
                 )
             )
         ))
@@ -1197,8 +1201,8 @@ class BuiltinRules:
                 [Var('data', STRING_TYPE)],
                 _csv_locator_type,
                 _msg('logic', 'CSVLocator',
-                    ListExpr([], STRING_TYPE),  # paths = []
-                    Call(Builtin('encode_string'), [Var('data', STRING_TYPE)])
+                    paths=ListExpr([], STRING_TYPE),  # paths = []
+                    inline_data=Call(Builtin('encode_string'), [Var('data', STRING_TYPE)])
                 )
             )
         ))
@@ -1233,9 +1237,9 @@ class BuiltinRules:
                 ],
                 _csv_column_type,
                 _msg('logic', 'CSVColumn',
-                    Var('column_name', STRING_TYPE),
-                    Var('target_id', _relation_id_type),
-                    Var('types', ListType(_type_type))
+                    column_name=Var('column_name', STRING_TYPE),
+                    target_id=Var('target_id', _relation_id_type),
+                    types=Var('types', ListType(_type_type))
                 )
             )
         ))
@@ -1272,10 +1276,10 @@ class BuiltinRules:
                 ],
                 _csv_data_type,
                 _msg('logic', 'CSVData',
-                    Var('locator', _csv_locator_type),
-                    Var('config', _csv_config_type),
-                    Var('columns', ListType(_csv_column_type)),
-                    Var('asof', STRING_TYPE)
+                    locator=Var('locator', _csv_locator_type),
+                    config=Var('config', _csv_config_type),
+                    columns=Var('columns', ListType(_csv_column_type)),
+                    asof=Var('asof', STRING_TYPE)
                 )
             )
         ))
@@ -1307,9 +1311,9 @@ class BuiltinRules:
                 ],
                 _rel_edb_type,
                 _msg('logic', 'RelEDB',
-                    Var('target_id', _relation_id_type),
-                    Var('path', ListType(STRING_TYPE)),
-                    Var('types', ListType(_type_type))
+                    target_id=Var('target_id', _relation_id_type),
+                    path=Var('path', ListType(STRING_TYPE)),
+                    types=Var('types', ListType(_type_type))
                 )
             )
         ))
@@ -1323,7 +1327,7 @@ class BuiltinRules:
             constructor=Lambda(
                 [Var('csv_data', _csv_data_type)],
                 _data_type,
-                _msg('logic', 'Data', Call(OneOf('csv_data'), [Var('csv_data', _csv_data_type)]))
+                _msg('logic', 'Data', data_type=Call(OneOf('csv_data'), [Var('csv_data', _csv_data_type)]))
             )
         ))
 
@@ -1333,7 +1337,7 @@ class BuiltinRules:
             constructor=Lambda(
                 [Var('betree_relation', _betree_relation_type)],
                 _data_type,
-                _msg('logic', 'Data', Call(OneOf('betree_relation'), [Var('betree_relation', _betree_relation_type)]))
+                _msg('logic', 'Data', data_type=Call(OneOf('betree_relation'), [Var('betree_relation', _betree_relation_type)]))
             )
         ))
 
@@ -1343,7 +1347,7 @@ class BuiltinRules:
             constructor=Lambda(
                 [Var('rel_edb', _rel_edb_type)],
                 _data_type,
-                _msg('logic', 'Data', Call(OneOf('rel_edb'), [Var('rel_edb', _rel_edb_type)]))
+                _msg('logic', 'Data', data_type=Call(OneOf('rel_edb'), [Var('rel_edb', _rel_edb_type)]))
             )
         ))
 

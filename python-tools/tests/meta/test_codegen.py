@@ -1,14 +1,8 @@
 #!/usr/bin/env python3
 """Tests for Julia and Python code generation from action AST."""
 
-import sys
-from pathlib import Path
-
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
-
 from meta.target import (
-    Var, Lit, Symbol, Builtin, Message, OneOf, ListExpr, Call, Lambda, Let,
+    Var, Lit, Symbol, Builtin, NewMessage, ListExpr, Call, Lambda, Let,
     IfElse, Seq, While, Assign, Return, FunDef, VisitNonterminalDef,
     BaseType, MessageType, ListType, OptionType,
 )
@@ -202,16 +196,17 @@ def test_python_builtin_generation():
     result = gen.generate_lines(expr, lines, "")
     assert result == "x is None"
 
-    # Test 'fst' and 'snd' builtins
+    # Test GetElement (replaces fst and snd builtins)
     reset_gensym()
     lines = []
-    expr = Call(Builtin("fst"), [Var("pair", _any_type)])
+    from meta.target import GetElement
+    expr = GetElement(Var("pair", _any_type), 0)
     result = gen.generate_lines(expr, lines, "")
     assert result == "pair[0]"
 
     reset_gensym()
     lines = []
-    expr = Call(Builtin("snd"), [Var("pair", _any_type)])
+    expr = GetElement(Var("pair", _any_type), 1)
     result = gen.generate_lines(expr, lines, "")
     assert result == "pair[1]"
 
@@ -366,20 +361,21 @@ def test_python_symbol_generation():
 
 
 def test_python_message_generation():
-    """Test Python Message constructor code generation."""
+    """Test Python NewMessage constructor code generation."""
     gen = PythonCodeGenerator()
 
-    # Simple message reference
+    # Simple message with no fields
     reset_gensym()
     lines = []
-    expr = Message("logic", "Expr")
+    expr = NewMessage("logic", "Expr", ())
     result = gen.generate_lines(expr, lines, "")
-    assert result == "logic_pb2.Expr"
+    assert result == "_t0"
+    assert "logic_pb2.Expr()" in "\n".join(lines)
 
-    # Message call without field mapping
+    # NewMessage with field
     reset_gensym()
     lines = []
-    expr = Call(Message("logic", "Expr"), [Var("value", _any_type)])
+    expr = NewMessage("logic", "Expr", (("value", Var("value", _any_type)),))
     result = gen.generate_lines(expr, lines, "")
     assert "logic_pb2.Expr" in "\n".join(lines)
 
@@ -388,11 +384,10 @@ def test_python_oneof_generation():
     """Test Python OneOf field code generation."""
     gen = PythonCodeGenerator()
 
-    # OneOf in Message constructor call
+    # OneOf in NewMessage constructor
     reset_gensym()
     lines = []
-    oneof_call = Call(OneOf("literal"), [Lit("hello")])
-    expr = Call(Message("logic", "Value"), [oneof_call])
+    expr = NewMessage("logic", "Value", (("literal", Lit("hello")),))
     result = gen.generate_lines(expr, lines, "")
     code = "\n".join(lines)
     assert "literal='hello'" in code or "literal=" in code
@@ -441,7 +436,7 @@ def test_python_visit_nonterminal_def_generation():
         nonterminal=nt,
         params=[],
         return_type=MessageType("logic", "Expr"),
-        body=Call(Message("logic", "Expr"), []),
+        body=NewMessage("logic", "Expr", ()),
     )
     code = gen.generate_def(parse_def)
     assert "def parse_expr(self) -> logic_pb2.Expr:" in code

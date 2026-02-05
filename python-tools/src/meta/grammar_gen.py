@@ -63,7 +63,7 @@ Field type handling:
 import re
 from typing import Callable, Dict, List, Optional, Set, Tuple, cast
 from .grammar import Grammar, Rule, Token, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
-from .target import Lambda, Call, Var, Lit, IfElse, Symbol, Builtin, Message, OneOf, ListExpr, BaseType, MessageType, OptionType, ListType, TargetType, TargetExpr, TupleType
+from .target import Lambda, Call, Var, Lit, IfElse, Symbol, Builtin, NewMessage, OneOf, ListExpr, BaseType, MessageType, OptionType, ListType, TargetType, TargetExpr, TupleType
 from .target_utils import create_identity_function
 from .grammar_utils import rewrite_rule
 from .proto_ast import ProtoMessage, ProtoField
@@ -246,7 +246,8 @@ class GrammarGenerator:
             else:
                 args.append(var)
         message = self.parser.messages[message_name]
-        body = Call(Message(message.module, message_name), args)
+        fields = list(zip(param_names, args))
+        body = NewMessage(message.module, message_name, fields)
         params = [Var(name, param_type) for name, param_type in zip(param_names, param_types)]
         return Lambda(params=params, return_type=MessageType(message.module, message_name), body=body)
 
@@ -492,7 +493,7 @@ class GrammarGenerator:
 
                 # Create oneof wrapper action
                 oneof_call = Call(OneOf(field.name), [Var('value', field_type)])
-                wrapper_call = Call(Message(message.module, message_name), [oneof_call])
+                wrapper_call = NewMessage(message.module, message_name, [(oneof.name, oneof_call)])
                 constructor = Lambda(
                     [Var('value', field_type)],
                     MessageType(message.module, message_name),
