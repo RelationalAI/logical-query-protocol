@@ -208,12 +208,9 @@ class JuliaCodeGenerator(CodeGenerator):
     # --- Override generate_lines for Julia-specific special cases ---
 
     def generate_lines(self, expr: TargetExpr, lines: List[str], indent: str = "") -> Optional[str]:
-        # Special case: Proto.Fragment construction with debug_info parameter
-        if isinstance(expr, Call) and isinstance(expr.func, NewMessage) and expr.func.name == "Fragment":
-            for arg in expr.args:
-                if isinstance(arg, Var) and arg.name == "debug_info":
-                    lines.append(f"{indent}debug_info = construct_debug_info(parser, get(parser.id_to_debuginfo, id, Dict()))")
-                    break
+        # Handle NewMessage with fields (which may contain OneOf calls)
+        if isinstance(expr, NewMessage):
+            return self._generate_newmessage(expr, lines, indent)
 
         # Julia uses 1-based indexing, so convert GetElement indices
         if isinstance(expr, GetElement):
@@ -224,92 +221,42 @@ class JuliaCodeGenerator(CodeGenerator):
 
         return super().generate_lines(expr, lines, indent)
 
-    def _generate_call(self, expr: Call, lines: List[str], indent: str) -> Optional[str]:
-        """Override to handle Message constructors and OneOf specially for Julia."""
-        # Check for Message constructor with OneOf call argument
-        if isinstance(expr.func, NewMessage):
-            f = self.generate_lines(expr.func, lines, indent)
+    def _generate_newmessage(self, expr: NewMessage, lines: List[str], indent: str) -> str:
+        """Generate Julia code for NewMessage with fields containing OneOf calls."""
+        ctor = self.gen_constructor(expr.module, expr.name)
 
-            # Get field mapping from proto message definitions
-            message_field_map = self._build_message_field_map()
-
-            # Process arguments, looking for Call(OneOf(...), [value]) patterns
-            positional_args = []
-            keyword_args = []
-
-            msg_key = (expr.func.module, expr.func.name)
-            field_specs = message_field_map.get(msg_key, [])
-            arg_idx = 0
-            field_idx = 0
-
-            while arg_idx < len(expr.args):
-                arg = expr.args[arg_idx]
-
-                if isinstance(arg, Call) and isinstance(arg.func, OneOf) and len(arg.args) == 1:
-                    # Extract field name and value from Call(OneOf(Symbol), [value])
-                    field_name = self.escape_identifier(arg.func.field_name)
-                    field_value = self.generate_lines(arg.args[0], lines, indent)
-                    field_symbol = self.gen_symbol(arg.func.field_name)
-                    keyword_args.append(f"{field_name}=OneOf({field_symbol}, {field_value})")
-                    arg_idx += 1
-                elif field_idx < len(field_specs):
-                    field_name, is_repeated = field_specs[field_idx]
-
-                    if is_repeated:
-                        # Determine how many args belong to this repeated field
-                        remaining_fields = len(field_specs) - field_idx - 1
-                        max_args_for_this_field = len(expr.args) - arg_idx - remaining_fields
-
-                        # If there's exactly one arg for this field, use it directly (it's already a list)
-                        # Otherwise, collect multiple args into a list
-                        if max_args_for_this_field == 1:
-                            field_value = self.generate_lines(arg, lines, indent)
-                            keyword_args.append(f"{field_name}={field_value}")
-                            arg_idx += 1
-                        else:
-                            # Collect multiple args into a list
-                            values = []
-                            while arg_idx < len(expr.args) and len(values) < max_args_for_this_field:
-                                next_arg = expr.args[arg_idx]
-                                # Stop if we encounter a oneof
-                                if isinstance(next_arg, Call) and isinstance(next_arg.func, OneOf):
-                                    break
-                                field_value = self.generate_lines(next_arg, lines, indent)
-                                values.append(field_value)
-                                arg_idx += 1
-
-                            if values:
-                                keyword_args.append(f"{field_name}=[{', '.join(values)}]")
-                            else:
-                                keyword_args.append(f"{field_name}=[]")
-                    else:
-                        field_value = self.generate_lines(arg, lines, indent)
-                        keyword_args.append(f"{field_name}={field_value}")
-                        arg_idx += 1
-
-                    field_idx += 1
-                else:
-                    positional_args.append(self.generate_lines(arg, lines, indent))
-                    arg_idx += 1
-
-            # Build argument list - Julia protobuf uses positional args only
-            # Combine keyword args (formatted as "name=value") into just values for positional calling
-            positional_values = []
-            for kw in keyword_args:
-                # Extract value from "name=value"
-                if '=' in kw:
-                    value = kw.split('=', 1)[1]
-                    positional_values.append(value)
-                else:
-                    positional_values.append(kw)
-
-            all_args = positional_args + positional_values
-            args_code = ', '.join(all_args)
-
+        if not expr.fields:
+            # No fields - return constructor directly
             tmp = gensym()
-            lines.append(f"{indent}{self.gen_assignment(tmp, f'{f}({args_code})', is_declaration=True)}")
+            lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}()', is_declaration=True)}")
             return tmp
 
+        # NewMessage with fields - need to handle OneOf specially
+        # Julia protobuf uses positional args in field order
+        positional_args = []
+
+        for field_name, field_expr in expr.fields:
+            # Check if this field is a Call(OneOf, [value])
+            if isinstance(field_expr, Call) and isinstance(field_expr.func, OneOf) and len(field_expr.args) == 1:
+                # OneOf field - wrap in OneOf(symbol, value)
+                oneof_field_name = field_expr.func.field_name
+                field_value = self.generate_lines(field_expr.args[0], lines, indent)
+                assert field_value is not None
+                field_symbol = self.gen_symbol(oneof_field_name)
+                positional_args.append(f"OneOf({field_symbol}, {field_value})")
+            else:
+                # Regular field
+                field_value = self.generate_lines(field_expr, lines, indent)
+                assert field_value is not None
+                positional_args.append(field_value)
+
+        args_code = ', '.join(positional_args)
+        tmp = gensym()
+        lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}({args_code})', is_declaration=True)}")
+        return tmp
+
+    def _generate_call(self, expr: Call, lines: List[str], indent: str) -> Optional[str]:
+        """Override to handle OneOf and VisitNonterminal specially for Julia."""
         # Check for Call(OneOf(Symbol), [value]) pattern (not in Message constructor)
         if isinstance(expr.func, OneOf) and len(expr.args) == 1:
             field_symbol = self.gen_symbol(expr.func.field_name)
