@@ -6,7 +6,7 @@ with proper keyword escaping and idiomatic Python style.
 
 from typing import List, Optional, Set, Tuple, Union
 
-from .codegen_base import CodeGenerator, BuiltinResult, ALREADY_RETURNED
+from .codegen_base import CodeGenerator, BuiltinResult
 from .target import (
     TargetExpr, Var, Lit, Symbol, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
     IfElse, FunDef, VisitNonterminalDef
@@ -372,21 +372,22 @@ class PythonCodeGenerator(CodeGenerator):
         return tmp
 
 
-    def _generate_if_else(self, expr: IfElse, lines: List[str], indent: str) -> str:
+    def _generate_if_else(self, expr: IfElse, lines: List[str], indent: str) -> Optional[str]:
         """Override to skip var declaration (Python doesn't need it)."""
         cond_code = self.generate_lines(expr.condition, lines, indent)
+        assert cond_code is not None, "If condition should not contain a return"
 
         # Optimization: short-circuit for boolean literals.
         # This is not needed, but makes the generated code more readable.
         if expr.then_branch == Lit(True):
             tmp_lines: List[str] = []
             else_code = self.generate_lines(expr.else_branch, tmp_lines, indent)
-            if not tmp_lines:
+            if not tmp_lines and else_code is not None:
                 return f"({cond_code} or {else_code})"
         if expr.else_branch == Lit(False):
             tmp_lines = []
             then_code = self.generate_lines(expr.then_branch, tmp_lines, indent)
-            if not tmp_lines:
+            if not tmp_lines and then_code is not None:
                 return f"({cond_code} and {then_code})"
 
         tmp = gensym()
@@ -395,18 +396,18 @@ class PythonCodeGenerator(CodeGenerator):
         body_indent = indent + self.indent_str
         then_code = self.generate_lines(expr.then_branch, lines, body_indent)
         # Only assign if the branch didn't already return
-        if then_code != ALREADY_RETURNED:
+        if then_code is not None:
             lines.append(f"{body_indent}{self.gen_assignment(tmp, then_code)}")
 
         lines.append(f"{indent}{self.gen_else()}")
         else_code = self.generate_lines(expr.else_branch, lines, body_indent)
         # Only assign if the branch didn't already return
-        if else_code != ALREADY_RETURNED:
+        if else_code is not None:
             lines.append(f"{body_indent}{self.gen_assignment(tmp, else_code)}")
 
-        # If both branches returned, propagate the sentinel
-        if then_code == ALREADY_RETURNED and else_code == ALREADY_RETURNED:
-            return ALREADY_RETURNED
+        # If both branches returned, propagate None
+        if then_code is None and else_code is None:
+            return None
 
         return tmp
 
@@ -432,7 +433,7 @@ class PythonCodeGenerator(CodeGenerator):
             body_lines: List[str] = []
             body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
             # Only add return if the body didn't already return
-            if body_inner != ALREADY_RETURNED:
+            if body_inner is not None:
                 body_lines.append(f"{indent}    return {body_inner}")
             body_code = "\n".join(body_lines)
 
@@ -458,7 +459,7 @@ class PythonCodeGenerator(CodeGenerator):
             body_lines: List[str] = []
             body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
             # Only add return if the body didn't already return
-            if body_inner != ALREADY_RETURNED:
+            if body_inner is not None:
                 body_lines.append(f"{indent}    return {body_inner}")
             body_code = "\n".join(body_lines)
 

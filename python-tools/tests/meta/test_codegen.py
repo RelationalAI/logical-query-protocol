@@ -244,16 +244,15 @@ def test_python_assign_generation():
 
 def test_python_return_generation():
     """Test Python return statement code generation."""
-    from src.meta.codegen_base import ALREADY_RETURNED
     gen = PythonCodeGenerator()
 
     reset_gensym()
     lines = []
     expr = Return(Var("result", _any_type))
     result = gen.generate_lines(expr, lines, "")
-    # Return generates a return statement and returns ALREADY_RETURNED sentinel
+    # Return generates a return statement and returns None
     # to indicate that the caller should not add another return
-    assert result == ALREADY_RETURNED
+    assert result is None
     assert "return result" in lines[0]
 
 
