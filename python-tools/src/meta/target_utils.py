@@ -23,9 +23,47 @@ Example:
 from typing import Mapping, Sequence
 
 from .target import (
-    BaseType, MessageType, OptionType, ListType, FunctionType, TupleType,
-    Lambda, Var, Lit, Call, Builtin, TargetExpr, TargetType
+    BaseType, Builtin, Lambda, Var, Lit, Call, TargetExpr, TargetType,
+    ListType, OptionType, TupleType, VarType
 )
+from .target_builtins import make_builtin
+
+
+def is_subtype(t1: TargetType, t2: TargetType) -> bool:
+    """Check if t1 is a subtype of t2 (t1 <: t2).
+
+    Subtyping rules:
+    - Reflexivity: T <: T
+    - Never <: T for all T (Never is the bottom type)
+    - T <: Any for all T (Any is the top type)
+    - T <: VarType for all T (type variables are wildcards)
+    - List is covariant: List[A] <: List[B] if A <: B
+    - Option is covariant: Option[A] <: Option[B] if A <: B
+    - Tuple is covariant: (A1, A2, ...) <: (B1, B2, ...) if Ai <: Bi for all i
+    """
+    if t1 == t2:
+        return True
+    # Never is a subtype of everything (bottom type)
+    if isinstance(t1, BaseType) and t1.name == "Never":
+        return True
+    # T <: Any for all T (Any is the top type)
+    if isinstance(t2, BaseType) and t2.name == "Any":
+        return True
+    # T <: VarType for all T (type variables are wildcards)
+    if isinstance(t2, VarType):
+        return True
+    # List is covariant: List[A] <: List[B] if A <: B
+    if isinstance(t1, ListType) and isinstance(t2, ListType):
+        return is_subtype(t1.element_type, t2.element_type)
+    # Option is covariant: Option[A] <: Option[B] if A <: B
+    if isinstance(t1, OptionType) and isinstance(t2, OptionType):
+        return is_subtype(t1.element_type, t2.element_type)
+    # Tuple is covariant: check element-wise
+    if isinstance(t1, TupleType) and isinstance(t2, TupleType):
+        if len(t1.elements) != len(t2.elements):
+            return False
+        return all(is_subtype(e1, e2) for e1, e2 in zip(t1.elements, t2.elements))
+    return False
 
 
 # Common types used throughout grammar generation
@@ -122,7 +160,10 @@ def _subst_inner(expr: TargetExpr, mapping: Mapping[str, TargetExpr]) -> TargetE
     """Inner substitution helper - performs actual substitution."""
     from .target import Let, Foreach, ForeachEnumerated, Assign, Seq, IfElse, While, Return
     if isinstance(expr, Var) and expr.name in mapping:
-        return mapping[expr.name]
+        val = mapping[expr.name]
+        assert is_subtype(val.target_type(), expr.type), \
+            f"Type mismatch in subst: {expr.name} has type {expr.type} but value has type {val.target_type()}"
+        return val
     elif isinstance(expr, Lambda):
         shadowed = [p.name for p in expr.params if p.name in mapping]
         new_mapping = _new_mapping(mapping, shadowed)
@@ -180,7 +221,7 @@ def subst(expr: TargetExpr, mapping: Mapping[str, TargetExpr]) -> TargetExpr:
             simple_mapping[var] = val
         else:
             # Multiple occurrences and val has side effects - need Let
-            fresh_var = Var(gensym('subst'), val.type if isinstance(val, Var) else BaseType('Any'))
+            fresh_var = Var(gensym('subst'), val.target_type())
             lets_needed.append((fresh_var, val))
             simple_mapping[var] = fresh_var
 
@@ -199,11 +240,11 @@ def subst(expr: TargetExpr, mapping: Mapping[str, TargetExpr]) -> TargetExpr:
 
 def make_equal(left, right):
     """Construct equality test: left == right."""
-    return Call(Builtin('equal'), [left, right])
+    return Call(make_builtin('equal'), [left, right])
 
 def make_which_oneof(msg, oneof_name):
     """Get which field is set in a oneof group."""
-    return Call(Builtin('WhichOneof'), [msg, oneof_name])
+    return Call(make_builtin('which_one_of'), [msg, oneof_name])
 
 def make_get_field(obj, field_name):
     """Get field value from message: obj.field_name."""
@@ -215,11 +256,11 @@ def make_get_field(obj, field_name):
 
 def make_some(value):
     """Wrap value in Option/Maybe: Some(value)."""
-    return Call(Builtin('Some'), [value])
+    return Call(make_builtin('some'), [value])
 
 def make_tuple(*args):
     """Construct tuple from values: (arg1, arg2, ...)."""
-    return Call(Builtin('tuple'), list(args))
+    return Call(make_builtin('tuple'), list(args))
 
 def make_get_element(tuple_expr, index):
     """Extract element from tuple at constant index: tuple_expr[index]."""
@@ -236,19 +277,19 @@ def make_snd(pair):
 
 def make_is_empty(collection):
     """Check if collection is empty: len(collection) == 0."""
-    return Call(Builtin('is_empty'), [collection])
+    return Call(make_builtin('is_empty'), [collection])
 
 def make_concat(left, right):
     """Concatenate two lists: left + right."""
-    return Call(Builtin('list_concat'), [left, right])
+    return Call(make_builtin('list_concat'), [left, right])
 
 def make_length(collection):
     """Get collection length: len(collection)."""
-    return Call(Builtin('length'), [collection])
+    return Call(make_builtin('length'), [collection])
 
 def make_unwrap_option_or(option, default):
     """Unwrap Option with default: option if Some(x) else default."""
-    return Call(Builtin('unwrap_option_or'), [option, default])
+    return Call(make_builtin('unwrap_option_or'), [option, default])
 
 
 def apply_lambda(func: Lambda, args: Sequence[TargetExpr]) -> TargetExpr:

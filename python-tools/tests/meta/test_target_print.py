@@ -12,12 +12,12 @@ from typing import Dict, List, Optional
 from meta.target import (
     TargetType, BaseType, MessageType, ListType, OptionType, TupleType,
     DictType, FunctionType, VarType,
-    TargetExpr, Var, Lit, Builtin, NewMessage, Call, Lambda, Let, IfElse,
+    TargetExpr, Var, Lit, NewMessage, Call, Lambda, Let, IfElse,
     Seq, ListExpr, GetElement,
 )
+from meta.target_builtins import make_builtin
 from meta.target_print import expr_to_str, type_to_str
 from meta.yacc_action_parser import TypeContext
-from meta.target import Var
 import ast
 
 
@@ -54,7 +54,6 @@ class TestTypeRoundtrip:
         "Int64",
         "Float64",
         "Boolean",
-        "Unknown",
     ])
     def test_base_types(self, type_str: str):
         """Test base type roundtrips."""
@@ -278,7 +277,7 @@ class TestExprDirect:
     def test_lambda_with_call_body(self):
         """Test lambda with function call body."""
         param = Var("x", BaseType("Int64"))
-        body = Call(Builtin("append"), [Var("x", BaseType("Int64")), Lit(1)])
+        body = Call(make_builtin("append"), [Var("x", BaseType("Int64")), Lit(1)])
         lam = Lambda([param], ListType(BaseType("Int64")), body)
         assert expr_to_str(lam) == "lambda x: builtin.append(x, 1)"
 
@@ -305,24 +304,24 @@ class TestExprDirect:
 
     def test_has_proto_field(self):
         """Test has_proto_field builtin call."""
-        from meta.target import Call, Builtin
+        from meta.target import Call
         obj = Var("msg", MessageType("logic", "Value"))
-        has = Call(Builtin("has_proto_field"), [obj, Lit("int_value")])
+        has = Call(make_builtin("has_proto_field"), [obj, Lit("int_value")])
         assert expr_to_str(has) == "builtin.has_proto_field(msg, 'int_value')"
 
     def test_dict_from_list(self):
         """Test dict_from_list builtin call."""
-        from meta.target import Call, Builtin
+        from meta.target import Call
         pairs = Var("pairs", ListType(TupleType([BaseType("String"), BaseType("Int64")])))
-        d = Call(Builtin("dict_from_list"), [pairs])
+        d = Call(make_builtin("dict_from_list"), [pairs])
         assert expr_to_str(d) == "builtin.dict_from_list(pairs)"
 
     def test_dict_lookup(self):
         """Test dict_get builtin call."""
-        from meta.target import Call, Builtin
+        from meta.target import Call
         d = Var("d", DictType(BaseType("String"), BaseType("Int64")))
         key = Lit("key")
-        lookup = Call(Builtin("dict_get"), [d, key])
+        lookup = Call(make_builtin("dict_get"), [d, key])
         assert expr_to_str(lookup) == "builtin.dict_get(d, 'key')"
 
     def test_assign(self):
@@ -370,18 +369,20 @@ class TestExprDirect:
     def test_oneof(self):
         """Test oneof expression."""
         from meta.target import OneOf
-        oneof = OneOf("value")
+        _any_type = BaseType("Any")
+        oneof = OneOf("value", FunctionType([_any_type], _any_type))
         assert expr_to_str(oneof) == "oneof(value)"
 
     def test_named_fun(self):
         """Test named function reference."""
         from meta.target import NamedFun
-        fun = NamedFun("my_func")
+        _any_type = BaseType("Any")
+        fun = NamedFun("my_func", FunctionType([], _any_type))
         assert expr_to_str(fun) == "my_func"
 
     def test_builtin(self):
         """Test builtin function reference."""
-        b = Builtin("append")
+        b = make_builtin("append")
         assert expr_to_str(b) == "builtin.append"
 
 

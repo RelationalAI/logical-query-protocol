@@ -7,6 +7,7 @@ from meta.target import (
     BaseType, MessageType, TupleType, ListType, OptionType, FunctionType,
     Var, GetElement, Call, Builtin, NewMessage, Lambda, Lit, IfElse, Let, ListExpr
 )
+from meta.target_builtins import make_builtin
 from meta.grammar import (
     Grammar, Nonterminal, Rule, LitTerminal, NamedTerminal,
     Star, Option, Sequence
@@ -14,6 +15,15 @@ from meta.grammar import (
 from meta.grammar_validator import GrammarValidator
 from meta.proto_parser import ProtoParser
 from meta.proto_ast import ProtoMessage, ProtoField, ProtoOneof
+
+# Dummy type for test builtins
+_ANY = BaseType("Any")
+_DUMMY_FN_TYPE = FunctionType([], _ANY)
+
+
+def _test_builtin(name: str) -> Builtin:
+    """Create a test builtin with a dummy type."""
+    return Builtin(name, _DUMMY_FN_TYPE)
 
 
 @pytest.fixture
@@ -219,7 +229,7 @@ class TestGetElementInExpressions:
         elem = GetElement(tuple_expr, 0)
 
         # Use element in a builtin call
-        call = Call(Builtin("Some"), [elem])
+        call = Call(make_builtin("some"), [elem])
         validator._check_expr_types(call, "test_rule")
         assert validator.result.is_valid
 
@@ -231,7 +241,7 @@ class TestGetElementInExpressions:
         elem1 = GetElement(tuple_expr, 1)
 
         # Use both elements in a builtin call
-        call = Call(Builtin("equal"), [elem0, elem1])
+        call = Call(make_builtin("equal"), [elem0, elem1])
         validator._check_expr_types(call, "test_rule")
         assert validator.result.is_valid
 
@@ -241,7 +251,7 @@ class TestGetElementInExpressions:
         tuple_expr = Var("pair", tuple_type)
         elem = GetElement(tuple_expr, 5)  # Out of bounds
 
-        call = Call(Builtin("Some"), [elem])
+        call = Call(make_builtin("some"), [elem])
         validator._check_expr_types(call, "test_rule")
         assert not validator.result.is_valid
         assert any("out of bounds" in e.message for e in validator.result.errors)
@@ -409,7 +419,7 @@ class TestTypeChecking:
 
     def test_builtin_unwrap_option_or_valid(self, validator):
         """Test unwrap_option_or with correct types."""
-        builtin = Builtin('unwrap_option_or')
+        builtin = make_builtin('unwrap_option_or')
         args = [
             Var('opt', OptionType(BaseType('String'))),
             Var('default', BaseType('String'))
@@ -420,7 +430,7 @@ class TestTypeChecking:
 
     def test_builtin_unwrap_option_or_wrong_arity(self, validator):
         """Test unwrap_option_or with wrong arity."""
-        builtin = Builtin('unwrap_option_or')
+        builtin = make_builtin('unwrap_option_or')
         args = [Var('opt', OptionType(BaseType('String')))]  # Missing default
 
         validator._check_builtin_call_types(builtin, args, 'test_rule')
@@ -429,7 +439,7 @@ class TestTypeChecking:
 
     def test_builtin_unwrap_option_or_non_option(self, validator):
         """Test unwrap_option_or with non-option type."""
-        builtin = Builtin('unwrap_option_or')
+        builtin = make_builtin('unwrap_option_or')
         args = [
             Var('s', BaseType('String')),  # Not an Option type
             Var('default', BaseType('String'))
@@ -441,7 +451,7 @@ class TestTypeChecking:
 
     def test_builtin_list_concat_valid(self, validator):
         """Test list_concat with correct types."""
-        builtin = Builtin('list_concat')
+        builtin = make_builtin('list_concat')
         args = [
             Var('list1', ListType(BaseType('String'))),
             Var('list2', ListType(BaseType('String')))
@@ -452,7 +462,7 @@ class TestTypeChecking:
 
     def test_builtin_list_concat_incompatible_types(self, validator):
         """Test list_concat with incompatible element types."""
-        builtin = Builtin('list_concat')
+        builtin = make_builtin('list_concat')
         args = [
             Var('list1', ListType(BaseType('String'))),
             Var('list2', ListType(BaseType('Int64')))  # Different element type
@@ -464,7 +474,7 @@ class TestTypeChecking:
 
     def test_builtin_length_valid(self, validator):
         """Test length with list type."""
-        builtin = Builtin('length')
+        builtin = make_builtin('length')
         args = [Var('list', ListType(BaseType('String')))]
 
         validator._check_builtin_call_types(builtin, args, 'test_rule')
@@ -472,7 +482,7 @@ class TestTypeChecking:
 
     def test_builtin_length_non_list(self, validator):
         """Test length with non-list type."""
-        builtin = Builtin('length')
+        builtin = make_builtin('length')
         args = [Var('s', BaseType('String'))]  # Not a list
 
         validator._check_builtin_call_types(builtin, args, 'test_rule')
@@ -682,13 +692,13 @@ class TestTypeInference:
 
     def test_infer_builtin_int64_to_int32(self, validator):
         """Test type inference for int64_to_int32 builtin."""
-        call = Call(Builtin('int64_to_int32'), [Var('x', BaseType('Int64'))])
+        call = Call(make_builtin('int64_to_int32'), [Var('x', BaseType('Int64'))])
         inferred = validator._infer_expr_type(call)
         assert inferred == BaseType('Int32')
 
     def test_infer_builtin_length(self, validator):
         """Test type inference for length builtin."""
-        call = Call(Builtin('length'), [Var('list', ListType(BaseType('String')))])
+        call = Call(make_builtin('length'), [Var('list', ListType(BaseType('String')))])
         inferred = validator._infer_expr_type(call)
         assert inferred == BaseType('Int64')
 
@@ -725,8 +735,378 @@ class TestComplexExpressions:
 
     def test_nested_calls(self, validator):
         """Test type checking nested function calls."""
-        inner = Call(Builtin('length'), [Var('list', ListType(BaseType('String')))])
-        outer = Call(Builtin('int64_to_int32'), [inner])
+        inner = Call(make_builtin('length'), [Var('list', ListType(BaseType('String')))])
+        outer = Call(make_builtin('int64_to_int32'), [inner])
 
         validator._check_expr_types(outer, 'test_rule')
         assert validator.result.is_valid
+
+
+class TestIsSubtype:
+    """Property tests for _is_subtype."""
+
+    def test_reflexivity(self, validator):
+        """T <: T for all T."""
+        types = [
+            BaseType("Never"),
+            BaseType("Any"),
+            BaseType("Int64"),
+            BaseType("Int32"),
+            BaseType("Float64"),
+            BaseType("String"),
+            BaseType("Boolean"),
+        ]
+        for t in types:
+            assert validator._is_subtype(t, t)
+
+    def test_never_is_bottom(self, validator):
+        """Never <: T for all T."""
+        never = BaseType("Never")
+        types = [
+            BaseType("Any"),
+            BaseType("Int64"),
+            BaseType("Int32"),
+            BaseType("Float64"),
+            BaseType("String"),
+            BaseType("Boolean"),
+        ]
+        for t in types:
+            assert validator._is_subtype(never, t)
+
+    def test_any_is_top(self, validator):
+        """T <: Any for all T."""
+        any_type = BaseType("Any")
+        types = [
+            BaseType("Never"),
+            BaseType("Int64"),
+            BaseType("Int32"),
+            BaseType("Float64"),
+            BaseType("String"),
+            BaseType("Boolean"),
+        ]
+        for t in types:
+            assert validator._is_subtype(t, any_type)
+
+    def test_concrete_not_subtype_of_different_concrete(self, validator):
+        """Distinct concrete types are not subtypes of each other."""
+        concrete = [
+            BaseType("Int64"),
+            BaseType("Int32"),
+            BaseType("Float64"),
+            BaseType("String"),
+            BaseType("Boolean"),
+        ]
+        for t in concrete:
+            for other in concrete:
+                if t != other:
+                    assert not validator._is_subtype(t, other)
+
+    def test_concrete_not_subtype_of_never(self, validator):
+        """Concrete types are not subtypes of Never."""
+        never = BaseType("Never")
+        concrete = [
+            BaseType("Int64"),
+            BaseType("Int32"),
+            BaseType("Float64"),
+            BaseType("String"),
+            BaseType("Boolean"),
+        ]
+        for t in concrete:
+            assert not validator._is_subtype(t, never)
+
+    def test_any_not_subtype_of_concrete(self, validator):
+        """Any is not a subtype of concrete types."""
+        any_type = BaseType("Any")
+        concrete = [
+            BaseType("Int64"),
+            BaseType("Int32"),
+            BaseType("Float64"),
+            BaseType("String"),
+            BaseType("Boolean"),
+        ]
+        for t in concrete:
+            assert not validator._is_subtype(any_type, t)
+
+    def test_list_reflexivity(self, validator):
+        """List[T] <: List[T]."""
+        types = [
+            BaseType("Never"),
+            BaseType("Any"),
+            BaseType("Int64"),
+            BaseType("String"),
+        ]
+        for t in types:
+            assert validator._is_subtype(ListType(t), ListType(t))
+
+    def test_list_never_is_bottom(self, validator):
+        """List[Never] <: List[T]."""
+        never = BaseType("Never")
+        types = [
+            BaseType("Any"),
+            BaseType("Int64"),
+            BaseType("String"),
+        ]
+        for t in types:
+            assert validator._is_subtype(ListType(never), ListType(t))
+
+    def test_list_any_is_top(self, validator):
+        """List[T] <: List[Any]."""
+        any_type = BaseType("Any")
+        types = [
+            BaseType("Never"),
+            BaseType("Int64"),
+            BaseType("String"),
+        ]
+        for t in types:
+            assert validator._is_subtype(ListType(t), ListType(any_type))
+
+    def test_list_concrete_not_subtype(self, validator):
+        """List[T] is not a subtype of List[U] for distinct concrete T, U."""
+        int64 = BaseType("Int64")
+        string = BaseType("String")
+        assert not validator._is_subtype(ListType(int64), ListType(string))
+        assert not validator._is_subtype(ListType(string), ListType(int64))
+
+    def test_list_not_subtype_of_element(self, validator):
+        """List[T] is not a subtype of T."""
+        int64 = BaseType("Int64")
+        assert not validator._is_subtype(ListType(int64), int64)
+
+    def test_element_not_subtype_of_list(self, validator):
+        """T is not a subtype of List[T]."""
+        int64 = BaseType("Int64")
+        assert not validator._is_subtype(int64, ListType(int64))
+
+    def test_option_reflexivity(self, validator):
+        """Option[T] <: Option[T]."""
+        types = [
+            BaseType("Never"),
+            BaseType("Any"),
+            BaseType("Int64"),
+            BaseType("String"),
+        ]
+        for t in types:
+            assert validator._is_subtype(OptionType(t), OptionType(t))
+
+    def test_option_never_is_bottom(self, validator):
+        """Option[Never] <: Option[T]."""
+        never = BaseType("Never")
+        types = [
+            BaseType("Any"),
+            BaseType("Int64"),
+            BaseType("String"),
+        ]
+        for t in types:
+            assert validator._is_subtype(OptionType(never), OptionType(t))
+
+    def test_option_any_is_top(self, validator):
+        """Option[T] <: Option[Any]."""
+        any_type = BaseType("Any")
+        types = [
+            BaseType("Never"),
+            BaseType("Int64"),
+            BaseType("String"),
+        ]
+        for t in types:
+            assert validator._is_subtype(OptionType(t), OptionType(any_type))
+
+    def test_option_concrete_not_subtype(self, validator):
+        """Option[T] is not a subtype of Option[U] for distinct concrete T, U."""
+        int64 = BaseType("Int64")
+        string = BaseType("String")
+        assert not validator._is_subtype(OptionType(int64), OptionType(string))
+        assert not validator._is_subtype(OptionType(string), OptionType(int64))
+
+    def test_option_not_subtype_of_element(self, validator):
+        """Option[T] is not a subtype of T."""
+        int64 = BaseType("Int64")
+        assert not validator._is_subtype(OptionType(int64), int64)
+
+    def test_element_not_subtype_of_option(self, validator):
+        """T is not a subtype of Option[T]."""
+        int64 = BaseType("Int64")
+        assert not validator._is_subtype(int64, OptionType(int64))
+
+    def test_nested_list_covariance(self, validator):
+        """List[List[Never]] <: List[List[Int64]]."""
+        never = BaseType("Never")
+        int64 = BaseType("Int64")
+        assert validator._is_subtype(
+            ListType(ListType(never)),
+            ListType(ListType(int64))
+        )
+
+    def test_nested_option_covariance(self, validator):
+        """Option[Option[Never]] <: Option[Option[Int64]]."""
+        never = BaseType("Never")
+        int64 = BaseType("Int64")
+        assert validator._is_subtype(
+            OptionType(OptionType(never)),
+            OptionType(OptionType(int64))
+        )
+
+    def test_list_of_option_covariance(self, validator):
+        """List[Option[Never]] <: List[Option[Int64]]."""
+        never = BaseType("Never")
+        int64 = BaseType("Int64")
+        assert validator._is_subtype(
+            ListType(OptionType(never)),
+            ListType(OptionType(int64))
+        )
+
+    def test_option_of_list_covariance(self, validator):
+        """Option[List[Never]] <: Option[List[Int64]]."""
+        never = BaseType("Never")
+        int64 = BaseType("Int64")
+        assert validator._is_subtype(
+            OptionType(ListType(never)),
+            OptionType(ListType(int64))
+        )
+
+    def test_tuple_reflexivity(self, validator):
+        """(T, U) <: (T, U)."""
+        int64 = BaseType("Int64")
+        string = BaseType("String")
+        t = TupleType([int64, string])
+        assert validator._is_subtype(t, t)
+
+    def test_tuple_covariance(self, validator):
+        """(Never, Never) <: (Int64, String)."""
+        never = BaseType("Never")
+        int64 = BaseType("Int64")
+        string = BaseType("String")
+        t1 = TupleType([never, never])
+        t2 = TupleType([int64, string])
+        assert validator._is_subtype(t1, t2)
+
+    def test_tuple_to_any(self, validator):
+        """(Int64, String) <: (Any, Any)."""
+        any_type = BaseType("Any")
+        int64 = BaseType("Int64")
+        string = BaseType("String")
+        t1 = TupleType([int64, string])
+        t2 = TupleType([any_type, any_type])
+        assert validator._is_subtype(t1, t2)
+
+    def test_tuple_length_mismatch(self, validator):
+        """(T,) is not a subtype of (T, U)."""
+        int64 = BaseType("Int64")
+        string = BaseType("String")
+        t1 = TupleType([int64])
+        t2 = TupleType([int64, string])
+        assert not validator._is_subtype(t1, t2)
+        assert not validator._is_subtype(t2, t1)
+
+    def test_tuple_element_mismatch(self, validator):
+        """(Int64, String) is not a subtype of (String, Int64)."""
+        int64 = BaseType("Int64")
+        string = BaseType("String")
+        t1 = TupleType([int64, string])
+        t2 = TupleType([string, int64])
+        assert not validator._is_subtype(t1, t2)
+
+    def test_list_not_subtype_of_option(self, validator):
+        """List[T] is not a subtype of Option[T]."""
+        int64 = BaseType("Int64")
+        assert not validator._is_subtype(ListType(int64), OptionType(int64))
+
+    def test_option_not_subtype_of_list(self, validator):
+        """Option[T] is not a subtype of List[T]."""
+        int64 = BaseType("Int64")
+        assert not validator._is_subtype(OptionType(int64), ListType(int64))
+
+    def test_tuple_not_subtype_of_list(self, validator):
+        """(T,) is not a subtype of List[T]."""
+        int64 = BaseType("Int64")
+        assert not validator._is_subtype(TupleType([int64]), ListType(int64))
+
+
+class TestTypesCompatible:
+    """Property tests for _types_compatible."""
+
+    def test_symmetric(self, validator):
+        """types_compatible(t1, t2) == types_compatible(t2, t1)."""
+        types = [
+            BaseType("Never"),
+            BaseType("Any"),
+            BaseType("Int64"),
+            BaseType("String"),
+        ]
+        for t1 in types:
+            for t2 in types:
+                assert validator._types_compatible(t1, t2) == validator._types_compatible(t2, t1)
+
+    def test_reflexive(self, validator):
+        """types_compatible(t, t) is True."""
+        types = [
+            BaseType("Int64"),
+            BaseType("String"),
+            BaseType("Boolean"),
+        ]
+        for t in types:
+            assert validator._types_compatible(t, t)
+
+    def test_never_compatible_with_all(self, validator):
+        """Never is compatible with all types."""
+        never = BaseType("Never")
+        concrete = [
+            BaseType("Int64"),
+            BaseType("String"),
+            BaseType("Boolean"),
+        ]
+        for t in concrete:
+            assert validator._types_compatible(never, t)
+            assert validator._types_compatible(t, never)
+
+    def test_any_compatible_with_all(self, validator):
+        """Any is compatible with all types."""
+        any_type = BaseType("Any")
+        concrete = [
+            BaseType("Int64"),
+            BaseType("String"),
+            BaseType("Boolean"),
+        ]
+        for t in concrete:
+            assert validator._types_compatible(any_type, t)
+            assert validator._types_compatible(t, any_type)
+
+    def test_distinct_concrete_not_compatible(self, validator):
+        """Distinct concrete types are not compatible."""
+        int64 = BaseType("Int64")
+        string = BaseType("String")
+        assert not validator._types_compatible(int64, string)
+
+    def test_list_compatible_via_never(self, validator):
+        """List[Never] is compatible with List[Int64]."""
+        never = BaseType("Never")
+        int64 = BaseType("Int64")
+        assert validator._types_compatible(ListType(never), ListType(int64))
+
+    def test_list_compatible_via_any(self, validator):
+        """List[Int64] is compatible with List[Any]."""
+        any_type = BaseType("Any")
+        int64 = BaseType("Int64")
+        assert validator._types_compatible(ListType(int64), ListType(any_type))
+
+    def test_list_incompatible_elements(self, validator):
+        """List[Int64] is not compatible with List[String]."""
+        int64 = BaseType("Int64")
+        string = BaseType("String")
+        assert not validator._types_compatible(ListType(int64), ListType(string))
+
+    def test_option_compatible_via_never(self, validator):
+        """Option[Never] is compatible with Option[Int64]."""
+        never = BaseType("Never")
+        int64 = BaseType("Int64")
+        assert validator._types_compatible(OptionType(never), OptionType(int64))
+
+    def test_option_incompatible_elements(self, validator):
+        """Option[Int64] is not compatible with Option[String]."""
+        int64 = BaseType("Int64")
+        string = BaseType("String")
+        assert not validator._types_compatible(OptionType(int64), OptionType(string))
+
+    def test_list_option_not_compatible(self, validator):
+        """List[T] is not compatible with Option[T]."""
+        int64 = BaseType("Int64")
+        assert not validator._types_compatible(ListType(int64), OptionType(int64))

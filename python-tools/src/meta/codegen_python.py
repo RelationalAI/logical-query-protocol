@@ -303,18 +303,7 @@ class PythonCodeGenerator(CodeGenerator):
 
     # --- Override generate_lines for Python-specific special cases ---
 
-    def generate_lines(self, expr: TargetExpr, lines: List[str], indent: str = "") -> str:
-        # Special case: fragments_pb2.Fragment construction with debug_info parameter
-        if isinstance(expr, Call) and isinstance(expr.func, NewMessage) and expr.func.name == "Fragment":
-            for arg in expr.args:
-                if isinstance(arg, Var) and arg.name == "debug_info":
-                    # Fragment constructor args are: id (FragmentId), declarations, debug_info
-                    # Extract the fragment_id from the first argument
-                    if len(expr.args) >= 1:
-                        fragment_id_expr = self.generate_lines(expr.args[0], lines, indent)
-                        lines.append(f"{indent}debug_info = self.construct_debug_info(self.id_to_debuginfo.get({fragment_id_expr}.id, {{}}))")
-                    break
-
+    def generate_lines(self, expr: TargetExpr, lines: List[str], indent: str = "") -> Optional[str]:
         # Handle NewMessage with fields (which may contain OneOf calls)
         if isinstance(expr, NewMessage):
             return self._generate_newmessage(expr, lines, indent)
@@ -344,6 +333,7 @@ class PythonCodeGenerator(CodeGenerator):
                 # OneOf field
                 oneof_field_name = field_expr.func.field_name
                 field_value = self.generate_lines(field_expr.args[0], lines, indent)
+                assert field_value is not None
                 is_repeated = field_is_repeated.get(oneof_field_name, False)
                 if oneof_field_name in PYTHON_KEYWORDS:
                     keyword_field_assignments.append((oneof_field_name, field_value, is_repeated))
@@ -352,6 +342,7 @@ class PythonCodeGenerator(CodeGenerator):
             else:
                 # Regular field
                 field_value = self.generate_lines(field_expr, lines, indent)
+                assert field_value is not None
                 is_repeated = field_is_repeated.get(field_name, False)
                 if field_name in PYTHON_KEYWORDS:
                     keyword_field_assignments.append((field_name, field_value, is_repeated))
@@ -427,15 +418,12 @@ class PythonCodeGenerator(CodeGenerator):
 
         ret_hint = f" -> {self.gen_type(expr.return_type)}" if expr.return_type else ""
 
-        if expr.body is None:
-            body_code = f"{indent}    pass"
-        else:
-            body_lines: List[str] = []
-            body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
-            # Only add return if the body didn't already return
-            if body_inner is not None:
-                body_lines.append(f"{indent}    return {body_inner}")
-            body_code = "\n".join(body_lines)
+        body_lines: List[str] = []
+        body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
+        # Only add return if the body didn't already return
+        if body_inner is not None:
+            body_lines.append(f"{indent}    return {body_inner}")
+        body_code = "\n".join(body_lines)
 
         return f"{indent}def {func_name}(self{params_str}){ret_hint}:\n{body_code}"
 
@@ -485,8 +473,11 @@ def generate_python_lines(
     lines: List[str],
     indent: str = "",
     generator: Optional[PythonCodeGenerator] = None,
-) -> str:
+) -> Optional[str]:
     """Generate Python code from a target IR expression.
+
+    Returns the value expression as a string, or None if the expression
+    contains a Return statement.
 
     For Message construction with field mapping, pass a generator initialized
     with proto_messages.
@@ -532,12 +523,14 @@ def generate_python(expr: TargetExpr, indent: str = "") -> str:
     elif isinstance(expr, Let):
         lines: List[str] = []
         result = generate_python_lines(expr, lines, indent)
+        assert result is not None
         if lines:
             return '\n'.join(lines) + '\n' + result
         return result
     else:
         lines = []
         result = generate_python_lines(expr, lines, indent)
+        assert result is not None
         if lines:
             return '\n'.join(lines) + '\n' + result
         return result

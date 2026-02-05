@@ -27,7 +27,7 @@ from .proto_parser import ProtoParser
 from .proto_ast import ProtoMessage, ProtoField
 from .target import (
     TargetType, TargetExpr, Call, NewMessage, Builtin, Var, IfElse, Let, Seq, ListExpr, GetField,
-    GetElement, BaseType, BottomType, VarType, MessageType, ListType, OptionType, TupleType, FunctionType, Lambda, OneOf, Lit
+    GetElement, BaseType, VarType, MessageType, ListType, OptionType, TupleType, FunctionType, Lambda, OneOf, Lit
 )
 from .type_env import TypeEnv
 from .validation_result import ValidationResult
@@ -527,7 +527,7 @@ class GrammarValidator:
 
         Subtyping rules:
         - Reflexivity: T <: T
-        - Bottom <: T for all T (Bottom is the empty type)
+        - Never <: T for all T (Never is the bottom type)
         - T <: Any for all T (Any is the top type)
         - List is covariant: List[A] <: List[B] if A <: B
         - Option is covariant: Option[A] <: Option[B] if A <: B
@@ -535,8 +535,8 @@ class GrammarValidator:
         """
         if t1 == t2:
             return True
-        # Bottom is a subtype of everything
-        if isinstance(t1, BottomType):
+        # Never is a subtype of everything (bottom type)
+        if isinstance(t1, BaseType) and t1.name == "Never":
             return True
         # T <: Any for all T (Any is the top type)
         if isinstance(t2, BaseType) and t2.name == "Any":

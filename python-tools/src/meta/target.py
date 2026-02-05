@@ -66,7 +66,10 @@ class TargetNode:
 @dataclass(frozen=True)
 class TargetExpr(TargetNode):
     """Base class for target language expressions."""
-    pass
+
+    def target_type(self) -> 'TargetType':
+        """Return the type of this expression."""
+        raise NotImplementedError(f"target_type not implemented for {type(self).__name__}")
 
 @dataclass(frozen=True)
 class Var(TargetExpr):
@@ -88,6 +91,9 @@ class Var(TargetExpr):
         if not self.name.isidentifier():
             raise ValueError(f"Invalid variable name: {self.name}")
 
+    def target_type(self) -> 'TargetType':
+        return self.type
+
 @dataclass(frozen=True)
 class Lit(TargetExpr):
     """Literal value (string, number, boolean, None).
@@ -102,6 +108,19 @@ class Lit(TargetExpr):
 
     def __str__(self) -> str:
         return repr(self.value)
+
+    def target_type(self) -> 'TargetType':
+        if isinstance(self.value, bool):
+            return BaseType("Boolean")
+        if isinstance(self.value, int):
+            return BaseType("Int64")
+        if isinstance(self.value, float):
+            return BaseType("Float64")
+        if isinstance(self.value, str):
+            return BaseType("String")
+        if self.value is None:
+            return OptionType(BaseType("Never"))
+        raise ValueError(f"Cannot determine type of literal: {self.value!r}")
 
 @dataclass(frozen=True)
 class Symbol(TargetExpr):
@@ -124,6 +143,9 @@ class Symbol(TargetExpr):
         if not self.name.isidentifier():
             raise ValueError(f"Invalid variable name: {self.name}")
 
+    def target_type(self) -> 'TargetType':
+        return BaseType("Symbol")
+
 @dataclass(frozen=True)
 class Builtin(TargetExpr):
     """Builtin function reference.
@@ -133,9 +155,13 @@ class Builtin(TargetExpr):
     Code generators map these to the appropriate syntax (e.g., self.consume in Python).
     """
     name: str
+    type: 'FunctionType'
 
     def __str__(self) -> str:
         return f"%{self.name}"
+
+    def target_type(self) -> 'TargetType':
+        return self.type
 
 
 @dataclass(frozen=True)
@@ -147,9 +173,13 @@ class NamedFun(TargetExpr):
     Code generators map these to method calls (e.g., self.function_name in Python).
     """
     name: str
+    type: 'FunctionType'
 
     def __str__(self) -> str:
         return f"@{self.name}"
+
+    def target_type(self) -> 'TargetType':
+        return self.type
 
 
 @dataclass(frozen=True)
@@ -183,18 +213,26 @@ class NewMessage(TargetExpr):
                 raise ValueError(f"Invalid field name: {field_name}")
         _freeze_sequence(self, 'fields')
 
+    def target_type(self) -> 'TargetType':
+        return MessageType(self.module, self.name)
+
 
 @dataclass(frozen=True)
 class OneOf(TargetExpr):
     """OneOf field discriminator.
 
     field_name: str representing the field name
-    Call this with a value to create a oneof field: Call(OneOf('field'), [value])
+    type: FunctionType from the value type to the value type
+    Call this with a value to create a oneof field: Call(OneOf('field', type), [value])
     """
     field_name: str
+    type: 'FunctionType'
 
     def __str__(self) -> str:
         return f"OneOf({self.field_name})"
+
+    def target_type(self) -> 'TargetType':
+        return self.type
 
 
 @dataclass(frozen=True)
@@ -214,6 +252,9 @@ class ListExpr(TargetExpr):
 
     def __post_init__(self):
         _freeze_sequence(self, 'elements')
+
+    def target_type(self) -> 'TargetType':
+        return ListType(self.element_type)
 
 
 @dataclass(frozen=True)
@@ -246,6 +287,17 @@ class Call(TargetExpr):
 
     def __post_init__(self):
         _freeze_sequence(self, 'args')
+
+    def target_type(self) -> 'TargetType':
+        func_type = self.func.target_type()
+        if isinstance(func_type, FunctionType):
+            # Match parameter types against argument types to build type variable mapping
+            mapping: dict[str, TargetType] = {}
+            for param_type, arg in zip(func_type.param_types, self.args):
+                match_types(param_type, arg.target_type(), mapping)
+            # Substitute type variables in return type
+            return subst_type(func_type.return_type, mapping)
+        raise ValueError(f"Cannot determine return type of call to {self.func}")
 
 
 @dataclass(frozen=True)
@@ -289,6 +341,14 @@ class GetElement(TargetExpr):
     def __post_init__(self):
         assert isinstance(self.index, int) and self.index >= 0, f"GetElement index must be non-negative integer: {self.index}"
 
+    def target_type(self) -> 'TargetType':
+        tuple_type = self.tuple_expr.target_type()
+        if isinstance(tuple_type, TupleType):
+            if 0 <= self.index < len(tuple_type.elements):
+                return tuple_type.elements[self.index]
+            raise ValueError(f"Tuple index {self.index} out of range for {tuple_type}")
+        raise ValueError(f"Cannot get element from non-tuple type: {tuple_type}")
+
 
 @dataclass(frozen=True)
 class Lambda(TargetExpr):
@@ -313,6 +373,9 @@ class Lambda(TargetExpr):
     def __post_init__(self):
         _freeze_sequence(self, 'params')
 
+    def target_type(self) -> 'TargetType':
+        return FunctionType([p.type for p in self.params], self.return_type)
+
 @dataclass(frozen=True)
 class Let(TargetExpr):
     """Let-binding: let var = init in body.
@@ -336,6 +399,9 @@ class Let(TargetExpr):
         type_str = f": {self.var.type}" if self.var.type else ""
         return f"let {self.var.name}{type_str} = {self.init} in {self.body}"
 
+    def target_type(self) -> 'TargetType':
+        return self.body.target_type()
+
 
 @dataclass(frozen=True)
 class IfElse(TargetExpr):
@@ -352,6 +418,9 @@ class IfElse(TargetExpr):
         else:
             return f"if ({self.condition}) then {self.then_branch} else {self.else_branch}"
 
+    def target_type(self) -> 'TargetType':
+        return self.then_branch.target_type()
+
 
 @dataclass(frozen=True)
 class Seq(TargetExpr):
@@ -365,6 +434,9 @@ class Seq(TargetExpr):
         _freeze_sequence(self, 'exprs')
         assert len(self.exprs) > 1, "Sequence must contain at least two expressions"
 
+    def target_type(self) -> 'TargetType':
+        return self.exprs[-1].target_type()
+
 
 @dataclass(frozen=True)
 class While(TargetExpr):
@@ -374,6 +446,9 @@ class While(TargetExpr):
 
     def __str__(self) -> str:
         return f"while ({self.condition}) {self.body}"
+
+    def target_type(self) -> 'TargetType':
+        return OptionType(BaseType("Never"))
 
 @dataclass(frozen=True)
 class Foreach(TargetExpr):
@@ -385,6 +460,9 @@ class Foreach(TargetExpr):
     def __str__(self) -> str:
         return f"for {self.var.name} in {self.collection} do {self.body}"
 
+    def target_type(self) -> 'TargetType':
+        return OptionType(BaseType("Never"))
+
 @dataclass(frozen=True)
 class ForeachEnumerated(TargetExpr):
     """Foreach loop with index: for index_var, var in enumerate(collection) do body."""
@@ -395,6 +473,9 @@ class ForeachEnumerated(TargetExpr):
 
     def __str__(self) -> str:
         return f"for {self.index_var.name}, {self.var.name} in enumerate({self.collection}) do {self.body}"
+
+    def target_type(self) -> 'TargetType':
+        return OptionType(BaseType("Never"))
 
 @dataclass(frozen=True)
 class Assign(TargetExpr):
@@ -408,6 +489,9 @@ class Assign(TargetExpr):
     def __str__(self) -> str:
         return f"{self.var.name} = {self.expr}"
 
+    def target_type(self) -> 'TargetType':
+        return OptionType(BaseType("Never"))
+
 @dataclass(frozen=True)
 class Return(TargetExpr):
     """Return statement: return expr."""
@@ -418,6 +502,9 @@ class Return(TargetExpr):
 
     def __post_init__(self):
         assert isinstance(self.expr, TargetExpr) and not isinstance(self.expr, Return), f"Invalid return expression in {self}: {self.expr}"
+
+    def target_type(self) -> 'TargetType':
+        return self.expr.target_type()
 
 
 @dataclass(frozen=True)
@@ -439,23 +526,6 @@ class BaseType(TargetType):
 
     def __str__(self) -> str:
         return self.name
-
-
-@dataclass(frozen=True)
-class BottomType(TargetType):
-    """The bottom type (empty type with no values).
-
-    Bottom is a subtype of every type. Used for:
-    - None literal has type Optional[Bottom]
-    - Empty list [] has type List[Bottom]
-
-    With covariant type constructors:
-    - Optional[Bottom] <: Optional[T] for any T
-    - List[Bottom] <: List[T] for any T
-    """
-
-    def __str__(self) -> str:
-        return "Bottom"
 
 
 @dataclass(frozen=True)
@@ -561,6 +631,54 @@ class FunctionType(TargetType):
         _freeze_sequence(self, 'param_types')
 
 
+def subst_type(typ: 'TargetType', mapping: dict[str, 'TargetType']) -> 'TargetType':
+    """Substitute type variables in a type according to the mapping."""
+    if isinstance(typ, VarType):
+        return mapping.get(typ.name, typ)
+    if isinstance(typ, (BaseType, MessageType)):
+        return typ
+    if isinstance(typ, ListType):
+        return ListType(subst_type(typ.element_type, mapping))
+    if isinstance(typ, OptionType):
+        return OptionType(subst_type(typ.element_type, mapping))
+    if isinstance(typ, DictType):
+        return DictType(subst_type(typ.key_type, mapping), subst_type(typ.value_type, mapping))
+    if isinstance(typ, TupleType):
+        return TupleType([subst_type(t, mapping) for t in typ.elements])
+    if isinstance(typ, FunctionType):
+        return FunctionType(
+            [subst_type(t, mapping) for t in typ.param_types],
+            subst_type(typ.return_type, mapping)
+        )
+    return typ
+
+
+def match_types(param_type: 'TargetType', arg_type: 'TargetType', mapping: dict[str, 'TargetType']) -> None:
+    """Match a parameter type against an argument type, updating the type variable mapping.
+
+    This performs simple unification: if param_type is a VarType, it binds to arg_type.
+    For compound types, it recursively matches components.
+    """
+    if isinstance(param_type, VarType):
+        if param_type.name not in mapping:
+            mapping[param_type.name] = arg_type
+        return
+    if isinstance(param_type, ListType) and isinstance(arg_type, ListType):
+        match_types(param_type.element_type, arg_type.element_type, mapping)
+    elif isinstance(param_type, OptionType) and isinstance(arg_type, OptionType):
+        match_types(param_type.element_type, arg_type.element_type, mapping)
+    elif isinstance(param_type, DictType) and isinstance(arg_type, DictType):
+        match_types(param_type.key_type, arg_type.key_type, mapping)
+        match_types(param_type.value_type, arg_type.value_type, mapping)
+    elif isinstance(param_type, TupleType) and isinstance(arg_type, TupleType):
+        for p, a in zip(param_type.elements, arg_type.elements):
+            match_types(p, a, mapping)
+    elif isinstance(param_type, FunctionType) and isinstance(arg_type, FunctionType):
+        for p, a in zip(param_type.param_types, arg_type.param_types):
+            match_types(p, a, mapping)
+        match_types(param_type.return_type, arg_type.return_type, mapping)
+
+
 @dataclass(frozen=True)
 class FunDef(TargetNode):
     """Function definition with parameters, return type, and body.
@@ -629,7 +747,6 @@ __all__ = [
     'Return',
     'TargetType',
     'BaseType',
-    'BottomType',
     'VarType',
     'MessageType',
     'TupleType',

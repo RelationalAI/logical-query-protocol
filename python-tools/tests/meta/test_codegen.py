@@ -2,10 +2,11 @@
 """Tests for Python code generation from action AST."""
 
 from meta.target import (
-    Var, Lit, Symbol, Builtin, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
+    Var, Lit, Symbol, NewMessage, ListExpr, Call, Lambda, Let,
     IfElse, Seq, While, Assign, Return, FunDef, VisitNonterminalDef,
     BaseType, MessageType, ListType, OptionType, GetElement,
 )
+from meta.target_builtins import make_builtin
 from meta.grammar import Nonterminal
 from meta.codegen_python import (
     generate_python,
@@ -104,7 +105,7 @@ def test_python_builtin_generation():
     # Test 'not' builtin
     reset_gensym()
     lines = []
-    expr = Call(Builtin("not"), [Var("x", _bool_type)])
+    expr = Call(make_builtin("not"), [Var("x", _bool_type)])
     result = gen.generate_lines(expr, lines, "")
     assert result == "not x"
     assert len(lines) == 0
@@ -112,21 +113,21 @@ def test_python_builtin_generation():
     # Test 'equal' builtin
     reset_gensym()
     lines = []
-    expr = Call(Builtin("equal"), [Var("a", _any_type), Var("b", _any_type)])
+    expr = Call(make_builtin("equal"), [Var("a", _any_type), Var("b", _any_type)])
     result = gen.generate_lines(expr, lines, "")
     assert result == "a == b"
 
     # Test 'list_concat' builtin
     reset_gensym()
     lines = []
-    expr = Call(Builtin("list_concat"), [Var("lst", ListType(_int_type)), Var("other", ListType(_int_type))])
+    expr = Call(make_builtin("list_concat"), [Var("lst", ListType(_int_type)), Var("other", ListType(_int_type))])
     result = gen.generate_lines(expr, lines, "")
     assert result == "(lst + (other if other is not None else []))"
 
     # Test 'is_none' builtin
     reset_gensym()
     lines = []
-    expr = Call(Builtin("is_none"), [Var("x", OptionType(_int_type))])
+    expr = Call(make_builtin("is_none"), [Var("x", OptionType(_int_type))])
     result = gen.generate_lines(expr, lines, "")
     assert result == "x is None"
 
@@ -146,14 +147,14 @@ def test_python_builtin_generation():
     # Test 'length' builtin
     reset_gensym()
     lines = []
-    expr = Call(Builtin("length"), [Var("lst", ListType(_int_type))])
+    expr = Call(make_builtin("length"), [Var("lst", ListType(_int_type))])
     result = gen.generate_lines(expr, lines, "")
     assert result == "len(lst)"
 
     # Test 'tuple' builtin (variadic)
     reset_gensym()
     lines = []
-    expr = Call(Builtin("tuple"), [Var("a", _int_type), Var("b", _str_type)])
+    expr = Call(make_builtin("tuple"), [Var("a", _int_type), Var("b", _str_type)])
     result = gen.generate_lines(expr, lines, "")
     assert result == "(a, b,)"
 
@@ -170,14 +171,14 @@ def test_python_if_else_generation():
     assert "if cond:" in "\n".join(lines)
     assert "else:" in "\n".join(lines)
     # Result should be a temp variable
-    assert result.startswith("_t")
+    assert result is not None and result.startswith("_t")
 
     # Short-circuit optimization: cond or else_value
     reset_gensym()
     lines = []
     expr = IfElse(Var("cond", _bool_type), Lit(True), Var("default", _bool_type))
     result = gen.generate_lines(expr, lines, "")
-    assert "cond or default" in result
+    assert result is not None and "cond or default" in result
     assert len(lines) == 0
 
     # Short-circuit optimization: cond and then_value
@@ -185,7 +186,7 @@ def test_python_if_else_generation():
     lines = []
     expr = IfElse(Var("cond", _bool_type), Var("value", _bool_type), Lit(False))
     result = gen.generate_lines(expr, lines, "")
-    assert "cond and value" in result
+    assert result is not None and "cond and value" in result
     assert len(lines) == 0
 
 
@@ -329,7 +330,7 @@ def test_python_fun_def_generation():
         name="add",
         params=[Var("x", _int_type), Var("y", _int_type)],
         return_type=_int_type,
-        body=Call(Builtin("add"), [Var("x", _int_type), Var("y", _int_type)]),
+        body=Call(make_builtin("add"), [Var("x", _int_type), Var("y", _int_type)]),
     )
     code = gen.generate_def(func)
     assert "def add(x: int, y: int) -> int:" in code
@@ -432,7 +433,7 @@ def test_python_helper_function_simple():
         name="add_one",
         params=[Var("x", _int_type)],
         return_type=_int_type,
-        body=Call(Builtin("add"), [Var("x", _int_type), Lit(1)]),
+        body=Call(make_builtin("add"), [Var("x", _int_type), Lit(1)]),
     )
     code = gen.generate_def(func)
     assert "def add_one(x: int) -> int:" in code
@@ -454,7 +455,7 @@ def test_python_helper_function_with_if():
         params=[Var("v", OptionType(_int_type)), Var("default", _int_type)],
         return_type=_int_type,
         body=IfElse(
-            Call(Builtin("is_none"), [Var("v", OptionType(_int_type))]),
+            Call(make_builtin("is_none"), [Var("v", OptionType(_int_type))]),
             Return(Var("default", _int_type)),
             Return(Var("v", OptionType(_int_type))),
         ),
@@ -512,7 +513,7 @@ def test_python_helper_function_message_constructor():
 
 def test_python_helper_function_calling_another():
     """Test Python code generation for helper function calling another function."""
-    from meta.target import NamedFun
+    from meta.target import NamedFun, FunctionType
     gen = PythonCodeGenerator()
     reset_gensym()
 
@@ -523,7 +524,7 @@ def test_python_helper_function_calling_another():
         name="wrapper",
         params=[Var("x", _int_type)],
         return_type=_int_type,
-        body=Call(NamedFun("helper"), [Var("x", _int_type)]),
+        body=Call(NamedFun("helper", FunctionType([_int_type], _int_type)), [Var("x", _int_type)]),
     )
     code = gen.generate_def(func)
     assert "def wrapper(x: int) -> int:" in code

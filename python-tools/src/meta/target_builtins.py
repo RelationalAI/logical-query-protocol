@@ -12,16 +12,19 @@ code for each builtin, but they should validate against this registry.
 
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Union
-from .target import TargetType, BaseType, VarType, MessageType, ListType, TupleType, OptionType, FunctionType, DictType
+from .target import TargetType, BaseType, VarType, MessageType, ListType, TupleType, OptionType, FunctionType, DictType, Builtin
 
 # Type aliases for convenience
 ANY = VarType("Any")
-INT64 = BaseType("Int64")
 INT32 = BaseType("Int32")
+INT64 = BaseType("Int64")
 FLOAT64 = BaseType("Float64")
 STRING = BaseType("String")
 BOOLEAN = BaseType("Boolean")
 BYTES = BaseType("Bytes")
+TOKEN = VarType("Token")
+VOID = BaseType("Void")
+NEVER = BaseType("Never")
 
 
 @dataclass(frozen=True)
@@ -99,6 +102,7 @@ register_builtin("and", [BOOLEAN, BOOLEAN], BOOLEAN)
 register_builtin("or", [BOOLEAN, BOOLEAN], BOOLEAN)
 
 # === Option operations ===
+register_builtin("none", [], OptionType(T))  # Returns None/nothing/null
 register_builtin("some", [T], OptionType(T))
 register_builtin("is_some", [OptionType(T)], BOOLEAN)
 register_builtin("is_none", [OptionType(T)], BOOLEAN)
@@ -109,6 +113,7 @@ register_builtin("unwrap_option_or", [OptionType(T), T], T)
 register_builtin("list_concat", [ListType(T), ListType(T)], ListType(T))
 register_builtin("length", [ListType(T)], INT64)
 register_builtin("map", [FunctionType([T1], T2), ListType(T1)], ListType(T2))
+register_builtin("append", [ListType(T), T], ListType(T))  # list.append(item)
 
 # === Tuple operations ===
 register_builtin("tuple", -1, T)  # Variadic: makes tuple from arguments
@@ -123,18 +128,17 @@ register_builtin("encode_string", [STRING], BYTES)
 # === Type conversions ===
 register_builtin("int64_to_int32", [INT64], INT32)
 
-# === Date/time operations ===
-register_builtin("make_date", [INT64, INT64, INT64], ANY)  # year, month, day -> DateValue
-
 # === Parser primitives (lexer/parser operations) ===
 register_builtin("match_lookahead_terminal", [STRING, INT64], BOOLEAN)
 register_builtin("match_lookahead_literal", [STRING, INT64], BOOLEAN)
 register_builtin("consume_literal", [STRING], BaseType("None"))
-register_builtin("consume_terminal", [STRING], ANY)
-register_builtin("current_token", [], ANY)
+register_builtin("consume_terminal", [STRING], TOKEN)
+register_builtin("consume", [STRING], TOKEN)  # Generic consume
+register_builtin("current_token", [], TOKEN)
 
 # === Error handling ===
-register_builtin("error", -1, BaseType("Never"))  # Variadic: 1 or 2 args
+register_builtin("error", [STRING], BaseType("Never"))
+register_builtin("error_with_token", [STRING, TOKEN], BaseType("Never"))
 
 # === Protobuf-specific ===
 register_builtin("fragment_id_from_string", [STRING], MessageType("fragments", "FragmentId"))
@@ -146,30 +150,16 @@ register_builtin("construct_fragment",
                  MessageType("fragments", "Fragment"))
 register_builtin("start_fragment", [MessageType("fragments", "FragmentId")], BaseType("None"))
 
-# === Config construction (primitives that will be replaced by IR implementations) ===
-register_builtin("construct_configure",
-                 [ListType(TupleType([STRING, MessageType("logic", "Value")]))],
-                 MessageType("transactions", "Configure"))
-register_builtin("construct_csv_config",
-                 [ListType(TupleType([STRING, MessageType("logic", "Value")]))],
-                 MessageType("logic", "CSVConfig"))
-register_builtin("construct_betree_info",
-                 [ListType(ANY), ListType(ANY), ListType(TupleType([STRING, MessageType("logic", "Value")]))],
-                 MessageType("logic", "BeTreeInfo"))
-register_builtin("export_csv_config",
-                 [STRING, ListType(ANY), ListType(TupleType([STRING, MessageType("logic", "Value")]))],
-                 MessageType("transactions", "ExportCSVConfig"))
-
 # === Dict operations ===
 register_builtin("dict_from_list", [ListType(TupleType([K, V]))], DictType(K, V))
 register_builtin("dict_get", [DictType(K, V), K], OptionType(V))
 
 # === Protobuf operations ===
 register_builtin("has_proto_field", [T, STRING], BOOLEAN)  # msg.HasField(field_name)
+register_builtin("which_one_of", [T, STRING], STRING)  # msg.WhichOneof(oneof_name)
 
 # === General helpers ===
-register_builtin("none", [], OptionType(T))  # Returns None/null
-register_builtin("make_empty_bytes", [], BYTES)  # Returns empty bytes b''
+register_builtin("is_empty", [ListType(T)], BOOLEAN)  # len(list) == 0
 
 
 # === Validation functions ===
@@ -194,6 +184,43 @@ def validate_builtin_call(name: str, num_args: int) -> Optional[str]:
     return None
 
 
+def make_builtin(name: str) -> Builtin:
+    """Create a Builtin expression with type looked up from the registry.
+
+    Args:
+        name: Name of the builtin function
+
+    Returns:
+        Builtin expression with its FunctionType
+
+    Raises:
+        ValueError: If the builtin is not registered
+    """
+    sig = get_builtin(name)
+    if sig is None:
+        raise ValueError(f"Unknown builtin: {name}")
+    # Convert BuiltinSignature to FunctionType
+    param_types: List[TargetType] = [] if isinstance(sig.param_types, int) else list(sig.param_types)
+    func_type = FunctionType(param_types, sig.return_type)
+    return Builtin(name, func_type)
+
+
+def make_builtin_with_type(name: str, func_type: FunctionType) -> Builtin:
+    """Create a Builtin expression with a specified type.
+
+    This is useful for tests that need builtins not in the registry,
+    or when the type is known from context.
+
+    Args:
+        name: Name of the builtin function
+        func_type: The function type for this builtin
+
+    Returns:
+        Builtin expression with the specified type
+    """
+    return Builtin(name, func_type)
+
+
 __all__ = [
     'BuiltinSignature',
     'BUILTIN_REGISTRY',
@@ -201,6 +228,8 @@ __all__ = [
     'get_builtin',
     'is_builtin',
     'validate_builtin_call',
+    'make_builtin',
+    'make_builtin_with_type',
     # Type constants
     'ANY', 'INT64', 'INT32', 'FLOAT64', 'STRING', 'BOOLEAN', 'BYTES',
     'T', 'T1', 'T2', 'K', 'V',
