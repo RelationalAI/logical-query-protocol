@@ -12,7 +12,6 @@ from meta.codegen_julia import (
     escape_identifier as escape_julia,
     JuliaCodeGenerator,
 )
-from meta.codegen_base import ALREADY_RETURNED
 from meta.gensym import reset as reset_gensym
 
 _any_type = BaseType("Any")
@@ -105,12 +104,12 @@ def test_julia_builtin_generation():
     result = gen.generate_lines(expr, lines, "")
     assert result == "a == b"
 
-    # Test 'list_concat' builtin
+    # Test 'list_concat' builtin (handles None second argument like Python)
     reset_gensym()
     lines = []
     expr = Call(Builtin("list_concat"), [Var("lst", ListType(_int_type)), Var("other", ListType(_int_type))])
     result = gen.generate_lines(expr, lines, "")
-    assert result == "vcat(lst, other)"
+    assert result == "vcat(lst, !isnothing(other) ? other : [])"
 
     # Test 'is_none' builtin
     reset_gensym()
@@ -323,8 +322,9 @@ def test_julia_return_generation():
     lines = []
     expr = Return(Var("result", _any_type))
     result = gen.generate_lines(expr, lines, "")
-    # Return generates a return statement and returns ALREADY_RETURNED sentinel
-    assert result == ALREADY_RETURNED
+    # Return generates a return statement and returns None
+    # to indicate that the caller should not add another return
+    assert result is None
     assert "return result" in lines[0]
 
 

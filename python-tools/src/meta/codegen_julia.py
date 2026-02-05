@@ -6,10 +6,10 @@ with proper keyword escaping and idiomatic Julia style.
 
 from typing import List, Optional, Set, Tuple, Union
 
-from .codegen_base import CodeGenerator, BuiltinResult, ALREADY_RETURNED
+from .codegen_base import CodeGenerator, BuiltinResult
 from .target import (
-    TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
-    IfElse, Seq, While, Assign, Return, FunDef, VisitNonterminalDef, VisitNonterminal, GetElement
+    TargetExpr, Var, Lit, Symbol, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
+    IfElse, FunDef, VisitNonterminalDef, VisitNonterminal, GetElement
 )
 from .gensym import gensym
 
@@ -79,144 +79,135 @@ class JuliaCodeGenerator(CodeGenerator):
         return field_map
 
     def _register_builtins(self) -> None:
-        """Register builtin generators."""
-        self.register_builtin("some", 1,
-            lambda args, lines, indent: BuiltinResult(args[0], []))
-        self.register_builtin("not", 1,
-            lambda args, lines, indent: BuiltinResult(f"!{args[0]}", []))
-        self.register_builtin("equal", 2,
-            lambda args, lines, indent: BuiltinResult(f"{args[0]} == {args[1]}", []))
-        self.register_builtin("not_equal", 2,
-            lambda args, lines, indent: BuiltinResult(f"{args[0]} != {args[1]}", []))
+        """Register builtin generators.
 
-        self.register_builtin("fragment_id_from_string", 1,
+        Arity is looked up from target_builtins.BUILTIN_REGISTRY.
+        """
+        self.register_builtin("some",
+            lambda args, lines, indent: BuiltinResult(args[0], []))
+        self.register_builtin("not",
+            lambda args, lines, indent: BuiltinResult(f"!{args[0]}", []))
+        self.register_builtin("and",
+            lambda args, lines, indent: BuiltinResult(f"({args[0]} && {args[1]})", []))
+        self.register_builtin("or",
+            lambda args, lines, indent: BuiltinResult(f"({args[0]} || {args[1]})", []))
+        self.register_builtin("equal",
+            lambda args, lines, indent: BuiltinResult(f"{args[0]} == {args[1]}", []))
+        self.register_builtin("not_equal",
+            lambda args, lines, indent: BuiltinResult(f"{args[0]} != {args[1]}", []))
+        self.register_builtin("add",
+            lambda args, lines, indent: BuiltinResult(f"({args[0]} + {args[1]})", []))
+
+        self.register_builtin("fragment_id_from_string",
             lambda args, lines, indent: BuiltinResult(f"Proto.FragmentId(Vector{{UInt8}}({args[0]}))", []))
 
-        self.register_builtin("relation_id_from_string", 1,
+        self.register_builtin("relation_id_from_string",
             lambda args, lines, indent: BuiltinResult(
-                f"Proto.RelationId(Base.parse(UInt64, bytes2hex(sha256({args[0]})[1:8]), base=16), 0)", []))
+                f"relation_id_from_string(parser, {args[0]})", []))
 
-        self.register_builtin("relation_id_from_int", 1,
-            lambda args, lines, indent: BuiltinResult(f"Proto.RelationId({args[0]}, 0)", []))
+        self.register_builtin("relation_id_from_int",
+            lambda args, lines, indent: BuiltinResult(
+                f"Proto.RelationId({args[0]} & 0xFFFFFFFFFFFFFFFF, ({args[0]} >> 64) & 0xFFFFFFFFFFFFFFFF)", []))
 
-        self.register_builtin("list_concat", 2,
-            lambda args, lines, indent: BuiltinResult(f"vcat({args[0]}, {args[1]})", []))
+        self.register_builtin("list_concat",
+            lambda args, lines, indent: BuiltinResult(
+                f"vcat({args[0]}, !isnothing({args[1]}) ? {args[1]} : [])", []))
 
-        self.register_builtin("list_append", 2,
-            lambda args, lines, indent: BuiltinResult(f"vcat({args[0]}, [{args[1]}])", []))
+        self.register_builtin("map",
+            lambda args, lines, indent: BuiltinResult(f"map({args[0]}, {args[1]})", []))
 
-        self.register_builtin("list_push!", 2,
-            lambda args, lines, indent: BuiltinResult("nothing", [f"push!({args[0]}, {args[1]})"]))
-
-        self.register_builtin("is_none", 1,
+        self.register_builtin("is_none",
             lambda args, lines, indent: BuiltinResult(f"isnothing({args[0]})", []))
 
-        self.register_builtin("fst", 1,
-            lambda args, lines, indent: BuiltinResult(f"{args[0]}[1]", []))
+        self.register_builtin("is_some",
+            lambda args, lines, indent: BuiltinResult(f"!isnothing({args[0]})", []))
 
-        self.register_builtin("snd", 1,
-            lambda args, lines, indent: BuiltinResult(f"{args[0]}[2]", []))
+        self.register_builtin("unwrap_option",
+            lambda args, lines, indent: BuiltinResult(args[0], []))
 
-        self.register_builtin("make_tuple", -1,
+        self.register_builtin("none",
+            lambda args, lines, indent: BuiltinResult("nothing", []))
+
+        self.register_builtin("make_empty_bytes",
+            lambda args, lines, indent: BuiltinResult("UInt8[]", []))
+
+        self.register_builtin("dict_from_list",
+            lambda args, lines, indent: BuiltinResult(f"Dict({args[0]})", []))
+
+        self.register_builtin("dict_get",
+            lambda args, lines, indent: BuiltinResult(f"get({args[0]}, {args[1]}, nothing)", []))
+
+        self.register_builtin("has_proto_field",
+            lambda args, lines, indent: BuiltinResult(
+                f"hasproperty({args[0]}, Symbol({args[1]})) && !isnothing(getproperty({args[0]}, Symbol({args[1]})))", []))
+
+        self.register_builtin("string_to_upper",
+            lambda args, lines, indent: BuiltinResult(f"uppercase({args[0]})", []))
+
+        self.register_builtin("string_in_list",
+            lambda args, lines, indent: BuiltinResult(f"({args[0]} in {args[1]})", []))
+
+        self.register_builtin("string_concat",
+            lambda args, lines, indent: BuiltinResult(f"({args[0]} * {args[1]})", []))
+
+        self.register_builtin("encode_string",
+            lambda args, lines, indent: BuiltinResult(f"Vector{{UInt8}}({args[0]})", []))
+
+        self.register_builtin("tuple",
             lambda args, lines, indent: BuiltinResult(f"({', '.join(args)},)", []))
 
-        self.register_builtin("length", 1,
+        self.register_builtin("length",
             lambda args, lines, indent: BuiltinResult(f"length({args[0]})", []))
 
-        self.register_builtin("unwrap_option_or", 2,
-            lambda args, lines, indent: BuiltinResult(f"something({args[0]}, {args[1]})", []))
+        self.register_builtin("unwrap_option_or",
+            lambda args, lines, indent: BuiltinResult(
+                f"(!isnothing({args[0]}) ? {args[0]} : {args[1]})", []))
 
-        self.register_builtin("match_lookahead_terminal", 2,
+        self.register_builtin("int64_to_int32",
+            lambda args, lines, indent: BuiltinResult(f"Int32({args[0]})", []))
+
+        self.register_builtin("match_lookahead_terminal",
             lambda args, lines, indent: BuiltinResult(f"match_lookahead_terminal(parser, {args[0]}, {args[1]})", []))
 
-        self.register_builtin("match_lookahead_literal", 2,
+        self.register_builtin("match_lookahead_literal",
             lambda args, lines, indent: BuiltinResult(f"match_lookahead_literal(parser, {args[0]}, {args[1]})", []))
 
-        self.register_builtin("consume_literal", 1,
+        self.register_builtin("consume_literal",
             lambda args, lines, indent: BuiltinResult("nothing", [f"consume_literal!(parser, {args[0]})"]))
 
-        self.register_builtin("consume_terminal", 1,
+        self.register_builtin("consume_terminal",
             lambda args, lines, indent: BuiltinResult(f"consume_terminal!(parser, {args[0]})", []))
 
-        self.register_builtin("current_token", 0,
+        self.register_builtin("current_token",
             lambda args, lines, indent: BuiltinResult("current_token(parser)", []))
 
+        # error is variadic (1 or 2 args)
         def gen_error(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
             if len(args) == 2:
                 return BuiltinResult("nothing", [f'throw(ParseError({args[0]} * ": " * string({args[1]})))'])
             elif len(args) == 1:
                 return BuiltinResult("nothing", [f"throw(ParseError({args[0]}))"])
             else:
-                raise ValueError("Invalid number of arguments for `error`")
-        self.register_builtin("error", -1, gen_error)
+                raise ValueError("Invalid number of arguments for builtin `error`.")
+        self.register_builtin("error", gen_error)
 
-        self.register_builtin("construct_configure", 1,
+        self.register_builtin("construct_configure",
             lambda args, lines, indent: BuiltinResult(f"construct_configure(parser, {args[0]})", []))
 
-        self.register_builtin("export_csv_config", 3,
-            lambda args, lines, indent: BuiltinResult(f"export_csv_config(parser, {args[0]}, {args[1]}, {args[2]})", []))
+        self.register_builtin("construct_betree_info",
+            lambda args, lines, indent: BuiltinResult(f"construct_betree_info(parser, {args[0]}, {args[1]}, {args[2]})", []))
 
-        self.register_builtin("start_fragment", 1,
-            lambda args, lines, indent: BuiltinResult(f"start_fragment(parser, {args[0]})", []))
+        self.register_builtin("construct_csv_config",
+            lambda args, lines, indent: BuiltinResult(f"construct_csv_config(parser, {args[0]})", []))
 
-        self.register_builtin("construct_fragment", 2,
+        self.register_builtin("start_fragment",
+            lambda args, lines, indent: BuiltinResult(args[0], [f"start_fragment(parser, {args[0]})"]))
+
+        self.register_builtin("construct_fragment",
             lambda args, lines, indent: BuiltinResult(f"construct_fragment(parser, {args[0]}, {args[1]})", []))
 
-        # Logical operators
-        self.register_builtin("and", 2,
-            lambda args, lines, indent: BuiltinResult(f"({args[0]} && {args[1]})", []))
-        self.register_builtin("or", 2,
-            lambda args, lines, indent: BuiltinResult(f"({args[0]} || {args[1]})", []))
-
-        # Arithmetic
-        self.register_builtin("add", 2,
-            lambda args, lines, indent: BuiltinResult(f"({args[0]} + {args[1]})", []))
-
-        # Collections
-        self.register_builtin("map", 2,
-            lambda args, lines, indent: BuiltinResult(f"map({args[0]}, {args[1]})", []))
-
-        # Option handling
-        self.register_builtin("is_some", 1,
-            lambda args, lines, indent: BuiltinResult(f"!isnothing({args[0]})", []))
-        self.register_builtin("unwrap_option", 1,
-            lambda args, lines, indent: BuiltinResult(args[0], []))
-        self.register_builtin("none", 0,
-            lambda args, lines, indent: BuiltinResult("nothing", []))
-
-        # Bytes
-        self.register_builtin("make_empty_bytes", 0,
-            lambda args, lines, indent: BuiltinResult("UInt8[]", []))
-
-        # Dictionary operations
-        self.register_builtin("dict_from_list", 1,
-            lambda args, lines, indent: BuiltinResult(f"Dict({args[0]})", []))
-        self.register_builtin("dict_get", 2,
-            lambda args, lines, indent: BuiltinResult(f"get({args[0]}, {args[1]}, nothing)", []))
-
-        # String operations
-        self.register_builtin("string_to_upper", 1,
-            lambda args, lines, indent: BuiltinResult(f"uppercase({args[0]})", []))
-        self.register_builtin("string_in_list", 2,
-            lambda args, lines, indent: BuiltinResult(f"({args[0]} in {args[1]})", []))
-        self.register_builtin("string_concat", 2,
-            lambda args, lines, indent: BuiltinResult(f"({args[0]} * {args[1]})", []))
-        self.register_builtin("encode_string", 1,
-            lambda args, lines, indent: BuiltinResult(f"Vector{{UInt8}}({args[0]})", []))
-
-        # Tuple creation (variadic)
-        self.register_builtin("tuple", -1,
-            lambda args, lines, indent: BuiltinResult(f"({', '.join(args)},)", []))
-
-        # Type conversions
-        self.register_builtin("int64_to_int32", 1,
-            lambda args, lines, indent: BuiltinResult(f"Int32({args[0]})", []))
-
-        # Additional helper builtins
-        self.register_builtin("construct_betree_info", 3,
-            lambda args, lines, indent: BuiltinResult(f"construct_betree_info(parser, {args[0]}, {args[1]}, {args[2]})", []))
-        self.register_builtin("construct_csv_config", 1,
-            lambda args, lines, indent: BuiltinResult(f"construct_csv_config(parser, {args[0]})", []))
+        self.register_builtin("export_csv_config",
+            lambda args, lines, indent: BuiltinResult(f"export_csv_config(parser, {args[0]}, {args[1]}, {args[2]})", []))
 
     def escape_keyword(self, name: str) -> str:
         return f'var"{name}"'
@@ -342,7 +333,7 @@ class JuliaCodeGenerator(CodeGenerator):
 
     # --- Override generate_lines for Julia-specific special cases ---
 
-    def generate_lines(self, expr: TargetExpr, lines: List[str], indent: str = "") -> str:
+    def generate_lines(self, expr: TargetExpr, lines: List[str], indent: str = "") -> Optional[str]:
         # Special case: Proto.Fragment construction with debug_info parameter
         if isinstance(expr, Call) and isinstance(expr.func, NewMessage) and expr.func.name == "Fragment":
             for arg in expr.args:
@@ -456,7 +447,11 @@ class JuliaCodeGenerator(CodeGenerator):
         # Check for VisitNonterminal calls - need to add parser as first argument
         if isinstance(expr.func, VisitNonterminal):
             f = self.generate_lines(expr.func, lines, indent)
-            args = [self.generate_lines(arg, lines, indent) for arg in expr.args]
+            args: List[str] = []
+            for arg in expr.args:
+                arg_code = self.generate_lines(arg, lines, indent)
+                assert arg_code is not None, "Function argument should not contain a return"
+                args.append(arg_code)
             # Prepend parser as first argument
             all_args = ["parser"] + args
             args_code = ', '.join(all_args)
@@ -475,20 +470,22 @@ class JuliaCodeGenerator(CodeGenerator):
         """
         raise ValueError(f"OneOf should only appear in Call(OneOf(...), [value]) pattern: {expr}")
 
-    def _generate_if_else(self, expr: IfElse, lines: List[str], indent: str) -> str:
+    def _generate_if_else(self, expr: IfElse, lines: List[str], indent: str) -> Optional[str]:
         """Override to skip var declaration (Julia doesn't need it)."""
         cond_code = self.generate_lines(expr.condition, lines, indent)
+        assert cond_code is not None, "If condition should not contain a return"
 
-        # Optimization: short-circuit for boolean literals
+        # Optimization: short-circuit for boolean literals.
+        # This is not needed, but makes the generated code more readable.
         if expr.then_branch == Lit(True):
             tmp_lines: List[str] = []
             else_code = self.generate_lines(expr.else_branch, tmp_lines, indent)
-            if not tmp_lines:
+            if not tmp_lines and else_code is not None:
                 return f"({cond_code} || {else_code})"
         if expr.else_branch == Lit(False):
             tmp_lines = []
             then_code = self.generate_lines(expr.then_branch, tmp_lines, indent)
-            if not tmp_lines:
+            if not tmp_lines and then_code is not None:
                 return f"({cond_code} && {then_code})"
 
         tmp = gensym()
@@ -497,20 +494,20 @@ class JuliaCodeGenerator(CodeGenerator):
         body_indent = indent + self.indent_str
         then_code = self.generate_lines(expr.then_branch, lines, body_indent)
         # Only assign if the branch didn't already return
-        if then_code != ALREADY_RETURNED:
+        if then_code is not None:
             lines.append(f"{body_indent}{self.gen_assignment(tmp, then_code)}")
 
         lines.append(f"{indent}{self.gen_else()}")
         else_code = self.generate_lines(expr.else_branch, lines, body_indent)
         # Only assign if the branch didn't already return
-        if else_code != ALREADY_RETURNED:
+        if else_code is not None:
             lines.append(f"{body_indent}{self.gen_assignment(tmp, else_code)}")
 
         lines.append(f"{indent}{self.gen_if_end()}")
 
-        # If both branches returned, propagate the sentinel
-        if then_code == ALREADY_RETURNED and else_code == ALREADY_RETURNED:
-            return ALREADY_RETURNED
+        # If both branches returned, propagate None
+        if then_code is None and else_code is None:
+            return None
 
         return tmp
 
@@ -534,7 +531,7 @@ class JuliaCodeGenerator(CodeGenerator):
             body_lines: List[str] = []
             body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
             # Only add return if the body didn't already return
-            if body_inner != ALREADY_RETURNED:
+            if body_inner is not None:
                 body_lines.append(f"{indent}    return {body_inner}")
             body_code = "\n".join(body_lines)
 
@@ -554,7 +551,7 @@ class JuliaCodeGenerator(CodeGenerator):
             lines: List[str] = []
             body_inner = self.generate_lines(expr.body, lines, indent + self.indent_str)
             # Only add return if the body didn't already return
-            if body_inner != ALREADY_RETURNED:
+            if body_inner is not None:
                 lines.append(f"{indent}{self.indent_str}{self.gen_return(body_inner)}")
             body_code = "\n".join(lines)
 
@@ -576,7 +573,7 @@ def generate_julia_type(typ) -> str:
     return _generator.gen_type(typ)
 
 
-def generate_julia_lines(expr: TargetExpr, lines: List[str], indent: str = "") -> str:
+def generate_julia_lines(expr: TargetExpr, lines: List[str], indent: str = "") -> Optional[str]:
     """Generate Julia code from a target IR expression."""
     return _generator.generate_lines(expr, lines, indent)
 
@@ -618,15 +615,17 @@ def generate_julia(expr: TargetExpr, indent: str = "") -> str:
     elif isinstance(expr, Let):
         lines: List[str] = []
         result = generate_julia_lines(expr, lines, indent)
+        result_str = result if result is not None else ""
         if lines:
-            return '\n'.join(lines) + '\n' + result
-        return result
+            return '\n'.join(lines) + '\n' + result_str
+        return result_str
     else:
         lines = []
         result = generate_julia_lines(expr, lines, indent)
+        result_str = result if result is not None else ""
         if lines:
-            return '\n'.join(lines) + '\n' + result
-        return result
+            return '\n'.join(lines) + '\n' + result_str
+        return result_str
 
 
 def generate_julia_function_body(expr: TargetExpr, indent: str = "    ") -> str:
