@@ -6,10 +6,10 @@ with proper keyword escaping and idiomatic Python style.
 
 from typing import List, Optional, Set, Tuple, Union
 
-from .codegen_base import CodeGenerator, BuiltinResult, ALREADY_RETURNED
+from .codegen_base import CodeGenerator, BuiltinResult
 from .target import (
     TargetExpr, Var, Lit, Symbol, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
-    IfElse, FunDef, VisitNonterminalDef, Assign, Builtin
+    IfElse, FunDef, VisitNonterminalDef
 )
 from .gensym import gensym
 
@@ -75,98 +75,104 @@ class PythonCodeGenerator(CodeGenerator):
         return field_map
 
     def _register_builtins(self) -> None:
-        """Register builtin generators."""
-        self.register_builtin("some", 1,
+        """Register builtin generators.
+
+        Arity is looked up from target_builtins.BUILTIN_REGISTRY.
+        """
+        self.register_builtin("some",
             lambda args, lines, indent: BuiltinResult(args[0], []))
-        self.register_builtin("not", 1,
+        self.register_builtin("not",
             lambda args, lines, indent: BuiltinResult(f"not {args[0]}", []))
-        self.register_builtin("and", 2,
+        self.register_builtin("and",
             lambda args, lines, indent: BuiltinResult(f"({args[0]} and {args[1]})", []))
-        self.register_builtin("or", 2,
+        self.register_builtin("or",
             lambda args, lines, indent: BuiltinResult(f"({args[0]} or {args[1]})", []))
-        self.register_builtin("equal", 2,
+        self.register_builtin("equal",
             lambda args, lines, indent: BuiltinResult(f"{args[0]} == {args[1]}", []))
-        self.register_builtin("not_equal", 2,
+        self.register_builtin("not_equal",
             lambda args, lines, indent: BuiltinResult(f"{args[0]} != {args[1]}", []))
-        self.register_builtin("add", 2,
+        self.register_builtin("add",
             lambda args, lines, indent: BuiltinResult(f"({args[0]} + {args[1]})", []))
 
-        self.register_builtin("fragment_id_from_string", 1,
+        self.register_builtin("fragment_id_from_string",
             lambda args, lines, indent: BuiltinResult(f"fragments_pb2.FragmentId(id={args[0]}.encode())", []))
 
-        self.register_builtin("relation_id_from_string", 1,
+        self.register_builtin("relation_id_from_string",
             lambda args, lines, indent: BuiltinResult(f"self.relation_id_from_string({args[0]})", []))
 
-        self.register_builtin("relation_id_from_int", 1,
+        self.register_builtin("relation_id_from_int",
             lambda args, lines, indent: BuiltinResult(f"logic_pb2.RelationId(id_low={args[0]} & 0xFFFFFFFFFFFFFFFF, id_high=({args[0]} >> 64) & 0xFFFFFFFFFFFFFFFF)", []))
 
-        self.register_builtin("list_concat", 2,
+        self.register_builtin("list_concat",
             lambda args, lines, indent: BuiltinResult(f"({args[0]} + ({args[1]} if {args[1]} is not None else []))", []))
 
-        self.register_builtin("map", 2,
+        self.register_builtin("map",
             lambda args, lines, indent: BuiltinResult(f"[{args[0]}(x) for x in {args[1]}]", []))
 
-        self.register_builtin("is_none", 1,
+        self.register_builtin("is_none",
             lambda args, lines, indent: BuiltinResult(f"{args[0]} is None", []))
 
-        self.register_builtin("is_some", 1,
+        self.register_builtin("is_some",
             lambda args, lines, indent: BuiltinResult(f"{args[0]} is not None", []))
 
-        self.register_builtin("unwrap_option", 1,
+        self.register_builtin("unwrap_option",
             lambda args, lines, indent: BuiltinResult(args[0], []))
 
-        self.register_builtin("none", 0,
+        self.register_builtin("none",
             lambda args, lines, indent: BuiltinResult("None", []))
 
-        self.register_builtin("make_empty_bytes", 0,
+        self.register_builtin("make_empty_bytes",
             lambda args, lines, indent: BuiltinResult("b''", []))
 
-        self.register_builtin("dict_from_list", 1,
+        self.register_builtin("dict_from_list",
             lambda args, lines, indent: BuiltinResult(f"dict({args[0]})", []))
 
-        self.register_builtin("dict_get", 2,
+        self.register_builtin("dict_get",
             lambda args, lines, indent: BuiltinResult(f"{args[0]}.get({args[1]})", []))
 
-        self.register_builtin("string_to_upper", 1,
+        self.register_builtin("has_proto_field",
+            lambda args, lines, indent: BuiltinResult(f"{args[0]}.HasField({args[1]})", []))
+
+        self.register_builtin("string_to_upper",
             lambda args, lines, indent: BuiltinResult(f"{args[0]}.upper()", []))
 
-        self.register_builtin("string_in_list", 2,
+        self.register_builtin("string_in_list",
             lambda args, lines, indent: BuiltinResult(f"{args[0]} in {args[1]}", []))
 
-        self.register_builtin("string_concat", 2,
+        self.register_builtin("string_concat",
             lambda args, lines, indent: BuiltinResult(f"({args[0]} + {args[1]})", []))
 
-        self.register_builtin("encode_string", 1,
+        self.register_builtin("encode_string",
             lambda args, lines, indent: BuiltinResult(f"{args[0]}.encode()", []))
 
-        self.register_builtin("tuple", -1,
+        self.register_builtin("tuple",
             lambda args, lines, indent: BuiltinResult(f"({', '.join(args)},)", []))
 
-        self.register_builtin("length", 1,
+        self.register_builtin("length",
             lambda args, lines, indent: BuiltinResult(f"len({args[0]})", []))
 
-        self.register_builtin("unwrap_option_or", 2,
+        self.register_builtin("unwrap_option_or",
             lambda args, lines, indent: BuiltinResult(f"({args[0]} if {args[0]} is not None else {args[1]})", []))
 
-        self.register_builtin("int64_to_int32", 1,
+        self.register_builtin("int64_to_int32",
             lambda args, lines, indent: BuiltinResult(f"int({args[0]})", []))
 
-        self.register_builtin("match_lookahead_terminal", 2,
+        self.register_builtin("match_lookahead_terminal",
             lambda args, lines, indent: BuiltinResult(f"self.match_lookahead_terminal({args[0]}, {args[1]})", []))
 
-        self.register_builtin("match_lookahead_literal", 2,
+        self.register_builtin("match_lookahead_literal",
             lambda args, lines, indent: BuiltinResult(f"self.match_lookahead_literal({args[0]}, {args[1]})", []))
 
-        self.register_builtin("consume_literal", 1,
+        self.register_builtin("consume_literal",
             lambda args, lines, indent: BuiltinResult("None", [f"self.consume_literal({args[0]})"]))
 
-        self.register_builtin("consume_terminal", 1,
+        self.register_builtin("consume_terminal",
             lambda args, lines, indent: BuiltinResult(f"self.consume_terminal({args[0]})", []))
 
-        self.register_builtin("current_token", 0,
+        self.register_builtin("current_token",
             lambda args, lines, indent: BuiltinResult("self.lookahead(0)", []))
 
-        # error has two arities, so we use a custom generator
+        # error is variadic (1 or 2 args)
         def gen_error(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
             if len(args) == 2:
                 return BuiltinResult("None", [_format_parse_error_with_token(args[0], args[1])])
@@ -174,24 +180,24 @@ class PythonCodeGenerator(CodeGenerator):
                 return BuiltinResult("None", [f"raise ParseError({args[0]})"])
             else:
                 raise ValueError("Invalid number of arguments for builtin `error`.")
-        self.register_builtin("error", -1, gen_error)
+        self.register_builtin("error", gen_error)
 
-        self.register_builtin("construct_configure", 1,
+        self.register_builtin("construct_configure",
             lambda args, lines, indent: BuiltinResult(f"self.construct_configure({args[0]})", []))
 
-        self.register_builtin("construct_betree_info", 3,
+        self.register_builtin("construct_betree_info",
             lambda args, lines, indent: BuiltinResult(f"self.construct_betree_info({args[0]}, {args[1]}, {args[2]})", []))
 
-        self.register_builtin("construct_csv_config", 1,
+        self.register_builtin("construct_csv_config",
             lambda args, lines, indent: BuiltinResult(f"self.construct_csv_config({args[0]})", []))
 
-        self.register_builtin("start_fragment", 1,
+        self.register_builtin("start_fragment",
             lambda args, lines, indent: BuiltinResult(args[0], [f"self.start_fragment({args[0]})"]))
 
-        self.register_builtin("construct_fragment", 2,
+        self.register_builtin("construct_fragment",
             lambda args, lines, indent: BuiltinResult(f"self.construct_fragment({args[0]}, {args[1]})", []))
 
-        self.register_builtin("export_csv_config", 3,
+        self.register_builtin("export_csv_config",
             lambda args, lines, indent: BuiltinResult(f"self.export_csv_config({args[0]}, {args[1]}, {args[2]})", []))
 
     def escape_keyword(self, name: str) -> str:
@@ -246,17 +252,6 @@ class PythonCodeGenerator(CodeGenerator):
 
     def gen_list_literal(self, elements: List[str], element_type) -> str:
         return f"[{', '.join(elements)}]"
-
-    def gen_dict_from_list(self, pairs: str) -> str:
-        return f"dict({pairs})"
-
-    def gen_dict_lookup(self, dict_expr: str, key: str, default: Optional[str]) -> str:
-        if default is None:
-            return f"{dict_expr}.get({key})"
-        return f"{dict_expr}.get({key}, {default})"
-
-    def gen_has_field(self, message: str, field_name: str) -> str:
-        return f"{message}.HasField({repr(field_name)})"
 
     def gen_function_type(self, param_types: List[str], return_type: str) -> str:
         return f"Callable[[{', '.join(param_types)}], {return_type}]"
@@ -377,21 +372,22 @@ class PythonCodeGenerator(CodeGenerator):
         return tmp
 
 
-    def _generate_if_else(self, expr: IfElse, lines: List[str], indent: str) -> str:
+    def _generate_if_else(self, expr: IfElse, lines: List[str], indent: str) -> Optional[str]:
         """Override to skip var declaration (Python doesn't need it)."""
         cond_code = self.generate_lines(expr.condition, lines, indent)
+        assert cond_code is not None, "If condition should not contain a return"
 
         # Optimization: short-circuit for boolean literals.
         # This is not needed, but makes the generated code more readable.
         if expr.then_branch == Lit(True):
             tmp_lines: List[str] = []
             else_code = self.generate_lines(expr.else_branch, tmp_lines, indent)
-            if not tmp_lines:
+            if not tmp_lines and else_code is not None:
                 return f"({cond_code} or {else_code})"
         if expr.else_branch == Lit(False):
             tmp_lines = []
             then_code = self.generate_lines(expr.then_branch, tmp_lines, indent)
-            if not tmp_lines:
+            if not tmp_lines and then_code is not None:
                 return f"({cond_code} and {then_code})"
 
         tmp = gensym()
@@ -400,18 +396,18 @@ class PythonCodeGenerator(CodeGenerator):
         body_indent = indent + self.indent_str
         then_code = self.generate_lines(expr.then_branch, lines, body_indent)
         # Only assign if the branch didn't already return
-        if then_code != ALREADY_RETURNED:
+        if then_code is not None:
             lines.append(f"{body_indent}{self.gen_assignment(tmp, then_code)}")
 
         lines.append(f"{indent}{self.gen_else()}")
         else_code = self.generate_lines(expr.else_branch, lines, body_indent)
         # Only assign if the branch didn't already return
-        if else_code != ALREADY_RETURNED:
+        if else_code is not None:
             lines.append(f"{body_indent}{self.gen_assignment(tmp, else_code)}")
 
-        # If both branches returned, propagate the sentinel
-        if then_code == ALREADY_RETURNED and else_code == ALREADY_RETURNED:
-            return ALREADY_RETURNED
+        # If both branches returned, propagate None
+        if then_code is None and else_code is None:
+            return None
 
         return tmp
 
@@ -437,7 +433,7 @@ class PythonCodeGenerator(CodeGenerator):
             body_lines: List[str] = []
             body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
             # Only add return if the body didn't already return
-            if body_inner != ALREADY_RETURNED:
+            if body_inner is not None:
                 body_lines.append(f"{indent}    return {body_inner}")
             body_code = "\n".join(body_lines)
 
@@ -463,45 +459,11 @@ class PythonCodeGenerator(CodeGenerator):
             body_lines: List[str] = []
             body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
             # Only add return if the body didn't already return
-            if body_inner != ALREADY_RETURNED:
+            if body_inner is not None:
                 body_lines.append(f"{indent}    return {body_inner}")
             body_code = "\n".join(body_lines)
 
         return f"{indent}@staticmethod\n{indent}def {func_name}({params_str}){ret_hint}:\n{body_code}"
-
-    def _generate_assign(self, expr: Assign, lines: List[str], indent: str) -> str:
-        """Generate code for an assignment, with list_concat optimization.
-
-        Optimizes `xs = list_concat(xs, ys)` to use mutation:
-        - `xs = list_concat(xs, [item])` -> `xs.append(item)`
-        - `xs = list_concat(xs, ys)` -> `xs.extend(ys)`
-        """
-        var_name = self.escape_identifier(expr.var.name)
-
-        # Check for list_concat optimization pattern
-        if isinstance(expr.expr, Call) and isinstance(expr.expr.func, Builtin):
-            if expr.expr.func.name == 'list_concat' and len(expr.expr.args) == 2:
-                first_arg = expr.expr.args[0]
-                second_arg = expr.expr.args[1]
-
-                # Check if first arg is the same variable being assigned
-                if isinstance(first_arg, Var) and first_arg.name == expr.var.name:
-                    # Check if second arg is a singleton list literal
-                    if isinstance(second_arg, ListExpr) and len(second_arg.elements) == 1:
-                        # xs = list_concat(xs, [item]) -> xs.append(item)
-                        item_code = self.generate_lines(second_arg.elements[0], lines, indent)
-                        lines.append(f"{indent}{var_name}.append({item_code})")
-                        return self.gen_none()
-                    else:
-                        # xs = list_concat(xs, ys) -> xs.extend(ys)
-                        ys_code = self.generate_lines(second_arg, lines, indent)
-                        lines.append(f"{indent}{var_name}.extend({ys_code})")
-                        return self.gen_none()
-
-        # Fall back to base implementation
-        expr_code = self.generate_lines(expr.expr, lines, indent)
-        lines.append(f"{indent}{self.gen_assignment(var_name, expr_code)}")
-        return self.gen_none()
 
 
 def escape_identifier(name: str) -> str:

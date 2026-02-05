@@ -291,81 +291,6 @@ class GetElement(TargetExpr):
 
 
 @dataclass(frozen=True)
-class DictFromList(TargetExpr):
-    """Construct dictionary from list of (key, value) tuples: dict(pairs).
-
-    Converts a list of tuples into a dictionary/map.
-
-    pairs: Expression evaluating to a list of (key, value) tuples
-    key_type: Type of dictionary keys
-    value_type: Type of dictionary values
-
-    Example:
-        DictFromList(
-            Var("pairs", ListType(TupleType([STRING, INT64]))),
-            BaseType("String"),
-            BaseType("Int64")
-        )
-    """
-    pairs: 'TargetExpr'
-    key_type: 'TargetType'
-    value_type: 'TargetType'
-
-    def __str__(self) -> str:
-        return f"dict({self.pairs})"
-
-
-@dataclass(frozen=True)
-class DictLookup(TargetExpr):
-    """Dictionary lookup with optional default: dict.get(key, default).
-
-    Looks up a key in a dictionary, returning a default value if not found.
-
-    dict_expr: Expression evaluating to a dictionary
-    key: Expression for the key to lookup
-    default: Optional default value if key not found (None means return None)
-
-    Example:
-        DictLookup(
-            Var("config", DictType(STRING, INT64)),
-            Lit("timeout"),
-            Lit(30)
-        )
-    """
-    dict_expr: 'TargetExpr'
-    key: 'TargetExpr'
-    default: Optional['TargetExpr'] = None
-
-    def __str__(self) -> str:
-        if self.default is None:
-            return f"{self.dict_expr}.get({self.key})"
-        return f"{self.dict_expr}.get({self.key}, {self.default})"
-
-
-@dataclass(frozen=True)
-class HasProtoField(TargetExpr):
-    """Check if protobuf message has field set (for oneOf): msg.HasField(field_name).
-
-    Checks whether a protobuf message has a particular field set, typically used
-    for oneOf discriminators.
-
-    message: Expression evaluating to a protobuf message
-    field_name: Name of the field to check (string literal)
-
-    Example:
-        HasProtoField(
-            Var("msg", MessageType("logic", "Value")),
-            "string_value"
-        )
-    """
-    message: 'TargetExpr'
-    field_name: str
-
-    def __str__(self) -> str:
-        return f"{self.message}.HasField({repr(self.field_name)})"
-
-
-@dataclass(frozen=True)
 class Lambda(TargetExpr):
     """Lambda function (anonymous function).
 
@@ -693,9 +618,6 @@ __all__ = [
     'Call',
     'GetField',
     'GetElement',
-    'DictFromList',
-    'DictLookup',
-    'HasProtoField',
     'Lambda',
     'Let',
     'IfElse',

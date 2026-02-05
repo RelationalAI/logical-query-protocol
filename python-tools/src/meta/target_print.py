@@ -9,7 +9,7 @@ from .target import (
     OptionType, TupleType, FunctionType,
     TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, OneOf,
     ListExpr, Call, Lambda, Let, IfElse, Seq, While, Foreach, ForeachEnumerated,
-    Assign, Return, GetField, GetElement, DictFromList, DictLookup, HasProtoField,
+    Assign, Return, GetField, GetElement,
     VisitNonterminal, FunDef
 )
 
@@ -133,18 +133,6 @@ def expr_to_str(expr: TargetExpr) -> str:
 
     elif isinstance(expr, GetElement):
         return f"{expr_to_str(expr.tuple_expr)}[{expr.index}]"
-
-    elif isinstance(expr, DictFromList):
-        return f"dict({expr_to_str(expr.pairs)})"
-
-    elif isinstance(expr, DictLookup):
-        if expr.default is not None:
-            return f"{expr_to_str(expr.dict_expr)}.get({expr_to_str(expr.key)}, {expr_to_str(expr.default)})"
-        else:
-            return f"{expr_to_str(expr.dict_expr)}.get({expr_to_str(expr.key)})"
-
-    elif isinstance(expr, HasProtoField):
-        return f"{expr_to_str(expr.message)}.HasField({repr(expr.field_name)})"
 
     elif isinstance(expr, VisitNonterminal):
         return f"visit_{expr.nonterminal.name}()"

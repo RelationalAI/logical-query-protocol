@@ -28,7 +28,7 @@ from pathlib import Path
 from .proto_parser import ProtoParser
 from .grammar_validator import validate_grammar
 from .grammar import Grammar
-from .yacc_grammar import load_yacc_grammar_file
+from .yacc_parser import load_yacc_grammar_file
 from .proto_print import format_message, format_enum
 
 

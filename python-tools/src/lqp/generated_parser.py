@@ -371,27 +371,27 @@ class Parser:
     @staticmethod
     def construct_csv_config(config_dict: list[tuple[str, logic_pb2.Value]]) -> logic_pb2.CSVConfig:
         config = dict(config_dict)
-        _t1056 = Parser._try_extract_value_int64(config.get('csv_header_row'))
+        _t1056 = Parser._extract_value_int64(config.get('csv_header_row'), 1)
         header_row = _t1056
-        _t1057 = Parser._try_extract_value_int64(config.get('csv_skip'))
+        _t1057 = Parser._extract_value_int64(config.get('csv_skip'), 0)
         skip = _t1057
-        _t1058 = Parser._try_extract_value_string(config.get('csv_new_line'))
+        _t1058 = Parser._extract_value_string(config.get('csv_new_line'), '')
         new_line = _t1058
-        _t1059 = Parser._try_extract_value_string(config.get('csv_delimiter'))
+        _t1059 = Parser._extract_value_string(config.get('csv_delimiter'), ',')
         delimiter = _t1059
-        _t1060 = Parser._try_extract_value_string(config.get('csv_quotechar'))
+        _t1060 = Parser._extract_value_string(config.get('csv_quotechar'), '"')
         quotechar = _t1060
-        _t1061 = Parser._try_extract_value_string(config.get('csv_escapechar'))
+        _t1061 = Parser._extract_value_string(config.get('csv_escapechar'), '"')
         escapechar = _t1061
-        _t1062 = Parser._try_extract_value_string(config.get('csv_comment'))
+        _t1062 = Parser._extract_value_string(config.get('csv_comment'), '')
         comment = _t1062
-        _t1063 = Parser._try_extract_value_string_list(config.get('csv_missing_strings'))
+        _t1063 = Parser._extract_value_string_list(config.get('csv_missing_strings'), [])
         missing_strings = _t1063
-        _t1064 = Parser._try_extract_value_string(config.get('csv_decimal_separator'))
+        _t1064 = Parser._extract_value_string(config.get('csv_decimal_separator'), '.')
         decimal_separator = _t1064
-        _t1065 = Parser._try_extract_value_string(config.get('csv_encoding'))
+        _t1065 = Parser._extract_value_string(config.get('csv_encoding'), 'utf-8')
         encoding = _t1065
-        _t1066 = Parser._try_extract_value_string(config.get('csv_compression'))
+        _t1066 = Parser._extract_value_string(config.get('csv_compression'), 'auto')
         compression = _t1066
         _t1067 = logic_pb2.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression)
         return _t1067
@@ -489,7 +489,7 @@ class Parser:
         while cond3:
             _t357 = self.parse_epoch()
             item4 = _t357
-            xs2.append(item4)
+            xs2 = (xs2 + ([item4] if [item4] is not None else []))
             cond3 = self.match_lookahead_literal('(', 0)
         epochs5 = xs2
         self.consume_literal(')')
@@ -511,7 +511,7 @@ class Parser:
         while cond8:
             _t360 = self.parse_config_key_value()
             item9 = _t360
-            xs7.append(item9)
+            xs7 = (xs7 + ([item9] if [item9] is not None else []))
             cond8 = self.match_lookahead_literal(':', 0)
         config_key_values10 = xs7
         self.consume_literal('}')
@@ -695,7 +695,7 @@ class Parser:
         while cond35:
             _t404 = self.parse_fragment_id()
             item36 = _t404
-            xs34.append(item36)
+            xs34 = (xs34 + ([item36] if [item36] is not None else []))
             cond35 = self.match_lookahead_literal(':', 0)
         fragment_ids37 = xs34
         self.consume_literal(')')
@@ -734,7 +734,7 @@ class Parser:
         while cond42:
             _t411 = self.parse_write()
             item43 = _t411
-            xs41.append(item43)
+            xs41 = (xs41 + ([item43] if [item43] is not None else []))
             cond42 = self.match_lookahead_literal('(', 0)
         writes44 = xs41
         self.consume_literal(')')
@@ -801,7 +801,7 @@ class Parser:
         while cond52:
             _t430 = self.parse_declaration()
             item53 = _t430
-            xs51.append(item53)
+            xs51 = (xs51 + ([item53] if [item53] is not None else []))
             cond52 = self.match_lookahead_literal('(', 0)
         declarations54 = xs51
         self.consume_literal(')')
@@ -925,7 +925,7 @@ class Parser:
         while cond70:
             _t461 = self.parse_binding()
             item71 = _t461
-            xs69.append(item71)
+            xs69 = (xs69 + ([item71] if [item71] is not None else []))
             cond70 = self.match_lookahead_terminal('SYMBOL', 0)
         bindings72 = xs69
         if self.match_lookahead_literal('|', 0):
@@ -1128,7 +1128,7 @@ class Parser:
         while cond91:
             _t520 = self.parse_binding()
             item92 = _t520
-            xs90.append(item92)
+            xs90 = (xs90 + ([item92] if [item92] is not None else []))
             cond91 = self.match_lookahead_terminal('SYMBOL', 0)
         bindings93 = xs90
         return bindings93
@@ -1369,7 +1369,7 @@ class Parser:
         while cond114:
             _t606 = self.parse_term()
             item115 = _t606
-            xs113.append(item115)
+            xs113 = (xs113 + ([item115] if [item115] is not None else []))
             cond114 = ((((((((((self.match_lookahead_literal('(', 0) or self.match_lookahead_literal('false', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_literal('true', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_terminal('FLOAT', 0)) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_terminal('STRING', 0)) or self.match_lookahead_terminal('SYMBOL', 0)) or self.match_lookahead_terminal('UINT128', 0))
         terms116 = xs113
         self.consume_literal(')')
@@ -1436,7 +1436,7 @@ class Parser:
         while cond123:
             _t678 = self.parse_formula()
             item124 = _t678
-            xs122.append(item124)
+            xs122 = (xs122 + ([item124] if [item124] is not None else []))
             cond123 = self.match_lookahead_literal('(', 0)
         formulas125 = xs122
         self.consume_literal(')')
@@ -1451,7 +1451,7 @@ class Parser:
         while cond127:
             _t680 = self.parse_formula()
             item128 = _t680
-            xs126.append(item128)
+            xs126 = (xs126 + ([item128] if [item128] is not None else []))
             cond127 = self.match_lookahead_literal('(', 0)
         formulas129 = xs126
         self.consume_literal(')')
@@ -1493,7 +1493,7 @@ class Parser:
         while cond136:
             _t688 = self.parse_abstraction()
             item137 = _t688
-            xs135.append(item137)
+            xs135 = (xs135 + ([item137] if [item137] is not None else []))
             cond136 = self.match_lookahead_literal('(', 0)
         abstractions138 = xs135
         self.consume_literal(')')
@@ -1509,7 +1509,7 @@ class Parser:
         while cond141:
             _t690 = self.parse_term()
             item142 = _t690
-            xs140.append(item142)
+            xs140 = (xs140 + ([item142] if [item142] is not None else []))
             cond141 = ((((((((((self.match_lookahead_literal('(', 0) or self.match_lookahead_literal('false', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_literal('true', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_terminal('FLOAT', 0)) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_terminal('STRING', 0)) or self.match_lookahead_terminal('SYMBOL', 0)) or self.match_lookahead_terminal('UINT128', 0))
         terms143 = xs140
         self.consume_literal(')')
@@ -1526,7 +1526,7 @@ class Parser:
         while cond146:
             _t693 = self.parse_term()
             item147 = _t693
-            xs145.append(item147)
+            xs145 = (xs145 + ([item147] if [item147] is not None else []))
             cond146 = ((((((((((self.match_lookahead_literal('(', 0) or self.match_lookahead_literal('false', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_literal('true', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_terminal('FLOAT', 0)) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_terminal('STRING', 0)) or self.match_lookahead_terminal('SYMBOL', 0)) or self.match_lookahead_terminal('UINT128', 0))
         terms148 = xs145
         self.consume_literal(')')
@@ -1589,7 +1589,7 @@ class Parser:
             while cond161:
                 _t712 = self.parse_rel_term()
                 item162 = _t712
-                xs160.append(item162)
+                xs160 = (xs160 + ([item162] if [item162] is not None else []))
                 cond161 = (((((((((((self.match_lookahead_literal('#', 0) or self.match_lookahead_literal('(', 0)) or self.match_lookahead_literal('false', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_literal('true', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_terminal('FLOAT', 0)) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_terminal('STRING', 0)) or self.match_lookahead_terminal('SYMBOL', 0)) or self.match_lookahead_terminal('UINT128', 0))
             rel_terms163 = xs160
             self.consume_literal(')')
@@ -1838,7 +1838,7 @@ class Parser:
         while cond192:
             _t824 = self.parse_rel_term()
             item193 = _t824
-            xs191.append(item193)
+            xs191 = (xs191 + ([item193] if [item193] is not None else []))
             cond192 = (((((((((((self.match_lookahead_literal('#', 0) or self.match_lookahead_literal('(', 0)) or self.match_lookahead_literal('false', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_literal('true', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_terminal('FLOAT', 0)) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_terminal('STRING', 0)) or self.match_lookahead_terminal('SYMBOL', 0)) or self.match_lookahead_terminal('UINT128', 0))
         rel_terms194 = xs191
         self.consume_literal(')')
@@ -1864,7 +1864,7 @@ class Parser:
         while cond198:
             _t829 = self.parse_attribute()
             item199 = _t829
-            xs197.append(item199)
+            xs197 = (xs197 + ([item199] if [item199] is not None else []))
             cond198 = self.match_lookahead_literal('(', 0)
         attributes200 = xs197
         self.consume_literal(')')
@@ -1880,7 +1880,7 @@ class Parser:
         while cond203:
             _t831 = self.parse_value()
             item204 = _t831
-            xs202.append(item204)
+            xs202 = (xs202 + ([item204] if [item204] is not None else []))
             cond203 = (((((((((self.match_lookahead_literal('(', 0) or self.match_lookahead_literal('false', 0)) or self.match_lookahead_literal('missing', 0)) or self.match_lookahead_literal('true', 0)) or self.match_lookahead_terminal('DECIMAL', 0)) or self.match_lookahead_terminal('FLOAT', 0)) or self.match_lookahead_terminal('INT', 0)) or self.match_lookahead_terminal('INT128', 0)) or self.match_lookahead_terminal('STRING', 0)) or self.match_lookahead_terminal('UINT128', 0))
         values205 = xs202
         self.consume_literal(')')
@@ -1895,7 +1895,7 @@ class Parser:
         while cond207:
             _t833 = self.parse_relation_id()
             item208 = _t833
-            xs206.append(item208)
+            xs206 = (xs206 + ([item208] if [item208] is not None else []))
             cond207 = (self.match_lookahead_literal(':', 0) or self.match_lookahead_terminal('INT', 0))
         relation_ids209 = xs206
         _t834 = self.parse_script()
@@ -1913,7 +1913,7 @@ class Parser:
         while cond212:
             _t836 = self.parse_construct()
             item213 = _t836
-            xs211.append(item213)
+            xs211 = (xs211 + ([item213] if [item213] is not None else []))
             cond212 = self.match_lookahead_literal('(', 0)
         constructs214 = xs211
         self.consume_literal(')')
@@ -1978,7 +1978,7 @@ class Parser:
         while cond221:
             _t863 = self.parse_instruction()
             item222 = _t863
-            xs220.append(item222)
+            xs220 = (xs220 + ([item222] if [item222] is not None else []))
             cond221 = self.match_lookahead_literal('(', 0)
         instructions223 = xs220
         self.consume_literal(')')
@@ -2258,7 +2258,7 @@ class Parser:
         while cond262:
             _t949 = self.parse_var()
             item263 = _t949
-            xs261.append(item263)
+            xs261 = (xs261 + ([item263] if [item263] is not None else []))
             cond262 = self.match_lookahead_terminal('SYMBOL', 0)
         vars264 = xs261
         self.consume_literal(')')
@@ -2272,7 +2272,7 @@ class Parser:
         while cond266:
             _t950 = self.parse_var()
             item267 = _t950
-            xs265.append(item267)
+            xs265 = (xs265 + ([item267] if [item267] is not None else []))
             cond266 = self.match_lookahead_terminal('SYMBOL', 0)
         vars268 = xs265
         self.consume_literal(')')
@@ -2335,7 +2335,7 @@ class Parser:
         cond277 = self.match_lookahead_terminal('STRING', 0)
         while cond277:
             item278 = self.consume_terminal('STRING')
-            xs276.append(item278)
+            xs276 = (xs276 + ([item278] if [item278] is not None else []))
             cond277 = self.match_lookahead_terminal('STRING', 0)
         strings279 = xs276
         self.consume_literal(']')
@@ -2348,7 +2348,7 @@ class Parser:
         while cond281:
             _t967 = self.parse_type()
             item282 = _t967
-            xs280.append(item282)
+            xs280 = (xs280 + ([item282] if [item282] is not None else []))
             cond281 = ((((((((((self.match_lookahead_literal('(', 0) or self.match_lookahead_literal('BOOLEAN', 0)) or self.match_lookahead_literal('DATE', 0)) or self.match_lookahead_literal('DATETIME', 0)) or self.match_lookahead_literal('FLOAT', 0)) or self.match_lookahead_literal('INT', 0)) or self.match_lookahead_literal('INT128', 0)) or self.match_lookahead_literal('MISSING', 0)) or self.match_lookahead_literal('STRING', 0)) or self.match_lookahead_literal('UINT128', 0)) or self.match_lookahead_literal('UNKNOWN', 0))
         types283 = xs280
         self.consume_literal(']')
@@ -2385,7 +2385,7 @@ class Parser:
         while cond290:
             _t974 = self.parse_type()
             item291 = _t974
-            xs289.append(item291)
+            xs289 = (xs289 + ([item291] if [item291] is not None else []))
             cond290 = ((((((((((self.match_lookahead_literal('(', 0) or self.match_lookahead_literal('BOOLEAN', 0)) or self.match_lookahead_literal('DATE', 0)) or self.match_lookahead_literal('DATETIME', 0)) or self.match_lookahead_literal('FLOAT', 0)) or self.match_lookahead_literal('INT', 0)) or self.match_lookahead_literal('INT128', 0)) or self.match_lookahead_literal('MISSING', 0)) or self.match_lookahead_literal('STRING', 0)) or self.match_lookahead_literal('UINT128', 0)) or self.match_lookahead_literal('UNKNOWN', 0))
         types292 = xs289
         self.consume_literal(')')
@@ -2399,7 +2399,7 @@ class Parser:
         while cond294:
             _t975 = self.parse_type()
             item295 = _t975
-            xs293.append(item295)
+            xs293 = (xs293 + ([item295] if [item295] is not None else []))
             cond294 = ((((((((((self.match_lookahead_literal('(', 0) or self.match_lookahead_literal('BOOLEAN', 0)) or self.match_lookahead_literal('DATE', 0)) or self.match_lookahead_literal('DATETIME', 0)) or self.match_lookahead_literal('FLOAT', 0)) or self.match_lookahead_literal('INT', 0)) or self.match_lookahead_literal('INT128', 0)) or self.match_lookahead_literal('MISSING', 0)) or self.match_lookahead_literal('STRING', 0)) or self.match_lookahead_literal('UINT128', 0)) or self.match_lookahead_literal('UNKNOWN', 0))
         types296 = xs293
         self.consume_literal(')')
@@ -2446,7 +2446,7 @@ class Parser:
         cond304 = self.match_lookahead_terminal('STRING', 0)
         while cond304:
             item305 = self.consume_terminal('STRING')
-            xs303.append(item305)
+            xs303 = (xs303 + ([item305] if [item305] is not None else []))
             cond304 = self.match_lookahead_terminal('STRING', 0)
         strings306 = xs303
         self.consume_literal(')')
@@ -2475,7 +2475,7 @@ class Parser:
         while cond310:
             _t987 = self.parse_csv_column()
             item311 = _t987
-            xs309.append(item311)
+            xs309 = (xs309 + ([item311] if [item311] is not None else []))
             cond310 = self.match_lookahead_literal('(', 0)
         csv_columns312 = xs309
         self.consume_literal(')')
@@ -2493,7 +2493,7 @@ class Parser:
         while cond316:
             _t989 = self.parse_type()
             item317 = _t989
-            xs315.append(item317)
+            xs315 = (xs315 + ([item317] if [item317] is not None else []))
             cond316 = ((((((((((self.match_lookahead_literal('(', 0) or self.match_lookahead_literal('BOOLEAN', 0)) or self.match_lookahead_literal('DATE', 0)) or self.match_lookahead_literal('DATETIME', 0)) or self.match_lookahead_literal('FLOAT', 0)) or self.match_lookahead_literal('INT', 0)) or self.match_lookahead_literal('INT128', 0)) or self.match_lookahead_literal('MISSING', 0)) or self.match_lookahead_literal('STRING', 0)) or self.match_lookahead_literal('UINT128', 0)) or self.match_lookahead_literal('UNKNOWN', 0))
         types318 = xs315
         self.consume_literal(']')
@@ -2525,7 +2525,7 @@ class Parser:
         while cond322:
             _t993 = self.parse_relation_id()
             item323 = _t993
-            xs321.append(item323)
+            xs321 = (xs321 + ([item323] if [item323] is not None else []))
             cond322 = (self.match_lookahead_literal(':', 0) or self.match_lookahead_terminal('INT', 0))
         relation_ids324 = xs321
         self.consume_literal(')')
@@ -2540,7 +2540,7 @@ class Parser:
         while cond326:
             _t995 = self.parse_read()
             item327 = _t995
-            xs325.append(item327)
+            xs325 = (xs325 + ([item327] if [item327] is not None else []))
             cond326 = self.match_lookahead_literal('(', 0)
         reads328 = xs325
         self.consume_literal(')')
@@ -2696,7 +2696,7 @@ class Parser:
         while cond348:
             _t1038 = self.parse_export_csv_column()
             item349 = _t1038
-            xs347.append(item349)
+            xs347 = (xs347 + ([item349] if [item349] is not None else []))
             cond348 = self.match_lookahead_literal('(', 0)
         export_csv_columns350 = xs347
         self.consume_literal(')')

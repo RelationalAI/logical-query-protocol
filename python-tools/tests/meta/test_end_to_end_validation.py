@@ -12,7 +12,7 @@ from textwrap import dedent
 from meta.proto_parser import ProtoParser
 from meta.grammar_validator import validate_grammar
 from meta.validation_result import ValidationResult
-from meta.yacc_grammar import load_yacc_grammar_file
+from meta.yacc_parser import load_yacc_grammar_file
 from meta.grammar import Grammar
 
 
@@ -87,7 +87,8 @@ class TestCompletenessErrors:
         """
 
         grammar_content = """\
-%token STRING String
+%start person
+%token STRING String r'"[^"]*"'
 
 %nonterm person test.Person
 
@@ -117,7 +118,8 @@ person
         """
 
         grammar_content = """\
-%token STRING String
+%start my_custom_person_rule
+%token STRING String r'"[^"]*"'
 
 %nonterm my_custom_person_rule test.Person
 
@@ -151,7 +153,8 @@ class TestTypeErrors:
         """
 
         grammar_content = """\
-%token STRING String
+%start record
+%token STRING String r'"[^"]*"'
 
 %nonterm record test.Record
 
@@ -181,7 +184,8 @@ record
         """
 
         grammar_content = """\
-%token STRING String
+%start pair
+%token STRING String r'"[^"]*"'
 
 %nonterm pair test.Pair
 
@@ -211,7 +215,8 @@ pair
         """
 
         grammar_content = """\
-%token STRING String
+%start record
+%token STRING String r'"[^"]*"'
 
 %nonterm record test.Record
 
@@ -242,7 +247,8 @@ record
         """
 
         grammar_content = """\
-%token STRING String
+%start person
+%token STRING String r'"[^"]*"'
 
 %nonterm person test.Person
 
@@ -273,7 +279,8 @@ person
         """
 
         grammar_content = """\
-%token STRING String
+%start record
+%token STRING String r'"[^"]*"'
 
 %nonterm record test.Record
 
@@ -303,7 +310,8 @@ record
         """
 
         grammar_content = """\
-%token STRING String
+%start record
+%token STRING String r'"[^"]*"'
 
 %nonterm record test.Record
 
@@ -340,7 +348,8 @@ class TestOneofCoverage:
         """
 
         grammar_content = """\
-%token STRING String
+%start value
+%token STRING String r'"[^"]*"'
 
 %nonterm value test.Value
 
@@ -374,7 +383,8 @@ class TestSoundnessErrors:
         """
 
         grammar_content = """\
-%token STRING String
+%start person
+%token STRING String r'"[^"]*"'
 
 %nonterm person test.Person
 %nonterm unknown_rule test.NonExistentMessage
@@ -416,7 +426,8 @@ class TestUnreachableRules:
         """
 
         grammar_content = """\
-%token STRING String
+%start start
+%token STRING String r'"[^"]*"'
 
 %nonterm start test.Start
 %nonterm orphan test.Orphan
@@ -455,8 +466,9 @@ class TestValidGrammar:
         """
 
         grammar_content = """\
-%token STRING String
-%token INT Int64
+%start person
+%token STRING String r'"[^"]*"'
+%token INT Int64 r'[-]?\\d+'
 
 %nonterm person test.Person
 
@@ -488,8 +500,9 @@ person
         """
 
         grammar_content = """\
-%token STRING String
-%token INT Int64
+%start value
+%token STRING String r'"[^"]*"'
+%token INT Int64 r'[-]?\\d+'
 
 %nonterm value test.Value
 
@@ -520,7 +533,8 @@ value
         """
 
         grammar_content = """\
-%token STRING String
+%start record
+%token STRING String r'"[^"]*"'
 
 %nonterm record test.Record
 
@@ -549,7 +563,8 @@ record
         """
 
         grammar_content = """\
-%token STRING String
+%start record
+%token STRING String r'"[^"]*"'
 
 %nonterm record test.Record
 
@@ -583,7 +598,8 @@ record
         """
 
         grammar_content = """\
-%token STRING String
+%start person
+%token STRING String r'"[^"]*"'
 
 %nonterm person test.Person
 %nonterm address test.Address
@@ -626,8 +642,9 @@ class TestComplexValidationScenarios:
         """
 
         grammar_content = """\
-%token STRING String
-%token INT Int64
+%start person
+%token STRING String r'"[^"]*"'
+%token INT Int64 r'[-]?\\d+'
 
 %nonterm person test.Person
 
@@ -660,7 +677,8 @@ person
         """
 
         grammar_content = """\
-%token STRING String
+%start pair
+%token STRING String r'"[^"]*"'
 
 %nonterm pair test.Pair
 

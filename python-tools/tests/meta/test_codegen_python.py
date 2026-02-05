@@ -12,7 +12,6 @@ from meta.codegen_python import (
     escape_identifier as escape_python,
     PythonCodeGenerator,
 )
-from meta.codegen_base import ALREADY_RETURNED
 from meta.gensym import reset as reset_gensym
 
 _any_type = BaseType("Any")
@@ -251,9 +250,9 @@ def test_python_return_generation():
     lines = []
     expr = Return(Var("result", _any_type))
     result = gen.generate_lines(expr, lines, "")
-    # Return generates a return statement and returns ALREADY_RETURNED sentinel
+    # Return generates a return statement and returns None
     # to indicate that the caller should not add another return
-    assert result == ALREADY_RETURNED
+    assert result is None
     assert "return result" in lines[0]
 
 
