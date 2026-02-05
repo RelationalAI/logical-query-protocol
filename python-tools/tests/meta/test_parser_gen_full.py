@@ -60,6 +60,7 @@ def load_grammar_and_protos():
             break
     if start is None:
         pytest.fail(f"Start symbol '{grammar_config.start_symbol}' has no rules")
+    assert start is not None
 
     grammar = Grammar(
         start=start,
