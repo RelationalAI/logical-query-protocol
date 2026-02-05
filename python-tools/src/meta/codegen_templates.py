@@ -5,24 +5,18 @@ Templates use placeholders like {0}, {1} for arguments and {args} for variadic.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 
 @dataclass
 class BuiltinTemplate:
     """Template for a builtin function.
 
-    value_template: Template for the value expression (e.g., "!{0}")
+    value_template: Template for the value expression (e.g., "!{0}"), or None for non-returning builtins.
     statement_templates: Templates for statements to execute (may be empty)
     """
-    value_template: str
+    value_template: Optional[str]
     statement_templates: List[str] = field(default_factory=list)
-
-
-@dataclass
-class VariadicBuiltinTemplate:
-    """Variadic builtin with different templates per arity."""
-    templates_by_arity: Dict[int, BuiltinTemplate]
 
 
 # Python builtin templates
@@ -64,9 +58,9 @@ PYTHON_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "current_token": BuiltinTemplate("self.lookahead(0)"),
     "start_fragment": BuiltinTemplate("{0}", ["self.start_fragment({0})"]),
     "construct_fragment": BuiltinTemplate("self.construct_fragment({0}, {1})"),
-    "error": BuiltinTemplate("None", ["raise ParseError({0})"]),
+    "error": BuiltinTemplate(None, ["raise ParseError({0})"]),
     "error_with_token": BuiltinTemplate(
-        "None", ['raise ParseError(f"{{{0}}}: {{{1}.type}}=`{{{1}.value}}`")']
+        None, ['raise ParseError(f"{{{0}}}: {{{1}.type}}=`{{{1}.value}}`")']
     ),
 }
 
@@ -112,14 +106,13 @@ JULIA_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "current_token": BuiltinTemplate("current_token(parser)"),
     "start_fragment": BuiltinTemplate("{0}", ["start_fragment(parser, {0})"]),
     "construct_fragment": BuiltinTemplate("construct_fragment(parser, {0}, {1})"),
-    "error": BuiltinTemplate("nothing", ["throw(ParseError({0}))"]),
-    "error_with_token": BuiltinTemplate("nothing", ['throw(ParseError({0} * ": " * string({1})))']),
+    "error": BuiltinTemplate(None, ["throw(ParseError({0}))"]),
+    "error_with_token": BuiltinTemplate(None, ['throw(ParseError({0} * ": " * string({1})))']),
 }
 
 
 __all__ = [
     'BuiltinTemplate',
-    'VariadicBuiltinTemplate',
     'PYTHON_TEMPLATES',
     'JULIA_TEMPLATES',
 ]

@@ -20,7 +20,7 @@ from .target import (
 )
 from .target_builtins import get_builtin
 from .gensym import gensym
-from .codegen_templates import BuiltinTemplate, VariadicBuiltinTemplate
+from .codegen_templates import BuiltinTemplate
 
 
 @dataclass
@@ -322,8 +322,11 @@ class CodeGenerator(ABC):
     def register_builtin_from_template(self, name: str, template: BuiltinTemplate) -> None:
         """Register a builtin from a template."""
         def generator(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
-            # Handle variadic {args} placeholder
-            if "{args}" in template.value_template:
+            # Handle None value (non-returning builtins like error)
+            if template.value_template is None:
+                value = None
+            elif "{args}" in template.value_template:
+                # Handle variadic {args} placeholder
                 value = template.value_template.replace("{args}", ", ".join(args))
             else:
                 value = template.value_template.format(*args)
@@ -339,41 +342,10 @@ class CodeGenerator(ABC):
 
         self.register_builtin(name, generator)
 
-    def register_variadic_builtin(self, name: str, variadic: VariadicBuiltinTemplate) -> None:
-        """Register a variadic builtin with different templates per arity."""
-        def generator(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
-            arity = len(args)
-            if arity not in variadic.templates_by_arity:
-                raise ValueError(f"Invalid number of arguments ({arity}) for builtin `{name}`.")
-            template = variadic.templates_by_arity[arity]
-
-            if "{args}" in template.value_template:
-                value = template.value_template.replace("{args}", ", ".join(args))
-            else:
-                value = template.value_template.format(*args)
-
-            statements = []
-            for stmt_template in template.statement_templates:
-                if "{args}" in stmt_template:
-                    statements.append(stmt_template.replace("{args}", ", ".join(args)))
-                else:
-                    statements.append(stmt_template.format(*args))
-
-            return BuiltinResult(value, statements)
-
-        self.register_builtin(name, generator)
-
-    def register_builtins_from_templates(
-        self,
-        templates: Dict[str, BuiltinTemplate],
-        variadic_templates: Optional[Dict[str, VariadicBuiltinTemplate]] = None
-    ) -> None:
+    def register_builtins_from_templates(self, templates: Dict[str, BuiltinTemplate]) -> None:
         """Register builtins from template dictionaries."""
         for name, template in templates.items():
             self.register_builtin_from_template(name, template)
-        if variadic_templates:
-            for name, variadic in variadic_templates.items():
-                self.register_variadic_builtin(name, variadic)
 
     def gen_builtin_call(self, name: str, args: List[str],
                          lines: List[str], indent: str) -> Optional[BuiltinResult]:
