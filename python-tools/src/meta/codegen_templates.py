@@ -62,12 +62,8 @@ PYTHON_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "consume_literal": BuiltinTemplate("None", ["self.consume_literal({0})"]),
     "consume_terminal": BuiltinTemplate("self.consume_terminal({0})"),
     "current_token": BuiltinTemplate("self.lookahead(0)"),
-    "construct_configure": BuiltinTemplate("self.construct_configure({0})"),
-    "construct_betree_info": BuiltinTemplate("self.construct_betree_info({0}, {1}, {2})"),
-    "construct_csv_config": BuiltinTemplate("self.construct_csv_config({0})"),
     "start_fragment": BuiltinTemplate("{0}", ["self.start_fragment({0})"]),
     "construct_fragment": BuiltinTemplate("self.construct_fragment({0}, {1})"),
-    "export_csv_config": BuiltinTemplate("self.export_csv_config({0}, {1}, {2})"),
     "error": BuiltinTemplate("None", ["raise ParseError({0})"]),
     "error_with_token": BuiltinTemplate(
         "None", ['raise ParseError(f"{{{0}}}: {{{1}.type}}=`{{{1}.value}}`")']
@@ -114,12 +110,8 @@ JULIA_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "consume_literal": BuiltinTemplate("nothing", ["consume_literal!(parser, {0})"]),
     "consume_terminal": BuiltinTemplate("consume_terminal!(parser, {0})"),
     "current_token": BuiltinTemplate("current_token(parser)"),
-    "construct_configure": BuiltinTemplate("construct_configure(parser, {0})"),
-    "construct_betree_info": BuiltinTemplate("construct_betree_info(parser, {0}, {1}, {2})"),
-    "construct_csv_config": BuiltinTemplate("construct_csv_config(parser, {0})"),
     "start_fragment": BuiltinTemplate("{0}", ["start_fragment(parser, {0})"]),
     "construct_fragment": BuiltinTemplate("construct_fragment(parser, {0}, {1})"),
-    "export_csv_config": BuiltinTemplate("export_csv_config(parser, {0}, {1}, {2})"),
     "error": BuiltinTemplate("nothing", ["throw(ParseError({0}))"]),
     "error_with_token": BuiltinTemplate("nothing", ['throw(ParseError({0} * ": " * string({1})))']),
 }
