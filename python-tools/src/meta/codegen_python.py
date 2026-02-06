@@ -100,8 +100,8 @@ class PythonCodeGenerator(CodeGenerator):
         self.register_builtin("relation_id_from_string",
             lambda args, lines, indent: BuiltinResult(f"self.relation_id_from_string({args[0]})", []))
 
-        self.register_builtin("relation_id_from_int",
-            lambda args, lines, indent: BuiltinResult(f"logic_pb2.RelationId(id_low={args[0]} & 0xFFFFFFFFFFFFFFFF, id_high=({args[0]} >> 64) & 0xFFFFFFFFFFFFFFFF)", []))
+        self.register_builtin("relation_id_from_uint128",
+            lambda args, lines, indent: BuiltinResult(f"logic_pb2.RelationId(id_low={args[0]}.low, id_high={args[0]}.high)", []))
 
         self.register_builtin("list_concat",
             lambda args, lines, indent: BuiltinResult(f"({args[0]} + ({args[1]} if {args[1]} is not None else []))", []))
