@@ -7,7 +7,10 @@ inherit from CodeGenerator and provide language-specific implementations.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tuple, Union
+
+if TYPE_CHECKING:
+    from .proto_ast import ProtoMessage
 
 from .target import (
     TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
@@ -17,6 +20,7 @@ from .target import (
 )
 from .target_builtins import get_builtin
 from .gensym import gensym
+from .codegen_templates import BuiltinTemplate
 
 
 @dataclass
@@ -58,9 +62,50 @@ class CodeGenerator(ABC):
     # Type mappings: base type name -> target language type
     base_type_map: Dict[str, str] = {}
 
-    def __init__(self) -> None:
-        # Instance-level builtin registry to avoid shared mutable state
+    def __init__(self, proto_messages: Optional[Dict[Tuple[str, str], Any]] = None) -> None:
         self.builtin_registry: Dict[str, BuiltinSpec] = {}
+        self.proto_messages = proto_messages or {}
+        self._message_field_map: Optional[Dict[Tuple[str, str], List[Tuple[str, bool]]]] = None
+
+    def _build_message_field_map(self) -> Dict[Tuple[str, str], List[Tuple[str, bool]]]:
+        """Build field mapping from proto message definitions.
+
+        Returns dict mapping (module, message_name) to list of (field_name, is_repeated).
+        Caches the result for subsequent calls.
+        """
+        if self._message_field_map is not None:
+            return self._message_field_map
+
+        field_map: Dict[Tuple[str, str], List[Tuple[str, bool]]] = {}
+        for (module, msg_name), proto_msg in self.proto_messages.items():
+            # Collect all oneof field names
+            oneof_field_names: Set[str] = set()
+            for oneof in proto_msg.oneofs:
+                oneof_field_names.update(f.name for f in oneof.fields)
+
+            # Only include messages with regular (non-oneof) fields
+            regular_fields = [
+                (f.name, f.is_repeated)
+                for f in proto_msg.fields
+                if f.name not in oneof_field_names
+            ]
+            if regular_fields:
+                escaped_fields = [
+                    (self._escape_field_for_map(fname), is_rep)
+                    for fname, is_rep in regular_fields
+                ]
+                field_map[(module, msg_name)] = escaped_fields
+
+        self._message_field_map = field_map
+        return field_map
+
+    def _escape_field_for_map(self, field_name: str) -> str:
+        """Escape a field name for the message field map.
+
+        Subclasses can override this to apply language-specific escaping.
+        Default implementation returns the field name unchanged.
+        """
+        return field_name
 
     @abstractmethod
     def escape_keyword(self, name: str) -> str:
@@ -274,6 +319,34 @@ class CodeGenerator(ABC):
         """
         self.builtin_registry[name] = BuiltinSpec(name, generator)
 
+    def register_builtin_from_template(self, name: str, template: BuiltinTemplate) -> None:
+        """Register a builtin from a template."""
+        def generator(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
+            # Handle None value (non-returning builtins like error)
+            if template.value_template is None:
+                value = None
+            elif "{args}" in template.value_template:
+                # Handle variadic {args} placeholder
+                value = template.value_template.replace("{args}", ", ".join(args))
+            else:
+                value = template.value_template.format(*args)
+
+            statements = []
+            for stmt_template in template.statement_templates:
+                if "{args}" in stmt_template:
+                    statements.append(stmt_template.replace("{args}", ", ".join(args)))
+                else:
+                    statements.append(stmt_template.format(*args))
+
+            return BuiltinResult(value, statements)
+
+        self.register_builtin(name, generator)
+
+    def register_builtins_from_templates(self, templates: Dict[str, BuiltinTemplate]) -> None:
+        """Register builtins from template dictionaries."""
+        for name, template in templates.items():
+            self.register_builtin_from_template(name, template)
+
     def gen_builtin_call(self, name: str, args: List[str],
                          lines: List[str], indent: str) -> Optional[BuiltinResult]:
         """Generate code for a builtin function call.
@@ -308,22 +381,7 @@ class CodeGenerator(ABC):
             return self.gen_symbol(expr.name)
 
         elif isinstance(expr, NewMessage):
-            # NewMessage generates instantiation (with or without fields)
-            ctor = self.gen_constructor(expr.module, expr.name)
-            if expr.fields:
-                field_args = []
-                for field_name, field_expr in expr.fields:
-                    field_val = self.generate_lines(field_expr, lines, indent)
-                    field_args.append(f"{field_name}={field_val}")
-                args_code = ', '.join(field_args)
-                tmp = gensym()
-                lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}({args_code})', is_declaration=True)}")
-                return tmp
-            else:
-                # No fields - generate empty instantiation
-                tmp = gensym()
-                lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}()', is_declaration=True)}")
-                return tmp
+            return self._generate_newmessage(expr, lines, indent)
 
         elif isinstance(expr, Builtin):
             return self.gen_builtin_ref(expr.name)
@@ -346,9 +404,7 @@ class CodeGenerator(ABC):
             return f"{obj_code}.{expr.field_name}"
 
         elif isinstance(expr, GetElement):
-            # GetElement(tuple_expr, index) -> tuple_expr[index]
-            tuple_code = self.generate_lines(expr.tuple_expr, lines, indent)
-            return f"{tuple_code}[{expr.index}]"
+            return self._generate_get_element(expr, lines, indent)
 
         elif isinstance(expr, Call):
             return self._generate_call(expr, lines, indent)
@@ -395,7 +451,11 @@ class CodeGenerator(ABC):
             if result is not None:
                 for stmt in result.statements:
                     lines.append(f"{indent}{stmt}")
-                return result.value  # May be None for non-returning builtins
+                # Check if builtin returns Never (like error builtins)
+                builtin_sig = get_builtin(expr.func.name)
+                if builtin_sig is not None and builtin_sig.return_type == BaseType("Never"):
+                    return None
+                return result.value
 
         # Regular call
         f = self.generate_lines(expr.func, lines, indent)
@@ -410,6 +470,37 @@ class CodeGenerator(ABC):
         tmp = gensym()
         lines.append(f"{indent}{self.gen_assignment(tmp, f'{f}({args_code})', is_declaration=True)}")
         return tmp
+
+    def _generate_newmessage(self, expr: NewMessage, lines: List[str], indent: str) -> str:
+        """Generate code for a NewMessage expression.
+
+        Default implementation generates a simple constructor call with keyword arguments.
+        Subclasses should override this to handle language-specific semantics
+        (e.g., OneOf fields, keyword escaping).
+        """
+        ctor = self.gen_constructor(expr.module, expr.name)
+        if expr.fields:
+            field_args = []
+            for field_name, field_expr in expr.fields:
+                field_val = self.generate_lines(field_expr, lines, indent)
+                field_args.append(f"{field_name}={field_val}")
+            args_code = ', '.join(field_args)
+            tmp = gensym()
+            lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}({args_code})', is_declaration=True)}")
+            return tmp
+        else:
+            tmp = gensym()
+            lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}()', is_declaration=True)}")
+            return tmp
+
+    def _generate_get_element(self, expr: GetElement, lines: List[str], indent: str) -> str:
+        """Generate code for a GetElement expression.
+
+        Default implementation uses 0-based indexing.
+        Subclasses can override for different indexing (e.g., Julia uses 1-based).
+        """
+        tuple_code = self.generate_lines(expr.tuple_expr, lines, indent)
+        return f"{tuple_code}[{expr.index}]"
 
     def _generate_oneof(self, expr: OneOf, lines: List[str], indent: str) -> str:
         """Generate code for a OneOf expression.
@@ -462,15 +553,24 @@ class CodeGenerator(ABC):
         cond_code = self.generate_lines(expr.condition, lines, indent)
         assert cond_code is not None, "If condition should not contain a return"
 
-        # Optimization: short-circuit for boolean literals
+        # Optimization: short-circuit for boolean literals using and/or builtins.
+        # `if cond then True else x` -> or(cond, x)
         if expr.then_branch == Lit(True):
-            else_code = self.generate_lines(expr.else_branch, lines, indent + self.indent_str)
-            assert else_code is not None, "Short-circuit else branch should not return"
-            return f"({cond_code} || {else_code})"
+            tmp_lines: List[str] = []
+            else_code = self.generate_lines(expr.else_branch, tmp_lines, indent)
+            if not tmp_lines and else_code is not None:
+                result = self.gen_builtin_call("or", [cond_code, else_code], lines, indent)
+                if result is not None:
+                    return result.value
+
+        # `if cond then x else False` -> and(cond, x)
         if expr.else_branch == Lit(False):
-            then_code = self.generate_lines(expr.then_branch, lines, indent + self.indent_str)
-            assert then_code is not None, "Short-circuit then branch should not return"
-            return f"({cond_code} && {then_code})"
+            tmp_lines = []
+            then_code = self.generate_lines(expr.then_branch, tmp_lines, indent)
+            if not tmp_lines and then_code is not None:
+                result = self.gen_builtin_call("and", [cond_code, then_code], lines, indent)
+                if result is not None:
+                    return result.value
 
         tmp = gensym()
         lines.append(f"{indent}{self.gen_var_declaration(tmp)}")

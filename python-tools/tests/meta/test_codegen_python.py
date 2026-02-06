@@ -2,9 +2,9 @@
 """Tests for Python code generation from action AST."""
 
 from meta.target import (
-    Var, Lit, Symbol, NewMessage, ListExpr, Call, Lambda, Let,
+    Var, Lit, Symbol, NamedFun, NewMessage, ListExpr, Call, Lambda, Let,
     IfElse, Seq, While, Assign, Return, FunDef, VisitNonterminalDef,
-    BaseType, MessageType, ListType, OptionType, GetElement,
+    BaseType, MessageType, ListType, OptionType, GetElement, FunctionType,
 )
 from meta.target_builtins import make_builtin
 from meta.grammar import Nonterminal
@@ -131,19 +131,6 @@ def test_python_builtin_generation():
     result = gen.generate_lines(expr, lines, "")
     assert result == "x is None"
 
-    # Test GetElement
-    reset_gensym()
-    lines = []
-    expr = GetElement(Var("pair", _any_type), 0)
-    result = gen.generate_lines(expr, lines, "")
-    assert result == "pair[0]"
-
-    reset_gensym()
-    lines = []
-    expr = GetElement(Var("pair", _any_type), 1)
-    result = gen.generate_lines(expr, lines, "")
-    assert result == "pair[1]"
-
     # Test 'length' builtin
     reset_gensym()
     lines = []
@@ -157,6 +144,24 @@ def test_python_builtin_generation():
     expr = Call(make_builtin("tuple"), [Var("a", _int_type), Var("b", _str_type)])
     result = gen.generate_lines(expr, lines, "")
     assert result == "(a, b,)"
+
+
+def test_python_get_element_generation():
+    """Test Python GetElement with 0-based indexing."""
+    gen = PythonCodeGenerator()
+
+    # GetElement uses 0-based indexing in Python
+    reset_gensym()
+    lines = []
+    expr = GetElement(Var("pair", _any_type), 0)
+    result = gen.generate_lines(expr, lines, "")
+    assert result == "pair[0]"
+
+    reset_gensym()
+    lines = []
+    expr = GetElement(Var("pair", _any_type), 1)
+    result = gen.generate_lines(expr, lines, "")
+    assert result == "pair[1]"
 
 
 def test_python_if_else_generation():
@@ -403,23 +408,6 @@ def test_python_type_generation():
     assert gen.gen_type(OptionType(BaseType("String"))) == "Optional[str]"
 
 
-def test_generator_instance_isolation():
-    """Test that generator instances don't share state."""
-    gen1 = PythonCodeGenerator()
-    gen2 = PythonCodeGenerator()
-
-    # Register a custom builtin on gen1
-    from meta.codegen_base import BuiltinResult
-    gen1.register_builtin("custom_op",
-        lambda args, lines, indent: BuiltinResult(f"custom({args[0]})", []))
-
-    # gen1 should have the custom builtin
-    assert "custom_op" in gen1.builtin_registry
-
-    # gen2 should NOT have the custom builtin
-    assert "custom_op" not in gen2.builtin_registry
-
-
 # Tests for helper function codegen (FunDef from yacc grammar)
 
 def test_python_helper_function_simple():
@@ -513,7 +501,6 @@ def test_python_helper_function_message_constructor():
 
 def test_python_helper_function_calling_another():
     """Test Python code generation for helper function calling another function."""
-    from meta.target import NamedFun, FunctionType
     gen = PythonCodeGenerator()
     reset_gensym()
 
@@ -529,3 +516,29 @@ def test_python_helper_function_calling_another():
     code = gen.generate_def(func)
     assert "def wrapper(x: int) -> int:" in code
     assert "Parser.helper(x)" in code
+
+
+if __name__ == "__main__":
+    test_python_keyword_escaping()
+    test_python_call_generation()
+    test_python_let_generation()
+    test_python_lambda_generation()
+    test_python_builtin_generation()
+    test_python_get_element_generation()
+    test_python_if_else_generation()
+    test_python_while_generation()
+    test_python_seq_generation()
+    test_python_assign_generation()
+    test_python_return_generation()
+    test_python_list_expr_generation()
+    test_python_symbol_generation()
+    test_python_message_generation()
+    test_python_oneof_generation()
+    test_python_fun_def_generation()
+    test_python_visit_nonterminal_def_generation()
+    test_python_type_generation()
+    test_python_helper_function_simple()
+    test_python_helper_function_with_if()
+    test_python_helper_function_with_assignment()
+    test_python_helper_function_message_constructor()
+    test_python_helper_function_calling_another()

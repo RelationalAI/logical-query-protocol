@@ -6,10 +6,11 @@ with proper keyword escaping and idiomatic Python style.
 
 from typing import List, Optional, Set, Tuple, Union
 
-from .codegen_base import CodeGenerator, BuiltinResult
+from .codegen_base import CodeGenerator
+from .codegen_templates import PYTHON_TEMPLATES
 from .target import (
     TargetExpr, Var, Lit, Symbol, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
-    IfElse, FunDef, VisitNonterminalDef
+    FunDef, VisitNonterminalDef
 )
 from .gensym import gensym
 
@@ -22,11 +23,6 @@ PYTHON_KEYWORDS: Set[str] = {
     'lambda', 'nonlocal', 'not', 'or', 'pass', 'raise', 'return',
     'try', 'while', 'with', 'yield',
 }
-
-
-def _format_parse_error_with_token(message_expr: str, token_expr: str) -> str:
-    """Format a ParseError raise statement with token information."""
-    return f'raise ParseError(f"{{{message_expr}}}: {{{token_expr}.type}}=`{{{token_expr}.value}}`")'
 
 
 class PythonCodeGenerator(CodeGenerator):
@@ -45,148 +41,12 @@ class PythonCodeGenerator(CodeGenerator):
     }
 
     def __init__(self, proto_messages=None):
-        super().__init__()
-        self.proto_messages = proto_messages or {}
-        self._message_field_map: dict | None = None
+        super().__init__(proto_messages)
         self._register_builtins()
 
-    def _build_message_field_map(self):
-        """Build field mapping from proto message definitions.
-
-        Returns dict mapping (module, message_name) to list of (field_name, is_repeated).
-        """
-        if self._message_field_map is not None:
-            return self._message_field_map
-
-        field_map = {}
-        for (module, msg_name), proto_msg in self.proto_messages.items():
-            # Collect all oneof field names
-            oneof_field_names = set()
-            for oneof in proto_msg.oneofs:
-                oneof_field_names.update(f.name for f in oneof.fields)
-
-            # Only include messages with regular (non-oneof) fields
-            regular_fields = [(f.name, f.is_repeated) for f in proto_msg.fields if f.name not in oneof_field_names]
-            if regular_fields:
-                # Preserve original proto field name; handle keyword fields at call sites via **{...}.
-                field_map[(module, msg_name)] = list(regular_fields)
-
-        self._message_field_map = field_map
-        return field_map
-
     def _register_builtins(self) -> None:
-        """Register builtin generators.
-
-        Arity is looked up from target_builtins.BUILTIN_REGISTRY.
-        """
-        self.register_builtin("some",
-            lambda args, lines, indent: BuiltinResult(args[0], []))
-        self.register_builtin("not",
-            lambda args, lines, indent: BuiltinResult(f"not {args[0]}", []))
-        self.register_builtin("and",
-            lambda args, lines, indent: BuiltinResult(f"({args[0]} and {args[1]})", []))
-        self.register_builtin("or",
-            lambda args, lines, indent: BuiltinResult(f"({args[0]} or {args[1]})", []))
-        self.register_builtin("equal",
-            lambda args, lines, indent: BuiltinResult(f"{args[0]} == {args[1]}", []))
-        self.register_builtin("not_equal",
-            lambda args, lines, indent: BuiltinResult(f"{args[0]} != {args[1]}", []))
-        self.register_builtin("add",
-            lambda args, lines, indent: BuiltinResult(f"({args[0]} + {args[1]})", []))
-
-        self.register_builtin("fragment_id_from_string",
-            lambda args, lines, indent: BuiltinResult(f"fragments_pb2.FragmentId(id={args[0]}.encode())", []))
-
-        self.register_builtin("relation_id_from_string",
-            lambda args, lines, indent: BuiltinResult(f"self.relation_id_from_string({args[0]})", []))
-
-        self.register_builtin("relation_id_from_uint128",
-            lambda args, lines, indent: BuiltinResult(f"logic_pb2.RelationId(id_low={args[0]}.low, id_high={args[0]}.high)", []))
-
-        self.register_builtin("list_concat",
-            lambda args, lines, indent: BuiltinResult(f"({args[0]} + ({args[1]} if {args[1]} is not None else []))", []))
-
-        self.register_builtin("map",
-            lambda args, lines, indent: BuiltinResult(f"[{args[0]}(x) for x in {args[1]}]", []))
-
-        self.register_builtin("is_none",
-            lambda args, lines, indent: BuiltinResult(f"{args[0]} is None", []))
-
-        self.register_builtin("is_some",
-            lambda args, lines, indent: BuiltinResult(f"{args[0]} is not None", []))
-
-        self.register_builtin("unwrap_option",
-            lambda args, lines, indent: BuiltinResult(args[0], []))
-
-        self.register_builtin("none",
-            lambda args, lines, indent: BuiltinResult("None", []))
-
-        self.register_builtin("make_empty_bytes",
-            lambda args, lines, indent: BuiltinResult("b''", []))
-
-        self.register_builtin("dict_from_list",
-            lambda args, lines, indent: BuiltinResult(f"dict({args[0]})", []))
-
-        self.register_builtin("dict_get",
-            lambda args, lines, indent: BuiltinResult(f"{args[0]}.get({args[1]})", []))
-
-        self.register_builtin("has_proto_field",
-            lambda args, lines, indent: BuiltinResult(f"{args[0]}.HasField({args[1]})", []))
-
-        self.register_builtin("string_to_upper",
-            lambda args, lines, indent: BuiltinResult(f"{args[0]}.upper()", []))
-
-        self.register_builtin("string_in_list",
-            lambda args, lines, indent: BuiltinResult(f"{args[0]} in {args[1]}", []))
-
-        self.register_builtin("string_concat",
-            lambda args, lines, indent: BuiltinResult(f"({args[0]} + {args[1]})", []))
-
-        self.register_builtin("encode_string",
-            lambda args, lines, indent: BuiltinResult(f"{args[0]}.encode()", []))
-
-        self.register_builtin("tuple",
-            lambda args, lines, indent: BuiltinResult(f"({', '.join(args)},)", []))
-
-        self.register_builtin("length",
-            lambda args, lines, indent: BuiltinResult(f"len({args[0]})", []))
-
-        self.register_builtin("unwrap_option_or",
-            lambda args, lines, indent: BuiltinResult(f"({args[0]} if {args[0]} is not None else {args[1]})", []))
-
-        self.register_builtin("int64_to_int32",
-            lambda args, lines, indent: BuiltinResult(f"int({args[0]})", []))
-
-        self.register_builtin("match_lookahead_terminal",
-            lambda args, lines, indent: BuiltinResult(f"self.match_lookahead_terminal({args[0]}, {args[1]})", []))
-
-        self.register_builtin("match_lookahead_literal",
-            lambda args, lines, indent: BuiltinResult(f"self.match_lookahead_literal({args[0]}, {args[1]})", []))
-
-        self.register_builtin("consume_literal",
-            lambda args, lines, indent: BuiltinResult("None", [f"self.consume_literal({args[0]})"]))
-
-        self.register_builtin("consume_terminal",
-            lambda args, lines, indent: BuiltinResult(f"self.consume_terminal({args[0]})", []))
-
-        self.register_builtin("current_token",
-            lambda args, lines, indent: BuiltinResult("self.lookahead(0)", []))
-
-        # error builtins do not return
-        self.register_builtin("error",
-            lambda args, lines, indent: BuiltinResult(None, [f"raise ParseError({args[0]})"]))
-
-        self.register_builtin("error_with_token",
-            lambda args, lines, indent: BuiltinResult(None, [_format_parse_error_with_token(args[0], args[1])]))
-
-        self.register_builtin("start_fragment",
-            lambda args, lines, indent: BuiltinResult(args[0], [f"self.start_fragment({args[0]})"]))
-
-        self.register_builtin("construct_fragment",
-            lambda args, lines, indent: BuiltinResult(f"self.construct_fragment({args[0]}, {args[1]})", []))
-
-        self.register_builtin("export_csv_config",
-            lambda args, lines, indent: BuiltinResult(f"self.export_csv_config({args[0]}, {args[1]}, {args[2]})", []))
+        """Register builtin generators from templates."""
+        self.register_builtins_from_templates(PYTHON_TEMPLATES)
 
     def escape_keyword(self, name: str) -> str:
         return f"{name}_"
@@ -347,46 +207,6 @@ class PythonCodeGenerator(CodeGenerator):
                 lines.append(f"{indent}getattr({tmp}, '{field_name}').extend({field_value})")
             else:
                 lines.append(f"{indent}getattr({tmp}, '{field_name}').CopyFrom({field_value})")
-
-        return tmp
-
-
-    def _generate_if_else(self, expr: IfElse, lines: List[str], indent: str) -> Optional[str]:
-        """Override to skip var declaration (Python doesn't need it)."""
-        cond_code = self.generate_lines(expr.condition, lines, indent)
-        assert cond_code is not None, "If condition should not contain a return"
-
-        # Optimization: short-circuit for boolean literals.
-        # This is not needed, but makes the generated code more readable.
-        if expr.then_branch == Lit(True):
-            tmp_lines: List[str] = []
-            else_code = self.generate_lines(expr.else_branch, tmp_lines, indent)
-            if not tmp_lines and else_code is not None:
-                return f"({cond_code} or {else_code})"
-        if expr.else_branch == Lit(False):
-            tmp_lines = []
-            then_code = self.generate_lines(expr.then_branch, tmp_lines, indent)
-            if not tmp_lines and then_code is not None:
-                return f"({cond_code} and {then_code})"
-
-        tmp = gensym()
-        lines.append(f"{indent}{self.gen_if_start(cond_code)}")
-
-        body_indent = indent + self.indent_str
-        then_code = self.generate_lines(expr.then_branch, lines, body_indent)
-        # Only assign if the branch didn't already return
-        if then_code is not None:
-            lines.append(f"{body_indent}{self.gen_assignment(tmp, then_code)}")
-
-        lines.append(f"{indent}{self.gen_else()}")
-        else_code = self.generate_lines(expr.else_branch, lines, body_indent)
-        # Only assign if the branch didn't already return
-        if else_code is not None:
-            lines.append(f"{body_indent}{self.gen_assignment(tmp, else_code)}")
-
-        # If both branches returned, propagate None
-        if then_code is None and else_code is None:
-            return None
 
         return tmp
 
