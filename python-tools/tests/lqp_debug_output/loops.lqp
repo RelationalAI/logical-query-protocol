@@ -95,10 +95,10 @@
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `17551841086482533469` -> `edges`
-;; 	 ID `7996010236749000971` -> `reachable`
-;; 	 ID `14321950021062508318` -> `next`
-;; 	 ID `12291301716330672712` -> `nothing_new`
-;; 	 ID `14364040197409932123` -> `frontier`
-;; 	 ID `79618640925625270` -> `reachable_2`
-;; 	 ID `3004594760313893010` -> `empty_frontier`
+;; 	 ID `0xf394aa7979e5cc5d` -> `edges`
+;; 	 ID `0x6ef788f215cfb10b` -> `reachable`
+;; 	 ID `0xc6c1c9a9c8543f1e` -> `next`
+;; 	 ID `0xaa9379c9f509f248` -> `nothing_new`
+;; 	 ID `0xc7575274a20d035b` -> `frontier`
+;; 	 ID `0x11adcbb69df0bb6` -> `reachable_2`
+;; 	 ID `0x29b27703f6827092` -> `empty_frontier`

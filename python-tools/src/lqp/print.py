@@ -226,7 +226,7 @@ def _debug_str(node: ir.LqpNode) -> str:
         debug_str += ";; -----------------------\n"
         debug_str += ";; Original names\n"
         for (rid, name) in debug_infos.items():
-            debug_str += f";; \t ID `{rid.id}` -> `{name}`\n"
+            debug_str += f";; \t ID `0x{rid.id:x}` -> `{name}`\n"
         return debug_str
     else: return ""
 

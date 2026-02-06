@@ -127,18 +127,18 @@
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `15511961118399231270` -> `another_edb`
-;; 	 ID `4623326149048941860` -> `inline_edb`
-;; 	 ID `12241733354516903356` -> `edb`
-;; 	 ID `11296646467174418931` -> `multi_key`
-;; 	 ID `2517080472536116612` -> `numeric_types`
-;; 	 ID `10555505896768410262` -> `temporal_data`
-;; 	 ID `16514460326753631698` -> `boolean_data`
-;; 	 ID `7467225577664975353` -> `key_only`
-;; 	 ID `1550376294846102864` -> `path_simple`
-;; 	 ID `15100206361345813856` -> `path_specialized`
-;; 	 ID `2113800447908720020` -> `path_mixed`
-;; 	 ID `14850802608622135859` -> `path_empty`
-;; 	 ID `3181428560199927439` -> `foo`
-;; 	 ID `18221048622641146868` -> `bar`
-;; 	 ID `13449332429612589307` -> `baz`
+;; 	 ID `0xd7458e7387db7526` -> `another_edb`
+;; 	 ID `0x40295aa31ad63d24` -> `inline_edb`
+;; 	 ID `0xa9e35fa05f07f5bc` -> `edb`
+;; 	 ID `0x9cc5c01c151a49f3` -> `multi_key`
+;; 	 ID `0x22ee775a8c966d84` -> `numeric_types`
+;; 	 ID `0x927cb0b0096c1296` -> `temporal_data`
+;; 	 ID `0xe52f262b796e7dd2` -> `boolean_data`
+;; 	 ID `0x67a0ea198e6e91f9` -> `key_only`
+;; 	 ID `0x15840b06a27cfd50` -> `path_simple`
+;; 	 ID `0xd18eb5ae6b1c6d60` -> `path_specialized`
+;; 	 ID `0x1d55ba4ed7a92d94` -> `path_mixed`
+;; 	 ID `0xce18a64a245dea33` -> `path_empty`
+;; 	 ID `0x2c26b46b68ffc68f` -> `foo`
+;; 	 ID `0xfcde2b2edba56bf4` -> `bar`
+;; 	 ID `0xbaa5a0964d3320fb` -> `baz`

@@ -38,8 +38,8 @@
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `11916882123021530046` -> `id`
-;; 	 ID `9413459455101357694` -> `name`
-;; 	 ID `1271752474707588935` -> `city`
-;; 	 ID `1798818752858411820` -> `greeting`
-;; 	 ID `8241791976733622578` -> `unicode_data`
+;; 	 ID `0xa56145270ce6b3be` -> `id`
+;; 	 ID `0x82a3537ff0dbce7e` -> `name`
+;; 	 ID `0x11a62c23412b7747` -> `city`
+;; 	 ID `0x18f6b0200b6fd32c` -> `greeting`
+;; 	 ID `0x7260ba22cddf4132` -> `unicode_data`

@@ -36,6 +36,6 @@
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `17566150147137631162` -> `numbers`
-;; 	 ID `2638187172736215459` -> `sorted_numbers`
-;; 	 ID `7431768677182986746` -> `limit_sorted_numbers`
+;; 	 ID `0xf3c7807d475073ba` -> `numbers`
+;; 	 ID `0x249cb94181ef29a3` -> `sorted_numbers`
+;; 	 ID `0x6722f23c985dd9fa` -> `limit_sorted_numbers`

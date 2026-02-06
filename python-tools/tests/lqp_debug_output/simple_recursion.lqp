@@ -56,12 +56,12 @@
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `13022943963523327216` -> `edge1`
-;; 	 ID `13756630614515951718` -> `edge2`
-;; 	 ID `409501014042465539` -> `edge3`
-;; 	 ID `7285625101263508808` -> `edge4`
-;; 	 ID `11658429718464131530` -> `edge`
-;; 	 ID `11183417301082826268` -> `path1`
-;; 	 ID `2220326454382330079` -> `path2`
-;; 	 ID `11578648566410131430` -> `path`
-;; 	 ID `16208045718567772255` -> `output`
+;; 	 ID `0xb4baca894ba024f0` -> `edge1`
+;; 	 ID `0xbee95ea87c7ca866` -> `edge2`
+;; 	 ID `0x5aed700ad29d503` -> `edge3`
+;; 	 ID `0x651bbd6dbf7b1548` -> `edge4`
+;; 	 ID `0xa1cb100f57e971ca` -> `edge`
+;; 	 ID `0x9b337ac875ffe61c` -> `path1`
+;; 	 ID `0x1ed02f257edc80df` -> `path2`
+;; 	 ID `0xa0af9f865bf637e6` -> `path`
+;; 	 ID `0xe0ee8bb50685e05f` -> `output`

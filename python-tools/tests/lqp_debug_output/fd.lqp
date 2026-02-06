@@ -207,25 +207,25 @@
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `16281709611803049790` -> `vin_determines_owner`
-;; 	 ID `17268489266876366576` -> `ssn`
-;; 	 ID `9954426197261524399` -> `vin`
-;; 	 ID `12320303242364489664` -> `owns`
-;; 	 ID `3981596135330217082` -> `query2`
-;; 	 ID `378706712368109145` -> `first_name`
-;; 	 ID `2532914575784924444` -> `last_name`
-;; 	 ID `2450621548305115752` -> `purchased_on_for`
-;; 	 ID `13287355746881327704` -> `car_determines_owner`
-;; 	 ID `6919740574510502700` -> `Person`
-;; 	 ID `15790463256600539800` -> `car_has_at_most_one_owner`
-;; 	 ID `16691780794364909551` -> `date_and_car_determine_person`
-;; 	 ID `11947469809295382674` -> `Car`
-;; 	 ID `13590578710748435052` -> `vin_is_car_key`
-;; 	 ID `15013491121772020750` -> `make`
-;; 	 ID `3352882180916130150` -> `query1`
-;; 	 ID `4787166673635998263` -> `emp_id`
-;; 	 ID `1441519574368593801` -> `Employee`
-;; 	 ID `16552413153559885111` -> `ssn_is_employee_key`
-;; 	 ID `8517456109436970268` -> `emp_id_is_employee_key`
-;; 	 ID `10269182389050116318` -> `ssn_is_person_key`
-;; 	 ID `882519611387004518` -> `name_is_person_key`
+;; 	 ID `0xe1f440a0b3957f3e` -> `vin_determines_owner`
+;; 	 ID `0xefa5ff7eefcfbef0` -> `ssn`
+;; 	 ID `0x8a2539e2b69d9daf` -> `vin`
+;; 	 ID `0xaafa8285ee3a8fc0` -> `owns`
+;; 	 ID `0x37417896f56cfc7a` -> `query2`
+;; 	 ID `0x5416fbf98c1d659` -> `first_name`
+;; 	 ID `0x2326b8630011d51c` -> `last_name`
+;; 	 ID `0x22025b5071a4ea68` -> `purchased_on_for`
+;; 	 ID `0xb8662ba7011b5258` -> `car_determines_owner`
+;; 	 ID `0x6007db63e18e532c` -> `Person`
+;; 	 ID `0xdb22feaba0887298` -> `car_has_at_most_one_owner`
+;; 	 ID `0xe7a51e3214ced7ef` -> `date_and_car_determine_person`
+;; 	 ID `0xa5cdf07dbbc15892` -> `Car`
+;; 	 ID `0xbc9b6f54da25926c` -> `vin_is_car_key`
+;; 	 ID `0xd05aa2a15fb3c40e` -> `make`
+;; 	 ID `0x2e87d494473e3166` -> `query1`
+;; 	 ID `0x426f6eb9e6a97a37` -> `emp_id`
+;; 	 ID `0x14014e6a57032789` -> `Employee`
+;; 	 ID `0xe5b5fc109170b537` -> `ssn_is_employee_key`
+;; 	 ID `0x7634153440f8a51c` -> `emp_id_is_employee_key`
+;; 	 ID `0x8e8376f9710788de` -> `ssn_is_person_key`
+;; 	 ID `0xc3f56e92809c666` -> `name_is_person_key`

@@ -27,7 +27,7 @@
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `11083562605256160670` -> `output_decimal64`
-;; 	 ID `17909083773971274800` -> `output_decimal128`
-;; 	 ID `5168972349743097577` -> `output_date`
-;; 	 ID `1476699919531177603` -> `output_datetime`
+;; 	 ID `0x99d0b9775c18b59e` -> `output_decimal64`
+;; 	 ID `0xf889d8ce58451c30` -> `output_decimal128`
+;; 	 ID `0x47bbe0f73840e6e9` -> `output_date`
+;; 	 ID `0x147e4ac0bf80f683` -> `output_datetime`

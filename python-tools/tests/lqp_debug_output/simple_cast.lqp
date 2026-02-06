@@ -41,9 +41,9 @@
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `16349762466079412570` -> `int_uint`
-;; 	 ID `4140026326011003740` -> `int_int`
-;; 	 ID `15495714284451503364` -> `int_dec64`
-;; 	 ID `2334076880760390067` -> `dec64_int`
-;; 	 ID `3236710351334212416` -> `int_dec128`
-;; 	 ID `5257262794935382812` -> `dec128_int`
+;; 	 ID `0xe2e6065690ad915a` -> `int_uint`
+;; 	 ID `0x397454023aa6c35c` -> `int_int`
+;; 	 ID `0xd70bd60ab9ad9d04` -> `int_dec64`
+;; 	 ID `0x20644e8e7c2cc1b3` -> `dec64_int`
+;; 	 ID `0x2ceb1aea6c1b0340` -> `int_dec128`
+;; 	 ID `0x48f58ca86700331c` -> `dec128_int`
