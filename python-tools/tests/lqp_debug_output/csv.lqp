@@ -19,9 +19,9 @@
                 :csv_quotechar "\""
                 :csv_skip 0})
             (columns
-              (column "user_id" 17914592993080586817 [INT])
-              (column "name" 3318323897171887315 [STRING])
-              (column "score" 15024169012464168155 [FLOAT]))
+              (column "user_id" 0xf89d6b6960453241 [INT])
+              (column "name" 0x2e0d0e00d49ec4d3 [STRING])
+              (column "score" 0xd080921d895bacdb [FLOAT]))
             (asof "2025-01-01T00:00:00Z"))
           (csv_data
             (csv_locator
@@ -38,8 +38,8 @@
                 :csv_quotechar "'"
                 :csv_skip 1})
             (columns
-              (column "timestamp" 4948721473946711771 [DATETIME])
-              (column "value" 10943683732806582112 [(DECIMAL 18 4)]))
+              (column "timestamp" 0x44ad63f60af0f6db [DATETIME])
+              (column "value" 0x97dfc65f74283f60 [(DECIMAL 18 4)]))
             (asof "2025-01-15T12:00:00Z"))
           (csv_data
             (csv_locator
@@ -54,9 +54,9 @@
                 :csv_quotechar "\""
                 :csv_skip 0})
             (columns
-              (column "user_id" 1730211800068853807 [INT])
-              (column "name" 2796314487109628035 [STRING])
-              (column "score" 2286927111849837318 [FLOAT]))
+              (column "user_id" 0x1802f277114b102f [INT])
+              (column "name" 0x26ce8135e472b083 [STRING])
+              (column "score" 0x1fbccc1771050306 [FLOAT]))
             (asof "2025-01-01T00:00:00Z"))
           (csv_data
             (csv_locator
@@ -71,8 +71,8 @@
                 :csv_quotechar "\""
                 :csv_skip 0})
             (columns
-              (column "id" 13663055770000247273 [INT STRING])
-              (column "data" 310947696548484702 [STRING FLOAT BOOLEAN]))
+              (column "id" 0xbd9cecd5353749e9 [INT STRING])
+              (column "data" 0x450b548547f965e [STRING FLOAT BOOLEAN]))
             (asof "2025-02-01T00:00:00Z"))
           (csv_data
             (csv_locator
@@ -87,35 +87,35 @@
                 :csv_quotechar "\""
                 :csv_skip 0})
             (columns
-              (column "col1" 15550009007474765693 [])
-              (column "col2" 6484483159165596370 []))
+              (column "col1" 0xd7ccbace08a86f7d [])
+              (column "col2" 0x59fd8313b61172d2 []))
             (asof "2025-03-01T00:00:00Z")))))
     (reads
-      (output :user_id 17914592993080586817)
-      (output :user_name 3318323897171887315)
-      (output :user_score 15024169012464168155)
-      (output :ts 4948721473946711771)
-      (output :val 10943683732806582112)
-      (output :inline_user_id 1730211800068853807)
-      (output :inline_user_name 2796314487109628035)
-      (output :inline_user_score 2286927111849837318)
-      (output :multi_id 13663055770000247273)
-      (output :multi_data 310947696548484702)
-      (output :inferred1 15550009007474765693)
-      (output :inferred2 6484483159165596370))))
+      (output :user_id 0xf89d6b6960453241)
+      (output :user_name 0x2e0d0e00d49ec4d3)
+      (output :user_score 0xd080921d895bacdb)
+      (output :ts 0x44ad63f60af0f6db)
+      (output :val 0x97dfc65f74283f60)
+      (output :inline_user_id 0x1802f277114b102f)
+      (output :inline_user_name 0x26ce8135e472b083)
+      (output :inline_user_score 0x1fbccc1771050306)
+      (output :multi_id 0xbd9cecd5353749e9)
+      (output :multi_data 0x450b548547f965e)
+      (output :inferred1 0xd7ccbace08a86f7d)
+      (output :inferred2 0x59fd8313b61172d2))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `17914592993080586817` -> `user_id`
-;; 	 ID `3318323897171887315` -> `user_name`
-;; 	 ID `15024169012464168155` -> `user_score`
-;; 	 ID `4948721473946711771` -> `ts`
-;; 	 ID `10943683732806582112` -> `val`
-;; 	 ID `1730211800068853807` -> `inline_user_id`
-;; 	 ID `2796314487109628035` -> `inline_user_name`
-;; 	 ID `2286927111849837318` -> `inline_user_score`
-;; 	 ID `13663055770000247273` -> `multi_id`
-;; 	 ID `310947696548484702` -> `multi_data`
-;; 	 ID `15550009007474765693` -> `inferred1`
-;; 	 ID `6484483159165596370` -> `inferred2`
+;; 	 ID `0xf89d6b6960453241` -> `user_id`
+;; 	 ID `0x2e0d0e00d49ec4d3` -> `user_name`
+;; 	 ID `0xd080921d895bacdb` -> `user_score`
+;; 	 ID `0x44ad63f60af0f6db` -> `ts`
+;; 	 ID `0x97dfc65f74283f60` -> `val`
+;; 	 ID `0x1802f277114b102f` -> `inline_user_id`
+;; 	 ID `0x26ce8135e472b083` -> `inline_user_name`
+;; 	 ID `0x1fbccc1771050306` -> `inline_user_score`
+;; 	 ID `0xbd9cecd5353749e9` -> `multi_id`
+;; 	 ID `0x450b548547f965e` -> `multi_data`
+;; 	 ID `0xd7ccbace08a86f7d` -> `inferred1`
+;; 	 ID `0x59fd8313b61172d2` -> `inferred2`

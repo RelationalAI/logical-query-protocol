@@ -96,7 +96,10 @@ class Lexer:
     @staticmethod
     def scan_int(n: str) -> int:
         """Parse INT token."""
-        return int(n)
+        val = int(n)
+        if val < -(1 << 63) or val >= (1 << 63):
+            raise ParseError(f'Integer literal out of 64-bit range: {{n}}')
+        return val
 
     @staticmethod
     def scan_float(f: str) -> float:
@@ -111,6 +114,8 @@ class Lexer:
     def scan_uint128(u: str) -> Any:
         """Parse UINT128 token."""
         uint128_val = int(u, 16)
+        if uint128_val < 0 or uint128_val >= (1 << 128):
+            raise ParseError(f'UInt128 literal out of range: {{u}}')
         low = uint128_val & 0xFFFFFFFFFFFFFFFF
         high = (uint128_val >> 64) & 0xFFFFFFFFFFFFFFFF
         return logic_pb2.UInt128Value(low=low, high=high)
@@ -120,6 +125,8 @@ class Lexer:
         """Parse INT128 token."""
         u = u[:-4]  # Remove the 'i128' suffix
         int128_val = int(u)
+        if int128_val < -(1 << 127) or int128_val >= (1 << 127):
+            raise ParseError(f'Int128 literal out of range: {{u}}')
         low = int128_val & 0xFFFFFFFFFFFFFFFF
         high = (int128_val >> 64) & 0xFFFFFFFFFFFFFFFF
         return logic_pb2.Int128Value(low=low, high=high)

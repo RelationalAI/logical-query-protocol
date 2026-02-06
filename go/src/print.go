@@ -1355,7 +1355,7 @@ func uint128ToHexString(low, high uint64) string {
 }
 
 func relationIdToString(rid *pb.RelationId) string {
-	return uint128ToString(rid.GetIdLow(), rid.GetIdHigh())
+	return "0x" + uint128ToHexString(rid.GetIdLow(), rid.GetIdHigh())
 }
 
 // Entry point

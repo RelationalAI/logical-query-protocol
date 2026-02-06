@@ -6,22 +6,22 @@
     (writes
       (define
         (fragment :f1
-          (def 3181428560199927439
+          (def 0x2c26b46b68ffc68f
             ([]
               (primitive :rel_primitive_eq 1 1)))
-          (def 4202944263766022126
+          (def 0x3a53db8a2c8a17ee
             ([]
-              (atom 3181428560199927439 )))
-          (def 16208045718567772255
+              (atom 0x2c26b46b68ffc68f )))
+          (def 0xe0ee8bb50685e05f
             ([]
-              (atom 3181428560199927439 ))))))
+              (atom 0x2c26b46b68ffc68f ))))))
     (reads
-      (output :result 16208045718567772255)
-      (abort :abort_1_eq_1 4202944263766022126))))
+      (output :result 0xe0ee8bb50685e05f)
+      (abort :abort_1_eq_1 0x3a53db8a2c8a17ee))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `3181428560199927439` -> `foo`
-;; 	 ID `4202944263766022126` -> `abort`
-;; 	 ID `16208045718567772255` -> `output`
+;; 	 ID `0x2c26b46b68ffc68f` -> `foo`
+;; 	 ID `0x3a53db8a2c8a17ee` -> `abort`
+;; 	 ID `0xe0ee8bb50685e05f` -> `output`

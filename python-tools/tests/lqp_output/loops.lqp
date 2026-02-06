@@ -6,7 +6,7 @@
     (writes
       (define
         (fragment :f1
-          (def 17551841086482533469
+          (def 0xf394aa7979e5cc5d
             ([a::INT b::INT]
               (or
                 (and
@@ -27,67 +27,67 @@
                 (and
                   (primitive :rel_primitive_eq a 6)
                   (primitive :rel_primitive_eq b 5)))))
-          (algorithm 7996010236749000971
+          (algorithm 0x6ef788f215cfb10b
             (script
               (loop
                 (init
-                  (assign 7996010236749000971
+                  (assign 0x6ef788f215cfb10b
                     ([n::INT]
                       (primitive :rel_primitive_eq n 1))))
                 (script
-                  (assign 14321950021062508318
+                  (assign 0xc6c1c9a9c8543f1e
                     ([m::INT]
                       (or
-                        (atom 7996010236749000971 m)
+                        (atom 0x6ef788f215cfb10b m)
                         (exists [n::INT]
                           (and
-                            (atom 7996010236749000971 n)
-                            (atom 17551841086482533469 n m))))))
-                  (break 12291301716330672712
+                            (atom 0x6ef788f215cfb10b n)
+                            (atom 0xf394aa7979e5cc5d n m))))))
+                  (break 0xaa9379c9f509f248
                     ([]
                       (ffi :rel_primitive_pairwise_equal
                         (args
                           ([n::INT]
-                            (atom 7996010236749000971 n))
+                            (atom 0x6ef788f215cfb10b n))
                           ([n::INT]
-                            (atom 14321950021062508318 n)))
+                            (atom 0xc6c1c9a9c8543f1e n)))
                         (terms))))
-                  (assign 7996010236749000971
+                  (assign 0x6ef788f215cfb10b
                     ([n::INT]
-                      (atom 14321950021062508318 n)))))))
-          (algorithm 14364040197409932123 79618640925625270
+                      (atom 0xc6c1c9a9c8543f1e n)))))))
+          (algorithm 0xc7575274a20d035b 0x11adcbb69df0bb6
             (script
               (loop
                 (init
-                  (assign 14364040197409932123
+                  (assign 0xc7575274a20d035b
                     ([n::INT]
                       (primitive :rel_primitive_eq n 1)))
-                  (assign 79618640925625270
+                  (assign 0x11adcbb69df0bb6
                     ([_n::INT]
                       (or))))
                 (script
-                  (upsert 79618640925625270
+                  (upsert 0x11adcbb69df0bb6
                     ([n::INT]
-                      (atom 14364040197409932123 n)))
-                  (assign 14321950021062508318
+                      (atom 0xc7575274a20d035b n)))
+                  (assign 0xc6c1c9a9c8543f1e
                     ([m::INT]
                       (exists [n::INT]
                         (and
                           (and
-                            (atom 14364040197409932123 n)
-                            (atom 17551841086482533469 n m))
+                            (atom 0xc7575274a20d035b n)
+                            (atom 0xf394aa7979e5cc5d n m))
                           (not
-                            (atom 79618640925625270 m))))))
-                  (assign 14364040197409932123
+                            (atom 0x11adcbb69df0bb6 m))))))
+                  (assign 0xc7575274a20d035b
                     ([n::INT]
-                      (atom 14321950021062508318 n)))
-                  (break 3004594760313893010
+                      (atom 0xc6c1c9a9c8543f1e n)))
+                  (break 0x29b27703f6827092
                     ([]
                       (ffi :rel_primitive_all_empty
                         (args
                           ([n::INT]
-                            (atom 14364040197409932123 n)))
+                            (atom 0xc7575274a20d035b n)))
                         (terms)))))))))))
     (reads
-      (output :reachable 7996010236749000971)
-      (output :reachable_2 79618640925625270))))
+      (output :reachable 0x6ef788f215cfb10b)
+      (output :reachable_2 0x11adcbb69df0bb6))))

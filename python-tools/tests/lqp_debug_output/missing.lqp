@@ -6,18 +6,18 @@
     (writes
       (define
         (fragment :f1
-          (def 17308140329744549114
+          (def 0xf032dded6d0944fa
             ([v::MISSING]
               (primitive :rel_primitive_eq missing v)))
-          (def 7718453676946129503
+          (def 0x6b1d74b99dae825f
             ([v::STRING]
               (primitive :rel_primitive_eq "missing" v))))))
     (reads
-      (output :miss1 17308140329744549114)
-      (output :miss2 7718453676946129503))))
+      (output :miss1 0xf032dded6d0944fa)
+      (output :miss2 0x6b1d74b99dae825f))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `17308140329744549114` -> `miss1`
-;; 	 ID `7718453676946129503` -> `miss2`
+;; 	 ID `0xf032dded6d0944fa` -> `miss1`
+;; 	 ID `0x6b1d74b99dae825f` -> `miss2`

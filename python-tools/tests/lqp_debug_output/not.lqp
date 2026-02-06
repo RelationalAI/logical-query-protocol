@@ -6,14 +6,14 @@
     (writes
       (define
         (fragment :frag
-          (def 11495104353665842533
+          (def 0x9f86d081884c7d65
             ([x::INT y::INT]
               (not
                 (primitive :rel_primitive_eq x y)))))))
     (reads
-      (output :output 1234567898765432123456789))))
+      (output :output 0x1056e0f555a18ebda7d15))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `11495104353665842533` -> `test`
+;; 	 ID `0x9f86d081884c7d65` -> `test`

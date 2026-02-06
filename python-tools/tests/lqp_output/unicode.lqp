@@ -19,18 +19,18 @@
                 :csv_quotechar "\""
                 :csv_skip 0})
             (columns
-              (column "id" 11916882123021530046 [INT INT])
-              (column "name" 9413459455101357694 [INT STRING])
-              (column "city" 1271752474707588935 [INT STRING])
-              (column "greeting" 1798818752858411820 [INT STRING]))
+              (column "id" 0xa56145270ce6b3be [INT INT])
+              (column "name" 0x82a3537ff0dbce7e [INT STRING])
+              (column "city" 0x11a62c23412b7747 [INT STRING])
+              (column "greeting" 0x18f6b0200b6fd32c [INT STRING]))
             (asof "2025-01-01T00:00:00Z"))
-          (def 8241791976733622578
+          (def 0x7260ba22cddf4132
             ([id::INT name::STRING city::STRING greeting::STRING]
               (exists [row::INT]
                 (and
-                  (atom 11916882123021530046 row id)
-                  (atom 9413459455101357694 row name)
-                  (atom 1271752474707588935 row city)
-                  (atom 1798818752858411820 row greeting))))))))
+                  (atom 0xa56145270ce6b3be row id)
+                  (atom 0x82a3537ff0dbce7e row name)
+                  (atom 0x11a62c23412b7747 row city)
+                  (atom 0x18f6b0200b6fd32c row greeting))))))))
     (reads
-      (output :unicode_data 8241791976733622578))))
+      (output :unicode_data 0x7260ba22cddf4132))))

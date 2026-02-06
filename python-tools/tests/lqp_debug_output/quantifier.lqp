@@ -6,7 +6,7 @@
     (writes
       (define
         (fragment :model
-          (def 7512117766650654031
+          (def 0x6840674ed01ced4f
             ([person::UINT128]
               (primitive :rel_primitive_hash_tuple_uint128
                 "Person"
@@ -15,20 +15,20 @@
                 "age"
                 10
                 person)))
-          (def 18139422136526288901
+          (def 0xfbbc2c538e81b805
             ([person::UINT128]
-              (atom 7512117766650654031 person)))
-          (def 12718961499977487753
+              (atom 0x6840674ed01ced4f person)))
+          (def 0xb082d418a6071589
             ([person::UINT128 cvar::STRING]
               (and
                 (primitive :rel_primitive_eq cvar "Alice")
-                (atom 7512117766650654031 person))))
-          (def 9492307082937470601
+                (atom 0x6840674ed01ced4f person))))
+          (def 0x83bb72ffe1698e89
             ([person::UINT128 cvar_2::INT]
               (and
                 (primitive :rel_primitive_eq cvar_2 10)
-                (atom 7512117766650654031 person))))
-          (def 8399384937444145343
+                (atom 0x6840674ed01ced4f person))))
+          (def 0x74909c19481ff8bf
             ([person_2::UINT128]
               (primitive :rel_primitive_hash_tuple_uint128
                 "Person"
@@ -37,20 +37,20 @@
                 "age"
                 30
                 person_2)))
-          (def 18339183127718524626
+          (def 0xfe81dde3b67ff6d2
             ([person_2::UINT128]
-              (atom 8399384937444145343 person_2)))
-          (def 1369735832256492081
+              (atom 0x74909c19481ff8bf person_2)))
+          (def 0x1302477b75c5b231
             ([person_2::UINT128 cvar_3::STRING]
               (and
                 (primitive :rel_primitive_eq cvar_3 "Bob")
-                (atom 8399384937444145343 person_2))))
-          (def 1063903724176868720
+                (atom 0x74909c19481ff8bf person_2))))
+          (def 0xec3becce2c70570
             ([person_2::UINT128 cvar_4::INT]
               (and
                 (primitive :rel_primitive_eq cvar_4 30)
-                (atom 8399384937444145343 person_2))))
-          (def 8154019264602240939
+                (atom 0x74909c19481ff8bf person_2))))
+          (def 0x7128e551be4ef7ab
             ([person_3::UINT128]
               (primitive :rel_primitive_hash_tuple_uint128
                 "Person"
@@ -59,20 +59,20 @@
                 "age"
                 50
                 person_3)))
-          (def 13934557884625712107
+          (def 0xc1617e914f3bf3eb
             ([person_3::UINT128]
-              (atom 8154019264602240939 person_3)))
-          (def 3205571553830491650
+              (atom 0x7128e551be4ef7ab person_3)))
+          (def 0x2c7c7a582829d602
             ([person_3::UINT128 cvar_5::STRING]
               (and
                 (primitive :rel_primitive_eq cvar_5 "Charlie")
-                (atom 8154019264602240939 person_3))))
-          (def 17828396038803401143
+                (atom 0x7128e551be4ef7ab person_3))))
+          (def 0xf76b2fbd07dba9b7
             ([person_3::UINT128 cvar_6::INT]
               (and
                 (primitive :rel_primitive_eq cvar_6 50)
-                (atom 8154019264602240939 person_3))))
-          (def 11258823016615705613
+                (atom 0x7128e551be4ef7ab person_3))))
+          (def 0x9c3f5fe1be5efc0d
             ([pet::UINT128]
               (primitive :rel_primitive_hash_tuple_uint128
                 "Pet"
@@ -81,20 +81,20 @@
                 "age"
                 1
                 pet)))
-          (def 15164953823225341498
+          (def 0xd274bd27a48c663a
             ([pet::UINT128]
-              (atom 11258823016615705613 pet)))
-          (def 15335969714662784111
+              (atom 0x9c3f5fe1be5efc0d pet)))
+          (def 0xd4d44f33b89fbc6f
             ([pet::UINT128 cvar_7::STRING]
               (and
                 (primitive :rel_primitive_eq cvar_7 "boots")
-                (atom 11258823016615705613 pet))))
-          (def 11222845615070129783
+                (atom 0x9c3f5fe1be5efc0d pet))))
+          (def 0x9bbf8ea02f4e2e77
             ([pet::UINT128 cvar_8::INT]
               (and
                 (primitive :rel_primitive_eq cvar_8 1)
-                (atom 11258823016615705613 pet))))
-          (def 15911788783640802277
+                (atom 0x9c3f5fe1be5efc0d pet))))
+          (def 0xdcd207982df473e5
             ([pet_2::UINT128]
               (primitive :rel_primitive_hash_tuple_uint128
                 "Pet"
@@ -103,20 +103,20 @@
                 "age"
                 3
                 pet_2)))
-          (def 13601274584918128123
+          (def 0xbcc16f2c1e97f5fb
             ([pet_2::UINT128]
-              (atom 15911788783640802277 pet_2)))
-          (def 4393382297106513503
+              (atom 0xdcd207982df473e5 pet_2)))
+          (def 0x3cf86dec0d85fe5f
             ([pet_2::UINT128 cvar_9::STRING]
               (and
                 (primitive :rel_primitive_eq cvar_9 "fluffy")
-                (atom 15911788783640802277 pet_2))))
-          (def 11807380396400810730
+                (atom 0xdcd207982df473e5 pet_2))))
+          (def 0xa3dc3de98f619aea
             ([pet_2::UINT128 cvar_10::INT]
               (and
                 (primitive :rel_primitive_eq cvar_10 3)
-                (atom 15911788783640802277 pet_2))))
-          (def 6128499679942839714
+                (atom 0xdcd207982df473e5 pet_2))))
+          (def 0x550ccdfd1d168da2
             ([person_3::UINT128 pet::UINT128]
               (and
                 (primitive :rel_primitive_hash_tuple_uint128
@@ -133,7 +133,7 @@
                   "age"
                   1
                   pet))))
-          (def 16796864715608924582
+          (def 0xe91a73771a29a1a6
             ([person_3::UINT128 pet_2::UINT128]
               (and
                 (primitive :rel_primitive_hash_tuple_uint128
@@ -150,91 +150,91 @@
                   "age"
                   3
                   pet_2))))
-          (def 6919740574510502700
+          (def 0x6007db63e18e532c
             ([person_4::UINT128]
               (or
-                (atom 18139422136526288901 person_4)
-                (atom 18339183127718524626 person_4)
-                (atom 13934557884625712107 person_4))))
-          (def 10307925019046802470
+                (atom 0xfbbc2c538e81b805 person_4)
+                (atom 0xfe81dde3b67ff6d2 person_4)
+                (atom 0xc1617e914f3bf3eb person_4))))
+          (def 0x8f0d1b30eba57426
             ([pet_3::UINT128]
               (or
-                (atom 15164953823225341498 pet_3)
-                (atom 13601274584918128123 pet_3))))
-          (def 4314963163249411553
+                (atom 0xd274bd27a48c663a pet_3)
+                (atom 0xbcc16f2c1e97f5fb pet_3))))
+          (def 0x3be1d422a46085e1
             ([person_5::UINT128 pet_4::UINT128]
               (or
-                (atom 6128499679942839714 person_5 pet_4)
-                (atom 16796864715608924582 person_5 pet_4))))
-          (def 9413459455101357694
+                (atom 0x550ccdfd1d168da2 person_5 pet_4)
+                (atom 0xe91a73771a29a1a6 person_5 pet_4))))
+          (def 0x82a3537ff0dbce7e
             ([person_6::UINT128 name::STRING]
               (or
-                (atom 12718961499977487753 person_6 name)
-                (atom 1369735832256492081 person_6 name)
-                (atom 3205571553830491650 person_6 name))))
-          (def 8545399813730161120
+                (atom 0xb082d418a6071589 person_6 name)
+                (atom 0x1302477b75c5b231 person_6 name)
+                (atom 0x2c7c7a582829d602 person_6 name))))
+          (def 0x76975bdae91351e0
             ([pet_5::UINT128 name_2::STRING]
               (or
-                (atom 15335969714662784111 pet_5 name_2)
-                (atom 4393382297106513503 pet_5 name_2))))
-          (def 89883151635241480
+                (atom 0xd4d44f33b89fbc6f pet_5 name_2)
+                (atom 0x3cf86dec0d85fe5f pet_5 name_2))))
+          (def 0x13f54400c82da08
             ([person_7::UINT128 age::INT]
               (or
-                (atom 9492307082937470601 person_7 age)
-                (atom 1063903724176868720 person_7 age)
-                (atom 17828396038803401143 person_7 age))))
-          (def 16527943021330147197
+                (atom 0x83bb72ffe1698e89 person_7 age)
+                (atom 0xec3becce2c70570 person_7 age)
+                (atom 0xf76b2fbd07dba9b7 person_7 age))))
+          (def 0xe55f0c9bee47a77d
             ([pet_6::UINT128 age_2::INT]
               (or
-                (atom 11222845615070129783 pet_6 age_2)
-                (atom 11807380396400810730 pet_6 age_2))))))))
+                (atom 0x9bbf8ea02f4e2e77 pet_6 age_2)
+                (atom 0xa3dc3de98f619aea pet_6 age_2))))))))
   (epoch
     (writes
       (define
         (fragment :query
-          (def 16208045718567772255
+          (def 0xe0ee8bb50685e05f
             ([cvar::STRING cvar_2::STRING person::UINT128 name::STRING]
               (and
                 (primitive :rel_primitive_eq cvar "cols")
                 (primitive :rel_primitive_eq cvar_2 "col000")
-                (atom 9413459455101357694 person name)
+                (atom 0x82a3537ff0dbce7e person name)
                 (not
                   (exists [pet::UINT128]
-                    (atom 4314963163249411553 person pet)))
-                (atom 6919740574510502700 person)))))))
+                    (atom 0x3be1d422a46085e1 person pet)))
+                (atom 0x6007db63e18e532c person)))))))
     (reads
-      (output :output_0 16208045718567772255))))
+      (output :output_0 0xe0ee8bb50685e05f))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `16208045718567772255` -> `output`
-;; 	 ID `9413459455101357694` -> `name`
-;; 	 ID `4314963163249411553` -> `pets`
-;; 	 ID `6919740574510502700` -> `Person`
-;; 	 ID `7512117766650654031` -> `_intermediate_1`
-;; 	 ID `18139422136526288901` -> `Person_1`
-;; 	 ID `12718961499977487753` -> `name_1`
-;; 	 ID `9492307082937470601` -> `age_1`
-;; 	 ID `8399384937444145343` -> `_intermediate_2`
-;; 	 ID `18339183127718524626` -> `Person_2`
-;; 	 ID `1369735832256492081` -> `name_2`
-;; 	 ID `1063903724176868720` -> `age_2`
-;; 	 ID `8154019264602240939` -> `_intermediate_3`
-;; 	 ID `13934557884625712107` -> `Person_3`
-;; 	 ID `3205571553830491650` -> `name_3`
-;; 	 ID `17828396038803401143` -> `age_3`
-;; 	 ID `11258823016615705613` -> `_intermediate_4`
-;; 	 ID `15164953823225341498` -> `Pet_1`
-;; 	 ID `15335969714662784111` -> `name_1_2`
-;; 	 ID `11222845615070129783` -> `age_1_2`
-;; 	 ID `15911788783640802277` -> `_intermediate_5`
-;; 	 ID `13601274584918128123` -> `Pet_2`
-;; 	 ID `4393382297106513503` -> `name_2_2`
-;; 	 ID `11807380396400810730` -> `age_2_2`
-;; 	 ID `6128499679942839714` -> `pets_1`
-;; 	 ID `16796864715608924582` -> `pets_2`
-;; 	 ID `10307925019046802470` -> `Pet`
-;; 	 ID `8545399813730161120` -> `name_4`
-;; 	 ID `89883151635241480` -> `age`
-;; 	 ID `16527943021330147197` -> `age_4`
+;; 	 ID `0xe0ee8bb50685e05f` -> `output`
+;; 	 ID `0x82a3537ff0dbce7e` -> `name`
+;; 	 ID `0x3be1d422a46085e1` -> `pets`
+;; 	 ID `0x6007db63e18e532c` -> `Person`
+;; 	 ID `0x6840674ed01ced4f` -> `_intermediate_1`
+;; 	 ID `0xfbbc2c538e81b805` -> `Person_1`
+;; 	 ID `0xb082d418a6071589` -> `name_1`
+;; 	 ID `0x83bb72ffe1698e89` -> `age_1`
+;; 	 ID `0x74909c19481ff8bf` -> `_intermediate_2`
+;; 	 ID `0xfe81dde3b67ff6d2` -> `Person_2`
+;; 	 ID `0x1302477b75c5b231` -> `name_2`
+;; 	 ID `0xec3becce2c70570` -> `age_2`
+;; 	 ID `0x7128e551be4ef7ab` -> `_intermediate_3`
+;; 	 ID `0xc1617e914f3bf3eb` -> `Person_3`
+;; 	 ID `0x2c7c7a582829d602` -> `name_3`
+;; 	 ID `0xf76b2fbd07dba9b7` -> `age_3`
+;; 	 ID `0x9c3f5fe1be5efc0d` -> `_intermediate_4`
+;; 	 ID `0xd274bd27a48c663a` -> `Pet_1`
+;; 	 ID `0xd4d44f33b89fbc6f` -> `name_1_2`
+;; 	 ID `0x9bbf8ea02f4e2e77` -> `age_1_2`
+;; 	 ID `0xdcd207982df473e5` -> `_intermediate_5`
+;; 	 ID `0xbcc16f2c1e97f5fb` -> `Pet_2`
+;; 	 ID `0x3cf86dec0d85fe5f` -> `name_2_2`
+;; 	 ID `0xa3dc3de98f619aea` -> `age_2_2`
+;; 	 ID `0x550ccdfd1d168da2` -> `pets_1`
+;; 	 ID `0xe91a73771a29a1a6` -> `pets_2`
+;; 	 ID `0x8f0d1b30eba57426` -> `Pet`
+;; 	 ID `0x76975bdae91351e0` -> `name_4`
+;; 	 ID `0x13f54400c82da08` -> `age`
+;; 	 ID `0xe55f0c9bee47a77d` -> `age_4`

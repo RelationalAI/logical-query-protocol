@@ -6,7 +6,7 @@
     (writes
       (define
         (fragment :f1
-          (def 10567094013610926008
+          (def 0x92a5dc04bd6f9fb8
             ([_lineitem::UINT128 _lineitem_l_returnflag::STRING _lineitem_l_linestatus::STRING]
               (exists [_lineitem_l_shipdate::DATE _date_limit::DATE]
                 (and
@@ -20,4 +20,4 @@
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `10567094013610926008` -> `common`
+;; 	 ID `0x92a5dc04bd6f9fb8` -> `common`

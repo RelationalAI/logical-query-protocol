@@ -267,8 +267,8 @@ def
 relation_id
     : ":" SYMBOL
       construct: builtin.relation_id_from_string($2)
-    | INT
-      construct: builtin.relation_id_from_int($1)
+    | UINT128
+      construct: builtin.relation_id_from_uint128($1)
 
 abstraction
     : "(" bindings formula ")"
