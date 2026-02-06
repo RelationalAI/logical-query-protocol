@@ -6,18 +6,18 @@
     (writes
       (define
         (fragment :f2
-          (def 3238736544897475342
+          (def 0x2cf24dba5fb0a30e
             ([v::INT]
               (primitive :rel_primitive_eq v 101)))))
       (define
         (fragment :f1
-          (def 16208045718567772255
+          (def 0xe0ee8bb50685e05f
             ([v::INT]
-              (atom 3238736544897475342 v))))))
+              (atom 0x2cf24dba5fb0a30e v))))))
     (reads
-      (output :epoch0 16208045718567772255)))
+      (output :epoch0 0xe0ee8bb50685e05f)))
   (epoch
     (writes
       (undefine :f2))
     (reads
-      (output :epoch1 16208045718567772255))))
+      (output :epoch1 0xe0ee8bb50685e05f))))

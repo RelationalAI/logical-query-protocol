@@ -7,7 +7,7 @@
     (writes
       (define
         (fragment :frag
-          (def 11495104353665842533
+          (def 0x9f86d081884c7d65
             ([x::INT y::INT]
               (not
                 (primitive :rel_primitive_eq x y)))))))))

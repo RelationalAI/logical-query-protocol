@@ -6,7 +6,7 @@
     (writes
       (define
         (fragment :f1
-          (def 3181428560199927439
+          (def 0x2c26b46b68ffc68f
             ([category::STRING amount::FLOAT]
               (or
                 (and
@@ -24,27 +24,27 @@
                 (and
                   (primitive :rel_primitive_eq category "drink")
                   (primitive :rel_primitive_eq amount 2.82)))))
-          (def 717761118272002131
+          (def 0x9f5ffef28309853
             ([cat::STRING x::FLOAT]
               (reduce
                 ([a::FLOAT b::FLOAT c::FLOAT]
                   (primitive :rel_primitive_add_monotype a b c))
                 ([num::FLOAT]
-                  (atom 3181428560199927439 cat num))
+                  (atom 0x2c26b46b68ffc68f cat num))
                 (terms x))))
-          (def 7797218844049897513
+          (def 0x6c35493a2b937829
             ([cat::STRING x::INT]
               (reduce
                 ([a::FLOAT b::FLOAT c::FLOAT]
                   (primitive :rel_primitive_add_monotype a b c))
                 ([num::FLOAT one::INT]
                   (and
-                    (atom 3181428560199927439 cat num)
+                    (atom 0x2c26b46b68ffc68f cat num)
                     (primitive :rel_primitive_eq one 1)))
                 (terms x)))))))
     (reads
-      (output :items_sum 717761118272002131)
-      (output :items_count 7797218844049897513))))
+      (output :items_sum 0x9f5ffef28309853)
+      (output :items_count 0x6c35493a2b937829))))
 
 ;; Debug information
 ;; -----------------------
