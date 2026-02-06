@@ -66,6 +66,14 @@ from .codegen_python import (
     escape_identifier as escape_python_identifier,
 )
 
+# Julia code generation
+from .codegen_julia import (
+    generate_julia,
+    generate_julia_lines,
+    generate_julia_def,
+    escape_identifier as escape_julia_identifier,
+)
+
 from .parser_gen_python import generate_parser_python
 
 __all__ = [
@@ -117,4 +125,9 @@ __all__ = [
     'generate_python',
     'generate_python_lines',
     'escape_python_identifier',
+    # Julia code generation
+    'generate_julia',
+    'generate_julia_lines',
+    'generate_julia_def',
+    'escape_julia_identifier',
 ]
