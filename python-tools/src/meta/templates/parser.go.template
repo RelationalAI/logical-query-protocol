@@ -12,6 +12,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"math"
+	"math/big"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -218,16 +219,24 @@ func scanUint128(s string) interface{{}} {{
 func scanInt128(s string) interface{{}} {{
 	// Remove the 'i128' suffix
 	numStr := s[:len(s)-4]
-	// Parse as int64 for now (simplified)
-	n, _ := strconv.ParseInt(numStr, 10, 64)
+	// Use big.Int for full 128-bit precision
+	n := new(big.Int)
+	n.SetString(numStr, 10)
+
 	var low, high uint64
-	if n >= 0 {{
-		low = uint64(n)
-		high = 0
+	if n.Sign() >= 0 {{
+		// Positive number: extract low and high 64 bits
+		mask := new(big.Int).SetUint64(0xFFFFFFFFFFFFFFFF)
+		low = new(big.Int).And(n, mask).Uint64()
+		high = new(big.Int).Rsh(n, 64).Uint64()
 	}} else {{
-		// Two's complement for negative numbers
-		low = uint64(n)
-		high = 0xFFFFFFFFFFFFFFFF
+		// Negative number: two's complement representation
+		// Add 2^128 to get the unsigned representation
+		twoTo128 := new(big.Int).Lsh(big.NewInt(1), 128)
+		unsigned := new(big.Int).Add(n, twoTo128)
+		mask := new(big.Int).SetUint64(0xFFFFFFFFFFFFFFFF)
+		low = new(big.Int).And(unsigned, mask).Uint64()
+		high = new(big.Int).Rsh(unsigned, 64).Uint64()
 	}}
 	return &pb.Int128Value{{Low: low, High: high}}
 }}
@@ -261,11 +270,17 @@ func scanDecimal(s string) interface{{}} {{
 	return &pb.DecimalValue{{Precision: int32(precision), Scale: scale, Value: value}}
 }}
 
+// relationIdKey is used as a map key for RelationIds
+type relationIdKey struct {{
+	Low  uint64
+	High uint64
+}}
+
 // Parser is an LL(k) recursive-descent parser
 type Parser struct {{
 	tokens            []Token
 	pos               int
-	idToDebugInfo     map[string]map[uint64]string
+	idToDebugInfo     map[string]map[relationIdKey]string
 	currentFragmentID []byte
 }}
 
@@ -274,7 +289,7 @@ func NewParser(tokens []Token) *Parser {{
 	return &Parser{{
 		tokens:            tokens,
 		pos:               0,
-		idToDebugInfo:     make(map[string]map[uint64]string),
+		idToDebugInfo:     make(map[string]map[relationIdKey]string),
 		currentFragmentID: nil,
 	}}
 }}
@@ -295,14 +310,14 @@ func (p *Parser) consumeLiteral(expected string) {{
 	p.pos++
 }}
 
-func (p *Parser) consumeTerminal(expected string) interface{{}} {{
+func (p *Parser) consumeTerminal(expected string) Token {{
 	if !p.matchLookaheadTerminal(expected, 0) {{
 		token := p.lookahead(0)
 		panic(ParseError{{msg: fmt.Sprintf("Expected terminal %s but got %s=`%v` at position %d", expected, token.Type, token.Value, token.Pos)}})
 	}}
 	token := p.lookahead(0)
 	p.pos++
-	return token.Value
+	return token
 }}
 
 func (p *Parser) matchLookaheadLiteral(literal string, k int) bool {{
@@ -328,24 +343,26 @@ func (p *Parser) startFragment(fragmentID *pb.FragmentId) *pb.FragmentId {{
 }}
 
 func (p *Parser) relationIdFromString(name string) *pb.RelationId {{
-	// Create RelationId from string hash
+	// Create RelationId from string hash (matching Python implementation)
+	// Python uses: int(hashlib.sha256(name.encode()).hexdigest()[:16], 16)
+	// This takes only first 8 bytes (16 hex chars) as id_low, id_high is always 0
+	// Python interprets the hex as big-endian, so we read bytes in big-endian order
 	hash := sha256.Sum256([]byte(name))
-	var low, high uint64
+	var low uint64
 	for i := 0; i < 8; i++ {{
-		low |= uint64(hash[i]) << (8 * i)
+		low = (low << 8) | uint64(hash[i])
 	}}
-	for i := 0; i < 8; i++ {{
-		high |= uint64(hash[8+i]) << (8 * i)
-	}}
+	high := uint64(0)
 	relationId := &pb.RelationId{{IdLow: low, IdHigh: high}}
 
 	// Store the mapping for the current fragment if we're inside one
 	if p.currentFragmentID != nil {{
-		key := string(p.currentFragmentID)
-		if _, ok := p.idToDebugInfo[key]; !ok {{
-			p.idToDebugInfo[key] = make(map[uint64]string)
+		fragKey := string(p.currentFragmentID)
+		if _, ok := p.idToDebugInfo[fragKey]; !ok {{
+			p.idToDebugInfo[fragKey] = make(map[relationIdKey]string)
 		}}
-		p.idToDebugInfo[key][relationId.IdLow] = name
+		idKey := relationIdKey{{Low: low, High: high}}
+		p.idToDebugInfo[fragKey][idKey] = name
 	}}
 
 	return relationId
@@ -353,14 +370,14 @@ func (p *Parser) relationIdFromString(name string) *pb.RelationId {{
 
 func (p *Parser) constructFragment(fragmentID *pb.FragmentId, declarations []*pb.Declaration) *pb.Fragment {{
 	// Get the debug info for this fragment
-	key := string(fragmentID.Id)
-	debugInfoMap := p.idToDebugInfo[key]
+	fragKey := string(fragmentID.Id)
+	debugInfoMap := p.idToDebugInfo[fragKey]
 
 	// Convert to DebugInfo protobuf
 	var ids []*pb.RelationId
 	var origNames []string
-	for idLow, name := range debugInfoMap {{
-		ids = append(ids, &pb.RelationId{{IdLow: idLow, IdHigh: 0}})
+	for idKey, name := range debugInfoMap {{
+		ids = append(ids, &pb.RelationId{{IdLow: idKey.Low, IdHigh: idKey.High}})
 		origNames = append(origNames, name)
 	}}
 
@@ -477,15 +494,49 @@ func listConcat[T any](a []T, b []T) []T {{
 	return result
 }}
 
+// listConcatAny concatenates two slices passed as interface{{}}.
+// Used when type information is lost through tuple indexing.
+func listConcatAny(a interface{{}}, b interface{{}}) interface{{}} {{
+	if a == nil {{
+		return b
+	}}
+	if b == nil {{
+		return a
+	}}
+	aVal := reflect.ValueOf(a)
+	bVal := reflect.ValueOf(b)
+	result := reflect.MakeSlice(aVal.Type(), aVal.Len()+bVal.Len(), aVal.Len()+bVal.Len())
+	reflect.Copy(result, aVal)
+	reflect.Copy(result.Slice(aVal.Len(), result.Len()), bVal)
+	return result.Interface()
+}}
+
 // hasProtoField checks if a proto message has a non-nil field by name
 // This uses reflection to check for oneOf fields
 func hasProtoField(msg interface{{}}, fieldName string) bool {{
 	if msg == nil {{
 		return false
 	}}
+
+	// Handle Option types by extracting .Value field via reflection
+	val := reflect.ValueOf(msg)
+	if val.Kind() == reflect.Struct {{
+		// Check if this looks like an Option[T] (has Valid and Value fields)
+		validField := val.FieldByName("Valid")
+		valueField := val.FieldByName("Value")
+		if validField.IsValid() && valueField.IsValid() && validField.Kind() == reflect.Bool {{
+			// This is an Option type - if Valid is true, use Value
+			if validField.Bool() {{
+				msg = valueField.Interface()
+			}} else {{
+				return false
+			}}
+		}}
+	}}
+
 	// For oneOf fields in Go protobuf, the getter returns nil if not set
 	// We use reflection to call the getter method
-	val := reflect.ValueOf(msg)
+	val = reflect.ValueOf(msg)
 	if val.Kind() == reflect.Ptr {{
 		val = val.Elem()
 	}}

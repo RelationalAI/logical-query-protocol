@@ -4,7 +4,7 @@
 // Do not modify this file! If you need to modify the parser, edit the generator code
 // in `python-tools/src/meta` or edit the protobuf specification in `proto/v1`.
 //
-// Command: python -m meta.cli ../proto/relationalai/lqp/v1/logic.proto ../proto/relationalai/lqp/v1/transactions.proto ../proto/relationalai/lqp/v1/fragments.proto --parser go
+// Command: python -m meta.cli ../proto/relationalai/lqp/v1/fragments.proto ../proto/relationalai/lqp/v1/logic.proto ../proto/relationalai/lqp/v1/transactions.proto --parser go
 
 package lqp
 
@@ -12,6 +12,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"math"
+	"math/big"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -244,16 +245,24 @@ func scanUint128(s string) interface{} {
 func scanInt128(s string) interface{} {
 	// Remove the 'i128' suffix
 	numStr := s[:len(s)-4]
-	// Parse as int64 for now (simplified)
-	n, _ := strconv.ParseInt(numStr, 10, 64)
+	// Use big.Int for full 128-bit precision
+	n := new(big.Int)
+	n.SetString(numStr, 10)
+
 	var low, high uint64
-	if n >= 0 {
-		low = uint64(n)
-		high = 0
+	if n.Sign() >= 0 {
+		// Positive number: extract low and high 64 bits
+		mask := new(big.Int).SetUint64(0xFFFFFFFFFFFFFFFF)
+		low = new(big.Int).And(n, mask).Uint64()
+		high = new(big.Int).Rsh(n, 64).Uint64()
 	} else {
-		// Two's complement for negative numbers
-		low = uint64(n)
-		high = 0xFFFFFFFFFFFFFFFF
+		// Negative number: two's complement representation
+		// Add 2^128 to get the unsigned representation
+		twoTo128 := new(big.Int).Lsh(big.NewInt(1), 128)
+		unsigned := new(big.Int).Add(n, twoTo128)
+		mask := new(big.Int).SetUint64(0xFFFFFFFFFFFFFFFF)
+		low = new(big.Int).And(unsigned, mask).Uint64()
+		high = new(big.Int).Rsh(unsigned, 64).Uint64()
 	}
 	return &pb.Int128Value{Low: low, High: high}
 }
@@ -287,11 +296,17 @@ func scanDecimal(s string) interface{} {
 	return &pb.DecimalValue{Precision: int32(precision), Scale: scale, Value: value}
 }
 
+// relationIdKey is used as a map key for RelationIds
+type relationIdKey struct {
+	Low  uint64
+	High uint64
+}
+
 // Parser is an LL(k) recursive-descent parser
 type Parser struct {
 	tokens            []Token
 	pos               int
-	idToDebugInfo     map[string]map[uint64]string
+	idToDebugInfo     map[string]map[relationIdKey]string
 	currentFragmentID []byte
 }
 
@@ -300,7 +315,7 @@ func NewParser(tokens []Token) *Parser {
 	return &Parser{
 		tokens:            tokens,
 		pos:               0,
-		idToDebugInfo:     make(map[string]map[uint64]string),
+		idToDebugInfo:     make(map[string]map[relationIdKey]string),
 		currentFragmentID: nil,
 	}
 }
@@ -321,14 +336,14 @@ func (p *Parser) consumeLiteral(expected string) {
 	p.pos++
 }
 
-func (p *Parser) consumeTerminal(expected string) interface{} {
+func (p *Parser) consumeTerminal(expected string) Token {
 	if !p.matchLookaheadTerminal(expected, 0) {
 		token := p.lookahead(0)
 		panic(ParseError{msg: fmt.Sprintf("Expected terminal %s but got %s=`%v` at position %d", expected, token.Type, token.Value, token.Pos)})
 	}
 	token := p.lookahead(0)
 	p.pos++
-	return token.Value
+	return token
 }
 
 func (p *Parser) matchLookaheadLiteral(literal string, k int) bool {
@@ -354,24 +369,26 @@ func (p *Parser) startFragment(fragmentID *pb.FragmentId) *pb.FragmentId {
 }
 
 func (p *Parser) relationIdFromString(name string) *pb.RelationId {
-	// Create RelationId from string hash
+	// Create RelationId from string hash (matching Python implementation)
+	// Python uses: int(hashlib.sha256(name.encode()).hexdigest()[:16], 16)
+	// This takes only first 8 bytes (16 hex chars) as id_low, id_high is always 0
+	// Python interprets the hex as big-endian, so we read bytes in big-endian order
 	hash := sha256.Sum256([]byte(name))
-	var low, high uint64
+	var low uint64
 	for i := 0; i < 8; i++ {
-		low |= uint64(hash[i]) << (8 * i)
+		low = (low << 8) | uint64(hash[i])
 	}
-	for i := 0; i < 8; i++ {
-		high |= uint64(hash[8+i]) << (8 * i)
-	}
+	high := uint64(0)
 	relationId := &pb.RelationId{IdLow: low, IdHigh: high}
 
 	// Store the mapping for the current fragment if we're inside one
 	if p.currentFragmentID != nil {
-		key := string(p.currentFragmentID)
-		if _, ok := p.idToDebugInfo[key]; !ok {
-			p.idToDebugInfo[key] = make(map[uint64]string)
+		fragKey := string(p.currentFragmentID)
+		if _, ok := p.idToDebugInfo[fragKey]; !ok {
+			p.idToDebugInfo[fragKey] = make(map[relationIdKey]string)
 		}
-		p.idToDebugInfo[key][relationId.IdLow] = name
+		idKey := relationIdKey{Low: low, High: high}
+		p.idToDebugInfo[fragKey][idKey] = name
 	}
 
 	return relationId
@@ -379,14 +396,14 @@ func (p *Parser) relationIdFromString(name string) *pb.RelationId {
 
 func (p *Parser) constructFragment(fragmentID *pb.FragmentId, declarations []*pb.Declaration) *pb.Fragment {
 	// Get the debug info for this fragment
-	key := string(fragmentID.Id)
-	debugInfoMap := p.idToDebugInfo[key]
+	fragKey := string(fragmentID.Id)
+	debugInfoMap := p.idToDebugInfo[fragKey]
 
 	// Convert to DebugInfo protobuf
 	var ids []*pb.RelationId
 	var origNames []string
-	for idLow, name := range debugInfoMap {
-		ids = append(ids, &pb.RelationId{IdLow: idLow, IdHigh: 0})
+	for idKey, name := range debugInfoMap {
+		ids = append(ids, &pb.RelationId{IdLow: idKey.Low, IdHigh: idKey.High})
 		origNames = append(origNames, name)
 	}
 
@@ -503,15 +520,49 @@ func listConcat[T any](a []T, b []T) []T {
 	return result
 }
 
+// listConcatAny concatenates two slices passed as interface{}.
+// Used when type information is lost through tuple indexing.
+func listConcatAny(a interface{}, b interface{}) interface{} {
+	if a == nil {
+		return b
+	}
+	if b == nil {
+		return a
+	}
+	aVal := reflect.ValueOf(a)
+	bVal := reflect.ValueOf(b)
+	result := reflect.MakeSlice(aVal.Type(), aVal.Len()+bVal.Len(), aVal.Len()+bVal.Len())
+	reflect.Copy(result, aVal)
+	reflect.Copy(result.Slice(aVal.Len(), result.Len()), bVal)
+	return result.Interface()
+}
+
 // hasProtoField checks if a proto message has a non-nil field by name
 // This uses reflection to check for oneOf fields
 func hasProtoField(msg interface{}, fieldName string) bool {
 	if msg == nil {
 		return false
 	}
+
+	// Handle Option types by extracting .Value field via reflection
+	val := reflect.ValueOf(msg)
+	if val.Kind() == reflect.Struct {
+		// Check if this looks like an Option[T] (has Valid and Value fields)
+		validField := val.FieldByName("Valid")
+		valueField := val.FieldByName("Value")
+		if validField.IsValid() && valueField.IsValid() && validField.Kind() == reflect.Bool {
+			// This is an Option type - if Valid is true, use Value
+			if validField.Bool() {
+				msg = valueField.Interface()
+			} else {
+				return false
+			}
+		}
+	}
+
 	// For oneOf fields in Go protobuf, the getter returns nil if not set
 	// We use reflection to call the getter method
-	val := reflect.ValueOf(msg)
+	val = reflect.ValueOf(msg)
 	if val.Kind() == reflect.Ptr {
 		val = val.Elem()
 	}
@@ -690,7 +741,11 @@ func (p *Parser) construct_betree_info(key_types []*pb.Type, value_types []*pb.T
 	_t1193 := p._try_extract_value_int64(dictGetValue(config, "betree_locator_tree_height"))
 	tree_height := _t1193
 	_t1194 := &pb.BeTreeLocator{ElementCount: element_count.UnwrapOr(0), TreeHeight: tree_height.UnwrapOr(0)}
-	_t1194.Location = &pb.BeTreeLocator_RootPageid{RootPageid: root_pageid.UnwrapOr(nil)}
+	if root_pageid.Valid {
+		_t1194.Location = &pb.BeTreeLocator_RootPageid{RootPageid: root_pageid.UnwrapOr(nil)}
+	} else {
+		_t1194.Location = &pb.BeTreeLocator_InlineData{InlineData: inline_data.UnwrapOr(nil)}
+	}
 	relation_locator := _t1194
 	_t1195 := &pb.BeTreeInfo{KeyTypes: key_types, ValueTypes: value_types, StorageConfig: storage_config, RelationLocator: relation_locator}
 	return _t1195
@@ -700,60 +755,48 @@ func (p *Parser) construct_configure(config_dict [][]interface{}) *pb.Configure 
 	config := dictFromList(config_dict)
 	maintenance_level_val := dictGetValue(config, "ivm.maintenance_level")
 	maintenance_level := pb.MaintenanceLevel_MAINTENANCE_LEVEL_OFF
-	var _t1199 Option[interface{}]
 	if (maintenance_level_val.Valid && hasProtoField(maintenance_level_val, "string_value")) {
-		var _t1200 Option[interface{}]
 		if maintenance_level_val.Value.GetStringValue() == "off" {
 			maintenance_level = pb.MaintenanceLevel_MAINTENANCE_LEVEL_OFF
-			_t1200 = Option[interface{}]{}
 		} else {
-			var _t1201 Option[interface{}]
 			if maintenance_level_val.Value.GetStringValue() == "auto" {
 				maintenance_level = pb.MaintenanceLevel_MAINTENANCE_LEVEL_AUTO
-				_t1201 = Option[interface{}]{}
 			} else {
-				var _t1202 Option[interface{}]
 				if maintenance_level_val.Value.GetStringValue() == "all" {
 					maintenance_level = pb.MaintenanceLevel_MAINTENANCE_LEVEL_ALL
-					_t1202 = Option[interface{}]{}
 				} else {
 					maintenance_level = pb.MaintenanceLevel_MAINTENANCE_LEVEL_OFF
-					_t1202 = Option[interface{}]{}
 				}
-				_t1201 = Some(_t1202)
 			}
-			_t1200 = Some(_t1201)
 		}
-		_t1199 = Some(_t1200)
 	} else {
-		_t1199 = Option[interface{}]{}
 	}
-	_t1203 := &pb.IVMConfig{Level: maintenance_level}
-	ivm_config := _t1203
-	_t1204 := p._extract_value_int64(dictGetValue(config, "semantics_version"), 0)
-	semantics_version := _t1204
-	_t1205 := &pb.Configure{SemanticsVersion: semantics_version, IvmConfig: ivm_config}
-	return _t1205
+	_t1196 := &pb.IVMConfig{Level: maintenance_level}
+	ivm_config := _t1196
+	_t1197 := p._extract_value_int64(dictGetValue(config, "semantics_version"), 0)
+	semantics_version := _t1197
+	_t1198 := &pb.Configure{SemanticsVersion: semantics_version, IvmConfig: ivm_config}
+	return _t1198
 }
 
 func (p *Parser) export_csv_config(path string, columns []*pb.ExportCSVColumn, config_dict [][]interface{}) *pb.ExportCSVConfig {
 	config := dictFromList(config_dict)
-	_t1206 := p._extract_value_int64(dictGetValue(config, "partition_size"), 0)
-	partition_size := _t1206
-	_t1207 := p._extract_value_string(dictGetValue(config, "compression"), "")
-	compression := _t1207
-	_t1208 := p._extract_value_boolean(dictGetValue(config, "syntax_header_row"), true)
-	syntax_header_row := _t1208
-	_t1209 := p._extract_value_string(dictGetValue(config, "syntax_missing_string"), "")
-	syntax_missing_string := _t1209
-	_t1210 := p._extract_value_string(dictGetValue(config, "syntax_delim"), ",")
-	syntax_delim := _t1210
-	_t1211 := p._extract_value_string(dictGetValue(config, "syntax_quotechar"), "\"")
-	syntax_quotechar := _t1211
-	_t1212 := p._extract_value_string(dictGetValue(config, "syntax_escapechar"), "\\")
-	syntax_escapechar := _t1212
-	_t1213 := &pb.ExportCSVConfig{Path: path, DataColumns: columns, PartitionSize: ptrInt64(partition_size), Compression: ptrString(compression), SyntaxHeaderRow: ptrBool(syntax_header_row), SyntaxMissingString: ptrString(syntax_missing_string), SyntaxDelim: ptrString(syntax_delim), SyntaxQuotechar: ptrString(syntax_quotechar), SyntaxEscapechar: ptrString(syntax_escapechar)}
-	return _t1213
+	_t1199 := p._extract_value_int64(dictGetValue(config, "partition_size"), 0)
+	partition_size := _t1199
+	_t1200 := p._extract_value_string(dictGetValue(config, "compression"), "")
+	compression := _t1200
+	_t1201 := p._extract_value_boolean(dictGetValue(config, "syntax_header_row"), true)
+	syntax_header_row := _t1201
+	_t1202 := p._extract_value_string(dictGetValue(config, "syntax_missing_string"), "")
+	syntax_missing_string := _t1202
+	_t1203 := p._extract_value_string(dictGetValue(config, "syntax_delim"), ",")
+	syntax_delim := _t1203
+	_t1204 := p._extract_value_string(dictGetValue(config, "syntax_quotechar"), "\"")
+	syntax_quotechar := _t1204
+	_t1205 := p._extract_value_string(dictGetValue(config, "syntax_escapechar"), "\\")
+	syntax_escapechar := _t1205
+	_t1206 := &pb.ExportCSVConfig{Path: path, DataColumns: columns, PartitionSize: ptrInt64(partition_size), Compression: ptrString(compression), SyntaxHeaderRow: ptrBool(syntax_header_row), SyntaxMissingString: ptrString(syntax_missing_string), SyntaxDelim: ptrString(syntax_delim), SyntaxQuotechar: ptrString(syntax_quotechar), SyntaxEscapechar: ptrString(syntax_escapechar)}
+	return _t1206
 }
 
 // --- Parse functions ---
@@ -831,10 +874,10 @@ func (p *Parser) parse_config_dict() [][]interface{} {
 
 func (p *Parser) parse_config_key_value() []interface{} {
 	p.consumeLiteral(":")
-	symbol11 := p.consumeTerminal("SYMBOL")
+	symbol11 := p.consumeTerminal("SYMBOL").Value.(string)
 	_t367 := p.parse_value()
 	value12 := _t367
-	return []interface{}{{symbol11, value12}}
+	return []interface{}{symbol11, value12}
 }
 
 func (p *Parser) parse_value() *pb.Value {
@@ -929,42 +972,42 @@ func (p *Parser) parse_value() *pb.Value {
 		} else {
 			var _t386 *pb.Value
 			if prediction13 == 7 {
-				decimal21 := p.consumeTerminal("DECIMAL")
+				decimal21 := p.consumeTerminal("DECIMAL").Value.(*pb.DecimalValue)
 				_t387 := &pb.Value{}
 				_t387.Value = &pb.Value_DecimalValue{DecimalValue: decimal21}
 				_t386 = _t387
 			} else {
 				var _t388 *pb.Value
 				if prediction13 == 6 {
-					int12820 := p.consumeTerminal("INT128")
+					int12820 := p.consumeTerminal("INT128").Value.(*pb.Int128Value)
 					_t389 := &pb.Value{}
 					_t389.Value = &pb.Value_Int128Value{Int128Value: int12820}
 					_t388 = _t389
 				} else {
 					var _t390 *pb.Value
 					if prediction13 == 5 {
-						uint12819 := p.consumeTerminal("UINT128")
+						uint12819 := p.consumeTerminal("UINT128").Value.(*pb.UInt128Value)
 						_t391 := &pb.Value{}
 						_t391.Value = &pb.Value_Uint128Value{Uint128Value: uint12819}
 						_t390 = _t391
 					} else {
 						var _t392 *pb.Value
 						if prediction13 == 4 {
-							float18 := p.consumeTerminal("FLOAT")
+							float18 := p.consumeTerminal("FLOAT").Value.(float64)
 							_t393 := &pb.Value{}
 							_t393.Value = &pb.Value_FloatValue{FloatValue: float18}
 							_t392 = _t393
 						} else {
 							var _t394 *pb.Value
 							if prediction13 == 3 {
-								int17 := p.consumeTerminal("INT")
+								int17 := p.consumeTerminal("INT").Value.(int64)
 								_t395 := &pb.Value{}
 								_t395.Value = &pb.Value_IntValue{IntValue: int17}
 								_t394 = _t395
 							} else {
 								var _t396 *pb.Value
 								if prediction13 == 2 {
-									string16 := p.consumeTerminal("STRING")
+									string16 := p.consumeTerminal("STRING").Value.(string)
 									_t397 := &pb.Value{}
 									_t397.Value = &pb.Value_StringValue{StringValue: string16}
 									_t396 = _t397
@@ -1011,9 +1054,9 @@ func (p *Parser) parse_value() *pb.Value {
 func (p *Parser) parse_date() *pb.DateValue {
 	p.consumeLiteral("(")
 	p.consumeLiteral("date")
-	int23 := p.consumeTerminal("INT")
-	int_324 := p.consumeTerminal("INT")
-	int_425 := p.consumeTerminal("INT")
+	int23 := p.consumeTerminal("INT").Value.(int64)
+	int_324 := p.consumeTerminal("INT").Value.(int64)
+	int_425 := p.consumeTerminal("INT").Value.(int64)
 	p.consumeLiteral(")")
 	_t404 := &pb.DateValue{Year: int32(int23), Month: int32(int_324), Day: int32(int_425)}
 	return _t404
@@ -1022,17 +1065,17 @@ func (p *Parser) parse_date() *pb.DateValue {
 func (p *Parser) parse_datetime() *pb.DateTimeValue {
 	p.consumeLiteral("(")
 	p.consumeLiteral("datetime")
-	int26 := p.consumeTerminal("INT")
-	int_327 := p.consumeTerminal("INT")
-	int_428 := p.consumeTerminal("INT")
-	int_529 := p.consumeTerminal("INT")
-	int_630 := p.consumeTerminal("INT")
-	int_731 := p.consumeTerminal("INT")
-	var _t405 interface{}
+	int26 := p.consumeTerminal("INT").Value.(int64)
+	int_327 := p.consumeTerminal("INT").Value.(int64)
+	int_428 := p.consumeTerminal("INT").Value.(int64)
+	int_529 := p.consumeTerminal("INT").Value.(int64)
+	int_630 := p.consumeTerminal("INT").Value.(int64)
+	int_731 := p.consumeTerminal("INT").Value.(int64)
+	var _t405 Option[int64]
 	if p.matchLookaheadTerminal("INT", 0) {
-		_t405 = p.consumeTerminal("INT")
+		_t405 = Some(p.consumeTerminal("INT").Value.(int64))
 	} else {
-		_t405 = nil
+		_t405 = Option[int64]{}
 	}
 	int_832 := _t405
 	p.consumeLiteral(")")
@@ -1090,7 +1133,7 @@ func (p *Parser) parse_sync() *pb.Sync {
 
 func (p *Parser) parse_fragment_id() *pb.FragmentId {
 	p.consumeLiteral(":")
-	symbol38 := p.consumeTerminal("SYMBOL")
+	symbol38 := p.consumeTerminal("SYMBOL").Value.(string)
 	return &pb.FragmentId{Id: []byte(symbol38)}
 }
 
@@ -1347,7 +1390,7 @@ func (p *Parser) parse_relation_id() *pb.RelationId {
 		_t465 = 0
 	} else {
 		var _t466 int64
-		if p.matchLookaheadTerminal("INT", 0) {
+		if p.matchLookaheadTerminal("UINT128", 0) {
 			_t466 = 1
 		} else {
 			_t466 = -1
@@ -1357,13 +1400,13 @@ func (p *Parser) parse_relation_id() *pb.RelationId {
 	prediction64 := _t465
 	var _t467 *pb.RelationId
 	if prediction64 == 1 {
-		int66 := p.consumeTerminal("INT")
-		_t467 = &pb.RelationId{IdLow: uint64(int66 & 0xFFFFFFFFFFFFFFFF), IdHigh: uint64((int66 >> 64) & 0xFFFFFFFFFFFFFFFF)}
+		uint12866 := p.consumeTerminal("UINT128").Value.(*pb.UInt128Value)
+		_t467 = &pb.RelationId{IdLow: uint12866.Low, IdHigh: uint12866.High}
 	} else {
 		var _t468 *pb.RelationId
 		if prediction64 == 0 {
 			p.consumeLiteral(":")
-			symbol65 := p.consumeTerminal("SYMBOL")
+			symbol65 := p.consumeTerminal("SYMBOL").Value.(string)
 			_t468 = p.relationIdFromString(symbol65)
 		} else {
 			panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in relation_id", p.lookahead(0).Type, p.lookahead(0).Value)})
@@ -1380,7 +1423,7 @@ func (p *Parser) parse_abstraction() *pb.Abstraction {
 	_t470 := p.parse_formula()
 	formula68 := _t470
 	p.consumeLiteral(")")
-	_t471 := &pb.Abstraction{Vars: listConcat(bindings67[0], bindings67[1]), Value: formula68}
+	_t471 := &pb.Abstraction{Vars: listConcat(bindings67[0].([]*pb.Binding), bindings67[1].([]*pb.Binding)), Value: formula68}
 	return _t471
 }
 
@@ -1404,11 +1447,11 @@ func (p *Parser) parse_bindings() []interface{} {
 	}
 	value_bindings73 := _t474
 	p.consumeLiteral("]")
-	return []interface{}{{bindings72, value_bindings73.UnwrapOr(nil)}}
+	return []interface{}{bindings72, value_bindings73.UnwrapOr(nil)}
 }
 
 func (p *Parser) parse_binding() *pb.Binding {
-	symbol74 := p.consumeTerminal("SYMBOL")
+	symbol74 := p.consumeTerminal("SYMBOL").Value.(string)
 	p.consumeLiteral("::")
 	_t476 := p.parse_type()
 	type75 := _t476
@@ -1655,8 +1698,8 @@ func (p *Parser) parse_missing_type() *pb.MissingType {
 func (p *Parser) parse_decimal_type() *pb.DecimalType {
 	p.consumeLiteral("(")
 	p.consumeLiteral("DECIMAL")
-	int88 := p.consumeTerminal("INT")
-	int_389 := p.consumeTerminal("INT")
+	int88 := p.consumeTerminal("INT").Value.(int64)
+	int_389 := p.consumeTerminal("INT").Value.(int64)
 	p.consumeLiteral(")")
 	_t532 := &pb.DecimalType{Precision: int32(int88), Scale: int32(int_389)}
 	return _t532
@@ -1979,7 +2022,7 @@ func (p *Parser) parse_exists() *pb.Exists {
 	_t600 := p.parse_formula()
 	formula109 := _t600
 	p.consumeLiteral(")")
-	_t601 := &pb.Abstraction{Vars: listConcat(bindings108[0], bindings108[1]), Value: formula109}
+	_t601 := &pb.Abstraction{Vars: listConcat(bindings108[0].([]*pb.Binding), bindings108[1].([]*pb.Binding)), Value: formula109}
 	_t602 := &pb.Exists{Body: _t601}
 	return _t602
 }
@@ -2226,7 +2269,7 @@ func (p *Parser) parse_term() *pb.Term {
 }
 
 func (p *Parser) parse_var() *pb.Var {
-	symbol120 := p.consumeTerminal("SYMBOL")
+	symbol120 := p.consumeTerminal("SYMBOL").Value.(string)
 	_t645 := &pb.Var{Name: symbol120}
 	return _t645
 }
@@ -2297,7 +2340,7 @@ func (p *Parser) parse_ffi() *pb.FFI {
 
 func (p *Parser) parse_name() string {
 	p.consumeLiteral(":")
-	symbol134 := p.consumeTerminal("SYMBOL")
+	symbol134 := p.consumeTerminal("SYMBOL").Value.(string)
 	return symbol134
 }
 
@@ -3469,7 +3512,7 @@ func (p *Parser) parse_algorithm() *pb.Algorithm {
 	if p.matchLookaheadLiteral(":", 0) {
 		_t881 = true
 	} else {
-		_t881 = p.matchLookaheadTerminal("INT", 0)
+		_t881 = p.matchLookaheadTerminal("UINT128", 0)
 	}
 	cond207 := _t881
 	for cond207 {
@@ -3480,7 +3523,7 @@ func (p *Parser) parse_algorithm() *pb.Algorithm {
 		if p.matchLookaheadLiteral(":", 0) {
 			_t883 = true
 		} else {
-			_t883 = p.matchLookaheadTerminal("INT", 0)
+			_t883 = p.matchLookaheadTerminal("UINT128", 0)
 		}
 		cond207 = _t883
 	}
@@ -3731,7 +3774,7 @@ func (p *Parser) parse_upsert() *pb.Upsert {
 	}
 	attrs235 := _t935
 	p.consumeLiteral(")")
-	_t937 := &pb.Upsert{Name: relation_id233, Body: abstraction_with_arity234[0], Attrs: attrs235.UnwrapOr(nil), ValueArity: abstraction_with_arity234[1]}
+	_t937 := &pb.Upsert{Name: relation_id233, Body: abstraction_with_arity234[0].(*pb.Abstraction), Attrs: attrs235.UnwrapOr(nil), ValueArity: abstraction_with_arity234[1].(int64)}
 	return _t937
 }
 
@@ -3742,8 +3785,8 @@ func (p *Parser) parse_abstraction_with_arity() []interface{} {
 	_t939 := p.parse_formula()
 	formula237 := _t939
 	p.consumeLiteral(")")
-	_t940 := &pb.Abstraction{Vars: listConcat(bindings236[0], bindings236[1]), Value: formula237}
-	return []interface{}{{_t940, len(bindings236[1])}}
+	_t940 := &pb.Abstraction{Vars: listConcat(bindings236[0].([]*pb.Binding), bindings236[1].([]*pb.Binding)), Value: formula237}
+	return []interface{}{_t940, int64(len(bindings236[1].([]*pb.Binding)))}
 }
 
 func (p *Parser) parse_break() *pb.Break {
@@ -3784,7 +3827,7 @@ func (p *Parser) parse_monoid_def() *pb.MonoidDef {
 	}
 	attrs244 := _t951
 	p.consumeLiteral(")")
-	_t953 := &pb.MonoidDef{Monoid: monoid241, Name: relation_id242, Body: abstraction_with_arity243[0], Attrs: attrs244.UnwrapOr(nil), ValueArity: abstraction_with_arity243[1]}
+	_t953 := &pb.MonoidDef{Monoid: monoid241, Name: relation_id242, Body: abstraction_with_arity243[0].(*pb.Abstraction), Attrs: attrs244.UnwrapOr(nil), ValueArity: abstraction_with_arity243[1].(int64)}
 	return _t953
 }
 
@@ -3919,7 +3962,7 @@ func (p *Parser) parse_monus_def() *pb.MonusDef {
 	}
 	attrs256 := _t982
 	p.consumeLiteral(")")
-	_t984 := &pb.MonusDef{Monoid: monoid253, Name: relation_id254, Body: abstraction_with_arity255[0], Attrs: attrs256.UnwrapOr(nil), ValueArity: abstraction_with_arity255[1]}
+	_t984 := &pb.MonusDef{Monoid: monoid253, Name: relation_id254, Body: abstraction_with_arity255[0].(*pb.Abstraction), Attrs: attrs256.UnwrapOr(nil), ValueArity: abstraction_with_arity255[1].(int64)}
 	return _t984
 }
 
@@ -4051,7 +4094,7 @@ func (p *Parser) parse_rel_edb_path() []string {
 	xs276 := []string{}
 	cond277 := p.matchLookaheadTerminal("STRING", 0)
 	for cond277 {
-		item278 := p.consumeTerminal("STRING")
+		item278 := p.consumeTerminal("STRING").Value.(string)
 		xs276 = listConcat(xs276, []string{item278})
 		cond277 = p.matchLookaheadTerminal("STRING", 0)
 	}
@@ -4545,7 +4588,7 @@ func (p *Parser) parse_csv_locator_paths() []string {
 	xs303 := []string{}
 	cond304 := p.matchLookaheadTerminal("STRING", 0)
 	for cond304 {
-		item305 := p.consumeTerminal("STRING")
+		item305 := p.consumeTerminal("STRING").Value.(string)
 		xs303 = listConcat(xs303, []string{item305})
 		cond304 = p.matchLookaheadTerminal("STRING", 0)
 	}
@@ -4557,7 +4600,7 @@ func (p *Parser) parse_csv_locator_paths() []string {
 func (p *Parser) parse_csv_locator_inline_data() string {
 	p.consumeLiteral("(")
 	p.consumeLiteral("inline_data")
-	string307 := p.consumeTerminal("STRING")
+	string307 := p.consumeTerminal("STRING").Value.(string)
 	p.consumeLiteral(")")
 	return string307
 }
@@ -4591,7 +4634,7 @@ func (p *Parser) parse_csv_columns() []*pb.CSVColumn {
 func (p *Parser) parse_csv_column() *pb.CSVColumn {
 	p.consumeLiteral("(")
 	p.consumeLiteral("column")
-	string313 := p.consumeTerminal("STRING")
+	string313 := p.consumeTerminal("STRING").Value.(string)
 	_t1096 := p.parse_relation_id()
 	relation_id314 := _t1096
 	p.consumeLiteral("[")
@@ -4733,7 +4776,7 @@ func (p *Parser) parse_csv_column() *pb.CSVColumn {
 func (p *Parser) parse_csv_asof() string {
 	p.consumeLiteral("(")
 	p.consumeLiteral("asof")
-	string319 := p.consumeTerminal("STRING")
+	string319 := p.consumeTerminal("STRING").Value.(string)
 	p.consumeLiteral(")")
 	return string319
 }
@@ -4756,7 +4799,7 @@ func (p *Parser) parse_context() *pb.Context {
 	if p.matchLookaheadLiteral(":", 0) {
 		_t1121 = true
 	} else {
-		_t1121 = p.matchLookaheadTerminal("INT", 0)
+		_t1121 = p.matchLookaheadTerminal("UINT128", 0)
 	}
 	cond322 := _t1121
 	for cond322 {
@@ -4767,7 +4810,7 @@ func (p *Parser) parse_context() *pb.Context {
 		if p.matchLookaheadLiteral(":", 0) {
 			_t1123 = true
 		} else {
-			_t1123 = p.matchLookaheadTerminal("INT", 0)
+			_t1123 = p.matchLookaheadTerminal("UINT128", 0)
 		}
 		cond322 = _t1123
 	}
@@ -4982,7 +5025,7 @@ func (p *Parser) parse_export_csv_config() *pb.ExportCSVConfig {
 func (p *Parser) parse_export_csv_path() string {
 	p.consumeLiteral("(")
 	p.consumeLiteral("path")
-	string346 := p.consumeTerminal("STRING")
+	string346 := p.consumeTerminal("STRING").Value.(string)
 	p.consumeLiteral(")")
 	return string346
 }
@@ -5006,7 +5049,7 @@ func (p *Parser) parse_export_csv_columns() []*pb.ExportCSVColumn {
 func (p *Parser) parse_export_csv_column() *pb.ExportCSVColumn {
 	p.consumeLiteral("(")
 	p.consumeLiteral("column")
-	string351 := p.consumeTerminal("STRING")
+	string351 := p.consumeTerminal("STRING").Value.(string)
 	_t1171 := p.parse_relation_id()
 	relation_id352 := _t1171
 	p.consumeLiteral(")")

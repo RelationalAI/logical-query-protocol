@@ -140,8 +140,8 @@ GO_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "string_in_list": BuiltinTemplate("stringInList({0}, {1})"),
     "string_concat": BuiltinTemplate("({0} + {1})"),
     "encode_string": BuiltinTemplate("[]byte({0})"),
-    "tuple": BuiltinTemplate("[]interface{}{{{args}}}"),
-    "length": BuiltinTemplate("len({0})"),
+    "tuple": BuiltinTemplate("[]interface{}{{args}}"),
+    "length": BuiltinTemplate("int64(len({0}))"),
     # unwrap_option_or is handled specially in codegen_go.py due to Go's lack of ternary
     "unwrap_option_or": BuiltinTemplate("{0}"),  # Placeholder - overridden in codegen
     "int64_to_int32": BuiltinTemplate("int32({0})"),
@@ -153,8 +153,9 @@ GO_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "fragment_id_from_string": BuiltinTemplate("&pb.FragmentId{{Id: []byte({0})}}"),
     "relation_id_from_string": BuiltinTemplate("p.relationIdFromString({0})"),
     "relation_id_from_int": BuiltinTemplate(
-        "&pb.RelationId{{IdLow: uint64({0} & 0xFFFFFFFFFFFFFFFF), IdHigh: uint64(({0} >> 64) & 0xFFFFFFFFFFFFFFFF)}}"
+        "&pb.RelationId{{IdLow: uint64({0}) & 0xFFFFFFFFFFFFFFFF, IdHigh: uint64({0}) >> 64 & 0xFFFFFFFFFFFFFFFF}}"
     ),
+    "relation_id_from_uint128": BuiltinTemplate("&pb.RelationId{{IdLow: {0}.Low, IdHigh: {0}.High}}"),
     "match_lookahead_terminal": BuiltinTemplate("p.matchLookaheadTerminal({0}, {1})"),
     "match_lookahead_literal": BuiltinTemplate("p.matchLookaheadLiteral({0}, {1})"),
     "consume_literal": BuiltinTemplate("nil", ["p.consumeLiteral({0})"]),

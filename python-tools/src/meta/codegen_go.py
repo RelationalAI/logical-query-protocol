@@ -155,6 +155,32 @@ class GoCodeGenerator(CodeGenerator):
 
         self.register_builtin("unwrap_option_or", unwrap_option_or_generator)
 
+        # 'consume_terminal' builtin - returns typed value from Token
+        # Map terminal names to Go types for type assertion
+        terminal_type_map = {
+            "INT": "int64",
+            "FLOAT": "float64",
+            "STRING": "string",
+            "SYMBOL": "string",
+            "DECIMAL": "*pb.DecimalValue",
+            "INT128": "*pb.Int128Value",
+            "UINT128": "*pb.UInt128Value",
+        }
+
+        def consume_terminal_generator(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
+            if len(args) != 1:
+                return BuiltinResult("p.consumeTerminal()", [])
+            terminal_arg = args[0]
+            # Extract terminal name from quoted string (e.g., '"INT"' -> 'INT')
+            terminal_name = terminal_arg.strip('"')
+            go_type = terminal_type_map.get(terminal_name)
+            if go_type:
+                return BuiltinResult(f"p.consumeTerminal({terminal_arg}).Value.({go_type})", [])
+            # Fallback for unknown terminals
+            return BuiltinResult(f"p.consumeTerminal({terminal_arg}).Value", [])
+
+        self.register_builtin("consume_terminal", consume_terminal_generator)
+
     def escape_keyword(self, name: str) -> str:
         return f"{name}_"
 
@@ -298,8 +324,16 @@ class GoCodeGenerator(CodeGenerator):
         return "}"
 
     def _generate_get_element(self, expr: GetElement, lines: List[str], indent: str) -> str:
-        """Go uses 0-based indexing."""
+        """Go uses 0-based indexing with type assertion for tuple elements."""
         tuple_code = self.generate_lines(expr.tuple_expr, lines, indent)
+        # Add type assertion since tuple elements are interface{}
+        try:
+            elem_type = expr.target_type()
+            if elem_type is not None:
+                go_type = self.gen_type(elem_type)
+                return f"{tuple_code}[{expr.index}].({go_type})"
+        except (NotImplementedError, ValueError):
+            pass
         return f"{tuple_code}[{expr.index}]"
 
     def generate_lines(self, expr: TargetExpr, lines: List[str], indent: str = "") -> Optional[str]:
@@ -345,6 +379,14 @@ class GoCodeGenerator(CodeGenerator):
             if expr_type is not None:
                 go_type = self.gen_type(expr_type)
                 is_option_type = isinstance(expr_type, OptionType)
+                # If the type is Option[Never] or Option[None], it means both branches
+                # return None - don't treat as Option, just use nil
+                if is_option_type:
+                    from .target import BaseType
+                    inner = expr_type.element_type
+                    if isinstance(inner, BaseType) and inner.name in ('Never', 'None', 'Void'):
+                        is_option_type = False
+                        go_type = None
         except (NotImplementedError, ValueError):
             # Fall back to interface{} if type determination fails
             pass
@@ -362,9 +404,21 @@ class GoCodeGenerator(CodeGenerator):
                 try:
                     branch_type = non_nil_branch.target_type()
                     if branch_type is not None:
-                        inner_go_type = self.gen_type(branch_type)
-                        go_type = f"Option[{inner_go_type}]"
-                        is_option_type = True
+                        # Skip Option detection if branch type is already Option[Never/None/Void]
+                        if isinstance(branch_type, OptionType):
+                            from .target import BaseType
+                            inner = branch_type.element_type
+                            if isinstance(inner, BaseType) and inner.name in ('Never', 'None', 'Void'):
+                                # Both branches effectively return None - don't create Option
+                                pass
+                            else:
+                                # Branch returns a real Option type - use it directly
+                                go_type = self.gen_type(branch_type)
+                                is_option_type = True
+                        else:
+                            inner_go_type = self.gen_type(branch_type)
+                            go_type = f"Option[{inner_go_type}]"
+                            is_option_type = True
                 except (NotImplementedError, ValueError):
                     pass
 
@@ -390,6 +444,21 @@ class GoCodeGenerator(CodeGenerator):
                 lines.extend(else_lines)
                 lines.append(f"{indent}{self.gen_if_end()}")
                 return self.gen_none()
+
+        # Optimization: if both branches return nil and no Option type needed,
+        # generate if-else for side effects only without temp variable.
+        if not is_option_type and go_type is None:
+            then_lines: List[str] = []
+            else_lines: List[str] = []
+            then_code = self.generate_lines(expr.then_branch, then_lines, indent + self.indent_str)
+            else_code = self.generate_lines(expr.else_branch, else_lines, indent + self.indent_str)
+            if then_code == "nil" and else_code == "nil":
+                lines.append(f"{indent}{self.gen_if_start(cond_code)}")
+                lines.extend(then_lines)
+                lines.append(f"{indent}{self.gen_else()}")
+                lines.extend(else_lines)
+                lines.append(f"{indent}{self.gen_if_end()}")
+                return "nil"
 
         tmp = gensym()
 
@@ -449,13 +518,15 @@ class GoCodeGenerator(CodeGenerator):
 
         # Separate regular fields from oneof fields
         regular_assignments = []
-        # Group oneof fields by their parent oneof name: {oneof_name: [(field_name, field_value, wrapper_code)]}
+        # Group oneof fields by their parent oneof name: {oneof_name: [(field_name, option_var, wrapper_code)]}
+        # option_var is the original Option variable name for checking .Valid
         oneof_groups: Dict[str, List[Tuple[str, str, str]]] = {}
 
         from .target import Var, OptionType
 
-        def unwrap_if_option(field_expr, field_value: str) -> str:
-            """Unwrap Option type values for struct field assignment."""
+        def unwrap_if_option(field_expr, field_value: str) -> Tuple[str, str]:
+            """Unwrap Option type values for struct field assignment.
+            Returns (option_var, unwrapped_value) where option_var is for .Valid check."""
             if isinstance(field_expr, Var) and field_expr.type is not None:
                 if isinstance(field_expr.type, OptionType):
                     inner_type = self.gen_type(field_expr.type.element_type)
@@ -463,8 +534,8 @@ class GoCodeGenerator(CodeGenerator):
                         zero = "nil"
                     else:
                         zero = self._go_zero_values.get(inner_type, "nil")
-                    return f"{field_value}.UnwrapOr({zero})"
-            return field_value
+                    return (field_value, f"{field_value}.UnwrapOr({zero})")
+            return (field_value, field_value)
 
         for field_name, field_expr in expr.fields:
             # Check if this field is a Call(OneOf, [value])
@@ -475,16 +546,16 @@ class GoCodeGenerator(CodeGenerator):
                 field_value = self.generate_lines(oneof_arg, lines, indent)
                 assert field_value is not None
                 # Unwrap if the argument is an Option type
-                field_value = unwrap_if_option(oneof_arg, field_value)
+                option_var, unwrapped = unwrap_if_option(oneof_arg, field_value)
 
                 pascal_field = to_pascal_case(oneof_field_name)
-                wrapper = f"&pb.{expr.name}_{pascal_field}{{{pascal_field}: {field_value}}}"
+                wrapper = f"&pb.{expr.name}_{pascal_field}{{{pascal_field}: {unwrapped}}}"
 
                 # field_name here is the oneof parent name
                 oneof_name = field_name
                 if oneof_name not in oneof_groups:
                     oneof_groups[oneof_name] = []
-                oneof_groups[oneof_name].append((oneof_field_name, field_value, wrapper))
+                oneof_groups[oneof_name].append((oneof_field_name, option_var, wrapper))
             else:
                 # Check if this field is a OneOf variant using proto schema info
                 oneof_info = self._oneof_field_to_parent.get((expr.module, expr.name, field_name))
@@ -494,14 +565,14 @@ class GoCodeGenerator(CodeGenerator):
                     field_value = self.generate_lines(field_expr, lines, indent)
                     assert field_value is not None
                     # Unwrap if the value is an Option type
-                    field_value = unwrap_if_option(field_expr, field_value)
+                    option_var, unwrapped = unwrap_if_option(field_expr, field_value)
 
                     pascal_field = to_pascal_case(field_name)
-                    wrapper = f"&pb.{expr.name}_{pascal_field}{{{pascal_field}: {field_value}}}"
+                    wrapper = f"&pb.{expr.name}_{pascal_field}{{{pascal_field}: {unwrapped}}}"
 
                     if oneof_name not in oneof_groups:
                         oneof_groups[oneof_name] = []
-                    oneof_groups[oneof_name].append((field_name, field_value, wrapper))
+                    oneof_groups[oneof_name].append((field_name, option_var, wrapper))
                 else:
                     # Regular field
                     field_value = self.generate_lines(field_expr, lines, indent)
@@ -528,21 +599,25 @@ class GoCodeGenerator(CodeGenerator):
         lines.append(f"{indent}{self.gen_assignment(tmp, f'&pb.{expr.name}{{{fields_code}}}', is_declaration=True)}")
 
         # Generate conditional assignments for oneof fields
-        # For each oneof group, assign the first (and usually only) variant
-        # Note: We don't generate nil checks because Go non-nullable types (bool, int, etc.)
-        # can't be compared to nil. The grammar structure should ensure only one variant is set.
+        # For each oneof group, check which variant is present and assign it
         for oneof_name, variants in oneof_groups.items():
             pascal_oneof = to_pascal_case(oneof_name)
             if len(variants) == 1:
                 # Single variant - assign directly
-                field_name, field_value, wrapper = variants[0]
+                field_name, option_var, wrapper = variants[0]
                 lines.append(f"{indent}{tmp}.{pascal_oneof} = {wrapper}")
             else:
-                # Multiple variants - need conditional, but we can only check nullable types
-                # For now, just assign the first variant
-                # TODO: improve this to handle nullable vs non-nullable types
-                field_name, field_value, wrapper = variants[0]
-                lines.append(f"{indent}{tmp}.{pascal_oneof} = {wrapper}")
+                # Multiple variants - generate if-else chain checking which one is valid
+                # Use .Valid on the original Option variable
+                for i, (field_name, option_var, wrapper) in enumerate(variants):
+                    if i == 0:
+                        lines.append(f"{indent}if {option_var}.Valid {{")
+                    elif i == len(variants) - 1:
+                        lines.append(f"{indent}}} else {{")
+                    else:
+                        lines.append(f"{indent}}} else if {option_var}.Valid {{")
+                    lines.append(f"{indent}\t{tmp}.{pascal_oneof} = {wrapper}")
+                lines.append(f"{indent}}}")
 
         return tmp
 
