@@ -6,11 +6,11 @@
     (writes
       (define
         (fragment :f1
-          (algorithm 12074491928194973989 15443881159395485941 151923326135382205 17041058638615872964
+          (algorithm 0xa791366f6f620125 0xd653b016db1da8f5 0x21bbd75cf6530bd 0xec7e008b5f4d05c4
             (script
               (loop
                 (init
-                  (assign 12074491928194973989
+                  (assign 0xa791366f6f620125
                     ([x::INT y::INT]
                       (or
                         (and
@@ -19,7 +19,7 @@
                         (and
                           (primitive :rel_primitive_eq x 2)
                           (primitive :rel_primitive_eq y 3)))))
-                  (assign 15443881159395485941
+                  (assign 0xd653b016db1da8f5
                     ([x::INT y::INT]
                       (or
                         (and
@@ -28,7 +28,7 @@
                         (and
                           (primitive :rel_primitive_eq x 2)
                           (primitive :rel_primitive_eq y 3)))))
-                  (assign 151923326135382205
+                  (assign 0x21bbd75cf6530bd
                     ([x::INT y::INT]
                       (or
                         (and
@@ -37,7 +37,7 @@
                         (and
                           (primitive :rel_primitive_eq x 2)
                           (primitive :rel_primitive_eq y 20)))))
-                  (assign 17041058638615872964
+                  (assign 0xec7e008b5f4d05c4
                     ([x::INT y::INT]
                       (or
                         (and
@@ -46,7 +46,7 @@
                         (and
                           (primitive :rel_primitive_eq x 2)
                           (primitive :rel_primitive_eq y 25)))))
-                  (assign 11697277356358429352
+                  (assign 0xa25513c7e0f6eaa8
                     ([x::INT y::INT]
                       (or
                         (and
@@ -57,36 +57,36 @@
                           (primitive :rel_primitive_eq y 20))))
                     (attrs
                       (attribute :function)))
-                  (assign 11303028219845360359
+                  (assign 0x9cdc6c47aa193ae7
                     ([]
                       (or))))
                 (script
-                  (monoid (min INT) 12074491928194973989
+                  (monoid (min INT) 0xa791366f6f620125
                     ([x::INT | y::INT]
-                      (atom 11697277356358429352 x y))
+                      (atom 0xa25513c7e0f6eaa8 x y))
                     (attrs
                       (attribute :function)))
-                  (monoid (or) 15443881159395485941
+                  (monoid (or) 0xd653b016db1da8f5
                     ([x::INT y::INT]
-                      (atom 11697277356358429352 x y)))
-                  (monus (or) 151923326135382205
+                      (atom 0xa25513c7e0f6eaa8 x y)))
+                  (monus (or) 0x21bbd75cf6530bd
                     ([x::INT | y::INT]
-                      (atom 11697277356358429352 x y))
+                      (atom 0xa25513c7e0f6eaa8 x y))
                     (attrs
                       (attribute :function)))
-                  (monus (sum INT) 17041058638615872964
+                  (monus (sum INT) 0xec7e008b5f4d05c4
                     ([x::INT | y::INT]
-                      (atom 11697277356358429352 x y))
+                      (atom 0xa25513c7e0f6eaa8 x y))
                     (attrs
                       (attribute :function)))
-                  (break 11303028219845360359
+                  (break 0x9cdc6c47aa193ae7
                     ([]
                       (and))))))))))
     (reads
-      (output :R1 12074491928194973989)
-      (output :R2 15443881159395485941)
-      (output :R3 151923326135382205)
-      (output :R4 17041058638615872964))))
+      (output :R1 0xa791366f6f620125)
+      (output :R2 0xd653b016db1da8f5)
+      (output :R3 0x21bbd75cf6530bd)
+      (output :R4 0xec7e008b5f4d05c4))))
 
 ;; Debug information
 ;; -----------------------

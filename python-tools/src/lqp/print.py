@@ -738,13 +738,13 @@ def to_string(node: ir.LqpNode, options: Dict = {}) -> str:
 
 def id_to_name(options: Dict, debug_info: Dict, rid: ir.RelationId) -> str:
     if not has_option(options, PrettyOptions.PRINT_NAMES):
-        return f"{rid.id}"
+        return f"0x{rid.id:x}"
     if len(debug_info) == 0:
-        return f"{rid.id}"
+        return f"0x{rid.id:x}"
     if rid not in debug_info:
         # The relation ID may be missing from the debug info if it was never defined. But it
         # is still valid and should be treated as empty.
-        return f"{rid.id}"
+        return f"0x{rid.id:x}"
     return ":"+debug_info.get(rid, "")
 
 def has_option(options: Dict, opt: PrettyOptions) -> bool:

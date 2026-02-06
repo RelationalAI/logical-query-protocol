@@ -6,130 +6,130 @@
     (writes
       (define
         (fragment :f1
-          (def 7901719704309484609
+          (def 0x6da88c34ba124c41
             ([v::INT]
               (primitive :rel_primitive_eq v 21)))
-          (def 17772030560817531006
+          (def 0xf6a2efa282ea487e
             ([v::INT]
               (primitive :rel_primitive_eq v -21)))
-          (def 1294199513523589994
+          (def 0x11f5eb99c00e936a
             ([v::INT128]
               (primitive :rel_primitive_eq v 21i128)))
-          (def 11038540059019930827
+          (def 0x9930c5b2f0cd6ccb
             ([v::INT128]
               (primitive :rel_primitive_eq v 85968058283706962486085i128)))
-          (def 6927505969524641992
+          (def 0x602371f9ccea10c8
             ([v::INT128]
               (primitive :rel_primitive_eq v -5968058283706962486085i128)))
-          (def 15025643537523545230
+          (def 0xd085cf3027bc148e
             ([v::UINT128]
               (primitive :rel_primitive_eq v 0x123456789abcdef12345)))
-          (def 8550051134248905158
+          (def 0x76a7e234dc54e9c6
             ([v::FLOAT]
               (primitive :rel_primitive_eq v 1.23)))
-          (def 14902406422828125677
+          (def 0xcecffbaf6b2b8ded
             ([v::FLOAT]
               (primitive :rel_primitive_eq v inf)))
-          (def 14333135249376898472
+          (def 0xc6e98691b0bd6da8
             ([v::FLOAT]
               (primitive :rel_primitive_eq v nan)))
-          (def 1046914482580477072
+          (def 0xe87632cd46bd490
             ([v::DATE]
               (primitive :rel_primitive_eq v (date 2025 8 1))))
-          (def 2838342210467241124
+          (def 0x2763d133c5e59ca4
             ([v::DATETIME]
               (primitive :rel_primitive_eq v (datetime 2025 8 1 20 3 4 123000))))
-          (def 16667871121710741243
+          (def 0xe7502c799b8f76fb
             ([v::(DECIMAL 18 6)]
               (primitive :rel_primitive_eq v 123.456000d18)))
-          (def 10098701174489624218
+          (def 0x8c25cb3686462e9a
             ([v::STRING]
               (primitive :rel_primitive_eq v "hello")))
-          (def 13213829929622723620
+          (def 0xb760f44fa5965c24
             ([v::BOOLEAN]
               (primitive :rel_primitive_eq v true)))
-          (def 2965631662653371761
+          (def 0x29280a48db1af571
             ([v::INT]
               (and
                 (primitive :rel_primitive_eq v 21)
-                (atom 7901719704309484609 21))))
-          (def 7497735226843032597
+                (atom 0x6da88c34ba124c41 21))))
+          (def 0x680d4e76cfe96c15
             ([v::INT]
               (and
                 (primitive :rel_primitive_eq v -21)
-                (atom 17772030560817531006 -21))))
-          (def 12020515264615679488
+                (atom 0xf6a2efa282ea487e -21))))
+          (def 0xa6d172f21c940600
             ([v::INT128]
               (and
                 (primitive :rel_primitive_eq v 21i128)
-                (atom 1294199513523589994 21i128))))
-          (def 12372217943612403113
+                (atom 0x11f5eb99c00e936a 21i128))))
+          (def 0xabb2f2ab3cbb2da9
             ([v::INT128]
               (and
                 (primitive :rel_primitive_eq v 85968058283706962486085i128)
-                (atom 11038540059019930827 85968058283706962486085i128))))
-          (def 8684593875400706727
+                (atom 0x9930c5b2f0cd6ccb 85968058283706962486085i128))))
+          (def 0x7885e01de1cacaa7
             ([v::INT128]
               (and
                 (primitive :rel_primitive_eq v -5968058283706962486085i128)
-                (atom 6927505969524641992 -5968058283706962486085i128))))
-          (def 7505808394141676799
+                (atom 0x602371f9ccea10c8 -5968058283706962486085i128))))
+          (def 0x6829fcf78cf5b4ff
             ([v::UINT128]
               (and
                 (primitive :rel_primitive_eq v 0x123456789abcdef12345)
-                (atom 15025643537523545230 0x123456789abcdef12345))))
-          (def 11698363356127107011
+                (atom 0xd085cf3027bc148e 0x123456789abcdef12345))))
+          (def 0xa258ef7de76717c3
             ([v::FLOAT]
               (and
                 (primitive :rel_primitive_eq v 1.23)
-                (atom 8550051134248905158 1.23))))
-          (def 1235902338854889056
+                (atom 0x76a7e234dc54e9c6 1.23))))
+          (def 0x1126cea10c852660
             ([v::FLOAT]
               (and
                 (primitive :rel_primitive_eq v inf)
-                (atom 14902406422828125677 inf))))
-          (def 17813938199633672175
+                (atom 0xcecffbaf6b2b8ded inf))))
+          (def 0xf737d26907ed37ef
             ([v::FLOAT]
               (and
                 (primitive :rel_primitive_eq v nan)
-                (atom 14333135249376898472 nan))))
-          (def 2575957693654781653
+                (atom 0xc6e98691b0bd6da8 nan))))
+          (def 0x23bfa3dfd6ba4ed5
             ([v::(DECIMAL 18 6)]
               (and
                 (primitive :rel_primitive_eq v 123.456000d18)
-                (atom 16667871121710741243 123.456000d18))))
-          (def 5168972349743097577
+                (atom 0xe7502c799b8f76fb 123.456000d18))))
+          (def 0x47bbe0f73840e6e9
             ([v::DATE]
               (and
                 (primitive :rel_primitive_eq v (date 2025 8 1))
-                (atom 1046914482580477072 (date 2025 8 1)))))
-          (def 1476699919531177603
+                (atom 0xe87632cd46bd490 (date 2025 8 1)))))
+          (def 0x147e4ac0bf80f683
             ([v::DATETIME]
               (and
                 (primitive :rel_primitive_eq v (datetime 2025 8 1 20 3 4 123000))
-                (atom 2838342210467241124 (datetime 2025 8 1 20 3 4 123000)))))
-          (def 8321355183808865828
+                (atom 0x2763d133c5e59ca4 (datetime 2025 8 1 20 3 4 123000)))))
+          (def 0x737b647384c86624
             ([v::STRING]
               (and
                 (primitive :rel_primitive_eq v "hello")
-                (atom 10098701174489624218 "hello"))))
-          (def 4836534089126697449
+                (atom 0x8c25cb3686462e9a "hello"))))
+          (def 0x431ed2210676d9e9
             ([v::BOOLEAN]
               (and
                 (primitive :rel_primitive_eq v true)
-                (atom 13213829929622723620 true)))))))
+                (atom 0xb760f44fa5965c24 true)))))))
     (reads
-      (output :int 2965631662653371761)
-      (output :int_n 7497735226843032597)
-      (output :int128_s 12020515264615679488)
-      (output :int128_l 12372217943612403113)
-      (output :int128_n 8684593875400706727)
-      (output :uint128 7505808394141676799)
-      (output :float 11698363356127107011)
-      (output :float_inf 1235902338854889056)
-      (output :float_nan 17813938199633672175)
-      (output :dec 2575957693654781653)
-      (output :date 5168972349743097577)
-      (output :datetime 1476699919531177603)
-      (output :str 8321355183808865828)
-      (output :bool 4836534089126697449))))
+      (output :int 0x29280a48db1af571)
+      (output :int_n 0x680d4e76cfe96c15)
+      (output :int128_s 0xa6d172f21c940600)
+      (output :int128_l 0xabb2f2ab3cbb2da9)
+      (output :int128_n 0x7885e01de1cacaa7)
+      (output :uint128 0x6829fcf78cf5b4ff)
+      (output :float 0xa258ef7de76717c3)
+      (output :float_inf 0x1126cea10c852660)
+      (output :float_nan 0xf737d26907ed37ef)
+      (output :dec 0x23bfa3dfd6ba4ed5)
+      (output :date 0x47bbe0f73840e6e9)
+      (output :datetime 0x147e4ac0bf80f683)
+      (output :str 0x737b647384c86624)
+      (output :bool 0x431ed2210676d9e9))))

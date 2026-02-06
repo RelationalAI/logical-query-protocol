@@ -6,11 +6,11 @@
     (writes
       (define
         (fragment :f1
-          (algorithm 12074491928194973989 15443881159395485941
+          (algorithm 0xa791366f6f620125 0xd653b016db1da8f5
             (script
               (loop
                 (init
-                  (assign 12074491928194973989
+                  (assign 0xa791366f6f620125
                     ([a::INT b::INT]
                       (or
                         (and
@@ -19,7 +19,7 @@
                         (and
                           (primitive :rel_primitive_eq a 2)
                           (primitive :rel_primitive_eq b 3)))))
-                  (assign 15443881159395485941
+                  (assign 0xd653b016db1da8f5
                     ([a::INT b::INT]
                       (or
                         (and
@@ -28,24 +28,24 @@
                         (and
                           (primitive :rel_primitive_eq a 2)
                           (primitive :rel_primitive_eq b 3)))))
-                  (assign 11697277356358429352
+                  (assign 0xa25513c7e0f6eaa8
                     ([a::INT b::INT]
                       (and
                         (primitive :rel_primitive_eq a 1)
                         (primitive :rel_primitive_eq b 3))))
-                  (assign 11303028219845360359
+                  (assign 0x9cdc6c47aa193ae7
                     ([]
                       (or))))
                 (script
-                  (upsert 12074491928194973989
+                  (upsert 0xa791366f6f620125
                     ([a::INT b::INT]
-                      (atom 11697277356358429352 a b)))
-                  (upsert 15443881159395485941
+                      (atom 0xa25513c7e0f6eaa8 a b)))
+                  (upsert 0xd653b016db1da8f5
                     ([a::INT | b::INT]
-                      (atom 11697277356358429352 a b)))
-                  (break 11303028219845360359
+                      (atom 0xa25513c7e0f6eaa8 a b)))
+                  (break 0x9cdc6c47aa193ae7
                     ([]
                       (and))))))))))
     (reads
-      (output :R1 12074491928194973989)
-      (output :R2 15443881159395485941))))
+      (output :R1 0xa791366f6f620125)
+      (output :R2 0xd653b016db1da8f5))))

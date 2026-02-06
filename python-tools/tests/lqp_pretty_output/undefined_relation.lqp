@@ -11,7 +11,7 @@
               (atom :hello v))))))
     (reads
       (output :epoch0 :output)
-      (output :nonexistent 8738597555292590240)))
+      (output :nonexistent 0x7945bc2d6e4fd0a0)))
   (epoch
     (writes
       (define

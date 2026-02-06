@@ -124,7 +124,10 @@ class Lexer:
     @staticmethod
     def scan_int(n: str) -> int:
         """Parse INT token."""
-        return int(n)
+        val = int(n)
+        if val < -(1 << 63) or val >= (1 << 63):
+            raise ParseError(f'Integer literal out of 64-bit range: {n}')
+        return val
 
     @staticmethod
     def scan_float(f: str) -> float:
@@ -139,6 +142,8 @@ class Lexer:
     def scan_uint128(u: str) -> Any:
         """Parse UINT128 token."""
         uint128_val = int(u, 16)
+        if uint128_val < 0 or uint128_val >= (1 << 128):
+            raise ParseError(f'UInt128 literal out of range: {u}')
         low = uint128_val & 0xFFFFFFFFFFFFFFFF
         high = (uint128_val >> 64) & 0xFFFFFFFFFFFFFFFF
         return logic_pb2.UInt128Value(low=low, high=high)
@@ -148,6 +153,8 @@ class Lexer:
         """Parse INT128 token."""
         u = u[:-4]  # Remove the 'i128' suffix
         int128_val = int(u)
+        if int128_val < -(1 << 127) or int128_val >= (1 << 127):
+            raise ParseError(f'Int128 literal out of range: {u}')
         low = int128_val & 0xFFFFFFFFFFFFFFFF
         high = (int128_val >> 64) & 0xFFFFFFFFFFFFFFFF
         return logic_pb2.Int128Value(low=low, high=high)
@@ -896,11 +903,11 @@ class Parser:
         if self.match_lookahead_literal(':', 0):
             _t457 = 0
         else:
-            _t457 = (self.match_lookahead_terminal('INT', 0) or -1)
+            _t457 = (self.match_lookahead_terminal('UINT128', 0) or -1)
         prediction64 = _t457
         if prediction64 == 1:
-            int66 = self.consume_terminal('INT')
-            _t458 = logic_pb2.RelationId(id_low=int66 & 0xFFFFFFFFFFFFFFFF, id_high=(int66 >> 64) & 0xFFFFFFFFFFFFFFFF)
+            uint12866 = self.consume_terminal('UINT128')
+            _t458 = logic_pb2.RelationId(id_low=uint12866.low, id_high=uint12866.high)
         else:
             if prediction64 == 0:
                 self.consume_literal(':')
@@ -1889,12 +1896,12 @@ class Parser:
         self.consume_literal('(')
         self.consume_literal('algorithm')
         xs206 = []
-        cond207 = (self.match_lookahead_literal(':', 0) or self.match_lookahead_terminal('INT', 0))
+        cond207 = (self.match_lookahead_literal(':', 0) or self.match_lookahead_terminal('UINT128', 0))
         while cond207:
             _t835 = self.parse_relation_id()
             item208 = _t835
             xs206 = (xs206 + ([item208] if [item208] is not None else []))
-            cond207 = (self.match_lookahead_literal(':', 0) or self.match_lookahead_terminal('INT', 0))
+            cond207 = (self.match_lookahead_literal(':', 0) or self.match_lookahead_terminal('UINT128', 0))
         relation_ids209 = xs206
         _t836 = self.parse_script()
         script210 = _t836
@@ -2517,12 +2524,12 @@ class Parser:
         self.consume_literal('(')
         self.consume_literal('context')
         xs321 = []
-        cond322 = (self.match_lookahead_literal(':', 0) or self.match_lookahead_terminal('INT', 0))
+        cond322 = (self.match_lookahead_literal(':', 0) or self.match_lookahead_terminal('UINT128', 0))
         while cond322:
             _t997 = self.parse_relation_id()
             item323 = _t997
             xs321 = (xs321 + ([item323] if [item323] is not None else []))
-            cond322 = (self.match_lookahead_literal(':', 0) or self.match_lookahead_terminal('INT', 0))
+            cond322 = (self.match_lookahead_literal(':', 0) or self.match_lookahead_terminal('UINT128', 0))
         relation_ids324 = xs321
         self.consume_literal(')')
         _t998 = transactions_pb2.Context(relations=relation_ids324)

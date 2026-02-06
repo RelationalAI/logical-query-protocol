@@ -133,7 +133,7 @@ attrs: "(attrs" attribute* ")"
 attribute: "(attribute" name constant* ")"
 
 fragment_id: ":" SYMBOL
-relation_id: (":" SYMBOL) | NUMBER
+relation_id: (":" SYMBOL) | UINT128
 name: ":" SYMBOL
 
 value: STRING | NUMBER | FLOAT | UINT128 | INT128
@@ -739,7 +739,7 @@ class LQPTransformer(Transformer):
         return ir.Attribute(name=items[0], args=items[1:], meta=self.meta(meta))
 
     def relation_id(self, meta, items):
-        ident = items[0] # Remove leading ':'
+        ident = items[0]
         if isinstance(ident, str):
             # First 64 bits of SHA-256 as the id
             id_val = int(hashlib.sha256(ident.encode()).hexdigest()[:16], 16)
@@ -750,8 +750,8 @@ class LQPTransformer(Transformer):
                 self.id_to_debuginfo[self._current_fragment_id][result] = ident
             return result
 
-        elif isinstance(ident, int):
-            return ir.RelationId(id=ident, meta=self.meta(meta))
+        elif isinstance(ident, ir.UInt128Value):
+            return ir.RelationId(id=ident.value, meta=self.meta(meta))
 
     #
     # Primitive values

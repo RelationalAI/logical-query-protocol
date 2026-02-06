@@ -146,7 +146,7 @@ register_builtin("error_with_token", [STRING, TOKEN], BaseType("Never"))
 # === Protobuf-specific ===
 register_builtin("fragment_id_from_string", [STRING], MessageType("fragments", "FragmentId"))
 register_builtin("relation_id_from_string", [STRING], MessageType("logic", "RelationId"))
-register_builtin("relation_id_from_int", [INT64], MessageType("logic", "RelationId"))
+register_builtin("relation_id_from_uint128", [MessageType("logic", "UInt128Value")], MessageType("logic", "RelationId"))
 register_builtin("construct_fragment",
                  [MessageType("fragments", "FragmentId"),
                   ListType(MessageType("logic", "Declaration"))],

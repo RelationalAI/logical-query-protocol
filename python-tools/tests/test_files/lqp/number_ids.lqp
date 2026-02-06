@@ -3,7 +3,7 @@
     (writes
       (define
         (fragment :f1
-          (def 1234567898765432123456789 ([v::INT] (+ 1 1 v))))))
+          (def 0x1056e0f555a18ebda7d15 ([v::INT] (+ 1 1 v))))))
 
     (reads
-      (output :output 1234567898765432123456789))))
+      (output :output 0x1056e0f555a18ebda7d15))))

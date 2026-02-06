@@ -6,11 +6,11 @@
     (writes
       (define
         (fragment :f1
-          (algorithm 10098605871750969749
+          (algorithm 0x8c2574892063f995
             (script
               (loop
                 (init
-                  (assign 10098605871750969749
+                  (assign 0x8c2574892063f995
                     ([a::INT b::INT]
                       (or
                         (and
@@ -19,29 +19,29 @@
                         (and
                           (primitive :rel_primitive_eq a 2)
                           (primitive :rel_primitive_eq b 3)))))
-                  (assign 11697277356358429352
+                  (assign 0xa25513c7e0f6eaa8
                     ([a::INT b::INT]
                       (and
                         (primitive :rel_primitive_eq a 1)
                         (primitive :rel_primitive_eq b 3))))
-                  (assign 11303028219845360359
+                  (assign 0x9cdc6c47aa193ae7
                     ([]
                       (or))))
                 (script
-                  (assign 9212013740914334473
+                  (assign 0x7fd7a5b0a5375b09
                     ([]
                       (or)))
                   (loop
                     (init)
                     (script
-                      (upsert 10098605871750969749
+                      (upsert 0x8c2574892063f995
                         ([a::INT b::INT]
-                          (atom 11697277356358429352 a b)))
-                      (break 9212013740914334473
+                          (atom 0xa25513c7e0f6eaa8 a b)))
+                      (break 0x7fd7a5b0a5375b09
                         ([]
                           (and)))))
-                  (break 11303028219845360359
+                  (break 0x9cdc6c47aa193ae7
                     ([]
                       (and))))))))))
     (reads
-      (output :R 10098605871750969749))))
+      (output :R 0x8c2574892063f995))))
