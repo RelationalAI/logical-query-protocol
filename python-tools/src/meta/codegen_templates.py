@@ -118,18 +118,20 @@ JULIA_TEMPLATES: Dict[str, BuiltinTemplate] = {
 
 
 # Go builtin templates
+# Note: Go uses Option[T] for scalars (to distinguish None from zero) and nil for pointers/slices
+# The builtins are overridden in codegen_go.py to handle both cases
 GO_TEMPLATES: Dict[str, BuiltinTemplate] = {
-    "some": BuiltinTemplate("{0}"),
+    "some": BuiltinTemplate("Some({0})"),  # Overridden for pointer types
     "not": BuiltinTemplate("!{0}"),
     "and": BuiltinTemplate("({0} && {1})"),
     "or": BuiltinTemplate("({0} || {1})"),
     "equal": BuiltinTemplate("{0} == {1}"),
     "not_equal": BuiltinTemplate("{0} != {1}"),
     "add": BuiltinTemplate("({0} + {1})"),
-    "is_none": BuiltinTemplate("{0} == nil"),
-    "is_some": BuiltinTemplate("{0} != nil"),
-    "unwrap_option": BuiltinTemplate("{0}"),
-    "none": BuiltinTemplate("nil"),
+    "is_none": BuiltinTemplate("!{0}.Valid"),  # Overridden for pointer types
+    "is_some": BuiltinTemplate("{0}.Valid"),   # Overridden for pointer types
+    "unwrap_option": BuiltinTemplate("{0}.Value"),  # Overridden for pointer types
+    "none": BuiltinTemplate("nil"),  # Overridden to use Option[T]{} when type known
     "make_empty_bytes": BuiltinTemplate("[]byte{}"),
     "dict_from_list": BuiltinTemplate("dictFromList({0})"),
     "dict_get": BuiltinTemplate("dictGetValue({0}, {1})"),
@@ -140,7 +142,8 @@ GO_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "encode_string": BuiltinTemplate("[]byte({0})"),
     "tuple": BuiltinTemplate("[]interface{}{{{args}}}"),
     "length": BuiltinTemplate("len({0})"),
-    "unwrap_option_or": BuiltinTemplate("unwrapOr({0}, {1})"),
+    # unwrap_option_or is handled specially in codegen_go.py due to Go's lack of ternary
+    "unwrap_option_or": BuiltinTemplate("{0}"),  # Placeholder - overridden in codegen
     "int64_to_int32": BuiltinTemplate("int32({0})"),
     "to_ptr_int64": BuiltinTemplate("ptrInt64({0})"),
     "to_ptr_string": BuiltinTemplate("ptrString({0})"),

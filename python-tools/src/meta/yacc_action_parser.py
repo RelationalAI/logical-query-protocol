@@ -20,8 +20,8 @@ from typing import Dict, List, Optional, Tuple, Set
 
 from .grammar import Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
 from .target import (
-    TargetType, BaseType, MessageType, ListType, OptionType, TupleType, DictType, FunctionType,
-    TargetExpr, Var, Lit, NamedFun, NewMessage, Call, Lambda,
+    TargetType, BaseType, MessageType, EnumType, ListType, OptionType, TupleType, DictType, FunctionType,
+    TargetExpr, Var, Lit, NamedFun, NewMessage, EnumValue, Call, Lambda,
     Let, IfElse, Seq, ListExpr, GetElement, GetField, FunDef, OneOf, Assign, Return
 )
 from .target_builtins import make_builtin
@@ -734,7 +734,29 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
             raise YaccGrammarError(f"Unknown variable: {name}", line)
 
     elif isinstance(node, ast.Attribute):
-        # Handle module.Message or obj.field
+        # Check for module.Enum.VALUE pattern (three levels)
+        if (isinstance(node.value, ast.Attribute) and
+            isinstance(node.value.value, ast.Name)):
+            module_name = node.value.value.id
+            possible_enum = node.value.attr
+            value_name = node.attr
+
+            # Check if this is an enum value reference
+            if ctx.enum_lookup is not None:
+                enum_values = ctx.enum_lookup(module_name, possible_enum)
+                if enum_values is not None:
+                    valid = [n for n, _ in enum_values]
+                    if value_name not in valid:
+                        raise YaccGrammarError(
+                            f"Unknown enum value '{value_name}' for enum {module_name}.{possible_enum}. "
+                            f"Valid values: {valid}", line)
+                    return EnumValue(module_name, possible_enum, value_name)
+
+            # Not an enum, could be nested field access
+            obj = _convert_func_expr(node.value, ctx, line, local_vars)
+            return _make_get_field(obj, node.attr, ctx, line)
+
+        # Handle module.Message or obj.field (two levels)
         if isinstance(node.value, ast.Name):
             # Could be module.Message constructor or local_var.field
             if node.value.id in local_vars:
@@ -942,6 +964,11 @@ class TypeContext:
     # Callback to look up field type: (message_type, field_name) -> field_type
     # If None, field types cannot be resolved (use Unknown placeholder)
     field_type_lookup: Optional[Callable[[MessageType, str], Optional[TargetType]]] = None
+    # Callback to look up enum values: (module, enum_name) -> [(value_name, value_num), ...]
+    # If None, enum values cannot be validated
+    enum_lookup: Optional[Callable[[str, str], Optional[List[Tuple[str, int]]]]] = None
+    # Callback to check if (module, name) is a message type
+    message_lookup: Optional[Callable[[str, str], bool]] = None
 
 
 @dataclass

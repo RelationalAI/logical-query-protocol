@@ -13,10 +13,10 @@ if TYPE_CHECKING:
     from .proto_ast import ProtoMessage
 
 from .target import (
-    TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
+    TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, EnumValue, OneOf, ListExpr, Call, Lambda, Let,
     IfElse, Seq, While, Assign, Return, FunDef, VisitNonterminalDef,
     VisitNonterminal, TargetType, BaseType, TupleType, ListType, DictType, OptionType,
-    MessageType, FunctionType, GetField, GetElement
+    MessageType, EnumType, FunctionType, GetField, GetElement
 )
 from .target_builtins import get_builtin
 from .gensym import gensym
@@ -163,6 +163,11 @@ class CodeGenerator(ABC):
         pass
 
     @abstractmethod
+    def gen_enum_value(self, module: str, enum_name: str, value_name: str) -> str:
+        """Generate an enum value reference (e.g., pb.EnumName_VALUE)."""
+        pass
+
+    @abstractmethod
     def gen_builtin_ref(self, name: str) -> str:
         """Generate a reference to a builtin function."""
         pass
@@ -182,6 +187,11 @@ class CodeGenerator(ABC):
     @abstractmethod
     def gen_message_type(self, module: str, name: str) -> str:
         """Generate a message/protobuf type reference."""
+        pass
+
+    @abstractmethod
+    def gen_enum_type(self, module: str, name: str) -> str:
+        """Generate an enum type reference."""
         pass
 
     @abstractmethod
@@ -220,6 +230,8 @@ class CodeGenerator(ABC):
             return self.base_type_map.get(typ.name, typ.name)
         elif isinstance(typ, MessageType):
             return self.gen_message_type(typ.module, typ.name)
+        elif isinstance(typ, EnumType):
+            return self.gen_enum_type(typ.module, typ.name)
         elif isinstance(typ, TupleType):
             element_types = [self.gen_type(e) for e in typ.elements]
             return self.gen_tuple_type(element_types)
@@ -383,6 +395,9 @@ class CodeGenerator(ABC):
         elif isinstance(expr, NewMessage):
             return self._generate_newmessage(expr, lines, indent)
 
+        elif isinstance(expr, EnumValue):
+            return self._generate_enum_value(expr, lines, indent)
+
         elif isinstance(expr, Builtin):
             return self.gen_builtin_ref(expr.name)
 
@@ -501,6 +516,10 @@ class CodeGenerator(ABC):
         """
         tuple_code = self.generate_lines(expr.tuple_expr, lines, indent)
         return f"{tuple_code}[{expr.index}]"
+
+    def _generate_enum_value(self, expr: EnumValue, lines: List[str], indent: str) -> str:
+        """Generate code for an enum value reference."""
+        return self.gen_enum_value(expr.module, expr.enum_name, expr.value_name)
 
     def _generate_oneof(self, expr: OneOf, lines: List[str], indent: str) -> str:
         """Generate code for a OneOf expression.

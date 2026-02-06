@@ -870,19 +870,17 @@ def construct_betree_info(
 def construct_configure(config_dict: List[Tuple[String, logic.Value]]) -> transactions.Configure:
     config: Dict[String, logic.Value] = builtin.dict_from_list(config_dict)
     maintenance_level_val: Optional[logic.Value] = builtin.dict_get(config, "ivm.maintenance_level")
-    maintenance_level: str
+    maintenance_level: transactions.MaintenanceLevel = transactions.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
     if (maintenance_level_val is not None
             and builtin.has_proto_field(maintenance_level_val, 'string_value')):
         if maintenance_level_val.string_value == "off":
-            maintenance_level = "MAINTENANCE_LEVEL_OFF"
+            maintenance_level = transactions.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
         elif maintenance_level_val.string_value == "auto":
-            maintenance_level = "MAINTENANCE_LEVEL_AUTO"
+            maintenance_level = transactions.MaintenanceLevel.MAINTENANCE_LEVEL_AUTO
         elif maintenance_level_val.string_value == "all":
-            maintenance_level = "MAINTENANCE_LEVEL_ALL"
+            maintenance_level = transactions.MaintenanceLevel.MAINTENANCE_LEVEL_ALL
         else:
-            maintenance_level = "MAINTENANCE_LEVEL_OFF"
-    else:
-        maintenance_level = "MAINTENANCE_LEVEL_OFF"
+            maintenance_level = transactions.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
     ivm_config: transactions.IVMConfig = transactions.IVMConfig(level=maintenance_level)
     semantics_version: int = _extract_value_int64(builtin.dict_get(config, "semantics_version"), 0)
     return transactions.Configure(

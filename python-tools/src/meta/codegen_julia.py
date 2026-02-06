@@ -102,6 +102,16 @@ class JuliaCodeGenerator(CodeGenerator):
             return f'Proto.var"#{name}"'
         return f"Proto.{name}"
 
+    def gen_enum_type(self, module: str, name: str) -> str:
+        if name in self.keywords:
+            return f'Proto.var"#{name}"'
+        return f"Proto.{name}"
+
+    def gen_enum_value(self, module: str, enum_name: str, value_name: str) -> str:
+        if enum_name in self.keywords:
+            return f'Proto.var"#{enum_name}".{value_name}'
+        return f"Proto.{enum_name}.{value_name}"
+
     def gen_tuple_type(self, element_types: List[str]) -> str:
         if not element_types:
             return 'Tuple{}'

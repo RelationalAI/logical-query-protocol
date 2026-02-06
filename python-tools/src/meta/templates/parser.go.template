@@ -29,6 +29,30 @@ func (e ParseError) Error() string {{
 	return e.msg
 }}
 
+// Option represents an optional value (Some or None)
+type Option[T any] struct {{
+	Value T
+	Valid bool
+}}
+
+// Some creates an Option containing a value
+func Some[T any](v T) Option[T] {{
+	return Option[T]{{Value: v, Valid: true}}
+}}
+
+// None creates an empty Option
+func None[T any]() Option[T] {{
+	return Option[T]{{}}
+}}
+
+// UnwrapOr returns the value if present, otherwise returns the default
+func (o Option[T]) UnwrapOr(defaultVal T) T {{
+	if o.Valid {{
+		return o.Value
+	}}
+	return defaultVal
+}}
+
 // Token represents a lexer token
 type Token struct {{
 	Type  string
@@ -369,13 +393,13 @@ func dictGet(m map[string]interface{{}}, key string) interface{{}} {{
 }}
 
 // dictGetValue retrieves a Value from the config dict with type assertion
-func dictGetValue(m map[string]interface{{}}, key string) *pb.Value {{
+func dictGetValue(m map[string]interface{{}}, key string) Option[*pb.Value] {{
 	if v, ok := m[key]; ok {{
 		if val, ok := v.(*pb.Value); ok {{
-			return val
+			return Some(val)
 		}}
 	}}
-	return nil
+	return Option[*pb.Value]{{}}
 }}
 
 func stringInList(s string, list []string) bool {{
@@ -387,12 +411,6 @@ func stringInList(s string, list []string) bool {{
 	return false
 }}
 
-func unwrapOr(val interface{{}}, defaultVal interface{{}}) interface{{}} {{
-	if val != nil {{
-		return val
-	}}
-	return defaultVal
-}}
 
 // Type conversion helpers for interface{{}} to concrete types
 func toInt32(v interface{{}}) int32 {{
@@ -434,9 +452,12 @@ func toBool(v interface{{}}) bool {{
 }}
 
 // Pointer conversion helpers for optional proto3 fields
+func ptrInt32(v int32) *int32 {{ return &v }}
 func ptrInt64(v int64) *int64 {{ return &v }}
+func ptrFloat64(v float64) *float64 {{ return &v }}
 func ptrString(v string) *string {{ return &v }}
 func ptrBool(v bool) *bool {{ return &v }}
+func ptrBytes(v []byte) *[]byte {{ return &v }}
 
 func mapSlice[T any, U any](slice []T, f func(T) U) []U {{
 	result := make([]U, len(slice))

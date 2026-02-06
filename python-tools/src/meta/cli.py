@@ -133,7 +133,7 @@ def run(args) -> int:
     proto_messages = {(msg.module, name): msg for name, msg in proto_parser.messages.items()}
 
     # Load grammar rules from file (yacc format)
-    grammar_config = load_yacc_grammar_file(grammar_path, proto_messages)
+    grammar_config = load_yacc_grammar_file(grammar_path, proto_messages, proto_parser.enums)
 
     # Build Grammar object from loaded config
     if not grammar_config.rules:
