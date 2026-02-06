@@ -68,8 +68,8 @@ def parse_args():
     output_group.add_argument(
         "--parser",
         type=str,
-        choices=["ir", "python", "julia"],
-        help="Output the generated parser (ir, python, or julia)"
+        choices=["ir", "python", "julia", "go"],
+        help="Output the generated parser (ir, python, julia, or go)"
     )
 
     args = parser.parse_args()
@@ -129,8 +129,11 @@ def run(args) -> int:
         print(f"Error: Grammar file not found: {grammar_path}", file=sys.stderr)
         return 1
 
+    # Transform messages dict from {name: ProtoMessage} to {(module, name): ProtoMessage}
+    proto_messages = {(msg.module, name): msg for name, msg in proto_parser.messages.items()}
+
     # Load grammar rules from file (yacc format)
-    grammar_config = load_yacc_grammar_file(grammar_path)
+    grammar_config = load_yacc_grammar_file(grammar_path, proto_messages)
 
     # Build Grammar object from loaded config
     if not grammar_config.rules:
@@ -205,6 +208,13 @@ def run(args) -> int:
             # Transform messages dict from {name: ProtoMessage} to {(module, name): ProtoMessage}
             proto_messages = {(msg.module, name): msg for name, msg in proto_parser.messages.items()}
             output_text = generate_parser_julia(grammar, command_line, proto_messages)
+            write_output(output_text, args.output, f"Generated parser written to {args.output}")
+        elif args.parser == "go":
+            from .parser_gen_go import generate_parser_go
+            command_line = " ".join(["python -m meta.cli"] + [str(f) for f in args.proto_files] + ["--parser", "go"])
+            # Transform messages dict from {name: ProtoMessage} to {(module, name): ProtoMessage}
+            proto_messages = {(msg.module, name): msg for name, msg in proto_parser.messages.items()}
+            output_text = generate_parser_go(grammar, command_line, proto_messages)
             write_output(output_text, args.output, f"Generated parser written to {args.output}")
 
     return 0

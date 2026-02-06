@@ -819,7 +819,7 @@ def construct_csv_config(config_dict: List[Tuple[String, logic.Value]]) -> logic
     encoding: str = _extract_value_string(builtin.dict_get(config, "csv_encoding"), "utf-8")
     compression: str = _extract_value_string(builtin.dict_get(config, "csv_compression"), "auto")
     return logic.CSVConfig(
-        header_row=header_row,
+        header_row=builtin.int64_to_int32(header_row),
         skip=skip,
         new_line=new_line,
         delimiter=delimiter,
@@ -907,11 +907,11 @@ def export_csv_config(
     return transactions.ExportCSVConfig(
         path=path,
         data_columns=columns,
-        partition_size=partition_size,
-        compression=compression,
-        syntax_header_row=syntax_header_row,
-        syntax_missing_string=syntax_missing_string,
-        syntax_delim=syntax_delim,
-        syntax_quotechar=syntax_quotechar,
-        syntax_escapechar=syntax_escapechar,
+        partition_size=builtin.to_ptr_int64(partition_size),
+        compression=builtin.to_ptr_string(compression),
+        syntax_header_row=builtin.to_ptr_bool(syntax_header_row),
+        syntax_missing_string=builtin.to_ptr_string(syntax_missing_string),
+        syntax_delim=builtin.to_ptr_string(syntax_delim),
+        syntax_quotechar=builtin.to_ptr_string(syntax_quotechar),
+        syntax_escapechar=builtin.to_ptr_string(syntax_escapechar),
     )

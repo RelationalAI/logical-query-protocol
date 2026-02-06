@@ -132,9 +132,8 @@ def _infer_type(expr: TargetExpr, line: Optional[int] = None,
             return tuple_type.elements[expr.index]
         raise YaccGrammarError(f"Cannot infer type of tuple element access: {expr}", line)
     elif isinstance(expr, GetField):
-        # GetField accesses a field from a message - we can't know the type without proto schema
-        # Return Any since the context (function return type) will provide the actual type
-        return BaseType("Any")
+        # GetField has field_type from proto schema lookup (or Unknown if not found)
+        return expr.field_type
     elif isinstance(expr, Let):
         # Let expression has the type of its body
         return _infer_type(expr.body, line, ctx)

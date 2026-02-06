@@ -572,6 +572,30 @@ class CodeGenerator(ABC):
                 if result is not None:
                     return result.value
 
+        # Optimization: if then branch returns and else is Lit(None), generate simple if without else.
+        # This avoids creating an unused temp variable.
+        if expr.else_branch == Lit(None):
+            then_lines: List[str] = []
+            then_code = self.generate_lines(expr.then_branch, then_lines, indent + self.indent_str)
+            if then_code is None:  # then branch returns
+                lines.append(f"{indent}{self.gen_if_start(cond_code)}")
+                lines.extend(then_lines)
+                lines.append(f"{indent}{self.gen_if_end()}")
+                return self.gen_none()
+
+        # Optimization: if else branch returns and then is Lit(None), generate negated if.
+        if expr.then_branch == Lit(None):
+            else_lines: List[str] = []
+            else_code = self.generate_lines(expr.else_branch, else_lines, indent + self.indent_str)
+            if else_code is None:  # else branch returns
+                # Generate: if !cond { else_branch }
+                negated = self.gen_builtin_call("not", [cond_code], lines, indent)
+                neg_cond = negated.value if negated else f"!({cond_code})"
+                lines.append(f"{indent}{self.gen_if_start(neg_cond)}")
+                lines.extend(else_lines)
+                lines.append(f"{indent}{self.gen_if_end()}")
+                return self.gen_none()
+
         tmp = gensym()
         lines.append(f"{indent}{self.gen_var_declaration(tmp)}")
         lines.append(f"{indent}{self.gen_if_start(cond_code)}")

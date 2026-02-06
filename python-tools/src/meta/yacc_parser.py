@@ -53,7 +53,7 @@ Action syntax (Python-like):
 import ast
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from .grammar import (
     Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence, Rule,
@@ -540,11 +540,75 @@ def _parse_alternative(lhs_name: str, lhs_type: TargetType, rhs_text: str,
     return Rule(lhs=lhs, rhs=rhs, constructor=constructor)
 
 
-def load_yacc_grammar(text: str) -> GrammarConfig:
+def _make_field_type_lookup(
+    proto_messages: Dict[Tuple[str, str], Any]
+) -> Callable[[MessageType, str], Optional[TargetType]]:
+    """Create a field type lookup function from proto message definitions.
+
+    Args:
+        proto_messages: Dict mapping (module, message_name) to ProtoMessage
+
+    Returns:
+        A function that takes (MessageType, field_name) and returns the field's TargetType
+    """
+    # Build field type map: (module, message_name, field_name) -> TargetType
+    field_types: Dict[Tuple[str, str, str], TargetType] = {}
+
+    for (module, msg_name), proto_msg in proto_messages.items():
+        for field in proto_msg.fields:
+            field_type = _proto_type_to_target_type(field.type, field.is_repeated)
+            field_types[(module, msg_name, field.name)] = field_type
+
+        # Also add oneof fields
+        for oneof in proto_msg.oneofs:
+            for field in oneof.fields:
+                field_type = _proto_type_to_target_type(field.type, False)
+                field_types[(module, msg_name, field.name)] = field_type
+
+    def lookup(message_type: MessageType, field_name: str) -> Optional[TargetType]:
+        key = (message_type.module, message_type.name, field_name)
+        return field_types.get(key)
+
+    return lookup
+
+
+def _proto_type_to_target_type(proto_type: str, is_repeated: bool) -> TargetType:
+    """Convert a proto field type string to TargetType."""
+    # Map proto scalar types to target base types
+    scalar_map = {
+        'int32': BaseType('Int32'),
+        'int64': BaseType('Int64'),
+        'uint32': BaseType('Int64'),  # Map to Int64 for simplicity
+        'uint64': BaseType('Int64'),
+        'float': BaseType('Float64'),
+        'double': BaseType('Float64'),
+        'bool': BaseType('Boolean'),
+        'string': BaseType('String'),
+        'bytes': BaseType('Bytes'),
+    }
+
+    if proto_type in scalar_map:
+        base_type = scalar_map[proto_type]
+    elif '.' in proto_type:
+        # Message type with module prefix
+        parts = proto_type.rsplit('.', 1)
+        base_type = MessageType(parts[0], parts[1])
+    else:
+        # Message type without module prefix - use logic as default module
+        base_type = MessageType('logic', proto_type)
+
+    if is_repeated:
+        return ListType(base_type)
+    return base_type
+
+
+def load_yacc_grammar(text: str, proto_messages: Optional[Dict[Tuple[str, str], Any]] = None) -> GrammarConfig:
     """Load grammar from yacc-like format.
 
     Args:
         text: Grammar file content
+        proto_messages: Optional dict mapping (module, message_name) to ProtoMessage,
+            used for field type lookup in helper functions
 
     Returns:
         GrammarConfig with terminals, rules, and function definitions
@@ -558,6 +622,10 @@ def load_yacc_grammar(text: str) -> GrammarConfig:
 
     # Parse directives
     ctx, ignored_completeness, rules_start = parse_directives(lines)
+
+    # Set up field type lookup if proto_messages is provided
+    if proto_messages:
+        ctx.field_type_lookup = _make_field_type_lookup(proto_messages)
 
     # Find the %% separator between rules and helper functions
     rules_lines = lines[rules_start:]
@@ -606,16 +674,20 @@ def load_yacc_grammar(text: str) -> GrammarConfig:
     )
 
 
-def load_yacc_grammar_file(path: Path) -> GrammarConfig:
+def load_yacc_grammar_file(
+    path: Path,
+    proto_messages: Optional[Dict[Tuple[str, str], Any]] = None
+) -> GrammarConfig:
     """Load grammar from a yacc-like format file.
 
     Args:
         path: Path to the grammar file
+        proto_messages: Optional dict mapping (module, message_name) to ProtoMessage
 
     Returns:
         GrammarConfig
     """
-    return load_yacc_grammar(path.read_text())
+    return load_yacc_grammar(path.read_text(), proto_messages)
 
 
 __all__ = [

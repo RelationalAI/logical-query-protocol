@@ -127,6 +127,9 @@ register_builtin("encode_string", [STRING], BYTES)
 
 # === Type conversions ===
 register_builtin("int64_to_int32", [INT64], INT32)
+register_builtin("to_ptr_int64", [INT64], OptionType(INT64))
+register_builtin("to_ptr_string", [STRING], OptionType(STRING))
+register_builtin("to_ptr_bool", [BOOLEAN], OptionType(BOOLEAN))
 
 # === Parser primitives (lexer/parser operations) ===
 register_builtin("match_lookahead_terminal", [STRING, INT64], BOOLEAN)
