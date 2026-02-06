@@ -127,6 +127,9 @@ register_builtin("encode_string", [STRING], BYTES)
 
 # === Type conversions ===
 register_builtin("int64_to_int32", [INT64], INT32)
+register_builtin("to_ptr_int64", [INT64], OptionType(INT64))
+register_builtin("to_ptr_string", [STRING], OptionType(STRING))
+register_builtin("to_ptr_bool", [BOOLEAN], OptionType(BOOLEAN))
 
 # === Parser primitives (lexer/parser operations) ===
 register_builtin("match_lookahead_terminal", [STRING, INT64], BOOLEAN)
@@ -143,7 +146,7 @@ register_builtin("error_with_token", [STRING, TOKEN], BaseType("Never"))
 # === Protobuf-specific ===
 register_builtin("fragment_id_from_string", [STRING], MessageType("fragments", "FragmentId"))
 register_builtin("relation_id_from_string", [STRING], MessageType("logic", "RelationId"))
-register_builtin("relation_id_from_int", [INT64], MessageType("logic", "RelationId"))
+register_builtin("relation_id_from_uint128", [MessageType("logic", "UInt128Value")], MessageType("logic", "RelationId"))
 register_builtin("construct_fragment",
                  [MessageType("fragments", "FragmentId"),
                   ListType(MessageType("logic", "Declaration"))],

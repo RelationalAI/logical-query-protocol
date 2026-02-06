@@ -6,7 +6,7 @@
     (writes
       (define
         (fragment :f1
-          (def 3181428560199927439
+          (def 0x2c26b46b68ffc68f
             ([a::INT b::INT]
               (or
                 (and
@@ -22,4 +22,4 @@
               (attribute :function)
               (attribute :inspect "normalizer" 2))))))
     (reads
-      (output :foo 3181428560199927439))))
+      (output :foo 0x2c26b46b68ffc68f))))

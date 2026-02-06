@@ -267,8 +267,8 @@ def
 relation_id
     : ":" SYMBOL
       construct: builtin.relation_id_from_string($2)
-    | INT
-      construct: builtin.relation_id_from_int($1)
+    | UINT128
+      construct: builtin.relation_id_from_uint128($1)
 
 abstraction
     : "(" bindings formula ")"
@@ -819,7 +819,7 @@ def construct_csv_config(config_dict: List[Tuple[String, logic.Value]]) -> logic
     encoding: str = _extract_value_string(builtin.dict_get(config, "csv_encoding"), "utf-8")
     compression: str = _extract_value_string(builtin.dict_get(config, "csv_compression"), "auto")
     return logic.CSVConfig(
-        header_row=header_row,
+        header_row=builtin.int64_to_int32(header_row),
         skip=skip,
         new_line=new_line,
         delimiter=delimiter,
@@ -870,19 +870,17 @@ def construct_betree_info(
 def construct_configure(config_dict: List[Tuple[String, logic.Value]]) -> transactions.Configure:
     config: Dict[String, logic.Value] = builtin.dict_from_list(config_dict)
     maintenance_level_val: Optional[logic.Value] = builtin.dict_get(config, "ivm.maintenance_level")
-    maintenance_level: str
+    maintenance_level: transactions.MaintenanceLevel = transactions.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
     if (maintenance_level_val is not None
             and builtin.has_proto_field(maintenance_level_val, 'string_value')):
         if maintenance_level_val.string_value == "off":
-            maintenance_level = "MAINTENANCE_LEVEL_OFF"
+            maintenance_level = transactions.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
         elif maintenance_level_val.string_value == "auto":
-            maintenance_level = "MAINTENANCE_LEVEL_AUTO"
+            maintenance_level = transactions.MaintenanceLevel.MAINTENANCE_LEVEL_AUTO
         elif maintenance_level_val.string_value == "all":
-            maintenance_level = "MAINTENANCE_LEVEL_ALL"
+            maintenance_level = transactions.MaintenanceLevel.MAINTENANCE_LEVEL_ALL
         else:
-            maintenance_level = "MAINTENANCE_LEVEL_OFF"
-    else:
-        maintenance_level = "MAINTENANCE_LEVEL_OFF"
+            maintenance_level = transactions.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
     ivm_config: transactions.IVMConfig = transactions.IVMConfig(level=maintenance_level)
     semantics_version: int = _extract_value_int64(builtin.dict_get(config, "semantics_version"), 0)
     return transactions.Configure(
@@ -907,11 +905,11 @@ def export_csv_config(
     return transactions.ExportCSVConfig(
         path=path,
         data_columns=columns,
-        partition_size=partition_size,
-        compression=compression,
-        syntax_header_row=syntax_header_row,
-        syntax_missing_string=syntax_missing_string,
-        syntax_delim=syntax_delim,
-        syntax_quotechar=syntax_quotechar,
-        syntax_escapechar=syntax_escapechar,
+        partition_size=builtin.to_ptr_int64(partition_size),
+        compression=builtin.to_ptr_string(compression),
+        syntax_header_row=builtin.to_ptr_bool(syntax_header_row),
+        syntax_missing_string=builtin.to_ptr_string(syntax_missing_string),
+        syntax_delim=builtin.to_ptr_string(syntax_delim),
+        syntax_quotechar=builtin.to_ptr_string(syntax_quotechar),
+        syntax_escapechar=builtin.to_ptr_string(syntax_escapechar),
     )

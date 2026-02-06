@@ -295,6 +295,7 @@ class Attribute(LqpNode):
 @dataclass(frozen=True)
 class RelationId(LqpNode):
     id: int
+
     def __post_init__(self):
         if self.id < 0 or self.id > 0xffffffffffffffffffffffffffffffff:
             raise ValueError("RelationId constructed with out of range (UInt128) number: {}".format(self.id))

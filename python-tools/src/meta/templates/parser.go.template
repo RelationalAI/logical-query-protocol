@@ -1,0 +1,605 @@
+// Auto-generated LL(k) recursive-descent parser.
+//
+// Generated from protobuf specifications.
+// Do not modify this file! If you need to modify the parser, edit the generator code
+// in `python-tools/src/meta` or edit the protobuf specification in `proto/v1`.
+//
+// {command_line_comment}
+
+package lqp
+
+import (
+	"crypto/sha256"
+	"fmt"
+	"math"
+	"math/big"
+	"reflect"
+	"regexp"
+	"strconv"
+	"strings"
+
+	pb "logical-query-protocol/src/lqp/v1"
+)
+
+// ParseError represents a parse error
+type ParseError struct {{
+	msg string
+}}
+
+func (e ParseError) Error() string {{
+	return e.msg
+}}
+
+// Option represents an optional value (Some or None)
+type Option[T any] struct {{
+	Value T
+	Valid bool
+}}
+
+// Some creates an Option containing a value
+func Some[T any](v T) Option[T] {{
+	return Option[T]{{Value: v, Valid: true}}
+}}
+
+// None creates an empty Option
+func None[T any]() Option[T] {{
+	return Option[T]{{}}
+}}
+
+// UnwrapOr returns the value if present, otherwise returns the default
+func (o Option[T]) UnwrapOr(defaultVal T) T {{
+	if o.Valid {{
+		return o.Value
+	}}
+	return defaultVal
+}}
+
+// Token represents a lexer token
+type Token struct {{
+	Type  string
+	Value interface{{}}
+	Pos   int
+}}
+
+func (t Token) String() string {{
+	return fmt.Sprintf("Token(%s, %v, %d)", t.Type, t.Value, t.Pos)
+}}
+
+// TokenSpec represents a token specification for the lexer
+type tokenSpec struct {{
+	name   string
+	regex  *regexp.Regexp
+	action func(string) interface{{}}
+}}
+
+// Lexer tokenizes input
+type Lexer struct {{
+	input  string
+	pos    int
+	tokens []Token
+}}
+
+// NewLexer creates a new lexer and tokenizes the input
+func NewLexer(input string) *Lexer {{
+	l := &Lexer{{
+		input:  input,
+		pos:    0,
+		tokens: make([]Token, 0),
+	}}
+	l.tokenize()
+	return l
+}}
+
+func (l *Lexer) tokenize() {{
+	tokenSpecs := []tokenSpec{{
+{token_specs}	}}
+
+	whitespaceRe := regexp.MustCompile(`^\s+`)
+	commentRe := regexp.MustCompile(`^;;.*`)
+
+	for l.pos < len(l.input) {{
+		remaining := l.input[l.pos:]
+
+		// Skip whitespace
+		if m := whitespaceRe.FindString(remaining); m != "" {{
+			l.pos += len(m)
+			continue
+		}}
+
+		// Skip comments
+		if m := commentRe.FindString(remaining); m != "" {{
+			l.pos += len(m)
+			continue
+		}}
+
+		// Collect all matching tokens
+		type candidate struct {{
+			tokenType string
+			value     string
+			action    func(string) interface{{}}
+			endPos    int
+		}}
+		var candidates []candidate
+
+		for _, spec := range tokenSpecs {{
+			if loc := spec.regex.FindStringIndex(remaining); loc != nil && loc[0] == 0 {{
+				value := remaining[:loc[1]]
+				candidates = append(candidates, candidate{{
+					tokenType: spec.name,
+					value:     value,
+					action:    spec.action,
+					endPos:    l.pos + loc[1],
+				}})
+			}}
+		}}
+
+		if len(candidates) == 0 {{
+			panic(ParseError{{msg: fmt.Sprintf("Unexpected character at position %d: %q", l.pos, string(l.input[l.pos]))}})
+		}}
+
+		// Pick the longest match
+		best := candidates[0]
+		for _, c := range candidates[1:] {{
+			if c.endPos > best.endPos {{
+				best = c
+			}}
+		}}
+
+		l.tokens = append(l.tokens, Token{{
+			Type:  best.tokenType,
+			Value: best.action(best.value),
+			Pos:   l.pos,
+		}})
+		l.pos = best.endPos
+	}}
+
+	l.tokens = append(l.tokens, Token{{Type: "$", Value: "", Pos: l.pos}})
+}}
+
+// Scanner functions for each token type
+func scanSymbol(s string) interface{{}} {{
+	return s
+}}
+
+func scanColonSymbol(s string) interface{{}} {{
+	return s[1:]
+}}
+
+func scanString(s string) interface{{}} {{
+	// Strip quotes and process escaping
+	content := s[1 : len(s)-1]
+	// Simple escape processing
+	content = strings.ReplaceAll(content, "\\n", "\n")
+	content = strings.ReplaceAll(content, "\\t", "\t")
+	content = strings.ReplaceAll(content, "\\r", "\r")
+	content = strings.ReplaceAll(content, "\\\\", "\\")
+	content = strings.ReplaceAll(content, "\\\"", "\"")
+	return content
+}}
+
+func scanInt(s string) interface{{}} {{
+	n, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {{
+		panic(ParseError{{msg: fmt.Sprintf("Invalid integer: %s", s)}})
+	}}
+	return n
+}}
+
+func scanFloat(s string) interface{{}} {{
+	if s == "inf" {{
+		return math.Inf(1) // +Inf
+	}} else if s == "nan" {{
+		return math.NaN() // NaN
+	}}
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil {{
+		panic(ParseError{{msg: fmt.Sprintf("Invalid float: %s", s)}})
+	}}
+	return f
+}}
+
+func scanUint128(s string) interface{{}} {{
+	// Remove the '0x' prefix
+	hexStr := s[2:]
+	// Parse as uint64 for now (simplified)
+	// For full uint128 support, would need big.Int
+	var low, high uint64
+	if len(hexStr) > 16 {{
+		highPart := hexStr[:len(hexStr)-16]
+		lowPart := hexStr[len(hexStr)-16:]
+		high, _ = strconv.ParseUint(highPart, 16, 64)
+		low, _ = strconv.ParseUint(lowPart, 16, 64)
+	}} else {{
+		low, _ = strconv.ParseUint(hexStr, 16, 64)
+		high = 0
+	}}
+	return &pb.UInt128Value{{Low: low, High: high}}
+}}
+
+func scanInt128(s string) interface{{}} {{
+	// Remove the 'i128' suffix
+	numStr := s[:len(s)-4]
+	// Use big.Int for full 128-bit precision
+	n := new(big.Int)
+	n.SetString(numStr, 10)
+
+	var low, high uint64
+	if n.Sign() >= 0 {{
+		// Positive number: extract low and high 64 bits
+		mask := new(big.Int).SetUint64(0xFFFFFFFFFFFFFFFF)
+		low = new(big.Int).And(n, mask).Uint64()
+		high = new(big.Int).Rsh(n, 64).Uint64()
+	}} else {{
+		// Negative number: two's complement representation
+		// Add 2^128 to get the unsigned representation
+		twoTo128 := new(big.Int).Lsh(big.NewInt(1), 128)
+		unsigned := new(big.Int).Add(n, twoTo128)
+		mask := new(big.Int).SetUint64(0xFFFFFFFFFFFFFFFF)
+		low = new(big.Int).And(unsigned, mask).Uint64()
+		high = new(big.Int).Rsh(unsigned, 64).Uint64()
+	}}
+	return &pb.Int128Value{{Low: low, High: high}}
+}}
+
+func scanDecimal(s string) interface{{}} {{
+	// Decimal is a string like '123.456d12' where the last part after `d` is the
+	// precision, and the scale is the number of digits between the decimal point and `d`
+	parts := strings.Split(s, "d")
+	if len(parts) != 2 {{
+		panic(ParseError{{msg: fmt.Sprintf("Invalid decimal format: %s", s)}})
+	}}
+	decParts := strings.Split(parts[0], ".")
+	scale := int32(0)
+	if len(decParts) == 2 {{
+		scale = int32(len(decParts[1]))
+	}}
+	precision, _ := strconv.ParseInt(parts[1], 10, 32)
+
+	// Parse the integer value
+	intStr := strings.ReplaceAll(parts[0], ".", "")
+	n, _ := strconv.ParseInt(intStr, 10, 64)
+	var low, high uint64
+	if n >= 0 {{
+		low = uint64(n)
+		high = 0
+	}} else {{
+		low = uint64(n)
+		high = 0xFFFFFFFFFFFFFFFF
+	}}
+	value := &pb.Int128Value{{Low: low, High: high}}
+	return &pb.DecimalValue{{Precision: int32(precision), Scale: scale, Value: value}}
+}}
+
+// relationIdKey is used as a map key for RelationIds
+type relationIdKey struct {{
+	Low  uint64
+	High uint64
+}}
+
+// Parser is an LL(k) recursive-descent parser
+type Parser struct {{
+	tokens            []Token
+	pos               int
+	idToDebugInfo     map[string]map[relationIdKey]string
+	currentFragmentID []byte
+}}
+
+// NewParser creates a new parser
+func NewParser(tokens []Token) *Parser {{
+	return &Parser{{
+		tokens:            tokens,
+		pos:               0,
+		idToDebugInfo:     make(map[string]map[relationIdKey]string),
+		currentFragmentID: nil,
+	}}
+}}
+
+func (p *Parser) lookahead(k int) Token {{
+	idx := p.pos + k
+	if idx < len(p.tokens) {{
+		return p.tokens[idx]
+	}}
+	return Token{{Type: "$", Value: "", Pos: -1}}
+}}
+
+func (p *Parser) consumeLiteral(expected string) {{
+	if !p.matchLookaheadLiteral(expected, 0) {{
+		token := p.lookahead(0)
+		panic(ParseError{{msg: fmt.Sprintf("Expected literal %q but got %s=`%v` at position %d", expected, token.Type, token.Value, token.Pos)}})
+	}}
+	p.pos++
+}}
+
+func (p *Parser) consumeTerminal(expected string) Token {{
+	if !p.matchLookaheadTerminal(expected, 0) {{
+		token := p.lookahead(0)
+		panic(ParseError{{msg: fmt.Sprintf("Expected terminal %s but got %s=`%v` at position %d", expected, token.Type, token.Value, token.Pos)}})
+	}}
+	token := p.lookahead(0)
+	p.pos++
+	return token
+}}
+
+func (p *Parser) matchLookaheadLiteral(literal string, k int) bool {{
+	token := p.lookahead(k)
+	// Support soft keywords: alphanumeric literals are lexed as SYMBOL tokens
+	if token.Type == "LITERAL" && token.Value == literal {{
+		return true
+	}}
+	if token.Type == "SYMBOL" && token.Value == literal {{
+		return true
+	}}
+	return false
+}}
+
+func (p *Parser) matchLookaheadTerminal(terminal string, k int) bool {{
+	token := p.lookahead(k)
+	return token.Type == terminal
+}}
+
+func (p *Parser) startFragment(fragmentID *pb.FragmentId) *pb.FragmentId {{
+	p.currentFragmentID = fragmentID.Id
+	return fragmentID
+}}
+
+func (p *Parser) relationIdFromString(name string) *pb.RelationId {{
+	// Create RelationId from string hash (matching Python implementation)
+	// Python uses: int(hashlib.sha256(name.encode()).hexdigest()[:16], 16)
+	// This takes only first 8 bytes (16 hex chars) as id_low, id_high is always 0
+	// Python interprets the hex as big-endian, so we read bytes in big-endian order
+	hash := sha256.Sum256([]byte(name))
+	var low uint64
+	for i := 0; i < 8; i++ {{
+		low = (low << 8) | uint64(hash[i])
+	}}
+	high := uint64(0)
+	relationId := &pb.RelationId{{IdLow: low, IdHigh: high}}
+
+	// Store the mapping for the current fragment if we're inside one
+	if p.currentFragmentID != nil {{
+		fragKey := string(p.currentFragmentID)
+		if _, ok := p.idToDebugInfo[fragKey]; !ok {{
+			p.idToDebugInfo[fragKey] = make(map[relationIdKey]string)
+		}}
+		idKey := relationIdKey{{Low: low, High: high}}
+		p.idToDebugInfo[fragKey][idKey] = name
+	}}
+
+	return relationId
+}}
+
+func (p *Parser) constructFragment(fragmentID *pb.FragmentId, declarations []*pb.Declaration) *pb.Fragment {{
+	// Get the debug info for this fragment
+	fragKey := string(fragmentID.Id)
+	debugInfoMap := p.idToDebugInfo[fragKey]
+
+	// Convert to DebugInfo protobuf
+	var ids []*pb.RelationId
+	var origNames []string
+	for idKey, name := range debugInfoMap {{
+		ids = append(ids, &pb.RelationId{{IdLow: idKey.Low, IdHigh: idKey.High}})
+		origNames = append(origNames, name)
+	}}
+
+	// Create DebugInfo
+	debugInfo := &pb.DebugInfo{{Ids: ids, OrigNames: origNames}}
+
+	// Clear currentFragmentID before the return
+	p.currentFragmentID = nil
+
+	// Create and return Fragment
+	return &pb.Fragment{{Id: fragmentID, Declarations: declarations, DebugInfo: debugInfo}}
+}}
+
+// Helper functions
+func dictFromList(pairs [][]interface{{}}) map[string]interface{{}} {{
+	result := make(map[string]interface{{}})
+	for _, pair := range pairs {{
+		if len(pair) >= 2 {{
+			result[pair[0].(string)] = pair[1]
+		}}
+	}}
+	return result
+}}
+
+func dictGet(m map[string]interface{{}}, key string) interface{{}} {{
+	if v, ok := m[key]; ok {{
+		return v
+	}}
+	return nil
+}}
+
+// dictGetValue retrieves a Value from the config dict with type assertion
+func dictGetValue(m map[string]interface{{}}, key string) Option[*pb.Value] {{
+	if v, ok := m[key]; ok {{
+		if val, ok := v.(*pb.Value); ok {{
+			return Some(val)
+		}}
+	}}
+	return Option[*pb.Value]{{}}
+}}
+
+func stringInList(s string, list []string) bool {{
+	for _, item := range list {{
+		if item == s {{
+			return true
+		}}
+	}}
+	return false
+}}
+
+
+// Type conversion helpers for interface{{}} to concrete types
+func toInt32(v interface{{}}) int32 {{
+	if v == nil {{ return 0 }}
+	switch x := v.(type) {{
+	case int32: return x
+	case int64: return int32(x)
+	case int: return int32(x)
+	default: return 0
+	}}
+}}
+
+func toInt64(v interface{{}}) int64 {{
+	if v == nil {{ return 0 }}
+	switch x := v.(type) {{
+	case int64: return x
+	case int32: return int64(x)
+	case int: return int64(x)
+	default: return 0
+	}}
+}}
+
+func toFloat64(v interface{{}}) float64 {{
+	if v == nil {{ return 0.0 }}
+	if f, ok := v.(float64); ok {{ return f }}
+	return 0.0
+}}
+
+func toString(v interface{{}}) string {{
+	if v == nil {{ return "" }}
+	if s, ok := v.(string); ok {{ return s }}
+	return ""
+}}
+
+func toBool(v interface{{}}) bool {{
+	if v == nil {{ return false }}
+	if b, ok := v.(bool); ok {{ return b }}
+	return false
+}}
+
+// Pointer conversion helpers for optional proto3 fields
+func ptrInt32(v int32) *int32 {{ return &v }}
+func ptrInt64(v int64) *int64 {{ return &v }}
+func ptrFloat64(v float64) *float64 {{ return &v }}
+func ptrString(v string) *string {{ return &v }}
+func ptrBool(v bool) *bool {{ return &v }}
+func ptrBytes(v []byte) *[]byte {{ return &v }}
+
+func mapSlice[T any, U any](slice []T, f func(T) U) []U {{
+	result := make([]U, len(slice))
+	for i, v := range slice {{
+		result[i] = f(v)
+	}}
+	return result
+}}
+
+func listConcat[T any](a []T, b []T) []T {{
+	if b == nil {{
+		return a
+	}}
+	result := make([]T, len(a)+len(b))
+	copy(result, a)
+	copy(result[len(a):], b)
+	return result
+}}
+
+// listConcatAny concatenates two slices passed as interface{{}}.
+// Used when type information is lost through tuple indexing.
+func listConcatAny(a interface{{}}, b interface{{}}) interface{{}} {{
+	if a == nil {{
+		return b
+	}}
+	if b == nil {{
+		return a
+	}}
+	aVal := reflect.ValueOf(a)
+	bVal := reflect.ValueOf(b)
+	result := reflect.MakeSlice(aVal.Type(), aVal.Len()+bVal.Len(), aVal.Len()+bVal.Len())
+	reflect.Copy(result, aVal)
+	reflect.Copy(result.Slice(aVal.Len(), result.Len()), bVal)
+	return result.Interface()
+}}
+
+// hasProtoField checks if a proto message has a non-nil field by name
+// This uses reflection to check for oneOf fields
+func hasProtoField(msg interface{{}}, fieldName string) bool {{
+	if msg == nil {{
+		return false
+	}}
+
+	// Handle Option types by extracting .Value field via reflection
+	val := reflect.ValueOf(msg)
+	if val.Kind() == reflect.Struct {{
+		// Check if this looks like an Option[T] (has Valid and Value fields)
+		validField := val.FieldByName("Valid")
+		valueField := val.FieldByName("Value")
+		if validField.IsValid() && valueField.IsValid() && validField.Kind() == reflect.Bool {{
+			// This is an Option type - if Valid is true, use Value
+			if validField.Bool() {{
+				msg = valueField.Interface()
+			}} else {{
+				return false
+			}}
+		}}
+	}}
+
+	// For oneOf fields in Go protobuf, the getter returns nil if not set
+	// We use reflection to call the getter method
+	val = reflect.ValueOf(msg)
+	if val.Kind() == reflect.Ptr {{
+		val = val.Elem()
+	}}
+	if val.Kind() != reflect.Struct {{
+		return false
+	}}
+
+	// Try to find a getter method: Get + PascalCase(fieldName)
+	methodName := "Get" + toPascalCase(fieldName)
+	method := reflect.ValueOf(msg).MethodByName(methodName)
+	if !method.IsValid() {{
+		return false
+	}}
+
+	results := method.Call(nil)
+	if len(results) == 0 {{
+		return false
+	}}
+
+	result := results[0]
+	if result.Kind() == reflect.Ptr || result.Kind() == reflect.Interface {{
+		return !result.IsNil()
+	}}
+	return true
+}}
+
+func toPascalCase(s string) string {{
+	parts := strings.Split(s, "_")
+	for i, part := range parts {{
+		if len(part) > 0 {{
+			parts[i] = strings.ToUpper(part[:1]) + part[1:]
+		}}
+	}}
+	return strings.Join(parts, "")
+}}
+
+// --- Helper functions ---
+{named_function_defns}
+
+// --- Parse functions ---
+{parse_nonterminal_defns}
+
+// Parse parses the input string and returns the result
+func Parse(input string) (*pb.Transaction, error) {{
+	defer func() {{
+		if r := recover(); r != nil {{
+			if pe, ok := r.(ParseError); ok {{
+				panic(pe)
+			}}
+			panic(r)
+		}}
+	}}()
+
+	lexer := NewLexer(input)
+	parser := NewParser(lexer.tokens)
+	result := parser.parse_{start_name}()
+
+	// Check for unconsumed tokens (except EOF)
+	if parser.pos < len(parser.tokens) {{
+		remainingToken := parser.lookahead(0)
+		if remainingToken.Type != "$" {{
+			return nil, ParseError{{msg: fmt.Sprintf("Unexpected token at end of input: %v", remainingToken)}}
+		}}
+	}}
+	return result, nil
+}}

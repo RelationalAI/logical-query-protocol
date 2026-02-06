@@ -75,6 +75,7 @@ from .codegen_julia import (
 )
 
 from .parser_gen_python import generate_parser_python
+from .parser_gen_julia import generate_parser_julia
 
 __all__ = [
     # Target language AST
@@ -121,6 +122,7 @@ __all__ = [
     'GrammarConflictError',
     'AmbiguousGrammarError',
     'generate_parser_python',
+    'generate_parser_julia',
     # Python code generation
     'generate_python',
     'generate_python_lines',

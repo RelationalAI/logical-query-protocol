@@ -80,7 +80,7 @@ from typing import Dict, List, Optional, Set, Tuple, Sequence as PySequence
 from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Terminal, Sequence
 from .grammar_utils import is_epsilon, rhs_elements
 from .target import Lambda, Call, VisitNonterminalDef, Var, Lit, Symbol, Builtin, NewMessage, OneOf, Let, IfElse, BaseType, ListType, ListExpr, TargetExpr, Seq, While, Foreach, ForeachEnumerated, Assign, VisitNonterminal, Return, GetField, GetElement, NamedFun
-from .target_builtins import make_builtin
+from .target_builtins import make_builtin, make_builtin_with_type
 from .gensym import gensym
 from .terminal_sequence_set import TerminalSequenceSet, FollowSet, FirstSet, ConcatSet
 
@@ -313,7 +313,14 @@ def _generate_parse_rhs_ir(rhs: Rhs, grammar: Grammar, follow_set: TerminalSeque
             return Seq([parse_expr, _apply(action, [])])
         return parse_expr
     elif isinstance(rhs, NamedTerminal):
-        parse_expr = Call(make_builtin('consume_terminal'), [Lit(rhs.name)])
+        # Use terminal's actual type for consume_terminal instead of generic Token
+        from .target import FunctionType
+        terminal_type = rhs.target_type()
+        consume_builtin = make_builtin_with_type(
+            'consume_terminal',
+            FunctionType([BaseType('String')], terminal_type)
+        )
+        parse_expr = Call(consume_builtin, [Lit(rhs.name)])
         if apply_action and action:
             if len(action.params) == 0:
                 return Seq([parse_expr, _apply(action, [])])

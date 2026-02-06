@@ -204,7 +204,7 @@ class ProtoParser:
 
     def _parse_enum(self, name: str, body: str) -> ProtoEnum:
         """Parse enum definition body into values."""
-        enum_obj = ProtoEnum(name=name)
+        enum_obj = ProtoEnum(name=name, module=self.current_module)
         for match in _ENUM_VALUE_PATTERN.finditer(body):
             value_name = match.group(1)
             value_number = int(match.group(2))

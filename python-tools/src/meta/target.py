@@ -218,6 +218,28 @@ class NewMessage(TargetExpr):
 
 
 @dataclass(frozen=True)
+class EnumValue(TargetExpr):
+    """Enum value reference: module.EnumName.VALUE_NAME
+
+    Represents a reference to a protobuf enum value.
+
+    module: Module name (protobuf file stem)
+    enum_name: Name of the enum type
+    value_name: Name of the enum value
+    """
+    module: str
+    enum_name: str
+    value_name: str
+
+    def __str__(self) -> str:
+        return f"{self.module}.{self.enum_name}.{self.value_name}"
+
+    def target_type(self) -> 'TargetType':
+        # EnumType is defined later in the file
+        return EnumType(self.module, self.enum_name)  # noqa: F821
+
+
+@dataclass(frozen=True)
 class OneOf(TargetExpr):
     """OneOf field discriminator.
 
@@ -270,6 +292,10 @@ class VisitNonterminal(TargetExpr):
     def __str__(self) -> str:
         return f"{self.visitor_name}_{self.nonterminal.name}"
 
+    def target_type(self) -> 'TargetType':
+        """Return the type of the nonterminal."""
+        return self.nonterminal.target_type()
+
 
 @dataclass(frozen=True)
 class Call(TargetExpr):
@@ -289,6 +315,9 @@ class Call(TargetExpr):
         _freeze_sequence(self, 'args')
 
     def target_type(self) -> 'TargetType':
+        # For VisitNonterminal, the type is the nonterminal's target type directly
+        if isinstance(self.func, VisitNonterminal):
+            return self.func.target_type()
         func_type = self.func.target_type()
         if isinstance(func_type, FunctionType):
             # Match parameter types against argument types to build type variable mapping
@@ -574,6 +603,20 @@ class MessageType(TargetType):
 
 
 @dataclass(frozen=True)
+class EnumType(TargetType):
+    """Protobuf enum types.
+
+    Example:
+        EnumType("transactions", "MaintenanceLevel")
+    """
+    module: str
+    name: str
+
+    def __str__(self) -> str:
+        return f"{self.module}.{self.name}"
+
+
+@dataclass(frozen=True)
 class TupleType(TargetType):
     """Tuple type with fixed number of element types."""
     elements: Sequence[TargetType]
@@ -647,7 +690,7 @@ def subst_type(typ: 'TargetType', mapping: dict[str, 'TargetType']) -> 'TargetTy
     """Substitute type variables in a type according to the mapping."""
     if isinstance(typ, VarType):
         return mapping.get(typ.name, typ)
-    if isinstance(typ, (BaseType, MessageType)):
+    if isinstance(typ, (BaseType, MessageType, EnumType)):
         return typ
     if isinstance(typ, ListType):
         return ListType(subst_type(typ.element_type, mapping))
@@ -747,6 +790,7 @@ __all__ = [
     'Builtin',
     'NamedFun',
     'NewMessage',
+    'EnumValue',
     'OneOf',
     'ListExpr',
     'Call',
@@ -765,6 +809,7 @@ __all__ = [
     'BaseType',
     'VarType',
     'MessageType',
+    'EnumType',
     'TupleType',
     'ListType',
     'DictType',

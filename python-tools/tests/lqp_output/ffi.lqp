@@ -6,29 +6,29 @@
     (writes
       (define
         (fragment :primitives
-          (def 17566150147137631162
+          (def 0xf3c7807d475073ba
             ([v::INT]
               (or
                 (primitive :rel_primitive_eq v 5)
                 (primitive :rel_primitive_eq v 12)
                 (primitive :rel_primitive_eq v 3))))
-          (def 2638187172736215459
+          (def 0x249cb94181ef29a3
             ([ord::INT v::INT]
               (ffi :rel_primitive_sort
                 (args
                   ([x::INT]
-                    (atom 17566150147137631162 x)))
+                    (atom 0xf3c7807d475073ba x)))
                 (terms ord v))))
-          (def 7431768677182986746
+          (def 0x6722f23c985dd9fa
             ([ord::INT v::INT]
               (ffi :rel_primitive_top
                 (args
                   ([x::INT]
-                    (atom 17566150147137631162 x))
+                    (atom 0xf3c7807d475073ba x))
                   ([limit::INT]
                     (primitive :rel_primitive_eq limit 2)))
                 (terms ord v)))))))
     (reads
-      (output :numbers 17566150147137631162)
-      (output :limit_sorted_numbers 7431768677182986746)
-      (output :sorted_numbers 2638187172736215459))))
+      (output :numbers 0xf3c7807d475073ba)
+      (output :limit_sorted_numbers 0x6722f23c985dd9fa)
+      (output :sorted_numbers 0x249cb94181ef29a3))))

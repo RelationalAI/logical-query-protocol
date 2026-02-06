@@ -16,7 +16,7 @@ from .parser_gen import generate_parse_functions
 
 
 # Load template at module level
-_TEMPLATE_PATH = Path(__file__).parent / "python_parser_prologue.py.template"
+_TEMPLATE_PATH = Path(__file__).parent / "templates" / "parser.py.template"
 PROLOGUE_TEMPLATE = _TEMPLATE_PATH.read_text()
 
 
@@ -37,7 +37,7 @@ def generate_parser_python(grammar: Grammar, command_line: Optional[str] = None,
 
     # Generate user-defined function methods from function_defs
     function_lines = []
-    for name, fundef in grammar.function_defs.items():
+    for fundef in grammar.function_defs.values():
         function_lines.append("")
         function_lines.append(codegen._generate_builtin_method_def(fundef, "    "))
     named_function_defns = "\n".join(function_lines) if function_lines else ""

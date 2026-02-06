@@ -84,6 +84,12 @@ class PythonCodeGenerator(CodeGenerator):
     def gen_message_type(self, module: str, name: str) -> str:
         return f"{module}_pb2.{name}"
 
+    def gen_enum_type(self, module: str, name: str) -> str:
+        return f"{module}_pb2.{name}"
+
+    def gen_enum_value(self, module: str, enum_name: str, value_name: str) -> str:
+        return f"{module}_pb2.{enum_name}.{value_name}"
+
     def gen_tuple_type(self, element_types: List[str]) -> str:
         if not element_types:
             return 'tuple[()]'

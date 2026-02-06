@@ -6,12 +6,12 @@
     (writes
       (define
         (fragment :f1
-          (def 17307602785083346210
+          (def 0xf030f5088e744d22
             ([row::INT v::INT]
               (and
                 (primitive :rel_primitive_eq row 1)
                 (primitive :rel_primitive_eq 2 v))))
-          (def 8011686847096043948
+          (def 0x6f2f3abd5cd439ac
             ([row::INT v::STRING]
               (and
                 (primitive :rel_primitive_eq row 1)
@@ -20,7 +20,7 @@
       (export
         (export_csv_config
           (path "wrong")
-          (columns (column "col1name" 17307602785083346210) (column "col2name" 8011686847096043948))
+          (columns (column "col1name" 0xf030f5088e744d22) (column "col2name" 0x6f2f3abd5cd439ac))
           { :compression ""
             :partition_size 10
             :syntax_delim ","
