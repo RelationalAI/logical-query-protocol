@@ -44,7 +44,7 @@ META_PROTO_ARGS := \
 .PHONY: all build lint breaking protobuf protobuf-py protobuf-julia parsers \
 	parser-python parser-julia \
 	force-parsers force-parser-python force-parser-julia \
-	test test-python test-julia \
+	test test-python test-julia check-python \
 	clean
 
 all: build parsers
@@ -100,11 +100,14 @@ force-parser-julia:
 
 test: test-python test-julia
 
-test-python: parser-python
+test-python: parser-python check-python
 	cd python-tools && python -m pytest
 
 test-julia: parser-julia
 	cd julia && julia --project=LQPParser -e 'using Pkg; Pkg.test("LQPParser")'
+
+check-python:
+	cd python-tools && pyrefly check
 
 # ---------- cleanup ----------
 
