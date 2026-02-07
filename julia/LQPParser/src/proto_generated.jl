@@ -16,8 +16,8 @@ export Exists, FFI, FunctionalDependency, MonoidDef, MonusDef, Not, Reduce, Scri
 export Construct, Loop, Declaration, Instruction, Formula
 
 # Import transaction types
-using .relationalai.lqp.v1: Transaction, Sync, Epoch, Writes, Reads, Output, Configure, IVMConfig
-export Transaction, Sync, Epoch, Writes, Reads, Output, Configure, IVMConfig
+using .relationalai.lqp.v1: Transaction, Sync, Epoch, Write, Read, Output, Configure, IVMConfig
+export Transaction, Sync, Epoch, Write, Read, Output, Configure, IVMConfig
 
 # Import fragment types
 using .relationalai.lqp.v1: Fragment, FragmentId, DebugInfo
