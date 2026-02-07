@@ -324,7 +324,7 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
                 and isinstance(func.value, ast.Name)
                 and func.value.id == 'list'
                 and not args and not node.keywords):
-            elem_type = _annotation_to_type(func.slice, line)
+            elem_type = _annotation_to_type(func.slice, line or 0)
             return ListExpr([], elem_type)
 
         # Handle builtin.foo(...) syntax for builtins

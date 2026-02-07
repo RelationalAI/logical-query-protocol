@@ -43,7 +43,7 @@ class PythonCodeGenerator(CodeGenerator):
 
     def __init__(self, proto_messages=None):
         super().__init__(proto_messages)
-        self._message_field_map = None
+        self._message_field_map: dict | None = None
         self._register_builtins()
 
     def _register_builtins(self) -> None:
