@@ -44,13 +44,18 @@ PYTHON_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "length": BuiltinTemplate("len({0})"),
     "unwrap_option_or": BuiltinTemplate("({0} if {0} is not None else {1})"),
     "int64_to_int32": BuiltinTemplate("int({0})"),
+    "to_ptr_int64": BuiltinTemplate("{0}"),  # Python doesn't need pointers
+    "to_ptr_string": BuiltinTemplate("{0}"),
+    "to_ptr_bool": BuiltinTemplate("{0}"),
     "map": BuiltinTemplate("[{0}(x) for x in {1}]"),
     "list_concat": BuiltinTemplate("({0} + ({1} if {1} is not None else []))"),
+    "list_push": BuiltinTemplate("None", ["{0}.append({1})"]),
     "fragment_id_from_string": BuiltinTemplate("fragments_pb2.FragmentId(id={0}.encode())"),
     "relation_id_from_string": BuiltinTemplate("self.relation_id_from_string({0})"),
     "relation_id_from_int": BuiltinTemplate(
         "logic_pb2.RelationId(id_low={0} & 0xFFFFFFFFFFFFFFFF, id_high=({0} >> 64) & 0xFFFFFFFFFFFFFFFF)"
     ),
+    "relation_id_from_uint128": BuiltinTemplate("logic_pb2.RelationId(id_low={0}.low, id_high={0}.high)"),
     "match_lookahead_terminal": BuiltinTemplate("self.match_lookahead_terminal({0}, {1})"),
     "match_lookahead_literal": BuiltinTemplate("self.match_lookahead_literal({0}, {1})"),
     "consume_literal": BuiltinTemplate("None", ["self.consume_literal({0})"]),
@@ -81,9 +86,7 @@ JULIA_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "make_empty_bytes": BuiltinTemplate("UInt8[]"),
     "dict_from_list": BuiltinTemplate("Dict({0})"),
     "dict_get": BuiltinTemplate("get({0}, {1}, nothing)"),
-    "has_proto_field": BuiltinTemplate(
-        "hasproperty({0}, Symbol({1})) && !isnothing(getproperty({0}, Symbol({1})))"
-    ),
+    "has_proto_field": BuiltinTemplate("_has_proto_field({0}, Symbol({1}))"),
     "string_to_upper": BuiltinTemplate("uppercase({0})"),
     "string_in_list": BuiltinTemplate("({0} in {1})"),
     "string_concat": BuiltinTemplate("({0} * {1})"),
@@ -92,23 +95,29 @@ JULIA_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "length": BuiltinTemplate("length({0})"),
     "unwrap_option_or": BuiltinTemplate("(!isnothing({0}) ? {0} : {1})"),
     "int64_to_int32": BuiltinTemplate("Int32({0})"),
+    "to_ptr_int64": BuiltinTemplate("{0}"),  # Julia doesn't need pointers
+    "to_ptr_string": BuiltinTemplate("{0}"),
+    "to_ptr_bool": BuiltinTemplate("{0}"),
     "map": BuiltinTemplate("map({0}, {1})"),
     "list_concat": BuiltinTemplate("vcat({0}, !isnothing({1}) ? {1} : [])"),
-    "fragment_id_from_string": BuiltinTemplate("Proto.FragmentId(; id=Vector{{UInt8}}({0}))"),
+    "list_push": BuiltinTemplate("nothing", ["push!({0}, {1})"]),
+    "fragment_id_from_string": BuiltinTemplate("Proto.FragmentId(Vector{{UInt8}}({0}))"),
     "relation_id_from_string": BuiltinTemplate("relation_id_from_string(parser, {0})"),
     "relation_id_from_int": BuiltinTemplate(
-        "Proto.RelationId(; id_low={0} & 0xFFFFFFFFFFFFFFFF, id_high=({0} >> 64) & 0xFFFFFFFFFFFFFFFF)"
+        "Proto.RelationId({0} & 0xFFFFFFFFFFFFFFFF, ({0} >> 64) & 0xFFFFFFFFFFFFFFFF)"
     ),
+    "relation_id_from_uint128": BuiltinTemplate("Proto.RelationId({0}.low, {0}.high)"),
     "match_lookahead_terminal": BuiltinTemplate("match_lookahead_terminal(parser, {0}, {1})"),
     "match_lookahead_literal": BuiltinTemplate("match_lookahead_literal(parser, {0}, {1})"),
     "consume_literal": BuiltinTemplate("nothing", ["consume_literal!(parser, {0})"]),
     "consume_terminal": BuiltinTemplate("consume_terminal!(parser, {0})"),
-    "current_token": BuiltinTemplate("current_token(parser)"),
-    "start_fragment": BuiltinTemplate("{0}", ["start_fragment(parser, {0})"]),
+    "current_token": BuiltinTemplate("lookahead(parser, 0)"),
+    "start_fragment": BuiltinTemplate("{0}", ["start_fragment!(parser, {0})"]),
     "construct_fragment": BuiltinTemplate("construct_fragment(parser, {0}, {1})"),
     "error": BuiltinTemplate(None, ["throw(ParseError({0}))"]),
     "error_with_token": BuiltinTemplate(None, ['throw(ParseError({0} * ": " * string({1})))']),
 }
+
 
 
 __all__ = [

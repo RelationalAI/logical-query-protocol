@@ -164,7 +164,7 @@
 
 transaction
     : "(" "transaction" configure? sync? epoch* ")"
-      construct: transactions.Transaction(epochs=$5, configure=builtin.unwrap_option_or($3, construct_configure([])), sync=$4)
+      construct: transactions.Transaction(epochs=$5, configure=builtin.unwrap_option_or($3, default_configure()), sync=$4)
 
 configure
     : "(" "configure" config_dict ")"
@@ -223,7 +223,7 @@ fragment_id
 
 epoch
     : "(" "epoch" epoch_writes? epoch_reads? ")"
-      construct: transactions.Epoch(writes=builtin.unwrap_option_or($3, []), reads=builtin.unwrap_option_or($4, []))
+      construct: transactions.Epoch(writes=builtin.unwrap_option_or($3, list[transactions.Write]()), reads=builtin.unwrap_option_or($4, list[transactions.Read]()))
 
 epoch_writes
     : "(" "writes" write* ")"
@@ -262,7 +262,7 @@ declaration
 
 def
     : "(" "def" relation_id abstraction attrs? ")"
-      construct: logic.Def(name=$3, body=$4, attrs=builtin.unwrap_option_or($5, []))
+      construct: logic.Def(name=$3, body=$4, attrs=builtin.unwrap_option_or($5, list[logic.Attribute]()))
 
 relation_id
     : ":" SYMBOL
@@ -276,7 +276,7 @@ abstraction
 
 bindings
     : "[" binding* value_bindings? "]"
-      construct: builtin.tuple($2, builtin.unwrap_option_or($3, []))
+      construct: builtin.tuple($2, builtin.unwrap_option_or($3, list[logic.Binding]()))
 
 binding
     : SYMBOL "::" type
@@ -383,11 +383,11 @@ formula
 
 true
     : "(" "true" ")"
-      construct: logic.Conjunction(args=[])
+      construct: logic.Conjunction(args=list[logic.Formula]())
 
 false
     : "(" "false" ")"
-      construct: logic.Disjunction(args=[])
+      construct: logic.Disjunction(args=list[logic.Formula]())
 
 exists
     : "(" "exists" bindings formula ")"
@@ -551,11 +551,11 @@ instruction
 
 assign
     : "(" "assign" relation_id abstraction attrs? ")"
-      construct: logic.Assign(name=$3, body=$4, attrs=builtin.unwrap_option_or($5, []))
+      construct: logic.Assign(name=$3, body=$4, attrs=builtin.unwrap_option_or($5, list[logic.Attribute]()))
 
 upsert
     : "(" "upsert" relation_id abstraction_with_arity attrs? ")"
-      construct: logic.Upsert(name=$3, body=$4[0], attrs=builtin.unwrap_option_or($5, []), value_arity=$4[1])
+      construct: logic.Upsert(name=$3, body=$4[0], attrs=builtin.unwrap_option_or($5, list[logic.Attribute]()), value_arity=$4[1])
 
 abstraction_with_arity
     : "(" bindings formula ")"
@@ -563,11 +563,11 @@ abstraction_with_arity
 
 break
     : "(" "break" relation_id abstraction attrs? ")"
-      construct: logic.Break(name=$3, body=$4, attrs=builtin.unwrap_option_or($5, []))
+      construct: logic.Break(name=$3, body=$4, attrs=builtin.unwrap_option_or($5, list[logic.Attribute]()))
 
 monoid_def
     : "(" "monoid" monoid relation_id abstraction_with_arity attrs? ")"
-      construct: logic.MonoidDef(monoid=$3, name=$4, body=$5[0], attrs=builtin.unwrap_option_or($6, []), value_arity=$5[1])
+      construct: logic.MonoidDef(monoid=$3, name=$4, body=$5[0], attrs=builtin.unwrap_option_or($6, list[logic.Attribute]()), value_arity=$5[1])
 
 monoid
     : or_monoid
@@ -596,7 +596,7 @@ sum_monoid
 
 monus_def
     : "(" "monus" monoid relation_id abstraction_with_arity attrs? ")"
-      construct: logic.MonusDef(monoid=$3, name=$4, body=$5[0], attrs=builtin.unwrap_option_or($6, []), value_arity=$5[1])
+      construct: logic.MonusDef(monoid=$3, name=$4, body=$5[0], attrs=builtin.unwrap_option_or($6, list[logic.Attribute]()), value_arity=$5[1])
 
 constraint
     : "(" "functional_dependency" relation_id abstraction functional_dependency_keys functional_dependency_values ")"
@@ -658,7 +658,7 @@ csv_locator_inline_data
 
 csvlocator
     : "(" "csv_locator" csv_locator_paths? csv_locator_inline_data? ")"
-      construct: logic.CSVLocator(paths=builtin.unwrap_option_or($3, []), inline_data=builtin.encode_string(builtin.unwrap_option_or($4, "")))
+      construct: logic.CSVLocator(paths=builtin.unwrap_option_or($3, list[str]()), inline_data=builtin.encode_string(builtin.unwrap_option_or($4, "")))
 
 csv_config
     : "(" "csv_config" config_dict ")"
@@ -814,12 +814,12 @@ def construct_csv_config(config_dict: List[Tuple[String, logic.Value]]) -> logic
     quotechar: str = _extract_value_string(builtin.dict_get(config, "csv_quotechar"), "\"")
     escapechar: str = _extract_value_string(builtin.dict_get(config, "csv_escapechar"), "\"")
     comment: str = _extract_value_string(builtin.dict_get(config, "csv_comment"), "")
-    missing_strings: List[String] = _extract_value_string_list(builtin.dict_get(config, "csv_missing_strings"), [])
+    missing_strings: List[String] = _extract_value_string_list(builtin.dict_get(config, "csv_missing_strings"), list[str]())
     decimal_separator: str = _extract_value_string(builtin.dict_get(config, "csv_decimal_separator"), ".")
     encoding: str = _extract_value_string(builtin.dict_get(config, "csv_encoding"), "utf-8")
     compression: str = _extract_value_string(builtin.dict_get(config, "csv_compression"), "auto")
     return logic.CSVConfig(
-        header_row=header_row,
+        header_row=builtin.int64_to_int32(header_row),
         skip=skip,
         new_line=new_line,
         delimiter=delimiter,
@@ -867,22 +867,27 @@ def construct_betree_info(
     )
 
 
+def default_configure() -> transactions.Configure:
+    ivm_config: transactions.IVMConfig = transactions.IVMConfig(level=transactions.MaintenanceLevel.MAINTENANCE_LEVEL_OFF)
+    return transactions.Configure(
+        semantics_version=0,
+        ivm_config=ivm_config,
+    )
+
 def construct_configure(config_dict: List[Tuple[String, logic.Value]]) -> transactions.Configure:
     config: Dict[String, logic.Value] = builtin.dict_from_list(config_dict)
     maintenance_level_val: Optional[logic.Value] = builtin.dict_get(config, "ivm.maintenance_level")
-    maintenance_level: str
+    maintenance_level: transactions.MaintenanceLevel = transactions.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
     if (maintenance_level_val is not None
             and builtin.has_proto_field(maintenance_level_val, 'string_value')):
         if maintenance_level_val.string_value == "off":
-            maintenance_level = "MAINTENANCE_LEVEL_OFF"
+            maintenance_level = transactions.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
         elif maintenance_level_val.string_value == "auto":
-            maintenance_level = "MAINTENANCE_LEVEL_AUTO"
+            maintenance_level = transactions.MaintenanceLevel.MAINTENANCE_LEVEL_AUTO
         elif maintenance_level_val.string_value == "all":
-            maintenance_level = "MAINTENANCE_LEVEL_ALL"
+            maintenance_level = transactions.MaintenanceLevel.MAINTENANCE_LEVEL_ALL
         else:
-            maintenance_level = "MAINTENANCE_LEVEL_OFF"
-    else:
-        maintenance_level = "MAINTENANCE_LEVEL_OFF"
+            maintenance_level = transactions.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
     ivm_config: transactions.IVMConfig = transactions.IVMConfig(level=maintenance_level)
     semantics_version: int = _extract_value_int64(builtin.dict_get(config, "semantics_version"), 0)
     return transactions.Configure(
@@ -907,11 +912,11 @@ def export_csv_config(
     return transactions.ExportCSVConfig(
         path=path,
         data_columns=columns,
-        partition_size=partition_size,
-        compression=compression,
-        syntax_header_row=syntax_header_row,
-        syntax_missing_string=syntax_missing_string,
-        syntax_delim=syntax_delim,
-        syntax_quotechar=syntax_quotechar,
-        syntax_escapechar=syntax_escapechar,
+        partition_size=builtin.to_ptr_int64(partition_size),
+        compression=builtin.to_ptr_string(compression),
+        syntax_header_row=builtin.to_ptr_bool(syntax_header_row),
+        syntax_missing_string=builtin.to_ptr_string(syntax_missing_string),
+        syntax_delim=builtin.to_ptr_string(syntax_delim),
+        syntax_quotechar=builtin.to_ptr_string(syntax_quotechar),
+        syntax_escapechar=builtin.to_ptr_string(syntax_escapechar),
     )

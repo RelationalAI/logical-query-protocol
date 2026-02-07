@@ -2,7 +2,7 @@
 
 This module generates recursive-descent parsers from context-free grammars.
 It produces a target-language-independent IR (intermediate representation)
-that can then be translated to Python, Julia, Go, or other languages.
+that can then be translated to Python, Julia, or other languages.
 
 Overview
 --------
@@ -51,7 +51,7 @@ Builtins used:
 - consume_terminal(name): Consume a terminal, return its value
 - match_lookahead_literal(s, k): Check if lookahead[k] is literal s
 - match_lookahead_terminal(name, k): Check if lookahead[k] is terminal type
-- list_concat(list1, list2): Concatenate two lists (returns new list)
+- list_push(list, item): Mutating push to list (returns Void)
 - equal(a, b): Equality check
 - error(msg, context): Raise parse error
 
@@ -76,11 +76,12 @@ The generated IR for expr (simplified) would be:
         t  # semantic action
 """
 
-from typing import Dict, List, Optional, Set, Tuple, Sequence as PySequence
+from typing import Dict, List, Optional, Set, Tuple
 from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Terminal, Sequence
 from .grammar_utils import is_epsilon, rhs_elements
-from .target import Lambda, Call, VisitNonterminalDef, Var, Lit, Symbol, Builtin, NewMessage, OneOf, Let, IfElse, BaseType, ListType, ListExpr, TargetExpr, Seq, While, Foreach, ForeachEnumerated, Assign, VisitNonterminal, Return, GetField, GetElement, NamedFun
-from .target_builtins import make_builtin
+from .target import Lambda, Call, VisitNonterminalDef, Var, Lit, Let, IfElse, BaseType, ListType, ListExpr, TargetExpr, Seq, While, Assign, VisitNonterminal
+from .target_builtins import make_builtin, make_builtin_with_type
+from .target_utils import apply_lambda
 from .gensym import gensym
 from .terminal_sequence_set import TerminalSequenceSet, FollowSet, FirstSet, ConcatSet
 
@@ -310,30 +311,38 @@ def _generate_parse_rhs_ir(rhs: Rhs, grammar: Grammar, follow_set: TerminalSeque
     elif isinstance(rhs, LitTerminal):
         parse_expr = Call(make_builtin('consume_literal'), [Lit(rhs.name)])
         if apply_action and action:
-            return Seq([parse_expr, _apply(action, [])])
+            return Seq([parse_expr, apply_lambda(action,[])])
         return parse_expr
     elif isinstance(rhs, NamedTerminal):
-        parse_expr = Call(make_builtin('consume_terminal'), [Lit(rhs.name)])
+        # Use terminal's actual type for consume_terminal instead of generic Token
+        from .target import FunctionType
+        terminal_type = rhs.target_type()
+        consume_builtin = make_builtin_with_type(
+            'consume_terminal',
+            FunctionType([BaseType('String')], terminal_type)
+        )
+        parse_expr = Call(consume_builtin, [Lit(rhs.name)])
         if apply_action and action:
             if len(action.params) == 0:
-                return Seq([parse_expr, _apply(action, [])])
+                return Seq([parse_expr, apply_lambda(action,[])])
             var_name = gensym(action.params[0].name)
             var = Var(var_name, rhs.target_type())
-            return Let(var, parse_expr, _apply(action, [var]))
+            return Let(var, parse_expr, apply_lambda(action,[var]))
         return parse_expr
     elif isinstance(rhs, Nonterminal):
         parse_expr = Call(VisitNonterminal('parse', rhs), [])
         if apply_action and action:
             if len(action.params) == 0:
-                return Seq([parse_expr, _apply(action, [])])
+                return Seq([parse_expr, apply_lambda(action,[])])
             var_name = gensym(action.params[0].name)
             var = Var(var_name, rhs.target_type())
-            return Let(var, parse_expr, _apply(action, [var]))
+            return Let(var, parse_expr, apply_lambda(action,[var]))
         return parse_expr
     elif isinstance(rhs, Option):
         assert grammar is not None
         predictor = _build_option_predictor(grammar, rhs.rhs, follow_set)
-        return IfElse(predictor, _generate_parse_rhs_ir(rhs.rhs, grammar, follow_set, False, None), Lit(None))
+        parse_result = _generate_parse_rhs_ir(rhs.rhs, grammar, follow_set, False, None)
+        return IfElse(predictor, Call(make_builtin('some'), [parse_result]), Lit(None))
     elif isinstance(rhs, Star):
         assert grammar is not None
         xs = Var(gensym('xs'), ListType(rhs.rhs.target_type()))
@@ -343,7 +352,7 @@ def _generate_parse_rhs_ir(rhs: Rhs, grammar: Grammar, follow_set: TerminalSeque
         item = Var(gensym('item'), rhs.rhs.target_type())
         loop_body = Seq([
             Assign(item, parse_item),
-            Assign(xs, Call(make_builtin('list_concat'), [xs, ListExpr([item], rhs.rhs.target_type())])),
+            Call(make_builtin('list_push'), [xs, item]),
             Assign(cond, predictor)
         ])
         return Let(xs, ListExpr([], rhs.rhs.target_type()),
@@ -384,7 +393,7 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, grammar: Grammar, follow_set:
             arg_vars.append(var)
             non_literal_count += 1
     if apply_action and action:
-        lambda_call = _apply(action, arg_vars)
+        lambda_call = apply_lambda(action,arg_vars)
         exprs.append(lambda_call)
     elif len(arg_vars) > 1:
         # Multiple values - wrap in tuple
@@ -401,63 +410,3 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, grammar: Grammar, follow_set:
     else:
         return Seq(exprs)
 
-def _apply(func: 'Lambda', args: PySequence['TargetExpr']) -> 'TargetExpr':
-    if len(args) == 0 and len(func.params) == 0:
-        return func.body
-    if len(func.params) > 0 and len(args) > 0:
-        body = _apply(Lambda(params=func.params[1:], return_type=func.return_type, body=func.body), args[1:])
-        if isinstance(args[0], (Var, Lit)):
-            return _subst(body, func.params[0].name, args[0])
-        return Let(func.params[0], args[0], body)
-    return Call(func, args)
-
-def _subst(expr: 'TargetExpr', var: str, val: 'TargetExpr') -> 'TargetExpr':
-    if isinstance(expr, Var):
-        if expr.name == var:
-            return val
-        else:
-            return expr
-    elif isinstance(expr, Lambda):
-        if var in [p.name for p in expr.params]:
-            return expr
-        return Lambda(params=expr.params, return_type=expr.return_type, body=_subst(expr.body, var, val))
-    elif isinstance(expr, Let):
-        if expr.var.name == var:
-            return expr
-        return Let(expr.var, _subst(expr.init, var, val), _subst(expr.body, var, val))
-    elif isinstance(expr, Assign):
-        return Assign(expr.var, _subst(expr.expr, var, val))
-    elif isinstance(expr, Call):
-        return Call(_subst(expr.func, var, val), [_subst(arg, var, val) for arg in expr.args])
-    elif isinstance(expr, Seq):
-        return Seq([_subst(arg, var, val) for arg in expr.exprs])
-    elif isinstance(expr, IfElse):
-        return IfElse(_subst(expr.condition, var, val), _subst(expr.then_branch, var, val), _subst(expr.else_branch, var, val))
-    elif isinstance(expr, While):
-        return While(_subst(expr.condition, var, val), _subst(expr.body, var, val))
-    elif isinstance(expr, Foreach):
-        if expr.var.name == var:
-            return expr
-        return Foreach(expr.var, _subst(expr.collection, var, val), _subst(expr.body, var, val))
-    elif isinstance(expr, ForeachEnumerated):
-        if expr.index_var.name == var or expr.var.name == var:
-            return expr
-        return ForeachEnumerated(expr.index_var, expr.var, _subst(expr.collection, var, val), _subst(expr.body, var, val))
-    elif isinstance(expr, ListExpr):
-        return ListExpr([_subst(elem, var, val) for elem in expr.elements], expr.element_type)
-    elif isinstance(expr, Return):
-        return Return(_subst(expr.expr, var, val))
-    elif isinstance(expr, GetField):
-        return GetField(_subst(expr.object, var, val), expr.field_name, expr.message_type, expr.field_type)
-    elif isinstance(expr, GetElement):
-        return GetElement(_subst(expr.tuple_expr, var, val), expr.index)
-    elif isinstance(expr, NewMessage):
-        # NewMessage can have fields that contain variables
-        if expr.fields:
-            new_fields = tuple((name, _subst(field_expr, var, val)) for name, field_expr in expr.fields)
-            return NewMessage(expr.module, expr.name, new_fields)
-        return expr
-    elif isinstance(expr, (Lit, Symbol, Builtin, OneOf, VisitNonterminal, NamedFun)):
-        # These don't contain variables, return unchanged
-        return expr
-    raise ValueError(f"Unknown expression type in _subst: {type(expr).__name__}")

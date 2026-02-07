@@ -124,6 +124,14 @@ def test_python_builtin_generation():
     result = gen.generate_lines(expr, lines, "")
     assert result == "(lst + (other if other is not None else []))"
 
+    # Test 'list_push' builtin (mutating push with statement)
+    reset_gensym()
+    lines = []
+    expr = Call(make_builtin("list_push"), [Var("lst", ListType(_int_type)), Var("item", _int_type)])
+    result = gen.generate_lines(expr, lines, "")
+    assert result == "None"
+    assert lines == ["lst.append(item)"]
+
     # Test 'is_none' builtin
     reset_gensym()
     lines = []
@@ -301,8 +309,8 @@ def test_python_message_generation():
     lines = []
     expr = NewMessage("logic", "Expr", ())
     result = gen.generate_lines(expr, lines, "")
-    # Python codegen returns constructor directly for empty NewMessage
-    assert result == "logic_pb2.Expr()"
+    assert result == "_t0"
+    assert "logic_pb2.Expr()" in "\n".join(lines)
 
     # NewMessage with field
     reset_gensym()

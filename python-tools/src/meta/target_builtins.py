@@ -111,6 +111,7 @@ register_builtin("unwrap_option_or", [OptionType(T), T], T)
 
 # === List operations ===
 register_builtin("list_concat", [ListType(T), ListType(T)], ListType(T))
+register_builtin("list_push", [ListType(T), T], VOID)  # Mutating push: list.append(item) / push!(list, item)
 register_builtin("length", [ListType(T)], INT64)
 register_builtin("map", [FunctionType([T1], T2), ListType(T1)], ListType(T2))
 register_builtin("append", [ListType(T), T], ListType(T))  # list.append(item)
@@ -127,6 +128,9 @@ register_builtin("encode_string", [STRING], BYTES)
 
 # === Type conversions ===
 register_builtin("int64_to_int32", [INT64], INT32)
+register_builtin("to_ptr_int64", [INT64], OptionType(INT64))
+register_builtin("to_ptr_string", [STRING], OptionType(STRING))
+register_builtin("to_ptr_bool", [BOOLEAN], OptionType(BOOLEAN))
 
 # === Parser primitives (lexer/parser operations) ===
 register_builtin("match_lookahead_terminal", [STRING, INT64], BOOLEAN)
@@ -160,6 +164,7 @@ register_builtin("which_one_of", [T, STRING], STRING)  # msg.WhichOneof(oneof_na
 
 # === General helpers ===
 register_builtin("is_empty", [ListType(T)], BOOLEAN)  # len(list) == 0
+register_builtin("enum_value", [STRING, STRING], T)  # enum_value(EnumType, ValueName)
 
 
 # === Validation functions ===
@@ -231,6 +236,6 @@ __all__ = [
     'make_builtin',
     'make_builtin_with_type',
     # Type constants
-    'ANY', 'INT64', 'INT32', 'FLOAT64', 'STRING', 'BOOLEAN', 'BYTES',
+    'ANY', 'INT64', 'INT32', 'FLOAT64', 'STRING', 'BOOLEAN', 'BYTES', 'VOID', 'NEVER',
     'T', 'T1', 'T2', 'K', 'V',
 ]

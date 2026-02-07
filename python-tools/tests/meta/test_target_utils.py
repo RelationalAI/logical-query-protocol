@@ -1,15 +1,16 @@
 """Tests for target_utils module."""
 
+import pytest
 from meta.target import (
-    BaseType, MessageType, ListType, OptionType, TupleType, FunctionType,
+    BaseType, MessageType, ListType, OptionType, TupleType, DictType, FunctionType,
     Var, Lit, Call, Builtin, Lambda, Let, IfElse, Seq, While,
-    Return, Assign, Foreach, ForeachEnumerated, GetField, GetElement,
+    Return, Assign, GetField, GetElement,
     TargetType,
 )
 from meta.target_builtins import make_builtin
 from meta.target_utils import (
     STRING_TYPE, INT64_TYPE, FLOAT64_TYPE, BOOLEAN_TYPE,
-    create_identity_function, subst,
+    create_identity_function, subst, type_join,
     make_equal, make_which_oneof, make_get_field, make_some,
     make_tuple, make_get_element, make_is_empty, make_concat,
     make_length, make_unwrap_option_or, apply_lambda
@@ -207,27 +208,6 @@ class TestSubstitution:
         result = subst(expr, {'y': Lit(42)})
         assert isinstance(result, Assign)
         assert result.expr == Lit(42)
-
-    def test_subst_in_foreach(self):
-        """Substitute in foreach loop."""
-        x_var = Var('x', STRING_TYPE)
-        items_var = Var('items', ListType(STRING_TYPE))
-        expr = Foreach(x_var, items_var, x_var)
-        result = subst(expr, {'items': Call(_test_builtin('get_list', ListType(STRING_TYPE)), [])})
-        assert isinstance(result, Foreach)
-        assert isinstance(result.collection, Call)
-        # Loop variable shadows itself in body
-        assert result.body == x_var
-
-    def test_subst_in_foreach_enumerated(self):
-        """Substitute in foreach enumerated loop."""
-        i_var = Var('i', INT64_TYPE)
-        x_var = Var('x', STRING_TYPE)
-        items_var = Var('items', ListType(STRING_TYPE))
-        expr = ForeachEnumerated(i_var, x_var, items_var, x_var)
-        result = subst(expr, {'items': Call(_test_builtin('get_list', ListType(STRING_TYPE)), [])})
-        assert isinstance(result, ForeachEnumerated)
-        assert isinstance(result.collection, Call)
 
     def test_subst_preserves_other_exprs(self):
         """Literals and other expressions without variables are preserved."""
@@ -489,3 +469,50 @@ class TestCountVarOccurrences:
         inner_call = result.args[0]
         assert isinstance(inner_call, Call)
         assert inner_call.args[0] == replacement
+
+
+_NEVER = BaseType("Never")
+
+
+class TestTypeJoin:
+    """Tests for type_join."""
+
+    def test_same_type(self):
+        assert type_join(INT64_TYPE, INT64_TYPE) == INT64_TYPE
+
+    def test_never_left(self):
+        assert type_join(_NEVER, INT64_TYPE) == INT64_TYPE
+
+    def test_never_right(self):
+        assert type_join(INT64_TYPE, _NEVER) == INT64_TYPE
+
+    def test_never_never(self):
+        assert type_join(_NEVER, _NEVER) == _NEVER
+
+    def test_any_absorbs(self):
+        assert type_join(_ANY, INT64_TYPE) == _ANY
+        assert type_join(INT64_TYPE, _ANY) == _ANY
+
+    def test_option_covariant(self):
+        assert type_join(OptionType(_NEVER), OptionType(INT64_TYPE)) == OptionType(INT64_TYPE)
+
+    def test_list_covariant(self):
+        assert type_join(ListType(_NEVER), ListType(INT64_TYPE)) == ListType(INT64_TYPE)
+
+    def test_dict_covariant_value(self):
+        assert type_join(
+            DictType(STRING_TYPE, _NEVER),
+            DictType(STRING_TYPE, INT64_TYPE)
+        ) == DictType(STRING_TYPE, INT64_TYPE)
+
+    def test_dict_key_mismatch(self):
+        with pytest.raises(TypeError, match="key types"):
+            type_join(DictType(STRING_TYPE, INT64_TYPE), DictType(INT64_TYPE, INT64_TYPE))
+
+    def test_incompatible_base_types(self):
+        with pytest.raises(TypeError, match="Cannot join"):
+            type_join(INT64_TYPE, STRING_TYPE)
+
+    def test_incompatible_type_kinds(self):
+        with pytest.raises(TypeError, match="Cannot join"):
+            type_join(INT64_TYPE, OptionType(INT64_TYPE))

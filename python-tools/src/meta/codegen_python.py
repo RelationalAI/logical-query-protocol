@@ -8,11 +8,11 @@ from typing import List, Optional, Set, Tuple, Union
 
 from .codegen_base import CodeGenerator
 from .codegen_templates import PYTHON_TEMPLATES
+from .gensym import gensym
 from .target import (
     TargetExpr, Var, Lit, Symbol, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
     FunDef, VisitNonterminalDef
 )
-from .gensym import gensym
 
 
 # Python keywords that need escaping
@@ -38,10 +38,12 @@ class PythonCodeGenerator(CodeGenerator):
         'String': 'str',
         'Boolean': 'bool',
         'Bytes': 'bytes',
+        'Void': 'None',
     }
 
     def __init__(self, proto_messages=None):
         super().__init__(proto_messages)
+        self._message_field_map = None
         self._register_builtins()
 
     def _register_builtins(self) -> None:
@@ -83,6 +85,12 @@ class PythonCodeGenerator(CodeGenerator):
 
     def gen_message_type(self, module: str, name: str) -> str:
         return f"{module}_pb2.{name}"
+
+    def gen_enum_type(self, module: str, name: str) -> str:
+        return f"{module}_pb2.{name}"
+
+    def gen_enum_value(self, module: str, enum_name: str, value_name: str) -> str:
+        return f"{module}_pb2.{enum_name}.{value_name}"
 
     def gen_tuple_type(self, element_types: List[str]) -> str:
         if not element_types:
@@ -149,66 +157,103 @@ class PythonCodeGenerator(CodeGenerator):
     def gen_func_def_end(self) -> str:
         return ""  # Python uses indentation
 
-    # --- Override generate_lines for Python-specific special cases ---
-
-    def generate_lines(self, expr: TargetExpr, lines: List[str], indent: str = "") -> Optional[str]:
-        # Handle NewMessage with fields (which may contain OneOf calls)
-        if isinstance(expr, NewMessage):
-            return self._generate_newmessage(expr, lines, indent)
-
-        return super().generate_lines(expr, lines, indent)
+    # --- NewMessage generation for Python protobuf ---
 
     def _generate_newmessage(self, expr: NewMessage, lines: List[str], indent: str) -> str:
-        """Override to handle NewMessage with fields containing OneOf calls."""
-        if not expr.fields:
-            # No fields - return constructor directly
-            ctor = self.gen_constructor(expr.module, expr.name)
-            return f"{ctor}()"
+        """Generate Python code for NewMessage with keyword-safe field handling.
 
-        # NewMessage with fields - need to handle OneOf specially
+        Python protobuf constructors use keyword arguments, but field names
+        that clash with Python keywords (e.g., 'import', 'from') can't be
+        passed as kwargs. Those are deferred and set via getattr() after
+        construction.
+        """
         ctor = self.gen_constructor(expr.module, expr.name)
-        keyword_args = []
-        keyword_field_assignments: List[Tuple[str, str, bool]] = []
 
-        # Get field info from proto message definitions
-        field_map = self._build_message_field_map()
-        message_fields = field_map.get((expr.module, expr.name), [])
-        field_is_repeated = {name: is_rep for name, is_rep in message_fields}
+        if not expr.fields:
+            tmp = gensym()
+            lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}()', is_declaration=True)}")
+            return tmp
+
+        keyword_args = []
+        deferred_fields: List[Tuple[str, str]] = []
 
         for field_name, field_expr in expr.fields:
-            # Check if this field is a Call(OneOf, [value])
-            if isinstance(field_expr, Call) and isinstance(field_expr.func, OneOf) and len(field_expr.args) == 1:
-                # OneOf field
+            is_oneof = (
+                isinstance(field_expr, Call)
+                and isinstance(field_expr.func, OneOf)
+                and len(field_expr.args) == 1
+            )
+            if is_oneof:
+                assert isinstance(field_expr, Call) and isinstance(field_expr.func, OneOf)
                 oneof_field_name = field_expr.func.field_name
                 field_value = self.generate_lines(field_expr.args[0], lines, indent)
                 assert field_value is not None
-                is_repeated = field_is_repeated.get(oneof_field_name, False)
                 if oneof_field_name in PYTHON_KEYWORDS:
-                    keyword_field_assignments.append((oneof_field_name, field_value, is_repeated))
+                    deferred_fields.append((oneof_field_name, field_value))
                 else:
                     keyword_args.append(f"{oneof_field_name}={field_value}")
             else:
-                # Regular field
                 field_value = self.generate_lines(field_expr, lines, indent)
                 assert field_value is not None
-                is_repeated = field_is_repeated.get(field_name, False)
                 if field_name in PYTHON_KEYWORDS:
-                    keyword_field_assignments.append((field_name, field_value, is_repeated))
+                    deferred_fields.append((field_name, field_value))
                 else:
                     keyword_args.append(f"{field_name}={field_value}")
 
         args_code = ', '.join(keyword_args)
+        call = f"{ctor}({args_code})"
         tmp = gensym()
-        lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}({args_code})', is_declaration=True)}")
+        lines.append(f"{indent}{self.gen_assignment(tmp, call, is_declaration=True)}")
 
-        # Handle keyword field assignments via getattr()
-        for field_name, field_value, is_repeated in keyword_field_assignments:
-            if is_repeated:
+        if deferred_fields:
+            self._newmessage_deferred(tmp, expr, deferred_fields, lines, indent)
+
+        return tmp
+
+    def _newmessage_deferred(
+        self,
+        tmp: str,
+        expr: NewMessage,
+        deferred_fields: List[Tuple[str, str]],
+        lines: List[str],
+        indent: str,
+    ) -> None:
+        """Set keyword-conflicting fields via getattr() post-construction."""
+        field_map = self._build_message_field_map()
+        message_fields = field_map.get((expr.module, expr.name), [])
+        field_is_repeated = {name: is_rep for name, is_rep in message_fields}
+
+        for field_name, field_value in deferred_fields:
+            if field_is_repeated.get(field_name, False):
                 lines.append(f"{indent}getattr({tmp}, '{field_name}').extend({field_value})")
             else:
                 lines.append(f"{indent}getattr({tmp}, '{field_name}').CopyFrom({field_value})")
 
-        return tmp
+    def _build_message_field_map(self) -> dict:
+        """Build field mapping from proto message definitions.
+
+        Returns dict mapping (module, message_name) to list of (field_name, is_repeated).
+        Caches the result for subsequent calls.
+        """
+        if self._message_field_map is not None:
+            return self._message_field_map
+
+        field_map = {}
+        for (module, msg_name), proto_msg in self.proto_messages.items():
+            oneof_field_names = set()
+            for oneof in proto_msg.oneofs:
+                oneof_field_names.update(f.name for f in oneof.fields)
+
+            regular_fields = [
+                (f.name, f.is_repeated)
+                for f in proto_msg.fields
+                if f.name not in oneof_field_names
+            ]
+            if regular_fields:
+                field_map[(module, msg_name)] = regular_fields
+
+        self._message_field_map = field_map
+        return field_map
 
     def _generate_parse_def(self, expr: VisitNonterminalDef, indent: str) -> str:
         """Generate a parse method definition."""
@@ -235,31 +280,22 @@ class PythonCodeGenerator(CodeGenerator):
 
         return f"{indent}def {func_name}(self{params_str}){ret_hint}:\n{body_code}"
 
-    def _generate_builtin_method_def(self, expr: FunDef, indent: str) -> str:
-        """Generate a builtin method definition as a static method."""
-        func_name = self.escape_identifier(expr.name)
+    # Parser generation settings
+    parse_def_indent = "    "
 
-        params = []
-        for param in expr.params:
-            escaped_name = self.escape_identifier(param.name)
-            type_hint = self.gen_type(param.type)
-            params.append(f"{escaped_name}: {type_hint}")
+    def format_literal_token_spec(self, escaped_literal: str) -> str:
+        return f"            ('LITERAL', re.compile(r'{escaped_literal}'), lambda x: x),"
 
-        params_str = ', '.join(params) if params else ''
+    def format_named_token_spec(self, token_name: str, token_pattern: str) -> str:
+        return f"            ('{token_name}', re.compile(r'{token_pattern}'), lambda x: Lexer.scan_{token_name.lower()}(x)),"
 
-        ret_hint = f" -> {self.gen_type(expr.return_type)}" if expr.return_type else ""
+    def format_command_line_comment(self, command_line: str) -> str:
+        return f"\nCommand: {command_line}\n"
 
-        if expr.body is None:
-            body_code = f"{indent}    pass"
-        else:
-            body_lines: List[str] = []
-            body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
-            # Only add return if the body didn't already return
-            if body_inner is not None:
-                body_lines.append(f"{indent}    return {body_inner}")
-            body_code = "\n".join(body_lines)
-
-        return f"{indent}@staticmethod\n{indent}def {func_name}({params_str}){ret_hint}:\n{body_code}"
+    def generate_method_def(self, expr: FunDef, indent: str) -> str:
+        """Generate a function definition as a static method on Parser."""
+        result = self._generate_fun_def(expr, indent)
+        return f"{indent}@staticmethod\n{result}"
 
 
 def escape_identifier(name: str) -> str:
@@ -344,18 +380,12 @@ def generate_python(expr: TargetExpr, indent: str = "") -> str:
         return result
 
 
-def generate_python_function_body(expr: TargetExpr, indent: str = "    ") -> str:
-    """Generate Python code for a function body with proper indentation."""
-    return generate_python(expr, indent)
-
-
 __all__ = [
     'escape_identifier',
     'generate_python',
     'generate_python_lines',
     'generate_python_def',
     'generate_python_type',
-    'generate_python_function_body',
     'PYTHON_KEYWORDS',
     'PythonCodeGenerator',
 ]

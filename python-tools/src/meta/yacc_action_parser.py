@@ -2,7 +2,7 @@
 
 This module converts Python AST nodes to target IR expressions. It handles
 the restricted subset of Python that can be translated to multiple target
-languages (Python, Julia, Go).
+languages (Python, Julia).
 
 Supported constructs:
 - Literals: int, float, string, bool, None
@@ -20,11 +20,12 @@ from typing import Dict, List, Optional, Tuple, Set
 
 from .grammar import Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
 from .target import (
-    TargetType, BaseType, MessageType, ListType, OptionType, TupleType, DictType, FunctionType,
-    TargetExpr, Var, Lit, NamedFun, NewMessage, Call, Lambda,
+    TargetType, BaseType, MessageType, EnumType, ListType, OptionType, TupleType, DictType, FunctionType,
+    TargetExpr, Var, Lit, NamedFun, NewMessage, EnumValue, Call, Lambda,
     Let, IfElse, Seq, ListExpr, GetElement, GetField, FunDef, OneOf, Assign, Return
 )
 from .target_builtins import make_builtin
+from .target_utils import type_join
 
 
 class YaccGrammarError(Exception):
@@ -132,9 +133,8 @@ def _infer_type(expr: TargetExpr, line: Optional[int] = None,
             return tuple_type.elements[expr.index]
         raise YaccGrammarError(f"Cannot infer type of tuple element access: {expr}", line)
     elif isinstance(expr, GetField):
-        # GetField accesses a field from a message - we can't know the type without proto schema
-        # Return Any since the context (function return type) will provide the actual type
-        return BaseType("Any")
+        # GetField has field_type from proto schema lookup (or Unknown if not found)
+        return expr.field_type
     elif isinstance(expr, Let):
         # Let expression has the type of its body
         return _infer_type(expr.body, line, ctx)
@@ -153,6 +153,16 @@ def _infer_type(expr: TargetExpr, line: Optional[int] = None,
         except ValueError:
             return BaseType("Any")
     raise YaccGrammarError(f"Cannot infer type of expression: {type(expr).__name__}", line)
+
+
+def _make_list_expr(elements: list, line: Optional[int],
+                    ctx: Optional['TypeContext']) -> ListExpr:
+    """Build a ListExpr from non-empty elements, joining their types."""
+    assert elements
+    elem_type = _infer_type(elements[0], line, ctx)
+    for elem in elements[1:]:
+        elem_type = type_join(elem_type, _infer_type(elem, line, ctx))
+    return ListExpr(elements, elem_type)
 
 
 # Python keywords that might be used as field names in the grammar
@@ -224,7 +234,7 @@ def _unsupported_node_error(node: ast.AST, line: Optional[int], reason: str = ""
         base_msg += f"\n  {explanation}"
 
     base_msg += ("\n\n  Note: Action expressions use a restricted subset of Python that can be "
-                 "translated to Julia and Go.\n  Supported constructs: literals, variables, "
+                 "translated to Julia.\n  Supported constructs: literals, variables, "
                  "function calls, message constructors,\n  list literals, conditional expressions "
                  "(x if cond else y), and tuple indexing (x[0]).")
 
@@ -238,7 +248,7 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
 
     This function translates Python AST nodes into target IR expressions.
     Only a restricted subset of Python is supported because the IR must be
-    translatable to multiple target languages (Python, Julia, Go).
+    translatable to multiple target languages (Python, Julia).
 
     Args:
         node: The AST node to convert
@@ -309,6 +319,14 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
         func = node.func
         args = [convert(a) for a in node.args]
 
+        # Handle list[T]() -> typed empty list
+        if (isinstance(func, ast.Subscript)
+                and isinstance(func.value, ast.Name)
+                and func.value.id == 'list'
+                and not args and not node.keywords):
+            elem_type = _annotation_to_type(func.slice, line)
+            return ListExpr([], elem_type)
+
         # Handle builtin.foo(...) syntax for builtins
         if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name):
             if func.value.id == "builtin":
@@ -369,13 +387,11 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
 
     elif isinstance(node, ast.List):
         elements = [convert(e) for e in node.elts]
-        if elements:
-            elem_type = _infer_type(elements[0], line, ctx)
-        else:
-            # Empty list has type List[Bottom]
-            # With covariance: List[Bottom] <: List[T] for any T
-            elem_type = BaseType("Never")
-        return ListExpr(elements, elem_type)
+        if not elements:
+            raise YaccGrammarError(
+                "Empty list [] is not allowed; use list[T]() to specify the element type.",
+                line)
+        return _make_list_expr(elements, line, ctx)
 
     elif isinstance(node, ast.IfExp):
         cond = convert(node.test)
@@ -735,7 +751,29 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
             raise YaccGrammarError(f"Unknown variable: {name}", line)
 
     elif isinstance(node, ast.Attribute):
-        # Handle module.Message or obj.field
+        # Check for module.Enum.VALUE pattern (three levels)
+        if (isinstance(node.value, ast.Attribute) and
+            isinstance(node.value.value, ast.Name)):
+            module_name = node.value.value.id
+            possible_enum = node.value.attr
+            value_name = node.attr
+
+            # Check if this is an enum value reference
+            if ctx.enum_lookup is not None:
+                enum_values = ctx.enum_lookup(module_name, possible_enum)
+                if enum_values is not None:
+                    valid = [n for n, _ in enum_values]
+                    if value_name not in valid:
+                        raise YaccGrammarError(
+                            f"Unknown enum value '{value_name}' for enum {module_name}.{possible_enum}. "
+                            f"Valid values: {valid}", line)
+                    return EnumValue(module_name, possible_enum, value_name)
+
+            # Not an enum, could be nested field access
+            obj = _convert_func_expr(node.value, ctx, line, local_vars)
+            return _make_get_field(obj, node.attr, ctx, line)
+
+        # Handle module.Message or obj.field (two levels)
         if isinstance(node.value, ast.Name):
             # Could be module.Message constructor or local_var.field
             if node.value.id in local_vars:
@@ -753,6 +791,14 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
     elif isinstance(node, ast.Call):
         func = node.func
         args = [_convert_func_expr(a, ctx, line, local_vars) for a in node.args]
+
+        # Handle list[T]() -> typed empty list
+        if (isinstance(func, ast.Subscript)
+                and isinstance(func.value, ast.Name)
+                and func.value.id == 'list'
+                and not args and not node.keywords):
+            elem_type = _annotation_to_type(func.slice, line)
+            return ListExpr([], elem_type)
 
         # Handle builtin.foo(...) syntax for builtins
         if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name):
@@ -821,13 +867,11 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
 
     elif isinstance(node, ast.List):
         elements = [_convert_func_expr(e, ctx, line, local_vars) for e in node.elts]
-        if elements:
-            elem_type = _infer_type(elements[0], line, ctx)
-        else:
-            # Empty list has type List[Bottom]
-            # With covariance: List[Bottom] <: List[T] for any T
-            elem_type = BaseType("Never")
-        return ListExpr(elements, elem_type)
+        if not elements:
+            raise YaccGrammarError(
+                "Empty list [] is not allowed; use list[T]() to specify the element type.",
+                line)
+        return _make_list_expr(elements, line, ctx)
 
     elif isinstance(node, ast.IfExp):
         cond = _convert_func_expr(node.test, ctx, line, local_vars)
@@ -892,10 +936,22 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
         raise YaccGrammarError(f"Unsupported expression type: {type(node).__name__}: {ast.dump(node)}", line)
 
 
+# Mapping from Python type names to canonical IR type names
+_PYTHON_TYPE_MAP = {
+    'int': 'Int64',
+    'float': 'Float64',
+    'str': 'String',
+    'bool': 'Boolean',
+    'bytes': 'Bytes',
+}
+
+
 def _annotation_to_type(node: ast.AST, line: int) -> TargetType:
     """Convert a Python type annotation AST to TargetType."""
     if isinstance(node, ast.Name):
-        return BaseType(node.id)
+        # Normalize Python type names to canonical IR names
+        type_name = _PYTHON_TYPE_MAP.get(node.id, node.id)
+        return BaseType(type_name)
     elif isinstance(node, ast.Attribute):
         if isinstance(node.value, ast.Name):
             return MessageType(node.value.id, node.attr)
@@ -943,6 +999,11 @@ class TypeContext:
     # Callback to look up field type: (message_type, field_name) -> field_type
     # If None, field types cannot be resolved (use Unknown placeholder)
     field_type_lookup: Optional[Callable[[MessageType, str], Optional[TargetType]]] = None
+    # Callback to look up enum values: (module, enum_name) -> [(value_name, value_num), ...]
+    # If None, enum values cannot be validated
+    enum_lookup: Optional[Callable[[str, str], Optional[List[Tuple[str, int]]]]] = None
+    # Callback to check if (module, name) is a message type
+    message_lookup: Optional[Callable[[str, str], bool]] = None
 
 
 @dataclass

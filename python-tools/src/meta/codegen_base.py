@@ -1,7 +1,7 @@
 """Base code generation infrastructure for target languages.
 
 This module provides an abstract base class and shared logic for generating
-code from the target IR. Language-specific code generators (Python, Julia, Go)
+code from the target IR. Language-specific code generators (Python, Julia)
 inherit from CodeGenerator and provide language-specific implementations.
 """
 
@@ -13,10 +13,10 @@ if TYPE_CHECKING:
     from .proto_ast import ProtoMessage
 
 from .target import (
-    TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
+    TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, EnumValue, OneOf, ListExpr, Call, Lambda, Let,
     IfElse, Seq, While, Assign, Return, FunDef, VisitNonterminalDef,
     VisitNonterminal, TargetType, BaseType, TupleType, ListType, DictType, OptionType,
-    MessageType, FunctionType, GetField, GetElement
+    MessageType, EnumType, FunctionType, GetField, GetElement
 )
 from .target_builtins import get_builtin
 from .gensym import gensym
@@ -65,47 +65,6 @@ class CodeGenerator(ABC):
     def __init__(self, proto_messages: Optional[Dict[Tuple[str, str], Any]] = None) -> None:
         self.builtin_registry: Dict[str, BuiltinSpec] = {}
         self.proto_messages = proto_messages or {}
-        self._message_field_map: Optional[Dict[Tuple[str, str], List[Tuple[str, bool]]]] = None
-
-    def _build_message_field_map(self) -> Dict[Tuple[str, str], List[Tuple[str, bool]]]:
-        """Build field mapping from proto message definitions.
-
-        Returns dict mapping (module, message_name) to list of (field_name, is_repeated).
-        Caches the result for subsequent calls.
-        """
-        if self._message_field_map is not None:
-            return self._message_field_map
-
-        field_map: Dict[Tuple[str, str], List[Tuple[str, bool]]] = {}
-        for (module, msg_name), proto_msg in self.proto_messages.items():
-            # Collect all oneof field names
-            oneof_field_names: Set[str] = set()
-            for oneof in proto_msg.oneofs:
-                oneof_field_names.update(f.name for f in oneof.fields)
-
-            # Only include messages with regular (non-oneof) fields
-            regular_fields = [
-                (f.name, f.is_repeated)
-                for f in proto_msg.fields
-                if f.name not in oneof_field_names
-            ]
-            if regular_fields:
-                escaped_fields = [
-                    (self._escape_field_for_map(fname), is_rep)
-                    for fname, is_rep in regular_fields
-                ]
-                field_map[(module, msg_name)] = escaped_fields
-
-        self._message_field_map = field_map
-        return field_map
-
-    def _escape_field_for_map(self, field_name: str) -> str:
-        """Escape a field name for the message field map.
-
-        Subclasses can override this to apply language-specific escaping.
-        Default implementation returns the field name unchanged.
-        """
-        return field_name
 
     @abstractmethod
     def escape_keyword(self, name: str) -> str:
@@ -163,6 +122,11 @@ class CodeGenerator(ABC):
         pass
 
     @abstractmethod
+    def gen_enum_value(self, module: str, enum_name: str, value_name: str) -> str:
+        """Generate an enum value reference (e.g., pb.EnumName_VALUE)."""
+        pass
+
+    @abstractmethod
     def gen_builtin_ref(self, name: str) -> str:
         """Generate a reference to a builtin function."""
         pass
@@ -182,6 +146,11 @@ class CodeGenerator(ABC):
     @abstractmethod
     def gen_message_type(self, module: str, name: str) -> str:
         """Generate a message/protobuf type reference."""
+        pass
+
+    @abstractmethod
+    def gen_enum_type(self, module: str, name: str) -> str:
+        """Generate an enum type reference."""
         pass
 
     @abstractmethod
@@ -220,6 +189,8 @@ class CodeGenerator(ABC):
             return self.base_type_map.get(typ.name, typ.name)
         elif isinstance(typ, MessageType):
             return self.gen_message_type(typ.module, typ.name)
+        elif isinstance(typ, EnumType):
+            return self.gen_enum_type(typ.module, typ.name)
         elif isinstance(typ, TupleType):
             element_types = [self.gen_type(e) for e in typ.elements]
             return self.gen_tuple_type(element_types)
@@ -292,7 +263,6 @@ class CodeGenerator(ABC):
         Returns (before_body, after_body) strings.
         For Python: ('def _t0():', '')
         For Julia: ('function _t0()', 'end')
-        For Go: ('_t0 := func() type {', '}')
         """
         pass
 
@@ -363,6 +333,32 @@ class CodeGenerator(ABC):
                 return spec.generator(args, lines, indent)
         return None
 
+    # --- Type-based expression classification ---
+
+    def _is_void_expr(self, expr: TargetExpr) -> bool:
+        """Check if expression has type OptionType(Never) — side-effect only, value always None."""
+        try:
+            t = expr.target_type()
+            return isinstance(t, OptionType) and isinstance(t.element_type, BaseType) and t.element_type.name == "Never"
+        except (NotImplementedError, ValueError, TypeError):
+            return False
+
+    def _is_never_expr(self, expr: TargetExpr) -> bool:
+        """Check if expression has type Never — diverges (return/error), no value produced."""
+        try:
+            t = expr.target_type()
+            return isinstance(t, BaseType) and t.name == "Never"
+        except (NotImplementedError, ValueError, TypeError):
+            return False
+
+    def _is_boolean_expr(self, expr: TargetExpr) -> bool:
+        """Check if expression has type Boolean."""
+        try:
+            t = expr.target_type()
+            return isinstance(t, BaseType) and t.name == "Boolean"
+        except (NotImplementedError, ValueError, TypeError):
+            return False
+
     # --- Expression generation ---
 
     def generate_lines(self, expr: TargetExpr, lines: List[str], indent: str = "") -> Optional[str]:
@@ -382,6 +378,9 @@ class CodeGenerator(ABC):
 
         elif isinstance(expr, NewMessage):
             return self._generate_newmessage(expr, lines, indent)
+
+        elif isinstance(expr, EnumValue):
+            return self._generate_enum_value(expr, lines, indent)
 
         elif isinstance(expr, Builtin):
             return self.gen_builtin_ref(expr.name)
@@ -467,6 +466,10 @@ class CodeGenerator(ABC):
             args.append(arg_code)
         args_code = ', '.join(args)
 
+        if self._is_void_expr(expr):
+            lines.append(f"{indent}{f}({args_code})")
+            return self.gen_none()
+
         tmp = gensym()
         lines.append(f"{indent}{self.gen_assignment(tmp, f'{f}({args_code})', is_declaration=True)}")
         return tmp
@@ -474,24 +477,32 @@ class CodeGenerator(ABC):
     def _generate_newmessage(self, expr: NewMessage, lines: List[str], indent: str) -> str:
         """Generate code for a NewMessage expression.
 
-        Default implementation generates a simple constructor call with keyword arguments.
-        Subclasses should override this to handle language-specific semantics
-        (e.g., OneOf fields, keyword escaping).
+        Default implementation uses positional constructor args.
+        Subclasses should override for language-specific protobuf semantics.
         """
         ctor = self.gen_constructor(expr.module, expr.name)
-        if expr.fields:
-            field_args = []
-            for field_name, field_expr in expr.fields:
-                field_val = self.generate_lines(field_expr, lines, indent)
-                field_args.append(f"{field_name}={field_val}")
-            args_code = ', '.join(field_args)
-            tmp = gensym()
-            lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}({args_code})', is_declaration=True)}")
-            return tmp
-        else:
+
+        if not expr.fields:
             tmp = gensym()
             lines.append(f"{indent}{self.gen_assignment(tmp, f'{ctor}()', is_declaration=True)}")
             return tmp
+
+        args = []
+        for field_name, field_expr in expr.fields:
+            if (isinstance(field_expr, Call)
+                    and isinstance(field_expr.func, OneOf)
+                    and len(field_expr.args) == 1):
+                field_value = self.generate_lines(field_expr.args[0], lines, indent)
+            else:
+                field_value = self.generate_lines(field_expr, lines, indent)
+            assert field_value is not None
+            args.append(f"{field_name}={field_value}")
+
+        args_code = ', '.join(args)
+        call = f"{ctor}({args_code})"
+        tmp = gensym()
+        lines.append(f"{indent}{self.gen_assignment(tmp, call, is_declaration=True)}")
+        return tmp
 
     def _generate_get_element(self, expr: GetElement, lines: List[str], indent: str) -> str:
         """Generate code for a GetElement expression.
@@ -501,6 +512,10 @@ class CodeGenerator(ABC):
         """
         tuple_code = self.generate_lines(expr.tuple_expr, lines, indent)
         return f"{tuple_code}[{expr.index}]"
+
+    def _generate_enum_value(self, expr: EnumValue, lines: List[str], indent: str) -> str:
+        """Generate code for an enum value reference."""
+        return self.gen_enum_value(expr.module, expr.enum_name, expr.value_name)
 
     def _generate_oneof(self, expr: OneOf, lines: List[str], indent: str) -> str:
         """Generate code for a OneOf expression.
@@ -553,27 +568,62 @@ class CodeGenerator(ABC):
         cond_code = self.generate_lines(expr.condition, lines, indent)
         assert cond_code is not None, "If condition should not contain a return"
 
-        # Optimization: short-circuit for boolean literals using and/or builtins.
-        # `if cond then True else x` -> or(cond, x)
-        if expr.then_branch == Lit(True):
-            tmp_lines: List[str] = []
-            else_code = self.generate_lines(expr.else_branch, tmp_lines, indent)
-            if not tmp_lines and else_code is not None:
-                result = self.gen_builtin_call("or", [cond_code, else_code], lines, indent)
-                if result is not None:
-                    return result.value
+        # Both branches diverge — generate for side effects only, no value.
+        if self._is_never_expr(expr):
+            lines.append(f"{indent}{self.gen_if_start(cond_code)}")
+            body_indent = indent + self.indent_str
+            self.generate_lines(expr.then_branch, lines, body_indent)
+            lines.append(f"{indent}{self.gen_else()}")
+            self.generate_lines(expr.else_branch, lines, body_indent)
+            end = self.gen_if_end()
+            if end:
+                lines.append(f"{indent}{end}")
+            return None
 
-        # `if cond then x else False` -> and(cond, x)
-        if expr.else_branch == Lit(False):
-            tmp_lines = []
-            then_code = self.generate_lines(expr.then_branch, tmp_lines, indent)
-            if not tmp_lines and then_code is not None:
-                result = self.gen_builtin_call("and", [cond_code, then_code], lines, indent)
-                if result is not None:
-                    return result.value
+        # Side-effect only (value always None) — no temp needed.
+        if self._is_void_expr(expr):
+            lines.append(f"{indent}{self.gen_if_start(cond_code)}")
+            body_indent = indent + self.indent_str
+            self.generate_lines(expr.then_branch, lines, body_indent)
+            if expr.else_branch != Lit(None):
+                lines.append(f"{indent}{self.gen_else()}")
+                self.generate_lines(expr.else_branch, lines, body_indent)
+            end = self.gen_if_end()
+            if end:
+                lines.append(f"{indent}{end}")
+            return self.gen_none()
+
+        # Short-circuit boolean if-else to and/or.
+        if self._is_boolean_expr(expr):
+            # `if cond then True else x` -> or(cond, x)
+            if expr.then_branch == Lit(True):
+                tmp_lines: List[str] = []
+                else_code = self.generate_lines(expr.else_branch, tmp_lines, indent)
+                if not tmp_lines and else_code is not None:
+                    result = self.gen_builtin_call("or", [cond_code, else_code], lines, indent)
+                    if result is not None:
+                        return result.value
+
+            # `if cond then x else False` -> and(cond, x)
+            if expr.else_branch == Lit(False):
+                tmp_lines = []
+                then_code = self.generate_lines(expr.then_branch, tmp_lines, indent)
+                if not tmp_lines and then_code is not None:
+                    result = self.gen_builtin_call("and", [cond_code, then_code], lines, indent)
+                    if result is not None:
+                        return result.value
+
+        # Determine expression type for typed variable declarations.
+        type_hint = None
+        try:
+            expr_type = expr.target_type()
+            if expr_type is not None:
+                type_hint = self.gen_type(expr_type)
+        except (NotImplementedError, ValueError, TypeError):
+            pass
 
         tmp = gensym()
-        lines.append(f"{indent}{self.gen_var_declaration(tmp)}")
+        lines.append(f"{indent}{self.gen_var_declaration(tmp, type_hint)}")
         lines.append(f"{indent}{self.gen_if_start(cond_code)}")
 
         body_indent = indent + self.indent_str
@@ -581,10 +631,13 @@ class CodeGenerator(ABC):
         if then_code is not None:
             lines.append(f"{body_indent}{self.gen_assignment(tmp, then_code)}")
 
-        lines.append(f"{indent}{self.gen_else()}")
-        else_code = self.generate_lines(expr.else_branch, lines, body_indent)
-        if else_code is not None:
-            lines.append(f"{body_indent}{self.gen_assignment(tmp, else_code)}")
+        if expr.else_branch != Lit(None):
+            lines.append(f"{indent}{self.gen_else()}")
+            else_code = self.generate_lines(expr.else_branch, lines, body_indent)
+            if else_code is not None:
+                lines.append(f"{body_indent}{self.gen_assignment(tmp, else_code)}")
+        else:
+            else_code = self._generate_nil_else_branch(tmp, lines, indent, body_indent)
 
         end = self.gen_if_end()
         if end:
@@ -595,6 +648,18 @@ class CodeGenerator(ABC):
             return None
 
         return tmp
+
+    def _generate_nil_else_branch(
+        self, tmp: str, lines: List[str], indent: str, body_indent: str,
+    ) -> str:
+        """Generate else branch for Lit(None). Returns the else_code value.
+
+        Subclasses may override to skip the else branch.
+        """
+        else_code = self.gen_none()
+        lines.append(f"{indent}{self.gen_else()}")
+        lines.append(f"{body_indent}{self.gen_assignment(tmp, else_code)}")
+        return else_code
 
     def _generate_seq(self, expr: Seq, lines: List[str], indent: str) -> Optional[str]:
         """Generate code for a sequence of expressions.
@@ -692,6 +757,31 @@ class CodeGenerator(ABC):
         return f"{indent}{header}\n{body_code}"
 
     @abstractmethod
+    def generate_method_def(self, expr: FunDef, indent: str) -> str:
+        """Generate a function definition as a method on Parser."""
+        pass
+
+    @abstractmethod
     def _generate_parse_def(self, expr: VisitNonterminalDef, indent: str) -> str:
         """Generate a parse method definition. Language-specific due to method syntax."""
         pass
+
+    # --- Token spec formatting for parser generation ---
+
+    @abstractmethod
+    def format_literal_token_spec(self, escaped_literal: str) -> str:
+        """Format a literal token spec line for the lexer."""
+        pass
+
+    @abstractmethod
+    def format_named_token_spec(self, token_name: str, token_pattern: str) -> str:
+        """Format a named token spec line for the lexer."""
+        pass
+
+    @abstractmethod
+    def format_command_line_comment(self, command_line: str) -> str:
+        """Format a command line comment for the generated file header."""
+        pass
+
+    # Parser generation indent for parse method definitions
+    parse_def_indent: str = ""

@@ -4,7 +4,7 @@ This module defines the AST for target language expressions, including generated
 and semantic actions that can be attached to grammar rules.
 
 The target AST types represent the "least common denominator" for
-Python, Julia, and Go expressions. All constructs in this AST should be easily
+Python and Julia expressions. All constructs in this AST should be easily
 translatable to each of these target languages.
 
 Expression types (TargetExpr subclasses):
@@ -24,8 +24,6 @@ Expression types (TargetExpr subclasses):
     IfElse              - If-else conditional expression
     Seq                 - Sequence of expressions evaluated in order
     While               - While loop: while condition do body
-    Foreach             - Foreach loop: for var in collection do body
-    ForeachEnumerated   - Foreach loop with index: for index_var, var in enumerate(collection) do body
     Assign              - Assignment statement: var = expr
     Return              - Return statement: return expr
 
@@ -218,6 +216,28 @@ class NewMessage(TargetExpr):
 
 
 @dataclass(frozen=True)
+class EnumValue(TargetExpr):
+    """Enum value reference: module.EnumName.VALUE_NAME
+
+    Represents a reference to a protobuf enum value.
+
+    module: Module name (protobuf file stem)
+    enum_name: Name of the enum type
+    value_name: Name of the enum value
+    """
+    module: str
+    enum_name: str
+    value_name: str
+
+    def __str__(self) -> str:
+        return f"{self.module}.{self.enum_name}.{self.value_name}"
+
+    def target_type(self) -> 'TargetType':
+        # EnumType is defined later in the file
+        return EnumType(self.module, self.enum_name)  # noqa: F821
+
+
+@dataclass(frozen=True)
 class OneOf(TargetExpr):
     """OneOf field discriminator.
 
@@ -270,6 +290,10 @@ class VisitNonterminal(TargetExpr):
     def __str__(self) -> str:
         return f"{self.visitor_name}_{self.nonterminal.name}"
 
+    def target_type(self) -> 'TargetType':
+        """Return the type of the nonterminal."""
+        return self.nonterminal.target_type()
+
 
 @dataclass(frozen=True)
 class Call(TargetExpr):
@@ -289,6 +313,9 @@ class Call(TargetExpr):
         _freeze_sequence(self, 'args')
 
     def target_type(self) -> 'TargetType':
+        # For VisitNonterminal, the type is the nonterminal's target type directly
+        if isinstance(self.func, VisitNonterminal):
+            return self.func.target_type()
         func_type = self.func.target_type()
         if isinstance(func_type, FunctionType):
             # Match parameter types against argument types to build type variable mapping
@@ -430,8 +457,20 @@ class IfElse(TargetExpr):
         else:
             return f"if ({self.condition}) then {self.then_branch} else {self.else_branch}"
 
+    def __post_init__(self):
+        try:
+            cond_type = self.condition.target_type()
+            assert cond_type == BaseType("Boolean"), f"IfElse condition must be Boolean, got {cond_type}"
+        except (NotImplementedError, ValueError, TypeError):
+            pass
+        try:
+            self.target_type()
+        except (NotImplementedError, ValueError, TypeError):
+            pass
+
     def target_type(self) -> 'TargetType':
-        return self.then_branch.target_type()
+        from .target_utils import type_join
+        return type_join(self.then_branch.target_type(), self.else_branch.target_type())
 
 
 @dataclass(frozen=True)
@@ -463,33 +502,6 @@ class While(TargetExpr):
         return OptionType(BaseType("Never"))
 
 @dataclass(frozen=True)
-class Foreach(TargetExpr):
-    """Foreach loop: for var in collection do body."""
-    var: 'Var'
-    collection: TargetExpr
-    body: TargetExpr
-
-    def __str__(self) -> str:
-        return f"for {self.var.name} in {self.collection} do {self.body}"
-
-    def target_type(self) -> 'TargetType':
-        return OptionType(BaseType("Never"))
-
-@dataclass(frozen=True)
-class ForeachEnumerated(TargetExpr):
-    """Foreach loop with index: for index_var, var in enumerate(collection) do body."""
-    index_var: 'Var'
-    var: 'Var'
-    collection: TargetExpr
-    body: TargetExpr
-
-    def __str__(self) -> str:
-        return f"for {self.index_var.name}, {self.var.name} in enumerate({self.collection}) do {self.body}"
-
-    def target_type(self) -> 'TargetType':
-        return OptionType(BaseType("Never"))
-
-@dataclass(frozen=True)
 class Assign(TargetExpr):
     """Assignment statement: var = expr.
 
@@ -516,7 +528,7 @@ class Return(TargetExpr):
         assert isinstance(self.expr, TargetExpr) and not isinstance(self.expr, Return), f"Invalid return expression in {self}: {self.expr}"
 
     def target_type(self) -> 'TargetType':
-        return self.expr.target_type()
+        return BaseType("Never")
 
 
 @dataclass(frozen=True)
@@ -565,6 +577,20 @@ class MessageType(TargetType):
     Example:
         MessageType("logic", "Expr")       # logic.Expr
         MessageType("transactions", "Transaction")  # transactions.Transaction
+    """
+    module: str
+    name: str
+
+    def __str__(self) -> str:
+        return f"{self.module}.{self.name}"
+
+
+@dataclass(frozen=True)
+class EnumType(TargetType):
+    """Protobuf enum types.
+
+    Example:
+        EnumType("transactions", "MaintenanceLevel")
     """
     module: str
     name: str
@@ -647,7 +673,7 @@ def subst_type(typ: 'TargetType', mapping: dict[str, 'TargetType']) -> 'TargetTy
     """Substitute type variables in a type according to the mapping."""
     if isinstance(typ, VarType):
         return mapping.get(typ.name, typ)
-    if isinstance(typ, (BaseType, MessageType)):
+    if isinstance(typ, (BaseType, MessageType, EnumType)):
         return typ
     if isinstance(typ, ListType):
         return ListType(subst_type(typ.element_type, mapping))
@@ -747,6 +773,7 @@ __all__ = [
     'Builtin',
     'NamedFun',
     'NewMessage',
+    'EnumValue',
     'OneOf',
     'ListExpr',
     'Call',
@@ -757,14 +784,13 @@ __all__ = [
     'IfElse',
     'Seq',
     'While',
-    'Foreach',
-    'ForeachEnumerated',
     'Assign',
     'Return',
     'TargetType',
     'BaseType',
     'VarType',
     'MessageType',
+    'EnumType',
     'TupleType',
     'ListType',
     'DictType',

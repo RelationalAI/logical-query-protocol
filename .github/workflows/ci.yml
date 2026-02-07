@@ -36,6 +36,26 @@ jobs:
         cd python-tools
         pyrefly check
 
+  julia-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        julia-version: ["1.10", "1.11", "1.12"]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Julia ${{ matrix.julia-version }}
+      uses: julia-actions/setup-julia@v2
+      with:
+        version: ${{ matrix.julia-version }}
+
+    - name: Run tests
+      run: |
+        cd julia/LQPParser
+        julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.test()'
+
   go-test:
     runs-on: ubuntu-latest
     strategy:

@@ -17,7 +17,7 @@ from meta.target import (
 )
 from meta.target_builtins import make_builtin
 from meta.target_print import expr_to_str, type_to_str
-from meta.yacc_action_parser import TypeContext
+from meta.yacc_action_parser import TypeContext, YaccGrammarError
 import ast
 
 
@@ -181,11 +181,19 @@ class TestExprRoundtrip:
         expr = parse_expr("proto.Pair(first=x, second=y)", ctx, extra_vars)
         assert expr_to_str(expr) == "proto.Pair(first=x, second=y)"
 
-    def test_empty_list(self):
-        """Test empty list roundtrip."""
+    def test_empty_list_rejected(self):
+        """Empty list [] is rejected; use list[T]() instead."""
         ctx = make_ctx()
-        expr = parse_expr("[]", ctx)
-        assert expr_to_str(expr) == "[]"
+        with pytest.raises(YaccGrammarError):
+            parse_expr("[]", ctx)
+
+    def test_typed_empty_list(self):
+        """Test typed empty list roundtrip."""
+        ctx = make_ctx()
+        expr = parse_expr("list[Int64]()", ctx)
+        assert isinstance(expr, ListExpr)
+        assert len(expr.elements) == 0
+        assert expr.element_type == BaseType("Int64")
 
     def test_list_with_elements(self):
         """Test list with elements."""
@@ -349,25 +357,6 @@ class TestExprDirect:
         body = Lit(42)
         loop = While(cond, body)
         assert expr_to_str(loop) == "while running: 42"
-
-    def test_foreach(self):
-        """Test foreach expression."""
-        from meta.target import Foreach
-        var = Var("x", BaseType("Int64"))
-        coll = Var("xs", ListType(BaseType("Int64")))
-        body = Var("x", BaseType("Int64"))
-        loop = Foreach(var, coll, body)
-        assert expr_to_str(loop) == "for x in xs: x"
-
-    def test_foreach_enumerated(self):
-        """Test foreach enumerated expression."""
-        from meta.target import ForeachEnumerated
-        idx = Var("i", BaseType("Int64"))
-        elem = Var("x", BaseType("Int64"))
-        coll = Var("xs", ListType(BaseType("Int64")))
-        body = Var("x", BaseType("Int64"))
-        loop = ForeachEnumerated(index_var=idx, var=elem, collection=coll, body=body)
-        assert expr_to_str(loop) == "for i, x in enumerate(xs): x"
 
     def test_oneof(self):
         """Test oneof expression."""
