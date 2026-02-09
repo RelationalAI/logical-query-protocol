@@ -15,3 +15,4 @@ gen
 .venv
 .pytest_cache
 **/uv.lock
+julia/LQPParser/Manifest.toml

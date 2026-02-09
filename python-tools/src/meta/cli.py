@@ -68,8 +68,8 @@ def parse_args():
     output_group.add_argument(
         "--parser",
         type=str,
-        choices=["ir", "python"],
-        help="Output the generated parser (ir or python)"
+        choices=["ir", "python", "julia"],
+        help="Output the generated parser (ir, python, or julia)"
     )
 
     args = parser.parse_args()
@@ -129,8 +129,11 @@ def run(args) -> int:
         print(f"Error: Grammar file not found: {grammar_path}", file=sys.stderr)
         return 1
 
+    # Transform messages dict from {name: ProtoMessage} to {(module, name): ProtoMessage}
+    proto_messages = {(msg.module, name): msg for name, msg in proto_parser.messages.items()}
+
     # Load grammar rules from file (yacc format)
-    grammar_config = load_yacc_grammar_file(grammar_path)
+    grammar_config = load_yacc_grammar_file(grammar_path, proto_messages, proto_parser.enums)
 
     # Build Grammar object from loaded config
     if not grammar_config.rules:
@@ -192,20 +195,29 @@ def run(args) -> int:
                 output_lines.append("")
             output_text = "\n".join(output_lines)
             write_output(output_text, args.output, f"Generated parser IR written to {args.output}")
-        elif args.parser == "python":
-            from .parser_gen_python import generate_parser_python
-            command_line = " ".join(["python -m meta.cli"] + [str(f) for f in args.proto_files] + ["--parser", "python"])
-            # Transform messages dict from {name: ProtoMessage} to {(module, name): ProtoMessage}
+        elif args.parser in ("python", "julia"):
             proto_messages = {(msg.module, name): msg for name, msg in proto_parser.messages.items()}
-            output_text = generate_parser_python(grammar, command_line, proto_messages)
+            command_line = " ".join(
+                ["python -m meta.cli"]
+                + [str(f) for f in args.proto_files]
+                + ["--grammar", str(args.grammar)]
+                + ["--parser", args.parser]
+            )
+            if args.parser == "python":
+                from .parser_gen_python import generate_parser_python
+                output_text = generate_parser_python(grammar, command_line, proto_messages)
+            else:
+                from .parser_gen_julia import generate_parser_julia
+                output_text = generate_parser_julia(grammar, command_line, proto_messages)
             write_output(output_text, args.output, f"Generated parser written to {args.output}")
 
     return 0
 
 
-def main():
-    """Main entry point for protobuf parser."""
-    return run(parse_args())
+def main() -> int:
+    """Main entry point."""
+    args = parse_args()
+    return run(args)
 
 
 if __name__ == "__main__":

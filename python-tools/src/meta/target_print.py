@@ -8,7 +8,7 @@ from .target import (
     TargetType, BaseType, VarType, MessageType, ListType, DictType,
     OptionType, TupleType, FunctionType,
     TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, OneOf,
-    ListExpr, Call, Lambda, Let, IfElse, Seq, While, Foreach, ForeachEnumerated,
+    ListExpr, Call, Lambda, Let, IfElse, Seq, While,
     Assign, Return, GetField, GetElement,
     VisitNonterminal, FunDef
 )
@@ -115,12 +115,6 @@ def expr_to_str(expr: TargetExpr) -> str:
 
     elif isinstance(expr, While):
         return f"while {expr_to_str(expr.condition)}: {expr_to_str(expr.body)}"
-
-    elif isinstance(expr, Foreach):
-        return f"for {expr.var.name} in {expr_to_str(expr.collection)}: {expr_to_str(expr.body)}"
-
-    elif isinstance(expr, ForeachEnumerated):
-        return f"for {expr.index_var.name}, {expr.var.name} in enumerate({expr_to_str(expr.collection)}): {expr_to_str(expr.body)}"
 
     elif isinstance(expr, Assign):
         return f"{expr.var.name} = {expr_to_str(expr.expr)}"

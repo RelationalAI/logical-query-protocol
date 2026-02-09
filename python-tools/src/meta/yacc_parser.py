@@ -53,7 +53,7 @@ Action syntax (Python-like):
 import ast
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from .grammar import (
     Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence, Rule,
@@ -540,11 +540,124 @@ def _parse_alternative(lhs_name: str, lhs_type: TargetType, rhs_text: str,
     return Rule(lhs=lhs, rhs=rhs, constructor=constructor)
 
 
-def load_yacc_grammar(text: str) -> GrammarConfig:
+def _make_field_type_lookup(
+    proto_messages: Dict[Tuple[str, str], Any]
+) -> Callable[[MessageType, str], Optional[TargetType]]:
+    """Create a field type lookup function from proto message definitions.
+
+    Args:
+        proto_messages: Dict mapping (module, message_name) to ProtoMessage
+
+    Returns:
+        A function that takes (MessageType, field_name) and returns the field's TargetType
+    """
+    # Build field type map: (module, message_name, field_name) -> TargetType
+    field_types: Dict[Tuple[str, str, str], TargetType] = {}
+
+    for (module, msg_name), proto_msg in proto_messages.items():
+        for field in proto_msg.fields:
+            field_type = _proto_type_to_target_type(field.type, field.is_repeated)
+            field_types[(module, msg_name, field.name)] = field_type
+
+        # Also add oneof fields
+        for oneof in proto_msg.oneofs:
+            for field in oneof.fields:
+                field_type = _proto_type_to_target_type(field.type, False)
+                field_types[(module, msg_name, field.name)] = field_type
+
+    def lookup(message_type: MessageType, field_name: str) -> Optional[TargetType]:
+        key = (message_type.module, message_type.name, field_name)
+        return field_types.get(key)
+
+    return lookup
+
+
+def _proto_type_to_target_type(proto_type: str, is_repeated: bool) -> TargetType:
+    """Convert a proto field type string to TargetType."""
+    # Map proto scalar types to target base types
+    scalar_map = {
+        'int32': BaseType('Int32'),
+        'int64': BaseType('Int64'),
+        'uint32': BaseType('Int64'),  # Map to Int64 for simplicity
+        'uint64': BaseType('Int64'),
+        'float': BaseType('Float64'),
+        'double': BaseType('Float64'),
+        'bool': BaseType('Boolean'),
+        'string': BaseType('String'),
+        'bytes': BaseType('Bytes'),
+    }
+
+    if proto_type in scalar_map:
+        base_type = scalar_map[proto_type]
+    elif '.' in proto_type:
+        # Message type with module prefix
+        parts = proto_type.rsplit('.', 1)
+        base_type = MessageType(parts[0], parts[1])
+    else:
+        # Message type without module prefix - use logic as default module
+        base_type = MessageType('logic', proto_type)
+
+    if is_repeated:
+        return ListType(base_type)
+    return base_type
+
+
+def _make_enum_lookup(
+    proto_enums: Dict[str, Any],
+    proto_messages: Dict[Tuple[str, str], Any]
+) -> Callable[[str, str], Optional[List[Tuple[str, int]]]]:
+    """Create enum lookup function from proto enum definitions.
+
+    Args:
+        proto_enums: Dict mapping enum_name to ProtoEnum
+        proto_messages: Dict mapping (module, message_name) to ProtoMessage
+
+    Returns:
+        A function that takes (module, enum_name) and returns list of (value_name, value_num)
+    """
+    enum_map: Dict[Tuple[str, str], List[Tuple[str, int]]] = {}
+
+    # Top-level enums
+    for enum_name, enum_obj in proto_enums.items():
+        enum_map[(enum_obj.module, enum_name)] = enum_obj.values
+
+    # Nested enums in messages
+    for msg in proto_messages.values():
+        for nested in getattr(msg, 'enums', []):
+            # Nested enums use the message's module
+            enum_map[(msg.module, nested.name)] = nested.values
+
+    return lambda m, n: enum_map.get((m, n))
+
+
+def _make_message_lookup(
+    proto_messages: Dict[Tuple[str, str], Any]
+) -> Callable[[str, str], bool]:
+    """Create message lookup function from proto message definitions.
+
+    Args:
+        proto_messages: Dict mapping (module, message_name) to ProtoMessage
+
+    Returns:
+        A function that takes (module, name) and returns True if it's a message
+    """
+    keys = set(proto_messages.keys())
+    return lambda m, n: (m, n) in keys
+
+
+def load_yacc_grammar(
+    text: str,
+    proto_messages: Optional[Dict[Tuple[str, str], Any]] = None,
+    proto_enums: Optional[Dict[str, Any]] = None
+) -> GrammarConfig:
     """Load grammar from yacc-like format.
 
     Args:
         text: Grammar file content
+        proto_messages: Optional dict mapping (module, message_name) to ProtoMessage,
+            used for field type lookup in helper functions
+        proto_enums: Optional dict mapping enum_name to ProtoEnum,
+            used for enum value validation
 
     Returns:
         GrammarConfig with terminals, rules, and function definitions
@@ -558,6 +671,15 @@ def load_yacc_grammar(text: str) -> GrammarConfig:
 
     # Parse directives
     ctx, ignored_completeness, rules_start = parse_directives(lines)
+
+    # Set up field type lookup if proto_messages is provided
+    if proto_messages:
+        ctx.field_type_lookup = _make_field_type_lookup(proto_messages)
+        ctx.message_lookup = _make_message_lookup(proto_messages)
+
+    # Set up enum lookup if proto_enums is provided
+    if proto_enums is not None or proto_messages:
+        ctx.enum_lookup = _make_enum_lookup(proto_enums or {}, proto_messages or {})
 
     # Find the %% separator between rules and helper functions
     rules_lines = lines[rules_start:]
@@ -606,16 +728,22 @@ def load_yacc_grammar(text: str) -> GrammarConfig:
     )
 
 
-def load_yacc_grammar_file(path: Path) -> GrammarConfig:
+def load_yacc_grammar_file(
+    path: Path,
+    proto_messages: Optional[Dict[Tuple[str, str], Any]] = None,
+    proto_enums: Optional[Dict[str, Any]] = None
+) -> GrammarConfig:
     """Load grammar from a yacc-like format file.
 
     Args:
         path: Path to the grammar file
+        proto_messages: Optional dict mapping (module, message_name) to ProtoMessage
+        proto_enums: Optional dict mapping enum_name to ProtoEnum
 
     Returns:
         GrammarConfig
     """
-    return load_yacc_grammar(path.read_text())
+    return load_yacc_grammar(path.read_text(), proto_messages, proto_enums)
 
 
 __all__ = [

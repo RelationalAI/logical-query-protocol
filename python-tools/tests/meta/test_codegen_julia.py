@@ -117,6 +117,14 @@ def test_julia_builtin_generation():
     result = gen.generate_lines(expr, lines, "")
     assert result == "vcat(lst, !isnothing(other) ? other : [])"
 
+    # Test 'list_push' builtin (mutating push with statement)
+    reset_gensym()
+    lines = []
+    expr = Call(make_builtin("list_push"), [Var("lst", ListType(_int_type)), Var("item", _int_type)])
+    result = gen.generate_lines(expr, lines, "")
+    assert result == "nothing"
+    assert lines == ["push!(lst, item)"]
+
     # Test 'is_none' builtin
     reset_gensym()
     lines = []
@@ -540,7 +548,7 @@ def test_julia_helper_function_calling_another():
 
     # Equivalent to:
     # function wrapper(x::Int64)::Int64
-    #     return Parser.helper(x)
+    #     return helper(parser, x)
     # end
     func = FunDef(
         name="wrapper",
@@ -550,7 +558,7 @@ def test_julia_helper_function_calling_another():
     )
     code = gen.generate_def(func)
     assert "function wrapper(x::Int64)::Int64" in code
-    assert "Parser.helper(x)" in code
+    assert "helper(parser, x)" in code
 
 
 if __name__ == "__main__":

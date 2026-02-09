@@ -75,6 +75,8 @@ def test_generate_parse_functions_with_nonterminal():
     assert nonterminal_names == {"S", "A"}
 
 
+
+
 def test_generate_parse_functions_with_option():
     """Test parser generation with Option operator."""
     # Grammar: S -> "a" A? where A -> "b"
@@ -296,10 +298,13 @@ def test_complex_star_sequence():
     assert len(defs) == 2
 
 
+
 if __name__ == "__main__":
     test_generate_parse_functions_simple()
     test_generate_parse_functions_multiple_alternatives()
     test_generate_parse_functions_with_nonterminal()
+
+
     test_generate_parse_functions_with_option()
     test_generate_parse_functions_with_star()
     test_generate_parse_functions_ll2()
@@ -309,4 +314,5 @@ if __name__ == "__main__":
     test_generate_parse_functions_unreachable_nonterminal()
     test_ll4_conflict_detection()
     test_complex_star_sequence()
+
     print("\n✓ All parser generation IR tests passed")

@@ -88,6 +88,7 @@ class ProtoEnum:
 
     Attributes:
         name: Enum type name
+        module: Module name (protobuf file stem)
         values: List of (enum_value_name, enum_value_number) tuples
 
     Example:
@@ -96,13 +97,14 @@ class ProtoEnum:
             ACTIVE = 1;
             INACTIVE = 2;
         }  ->
-        ProtoEnum(name="Status", values=[
+        ProtoEnum(name="Status", module="mymodule", values=[
             ("UNKNOWN", 0),
             ("ACTIVE", 1),
             ("INACTIVE", 2)
         ])
     """
     name: str
+    module: str = ""
     values: List[Tuple[str, int]] = field(default_factory=list)
 
 
