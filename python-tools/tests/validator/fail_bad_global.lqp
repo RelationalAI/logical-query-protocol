@@ -1,0 +1,12 @@
+;; ERROR: Global rule found in body at fail_bad_global.lqp:12:17: 'foo'
+(transaction
+  (epoch
+    (writes
+      (define (fragment :f1
+        (algorithm :foo
+          (script
+            (loop
+              (init
+                (assign :bar ([] (or))))
+              (script
+                (assign :foo ([] (or))))))))))))

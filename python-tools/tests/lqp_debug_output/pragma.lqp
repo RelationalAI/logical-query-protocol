@@ -1,0 +1,50 @@
+(transaction
+  (configure
+    { :ivm.maintenance_level "off"
+      :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          (def 0x8c2574892063f995
+            ([a::INT b::INT c::INT]
+              (or
+                (and
+                  (primitive :rel_primitive_eq a 1)
+                  (primitive :rel_primitive_eq b 2)
+                  (primitive :rel_primitive_eq c 0))
+                (and
+                  (primitive :rel_primitive_eq a 1)
+                  (primitive :rel_primitive_eq b 3)
+                  (primitive :rel_primitive_eq c 0))
+                (and
+                  (primitive :rel_primitive_eq a 1)
+                  (primitive :rel_primitive_eq b 4)
+                  (primitive :rel_primitive_eq c 0)))))
+          (def 0x8de0b3c47f112c59
+            ([b::INT a::INT]
+              (or
+                (and
+                  (primitive :rel_primitive_eq b 2)
+                  (primitive :rel_primitive_eq a 1))
+                (and
+                  (primitive :rel_primitive_eq b 3)
+                  (primitive :rel_primitive_eq a 1))
+                (and
+                  (primitive :rel_primitive_eq b 4)
+                  (primitive :rel_primitive_eq a 1)))))
+          (def 0x2c26b46b68ffc68f
+            ([a::INT b::INT c::INT]
+              (and
+                (atom 0x8c2574892063f995 a b c)
+                (atom 0x8de0b3c47f112c59 b a)
+                (pragma :rel_primitive_force_var_order c b a)))))))
+    (reads
+      (output :foo 0x2c26b46b68ffc68f))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `0x8c2574892063f995` -> `R`
+;; 	 ID `0x8de0b3c47f112c59` -> `S`
+;; 	 ID `0x2c26b46b68ffc68f` -> `foo`

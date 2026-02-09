@@ -1,0 +1,15 @@
+;; ERROR: Duplicate declaration across fragments at fail_dup_id_3.lqp:14:11: 'cool'
+;; Duplicate ID, different fragment, different epoch.
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :frag1
+          (def :cool
+            ([] (or)))))))
+  (epoch
+    (writes
+      (define
+        (fragment :frag2
+          (def :cool
+            ([] (or))))))))

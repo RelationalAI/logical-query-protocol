@@ -1,0 +1,315 @@
+"""
+Auto-generated LL(k) recursive-descent parser.
+
+Generated from protobuf specifications.
+Do not modify this file! If you need to modify the parser, edit the generator code
+in `python-tools/src/meta` or edit the protobuf specification in `proto/v1`.
+
+{command_line_comment}"""
+
+using SHA
+using ProtoBuf: OneOf
+
+# Import protobuf modules
+include("proto_generated.jl")
+using .Proto
+
+
+function _has_proto_field(obj, field_sym::Symbol)::Bool
+    if hasproperty(obj, field_sym)
+        return !isnothing(getproperty(obj, field_sym))
+    end
+    for fname in fieldnames(typeof(obj))
+        fval = getfield(obj, fname)
+        if fval isa OneOf && fval.name == field_sym
+            return true
+        end
+    end
+    return false
+end
+
+function _get_oneof_field(obj, field_sym::Symbol)
+    for fname in fieldnames(typeof(obj))
+        fval = getfield(obj, fname)
+        if fval isa OneOf && fval.name == field_sym
+            return fval[]
+        end
+    end
+    error("No oneof field $field_sym on $(typeof(obj))")
+end
+
+
+struct ParseError <: Exception
+    msg::String
+end
+
+Base.showerror(io::IO, e::ParseError) = print(io, "ParseError: ", e.msg)
+
+
+struct Token
+    type::String
+    value::Any
+    pos::Int
+end
+
+Base.show(io::IO, t::Token) = print(io, "Token(", t.type, ", ", repr(t.value), ", ", t.pos, ")")
+
+
+mutable struct Lexer
+    input::String
+    pos::Int
+    tokens::Vector{{Token}}
+
+    function Lexer(input::String)
+        lexer = new(input, 1, Token[])
+        tokenize!(lexer)
+        return lexer
+    end
+end
+
+
+function tokenize!(lexer::Lexer)
+    token_specs = [
+{token_specs}    ]
+
+    whitespace_re = r"\s+"
+    comment_re = r";;.*"
+
+    # Use ncodeunits for byte-based position tracking (UTF-8 safe)
+    while lexer.pos <= ncodeunits(lexer.input)
+        # Skip whitespace
+        m = match(whitespace_re, lexer.input, lexer.pos)
+        if m !== nothing && m.offset == lexer.pos
+            lexer.pos = m.offset + ncodeunits(m.match)
+            continue
+        end
+
+        # Skip comments
+        m = match(comment_re, lexer.input, lexer.pos)
+        if m !== nothing && m.offset == lexer.pos
+            lexer.pos = m.offset + ncodeunits(m.match)
+            continue
+        end
+
+        # Collect all matching tokens
+        candidates = Tuple{{String,String,Function,Int}}[]
+
+        for (token_type, regex, action) in token_specs
+            m = match(regex, lexer.input, lexer.pos)
+            if m !== nothing && m.offset == lexer.pos
+                value = m.match
+                push!(candidates, (token_type, value, action, m.offset + ncodeunits(value)))
+            end
+        end
+
+        if isempty(candidates)
+            throw(ParseError("Unexpected character at position $(lexer.pos): $(repr(lexer.input[lexer.pos]))"))
+        end
+
+        # Pick the longest match
+        token_type, value, action, end_pos = candidates[argmax([c[4] for c in candidates])]
+        push!(lexer.tokens, Token(token_type, action(value), lexer.pos))
+        lexer.pos = end_pos
+    end
+
+    push!(lexer.tokens, Token("\$", "", lexer.pos))
+    return nothing
+end
+
+
+# Scanner functions for each token type
+scan_symbol(s::String) = s
+
+function scan_string(s::String)
+    # Strip quotes using Unicode-safe chop (handles multi-byte characters)
+    content = chop(s, head=1, tail=1)
+    # Simple escape processing - Julia handles most escapes natively
+    result = replace(content, "\\n" => "\n")
+    result = replace(result, "\\t" => "\t")
+    result = replace(result, "\\r" => "\r")
+    result = replace(result, "\\\\" => "\\")
+    result = replace(result, "\\\"" => "\"")
+    return result
+end
+
+scan_int(n::String) = Base.parse(Int64, n)
+
+function scan_float(f::String)
+    if f == "inf"
+        return Inf
+    elseif f == "nan"
+        return NaN
+    end
+    return Base.parse(Float64, f)
+end
+
+function scan_uint128(u::String)
+    # Remove the '0x' prefix
+    hex_str = u[3:end]
+    uint128_val = Base.parse(UInt128, hex_str, base=16)
+    low = UInt64(uint128_val & 0xFFFFFFFFFFFFFFFF)
+    high = UInt64((uint128_val >> 64) & 0xFFFFFFFFFFFFFFFF)
+    return Proto.UInt128Value(low, high)
+end
+
+function scan_int128(u::String)
+    # Remove the 'i128' suffix
+    u = u[1:end-4]
+    int128_val = Base.parse(Int128, u)
+    low = UInt64(int128_val & 0xFFFFFFFFFFFFFFFF)
+    high = UInt64((int128_val >> 64) & 0xFFFFFFFFFFFFFFFF)
+    return Proto.Int128Value(low, high)
+end
+
+function scan_decimal(d::String)
+    # Decimal is a string like '123.456d12' where the last part after `d` is the
+    # precision, and the scale is the number of digits between the decimal point and `d`
+    parts = split(d, 'd')
+    if length(parts) != 2
+        throw(ArgumentError("Invalid decimal format: $d"))
+    end
+    scale = length(split(parts[1], '.')[2])
+    precision = Base.parse(Int32, parts[2])
+    # Parse the integer value
+    int_str = replace(parts[1], "." => "")
+    int128_val = Base.parse(Int128, int_str)
+    low = UInt64(int128_val & 0xFFFFFFFFFFFFFFFF)
+    high = UInt64((int128_val >> 64) & 0xFFFFFFFFFFFFFFFF)
+    value = Proto.Int128Value(low, high)
+    return Proto.DecimalValue(precision, scale, value)
+end
+
+
+mutable struct Parser
+    tokens::Vector{{Token}}
+    pos::Int
+    id_to_debuginfo::Dict{{Vector{{UInt8}},Vector{{Pair{{Tuple{{UInt64,UInt64}},String}}}}}}
+    _current_fragment_id::Union{{Nothing,Vector{{UInt8}}}}
+    _relation_id_to_name::Dict{{Tuple{{UInt64,UInt64}},String}}
+
+    function Parser(tokens::Vector{{Token}})
+        return new(tokens, 1, Dict(), nothing, Dict())
+    end
+end
+
+
+function lookahead(parser::Parser, k::Int=0)::Token
+    idx = parser.pos + k
+    return idx <= length(parser.tokens) ? parser.tokens[idx] : Token("\$", "", -1)
+end
+
+
+function consume_literal!(parser::Parser, expected::String)
+    if !match_lookahead_literal(parser, expected, 0)
+        token = lookahead(parser, 0)
+        throw(ParseError("Expected literal $(repr(expected)) but got $(token.type)=`$(repr(token.value))` at position $(token.pos)"))
+    end
+    parser.pos += 1
+    return nothing
+end
+
+
+function consume_terminal!(parser::Parser, expected::String)
+    if !match_lookahead_terminal(parser, expected, 0)
+        token = lookahead(parser, 0)
+        throw(ParseError("Expected terminal $expected but got $(token.type)=`$(repr(token.value))` at position $(token.pos)"))
+    end
+    token = lookahead(parser, 0)
+    parser.pos += 1
+    return token.value
+end
+
+
+function match_lookahead_literal(parser::Parser, literal::String, k::Int)::Bool
+    token = lookahead(parser, k)
+    # Support soft keywords: alphanumeric literals are lexed as SYMBOL tokens
+    if token.type == "LITERAL" && token.value == literal
+        return true
+    end
+    if token.type == "SYMBOL" && token.value == literal
+        return true
+    end
+    return false
+end
+
+
+function match_lookahead_terminal(parser::Parser, terminal::String, k::Int)::Bool
+    token = lookahead(parser, k)
+    return token.type == terminal
+end
+
+
+function start_fragment!(parser::Parser, fragment_id::Proto.FragmentId)
+    parser._current_fragment_id = fragment_id.id
+    return fragment_id
+end
+
+
+function relation_id_from_string(parser::Parser, name::String)
+    # Create RelationId from string and track mapping for debug info
+    hash_bytes = sha256(name)
+    val = Base.parse(UInt64, bytes2hex(hash_bytes[1:8]), base=16)
+    id_low = UInt64(val & 0xFFFFFFFFFFFFFFFF)
+    id_high = UInt64((val >> 64) & 0xFFFFFFFFFFFFFFFF)
+    relation_id = Proto.RelationId(id_low, id_high)
+
+    # Store the mapping for the current fragment if we're inside one
+    if parser._current_fragment_id !== nothing
+        if !haskey(parser.id_to_debuginfo, parser._current_fragment_id)
+            parser.id_to_debuginfo[parser._current_fragment_id] = Pair{{Tuple{{UInt64,UInt64}},String}}[]
+        end
+        entries = parser.id_to_debuginfo[parser._current_fragment_id]
+        key = (relation_id.id_low, relation_id.id_high)
+        if !any(p -> p.first == key, entries)
+            push!(entries, key => name)
+        end
+    end
+
+    return relation_id
+end
+
+function construct_fragment(
+    parser::Parser,
+    fragment_id::Proto.FragmentId,
+    declarations::Vector{{Proto.Declaration}}
+)
+    # Get the debug info for this fragment
+    debug_info_entries = get(parser.id_to_debuginfo, fragment_id.id, Pair{{Tuple{{UInt64,UInt64}},String}}[])
+
+    # Convert to DebugInfo protobuf (preserving insertion order)
+    ids = Proto.RelationId[]
+    orig_names = String[]
+    for (key, name) in debug_info_entries
+        push!(ids, Proto.RelationId(key[1], key[2]))
+        push!(orig_names, name)
+    end
+
+    # Create DebugInfo
+    debug_info = Proto.DebugInfo(ids, orig_names)
+
+    # Clear _current_fragment_id before the return
+    parser._current_fragment_id = nothing
+
+    # Create and return Fragment
+    return Proto.Fragment(fragment_id, declarations, debug_info)
+end
+
+# --- Helper functions ---
+{named_function_defns}
+
+# --- Parse functions ---
+{parse_nonterminal_defns}
+
+function parse(input::String)
+    lexer = Lexer(input)
+    parser = Parser(lexer.tokens)
+    result = parse_{start_name}(parser)
+    # Check for unconsumed tokens (except EOF)
+    if parser.pos <= length(parser.tokens)
+        remaining_token = lookahead(parser, 0)
+        if remaining_token.type != "\$"
+            throw(ParseError("Unexpected token at end of input: $remaining_token"))
+        end
+    end
+    return result
+end

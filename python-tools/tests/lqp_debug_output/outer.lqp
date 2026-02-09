@@ -1,0 +1,55 @@
+(transaction
+  (configure
+    { :ivm.maintenance_level "off"
+      :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          (algorithm 0x8c2574892063f995
+            (script
+              (loop
+                (init
+                  (assign 0x8c2574892063f995
+                    ([a::INT b::INT]
+                      (or
+                        (and
+                          (primitive :rel_primitive_eq a 1)
+                          (primitive :rel_primitive_eq b 2))
+                        (and
+                          (primitive :rel_primitive_eq a 2)
+                          (primitive :rel_primitive_eq b 3)))))
+                  (assign 0xa25513c7e0f6eaa8
+                    ([a::INT b::INT]
+                      (and
+                        (primitive :rel_primitive_eq a 1)
+                        (primitive :rel_primitive_eq b 3))))
+                  (assign 0x9cdc6c47aa193ae7
+                    ([]
+                      (or))))
+                (script
+                  (assign 0x7fd7a5b0a5375b09
+                    ([]
+                      (or)))
+                  (loop
+                    (init)
+                    (script
+                      (upsert 0x8c2574892063f995
+                        ([a::INT b::INT]
+                          (atom 0xa25513c7e0f6eaa8 a b)))
+                      (break 0x7fd7a5b0a5375b09
+                        ([]
+                          (and)))))
+                  (break 0x9cdc6c47aa193ae7
+                    ([]
+                      (and))))))))))
+    (reads
+      (output :R 0x8c2574892063f995))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `0x8c2574892063f995` -> `R`
+;; 	 ID `0xa25513c7e0f6eaa8` -> `U`
+;; 	 ID `0x9cdc6c47aa193ae7` -> `always`
+;; 	 ID `0x7fd7a5b0a5375b09` -> `always2`

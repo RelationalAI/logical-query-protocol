@@ -1,0 +1,18 @@
+.DS_Store
+
+# LispyQP
+__pycache__/
+python-tools/dist/
+python-tools/build/
+python-tools/src/*.egg-info/
+python-tools/out/
+python-tools/.lsp/.cache
+
+# Proto generated files
+gen
+
+.envrc
+.venv
+.pytest_cache
+**/uv.lock
+julia/LQPParser/Manifest.toml

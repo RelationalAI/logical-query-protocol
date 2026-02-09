@@ -1,0 +1,13 @@
+;; ERROR: Key variable 'd' not declared in guard at fail_fd_key_variable.lqp:10:21
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :fds
+          (functional_dependency :fd_1
+            ([a::INT b::INT c::INT]
+              (atom :r a b c))
+            (keys a d)
+            (values c)))))
+    (reads
+      (output :output 0x1056e0f555a18ebda7d15))))

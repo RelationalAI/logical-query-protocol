@@ -1,0 +1,8 @@
+project_includes = ["**/*"]
+project_excludes = [
+    "**/.[!/.]*",
+    "**/*venv/**/*",
+    "src/lqp/proto/**/*",
+    "build",
+]
+search_path = ["."]

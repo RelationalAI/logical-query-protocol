@@ -1,0 +1,13 @@
+(transaction
+  (configure
+    { :ivm.maintenance_level "off"
+      :semantics_version 0})
+  (sync :foo :bar)
+  (epoch
+    (writes
+      (define
+        (fragment :frag
+          (def 0x9f86d081884c7d65
+            ([x::INT y::INT]
+              (not
+                (primitive :rel_primitive_eq x y)))))))))

@@ -1,0 +1,9 @@
+(transaction
+  (sync :foo :bar)
+  (epoch
+    (writes
+      (define
+        (fragment :frag
+          (def :test
+            ([x::INT y::INT]
+              (not (= x y)))))))))

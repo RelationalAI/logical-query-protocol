@@ -1,0 +1,8 @@
+;; ERROR: Duplicate declaration across fragments at fail_dup_id_2.lqp:7:29: 'foo'
+;; Duplicate ID, different fragment, same epoch.
+(transaction
+  (epoch
+    (writes
+      (define (fragment :f1 (def :foo ([] (or)))))
+      (define (fragment :f2 (def :foo ([] (or))))))
+    (reads)))

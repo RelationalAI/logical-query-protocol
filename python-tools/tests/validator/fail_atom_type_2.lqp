@@ -1,0 +1,9 @@
+;; ERROR: Incorrect type for 'foo' atom at index 0 ('z') at fail_atom_type_2.lqp:8:31: expected FLOAT term, got INT
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          (def :foo ([x::FLOAT y::STRING] (and (= x 1.1) (= y "B"))))
+          (def :bar ([z::INT] (atom :foo z "hi"))))))
+    (reads)))

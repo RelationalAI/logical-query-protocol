@@ -1,0 +1,12 @@
+;; ERROR: Shadowed variable at fail_shadowing_2.lqp:9:24: 'x'
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :frag
+          (def :outer_scope
+            ([x::STRING]
+              (exists [x::STRING]
+                 (and
+                   (primitive :check_string x))))))))
+    (reads)))

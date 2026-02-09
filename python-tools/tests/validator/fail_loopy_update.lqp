@@ -1,0 +1,9 @@
+;; ERROR: Upsert at fail_loopy_update.lqp:9:15 must have an Atom as its value
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :copy
+          (algorithm :test1
+            (script
+              (upsert :test1 ([] (and ))))))))))

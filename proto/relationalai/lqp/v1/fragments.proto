@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option go_package = "logical-query-protocol/lqp/v1";
+
+package relationalai.lqp.v1;
+
+import "relationalai/lqp/v1/logic.proto";
+
+message Fragment {
+  FragmentId id = 1;
+  repeated Declaration declarations = 2;
+  DebugInfo debug_info = 3;
+}
+
+message DebugInfo {
+  repeated RelationId ids = 1;
+  repeated string orig_names = 2;
+}
+
+message FragmentId {
+  bytes id = 1; // Variable-length identifier, up to 256 bits (32 bytes) or less
+}

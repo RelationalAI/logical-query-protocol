@@ -1,0 +1,11 @@
+(transaction
+  (epoch
+    (writes
+      (define (fragment :f1
+        (algorithm :foo
+          (script
+            (loop
+              (init
+                (assign :foo ([] (or))))
+              (script
+                (assign :foo ([] (and))))))))))))

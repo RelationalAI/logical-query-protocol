@@ -1,0 +1,16 @@
+;; ERROR: Incorrect arity for 'foo2' atom at fail_atom_arity_3.lqp:15:26: expected 0 terms, got 1
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          (def :foo ([] (or)))
+          (def :bar ([] (atom :foo))))))
+    (reads))
+  (epoch
+    (writes
+      (define
+        (fragment :f2
+          (def :foo2 ([] (or)))
+          (def :bar2 ([] (atom :foo2 1))))))
+    (reads)))

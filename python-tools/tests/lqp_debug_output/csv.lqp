@@ -1,0 +1,121 @@
+(transaction
+  (configure
+    { :ivm.maintenance_level "off"
+      :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          (csv_data
+            (csv_locator
+              (paths "s3://bucket/data/file1.csv" "s3://bucket/data/file2.csv"))
+            (csv_config
+              { :csv_compression "auto"
+                :csv_decimal_separator "."
+                :csv_delimiter ","
+                :csv_encoding "utf-8"
+                :csv_escapechar "\""
+                :csv_header_row 1
+                :csv_quotechar "\""
+                :csv_skip 0})
+            (columns
+              (column "user_id" 0xf89d6b6960453241 [INT])
+              (column "name" 0x2e0d0e00d49ec4d3 [STRING])
+              (column "score" 0xd080921d895bacdb [FLOAT]))
+            (asof "2025-01-01T00:00:00Z"))
+          (csv_data
+            (csv_locator
+              (paths "https://example.com/data.csv"))
+            (csv_config
+              { :csv_comment "#"
+                :csv_compression "gzip"
+                :csv_decimal_separator ","
+                :csv_delimiter "|"
+                :csv_encoding "latin-1"
+                :csv_escapechar "\\"
+                :csv_header_row 2
+                :csv_missing_strings "NA"
+                :csv_quotechar "'"
+                :csv_skip 1})
+            (columns
+              (column "timestamp" 0x44ad63f60af0f6db [DATETIME])
+              (column "value" 0x97dfc65f74283f60 [(DECIMAL 18 4)]))
+            (asof "2025-01-15T12:00:00Z"))
+          (csv_data
+            (csv_locator
+              (inline_data "user_id,name,score\n1,Alice,95.5\n2,Bob,87.3"))
+            (csv_config
+              { :csv_compression "auto"
+                :csv_decimal_separator "."
+                :csv_delimiter ","
+                :csv_encoding "utf-8"
+                :csv_escapechar "\""
+                :csv_header_row 1
+                :csv_quotechar "\""
+                :csv_skip 0})
+            (columns
+              (column "user_id" 0x1802f277114b102f [INT])
+              (column "name" 0x26ce8135e472b083 [STRING])
+              (column "score" 0x1fbccc1771050306 [FLOAT]))
+            (asof "2025-01-01T00:00:00Z"))
+          (csv_data
+            (csv_locator
+              (paths "/local/path/data.csv"))
+            (csv_config
+              { :csv_compression "auto"
+                :csv_decimal_separator "."
+                :csv_delimiter "\t"
+                :csv_encoding "utf-8"
+                :csv_escapechar "\""
+                :csv_header_row 1
+                :csv_quotechar "\""
+                :csv_skip 0})
+            (columns
+              (column "id" 0xbd9cecd5353749e9 [INT STRING])
+              (column "data" 0x450b548547f965e [STRING FLOAT BOOLEAN]))
+            (asof "2025-02-01T00:00:00Z"))
+          (csv_data
+            (csv_locator
+              (paths "data/infer.csv"))
+            (csv_config
+              { :csv_compression "auto"
+                :csv_decimal_separator "."
+                :csv_delimiter ","
+                :csv_encoding "utf-8"
+                :csv_escapechar "\""
+                :csv_header_row 1
+                :csv_quotechar "\""
+                :csv_skip 0})
+            (columns
+              (column "col1" 0xd7ccbace08a86f7d [])
+              (column "col2" 0x59fd8313b61172d2 []))
+            (asof "2025-03-01T00:00:00Z")))))
+    (reads
+      (output :user_id 0xf89d6b6960453241)
+      (output :user_name 0x2e0d0e00d49ec4d3)
+      (output :user_score 0xd080921d895bacdb)
+      (output :ts 0x44ad63f60af0f6db)
+      (output :val 0x97dfc65f74283f60)
+      (output :inline_user_id 0x1802f277114b102f)
+      (output :inline_user_name 0x26ce8135e472b083)
+      (output :inline_user_score 0x1fbccc1771050306)
+      (output :multi_id 0xbd9cecd5353749e9)
+      (output :multi_data 0x450b548547f965e)
+      (output :inferred1 0xd7ccbace08a86f7d)
+      (output :inferred2 0x59fd8313b61172d2))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `0xf89d6b6960453241` -> `user_id`
+;; 	 ID `0x2e0d0e00d49ec4d3` -> `user_name`
+;; 	 ID `0xd080921d895bacdb` -> `user_score`
+;; 	 ID `0x44ad63f60af0f6db` -> `ts`
+;; 	 ID `0x97dfc65f74283f60` -> `val`
+;; 	 ID `0x1802f277114b102f` -> `inline_user_id`
+;; 	 ID `0x26ce8135e472b083` -> `inline_user_name`
+;; 	 ID `0x1fbccc1771050306` -> `inline_user_score`
+;; 	 ID `0xbd9cecd5353749e9` -> `multi_id`
+;; 	 ID `0x450b548547f965e` -> `multi_data`
+;; 	 ID `0xd7ccbace08a86f7d` -> `inferred1`
+;; 	 ID `0x59fd8313b61172d2` -> `inferred2`
