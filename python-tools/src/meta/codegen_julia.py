@@ -82,6 +82,16 @@ class JuliaCodeGenerator(CodeGenerator):
     def escape_keyword(self, name: str) -> str:
         return f'var"{name}"'
 
+    def _escape_proto_field(self, name: str) -> str:
+        """Escape a proto field name matching ProtoBuf.jl's convention.
+
+        ProtoBuf.jl prefixes Julia keywords with '#' in struct field names,
+        e.g., `type` becomes `var"#type"`.
+        """
+        if name in JULIA_KEYWORDS:
+            return f'var"#{name}"'
+        return name
+
     # --- Literal generation ---
 
     def gen_none(self) -> str:
@@ -311,31 +321,30 @@ class JuliaCodeGenerator(CodeGenerator):
                 # Generate for side effects but discard.
                 self.generate_lines(field_expr, lines, indent)
 
-        # Build constructor args in struct field order
-        args: List[str] = []
+        # Build constructor kwargs
+        kwargs: List[str] = []
         for struct_field, kind in struct_fields:
             if kind == 'oneof':
                 alts = oneof_groups.get(struct_field, [])
                 if not alts:
-                    args.append("nothing")
-                elif len(alts) == 1:
+                    continue
+                escaped = self._escape_proto_field(struct_field)
+                if len(alts) == 1:
                     alt_name, value = alts[0]
                     sym = self._gen_oneof_symbol(alt_name)
-                    args.append(f"OneOf({sym}, {value})")
+                    kwargs.append(f"{escaped}=OneOf({sym}, {value})")
                 else:
-                    # Multiple alternatives: chain ternary expressions
                     result_expr = "nothing"
                     for alt_name, value in reversed(alts):
                         sym = self._gen_oneof_symbol(alt_name)
                         result_expr = f"(!isnothing({value}) ? OneOf({sym}, {value}) : {result_expr})"
-                    args.append(result_expr)
+                    kwargs.append(f"{escaped}={result_expr}")
             else:
                 if struct_field in regular_values:
-                    args.append(regular_values[struct_field])
-                else:
-                    args.append("nothing")
+                    escaped = self._escape_proto_field(struct_field)
+                    kwargs.append(f"{escaped}={regular_values[struct_field]}")
 
-        call = f"{ctor}({', '.join(args)})"
+        call = f"{ctor}({', '.join(kwargs)})" if kwargs else f"{ctor}()"
         tmp = gensym()
         lines.append(f"{indent}{self.gen_assignment(tmp, call, is_declaration=True)}")
         return tmp

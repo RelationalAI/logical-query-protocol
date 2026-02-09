@@ -23,7 +23,7 @@ GRAMMAR := python-tools/src/meta/grammar.y
 
 # Generated protobuf outputs
 PY_PROTO_DIR := python-tools/src/lqp/proto/v1
-JL_PROTO_DIR := julia/LQPParser/src/relationalai/lqp/v1
+JL_PROTO_DIR := julia/LogicalQueryProtocol/src/relationalai/lqp/v1
 
 # Generated parser outputs
 PY_PARSER := python-tools/src/lqp/generated_parser.py
@@ -74,7 +74,7 @@ protobuf-py: $(PROTO_FILES)
 	rm -rf gen/python gen/go
 
 protobuf-julia: $(PROTO_FILES)
-	cd julia && julia --project=LQPParser generate_proto.jl
+	cd julia && julia --project=LogicalQueryProtocol generate_proto.jl
 
 # ---------- parser generation ----------
 
@@ -104,7 +104,8 @@ test-python: parser-python check-python
 	cd python-tools && python -m pytest
 
 test-julia: parser-julia
-	cd julia && julia --project=LQPParser -e 'using Pkg; Pkg.test("LQPParser")'
+	cd julia && julia --project=LogicalQueryProtocol -e 'using Pkg; Pkg.test()'
+	cd julia && julia --project=LQPParser -e 'using Pkg; Pkg.test()'
 
 check-python:
 	cd python-tools && pyrefly check

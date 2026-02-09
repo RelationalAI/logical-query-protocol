@@ -3,27 +3,6 @@ using LQPParser
 import LQPParser: parse, Proto
 using ProtoBuf
 
-"""
-    proto_equal(a, b) -> Bool
-
-Structural equality for protobuf types. Julia's default `==` for immutable
-structs uses `===`, which fails for structs containing arrays (arrays compare
-by identity with `===`). This function compares field-by-field recursively.
-"""
-function proto_equal(a, b)
-    isnothing(a) && isnothing(b) && return true
-    (isnothing(a) || isnothing(b)) && return false
-    typeof(a) != typeof(b) && return false
-    T = typeof(a)
-    (isprimitivetype(T) || T == String || T == Symbol || T == Nothing) && return a == b
-    T <: ProtoBuf.OneOf && return a.name == b.name && proto_equal(a.value, b.value)
-    if T <: AbstractVector
-        length(a) != length(b) && return false
-        return all(proto_equal(a[i], b[i]) for i in eachindex(a))
-    end
-    return all(proto_equal(getfield(a, f), getfield(b, f)) for f in fieldnames(T))
-end
-
 @testset "LQPParser.jl" begin
     @testset "Basic parsing" begin
         # Test simple transaction parsing
@@ -68,11 +47,9 @@ end
                 if isfile(bin_path)
                     expected_binary = read(bin_path)
                     if generated_binary != expected_binary
-                        # If binaries don't match, try parsing both and comparing
-                        # (protobuf serialization can vary in field order)
                         decoder = ProtoBuf.ProtoDecoder(IOBuffer(expected_binary))
                         expected_parsed = ProtoBuf.decode(decoder, Proto.Transaction)
-                        @test proto_equal(result, expected_parsed)
+                        @test result == expected_parsed
                     else
                         @test true  # Binaries match exactly
                     end
