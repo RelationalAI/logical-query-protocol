@@ -12,6 +12,22 @@
 # Not all expression forms are supported. Indeed, one can only call helper
 # functions declared below and builtin functions via `builtin.func(...)`.
 # We translate this restricted Python into actual Python, Julia, and Go.
+#
+# Each rule has a construct action and a deconstruct action.
+#
+# Construct actions use `$$ = expr` to build the LHS value from the RHS
+# elements ($1, $2, ...). If omitted, the default is `$$ = $N` when there
+# is exactly one non-literal RHS element.
+#
+# Deconstruct actions use `$N = expr` assignments to extract RHS element
+# values from the LHS value ($$). If omitted, the default is the identity
+# deconstruct. If any assignment uses a conditional guard of the form
+# `$N = expr if COND else None`, the deconstructor returns None when the
+# condition fails, signaling that this rule does not match.
+#
+# The pretty printer uses the deconstruct actions. For nonterminals with
+# multiple alternatives, it tries the rules in declaration order, choosing
+# the first whose deconstructor returns a non-None value.
 
 
 # Start symbol
@@ -164,267 +180,350 @@
 
 transaction
     : "(" "transaction" configure? sync? epoch* ")"
-      construct: transactions.Transaction(epochs=$5, configure=builtin.unwrap_option_or($3, default_configure()), sync=$4)
+      construct: $$ = transactions.Transaction(epochs=$5, configure=builtin.unwrap_option_or($3, default_configure()), sync=$4)
+      deconstruct:
+        $3 = $$.configure if not is_default_configure($$.configure) else None
+        $4 = $$.sync
+        $5 = $$.epochs
 
 configure
     : "(" "configure" config_dict ")"
-      construct: construct_configure($3)
+      construct: $$ = construct_configure($3)
+      deconstruct: $3 = deconstruct_configure($$)
 
 config_dict
     : "{" config_key_value* "}"
 
 config_key_value
     : ":" SYMBOL value
-      construct: builtin.tuple($2, $3)
+      construct: $$ = builtin.tuple($2, $3)
+      deconstruct:
+        $2 = $$[0]
+        $3 = $$[1]
 
 value
     : date
-      construct: logic.Value(date_value=$1)
+      construct: $$ = logic.Value(date_value=$1)
+      deconstruct: $1 = $$.date_value if builtin.has_proto_field($$, 'date_value') else None
     | datetime
-      construct: logic.Value(datetime_value=$1)
+      construct: $$ = logic.Value(datetime_value=$1)
+      deconstruct: $1 = $$.datetime_value if builtin.has_proto_field($$, 'datetime_value') else None
     | STRING
-      construct: logic.Value(string_value=$1)
+      construct: $$ = logic.Value(string_value=$1)
+      deconstruct: $1 = $$.string_value if builtin.has_proto_field($$, 'string_value') else None
     | INT
-      construct: logic.Value(int_value=$1)
+      construct: $$ = logic.Value(int_value=$1)
+      deconstruct: $1 = $$.int_value if builtin.has_proto_field($$, 'int_value') else None
     | FLOAT
-      construct: logic.Value(float_value=$1)
+      construct: $$ = logic.Value(float_value=$1)
+      deconstruct: $1 = $$.float_value if builtin.has_proto_field($$, 'float_value') else None
     | UINT128
-      construct: logic.Value(uint128_value=$1)
+      construct: $$ = logic.Value(uint128_value=$1)
+      deconstruct: $1 = $$.uint128_value if builtin.has_proto_field($$, 'uint128_value') else None
     | INT128
-      construct: logic.Value(int128_value=$1)
+      construct: $$ = logic.Value(int128_value=$1)
+      deconstruct: $1 = $$.int128_value if builtin.has_proto_field($$, 'int128_value') else None
     | DECIMAL
-      construct: logic.Value(decimal_value=$1)
+      construct: $$ = logic.Value(decimal_value=$1)
+      deconstruct: $1 = $$.decimal_value if builtin.has_proto_field($$, 'decimal_value') else None
     | "missing"
-      construct: logic.Value(missing_value=logic.MissingValue())
+      construct: $$ = logic.Value(missing_value=logic.MissingValue())
     | boolean_value
-      construct: logic.Value(boolean_value=$1)
+      construct: $$ = logic.Value(boolean_value=$1)
+      deconstruct: $1 = $$.boolean_value if builtin.has_proto_field($$, 'boolean_value') else None
 
 date
     : "(" "date" INT INT INT ")"
-      construct: logic.DateValue(year=builtin.int64_to_int32($3), month=builtin.int64_to_int32($4), day=builtin.int64_to_int32($5))
+      construct: $$ = logic.DateValue(year=builtin.int64_to_int32($3), month=builtin.int64_to_int32($4), day=builtin.int64_to_int32($5))
+      deconstruct: $3 = builtin.int32_to_int64($$.year); $4 = builtin.int32_to_int64($$.month); $5 = builtin.int32_to_int64($$.day)
 
 datetime
     : "(" "datetime" INT INT INT INT INT INT INT? ")"
-      construct: logic.DateTimeValue(year=builtin.int64_to_int32($3), month=builtin.int64_to_int32($4), day=builtin.int64_to_int32($5), hour=builtin.int64_to_int32($6), minute=builtin.int64_to_int32($7), second=builtin.int64_to_int32($8), microsecond=builtin.int64_to_int32(builtin.unwrap_option_or($9, 0)))
+      construct: $$ = logic.DateTimeValue(year=builtin.int64_to_int32($3), month=builtin.int64_to_int32($4), day=builtin.int64_to_int32($5), hour=builtin.int64_to_int32($6), minute=builtin.int64_to_int32($7), second=builtin.int64_to_int32($8), microsecond=builtin.int64_to_int32(builtin.unwrap_option_or($9, 0)))
+      deconstruct:
+        $3 = builtin.int32_to_int64($$.year)
+        $4 = builtin.int32_to_int64($$.month)
+        $5 = builtin.int32_to_int64($$.day)
+        $6 = builtin.int32_to_int64($$.hour)
+        $7 = builtin.int32_to_int64($$.minute)
+        $8 = builtin.int32_to_int64($$.second)
+        $9 = builtin.int32_to_int64($$.microsecond)
 
 boolean_value
     : "true"
-      construct: True
+      construct: $$ = True
     | "false"
-      construct: False
+      construct: $$ = False
 
 sync
     : "(" "sync" fragment_id* ")"
-      construct: transactions.Sync(fragments=$3)
+      construct: $$ = transactions.Sync(fragments=$3)
+      deconstruct: $3 = $$.fragments
 
 fragment_id
     : ":" SYMBOL
-      construct: builtin.fragment_id_from_string($2)
+      construct: $$ = builtin.fragment_id_from_string($2)
+      deconstruct: $2 = builtin.fragment_id_to_string($$)
 
 epoch
     : "(" "epoch" epoch_writes? epoch_reads? ")"
-      construct: transactions.Epoch(writes=builtin.unwrap_option_or($3, list[transactions.Write]()), reads=builtin.unwrap_option_or($4, list[transactions.Read]()))
+      construct: $$ = transactions.Epoch(writes=builtin.unwrap_option_or($3, list[transactions.Write]()), reads=builtin.unwrap_option_or($4, list[transactions.Read]()))
+      deconstruct:
+        $3 = $$.writes if not builtin.is_empty($$.writes) else None
+        $4 = $$.reads if not builtin.is_empty($$.reads) else None
 
 epoch_writes
     : "(" "writes" write* ")"
 
 write
     : define
-      construct: transactions.Write(define=$1)
+      construct: $$ = transactions.Write(define=$1)
+      deconstruct: $1 = $$.define if builtin.has_proto_field($$, 'define') else None
     | undefine
-      construct: transactions.Write(undefine=$1)
+      construct: $$ = transactions.Write(undefine=$1)
+      deconstruct: $1 = $$.undefine if builtin.has_proto_field($$, 'undefine') else None
     | context
-      construct: transactions.Write(context=$1)
+      construct: $$ = transactions.Write(context=$1)
+      deconstruct: $1 = $$.context if builtin.has_proto_field($$, 'context') else None
 
 define
     : "(" "define" fragment ")"
-      construct: transactions.Define(fragment=$3)
+      construct: $$ = transactions.Define(fragment=$3)
+      deconstruct: $3 = $$.fragment
 
 fragment
     : "(" "fragment" new_fragment_id declaration* ")"
-      construct: builtin.construct_fragment($3, $4)
+      construct: $$ = builtin.construct_fragment($3, $4)
+      deconstruct: $3 = $$.id; $4 = $$.declarations
 
 new_fragment_id
     : fragment_id
       construct:
         builtin.start_fragment($1)
-        $1
+        $$ = $1
 
 declaration
     : def
-      construct: logic.Declaration(def=$1)
+      construct: $$ = logic.Declaration(def=$1)
+      deconstruct: $1 = $$.def if builtin.has_proto_field($$, 'def') else None
     | algorithm
-      construct: logic.Declaration(algorithm=$1)
+      construct: $$ = logic.Declaration(algorithm=$1)
+      deconstruct: $1 = $$.algorithm if builtin.has_proto_field($$, 'algorithm') else None
     | constraint
-      construct: logic.Declaration(constraint=$1)
+      construct: $$ = logic.Declaration(constraint=$1)
+      deconstruct: $1 = $$.constraint if builtin.has_proto_field($$, 'constraint') else None
     | data
-      construct: logic.Declaration(data=$1)
+      construct: $$ = logic.Declaration(data=$1)
+      deconstruct: $1 = $$.data if builtin.has_proto_field($$, 'data') else None
 
 def
     : "(" "def" relation_id abstraction attrs? ")"
-      construct: logic.Def(name=$3, body=$4, attrs=builtin.unwrap_option_or($5, list[logic.Attribute]()))
+      construct: $$ = logic.Def(name=$3, body=$4, attrs=builtin.unwrap_option_or($5, list[logic.Attribute]()))
+      deconstruct:
+        $3 = $$.name
+        $4 = $$.body
+        $5 = $$.attrs if not builtin.is_empty($$.attrs) else None
 
 relation_id
     : ":" SYMBOL
-      construct: builtin.relation_id_from_string($2)
+      construct: $$ = builtin.relation_id_from_string($2)
+      deconstruct: $2 = deconstruct_relation_id_string($$)
     | UINT128
-      construct: builtin.relation_id_from_uint128($1)
+      construct: $$ = builtin.relation_id_from_uint128($1)
+      deconstruct: $1 = deconstruct_relation_id_uint128($$)
 
 abstraction
     : "(" bindings formula ")"
-      construct: logic.Abstraction(vars=builtin.list_concat($2[0], $2[1]), value=$3)
+      construct: $$ = logic.Abstraction(vars=builtin.list_concat($2[0], $2[1]), value=$3)
+      deconstruct: $2 = deconstruct_bindings($$); $3 = $$.value
 
 bindings
     : "[" binding* value_bindings? "]"
-      construct: builtin.tuple($2, builtin.unwrap_option_or($3, list[logic.Binding]()))
+      construct: $$ = builtin.tuple($2, builtin.unwrap_option_or($3, list[logic.Binding]()))
+      deconstruct: $2 = $$[0]; $3 = $$[1] if not builtin.is_empty($$[1]) else None
 
 binding
     : SYMBOL "::" type
-      construct: logic.Binding(var=logic.Var(name=$1), type=$3)
+      construct: $$ = logic.Binding(var=logic.Var(name=$1), type=$3)
+      deconstruct: $1 = $$.var.name; $3 = $$.type
 
 type
     : unspecified_type
-      construct: logic.Type(unspecified_type=$1)
+      construct: $$ = logic.Type(unspecified_type=$1)
+      deconstruct: $1 = $$.unspecified_type if builtin.has_proto_field($$, 'unspecified_type') else None
     | string_type
-      construct: logic.Type(string_type=$1)
+      construct: $$ = logic.Type(string_type=$1)
+      deconstruct: $1 = $$.string_type if builtin.has_proto_field($$, 'string_type') else None
     | int_type
-      construct: logic.Type(int_type=$1)
+      construct: $$ = logic.Type(int_type=$1)
+      deconstruct: $1 = $$.int_type if builtin.has_proto_field($$, 'int_type') else None
     | float_type
-      construct: logic.Type(float_type=$1)
+      construct: $$ = logic.Type(float_type=$1)
+      deconstruct: $1 = $$.float_type if builtin.has_proto_field($$, 'float_type') else None
     | uint128_type
-      construct: logic.Type(uint128_type=$1)
+      construct: $$ = logic.Type(uint128_type=$1)
+      deconstruct: $1 = $$.uint128_type if builtin.has_proto_field($$, 'uint128_type') else None
     | int128_type
-      construct: logic.Type(int128_type=$1)
+      construct: $$ = logic.Type(int128_type=$1)
+      deconstruct: $1 = $$.int128_type if builtin.has_proto_field($$, 'int128_type') else None
     | date_type
-      construct: logic.Type(date_type=$1)
+      construct: $$ = logic.Type(date_type=$1)
+      deconstruct: $1 = $$.date_type if builtin.has_proto_field($$, 'date_type') else None
     | datetime_type
-      construct: logic.Type(datetime_type=$1)
+      construct: $$ = logic.Type(datetime_type=$1)
+      deconstruct: $1 = $$.datetime_type if builtin.has_proto_field($$, 'datetime_type') else None
     | missing_type
-      construct: logic.Type(missing_type=$1)
+      construct: $$ = logic.Type(missing_type=$1)
+      deconstruct: $1 = $$.missing_type if builtin.has_proto_field($$, 'missing_type') else None
     | decimal_type
-      construct: logic.Type(decimal_type=$1)
+      construct: $$ = logic.Type(decimal_type=$1)
+      deconstruct: $1 = $$.decimal_type if builtin.has_proto_field($$, 'decimal_type') else None
     | boolean_type
-      construct: logic.Type(boolean_type=$1)
+      construct: $$ = logic.Type(boolean_type=$1)
+      deconstruct: $1 = $$.boolean_type if builtin.has_proto_field($$, 'boolean_type') else None
 
 unspecified_type
     : "UNKNOWN"
-      construct: logic.UnspecifiedType()
+      construct: $$ = logic.UnspecifiedType()
 
 string_type
     : "STRING"
-      construct: logic.StringType()
+      construct: $$ = logic.StringType()
 
 int_type
     : "INT"
-      construct: logic.IntType()
+      construct: $$ = logic.IntType()
 
 float_type
     : "FLOAT"
-      construct: logic.FloatType()
+      construct: $$ = logic.FloatType()
 
 uint128_type
     : "UINT128"
-      construct: logic.UInt128Type()
+      construct: $$ = logic.UInt128Type()
 
 int128_type
     : "INT128"
-      construct: logic.Int128Type()
+      construct: $$ = logic.Int128Type()
 
 date_type
     : "DATE"
-      construct: logic.DateType()
+      construct: $$ = logic.DateType()
 
 datetime_type
     : "DATETIME"
-      construct: logic.DateTimeType()
+      construct: $$ = logic.DateTimeType()
 
 missing_type
     : "MISSING"
-      construct: logic.MissingType()
+      construct: $$ = logic.MissingType()
 
 decimal_type
     : "(" "DECIMAL" INT INT ")"
-      construct: logic.DecimalType(precision=builtin.int64_to_int32($3), scale=builtin.int64_to_int32($4))
+      construct: $$ = logic.DecimalType(precision=builtin.int64_to_int32($3), scale=builtin.int64_to_int32($4))
+      deconstruct: $3 = builtin.int32_to_int64($$.precision); $4 = builtin.int32_to_int64($$.scale)
 
 boolean_type
     : "BOOLEAN"
-      construct: logic.BooleanType()
+      construct: $$ = logic.BooleanType()
 
 value_bindings
     : "|" binding*
 
 formula
     : true
-      construct: logic.Formula(conjunction=$1)
+      construct: $$ = logic.Formula(conjunction=$1)
+      deconstruct: $1 = $$.conjunction if builtin.has_proto_field($$, 'conjunction') and builtin.is_empty($$.conjunction.args) else None
     | false
-      construct: logic.Formula(disjunction=$1)
+      construct: $$ = logic.Formula(disjunction=$1)
+      deconstruct: $1 = $$.disjunction if builtin.has_proto_field($$, 'disjunction') and builtin.is_empty($$.disjunction.args) else None
     | exists
-      construct: logic.Formula(exists=$1)
+      construct: $$ = logic.Formula(exists=$1)
+      deconstruct: $1 = $$.exists if builtin.has_proto_field($$, 'exists') else None
     | reduce
-      construct: logic.Formula(reduce=$1)
+      construct: $$ = logic.Formula(reduce=$1)
+      deconstruct: $1 = $$.reduce if builtin.has_proto_field($$, 'reduce') else None
     | conjunction
-      construct: logic.Formula(conjunction=$1)
+      construct: $$ = logic.Formula(conjunction=$1)
+      deconstruct: $1 = $$.conjunction if builtin.has_proto_field($$, 'conjunction') and not builtin.is_empty($$.conjunction.args) else None
     | disjunction
-      construct: logic.Formula(disjunction=$1)
+      construct: $$ = logic.Formula(disjunction=$1)
+      deconstruct: $1 = $$.disjunction if builtin.has_proto_field($$, 'disjunction') and not builtin.is_empty($$.disjunction.args) else None
     | not
-      construct: logic.Formula(not=$1)
+      construct: $$ = logic.Formula(not=$1)
+      deconstruct: $1 = $$.not if builtin.has_proto_field($$, 'not') else None
     | ffi
-      construct: logic.Formula(ffi=$1)
+      construct: $$ = logic.Formula(ffi=$1)
+      deconstruct: $1 = $$.ffi if builtin.has_proto_field($$, 'ffi') else None
     | atom
-      construct: logic.Formula(atom=$1)
+      construct: $$ = logic.Formula(atom=$1)
+      deconstruct: $1 = $$.atom if builtin.has_proto_field($$, 'atom') else None
     | pragma
-      construct: logic.Formula(pragma=$1)
+      construct: $$ = logic.Formula(pragma=$1)
+      deconstruct: $1 = $$.pragma if builtin.has_proto_field($$, 'pragma') else None
     | primitive
-      construct: logic.Formula(primitive=$1)
+      construct: $$ = logic.Formula(primitive=$1)
+      deconstruct: $1 = $$.primitive if builtin.has_proto_field($$, 'primitive') else None
     | rel_atom
-      construct: logic.Formula(rel_atom=$1)
+      construct: $$ = logic.Formula(rel_atom=$1)
+      deconstruct: $1 = $$.rel_atom if builtin.has_proto_field($$, 'rel_atom') else None
     | cast
-      construct: logic.Formula(cast=$1)
+      construct: $$ = logic.Formula(cast=$1)
+      deconstruct: $1 = $$.cast if builtin.has_proto_field($$, 'cast') else None
 
 true
     : "(" "true" ")"
-      construct: logic.Conjunction(args=list[logic.Formula]())
+      construct: $$ = logic.Conjunction(args=list[logic.Formula]())
 
 false
     : "(" "false" ")"
-      construct: logic.Disjunction(args=list[logic.Formula]())
+      construct: $$ = logic.Disjunction(args=list[logic.Formula]())
 
 exists
     : "(" "exists" bindings formula ")"
-      construct: logic.Exists(body=logic.Abstraction(vars=builtin.list_concat($3[0], $3[1]), value=$4))
+      construct: $$ = logic.Exists(body=logic.Abstraction(vars=builtin.list_concat($3[0], $3[1]), value=$4))
+      deconstruct: $3 = deconstruct_bindings($$.body); $4 = $$.body.value
 
 reduce
     : "(" "reduce" abstraction abstraction terms ")"
-      construct: logic.Reduce(op=$3, body=$4, terms=$5)
+      construct: $$ = logic.Reduce(op=$3, body=$4, terms=$5)
+      deconstruct: $3 = $$.op; $4 = $$.body; $5 = $$.terms
 
 term
     : var
-      construct: logic.Term(var=$1)
+      construct: $$ = logic.Term(var=$1)
+      deconstruct: $1 = $$.var if builtin.has_proto_field($$, 'var') else None
     | constant
-      construct: logic.Term(constant=$1)
+      construct: $$ = logic.Term(constant=$1)
+      deconstruct: $1 = $$.constant if builtin.has_proto_field($$, 'constant') else None
 
 var
     : SYMBOL
-      construct: logic.Var(name=$1)
+      construct: $$ = logic.Var(name=$1)
+      deconstruct: $1 = $$.name
 
 constant
     : value
 
 conjunction
     : "(" "and" formula* ")"
-      construct: logic.Conjunction(args=$3)
+      construct: $$ = logic.Conjunction(args=$3)
+      deconstruct: $3 = $$.args
 
 disjunction
     : "(" "or" formula* ")"
-      construct: logic.Disjunction(args=$3)
+      construct: $$ = logic.Disjunction(args=$3)
+      deconstruct: $3 = $$.args
 
 not
     : "(" "not" formula ")"
-      construct: logic.Not(arg=$3)
+      construct: $$ = logic.Not(arg=$3)
+      deconstruct: $3 = $$.arg
 
 ffi
     : "(" "ffi" name ffi_args terms ")"
-      construct: logic.FFI(name=$3, args=$4, terms=$5)
+      construct: $$ = logic.FFI(name=$3, args=$4, terms=$5)
+      deconstruct: $3 = $$.name; $4 = $$.args; $5 = $$.terms
 
 ffi_args
     : "(" "args" abstraction* ")"
@@ -437,11 +536,13 @@ name
 
 atom
     : "(" "atom" relation_id term* ")"
-      construct: logic.Atom(name=$3, terms=$4)
+      construct: $$ = logic.Atom(name=$3, terms=$4)
+      deconstruct: $3 = $$.name; $4 = $$.terms
 
 pragma
     : "(" "pragma" name term* ")"
-      construct: logic.Pragma(name=$3, terms=$4)
+      construct: $$ = logic.Pragma(name=$3, terms=$4)
+      deconstruct: $3 = $$.name; $4 = $$.terms
 
 primitive
     : eq
@@ -454,153 +555,236 @@ primitive
     | multiply
     | divide
     | "(" "primitive" name rel_term* ")"
-      construct: logic.Primitive(name=$3, terms=$4)
+      construct: $$ = logic.Primitive(name=$3, terms=$4)
+      deconstruct: $3 = $$.name; $4 = $$.terms
 
 eq
     : "(" "=" term term ")"
-      construct: logic.Primitive(name="rel_primitive_eq", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4)])
+      construct: $$ = logic.Primitive(name="rel_primitive_eq", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4)])
+      deconstruct:
+        $3 = $$.terms[0].term if $$.name == "rel_primitive_eq" else None
+        $4 = $$.terms[1].term
 
 lt
     : "(" "<" term term ")"
-      construct: logic.Primitive(name="rel_primitive_lt_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4)])
+      construct: $$ = logic.Primitive(name="rel_primitive_lt_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4)])
+      deconstruct:
+        $3 = $$.terms[0].term if $$.name == "rel_primitive_lt_monotype" else None
+        $4 = $$.terms[1].term
 
 lt_eq
     : "(" "<=" term term ")"
-      construct: logic.Primitive(name="rel_primitive_lt_eq_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4)])
+      construct: $$ = logic.Primitive(name="rel_primitive_lt_eq_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4)])
+      deconstruct:
+        $3 = $$.terms[0].term if $$.name == "rel_primitive_lt_eq_monotype" else None
+        $4 = $$.terms[1].term
 
 gt
     : "(" ">" term term ")"
-      construct: logic.Primitive(name="rel_primitive_gt_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4)])
+      construct: $$ = logic.Primitive(name="rel_primitive_gt_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4)])
+      deconstruct:
+        $3 = $$.terms[0].term if $$.name == "rel_primitive_gt_monotype" else None
+        $4 = $$.terms[1].term
 
 gt_eq
     : "(" ">=" term term ")"
-      construct: logic.Primitive(name="rel_primitive_gt_eq_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4)])
+      construct: $$ = logic.Primitive(name="rel_primitive_gt_eq_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4)])
+      deconstruct:
+        $3 = $$.terms[0].term if $$.name == "rel_primitive_gt_eq_monotype" else None
+        $4 = $$.terms[1].term
 
 add
     : "(" "+" term term term ")"
-      construct: logic.Primitive(name="rel_primitive_add_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4), logic.RelTerm(term=$5)])
+      construct: $$ = logic.Primitive(name="rel_primitive_add_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4), logic.RelTerm(term=$5)])
+      deconstruct:
+        $3 = $$.terms[0].term if $$.name == "rel_primitive_add_monotype" else None
+        $4 = $$.terms[1].term
+        $5 = $$.terms[2].term
 
 minus
     : "(" "-" term term term ")"
-      construct: logic.Primitive(name="rel_primitive_subtract_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4), logic.RelTerm(term=$5)])
+      construct: $$ = logic.Primitive(name="rel_primitive_subtract_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4), logic.RelTerm(term=$5)])
+      deconstruct:
+        $3 = $$.terms[0].term if $$.name == "rel_primitive_subtract_monotype" else None
+        $4 = $$.terms[1].term
+        $5 = $$.terms[2].term
 
 multiply
     : "(" "*" term term term ")"
-      construct: logic.Primitive(name="rel_primitive_multiply_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4), logic.RelTerm(term=$5)])
+      construct: $$ = logic.Primitive(name="rel_primitive_multiply_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4), logic.RelTerm(term=$5)])
+      deconstruct:
+        $3 = $$.terms[0].term if $$.name == "rel_primitive_multiply_monotype" else None
+        $4 = $$.terms[1].term
+        $5 = $$.terms[2].term
 
 divide
     : "(" "/" term term term ")"
-      construct: logic.Primitive(name="rel_primitive_divide_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4), logic.RelTerm(term=$5)])
+      construct: $$ = logic.Primitive(name="rel_primitive_divide_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4), logic.RelTerm(term=$5)])
+      deconstruct:
+        $3 = $$.terms[0].term if $$.name == "rel_primitive_divide_monotype" else None
+        $4 = $$.terms[1].term
+        $5 = $$.terms[2].term
 
 rel_term
     : specialized_value
-      construct: logic.RelTerm(specialized_value=$1)
+      construct: $$ = logic.RelTerm(specialized_value=$1)
+      deconstruct: $1 = $$.specialized_value if builtin.has_proto_field($$, 'specialized_value') else None
     | term
-      construct: logic.RelTerm(term=$1)
+      construct: $$ = logic.RelTerm(term=$1)
+      deconstruct: $1 = $$.term if builtin.has_proto_field($$, 'term') else None
 
 specialized_value
     : "#" value
 
 rel_atom
     : "(" "relatom" name rel_term* ")"
-      construct: logic.RelAtom(name=$3, terms=$4)
+      construct: $$ = logic.RelAtom(name=$3, terms=$4)
+      deconstruct: $3 = $$.name; $4 = $$.terms
 
 cast
     : "(" "cast" term term ")"
-      construct: logic.Cast(input=$3, result=$4)
+      construct: $$ = logic.Cast(input=$3, result=$4)
+      deconstruct: $3 = $$.input; $4 = $$.result
 
 attrs
     : "(" "attrs" attribute* ")"
 
 attribute
     : "(" "attribute" name value* ")"
-      construct: logic.Attribute(name=$3, args=$4)
+      construct: $$ = logic.Attribute(name=$3, args=$4)
+      deconstruct: $3 = $$.name; $4 = $$.args
 
 algorithm
     : "(" "algorithm" relation_id* script ")"
-      construct: logic.Algorithm(global=$3, body=$4)
+      construct: $$ = logic.Algorithm(global=$3, body=$4)
+      deconstruct: $3 = $$.global; $4 = $$.body
 
 script
     : "(" "script" construct* ")"
-      construct: logic.Script(constructs=$3)
+      construct: $$ = logic.Script(constructs=$3)
+      deconstruct: $3 = $$.constructs
 
 construct
     : loop
-      construct: logic.Construct(loop=$1)
+      construct: $$ = logic.Construct(loop=$1)
+      deconstruct: $1 = $$.loop if builtin.has_proto_field($$, 'loop') else None
     | instruction
-      construct: logic.Construct(instruction=$1)
+      construct: $$ = logic.Construct(instruction=$1)
+      deconstruct: $1 = $$.instruction if builtin.has_proto_field($$, 'instruction') else None
 
 loop
     : "(" "loop" init script ")"
-      construct: logic.Loop(init=$3, body=$4)
+      construct: $$ = logic.Loop(init=$3, body=$4)
+      deconstruct: $3 = $$.init; $4 = $$.body
 
 init
     : "(" "init" instruction* ")"
 
 instruction
     : assign
-      construct: logic.Instruction(assign=$1)
+      construct: $$ = logic.Instruction(assign=$1)
+      deconstruct: $1 = $$.assign if builtin.has_proto_field($$, 'assign') else None
     | upsert
-      construct: logic.Instruction(upsert=$1)
+      construct: $$ = logic.Instruction(upsert=$1)
+      deconstruct: $1 = $$.upsert if builtin.has_proto_field($$, 'upsert') else None
     | break
-      construct: logic.Instruction(break=$1)
+      construct: $$ = logic.Instruction(break=$1)
+      deconstruct: $1 = $$.break if builtin.has_proto_field($$, 'break') else None
     | monoid_def
-      construct: logic.Instruction(monoid_def=$1)
+      construct: $$ = logic.Instruction(monoid_def=$1)
+      deconstruct: $1 = $$.monoid_def if builtin.has_proto_field($$, 'monoid_def') else None
     | monus_def
-      construct: logic.Instruction(monus_def=$1)
+      construct: $$ = logic.Instruction(monus_def=$1)
+      deconstruct: $1 = $$.monus_def if builtin.has_proto_field($$, 'monus_def') else None
 
 assign
     : "(" "assign" relation_id abstraction attrs? ")"
-      construct: logic.Assign(name=$3, body=$4, attrs=builtin.unwrap_option_or($5, list[logic.Attribute]()))
+      construct: $$ = logic.Assign(name=$3, body=$4, attrs=builtin.unwrap_option_or($5, list[logic.Attribute]()))
+      deconstruct:
+        $3 = $$.name
+        $4 = $$.body
+        $5 = $$.attrs if not builtin.is_empty($$.attrs) else None
 
 upsert
     : "(" "upsert" relation_id abstraction_with_arity attrs? ")"
-      construct: logic.Upsert(name=$3, body=$4[0], attrs=builtin.unwrap_option_or($5, list[logic.Attribute]()), value_arity=$4[1])
+      construct: $$ = logic.Upsert(name=$3, body=$4[0], attrs=builtin.unwrap_option_or($5, list[logic.Attribute]()), value_arity=$4[1])
+      deconstruct:
+        $3 = $$.name
+        $4 = builtin.tuple($$.body, $$.value_arity)
+        $5 = $$.attrs if not builtin.is_empty($$.attrs) else None
 
 abstraction_with_arity
     : "(" bindings formula ")"
-      construct: builtin.tuple(logic.Abstraction(vars=builtin.list_concat($2[0], $2[1]), value=$3), builtin.length($2[1]))
+      construct: $$ = builtin.tuple(logic.Abstraction(vars=builtin.list_concat($2[0], $2[1]), value=$3), builtin.length($2[1]))
+      deconstruct: $2 = deconstruct_bindings_with_arity($$[0], $$[1]); $3 = $$[0].value
 
 break
     : "(" "break" relation_id abstraction attrs? ")"
-      construct: logic.Break(name=$3, body=$4, attrs=builtin.unwrap_option_or($5, list[logic.Attribute]()))
+      construct: $$ = logic.Break(name=$3, body=$4, attrs=builtin.unwrap_option_or($5, list[logic.Attribute]()))
+      deconstruct:
+        $3 = $$.name
+        $4 = $$.body
+        $5 = $$.attrs if not builtin.is_empty($$.attrs) else None
 
 monoid_def
     : "(" "monoid" monoid relation_id abstraction_with_arity attrs? ")"
-      construct: logic.MonoidDef(monoid=$3, name=$4, body=$5[0], attrs=builtin.unwrap_option_or($6, list[logic.Attribute]()), value_arity=$5[1])
+      construct: $$ = logic.MonoidDef(monoid=$3, name=$4, body=$5[0], attrs=builtin.unwrap_option_or($6, list[logic.Attribute]()), value_arity=$5[1])
+      deconstruct:
+        $3 = $$.monoid
+        $4 = $$.name
+        $5 = builtin.tuple($$.body, $$.value_arity)
+        $6 = $$.attrs if not builtin.is_empty($$.attrs) else None
 
 monoid
     : or_monoid
-      construct: logic.Monoid(or_monoid=$1)
+      construct: $$ = logic.Monoid(or_monoid=$1)
+      deconstruct: $1 = $$.or_monoid if builtin.has_proto_field($$, 'or_monoid') else None
     | min_monoid
-      construct: logic.Monoid(min_monoid=$1)
+      construct: $$ = logic.Monoid(min_monoid=$1)
+      deconstruct: $1 = $$.min_monoid if builtin.has_proto_field($$, 'min_monoid') else None
     | max_monoid
-      construct: logic.Monoid(max_monoid=$1)
+      construct: $$ = logic.Monoid(max_monoid=$1)
+      deconstruct: $1 = $$.max_monoid if builtin.has_proto_field($$, 'max_monoid') else None
     | sum_monoid
-      construct: logic.Monoid(sum_monoid=$1)
+      construct: $$ = logic.Monoid(sum_monoid=$1)
+      deconstruct: $1 = $$.sum_monoid if builtin.has_proto_field($$, 'sum_monoid') else None
 
 or_monoid
     : "(" "or" ")"
-      construct: logic.OrMonoid()
+      construct: $$ = logic.OrMonoid()
 
 min_monoid
     : "(" "min" type ")"
-      construct: logic.MinMonoid(type=$3)
+      construct: $$ = logic.MinMonoid(type=$3)
+      deconstruct: $3 = $$.type
+
 max_monoid
     : "(" "max" type ")"
-      construct: logic.MaxMonoid(type=$3)
+      construct: $$ = logic.MaxMonoid(type=$3)
+      deconstruct: $3 = $$.type
 
 sum_monoid
     : "(" "sum" type ")"
-      construct: logic.SumMonoid(type=$3)
+      construct: $$ = logic.SumMonoid(type=$3)
+      deconstruct: $3 = $$.type
 
 monus_def
     : "(" "monus" monoid relation_id abstraction_with_arity attrs? ")"
-      construct: logic.MonusDef(monoid=$3, name=$4, body=$5[0], attrs=builtin.unwrap_option_or($6, list[logic.Attribute]()), value_arity=$5[1])
+      construct: $$ = logic.MonusDef(monoid=$3, name=$4, body=$5[0], attrs=builtin.unwrap_option_or($6, list[logic.Attribute]()), value_arity=$5[1])
+      deconstruct:
+        $3 = $$.monoid
+        $4 = $$.name
+        $5 = builtin.tuple($$.body, $$.value_arity)
+        $6 = $$.attrs if not builtin.is_empty($$.attrs) else None
 
 constraint
     : "(" "functional_dependency" relation_id abstraction functional_dependency_keys functional_dependency_values ")"
-      construct: logic.Constraint(name=$3, functional_dependency=logic.FunctionalDependency(guard=$4, keys=$5, values=$6))
+      construct: $$ = logic.Constraint(name=$3, functional_dependency=logic.FunctionalDependency(guard=$4, keys=$5, values=$6))
+      deconstruct:
+        $3 = $$.name
+        $4 = $$.functional_dependency.guard
+        $5 = $$.functional_dependency.keys
+        $6 = $$.functional_dependency.values
 
 functional_dependency_keys
     : "(" "keys" var* ")"
@@ -610,11 +794,14 @@ functional_dependency_values
 
 data
     : rel_edb
-      construct: logic.Data(rel_edb=$1)
+      construct: $$ = logic.Data(rel_edb=$1)
+      deconstruct: $1 = $$.rel_edb if builtin.has_proto_field($$, 'rel_edb') else None
     | betree_relation
-      construct: logic.Data(betree_relation=$1)
+      construct: $$ = logic.Data(betree_relation=$1)
+      deconstruct: $1 = $$.betree_relation if builtin.has_proto_field($$, 'betree_relation') else None
     | csv_data
-      construct: logic.Data(csv_data=$1)
+      construct: $$ = logic.Data(csv_data=$1)
+      deconstruct: $1 = $$.csv_data if builtin.has_proto_field($$, 'csv_data') else None
 
 rel_edb_path
     : "[" STRING* "]"
@@ -624,15 +811,21 @@ rel_edb_types
 
 rel_edb
     : "(" "rel_edb" relation_id rel_edb_path rel_edb_types ")"
-      construct: logic.RelEDB(target_id=$3, path=$4, types=$5)
+      construct: $$ = logic.RelEDB(target_id=$3, path=$4, types=$5)
+      deconstruct: $3 = $$.target_id; $4 = $$.path; $5 = $$.types
 
 betree_relation
     : "(" "betree_relation" relation_id betree_info ")"
-      construct: logic.BeTreeRelation(name=$3, relation_info=$4)
+      construct: $$ = logic.BeTreeRelation(name=$3, relation_info=$4)
+      deconstruct: $3 = $$.name; $4 = $$.relation_info
 
 betree_info
     : "(" "betree_info" betree_info_key_types betree_info_value_types config_dict ")"
-      construct: construct_betree_info($3, $4, $5)
+      construct: $$ = construct_betree_info($3, $4, $5)
+      deconstruct:
+        $3 = $$.key_types
+        $4 = $$.value_types
+        $5 = deconstruct_betree_info_config($$)
 
 betree_info_key_types
     : "(" "key_types" type* ")"
@@ -648,7 +841,8 @@ csv_asof
 
 csv_data
     : "(" "csv_data" csvlocator csv_config csv_columns csv_asof ")"
-      construct: logic.CSVData(locator=$3, config=$4, columns=$5, asof=$6)
+      construct: $$ = logic.CSVData(locator=$3, config=$4, columns=$5, asof=$6)
+      deconstruct: $3 = $$.locator; $4 = $$.config; $5 = $$.columns; $6 = $$.asof
 
 csv_locator_paths
     : "(" "paths" STRING* ")"
@@ -658,62 +852,83 @@ csv_locator_inline_data
 
 csvlocator
     : "(" "csv_locator" csv_locator_paths? csv_locator_inline_data? ")"
-      construct: logic.CSVLocator(paths=builtin.unwrap_option_or($3, list[str]()), inline_data=builtin.encode_string(builtin.unwrap_option_or($4, "")))
+      construct: $$ = logic.CSVLocator(paths=builtin.unwrap_option_or($3, list[str]()), inline_data=builtin.encode_string(builtin.unwrap_option_or($4, "")))
+      deconstruct:
+        $3 = $$.paths if not builtin.is_empty($$.paths) else None
+        $4 = builtin.decode_string($$.inline_data) if builtin.decode_string($$.inline_data) != "" else None
 
 csv_config
     : "(" "csv_config" config_dict ")"
-      construct: construct_csv_config($3)
+      construct: $$ = construct_csv_config($3)
+      deconstruct: $3 = deconstruct_csv_config($$)
 
 csv_column
     : "(" "column" STRING relation_id "[" type* "]" ")"
-      construct: logic.CSVColumn(column_name=$3, target_id=$4, types=$6)
+      construct: $$ = logic.CSVColumn(column_name=$3, target_id=$4, types=$6)
+      deconstruct: $3 = $$.column_name; $4 = $$.target_id; $6 = $$.types
 
 undefine
     : "(" "undefine" fragment_id ")"
-      construct: transactions.Undefine(fragment_id=$3)
+      construct: $$ = transactions.Undefine(fragment_id=$3)
+      deconstruct: $3 = $$.fragment_id
 
 context
     : "(" "context" relation_id* ")"
-      construct: transactions.Context(relations=$3)
+      construct: $$ = transactions.Context(relations=$3)
+      deconstruct: $3 = $$.relations
 
 epoch_reads
     : "(" "reads" read* ")"
 
 read
     : demand
-      construct: transactions.Read(demand=$1)
+      construct: $$ = transactions.Read(demand=$1)
+      deconstruct: $1 = $$.demand if builtin.has_proto_field($$, 'demand') else None
     | output
-      construct: transactions.Read(output=$1)
+      construct: $$ = transactions.Read(output=$1)
+      deconstruct: $1 = $$.output if builtin.has_proto_field($$, 'output') else None
     | what_if
-      construct: transactions.Read(what_if=$1)
+      construct: $$ = transactions.Read(what_if=$1)
+      deconstruct: $1 = $$.what_if if builtin.has_proto_field($$, 'what_if') else None
     | abort
-      construct: transactions.Read(abort=$1)
+      construct: $$ = transactions.Read(abort=$1)
+      deconstruct: $1 = $$.abort if builtin.has_proto_field($$, 'abort') else None
     | export
-      construct: transactions.Read(export=$1)
+      construct: $$ = transactions.Read(export=$1)
+      deconstruct: $1 = $$.export if builtin.has_proto_field($$, 'export') else None
 
 demand
     : "(" "demand" relation_id ")"
-      construct: transactions.Demand(relation_id=$3)
+      construct: $$ = transactions.Demand(relation_id=$3)
+      deconstruct: $3 = $$.relation_id
 
 output
     : "(" "output" name? relation_id ")"
-      construct: transactions.Output(name=builtin.unwrap_option_or($3, "output"), relation_id=$4)
+      construct: $$ = transactions.Output(name=builtin.unwrap_option_or($3, "output"), relation_id=$4)
+      deconstruct: $3 = $$.name if $$.name != "output" else None; $4 = $$.relation_id
 
 what_if
     : "(" "what_if" name epoch ")"
-      construct: transactions.WhatIf(branch=$3, epoch=$4)
+      construct: $$ = transactions.WhatIf(branch=$3, epoch=$4)
+      deconstruct: $3 = $$.branch; $4 = $$.epoch
 
 abort
     : "(" "abort" name? relation_id ")"
-      construct: transactions.Abort(name=builtin.unwrap_option_or($3, "abort"), relation_id=$4)
+      construct: $$ = transactions.Abort(name=builtin.unwrap_option_or($3, "abort"), relation_id=$4)
+      deconstruct: $3 = $$.name if $$.name != "abort" else None; $4 = $$.relation_id
 
 export
     : "(" "export" export_csv_config ")"
-      construct: transactions.Export(csv_config=$3)
+      construct: $$ = transactions.Export(csv_config=$3)
+      deconstruct: $3 = $$.csv_config
 
 export_csv_config
     : "(" "export_csv_config" export_csv_path export_csv_columns config_dict ")"
-      construct: export_csv_config($3, $4, $5)
+      construct: $$ = export_csv_config($3, $4, $5)
+      deconstruct:
+        $3 = $$.path
+        $4 = $$.data_columns
+        $5 = deconstruct_export_csv_config($$)
 
 export_csv_path
     : "(" "path" STRING ")"
@@ -723,7 +938,8 @@ export_csv_columns
 
 export_csv_column
     : "(" "column" STRING relation_id ")"
-      construct: transactions.ExportCSVColumn(column_name=$3, column_data=$4)
+      construct: $$ = transactions.ExportCSVColumn(column_name=$3, column_data=$4)
+      deconstruct: $3 = $$.column_name; $4 = $$.column_data
 
 
 %%
@@ -920,3 +1136,151 @@ def export_csv_config(
         syntax_quotechar=builtin.to_ptr_string(syntax_quotechar),
         syntax_escapechar=builtin.to_ptr_string(syntax_escapechar),
     )
+
+
+def _make_value_int64(v: int) -> logic.Value:
+    return logic.Value(int_value=v)
+
+
+def _make_value_float64(v: float) -> logic.Value:
+    return logic.Value(float_value=v)
+
+
+def _make_value_string(v: str) -> logic.Value:
+    return logic.Value(string_value=v)
+
+
+def _make_value_boolean(v: bool) -> logic.Value:
+    return logic.Value(boolean_value=v)
+
+
+def _make_value_uint128(v: logic.UInt128Value) -> logic.Value:
+    return logic.Value(uint128_value=v)
+
+
+def is_default_configure(cfg: transactions.Configure) -> bool:
+    if cfg.semantics_version != 0:
+        return False
+    if cfg.ivm_config.level != transactions.MaintenanceLevel.MAINTENANCE_LEVEL_OFF:
+        return False
+    return True
+
+
+def deconstruct_configure(msg: transactions.Configure) -> List[Tuple[String, logic.Value]]:
+    result: List[Tuple[String, logic.Value]] = list[Tuple[String, logic.Value]]()
+    if msg.semantics_version != 0:
+        builtin.list_push(result, builtin.tuple("semantics_version", _make_value_int64(msg.semantics_version)))
+    if msg.ivm_config.level == transactions.MaintenanceLevel.MAINTENANCE_LEVEL_AUTO:
+        builtin.list_push(result, builtin.tuple("ivm.maintenance_level", _make_value_string("auto")))
+    elif msg.ivm_config.level == transactions.MaintenanceLevel.MAINTENANCE_LEVEL_ALL:
+        builtin.list_push(result, builtin.tuple("ivm.maintenance_level", _make_value_string("all")))
+    elif msg.ivm_config.level == transactions.MaintenanceLevel.MAINTENANCE_LEVEL_OFF:
+        builtin.list_push(result, builtin.tuple("ivm.maintenance_level", _make_value_string("off")))
+    return result
+
+
+def deconstruct_csv_config(msg: logic.CSVConfig) -> List[Tuple[String, logic.Value]]:
+    result: List[Tuple[String, logic.Value]] = list[Tuple[String, logic.Value]]()
+    if msg.header_row != 1:
+        builtin.list_push(result, builtin.tuple("csv_header_row", _make_value_int64(builtin.int32_to_int64(msg.header_row))))
+    if msg.skip != 0:
+        builtin.list_push(result, builtin.tuple("csv_skip", _make_value_int64(msg.skip)))
+    if msg.new_line != "":
+        builtin.list_push(result, builtin.tuple("csv_new_line", _make_value_string(msg.new_line)))
+    if msg.delimiter != ",":
+        builtin.list_push(result, builtin.tuple("csv_delimiter", _make_value_string(msg.delimiter)))
+    if msg.quotechar != "\"":
+        builtin.list_push(result, builtin.tuple("csv_quotechar", _make_value_string(msg.quotechar)))
+    if msg.escapechar != "\"":
+        builtin.list_push(result, builtin.tuple("csv_escapechar", _make_value_string(msg.escapechar)))
+    if msg.comment != "":
+        builtin.list_push(result, builtin.tuple("csv_comment", _make_value_string(msg.comment)))
+    if not builtin.is_empty(msg.missing_strings):
+        builtin.list_push(result, builtin.tuple("csv_missing_strings", _make_value_string(msg.missing_strings[0])))
+    if msg.decimal_separator != ".":
+        builtin.list_push(result, builtin.tuple("csv_decimal_separator", _make_value_string(msg.decimal_separator)))
+    if msg.encoding != "utf-8":
+        builtin.list_push(result, builtin.tuple("csv_encoding", _make_value_string(msg.encoding)))
+    if msg.compression != "auto":
+        builtin.list_push(result, builtin.tuple("csv_compression", _make_value_string(msg.compression)))
+    return result
+
+
+def _maybe_push_float64(result: List[Tuple[String, logic.Value]], key: String, val: Optional[float]) -> None:
+    if val is not None:
+        builtin.list_push(result, builtin.tuple(key, _make_value_float64(builtin.unwrap_option(val))))
+    return None
+
+
+def _maybe_push_int64(result: List[Tuple[String, logic.Value]], key: String, val: Optional[int]) -> None:
+    if val is not None:
+        builtin.list_push(result, builtin.tuple(key, _make_value_int64(builtin.unwrap_option(val))))
+    return None
+
+
+def _maybe_push_uint128(result: List[Tuple[String, logic.Value]], key: String, val: Optional[logic.UInt128Value]) -> None:
+    if val is not None:
+        builtin.list_push(result, builtin.tuple(key, _make_value_uint128(builtin.unwrap_option(val))))
+    return None
+
+
+def _maybe_push_bytes_as_string(result: List[Tuple[String, logic.Value]], key: String, val: Optional[bytes]) -> None:
+    if val is not None:
+        builtin.list_push(result, builtin.tuple(key, _make_value_string(builtin.decode_string(builtin.unwrap_option(val)))))
+    return None
+
+
+def deconstruct_betree_info_config(msg: logic.BeTreeInfo) -> List[Tuple[String, logic.Value]]:
+    result: List[Tuple[String, logic.Value]] = list[Tuple[String, logic.Value]]()
+    _maybe_push_float64(result, "betree_config_epsilon", msg.storage_config.epsilon)
+    _maybe_push_int64(result, "betree_config_max_pivots", msg.storage_config.max_pivots)
+    _maybe_push_int64(result, "betree_config_max_deltas", msg.storage_config.max_deltas)
+    _maybe_push_int64(result, "betree_config_max_leaf", msg.storage_config.max_leaf)
+    _maybe_push_uint128(result, "betree_locator_root_pageid", msg.relation_locator.root_pageid)
+    _maybe_push_bytes_as_string(result, "betree_locator_inline_data", msg.relation_locator.inline_data)
+    _maybe_push_int64(result, "betree_locator_element_count", msg.relation_locator.element_count)
+    _maybe_push_int64(result, "betree_locator_tree_height", msg.relation_locator.tree_height)
+    return result
+
+
+def deconstruct_export_csv_config(msg: transactions.ExportCSVConfig) -> List[Tuple[String, logic.Value]]:
+    result: List[Tuple[String, logic.Value]] = list[Tuple[String, logic.Value]]()
+    if msg.partition_size is not None and builtin.unwrap_option(msg.partition_size) != 0:
+        builtin.list_push(result, builtin.tuple("partition_size", _make_value_int64(builtin.unwrap_option(msg.partition_size))))
+    if msg.compression is not None and builtin.unwrap_option(msg.compression) != "":
+        builtin.list_push(result, builtin.tuple("compression", _make_value_string(builtin.unwrap_option(msg.compression))))
+    if msg.syntax_header_row is not None:
+        builtin.list_push(result, builtin.tuple("syntax_header_row", _make_value_boolean(builtin.unwrap_option(msg.syntax_header_row))))
+    if msg.syntax_missing_string is not None and builtin.unwrap_option(msg.syntax_missing_string) != "":
+        builtin.list_push(result, builtin.tuple("syntax_missing_string", _make_value_string(builtin.unwrap_option(msg.syntax_missing_string))))
+    if msg.syntax_delim is not None and builtin.unwrap_option(msg.syntax_delim) != ",":
+        builtin.list_push(result, builtin.tuple("syntax_delim", _make_value_string(builtin.unwrap_option(msg.syntax_delim))))
+    if msg.syntax_quotechar is not None and builtin.unwrap_option(msg.syntax_quotechar) != '"':
+        builtin.list_push(result, builtin.tuple("syntax_quotechar", _make_value_string(builtin.unwrap_option(msg.syntax_quotechar))))
+    if msg.syntax_escapechar is not None and builtin.unwrap_option(msg.syntax_escapechar) != "\\":
+        builtin.list_push(result, builtin.tuple("syntax_escapechar", _make_value_string(builtin.unwrap_option(msg.syntax_escapechar))))
+    return result
+
+
+def deconstruct_relation_id_string(msg: logic.RelationId) -> Optional[String]:
+    name: String = builtin.relation_id_to_string(msg)
+    if name != "":
+        return name
+    return None
+
+
+def deconstruct_relation_id_uint128(msg: logic.RelationId) -> Optional[logic.UInt128Value]:
+    name: String = builtin.relation_id_to_string(msg)
+    if name == "":
+        return builtin.relation_id_to_uint128(msg)
+    return None
+
+
+def deconstruct_bindings(abs: logic.Abstraction) -> Tuple[List[logic.Binding], List[logic.Binding]]:
+    return builtin.tuple(abs.vars, list[logic.Binding]())
+
+
+def deconstruct_bindings_with_arity(abs: logic.Abstraction, value_arity: int) -> Tuple[List[logic.Binding], List[logic.Binding]]:
+    n: int = builtin.length(abs.vars)
+    key_end: int = n - value_arity
+    return builtin.tuple(builtin.list_slice(abs.vars, 0, key_end), builtin.list_slice(abs.vars, key_end, n))

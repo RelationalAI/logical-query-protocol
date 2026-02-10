@@ -11,7 +11,7 @@ from meta.target import (
 from meta.target_builtins import make_builtin
 from meta.grammar import (
     Grammar, Nonterminal, Rule, LitTerminal, NamedTerminal,
-    Star, Option, Sequence
+    Star, Option, Sequence, make_rule,
 )
 from meta.grammar_validator import GrammarValidator
 from meta.proto_parser import ProtoParser
@@ -271,7 +271,7 @@ class TestStructureValidation:
         rhs = Star(nt)
         param = Var('items', ListType(BaseType('String')))
         constructor = Lambda([param], BaseType('Unit'), Lit(None))
-        rule = Rule(start, rhs, constructor)
+        rule = make_rule(start, rhs, constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -288,7 +288,7 @@ class TestStructureValidation:
         rhs = Star(terminal)
         param = Var('items', ListType(BaseType('String')))
         constructor = Lambda([param], BaseType('Unit'), Lit(None))
-        rule = Rule(start, rhs, constructor)
+        rule = make_rule(start, rhs, constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -312,7 +312,7 @@ class TestStructureValidation:
         rhs = Option(nt)
         param = Var('opt', OptionType(BaseType('String')))
         constructor = Lambda([param], BaseType('Unit'), Lit(None))
-        rule = Rule(start, rhs, constructor)
+        rule = make_rule(start, rhs, constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -339,7 +339,7 @@ class TestMessageCoverage:
         start = Nonterminal('test_message', MessageType('proto', 'TestMessage'))
         grammar = Grammar(start=start)
         constructor = Lambda([], MessageType('proto', 'TestMessage'), Call(NewMessage('proto', 'TestMessage', ()), []))
-        rule = Rule(start, LitTerminal('test'), constructor)
+        rule = make_rule(start, LitTerminal('test'), constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -381,7 +381,7 @@ class TestFieldCoverage:
         age_var = Var('age', BaseType('Int32'))
         body = NewMessage('proto', 'Person', (('name', name_var), ('age', age_var)))
         constructor = Lambda([name_var, age_var], MessageType('proto', 'Person'), body)
-        rule = Rule(start, Sequence((NamedTerminal('STRING', BaseType('String')), NamedTerminal('INT', BaseType('Int32')))), constructor)
+        rule = make_rule(start, Sequence((NamedTerminal('STRING', BaseType('String')), NamedTerminal('INT', BaseType('Int32')))), constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -404,7 +404,7 @@ class TestFieldCoverage:
         name_var = Var('name', BaseType('String'))
         body = NewMessage('proto', 'Person', (('name', name_var),))  # Missing age field
         constructor = Lambda([name_var], MessageType('proto', 'Person'), body)
-        rule = Rule(start, NamedTerminal('STRING', BaseType('String')), constructor)
+        rule = make_rule(start, NamedTerminal('STRING', BaseType('String')), constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -504,7 +504,7 @@ class TestRuleTypeChecking:
         param2 = Var('y', BaseType('Int64'))
         rhs = Sequence((NamedTerminal('STRING', BaseType('String')), NamedTerminal('INT', BaseType('Int64'))))
         constructor = Lambda([param1, param2], BaseType('String'), param1)
-        rule = Rule(start, rhs, constructor)
+        rule = make_rule(start, rhs, constructor)
 
         validator = GrammarValidator(grammar, parser)
         validator._check_rule_types(rule)
@@ -538,7 +538,7 @@ class TestRuleTypeChecking:
         rhs = NamedTerminal('STRING', BaseType('String'))
         body = NewMessage('proto', 'TestMsg', (('s', param),))
         constructor = Lambda([param], msg_type, body)
-        rule = Rule(start, rhs, constructor)
+        rule = make_rule(start, rhs, constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -554,7 +554,7 @@ class TestRuleTypeChecking:
         param = Var('s', BaseType('String'))
         rhs = NamedTerminal('STRING', BaseType('String'))
         constructor = Lambda([param], BaseType('String'), param)  # Returns the string
-        rule = Rule(start, rhs, constructor)
+        rule = make_rule(start, rhs, constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -576,7 +576,7 @@ class TestRuleTypeChecking:
         bad_elem = GetElement(tuple_var, 5)  # Out of bounds
         body = IfElse(condition, bad_elem, param)
         constructor = Lambda([param], BaseType('String'), body)
-        rule = Rule(start, rhs, constructor)
+        rule = make_rule(start, rhs, constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -598,12 +598,12 @@ class TestUnreachableRules:
         # Start rule references child - need parameter for child nonterminal
         child_param = Var('c', BaseType('String'))
         constructor1 = Lambda([child_param], BaseType('Unit'), Lit(None))
-        rule1 = Rule(start, child, constructor1)
+        rule1 = make_rule(start, child, constructor1)
         grammar.rules[start] = [rule1]
 
         # Child rule
         constructor2 = Lambda([], BaseType('String'), Lit("test"))
-        rule2 = Rule(child, LitTerminal('test'), constructor2)
+        rule2 = make_rule(child, LitTerminal('test'), constructor2)
         grammar.rules[child] = [rule2]
 
         validator = GrammarValidator(grammar, parser)
@@ -619,12 +619,12 @@ class TestUnreachableRules:
 
         # Start rule doesn't reference orphan
         constructor1 = Lambda([], BaseType('Unit'), Lit(None))
-        rule1 = Rule(start, LitTerminal('test'), constructor1)
+        rule1 = make_rule(start, LitTerminal('test'), constructor1)
         grammar.rules[start] = [rule1]
 
         # Orphan rule not referenced
         constructor2 = Lambda([], BaseType('String'), Lit("orphan"))
-        rule2 = Rule(orphan, LitTerminal('orphan'), constructor2)
+        rule2 = make_rule(orphan, LitTerminal('orphan'), constructor2)
         grammar.rules[orphan] = [rule2]
 
         validator = GrammarValidator(grammar, parser)
@@ -645,7 +645,7 @@ class TestSoundness:
         start = Nonterminal('test_message', MessageType('proto', 'TestMessage'))
         grammar = Grammar(start=start)
         constructor = Lambda([], MessageType('proto', 'TestMessage'), Call(NewMessage('proto', 'TestMessage', ()), []))
-        rule = Rule(start, LitTerminal('test'), constructor)
+        rule = make_rule(start, LitTerminal('test'), constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -661,7 +661,7 @@ class TestSoundness:
         start = Nonterminal('unknown_rule', invalid_type)
         grammar = Grammar(start=start)
         constructor = Lambda([], invalid_type, Call(NewMessage('proto', 'NonExistentMessage', ()), []))
-        rule = Rule(start, LitTerminal('test'), constructor)
+        rule = make_rule(start, LitTerminal('test'), constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -763,7 +763,7 @@ class TestHelperFunctionCalls:
         helper_type = FunctionType([BaseType('String')], BaseType('String'))
         body = Call(NamedFun('my_helper', helper_type), [param])
         constructor = Lambda([param], BaseType('String'), body)
-        rule = Rule(start, NamedTerminal('STRING', BaseType('String')), constructor)
+        rule = make_rule(start, NamedTerminal('STRING', BaseType('String')), constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -796,7 +796,7 @@ class TestHelperFunctionCalls:
         helper_call = Call(NamedFun('wrap', wrap_type), [param])
         body = ListExpr([helper_call], BaseType('String'))
         constructor = Lambda([param], ListType(BaseType('String')), body)
-        rule = Rule(start, NamedTerminal('STRING', BaseType('String')), constructor)
+        rule = make_rule(start, NamedTerminal('STRING', BaseType('String')), constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -825,7 +825,7 @@ class TestHelperFunctionCalls:
         param = Var('s', BaseType('String'))
         body = Call(NamedFun('outer', str_to_str), [param])
         constructor = Lambda([param], BaseType('String'), body)
-        rule = Rule(start, NamedTerminal('STRING', BaseType('String')), constructor)
+        rule = make_rule(start, NamedTerminal('STRING', BaseType('String')), constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)

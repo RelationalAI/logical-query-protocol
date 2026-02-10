@@ -71,12 +71,20 @@ def parse_args():
         choices=["ir", "python", "julia"],
         help="Output the generated parser (ir, python, or julia)"
     )
+    output_group.add_argument(
+        "--printer",
+        type=str,
+        choices=["ir", "python", "julia"],
+        help="Output the generated pretty printer (ir, python, or julia)"
+    )
 
     args = parser.parse_args()
 
-    # --grammar is required for --parser
+    # --grammar is required for --parser and --printer
     if args.parser and not args.grammar:
         parser.error("--grammar is required when using --parser")
+    if args.printer and not args.grammar:
+        parser.error("--grammar is required when using --printer")
 
     return args
 
@@ -178,8 +186,8 @@ def run(args) -> int:
 
             return 1
 
-    # Output grammar if -o is specified and not generating parser
-    if args.output and not args.parser:
+    # Output grammar if -o is specified and not generating parser or printer
+    if args.output and not args.parser and not args.printer:
         output_text = grammar.print_grammar_yacc()
         args.output.write_text(output_text)
         print(f"Grammar written to {args.output}")
@@ -210,6 +218,31 @@ def run(args) -> int:
                 from .parser_gen_julia import generate_parser_julia
                 output_text = generate_parser_julia(grammar, command_line, proto_messages)
             write_output(output_text, args.output, f"Generated parser written to {args.output}")
+
+    if args.printer:
+        if args.printer == "ir":
+            from .pretty_gen import generate_pretty_functions
+            pretty_functions = generate_pretty_functions(grammar, proto_messages)
+            output_lines = []
+            for defn in pretty_functions:
+                output_lines.append(str(defn))
+                output_lines.append("")
+            output_text = "\n".join(output_lines)
+            write_output(output_text, args.output, f"Generated printer IR written to {args.output}")
+        elif args.printer == "python":
+            proto_messages = {(msg.module, name): msg for name, msg in proto_parser.messages.items()}
+            command_line = " ".join(
+                ["python -m meta.cli"]
+                + [str(f) for f in args.proto_files]
+                + ["--grammar", str(args.grammar)]
+                + ["--printer", args.printer]
+            )
+            from .pretty_gen_python import generate_pretty_printer_python
+            output_text = generate_pretty_printer_python(grammar, command_line, proto_messages)
+            write_output(output_text, args.output, f"Generated pretty printer written to {args.output}")
+        else:
+            print(f"Error: Pretty printer generation for '{args.printer}' is not yet implemented", file=sys.stderr)
+            return 1
 
     return 0
 

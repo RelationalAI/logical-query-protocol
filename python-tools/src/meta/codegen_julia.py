@@ -128,6 +128,9 @@ class JuliaCodeGenerator(CodeGenerator):
     def gen_parse_nonterminal_ref(self, name: str) -> str:
         return f"parse_{name}"
 
+    def gen_pretty_nonterminal_ref(self, name: str) -> str:
+        return f"pretty_{name}"
+
     # --- Type generation ---
 
     def gen_message_type(self, module: str, name: str) -> str:
@@ -190,6 +193,15 @@ class JuliaCodeGenerator(CodeGenerator):
         return f"while {cond}"
 
     def gen_while_end(self) -> str:
+        return "end"
+
+    def gen_foreach_start(self, var: str, collection: str) -> str:
+        return f"for {var} in {collection}"
+
+    def gen_foreach_enumerated_start(self, index_var: str, var: str, collection: str) -> str:
+        return f"for ({index_var}, {var}) in enumerate({collection})"
+
+    def gen_foreach_end(self) -> str:
         return "end"
 
     def gen_empty_body(self) -> str:
@@ -414,6 +426,31 @@ class JuliaCodeGenerator(CodeGenerator):
             body_lines: List[str] = []
             body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
             # Only add return if the body didn't already return
+            if body_inner is not None:
+                body_lines.append(f"{indent}    return {body_inner}")
+            body_code = "\n".join(body_lines)
+
+        return f"{indent}function {func_name}({params_str}){ret_hint}\n{body_code}\n{indent}end"
+
+    def _generate_pretty_def(self, expr: VisitNonterminalDef, indent: str) -> str:
+        """Generate a pretty-print function definition."""
+        func_name = f"pretty_{expr.nonterminal.name}"
+
+        params = ["pp::PrettyPrinter"]
+        for param in expr.params:
+            escaped_name = self.escape_identifier(param.name)
+            type_hint = self.gen_type(param.type)
+            params.append(f"{escaped_name}::{type_hint}")
+
+        params_str = ', '.join(params)
+
+        ret_hint = f"::{self.gen_type(expr.return_type)}" if expr.return_type else ""
+
+        if expr.body is None:
+            body_code = f"{indent}    nothing"
+        else:
+            body_lines: List[str] = []
+            body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
             if body_inner is not None:
                 body_lines.append(f"{indent}    return {body_inner}")
             body_code = "\n".join(body_lines)

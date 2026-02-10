@@ -120,8 +120,49 @@ JULIA_TEMPLATES: Dict[str, BuiltinTemplate] = {
 
 
 
+# Python pretty-printing builtin templates
+PYTHON_PRETTY_TEMPLATES: Dict[str, BuiltinTemplate] = {
+    "write_io": BuiltinTemplate("None", ["self.write({0})"]),
+    "newline_io": BuiltinTemplate("None", ["self.newline()"]),
+    "indent_io": BuiltinTemplate("None", ["self.indent()"]),
+    "dedent_io": BuiltinTemplate("None", ["self.dedent()"]),
+    "format_int64": BuiltinTemplate("str({0})"),
+    "format_int32": BuiltinTemplate("str({0})"),
+    "format_float64": BuiltinTemplate("str({0})"),
+    "format_string": BuiltinTemplate("repr({0})"),
+    "format_symbol": BuiltinTemplate("{0}"),
+    "format_bool": BuiltinTemplate("('true' if {0} else 'false')"),
+    "format_decimal": BuiltinTemplate("self.format_decimal({0})"),
+    "format_int128": BuiltinTemplate("self.format_int128({0})"),
+    "format_uint128": BuiltinTemplate("self.format_uint128({0})"),
+    "greater": BuiltinTemplate("({0} > {1})"),
+    "to_string": BuiltinTemplate("str({0})"),
+}
+
+# Julia pretty-printing builtin templates
+JULIA_PRETTY_TEMPLATES: Dict[str, BuiltinTemplate] = {
+    "write_io": BuiltinTemplate("nothing", ["write(pp, {0})"]),
+    "newline_io": BuiltinTemplate("nothing", ["newline(pp)"]),
+    "indent_io": BuiltinTemplate("nothing", ["indent!(pp)"]),
+    "dedent_io": BuiltinTemplate("nothing", ["dedent!(pp)"]),
+    "format_int64": BuiltinTemplate("string({0})"),
+    "format_int32": BuiltinTemplate("string({0})"),
+    "format_float64": BuiltinTemplate("string({0})"),
+    "format_string": BuiltinTemplate("repr({0})"),
+    "format_symbol": BuiltinTemplate("{0}"),
+    "format_bool": BuiltinTemplate("({0} ? \"true\" : \"false\")"),
+    "format_decimal": BuiltinTemplate("format_decimal(pp, {0})"),
+    "format_int128": BuiltinTemplate("format_int128(pp, {0})"),
+    "format_uint128": BuiltinTemplate("format_uint128(pp, {0})"),
+    "greater": BuiltinTemplate("({0} > {1})"),
+    "to_string": BuiltinTemplate("string({0})"),
+}
+
+
 __all__ = [
     'BuiltinTemplate',
     'PYTHON_TEMPLATES',
     'JULIA_TEMPLATES',
+    'PYTHON_PRETTY_TEMPLATES',
+    'JULIA_PRETTY_TEMPLATES',
 ]

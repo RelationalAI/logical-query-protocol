@@ -381,12 +381,16 @@ class GetElement(TargetExpr):
         assert isinstance(self.index, int) and self.index >= 0, f"GetElement index must be non-negative integer: {self.index}"
 
     def target_type(self) -> 'TargetType':
-        tuple_type = self.tuple_expr.target_type()
-        if isinstance(tuple_type, TupleType):
-            if 0 <= self.index < len(tuple_type.elements):
-                return tuple_type.elements[self.index]
-            raise ValueError(f"Tuple index {self.index} out of range for {tuple_type}")
-        raise ValueError(f"Cannot get element from non-tuple type: {tuple_type}")
+        expr_type = self.tuple_expr.target_type()
+        if isinstance(expr_type, TupleType):
+            if 0 <= self.index < len(expr_type.elements):
+                return expr_type.elements[self.index]
+            raise ValueError(f"Tuple index {self.index} out of range for {expr_type}")
+        if isinstance(expr_type, ListType):
+            return expr_type.element_type
+        if isinstance(expr_type, BaseType) and expr_type.name == "Unknown":
+            return BaseType("Unknown")
+        raise ValueError(f"Cannot get element from non-tuple type: {expr_type}")
 
 
 @dataclass(frozen=True)
@@ -497,6 +501,33 @@ class While(TargetExpr):
 
     def __str__(self) -> str:
         return f"while ({self.condition}) {self.body}"
+
+    def target_type(self) -> 'TargetType':
+        return OptionType(BaseType("Never"))
+
+@dataclass(frozen=True)
+class Foreach(TargetExpr):
+    """Foreach loop: for var in collection do body."""
+    var: 'Var'
+    collection: TargetExpr
+    body: TargetExpr
+
+    def __str__(self) -> str:
+        return f"for {self.var.name} in {self.collection} do {self.body}"
+
+    def target_type(self) -> 'TargetType':
+        return OptionType(BaseType("Never"))
+
+@dataclass(frozen=True)
+class ForeachEnumerated(TargetExpr):
+    """Foreach loop with index: for (index_var, var) in enumerate(collection) do body."""
+    index_var: 'Var'
+    var: 'Var'
+    collection: TargetExpr
+    body: TargetExpr
+
+    def __str__(self) -> str:
+        return f"for ({self.index_var.name}, {self.var.name}) in enumerate({self.collection}) do {self.body}"
 
     def target_type(self) -> 'TargetType':
         return OptionType(BaseType("Never"))
@@ -784,6 +815,8 @@ __all__ = [
     'IfElse',
     'Seq',
     'While',
+    'Foreach',
+    'ForeachEnumerated',
     'Assign',
     'Return',
     'TargetType',

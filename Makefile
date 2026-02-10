@@ -1,12 +1,14 @@
 # Makefile for the Logical Query Protocol (LQP)
 #
 # Usage:
-#   make              Build protobuf bindings and regenerate all parsers.
+#   make              Build protobuf bindings and regenerate all parsers and printers.
 #   make build        Lint, check breaking changes, and generate protobuf code.
 #   make parsers      Regenerate Python and Julia parsers from the grammar.
 #   make parser-X     Regenerate a single parser (X = python, julia).
 #   make force-parsers      Force-regenerate both parsers.
 #   make force-parser-X     Force-regenerate a single parser.
+#   make printers     Regenerate pretty printers from the grammar.
+#   make printer-X    Regenerate a single printer (X = python, go, julia).
 #   make test         Run tests for all languages.
 #   make test-X       Run tests for one language (X = python, julia).
 #   make clean        Remove temporary generated files.
@@ -29,6 +31,11 @@ JL_PROTO_DIR := julia/LQPParser/src/relationalai/lqp/v1
 PY_PARSER := python-tools/src/lqp/generated_parser.py
 JL_PARSER := julia/LQPParser/src/parser.jl
 
+# Generated pretty printer outputs
+PY_PRINTER := python-tools/src/lqp/generated_pretty_printer.py
+JL_PRINTER := julia/LQPParser/src/pretty_printer.jl
+GO_PRINTER := go/src/pretty_printer.go
+
 # Parser templates
 PY_TEMPLATE := python-tools/src/meta/templates/parser.py.template
 JL_TEMPLATE := python-tools/src/meta/templates/parser.jl.template
@@ -44,10 +51,11 @@ META_PROTO_ARGS := \
 .PHONY: all build lint breaking protobuf protobuf-py protobuf-julia parsers \
 	parser-python parser-julia \
 	force-parsers force-parser-python force-parser-julia \
+	printers printer-python printer-julia printer-go \
 	test test-python test-julia check-python \
 	clean
 
-all: build parsers
+all: build parsers printers
 
 # ---------- protobuf build (replaces ./build script) ----------
 
@@ -95,6 +103,20 @@ force-parser-python:
 
 force-parser-julia:
 	$(META_CLI) $(META_PROTO_ARGS) --parser julia -o ../julia/LQPParser/src/parser.jl
+
+# ---------- pretty printer generation ----------
+
+printers: printer-python printer-julia printer-go
+
+printer-python: $(PY_PRINTER)
+$(PY_PRINTER): $(PROTO_FILES) $(GRAMMAR)
+	$(META_CLI) $(META_PROTO_ARGS) --printer python -o src/lqp/generated_pretty_printer.py
+
+printer-julia:
+	@echo "Pretty printer generation for Julia is not yet implemented."
+
+printer-go:
+	@echo "Pretty printer generation for Go is not yet implemented."
 
 # ---------- testing ----------
 

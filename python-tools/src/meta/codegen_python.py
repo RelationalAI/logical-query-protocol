@@ -49,9 +49,36 @@ class PythonCodeGenerator(CodeGenerator):
     def _register_builtins(self) -> None:
         """Register builtin generators from templates."""
         self.register_builtins_from_templates(PYTHON_TEMPLATES)
+        # Override tuple to handle empty and single-element cases correctly
+        self.register_builtin("tuple", self._gen_tuple_builtin)
+
+    @staticmethod
+    def _gen_tuple_builtin(args, lines, indent):
+        from .codegen_base import BuiltinResult
+        if len(args) == 0:
+            return BuiltinResult("()", [])
+        elif len(args) == 1:
+            return BuiltinResult(f"({args[0]},)", [])
+        else:
+            return BuiltinResult(f"({', '.join(args)},)", [])
 
     def escape_keyword(self, name: str) -> str:
         return f"{name}_"
+
+    # --- Field access ---
+
+    _PYTHON_KEYWORDS = frozenset({
+        'False', 'None', 'True', 'and', 'as', 'assert', 'async', 'await',
+        'break', 'class', 'continue', 'def', 'del', 'elif', 'else', 'except',
+        'finally', 'for', 'from', 'global', 'if', 'import', 'in', 'is',
+        'lambda', 'nonlocal', 'not', 'or', 'pass', 'raise', 'return',
+        'try', 'while', 'with', 'yield',
+    })
+
+    def gen_field_access(self, obj_code: str, field_name: str) -> str:
+        if field_name in self._PYTHON_KEYWORDS:
+            return f"getattr({obj_code}, {field_name!r})"
+        return f"{obj_code}.{field_name}"
 
     # --- Literal generation ---
 
@@ -80,6 +107,9 @@ class PythonCodeGenerator(CodeGenerator):
 
     def gen_parse_nonterminal_ref(self, name: str) -> str:
         return f"self.parse_{name}"
+
+    def gen_pretty_nonterminal_ref(self, name: str) -> str:
+        return f"self.pretty_{name}"
 
     # --- Type generation ---
 
@@ -127,6 +157,15 @@ class PythonCodeGenerator(CodeGenerator):
         return f"while {cond}:"
 
     def gen_while_end(self) -> str:
+        return ""  # Python uses indentation
+
+    def gen_foreach_start(self, var: str, collection: str) -> str:
+        return f"for {var} in {collection}:"
+
+    def gen_foreach_enumerated_start(self, index_var: str, var: str, collection: str) -> str:
+        return f"for {index_var}, {var} in enumerate({collection}):"
+
+    def gen_foreach_end(self) -> str:
         return ""  # Python uses indentation
 
     def gen_empty_body(self) -> str:
@@ -274,6 +313,30 @@ class PythonCodeGenerator(CodeGenerator):
         body_lines: List[str] = []
         body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
         # Only add return if the body didn't already return
+        if body_inner is not None:
+            body_lines.append(f"{indent}    return {body_inner}")
+        body_code = "\n".join(body_lines)
+
+        return f"{indent}def {func_name}(self{params_str}){ret_hint}:\n{body_code}"
+
+    def _generate_pretty_def(self, expr: VisitNonterminalDef, indent: str) -> str:
+        """Generate a pretty-print method definition."""
+        func_name = f"pretty_{expr.nonterminal.name}"
+
+        params = []
+        for param in expr.params:
+            escaped_name = self.escape_identifier(param.name)
+            type_hint = self.gen_type(param.type)
+            params.append(f"{escaped_name}: {type_hint}")
+
+        params_str = ', '.join(params) if params else ''
+        if params_str:
+            params_str = ', ' + params_str
+
+        ret_hint = f" -> {self.gen_type(expr.return_type)}" if expr.return_type else ""
+
+        body_lines: List[str] = []
+        body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
         if body_inner is not None:
             body_lines.append(f"{indent}    return {body_inner}")
         body_code = "\n".join(body_lines)

@@ -112,6 +112,7 @@ register_builtin("unwrap_option_or", [OptionType(T), T], T)
 # === List operations ===
 register_builtin("list_concat", [ListType(T), ListType(T)], ListType(T))
 register_builtin("list_push", [ListType(T), T], VOID)  # Mutating push: list.append(item) / push!(list, item)
+register_builtin("list_slice", [ListType(T), INT64, INT64], ListType(T))  # list[start:end]
 register_builtin("length", [ListType(T)], INT64)
 register_builtin("map", [FunctionType([T1], T2), ListType(T1)], ListType(T2))
 register_builtin("append", [ListType(T), T], ListType(T))  # list.append(item)
@@ -128,6 +129,8 @@ register_builtin("encode_string", [STRING], BYTES)
 
 # === Type conversions ===
 register_builtin("int64_to_int32", [INT64], INT32)
+register_builtin("int32_to_int64", [INT32], INT64)
+register_builtin("decode_string", [BYTES], STRING)
 register_builtin("to_ptr_int64", [INT64], OptionType(INT64))
 register_builtin("to_ptr_string", [STRING], OptionType(STRING))
 register_builtin("to_ptr_bool", [BOOLEAN], OptionType(BOOLEAN))
@@ -146,8 +149,11 @@ register_builtin("error_with_token", [STRING, TOKEN], BaseType("Never"))
 
 # === Protobuf-specific ===
 register_builtin("fragment_id_from_string", [STRING], MessageType("fragments", "FragmentId"))
+register_builtin("fragment_id_to_string", [MessageType("fragments", "FragmentId")], STRING)
 register_builtin("relation_id_from_string", [STRING], MessageType("logic", "RelationId"))
 register_builtin("relation_id_from_uint128", [MessageType("logic", "UInt128Value")], MessageType("logic", "RelationId"))
+register_builtin("relation_id_to_string", [MessageType("logic", "RelationId")], STRING)
+register_builtin("relation_id_to_uint128", [MessageType("logic", "RelationId")], MessageType("logic", "UInt128Value"))
 register_builtin("construct_fragment",
                  [MessageType("fragments", "FragmentId"),
                   ListType(MessageType("logic", "Declaration"))],
@@ -165,6 +171,25 @@ register_builtin("which_one_of", [T, STRING], STRING)  # msg.WhichOneof(oneof_na
 # === General helpers ===
 register_builtin("is_empty", [ListType(T)], BOOLEAN)  # len(list) == 0
 register_builtin("enum_value", [STRING, STRING], T)  # enum_value(EnumType, ValueName)
+register_builtin("greater", [INT64, INT64], BOOLEAN)
+register_builtin("to_string", [T], STRING)
+
+# === Pretty-printing IO operations ===
+register_builtin("write_io", [STRING], VOID)
+register_builtin("newline_io", [], VOID)
+register_builtin("indent_io", [], VOID)
+register_builtin("dedent_io", [], VOID)
+
+# === Formatting for terminal types ===
+register_builtin("format_int64", [INT64], STRING)
+register_builtin("format_int32", [INT32], STRING)
+register_builtin("format_float64", [FLOAT64], STRING)
+register_builtin("format_string", [STRING], STRING)
+register_builtin("format_symbol", [STRING], STRING)
+register_builtin("format_bool", [BOOLEAN], STRING)
+register_builtin("format_decimal", [MessageType("logic", "DecimalValue")], STRING)
+register_builtin("format_int128", [MessageType("logic", "Int128Value")], STRING)
+register_builtin("format_uint128", [MessageType("logic", "UInt128Value")], STRING)
 
 
 # === Validation functions ===
