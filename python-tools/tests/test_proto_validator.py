@@ -65,7 +65,7 @@ def test_proto_validator_failure_files(validator_file):
     [f for f in os.listdir(VALIDATOR_DIR) if f.startswith("fail_")],
 )
 def test_proto_validator_matches_ir_validator(validator_file):
-    """Both validators should raise ValidationError on the same files."""
+    """Both validators should raise ValidationError with matching messages."""
     file_path = VALIDATOR_DIR / validator_file
     expected_error = extract_expected_error(file_path)
     if not expected_error:
@@ -77,10 +77,17 @@ def test_proto_validator_matches_ir_validator(validator_file):
     # IR validator
     ir_result = parse_lqp(str(file_path), content)
     assert isinstance(ir_result, ir.Transaction)
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError) as ir_exc:
         validate_lqp(ir_result)
 
     # Proto validator
     txn_proto = parse(content)
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError) as proto_exc:
         validate_proto(txn_proto)
+
+    # Compare error messages (ignoring source locations)
+    ir_msg = strip_source_location(str(ir_exc.value))
+    proto_msg = strip_source_location(str(proto_exc.value))
+    assert ir_msg == proto_msg, (
+        f"Validator messages differ:\n  IR:    {ir_msg}\n  Proto: {proto_msg}"
+    )

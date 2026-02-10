@@ -15,7 +15,7 @@ from lqp.validator import ValidationError
 
 # --- Helpers ---
 
-def relation_id_key(rid: logic_pb2.RelationId) -> Tuple[int,int]:
+def relation_id_key(rid: logic_pb2.RelationId) -> Tuple[int, int]:
     """Hashable key for a RelationId."""
     return (rid.id_low, rid.id_high)
 
@@ -71,7 +71,7 @@ def get_value_type_name(value_msg: logic_pb2.Value) -> str:
     return _VALUE_ONEOF_TO_TYPE_NAME.get(which, "UNSPECIFIED")
 
 
-def build_debug_info(debug_info: fragments_pb2.DebugInfo) -> Dict[Tuple[int,int],str]:
+def build_debug_info(debug_info: fragments_pb2.DebugInfo) -> Dict[Tuple[int, int], str]:
     """Convert DebugInfo parallel arrays to a dict keyed by (id_low, id_high)."""
     result = {}
     for rid, name in zip(debug_info.ids, debug_info.orig_names):
@@ -180,6 +180,7 @@ def unwrap_data(data: logic_pb2.Data) -> Optional[Message]:
 # --- Base visitor ---
 
 # Wrapper types whose oneof should be unwrapped before visiting.
+# New proto wrapper types must be added here or they silently fall through to generic_visit.
 _WRAPPER_TYPES = {
     "Declaration": unwrap_declaration,
     "Instruction": unwrap_instruction,
@@ -194,8 +195,8 @@ _WRAPPER_TYPES = {
 
 class ProtoVisitor:
     def __init__(self):
-        self.original_names: Dict[Tuple[int,int],str] = {}
-        self._visit_cache: Dict[str,Any] = {}
+        self.original_names: Dict[Tuple[int, int], str] = {}
+        self._visit_cache: Dict[str, Any] = {}
 
     def get_original_name(self, rid: logic_pb2.RelationId) -> str:
         key = relation_id_key(rid)
@@ -225,8 +226,6 @@ class ProtoVisitor:
         return self._resolve_visitor(type_name)(node, *args)
 
     def generic_visit(self, node: Message, *args: Any) -> None:
-        if not isinstance(node, Message):
-            return
         for field_desc in node.DESCRIPTOR.fields:
             value = getattr(node, field_desc.name)
             if field_desc.label == FieldDescriptor.LABEL_REPEATED:
@@ -243,7 +242,7 @@ class ProtoVisitor:
 class UnusedVariableVisitor(ProtoVisitor):
     def __init__(self, txn: transactions_pb2.Transaction):
         super().__init__()
-        self.scopes: List[Tuple[Set[str],Set[str]]] = []
+        self.scopes: List[Tuple[Set[str], Set[str]]] = []
         self.visit(txn)
 
     def _declare_var(self, var_name: str):
@@ -295,7 +294,7 @@ class ShadowedVariableFinder(ProtoVisitor):
 class DuplicateRelationIdFinder(ProtoVisitor):
     def __init__(self, txn: transactions_pb2.Transaction):
         super().__init__()
-        self.seen_ids: Dict[Tuple[int,int],Tuple[int,Optional[bytes]]] = {}
+        self.seen_ids: Dict[Tuple[int, int], Tuple[int, Optional[bytes]]] = {}
         self.curr_epoch: int = 0
         self.curr_fragment: Optional[bytes] = None
         self.visit(txn)
@@ -383,7 +382,7 @@ class AtomTypeChecker(ProtoVisitor):
                             if instr is not None:
                                 self.atoms.append((type(instr).__name__, instr))
                         elif inner_name in ("Assign", "Upsert", "Break", "MonoidDef", "MonusDef"):
-                            self.atoms.append((inner_name, instr))
+                            self.atoms.append((inner_name, inner))
 
             def visit_Loop(self, node: logic_pb2.Loop):
                 for instr_wrapper in node.init:
@@ -394,15 +393,12 @@ class AtomTypeChecker(ProtoVisitor):
         return DefCollector(txn).atoms
 
     @staticmethod
-    def get_relation_sig(kind: str, node) -> List[str]:
+    def get_relation_sig(node) -> List[str]:
         """Return a list of the type names of the parameters of a Def-like node."""
-        if kind == "Def":
-            return [get_type_name(b.type) for b in node.body.vars]
-        else:
-            return [get_type_name(b.type) for b in node.body.vars]
+        return [get_type_name(b.type) for b in node.body.vars]
 
     @staticmethod
-    def get_relation_id(kind: str, node) -> logic_pb2.RelationId:
+    def get_relation_id(node) -> logic_pb2.RelationId:
         return node.name
 
     class State:
@@ -414,10 +410,10 @@ class AtomTypeChecker(ProtoVisitor):
         super().__init__()
         global_defs = AtomTypeChecker.collect_global_defs(txn)
         relation_types = {}
-        for kind, node in global_defs:
-            rid = AtomTypeChecker.get_relation_id(kind, node)
+        for _, node in global_defs:
+            rid = AtomTypeChecker.get_relation_id(node)
             key = relation_id_key(rid)
-            sig = AtomTypeChecker.get_relation_sig(kind, node)
+            sig = AtomTypeChecker.get_relation_sig(node)
             relation_types[key] = sig
         state = AtomTypeChecker.State(relation_types, {})
         self.visit(txn, state)
@@ -515,8 +511,8 @@ class LoopyBadBreakFinder(ProtoVisitor):
 class LoopyBadGlobalFinder(ProtoVisitor):
     def __init__(self, txn: transactions_pb2.Transaction):
         super().__init__()
-        self.globals: Set[Tuple[int,int]] = set()
-        self.init: Set[Tuple[int,int]] = set()
+        self.globals: Set[Tuple[int, int]] = set()
+        self.init: Set[Tuple[int, int]] = set()
         self.visit(txn)
 
     def visit_Algorithm(self, node: logic_pb2.Algorithm, *args: Any):
@@ -583,11 +579,11 @@ class CSVConfigChecker(ProtoVisitor):
     def __init__(self, txn: transactions_pb2.Transaction):
         super().__init__()
         global_defs = AtomTypeChecker.collect_global_defs(txn)
-        self.relation_types: Dict[Tuple[int,int],List[str]] = {}
-        for kind, node in global_defs:
-            rid = AtomTypeChecker.get_relation_id(kind, node)
+        self.relation_types: Dict[Tuple[int, int], List[str]] = {}
+        for _, node in global_defs:
+            rid = AtomTypeChecker.get_relation_id(node)
             key = relation_id_key(rid)
-            sig = AtomTypeChecker.get_relation_sig(kind, node)
+            sig = AtomTypeChecker.get_relation_sig(node)
             self.relation_types[key] = sig
         self.visit(txn)
 
