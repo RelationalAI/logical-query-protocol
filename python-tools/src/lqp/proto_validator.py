@@ -5,9 +5,10 @@ Parallel to validator.py but operates on protobuf messages (transactions_pb2.Tra
 rather than IR dataclasses (ir.Transaction). Reuses ValidationError from validator.py.
 """
 
+from dataclasses import dataclass
 from typing import Any, Dict, List, Set, Optional, Tuple, Union, cast
 from google.protobuf.message import Message
-from google.protobuf.descriptor import FieldDescriptor
+from google.protobuf.descriptor import Descriptor, FieldDescriptor
 
 from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
 from lqp.validator import ValidationError
@@ -236,8 +237,7 @@ class ProtoVisitor:
         return self._resolve_visitor(type_name)(node, *args)
 
     def generic_visit(self, node: Message, *args: Any) -> None:
-        descriptor = node.DESCRIPTOR
-        assert descriptor is not None
+        descriptor = cast(Descriptor, node.DESCRIPTOR)
         for field_desc in descriptor.fields:
             value = getattr(node, field_desc.name)
             if field_desc.label == FieldDescriptor.LABEL_REPEATED:
@@ -413,10 +413,10 @@ class AtomTypeChecker(ProtoVisitor):
     def get_relation_id(node) -> logic_pb2.RelationId:
         return node.name
 
+    @dataclass(frozen=True)
     class State:
-        def __init__(self, relation_types, var_types):
-            self.relation_types = relation_types
-            self.var_types = var_types
+        relation_types: Dict[Tuple[int, int], List[str]]
+        var_types: Dict[str, str]
 
     def __init__(self, txn: transactions_pb2.Transaction):
         super().__init__()
@@ -568,9 +568,9 @@ class LoopyBadGlobalFinder(ProtoVisitor):
 class LoopyUpdatesShouldBeAtoms(ProtoVisitor):
     def __init__(self, txn: transactions_pb2.Transaction):
         super().__init__()
-        self.generic_visit(txn)
+        self.visit(txn)
 
-    def _check_atom_body(self, node, instr_type_name: str):
+    def _check_atom_body(self, node: _InstructionLike, instr_type_name: str):
         formula = node.body.value
         which = formula.WhichOneof("formula_type")
         if which != "atom":
