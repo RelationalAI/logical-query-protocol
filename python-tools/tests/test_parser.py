@@ -1,7 +1,6 @@
 import os
 import re
 import pytest
-import sys
 import lqp.ir as ir
 from pathlib import Path
 from lqp.parser import parse_lqp
@@ -37,7 +36,8 @@ def test_validate_lqp_inputs(input_file):
         with open(input_file, "r") as f:
             content = f.read()
         parsed_lqp = parse_lqp(input_file, content)
-        if not(isinstance(parsed_lqp, ir.Transaction)): return
+        if not isinstance(parsed_lqp, ir.Transaction):
+            return
         validate_lqp(parsed_lqp)
     except Exception as e:
         pytest.fail(f"Failed validating {input_file}: {str(e)}")

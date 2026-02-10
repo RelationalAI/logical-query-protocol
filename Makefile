@@ -26,7 +26,7 @@ PY_PROTO_DIR := python-tools/src/lqp/proto/v1
 JL_PROTO_DIR := julia/LQPParser/src/relationalai/lqp/v1
 
 # Generated parser outputs
-PY_PARSER := python-tools/src/lqp/generated_parser.py
+PY_PARSER := python-tools/src/lqp/gen/parser.py
 JL_PARSER := julia/LQPParser/src/parser.jl
 
 # Parser templates
@@ -82,7 +82,7 @@ parsers: parser-python parser-julia
 
 parser-python: $(PY_PARSER)
 $(PY_PARSER): $(PROTO_FILES) $(GRAMMAR) $(PY_TEMPLATE)
-	$(META_CLI) $(META_PROTO_ARGS) --parser python -o src/lqp/generated_parser.py
+	$(META_CLI) $(META_PROTO_ARGS) --parser python -o src/lqp/gen/parser.py
 
 parser-julia: $(JL_PARSER)
 $(JL_PARSER): $(PROTO_FILES) $(GRAMMAR) $(JL_TEMPLATE)
@@ -91,7 +91,7 @@ $(JL_PARSER): $(PROTO_FILES) $(GRAMMAR) $(JL_TEMPLATE)
 force-parsers: force-parser-python force-parser-julia
 
 force-parser-python:
-	$(META_CLI) $(META_PROTO_ARGS) --parser python -o src/lqp/generated_parser.py
+	$(META_CLI) $(META_PROTO_ARGS) --parser python -o src/lqp/gen/parser.py
 
 force-parser-julia:
 	$(META_CLI) $(META_PROTO_ARGS) --parser julia -o ../julia/LQPParser/src/parser.jl

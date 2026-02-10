@@ -7,7 +7,6 @@ from meta.target import (
     Return, Assign, GetField, GetElement,
     TargetType,
 )
-from meta.target_builtins import make_builtin
 from meta.target_utils import (
     STRING_TYPE, INT64_TYPE, FLOAT64_TYPE, BOOLEAN_TYPE,
     create_identity_function, subst, type_join,

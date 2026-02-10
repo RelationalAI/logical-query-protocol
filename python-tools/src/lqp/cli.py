@@ -23,7 +23,7 @@ def process_file(filename, bin, json, validate=True, use_generated=False):
         lqp_text = f.read()
 
     if use_generated:
-        from lqp.generated_parser import parse
+        from lqp.gen.parser import parse
         lqp_proto = parse(lqp_text)
         if validate:
             validate_lqp(lqp_proto)

@@ -6,14 +6,11 @@ pretty-printing it back yields the same string.
 """
 
 import pytest
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from meta.target import (
     TargetType, BaseType, MessageType, ListType, OptionType, TupleType,
-    DictType, FunctionType, VarType,
-    TargetExpr, Var, Lit, NewMessage, Call, Lambda, Let, IfElse,
-    Seq, ListExpr, GetElement,
+    DictType, FunctionType, TargetExpr, Var, Lit, Call, Lambda, ListExpr,
 )
 from meta.target_builtins import make_builtin
 from meta.target_print import expr_to_str, type_to_str

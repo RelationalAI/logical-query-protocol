@@ -12,7 +12,7 @@ from meta.grammar_utils import (
     get_nonterminals, get_literals, is_epsilon, rhs_elements,
     count_nonliteral_rhs_elements,
 )
-from meta.target import BaseType, MessageType, TupleType, ListType, OptionType, Lambda, Var, Lit
+from meta.target import BaseType, MessageType, TupleType, ListType, OptionType, Lambda, Var
 
 
 class TestLitTerminal:
