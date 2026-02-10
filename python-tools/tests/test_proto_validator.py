@@ -8,6 +8,7 @@ from lqp.parser import parse_lqp
 from lqp.validator import ValidationError, validate_lqp
 from lqp.proto_validator import validate_proto
 import lqp.ir as ir
+from .utils import get_lqp_input_files
 
 VALIDATOR_DIR = Path(__file__).parent / "validator"
 
@@ -24,6 +25,14 @@ def extract_expected_error(file_path):
     if error_match:
         return error_match.group(1).strip()
     return None
+
+
+@pytest.mark.parametrize("input_file", get_lqp_input_files())
+def test_validate_proto_lqp_inputs(input_file):
+    with open(input_file, "r") as f:
+        content = f.read()
+    txn_proto = parse(content)
+    validate_proto(txn_proto)
 
 
 @pytest.mark.parametrize(
