@@ -14,8 +14,10 @@ if TYPE_CHECKING:
 
 from .target import (
     TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, EnumValue, OneOf, ListExpr, Call, Lambda, Let,
-    IfElse, Seq, While, Foreach, ForeachEnumerated, Assign, Return, FunDef, VisitNonterminalDef,
-    VisitNonterminal, TargetType, BaseType, TupleType, ListType, DictType, OptionType,
+    IfElse, Seq, While, Foreach, ForeachEnumerated, Assign, Return, FunDef,
+    ParseNonterminalDef, PrintNonterminalDef,
+    ParseNonterminal, PrintNonterminal,
+    TargetType, BaseType, TupleType, ListType, DictType, OptionType,
     MessageType, EnumType, FunctionType, VarType, GetField, GetElement
 )
 from .target_builtins import get_builtin
@@ -416,9 +418,10 @@ class CodeGenerator(ABC):
         elif isinstance(expr, NamedFun):
             return self.gen_named_fun_ref(expr.name)
 
-        elif isinstance(expr, VisitNonterminal):
-            if expr.visitor_name == 'pretty':
-                return self.gen_pretty_nonterminal_ref(expr.nonterminal.name)
+        elif isinstance(expr, PrintNonterminal):
+            return self.gen_pretty_nonterminal_ref(expr.nonterminal.name)
+
+        elif isinstance(expr, ParseNonterminal):
             return self.gen_parse_nonterminal_ref(expr.nonterminal.name)
 
         elif isinstance(expr, OneOf):
@@ -429,6 +432,7 @@ class CodeGenerator(ABC):
 
         elif isinstance(expr, GetField):
             obj_code = self.generate_lines(expr.object, lines, indent)
+            assert obj_code is not None, "GetField object should not contain a return"
             return self.gen_field_access(obj_code, expr.field_name)
 
         elif isinstance(expr, GetElement):
@@ -792,13 +796,13 @@ class CodeGenerator(ABC):
 
     # --- Function definition generation ---
 
-    def generate_def(self, expr: Union[FunDef, VisitNonterminalDef], indent: str = "") -> str:
+    def generate_def(self, expr: Union[FunDef, ParseNonterminalDef, PrintNonterminalDef], indent: str = "") -> str:
         """Generate a function definition."""
         if isinstance(expr, FunDef):
             return self._generate_fun_def(expr, indent)
-        elif isinstance(expr, VisitNonterminalDef):
-            if expr.visitor_name == 'pretty':
-                return self._generate_pretty_def(expr, indent)
+        elif isinstance(expr, PrintNonterminalDef):
+            return self._generate_pretty_def(expr, indent)
+        elif isinstance(expr, ParseNonterminalDef):
             return self._generate_parse_def(expr, indent)
         else:
             raise ValueError(f"Unknown definition type: {type(expr)}")
@@ -832,12 +836,12 @@ class CodeGenerator(ABC):
         pass
 
     @abstractmethod
-    def _generate_parse_def(self, expr: VisitNonterminalDef, indent: str) -> str:
+    def _generate_parse_def(self, expr: ParseNonterminalDef, indent: str) -> str:
         """Generate a parse method definition. Language-specific due to method syntax."""
         pass
 
     @abstractmethod
-    def _generate_pretty_def(self, expr: VisitNonterminalDef, indent: str) -> str:
+    def _generate_pretty_def(self, expr: PrintNonterminalDef, indent: str) -> str:
         """Generate a pretty-print method definition. Language-specific due to method syntax."""
         pass
 

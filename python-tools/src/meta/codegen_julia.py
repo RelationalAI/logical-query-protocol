@@ -10,8 +10,9 @@ from .codegen_base import CodeGenerator
 from .codegen_templates import JULIA_TEMPLATES
 from .target import (
     TargetExpr, Var, Lit, Symbol, NamedFun, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
-    FunDef, VisitNonterminalDef, VisitNonterminal, GetField, GetElement, BaseType,
-    MessageType,
+    FunDef, ParseNonterminalDef, PrintNonterminalDef,
+    ParseNonterminal, PrintNonterminal,
+    GetField, GetElement, BaseType, MessageType,
 )
 from .gensym import gensym
 
@@ -377,8 +378,8 @@ class JuliaCodeGenerator(CodeGenerator):
             lines.append(f"{indent}{self.gen_assignment(tmp, f'OneOf({field_symbol}, {field_value})', is_declaration=True)}")
             return tmp
 
-        # Check for VisitNonterminal or NamedFun calls - need to add parser as first argument
-        if isinstance(expr.func, (VisitNonterminal, NamedFun)):
+        # Check for parse/print nonterminal or NamedFun calls - need to add parser as first argument
+        if isinstance(expr.func, (ParseNonterminal, PrintNonterminal, NamedFun)):
             f = self.generate_lines(expr.func, lines, indent)
             args: List[str] = []
             for arg in expr.args:
@@ -406,7 +407,7 @@ class JuliaCodeGenerator(CodeGenerator):
         """
         raise ValueError(f"OneOf should only appear in Call(OneOf(...), [value]) pattern: {expr}")
 
-    def _generate_parse_def(self, expr: VisitNonterminalDef, indent: str) -> str:
+    def _generate_parse_def(self, expr: ParseNonterminalDef, indent: str) -> str:
         """Generate a parse method definition."""
         func_name = f"parse_{expr.nonterminal.name}"
 
@@ -432,7 +433,7 @@ class JuliaCodeGenerator(CodeGenerator):
 
         return f"{indent}function {func_name}({params_str}){ret_hint}\n{body_code}\n{indent}end"
 
-    def _generate_pretty_def(self, expr: VisitNonterminalDef, indent: str) -> str:
+    def _generate_pretty_def(self, expr: PrintNonterminalDef, indent: str) -> str:
         """Generate a pretty-print function definition."""
         func_name = f"pretty_{expr.nonterminal.name}"
 
@@ -505,7 +506,7 @@ def generate_julia_lines(expr: TargetExpr, lines: List[str], indent: str = "") -
     return JuliaCodeGenerator().generate_lines(expr, lines, indent)
 
 
-def generate_julia_def(expr: Union[FunDef, VisitNonterminalDef], indent: str = "") -> str:
+def generate_julia_def(expr: Union[FunDef, ParseNonterminalDef, PrintNonterminalDef], indent: str = "") -> str:
     """Generate Julia function definition."""
     return JuliaCodeGenerator().generate_def(expr, indent)
 

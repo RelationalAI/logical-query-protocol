@@ -12,8 +12,8 @@ from typing import Dict, List, Optional, Union
 from .grammar import Grammar, GrammarConfig, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
 from .grammar_utils import is_epsilon, rhs_elements
 from .target import (
-    Lambda, Call, VisitNonterminalDef, Var, Lit, Builtin, Let, IfElse,
-    BaseType, ListType, TupleType, TargetExpr, Seq, VisitNonterminal, gensym,
+    Lambda, Call, PrintNonterminalDef, Var, Lit, Builtin, Let, IfElse,
+    BaseType, ListType, TupleType, TargetExpr, Seq, PrintNonterminal, gensym,
     OptionType, ForeachEnumerated, GetElement
 )
 from .target_builtins import make_builtin
@@ -28,7 +28,7 @@ def _get_rules_dict(grammar: GrammarLike) -> Dict[Nonterminal, List[Rule]]:
 
 
 def generate_pretty_functions(grammar: GrammarLike,
-                              proto_messages: Optional[Dict] = None) -> List[VisitNonterminalDef]:
+                              proto_messages: Optional[Dict] = None) -> List[PrintNonterminalDef]:
     """Generate pretty printer functions for all nonterminals."""
     pretty_methods = []
 
@@ -49,7 +49,7 @@ def generate_pretty_functions(grammar: GrammarLike,
 
 def _generate_pretty_method(lhs: Nonterminal, rules: List[Rule],
                             grammar: GrammarLike,
-                            proto_messages: Optional[Dict]) -> VisitNonterminalDef:
+                            proto_messages: Optional[Dict]) -> PrintNonterminalDef:
     """Generate a pretty-print visitor method for a nonterminal."""
     nt = rules[0].lhs
     msg_param = Var("msg", nt.type)
@@ -59,8 +59,7 @@ def _generate_pretty_method(lhs: Nonterminal, rules: List[Rule],
     else:
         body = _generate_pretty_alternatives(rules, msg_param, grammar, proto_messages)
 
-    return VisitNonterminalDef(
-        visitor_name='pretty',
+    return PrintNonterminalDef(
         nonterminal=nt,
         params=[msg_param],
         return_type=OptionType(BaseType("Never")),
@@ -185,11 +184,11 @@ def _generate_nonterminal_ref_dispatch(rule: Rule, msg_param: Var,
             break
 
     if guard_deconstructor is None:
-        return Call(VisitNonterminal('pretty', nt_ref), [msg_param])
+        return Call(PrintNonterminal(nt_ref), [msg_param])
 
     deconstruct_result_var = Var(gensym('guard_result'), guard_deconstructor.return_type)
     deconstruct_call = Call(guard_deconstructor, [msg_param])
-    pretty_call = Call(VisitNonterminal('pretty', nt_ref), [msg_param])
+    pretty_call = Call(PrintNonterminal(nt_ref), [msg_param])
 
     return Let(
         deconstruct_result_var,
@@ -253,7 +252,7 @@ def _generate_pretty_from_fields(rhs: Rhs, fields_var: Var,
         formatted = _format_terminal(rhs, fields_var)
         return Call(make_builtin('write_io'), [formatted])
     elif isinstance(rhs, Nonterminal):
-        return Call(VisitNonterminal('pretty', rhs), [fields_var])
+        return Call(PrintNonterminal(rhs), [fields_var])
     elif isinstance(rhs, Option):
         return _generate_pretty_option_from_field(rhs, fields_var, grammar, proto_messages)
     elif isinstance(rhs, Star):
@@ -316,7 +315,7 @@ def _pretty_print_element(elem: Rhs, var: Var, grammar: GrammarLike,
         formatted = _format_terminal(elem, var)
         return Call(make_builtin('write_io'), [formatted])
     elif isinstance(elem, Nonterminal):
-        return Call(VisitNonterminal('pretty', elem), [var])
+        return Call(PrintNonterminal(elem), [var])
     elif isinstance(elem, Option):
         return _generate_pretty_option_from_field(elem, var, grammar, proto_messages)
     elif isinstance(elem, Star):
@@ -342,7 +341,7 @@ def _generate_pretty_option_from_field(rhs: Option, field_var: Var,
         formatted = _format_terminal(rhs.rhs, value_var)
         pretty_inner = Call(make_builtin('write_io'), [formatted])
     elif isinstance(rhs.rhs, Nonterminal):
-        pretty_inner = Call(VisitNonterminal('pretty', rhs.rhs), [value_var])
+        pretty_inner = Call(PrintNonterminal(rhs.rhs), [value_var])
     elif isinstance(rhs.rhs, Sequence):
         pretty_inner = _generate_pretty_from_fields(rhs.rhs, value_var, grammar, proto_messages)
     else:
@@ -372,7 +371,7 @@ def _generate_pretty_star_from_field(rhs: Star, field_var: Var,
         formatted = _format_terminal(rhs.rhs, elem_var)
         pretty_elem = Call(make_builtin('write_io'), [formatted])
     elif isinstance(rhs.rhs, Nonterminal):
-        pretty_elem = Call(VisitNonterminal('pretty', rhs.rhs), [elem_var])
+        pretty_elem = Call(PrintNonterminal(rhs.rhs), [elem_var])
     elif isinstance(rhs.rhs, Sequence):
         pretty_elem = _generate_pretty_from_fields(rhs.rhs, elem_var, grammar, proto_messages)
     else:
@@ -426,7 +425,7 @@ def _format_terminal(terminal: NamedTerminal, value_var: Var) -> TargetExpr:
         return Call(make_builtin('format_float64'), [value_var])
     elif terminal.name == 'BOOL':
         return Call(make_builtin('format_bool'), [value_var])
-    elif terminal.name == 'HEX_UINT128':
+    elif terminal.name == 'UINT128':
         return Call(make_builtin('format_uint128'), [value_var])
     else:
         return Call(make_builtin('to_string'), [value_var])

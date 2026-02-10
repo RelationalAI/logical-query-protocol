@@ -610,12 +610,20 @@ def parse_deconstruct_action(text: str, lhs_type: TargetType, rhs: 'Rhs',
     except SyntaxError as e:
         raise YaccGrammarError(f"Syntax error in deconstruct action: {e}", line)
 
-    # Extract $N assignments from the AST
+    # Extract assert conditions, side-effects, and $N assignments from the AST
     # assignments maps 1-indexed $N to the expression AST node
     assignments: Dict[int, ast.expr] = {}
+    assert_conditions: List[ast.expr] = []
+    side_effects: List[ast.expr] = []
     extra_vars: Dict[str, TargetType] = {"_dollar_dollar": lhs_type}
 
     for stmt in tree.body:
+        if isinstance(stmt, ast.Assert):
+            assert_conditions.append(stmt.test)
+            continue
+        if isinstance(stmt, ast.Expr):
+            side_effects.append(stmt.value)
+            continue
         if isinstance(stmt, ast.Assign) and len(stmt.targets) == 1:
             target = stmt.targets[0]
             if isinstance(target, ast.Name) and target.id.startswith('_dollar_') and target.id[8:].isdigit():
@@ -623,7 +631,8 @@ def parse_deconstruct_action(text: str, lhs_type: TargetType, rhs: 'Rhs',
                 assignments[dollar_idx] = stmt.value
                 continue
         raise YaccGrammarError(
-            f"Deconstruct actions must be $N = expr assignments. Got: {ast.dump(stmt)}",
+            f"Deconstruct actions must be assert, side-effect expressions, "
+            f"or $N = expr assignments. Got: {ast.dump(stmt)}",
             line)
 
     # Validate all non-literal RHS elements are assigned
@@ -649,27 +658,28 @@ def parse_deconstruct_action(text: str, lhs_type: TargetType, rhs: 'Rhs',
         expr = _convert_node_with_vars(assignments[idx], param_info, empty_params, ctx, line, extra_vars)
         converted.append(expr)
 
-    # Detect conditional assignments: IfElse(cond, then_val, None)
-    # These are guards — if any condition fails, the deconstruct should return None.
-    conditions: List[TargetExpr] = []
-    unconditional: List[TargetExpr] = []
-    for expr in converted:
-        if (isinstance(expr, IfElse) and isinstance(expr.else_branch, Lit)
-                and expr.else_branch.value is None):
-            conditions.append(expr.condition)
-            unconditional.append(expr.then_branch)
-        else:
-            unconditional.append(expr)
+    # Convert side-effect expressions to target IR
+    side_effect_exprs: List[TargetExpr] = []
+    for se_node in side_effects:
+        se_expr = _convert_node_with_vars(se_node, param_info, empty_params, ctx, line, extra_vars)
+        side_effect_exprs.append(se_expr)
 
-    if conditions:
-        # Build guarded body: if all conditions met, return Some(tuple); else None
-        if len(unconditional) == 1:
-            success_body: TargetExpr = Call(_make_builtin('some'), [unconditional[0]])
-            inner_type = _infer_type(unconditional[0], line, ctx)
+    # Build body from assert conditions and assignments
+    if assert_conditions:
+        # Convert assert conditions to target IR
+        conditions: List[TargetExpr] = []
+        for cond_node in assert_conditions:
+            cond_expr = _convert_node_with_vars(cond_node, param_info, empty_params, ctx, line, extra_vars)
+            conditions.append(cond_expr)
+
+        # Build guarded body: if all conditions met, return Some(vals); else None
+        if len(converted) == 1:
+            success_body: TargetExpr = Call(_make_builtin('some'), [converted[0]])
+            inner_type = _infer_type(converted[0], line, ctx)
         else:
-            tuple_expr = Call(_make_builtin('tuple'), unconditional)
+            tuple_expr = Call(_make_builtin('tuple'), converted)
             success_body = Call(_make_builtin('some'), [tuple_expr])
-            element_types = [_infer_type(c, line, ctx) for c in unconditional]
+            element_types = [_infer_type(c, line, ctx) for c in converted]
             inner_type = TupleType(tuple(element_types))
 
         # Combine conditions with 'and'
@@ -686,6 +696,10 @@ def parse_deconstruct_action(text: str, lhs_type: TargetType, rhs: 'Rhs',
         body = Call(_make_builtin('tuple'), converted)
         element_types = [_infer_type(c, line, ctx) for c in converted]
         return_type = TupleType(tuple(element_types))
+
+    # Wrap with side-effects if any
+    if side_effect_exprs:
+        body = Seq(tuple(side_effect_exprs) + (body,))
 
     return Lambda([msg_param], return_type, body)
 

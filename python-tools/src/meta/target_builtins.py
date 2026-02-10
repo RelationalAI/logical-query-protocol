@@ -159,6 +159,7 @@ register_builtin("construct_fragment",
                   ListType(MessageType("logic", "Declaration"))],
                  MessageType("fragments", "Fragment"))
 register_builtin("start_fragment", [MessageType("fragments", "FragmentId")], BaseType("None"))
+register_builtin("start_pretty_fragment", [MessageType("fragments", "Fragment")], BaseType("None"))
 
 # === Dict operations ===
 register_builtin("dict_from_list", [ListType(TupleType([K, V]))], DictType(K, V))

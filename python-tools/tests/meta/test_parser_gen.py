@@ -9,12 +9,12 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from meta.grammar import make_rule, Grammar, Rule, Nonterminal, LitTerminal, NamedTerminal, Option, Star, Sequence
-from meta.target import Lambda, Var, MessageType, VisitNonterminalDef, BaseType, ListType
+from meta.target import Lambda, Var, MessageType, ParseNonterminalDef, BaseType, ListType
 from meta.parser_gen import generate_parse_functions, GrammarConflictError, AmbiguousGrammarError
 
 
 def test_generate_parse_functions_simple():
-    """Test that generate_parse_functions produces VisitNonterminalDef for each nonterminal."""
+    """Test that generate_parse_functions produces ParseNonterminalDef for each nonterminal."""
     # Create a simple grammar: S -> "a"
     s_type = MessageType("test", "S")
     s = Nonterminal("S", s_type)
@@ -29,7 +29,7 @@ def test_generate_parse_functions_simple():
 
     # Should have one definition for S
     assert len(defs) == 1
-    assert isinstance(defs[0], VisitNonterminalDef)
+    assert isinstance(defs[0], ParseNonterminalDef)
     assert defs[0].nonterminal == s
 
 

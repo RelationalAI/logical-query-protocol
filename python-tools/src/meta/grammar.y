@@ -21,9 +21,9 @@
 #
 # Deconstruct actions use `$N = expr` assignments to extract RHS element
 # values from the LHS value ($$). If omitted, the default is the identity
-# deconstruct. If any assignment uses a conditional guard of the form
-# `$N = expr if COND else None`, the deconstructor returns None when the
-# condition fails, signaling that this rule does not match.
+# deconstruct. Use `assert COND` to guard the deconstructor: if any assert
+# condition fails, the deconstructor returns None, signaling that this rule
+# does not match the LHS value.
 #
 # The pretty printer uses the deconstruct actions. For nonterminals with
 # multiple alternatives, it tries the rules in declaration order, choosing
@@ -183,7 +183,7 @@ transaction
       construct: $$ = transactions.Transaction(epochs=$5, configure=builtin.unwrap_option_or($3, default_configure()), sync=$4)
       deconstruct:
         $3 = $$.configure if not is_default_configure($$.configure) else None
-        $4 = $$.sync
+        $4 = $$.sync # TODO: if sync.fragments is not empty else None
         $5 = $$.epochs
 
 configure
@@ -204,38 +204,59 @@ config_key_value
 value
     : date
       construct: $$ = logic.Value(date_value=$1)
-      deconstruct: $1 = $$.date_value if builtin.has_proto_field($$, 'date_value') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'date_value')
+        $1 = $$.date_value
     | datetime
       construct: $$ = logic.Value(datetime_value=$1)
-      deconstruct: $1 = $$.datetime_value if builtin.has_proto_field($$, 'datetime_value') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'datetime_value')
+        $1 = $$.datetime_value
     | STRING
       construct: $$ = logic.Value(string_value=$1)
-      deconstruct: $1 = $$.string_value if builtin.has_proto_field($$, 'string_value') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'string_value')
+        $1 = $$.string_value
     | INT
       construct: $$ = logic.Value(int_value=$1)
-      deconstruct: $1 = $$.int_value if builtin.has_proto_field($$, 'int_value') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'int_value')
+        $1 = $$.int_value
     | FLOAT
       construct: $$ = logic.Value(float_value=$1)
-      deconstruct: $1 = $$.float_value if builtin.has_proto_field($$, 'float_value') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'float_value')
+        $1 = $$.float_value
     | UINT128
       construct: $$ = logic.Value(uint128_value=$1)
-      deconstruct: $1 = $$.uint128_value if builtin.has_proto_field($$, 'uint128_value') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'uint128_value')
+        $1 = $$.uint128_value
     | INT128
       construct: $$ = logic.Value(int128_value=$1)
-      deconstruct: $1 = $$.int128_value if builtin.has_proto_field($$, 'int128_value') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'int128_value')
+        $1 = $$.int128_value
     | DECIMAL
       construct: $$ = logic.Value(decimal_value=$1)
-      deconstruct: $1 = $$.decimal_value if builtin.has_proto_field($$, 'decimal_value') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'decimal_value')
+        $1 = $$.decimal_value
     | "missing"
       construct: $$ = logic.Value(missing_value=logic.MissingValue())
     | boolean_value
       construct: $$ = logic.Value(boolean_value=$1)
-      deconstruct: $1 = $$.boolean_value if builtin.has_proto_field($$, 'boolean_value') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'boolean_value')
+        $1 = $$.boolean_value
 
 date
     : "(" "date" INT INT INT ")"
       construct: $$ = logic.DateValue(year=builtin.int64_to_int32($3), month=builtin.int64_to_int32($4), day=builtin.int64_to_int32($5))
-      deconstruct: $3 = builtin.int32_to_int64($$.year); $4 = builtin.int32_to_int64($$.month); $5 = builtin.int32_to_int64($$.day)
+      deconstruct:
+        $3 = builtin.int32_to_int64($$.year)
+        $4 = builtin.int32_to_int64($$.month)
+        $5 = builtin.int32_to_int64($$.day)
 
 datetime
     : "(" "datetime" INT INT INT INT INT INT INT? ")"
@@ -278,13 +299,19 @@ epoch_writes
 write
     : define
       construct: $$ = transactions.Write(define=$1)
-      deconstruct: $1 = $$.define if builtin.has_proto_field($$, 'define') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'define')
+        $1 = $$.define
     | undefine
       construct: $$ = transactions.Write(undefine=$1)
-      deconstruct: $1 = $$.undefine if builtin.has_proto_field($$, 'undefine') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'undefine')
+        $1 = $$.undefine
     | context
       construct: $$ = transactions.Write(context=$1)
-      deconstruct: $1 = $$.context if builtin.has_proto_field($$, 'context') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'context')
+        $1 = $$.context
 
 define
     : "(" "define" fragment ")"
@@ -294,7 +321,10 @@ define
 fragment
     : "(" "fragment" new_fragment_id declaration* ")"
       construct: $$ = builtin.construct_fragment($3, $4)
-      deconstruct: $3 = $$.id; $4 = $$.declarations
+      deconstruct:
+        builtin.start_pretty_fragment($$)
+        $3 = $$.id
+        $4 = $$.declarations
 
 new_fragment_id
     : fragment_id
@@ -305,16 +335,24 @@ new_fragment_id
 declaration
     : def
       construct: $$ = logic.Declaration(def=$1)
-      deconstruct: $1 = $$.def if builtin.has_proto_field($$, 'def') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'def')
+        $1 = $$.def
     | algorithm
       construct: $$ = logic.Declaration(algorithm=$1)
-      deconstruct: $1 = $$.algorithm if builtin.has_proto_field($$, 'algorithm') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'algorithm')
+        $1 = $$.algorithm
     | constraint
       construct: $$ = logic.Declaration(constraint=$1)
-      deconstruct: $1 = $$.constraint if builtin.has_proto_field($$, 'constraint') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'constraint')
+        $1 = $$.constraint
     | data
       construct: $$ = logic.Declaration(data=$1)
-      deconstruct: $1 = $$.data if builtin.has_proto_field($$, 'data') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'data')
+        $1 = $$.data
 
 def
     : "(" "def" relation_id abstraction attrs? ")"
@@ -335,52 +373,80 @@ relation_id
 abstraction
     : "(" bindings formula ")"
       construct: $$ = logic.Abstraction(vars=builtin.list_concat($2[0], $2[1]), value=$3)
-      deconstruct: $2 = deconstruct_bindings($$); $3 = $$.value
+      deconstruct:
+        $2 = deconstruct_bindings($$)
+        $3 = $$.value
 
 bindings
     : "[" binding* value_bindings? "]"
       construct: $$ = builtin.tuple($2, builtin.unwrap_option_or($3, list[logic.Binding]()))
-      deconstruct: $2 = $$[0]; $3 = $$[1] if not builtin.is_empty($$[1]) else None
+      deconstruct:
+        $2 = $$[0]
+        $3 = $$[1] if not builtin.is_empty($$[1]) else None
 
 binding
     : SYMBOL "::" type
       construct: $$ = logic.Binding(var=logic.Var(name=$1), type=$3)
-      deconstruct: $1 = $$.var.name; $3 = $$.type
+      deconstruct:
+        $1 = $$.var.name
+        $3 = $$.type
 
 type
     : unspecified_type
       construct: $$ = logic.Type(unspecified_type=$1)
-      deconstruct: $1 = $$.unspecified_type if builtin.has_proto_field($$, 'unspecified_type') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'unspecified_type')
+        $1 = $$.unspecified_type
     | string_type
       construct: $$ = logic.Type(string_type=$1)
-      deconstruct: $1 = $$.string_type if builtin.has_proto_field($$, 'string_type') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'string_type')
+        $1 = $$.string_type
     | int_type
       construct: $$ = logic.Type(int_type=$1)
-      deconstruct: $1 = $$.int_type if builtin.has_proto_field($$, 'int_type') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'int_type')
+        $1 = $$.int_type
     | float_type
       construct: $$ = logic.Type(float_type=$1)
-      deconstruct: $1 = $$.float_type if builtin.has_proto_field($$, 'float_type') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'float_type')
+        $1 = $$.float_type
     | uint128_type
       construct: $$ = logic.Type(uint128_type=$1)
-      deconstruct: $1 = $$.uint128_type if builtin.has_proto_field($$, 'uint128_type') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'uint128_type')
+        $1 = $$.uint128_type
     | int128_type
       construct: $$ = logic.Type(int128_type=$1)
-      deconstruct: $1 = $$.int128_type if builtin.has_proto_field($$, 'int128_type') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'int128_type')
+        $1 = $$.int128_type
     | date_type
       construct: $$ = logic.Type(date_type=$1)
-      deconstruct: $1 = $$.date_type if builtin.has_proto_field($$, 'date_type') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'date_type')
+        $1 = $$.date_type
     | datetime_type
       construct: $$ = logic.Type(datetime_type=$1)
-      deconstruct: $1 = $$.datetime_type if builtin.has_proto_field($$, 'datetime_type') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'datetime_type')
+        $1 = $$.datetime_type
     | missing_type
       construct: $$ = logic.Type(missing_type=$1)
-      deconstruct: $1 = $$.missing_type if builtin.has_proto_field($$, 'missing_type') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'missing_type')
+        $1 = $$.missing_type
     | decimal_type
       construct: $$ = logic.Type(decimal_type=$1)
-      deconstruct: $1 = $$.decimal_type if builtin.has_proto_field($$, 'decimal_type') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'decimal_type')
+        $1 = $$.decimal_type
     | boolean_type
       construct: $$ = logic.Type(boolean_type=$1)
-      deconstruct: $1 = $$.boolean_type if builtin.has_proto_field($$, 'boolean_type') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'boolean_type')
+        $1 = $$.boolean_type
 
 unspecified_type
     : "UNKNOWN"
@@ -421,7 +487,9 @@ missing_type
 decimal_type
     : "(" "DECIMAL" INT INT ")"
       construct: $$ = logic.DecimalType(precision=builtin.int64_to_int32($3), scale=builtin.int64_to_int32($4))
-      deconstruct: $3 = builtin.int32_to_int64($$.precision); $4 = builtin.int32_to_int64($$.scale)
+      deconstruct:
+        $3 = builtin.int32_to_int64($$.precision)
+        $4 = builtin.int32_to_int64($$.scale)
 
 boolean_type
     : "BOOLEAN"
@@ -433,43 +501,69 @@ value_bindings
 formula
     : true
       construct: $$ = logic.Formula(conjunction=$1)
-      deconstruct: $1 = $$.conjunction if builtin.has_proto_field($$, 'conjunction') and builtin.is_empty($$.conjunction.args) else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'conjunction') and builtin.is_empty($$.conjunction.args)
+        $1 = $$.conjunction
     | false
       construct: $$ = logic.Formula(disjunction=$1)
-      deconstruct: $1 = $$.disjunction if builtin.has_proto_field($$, 'disjunction') and builtin.is_empty($$.disjunction.args) else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'disjunction') and builtin.is_empty($$.disjunction.args)
+        $1 = $$.disjunction
     | exists
       construct: $$ = logic.Formula(exists=$1)
-      deconstruct: $1 = $$.exists if builtin.has_proto_field($$, 'exists') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'exists')
+        $1 = $$.exists
     | reduce
       construct: $$ = logic.Formula(reduce=$1)
-      deconstruct: $1 = $$.reduce if builtin.has_proto_field($$, 'reduce') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'reduce')
+        $1 = $$.reduce
     | conjunction
       construct: $$ = logic.Formula(conjunction=$1)
-      deconstruct: $1 = $$.conjunction if builtin.has_proto_field($$, 'conjunction') and not builtin.is_empty($$.conjunction.args) else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'conjunction') and not builtin.is_empty($$.conjunction.args)
+        $1 = $$.conjunction
     | disjunction
       construct: $$ = logic.Formula(disjunction=$1)
-      deconstruct: $1 = $$.disjunction if builtin.has_proto_field($$, 'disjunction') and not builtin.is_empty($$.disjunction.args) else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'disjunction') and not builtin.is_empty($$.disjunction.args)
+        $1 = $$.disjunction
     | not
       construct: $$ = logic.Formula(not=$1)
-      deconstruct: $1 = $$.not if builtin.has_proto_field($$, 'not') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'not')
+        $1 = $$.not
     | ffi
       construct: $$ = logic.Formula(ffi=$1)
-      deconstruct: $1 = $$.ffi if builtin.has_proto_field($$, 'ffi') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'ffi')
+        $1 = $$.ffi
     | atom
       construct: $$ = logic.Formula(atom=$1)
-      deconstruct: $1 = $$.atom if builtin.has_proto_field($$, 'atom') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'atom')
+        $1 = $$.atom
     | pragma
       construct: $$ = logic.Formula(pragma=$1)
-      deconstruct: $1 = $$.pragma if builtin.has_proto_field($$, 'pragma') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'pragma')
+        $1 = $$.pragma
     | primitive
       construct: $$ = logic.Formula(primitive=$1)
-      deconstruct: $1 = $$.primitive if builtin.has_proto_field($$, 'primitive') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'primitive')
+        $1 = $$.primitive
     | rel_atom
       construct: $$ = logic.Formula(rel_atom=$1)
-      deconstruct: $1 = $$.rel_atom if builtin.has_proto_field($$, 'rel_atom') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'rel_atom')
+        $1 = $$.rel_atom
     | cast
       construct: $$ = logic.Formula(cast=$1)
-      deconstruct: $1 = $$.cast if builtin.has_proto_field($$, 'cast') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'cast')
+        $1 = $$.cast
 
 true
     : "(" "true" ")"
@@ -482,20 +576,29 @@ false
 exists
     : "(" "exists" bindings formula ")"
       construct: $$ = logic.Exists(body=logic.Abstraction(vars=builtin.list_concat($3[0], $3[1]), value=$4))
-      deconstruct: $3 = deconstruct_bindings($$.body); $4 = $$.body.value
+      deconstruct:
+        $3 = deconstruct_bindings($$.body)
+        $4 = $$.body.value
 
 reduce
     : "(" "reduce" abstraction abstraction terms ")"
       construct: $$ = logic.Reduce(op=$3, body=$4, terms=$5)
-      deconstruct: $3 = $$.op; $4 = $$.body; $5 = $$.terms
+      deconstruct:
+        $3 = $$.op
+        $4 = $$.body
+        $5 = $$.terms
 
 term
     : var
       construct: $$ = logic.Term(var=$1)
-      deconstruct: $1 = $$.var if builtin.has_proto_field($$, 'var') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'var')
+        $1 = $$.var
     | constant
       construct: $$ = logic.Term(constant=$1)
-      deconstruct: $1 = $$.constant if builtin.has_proto_field($$, 'constant') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'constant')
+        $1 = $$.constant
 
 var
     : SYMBOL
@@ -523,7 +626,10 @@ not
 ffi
     : "(" "ffi" name ffi_args terms ")"
       construct: $$ = logic.FFI(name=$3, args=$4, terms=$5)
-      deconstruct: $3 = $$.name; $4 = $$.args; $5 = $$.terms
+      deconstruct:
+        $3 = $$.name
+        $4 = $$.args
+        $5 = $$.terms
 
 ffi_args
     : "(" "args" abstraction* ")"
@@ -537,12 +643,16 @@ name
 atom
     : "(" "atom" relation_id term* ")"
       construct: $$ = logic.Atom(name=$3, terms=$4)
-      deconstruct: $3 = $$.name; $4 = $$.terms
+      deconstruct:
+        $3 = $$.name
+        $4 = $$.terms
 
 pragma
     : "(" "pragma" name term* ")"
       construct: $$ = logic.Pragma(name=$3, terms=$4)
-      deconstruct: $3 = $$.name; $4 = $$.terms
+      deconstruct:
+        $3 = $$.name
+        $4 = $$.terms
 
 primitive
     : eq
@@ -556,48 +666,56 @@ primitive
     | divide
     | "(" "primitive" name rel_term* ")"
       construct: $$ = logic.Primitive(name=$3, terms=$4)
-      deconstruct: $3 = $$.name; $4 = $$.terms
+      deconstruct:
+        $3 = $$.name
+        $4 = $$.terms
 
 eq
     : "(" "=" term term ")"
       construct: $$ = logic.Primitive(name="rel_primitive_eq", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4)])
       deconstruct:
-        $3 = $$.terms[0].term if $$.name == "rel_primitive_eq" else None
+        assert $$.name == "rel_primitive_eq"
+        $3 = $$.terms[0].term
         $4 = $$.terms[1].term
 
 lt
     : "(" "<" term term ")"
       construct: $$ = logic.Primitive(name="rel_primitive_lt_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4)])
       deconstruct:
-        $3 = $$.terms[0].term if $$.name == "rel_primitive_lt_monotype" else None
+        assert $$.name == "rel_primitive_lt_monotype"
+        $3 = $$.terms[0].term
         $4 = $$.terms[1].term
 
 lt_eq
     : "(" "<=" term term ")"
       construct: $$ = logic.Primitive(name="rel_primitive_lt_eq_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4)])
       deconstruct:
-        $3 = $$.terms[0].term if $$.name == "rel_primitive_lt_eq_monotype" else None
+        assert $$.name == "rel_primitive_lt_eq_monotype"
+        $3 = $$.terms[0].term
         $4 = $$.terms[1].term
 
 gt
     : "(" ">" term term ")"
       construct: $$ = logic.Primitive(name="rel_primitive_gt_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4)])
       deconstruct:
-        $3 = $$.terms[0].term if $$.name == "rel_primitive_gt_monotype" else None
+        assert $$.name == "rel_primitive_gt_monotype"
+        $3 = $$.terms[0].term
         $4 = $$.terms[1].term
 
 gt_eq
     : "(" ">=" term term ")"
       construct: $$ = logic.Primitive(name="rel_primitive_gt_eq_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4)])
       deconstruct:
-        $3 = $$.terms[0].term if $$.name == "rel_primitive_gt_eq_monotype" else None
+        assert $$.name == "rel_primitive_gt_eq_monotype"
+        $3 = $$.terms[0].term
         $4 = $$.terms[1].term
 
 add
     : "(" "+" term term term ")"
       construct: $$ = logic.Primitive(name="rel_primitive_add_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4), logic.RelTerm(term=$5)])
       deconstruct:
-        $3 = $$.terms[0].term if $$.name == "rel_primitive_add_monotype" else None
+        assert $$.name == "rel_primitive_add_monotype"
+        $3 = $$.terms[0].term
         $4 = $$.terms[1].term
         $5 = $$.terms[2].term
 
@@ -605,7 +723,8 @@ minus
     : "(" "-" term term term ")"
       construct: $$ = logic.Primitive(name="rel_primitive_subtract_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4), logic.RelTerm(term=$5)])
       deconstruct:
-        $3 = $$.terms[0].term if $$.name == "rel_primitive_subtract_monotype" else None
+        assert $$.name == "rel_primitive_subtract_monotype"
+        $3 = $$.terms[0].term
         $4 = $$.terms[1].term
         $5 = $$.terms[2].term
 
@@ -613,7 +732,8 @@ multiply
     : "(" "*" term term term ")"
       construct: $$ = logic.Primitive(name="rel_primitive_multiply_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4), logic.RelTerm(term=$5)])
       deconstruct:
-        $3 = $$.terms[0].term if $$.name == "rel_primitive_multiply_monotype" else None
+        assert $$.name == "rel_primitive_multiply_monotype"
+        $3 = $$.terms[0].term
         $4 = $$.terms[1].term
         $5 = $$.terms[2].term
 
@@ -621,17 +741,22 @@ divide
     : "(" "/" term term term ")"
       construct: $$ = logic.Primitive(name="rel_primitive_divide_monotype", terms=[logic.RelTerm(term=$3), logic.RelTerm(term=$4), logic.RelTerm(term=$5)])
       deconstruct:
-        $3 = $$.terms[0].term if $$.name == "rel_primitive_divide_monotype" else None
+        assert $$.name == "rel_primitive_divide_monotype"
+        $3 = $$.terms[0].term
         $4 = $$.terms[1].term
         $5 = $$.terms[2].term
 
 rel_term
     : specialized_value
       construct: $$ = logic.RelTerm(specialized_value=$1)
-      deconstruct: $1 = $$.specialized_value if builtin.has_proto_field($$, 'specialized_value') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'specialized_value')
+        $1 = $$.specialized_value
     | term
       construct: $$ = logic.RelTerm(term=$1)
-      deconstruct: $1 = $$.term if builtin.has_proto_field($$, 'term') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'term')
+        $1 = $$.term
 
 specialized_value
     : "#" value
@@ -639,12 +764,16 @@ specialized_value
 rel_atom
     : "(" "relatom" name rel_term* ")"
       construct: $$ = logic.RelAtom(name=$3, terms=$4)
-      deconstruct: $3 = $$.name; $4 = $$.terms
+      deconstruct:
+        $3 = $$.name
+        $4 = $$.terms
 
 cast
     : "(" "cast" term term ")"
       construct: $$ = logic.Cast(input=$3, result=$4)
-      deconstruct: $3 = $$.input; $4 = $$.result
+      deconstruct:
+        $3 = $$.input
+        $4 = $$.result
 
 attrs
     : "(" "attrs" attribute* ")"
@@ -652,12 +781,16 @@ attrs
 attribute
     : "(" "attribute" name value* ")"
       construct: $$ = logic.Attribute(name=$3, args=$4)
-      deconstruct: $3 = $$.name; $4 = $$.args
+      deconstruct:
+        $3 = $$.name
+        $4 = $$.args
 
 algorithm
     : "(" "algorithm" relation_id* script ")"
       construct: $$ = logic.Algorithm(global=$3, body=$4)
-      deconstruct: $3 = $$.global; $4 = $$.body
+      deconstruct:
+        $3 = $$.global
+        $4 = $$.body
 
 script
     : "(" "script" construct* ")"
@@ -667,15 +800,21 @@ script
 construct
     : loop
       construct: $$ = logic.Construct(loop=$1)
-      deconstruct: $1 = $$.loop if builtin.has_proto_field($$, 'loop') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'loop')
+        $1 = $$.loop
     | instruction
       construct: $$ = logic.Construct(instruction=$1)
-      deconstruct: $1 = $$.instruction if builtin.has_proto_field($$, 'instruction') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'instruction')
+        $1 = $$.instruction
 
 loop
     : "(" "loop" init script ")"
       construct: $$ = logic.Loop(init=$3, body=$4)
-      deconstruct: $3 = $$.init; $4 = $$.body
+      deconstruct:
+        $3 = $$.init
+        $4 = $$.body
 
 init
     : "(" "init" instruction* ")"
@@ -683,19 +822,29 @@ init
 instruction
     : assign
       construct: $$ = logic.Instruction(assign=$1)
-      deconstruct: $1 = $$.assign if builtin.has_proto_field($$, 'assign') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'assign')
+        $1 = $$.assign
     | upsert
       construct: $$ = logic.Instruction(upsert=$1)
-      deconstruct: $1 = $$.upsert if builtin.has_proto_field($$, 'upsert') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'upsert')
+        $1 = $$.upsert
     | break
       construct: $$ = logic.Instruction(break=$1)
-      deconstruct: $1 = $$.break if builtin.has_proto_field($$, 'break') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'break')
+        $1 = $$.break
     | monoid_def
       construct: $$ = logic.Instruction(monoid_def=$1)
-      deconstruct: $1 = $$.monoid_def if builtin.has_proto_field($$, 'monoid_def') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'monoid_def')
+        $1 = $$.monoid_def
     | monus_def
       construct: $$ = logic.Instruction(monus_def=$1)
-      deconstruct: $1 = $$.monus_def if builtin.has_proto_field($$, 'monus_def') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'monus_def')
+        $1 = $$.monus_def
 
 assign
     : "(" "assign" relation_id abstraction attrs? ")"
@@ -716,7 +865,9 @@ upsert
 abstraction_with_arity
     : "(" bindings formula ")"
       construct: $$ = builtin.tuple(logic.Abstraction(vars=builtin.list_concat($2[0], $2[1]), value=$3), builtin.length($2[1]))
-      deconstruct: $2 = deconstruct_bindings_with_arity($$[0], $$[1]); $3 = $$[0].value
+      deconstruct:
+        $2 = deconstruct_bindings_with_arity($$[0], $$[1])
+        $3 = $$[0].value
 
 break
     : "(" "break" relation_id abstraction attrs? ")"
@@ -738,16 +889,24 @@ monoid_def
 monoid
     : or_monoid
       construct: $$ = logic.Monoid(or_monoid=$1)
-      deconstruct: $1 = $$.or_monoid if builtin.has_proto_field($$, 'or_monoid') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'or_monoid')
+        $1 = $$.or_monoid
     | min_monoid
       construct: $$ = logic.Monoid(min_monoid=$1)
-      deconstruct: $1 = $$.min_monoid if builtin.has_proto_field($$, 'min_monoid') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'min_monoid')
+        $1 = $$.min_monoid
     | max_monoid
       construct: $$ = logic.Monoid(max_monoid=$1)
-      deconstruct: $1 = $$.max_monoid if builtin.has_proto_field($$, 'max_monoid') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'max_monoid')
+        $1 = $$.max_monoid
     | sum_monoid
       construct: $$ = logic.Monoid(sum_monoid=$1)
-      deconstruct: $1 = $$.sum_monoid if builtin.has_proto_field($$, 'sum_monoid') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'sum_monoid')
+        $1 = $$.sum_monoid
 
 or_monoid
     : "(" "or" ")"
@@ -795,13 +954,19 @@ functional_dependency_values
 data
     : rel_edb
       construct: $$ = logic.Data(rel_edb=$1)
-      deconstruct: $1 = $$.rel_edb if builtin.has_proto_field($$, 'rel_edb') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'rel_edb')
+        $1 = $$.rel_edb
     | betree_relation
       construct: $$ = logic.Data(betree_relation=$1)
-      deconstruct: $1 = $$.betree_relation if builtin.has_proto_field($$, 'betree_relation') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'betree_relation')
+        $1 = $$.betree_relation
     | csv_data
       construct: $$ = logic.Data(csv_data=$1)
-      deconstruct: $1 = $$.csv_data if builtin.has_proto_field($$, 'csv_data') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'csv_data')
+        $1 = $$.csv_data
 
 rel_edb_path
     : "[" STRING* "]"
@@ -812,12 +977,17 @@ rel_edb_types
 rel_edb
     : "(" "rel_edb" relation_id rel_edb_path rel_edb_types ")"
       construct: $$ = logic.RelEDB(target_id=$3, path=$4, types=$5)
-      deconstruct: $3 = $$.target_id; $4 = $$.path; $5 = $$.types
+      deconstruct:
+        $3 = $$.target_id
+        $4 = $$.path
+        $5 = $$.types
 
 betree_relation
     : "(" "betree_relation" relation_id betree_info ")"
       construct: $$ = logic.BeTreeRelation(name=$3, relation_info=$4)
-      deconstruct: $3 = $$.name; $4 = $$.relation_info
+      deconstruct:
+        $3 = $$.name
+        $4 = $$.relation_info
 
 betree_info
     : "(" "betree_info" betree_info_key_types betree_info_value_types config_dict ")"
@@ -842,7 +1012,11 @@ csv_asof
 csv_data
     : "(" "csv_data" csvlocator csv_config csv_columns csv_asof ")"
       construct: $$ = logic.CSVData(locator=$3, config=$4, columns=$5, asof=$6)
-      deconstruct: $3 = $$.locator; $4 = $$.config; $5 = $$.columns; $6 = $$.asof
+      deconstruct:
+        $3 = $$.locator
+        $4 = $$.config
+        $5 = $$.columns
+        $6 = $$.asof
 
 csv_locator_paths
     : "(" "paths" STRING* ")"
@@ -865,7 +1039,10 @@ csv_config
 csv_column
     : "(" "column" STRING relation_id "[" type* "]" ")"
       construct: $$ = logic.CSVColumn(column_name=$3, target_id=$4, types=$6)
-      deconstruct: $3 = $$.column_name; $4 = $$.target_id; $6 = $$.types
+      deconstruct:
+        $3 = $$.column_name
+        $4 = $$.target_id
+        $6 = $$.types
 
 undefine
     : "(" "undefine" fragment_id ")"
@@ -883,19 +1060,29 @@ epoch_reads
 read
     : demand
       construct: $$ = transactions.Read(demand=$1)
-      deconstruct: $1 = $$.demand if builtin.has_proto_field($$, 'demand') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'demand')
+        $1 = $$.demand
     | output
       construct: $$ = transactions.Read(output=$1)
-      deconstruct: $1 = $$.output if builtin.has_proto_field($$, 'output') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'output')
+        $1 = $$.output
     | what_if
       construct: $$ = transactions.Read(what_if=$1)
-      deconstruct: $1 = $$.what_if if builtin.has_proto_field($$, 'what_if') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'what_if')
+        $1 = $$.what_if
     | abort
       construct: $$ = transactions.Read(abort=$1)
-      deconstruct: $1 = $$.abort if builtin.has_proto_field($$, 'abort') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'abort')
+        $1 = $$.abort
     | export
       construct: $$ = transactions.Read(export=$1)
-      deconstruct: $1 = $$.export if builtin.has_proto_field($$, 'export') else None
+      deconstruct:
+        assert builtin.has_proto_field($$, 'export')
+        $1 = $$.export
 
 demand
     : "(" "demand" relation_id ")"
@@ -905,17 +1092,23 @@ demand
 output
     : "(" "output" name? relation_id ")"
       construct: $$ = transactions.Output(name=builtin.unwrap_option_or($3, "output"), relation_id=$4)
-      deconstruct: $3 = $$.name if $$.name != "output" else None; $4 = $$.relation_id
+      deconstruct:
+        $3 = $$.name if $$.name != "output" else None
+        $4 = $$.relation_id
 
 what_if
     : "(" "what_if" name epoch ")"
       construct: $$ = transactions.WhatIf(branch=$3, epoch=$4)
-      deconstruct: $3 = $$.branch; $4 = $$.epoch
+      deconstruct:
+        $3 = $$.branch
+        $4 = $$.epoch
 
 abort
     : "(" "abort" name? relation_id ")"
       construct: $$ = transactions.Abort(name=builtin.unwrap_option_or($3, "abort"), relation_id=$4)
-      deconstruct: $3 = $$.name if $$.name != "abort" else None; $4 = $$.relation_id
+      deconstruct:
+        $3 = $$.name if $$.name != "abort" else None
+        $4 = $$.relation_id
 
 export
     : "(" "export" export_csv_config ")"
@@ -939,7 +1132,9 @@ export_csv_columns
 export_csv_column
     : "(" "column" STRING relation_id ")"
       construct: $$ = transactions.ExportCSVColumn(column_name=$3, column_data=$4)
-      deconstruct: $3 = $$.column_name; $4 = $$.column_data
+      deconstruct:
+        $3 = $$.column_name
+        $4 = $$.column_data
 
 
 %%

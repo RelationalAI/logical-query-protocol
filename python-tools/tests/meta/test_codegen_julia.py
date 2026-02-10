@@ -3,7 +3,7 @@
 
 from meta.target import (
     Var, Lit, Symbol, NamedFun, NewMessage, ListExpr, Call, Lambda, Let,
-    IfElse, Seq, While, Assign, Return, FunDef, VisitNonterminalDef,
+    IfElse, Seq, While, Assign, Return, FunDef, ParseNonterminalDef,
     BaseType, MessageType, ListType, OptionType, GetElement, FunctionType,
 )
 from meta.target_builtins import make_builtin
@@ -312,7 +312,7 @@ def test_julia_fun_def_generation():
 
 
 def test_julia_visit_nonterminal_def_generation():
-    """Test Julia VisitNonterminalDef code generation."""
+    """Test Julia ParseNonterminalDef code generation."""
     gen = JuliaCodeGenerator()
 
     # Create a nonterminal
@@ -320,8 +320,7 @@ def test_julia_visit_nonterminal_def_generation():
 
     # Simple parse method
     reset_gensym()
-    parse_def = VisitNonterminalDef(
-        visitor_name="parse",
+    parse_def = ParseNonterminalDef(
         nonterminal=nt,
         params=[],
         return_type=MessageType("logic", "Expr"),
@@ -334,8 +333,7 @@ def test_julia_visit_nonterminal_def_generation():
 
     # Parse method with parameters
     reset_gensym()
-    parse_def = VisitNonterminalDef(
-        visitor_name="parse",
+    parse_def = ParseNonterminalDef(
         nonterminal=nt,
         params=[Var("context", _str_type)],
         return_type=MessageType("logic", "Expr"),

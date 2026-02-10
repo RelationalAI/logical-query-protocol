@@ -11,7 +11,7 @@ from .codegen_templates import PYTHON_TEMPLATES
 from .gensym import gensym
 from .target import (
     TargetExpr, Var, Lit, Symbol, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
-    FunDef, VisitNonterminalDef
+    FunDef, ParseNonterminalDef, PrintNonterminalDef
 )
 
 
@@ -30,6 +30,7 @@ class PythonCodeGenerator(CodeGenerator):
 
     keywords = PYTHON_KEYWORDS
     indent_str = "    "
+    named_fun_class = "Parser"
 
     base_type_map = {
         'Int32': 'int',
@@ -103,7 +104,7 @@ class PythonCodeGenerator(CodeGenerator):
         return f"self.{name}"
 
     def gen_named_fun_ref(self, name: str) -> str:
-        return f"Parser.{name}"
+        return f"{self.named_fun_class}.{name}"
 
     def gen_parse_nonterminal_ref(self, name: str) -> str:
         return f"self.parse_{name}"
@@ -294,7 +295,7 @@ class PythonCodeGenerator(CodeGenerator):
         self._message_field_map = field_map
         return field_map
 
-    def _generate_parse_def(self, expr: VisitNonterminalDef, indent: str) -> str:
+    def _generate_parse_def(self, expr: ParseNonterminalDef, indent: str) -> str:
         """Generate a parse method definition."""
         func_name = f"parse_{expr.nonterminal.name}"
 
@@ -319,7 +320,7 @@ class PythonCodeGenerator(CodeGenerator):
 
         return f"{indent}def {func_name}(self{params_str}){ret_hint}:\n{body_code}"
 
-    def _generate_pretty_def(self, expr: VisitNonterminalDef, indent: str) -> str:
+    def _generate_pretty_def(self, expr: PrintNonterminalDef, indent: str) -> str:
         """Generate a pretty-print method definition."""
         func_name = f"pretty_{expr.nonterminal.name}"
 
@@ -356,9 +357,30 @@ class PythonCodeGenerator(CodeGenerator):
         return f"\nCommand: {command_line}\n"
 
     def generate_method_def(self, expr: FunDef, indent: str) -> str:
-        """Generate a function definition as a static method on Parser."""
-        result = self._generate_fun_def(expr, indent)
-        return f"{indent}@staticmethod\n{result}"
+        """Generate a function definition as an instance method."""
+        func_name = self.escape_identifier(expr.name)
+        params = []
+        for p in expr.params:
+            escaped_name = self.escape_identifier(p.name)
+            type_hint = self.gen_type(p.type)
+            params.append(f"{escaped_name}: {type_hint}")
+
+        params_str = ', '.join(params) if params else ''
+        if params_str:
+            params_str = ', ' + params_str
+
+        ret_hint = f" -> {self.gen_type(expr.return_type)}" if expr.return_type else ""
+
+        body_lines: List[str] = []
+        if expr.body is None:
+            body_lines.append(f"{indent}    pass")
+        else:
+            body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
+            if body_inner is not None:
+                body_lines.append(f"{indent}    return {body_inner}")
+        body_code = "\n".join(body_lines)
+
+        return f"{indent}def {func_name}(self{params_str}){ret_hint}:\n{body_code}"
 
 
 def escape_identifier(name: str) -> str:
@@ -395,7 +417,7 @@ def generate_python_lines(
 
 
 def generate_python_def(
-    expr: Union[FunDef, VisitNonterminalDef],
+    expr: Union[FunDef, ParseNonterminalDef, PrintNonterminalDef],
     indent: str = "",
     generator: Optional[PythonCodeGenerator] = None,
 ) -> str:
