@@ -12,6 +12,10 @@ Supported constructs:
 - List literals: [a, b, c]
 - Conditional expressions: x if cond else y
 - Tuple indexing: x[0]
+- Arithmetic operators: +, -, *, /, //, %
+- Comparison operators: ==, !=, <, >, <=, >=, is, is not, in, not in
+- Boolean operators: and, or, not
+- Unary minus: -x
 """
 
 import ast
@@ -20,12 +24,12 @@ from typing import Dict, List, Optional, Tuple, Set
 
 from .grammar import Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
 from .target import (
-    TargetType, BaseType, MessageType, EnumType, ListType, OptionType, TupleType, DictType, FunctionType,
+    TargetType, BaseType, MessageType, EnumType, ListType, OptionType, TupleType, DictType, FunctionType, VarType,
     TargetExpr, Var, Lit, NamedFun, NewMessage, EnumValue, Call, Lambda,
     Let, IfElse, Seq, ListExpr, GetElement, GetField, FunDef, OneOf, Assign, Return
 )
 from .target_builtins import make_builtin
-from .target_utils import type_join
+from .target_utils import type_join, is_subtype
 
 
 class YaccGrammarError(Exception):
@@ -206,14 +210,9 @@ def _unsupported_node_error(node: ast.AST, line: Optional[int], reason: str = ""
 
     # Map AST node types to user-friendly descriptions and suggestions
     node_explanations = {
-        'UnaryOp': "Unary operators (like -x, +x, ~x, not x) are not supported. "
-                   "Use builtin functions instead (e.g., 'subtract(0, x)' for negation).",
-        'BinOp': "Binary operators (+, -, *, /, etc.) are not supported. "
-                 "Use builtin functions instead (e.g., 'add(x, y)', 'multiply(x, y)').",
-        'BoolOp': "Boolean operators (and, or) are not supported directly. "
-                  "Use builtin functions instead (e.g., 'and(x, y)', 'or(x, y)').",
-        'Compare': "Comparison operators (==, !=, <, >, etc.) are not supported. "
-                   "Use builtin functions instead (e.g., 'equal(x, y)', 'less_than(x, y)').",
+        'UnaryOp': "Unsupported unary operator. "
+                   "Supported: not, unary minus (-x). "
+                   "Bitwise operators (~x, +x) are not supported.",
         'Lambda': "Python lambda expressions are not supported in actions. "
                   "Define named functions in the %functions section instead.",
         'Dict': "Dictionary literals are not supported. "
@@ -436,6 +435,14 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
                 return Call(make_builtin("equal"), [left, right])
             elif isinstance(op, ast.NotEq):
                 return Call(make_builtin("not_equal"), [left, right])
+            elif isinstance(op, ast.Lt):
+                return Call(make_builtin("less_than"), [left, right])
+            elif isinstance(op, ast.LtE):
+                return Call(make_builtin("less_equal"), [left, right])
+            elif isinstance(op, ast.Gt):
+                return Call(make_builtin("greater_than"), [left, right])
+            elif isinstance(op, ast.GtE):
+                return Call(make_builtin("greater_equal"), [left, right])
             elif isinstance(op, ast.In):
                 return Call(make_builtin("string_in_list"), [left, right])
             elif isinstance(op, ast.NotIn):
@@ -457,9 +464,26 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
             return result
         raise YaccGrammarError(f"Unsupported boolean operation", line)
 
+    elif isinstance(node, ast.BinOp):
+        left = convert(node.left)
+        right = convert(node.right)
+        if isinstance(node.op, ast.Add):
+            return Call(make_builtin("add"), [left, right])
+        elif isinstance(node.op, ast.Sub):
+            return Call(make_builtin("subtract"), [left, right])
+        elif isinstance(node.op, ast.Mult):
+            return Call(make_builtin("multiply"), [left, right])
+        elif isinstance(node.op, ast.Div) or isinstance(node.op, ast.FloorDiv):
+            return Call(make_builtin("divide"), [left, right])
+        elif isinstance(node.op, ast.Mod):
+            return Call(make_builtin("modulo"), [left, right])
+        raise YaccGrammarError(f"Unsupported binary operator: {type(node.op).__name__}", line)
+
     elif isinstance(node, ast.UnaryOp):
         if isinstance(node.op, ast.Not):
             return Call(make_builtin("not"), [convert(node.operand)])
+        elif isinstance(node.op, ast.USub):
+            return Call(make_builtin("subtract"), [Lit(0), convert(node.operand)])
         raise _unsupported_node_error(node, line)
 
     else:
@@ -613,6 +637,8 @@ def parse_deconstruct_action(text: str, lhs_type: TargetType, rhs: 'Rhs',
     # Extract assert conditions, side-effects, and $N assignments from the AST
     # assignments maps 1-indexed $N to the expression AST node
     assignments: Dict[int, ast.expr] = {}
+    # type_annotations maps 1-indexed $N to the declared TargetType (if any)
+    type_annotations: Dict[int, TargetType] = {}
     assert_conditions: List[ast.expr] = []
     side_effects: List[ast.expr] = []
     extra_vars: Dict[str, TargetType] = {"_dollar_dollar": lhs_type}
@@ -629,6 +655,13 @@ def parse_deconstruct_action(text: str, lhs_type: TargetType, rhs: 'Rhs',
             if isinstance(target, ast.Name) and target.id.startswith('_dollar_') and target.id[8:].isdigit():
                 dollar_idx = int(target.id[8:])  # 1-indexed
                 assignments[dollar_idx] = stmt.value
+                continue
+        if isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Name):
+            target = stmt.target
+            if target.id.startswith('_dollar_') and target.id[8:].isdigit() and stmt.value is not None:
+                dollar_idx = int(target.id[8:])  # 1-indexed
+                assignments[dollar_idx] = stmt.value
+                type_annotations[dollar_idx] = _annotation_to_type(stmt.annotation, line or 0)
                 continue
         raise YaccGrammarError(
             f"Deconstruct actions must be assert, side-effect expressions, "
@@ -650,6 +683,18 @@ def parse_deconstruct_action(text: str, lhs_type: TargetType, rhs: 'Rhs',
             f"{', '.join(f'${i}' for i in sorted(extra))}",
             line)
 
+    # Type-check annotations against the expected RHS element types
+    for idx, declared_type in type_annotations.items():
+        # idx is 1-indexed; rhs_param_info is 0-indexed
+        rhs_idx = idx - 1
+        if rhs_idx < len(rhs_param_info):
+            _, expected_type = rhs_param_info[rhs_idx]
+            if expected_type is not None and not is_subtype(declared_type, expected_type):
+                raise YaccGrammarError(
+                    f"Type annotation on ${idx} is {declared_type}, "
+                    f"but RHS element type is {expected_type}",
+                    line)
+
     # Convert each assignment's value expression to target IR
     param_info: List[Tuple[Optional[str], Optional[TargetType]]] = []
     empty_params: List[Var] = []
@@ -657,6 +702,28 @@ def parse_deconstruct_action(text: str, lhs_type: TargetType, rhs: 'Rhs',
     for idx in sorted(assignments.keys()):
         expr = _convert_node_with_vars(assignments[idx], param_info, empty_params, ctx, line, extra_vars)
         converted.append(expr)
+
+    # Type-check: inferred expression types must be compatible with declared types
+    unknown_type = BaseType("Unknown")
+    for i, idx in enumerate(sorted(assignments.keys())):
+        if idx in type_annotations:
+            declared_type = type_annotations[idx]
+            inferred_type = _infer_type(converted[i], line, ctx)
+            # Skip check when inferred type is Unknown or a type variable
+            if inferred_type == unknown_type or isinstance(inferred_type, VarType):
+                continue
+            # T <: Optional[T]: non-None means "present" for optional RHS elements
+            # Optional[T] <: T: None encodes match failure, handled by framework
+            compatible = (is_subtype(inferred_type, declared_type)
+                          or (isinstance(declared_type, OptionType)
+                              and is_subtype(inferred_type, declared_type.element_type))
+                          or (isinstance(inferred_type, OptionType)
+                              and is_subtype(inferred_type.element_type, declared_type)))
+            if not compatible:
+                raise YaccGrammarError(
+                    f"Type mismatch in deconstruct ${idx}: "
+                    f"declared {declared_type}, but expression has type {inferred_type}",
+                    line)
 
     # Convert side-effect expressions to target IR
     side_effect_exprs: List[TargetExpr] = []
@@ -1130,6 +1197,14 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
                 return Call(make_builtin("equal"), [left, right])
             elif isinstance(op, ast.NotEq):
                 return Call(make_builtin("not_equal"), [left, right])
+            elif isinstance(op, ast.Lt):
+                return Call(make_builtin("less_than"), [left, right])
+            elif isinstance(op, ast.LtE):
+                return Call(make_builtin("less_equal"), [left, right])
+            elif isinstance(op, ast.Gt):
+                return Call(make_builtin("greater_than"), [left, right])
+            elif isinstance(op, ast.GtE):
+                return Call(make_builtin("greater_equal"), [left, right])
             elif isinstance(op, ast.In):
                 return Call(make_builtin("string_in_list"), [left, right])
             elif isinstance(op, ast.NotIn):
@@ -1159,6 +1234,10 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
             return Call(make_builtin("subtract"), [left, right])
         elif isinstance(node.op, ast.Mult):
             return Call(make_builtin("multiply"), [left, right])
+        elif isinstance(node.op, ast.Div) or isinstance(node.op, ast.FloorDiv):
+            return Call(make_builtin("divide"), [left, right])
+        elif isinstance(node.op, ast.Mod):
+            return Call(make_builtin("modulo"), [left, right])
         raise YaccGrammarError(f"Unsupported binary operation: {type(node.op).__name__}", line)
 
     elif isinstance(node, ast.Tuple):
@@ -1168,6 +1247,8 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
     elif isinstance(node, ast.UnaryOp):
         if isinstance(node.op, ast.Not):
             return Call(make_builtin("not"), [_convert_func_expr(node.operand, ctx, line, local_vars)])
+        elif isinstance(node.op, ast.USub):
+            return Call(make_builtin("subtract"), [Lit(0), _convert_func_expr(node.operand, ctx, line, local_vars)])
         raise YaccGrammarError(f"Unsupported unary operation: {type(node.op).__name__}", line)
 
     elif isinstance(node, ast.Subscript):

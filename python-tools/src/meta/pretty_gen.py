@@ -102,9 +102,7 @@ def _generate_pretty_alternatives(rules: List[Rule], msg_param: Var,
     guarded_indices = [i for i in range(len(rules)) if i != fallback_idx]
     for i in reversed(guarded_indices):
         rule = rules[i]
-        if _is_nonterminal_ref(rule) and _has_guarded_deconstruct(rule.rhs, grammar):
-            result = _generate_nonterminal_ref_dispatch(rule, msg_param, grammar, proto_messages, result)
-        elif rule.deconstructor is not None and isinstance(rule.deconstructor.return_type, OptionType):
+        if rule.deconstructor is not None and isinstance(rule.deconstructor.return_type, OptionType):
             deconstruct_result_var = Var(gensym('deconstruct_result'), rule.deconstructor.return_type)
             deconstruct_call = Call(rule.deconstructor, [msg_param])
             pretty_body = _generate_pretty_from_fields(
@@ -118,6 +116,8 @@ def _generate_pretty_alternatives(rules: List[Rule], msg_param: Var,
                     result
                 )
             )
+        elif _is_nonterminal_ref(rule) and _has_guarded_deconstruct(rule.rhs, grammar):
+            result = _generate_nonterminal_ref_dispatch(rule, msg_param, grammar, proto_messages, result)
         else:
             # Unguarded non-fallback rule — treat as always matching at this position
             result = _generate_pretty_with_deconstruct(rule, msg_param, grammar, proto_messages)
@@ -281,6 +281,10 @@ def _generate_pretty_sequence_from_fields(rhs: Sequence, fields_var: Var,
     non_lit_count = sum(1 for e in elems if not isinstance(e, LitTerminal))
 
     for i, elem in enumerate(elems):
+        # In non-S-expression mode, add space between elements
+        if not is_sexp and stmts:
+            stmts.append(Call(make_builtin('write_io'), [Lit(' ')]))
+
         if isinstance(elem, LitTerminal):
             is_keyword = is_sexp and i == 1
             stmts.append(_format_literal(elem, is_sexp_keyword=is_keyword))
@@ -421,8 +425,12 @@ def _format_terminal(terminal: NamedTerminal, value_var: Var) -> TargetExpr:
         return Call(make_builtin('format_string'), [value_var])
     elif terminal.name in ['INT', 'NUMBER']:
         return Call(make_builtin('format_int64'), [value_var])
+    elif terminal.name == 'INT128':
+        return Call(make_builtin('format_int128'), [value_var])
     elif terminal.name == 'FLOAT':
         return Call(make_builtin('format_float64'), [value_var])
+    elif terminal.name == 'DECIMAL':
+        return Call(make_builtin('format_decimal'), [value_var])
     elif terminal.name == 'BOOL':
         return Call(make_builtin('format_bool'), [value_var])
     elif terminal.name == 'UINT128':

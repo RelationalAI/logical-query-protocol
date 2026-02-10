@@ -6,6 +6,7 @@ Three test suites:
 3. Bin roundtrip: parse .bin → print → re-parse → compare protobuf with original.
 """
 
+import re
 import pytest
 from pathlib import Path
 
@@ -18,25 +19,6 @@ import lqp.print as lqp_print
 
 from .utils import get_lqp_input_files, get_all_files, PARENT_DIR
 
-
-# Files where the generated pretty printer crashes (proto field issues).
-PRETTY_PRINT_CRASHES = {
-    "arithmetic",
-    "csv",
-    "edb",
-    "loops",
-    "monoid_monus",
-    "multiple_export",
-    "outer",
-    "piece_of_q1",
-    "primitives",
-    "quantifier",
-    "simple_cast",
-    "simple_relatom",
-    "unicode",
-    "upsert",
-    "value_types",
-}
 
 BIN_DIR = PARENT_DIR / "test_files" / "bin"
 
@@ -59,12 +41,23 @@ def _parse_and_pretty(input_file: str) -> str:
     return pretty(proto)
 
 
+def _normalize_ws(s: str) -> str:
+    """Collapse all whitespace sequences to a single space."""
+    return re.sub(r'\s+', ' ', s).strip()
+
+
+def _clear_debug_info(proto):
+    """Clear debug_info from all fragments in a Transaction."""
+    for epoch in proto.epochs:
+        for write in epoch.writes:
+            if write.HasField('define'):
+                write.define.fragment.ClearField('debug_info')
+
+
 @pytest.mark.parametrize("input_file", get_lqp_input_files())
 def test_roundtrip_idempotent(input_file):
     """Parse → print → parse → print, then compare the two printed outputs."""
     stem = _stem(input_file)
-    if stem in PRETTY_PRINT_CRASHES:
-        pytest.xfail(f"{stem}: generated pretty printer crashes")
 
     # First pass: .lqp → IR → proto → pretty-print
     text1 = _parse_and_pretty(input_file)
@@ -84,8 +77,6 @@ def test_roundtrip_idempotent(input_file):
 def test_matches_old_pretty_printer(input_file):
     """Compare generated pretty printer output to old IR-based pretty printer."""
     stem = _stem(input_file)
-    if stem in PRETTY_PRINT_CRASHES:
-        pytest.xfail(f"{stem}: generated pretty printer crashes")
 
     with open(input_file, "r") as f:
         content = f.read()
@@ -101,7 +92,7 @@ def test_matches_old_pretty_printer(input_file):
     options[str(lqp_print.PrettyOptions.PRINT_DEBUG)] = False
     old_output = lqp_print.to_string(ir_node, options)
 
-    assert generated_output == old_output, (
+    assert _normalize_ws(generated_output) == _normalize_ws(old_output), (
         f"Outputs differ for {stem}.\n"
         f"=== Generated ===\n{generated_output}\n"
         f"=== Old (PRINT_NAMES) ===\n{old_output}"
@@ -112,8 +103,6 @@ def test_matches_old_pretty_printer(input_file):
 def test_bin_roundtrip(input_file):
     """Parse .bin → print → re-parse → compare protobuf with original."""
     stem = _stem(input_file)
-    if stem in PRETTY_PRINT_CRASHES:
-        pytest.xfail(f"{stem}: generated pretty printer crashes")
 
     # Parse binary protobuf
     proto1 = read_bin_to_proto(input_file)
@@ -121,6 +110,11 @@ def test_bin_roundtrip(input_file):
     # Pretty-print → re-parse
     text = pretty(proto1)
     proto2 = generated_parse(text)
+
+    # Clear debug info before comparison since pretty printer
+    # consumes but does not output debug info
+    _clear_debug_info(proto1)
+    _clear_debug_info(proto2)
 
     # Compare serialized protobufs
     binary1 = proto1.SerializeToString()

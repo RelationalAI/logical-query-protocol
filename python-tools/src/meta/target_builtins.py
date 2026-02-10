@@ -152,7 +152,9 @@ register_builtin("fragment_id_from_string", [STRING], MessageType("fragments", "
 register_builtin("fragment_id_to_string", [MessageType("fragments", "FragmentId")], STRING)
 register_builtin("relation_id_from_string", [STRING], MessageType("logic", "RelationId"))
 register_builtin("relation_id_from_uint128", [MessageType("logic", "UInt128Value")], MessageType("logic", "RelationId"))
+register_builtin("relation_id_from_int", [INT64], MessageType("logic", "RelationId"))
 register_builtin("relation_id_to_string", [MessageType("logic", "RelationId")], STRING)
+register_builtin("relation_id_to_int", [MessageType("logic", "RelationId")], OptionType(INT64))
 register_builtin("relation_id_to_uint128", [MessageType("logic", "RelationId")], MessageType("logic", "UInt128Value"))
 register_builtin("construct_fragment",
                  [MessageType("fragments", "FragmentId"),

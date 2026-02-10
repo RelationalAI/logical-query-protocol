@@ -1,0 +1,126 @@
+"""
+Auto-generated pretty printer.
+
+Generated from protobuf specifications.
+Do not modify this file! If you need to modify the pretty printer, edit the generator code
+in `python-tools/src/meta` or edit the protobuf specification in `proto/v1`.
+
+{command_line_comment}"""
+
+from io import StringIO
+from typing import Any, IO, Never, Optional
+
+from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
+
+
+class ParseError(Exception):
+    pass
+
+
+class PrettyPrinter:
+    """Pretty printer for protobuf messages."""
+
+    def __init__(self, io: Optional[IO[str]] = None):
+        self.io = io if io is not None else StringIO()
+        self.indent_level = 0
+        self.at_line_start = True
+        self._debug_info: dict[tuple[int, int], str] = {{}}
+
+    def write(self, s: str) -> None:
+        """Write a string to the output, with indentation at line start."""
+        if self.at_line_start and s.strip():
+            self.io.write('  ' * self.indent_level)
+            self.at_line_start = False
+        self.io.write(s)
+
+    def newline(self) -> None:
+        """Write a newline to the output."""
+        self.io.write('\n')
+        self.at_line_start = True
+
+    def indent(self, delta: int = 1) -> None:
+        """Increase indentation level."""
+        self.indent_level += delta
+
+    def dedent(self, delta: int = 1) -> None:
+        """Decrease indentation level."""
+        self.indent_level = max(0, self.indent_level - delta)
+
+    def get_output(self) -> str:
+        """Get the accumulated output as a string."""
+        if isinstance(self.io, StringIO):
+            return self.io.getvalue()
+        return ""
+
+    def format_decimal(self, msg) -> str:
+        """Format a DecimalValue as '<digits>.<digits>d<precision>'."""
+        int_val = (msg.value.high << 64) | msg.value.low
+        if msg.value.high & (1 << 63):
+            int_val -= (1 << 128)
+        sign = ""
+        if int_val < 0:
+            sign = "-"
+            int_val = -int_val
+        digits = str(int_val)
+        scale = msg.scale
+        if scale <= 0:
+            decimal_str = digits + "." + "0" * (-scale)
+        elif scale >= len(digits):
+            decimal_str = "0." + "0" * (scale - len(digits)) + digits
+        else:
+            decimal_str = digits[:-scale] + "." + digits[-scale:]
+        return sign + decimal_str + "d" + str(msg.precision)
+
+    def format_int128(self, msg) -> str:
+        """Format an Int128Value protobuf message as a string with i128 suffix."""
+        value = (msg.high << 64) | msg.low
+        if msg.high & (1 << 63):
+            value -= (1 << 128)
+        return str(value) + "i128"
+
+    def format_uint128(self, msg) -> str:
+        """Format a UInt128Value protobuf message as a hex string."""
+        value = (msg.high << 64) | msg.low
+        return f"0x{{value:032x}}"
+
+    def fragment_id_to_string(self, msg) -> str:
+        """Convert FragmentId to string representation."""
+        return msg.id.decode('utf-8') if msg.id else ""
+
+    def start_pretty_fragment(self, msg) -> None:
+        """Extract debug info from Fragment for relation ID lookup."""
+        debug_info = msg.debug_info
+        for rid, name in zip(debug_info.ids, debug_info.orig_names):
+            self._debug_info[(rid.id_low, rid.id_high)] = name
+
+    def relation_id_to_string(self, msg):
+        """Convert RelationId to string representation using debug info."""
+        return self._debug_info.get((msg.id_low, msg.id_high))
+
+    def relation_id_to_int(self, msg):
+        """Convert RelationId to int if it fits in signed 64-bit range."""
+        value = (msg.id_high << 64) | msg.id_low
+        if value <= 0x7FFFFFFFFFFFFFFF:
+            return value
+        return None
+
+    def relation_id_to_uint128(self, msg):
+        """Convert RelationId to UInt128Value representation."""
+        return logic_pb2.UInt128Value(low=msg.id_low, high=msg.id_high)
+
+    def format_string_value(self, s: str) -> str:
+        """Format a string value with double quotes for LQP output."""
+        escaped = s.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t')
+        return '"' + escaped + '"'
+
+    # --- Helper functions ---
+{named_function_defns}
+
+    # --- Pretty-print methods ---
+{pretty_nonterminal_defns}
+
+def pretty(msg: Any, io: Optional[IO[str]] = None) -> str:
+    """Pretty print a protobuf message and return the string representation."""
+    printer = PrettyPrinter(io)
+    printer.pretty_{start_name}(msg)
+    return printer.get_output()
