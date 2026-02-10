@@ -5,12 +5,22 @@ Parallel to validator.py but operates on protobuf messages (transactions_pb2.Tra
 rather than IR dataclasses (ir.Transaction). Reuses ValidationError from validator.py.
 """
 
-from typing import Any, Dict, List, Set, Optional, Tuple
+from typing import Any, Dict, List, Set, Optional, Tuple, Union, cast
 from google.protobuf.message import Message
 from google.protobuf.descriptor import FieldDescriptor
 
 from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
 from lqp.validator import ValidationError
+
+# Proto instruction types that have `name: RelationId` and `body: Abstraction`.
+_InstructionLike = Union[
+    logic_pb2.Def,
+    logic_pb2.Assign,
+    logic_pb2.Upsert,
+    logic_pb2.Break,
+    logic_pb2.MonoidDef,
+    logic_pb2.MonusDef,
+]
 
 
 # --- Helpers ---
@@ -218,7 +228,7 @@ class ProtoVisitor:
         # Unwrap oneof wrappers
         unwrapper = _WRAPPER_TYPES.get(type_name)
         if unwrapper is not None:
-            inner = unwrapper(node)
+            inner = unwrapper(cast(Any, node))
             if inner is not None:
                 self.visit(inner, *args)
             return
@@ -226,7 +236,9 @@ class ProtoVisitor:
         return self._resolve_visitor(type_name)(node, *args)
 
     def generic_visit(self, node: Message, *args: Any) -> None:
-        for field_desc in node.DESCRIPTOR.fields:
+        descriptor = node.DESCRIPTOR
+        assert descriptor is not None
+        for field_desc in descriptor.fields:
             value = getattr(node, field_desc.name)
             if field_desc.label == FieldDescriptor.LABEL_REPEATED:
                 for item in value:
@@ -378,7 +390,7 @@ class AtomTypeChecker(ProtoVisitor):
                     if inner is not None:
                         inner_name = type(inner).__name__
                         if inner_name == "Instruction":
-                            instr = unwrap_instruction(inner)
+                            instr = unwrap_instruction(cast(logic_pb2.Instruction, inner))
                             if instr is not None:
                                 self.atoms.append((type(instr).__name__, instr))
                         elif inner_name in ("Assign", "Upsert", "Break", "MonoidDef", "MonusDef"):
@@ -438,7 +450,7 @@ class AtomTypeChecker(ProtoVisitor):
                 continue
             inner_name = type(inner).__name__
             if inner_name == "Instruction":
-                actual_instr = unwrap_instruction(inner)
+                actual_instr = cast(_InstructionLike, unwrap_instruction(cast(logic_pb2.Instruction, inner)))
                 if actual_instr is not None:
                     key = relation_id_key(actual_instr.name)
                     sig = [get_type_name(b.type) for b in actual_instr.body.vars]
@@ -448,8 +460,9 @@ class AtomTypeChecker(ProtoVisitor):
                     )
                     self.visit(actual_instr, new_state)
             elif inner_name in ("Assign", "Upsert", "Break", "MonoidDef", "MonusDef"):
-                key = relation_id_key(inner.name)
-                sig = [get_type_name(b.type) for b in inner.body.vars]
+                typed_inner = cast(_InstructionLike, inner)
+                key = relation_id_key(typed_inner.name)
+                sig = [get_type_name(b.type) for b in typed_inner.body.vars]
                 new_state = AtomTypeChecker.State(
                     {key: sig, **state.relation_types},
                     state.var_types,
@@ -524,8 +537,8 @@ class LoopyBadGlobalFinder(ProtoVisitor):
                 continue
             inner_name = type(inner).__name__
             if inner_name == "Instruction":
-                actual = unwrap_instruction(inner)
-                if actual is not None and hasattr(actual, "name"):
+                actual = cast(_InstructionLike, unwrap_instruction(cast(logic_pb2.Instruction, inner)))
+                if actual is not None:
                     self.init.add(relation_id_key(actual.name))
             elif inner_name == "Loop":
                 self.visit(inner)
@@ -533,8 +546,8 @@ class LoopyBadGlobalFinder(ProtoVisitor):
 
     def visit_Loop(self, node: logic_pb2.Loop, *args: Any):
         for instr_wrapper in node.init:
-            instr = unwrap_instruction(instr_wrapper)
-            if instr is not None and hasattr(instr, "name"):
+            instr = cast(_InstructionLike, unwrap_instruction(instr_wrapper))
+            if instr is not None:
                 self.init.add(relation_id_key(instr.name))
         for construct in node.body.constructs:
             inner = unwrap_construct(construct)
@@ -542,8 +555,8 @@ class LoopyBadGlobalFinder(ProtoVisitor):
                 continue
             inner_name = type(inner).__name__
             if inner_name == "Instruction":
-                actual = unwrap_instruction(inner)
-                if actual is not None and hasattr(actual, "name"):
+                actual = cast(_InstructionLike, unwrap_instruction(cast(logic_pb2.Instruction, inner)))
+                if actual is not None:
                     key = relation_id_key(actual.name)
                     if key in self.globals and key not in self.init:
                         original_name = self.get_original_name(actual.name)
@@ -607,8 +620,8 @@ class CSVConfigChecker(ProtoVisitor):
                 f"CSV compression should be one of {valid_compressions}, got '{node.compression}'"
             )
 
-        column_0_key_types = None
-        column_0_name = None
+        column_0_key_types: Optional[List[str]] = None
+        column_0_name: Optional[str] = None
         for column in node.data_columns:
             key = relation_id_key(column.column_data)
             if key not in self.relation_types:
