@@ -3,19 +3,17 @@
 
 import sys
 from pathlib import Path
-from typing import cast
 
-import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from meta.grammar import (
-    LitTerminal, NamedTerminal, Nonterminal, Terminal,
+    LitTerminal, NamedTerminal, Nonterminal,
     Star, Option, Sequence,
     Rule, Grammar, make_rule,
 )
 from meta.grammar_analysis import GrammarAnalysis
-from meta.target import BaseType, MessageType, Lambda, Var, OptionType, TupleType, Lit, Call
+from meta.target import BaseType, MessageType, Lambda, Var, OptionType, Call
 from meta.target_builtins import make_builtin
 
 

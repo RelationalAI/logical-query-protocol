@@ -470,13 +470,13 @@ def parse_rules(lines: List[str], start_line: int, ctx: TypeContext) -> Tuple[Li
             flush_alternative()
 
             if current_lhs is None:
-                raise YaccGrammarError(f"Rule continuation without rule name", line_num)
+                raise YaccGrammarError("Rule continuation without rule name", line_num)
 
             rest = stripped[1:].strip()
             if rest:
                 # Check if this line incorrectly contains 'construct:' inline
                 if ' construct:' in rest or rest.endswith(' construct'):
-                    raise YaccGrammarError(f"'construct:' must be on a separate line from the RHS", line_num)
+                    raise YaccGrammarError("'construct:' must be on a separate line from the RHS", line_num)
                 current_rhs_lines = [rest]
                 current_alt_start_line = line_num
 
@@ -723,7 +723,7 @@ def load_yacc_grammar(
     # Check for tabs - they are not allowed
     for line_num, line in enumerate(lines, 1):
         if '\t' in line:
-            raise YaccGrammarError(f"Tabs are not allowed in grammar files. Semantic actions are sensitive to indentation.", line_num)
+            raise YaccGrammarError("Tabs are not allowed in grammar files. Semantic actions are sensitive to indentation.", line_num)
 
     # Parse directives
     ctx, ignored_completeness, rules_start = parse_directives(lines)

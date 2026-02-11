@@ -24,7 +24,7 @@ from typing import Dict, List, Optional, Tuple, Set
 
 from .grammar import Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
 from .target import (
-    TargetType, BaseType, MessageType, EnumType, ListType, OptionType, TupleType, DictType, FunctionType,
+    TargetType, BaseType, MessageType, ListType, OptionType, TupleType, DictType, FunctionType,
     TargetExpr, Var, Lit, NamedFun, NewMessage, EnumValue, Call, Lambda,
     Let, IfElse, Seq, ListExpr, GetElement, GetField, FunDef, OneOf, Assign, Return
 )
@@ -312,8 +312,8 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
         if isinstance(node.slice, ast.Constant) and isinstance(node.slice.value, int):
             return GetElement(value, node.slice.value)
         raise YaccGrammarError(
-            f"Subscript must use integer literal index (e.g., x[0], x[1]).\n"
-            f"  Dynamic indexing and slices are not supported.",
+            "Subscript must use integer literal index (e.g., x[0], x[1]).\n"
+            "  Dynamic indexing and slices are not supported.",
             line)
 
     elif isinstance(node, ast.Attribute):
@@ -355,8 +355,8 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
             for kw in node.keywords:
                 if kw.arg is None:
                     raise YaccGrammarError(
-                        f"**kwargs syntax is not supported in message constructors.\n"
-                        f"  Use explicit keyword arguments: module.Msg(field1=val1, field2=val2)",
+                        "**kwargs syntax is not supported in message constructors.\n"
+                        "  Use explicit keyword arguments: module.Msg(field1=val1, field2=val2)",
                         line)
                 field_name = kw.arg
                 # Restore original field name if it was escaped
@@ -955,10 +955,10 @@ def _convert_stmt(stmt: ast.stmt, ctx: 'TypeContext', line: int,
         # Simple assignment without type annotation: x = expr
         # Only allowed if re-assigning to an already-declared variable
         if len(stmt.targets) != 1:
-            raise YaccGrammarError(f"Multiple assignment targets not supported", line)
+            raise YaccGrammarError("Multiple assignment targets not supported", line)
         target = stmt.targets[0]
         if not isinstance(target, ast.Name):
-            raise YaccGrammarError(f"Only simple variable assignment supported", line)
+            raise YaccGrammarError("Only simple variable assignment supported", line)
         var_name = target.id
         if var_name not in local_vars:
             raise YaccGrammarError(
@@ -973,7 +973,7 @@ def _convert_stmt(stmt: ast.stmt, ctx: 'TypeContext', line: int,
     elif isinstance(stmt, ast.AnnAssign):
         # Annotated assignment: x: Type = expr
         if not isinstance(stmt.target, ast.Name):
-            raise YaccGrammarError(f"Only simple variable assignment supported", line)
+            raise YaccGrammarError("Only simple variable assignment supported", line)
         var_name = stmt.target.id
         var_type = _annotation_to_type(stmt.annotation, line)
         local_vars[var_name] = var_type
@@ -1104,7 +1104,7 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
                 fields = []
                 for kw in node.keywords:
                     if kw.arg is None:
-                        raise YaccGrammarError(f"**kwargs not supported", line)
+                        raise YaccGrammarError("**kwargs not supported", line)
                     field_expr = _convert_func_expr(kw.value, ctx, line, local_vars)
                     fields.append((kw.arg, field_expr))
                 return NewMessage(obj_name, method_name, tuple(fields))
@@ -1116,7 +1116,7 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
             if func_name == 'dict':
                 if len(args) == 1:
                     return Call(make_builtin('dict_from_list'), args)
-                raise YaccGrammarError(f"dict() requires exactly one argument", line)
+                raise YaccGrammarError("dict() requires exactly one argument", line)
             # User-defined functions take precedence over builtins
             if func_name in ctx.functions:
                 return Call(_make_named_fun(func_name, ctx.functions[func_name]), args)
@@ -1207,7 +1207,7 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
             for val in node.values[1:]:
                 result = Call(make_builtin("or"), [result, _convert_func_expr(val, ctx, line, local_vars)])
             return result
-        raise YaccGrammarError(f"Unsupported boolean operation", line)
+        raise YaccGrammarError("Unsupported boolean operation", line)
 
     elif isinstance(node, ast.BinOp):
         left = _convert_func_expr(node.left, ctx, line, local_vars)
@@ -1239,7 +1239,7 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
         value = _convert_func_expr(node.value, ctx, line, local_vars)
         if isinstance(node.slice, ast.Constant) and isinstance(node.slice.value, int):
             return GetElement(value, node.slice.value)
-        raise YaccGrammarError(f"Only constant integer subscripts supported", line)
+        raise YaccGrammarError("Only constant integer subscripts supported", line)
 
     else:
         raise YaccGrammarError(f"Unsupported expression type: {type(node).__name__}: {ast.dump(node)}", line)
@@ -1287,7 +1287,7 @@ def _annotation_to_type(node: ast.AST, line: int) -> TargetType:
                     key_type = _annotation_to_type(node.slice.elts[0], line)
                     value_type = _annotation_to_type(node.slice.elts[1], line)
                     return DictType(key_type, value_type)
-                raise YaccGrammarError(f"dict type requires exactly 2 type arguments", line)
+                raise YaccGrammarError("dict type requires exactly 2 type arguments", line)
         raise YaccGrammarError(f"Invalid type annotation: {ast.dump(node)}", line)
     else:
         raise YaccGrammarError(f"Invalid type annotation: {ast.dump(node)}", line)
@@ -1295,9 +1295,9 @@ def _annotation_to_type(node: ast.AST, line: int) -> TargetType:
 
 # TypeContext is defined here to avoid circular imports, but it's also
 # re-exported from yacc_parser for convenience.
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field  # noqa: E402
 
-from typing import Callable
+from typing import Callable  # noqa: E402
 
 @dataclass
 class TypeContext:

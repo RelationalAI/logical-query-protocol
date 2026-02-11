@@ -3,7 +3,7 @@ import re
 import pytest
 from pathlib import Path
 
-from lqp.generated_parser import parse
+from lqp.gen.parser import parse
 from lqp.parser import parse_lqp
 from lqp.validator import ValidationError, validate_lqp
 from lqp.proto_validator import validate_proto

@@ -1,4 +1,3 @@
-import pytest
 
 from lqp import ir, emit
 from lqp import print as lqp_print

@@ -8,14 +8,13 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 
 # Import action AST types
-from .target import TargetExpr, Call, Lambda, TargetType, ListType, OptionType, TupleType, FunDef
+from .target import Lambda, TargetType, ListType, OptionType, TupleType, FunDef
 
 # Use TYPE_CHECKING to avoid circular import: GrammarAnalysis imports Grammar,
 # but we need GrammarAnalysis type hints here. These imports only exist during
 # type checking, not at runtime.
 if TYPE_CHECKING:
     from .grammar_analysis import GrammarAnalysis
-    from .grammar_utils import count_nonliteral_rhs_elements
 
 
 # Grammar RHS (right-hand side) elements
@@ -462,7 +461,7 @@ class GrammarConfig:
 # Helper functions
 
 # Import traversal utilities here to avoid circular imports
-from .grammar_utils import get_nonterminals, get_literals, collect  # noqa: E402
+from .grammar_utils import collect  # noqa: E402
 
 
 def is_epsilon(rhs: Rhs) -> bool:

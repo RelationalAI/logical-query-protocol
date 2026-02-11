@@ -4,10 +4,10 @@ This module provides functions for analyzing grammars including reachability,
 nullable computation, FIRST/FOLLOW sets, and LL(k) checking.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from functools import cached_property
 from typing import Dict, Iterable, List, Mapping, Optional, Set, Tuple
-from .grammar import Grammar, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence, Terminal
+from .grammar import Grammar, Rhs, NamedTerminal, Nonterminal, Star, Option, Sequence, Terminal
 from .target import BaseType
 from .grammar_utils import get_nonterminals
 

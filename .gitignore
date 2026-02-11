@@ -9,7 +9,7 @@ python-tools/out/
 python-tools/.lsp/.cache
 
 # Proto generated files
-gen
+./gen
 
 .envrc
 .venv

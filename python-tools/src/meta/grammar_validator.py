@@ -26,8 +26,8 @@ from .grammar import Grammar, Rule, Nonterminal, Rhs, LitTerminal, NamedTerminal
 from .proto_parser import ProtoParser
 from .proto_ast import ProtoMessage, ProtoField
 from .target import (
-    TargetType, TargetExpr, Call, NewMessage, Builtin, Var, IfElse, Let, Seq, ListExpr, GetField,
-    GetElement, BaseType, VarType, MessageType, ListType, OptionType, TupleType, FunctionType, Lambda, OneOf, Lit
+    TargetType, TargetExpr, Call, NewMessage, Builtin, IfElse, Let, Seq, ListExpr, GetField,
+    GetElement, BaseType, VarType, MessageType, ListType, OptionType, TupleType, Lambda, OneOf
 )
 from .type_env import TypeEnv
 from .validation_result import ValidationResult

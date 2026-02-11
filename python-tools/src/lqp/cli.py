@@ -23,7 +23,7 @@ def parse_lqp_to_proto(filename, use_generated=False, validate=True):
         lqp_text = f.read()
 
     if use_generated:
-        from lqp.generated_parser import parse
+        from lqp.gen.parser import parse
         from lqp.proto_validator import validate_proto
         lqp_proto = parse(lqp_text)
         if validate:
