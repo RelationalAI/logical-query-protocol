@@ -15,7 +15,7 @@ VALIDATOR_DIR = Path(__file__).parent / "validator"
 
 def strip_source_location(error_str: str) -> str:
     """Remove 'at <file>:<line>:<col>' from an error string."""
-    return re.sub(r'\s+at\s+\S+:\d+:\d+', '', error_str)
+    return re.sub(r'\s+at\s+\S+:\d+:\d+\s*:?\s*', ' ', error_str).strip()
 
 
 def extract_expected_error(file_path):
@@ -37,7 +37,7 @@ def test_validate_proto_lqp_inputs(input_file):
 
 @pytest.mark.parametrize(
     "validator_file",
-    [f for f in os.listdir(VALIDATOR_DIR) if f.startswith("valid_")],
+    sorted(f for f in os.listdir(VALIDATOR_DIR) if f.startswith("valid_")),
 )
 def test_valid_proto_validator_files(validator_file):
     file_path = VALIDATOR_DIR / validator_file
@@ -49,7 +49,7 @@ def test_valid_proto_validator_files(validator_file):
 
 @pytest.mark.parametrize(
     "validator_file",
-    [f for f in os.listdir(VALIDATOR_DIR) if f.startswith("fail_")],
+    sorted(f for f in os.listdir(VALIDATOR_DIR) if f.startswith("fail_")),
 )
 def test_proto_validator_failure_files(validator_file):
     file_path = VALIDATOR_DIR / validator_file
@@ -71,7 +71,7 @@ def test_proto_validator_failure_files(validator_file):
 
 @pytest.mark.parametrize(
     "validator_file",
-    [f for f in os.listdir(VALIDATOR_DIR) if f.startswith("fail_")],
+    sorted(f for f in os.listdir(VALIDATOR_DIR) if f.startswith("fail_")),
 )
 def test_proto_validator_matches_ir_validator(validator_file):
     """Both validators should raise ValidationError with matching messages."""

@@ -339,6 +339,7 @@ class DuplicateRelationIdFinder(ProtoVisitor):
         self.generic_visit(node, *args)
 
     def visit_Algorithm(self, node: logic_pb2.Algorithm, *args: Any):
+        # `global` is a Python keyword, so we use getattr.
         for rid in getattr(node, "global"):
             key = relation_id_key(rid)
             if key in self.seen_ids:
@@ -455,7 +456,7 @@ class AtomTypeChecker(ProtoVisitor):
                     key = relation_id_key(actual_instr.name)
                     sig = [get_type_name(b.type) for b in actual_instr.body.vars]
                     new_state = AtomTypeChecker.State(
-                        {**state.relation_types, key: sig},
+                        {key: sig, **state.relation_types},
                         state.var_types,
                     )
                     self.visit(actual_instr, new_state)
@@ -464,7 +465,7 @@ class AtomTypeChecker(ProtoVisitor):
                 key = relation_id_key(typed_inner.name)
                 sig = [get_type_name(b.type) for b in typed_inner.body.vars]
                 new_state = AtomTypeChecker.State(
-                    {**state.relation_types, key: sig},
+                    {key: sig, **state.relation_types},
                     state.var_types,
                 )
                 self.visit(inner, new_state)
@@ -671,7 +672,7 @@ class FDVarsChecker(ProtoVisitor):
 
 # --- Entry point ---
 
-def validate_proto(txn: transactions_pb2.Transaction):
+def validate_proto(txn: transactions_pb2.Transaction) -> None:
     """Validate a protobuf Transaction message."""
     ShadowedVariableFinder(txn)
     UnusedVariableVisitor(txn)
