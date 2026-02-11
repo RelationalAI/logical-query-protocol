@@ -48,6 +48,7 @@ message Write {
     Define define = 1;
     Undefine undefine = 2;
     Context context = 3;
+    Snapshot snapshot = 4;
   }
 }
 
@@ -61,6 +62,11 @@ message Undefine {
 
 message Context {
   repeated RelationId relations = 1;
+}
+
+message Snapshot {
+  repeated string destination_path = 1;
+  RelationId source_relation = 2;
 }
 
 //
