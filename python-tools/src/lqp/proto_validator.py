@@ -529,7 +529,13 @@ class LoopyBadGlobalFinder(ProtoVisitor):
         self.init: Set[Tuple[int, int]] = set()
         self.visit(txn)
 
+    # Instruction types that count as "init" declarations in Algorithm.body.
+    _ALGORITHM_INIT_TYPES = {"Assign", "Upsert", "MonoidDef", "MonusDef"}
+    # Instruction types checked in Loop init and body, matching the IR validator.
+    _LOOP_INSTR_TYPES = {"Break", "Assign", "Upsert"}
+
     def visit_Algorithm(self, node: logic_pb2.Algorithm, *args: Any):
+        # `global` is a Python keyword, so we use getattr.
         for rid in getattr(node, "global"):
             self.globals.add(relation_id_key(rid))
         for construct in node.body.constructs:
@@ -539,7 +545,7 @@ class LoopyBadGlobalFinder(ProtoVisitor):
             inner_name = type(inner).__name__
             if inner_name == "Instruction":
                 actual = cast(_InstructionLike, unwrap_instruction(cast(logic_pb2.Instruction, inner)))
-                if actual is not None:
+                if actual is not None and type(actual).__name__ in self._ALGORITHM_INIT_TYPES:
                     self.init.add(relation_id_key(actual.name))
             elif inner_name == "Loop":
                 self.visit(inner)
@@ -548,7 +554,7 @@ class LoopyBadGlobalFinder(ProtoVisitor):
     def visit_Loop(self, node: logic_pb2.Loop, *args: Any):
         for instr_wrapper in node.init:
             instr = cast(_InstructionLike, unwrap_instruction(instr_wrapper))
-            if instr is not None:
+            if instr is not None and type(instr).__name__ in self._LOOP_INSTR_TYPES:
                 self.init.add(relation_id_key(instr.name))
         for construct in node.body.constructs:
             inner = unwrap_construct(construct)
@@ -557,7 +563,7 @@ class LoopyBadGlobalFinder(ProtoVisitor):
             inner_name = type(inner).__name__
             if inner_name == "Instruction":
                 actual = cast(_InstructionLike, unwrap_instruction(cast(logic_pb2.Instruction, inner)))
-                if actual is not None:
+                if actual is not None and type(actual).__name__ in self._LOOP_INSTR_TYPES:
                     key = relation_id_key(actual.name)
                     if key in self.globals and key not in self.init:
                         original_name = self.get_original_name(actual.name)

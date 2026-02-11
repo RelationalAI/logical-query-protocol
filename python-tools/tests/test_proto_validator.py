@@ -15,7 +15,7 @@ VALIDATOR_DIR = Path(__file__).parent / "validator"
 
 def strip_source_location(error_str: str) -> str:
     """Remove 'at <file>:<line>:<col>' from an error string."""
-    return re.sub(r'\s+at\s+\S+:\d+:\d+\s*:?\s*', ' ', error_str).strip()
+    return re.sub(r'\s+at\s+\S+:\d+:\d+', '', error_str)
 
 
 def extract_expected_error(file_path):
