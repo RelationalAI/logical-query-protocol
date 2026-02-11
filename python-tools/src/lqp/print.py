@@ -684,6 +684,33 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
         lqp += config_dict_to_str(config_dict, indent_level + 1, options) #type: ignore
         lqp += f"{conf.RPAREN()}"
 
+    elif isinstance(node, ir.ExportCSVTableConfig):
+        def line(kw: str, body: str) -> str:
+            return f"{ind}{conf.SIND()}{conf.LPAREN()}{conf.kw(kw)} {body}{conf.RPAREN()}"
+
+        def line_conf_f(kw: str, field: Union[int, str]) -> str:
+            return line(kw, to_str(field, 0, options, debug_info))
+
+        lqp += f"{ind}{conf.LPAREN()}{conf.kw('export_csv_table_config')}\n"
+
+        if has_option(options, PrettyOptions.PRINT_CSV_FILENAME):
+            lqp += line_conf_f('path', node.path) + "\n"
+        else:
+            lqp += line_conf_f('path', '<hidden filename>') + "\n"
+        lqp += line('export_def', to_str(node.table_def, 0, options, debug_info)) + "\n"
+
+        config_dict: dict[str, Any] = {}
+        config_dict['partition_size'] = node.partition_size if node.partition_size is not None else 0
+        config_dict['compression'] = node.compression if node.compression is not None else "" #type: ignore
+        config_dict['syntax_header_row'] = node.syntax_header_row if node.syntax_header_row is not None else 1
+        config_dict['syntax_missing_string'] = node.syntax_missing_string if node.syntax_missing_string is not None else "" #type: ignore
+        config_dict['syntax_delim'] = node.syntax_delim if node.syntax_delim is not None else "," #type: ignore
+        config_dict['syntax_quotechar'] = node.syntax_quotechar if node.syntax_quotechar is not None else '"' #type: ignore
+        config_dict['syntax_escapechar'] = node.syntax_escapechar if node.syntax_escapechar is not None else '\\' #type: ignore
+
+        lqp += config_dict_to_str(config_dict, indent_level + 1, options) #type: ignore
+        lqp += f"{conf.RPAREN()}"
+
     elif isinstance(node, ir.ExportCSVColumn):
         lqp += f"{ind}{conf.LPAREN()}{conf.kw('column')} {to_str(node.column_name, 0, options, debug_info)} {to_str(node.column_data, 0, options, debug_info)}{conf.RPAREN()}"
 

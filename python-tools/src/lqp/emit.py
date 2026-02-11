@@ -474,11 +474,29 @@ def convert_output(o: ir.Output) -> transactions_pb2.Output:
     return transactions_pb2.Output(**kwargs) # type: ignore
 
 def convert_export(e: ir.Export) -> transactions_pb2.Export:
-    return transactions_pb2.Export(csv_config=convert_export_config(e.config)) # type: ignore
+    if isinstance(e.config, ir.ExportCSVConfig):
+        return transactions_pb2.Export(csv_config=convert_export_config(e.config)) # type: ignore
+    elif isinstance(e.config, ir.ExportCSVTableConfig):
+        return transactions_pb2.Export(csv_table_config=convert_export_table_config(e.config)) # type: ignore
+    else:
+        raise ValueError(f"Unknown export config type: {type(e.config)}")
 
 def convert_export_config(ec: ir.ExportCSVConfig) -> transactions_pb2.ExportCSVConfig:
     return transactions_pb2.ExportCSVConfig(
         data_columns=[convert_export_csv_column(c) for c in ec.data_columns],
+        path=ec.path,
+        partition_size=ec.partition_size if ec.partition_size is not None else 0,
+        compression=ec.compression if ec.compression is not None else "",
+        syntax_header_row=ec.syntax_header_row if ec.syntax_header_row is not None else True, # type: ignore
+        syntax_missing_string=ec.syntax_missing_string if ec.syntax_missing_string is not None else "",
+        syntax_delim=ec.syntax_delim if ec.syntax_delim is not None else ",",
+        syntax_quotechar=ec.syntax_quotechar if ec.syntax_quotechar is not None else '"',
+        syntax_escapechar=ec.syntax_escapechar if ec.syntax_escapechar is not None else '\\'
+    )
+
+def convert_export_table_config(ec: ir.ExportCSVTableConfig) -> transactions_pb2.ExportCSVTableConfig:
+    return transactions_pb2.ExportCSVTableConfig(
+        table_def=convert_relation_id(ec.table_def),
         path=ec.path,
         partition_size=ec.partition_size if ec.partition_size is not None else 0,
         compression=ec.compression if ec.compression is not None else "",

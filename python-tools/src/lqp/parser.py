@@ -31,14 +31,16 @@ context: "(context" relation_id* ")"
 read: demand | output | export | abort
 demand: "(demand" relation_id ")"
 output: "(output" name? relation_id ")"
-export: "(export" export_csv_config ")"
+export: "(export" (export_csv_config | export_csv_table_config) ")"
 abort: "(abort" name? relation_id ")"
 
 export_csv_config: "(export_csv_config" export_path export_columns config_dict ")"
+export_csv_table_config: "(export_csv_table_config" export_path export_table_def config_dict ")"
 
 export_columns: "(columns" export_column* ")"
 export_column: "(column" STRING relation_id ")"
 export_path: "(path" STRING ")"
+export_table_def: "(export_def" relation_id ")"
 
 fragment: "(fragment" fragment_id declaration* ")"
 
@@ -298,6 +300,22 @@ class LQPTransformer(Transformer):
             meta=self.meta(meta)
         )
 
+    def export_csv_table_config(self, meta, items):
+        assert len(items) >= 2, "Export CSV table config must have at least table_def and path"
+
+        export_fields = {}
+        for i in items[2:]:
+            assert isinstance(i, dict)
+            for k, v in i.items():
+                export_fields[k] = v.value
+
+        return ir.ExportCSVTableConfig(
+            path=items[0],
+            table_def=items[1],
+            **export_fields,
+            meta=self.meta(meta)
+        )
+
     def export_columns(self, meta, items):
         # items is a list of ExportCSVColumn objects
         return items
@@ -310,6 +328,9 @@ class LQPTransformer(Transformer):
         )
 
     def export_path(self, meta, items):
+        return items[0]
+
+    def export_table_def(self, meta, items):
         return items[0]
 
     def abort(self, meta, items):
