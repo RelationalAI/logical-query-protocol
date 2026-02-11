@@ -521,7 +521,7 @@ def test_python_helper_function_calling_another():
     )
     code = gen.generate_def(func)
     assert "def wrapper(x: int) -> int:" in code
-    assert "Parser.helper(x)" in code
+    assert "self.helper(x)" in code
 
 
 def test_python_and_short_circuit_with_side_effects():
