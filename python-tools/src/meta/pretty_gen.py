@@ -321,7 +321,7 @@ def _generate_pretty_sequence_from_fields(rhs: Sequence, fields_var: Var,
             # For sexp closing paren, emit dedent if we indented
             if is_sexp and elem.name == ')' and non_lit_count > 0:
                 stmts.append(Call(make_builtin('dedent_io'), []))
-            stmts.append(_format_literal(elem, is_sexp_keyword=is_keyword))
+            stmts.append(_format_literal(elem))
             # After sexp keyword, emit indent (always, not conditional on Option)
             if is_keyword and non_lit_count > 0:
                 stmts.append(Call(make_builtin('indent_io'), []))
@@ -461,20 +461,9 @@ def _generate_pretty_star_from_field(rhs: Star, field_var: Var,
     return loop_body
 
 
-def _format_literal(lit: LitTerminal, is_sexp_keyword: bool = False) -> TargetExpr:
-    """Format a literal terminal for output.
-
-    is_sexp_keyword: True if this literal is the keyword in an S-expression
-    (i.e., appears at position 1 in a "(keyword ...)" sequence).
-    """
-    if lit.name == '(':
-        return Call(make_builtin('write_io'), [Lit('(')])
-    elif lit.name == ')':
-        return Call(make_builtin('write_io'), [Lit(')')])
-    elif is_sexp_keyword:
-        return Call(make_builtin('write_io'), [Lit(lit.name)])
-    else:
-        return Call(make_builtin('write_io'), [Lit(lit.name)])
+def _format_literal(lit: LitTerminal) -> TargetExpr:
+    """Format a literal terminal for output."""
+    return Call(make_builtin('write_io'), [Lit(lit.name)])
 
 
 def _format_terminal(terminal: NamedTerminal, value_var: Var) -> TargetExpr:
@@ -515,12 +504,6 @@ def _is_trivial_deconstruct(deconstructor: Lambda) -> bool:
 
 def _extract_trivial_deconstruct_result(deconstructor: Lambda, msg_param: Var) -> TargetExpr:
     """Extract the result expression from a trivial deconstructor."""
-    body = deconstructor.body
-    if isinstance(body, Var) and body.name == 'msg':
-        return msg_param
-    if (isinstance(body, Call) and isinstance(body.func, Builtin) and
-            body.func.name == 'some' and len(body.args) == 1):
-        return msg_param
     return msg_param
 
 

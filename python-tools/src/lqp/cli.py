@@ -181,8 +181,8 @@ def main():
                 sys.stdout.write(pretty_print_proto(lqp_proto))
             return
 
-        assert filename.endswith(".lqp"), \
-            f"The input {filename} does not seem to be an LQP or bin file"
+        if not filename.endswith(".lqp"):
+            arg_parser.error(f"The input {filename} does not seem to be an LQP or bin file")
 
         if args.pretty:
             lqp_proto = parse_lqp_to_proto(filename, use_generated, validate)
@@ -190,7 +190,8 @@ def main():
             return
 
         if args.out:
-            assert not (args.bin and args.json), "Cannot specify both --bin and --json with --out option"
+            if args.bin and args.json:
+                arg_parser.error("Cannot specify both --bin and --json with --out option")
 
         basename = os.path.splitext(filename)[0]
 

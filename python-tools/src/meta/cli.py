@@ -140,6 +140,14 @@ def run(args) -> int:
     # Transform messages dict from {name: ProtoMessage} to {(module, name): ProtoMessage}
     proto_messages = {(msg.module, name): msg for name, msg in proto_parser.messages.items()}
 
+    def make_command_line(*extra_args):
+        """Build a reproducible command line using basenames to avoid embedding absolute paths."""
+        parts = ["python -m meta.cli"]
+        parts += [f.name for f in args.proto_files]
+        parts += ["--grammar", args.grammar.name]
+        parts += list(extra_args)
+        return " ".join(parts)
+
     # Load grammar rules from file (yacc format)
     grammar_config = load_yacc_grammar_file(grammar_path, proto_messages, proto_parser.enums)
 
@@ -233,13 +241,7 @@ def run(args) -> int:
             output_text = "\n".join(output_lines)
             write_output(output_text, args.output, f"Generated printer IR written to {args.output}")
         elif args.printer == "python":
-            proto_messages = {(msg.module, name): msg for name, msg in proto_parser.messages.items()}
-            command_line = " ".join(
-                ["python -m meta.cli"]
-                + [str(f) for f in args.proto_files]
-                + ["--grammar", str(args.grammar)]
-                + ["--printer", args.printer]
-            )
+            command_line = make_command_line("--printer", args.printer)
             from .pretty_gen_python import generate_pretty_printer_python
             output_text = generate_pretty_printer_python(grammar, command_line, proto_messages)
             write_output(output_text, args.output, f"Generated pretty printer written to {args.output}")

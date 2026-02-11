@@ -68,16 +68,8 @@ class PythonCodeGenerator(CodeGenerator):
 
     # --- Field access ---
 
-    _PYTHON_KEYWORDS = frozenset({
-        'False', 'None', 'True', 'and', 'as', 'assert', 'async', 'await',
-        'break', 'class', 'continue', 'def', 'del', 'elif', 'else', 'except',
-        'finally', 'for', 'from', 'global', 'if', 'import', 'in', 'is',
-        'lambda', 'nonlocal', 'not', 'or', 'pass', 'raise', 'return',
-        'try', 'while', 'with', 'yield',
-    })
-
     def gen_field_access(self, obj_code: str, field_name: str) -> str:
-        if field_name in self._PYTHON_KEYWORDS:
+        if field_name in PYTHON_KEYWORDS:
             return f"getattr({obj_code}, {field_name!r})"
         return f"{obj_code}.{field_name}"
 
@@ -295,54 +287,50 @@ class PythonCodeGenerator(CodeGenerator):
         self._message_field_map = field_map
         return field_map
 
-    def _generate_parse_def(self, expr: ParseNonterminalDef, indent: str) -> str:
-        """Generate a parse method definition."""
-        func_name = f"parse_{expr.nonterminal.name}"
+    def _generate_self_method(self, func_name: str, params, body, return_type, indent: str) -> str:
+        """Generate a method definition with `self` as first parameter.
 
-        params = []
-        for param in expr.params:
+        Args:
+            func_name: The method name.
+            params: List of Param objects (each with .name and .type).
+            body: The method body expression, or None for an empty body.
+            return_type: The return type, or None.
+            indent: Indentation prefix.
+        """
+        typed_params = []
+        for param in params:
             escaped_name = self.escape_identifier(param.name)
             type_hint = self.gen_type(param.type)
-            params.append(f"{escaped_name}: {type_hint}")
+            typed_params.append(f"{escaped_name}: {type_hint}")
 
-        params_str = ', '.join(params) if params else ''
+        params_str = ', '.join(typed_params) if typed_params else ''
         if params_str:
             params_str = ', ' + params_str
 
-        ret_hint = f" -> {self.gen_type(expr.return_type)}" if expr.return_type else ""
+        ret_hint = f" -> {self.gen_type(return_type)}" if return_type else ""
 
         body_lines: List[str] = []
-        body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
-        # Only add return if the body didn't already return
-        if body_inner is not None:
-            body_lines.append(f"{indent}    return {body_inner}")
+        if body is None:
+            body_lines.append(f"{indent}    pass")
+        else:
+            body_inner = self.generate_lines(body, body_lines, indent + "    ")
+            if body_inner is not None:
+                body_lines.append(f"{indent}    return {body_inner}")
         body_code = "\n".join(body_lines)
 
         return f"{indent}def {func_name}(self{params_str}){ret_hint}:\n{body_code}"
+
+    def _generate_parse_def(self, expr: ParseNonterminalDef, indent: str) -> str:
+        """Generate a parse method definition."""
+        return self._generate_self_method(
+            f"parse_{expr.nonterminal.name}", expr.params, expr.body, expr.return_type, indent
+        )
 
     def _generate_pretty_def(self, expr: PrintNonterminalDef, indent: str) -> str:
         """Generate a pretty-print method definition."""
-        func_name = f"pretty_{expr.nonterminal.name}"
-
-        params = []
-        for param in expr.params:
-            escaped_name = self.escape_identifier(param.name)
-            type_hint = self.gen_type(param.type)
-            params.append(f"{escaped_name}: {type_hint}")
-
-        params_str = ', '.join(params) if params else ''
-        if params_str:
-            params_str = ', ' + params_str
-
-        ret_hint = f" -> {self.gen_type(expr.return_type)}" if expr.return_type else ""
-
-        body_lines: List[str] = []
-        body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
-        if body_inner is not None:
-            body_lines.append(f"{indent}    return {body_inner}")
-        body_code = "\n".join(body_lines)
-
-        return f"{indent}def {func_name}(self{params_str}){ret_hint}:\n{body_code}"
+        return self._generate_self_method(
+            f"pretty_{expr.nonterminal.name}", expr.params, expr.body, expr.return_type, indent
+        )
 
     # Parser generation settings
     parse_def_indent = "    "
@@ -358,29 +346,9 @@ class PythonCodeGenerator(CodeGenerator):
 
     def generate_method_def(self, expr: FunDef, indent: str) -> str:
         """Generate a function definition as an instance method."""
-        func_name = self.escape_identifier(expr.name)
-        params = []
-        for p in expr.params:
-            escaped_name = self.escape_identifier(p.name)
-            type_hint = self.gen_type(p.type)
-            params.append(f"{escaped_name}: {type_hint}")
-
-        params_str = ', '.join(params) if params else ''
-        if params_str:
-            params_str = ', ' + params_str
-
-        ret_hint = f" -> {self.gen_type(expr.return_type)}" if expr.return_type else ""
-
-        body_lines: List[str] = []
-        if expr.body is None:
-            body_lines.append(f"{indent}    pass")
-        else:
-            body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
-            if body_inner is not None:
-                body_lines.append(f"{indent}    return {body_inner}")
-        body_code = "\n".join(body_lines)
-
-        return f"{indent}def {func_name}(self{params_str}){ret_hint}:\n{body_code}"
+        return self._generate_self_method(
+            self.escape_identifier(expr.name), expr.params, expr.body, expr.return_type, indent
+        )
 
 
 def escape_identifier(name: str) -> str:

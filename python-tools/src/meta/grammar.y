@@ -259,7 +259,7 @@ datetime
         $6: Int64 = builtin.int32_to_int64($$.hour)
         $7: Int64 = builtin.int32_to_int64($$.minute)
         $8: Int64 = builtin.int32_to_int64($$.second)
-        $9: Optional[Int64] = builtin.int32_to_int64($$.microsecond)
+        $9: Optional[Int64] = builtin.int32_to_int64($$.microsecond) if $$.microsecond != 0 else None
 
 boolean_value
     : "true"
