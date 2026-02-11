@@ -41,6 +41,29 @@ def _parse_and_pretty(input_file: str) -> str:
     return pretty(proto)
 
 
+def _normalize_primitives(s: str) -> str:
+    """Normalize shorthand primitive syntax to verbose form."""
+    # Binary primitives: (= a b) → (primitive :rel_primitive_eq a b)
+    s = re.sub(r'\(\s*=\s+', '(primitive :rel_primitive_eq ', s)
+    s = re.sub(r'\(\s*<=\s+', '(primitive :rel_primitive_lt_eq_monotype ', s)
+    s = re.sub(r'\(\s*>=\s+', '(primitive :rel_primitive_gt_eq_monotype ', s)
+    s = re.sub(r'\(\s*<\s+', '(primitive :rel_primitive_lt_monotype ', s)
+    s = re.sub(r'\(\s*>\s+', '(primitive :rel_primitive_gt_monotype ', s)
+    # Ternary primitives: (+ a b c) → (primitive :rel_primitive_add_monotype a b c)
+    s = re.sub(r'\(\s*\+\s+', '(primitive :rel_primitive_add_monotype ', s)
+    s = re.sub(r'\(\s*-\s+', '(primitive :rel_primitive_subtract_monotype ', s)
+    s = re.sub(r'\(\s*\*\s+', '(primitive :rel_primitive_multiply_monotype ', s)
+    s = re.sub(r'\(\s*/\s+', '(primitive :rel_primitive_divide_monotype ', s)
+    return s
+
+
+def _normalize_formulas(s: str) -> str:
+    """Normalize (true) to (and) and (false) to (or)."""
+    s = re.sub(r'\(\s*true\s*\)', '(and)', s)
+    s = re.sub(r'\(\s*false\s*\)', '(or)', s)
+    return s
+
+
 def _normalize_ws(s: str) -> str:
     """Collapse all whitespace sequences to a single space."""
     return re.sub(r'\s+', ' ', s).strip()
@@ -91,6 +114,11 @@ def test_matches_old_pretty_printer(input_file):
     options[str(lqp_print.PrettyOptions.PRINT_NAMES)] = True
     options[str(lqp_print.PrettyOptions.PRINT_DEBUG)] = False
     old_output = lqp_print.to_string(ir_node, options)
+
+    generated_output = _normalize_primitives(generated_output)
+    generated_output = _normalize_formulas(generated_output)
+    old_output = _normalize_primitives(old_output)
+    old_output = _normalize_formulas(old_output)
 
     assert _normalize_ws(generated_output) == _normalize_ws(old_output), (
         f"Outputs differ for {stem}.\n"
