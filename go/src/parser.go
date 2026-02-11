@@ -518,14 +518,6 @@ func toBool(v interface{}) bool {
 	return false
 }
 
-// Pointer conversion helpers for optional proto3 fields
-func ptrInt32(v int32) *int32 { return &v }
-func ptrInt64(v int64) *int64 { return &v }
-func ptrFloat64(v float64) *float64 { return &v }
-func ptrString(v string) *string { return &v }
-func ptrBool(v bool) *bool { return &v }
-func ptrBytes(v []byte) *[]byte { return &v }
-
 func mapSlice[T any, U any](slice []T, f func(T) U) []U {
 	result := make([]U, len(slice))
 	for i, v := range slice {
@@ -807,7 +799,7 @@ func (p *Parser) export_csv_config(path string, columns []*pb.ExportCSVColumn, c
 	syntax_quotechar := _t990
 	_t991 := p._extract_value_string(dictGetValue(config, "syntax_escapechar"), "\\")
 	syntax_escapechar := _t991
-	_t992 := &pb.ExportCSVConfig{Path: path, DataColumns: columns, PartitionSize: ptrInt64(partition_size), Compression: ptrString(compression), SyntaxHeaderRow: ptrBool(syntax_header_row), SyntaxMissingString: ptrString(syntax_missing_string), SyntaxDelim: ptrString(syntax_delim), SyntaxQuotechar: ptrString(syntax_quotechar), SyntaxEscapechar: ptrString(syntax_escapechar)}
+	_t992 := &pb.ExportCSVConfig{Path: path, DataColumns: columns, PartitionSize: ptr(partition_size), Compression: ptr(compression), SyntaxHeaderRow: ptr(syntax_header_row), SyntaxMissingString: ptr(syntax_missing_string), SyntaxDelim: ptr(syntax_delim), SyntaxQuotechar: ptr(syntax_quotechar), SyntaxEscapechar: ptr(syntax_escapechar)}
 	return _t992
 }
 

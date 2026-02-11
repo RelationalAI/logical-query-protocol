@@ -44,9 +44,6 @@ PYTHON_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "length": BuiltinTemplate("len({0})"),
     "unwrap_option_or": BuiltinTemplate("({0} if {0} is not None else {1})"),
     "int64_to_int32": BuiltinTemplate("int({0})"),
-    "to_ptr_int64": BuiltinTemplate("{0}"),  # Python doesn't need pointers
-    "to_ptr_string": BuiltinTemplate("{0}"),
-    "to_ptr_bool": BuiltinTemplate("{0}"),
     "map": BuiltinTemplate("[{0}(x) for x in {1}]"),
     "list_concat": BuiltinTemplate("({0} + ({1} if {1} is not None else []))"),
     "list_push": BuiltinTemplate("None", ["{0}.append({1})"]),
@@ -95,9 +92,6 @@ JULIA_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "length": BuiltinTemplate("length({0})"),
     "unwrap_option_or": BuiltinTemplate("(!isnothing({0}) ? {0} : {1})"),
     "int64_to_int32": BuiltinTemplate("Int32({0})"),
-    "to_ptr_int64": BuiltinTemplate("{0}"),  # Julia doesn't need pointers
-    "to_ptr_string": BuiltinTemplate("{0}"),
-    "to_ptr_bool": BuiltinTemplate("{0}"),
     "map": BuiltinTemplate("map({0}, {1})"),
     "list_concat": BuiltinTemplate("vcat({0}, !isnothing({1}) ? {1} : [])"),
     "list_push": BuiltinTemplate("nothing", ["push!({0}, {1})"]),
@@ -148,9 +142,6 @@ GO_TEMPLATES: Dict[str, BuiltinTemplate] = {
     # unwrap_option_or is handled specially in codegen_go.py due to Go's lack of ternary
     "unwrap_option_or": BuiltinTemplate("{0}"),  # Placeholder - overridden in codegen
     "int64_to_int32": BuiltinTemplate("int32({0})"),
-    "to_ptr_int64": BuiltinTemplate("ptrInt64({0})"),
-    "to_ptr_string": BuiltinTemplate("ptrString({0})"),
-    "to_ptr_bool": BuiltinTemplate("ptrBool({0})"),
     "map": BuiltinTemplate("mapSlice({1}, {0})"),
     "list_push": BuiltinTemplate("nil", ["{0} = append({0}, {1})"]),
     "list_concat": BuiltinTemplate("listConcat({0}, {1})"),

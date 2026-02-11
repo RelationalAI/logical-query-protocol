@@ -492,14 +492,6 @@ func toBool(v interface{{}}) bool {{
 	return false
 }}
 
-// Pointer conversion helpers for optional proto3 fields
-func ptrInt32(v int32) *int32 {{ return &v }}
-func ptrInt64(v int64) *int64 {{ return &v }}
-func ptrFloat64(v float64) *float64 {{ return &v }}
-func ptrString(v string) *string {{ return &v }}
-func ptrBool(v bool) *bool {{ return &v }}
-func ptrBytes(v []byte) *[]byte {{ return &v }}
-
 func mapSlice[T any, U any](slice []T, f func(T) U) []U {{
 	result := make([]U, len(slice))
 	for i, v := range slice {{
