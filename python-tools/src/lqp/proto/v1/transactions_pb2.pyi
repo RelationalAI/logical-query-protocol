@@ -116,6 +116,28 @@ class ExportCSVColumn(_message.Message):
     column_data: _logic_pb2.RelationId
     def __init__(self, column_name: _Optional[str] = ..., column_data: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ...) -> None: ...
 
+class ExportCSVTableConfig(_message.Message):
+    __slots__ = ("path", "table_def", "partition_size", "compression", "syntax_header_row", "syntax_missing_string", "syntax_delim", "syntax_quotechar", "syntax_escapechar")
+    PATH_FIELD_NUMBER: _ClassVar[int]
+    TABLE_DEF_FIELD_NUMBER: _ClassVar[int]
+    PARTITION_SIZE_FIELD_NUMBER: _ClassVar[int]
+    COMPRESSION_FIELD_NUMBER: _ClassVar[int]
+    SYNTAX_HEADER_ROW_FIELD_NUMBER: _ClassVar[int]
+    SYNTAX_MISSING_STRING_FIELD_NUMBER: _ClassVar[int]
+    SYNTAX_DELIM_FIELD_NUMBER: _ClassVar[int]
+    SYNTAX_QUOTECHAR_FIELD_NUMBER: _ClassVar[int]
+    SYNTAX_ESCAPECHAR_FIELD_NUMBER: _ClassVar[int]
+    path: str
+    table_def: _logic_pb2.RelationId
+    partition_size: int
+    compression: str
+    syntax_header_row: bool
+    syntax_missing_string: str
+    syntax_delim: str
+    syntax_quotechar: str
+    syntax_escapechar: str
+    def __init__(self, path: _Optional[str] = ..., table_def: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ..., partition_size: _Optional[int] = ..., compression: _Optional[str] = ..., syntax_header_row: _Optional[bool] = ..., syntax_missing_string: _Optional[str] = ..., syntax_delim: _Optional[str] = ..., syntax_quotechar: _Optional[str] = ..., syntax_escapechar: _Optional[str] = ...) -> None: ...
+
 class Read(_message.Message):
     __slots__ = ("demand", "output", "what_if", "abort", "export")
     DEMAND_FIELD_NUMBER: _ClassVar[int]
@@ -145,10 +167,12 @@ class Output(_message.Message):
     def __init__(self, name: _Optional[str] = ..., relation_id: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ...) -> None: ...
 
 class Export(_message.Message):
-    __slots__ = ("csv_config",)
+    __slots__ = ("csv_config", "csv_table_config")
     CSV_CONFIG_FIELD_NUMBER: _ClassVar[int]
+    CSV_TABLE_CONFIG_FIELD_NUMBER: _ClassVar[int]
     csv_config: ExportCSVConfig
-    def __init__(self, csv_config: _Optional[_Union[ExportCSVConfig, _Mapping]] = ...) -> None: ...
+    csv_table_config: ExportCSVTableConfig
+    def __init__(self, csv_config: _Optional[_Union[ExportCSVConfig, _Mapping]] = ..., csv_table_config: _Optional[_Union[ExportCSVTableConfig, _Mapping]] = ...) -> None: ...
 
 class WhatIf(_message.Message):
     __slots__ = ("branch", "epoch")
