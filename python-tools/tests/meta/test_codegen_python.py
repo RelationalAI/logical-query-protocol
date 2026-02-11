@@ -524,6 +524,92 @@ def test_python_helper_function_calling_another():
     assert "Parser.helper(x)" in code
 
 
+def test_python_and_short_circuit_with_side_effects():
+    """Test that 'and' preserves short-circuit semantics when RHS has side-effects.
+
+    When the RHS of 'and' contains a builtin like unwrap_option that emits
+    side-effect statements (e.g., assert), those side-effects must not be
+    hoisted above the 'and' — they should only execute when the LHS is truthy.
+    """
+    gen = PythonCodeGenerator()
+    reset_gensym()
+    lines = []
+
+    # and(x is not None, unwrap_option(x) == 42)
+    # unwrap_option emits `assert x is not None` as a side-effect.
+    # That assert must NOT execute when x is None.
+    expr = Call(make_builtin("and"), [
+        Call(make_builtin("is_some"), [Var("x", OptionType(_int_type))]),
+        Call(make_builtin("equal"), [
+            Call(make_builtin("unwrap_option"), [Var("x", OptionType(_int_type))]),
+            Lit(42),
+        ]),
+    ])
+    result = gen.generate_lines(expr, lines, "")
+    code = "\n".join(lines)
+
+    # The assert from unwrap_option must be inside the if body, not at the top
+    assert result is not None
+    assert "assert" not in code.split("if ")[0], \
+        f"assert was hoisted above the if guard:\n{code}"
+    assert "if " in code, f"Expected if-else for short-circuit, got:\n{code}"
+
+
+def test_python_or_short_circuit_with_side_effects():
+    """Test that 'or' preserves short-circuit semantics when RHS has side-effects."""
+    gen = PythonCodeGenerator()
+    reset_gensym()
+    lines = []
+
+    # or(x is None, unwrap_option(x) == 42)
+    # unwrap_option side-effects must only execute when x is NOT None.
+    expr = Call(make_builtin("or"), [
+        Call(make_builtin("is_none"), [Var("x", OptionType(_int_type))]),
+        Call(make_builtin("equal"), [
+            Call(make_builtin("unwrap_option"), [Var("x", OptionType(_int_type))]),
+            Lit(42),
+        ]),
+    ])
+    result = gen.generate_lines(expr, lines, "")
+    code = "\n".join(lines)
+
+    assert result is not None
+    assert "assert" not in code.split("if ")[0], \
+        f"assert was hoisted above the if guard:\n{code}"
+    assert "if " in code, f"Expected if-else for short-circuit, got:\n{code}"
+
+
+def test_python_and_without_side_effects_uses_template():
+    """Test that 'and' without side-effects uses the simple template."""
+    gen = PythonCodeGenerator()
+    reset_gensym()
+    lines = []
+
+    # and(a, b) with no side-effects should produce (a and b)
+    expr = Call(make_builtin("and"), [
+        Var("a", _bool_type),
+        Var("b", _bool_type),
+    ])
+    result = gen.generate_lines(expr, lines, "")
+    assert result == "(a and b)"
+    assert len(lines) == 0
+
+
+def test_python_or_without_side_effects_uses_template():
+    """Test that 'or' without side-effects uses the simple template."""
+    gen = PythonCodeGenerator()
+    reset_gensym()
+    lines = []
+
+    expr = Call(make_builtin("or"), [
+        Var("a", _bool_type),
+        Var("b", _bool_type),
+    ])
+    result = gen.generate_lines(expr, lines, "")
+    assert result == "(a or b)"
+    assert len(lines) == 0
+
+
 if __name__ == "__main__":
     test_python_keyword_escaping()
     test_python_call_generation()
