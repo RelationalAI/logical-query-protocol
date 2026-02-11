@@ -127,7 +127,7 @@ def _format_value(val: logic_pb2.Value) -> str:
         return f"{dt.year}-{dt.month:02d}-{dt.day:02d}T{dt.hour:02d}:{dt.minute:02d}:{dt.second:02d}"
     elif which == "decimal_value":
         return f"decimal({val.decimal_value.precision},{val.decimal_value.scale})"
-    return "?"
+    return f"<{which}>" if which else "?"
 
 
 # --- Oneof unwrappers ---
@@ -648,13 +648,9 @@ class CSVConfigChecker(ProtoVisitor):
                 if column_0_key_types != key_types:
                     raise ValidationError(
                         f"All data columns in ExportCSVConfig must have the same key types. "
-                        f"Got '{column_0_name}' with key types {key_types_to_str(column_0_key_types)} "
-                        f"and '{self.get_original_name(column.column_data)}' with key types {key_types_to_str(key_types)}."
+                        f"Got '{column_0_name}' with key types {[str(t) for t in column_0_key_types]} "
+                        f"and '{self.get_original_name(column.column_data)}' with key types {[str(t) for t in key_types]}."
                     )
-
-
-def key_types_to_str(types: List[str]) -> str:
-    return "[" + ", ".join(f"'{t}'" for t in types) + "]"
 
 
 class FDVarsChecker(ProtoVisitor):
