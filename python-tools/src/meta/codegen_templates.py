@@ -119,9 +119,64 @@ JULIA_TEMPLATES: Dict[str, BuiltinTemplate] = {
 }
 
 
+# Go builtin templates
+# Note: option-related builtins (some, is_none, is_some, unwrap_option, unwrap_option_or)
+# are intercepted at the AST level in codegen_go.py._generate_option_builtin.
+# The templates here serve as fallbacks.
+GO_TEMPLATES: Dict[str, BuiltinTemplate] = {
+    "some": BuiltinTemplate("ptr({0})"),
+    "not": BuiltinTemplate("!{0}"),
+    "and": BuiltinTemplate("({0} && {1})"),
+    "or": BuiltinTemplate("({0} || {1})"),
+    "equal": BuiltinTemplate("{0} == {1}"),
+    "not_equal": BuiltinTemplate("{0} != {1}"),
+    "add": BuiltinTemplate("({0} + {1})"),
+    "is_none": BuiltinTemplate("{0} == nil"),
+    "is_some": BuiltinTemplate("{0} != nil"),
+    "unwrap_option": BuiltinTemplate("*{0}"),
+    "none": BuiltinTemplate("nil"),
+    "make_empty_bytes": BuiltinTemplate("[]byte{}"),
+    "dict_from_list": BuiltinTemplate("dictFromList({0})"),
+    "dict_get": BuiltinTemplate("dictGetValue({0}, {1})"),
+    "has_proto_field": BuiltinTemplate('hasProtoField({0}, {1})'),
+    "string_to_upper": BuiltinTemplate("strings.ToUpper({0})"),
+    "string_in_list": BuiltinTemplate("stringInList({0}, {1})"),
+    "string_concat": BuiltinTemplate("({0} + {1})"),
+    "encode_string": BuiltinTemplate("[]byte({0})"),
+    "tuple": BuiltinTemplate("[]interface{}{{args}}"),
+    "length": BuiltinTemplate("int64(len({0}))"),
+    # unwrap_option_or is handled specially in codegen_go.py due to Go's lack of ternary
+    "unwrap_option_or": BuiltinTemplate("{0}"),  # Placeholder - overridden in codegen
+    "int64_to_int32": BuiltinTemplate("int32({0})"),
+    "to_ptr_int64": BuiltinTemplate("ptrInt64({0})"),
+    "to_ptr_string": BuiltinTemplate("ptrString({0})"),
+    "to_ptr_bool": BuiltinTemplate("ptrBool({0})"),
+    "map": BuiltinTemplate("mapSlice({1}, {0})"),
+    "list_push": BuiltinTemplate("nil", ["{0} = append({0}, {1})"]),
+    "list_concat": BuiltinTemplate("listConcat({0}, {1})"),
+    "fragment_id_from_string": BuiltinTemplate("&pb.FragmentId{{Id: []byte({0})}}"),
+    "relation_id_from_string": BuiltinTemplate("p.relationIdFromString({0})"),
+    "relation_id_from_int": BuiltinTemplate(
+        "&pb.RelationId{{IdLow: uint64({0}) & 0xFFFFFFFFFFFFFFFF, IdHigh: uint64({0}) >> 64 & 0xFFFFFFFFFFFFFFFF}}"
+    ),
+    "relation_id_from_uint128": BuiltinTemplate("&pb.RelationId{{IdLow: {0}.Low, IdHigh: {0}.High}}"),
+    "match_lookahead_terminal": BuiltinTemplate("p.matchLookaheadTerminal({0}, {1})"),
+    "match_lookahead_literal": BuiltinTemplate("p.matchLookaheadLiteral({0}, {1})"),
+    "consume_literal": BuiltinTemplate("nil", ["p.consumeLiteral({0})"]),
+    "consume_terminal": BuiltinTemplate("p.consumeTerminal({0})"),
+    "current_token": BuiltinTemplate("p.lookahead(0)"),
+    "start_fragment": BuiltinTemplate("{0}", ["p.startFragment({0})"]),
+    "construct_fragment": BuiltinTemplate("p.constructFragment({0}, {1})"),
+    "error": BuiltinTemplate(None, ["panic(ParseError{{msg: {0}}})"]),
+    "error_with_token": BuiltinTemplate(
+        None, ['panic(ParseError{{msg: fmt.Sprintf("%s: %s=`%v`", {0}, {1}.Type, {1}.Value)}})'
+    ]),
+}
+
 
 __all__ = [
     'BuiltinTemplate',
     'PYTHON_TEMPLATES',
     'JULIA_TEMPLATES',
+    'GO_TEMPLATES',
 ]
