@@ -10,7 +10,8 @@ from .codegen_base import CodeGenerator
 from .codegen_templates import GO_TEMPLATES
 from .target import (
     TargetExpr, Var, Symbol, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
-    FunDef, VisitNonterminalDef, VisitNonterminal, GetElement, GetField, TargetType,
+    FunDef, VisitNonterminalDef, PrintNonterminalDef, VisitNonterminal,
+    GetElement, GetField, TargetType,
 )
 from .gensym import gensym
 
@@ -213,6 +214,9 @@ class GoCodeGenerator(CodeGenerator):
     def gen_parse_nonterminal_ref(self, name: str) -> str:
         return f"p.parse_{name}"
 
+    def gen_pretty_nonterminal_ref(self, name: str) -> str:
+        return f"p.pretty_{name}"
+
     # --- Type generation ---
 
     def gen_message_type(self, module: str, name: str) -> str:
@@ -270,6 +274,15 @@ class GoCodeGenerator(CodeGenerator):
         return f"for {cond} {{"
 
     def gen_while_end(self) -> str:
+        return "}"
+
+    def gen_foreach_start(self, var: str, collection: str) -> str:
+        return f"for _, {var} := range {collection} {{"
+
+    def gen_foreach_enumerated_start(self, index_var: str, var: str, collection: str) -> str:
+        return f"for {index_var}, {var} := range {collection} {{"
+
+    def gen_foreach_end(self) -> str:
         return "}"
 
     def gen_empty_body(self) -> str:
@@ -689,6 +702,39 @@ class GoCodeGenerator(CodeGenerator):
         self.reset_declared_vars()
 
         func_name = f"parse_{expr.nonterminal.name}"
+
+        params = []
+        for param in expr.params:
+            escaped_name = self.escape_identifier(param.name)
+            type_hint = self.gen_type(param.type)
+            params.append((escaped_name, type_hint))
+            self.mark_declared(escaped_name)
+
+        ret_type = self.gen_type(expr.return_type) if expr.return_type else "interface{}"
+        self.set_current_return_type(ret_type, expr.return_type)
+
+        header = self.gen_func_def_header(func_name, params, ret_type, is_method=True)
+
+        if expr.body is None:
+            zero = self._go_zero_values.get(ret_type, "nil")
+            body_code = f"{indent}{self.indent_str}return {zero}"
+        else:
+            body_lines: List[str] = []
+            body_inner = self.generate_lines(expr.body, body_lines, indent + self.indent_str)
+            if body_inner is not None:
+                body_lines.append(f"{indent}{self.indent_str}return {body_inner}")
+            body_code = "\n".join(body_lines)
+
+        self.set_current_return_type(None)
+
+        end = self.gen_func_def_end()
+        return f"{indent}{header}\n{body_code}\n{indent}{end}"
+
+    def _generate_pretty_def(self, expr: PrintNonterminalDef, indent: str) -> str:
+        """Generate a pretty-print method definition."""
+        self.reset_declared_vars()
+
+        func_name = f"pretty_{expr.nonterminal.name}"
 
         params = []
         for param in expr.params:

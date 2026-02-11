@@ -116,14 +116,25 @@ force-parser-go: protobuf
 
 printers: printer-python printer-julia printer-go
 
-printer-python: $(PY_PRINTER)
+printer-python: protobuf $(PY_PRINTER)
 $(PY_PRINTER): $(PROTO_FILES) $(GRAMMAR)
 	$(META_CLI) $(META_PROTO_ARGS) --printer python -o src/lqp/generated_pretty_printer.py
 
-printer-julia:
+printer-julia: protobuf
 	@echo "Pretty printer generation for Julia is not yet implemented."
 
-printer-go:
+printer-go: protobuf
+	@echo "Pretty printer generation for Go is not yet implemented."
+
+force-printers: force-printer-python force-printer-julia force-printer-go
+
+force-printer-python: protobuf
+	$(META_CLI) $(META_PROTO_ARGS) --printer python -o src/lqp/generated_pretty_printer.py
+
+force-printer-julia: protobuf
+	@echo "Pretty printer generation for Julia is not yet implemented."
+
+force-printer-go: protobuf
 	@echo "Pretty printer generation for Go is not yet implemented."
 
 # ---------- testing ----------
