@@ -68,8 +68,8 @@ def parse_args():
     output_group.add_argument(
         "--parser",
         type=str,
-        choices=["ir", "python", "julia"],
-        help="Output the generated parser (ir, python, or julia)"
+        choices=["ir", "python", "julia", "go"],
+        help="Output the generated parser (ir, python, julia, or go)"
     )
     output_group.add_argument(
         "--printer",
@@ -203,7 +203,7 @@ def run(args) -> int:
                 output_lines.append("")
             output_text = "\n".join(output_lines)
             write_output(output_text, args.output, f"Generated parser IR written to {args.output}")
-        elif args.parser in ("python", "julia"):
+        elif args.parser in ("python", "julia", "go"):
             proto_messages = {(msg.module, name): msg for name, msg in proto_parser.messages.items()}
             command_line = " ".join(
                 ["python -m meta.cli"]
@@ -214,9 +214,12 @@ def run(args) -> int:
             if args.parser == "python":
                 from .parser_gen_python import generate_parser_python
                 output_text = generate_parser_python(grammar, command_line, proto_messages)
-            else:
+            elif args.parser == "julia":
                 from .parser_gen_julia import generate_parser_julia
                 output_text = generate_parser_julia(grammar, command_line, proto_messages)
+            else:
+                from .parser_gen_go import generate_parser_go
+                output_text = generate_parser_go(grammar, command_line, proto_messages)
             write_output(output_text, args.output, f"Generated parser written to {args.output}")
 
     if args.printer:
