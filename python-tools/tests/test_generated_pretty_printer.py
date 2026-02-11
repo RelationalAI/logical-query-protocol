@@ -12,8 +12,8 @@ from pathlib import Path
 
 from lqp.parser import parse_lqp
 from lqp.emit import ir_to_proto
-from lqp.generated_pretty_printer import pretty
-from lqp.generated_parser import parse as generated_parse
+from lqp.gen.pretty import pretty
+from lqp.gen.parser import parse as generated_parse
 from lqp.cli import read_bin_to_proto
 import lqp.print as lqp_print
 

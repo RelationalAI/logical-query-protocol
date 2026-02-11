@@ -49,7 +49,7 @@ def read_bin_to_proto(filename):
 
 def pretty_print_proto(lqp_proto):
     """Pretty-print a protobuf message and return the string."""
-    from lqp.generated_pretty_printer import pretty
+    from lqp.gen.pretty import pretty
     return pretty(lqp_proto)
 
 
