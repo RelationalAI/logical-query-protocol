@@ -455,7 +455,7 @@ class AtomTypeChecker(ProtoVisitor):
                     key = relation_id_key(actual_instr.name)
                     sig = [get_type_name(b.type) for b in actual_instr.body.vars]
                     new_state = AtomTypeChecker.State(
-                        {key: sig, **state.relation_types},
+                        {**state.relation_types, key: sig},
                         state.var_types,
                     )
                     self.visit(actual_instr, new_state)
@@ -464,7 +464,7 @@ class AtomTypeChecker(ProtoVisitor):
                 key = relation_id_key(typed_inner.name)
                 sig = [get_type_name(b.type) for b in typed_inner.body.vars]
                 new_state = AtomTypeChecker.State(
-                    {key: sig, **state.relation_types},
+                    {**state.relation_types, key: sig},
                     state.var_types,
                 )
                 self.visit(inner, new_state)
