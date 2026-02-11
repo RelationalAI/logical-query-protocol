@@ -325,6 +325,13 @@ end
 
 # --- Helper functions ---
 
+function _extract_value_int32(parser::Parser, value::Union{Nothing, Proto.Value}, default::Int64)::Int64
+    if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
+        return Int32(_get_oneof_field(value, :int_value))
+    end
+    return default
+end
+
 function _extract_value_int64(parser::Parser, value::Union{Nothing, Proto.Value}, default::Int64)::Int64
     if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
         return _get_oneof_field(value, :int_value)
@@ -418,7 +425,7 @@ end
 
 function construct_csv_config(parser::Parser, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.CSVConfig
     config = Dict(config_dict)
-    _t945 = _extract_value_int64(parser, get(config, "csv_header_row", nothing), 1)
+    _t945 = _extract_value_int32(parser, get(config, "csv_header_row", nothing), 1)
     header_row = _t945
     _t946 = _extract_value_int64(parser, get(config, "csv_skip", nothing), 0)
     skip = _t946
@@ -440,7 +447,7 @@ function construct_csv_config(parser::Parser, config_dict::Vector{Tuple{String, 
     encoding = _t954
     _t955 = _extract_value_string(parser, get(config, "csv_compression", nothing), "auto")
     compression = _t955
-    _t956 = Proto.CSVConfig(header_row=Int32(header_row), skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression)
+    _t956 = Proto.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression)
     return _t956
 end
 
@@ -524,29 +531,34 @@ function export_csv_config(parser::Parser, path::String, columns::Vector{Proto.E
     return _t980
 end
 
-function _make_value_int64(parser::Parser, v::Int64)::Proto.Value
-    _t981 = Proto.Value(value=OneOf(:int_value, v))
+function _make_value_int32(parser::Parser, v::Int64)::Proto.Value
+    _t981 = Proto.Value(value=OneOf(:int_value, Int64(v)))
     return _t981
 end
 
-function _make_value_float64(parser::Parser, v::Float64)::Proto.Value
-    _t982 = Proto.Value(value=OneOf(:float_value, v))
+function _make_value_int64(parser::Parser, v::Int64)::Proto.Value
+    _t982 = Proto.Value(value=OneOf(:int_value, v))
     return _t982
 end
 
-function _make_value_string(parser::Parser, v::String)::Proto.Value
-    _t983 = Proto.Value(value=OneOf(:string_value, v))
+function _make_value_float64(parser::Parser, v::Float64)::Proto.Value
+    _t983 = Proto.Value(value=OneOf(:float_value, v))
     return _t983
 end
 
-function _make_value_boolean(parser::Parser, v::Bool)::Proto.Value
-    _t984 = Proto.Value(value=OneOf(:boolean_value, v))
+function _make_value_string(parser::Parser, v::String)::Proto.Value
+    _t984 = Proto.Value(value=OneOf(:string_value, v))
     return _t984
 end
 
-function _make_value_uint128(parser::Parser, v::Proto.UInt128Value)::Proto.Value
-    _t985 = Proto.Value(value=OneOf(:uint128_value, v))
+function _make_value_boolean(parser::Parser, v::Bool)::Proto.Value
+    _t985 = Proto.Value(value=OneOf(:boolean_value, v))
     return _t985
+end
+
+function _make_value_uint128(parser::Parser, v::Proto.UInt128Value)::Proto.Value
+    _t986 = Proto.Value(value=OneOf(:uint128_value, v))
+    return _t986
 end
 
 function is_default_configure(parser::Parser, cfg::Proto.Configure)::Bool
@@ -563,134 +575,82 @@ function deconstruct_configure(parser::Parser, msg::Proto.Configure)::Vector{Tup
     result = Tuple{String, Proto.Value}[]
     
     if msg.ivm_config.level == Proto.MaintenanceLevel.MAINTENANCE_LEVEL_AUTO
-        _t987 = _make_value_string(parser, "auto")
-        push!(result, ("ivm.maintenance_level", _t987,))
-        _t986 = nothing
+        _t988 = _make_value_string(parser, "auto")
+        push!(result, ("ivm.maintenance_level", _t988,))
+        _t987 = nothing
     else
         
         if msg.ivm_config.level == Proto.MaintenanceLevel.MAINTENANCE_LEVEL_ALL
-            _t989 = _make_value_string(parser, "all")
-            push!(result, ("ivm.maintenance_level", _t989,))
-            _t988 = nothing
+            _t990 = _make_value_string(parser, "all")
+            push!(result, ("ivm.maintenance_level", _t990,))
+            _t989 = nothing
         else
             
             if msg.ivm_config.level == Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
-                _t991 = _make_value_string(parser, "off")
-                push!(result, ("ivm.maintenance_level", _t991,))
-                _t990 = nothing
+                _t992 = _make_value_string(parser, "off")
+                push!(result, ("ivm.maintenance_level", _t992,))
+                _t991 = nothing
             else
-                _t990 = nothing
+                _t991 = nothing
             end
-            _t988 = _t990
+            _t989 = _t991
         end
-        _t986 = _t988
+        _t987 = _t989
     end
-    _t992 = _make_value_int64(parser, msg.semantics_version)
-    push!(result, ("semantics_version", _t992,))
-    return result
+    _t993 = _make_value_int64(parser, msg.semantics_version)
+    push!(result, ("semantics_version", _t993,))
+    return sort(result)
 end
 
 function deconstruct_csv_config(parser::Parser, msg::Proto.CSVConfig)::Vector{Tuple{String, Proto.Value}}
     result = Tuple{String, Proto.Value}[]
+    _t994 = _make_value_int32(parser, msg.header_row)
+    push!(result, ("csv_header_row", _t994,))
+    _t995 = _make_value_int64(parser, msg.skip)
+    push!(result, ("csv_skip", _t995,))
     
-    if msg.header_row != 1
-        _t994 = _make_value_int64(parser, Int64(msg.header_row))
-        push!(result, ("csv_header_row", _t994,))
-        _t993 = nothing
+    if (!isnothing(msg.new_line) && msg.new_line != "")
+        _t997 = _make_value_string(parser, msg.new_line)
+        push!(result, ("csv_new_line", _t997,))
+        _t996 = nothing
     else
-        _t993 = nothing
+        _t996 = nothing
     end
+    _t998 = _make_value_string(parser, msg.delimiter)
+    push!(result, ("csv_delimiter", _t998,))
+    _t999 = _make_value_string(parser, msg.quotechar)
+    push!(result, ("csv_quotechar", _t999,))
+    _t1000 = _make_value_string(parser, msg.escapechar)
+    push!(result, ("csv_escapechar", _t1000,))
     
-    if msg.skip != 0
-        _t996 = _make_value_int64(parser, msg.skip)
-        push!(result, ("csv_skip", _t996,))
-        _t995 = nothing
-    else
-        _t995 = nothing
-    end
-    
-    if msg.new_line != ""
-        _t998 = _make_value_string(parser, msg.new_line)
-        push!(result, ("csv_new_line", _t998,))
-        _t997 = nothing
-    else
-        _t997 = nothing
-    end
-    
-    if msg.delimiter != ","
-        _t1000 = _make_value_string(parser, msg.delimiter)
-        push!(result, ("csv_delimiter", _t1000,))
-        _t999 = nothing
-    else
-        _t999 = nothing
-    end
-    
-    if msg.quotechar != "\""
-        _t1002 = _make_value_string(parser, msg.quotechar)
-        push!(result, ("csv_quotechar", _t1002,))
+    if (!isnothing(msg.comment) && msg.comment != "")
+        _t1002 = _make_value_string(parser, msg.comment)
+        push!(result, ("csv_comment", _t1002,))
         _t1001 = nothing
     else
         _t1001 = nothing
     end
-    
-    if msg.escapechar != "\""
-        _t1004 = _make_value_string(parser, msg.escapechar)
-        push!(result, ("csv_escapechar", _t1004,))
-        _t1003 = nothing
-    else
-        _t1003 = nothing
+    for missing_string in msg.missing_strings
+        _t1003 = _make_value_string(parser, missing_string)
+        push!(result, ("csv_missing_strings", _t1003,))
     end
-    
-    if msg.comment != ""
-        _t1006 = _make_value_string(parser, msg.comment)
-        push!(result, ("csv_comment", _t1006,))
-        _t1005 = nothing
-    else
-        _t1005 = nothing
-    end
-    
-    if !isempty(msg.missing_strings)
-        _t1008 = _make_value_string(parser, msg.missing_strings[1])
-        push!(result, ("csv_missing_strings", _t1008,))
-        _t1007 = nothing
-    else
-        _t1007 = nothing
-    end
-    
-    if msg.decimal_separator != "."
-        _t1010 = _make_value_string(parser, msg.decimal_separator)
-        push!(result, ("csv_decimal_separator", _t1010,))
-        _t1009 = nothing
-    else
-        _t1009 = nothing
-    end
-    
-    if msg.encoding != "utf-8"
-        _t1012 = _make_value_string(parser, msg.encoding)
-        push!(result, ("csv_encoding", _t1012,))
-        _t1011 = nothing
-    else
-        _t1011 = nothing
-    end
-    
-    if msg.compression != "auto"
-        _t1014 = _make_value_string(parser, msg.compression)
-        push!(result, ("csv_compression", _t1014,))
-        _t1013 = nothing
-    else
-        _t1013 = nothing
-    end
-    return result
+    _t1004 = _make_value_string(parser, msg.decimal_separator)
+    push!(result, ("csv_decimal_separator", _t1004,))
+    _t1005 = _make_value_string(parser, msg.encoding)
+    push!(result, ("csv_encoding", _t1005,))
+    _t1006 = _make_value_string(parser, msg.compression)
+    push!(result, ("csv_compression", _t1006,))
+    return sort(result)
 end
 
 function _maybe_push_float64(parser::Parser, result::Vector{Tuple{String, Proto.Value}}, key::String, val::Union{Nothing, Float64})::Nothing
     
     if !isnothing(val)
-        _t1016 = _make_value_float64(parser, val)
-        push!(result, (key, _t1016,))
-        _t1015 = nothing
+        _t1008 = _make_value_float64(parser, val)
+        push!(result, (key, _t1008,))
+        _t1007 = nothing
     else
-        _t1015 = nothing
+        _t1007 = nothing
     end
     return nothing
 end
@@ -698,11 +658,11 @@ end
 function _maybe_push_int64(parser::Parser, result::Vector{Tuple{String, Proto.Value}}, key::String, val::Union{Nothing, Int64})::Nothing
     
     if !isnothing(val)
-        _t1018 = _make_value_int64(parser, val)
-        push!(result, (key, _t1018,))
-        _t1017 = nothing
+        _t1010 = _make_value_int64(parser, val)
+        push!(result, (key, _t1010,))
+        _t1009 = nothing
     else
-        _t1017 = nothing
+        _t1009 = nothing
     end
     return nothing
 end
@@ -710,11 +670,11 @@ end
 function _maybe_push_uint128(parser::Parser, result::Vector{Tuple{String, Proto.Value}}, key::String, val::Union{Nothing, Proto.UInt128Value})::Nothing
     
     if !isnothing(val)
-        _t1020 = _make_value_uint128(parser, val)
-        push!(result, (key, _t1020,))
-        _t1019 = nothing
+        _t1012 = _make_value_uint128(parser, val)
+        push!(result, (key, _t1012,))
+        _t1011 = nothing
     else
-        _t1019 = nothing
+        _t1011 = nothing
     end
     return nothing
 end
@@ -722,99 +682,99 @@ end
 function _maybe_push_bytes_as_string(parser::Parser, result::Vector{Tuple{String, Proto.Value}}, key::String, val::Union{Nothing, Vector{UInt8}})::Nothing
     
     if !isnothing(val)
-        _t1022 = _make_value_string(parser, String(val))
-        push!(result, (key, _t1022,))
-        _t1021 = nothing
+        _t1014 = _make_value_string(parser, String(val))
+        push!(result, (key, _t1014,))
+        _t1013 = nothing
     else
-        _t1021 = nothing
+        _t1013 = nothing
     end
     return nothing
 end
 
 function deconstruct_betree_info_config(parser::Parser, msg::Proto.BeTreeInfo)::Vector{Tuple{String, Proto.Value}}
     result = Tuple{String, Proto.Value}[]
-    _t1023 = _maybe_push_float64(parser, result, "betree_config_epsilon", msg.storage_config.epsilon)
-    _t1024 = _maybe_push_int64(parser, result, "betree_config_max_pivots", msg.storage_config.max_pivots)
-    _t1025 = _maybe_push_int64(parser, result, "betree_config_max_deltas", msg.storage_config.max_deltas)
-    _t1026 = _maybe_push_int64(parser, result, "betree_config_max_leaf", msg.storage_config.max_leaf)
+    _t1015 = _maybe_push_float64(parser, result, "betree_config_epsilon", msg.storage_config.epsilon)
+    _t1016 = _maybe_push_int64(parser, result, "betree_config_max_pivots", msg.storage_config.max_pivots)
+    _t1017 = _maybe_push_int64(parser, result, "betree_config_max_deltas", msg.storage_config.max_deltas)
+    _t1018 = _maybe_push_int64(parser, result, "betree_config_max_leaf", msg.storage_config.max_leaf)
     
     if _has_proto_field(msg.relation_locator, Symbol("root_pageid"))
-        _t1028 = _maybe_push_uint128(parser, result, "betree_locator_root_pageid", _get_oneof_field(msg.relation_locator, :root_pageid))
-        _t1027 = _t1028
+        _t1020 = _maybe_push_uint128(parser, result, "betree_locator_root_pageid", _get_oneof_field(msg.relation_locator, :root_pageid))
+        _t1019 = _t1020
     else
-        _t1027 = nothing
+        _t1019 = nothing
     end
     
     if _has_proto_field(msg.relation_locator, Symbol("inline_data"))
-        _t1030 = _maybe_push_bytes_as_string(parser, result, "betree_locator_inline_data", _get_oneof_field(msg.relation_locator, :inline_data))
-        _t1029 = _t1030
+        _t1022 = _maybe_push_bytes_as_string(parser, result, "betree_locator_inline_data", _get_oneof_field(msg.relation_locator, :inline_data))
+        _t1021 = _t1022
     else
-        _t1029 = nothing
+        _t1021 = nothing
     end
-    _t1031 = _maybe_push_int64(parser, result, "betree_locator_element_count", msg.relation_locator.element_count)
-    _t1032 = _maybe_push_int64(parser, result, "betree_locator_tree_height", msg.relation_locator.tree_height)
-    return result
+    _t1023 = _maybe_push_int64(parser, result, "betree_locator_element_count", msg.relation_locator.element_count)
+    _t1024 = _maybe_push_int64(parser, result, "betree_locator_tree_height", msg.relation_locator.tree_height)
+    return sort(result)
 end
 
 function deconstruct_export_csv_config(parser::Parser, msg::Proto.ExportCSVConfig)::Vector{Tuple{String, Proto.Value}}
     result = Tuple{String, Proto.Value}[]
     
-    if (!isnothing(msg.partition_size) && msg.partition_size != 0)
-        _t1034 = _make_value_int64(parser, msg.partition_size)
-        push!(result, ("partition_size", _t1034,))
-        _t1033 = nothing
+    if !isnothing(msg.partition_size)
+        _t1026 = _make_value_int64(parser, msg.partition_size)
+        push!(result, ("partition_size", _t1026,))
+        _t1025 = nothing
     else
-        _t1033 = nothing
+        _t1025 = nothing
     end
     
-    if (!isnothing(msg.compression) && msg.compression != "")
-        _t1036 = _make_value_string(parser, msg.compression)
-        push!(result, ("compression", _t1036,))
-        _t1035 = nothing
+    if !isnothing(msg.compression)
+        _t1028 = _make_value_string(parser, msg.compression)
+        push!(result, ("compression", _t1028,))
+        _t1027 = nothing
     else
-        _t1035 = nothing
+        _t1027 = nothing
     end
     
     if !isnothing(msg.syntax_header_row)
-        _t1038 = _make_value_boolean(parser, msg.syntax_header_row)
-        push!(result, ("syntax_header_row", _t1038,))
+        _t1030 = _make_value_boolean(parser, msg.syntax_header_row)
+        push!(result, ("syntax_header_row", _t1030,))
+        _t1029 = nothing
+    else
+        _t1029 = nothing
+    end
+    
+    if !isnothing(msg.syntax_missing_string)
+        _t1032 = _make_value_string(parser, msg.syntax_missing_string)
+        push!(result, ("syntax_missing_string", _t1032,))
+        _t1031 = nothing
+    else
+        _t1031 = nothing
+    end
+    
+    if !isnothing(msg.syntax_delim)
+        _t1034 = _make_value_string(parser, msg.syntax_delim)
+        push!(result, ("syntax_delim", _t1034,))
+        _t1033 = nothing
+    else
+        _t1033 = nothing
+    end
+    
+    if !isnothing(msg.syntax_quotechar)
+        _t1036 = _make_value_string(parser, msg.syntax_quotechar)
+        push!(result, ("syntax_quotechar", _t1036,))
+        _t1035 = nothing
+    else
+        _t1035 = nothing
+    end
+    
+    if !isnothing(msg.syntax_escapechar)
+        _t1038 = _make_value_string(parser, msg.syntax_escapechar)
+        push!(result, ("syntax_escapechar", _t1038,))
         _t1037 = nothing
     else
         _t1037 = nothing
     end
-    
-    if (!isnothing(msg.syntax_missing_string) && msg.syntax_missing_string != "")
-        _t1040 = _make_value_string(parser, msg.syntax_missing_string)
-        push!(result, ("syntax_missing_string", _t1040,))
-        _t1039 = nothing
-    else
-        _t1039 = nothing
-    end
-    
-    if (!isnothing(msg.syntax_delim) && msg.syntax_delim != ",")
-        _t1042 = _make_value_string(parser, msg.syntax_delim)
-        push!(result, ("syntax_delim", _t1042,))
-        _t1041 = nothing
-    else
-        _t1041 = nothing
-    end
-    
-    if (!isnothing(msg.syntax_quotechar) && msg.syntax_quotechar != "\"")
-        _t1044 = _make_value_string(parser, msg.syntax_quotechar)
-        push!(result, ("syntax_quotechar", _t1044,))
-        _t1043 = nothing
-    else
-        _t1043 = nothing
-    end
-    
-    if (!isnothing(msg.syntax_escapechar) && msg.syntax_escapechar != "\\")
-        _t1046 = _make_value_string(parser, msg.syntax_escapechar)
-        push!(result, ("syntax_escapechar", _t1046,))
-        _t1045 = nothing
-    else
-        _t1045 = nothing
-    end
-    return result
+    return sort(result)
 end
 
 function deconstruct_relation_id_string(parser::Parser, msg::Proto.RelationId)::Union{Nothing, String}

@@ -1319,11 +1319,13 @@ def deconstruct_csv_config(msg: logic.CSVConfig) -> List[Tuple[String, logic.Val
     result: List[Tuple[String, logic.Value]] = list[Tuple[String, logic.Value]]()
     builtin.list_push(result, builtin.tuple("csv_header_row", _make_value_int32(msg.header_row)))
     builtin.list_push(result, builtin.tuple("csv_skip", _make_value_int64(msg.skip)))
-    builtin.list_push(result, builtin.tuple("csv_new_line", _make_value_string(msg.new_line)))
+    if msg.new_line is not None and msg.new_line != "":
+        builtin.list_push(result, builtin.tuple("csv_new_line", _make_value_string(msg.new_line)))
     builtin.list_push(result, builtin.tuple("csv_delimiter", _make_value_string(msg.delimiter)))
     builtin.list_push(result, builtin.tuple("csv_quotechar", _make_value_string(msg.quotechar)))
     builtin.list_push(result, builtin.tuple("csv_escapechar", _make_value_string(msg.escapechar)))
-    builtin.list_push(result, builtin.tuple("csv_comment", _make_value_string(msg.comment)))
+    if msg.comment is not None and msg.comment != "":
+        builtin.list_push(result, builtin.tuple("csv_comment", _make_value_string(msg.comment)))
     for missing_string in msg.missing_strings:
         builtin.list_push(result, builtin.tuple("csv_missing_strings", _make_value_string(missing_string)))
     builtin.list_push(result, builtin.tuple("csv_decimal_separator", _make_value_string(msg.decimal_separator)))

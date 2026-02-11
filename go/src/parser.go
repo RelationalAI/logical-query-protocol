@@ -607,6 +607,13 @@ func toPascalCase(s string) string {
 
 // --- Helper functions ---
 
+func (p *Parser) _extract_value_int32(value *pb.Value, default_ int64) int64 {
+	if (value != nil && hasProtoField(value, "int_value")) {
+		return int32(value.GetIntValue())
+	}
+	return default_
+}
+
 func (p *Parser) _extract_value_int64(value *pb.Value, default_ int64) int64 {
 	if (value != nil && hasProtoField(value, "int_value")) {
 		return value.GetIntValue()
@@ -700,7 +707,7 @@ func (p *Parser) _try_extract_value_string_list(value *pb.Value) []string {
 
 func (p *Parser) construct_csv_config(config_dict [][]interface{}) *pb.CSVConfig {
 	config := dictFromList(config_dict)
-	_t956 := p._extract_value_int64(dictGetValue(config, "csv_header_row"), 1)
+	_t956 := p._extract_value_int32(dictGetValue(config, "csv_header_row"), 1)
 	header_row := _t956
 	_t957 := p._extract_value_int64(dictGetValue(config, "csv_skip"), 0)
 	skip := _t957
@@ -722,7 +729,7 @@ func (p *Parser) construct_csv_config(config_dict [][]interface{}) *pb.CSVConfig
 	encoding := _t965
 	_t966 := p._extract_value_string(dictGetValue(config, "csv_compression"), "auto")
 	compression := _t966
-	_t967 := &pb.CSVConfig{HeaderRow: int32(header_row), Skip: skip, NewLine: new_line, Delimiter: delimiter, Quotechar: quotechar, Escapechar: escapechar, Comment: comment, MissingStrings: missing_strings, DecimalSeparator: decimal_separator, Encoding: encoding, Compression: compression}
+	_t967 := &pb.CSVConfig{HeaderRow: header_row, Skip: skip, NewLine: new_line, Delimiter: delimiter, Quotechar: quotechar, Escapechar: escapechar, Comment: comment, MissingStrings: missing_strings, DecimalSeparator: decimal_separator, Encoding: encoding, Compression: compression}
 	return _t967
 }
 
@@ -811,34 +818,41 @@ func (p *Parser) export_csv_config(path string, columns []*pb.ExportCSVColumn, c
 	return _t991
 }
 
-func (p *Parser) _make_value_int64(v int64) *pb.Value {
-	_t992 := &pb.Value{}
-	_t992.Value = &pb.Value_IntValue{IntValue: v}
-	return _t992
-}
-
-func (p *Parser) _make_value_float64(v float64) *pb.Value {
+func (p *Parser) _make_value_int32(v int64) *pb.Value {
+	_t992 := p.int32_to_int64(v)
 	_t993 := &pb.Value{}
-	_t993.Value = &pb.Value_FloatValue{FloatValue: v}
+	_t993.Value = &pb.Value_IntValue{IntValue: _t992}
 	return _t993
 }
 
-func (p *Parser) _make_value_string(v string) *pb.Value {
+func (p *Parser) _make_value_int64(v int64) *pb.Value {
 	_t994 := &pb.Value{}
-	_t994.Value = &pb.Value_StringValue{StringValue: v}
+	_t994.Value = &pb.Value_IntValue{IntValue: v}
 	return _t994
 }
 
-func (p *Parser) _make_value_boolean(v bool) *pb.Value {
+func (p *Parser) _make_value_float64(v float64) *pb.Value {
 	_t995 := &pb.Value{}
-	_t995.Value = &pb.Value_BooleanValue{BooleanValue: v}
+	_t995.Value = &pb.Value_FloatValue{FloatValue: v}
 	return _t995
 }
 
-func (p *Parser) _make_value_uint128(v *pb.UInt128Value) *pb.Value {
+func (p *Parser) _make_value_string(v string) *pb.Value {
 	_t996 := &pb.Value{}
-	_t996.Value = &pb.Value_Uint128Value{Uint128Value: v}
+	_t996.Value = &pb.Value_StringValue{StringValue: v}
 	return _t996
+}
+
+func (p *Parser) _make_value_boolean(v bool) *pb.Value {
+	_t997 := &pb.Value{}
+	_t997.Value = &pb.Value_BooleanValue{BooleanValue: v}
+	return _t997
+}
+
+func (p *Parser) _make_value_uint128(v *pb.UInt128Value) *pb.Value {
+	_t998 := &pb.Value{}
+	_t998.Value = &pb.Value_Uint128Value{Uint128Value: v}
+	return _t998
 }
 
 func (p *Parser) is_default_configure(cfg *pb.Configure) bool {
@@ -853,218 +867,182 @@ func (p *Parser) is_default_configure(cfg *pb.Configure) bool {
 
 func (p *Parser) deconstruct_configure(msg *pb.Configure) [][]interface{} {
 	result := [][]interface{}{}
-	var _t997 interface{}
+	var _t999 interface{}
 	if msg.ivm_config.GetLevel() == pb.MaintenanceLevel_MAINTENANCE_LEVEL_AUTO {
-		_t998 := p._make_value_string("auto")
-		result = append(result, []interface{}{"ivm.maintenance_level", _t998})
-		_t997 = nil
+		_t1000 := p._make_value_string("auto")
+		result = append(result, []interface{}{"ivm.maintenance_level", _t1000})
+		_t999 = nil
 	} else {
-		var _t999 interface{}
+		var _t1001 interface{}
 		if msg.ivm_config.GetLevel() == pb.MaintenanceLevel_MAINTENANCE_LEVEL_ALL {
-			_t1000 := p._make_value_string("all")
-			result = append(result, []interface{}{"ivm.maintenance_level", _t1000})
-			_t999 = nil
+			_t1002 := p._make_value_string("all")
+			result = append(result, []interface{}{"ivm.maintenance_level", _t1002})
+			_t1001 = nil
 		} else {
-			var _t1001 interface{}
+			var _t1003 interface{}
 			if msg.ivm_config.GetLevel() == pb.MaintenanceLevel_MAINTENANCE_LEVEL_OFF {
-				_t1002 := p._make_value_string("off")
-				result = append(result, []interface{}{"ivm.maintenance_level", _t1002})
-				_t1001 = nil
+				_t1004 := p._make_value_string("off")
+				result = append(result, []interface{}{"ivm.maintenance_level", _t1004})
+				_t1003 = nil
 			}
-			_t999 = _t1001
+			_t1001 = _t1003
 		}
-		_t997 = _t999
+		_t999 = _t1001
 	}
-	_t1003 := p._make_value_int64(msg.GetSemanticsVersion())
-	result = append(result, []interface{}{"semantics_version", _t1003})
-	return result
+	_t1005 := p._make_value_int64(msg.GetSemanticsVersion())
+	result = append(result, []interface{}{"semantics_version", _t1005})
+	return listSort(result)
 }
 
 func (p *Parser) deconstruct_csv_config(msg *pb.CSVConfig) [][]interface{} {
 	result := [][]interface{}{}
-	var _t1004 interface{}
-	if msg.GetHeaderRow() != 1 {
-		_t1005 := p.int32_to_int64(msg.GetHeaderRow())
-		_t1006 := p._make_value_int64(_t1005)
-		result = append(result, []interface{}{"csv_header_row", _t1006})
-		_t1004 = nil
+	_t1006 := p._make_value_int32(msg.GetHeaderRow())
+	result = append(result, []interface{}{"csv_header_row", _t1006})
+	_t1007 := p._make_value_int64(msg.GetSkip())
+	result = append(result, []interface{}{"csv_skip", _t1007})
+	var _t1008 interface{}
+	if (msg.GetNewLine() != nil && msg.GetNewLine() != "") {
+		_t1009 := p._make_value_string(msg.GetNewLine())
+		result = append(result, []interface{}{"csv_new_line", _t1009})
+		_t1008 = nil
 	}
-	var _t1007 interface{}
-	if msg.GetSkip() != 0 {
-		_t1008 := p._make_value_int64(msg.GetSkip())
-		result = append(result, []interface{}{"csv_skip", _t1008})
-		_t1007 = nil
-	}
-	var _t1009 interface{}
-	if msg.GetNewLine() != "" {
-		_t1010 := p._make_value_string(msg.GetNewLine())
-		result = append(result, []interface{}{"csv_new_line", _t1010})
-		_t1009 = nil
-	}
-	var _t1011 interface{}
-	if msg.GetDelimiter() != "," {
-		_t1012 := p._make_value_string(msg.GetDelimiter())
-		result = append(result, []interface{}{"csv_delimiter", _t1012})
-		_t1011 = nil
-	}
+	_t1010 := p._make_value_string(msg.GetDelimiter())
+	result = append(result, []interface{}{"csv_delimiter", _t1010})
+	_t1011 := p._make_value_string(msg.GetQuotechar())
+	result = append(result, []interface{}{"csv_quotechar", _t1011})
+	_t1012 := p._make_value_string(msg.GetEscapechar())
+	result = append(result, []interface{}{"csv_escapechar", _t1012})
 	var _t1013 interface{}
-	if msg.GetQuotechar() != "\"" {
-		_t1014 := p._make_value_string(msg.GetQuotechar())
-		result = append(result, []interface{}{"csv_quotechar", _t1014})
+	if (msg.GetComment() != nil && msg.GetComment() != "") {
+		_t1014 := p._make_value_string(msg.GetComment())
+		result = append(result, []interface{}{"csv_comment", _t1014})
 		_t1013 = nil
 	}
-	var _t1015 interface{}
-	if msg.GetEscapechar() != "\"" {
-		_t1016 := p._make_value_string(msg.GetEscapechar())
-		result = append(result, []interface{}{"csv_escapechar", _t1016})
-		_t1015 = nil
+	for _, missing_string := range msg.GetMissingStrings() {
+		_t1015 := p._make_value_string(missing_string)
+		result = append(result, []interface{}{"csv_missing_strings", _t1015})
 	}
-	var _t1017 interface{}
-	if msg.GetComment() != "" {
-		_t1018 := p._make_value_string(msg.GetComment())
-		result = append(result, []interface{}{"csv_comment", _t1018})
-		_t1017 = nil
-	}
-	_t1019 := p.is_empty(msg.GetMissingStrings())
-	var _t1020 interface{}
-	if !_t1019 {
-		_t1021 := p._make_value_string(msg.GetMissingStrings()[0].(string))
-		result = append(result, []interface{}{"csv_missing_strings", _t1021})
-		_t1020 = nil
-	}
-	var _t1022 interface{}
-	if msg.GetDecimalSeparator() != "." {
-		_t1023 := p._make_value_string(msg.GetDecimalSeparator())
-		result = append(result, []interface{}{"csv_decimal_separator", _t1023})
-		_t1022 = nil
-	}
-	var _t1024 interface{}
-	if msg.GetEncoding() != "utf-8" {
-		_t1025 := p._make_value_string(msg.GetEncoding())
-		result = append(result, []interface{}{"csv_encoding", _t1025})
-		_t1024 = nil
-	}
-	var _t1026 interface{}
-	if msg.GetCompression() != "auto" {
-		_t1027 := p._make_value_string(msg.GetCompression())
-		result = append(result, []interface{}{"csv_compression", _t1027})
-		_t1026 = nil
-	}
-	return result
+	_t1016 := p._make_value_string(msg.GetDecimalSeparator())
+	result = append(result, []interface{}{"csv_decimal_separator", _t1016})
+	_t1017 := p._make_value_string(msg.GetEncoding())
+	result = append(result, []interface{}{"csv_encoding", _t1017})
+	_t1018 := p._make_value_string(msg.GetCompression())
+	result = append(result, []interface{}{"csv_compression", _t1018})
+	return listSort(result)
 }
 
 func (p *Parser) _maybe_push_float64(result [][]interface{}, key string, val *float64) interface{} {
-	var _t1028 interface{}
+	var _t1019 interface{}
 	if val != nil {
-		_t1029 := p._make_value_float64(*val)
-		result = append(result, []interface{}{key, _t1029})
-		_t1028 = nil
+		_t1020 := p._make_value_float64(*val)
+		result = append(result, []interface{}{key, _t1020})
+		_t1019 = nil
 	}
 	return nil
 }
 
 func (p *Parser) _maybe_push_int64(result [][]interface{}, key string, val *int64) interface{} {
-	var _t1030 interface{}
+	var _t1021 interface{}
 	if val != nil {
-		_t1031 := p._make_value_int64(*val)
-		result = append(result, []interface{}{key, _t1031})
-		_t1030 = nil
+		_t1022 := p._make_value_int64(*val)
+		result = append(result, []interface{}{key, _t1022})
+		_t1021 = nil
 	}
 	return nil
 }
 
 func (p *Parser) _maybe_push_uint128(result [][]interface{}, key string, val *pb.UInt128Value) interface{} {
-	var _t1032 interface{}
+	var _t1023 interface{}
 	if val != nil {
-		_t1033 := p._make_value_uint128(val)
-		result = append(result, []interface{}{key, _t1033})
-		_t1032 = nil
+		_t1024 := p._make_value_uint128(val)
+		result = append(result, []interface{}{key, _t1024})
+		_t1023 = nil
 	}
 	return nil
 }
 
 func (p *Parser) _maybe_push_bytes_as_string(result [][]interface{}, key string, val []byte) interface{} {
-	var _t1034 interface{}
+	var _t1025 interface{}
 	if val != nil {
-		_t1035 := p.decode_string(val)
-		_t1036 := p._make_value_string(_t1035)
-		result = append(result, []interface{}{key, _t1036})
-		_t1034 = nil
+		_t1026 := p.decode_string(val)
+		_t1027 := p._make_value_string(_t1026)
+		result = append(result, []interface{}{key, _t1027})
+		_t1025 = nil
 	}
 	return nil
 }
 
 func (p *Parser) deconstruct_betree_info_config(msg *pb.BeTreeInfo) [][]interface{} {
 	result := [][]interface{}{}
-	_t1037 := p._maybe_push_float64(result, "betree_config_epsilon", msg.storage_config.GetEpsilon())
-	_t1038 := p._maybe_push_int64(result, "betree_config_max_pivots", msg.storage_config.GetMaxPivots())
-	_t1039 := p._maybe_push_int64(result, "betree_config_max_deltas", msg.storage_config.GetMaxDeltas())
-	_t1040 := p._maybe_push_int64(result, "betree_config_max_leaf", msg.storage_config.GetMaxLeaf())
-	var _t1041 interface{}
+	_t1028 := p._maybe_push_float64(result, "betree_config_epsilon", msg.storage_config.GetEpsilon())
+	_t1029 := p._maybe_push_int64(result, "betree_config_max_pivots", msg.storage_config.GetMaxPivots())
+	_t1030 := p._maybe_push_int64(result, "betree_config_max_deltas", msg.storage_config.GetMaxDeltas())
+	_t1031 := p._maybe_push_int64(result, "betree_config_max_leaf", msg.storage_config.GetMaxLeaf())
+	var _t1032 interface{}
 	if hasProtoField(msg.GetRelationLocator(), "root_pageid") {
-		_t1042 := p._maybe_push_uint128(result, "betree_locator_root_pageid", msg.relation_locator.GetRootPageid())
-		_t1041 = _t1042
+		_t1033 := p._maybe_push_uint128(result, "betree_locator_root_pageid", msg.relation_locator.GetRootPageid())
+		_t1032 = _t1033
 	}
-	var _t1043 interface{}
+	var _t1034 interface{}
 	if hasProtoField(msg.GetRelationLocator(), "inline_data") {
-		_t1044 := p._maybe_push_bytes_as_string(result, "betree_locator_inline_data", msg.relation_locator.GetInlineData())
-		_t1043 = _t1044
+		_t1035 := p._maybe_push_bytes_as_string(result, "betree_locator_inline_data", msg.relation_locator.GetInlineData())
+		_t1034 = _t1035
 	}
-	_t1045 := p._maybe_push_int64(result, "betree_locator_element_count", msg.relation_locator.GetElementCount())
-	_t1046 := p._maybe_push_int64(result, "betree_locator_tree_height", msg.relation_locator.GetTreeHeight())
-	return result
+	_t1036 := p._maybe_push_int64(result, "betree_locator_element_count", msg.relation_locator.GetElementCount())
+	_t1037 := p._maybe_push_int64(result, "betree_locator_tree_height", msg.relation_locator.GetTreeHeight())
+	return listSort(result)
 }
 
 func (p *Parser) deconstruct_export_csv_config(msg *pb.ExportCSVConfig) [][]interface{} {
 	result := [][]interface{}{}
-	var _t1047 interface{}
-	if (msg.GetPartitionSize() != nil && *msg.GetPartitionSize() != 0) {
-		_t1048 := p._make_value_int64(*msg.GetPartitionSize())
-		result = append(result, []interface{}{"partition_size", _t1048})
-		_t1047 = nil
+	var _t1038 interface{}
+	if msg.GetPartitionSize() != nil {
+		_t1039 := p._make_value_int64(*msg.GetPartitionSize())
+		result = append(result, []interface{}{"partition_size", _t1039})
+		_t1038 = nil
 	}
-	var _t1049 interface{}
-	if (msg.GetCompression() != nil && *msg.GetCompression() != "") {
-		_t1050 := p._make_value_string(*msg.GetCompression())
-		result = append(result, []interface{}{"compression", _t1050})
-		_t1049 = nil
+	var _t1040 interface{}
+	if msg.GetCompression() != nil {
+		_t1041 := p._make_value_string(*msg.GetCompression())
+		result = append(result, []interface{}{"compression", _t1041})
+		_t1040 = nil
 	}
-	var _t1051 interface{}
+	var _t1042 interface{}
 	if msg.GetSyntaxHeaderRow() != nil {
-		_t1052 := p._make_value_boolean(*msg.GetSyntaxHeaderRow())
-		result = append(result, []interface{}{"syntax_header_row", _t1052})
-		_t1051 = nil
+		_t1043 := p._make_value_boolean(*msg.GetSyntaxHeaderRow())
+		result = append(result, []interface{}{"syntax_header_row", _t1043})
+		_t1042 = nil
 	}
-	var _t1053 interface{}
-	if (msg.GetSyntaxMissingString() != nil && *msg.GetSyntaxMissingString() != "") {
-		_t1054 := p._make_value_string(*msg.GetSyntaxMissingString())
-		result = append(result, []interface{}{"syntax_missing_string", _t1054})
-		_t1053 = nil
+	var _t1044 interface{}
+	if msg.GetSyntaxMissingString() != nil {
+		_t1045 := p._make_value_string(*msg.GetSyntaxMissingString())
+		result = append(result, []interface{}{"syntax_missing_string", _t1045})
+		_t1044 = nil
 	}
-	var _t1055 interface{}
-	if (msg.GetSyntaxDelim() != nil && *msg.GetSyntaxDelim() != ",") {
-		_t1056 := p._make_value_string(*msg.GetSyntaxDelim())
-		result = append(result, []interface{}{"syntax_delim", _t1056})
-		_t1055 = nil
+	var _t1046 interface{}
+	if msg.GetSyntaxDelim() != nil {
+		_t1047 := p._make_value_string(*msg.GetSyntaxDelim())
+		result = append(result, []interface{}{"syntax_delim", _t1047})
+		_t1046 = nil
 	}
-	var _t1057 interface{}
-	if (msg.GetSyntaxQuotechar() != nil && *msg.GetSyntaxQuotechar() != "\"") {
-		_t1058 := p._make_value_string(*msg.GetSyntaxQuotechar())
-		result = append(result, []interface{}{"syntax_quotechar", _t1058})
-		_t1057 = nil
+	var _t1048 interface{}
+	if msg.GetSyntaxQuotechar() != nil {
+		_t1049 := p._make_value_string(*msg.GetSyntaxQuotechar())
+		result = append(result, []interface{}{"syntax_quotechar", _t1049})
+		_t1048 = nil
 	}
-	var _t1059 interface{}
-	if (msg.GetSyntaxEscapechar() != nil && *msg.GetSyntaxEscapechar() != "\\") {
-		_t1060 := p._make_value_string(*msg.GetSyntaxEscapechar())
-		result = append(result, []interface{}{"syntax_escapechar", _t1060})
-		_t1059 = nil
+	var _t1050 interface{}
+	if msg.GetSyntaxEscapechar() != nil {
+		_t1051 := p._make_value_string(*msg.GetSyntaxEscapechar())
+		result = append(result, []interface{}{"syntax_escapechar", _t1051})
+		_t1050 = nil
 	}
-	return result
+	return listSort(result)
 }
 
 func (p *Parser) deconstruct_relation_id_string(msg *pb.RelationId) *string {
-	_t1061 := p.relation_id_to_string(msg)
-	name := _t1061
+	_t1052 := p.relation_id_to_string(msg)
+	name := _t1052
 	if name != "" {
 		return ptr(name)
 	}
@@ -1072,28 +1050,28 @@ func (p *Parser) deconstruct_relation_id_string(msg *pb.RelationId) *string {
 }
 
 func (p *Parser) deconstruct_relation_id_uint128(msg *pb.RelationId) *pb.UInt128Value {
-	_t1062 := p.relation_id_to_string(msg)
-	name := _t1062
+	_t1053 := p.relation_id_to_string(msg)
+	name := _t1053
 	if name == "" {
-		_t1063 := p.relation_id_to_uint128(msg)
-		return _t1063
+		_t1054 := p.relation_id_to_uint128(msg)
+		return _t1054
 	}
 	return nil
 }
 
 func (p *Parser) deconstruct_bindings(abs *pb.Abstraction) []interface{} {
 	n := int64(len(abs.GetVars()))
-	_t1064 := p.list_slice(abs.GetVars(), 0, n)
-	return []interface{}{_t1064, []*pb.Binding{}}
+	_t1055 := p.list_slice(abs.GetVars(), 0, n)
+	return []interface{}{_t1055, []*pb.Binding{}}
 }
 
 func (p *Parser) deconstruct_bindings_with_arity(abs *pb.Abstraction, value_arity int64) []interface{} {
 	n := int64(len(abs.GetVars()))
-	_t1065 := p.subtract(n, value_arity)
-	key_end := _t1065
-	_t1066 := p.list_slice(abs.GetVars(), 0, key_end)
-	_t1067 := p.list_slice(abs.GetVars(), key_end, n)
-	return []interface{}{_t1066, _t1067}
+	_t1056 := p.subtract(n, value_arity)
+	key_end := _t1056
+	_t1057 := p.list_slice(abs.GetVars(), 0, key_end)
+	_t1058 := p.list_slice(abs.GetVars(), key_end, n)
+	return []interface{}{_t1057, _t1058}
 }
 
 // --- Parse functions ---

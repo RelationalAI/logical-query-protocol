@@ -64,6 +64,16 @@ def _normalize_formulas(s: str) -> str:
     return s
 
 
+def _normalize_header_row(s: str) -> str:
+    """Normalize :syntax_header_row 1 to :syntax_header_row true.
+
+    The proto type is bool, but the old printer formats it as an int.
+    """
+    s = re.sub(r':syntax_header_row\s+1\b', ':syntax_header_row true', s)
+    s = re.sub(r':syntax_header_row\s+0\b', ':syntax_header_row false', s)
+    return s
+
+
 def _normalize_ws(s: str) -> str:
     """Collapse all whitespace sequences to a single space, strip spaces before closing brackets."""
     s = re.sub(r'\s+', ' ', s).strip()
@@ -121,6 +131,7 @@ def test_matches_old_pretty_printer(input_file):
     generated_output = _normalize_formulas(generated_output)
     old_output = _normalize_primitives(old_output)
     old_output = _normalize_formulas(old_output)
+    old_output = _normalize_header_row(old_output)
 
     assert _normalize_ws(generated_output) == _normalize_ws(old_output), (
         f"Outputs differ for {stem}.\n"

@@ -306,9 +306,12 @@ def _generate_pretty_sequence_from_fields(rhs: Sequence, fields_var: Var,
                     stmts.append(Call(make_builtin('write_io'), [Lit(' ')]))
         else:
             if is_sexp:
-                # Sexp spacing: newline before each non-literal
-                # (indent is emitted unconditionally after the keyword)
-                leading_ws = [Call(make_builtin('newline_io'), [])]
+                if prev_lit_name in NO_TRAILING_SPACE:
+                    # After opening brackets, no whitespace
+                    pass
+                else:
+                    # Sexp spacing: newline before each non-literal
+                    leading_ws = [Call(make_builtin('newline_io'), [])]
             elif stmts:
                 # Non-sexp spacing between elements
                 cur_lit_name = None
