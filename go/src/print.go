@@ -140,6 +140,12 @@ func (pp PrettyParams) pprint(node interface{}) {
 				levelStr = strings.ToLower(strings.TrimPrefix(levelStr, "MAINTENANCE_LEVEL_"))
 				configDict["ivm.maintenance_level"] = levelStr
 			}
+			optimization_level := n.GetOptimizationLevel()
+			if optimization_level != pb.OptimizationLevel_OPTIMIZATION_LEVEL_UNSPECIFIED{
+				levelStr := optimization_level.String()
+				levelStr = strings.ToLower(strings.TrimPrefix(levelStr, "OPTIMIZATION_LEVEL_"))
+				configDict["optimization_level"] = levelStr
+			}
 		}
 		pp.PARENS(func(pp PrettyParams) {
 			pp.Write("configure")

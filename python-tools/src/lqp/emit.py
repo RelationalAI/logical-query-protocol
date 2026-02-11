@@ -544,7 +544,7 @@ def convert_maintenance_level(l: ir.MaintenanceLevel) -> transactions_pb2.Mainte
     return transactions_pb2.MaintenanceLevel.Name(l.value) # type: ignore[missing-attribute]
 
 def convert_optimization_level(o: ir.OptimizationLevel) -> transactions_pb2.OptimizationLevel:
-    return transactions_pb2.OptimizationLevel.Name(o.value)
+    return transactions_pb2.OptimizationLevel.Name(o.value) # type: ignore[missing-attribute]
 
 def convert_sync(c: ir.Sync) -> transactions_pb2.Sync:
     return transactions_pb2.Sync(fragments=[convert_fragment_id(rid) for rid in c.fragments])
