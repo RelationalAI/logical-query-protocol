@@ -34,7 +34,7 @@ JL_PARSER := julia/LQPParser/src/parser.jl
 GO_PARSER := go/src/parser.go
 
 # Generated pretty printer outputs
-PY_PRINTER := python-tools/src/lqp/generated_pretty_printer.py
+PY_PRINTER := python-tools/src/lqp/gen/pretty.py
 JL_PRINTER := julia/LQPParser/src/pretty_printer.jl
 GO_PRINTER := go/src/pretty_printer.go
 
@@ -118,7 +118,7 @@ printers: printer-python printer-julia printer-go
 
 printer-python: protobuf $(PY_PRINTER)
 $(PY_PRINTER): $(PROTO_FILES) $(GRAMMAR)
-	$(META_CLI) $(META_PROTO_ARGS) --printer python -o src/lqp/generated_pretty_printer.py
+	$(META_CLI) $(META_PROTO_ARGS) --printer python -o src/lqp/gen/pretty.py
 
 printer-julia: protobuf
 	@echo "Pretty printer generation for Julia is not yet implemented."
@@ -129,7 +129,7 @@ printer-go: protobuf
 force-printers: force-printer-python force-printer-julia force-printer-go
 
 force-printer-python: protobuf
-	$(META_CLI) $(META_PROTO_ARGS) --printer python -o src/lqp/generated_pretty_printer.py
+	$(META_CLI) $(META_PROTO_ARGS) --printer python -o src/lqp/gen/pretty.py
 
 force-printer-julia: protobuf
 	@echo "Pretty printer generation for Julia is not yet implemented."

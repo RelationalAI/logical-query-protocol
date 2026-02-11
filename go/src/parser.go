@@ -807,7 +807,7 @@ func (p *Parser) export_csv_config(path string, columns []*pb.ExportCSVColumn, c
 	syntax_quotechar := _t989
 	_t990 := p._extract_value_string(dictGetValue(config, "syntax_escapechar"), "\\")
 	syntax_escapechar := _t990
-	_t991 := &pb.ExportCSVConfig{Path: path, DataColumns: columns, PartitionSize: ptrInt64(partition_size), Compression: ptrString(compression), SyntaxHeaderRow: ptrBool(syntax_header_row), SyntaxMissingString: ptrString(syntax_missing_string), SyntaxDelim: ptrString(syntax_delim), SyntaxQuotechar: ptrString(syntax_quotechar), SyntaxEscapechar: ptrString(syntax_escapechar)}
+	_t991 := &pb.ExportCSVConfig{Path: path, DataColumns: columns, PartitionSize: ptr(partition_size), Compression: ptr(compression), SyntaxHeaderRow: ptr(syntax_header_row), SyntaxMissingString: ptr(syntax_missing_string), SyntaxDelim: ptr(syntax_delim), SyntaxQuotechar: ptr(syntax_quotechar), SyntaxEscapechar: ptr(syntax_escapechar)}
 	return _t991
 }
 
@@ -1082,16 +1082,18 @@ func (p *Parser) deconstruct_relation_id_uint128(msg *pb.RelationId) *pb.UInt128
 }
 
 func (p *Parser) deconstruct_bindings(abs *pb.Abstraction) []interface{} {
-	return []interface{}{abs.GetVars(), []*pb.Binding{}}
+	n := int64(len(abs.GetVars()))
+	_t1064 := p.list_slice(abs.GetVars(), 0, n)
+	return []interface{}{_t1064, []*pb.Binding{}}
 }
 
 func (p *Parser) deconstruct_bindings_with_arity(abs *pb.Abstraction, value_arity int64) []interface{} {
 	n := int64(len(abs.GetVars()))
-	_t1064 := p.subtract(n, value_arity)
-	key_end := _t1064
-	_t1065 := p.list_slice(abs.GetVars(), 0, key_end)
-	_t1066 := p.list_slice(abs.GetVars(), key_end, n)
-	return []interface{}{_t1065, _t1066}
+	_t1065 := p.subtract(n, value_arity)
+	key_end := _t1065
+	_t1066 := p.list_slice(abs.GetVars(), 0, key_end)
+	_t1067 := p.list_slice(abs.GetVars(), key_end, n)
+	return []interface{}{_t1066, _t1067}
 }
 
 // --- Parse functions ---

@@ -834,7 +834,8 @@ function deconstruct_relation_id_uint128(parser::Parser, msg::Proto.RelationId):
 end
 
 function deconstruct_bindings(parser::Parser, abs::Proto.Abstraction)::Tuple{Vector{Proto.Binding}, Vector{Proto.Binding}}
-    return (abs.vars, Proto.Binding[],)
+    n = length(abs.vars)
+    return (abs.vars[0:n], Proto.Binding[],)
 end
 
 function deconstruct_bindings_with_arity(parser::Parser, abs::Proto.Abstraction, value_arity::Int64)::Tuple{Vector{Proto.Binding}, Vector{Proto.Binding}}
