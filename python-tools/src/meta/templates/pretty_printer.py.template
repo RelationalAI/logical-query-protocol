@@ -54,7 +54,7 @@ class PrettyPrinter:
 
     def format_decimal(self, msg) -> str:
         """Format a DecimalValue as '<digits>.<digits>d<precision>'."""
-        int_val = (msg.value.high << 64) | msg.value.low
+        int_val: int = (msg.value.high << 64) | msg.value.low
         if msg.value.high & (1 << 63):
             int_val -= (1 << 128)
         sign = ""

@@ -30,7 +30,7 @@ class PythonCodeGenerator(CodeGenerator):
 
     keywords = PYTHON_KEYWORDS
     indent_str = "    "
-    named_fun_class = "Parser"
+    named_fun_class = "self"
 
     base_type_map = {
         'Int32': 'int',
@@ -52,6 +52,8 @@ class PythonCodeGenerator(CodeGenerator):
         self.register_builtins_from_templates(PYTHON_TEMPLATES)
         # Override tuple to handle empty and single-element cases correctly
         self.register_builtin("tuple", self._gen_tuple_builtin)
+        # Override unwrap_option to emit assert for type narrowing
+        self.register_builtin("unwrap_option", self._gen_unwrap_option_builtin)
 
     @staticmethod
     def _gen_tuple_builtin(args, lines, indent):
@@ -62,6 +64,11 @@ class PythonCodeGenerator(CodeGenerator):
             return BuiltinResult(f"({args[0]},)", [])
         else:
             return BuiltinResult(f"({', '.join(args)},)", [])
+
+    @staticmethod
+    def _gen_unwrap_option_builtin(args, lines, indent):
+        from .codegen_base import BuiltinResult
+        return BuiltinResult(args[0], [f"{indent}assert {args[0]} is not None"])
 
     def escape_keyword(self, name: str) -> str:
         return f"{name}_"

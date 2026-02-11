@@ -22,7 +22,6 @@ def generate_pretty_printer_python(grammar: Grammar, command_line: Optional[str]
     template = _TEMPLATE_PATH.read_text()
 
     codegen = PythonCodeGenerator(proto_messages=proto_messages)
-    codegen.named_fun_class = "self"
     indent = "    "
 
     defns = generate_pretty_functions(grammar, proto_messages)

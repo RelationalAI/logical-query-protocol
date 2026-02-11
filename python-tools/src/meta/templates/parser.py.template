@@ -239,6 +239,14 @@ class Parser:
         # Create and return Fragment
         return fragments_pb2.Fragment(id=fragment_id, declarations=declarations, debug_info=debug_info)
 
+    def relation_id_to_string(self, msg) -> str:
+        """Stub: only used in pretty printer."""
+        raise NotImplementedError("relation_id_to_string is only available in PrettyPrinter")
+
+    def relation_id_to_uint128(self, msg):
+        """Stub: only used in pretty printer."""
+        raise NotImplementedError("relation_id_to_uint128 is only available in PrettyPrinter")
+
     # --- Helper functions ---
 {named_function_defns}
 
