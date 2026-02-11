@@ -301,10 +301,10 @@ def convert_def(d: ir.Def) -> logic_pb2.Def:
         attrs=[convert_attribute(attr) for attr in d.attrs]
     )
 
-def convert_loop(l: ir.Loop) -> logic_pb2.Loop:
+def convert_loop(loop: ir.Loop) -> logic_pb2.Loop:
     return logic_pb2.Loop(
-        init=[convert_instruction(init_def) for init_def in l.init],
-        body=convert_script(l.body)
+        init=[convert_instruction(init_def) for init_def in loop.init],
+        body=convert_script(loop.body)
     )
 
 def convert_declaration(decl: ir.Declaration) -> logic_pb2.Declaration:
@@ -401,7 +401,6 @@ def convert_monus_def(instr: ir.MonusDef) -> logic_pb2.MonusDef:
         attrs=[convert_attribute(attr) for attr in instr.attrs]
     )
 def convert_monoid(monoid: ir.Monoid) -> logic_pb2.Monoid:
-    from typing import Dict, Any
     if isinstance(monoid, ir.OrMonoid):
         return logic_pb2.Monoid(**{'or_monoid': logic_pb2.OrMonoid()})  # type: ignore
     elif isinstance(monoid, ir.SumMonoid):
@@ -539,8 +538,8 @@ def convert_ivm_config(c: ir.IVMConfig) -> transactions_pb2.IVMConfig:
         level=convert_maintenance_level(c.level)
     )
 
-def convert_maintenance_level(l: ir.MaintenanceLevel) -> transactions_pb2.MaintenanceLevel:
-    return transactions_pb2.MaintenanceLevel.Name(l.value) # type: ignore[missing-attribute]
+def convert_maintenance_level(level: ir.MaintenanceLevel) -> transactions_pb2.MaintenanceLevel:
+    return transactions_pb2.MaintenanceLevel.Name(level.value) # type: ignore[missing-attribute]
 
 def convert_sync(c: ir.Sync) -> transactions_pb2.Sync:
     return transactions_pb2.Sync(fragments=[convert_fragment_id(rid) for rid in c.fragments])

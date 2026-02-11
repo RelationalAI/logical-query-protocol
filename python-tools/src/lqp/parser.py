@@ -339,7 +339,7 @@ class LQPTransformer(Transformer):
     def def_(self, meta, items):
         name = items[0]
         body, value_arity = items[1]
-        assert value_arity == 0, f"Defs should not have a value arity"
+        assert value_arity == 0, "Defs should not have a value arity"
         attrs = items[2] if len(items) > 2 else []
         return ir.Def(name=name, body=body, attrs=attrs, meta=self.meta(meta))
 
@@ -548,7 +548,7 @@ class LQPTransformer(Transformer):
     def assign(self, meta, items):
         name = items[0]
         body, value_arity = items[1]
-        assert value_arity == 0, f"Assigns should not have a value arity"
+        assert value_arity == 0, "Assigns should not have a value arity"
         attrs = items[2] if len(items) > 2 else []
         return ir.Assign(name=name, body=body, attrs=attrs, meta=self.meta(meta))
 
@@ -561,7 +561,7 @@ class LQPTransformer(Transformer):
     def break_(self, meta, items):
         name = items[0]
         body, value_arity = items[1]
-        assert value_arity == 0, f"Breaks should not have a value arity"
+        assert value_arity == 0, "Breaks should not have a value arity"
         attrs = items[2] if len(items) > 2 else []
         return ir.Break(name=name, body=body, attrs=attrs, meta=self.meta(meta))
 
@@ -633,7 +633,7 @@ class LQPTransformer(Transformer):
 
     def exists(self, meta, items):
         vars, arity = items[0]
-        assert arity == 0, f"Exists should not have a value_arity"
+        assert arity == 0, "Exists should not have a value_arity"
         # Create Abstraction for body directly here
         body_abstraction = ir.Abstraction(vars=vars, value=items[1], meta=self.meta(meta))
         return ir.Exists(body=body_abstraction, meta=self.meta(meta))
@@ -641,7 +641,7 @@ class LQPTransformer(Transformer):
     def reduce(self, meta, items):
         op, x = items[0]
         body, y = items[1]
-        assert x == y == 0, f"Abstractions in Reduce should not have value arities"
+        assert x == y == 0, "Abstractions in Reduce should not have value arities"
         return ir.Reduce(op=op, body=body, terms=items[2], meta=self.meta(meta))
 
     def conjunction(self, meta, items):

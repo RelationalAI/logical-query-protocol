@@ -9,7 +9,7 @@ from pathlib import Path
 
 from lqp.parser import parse_lqp
 from lqp.emit import ir_to_proto
-from lqp.generated_parser import parse as generated_parse
+from lqp.gen.parser import parse as generated_parse
 
 from .utils import get_lqp_input_files, get_all_files, PARENT_DIR
 

@@ -1,4 +1,3 @@
-import os
 import pytest
 from pathlib import Path
 from .utils import get_lqp_input_files, get_all_files, PARENT_DIR
