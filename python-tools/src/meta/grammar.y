@@ -259,14 +259,17 @@ datetime
         $6: Int64 = builtin.int32_to_int64($$.hour)
         $7: Int64 = builtin.int32_to_int64($$.minute)
         $8: Int64 = builtin.int32_to_int64($$.second)
-        $9: Optional[Int64] = builtin.int32_to_int64($$.microsecond) if $$.microsecond != 0 else None
+        $9: Optional[Int64] = builtin.some(builtin.int32_to_int64($$.microsecond))
 
 boolean_value
     : "true"
       construct: $$ = True
       deconstruct if $$:
+        pass
     | "false"
       construct: $$ = False
+      deconstruct if not $$:
+        pass
 
 sync
     : "(" "sync" fragment_id* ")"
@@ -1069,6 +1072,12 @@ export_csv_column
 %%
 
 
+def _extract_value_int32(value: Optional[logic.Value], default: int) -> int:
+    if value is not None and builtin.has_proto_field(builtin.unwrap_option(value), 'int_value'):
+        return builtin.int64_to_int32(builtin.unwrap_option(value).int_value)
+    return default
+
+
 def _extract_value_int64(value: Optional[logic.Value], default: int) -> int:
     if value is not None and builtin.has_proto_field(builtin.unwrap_option(value), 'int_value'):
         return builtin.unwrap_option(value).int_value
@@ -1147,7 +1156,7 @@ def _try_extract_value_string_list(value: Optional[logic.Value]) -> Optional[Lis
 
 def construct_csv_config(config_dict: List[Tuple[String, logic.Value]]) -> logic.CSVConfig:
     config: Dict[String, logic.Value] = builtin.dict_from_list(config_dict)
-    header_row: int = _extract_value_int64(builtin.dict_get(config, "csv_header_row"), 1)
+    header_row: int = _extract_value_int32(builtin.dict_get(config, "csv_header_row"), 1)
     skip: int = _extract_value_int64(builtin.dict_get(config, "csv_skip"), 0)
     new_line: str = _extract_value_string(builtin.dict_get(config, "csv_new_line"), "")
     delimiter: str = _extract_value_string(builtin.dict_get(config, "csv_delimiter"), ",")
@@ -1159,7 +1168,7 @@ def construct_csv_config(config_dict: List[Tuple[String, logic.Value]]) -> logic
     encoding: str = _extract_value_string(builtin.dict_get(config, "csv_encoding"), "utf-8")
     compression: str = _extract_value_string(builtin.dict_get(config, "csv_compression"), "auto")
     return logic.CSVConfig(
-        header_row=builtin.int64_to_int32(header_row),
+        header_row=header_row,
         skip=skip,
         new_line=new_line,
         delimiter=delimiter,
@@ -1262,6 +1271,10 @@ def export_csv_config(
     )
 
 
+def _make_value_int32(v: int) -> logic.Value:
+    return logic.Value(int_value=builtin.int32_to_int64(v))
+
+
 def _make_value_int64(v: int) -> logic.Value:
     return logic.Value(int_value=v)
 
@@ -1299,34 +1312,24 @@ def deconstruct_configure(msg: transactions.Configure) -> List[Tuple[String, log
     elif msg.ivm_config.level == transactions.MaintenanceLevel.MAINTENANCE_LEVEL_OFF:
         builtin.list_push(result, builtin.tuple("ivm.maintenance_level", _make_value_string("off")))
     builtin.list_push(result, builtin.tuple("semantics_version", _make_value_int64(msg.semantics_version)))
-    return result
+    return builtin.list_sort(result)
 
 
 def deconstruct_csv_config(msg: logic.CSVConfig) -> List[Tuple[String, logic.Value]]:
     result: List[Tuple[String, logic.Value]] = list[Tuple[String, logic.Value]]()
-    if msg.header_row != 1:
-        builtin.list_push(result, builtin.tuple("csv_header_row", _make_value_int64(builtin.int32_to_int64(msg.header_row))))
-    if msg.skip != 0:
-        builtin.list_push(result, builtin.tuple("csv_skip", _make_value_int64(msg.skip)))
-    if msg.new_line != "":
-        builtin.list_push(result, builtin.tuple("csv_new_line", _make_value_string(msg.new_line)))
-    if msg.delimiter != ",":
-        builtin.list_push(result, builtin.tuple("csv_delimiter", _make_value_string(msg.delimiter)))
-    if msg.quotechar != "\"":
-        builtin.list_push(result, builtin.tuple("csv_quotechar", _make_value_string(msg.quotechar)))
-    if msg.escapechar != "\"":
-        builtin.list_push(result, builtin.tuple("csv_escapechar", _make_value_string(msg.escapechar)))
-    if msg.comment != "":
-        builtin.list_push(result, builtin.tuple("csv_comment", _make_value_string(msg.comment)))
-    if not builtin.is_empty(msg.missing_strings):
-        builtin.list_push(result, builtin.tuple("csv_missing_strings", _make_value_string(msg.missing_strings[0])))
-    if msg.decimal_separator != ".":
-        builtin.list_push(result, builtin.tuple("csv_decimal_separator", _make_value_string(msg.decimal_separator)))
-    if msg.encoding != "utf-8":
-        builtin.list_push(result, builtin.tuple("csv_encoding", _make_value_string(msg.encoding)))
-    if msg.compression != "auto":
-        builtin.list_push(result, builtin.tuple("csv_compression", _make_value_string(msg.compression)))
-    return result
+    builtin.list_push(result, builtin.tuple("csv_header_row", _make_value_int32(msg.header_row)))
+    builtin.list_push(result, builtin.tuple("csv_skip", _make_value_int64(msg.skip)))
+    builtin.list_push(result, builtin.tuple("csv_new_line", _make_value_string(msg.new_line)))
+    builtin.list_push(result, builtin.tuple("csv_delimiter", _make_value_string(msg.delimiter)))
+    builtin.list_push(result, builtin.tuple("csv_quotechar", _make_value_string(msg.quotechar)))
+    builtin.list_push(result, builtin.tuple("csv_escapechar", _make_value_string(msg.escapechar)))
+    builtin.list_push(result, builtin.tuple("csv_comment", _make_value_string(msg.comment)))
+    for missing_string in msg.missing_strings:
+        builtin.list_push(result, builtin.tuple("csv_missing_strings", _make_value_string(missing_string)))
+    builtin.list_push(result, builtin.tuple("csv_decimal_separator", _make_value_string(msg.decimal_separator)))
+    builtin.list_push(result, builtin.tuple("csv_encoding", _make_value_string(msg.encoding)))
+    builtin.list_push(result, builtin.tuple("csv_compression", _make_value_string(msg.compression)))
+    return builtin.list_sort(result)
 
 
 def _maybe_push_float64(result: List[Tuple[String, logic.Value]], key: String, val: Optional[float]) -> None:
@@ -1365,26 +1368,26 @@ def deconstruct_betree_info_config(msg: logic.BeTreeInfo) -> List[Tuple[String, 
         _maybe_push_bytes_as_string(result, "betree_locator_inline_data", msg.relation_locator.inline_data)
     _maybe_push_int64(result, "betree_locator_element_count", msg.relation_locator.element_count)
     _maybe_push_int64(result, "betree_locator_tree_height", msg.relation_locator.tree_height)
-    return result
+    return builtin.list_sort(result)
 
 
 def deconstruct_export_csv_config(msg: transactions.ExportCSVConfig) -> List[Tuple[String, logic.Value]]:
     result: List[Tuple[String, logic.Value]] = list[Tuple[String, logic.Value]]()
-    if msg.partition_size is not None and builtin.unwrap_option(msg.partition_size) != 0:
+    if msg.partition_size is not None:
         builtin.list_push(result, builtin.tuple("partition_size", _make_value_int64(builtin.unwrap_option(msg.partition_size))))
-    if msg.compression is not None and builtin.unwrap_option(msg.compression) != "":
+    if msg.compression is not None:
         builtin.list_push(result, builtin.tuple("compression", _make_value_string(builtin.unwrap_option(msg.compression))))
     if msg.syntax_header_row is not None:
         builtin.list_push(result, builtin.tuple("syntax_header_row", _make_value_boolean(builtin.unwrap_option(msg.syntax_header_row))))
-    if msg.syntax_missing_string is not None and builtin.unwrap_option(msg.syntax_missing_string) != "":
+    if msg.syntax_missing_string is not None:
         builtin.list_push(result, builtin.tuple("syntax_missing_string", _make_value_string(builtin.unwrap_option(msg.syntax_missing_string))))
-    if msg.syntax_delim is not None and builtin.unwrap_option(msg.syntax_delim) != ",":
+    if msg.syntax_delim is not None:
         builtin.list_push(result, builtin.tuple("syntax_delim", _make_value_string(builtin.unwrap_option(msg.syntax_delim))))
-    if msg.syntax_quotechar is not None and builtin.unwrap_option(msg.syntax_quotechar) != '"':
+    if msg.syntax_quotechar is not None:
         builtin.list_push(result, builtin.tuple("syntax_quotechar", _make_value_string(builtin.unwrap_option(msg.syntax_quotechar))))
-    if msg.syntax_escapechar is not None and builtin.unwrap_option(msg.syntax_escapechar) != "\\":
+    if msg.syntax_escapechar is not None:
         builtin.list_push(result, builtin.tuple("syntax_escapechar", _make_value_string(builtin.unwrap_option(msg.syntax_escapechar))))
-    return result
+    return builtin.list_sort(result)
 
 
 def deconstruct_relation_id_string(msg: logic.RelationId) -> Optional[String]:

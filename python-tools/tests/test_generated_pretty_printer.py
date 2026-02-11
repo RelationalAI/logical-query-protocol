@@ -65,8 +65,10 @@ def _normalize_formulas(s: str) -> str:
 
 
 def _normalize_ws(s: str) -> str:
-    """Collapse all whitespace sequences to a single space."""
-    return re.sub(r'\s+', ' ', s).strip()
+    """Collapse all whitespace sequences to a single space, strip spaces before closing brackets."""
+    s = re.sub(r'\s+', ' ', s).strip()
+    s = re.sub(r'\s+([)\]}])', r'\1', s)
+    return s
 
 
 def _clear_debug_info(proto):

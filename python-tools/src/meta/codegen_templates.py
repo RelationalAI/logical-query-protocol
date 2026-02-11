@@ -93,6 +93,7 @@ PYTHON_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "relation_id_to_uint128": BuiltinTemplate("self.relation_id_to_uint128({0})"),
     "subtract": BuiltinTemplate("({0} - {1})"),
     "list_slice": BuiltinTemplate("{0}[{1}:{2}]"),
+    "list_sort": BuiltinTemplate("sorted({0})"),
 }
 
 
@@ -168,6 +169,7 @@ JULIA_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "relation_id_to_uint128": BuiltinTemplate("relation_id_to_uint128(pp, {0})"),
     "subtract": BuiltinTemplate("({0} - {1})"),
     "list_slice": BuiltinTemplate("{0}[{1}:{2}]"),
+    "list_sort": BuiltinTemplate("sort({0})"),
 }
 
 
@@ -206,6 +208,7 @@ GO_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "map": BuiltinTemplate("mapSlice({1}, {0})"),
     "list_push": BuiltinTemplate("nil", ["{0} = append({0}, {1})"]),
     "list_concat": BuiltinTemplate("listConcat({0}, {1})"),
+    "list_sort": BuiltinTemplate("listSort({0})"),
     "fragment_id_from_string": BuiltinTemplate("&pb.FragmentId{{Id: []byte({0})}}"),
     "relation_id_from_string": BuiltinTemplate("p.relationIdFromString({0})"),
     "relation_id_from_int": BuiltinTemplate(

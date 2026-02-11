@@ -348,6 +348,26 @@ def parse_rhs(text: str, ctx: TypeContext) -> Rhs:
     return Sequence(tuple(elements))
 
 
+def _strip_comment(line: str) -> str:
+    """Strip a #-comment from a line, respecting quoted strings."""
+    in_single = False
+    in_double = False
+    i = 0
+    while i < len(line):
+        c = line[i]
+        if c == '\\' and (in_single or in_double):
+            i += 2
+            continue
+        if c == "'" and not in_double:
+            in_single = not in_single
+        elif c == '"' and not in_single:
+            in_double = not in_double
+        elif c == '#' and not in_single and not in_double:
+            return line[:i].rstrip()
+        i += 1
+    return line
+
+
 def _get_indent(line: str) -> int:
     """Get the indentation level (number of leading spaces) of a line."""
     return len(line) - len(line.lstrip())
@@ -724,6 +744,9 @@ def load_yacc_grammar(
     for line_num, line in enumerate(lines, 1):
         if '\t' in line:
             raise YaccGrammarError("Tabs are not allowed in grammar files. Semantic actions are sensitive to indentation.", line_num)
+
+    # Strip comments
+    lines = [_strip_comment(line) for line in lines]
 
     # Parse directives
     ctx, ignored_completeness, rules_start = parse_directives(lines)

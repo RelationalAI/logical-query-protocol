@@ -113,6 +113,7 @@ register_builtin("unwrap_option_or", [OptionType(T), T], T)
 register_builtin("list_concat", [ListType(T), ListType(T)], ListType(T))
 register_builtin("list_push", [ListType(T), T], VOID)  # Mutating push: list.append(item) / push!(list, item)
 register_builtin("list_slice", [ListType(T), INT64, INT64], ListType(T))  # list[start:end]
+register_builtin("list_sort", [ListType(T)], ListType(T))
 register_builtin("length", [ListType(T)], INT64)
 register_builtin("map", [FunctionType([T1], T2), ListType(T1)], ListType(T2))
 register_builtin("append", [ListType(T), T], ListType(T))  # list.append(item)

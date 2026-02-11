@@ -292,8 +292,10 @@ def _generate_pretty_sequence_from_fields(rhs: Sequence, fields_var: Var,
         # Compute leading whitespace for this element
         leading_ws: List[TargetExpr] = []
         if isinstance(elem, LitTerminal):
-            # Non-sexp spacing before literals
-            if not is_sexp and stmts:
+            if is_sexp and i >= 2 and elem.name not in NO_LEADING_SPACE:
+                # Sexp spacing: newline before non-bracket-closing literals
+                stmts.append(Call(make_builtin('newline_io'), []))
+            elif not is_sexp and stmts:
                 cur_lit_name = elem.name
                 suppress = False
                 if prev_lit_name in NO_TRAILING_SPACE:
