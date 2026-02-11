@@ -87,6 +87,21 @@ message ExportCSVColumn {
   RelationId column_data = 2;
 }
 
+message ExportCSVTableConfig {
+  string path = 1;
+  RelationId table_def = 2;
+
+  optional int64 partition_size = 3;
+  optional string compression = 4;
+  optional bool             syntax_header_row = 5;
+  optional string           syntax_missing_string = 6;
+  optional string           syntax_delim = 7;
+  optional string           syntax_quotechar = 8;
+  optional string           syntax_escapechar = 9;
+
+  // TODO: support data integration options, e.g., private tokens for private buckets etc.
+}
+
 //
 // Read operations
 //
@@ -113,6 +128,7 @@ message Output {
 message Export {
   oneof export_config {
     ExportCSVConfig csv_config = 1;
+    ExportCSVTableConfig csv_table_config = 2;
 
     // TODO: support JSON export
   }
