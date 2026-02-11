@@ -48,7 +48,7 @@ message Write {
     Define define = 1;
     Undefine undefine = 2;
     Context context = 3;
-    Snapshot snapshot = 4;
+    Snapshot snapshot = 5;
   }
 }
 
