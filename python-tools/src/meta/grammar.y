@@ -127,6 +127,7 @@
 %nonterm rel_term logic.RelTerm
 %nonterm relation_id logic.RelationId
 %nonterm script logic.Script
+%nonterm snapshot transactions.Snapshot
 %nonterm specialized_value logic.Value
 %nonterm string_type logic.StringType
 %nonterm sum_monoid logic.SumMonoid
@@ -235,6 +236,8 @@ write
       construct: transactions.Write(undefine=$1)
     | context
       construct: transactions.Write(context=$1)
+    | snapshot
+      construct: transactions.Write(snapshot=$1)
 
 define
     : "(" "define" fragment ")"
@@ -675,6 +678,10 @@ undefine
 context
     : "(" "context" relation_id* ")"
       construct: transactions.Context(relations=$3)
+
+snapshot
+    : "(" "snapshot" rel_edb_path relation_id ")"
+      construct: transactions.Snapshot(destination_path=$3, source_relation=$4)
 
 epoch_reads
     : "(" "reads" read* ")"
