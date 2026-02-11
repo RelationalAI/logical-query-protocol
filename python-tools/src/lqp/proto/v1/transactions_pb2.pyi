@@ -15,10 +15,21 @@ class MaintenanceLevel(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     MAINTENANCE_LEVEL_OFF: _ClassVar[MaintenanceLevel]
     MAINTENANCE_LEVEL_AUTO: _ClassVar[MaintenanceLevel]
     MAINTENANCE_LEVEL_ALL: _ClassVar[MaintenanceLevel]
+
+class OptimizationLevel(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    OPTIMIZATION_LEVEL_UNSPECIFIED: _ClassVar[OptimizationLevel]
+    OPTIMIZATION_LEVEL_DEFAULT: _ClassVar[OptimizationLevel]
+    OPTIMIZATION_LEVEL_CONSERVATIVE: _ClassVar[OptimizationLevel]
+    OPTIMIZATION_LEVEL_AGGRESSIVE: _ClassVar[OptimizationLevel]
 MAINTENANCE_LEVEL_UNSPECIFIED: MaintenanceLevel
 MAINTENANCE_LEVEL_OFF: MaintenanceLevel
 MAINTENANCE_LEVEL_AUTO: MaintenanceLevel
 MAINTENANCE_LEVEL_ALL: MaintenanceLevel
+OPTIMIZATION_LEVEL_UNSPECIFIED: OptimizationLevel
+OPTIMIZATION_LEVEL_DEFAULT: OptimizationLevel
+OPTIMIZATION_LEVEL_CONSERVATIVE: OptimizationLevel
+OPTIMIZATION_LEVEL_AGGRESSIVE: OptimizationLevel
 
 class Transaction(_message.Message):
     __slots__ = ("epochs", "configure", "sync")
@@ -31,12 +42,14 @@ class Transaction(_message.Message):
     def __init__(self, epochs: _Optional[_Iterable[_Union[Epoch, _Mapping]]] = ..., configure: _Optional[_Union[Configure, _Mapping]] = ..., sync: _Optional[_Union[Sync, _Mapping]] = ...) -> None: ...
 
 class Configure(_message.Message):
-    __slots__ = ("semantics_version", "ivm_config")
+    __slots__ = ("semantics_version", "ivm_config", "optimization_level")
     SEMANTICS_VERSION_FIELD_NUMBER: _ClassVar[int]
     IVM_CONFIG_FIELD_NUMBER: _ClassVar[int]
+    OPTIMIZATION_LEVEL_FIELD_NUMBER: _ClassVar[int]
     semantics_version: int
     ivm_config: IVMConfig
-    def __init__(self, semantics_version: _Optional[int] = ..., ivm_config: _Optional[_Union[IVMConfig, _Mapping]] = ...) -> None: ...
+    optimization_level: OptimizationLevel
+    def __init__(self, semantics_version: _Optional[int] = ..., ivm_config: _Optional[_Union[IVMConfig, _Mapping]] = ..., optimization_level: _Optional[_Union[OptimizationLevel, str]] = ...) -> None: ...
 
 class IVMConfig(_message.Message):
     __slots__ = ("level",)

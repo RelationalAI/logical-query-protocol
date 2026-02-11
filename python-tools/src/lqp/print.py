@@ -182,6 +182,8 @@ def program_to_str(node: ir.Transaction, options: Dict = {}) -> str:
     config_dict["semantics_version"] = config.semantics_version
     if config.ivm_config.level != ir.MaintenanceLevel.UNSPECIFIED:
         config_dict["ivm.maintenance_level"] = config.ivm_config.level.name.lower()
+    if config.optimization_level != ir.OptimizationLevel.UNSPECIFIED:
+        config_dict["optimization_level"] = config.optimization_level.name.lower()
 
     s += "\n" + conf.indentation(1) + conf.LPAREN() + conf.kw("configure") + "\n"
     s += config_dict_to_str(config_dict, 2, options)

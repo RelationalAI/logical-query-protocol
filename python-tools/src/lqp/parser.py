@@ -178,16 +178,25 @@ def construct_configure(config_dict, meta):
         maintenance_level = ir.MaintenanceLevel.OFF
     ivm_config = ir.IVMConfig(level=maintenance_level, meta=meta)
 
-    # Construct Configure
+    # Get optimization level
+    optimization_level_value = config_dict.get("optimization_level")
+    if optimization_level_value:
+        optimization_level = getattr(ir.OptimizationLevel, optimization_level_value.value.upper())
+    else:
+        optimization_level = ir.OptimizationLevel.DEFAULT
+
+    # Get semantics_version
     semantics_version_value = config_dict.get("semantics_version")
     if semantics_version_value:
         semantics_version = semantics_version_value.value
     else:
         semantics_version = 0
 
+    # Construct & return Configure
     return ir.Configure(
         semantics_version=semantics_version,
         ivm_config=ivm_config,
+        optimization_level=optimization_level,
         meta=meta,
     )
 
