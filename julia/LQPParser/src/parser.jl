@@ -2881,10 +2881,7 @@ function parse_constraint(parser::Parser)::Proto.Constraint
     functional_dependency_values260 = _t850
     consume_literal!(parser, ")")
     _t851 = Proto.FunctionalDependency(abstraction258, functional_dependency_keys259, functional_dependency_values260)
-    _t852 = Proto.Constraint(OneOf(:functional_dependency, _t851), relation_id257)
-    # TODO: This was changed manually - the generated code mixed the two inputs which lead to an error. 
-    # original line is below
-    # _t852 = Proto.Constraint(relation_id257, OneOf(:functional_dependency, _t851))
+    _t852 = Proto.Constraint(relation_id257, OneOf(:functional_dependency, _t851))
     return _t852
 end
 
