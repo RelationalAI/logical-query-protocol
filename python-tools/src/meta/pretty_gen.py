@@ -272,6 +272,9 @@ def _generate_pretty_sequence_from_fields(rhs: Sequence, fields_var: Var,
     stmts: List[TargetExpr] = []
     field_idx = 0
 
+    NO_TRAILING_SPACE = {'(', '[', ':', '#', '::'}
+    NO_LEADING_SPACE = {')', ']', '}', '::'}
+
     # Detect S-expression pattern: first element is "(", second is a keyword literal
     is_sexp = (len(elems) >= 2
                and isinstance(elems[0], LitTerminal) and elems[0].name == '('
@@ -280,28 +283,68 @@ def _generate_pretty_sequence_from_fields(rhs: Sequence, fields_var: Var,
     # Count non-literal elements to determine if fields_var is a tuple or single value
     non_lit_count = sum(1 for e in elems if not isinstance(e, LitTerminal))
 
+    # Track the previous element's literal name for spacing decisions
+    prev_lit_name: Optional[str] = None
+
     for i, elem in enumerate(elems):
-        # In non-S-expression mode, add space between elements
-        if not is_sexp and stmts:
-            stmts.append(Call(make_builtin('write_io'), [Lit(' ')]))
+        is_optional_or_star = isinstance(elem, (Option, Star))
+
+        # Compute leading whitespace for this element
+        leading_ws: List[TargetExpr] = []
+        if isinstance(elem, LitTerminal):
+            # Non-sexp spacing before literals
+            if not is_sexp and stmts:
+                cur_lit_name = elem.name
+                suppress = False
+                if prev_lit_name in NO_TRAILING_SPACE:
+                    suppress = True
+                if cur_lit_name in NO_LEADING_SPACE:
+                    suppress = True
+                if not suppress:
+                    stmts.append(Call(make_builtin('write_io'), [Lit(' ')]))
+        else:
+            if is_sexp:
+                # Sexp spacing: newline before each non-literal
+                # (indent is emitted unconditionally after the keyword)
+                leading_ws = [Call(make_builtin('newline_io'), [])]
+            elif stmts:
+                # Non-sexp spacing between elements
+                cur_lit_name = None
+                suppress = False
+                if prev_lit_name in NO_TRAILING_SPACE:
+                    suppress = True
+                if not suppress:
+                    leading_ws = [Call(make_builtin('write_io'), [Lit(' ')])]
 
         if isinstance(elem, LitTerminal):
             is_keyword = is_sexp and i == 1
+            # For sexp closing paren, emit dedent if we indented
+            if is_sexp and elem.name == ')' and non_lit_count > 0:
+                stmts.append(Call(make_builtin('dedent_io'), []))
             stmts.append(_format_literal(elem, is_sexp_keyword=is_keyword))
+            # After sexp keyword, emit indent (always, not conditional on Option)
+            if is_keyword and non_lit_count > 0:
+                stmts.append(Call(make_builtin('indent_io'), []))
+            prev_lit_name = elem.name
         else:
-            # Insert newline between consecutive non-literal elements
-            if stmts and field_idx > 0 and is_sexp:
-                stmts.append(Call(make_builtin('newline_io'), []))
+            # For non-optional, non-star elements, emit spacing unconditionally
+            if not is_optional_or_star:
+                stmts.extend(leading_ws)
+            prev_lit_name = None
 
             # Extract field from tuple or use directly
             if non_lit_count > 1 and isinstance(fields_var.type, TupleType):
                 elem_type = fields_var.type.elements[field_idx]
                 elem_var = Var(gensym('field'), elem_type)
                 elem_expr = GetElement(fields_var, field_idx)
-                pretty_elem = _pretty_print_element(elem, elem_var, grammar, proto_messages)
+                pretty_elem = _pretty_print_element(
+                    elem, elem_var, grammar, proto_messages,
+                    leading_ws=leading_ws if is_optional_or_star else [])
                 stmts.append(Let(elem_var, elem_expr, pretty_elem))
             else:
-                stmts.append(_pretty_print_element(elem, fields_var, grammar, proto_messages))
+                stmts.append(_pretty_print_element(
+                    elem, fields_var, grammar, proto_messages,
+                    leading_ws=leading_ws if is_optional_or_star else []))
             field_idx += 1
 
     if not stmts:
@@ -313,24 +356,33 @@ def _generate_pretty_sequence_from_fields(rhs: Sequence, fields_var: Var,
 
 
 def _pretty_print_element(elem: Rhs, var: Var, grammar: GrammarLike,
-                           proto_messages: Optional[Dict]) -> TargetExpr:
-    """Pretty print a single RHS element given its value."""
+                           proto_messages: Optional[Dict],
+                           leading_ws: Optional[List[TargetExpr]] = None) -> TargetExpr:
+    """Pretty print a single RHS element given its value.
+
+    Args:
+        leading_ws: Whitespace expressions to emit before the element,
+            but only if the element produces output (used for Option/Star).
+    """
     if isinstance(elem, NamedTerminal):
         formatted = _format_terminal(elem, var)
         return Call(make_builtin('write_io'), [formatted])
     elif isinstance(elem, Nonterminal):
         return Call(PrintNonterminal(elem), [var])
     elif isinstance(elem, Option):
-        return _generate_pretty_option_from_field(elem, var, grammar, proto_messages)
+        return _generate_pretty_option_from_field(
+            elem, var, grammar, proto_messages, leading_ws=leading_ws or [])
     elif isinstance(elem, Star):
-        return _generate_pretty_star_from_field(elem, var, grammar, proto_messages)
+        return _generate_pretty_star_from_field(
+            elem, var, grammar, proto_messages, leading_ws=leading_ws or [])
     else:
         return Call(make_builtin('write_io'), [Lit(f'<{type(elem).__name__}>')])
 
 
 def _generate_pretty_option_from_field(rhs: Option, field_var: Var,
                                        grammar: GrammarLike,
-                                       proto_messages: Optional[Dict]) -> TargetExpr:
+                                       proto_messages: Optional[Dict],
+                                       leading_ws: Optional[List[TargetExpr]] = None) -> TargetExpr:
     """Generate pretty printing for an optional field."""
     has_value = Call(make_builtin('is_some'), [field_var])
 
@@ -351,16 +403,22 @@ def _generate_pretty_option_from_field(rhs: Option, field_var: Var,
     else:
         pretty_inner = Call(make_builtin('write_io'), [Call(make_builtin('to_string'), [value_var])])
 
+    then_body: TargetExpr = Let(value_var, value_expr, pretty_inner)
+    # Include leading whitespace inside the conditional
+    if leading_ws:
+        then_body = Seq(list(leading_ws) + [then_body])
+
     return IfElse(
         has_value,
-        Let(value_var, value_expr, pretty_inner),
+        then_body,
         Lit(None)
     )
 
 
 def _generate_pretty_star_from_field(rhs: Star, field_var: Var,
                                      grammar: GrammarLike,
-                                     proto_messages: Optional[Dict]) -> TargetExpr:
+                                     proto_messages: Optional[Dict],
+                                     leading_ws: Optional[List[TargetExpr]] = None) -> TargetExpr:
     """Generate pretty printing for a repeated field."""
     list_type = field_var.type
     if isinstance(list_type, ListType):
@@ -390,7 +448,17 @@ def _generate_pretty_star_from_field(rhs: Star, field_var: Var,
 
     pretty_with_spacing = _optimize_if_else_with_common_tail(pretty_with_spacing)
 
-    return ForeachEnumerated(index_var, elem_var, field_var, pretty_with_spacing)
+    loop_body: TargetExpr = ForeachEnumerated(index_var, elem_var, field_var, pretty_with_spacing)
+
+    # Include leading whitespace inside an is_empty guard
+    if leading_ws:
+        loop_body = IfElse(
+            Call(make_builtin('not'), [Call(make_builtin('is_empty'), [field_var])]),
+            Seq(list(leading_ws) + [loop_body]),
+            Lit(None)
+        )
+
+    return loop_body
 
 
 def _format_literal(lit: LitTerminal, is_sexp_keyword: bool = False) -> TargetExpr:
@@ -402,17 +470,9 @@ def _format_literal(lit: LitTerminal, is_sexp_keyword: bool = False) -> TargetEx
     if lit.name == '(':
         return Call(make_builtin('write_io'), [Lit('(')])
     elif lit.name == ')':
-        return Seq([
-            Call(make_builtin('dedent_io'), []),
-            Call(make_builtin('write_io'), [Lit(')')]),
-            Call(make_builtin('newline_io'), []),
-        ])
+        return Call(make_builtin('write_io'), [Lit(')')])
     elif is_sexp_keyword:
-        return Seq([
-            Call(make_builtin('write_io'), [Lit(lit.name)]),
-            Call(make_builtin('newline_io'), []),
-            Call(make_builtin('indent_io'), []),
-        ])
+        return Call(make_builtin('write_io'), [Lit(lit.name)])
     else:
         return Call(make_builtin('write_io'), [Lit(lit.name)])
 

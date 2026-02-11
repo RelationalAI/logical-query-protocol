@@ -381,6 +381,7 @@ def parse_rules(lines: List[str], start_line: int, ctx: TypeContext) -> Tuple[Li
     current_rhs_lines: List[str] = []  # Accumulate RHS lines
     current_action_lines: List[str] = []  # Accumulate action lines
     current_deconstruct_lines: List[str] = []  # Accumulate deconstruct lines
+    current_deconstruct_guard: Optional[str] = None  # Guard expression from 'deconstruct if COND:'
     current_alt_start_line: int = 0
     in_action: bool = False
     in_deconstruct: bool = False
@@ -388,16 +389,17 @@ def parse_rules(lines: List[str], start_line: int, ctx: TypeContext) -> Tuple[Li
 
     def flush_alternative():
         """Process accumulated alternative."""
-        nonlocal current_rhs_lines, current_action_lines, current_deconstruct_lines, in_action, in_deconstruct
+        nonlocal current_rhs_lines, current_action_lines, current_deconstruct_lines, current_deconstruct_guard, in_action, in_deconstruct
         if current_rhs_lines and current_lhs is not None and current_lhs_type is not None:
             rhs_text = '\n'.join(current_rhs_lines)
             action_text = '\n'.join(current_action_lines)
             deconstruct_text = '\n'.join(current_deconstruct_lines)
-            rule = _parse_alternative(current_lhs, current_lhs_type, rhs_text, action_text, deconstruct_text, ctx, current_alt_start_line)
+            rule = _parse_alternative(current_lhs, current_lhs_type, rhs_text, action_text, deconstruct_text, ctx, current_alt_start_line, deconstruct_guard=current_deconstruct_guard)
             rules.append(rule)
         current_rhs_lines = []
         current_action_lines = []
         current_deconstruct_lines = []
+        current_deconstruct_guard = None
         in_action = False
         in_deconstruct = False
 
@@ -432,7 +434,7 @@ def parse_rules(lines: List[str], start_line: int, ctx: TypeContext) -> Tuple[Li
 
         # If we're in a deconstruct block, check if we should exit
         if in_deconstruct:
-            if indent <= action_base_indent and not stripped.startswith('deconstruct:'):
+            if indent <= action_base_indent and not stripped.startswith('deconstruct'):
                 in_deconstruct = False
                 # Don't consume this line, process it below
             else:
@@ -488,15 +490,29 @@ def parse_rules(lines: List[str], start_line: int, ctx: TypeContext) -> Tuple[Li
                 in_action = True
                 current_action_lines = []
 
-        elif stripped.startswith('deconstruct:'):
-            # Start of deconstruct action
+        elif stripped.startswith('deconstruct'):
+            # Start of deconstruct action: "deconstruct:" or "deconstruct if COND:"
             action_base_indent = indent
-            rest = stripped[len('deconstruct:'):].strip()
-            if rest:
-                current_deconstruct_lines = [rest]
-            else:
+            deconstruct_rest = stripped[len('deconstruct'):].strip()
+            if deconstruct_rest.startswith('if '):
+                # Guard syntax: "deconstruct if COND:"
+                if not deconstruct_rest.endswith(':'):
+                    raise YaccGrammarError("deconstruct guard must end with ':'", line_num)
+                guard_text = deconstruct_rest[3:-1].strip()  # between 'if ' and ':'
+                current_deconstruct_guard = guard_text
                 in_deconstruct = True
                 current_deconstruct_lines = []
+            elif deconstruct_rest.startswith(':'):
+                # Standard syntax: "deconstruct:" or "deconstruct: expr"
+                rest = deconstruct_rest[1:].strip()
+                current_deconstruct_guard = None
+                if rest:
+                    current_deconstruct_lines = [rest]
+                else:
+                    in_deconstruct = True
+                    current_deconstruct_lines = []
+            else:
+                raise YaccGrammarError(f"Invalid deconstruct syntax: {stripped}", line_num)
 
         elif line and line[0].isspace() and current_rhs_lines:
             # Continuation of RHS (indented line, not yet in action)
@@ -529,7 +545,8 @@ def _find_non_literal_indices(rhs: Rhs) -> List[int]:
 
 def _parse_alternative(lhs_name: str, lhs_type: TargetType, rhs_text: str,
                        action_text: str, deconstruct_text: str,
-                       ctx: TypeContext, line: int) -> Rule:
+                       ctx: TypeContext, line: int,
+                       deconstruct_guard: Optional[str] = None) -> Rule:
     """Parse a single rule alternative.
 
     Args:
@@ -540,6 +557,7 @@ def _parse_alternative(lhs_name: str, lhs_type: TargetType, rhs_text: str,
         deconstruct_text: The deconstruct action text (from deconstruct: block)
         ctx: Type context
         line: Line number for error messages
+        deconstruct_guard: Optional guard expression from 'deconstruct if COND:'
     """
     from .yacc_action_parser import parse_deconstruct_action
 
@@ -569,7 +587,9 @@ def _parse_alternative(lhs_name: str, lhs_type: TargetType, rhs_text: str,
 
     # Parse deconstruct action: explicit if provided, otherwise default to identity ($$)
     if deconstruct_text:
-        deconstructor = parse_deconstruct_action(deconstruct_text, lhs_type, rhs, ctx, line)
+        deconstructor = parse_deconstruct_action(deconstruct_text, lhs_type, rhs, ctx, line, guard=deconstruct_guard)
+    elif deconstruct_guard:
+        deconstructor = parse_deconstruct_action("$$", lhs_type, rhs, ctx, line, guard=deconstruct_guard)
     else:
         deconstructor = parse_deconstruct_action("$$", lhs_type, rhs, ctx, line)
 

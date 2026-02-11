@@ -81,7 +81,7 @@ class PrettyPrinter:
     def format_uint128(self, msg) -> str:
         """Format a UInt128Value protobuf message as a hex string."""
         value = (msg.high << 64) | msg.low
-        return f"0x{{value:032x}}"
+        return f"0x{{value:x}}"
 
     def fragment_id_to_string(self, msg) -> str:
         """Convert FragmentId to string representation."""
@@ -95,7 +95,7 @@ class PrettyPrinter:
 
     def relation_id_to_string(self, msg):
         """Convert RelationId to string representation using debug info."""
-        return self._debug_info.get((msg.id_low, msg.id_high))
+        return self._debug_info.get((msg.id_low, msg.id_high), "")
 
     def relation_id_to_int(self, msg):
         """Convert RelationId to int if it fits in signed 64-bit range."""
@@ -123,4 +123,5 @@ def pretty(msg: Any, io: Optional[IO[str]] = None) -> str:
     """Pretty print a protobuf message and return the string representation."""
     printer = PrettyPrinter(io)
     printer.pretty_{start_name}(msg)
+    printer.newline()
     return printer.get_output()

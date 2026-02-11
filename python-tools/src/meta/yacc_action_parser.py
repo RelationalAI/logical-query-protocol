@@ -24,7 +24,7 @@ from typing import Dict, List, Optional, Tuple, Set
 
 from .grammar import Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
 from .target import (
-    TargetType, BaseType, MessageType, EnumType, ListType, OptionType, TupleType, DictType, FunctionType, VarType,
+    TargetType, BaseType, MessageType, EnumType, ListType, OptionType, TupleType, DictType, FunctionType,
     TargetExpr, Var, Lit, NamedFun, NewMessage, EnumValue, Call, Lambda,
     Let, IfElse, Seq, ListExpr, GetElement, GetField, FunDef, OneOf, Assign, Return
 )
@@ -585,7 +585,8 @@ def parse_action(text: str, rhs: Rhs, ctx: 'TypeContext', line: Optional[int] = 
 
 
 def parse_deconstruct_action(text: str, lhs_type: TargetType, rhs: 'Rhs',
-                              ctx: 'TypeContext', line: Optional[int] = None) -> Lambda:
+                              ctx: 'TypeContext', line: Optional[int] = None,
+                              guard: Optional[str] = None) -> Lambda:
     """Parse a deconstruct action and return a Lambda.
 
     Deconstruct actions assign to $1, $2, ... for each non-literal RHS element,
@@ -606,6 +607,7 @@ def parse_deconstruct_action(text: str, lhs_type: TargetType, rhs: 'Rhs',
         rhs: The RHS of the rule (used for validation)
         ctx: Type context
         line: Line number for error messages
+        guard: Optional guard expression from 'deconstruct if COND:'
 
     Returns:
         Lambda expression with one parameter of lhs_type
@@ -615,7 +617,7 @@ def parse_deconstruct_action(text: str, lhs_type: TargetType, rhs: 'Rhs',
     text = text.strip()
 
     # Default identity: deconstruct returns $$ unchanged
-    if text == '$$':
+    if text == '$$' and guard is None:
         msg_param = Var("_dollar_dollar", lhs_type)
         return Lambda([msg_param], lhs_type, msg_param)
 
@@ -634,19 +636,20 @@ def parse_deconstruct_action(text: str, lhs_type: TargetType, rhs: 'Rhs',
     except SyntaxError as e:
         raise YaccGrammarError(f"Syntax error in deconstruct action: {e}", line)
 
-    # Extract assert conditions, side-effects, and $N assignments from the AST
+    # Extract side-effects and $N assignments from the AST
     # assignments maps 1-indexed $N to the expression AST node
     assignments: Dict[int, ast.expr] = {}
     # type_annotations maps 1-indexed $N to the declared TargetType (if any)
     type_annotations: Dict[int, TargetType] = {}
-    assert_conditions: List[ast.expr] = []
     side_effects: List[ast.expr] = []
     extra_vars: Dict[str, TargetType] = {"_dollar_dollar": lhs_type}
 
     for stmt in tree.body:
         if isinstance(stmt, ast.Assert):
-            assert_conditions.append(stmt.test)
-            continue
+            raise YaccGrammarError(
+                "assert in deconstruct blocks is no longer supported. "
+                "Use 'deconstruct if COND:' syntax instead.",
+                line)
         if isinstance(stmt, ast.Expr):
             side_effects.append(stmt.value)
             continue
@@ -664,7 +667,7 @@ def parse_deconstruct_action(text: str, lhs_type: TargetType, rhs: 'Rhs',
                 type_annotations[dollar_idx] = _annotation_to_type(stmt.annotation, line or 0)
                 continue
         raise YaccGrammarError(
-            f"Deconstruct actions must be assert, side-effect expressions, "
+            f"Deconstruct actions must be side-effect expressions "
             f"or $N = expr assignments. Got: {ast.dump(stmt)}",
             line)
 
@@ -703,43 +706,23 @@ def parse_deconstruct_action(text: str, lhs_type: TargetType, rhs: 'Rhs',
         expr = _convert_node_with_vars(assignments[idx], param_info, empty_params, ctx, line, extra_vars)
         converted.append(expr)
 
-    # Type-check: inferred expression types must be compatible with declared types
-    unknown_type = BaseType("Unknown")
-    for i, idx in enumerate(sorted(assignments.keys())):
-        if idx in type_annotations:
-            declared_type = type_annotations[idx]
-            inferred_type = _infer_type(converted[i], line, ctx)
-            # Skip check when inferred type is Unknown or a type variable
-            if inferred_type == unknown_type or isinstance(inferred_type, VarType):
-                continue
-            # T <: Optional[T]: non-None means "present" for optional RHS elements
-            # Optional[T] <: T: None encodes match failure, handled by framework
-            compatible = (is_subtype(inferred_type, declared_type)
-                          or (isinstance(declared_type, OptionType)
-                              and is_subtype(inferred_type, declared_type.element_type))
-                          or (isinstance(inferred_type, OptionType)
-                              and is_subtype(inferred_type.element_type, declared_type)))
-            if not compatible:
-                raise YaccGrammarError(
-                    f"Type mismatch in deconstruct ${idx}: "
-                    f"declared {declared_type}, but expression has type {inferred_type}",
-                    line)
-
     # Convert side-effect expressions to target IR
     side_effect_exprs: List[TargetExpr] = []
     for se_node in side_effects:
         se_expr = _convert_node_with_vars(se_node, param_info, empty_params, ctx, line, extra_vars)
         side_effect_exprs.append(se_expr)
 
-    # Build body from assert conditions and assignments
-    if assert_conditions:
-        # Convert assert conditions to target IR
-        conditions: List[TargetExpr] = []
-        for cond_node in assert_conditions:
-            cond_expr = _convert_node_with_vars(cond_node, param_info, empty_params, ctx, line, extra_vars)
-            conditions.append(cond_expr)
+    # Build body from guard and assignments
+    if guard is not None:
+        # Parse the guard expression
+        guard_preprocessed = preprocess_action(guard)
+        try:
+            guard_tree = ast.parse(guard_preprocessed, mode='eval')
+        except SyntaxError as e:
+            raise YaccGrammarError(f"Syntax error in deconstruct guard: {e}", line)
+        guard_expr = _convert_node_with_vars(guard_tree.body, param_info, empty_params, ctx, line, extra_vars)
 
-        # Build guarded body: if all conditions met, return Some(vals); else None
+        # Build guarded body: if guard met, return Some(vals); else None
         if len(converted) == 1:
             success_body: TargetExpr = Call(_make_builtin('some'), [converted[0]])
             inner_type = _infer_type(converted[0], line, ctx)
@@ -749,24 +732,25 @@ def parse_deconstruct_action(text: str, lhs_type: TargetType, rhs: 'Rhs',
             element_types = [_infer_type(c, line, ctx) for c in converted]
             inner_type = TupleType(tuple(element_types))
 
-        # Combine conditions with 'and'
-        combined_cond = conditions[0]
-        for c in conditions[1:]:
-            combined_cond = Call(_make_builtin('and'), [combined_cond, c])
+        # Wrap with side-effects if any (before the guard check)
+        if side_effect_exprs:
+            success_body = Seq(tuple(side_effect_exprs) + (success_body,))
 
-        body: TargetExpr = IfElse(combined_cond, success_body, Lit(None))
+        body: TargetExpr = IfElse(guard_expr, success_body, Lit(None))
         return_type: TargetType = OptionType(inner_type)
     elif len(converted) == 1:
         body = converted[0]
         return_type = _infer_type(body, line, ctx)
+        # Wrap with side-effects if any
+        if side_effect_exprs:
+            body = Seq(tuple(side_effect_exprs) + (body,))
     else:
         body = Call(_make_builtin('tuple'), converted)
         element_types = [_infer_type(c, line, ctx) for c in converted]
         return_type = TupleType(tuple(element_types))
-
-    # Wrap with side-effects if any
-    if side_effect_exprs:
-        body = Seq(tuple(side_effect_exprs) + (body,))
+        # Wrap with side-effects if any
+        if side_effect_exprs:
+            body = Seq(tuple(side_effect_exprs) + (body,))
 
     return Lambda([msg_param], return_type, body)
 
