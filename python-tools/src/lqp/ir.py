@@ -533,6 +533,7 @@ class Transaction(LqpNode):
 class Configure(LqpNode):
     semantics_version: int
     ivm_config: IVMConfig
+    optimization_level: OptimizationLevel
 
 # Sync(fragments::FragmentId[])
 @dataclass(frozen=True)
@@ -549,6 +550,15 @@ class MaintenanceLevel(Enum):
     OFF = 1
     AUTO = 2
     ALL = 3
+
+    def __str__(self) -> str:
+        return self.name
+
+class OptimizationLevel(Enum):
+    UNSPECIFIED = 0
+    DEFAULT = 1
+    CONSERVATIVE = 2
+    AGGRESSIVE = 3
 
     def __str__(self) -> str:
         return self.name

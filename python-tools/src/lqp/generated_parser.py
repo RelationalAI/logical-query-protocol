@@ -405,7 +405,7 @@ class Parser:
     def default_configure() -> transactions_pb2.Configure:
         _t969 = transactions_pb2.IVMConfig(level=transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_OFF)
         ivm_config = _t969
-        _t970 = transactions_pb2.Configure(semantics_version=0, ivm_config=ivm_config)
+        _t970 = transactions_pb2.Configure(semantics_version=0, ivm_config=ivm_config, optimization_level=transactions_pb2.OptimizationLevel.OPTIMIZATION_LEVEL_DEFAULT)
         return _t970
 
     @staticmethod
@@ -428,7 +428,20 @@ class Parser:
         ivm_config = _t971
         _t972 = Parser._extract_value_int64(config.get('semantics_version'), 0)
         semantics_version = _t972
-        _t973 = transactions_pb2.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
+        optimization_level_val = config.get('optimization_level')
+        optimization_level = transactions_pb2.OptimizationLevel.OPTIMIZATION_LEVEL_DEFAULT
+        if (optimization_level_val is not None and optimization_level_val.HasField('string_value')):
+            if optimization_level_val.string_value == 'default':
+                optimization_level = transactions_pb2.OptimizationLevel.OPTIMIZATION_LEVEL_DEFAULT
+            else:
+                if optimization_level_val.string_value == 'conservative':
+                    optimization_level = transactions_pb2.OptimizationLevel.OPTIMIZATION_LEVEL_CONSERVATIVE
+                else:
+                    if optimization_level_val.string_value == 'aggressive':
+                        optimization_level = transactions_pb2.OptimizationLevel.OPTIMIZATION_LEVEL_AGGRESSIVE
+                    else:
+                        optimization_level = transactions_pb2.OptimizationLevel.OPTIMIZATION_LEVEL_DEFAULT
+        _t973 = transactions_pb2.Configure(semantics_version=semantics_version, ivm_config=ivm_config, optimization_level=optimization_level)
         return _t973
 
     @staticmethod

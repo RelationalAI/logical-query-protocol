@@ -531,7 +531,8 @@ def convert_epoch(e: ir.Epoch) -> transactions_pb2.Epoch:
 def convert_configure(c: ir.Configure) -> transactions_pb2.Configure:
     return transactions_pb2.Configure(
         semantics_version=c.semantics_version,
-        ivm_config=convert_ivm_config(c.ivm_config)
+        ivm_config=convert_ivm_config(c.ivm_config),
+        optimization_level=convert_optimization_level(c.optimization_level)
     )
 
 def convert_ivm_config(c: ir.IVMConfig) -> transactions_pb2.IVMConfig:
@@ -541,6 +542,9 @@ def convert_ivm_config(c: ir.IVMConfig) -> transactions_pb2.IVMConfig:
 
 def convert_maintenance_level(l: ir.MaintenanceLevel) -> transactions_pb2.MaintenanceLevel:
     return transactions_pb2.MaintenanceLevel.Name(l.value) # type: ignore[missing-attribute]
+
+def convert_optimization_level(o: ir.OptimizationLevel) -> transactions_pb2.OptimizationLevel:
+    return transactions_pb2.OptimizationLevel.Name(o.value) # type: ignore[missing-attribute]
 
 def convert_sync(c: ir.Sync) -> transactions_pb2.Sync:
     return transactions_pb2.Sync(fragments=[convert_fragment_id(rid) for rid in c.fragments])

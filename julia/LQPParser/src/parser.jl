@@ -473,7 +473,7 @@ end
 function default_configure(parser::Parser)::Proto.Configure
     _t969 = Proto.IVMConfig(level=Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF)
     ivm_config = _t969
-    _t970 = Proto.Configure(semantics_version=0, ivm_config=ivm_config)
+    _t970 = Proto.Configure(0, ivm_config, Proto.OptimizationLevel.OPTIMIZATION_LEVEL_DEFAULT)
     return _t970
 end
 
@@ -500,7 +500,24 @@ function construct_configure(parser::Parser, config_dict::Vector{Tuple{String, P
     ivm_config = _t971
     _t972 = _extract_value_int64(parser, get(config, "semantics_version", nothing), 0)
     semantics_version = _t972
-    _t973 = Proto.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
+    optimization_level_val = get(config, "optimization_level", nothing)
+    optimization_level = Proto.OptimizationLevel.OPTIMIZATION_LEVEL_DEFAULT
+    if (!isnothing(optimization_level_val) && _has_proto_field(optimization_level_val, Symbol("string_value")))
+        if _get_oneof_field(optimization_level_val, :string_value) == "default"
+            optimization_level = Proto.OptimizationLevel.OPTIMIZATION_LEVEL_DEFAULT
+        else
+            if _get_oneof_field(optimization_level_val, :string_value) == "conservative"
+                optimization_level = Proto.OptimizationLevel.OPTIMIZATION_LEVEL_CONSERVATIVE
+            else
+                if _get_oneof_field(optimization_level_val, :string_value) == "aggressive"
+                    optimization_level = Proto.OptimizationLevel.OPTIMIZATION_LEVEL_AGGRESSIVE
+                else
+                    optimization_level = Proto.OptimizationLevel.OPTIMIZATION_LEVEL_DEFAULT
+                end
+            end
+        end
+    end
+    _t973 = Proto.Configure(semantics_version, ivm_config, optimization_level)
     return _t973
 end
 
@@ -2863,8 +2880,8 @@ function parse_constraint(parser::Parser)::Proto.Constraint
     _t850 = parse_functional_dependency_values(parser)
     functional_dependency_values260 = _t850
     consume_literal!(parser, ")")
-    _t851 = Proto.FunctionalDependency(guard=abstraction258, keys=functional_dependency_keys259, values=functional_dependency_values260)
-    _t852 = Proto.Constraint(constraint_type=OneOf(:functional_dependency, _t851), name=relation_id257)
+    _t851 = Proto.FunctionalDependency(abstraction258, functional_dependency_keys259, functional_dependency_values260)
+    _t852 = Proto.Constraint(relation_id257, OneOf(:functional_dependency, _t851))
     return _t852
 end
 
