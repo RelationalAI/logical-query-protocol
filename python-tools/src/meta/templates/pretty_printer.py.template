@@ -52,7 +52,7 @@ class PrettyPrinter:
             return self.io.getvalue()
         return ""
 
-    def format_decimal(self, msg) -> str:
+    def format_decimal(self, msg: logic_pb2.DecimalValue) -> str:
         """Format a DecimalValue as '<digits>.<digits>d<precision>'."""
         int_val: int = (msg.value.high << 64) | msg.value.low
         if msg.value.high & (1 << 63):
@@ -71,40 +71,40 @@ class PrettyPrinter:
             decimal_str = digits[:-scale] + "." + digits[-scale:]
         return sign + decimal_str + "d" + str(msg.precision)
 
-    def format_int128(self, msg) -> str:
+    def format_int128(self, msg: logic_pb2.Int128Value) -> str:
         """Format an Int128Value protobuf message as a string with i128 suffix."""
         value = (msg.high << 64) | msg.low
         if msg.high & (1 << 63):
             value -= (1 << 128)
         return str(value) + "i128"
 
-    def format_uint128(self, msg) -> str:
+    def format_uint128(self, msg: logic_pb2.UInt128Value) -> str:
         """Format a UInt128Value protobuf message as a hex string."""
         value = (msg.high << 64) | msg.low
         return f"0x{{value:x}}"
 
-    def fragment_id_to_string(self, msg) -> str:
+    def fragment_id_to_string(self, msg: fragments_pb2.FragmentId) -> str:
         """Convert FragmentId to string representation."""
         return msg.id.decode('utf-8') if msg.id else ""
 
-    def start_pretty_fragment(self, msg) -> None:
+    def start_pretty_fragment(self, msg: fragments_pb2.Fragment) -> None:
         """Extract debug info from Fragment for relation ID lookup."""
         debug_info = msg.debug_info
         for rid, name in zip(debug_info.ids, debug_info.orig_names):
             self._debug_info[(rid.id_low, rid.id_high)] = name
 
-    def relation_id_to_string(self, msg):
+    def relation_id_to_string(self, msg: logic_pb2.RelationId) -> str:
         """Convert RelationId to string representation using debug info."""
         return self._debug_info.get((msg.id_low, msg.id_high), "")
 
-    def relation_id_to_int(self, msg):
+    def relation_id_to_int(self, msg: logic_pb2.RelationId) -> Optional[int]:
         """Convert RelationId to int if it fits in signed 64-bit range."""
         value = (msg.id_high << 64) | msg.id_low
         if value <= 0x7FFFFFFFFFFFFFFF:
             return value
         return None
 
-    def relation_id_to_uint128(self, msg):
+    def relation_id_to_uint128(self, msg: logic_pb2.RelationId) -> logic_pb2.UInt128Value:
         """Convert RelationId to UInt128Value representation."""
         return logic_pb2.UInt128Value(low=msg.id_low, high=msg.id_high)
 

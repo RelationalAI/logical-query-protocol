@@ -54,9 +54,9 @@ class PrettyPrinter:
             return self.io.getvalue()
         return ""
 
-    def format_decimal(self, msg) -> str:
+    def format_decimal(self, msg: logic_pb2.DecimalValue) -> str:
         """Format a DecimalValue as '<digits>.<digits>d<precision>'."""
-        int_val = (msg.value.high << 64) | msg.value.low
+        int_val: int = (msg.value.high << 64) | msg.value.low
         if msg.value.high & (1 << 63):
             int_val -= (1 << 128)
         sign = ""
@@ -73,40 +73,40 @@ class PrettyPrinter:
             decimal_str = digits[:-scale] + "." + digits[-scale:]
         return sign + decimal_str + "d" + str(msg.precision)
 
-    def format_int128(self, msg) -> str:
+    def format_int128(self, msg: logic_pb2.Int128Value) -> str:
         """Format an Int128Value protobuf message as a string with i128 suffix."""
         value = (msg.high << 64) | msg.low
         if msg.high & (1 << 63):
             value -= (1 << 128)
         return str(value) + "i128"
 
-    def format_uint128(self, msg) -> str:
+    def format_uint128(self, msg: logic_pb2.UInt128Value) -> str:
         """Format a UInt128Value protobuf message as a hex string."""
         value = (msg.high << 64) | msg.low
         return f"0x{value:x}"
 
-    def fragment_id_to_string(self, msg) -> str:
+    def fragment_id_to_string(self, msg: fragments_pb2.FragmentId) -> str:
         """Convert FragmentId to string representation."""
         return msg.id.decode('utf-8') if msg.id else ""
 
-    def start_pretty_fragment(self, msg) -> None:
+    def start_pretty_fragment(self, msg: fragments_pb2.Fragment) -> None:
         """Extract debug info from Fragment for relation ID lookup."""
         debug_info = msg.debug_info
         for rid, name in zip(debug_info.ids, debug_info.orig_names):
             self._debug_info[(rid.id_low, rid.id_high)] = name
 
-    def relation_id_to_string(self, msg):
+    def relation_id_to_string(self, msg: logic_pb2.RelationId) -> str:
         """Convert RelationId to string representation using debug info."""
         return self._debug_info.get((msg.id_low, msg.id_high), "")
 
-    def relation_id_to_int(self, msg):
+    def relation_id_to_int(self, msg: logic_pb2.RelationId) -> Optional[int]:
         """Convert RelationId to int if it fits in signed 64-bit range."""
         value = (msg.id_high << 64) | msg.id_low
         if value <= 0x7FFFFFFFFFFFFFFF:
             return value
         return None
 
-    def relation_id_to_uint128(self, msg):
+    def relation_id_to_uint128(self, msg: logic_pb2.RelationId) -> logic_pb2.UInt128Value:
         """Convert RelationId to UInt128Value representation."""
         return logic_pb2.UInt128Value(low=msg.id_low, high=msg.id_high)
 
@@ -118,67 +118,93 @@ class PrettyPrinter:
     # --- Helper functions ---
 
     def _extract_value_int64(self, value: Optional[logic_pb2.Value], default: int) -> int:
+        assert value is not None
         if (value is not None and value.HasField('int_value')):
+            assert value is not None
             return value.int_value
         return default
 
     def _extract_value_float64(self, value: Optional[logic_pb2.Value], default: float) -> float:
+        assert value is not None
         if (value is not None and value.HasField('float_value')):
+            assert value is not None
             return value.float_value
         return default
 
     def _extract_value_string(self, value: Optional[logic_pb2.Value], default: str) -> str:
+        assert value is not None
         if (value is not None and value.HasField('string_value')):
+            assert value is not None
             return value.string_value
         return default
 
     def _extract_value_boolean(self, value: Optional[logic_pb2.Value], default: bool) -> bool:
+        assert value is not None
         if (value is not None and value.HasField('boolean_value')):
+            assert value is not None
             return value.boolean_value
         return default
 
     def _extract_value_bytes(self, value: Optional[logic_pb2.Value], default: bytes) -> bytes:
+        assert value is not None
         if (value is not None and value.HasField('string_value')):
+            assert value is not None
             return value.string_value.encode()
         return default
 
     def _extract_value_uint128(self, value: Optional[logic_pb2.Value], default: logic_pb2.UInt128Value) -> logic_pb2.UInt128Value:
+        assert value is not None
         if (value is not None and value.HasField('uint128_value')):
+            assert value is not None
             return value.uint128_value
         return default
 
     def _extract_value_string_list(self, value: Optional[logic_pb2.Value], default: list[str]) -> list[str]:
+        assert value is not None
         if (value is not None and value.HasField('string_value')):
+            assert value is not None
             return [value.string_value]
         return default
 
     def _try_extract_value_int64(self, value: Optional[logic_pb2.Value]) -> Optional[int]:
+        assert value is not None
         if (value is not None and value.HasField('int_value')):
+            assert value is not None
             return value.int_value
         return None
 
     def _try_extract_value_float64(self, value: Optional[logic_pb2.Value]) -> Optional[float]:
+        assert value is not None
         if (value is not None and value.HasField('float_value')):
+            assert value is not None
             return value.float_value
         return None
 
     def _try_extract_value_string(self, value: Optional[logic_pb2.Value]) -> Optional[str]:
+        assert value is not None
         if (value is not None and value.HasField('string_value')):
+            assert value is not None
             return value.string_value
         return None
 
     def _try_extract_value_bytes(self, value: Optional[logic_pb2.Value]) -> Optional[bytes]:
+        assert value is not None
         if (value is not None and value.HasField('string_value')):
+            assert value is not None
             return value.string_value.encode()
         return None
 
     def _try_extract_value_uint128(self, value: Optional[logic_pb2.Value]) -> Optional[logic_pb2.UInt128Value]:
+        assert value is not None
         if (value is not None and value.HasField('uint128_value')):
+            assert value is not None
             return value.uint128_value
         return None
 
     def _try_extract_value_string_list(self, value: Optional[logic_pb2.Value]) -> Optional[list[str]]:
+        assert value is not None
         if (value is not None and value.HasField('string_value')):
+            assert value is not None
             return [value.string_value]
         return None
 
@@ -419,6 +445,7 @@ class PrettyPrinter:
     def _maybe_push_float64(self, result: list[tuple[str, logic_pb2.Value]], key: str, val: Optional[float]) -> None:
         
         if val is not None:
+            assert val is not None
             _t1361 = self._make_value_float64(val)
             result.append((key, _t1361,))
             _t1360 = None
@@ -429,6 +456,7 @@ class PrettyPrinter:
     def _maybe_push_int64(self, result: list[tuple[str, logic_pb2.Value]], key: str, val: Optional[int]) -> None:
         
         if val is not None:
+            assert val is not None
             _t1363 = self._make_value_int64(val)
             result.append((key, _t1363,))
             _t1362 = None
@@ -439,6 +467,7 @@ class PrettyPrinter:
     def _maybe_push_uint128(self, result: list[tuple[str, logic_pb2.Value]], key: str, val: Optional[logic_pb2.UInt128Value]) -> None:
         
         if val is not None:
+            assert val is not None
             _t1365 = self._make_value_uint128(val)
             result.append((key, _t1365,))
             _t1364 = None
@@ -449,6 +478,7 @@ class PrettyPrinter:
     def _maybe_push_bytes_as_string(self, result: list[tuple[str, logic_pb2.Value]], key: str, val: Optional[bytes]) -> None:
         
         if val is not None:
+            assert val is not None
             _t1367 = self._make_value_string(val.decode('utf-8'))
             result.append((key, _t1367,))
             _t1366 = None
@@ -480,15 +510,19 @@ class PrettyPrinter:
 
     def deconstruct_export_csv_config(self, msg: transactions_pb2.ExportCSVConfig) -> list[tuple[str, logic_pb2.Value]]:
         result = []
+        assert msg.partition_size is not None
         
         if (msg.partition_size is not None and msg.partition_size != 0):
+            assert msg.partition_size is not None
             _t1379 = self._make_value_int64(msg.partition_size)
             result.append(('partition_size', _t1379,))
             _t1378 = None
         else:
             _t1378 = None
+        assert msg.compression is not None
         
         if (msg.compression is not None and msg.compression != ''):
+            assert msg.compression is not None
             _t1381 = self._make_value_string(msg.compression)
             result.append(('compression', _t1381,))
             _t1380 = None
@@ -496,34 +530,43 @@ class PrettyPrinter:
             _t1380 = None
         
         if msg.syntax_header_row is not None:
+            assert msg.syntax_header_row is not None
             _t1383 = self._make_value_boolean(msg.syntax_header_row)
             result.append(('syntax_header_row', _t1383,))
             _t1382 = None
         else:
             _t1382 = None
+        assert msg.syntax_missing_string is not None
         
         if (msg.syntax_missing_string is not None and msg.syntax_missing_string != ''):
+            assert msg.syntax_missing_string is not None
             _t1385 = self._make_value_string(msg.syntax_missing_string)
             result.append(('syntax_missing_string', _t1385,))
             _t1384 = None
         else:
             _t1384 = None
+        assert msg.syntax_delim is not None
         
         if (msg.syntax_delim is not None and msg.syntax_delim != ','):
+            assert msg.syntax_delim is not None
             _t1387 = self._make_value_string(msg.syntax_delim)
             result.append(('syntax_delim', _t1387,))
             _t1386 = None
         else:
             _t1386 = None
+        assert msg.syntax_quotechar is not None
         
         if (msg.syntax_quotechar is not None and msg.syntax_quotechar != '"'):
+            assert msg.syntax_quotechar is not None
             _t1389 = self._make_value_string(msg.syntax_quotechar)
             result.append(('syntax_quotechar', _t1389,))
             _t1388 = None
         else:
             _t1388 = None
+        assert msg.syntax_escapechar is not None
         
         if (msg.syntax_escapechar is not None and msg.syntax_escapechar != '\\'):
+            assert msg.syntax_escapechar is not None
             _t1391 = self._make_value_string(msg.syntax_escapechar)
             result.append(('syntax_escapechar', _t1391,))
             _t1390 = None
@@ -544,7 +587,8 @@ class PrettyPrinter:
         return None
 
     def deconstruct_bindings(self, abs: logic_pb2.Abstraction) -> tuple[list[logic_pb2.Binding], list[logic_pb2.Binding]]:
-        return (abs.vars, [],)
+        n = len(abs.vars)
+        return (abs.vars[0:n], [],)
 
     def deconstruct_bindings_with_arity(self, abs: logic_pb2.Abstraction, value_arity: int) -> tuple[list[logic_pb2.Binding], list[logic_pb2.Binding]]:
         n = len(abs.vars)
@@ -568,6 +612,7 @@ class PrettyPrinter:
             return (_t492, _t493, _dollar_dollar.epochs,)
         _t494 = _t491(msg)
         fields0 = _t494
+        assert fields0 is not None
         unwrapped_fields1 = fields0
         self.write('(')
         self.write('transaction')
@@ -576,6 +621,7 @@ class PrettyPrinter:
         
         if field2 is not None:
             self.newline()
+            assert field2 is not None
             opt_val3 = field2
             _t496 = self.pretty_configure(opt_val3)
             _t495 = _t496
@@ -585,6 +631,7 @@ class PrettyPrinter:
         
         if field4 is not None:
             self.newline()
+            assert field4 is not None
             opt_val5 = field4
             _t498 = self.pretty_sync(opt_val5)
             _t497 = _t498
@@ -611,6 +658,7 @@ class PrettyPrinter:
             return _t502
         _t503 = _t501(msg)
         fields9 = _t503
+        assert fields9 is not None
         unwrapped_fields10 = fields9
         self.write('(')
         self.write('configure')
@@ -626,6 +674,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t506 = _t505(msg)
         fields11 = _t506
+        assert fields11 is not None
         unwrapped_fields12 = fields11
         self.write('{')
         if not len(unwrapped_fields12) == 0:
@@ -646,6 +695,7 @@ class PrettyPrinter:
             return (_dollar_dollar[0], _dollar_dollar[1],)
         _t510 = _t509(msg)
         fields15 = _t510
+        assert fields15 is not None
         unwrapped_fields16 = fields15
         self.write(':')
         field17 = unwrapped_fields16[0]
@@ -786,6 +836,7 @@ class PrettyPrinter:
                                                 return _dollar_dollar
                                             _t552 = _t551(msg)
                                             fields19 = _t552
+                                            assert fields19 is not None
                                             unwrapped_fields20 = fields19
                                             self.write('missing')
                                             _t549 = None
@@ -804,6 +855,7 @@ class PrettyPrinter:
             return (int(_dollar_dollar.year), int(_dollar_dollar.month), int(_dollar_dollar.day),)
         _t554 = _t553(msg)
         fields30 = _t554
+        assert fields30 is not None
         unwrapped_fields31 = fields30
         self.write('(')
         self.write('date')
@@ -831,6 +883,7 @@ class PrettyPrinter:
             return (int(_dollar_dollar.year), int(_dollar_dollar.month), int(_dollar_dollar.day), int(_dollar_dollar.hour), int(_dollar_dollar.minute), int(_dollar_dollar.second), _t556,)
         _t557 = _t555(msg)
         fields35 = _t557
+        assert fields35 is not None
         unwrapped_fields36 = fields35
         self.write('(')
         self.write('datetime')
@@ -857,6 +910,7 @@ class PrettyPrinter:
         
         if field43 is not None:
             self.newline()
+            assert field43 is not None
             opt_val44 = field43
             self.write(str(opt_val44))
             _t558 = None
@@ -885,6 +939,7 @@ class PrettyPrinter:
                 return _dollar_dollar
             _t564 = _t563(msg)
             fields45 = _t564
+            assert fields45 is not None
             unwrapped_fields46 = fields45
             self.write('false')
             _t562 = None
@@ -895,6 +950,7 @@ class PrettyPrinter:
             return _dollar_dollar.fragments
         _t566 = _t565(msg)
         fields48 = _t566
+        assert fields48 is not None
         unwrapped_fields49 = fields48
         self.write('(')
         self.write('sync')
@@ -918,6 +974,7 @@ class PrettyPrinter:
             return self.fragment_id_to_string(_dollar_dollar)
         _t570 = _t569(msg)
         fields52 = _t570
+        assert fields52 is not None
         unwrapped_fields53 = fields52
         self.write(':')
         self.write(unwrapped_fields53)
@@ -938,6 +995,7 @@ class PrettyPrinter:
             return (_t572, _t573,)
         _t574 = _t571(msg)
         fields54 = _t574
+        assert fields54 is not None
         unwrapped_fields55 = fields54
         self.write('(')
         self.write('epoch')
@@ -946,6 +1004,7 @@ class PrettyPrinter:
         
         if field56 is not None:
             self.newline()
+            assert field56 is not None
             opt_val57 = field56
             _t576 = self.pretty_epoch_writes(opt_val57)
             _t575 = _t576
@@ -955,6 +1014,7 @@ class PrettyPrinter:
         
         if field58 is not None:
             self.newline()
+            assert field58 is not None
             opt_val59 = field58
             _t578 = self.pretty_epoch_reads(opt_val59)
             _t577 = _t578
@@ -969,6 +1029,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t580 = _t579(msg)
         fields60 = _t580
+        assert fields60 is not None
         unwrapped_fields61 = fields60
         self.write('(')
         self.write('writes')
@@ -1040,6 +1101,7 @@ class PrettyPrinter:
             return _dollar_dollar.fragment
         _t599 = _t598(msg)
         fields67 = _t599
+        assert fields67 is not None
         unwrapped_fields68 = fields67
         self.write('(')
         self.write('define')
@@ -1056,6 +1118,7 @@ class PrettyPrinter:
             return (_dollar_dollar.id, _dollar_dollar.declarations,)
         _t603 = _t601(msg)
         fields69 = _t603
+        assert fields69 is not None
         unwrapped_fields70 = fields69
         self.write('(')
         self.write('fragment')
@@ -1083,6 +1146,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t608 = _t607(msg)
         fields75 = _t608
+        assert fields75 is not None
         unwrapped_fields76 = fields75
         _t609 = self.pretty_fragment_id(unwrapped_fields76)
         return _t609
@@ -1160,6 +1224,7 @@ class PrettyPrinter:
             return (_dollar_dollar.name, _dollar_dollar.body, _t631,)
         _t632 = _t630(msg)
         fields81 = _t632
+        assert fields81 is not None
         unwrapped_fields82 = fields81
         self.write('(')
         self.write('def')
@@ -1174,6 +1239,7 @@ class PrettyPrinter:
         
         if field85 is not None:
             self.newline()
+            assert field85 is not None
             opt_val86 = field85
             _t636 = self.pretty_attrs(opt_val86)
             _t635 = _t636
@@ -1215,6 +1281,7 @@ class PrettyPrinter:
             return (_t646, _dollar_dollar.value,)
         _t647 = _t645(msg)
         fields89 = _t647
+        assert fields89 is not None
         unwrapped_fields90 = fields89
         self.write('(')
         field91 = unwrapped_fields90[0]
@@ -1235,6 +1302,7 @@ class PrettyPrinter:
             return (_dollar_dollar[0], _t651,)
         _t652 = _t650(msg)
         fields93 = _t652
+        assert fields93 is not None
         unwrapped_fields94 = fields93
         self.write('[')
         field95 = unwrapped_fields94[0]
@@ -1250,6 +1318,7 @@ class PrettyPrinter:
         
         if field98 is not None:
             self.write(' ')
+            assert field98 is not None
             opt_val99 = field98
             _t656 = self.pretty_value_bindings(opt_val99)
             _t655 = _t656
@@ -1263,6 +1332,7 @@ class PrettyPrinter:
             return (_dollar_dollar.var.name, _dollar_dollar.type,)
         _t658 = _t657(msg)
         fields100 = _t658
+        assert fields100 is not None
         unwrapped_fields101 = fields100
         field102 = unwrapped_fields101[0]
         self.write(field102)
@@ -1444,6 +1514,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t716 = _t715(msg)
         fields115 = _t716
+        assert fields115 is not None
         unwrapped_fields116 = fields115
         self.write('UNKNOWN')
         return None
@@ -1453,6 +1524,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t718 = _t717(msg)
         fields117 = _t718
+        assert fields117 is not None
         unwrapped_fields118 = fields117
         self.write('STRING')
         return None
@@ -1462,6 +1534,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t720 = _t719(msg)
         fields119 = _t720
+        assert fields119 is not None
         unwrapped_fields120 = fields119
         self.write('INT')
         return None
@@ -1471,6 +1544,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t722 = _t721(msg)
         fields121 = _t722
+        assert fields121 is not None
         unwrapped_fields122 = fields121
         self.write('FLOAT')
         return None
@@ -1480,6 +1554,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t724 = _t723(msg)
         fields123 = _t724
+        assert fields123 is not None
         unwrapped_fields124 = fields123
         self.write('UINT128')
         return None
@@ -1489,6 +1564,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t726 = _t725(msg)
         fields125 = _t726
+        assert fields125 is not None
         unwrapped_fields126 = fields125
         self.write('INT128')
         return None
@@ -1498,6 +1574,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t728 = _t727(msg)
         fields127 = _t728
+        assert fields127 is not None
         unwrapped_fields128 = fields127
         self.write('DATE')
         return None
@@ -1507,6 +1584,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t730 = _t729(msg)
         fields129 = _t730
+        assert fields129 is not None
         unwrapped_fields130 = fields129
         self.write('DATETIME')
         return None
@@ -1516,6 +1594,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t732 = _t731(msg)
         fields131 = _t732
+        assert fields131 is not None
         unwrapped_fields132 = fields131
         self.write('MISSING')
         return None
@@ -1525,6 +1604,7 @@ class PrettyPrinter:
             return (int(_dollar_dollar.precision), int(_dollar_dollar.scale),)
         _t734 = _t733(msg)
         fields133 = _t734
+        assert fields133 is not None
         unwrapped_fields134 = fields133
         self.write('(')
         self.write('DECIMAL')
@@ -1544,6 +1624,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t736 = _t735(msg)
         fields137 = _t736
+        assert fields137 is not None
         unwrapped_fields138 = fields137
         self.write('BOOLEAN')
         return None
@@ -1553,6 +1634,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t738 = _t737(msg)
         fields139 = _t738
+        assert fields139 is not None
         unwrapped_fields140 = fields139
         self.write('|')
         if not len(unwrapped_fields140) == 0:
@@ -1770,6 +1852,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t807 = _t806(msg)
         fields156 = _t807
+        assert fields156 is not None
         unwrapped_fields157 = fields156
         self.write('(')
         self.write('true')
@@ -1781,6 +1864,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t809 = _t808(msg)
         fields158 = _t809
+        assert fields158 is not None
         unwrapped_fields159 = fields158
         self.write('(')
         self.write('false')
@@ -1793,6 +1877,7 @@ class PrettyPrinter:
             return (_t811, _dollar_dollar.body.value,)
         _t812 = _t810(msg)
         fields160 = _t812
+        assert fields160 is not None
         unwrapped_fields161 = fields160
         self.write('(')
         self.write('exists')
@@ -1812,6 +1897,7 @@ class PrettyPrinter:
             return (_dollar_dollar.op, _dollar_dollar.body, _dollar_dollar.terms,)
         _t816 = _t815(msg)
         fields164 = _t816
+        assert fields164 is not None
         unwrapped_fields165 = fields164
         self.write('(')
         self.write('reduce')
@@ -1834,6 +1920,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t821 = _t820(msg)
         fields169 = _t821
+        assert fields169 is not None
         unwrapped_fields170 = fields169
         self.write('(')
         self.write('terms')
@@ -1890,6 +1977,7 @@ class PrettyPrinter:
             return _dollar_dollar.name
         _t835 = _t834(msg)
         fields175 = _t835
+        assert fields175 is not None
         unwrapped_fields176 = fields175
         self.write(unwrapped_fields176)
         return None
@@ -1899,6 +1987,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t837 = _t836(msg)
         fields177 = _t837
+        assert fields177 is not None
         unwrapped_fields178 = fields177
         _t838 = self.pretty_value(unwrapped_fields178)
         return _t838
@@ -1908,6 +1997,7 @@ class PrettyPrinter:
             return _dollar_dollar.args
         _t840 = _t839(msg)
         fields179 = _t840
+        assert fields179 is not None
         unwrapped_fields180 = fields179
         self.write('(')
         self.write('and')
@@ -1931,6 +2021,7 @@ class PrettyPrinter:
             return _dollar_dollar.args
         _t844 = _t843(msg)
         fields183 = _t844
+        assert fields183 is not None
         unwrapped_fields184 = fields183
         self.write('(')
         self.write('or')
@@ -1954,6 +2045,7 @@ class PrettyPrinter:
             return _dollar_dollar.arg
         _t848 = _t847(msg)
         fields187 = _t848
+        assert fields187 is not None
         unwrapped_fields188 = fields187
         self.write('(')
         self.write('not')
@@ -1969,6 +2061,7 @@ class PrettyPrinter:
             return (_dollar_dollar.name, _dollar_dollar.args, _dollar_dollar.terms,)
         _t851 = _t850(msg)
         fields189 = _t851
+        assert fields189 is not None
         unwrapped_fields190 = fields189
         self.write('(')
         self.write('ffi')
@@ -1991,6 +2084,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t856 = _t855(msg)
         fields194 = _t856
+        assert fields194 is not None
         unwrapped_fields195 = fields194
         self.write(':')
         self.write(unwrapped_fields195)
@@ -2001,6 +2095,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t858 = _t857(msg)
         fields196 = _t858
+        assert fields196 is not None
         unwrapped_fields197 = fields196
         self.write('(')
         self.write('args')
@@ -2024,6 +2119,7 @@ class PrettyPrinter:
             return (_dollar_dollar.name, _dollar_dollar.terms,)
         _t862 = _t861(msg)
         fields200 = _t862
+        assert fields200 is not None
         unwrapped_fields201 = fields200
         self.write('(')
         self.write('atom')
@@ -2051,6 +2147,7 @@ class PrettyPrinter:
             return (_dollar_dollar.name, _dollar_dollar.terms,)
         _t867 = _t866(msg)
         fields206 = _t867
+        assert fields206 is not None
         unwrapped_fields207 = fields206
         self.write('(')
         self.write('pragma')
@@ -2204,6 +2301,7 @@ class PrettyPrinter:
                                                 return (_dollar_dollar.name, _dollar_dollar.terms,)
                                             _t917 = _t916(msg)
                                             fields212 = _t917
+                                            assert fields212 is not None
                                             unwrapped_fields213 = fields212
                                             self.write('(')
                                             self.write('primitive')
@@ -2245,6 +2343,7 @@ class PrettyPrinter:
             return _t922
         _t923 = _t921(msg)
         fields227 = _t923
+        assert fields227 is not None
         unwrapped_fields228 = fields227
         self.write('(')
         self.write('=')
@@ -2269,6 +2368,7 @@ class PrettyPrinter:
             return _t927
         _t928 = _t926(msg)
         fields231 = _t928
+        assert fields231 is not None
         unwrapped_fields232 = fields231
         self.write('(')
         self.write('<')
@@ -2293,6 +2393,7 @@ class PrettyPrinter:
             return _t932
         _t933 = _t931(msg)
         fields235 = _t933
+        assert fields235 is not None
         unwrapped_fields236 = fields235
         self.write('(')
         self.write('<=')
@@ -2317,6 +2418,7 @@ class PrettyPrinter:
             return _t937
         _t938 = _t936(msg)
         fields239 = _t938
+        assert fields239 is not None
         unwrapped_fields240 = fields239
         self.write('(')
         self.write('>')
@@ -2341,6 +2443,7 @@ class PrettyPrinter:
             return _t942
         _t943 = _t941(msg)
         fields243 = _t943
+        assert fields243 is not None
         unwrapped_fields244 = fields243
         self.write('(')
         self.write('>=')
@@ -2365,6 +2468,7 @@ class PrettyPrinter:
             return _t947
         _t948 = _t946(msg)
         fields247 = _t948
+        assert fields247 is not None
         unwrapped_fields248 = fields247
         self.write('(')
         self.write('+')
@@ -2392,6 +2496,7 @@ class PrettyPrinter:
             return _t953
         _t954 = _t952(msg)
         fields252 = _t954
+        assert fields252 is not None
         unwrapped_fields253 = fields252
         self.write('(')
         self.write('-')
@@ -2419,6 +2524,7 @@ class PrettyPrinter:
             return _t959
         _t960 = _t958(msg)
         fields257 = _t960
+        assert fields257 is not None
         unwrapped_fields258 = fields257
         self.write('(')
         self.write('*')
@@ -2446,6 +2552,7 @@ class PrettyPrinter:
             return _t965
         _t966 = _t964(msg)
         fields262 = _t966
+        assert fields262 is not None
         unwrapped_fields263 = fields262
         self.write('(')
         self.write('/')
@@ -2501,6 +2608,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t981 = _t980(msg)
         fields269 = _t981
+        assert fields269 is not None
         unwrapped_fields270 = fields269
         self.write('#')
         _t982 = self.pretty_value(unwrapped_fields270)
@@ -2511,6 +2619,7 @@ class PrettyPrinter:
             return (_dollar_dollar.name, _dollar_dollar.terms,)
         _t984 = _t983(msg)
         fields271 = _t984
+        assert fields271 is not None
         unwrapped_fields272 = fields271
         self.write('(')
         self.write('relatom')
@@ -2538,6 +2647,7 @@ class PrettyPrinter:
             return (_dollar_dollar.input, _dollar_dollar.result,)
         _t989 = _t988(msg)
         fields277 = _t989
+        assert fields277 is not None
         unwrapped_fields278 = fields277
         self.write('(')
         self.write('cast')
@@ -2557,6 +2667,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t993 = _t992(msg)
         fields281 = _t993
+        assert fields281 is not None
         unwrapped_fields282 = fields281
         self.write('(')
         self.write('attrs')
@@ -2580,6 +2691,7 @@ class PrettyPrinter:
             return (_dollar_dollar.name, _dollar_dollar.args,)
         _t997 = _t996(msg)
         fields285 = _t997
+        assert fields285 is not None
         unwrapped_fields286 = fields285
         self.write('(')
         self.write('attribute')
@@ -2607,6 +2719,7 @@ class PrettyPrinter:
             return (getattr(_dollar_dollar, 'global'), _dollar_dollar.body,)
         _t1002 = _t1001(msg)
         fields291 = _t1002
+        assert fields291 is not None
         unwrapped_fields292 = fields291
         self.write('(')
         self.write('algorithm')
@@ -2634,6 +2747,7 @@ class PrettyPrinter:
             return _dollar_dollar.constructs
         _t1007 = _t1006(msg)
         fields297 = _t1007
+        assert fields297 is not None
         unwrapped_fields298 = fields297
         self.write('(')
         self.write('script')
@@ -2690,6 +2804,7 @@ class PrettyPrinter:
             return (_dollar_dollar.init, _dollar_dollar.body,)
         _t1021 = _t1020(msg)
         fields303 = _t1021
+        assert fields303 is not None
         unwrapped_fields304 = fields303
         self.write('(')
         self.write('loop')
@@ -2709,6 +2824,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t1025 = _t1024(msg)
         fields307 = _t1025
+        assert fields307 is not None
         unwrapped_fields308 = fields307
         self.write('(')
         self.write('init')
@@ -2815,6 +2931,7 @@ class PrettyPrinter:
             return (_dollar_dollar.name, _dollar_dollar.body, _t1054,)
         _t1055 = _t1053(msg)
         fields316 = _t1055
+        assert fields316 is not None
         unwrapped_fields317 = fields316
         self.write('(')
         self.write('assign')
@@ -2829,6 +2946,7 @@ class PrettyPrinter:
         
         if field320 is not None:
             self.newline()
+            assert field320 is not None
             opt_val321 = field320
             _t1059 = self.pretty_attrs(opt_val321)
             _t1058 = _t1059
@@ -2848,6 +2966,7 @@ class PrettyPrinter:
             return (_dollar_dollar.name, (_dollar_dollar.body, _dollar_dollar.value_arity,), _t1061,)
         _t1062 = _t1060(msg)
         fields322 = _t1062
+        assert fields322 is not None
         unwrapped_fields323 = fields322
         self.write('(')
         self.write('upsert')
@@ -2862,6 +2981,7 @@ class PrettyPrinter:
         
         if field326 is not None:
             self.newline()
+            assert field326 is not None
             opt_val327 = field326
             _t1066 = self.pretty_attrs(opt_val327)
             _t1065 = _t1066
@@ -2877,6 +2997,7 @@ class PrettyPrinter:
             return (_t1068, _dollar_dollar[0].value,)
         _t1069 = _t1067(msg)
         fields328 = _t1069
+        assert fields328 is not None
         unwrapped_fields329 = fields328
         self.write('(')
         field330 = unwrapped_fields329[0]
@@ -2897,6 +3018,7 @@ class PrettyPrinter:
             return (_dollar_dollar.name, _dollar_dollar.body, _t1073,)
         _t1074 = _t1072(msg)
         fields332 = _t1074
+        assert fields332 is not None
         unwrapped_fields333 = fields332
         self.write('(')
         self.write('break')
@@ -2911,6 +3033,7 @@ class PrettyPrinter:
         
         if field336 is not None:
             self.newline()
+            assert field336 is not None
             opt_val337 = field336
             _t1078 = self.pretty_attrs(opt_val337)
             _t1077 = _t1078
@@ -2930,6 +3053,7 @@ class PrettyPrinter:
             return (_dollar_dollar.monoid, _dollar_dollar.name, (_dollar_dollar.body, _dollar_dollar.value_arity,), _t1080,)
         _t1081 = _t1079(msg)
         fields338 = _t1081
+        assert fields338 is not None
         unwrapped_fields339 = fields338
         self.write('(')
         self.write('monoid')
@@ -2947,6 +3071,7 @@ class PrettyPrinter:
         
         if field343 is not None:
             self.newline()
+            assert field343 is not None
             opt_val344 = field343
             _t1086 = self.pretty_attrs(opt_val344)
             _t1085 = _t1086
@@ -3024,6 +3149,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t1108 = _t1107(msg)
         fields349 = _t1108
+        assert fields349 is not None
         unwrapped_fields350 = fields349
         self.write('(')
         self.write('or')
@@ -3035,6 +3161,7 @@ class PrettyPrinter:
             return _dollar_dollar.type
         _t1110 = _t1109(msg)
         fields351 = _t1110
+        assert fields351 is not None
         unwrapped_fields352 = fields351
         self.write('(')
         self.write('min')
@@ -3050,6 +3177,7 @@ class PrettyPrinter:
             return _dollar_dollar.type
         _t1113 = _t1112(msg)
         fields353 = _t1113
+        assert fields353 is not None
         unwrapped_fields354 = fields353
         self.write('(')
         self.write('max')
@@ -3065,6 +3193,7 @@ class PrettyPrinter:
             return _dollar_dollar.type
         _t1116 = _t1115(msg)
         fields355 = _t1116
+        assert fields355 is not None
         unwrapped_fields356 = fields355
         self.write('(')
         self.write('sum')
@@ -3085,6 +3214,7 @@ class PrettyPrinter:
             return (_dollar_dollar.monoid, _dollar_dollar.name, (_dollar_dollar.body, _dollar_dollar.value_arity,), _t1119,)
         _t1120 = _t1118(msg)
         fields357 = _t1120
+        assert fields357 is not None
         unwrapped_fields358 = fields357
         self.write('(')
         self.write('monus')
@@ -3102,6 +3232,7 @@ class PrettyPrinter:
         
         if field362 is not None:
             self.newline()
+            assert field362 is not None
             opt_val363 = field362
             _t1125 = self.pretty_attrs(opt_val363)
             _t1124 = _t1125
@@ -3116,6 +3247,7 @@ class PrettyPrinter:
             return (_dollar_dollar.name, _dollar_dollar.functional_dependency.guard, _dollar_dollar.functional_dependency.keys, _dollar_dollar.functional_dependency.values,)
         _t1127 = _t1126(msg)
         fields364 = _t1127
+        assert fields364 is not None
         unwrapped_fields365 = fields364
         self.write('(')
         self.write('functional_dependency')
@@ -3141,6 +3273,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t1133 = _t1132(msg)
         fields370 = _t1133
+        assert fields370 is not None
         unwrapped_fields371 = fields370
         self.write('(')
         self.write('keys')
@@ -3164,6 +3297,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t1137 = _t1136(msg)
         fields374 = _t1137
+        assert fields374 is not None
         unwrapped_fields375 = fields374
         self.write('(')
         self.write('values')
@@ -3235,6 +3369,7 @@ class PrettyPrinter:
             return (_dollar_dollar.target_id, _dollar_dollar.path, _dollar_dollar.types,)
         _t1156 = _t1155(msg)
         fields381 = _t1156
+        assert fields381 is not None
         unwrapped_fields382 = fields381
         self.write('(')
         self.write('rel_edb')
@@ -3257,6 +3392,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t1161 = _t1160(msg)
         fields386 = _t1161
+        assert fields386 is not None
         unwrapped_fields387 = fields386
         self.write('[')
         for i389, elem388 in enumerate(unwrapped_fields387):
@@ -3275,6 +3411,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t1164 = _t1163(msg)
         fields390 = _t1164
+        assert fields390 is not None
         unwrapped_fields391 = fields390
         self.write('[')
         for i393, elem392 in enumerate(unwrapped_fields391):
@@ -3293,6 +3430,7 @@ class PrettyPrinter:
             return (_dollar_dollar.name, _dollar_dollar.relation_info,)
         _t1168 = _t1167(msg)
         fields394 = _t1168
+        assert fields394 is not None
         unwrapped_fields395 = fields394
         self.write('(')
         self.write('betree_relation')
@@ -3313,6 +3451,7 @@ class PrettyPrinter:
             return (_dollar_dollar.key_types, _dollar_dollar.value_types, _t1172,)
         _t1173 = _t1171(msg)
         fields398 = _t1173
+        assert fields398 is not None
         unwrapped_fields399 = fields398
         self.write('(')
         self.write('betree_info')
@@ -3335,6 +3474,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t1178 = _t1177(msg)
         fields403 = _t1178
+        assert fields403 is not None
         unwrapped_fields404 = fields403
         self.write('(')
         self.write('key_types')
@@ -3358,6 +3498,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t1182 = _t1181(msg)
         fields407 = _t1182
+        assert fields407 is not None
         unwrapped_fields408 = fields407
         self.write('(')
         self.write('value_types')
@@ -3381,6 +3522,7 @@ class PrettyPrinter:
             return (_dollar_dollar.locator, _dollar_dollar.config, _dollar_dollar.columns, _dollar_dollar.asof,)
         _t1186 = _t1185(msg)
         fields411 = _t1186
+        assert fields411 is not None
         unwrapped_fields412 = fields411
         self.write('(')
         self.write('csv_data')
@@ -3416,6 +3558,7 @@ class PrettyPrinter:
             return (_t1192, _t1193,)
         _t1194 = _t1191(msg)
         fields417 = _t1194
+        assert fields417 is not None
         unwrapped_fields418 = fields417
         self.write('(')
         self.write('csv_locator')
@@ -3424,6 +3567,7 @@ class PrettyPrinter:
         
         if field419 is not None:
             self.newline()
+            assert field419 is not None
             opt_val420 = field419
             _t1196 = self.pretty_csv_locator_paths(opt_val420)
             _t1195 = _t1196
@@ -3433,6 +3577,7 @@ class PrettyPrinter:
         
         if field421 is not None:
             self.newline()
+            assert field421 is not None
             opt_val422 = field421
             _t1198 = self.pretty_csv_locator_inline_data(opt_val422)
             _t1197 = _t1198
@@ -3447,6 +3592,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t1200 = _t1199(msg)
         fields423 = _t1200
+        assert fields423 is not None
         unwrapped_fields424 = fields423
         self.write('(')
         self.write('paths')
@@ -3470,6 +3616,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t1203 = _t1202(msg)
         fields427 = _t1203
+        assert fields427 is not None
         unwrapped_fields428 = fields427
         self.write('(')
         self.write('inline_data')
@@ -3486,6 +3633,7 @@ class PrettyPrinter:
             return _t1205
         _t1206 = _t1204(msg)
         fields429 = _t1206
+        assert fields429 is not None
         unwrapped_fields430 = fields429
         self.write('(')
         self.write('csv_config')
@@ -3501,6 +3649,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t1209 = _t1208(msg)
         fields431 = _t1209
+        assert fields431 is not None
         unwrapped_fields432 = fields431
         self.write('(')
         self.write('columns')
@@ -3524,6 +3673,7 @@ class PrettyPrinter:
             return (_dollar_dollar.column_name, _dollar_dollar.target_id, _dollar_dollar.types,)
         _t1213 = _t1212(msg)
         fields435 = _t1213
+        assert fields435 is not None
         unwrapped_fields436 = fields435
         self.write('(')
         self.write('column')
@@ -3556,6 +3706,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t1218 = _t1217(msg)
         fields442 = _t1218
+        assert fields442 is not None
         unwrapped_fields443 = fields442
         self.write('(')
         self.write('asof')
@@ -3571,6 +3722,7 @@ class PrettyPrinter:
             return _dollar_dollar.fragment_id
         _t1220 = _t1219(msg)
         fields444 = _t1220
+        assert fields444 is not None
         unwrapped_fields445 = fields444
         self.write('(')
         self.write('undefine')
@@ -3586,6 +3738,7 @@ class PrettyPrinter:
             return _dollar_dollar.relations
         _t1223 = _t1222(msg)
         fields446 = _t1223
+        assert fields446 is not None
         unwrapped_fields447 = fields446
         self.write('(')
         self.write('context')
@@ -3609,6 +3762,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t1227 = _t1226(msg)
         fields450 = _t1227
+        assert fields450 is not None
         unwrapped_fields451 = fields450
         self.write('(')
         self.write('reads')
@@ -3710,6 +3864,7 @@ class PrettyPrinter:
             return _dollar_dollar.relation_id
         _t1256 = _t1255(msg)
         fields459 = _t1256
+        assert fields459 is not None
         unwrapped_fields460 = fields459
         self.write('(')
         self.write('demand')
@@ -3725,6 +3880,7 @@ class PrettyPrinter:
             return (_dollar_dollar.name, _dollar_dollar.relation_id,)
         _t1259 = _t1258(msg)
         fields461 = _t1259
+        assert fields461 is not None
         unwrapped_fields462 = fields461
         self.write('(')
         self.write('output')
@@ -3744,6 +3900,7 @@ class PrettyPrinter:
             return (_dollar_dollar.branch, _dollar_dollar.epoch,)
         _t1263 = _t1262(msg)
         fields465 = _t1263
+        assert fields465 is not None
         unwrapped_fields466 = fields465
         self.write('(')
         self.write('what_if')
@@ -3768,6 +3925,7 @@ class PrettyPrinter:
             return (_t1267, _dollar_dollar.relation_id,)
         _t1268 = _t1266(msg)
         fields469 = _t1268
+        assert fields469 is not None
         unwrapped_fields470 = fields469
         self.write('(')
         self.write('abort')
@@ -3776,6 +3934,7 @@ class PrettyPrinter:
         
         if field471 is not None:
             self.newline()
+            assert field471 is not None
             opt_val472 = field471
             _t1270 = self.pretty_name(opt_val472)
             _t1269 = _t1270
@@ -3793,6 +3952,7 @@ class PrettyPrinter:
             return _dollar_dollar.csv_config
         _t1273 = _t1272(msg)
         fields474 = _t1273
+        assert fields474 is not None
         unwrapped_fields475 = fields474
         self.write('(')
         self.write('export')
@@ -3809,6 +3969,7 @@ class PrettyPrinter:
             return (_dollar_dollar.path, _dollar_dollar.data_columns, _t1276,)
         _t1277 = _t1275(msg)
         fields476 = _t1277
+        assert fields476 is not None
         unwrapped_fields477 = fields476
         self.write('(')
         self.write('export_csv_config')
@@ -3831,6 +3992,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t1282 = _t1281(msg)
         fields481 = _t1282
+        assert fields481 is not None
         unwrapped_fields482 = fields481
         self.write('(')
         self.write('path')
@@ -3846,6 +4008,7 @@ class PrettyPrinter:
             return _dollar_dollar
         _t1284 = _t1283(msg)
         fields483 = _t1284
+        assert fields483 is not None
         unwrapped_fields484 = fields483
         self.write('(')
         self.write('columns')
@@ -3869,6 +4032,7 @@ class PrettyPrinter:
             return (_dollar_dollar.column_name, _dollar_dollar.column_data,)
         _t1288 = _t1287(msg)
         fields487 = _t1288
+        assert fields487 is not None
         unwrapped_fields488 = fields487
         self.write('(')
         self.write('column')

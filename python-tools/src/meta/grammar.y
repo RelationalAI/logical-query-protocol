@@ -1252,13 +1252,13 @@ def export_csv_config(
     return transactions.ExportCSVConfig(
         path=path,
         data_columns=columns,
-        partition_size=builtin.to_ptr_int64(partition_size),
-        compression=builtin.to_ptr_string(compression),
-        syntax_header_row=builtin.to_ptr_bool(syntax_header_row),
-        syntax_missing_string=builtin.to_ptr_string(syntax_missing_string),
-        syntax_delim=builtin.to_ptr_string(syntax_delim),
-        syntax_quotechar=builtin.to_ptr_string(syntax_quotechar),
-        syntax_escapechar=builtin.to_ptr_string(syntax_escapechar),
+        partition_size=builtin.some(partition_size),
+        compression=builtin.some(compression),
+        syntax_header_row=builtin.some(syntax_header_row),
+        syntax_missing_string=builtin.some(syntax_missing_string),
+        syntax_delim=builtin.some(syntax_delim),
+        syntax_quotechar=builtin.some(syntax_quotechar),
+        syntax_escapechar=builtin.some(syntax_escapechar),
     )
 
 
@@ -1402,7 +1402,8 @@ def deconstruct_relation_id_uint128(msg: logic.RelationId) -> Optional[logic.UIn
 
 
 def deconstruct_bindings(abs: logic.Abstraction) -> Tuple[List[logic.Binding], List[logic.Binding]]:
-    return builtin.tuple(abs.vars, list[logic.Binding]())
+    n: int = builtin.length(abs.vars)
+    return builtin.tuple(builtin.list_slice(abs.vars, 0, n), list[logic.Binding]())
 
 
 def deconstruct_bindings_with_arity(abs: logic.Abstraction, value_arity: int) -> Tuple[List[logic.Binding], List[logic.Binding]]:

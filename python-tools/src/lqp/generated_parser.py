@@ -278,93 +278,93 @@ class Parser:
     # --- Helper functions ---
 
     def _extract_value_int64(self, value: Optional[logic_pb2.Value], default: int) -> int:
-                assert value is not None
+        assert value is not None
         if (value is not None and value.HasField('int_value')):
-                        assert value is not None
+            assert value is not None
             return value.int_value
         return default
 
     def _extract_value_float64(self, value: Optional[logic_pb2.Value], default: float) -> float:
-                assert value is not None
+        assert value is not None
         if (value is not None and value.HasField('float_value')):
-                        assert value is not None
+            assert value is not None
             return value.float_value
         return default
 
     def _extract_value_string(self, value: Optional[logic_pb2.Value], default: str) -> str:
-                assert value is not None
+        assert value is not None
         if (value is not None and value.HasField('string_value')):
-                        assert value is not None
+            assert value is not None
             return value.string_value
         return default
 
     def _extract_value_boolean(self, value: Optional[logic_pb2.Value], default: bool) -> bool:
-                assert value is not None
+        assert value is not None
         if (value is not None and value.HasField('boolean_value')):
-                        assert value is not None
+            assert value is not None
             return value.boolean_value
         return default
 
     def _extract_value_bytes(self, value: Optional[logic_pb2.Value], default: bytes) -> bytes:
-                assert value is not None
+        assert value is not None
         if (value is not None and value.HasField('string_value')):
-                        assert value is not None
+            assert value is not None
             return value.string_value.encode()
         return default
 
     def _extract_value_uint128(self, value: Optional[logic_pb2.Value], default: logic_pb2.UInt128Value) -> logic_pb2.UInt128Value:
-                assert value is not None
+        assert value is not None
         if (value is not None and value.HasField('uint128_value')):
-                        assert value is not None
+            assert value is not None
             return value.uint128_value
         return default
 
     def _extract_value_string_list(self, value: Optional[logic_pb2.Value], default: list[str]) -> list[str]:
-                assert value is not None
+        assert value is not None
         if (value is not None and value.HasField('string_value')):
-                        assert value is not None
+            assert value is not None
             return [value.string_value]
         return default
 
     def _try_extract_value_int64(self, value: Optional[logic_pb2.Value]) -> Optional[int]:
-                assert value is not None
+        assert value is not None
         if (value is not None and value.HasField('int_value')):
-                        assert value is not None
+            assert value is not None
             return value.int_value
         return None
 
     def _try_extract_value_float64(self, value: Optional[logic_pb2.Value]) -> Optional[float]:
-                assert value is not None
+        assert value is not None
         if (value is not None and value.HasField('float_value')):
-                        assert value is not None
+            assert value is not None
             return value.float_value
         return None
 
     def _try_extract_value_string(self, value: Optional[logic_pb2.Value]) -> Optional[str]:
-                assert value is not None
+        assert value is not None
         if (value is not None and value.HasField('string_value')):
-                        assert value is not None
+            assert value is not None
             return value.string_value
         return None
 
     def _try_extract_value_bytes(self, value: Optional[logic_pb2.Value]) -> Optional[bytes]:
-                assert value is not None
+        assert value is not None
         if (value is not None and value.HasField('string_value')):
-                        assert value is not None
+            assert value is not None
             return value.string_value.encode()
         return None
 
     def _try_extract_value_uint128(self, value: Optional[logic_pb2.Value]) -> Optional[logic_pb2.UInt128Value]:
-                assert value is not None
+        assert value is not None
         if (value is not None and value.HasField('uint128_value')):
-                        assert value is not None
+            assert value is not None
             return value.uint128_value
         return None
 
     def _try_extract_value_string_list(self, value: Optional[logic_pb2.Value]) -> Optional[list[str]]:
-                assert value is not None
+        assert value is not None
         if (value is not None and value.HasField('string_value')):
-                        assert value is not None
+            assert value is not None
             return [value.string_value]
         return None
 
@@ -605,7 +605,7 @@ class Parser:
     def _maybe_push_float64(self, result: list[tuple[str, logic_pb2.Value]], key: str, val: Optional[float]) -> None:
         
         if val is not None:
-                        assert val is not None
+            assert val is not None
             _t1016 = self._make_value_float64(val)
             result.append((key, _t1016,))
             _t1015 = None
@@ -616,7 +616,7 @@ class Parser:
     def _maybe_push_int64(self, result: list[tuple[str, logic_pb2.Value]], key: str, val: Optional[int]) -> None:
         
         if val is not None:
-                        assert val is not None
+            assert val is not None
             _t1018 = self._make_value_int64(val)
             result.append((key, _t1018,))
             _t1017 = None
@@ -627,7 +627,7 @@ class Parser:
     def _maybe_push_uint128(self, result: list[tuple[str, logic_pb2.Value]], key: str, val: Optional[logic_pb2.UInt128Value]) -> None:
         
         if val is not None:
-                        assert val is not None
+            assert val is not None
             _t1020 = self._make_value_uint128(val)
             result.append((key, _t1020,))
             _t1019 = None
@@ -638,7 +638,7 @@ class Parser:
     def _maybe_push_bytes_as_string(self, result: list[tuple[str, logic_pb2.Value]], key: str, val: Optional[bytes]) -> None:
         
         if val is not None:
-                        assert val is not None
+            assert val is not None
             _t1022 = self._make_value_string(val.decode('utf-8'))
             result.append((key, _t1022,))
             _t1021 = None
@@ -670,19 +670,19 @@ class Parser:
 
     def deconstruct_export_csv_config(self, msg: transactions_pb2.ExportCSVConfig) -> list[tuple[str, logic_pb2.Value]]:
         result = []
-                assert msg.partition_size is not None
+        assert msg.partition_size is not None
         
         if (msg.partition_size is not None and msg.partition_size != 0):
-                        assert msg.partition_size is not None
+            assert msg.partition_size is not None
             _t1034 = self._make_value_int64(msg.partition_size)
             result.append(('partition_size', _t1034,))
             _t1033 = None
         else:
             _t1033 = None
-                assert msg.compression is not None
+        assert msg.compression is not None
         
         if (msg.compression is not None and msg.compression != ''):
-                        assert msg.compression is not None
+            assert msg.compression is not None
             _t1036 = self._make_value_string(msg.compression)
             result.append(('compression', _t1036,))
             _t1035 = None
@@ -690,43 +690,43 @@ class Parser:
             _t1035 = None
         
         if msg.syntax_header_row is not None:
-                        assert msg.syntax_header_row is not None
+            assert msg.syntax_header_row is not None
             _t1038 = self._make_value_boolean(msg.syntax_header_row)
             result.append(('syntax_header_row', _t1038,))
             _t1037 = None
         else:
             _t1037 = None
-                assert msg.syntax_missing_string is not None
+        assert msg.syntax_missing_string is not None
         
         if (msg.syntax_missing_string is not None and msg.syntax_missing_string != ''):
-                        assert msg.syntax_missing_string is not None
+            assert msg.syntax_missing_string is not None
             _t1040 = self._make_value_string(msg.syntax_missing_string)
             result.append(('syntax_missing_string', _t1040,))
             _t1039 = None
         else:
             _t1039 = None
-                assert msg.syntax_delim is not None
+        assert msg.syntax_delim is not None
         
         if (msg.syntax_delim is not None and msg.syntax_delim != ','):
-                        assert msg.syntax_delim is not None
+            assert msg.syntax_delim is not None
             _t1042 = self._make_value_string(msg.syntax_delim)
             result.append(('syntax_delim', _t1042,))
             _t1041 = None
         else:
             _t1041 = None
-                assert msg.syntax_quotechar is not None
+        assert msg.syntax_quotechar is not None
         
         if (msg.syntax_quotechar is not None and msg.syntax_quotechar != '"'):
-                        assert msg.syntax_quotechar is not None
+            assert msg.syntax_quotechar is not None
             _t1044 = self._make_value_string(msg.syntax_quotechar)
             result.append(('syntax_quotechar', _t1044,))
             _t1043 = None
         else:
             _t1043 = None
-                assert msg.syntax_escapechar is not None
+        assert msg.syntax_escapechar is not None
         
         if (msg.syntax_escapechar is not None and msg.syntax_escapechar != '\\'):
-                        assert msg.syntax_escapechar is not None
+            assert msg.syntax_escapechar is not None
             _t1046 = self._make_value_string(msg.syntax_escapechar)
             result.append(('syntax_escapechar', _t1046,))
             _t1045 = None
@@ -747,7 +747,8 @@ class Parser:
         return None
 
     def deconstruct_bindings(self, abs: logic_pb2.Abstraction) -> tuple[list[logic_pb2.Binding], list[logic_pb2.Binding]]:
-        return (abs.vars, [],)
+        n = len(abs.vars)
+        return (abs.vars[0:n], [],)
 
     def deconstruct_bindings_with_arity(self, abs: logic_pb2.Abstraction, value_arity: int) -> tuple[list[logic_pb2.Binding], list[logic_pb2.Binding]]:
         n = len(abs.vars)
