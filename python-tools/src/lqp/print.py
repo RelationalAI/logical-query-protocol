@@ -203,9 +203,11 @@ def program_to_str(node: ir.Transaction, options: Dict = {}) -> str:
             sec_s += list_to_str(items_list, 3, "\n", options, debug_info) + conf.RPAREN()
             return sec_s
         writes_s = build_section("writes", epoch.writes)
-        if writes_s: section_strs.append(writes_s)
+        if writes_s:
+            section_strs.append(writes_s)
         reads_s = build_section("reads", epoch.reads, _collect_debug_infos(node))
-        if reads_s: section_strs.append(reads_s)
+        if reads_s:
+            section_strs.append(reads_s)
         s += "".join(section_strs)
         s += conf.RPAREN()
     s += conf.RPAREN()
@@ -228,7 +230,8 @@ def _debug_str(node: ir.LqpNode) -> str:
         for (rid, name) in debug_infos.items():
             debug_str += f";; \t ID `0x{rid.id:x}` -> `{name}`\n"
         return debug_str
-    else: return ""
+    else:
+        return ""
 
 def _collect_debug_infos(node: ir.LqpNode) -> Dict[ir.RelationId, str]:
     debug_infos: Dict = {}

@@ -3,6 +3,13 @@
 A command-line tool to parse Logical Query Protocol (LQP) S-expressions into Protobuf binary
 and JSON formats.
 
+## Installation
+
+The `lqp` package is available on PyPi through `pip`. Use
+```bash
+pip install lqp
+```
+
 ## Usage
 
 ```
@@ -108,7 +115,7 @@ Running tests:
 python -m pytest
 ```
 
-To add testcases, add a `.lqp` file to the `tests/test_files/lqp` subdirectory. New
+To add testcases, add a `.lqp` file to the top-level `tests/lqp` directory. New
 files get picked up automatically. To generate or update the corresponding output files
 (binary, debug mode, and pretty-printing snapshots), run `pytest --snapshot-update`.
 

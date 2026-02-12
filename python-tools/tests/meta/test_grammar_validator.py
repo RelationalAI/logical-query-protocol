@@ -15,7 +15,7 @@ from meta.grammar import (
 )
 from meta.grammar_validator import GrammarValidator
 from meta.proto_parser import ProtoParser
-from meta.proto_ast import ProtoMessage, ProtoField, ProtoOneof
+from meta.proto_ast import ProtoMessage, ProtoField
 
 # Dummy type for test builtins
 _ANY = BaseType("Any")

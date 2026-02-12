@@ -3,7 +3,9 @@ from pathlib import Path
 
 # Directory constants
 PARENT_DIR = Path(__file__).parent
-TEST_INPUTS_DIR = PARENT_DIR / "test_files" / "lqp"
+REPO_ROOT = PARENT_DIR.parent.parent
+TEST_INPUTS_DIR = REPO_ROOT / "tests" / "lqp"
+BIN_SNAPSHOTS_DIR = REPO_ROOT / "tests" / "bin"
 
 
 def get_all_files(dir, file_extension):

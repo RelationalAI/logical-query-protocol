@@ -6,7 +6,6 @@ import tempfile
 import shutil
 
 from meta.proto_parser import ProtoParser
-from meta.proto_ast import ProtoMessage, ProtoField, ProtoOneof, ProtoEnum
 
 
 class TestProtoParser(unittest.TestCase):

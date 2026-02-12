@@ -15,7 +15,6 @@ from meta.target import (
     gensym,
 )
 from meta.target_builtins import make_builtin
-from meta.gensym import reset as gensym_reset
 
 # Dummy type for test builtins
 _ANY = BaseType("Any")

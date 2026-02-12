@@ -111,6 +111,16 @@ class JuliaCodeGenerator(CodeGenerator):
     def gen_symbol(self, name: str) -> str:
         return f":{name}"
 
+    def _escape_proto_field(self, name: str) -> str:
+        """Escape a proto field name for use as a Julia kwarg.
+
+        ProtoBuf.jl escapes Julia keywords with a '#' prefix in struct fields
+        and keyword constructors, e.g. `global` -> `var"#global"`.
+        """
+        if name in JULIA_KEYWORDS:
+            return f'var"#{name}"'
+        return name
+
     def _gen_oneof_symbol(self, name: str) -> str:
         """Generate a Julia symbol for a OneOf field name, escaping keywords.
 
@@ -277,14 +287,6 @@ class JuliaCodeGenerator(CodeGenerator):
 
         regular_fields = {f.name for f in proto_msg.fields}
 
-        # Julia ProtoBuf struct field order: oneofs first, then regular fields,
-        # each group in proto declaration order.
-        struct_fields: List[Tuple[str, str]] = []  # (name, kind)
-        for oneof in proto_msg.oneofs:
-            struct_fields.append((oneof.name, 'oneof'))
-        for f in proto_msg.fields:
-            struct_fields.append((f.name, 'regular'))
-
         # Generate values for each grammar kwarg, grouped by struct field
         # For oneofs: struct_field → [(alt_name, generated_value), ...]
         # For regular: struct_field → generated_value
@@ -321,6 +323,7 @@ class JuliaCodeGenerator(CodeGenerator):
                 # Generate for side effects but discard.
                 self.generate_lines(field_expr, lines, indent)
 
+<<<<<<< HEAD
         # Build constructor kwargs
         kwargs: List[str] = []
         for struct_field, kind in struct_fields:
@@ -345,6 +348,30 @@ class JuliaCodeGenerator(CodeGenerator):
                     kwargs.append(f"{escaped}={regular_values[struct_field]}")
 
         call = f"{ctor}({', '.join(kwargs)})" if kwargs else f"{ctor}()"
+=======
+        # Build keyword constructor args (avoids dependence on positional field order)
+        kwargs: List[str] = []
+        for oneof in proto_msg.oneofs:
+            alts = oneof_groups.get(oneof.name, [])
+            if not alts:
+                continue
+            elif len(alts) == 1:
+                alt_name, value = alts[0]
+                sym = self._gen_oneof_symbol(alt_name)
+                kwargs.append(f"{self._escape_proto_field(oneof.name)}=OneOf({sym}, {value})")
+            else:
+                # Multiple alternatives: chain ternary expressions
+                result_expr = "nothing"
+                for alt_name, value in reversed(alts):
+                    sym = self._gen_oneof_symbol(alt_name)
+                    result_expr = f"(!isnothing({value}) ? OneOf({sym}, {value}) : {result_expr})"
+                kwargs.append(f"{self._escape_proto_field(oneof.name)}={result_expr}")
+        for f in proto_msg.fields:
+            if f.name in regular_values:
+                kwargs.append(f"{self._escape_proto_field(f.name)}={regular_values[f.name]}")
+
+        call = f"{ctor}({', '.join(kwargs)})"
+>>>>>>> origin/main
         tmp = gensym()
         lines.append(f"{indent}{self.gen_assignment(tmp, call, is_declaration=True)}")
         return tmp
