@@ -229,6 +229,9 @@ class GoCodeGenerator(CodeGenerator):
         # Go doesn't have tuples, use a struct or interface slice
         return f"[]interface{{}}"
 
+    def gen_sequence_type(self, element_type: str) -> str:
+        return f"[]{element_type}"
+
     def gen_list_type(self, element_type: str) -> str:
         return f"[]{element_type}"
 

@@ -27,7 +27,7 @@ from .proto_parser import ProtoParser
 from .proto_ast import ProtoMessage, ProtoField
 from .target import (
     TargetType, TargetExpr, Call, NewMessage, Builtin, IfElse, Let, Seq, ListExpr, GetField,
-    GetElement, BaseType, VarType, MessageType, ListType, OptionType, TupleType, Lambda, OneOf
+    GetElement, BaseType, VarType, MessageType, SequenceType, ListType, OptionType, TupleType, Lambda, OneOf
 )
 from .type_env import TypeEnv
 from .validation_result import ValidationResult
@@ -391,19 +391,21 @@ class GrammarValidator:
             else:
                 arg0_type = self._infer_expr_type(args[0])
                 arg1_type = self._infer_expr_type(args[1])
-                if arg0_type is not None and not isinstance(arg0_type, ListType):
+                if arg0_type is not None and not isinstance(arg0_type, (SequenceType, ListType)):
                     self.result.add_error(
                         "type_builtin_arg",
-                        f"In {context}: builtin 'list_concat' arg 0 has type {arg0_type}, expected List[T]",
+                        f"In {context}: builtin 'list_concat' arg 0 has type {arg0_type}, expected Sequence[T]",
                         rule_name=context
                     )
-                if arg1_type is not None and not isinstance(arg1_type, ListType):
+                if arg1_type is not None and not isinstance(arg1_type, (SequenceType, ListType)):
                     self.result.add_error(
                         "type_builtin_arg",
-                        f"In {context}: builtin 'list_concat' arg 1 has type {arg1_type}, expected List[T]",
+                        f"In {context}: builtin 'list_concat' arg 1 has type {arg1_type}, expected Sequence[T]",
                         rule_name=context
                     )
-                if arg0_type is not None and arg1_type is not None and isinstance(arg0_type, ListType) and isinstance(arg1_type, ListType):
+                if (arg0_type is not None and arg1_type is not None
+                        and isinstance(arg0_type, (SequenceType, ListType))
+                        and isinstance(arg1_type, (SequenceType, ListType))):
                     # Check that element types have a common supertype
                     t = arg0_type.element_type
                     u = arg1_type.element_type
@@ -424,10 +426,10 @@ class GrammarValidator:
                 )
             else:
                 arg_type = self._infer_expr_type(args[0])
-                if arg_type is not None and not isinstance(arg_type, ListType):
+                if arg_type is not None and not isinstance(arg_type, (SequenceType, ListType)):
                     self.result.add_error(
                         "type_builtin_arg",
-                        f"In {context}: builtin 'length' arg has type {arg_type}, expected List[T]",
+                        f"In {context}: builtin 'length' arg has type {arg_type}, expected Sequence[T]",
                         rule_name=context
                     )
 
@@ -514,6 +516,12 @@ class GrammarValidator:
         # T <: Any for all T (Any is the top type)
         if isinstance(t2, BaseType) and t2.name == "Any":
             return True
+        # List[T] <: Sequence[U] if T <: U (List is a subtype of Sequence)
+        if isinstance(t1, ListType) and isinstance(t2, SequenceType):
+            return self._is_subtype(t1.element_type, t2.element_type)
+        # Sequence is covariant: Sequence[A] <: Sequence[B] if A <: B
+        if isinstance(t1, SequenceType) and isinstance(t2, SequenceType):
+            return self._is_subtype(t1.element_type, t2.element_type)
         # List is covariant: List[A] <: List[B] if A <: B
         if isinstance(t1, ListType) and isinstance(t2, ListType):
             return self._is_subtype(t1.element_type, t2.element_type)
@@ -703,6 +711,9 @@ class GrammarValidator:
             if msg and msg.module == typ.module:
                 return True
             return False
+
+        if isinstance(typ, SequenceType):
+            return self._is_valid_type(typ.element_type)
 
         if isinstance(typ, ListType):
             # List is valid if element type is valid

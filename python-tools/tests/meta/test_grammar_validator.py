@@ -488,7 +488,7 @@ class TestTypeChecking:
 
         validator._check_builtin_call_types(builtin, args, 'test_rule')
         assert not validator.result.is_valid
-        assert any("expected List" in e.message for e in validator.result.errors)
+        assert any("expected Sequence" in e.message for e in validator.result.errors)
 
 
 class TestRuleTypeChecking:
