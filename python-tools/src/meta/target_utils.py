@@ -24,7 +24,7 @@ from typing import Mapping, Sequence
 
 from .target import (
     BaseType, Builtin, Lambda, Var, Lit, Call, TargetExpr, TargetType,
-    ListType, OptionType, TupleType, DictType, VarType
+    SequenceType, ListType, OptionType, TupleType, DictType, VarType
 )
 from .target_builtins import make_builtin
 
@@ -52,9 +52,15 @@ def is_subtype(t1: TargetType, t2: TargetType) -> bool:
     # T <: VarType for all T (type variables are wildcards)
     if isinstance(t2, VarType):
         return True
-    # List is covariant: List[A] <: List[B] if A <: B
-    if isinstance(t1, ListType) and isinstance(t2, ListType):
+    # List[T] <: Sequence[U] if T <: U
+    if isinstance(t1, ListType) and isinstance(t2, SequenceType):
         return is_subtype(t1.element_type, t2.element_type)
+    # Sequence is covariant: Sequence[A] <: Sequence[B] if A <: B
+    if isinstance(t1, SequenceType) and isinstance(t2, SequenceType):
+        return is_subtype(t1.element_type, t2.element_type)
+    # List is invariant: List[A] <: List[B] only if A == B
+    if isinstance(t1, ListType) and isinstance(t2, ListType):
+        return t1.element_type == t2.element_type
     # Option is covariant: Option[A] <: Option[B] if A <: B
     if isinstance(t1, OptionType) and isinstance(t2, OptionType):
         return is_subtype(t1.element_type, t2.element_type)
@@ -87,6 +93,12 @@ def type_join(t1: TargetType, t2: TargetType) -> TargetType:
         return t2
     if isinstance(t1, OptionType) and isinstance(t2, OptionType):
         return OptionType(type_join(t1.element_type, t2.element_type))
+    if isinstance(t1, SequenceType) and isinstance(t2, SequenceType):
+        return SequenceType(type_join(t1.element_type, t2.element_type))
+    if isinstance(t1, ListType) and isinstance(t2, SequenceType):
+        return SequenceType(type_join(t1.element_type, t2.element_type))
+    if isinstance(t1, SequenceType) and isinstance(t2, ListType):
+        return SequenceType(type_join(t1.element_type, t2.element_type))
     if isinstance(t1, ListType) and isinstance(t2, ListType):
         return ListType(type_join(t1.element_type, t2.element_type))
     if isinstance(t1, TupleType) and isinstance(t2, TupleType):
@@ -142,7 +154,7 @@ def _is_simple_expr(expr: TargetExpr) -> bool:
 
 def _count_var_occurrences(expr: TargetExpr, var: str) -> int:
     """Count occurrences of a variable in an expression."""
-    from .target import Let, Assign, Seq, IfElse, While, Return, NewMessage, GetField, GetElement, ListExpr
+    from .target import Let, Assign, Seq, IfElse, While, Foreach, ForeachEnumerated, Return, NewMessage, GetField, GetElement, ListExpr
     if isinstance(expr, Var) and expr.name == var:
         return 1
     elif isinstance(expr, Lambda):
@@ -171,6 +183,16 @@ def _count_var_occurrences(expr: TargetExpr, var: str) -> int:
                 _count_var_occurrences(expr.else_branch, var))
     elif isinstance(expr, While):
         return _count_var_occurrences(expr.condition, var) + _count_var_occurrences(expr.body, var)
+    elif isinstance(expr, Foreach):
+        count = _count_var_occurrences(expr.collection, var)
+        if expr.var.name != var:
+            count += _count_var_occurrences(expr.body, var)
+        return count
+    elif isinstance(expr, ForeachEnumerated):
+        count = _count_var_occurrences(expr.collection, var)
+        if expr.index_var.name != var and expr.var.name != var:
+            count += _count_var_occurrences(expr.body, var)
+        return count
     elif isinstance(expr, Return):
         return _count_var_occurrences(expr.expr, var)
     elif isinstance(expr, NewMessage):
@@ -198,7 +220,7 @@ def _new_mapping(mapping: Mapping[str, TargetExpr], shadowed: list[str]):
 
 def _subst_inner(expr: TargetExpr, mapping: Mapping[str, TargetExpr]) -> TargetExpr:
     """Inner substitution helper - performs actual substitution."""
-    from .target import Let, Assign, Seq, IfElse, While, Return, NewMessage, GetField, GetElement, ListExpr
+    from .target import Let, Assign, Seq, IfElse, While, Foreach, ForeachEnumerated, Return, NewMessage, GetField, GetElement, ListExpr
     if isinstance(expr, Var) and expr.name in mapping:
         return mapping[expr.name]
     elif isinstance(expr, Lambda):
@@ -218,6 +240,12 @@ def _subst_inner(expr: TargetExpr, mapping: Mapping[str, TargetExpr]) -> TargetE
         return IfElse(_subst_inner(expr.condition, mapping), _subst_inner(expr.then_branch, mapping), _subst_inner(expr.else_branch, mapping))
     elif isinstance(expr, While):
         return While(_subst_inner(expr.condition, mapping), _subst_inner(expr.body, mapping))
+    elif isinstance(expr, Foreach):
+        new_mapping = _new_mapping(mapping, [expr.var.name])
+        return Foreach(expr.var, _subst_inner(expr.collection, mapping), _subst_inner(expr.body, new_mapping))
+    elif isinstance(expr, ForeachEnumerated):
+        new_mapping = _new_mapping(mapping, [expr.index_var.name, expr.var.name])
+        return ForeachEnumerated(expr.index_var, expr.var, _subst_inner(expr.collection, mapping), _subst_inner(expr.body, new_mapping))
     elif isinstance(expr, Return):
         return Return(_subst_inner(expr.expr, mapping))
     elif isinstance(expr, NewMessage):
@@ -236,7 +264,7 @@ def _subst_inner(expr: TargetExpr, mapping: Mapping[str, TargetExpr]) -> TargetE
 
 def _validate_subst_types(expr: TargetExpr, mapping: Mapping[str, TargetExpr]) -> None:
     """Check that substitution values have compatible types with their target variables."""
-    from .target import Let, Assign, Seq, IfElse, While, Return
+    from .target import Let, Assign, Seq, IfElse, While, Foreach, ForeachEnumerated, Return
     if isinstance(expr, Var) and expr.name in mapping:
         val = mapping[expr.name]
         assert is_subtype(val.target_type(), expr.type), \
@@ -265,6 +293,16 @@ def _validate_subst_types(expr: TargetExpr, mapping: Mapping[str, TargetExpr]) -
     elif isinstance(expr, While):
         _validate_subst_types(expr.condition, mapping)
         _validate_subst_types(expr.body, mapping)
+    elif isinstance(expr, Foreach):
+        _validate_subst_types(expr.collection, mapping)
+        filtered = {k: v for k, v in mapping.items() if k != expr.var.name}
+        if filtered:
+            _validate_subst_types(expr.body, filtered)
+    elif isinstance(expr, ForeachEnumerated):
+        _validate_subst_types(expr.collection, mapping)
+        filtered = {k: v for k, v in mapping.items() if k not in {expr.index_var.name, expr.var.name}}
+        if filtered:
+            _validate_subst_types(expr.body, filtered)
     elif isinstance(expr, Assign):
         _validate_subst_types(expr.expr, mapping)
     elif isinstance(expr, Return):

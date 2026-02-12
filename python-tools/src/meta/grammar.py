@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 
 # Import action AST types
-from .target import Lambda, TargetType, ListType, OptionType, TupleType, FunDef
+from .target import Lambda, TargetType, SequenceType, ListType, OptionType, TupleType, FunDef
 
 # Use TYPE_CHECKING to avoid circular import: GrammarAnalysis imports Grammar,
 # but we need GrammarAnalysis type hints here. These imports only exist during
@@ -121,8 +121,8 @@ class Star(Rhs):
         return f"{self.rhs}*"
 
     def target_type(self) -> TargetType:
-        """Return list type of the element type."""
-        return ListType(self.rhs.target_type())
+        """Return sequence type of the element type."""
+        return SequenceType(self.rhs.target_type())
 
 
 @dataclass(frozen=True)
