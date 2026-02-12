@@ -115,7 +115,7 @@ Running tests:
 python -m pytest
 ```
 
-To add testcases, add a `.lqp` file to the `tests/test_files/lqp` subdirectory. New
+To add testcases, add a `.lqp` file to the top-level `tests/lqp` directory. New
 files get picked up automatically. To generate or update the corresponding output files
 (binary, debug mode, and pretty-printing snapshots), run `pytest --snapshot-update`.
 

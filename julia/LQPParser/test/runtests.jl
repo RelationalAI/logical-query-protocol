@@ -41,8 +41,8 @@ end
     end
 
     # Test all LQP files against their binary snapshots
-    test_files_dir = joinpath(@__DIR__, "../../../python-tools/tests/test_files/lqp")
-    bin_files_dir = joinpath(@__DIR__, "../../../python-tools/tests/test_files/bin")
+    test_files_dir = joinpath(@__DIR__, "../../../tests/lqp")
+    bin_files_dir = joinpath(@__DIR__, "../../../tests/bin")
 
     if isdir(test_files_dir)
         lqp_files = sort(filter(f -> endswith(f, ".lqp"), readdir(test_files_dir)))
