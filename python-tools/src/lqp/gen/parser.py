@@ -12,7 +12,7 @@ Command: python -m meta.cli ../proto/relationalai/lqp/v1/fragments.proto ../prot
 import ast
 import hashlib
 import re
-from typing import List, Optional, Any, Tuple, Callable
+from typing import Sequence, List, Optional, Any, Tuple, Callable
 from decimal import Decimal
 
 from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
@@ -348,7 +348,7 @@ class Parser:
         return None
 
     @staticmethod
-    def construct_csv_config(config_dict: list[tuple[str, logic_pb2.Value]]) -> logic_pb2.CSVConfig:
+    def construct_csv_config(config_dict: Sequence[tuple[str, logic_pb2.Value]]) -> logic_pb2.CSVConfig:
         config = dict(config_dict)
         _t946 = Parser._extract_value_int64(config.get('csv_header_row'), 1)
         header_row = _t946
@@ -376,7 +376,7 @@ class Parser:
         return _t957
 
     @staticmethod
-    def construct_betree_info(key_types: list[logic_pb2.Type], value_types: list[logic_pb2.Type], config_dict: list[tuple[str, logic_pb2.Value]]) -> logic_pb2.BeTreeInfo:
+    def construct_betree_info(key_types: Sequence[logic_pb2.Type], value_types: Sequence[logic_pb2.Type], config_dict: Sequence[tuple[str, logic_pb2.Value]]) -> logic_pb2.BeTreeInfo:
         config = dict(config_dict)
         _t958 = Parser._try_extract_value_float64(config.get('betree_config_epsilon'))
         epsilon = _t958
@@ -409,7 +409,7 @@ class Parser:
         return _t970
 
     @staticmethod
-    def construct_configure(config_dict: list[tuple[str, logic_pb2.Value]]) -> transactions_pb2.Configure:
+    def construct_configure(config_dict: Sequence[tuple[str, logic_pb2.Value]]) -> transactions_pb2.Configure:
         config = dict(config_dict)
         maintenance_level_val = config.get('ivm.maintenance_level')
         maintenance_level = transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
@@ -432,7 +432,7 @@ class Parser:
         return _t973
 
     @staticmethod
-    def export_csv_config(path: str, columns: list[transactions_pb2.ExportCSVColumn], config_dict: list[tuple[str, logic_pb2.Value]]) -> transactions_pb2.ExportCSVConfig:
+    def export_csv_config(path: str, columns: Sequence[transactions_pb2.ExportCSVColumn], config_dict: Sequence[tuple[str, logic_pb2.Value]]) -> transactions_pb2.ExportCSVConfig:
         config = dict(config_dict)
         _t974 = Parser._extract_value_int64(config.get('partition_size'), 0)
         partition_size = _t974
@@ -492,7 +492,7 @@ class Parser:
         _t361 = Parser.construct_configure(config_dict6)
         return _t361
 
-    def parse_config_dict(self) -> list[tuple[str, logic_pb2.Value]]:
+    def parse_config_dict(self) -> Sequence[tuple[str, logic_pb2.Value]]:
         self.consume_literal('{')
         xs7 = []
         cond8 = self.match_lookahead_literal(':', 0)
@@ -746,7 +746,7 @@ class Parser:
         _t413 = transactions_pb2.Epoch(writes=(epoch_writes39 if epoch_writes39 is not None else []), reads=(epoch_reads40 if epoch_reads40 is not None else []))
         return _t413
 
-    def parse_epoch_writes(self) -> list[transactions_pb2.Write]:
+    def parse_epoch_writes(self) -> Sequence[transactions_pb2.Write]:
         self.consume_literal('(')
         self.consume_literal('writes')
         xs41 = []
@@ -963,10 +963,10 @@ class Parser:
         _t462 = self.parse_formula()
         formula68 = _t462
         self.consume_literal(')')
-        _t463 = logic_pb2.Abstraction(vars=(bindings67[0] + (bindings67[1] if bindings67[1] is not None else [])), value=formula68)
+        _t463 = logic_pb2.Abstraction(vars=(list(bindings67[0]) + list(bindings67[1] if bindings67[1] is not None else [])), value=formula68)
         return _t463
 
-    def parse_bindings(self) -> tuple[list[logic_pb2.Binding], list[logic_pb2.Binding]]:
+    def parse_bindings(self) -> tuple[Sequence[logic_pb2.Binding], Sequence[logic_pb2.Binding]]:
         self.consume_literal('[')
         xs69 = []
         cond70 = self.match_lookahead_terminal('SYMBOL', 0)
@@ -1201,7 +1201,7 @@ class Parser:
         _t524 = logic_pb2.BooleanType()
         return _t524
 
-    def parse_value_bindings(self) -> list[logic_pb2.Binding]:
+    def parse_value_bindings(self) -> Sequence[logic_pb2.Binding]:
         self.consume_literal('|')
         xs90 = []
         cond91 = self.match_lookahead_terminal('SYMBOL', 0)
@@ -1459,7 +1459,7 @@ class Parser:
         _t591 = self.parse_formula()
         formula109 = _t591
         self.consume_literal(')')
-        _t592 = logic_pb2.Abstraction(vars=(bindings108[0] + (bindings108[1] if bindings108[1] is not None else [])), value=formula109)
+        _t592 = logic_pb2.Abstraction(vars=(list(bindings108[0]) + list(bindings108[1] if bindings108[1] is not None else [])), value=formula109)
         _t593 = logic_pb2.Exists(body=_t592)
         return _t593
 
@@ -1476,7 +1476,7 @@ class Parser:
         _t597 = logic_pb2.Reduce(op=abstraction110, body=abstraction_3111, terms=terms112)
         return _t597
 
-    def parse_terms(self) -> list[logic_pb2.Term]:
+    def parse_terms(self) -> Sequence[logic_pb2.Term]:
         self.consume_literal('(')
         self.consume_literal('terms')
         xs113 = []
@@ -1632,7 +1632,7 @@ class Parser:
         symbol134 = self.consume_terminal('SYMBOL')
         return symbol134
 
-    def parse_ffi_args(self) -> list[logic_pb2.Abstraction]:
+    def parse_ffi_args(self) -> Sequence[logic_pb2.Abstraction]:
         self.consume_literal('(')
         self.consume_literal('args')
         xs135 = []
@@ -2064,7 +2064,7 @@ class Parser:
         _t745 = logic_pb2.Cast(input=term195, result=term_3196)
         return _t745
 
-    def parse_attrs(self) -> list[logic_pb2.Attribute]:
+    def parse_attrs(self) -> Sequence[logic_pb2.Attribute]:
         self.consume_literal('(')
         self.consume_literal('attrs')
         xs197 = []
@@ -2194,7 +2194,7 @@ class Parser:
         _t770 = logic_pb2.Loop(init=init218, body=script219)
         return _t770
 
-    def parse_init(self) -> list[logic_pb2.Instruction]:
+    def parse_init(self) -> Sequence[logic_pb2.Instruction]:
         self.consume_literal('(')
         self.consume_literal('init')
         xs220 = []
@@ -2326,7 +2326,7 @@ class Parser:
         _t804 = self.parse_formula()
         formula237 = _t804
         self.consume_literal(')')
-        _t805 = logic_pb2.Abstraction(vars=(bindings236[0] + (bindings236[1] if bindings236[1] is not None else [])), value=formula237)
+        _t805 = logic_pb2.Abstraction(vars=(list(bindings236[0]) + list(bindings236[1] if bindings236[1] is not None else [])), value=formula237)
         return (_t805, len(bindings236[1]),)
 
     def parse_break(self) -> logic_pb2.Break:
@@ -2498,7 +2498,7 @@ class Parser:
         _t852 = logic_pb2.Constraint(name=relation_id257, functional_dependency=_t851)
         return _t852
 
-    def parse_functional_dependency_keys(self) -> list[logic_pb2.Var]:
+    def parse_functional_dependency_keys(self) -> Sequence[logic_pb2.Var]:
         self.consume_literal('(')
         self.consume_literal('keys')
         xs261 = []
@@ -2512,7 +2512,7 @@ class Parser:
         self.consume_literal(')')
         return vars264
 
-    def parse_functional_dependency_values(self) -> list[logic_pb2.Var]:
+    def parse_functional_dependency_values(self) -> Sequence[logic_pb2.Var]:
         self.consume_literal('(')
         self.consume_literal('values')
         xs265 = []
@@ -2587,7 +2587,7 @@ class Parser:
         _t871 = logic_pb2.RelEDB(target_id=relation_id273, path=rel_edb_path274, types=rel_edb_types275)
         return _t871
 
-    def parse_rel_edb_path(self) -> list[str]:
+    def parse_rel_edb_path(self) -> Sequence[str]:
         self.consume_literal('[')
         xs276 = []
         cond277 = self.match_lookahead_terminal('STRING', 0)
@@ -2599,7 +2599,7 @@ class Parser:
         self.consume_literal(']')
         return strings279
 
-    def parse_rel_edb_types(self) -> list[logic_pb2.Type]:
+    def parse_rel_edb_types(self) -> Sequence[logic_pb2.Type]:
         self.consume_literal('[')
         xs280 = []
         cond281 = ((((((((((self.match_lookahead_literal('(', 0) or self.match_lookahead_literal('BOOLEAN', 0)) or self.match_lookahead_literal('DATE', 0)) or self.match_lookahead_literal('DATETIME', 0)) or self.match_lookahead_literal('FLOAT', 0)) or self.match_lookahead_literal('INT', 0)) or self.match_lookahead_literal('INT128', 0)) or self.match_lookahead_literal('MISSING', 0)) or self.match_lookahead_literal('STRING', 0)) or self.match_lookahead_literal('UINT128', 0)) or self.match_lookahead_literal('UNKNOWN', 0))
@@ -2636,7 +2636,7 @@ class Parser:
         _t879 = Parser.construct_betree_info(betree_info_key_types286, betree_info_value_types287, config_dict288)
         return _t879
 
-    def parse_betree_info_key_types(self) -> list[logic_pb2.Type]:
+    def parse_betree_info_key_types(self) -> Sequence[logic_pb2.Type]:
         self.consume_literal('(')
         self.consume_literal('key_types')
         xs289 = []
@@ -2650,7 +2650,7 @@ class Parser:
         self.consume_literal(')')
         return types292
 
-    def parse_betree_info_value_types(self) -> list[logic_pb2.Type]:
+    def parse_betree_info_value_types(self) -> Sequence[logic_pb2.Type]:
         self.consume_literal('(')
         self.consume_literal('value_types')
         xs293 = []
@@ -2700,7 +2700,7 @@ class Parser:
         _t891 = logic_pb2.CSVLocator(paths=(csv_locator_paths301 if csv_locator_paths301 is not None else []), inline_data=(csv_locator_inline_data302 if csv_locator_inline_data302 is not None else '').encode())
         return _t891
 
-    def parse_csv_locator_paths(self) -> list[str]:
+    def parse_csv_locator_paths(self) -> Sequence[str]:
         self.consume_literal('(')
         self.consume_literal('paths')
         xs303 = []
@@ -2729,7 +2729,7 @@ class Parser:
         _t893 = Parser.construct_csv_config(config_dict308)
         return _t893
 
-    def parse_csv_columns(self) -> list[logic_pb2.CSVColumn]:
+    def parse_csv_columns(self) -> Sequence[logic_pb2.CSVColumn]:
         self.consume_literal('(')
         self.consume_literal('columns')
         xs309 = []
@@ -2794,7 +2794,7 @@ class Parser:
         _t901 = transactions_pb2.Context(relations=relation_ids324)
         return _t901
 
-    def parse_epoch_reads(self) -> list[transactions_pb2.Read]:
+    def parse_epoch_reads(self) -> Sequence[transactions_pb2.Read]:
         self.consume_literal('(')
         self.consume_literal('reads')
         xs325 = []
@@ -2963,7 +2963,7 @@ class Parser:
         self.consume_literal(')')
         return string346
 
-    def parse_export_csv_columns(self) -> list[transactions_pb2.ExportCSVColumn]:
+    def parse_export_csv_columns(self) -> Sequence[transactions_pb2.ExportCSVColumn]:
         self.consume_literal('(')
         self.consume_literal('columns')
         xs347 = []

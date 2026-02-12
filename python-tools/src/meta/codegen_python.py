@@ -97,6 +97,9 @@ class PythonCodeGenerator(CodeGenerator):
             return 'tuple[()]'
         return f"tuple[{', '.join(element_types)}]"
 
+    def gen_sequence_type(self, element_type: str) -> str:
+        return f"Sequence[{element_type}]"
+
     def gen_list_type(self, element_type: str) -> str:
         return f"list[{element_type}]"
 

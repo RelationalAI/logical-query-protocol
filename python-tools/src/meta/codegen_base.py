@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tupl
 from .target import (
     TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, EnumValue, OneOf, ListExpr, Call, Lambda, Let,
     IfElse, Seq, While, Foreach, ForeachEnumerated, Assign, Return, FunDef, VisitNonterminalDef,
-    VisitNonterminal, TargetType, BaseType, TupleType, ListType, DictType, OptionType,
+    VisitNonterminal, TargetType, BaseType, VarType, TupleType, SeqeunceType, ListType, DictType, OptionType,
     MessageType, EnumType, FunctionType, GetField, GetElement
 )
 from .target_builtins import get_builtin
@@ -156,6 +156,11 @@ class CodeGenerator(ABC):
         pass
 
     @abstractmethod
+    def gen_sequence_type(self, element_type: str) -> str:
+        """Generate a read-only sequence type."""
+        pass
+
+    @abstractmethod
     def gen_list_type(self, element_type: str) -> str:
         """Generate a list/array type."""
         pass
@@ -191,6 +196,8 @@ class CodeGenerator(ABC):
         elif isinstance(typ, TupleType):
             element_types = [self.gen_type(e) for e in typ.elements]
             return self.gen_tuple_type(element_types)
+        elif isinstance(typ, SequenceType):
+            return self.gen_sequence_type(self.gen_type(typ.element_type))
         elif isinstance(typ, ListType):
             return self.gen_list_type(self.gen_type(typ.element_type))
         elif isinstance(typ, DictType):
@@ -201,6 +208,8 @@ class CodeGenerator(ABC):
             param_types = [self.gen_type(pt) for pt in typ.param_types]
             return_type = self.gen_type(typ.return_type)
             return self.gen_function_type(param_types, return_type)
+        elif isinstance(typ, VarType):
+            return self.base_type_map.get("Any", "Any")
         else:
             raise ValueError(f"Unknown type: {type(typ)}")
 

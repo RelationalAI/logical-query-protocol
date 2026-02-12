@@ -35,18 +35,18 @@
 %nonterm assign logic.Assign
 %nonterm atom logic.Atom
 %nonterm attribute logic.Attribute
-%nonterm attrs List[logic.Attribute]
+%nonterm attrs Sequence[logic.Attribute]
 %nonterm betree_info logic.BeTreeInfo
-%nonterm betree_info_key_types List[logic.Type]
-%nonterm betree_info_value_types List[logic.Type]
+%nonterm betree_info_key_types Sequence[logic.Type]
+%nonterm betree_info_value_types Sequence[logic.Type]
 %nonterm betree_relation logic.BeTreeRelation
 %nonterm binding logic.Binding
-%nonterm bindings Tuple[List[logic.Binding], List[logic.Binding]]
+%nonterm bindings Tuple[Sequence[logic.Binding], Sequence[logic.Binding]]
 %nonterm boolean_type logic.BooleanType
 %nonterm boolean_value Boolean
 %nonterm break logic.Break
 %nonterm cast logic.Cast
-%nonterm config_dict List[Tuple[String, logic.Value]]
+%nonterm config_dict Sequence[Tuple[String, logic.Value]]
 %nonterm config_key_value Tuple[String, logic.Value]
 %nonterm configure transactions.Configure
 %nonterm conjunction logic.Conjunction
@@ -56,11 +56,11 @@
 %nonterm context transactions.Context
 %nonterm csv_asof String
 %nonterm csv_column logic.CSVColumn
-%nonterm csv_columns List[logic.CSVColumn]
+%nonterm csv_columns Sequence[logic.CSVColumn]
 %nonterm csv_config logic.CSVConfig
 %nonterm csv_data logic.CSVData
 %nonterm csv_locator_inline_data String
-%nonterm csv_locator_paths List[String]
+%nonterm csv_locator_paths Sequence[String]
 %nonterm csvlocator logic.CSVLocator
 %nonterm data logic.Data
 %nonterm date logic.DateValue
@@ -76,27 +76,27 @@
 %nonterm divide logic.Primitive
 %nonterm abort transactions.Abort
 %nonterm epoch transactions.Epoch
-%nonterm epoch_reads List[transactions.Read]
-%nonterm epoch_writes List[transactions.Write]
+%nonterm epoch_reads Sequence[transactions.Read]
+%nonterm epoch_writes Sequence[transactions.Write]
 %nonterm eq logic.Primitive
 %nonterm exists logic.Exists
 %nonterm export transactions.Export
 %nonterm export_csv_column transactions.ExportCSVColumn
-%nonterm export_csv_columns List[transactions.ExportCSVColumn]
+%nonterm export_csv_columns Sequence[transactions.ExportCSVColumn]
 %nonterm export_csv_config transactions.ExportCSVConfig
 %nonterm export_csv_path String
 %nonterm false logic.Disjunction
 %nonterm ffi logic.FFI
-%nonterm ffi_args List[logic.Abstraction]
+%nonterm ffi_args Sequence[logic.Abstraction]
 %nonterm float_type logic.FloatType
 %nonterm formula logic.Formula
 %nonterm fragment fragments.Fragment
 %nonterm fragment_id fragments.FragmentId
-%nonterm functional_dependency_keys List[logic.Var]
-%nonterm functional_dependency_values List[logic.Var]
+%nonterm functional_dependency_keys Sequence[logic.Var]
+%nonterm functional_dependency_values Sequence[logic.Var]
 %nonterm gt logic.Primitive
 %nonterm gt_eq logic.Primitive
-%nonterm init List[logic.Instruction]
+%nonterm init Sequence[logic.Instruction]
 %nonterm instruction logic.Instruction
 %nonterm int_type logic.IntType
 %nonterm int128_type logic.Int128Type
@@ -122,8 +122,8 @@
 %nonterm reduce logic.Reduce
 %nonterm rel_atom logic.RelAtom
 %nonterm rel_edb logic.RelEDB
-%nonterm rel_edb_path List[String]
-%nonterm rel_edb_types List[logic.Type]
+%nonterm rel_edb_path Sequence[String]
+%nonterm rel_edb_types Sequence[logic.Type]
 %nonterm rel_term logic.RelTerm
 %nonterm relation_id logic.RelationId
 %nonterm script logic.Script
@@ -132,7 +132,7 @@
 %nonterm sum_monoid logic.SumMonoid
 %nonterm sync transactions.Sync
 %nonterm term logic.Term
-%nonterm terms List[logic.Term]
+%nonterm terms Sequence[logic.Term]
 %nonterm transaction transactions.Transaction
 %nonterm true logic.Conjunction
 %nonterm type logic.Type
@@ -141,7 +141,7 @@
 %nonterm unspecified_type logic.UnspecifiedType
 %nonterm upsert logic.Upsert
 %nonterm value logic.Value
-%nonterm value_bindings List[logic.Binding]
+%nonterm value_bindings Sequence[logic.Binding]
 %nonterm var logic.Var
 %nonterm what_if transactions.WhatIf
 %nonterm write transactions.Write
@@ -805,7 +805,7 @@ def _try_extract_value_string_list(value: Optional[logic.Value]) -> Optional[Lis
     return None
 
 
-def construct_csv_config(config_dict: List[Tuple[String, logic.Value]]) -> logic.CSVConfig:
+def construct_csv_config(config_dict: Sequence[Tuple[String, logic.Value]]) -> logic.CSVConfig:
     config: Dict[String, logic.Value] = builtin.dict_from_list(config_dict)
     header_row: int = _extract_value_int64(builtin.dict_get(config, "csv_header_row"), 1)
     skip: int = _extract_value_int64(builtin.dict_get(config, "csv_skip"), 0)
@@ -834,9 +834,9 @@ def construct_csv_config(config_dict: List[Tuple[String, logic.Value]]) -> logic
 
 
 def construct_betree_info(
-    key_types: List[logic.Type],
-    value_types: List[logic.Type],
-    config_dict: List[Tuple[String, logic.Value]],
+    key_types: Sequence[logic.Type],
+    value_types: Sequence[logic.Type],
+    config_dict: Sequence[Tuple[String, logic.Value]],
 ) -> logic.BeTreeInfo:
     config: Dict[String, logic.Value] = builtin.dict_from_list(config_dict)
     epsilon: Optional[float] = _try_extract_value_float64(builtin.dict_get(config, "betree_config_epsilon"))
@@ -874,7 +874,7 @@ def default_configure() -> transactions.Configure:
         ivm_config=ivm_config,
     )
 
-def construct_configure(config_dict: List[Tuple[String, logic.Value]]) -> transactions.Configure:
+def construct_configure(config_dict: Sequence[Tuple[String, logic.Value]]) -> transactions.Configure:
     config: Dict[String, logic.Value] = builtin.dict_from_list(config_dict)
     maintenance_level_val: Optional[logic.Value] = builtin.dict_get(config, "ivm.maintenance_level")
     maintenance_level: transactions.MaintenanceLevel = transactions.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
@@ -898,8 +898,8 @@ def construct_configure(config_dict: List[Tuple[String, logic.Value]]) -> transa
 
 def export_csv_config(
     path: String,
-    columns: List[transactions.ExportCSVColumn],
-    config_dict: List[Tuple[String, logic.Value]],
+    columns: Sequence[transactions.ExportCSVColumn],
+    config_dict: Sequence[Tuple[String, logic.Value]],
 ) -> transactions.ExportCSVConfig:
     config: Dict[String, logic.Value] = builtin.dict_from_list(config_dict)
     partition_size: int = _extract_value_int64(builtin.dict_get(config, "partition_size"), 0)

@@ -10,7 +10,7 @@ in `python-tools/src/meta` or edit the protobuf specification in `proto/v1`.
 import ast
 import hashlib
 import re
-from typing import List, Optional, Any, Tuple, Callable
+from typing import Sequence, List, Optional, Any, Tuple, Callable
 from decimal import Decimal
 
 from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
