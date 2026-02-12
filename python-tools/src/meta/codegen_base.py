@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tupl
 
 from .target import (
     TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, EnumValue, OneOf, ListExpr, Call, Lambda, Let,
-    IfElse, Seq, While, Assign, Return, FunDef, VisitNonterminalDef,
+    IfElse, Seq, While, Foreach, ForeachEnumerated, Assign, Return, FunDef, VisitNonterminalDef,
     VisitNonterminal, TargetType, BaseType, VarType, TupleType, SequenceType, ListType, DictType, OptionType,
     MessageType, EnumType, FunctionType, GetField, GetElement
 )
@@ -241,6 +241,21 @@ class CodeGenerator(ABC):
         pass
 
     @abstractmethod
+    def gen_foreach_start(self, var: str, collection: str) -> str:
+        """Generate start of foreach loop."""
+        pass
+
+    @abstractmethod
+    def gen_foreach_enumerated_start(self, index_var: str, var: str, collection: str) -> str:
+        """Generate start of foreach enumerated loop."""
+        pass
+
+    @abstractmethod
+    def gen_foreach_end(self) -> str:
+        """Generate end of foreach loop."""
+        pass
+
+    @abstractmethod
     def gen_empty_body(self) -> str:
         """Generate placeholder for empty body (e.g., 'pass' or '// empty')."""
         pass
@@ -428,6 +443,12 @@ class CodeGenerator(ABC):
 
         elif isinstance(expr, While):
             return self._generate_while(expr, lines, indent)
+
+        elif isinstance(expr, Foreach):
+            return self._generate_foreach(expr, lines, indent)
+
+        elif isinstance(expr, ForeachEnumerated):
+            return self._generate_foreach_enumerated(expr, lines, indent)
 
         elif isinstance(expr, Assign):
             return self._generate_assign(expr, lines, indent)
@@ -756,6 +777,39 @@ class CodeGenerator(ABC):
             lines.append(f"{body_indent}{self.gen_assignment(cond_code, cond_code2)}")
 
         end = self.gen_while_end()
+        if end:
+            lines.append(f"{indent}{end}")
+
+        return self.gen_none()
+
+    def _generate_foreach(self, expr: Foreach, lines: List[str], indent: str) -> str:
+        """Generate code for a foreach loop."""
+        collection_code = self.generate_lines(expr.collection, lines, indent)
+        assert collection_code is not None, "Foreach collection should not contain a return"
+        var_name = self.escape_identifier(expr.var.name)
+
+        lines.append(f"{indent}{self.gen_foreach_start(var_name, collection_code)}")
+        body_indent = indent + self.indent_str
+        self.generate_lines(expr.body, lines, body_indent)
+
+        end = self.gen_foreach_end()
+        if end:
+            lines.append(f"{indent}{end}")
+
+        return self.gen_none()
+
+    def _generate_foreach_enumerated(self, expr: ForeachEnumerated, lines: List[str], indent: str) -> str:
+        """Generate code for a foreach enumerated loop."""
+        collection_code = self.generate_lines(expr.collection, lines, indent)
+        assert collection_code is not None, "ForeachEnumerated collection should not contain a return"
+        index_name = self.escape_identifier(expr.index_var.name)
+        var_name = self.escape_identifier(expr.var.name)
+
+        lines.append(f"{indent}{self.gen_foreach_enumerated_start(index_name, var_name, collection_code)}")
+        body_indent = indent + self.indent_str
+        self.generate_lines(expr.body, lines, body_indent)
+
+        end = self.gen_foreach_end()
         if end:
             lines.append(f"{indent}{end}")
 

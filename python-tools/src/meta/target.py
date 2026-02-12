@@ -504,6 +504,33 @@ class While(TargetExpr):
         return OptionType(BaseType("Never"))
 
 @dataclass(frozen=True)
+class Foreach(TargetExpr):
+    """Foreach loop: for var in collection do body."""
+    var: 'Var'
+    collection: TargetExpr
+    body: TargetExpr
+
+    def __str__(self) -> str:
+        return f"for {self.var.name} in {self.collection} do {self.body}"
+
+    def target_type(self) -> 'TargetType':
+        return OptionType(BaseType("Never"))
+
+@dataclass(frozen=True)
+class ForeachEnumerated(TargetExpr):
+    """Foreach loop with index: for (index_var, var) in enumerate(collection) do body."""
+    index_var: 'Var'
+    var: 'Var'
+    collection: TargetExpr
+    body: TargetExpr
+
+    def __str__(self) -> str:
+        return f"for ({self.index_var.name}, {self.var.name}) in enumerate({self.collection}) do {self.body}"
+
+    def target_type(self) -> 'TargetType':
+        return OptionType(BaseType("Never"))
+
+@dataclass(frozen=True)
 class Assign(TargetExpr):
     """Assignment statement: var = expr.
 
@@ -812,6 +839,8 @@ __all__ = [
     'IfElse',
     'Seq',
     'While',
+    'Foreach',
+    'ForeachEnumerated',
     'Assign',
     'Return',
     'TargetType',
