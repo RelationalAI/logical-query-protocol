@@ -5,7 +5,7 @@ to Python-like string representations.
 """
 
 from .target import (
-    TargetType, BaseType, VarType, MessageType, ListType, DictType,
+    TargetType, BaseType, VarType, MessageType, SequenceType, ListType, DictType,
     OptionType, TupleType, FunctionType,
     TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, OneOf,
     ListExpr, Call, Lambda, Let, IfElse, Seq, While,
@@ -32,6 +32,9 @@ def type_to_str(typ: TargetType) -> str:
 
     elif isinstance(typ, MessageType):
         return f"{typ.module}.{typ.name}"
+
+    elif isinstance(typ, SequenceType):
+        return f"Sequence[{type_to_str(typ.element_type)}]"
 
     elif isinstance(typ, ListType):
         return f"List[{type_to_str(typ.element_type)}]"

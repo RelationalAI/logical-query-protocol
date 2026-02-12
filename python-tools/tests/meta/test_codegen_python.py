@@ -122,7 +122,7 @@ def test_python_builtin_generation():
     lines = []
     expr = Call(make_builtin("list_concat"), [Var("lst", ListType(_int_type)), Var("other", ListType(_int_type))])
     result = gen.generate_lines(expr, lines, "")
-    assert result == "(lst + (other if other is not None else []))"
+    assert result == "(list(lst) + list(other if other is not None else []))"
 
     # Test 'list_push' builtin (mutating push with statement)
     reset_gensym()
