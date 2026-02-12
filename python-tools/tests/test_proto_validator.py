@@ -31,8 +31,8 @@ def extract_expected_error(file_path):
 def test_validate_proto_lqp_inputs(input_file):
     with open(input_file, "r") as f:
         content = f.read()
-    txn_proto = parse(content)
-    validate_proto(txn_proto)
+    txn_proto, provenance = parse(content)
+    validate_proto(txn_proto, provenance)
 
 
 @pytest.mark.parametrize(
@@ -43,8 +43,8 @@ def test_valid_proto_validator_files(validator_file):
     file_path = VALIDATOR_DIR / validator_file
     with open(file_path, "r") as f:
         content = f.read()
-    txn_proto = parse(content)
-    validate_proto(txn_proto)
+    txn_proto, provenance = parse(content)
+    validate_proto(txn_proto, provenance)
 
 
 @pytest.mark.parametrize(
@@ -59,10 +59,10 @@ def test_proto_validator_failure_files(validator_file):
         return
     with open(file_path, "r") as f:
         content = f.read()
-    txn_proto = parse(content)
+    txn_proto, provenance = parse(content)
     with pytest.raises(ValidationError) as exc_info:
-        validate_proto(txn_proto)
-    error_message = str(exc_info.value)
+        validate_proto(txn_proto, provenance)
+    error_message = strip_source_location(str(exc_info.value))
     stripped_expected = strip_source_location(expected_error)
     assert stripped_expected in error_message, (
         f"Expected '{stripped_expected}' in error message: '{error_message}'"
@@ -90,9 +90,9 @@ def test_proto_validator_matches_ir_validator(validator_file):
         validate_lqp(ir_result)
 
     # Proto validator
-    txn_proto = parse(content)
+    txn_proto, provenance = parse(content)
     with pytest.raises(ValidationError) as proto_exc:
-        validate_proto(txn_proto)
+        validate_proto(txn_proto, provenance)
 
     # Compare error messages (ignoring source locations)
     ir_msg = strip_source_location(str(ir_exc.value))

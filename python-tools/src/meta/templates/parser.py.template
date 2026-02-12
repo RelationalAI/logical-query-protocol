@@ -8,10 +8,12 @@ in `python-tools/src/meta` or edit the protobuf specification in `proto/v1`.
 {command_line_comment}"""
 
 import ast
+import bisect
 import hashlib
 import re
 from collections.abc import Sequence
-from typing import List, Optional, Any, Tuple, Callable
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Any, Tuple, Callable
 from decimal import Decimal
 
 from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
@@ -22,15 +24,31 @@ class ParseError(Exception):
     pass
 
 
+@dataclass(frozen=True)
+class Location:
+    """Source location with 1-based line and column."""
+    line: int
+    column: int
+    offset: int
+
+
+@dataclass(frozen=True)
+class Span:
+    """Source span from start to end location."""
+    start: Location
+    end: Location
+
+
 class Token:
     """Token representation."""
-    def __init__(self, type: str, value: str, pos: int):
+    def __init__(self, type: str, value: str, start_pos: int, end_pos: int):
         self.type = type
         self.value = value
-        self.pos = pos
+        self.start_pos = start_pos
+        self.end_pos = end_pos
 
     def __repr__(self) -> str:
-        return f"Token({{self.type}}, {{self.value!r}}, {{self.pos}})"
+        return f"Token({{self.type}}, {{self.value!r}}, {{self.start_pos}})"
 
 
 class Lexer:
@@ -74,10 +92,10 @@ class Lexer:
 
             # Pick the longest match
             token_type, value, action, end_pos = max(candidates, key=lambda x: x[3])
-            self.tokens.append(Token(token_type, action(value), self.pos))
+            self.tokens.append(Token(token_type, action(value), self.pos, end_pos))
             self.pos = end_pos
 
-        self.tokens.append(Token('$', '', self.pos))
+        self.tokens.append(Token('$', '', self.pos, self.pos))
 
     @staticmethod
     def scan_symbol(s: str) -> str:
@@ -151,32 +169,45 @@ class Lexer:
         return logic_pb2.DecimalValue(precision=precision, scale=scale, value=value)
 
 
+def _compute_line_starts(text: str) -> List[int]:
+    """Compute byte offsets where each line begins."""
+    starts = [0]
+    for i, ch in enumerate(text):
+        if ch == '\n':
+            starts.append(i + 1)
+    return starts
+
+
 class Parser:
     """LL(k) recursive-descent parser with backtracking."""
-    def __init__(self, tokens: List[Token]):
+    def __init__(self, tokens: List[Token], input_str: str):
         self.tokens = tokens
         self.pos = 0
         self.id_to_debuginfo = {{}}
         self._current_fragment_id: bytes | None = None
         self._relation_id_to_name = {{}}
+        self.provenance: Dict[Tuple[int, ...], Span] = {{}}
+        self._path: List[int] = []
+        self._input_str = input_str
+        self._line_starts = _compute_line_starts(input_str)
 
     def lookahead(self, k: int = 0) -> Token:
         """Get lookahead token at offset k."""
         idx = self.pos + k
-        return self.tokens[idx] if idx < len(self.tokens) else Token('$', '', -1)
+        return self.tokens[idx] if idx < len(self.tokens) else Token('$', '', -1, -1)
 
     def consume_literal(self, expected: str) -> None:
         """Consume a literal token."""
         if not self.match_lookahead_literal(expected, 0):
             token = self.lookahead(0)
-            raise ParseError(f'Expected literal {{expected!r}} but got {{token.type}}=`{{token.value!r}}` at position {{token.pos}}')
+            raise ParseError(f'Expected literal {{expected!r}} but got {{token.type}}=`{{token.value!r}}` at position {{token.start_pos}}')
         self.pos += 1
 
     def consume_terminal(self, expected: str) -> Any:
         """Consume a terminal token and return parsed value."""
         if not self.match_lookahead_terminal(expected, 0):
             token = self.lookahead(0)
-            raise ParseError(f'Expected terminal {{expected}} but got {{token.type}}=`{{token.value!r}}` at position {{token.pos}}')
+            raise ParseError(f'Expected terminal {{expected}} but got {{token.type}}=`{{token.value!r}}` at position {{token.start_pos}}')
         token = self.lookahead(0)
         self.pos += 1
         return token.value
@@ -198,6 +229,25 @@ class Parser:
         """Check if lookahead token at position k matches terminal."""
         token = self.lookahead(k)
         return token.type == terminal
+
+    def _push_path(self, n: int) -> None:
+        self._path.append(n)
+
+    def _pop_path(self) -> None:
+        self._path.pop()
+
+    def _span_start(self) -> int:
+        return self.tokens[self.pos].start_pos
+
+    def _record_span(self, start_offset: int) -> None:
+        end_offset = self.tokens[self.pos - 1].end_pos
+        span = Span(self._make_location(start_offset), self._make_location(end_offset))
+        self.provenance[tuple(self._path)] = span
+
+    def _make_location(self, offset: int) -> Location:
+        line = bisect.bisect_right(self._line_starts, offset)
+        column = offset - self._line_starts[line - 1] + 1
+        return Location(line, column, offset)
 
     def start_fragment(self, fragment_id: fragments_pb2.FragmentId) -> fragments_pb2.FragmentId:
         """Set current fragment ID for debug info tracking."""
@@ -254,14 +304,14 @@ class Parser:
     # --- Parse methods ---
 {parse_nonterminal_defns}
 
-def parse(input_str: str) -> Any:
-    """Parse input string and return parse tree."""
+def parse(input_str: str) -> Tuple[Any, Dict[Tuple[int, ...], Span]]:
+    """Parse input string and return (parse tree, provenance map)."""
     lexer = Lexer(input_str)
-    parser = Parser(lexer.tokens)
+    parser = Parser(lexer.tokens, input_str)
     result = parser.parse_{start_name}()
     # Check for unconsumed tokens (except EOF)
     if parser.pos < len(parser.tokens):
         remaining_token = parser.lookahead(0)
         if remaining_token.type != '$':
             raise ParseError(f"Unexpected token at end of input: {{remaining_token}}")
-    return result
+    return result, parser.provenance

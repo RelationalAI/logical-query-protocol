@@ -46,13 +46,25 @@ end
 Base.showerror(io::IO, e::ParseError) = print(io, "ParseError: ", e.msg)
 
 
+struct Location
+    line::Int
+    column::Int
+    offset::Int
+end
+
+struct Span
+    start_::Location
+    end_::Location
+end
+
 struct Token
     type::String
     value::Any
-    pos::Int
+    start_pos::Int
+    end_pos::Int
 end
 
-Base.show(io::IO, t::Token) = print(io, "Token(", t.type, ", ", repr(t.value), ", ", t.pos, ")")
+Base.show(io::IO, t::Token) = print(io, "Token(", t.type, ", ", repr(t.value), ", ", t.start_pos, ")")
 
 
 mutable struct Lexer
@@ -108,11 +120,11 @@ function tokenize!(lexer::Lexer)
 
         # Pick the longest match
         token_type, value, action, end_pos = candidates[argmax([c[4] for c in candidates])]
-        push!(lexer.tokens, Token(token_type, action(value), lexer.pos))
+        push!(lexer.tokens, Token(token_type, action(value), lexer.pos, end_pos))
         lexer.pos = end_pos
     end
 
-    push!(lexer.tokens, Token("\$", "", lexer.pos))
+    push!(lexer.tokens, Token("\$", "", lexer.pos, lexer.pos))
     return nothing
 end
 
@@ -187,23 +199,37 @@ mutable struct Parser
     id_to_debuginfo::Dict{{Vector{{UInt8}},Vector{{Pair{{Tuple{{UInt64,UInt64}},String}}}}}}
     _current_fragment_id::Union{{Nothing,Vector{{UInt8}}}}
     _relation_id_to_name::Dict{{Tuple{{UInt64,UInt64}},String}}
+    provenance::Dict{{Tuple{{Vararg{{Int}}}},Span}}
+    _path::Vector{{Int}}
+    _line_starts::Vector{{Int}}
 
-    function Parser(tokens::Vector{{Token}})
-        return new(tokens, 1, Dict(), nothing, Dict())
+    function Parser(tokens::Vector{{Token}}, input::String)
+        line_starts = _compute_line_starts(input)
+        return new(tokens, 1, Dict(), nothing, Dict(), Dict(), Int[], line_starts)
     end
+end
+
+function _compute_line_starts(text::String)::Vector{{Int}}
+    starts = [0]
+    for (i, ch) in enumerate(text)
+        if ch == '\n'
+            push!(starts, i)
+        end
+    end
+    return starts
 end
 
 
 function lookahead(parser::Parser, k::Int=0)::Token
     idx = parser.pos + k
-    return idx <= length(parser.tokens) ? parser.tokens[idx] : Token("\$", "", -1)
+    return idx <= length(parser.tokens) ? parser.tokens[idx] : Token("\$", "", -1, -1)
 end
 
 
 function consume_literal!(parser::Parser, expected::String)
     if !match_lookahead_literal(parser, expected, 0)
         token = lookahead(parser, 0)
-        throw(ParseError("Expected literal $(repr(expected)) but got $(token.type)=`$(repr(token.value))` at position $(token.pos)"))
+        throw(ParseError("Expected literal $(repr(expected)) but got $(token.type)=`$(repr(token.value))` at position $(token.start_pos)"))
     end
     parser.pos += 1
     return nothing
@@ -213,7 +239,7 @@ end
 function consume_terminal!(parser::Parser, expected::String)
     if !match_lookahead_terminal(parser, expected, 0)
         token = lookahead(parser, 0)
-        throw(ParseError("Expected terminal $expected but got $(token.type)=`$(repr(token.value))` at position $(token.pos)"))
+        throw(ParseError("Expected terminal $expected but got $(token.type)=`$(repr(token.value))` at position $(token.start_pos)"))
     end
     token = lookahead(parser, 0)
     parser.pos += 1
@@ -239,6 +265,35 @@ function match_lookahead_terminal(parser::Parser, terminal::String, k::Int)::Boo
     return token.type == terminal
 end
 
+
+function push_path!(parser::Parser, n::Int)
+    push!(parser._path, n)
+    return nothing
+end
+
+function pop_path!(parser::Parser)
+    pop!(parser._path)
+    return nothing
+end
+
+function span_start(parser::Parser)::Int
+    return parser.tokens[parser.pos].start_pos
+end
+
+function record_span!(parser::Parser, start_offset::Int)
+    end_offset = parser.tokens[parser.pos - 1].end_pos
+    start_loc = _make_location(parser, start_offset)
+    end_loc = _make_location(parser, end_offset)
+    parser.provenance[Tuple(parser._path)] = Span(start_loc, end_loc)
+    return nothing
+end
+
+function _make_location(parser::Parser, offset::Int)::Location
+    # Binary search for the line containing offset
+    line = searchsortedlast(parser._line_starts, offset)
+    column = offset - parser._line_starts[line] + 1
+    return Location(line, column, offset)
+end
 
 function start_fragment!(parser::Parser, fragment_id::Proto.FragmentId)
     parser._current_fragment_id = fragment_id.id
@@ -303,7 +358,7 @@ end
 
 function parse(input::String)
     lexer = Lexer(input)
-    parser = Parser(lexer.tokens)
+    parser = Parser(lexer.tokens, input)
     result = parse_{start_name}(parser)
     # Check for unconsumed tokens (except EOF)
     if parser.pos <= length(parser.tokens)
@@ -312,5 +367,5 @@ function parse(input::String)
             throw(ParseError("Unexpected token at end of input: $remaining_token"))
         end
     end
-    return result
+    return result, parser.provenance
 end

@@ -98,7 +98,7 @@ def test_roundtrip_idempotent(input_file):
     text1 = _parse_and_pretty(input_file)
 
     # Second pass: parse printed output → proto → pretty-print again
-    proto2 = generated_parse(text1)
+    proto2, _ = generated_parse(text1)
     text2 = pretty(proto2)
 
     assert text1 == text2, (
@@ -150,7 +150,7 @@ def test_bin_roundtrip(input_file):
 
     # Pretty-print → re-parse
     text = pretty(proto1)
-    proto2 = generated_parse(text)
+    proto2, _ = generated_parse(text)
 
     # Clear debug info before comparison since pretty printer
     # consumes but does not output debug info

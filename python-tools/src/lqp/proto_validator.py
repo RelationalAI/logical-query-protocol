@@ -203,11 +203,36 @@ _WRAPPER_TYPES = {
     "Data": unwrap_data,
 }
 
+_WRAPPER_ONEOF_NAMES = {
+    "Declaration": "declaration_type",
+    "Instruction": "instr_type",
+    "Formula": "formula_type",
+    "Construct": "construct_type",
+    "Write": "write_type",
+    "Read": "read_type",
+    "Constraint": "constraint_type",
+    "Data": "data_type",
+}
+
 
 class ProtoVisitor:
-    def __init__(self):
+    def __init__(self, provenance=None):
         self.original_names: Dict[Tuple[int, int], str] = {}
         self._visit_cache: Dict[str, Any] = {}
+        self.provenance = provenance or {}
+        self._path: List[int] = []
+
+    def _format_location(self, msg: str) -> str:
+        path = tuple(self._path)
+        while path:
+            span = self.provenance.get(path)
+            if span is not None:
+                return f"{msg} at <input>:{span.start.line}:{span.start.column}"
+            path = path[:-1]
+        span = self.provenance.get(())
+        if span is not None:
+            return f"{msg} at <input>:{span.start.line}:{span.start.column}"
+        return msg
 
     def get_original_name(self, rid: logic_pb2.RelationId) -> str:
         key = relation_id_key(rid)
@@ -231,7 +256,14 @@ class ProtoVisitor:
         if unwrapper is not None:
             inner = unwrapper(cast(Any, node))
             if inner is not None:
+                oneof_name = _WRAPPER_ONEOF_NAMES[type_name]
+                which = node.WhichOneof(oneof_name)
+                assert which is not None
+                descriptor = cast(Descriptor, node.DESCRIPTOR)
+                field_desc = descriptor.fields_by_name[which]
+                self._path.append(field_desc.number)
                 self.visit(inner, *args)
+                self._path.pop()
             return
 
         return self._resolve_visitor(type_name)(node, *args)
@@ -241,19 +273,25 @@ class ProtoVisitor:
         for field_desc in descriptor.fields:
             value = getattr(node, field_desc.name)
             if field_desc.label == FieldDescriptor.LABEL_REPEATED:
-                for item in value:
+                self._path.append(field_desc.number)
+                for i, item in enumerate(value):
                     if isinstance(item, Message):
+                        self._path.append(i)
                         self.visit(item, *args)
+                        self._path.pop()
+                self._path.pop()
             elif field_desc.message_type is not None and node.HasField(field_desc.name):
                 if isinstance(value, Message):
+                    self._path.append(field_desc.number)
                     self.visit(value, *args)
+                    self._path.pop()
 
 
 # --- Validation visitors ---
 
 class UnusedVariableVisitor(ProtoVisitor):
-    def __init__(self, txn: transactions_pb2.Transaction):
-        super().__init__()
+    def __init__(self, txn: transactions_pb2.Transaction, provenance=None):
+        super().__init__(provenance)
         self.scopes: List[Tuple[Set[str], Set[str]]] = []
         self.visit(txn)
 
@@ -266,7 +304,7 @@ class UnusedVariableVisitor(ProtoVisitor):
             if var_name in declared:
                 used.add(var_name)
                 return
-        raise ValidationError(f"Undeclared variable used: '{var_name}'")
+        raise ValidationError(self._format_location(f"Undeclared variable used: '{var_name}'"))
 
     def visit_Abstraction(self, node: logic_pb2.Abstraction, *args: Any):
         self.scopes.append((set(), set()))
@@ -279,7 +317,7 @@ class UnusedVariableVisitor(ProtoVisitor):
             for var_name in unused:
                 if var_name.startswith("_"):
                     continue
-                raise ValidationError(f"Unused variable declared: '{var_name}'")
+                raise ValidationError(self._format_location(f"Unused variable declared: '{var_name}'"))
 
     def visit_Var(self, node: logic_pb2.Var, *args: Any):
         self._mark_var_used(node.name)
@@ -289,8 +327,8 @@ class UnusedVariableVisitor(ProtoVisitor):
 
 
 class ShadowedVariableFinder(ProtoVisitor):
-    def __init__(self, txn: transactions_pb2.Transaction):
-        super().__init__()
+    def __init__(self, txn: transactions_pb2.Transaction, provenance=None):
+        super().__init__(provenance)
         self.visit(txn)
 
     def visit_Abstraction(self, node: logic_pb2.Abstraction, *args: Any):
@@ -298,14 +336,14 @@ class ShadowedVariableFinder(ProtoVisitor):
         for binding in node.vars:
             name = binding.var.name
             if name in in_scope_names:
-                raise ValidationError(f"Shadowed variable: '{name}'")
+                raise ValidationError(self._format_location(f"Shadowed variable: '{name}'"))
         new_scope = in_scope_names | {b.var.name for b in node.vars}
         self.visit(node.value, new_scope)
 
 
 class DuplicateRelationIdFinder(ProtoVisitor):
-    def __init__(self, txn: transactions_pb2.Transaction):
-        super().__init__()
+    def __init__(self, txn: transactions_pb2.Transaction, provenance=None):
+        super().__init__(provenance)
         self.seen_ids: Dict[Tuple[int, int], Tuple[int, Optional[bytes]]] = {}
         self.curr_epoch: int = 0
         self.curr_fragment: Optional[bytes] = None
@@ -320,14 +358,14 @@ class DuplicateRelationIdFinder(ProtoVisitor):
             seen_epoch, seen_frag = self.seen_ids[key]
             if self.curr_fragment != seen_frag:
                 original_name = self.get_original_name(rid)
-                raise ValidationError(
+                raise ValidationError(self._format_location(
                     f"Duplicate declaration across fragments: '{original_name}'"
-                )
+                ))
             elif self.curr_epoch == seen_epoch:
                 original_name = self.get_original_name(rid)
-                raise ValidationError(
+                raise ValidationError(self._format_location(
                     f"Duplicate declaration within fragment in epoch: '{original_name}'"
-                )
+                ))
         self.seen_ids[key] = (self.curr_epoch, self.curr_fragment)
 
     def visit_Fragment(self, node: fragments_pb2.Fragment, *args: Any):
@@ -344,16 +382,16 @@ class DuplicateRelationIdFinder(ProtoVisitor):
             key = relation_id_key(rid)
             if key in self.seen_ids:
                 original_name = self.get_original_name(rid)
-                raise ValidationError(
+                raise ValidationError(self._format_location(
                     f"Duplicate declaration: '{original_name}'"
-                )
+                ))
             else:
                 self.seen_ids[key] = (self.curr_epoch, self.curr_fragment)
 
 
 class DuplicateFragmentDefinitionFinder(ProtoVisitor):
-    def __init__(self, txn: transactions_pb2.Transaction):
-        super().__init__()
+    def __init__(self, txn: transactions_pb2.Transaction, provenance=None):
+        super().__init__(provenance)
         self.seen_ids: Set[bytes] = set()
         self.visit(txn)
 
@@ -365,9 +403,9 @@ class DuplicateFragmentDefinitionFinder(ProtoVisitor):
         frag_id = node.fragment.id.id
         if frag_id in self.seen_ids:
             id_str = frag_id.decode("utf-8")
-            raise ValidationError(
+            raise ValidationError(self._format_location(
                 f"Duplicate fragment within an epoch: '{id_str}'"
-            )
+            ))
         else:
             self.seen_ids.add(frag_id)
 
@@ -419,8 +457,8 @@ class AtomTypeChecker(ProtoVisitor):
         relation_types: Dict[Tuple[int, int], List[str]]
         var_types: Dict[str, str]
 
-    def __init__(self, txn: transactions_pb2.Transaction):
-        super().__init__()
+    def __init__(self, txn: transactions_pb2.Transaction, provenance=None):
+        super().__init__(provenance)
         global_defs = AtomTypeChecker.collect_global_defs(txn)
         relation_types = {}
         for _, node in global_defs:
@@ -483,10 +521,10 @@ class AtomTypeChecker(ProtoVisitor):
         relation_arity = len(relation_type_sig)
         if atom_arity != relation_arity:
             original_name = self.get_original_name(node.name)
-            raise ValidationError(
+            raise ValidationError(self._format_location(
                 f"Incorrect arity for '{original_name}' atom: "
                 f"expected {relation_arity} term{'' if relation_arity == 1 else 's'}, got {atom_arity}"
-            )
+            ))
 
         for i, (term, expected_type) in enumerate(zip(node.terms, relation_type_sig)):
             which = term.WhichOneof("term_type")
@@ -501,15 +539,15 @@ class AtomTypeChecker(ProtoVisitor):
             if term_type != expected_type:
                 original_name = self.get_original_name(node.name)
                 pretty_term = proto_term_str(term)
-                raise ValidationError(
+                raise ValidationError(self._format_location(
                     f"Incorrect type for '{original_name}' atom at index {i} ('{pretty_term}'): "
                     f"expected {expected_type} term, got {term_type}"
-                )
+                ))
 
 
 class LoopyBadBreakFinder(ProtoVisitor):
-    def __init__(self, txn: transactions_pb2.Transaction):
-        super().__init__()
+    def __init__(self, txn: transactions_pb2.Transaction, provenance=None):
+        super().__init__(provenance)
         self.visit(txn)
 
     def visit_Loop(self, node: logic_pb2.Loop, *args: Any):
@@ -517,14 +555,14 @@ class LoopyBadBreakFinder(ProtoVisitor):
             if instr_wrapper.HasField("break"):
                 brk = getattr(instr_wrapper, "break")
                 original_name = self.get_original_name(brk.name)
-                raise ValidationError(
+                raise ValidationError(self._format_location(
                     f"Break rule found outside of body: '{original_name}'"
-                )
+                ))
 
 
 class LoopyBadGlobalFinder(ProtoVisitor):
-    def __init__(self, txn: transactions_pb2.Transaction):
-        super().__init__()
+    def __init__(self, txn: transactions_pb2.Transaction, provenance=None):
+        super().__init__(provenance)
         self.globals: Set[Tuple[int, int]] = set()
         self.init: Set[Tuple[int, int]] = set()
         self.visit(txn)
@@ -567,23 +605,23 @@ class LoopyBadGlobalFinder(ProtoVisitor):
                     key = relation_id_key(actual.name)
                     if key in self.globals and key not in self.init:
                         original_name = self.get_original_name(actual.name)
-                        raise ValidationError(
+                        raise ValidationError(self._format_location(
                             f"Global rule found in body: '{original_name}'"
-                        )
+                        ))
 
 
 class LoopyUpdatesShouldBeAtoms(ProtoVisitor):
-    def __init__(self, txn: transactions_pb2.Transaction):
-        super().__init__()
+    def __init__(self, txn: transactions_pb2.Transaction, provenance=None):
+        super().__init__(provenance)
         self.visit(txn)
 
     def _check_atom_body(self, node: _InstructionLike, instr_type_name: str):
         formula = node.body.value
         which = formula.WhichOneof("formula_type")
         if which != "atom":
-            raise ValidationError(
+            raise ValidationError(self._format_location(
                 f"{instr_type_name} must have an Atom as its value"
-            )
+            ))
 
     def visit_Upsert(self, node: logic_pb2.Upsert, *args: Any):
         self._check_atom_body(node, "Upsert")
@@ -596,8 +634,8 @@ class LoopyUpdatesShouldBeAtoms(ProtoVisitor):
 
 
 class CSVConfigChecker(ProtoVisitor):
-    def __init__(self, txn: transactions_pb2.Transaction):
-        super().__init__()
+    def __init__(self, txn: transactions_pb2.Transaction, provenance=None):
+        super().__init__(provenance)
         global_defs = AtomTypeChecker.collect_global_defs(txn)
         self.relation_types: Dict[Tuple[int, int], List[str]] = {}
         for _, node in global_defs:
@@ -609,23 +647,23 @@ class CSVConfigChecker(ProtoVisitor):
 
     def visit_ExportCSVConfig(self, node: transactions_pb2.ExportCSVConfig, *args: Any):
         if node.HasField("syntax_delim") and len(node.syntax_delim) != 1:
-            raise ValidationError(
+            raise ValidationError(self._format_location(
                 f"CSV delimiter should be a single character, got '{node.syntax_delim}'"
-            )
+            ))
         if node.HasField("syntax_quotechar") and len(node.syntax_quotechar) != 1:
-            raise ValidationError(
+            raise ValidationError(self._format_location(
                 f"CSV quotechar should be a single character, got '{node.syntax_quotechar}'"
-            )
+            ))
         if node.HasField("syntax_escapechar") and len(node.syntax_escapechar) != 1:
-            raise ValidationError(
+            raise ValidationError(self._format_location(
                 f"CSV escapechar should be a single character, got '{node.syntax_escapechar}'"
-            )
+            ))
 
         valid_compressions = {"", "gzip"}
         if node.HasField("compression") and node.compression not in valid_compressions:
-            raise ValidationError(
+            raise ValidationError(self._format_location(
                 f"CSV compression should be one of {valid_compressions}, got '{node.compression}'"
-            )
+            ))
 
         column_0_key_types: Optional[List[str]] = None
         column_0_name: Optional[str] = None
@@ -636,53 +674,53 @@ class CSVConfigChecker(ProtoVisitor):
 
             column_types = self.relation_types[key]
             if len(column_types) < 1:
-                raise ValidationError(
+                raise ValidationError(self._format_location(
                     f"Data column relation must have at least one column, "
                     f"got zero columns in '{self.get_original_name(column.column_data)}'"
-                )
+                ))
             key_types = column_types[:-1]
             if column_0_key_types is None:
                 column_0_key_types = key_types
                 column_0_name = self.get_original_name(column.column_data)
             else:
                 if column_0_key_types != key_types:
-                    raise ValidationError(
+                    raise ValidationError(self._format_location(
                         f"All data columns in ExportCSVConfig must have the same key types. "
                         f"Got '{column_0_name}' with key types {[str(t) for t in column_0_key_types]} "
                         f"and '{self.get_original_name(column.column_data)}' with key types {[str(t) for t in key_types]}."
-                    )
+                    ))
 
 
 class FDVarsChecker(ProtoVisitor):
-    def __init__(self, txn: transactions_pb2.Transaction):
-        super().__init__()
+    def __init__(self, txn: transactions_pb2.Transaction, provenance=None):
+        super().__init__(provenance)
         self.visit(txn)
 
     def visit_FunctionalDependency(self, node: logic_pb2.FunctionalDependency, *args: Any):
         guard_var_names = {b.var.name for b in node.guard.vars}
         for var in node.keys:
             if var.name not in guard_var_names:
-                raise ValidationError(
+                raise ValidationError(self._format_location(
                     f"Key variable '{var.name}' not declared in guard"
-                )
+                ))
         for var in node.values:
             if var.name not in guard_var_names:
-                raise ValidationError(
+                raise ValidationError(self._format_location(
                     f"Value variable '{var.name}' not declared in guard"
-                )
+                ))
 
 
 # --- Entry point ---
 
-def validate_proto(txn: transactions_pb2.Transaction) -> None:
+def validate_proto(txn: transactions_pb2.Transaction, provenance=None) -> None:
     """Validate a protobuf Transaction message."""
-    ShadowedVariableFinder(txn)
-    UnusedVariableVisitor(txn)
-    DuplicateRelationIdFinder(txn)
-    DuplicateFragmentDefinitionFinder(txn)
-    AtomTypeChecker(txn)
-    LoopyBadBreakFinder(txn)
-    LoopyBadGlobalFinder(txn)
-    LoopyUpdatesShouldBeAtoms(txn)
-    CSVConfigChecker(txn)
-    FDVarsChecker(txn)
+    ShadowedVariableFinder(txn, provenance)
+    UnusedVariableVisitor(txn, provenance)
+    DuplicateRelationIdFinder(txn, provenance)
+    DuplicateFragmentDefinitionFinder(txn, provenance)
+    AtomTypeChecker(txn, provenance)
+    LoopyBadBreakFinder(txn, provenance)
+    LoopyBadGlobalFinder(txn, provenance)
+    LoopyUpdatesShouldBeAtoms(txn, provenance)
+    CSVConfigChecker(txn, provenance)
+    FDVarsChecker(txn, provenance)

@@ -34,7 +34,7 @@ end
             (reads)))
         """
 
-        result = parse(input)
+        result, provenance = parse(input)
         @test result !== nothing
         @test typeof(result) == Proto.Transaction
         @test length(result.epochs) == 1
@@ -54,7 +54,7 @@ end
 
                 # Parse the LQP file
                 content = read(lqp_path, String)
-                result = parse(content)
+                result, _ = parse(content)
                 @test result !== nothing
                 @test typeof(result) == Proto.Transaction
 

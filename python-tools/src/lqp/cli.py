@@ -25,9 +25,9 @@ def parse_lqp_to_proto(filename, use_generated=False, validate=True):
     if use_generated:
         from lqp.gen.parser import parse
         from lqp.proto_validator import validate_proto
-        lqp_proto = parse(lqp_text)
+        lqp_proto, provenance = parse(lqp_text)
         if validate:
-            validate_proto(lqp_proto)
+            validate_proto(lqp_proto, provenance)
     else:
         lqp = parse_lqp(filename, lqp_text)
         if validate and isinstance(lqp, ir.Transaction):

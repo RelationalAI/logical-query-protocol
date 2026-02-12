@@ -48,8 +48,8 @@ def test_generated_parser_matches_lark_parser(input_file):
     lark_proto = ir_to_proto(lark_ir)
     lark_binary = lark_proto.SerializeToString()
 
-    # Parse with generated parser (returns protobuf directly)
-    generated_proto = generated_parse(content)
+    # Parse with generated parser (returns protobuf and provenance)
+    generated_proto, _ = generated_parse(content)
     generated_binary = generated_proto.SerializeToString()
 
     # Compare serialized protobufs

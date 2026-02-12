@@ -31,7 +31,7 @@ def generate_parser(
     template = template_path.read_text()
     indent = codegen.parse_def_indent
 
-    defns = generate_parse_functions(grammar, indent=indent)
+    defns = generate_parse_functions(grammar, indent=indent, proto_messages=codegen.proto_messages)
     lines = []
     for defn in defns:
         lines.append("")

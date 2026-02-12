@@ -94,6 +94,11 @@ PYTHON_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "subtract": BuiltinTemplate("({0} - {1})"),
     "list_slice": BuiltinTemplate("{0}[{1}:{2}]"),
     "list_sort": BuiltinTemplate("sorted({0})"),
+    # Provenance tracking
+    "push_path": BuiltinTemplate("None", ["self._push_path({0})"]),
+    "pop_path": BuiltinTemplate("None", ["self._pop_path()"]),
+    "span_start": BuiltinTemplate("self._span_start()"),
+    "record_span": BuiltinTemplate("None", ["self._record_span({0})"]),
 }
 
 
@@ -170,6 +175,11 @@ JULIA_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "subtract": BuiltinTemplate("({0} - {1})"),
     "list_slice": BuiltinTemplate("{0}[{1}:{2}]"),
     "list_sort": BuiltinTemplate("sort({0})"),
+    # Provenance tracking
+    "push_path": BuiltinTemplate("nothing", ["push_path!(parser, {0})"]),
+    "pop_path": BuiltinTemplate("nothing", ["pop_path!(parser)"]),
+    "span_start": BuiltinTemplate("span_start(parser)"),
+    "record_span": BuiltinTemplate("nothing", ["record_span!(parser, {0})"]),
 }
 
 
@@ -252,6 +262,11 @@ GO_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "relation_id_to_uint128": BuiltinTemplate("p.relationIdToUint128({0})"),
     "subtract": BuiltinTemplate("({0} - {1})"),
     "list_slice": BuiltinTemplate("{0}[{1}:{2}]"),
+    # Provenance tracking
+    "push_path": BuiltinTemplate("nil", ["p.pushPath({0})"]),
+    "pop_path": BuiltinTemplate("nil", ["p.popPath()"]),
+    "span_start": BuiltinTemplate("p.spanStart()"),
+    "record_span": BuiltinTemplate("nil", ["p.recordSpan({0})"]),
 }
 
 __all__ = [
