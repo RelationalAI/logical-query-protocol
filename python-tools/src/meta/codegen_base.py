@@ -11,8 +11,10 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tupl
 
 from .target import (
     TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, EnumValue, OneOf, ListExpr, Call, Lambda, Let,
-    IfElse, Seq, While, Assign, Return, FunDef, VisitNonterminalDef,
-    VisitNonterminal, TargetType, BaseType, TupleType, ListType, DictType, OptionType,
+    IfElse, Seq, While, Foreach, ForeachEnumerated, Assign, Return, FunDef,
+    ParseNonterminalDef, PrintNonterminalDef,
+    ParseNonterminal, PrintNonterminal,
+    TargetType, BaseType, VarType, TupleType, SequenceType, ListType, DictType, OptionType,
     MessageType, EnumType, FunctionType, GetField, GetElement
 )
 from .target_builtins import get_builtin
@@ -73,6 +75,12 @@ class CodeGenerator(ABC):
         if name in self.keywords:
             return self.escape_keyword(name)
         return name
+
+    # --- Field access ---
+
+    def gen_field_access(self, obj_code: str, field_name: str) -> str:
+        """Generate field access expression: obj.field_name."""
+        return f"{obj_code}.{field_name}"
 
     # --- Literal generation ---
 
@@ -138,6 +146,11 @@ class CodeGenerator(ABC):
         """Generate a reference to a parse method for a nonterminal."""
         pass
 
+    @abstractmethod
+    def gen_pretty_nonterminal_ref(self, name: str) -> str:
+        """Generate a reference to a pretty-print method for a nonterminal."""
+        pass
+
     # --- Type generation ---
 
     @abstractmethod
@@ -156,8 +169,13 @@ class CodeGenerator(ABC):
         pass
 
     @abstractmethod
+    def gen_sequence_type(self, element_type: str) -> str:
+        """Generate a read-only sequence type."""
+        pass
+
+    @abstractmethod
     def gen_list_type(self, element_type: str) -> str:
-        """Generate a list/array type."""
+        """Generate a mutable list/array type."""
         pass
 
     @abstractmethod
@@ -191,6 +209,8 @@ class CodeGenerator(ABC):
         elif isinstance(typ, TupleType):
             element_types = [self.gen_type(e) for e in typ.elements]
             return self.gen_tuple_type(element_types)
+        elif isinstance(typ, SequenceType):
+            return self.gen_sequence_type(self.gen_type(typ.element_type))
         elif isinstance(typ, ListType):
             return self.gen_list_type(self.gen_type(typ.element_type))
         elif isinstance(typ, DictType):
@@ -201,6 +221,8 @@ class CodeGenerator(ABC):
             param_types = [self.gen_type(pt) for pt in typ.param_types]
             return_type = self.gen_type(typ.return_type)
             return self.gen_function_type(param_types, return_type)
+        elif isinstance(typ, VarType):
+            return self.base_type_map.get("Any", "Any")
         else:
             raise ValueError(f"Unknown type: {type(typ)}")
 
@@ -229,6 +251,21 @@ class CodeGenerator(ABC):
     @abstractmethod
     def gen_while_end(self) -> str:
         """Generate end of while loop."""
+        pass
+
+    @abstractmethod
+    def gen_foreach_start(self, var: str, collection: str) -> str:
+        """Generate start of foreach loop."""
+        pass
+
+    @abstractmethod
+    def gen_foreach_enumerated_start(self, index_var: str, var: str, collection: str) -> str:
+        """Generate start of foreach enumerated loop."""
+        pass
+
+    @abstractmethod
+    def gen_foreach_end(self) -> str:
+        """Generate end of foreach loop."""
         pass
 
     @abstractmethod
@@ -385,7 +422,10 @@ class CodeGenerator(ABC):
         elif isinstance(expr, NamedFun):
             return self.gen_named_fun_ref(expr.name)
 
-        elif isinstance(expr, VisitNonterminal):
+        elif isinstance(expr, PrintNonterminal):
+            return self.gen_pretty_nonterminal_ref(expr.nonterminal.name)
+
+        elif isinstance(expr, ParseNonterminal):
             return self.gen_parse_nonterminal_ref(expr.nonterminal.name)
 
         elif isinstance(expr, OneOf):
@@ -395,9 +435,9 @@ class CodeGenerator(ABC):
             return self._generate_list_expr(expr, lines, indent)
 
         elif isinstance(expr, GetField):
-            # GetField(object, field_name) -> object.field_name
             obj_code = self.generate_lines(expr.object, lines, indent)
-            return f"{obj_code}.{expr.field_name}"
+            assert obj_code is not None, "GetField object should not contain a return"
+            return self.gen_field_access(obj_code, expr.field_name)
 
         elif isinstance(expr, GetElement):
             return self._generate_get_element(expr, lines, indent)
@@ -419,6 +459,12 @@ class CodeGenerator(ABC):
 
         elif isinstance(expr, While):
             return self._generate_while(expr, lines, indent)
+
+        elif isinstance(expr, Foreach):
+            return self._generate_foreach(expr, lines, indent)
+
+        elif isinstance(expr, ForeachEnumerated):
+            return self._generate_foreach_enumerated(expr, lines, indent)
 
         elif isinstance(expr, Assign):
             return self._generate_assign(expr, lines, indent)
@@ -503,7 +549,9 @@ class CodeGenerator(ABC):
 
         # RHS has side-effects — guard them with an if-else
         tmp = gensym()
-        lines.append(f"{indent}{self.gen_var_declaration(tmp)}")
+        decl = self.gen_var_declaration(tmp)
+        if decl:
+            lines.append(f"{indent}{decl}")
         if op == 'and':
             lines.append(f"{indent}{self.gen_if_start(left_code)}")
             lines.extend(rhs_lines)
@@ -750,6 +798,39 @@ class CodeGenerator(ABC):
 
         return self.gen_none()
 
+    def _generate_foreach(self, expr: Foreach, lines: List[str], indent: str) -> str:
+        """Generate code for a foreach loop."""
+        collection_code = self.generate_lines(expr.collection, lines, indent)
+        assert collection_code is not None, "Foreach collection should not contain a return"
+        var_name = self.escape_identifier(expr.var.name)
+
+        lines.append(f"{indent}{self.gen_foreach_start(var_name, collection_code)}")
+        body_indent = indent + self.indent_str
+        self.generate_lines(expr.body, lines, body_indent)
+
+        end = self.gen_foreach_end()
+        if end:
+            lines.append(f"{indent}{end}")
+
+        return self.gen_none()
+
+    def _generate_foreach_enumerated(self, expr: ForeachEnumerated, lines: List[str], indent: str) -> str:
+        """Generate code for a foreach enumerated loop."""
+        collection_code = self.generate_lines(expr.collection, lines, indent)
+        assert collection_code is not None, "ForeachEnumerated collection should not contain a return"
+        index_name = self.escape_identifier(expr.index_var.name)
+        var_name = self.escape_identifier(expr.var.name)
+
+        lines.append(f"{indent}{self.gen_foreach_enumerated_start(index_name, var_name, collection_code)}")
+        body_indent = indent + self.indent_str
+        self.generate_lines(expr.body, lines, body_indent)
+
+        end = self.gen_foreach_end()
+        if end:
+            lines.append(f"{indent}{end}")
+
+        return self.gen_none()
+
     def _generate_assign(self, expr: Assign, lines: List[str], indent: str) -> str:
         """Generate code for an assignment."""
         var_name = self.escape_identifier(expr.var.name)
@@ -771,11 +852,13 @@ class CodeGenerator(ABC):
 
     # --- Function definition generation ---
 
-    def generate_def(self, expr: Union[FunDef, VisitNonterminalDef], indent: str = "") -> str:
+    def generate_def(self, expr: Union[FunDef, ParseNonterminalDef, PrintNonterminalDef], indent: str = "") -> str:
         """Generate a function definition."""
         if isinstance(expr, FunDef):
             return self._generate_fun_def(expr, indent)
-        elif isinstance(expr, VisitNonterminalDef):
+        elif isinstance(expr, PrintNonterminalDef):
+            return self._generate_pretty_def(expr, indent)
+        elif isinstance(expr, ParseNonterminalDef):
             return self._generate_parse_def(expr, indent)
         else:
             raise ValueError(f"Unknown definition type: {type(expr)}")
@@ -809,8 +892,13 @@ class CodeGenerator(ABC):
         pass
 
     @abstractmethod
-    def _generate_parse_def(self, expr: VisitNonterminalDef, indent: str) -> str:
+    def _generate_parse_def(self, expr: ParseNonterminalDef, indent: str) -> str:
         """Generate a parse method definition. Language-specific due to method syntax."""
+        pass
+
+    @abstractmethod
+    def _generate_pretty_def(self, expr: PrintNonterminalDef, indent: str) -> str:
+        """Generate a pretty-print method definition. Language-specific due to method syntax."""
         pass
 
     # --- Token spec formatting for parser generation ---

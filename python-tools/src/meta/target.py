@@ -15,7 +15,8 @@ Expression types (TargetExpr subclasses):
     NewMessage          - Message constructor with field names
     OneOf               - OneOf field discriminator
     ListExpr            - List constructor expression
-    VisitNonterminal    - Visitor method call for a nonterminal
+    ParseNonterminal    - Parse method call for a nonterminal
+    PrintNonterminal    - Print method call for a nonterminal
     Call                - Function call expression
     GetField            - Field access expression
     GetElement          - Tuple element access with constant integer index
@@ -278,20 +279,26 @@ class ListExpr(TargetExpr):
 
 
 @dataclass(frozen=True)
-class VisitNonterminal(TargetExpr):
-    """Visitor method call for a nonterminal.
-
-    Like Call but specifically for calling visitor methods, with a Nonterminal
-    instead of an expression for the function.
-    """
-    visitor_name: str  # e.g., 'parse', 'pretty'
+class ParseNonterminal(TargetExpr):
+    """Parse method call for a nonterminal."""
     nonterminal: 'Nonterminal'
 
     def __str__(self) -> str:
-        return f"{self.visitor_name}_{self.nonterminal.name}"
+        return f"parse_{self.nonterminal.name}"
 
     def target_type(self) -> 'TargetType':
-        """Return the type of the nonterminal."""
+        return self.nonterminal.target_type()
+
+
+@dataclass(frozen=True)
+class PrintNonterminal(TargetExpr):
+    """Pretty-print method call for a nonterminal."""
+    nonterminal: 'Nonterminal'
+
+    def __str__(self) -> str:
+        return f"pretty_{self.nonterminal.name}"
+
+    def target_type(self) -> 'TargetType':
         return self.nonterminal.target_type()
 
 
@@ -313,8 +320,7 @@ class Call(TargetExpr):
         _freeze_sequence(self, 'args')
 
     def target_type(self) -> 'TargetType':
-        # For VisitNonterminal, the type is the nonterminal's target type directly
-        if isinstance(self.func, VisitNonterminal):
+        if isinstance(self.func, (ParseNonterminal, PrintNonterminal)):
             return self.func.target_type()
         func_type = self.func.target_type()
         if isinstance(func_type, FunctionType):
@@ -381,12 +387,14 @@ class GetElement(TargetExpr):
         assert isinstance(self.index, int) and self.index >= 0, f"GetElement index must be non-negative integer: {self.index}"
 
     def target_type(self) -> 'TargetType':
-        tuple_type = self.tuple_expr.target_type()
-        if isinstance(tuple_type, TupleType):
-            if 0 <= self.index < len(tuple_type.elements):
-                return tuple_type.elements[self.index]
-            raise ValueError(f"Tuple index {self.index} out of range for {tuple_type}")
-        raise ValueError(f"Cannot get element from non-tuple type: {tuple_type}")
+        expr_type = self.tuple_expr.target_type()
+        if isinstance(expr_type, TupleType):
+            if 0 <= self.index < len(expr_type.elements):
+                return expr_type.elements[self.index]
+            raise ValueError(f"Tuple index {self.index} out of range for {expr_type}")
+        if isinstance(expr_type, (SequenceType, ListType)):
+            return expr_type.element_type
+        raise ValueError(f"Cannot get element from non-tuple type: {expr_type}")
 
 
 @dataclass(frozen=True)
@@ -497,6 +505,33 @@ class While(TargetExpr):
 
     def __str__(self) -> str:
         return f"while ({self.condition}) {self.body}"
+
+    def target_type(self) -> 'TargetType':
+        return OptionType(BaseType("Never"))
+
+@dataclass(frozen=True)
+class Foreach(TargetExpr):
+    """Foreach loop: for var in collection do body."""
+    var: 'Var'
+    collection: TargetExpr
+    body: TargetExpr
+
+    def __str__(self) -> str:
+        return f"for {self.var.name} in {self.collection} do {self.body}"
+
+    def target_type(self) -> 'TargetType':
+        return OptionType(BaseType("Never"))
+
+@dataclass(frozen=True)
+class ForeachEnumerated(TargetExpr):
+    """Foreach loop with index: for (index_var, var) in enumerate(collection) do body."""
+    index_var: 'Var'
+    var: 'Var'
+    collection: TargetExpr
+    body: TargetExpr
+
+    def __str__(self) -> str:
+        return f"for ({self.index_var.name}, {self.var.name}) in enumerate({self.collection}) do {self.body}"
 
     def target_type(self) -> 'TargetType':
         return OptionType(BaseType("Never"))
@@ -613,8 +648,28 @@ class TupleType(TargetType):
 
 
 @dataclass(frozen=True)
+class SequenceType(TargetType):
+    """Read-only covariant sequence type.
+
+    Sequence[T] is the supertype of List[T]. It represents a read-only
+    view of an ordered collection. List[T] <: Sequence[T] for all T.
+    Sequence is covariant: Sequence[A] <: Sequence[B] if A <: B.
+
+    Example:
+        SequenceType(BaseType("Int64"))              # Sequence[Int64]
+        SequenceType(MessageType("logic", "Expr"))   # Sequence[logic.Expr]
+    """
+    element_type: TargetType
+
+    def __str__(self) -> str:
+        return f"Sequence[{self.element_type}]"
+
+
+@dataclass(frozen=True)
 class ListType(TargetType):
-    """Parameterized list/array type.
+    """Parameterized mutable list/array type.
+
+    List[T] <: Sequence[T]. List is invariant: List[A] <: List[B] only if A == B.
 
     Example:
         ListType(BaseType("Int64"))              # List[Int64]
@@ -675,6 +730,8 @@ def subst_type(typ: 'TargetType', mapping: dict[str, 'TargetType']) -> 'TargetTy
         return mapping.get(typ.name, typ)
     if isinstance(typ, (BaseType, MessageType, EnumType)):
         return typ
+    if isinstance(typ, SequenceType):
+        return SequenceType(subst_type(typ.element_type, mapping))
     if isinstance(typ, ListType):
         return ListType(subst_type(typ.element_type, mapping))
     if isinstance(typ, OptionType):
@@ -701,7 +758,11 @@ def match_types(param_type: 'TargetType', arg_type: 'TargetType', mapping: dict[
         if param_type.name not in mapping:
             mapping[param_type.name] = arg_type
         return
-    if isinstance(param_type, ListType) and isinstance(arg_type, ListType):
+    if isinstance(param_type, SequenceType) and isinstance(arg_type, SequenceType):
+        match_types(param_type.element_type, arg_type.element_type, mapping)
+    elif isinstance(param_type, SequenceType) and isinstance(arg_type, ListType):
+        match_types(param_type.element_type, arg_type.element_type, mapping)
+    elif isinstance(param_type, ListType) and isinstance(arg_type, ListType):
         match_types(param_type.element_type, arg_type.element_type, mapping)
     elif isinstance(param_type, OptionType) and isinstance(arg_type, OptionType):
         match_types(param_type.element_type, arg_type.element_type, mapping)
@@ -739,28 +800,42 @@ class FunDef(TargetNode):
 
 
 @dataclass(frozen=True)
-class VisitNonterminalDef(TargetNode):
-    """Visitor method definition for a nonterminal.
-
-    Like FunDef but specifically for visitor methods, with a Nonterminal
-    instead of a string name.
-    """
-    visitor_name: str  # e.g., 'parse', 'pretty'
+class ParseNonterminalDef(TargetNode):
+    """Parse method definition for a nonterminal."""
     nonterminal: 'Nonterminal'
     params: Sequence['Var']
     return_type: TargetType
     body: 'TargetExpr'
-    indent: str = ""  # base indentation for code generation
+    indent: str = ""
 
     def __str__(self) -> str:
         params_str = ', '.join(f"{p.name}: {p.type}" for p in self.params)
-        return f"{self.visitor_name}_{self.nonterminal.name}({params_str}) -> {self.return_type}: {self.body}"
+        return f"parse_{self.nonterminal.name}({params_str}) -> {self.return_type}: {self.body}"
 
     def __post_init__(self):
         _freeze_sequence(self, 'params')
 
     def function_type(self) -> 'FunctionType':
-        """Return the function type of this visitor method."""
+        return FunctionType([p.type for p in self.params], self.return_type)
+
+
+@dataclass(frozen=True)
+class PrintNonterminalDef(TargetNode):
+    """Pretty-print method definition for a nonterminal."""
+    nonterminal: 'Nonterminal'
+    params: Sequence['Var']
+    return_type: TargetType
+    body: 'TargetExpr'
+    indent: str = ""
+
+    def __str__(self) -> str:
+        params_str = ', '.join(f"{p.name}: {p.type}" for p in self.params)
+        return f"pretty_{self.nonterminal.name}({params_str}) -> {self.return_type}: {self.body}"
+
+    def __post_init__(self):
+        _freeze_sequence(self, 'params')
+
+    def function_type(self) -> 'FunctionType':
         return FunctionType([p.type for p in self.params], self.return_type)
 
 
@@ -784,6 +859,8 @@ __all__ = [
     'IfElse',
     'Seq',
     'While',
+    'Foreach',
+    'ForeachEnumerated',
     'Assign',
     'Return',
     'TargetType',
@@ -792,12 +869,15 @@ __all__ = [
     'MessageType',
     'EnumType',
     'TupleType',
+    'SequenceType',
     'ListType',
     'DictType',
     'OptionType',
     'FunctionType',
     'FunDef',
-    'VisitNonterminalDef',
-    'VisitNonterminal',
+    'ParseNonterminalDef',
+    'PrintNonterminalDef',
+    'ParseNonterminal',
+    'PrintNonterminal',
     'gensym',
 ]
