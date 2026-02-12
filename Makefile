@@ -49,9 +49,9 @@ PY_PROTO_GENERATED := \
 	$(PY_PROTO_DIR)/fragments_pb2.py \
 	$(PY_PROTO_DIR)/transactions_pb2.py
 GO_PROTO_GENERATED := \
-	$(PY_PROTO_DIR)/logic.pb.go \
-	$(PY_PROTO_DIR)/fragments.pb.go \
-	$(PY_PROTO_DIR)/transactions.pb.go
+	$(GO_PROTO_DIR)/logic.pb.go \
+	$(GO_PROTO_DIR)/fragments.pb.go \
+	$(GO_PROTO_DIR)/transactions.pb.go
 JL_PROTO_GENERATED := \
 	$(JL_PROTO_DIR)/logic_pb.jl \
 	$(JL_PROTO_DIR)/fragments_pb.jl \
