@@ -467,6 +467,11 @@ class CodeGenerator(ABC):
 
         # First, check for builtin special cases
         if isinstance(expr.func, Builtin):
+            # Short-circuit builtins: evaluate RHS lazily to preserve semantics
+            if expr.func.name in ('and', 'or') and len(expr.args) == 2:
+                return self._generate_short_circuit_call(
+                    expr.func.name, expr.args[0], expr.args[1], lines, indent)
+
             # Evaluate arguments (they should not contain return statements)
             args: List[str] = []
             for arg in expr.args:
@@ -499,6 +504,53 @@ class CodeGenerator(ABC):
 
         tmp = gensym()
         lines.append(f"{indent}{self.gen_assignment(tmp, f'{f}({args_code})', is_declaration=True)}")
+        return tmp
+
+    def _generate_short_circuit_call(self, op: str, left: TargetExpr, right: TargetExpr,
+                                      lines: List[str], indent: str) -> str:
+        """Generate and/or with short-circuit semantics.
+
+        Evaluates the LHS normally, then checks whether the RHS has
+        side-effects. If not, uses the language template (e.g., `a and b`).
+        If the RHS does have side-effects, emits an if-else so those
+        side-effects only execute when the LHS permits.
+        """
+        left_code = self.generate_lines(left, lines, indent)
+        assert left_code is not None, "Short-circuit LHS should not contain a return"
+
+        body_indent = indent + self.indent_str
+        rhs_lines: List[str] = []
+        right_code = self.generate_lines(right, rhs_lines, body_indent)
+        assert right_code is not None, "Short-circuit RHS should not contain a return"
+
+        if not rhs_lines:
+            # No side-effects in RHS — use the language template
+            result = self.gen_builtin_call(op, [left_code, right_code], lines, indent)
+            if result is not None and result.value is not None:
+                for stmt in result.statements:
+                    lines.append(f"{indent}{stmt}")
+                return result.value
+
+        # RHS has side-effects — guard them with an if-else
+        tmp = gensym()
+        decl = self.gen_var_declaration(tmp)
+        if decl:
+            lines.append(f"{indent}{decl}")
+        if op == 'and':
+            lines.append(f"{indent}{self.gen_if_start(left_code)}")
+            lines.extend(rhs_lines)
+            lines.append(f"{body_indent}{self.gen_assignment(tmp, right_code)}")
+            lines.append(f"{indent}{self.gen_else()}")
+            lines.append(f"{body_indent}{self.gen_assignment(tmp, self.gen_literal(False))}")
+        else:
+            lines.append(f"{indent}{self.gen_if_start(left_code)}")
+            lines.append(f"{body_indent}{self.gen_assignment(tmp, self.gen_literal(True))}")
+            lines.append(f"{indent}{self.gen_else()}")
+            lines.extend(rhs_lines)
+            lines.append(f"{body_indent}{self.gen_assignment(tmp, right_code)}")
+        end = self.gen_if_end()
+        if end:
+            lines.append(f"{indent}{end}")
         return tmp
 
     def _generate_newmessage(self, expr: NewMessage, lines: List[str], indent: str) -> str:

@@ -96,7 +96,7 @@ class TestCompletenessErrors:
 
 person
     : STRING
-      construct: test.Person(name=$1)
+      construct: $$ = test.Person(name=$1)
 
 %%
 """
@@ -127,7 +127,7 @@ person
 
 my_custom_person_rule
     : STRING
-      construct: test.Person(name=$1)
+      construct: $$ = test.Person(name=$1)
 
 %%
 """
@@ -162,7 +162,7 @@ class TestTypeErrors:
 
 record
     : STRING
-      construct: $1
+      construct: $$ = $1
 
 %%
 """
@@ -193,7 +193,7 @@ record
 
 pair
     : STRING STRING
-      construct: test.Pair(first=builtin.tuple($1, $2)[5], second=$2)
+      construct: $$ = test.Pair(first=builtin.tuple($1, $2)[5], second=$2)
 
 %%
 """
@@ -224,7 +224,7 @@ pair
 
 record
     : STRING
-      construct: test.Record(value=$1[0])
+      construct: $$ = test.Record(value=$1[0])
 
 %%
 """
@@ -256,7 +256,7 @@ record
 
 person
     : STRING
-      construct: test.Person(name=$1)
+      construct: $$ = test.Person(name=$1)
 
 %%
 """
@@ -288,7 +288,7 @@ person
 
 record
     : STRING
-      construct: test.Record(value=builtin.unwrap_option_or($1, "default"))
+      construct: $$ = test.Record(value=builtin.unwrap_option_or($1, "default"))
 
 %%
 """
@@ -319,7 +319,7 @@ record
 
 record
     : STRING
-      construct: test.Record(count=builtin.length($1))
+      construct: $$ = test.Record(count=builtin.length($1))
 
 %%
 """
@@ -357,7 +357,7 @@ class TestOneofCoverage:
 
 value
     : STRING
-      construct: test.Value(kind=oneof_text($1))
+      construct: $$ = test.Value(kind=oneof_text($1))
 
 %%
 """
@@ -393,11 +393,11 @@ class TestSoundnessErrors:
 
 person
     : STRING
-      construct: test.Person(name=$1)
+      construct: $$ = test.Person(name=$1)
 
 unknown_rule
     : STRING
-      construct: test.NonExistentMessage(name=$1)
+      construct: $$ = test.NonExistentMessage(name=$1)
 
 %%
 """
@@ -436,11 +436,11 @@ class TestUnreachableRules:
 
 start
     : STRING
-      construct: test.Start(value=$1)
+      construct: $$ = test.Start(value=$1)
 
 orphan
     : STRING
-      construct: test.Orphan(data=$1)
+      construct: $$ = test.Orphan(data=$1)
 
 %%
 """
@@ -476,7 +476,7 @@ class TestValidGrammar:
 
 person
     : STRING INT
-      construct: test.Person(name=$1, age=builtin.int64_to_int32($2))
+      construct: $$ = test.Person(name=$1, age=builtin.int64_to_int32($2))
 
 %%
 """
@@ -510,9 +510,9 @@ person
 
 value
     : STRING
-      construct: test.Value(kind=oneof_text($1))
+      construct: $$ = test.Value(kind=oneof_text($1))
     | INT
-      construct: test.Value(kind=oneof_number($1))
+      construct: $$ = test.Value(kind=oneof_number($1))
 
 %%
 """
@@ -542,7 +542,7 @@ value
 
 record
     : STRING*
-      construct: test.Record(values=$1)
+      construct: $$ = test.Record(values=$1)
 
 %%
 """
@@ -572,7 +572,7 @@ record
 
 record
     : STRING?
-      construct: test.Record(value=$1)
+      construct: $$ = test.Record(value=$1)
 
 %%
 """
@@ -608,11 +608,11 @@ record
 
 person
     : STRING address
-      construct: test.Person(name=$1, address=$2)
+      construct: $$ = test.Person(name=$1, address=$2)
 
 address
     : STRING
-      construct: test.Address(street=$1)
+      construct: $$ = test.Address(street=$1)
 
 %%
 """
@@ -652,7 +652,7 @@ class TestComplexValidationScenarios:
 
 person
     : STRING INT
-      construct: $1
+      construct: $$ = $1
 
 %%
 """
@@ -686,7 +686,7 @@ person
 
 pair
     : STRING STRING
-      construct: test.Pair(first=builtin.tuple($1, $2)[0], second=builtin.tuple($1, $2)[1])
+      construct: $$ = test.Pair(first=builtin.tuple($1, $2)[0], second=builtin.tuple($1, $2)[1])
 
 %%
 """
