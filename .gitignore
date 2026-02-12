@@ -1,5 +1,5 @@
 # Proto generated files
-gen
+./gen
 
 # Python
 .venv
