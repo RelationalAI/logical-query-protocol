@@ -1264,6 +1264,35 @@ class TestIsSubtype:
         for t in types:
             assert validator._is_subtype(ListType(t), SequenceType(t))
 
+    def test_list_subtype_of_sequence_covariant(self, validator):
+        """List[Never] <: Sequence[T] (via List <: Sequence and Sequence covariance)."""
+        never = BaseType("Never")
+        types = [
+            BaseType("Any"),
+            BaseType("Int64"),
+            BaseType("String"),
+        ]
+        for t in types:
+            assert validator._is_subtype(ListType(never), SequenceType(t))
+
+    def test_list_not_subtype_of_incompatible_sequence(self, validator):
+        """List[T] is NOT <: Sequence[U] for distinct concrete T, U."""
+        int64 = BaseType("Int64")
+        string = BaseType("String")
+        assert not validator._is_subtype(ListType(int64), SequenceType(string))
+        assert not validator._is_subtype(ListType(string), SequenceType(int64))
+
+    def test_sequence_not_subtype_of_list(self, validator):
+        """Sequence[T] is NOT <: List[T]."""
+        types = [
+            BaseType("Never"),
+            BaseType("Any"),
+            BaseType("Int64"),
+            BaseType("String"),
+        ]
+        for t in types:
+            assert not validator._is_subtype(SequenceType(t), ListType(t))
+
 
 class TestTypesCompatible:
     """Property tests for _types_compatible."""
