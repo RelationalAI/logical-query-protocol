@@ -12,6 +12,10 @@ Supported constructs:
 - List literals: [a, b, c]
 - Conditional expressions: x if cond else y
 - Tuple indexing: x[0]
+- Arithmetic operators: +, -, *, /, //, %
+- Comparison operators: ==, !=, <, >, <=, >=, is, is not, in, not in
+- Boolean operators: and, or, not
+- Unary minus: -x
 """
 
 import ast
@@ -209,14 +213,9 @@ def _unsupported_node_error(node: ast.AST, line: Optional[int], reason: str = ""
 
     # Map AST node types to user-friendly descriptions and suggestions
     node_explanations = {
-        'UnaryOp': "Unary operators (like -x, +x, ~x, not x) are not supported. "
-                   "Use builtin functions instead (e.g., 'subtract(0, x)' for negation).",
-        'BinOp': "Binary operators (+, -, *, /, etc.) are not supported. "
-                 "Use builtin functions instead (e.g., 'add(x, y)', 'multiply(x, y)').",
-        'BoolOp': "Boolean operators (and, or) are not supported directly. "
-                  "Use builtin functions instead (e.g., 'and(x, y)', 'or(x, y)').",
-        'Compare': "Comparison operators (==, !=, <, >, etc.) are not supported. "
-                   "Use builtin functions instead (e.g., 'equal(x, y)', 'less_than(x, y)').",
+        'UnaryOp': "Unsupported unary operator. "
+                   "Supported: not, unary minus (-x). "
+                   "Bitwise operators (~x, +x) are not supported.",
         'Lambda': "Python lambda expressions are not supported in actions. "
                   "Define named functions in the %functions section instead.",
         'Dict': "Dictionary literals are not supported. "
@@ -237,8 +236,7 @@ def _unsupported_node_error(node: ast.AST, line: Optional[int], reason: str = ""
         'Slice': "Slice expressions (x[a:b]) are not supported. "
                  "Only constant integer indexing is allowed.",
         'NamedExpr': "Walrus operator (:=) is not supported.",
-        'Tuple': "Tuple literals are not directly supported. "
-                 "Use tuple(a, b, ...) builtin instead.",
+        'Tuple': "Tuple literals (a, b, ...) are supported and map to builtin.tuple().",
     }
 
     base_msg = f"Cannot convert Python '{node_type}' to target IR"
@@ -420,19 +418,76 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
         return IfElse(cond, then_branch, else_branch)
 
     elif isinstance(node, ast.Compare):
-        # Handle comparisons: x is None, x is not None
         if len(node.ops) == 1 and len(node.comparators) == 1:
             left = convert(node.left)
+            right = convert(node.comparators[0])
             op = node.ops[0]
             if isinstance(op, ast.Is):
                 if isinstance(node.comparators[0], ast.Constant) and node.comparators[0].value is None:
                     return Call(make_builtin("is_none"), [left])
+                return Call(make_builtin("equal"), [left, right])
             elif isinstance(op, ast.IsNot):
                 if isinstance(node.comparators[0], ast.Constant) and node.comparators[0].value is None:
                     return Call(make_builtin("is_some"), [left])
+                return Call(make_builtin("not_equal"), [left, right])
+            elif isinstance(op, ast.Eq):
+                return Call(make_builtin("equal"), [left, right])
+            elif isinstance(op, ast.NotEq):
+                return Call(make_builtin("not_equal"), [left, right])
+            elif isinstance(op, ast.Lt):
+                return Call(make_builtin("less_than"), [left, right])
+            elif isinstance(op, ast.LtE):
+                return Call(make_builtin("less_equal"), [left, right])
+            elif isinstance(op, ast.Gt):
+                return Call(make_builtin("greater_than"), [left, right])
+            elif isinstance(op, ast.GtE):
+                return Call(make_builtin("greater_equal"), [left, right])
+            elif isinstance(op, ast.In):
+                return Call(make_builtin("string_in_list"), [left, right])
+            elif isinstance(op, ast.NotIn):
+                return Call(make_builtin("not"), [Call(make_builtin("string_in_list"), [left, right])])
         raise YaccGrammarError(
-            "Unsupported comparison. Only 'x is None' and 'x is not None' are supported in actions.",
+            f"Unsupported comparison operator in action.",
             line)
+
+    elif isinstance(node, ast.BoolOp):
+        if isinstance(node.op, ast.And):
+            result = convert(node.values[0])
+            for val in node.values[1:]:
+                result = Call(make_builtin("and"), [result, convert(val)])
+            return result
+        elif isinstance(node.op, ast.Or):
+            result = convert(node.values[0])
+            for val in node.values[1:]:
+                result = Call(make_builtin("or"), [result, convert(val)])
+            return result
+        raise YaccGrammarError(f"Unsupported boolean operation", line)
+
+    elif isinstance(node, ast.BinOp):
+        left = convert(node.left)
+        right = convert(node.right)
+        if isinstance(node.op, ast.Add):
+            return Call(make_builtin("add"), [left, right])
+        elif isinstance(node.op, ast.Sub):
+            return Call(make_builtin("subtract"), [left, right])
+        elif isinstance(node.op, ast.Mult):
+            return Call(make_builtin("multiply"), [left, right])
+        elif isinstance(node.op, ast.Div) or isinstance(node.op, ast.FloorDiv):
+            return Call(make_builtin("divide"), [left, right])
+        elif isinstance(node.op, ast.Mod):
+            return Call(make_builtin("modulo"), [left, right])
+        raise YaccGrammarError(f"Unsupported binary operator: {type(node.op).__name__}", line)
+
+    elif isinstance(node, ast.UnaryOp):
+        if isinstance(node.op, ast.Not):
+            return Call(make_builtin("not"), [convert(node.operand)])
+        elif isinstance(node.op, ast.USub):
+            return Call(make_builtin("subtract"), [Lit(0), convert(node.operand)])
+        raise _unsupported_node_error(node, line)
+
+    elif isinstance(node, ast.Tuple):
+        elements = [convert(e) for e in node.elts]
+        return Call(make_builtin('tuple'), elements)
 
     else:
         raise _unsupported_node_error(node, line)
@@ -986,6 +1041,14 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
                 return Call(make_builtin("equal"), [left, right])
             elif isinstance(op, ast.NotEq):
                 return Call(make_builtin("not_equal"), [left, right])
+            elif isinstance(op, ast.Lt):
+                return Call(make_builtin("less_than"), [left, right])
+            elif isinstance(op, ast.LtE):
+                return Call(make_builtin("less_equal"), [left, right])
+            elif isinstance(op, ast.Gt):
+                return Call(make_builtin("greater_than"), [left, right])
+            elif isinstance(op, ast.GtE):
+                return Call(make_builtin("greater_equal"), [left, right])
             elif isinstance(op, ast.In):
                 return Call(make_builtin("string_in_list"), [left, right])
             elif isinstance(op, ast.NotIn):
@@ -1010,9 +1073,27 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
         left = _convert_func_expr(node.left, ctx, line, local_vars)
         right = _convert_func_expr(node.right, ctx, line, local_vars)
         if isinstance(node.op, ast.Add):
-            # Could be numeric add or string concat - use string_concat for strings
-            return Call(make_builtin("string_concat"), [left, right])
+            return Call(make_builtin("add"), [left, right])
+        elif isinstance(node.op, ast.Sub):
+            return Call(make_builtin("subtract"), [left, right])
+        elif isinstance(node.op, ast.Mult):
+            return Call(make_builtin("multiply"), [left, right])
+        elif isinstance(node.op, ast.Div) or isinstance(node.op, ast.FloorDiv):
+            return Call(make_builtin("divide"), [left, right])
+        elif isinstance(node.op, ast.Mod):
+            return Call(make_builtin("modulo"), [left, right])
         raise YaccGrammarError(f"Unsupported binary operation: {type(node.op).__name__}", line)
+
+    elif isinstance(node, ast.Tuple):
+        elements = [_convert_func_expr(e, ctx, line, local_vars) for e in node.elts]
+        return Call(make_builtin('tuple'), elements)
+
+    elif isinstance(node, ast.UnaryOp):
+        if isinstance(node.op, ast.Not):
+            return Call(make_builtin("not"), [_convert_func_expr(node.operand, ctx, line, local_vars)])
+        elif isinstance(node.op, ast.USub):
+            return Call(make_builtin("subtract"), [Lit(0), _convert_func_expr(node.operand, ctx, line, local_vars)])
+        raise YaccGrammarError(f"Unsupported unary operation: {type(node.op).__name__}", line)
 
     elif isinstance(node, ast.Subscript):
         # Handle dict.get() result or tuple indexing
