@@ -29,8 +29,15 @@ JL_PROTO_DIR := julia/LQPParser/src/relationalai/lqp/v1
 GO_PROTO_DIR := go/src/lqp/v1
 
 # Representative generated protobuf files (used as make targets)
-PY_GO_PROTO_GEN := $(PY_PROTO_DIR)/logic_pb2.py
-JL_PROTO_GEN := $(JL_PROTO_DIR)/logic_pb.jl
+PY_PROTO_GEN := $(PY_PROTO_DIR)/logic_pb2.py \
+                $(PY_PROTO_DIR)/fragments_pb2.py \
+                $(PY_PROTO_DIR)/transactions_pb2.py
+GO_PROTO_GEN := $(GO_PROTO_DIR)/logic.pb.go \
+				$(GO_PROTO_DIR)/fragments.pb.go \
+				$(GO_PROTO_DIR)/transctions.pb.go
+JL_PROTO_GEN := $(JL_PROTO_DIR)/logic_pb.jl \
+                $(JL_PROTO_DIR)/fragments_pb.jl \
+                $(JL_PROTO_DIR)/transactions_pb.jl
 
 # Generated parser outputs
 PY_PARSER := python-tools/src/lqp/gen/parser.py
@@ -55,7 +62,7 @@ META_PROTO_ARGS := \
 	--grammar src/meta/grammar.y
 
 
-.PHONY: all build protobuf protobuf-lint protobuf-py-go protobuf-julia \
+.PHONY: all protobuf protobuf-lint protobuf-py-go protobuf-julia \
 	parsers parser-python parser-julia parser-go \
 	force-parsers force-parser-python force-parser-julia force-parser-go \
 	printers printer-python printer-julia printer-go \
@@ -63,7 +70,7 @@ META_PROTO_ARGS := \
 	test test-python test-julia test-go check-python \
 	clean
 
-all: build parsers printers
+all: protobuf parsers printers
 
 # ---------- protobuf build (replaces ./build script) ----------
 
@@ -72,12 +79,12 @@ protobuf-lint: $(PROTO_FILES)
 	buf breaking --against ".git#branch=main,subdir=proto"
 
 # Convenience phony targets
-protobuf: $(PY_GO_PROTO_GEN) $(JL_PROTO_GEN)
-protobuf-py-go: $(PY_GO_PROTO_GEN)
+protobuf: $(PY_PROTO_GEN) $(GO_PROTO_GEN) $(JL_PROTO_GEN)
+protobuf-py-go: $(PY_PROTO_GEN) $(GO_PROTO_GEN)
 protobuf-julia: $(JL_PROTO_GEN)
 
 # Only regenerate when .proto files are newer than the generated output
-$(PY_GO_PROTO_GEN): $(PROTO_FILES)
+$(PY_PROTO_GEN) $(GO_PROTO_GEN): $(PROTO_FILES)
 	buf lint
 	buf breaking --against ".git#branch=main,subdir=proto"
 	buf generate
