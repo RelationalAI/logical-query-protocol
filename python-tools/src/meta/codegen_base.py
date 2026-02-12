@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tupl
 from .target import (
     TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, EnumValue, OneOf, ListExpr, Call, Lambda, Let,
     IfElse, Seq, While, Foreach, ForeachEnumerated, Assign, Return, FunDef, VisitNonterminalDef,
-    VisitNonterminal, TargetType, BaseType, VarType, TupleType, SeqeunceType, ListType, DictType, OptionType,
+    VisitNonterminal, TargetType, BaseType, VarType, TupleType, SequenceType, ListType, DictType, OptionType,
     MessageType, EnumType, FunctionType, GetField, GetElement
 )
 from .target_builtins import get_builtin
