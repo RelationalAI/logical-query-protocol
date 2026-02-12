@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Tuple
 from .proto_parser import ProtoParser
 from .proto_ast import ProtoMessage, ProtoField
 from .target import (
-    TargetType, BaseType, MessageType, ListType, OptionType, FunctionType
+    TargetType, BaseType, MessageType, SequenceType, ListType, OptionType, FunctionType
 )
 from .target_builtins import BUILTIN_REGISTRY
 
@@ -99,9 +99,9 @@ class TypeEnv:
         if proto_field.is_optional:
             base_type = OptionType(base_type)
 
-        # Wrap in List if repeated
+        # Wrap in Sequence if repeated
         if proto_field.is_repeated:
-            base_type = ListType(base_type)
+            base_type = SequenceType(base_type)
 
         return base_type
 

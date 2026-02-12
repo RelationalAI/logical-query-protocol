@@ -24,7 +24,7 @@ from typing import Mapping, Sequence
 
 from .target import (
     BaseType, Builtin, Lambda, Var, Lit, Call, TargetExpr, TargetType,
-    ListType, OptionType, TupleType, DictType, VarType
+    SequenceType, ListType, OptionType, TupleType, DictType, VarType
 )
 from .target_builtins import make_builtin
 
@@ -52,9 +52,15 @@ def is_subtype(t1: TargetType, t2: TargetType) -> bool:
     # T <: VarType for all T (type variables are wildcards)
     if isinstance(t2, VarType):
         return True
-    # List is covariant: List[A] <: List[B] if A <: B
-    if isinstance(t1, ListType) and isinstance(t2, ListType):
+    # List[T] <: Sequence[U] if T <: U
+    if isinstance(t1, ListType) and isinstance(t2, SequenceType):
         return is_subtype(t1.element_type, t2.element_type)
+    # Sequence is covariant: Sequence[A] <: Sequence[B] if A <: B
+    if isinstance(t1, SequenceType) and isinstance(t2, SequenceType):
+        return is_subtype(t1.element_type, t2.element_type)
+    # List is invariant: List[A] <: List[B] only if A == B
+    if isinstance(t1, ListType) and isinstance(t2, ListType):
+        return t1.element_type == t2.element_type
     # Option is covariant: Option[A] <: Option[B] if A <: B
     if isinstance(t1, OptionType) and isinstance(t2, OptionType):
         return is_subtype(t1.element_type, t2.element_type)
@@ -87,6 +93,12 @@ def type_join(t1: TargetType, t2: TargetType) -> TargetType:
         return t2
     if isinstance(t1, OptionType) and isinstance(t2, OptionType):
         return OptionType(type_join(t1.element_type, t2.element_type))
+    if isinstance(t1, SequenceType) and isinstance(t2, SequenceType):
+        return SequenceType(type_join(t1.element_type, t2.element_type))
+    if isinstance(t1, ListType) and isinstance(t2, SequenceType):
+        return SequenceType(type_join(t1.element_type, t2.element_type))
+    if isinstance(t1, SequenceType) and isinstance(t2, ListType):
+        return SequenceType(type_join(t1.element_type, t2.element_type))
     if isinstance(t1, ListType) and isinstance(t2, ListType):
         return ListType(type_join(t1.element_type, t2.element_type))
     if isinstance(t1, TupleType) and isinstance(t2, TupleType):

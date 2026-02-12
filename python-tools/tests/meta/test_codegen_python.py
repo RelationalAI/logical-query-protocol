@@ -122,7 +122,7 @@ def test_python_builtin_generation():
     lines = []
     expr = Call(make_builtin("list_concat"), [Var("lst", ListType(_int_type)), Var("other", ListType(_int_type))])
     result = gen.generate_lines(expr, lines, "")
-    assert result == "(lst + (other if other is not None else []))"
+    assert result == "(list(lst) + list(other if other is not None else []))"
 
     # Test 'list_push' builtin (mutating push with statement)
     reset_gensym()
@@ -524,6 +524,92 @@ def test_python_helper_function_calling_another():
     code = gen.generate_def(func)
     assert "def wrapper(x: int) -> int:" in code
     assert "Parser.helper(x)" in code
+
+
+def test_python_and_short_circuit_with_side_effects():
+    """Test that 'and' preserves short-circuit semantics when RHS has side-effects.
+
+    When the RHS of 'and' contains a function call (which generates a temp-var
+    assignment), those side-effects must not be hoisted above the short-circuit
+    check — they should only execute when the LHS is truthy.
+    """
+    gen = PythonCodeGenerator()
+    reset_gensym()
+    lines = []
+
+    # and(a, f(x) == 42)
+    # The call f(x) generates a temp-var assignment line.
+    # That assignment must be guarded by the 'and' LHS.
+    expr = Call(make_builtin("and"), [
+        Var("a", _bool_type),
+        Call(make_builtin("equal"), [
+            Call(Var("f", _any_type), [Var("x", _any_type)]),
+            Lit(42),
+        ]),
+    ])
+    result = gen.generate_lines(expr, lines, "")
+    code = "\n".join(lines)
+
+    assert result is not None
+    # f(x) call must be inside the if body, not before it
+    assert "f(x)" not in code.split("if ")[0], \
+        f"f(x) was hoisted above the if guard:\n{code}"
+    assert "if " in code, f"Expected if-else for short-circuit, got:\n{code}"
+
+
+def test_python_or_short_circuit_with_side_effects():
+    """Test that 'or' preserves short-circuit semantics when RHS has side-effects."""
+    gen = PythonCodeGenerator()
+    reset_gensym()
+    lines = []
+
+    # or(a, f(x) == 42)
+    # f(x) side-effects must only execute when a is falsy.
+    expr = Call(make_builtin("or"), [
+        Var("a", _bool_type),
+        Call(make_builtin("equal"), [
+            Call(Var("f", _any_type), [Var("x", _any_type)]),
+            Lit(42),
+        ]),
+    ])
+    result = gen.generate_lines(expr, lines, "")
+    code = "\n".join(lines)
+
+    assert result is not None
+    assert "f(x)" not in code.split("if ")[0], \
+        f"f(x) was hoisted above the if guard:\n{code}"
+    assert "if " in code, f"Expected if-else for short-circuit, got:\n{code}"
+
+
+def test_python_and_without_side_effects_uses_template():
+    """Test that 'and' without side-effects uses the simple template."""
+    gen = PythonCodeGenerator()
+    reset_gensym()
+    lines = []
+
+    # and(a, b) with no side-effects should produce (a and b)
+    expr = Call(make_builtin("and"), [
+        Var("a", _bool_type),
+        Var("b", _bool_type),
+    ])
+    result = gen.generate_lines(expr, lines, "")
+    assert result == "(a and b)"
+    assert len(lines) == 0
+
+
+def test_python_or_without_side_effects_uses_template():
+    """Test that 'or' without side-effects uses the simple template."""
+    gen = PythonCodeGenerator()
+    reset_gensym()
+    lines = []
+
+    expr = Call(make_builtin("or"), [
+        Var("a", _bool_type),
+        Var("b", _bool_type),
+    ])
+    result = gen.generate_lines(expr, lines, "")
+    assert result == "(a or b)"
+    assert len(lines) == 0
 
 
 if __name__ == "__main__":

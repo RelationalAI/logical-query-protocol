@@ -160,6 +160,9 @@ class JuliaCodeGenerator(CodeGenerator):
             return 'Tuple{}'
         return f"Tuple{{{', '.join(element_types)}}}"
 
+    def gen_sequence_type(self, element_type: str) -> str:
+        return f"Vector{{{element_type}}}"
+
     def gen_list_type(self, element_type: str) -> str:
         return f"Vector{{{element_type}}}"
 

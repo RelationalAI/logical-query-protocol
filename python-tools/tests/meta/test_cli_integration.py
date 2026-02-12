@@ -47,7 +47,7 @@ def create_test_files():
 
     transaction
         : "(" "transaction" STRING INT ")"
-        construct: test.Transaction(name=$3, value=$4)
+        construct: $$ = test.Transaction(name=$3, value=$4)
 
     %%
     """)
@@ -103,11 +103,11 @@ def create_invalid_grammar():
 
     transaction
         : "(" "person" STRING ")"
-        construct: test.Transaction(person=test.Person(name=$3))
+        construct: $$ = test.Transaction(person=test.Person(name=$3))
 
     person
         : "(" "person" STRING ")"
-        construct: test.Person(name=$3)
+        construct: $$ = test.Person(name=$3)
 
     %%
     """)

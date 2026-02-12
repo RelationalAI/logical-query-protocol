@@ -20,7 +20,7 @@ from typing import Dict, List, Optional, Tuple, Set
 
 from .grammar import Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
 from .target import (
-    TargetType, BaseType, MessageType, ListType, OptionType, TupleType, DictType, FunctionType,
+    TargetType, BaseType, MessageType, SequenceType, ListType, OptionType, TupleType, DictType, FunctionType,
     TargetExpr, Var, Lit, NamedFun, NewMessage, EnumValue, Call, Lambda,
     Let, IfElse, Seq, ListExpr, GetElement, GetField, FunDef, OneOf, Assign, Return
 )
@@ -176,15 +176,30 @@ def preprocess_action(text: str) -> str:
     """Preprocess action text to make it valid Python.
 
     Transforms:
-        $1, $2, ... -> _dollar_1, _dollar_2, ...
+        $$           -> _dollar_dollar
+        $1, $2, ...  -> _dollar_1, _dollar_2, ...
         keyword=expr -> _kw_keyword_=expr (for Python keywords used as field names)
+        .keyword     -> ._kw_keyword_ (for field access on Python keywords)
     """
-    # Replace $N with _dollar_N
-    result = re.sub(r'\$(\d+)', r'_dollar_\1', text)
+    # Replace $$ with _dollar_dollar first, before $N
+    result = text.replace('$$', '_dollar_dollar')
+    result = re.sub(r'\$(\d+)', r'_dollar_\1', result)
     # Replace keyword= with _kw_keyword_= for Python keywords used as kwargs
+    # Replace .keyword with ._kw_keyword_ for field access on Python keywords
     for kw in PYTHON_KEYWORDS:
         result = re.sub(rf'\b{kw}=', f'_kw_{kw}_=', result)
+        result = re.sub(rf'\.{kw}\b', f'._kw_{kw}_', result)
     return result
+
+
+def _unescape_keyword(name: str) -> str:
+    """Unescape a preprocessed keyword field name back to its original form.
+
+    _kw_def_ -> def, _kw_class_ -> class, etc.
+    """
+    if name.startswith('_kw_') and name.endswith('_'):
+        return name[4:-1]
+    return name
 
 
 def _unsupported_node_error(node: ast.AST, line: Optional[int], reason: str = "") -> YaccGrammarError:
@@ -271,7 +286,9 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
             return Lit(True)
         elif name == 'False':
             return Lit(False)
-        elif name.startswith('_dollar_'):
+        elif name in extra_vars:
+            return Var(name, extra_vars[name])
+        elif name.startswith('_dollar_') and name[8:].isdigit():
             # $N reference - map to the corresponding parameter
             idx = int(name[8:]) - 1  # Convert 1-indexed to 0-indexed
             if idx < 0 or idx >= len(param_info):
@@ -282,8 +299,6 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
             # Find the parameter for this position (skipping literals)
             param_idx = sum(1 for _, t in param_info[:idx] if t is not None)
             return params[param_idx]
-        elif name in extra_vars:
-            return Var(name, extra_vars[name])
         elif name in ctx.functions:
             return _make_named_fun(name, ctx.functions[name])
         else:
@@ -306,14 +321,18 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
             line)
 
     elif isinstance(node, ast.Attribute):
+        attr_name = _unescape_keyword(node.attr)
         if isinstance(node.value, ast.Name):
+            name = node.value.id
+            # Field access on a variable in scope
+            if name in extra_vars:
+                obj = Var(name, extra_vars[name])
+                return _make_get_field(obj, attr_name, ctx, line)
             # module.Message reference
-            return NewMessage(node.value.id, node.attr, ())
-        raise YaccGrammarError(
-            "Field access on expressions is not supported.\n"
-            "  Only 'module.MessageName' for message constructors is allowed.\n"
-            "  Use GetField in target IR for field access on messages.",
-            line)
+            return NewMessage(name, attr_name, ())
+        # Field access on a more complex expression
+        obj = convert(node.value)
+        return _make_get_field(obj, attr_name, ctx, line)
 
     elif isinstance(node, ast.Call):
         func = node.func
@@ -446,8 +465,14 @@ def parse_action(text: str, rhs: Rhs, ctx: 'TypeContext', line: Optional[int] = 
                  expected_return_type: Optional[TargetType] = None) -> Lambda:
     """Parse a semantic action and return a Lambda.
 
+    Construct actions must assign to $$ (the result). For example:
+        $$ = module.Message(field=$1)
+    or multi-statement:
+        builtin.start_fragment($1)
+        $$ = $1
+
     Args:
-        text: Action text (Python expression)
+        text: Action text with $$ = expr assignment
         rhs: The RHS of the rule
         ctx: Type context
         line: Line number for error messages
@@ -461,11 +486,45 @@ def parse_action(text: str, rhs: Rhs, ctx: 'TypeContext', line: Optional[int] = 
 
     # Build parameter list with names from RHS symbols
     params = _build_params(rhs)
-
-    # Parse the expression
-    # Pass param info so $N references can be resolved to named parameters
     param_info = _get_rhs_param_info(rhs)
-    body = parse_action_expr(preprocessed, param_info, params, ctx, line)
+
+    # Parse as exec mode to handle $$ = expr assignments and multi-statement actions
+    try:
+        tree = ast.parse(preprocessed, mode='exec')
+    except SyntaxError as e:
+        raise YaccGrammarError(f"Syntax error in construct action: {e}", line)
+
+    # Find the $$ assignment and any side-effect statements
+    dollar_dollar_value: Optional[ast.expr] = None
+    side_effects: List[TargetExpr] = []
+
+    for stmt in tree.body:
+        if isinstance(stmt, ast.Assign) and len(stmt.targets) == 1:
+            target = stmt.targets[0]
+            if isinstance(target, ast.Name) and target.id == '_dollar_dollar':
+                if dollar_dollar_value is not None:
+                    raise YaccGrammarError("Multiple assignments to $$ in construct action", line)
+                dollar_dollar_value = stmt.value
+                continue
+        # Side-effect statement (e.g., builtin.start_fragment($1))
+        if isinstance(stmt, ast.Expr):
+            expr = _convert_node_with_vars(stmt.value, param_info, params, ctx, line, {})
+            side_effects.append(expr)
+        else:
+            raise YaccGrammarError(
+                f"Construct actions must contain $$ = expr and optional side-effect expressions. "
+                f"Got: {type(stmt).__name__}",
+                line)
+
+    if dollar_dollar_value is None:
+        raise YaccGrammarError("Construct action must assign to $$", line)
+
+    # Convert the $$ value expression
+    body = _convert_node_with_vars(dollar_dollar_value, param_info, params, ctx, line, {})
+
+    # If there are side effects, wrap in a Seq with the $$ value last
+    if side_effects:
+        body = Seq(tuple(side_effects) + (body,))
 
     # Use expected return type from %type declaration if provided, otherwise infer
     return_type = expected_return_type if expected_return_type is not None else _infer_type(body, line, ctx)
@@ -715,7 +774,8 @@ def _make_get_field(obj: TargetExpr, field_name: str, ctx: 'TypeContext', line: 
     if isinstance(obj_type, OptionType):
         obj_type = obj_type.element_type
     if not isinstance(obj_type, MessageType):
-        raise YaccGrammarError(f"Cannot access field '{field_name}' on non-message type {obj_type}", line)
+        # Allow field access on Unknown types -- return GetField with Unknown type
+        return GetField(obj, field_name, MessageType("unknown", "Unknown"), BaseType("Unknown"))
     message_type = obj_type
     # Try to look up field type
     field_type: TargetType = BaseType("Unknown")
@@ -959,7 +1019,10 @@ def _annotation_to_type(node: ast.AST, line: int) -> TargetType:
     elif isinstance(node, ast.Subscript):
         if isinstance(node.value, ast.Name):
             container = node.value.id
-            if container == 'List' or container == 'list':
+            if container == 'Sequence':
+                elem_type = _annotation_to_type(node.slice, line)
+                return SequenceType(elem_type)
+            elif container == 'List' or container == 'list':
                 elem_type = _annotation_to_type(node.slice, line)
                 return ListType(elem_type)
             elif container == 'Optional':
