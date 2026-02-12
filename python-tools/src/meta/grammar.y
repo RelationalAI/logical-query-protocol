@@ -696,8 +696,8 @@ demand
       construct: transactions.Demand(relation_id=$3)
 
 output
-    : "(" "output" name relation_id ")"
-      construct: transactions.Output(name=$3, relation_id=$4)
+    : "(" "output" name? relation_id ")"
+      construct: transactions.Output(name=builtin.unwrap_option_or($3, "output"), relation_id=$4)
 
 what_if
     : "(" "what_if" name epoch ")"
