@@ -3,6 +3,13 @@
 A command-line tool to parse Logical Query Protocol (LQP) S-expressions into Protobuf binary
 and JSON formats.
 
+## Installation
+
+The `lqp` package is available on PyPi through `pip`. Use
+```bash
+pip install lqp
+```
+
 ## Usage
 
 ```
