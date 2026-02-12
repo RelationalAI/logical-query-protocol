@@ -10,7 +10,7 @@ from .target import (
     TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, OneOf,
     ListExpr, Call, Lambda, Let, IfElse, Seq, While,
     Assign, Return, GetField, GetElement,
-    VisitNonterminal, FunDef
+    ParseNonterminal, PrintNonterminal, FunDef
 )
 
 
@@ -128,8 +128,11 @@ def expr_to_str(expr: TargetExpr) -> str:
     elif isinstance(expr, GetElement):
         return f"{expr_to_str(expr.tuple_expr)}[{expr.index}]"
 
-    elif isinstance(expr, VisitNonterminal):
-        return f"visit_{expr.nonterminal.name}()"
+    elif isinstance(expr, ParseNonterminal):
+        return f"parse_{expr.nonterminal.name}()"
+
+    elif isinstance(expr, PrintNonterminal):
+        return f"pretty_{expr.nonterminal.name}()"
 
     else:
         return str(expr)

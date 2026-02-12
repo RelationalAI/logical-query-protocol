@@ -10,8 +10,9 @@ from .codegen_base import CodeGenerator
 from .codegen_templates import JULIA_TEMPLATES
 from .target import (
     TargetExpr, Var, Lit, Symbol, NamedFun, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
-    FunDef, VisitNonterminalDef, VisitNonterminal, GetField, GetElement, BaseType,
-    MessageType,
+    FunDef, ParseNonterminalDef, PrintNonterminalDef,
+    ParseNonterminal, PrintNonterminal,
+    GetField, GetElement, BaseType, MessageType,
 )
 from .gensym import gensym
 
@@ -138,6 +139,9 @@ class JuliaCodeGenerator(CodeGenerator):
     def gen_parse_nonterminal_ref(self, name: str) -> str:
         return f"parse_{name}"
 
+    def gen_pretty_nonterminal_ref(self, name: str) -> str:
+        return f"pretty_{name}"
+
     # --- Type generation ---
 
     def gen_message_type(self, module: str, name: str) -> str:
@@ -159,6 +163,9 @@ class JuliaCodeGenerator(CodeGenerator):
         if not element_types:
             return 'Tuple{}'
         return f"Tuple{{{', '.join(element_types)}}}"
+
+    def gen_sequence_type(self, element_type: str) -> str:
+        return f"Vector{{{element_type}}}"
 
     def gen_list_type(self, element_type: str) -> str:
         return f"Vector{{{element_type}}}"
@@ -200,6 +207,15 @@ class JuliaCodeGenerator(CodeGenerator):
         return f"while {cond}"
 
     def gen_while_end(self) -> str:
+        return "end"
+
+    def gen_foreach_start(self, var: str, collection: str) -> str:
+        return f"for {var} in {collection}"
+
+    def gen_foreach_enumerated_start(self, index_var: str, var: str, collection: str) -> str:
+        return f"for ({index_var}, {var}) in enumerate({collection})"
+
+    def gen_foreach_end(self) -> str:
         return "end"
 
     def gen_empty_body(self) -> str:
@@ -364,16 +380,17 @@ class JuliaCodeGenerator(CodeGenerator):
             lines.append(f"{indent}{self.gen_assignment(tmp, f'OneOf({field_symbol}, {field_value})', is_declaration=True)}")
             return tmp
 
-        # Check for VisitNonterminal or NamedFun calls - need to add parser as first argument
-        if isinstance(expr.func, (VisitNonterminal, NamedFun)):
+        # Check for parse/print nonterminal or NamedFun calls - need to add receiver as first argument
+        if isinstance(expr.func, (ParseNonterminal, PrintNonterminal, NamedFun)):
             f = self.generate_lines(expr.func, lines, indent)
             args: List[str] = []
             for arg in expr.args:
                 arg_code = self.generate_lines(arg, lines, indent)
                 assert arg_code is not None, "Function argument should not contain a return"
                 args.append(arg_code)
-            # Prepend parser as first argument
-            all_args = ["parser"] + args
+            # PrintNonterminal uses "pp" (PrettyPrinter), others use "parser"
+            receiver = "pp" if isinstance(expr.func, PrintNonterminal) else "parser"
+            all_args = [receiver] + args
             args_code = ', '.join(all_args)
             if self._is_void_expr(expr):
                 lines.append(f"{indent}{f}({args_code})")
@@ -393,31 +410,51 @@ class JuliaCodeGenerator(CodeGenerator):
         """
         raise ValueError(f"OneOf should only appear in Call(OneOf(...), [value]) pattern: {expr}")
 
-    def _generate_parse_def(self, expr: VisitNonterminalDef, indent: str) -> str:
-        """Generate a parse method definition."""
-        func_name = f"parse_{expr.nonterminal.name}"
+    def _generate_julia_function(self, func_name: str, first_param: str, params, body,
+                                  return_type, indent: str) -> str:
+        """Generate a Julia function definition with a typed first parameter.
 
-        params = ["parser::Parser"]
-        for param in expr.params:
+        Args:
+            func_name: The function name.
+            first_param: The first parameter string (e.g. "parser::Parser").
+            params: List of Param objects (each with .name and .type).
+            body: The function body expression, or None for an empty body.
+            return_type: The return type, or None.
+            indent: Indentation prefix.
+        """
+        typed_params = [first_param]
+        for param in params:
             escaped_name = self.escape_identifier(param.name)
             type_hint = self.gen_type(param.type)
-            params.append(f"{escaped_name}::{type_hint}")
+            typed_params.append(f"{escaped_name}::{type_hint}")
 
-        params_str = ', '.join(params)
+        params_str = ', '.join(typed_params)
+        ret_hint = f"::{self.gen_type(return_type)}" if return_type else ""
 
-        ret_hint = f"::{self.gen_type(expr.return_type)}" if expr.return_type else ""
-
-        if expr.body is None:
-            body_code = f"{indent}    nothing"
+        if body is None:
+            body_code = f"{indent}{self.indent_str}{self.gen_empty_body()}"
         else:
             body_lines: List[str] = []
-            body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
-            # Only add return if the body didn't already return
+            body_inner = self.generate_lines(body, body_lines, indent + self.indent_str)
             if body_inner is not None:
-                body_lines.append(f"{indent}    return {body_inner}")
+                body_lines.append(f"{indent}{self.indent_str}{self.gen_return(body_inner)}")
             body_code = "\n".join(body_lines)
 
         return f"{indent}function {func_name}({params_str}){ret_hint}\n{body_code}\n{indent}end"
+
+    def _generate_parse_def(self, expr: ParseNonterminalDef, indent: str) -> str:
+        """Generate a parse method definition."""
+        return self._generate_julia_function(
+            f"parse_{expr.nonterminal.name}", "parser::Parser",
+            expr.params, expr.body, expr.return_type, indent
+        )
+
+    def _generate_pretty_def(self, expr: PrintNonterminalDef, indent: str) -> str:
+        """Generate a pretty-print function definition."""
+        return self._generate_julia_function(
+            f"pretty_{expr.nonterminal.name}", "pp::PrettyPrinter",
+            expr.params, expr.body, expr.return_type, indent
+        )
 
     def format_literal_token_spec(self, escaped_literal: str) -> str:
         return f'        ("LITERAL", r"{escaped_literal}", identity),'
@@ -431,24 +468,10 @@ class JuliaCodeGenerator(CodeGenerator):
 
     def generate_method_def(self, expr: FunDef, indent: str) -> str:
         """Generate a function definition with parser as first parameter."""
-        func_name = self.escape_identifier(expr.name)
-        params = [(self.escape_identifier(p.name), self.gen_type(p.type)) for p in expr.params]
-        params = [("parser", "Parser")] + params
-        ret_type = self.gen_type(expr.return_type) if expr.return_type else None
-
-        header = self.gen_func_def_header(func_name, params, ret_type)
-
-        if expr.body is None:
-            body_code = f"{indent}{self.indent_str}{self.gen_empty_body()}"
-        else:
-            lines: List[str] = []
-            body_inner = self.generate_lines(expr.body, lines, indent + self.indent_str)
-            if body_inner is not None:
-                lines.append(f"{indent}{self.indent_str}{self.gen_return(body_inner)}")
-            body_code = "\n".join(lines)
-
-        end = self.gen_func_def_end()
-        return f"{indent}{header}\n{body_code}\n{indent}{end}"
+        return self._generate_julia_function(
+            self.escape_identifier(expr.name), "parser::Parser",
+            expr.params, expr.body, expr.return_type, indent
+        )
 
 def escape_identifier(name: str) -> str:
     """Escape a Julia identifier if it's a keyword."""
@@ -467,7 +490,7 @@ def generate_julia_lines(expr: TargetExpr, lines: List[str], indent: str = "") -
     return JuliaCodeGenerator().generate_lines(expr, lines, indent)
 
 
-def generate_julia_def(expr: Union[FunDef, VisitNonterminalDef], indent: str = "") -> str:
+def generate_julia_def(expr: Union[FunDef, ParseNonterminalDef, PrintNonterminalDef], indent: str = "") -> str:
     """Generate Julia function definition."""
     return JuliaCodeGenerator().generate_def(expr, indent)
 
