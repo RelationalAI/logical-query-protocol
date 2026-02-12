@@ -20,7 +20,7 @@ from typing import Dict, List, Optional, Tuple, Set
 
 from .grammar import Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
 from .target import (
-    TargetType, BaseType, MessageType, ListType, OptionType, TupleType, DictType, FunctionType,
+    TargetType, BaseType, MessageType, SequenceType, ListType, OptionType, TupleType, DictType, FunctionType,
     TargetExpr, Var, Lit, NamedFun, NewMessage, EnumValue, Call, Lambda,
     Let, IfElse, Seq, ListExpr, GetElement, GetField, FunDef, OneOf, Assign, Return
 )
@@ -959,7 +959,10 @@ def _annotation_to_type(node: ast.AST, line: int) -> TargetType:
     elif isinstance(node, ast.Subscript):
         if isinstance(node.value, ast.Name):
             container = node.value.id
-            if container == 'List' or container == 'list':
+            if container == 'Sequence':
+                elem_type = _annotation_to_type(node.slice, line)
+                return SequenceType(elem_type)
+            elif container == 'List' or container == 'list':
                 elem_type = _annotation_to_type(node.slice, line)
                 return ListType(elem_type)
             elif container == 'Optional':

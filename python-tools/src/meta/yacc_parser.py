@@ -59,7 +59,7 @@ from .grammar import (
     Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence, Rule,
     GrammarConfig, TerminalDef
 )
-from .target import TargetType, BaseType, MessageType, ListType, OptionType, TupleType
+from .target import TargetType, BaseType, MessageType, SequenceType, ListType, OptionType, TupleType
 
 # Import from action parser
 from .yacc_action_parser import (
@@ -91,7 +91,11 @@ def parse_type(text: str) -> TargetType:
         args_text = bracket_match.group(2)
         args = _split_bracket_type_args(args_text)
 
-        if constructor == "List":
+        if constructor == "Sequence":
+            if len(args) != 1:
+                raise YaccGrammarError(f"Sequence type requires exactly one argument: {text}")
+            return SequenceType(parse_type(args[0]))
+        elif constructor == "List":
             if len(args) != 1:
                 raise YaccGrammarError(f"List type requires exactly one argument: {text}")
             return ListType(parse_type(args[0]))
@@ -598,7 +602,7 @@ def _proto_type_to_target_type(proto_type: str, is_repeated: bool) -> TargetType
         base_type = MessageType('logic', proto_type)
 
     if is_repeated:
-        return ListType(base_type)
+        return SequenceType(base_type)
     return base_type
 
 
