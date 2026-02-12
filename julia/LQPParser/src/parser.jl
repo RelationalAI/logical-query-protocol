@@ -425,63 +425,63 @@ end
 
 function construct_csv_config(parser::Parser, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.CSVConfig
     config = Dict(config_dict)
-    _t946 = _extract_value_int32(parser, get(config, "csv_header_row", nothing), 1)
-    header_row = _t946
-    _t947 = _extract_value_int64(parser, get(config, "csv_skip", nothing), 0)
-    skip = _t947
-    _t948 = _extract_value_string(parser, get(config, "csv_new_line", nothing), "")
-    new_line = _t948
-    _t949 = _extract_value_string(parser, get(config, "csv_delimiter", nothing), ",")
-    delimiter = _t949
-    _t950 = _extract_value_string(parser, get(config, "csv_quotechar", nothing), "\"")
-    quotechar = _t950
-    _t951 = _extract_value_string(parser, get(config, "csv_escapechar", nothing), "\"")
-    escapechar = _t951
-    _t952 = _extract_value_string(parser, get(config, "csv_comment", nothing), "")
-    comment = _t952
-    _t953 = _extract_value_string_list(parser, get(config, "csv_missing_strings", nothing), String[])
-    missing_strings = _t953
-    _t954 = _extract_value_string(parser, get(config, "csv_decimal_separator", nothing), ".")
-    decimal_separator = _t954
-    _t955 = _extract_value_string(parser, get(config, "csv_encoding", nothing), "utf-8")
-    encoding = _t955
-    _t956 = _extract_value_string(parser, get(config, "csv_compression", nothing), "auto")
-    compression = _t956
-    _t957 = Proto.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression)
-    return _t957
+    _t945 = _extract_value_int32(parser, get(config, "csv_header_row", nothing), 1)
+    header_row = _t945
+    _t946 = _extract_value_int64(parser, get(config, "csv_skip", nothing), 0)
+    skip = _t946
+    _t947 = _extract_value_string(parser, get(config, "csv_new_line", nothing), "")
+    new_line = _t947
+    _t948 = _extract_value_string(parser, get(config, "csv_delimiter", nothing), ",")
+    delimiter = _t948
+    _t949 = _extract_value_string(parser, get(config, "csv_quotechar", nothing), "\"")
+    quotechar = _t949
+    _t950 = _extract_value_string(parser, get(config, "csv_escapechar", nothing), "\"")
+    escapechar = _t950
+    _t951 = _extract_value_string(parser, get(config, "csv_comment", nothing), "")
+    comment = _t951
+    _t952 = _extract_value_string_list(parser, get(config, "csv_missing_strings", nothing), String[])
+    missing_strings = _t952
+    _t953 = _extract_value_string(parser, get(config, "csv_decimal_separator", nothing), ".")
+    decimal_separator = _t953
+    _t954 = _extract_value_string(parser, get(config, "csv_encoding", nothing), "utf-8")
+    encoding = _t954
+    _t955 = _extract_value_string(parser, get(config, "csv_compression", nothing), "auto")
+    compression = _t955
+    _t956 = Proto.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression)
+    return _t956
 end
 
 function construct_betree_info(parser::Parser, key_types::Vector{Proto.var"#Type"}, value_types::Vector{Proto.var"#Type"}, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.BeTreeInfo
     config = Dict(config_dict)
-    _t958 = _try_extract_value_float64(parser, get(config, "betree_config_epsilon", nothing))
-    epsilon = _t958
-    _t959 = _try_extract_value_int64(parser, get(config, "betree_config_max_pivots", nothing))
-    max_pivots = _t959
-    _t960 = _try_extract_value_int64(parser, get(config, "betree_config_max_deltas", nothing))
-    max_deltas = _t960
-    _t961 = _try_extract_value_int64(parser, get(config, "betree_config_max_leaf", nothing))
-    max_leaf = _t961
-    _t962 = Proto.BeTreeConfig(epsilon=epsilon, max_pivots=max_pivots, max_deltas=max_deltas, max_leaf=max_leaf)
-    storage_config = _t962
-    _t963 = _try_extract_value_uint128(parser, get(config, "betree_locator_root_pageid", nothing))
-    root_pageid = _t963
-    _t964 = _try_extract_value_bytes(parser, get(config, "betree_locator_inline_data", nothing))
-    inline_data = _t964
-    _t965 = _try_extract_value_int64(parser, get(config, "betree_locator_element_count", nothing))
-    element_count = _t965
-    _t966 = _try_extract_value_int64(parser, get(config, "betree_locator_tree_height", nothing))
-    tree_height = _t966
-    _t967 = Proto.BeTreeLocator(location=(!isnothing(root_pageid) ? OneOf(:root_pageid, root_pageid) : (!isnothing(inline_data) ? OneOf(:inline_data, inline_data) : nothing)), element_count=element_count, tree_height=tree_height)
-    relation_locator = _t967
-    _t968 = Proto.BeTreeInfo(key_types=key_types, value_types=value_types, storage_config=storage_config, relation_locator=relation_locator)
-    return _t968
+    _t957 = _try_extract_value_float64(parser, get(config, "betree_config_epsilon", nothing))
+    epsilon = _t957
+    _t958 = _try_extract_value_int64(parser, get(config, "betree_config_max_pivots", nothing))
+    max_pivots = _t958
+    _t959 = _try_extract_value_int64(parser, get(config, "betree_config_max_deltas", nothing))
+    max_deltas = _t959
+    _t960 = _try_extract_value_int64(parser, get(config, "betree_config_max_leaf", nothing))
+    max_leaf = _t960
+    _t961 = Proto.BeTreeConfig(epsilon=epsilon, max_pivots=max_pivots, max_deltas=max_deltas, max_leaf=max_leaf)
+    storage_config = _t961
+    _t962 = _try_extract_value_uint128(parser, get(config, "betree_locator_root_pageid", nothing))
+    root_pageid = _t962
+    _t963 = _try_extract_value_bytes(parser, get(config, "betree_locator_inline_data", nothing))
+    inline_data = _t963
+    _t964 = _try_extract_value_int64(parser, get(config, "betree_locator_element_count", nothing))
+    element_count = _t964
+    _t965 = _try_extract_value_int64(parser, get(config, "betree_locator_tree_height", nothing))
+    tree_height = _t965
+    _t966 = Proto.BeTreeLocator(location=(!isnothing(root_pageid) ? OneOf(:root_pageid, root_pageid) : (!isnothing(inline_data) ? OneOf(:inline_data, inline_data) : nothing)), element_count=element_count, tree_height=tree_height)
+    relation_locator = _t966
+    _t967 = Proto.BeTreeInfo(key_types=key_types, value_types=value_types, storage_config=storage_config, relation_locator=relation_locator)
+    return _t967
 end
 
 function default_configure(parser::Parser)::Proto.Configure
-    _t969 = Proto.IVMConfig(level=Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF)
-    ivm_config = _t969
-    _t970 = Proto.Configure(semantics_version=0, ivm_config=ivm_config)
-    return _t970
+    _t968 = Proto.IVMConfig(level=Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF)
+    ivm_config = _t968
+    _t969 = Proto.Configure(semantics_version=0, ivm_config=ivm_config)
+    return _t969
 end
 
 function construct_configure(parser::Parser, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.Configure
@@ -503,32 +503,241 @@ function construct_configure(parser::Parser, config_dict::Vector{Tuple{String, P
             end
         end
     end
-    _t971 = Proto.IVMConfig(level=maintenance_level)
-    ivm_config = _t971
-    _t972 = _extract_value_int64(parser, get(config, "semantics_version", nothing), 0)
-    semantics_version = _t972
-    _t973 = Proto.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
-    return _t973
+    _t970 = Proto.IVMConfig(level=maintenance_level)
+    ivm_config = _t970
+    _t971 = _extract_value_int64(parser, get(config, "semantics_version", nothing), 0)
+    semantics_version = _t971
+    _t972 = Proto.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
+    return _t972
 end
 
 function export_csv_config(parser::Parser, path::String, columns::Vector{Proto.ExportCSVColumn}, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.ExportCSVConfig
     config = Dict(config_dict)
-    _t974 = _extract_value_int64(parser, get(config, "partition_size", nothing), 0)
-    partition_size = _t974
-    _t975 = _extract_value_string(parser, get(config, "compression", nothing), "")
-    compression = _t975
-    _t976 = _extract_value_boolean(parser, get(config, "syntax_header_row", nothing), true)
-    syntax_header_row = _t976
-    _t977 = _extract_value_string(parser, get(config, "syntax_missing_string", nothing), "")
-    syntax_missing_string = _t977
-    _t978 = _extract_value_string(parser, get(config, "syntax_delim", nothing), ",")
-    syntax_delim = _t978
-    _t979 = _extract_value_string(parser, get(config, "syntax_quotechar", nothing), "\"")
-    syntax_quotechar = _t979
-    _t980 = _extract_value_string(parser, get(config, "syntax_escapechar", nothing), "\\")
-    syntax_escapechar = _t980
-    _t981 = Proto.ExportCSVConfig(path=path, data_columns=columns, partition_size=partition_size, compression=compression, syntax_header_row=syntax_header_row, syntax_missing_string=syntax_missing_string, syntax_delim=syntax_delim, syntax_quotechar=syntax_quotechar, syntax_escapechar=syntax_escapechar)
+    _t973 = _extract_value_int64(parser, get(config, "partition_size", nothing), 0)
+    partition_size = _t973
+    _t974 = _extract_value_string(parser, get(config, "compression", nothing), "")
+    compression = _t974
+    _t975 = _extract_value_boolean(parser, get(config, "syntax_header_row", nothing), true)
+    syntax_header_row = _t975
+    _t976 = _extract_value_string(parser, get(config, "syntax_missing_string", nothing), "")
+    syntax_missing_string = _t976
+    _t977 = _extract_value_string(parser, get(config, "syntax_delim", nothing), ",")
+    syntax_delim = _t977
+    _t978 = _extract_value_string(parser, get(config, "syntax_quotechar", nothing), "\"")
+    syntax_quotechar = _t978
+    _t979 = _extract_value_string(parser, get(config, "syntax_escapechar", nothing), "\\")
+    syntax_escapechar = _t979
+    _t980 = Proto.ExportCSVConfig(path=path, data_columns=columns, partition_size=partition_size, compression=compression, syntax_header_row=syntax_header_row, syntax_missing_string=syntax_missing_string, syntax_delim=syntax_delim, syntax_quotechar=syntax_quotechar, syntax_escapechar=syntax_escapechar)
+    return _t980
+end
+
+function _make_value_int32(parser::Parser, v::Int32)::Proto.Value
+    _t981 = Proto.Value(value=OneOf(:int_value, Int64(v)))
     return _t981
+end
+
+function _make_value_int64(parser::Parser, v::Int64)::Proto.Value
+    _t982 = Proto.Value(value=OneOf(:int_value, v))
+    return _t982
+end
+
+function _make_value_float64(parser::Parser, v::Float64)::Proto.Value
+    _t983 = Proto.Value(value=OneOf(:float_value, v))
+    return _t983
+end
+
+function _make_value_string(parser::Parser, v::String)::Proto.Value
+    _t984 = Proto.Value(value=OneOf(:string_value, v))
+    return _t984
+end
+
+function _make_value_boolean(parser::Parser, v::Bool)::Proto.Value
+    _t985 = Proto.Value(value=OneOf(:boolean_value, v))
+    return _t985
+end
+
+function _make_value_uint128(parser::Parser, v::Proto.UInt128Value)::Proto.Value
+    _t986 = Proto.Value(value=OneOf(:uint128_value, v))
+    return _t986
+end
+
+function is_default_configure(parser::Parser, cfg::Proto.Configure)::Bool
+    if cfg.semantics_version != 0
+        return false
+    end
+    if cfg.ivm_config.level != Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
+        return false
+    end
+    return true
+end
+
+function deconstruct_configure(parser::Parser, msg::Proto.Configure)::Vector{Tuple{String, Proto.Value}}
+    result = Tuple{String, Proto.Value}[]
+    if msg.ivm_config.level == Proto.MaintenanceLevel.MAINTENANCE_LEVEL_AUTO
+        _t987 = _make_value_string(parser, "auto")
+        push!(result, ("ivm.maintenance_level", _t987,))
+    else
+        if msg.ivm_config.level == Proto.MaintenanceLevel.MAINTENANCE_LEVEL_ALL
+            _t988 = _make_value_string(parser, "all")
+            push!(result, ("ivm.maintenance_level", _t988,))
+        else
+            if msg.ivm_config.level == Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
+                _t989 = _make_value_string(parser, "off")
+                push!(result, ("ivm.maintenance_level", _t989,))
+            end
+        end
+    end
+    _t990 = _make_value_int64(parser, msg.semantics_version)
+    push!(result, ("semantics_version", _t990,))
+    return sort(result)
+end
+
+function deconstruct_csv_config(parser::Parser, msg::Proto.CSVConfig)::Vector{Tuple{String, Proto.Value}}
+    result = Tuple{String, Proto.Value}[]
+    _t991 = _make_value_int32(parser, msg.header_row)
+    push!(result, ("csv_header_row", _t991,))
+    _t992 = _make_value_int64(parser, msg.skip)
+    push!(result, ("csv_skip", _t992,))
+    if msg.new_line != ""
+        _t993 = _make_value_string(parser, msg.new_line)
+        push!(result, ("csv_new_line", _t993,))
+    end
+    _t994 = _make_value_string(parser, msg.delimiter)
+    push!(result, ("csv_delimiter", _t994,))
+    _t995 = _make_value_string(parser, msg.quotechar)
+    push!(result, ("csv_quotechar", _t995,))
+    _t996 = _make_value_string(parser, msg.escapechar)
+    push!(result, ("csv_escapechar", _t996,))
+    if msg.comment != ""
+        _t997 = _make_value_string(parser, msg.comment)
+        push!(result, ("csv_comment", _t997,))
+    end
+    for missing_string in msg.missing_strings
+        _t998 = _make_value_string(parser, missing_string)
+        push!(result, ("csv_missing_strings", _t998,))
+    end
+    _t999 = _make_value_string(parser, msg.decimal_separator)
+    push!(result, ("csv_decimal_separator", _t999,))
+    _t1000 = _make_value_string(parser, msg.encoding)
+    push!(result, ("csv_encoding", _t1000,))
+    _t1001 = _make_value_string(parser, msg.compression)
+    push!(result, ("csv_compression", _t1001,))
+    return sort(result)
+end
+
+function _maybe_push_float64(parser::Parser, result::Vector{Tuple{String, Proto.Value}}, key::String, val::Union{Nothing, Float64})::Union{Nothing, Union{}}
+    if !isnothing(val)
+        _t1002 = _make_value_float64(parser, val)
+        push!(result, (key, _t1002,))
+    end
+    return nothing
+end
+
+function _maybe_push_int64(parser::Parser, result::Vector{Tuple{String, Proto.Value}}, key::String, val::Union{Nothing, Int64})::Union{Nothing, Union{}}
+    if !isnothing(val)
+        _t1003 = _make_value_int64(parser, val)
+        push!(result, (key, _t1003,))
+    end
+    return nothing
+end
+
+function _maybe_push_uint128(parser::Parser, result::Vector{Tuple{String, Proto.Value}}, key::String, val::Union{Nothing, Proto.UInt128Value})::Union{Nothing, Union{}}
+    if !isnothing(val)
+        _t1004 = _make_value_uint128(parser, val)
+        push!(result, (key, _t1004,))
+    end
+    return nothing
+end
+
+function _maybe_push_bytes_as_string(parser::Parser, result::Vector{Tuple{String, Proto.Value}}, key::String, val::Union{Nothing, Vector{UInt8}})::Union{Nothing, Union{}}
+    if !isnothing(val)
+        _t1005 = _make_value_string(parser, String(val))
+        push!(result, (key, _t1005,))
+    end
+    return nothing
+end
+
+function deconstruct_betree_info_config(parser::Parser, msg::Proto.BeTreeInfo)::Vector{Tuple{String, Proto.Value}}
+    result = Tuple{String, Proto.Value}[]
+    _t1006 = _make_value_float64(parser, msg.storage_config.epsilon)
+    push!(result, ("betree_config_epsilon", _t1006,))
+    _t1007 = _make_value_int64(parser, msg.storage_config.max_pivots)
+    push!(result, ("betree_config_max_pivots", _t1007,))
+    _t1008 = _make_value_int64(parser, msg.storage_config.max_deltas)
+    push!(result, ("betree_config_max_deltas", _t1008,))
+    _t1009 = _make_value_int64(parser, msg.storage_config.max_leaf)
+    push!(result, ("betree_config_max_leaf", _t1009,))
+    if _has_proto_field(msg.relation_locator, Symbol("root_pageid"))
+        _maybe_push_uint128(parser, result, "betree_locator_root_pageid", _get_oneof_field(msg.relation_locator, :root_pageid))
+    end
+    if _has_proto_field(msg.relation_locator, Symbol("inline_data"))
+        _maybe_push_bytes_as_string(parser, result, "betree_locator_inline_data", _get_oneof_field(msg.relation_locator, :inline_data))
+    end
+    _t1010 = _make_value_int64(parser, msg.relation_locator.element_count)
+    push!(result, ("betree_locator_element_count", _t1010,))
+    _t1011 = _make_value_int64(parser, msg.relation_locator.tree_height)
+    push!(result, ("betree_locator_tree_height", _t1011,))
+    return sort(result)
+end
+
+function deconstruct_export_csv_config(parser::Parser, msg::Proto.ExportCSVConfig)::Vector{Tuple{String, Proto.Value}}
+    result = Tuple{String, Proto.Value}[]
+    if !isnothing(msg.partition_size)
+        _t1012 = _make_value_int64(parser, msg.partition_size)
+        push!(result, ("partition_size", _t1012,))
+    end
+    if !isnothing(msg.compression)
+        _t1013 = _make_value_string(parser, msg.compression)
+        push!(result, ("compression", _t1013,))
+    end
+    if !isnothing(msg.syntax_header_row)
+        _t1014 = _make_value_boolean(parser, msg.syntax_header_row)
+        push!(result, ("syntax_header_row", _t1014,))
+    end
+    if !isnothing(msg.syntax_missing_string)
+        _t1015 = _make_value_string(parser, msg.syntax_missing_string)
+        push!(result, ("syntax_missing_string", _t1015,))
+    end
+    if !isnothing(msg.syntax_delim)
+        _t1016 = _make_value_string(parser, msg.syntax_delim)
+        push!(result, ("syntax_delim", _t1016,))
+    end
+    if !isnothing(msg.syntax_quotechar)
+        _t1017 = _make_value_string(parser, msg.syntax_quotechar)
+        push!(result, ("syntax_quotechar", _t1017,))
+    end
+    if !isnothing(msg.syntax_escapechar)
+        _t1018 = _make_value_string(parser, msg.syntax_escapechar)
+        push!(result, ("syntax_escapechar", _t1018,))
+    end
+    return sort(result)
+end
+
+function deconstruct_relation_id_string(parser::Parser, msg::Proto.RelationId)::Union{Nothing, String}
+    name = relation_id_to_string(pp, msg)
+    if name != ""
+        return name
+    end
+    return nothing
+end
+
+function deconstruct_relation_id_uint128(parser::Parser, msg::Proto.RelationId)::Union{Nothing, Proto.UInt128Value}
+    name = relation_id_to_string(pp, msg)
+    if name == ""
+        return relation_id_to_uint128(pp, msg)
+    end
+    return nothing
+end
+
+function deconstruct_bindings(parser::Parser, abs::Proto.Abstraction)::Tuple{Vector{Proto.Binding}, Vector{Proto.Binding}}
+    n = length(abs.vars)
+    return (abs.vars[0:n], Proto.Binding[],)
+end
+
+function deconstruct_bindings_with_arity(parser::Parser, abs::Proto.Abstraction, value_arity::Int64)::Tuple{Vector{Proto.Binding}, Vector{Proto.Binding}}
+    n = length(abs.vars)
+    key_end = (n - value_arity)
+    return (abs.vars[0:key_end], abs.vars[key_end:n],)
 end
 
 # --- Parse functions ---
@@ -3325,31 +3534,25 @@ end
 function parse_output(parser::Parser)::Proto.Output
     consume_literal!(parser, "(")
     consume_literal!(parser, "output")
-    
-    if (match_lookahead_literal(parser, ":", 0) && match_lookahead_terminal(parser, "SYMBOL", 1))
-        _t927 = parse_name(parser)
-        _t926 = _t927
-    else
-        _t926 = nothing
-    end
+    _t926 = parse_name(parser)
     name336 = _t926
-    _t928 = parse_relation_id(parser)
-    relation_id337 = _t928
+    _t927 = parse_relation_id(parser)
+    relation_id337 = _t927
     consume_literal!(parser, ")")
-    _t929 = Proto.Output(name=(!isnothing(name336) ? name336 : "output"), relation_id=relation_id337)
-    return _t929
+    _t928 = Proto.Output(name=name336, relation_id=relation_id337)
+    return _t928
 end
 
 function parse_what_if(parser::Parser)::Proto.WhatIf
     consume_literal!(parser, "(")
     consume_literal!(parser, "what_if")
-    _t930 = parse_name(parser)
-    name338 = _t930
-    _t931 = parse_epoch(parser)
-    epoch339 = _t931
+    _t929 = parse_name(parser)
+    name338 = _t929
+    _t930 = parse_epoch(parser)
+    epoch339 = _t930
     consume_literal!(parser, ")")
-    _t932 = Proto.WhatIf(branch=name338, epoch=epoch339)
-    return _t932
+    _t931 = Proto.WhatIf(branch=name338, epoch=epoch339)
+    return _t931
 end
 
 function parse_abort(parser::Parser)::Proto.Abort
@@ -3357,41 +3560,41 @@ function parse_abort(parser::Parser)::Proto.Abort
     consume_literal!(parser, "abort")
     
     if (match_lookahead_literal(parser, ":", 0) && match_lookahead_terminal(parser, "SYMBOL", 1))
-        _t934 = parse_name(parser)
-        _t933 = _t934
+        _t933 = parse_name(parser)
+        _t932 = _t933
     else
-        _t933 = nothing
+        _t932 = nothing
     end
-    name340 = _t933
-    _t935 = parse_relation_id(parser)
-    relation_id341 = _t935
+    name340 = _t932
+    _t934 = parse_relation_id(parser)
+    relation_id341 = _t934
     consume_literal!(parser, ")")
-    _t936 = Proto.Abort(name=(!isnothing(name340) ? name340 : "abort"), relation_id=relation_id341)
-    return _t936
+    _t935 = Proto.Abort(name=(!isnothing(name340) ? name340 : "abort"), relation_id=relation_id341)
+    return _t935
 end
 
 function parse_export(parser::Parser)::Proto.Export
     consume_literal!(parser, "(")
     consume_literal!(parser, "export")
-    _t937 = parse_export_csv_config(parser)
-    export_csv_config342 = _t937
+    _t936 = parse_export_csv_config(parser)
+    export_csv_config342 = _t936
     consume_literal!(parser, ")")
-    _t938 = Proto.Export(export_config=OneOf(:csv_config, export_csv_config342))
-    return _t938
+    _t937 = Proto.Export(export_config=OneOf(:csv_config, export_csv_config342))
+    return _t937
 end
 
 function parse_export_csv_config(parser::Parser)::Proto.ExportCSVConfig
     consume_literal!(parser, "(")
     consume_literal!(parser, "export_csv_config")
-    _t939 = parse_export_csv_path(parser)
-    export_csv_path343 = _t939
-    _t940 = parse_export_csv_columns(parser)
-    export_csv_columns344 = _t940
-    _t941 = parse_config_dict(parser)
-    config_dict345 = _t941
+    _t938 = parse_export_csv_path(parser)
+    export_csv_path343 = _t938
+    _t939 = parse_export_csv_columns(parser)
+    export_csv_columns344 = _t939
+    _t940 = parse_config_dict(parser)
+    config_dict345 = _t940
     consume_literal!(parser, ")")
-    _t942 = export_csv_config(parser, export_csv_path343, export_csv_columns344, config_dict345)
-    return _t942
+    _t941 = export_csv_config(parser, export_csv_path343, export_csv_columns344, config_dict345)
+    return _t941
 end
 
 function parse_export_csv_path(parser::Parser)::String
@@ -3408,8 +3611,8 @@ function parse_export_csv_columns(parser::Parser)::Vector{Proto.ExportCSVColumn}
     xs347 = Proto.ExportCSVColumn[]
     cond348 = match_lookahead_literal(parser, "(", 0)
     while cond348
-        _t943 = parse_export_csv_column(parser)
-        item349 = _t943
+        _t942 = parse_export_csv_column(parser)
+        item349 = _t942
         push!(xs347, item349)
         cond348 = match_lookahead_literal(parser, "(", 0)
     end
@@ -3422,11 +3625,11 @@ function parse_export_csv_column(parser::Parser)::Proto.ExportCSVColumn
     consume_literal!(parser, "(")
     consume_literal!(parser, "column")
     string351 = consume_terminal!(parser, "STRING")
-    _t944 = parse_relation_id(parser)
-    relation_id352 = _t944
+    _t943 = parse_relation_id(parser)
+    relation_id352 = _t943
     consume_literal!(parser, ")")
-    _t945 = Proto.ExportCSVColumn(column_name=string351, column_data=relation_id352)
-    return _t945
+    _t944 = Proto.ExportCSVColumn(column_name=string351, column_data=relation_id352)
+    return _t944
 end
 
 
