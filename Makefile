@@ -7,8 +7,6 @@
 #   make parser-X     Regenerate a single parser (X = python, julia, go).
 #   make force-parsers      Force-regenerate all parsers.
 #   make force-parser-X     Force-regenerate a single parser.
-#   make printers     Regenerate pretty printers from the grammar.
-#   make printer-X    Regenerate a single printer (X = python, go, julia).
 #   make test         Run tests for all languages.
 #   make test-X       Run tests for one language (X = python, julia, go).
 #   make clean        Remove temporary generated files.
@@ -44,11 +42,6 @@ PY_PARSER := python-tools/src/lqp/gen/parser.py
 JL_PARSER := julia/LQPParser/src/parser.jl
 GO_PARSER := go/src/parser.go
 
-# Generated pretty printer outputs
-PY_PRINTER := python-tools/src/lqp/gen/pretty.py
-JL_PRINTER := julia/LQPParser/src/pretty_printer.jl
-GO_PRINTER := go/src/pretty_printer.go
-
 # Parser templates
 PY_TEMPLATE := python-tools/src/meta/templates/parser.py.template
 JL_TEMPLATE := python-tools/src/meta/templates/parser.jl.template
@@ -65,12 +58,10 @@ META_PROTO_ARGS := \
 .PHONY: all protobuf protobuf-lint protobuf-py-go protobuf-julia \
 	parsers parser-python parser-julia parser-go \
 	force-parsers force-parser-python force-parser-julia force-parser-go \
-	printers printer-python printer-julia printer-go \
-	force-printers force-printer-python force-printer-julia force-printer-go \
 	test test-python test-julia test-go check-python \
 	clean
 
-all: protobuf parsers printers
+all: protobuf parsers
 
 # ---------- protobuf build (replaces ./build script) ----------
 
@@ -131,31 +122,6 @@ force-parser-julia: $(JL_PROTO_GEN)
 
 force-parser-go: $(PY_GO_PROTO_GEN)
 	$(META_CLI) $(META_PROTO_ARGS) --parser go -o ../go/src/parser.go
-
-# ---------- pretty printer generation ----------
-
-printers: printer-python printer-julia printer-go
-
-printer-python: $(PY_PRINTER)
-$(PY_PRINTER): $(PY_GO_PROTO_GEN) $(GRAMMAR)
-	$(META_CLI) $(META_PROTO_ARGS) --printer python -o src/lqp/gen/pretty.py
-
-printer-julia: $(JL_PROTO_GEN)
-	@echo "Pretty printer generation for Julia is not yet implemented."
-
-printer-go: $(PY_GO_PROTO_GEN)
-	@echo "Pretty printer generation for Go is not yet implemented."
-
-force-printers: force-printer-python force-printer-julia force-printer-go
-
-force-printer-python: $(PY_GO_PROTO_GEN)
-	$(META_CLI) $(META_PROTO_ARGS) --printer python -o src/lqp/gen/pretty.py
-
-force-printer-julia: $(JL_PROTO_GEN)
-	@echo "Pretty printer generation for Julia is not yet implemented."
-
-force-printer-go: $(PY_GO_PROTO_GEN)
-	@echo "Pretty printer generation for Go is not yet implemented."
 
 # ---------- testing ----------
 

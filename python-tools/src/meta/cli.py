@@ -71,20 +71,11 @@ def parse_args():
         choices=["ir", "python", "julia", "go"],
         help="Output the generated parser (ir, python, julia, or go)"
     )
-    output_group.add_argument(
-        "--printer",
-        type=str,
-        choices=["ir", "python", "julia"],
-        help="Output the generated pretty printer (ir, python, or julia)"
-    )
-
     args = parser.parse_args()
 
-    # --grammar is required for --parser and --printer
+    # --grammar is required for --parser
     if args.parser and not args.grammar:
         parser.error("--grammar is required when using --parser")
-    if args.printer and not args.grammar:
-        parser.error("--grammar is required when using --printer")
 
     return args
 
@@ -140,14 +131,6 @@ def run(args) -> int:
     # Transform messages dict from {name: ProtoMessage} to {(module, name): ProtoMessage}
     proto_messages = {(msg.module, name): msg for name, msg in proto_parser.messages.items()}
 
-    def make_command_line(*extra_args):
-        """Build a reproducible command line using basenames to avoid embedding absolute paths."""
-        parts = ["python -m meta.cli"]
-        parts += [f.name for f in args.proto_files]
-        parts += ["--grammar", args.grammar.name]
-        parts += list(extra_args)
-        return " ".join(parts)
-
     # Load grammar rules from file (yacc format)
     grammar_config = load_yacc_grammar_file(grammar_path, proto_messages, proto_parser.enums)
 
@@ -194,8 +177,8 @@ def run(args) -> int:
 
             return 1
 
-    # Output grammar if -o is specified and not generating parser or printer
-    if args.output and not args.parser and not args.printer:
+    # Output grammar if -o is specified and not generating parser
+    if args.output and not args.parser:
         output_text = grammar.print_grammar_yacc()
         args.output.write_text(output_text)
         print(f"Grammar written to {args.output}")
@@ -229,25 +212,6 @@ def run(args) -> int:
                 from .parser_gen_go import generate_parser_go
                 output_text = generate_parser_go(grammar, command_line, proto_messages)
             write_output(output_text, args.output, f"Generated parser written to {args.output}")
-
-    if args.printer:
-        if args.printer == "ir":
-            from .pretty_gen import generate_pretty_functions
-            pretty_functions = generate_pretty_functions(grammar, proto_messages)
-            output_lines = []
-            for defn in pretty_functions:
-                output_lines.append(str(defn))
-                output_lines.append("")
-            output_text = "\n".join(output_lines)
-            write_output(output_text, args.output, f"Generated printer IR written to {args.output}")
-        elif args.printer == "python":
-            command_line = make_command_line("--printer", args.printer)
-            from .pretty_gen_python import generate_pretty_printer_python
-            output_text = generate_pretty_printer_python(grammar, command_line, proto_messages)
-            write_output(output_text, args.output, f"Generated pretty printer written to {args.output}")
-        else:
-            print(f"Error: Pretty printer generation for '{args.printer}' is not yet implemented", file=sys.stderr)
-            return 1
 
     return 0
 

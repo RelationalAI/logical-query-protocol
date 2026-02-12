@@ -37,22 +37,6 @@ def parse_lqp_to_proto(filename, use_generated=False, validate=True):
     return lqp_proto
 
 
-def read_bin_to_proto(filename):
-    """Read a protobuf binary file and return a Transaction message."""
-    from lqp.proto.v1 import transactions_pb2
-    with open(filename, "rb") as f:
-        data = f.read()
-    msg = transactions_pb2.Transaction()
-    msg.ParseFromString(data)
-    return msg
-
-
-def pretty_print_proto(lqp_proto):
-    """Pretty-print a protobuf message and return the string."""
-    from lqp.gen.pretty import pretty
-    return pretty(lqp_proto)
-
-
 def process_file(filename, bin, json, validate=True, use_generated=False):
     """Process a single LQP file and output binary and/or JSON."""
     lqp_proto = parse_lqp_to_proto(filename, use_generated, validate)
@@ -139,11 +123,10 @@ def main():
     """Main entry point for the lqp CLI."""
     arg_parser = argparse.ArgumentParser(description="Parse LQP S-expression into Protobuf binary and JSON files.")
     arg_parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {get_package_version()}", help="show program's version number and exit")
-    arg_parser.add_argument("input", help="directory holding .lqp files, or a single .lqp or .bin file")
+    arg_parser.add_argument("input", help="directory holding .lqp files, or a single .lqp file")
     arg_parser.add_argument("--no-validation", action="store_true", help="don't validate parsed LQP")
     arg_parser.add_argument("--bin", action="store_true", help="encode emitted ProtoBuf into binary")
     arg_parser.add_argument("--json", action="store_true", help="encode emitted ProtoBuf into JSON")
-    arg_parser.add_argument("--pretty", action="store_true", help="pretty-print the input as LQP S-expression")
     arg_parser.add_argument("--out", action="store_true", help="write emitted binary or JSON to stdout")
 
     # Parser selection options (mutually exclusive)
@@ -162,32 +145,8 @@ def main():
     if os.path.isfile(args.input):
         filename = args.input
 
-        if filename.endswith(".bin"):
-            lqp_proto = read_bin_to_proto(filename)
-            if args.pretty:
-                sys.stdout.write(pretty_print_proto(lqp_proto))
-            if args.json:
-                lqp_json = MessageToJson(lqp_proto, preserving_proto_field_name=True)
-                if args.out:
-                    sys.stdout.write(lqp_json)
-                else:
-                    basename = os.path.splitext(filename)[0]
-                    json_name = basename + ".json"
-                    with open(json_name, "w") as f:
-                        f.write(lqp_json)
-                    print(f"Successfully wrote {filename} to JSON at {json_name}")
-            if not args.pretty and not args.json:
-                # Default: pretty-print to stdout
-                sys.stdout.write(pretty_print_proto(lqp_proto))
-            return
-
         if not filename.endswith(".lqp"):
-            arg_parser.error(f"The input {filename} does not seem to be an LQP or bin file")
-
-        if args.pretty:
-            lqp_proto = parse_lqp_to_proto(filename, use_generated, validate)
-            sys.stdout.write(pretty_print_proto(lqp_proto))
-            return
+            arg_parser.error(f"The input {filename} does not seem to be an LQP file")
 
         if args.out:
             if args.bin and args.json:
