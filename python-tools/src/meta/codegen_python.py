@@ -49,6 +49,13 @@ class PythonCodeGenerator(CodeGenerator):
     def _register_builtins(self) -> None:
         """Register builtin generators from templates."""
         self.register_builtins_from_templates(PYTHON_TEMPLATES)
+        # Override unwrap_option to emit assert for type narrowing
+        self.register_builtin("unwrap_option", self._gen_unwrap_option_builtin)
+
+    @staticmethod
+    def _gen_unwrap_option_builtin(args, lines, indent):
+        from .codegen_base import BuiltinResult
+        return BuiltinResult(args[0], [f"assert {args[0]} is not None"])
 
     def escape_keyword(self, name: str) -> str:
         return f"{name}_"
