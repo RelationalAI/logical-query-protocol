@@ -91,10 +91,28 @@ $(PY_PROTO_GEN) $(GO_PROTO_GEN): $(PROTO_FILES)
 	cp gen/go/relationalai/lqp/v1/*.pb.go $(GO_PROTO_DIR)/
 	rm -rf gen/python gen/go
 
+# ProtoBuf.jl embeds a timestamp in generated files. To avoid unnecessary
+# diffs and rebuilds, we save the old files before regenerating and restore
+# them if the only difference is the timestamp header (first two lines).
 $(JL_PROTO_GEN): $(PROTO_FILES)
 	buf lint
 	buf breaking --against ".git#branch=main,subdir=proto"
+	@for f in $(JL_PROTO_GEN); do \
+		[ -f "$$f" ] && cp -p "$$f" "$$f.prev"; \
+	done
 	cd julia && julia --project=LQPParser generate_proto.jl
+	@for f in $(JL_PROTO_GEN); do \
+		if [ -f "$$f.prev" ]; then \
+			tail -n +3 "$$f.prev" > "$$f.prev.cmp"; \
+			tail -n +3 "$$f" > "$$f.cmp"; \
+			if diff "$$f.prev.cmp" "$$f.cmp" > /dev/null 2>&1; then \
+				mv "$$f.prev" "$$f"; \
+			else \
+				rm "$$f.prev"; \
+			fi; \
+			rm -f "$$f.prev.cmp" "$$f.cmp"; \
+		fi; \
+	done
 
 # ---------- parser generation ----------
 
