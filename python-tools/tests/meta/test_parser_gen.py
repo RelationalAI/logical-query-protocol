@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from meta.grammar import Grammar, Rule, Nonterminal, LitTerminal, NamedTerminal, Option, Star, Sequence
 from meta.target import Lambda, Var, MessageType, VisitNonterminalDef, BaseType, ListType
-from meta.parser_gen import generate_parse_functions, GrammarConflictError, AmbiguousGrammarError
+from meta.parser_gen import generate_parse_functions, GrammarConflictError
 
 
 def test_generate_parse_functions_simple():

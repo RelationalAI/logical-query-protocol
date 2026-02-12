@@ -328,7 +328,7 @@ def test_python_oneof_generation():
     reset_gensym()
     lines = []
     expr = NewMessage("logic", "Value", (("literal", Lit("hello")),))
-    result = gen.generate_lines(expr, lines, "")
+    gen.generate_lines(expr, lines, "")
     code = "\n".join(lines)
     assert "literal='hello'" in code or "literal=" in code
 

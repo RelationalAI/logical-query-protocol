@@ -1,4 +1,3 @@
-import pytest
 from lqp.ir import RelationId, SourceInfo
 
 def test_relation_id_str_no_meta():

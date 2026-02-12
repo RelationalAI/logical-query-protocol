@@ -5,11 +5,9 @@ expression's type. This ensures type soundness of the substitution operation.
 """
 
 from meta.target import (
-    BaseType, ListType, OptionType, TupleType, FunctionType, MessageType,
-    Var, Lit, Call, Builtin, Lambda, Let, IfElse, Seq,
-    TargetType, TargetExpr,
+    BaseType, ListType, OptionType, FunctionType, Var, Lit, Call, Builtin, Lambda, Let, IfElse, Seq,
+    TargetType,
 )
-from meta.target_builtins import make_builtin
 from meta.target_utils import subst, is_subtype, STRING_TYPE, INT64_TYPE, BOOLEAN_TYPE
 
 
