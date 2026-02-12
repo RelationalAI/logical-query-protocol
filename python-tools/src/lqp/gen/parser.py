@@ -270,6 +270,12 @@ class Parser:
     # --- Helper functions ---
 
     @staticmethod
+    def _extract_value_int32(value: Optional[logic_pb2.Value], default: int) -> int:
+        if (value is not None and value.HasField('int_value')):
+            return int(value.int_value)
+        return int(default)
+
+    @staticmethod
     def _extract_value_int64(value: Optional[logic_pb2.Value], default: int) -> int:
         if (value is not None and value.HasField('int_value')):
             return value.int_value
@@ -350,7 +356,7 @@ class Parser:
     @staticmethod
     def construct_csv_config(config_dict: list[tuple[str, logic_pb2.Value]]) -> logic_pb2.CSVConfig:
         config = dict(config_dict)
-        _t946 = Parser._extract_value_int64(config.get('csv_header_row'), 1)
+        _t946 = Parser._extract_value_int32(config.get('csv_header_row'), 1)
         header_row = _t946
         _t947 = Parser._extract_value_int64(config.get('csv_skip'), 0)
         skip = _t947
@@ -372,7 +378,7 @@ class Parser:
         encoding = _t955
         _t956 = Parser._extract_value_string(config.get('csv_compression'), 'auto')
         compression = _t956
-        _t957 = logic_pb2.CSVConfig(header_row=int(header_row), skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression)
+        _t957 = logic_pb2.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression)
         return _t957
 
     @staticmethod
