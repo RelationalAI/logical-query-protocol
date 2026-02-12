@@ -12,6 +12,10 @@ Supported constructs:
 - List literals: [a, b, c]
 - Conditional expressions: x if cond else y
 - Tuple indexing: x[0]
+- Arithmetic operators: +, -, *, /, //, %
+- Comparison operators: ==, !=, <, >, <=, >=, is, is not, in, not in
+- Boolean operators: and, or, not
+- Unary minus: -x
 """
 
 import ast
@@ -20,12 +24,13 @@ from typing import Dict, List, Optional, Tuple, Set
 
 from .grammar import Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
 from .target import (
-    TargetType, BaseType, MessageType, ListType, OptionType, TupleType, DictType, FunctionType,
+    TargetType, BaseType, MessageType, SequenceType, ListType, OptionType, TupleType, DictType, FunctionType,
     TargetExpr, Var, Lit, NamedFun, NewMessage, EnumValue, Call, Lambda,
-    Let, IfElse, Seq, ListExpr, GetElement, GetField, FunDef, OneOf, Assign, Return
+    Let, IfElse, Seq, ListExpr, GetElement, GetField, FunDef, OneOf, Assign, Return,
+    Foreach, ForeachEnumerated
 )
 from .target_builtins import make_builtin
-from .target_utils import type_join
+from .target_utils import type_join, is_subtype
 
 
 class YaccGrammarError(Exception):
@@ -179,12 +184,25 @@ def preprocess_action(text: str) -> str:
         $1, $2, ... -> _dollar_1, _dollar_2, ...
         keyword=expr -> _kw_keyword_=expr (for Python keywords used as field names)
     """
-    # Replace $N with _dollar_N
-    result = re.sub(r'\$(\d+)', r'_dollar_\1', text)
+    # Replace $$ with _dollar_dollar, then $N with _dollar_N
+    result = text.replace('$$', '_dollar_dollar')
+    result = re.sub(r'\$(\d+)', r'_dollar_\1', result)
     # Replace keyword= with _kw_keyword_= for Python keywords used as kwargs
+    # Replace .keyword with ._kw_keyword_ for field access on Python keywords
     for kw in PYTHON_KEYWORDS:
         result = re.sub(rf'\b{kw}=', f'_kw_{kw}_=', result)
+        result = re.sub(rf'\.{kw}\b', f'._kw_{kw}_', result)
     return result
+
+
+def _unescape_keyword(name: str) -> str:
+    """Unescape a preprocessed keyword field name back to its original form.
+
+    _kw_def_ -> def, _kw_class_ -> class, etc.
+    """
+    if name.startswith('_kw_') and name.endswith('_'):
+        return name[4:-1]
+    return name
 
 
 def _unsupported_node_error(node: ast.AST, line: Optional[int], reason: str = "") -> YaccGrammarError:
@@ -193,14 +211,9 @@ def _unsupported_node_error(node: ast.AST, line: Optional[int], reason: str = ""
 
     # Map AST node types to user-friendly descriptions and suggestions
     node_explanations = {
-        'UnaryOp': "Unary operators (like -x, +x, ~x, not x) are not supported. "
-                   "Use builtin functions instead (e.g., 'subtract(0, x)' for negation).",
-        'BinOp': "Binary operators (+, -, *, /, etc.) are not supported. "
-                 "Use builtin functions instead (e.g., 'add(x, y)', 'multiply(x, y)').",
-        'BoolOp': "Boolean operators (and, or) are not supported directly. "
-                  "Use builtin functions instead (e.g., 'and(x, y)', 'or(x, y)').",
-        'Compare': "Comparison operators (==, !=, <, >, etc.) are not supported. "
-                   "Use builtin functions instead (e.g., 'equal(x, y)', 'less_than(x, y)').",
+        'UnaryOp': "Unsupported unary operator. "
+                   "Supported: not, unary minus (-x). "
+                   "Bitwise operators (~x, +x) are not supported.",
         'Lambda': "Python lambda expressions are not supported in actions. "
                   "Define named functions in the %functions section instead.",
         'Dict': "Dictionary literals are not supported. "
@@ -221,8 +234,7 @@ def _unsupported_node_error(node: ast.AST, line: Optional[int], reason: str = ""
         'Slice': "Slice expressions (x[a:b]) are not supported. "
                  "Only constant integer indexing is allowed.",
         'NamedExpr': "Walrus operator (:=) is not supported.",
-        'Tuple': "Tuple literals are not directly supported. "
-                 "Use tuple(a, b, ...) builtin instead.",
+        'Tuple': "Tuple literals (a, b, ...) are supported and map to builtin.tuple().",
     }
 
     base_msg = f"Cannot convert Python '{node_type}' to target IR"
@@ -271,7 +283,9 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
             return Lit(True)
         elif name == 'False':
             return Lit(False)
-        elif name.startswith('_dollar_'):
+        elif name in extra_vars:
+            return Var(name, extra_vars[name])
+        elif name.startswith('_dollar_') and name[8:].isdigit():
             # $N reference - map to the corresponding parameter
             idx = int(name[8:]) - 1  # Convert 1-indexed to 0-indexed
             if idx < 0 or idx >= len(param_info):
@@ -282,8 +296,6 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
             # Find the parameter for this position (skipping literals)
             param_idx = sum(1 for _, t in param_info[:idx] if t is not None)
             return params[param_idx]
-        elif name in extra_vars:
-            return Var(name, extra_vars[name])
         elif name in ctx.functions:
             return _make_named_fun(name, ctx.functions[name])
         else:
@@ -306,14 +318,18 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
             line)
 
     elif isinstance(node, ast.Attribute):
+        attr_name = _unescape_keyword(node.attr)
         if isinstance(node.value, ast.Name):
+            name = node.value.id
+            # Field access on a variable in scope
+            if name in extra_vars:
+                obj = Var(name, extra_vars[name])
+                return _make_get_field(obj, attr_name, ctx, line)
             # module.Message reference
-            return NewMessage(node.value.id, node.attr, ())
-        raise YaccGrammarError(
-            "Field access on expressions is not supported.\n"
-            "  Only 'module.MessageName' for message constructors is allowed.\n"
-            "  Use GetField in target IR for field access on messages.",
-            line)
+            return NewMessage(name, attr_name, ())
+        # Field access on a more complex expression
+        obj = convert(node.value)
+        return _make_get_field(obj, attr_name, ctx, line)
 
     elif isinstance(node, ast.Call):
         func = node.func
@@ -393,6 +409,10 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
                 line)
         return _make_list_expr(elements, line, ctx)
 
+    elif isinstance(node, ast.Tuple):
+        elements = [convert(e) for e in node.elts]
+        return Call(make_builtin('tuple'), elements)
+
     elif isinstance(node, ast.IfExp):
         cond = convert(node.test)
         then_branch = convert(node.body)
@@ -400,19 +420,72 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
         return IfElse(cond, then_branch, else_branch)
 
     elif isinstance(node, ast.Compare):
-        # Handle comparisons: x is None, x is not None
         if len(node.ops) == 1 and len(node.comparators) == 1:
             left = convert(node.left)
+            right = convert(node.comparators[0])
             op = node.ops[0]
             if isinstance(op, ast.Is):
                 if isinstance(node.comparators[0], ast.Constant) and node.comparators[0].value is None:
                     return Call(make_builtin("is_none"), [left])
+                return Call(make_builtin("equal"), [left, right])
             elif isinstance(op, ast.IsNot):
                 if isinstance(node.comparators[0], ast.Constant) and node.comparators[0].value is None:
                     return Call(make_builtin("is_some"), [left])
+                return Call(make_builtin("not_equal"), [left, right])
+            elif isinstance(op, ast.Eq):
+                return Call(make_builtin("equal"), [left, right])
+            elif isinstance(op, ast.NotEq):
+                return Call(make_builtin("not_equal"), [left, right])
+            elif isinstance(op, ast.Lt):
+                return Call(make_builtin("less_than"), [left, right])
+            elif isinstance(op, ast.LtE):
+                return Call(make_builtin("less_equal"), [left, right])
+            elif isinstance(op, ast.Gt):
+                return Call(make_builtin("greater_than"), [left, right])
+            elif isinstance(op, ast.GtE):
+                return Call(make_builtin("greater_equal"), [left, right])
+            elif isinstance(op, ast.In):
+                return Call(make_builtin("string_in_list"), [left, right])
+            elif isinstance(op, ast.NotIn):
+                return Call(make_builtin("not"), [Call(make_builtin("string_in_list"), [left, right])])
         raise YaccGrammarError(
-            "Unsupported comparison. Only 'x is None' and 'x is not None' are supported in actions.",
+            f"Unsupported comparison operator in action.",
             line)
+
+    elif isinstance(node, ast.BoolOp):
+        if isinstance(node.op, ast.And):
+            result = convert(node.values[0])
+            for val in node.values[1:]:
+                result = Call(make_builtin("and"), [result, convert(val)])
+            return result
+        elif isinstance(node.op, ast.Or):
+            result = convert(node.values[0])
+            for val in node.values[1:]:
+                result = Call(make_builtin("or"), [result, convert(val)])
+            return result
+        raise YaccGrammarError(f"Unsupported boolean operation", line)
+
+    elif isinstance(node, ast.BinOp):
+        left = convert(node.left)
+        right = convert(node.right)
+        if isinstance(node.op, ast.Add):
+            return Call(make_builtin("add"), [left, right])
+        elif isinstance(node.op, ast.Sub):
+            return Call(make_builtin("subtract"), [left, right])
+        elif isinstance(node.op, ast.Mult):
+            return Call(make_builtin("multiply"), [left, right])
+        elif isinstance(node.op, ast.Div) or isinstance(node.op, ast.FloorDiv):
+            return Call(make_builtin("divide"), [left, right])
+        elif isinstance(node.op, ast.Mod):
+            return Call(make_builtin("modulo"), [left, right])
+        raise YaccGrammarError(f"Unsupported binary operator: {type(node.op).__name__}", line)
+
+    elif isinstance(node, ast.UnaryOp):
+        if isinstance(node.op, ast.Not):
+            return Call(make_builtin("not"), [convert(node.operand)])
+        elif isinstance(node.op, ast.USub):
+            return Call(make_builtin("subtract"), [Lit(0), convert(node.operand)])
+        raise _unsupported_node_error(node, line)
 
     else:
         raise _unsupported_node_error(node, line)
@@ -446,8 +519,14 @@ def parse_action(text: str, rhs: Rhs, ctx: 'TypeContext', line: Optional[int] = 
                  expected_return_type: Optional[TargetType] = None) -> Lambda:
     """Parse a semantic action and return a Lambda.
 
+    Construct actions must assign to $$ (the result). For example:
+        $$ = module.Message(field=$1)
+    or multi-statement:
+        builtin.start_fragment($1)
+        $$ = $1
+
     Args:
-        text: Action text (Python expression)
+        text: Action text with $$ = expr assignment
         rhs: The RHS of the rule
         ctx: Type context
         line: Line number for error messages
@@ -461,15 +540,222 @@ def parse_action(text: str, rhs: Rhs, ctx: 'TypeContext', line: Optional[int] = 
 
     # Build parameter list with names from RHS symbols
     params = _build_params(rhs)
-
-    # Parse the expression
-    # Pass param info so $N references can be resolved to named parameters
     param_info = _get_rhs_param_info(rhs)
-    body = parse_action_expr(preprocessed, param_info, params, ctx, line)
+
+    # Parse as exec mode to handle $$ = expr assignments and multi-statement actions
+    try:
+        tree = ast.parse(preprocessed, mode='exec')
+    except SyntaxError as e:
+        raise YaccGrammarError(f"Syntax error in construct action: {e}", line)
+
+    # Find the $$ assignment and any side-effect statements
+    dollar_dollar_value: Optional[ast.expr] = None
+    side_effects: List[TargetExpr] = []
+
+    for stmt in tree.body:
+        if isinstance(stmt, ast.Assign) and len(stmt.targets) == 1:
+            target = stmt.targets[0]
+            if isinstance(target, ast.Name) and target.id == '_dollar_dollar':
+                if dollar_dollar_value is not None:
+                    raise YaccGrammarError("Multiple assignments to $$ in construct action", line)
+                dollar_dollar_value = stmt.value
+                continue
+        # Side-effect statement (e.g., builtin.start_fragment($1))
+        if isinstance(stmt, ast.Expr):
+            expr = _convert_node_with_vars(stmt.value, param_info, params, ctx, line, {})
+            side_effects.append(expr)
+        else:
+            raise YaccGrammarError(
+                f"Construct actions must contain $$ = expr and optional side-effect expressions. "
+                f"Got: {type(stmt).__name__}",
+                line)
+
+    if dollar_dollar_value is None:
+        raise YaccGrammarError("Construct action must assign to $$", line)
+
+    # Convert the $$ value expression
+    body = _convert_node_with_vars(dollar_dollar_value, param_info, params, ctx, line, {})
+
+    # If there are side effects, wrap in a Seq with the $$ value last
+    if side_effects:
+        body = Seq(tuple(side_effects) + (body,))
 
     # Use expected return type from %type declaration if provided, otherwise infer
     return_type = expected_return_type if expected_return_type is not None else _infer_type(body, line, ctx)
     return Lambda(params, return_type, body)
+
+
+def parse_deconstruct_action(text: str, lhs_type: TargetType, rhs: 'Rhs',
+                              ctx: 'TypeContext', line: Optional[int] = None,
+                              guard: Optional[str] = None) -> Lambda:
+    """Parse a deconstruct action and return a Lambda.
+
+    Deconstruct actions assign to $1, $2, ... for each non-literal RHS element,
+    extracting values from $$ (the LHS message). For example:
+
+        $1 = $$.name; $2 = $$.body
+
+    The parser validates that all non-literal RHS elements are assigned.
+
+    The resulting Lambda takes one parameter ($$) and returns a tuple of the
+    assigned values, in RHS order.
+
+    If no text is provided (default identity), the Lambda returns $$ directly.
+
+    Args:
+        text: Deconstruct action text with $N = expr assignments
+        lhs_type: Type of the LHS nonterminal (type of $$ parameter)
+        rhs: The RHS of the rule (used for validation)
+        ctx: Type context
+        line: Line number for error messages
+        guard: Optional guard expression from 'deconstruct if COND:'
+
+    Returns:
+        Lambda expression with one parameter of lhs_type
+    """
+    from .target_builtins import make_builtin as _make_builtin
+
+    text = text.strip()
+
+    # Default identity: deconstruct returns $$ unchanged
+    if text == '$$' and guard is None:
+        msg_param = Var("_dollar_dollar", lhs_type)
+        return Lambda([msg_param], lhs_type, msg_param)
+
+    preprocessed = preprocess_action(text)
+
+    # The $$ parameter
+    msg_param = Var("_dollar_dollar", lhs_type)
+
+    # Get the non-literal RHS element info for validation
+    rhs_param_info = _get_rhs_param_info(rhs)
+    non_literal_indices = [i for i, (_, t) in enumerate(rhs_param_info) if t is not None]
+
+    # Parse as statements (exec mode) to handle $N = expr assignments
+    try:
+        tree = ast.parse(preprocessed, mode='exec')
+    except SyntaxError as e:
+        raise YaccGrammarError(f"Syntax error in deconstruct action: {e}", line)
+
+    # Extract side-effects and $N assignments from the AST
+    # assignments maps 1-indexed $N to the expression AST node
+    assignments: Dict[int, ast.expr] = {}
+    # type_annotations maps 1-indexed $N to the declared TargetType (if any)
+    type_annotations: Dict[int, TargetType] = {}
+    side_effects: List[ast.expr] = []
+    extra_vars: Dict[str, TargetType] = {"_dollar_dollar": lhs_type}
+
+    for stmt in tree.body:
+        if isinstance(stmt, ast.Assert):
+            raise YaccGrammarError(
+                "assert in deconstruct blocks is no longer supported. "
+                "Use 'deconstruct if COND:' syntax instead.",
+                line)
+        if isinstance(stmt, ast.Pass):
+            continue
+        if isinstance(stmt, ast.Expr):
+            side_effects.append(stmt.value)
+            continue
+        if isinstance(stmt, ast.Assign) and len(stmt.targets) == 1:
+            target = stmt.targets[0]
+            if isinstance(target, ast.Name) and target.id.startswith('_dollar_') and target.id[8:].isdigit():
+                dollar_idx = int(target.id[8:])  # 1-indexed
+                assignments[dollar_idx] = stmt.value
+                continue
+        if isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Name):
+            target = stmt.target
+            if target.id.startswith('_dollar_') and target.id[8:].isdigit() and stmt.value is not None:
+                dollar_idx = int(target.id[8:])  # 1-indexed
+                assignments[dollar_idx] = stmt.value
+                type_annotations[dollar_idx] = _annotation_to_type(stmt.annotation, line or 0)
+                continue
+        raise YaccGrammarError(
+            f"Deconstruct actions must be side-effect expressions "
+            f"or $N = expr assignments. Got: {ast.dump(stmt)}",
+            line)
+
+    # Validate all non-literal RHS elements are assigned
+    expected_indices = set(i + 1 for i in non_literal_indices)  # 1-indexed
+    assigned_indices = set(assignments.keys())
+    missing = expected_indices - assigned_indices
+    if missing:
+        raise YaccGrammarError(
+            f"Deconstruct action missing assignments for: {', '.join(f'${i}' for i in sorted(missing))}",
+            line)
+    extra = assigned_indices - expected_indices
+    if extra:
+        raise YaccGrammarError(
+            f"Deconstruct action has assignments for non-existent RHS elements: "
+            f"{', '.join(f'${i}' for i in sorted(extra))}",
+            line)
+
+    # Type-check annotations against the expected RHS element types
+    for idx, declared_type in type_annotations.items():
+        # idx is 1-indexed; rhs_param_info is 0-indexed
+        rhs_idx = idx - 1
+        if rhs_idx < len(rhs_param_info):
+            _, expected_type = rhs_param_info[rhs_idx]
+            if expected_type is not None and not is_subtype(declared_type, expected_type):
+                raise YaccGrammarError(
+                    f"Type annotation on ${idx} is {declared_type}, "
+                    f"but RHS element type is {expected_type}",
+                    line)
+
+    # Convert each assignment's value expression to target IR
+    param_info: List[Tuple[Optional[str], Optional[TargetType]]] = []
+    empty_params: List[Var] = []
+    converted: List[TargetExpr] = []
+    for idx in sorted(assignments.keys()):
+        expr = _convert_node_with_vars(assignments[idx], param_info, empty_params, ctx, line, extra_vars)
+        converted.append(expr)
+
+    # Convert side-effect expressions to target IR
+    side_effect_exprs: List[TargetExpr] = []
+    for se_node in side_effects:
+        se_expr = _convert_node_with_vars(se_node, param_info, empty_params, ctx, line, extra_vars)
+        side_effect_exprs.append(se_expr)
+
+    # Build body from guard and assignments
+    if guard is not None:
+        # Parse the guard expression
+        guard_preprocessed = preprocess_action(guard)
+        try:
+            guard_tree = ast.parse(guard_preprocessed, mode='eval')
+        except SyntaxError as e:
+            raise YaccGrammarError(f"Syntax error in deconstruct guard: {e}", line)
+        guard_expr = _convert_node_with_vars(guard_tree.body, param_info, empty_params, ctx, line, extra_vars)
+
+        # Build guarded body: if guard met, return Some(vals); else None
+        if len(converted) == 1:
+            success_body: TargetExpr = Call(_make_builtin('some'), [converted[0]])
+            inner_type = _infer_type(converted[0], line, ctx)
+        else:
+            tuple_expr = Call(_make_builtin('tuple'), converted)
+            success_body = Call(_make_builtin('some'), [tuple_expr])
+            element_types = [_infer_type(c, line, ctx) for c in converted]
+            inner_type = TupleType(tuple(element_types))
+
+        # Wrap with side-effects if any (before the guard check)
+        if side_effect_exprs:
+            success_body = Seq(tuple(side_effect_exprs) + (success_body,))
+
+        body: TargetExpr = IfElse(guard_expr, success_body, Lit(None))
+        return_type: TargetType = OptionType(inner_type)
+    elif len(converted) == 1:
+        body = converted[0]
+        return_type = _infer_type(body, line, ctx)
+        # Wrap with side-effects if any
+        if side_effect_exprs:
+            body = Seq(tuple(side_effect_exprs) + (body,))
+    else:
+        body = Call(_make_builtin('tuple'), converted)
+        element_types = [_infer_type(c, line, ctx) for c in converted]
+        return_type = TupleType(tuple(element_types))
+        # Wrap with side-effects if any
+        if side_effect_exprs:
+            body = Seq(tuple(side_effect_exprs) + (body,))
+
+    return Lambda([msg_param], return_type, body)
 
 
 def parse_action_expr(text: str, param_info: List[Tuple[Optional[str], Optional[TargetType]]],
@@ -700,6 +986,34 @@ def _convert_stmt(stmt: ast.stmt, ctx: 'TypeContext', line: int,
         value = _convert_func_expr(stmt.value, ctx, line, local_vars)
         return Assign(Var(var_name, var_type), value)
 
+    elif isinstance(stmt, ast.For):
+        if stmt.orelse:
+            raise YaccGrammarError("for/else not supported", line)
+        collection = _convert_func_expr(stmt.iter, ctx, line, local_vars)
+        col_type = collection.target_type()
+        if isinstance(col_type, ListType):
+            elem_type = col_type.element_type
+        else:
+            elem_type = BaseType("Unknown")
+        if isinstance(stmt.target, ast.Tuple) and len(stmt.target.elts) == 2:
+            # for (i, x) in enumerate(collection)
+            idx_target, val_target = stmt.target.elts
+            if not isinstance(idx_target, ast.Name) or not isinstance(val_target, ast.Name):
+                raise YaccGrammarError("Only simple variable names supported in for loop", line)
+            idx_var = Var(idx_target.id, BaseType("Int64"))
+            val_var = Var(val_target.id, elem_type)
+            local_vars[idx_target.id] = idx_var.type
+            local_vars[val_target.id] = val_var.type
+            body = _convert_function_body(stmt.body, ctx, line, local_vars)
+            return ForeachEnumerated(idx_var, val_var, collection, body)
+        elif isinstance(stmt.target, ast.Name):
+            var = Var(stmt.target.id, elem_type)
+            local_vars[stmt.target.id] = elem_type
+            body = _convert_function_body(stmt.body, ctx, line, local_vars)
+            return Foreach(var, collection, body)
+        else:
+            raise YaccGrammarError("Only simple variable names supported in for loop", line)
+
     elif isinstance(stmt, ast.Expr):
         # Expression statement (e.g., function call with side effects)
         return _convert_func_expr(stmt.value, ctx, line, local_vars)
@@ -715,7 +1029,8 @@ def _make_get_field(obj: TargetExpr, field_name: str, ctx: 'TypeContext', line: 
     if isinstance(obj_type, OptionType):
         obj_type = obj_type.element_type
     if not isinstance(obj_type, MessageType):
-        raise YaccGrammarError(f"Cannot access field '{field_name}' on non-message type {obj_type}", line)
+        # Allow field access on Unknown types — return GetField with Unknown type
+        return GetField(obj, field_name, MessageType("unknown", "Unknown"), BaseType("Unknown"))
     message_type = obj_type
     # Try to look up field type
     field_type: TargetType = BaseType("Unknown")
@@ -897,6 +1212,14 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
                 return Call(make_builtin("equal"), [left, right])
             elif isinstance(op, ast.NotEq):
                 return Call(make_builtin("not_equal"), [left, right])
+            elif isinstance(op, ast.Lt):
+                return Call(make_builtin("less_than"), [left, right])
+            elif isinstance(op, ast.LtE):
+                return Call(make_builtin("less_equal"), [left, right])
+            elif isinstance(op, ast.Gt):
+                return Call(make_builtin("greater_than"), [left, right])
+            elif isinstance(op, ast.GtE):
+                return Call(make_builtin("greater_equal"), [left, right])
             elif isinstance(op, ast.In):
                 return Call(make_builtin("string_in_list"), [left, right])
             elif isinstance(op, ast.NotIn):
@@ -921,12 +1244,29 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
         left = _convert_func_expr(node.left, ctx, line, local_vars)
         right = _convert_func_expr(node.right, ctx, line, local_vars)
         if isinstance(node.op, ast.Add):
-            # Could be numeric add or string concat - use string_concat for strings
-            return Call(make_builtin("string_concat"), [left, right])
+            return Call(make_builtin("add"), [left, right])
+        elif isinstance(node.op, ast.Sub):
+            return Call(make_builtin("subtract"), [left, right])
+        elif isinstance(node.op, ast.Mult):
+            return Call(make_builtin("multiply"), [left, right])
+        elif isinstance(node.op, ast.Div) or isinstance(node.op, ast.FloorDiv):
+            return Call(make_builtin("divide"), [left, right])
+        elif isinstance(node.op, ast.Mod):
+            return Call(make_builtin("modulo"), [left, right])
         raise YaccGrammarError(f"Unsupported binary operation: {type(node.op).__name__}", line)
 
+    elif isinstance(node, ast.Tuple):
+        elements = [_convert_func_expr(e, ctx, line, local_vars) for e in node.elts]
+        return Call(make_builtin('tuple'), elements)
+
+    elif isinstance(node, ast.UnaryOp):
+        if isinstance(node.op, ast.Not):
+            return Call(make_builtin("not"), [_convert_func_expr(node.operand, ctx, line, local_vars)])
+        elif isinstance(node.op, ast.USub):
+            return Call(make_builtin("subtract"), [Lit(0), _convert_func_expr(node.operand, ctx, line, local_vars)])
+        raise YaccGrammarError(f"Unsupported unary operation: {type(node.op).__name__}", line)
+
     elif isinstance(node, ast.Subscript):
-        # Handle dict.get() result or tuple indexing
         value = _convert_func_expr(node.value, ctx, line, local_vars)
         if isinstance(node.slice, ast.Constant) and isinstance(node.slice.value, int):
             return GetElement(value, node.slice.value)
@@ -948,6 +1288,8 @@ _PYTHON_TYPE_MAP = {
 
 def _annotation_to_type(node: ast.AST, line: int) -> TargetType:
     """Convert a Python type annotation AST to TargetType."""
+    if isinstance(node, ast.Constant) and node.value is None:
+        return BaseType("Void")
     if isinstance(node, ast.Name):
         # Normalize Python type names to canonical IR names
         type_name = _PYTHON_TYPE_MAP.get(node.id, node.id)
@@ -959,7 +1301,10 @@ def _annotation_to_type(node: ast.AST, line: int) -> TargetType:
     elif isinstance(node, ast.Subscript):
         if isinstance(node.value, ast.Name):
             container = node.value.id
-            if container == 'List' or container == 'list':
+            if container == 'Sequence':
+                elem_type = _annotation_to_type(node.slice, line)
+                return SequenceType(elem_type)
+            elif container == 'List' or container == 'list':
                 elem_type = _annotation_to_type(node.slice, line)
                 return ListType(elem_type)
             elif container == 'Optional':
@@ -1019,6 +1364,7 @@ __all__ = [
     'TypeContext',
     'TerminalInfo',
     'parse_action',
+    'parse_deconstruct_action',
     'parse_action_expr',
     'parse_helper_functions',
     'prescan_helper_function_names',

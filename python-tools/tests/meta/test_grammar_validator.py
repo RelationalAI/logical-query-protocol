@@ -4,14 +4,14 @@
 import pytest
 
 from meta.target import (
-    BaseType, MessageType, TupleType, ListType, OptionType, FunctionType,
+    BaseType, MessageType, TupleType, SequenceType, ListType, OptionType, FunctionType,
     Var, GetElement, Call, Builtin, NewMessage, Lambda, Lit, IfElse, Let, ListExpr,
     NamedFun, FunDef
 )
 from meta.target_builtins import make_builtin
 from meta.grammar import (
     Grammar, Nonterminal, Rule, LitTerminal, NamedTerminal,
-    Star, Option, Sequence
+    Star, Option, Sequence, make_rule,
 )
 from meta.grammar_validator import GrammarValidator
 from meta.proto_parser import ProtoParser
@@ -271,7 +271,7 @@ class TestStructureValidation:
         rhs = Star(nt)
         param = Var('items', ListType(BaseType('String')))
         constructor = Lambda([param], BaseType('Unit'), Lit(None))
-        rule = Rule(start, rhs, constructor)
+        rule = make_rule(start, rhs, constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -288,7 +288,7 @@ class TestStructureValidation:
         rhs = Star(terminal)
         param = Var('items', ListType(BaseType('String')))
         constructor = Lambda([param], BaseType('Unit'), Lit(None))
-        rule = Rule(start, rhs, constructor)
+        rule = make_rule(start, rhs, constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -312,7 +312,7 @@ class TestStructureValidation:
         rhs = Option(nt)
         param = Var('opt', OptionType(BaseType('String')))
         constructor = Lambda([param], BaseType('Unit'), Lit(None))
-        rule = Rule(start, rhs, constructor)
+        rule = make_rule(start, rhs, constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -339,7 +339,7 @@ class TestMessageCoverage:
         start = Nonterminal('test_message', MessageType('proto', 'TestMessage'))
         grammar = Grammar(start=start)
         constructor = Lambda([], MessageType('proto', 'TestMessage'), Call(NewMessage('proto', 'TestMessage', ()), []))
-        rule = Rule(start, LitTerminal('test'), constructor)
+        rule = make_rule(start, LitTerminal('test'), constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -381,7 +381,7 @@ class TestFieldCoverage:
         age_var = Var('age', BaseType('Int32'))
         body = NewMessage('proto', 'Person', (('name', name_var), ('age', age_var)))
         constructor = Lambda([name_var, age_var], MessageType('proto', 'Person'), body)
-        rule = Rule(start, Sequence((NamedTerminal('STRING', BaseType('String')), NamedTerminal('INT', BaseType('Int32')))), constructor)
+        rule = make_rule(start, Sequence((NamedTerminal('STRING', BaseType('String')), NamedTerminal('INT', BaseType('Int32')))), constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -404,7 +404,7 @@ class TestFieldCoverage:
         name_var = Var('name', BaseType('String'))
         body = NewMessage('proto', 'Person', (('name', name_var),))  # Missing age field
         constructor = Lambda([name_var], MessageType('proto', 'Person'), body)
-        rule = Rule(start, NamedTerminal('STRING', BaseType('String')), constructor)
+        rule = make_rule(start, NamedTerminal('STRING', BaseType('String')), constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -488,7 +488,7 @@ class TestTypeChecking:
 
         validator._check_builtin_call_types(builtin, args, 'test_rule')
         assert not validator.result.is_valid
-        assert any("expected List" in e.message for e in validator.result.errors)
+        assert any("expected Sequence" in e.message for e in validator.result.errors)
 
 
 class TestRuleTypeChecking:
@@ -504,7 +504,7 @@ class TestRuleTypeChecking:
         param2 = Var('y', BaseType('Int64'))
         rhs = Sequence((NamedTerminal('STRING', BaseType('String')), NamedTerminal('INT', BaseType('Int64'))))
         constructor = Lambda([param1, param2], BaseType('String'), param1)
-        rule = Rule(start, rhs, constructor)
+        rule = make_rule(start, rhs, constructor)
 
         validator = GrammarValidator(grammar, parser)
         validator._check_rule_types(rule)
@@ -538,7 +538,7 @@ class TestRuleTypeChecking:
         rhs = NamedTerminal('STRING', BaseType('String'))
         body = NewMessage('proto', 'TestMsg', (('s', param),))
         constructor = Lambda([param], msg_type, body)
-        rule = Rule(start, rhs, constructor)
+        rule = make_rule(start, rhs, constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -554,7 +554,7 @@ class TestRuleTypeChecking:
         param = Var('s', BaseType('String'))
         rhs = NamedTerminal('STRING', BaseType('String'))
         constructor = Lambda([param], BaseType('String'), param)  # Returns the string
-        rule = Rule(start, rhs, constructor)
+        rule = make_rule(start, rhs, constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -576,7 +576,7 @@ class TestRuleTypeChecking:
         bad_elem = GetElement(tuple_var, 5)  # Out of bounds
         body = IfElse(condition, bad_elem, param)
         constructor = Lambda([param], BaseType('String'), body)
-        rule = Rule(start, rhs, constructor)
+        rule = make_rule(start, rhs, constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -598,12 +598,12 @@ class TestUnreachableRules:
         # Start rule references child - need parameter for child nonterminal
         child_param = Var('c', BaseType('String'))
         constructor1 = Lambda([child_param], BaseType('Unit'), Lit(None))
-        rule1 = Rule(start, child, constructor1)
+        rule1 = make_rule(start, child, constructor1)
         grammar.rules[start] = [rule1]
 
         # Child rule
         constructor2 = Lambda([], BaseType('String'), Lit("test"))
-        rule2 = Rule(child, LitTerminal('test'), constructor2)
+        rule2 = make_rule(child, LitTerminal('test'), constructor2)
         grammar.rules[child] = [rule2]
 
         validator = GrammarValidator(grammar, parser)
@@ -619,12 +619,12 @@ class TestUnreachableRules:
 
         # Start rule doesn't reference orphan
         constructor1 = Lambda([], BaseType('Unit'), Lit(None))
-        rule1 = Rule(start, LitTerminal('test'), constructor1)
+        rule1 = make_rule(start, LitTerminal('test'), constructor1)
         grammar.rules[start] = [rule1]
 
         # Orphan rule not referenced
         constructor2 = Lambda([], BaseType('String'), Lit("orphan"))
-        rule2 = Rule(orphan, LitTerminal('orphan'), constructor2)
+        rule2 = make_rule(orphan, LitTerminal('orphan'), constructor2)
         grammar.rules[orphan] = [rule2]
 
         validator = GrammarValidator(grammar, parser)
@@ -645,7 +645,7 @@ class TestSoundness:
         start = Nonterminal('test_message', MessageType('proto', 'TestMessage'))
         grammar = Grammar(start=start)
         constructor = Lambda([], MessageType('proto', 'TestMessage'), Call(NewMessage('proto', 'TestMessage', ()), []))
-        rule = Rule(start, LitTerminal('test'), constructor)
+        rule = make_rule(start, LitTerminal('test'), constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -661,7 +661,7 @@ class TestSoundness:
         start = Nonterminal('unknown_rule', invalid_type)
         grammar = Grammar(start=start)
         constructor = Lambda([], invalid_type, Call(NewMessage('proto', 'NonExistentMessage', ()), []))
-        rule = Rule(start, LitTerminal('test'), constructor)
+        rule = make_rule(start, LitTerminal('test'), constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -763,7 +763,7 @@ class TestHelperFunctionCalls:
         helper_type = FunctionType([BaseType('String')], BaseType('String'))
         body = Call(NamedFun('my_helper', helper_type), [param])
         constructor = Lambda([param], BaseType('String'), body)
-        rule = Rule(start, NamedTerminal('STRING', BaseType('String')), constructor)
+        rule = make_rule(start, NamedTerminal('STRING', BaseType('String')), constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -796,7 +796,7 @@ class TestHelperFunctionCalls:
         helper_call = Call(NamedFun('wrap', wrap_type), [param])
         body = ListExpr([helper_call], BaseType('String'))
         constructor = Lambda([param], ListType(BaseType('String')), body)
-        rule = Rule(start, NamedTerminal('STRING', BaseType('String')), constructor)
+        rule = make_rule(start, NamedTerminal('STRING', BaseType('String')), constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -825,7 +825,7 @@ class TestHelperFunctionCalls:
         param = Var('s', BaseType('String'))
         body = Call(NamedFun('outer', str_to_str), [param])
         constructor = Lambda([param], BaseType('String'), body)
-        rule = Rule(start, NamedTerminal('STRING', BaseType('String')), constructor)
+        rule = make_rule(start, NamedTerminal('STRING', BaseType('String')), constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -974,34 +974,34 @@ class TestIsSubtype:
         for t in types:
             assert validator._is_subtype(ListType(t), ListType(t))
 
-    def test_list_never_is_bottom(self, validator):
-        """List[Never] <: List[T]."""
+    def test_list_invariant(self, validator):
+        """List is invariant: List[T] <: List[U] only if T == U."""
         never = BaseType("Never")
-        types = [
-            BaseType("Any"),
-            BaseType("Int64"),
-            BaseType("String"),
-        ]
-        for t in types:
-            assert validator._is_subtype(ListType(never), ListType(t))
-
-    def test_list_any_is_top(self, validator):
-        """List[T] <: List[Any]."""
         any_type = BaseType("Any")
-        types = [
-            BaseType("Never"),
-            BaseType("Int64"),
-            BaseType("String"),
-        ]
-        for t in types:
-            assert validator._is_subtype(ListType(t), ListType(any_type))
-
-    def test_list_concrete_not_subtype(self, validator):
-        """List[T] is not a subtype of List[U] for distinct concrete T, U."""
         int64 = BaseType("Int64")
         string = BaseType("String")
+        # List[Never] is NOT a subtype of List[Any] (invariant)
+        assert not validator._is_subtype(ListType(never), ListType(any_type))
+        # List[Int64] is NOT a subtype of List[Any] (invariant)
+        assert not validator._is_subtype(ListType(int64), ListType(any_type))
+        # Distinct concrete types are not subtypes
         assert not validator._is_subtype(ListType(int64), ListType(string))
         assert not validator._is_subtype(ListType(string), ListType(int64))
+
+    def test_list_subtype_of_sequence(self, validator):
+        """List[T] <: Sequence[T]."""
+        int64 = BaseType("Int64")
+        assert validator._is_subtype(ListType(int64), SequenceType(int64))
+
+    def test_sequence_covariant(self, validator):
+        """Sequence is covariant: Sequence[Never] <: Sequence[T]."""
+        never = BaseType("Never")
+        any_type = BaseType("Any")
+        int64 = BaseType("Int64")
+        assert validator._is_subtype(SequenceType(never), SequenceType(int64))
+        assert validator._is_subtype(SequenceType(int64), SequenceType(any_type))
+        # Sequence[Int64] is NOT a subtype of Sequence[String]
+        assert not validator._is_subtype(SequenceType(int64), SequenceType(BaseType("String")))
 
     def test_list_not_subtype_of_element(self, validator):
         """List[T] is not a subtype of T."""
@@ -1063,13 +1063,22 @@ class TestIsSubtype:
         int64 = BaseType("Int64")
         assert not validator._is_subtype(int64, OptionType(int64))
 
-    def test_nested_list_covariance(self, validator):
-        """List[List[Never]] <: List[List[Int64]]."""
+    def test_nested_list_invariance(self, validator):
+        """List is invariant: List[List[Never]] is NOT a subtype of List[List[Int64]]."""
+        never = BaseType("Never")
+        int64 = BaseType("Int64")
+        assert not validator._is_subtype(
+            ListType(ListType(never)),
+            ListType(ListType(int64))
+        )
+
+    def test_nested_sequence_covariance(self, validator):
+        """Sequence[Sequence[Never]] <: Sequence[Sequence[Int64]]."""
         never = BaseType("Never")
         int64 = BaseType("Int64")
         assert validator._is_subtype(
-            ListType(ListType(never)),
-            ListType(ListType(int64))
+            SequenceType(SequenceType(never)),
+            SequenceType(SequenceType(int64))
         )
 
     def test_nested_option_covariance(self, validator):
@@ -1081,22 +1090,40 @@ class TestIsSubtype:
             OptionType(OptionType(int64))
         )
 
-    def test_list_of_option_covariance(self, validator):
-        """List[Option[Never]] <: List[Option[Int64]]."""
+    def test_list_of_option_invariance(self, validator):
+        """List is invariant, so List[Option[Never]] is NOT <: List[Option[Int64]]."""
         never = BaseType("Never")
         int64 = BaseType("Int64")
-        assert validator._is_subtype(
+        assert not validator._is_subtype(
             ListType(OptionType(never)),
             ListType(OptionType(int64))
         )
 
-    def test_option_of_list_covariance(self, validator):
-        """Option[List[Never]] <: Option[List[Int64]]."""
+    def test_sequence_of_option_covariance(self, validator):
+        """Sequence[Option[Never]] <: Sequence[Option[Int64]]."""
         never = BaseType("Never")
         int64 = BaseType("Int64")
         assert validator._is_subtype(
+            SequenceType(OptionType(never)),
+            SequenceType(OptionType(int64))
+        )
+
+    def test_option_of_list_invariance(self, validator):
+        """Option[List[Never]] is NOT <: Option[List[Int64]] because List is invariant."""
+        never = BaseType("Never")
+        int64 = BaseType("Int64")
+        assert not validator._is_subtype(
             OptionType(ListType(never)),
             OptionType(ListType(int64))
+        )
+
+    def test_option_of_sequence_covariance(self, validator):
+        """Option[Sequence[Never]] <: Option[Sequence[Int64]]."""
+        never = BaseType("Never")
+        int64 = BaseType("Int64")
+        assert validator._is_subtype(
+            OptionType(SequenceType(never)),
+            OptionType(SequenceType(int64))
         )
 
     def test_tuple_reflexivity(self, validator):
@@ -1212,17 +1239,29 @@ class TestTypesCompatible:
         string = BaseType("String")
         assert not validator._types_compatible(int64, string)
 
-    def test_list_compatible_via_never(self, validator):
-        """List[Never] is compatible with List[Int64]."""
+    def test_list_not_compatible_via_never(self, validator):
+        """List[Never] is NOT compatible with List[Int64] (List is invariant)."""
         never = BaseType("Never")
         int64 = BaseType("Int64")
-        assert validator._types_compatible(ListType(never), ListType(int64))
+        assert not validator._types_compatible(ListType(never), ListType(int64))
 
-    def test_list_compatible_via_any(self, validator):
-        """List[Int64] is compatible with List[Any]."""
+    def test_list_not_compatible_via_any(self, validator):
+        """List[Int64] is NOT compatible with List[Any] (List is invariant)."""
         any_type = BaseType("Any")
         int64 = BaseType("Int64")
-        assert validator._types_compatible(ListType(int64), ListType(any_type))
+        assert not validator._types_compatible(ListType(int64), ListType(any_type))
+
+    def test_sequence_compatible_via_never(self, validator):
+        """Sequence[Never] is compatible with Sequence[Int64] (covariant)."""
+        never = BaseType("Never")
+        int64 = BaseType("Int64")
+        assert validator._types_compatible(SequenceType(never), SequenceType(int64))
+
+    def test_sequence_compatible_via_any(self, validator):
+        """Sequence[Int64] is compatible with Sequence[Any] (covariant)."""
+        any_type = BaseType("Any")
+        int64 = BaseType("Int64")
+        assert validator._types_compatible(SequenceType(int64), SequenceType(any_type))
 
     def test_list_incompatible_elements(self, validator):
         """List[Int64] is not compatible with List[String]."""

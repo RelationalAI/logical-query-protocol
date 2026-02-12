@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 
 # Import action AST types
-from .target import Lambda, TargetType, ListType, OptionType, TupleType, FunDef
+from .target import Lambda, TargetType, SequenceType, ListType, OptionType, TupleType, FunDef
 
 # Use TYPE_CHECKING to avoid circular import: GrammarAnalysis imports Grammar,
 # but we need GrammarAnalysis type hints here. These imports only exist during
@@ -121,8 +121,8 @@ class Star(Rhs):
         return f"{self.rhs}*"
 
     def target_type(self) -> TargetType:
-        """Return list type of the element type."""
-        return ListType(self.rhs.target_type())
+        """Return sequence type of the element type."""
+        return SequenceType(self.rhs.target_type())
 
 
 @dataclass(frozen=True)
@@ -207,6 +207,7 @@ class Rule:
     lhs: Nonterminal
     rhs: Rhs
     constructor: 'Lambda'
+    deconstructor: Optional['Lambda'] = None  # Pretty-printer deconstruction action
     source_type: Optional[str] = None  # Track the protobuf type this rule came from
 
     def __str__(self):
@@ -226,6 +227,10 @@ class Rule:
             f"Action for {self.lhs.name} has {action_params} parameter(s) "
             f"but RHS has {rhs_len} non-literal element(s): {self.rhs}"
         )
+
+# Backwards-compatible alias for tests
+make_rule = Rule
+
 
 @dataclass(frozen=True)
 class Token:
@@ -322,6 +327,8 @@ class Grammar:
 
                 if rule.constructor:
                     lines.append(f"    +{{{{ {rule.constructor} }}}}")
+                if rule.deconstructor:
+                    lines.append(f"    -{{{{ {rule.deconstructor} }}}}")
 
             lines.append("")
 
@@ -388,7 +395,10 @@ class Grammar:
                 rhs_str = self._rhs_to_str(rule.rhs)
                 action_str = expr_to_str(rule.constructor.body)
                 lines.append(f"{prefix}{rhs_str}")
-                lines.append(f"    {{ {action_str} }}")
+                lines.append(f"      construct: {action_str}")
+                if rule.deconstructor is not None:
+                    decon_str = expr_to_str(rule.deconstructor.body)
+                    lines.append(f"      deconstruct: {decon_str}")
 
             lines.append("")
 

@@ -48,7 +48,7 @@ PYTHON_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "to_ptr_string": BuiltinTemplate("{0}"),
     "to_ptr_bool": BuiltinTemplate("{0}"),
     "map": BuiltinTemplate("[{0}(x) for x in {1}]"),
-    "list_concat": BuiltinTemplate("({0} + ({1} if {1} is not None else []))"),
+    "list_concat": BuiltinTemplate("(list({0}) + list({1} if {1} is not None else []))"),
     "list_push": BuiltinTemplate("None", ["{0}.append({1})"]),
     "fragment_id_from_string": BuiltinTemplate("fragments_pb2.FragmentId(id={0}.encode())"),
     "relation_id_from_string": BuiltinTemplate("self.relation_id_from_string({0})"),
@@ -67,6 +67,33 @@ PYTHON_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "error_with_token": BuiltinTemplate(
         None, ['raise ParseError(f"{{{0}}}: {{{1}.type}}=`{{{1}.value}}`")']
     ),
+    # Pretty-printing builtins
+    "write_io": BuiltinTemplate("None", ["self.write({0})"]),
+    "newline_io": BuiltinTemplate("None", ["self.newline()"]),
+    "indent_io": BuiltinTemplate("None", ["self.indent()"]),
+    "dedent_io": BuiltinTemplate("None", ["self.dedent()"]),
+    "format_int64": BuiltinTemplate("str({0})"),
+    "format_int32": BuiltinTemplate("str({0})"),
+    "format_float64": BuiltinTemplate("str({0})"),
+    "format_string": BuiltinTemplate("self.format_string_value({0})"),
+    "format_symbol": BuiltinTemplate("{0}"),
+    "format_bool": BuiltinTemplate("('true' if {0} else 'false')"),
+    "format_decimal": BuiltinTemplate("self.format_decimal({0})"),
+    "format_int128": BuiltinTemplate("self.format_int128({0})"),
+    "format_uint128": BuiltinTemplate("self.format_uint128({0})"),
+    "greater": BuiltinTemplate("({0} > {1})"),
+    "to_string": BuiltinTemplate("str({0})"),
+    # Type conversions used by pretty printer
+    "int32_to_int64": BuiltinTemplate("int({0})"),
+    "is_empty": BuiltinTemplate("len({0}) == 0"),
+    "decode_string": BuiltinTemplate("{0}.decode('utf-8')"),
+    "fragment_id_to_string": BuiltinTemplate("self.fragment_id_to_string({0})"),
+    "relation_id_to_string": BuiltinTemplate("self.relation_id_to_string({0})"),
+    "relation_id_to_int": BuiltinTemplate("self.relation_id_to_int({0})"),
+    "relation_id_to_uint128": BuiltinTemplate("self.relation_id_to_uint128({0})"),
+    "subtract": BuiltinTemplate("({0} - {1})"),
+    "list_slice": BuiltinTemplate("{0}[{1}:{2}]"),
+    "list_sort": BuiltinTemplate("sorted({0})"),
 }
 
 
@@ -116,6 +143,33 @@ JULIA_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "construct_fragment": BuiltinTemplate("construct_fragment(parser, {0}, {1})"),
     "error": BuiltinTemplate(None, ["throw(ParseError({0}))"]),
     "error_with_token": BuiltinTemplate(None, ['throw(ParseError({0} * ": " * string({1})))']),
+    # Pretty-printing builtins
+    "write_io": BuiltinTemplate("nothing", ["write(pp, {0})"]),
+    "newline_io": BuiltinTemplate("nothing", ["newline(pp)"]),
+    "indent_io": BuiltinTemplate("nothing", ["indent!(pp)"]),
+    "dedent_io": BuiltinTemplate("nothing", ["dedent!(pp)"]),
+    "format_int64": BuiltinTemplate("string({0})"),
+    "format_int32": BuiltinTemplate("string({0})"),
+    "format_float64": BuiltinTemplate("string({0})"),
+    "format_string": BuiltinTemplate("format_string_value({0})"),
+    "format_symbol": BuiltinTemplate("{0}"),
+    "format_bool": BuiltinTemplate("({0} ? \"true\" : \"false\")"),
+    "format_decimal": BuiltinTemplate("format_decimal(pp, {0})"),
+    "format_int128": BuiltinTemplate("format_int128(pp, {0})"),
+    "format_uint128": BuiltinTemplate("format_uint128(pp, {0})"),
+    "greater": BuiltinTemplate("({0} > {1})"),
+    "to_string": BuiltinTemplate("string({0})"),
+    # Type conversions used by pretty printer
+    "int32_to_int64": BuiltinTemplate("Int64({0})"),
+    "is_empty": BuiltinTemplate("isempty({0})"),
+    "decode_string": BuiltinTemplate("String({0})"),
+    "fragment_id_to_string": BuiltinTemplate("fragment_id_to_string(pp, {0})"),
+    "relation_id_to_string": BuiltinTemplate("relation_id_to_string(pp, {0})"),
+    "relation_id_to_int": BuiltinTemplate("relation_id_to_int(pp, {0})"),
+    "relation_id_to_uint128": BuiltinTemplate("relation_id_to_uint128(pp, {0})"),
+    "subtract": BuiltinTemplate("({0} - {1})"),
+    "list_slice": BuiltinTemplate("{0}[{1}:{2}]"),
+    "list_sort": BuiltinTemplate("sort({0})"),
 }
 
 
@@ -154,6 +208,7 @@ GO_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "map": BuiltinTemplate("mapSlice({1}, {0})"),
     "list_push": BuiltinTemplate("nil", ["{0} = append({0}, {1})"]),
     "list_concat": BuiltinTemplate("listConcat({0}, {1})"),
+    "list_sort": BuiltinTemplate("listSort({0})"),
     "fragment_id_from_string": BuiltinTemplate("&pb.FragmentId{{Id: []byte({0})}}"),
     "relation_id_from_string": BuiltinTemplate("p.relationIdFromString({0})"),
     "relation_id_from_int": BuiltinTemplate(
@@ -171,8 +226,33 @@ GO_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "error_with_token": BuiltinTemplate(
         None, ['panic(ParseError{{msg: fmt.Sprintf("%s: %s=`%v`", {0}, {1}.Type, {1}.Value)}})'
     ]),
+    # Pretty-printing builtins
+    "write_io": BuiltinTemplate("nil", ["p.write({0})"]),
+    "newline_io": BuiltinTemplate("nil", ["p.newline()"]),
+    "indent_io": BuiltinTemplate("nil", ["p.indent()"]),
+    "dedent_io": BuiltinTemplate("nil", ["p.dedent()"]),
+    "format_int64": BuiltinTemplate('fmt.Sprintf("%d", {0})'),
+    "format_int32": BuiltinTemplate('fmt.Sprintf("%d", {0})'),
+    "format_float64": BuiltinTemplate('fmt.Sprintf("%g", {0})'),
+    "format_string": BuiltinTemplate("p.formatStringValue({0})"),
+    "format_symbol": BuiltinTemplate("{0}"),
+    "format_bool": BuiltinTemplate('formatBool({0})'),
+    "format_decimal": BuiltinTemplate("p.formatDecimal({0})"),
+    "format_int128": BuiltinTemplate("p.formatInt128({0})"),
+    "format_uint128": BuiltinTemplate("p.formatUint128({0})"),
+    "greater": BuiltinTemplate("({0} > {1})"),
+    "to_string": BuiltinTemplate('fmt.Sprintf("%v", {0})'),
+    # Type conversions used by pretty printer
+    "int32_to_int64": BuiltinTemplate("int64({0})"),
+    "is_empty": BuiltinTemplate("len({0}) == 0"),
+    "decode_string": BuiltinTemplate("string({0})"),
+    "fragment_id_to_string": BuiltinTemplate("p.fragmentIdToString({0})"),
+    "relation_id_to_string": BuiltinTemplate("p.relationIdToString({0})"),
+    "relation_id_to_int": BuiltinTemplate("p.relationIdToInt({0})"),
+    "relation_id_to_uint128": BuiltinTemplate("p.relationIdToUint128({0})"),
+    "subtract": BuiltinTemplate("({0} - {1})"),
+    "list_slice": BuiltinTemplate("{0}[{1}:{2}]"),
 }
-
 
 __all__ = [
     'BuiltinTemplate',

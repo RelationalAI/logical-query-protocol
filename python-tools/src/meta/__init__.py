@@ -25,10 +25,13 @@ from .target import (
     TargetType,
     BaseType,
     TupleType,
+    SequenceType,
     ListType,
     FunDef,
-    VisitNonterminalDef,
-    VisitNonterminal,
+    ParseNonterminalDef,
+    PrintNonterminalDef,
+    ParseNonterminal,
+    PrintNonterminal,
 )
 
 # Grammar data structures
@@ -95,10 +98,13 @@ __all__ = [
     'TargetType',
     'BaseType',
     'TupleType',
+    'SequenceType',
     'ListType',
     'FunDef',
-    'VisitNonterminalDef',
-    'VisitNonterminal',
+    'ParseNonterminalDef',
+    'PrintNonterminalDef',
+    'ParseNonterminal',
+    'PrintNonterminal',
     # Grammar
     'Grammar',
     'Rule',
