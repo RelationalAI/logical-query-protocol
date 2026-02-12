@@ -15,7 +15,8 @@ Expression types (TargetExpr subclasses):
     NewMessage          - Message constructor with field names
     OneOf               - OneOf field discriminator
     ListExpr            - List constructor expression
-    VisitNonterminal    - Visitor method call for a nonterminal
+    ParseNonterminal    - Parse method call for a nonterminal
+    PrintNonterminal    - Print method call for a nonterminal
     Call                - Function call expression
     GetField            - Field access expression
     GetElement          - Tuple element access with constant integer index
@@ -38,7 +39,7 @@ Type expressions (TargetType subclasses):
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Optional, Sequence, Union, TYPE_CHECKING
+from typing import Any, Optional, Sequence, TYPE_CHECKING
 from .gensym import gensym
 
 if TYPE_CHECKING:
@@ -299,9 +300,6 @@ class PrintNonterminal(TargetExpr):
 
     def target_type(self) -> 'TargetType':
         return self.nonterminal.target_type()
-
-
-VisitNonterminal = Union[ParseNonterminal, PrintNonterminal]
 
 
 @dataclass(frozen=True)
@@ -786,9 +784,6 @@ class PrintNonterminalDef(TargetNode):
         return FunctionType([p.type for p in self.params], self.return_type)
 
 
-VisitNonterminalDef = Union[ParseNonterminalDef, PrintNonterminalDef]
-
-
 __all__ = [
     'TargetNode',
     'TargetExpr',
@@ -824,9 +819,7 @@ __all__ = [
     'FunDef',
     'ParseNonterminalDef',
     'PrintNonterminalDef',
-    'VisitNonterminalDef',
     'ParseNonterminal',
     'PrintNonterminal',
-    'VisitNonterminal',
     'gensym',
 ]
