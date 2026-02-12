@@ -48,8 +48,10 @@ PYTHON_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "to_ptr_string": BuiltinTemplate("{0}"),
     "to_ptr_bool": BuiltinTemplate("{0}"),
     "map": BuiltinTemplate("[{0}(x) for x in {1}]"),
-    "list_concat": BuiltinTemplate("({0} + ({1} if {1} is not None else []))"),
+    "list_concat": BuiltinTemplate("(list({0}) + list({1} if {1} is not None else []))"),
     "list_push": BuiltinTemplate("None", ["{0}.append({1})"]),
+    "list_slice": BuiltinTemplate("{0}[{1}:{2}]"),
+    "list_sort": BuiltinTemplate("sorted({0})"),
     "fragment_id_from_string": BuiltinTemplate("fragments_pb2.FragmentId(id={0}.encode())"),
     "relation_id_from_string": BuiltinTemplate("self.relation_id_from_string({0})"),
     "relation_id_from_int": BuiltinTemplate(
@@ -128,6 +130,8 @@ JULIA_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "map": BuiltinTemplate("map({0}, {1})"),
     "list_concat": BuiltinTemplate("vcat({0}, !isnothing({1}) ? {1} : [])"),
     "list_push": BuiltinTemplate("nothing", ["push!({0}, {1})"]),
+    "list_slice": BuiltinTemplate("{0}[{1}:{2}]"),
+    "list_sort": BuiltinTemplate("sort({0})"),
     "fragment_id_from_string": BuiltinTemplate("Proto.FragmentId(Vector{{UInt8}}({0}))"),
     "relation_id_from_string": BuiltinTemplate("relation_id_from_string(parser, {0})"),
     "relation_id_from_int": BuiltinTemplate(

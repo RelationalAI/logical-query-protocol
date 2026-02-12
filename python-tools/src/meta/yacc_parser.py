@@ -59,7 +59,7 @@ from .grammar import (
     Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence, Rule,
     GrammarConfig, TerminalDef
 )
-from .target import TargetType, BaseType, MessageType, ListType, OptionType, TupleType
+from .target import TargetType, BaseType, MessageType, SequenceType, ListType, OptionType, TupleType
 
 # Import from action parser
 from .yacc_action_parser import (
@@ -91,7 +91,11 @@ def parse_type(text: str) -> TargetType:
         args_text = bracket_match.group(2)
         args = _split_bracket_type_args(args_text)
 
-        if constructor == "List":
+        if constructor == "Sequence":
+            if len(args) != 1:
+                raise YaccGrammarError(f"Sequence type requires exactly one argument: {text}")
+            return SequenceType(parse_type(args[0]))
+        elif constructor == "List":
             if len(args) != 1:
                 raise YaccGrammarError(f"List type requires exactly one argument: {text}")
             return ListType(parse_type(args[0]))
@@ -348,6 +352,26 @@ def parse_rhs(text: str, ctx: TypeContext) -> Rhs:
     return Sequence(tuple(elements))
 
 
+def _strip_comment(line: str) -> str:
+    """Strip a #-comment from a line, respecting quoted strings."""
+    in_single = False
+    in_double = False
+    i = 0
+    while i < len(line):
+        c = line[i]
+        if c == '\\' and (in_single or in_double):
+            i += 2
+            continue
+        if c == "'" and not in_double:
+            in_single = not in_single
+        elif c == '"' and not in_single:
+            in_double = not in_double
+        elif c == '#' and not in_single and not in_double:
+            return line[:i].rstrip()
+        i += 1
+    return line
+
+
 def _get_indent(line: str) -> int:
     """Get the indentation level (number of leading spaces) of a line."""
     return len(line) - len(line.lstrip())
@@ -530,8 +554,8 @@ def _parse_alternative(lhs_name: str, lhs_type: TargetType, rhs_text: str,
                 f"(at positions {non_literal_indices}): {rhs_text}",
                 line)
         else:
-            # Exactly one non-literal - default to $n
-            action_text = f"${non_literal_indices[0]}"
+            # Exactly one non-literal - default to $$ = $n
+            action_text = f"$$ = ${non_literal_indices[0]}"
 
     # Parse action, using LHS type as expected return type
     constructor = parse_action(action_text, rhs, ctx, line, expected_return_type=lhs_type)
@@ -598,7 +622,7 @@ def _proto_type_to_target_type(proto_type: str, is_repeated: bool) -> TargetType
         base_type = MessageType('logic', proto_type)
 
     if is_repeated:
-        return ListType(base_type)
+        return SequenceType(base_type)
     return base_type
 
 
@@ -668,6 +692,9 @@ def load_yacc_grammar(
     for line_num, line in enumerate(lines, 1):
         if '\t' in line:
             raise YaccGrammarError("Tabs are not allowed in grammar files. Semantic actions are sensitive to indentation.", line_num)
+
+    # Strip comments
+    lines = [_strip_comment(line) for line in lines]
 
     # Parse directives
     ctx, ignored_completeness, rules_start = parse_directives(lines)

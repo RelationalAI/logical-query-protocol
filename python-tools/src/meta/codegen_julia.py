@@ -246,6 +246,28 @@ class JuliaCodeGenerator(CodeGenerator):
     def gen_func_def_end(self) -> str:
         return "end"
 
+    def _generate_foreach_enumerated(self, expr, lines: List[str], indent: str) -> str:
+        """Override to adjust for Julia's 1-based enumerate.
+
+        The IR generates guards like `index > 0` assuming 0-based indexing.
+        Julia's `enumerate` returns 1-based indices, so we use a raw index
+        variable and assign the 0-based version at the top of the loop body.
+        """
+        from .target import ForeachEnumerated
+        assert isinstance(expr, ForeachEnumerated)
+        collection_code = self.generate_lines(expr.collection, lines, indent)
+        assert collection_code is not None
+        index_name = self.escape_identifier(expr.index_var.name)
+        var_name = self.escape_identifier(expr.var.name)
+
+        raw_index = gensym('i')
+        lines.append(f"{indent}for ({raw_index}, {var_name}) in enumerate({collection_code})")
+        body_indent = indent + self.indent_str
+        lines.append(f"{body_indent}{index_name} = {raw_index} - 1")
+        self.generate_lines(expr.body, lines, body_indent)
+        lines.append(f"{indent}end")
+        return self.gen_none()
+
     def _generate_get_element(self, expr: GetElement, lines: List[str], indent: str) -> str:
         """Julia uses 1-based indexing."""
         tuple_code = self.generate_lines(expr.tuple_expr, lines, indent)
