@@ -529,31 +529,31 @@ def test_python_helper_function_calling_another():
 def test_python_and_short_circuit_with_side_effects():
     """Test that 'and' preserves short-circuit semantics when RHS has side-effects.
 
-    When the RHS of 'and' contains a builtin like unwrap_option that emits
-    side-effect statements (e.g., assert), those side-effects must not be
-    hoisted above the 'and' — they should only execute when the LHS is truthy.
+    When the RHS of 'and' contains a function call (which generates a temp-var
+    assignment), those side-effects must not be hoisted above the short-circuit
+    check — they should only execute when the LHS is truthy.
     """
     gen = PythonCodeGenerator()
     reset_gensym()
     lines = []
 
-    # and(x is not None, unwrap_option(x) == 42)
-    # unwrap_option emits `assert x is not None` as a side-effect.
-    # That assert must NOT execute when x is None.
+    # and(a, f(x) == 42)
+    # The call f(x) generates a temp-var assignment line.
+    # That assignment must be guarded by the 'and' LHS.
     expr = Call(make_builtin("and"), [
-        Call(make_builtin("is_some"), [Var("x", OptionType(_int_type))]),
+        Var("a", _bool_type),
         Call(make_builtin("equal"), [
-            Call(make_builtin("unwrap_option"), [Var("x", OptionType(_int_type))]),
+            Call(Var("f", _any_type), [Var("x", _any_type)]),
             Lit(42),
         ]),
     ])
     result = gen.generate_lines(expr, lines, "")
     code = "\n".join(lines)
 
-    # The assert from unwrap_option must be inside the if body, not at the top
     assert result is not None
-    assert "assert" not in code.split("if ")[0], \
-        f"assert was hoisted above the if guard:\n{code}"
+    # f(x) call must be inside the if body, not before it
+    assert "f(x)" not in code.split("if ")[0], \
+        f"f(x) was hoisted above the if guard:\n{code}"
     assert "if " in code, f"Expected if-else for short-circuit, got:\n{code}"
 
 
@@ -563,12 +563,12 @@ def test_python_or_short_circuit_with_side_effects():
     reset_gensym()
     lines = []
 
-    # or(x is None, unwrap_option(x) == 42)
-    # unwrap_option side-effects must only execute when x is NOT None.
+    # or(a, f(x) == 42)
+    # f(x) side-effects must only execute when a is falsy.
     expr = Call(make_builtin("or"), [
-        Call(make_builtin("is_none"), [Var("x", OptionType(_int_type))]),
+        Var("a", _bool_type),
         Call(make_builtin("equal"), [
-            Call(make_builtin("unwrap_option"), [Var("x", OptionType(_int_type))]),
+            Call(Var("f", _any_type), [Var("x", _any_type)]),
             Lit(42),
         ]),
     ])
@@ -576,8 +576,8 @@ def test_python_or_short_circuit_with_side_effects():
     code = "\n".join(lines)
 
     assert result is not None
-    assert "assert" not in code.split("if ")[0], \
-        f"assert was hoisted above the if guard:\n{code}"
+    assert "f(x)" not in code.split("if ")[0], \
+        f"f(x) was hoisted above the if guard:\n{code}"
     assert "if " in code, f"Expected if-else for short-circuit, got:\n{code}"
 
 

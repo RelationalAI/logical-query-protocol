@@ -503,7 +503,9 @@ class CodeGenerator(ABC):
 
         # RHS has side-effects — guard them with an if-else
         tmp = gensym()
-        lines.append(f"{indent}{self.gen_var_declaration(tmp)}")
+        decl = self.gen_var_declaration(tmp)
+        if decl:
+            lines.append(f"{indent}{decl}")
         if op == 'and':
             lines.append(f"{indent}{self.gen_if_start(left_code)}")
             lines.extend(rhs_lines)
