@@ -272,6 +272,15 @@ class GoCodeGenerator(CodeGenerator):
     def gen_while_end(self) -> str:
         return "}"
 
+    def gen_foreach_start(self, var: str, collection: str) -> str:
+        return f"for _, {var} := range {collection} {{"
+
+    def gen_foreach_enumerated_start(self, index_var: str, var: str, collection: str) -> str:
+        return f"for {index_var}, {var} := range {collection} {{"
+
+    def gen_foreach_end(self) -> str:
+        return "}"
+
     def gen_empty_body(self) -> str:
         return "// empty"
 

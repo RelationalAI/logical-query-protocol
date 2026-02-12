@@ -22,7 +22,8 @@ from .grammar import Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option,
 from .target import (
     TargetType, BaseType, MessageType, ListType, OptionType, TupleType, DictType, FunctionType,
     TargetExpr, Var, Lit, NamedFun, NewMessage, EnumValue, Call, Lambda,
-    Let, IfElse, Seq, ListExpr, GetElement, GetField, FunDef, OneOf, Assign, Return
+    Let, IfElse, Seq, ListExpr, GetElement, GetField, FunDef, OneOf, Assign, Return,
+    Foreach, ForeachEnumerated
 )
 from .target_builtins import make_builtin
 from .target_utils import type_join
@@ -699,6 +700,34 @@ def _convert_stmt(stmt: ast.stmt, ctx: 'TypeContext', line: int,
             return Assign(Var(var_name, var_type), Lit(None))
         value = _convert_func_expr(stmt.value, ctx, line, local_vars)
         return Assign(Var(var_name, var_type), value)
+
+    elif isinstance(stmt, ast.For):
+        if stmt.orelse:
+            raise YaccGrammarError("for/else not supported", line)
+        collection = _convert_func_expr(stmt.iter, ctx, line, local_vars)
+        col_type = collection.target_type()
+        if isinstance(col_type, ListType):
+            elem_type = col_type.element_type
+        else:
+            elem_type = BaseType("Unknown")
+        if isinstance(stmt.target, ast.Tuple) and len(stmt.target.elts) == 2:
+            # for (i, x) in enumerate(collection)
+            idx_target, val_target = stmt.target.elts
+            if not isinstance(idx_target, ast.Name) or not isinstance(val_target, ast.Name):
+                raise YaccGrammarError("Only simple variable names supported in for loop", line)
+            idx_var = Var(idx_target.id, BaseType("Int64"))
+            val_var = Var(val_target.id, elem_type)
+            local_vars[idx_target.id] = idx_var.type
+            local_vars[val_target.id] = val_var.type
+            body = _convert_function_body(stmt.body, ctx, line, local_vars)
+            return ForeachEnumerated(idx_var, val_var, collection, body)
+        elif isinstance(stmt.target, ast.Name):
+            var = Var(stmt.target.id, elem_type)
+            local_vars[stmt.target.id] = elem_type
+            body = _convert_function_body(stmt.body, ctx, line, local_vars)
+            return Foreach(var, collection, body)
+        else:
+            raise YaccGrammarError("Only simple variable names supported in for loop", line)
 
     elif isinstance(stmt, ast.Expr):
         # Expression statement (e.g., function call with side effects)
