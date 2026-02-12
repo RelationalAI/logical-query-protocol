@@ -14,7 +14,7 @@ from .target import (
     IfElse, Seq, While, Foreach, ForeachEnumerated, Assign, Return, FunDef,
     ParseNonterminalDef, PrintNonterminalDef,
     ParseNonterminal, PrintNonterminal,
-    TargetType, BaseType, TupleType, ListType, DictType, OptionType,
+    TargetType, BaseType, TupleType, SequenceType, ListType, DictType, OptionType,
     MessageType, EnumType, FunctionType, VarType, GetField, GetElement
 )
 from .target_builtins import get_builtin
@@ -169,8 +169,13 @@ class CodeGenerator(ABC):
         pass
 
     @abstractmethod
+    def gen_sequence_type(self, element_type: str) -> str:
+        """Generate a read-only sequence type."""
+        pass
+
+    @abstractmethod
     def gen_list_type(self, element_type: str) -> str:
-        """Generate a list/array type."""
+        """Generate a mutable list/array type."""
         pass
 
     @abstractmethod
@@ -204,6 +209,8 @@ class CodeGenerator(ABC):
         elif isinstance(typ, TupleType):
             element_types = [self.gen_type(e) for e in typ.elements]
             return self.gen_tuple_type(element_types)
+        elif isinstance(typ, SequenceType):
+            return self.gen_sequence_type(self.gen_type(typ.element_type))
         elif isinstance(typ, ListType):
             return self.gen_list_type(self.gen_type(typ.element_type))
         elif isinstance(typ, DictType):

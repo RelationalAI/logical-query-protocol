@@ -10,6 +10,7 @@ Command: python -m meta.cli fragments.proto logic.proto transactions.proto --gra
 """
 
 from io import StringIO
+from collections.abc import Sequence
 from typing import Any, IO, Never, Optional
 
 from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
@@ -201,7 +202,7 @@ class PrettyPrinter:
             return value.uint128_value
         return default
 
-    def _extract_value_string_list(self, value: Optional[logic_pb2.Value], default: list[str]) -> list[str]:
+    def _extract_value_string_list(self, value: Optional[logic_pb2.Value], default: Sequence[str]) -> Sequence[str]:
         
         if value is not None:
             assert value is not None
@@ -273,7 +274,7 @@ class PrettyPrinter:
             return value.uint128_value
         return None
 
-    def _try_extract_value_string_list(self, value: Optional[logic_pb2.Value]) -> Optional[list[str]]:
+    def _try_extract_value_string_list(self, value: Optional[logic_pb2.Value]) -> Optional[Sequence[str]]:
         
         if value is not None:
             assert value is not None
@@ -285,7 +286,7 @@ class PrettyPrinter:
             return [value.string_value]
         return None
 
-    def construct_csv_config(self, config_dict: list[tuple[str, logic_pb2.Value]]) -> logic_pb2.CSVConfig:
+    def construct_csv_config(self, config_dict: Sequence[tuple[str, logic_pb2.Value]]) -> logic_pb2.CSVConfig:
         config = dict(config_dict)
         _t1304 = self._extract_value_int32(config.get('csv_header_row'), 1)
         header_row = _t1304
@@ -312,7 +313,7 @@ class PrettyPrinter:
         _t1315 = logic_pb2.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression)
         return _t1315
 
-    def construct_betree_info(self, key_types: list[logic_pb2.Type], value_types: list[logic_pb2.Type], config_dict: list[tuple[str, logic_pb2.Value]]) -> logic_pb2.BeTreeInfo:
+    def construct_betree_info(self, key_types: Sequence[logic_pb2.Type], value_types: Sequence[logic_pb2.Type], config_dict: Sequence[tuple[str, logic_pb2.Value]]) -> logic_pb2.BeTreeInfo:
         config = dict(config_dict)
         _t1316 = self._try_extract_value_float64(config.get('betree_config_epsilon'))
         epsilon = _t1316
@@ -343,7 +344,7 @@ class PrettyPrinter:
         _t1328 = transactions_pb2.Configure(semantics_version=0, ivm_config=ivm_config)
         return _t1328
 
-    def construct_configure(self, config_dict: list[tuple[str, logic_pb2.Value]]) -> transactions_pb2.Configure:
+    def construct_configure(self, config_dict: Sequence[tuple[str, logic_pb2.Value]]) -> transactions_pb2.Configure:
         config = dict(config_dict)
         maintenance_level_val = config.get('ivm.maintenance_level')
         maintenance_level = transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
@@ -365,7 +366,7 @@ class PrettyPrinter:
         _t1331 = transactions_pb2.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
         return _t1331
 
-    def export_csv_config(self, path: str, columns: list[transactions_pb2.ExportCSVColumn], config_dict: list[tuple[str, logic_pb2.Value]]) -> transactions_pb2.ExportCSVConfig:
+    def export_csv_config(self, path: str, columns: Sequence[transactions_pb2.ExportCSVColumn], config_dict: Sequence[tuple[str, logic_pb2.Value]]) -> transactions_pb2.ExportCSVConfig:
         config = dict(config_dict)
         _t1332 = self._extract_value_int64(config.get('partition_size'), 0)
         partition_size = _t1332
@@ -617,11 +618,11 @@ class PrettyPrinter:
             return self.relation_id_to_uint128(msg)
         return None
 
-    def deconstruct_bindings(self, abs: logic_pb2.Abstraction) -> tuple[list[logic_pb2.Binding], list[logic_pb2.Binding]]:
+    def deconstruct_bindings(self, abs: logic_pb2.Abstraction) -> tuple[Sequence[logic_pb2.Binding], Sequence[logic_pb2.Binding]]:
         n = len(abs.vars)
         return (abs.vars[0:n], [],)
 
-    def deconstruct_bindings_with_arity(self, abs: logic_pb2.Abstraction, value_arity: int) -> tuple[list[logic_pb2.Binding], list[logic_pb2.Binding]]:
+    def deconstruct_bindings_with_arity(self, abs: logic_pb2.Abstraction, value_arity: int) -> tuple[Sequence[logic_pb2.Binding], Sequence[logic_pb2.Binding]]:
         n = len(abs.vars)
         key_end = (n - value_arity)
         return (abs.vars[0:key_end], abs.vars[key_end:n],)
@@ -700,7 +701,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_config_dict(self, msg: list[tuple[str, logic_pb2.Value]]) -> Optional[Never]:
+    def pretty_config_dict(self, msg: Sequence[tuple[str, logic_pb2.Value]]) -> Optional[Never]:
         def _t504(_dollar_dollar):
             return _dollar_dollar
         _t505 = _t504(msg)
@@ -1058,7 +1059,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_epoch_writes(self, msg: list[transactions_pb2.Write]) -> Optional[Never]:
+    def pretty_epoch_writes(self, msg: Sequence[transactions_pb2.Write]) -> Optional[Never]:
         def _t579(_dollar_dollar):
             return _dollar_dollar
         _t580 = _t579(msg)
@@ -1326,7 +1327,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_bindings(self, msg: tuple[list[logic_pb2.Binding], list[logic_pb2.Binding]]) -> Optional[Never]:
+    def pretty_bindings(self, msg: tuple[Sequence[logic_pb2.Binding], Sequence[logic_pb2.Binding]]) -> Optional[Never]:
         def _t650(_dollar_dollar):
             
             if not len(_dollar_dollar[1]) == 0:
@@ -1663,7 +1664,7 @@ class PrettyPrinter:
         self.write('BOOLEAN')
         return None
 
-    def pretty_value_bindings(self, msg: list[logic_pb2.Binding]) -> Optional[Never]:
+    def pretty_value_bindings(self, msg: Sequence[logic_pb2.Binding]) -> Optional[Never]:
         def _t737(_dollar_dollar):
             return _dollar_dollar
         _t738 = _t737(msg)
@@ -1949,7 +1950,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_terms(self, msg: list[logic_pb2.Term]) -> Optional[Never]:
+    def pretty_terms(self, msg: Sequence[logic_pb2.Term]) -> Optional[Never]:
         def _t820(_dollar_dollar):
             return _dollar_dollar
         _t821 = _t820(msg)
@@ -2124,7 +2125,7 @@ class PrettyPrinter:
         self.write(unwrapped_fields194)
         return None
 
-    def pretty_ffi_args(self, msg: list[logic_pb2.Abstraction]) -> Optional[Never]:
+    def pretty_ffi_args(self, msg: Sequence[logic_pb2.Abstraction]) -> Optional[Never]:
         def _t857(_dollar_dollar):
             return _dollar_dollar
         _t858 = _t857(msg)
@@ -2696,7 +2697,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_attrs(self, msg: list[logic_pb2.Attribute]) -> Optional[Never]:
+    def pretty_attrs(self, msg: Sequence[logic_pb2.Attribute]) -> Optional[Never]:
         def _t992(_dollar_dollar):
             return _dollar_dollar
         _t993 = _t992(msg)
@@ -2853,7 +2854,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_init(self, msg: list[logic_pb2.Instruction]) -> Optional[Never]:
+    def pretty_init(self, msg: Sequence[logic_pb2.Instruction]) -> Optional[Never]:
         def _t1024(_dollar_dollar):
             return _dollar_dollar
         _t1025 = _t1024(msg)
@@ -3302,7 +3303,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_functional_dependency_keys(self, msg: list[logic_pb2.Var]) -> Optional[Never]:
+    def pretty_functional_dependency_keys(self, msg: Sequence[logic_pb2.Var]) -> Optional[Never]:
         def _t1132(_dollar_dollar):
             return _dollar_dollar
         _t1133 = _t1132(msg)
@@ -3326,7 +3327,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_functional_dependency_values(self, msg: list[logic_pb2.Var]) -> Optional[Never]:
+    def pretty_functional_dependency_values(self, msg: Sequence[logic_pb2.Var]) -> Optional[Never]:
         def _t1136(_dollar_dollar):
             return _dollar_dollar
         _t1137 = _t1136(msg)
@@ -3421,7 +3422,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_rel_edb_path(self, msg: list[str]) -> Optional[Never]:
+    def pretty_rel_edb_path(self, msg: Sequence[str]) -> Optional[Never]:
         def _t1160(_dollar_dollar):
             return _dollar_dollar
         _t1161 = _t1160(msg)
@@ -3440,7 +3441,7 @@ class PrettyPrinter:
         self.write(']')
         return None
 
-    def pretty_rel_edb_types(self, msg: list[logic_pb2.Type]) -> Optional[Never]:
+    def pretty_rel_edb_types(self, msg: Sequence[logic_pb2.Type]) -> Optional[Never]:
         def _t1163(_dollar_dollar):
             return _dollar_dollar
         _t1164 = _t1163(msg)
@@ -3503,7 +3504,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_betree_info_key_types(self, msg: list[logic_pb2.Type]) -> Optional[Never]:
+    def pretty_betree_info_key_types(self, msg: Sequence[logic_pb2.Type]) -> Optional[Never]:
         def _t1177(_dollar_dollar):
             return _dollar_dollar
         _t1178 = _t1177(msg)
@@ -3527,7 +3528,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_betree_info_value_types(self, msg: list[logic_pb2.Type]) -> Optional[Never]:
+    def pretty_betree_info_value_types(self, msg: Sequence[logic_pb2.Type]) -> Optional[Never]:
         def _t1181(_dollar_dollar):
             return _dollar_dollar
         _t1182 = _t1181(msg)
@@ -3621,7 +3622,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_csv_locator_paths(self, msg: list[str]) -> Optional[Never]:
+    def pretty_csv_locator_paths(self, msg: Sequence[str]) -> Optional[Never]:
         def _t1199(_dollar_dollar):
             return _dollar_dollar
         _t1200 = _t1199(msg)
@@ -3678,7 +3679,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_csv_columns(self, msg: list[logic_pb2.CSVColumn]) -> Optional[Never]:
+    def pretty_csv_columns(self, msg: Sequence[logic_pb2.CSVColumn]) -> Optional[Never]:
         def _t1208(_dollar_dollar):
             return _dollar_dollar
         _t1209 = _t1208(msg)
@@ -3790,7 +3791,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_epoch_reads(self, msg: list[transactions_pb2.Read]) -> Optional[Never]:
+    def pretty_epoch_reads(self, msg: Sequence[transactions_pb2.Read]) -> Optional[Never]:
         def _t1226(_dollar_dollar):
             return _dollar_dollar
         _t1227 = _t1226(msg)
@@ -4036,7 +4037,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_export_csv_columns(self, msg: list[transactions_pb2.ExportCSVColumn]) -> Optional[Never]:
+    def pretty_export_csv_columns(self, msg: Sequence[transactions_pb2.ExportCSVColumn]) -> Optional[Never]:
         def _t1283(_dollar_dollar):
             return _dollar_dollar
         _t1284 = _t1283(msg)

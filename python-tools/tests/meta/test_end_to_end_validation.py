@@ -327,7 +327,7 @@ record
         result = parse_and_validate(grammar_content, proto_content)
         assert not result.is_valid
         assert any(e.category == "type_builtin_arg" for e in result.errors)
-        assert any("expected List" in e.message for e in result.errors)
+        assert any("expected Sequence" in e.message for e in result.errors)
 
 
 class TestOneofCoverage:

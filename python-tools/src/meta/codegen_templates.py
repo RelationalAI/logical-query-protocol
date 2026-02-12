@@ -48,7 +48,7 @@ PYTHON_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "to_ptr_string": BuiltinTemplate("{0}"),
     "to_ptr_bool": BuiltinTemplate("{0}"),
     "map": BuiltinTemplate("[{0}(x) for x in {1}]"),
-    "list_concat": BuiltinTemplate("({0} + ({1} if {1} is not None else []))"),
+    "list_concat": BuiltinTemplate("(list({0}) + list({1} if {1} is not None else []))"),
     "list_push": BuiltinTemplate("None", ["{0}.append({1})"]),
     "fragment_id_from_string": BuiltinTemplate("fragments_pb2.FragmentId(id={0}.encode())"),
     "relation_id_from_string": BuiltinTemplate("self.relation_id_from_string({0})"),

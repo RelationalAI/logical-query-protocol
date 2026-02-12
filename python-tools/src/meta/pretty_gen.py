@@ -13,7 +13,7 @@ from .grammar import Grammar, GrammarConfig, Rule, Rhs, LitTerminal, NamedTermin
 from .grammar_utils import is_epsilon, rhs_elements
 from .target import (
     Lambda, Call, PrintNonterminalDef, Var, Lit, Builtin, Let, IfElse,
-    BaseType, ListType, TupleType, TargetExpr, Seq, PrintNonterminal, gensym,
+    BaseType, SequenceType, ListType, TupleType, TargetExpr, Seq, PrintNonterminal, gensym,
     OptionType, ForeachEnumerated, GetElement
 )
 from .target_builtins import make_builtin
@@ -426,7 +426,7 @@ def _generate_pretty_star_from_field(rhs: Star, field_var: Var,
                                      leading_ws: Optional[List[TargetExpr]] = None) -> TargetExpr:
     """Generate pretty printing for a repeated field."""
     list_type = field_var.type
-    if isinstance(list_type, ListType):
+    if isinstance(list_type, (SequenceType, ListType)):
         elem_type = list_type.element_type
     else:
         elem_type = BaseType('Any')

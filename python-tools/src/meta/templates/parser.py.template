@@ -10,6 +10,7 @@ in `python-tools/src/meta` or edit the protobuf specification in `proto/v1`.
 import ast
 import hashlib
 import re
+from collections.abc import Sequence
 from typing import List, Optional, Any, Tuple, Callable
 from decimal import Decimal
 

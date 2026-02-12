@@ -233,6 +233,9 @@ class GoCodeGenerator(CodeGenerator):
         # Go doesn't have tuples, use a struct or interface slice
         return f"[]interface{{}}"
 
+    def gen_sequence_type(self, element_type: str) -> str:
+        return f"[]{element_type}"
+
     def gen_list_type(self, element_type: str) -> str:
         return f"[]{element_type}"
 
@@ -502,7 +505,7 @@ class GoCodeGenerator(CodeGenerator):
 
     def _generate_call(self, expr: Call, lines: List[str], indent: str) -> Optional[str]:
         """Override to handle OneOf, VisitNonterminal, NamedFun, and option builtins for Go."""
-        from .target import NamedFun, FunctionType, ListType, BaseType, Builtin, OptionType
+        from .target import NamedFun, FunctionType, SequenceType, ListType, BaseType, Builtin, OptionType
 
         # Intercept option-related builtins to use pointer/nil idioms
         if isinstance(expr.func, Builtin) and expr.func.name in (
@@ -541,7 +544,7 @@ class GoCodeGenerator(CodeGenerator):
                         # Try to get expected type from parameter
                         if i < len(func_type.param_types):
                             param_type = func_type.param_types[i]
-                            if isinstance(param_type, ListType):
+                            if isinstance(param_type, (SequenceType, ListType)):
                                 # Generate list with correct element type
                                 arg_code = self.gen_list_literal([], param_type.element_type)
                                 args.append(arg_code)

@@ -12,7 +12,7 @@ code for each builtin, but they should validate against this registry.
 
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Union
-from .target import TargetType, BaseType, VarType, MessageType, ListType, TupleType, OptionType, FunctionType, DictType, Builtin
+from .target import TargetType, BaseType, VarType, MessageType, SequenceType, ListType, TupleType, OptionType, FunctionType, DictType, Builtin
 
 # Type aliases for convenience
 ANY = VarType("Any")
@@ -109,14 +109,14 @@ register_builtin("is_none", [OptionType(T)], BOOLEAN)
 register_builtin("unwrap_option", [OptionType(T)], T)
 register_builtin("unwrap_option_or", [OptionType(T), T], T)
 
-# === List operations ===
-register_builtin("list_concat", [ListType(T), ListType(T)], ListType(T))
+# === List/Sequence operations ===
+register_builtin("list_concat", [SequenceType(T), SequenceType(T)], ListType(T))
 register_builtin("list_push", [ListType(T), T], VOID)  # Mutating push: list.append(item) / push!(list, item)
-register_builtin("list_slice", [ListType(T), INT64, INT64], ListType(T))  # list[start:end]
-register_builtin("list_sort", [ListType(T)], ListType(T))
-register_builtin("length", [ListType(T)], INT64)
-register_builtin("map", [FunctionType([T1], T2), ListType(T1)], ListType(T2))
-register_builtin("append", [ListType(T), T], ListType(T))  # list.append(item)
+register_builtin("list_slice", [SequenceType(T), INT64, INT64], ListType(T))  # list[start:end]
+register_builtin("list_sort", [SequenceType(T)], ListType(T))
+register_builtin("length", [SequenceType(T)], INT64)
+register_builtin("map", [FunctionType([T1], T2), SequenceType(T1)], ListType(T2))
+register_builtin("append", [SequenceType(T), T], ListType(T))  # non-mutating append
 
 # === Tuple operations ===
 register_builtin("tuple", -1, T)  # Variadic: makes tuple from arguments
@@ -125,7 +125,7 @@ register_builtin("tuple", -1, T)  # Variadic: makes tuple from arguments
 register_builtin("string_concat", [STRING, STRING], STRING)
 register_builtin("string_to_upper", [STRING], STRING)
 register_builtin("string_to_lower", [STRING], STRING)
-register_builtin("string_in_list", [STRING, ListType(STRING)], BOOLEAN)
+register_builtin("string_in_list", [STRING, SequenceType(STRING)], BOOLEAN)
 register_builtin("encode_string", [STRING], BYTES)
 
 # === Type conversions ===
@@ -159,13 +159,13 @@ register_builtin("relation_id_to_int", [MessageType("logic", "RelationId")], Opt
 register_builtin("relation_id_to_uint128", [MessageType("logic", "RelationId")], MessageType("logic", "UInt128Value"))
 register_builtin("construct_fragment",
                  [MessageType("fragments", "FragmentId"),
-                  ListType(MessageType("logic", "Declaration"))],
+                  SequenceType(MessageType("logic", "Declaration"))],
                  MessageType("fragments", "Fragment"))
 register_builtin("start_fragment", [MessageType("fragments", "FragmentId")], BaseType("None"))
 register_builtin("start_pretty_fragment", [MessageType("fragments", "Fragment")], BaseType("None"))
 
 # === Dict operations ===
-register_builtin("dict_from_list", [ListType(TupleType([K, V]))], DictType(K, V))
+register_builtin("dict_from_list", [SequenceType(TupleType([K, V]))], DictType(K, V))
 register_builtin("dict_get", [DictType(K, V), K], OptionType(V))
 
 # === Protobuf operations ===
@@ -173,7 +173,7 @@ register_builtin("has_proto_field", [T, STRING], BOOLEAN)  # msg.HasField(field_
 register_builtin("which_one_of", [T, STRING], STRING)  # msg.WhichOneof(oneof_name)
 
 # === General helpers ===
-register_builtin("is_empty", [ListType(T)], BOOLEAN)  # len(list) == 0
+register_builtin("is_empty", [SequenceType(T)], BOOLEAN)  # len(list) == 0
 register_builtin("enum_value", [STRING, STRING], T)  # enum_value(EnumType, ValueName)
 register_builtin("greater", [INT64, INT64], BOOLEAN)
 register_builtin("to_string", [T], STRING)

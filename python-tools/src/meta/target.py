@@ -32,7 +32,8 @@ Type expressions (TargetType subclasses):
     VarType             - Type variable for polymorphic types
     MessageType         - Protobuf message types
     TupleType           - Tuple type with fixed number of element types
-    ListType            - Parameterized list/array type
+    SequenceType        - Read-only sequence type (covariant)
+    ListType            - Mutable list/array type (invariant, subtype of Sequence)
     OptionType          - Optional/Maybe type for values that may be None
     FunctionType        - Function type with parameter types and return type
 """
@@ -394,7 +395,7 @@ class GetElement(TargetExpr):
             if 0 <= self.index < len(expr_type.elements):
                 return expr_type.elements[self.index]
             raise ValueError(f"Tuple index {self.index} out of range for {expr_type}")
-        if isinstance(expr_type, ListType):
+        if isinstance(expr_type, (SequenceType, ListType)):
             return expr_type.element_type
         if isinstance(expr_type, BaseType) and expr_type.name == "Unknown":
             return BaseType("Unknown")
@@ -652,8 +653,30 @@ class TupleType(TargetType):
 
 
 @dataclass(frozen=True)
+class SequenceType(TargetType):
+    """Read-only sequence type (covariant on element type).
+
+    Sequence[T] is the read-only counterpart of List[T].
+    List[T] is a subtype of Sequence[T].
+    Sequence is covariant: Sequence[A] <: Sequence[B] if A <: B.
+
+    Example:
+        SequenceType(BaseType("Int64"))              # Sequence[Int64]
+        SequenceType(MessageType("logic", "Expr"))   # Sequence[logic.Expr]
+    """
+    element_type: TargetType
+
+    def __str__(self) -> str:
+        return f"Sequence[{self.element_type}]"
+
+
+@dataclass(frozen=True)
 class ListType(TargetType):
-    """Parameterized list/array type.
+    """Mutable list/array type (invariant on element type).
+
+    List[T] is a subtype of Sequence[T].
+    Use List[T] when mutation (e.g., list_push) is needed.
+    Use Sequence[T] for read-only access to repeated fields.
 
     Example:
         ListType(BaseType("Int64"))              # List[Int64]
@@ -714,6 +737,8 @@ def subst_type(typ: 'TargetType', mapping: dict[str, 'TargetType']) -> 'TargetTy
         return mapping.get(typ.name, typ)
     if isinstance(typ, (BaseType, MessageType, EnumType)):
         return typ
+    if isinstance(typ, SequenceType):
+        return SequenceType(subst_type(typ.element_type, mapping))
     if isinstance(typ, ListType):
         return ListType(subst_type(typ.element_type, mapping))
     if isinstance(typ, OptionType):
@@ -740,7 +765,11 @@ def match_types(param_type: 'TargetType', arg_type: 'TargetType', mapping: dict[
         if param_type.name not in mapping:
             mapping[param_type.name] = arg_type
         return
-    if isinstance(param_type, ListType) and isinstance(arg_type, ListType):
+    if isinstance(param_type, SequenceType) and isinstance(arg_type, SequenceType):
+        match_types(param_type.element_type, arg_type.element_type, mapping)
+    elif isinstance(param_type, SequenceType) and isinstance(arg_type, ListType):
+        match_types(param_type.element_type, arg_type.element_type, mapping)
+    elif isinstance(param_type, ListType) and isinstance(arg_type, ListType):
         match_types(param_type.element_type, arg_type.element_type, mapping)
     elif isinstance(param_type, OptionType) and isinstance(arg_type, OptionType):
         match_types(param_type.element_type, arg_type.element_type, mapping)
@@ -850,6 +879,7 @@ __all__ = [
     'MessageType',
     'EnumType',
     'TupleType',
+    'SequenceType',
     'ListType',
     'DictType',
     'OptionType',
