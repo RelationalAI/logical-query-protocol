@@ -1,7 +1,7 @@
 """Tests for grammar_utils module."""
 
 from meta.grammar import (
-    Nonterminal, LitTerminal, NamedTerminal, Sequence, Star, Option, Rule,
+    Nonterminal, LitTerminal, NamedTerminal, Sequence, Star, Option, Rule
 )
 from meta.grammar_utils import collect, get_nonterminals, get_literals, rewrite_rule
 from meta.target import MessageType, BaseType, Lambda, Var, OptionType, ListType

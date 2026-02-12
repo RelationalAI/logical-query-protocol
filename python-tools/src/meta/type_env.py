@@ -99,7 +99,7 @@ class TypeEnv:
         if proto_field.is_optional:
             base_type = OptionType(base_type)
 
-        # Wrap in Sequence if repeated (read-only access)
+        # Wrap in Sequence if repeated
         if proto_field.is_repeated:
             base_type = SequenceType(base_type)
 

@@ -8,8 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from meta.grammar import (
-    LitTerminal, NamedTerminal, Nonterminal,
-    Star, Option, Sequence,
+    LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence,
     Rule, Grammar,
 )
 from meta.grammar_analysis import GrammarAnalysis

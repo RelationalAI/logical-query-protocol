@@ -23,7 +23,7 @@ STRING = BaseType("String")
 BOOLEAN = BaseType("Boolean")
 BYTES = BaseType("Bytes")
 TOKEN = VarType("Token")
-VOID = BaseType("Void")
+NONE = OptionType(BaseType("Never")) # the type of None
 NEVER = BaseType("Never")
 
 
@@ -111,7 +111,7 @@ register_builtin("unwrap_option_or", [OptionType(T), T], T)
 
 # === List/Sequence operations ===
 register_builtin("list_concat", [SequenceType(T), SequenceType(T)], ListType(T))
-register_builtin("list_push", [ListType(T), T], VOID)  # Mutating push: list.append(item) / push!(list, item)
+register_builtin("list_push", [ListType(T), T], NONE)  # Mutating push: list.append(item) / push!(list, item)
 register_builtin("list_slice", [SequenceType(T), INT64, INT64], ListType(T))  # list[start:end]
 register_builtin("list_sort", [SequenceType(T)], ListType(T))
 register_builtin("length", [SequenceType(T)], INT64)
@@ -179,10 +179,10 @@ register_builtin("greater", [INT64, INT64], BOOLEAN)
 register_builtin("to_string", [T], STRING)
 
 # === Pretty-printing IO operations ===
-register_builtin("write_io", [STRING], VOID)
-register_builtin("newline_io", [], VOID)
-register_builtin("indent_io", [], VOID)
-register_builtin("dedent_io", [], VOID)
+register_builtin("write_io", [STRING], NONE)
+register_builtin("newline_io", [], NONE)
+register_builtin("indent_io", [], NONE)
+register_builtin("dedent_io", [], NONE)
 
 # === Formatting for terminal types ===
 register_builtin("format_int64", [INT64], STRING)
@@ -265,6 +265,6 @@ __all__ = [
     'make_builtin',
     'make_builtin_with_type',
     # Type constants
-    'ANY', 'INT64', 'INT32', 'FLOAT64', 'STRING', 'BOOLEAN', 'BYTES', 'VOID', 'NEVER',
+    'ANY', 'INT64', 'INT32', 'FLOAT64', 'STRING', 'BOOLEAN', 'BYTES', 'NONE', 'NEVER',
     'T', 'T1', 'T2', 'K', 'V',
 ]

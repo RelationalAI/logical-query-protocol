@@ -1287,7 +1287,7 @@ _PYTHON_TYPE_MAP = {
 def _annotation_to_type(node: ast.AST, line: int) -> TargetType:
     """Convert a Python type annotation AST to TargetType."""
     if isinstance(node, ast.Constant) and node.value is None:
-        return BaseType("Void")
+        return OptionType(BaseType("Never"))
     if isinstance(node, ast.Name):
         # Normalize Python type names to canonical IR names
         type_name = _PYTHON_TYPE_MAP.get(node.id, node.id)
