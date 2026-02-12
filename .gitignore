@@ -1,18 +1,23 @@
-.DS_Store
+# Proto generated files
+./gen
 
-# LispyQP
+# Python
+.venv
+.pytest_cache
+**/uv.lock
 __pycache__/
 python-tools/dist/
 python-tools/build/
 python-tools/src/*.egg-info/
 python-tools/out/
 python-tools/.lsp/.cache
+python-tools/.clj-kondo
 
-# Proto generated files
-./gen
-
-.envrc
-.venv
-.pytest_cache
-**/uv.lock
+# Julia
 julia/LQPParser/Manifest.toml
+
+# Other
+.DS_Store
+.envrc
+.lsp
+.clj-kondo
