@@ -3,7 +3,7 @@
 
 from meta.target import (
     Var, Lit, Symbol, NewMessage, ListExpr, Call, Let,
-    IfElse, Seq, While, Assign, Return, FunDef, VisitNonterminalDef,
+    IfElse, Seq, While, Assign, Return, FunDef, ParseNonterminalDef,
     BaseType, MessageType, ListType, OptionType, GetElement,
 )
 from meta.target_builtins import make_builtin
@@ -313,14 +313,13 @@ def test_go_fun_def_generation():
 
 
 def test_go_visit_nonterminal_def_generation():
-    """Test Go VisitNonterminalDef code generation."""
+    """Test Go ParseNonterminalDef code generation."""
     gen = GoCodeGenerator()
 
     nt = Nonterminal("expr", MessageType("logic", "Expr"))
 
     reset_gensym()
-    parse_def = VisitNonterminalDef(
-        visitor_name="parse",
+    parse_def = ParseNonterminalDef(
         nonterminal=nt,
         params=[],
         return_type=MessageType("logic", "Expr"),

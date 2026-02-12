@@ -11,8 +11,10 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tupl
 
 from .target import (
     TargetExpr, Var, Lit, Symbol, Builtin, NamedFun, NewMessage, EnumValue, OneOf, ListExpr, Call, Lambda, Let,
-    IfElse, Seq, While, Foreach, ForeachEnumerated, Assign, Return, FunDef, VisitNonterminalDef,
-    VisitNonterminal, TargetType, BaseType, VarType, TupleType, SequenceType, ListType, DictType, OptionType,
+    IfElse, Seq, While, Foreach, ForeachEnumerated, Assign, Return, FunDef,
+    ParseNonterminalDef, PrintNonterminalDef,
+    ParseNonterminal, PrintNonterminal,
+    TargetType, BaseType, VarType, TupleType, SequenceType, ListType, DictType, OptionType,
     MessageType, EnumType, FunctionType, GetField, GetElement
 )
 from .target_builtins import get_builtin
@@ -73,6 +75,12 @@ class CodeGenerator(ABC):
         if name in self.keywords:
             return self.escape_keyword(name)
         return name
+
+    # --- Field access ---
+
+    def gen_field_access(self, obj_code: str, field_name: str) -> str:
+        """Generate field access expression: obj.field_name."""
+        return f"{obj_code}.{field_name}"
 
     # --- Literal generation ---
 
@@ -138,6 +146,11 @@ class CodeGenerator(ABC):
         """Generate a reference to a parse method for a nonterminal."""
         pass
 
+    @abstractmethod
+    def gen_pretty_nonterminal_ref(self, name: str) -> str:
+        """Generate a reference to a pretty-print method for a nonterminal."""
+        pass
+
     # --- Type generation ---
 
     @abstractmethod
@@ -162,7 +175,7 @@ class CodeGenerator(ABC):
 
     @abstractmethod
     def gen_list_type(self, element_type: str) -> str:
-        """Generate a list/array type."""
+        """Generate a mutable list/array type."""
         pass
 
     @abstractmethod
@@ -409,7 +422,10 @@ class CodeGenerator(ABC):
         elif isinstance(expr, NamedFun):
             return self.gen_named_fun_ref(expr.name)
 
-        elif isinstance(expr, VisitNonterminal):
+        elif isinstance(expr, PrintNonterminal):
+            return self.gen_pretty_nonterminal_ref(expr.nonterminal.name)
+
+        elif isinstance(expr, ParseNonterminal):
             return self.gen_parse_nonterminal_ref(expr.nonterminal.name)
 
         elif isinstance(expr, OneOf):
@@ -419,9 +435,9 @@ class CodeGenerator(ABC):
             return self._generate_list_expr(expr, lines, indent)
 
         elif isinstance(expr, GetField):
-            # GetField(object, field_name) -> object.field_name
             obj_code = self.generate_lines(expr.object, lines, indent)
-            return f"{obj_code}.{expr.field_name}"
+            assert obj_code is not None, "GetField object should not contain a return"
+            return self.gen_field_access(obj_code, expr.field_name)
 
         elif isinstance(expr, GetElement):
             return self._generate_get_element(expr, lines, indent)
@@ -836,11 +852,13 @@ class CodeGenerator(ABC):
 
     # --- Function definition generation ---
 
-    def generate_def(self, expr: Union[FunDef, VisitNonterminalDef], indent: str = "") -> str:
+    def generate_def(self, expr: Union[FunDef, ParseNonterminalDef, PrintNonterminalDef], indent: str = "") -> str:
         """Generate a function definition."""
         if isinstance(expr, FunDef):
             return self._generate_fun_def(expr, indent)
-        elif isinstance(expr, VisitNonterminalDef):
+        elif isinstance(expr, PrintNonterminalDef):
+            return self._generate_pretty_def(expr, indent)
+        elif isinstance(expr, ParseNonterminalDef):
             return self._generate_parse_def(expr, indent)
         else:
             raise ValueError(f"Unknown definition type: {type(expr)}")
@@ -874,8 +892,13 @@ class CodeGenerator(ABC):
         pass
 
     @abstractmethod
-    def _generate_parse_def(self, expr: VisitNonterminalDef, indent: str) -> str:
+    def _generate_parse_def(self, expr: ParseNonterminalDef, indent: str) -> str:
         """Generate a parse method definition. Language-specific due to method syntax."""
+        pass
+
+    @abstractmethod
+    def _generate_pretty_def(self, expr: PrintNonterminalDef, indent: str) -> str:
+        """Generate a pretty-print method definition. Language-specific due to method syntax."""
         pass
 
     # --- Token spec formatting for parser generation ---

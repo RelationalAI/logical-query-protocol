@@ -11,7 +11,7 @@ from .codegen_templates import PYTHON_TEMPLATES
 from .gensym import gensym
 from .target import (
     TargetExpr, Var, Lit, Symbol, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
-    FunDef, VisitNonterminalDef
+    FunDef, ParseNonterminalDef, PrintNonterminalDef
 )
 
 
@@ -30,6 +30,7 @@ class PythonCodeGenerator(CodeGenerator):
 
     keywords = PYTHON_KEYWORDS
     indent_str = "    "
+    named_fun_class = "self"
 
     base_type_map = {
         'Int32': 'int',
@@ -49,9 +50,35 @@ class PythonCodeGenerator(CodeGenerator):
     def _register_builtins(self) -> None:
         """Register builtin generators from templates."""
         self.register_builtins_from_templates(PYTHON_TEMPLATES)
+        # Override tuple to handle empty and single-element cases correctly
+        self.register_builtin("tuple", self._gen_tuple_builtin)
+        # Override unwrap_option to emit assert for type narrowing
+        self.register_builtin("unwrap_option", self._gen_unwrap_option_builtin)
+
+    @staticmethod
+    def _gen_tuple_builtin(args, lines, indent):
+        from .codegen_base import BuiltinResult
+        if len(args) == 0:
+            return BuiltinResult("()", [])
+        elif len(args) == 1:
+            return BuiltinResult(f"({args[0]},)", [])
+        else:
+            return BuiltinResult(f"({', '.join(args)},)", [])
+
+    @staticmethod
+    def _gen_unwrap_option_builtin(args, lines, indent):
+        from .codegen_base import BuiltinResult
+        return BuiltinResult(args[0], [f"assert {args[0]} is not None"])
 
     def escape_keyword(self, name: str) -> str:
         return f"{name}_"
+
+    # --- Field access ---
+
+    def gen_field_access(self, obj_code: str, field_name: str) -> str:
+        if field_name in PYTHON_KEYWORDS:
+            return f"getattr({obj_code}, {field_name!r})"
+        return f"{obj_code}.{field_name}"
 
     # --- Literal generation ---
 
@@ -76,10 +103,13 @@ class PythonCodeGenerator(CodeGenerator):
         return f"self.{name}"
 
     def gen_named_fun_ref(self, name: str) -> str:
-        return f"Parser.{name}"
+        return f"{self.named_fun_class}.{name}"
 
     def gen_parse_nonterminal_ref(self, name: str) -> str:
         return f"self.parse_{name}"
+
+    def gen_pretty_nonterminal_ref(self, name: str) -> str:
+        return f"self.pretty_{name}"
 
     # --- Type generation ---
 
@@ -267,30 +297,50 @@ class PythonCodeGenerator(CodeGenerator):
         self._message_field_map = field_map
         return field_map
 
-    def _generate_parse_def(self, expr: VisitNonterminalDef, indent: str) -> str:
-        """Generate a parse method definition."""
-        func_name = f"parse_{expr.nonterminal.name}"
+    def _generate_self_method(self, func_name: str, params, body, return_type, indent: str) -> str:
+        """Generate a method definition with `self` as first parameter.
 
-        params = []
-        for param in expr.params:
+        Args:
+            func_name: The method name.
+            params: List of Param objects (each with .name and .type).
+            body: The method body expression, or None for an empty body.
+            return_type: The return type, or None.
+            indent: Indentation prefix.
+        """
+        typed_params = []
+        for param in params:
             escaped_name = self.escape_identifier(param.name)
             type_hint = self.gen_type(param.type)
-            params.append(f"{escaped_name}: {type_hint}")
+            typed_params.append(f"{escaped_name}: {type_hint}")
 
-        params_str = ', '.join(params) if params else ''
+        params_str = ', '.join(typed_params) if typed_params else ''
         if params_str:
             params_str = ', ' + params_str
 
-        ret_hint = f" -> {self.gen_type(expr.return_type)}" if expr.return_type else ""
+        ret_hint = f" -> {self.gen_type(return_type)}" if return_type else ""
 
         body_lines: List[str] = []
-        body_inner = self.generate_lines(expr.body, body_lines, indent + "    ")
-        # Only add return if the body didn't already return
-        if body_inner is not None:
-            body_lines.append(f"{indent}    return {body_inner}")
+        if body is None:
+            body_lines.append(f"{indent}    pass")
+        else:
+            body_inner = self.generate_lines(body, body_lines, indent + "    ")
+            if body_inner is not None:
+                body_lines.append(f"{indent}    return {body_inner}")
         body_code = "\n".join(body_lines)
 
         return f"{indent}def {func_name}(self{params_str}){ret_hint}:\n{body_code}"
+
+    def _generate_parse_def(self, expr: ParseNonterminalDef, indent: str) -> str:
+        """Generate a parse method definition."""
+        return self._generate_self_method(
+            f"parse_{expr.nonterminal.name}", expr.params, expr.body, expr.return_type, indent
+        )
+
+    def _generate_pretty_def(self, expr: PrintNonterminalDef, indent: str) -> str:
+        """Generate a pretty-print method definition."""
+        return self._generate_self_method(
+            f"pretty_{expr.nonterminal.name}", expr.params, expr.body, expr.return_type, indent
+        )
 
     # Parser generation settings
     parse_def_indent = "    "
@@ -305,9 +355,10 @@ class PythonCodeGenerator(CodeGenerator):
         return f"\nCommand: {command_line}\n"
 
     def generate_method_def(self, expr: FunDef, indent: str) -> str:
-        """Generate a function definition as a static method on Parser."""
-        result = self._generate_fun_def(expr, indent)
-        return f"{indent}@staticmethod\n{result}"
+        """Generate a function definition as an instance method."""
+        return self._generate_self_method(
+            self.escape_identifier(expr.name), expr.params, expr.body, expr.return_type, indent
+        )
 
 
 def escape_identifier(name: str) -> str:
@@ -344,7 +395,7 @@ def generate_python_lines(
 
 
 def generate_python_def(
-    expr: Union[FunDef, VisitNonterminalDef],
+    expr: Union[FunDef, ParseNonterminalDef, PrintNonterminalDef],
     indent: str = "",
     generator: Optional[PythonCodeGenerator] = None,
 ) -> str:

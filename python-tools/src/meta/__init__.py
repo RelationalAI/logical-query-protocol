@@ -28,8 +28,10 @@ from .target import (
     SequenceType,
     ListType,
     FunDef,
-    VisitNonterminalDef,
-    VisitNonterminal,
+    ParseNonterminalDef,
+    PrintNonterminalDef,
+    ParseNonterminal,
+    PrintNonterminal,
 )
 
 # Grammar data structures
@@ -99,8 +101,10 @@ __all__ = [
     'SequenceType',
     'ListType',
     'FunDef',
-    'VisitNonterminalDef',
-    'VisitNonterminal',
+    'ParseNonterminalDef',
+    'PrintNonterminalDef',
+    'ParseNonterminal',
+    'PrintNonterminal',
     # Grammar
     'Grammar',
     'Rule',

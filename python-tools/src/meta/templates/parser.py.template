@@ -10,7 +10,8 @@ in `python-tools/src/meta` or edit the protobuf specification in `proto/v1`.
 import ast
 import hashlib
 import re
-from typing import Sequence, List, Optional, Any, Tuple, Callable
+from collections.abc import Sequence
+from typing import List, Optional, Any, Tuple, Callable
 from decimal import Decimal
 
 from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
@@ -238,6 +239,14 @@ class Parser:
 
         # Create and return Fragment
         return fragments_pb2.Fragment(id=fragment_id, declarations=declarations, debug_info=debug_info)
+
+    def relation_id_to_string(self, msg) -> str:
+        """Stub: only used in pretty printer."""
+        raise NotImplementedError("relation_id_to_string is only available in PrettyPrinter")
+
+    def relation_id_to_uint128(self, msg):
+        """Stub: only used in pretty printer."""
+        raise NotImplementedError("relation_id_to_uint128 is only available in PrettyPrinter")
 
     # --- Helper functions ---
 {named_function_defns}
