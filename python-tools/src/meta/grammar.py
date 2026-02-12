@@ -228,9 +228,6 @@ class Rule:
             f"but RHS has {rhs_len} non-literal element(s): {self.rhs}"
         )
 
-# Backwards-compatible alias for tests
-make_rule = Rule
-
 
 @dataclass(frozen=True)
 class Token:
@@ -306,40 +303,6 @@ class Grammar:
         """Find all nonterminals that are unreachable from start symbol."""
         _, unreachable = self.analysis.partition_nonterminals_by_reachability()
         return unreachable
-
-    def print_grammar(self, reachable_only: bool = True) -> str:
-        """Convert to context-free grammar format with actions."""
-        lines = []
-        lines.append("// Auto-generated grammar from protobuf specifications")
-        lines.append("")
-
-        reachable, unreachable = self.analysis.partition_nonterminals_by_reachability()
-        rule_order = reachable if reachable_only else reachable + unreachable
-
-        for lhs in rule_order:
-            rules_list = self.rules[lhs]
-            lines.append(f"{lhs}")
-            for idx, rule in enumerate(rules_list):
-                if idx == 0:
-                    lines.append(f"  : {rule.to_pattern(self)}")
-                else:
-                    lines.append(f"  | {rule.to_pattern(self)}")
-
-                if rule.constructor:
-                    lines.append(f"    +{{{{ {rule.constructor} }}}}")
-                if rule.deconstructor:
-                    lines.append(f"    -{{{{ {rule.deconstructor} }}}}")
-
-            lines.append("")
-
-        # Print tokens at the end
-        if self.rules and self.tokens:
-            lines.append("")
-
-        for token in self.tokens:
-            lines.append(f"{token.name}: {token.pattern}")
-
-        return "\n".join(lines)
 
     def print_grammar_yacc(self, reachable_only: bool = True) -> str:
         """Convert to yacc-like grammar format.

@@ -632,18 +632,23 @@ def _make_field_type_lookup(
     Returns:
         A function that takes (MessageType, field_name) and returns the field's TargetType
     """
+    # Build name -> module index for resolving unqualified message type names
+    name_to_module: Dict[str, str] = {}
+    for (module, msg_name) in proto_messages:
+        name_to_module[msg_name] = module
+
     # Build field type map: (module, message_name, field_name) -> TargetType
     field_types: Dict[Tuple[str, str, str], TargetType] = {}
 
     for (module, msg_name), proto_msg in proto_messages.items():
         for field in proto_msg.fields:
-            field_type = _proto_type_to_target_type(field.type, field.is_repeated, field.is_optional)
+            field_type = _proto_type_to_target_type(field.type, field.is_repeated, field.is_optional, name_to_module)
             field_types[(module, msg_name, field.name)] = field_type
 
         # Also add oneof fields
         for oneof in proto_msg.oneofs:
             for field in oneof.fields:
-                field_type = _proto_type_to_target_type(field.type, False)
+                field_type = _proto_type_to_target_type(field.type, False, name_to_module=name_to_module)
                 field_types[(module, msg_name, field.name)] = field_type
 
     def lookup(message_type: MessageType, field_name: str) -> Optional[TargetType]:
@@ -654,7 +659,8 @@ def _make_field_type_lookup(
 
 
 def _proto_type_to_target_type(proto_type: str, is_repeated: bool,
-                               is_optional: bool = False) -> TargetType:
+                               is_optional: bool = False,
+                               name_to_module: Optional[Dict[str, str]] = None) -> TargetType:
     """Convert a proto field type string to TargetType."""
     # Map proto scalar types to target base types
     scalar_map = {
@@ -676,8 +682,9 @@ def _proto_type_to_target_type(proto_type: str, is_repeated: bool,
         parts = proto_type.rsplit('.', 1)
         base_type = MessageType(parts[0], parts[1])
     else:
-        # Message type without module prefix - use logic as default module
-        base_type = MessageType('logic', proto_type)
+        # Message type without module prefix - look up the correct module
+        module = name_to_module.get(proto_type, 'logic') if name_to_module else 'logic'
+        base_type = MessageType(module, proto_type)
 
     if is_repeated:
         return SequenceType(base_type)

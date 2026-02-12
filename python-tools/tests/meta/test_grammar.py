@@ -6,7 +6,7 @@ import pytest
 from meta.grammar import (
     LitTerminal, NamedTerminal, Nonterminal,
     Star, Option, Sequence,
-    Rule, Token, Grammar, make_rule,
+    Rule, Token, Grammar,
 )
 from meta.grammar_utils import (
     get_nonterminals, get_literals, is_epsilon, rhs_elements,
@@ -256,7 +256,7 @@ class TestRule:
         rhs = nt
         param = Var("x", MessageType("proto", "B"))
         constructor = Lambda([param], MessageType("proto", "A"), param)
-        rule = make_rule(lhs, rhs, constructor)
+        rule = Rule(lhs, rhs, constructor)
         assert rule.lhs == lhs
         assert rule.rhs == rhs
         assert rule.constructor == constructor
@@ -270,7 +270,7 @@ class TestRule:
         param1 = Var("x", MessageType("proto", "B"))
         param2 = Var("y", MessageType("proto", "C"))
         constructor = Lambda([param1, param2], MessageType("proto", "A"), param1)
-        rule = make_rule(lhs, rhs, constructor)
+        rule = Rule(lhs, rhs, constructor)
         assert len(rule.constructor.params) == 2
 
     def test_construction_filters_literals(self):
@@ -281,7 +281,7 @@ class TestRule:
         rhs = Sequence((nt, lit))
         param = Var("x", MessageType("proto", "B"))
         constructor = Lambda([param], MessageType("proto", "A"), param)
-        rule = make_rule(lhs, rhs, constructor)
+        rule = Rule(lhs, rhs, constructor)
         assert len(rule.constructor.params) == 1
 
     def test_construction_fails_with_wrong_param_count(self):
@@ -293,7 +293,7 @@ class TestRule:
         param = Var("x", MessageType("proto", "B"))
         constructor = Lambda([param], MessageType("proto", "A"), param)
         with pytest.raises(AssertionError, match="Action for A has 1 parameter"):
-            make_rule(lhs, rhs, constructor)
+            Rule(lhs, rhs, constructor)
 
     def test_str(self):
         """Test Rule string representation."""
@@ -301,7 +301,7 @@ class TestRule:
         nt = Nonterminal("B", MessageType("proto", "B"))
         param = Var("x", MessageType("proto", "B"))
         constructor = Lambda([param], MessageType("proto", "A"), param)
-        rule = make_rule(lhs, nt, constructor)
+        rule = Rule(lhs, nt, constructor)
         result = str(rule)
         assert "A ->" in result
         assert "B" in result
@@ -312,7 +312,7 @@ class TestRule:
         nt = Nonterminal("B", MessageType("proto", "B"))
         param = Var("x", MessageType("proto", "B"))
         constructor = Lambda([param], MessageType("proto", "A"), param)
-        rule = make_rule(lhs, nt, constructor, source_type="SomeProtoType")
+        rule = Rule(lhs, nt, constructor, source_type="SomeProtoType")
         assert rule.source_type == "SomeProtoType"
 
 
@@ -344,7 +344,7 @@ class TestGrammar:
         nt = Nonterminal("A", MessageType("proto", "A"))
         param = Var("x", MessageType("proto", "A"))
         constructor = Lambda([param], MessageType("proto", "A"), param)
-        rule = make_rule(nt, nt, constructor)
+        rule = Rule(nt, nt, constructor)
         grammar.add_rule(rule)
         assert nt in grammar.rules
         assert len(grammar.rules[nt]) == 1
@@ -360,8 +360,8 @@ class TestGrammar:
         param_c = Var("y", MessageType("proto", "C"))
         constructor_b = Lambda([param_b], MessageType("proto", "A"), param_b)
         constructor_c = Lambda([param_c], MessageType("proto", "A"), param_c)
-        rule1 = make_rule(nt, nt_b, constructor_b)
-        rule2 = make_rule(nt, nt_c, constructor_c)
+        rule1 = Rule(nt, nt_b, constructor_b)
+        rule2 = Rule(nt, nt_c, constructor_c)
         grammar.add_rule(rule1)
         grammar.add_rule(rule2)
         assert len(grammar.rules[nt]) == 2
@@ -373,7 +373,7 @@ class TestGrammar:
         nt = Nonterminal("A", MessageType("proto", "A"))
         param = Var("x", MessageType("proto", "A"))
         constructor = Lambda([param], MessageType("proto", "A"), param)
-        rule = make_rule(nt, nt, constructor)
+        rule = Rule(nt, nt, constructor)
         grammar.add_rule(rule)
         rules = grammar.get_rules(nt)
         assert len(rules) == 1
@@ -394,7 +394,7 @@ class TestGrammar:
         nt = Nonterminal("A", MessageType("proto", "A"))
         param = Var("x", MessageType("proto", "A"))
         constructor = Lambda([param], MessageType("proto", "A"), param)
-        rule = make_rule(nt, nt, constructor)
+        rule = Rule(nt, nt, constructor)
         grammar.add_rule(rule)
         assert grammar.has_rule(nt)
         other = Nonterminal("B", MessageType("proto", "B"))
@@ -420,11 +420,11 @@ class TestGrammar:
         constructor_c = Lambda([param_c], MessageType("proto", "C"), param_c)
         constructor_d = Lambda([param_d], MessageType("proto", "D"), param_d)
 
-        grammar.add_rule(make_rule(start, a, constructor_start))
-        grammar.add_rule(make_rule(a, b, constructor_a))
-        grammar.add_rule(make_rule(b, c, constructor_b))
-        grammar.add_rule(make_rule(c, c, constructor_c))
-        grammar.add_rule(make_rule(d, d, constructor_d))  # unreachable rule
+        grammar.add_rule(Rule(start, a, constructor_start))
+        grammar.add_rule(Rule(a, b, constructor_a))
+        grammar.add_rule(Rule(b, c, constructor_b))
+        grammar.add_rule(Rule(c, c, constructor_c))
+        grammar.add_rule(Rule(d, d, constructor_d))  # unreachable rule
 
         reachable, unreachable = grammar.analysis.partition_nonterminals_by_reachability()
         assert reachable[0] == start
@@ -436,17 +436,17 @@ class TestGrammar:
 
 
 
-    def test_print_grammar(self):
-        """Test Grammar print_grammar."""
+    def test_print_grammar_yacc(self):
+        """Test Grammar print_grammar_yacc."""
         start = Nonterminal("Start", MessageType("proto", "Start"))
         grammar = Grammar(start)
         a = Nonterminal("A", MessageType("proto", "A"))
         param = Var("x", MessageType("proto", "A"))
         constructor = Lambda([param], MessageType("proto", "A"), param)
-        grammar.add_rule(make_rule(start, a, constructor))
-        output = grammar.print_grammar()
+        grammar.add_rule(Rule(start, a, constructor))
+        output = grammar.print_grammar_yacc()
         assert "Start" in output
-        assert ": A" in output
+        assert "A" in output
 
 
 

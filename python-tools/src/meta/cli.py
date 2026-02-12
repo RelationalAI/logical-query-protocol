@@ -71,6 +71,7 @@ def parse_args():
         choices=["ir", "python", "julia", "go"],
         help="Output the generated parser (ir, python, julia, or go)"
     )
+
     args = parser.parse_args()
 
     # --grammar is required for --parser

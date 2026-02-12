@@ -403,7 +403,9 @@ class GrammarValidator:
                         f"In {context}: builtin 'list_concat' arg 1 has type {arg1_type}, expected Sequence[T]",
                         rule_name=context
                     )
-                if arg0_type is not None and arg1_type is not None and isinstance(arg0_type, (SequenceType, ListType)) and isinstance(arg1_type, (SequenceType, ListType)):
+                if (arg0_type is not None and arg1_type is not None
+                        and isinstance(arg0_type, (SequenceType, ListType))
+                        and isinstance(arg1_type, (SequenceType, ListType))):
                     # Check that element types have a common supertype
                     t = arg0_type.element_type
                     u = arg1_type.element_type
@@ -502,7 +504,9 @@ class GrammarValidator:
         - Reflexivity: T <: T
         - Never <: T for all T (Never is the bottom type)
         - T <: Any for all T (Any is the top type)
-        - List is covariant: List[A] <: List[B] if A <: B
+        - List[T] <: Sequence[T]
+        - List is invariant: List[A] <: List[B] iff A == B
+        - Sequence is covariant: Sequence[A] <: Sequence[B] if A <: B
         - Option is covariant: Option[A] <: Option[B] if A <: B
         - Tuple is covariant: (A1, A2, ...) <: (B1, B2, ...) if Ai <: Bi for all i
         """
@@ -514,15 +518,13 @@ class GrammarValidator:
         # T <: Any for all T (Any is the top type)
         if isinstance(t2, BaseType) and t2.name == "Any":
             return True
-        # List[T] <: Sequence[U] if T <: U
+        # List[T] <: Sequence[T] (by transitivity with Sequence covariance: List[T] <: Sequence[U] if T <: U)
         if isinstance(t1, ListType) and isinstance(t2, SequenceType):
             return self._is_subtype(t1.element_type, t2.element_type)
         # Sequence is covariant: Sequence[A] <: Sequence[B] if A <: B
         if isinstance(t1, SequenceType) and isinstance(t2, SequenceType):
             return self._is_subtype(t1.element_type, t2.element_type)
-        # List is invariant: List[A] <: List[B] only if A == B
-        if isinstance(t1, ListType) and isinstance(t2, ListType):
-            return t1.element_type == t2.element_type
+        # List is invariant (equality handled by reflexivity above)
         # Option is covariant: Option[A] <: Option[B] if A <: B
         if isinstance(t1, OptionType) and isinstance(t2, OptionType):
             return self._is_subtype(t1.element_type, t2.element_type)
@@ -714,6 +716,7 @@ class GrammarValidator:
             return self._is_valid_type(typ.element_type)
 
         if isinstance(typ, ListType):
+            # List is valid if element type is valid
             return self._is_valid_type(typ.element_type)
 
         if isinstance(typ, OptionType):

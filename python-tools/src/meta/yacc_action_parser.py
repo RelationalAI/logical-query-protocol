@@ -991,10 +991,10 @@ def _convert_stmt(stmt: ast.stmt, ctx: 'TypeContext', line: int,
             raise YaccGrammarError("for/else not supported", line)
         collection = _convert_func_expr(stmt.iter, ctx, line, local_vars)
         col_type = collection.target_type()
-        if isinstance(col_type, ListType):
+        if isinstance(col_type, (ListType, SequenceType)):
             elem_type = col_type.element_type
         else:
-            elem_type = BaseType("Unknown")
+            raise YaccGrammarError(f"Cannot iterate over non-list type: {col_type}", line)
         if isinstance(stmt.target, ast.Tuple) and len(stmt.target.elts) == 2:
             # for (i, x) in enumerate(collection)
             idx_target, val_target = stmt.target.elts
@@ -1029,15 +1029,13 @@ def _make_get_field(obj: TargetExpr, field_name: str, ctx: 'TypeContext', line: 
     if isinstance(obj_type, OptionType):
         obj_type = obj_type.element_type
     if not isinstance(obj_type, MessageType):
-        # Allow field access on Unknown types — return GetField with Unknown type
-        return GetField(obj, field_name, MessageType("unknown", "Unknown"), BaseType("Unknown"))
+        raise YaccGrammarError(f"Cannot access field '{field_name}' on non-message type: {obj_type}", line)
     message_type = obj_type
-    # Try to look up field type
-    field_type: TargetType = BaseType("Unknown")
-    if ctx.field_type_lookup is not None:
-        looked_up = ctx.field_type_lookup(message_type, field_name)
-        if looked_up is not None:
-            field_type = looked_up
+    if ctx.field_type_lookup is None:
+        return GetField(obj, field_name, message_type, BaseType("Unknown"))
+    field_type = ctx.field_type_lookup(message_type, field_name)
+    if field_type is None:
+        raise YaccGrammarError(f"Unknown field '{field_name}' on {message_type}", line)
     return GetField(obj, field_name, message_type, field_type)
 
 
@@ -1342,7 +1340,7 @@ class TypeContext:
     functions: Dict[str, FunctionType] = field(default_factory=dict)
     start_symbol: Optional[str] = None
     # Callback to look up field type: (message_type, field_name) -> field_type
-    # If None, field types cannot be resolved (use Unknown placeholder)
+    # If None, field type resolution will raise an error
     field_type_lookup: Optional[Callable[[MessageType, str], Optional[TargetType]]] = None
     # Callback to look up enum values: (module, enum_name) -> [(value_name, value_num), ...]
     # If None, enum values cannot be validated

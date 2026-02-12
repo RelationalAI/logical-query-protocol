@@ -394,8 +394,6 @@ class GetElement(TargetExpr):
             raise ValueError(f"Tuple index {self.index} out of range for {expr_type}")
         if isinstance(expr_type, (SequenceType, ListType)):
             return expr_type.element_type
-        if isinstance(expr_type, BaseType) and expr_type.name == "Unknown":
-            return BaseType("Unknown")
         raise ValueError(f"Cannot get element from non-tuple type: {expr_type}")
 
 

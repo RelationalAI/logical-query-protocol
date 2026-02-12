@@ -1,7 +1,7 @@
 """Tests for grammar_utils module."""
 
 from meta.grammar import (
-    Nonterminal, LitTerminal, NamedTerminal, Sequence, Star, Option, Rule, make_rule,
+    Nonterminal, LitTerminal, NamedTerminal, Sequence, Star, Option, Rule,
 )
 from meta.grammar_utils import collect, get_nonterminals, get_literals, rewrite_rule
 from meta.target import MessageType, BaseType, Lambda, Var, OptionType, ListType
@@ -138,7 +138,7 @@ class TestRewriteRhs:
         nt_old = Nonterminal('Foo', MessageType('test', 'Foo'))
         nt_new = Nonterminal('Bar', MessageType('test', 'Foo'))
         param = Var('x', MessageType('test', 'Foo'))
-        rule = make_rule(
+        rule = Rule(
             lhs=nt_old,
             rhs=nt_old,
             constructor=Lambda([param], MessageType('test', 'Foo'), param),
@@ -156,7 +156,7 @@ class TestRewriteRhs:
         # Constructor needs 2 params since RHS has 2 non-literals
         param1 = Var('x', MessageType('test', 'Foo'))
         param2 = Var('y', MessageType('test', 'Keep'))
-        rule = make_rule(
+        rule = Rule(
             lhs=Nonterminal('Result', MessageType('test', 'Result')),
             rhs=seq,
             constructor=Lambda([param1, param2], MessageType('test', 'Result'), param1),
@@ -173,7 +173,7 @@ class TestRewriteRhs:
         nt_new = Nonterminal('Bar', MessageType('test', 'Foo'))
         star = Star(nt_old)
         param = Var('x', MessageType('test', 'Foo'))
-        rule = make_rule(
+        rule = Rule(
             lhs=Nonterminal('Result', MessageType('test', 'Result')),
             rhs=star,
             constructor=Lambda([param], MessageType('test', 'Result'), param),
@@ -189,7 +189,7 @@ class TestRewriteRhs:
         nt_new = Nonterminal('Bar', MessageType('test', 'Foo'))
         opt = Option(nt_old)
         param = Var('x', MessageType('test', 'Foo'))
-        rule = make_rule(
+        rule = Rule(
             lhs=Nonterminal('Result', MessageType('test', 'Result')),
             rhs=opt,
             constructor=Lambda([param], MessageType('test', 'Result'), param),
@@ -203,7 +203,7 @@ class TestRewriteRhs:
         """Rewrite with no matches returns original rule."""
         nt = Nonterminal('Foo', MessageType('test', 'Foo'))
         param = Var('x', MessageType('test', 'Foo'))
-        rule = make_rule(
+        rule = Rule(
             lhs=nt,
             rhs=nt,
             constructor=Lambda([param], MessageType('test', 'Foo'), param),
@@ -225,7 +225,7 @@ class TestRewriteRhs:
         # Constructor needs 2 params - one for Keep, one for Option containing Star
         param1 = Var('x', MessageType('test', 'Keep'))
         param2 = Var('y', OptionType(ListType(MessageType('test', 'Foo'))))
-        rule = make_rule(
+        rule = Rule(
             lhs=Nonterminal('Result', MessageType('test', 'Result')),
             rhs=outer,
             constructor=Lambda([param1, param2], MessageType('test', 'Result'), param1),
@@ -248,7 +248,7 @@ class TestRewriteRhs:
         # Constructor needs 2 params since RHS has 2 non-literals
         param1 = Var('x', MessageType('test', 'Foo'))
         param2 = Var('y', MessageType('test', 'Bar'))
-        rule = make_rule(
+        rule = Rule(
             lhs=Nonterminal('Result', MessageType('test', 'Result')),
             rhs=seq,
             constructor=Lambda([param1, param2], MessageType('test', 'Result'), param1),
@@ -266,7 +266,7 @@ class TestRewriteRhs:
         lhs = Nonterminal('Result', MessageType('test', 'Result'))
         param = Var('x', MessageType('test', 'Foo'))
         constructor = Lambda([param], MessageType('test', 'Result'), param)
-        rule = make_rule(
+        rule = Rule(
             lhs=lhs,
             rhs=nt_old,
             constructor=constructor,
