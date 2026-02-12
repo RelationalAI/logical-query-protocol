@@ -128,7 +128,7 @@ class PrettyPrinter:
         if _t1290:
             assert value is not None
             return int(value.int_value)
-        return default
+        return int(default)
 
     def _extract_value_int64(self, value: Optional[logic_pb2.Value], default: int) -> int:
         
@@ -450,7 +450,7 @@ class PrettyPrinter:
         _t1354 = self._make_value_int64(msg.skip)
         result.append(('csv_skip', _t1354,))
         
-        if (msg.new_line is not None and msg.new_line != ''):
+        if msg.new_line != '':
             _t1356 = self._make_value_string(msg.new_line)
             result.append(('csv_new_line', _t1356,))
             _t1355 = None
@@ -463,7 +463,7 @@ class PrettyPrinter:
         _t1359 = self._make_value_string(msg.escapechar)
         result.append(('csv_escapechar', _t1359,))
         
-        if (msg.comment is not None and msg.comment != ''):
+        if msg.comment != '':
             _t1361 = self._make_value_string(msg.comment)
             result.append(('csv_comment', _t1361,))
             _t1360 = None
@@ -526,10 +526,14 @@ class PrettyPrinter:
 
     def deconstruct_betree_info_config(self, msg: logic_pb2.BeTreeInfo) -> list[tuple[str, logic_pb2.Value]]:
         result = []
-        _t1374 = self._maybe_push_float64(result, 'betree_config_epsilon', msg.storage_config.epsilon)
-        _t1375 = self._maybe_push_int64(result, 'betree_config_max_pivots', msg.storage_config.max_pivots)
-        _t1376 = self._maybe_push_int64(result, 'betree_config_max_deltas', msg.storage_config.max_deltas)
-        _t1377 = self._maybe_push_int64(result, 'betree_config_max_leaf', msg.storage_config.max_leaf)
+        _t1374 = self._make_value_float64(msg.storage_config.epsilon)
+        result.append(('betree_config_epsilon', _t1374,))
+        _t1375 = self._make_value_int64(msg.storage_config.max_pivots)
+        result.append(('betree_config_max_pivots', _t1375,))
+        _t1376 = self._make_value_int64(msg.storage_config.max_deltas)
+        result.append(('betree_config_max_deltas', _t1376,))
+        _t1377 = self._make_value_int64(msg.storage_config.max_leaf)
+        result.append(('betree_config_max_leaf', _t1377,))
         
         if msg.relation_locator.HasField('root_pageid'):
             _t1379 = self._maybe_push_uint128(result, 'betree_locator_root_pageid', msg.relation_locator.root_pageid)
@@ -542,8 +546,10 @@ class PrettyPrinter:
             _t1380 = _t1381
         else:
             _t1380 = None
-        _t1382 = self._maybe_push_int64(result, 'betree_locator_element_count', msg.relation_locator.element_count)
-        _t1383 = self._maybe_push_int64(result, 'betree_locator_tree_height', msg.relation_locator.tree_height)
+        _t1382 = self._make_value_int64(msg.relation_locator.element_count)
+        result.append(('betree_locator_element_count', _t1382,))
+        _t1383 = self._make_value_int64(msg.relation_locator.tree_height)
+        result.append(('betree_locator_tree_height', _t1383,))
         return sorted(result)
 
     def deconstruct_export_csv_config(self, msg: transactions_pb2.ExportCSVConfig) -> list[tuple[str, logic_pb2.Value]]:

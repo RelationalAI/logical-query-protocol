@@ -226,6 +226,32 @@ GO_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "error_with_token": BuiltinTemplate(
         None, ['panic(ParseError{{msg: fmt.Sprintf("%s: %s=`%v`", {0}, {1}.Type, {1}.Value)}})'
     ]),
+    # Pretty-printing builtins
+    "write_io": BuiltinTemplate("nil", ["p.write({0})"]),
+    "newline_io": BuiltinTemplate("nil", ["p.newline()"]),
+    "indent_io": BuiltinTemplate("nil", ["p.indent()"]),
+    "dedent_io": BuiltinTemplate("nil", ["p.dedent()"]),
+    "format_int64": BuiltinTemplate('fmt.Sprintf("%d", {0})'),
+    "format_int32": BuiltinTemplate('fmt.Sprintf("%d", {0})'),
+    "format_float64": BuiltinTemplate('fmt.Sprintf("%g", {0})'),
+    "format_string": BuiltinTemplate("p.formatStringValue({0})"),
+    "format_symbol": BuiltinTemplate("{0}"),
+    "format_bool": BuiltinTemplate('formatBool({0})'),
+    "format_decimal": BuiltinTemplate("p.formatDecimal({0})"),
+    "format_int128": BuiltinTemplate("p.formatInt128({0})"),
+    "format_uint128": BuiltinTemplate("p.formatUint128({0})"),
+    "greater": BuiltinTemplate("({0} > {1})"),
+    "to_string": BuiltinTemplate('fmt.Sprintf("%v", {0})'),
+    # Type conversions used by pretty printer
+    "int32_to_int64": BuiltinTemplate("int64({0})"),
+    "is_empty": BuiltinTemplate("len({0}) == 0"),
+    "decode_string": BuiltinTemplate("string({0})"),
+    "fragment_id_to_string": BuiltinTemplate("p.fragmentIdToString({0})"),
+    "relation_id_to_string": BuiltinTemplate("p.relationIdToString({0})"),
+    "relation_id_to_int": BuiltinTemplate("p.relationIdToInt({0})"),
+    "relation_id_to_uint128": BuiltinTemplate("p.relationIdToUint128({0})"),
+    "subtract": BuiltinTemplate("({0} - {1})"),
+    "list_slice": BuiltinTemplate("{0}[{1}:{2}]"),
 }
 
 __all__ = [

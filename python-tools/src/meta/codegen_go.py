@@ -9,9 +9,9 @@ from typing import Dict, List, Optional, Set, Tuple, Union
 from .codegen_base import CodeGenerator
 from .codegen_templates import GO_TEMPLATES
 from .target import (
-    TargetExpr, Var, Symbol, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
+    TargetExpr, NewMessage, OneOf, ListExpr, Call, Seq,
     FunDef, VisitNonterminalDef, PrintNonterminalDef, VisitNonterminal,
-    GetElement, GetField, TargetType,
+    GetElement, TargetType,
 )
 from .gensym import gensym
 
@@ -347,14 +347,53 @@ class GoCodeGenerator(CodeGenerator):
             pass
         return f"{tuple_code}[{expr.index}]"
 
-    def generate_lines(self, expr: TargetExpr, lines: List[str], indent: str = "") -> Optional[str]:
-        """Override to handle Go-specific GetField with getter methods."""
-        if isinstance(expr, GetField):
-            obj_code = super().generate_lines(expr.object, lines, indent)
-            pascal_field = to_pascal_case(expr.field_name)
-            return f"{obj_code}.Get{pascal_field}()"
+    def gen_field_access(self, obj_code: str, field_name: str) -> str:
+        """Generate Go field access using getter methods (nil-safe)."""
+        pascal_field = to_pascal_case(field_name)
+        return f"{obj_code}.Get{pascal_field}()"
 
+    def _is_optional_scalar_field(self, expr) -> bool:
+        """Check if a GetField accesses an optional scalar proto field.
+
+        Go protobuf getters strip pointer types from optional scalars,
+        returning plain values instead of *T. For nil checks and unwrap,
+        we need direct PascalCase field access to preserve the pointer type.
+        """
+        from .target import GetField, OptionType
+        if not isinstance(expr, GetField):
+            return False
+        if not isinstance(expr.field_type, OptionType):
+            return False
+        inner_go = self.gen_type(expr.field_type.element_type)
+        return not self._is_nullable_go_type(inner_go)
+
+    def generate_lines(self, expr: TargetExpr, lines: List[str], indent: str = "") -> Optional[str]:
+        from .target import GetField
+        # For optional scalar proto fields, use direct PascalCase access
+        # to preserve pointer type (getters strip it).
+        if isinstance(expr, GetField) and self._is_optional_scalar_field(expr):
+            obj_code = self.generate_lines(expr.object, lines, indent)
+            assert obj_code is not None
+            pascal_field = to_pascal_case(expr.field_name)
+            return f"{obj_code}.{pascal_field}"
         return super().generate_lines(expr, lines, indent)
+
+    def _generate_seq(self, expr: Seq, lines: List[str], indent: str) -> Optional[str]:
+        """Generate Go sequence, suppressing unused variable errors.
+
+        In Go, declared-but-unused variables are compile errors. When an
+        intermediate expression in a Seq produces a temp variable (e.g., from
+        an IfElse used for side effects), we emit `_ = var` to suppress it.
+        """
+        result: Optional[str] = self.gen_none()
+        for i, e in enumerate(expr.exprs):
+            result = self.generate_lines(e, lines, indent)
+            if result is None:
+                break
+            # Suppress unused temp variable from non-final expressions
+            if i < len(expr.exprs) - 1 and result is not None and result.startswith("_t"):
+                lines.append(f"{indent}_ = {result}")
+        return result
 
     def _generate_newmessage(self, expr: NewMessage, lines: List[str], indent: str) -> str:
         """Generate Go code for NewMessage with fields containing OneOf calls.

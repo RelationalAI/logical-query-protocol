@@ -1072,10 +1072,10 @@ export_csv_column
 %%
 
 
-def _extract_value_int32(value: Optional[logic.Value], default: int) -> int:
+def _extract_value_int32(value: Optional[logic.Value], default: int) -> Int32:
     if value is not None and builtin.has_proto_field(builtin.unwrap_option(value), 'int_value'):
         return builtin.int64_to_int32(builtin.unwrap_option(value).int_value)
-    return default
+    return builtin.int64_to_int32(default)
 
 
 def _extract_value_int64(value: Optional[logic.Value], default: int) -> int:
@@ -1156,7 +1156,7 @@ def _try_extract_value_string_list(value: Optional[logic.Value]) -> Optional[Seq
 
 def construct_csv_config(config_dict: Sequence[Tuple[String, logic.Value]]) -> logic.CSVConfig:
     config: Dict[String, logic.Value] = builtin.dict_from_list(config_dict)
-    header_row: int = _extract_value_int32(builtin.dict_get(config, "csv_header_row"), 1)
+    header_row: Int32 = _extract_value_int32(builtin.dict_get(config, "csv_header_row"), 1)
     skip: int = _extract_value_int64(builtin.dict_get(config, "csv_skip"), 0)
     new_line: str = _extract_value_string(builtin.dict_get(config, "csv_new_line"), "")
     delimiter: str = _extract_value_string(builtin.dict_get(config, "csv_delimiter"), ",")
@@ -1271,7 +1271,7 @@ def export_csv_config(
     )
 
 
-def _make_value_int32(v: int) -> logic.Value:
+def _make_value_int32(v: Int32) -> logic.Value:
     return logic.Value(int_value=builtin.int32_to_int64(v))
 
 
@@ -1319,12 +1319,12 @@ def deconstruct_csv_config(msg: logic.CSVConfig) -> List[Tuple[String, logic.Val
     result: List[Tuple[String, logic.Value]] = list[Tuple[String, logic.Value]]()
     builtin.list_push(result, builtin.tuple("csv_header_row", _make_value_int32(msg.header_row)))
     builtin.list_push(result, builtin.tuple("csv_skip", _make_value_int64(msg.skip)))
-    if msg.new_line is not None and msg.new_line != "":
+    if msg.new_line != "":
         builtin.list_push(result, builtin.tuple("csv_new_line", _make_value_string(msg.new_line)))
     builtin.list_push(result, builtin.tuple("csv_delimiter", _make_value_string(msg.delimiter)))
     builtin.list_push(result, builtin.tuple("csv_quotechar", _make_value_string(msg.quotechar)))
     builtin.list_push(result, builtin.tuple("csv_escapechar", _make_value_string(msg.escapechar)))
-    if msg.comment is not None and msg.comment != "":
+    if msg.comment != "":
         builtin.list_push(result, builtin.tuple("csv_comment", _make_value_string(msg.comment)))
     for missing_string in msg.missing_strings:
         builtin.list_push(result, builtin.tuple("csv_missing_strings", _make_value_string(missing_string)))
@@ -1360,16 +1360,16 @@ def _maybe_push_bytes_as_string(result: List[Tuple[String, logic.Value]], key: S
 
 def deconstruct_betree_info_config(msg: logic.BeTreeInfo) -> List[Tuple[String, logic.Value]]:
     result: List[Tuple[String, logic.Value]] = list[Tuple[String, logic.Value]]()
-    _maybe_push_float64(result, "betree_config_epsilon", msg.storage_config.epsilon)
-    _maybe_push_int64(result, "betree_config_max_pivots", msg.storage_config.max_pivots)
-    _maybe_push_int64(result, "betree_config_max_deltas", msg.storage_config.max_deltas)
-    _maybe_push_int64(result, "betree_config_max_leaf", msg.storage_config.max_leaf)
+    builtin.list_push(result, builtin.tuple("betree_config_epsilon", _make_value_float64(msg.storage_config.epsilon)))
+    builtin.list_push(result, builtin.tuple("betree_config_max_pivots", _make_value_int64(msg.storage_config.max_pivots)))
+    builtin.list_push(result, builtin.tuple("betree_config_max_deltas", _make_value_int64(msg.storage_config.max_deltas)))
+    builtin.list_push(result, builtin.tuple("betree_config_max_leaf", _make_value_int64(msg.storage_config.max_leaf)))
     if builtin.has_proto_field(msg.relation_locator, "root_pageid"):
         _maybe_push_uint128(result, "betree_locator_root_pageid", msg.relation_locator.root_pageid)
     if builtin.has_proto_field(msg.relation_locator, "inline_data"):
         _maybe_push_bytes_as_string(result, "betree_locator_inline_data", msg.relation_locator.inline_data)
-    _maybe_push_int64(result, "betree_locator_element_count", msg.relation_locator.element_count)
-    _maybe_push_int64(result, "betree_locator_tree_height", msg.relation_locator.tree_height)
+    builtin.list_push(result, builtin.tuple("betree_locator_element_count", _make_value_int64(msg.relation_locator.element_count)))
+    builtin.list_push(result, builtin.tuple("betree_locator_tree_height", _make_value_int64(msg.relation_locator.tree_height)))
     return builtin.list_sort(result)
 
 

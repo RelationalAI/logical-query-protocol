@@ -325,11 +325,11 @@ end
 
 # --- Helper functions ---
 
-function _extract_value_int32(parser::Parser, value::Union{Nothing, Proto.Value}, default::Int64)::Int64
+function _extract_value_int32(parser::Parser, value::Union{Nothing, Proto.Value}, default::Int64)::Int32
     if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
         return Int32(_get_oneof_field(value, :int_value))
     end
-    return default
+    return Int32(default)
 end
 
 function _extract_value_int64(parser::Parser, value::Union{Nothing, Proto.Value}, default::Int64)::Int64
@@ -531,7 +531,7 @@ function export_csv_config(parser::Parser, path::String, columns::Vector{Proto.E
     return _t980
 end
 
-function _make_value_int32(parser::Parser, v::Int64)::Proto.Value
+function _make_value_int32(parser::Parser, v::Int32)::Proto.Value
     _t981 = Proto.Value(value=OneOf(:int_value, Int64(v)))
     return _t981
 end
@@ -609,7 +609,7 @@ function deconstruct_csv_config(parser::Parser, msg::Proto.CSVConfig)::Vector{Tu
     _t995 = _make_value_int64(parser, msg.skip)
     push!(result, ("csv_skip", _t995,))
     
-    if (!isnothing(msg.new_line) && msg.new_line != "")
+    if msg.new_line != ""
         _t997 = _make_value_string(parser, msg.new_line)
         push!(result, ("csv_new_line", _t997,))
         _t996 = nothing
@@ -623,7 +623,7 @@ function deconstruct_csv_config(parser::Parser, msg::Proto.CSVConfig)::Vector{Tu
     _t1000 = _make_value_string(parser, msg.escapechar)
     push!(result, ("csv_escapechar", _t1000,))
     
-    if (!isnothing(msg.comment) && msg.comment != "")
+    if msg.comment != ""
         _t1002 = _make_value_string(parser, msg.comment)
         push!(result, ("csv_comment", _t1002,))
         _t1001 = nothing
@@ -693,10 +693,14 @@ end
 
 function deconstruct_betree_info_config(parser::Parser, msg::Proto.BeTreeInfo)::Vector{Tuple{String, Proto.Value}}
     result = Tuple{String, Proto.Value}[]
-    _t1015 = _maybe_push_float64(parser, result, "betree_config_epsilon", msg.storage_config.epsilon)
-    _t1016 = _maybe_push_int64(parser, result, "betree_config_max_pivots", msg.storage_config.max_pivots)
-    _t1017 = _maybe_push_int64(parser, result, "betree_config_max_deltas", msg.storage_config.max_deltas)
-    _t1018 = _maybe_push_int64(parser, result, "betree_config_max_leaf", msg.storage_config.max_leaf)
+    _t1015 = _make_value_float64(parser, msg.storage_config.epsilon)
+    push!(result, ("betree_config_epsilon", _t1015,))
+    _t1016 = _make_value_int64(parser, msg.storage_config.max_pivots)
+    push!(result, ("betree_config_max_pivots", _t1016,))
+    _t1017 = _make_value_int64(parser, msg.storage_config.max_deltas)
+    push!(result, ("betree_config_max_deltas", _t1017,))
+    _t1018 = _make_value_int64(parser, msg.storage_config.max_leaf)
+    push!(result, ("betree_config_max_leaf", _t1018,))
     
     if _has_proto_field(msg.relation_locator, Symbol("root_pageid"))
         _t1020 = _maybe_push_uint128(parser, result, "betree_locator_root_pageid", _get_oneof_field(msg.relation_locator, :root_pageid))
@@ -711,8 +715,10 @@ function deconstruct_betree_info_config(parser::Parser, msg::Proto.BeTreeInfo)::
     else
         _t1021 = nothing
     end
-    _t1023 = _maybe_push_int64(parser, result, "betree_locator_element_count", msg.relation_locator.element_count)
-    _t1024 = _maybe_push_int64(parser, result, "betree_locator_tree_height", msg.relation_locator.tree_height)
+    _t1023 = _make_value_int64(parser, msg.relation_locator.element_count)
+    push!(result, ("betree_locator_element_count", _t1023,))
+    _t1024 = _make_value_int64(parser, msg.relation_locator.tree_height)
+    push!(result, ("betree_locator_tree_height", _t1024,))
     return sort(result)
 end
 

@@ -637,7 +637,7 @@ def _make_field_type_lookup(
 
     for (module, msg_name), proto_msg in proto_messages.items():
         for field in proto_msg.fields:
-            field_type = _proto_type_to_target_type(field.type, field.is_repeated)
+            field_type = _proto_type_to_target_type(field.type, field.is_repeated, field.is_optional)
             field_types[(module, msg_name, field.name)] = field_type
 
         # Also add oneof fields
@@ -653,7 +653,8 @@ def _make_field_type_lookup(
     return lookup
 
 
-def _proto_type_to_target_type(proto_type: str, is_repeated: bool) -> TargetType:
+def _proto_type_to_target_type(proto_type: str, is_repeated: bool,
+                               is_optional: bool = False) -> TargetType:
     """Convert a proto field type string to TargetType."""
     # Map proto scalar types to target base types
     scalar_map = {
@@ -680,6 +681,8 @@ def _proto_type_to_target_type(proto_type: str, is_repeated: bool) -> TargetType
 
     if is_repeated:
         return SequenceType(base_type)
+    if is_optional:
+        return OptionType(base_type)
     return base_type
 
 
