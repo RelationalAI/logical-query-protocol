@@ -43,8 +43,8 @@ func TestParseLQPFiles(t *testing.T) {
 	// Go up to the repository root (from go/test to repo root)
 	repoRoot := filepath.Join(testDir, "..", "..")
 
-	lqpDir := filepath.Join(repoRoot, "python-tools", "tests", "test_files", "lqp")
-	binDir := filepath.Join(repoRoot, "python-tools", "tests", "test_files", "bin")
+	lqpDir := filepath.Join(repoRoot, "tests", "lqp")
+	binDir := filepath.Join(repoRoot, "tests", "bin")
 
 	// Read all .lqp files
 	entries, err := os.ReadDir(lqpDir)

@@ -7,7 +7,7 @@ from lqp.parser import parse_lqp
 from lqp.emit import ir_to_proto
 from lqp.validator import ValidationError, validate_lqp
 from pytest_snapshot.plugin import Snapshot
-from .utils import get_lqp_input_files
+from .utils import get_lqp_input_files, BIN_SNAPSHOTS_DIR
 
 @pytest.mark.parametrize("input_file", get_lqp_input_files())
 def test_parse_lqp(snapshot: Snapshot, input_file):
@@ -22,7 +22,7 @@ def test_parse_lqp(snapshot: Snapshot, input_file):
         proto_result = ir_to_proto(parsed_lqp)
         assert proto_result is not None, f"Failed to convert IR to Proto for {input_file}"
         binary_output = proto_result.SerializeToString()
-        snapshot.snapshot_dir = Path(__file__).parent / "test_files" / "bin"
+        snapshot.snapshot_dir = BIN_SNAPSHOTS_DIR
         snapshot_filename = os.path.basename(input_file).replace(".lqp", ".bin")
         snapshot.assert_match(binary_output, snapshot_filename)
         print(f"Successfully parsed and snapshotted {input_file}")

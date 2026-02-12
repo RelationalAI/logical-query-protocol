@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from .utils import get_lqp_input_files, get_all_files, PARENT_DIR
+from .utils import get_lqp_input_files, get_all_files, PARENT_DIR, BIN_SNAPSHOTS_DIR
 
 
 def get_base_filename(filepath):
@@ -16,17 +16,17 @@ def check_output_files_have_corresponding_inputs():
     missing_inputs = []
 
     output_files = [
-        ("lqp_output", ".lqp"),
-        ("lqp_debug_output", ".lqp"),
-        ("lqp_pretty_output", ".lqp"),
-        ("test_files/bin", ".bin"),
+        (PARENT_DIR / "lqp_output", ".lqp"),
+        (PARENT_DIR / "lqp_debug_output", ".lqp"),
+        (PARENT_DIR / "lqp_pretty_output", ".lqp"),
+        (BIN_SNAPSHOTS_DIR, ".bin"),
     ]
 
     for directory, file_extension in output_files:
-        for output_file in get_all_files(PARENT_DIR / directory, file_extension):
+        for output_file in get_all_files(directory, file_extension):
             base_name = get_base_filename(output_file)
             if base_name not in input_basenames:
-                missing_inputs.append(f"{directory}/{Path(output_file).name} -> missing input {base_name}.lqp")
+                missing_inputs.append(f"{Path(output_file).parent.name}/{Path(output_file).name} -> missing input {base_name}.lqp")
 
     return missing_inputs
 

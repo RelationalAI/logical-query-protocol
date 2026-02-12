@@ -28,7 +28,7 @@ def get_validator_files():
 
 
 def get_all_test_lqp_files():
-    """Get all .lqp test files from both test_files and validator directories."""
+    """Get all .lqp test files from both tests/lqp and validator directories."""
     files = get_lqp_input_files() + get_validator_files()
     return sorted(set(files))
 
