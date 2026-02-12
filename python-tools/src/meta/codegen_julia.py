@@ -393,7 +393,7 @@ class JuliaCodeGenerator(CodeGenerator):
         return super().generate_lines(expr, lines, indent)
 
     def _generate_call(self, expr: Call, lines: List[str], indent: str) -> Optional[str]:
-        """Override to handle OneOf and VisitNonterminal specially for Julia."""
+        """Override to handle OneOf and Parse/PrintNonterminal specially for Julia."""
         # Check for Call(OneOf(Symbol), [value]) pattern (not in Message constructor)
         if isinstance(expr.func, OneOf) and len(expr.args) == 1:
             field_symbol = self._gen_oneof_symbol(expr.func.field_name)

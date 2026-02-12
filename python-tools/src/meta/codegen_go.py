@@ -10,7 +10,7 @@ from .codegen_base import CodeGenerator
 from .codegen_templates import GO_TEMPLATES
 from .target import (
     TargetExpr, NewMessage, OneOf, ListExpr, Call, Seq,
-    FunDef, VisitNonterminalDef, PrintNonterminalDef, VisitNonterminal,
+    FunDef, ParseNonterminalDef, PrintNonterminalDef, ParseNonterminal, PrintNonterminal,
     GetElement, TargetType,
 )
 from .gensym import gensym
@@ -543,8 +543,8 @@ class GoCodeGenerator(CodeGenerator):
         return tmp
 
     def _generate_call(self, expr: Call, lines: List[str], indent: str) -> Optional[str]:
-        """Override to handle OneOf, VisitNonterminal, NamedFun, and option builtins for Go."""
-        from .target import NamedFun, FunctionType, SequenceType, ListType, BaseType, Builtin, OptionType
+        """Override to handle OneOf, Parse/PrintNonterminal, NamedFun, and option builtins for Go."""
+        from .target import NamedFun, FunctionType, ListType, BaseType, Builtin, OptionType
 
         # Intercept option-related builtins to use pointer/nil idioms
         if isinstance(expr.func, Builtin) and expr.func.name in (
@@ -559,8 +559,8 @@ class GoCodeGenerator(CodeGenerator):
             field_value = self.generate_lines(expr.args[0], lines, indent)
             return field_value
 
-        # Check for VisitNonterminal calls
-        if isinstance(expr.func, VisitNonterminal):
+        # Check for Parse/PrintNonterminal calls
+        if isinstance(expr.func, (ParseNonterminal, PrintNonterminal)):
             f = self.generate_lines(expr.func, lines, indent)
             args: List[str] = []
             for arg in expr.args:
@@ -583,7 +583,7 @@ class GoCodeGenerator(CodeGenerator):
                         # Try to get expected type from parameter
                         if i < len(func_type.param_types):
                             param_type = func_type.param_types[i]
-                            if isinstance(param_type, (SequenceType, ListType)):
+                            if isinstance(param_type, ListType):
                                 # Generate list with correct element type
                                 arg_code = self.gen_list_literal([], param_type.element_type)
                                 args.append(arg_code)
@@ -739,7 +739,7 @@ class GoCodeGenerator(CodeGenerator):
         lines.append(f"{indent}{self.gen_assignment(var_name, expr_code)}")
         return self.gen_none()
 
-    def _generate_parse_def(self, expr: VisitNonterminalDef, indent: str) -> str:
+    def _generate_parse_def(self, expr: ParseNonterminalDef, indent: str) -> str:
         """Generate a parse method definition."""
         self.reset_declared_vars()
 
@@ -882,7 +882,7 @@ def generate_go_lines(expr: TargetExpr, lines: List[str], indent: str = "") -> O
     return GoCodeGenerator().generate_lines(expr, lines, indent)
 
 
-def generate_go_def(expr: Union[FunDef, VisitNonterminalDef], indent: str = "") -> str:
+def generate_go_def(expr: Union[FunDef, ParseNonterminalDef, PrintNonterminalDef], indent: str = "") -> str:
     """Generate Go function definition."""
     return GoCodeGenerator().generate_def(expr, indent)
 

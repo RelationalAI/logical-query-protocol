@@ -313,7 +313,7 @@ def test_go_fun_def_generation():
 
 
 def test_go_visit_nonterminal_def_generation():
-    """Test Go VisitNonterminalDef code generation."""
+    """Test Go ParseNonterminalDef code generation."""
     gen = GoCodeGenerator()
 
     nt = Nonterminal("expr", MessageType("logic", "Expr"))
@@ -363,6 +363,90 @@ def test_go_get_element_generation():
     assert "pair[1]" in result
 
 
+def test_go_and_short_circuit_with_side_effects():
+    """Test that 'and' preserves short-circuit semantics when RHS has side-effects."""
+    gen = GoCodeGenerator()
+    gen.reset_declared_vars()
+    reset_gensym()
+    lines = []
+
+    # and(a, f(x) == 42)
+    # The call f(x) generates a temp-var assignment.
+    # That assignment must be guarded by the if.
+    expr = Call(make_builtin("and"), [
+        Var("a", _bool_type),
+        Call(make_builtin("equal"), [
+            Call(Var("f", _any_type), [Var("x", _any_type)]),
+            Lit(42),
+        ]),
+    ])
+    result = gen.generate_lines(expr, lines, "")
+    code = "\n".join(lines)
+
+    assert result is not None
+    assert "f(x)" not in code.split("if ")[0], \
+        f"f(x) was hoisted above the if guard:\n{code}"
+    assert "if " in code, f"Expected if-else for short-circuit, got:\n{code}"
+    assert "} else {" in code
+
+
+def test_go_or_short_circuit_with_side_effects():
+    """Test that 'or' preserves short-circuit semantics when RHS has side-effects."""
+    gen = GoCodeGenerator()
+    gen.reset_declared_vars()
+    reset_gensym()
+    lines = []
+
+    # or(a, f(x) == 42)
+    expr = Call(make_builtin("or"), [
+        Var("a", _bool_type),
+        Call(make_builtin("equal"), [
+            Call(Var("f", _any_type), [Var("x", _any_type)]),
+            Lit(42),
+        ]),
+    ])
+    result = gen.generate_lines(expr, lines, "")
+    code = "\n".join(lines)
+
+    assert result is not None
+    assert "f(x)" not in code.split("if ")[0], \
+        f"f(x) was hoisted above the if guard:\n{code}"
+    assert "if " in code, f"Expected if-else for short-circuit, got:\n{code}"
+    assert "} else {" in code
+
+
+def test_go_and_without_side_effects_uses_template():
+    """Test that 'and' without side-effects uses the simple template."""
+    gen = GoCodeGenerator()
+    gen.reset_declared_vars()
+    reset_gensym()
+    lines = []
+
+    expr = Call(make_builtin("and"), [
+        Var("a", _bool_type),
+        Var("b", _bool_type),
+    ])
+    result = gen.generate_lines(expr, lines, "")
+    assert result == "(a && b)"
+    assert len(lines) == 0
+
+
+def test_go_or_without_side_effects_uses_template():
+    """Test that 'or' without side-effects uses the simple template."""
+    gen = GoCodeGenerator()
+    gen.reset_declared_vars()
+    reset_gensym()
+    lines = []
+
+    expr = Call(make_builtin("or"), [
+        Var("a", _bool_type),
+        Var("b", _bool_type),
+    ])
+    result = gen.generate_lines(expr, lines, "")
+    assert result == "(a || b)"
+    assert len(lines) == 0
+
+
 if __name__ == "__main__":
     test_go_keyword_escaping()
     test_go_pascal_case()
@@ -384,3 +468,7 @@ if __name__ == "__main__":
     test_go_visit_nonterminal_def_generation()
     test_go_declared_var_tracking()
     test_go_get_element_generation()
+    test_go_and_short_circuit_with_side_effects()
+    test_go_or_short_circuit_with_side_effects()
+    test_go_and_without_side_effects_uses_template()
+    test_go_or_without_side_effects_uses_template()

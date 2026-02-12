@@ -21,21 +21,10 @@ PROTO_FILES := \
 
 GRAMMAR := python-tools/src/meta/grammar.y
 
-# Generated protobuf output directories
+# Generated protobuf outputs
 PY_PROTO_DIR := python-tools/src/lqp/proto/v1
 JL_PROTO_DIR := julia/LQPParser/src/relationalai/lqp/v1
 GO_PROTO_DIR := go/src/lqp/v1
-
-# Representative generated protobuf files (used as make targets)
-PY_PROTO_GEN := $(PY_PROTO_DIR)/logic_pb2.py \
-                $(PY_PROTO_DIR)/fragments_pb2.py \
-                $(PY_PROTO_DIR)/transactions_pb2.py
-GO_PROTO_GEN := $(GO_PROTO_DIR)/logic.pb.go \
-				$(GO_PROTO_DIR)/fragments.pb.go \
-				$(GO_PROTO_DIR)/transctions.pb.go
-JL_PROTO_GEN := $(JL_PROTO_DIR)/logic_pb.jl \
-                $(JL_PROTO_DIR)/fragments_pb.jl \
-                $(JL_PROTO_DIR)/transactions_pb.jl
 
 # Generated parser outputs
 PY_PARSER := python-tools/src/lqp/gen/parser.py
@@ -54,28 +43,36 @@ META_PROTO_ARGS := \
 	../$(PROTO_DIR)/relationalai/lqp/v1/transactions.proto \
 	--grammar src/meta/grammar.y
 
+# Generated protobuf files used to track freshness
+PY_PROTO_GENERATED := \
+	$(PY_PROTO_DIR)/logic_pb2.py \
+	$(PY_PROTO_DIR)/fragments_pb2.py \
+	$(PY_PROTO_DIR)/transactions_pb2.py
+GO_PROTO_GENERATED := \
+	$(GO_PROTO_DIR)/logic.pb.go \
+	$(GO_PROTO_DIR)/fragments.pb.go \
+	$(GO_PROTO_DIR)/transactions.pb.go
+JL_PROTO_GENERATED := \
+	$(JL_PROTO_DIR)/logic_pb.jl \
+	$(JL_PROTO_DIR)/fragments_pb.jl \
+	$(JL_PROTO_DIR)/transactions_pb.jl
 
-.PHONY: all protobuf protobuf-lint protobuf-py-go protobuf-julia \
-	parsers parser-python parser-julia parser-go \
+.PHONY: all protobuf parsers parser-python parser-julia parser-go \
 	force-parsers force-parser-python force-parser-julia force-parser-go \
 	test test-python test-julia test-go check-python \
 	clean
 
-all: protobuf parsers
+all: build parsers
 
 # ---------- protobuf build (replaces ./build script) ----------
 
-protobuf-lint: $(PROTO_FILES)
-	buf lint
-	buf breaking --against ".git#branch=main,subdir=proto"
+protobuf: $(PY_PROTO_GENERATED) $(GO_PROTO_GENERATED) $(JL_PROTO_GENERATED)
 
-# Convenience phony targets
-protobuf: $(PY_PROTO_GEN) $(GO_PROTO_GEN) $(JL_PROTO_GEN)
-protobuf-py-go: $(PY_PROTO_GEN) $(GO_PROTO_GEN)
-protobuf-julia: $(JL_PROTO_GEN)
+# This rule is there to trick a later run of make to not regenerate the protobuf files
+touch-proto-generated:
+	touch $(PY_PROTO_GENERATED) $(GO_PROTO_GENERATED) $(JL_PROTO_GENERATED)
 
-# Only regenerate when .proto files are newer than the generated output
-$(PY_PROTO_GEN) $(GO_PROTO_GEN): $(PROTO_FILES)
+$(PY_PROTO_GENERATED) $(GO_PROTO_GENERATED): $(PROTO_FILES)
 	buf lint
 	buf breaking --against ".git#branch=main,subdir=proto"
 	buf generate
@@ -91,7 +88,7 @@ $(PY_PROTO_GEN) $(GO_PROTO_GEN): $(PROTO_FILES)
 	cp gen/go/relationalai/lqp/v1/*.pb.go $(GO_PROTO_DIR)/
 	rm -rf gen/python gen/go
 
-$(JL_PROTO_GEN): $(PROTO_FILES)
+$(JL_PROTO_GENERATED): $(PROTO_FILES)
 	buf lint
 	buf breaking --against ".git#branch=main,subdir=proto"
 	cd julia && julia --project=LQPParser generate_proto.jl
@@ -101,39 +98,39 @@ $(JL_PROTO_GEN): $(PROTO_FILES)
 parsers: parser-python parser-julia parser-go
 
 parser-python: $(PY_PARSER)
-$(PY_PARSER): $(PY_GO_PROTO_GEN) $(GRAMMAR) $(PY_TEMPLATE)
+$(PY_PARSER): $(PROTO_FILES) $(GRAMMAR) $(PY_TEMPLATE)
 	$(META_CLI) $(META_PROTO_ARGS) --parser python -o src/lqp/gen/parser.py
 
 parser-julia: $(JL_PARSER)
-$(JL_PARSER): $(JL_PROTO_GEN) $(GRAMMAR) $(JL_TEMPLATE)
+$(JL_PARSER): $(PROTO_FILES) $(GRAMMAR) $(JL_TEMPLATE)
 	$(META_CLI) $(META_PROTO_ARGS) --parser julia -o ../julia/LQPParser/src/parser.jl
 
 parser-go: $(GO_PARSER)
-$(GO_PARSER): $(PY_GO_PROTO_GEN) $(GRAMMAR) $(GO_TEMPLATE)
+$(GO_PARSER): $(PROTO_FILES) $(GRAMMAR) $(GO_TEMPLATE)
 	$(META_CLI) $(META_PROTO_ARGS) --parser go -o ../go/src/parser.go
 
 force-parsers: force-parser-python force-parser-julia force-parser-go
 
-force-parser-python: $(PY_GO_PROTO_GEN)
+force-parser-python:
 	$(META_CLI) $(META_PROTO_ARGS) --parser python -o src/lqp/gen/parser.py
 
-force-parser-julia: $(JL_PROTO_GEN)
+force-parser-julia:
 	$(META_CLI) $(META_PROTO_ARGS) --parser julia -o ../julia/LQPParser/src/parser.jl
 
-force-parser-go: $(PY_GO_PROTO_GEN)
+force-parser-go:
 	$(META_CLI) $(META_PROTO_ARGS) --parser go -o ../go/src/parser.go
 
 # ---------- testing ----------
 
 test: test-python test-julia test-go
 
-test-python: parser-python check-python
+test-python: $(PY_PARSER) $(PY_PROTO_GENERATED) check-python
 	cd python-tools && python -m pytest
 
-test-julia: parser-julia
+test-julia: $(JL_PARSER) $(JL_PROTO_GENERATED)
 	cd julia && julia --project=LQPParser -e 'using Pkg; Pkg.test("LQPParser")'
 
-test-go: parser-go
+test-go: $(GO_PARSER) $(GO_PROTO_GENERATED)
 	cd go && go test ./test/...
 
 check-python:

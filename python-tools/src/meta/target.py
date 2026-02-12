@@ -15,7 +15,8 @@ Expression types (TargetExpr subclasses):
     NewMessage          - Message constructor with field names
     OneOf               - OneOf field discriminator
     ListExpr            - List constructor expression
-    VisitNonterminal    - Visitor method call for a nonterminal
+    ParseNonterminal    - Parse method call for a nonterminal
+    PrintNonterminal    - Print method call for a nonterminal
     Call                - Function call expression
     GetField            - Field access expression
     GetElement          - Tuple element access with constant integer index
@@ -32,14 +33,13 @@ Type expressions (TargetType subclasses):
     VarType             - Type variable for polymorphic types
     MessageType         - Protobuf message types
     TupleType           - Tuple type with fixed number of element types
-    SequenceType        - Read-only sequence type (covariant)
-    ListType            - Mutable list/array type (invariant, subtype of Sequence)
+    ListType            - Parameterized list/array type
     OptionType          - Optional/Maybe type for values that may be None
     FunctionType        - Function type with parameter types and return type
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Optional, Sequence, Union, TYPE_CHECKING
+from typing import Any, Optional, Sequence, TYPE_CHECKING
 from .gensym import gensym
 
 if TYPE_CHECKING:
@@ -300,9 +300,6 @@ class PrintNonterminal(TargetExpr):
 
     def target_type(self) -> 'TargetType':
         return self.nonterminal.target_type()
-
-
-VisitNonterminal = Union[ParseNonterminal, PrintNonterminal]
 
 
 @dataclass(frozen=True)
@@ -654,10 +651,10 @@ class TupleType(TargetType):
 
 @dataclass(frozen=True)
 class SequenceType(TargetType):
-    """Read-only sequence type (covariant on element type).
+    """Read-only covariant sequence type.
 
-    Sequence[T] is the read-only counterpart of List[T].
-    List[T] is a subtype of Sequence[T].
+    Sequence[T] is the supertype of List[T]. It represents a read-only
+    view of an ordered collection. List[T] <: Sequence[T] for all T.
     Sequence is covariant: Sequence[A] <: Sequence[B] if A <: B.
 
     Example:
@@ -672,11 +669,9 @@ class SequenceType(TargetType):
 
 @dataclass(frozen=True)
 class ListType(TargetType):
-    """Mutable list/array type (invariant on element type).
+    """Parameterized mutable list/array type.
 
-    List[T] is a subtype of Sequence[T].
-    Use List[T] when mutation (e.g., list_push) is needed.
-    Use Sequence[T] for read-only access to repeated fields.
+    List[T] <: Sequence[T]. List is invariant: List[A] <: List[B] only if A == B.
 
     Example:
         ListType(BaseType("Int64"))              # List[Int64]
@@ -846,9 +841,6 @@ class PrintNonterminalDef(TargetNode):
         return FunctionType([p.type for p in self.params], self.return_type)
 
 
-VisitNonterminalDef = Union[ParseNonterminalDef, PrintNonterminalDef]
-
-
 __all__ = [
     'TargetNode',
     'TargetExpr',
@@ -887,9 +879,7 @@ __all__ = [
     'FunDef',
     'ParseNonterminalDef',
     'PrintNonterminalDef',
-    'VisitNonterminalDef',
     'ParseNonterminal',
     'PrintNonterminal',
-    'VisitNonterminal',
     'gensym',
 ]
