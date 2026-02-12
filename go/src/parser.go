@@ -639,6 +639,13 @@ func toPascalCase(s string) string {
 
 // --- Helper functions ---
 
+func (p *Parser) _extract_value_int32(value *pb.Value, default_ int64) int32 {
+	if (value != nil && hasProtoField(value, "int_value")) {
+		return int32(value.GetIntValue())
+	}
+	return int32(default_)
+}
+
 func (p *Parser) _extract_value_int64(value *pb.Value, default_ int64) int64 {
 	if (value != nil && hasProtoField(value, "int_value")) {
 		return value.GetIntValue()
@@ -732,7 +739,7 @@ func (p *Parser) _try_extract_value_string_list(value *pb.Value) []string {
 
 func (p *Parser) construct_csv_config(config_dict [][]interface{}) *pb.CSVConfig {
 	config := dictFromList(config_dict)
-	_t957 := p._extract_value_int64(dictGetValue(config, "csv_header_row"), 1)
+	_t957 := p._extract_value_int32(dictGetValue(config, "csv_header_row"), 1)
 	header_row := _t957
 	_t958 := p._extract_value_int64(dictGetValue(config, "csv_skip"), 0)
 	skip := _t958
@@ -754,7 +761,7 @@ func (p *Parser) construct_csv_config(config_dict [][]interface{}) *pb.CSVConfig
 	encoding := _t966
 	_t967 := p._extract_value_string(dictGetValue(config, "csv_compression"), "auto")
 	compression := _t967
-	_t968 := &pb.CSVConfig{HeaderRow: int32(header_row), Skip: skip, NewLine: new_line, Delimiter: delimiter, Quotechar: quotechar, Escapechar: escapechar, Comment: comment, MissingStrings: missing_strings, DecimalSeparator: decimal_separator, Encoding: encoding, Compression: compression}
+	_t968 := &pb.CSVConfig{HeaderRow: header_row, Skip: skip, NewLine: new_line, Delimiter: delimiter, Quotechar: quotechar, Escapechar: escapechar, Comment: comment, MissingStrings: missing_strings, DecimalSeparator: decimal_separator, Encoding: encoding, Compression: compression}
 	return _t968
 }
 
@@ -839,7 +846,7 @@ func (p *Parser) export_csv_config(path string, columns []*pb.ExportCSVColumn, c
 	syntax_quotechar := _t990
 	_t991 := p._extract_value_string(dictGetValue(config, "syntax_escapechar"), "\\")
 	syntax_escapechar := _t991
-	_t992 := &pb.ExportCSVConfig{Path: path, DataColumns: columns, PartitionSize: ptrInt64(partition_size), Compression: ptrString(compression), SyntaxHeaderRow: ptrBool(syntax_header_row), SyntaxMissingString: ptrString(syntax_missing_string), SyntaxDelim: ptrString(syntax_delim), SyntaxQuotechar: ptrString(syntax_quotechar), SyntaxEscapechar: ptrString(syntax_escapechar)}
+	_t992 := &pb.ExportCSVConfig{Path: path, DataColumns: columns, PartitionSize: ptr(partition_size), Compression: ptr(compression), SyntaxHeaderRow: ptr(syntax_header_row), SyntaxMissingString: ptr(syntax_missing_string), SyntaxDelim: ptr(syntax_delim), SyntaxQuotechar: ptr(syntax_quotechar), SyntaxEscapechar: ptr(syntax_escapechar)}
 	return _t992
 }
 
