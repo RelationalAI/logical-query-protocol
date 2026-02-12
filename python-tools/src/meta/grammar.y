@@ -696,8 +696,8 @@ demand
       construct: transactions.Demand(relation_id=$3)
 
 output
-    : "(" "output" name? relation_id ")"
-      construct: transactions.Output(name=builtin.unwrap_option_or($3, "output"), relation_id=$4)
+    : "(" "output" name relation_id ")"
+      construct: transactions.Output(name=$3, relation_id=$4)
 
 what_if
     : "(" "what_if" name epoch ")"
@@ -727,6 +727,12 @@ export_csv_column
 
 
 %%
+
+
+def _extract_value_int32(value: Optional[logic.Value], default: int) -> Int32:
+    if value is not None and builtin.has_proto_field(builtin.unwrap_option(value), 'int_value'):
+        return builtin.int64_to_int32(builtin.unwrap_option(value).int_value)
+    return builtin.int64_to_int32(default)
 
 
 def _extract_value_int64(value: Optional[logic.Value], default: int) -> int:
@@ -807,7 +813,7 @@ def _try_extract_value_string_list(value: Optional[logic.Value]) -> Optional[Lis
 
 def construct_csv_config(config_dict: List[Tuple[String, logic.Value]]) -> logic.CSVConfig:
     config: Dict[String, logic.Value] = builtin.dict_from_list(config_dict)
-    header_row: int = _extract_value_int64(builtin.dict_get(config, "csv_header_row"), 1)
+    header_row: Int32 = _extract_value_int32(builtin.dict_get(config, "csv_header_row"), 1)
     skip: int = _extract_value_int64(builtin.dict_get(config, "csv_skip"), 0)
     new_line: str = _extract_value_string(builtin.dict_get(config, "csv_new_line"), "")
     delimiter: str = _extract_value_string(builtin.dict_get(config, "csv_delimiter"), ",")
@@ -819,7 +825,7 @@ def construct_csv_config(config_dict: List[Tuple[String, logic.Value]]) -> logic
     encoding: str = _extract_value_string(builtin.dict_get(config, "csv_encoding"), "utf-8")
     compression: str = _extract_value_string(builtin.dict_get(config, "csv_compression"), "auto")
     return logic.CSVConfig(
-        header_row=builtin.int64_to_int32(header_row),
+        header_row=header_row,
         skip=skip,
         new_line=new_line,
         delimiter=delimiter,
@@ -912,11 +918,11 @@ def export_csv_config(
     return transactions.ExportCSVConfig(
         path=path,
         data_columns=columns,
-        partition_size=builtin.to_ptr_int64(partition_size),
-        compression=builtin.to_ptr_string(compression),
-        syntax_header_row=builtin.to_ptr_bool(syntax_header_row),
-        syntax_missing_string=builtin.to_ptr_string(syntax_missing_string),
-        syntax_delim=builtin.to_ptr_string(syntax_delim),
-        syntax_quotechar=builtin.to_ptr_string(syntax_quotechar),
-        syntax_escapechar=builtin.to_ptr_string(syntax_escapechar),
+        partition_size=builtin.some(partition_size),
+        compression=builtin.some(compression),
+        syntax_header_row=builtin.some(syntax_header_row),
+        syntax_missing_string=builtin.some(syntax_missing_string),
+        syntax_delim=builtin.some(syntax_delim),
+        syntax_quotechar=builtin.some(syntax_quotechar),
+        syntax_escapechar=builtin.some(syntax_escapechar),
     )
