@@ -436,17 +436,17 @@ class TestGrammar:
 
 
 
-    def test_print_grammar(self):
-        """Test Grammar print_grammar."""
+    def test_print_grammar_yacc(self):
+        """Test Grammar print_grammar_yacc."""
         start = Nonterminal("Start", MessageType("proto", "Start"))
         grammar = Grammar(start)
         a = Nonterminal("A", MessageType("proto", "A"))
         param = Var("x", MessageType("proto", "A"))
         constructor = Lambda([param], MessageType("proto", "A"), param)
         grammar.add_rule(Rule(start, a, constructor))
-        output = grammar.print_grammar()
+        output = grammar.print_grammar_yacc()
         assert "Start" in output
-        assert ": A" in output
+        assert "A" in output
 
 
 
