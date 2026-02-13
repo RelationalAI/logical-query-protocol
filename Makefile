@@ -1,12 +1,16 @@
 # Makefile for the Logical Query Protocol (LQP)
 #
 # Usage:
-#   make              Build protobuf bindings and regenerate all parsers.
+#   make              Build protobuf bindings, parsers, and printers.
 #   make protobuf     Lint, check breaking changes, and generate protobuf code.
 #   make parsers      Regenerate Python, Julia, and Go parsers from the grammar.
 #   make parser-X     Regenerate a single parser (X = python, julia, go).
 #   make force-parsers      Force-regenerate all parsers.
 #   make force-parser-X     Force-regenerate a single parser.
+#   make printers     Regenerate pretty printers from the grammar.
+#   make printer-python     Regenerate the Python pretty printer.
+#   make force-printers     Force-regenerate all printers.
+#   make force-printer-python  Force-regenerate the Python pretty printer.
 #   make test         Run tests for all languages.
 #   make test-X       Run tests for one language (X = python, julia, go).
 #   make clean        Remove temporary generated files.
@@ -31,10 +35,16 @@ PY_PARSER := python-tools/src/lqp/gen/parser.py
 JL_PARSER := julia/LQPParser/src/parser.jl
 GO_PARSER := go/src/parser.go
 
+# Generated printer outputs
+PY_PRINTER := python-tools/src/lqp/gen/pretty.py
+
 # Parser templates
 PY_TEMPLATE := python-tools/src/meta/templates/parser.py.template
 JL_TEMPLATE := python-tools/src/meta/templates/parser.jl.template
 GO_TEMPLATE := python-tools/src/meta/templates/parser.go.template
+
+# Printer templates
+PY_PRINTER_TEMPLATE := python-tools/src/meta/templates/pretty_printer.py.template
 
 META_CLI := cd python-tools && PYTHONPATH=src python -m meta.cli
 META_PROTO_ARGS := \
@@ -59,10 +69,11 @@ JL_PROTO_GENERATED := \
 
 .PHONY: all protobuf parsers parser-python parser-julia parser-go \
 	force-parsers force-parser-python force-parser-julia force-parser-go \
+	printers printer-python force-printers force-printer-python \
 	test test-python test-julia test-go check-python \
 	clean
 
-all: build parsers
+all: protobuf parsers printers
 
 # ---------- protobuf build (replaces ./build script) ----------
 
@@ -119,6 +130,19 @@ force-parser-julia:
 
 force-parser-go:
 	$(META_CLI) $(META_PROTO_ARGS) --parser go -o ../go/src/parser.go
+
+# ---------- printer generation ----------
+
+printers: printer-python
+
+printer-python: $(PY_PRINTER)
+$(PY_PRINTER): $(PROTO_FILES) $(GRAMMAR) $(PY_PRINTER_TEMPLATE)
+	$(META_CLI) $(META_PROTO_ARGS) --printer python -o src/lqp/gen/pretty.py
+
+force-printers: force-printer-python
+
+force-printer-python:
+	$(META_CLI) $(META_PROTO_ARGS) --printer python -o src/lqp/gen/pretty.py
 
 # ---------- testing ----------
 
