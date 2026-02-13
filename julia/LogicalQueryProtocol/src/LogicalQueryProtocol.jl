@@ -30,4 +30,5 @@ using ProtoBuf: ProtoBuf
 include("types.jl")
 include("equality.jl")
 include("protobuf-helpers.jl")
+include("parser.jl")
 end

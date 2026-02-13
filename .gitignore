@@ -14,7 +14,7 @@ python-tools/.clj-kondo
 /gen
 
 # Julia
-julia/LQPParser/Manifest.toml
+julia/LogicalQueryProtocol/Manifest.toml
 
 # Other
 .DS_Store

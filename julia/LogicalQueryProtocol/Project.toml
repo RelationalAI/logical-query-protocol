@@ -4,6 +4,7 @@ version = "0.1.0"
 
 [deps]
 ProtoBuf = "3349acd9-ac6a-5e09-bcdb-63829b23a429"
+SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 
 [compat]
 ProtoBuf = "1.2.0"

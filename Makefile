@@ -28,7 +28,7 @@ GO_PROTO_DIR := go/src/lqp/v1
 
 # Generated parser outputs
 PY_PARSER := python-tools/src/lqp/gen/parser.py
-JL_PARSER := julia/LQPParser/src/parser.jl
+JL_PARSER := julia/LogicalQueryProtocol/src/parser.jl
 GO_PARSER := go/src/parser.go
 
 # Parser templates
@@ -103,7 +103,7 @@ $(PY_PARSER): $(PROTO_FILES) $(GRAMMAR) $(PY_TEMPLATE)
 
 parser-julia: $(JL_PARSER)
 $(JL_PARSER): $(PROTO_FILES) $(GRAMMAR) $(JL_TEMPLATE)
-	$(META_CLI) $(META_PROTO_ARGS) --parser julia -o ../julia/LQPParser/src/parser.jl
+	$(META_CLI) $(META_PROTO_ARGS) --parser julia -o ../julia/LogicalQueryProtocol/src/parser.jl
 
 parser-go: $(GO_PARSER)
 $(GO_PARSER): $(PROTO_FILES) $(GRAMMAR) $(GO_TEMPLATE)
@@ -115,7 +115,7 @@ force-parser-python:
 	$(META_CLI) $(META_PROTO_ARGS) --parser python -o src/lqp/gen/parser.py
 
 force-parser-julia:
-	$(META_CLI) $(META_PROTO_ARGS) --parser julia -o ../julia/LQPParser/src/parser.jl
+	$(META_CLI) $(META_PROTO_ARGS) --parser julia -o ../julia/LogicalQueryProtocol/src/parser.jl
 
 force-parser-go:
 	$(META_CLI) $(META_PROTO_ARGS) --parser go -o ../go/src/parser.go
@@ -129,7 +129,6 @@ test-python: $(PY_PARSER) $(PY_PROTO_GENERATED) check-python
 
 test-julia: $(JL_PARSER) $(JL_PROTO_GENERATED)
 	cd julia && julia --project=LogicalQueryProtocol -e 'using Pkg; Pkg.test()'
-	cd julia && julia --project=LQPParser -e 'using Pkg; Pkg.test()'
 
 test-go: $(GO_PARSER) $(GO_PROTO_GENERATED)
 	cd go && go test ./test/...

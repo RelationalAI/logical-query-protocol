@@ -1,8 +1,8 @@
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.10.2"
+julia_version = "1.11.8"
 manifest_format = "2.0"
-project_hash = "b6607db0c5156c7dd7b862c6c47d5627215b8b6b"
+project_hash = "3b2773f776e5482715b42feb3238680e47397f0f"
 
 [[deps.BufferedStreams]]
 git-tree-sha1 = "6863c5b7fc997eadcabdbaf6c5f201dc30032643"
@@ -12,6 +12,7 @@ version = "1.2.2"
 [[deps.Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
+version = "1.11.0"
 
 [[deps.EnumX]]
 git-tree-sha1 = "7bebc8aad6ee6217c78c5ddcf7ed289d65d0263e"
@@ -21,12 +22,17 @@ version = "1.0.6"
 [[deps.Printf]]
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+version = "1.11.0"
 
 [[deps.ProtoBuf]]
 deps = ["BufferedStreams", "Dates", "EnumX", "TOML"]
 git-tree-sha1 = "eabdb811dbacadc9d7e0dee9ac11c1a12705e12a"
 uuid = "3349acd9-ac6a-5e09-bcdb-63829b23a429"
 version = "1.2.0"
+
+[[deps.SHA]]
+uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
+version = "0.7.0"
 
 [[deps.TOML]]
 deps = ["Dates"]
@@ -35,3 +41,4 @@ version = "1.0.3"
 
 [[deps.Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
+version = "1.11.0"
