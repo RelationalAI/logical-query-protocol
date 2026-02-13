@@ -90,8 +90,12 @@ function decimal_bits_to_precision(bits::Integer)
     elseif bits == 128
         return 38
     else
-        @assert false
+        @assert is_supported_decimal_bits(bits)
     end
+end
+
+function is_supported_decimal_bits(bits::Integer)
+    return bits in [8, 16, 32, 64, 128]
 end
 
 persistent_id(fragment::Fragment) = persistent_id(fragment.id::FragmentId)
@@ -114,8 +118,12 @@ function global_ids(declaration::Declaration)
         constraint = unwrap(declaration)::Constraint
         return [persistent_id(constraint)]
     else
-        @assert false
+        @assert _is_valid_declaration(declaration)
     end
+end
+
+function _is_valid_declaration(declaration::Declaration)
+    return declaration.declaration_type.name in [:def, :algorithm, :data, :constraint]
 end
 
 function global_ids(data::Data)
@@ -137,6 +145,10 @@ function global_ids(data::Data)
         end
         return ids
     else
-        @assert false
+        @assert _is_valid_data(data)
     end
+end
+
+function _is_valid_data(data::Data)
+    return data.data_type.name in [:rel_edb, :betree_relation, :csv_data]
 end
