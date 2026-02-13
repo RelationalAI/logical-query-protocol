@@ -361,32 +361,6 @@ class JuliaCodeGenerator(CodeGenerator):
                 # Generate for side effects but discard.
                 self.generate_lines(field_expr, lines, indent)
 
-<<<<<<< HEAD
-        # Build constructor kwargs
-        kwargs: List[str] = []
-        for struct_field, kind in struct_fields:
-            if kind == 'oneof':
-                alts = oneof_groups.get(struct_field, [])
-                if not alts:
-                    continue
-                escaped = self._escape_proto_field(struct_field)
-                if len(alts) == 1:
-                    alt_name, value = alts[0]
-                    sym = self._gen_oneof_symbol(alt_name)
-                    kwargs.append(f"{escaped}=OneOf({sym}, {value})")
-                else:
-                    result_expr = "nothing"
-                    for alt_name, value in reversed(alts):
-                        sym = self._gen_oneof_symbol(alt_name)
-                        result_expr = f"(!isnothing({value}) ? OneOf({sym}, {value}) : {result_expr})"
-                    kwargs.append(f"{escaped}={result_expr}")
-            else:
-                if struct_field in regular_values:
-                    escaped = self._escape_proto_field(struct_field)
-                    kwargs.append(f"{escaped}={regular_values[struct_field]}")
-
-        call = f"{ctor}({', '.join(kwargs)})" if kwargs else f"{ctor}()"
-=======
         # Build keyword constructor args (avoids dependence on positional field order)
         kwargs: List[str] = []
         for oneof in proto_msg.oneofs:
@@ -409,7 +383,6 @@ class JuliaCodeGenerator(CodeGenerator):
                 kwargs.append(f"{self._escape_proto_field(f.name)}={regular_values[f.name]}")
 
         call = f"{ctor}({', '.join(kwargs)})"
->>>>>>> origin/main
         tmp = gensym()
         lines.append(f"{indent}{self.gen_assignment(tmp, call, is_declaration=True)}")
         return tmp
