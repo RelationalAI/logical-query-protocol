@@ -1,51 +1,88 @@
 (transaction
   (configure
     { :ivm.maintenance_level "off"
-      :semantics_version 0})
+    :semantics_version 0})
   (epoch
     (writes
       (define
-        (fragment :f1
-          (algorithm :R1 :R2
+        (fragment
+          :f1
+          (algorithm
+            :R1
+            :R2
             (script
               (loop
                 (init
-                  (assign :R1
-                    ([a::INT b::INT]
-                      (or
-                        (and
-                          (primitive :rel_primitive_eq a 1)
-                          (primitive :rel_primitive_eq b 2))
-                        (and
-                          (primitive :rel_primitive_eq a 2)
-                          (primitive :rel_primitive_eq b 3)))))
-                  (assign :R2
-                    ([a::INT b::INT]
-                      (or
-                        (and
-                          (primitive :rel_primitive_eq a 1)
-                          (primitive :rel_primitive_eq b 2))
-                        (and
-                          (primitive :rel_primitive_eq a 2)
-                          (primitive :rel_primitive_eq b 3)))))
-                  (assign :U
-                    ([a::INT b::INT]
+                  (assign
+                    :R1
+                    ([a::INT
+                    b::INT] (or
                       (and
-                        (primitive :rel_primitive_eq a 1)
-                        (primitive :rel_primitive_eq b 3))))
-                  (assign :always
-                    ([]
-                      (or))))
+                        (=
+                          a
+                          1)
+                        (=
+                          b
+                          2))
+                      (and
+                        (=
+                          a
+                          2)
+                        (=
+                          b
+                          3)))))
+                  (assign
+                    :R2
+                    ([a::INT
+                    b::INT] (or
+                      (and
+                        (=
+                          a
+                          1)
+                        (=
+                          b
+                          2))
+                      (and
+                        (=
+                          a
+                          2)
+                        (=
+                          b
+                          3)))))
+                  (assign
+                    :U
+                    ([a::INT
+                    b::INT] (and
+                      (=
+                        a
+                        1)
+                      (=
+                        b
+                        3))))
+                  (assign
+                    :always
+                    ([] (false))))
                 (script
-                  (upsert :R1
-                    ([a::INT b::INT]
-                      (atom :U a b)))
-                  (upsert :R2
-                    ([a::INT | b::INT]
-                      (atom :U a b)))
-                  (break :always
-                    ([]
-                      (and))))))))))
+                  (upsert
+                    :R1
+                    ([a::INT
+                    b::INT] (atom
+                      :U
+                      a
+                      b)))
+                  (upsert
+                    :R2
+                    ([a::INT | b::INT] (atom
+                      :U
+                      a
+                      b)))
+                  (break
+                    :always
+                    ([] (true))))))))))
     (reads
-      (output :R1 :R1)
-      (output :R2 :R2))))
+      (output
+        :R1
+        :R1)
+      (output
+        :R2
+        :R2))))
