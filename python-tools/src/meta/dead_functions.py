@@ -4,68 +4,32 @@ Computes the set of user-defined functions reachable from the generated
 parse function bodies and filters out unreachable ones.
 """
 
-from typing import Dict, List, Set
+from typing import Dict, List, Sequence, Set
 
-from .target import (
-    Assign, Call, Foreach, ForeachEnumerated, FunDef, GetElement, GetField,
-    IfElse, Lambda, Let, ListExpr, NamedFun, NewMessage, Return, Seq,
-    TargetExpr, Var, While,
-)
+from .target import FunDef, NamedFun, TargetExpr
+from .target_visitor import TargetExprVisitor
+
+
+class _NamedFunCollector(TargetExprVisitor):
+    """Collect names of all NamedFun references in an expression tree."""
+
+    def __init__(self):
+        super().__init__()
+        self.refs: Set[str] = set()
+
+    def visit_NamedFun(self, expr: NamedFun) -> None:
+        self.refs.add(expr.name)
 
 
 def collect_named_fun_refs(expr: TargetExpr) -> Set[str]:
     """Collect names of all NamedFun references in an expression tree."""
-    if isinstance(expr, NamedFun):
-        return {expr.name}
-    elif isinstance(expr, (Var,)):
-        return set()
-    elif isinstance(expr, Lambda):
-        return collect_named_fun_refs(expr.body)
-    elif isinstance(expr, Let):
-        return collect_named_fun_refs(expr.init) | collect_named_fun_refs(expr.body)
-    elif isinstance(expr, Assign):
-        return collect_named_fun_refs(expr.expr)
-    elif isinstance(expr, Call):
-        refs = collect_named_fun_refs(expr.func)
-        for arg in expr.args:
-            refs |= collect_named_fun_refs(arg)
-        return refs
-    elif isinstance(expr, Seq):
-        refs: Set[str] = set()
-        for e in expr.exprs:
-            refs |= collect_named_fun_refs(e)
-        return refs
-    elif isinstance(expr, IfElse):
-        return (collect_named_fun_refs(expr.condition)
-                | collect_named_fun_refs(expr.then_branch)
-                | collect_named_fun_refs(expr.else_branch))
-    elif isinstance(expr, While):
-        return collect_named_fun_refs(expr.condition) | collect_named_fun_refs(expr.body)
-    elif isinstance(expr, Foreach):
-        return collect_named_fun_refs(expr.collection) | collect_named_fun_refs(expr.body)
-    elif isinstance(expr, ForeachEnumerated):
-        return collect_named_fun_refs(expr.collection) | collect_named_fun_refs(expr.body)
-    elif isinstance(expr, Return):
-        return collect_named_fun_refs(expr.expr)
-    elif isinstance(expr, NewMessage):
-        refs = set()
-        for _, field_expr in expr.fields:
-            refs |= collect_named_fun_refs(field_expr)
-        return refs
-    elif isinstance(expr, GetField):
-        return collect_named_fun_refs(expr.object)
-    elif isinstance(expr, GetElement):
-        return collect_named_fun_refs(expr.tuple_expr)
-    elif isinstance(expr, ListExpr):
-        refs = set()
-        for elem in expr.elements:
-            refs |= collect_named_fun_refs(elem)
-        return refs
-    return set()
+    collector = _NamedFunCollector()
+    collector.visit(expr)
+    return collector.refs
 
 
 def live_functions(
-    roots: List[TargetExpr],
+    roots: Sequence[TargetExpr],
     function_defs: Dict[str, FunDef],
 ) -> Dict[str, FunDef]:
     """Return the subset of function_defs reachable from roots.
