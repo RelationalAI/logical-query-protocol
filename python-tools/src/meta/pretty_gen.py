@@ -8,8 +8,8 @@ For nonterminals with multiple rules, rules are tried in specificity order
 (most specific first), using the deconstructor to determine which rule matches.
 """
 
-from typing import Dict, List, Optional, Union
-from .grammar import Grammar, GrammarConfig, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
+from typing import Dict, List, Optional
+from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
 from .grammar_utils import is_epsilon, rhs_elements
 from .target import (
     Lambda, Call, PrintNonterminalDef, Var, Lit, Builtin, Let, IfElse,
@@ -18,37 +18,25 @@ from .target import (
 )
 from .target_builtins import make_builtin
 
-# Type alias for grammar parameter (both Grammar and GrammarConfig have .rules)
-GrammarLike = Union[Grammar, GrammarConfig]
 
-
-def _get_rules_dict(grammar: GrammarLike) -> Dict[Nonterminal, List[Rule]]:
-    """Get the rules dictionary from either Grammar or GrammarConfig."""
-    return grammar.rules
-
-
-def generate_pretty_functions(grammar: GrammarLike,
+def generate_pretty_functions(grammar: Grammar,
                               proto_messages: Optional[Dict] = None) -> List[PrintNonterminalDef]:
     """Generate pretty printer functions for all nonterminals."""
     pretty_methods = []
 
-    if isinstance(grammar, GrammarConfig):
-        nonterminals = sorted(grammar.rules.keys(), key=lambda nt: nt.name)
-    else:
-        rule_order, _ = grammar.analysis.partition_nonterminals_by_reachability()
-        reachable = grammar.analysis.reachability
-        nonterminals = [nt for nt in rule_order if reachable is None or nt in reachable]
+    rule_order, _ = grammar.analysis.partition_nonterminals_by_reachability()
+    reachable = grammar.analysis.reachability
+    nonterminals = [nt for nt in rule_order if reachable is None or nt in reachable]
 
-    rules_dict = _get_rules_dict(grammar)
     for nt in nonterminals:
-        rules = rules_dict[nt]
+        rules = grammar.rules[nt]
         method_code = _generate_pretty_method(nt, rules, grammar, proto_messages)
         pretty_methods.append(method_code)
     return pretty_methods
 
 
 def _generate_pretty_method(lhs: Nonterminal, rules: List[Rule],
-                            grammar: GrammarLike,
+                            grammar: Grammar,
                             proto_messages: Optional[Dict]) -> PrintNonterminalDef:
     """Generate a pretty-print visitor method for a nonterminal."""
     nt = rules[0].lhs
@@ -68,7 +56,7 @@ def _generate_pretty_method(lhs: Nonterminal, rules: List[Rule],
 
 
 def _generate_pretty_alternatives(rules: List[Rule], msg_param: Var,
-                                  grammar: GrammarLike,
+                                  grammar: Grammar,
                                   proto_messages: Optional[Dict]) -> TargetExpr:
     """Generate if-else chain trying rules in declaration order.
 
@@ -125,7 +113,7 @@ def _generate_pretty_alternatives(rules: List[Rule], msg_param: Var,
     return result
 
 
-def _is_guarded_rule(rule: Rule, grammar: GrammarLike) -> bool:
+def _is_guarded_rule(rule: Rule, grammar: Grammar) -> bool:
     """Check if a rule has a guard (Optional deconstructor or guarded nonterminal ref)."""
     if _is_nonterminal_ref(rule) and _has_guarded_deconstruct(rule.rhs, grammar):
         return True
@@ -139,11 +127,11 @@ def _is_nonterminal_ref(rule: Rule) -> bool:
     return isinstance(rule.rhs, Nonterminal)
 
 
-def _has_guarded_deconstruct(nt_ref: Rhs, grammar: GrammarLike) -> bool:
+def _has_guarded_deconstruct(nt_ref: Rhs, grammar: Grammar) -> bool:
     """Check if a referenced nonterminal has a guarded (Optional) deconstructor."""
     if not isinstance(nt_ref, Nonterminal):
         return False
-    rules_dict = _get_rules_dict(grammar)
+    rules_dict = grammar.rules
     for nt, rules in rules_dict.items():
         if nt.name == nt_ref.name:
             return any(
@@ -155,7 +143,7 @@ def _has_guarded_deconstruct(nt_ref: Rhs, grammar: GrammarLike) -> bool:
 
 
 def _generate_nonterminal_ref_dispatch(rule: Rule, msg_param: Var,
-                                       grammar: GrammarLike,
+                                       grammar: Grammar,
                                        proto_messages: Optional[Dict],
                                        fallback: TargetExpr) -> TargetExpr:
     """Generate dispatch for a nonterminal-reference alternative.
@@ -166,7 +154,7 @@ def _generate_nonterminal_ref_dispatch(rule: Rule, msg_param: Var,
     nt_ref = rule.rhs
     assert isinstance(nt_ref, Nonterminal)
 
-    rules_dict = _get_rules_dict(grammar)
+    rules_dict = grammar.rules
     subrule_rules = None
     for nt, rules in rules_dict.items():
         if nt.name == nt_ref.name:
@@ -202,7 +190,7 @@ def _generate_nonterminal_ref_dispatch(rule: Rule, msg_param: Var,
 
 
 def _generate_pretty_with_deconstruct(rule: Rule, msg_param: Var,
-                                      grammar: GrammarLike,
+                                      grammar: Grammar,
                                       proto_messages: Optional[Dict]) -> TargetExpr:
     """Generate pretty printing using the deconstructor to extract fields."""
     if rule.deconstructor is None or _is_trivial_deconstruct(rule.deconstructor):
@@ -241,7 +229,7 @@ def _generate_pretty_with_deconstruct(rule: Rule, msg_param: Var,
 
 
 def _generate_pretty_from_fields(rhs: Rhs, fields_var: Var,
-                                 grammar: GrammarLike,
+                                 grammar: Grammar,
                                  proto_messages: Optional[Dict]) -> TargetExpr:
     """Generate pretty printing code given extracted field values."""
     if isinstance(rhs, Sequence):
@@ -262,7 +250,7 @@ def _generate_pretty_from_fields(rhs: Rhs, fields_var: Var,
 
 
 def _generate_pretty_sequence_from_fields(rhs: Sequence, fields_var: Var,
-                                          grammar: GrammarLike,
+                                          grammar: Grammar,
                                           proto_messages: Optional[Dict]) -> TargetExpr:
     """Generate pretty printing for a sequence using extracted field values."""
     if is_epsilon(rhs):
@@ -360,7 +348,7 @@ def _generate_pretty_sequence_from_fields(rhs: Sequence, fields_var: Var,
         return Seq(stmts)
 
 
-def _pretty_print_element(elem: Rhs, var: Var, grammar: GrammarLike,
+def _pretty_print_element(elem: Rhs, var: Var, grammar: Grammar,
                            proto_messages: Optional[Dict],
                            leading_ws: Optional[List[TargetExpr]] = None) -> TargetExpr:
     """Pretty print a single RHS element given its value.
@@ -385,7 +373,7 @@ def _pretty_print_element(elem: Rhs, var: Var, grammar: GrammarLike,
 
 
 def _generate_pretty_option_from_field(rhs: Option, field_var: Var,
-                                       grammar: GrammarLike,
+                                       grammar: Grammar,
                                        proto_messages: Optional[Dict],
                                        leading_ws: Optional[List[TargetExpr]] = None) -> TargetExpr:
     """Generate pretty printing for an optional field."""
@@ -421,7 +409,7 @@ def _generate_pretty_option_from_field(rhs: Option, field_var: Var,
 
 
 def _generate_pretty_star_from_field(rhs: Star, field_var: Var,
-                                     grammar: GrammarLike,
+                                     grammar: Grammar,
                                      proto_messages: Optional[Dict],
                                      leading_ws: Optional[List[TargetExpr]] = None) -> TargetExpr:
     """Generate pretty printing for a repeated field."""
