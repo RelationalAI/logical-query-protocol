@@ -13,6 +13,7 @@
 #   make force-printer-python  Force-regenerate the Python pretty printer.
 #   make test         Run tests for all languages.
 #   make test-X       Run tests for one language (X = python, julia, go).
+#   make test-python-update-snapshots  Update Python pretty printer snapshots.
 #   make clean        Remove temporary generated files.
 #
 # Prerequisites: buf, python (with lqp[test] installed), julia, go.
@@ -70,7 +71,7 @@ JL_PROTO_GENERATED := \
 .PHONY: all protobuf parsers parser-python parser-julia parser-go \
 	force-parsers force-parser-python force-parser-julia force-parser-go \
 	printers printer-python force-printers force-printer-python \
-	test test-python test-julia test-go check-python \
+	test test-python test-python-update-snapshots test-julia test-go check-python \
 	clean
 
 all: protobuf parsers printers
@@ -150,6 +151,9 @@ test: test-python test-julia test-go
 
 test-python: $(PY_PARSER) $(PY_PROTO_GENERATED) check-python
 	cd python-tools && python -m pytest
+
+test-python-update-snapshots: $(PY_PARSER) $(PY_PROTO_GENERATED)
+	cd python-tools && python -m pytest --snapshot-update
 
 test-julia: $(JL_PARSER) $(JL_PROTO_GENERATED)
 	cd julia && julia --project=LogicalQueryProtocol -e 'using Pkg; Pkg.test()'
