@@ -1,6 +1,7 @@
 name = "LogicalQueryProtocol"
 uuid = "a92373ee-6cc4-4662-ae66-0c99a03ebae1"
 version = "0.1.0"
+authors = ["RelationalAI"]
 
 [deps]
 ProtoBuf = "3349acd9-ac6a-5e09-bcdb-63829b23a429"
