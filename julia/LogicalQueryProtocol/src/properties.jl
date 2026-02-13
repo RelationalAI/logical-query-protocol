@@ -73,7 +73,7 @@ function decimal_precision_to_bits(precision::Integer)
     elseif precision <= 18
         return 64
     else
-        @assert precision <= 38 @safe("Decimal precision must be between 0 and 38")
+        @assert precision <= 38
         return 128
     end
 end
@@ -90,7 +90,7 @@ function decimal_bits_to_precision(bits::Integer)
     elseif bits == 128
         return 38
     else
-        @assert false @safe("Unsupported RelFixedDecimalDBType bits $(bits)")
+        @assert false
     end
 end
 
@@ -114,18 +114,18 @@ function global_ids(declaration::Declaration)
         constraint = unwrap(declaration)::Constraint
         return [persistent_id(constraint)]
     else
-        @assert false @safe("Unknown declaration type: $(declaration.declaration_type.name)")
+        @assert false
     end
 end
 
 function global_ids(data::Data)
     if data.data_type.name == :rel_edb
         rel_edb = data.data_type[]::RelEDB
-        @assert !isnothing(rel_edb.target_id) @safe("RelEDB must have a target_id")
+        @assert !isnothing(rel_edb.target_id)
         return [persistent_id(rel_edb.target_id)]
     elseif data.data_type.name == :betree_relation
         betree_relation = data.data_type[]::BeTreeRelation
-        @assert !isnothing(betree_relation.name) @safe("BeTreeRelation must have a name")
+        @assert !isnothing(betree_relation.name)
         return [persistent_id(betree_relation.name)]
     elseif data.data_type.name == :csv_data
         csv_data = data.data_type[]::CSVData
@@ -137,6 +137,6 @@ function global_ids(data::Data)
         end
         return ids
     else
-        @assert false @safe("Unknown data type: $(data.data_type.name)")
+        @assert false
     end
 end
