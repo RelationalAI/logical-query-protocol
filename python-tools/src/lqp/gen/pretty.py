@@ -1615,7 +1615,7 @@ class PrettyPrinter:
                     else:
                         def _t749(_dollar_dollar):
                             
-                            if (_dollar_dollar.HasField('conjunction') and not len(_dollar_dollar.conjunction.args) == 0):
+                            if _dollar_dollar.HasField('conjunction'):
                                 _t750 = _dollar_dollar.conjunction
                             else:
                                 _t750 = None
@@ -1629,7 +1629,7 @@ class PrettyPrinter:
                         else:
                             def _t754(_dollar_dollar):
                                 
-                                if (_dollar_dollar.HasField('disjunction') and not len(_dollar_dollar.disjunction.args) == 0):
+                                if _dollar_dollar.HasField('disjunction'):
                                     _t755 = _dollar_dollar.disjunction
                                 else:
                                     _t755 = None
