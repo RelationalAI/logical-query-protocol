@@ -997,7 +997,13 @@ func (pp PrettyParams) pprint(node interface{}) {
 			pp.PARENS(func(pp PrettyParams) {
 				pp.Write("export")
 				pp.NEWLINE()
-				pp.INDENT(2, func(pp PrettyParams) { pp.pprint(export.GetCsvConfig()) })
+				pp.INDENT(2, func(pp PrettyParams) {
+					if csvConfig := export.GetCsvConfig(); csvConfig != nil {
+						pp.pprint(csvConfig)
+					} else if csvTableConfig := export.GetCsvTableConfig(); csvTableConfig != nil {
+						pp.pprint(csvTableConfig)
+					}
+				})
 			})
 		} else if whatIf := n.GetWhatIf(); whatIf != nil {
 			pp.PARENS(func(pp PrettyParams) {
@@ -1061,6 +1067,39 @@ func (pp PrettyParams) pprint(node interface{}) {
 			pp.pprint(n.GetColumnName())
 			pp.SPACE()
 			pp.pprint(n.GetColumnData())
+		})
+
+	case *pb.ExportCSVTableConfig:
+		pp.PARENS(func(pp PrettyParams) {
+			pp.Write("export_csv_table_config")
+			pp.NEWLINE()
+			pp.INDENT(2, func(pp PrettyParams) {
+				pp.PARENS(func(pp PrettyParams) {
+					pp.Write("path")
+					pp.SPACE()
+					pp.pprint(n.GetPath())
+				})
+				pp.NEWLINE()
+				pp.PARENS(func(pp PrettyParams) {
+					pp.Write("export_def")
+					pp.SPACE()
+					pp.pprint(n.GetTableDef())
+				})
+				pp.NEWLINE()
+				configDict := make(map[string]interface{})
+				configDict["partition_size"] = n.GetPartitionSize()
+				configDict["compression"] = n.GetCompression()
+				if n.GetSyntaxHeaderRow() {
+					configDict["syntax_header_row"] = 1
+				} else {
+					configDict["syntax_header_row"] = 0
+				}
+				configDict["syntax_missing_string"] = n.GetSyntaxMissingString()
+				configDict["syntax_delim"] = n.GetSyntaxDelim()
+				configDict["syntax_quotechar"] = n.GetSyntaxQuotechar()
+				configDict["syntax_escapechar"] = n.GetSyntaxEscapechar()
+				pp.configDictToStr(configDict)
+			})
 		})
 
 	case *pb.Epoch:
