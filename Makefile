@@ -23,7 +23,7 @@ GRAMMAR := python-tools/src/meta/grammar.y
 
 # Generated protobuf outputs
 PY_PROTO_DIR := python-tools/src/lqp/proto/v1
-JL_PROTO_DIR := julia/LogicalQueryProtocol/src/relationalai/lqp/v1
+JL_PROTO_DIR := julia/LogicalQueryProtocol/src/gen/relationalai/lqp/v1
 GO_PROTO_DIR := go/src/lqp/v1
 
 # Generated parser outputs
