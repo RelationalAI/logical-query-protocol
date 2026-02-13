@@ -32,30 +32,43 @@ def parse_input(filename: str, validate: bool = True):
     return txn
 
 
-def process_file(filename: str, bin_out, json_out, pretty_print: bool, validate: bool = True):
-    """Process a single input file and produce requested outputs."""
+def output_path(filename: str, ext: str) -> str:
+    """Return the output path for a file with the given extension."""
+    base, _ = os.path.splitext(filename)
+    return base + ext
+
+
+def process_file(filename: str, fmt: str, out: bool, validate: bool = True):
+    """Process a single input file and produce requested output."""
     txn = parse_input(filename, validate)
 
-    if bin_out:
+    if fmt == "bin":
         data = txn.SerializeToString()
-        if bin_out == "-":
+        if out:
             sys.stdout.buffer.write(data)
         else:
-            with open(bin_out, "wb") as f:
+            dest = output_path(filename, ".bin")
+            with open(dest, "wb") as f:
                 f.write(data)
-            print(f"Successfully wrote {filename} to bin at {bin_out}")
-
-    if json_out:
+            print(f"Successfully wrote {filename} to {dest}")
+    elif fmt == "json":
         json_str = MessageToJson(txn, preserving_proto_field_name=True)
-        if json_out == "-":
+        if out:
             sys.stdout.write(json_str)
         else:
-            with open(json_out, "w") as f:
+            dest = output_path(filename, ".json")
+            with open(dest, "w") as f:
                 f.write(json_str)
-            print(f"Successfully wrote {filename} to JSON at {json_out}")
-
-    if pretty_print:
-        sys.stdout.write(pretty(txn))
+            print(f"Successfully wrote {filename} to {dest}")
+    elif fmt == "lqp":
+        text = pretty(txn)
+        if out:
+            sys.stdout.write(text)
+        else:
+            dest = output_path(filename, ".lqp")
+            with open(dest, "w") as f:
+                f.write(text)
+            print(f"Successfully wrote {filename} to {dest}")
 
 
 def collect_input_files(path: str):
@@ -87,41 +100,59 @@ def main():
         version=f"%(prog)s {get_package_version()}",
     )
     arg_parser.add_argument(
-        "input", nargs="+",
-        help="one or more .lqp or .bin files, or directories",
+        "input",
+        help=".lqp or .bin file, or a directory",
     )
     arg_parser.add_argument(
         "--no-validation", action="store_true",
         help="skip validation",
     )
     arg_parser.add_argument(
-        "--bin", metavar="FILE",
-        help="write protobuf binary output (- for stdout)",
+        "--out", action="store_true",
+        help="write output to stdout",
     )
-    arg_parser.add_argument(
-        "--json", metavar="FILE",
-        help="write protobuf JSON output (- for stdout)",
+
+    fmt_group = arg_parser.add_mutually_exclusive_group()
+    fmt_group.add_argument(
+        "--bin", action="store_true",
+        help="write protobuf binary output",
     )
-    arg_parser.add_argument(
-        "--pretty", action="store_true",
-        help="pretty-print to stdout",
+    fmt_group.add_argument(
+        "--json", action="store_true",
+        help="write protobuf JSON output",
+    )
+    fmt_group.add_argument(
+        "--lqp", action="store_true",
+        help="pretty-print LQP output",
     )
 
     args = arg_parser.parse_args()
     validate = not args.no_validation
 
-    input_files = []
-    for path in args.input:
-        found = collect_input_files(path)
-        if not found:
-            arg_parser.error(f"No .lqp or .bin files found at {path}")
-        input_files.extend(found)
+    fmt = None
+    if args.bin:
+        fmt = "bin"
+    elif args.json:
+        fmt = "json"
+    elif args.lqp:
+        fmt = "lqp"
 
-    for filename in input_files:
+    if os.path.isfile(args.input):
+        filename = args.input
         if not (filename.endswith(".lqp") or filename.endswith(".bin")):
             arg_parser.error(f"Unsupported file type: {filename}")
-
-        process_file(filename, args.bin, args.json, args.pretty, validate)
+        if fmt:
+            process_file(filename, fmt, args.out, validate)
+        else:
+            parse_input(filename, validate)
+    elif os.path.isdir(args.input):
+        for filename in collect_input_files(args.input):
+            if fmt:
+                process_file(filename, fmt, args.out, validate)
+            else:
+                parse_input(filename, validate)
+    else:
+        arg_parser.error(f"Input is not a valid file or directory: {args.input}")
 
 
 if __name__ == "__main__":
