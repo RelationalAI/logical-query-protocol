@@ -83,6 +83,16 @@ class JuliaCodeGenerator(CodeGenerator):
     def escape_keyword(self, name: str) -> str:
         return f'var"{name}"'
 
+    def _escape_proto_field(self, name: str) -> str:
+        """Escape a proto field name matching ProtoBuf.jl's convention.
+
+        ProtoBuf.jl prefixes Julia keywords with '#' in struct field names,
+        e.g., `type` becomes `var"#type"`.
+        """
+        if name in JULIA_KEYWORDS:
+            return f'var"#{name}"'
+        return name
+
     # --- Literal generation ---
 
     def gen_none(self) -> str:

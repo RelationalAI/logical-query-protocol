@@ -1,6 +1,3 @@
-# Proto generated files
-./gen
-
 # Python
 .venv
 .pytest_cache
@@ -13,11 +10,15 @@ python-tools/out/
 python-tools/.lsp/.cache
 python-tools/.clj-kondo
 
+# Proto generated files
+/gen
+
 # Julia
-julia/LQPParser/Manifest.toml
+julia/LogicalQueryProtocol/Manifest.toml
 
 # Other
 .DS_Store
 .envrc
 .lsp
 .clj-kondo
+
