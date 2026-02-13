@@ -23,10 +23,11 @@ class ParseError(Exception):
 class PrettyPrinter:
     """Pretty printer for protobuf messages."""
 
-    def __init__(self, io: Optional[IO[str]] = None):
+    def __init__(self, io: Optional[IO[str]] = None, print_names: bool = True):
         self.io = io if io is not None else StringIO()
         self.indent_level = 0
         self.at_line_start = True
+        self.print_names = print_names
         self._debug_info: dict[tuple[int, int], str] = {}
 
     def write(self, s: str) -> None:
@@ -98,6 +99,8 @@ class PrettyPrinter:
 
     def relation_id_to_string(self, msg: logic_pb2.RelationId) -> str:
         """Convert RelationId to string representation using debug info."""
+        if not self.print_names:
+            return ""
         return self._debug_info.get((msg.id_low, msg.id_high), "")
 
     def relation_id_to_int(self, msg: logic_pb2.RelationId) -> Optional[int]:
@@ -115,6 +118,18 @@ class PrettyPrinter:
         """Format a string value with double quotes for LQP output."""
         escaped = s.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t')
         return '"' + escaped + '"'
+
+    def write_debug_info(self) -> None:
+        """Write accumulated debug info as comments at the end of the output."""
+        if not self._debug_info:
+            return
+        self.io.write('\n;; Debug information\n')
+        self.io.write(';; -----------------------\n')
+        self.io.write(';; Original names\n')
+        for (id_low, id_high), name in self._debug_info.items():
+            value = (id_high << 64) | id_low
+            self.io.write(f';; \t ID `0x{value:x}` -> `{name}`\n')
+
 
     # --- Helper functions ---
 
@@ -3855,8 +3870,17 @@ class PrettyPrinter:
 
 
 def pretty(msg: Any, io: Optional[IO[str]] = None) -> str:
-    """Pretty print a protobuf message and return the string representation."""
+    """Pretty print a protobuf message, resolving relation IDs to names."""
     printer = PrettyPrinter(io)
     printer.pretty_transaction(msg)
     printer.newline()
+    return printer.get_output()
+
+
+def pretty_debug(msg: Any, io: Optional[IO[str]] = None) -> str:
+    """Pretty print a protobuf message with raw relation IDs and debug info appended as comments."""
+    printer = PrettyPrinter(io, print_names=False)
+    printer.pretty_transaction(msg)
+    printer.newline()
+    printer.write_debug_info()
     return printer.get_output()
