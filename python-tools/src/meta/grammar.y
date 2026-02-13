@@ -494,11 +494,11 @@ formula
         $1: logic.Reduce = $$.reduce
     | conjunction
       construct: $$ = logic.Formula(conjunction=$1)
-      deconstruct if builtin.has_proto_field($$, 'conjunction') and not builtin.is_empty($$.conjunction.args):
+      deconstruct if builtin.has_proto_field($$, 'conjunction'):
         $1: logic.Conjunction = $$.conjunction
     | disjunction
       construct: $$ = logic.Formula(disjunction=$1)
-      deconstruct if builtin.has_proto_field($$, 'disjunction') and not builtin.is_empty($$.disjunction.args):
+      deconstruct if builtin.has_proto_field($$, 'disjunction'):
         $1: logic.Disjunction = $$.disjunction
     | not
       construct: $$ = logic.Formula(not=$1)
