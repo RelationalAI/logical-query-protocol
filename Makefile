@@ -139,4 +139,4 @@ check-python:
 # ---------- cleanup ----------
 
 clean:
-	rm -rf gen/python gen/go
+	rm -rf gen/python gen/go gen
