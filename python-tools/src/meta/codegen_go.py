@@ -9,8 +9,9 @@ from typing import Dict, List, Optional, Set, Tuple, Union
 from .codegen_base import CodeGenerator
 from .codegen_templates import GO_TEMPLATES
 from .target import (
-    TargetExpr, Var, Symbol, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
-    FunDef, VisitNonterminalDef, VisitNonterminal, GetElement, GetField, TargetType,
+    TargetExpr, NewMessage, OneOf, ListExpr, Call, Seq,
+    FunDef, ParseNonterminalDef, PrintNonterminalDef, ParseNonterminal, PrintNonterminal,
+    GetElement, TargetType,
 )
 from .gensym import gensym
 
@@ -213,6 +214,9 @@ class GoCodeGenerator(CodeGenerator):
     def gen_parse_nonterminal_ref(self, name: str) -> str:
         return f"p.parse_{name}"
 
+    def gen_pretty_nonterminal_ref(self, name: str) -> str:
+        return f"p.pretty_{name}"
+
     # --- Type generation ---
 
     def gen_message_type(self, module: str, name: str) -> str:
@@ -228,6 +232,9 @@ class GoCodeGenerator(CodeGenerator):
     def gen_tuple_type(self, element_types: List[str]) -> str:
         # Go doesn't have tuples, use a struct or interface slice
         return f"[]interface{{}}"
+
+    def gen_sequence_type(self, element_type: str) -> str:
+        return f"[]{element_type}"
 
     def gen_list_type(self, element_type: str) -> str:
         return f"[]{element_type}"
@@ -270,6 +277,15 @@ class GoCodeGenerator(CodeGenerator):
         return f"for {cond} {{"
 
     def gen_while_end(self) -> str:
+        return "}"
+
+    def gen_foreach_start(self, var: str, collection: str) -> str:
+        return f"for _, {var} := range {collection} {{"
+
+    def gen_foreach_enumerated_start(self, index_var: str, var: str, collection: str) -> str:
+        return f"for {index_var}, {var} := range {collection} {{"
+
+    def gen_foreach_end(self) -> str:
         return "}"
 
     def gen_empty_body(self) -> str:
@@ -331,14 +347,53 @@ class GoCodeGenerator(CodeGenerator):
             pass
         return f"{tuple_code}[{expr.index}]"
 
-    def generate_lines(self, expr: TargetExpr, lines: List[str], indent: str = "") -> Optional[str]:
-        """Override to handle Go-specific GetField with getter methods."""
-        if isinstance(expr, GetField):
-            obj_code = super().generate_lines(expr.object, lines, indent)
-            pascal_field = to_pascal_case(expr.field_name)
-            return f"{obj_code}.Get{pascal_field}()"
+    def gen_field_access(self, obj_code: str, field_name: str) -> str:
+        """Generate Go field access using getter methods (nil-safe)."""
+        pascal_field = to_pascal_case(field_name)
+        return f"{obj_code}.Get{pascal_field}()"
 
+    def _is_optional_scalar_field(self, expr) -> bool:
+        """Check if a GetField accesses an optional scalar proto field.
+
+        Go protobuf getters strip pointer types from optional scalars,
+        returning plain values instead of *T. For nil checks and unwrap,
+        we need direct PascalCase field access to preserve the pointer type.
+        """
+        from .target import GetField, OptionType
+        if not isinstance(expr, GetField):
+            return False
+        if not isinstance(expr.field_type, OptionType):
+            return False
+        inner_go = self.gen_type(expr.field_type.element_type)
+        return not self._is_nullable_go_type(inner_go)
+
+    def generate_lines(self, expr: TargetExpr, lines: List[str], indent: str = "") -> Optional[str]:
+        from .target import GetField
+        # For optional scalar proto fields, use direct PascalCase access
+        # to preserve pointer type (getters strip it).
+        if isinstance(expr, GetField) and self._is_optional_scalar_field(expr):
+            obj_code = self.generate_lines(expr.object, lines, indent)
+            assert obj_code is not None
+            pascal_field = to_pascal_case(expr.field_name)
+            return f"{obj_code}.{pascal_field}"
         return super().generate_lines(expr, lines, indent)
+
+    def _generate_seq(self, expr: Seq, lines: List[str], indent: str) -> Optional[str]:
+        """Generate Go sequence, suppressing unused variable errors.
+
+        In Go, declared-but-unused variables are compile errors. When an
+        intermediate expression in a Seq produces a temp variable (e.g., from
+        an IfElse used for side effects), we emit `_ = var` to suppress it.
+        """
+        result: Optional[str] = self.gen_none()
+        for i, e in enumerate(expr.exprs):
+            result = self.generate_lines(e, lines, indent)
+            if result is None:
+                break
+            # Suppress unused temp variable from non-final expressions
+            if i < len(expr.exprs) - 1 and result is not None and result.startswith("_t"):
+                lines.append(f"{indent}_ = {result}")
+        return result
 
     def _generate_newmessage(self, expr: NewMessage, lines: List[str], indent: str) -> str:
         """Generate Go code for NewMessage with fields containing OneOf calls.
@@ -488,7 +543,7 @@ class GoCodeGenerator(CodeGenerator):
         return tmp
 
     def _generate_call(self, expr: Call, lines: List[str], indent: str) -> Optional[str]:
-        """Override to handle OneOf, VisitNonterminal, NamedFun, and option builtins for Go."""
+        """Override to handle OneOf, Parse/PrintNonterminal, NamedFun, and option builtins for Go."""
         from .target import NamedFun, FunctionType, ListType, BaseType, Builtin, OptionType
 
         # Intercept option-related builtins to use pointer/nil idioms
@@ -504,8 +559,8 @@ class GoCodeGenerator(CodeGenerator):
             field_value = self.generate_lines(expr.args[0], lines, indent)
             return field_value
 
-        # Check for VisitNonterminal calls
-        if isinstance(expr.func, VisitNonterminal):
+        # Check for Parse/PrintNonterminal calls
+        if isinstance(expr.func, (ParseNonterminal, PrintNonterminal)):
             f = self.generate_lines(expr.func, lines, indent)
             args: List[str] = []
             for arg in expr.args:
@@ -684,11 +739,44 @@ class GoCodeGenerator(CodeGenerator):
         lines.append(f"{indent}{self.gen_assignment(var_name, expr_code)}")
         return self.gen_none()
 
-    def _generate_parse_def(self, expr: VisitNonterminalDef, indent: str) -> str:
+    def _generate_parse_def(self, expr: ParseNonterminalDef, indent: str) -> str:
         """Generate a parse method definition."""
         self.reset_declared_vars()
 
         func_name = f"parse_{expr.nonterminal.name}"
+
+        params = []
+        for param in expr.params:
+            escaped_name = self.escape_identifier(param.name)
+            type_hint = self.gen_type(param.type)
+            params.append((escaped_name, type_hint))
+            self.mark_declared(escaped_name)
+
+        ret_type = self.gen_type(expr.return_type) if expr.return_type else "interface{}"
+        self.set_current_return_type(ret_type, expr.return_type)
+
+        header = self.gen_func_def_header(func_name, params, ret_type, is_method=True)
+
+        if expr.body is None:
+            zero = self._go_zero_values.get(ret_type, "nil")
+            body_code = f"{indent}{self.indent_str}return {zero}"
+        else:
+            body_lines: List[str] = []
+            body_inner = self.generate_lines(expr.body, body_lines, indent + self.indent_str)
+            if body_inner is not None:
+                body_lines.append(f"{indent}{self.indent_str}return {body_inner}")
+            body_code = "\n".join(body_lines)
+
+        self.set_current_return_type(None)
+
+        end = self.gen_func_def_end()
+        return f"{indent}{header}\n{body_code}\n{indent}{end}"
+
+    def _generate_pretty_def(self, expr: PrintNonterminalDef, indent: str) -> str:
+        """Generate a pretty-print method definition."""
+        self.reset_declared_vars()
+
+        func_name = f"pretty_{expr.nonterminal.name}"
 
         params = []
         for param in expr.params:
@@ -794,7 +882,7 @@ def generate_go_lines(expr: TargetExpr, lines: List[str], indent: str = "") -> O
     return GoCodeGenerator().generate_lines(expr, lines, indent)
 
 
-def generate_go_def(expr: Union[FunDef, VisitNonterminalDef], indent: str = "") -> str:
+def generate_go_def(expr: Union[FunDef, ParseNonterminalDef, PrintNonterminalDef], indent: str = "") -> str:
     """Generate Go function definition."""
     return GoCodeGenerator().generate_def(expr, indent)
 

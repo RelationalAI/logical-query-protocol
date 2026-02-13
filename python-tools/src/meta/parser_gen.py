@@ -6,7 +6,7 @@ that can then be translated to Python, Julia, or other languages.
 
 Overview
 --------
-The parser generator takes a Grammar and produces a list of VisitNonterminalDef
+The parser generator takes a Grammar and produces a list of ParseNonterminalDef
 objects, one for each reachable nonterminal. Each definition contains:
 - The nonterminal being parsed
 - Parameters (for parameterized nonterminals)
@@ -79,7 +79,7 @@ The generated IR for expr (simplified) would be:
 from typing import Dict, List, Optional, Set, Tuple
 from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Terminal, Sequence
 from .grammar_utils import is_epsilon, rhs_elements
-from .target import Lambda, Call, VisitNonterminalDef, Var, Lit, Let, IfElse, BaseType, ListType, ListExpr, TargetExpr, Seq, While, Assign, VisitNonterminal
+from .target import Lambda, Call, ParseNonterminalDef, Var, Lit, Let, IfElse, BaseType, ListType, ListExpr, TargetExpr, Seq, While, Assign, ParseNonterminal
 from .target_builtins import make_builtin, make_builtin_with_type
 from .target_utils import apply_lambda
 from .gensym import gensym
@@ -103,7 +103,7 @@ class AmbiguousGrammarError(Exception):
     pass
 
 
-def generate_parse_functions(grammar: Grammar, indent: str = "") -> List[VisitNonterminalDef]:
+def generate_parse_functions(grammar: Grammar, indent: str = "") -> List[ParseNonterminalDef]:
     parser_methods = []
     reachable, _ = grammar.analysis.partition_nonterminals_by_reachability()
     for nt in reachable:
@@ -112,7 +112,7 @@ def generate_parse_functions(grammar: Grammar, indent: str = "") -> List[VisitNo
         parser_methods.append(method_code)
     return parser_methods
 
-def _generate_parse_method(lhs: Nonterminal, rules: List[Rule], grammar: Grammar, indent: str = "") -> VisitNonterminalDef:
+def _generate_parse_method(lhs: Nonterminal, rules: List[Rule], grammar: Grammar, indent: str = "") -> ParseNonterminalDef:
     """Generate parse method code as string (preserving existing logic)."""
     return_type = None
     rhs = None
@@ -138,7 +138,7 @@ def _generate_parse_method(lhs: Nonterminal, rules: List[Rule], grammar: Grammar
             tail = IfElse(Call(make_builtin('equal'), [Var(prediction, BaseType('Int64')), Lit(i)]), _generate_parse_rhs_ir(rule.rhs, grammar, follow_set, True, rule.constructor), tail)
         rhs = Let(Var(prediction, BaseType('Int64')), predictor, tail)
     assert return_type is not None
-    return VisitNonterminalDef('parse', lhs, [], return_type, rhs, indent)
+    return ParseNonterminalDef(lhs, [], return_type, rhs, indent)
 
 def _build_predictor(grammar: Grammar, rules: List[Rule]) -> TargetExpr:
     """Build a predictor expression that returns the index of the matching rule.
@@ -330,7 +330,7 @@ def _generate_parse_rhs_ir(rhs: Rhs, grammar: Grammar, follow_set: TerminalSeque
             return Let(var, parse_expr, apply_lambda(action,[var]))
         return parse_expr
     elif isinstance(rhs, Nonterminal):
-        parse_expr = Call(VisitNonterminal('parse', rhs), [])
+        parse_expr = Call(ParseNonterminal(rhs), [])
         if apply_action and action:
             if len(action.params) == 0:
                 return Seq([parse_expr, apply_lambda(action,[])])

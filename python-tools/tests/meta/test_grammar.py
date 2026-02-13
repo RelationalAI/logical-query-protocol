@@ -12,7 +12,7 @@ from meta.grammar_utils import (
     get_nonterminals, get_literals, is_epsilon, rhs_elements,
     count_nonliteral_rhs_elements,
 )
-from meta.target import BaseType, MessageType, TupleType, ListType, OptionType, Lambda, Var
+from meta.target import BaseType, MessageType, TupleType, SequenceType, ListType, OptionType, Lambda, Var
 
 
 class TestLitTerminal:
@@ -131,11 +131,11 @@ class TestStar:
         assert str(star) == "Item*"
 
     def test_target_type(self):
-        """Test Star returns list type."""
+        """Test Star returns sequence type."""
         nt = Nonterminal("Item", MessageType("proto", "Item"))
         star = Star(nt)
         result = star.target_type()
-        assert isinstance(result, ListType)
+        assert isinstance(result, SequenceType)
         assert result.element_type == MessageType("proto", "Item")
 
 

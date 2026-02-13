@@ -325,6 +325,13 @@ end
 
 # --- Helper functions ---
 
+function _extract_value_int32(parser::Parser, value::Union{Nothing, Proto.Value}, default::Int64)::Int32
+    if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
+        return Int32(_get_oneof_field(value, :int_value))
+    end
+    return Int32(default)
+end
+
 function _extract_value_int64(parser::Parser, value::Union{Nothing, Proto.Value}, default::Int64)::Int64
     if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
         return _get_oneof_field(value, :int_value)
@@ -418,7 +425,7 @@ end
 
 function construct_csv_config(parser::Parser, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.CSVConfig
     config = Dict(config_dict)
-    _t946 = _extract_value_int64(parser, get(config, "csv_header_row", nothing), 1)
+    _t946 = _extract_value_int32(parser, get(config, "csv_header_row", nothing), 1)
     header_row = _t946
     _t947 = _extract_value_int64(parser, get(config, "csv_skip", nothing), 0)
     skip = _t947
@@ -440,7 +447,7 @@ function construct_csv_config(parser::Parser, config_dict::Vector{Tuple{String, 
     encoding = _t955
     _t956 = _extract_value_string(parser, get(config, "csv_compression", nothing), "auto")
     compression = _t956
-    _t957 = Proto.CSVConfig(header_row=Int32(header_row), skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression)
+    _t957 = Proto.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression)
     return _t957
 end
 
