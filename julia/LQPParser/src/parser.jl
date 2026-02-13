@@ -625,90 +625,64 @@ function deconstruct_csv_config(parser::Parser, msg::Proto.CSVConfig)::Vector{Tu
     return sort(result)
 end
 
-function _maybe_push_float64(parser::Parser, result::Vector{Tuple{String, Proto.Value}}, key::String, val::Union{Nothing, Float64})::Union{Nothing, Union{}}
-    if !isnothing(val)
-        _t1002 = _make_value_float64(parser, val)
-        push!(result, (key, _t1002,))
-    end
-    return nothing
-end
-
-function _maybe_push_int64(parser::Parser, result::Vector{Tuple{String, Proto.Value}}, key::String, val::Union{Nothing, Int64})::Union{Nothing, Union{}}
-    if !isnothing(val)
-        _t1003 = _make_value_int64(parser, val)
-        push!(result, (key, _t1003,))
-    end
-    return nothing
-end
-
-function _maybe_push_uint128(parser::Parser, result::Vector{Tuple{String, Proto.Value}}, key::String, val::Union{Nothing, Proto.UInt128Value})::Union{Nothing, Union{}}
-    if !isnothing(val)
-        _t1004 = _make_value_uint128(parser, val)
-        push!(result, (key, _t1004,))
-    end
-    return nothing
-end
-
-function _maybe_push_bytes_as_string(parser::Parser, result::Vector{Tuple{String, Proto.Value}}, key::String, val::Union{Nothing, Vector{UInt8}})::Union{Nothing, Union{}}
-    if !isnothing(val)
-        _t1005 = _make_value_string(parser, String(val))
-        push!(result, (key, _t1005,))
-    end
-    return nothing
-end
-
 function deconstruct_betree_info_config(parser::Parser, msg::Proto.BeTreeInfo)::Vector{Tuple{String, Proto.Value}}
     result = Tuple{String, Proto.Value}[]
-    _t1006 = _make_value_float64(parser, msg.storage_config.epsilon)
-    push!(result, ("betree_config_epsilon", _t1006,))
-    _t1007 = _make_value_int64(parser, msg.storage_config.max_pivots)
-    push!(result, ("betree_config_max_pivots", _t1007,))
-    _t1008 = _make_value_int64(parser, msg.storage_config.max_deltas)
-    push!(result, ("betree_config_max_deltas", _t1008,))
-    _t1009 = _make_value_int64(parser, msg.storage_config.max_leaf)
-    push!(result, ("betree_config_max_leaf", _t1009,))
+    _t1002 = _make_value_float64(parser, msg.storage_config.epsilon)
+    push!(result, ("betree_config_epsilon", _t1002,))
+    _t1003 = _make_value_int64(parser, msg.storage_config.max_pivots)
+    push!(result, ("betree_config_max_pivots", _t1003,))
+    _t1004 = _make_value_int64(parser, msg.storage_config.max_deltas)
+    push!(result, ("betree_config_max_deltas", _t1004,))
+    _t1005 = _make_value_int64(parser, msg.storage_config.max_leaf)
+    push!(result, ("betree_config_max_leaf", _t1005,))
     if _has_proto_field(msg.relation_locator, Symbol("root_pageid"))
-        _maybe_push_uint128(parser, result, "betree_locator_root_pageid", _get_oneof_field(msg.relation_locator, :root_pageid))
+        if !isnothing(_get_oneof_field(msg.relation_locator, :root_pageid))
+            _t1006 = _make_value_uint128(parser, _get_oneof_field(msg.relation_locator, :root_pageid))
+            push!(result, ("betree_locator_root_pageid", _t1006,))
+        end
     end
     if _has_proto_field(msg.relation_locator, Symbol("inline_data"))
-        _maybe_push_bytes_as_string(parser, result, "betree_locator_inline_data", _get_oneof_field(msg.relation_locator, :inline_data))
+        if !isnothing(_get_oneof_field(msg.relation_locator, :inline_data))
+            _t1007 = _make_value_string(parser, String(_get_oneof_field(msg.relation_locator, :inline_data)))
+            push!(result, ("betree_locator_inline_data", _t1007,))
+        end
     end
-    _t1010 = _make_value_int64(parser, msg.relation_locator.element_count)
-    push!(result, ("betree_locator_element_count", _t1010,))
-    _t1011 = _make_value_int64(parser, msg.relation_locator.tree_height)
-    push!(result, ("betree_locator_tree_height", _t1011,))
+    _t1008 = _make_value_int64(parser, msg.relation_locator.element_count)
+    push!(result, ("betree_locator_element_count", _t1008,))
+    _t1009 = _make_value_int64(parser, msg.relation_locator.tree_height)
+    push!(result, ("betree_locator_tree_height", _t1009,))
     return sort(result)
 end
 
 function deconstruct_export_csv_config(parser::Parser, msg::Proto.ExportCSVConfig)::Vector{Tuple{String, Proto.Value}}
     result = Tuple{String, Proto.Value}[]
     if !isnothing(msg.partition_size)
-        _t1012 = _make_value_int64(parser, msg.partition_size)
-        push!(result, ("partition_size", _t1012,))
+        _t1010 = _make_value_int64(parser, msg.partition_size)
+        push!(result, ("partition_size", _t1010,))
     end
     if !isnothing(msg.compression)
-        _t1013 = _make_value_string(parser, msg.compression)
-        push!(result, ("compression", _t1013,))
+        _t1011 = _make_value_string(parser, msg.compression)
+        push!(result, ("compression", _t1011,))
     end
     if !isnothing(msg.syntax_header_row)
-        _t1014 = _make_value_boolean(parser, msg.syntax_header_row)
-        push!(result, ("syntax_header_row", _t1014,))
+        _t1012 = _make_value_boolean(parser, msg.syntax_header_row)
+        push!(result, ("syntax_header_row", _t1012,))
     end
     if !isnothing(msg.syntax_missing_string)
-        _t1015 = _make_value_string(parser, msg.syntax_missing_string)
-        push!(result, ("syntax_missing_string", _t1015,))
+        _t1013 = _make_value_string(parser, msg.syntax_missing_string)
+        push!(result, ("syntax_missing_string", _t1013,))
     end
     if !isnothing(msg.syntax_delim)
-        _t1016 = _make_value_string(parser, msg.syntax_delim)
-        push!(result, ("syntax_delim", _t1016,))
+        _t1014 = _make_value_string(parser, msg.syntax_delim)
+        push!(result, ("syntax_delim", _t1014,))
     end
     if !isnothing(msg.syntax_quotechar)
-        _t1017 = _make_value_string(parser, msg.syntax_quotechar)
-        push!(result, ("syntax_quotechar", _t1017,))
+        _t1015 = _make_value_string(parser, msg.syntax_quotechar)
+        push!(result, ("syntax_quotechar", _t1015,))
     end
     if !isnothing(msg.syntax_escapechar)
-        _t1018 = _make_value_string(parser, msg.syntax_escapechar)
-        push!(result, ("syntax_escapechar", _t1018,))
+        _t1016 = _make_value_string(parser, msg.syntax_escapechar)
+        push!(result, ("syntax_escapechar", _t1016,))
     end
     return sort(result)
 end

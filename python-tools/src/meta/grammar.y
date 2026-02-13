@@ -1334,29 +1334,6 @@ def deconstruct_csv_config(msg: logic.CSVConfig) -> List[Tuple[String, logic.Val
     return builtin.list_sort(result)
 
 
-def _maybe_push_float64(result: List[Tuple[String, logic.Value]], key: String, val: Optional[float]) -> None:
-    if val is not None:
-        builtin.list_push(result, builtin.tuple(key, _make_value_float64(builtin.unwrap_option(val))))
-    return None
-
-
-def _maybe_push_int64(result: List[Tuple[String, logic.Value]], key: String, val: Optional[int]) -> None:
-    if val is not None:
-        builtin.list_push(result, builtin.tuple(key, _make_value_int64(builtin.unwrap_option(val))))
-    return None
-
-
-def _maybe_push_uint128(result: List[Tuple[String, logic.Value]], key: String, val: Optional[logic.UInt128Value]) -> None:
-    if val is not None:
-        builtin.list_push(result, builtin.tuple(key, _make_value_uint128(builtin.unwrap_option(val))))
-    return None
-
-
-def _maybe_push_bytes_as_string(result: List[Tuple[String, logic.Value]], key: String, val: Optional[bytes]) -> None:
-    if val is not None:
-        builtin.list_push(result, builtin.tuple(key, _make_value_string(builtin.decode_string(builtin.unwrap_option(val)))))
-    return None
-
 
 def deconstruct_betree_info_config(msg: logic.BeTreeInfo) -> List[Tuple[String, logic.Value]]:
     result: List[Tuple[String, logic.Value]] = list[Tuple[String, logic.Value]]()
@@ -1365,9 +1342,11 @@ def deconstruct_betree_info_config(msg: logic.BeTreeInfo) -> List[Tuple[String, 
     builtin.list_push(result, builtin.tuple("betree_config_max_deltas", _make_value_int64(msg.storage_config.max_deltas)))
     builtin.list_push(result, builtin.tuple("betree_config_max_leaf", _make_value_int64(msg.storage_config.max_leaf)))
     if builtin.has_proto_field(msg.relation_locator, "root_pageid"):
-        _maybe_push_uint128(result, "betree_locator_root_pageid", msg.relation_locator.root_pageid)
+        if msg.relation_locator.root_pageid is not None:
+            builtin.list_push(result, builtin.tuple("betree_locator_root_pageid", _make_value_uint128(builtin.unwrap_option(msg.relation_locator.root_pageid))))
     if builtin.has_proto_field(msg.relation_locator, "inline_data"):
-        _maybe_push_bytes_as_string(result, "betree_locator_inline_data", msg.relation_locator.inline_data)
+        if msg.relation_locator.inline_data is not None:
+            builtin.list_push(result, builtin.tuple("betree_locator_inline_data", _make_value_string(builtin.decode_string(builtin.unwrap_option(msg.relation_locator.inline_data)))))
     builtin.list_push(result, builtin.tuple("betree_locator_element_count", _make_value_int64(msg.relation_locator.element_count)))
     builtin.list_push(result, builtin.tuple("betree_locator_tree_height", _make_value_int64(msg.relation_locator.tree_height)))
     return builtin.list_sort(result)

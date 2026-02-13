@@ -950,90 +950,64 @@ func (p *Parser) deconstruct_csv_config(msg *pb.CSVConfig) [][]interface{} {
 	return listSort(result)
 }
 
-func (p *Parser) _maybe_push_float64(result [][]interface{}, key string, val *float64) interface{} {
-	if val != nil {
-		_t1013 := p._make_value_float64(*val)
-		result = append(result, []interface{}{key, _t1013})
-	}
-	return nil
-}
-
-func (p *Parser) _maybe_push_int64(result [][]interface{}, key string, val *int64) interface{} {
-	if val != nil {
-		_t1014 := p._make_value_int64(*val)
-		result = append(result, []interface{}{key, _t1014})
-	}
-	return nil
-}
-
-func (p *Parser) _maybe_push_uint128(result [][]interface{}, key string, val *pb.UInt128Value) interface{} {
-	if val != nil {
-		_t1015 := p._make_value_uint128(val)
-		result = append(result, []interface{}{key, _t1015})
-	}
-	return nil
-}
-
-func (p *Parser) _maybe_push_bytes_as_string(result [][]interface{}, key string, val []byte) interface{} {
-	if val != nil {
-		_t1016 := p._make_value_string(string(val))
-		result = append(result, []interface{}{key, _t1016})
-	}
-	return nil
-}
-
 func (p *Parser) deconstruct_betree_info_config(msg *pb.BeTreeInfo) [][]interface{} {
 	result := [][]interface{}{}
-	_t1017 := p._make_value_float64(msg.GetStorageConfig().GetEpsilon())
-	result = append(result, []interface{}{"betree_config_epsilon", _t1017})
-	_t1018 := p._make_value_int64(msg.GetStorageConfig().GetMaxPivots())
-	result = append(result, []interface{}{"betree_config_max_pivots", _t1018})
-	_t1019 := p._make_value_int64(msg.GetStorageConfig().GetMaxDeltas())
-	result = append(result, []interface{}{"betree_config_max_deltas", _t1019})
-	_t1020 := p._make_value_int64(msg.GetStorageConfig().GetMaxLeaf())
-	result = append(result, []interface{}{"betree_config_max_leaf", _t1020})
+	_t1013 := p._make_value_float64(msg.GetStorageConfig().GetEpsilon())
+	result = append(result, []interface{}{"betree_config_epsilon", _t1013})
+	_t1014 := p._make_value_int64(msg.GetStorageConfig().GetMaxPivots())
+	result = append(result, []interface{}{"betree_config_max_pivots", _t1014})
+	_t1015 := p._make_value_int64(msg.GetStorageConfig().GetMaxDeltas())
+	result = append(result, []interface{}{"betree_config_max_deltas", _t1015})
+	_t1016 := p._make_value_int64(msg.GetStorageConfig().GetMaxLeaf())
+	result = append(result, []interface{}{"betree_config_max_leaf", _t1016})
 	if hasProtoField(msg.GetRelationLocator(), "root_pageid") {
-		_t1021 := p._maybe_push_uint128(result, "betree_locator_root_pageid", msg.GetRelationLocator().GetRootPageid())
+		if msg.GetRelationLocator().GetRootPageid() != nil {
+			_t1017 := p._make_value_uint128(*msg.GetRelationLocator().GetRootPageid())
+			result = append(result, []interface{}{"betree_locator_root_pageid", _t1017})
+		}
 	}
 	if hasProtoField(msg.GetRelationLocator(), "inline_data") {
-		_t1022 := p._maybe_push_bytes_as_string(result, "betree_locator_inline_data", msg.GetRelationLocator().GetInlineData())
+		if msg.GetRelationLocator().GetInlineData() != nil {
+			_t1018 := p._make_value_string(string(*msg.GetRelationLocator().GetInlineData()))
+			result = append(result, []interface{}{"betree_locator_inline_data", _t1018})
+		}
 	}
-	_t1023 := p._make_value_int64(msg.GetRelationLocator().GetElementCount())
-	result = append(result, []interface{}{"betree_locator_element_count", _t1023})
-	_t1024 := p._make_value_int64(msg.GetRelationLocator().GetTreeHeight())
-	result = append(result, []interface{}{"betree_locator_tree_height", _t1024})
+	_t1019 := p._make_value_int64(msg.GetRelationLocator().GetElementCount())
+	result = append(result, []interface{}{"betree_locator_element_count", _t1019})
+	_t1020 := p._make_value_int64(msg.GetRelationLocator().GetTreeHeight())
+	result = append(result, []interface{}{"betree_locator_tree_height", _t1020})
 	return listSort(result)
 }
 
 func (p *Parser) deconstruct_export_csv_config(msg *pb.ExportCSVConfig) [][]interface{} {
 	result := [][]interface{}{}
 	if msg.PartitionSize != nil {
-		_t1025 := p._make_value_int64(*msg.PartitionSize)
-		result = append(result, []interface{}{"partition_size", _t1025})
+		_t1021 := p._make_value_int64(*msg.PartitionSize)
+		result = append(result, []interface{}{"partition_size", _t1021})
 	}
 	if msg.Compression != nil {
-		_t1026 := p._make_value_string(*msg.Compression)
-		result = append(result, []interface{}{"compression", _t1026})
+		_t1022 := p._make_value_string(*msg.Compression)
+		result = append(result, []interface{}{"compression", _t1022})
 	}
 	if msg.SyntaxHeaderRow != nil {
-		_t1027 := p._make_value_boolean(*msg.SyntaxHeaderRow)
-		result = append(result, []interface{}{"syntax_header_row", _t1027})
+		_t1023 := p._make_value_boolean(*msg.SyntaxHeaderRow)
+		result = append(result, []interface{}{"syntax_header_row", _t1023})
 	}
 	if msg.SyntaxMissingString != nil {
-		_t1028 := p._make_value_string(*msg.SyntaxMissingString)
-		result = append(result, []interface{}{"syntax_missing_string", _t1028})
+		_t1024 := p._make_value_string(*msg.SyntaxMissingString)
+		result = append(result, []interface{}{"syntax_missing_string", _t1024})
 	}
 	if msg.SyntaxDelim != nil {
-		_t1029 := p._make_value_string(*msg.SyntaxDelim)
-		result = append(result, []interface{}{"syntax_delim", _t1029})
+		_t1025 := p._make_value_string(*msg.SyntaxDelim)
+		result = append(result, []interface{}{"syntax_delim", _t1025})
 	}
 	if msg.SyntaxQuotechar != nil {
-		_t1030 := p._make_value_string(*msg.SyntaxQuotechar)
-		result = append(result, []interface{}{"syntax_quotechar", _t1030})
+		_t1026 := p._make_value_string(*msg.SyntaxQuotechar)
+		result = append(result, []interface{}{"syntax_quotechar", _t1026})
 	}
 	if msg.SyntaxEscapechar != nil {
-		_t1031 := p._make_value_string(*msg.SyntaxEscapechar)
-		result = append(result, []interface{}{"syntax_escapechar", _t1031})
+		_t1027 := p._make_value_string(*msg.SyntaxEscapechar)
+		result = append(result, []interface{}{"syntax_escapechar", _t1027})
 	}
 	return listSort(result)
 }
