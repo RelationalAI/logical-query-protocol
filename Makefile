@@ -1,12 +1,16 @@
 # Makefile for the Logical Query Protocol (LQP)
 #
 # Usage:
-#   make              Build protobuf bindings and regenerate all parsers.
+#   make              Build protobuf bindings, parsers, and printers.
 #   make protobuf     Lint, check breaking changes, and generate protobuf code.
 #   make parsers      Regenerate Python, Julia, and Go parsers from the grammar.
 #   make parser-X     Regenerate a single parser (X = python, julia, go).
 #   make force-parsers      Force-regenerate all parsers.
 #   make force-parser-X     Force-regenerate a single parser.
+#   make printers     Regenerate pretty printers from the grammar.
+#   make printer-python     Regenerate the Python pretty printer.
+#   make force-printers     Force-regenerate all printers.
+#   make force-printer-python  Force-regenerate the Python pretty printer.
 #   make test         Run tests for all languages.
 #   make test-X       Run tests for one language (X = python, julia, go).
 #   make clean        Remove temporary generated files.
@@ -23,18 +27,24 @@ GRAMMAR := python-tools/src/meta/grammar.y
 
 # Generated protobuf outputs
 PY_PROTO_DIR := python-tools/src/lqp/proto/v1
-JL_PROTO_DIR := julia/LQPParser/src/relationalai/lqp/v1
+JL_PROTO_DIR := julia/LogicalQueryProtocol/src/gen/relationalai/lqp/v1
 GO_PROTO_DIR := go/src/lqp/v1
 
 # Generated parser outputs
 PY_PARSER := python-tools/src/lqp/gen/parser.py
-JL_PARSER := julia/LQPParser/src/parser.jl
+JL_PARSER := julia/LogicalQueryProtocol/src/parser.jl
 GO_PARSER := go/src/parser.go
+
+# Generated printer outputs
+PY_PRINTER := python-tools/src/lqp/gen/pretty.py
 
 # Parser templates
 PY_TEMPLATE := python-tools/src/meta/templates/parser.py.template
 JL_TEMPLATE := python-tools/src/meta/templates/parser.jl.template
 GO_TEMPLATE := python-tools/src/meta/templates/parser.go.template
+
+# Printer templates
+PY_PRINTER_TEMPLATE := python-tools/src/meta/templates/pretty_printer.py.template
 
 META_CLI := cd python-tools && PYTHONPATH=src python -m meta.cli
 META_PROTO_ARGS := \
@@ -59,10 +69,11 @@ JL_PROTO_GENERATED := \
 
 .PHONY: all protobuf parsers parser-python parser-julia parser-go \
 	force-parsers force-parser-python force-parser-julia force-parser-go \
+	printers printer-python force-printers force-printer-python \
 	test test-python test-julia test-go check-python \
 	clean
 
-all: build parsers
+all: protobuf parsers printers
 
 # ---------- protobuf build (replaces ./build script) ----------
 
@@ -91,7 +102,7 @@ $(PY_PROTO_GENERATED) $(GO_PROTO_GENERATED): $(PROTO_FILES)
 $(JL_PROTO_GENERATED): $(PROTO_FILES)
 	buf lint
 	buf breaking --against ".git#branch=main,subdir=proto"
-	cd julia && julia --project=LQPParser generate_proto.jl
+	cd julia && julia --project=LogicalQueryProtocol generate_proto.jl
 
 # ---------- parser generation ----------
 
@@ -103,7 +114,7 @@ $(PY_PARSER): $(PROTO_FILES) $(GRAMMAR) $(PY_TEMPLATE)
 
 parser-julia: $(JL_PARSER)
 $(JL_PARSER): $(PROTO_FILES) $(GRAMMAR) $(JL_TEMPLATE)
-	$(META_CLI) $(META_PROTO_ARGS) --parser julia -o ../julia/LQPParser/src/parser.jl
+	$(META_CLI) $(META_PROTO_ARGS) --parser julia -o ../julia/LogicalQueryProtocol/src/parser.jl
 
 parser-go: $(GO_PARSER)
 $(GO_PARSER): $(PROTO_FILES) $(GRAMMAR) $(GO_TEMPLATE)
@@ -115,10 +126,23 @@ force-parser-python:
 	$(META_CLI) $(META_PROTO_ARGS) --parser python -o src/lqp/gen/parser.py
 
 force-parser-julia:
-	$(META_CLI) $(META_PROTO_ARGS) --parser julia -o ../julia/LQPParser/src/parser.jl
+	$(META_CLI) $(META_PROTO_ARGS) --parser julia -o ../julia/LogicalQueryProtocol/src/parser.jl
 
 force-parser-go:
 	$(META_CLI) $(META_PROTO_ARGS) --parser go -o ../go/src/parser.go
+
+# ---------- printer generation ----------
+
+printers: printer-python
+
+printer-python: $(PY_PRINTER)
+$(PY_PRINTER): $(PROTO_FILES) $(GRAMMAR) $(PY_PRINTER_TEMPLATE)
+	$(META_CLI) $(META_PROTO_ARGS) --printer python -o src/lqp/gen/pretty.py
+
+force-printers: force-printer-python
+
+force-printer-python:
+	$(META_CLI) $(META_PROTO_ARGS) --printer python -o src/lqp/gen/pretty.py
 
 # ---------- testing ----------
 
@@ -128,7 +152,7 @@ test-python: $(PY_PARSER) $(PY_PROTO_GENERATED) check-python
 	cd python-tools && python -m pytest
 
 test-julia: $(JL_PARSER) $(JL_PROTO_GENERATED)
-	cd julia && julia --project=LQPParser -e 'using Pkg; Pkg.test("LQPParser")'
+	cd julia && julia --project=LogicalQueryProtocol -e 'using Pkg; Pkg.test()'
 
 test-go: $(GO_PARSER) $(GO_PROTO_GENERATED)
 	cd go && go test ./test/...
@@ -139,4 +163,4 @@ check-python:
 # ---------- cleanup ----------
 
 clean:
-	rm -rf gen/python gen/go
+	rm -rf gen/python gen/go gen

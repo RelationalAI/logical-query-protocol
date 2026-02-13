@@ -207,6 +207,7 @@ class Rule:
     lhs: Nonterminal
     rhs: Rhs
     constructor: 'Lambda'
+    deconstructor: Optional['Lambda'] = None  # Pretty-printer deconstruction action
     source_type: Optional[str] = None  # Track the protobuf type this rule came from
 
     def __str__(self):
@@ -226,6 +227,7 @@ class Rule:
             f"Action for {self.lhs.name} has {action_params} parameter(s) "
             f"but RHS has {rhs_len} non-literal element(s): {self.rhs}"
         )
+
 
 @dataclass(frozen=True)
 class Token:
@@ -302,38 +304,6 @@ class Grammar:
         _, unreachable = self.analysis.partition_nonterminals_by_reachability()
         return unreachable
 
-    def print_grammar(self, reachable_only: bool = True) -> str:
-        """Convert to context-free grammar format with actions."""
-        lines = []
-        lines.append("// Auto-generated grammar from protobuf specifications")
-        lines.append("")
-
-        reachable, unreachable = self.analysis.partition_nonterminals_by_reachability()
-        rule_order = reachable if reachable_only else reachable + unreachable
-
-        for lhs in rule_order:
-            rules_list = self.rules[lhs]
-            lines.append(f"{lhs}")
-            for idx, rule in enumerate(rules_list):
-                if idx == 0:
-                    lines.append(f"  : {rule.to_pattern(self)}")
-                else:
-                    lines.append(f"  | {rule.to_pattern(self)}")
-
-                if rule.constructor:
-                    lines.append(f"    +{{{{ {rule.constructor} }}}}")
-
-            lines.append("")
-
-        # Print tokens at the end
-        if self.rules and self.tokens:
-            lines.append("")
-
-        for token in self.tokens:
-            lines.append(f"{token.name}: {token.pattern}")
-
-        return "\n".join(lines)
-
     def print_grammar_yacc(self, reachable_only: bool = True) -> str:
         """Convert to yacc-like grammar format.
 
@@ -388,7 +358,10 @@ class Grammar:
                 rhs_str = self._rhs_to_str(rule.rhs)
                 action_str = expr_to_str(rule.constructor.body)
                 lines.append(f"{prefix}{rhs_str}")
-                lines.append(f"    {{ {action_str} }}")
+                lines.append(f"      construct: {action_str}")
+                if rule.deconstructor is not None:
+                    decon_str = expr_to_str(rule.deconstructor.body)
+                    lines.append(f"      deconstruct: {decon_str}")
 
             lines.append("")
 

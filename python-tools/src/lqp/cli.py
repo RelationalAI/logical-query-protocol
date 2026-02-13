@@ -17,8 +17,8 @@ from lqp.validator import validate_lqp
 import lqp.ir as ir
 
 
-def process_file(filename, bin, json, validate=True, use_generated=False):
-    """Process a single LQP file and output binary and/or JSON."""
+def parse_lqp_to_proto(filename, use_generated=False, validate=True):
+    """Parse an LQP text file and return a protobuf message."""
     with open(filename, "r") as f:
         lqp_text = f.read()
 
@@ -33,6 +33,13 @@ def process_file(filename, bin, json, validate=True, use_generated=False):
         if validate and isinstance(lqp, ir.Transaction):
             validate_lqp(lqp)
         lqp_proto = ir_to_proto(lqp)
+
+    return lqp_proto
+
+
+def process_file(filename, bin, json, validate=True, use_generated=False):
+    """Process a single LQP file and output binary and/or JSON."""
+    lqp_proto = parse_lqp_to_proto(filename, use_generated, validate)
 
     # Write binary output to the configured directories, using the same filename.
     if bin:
@@ -137,11 +144,13 @@ def main():
 
     if os.path.isfile(args.input):
         filename = args.input
-        assert filename.endswith(".lqp") and os.path.isfile(filename), \
-            f"The input {filename} does not seem to be an LQP file"
+
+        if not filename.endswith(".lqp"):
+            arg_parser.error(f"The input {filename} does not seem to be an LQP file")
 
         if args.out:
-            assert not (args.bin and args.json), "Cannot specify both --bin and --json with --out option"
+            if args.bin and args.json:
+                arg_parser.error("Cannot specify both --bin and --json with --out option")
 
         basename = os.path.splitext(filename)[0]
 

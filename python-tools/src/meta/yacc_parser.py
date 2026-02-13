@@ -57,7 +57,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from .grammar import (
     Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence, Rule,
-    GrammarConfig, TerminalDef
+    GrammarConfig, TerminalDef,
 )
 from .target import TargetType, BaseType, MessageType, SequenceType, ListType, OptionType, TupleType
 
@@ -78,6 +78,7 @@ def parse_type(text: str) -> TargetType:
     Syntax:
         String, Int64, Float64, Boolean    -> BaseType
         module.MessageName                 -> MessageType
+        Sequence[Type]                     -> SequenceType
         List[Type]                         -> ListType
         Tuple[Type1, Type2, ...]           -> TupleType
         Optional[Type]                     -> OptionType
@@ -380,14 +381,18 @@ def _get_indent(line: str) -> int:
 def parse_rules(lines: List[str], start_line: int, ctx: TypeContext) -> Tuple[List[Rule], int]:
     """Parse rules section until %%.
 
-    Rules use 'construct:' to introduce semantic actions:
+    Rules use 'construct:' and 'deconstruct:' to introduce semantic actions:
         rule
             : rhs
             construct: single_line_expression
+            deconstruct: single_line_expression
 
         rule
             : rhs
             construct:
+                multi_line
+                action_code
+            deconstruct:
                 multi_line
                 action_code
 
@@ -400,21 +405,28 @@ def parse_rules(lines: List[str], start_line: int, ctx: TypeContext) -> Tuple[Li
     current_lhs_type: Optional[TargetType] = None
     current_rhs_lines: List[str] = []  # Accumulate RHS lines
     current_action_lines: List[str] = []  # Accumulate action lines
+    current_deconstruct_lines: List[str] = []  # Accumulate deconstruct lines
+    current_deconstruct_guard: Optional[str] = None  # Guard expression from 'deconstruct if COND:'
     current_alt_start_line: int = 0
     in_action: bool = False
-    action_base_indent: int = 0  # Indentation level of the 'construct:' line
+    in_deconstruct: bool = False
+    action_base_indent: int = 0  # Indentation level of the 'construct:'/'deconstruct:' line
 
     def flush_alternative():
         """Process accumulated alternative."""
-        nonlocal current_rhs_lines, current_action_lines, in_action
+        nonlocal current_rhs_lines, current_action_lines, current_deconstruct_lines, current_deconstruct_guard, in_action, in_deconstruct
         if current_rhs_lines and current_lhs is not None and current_lhs_type is not None:
             rhs_text = '\n'.join(current_rhs_lines)
             action_text = '\n'.join(current_action_lines)
-            rule = _parse_alternative(current_lhs, current_lhs_type, rhs_text, action_text, ctx, current_alt_start_line)
+            deconstruct_text = '\n'.join(current_deconstruct_lines)
+            rule = _parse_alternative(current_lhs, current_lhs_type, rhs_text, action_text, deconstruct_text, ctx, current_alt_start_line, deconstruct_guard=current_deconstruct_guard)
             rules.append(rule)
         current_rhs_lines = []
         current_action_lines = []
+        current_deconstruct_lines = []
+        current_deconstruct_guard = None
         in_action = False
+        in_deconstruct = False
 
     while i < len(lines):
         line = lines[i]
@@ -426,8 +438,9 @@ def parse_rules(lines: List[str], start_line: int, ctx: TypeContext) -> Tuple[Li
         # Skip empty lines and comments (but preserve them in action blocks)
         if not stripped or stripped.startswith('#'):
             if in_action and current_action_lines:
-                # Preserve empty lines within action blocks
                 current_action_lines.append('')
+            if in_deconstruct and current_deconstruct_lines:
+                current_deconstruct_lines.append('')
             continue
 
         # Check for section separator
@@ -438,12 +451,19 @@ def parse_rules(lines: List[str], start_line: int, ctx: TypeContext) -> Tuple[Li
         # If we're in an action block, check if we should exit
         if in_action:
             if indent <= action_base_indent and not stripped.startswith('construct:'):
-                # Indentation decreased - end of action block
                 in_action = False
                 # Don't consume this line, process it below
             else:
-                # Continue action block
                 current_action_lines.append(stripped)
+                continue
+
+        # If we're in a deconstruct block, check if we should exit
+        if in_deconstruct:
+            if indent <= action_base_indent and not stripped.startswith('deconstruct'):
+                in_deconstruct = False
+                # Don't consume this line, process it below
+            else:
+                current_deconstruct_lines.append(stripped)
                 continue
 
         # Check for new rule (name at start of line, not indented)
@@ -490,12 +510,34 @@ def parse_rules(lines: List[str], start_line: int, ctx: TypeContext) -> Tuple[Li
             action_base_indent = indent
             rest = stripped[len('construct:'):].strip()
             if rest:
-                # Single-line action
                 current_action_lines = [rest]
             else:
-                # Multi-line action follows
                 in_action = True
                 current_action_lines = []
+
+        elif stripped.startswith('deconstruct'):
+            # Start of deconstruct action: "deconstruct:" or "deconstruct if COND:"
+            action_base_indent = indent
+            deconstruct_rest = stripped[len('deconstruct'):].strip()
+            if deconstruct_rest.startswith('if '):
+                # Guard syntax: "deconstruct if COND:"
+                if not deconstruct_rest.endswith(':'):
+                    raise YaccGrammarError("deconstruct guard must end with ':'", line_num)
+                guard_text = deconstruct_rest[3:-1].strip()  # between 'if ' and ':'
+                current_deconstruct_guard = guard_text
+                in_deconstruct = True
+                current_deconstruct_lines = []
+            elif deconstruct_rest.startswith(':'):
+                # Standard syntax: "deconstruct:" or "deconstruct: expr"
+                rest = deconstruct_rest[1:].strip()
+                current_deconstruct_guard = None
+                if rest:
+                    current_deconstruct_lines = [rest]
+                else:
+                    in_deconstruct = True
+                    current_deconstruct_lines = []
+            else:
+                raise YaccGrammarError(f"Invalid deconstruct syntax: {stripped}", line_num)
 
         elif line and line[0].isspace() and current_rhs_lines:
             # Continuation of RHS (indented line, not yet in action)
@@ -527,7 +569,9 @@ def _find_non_literal_indices(rhs: Rhs) -> List[int]:
 
 
 def _parse_alternative(lhs_name: str, lhs_type: TargetType, rhs_text: str,
-                       action_text: str, ctx: TypeContext, line: int) -> Rule:
+                       action_text: str, deconstruct_text: str,
+                       ctx: TypeContext, line: int,
+                       deconstruct_guard: Optional[str] = None) -> Rule:
     """Parse a single rule alternative.
 
     Args:
@@ -535,9 +579,13 @@ def _parse_alternative(lhs_name: str, lhs_type: TargetType, rhs_text: str,
         lhs_type: Type of the left-hand side
         rhs_text: The right-hand side pattern text
         action_text: The semantic action text (from construct: block), or empty for default
+        deconstruct_text: The deconstruct action text (from deconstruct: block)
         ctx: Type context
         line: Line number for error messages
+        deconstruct_guard: Optional guard expression from 'deconstruct if COND:'
     """
+    from .yacc_action_parser import parse_deconstruct_action
+
     # Parse RHS first so we can check for default action
     rhs = parse_rhs(rhs_text, ctx)
 
@@ -561,7 +609,16 @@ def _parse_alternative(lhs_name: str, lhs_type: TargetType, rhs_text: str,
     constructor = parse_action(action_text, rhs, ctx, line, expected_return_type=lhs_type)
 
     lhs = Nonterminal(lhs_name, lhs_type)
-    return Rule(lhs=lhs, rhs=rhs, constructor=constructor)
+
+    # Parse deconstruct action: explicit if provided, otherwise default to identity ($$)
+    if deconstruct_text:
+        deconstructor = parse_deconstruct_action(deconstruct_text, lhs_type, rhs, ctx, line, guard=deconstruct_guard)
+    elif deconstruct_guard:
+        deconstructor = parse_deconstruct_action("$$", lhs_type, rhs, ctx, line, guard=deconstruct_guard)
+    else:
+        deconstructor = parse_deconstruct_action("$$", lhs_type, rhs, ctx, line)
+
+    return Rule(lhs=lhs, rhs=rhs, constructor=constructor, deconstructor=deconstructor)
 
 
 def _make_field_type_lookup(
@@ -575,18 +632,23 @@ def _make_field_type_lookup(
     Returns:
         A function that takes (MessageType, field_name) and returns the field's TargetType
     """
+    # Build name -> module index for resolving unqualified message type names
+    name_to_module: Dict[str, str] = {}
+    for (module, msg_name) in proto_messages:
+        name_to_module[msg_name] = module
+
     # Build field type map: (module, message_name, field_name) -> TargetType
     field_types: Dict[Tuple[str, str, str], TargetType] = {}
 
     for (module, msg_name), proto_msg in proto_messages.items():
         for field in proto_msg.fields:
-            field_type = _proto_type_to_target_type(field.type, field.is_repeated)
+            field_type = _proto_type_to_target_type(field.type, field.is_repeated, field.is_optional, name_to_module)
             field_types[(module, msg_name, field.name)] = field_type
 
         # Also add oneof fields
         for oneof in proto_msg.oneofs:
             for field in oneof.fields:
-                field_type = _proto_type_to_target_type(field.type, False)
+                field_type = _proto_type_to_target_type(field.type, False, name_to_module=name_to_module)
                 field_types[(module, msg_name, field.name)] = field_type
 
     def lookup(message_type: MessageType, field_name: str) -> Optional[TargetType]:
@@ -596,7 +658,9 @@ def _make_field_type_lookup(
     return lookup
 
 
-def _proto_type_to_target_type(proto_type: str, is_repeated: bool) -> TargetType:
+def _proto_type_to_target_type(proto_type: str, is_repeated: bool,
+                               is_optional: bool = False,
+                               name_to_module: Optional[Dict[str, str]] = None) -> TargetType:
     """Convert a proto field type string to TargetType."""
     # Map proto scalar types to target base types
     scalar_map = {
@@ -618,11 +682,14 @@ def _proto_type_to_target_type(proto_type: str, is_repeated: bool) -> TargetType
         parts = proto_type.rsplit('.', 1)
         base_type = MessageType(parts[0], parts[1])
     else:
-        # Message type without module prefix - use logic as default module
-        base_type = MessageType('logic', proto_type)
+        # Message type without module prefix - look up the correct module
+        module = name_to_module.get(proto_type, 'logic') if name_to_module else 'logic'
+        base_type = MessageType(module, proto_type)
 
     if is_repeated:
         return SequenceType(base_type)
+    if is_optional:
+        return OptionType(base_type)
     return base_type
 
 

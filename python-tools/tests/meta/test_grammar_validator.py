@@ -4,14 +4,14 @@
 import pytest
 
 from meta.target import (
-    BaseType, MessageType, TupleType, ListType, SequenceType, OptionType, FunctionType,
+    BaseType, MessageType, TupleType, SequenceType, ListType, OptionType, FunctionType,
     Var, GetElement, Call, Builtin, NewMessage, Lambda, Lit, IfElse, Let, ListExpr,
     NamedFun, FunDef
 )
 from meta.target_builtins import make_builtin
 from meta.grammar import (
     Grammar, Nonterminal, Rule, LitTerminal, NamedTerminal,
-    Star, Option, Sequence
+    Star, Option, Sequence,
 )
 from meta.grammar_validator import GrammarValidator
 from meta.proto_parser import ProtoParser
@@ -974,6 +974,20 @@ class TestIsSubtype:
         for t in types:
             assert validator._is_subtype(ListType(t), ListType(t))
 
+    def test_list_invariant(self, validator):
+        """List is invariant: List[T] <: List[U] only if T == U."""
+        never = BaseType("Never")
+        any_type = BaseType("Any")
+        int64 = BaseType("Int64")
+        string = BaseType("String")
+        # List[Never] is NOT a subtype of List[Any] (invariant)
+        assert not validator._is_subtype(ListType(never), ListType(any_type))
+        # List[Int64] is NOT a subtype of List[Any] (invariant)
+        assert not validator._is_subtype(ListType(int64), ListType(any_type))
+        # Distinct concrete types are not subtypes
+        assert not validator._is_subtype(ListType(int64), ListType(string))
+        assert not validator._is_subtype(ListType(string), ListType(int64))
+
     def test_list_invariant_not_subtype_with_never(self, validator):
         """List[Never] is NOT <: List[T] (List is invariant)."""
         never = BaseType("Never")
@@ -994,13 +1008,6 @@ class TestIsSubtype:
         ]
         for t in types:
             assert not validator._is_subtype(ListType(t), ListType(any_type))
-
-    def test_list_concrete_not_subtype(self, validator):
-        """List[T] is not a subtype of List[U] for distinct concrete T, U."""
-        int64 = BaseType("Int64")
-        string = BaseType("String")
-        assert not validator._is_subtype(ListType(int64), ListType(string))
-        assert not validator._is_subtype(ListType(string), ListType(int64))
 
     def test_list_not_subtype_of_element(self, validator):
         """List[T] is not a subtype of T."""
@@ -1063,7 +1070,7 @@ class TestIsSubtype:
         assert not validator._is_subtype(int64, OptionType(int64))
 
     def test_nested_list_invariance(self, validator):
-        """List[List[Never]] is NOT <: List[List[Int64]] (List is invariant)."""
+        """List is invariant: List[List[Never]] is NOT a subtype of List[List[Int64]]."""
         never = BaseType("Never")
         int64 = BaseType("Int64")
         assert not validator._is_subtype(
@@ -1081,7 +1088,7 @@ class TestIsSubtype:
         )
 
     def test_list_of_option_invariance(self, validator):
-        """List[Option[Never]] is NOT <: List[Option[Int64]] (List is invariant)."""
+        """List is invariant, so List[Option[Never]] is NOT <: List[Option[Int64]]."""
         never = BaseType("Never")
         int64 = BaseType("Int64")
         assert not validator._is_subtype(
@@ -1089,8 +1096,17 @@ class TestIsSubtype:
             ListType(OptionType(int64))
         )
 
+    def test_sequence_of_option_covariance(self, validator):
+        """Sequence[Option[Never]] <: Sequence[Option[Int64]]."""
+        never = BaseType("Never")
+        int64 = BaseType("Int64")
+        assert validator._is_subtype(
+            SequenceType(OptionType(never)),
+            SequenceType(OptionType(int64))
+        )
+
     def test_option_of_list_invariance(self, validator):
-        """Option[List[Never]] is NOT <: Option[List[Int64]] (List is invariant)."""
+        """Option[List[Never]] is NOT <: Option[List[Int64]] because List is invariant."""
         never = BaseType("Never")
         int64 = BaseType("Int64")
         assert not validator._is_subtype(
@@ -1333,13 +1349,13 @@ class TestTypesCompatible:
         string = BaseType("String")
         assert not validator._types_compatible(int64, string)
 
-    def test_list_invariant_not_compatible_via_never(self, validator):
+    def test_list_not_compatible_via_never(self, validator):
         """List[Never] is NOT compatible with List[Int64] (List is invariant)."""
         never = BaseType("Never")
         int64 = BaseType("Int64")
         assert not validator._types_compatible(ListType(never), ListType(int64))
 
-    def test_list_invariant_not_compatible_via_any(self, validator):
+    def test_list_not_compatible_via_any(self, validator):
         """List[Int64] is NOT compatible with List[Any] (List is invariant)."""
         any_type = BaseType("Any")
         int64 = BaseType("Int64")

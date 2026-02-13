@@ -14,8 +14,8 @@ from .target import (
     IfElse, Seq, While, Foreach, ForeachEnumerated, Assign, Return, FunDef,
     ParseNonterminalDef, PrintNonterminalDef,
     ParseNonterminal, PrintNonterminal,
-    TargetType, BaseType, VarType, TupleType, SequenceType, ListType, DictType, OptionType,
-    MessageType, EnumType, FunctionType, GetField, GetElement
+    TargetType, BaseType, TupleType, SequenceType, ListType, DictType, OptionType,
+    MessageType, EnumType, FunctionType, VarType, GetField, GetElement
 )
 from .target_builtins import get_builtin
 from .gensym import gensym
@@ -511,9 +511,7 @@ class CodeGenerator(ABC):
 
         # RHS has side-effects — guard them with an if-else
         tmp = gensym()
-        decl = self.gen_var_declaration(tmp)
-        if decl:
-            lines.append(f"{indent}{decl}")
+        lines.append(f"{indent}{self.gen_var_declaration(tmp)}")
         if op == 'and':
             lines.append(f"{indent}{self.gen_if_start(left_code)}")
             lines.extend(rhs_lines)

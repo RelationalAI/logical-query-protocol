@@ -643,6 +643,12 @@ class GoCodeGenerator(CodeGenerator):
                     inner_go = self.gen_type(arg_type.element_type)
                     if self._is_nullable_go_type(inner_go):
                         return arg_code
+                else:
+                    # Non-OptionType (e.g., oneof fields): check if the Go
+                    # type is already nullable, in which case no deref needed.
+                    go_type = self.gen_type(arg_type)
+                    if self._is_nullable_go_type(go_type):
+                        return arg_code
             except (NotImplementedError, ValueError, TypeError):
                 pass
             return f"*{arg_code}"
