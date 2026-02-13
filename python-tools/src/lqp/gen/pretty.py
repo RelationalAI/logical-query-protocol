@@ -23,11 +23,11 @@ class ParseError(Exception):
 class PrettyPrinter:
     """Pretty printer for protobuf messages."""
 
-    def __init__(self, io: Optional[IO[str]] = None, print_names: bool = True):
+    def __init__(self, io: Optional[IO[str]] = None, print_symbolic_relation_ids: bool = True):
         self.io = io if io is not None else StringIO()
         self.indent_level = 0
         self.at_line_start = True
-        self.print_names = print_names
+        self.print_symbolic_relation_ids = print_symbolic_relation_ids
         self._debug_info: dict[tuple[int, int], str] = {}
 
     def write(self, s: str) -> None:
@@ -99,7 +99,7 @@ class PrettyPrinter:
 
     def relation_id_to_string(self, msg: logic_pb2.RelationId) -> str:
         """Convert RelationId to string representation using debug info."""
-        if not self.print_names:
+        if not self.print_symbolic_relation_ids:
             return ""
         return self._debug_info.get((msg.id_low, msg.id_high), "")
 
@@ -3879,7 +3879,7 @@ def pretty(msg: Any, io: Optional[IO[str]] = None) -> str:
 
 def pretty_debug(msg: Any, io: Optional[IO[str]] = None) -> str:
     """Pretty print a protobuf message with raw relation IDs and debug info appended as comments."""
-    printer = PrettyPrinter(io, print_names=False)
+    printer = PrettyPrinter(io, print_symbolic_relation_ids=False)
     printer.pretty_transaction(msg)
     printer.newline()
     printer.write_debug_info()

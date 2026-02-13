@@ -27,12 +27,12 @@ GRAMMAR := python-tools/src/meta/grammar.y
 
 # Generated protobuf outputs
 PY_PROTO_DIR := python-tools/src/lqp/proto/v1
-JL_PROTO_DIR := julia/LQPParser/src/relationalai/lqp/v1
+JL_PROTO_DIR := julia/LogicalQueryProtocol/src/gen/relationalai/lqp/v1
 GO_PROTO_DIR := go/src/lqp/v1
 
 # Generated parser outputs
 PY_PARSER := python-tools/src/lqp/gen/parser.py
-JL_PARSER := julia/LQPParser/src/parser.jl
+JL_PARSER := julia/LogicalQueryProtocol/src/parser.jl
 GO_PARSER := go/src/parser.go
 
 # Generated printer outputs
@@ -102,7 +102,7 @@ $(PY_PROTO_GENERATED) $(GO_PROTO_GENERATED): $(PROTO_FILES)
 $(JL_PROTO_GENERATED): $(PROTO_FILES)
 	buf lint
 	buf breaking --against ".git#branch=main,subdir=proto"
-	cd julia && julia --project=LQPParser generate_proto.jl
+	cd julia && julia --project=LogicalQueryProtocol generate_proto.jl
 
 # ---------- parser generation ----------
 
@@ -114,7 +114,7 @@ $(PY_PARSER): $(PROTO_FILES) $(GRAMMAR) $(PY_TEMPLATE)
 
 parser-julia: $(JL_PARSER)
 $(JL_PARSER): $(PROTO_FILES) $(GRAMMAR) $(JL_TEMPLATE)
-	$(META_CLI) $(META_PROTO_ARGS) --parser julia -o ../julia/LQPParser/src/parser.jl
+	$(META_CLI) $(META_PROTO_ARGS) --parser julia -o ../julia/LogicalQueryProtocol/src/parser.jl
 
 parser-go: $(GO_PARSER)
 $(GO_PARSER): $(PROTO_FILES) $(GRAMMAR) $(GO_TEMPLATE)
@@ -126,7 +126,7 @@ force-parser-python:
 	$(META_CLI) $(META_PROTO_ARGS) --parser python -o src/lqp/gen/parser.py
 
 force-parser-julia:
-	$(META_CLI) $(META_PROTO_ARGS) --parser julia -o ../julia/LQPParser/src/parser.jl
+	$(META_CLI) $(META_PROTO_ARGS) --parser julia -o ../julia/LogicalQueryProtocol/src/parser.jl
 
 force-parser-go:
 	$(META_CLI) $(META_PROTO_ARGS) --parser go -o ../go/src/parser.go
@@ -152,7 +152,7 @@ test-python: $(PY_PARSER) $(PY_PROTO_GENERATED) check-python
 	cd python-tools && python -m pytest
 
 test-julia: $(JL_PARSER) $(JL_PROTO_GENERATED)
-	cd julia && julia --project=LQPParser -e 'using Pkg; Pkg.test("LQPParser")'
+	cd julia && julia --project=LogicalQueryProtocol -e 'using Pkg; Pkg.test()'
 
 test-go: $(GO_PARSER) $(GO_PROTO_GENERATED)
 	cd go && go test ./test/...
@@ -163,4 +163,4 @@ check-python:
 # ---------- cleanup ----------
 
 clean:
-	rm -rf gen/python gen/go
+	rm -rf gen/python gen/go gen
