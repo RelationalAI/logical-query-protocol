@@ -21,31 +21,70 @@ class ParseError(Exception):
 class PrettyPrinter:
     """Pretty printer for protobuf messages."""
 
-    def __init__(self, io: Optional[IO[str]] = None):
+    def __init__(self, io: Optional[IO[str]] = None, max_width: int = 92):
         self.io = io if io is not None else StringIO()
         self.indent_level = 0
         self.at_line_start = True
+        self.separator = '\n'
+        self.max_width = max_width
+        self._computing: set[int] = set()
+        self._memo: dict[int, str] = {{}}
+        self._memo_refs: list[Any] = []
         self._debug_info: dict[tuple[int, int], str] = {{}}
 
     def write(self, s: str) -> None:
         """Write a string to the output, with indentation at line start."""
-        if self.at_line_start and s.strip():
+        if self.separator == '\n' and self.at_line_start and s.strip():
             self.io.write('  ' * self.indent_level)
             self.at_line_start = False
         self.io.write(s)
 
     def newline(self) -> None:
-        """Write a newline to the output."""
-        self.io.write('\n')
-        self.at_line_start = True
+        """Write separator (newline or space depending on mode)."""
+        self.io.write(self.separator)
+        if self.separator == '\n':
+            self.at_line_start = True
 
     def indent(self, delta: int = 1) -> None:
-        """Increase indentation level."""
-        self.indent_level += delta
+        """Increase indentation level (no-op in flat mode)."""
+        if self.separator == '\n':
+            self.indent_level += delta
 
     def dedent(self, delta: int = 1) -> None:
-        """Decrease indentation level."""
-        self.indent_level = max(0, self.indent_level - delta)
+        """Decrease indentation level (no-op in flat mode)."""
+        if self.separator == '\n':
+            self.indent_level = max(0, self.indent_level - delta)
+
+    def _try_flat(self, msg: Any, pretty_fn: Any) -> Optional[str]:
+        """Try to render msg flat (space-separated). Return flat string if it fits, else None."""
+        msg_id = id(msg)
+        if msg_id not in self._memo and msg_id not in self._computing:
+            self._computing.add(msg_id)
+            saved_io = self.io
+            saved_sep = self.separator
+            saved_indent = self.indent_level
+            saved_at_line_start = self.at_line_start
+            try:
+                self.io = StringIO()
+                self.separator = ' '
+                self.indent_level = 0
+                self.at_line_start = False
+                pretty_fn(msg)
+                self._memo[msg_id] = self.io.getvalue()
+                self._memo_refs.append(msg)
+            finally:
+                self.io = saved_io
+                self.separator = saved_sep
+                self.indent_level = saved_indent
+                self.at_line_start = saved_at_line_start
+                self._computing.discard(msg_id)
+        if msg_id in self._memo:
+            flat = self._memo[msg_id]
+            if self.separator != '\n':
+                return flat
+            if len(flat) + 2 * self.indent_level <= self.max_width:
+                return flat
+        return None
 
     def get_output(self) -> str:
         """Get the accumulated output as a string."""
@@ -120,9 +159,9 @@ class PrettyPrinter:
     # --- Pretty-print methods ---
 {pretty_nonterminal_defns}
 
-def pretty(msg: Any, io: Optional[IO[str]] = None) -> str:
+def pretty(msg: Any, io: Optional[IO[str]] = None, max_width: int = 92) -> str:
     """Pretty print a protobuf message and return the string representation."""
-    printer = PrettyPrinter(io)
+    printer = PrettyPrinter(io, max_width=max_width)
     printer.pretty_{start_name}(msg)
     printer.newline()
     return printer.get_output()

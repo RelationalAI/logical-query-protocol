@@ -337,10 +337,21 @@ class PythonCodeGenerator(CodeGenerator):
         )
 
     def _generate_pretty_def(self, expr: PrintNonterminalDef, indent: str) -> str:
-        """Generate a pretty-print method definition."""
-        return self._generate_self_method(
-            f"pretty_{expr.nonterminal.name}", expr.params, expr.body, expr.return_type, indent
+        """Generate a pretty-print method definition with flat-mode preamble."""
+        method_name = f"pretty_{expr.nonterminal.name}"
+        base = self._generate_self_method(
+            method_name, expr.params, expr.body, expr.return_type, indent
         )
+        # Inject _try_flat preamble after the def line.
+        lines = base.split('\n')
+        body_indent = indent + "    "
+        preamble = [
+            f"{body_indent}_flat = self._try_flat(msg, self.{method_name})",
+            f"{body_indent}if _flat is not None:",
+            f"{body_indent}    self.write(_flat)",
+            f"{body_indent}    return None",
+        ]
+        return lines[0] + '\n' + '\n'.join(preamble) + '\n' + '\n'.join(lines[1:])
 
     # Parser generation settings
     parse_def_indent = "    "
