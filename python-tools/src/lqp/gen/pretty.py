@@ -130,7 +130,6 @@ class PrettyPrinter:
             value = (id_high << 64) | id_low
             self.io.write(f';; \t ID `0x{value:x}` -> `{name}`\n')
 
-
     # --- Helper functions ---
 
     def _extract_value_int32(self, value: Optional[logic_pb2.Value], default: int) -> int:
