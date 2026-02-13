@@ -49,8 +49,9 @@ def load_grammar_and_protos():
     for proto_file in proto_files:
         proto_parser.parse_file(proto_file)
 
-    # Load grammar config from file
-    grammar_config = load_yacc_grammar_file(GRAMMAR_PATH)
+    # Load grammar config from file (with proto info for field type resolution)
+    proto_messages_dict = {(msg.module, name): msg for name, msg in proto_parser.messages.items()}
+    grammar_config = load_yacc_grammar_file(GRAMMAR_PATH, proto_messages_dict, proto_parser.enums)
 
     # Build Grammar object from config (same as cli.py does)
     start = None

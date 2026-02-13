@@ -739,68 +739,68 @@ func (p *Parser) _try_extract_value_string_list(value *pb.Value) []string {
 
 func (p *Parser) construct_csv_config(config_dict [][]interface{}) *pb.CSVConfig {
 	config := dictFromList(config_dict)
-	_t957 := p._extract_value_int32(dictGetValue(config, "csv_header_row"), 1)
-	header_row := _t957
-	_t958 := p._extract_value_int64(dictGetValue(config, "csv_skip"), 0)
-	skip := _t958
-	_t959 := p._extract_value_string(dictGetValue(config, "csv_new_line"), "")
-	new_line := _t959
-	_t960 := p._extract_value_string(dictGetValue(config, "csv_delimiter"), ",")
-	delimiter := _t960
-	_t961 := p._extract_value_string(dictGetValue(config, "csv_quotechar"), "\"")
-	quotechar := _t961
-	_t962 := p._extract_value_string(dictGetValue(config, "csv_escapechar"), "\"")
-	escapechar := _t962
-	_t963 := p._extract_value_string(dictGetValue(config, "csv_comment"), "")
-	comment := _t963
-	_t964 := p._extract_value_string_list(dictGetValue(config, "csv_missing_strings"), []string{})
-	missing_strings := _t964
-	_t965 := p._extract_value_string(dictGetValue(config, "csv_decimal_separator"), ".")
-	decimal_separator := _t965
-	_t966 := p._extract_value_string(dictGetValue(config, "csv_encoding"), "utf-8")
-	encoding := _t966
-	_t967 := p._extract_value_string(dictGetValue(config, "csv_compression"), "auto")
-	compression := _t967
-	_t968 := &pb.CSVConfig{HeaderRow: header_row, Skip: skip, NewLine: new_line, Delimiter: delimiter, Quotechar: quotechar, Escapechar: escapechar, Comment: comment, MissingStrings: missing_strings, DecimalSeparator: decimal_separator, Encoding: encoding, Compression: compression}
-	return _t968
+	_t956 := p._extract_value_int32(dictGetValue(config, "csv_header_row"), 1)
+	header_row := _t956
+	_t957 := p._extract_value_int64(dictGetValue(config, "csv_skip"), 0)
+	skip := _t957
+	_t958 := p._extract_value_string(dictGetValue(config, "csv_new_line"), "")
+	new_line := _t958
+	_t959 := p._extract_value_string(dictGetValue(config, "csv_delimiter"), ",")
+	delimiter := _t959
+	_t960 := p._extract_value_string(dictGetValue(config, "csv_quotechar"), "\"")
+	quotechar := _t960
+	_t961 := p._extract_value_string(dictGetValue(config, "csv_escapechar"), "\"")
+	escapechar := _t961
+	_t962 := p._extract_value_string(dictGetValue(config, "csv_comment"), "")
+	comment := _t962
+	_t963 := p._extract_value_string_list(dictGetValue(config, "csv_missing_strings"), []string{})
+	missing_strings := _t963
+	_t964 := p._extract_value_string(dictGetValue(config, "csv_decimal_separator"), ".")
+	decimal_separator := _t964
+	_t965 := p._extract_value_string(dictGetValue(config, "csv_encoding"), "utf-8")
+	encoding := _t965
+	_t966 := p._extract_value_string(dictGetValue(config, "csv_compression"), "auto")
+	compression := _t966
+	_t967 := &pb.CSVConfig{HeaderRow: header_row, Skip: skip, NewLine: new_line, Delimiter: delimiter, Quotechar: quotechar, Escapechar: escapechar, Comment: comment, MissingStrings: missing_strings, DecimalSeparator: decimal_separator, Encoding: encoding, Compression: compression}
+	return _t967
 }
 
 func (p *Parser) construct_betree_info(key_types []*pb.Type, value_types []*pb.Type, config_dict [][]interface{}) *pb.BeTreeInfo {
 	config := dictFromList(config_dict)
-	_t969 := p._try_extract_value_float64(dictGetValue(config, "betree_config_epsilon"))
-	epsilon := _t969
-	_t970 := p._try_extract_value_int64(dictGetValue(config, "betree_config_max_pivots"))
-	max_pivots := _t970
-	_t971 := p._try_extract_value_int64(dictGetValue(config, "betree_config_max_deltas"))
-	max_deltas := _t971
-	_t972 := p._try_extract_value_int64(dictGetValue(config, "betree_config_max_leaf"))
-	max_leaf := _t972
-	_t973 := &pb.BeTreeConfig{Epsilon: deref(epsilon, 0.0), MaxPivots: deref(max_pivots, 0), MaxDeltas: deref(max_deltas, 0), MaxLeaf: deref(max_leaf, 0)}
-	storage_config := _t973
-	_t974 := p._try_extract_value_uint128(dictGetValue(config, "betree_locator_root_pageid"))
-	root_pageid := _t974
-	_t975 := p._try_extract_value_bytes(dictGetValue(config, "betree_locator_inline_data"))
-	inline_data := _t975
-	_t976 := p._try_extract_value_int64(dictGetValue(config, "betree_locator_element_count"))
-	element_count := _t976
-	_t977 := p._try_extract_value_int64(dictGetValue(config, "betree_locator_tree_height"))
-	tree_height := _t977
-	_t978 := &pb.BeTreeLocator{ElementCount: deref(element_count, 0), TreeHeight: deref(tree_height, 0)}
+	_t968 := p._try_extract_value_float64(dictGetValue(config, "betree_config_epsilon"))
+	epsilon := _t968
+	_t969 := p._try_extract_value_int64(dictGetValue(config, "betree_config_max_pivots"))
+	max_pivots := _t969
+	_t970 := p._try_extract_value_int64(dictGetValue(config, "betree_config_max_deltas"))
+	max_deltas := _t970
+	_t971 := p._try_extract_value_int64(dictGetValue(config, "betree_config_max_leaf"))
+	max_leaf := _t971
+	_t972 := &pb.BeTreeConfig{Epsilon: deref(epsilon, 0.0), MaxPivots: deref(max_pivots, 0), MaxDeltas: deref(max_deltas, 0), MaxLeaf: deref(max_leaf, 0)}
+	storage_config := _t972
+	_t973 := p._try_extract_value_uint128(dictGetValue(config, "betree_locator_root_pageid"))
+	root_pageid := _t973
+	_t974 := p._try_extract_value_bytes(dictGetValue(config, "betree_locator_inline_data"))
+	inline_data := _t974
+	_t975 := p._try_extract_value_int64(dictGetValue(config, "betree_locator_element_count"))
+	element_count := _t975
+	_t976 := p._try_extract_value_int64(dictGetValue(config, "betree_locator_tree_height"))
+	tree_height := _t976
+	_t977 := &pb.BeTreeLocator{ElementCount: deref(element_count, 0), TreeHeight: deref(tree_height, 0)}
 	if root_pageid != nil {
-		_t978.Location = &pb.BeTreeLocator_RootPageid{RootPageid: root_pageid}
+		_t977.Location = &pb.BeTreeLocator_RootPageid{RootPageid: root_pageid}
 	} else {
-		_t978.Location = &pb.BeTreeLocator_InlineData{InlineData: inline_data}
+		_t977.Location = &pb.BeTreeLocator_InlineData{InlineData: inline_data}
 	}
-	relation_locator := _t978
-	_t979 := &pb.BeTreeInfo{KeyTypes: key_types, ValueTypes: value_types, StorageConfig: storage_config, RelationLocator: relation_locator}
-	return _t979
+	relation_locator := _t977
+	_t978 := &pb.BeTreeInfo{KeyTypes: key_types, ValueTypes: value_types, StorageConfig: storage_config, RelationLocator: relation_locator}
+	return _t978
 }
 
 func (p *Parser) default_configure() *pb.Configure {
-	_t980 := &pb.IVMConfig{Level: pb.MaintenanceLevel_MAINTENANCE_LEVEL_OFF}
-	ivm_config := _t980
-	_t981 := &pb.Configure{SemanticsVersion: 0, IvmConfig: ivm_config}
-	return _t981
+	_t979 := &pb.IVMConfig{Level: pb.MaintenanceLevel_MAINTENANCE_LEVEL_OFF}
+	ivm_config := _t979
+	_t980 := &pb.Configure{SemanticsVersion: 0, IvmConfig: ivm_config}
+	return _t980
 }
 
 func (p *Parser) construct_configure(config_dict [][]interface{}) *pb.Configure {
@@ -822,32 +822,221 @@ func (p *Parser) construct_configure(config_dict [][]interface{}) *pb.Configure 
 			}
 		}
 	}
-	_t982 := &pb.IVMConfig{Level: maintenance_level}
-	ivm_config := _t982
-	_t983 := p._extract_value_int64(dictGetValue(config, "semantics_version"), 0)
-	semantics_version := _t983
-	_t984 := &pb.Configure{SemanticsVersion: semantics_version, IvmConfig: ivm_config}
-	return _t984
+	_t981 := &pb.IVMConfig{Level: maintenance_level}
+	ivm_config := _t981
+	_t982 := p._extract_value_int64(dictGetValue(config, "semantics_version"), 0)
+	semantics_version := _t982
+	_t983 := &pb.Configure{SemanticsVersion: semantics_version, IvmConfig: ivm_config}
+	return _t983
 }
 
 func (p *Parser) export_csv_config(path string, columns []*pb.ExportCSVColumn, config_dict [][]interface{}) *pb.ExportCSVConfig {
 	config := dictFromList(config_dict)
-	_t985 := p._extract_value_int64(dictGetValue(config, "partition_size"), 0)
-	partition_size := _t985
-	_t986 := p._extract_value_string(dictGetValue(config, "compression"), "")
-	compression := _t986
-	_t987 := p._extract_value_boolean(dictGetValue(config, "syntax_header_row"), true)
-	syntax_header_row := _t987
-	_t988 := p._extract_value_string(dictGetValue(config, "syntax_missing_string"), "")
-	syntax_missing_string := _t988
-	_t989 := p._extract_value_string(dictGetValue(config, "syntax_delim"), ",")
-	syntax_delim := _t989
-	_t990 := p._extract_value_string(dictGetValue(config, "syntax_quotechar"), "\"")
-	syntax_quotechar := _t990
-	_t991 := p._extract_value_string(dictGetValue(config, "syntax_escapechar"), "\\")
-	syntax_escapechar := _t991
-	_t992 := &pb.ExportCSVConfig{Path: path, DataColumns: columns, PartitionSize: ptr(partition_size), Compression: ptr(compression), SyntaxHeaderRow: ptr(syntax_header_row), SyntaxMissingString: ptr(syntax_missing_string), SyntaxDelim: ptr(syntax_delim), SyntaxQuotechar: ptr(syntax_quotechar), SyntaxEscapechar: ptr(syntax_escapechar)}
+	_t984 := p._extract_value_int64(dictGetValue(config, "partition_size"), 0)
+	partition_size := _t984
+	_t985 := p._extract_value_string(dictGetValue(config, "compression"), "")
+	compression := _t985
+	_t986 := p._extract_value_boolean(dictGetValue(config, "syntax_header_row"), true)
+	syntax_header_row := _t986
+	_t987 := p._extract_value_string(dictGetValue(config, "syntax_missing_string"), "")
+	syntax_missing_string := _t987
+	_t988 := p._extract_value_string(dictGetValue(config, "syntax_delim"), ",")
+	syntax_delim := _t988
+	_t989 := p._extract_value_string(dictGetValue(config, "syntax_quotechar"), "\"")
+	syntax_quotechar := _t989
+	_t990 := p._extract_value_string(dictGetValue(config, "syntax_escapechar"), "\\")
+	syntax_escapechar := _t990
+	_t991 := &pb.ExportCSVConfig{Path: path, DataColumns: columns, PartitionSize: ptr(partition_size), Compression: ptr(compression), SyntaxHeaderRow: ptr(syntax_header_row), SyntaxMissingString: ptr(syntax_missing_string), SyntaxDelim: ptr(syntax_delim), SyntaxQuotechar: ptr(syntax_quotechar), SyntaxEscapechar: ptr(syntax_escapechar)}
+	return _t991
+}
+
+func (p *Parser) _make_value_int32(v int32) *pb.Value {
+	_t992 := &pb.Value{}
+	_t992.Value = &pb.Value_IntValue{IntValue: int64(v)}
 	return _t992
+}
+
+func (p *Parser) _make_value_int64(v int64) *pb.Value {
+	_t993 := &pb.Value{}
+	_t993.Value = &pb.Value_IntValue{IntValue: v}
+	return _t993
+}
+
+func (p *Parser) _make_value_float64(v float64) *pb.Value {
+	_t994 := &pb.Value{}
+	_t994.Value = &pb.Value_FloatValue{FloatValue: v}
+	return _t994
+}
+
+func (p *Parser) _make_value_string(v string) *pb.Value {
+	_t995 := &pb.Value{}
+	_t995.Value = &pb.Value_StringValue{StringValue: v}
+	return _t995
+}
+
+func (p *Parser) _make_value_boolean(v bool) *pb.Value {
+	_t996 := &pb.Value{}
+	_t996.Value = &pb.Value_BooleanValue{BooleanValue: v}
+	return _t996
+}
+
+func (p *Parser) _make_value_uint128(v *pb.UInt128Value) *pb.Value {
+	_t997 := &pb.Value{}
+	_t997.Value = &pb.Value_Uint128Value{Uint128Value: v}
+	return _t997
+}
+
+func (p *Parser) is_default_configure(cfg *pb.Configure) bool {
+	if cfg.GetSemanticsVersion() != 0 {
+		return false
+	}
+	if cfg.GetIvmConfig().GetLevel() != pb.MaintenanceLevel_MAINTENANCE_LEVEL_OFF {
+		return false
+	}
+	return true
+}
+
+func (p *Parser) deconstruct_configure(msg *pb.Configure) [][]interface{} {
+	result := [][]interface{}{}
+	if msg.GetIvmConfig().GetLevel() == pb.MaintenanceLevel_MAINTENANCE_LEVEL_AUTO {
+		_t998 := p._make_value_string("auto")
+		result = append(result, []interface{}{"ivm.maintenance_level", _t998})
+	} else {
+		if msg.GetIvmConfig().GetLevel() == pb.MaintenanceLevel_MAINTENANCE_LEVEL_ALL {
+			_t999 := p._make_value_string("all")
+			result = append(result, []interface{}{"ivm.maintenance_level", _t999})
+		} else {
+			if msg.GetIvmConfig().GetLevel() == pb.MaintenanceLevel_MAINTENANCE_LEVEL_OFF {
+				_t1000 := p._make_value_string("off")
+				result = append(result, []interface{}{"ivm.maintenance_level", _t1000})
+			}
+		}
+	}
+	_t1001 := p._make_value_int64(msg.GetSemanticsVersion())
+	result = append(result, []interface{}{"semantics_version", _t1001})
+	return listSort(result)
+}
+
+func (p *Parser) deconstruct_csv_config(msg *pb.CSVConfig) [][]interface{} {
+	result := [][]interface{}{}
+	_t1002 := p._make_value_int32(msg.GetHeaderRow())
+	result = append(result, []interface{}{"csv_header_row", _t1002})
+	_t1003 := p._make_value_int64(msg.GetSkip())
+	result = append(result, []interface{}{"csv_skip", _t1003})
+	if msg.GetNewLine() != "" {
+		_t1004 := p._make_value_string(msg.GetNewLine())
+		result = append(result, []interface{}{"csv_new_line", _t1004})
+	}
+	_t1005 := p._make_value_string(msg.GetDelimiter())
+	result = append(result, []interface{}{"csv_delimiter", _t1005})
+	_t1006 := p._make_value_string(msg.GetQuotechar())
+	result = append(result, []interface{}{"csv_quotechar", _t1006})
+	_t1007 := p._make_value_string(msg.GetEscapechar())
+	result = append(result, []interface{}{"csv_escapechar", _t1007})
+	if msg.GetComment() != "" {
+		_t1008 := p._make_value_string(msg.GetComment())
+		result = append(result, []interface{}{"csv_comment", _t1008})
+	}
+	for _, missing_string := range msg.GetMissingStrings() {
+		_t1009 := p._make_value_string(missing_string)
+		result = append(result, []interface{}{"csv_missing_strings", _t1009})
+	}
+	_t1010 := p._make_value_string(msg.GetDecimalSeparator())
+	result = append(result, []interface{}{"csv_decimal_separator", _t1010})
+	_t1011 := p._make_value_string(msg.GetEncoding())
+	result = append(result, []interface{}{"csv_encoding", _t1011})
+	_t1012 := p._make_value_string(msg.GetCompression())
+	result = append(result, []interface{}{"csv_compression", _t1012})
+	return listSort(result)
+}
+
+func (p *Parser) deconstruct_betree_info_config(msg *pb.BeTreeInfo) [][]interface{} {
+	result := [][]interface{}{}
+	_t1013 := p._make_value_float64(msg.GetStorageConfig().GetEpsilon())
+	result = append(result, []interface{}{"betree_config_epsilon", _t1013})
+	_t1014 := p._make_value_int64(msg.GetStorageConfig().GetMaxPivots())
+	result = append(result, []interface{}{"betree_config_max_pivots", _t1014})
+	_t1015 := p._make_value_int64(msg.GetStorageConfig().GetMaxDeltas())
+	result = append(result, []interface{}{"betree_config_max_deltas", _t1015})
+	_t1016 := p._make_value_int64(msg.GetStorageConfig().GetMaxLeaf())
+	result = append(result, []interface{}{"betree_config_max_leaf", _t1016})
+	if hasProtoField(msg.GetRelationLocator(), "root_pageid") {
+		if msg.GetRelationLocator().GetRootPageid() != nil {
+			_t1017 := p._make_value_uint128(msg.GetRelationLocator().GetRootPageid())
+			result = append(result, []interface{}{"betree_locator_root_pageid", _t1017})
+		}
+	}
+	if hasProtoField(msg.GetRelationLocator(), "inline_data") {
+		if msg.GetRelationLocator().GetInlineData() != nil {
+			_t1018 := p._make_value_string(string(msg.GetRelationLocator().GetInlineData()))
+			result = append(result, []interface{}{"betree_locator_inline_data", _t1018})
+		}
+	}
+	_t1019 := p._make_value_int64(msg.GetRelationLocator().GetElementCount())
+	result = append(result, []interface{}{"betree_locator_element_count", _t1019})
+	_t1020 := p._make_value_int64(msg.GetRelationLocator().GetTreeHeight())
+	result = append(result, []interface{}{"betree_locator_tree_height", _t1020})
+	return listSort(result)
+}
+
+func (p *Parser) deconstruct_export_csv_config(msg *pb.ExportCSVConfig) [][]interface{} {
+	result := [][]interface{}{}
+	if msg.PartitionSize != nil {
+		_t1021 := p._make_value_int64(*msg.PartitionSize)
+		result = append(result, []interface{}{"partition_size", _t1021})
+	}
+	if msg.Compression != nil {
+		_t1022 := p._make_value_string(*msg.Compression)
+		result = append(result, []interface{}{"compression", _t1022})
+	}
+	if msg.SyntaxHeaderRow != nil {
+		_t1023 := p._make_value_boolean(*msg.SyntaxHeaderRow)
+		result = append(result, []interface{}{"syntax_header_row", _t1023})
+	}
+	if msg.SyntaxMissingString != nil {
+		_t1024 := p._make_value_string(*msg.SyntaxMissingString)
+		result = append(result, []interface{}{"syntax_missing_string", _t1024})
+	}
+	if msg.SyntaxDelim != nil {
+		_t1025 := p._make_value_string(*msg.SyntaxDelim)
+		result = append(result, []interface{}{"syntax_delim", _t1025})
+	}
+	if msg.SyntaxQuotechar != nil {
+		_t1026 := p._make_value_string(*msg.SyntaxQuotechar)
+		result = append(result, []interface{}{"syntax_quotechar", _t1026})
+	}
+	if msg.SyntaxEscapechar != nil {
+		_t1027 := p._make_value_string(*msg.SyntaxEscapechar)
+		result = append(result, []interface{}{"syntax_escapechar", _t1027})
+	}
+	return listSort(result)
+}
+
+func (p *Parser) deconstruct_relation_id_string(msg *pb.RelationId) *string {
+	name := p.relationIdToString(msg)
+	if name != "" {
+		return ptr(name)
+	}
+	return nil
+}
+
+func (p *Parser) deconstruct_relation_id_uint128(msg *pb.RelationId) *pb.UInt128Value {
+	name := p.relationIdToString(msg)
+	if name == "" {
+		return p.relationIdToUint128(msg)
+	}
+	return nil
+}
+
+func (p *Parser) deconstruct_bindings(abs *pb.Abstraction) []interface{} {
+	n := int64(len(abs.GetVars()))
+	return []interface{}{abs.GetVars()[0:n], []*pb.Binding{}}
+}
+
+func (p *Parser) deconstruct_bindings_with_arity(abs *pb.Abstraction, value_arity int64) []interface{} {
+	n := int64(len(abs.GetVars()))
+	key_end := (n - value_arity)
+	return []interface{}{abs.GetVars()[0:key_end], abs.GetVars()[key_end:n]}
 }
 
 // --- Parse functions ---
@@ -3747,70 +3936,66 @@ func (p *Parser) parse_demand() *pb.Demand {
 func (p *Parser) parse_output() *pb.Output {
 	p.consumeLiteral("(")
 	p.consumeLiteral("output")
-	var _t937 *string
-	if (p.matchLookaheadLiteral(":", 0) && p.matchLookaheadTerminal("SYMBOL", 1)) {
-		_t938 := p.parse_name()
-		_t937 = ptr(_t938)
-	}
+	_t937 := p.parse_name()
 	name336 := _t937
-	_t939 := p.parse_relation_id()
-	relation_id337 := _t939
+	_t938 := p.parse_relation_id()
+	relation_id337 := _t938
 	p.consumeLiteral(")")
-	_t940 := &pb.Output{Name: deref(name336, "output"), RelationId: relation_id337}
-	return _t940
+	_t939 := &pb.Output{Name: name336, RelationId: relation_id337}
+	return _t939
 }
 
 func (p *Parser) parse_what_if() *pb.WhatIf {
 	p.consumeLiteral("(")
 	p.consumeLiteral("what_if")
-	_t941 := p.parse_name()
-	name338 := _t941
-	_t942 := p.parse_epoch()
-	epoch339 := _t942
+	_t940 := p.parse_name()
+	name338 := _t940
+	_t941 := p.parse_epoch()
+	epoch339 := _t941
 	p.consumeLiteral(")")
-	_t943 := &pb.WhatIf{Branch: name338, Epoch: epoch339}
-	return _t943
+	_t942 := &pb.WhatIf{Branch: name338, Epoch: epoch339}
+	return _t942
 }
 
 func (p *Parser) parse_abort() *pb.Abort {
 	p.consumeLiteral("(")
 	p.consumeLiteral("abort")
-	var _t944 *string
+	var _t943 *string
 	if (p.matchLookaheadLiteral(":", 0) && p.matchLookaheadTerminal("SYMBOL", 1)) {
-		_t945 := p.parse_name()
-		_t944 = ptr(_t945)
+		_t944 := p.parse_name()
+		_t943 = ptr(_t944)
 	}
-	name340 := _t944
-	_t946 := p.parse_relation_id()
-	relation_id341 := _t946
+	name340 := _t943
+	_t945 := p.parse_relation_id()
+	relation_id341 := _t945
 	p.consumeLiteral(")")
-	_t947 := &pb.Abort{Name: deref(name340, "abort"), RelationId: relation_id341}
-	return _t947
+	_t946 := &pb.Abort{Name: deref(name340, "abort"), RelationId: relation_id341}
+	return _t946
 }
 
 func (p *Parser) parse_export() *pb.Export {
 	p.consumeLiteral("(")
 	p.consumeLiteral("export")
-	_t948 := p.parse_export_csv_config()
-	export_csv_config342 := _t948
+	_t947 := p.parse_export_csv_config()
+	export_csv_config342 := _t947
 	p.consumeLiteral(")")
-	_t949 := &pb.Export{}
-	_t949.ExportConfig = &pb.Export_CsvConfig{CsvConfig: export_csv_config342}
-	return _t949
+	_t948 := &pb.Export{}
+	_t948.ExportConfig = &pb.Export_CsvConfig{CsvConfig: export_csv_config342}
+	return _t948
 }
 
 func (p *Parser) parse_export_csv_config() *pb.ExportCSVConfig {
 	p.consumeLiteral("(")
 	p.consumeLiteral("export_csv_config")
-	_t950 := p.parse_export_csv_path()
-	export_csv_path343 := _t950
-	_t951 := p.parse_export_csv_columns()
-	export_csv_columns344 := _t951
-	_t952 := p.parse_config_dict()
-	config_dict345 := _t952
+	_t949 := p.parse_export_csv_path()
+	export_csv_path343 := _t949
+	_t950 := p.parse_export_csv_columns()
+	export_csv_columns344 := _t950
+	_t951 := p.parse_config_dict()
+	config_dict345 := _t951
 	p.consumeLiteral(")")
-	_t953 := p.export_csv_config(export_csv_path343, export_csv_columns344, config_dict345)
-	return _t953
+	_t952 := p.export_csv_config(export_csv_path343, export_csv_columns344, config_dict345)
+	return _t952
 }
 
 func (p *Parser) parse_export_csv_path() string {
@@ -3827,8 +4012,8 @@ func (p *Parser) parse_export_csv_columns() []*pb.ExportCSVColumn {
 	xs347 := []*pb.ExportCSVColumn{}
 	cond348 := p.matchLookaheadLiteral("(", 0)
 	for cond348 {
-		_t954 := p.parse_export_csv_column()
-		item349 := _t954
+		_t953 := p.parse_export_csv_column()
+		item349 := _t953
 		xs347 = append(xs347, item349)
 		cond348 = p.matchLookaheadLiteral("(", 0)
 	}
@@ -3841,11 +4026,11 @@ func (p *Parser) parse_export_csv_column() *pb.ExportCSVColumn {
 	p.consumeLiteral("(")
 	p.consumeLiteral("column")
 	string351 := p.consumeTerminal("STRING").Value.AsString()
-	_t955 := p.parse_relation_id()
-	relation_id352 := _t955
+	_t954 := p.parse_relation_id()
+	relation_id352 := _t954
 	p.consumeLiteral(")")
-	_t956 := &pb.ExportCSVColumn{ColumnName: string351, ColumnData: relation_id352}
-	return _t956
+	_t955 := &pb.ExportCSVColumn{ColumnName: string351, ColumnData: relation_id352}
+	return _t955
 }
 
 
