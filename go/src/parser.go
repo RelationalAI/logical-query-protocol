@@ -962,13 +962,13 @@ func (p *Parser) deconstruct_betree_info_config(msg *pb.BeTreeInfo) [][]interfac
 	result = append(result, []interface{}{"betree_config_max_leaf", _t1016})
 	if hasProtoField(msg.GetRelationLocator(), "root_pageid") {
 		if msg.GetRelationLocator().GetRootPageid() != nil {
-			_t1017 := p._make_value_uint128(*msg.GetRelationLocator().GetRootPageid())
+			_t1017 := p._make_value_uint128(msg.GetRelationLocator().GetRootPageid())
 			result = append(result, []interface{}{"betree_locator_root_pageid", _t1017})
 		}
 	}
 	if hasProtoField(msg.GetRelationLocator(), "inline_data") {
 		if msg.GetRelationLocator().GetInlineData() != nil {
-			_t1018 := p._make_value_string(string(*msg.GetRelationLocator().GetInlineData()))
+			_t1018 := p._make_value_string(string(msg.GetRelationLocator().GetInlineData()))
 			result = append(result, []interface{}{"betree_locator_inline_data", _t1018})
 		}
 	}
