@@ -70,6 +70,10 @@ make test
 
 The code generators are implemented in `meta/`.
 
+Generated SDKs for each first-class language are in `sdks/`. Check the respective README's
+for more instructions. Each SDK contains a parser and pretty-printer for a S-expression
+representation of the LQP, which is human-readable and meant for testing and debugging.
+
 ### Release (for Maintainers)
 
 Releasing a new version of the LQP is done by releasing new versions of each of the SDKs.
