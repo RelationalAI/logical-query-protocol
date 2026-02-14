@@ -16,13 +16,13 @@ def check_output_files_have_corresponding_inputs():
     missing_inputs = []
 
     output_files = [
-        (PARENT_DIR / "lqp_output", ".lqp"),
-        (PARENT_DIR / "lqp_debug_output", ".lqp"),
         (PARENT_DIR / "lqp_pretty_output", ".lqp"),
         (BIN_SNAPSHOTS_DIR, ".bin"),
     ]
 
     for directory, file_extension in output_files:
+        if not directory.exists():
+            continue
         for output_file in get_all_files(directory, file_extension):
             base_name = get_base_filename(output_file)
             if base_name not in input_basenames:

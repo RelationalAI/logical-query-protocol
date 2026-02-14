@@ -1,8 +1,7 @@
 """
 Validator for protobuf-based LQP messages.
 
-Parallel to validator.py but operates on protobuf messages (transactions_pb2.Transaction)
-rather than IR dataclasses (ir.Transaction). Reuses ValidationError from validator.py.
+Operates on protobuf messages (transactions_pb2.Transaction).
 """
 
 from dataclasses import dataclass
@@ -11,7 +10,10 @@ from google.protobuf.message import Message
 from google.protobuf.descriptor import Descriptor, FieldDescriptor
 
 from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
-from lqp.validator import ValidationError
+
+
+class ValidationError(Exception):
+    pass
 
 # Proto instruction types that have `name: RelationId` and `body: Abstraction`.
 _InstructionLike = Union[

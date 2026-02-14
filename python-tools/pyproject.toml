@@ -12,10 +12,7 @@ authors = [
     { name = "Nate Nystrom", email = "nate.nystrom@relational.ai" },
 ]
 dependencies = [
-    "lark>=1.1.9",
     "protobuf>=3.20.3,<5.0.0",
-    "colorama",
-    "more-itertools",
 ]
 
 [project.scripts]
