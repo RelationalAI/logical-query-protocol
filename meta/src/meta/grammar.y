@@ -146,6 +146,7 @@
 %nonterm specialized_value logic.Value
 %nonterm string_type logic.StringType
 %nonterm sum_monoid logic.SumMonoid
+%nonterm snapshot transactions.Snapshot
 %nonterm sync transactions.Sync
 %nonterm term logic.Term
 %nonterm terms Sequence[logic.Term]
@@ -304,6 +305,10 @@ write
       construct: $$ = transactions.Write(context=$1)
       deconstruct if builtin.has_proto_field($$, 'context'):
         $1: transactions.Context = $$.context
+    | snapshot
+      construct: $$ = transactions.Write(snapshot=$1)
+      deconstruct if builtin.has_proto_field($$, 'snapshot'):
+        $1: transactions.Snapshot = $$.snapshot
 
 define
     : "(" "define" fragment ")"
@@ -990,6 +995,13 @@ context
     : "(" "context" relation_id* ")"
       construct: $$ = transactions.Context(relations=$3)
       deconstruct: $3: Sequence[logic.RelationId] = $$.relations
+
+snapshot
+    : "(" "snapshot" rel_edb_path relation_id ")"
+      construct: $$ = transactions.Snapshot(destination_path=$3, source_relation=$4)
+      deconstruct:
+        $3: Sequence[String] = $$.destination_path
+        $4: logic.RelationId = $$.source_relation
 
 epoch_reads
     : "(" "reads" read* ")"
