@@ -24,9 +24,13 @@ from typing import Mapping, Sequence
 
 from .target import (
     BaseType, Builtin, Lambda, Var, Lit, Call, TargetExpr, TargetType,
-    SequenceType, ListType, OptionType, TupleType, DictType, VarType
+    SequenceType, ListType, OptionType, TupleType, DictType, VarType,
+    Let, Assign, Seq, IfElse, While, Foreach, ForeachEnumerated, Return,
+    NewMessage, GetField, GetElement, ListExpr,
 )
+from .gensym import gensym
 from .target_builtins import make_builtin
+from .target_visitor import TargetExprVisitor
 
 
 def is_subtype(t1: TargetType, t2: TargetType) -> bool:
@@ -137,7 +141,6 @@ def create_identity_function(param_type: TargetType) -> Lambda:
 
 def _is_simple_expr(expr: TargetExpr) -> bool:
     """Check if an expression is cheap to evaluate and has no side effects."""
-    from .target import IfElse, Let
     if isinstance(expr, (Var, Lit)):
         return True
     if isinstance(expr, Call):
@@ -154,7 +157,6 @@ def _is_simple_expr(expr: TargetExpr) -> bool:
 
 def _count_var_occurrences(expr: TargetExpr, var: str) -> int:
     """Count occurrences of a variable in an expression."""
-    from .target import Let, Assign, Seq, IfElse, While, Foreach, ForeachEnumerated, Return, NewMessage, GetField, GetElement, ListExpr
     if isinstance(expr, Var) and expr.name == var:
         return 1
     elif isinstance(expr, Lambda):
@@ -220,7 +222,6 @@ def _new_mapping(mapping: Mapping[str, TargetExpr], shadowed: list[str]):
 
 def _subst_inner(expr: TargetExpr, mapping: Mapping[str, TargetExpr]) -> TargetExpr:
     """Inner substitution helper - performs actual substitution."""
-    from .target import Let, Assign, Seq, IfElse, While, Foreach, ForeachEnumerated, Return, NewMessage, GetField, GetElement, ListExpr
     if isinstance(expr, Var) and expr.name in mapping:
         return mapping[expr.name]
     elif isinstance(expr, Lambda):
@@ -262,51 +263,49 @@ def _subst_inner(expr: TargetExpr, mapping: Mapping[str, TargetExpr]) -> TargetE
     return expr
 
 
+class _SubstTypeValidator(TargetExprVisitor):
+    """Validates that substitution values have compatible types with their target variables.
+
+    Scope-introducing nodes create new validators with filtered mappings for the body.
+    """
+
+    def __init__(self, mapping: Mapping[str, TargetExpr]):
+        super().__init__()
+        self._mapping = mapping
+
+    def visit(self, expr: TargetExpr) -> None:
+        if not self._mapping:
+            return
+        super().visit(expr)
+
+    def visit_Var(self, expr: Var) -> None:
+        if expr.name in self._mapping:
+            val = self._mapping[expr.name]
+            assert is_subtype(val.target_type(), expr.type), \
+                f"Type mismatch in subst: {expr.name} has type {expr.type} but value has type {val.target_type()}"
+
+    def _visit_scope(self, shadowed: set, children_before_body, body: TargetExpr) -> None:
+        for child in children_before_body:
+            self.visit(child)
+        filtered = {k: v for k, v in self._mapping.items() if k not in shadowed}
+        _SubstTypeValidator(filtered).visit(body)
+
+    def visit_Lambda(self, expr: Lambda) -> None:
+        self._visit_scope({p.name for p in expr.params}, [], expr.body)
+
+    def visit_Let(self, expr: Let) -> None:
+        self._visit_scope({expr.var.name}, [expr.init], expr.body)
+
+    def visit_Foreach(self, expr: Foreach) -> None:
+        self._visit_scope({expr.var.name}, [expr.collection], expr.body)
+
+    def visit_ForeachEnumerated(self, expr: ForeachEnumerated) -> None:
+        self._visit_scope({expr.index_var.name, expr.var.name}, [expr.collection], expr.body)
+
+
 def _validate_subst_types(expr: TargetExpr, mapping: Mapping[str, TargetExpr]) -> None:
     """Check that substitution values have compatible types with their target variables."""
-    from .target import Let, Assign, Seq, IfElse, While, Foreach, ForeachEnumerated, Return
-    if isinstance(expr, Var) and expr.name in mapping:
-        val = mapping[expr.name]
-        assert is_subtype(val.target_type(), expr.type), \
-            f"Type mismatch in subst: {expr.name} has type {expr.type} but value has type {val.target_type()}"
-    elif isinstance(expr, Lambda):
-        shadowed = {p.name for p in expr.params}
-        filtered = {k: v for k, v in mapping.items() if k not in shadowed}
-        if filtered:
-            _validate_subst_types(expr.body, filtered)
-    elif isinstance(expr, Let):
-        _validate_subst_types(expr.init, mapping)
-        filtered = {k: v for k, v in mapping.items() if k != expr.var.name}
-        if filtered:
-            _validate_subst_types(expr.body, filtered)
-    elif isinstance(expr, Call):
-        _validate_subst_types(expr.func, mapping)
-        for arg in expr.args:
-            _validate_subst_types(arg, mapping)
-    elif isinstance(expr, Seq):
-        for e in expr.exprs:
-            _validate_subst_types(e, mapping)
-    elif isinstance(expr, IfElse):
-        _validate_subst_types(expr.condition, mapping)
-        _validate_subst_types(expr.then_branch, mapping)
-        _validate_subst_types(expr.else_branch, mapping)
-    elif isinstance(expr, While):
-        _validate_subst_types(expr.condition, mapping)
-        _validate_subst_types(expr.body, mapping)
-    elif isinstance(expr, Foreach):
-        _validate_subst_types(expr.collection, mapping)
-        filtered = {k: v for k, v in mapping.items() if k != expr.var.name}
-        if filtered:
-            _validate_subst_types(expr.body, filtered)
-    elif isinstance(expr, ForeachEnumerated):
-        _validate_subst_types(expr.collection, mapping)
-        filtered = {k: v for k, v in mapping.items() if k not in {expr.index_var.name, expr.var.name}}
-        if filtered:
-            _validate_subst_types(expr.body, filtered)
-    elif isinstance(expr, Assign):
-        _validate_subst_types(expr.expr, mapping)
-    elif isinstance(expr, Return):
-        _validate_subst_types(expr.expr, mapping)
+    _SubstTypeValidator(mapping).visit(expr)
 
 
 def subst(expr: TargetExpr, mapping: Mapping[str, TargetExpr]) -> TargetExpr:
@@ -321,8 +320,6 @@ def subst(expr: TargetExpr, mapping: Mapping[str, TargetExpr]) -> TargetExpr:
         and its variable occurs more than once, introduces a Let binding
         to avoid duplicating side effects.
     """
-    from .target import Let
-    from .gensym import gensym
     if not mapping:
         return expr
 
@@ -368,7 +365,6 @@ def make_which_oneof(msg, oneof_name):
 
 def make_get_field(obj, field_name, message_type, field_type):
     """Get field value from message: obj.field_name."""
-    from .target import GetField
     # If field_name is a Lit, extract the string value
     if isinstance(field_name, Lit):
         field_name = field_name.value
@@ -384,7 +380,6 @@ def make_tuple(*args):
 
 def make_get_element(tuple_expr, index):
     """Extract element from tuple at constant index: tuple_expr[index]."""
-    from .target import GetElement
     return GetElement(tuple_expr, index)
 
 def make_fst(pair):
