@@ -4,9 +4,9 @@ import os
 
 from lqp.gen.parser import parse
 from lqp.gen.pretty import pretty
-from .utils import get_lqp_input_files
+from .utils import get_lqp_input_files, REPO_ROOT
 
-PRETTY_SNAPSHOTS_DIR = os.path.join(os.path.dirname(__file__), "lqp_pretty_output")
+PRETTY_SNAPSHOTS_DIR = REPO_ROOT / "tests" / "pretty"
 
 
 def _normalize_primitives(s: str) -> str:
