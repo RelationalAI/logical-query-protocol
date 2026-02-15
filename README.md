@@ -74,6 +74,8 @@ make parsers
 make test
 ```
 
+The code generators are implemented in `meta/`.
+
 ### Release (for Maintainers)
 
 Releasing a new version of the LQP is done by releasing new versions of each of the SDKs.

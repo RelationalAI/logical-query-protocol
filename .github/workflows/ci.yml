@@ -26,6 +26,21 @@ jobs:
         python -m pip install -e ".[test]"
         python -m pip install pyrefly
 
+    - name: Install meta dependencies
+      run: |
+        cd meta
+        python -m pip install -e ".[test]"
+
+    - name: Test meta with pytest
+      run: |
+        cd meta
+        python -m pytest
+
+    - name: Type check meta
+      run: |
+        cd meta
+        pyrefly check
+
     - name: Test with pytest
       run: |
         cd python-tools
