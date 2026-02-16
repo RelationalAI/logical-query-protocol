@@ -14,6 +14,8 @@
 #   make test         Run tests for all languages.
 #   make test-X       Run tests for one language (X = python, julia, go).
 #   make test-python-update-snapshots  Update Python pretty printer snapshots.
+#   make lint-python  Run ruff lint and format checks.
+#   make format-python  Auto-format Python code with ruff.
 #   make clean        Remove temporary generated files.
 #
 # Prerequisites: buf, uv (python), julia, go.
@@ -72,7 +74,7 @@ JL_PROTO_GENERATED := \
 	force-parsers force-parser-python force-parser-julia force-parser-go \
 	printers printer-python force-printers force-printer-python \
 	test test-python test-python-update-snapshots test-julia test-go check-python \
-	clean
+	lint-python format-python clean
 
 all: protobuf parsers printers
 
@@ -161,8 +163,15 @@ test-julia: $(JL_PARSER) $(JL_PROTO_GENERATED)
 test-go: $(GO_PARSER) $(GO_PROTO_GENERATED)
 	cd go && go test ./test/...
 
-check-python:
+check-python: lint-python
 	cd python-tools && uv run pyrefly check
+
+lint-python:
+	cd python-tools && uv run ruff check
+	cd python-tools && uv run ruff format --check
+
+format-python:
+	cd python-tools && uv run ruff format
 
 # ---------- cleanup ----------
 

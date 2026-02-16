@@ -79,9 +79,10 @@ first use.
 
 From the repo root, common tasks are available via `make`:
 ```bash
-make test-python                     # run tests (includes type checking)
+make test-python                     # run tests (includes lint + type check)
 make test-python-update-snapshots    # update test snapshots
-make check-python                    # type check only
+make check-python                    # lint + type check only
+make format-python                   # auto-format with ruff
 ```
 
 Or run tools directly from within `python-tools/`:
@@ -89,6 +90,8 @@ Or run tools directly from within `python-tools/`:
 uv run lqp --help                         # run the lqp CLI from source
 uv run python -m pytest                   # run tests
 uv run python -m pytest --snapshot-update # update snapshots
+uv run ruff check                         # lint
+uv run ruff format                        # auto-format
 uv run pyrefly check                      # type check
 uv run python -m build                    # build distribution
 ```
