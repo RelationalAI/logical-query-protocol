@@ -22,6 +22,7 @@ lqp-meta-tool = "meta.cli:main"
 
 [dependency-groups]
 dev = [
+    "build",
     "pytest>=7.0.0",
     "pytest-snapshot",
     "pyrefly==0.25.1",
