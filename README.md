@@ -83,7 +83,7 @@ Releasing a new version of the LQP is done by releasing new versions of each of 
 This package is [deployed to PyPI](https://pypi.org/project/lqp/). For maintainers, these
 are the steps to deploy a new version:
 
-1. `cd` into python-tools in the LQP repo
+1. `cd` into sdks/python in the LQP repo
 2. Make sure the `dist` directory is empty if it exists
 3. `python -m build`
 4. `python -m twine upload dist/*`

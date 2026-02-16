@@ -14,12 +14,12 @@ buf breaking --against ".git#branch=main,subdir=proto"
 # Generate code from protobuf definitions
 buf generate
 
-# Copy generated Python protobuf files to the python-tools directory
-cp gen/python/relationalai/lqp/v1/*_pb2.py* python-tools/src/lqp/proto/v1/
+# Copy generated Python protobuf files to the sdks/python directory
+cp gen/python/relationalai/lqp/v1/*_pb2.py* sdks/python/src/lqp/proto/v1/
 
 # Fix import paths in the generated Python files
 # This replaces the fully qualified import paths with local ones
-for file in python-tools/src/lqp/proto/v1/*_pb2.py*; do
+for file in sdks/python/src/lqp/proto/v1/*_pb2.py*; do
     # Replace "from relationalai.lqp.v1" with "from lqp.proto.v1"
     sed 's/from relationalai\.lqp\.v1/from lqp\.proto\.v1/g' "$file" > "$file.tmp"
     mv "$file.tmp" "$file"

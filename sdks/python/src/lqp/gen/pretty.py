@@ -3,7 +3,7 @@ Auto-generated pretty printer.
 
 Generated from protobuf specifications.
 Do not modify this file! If you need to modify the pretty printer, edit the generator code
-in `python-tools/src/meta` or edit the protobuf specification in `proto/v1`.
+in `meta/` or edit the protobuf specification in `proto/v1`.
 
 
 Command: python -m meta.cli ../proto/relationalai/lqp/v1/fragments.proto ../proto/relationalai/lqp/v1/logic.proto ../proto/relationalai/lqp/v1/transactions.proto --grammar src/meta/grammar.y --printer python

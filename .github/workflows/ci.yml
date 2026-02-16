@@ -24,7 +24,7 @@ jobs:
 
     - name: Lint
       run: |
-        cd python-tools
+        cd sdks/python
         uv run ruff check
         uv run ruff format --check
 
@@ -46,12 +46,12 @@ jobs:
 
     - name: Run tests
       run: |
-        cd python-tools
+        cd sdks/python
         uv run python -m pytest
 
     - name: Type check
       run: |
-        cd python-tools
+        cd sdks/python
         uv run pyrefly check
 
   julia-test:

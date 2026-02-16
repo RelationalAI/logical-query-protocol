@@ -1,4 +1,4 @@
-# python-tools
+# LQP Python SDK
 
 A command-line tool to parse Logical Query Protocol (LQP) S-expressions into Protobuf binary
 and JSON formats.
@@ -85,7 +85,7 @@ make check-python                    # lint + type check only
 make format-python                   # auto-format with ruff
 ```
 
-Or run tools directly from within `python-tools/`:
+Or run tools directly from within `sdks/python/`:
 ```bash
 uv run lqp --help                         # run the lqp CLI from source
 uv run python -m pytest                   # run tests
