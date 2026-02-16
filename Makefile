@@ -16,7 +16,7 @@
 #   make test-python-update-snapshots  Update Python pretty printer snapshots.
 #   make clean        Remove temporary generated files.
 #
-# Prerequisites: buf, python (with lqp[test] installed), julia, go.
+# Prerequisites: buf, uv (python), julia, go.
 
 PROTO_DIR := proto
 PROTO_FILES := \
@@ -47,7 +47,7 @@ GO_TEMPLATE := python-tools/src/meta/templates/parser.go.template
 # Printer templates
 PY_PRINTER_TEMPLATE := python-tools/src/meta/templates/pretty_printer.py.template
 
-META_CLI := cd python-tools && PYTHONPATH=src python -m meta.cli
+META_CLI := cd python-tools && PYTHONPATH=src uv run python -m meta.cli
 META_PROTO_ARGS := \
 	../$(PROTO_DIR)/relationalai/lqp/v1/fragments.proto \
 	../$(PROTO_DIR)/relationalai/lqp/v1/logic.proto \
@@ -150,10 +150,10 @@ force-printer-python:
 test: test-python test-julia test-go
 
 test-python: $(PY_PARSER) $(PY_PROTO_GENERATED) check-python
-	cd python-tools && python -m pytest
+	cd python-tools && uv run python -m pytest
 
 test-python-update-snapshots: $(PY_PARSER) $(PY_PROTO_GENERATED)
-	cd python-tools && python -m pytest --snapshot-update
+	cd python-tools && uv run python -m pytest --snapshot-update
 
 test-julia: $(JL_PARSER) $(JL_PROTO_GENERATED)
 	cd julia && julia --project=LogicalQueryProtocol -e 'using Pkg; Pkg.test()'
@@ -162,7 +162,7 @@ test-go: $(GO_PARSER) $(GO_PROTO_GENERATED)
 	cd go && go test ./test/...
 
 check-python:
-	cd python-tools && pyrefly check
+	cd python-tools && uv run pyrefly check
 
 # ---------- cleanup ----------
 

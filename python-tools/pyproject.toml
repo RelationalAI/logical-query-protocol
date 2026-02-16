@@ -11,6 +11,7 @@ authors = [
     { name = "Sławek Staworko", email = "slawek.staworko@relational.ai" },
     { name = "Nate Nystrom", email = "nate.nystrom@relational.ai" },
 ]
+requires-python = ">=3.10"
 dependencies = [
     "protobuf>=3.20.3,<5.0.0",
 ]
@@ -19,8 +20,8 @@ dependencies = [
 lqp = "lqp.cli:main"
 lqp-meta-tool = "meta.cli:main"
 
-[project.optional-dependencies]
-test = [
+[dependency-groups]
+dev = [
     "pytest>=7.0.0",
     "pytest-snapshot",
     "pyrefly==0.25.1",
