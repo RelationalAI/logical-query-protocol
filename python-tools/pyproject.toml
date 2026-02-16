@@ -37,21 +37,12 @@ build-backend = "setuptools.build_meta"
 meta = ["grammar.y", "*.template"]
 
 [tool.ruff]
-exclude = ["src/lqp/proto", "src/lqp/gen"]
+exclude = ["src/lqp/proto", "src/lqp/gen", "src/meta", "tests/meta"]
 target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
 ignore = ["E501"]
-
-[tool.ruff.lint.per-file-ignores]
-# Pre-existing issues to fix separately:
-# F601: duplicate dict keys in template maps
-"src/meta/codegen_templates.py" = ["F601"]
-# F841: unused local variables in tests
-"tests/meta/test_codegen_go.py" = ["F841"]
-# F811: redefined test functions (duplicate test names)
-"tests/meta/test_codegen_python.py" = ["F811"]
 
 [tool.pyright]
 include = ["src", "tests"]
