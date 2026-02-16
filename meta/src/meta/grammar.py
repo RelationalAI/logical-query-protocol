@@ -5,10 +5,17 @@ with semantic actions, including support for normalization and left-factoring.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 # Import action AST types
-from .target import Lambda, TargetType, SequenceType, ListType, OptionType, TupleType, FunDef
+from .target import (
+    FunDef,
+    Lambda,
+    OptionType,
+    SequenceType,
+    TargetType,
+    TupleType,
+)
 
 # Use TYPE_CHECKING to avoid circular import: GrammarAnalysis imports Grammar,
 # but we need GrammarAnalysis type hints here. These imports only exist during
@@ -18,6 +25,7 @@ if TYPE_CHECKING:
 
 
 # Grammar RHS (right-hand side) elements
+
 
 @dataclass(frozen=True)
 class Rhs:
@@ -55,21 +63,29 @@ class Rhs:
 
     def target_type(self) -> TargetType:
         """Return the target type for this RHS element."""
-        raise NotImplementedError(f"target_type not implemented for {type(self).__name__}")
+        raise NotImplementedError(
+            f"target_type not implemented for {type(self).__name__}"
+        )
+
 
 @dataclass(frozen=True)
 class RhsSymbol(Rhs):
     """Base class for symbols occurring on the right-hand side of grammar rules."""
+
     pass
+
 
 @dataclass(frozen=True)
 class Terminal(RhsSymbol):
     """Base class for terminal symbols."""
+
     pass
+
 
 @dataclass(frozen=True, unsafe_hash=True)
 class LitTerminal(Terminal):
     """Literal terminal (quoted string in grammar)."""
+
     name: str
 
     def __str__(self) -> str:
@@ -83,6 +99,7 @@ class LitTerminal(Terminal):
 @dataclass(frozen=True, unsafe_hash=True)
 class NamedTerminal(Terminal):
     """Token terminal (unquoted uppercase name like SYMBOL, INT)."""
+
     name: str
     type: TargetType
 
@@ -97,6 +114,7 @@ class NamedTerminal(Terminal):
 @dataclass(frozen=True, unsafe_hash=True)
 class Nonterminal(RhsSymbol):
     """Nonterminal (rule name)."""
+
     name: str
     type: TargetType
 
@@ -115,6 +133,7 @@ class Star(Rhs):
     Any Rhs can be used except LitTerminal, since LitTerminal
     produces no value, making Star(LitTerminal) semantically meaningless.
     """
+
     rhs: Rhs
 
     def __str__(self) -> str:
@@ -132,6 +151,7 @@ class Option(Rhs):
     Any Rhs can be used except LitTerminal, since LitTerminal
     produces no value, making Option(LitTerminal) semantically meaningless.
     """
+
     rhs: Rhs
 
     def __str__(self) -> str:
@@ -145,12 +165,14 @@ class Option(Rhs):
 @dataclass(frozen=True)
 class Sequence(Rhs):
     """Sequence of grammar symbols (concatenation)."""
-    elements: Tuple['Rhs', ...] = field(default_factory=tuple)
+
+    elements: tuple["Rhs", ...] = field(default_factory=tuple)
 
     def __post_init__(self):
         for elem in self.elements:
-            assert not isinstance(elem, Sequence), \
+            assert not isinstance(elem, Sequence), (
                 f"Sequence elements cannot be Sequence nodes, got {type(elem).__name__}"
+            )
 
     def __str__(self) -> str:
         return " ".join(str(e) for e in self.elements)
@@ -167,6 +189,7 @@ class Sequence(Rhs):
 
 
 # Grammar rules and tokens
+
 
 @dataclass(frozen=True)
 class Rule:
@@ -204,22 +227,24 @@ class Rule:
             )
         )
     """
+
     lhs: Nonterminal
     rhs: Rhs
-    constructor: 'Lambda'
-    deconstructor: Optional['Lambda'] = None  # Pretty-printer deconstruction action
-    source_type: Optional[str] = None  # Track the protobuf type this rule came from
+    constructor: "Lambda"
+    deconstructor: Optional["Lambda"] = None  # Pretty-printer deconstruction action
+    source_type: str | None = None  # Track the protobuf type this rule came from
 
     def __str__(self):
         result = f"{self.lhs.name} -> {self.rhs} {{{{ {self.constructor} }}}}"
         return result
 
-    def to_pattern(self, grammar: Optional['Grammar'] = None) -> str:
+    def to_pattern(self, grammar: Optional["Grammar"] = None) -> str:
         """Convert RHS to pattern string."""
         return str(self.rhs)
 
     def __post_init__(self):
         from .grammar_utils import count_nonliteral_rhs_elements
+
         assert isinstance(self.rhs, Rhs)
         rhs_len = count_nonliteral_rhs_elements(self.rhs)
         action_params = len(self.constructor.params)
@@ -247,30 +272,38 @@ class Token:
         symbol_token = Token("SYMBOL", r'[a-zA-Z_][a-zA-Z0-9_]*', BaseType("String"))
         string_token = Token("STRING", r'"[^"]*"', BaseType("String"))
     """
+
     name: str
     pattern: str
     type: TargetType
 
+
 @dataclass
 class Grammar:
     """Complete grammar specification with normalization and left-factoring support."""
+
     start: Nonterminal
-    rules: Dict[Nonterminal, List[Rule]] = field(default_factory=dict)
-    tokens: List[Token] = field(default_factory=list)
-    ignored_completeness: List[str] = field(default_factory=list)  # Message names to ignore in completeness checks
-    function_defs: Dict[str, 'FunDef'] = field(default_factory=dict)  # User-defined functions with IR bodies
+    rules: dict[Nonterminal, list[Rule]] = field(default_factory=dict)
+    tokens: list[Token] = field(default_factory=list)
+    ignored_completeness: list[str] = field(
+        default_factory=list
+    )  # Message names to ignore in completeness checks
+    function_defs: dict[str, "FunDef"] = field(
+        default_factory=dict
+    )  # User-defined functions with IR bodies
 
     # Lazily created analysis object (holds cached results)
-    _analysis: Optional['GrammarAnalysis'] = field(default=None, init=False, repr=False)
+    _analysis: Optional["GrammarAnalysis"] = field(default=None, init=False, repr=False)
 
     def __post_init__(self):
         self.rules = {self.start: []}
 
     @property
-    def analysis(self) -> 'GrammarAnalysis':
+    def analysis(self) -> "GrammarAnalysis":
         """Get or create the grammar analysis object."""
         if self._analysis is None:
             from .grammar_analysis import GrammarAnalysis
+
             self._analysis = GrammarAnalysis(self)
         return self._analysis
 
@@ -291,7 +324,7 @@ class Grammar:
         self.rules[lhs].append(rule)
         return None
 
-    def get_rules(self, nt: Nonterminal) -> List[Rule]:
+    def get_rules(self, nt: Nonterminal) -> list[Rule]:
         """Get all rules with the given LHS name."""
         return self.rules.get(nt, [])
 
@@ -299,7 +332,7 @@ class Grammar:
         """Check if any rule has the given LHS name."""
         return name in self.rules
 
-    def get_unreachable_nonterminals(self) -> List[Nonterminal]:
+    def get_unreachable_nonterminals(self) -> list[Nonterminal]:
         """Find all nonterminals that are unreachable from start symbol."""
         _, unreachable = self.analysis.partition_nonterminals_by_reachability()
         return unreachable
@@ -310,7 +343,7 @@ class Grammar:
         Returns the grammar in the yacc-like format that can be
         loaded with load_yacc_grammar().
         """
-        from .target_print import type_to_str, expr_to_str
+        from .target_print import expr_to_str, type_to_str
 
         lines = []
         lines.append("# Auto-generated grammar from protobuf specifications")
@@ -320,7 +353,7 @@ class Grammar:
         rule_order = reachable if reachable_only else reachable + unreachable
 
         # Collect all named terminals from rules
-        terminals: Dict[str, NamedTerminal] = {}
+        terminals: dict[str, NamedTerminal] = {}
         for lhs in rule_order:
             for rule in self.rules[lhs]:
                 for term in collect(rule.rhs, NamedTerminal):
@@ -370,8 +403,12 @@ class Grammar:
 
         # Emit function definitions
         for name, func_def in self.function_defs.items():
-            params_str = ", ".join(f"{p.name}: {type_to_str(p.type)}" for p in func_def.params)
-            lines.append(f"def {name}({params_str}) -> {type_to_str(func_def.return_type)}:")
+            params_str = ", ".join(
+                f"{p.name}: {type_to_str(p.type)}" for p in func_def.params
+            )
+            lines.append(
+                f"def {name}({params_str}) -> {type_to_str(func_def.return_type)}:"
+            )
             if func_def.body is not None:
                 lines.append(f"    return {expr_to_str(func_def.body)}")
             else:
@@ -401,8 +438,9 @@ class Grammar:
 @dataclass
 class TerminalDef:
     """Definition of a terminal symbol with type and optional pattern."""
+
     type: TargetType
-    pattern: Optional[str] = None  # Regex pattern or fixed string
+    pattern: str | None = None  # Regex pattern or fixed string
     is_regex: bool = True  # True for r'...' patterns, False for '...' literals
 
 
@@ -413,12 +451,13 @@ class GrammarConfig:
     This is a simpler representation than Grammar, used when loading
     grammar files before building the full Grammar object.
     """
-    terminals: Dict[str, TargetType]
+
+    terminals: dict[str, TargetType]
     start_symbol: str
-    terminal_patterns: Dict[str, TerminalDef] = field(default_factory=dict)
-    rules: Dict[Nonterminal, List[Rule]] = field(default_factory=dict)
-    ignored_completeness: List[str] = field(default_factory=list)
-    function_defs: Dict[str, FunDef] = field(default_factory=dict)
+    terminal_patterns: dict[str, TerminalDef] = field(default_factory=dict)
+    rules: dict[Nonterminal, list[Rule]] = field(default_factory=dict)
+    ignored_completeness: list[str] = field(default_factory=list)
+    function_defs: dict[str, FunDef] = field(default_factory=dict)
 
 
 # Helper functions
@@ -432,7 +471,7 @@ def is_epsilon(rhs: Rhs) -> bool:
     return isinstance(rhs, Sequence) and len(rhs.elements) == 0
 
 
-def rhs_elements(rhs: Rhs) -> Tuple[Rhs, ...]:
+def rhs_elements(rhs: Rhs) -> tuple[Rhs, ...]:
     """Return elements of rhs. For Sequence, returns rhs.elements; otherwise returns (rhs,)."""
     if isinstance(rhs, Sequence):
         return rhs.elements
@@ -450,5 +489,7 @@ def _count_nonliteral_rhs_elements(rhs: Rhs) -> int:
     elif isinstance(rhs, LitTerminal):
         return 0
     else:
-        assert isinstance(rhs, (NamedTerminal, Nonterminal, Option, Star)), f"found {type(rhs)}"
+        assert isinstance(rhs, (NamedTerminal, Nonterminal, Option, Star)), (
+            f"found {type(rhs)}"
+        )
         return 1

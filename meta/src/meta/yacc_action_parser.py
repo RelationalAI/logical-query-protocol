@@ -20,29 +20,63 @@ Supported constructs:
 
 import ast
 import re
-from typing import Dict, List, Optional, Tuple, Set
+from typing import Optional
 
-from .grammar import Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Sequence
+from .grammar import (
+    LitTerminal,
+    NamedTerminal,
+    Nonterminal,
+    Option,
+    Rhs,
+    Sequence,
+    Star,
+)
 from .target import (
-    TargetType, BaseType, MessageType, SequenceType, ListType, OptionType, TupleType, DictType, FunctionType,
-    TargetExpr, Var, Lit, NamedFun, NewMessage, EnumValue, Call, Lambda,
-    Let, IfElse, Seq, ListExpr, GetElement, GetField, FunDef, OneOf, Assign, Return,
-    Foreach, ForeachEnumerated
+    Assign,
+    BaseType,
+    Call,
+    DictType,
+    EnumValue,
+    Foreach,
+    ForeachEnumerated,
+    FunctionType,
+    FunDef,
+    GetElement,
+    GetField,
+    IfElse,
+    Lambda,
+    Let,
+    ListExpr,
+    ListType,
+    Lit,
+    MessageType,
+    NamedFun,
+    NewMessage,
+    OneOf,
+    OptionType,
+    Return,
+    Seq,
+    SequenceType,
+    TargetExpr,
+    TargetType,
+    TupleType,
+    Var,
 )
 from .target_builtins import make_builtin
-from .target_utils import type_join, is_subtype
+from .target_utils import is_subtype, type_join
 
 
 class YaccGrammarError(Exception):
     """Error during yacc grammar parsing."""
-    def __init__(self, message: str, line: Optional[int] = None):
+
+    def __init__(self, message: str, line: int | None = None):
         if line is not None:
             message = f"line {line}: {message}"
         super().__init__(message)
         self.line = line
 
 
-def _get_rhs_element_name(elem: Rhs) -> Optional[str]:
+def _get_rhs_element_name(elem: Rhs) -> str | None:
     """Get the name of an RHS element for use as a parameter name.
 
     Returns the symbol name for terminals and nonterminals, unwrapping
@@ -66,14 +100,14 @@ def _get_rhs_element_name(elem: Rhs) -> Optional[str]:
         return None
 
 
-def _get_rhs_param_info(rhs: Rhs) -> List[Tuple[Optional[str], Optional[TargetType]]]:
+def _get_rhs_param_info(rhs: Rhs) -> list[tuple[str | None, TargetType | None]]:
     """Get parameter names and types from an RHS.
 
     Returns a list of (name, type) tuples, one per RHS element.
     Literals are represented as (None, None).
     """
     if isinstance(rhs, Sequence):
-        result: List[Tuple[Optional[str], Optional[TargetType]]] = []
+        result: list[tuple[str | None, TargetType | None]] = []
         for elem in rhs.elements:
             if isinstance(elem, LitTerminal):
                 result.append((None, None))
@@ -86,7 +120,7 @@ def _get_rhs_param_info(rhs: Rhs) -> List[Tuple[Optional[str], Optional[TargetTy
         return [(_get_rhs_element_name(rhs), rhs.target_type())]
 
 
-def _get_rhs_param_types(rhs: Rhs) -> List[Optional[TargetType]]:
+def _get_rhs_param_types(rhs: Rhs) -> list[TargetType | None]:
     """Get the types of parameters from an RHS (including literals as None).
 
     Returns a list with one entry per RHS element. Literals are represented
@@ -100,8 +134,9 @@ def _make_named_fun(name: str, func_type: FunctionType) -> NamedFun:
     return NamedFun(name, func_type)
 
 
-def _infer_type(expr: TargetExpr, line: Optional[int] = None,
-                ctx: Optional['TypeContext'] = None) -> TargetType:
+def _infer_type(
+    expr: TargetExpr, line: int | None = None, ctx: Optional["TypeContext"] = None
+) -> TargetType:
     """Infer the type of an expression.
 
     Args:
@@ -134,9 +169,13 @@ def _infer_type(expr: TargetExpr, line: Optional[int] = None,
     elif isinstance(expr, GetElement):
         # Infer tuple element type
         tuple_type = _infer_type(expr.tuple_expr, line, ctx)
-        if isinstance(tuple_type, TupleType) and 0 <= expr.index < len(tuple_type.elements):
+        if isinstance(tuple_type, TupleType) and 0 <= expr.index < len(
+            tuple_type.elements
+        ):
             return tuple_type.elements[expr.index]
-        raise YaccGrammarError(f"Cannot infer type of tuple element access: {expr}", line)
+        raise YaccGrammarError(
+            f"Cannot infer type of tuple element access: {expr}", line
+        )
     elif isinstance(expr, GetField):
         # GetField has field_type from proto schema lookup (or Unknown if not found)
         return expr.field_type
@@ -157,11 +196,14 @@ def _infer_type(expr: TargetExpr, line: Optional[int] = None,
             return expr.target_type()
         except ValueError:
             return BaseType("Any")
-    raise YaccGrammarError(f"Cannot infer type of expression: {type(expr).__name__}", line)
+    raise YaccGrammarError(
+        f"Cannot infer type of expression: {type(expr).__name__}", line
+    )
 
 
-def _make_list_expr(elements: list, line: Optional[int],
-                    ctx: Optional['TypeContext']) -> ListExpr:
+def _make_list_expr(
+    elements: list, line: int | None, ctx: Optional["TypeContext"]
+) -> ListExpr:
     """Build a ListExpr from non-empty elements, joining their types."""
     assert elements
     elem_type = _infer_type(elements[0], line, ctx)
@@ -171,10 +213,38 @@ def _make_list_expr(elements: list, line: Optional[int],
 
 
 # Python keywords that might be used as field names in the grammar
-PYTHON_KEYWORDS = {'def', 'class', 'return', 'if', 'else', 'for', 'while', 'with',
-                   'try', 'except', 'finally', 'import', 'from', 'as', 'pass',
-                   'break', 'continue', 'raise', 'yield', 'global', 'nonlocal',
-                   'lambda', 'and', 'or', 'not', 'in', 'is', 'True', 'False', 'None'}
+PYTHON_KEYWORDS = {
+    "def",
+    "class",
+    "return",
+    "if",
+    "else",
+    "for",
+    "while",
+    "with",
+    "try",
+    "except",
+    "finally",
+    "import",
+    "from",
+    "as",
+    "pass",
+    "break",
+    "continue",
+    "raise",
+    "yield",
+    "global",
+    "nonlocal",
+    "lambda",
+    "and",
+    "or",
+    "not",
+    "in",
+    "is",
+    "True",
+    "False",
+    "None",
+}
 
 
 def preprocess_action(text: str) -> str:
@@ -185,13 +255,13 @@ def preprocess_action(text: str) -> str:
         keyword=expr -> _kw_keyword_=expr (for Python keywords used as field names)
     """
     # Replace $$ with _dollar_dollar, then $N with _dollar_N
-    result = text.replace('$$', '_dollar_dollar')
-    result = re.sub(r'\$(\d+)', r'_dollar_\1', result)
+    result = text.replace("$$", "_dollar_dollar")
+    result = re.sub(r"\$(\d+)", r"_dollar_\1", result)
     # Replace keyword= with _kw_keyword_= for Python keywords used as kwargs
     # Replace .keyword with ._kw_keyword_ for field access on Python keywords
     for kw in PYTHON_KEYWORDS:
-        result = re.sub(rf'\b{kw}=', f'_kw_{kw}_=', result)
-        result = re.sub(rf'\.{kw}\b', f'._kw_{kw}_', result)
+        result = re.sub(rf"\b{kw}=", f"_kw_{kw}_=", result)
+        result = re.sub(rf"\.{kw}\b", f"._kw_{kw}_", result)
     return result
 
 
@@ -200,41 +270,43 @@ def _unescape_keyword(name: str) -> str:
 
     _kw_def_ -> def, _kw_class_ -> class, etc.
     """
-    if name.startswith('_kw_') and name.endswith('_'):
+    if name.startswith("_kw_") and name.endswith("_"):
         return name[4:-1]
     return name
 
 
-def _unsupported_node_error(node: ast.AST, line: Optional[int], reason: str = "") -> YaccGrammarError:
+def _unsupported_node_error(
+    node: ast.AST, line: int | None, reason: str = ""
+) -> YaccGrammarError:
     """Create an error for unsupported Python syntax with helpful diagnostics."""
     node_type = type(node).__name__
 
     # Map AST node types to user-friendly descriptions and suggestions
     node_explanations = {
-        'UnaryOp': "Unsupported unary operator. "
-                   "Supported: not, unary minus (-x). "
-                   "Bitwise operators (~x, +x) are not supported.",
-        'Lambda': "Python lambda expressions are not supported in actions. "
-                  "Define named functions in the %functions section instead.",
-        'Dict': "Dictionary literals are not supported. "
-                "Use 'dict(pairs)' with a list of tuples instead.",
-        'Set': "Set literals are not supported.",
-        'ListComp': "List comprehensions are not supported. "
-                    "Use explicit loops or map() instead.",
-        'DictComp': "Dictionary comprehensions are not supported.",
-        'SetComp': "Set comprehensions are not supported.",
-        'GeneratorExp': "Generator expressions are not supported.",
-        'Await': "Async/await is not supported.",
-        'Yield': "Yield expressions are not supported.",
-        'YieldFrom': "Yield from expressions are not supported.",
-        'FormattedValue': "F-string formatting is not supported. "
-                          "Use string_concat() for string building.",
-        'JoinedStr': "F-strings are not supported. Use string_concat() instead.",
-        'Starred': "Starred expressions (*args) are not supported.",
-        'Slice': "Slice expressions (x[a:b]) are not supported. "
-                 "Only constant integer indexing is allowed.",
-        'NamedExpr': "Walrus operator (:=) is not supported.",
-        'Tuple': "Tuple literals (a, b, ...) are supported and map to builtin.tuple().",
+        "UnaryOp": "Unsupported unary operator. "
+        "Supported: not, unary minus (-x). "
+        "Bitwise operators (~x, +x) are not supported.",
+        "Lambda": "Python lambda expressions are not supported in actions. "
+        "Define named functions in the %functions section instead.",
+        "Dict": "Dictionary literals are not supported. "
+        "Use 'dict(pairs)' with a list of tuples instead.",
+        "Set": "Set literals are not supported.",
+        "ListComp": "List comprehensions are not supported. "
+        "Use explicit loops or map() instead.",
+        "DictComp": "Dictionary comprehensions are not supported.",
+        "SetComp": "Set comprehensions are not supported.",
+        "GeneratorExp": "Generator expressions are not supported.",
+        "Await": "Async/await is not supported.",
+        "Yield": "Yield expressions are not supported.",
+        "YieldFrom": "Yield from expressions are not supported.",
+        "FormattedValue": "F-string formatting is not supported. "
+        "Use string_concat() for string building.",
+        "JoinedStr": "F-strings are not supported. Use string_concat() instead.",
+        "Starred": "Starred expressions (*args) are not supported.",
+        "Slice": "Slice expressions (x[a:b]) are not supported. "
+        "Only constant integer indexing is allowed.",
+        "NamedExpr": "Walrus operator (:=) is not supported.",
+        "Tuple": "Tuple literals (a, b, ...) are supported and map to builtin.tuple().",
     }
 
     base_msg = f"Cannot convert Python '{node_type}' to target IR"
@@ -245,17 +317,24 @@ def _unsupported_node_error(node: ast.AST, line: Optional[int], reason: str = ""
     if explanation:
         base_msg += f"\n  {explanation}"
 
-    base_msg += ("\n\n  Note: Action expressions use a restricted subset of Python that can be "
-                 "translated to Julia.\n  Supported constructs: literals, variables, "
-                 "function calls, message constructors,\n  list literals, conditional expressions "
-                 "(x if cond else y), and tuple indexing (x[0]).")
+    base_msg += (
+        "\n\n  Note: Action expressions use a restricted subset of Python that can be "
+        "translated to Julia.\n  Supported constructs: literals, variables, "
+        "function calls, message constructors,\n  list literals, conditional expressions "
+        "(x if cond else y), and tuple indexing (x[0])."
+    )
 
     return YaccGrammarError(base_msg, line)
 
 
-def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str], Optional[TargetType]]],
-                            params: List[Var], ctx: 'TypeContext',
-                            line: Optional[int], extra_vars: Dict[str, TargetType]) -> TargetExpr:
+def _convert_node_with_vars(
+    node: ast.AST,
+    param_info: list[tuple[str | None, TargetType | None]],
+    params: list[Var],
+    ctx: "TypeContext",
+    line: int | None,
+    extra_vars: dict[str, TargetType],
+) -> TargetExpr:
     """Convert AST node with extra variable bindings.
 
     This function translates Python AST nodes into target IR expressions.
@@ -279,20 +358,22 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
 
     elif isinstance(node, ast.Name):
         name = node.id
-        if name == 'True':
+        if name == "True":
             return Lit(True)
-        elif name == 'False':
+        elif name == "False":
             return Lit(False)
         elif name in extra_vars:
             return Var(name, extra_vars[name])
-        elif name.startswith('_dollar_') and name[8:].isdigit():
+        elif name.startswith("_dollar_") and name[8:].isdigit():
             # $N reference - map to the corresponding parameter
             idx = int(name[8:]) - 1  # Convert 1-indexed to 0-indexed
             if idx < 0 or idx >= len(param_info):
-                raise YaccGrammarError(f"Invalid parameter reference ${idx+1}", line)
+                raise YaccGrammarError(f"Invalid parameter reference ${idx + 1}", line)
             _, param_type = param_info[idx]
             if param_type is None:
-                raise YaccGrammarError(f"Cannot reference literal at position ${idx+1}", line)
+                raise YaccGrammarError(
+                    f"Cannot reference literal at position ${idx + 1}", line
+                )
             # Find the parameter for this position (skipping literals)
             param_idx = sum(1 for _, t in param_info[:idx] if t is not None)
             return params[param_idx]
@@ -301,12 +382,14 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
         else:
             # Check builtins
             from .target_builtins import is_builtin
+
             if is_builtin(name):
                 return make_builtin(name)
             raise YaccGrammarError(
                 f"Unknown variable or function: '{name}'\n"
                 f"  Functions must be defined in the helper functions section or be builtins.",
-                line)
+                line,
+            )
 
     elif isinstance(node, ast.Subscript):
         value = convert(node.value)
@@ -315,7 +398,8 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
         raise YaccGrammarError(
             "Subscript must use integer literal index (e.g., x[0], x[1]).\n"
             "  Dynamic indexing and slices are not supported.",
-            line)
+            line,
+        )
 
     elif isinstance(node, ast.Attribute):
         attr_name = _unescape_keyword(node.attr)
@@ -336,10 +420,13 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
         args = [convert(a) for a in node.args]
 
         # Handle list[T]() -> typed empty list
-        if (isinstance(func, ast.Subscript)
-                and isinstance(func.value, ast.Name)
-                and func.value.id == 'list'
-                and not args and not node.keywords):
+        if (
+            isinstance(func, ast.Subscript)
+            and isinstance(func.value, ast.Name)
+            and func.value.id == "list"
+            and not args
+            and not node.keywords
+        ):
             elem_type = _annotation_to_type(func.slice, line or 0)
             return ListExpr([], elem_type)
 
@@ -358,10 +445,11 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
                     raise YaccGrammarError(
                         "**kwargs syntax is not supported in message constructors.\n"
                         "  Use explicit keyword arguments: module.Msg(field1=val1, field2=val2)",
-                        line)
+                        line,
+                    )
                 field_name = kw.arg
                 # Restore original field name if it was escaped
-                if field_name.startswith('_kw_') and field_name.endswith('_'):
+                if field_name.startswith("_kw_") and field_name.endswith("_"):
                     field_name = field_name[4:-1]
                 field_expr = convert(kw.value)
                 fields.append((field_name, field_expr))
@@ -371,10 +459,10 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
         if isinstance(func, ast.Name):
             func_name = func.id
             # Handle special forms
-            if func_name == 'seq':
+            if func_name == "seq":
                 return Seq(args)
             # Check for oneof_VARIANT pattern
-            if func_name.startswith('oneof_'):
+            if func_name.startswith("oneof_"):
                 variant_name = func_name[6:]  # Remove 'oneof_' prefix
                 if len(args) == 1:
                     arg_type = _infer_type(args[0], line, ctx)
@@ -383,9 +471,10 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
                     oneof_type = FunctionType([BaseType("Any")], BaseType("Any"))
                 return Call(OneOf(variant_name, oneof_type), args)
             # has_field(msg, field_name) -> has_proto_field builtin
-            if func_name == 'has_field':
-                return Call(make_builtin('has_proto_field'), args)
+            if func_name == "has_field":
+                return Call(make_builtin("has_proto_field"), args)
             from .target_builtins import is_builtin
+
             if is_builtin(func_name):
                 return Call(make_builtin(func_name), args)
             if func_name in ctx.functions:
@@ -396,7 +485,8 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
                 f"    - Builtins (see target_builtins.py for available builtins)\n"
                 f"    - Defined in the %functions section of the grammar\n"
                 f"  Note: Python standard library functions are not available.",
-                line)
+                line,
+            )
 
         func_expr = convert(func)
         return Call(func_expr, args)
@@ -406,12 +496,13 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
         if not elements:
             raise YaccGrammarError(
                 "Empty list [] is not allowed; use list[T]() to specify the element type.",
-                line)
+                line,
+            )
         return _make_list_expr(elements, line, ctx)
 
     elif isinstance(node, ast.Tuple):
         elements = [convert(e) for e in node.elts]
-        return Call(make_builtin('tuple'), elements)
+        return Call(make_builtin("tuple"), elements)
 
     elif isinstance(node, ast.IfExp):
         cond = convert(node.test)
@@ -425,11 +516,17 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
             right = convert(node.comparators[0])
             op = node.ops[0]
             if isinstance(op, ast.Is):
-                if isinstance(node.comparators[0], ast.Constant) and node.comparators[0].value is None:
+                if (
+                    isinstance(node.comparators[0], ast.Constant)
+                    and node.comparators[0].value is None
+                ):
                     return Call(make_builtin("is_none"), [left])
                 return Call(make_builtin("equal"), [left, right])
             elif isinstance(op, ast.IsNot):
-                if isinstance(node.comparators[0], ast.Constant) and node.comparators[0].value is None:
+                if (
+                    isinstance(node.comparators[0], ast.Constant)
+                    and node.comparators[0].value is None
+                ):
                     return Call(make_builtin("is_some"), [left])
                 return Call(make_builtin("not_equal"), [left, right])
             elif isinstance(op, ast.Eq):
@@ -447,10 +544,11 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
             elif isinstance(op, ast.In):
                 return Call(make_builtin("string_in_list"), [left, right])
             elif isinstance(op, ast.NotIn):
-                return Call(make_builtin("not"), [Call(make_builtin("string_in_list"), [left, right])])
-        raise YaccGrammarError(
-            f"Unsupported comparison operator in action.",
-            line)
+                return Call(
+                    make_builtin("not"),
+                    [Call(make_builtin("string_in_list"), [left, right])],
+                )
+        raise YaccGrammarError("Unsupported comparison operator in action.", line)
 
     elif isinstance(node, ast.BoolOp):
         if isinstance(node.op, ast.And):
@@ -463,7 +561,7 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
             for val in node.values[1:]:
                 result = Call(make_builtin("or"), [result, convert(val)])
             return result
-        raise YaccGrammarError(f"Unsupported boolean operation", line)
+        raise YaccGrammarError("Unsupported boolean operation", line)
 
     elif isinstance(node, ast.BinOp):
         left = convert(node.left)
@@ -478,7 +576,9 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
             return Call(make_builtin("divide"), [left, right])
         elif isinstance(node.op, ast.Mod):
             return Call(make_builtin("modulo"), [left, right])
-        raise YaccGrammarError(f"Unsupported binary operator: {type(node.op).__name__}", line)
+        raise YaccGrammarError(
+            f"Unsupported binary operator: {type(node.op).__name__}", line
+        )
 
     elif isinstance(node, ast.UnaryOp):
         if isinstance(node.op, ast.Not):
@@ -491,7 +591,7 @@ def _convert_node_with_vars(node: ast.AST, param_info: List[Tuple[Optional[str],
         raise _unsupported_node_error(node, line)
 
 
-def _build_params(rhs: Rhs) -> List[Var]:
+def _build_params(rhs: Rhs) -> list[Var]:
     """Build parameter list from RHS (non-literal elements only).
 
     Uses the symbol name from the RHS element as the parameter name.
@@ -502,7 +602,7 @@ def _build_params(rhs: Rhs) -> List[Var]:
     """
     param_info = _get_rhs_param_info(rhs)
     params = []
-    used_names: Set[str] = set()
+    used_names: set[str] = set()
     for i, (name, t) in enumerate(param_info):
         if t is not None:
             # Use the element name, or fall back to positional name
@@ -515,8 +615,13 @@ def _build_params(rhs: Rhs) -> List[Var]:
     return params
 
 
-def parse_action(text: str, rhs: Rhs, ctx: 'TypeContext', line: Optional[int] = None,
-                 expected_return_type: Optional[TargetType] = None) -> Lambda:
+def parse_action(
+    text: str,
+    rhs: Rhs,
+    ctx: "TypeContext",
+    line: int | None = None,
+    expected_return_type: TargetType | None = None,
+) -> Lambda:
     """Parse a semantic action and return a Lambda.
 
     Construct actions must assign to $$ (the result). For example:
@@ -544,50 +649,66 @@ def parse_action(text: str, rhs: Rhs, ctx: 'TypeContext', line: Optional[int] = 
 
     # Parse as exec mode to handle $$ = expr assignments and multi-statement actions
     try:
-        tree = ast.parse(preprocessed, mode='exec')
+        tree = ast.parse(preprocessed, mode="exec")
     except SyntaxError as e:
         raise YaccGrammarError(f"Syntax error in construct action: {e}", line)
 
     # Find the $$ assignment and any side-effect statements
-    dollar_dollar_value: Optional[ast.expr] = None
-    side_effects: List[TargetExpr] = []
+    dollar_dollar_value: ast.expr | None = None
+    side_effects: list[TargetExpr] = []
 
     for stmt in tree.body:
         if isinstance(stmt, ast.Assign) and len(stmt.targets) == 1:
             target = stmt.targets[0]
-            if isinstance(target, ast.Name) and target.id == '_dollar_dollar':
+            if isinstance(target, ast.Name) and target.id == "_dollar_dollar":
                 if dollar_dollar_value is not None:
-                    raise YaccGrammarError("Multiple assignments to $$ in construct action", line)
+                    raise YaccGrammarError(
+                        "Multiple assignments to $$ in construct action", line
+                    )
                 dollar_dollar_value = stmt.value
                 continue
         # Side-effect statement (e.g., builtin.start_fragment($1))
         if isinstance(stmt, ast.Expr):
-            expr = _convert_node_with_vars(stmt.value, param_info, params, ctx, line, {})
+            expr = _convert_node_with_vars(
+                stmt.value, param_info, params, ctx, line, {}
+            )
             side_effects.append(expr)
         else:
             raise YaccGrammarError(
                 f"Construct actions must contain $$ = expr and optional side-effect expressions. "
                 f"Got: {type(stmt).__name__}",
-                line)
+                line,
+            )
 
     if dollar_dollar_value is None:
         raise YaccGrammarError("Construct action must assign to $$", line)
 
     # Convert the $$ value expression
-    body = _convert_node_with_vars(dollar_dollar_value, param_info, params, ctx, line, {})
+    body = _convert_node_with_vars(
+        dollar_dollar_value, param_info, params, ctx, line, {}
+    )
 
     # If there are side effects, wrap in a Seq with the $$ value last
     if side_effects:
         body = Seq(tuple(side_effects) + (body,))
 
     # Use expected return type from %type declaration if provided, otherwise infer
-    return_type = expected_return_type if expected_return_type is not None else _infer_type(body, line, ctx)
+    return_type = (
+        expected_return_type
+        if expected_return_type is not None
+        else _infer_type(body, line, ctx)
+    )
     return Lambda(params, return_type, body)
 
 
-def parse_deconstruct_action(text: str, lhs_type: TargetType, rhs: 'Rhs',
-                              ctx: 'TypeContext', line: Optional[int] = None,
-                              guard: Optional[str] = None) -> Lambda:
+def parse_deconstruct_action(
+    text: str,
+    lhs_type: TargetType,
+    rhs: "Rhs",
+    ctx: "TypeContext",
+    line: int | None = None,
+    guard: str | None = None,
+) -> Lambda:
     """Parse a deconstruct action and return a Lambda.
 
     Deconstruct actions assign to $1, $2, ... for each non-literal RHS element,
@@ -618,7 +739,7 @@ def parse_deconstruct_action(text: str, lhs_type: TargetType, rhs: 'Rhs',
     text = text.strip()
 
     # Default identity: deconstruct returns $$ unchanged
-    if text == '$$' and guard is None:
+    if text == "$$" and guard is None:
         msg_param = Var("_dollar_dollar", lhs_type)
         return Lambda([msg_param], lhs_type, msg_param)
 
@@ -629,28 +750,31 @@ def parse_deconstruct_action(text: str, lhs_type: TargetType, rhs: 'Rhs',
 
     # Get the non-literal RHS element info for validation
     rhs_param_info = _get_rhs_param_info(rhs)
-    non_literal_indices = [i for i, (_, t) in enumerate(rhs_param_info) if t is not None]
+    non_literal_indices = [
+        i for i, (_, t) in enumerate(rhs_param_info) if t is not None
+    ]
 
     # Parse as statements (exec mode) to handle $N = expr assignments
     try:
-        tree = ast.parse(preprocessed, mode='exec')
+        tree = ast.parse(preprocessed, mode="exec")
     except SyntaxError as e:
         raise YaccGrammarError(f"Syntax error in deconstruct action: {e}", line)
 
     # Extract side-effects and $N assignments from the AST
     # assignments maps 1-indexed $N to the expression AST node
-    assignments: Dict[int, ast.expr] = {}
+    assignments: dict[int, ast.expr] = {}
     # type_annotations maps 1-indexed $N to the declared TargetType (if any)
-    type_annotations: Dict[int, TargetType] = {}
-    side_effects: List[ast.expr] = []
-    extra_vars: Dict[str, TargetType] = {"_dollar_dollar": lhs_type}
+    type_annotations: dict[int, TargetType] = {}
+    side_effects: list[ast.expr] = []
+    extra_vars: dict[str, TargetType] = {"_dollar_dollar": lhs_type}
 
     for stmt in tree.body:
         if isinstance(stmt, ast.Assert):
             raise YaccGrammarError(
                 "assert in deconstruct blocks is no longer supported. "
                 "Use 'deconstruct if COND:' syntax instead.",
-                line)
+                line,
+            )
         if isinstance(stmt, ast.Pass):
             continue
         if isinstance(stmt, ast.Expr):
@@ -658,21 +782,32 @@ def parse_deconstruct_action(text: str, lhs_type: TargetType, rhs: 'Rhs',
             continue
         if isinstance(stmt, ast.Assign) and len(stmt.targets) == 1:
             target = stmt.targets[0]
-            if isinstance(target, ast.Name) and target.id.startswith('_dollar_') and target.id[8:].isdigit():
+            if (
+                isinstance(target, ast.Name)
+                and target.id.startswith("_dollar_")
+                and target.id[8:].isdigit()
+            ):
                 dollar_idx = int(target.id[8:])  # 1-indexed
                 assignments[dollar_idx] = stmt.value
                 continue
         if isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Name):
             target = stmt.target
-            if target.id.startswith('_dollar_') and target.id[8:].isdigit() and stmt.value is not None:
+            if (
+                target.id.startswith("_dollar_")
+                and target.id[8:].isdigit()
+                and stmt.value is not None
+            ):
                 dollar_idx = int(target.id[8:])  # 1-indexed
                 assignments[dollar_idx] = stmt.value
-                type_annotations[dollar_idx] = _annotation_to_type(stmt.annotation, line or 0)
+                type_annotations[dollar_idx] = _annotation_to_type(
+                    stmt.annotation, line or 0
+                )
                 continue
         raise YaccGrammarError(
             f"Deconstruct actions must be side-effect expressions "
             f"or $N = expr assignments. Got: {ast.dump(stmt)}",
-            line)
+            line,
+        )
 
     # Validate all non-literal RHS elements are assigned
     expected_indices = set(i + 1 for i in non_literal_indices)  # 1-indexed
@@ -681,13 +816,15 @@ def parse_deconstruct_action(text: str, lhs_type: TargetType, rhs: 'Rhs',
     if missing:
         raise YaccGrammarError(
             f"Deconstruct action missing assignments for: {', '.join(f'${i}' for i in sorted(missing))}",
-            line)
+            line,
+        )
     extra = assigned_indices - expected_indices
     if extra:
         raise YaccGrammarError(
             f"Deconstruct action has assignments for non-existent RHS elements: "
             f"{', '.join(f'${i}' for i in sorted(extra))}",
-            line)
+            line,
+        )
 
     # Type-check annotations against the expected RHS element types
     for idx, declared_type in type_annotations.items():
@@ -695,24 +832,31 @@ def parse_deconstruct_action(text: str, lhs_type: TargetType, rhs: 'Rhs',
         rhs_idx = idx - 1
         if rhs_idx < len(rhs_param_info):
             _, expected_type = rhs_param_info[rhs_idx]
-            if expected_type is not None and not is_subtype(declared_type, expected_type):
+            if expected_type is not None and not is_subtype(
+                declared_type, expected_type
+            ):
                 raise YaccGrammarError(
                     f"Type annotation on ${idx} is {declared_type}, "
                     f"but RHS element type is {expected_type}",
-                    line)
+                    line,
+                )
 
     # Convert each assignment's value expression to target IR
-    param_info: List[Tuple[Optional[str], Optional[TargetType]]] = []
-    empty_params: List[Var] = []
-    converted: List[TargetExpr] = []
+    param_info: list[tuple[str | None, TargetType | None]] = []
+    empty_params: list[Var] = []
+    converted: list[TargetExpr] = []
     for idx in sorted(assignments.keys()):
-        expr = _convert_node_with_vars(assignments[idx], param_info, empty_params, ctx, line, extra_vars)
+        expr = _convert_node_with_vars(
+            assignments[idx], param_info, empty_params, ctx, line, extra_vars
+        )
         converted.append(expr)
 
     # Convert side-effect expressions to target IR
-    side_effect_exprs: List[TargetExpr] = []
+    side_effect_exprs: list[TargetExpr] = []
     for se_node in side_effects:
-        se_expr = _convert_node_with_vars(se_node, param_info, empty_params, ctx, line, extra_vars)
+        se_expr = _convert_node_with_vars(
+            se_node, param_info, empty_params, ctx, line, extra_vars
+        )
         side_effect_exprs.append(se_expr)
 
     # Build body from guard and assignments
@@ -720,18 +864,20 @@ def parse_deconstruct_action(text: str, lhs_type: TargetType, rhs: 'Rhs',
         # Parse the guard expression
         guard_preprocessed = preprocess_action(guard)
         try:
-            guard_tree = ast.parse(guard_preprocessed, mode='eval')
+            guard_tree = ast.parse(guard_preprocessed, mode="eval")
         except SyntaxError as e:
             raise YaccGrammarError(f"Syntax error in deconstruct guard: {e}", line)
-        guard_expr = _convert_node_with_vars(guard_tree.body, param_info, empty_params, ctx, line, extra_vars)
+        guard_expr = _convert_node_with_vars(
+            guard_tree.body, param_info, empty_params, ctx, line, extra_vars
+        )
 
         # Build guarded body: if guard met, return Some(vals); else None
         if len(converted) == 1:
-            success_body: TargetExpr = Call(_make_builtin('some'), [converted[0]])
+            success_body: TargetExpr = Call(_make_builtin("some"), [converted[0]])
             inner_type = _infer_type(converted[0], line, ctx)
         else:
-            tuple_expr = Call(_make_builtin('tuple'), converted)
-            success_body = Call(_make_builtin('some'), [tuple_expr])
+            tuple_expr = Call(_make_builtin("tuple"), converted)
+            success_body = Call(_make_builtin("some"), [tuple_expr])
             element_types = [_infer_type(c, line, ctx) for c in converted]
             inner_type = TupleType(tuple(element_types))
 
@@ -748,7 +894,7 @@ def parse_deconstruct_action(text: str, lhs_type: TargetType, rhs: 'Rhs',
         if side_effect_exprs:
             body = Seq(tuple(side_effect_exprs) + (body,))
     else:
-        body = Call(_make_builtin('tuple'), converted)
+        body = Call(_make_builtin("tuple"), converted)
         element_types = [_infer_type(c, line, ctx) for c in converted]
         return_type = TupleType(tuple(element_types))
         # Wrap with side-effects if any
@@ -758,9 +904,14 @@ def parse_deconstruct_action(text: str, lhs_type: TargetType, rhs: 'Rhs',
     return Lambda([msg_param], return_type, body)
 
 
-def parse_action_expr(text: str, param_info: List[Tuple[Optional[str], Optional[TargetType]]],
-                      params: List[Var], ctx: 'TypeContext',
-                      line: Optional[int], extra_vars: Optional[Dict[str, TargetType]] = None) -> TargetExpr:
+def parse_action_expr(
+    text: str,
+    param_info: list[tuple[str | None, TargetType | None]],
+    params: list[Var],
+    ctx: "TypeContext",
+    line: int | None,
+    extra_vars: dict[str, TargetType] | None = None,
+) -> TargetExpr:
     """Parse an action expression.
 
     Args:
@@ -776,14 +927,16 @@ def parse_action_expr(text: str, param_info: List[Tuple[Optional[str], Optional[
 
     # Try parsing as a single Python expression first
     try:
-        tree = ast.parse(text, mode='eval')
-        return _convert_node_with_vars(tree.body, param_info, params, ctx, line, extra_vars)
+        tree = ast.parse(text, mode="eval")
+        return _convert_node_with_vars(
+            tree.body, param_info, params, ctx, line, extra_vars
+        )
     except SyntaxError:
         pass
 
     # If that fails, try parsing as multiple statements (for multi-line actions)
     try:
-        tree = ast.parse(text, mode='exec')
+        tree = ast.parse(text, mode="exec")
     except SyntaxError as e:
         raise YaccGrammarError(f"Syntax error in action: {e}", line)
 
@@ -791,9 +944,15 @@ def parse_action_expr(text: str, param_info: List[Tuple[Optional[str], Optional[
     exprs = []
     for stmt in tree.body:
         if isinstance(stmt, ast.Expr):
-            exprs.append(_convert_node_with_vars(stmt.value, param_info, params, ctx, line, extra_vars))
+            exprs.append(
+                _convert_node_with_vars(
+                    stmt.value, param_info, params, ctx, line, extra_vars
+                )
+            )
         else:
-            raise YaccGrammarError(f"Unsupported statement in action block: {type(stmt).__name__}", line)
+            raise YaccGrammarError(
+                f"Unsupported statement in action block: {type(stmt).__name__}", line
+            )
 
     if len(exprs) == 1:
         return exprs[0]
@@ -802,12 +961,15 @@ def parse_action_expr(text: str, param_info: List[Tuple[Optional[str], Optional[
 
 # Helper function parsing
 
-def prescan_helper_function_names(lines: List[str], start_line: int, ctx: 'TypeContext') -> None:
+
+def prescan_helper_function_names(
+    lines: list[str], start_line: int, ctx: "TypeContext"
+) -> None:
     """Pre-scan helper functions section to register function signatures.
 
     This allows rules to reference helper functions before they are fully parsed.
     """
-    text = '\n'.join(lines)
+    text = "\n".join(lines)
     if not text.strip():
         return
 
@@ -828,14 +990,16 @@ def prescan_helper_function_names(lines: List[str], start_line: int, ctx: 'TypeC
                 pass
 
 
-def parse_helper_functions(lines: List[str], start_line: int, ctx: 'TypeContext') -> Dict[str, FunDef]:
+def parse_helper_functions(
+    lines: list[str], start_line: int, ctx: "TypeContext"
+) -> dict[str, FunDef]:
     """Parse helper functions section (Python code).
 
     Returns:
         Dictionary of function name -> FunDef
     """
     # Join lines into text
-    text = '\n'.join(lines)
+    text = "\n".join(lines)
 
     if not text.strip():
         return {}
@@ -844,14 +1008,16 @@ def parse_helper_functions(lines: List[str], start_line: int, ctx: 'TypeContext'
     try:
         tree = ast.parse(text)
     except SyntaxError as e:
-        raise YaccGrammarError(f"Syntax error in helper functions: {e}", start_line + (e.lineno or 1))
+        raise YaccGrammarError(
+            f"Syntax error in helper functions: {e}", start_line + (e.lineno or 1)
+        )
 
     # Two-pass approach:
     # Pass 1: Extract function signatures (if not already done by prescan)
     # Pass 2: Convert function bodies using the complete type environment
 
     # Pass 1: Extract function signatures and register types in ctx.functions
-    func_nodes: List[ast.FunctionDef] = []
+    func_nodes: list[ast.FunctionDef] = []
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef):
             func_nodes.append(node)
@@ -861,7 +1027,7 @@ def parse_helper_functions(lines: List[str], start_line: int, ctx: 'TypeContext'
                 ctx.functions[node.name] = func_type
 
     # Pass 2: Convert function bodies with complete type environment
-    functions: Dict[str, FunDef] = {}
+    functions: dict[str, FunDef] = {}
     for node in func_nodes:
         func_def = _convert_function_def(node, ctx, start_line)
         functions[func_def.name] = func_def
@@ -869,7 +1035,9 @@ def parse_helper_functions(lines: List[str], start_line: int, ctx: 'TypeContext'
     return functions
 
 
-def _extract_function_signature(node: ast.FunctionDef, base_line: int) -> Tuple[Tuple[Var, ...], TargetType]:
+def _extract_function_signature(
+    node: ast.FunctionDef, base_line: int
+) -> tuple[tuple[Var, ...], TargetType]:
     """Extract function signature (params, return type) without converting body.
 
     Returns (params, return_type). The function name is available from node.name.
@@ -881,40 +1049,48 @@ def _extract_function_signature(node: ast.FunctionDef, base_line: int) -> Tuple[
     for arg in node.args.args:
         param_name = arg.arg
         if arg.annotation is None:
-            raise YaccGrammarError(f"Parameter {param_name} in {name} missing type annotation",
-                                   base_line + node.lineno)
+            raise YaccGrammarError(
+                f"Parameter {param_name} in {name} missing type annotation",
+                base_line + node.lineno,
+            )
         param_type = _annotation_to_type(arg.annotation, base_line + node.lineno)
         params.append(Var(param_name, param_type))
 
     # Parse return type
     if node.returns is None:
-        raise YaccGrammarError(f"Function {name} missing return type annotation",
-                               base_line + node.lineno)
+        raise YaccGrammarError(
+            f"Function {name} missing return type annotation", base_line + node.lineno
+        )
     return_type = _annotation_to_type(node.returns, base_line + node.lineno)
 
     return tuple(params), return_type
 
 
-def _convert_function_def(node: ast.FunctionDef, ctx: 'TypeContext', base_line: int) -> FunDef:
+def _convert_function_def(
+    node: ast.FunctionDef, ctx: "TypeContext", base_line: int
+) -> FunDef:
     """Convert a Python function definition to FunDef."""
     name = node.name
 
     # Parse parameters with type annotations
     params = []
-    param_vars: Dict[str, TargetType] = {}
+    param_vars: dict[str, TargetType] = {}
     for arg in node.args.args:
         param_name = arg.arg
         if arg.annotation is None:
-            raise YaccGrammarError(f"Parameter {param_name} in {name} missing type annotation",
-                                   base_line + node.lineno)
+            raise YaccGrammarError(
+                f"Parameter {param_name} in {name} missing type annotation",
+                base_line + node.lineno,
+            )
         param_type = _annotation_to_type(arg.annotation, base_line + node.lineno)
         params.append(Var(param_name, param_type))
         param_vars[param_name] = param_type
 
     # Parse return type
     if node.returns is None:
-        raise YaccGrammarError(f"Function {name} missing return type annotation",
-                               base_line + node.lineno)
+        raise YaccGrammarError(
+            f"Function {name} missing return type annotation", base_line + node.lineno
+        )
     return_type = _annotation_to_type(node.returns, base_line + node.lineno)
 
     # Convert function body statements to target IR
@@ -923,8 +1099,12 @@ def _convert_function_def(node: ast.FunctionDef, ctx: 'TypeContext', base_line: 
     return FunDef(name, tuple(params), return_type, body)
 
 
-def _convert_function_body(stmts: List[ast.stmt], ctx: 'TypeContext', line: int,
-                           local_vars: Dict[str, TargetType]) -> TargetExpr:
+def _convert_function_body(
+    stmts: list[ast.stmt],
+    ctx: "TypeContext",
+    line: int,
+    local_vars: dict[str, TargetType],
+) -> TargetExpr:
     """Convert a list of Python statements to target IR.
 
     Returns a Seq of converted statements.
@@ -937,8 +1117,9 @@ def _convert_function_body(stmts: List[ast.stmt], ctx: 'TypeContext', line: int,
     return Seq(tuple(converted))
 
 
-def _convert_stmt(stmt: ast.stmt, ctx: 'TypeContext', line: int,
-                  local_vars: Dict[str, TargetType]) -> TargetExpr:
+def _convert_stmt(
+    stmt: ast.stmt, ctx: "TypeContext", line: int, local_vars: dict[str, TargetType]
+) -> TargetExpr:
     """Convert a single Python statement to target IR."""
     if isinstance(stmt, ast.Return):
         if stmt.value is None:
@@ -967,7 +1148,8 @@ def _convert_stmt(stmt: ast.stmt, ctx: 'TypeContext', line: int,
             raise YaccGrammarError(
                 f"Local variable '{var_name}' must have a type annotation. "
                 f"Use '{var_name}: Type = ...' instead of '{var_name} = ...'",
-                line)
+                line,
+            )
         # Re-assignment to already-declared variable
         var_type = local_vars[var_name]
         value = _convert_func_expr(stmt.value, ctx, line, local_vars)
@@ -994,12 +1176,18 @@ def _convert_stmt(stmt: ast.stmt, ctx: 'TypeContext', line: int,
         if isinstance(col_type, (ListType, SequenceType)):
             elem_type = col_type.element_type
         else:
-            raise YaccGrammarError(f"Cannot iterate over non-list type: {col_type}", line)
+            raise YaccGrammarError(
+                f"Cannot iterate over non-list type: {col_type}", line
+            )
         if isinstance(stmt.target, ast.Tuple) and len(stmt.target.elts) == 2:
             # for (i, x) in enumerate(collection)
             idx_target, val_target = stmt.target.elts
-            if not isinstance(idx_target, ast.Name) or not isinstance(val_target, ast.Name):
-                raise YaccGrammarError("Only simple variable names supported in for loop", line)
+            if not isinstance(idx_target, ast.Name) or not isinstance(
+                val_target, ast.Name
+            ):
+                raise YaccGrammarError(
+                    "Only simple variable names supported in for loop", line
+                )
             idx_var = Var(idx_target.id, BaseType("Int64"))
             val_var = Var(val_target.id, elem_type)
             local_vars[idx_target.id] = idx_var.type
@@ -1012,24 +1200,32 @@ def _convert_stmt(stmt: ast.stmt, ctx: 'TypeContext', line: int,
             body = _convert_function_body(stmt.body, ctx, line, local_vars)
             return Foreach(var, collection, body)
         else:
-            raise YaccGrammarError("Only simple variable names supported in for loop", line)
+            raise YaccGrammarError(
+                "Only simple variable names supported in for loop", line
+            )
 
     elif isinstance(stmt, ast.Expr):
         # Expression statement (e.g., function call with side effects)
         return _convert_func_expr(stmt.value, ctx, line, local_vars)
 
     else:
-        raise YaccGrammarError(f"Unsupported statement type: {type(stmt).__name__}", line)
+        raise YaccGrammarError(
+            f"Unsupported statement type: {type(stmt).__name__}", line
+        )
 
 
-def _make_get_field(obj: TargetExpr, field_name: str, ctx: 'TypeContext', line: Optional[int] = None) -> GetField:
+def _make_get_field(
+    obj: TargetExpr, field_name: str, ctx: "TypeContext", line: int | None = None
+) -> GetField:
     """Create a GetField expression, looking up field type if possible."""
     obj_type = obj.target_type()
     # Unwrap OptionType - we assume caller has checked for None
     if isinstance(obj_type, OptionType):
         obj_type = obj_type.element_type
     if not isinstance(obj_type, MessageType):
-        raise YaccGrammarError(f"Cannot access field '{field_name}' on non-message type: {obj_type}", line)
+        raise YaccGrammarError(
+            f"Cannot access field '{field_name}' on non-message type: {obj_type}", line
+        )
     message_type = obj_type
     if ctx.field_type_lookup is None:
         return GetField(obj, field_name, message_type, BaseType("Unknown"))
@@ -1039,19 +1235,20 @@ def _make_get_field(obj: TargetExpr, field_name: str, ctx: 'TypeContext', line: 
     return GetField(obj, field_name, message_type, field_type)
 
 
-def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
-                       local_vars: Dict[str, TargetType]) -> TargetExpr:
+def _convert_func_expr(
+    node: ast.expr, ctx: "TypeContext", line: int, local_vars: dict[str, TargetType]
+) -> TargetExpr:
     """Convert a Python expression in a function body to target IR."""
     if isinstance(node, ast.Constant):
         return Lit(node.value)
 
     elif isinstance(node, ast.Name):
         name = node.id
-        if name == 'True':
+        if name == "True":
             return Lit(True)
-        elif name == 'False':
+        elif name == "False":
             return Lit(False)
-        elif name == 'None':
+        elif name == "None":
             return Lit(None)
         elif name in local_vars:
             return Var(name, local_vars[name])
@@ -1059,14 +1256,16 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
             return _make_named_fun(name, ctx.functions[name])
         else:
             from .target_builtins import is_builtin
+
             if is_builtin(name):
                 return make_builtin(name)
             raise YaccGrammarError(f"Unknown variable: {name}", line)
 
     elif isinstance(node, ast.Attribute):
         # Check for module.Enum.VALUE pattern (three levels)
-        if (isinstance(node.value, ast.Attribute) and
-            isinstance(node.value.value, ast.Name)):
+        if isinstance(node.value, ast.Attribute) and isinstance(
+            node.value.value, ast.Name
+        ):
             module_name = node.value.value.id
             possible_enum = node.value.attr
             value_name = node.attr
@@ -1079,7 +1278,9 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
                     if value_name not in valid:
                         raise YaccGrammarError(
                             f"Unknown enum value '{value_name}' for enum {module_name}.{possible_enum}. "
-                            f"Valid values: {valid}", line)
+                            f"Valid values: {valid}",
+                            line,
+                        )
                     return EnumValue(module_name, possible_enum, value_name)
 
             # Not an enum, could be nested field access
@@ -1106,10 +1307,13 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
         args = [_convert_func_expr(a, ctx, line, local_vars) for a in node.args]
 
         # Handle list[T]() -> typed empty list
-        if (isinstance(func, ast.Subscript)
-                and isinstance(func.value, ast.Name)
-                and func.value.id == 'list'
-                and not args and not node.keywords):
+        if (
+            isinstance(func, ast.Subscript)
+            and isinstance(func.value, ast.Name)
+            and func.value.id == "list"
+            and not args
+            and not node.keywords
+        ):
             elem_type = _annotation_to_type(func.slice, line)
             return ListExpr([], elem_type)
 
@@ -1142,17 +1346,18 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
         if isinstance(func, ast.Name):
             func_name = func.id
             # Check for dict() builtin
-            if func_name == 'dict':
+            if func_name == "dict":
                 if len(args) == 1:
-                    return Call(make_builtin('dict_from_list'), args)
+                    return Call(make_builtin("dict_from_list"), args)
                 raise YaccGrammarError("dict() requires exactly one argument", line)
             # User-defined functions take precedence over builtins
             if func_name in ctx.functions:
                 return Call(_make_named_fun(func_name, ctx.functions[func_name]), args)
             # has_field(msg, field_name) -> has_proto_field builtin
-            if func_name == 'has_field':
-                return Call(make_builtin('has_proto_field'), args)
+            if func_name == "has_field":
+                return Call(make_builtin("has_proto_field"), args)
             from .target_builtins import is_builtin
+
             if is_builtin(func_name):
                 return Call(make_builtin(func_name), args)
             raise YaccGrammarError(f"Unknown function: {func_name}", line)
@@ -1173,7 +1378,9 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
             if isinstance(obj_type, MessageType):
                 method_ref = _make_get_field(obj, method_name, ctx, line)
                 return Call(method_ref, args)
-            raise YaccGrammarError(f"Cannot call method '{method_name}' on type {obj_type}", line)
+            raise YaccGrammarError(
+                f"Cannot call method '{method_name}' on type {obj_type}", line
+            )
 
         func_expr = _convert_func_expr(func, ctx, line, local_vars)
         return Call(func_expr, args)
@@ -1183,7 +1390,8 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
         if not elements:
             raise YaccGrammarError(
                 "Empty list [] is not allowed; use list[T]() to specify the element type.",
-                line)
+                line,
+            )
         return _make_list_expr(elements, line, ctx)
 
     elif isinstance(node, ast.IfExp):
@@ -1199,11 +1407,17 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
             right = _convert_func_expr(node.comparators[0], ctx, line, local_vars)
             op = node.ops[0]
             if isinstance(op, ast.Is):
-                if isinstance(node.comparators[0], ast.Constant) and node.comparators[0].value is None:
+                if (
+                    isinstance(node.comparators[0], ast.Constant)
+                    and node.comparators[0].value is None
+                ):
                     return Call(make_builtin("is_none"), [left])
                 return Call(make_builtin("equal"), [left, right])
             elif isinstance(op, ast.IsNot):
-                if isinstance(node.comparators[0], ast.Constant) and node.comparators[0].value is None:
+                if (
+                    isinstance(node.comparators[0], ast.Constant)
+                    and node.comparators[0].value is None
+                ):
                     return Call(make_builtin("is_some"), [left])
                 return Call(make_builtin("not_equal"), [left, right])
             elif isinstance(op, ast.Eq):
@@ -1221,7 +1435,10 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
             elif isinstance(op, ast.In):
                 return Call(make_builtin("string_in_list"), [left, right])
             elif isinstance(op, ast.NotIn):
-                return Call(make_builtin("not"), [Call(make_builtin("string_in_list"), [left, right])])
+                return Call(
+                    make_builtin("not"),
+                    [Call(make_builtin("string_in_list"), [left, right])],
+                )
         raise YaccGrammarError(f"Unsupported comparison: {ast.dump(node)}", line)
 
     elif isinstance(node, ast.BoolOp):
@@ -1229,12 +1446,18 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
         if isinstance(node.op, ast.And):
             result = _convert_func_expr(node.values[0], ctx, line, local_vars)
             for val in node.values[1:]:
-                result = Call(make_builtin("and"), [result, _convert_func_expr(val, ctx, line, local_vars)])
+                result = Call(
+                    make_builtin("and"),
+                    [result, _convert_func_expr(val, ctx, line, local_vars)],
+                )
             return result
         elif isinstance(node.op, ast.Or):
             result = _convert_func_expr(node.values[0], ctx, line, local_vars)
             for val in node.values[1:]:
-                result = Call(make_builtin("or"), [result, _convert_func_expr(val, ctx, line, local_vars)])
+                result = Call(
+                    make_builtin("or"),
+                    [result, _convert_func_expr(val, ctx, line, local_vars)],
+                )
             return result
         raise YaccGrammarError("Unsupported boolean operation", line)
 
@@ -1251,18 +1474,28 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
             return Call(make_builtin("divide"), [left, right])
         elif isinstance(node.op, ast.Mod):
             return Call(make_builtin("modulo"), [left, right])
-        raise YaccGrammarError(f"Unsupported binary operation: {type(node.op).__name__}", line)
+        raise YaccGrammarError(
+            f"Unsupported binary operation: {type(node.op).__name__}", line
+        )
 
     elif isinstance(node, ast.Tuple):
         elements = [_convert_func_expr(e, ctx, line, local_vars) for e in node.elts]
-        return Call(make_builtin('tuple'), elements)
+        return Call(make_builtin("tuple"), elements)
 
     elif isinstance(node, ast.UnaryOp):
         if isinstance(node.op, ast.Not):
-            return Call(make_builtin("not"), [_convert_func_expr(node.operand, ctx, line, local_vars)])
+            return Call(
+                make_builtin("not"),
+                [_convert_func_expr(node.operand, ctx, line, local_vars)],
+            )
         elif isinstance(node.op, ast.USub):
-            return Call(make_builtin("subtract"), [Lit(0), _convert_func_expr(node.operand, ctx, line, local_vars)])
-        raise YaccGrammarError(f"Unsupported unary operation: {type(node.op).__name__}", line)
+            return Call(
+                make_builtin("subtract"),
+                [Lit(0), _convert_func_expr(node.operand, ctx, line, local_vars)],
+            )
+        raise YaccGrammarError(
+            f"Unsupported unary operation: {type(node.op).__name__}", line
+        )
 
     elif isinstance(node, ast.Subscript):
         value = _convert_func_expr(node.value, ctx, line, local_vars)
@@ -1271,16 +1504,19 @@ def _convert_func_expr(node: ast.expr, ctx: 'TypeContext', line: int,
         raise YaccGrammarError("Only constant integer subscripts supported", line)
 
     else:
-        raise YaccGrammarError(f"Unsupported expression type: {type(node).__name__}: {ast.dump(node)}", line)
+        raise YaccGrammarError(
+            f"Unsupported expression type: {type(node).__name__}: {ast.dump(node)}",
+            line,
+        )
 
 
 # Mapping from Python type names to canonical IR type names
 _PYTHON_TYPE_MAP = {
-    'int': 'Int64',
-    'float': 'Float64',
-    'str': 'String',
-    'bool': 'Boolean',
-    'bytes': 'Bytes',
+    "int": "Int64",
+    "float": "Float64",
+    "str": "String",
+    "bool": "Boolean",
+    "bytes": "Bytes",
 }
 
 
@@ -1299,27 +1535,29 @@ def _annotation_to_type(node: ast.AST, line: int) -> TargetType:
     elif isinstance(node, ast.Subscript):
         if isinstance(node.value, ast.Name):
             container = node.value.id
-            if container == 'Sequence':
+            if container == "Sequence":
                 elem_type = _annotation_to_type(node.slice, line)
                 return SequenceType(elem_type)
-            elif container == 'List' or container == 'list':
+            elif container == "List" or container == "list":
                 elem_type = _annotation_to_type(node.slice, line)
                 return ListType(elem_type)
-            elif container == 'Optional':
+            elif container == "Optional":
                 elem_type = _annotation_to_type(node.slice, line)
                 return OptionType(elem_type)
-            elif container == 'Tuple' or container == 'tuple':
+            elif container == "Tuple" or container == "tuple":
                 if isinstance(node.slice, ast.Tuple):
                     elem_types = [_annotation_to_type(e, line) for e in node.slice.elts]
                 else:
                     elem_types = [_annotation_to_type(node.slice, line)]
                 return TupleType(tuple(elem_types))
-            elif container == 'Dict' or container == 'dict':
+            elif container == "Dict" or container == "dict":
                 if isinstance(node.slice, ast.Tuple) and len(node.slice.elts) == 2:
                     key_type = _annotation_to_type(node.slice.elts[0], line)
                     value_type = _annotation_to_type(node.slice.elts[1], line)
                     return DictType(key_type, value_type)
-                raise YaccGrammarError("dict type requires exactly 2 type arguments", line)
+                raise YaccGrammarError(
+                    "dict type requires exactly 2 type arguments", line
+                )
         raise YaccGrammarError(f"Invalid type annotation: {ast.dump(node)}", line)
     else:
         raise YaccGrammarError(f"Invalid type annotation: {ast.dump(node)}", line)
@@ -1327,49 +1565,51 @@ def _annotation_to_type(node: ast.AST, line: int) -> TargetType:
 
 # TypeContext is defined here to avoid circular imports, but it's also
 # re-exported from yacc_parser for convenience.
+from collections.abc import Callable  # noqa: E402
 from dataclasses import dataclass, field  # noqa: E402
 
-from typing import Callable  # noqa: E402
 
 @dataclass
 class TypeContext:
     """Context for looking up types of terminals and nonterminals."""
-    terminals: Dict[str, TargetType] = field(default_factory=dict)
-    terminal_info: Dict[str, 'TerminalInfo'] = field(default_factory=dict)
-    nonterminals: Dict[str, TargetType] = field(default_factory=dict)
-    functions: Dict[str, FunctionType] = field(default_factory=dict)
-    start_symbol: Optional[str] = None
+
+    terminals: dict[str, TargetType] = field(default_factory=dict)
+    terminal_info: dict[str, "TerminalInfo"] = field(default_factory=dict)
+    nonterminals: dict[str, TargetType] = field(default_factory=dict)
+    functions: dict[str, FunctionType] = field(default_factory=dict)
+    start_symbol: str | None = None
     # Callback to look up field type: (message_type, field_name) -> field_type
     # If None, field type resolution will raise an error
-    field_type_lookup: Optional[Callable[[MessageType, str], Optional[TargetType]]] = None
+    field_type_lookup: Callable[[MessageType, str], TargetType | None] | None = None
     # Callback to look up enum values: (module, enum_name) -> [(value_name, value_num), ...]
     # If None, enum values cannot be validated
-    enum_lookup: Optional[Callable[[str, str], Optional[List[Tuple[str, int]]]]] = None
+    enum_lookup: Callable[[str, str], list[tuple[str, int]] | None] | None = None
     # Callback to check if (module, name) is a message type
-    message_lookup: Optional[Callable[[str, str], bool]] = None
+    message_lookup: Callable[[str, str], bool] | None = None
 
 
 @dataclass
 class TerminalInfo:
     """Information about a terminal symbol."""
+
     type: TargetType
-    pattern: Optional[str] = None
+    pattern: str | None = None
     is_regex: bool = True  # True for r'...' patterns, False for '...' literals
 
 
 __all__ = [
-    'YaccGrammarError',
-    'TypeContext',
-    'TerminalInfo',
-    'parse_action',
-    'parse_deconstruct_action',
-    'parse_action_expr',
-    'parse_helper_functions',
-    'prescan_helper_function_names',
-    'preprocess_action',
-    '_get_rhs_param_info',
-    '_get_rhs_param_types',
-    '_build_params',
-    '_infer_type',
-    '_convert_node_with_vars',
+    "YaccGrammarError",
+    "TypeContext",
+    "TerminalInfo",
+    "parse_action",
+    "parse_deconstruct_action",
+    "parse_action_expr",
+    "parse_helper_functions",
+    "prescan_helper_function_names",
+    "preprocess_action",
+    "_get_rhs_param_info",
+    "_get_rhs_param_types",
+    "_build_params",
+    "_infer_type",
+    "_convert_node_with_vars",
 ]

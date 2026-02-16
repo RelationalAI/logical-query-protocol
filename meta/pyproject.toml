@@ -5,15 +5,17 @@ description = "Code generation meta-tools for the Logical Query Protocol"
 authors = [
     { name = "Nate Nystrom", email = "nate.nystrom@relational.ai" },
 ]
+requires-python = ">=3.10"
 dependencies = []
 
 [project.scripts]
 lqp-meta-tool = "meta.cli:main"
 
-[project.optional-dependencies]
-test = [
+[dependency-groups]
+dev = [
     "pytest>=7.0.0",
     "pyrefly==0.25.1",
+    "ruff",
 ]
 
 [build-system]
@@ -22,6 +24,20 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.package-data]
 meta = ["grammar.y", "*.template"]
+
+[tool.ruff]
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v"
 
 [tool.pyright]
 include = ["src", "tests"]

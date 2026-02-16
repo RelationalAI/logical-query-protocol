@@ -4,13 +4,30 @@
 import pytest
 
 from meta.target import (
+    Assign,
     # Types
-    BaseType, MessageType, TupleType, ListType, OptionType, FunctionType,
-    # Expressions
-    Var, Lit, Symbol, Builtin, NewMessage, Call, Lambda, Let, IfElse,
-    Seq, While, Assign, Return, GetElement,
+    BaseType,
+    Builtin,
+    Call,
+    FunctionType,
     # Definitions
     FunDef,
+    GetElement,
+    IfElse,
+    Lambda,
+    Let,
+    ListType,
+    Lit,
+    MessageType,
+    NewMessage,
+    OptionType,
+    Return,
+    Seq,
+    Symbol,
+    TupleType,
+    # Expressions
+    Var,
+    While,
     # Utilities
     gensym,
 )
@@ -29,6 +46,7 @@ def _test_builtin(name: str) -> Builtin:
 # ============================================================================
 # Type Tests
 # ============================================================================
+
 
 class TestBaseType:
     """Tests for BaseType."""
@@ -193,6 +211,7 @@ class TestFunctionType:
 # Expression Tests
 # ============================================================================
 
+
 class TestVar:
     """Tests for Var."""
 
@@ -214,7 +233,6 @@ class TestVar:
 
         with pytest.raises(ValueError, match="Invalid variable name"):
             Var("with-dash", BaseType("String"))
-
 
 
 class TestLit:
@@ -351,7 +369,6 @@ class TestCall:
         assert str(outer) == "%process(%get_x(), 42)"
 
 
-
 class TestLambda:
     """Tests for Lambda."""
 
@@ -377,7 +394,6 @@ class TestLambda:
         body = Var("x", BaseType("Int64"))
         lam = Lambda([param], BaseType("Int64"), body)
         assert str(lam) == "lambda x::Int64 -> Int64: x::Int64"
-
 
 
 class TestLet:
@@ -414,7 +430,6 @@ class TestLet:
         assert "let y" in str(outer)
 
 
-
 class TestIfElse:
     """Tests for IfElse."""
 
@@ -444,7 +459,6 @@ class TestIfElse:
         outer = IfElse(cond1, Lit("x"), inner)
         assert "if (a" in str(outer)
         assert "if (b" in str(outer)
-
 
 
 class TestSeq:
@@ -477,7 +491,6 @@ class TestSeq:
             Seq([])
 
 
-
 class TestWhile:
     """Tests for While."""
 
@@ -497,7 +510,6 @@ class TestWhile:
         assert str(loop) == "while (flag::Boolean) 1"
 
 
-
 class TestAssign:
     """Tests for Assign."""
 
@@ -515,7 +527,6 @@ class TestAssign:
         expr = Lit("hello")
         assign = Assign(var, expr)
         assert str(assign) == "result = 'hello'"
-
 
 
 class TestReturn:
@@ -557,7 +568,10 @@ class TestGetElement:
 
     def test_construction_second_element(self):
         """Test GetElement construction for second element."""
-        tuple_expr = Var("triple", TupleType([BaseType("Int64"), BaseType("String"), BaseType("Boolean")]))
+        tuple_expr = Var(
+            "triple",
+            TupleType([BaseType("Int64"), BaseType("String"), BaseType("Boolean")]),
+        )
         elem = GetElement(tuple_expr, 2)
         assert elem.index == 2
 
@@ -577,7 +591,9 @@ class TestGetElement:
         """Test GetElement with negative index raises error."""
         tuple_expr = Var("pair", TupleType([BaseType("Int64"), BaseType("String")]))
         # GetElement validates index at construction time
-        with pytest.raises(AssertionError, match="GetElement index must be non-negative integer"):
+        with pytest.raises(
+            AssertionError, match="GetElement index must be non-negative integer"
+        ):
             GetElement(tuple_expr, -1)
 
     def test_nested_tuple_access(self):
@@ -612,6 +628,7 @@ class TestGetElement:
 # Definition Tests
 # ============================================================================
 
+
 class TestFunDef:
     """Tests for FunDef."""
 
@@ -643,6 +660,7 @@ class TestFunDef:
 # ============================================================================
 # Utility Tests
 # ============================================================================
+
 
 class TestGensym:
     """Tests for gensym utility."""
@@ -712,7 +730,11 @@ class TestComplexExpressions:
         arg1 = Var("epochs", ListType(MessageType("proto", "Epoch")))
         arg2 = Var("configure", OptionType(MessageType("proto", "Configure")))
         arg3 = Var("sync", OptionType(MessageType("proto", "Sync")))
-        ctor = NewMessage("proto", "Transaction", (("epochs", arg1), ("configure", arg2), ("sync", arg3)))
+        ctor = NewMessage(
+            "proto",
+            "Transaction",
+            (("epochs", arg1), ("configure", arg2), ("sync", arg3)),
+        )
 
         assert len(ctor.fields) == 3
         assert ctor.name == "Transaction"
@@ -730,12 +752,14 @@ class TestComplexExpressions:
         """Test complex tuple with various types."""
         # (Int64, List[String], Option[MessageType], (Boolean, Float64))
         inner_tuple = TupleType([BaseType("Boolean"), BaseType("Float64")])
-        t = TupleType([
-            BaseType("Int64"),
-            ListType(BaseType("String")),
-            OptionType(MessageType("proto", "Value")),
-            inner_tuple
-        ])
+        t = TupleType(
+            [
+                BaseType("Int64"),
+                ListType(BaseType("String")),
+                OptionType(MessageType("proto", "Value")),
+                inner_tuple,
+            ]
+        )
 
         assert len(t.elements) == 4
         assert "List[String]" in str(t)

@@ -11,8 +11,20 @@ code for each builtin, but they should validate against this registry.
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Union
-from .target import TargetType, BaseType, VarType, MessageType, SequenceType, ListType, TupleType, OptionType, FunctionType, DictType, Builtin
+
+from .target import (
+    BaseType,
+    Builtin,
+    DictType,
+    FunctionType,
+    ListType,
+    MessageType,
+    OptionType,
+    SequenceType,
+    TargetType,
+    TupleType,
+    VarType,
+)
 
 # Type aliases for convenience
 ANY = VarType("Any")
@@ -23,7 +35,7 @@ STRING = BaseType("String")
 BOOLEAN = BaseType("Boolean")
 BYTES = BaseType("Bytes")
 TOKEN = VarType("Token")
-NONE = OptionType(BaseType("Never")) # the type of None
+NONE = OptionType(BaseType("Never"))  # the type of None
 NEVER = BaseType("Never")
 
 
@@ -39,8 +51,9 @@ class BuiltinSignature:
     is_primitive: True if this builtin has no IR body and must be implemented
                   by the code generator. False if it has an IR definition.
     """
+
     name: str
-    param_types: Union[List[TargetType], int]  # List of types or -1 for variadic
+    param_types: list[TargetType] | int  # List of types or -1 for variadic
     return_type: TargetType
     is_primitive: bool = True
 
@@ -58,16 +71,25 @@ class BuiltinSignature:
 
 # Registry of all known builtins
 # This should be kept in sync with what code generators implement
-BUILTIN_REGISTRY: Dict[str, BuiltinSignature] = {}
+BUILTIN_REGISTRY: dict[str, BuiltinSignature] = {}
 
-def register_builtin(name: str, param_types: Union[List[TargetType], int],
-                     return_type: TargetType, is_primitive: bool = True) -> None:
+
+def register_builtin(
+    name: str,
+    param_types: list[TargetType] | int,
+    return_type: TargetType,
+    is_primitive: bool = True,
+) -> None:
     """Register a builtin in the registry."""
-    BUILTIN_REGISTRY[name] = BuiltinSignature(name, param_types, return_type, is_primitive)
+    BUILTIN_REGISTRY[name] = BuiltinSignature(
+        name, param_types, return_type, is_primitive
+    )
 
-def get_builtin(name: str) -> Optional[BuiltinSignature]:
+
+def get_builtin(name: str) -> BuiltinSignature | None:
     """Get builtin signature by name, or None if not found."""
     return BUILTIN_REGISTRY.get(name)
+
 
 def is_builtin(name: str) -> bool:
     """Check if a name is a registered builtin."""
@@ -111,8 +133,12 @@ register_builtin("unwrap_option_or", [OptionType(T), T], T)
 
 # === List/Sequence operations ===
 register_builtin("list_concat", [SequenceType(T), SequenceType(T)], ListType(T))
-register_builtin("list_push", [ListType(T), T], NONE)  # Mutating push: list.append(item) / push!(list, item)
-register_builtin("list_slice", [SequenceType(T), INT64, INT64], ListType(T))  # list[start:end]
+register_builtin(
+    "list_push", [ListType(T), T], NONE
+)  # Mutating push: list.append(item) / push!(list, item)
+register_builtin(
+    "list_slice", [SequenceType(T), INT64, INT64], ListType(T)
+)  # list[start:end]
 register_builtin("list_sort", [SequenceType(T)], ListType(T))
 register_builtin("length", [SequenceType(T)], INT64)
 register_builtin("map", [FunctionType([T1], T2), SequenceType(T1)], ListType(T2))
@@ -149,20 +175,44 @@ register_builtin("error", [STRING], BaseType("Never"))
 register_builtin("error_with_token", [STRING, TOKEN], BaseType("Never"))
 
 # === Protobuf-specific ===
-register_builtin("fragment_id_from_string", [STRING], MessageType("fragments", "FragmentId"))
-register_builtin("fragment_id_to_string", [MessageType("fragments", "FragmentId")], STRING)
-register_builtin("relation_id_from_string", [STRING], MessageType("logic", "RelationId"))
-register_builtin("relation_id_from_uint128", [MessageType("logic", "UInt128Value")], MessageType("logic", "RelationId"))
+register_builtin(
+    "fragment_id_from_string", [STRING], MessageType("fragments", "FragmentId")
+)
+register_builtin(
+    "fragment_id_to_string", [MessageType("fragments", "FragmentId")], STRING
+)
+register_builtin(
+    "relation_id_from_string", [STRING], MessageType("logic", "RelationId")
+)
+register_builtin(
+    "relation_id_from_uint128",
+    [MessageType("logic", "UInt128Value")],
+    MessageType("logic", "RelationId"),
+)
 register_builtin("relation_id_from_int", [INT64], MessageType("logic", "RelationId"))
 register_builtin("relation_id_to_string", [MessageType("logic", "RelationId")], STRING)
-register_builtin("relation_id_to_int", [MessageType("logic", "RelationId")], OptionType(INT64))
-register_builtin("relation_id_to_uint128", [MessageType("logic", "RelationId")], MessageType("logic", "UInt128Value"))
-register_builtin("construct_fragment",
-                 [MessageType("fragments", "FragmentId"),
-                  SequenceType(MessageType("logic", "Declaration"))],
-                 MessageType("fragments", "Fragment"))
-register_builtin("start_fragment", [MessageType("fragments", "FragmentId")], BaseType("None"))
-register_builtin("start_pretty_fragment", [MessageType("fragments", "Fragment")], BaseType("None"))
+register_builtin(
+    "relation_id_to_int", [MessageType("logic", "RelationId")], OptionType(INT64)
+)
+register_builtin(
+    "relation_id_to_uint128",
+    [MessageType("logic", "RelationId")],
+    MessageType("logic", "UInt128Value"),
+)
+register_builtin(
+    "construct_fragment",
+    [
+        MessageType("fragments", "FragmentId"),
+        SequenceType(MessageType("logic", "Declaration")),
+    ],
+    MessageType("fragments", "Fragment"),
+)
+register_builtin(
+    "start_fragment", [MessageType("fragments", "FragmentId")], BaseType("None")
+)
+register_builtin(
+    "start_pretty_fragment", [MessageType("fragments", "Fragment")], BaseType("None")
+)
 
 # === Dict operations ===
 register_builtin("dict_from_list", [SequenceType(TupleType([K, V]))], DictType(K, V))
@@ -198,7 +248,8 @@ register_builtin("format_uint128", [MessageType("logic", "UInt128Value")], STRIN
 
 # === Validation functions ===
 
-def validate_builtin_call(name: str, num_args: int) -> Optional[str]:
+
+def validate_builtin_call(name: str, num_args: int) -> str | None:
     """Validate a builtin call.
 
     Returns None if valid, or an error message if invalid.
@@ -234,7 +285,9 @@ def make_builtin(name: str) -> Builtin:
     if sig is None:
         raise ValueError(f"Unknown builtin: {name}")
     # Convert BuiltinSignature to FunctionType
-    param_types: List[TargetType] = [] if isinstance(sig.param_types, int) else list(sig.param_types)
+    param_types: list[TargetType] = (
+        [] if isinstance(sig.param_types, int) else list(sig.param_types)
+    )
     func_type = FunctionType(param_types, sig.return_type)
     return Builtin(name, func_type)
 
@@ -256,15 +309,27 @@ def make_builtin_with_type(name: str, func_type: FunctionType) -> Builtin:
 
 
 __all__ = [
-    'BuiltinSignature',
-    'BUILTIN_REGISTRY',
-    'register_builtin',
-    'get_builtin',
-    'is_builtin',
-    'validate_builtin_call',
-    'make_builtin',
-    'make_builtin_with_type',
+    "BuiltinSignature",
+    "BUILTIN_REGISTRY",
+    "register_builtin",
+    "get_builtin",
+    "is_builtin",
+    "validate_builtin_call",
+    "make_builtin",
+    "make_builtin_with_type",
     # Type constants
-    'ANY', 'INT64', 'INT32', 'FLOAT64', 'STRING', 'BOOLEAN', 'BYTES', 'NONE', 'NEVER',
-    'T', 'T1', 'T2', 'K', 'V',
+    "ANY",
+    "INT64",
+    "INT32",
+    "FLOAT64",
+    "STRING",
+    "BOOLEAN",
+    "BYTES",
+    "NONE",
+    "NEVER",
+    "T",
+    "T1",
+    "T2",
+    "K",
+    "V",
 ]

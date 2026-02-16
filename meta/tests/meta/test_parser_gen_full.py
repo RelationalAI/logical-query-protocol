@@ -15,7 +15,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 
 # Paths to the actual proto and grammar files
-PROTO_DIR = Path(__file__).parent.parent.parent.parent / "proto" / "relationalai" / "lqp" / "v1"
+PROTO_DIR = (
+    Path(__file__).parent.parent.parent.parent / "proto" / "relationalai" / "lqp" / "v1"
+)
 GRAMMAR_PATH = Path(__file__).parent.parent.parent / "src" / "meta" / "grammar.y"
 
 
@@ -35,9 +37,9 @@ def load_grammar_and_protos():
     Returns:
         tuple: (grammar, proto_messages)
     """
+    from meta.grammar import Grammar, Token
     from meta.proto_parser import ProtoParser
     from meta.yacc_parser import load_yacc_grammar_file
-    from meta.grammar import Grammar, Token
 
     proto_files = get_proto_files()
 
@@ -50,8 +52,12 @@ def load_grammar_and_protos():
         proto_parser.parse_file(proto_file)
 
     # Load grammar config from file (with proto info for field type resolution)
-    proto_messages_dict = {(msg.module, name): msg for name, msg in proto_parser.messages.items()}
-    grammar_config = load_yacc_grammar_file(GRAMMAR_PATH, proto_messages_dict, proto_parser.enums)
+    proto_messages_dict = {
+        (msg.module, name): msg for name, msg in proto_parser.messages.items()
+    }
+    grammar_config = load_yacc_grammar_file(
+        GRAMMAR_PATH, proto_messages_dict, proto_parser.enums
+    )
 
     # Build Grammar object from config (same as cli.py does)
     start = None
@@ -66,7 +72,7 @@ def load_grammar_and_protos():
     grammar = Grammar(
         start=start,
         ignored_completeness=grammar_config.ignored_completeness,
-        function_defs=grammar_config.function_defs
+        function_defs=grammar_config.function_defs,
     )
     for _, rules in grammar_config.rules.items():
         for rule in rules:
@@ -75,10 +81,14 @@ def load_grammar_and_protos():
     # Add tokens with patterns from terminal declarations
     for terminal_name, terminal_def in grammar_config.terminal_patterns.items():
         if terminal_def.pattern is not None:
-            grammar.tokens.append(Token(terminal_name, terminal_def.pattern, terminal_def.type))
+            grammar.tokens.append(
+                Token(terminal_name, terminal_def.pattern, terminal_def.type)
+            )
 
     # Transform messages dict from {name: ProtoMessage} to {(module, name): ProtoMessage}
-    proto_messages = {(msg.module, name): msg for name, msg in proto_parser.messages.items()}
+    proto_messages = {
+        (msg.module, name): msg for name, msg in proto_parser.messages.items()
+    }
 
     return grammar, proto_messages
 
@@ -93,7 +103,9 @@ class TestPythonParserGeneratorFull:
         grammar, proto_messages = load_grammar_and_protos()
 
         # Generate parser - should complete without error
-        output = generate_parser_python(grammar, command_line="test", proto_messages=proto_messages)
+        output = generate_parser_python(
+            grammar, command_line="test", proto_messages=proto_messages
+        )
 
         # Basic sanity checks on output
         assert output is not None
@@ -104,11 +116,14 @@ class TestPythonParserGeneratorFull:
     def test_generated_python_has_valid_syntax(self):
         """Test that generated Python parser has valid syntax."""
         import ast
+
         from meta.parser_gen_python import generate_parser_python
 
         grammar, proto_messages = load_grammar_and_protos()
 
-        output = generate_parser_python(grammar, command_line="test", proto_messages=proto_messages)
+        output = generate_parser_python(
+            grammar, command_line="test", proto_messages=proto_messages
+        )
 
         # Parse the generated code to check syntax
         try:
@@ -127,7 +142,9 @@ class TestJuliaParserGeneratorFull:
         grammar, proto_messages = load_grammar_and_protos()
 
         # Generate parser - should complete without error
-        output = generate_parser_julia(grammar, command_line="test", proto_messages=proto_messages)
+        output = generate_parser_julia(
+            grammar, command_line="test", proto_messages=proto_messages
+        )
 
         # Basic sanity checks on output
         assert output is not None
@@ -141,7 +158,9 @@ class TestJuliaParserGeneratorFull:
 
         grammar, proto_messages = load_grammar_and_protos()
 
-        output = generate_parser_julia(grammar, command_line="test", proto_messages=proto_messages)
+        output = generate_parser_julia(
+            grammar, command_line="test", proto_messages=proto_messages
+        )
 
         # Check for expected Julia constructs
         assert "struct Token" in output
@@ -157,24 +176,30 @@ class TestParserGeneratorConsistency:
 
     def test_both_generators_produce_same_parse_functions(self):
         """Test that both generators produce parse functions for the same nonterminals."""
-        from meta.parser_gen_python import generate_parser_python
-        from meta.parser_gen_julia import generate_parser_julia
         import re
+
+        from meta.parser_gen_julia import generate_parser_julia
+        from meta.parser_gen_python import generate_parser_python
 
         grammar, proto_messages = load_grammar_and_protos()
 
-        python_output = generate_parser_python(grammar, command_line="test", proto_messages=proto_messages)
-        julia_output = generate_parser_julia(grammar, command_line="test", proto_messages=proto_messages)
+        python_output = generate_parser_python(
+            grammar, command_line="test", proto_messages=proto_messages
+        )
+        julia_output = generate_parser_julia(
+            grammar, command_line="test", proto_messages=proto_messages
+        )
 
         # Extract parse function names from Python (def parse_xxx)
-        python_parse_funcs = set(re.findall(r'def (parse_\w+)\(', python_output))
+        python_parse_funcs = set(re.findall(r"def (parse_\w+)\(", python_output))
 
         # Extract parse function names from Julia (function parse_xxx)
-        julia_parse_funcs = set(re.findall(r'function (parse_\w+)\(', julia_output))
+        julia_parse_funcs = set(re.findall(r"function (parse_\w+)\(", julia_output))
 
         # Both should have the same parse functions (modulo the main 'parse' function)
-        python_parse_funcs.discard('parse')
-        julia_parse_funcs.discard('parse')
+        python_parse_funcs.discard("parse")
+        julia_parse_funcs.discard("parse")
 
-        assert python_parse_funcs == julia_parse_funcs, \
+        assert python_parse_funcs == julia_parse_funcs, (
             f"Parse function mismatch:\nPython only: {python_parse_funcs - julia_parse_funcs}\nJulia only: {julia_parse_funcs - python_parse_funcs}"
+        )

@@ -4,15 +4,32 @@
 import pytest
 
 from meta.grammar import (
-    LitTerminal, NamedTerminal, Nonterminal,
-    Star, Option, Sequence,
-    Rule, Token, Grammar,
+    Grammar,
+    LitTerminal,
+    NamedTerminal,
+    Nonterminal,
+    Option,
+    Rule,
+    Sequence,
+    Star,
+    Token,
 )
 from meta.grammar_utils import (
-    get_nonterminals, get_literals, is_epsilon, rhs_elements,
     count_nonliteral_rhs_elements,
+    get_literals,
+    get_nonterminals,
+    is_epsilon,
+    rhs_elements,
 )
-from meta.target import BaseType, MessageType, TupleType, SequenceType, ListType, OptionType, Lambda, Var
+from meta.target import (
+    BaseType,
+    Lambda,
+    MessageType,
+    OptionType,
+    SequenceType,
+    TupleType,
+    Var,
+)
 
 
 class TestLitTerminal:
@@ -123,7 +140,6 @@ class TestStar:
         star = Star(term)
         assert star.rhs == term
 
-
     def test_str(self):
         """Test Star string representation."""
         nt = Nonterminal("Item", MessageType("proto", "Item"))
@@ -197,7 +213,9 @@ class TestSequence:
         """Test Sequence fails with nested Sequence."""
         nt = Nonterminal("A", MessageType("proto", "A"))
         inner = Sequence((nt,))
-        with pytest.raises(AssertionError, match="Sequence elements cannot be Sequence"):
+        with pytest.raises(
+            AssertionError, match="Sequence elements cannot be Sequence"
+        ):
             Sequence((inner,))
 
     def test_str(self):
@@ -426,15 +444,15 @@ class TestGrammar:
         grammar.add_rule(Rule(c, c, constructor_c))
         grammar.add_rule(Rule(d, d, constructor_d))  # unreachable rule
 
-        reachable, unreachable = grammar.analysis.partition_nonterminals_by_reachability()
+        reachable, unreachable = (
+            grammar.analysis.partition_nonterminals_by_reachability()
+        )
         assert reachable[0] == start
         assert reachable[1] == a
         assert reachable[2] == b
         assert reachable[3] == c
         assert len(reachable) == 4
         assert unreachable == [d]
-
-
 
     def test_print_grammar_yacc(self):
         """Test Grammar print_grammar_yacc."""
@@ -447,8 +465,6 @@ class TestGrammar:
         output = grammar.print_grammar_yacc()
         assert "Start" in output
         assert "A" in output
-
-
 
 
 class TestHelperFunctions:

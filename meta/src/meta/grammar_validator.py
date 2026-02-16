@@ -20,14 +20,42 @@ Note: This validator does NOT check if the grammar is LL(k) for any k.
 Grammar ambiguity and lookahead conflicts are detected by the parser generator.
 """
 
-from typing import List, Optional, Set, Sequence as PySequence, Dict
+from collections.abc import Sequence as PySequence
 
-from .grammar import Grammar, Rule, Nonterminal, Rhs, LitTerminal, NamedTerminal, Star, Option, Sequence
+from .grammar import (
+    Grammar,
+    LitTerminal,
+    NamedTerminal,
+    Nonterminal,
+    Option,
+    Rhs,
+    Rule,
+    Sequence,
+    Star,
+)
+from .proto_ast import ProtoField, ProtoMessage
 from .proto_parser import ProtoParser
-from .proto_ast import ProtoMessage, ProtoField
 from .target import (
-    TargetType, TargetExpr, Call, NewMessage, Builtin, IfElse, Let, Seq, ListExpr, GetField,
-    GetElement, BaseType, VarType, MessageType, SequenceType, ListType, OptionType, TupleType, Lambda, OneOf
+    BaseType,
+    Builtin,
+    Call,
+    GetElement,
+    GetField,
+    IfElse,
+    Lambda,
+    Let,
+    ListExpr,
+    ListType,
+    MessageType,
+    NewMessage,
+    OneOf,
+    OptionType,
+    Seq,
+    SequenceType,
+    TargetExpr,
+    TargetType,
+    TupleType,
+    VarType,
 )
 from .type_env import TypeEnv
 from .validation_result import ValidationResult
@@ -46,8 +74,8 @@ class GrammarValidator:
         self.result = ValidationResult()
 
         # Build lookup structures
-        self._rule_names: Set[str] = {nt.name for nt in grammar.rules.keys()}
-        self._message_names: Set[str] = set(parser.messages.keys())
+        self._rule_names: set[str] = {nt.name for nt in grammar.rules.keys()}
+        self._message_names: set[str] = set(parser.messages.keys())
 
         # Build type environment from proto spec
         self.type_env = TypeEnv(parser)
@@ -69,7 +97,7 @@ class GrammarValidator:
             self.result.add_error(
                 "unreachable",
                 f"Grammar rule '{nt.name}' is unreachable from start symbol",
-                rule_name=nt.name
+                rule_name=nt.name,
             )
         return None
 
@@ -93,14 +121,14 @@ class GrammarValidator:
                 self.result.add_error(
                     "structure",
                     f"Rule '{rule_name}': Star must contain NamedTerminal or Nonterminal, got {type(rhs.rhs).__name__}",
-                    rule_name=rule_name
+                    rule_name=rule_name,
                 )
         elif isinstance(rhs, Option):
             if not isinstance(rhs.rhs, (NamedTerminal, Nonterminal)):
                 self.result.add_error(
                     "structure",
                     f"Rule '{rule_name}': Option must contain NamedTerminal or Nonterminal, got {type(rhs.rhs).__name__}",
-                    rule_name=rule_name
+                    rule_name=rule_name,
                 )
         elif isinstance(rhs, Sequence):
             for elem in rhs.elements:
@@ -108,7 +136,7 @@ class GrammarValidator:
                     self.result.add_error(
                         "structure",
                         f"Rule '{rule_name}': Sequence cannot contain nested Sequence",
-                        rule_name=rule_name
+                        rule_name=rule_name,
                     )
                 else:
                     self._check_rhs_structure(elem, rule_name)
@@ -142,7 +170,7 @@ class GrammarValidator:
             self.result.add_error(
                 "type_arity",
                 f"Rule '{rule_name}': lambda has {len(param_types)} params but RHS has {len(rhs_types)} non-literal elements",
-                rule_name=rule_name
+                rule_name=rule_name,
             )
             return None  # Can't check types if arity mismatch
 
@@ -154,7 +182,7 @@ class GrammarValidator:
                 self.result.add_error(
                     "type_param",
                     f"Rule '{rule_name}': param '{param_name}' has type {param_type} but RHS element has type {rhs_type}",
-                    rule_name=rule_name
+                    rule_name=rule_name,
                 )
 
         # Check return type matches LHS type
@@ -168,7 +196,7 @@ class GrammarValidator:
             self.result.add_error(
                 "type_return",
                 f"Rule '{rule_name}': lambda body has type {body_type} but LHS expects {lhs_type}",
-                rule_name=rule_name
+                rule_name=rule_name,
             )
 
         # Type check the lambda body expression
@@ -215,11 +243,13 @@ class GrammarValidator:
             self._check_expr_types(expr.object, context)
             # Check that object type matches expected message_type
             obj_type = self._infer_expr_type(expr.object)
-            if obj_type is not None and not self._is_subtype(obj_type, expr.message_type):
+            if obj_type is not None and not self._is_subtype(
+                obj_type, expr.message_type
+            ):
                 self.result.add_error(
                     "type_field_access",
                     f"In {context}: GetField expects object of type {expr.message_type}, got {obj_type}",
-                    rule_name=context
+                    rule_name=context,
                 )
 
         elif isinstance(expr, GetElement):
@@ -231,7 +261,7 @@ class GrammarValidator:
                 self.result.add_error(
                     "type_tuple_element",
                     f"In {context}: GetElement expects tuple type, got {tuple_type}",
-                    rule_name=context
+                    rule_name=context,
                 )
             # Check index bounds
             if isinstance(tuple_type, TupleType):
@@ -239,7 +269,7 @@ class GrammarValidator:
                     self.result.add_error(
                         "type_tuple_element",
                         f"In {context}: GetElement index {expr.index} out of bounds for tuple with {len(tuple_type.elements)} elements",
-                        rule_name=context
+                        rule_name=context,
                     )
 
         elif isinstance(expr, NewMessage):
@@ -269,12 +299,12 @@ class GrammarValidator:
                     "completeness",
                     f"In {context}: NewMessage refers to unknown message {new_msg.name}",
                     proto_type=new_msg.name,
-                    rule_name=context
+                    rule_name=context,
                 )
             return None
 
         # Build map of proto fields by name (both regular fields and oneofs)
-        proto_fields_by_name: Dict[str, ProtoField] = {
+        proto_fields_by_name: dict[str, ProtoField] = {
             field.name: field for field in proto_message.fields
         }
         # Add oneof variant fields to the map
@@ -282,10 +312,10 @@ class GrammarValidator:
             for variant_field in oneof.fields:
                 proto_fields_by_name[variant_field.name] = variant_field
         # Add oneof names as valid fields (oneofs can be set as a whole)
-        oneof_names: Set[str] = {oneof.name for oneof in proto_message.oneofs}
+        oneof_names: set[str] = {oneof.name for oneof in proto_message.oneofs}
 
         # Track which proto fields were provided
-        provided_fields: Set[str] = set()
+        provided_fields: set[str] = set()
 
         # Check each grammar field
         for field_name, field_expr in new_msg.fields:
@@ -297,7 +327,7 @@ class GrammarValidator:
                     "field_name",
                     f"In {context}: NewMessage {new_msg.name} has unknown field '{field_name}'",
                     proto_type=new_msg.name,
-                    rule_name=context
+                    rule_name=context,
                 )
                 continue
 
@@ -313,12 +343,14 @@ class GrammarValidator:
             actual_type = self._infer_expr_type(field_expr)
 
             # Check actual type is a subtype of expected type (actual_type <: expected_type)
-            if actual_type is not None and not self._is_subtype(actual_type, expected_type):
+            if actual_type is not None and not self._is_subtype(
+                actual_type, expected_type
+            ):
                 self.result.add_error(
                     "field_type",
                     f"In {context}: NewMessage {new_msg.name} field '{field_name}' has type {actual_type}, expected {expected_type}",
                     proto_type=new_msg.name,
-                    rule_name=context
+                    rule_name=context,
                 )
 
         # Check for missing fields
@@ -328,12 +360,14 @@ class GrammarValidator:
                     "field_coverage",
                     f"In {context}: NewMessage {new_msg.name} missing field '{field.name}'",
                     proto_type=new_msg.name,
-                    rule_name=context
+                    rule_name=context,
                 )
 
         return None
 
-    def _check_builtin_call_types(self, builtin: Builtin, args: PySequence[TargetExpr], context: str) -> None:
+    def _check_builtin_call_types(
+        self, builtin: Builtin, args: PySequence[TargetExpr], context: str
+    ) -> None:
         """Check that Builtin call has correct argument types.
 
         Args:
@@ -353,7 +387,7 @@ class GrammarValidator:
                 self.result.add_error(
                     "type_builtin_arity",
                     f"In {context}: builtin 'unwrap_option_or' expects 2 args, got {len(args)}",
-                    rule_name=context
+                    rule_name=context,
                 )
             else:
                 arg0_type = self._infer_expr_type(args[0])
@@ -362,9 +396,13 @@ class GrammarValidator:
                     self.result.add_error(
                         "type_builtin_arg",
                         f"In {context}: builtin 'unwrap_option_or' arg 0 has type {arg0_type}, expected Option[T]",
-                        rule_name=context
+                        rule_name=context,
                     )
-                if arg0_type is not None and arg1_type is not None and isinstance(arg0_type, OptionType):
+                if (
+                    arg0_type is not None
+                    and arg1_type is not None
+                    and isinstance(arg0_type, OptionType)
+                ):
                     # Check that types have a common supertype
                     t = arg0_type.element_type
                     u = arg1_type
@@ -372,7 +410,7 @@ class GrammarValidator:
                         self.result.add_error(
                             "type_builtin_arg",
                             f"In {context}: builtin 'unwrap_option_or' types {t} and {u} have no common supertype",
-                            rule_name=context
+                            rule_name=context,
                         )
 
         elif name == "tuple":
@@ -386,26 +424,33 @@ class GrammarValidator:
                 self.result.add_error(
                     "type_builtin_arity",
                     f"In {context}: builtin 'list_concat' expects 2 args, got {len(args)}",
-                    rule_name=context
+                    rule_name=context,
                 )
             else:
                 arg0_type = self._infer_expr_type(args[0])
                 arg1_type = self._infer_expr_type(args[1])
-                if arg0_type is not None and not isinstance(arg0_type, (SequenceType, ListType)):
+                if arg0_type is not None and not isinstance(
+                    arg0_type, (SequenceType, ListType)
+                ):
                     self.result.add_error(
                         "type_builtin_arg",
                         f"In {context}: builtin 'list_concat' arg 0 has type {arg0_type}, expected Sequence[T]",
-                        rule_name=context
+                        rule_name=context,
                     )
-                if arg1_type is not None and not isinstance(arg1_type, (SequenceType, ListType)):
+                if arg1_type is not None and not isinstance(
+                    arg1_type, (SequenceType, ListType)
+                ):
                     self.result.add_error(
                         "type_builtin_arg",
                         f"In {context}: builtin 'list_concat' arg 1 has type {arg1_type}, expected Sequence[T]",
-                        rule_name=context
+                        rule_name=context,
                     )
-                if (arg0_type is not None and arg1_type is not None
-                        and isinstance(arg0_type, (SequenceType, ListType))
-                        and isinstance(arg1_type, (SequenceType, ListType))):
+                if (
+                    arg0_type is not None
+                    and arg1_type is not None
+                    and isinstance(arg0_type, (SequenceType, ListType))
+                    and isinstance(arg1_type, (SequenceType, ListType))
+                ):
                     # Check that element types have a common supertype
                     t = arg0_type.element_type
                     u = arg1_type.element_type
@@ -413,7 +458,7 @@ class GrammarValidator:
                         self.result.add_error(
                             "type_builtin_arg",
                             f"In {context}: builtin 'list_concat' element types {t} and {u} have no common supertype",
-                            rule_name=context
+                            rule_name=context,
                         )
 
         elif name == "length":
@@ -422,15 +467,17 @@ class GrammarValidator:
                 self.result.add_error(
                     "type_builtin_arity",
                     f"In {context}: builtin 'length' expects 1 arg, got {len(args)}",
-                    rule_name=context
+                    rule_name=context,
                 )
             else:
                 arg_type = self._infer_expr_type(args[0])
-                if arg_type is not None and not isinstance(arg_type, (SequenceType, ListType)):
+                if arg_type is not None and not isinstance(
+                    arg_type, (SequenceType, ListType)
+                ):
                     self.result.add_error(
                         "type_builtin_arg",
                         f"In {context}: builtin 'length' arg has type {arg_type}, expected Sequence[T]",
-                        rule_name=context
+                        rule_name=context,
                     )
 
         elif name == "int64_to_int32":
@@ -439,7 +486,7 @@ class GrammarValidator:
                 self.result.add_error(
                     "type_builtin_arity",
                     f"In {context}: builtin 'int64_to_int32' expects 1 arg, got {len(args)}",
-                    rule_name=context
+                    rule_name=context,
                 )
             else:
                 arg_type = self._infer_expr_type(args[0])
@@ -447,21 +494,25 @@ class GrammarValidator:
                     self.result.add_error(
                         "type_builtin_arg",
                         f"In {context}: builtin 'int64_to_int32' arg has type {arg_type}, expected Int64",
-                        rule_name=context
+                        rule_name=context,
                     )
 
         # For other builtins, we don't have type signatures defined yet
         # We could add more as needed
         return None
 
-    def _infer_expr_type(self, expr: TargetExpr) -> Optional[TargetType]:
+    def _infer_expr_type(self, expr: TargetExpr) -> TargetType | None:
         """Infer the type of an expression.
 
         Returns:
             The type of the expression, or None if it cannot be inferred.
         """
         # Special case for tuple builtin - need to compute TupleType from args
-        if isinstance(expr, Call) and isinstance(expr.func, Builtin) and expr.func.name == "tuple":
+        if (
+            isinstance(expr, Call)
+            and isinstance(expr.func, Builtin)
+            and expr.func.name == "tuple"
+        ):
             arg_types = [self._infer_expr_type(arg) for arg in expr.args]
             if all(t is not None for t in arg_types):
                 return TupleType(tuple(t for t in arg_types if t is not None))
@@ -476,9 +527,9 @@ class GrammarValidator:
         except (NotImplementedError, ValueError):
             return None
 
-    def _get_rhs_element_types(self, rhs: Rhs) -> List[TargetType]:
+    def _get_rhs_element_types(self, rhs: Rhs) -> list[TargetType]:
         """Get types of non-literal RHS elements in order."""
-        types: List[TargetType] = []
+        types: list[TargetType] = []
 
         def visit(r: Rhs) -> None:
             if isinstance(r, LitTerminal):
@@ -532,7 +583,9 @@ class GrammarValidator:
         if isinstance(t1, TupleType) and isinstance(t2, TupleType):
             if len(t1.elements) != len(t2.elements):
                 return False
-            return all(self._is_subtype(e1, e2) for e1, e2 in zip(t1.elements, t2.elements))
+            return all(
+                self._is_subtype(e1, e2) for e1, e2 in zip(t1.elements, t2.elements)
+            )
         return False
 
     def _types_compatible(self, t1: TargetType, t2: TargetType) -> bool:
@@ -579,11 +632,13 @@ class GrammarValidator:
                     self.result.add_error(
                         "completeness",
                         f"Proto message '{message_name}' has no grammar rule producing it",
-                        proto_type=message_name
+                        proto_type=message_name,
                     )
         return None
 
-    def _expr_constructs_oneof_variant(self, expr: TargetExpr, variant_name: str) -> bool:
+    def _expr_constructs_oneof_variant(
+        self, expr: TargetExpr, variant_name: str
+    ) -> bool:
         """Check if expression constructs a oneof variant."""
         if isinstance(expr, Call):
             if isinstance(expr.func, OneOf) and expr.func.field_name == variant_name:
@@ -657,7 +712,9 @@ class GrammarValidator:
                 # Find which variant(s) this rule constructs
                 constructed_variants = []
                 for variant_name in all_variants:
-                    if self._expr_constructs_oneof_variant(rule.constructor, variant_name):
+                    if self._expr_constructs_oneof_variant(
+                        rule.constructor, variant_name
+                    ):
                         constructed_variants.append(variant_name)
 
                 if len(constructed_variants) == 0:
@@ -670,7 +727,7 @@ class GrammarValidator:
                         "oneof_coverage",
                         f"Rule for '{message_name}' constructs multiple oneof variants: {', '.join(constructed_variants)}",
                         proto_type=message_name,
-                        rule_name=rule.lhs.name
+                        rule_name=rule.lhs.name,
                     )
 
             # Check each variant has at least one rule
@@ -680,7 +737,7 @@ class GrammarValidator:
                     self.result.add_error(
                         "oneof_coverage",
                         f"Oneof variant '{message_name}.{variant_name}' has no grammar alternative",
-                        proto_type=message_name
+                        proto_type=message_name,
                     )
 
             # Note: We don't report an error for rules that don't construct any variant.
@@ -745,7 +802,7 @@ class GrammarValidator:
                 self.result.add_error(
                     "soundness",
                     f"Grammar rule '{rule_nt.name}' has LHS type {lhs_type} which is not a valid type",
-                    rule_name=rule_nt.name
+                    rule_name=rule_nt.name,
                 )
         return None
 
@@ -757,14 +814,14 @@ class GrammarValidator:
         """Check if type is a proto message type."""
         return type_name in self.parser.messages
 
-    def _find_nonterminal(self, name: str) -> Optional[Nonterminal]:
+    def _find_nonterminal(self, name: str) -> Nonterminal | None:
         """Find nonterminal by name."""
         for nt in self.grammar.rules.keys():
             if nt.name == name:
                 return nt
         return None
 
-    def _find_nonterminals_by_type(self, target_type: TargetType) -> List[Nonterminal]:
+    def _find_nonterminals_by_type(self, target_type: TargetType) -> list[Nonterminal]:
         """Find all nonterminals with the given type."""
         result = []
         for nt in self.grammar.rules.keys():
@@ -772,9 +829,9 @@ class GrammarValidator:
                 result.append(nt)
         return result
 
-    def _get_rhs_nonterminal_names(self, rhs: Rhs) -> Set[str]:
+    def _get_rhs_nonterminal_names(self, rhs: Rhs) -> set[str]:
         """Get all nonterminal names referenced in RHS."""
-        names: Set[str] = set()
+        names: set[str] = set()
 
         def visit(r: Rhs) -> None:
             if isinstance(r, Nonterminal):
@@ -790,6 +847,7 @@ class GrammarValidator:
 
         visit(rhs)
         return names
+
 
 def validate_grammar(
     grammar: Grammar,

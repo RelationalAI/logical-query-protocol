@@ -1,27 +1,29 @@
 """Type environment for validating grammar expressions against protobuf specification."""
 
-from typing import Dict, List, Optional, Tuple
-
+from .proto_ast import ProtoField, ProtoMessage
 from .proto_parser import ProtoParser
-from .proto_ast import ProtoMessage, ProtoField
 from .target import (
-    TargetType, BaseType, MessageType, SequenceType, ListType, OptionType, FunctionType
+    BaseType,
+    FunctionType,
+    MessageType,
+    OptionType,
+    SequenceType,
+    TargetType,
 )
 from .target_builtins import BUILTIN_REGISTRY
 
-
 # Mapping from protobuf primitive types to base type names
 _PRIMITIVE_TO_BASE_TYPE = {
-    'string': 'String',
-    'int32': 'Int32',
-    'int64': 'Int64',
-    'uint32': 'UInt32',
-    'uint64': 'UInt64',
-    'fixed64': 'Int64',
-    'bool': 'Boolean',
-    'double': 'Float64',
-    'float': 'Float32',
-    'bytes': 'Bytes',
+    "string": "String",
+    "int32": "Int32",
+    "int64": "Int64",
+    "uint32": "UInt32",
+    "uint64": "UInt64",
+    "fixed64": "Int64",
+    "bool": "Boolean",
+    "double": "Float64",
+    "float": "Float32",
+    "bytes": "Bytes",
 }
 
 
@@ -45,11 +47,11 @@ class TypeEnv:
         self.parser = proto_parser
 
         # Message field types: (module, message_name) -> [field_types]
-        self._message_field_types: Dict[Tuple[str, str], List[TargetType]] = {}
+        self._message_field_types: dict[tuple[str, str], list[TargetType]] = {}
 
         # Local variable scopes: stack of frames (innermost first)
         # Each frame is a dict: var_name -> type
-        self._local_scopes: List[Dict[str, TargetType]] = []
+        self._local_scopes: list[dict[str, TargetType]] = []
 
         # Build type information from proto
         self._build_message_types()
@@ -105,7 +107,9 @@ class TypeEnv:
 
         return base_type
 
-    def get_message_field_types(self, module: str, name: str) -> Optional[List[TargetType]]:
+    def get_message_field_types(
+        self, module: str, name: str
+    ) -> list[TargetType] | None:
         """Get field types for a message constructor.
 
         Args:
@@ -117,7 +121,7 @@ class TypeEnv:
         """
         return self._message_field_types.get((module, name))
 
-    def get_builtin_type(self, name: str) -> Optional[FunctionType]:
+    def get_builtin_type(self, name: str) -> FunctionType | None:
         """Get function type for a builtin.
 
         Args:
@@ -140,7 +144,7 @@ class TypeEnv:
             return self._is_oneof_only_message(self.parser.messages[name])
         return False
 
-    def lookup_var(self, name: str) -> Optional[TargetType]:
+    def lookup_var(self, name: str) -> TargetType | None:
         """Look up variable in local scopes (innermost to outermost).
 
         Args:
@@ -155,7 +159,7 @@ class TypeEnv:
                 return scope[name]
         return None
 
-    def push_scope(self, bindings: Dict[str, TargetType]) -> None:
+    def push_scope(self, bindings: dict[str, TargetType]) -> None:
         """Enter a new lexical scope with given variable bindings.
 
         Args:

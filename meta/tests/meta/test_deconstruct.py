@@ -3,15 +3,32 @@
 
 import pytest
 
-from meta.target import (
-    BaseType, MessageType, TupleType, SequenceType, ListType, OptionType,
-    Var, Call, Lambda, GetField, IfElse, Seq,
-)
 from meta.grammar import (
-    Nonterminal, LitTerminal, NamedTerminal, Star, Option, Sequence,
+    LitTerminal,
+    NamedTerminal,
+    Nonterminal,
+    Option,
+    Sequence,
+    Star,
+)
+from meta.target import (
+    BaseType,
+    Call,
+    GetField,
+    IfElse,
+    Lambda,
+    ListType,
+    MessageType,
+    OptionType,
+    Seq,
+    SequenceType,
+    TupleType,
+    Var,
 )
 from meta.yacc_action_parser import (
-    parse_deconstruct_action, TypeContext, YaccGrammarError,
+    TypeContext,
+    YaccGrammarError,
+    parse_deconstruct_action,
 )
 
 
@@ -22,6 +39,7 @@ def ctx():
 
 
 # -- Helpers for building RHS patterns --
+
 
 def _msg_type(name: str) -> MessageType:
     return MessageType("proto", name)
@@ -39,8 +57,8 @@ def _seq(*elems) -> Sequence:
 # Identity deconstruct
 # ============================================================================
 
-class TestIdentityDeconstruct:
 
+class TestIdentityDeconstruct:
     def test_identity_returns_param(self, ctx):
         """'$$' with no guard returns the input unchanged."""
         lhs_type = _msg_type("Foo")
@@ -67,8 +85,8 @@ class TestIdentityDeconstruct:
 # Simple field extraction
 # ============================================================================
 
-class TestSimpleFieldExtraction:
 
+class TestSimpleFieldExtraction:
     def test_single_assignment(self, ctx):
         """Single $1 assignment extracts one field."""
         lhs_type = _msg_type("Wrapper")
@@ -77,7 +95,9 @@ class TestSimpleFieldExtraction:
             _nonterminal("inner", BaseType("String")),
             LitTerminal(")"),
         )
-        ctx.field_type_lookup = lambda mt, fn: BaseType("String") if fn == "name" else None
+        ctx.field_type_lookup = lambda mt, fn: (
+            BaseType("String") if fn == "name" else None
+        )
         result = parse_deconstruct_action("$2 = $$.name", lhs_type, rhs, ctx)
         assert isinstance(result, Lambda)
         assert len(result.params) == 1
@@ -123,8 +143,8 @@ class TestSimpleFieldExtraction:
 # Validation: missing / extra assignments
 # ============================================================================
 
-class TestAssignmentValidation:
 
+class TestAssignmentValidation:
     def test_missing_assignment_errors(self, ctx):
         """Omitting a required $N assignment raises YaccGrammarError."""
         lhs_type = _msg_type("Pair")
@@ -168,8 +188,8 @@ class TestAssignmentValidation:
 # Type annotations
 # ============================================================================
 
-class TestTypeAnnotations:
 
+class TestTypeAnnotations:
     def test_compatible_annotation_accepted(self, ctx):
         """Type annotation that is a subtype of the RHS element type is accepted."""
         lhs_type = _msg_type("Wrapper")
@@ -229,8 +249,8 @@ class TestTypeAnnotations:
 # Guard expressions
 # ============================================================================
 
-class TestGuardExpressions:
 
+class TestGuardExpressions:
     def test_guard_wraps_in_option(self, ctx):
         """A guard expression wraps the result in Option (IfElse with None fallback)."""
         lhs_type = _msg_type("Wrapper")
@@ -271,10 +291,10 @@ class TestGuardExpressions:
             LitTerminal(")"),
         )
         ctx.field_type_lookup = lambda mt, fn: BaseType("String")
-        with pytest.raises(YaccGrammarError, match=r"Syntax error in deconstruct guard"):
-            parse_deconstruct_action(
-                "$2 = $$.name", lhs_type, rhs, ctx, guard="if =="
-            )
+        with pytest.raises(
+            YaccGrammarError, match=r"Syntax error in deconstruct guard"
+        ):
+            parse_deconstruct_action("$2 = $$.name", lhs_type, rhs, ctx, guard="if ==")
 
     def test_guard_with_multiple_assignments(self, ctx):
         """Guard with multiple assignments wraps a tuple in Option."""
@@ -302,8 +322,8 @@ class TestGuardExpressions:
 # Side-effect expressions
 # ============================================================================
 
-class TestSideEffects:
 
+class TestSideEffects:
     def test_side_effect_with_assignment(self, ctx):
         """Side-effect expressions are allowed alongside $N assignments."""
         lhs_type = _msg_type("Wrapper")
@@ -326,8 +346,8 @@ class TestSideEffects:
 # Error cases
 # ============================================================================
 
-class TestErrorCases:
 
+class TestErrorCases:
     def test_syntax_error(self, ctx):
         """Invalid Python syntax raises YaccGrammarError."""
         lhs_type = _msg_type("Foo")
@@ -380,8 +400,8 @@ class TestErrorCases:
 # RHS patterns: Star, Option
 # ============================================================================
 
-class TestRhsPatterns:
 
+class TestRhsPatterns:
     def test_star_rhs_element(self, ctx):
         """Deconstruct with Star RHS element validates correctly."""
         lhs_type = _msg_type("ListHolder")

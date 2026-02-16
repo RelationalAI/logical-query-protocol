@@ -3,19 +3,41 @@
 
 import pytest
 
-from meta.target import (
-    BaseType, MessageType, TupleType, SequenceType, ListType, OptionType, FunctionType,
-    Var, GetElement, Call, Builtin, NewMessage, Lambda, Lit, IfElse, Let, ListExpr,
-    NamedFun, FunDef
-)
-from meta.target_builtins import make_builtin
 from meta.grammar import (
-    Grammar, Nonterminal, Rule, LitTerminal, NamedTerminal,
-    Star, Option, Sequence,
+    Grammar,
+    LitTerminal,
+    NamedTerminal,
+    Nonterminal,
+    Option,
+    Rule,
+    Sequence,
+    Star,
 )
 from meta.grammar_validator import GrammarValidator
+from meta.proto_ast import ProtoField, ProtoMessage
 from meta.proto_parser import ProtoParser
-from meta.proto_ast import ProtoMessage, ProtoField
+from meta.target import (
+    BaseType,
+    Builtin,
+    Call,
+    FunctionType,
+    FunDef,
+    GetElement,
+    IfElse,
+    Lambda,
+    Let,
+    ListExpr,
+    ListType,
+    Lit,
+    MessageType,
+    NamedFun,
+    NewMessage,
+    OptionType,
+    SequenceType,
+    TupleType,
+    Var,
+)
+from meta.target_builtins import make_builtin
 
 # Dummy type for test builtins
 _ANY = BaseType("Any")
@@ -37,7 +59,7 @@ def empty_proto_parser():
 @pytest.fixture
 def empty_grammar():
     """Create a minimal Grammar for testing."""
-    start = Nonterminal('start', BaseType('Unit'))
+    start = Nonterminal("start", BaseType("Unit"))
     return Grammar(start=start)
 
 
@@ -94,7 +116,9 @@ class TestGetElementTypeChecking:
         tuple_expr = Var("pair", tuple_type)
         # This will raise AssertionError at construction, so we can't test validator path
         # Just verify construction fails
-        with pytest.raises(AssertionError, match="GetElement index must be non-negative"):
+        with pytest.raises(
+            AssertionError, match="GetElement index must be non-negative"
+        ):
             GetElement(tuple_expr, -1)
 
     def test_getelement_non_tuple_type(self, validator):
@@ -110,7 +134,9 @@ class TestGetElementTypeChecking:
 
     def test_getelement_with_option_type(self, validator):
         """Test GetElement with option type (should fail)."""
-        option_expr = Var("opt", OptionType(TupleType([BaseType("Int64"), BaseType("String")])))
+        option_expr = Var(
+            "opt", OptionType(TupleType([BaseType("Int64"), BaseType("String")]))
+        )
         elem = GetElement(option_expr, 0)
 
         validator._check_expr_types(elem, "test_rule")
@@ -198,12 +224,14 @@ class TestGetElementTypeInference:
 
     def test_infer_type_complex_tuple(self, validator):
         """Test type inference with complex tuple containing various types."""
-        tuple_type = TupleType([
-            BaseType("Int64"),
-            ListType(BaseType("String")),
-            OptionType(MessageType("proto", "Value")),
-            TupleType([BaseType("Boolean"), BaseType("Float64")])
-        ])
+        tuple_type = TupleType(
+            [
+                BaseType("Int64"),
+                ListType(BaseType("String")),
+                OptionType(MessageType("proto", "Value")),
+                TupleType([BaseType("Boolean"), BaseType("Float64")]),
+            ]
+        )
         tuple_expr = Var("complex", tuple_type)
 
         # Check each element
@@ -214,10 +242,14 @@ class TestGetElementTypeInference:
         assert validator._infer_expr_type(elem1) == ListType(BaseType("String"))
 
         elem2 = GetElement(tuple_expr, 2)
-        assert validator._infer_expr_type(elem2) == OptionType(MessageType("proto", "Value"))
+        assert validator._infer_expr_type(elem2) == OptionType(
+            MessageType("proto", "Value")
+        )
 
         elem3 = GetElement(tuple_expr, 3)
-        assert validator._infer_expr_type(elem3) == TupleType([BaseType("Boolean"), BaseType("Float64")])
+        assert validator._infer_expr_type(elem3) == TupleType(
+            [BaseType("Boolean"), BaseType("Float64")]
+        )
 
 
 class TestGetElementInExpressions:
@@ -264,13 +296,13 @@ class TestStructureValidation:
     def test_star_with_nonterminal(self):
         """Test Star with Nonterminal is valid."""
         parser = ProtoParser()
-        start = Nonterminal('start', BaseType('Unit'))
+        start = Nonterminal("start", BaseType("Unit"))
         grammar = Grammar(start=start)
 
-        nt = Nonterminal('foo', BaseType('String'))
+        nt = Nonterminal("foo", BaseType("String"))
         rhs = Star(nt)
-        param = Var('items', ListType(BaseType('String')))
-        constructor = Lambda([param], BaseType('Unit'), Lit(None))
+        param = Var("items", ListType(BaseType("String")))
+        constructor = Lambda([param], BaseType("Unit"), Lit(None))
         rule = Rule(start, rhs, constructor)
         grammar.rules[start] = [rule]
 
@@ -281,13 +313,13 @@ class TestStructureValidation:
     def test_star_with_terminal(self):
         """Test Star with NamedTerminal is valid."""
         parser = ProtoParser()
-        start = Nonterminal('start', BaseType('Unit'))
+        start = Nonterminal("start", BaseType("Unit"))
         grammar = Grammar(start=start)
 
-        terminal = NamedTerminal('STRING', BaseType('String'))
+        terminal = NamedTerminal("STRING", BaseType("String"))
         rhs = Star(terminal)
-        param = Var('items', ListType(BaseType('String')))
-        constructor = Lambda([param], BaseType('Unit'), Lit(None))
+        param = Var("items", ListType(BaseType("String")))
+        constructor = Lambda([param], BaseType("Unit"), Lit(None))
         rule = Rule(start, rhs, constructor)
         grammar.rules[start] = [rule]
 
@@ -305,13 +337,13 @@ class TestStructureValidation:
     def test_option_with_nonterminal(self):
         """Test Option with Nonterminal is valid."""
         parser = ProtoParser()
-        start = Nonterminal('start', BaseType('Unit'))
+        start = Nonterminal("start", BaseType("Unit"))
         grammar = Grammar(start=start)
 
-        nt = Nonterminal('foo', BaseType('String'))
+        nt = Nonterminal("foo", BaseType("String"))
         rhs = Option(nt)
-        param = Var('opt', OptionType(BaseType('String')))
-        constructor = Lambda([param], BaseType('Unit'), Lit(None))
+        param = Var("opt", OptionType(BaseType("String")))
+        constructor = Lambda([param], BaseType("Unit"), Lit(None))
         rule = Rule(start, rhs, constructor)
         grammar.rules[start] = [rule]
 
@@ -322,9 +354,11 @@ class TestStructureValidation:
     def test_sequence_with_nested_sequence_invalid(self):
         """Test Sequence with nested Sequence is invalid (caught at construction)."""
         # Sequence validates at construction that elements cannot be Sequence
-        inner_seq = Sequence((LitTerminal('a'), LitTerminal('b')))
-        with pytest.raises(AssertionError, match="Sequence elements cannot be Sequence"):
-            Sequence((LitTerminal('('), inner_seq, LitTerminal(')')))
+        inner_seq = Sequence((LitTerminal("a"), LitTerminal("b")))
+        with pytest.raises(
+            AssertionError, match="Sequence elements cannot be Sequence"
+        ):
+            Sequence((LitTerminal("("), inner_seq, LitTerminal(")")))
 
 
 class TestMessageCoverage:
@@ -333,13 +367,17 @@ class TestMessageCoverage:
     def test_message_with_rule(self):
         """Test message with corresponding rule passes."""
         parser = ProtoParser()
-        msg = ProtoMessage(name='TestMessage', module='proto')
-        parser.messages['TestMessage'] = msg
+        msg = ProtoMessage(name="TestMessage", module="proto")
+        parser.messages["TestMessage"] = msg
 
-        start = Nonterminal('test_message', MessageType('proto', 'TestMessage'))
+        start = Nonterminal("test_message", MessageType("proto", "TestMessage"))
         grammar = Grammar(start=start)
-        constructor = Lambda([], MessageType('proto', 'TestMessage'), Call(NewMessage('proto', 'TestMessage', ()), []))
-        rule = Rule(start, LitTerminal('test'), constructor)
+        constructor = Lambda(
+            [],
+            MessageType("proto", "TestMessage"),
+            Call(NewMessage("proto", "TestMessage", ()), []),
+        )
+        rule = Rule(start, LitTerminal("test"), constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -349,10 +387,10 @@ class TestMessageCoverage:
     def test_message_without_rule(self):
         """Test message without corresponding rule fails."""
         parser = ProtoParser()
-        msg = ProtoMessage(name='MissingMessage', module='proto')
-        parser.messages['MissingMessage'] = msg
+        msg = ProtoMessage(name="MissingMessage", module="proto")
+        parser.messages["MissingMessage"] = msg
 
-        start = Nonterminal('start', BaseType('Unit'))
+        start = Nonterminal("start", BaseType("Unit"))
         grammar = Grammar(start=start)
 
         validator = GrammarValidator(grammar, parser)
@@ -367,21 +405,38 @@ class TestFieldCoverage:
     def test_message_with_correct_field_count(self):
         """Test message constructed with correct number of fields."""
         parser = ProtoParser()
-        msg = ProtoMessage(name='Person', module='proto')
+        msg = ProtoMessage(name="Person", module="proto")
         msg.fields = [
-            ProtoField(name='name', type='string', number=1, is_repeated=False, is_optional=False),
-            ProtoField(name='age', type='int32', number=2, is_repeated=False, is_optional=False)
+            ProtoField(
+                name="name",
+                type="string",
+                number=1,
+                is_repeated=False,
+                is_optional=False,
+            ),
+            ProtoField(
+                name="age", type="int32", number=2, is_repeated=False, is_optional=False
+            ),
         ]
-        parser.messages['Person'] = msg
+        parser.messages["Person"] = msg
 
-        start = Nonterminal('person', MessageType('proto', 'Person'))
+        start = Nonterminal("person", MessageType("proto", "Person"))
         grammar = Grammar(start=start)
 
-        name_var = Var('name', BaseType('String'))
-        age_var = Var('age', BaseType('Int32'))
-        body = NewMessage('proto', 'Person', (('name', name_var), ('age', age_var)))
-        constructor = Lambda([name_var, age_var], MessageType('proto', 'Person'), body)
-        rule = Rule(start, Sequence((NamedTerminal('STRING', BaseType('String')), NamedTerminal('INT', BaseType('Int32')))), constructor)
+        name_var = Var("name", BaseType("String"))
+        age_var = Var("age", BaseType("Int32"))
+        body = NewMessage("proto", "Person", (("name", name_var), ("age", age_var)))
+        constructor = Lambda([name_var, age_var], MessageType("proto", "Person"), body)
+        rule = Rule(
+            start,
+            Sequence(
+                (
+                    NamedTerminal("STRING", BaseType("String")),
+                    NamedTerminal("INT", BaseType("Int32")),
+                )
+            ),
+            constructor,
+        )
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -391,28 +446,38 @@ class TestFieldCoverage:
     def test_message_with_wrong_field_count(self):
         """Test message constructed with wrong number of fields warns."""
         parser = ProtoParser()
-        msg = ProtoMessage(name='Person', module='proto')
+        msg = ProtoMessage(name="Person", module="proto")
         msg.fields = [
-            ProtoField(name='name', type='string', number=1, is_repeated=False, is_optional=False),
-            ProtoField(name='age', type='int32', number=2, is_repeated=False, is_optional=False)
+            ProtoField(
+                name="name",
+                type="string",
+                number=1,
+                is_repeated=False,
+                is_optional=False,
+            ),
+            ProtoField(
+                name="age", type="int32", number=2, is_repeated=False, is_optional=False
+            ),
         ]
-        parser.messages['Person'] = msg
+        parser.messages["Person"] = msg
 
-        start = Nonterminal('person', MessageType('proto', 'Person'))
+        start = Nonterminal("person", MessageType("proto", "Person"))
         grammar = Grammar(start=start)
 
-        name_var = Var('name', BaseType('String'))
-        body = NewMessage('proto', 'Person', (('name', name_var),))  # Missing age field
-        constructor = Lambda([name_var], MessageType('proto', 'Person'), body)
-        rule = Rule(start, NamedTerminal('STRING', BaseType('String')), constructor)
+        name_var = Var("name", BaseType("String"))
+        body = NewMessage("proto", "Person", (("name", name_var),))  # Missing age field
+        constructor = Lambda([name_var], MessageType("proto", "Person"), body)
+        rule = Rule(start, NamedTerminal("STRING", BaseType("String")), constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
         validator._check_types()  # Field validation now happens in type checking
         # Missing fields are errors
         assert not validator.result.is_valid
-        assert any(e.category == 'field_coverage' for e in validator.result.errors)
-        assert any('missing field' in e.message.lower() for e in validator.result.errors)
+        assert any(e.category == "field_coverage" for e in validator.result.errors)
+        assert any(
+            "missing field" in e.message.lower() for e in validator.result.errors
+        )
 
 
 class TestTypeChecking:
@@ -420,73 +485,78 @@ class TestTypeChecking:
 
     def test_builtin_unwrap_option_or_valid(self, validator):
         """Test unwrap_option_or with correct types."""
-        builtin = make_builtin('unwrap_option_or')
+        builtin = make_builtin("unwrap_option_or")
         args = [
-            Var('opt', OptionType(BaseType('String'))),
-            Var('default', BaseType('String'))
+            Var("opt", OptionType(BaseType("String"))),
+            Var("default", BaseType("String")),
         ]
 
-        validator._check_builtin_call_types(builtin, args, 'test_rule')
+        validator._check_builtin_call_types(builtin, args, "test_rule")
         assert validator.result.is_valid
 
     def test_builtin_unwrap_option_or_wrong_arity(self, validator):
         """Test unwrap_option_or with wrong arity."""
-        builtin = make_builtin('unwrap_option_or')
-        args = [Var('opt', OptionType(BaseType('String')))]  # Missing default
+        builtin = make_builtin("unwrap_option_or")
+        args = [Var("opt", OptionType(BaseType("String")))]  # Missing default
 
-        validator._check_builtin_call_types(builtin, args, 'test_rule')
+        validator._check_builtin_call_types(builtin, args, "test_rule")
         assert not validator.result.is_valid
-        assert any("expects 2 args, got 1" in e.message for e in validator.result.errors)
+        assert any(
+            "expects 2 args, got 1" in e.message for e in validator.result.errors
+        )
 
     def test_builtin_unwrap_option_or_non_option(self, validator):
         """Test unwrap_option_or with non-option type."""
-        builtin = make_builtin('unwrap_option_or')
+        builtin = make_builtin("unwrap_option_or")
         args = [
-            Var('s', BaseType('String')),  # Not an Option type
-            Var('default', BaseType('String'))
+            Var("s", BaseType("String")),  # Not an Option type
+            Var("default", BaseType("String")),
         ]
 
-        validator._check_builtin_call_types(builtin, args, 'test_rule')
+        validator._check_builtin_call_types(builtin, args, "test_rule")
         assert not validator.result.is_valid
-        assert any("arg 0" in e.message and "expected Option" in e.message for e in validator.result.errors)
+        assert any(
+            "arg 0" in e.message and "expected Option" in e.message
+            for e in validator.result.errors
+        )
 
     def test_builtin_list_concat_valid(self, validator):
         """Test list_concat with correct types."""
-        builtin = make_builtin('list_concat')
+        builtin = make_builtin("list_concat")
         args = [
-            Var('list1', ListType(BaseType('String'))),
-            Var('list2', ListType(BaseType('String')))
+            Var("list1", ListType(BaseType("String"))),
+            Var("list2", ListType(BaseType("String"))),
         ]
 
-        validator._check_builtin_call_types(builtin, args, 'test_rule')
+        validator._check_builtin_call_types(builtin, args, "test_rule")
         assert validator.result.is_valid
 
     def test_builtin_list_concat_incompatible_types(self, validator):
         """Test list_concat with incompatible element types."""
-        builtin = make_builtin('list_concat')
+        builtin = make_builtin("list_concat")
         args = [
-            Var('list1', ListType(BaseType('String'))),
-            Var('list2', ListType(BaseType('Int64')))  # Different element type
+            Var("list1", ListType(BaseType("String"))),
+            Var("list2", ListType(BaseType("Int64"))),  # Different element type
         ]
 
-        validator._check_builtin_call_types(builtin, args, 'test_rule')
+        validator._check_builtin_call_types(builtin, args, "test_rule")
         assert not validator.result.is_valid
         assert any("no common supertype" in e.message for e in validator.result.errors)
 
     def test_builtin_length_valid(self, validator):
         """Test length with list type."""
-        builtin = make_builtin('length')
-        args = [Var('list', ListType(BaseType('String')))]
+        builtin = make_builtin("length")
+        args = [Var("list", ListType(BaseType("String")))]
 
-        validator._check_builtin_call_types(builtin, args, 'test_rule')
+        validator._check_builtin_call_types(builtin, args, "test_rule")
         assert validator.result.is_valid
 
     def test_builtin_length_non_list(self, validator):
         """Test length with non-list type."""
-        builtin = make_builtin('length')
-        args = [Var('s', BaseType('String'))]  # Not a list
+        builtin = make_builtin("length")
+        args = [Var("s", BaseType("String"))]  # Not a list
 
-        validator._check_builtin_call_types(builtin, args, 'test_rule')
+        validator._check_builtin_call_types(builtin, args, "test_rule")
         assert not validator.result.is_valid
         assert any("expected Sequence" in e.message for e in validator.result.errors)
 
@@ -497,13 +567,18 @@ class TestRuleTypeChecking:
     def test_rule_arity_match(self):
         """Test rule with matching parameter and RHS element counts."""
         parser = ProtoParser()
-        start = Nonterminal('start', BaseType('String'))
+        start = Nonterminal("start", BaseType("String"))
         grammar = Grammar(start=start)
 
-        param1 = Var('x', BaseType('String'))
-        param2 = Var('y', BaseType('Int64'))
-        rhs = Sequence((NamedTerminal('STRING', BaseType('String')), NamedTerminal('INT', BaseType('Int64'))))
-        constructor = Lambda([param1, param2], BaseType('String'), param1)
+        param1 = Var("x", BaseType("String"))
+        param2 = Var("y", BaseType("Int64"))
+        rhs = Sequence(
+            (
+                NamedTerminal("STRING", BaseType("String")),
+                NamedTerminal("INT", BaseType("Int64")),
+            )
+        )
+        constructor = Lambda([param1, param2], BaseType("String"), param1)
         rule = Rule(start, rhs, constructor)
 
         validator = GrammarValidator(grammar, parser)
@@ -513,30 +588,37 @@ class TestRuleTypeChecking:
     def test_rule_arity_mismatch(self):
         """Test rule with mismatched parameter and RHS element counts."""
         parser = ProtoParser()
-        start = Nonterminal('start', BaseType('Unit'))
+        start = Nonterminal("start", BaseType("Unit"))
         grammar = Grammar(start=start)
 
         # Can't construct Rule with arity mismatch due to assertion
         # Just verify the validator would catch it
         validator = GrammarValidator(grammar, parser)
-        validator.result.add_error('type_arity', "lambda has 1 params but RHS has 2 non-literal elements")
+        validator.result.add_error(
+            "type_arity", "lambda has 1 params but RHS has 2 non-literal elements"
+        )
         assert not validator.result.is_valid
 
     def test_rule_param_type_match(self):
         """Test rule with matching parameter types."""
         parser = ProtoParser()
-        parser.messages['TestMsg'] = ProtoMessage(
-            name='TestMsg', module='proto', fields=[
-                ProtoField(name='s', number=1, type='string'),
-            ], oneofs=[], enums=[], reserved=[]
+        parser.messages["TestMsg"] = ProtoMessage(
+            name="TestMsg",
+            module="proto",
+            fields=[
+                ProtoField(name="s", number=1, type="string"),
+            ],
+            oneofs=[],
+            enums=[],
+            reserved=[],
         )
-        msg_type = MessageType('proto', 'TestMsg')
-        start = Nonterminal('start', msg_type)
+        msg_type = MessageType("proto", "TestMsg")
+        start = Nonterminal("start", msg_type)
         grammar = Grammar(start=start)
 
-        param = Var('s', BaseType('String'))
-        rhs = NamedTerminal('STRING', BaseType('String'))
-        body = NewMessage('proto', 'TestMsg', (('s', param),))
+        param = Var("s", BaseType("String"))
+        rhs = NamedTerminal("STRING", BaseType("String"))
+        body = NewMessage("proto", "TestMsg", (("s", param),))
         constructor = Lambda([param], msg_type, body)
         rule = Rule(start, rhs, constructor)
         grammar.rules[start] = [rule]
@@ -548,12 +630,12 @@ class TestRuleTypeChecking:
     def test_rule_return_type_match(self):
         """Test rule with matching return type."""
         parser = ProtoParser()
-        start = Nonterminal('start', BaseType('String'))
+        start = Nonterminal("start", BaseType("String"))
         grammar = Grammar(start=start)
 
-        param = Var('s', BaseType('String'))
-        rhs = NamedTerminal('STRING', BaseType('String'))
-        constructor = Lambda([param], BaseType('String'), param)  # Returns the string
+        param = Var("s", BaseType("String"))
+        rhs = NamedTerminal("STRING", BaseType("String"))
+        constructor = Lambda([param], BaseType("String"), param)  # Returns the string
         rule = Rule(start, rhs, constructor)
         grammar.rules[start] = [rule]
 
@@ -564,18 +646,18 @@ class TestRuleTypeChecking:
     def test_nested_expressions_checked(self):
         """Test that nested expressions are type checked."""
         parser = ProtoParser()
-        start = Nonterminal('start', BaseType('String'))
+        start = Nonterminal("start", BaseType("String"))
         grammar = Grammar(start=start)
 
-        param = Var('s', BaseType('String'))
-        rhs = NamedTerminal('STRING', BaseType('String'))
+        param = Var("s", BaseType("String"))
+        rhs = NamedTerminal("STRING", BaseType("String"))
         # Use IfElse with GetElement that has out of bounds index
-        tuple_type = TupleType([BaseType('Int64'), BaseType('String')])
-        tuple_var = Var('pair', tuple_type)
-        condition = Var('flag', BaseType('Boolean'))
+        tuple_type = TupleType([BaseType("Int64"), BaseType("String")])
+        tuple_var = Var("pair", tuple_type)
+        condition = Var("flag", BaseType("Boolean"))
         bad_elem = GetElement(tuple_var, 5)  # Out of bounds
         body = IfElse(condition, bad_elem, param)
-        constructor = Lambda([param], BaseType('String'), body)
+        constructor = Lambda([param], BaseType("String"), body)
         rule = Rule(start, rhs, constructor)
         grammar.rules[start] = [rule]
 
@@ -591,19 +673,19 @@ class TestUnreachableRules:
     def test_reachable_rule(self):
         """Test that reachable rules don't generate errors."""
         parser = ProtoParser()
-        start = Nonterminal('start', BaseType('Unit'))
-        child = Nonterminal('child', BaseType('String'))
+        start = Nonterminal("start", BaseType("Unit"))
+        child = Nonterminal("child", BaseType("String"))
         grammar = Grammar(start=start)
 
         # Start rule references child - need parameter for child nonterminal
-        child_param = Var('c', BaseType('String'))
-        constructor1 = Lambda([child_param], BaseType('Unit'), Lit(None))
+        child_param = Var("c", BaseType("String"))
+        constructor1 = Lambda([child_param], BaseType("Unit"), Lit(None))
         rule1 = Rule(start, child, constructor1)
         grammar.rules[start] = [rule1]
 
         # Child rule
-        constructor2 = Lambda([], BaseType('String'), Lit("test"))
-        rule2 = Rule(child, LitTerminal('test'), constructor2)
+        constructor2 = Lambda([], BaseType("String"), Lit("test"))
+        rule2 = Rule(child, LitTerminal("test"), constructor2)
         grammar.rules[child] = [rule2]
 
         validator = GrammarValidator(grammar, parser)
@@ -613,24 +695,27 @@ class TestUnreachableRules:
     def test_unreachable_rule(self):
         """Test that unreachable rules generate errors."""
         parser = ProtoParser()
-        start = Nonterminal('start', BaseType('Unit'))
-        orphan = Nonterminal('orphan', BaseType('String'))
+        start = Nonterminal("start", BaseType("Unit"))
+        orphan = Nonterminal("orphan", BaseType("String"))
         grammar = Grammar(start=start)
 
         # Start rule doesn't reference orphan
-        constructor1 = Lambda([], BaseType('Unit'), Lit(None))
-        rule1 = Rule(start, LitTerminal('test'), constructor1)
+        constructor1 = Lambda([], BaseType("Unit"), Lit(None))
+        rule1 = Rule(start, LitTerminal("test"), constructor1)
         grammar.rules[start] = [rule1]
 
         # Orphan rule not referenced
-        constructor2 = Lambda([], BaseType('String'), Lit("orphan"))
-        rule2 = Rule(orphan, LitTerminal('orphan'), constructor2)
+        constructor2 = Lambda([], BaseType("String"), Lit("orphan"))
+        rule2 = Rule(orphan, LitTerminal("orphan"), constructor2)
         grammar.rules[orphan] = [rule2]
 
         validator = GrammarValidator(grammar, parser)
         validator._check_unreachable()
         assert len(validator.result.errors) > 0
-        assert any("orphan" in e.message and "unreachable" in e.message for e in validator.result.errors)
+        assert any(
+            "orphan" in e.message and "unreachable" in e.message
+            for e in validator.result.errors
+        )
 
 
 class TestSoundness:
@@ -639,13 +724,17 @@ class TestSoundness:
     def test_rule_with_proto_backing(self):
         """Test rule corresponding to proto message is sound."""
         parser = ProtoParser()
-        msg = ProtoMessage(name='TestMessage', module='proto')
-        parser.messages['TestMessage'] = msg
+        msg = ProtoMessage(name="TestMessage", module="proto")
+        parser.messages["TestMessage"] = msg
 
-        start = Nonterminal('test_message', MessageType('proto', 'TestMessage'))
+        start = Nonterminal("test_message", MessageType("proto", "TestMessage"))
         grammar = Grammar(start=start)
-        constructor = Lambda([], MessageType('proto', 'TestMessage'), Call(NewMessage('proto', 'TestMessage', ()), []))
-        rule = Rule(start, LitTerminal('test'), constructor)
+        constructor = Lambda(
+            [],
+            MessageType("proto", "TestMessage"),
+            Call(NewMessage("proto", "TestMessage", ()), []),
+        )
+        rule = Rule(start, LitTerminal("test"), constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -657,17 +746,22 @@ class TestSoundness:
         parser = ProtoParser()
 
         # Create a rule with a MessageType that doesn't exist in the proto spec
-        invalid_type = MessageType('proto', 'NonExistentMessage')
-        start = Nonterminal('unknown_rule', invalid_type)
+        invalid_type = MessageType("proto", "NonExistentMessage")
+        start = Nonterminal("unknown_rule", invalid_type)
         grammar = Grammar(start=start)
-        constructor = Lambda([], invalid_type, Call(NewMessage('proto', 'NonExistentMessage', ()), []))
-        rule = Rule(start, LitTerminal('test'), constructor)
+        constructor = Lambda(
+            [], invalid_type, Call(NewMessage("proto", "NonExistentMessage", ()), [])
+        )
+        rule = Rule(start, LitTerminal("test"), constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
         validator._check_soundness()
         assert len(validator.result.errors) > 0
-        assert any("unknown_rule" in e.message and "is not a valid type" in e.message for e in validator.result.errors)
+        assert any(
+            "unknown_rule" in e.message and "is not a valid type" in e.message
+            for e in validator.result.errors
+        )
 
 
 class TestTypeInference:
@@ -675,33 +769,33 @@ class TestTypeInference:
 
     def test_infer_var_type(self, validator):
         """Test type inference for Var."""
-        var = Var('x', BaseType('Int64'))
+        var = Var("x", BaseType("Int64"))
         inferred = validator._infer_expr_type(var)
-        assert inferred == BaseType('Int64')
+        assert inferred == BaseType("Int64")
 
     def test_infer_newmessage_type(self, validator):
         """Test type inference for NewMessage expression."""
-        msg = NewMessage('proto', 'TestMsg', ())
+        msg = NewMessage("proto", "TestMsg", ())
         inferred = validator._infer_expr_type(msg)
-        assert inferred == MessageType('proto', 'TestMsg')
+        assert inferred == MessageType("proto", "TestMsg")
 
     def test_infer_list_expr_type(self, validator):
         """Test type inference for ListExpr."""
-        list_expr = ListExpr([Lit(1), Lit(2)], BaseType('Int64'))
+        list_expr = ListExpr([Lit(1), Lit(2)], BaseType("Int64"))
         inferred = validator._infer_expr_type(list_expr)
-        assert inferred == ListType(BaseType('Int64'))
+        assert inferred == ListType(BaseType("Int64"))
 
     def test_infer_builtin_int64_to_int32(self, validator):
         """Test type inference for int64_to_int32 builtin."""
-        call = Call(make_builtin('int64_to_int32'), [Var('x', BaseType('Int64'))])
+        call = Call(make_builtin("int64_to_int32"), [Var("x", BaseType("Int64"))])
         inferred = validator._infer_expr_type(call)
-        assert inferred == BaseType('Int32')
+        assert inferred == BaseType("Int32")
 
     def test_infer_builtin_length(self, validator):
         """Test type inference for length builtin."""
-        call = Call(make_builtin('length'), [Var('list', ListType(BaseType('String')))])
+        call = Call(make_builtin("length"), [Var("list", ListType(BaseType("String")))])
         inferred = validator._infer_expr_type(call)
-        assert inferred == BaseType('Int64')
+        assert inferred == BaseType("Int64")
 
 
 class TestComplexExpressions:
@@ -709,37 +803,39 @@ class TestComplexExpressions:
 
     def test_let_expression(self, validator):
         """Test type checking Let expression."""
-        var = Var('x', BaseType('Int64'))
+        var = Var("x", BaseType("Int64"))
         init = Lit(42)
         body = var
         let_expr = Let(var, init, body)
 
-        validator._check_expr_types(let_expr, 'test_rule')
+        validator._check_expr_types(let_expr, "test_rule")
         assert validator.result.is_valid
 
     def test_ifelse_expression(self, validator):
         """Test type checking IfElse expression."""
-        condition = Var('flag', BaseType('Boolean'))
+        condition = Var("flag", BaseType("Boolean"))
         then_branch = Lit(1)
         else_branch = Lit(2)
         ifelse = IfElse(condition, then_branch, else_branch)
 
-        validator._check_expr_types(ifelse, 'test_rule')
+        validator._check_expr_types(ifelse, "test_rule")
         assert validator.result.is_valid
 
     def test_list_expression(self, validator):
         """Test type checking ListExpr."""
-        list_expr = ListExpr([Lit(1), Lit(2), Lit(3)], BaseType('Int64'))
+        list_expr = ListExpr([Lit(1), Lit(2), Lit(3)], BaseType("Int64"))
 
-        validator._check_expr_types(list_expr, 'test_rule')
+        validator._check_expr_types(list_expr, "test_rule")
         assert validator.result.is_valid
 
     def test_nested_calls(self, validator):
         """Test type checking nested function calls."""
-        inner = Call(make_builtin('length'), [Var('list', ListType(BaseType('String')))])
-        outer = Call(make_builtin('int64_to_int32'), [inner])
+        inner = Call(
+            make_builtin("length"), [Var("list", ListType(BaseType("String")))]
+        )
+        outer = Call(make_builtin("int64_to_int32"), [inner])
 
-        validator._check_expr_types(outer, 'test_rule')
+        validator._check_expr_types(outer, "test_rule")
         assert validator.result.is_valid
 
 
@@ -749,21 +845,23 @@ class TestHelperFunctionCalls:
     def test_call_helper_function(self):
         """Test that calling a helper function in a rule passes validation."""
         parser = ProtoParser()
-        start = Nonterminal('start', BaseType('String'))
+        start = Nonterminal("start", BaseType("String"))
         grammar = Grammar(start=start)
 
         # Define a helper function: def my_helper(x: String) -> String: x
-        helper_param = Var('x', BaseType('String'))
+        helper_param = Var("x", BaseType("String"))
         helper_body = helper_param
-        helper_def = FunDef('my_helper', [helper_param], BaseType('String'), helper_body)
-        grammar.function_defs['my_helper'] = helper_def
+        helper_def = FunDef(
+            "my_helper", [helper_param], BaseType("String"), helper_body
+        )
+        grammar.function_defs["my_helper"] = helper_def
 
         # Rule that calls the helper: start -> STRING { my_helper($1) }
-        param = Var('s', BaseType('String'))
-        helper_type = FunctionType([BaseType('String')], BaseType('String'))
-        body = Call(NamedFun('my_helper', helper_type), [param])
-        constructor = Lambda([param], BaseType('String'), body)
-        rule = Rule(start, NamedTerminal('STRING', BaseType('String')), constructor)
+        param = Var("s", BaseType("String"))
+        helper_type = FunctionType([BaseType("String")], BaseType("String"))
+        body = Call(NamedFun("my_helper", helper_type), [param])
+        constructor = Lambda([param], BaseType("String"), body)
+        rule = Rule(start, NamedTerminal("STRING", BaseType("String")), constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -773,30 +871,30 @@ class TestHelperFunctionCalls:
     def test_call_helper_function_in_expression(self, validator):
         """Test calling a helper function within an expression."""
         # Call to a named function with type Int64 -> String
-        fn_type = FunctionType([BaseType('Int64')], BaseType('String'))
-        call = Call(NamedFun('some_helper', fn_type), [Lit(42)])
+        fn_type = FunctionType([BaseType("Int64")], BaseType("String"))
+        call = Call(NamedFun("some_helper", fn_type), [Lit(42)])
         # Should pass - validator doesn't check if function exists
-        validator._check_expr_types(call, 'test_rule')
+        validator._check_expr_types(call, "test_rule")
         assert validator.result.is_valid
 
     def test_helper_function_as_argument(self):
         """Test helper function result used as argument to another call."""
         parser = ProtoParser()
-        start = Nonterminal('start', ListType(BaseType('String')))
+        start = Nonterminal("start", ListType(BaseType("String")))
         grammar = Grammar(start=start)
 
         # Define helper: def wrap(x: String) -> String: x
-        helper_param = Var('x', BaseType('String'))
-        helper_def = FunDef('wrap', [helper_param], BaseType('String'), helper_param)
-        grammar.function_defs['wrap'] = helper_def
+        helper_param = Var("x", BaseType("String"))
+        helper_def = FunDef("wrap", [helper_param], BaseType("String"), helper_param)
+        grammar.function_defs["wrap"] = helper_def
 
         # Rule: start -> STRING { [wrap($1)] }
-        param = Var('s', BaseType('String'))
-        wrap_type = FunctionType([BaseType('String')], BaseType('String'))
-        helper_call = Call(NamedFun('wrap', wrap_type), [param])
-        body = ListExpr([helper_call], BaseType('String'))
-        constructor = Lambda([param], ListType(BaseType('String')), body)
-        rule = Rule(start, NamedTerminal('STRING', BaseType('String')), constructor)
+        param = Var("s", BaseType("String"))
+        wrap_type = FunctionType([BaseType("String")], BaseType("String"))
+        helper_call = Call(NamedFun("wrap", wrap_type), [param])
+        body = ListExpr([helper_call], BaseType("String"))
+        constructor = Lambda([param], ListType(BaseType("String")), body)
+        rule = Rule(start, NamedTerminal("STRING", BaseType("String")), constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -806,26 +904,26 @@ class TestHelperFunctionCalls:
     def test_nested_helper_function_calls(self):
         """Test nested calls to helper functions."""
         parser = ProtoParser()
-        start = Nonterminal('start', BaseType('String'))
+        start = Nonterminal("start", BaseType("String"))
         grammar = Grammar(start=start)
 
         # Define helpers
-        str_to_str = FunctionType([BaseType('String')], BaseType('String'))
+        str_to_str = FunctionType([BaseType("String")], BaseType("String"))
 
-        inner_param = Var('x', BaseType('String'))
-        inner_def = FunDef('inner', [inner_param], BaseType('String'), inner_param)
-        grammar.function_defs['inner'] = inner_def
+        inner_param = Var("x", BaseType("String"))
+        inner_def = FunDef("inner", [inner_param], BaseType("String"), inner_param)
+        grammar.function_defs["inner"] = inner_def
 
-        outer_param = Var('y', BaseType('String'))
-        outer_body = Call(NamedFun('inner', str_to_str), [outer_param])
-        outer_def = FunDef('outer', [outer_param], BaseType('String'), outer_body)
-        grammar.function_defs['outer'] = outer_def
+        outer_param = Var("y", BaseType("String"))
+        outer_body = Call(NamedFun("inner", str_to_str), [outer_param])
+        outer_def = FunDef("outer", [outer_param], BaseType("String"), outer_body)
+        grammar.function_defs["outer"] = outer_def
 
         # Rule: start -> STRING { outer($1) }
-        param = Var('s', BaseType('String'))
-        body = Call(NamedFun('outer', str_to_str), [param])
-        constructor = Lambda([param], BaseType('String'), body)
-        rule = Rule(start, NamedTerminal('STRING', BaseType('String')), constructor)
+        param = Var("s", BaseType("String"))
+        body = Call(NamedFun("outer", str_to_str), [param])
+        constructor = Lambda([param], BaseType("String"), body)
+        rule = Rule(start, NamedTerminal("STRING", BaseType("String")), constructor)
         grammar.rules[start] = [rule]
 
         validator = GrammarValidator(grammar, parser)
@@ -839,42 +937,49 @@ class TestGetFieldTypeChecking:
     def test_getfield_correct_message_type(self, validator):
         """Test GetField with correct message type passes."""
         from meta.target import GetField
-        msg_type = MessageType('proto', 'TestMsg')
-        obj = Var('msg', msg_type)
-        field = GetField(obj, 'field_name', msg_type, BaseType('String'))
-        validator._check_expr_types(field, 'test_rule')
+
+        msg_type = MessageType("proto", "TestMsg")
+        obj = Var("msg", msg_type)
+        field = GetField(obj, "field_name", msg_type, BaseType("String"))
+        validator._check_expr_types(field, "test_rule")
         assert validator.result.is_valid
 
     def test_getfield_wrong_message_type(self, validator):
         """Test GetField with wrong message type fails."""
         from meta.target import GetField
-        actual_type = MessageType('proto', 'ActualMsg')
-        expected_type = MessageType('proto', 'ExpectedMsg')
-        obj = Var('msg', actual_type)
-        field = GetField(obj, 'field_name', expected_type, BaseType('String'))
-        validator._check_expr_types(field, 'test_rule')
+
+        actual_type = MessageType("proto", "ActualMsg")
+        expected_type = MessageType("proto", "ExpectedMsg")
+        obj = Var("msg", actual_type)
+        field = GetField(obj, "field_name", expected_type, BaseType("String"))
+        validator._check_expr_types(field, "test_rule")
         assert not validator.result.is_valid
-        assert any('type_field_access' == e.category for e in validator.result.errors)
-        assert any('ExpectedMsg' in e.message and 'ActualMsg' in e.message for e in validator.result.errors)
+        assert any("type_field_access" == e.category for e in validator.result.errors)
+        assert any(
+            "ExpectedMsg" in e.message and "ActualMsg" in e.message
+            for e in validator.result.errors
+        )
 
     def test_getfield_target_type(self):
         """Test GetField.target_type() returns field_type."""
         from meta.target import GetField
-        msg_type = MessageType('proto', 'TestMsg')
-        field_type = BaseType('Int64')
-        obj = Var('msg', msg_type)
-        field = GetField(obj, 'value', msg_type, field_type)
+
+        msg_type = MessageType("proto", "TestMsg")
+        field_type = BaseType("Int64")
+        obj = Var("msg", msg_type)
+        field = GetField(obj, "value", msg_type, field_type)
         assert field.target_type() == field_type
 
     def test_getfield_nested_correct_types(self, validator):
         """Test nested GetField with correct types passes."""
         from meta.target import GetField
-        outer_type = MessageType('proto', 'Outer')
-        inner_type = MessageType('proto', 'Inner')
-        obj = Var('msg', outer_type)
-        inner = GetField(obj, 'inner', outer_type, inner_type)
-        outer = GetField(inner, 'value', inner_type, BaseType('String'))
-        validator._check_expr_types(outer, 'test_rule')
+
+        outer_type = MessageType("proto", "Outer")
+        inner_type = MessageType("proto", "Inner")
+        obj = Var("msg", outer_type)
+        inner = GetField(obj, "inner", outer_type, inner_type)
+        outer = GetField(inner, "value", inner_type, BaseType("String"))
+        validator._check_expr_types(outer, "test_rule")
         assert validator.result.is_valid
 
 
@@ -1074,8 +1179,7 @@ class TestIsSubtype:
         never = BaseType("Never")
         int64 = BaseType("Int64")
         assert not validator._is_subtype(
-            ListType(ListType(never)),
-            ListType(ListType(int64))
+            ListType(ListType(never)), ListType(ListType(int64))
         )
 
     def test_nested_option_covariance(self, validator):
@@ -1083,8 +1187,7 @@ class TestIsSubtype:
         never = BaseType("Never")
         int64 = BaseType("Int64")
         assert validator._is_subtype(
-            OptionType(OptionType(never)),
-            OptionType(OptionType(int64))
+            OptionType(OptionType(never)), OptionType(OptionType(int64))
         )
 
     def test_list_of_option_invariance(self, validator):
@@ -1092,8 +1195,7 @@ class TestIsSubtype:
         never = BaseType("Never")
         int64 = BaseType("Int64")
         assert not validator._is_subtype(
-            ListType(OptionType(never)),
-            ListType(OptionType(int64))
+            ListType(OptionType(never)), ListType(OptionType(int64))
         )
 
     def test_sequence_of_option_covariance(self, validator):
@@ -1101,8 +1203,7 @@ class TestIsSubtype:
         never = BaseType("Never")
         int64 = BaseType("Int64")
         assert validator._is_subtype(
-            SequenceType(OptionType(never)),
-            SequenceType(OptionType(int64))
+            SequenceType(OptionType(never)), SequenceType(OptionType(int64))
         )
 
     def test_option_of_list_invariance(self, validator):
@@ -1110,8 +1211,7 @@ class TestIsSubtype:
         never = BaseType("Never")
         int64 = BaseType("Int64")
         assert not validator._is_subtype(
-            OptionType(ListType(never)),
-            OptionType(ListType(int64))
+            OptionType(ListType(never)), OptionType(ListType(int64))
         )
 
     def test_option_of_sequence_covariance(self, validator):
@@ -1119,8 +1219,7 @@ class TestIsSubtype:
         never = BaseType("Never")
         int64 = BaseType("Int64")
         assert validator._is_subtype(
-            OptionType(SequenceType(never)),
-            OptionType(SequenceType(int64))
+            OptionType(SequenceType(never)), OptionType(SequenceType(int64))
         )
 
     def test_tuple_reflexivity(self, validator):
@@ -1227,8 +1326,7 @@ class TestIsSubtype:
         never = BaseType("Never")
         int64 = BaseType("Int64")
         assert validator._is_subtype(
-            SequenceType(SequenceType(never)),
-            SequenceType(SequenceType(int64))
+            SequenceType(SequenceType(never)), SequenceType(SequenceType(int64))
         )
 
     def test_sequence_not_subtype_of_element(self, validator):
@@ -1307,7 +1405,9 @@ class TestTypesCompatible:
         ]
         for t1 in types:
             for t2 in types:
-                assert validator._types_compatible(t1, t2) == validator._types_compatible(t2, t1)
+                assert validator._types_compatible(
+                    t1, t2
+                ) == validator._types_compatible(t2, t1)
 
     def test_reflexive(self, validator):
         """types_compatible(t, t) is True."""
@@ -1407,7 +1507,9 @@ class TestTypesCompatible:
         """Sequence[Int64] is not compatible with Sequence[String]."""
         int64 = BaseType("Int64")
         string = BaseType("String")
-        assert not validator._types_compatible(SequenceType(int64), SequenceType(string))
+        assert not validator._types_compatible(
+            SequenceType(int64), SequenceType(string)
+        )
 
     def test_sequence_option_not_compatible(self, validator):
         """Sequence[T] is not compatible with Option[T]."""

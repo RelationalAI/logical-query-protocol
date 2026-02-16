@@ -1,9 +1,9 @@
 """Tests for protobuf parser."""
 
+import shutil
+import tempfile
 import unittest
 from pathlib import Path
-import tempfile
-import shutil
 
 from meta.proto_parser import ProtoParser
 

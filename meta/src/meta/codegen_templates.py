@@ -5,7 +5,6 @@ Templates use placeholders like {0}, {1} for arguments and {args} for variadic.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
 
 
 @dataclass
@@ -15,12 +14,13 @@ class BuiltinTemplate:
     value_template: Template for the value expression (e.g., "!{0}"), or None for non-returning builtins.
     statement_templates: Templates for statements to execute (may be empty)
     """
-    value_template: Optional[str]
-    statement_templates: List[str] = field(default_factory=list)
+
+    value_template: str | None
+    statement_templates: list[str] = field(default_factory=list)
 
 
 # Python builtin templates
-PYTHON_TEMPLATES: Dict[str, BuiltinTemplate] = {
+PYTHON_TEMPLATES: dict[str, BuiltinTemplate] = {
     "some": BuiltinTemplate("{0}"),
     "not": BuiltinTemplate("not {0}"),
     "and": BuiltinTemplate("({0} and {1})"),
@@ -49,18 +49,28 @@ PYTHON_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "to_ptr_string": BuiltinTemplate("{0}"),
     "to_ptr_bool": BuiltinTemplate("{0}"),
     "map": BuiltinTemplate("[{0}(x) for x in {1}]"),
-    "list_concat": BuiltinTemplate("(list({0}) + list({1} if {1} is not None else []))"),
+    "list_concat": BuiltinTemplate(
+        "(list({0}) + list({1} if {1} is not None else []))"
+    ),
     "list_push": BuiltinTemplate("None", ["{0}.append({1})"]),
     "list_slice": BuiltinTemplate("{0}[{1}:{2}]"),
     "list_sort": BuiltinTemplate("sorted({0})"),
-    "fragment_id_from_string": BuiltinTemplate("fragments_pb2.FragmentId(id={0}.encode())"),
+    "fragment_id_from_string": BuiltinTemplate(
+        "fragments_pb2.FragmentId(id={0}.encode())"
+    ),
     "relation_id_from_string": BuiltinTemplate("self.relation_id_from_string({0})"),
     "relation_id_from_int": BuiltinTemplate(
         "logic_pb2.RelationId(id_low={0} & 0xFFFFFFFFFFFFFFFF, id_high=({0} >> 64) & 0xFFFFFFFFFFFFFFFF)"
     ),
-    "relation_id_from_uint128": BuiltinTemplate("logic_pb2.RelationId(id_low={0}.low, id_high={0}.high)"),
-    "match_lookahead_terminal": BuiltinTemplate("self.match_lookahead_terminal({0}, {1})"),
-    "match_lookahead_literal": BuiltinTemplate("self.match_lookahead_literal({0}, {1})"),
+    "relation_id_from_uint128": BuiltinTemplate(
+        "logic_pb2.RelationId(id_low={0}.low, id_high={0}.high)"
+    ),
+    "match_lookahead_terminal": BuiltinTemplate(
+        "self.match_lookahead_terminal({0}, {1})"
+    ),
+    "match_lookahead_literal": BuiltinTemplate(
+        "self.match_lookahead_literal({0}, {1})"
+    ),
     "consume_literal": BuiltinTemplate("None", ["self.consume_literal({0})"]),
     "consume_terminal": BuiltinTemplate("self.consume_terminal({0})"),
     "current_token": BuiltinTemplate("self.lookahead(0)"),
@@ -94,14 +104,11 @@ PYTHON_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "relation_id_to_string": BuiltinTemplate("self.relation_id_to_string({0})"),
     "relation_id_to_int": BuiltinTemplate("self.relation_id_to_int({0})"),
     "relation_id_to_uint128": BuiltinTemplate("self.relation_id_to_uint128({0})"),
-    "subtract": BuiltinTemplate("({0} - {1})"),
-    "list_slice": BuiltinTemplate("{0}[{1}:{2}]"),
-    "list_sort": BuiltinTemplate("sorted({0})"),
 }
 
 
 # Julia builtin templates
-JULIA_TEMPLATES: Dict[str, BuiltinTemplate] = {
+JULIA_TEMPLATES: dict[str, BuiltinTemplate] = {
     "some": BuiltinTemplate("{0}"),
     "not": BuiltinTemplate("!{0}"),
     "and": BuiltinTemplate("({0} && {1})"),
@@ -134,21 +141,29 @@ JULIA_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "list_push": BuiltinTemplate("nothing", ["push!({0}, {1})"]),
     "list_slice": BuiltinTemplate("{0}[{1}:{2}]"),
     "list_sort": BuiltinTemplate("sort({0})"),
-    "fragment_id_from_string": BuiltinTemplate("Proto.FragmentId(Vector{{UInt8}}({0}))"),
+    "fragment_id_from_string": BuiltinTemplate(
+        "Proto.FragmentId(Vector{{UInt8}}({0}))"
+    ),
     "relation_id_from_string": BuiltinTemplate("relation_id_from_string(parser, {0})"),
     "relation_id_from_int": BuiltinTemplate(
         "Proto.RelationId({0} & 0xFFFFFFFFFFFFFFFF, ({0} >> 64) & 0xFFFFFFFFFFFFFFFF)"
     ),
     "relation_id_from_uint128": BuiltinTemplate("Proto.RelationId({0}.low, {0}.high)"),
-    "match_lookahead_terminal": BuiltinTemplate("match_lookahead_terminal(parser, {0}, {1})"),
-    "match_lookahead_literal": BuiltinTemplate("match_lookahead_literal(parser, {0}, {1})"),
+    "match_lookahead_terminal": BuiltinTemplate(
+        "match_lookahead_terminal(parser, {0}, {1})"
+    ),
+    "match_lookahead_literal": BuiltinTemplate(
+        "match_lookahead_literal(parser, {0}, {1})"
+    ),
     "consume_literal": BuiltinTemplate("nothing", ["consume_literal!(parser, {0})"]),
     "consume_terminal": BuiltinTemplate("consume_terminal!(parser, {0})"),
     "current_token": BuiltinTemplate("lookahead(parser, 0)"),
     "start_fragment": BuiltinTemplate("{0}", ["start_fragment!(parser, {0})"]),
     "construct_fragment": BuiltinTemplate("construct_fragment(parser, {0}, {1})"),
     "error": BuiltinTemplate(None, ["throw(ParseError({0}))"]),
-    "error_with_token": BuiltinTemplate(None, ['throw(ParseError({0} * ": " * string({1})))']),
+    "error_with_token": BuiltinTemplate(
+        None, ['throw(ParseError({0} * ": " * string({1})))']
+    ),
     # Pretty-printing builtins
     "write_io": BuiltinTemplate("nothing", ["write(pp, {0})"]),
     "newline_io": BuiltinTemplate("nothing", ["newline(pp)"]),
@@ -159,7 +174,7 @@ JULIA_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "format_float64": BuiltinTemplate("string({0})"),
     "format_string": BuiltinTemplate("format_string_value({0})"),
     "format_symbol": BuiltinTemplate("{0}"),
-    "format_bool": BuiltinTemplate("({0} ? \"true\" : \"false\")"),
+    "format_bool": BuiltinTemplate('({0} ? "true" : "false")'),
     "format_decimal": BuiltinTemplate("format_decimal(pp, {0})"),
     "format_int128": BuiltinTemplate("format_int128(pp, {0})"),
     "format_uint128": BuiltinTemplate("format_uint128(pp, {0})"),
@@ -173,9 +188,6 @@ JULIA_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "relation_id_to_string": BuiltinTemplate("relation_id_to_string(pp, {0})"),
     "relation_id_to_int": BuiltinTemplate("relation_id_to_int(pp, {0})"),
     "relation_id_to_uint128": BuiltinTemplate("relation_id_to_uint128(pp, {0})"),
-    "subtract": BuiltinTemplate("({0} - {1})"),
-    "list_slice": BuiltinTemplate("{0}[{1}:{2}]"),
-    "list_sort": BuiltinTemplate("sort({0})"),
 }
 
 
@@ -183,7 +195,7 @@ JULIA_TEMPLATES: Dict[str, BuiltinTemplate] = {
 # Note: option-related builtins (some, is_none, is_some, unwrap_option, unwrap_option_or)
 # are intercepted at the AST level in codegen_go.py._generate_option_builtin.
 # The templates here serve as fallbacks.
-GO_TEMPLATES: Dict[str, BuiltinTemplate] = {
+GO_TEMPLATES: dict[str, BuiltinTemplate] = {
     "some": BuiltinTemplate("ptr({0})"),
     "not": BuiltinTemplate("!{0}"),
     "and": BuiltinTemplate("({0} && {1})"),
@@ -198,7 +210,7 @@ GO_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "make_empty_bytes": BuiltinTemplate("[]byte{}"),
     "dict_from_list": BuiltinTemplate("dictFromList({0})"),
     "dict_get": BuiltinTemplate("dictGetValue({0}, {1})"),
-    "has_proto_field": BuiltinTemplate('hasProtoField({0}, {1})'),
+    "has_proto_field": BuiltinTemplate("hasProtoField({0}, {1})"),
     "string_to_upper": BuiltinTemplate("strings.ToUpper({0})"),
     "string_in_list": BuiltinTemplate("stringInList({0}, {1})"),
     "subtract": BuiltinTemplate("({0} - {1})"),
@@ -221,7 +233,9 @@ GO_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "relation_id_from_int": BuiltinTemplate(
         "&pb.RelationId{{IdLow: uint64({0}) & 0xFFFFFFFFFFFFFFFF, IdHigh: uint64({0}) >> 64 & 0xFFFFFFFFFFFFFFFF}}"
     ),
-    "relation_id_from_uint128": BuiltinTemplate("&pb.RelationId{{IdLow: {0}.Low, IdHigh: {0}.High}}"),
+    "relation_id_from_uint128": BuiltinTemplate(
+        "&pb.RelationId{{IdLow: {0}.Low, IdHigh: {0}.High}}"
+    ),
     "match_lookahead_terminal": BuiltinTemplate("p.matchLookaheadTerminal({0}, {1})"),
     "match_lookahead_literal": BuiltinTemplate("p.matchLookaheadLiteral({0}, {1})"),
     "consume_literal": BuiltinTemplate("nil", ["p.consumeLiteral({0})"]),
@@ -231,8 +245,11 @@ GO_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "construct_fragment": BuiltinTemplate("p.constructFragment({0}, {1})"),
     "error": BuiltinTemplate(None, ["panic(ParseError{{msg: {0}}})"]),
     "error_with_token": BuiltinTemplate(
-        None, ['panic(ParseError{{msg: fmt.Sprintf("%s: %s=`%v`", {0}, {1}.Type, {1}.Value)}})'
-    ]),
+        None,
+        [
+            'panic(ParseError{{msg: fmt.Sprintf("%s: %s=`%v`", {0}, {1}.Type, {1}.Value)}})'
+        ],
+    ),
     # Pretty-printing builtins
     "write_io": BuiltinTemplate("nil", ["p.write({0})"]),
     "newline_io": BuiltinTemplate("nil", ["p.newline()"]),
@@ -243,7 +260,7 @@ GO_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "format_float64": BuiltinTemplate('fmt.Sprintf("%g", {0})'),
     "format_string": BuiltinTemplate("p.formatStringValue({0})"),
     "format_symbol": BuiltinTemplate("{0}"),
-    "format_bool": BuiltinTemplate('formatBool({0})'),
+    "format_bool": BuiltinTemplate("formatBool({0})"),
     "format_decimal": BuiltinTemplate("p.formatDecimal({0})"),
     "format_int128": BuiltinTemplate("p.formatInt128({0})"),
     "format_uint128": BuiltinTemplate("p.formatUint128({0})"),
@@ -257,13 +274,11 @@ GO_TEMPLATES: Dict[str, BuiltinTemplate] = {
     "relation_id_to_string": BuiltinTemplate("p.relationIdToString({0})"),
     "relation_id_to_int": BuiltinTemplate("p.relationIdToInt({0})"),
     "relation_id_to_uint128": BuiltinTemplate("p.relationIdToUint128({0})"),
-    "subtract": BuiltinTemplate("({0} - {1})"),
-    "list_slice": BuiltinTemplate("{0}[{1}:{2}]"),
 }
 
 __all__ = [
-    'BuiltinTemplate',
-    'PYTHON_TEMPLATES',
-    'JULIA_TEMPLATES',
-    'GO_TEMPLATES',
+    "BuiltinTemplate",
+    "PYTHON_TEMPLATES",
+    "JULIA_TEMPLATES",
+    "GO_TEMPLATES",
 ]

@@ -6,10 +6,10 @@ and protobuf output using small test cases.
 """
 
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from textwrap import dedent
-import sys
 
 
 def create_test_files():
@@ -125,6 +125,7 @@ def run_cli(*args):
         tuple: (returncode, stdout, stderr)
     """
     import os
+
     cmd = [sys.executable, "-m", "meta.cli"] + list(args)
     src_dir = Path(__file__).parent.parent.parent / "src"
     env = os.environ.copy()
@@ -134,7 +135,7 @@ def run_cli(*args):
         capture_output=True,
         text=True,
         cwd=Path(__file__).parent.parent.parent,
-        env=env
+        env=env,
     )
     return result.returncode, result.stdout, result.stderr
 
@@ -147,13 +148,15 @@ class TestCLIValidation:
         proto_path, grammar_path, temp_dir = create_test_files()
         try:
             returncode, stdout, stderr = run_cli(
-                str(proto_path),
-                "--grammar", str(grammar_path)
+                str(proto_path), "--grammar", str(grammar_path)
             )
 
-            assert returncode == 0, f"Expected success, got {returncode}\nstdout: {stdout}\nstderr: {stderr}"
+            assert returncode == 0, (
+                f"Expected success, got {returncode}\nstdout: {stdout}\nstderr: {stderr}"
+            )
         finally:
             import shutil
+
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     def test_validate_invalid_grammar(self):
@@ -161,17 +164,20 @@ class TestCLIValidation:
         proto_path, grammar_path, temp_dir = create_invalid_grammar()
         try:
             returncode, stdout, stderr = run_cli(
-                str(proto_path),
-                "--grammar", str(grammar_path)
+                str(proto_path), "--grammar", str(grammar_path)
             )
 
             # Validation should fail (missing Address coverage)
-            assert returncode != 0, f"Expected validation to fail\nstdout: {stdout}\nstderr: {stderr}"
+            assert returncode != 0, (
+                f"Expected validation to fail\nstdout: {stdout}\nstderr: {stderr}"
+            )
             # Should mention Address in the output
-            assert "address" in stdout.lower() or "address" in stderr.lower(), \
+            assert "address" in stdout.lower() or "address" in stderr.lower(), (
                 f"Expected 'address' in output\nstdout: {stdout}\nstderr: {stderr}"
+            )
         finally:
             import shutil
+
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     def test_parser_blocked_on_validation_failure(self):
@@ -180,27 +186,32 @@ class TestCLIValidation:
         try:
             # Try to generate IR parser with invalid grammar
             returncode, stdout, stderr = run_cli(
-                str(proto_path),
-                "--grammar", str(grammar_path),
-                "--parser", "ir"
+                str(proto_path), "--grammar", str(grammar_path), "--parser", "ir"
             )
 
-            assert returncode != 0, f"Expected parser generation to fail\nstdout: {stdout}\nstderr: {stderr}"
-            assert "cannot generate parser" in stderr.lower() or "validation" in stderr.lower(), \
-                f"Expected validation error message\nstderr: {stderr}"
+            assert returncode != 0, (
+                f"Expected parser generation to fail\nstdout: {stdout}\nstderr: {stderr}"
+            )
+            assert (
+                "cannot generate parser" in stderr.lower()
+                or "validation" in stderr.lower()
+            ), f"Expected validation error message\nstderr: {stderr}"
 
             # Try to generate Python parser with invalid grammar
             returncode, stdout, stderr = run_cli(
-                str(proto_path),
-                "--grammar", str(grammar_path),
-                "--parser", "python"
+                str(proto_path), "--grammar", str(grammar_path), "--parser", "python"
             )
 
-            assert returncode != 0, f"Expected parser generation to fail\nstdout: {stdout}\nstderr: {stderr}"
-            assert "cannot generate parser" in stderr.lower() or "validation" in stderr.lower(), \
-                f"Expected validation error message\nstderr: {stderr}"
+            assert returncode != 0, (
+                f"Expected parser generation to fail\nstdout: {stdout}\nstderr: {stderr}"
+            )
+            assert (
+                "cannot generate parser" in stderr.lower()
+                or "validation" in stderr.lower()
+            ), f"Expected validation error message\nstderr: {stderr}"
         finally:
             import shutil
+
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     def test_no_validate_bypasses_validation(self):
@@ -210,17 +221,24 @@ class TestCLIValidation:
             # Generate IR parser with --no-validate
             returncode, stdout, stderr = run_cli(
                 str(proto_path),
-                "--grammar", str(grammar_path),
-                "--parser", "ir",
-                "--no-validate"
+                "--grammar",
+                str(grammar_path),
+                "--parser",
+                "ir",
+                "--no-validate",
             )
 
             # Should succeed since validation is skipped
-            assert returncode == 0, f"Expected success with --no-validate\nstdout: {stdout}\nstderr: {stderr}"
+            assert returncode == 0, (
+                f"Expected success with --no-validate\nstdout: {stdout}\nstderr: {stderr}"
+            )
             # Should have generated some output
-            assert "transaction" in stdout.lower(), f"Expected parser output\nstdout: {stdout}"
+            assert "transaction" in stdout.lower(), (
+                f"Expected parser output\nstdout: {stdout}"
+            )
         finally:
             import shutil
+
             shutil.rmtree(temp_dir, ignore_errors=True)
 
 
@@ -231,17 +249,17 @@ class TestCLIProtoOutput:
         """Test that --proto outputs parsed protobuf specification."""
         proto_path, grammar_path, temp_dir = create_test_files()
         try:
-            returncode, stdout, stderr = run_cli(
-                str(proto_path),
-                "--proto"
-            )
+            returncode, stdout, stderr = run_cli(str(proto_path), "--proto")
 
-            assert returncode == 0, f"Expected success, got {returncode}\nstderr: {stderr}"
+            assert returncode == 0, (
+                f"Expected success, got {returncode}\nstderr: {stderr}"
+            )
             assert "message Transaction" in stdout
             assert "string name" in stdout
             assert "int32 value" in stdout
         finally:
             import shutil
+
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     def test_proto_output_to_file(self):
@@ -250,12 +268,12 @@ class TestCLIProtoOutput:
         output_path = temp_dir / "proto_output.txt"
         try:
             returncode, _stdout, stderr = run_cli(
-                str(proto_path),
-                "--proto",
-                "-o", str(output_path)
+                str(proto_path), "--proto", "-o", str(output_path)
             )
 
-            assert returncode == 0, f"Expected success, got {returncode}\nstderr: {stderr}"
+            assert returncode == 0, (
+                f"Expected success, got {returncode}\nstderr: {stderr}"
+            )
             assert output_path.exists(), "Output file was not created"
 
             output_content = output_path.read_text()
@@ -263,6 +281,7 @@ class TestCLIProtoOutput:
             assert "string name" in output_content
         finally:
             import shutil
+
             shutil.rmtree(temp_dir, ignore_errors=True)
 
 
@@ -274,16 +293,17 @@ class TestCLIParserIR:
         proto_path, grammar_path, temp_dir = create_test_files()
         try:
             returncode, stdout, stderr = run_cli(
-                str(proto_path),
-                "--grammar", str(grammar_path),
-                "--parser", "ir"
+                str(proto_path), "--grammar", str(grammar_path), "--parser", "ir"
             )
 
-            assert returncode == 0, f"Expected success, got {returncode}\nstderr: {stderr}"
+            assert returncode == 0, (
+                f"Expected success, got {returncode}\nstderr: {stderr}"
+            )
             # IR output should contain transaction rule
             assert "transaction" in stdout.lower()
         finally:
             import shutil
+
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     def test_parser_ir_output_to_file(self):
@@ -293,18 +313,24 @@ class TestCLIParserIR:
         try:
             returncode, _stdout, stderr = run_cli(
                 str(proto_path),
-                "--grammar", str(grammar_path),
-                "--parser", "ir",
-                "-o", str(output_path)
+                "--grammar",
+                str(grammar_path),
+                "--parser",
+                "ir",
+                "-o",
+                str(output_path),
             )
 
-            assert returncode == 0, f"Expected success, got {returncode}\nstderr: {stderr}"
+            assert returncode == 0, (
+                f"Expected success, got {returncode}\nstderr: {stderr}"
+            )
             assert output_path.exists(), "Output file was not created"
 
             output_content = output_path.read_text()
             assert len(output_content) > 0, "Output file is empty"
         finally:
             import shutil
+
             shutil.rmtree(temp_dir, ignore_errors=True)
 
 
@@ -316,17 +342,18 @@ class TestCLIParserPython:
         proto_path, grammar_path, temp_dir = create_test_files()
         try:
             returncode, stdout, stderr = run_cli(
-                str(proto_path),
-                "--grammar", str(grammar_path),
-                "--parser", "python"
+                str(proto_path), "--grammar", str(grammar_path), "--parser", "python"
             )
 
-            assert returncode == 0, f"Expected success, got {returncode}\nstderr: {stderr}"
+            assert returncode == 0, (
+                f"Expected success, got {returncode}\nstderr: {stderr}"
+            )
             # Python output should contain valid Python code
             assert "def " in stdout or "class " in stdout
             assert "import" in stdout or "from" in stdout
         finally:
             import shutil
+
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     def test_parser_python_output_to_file(self):
@@ -336,12 +363,17 @@ class TestCLIParserPython:
         try:
             returncode, _stdout, stderr = run_cli(
                 str(proto_path),
-                "--grammar", str(grammar_path),
-                "--parser", "python",
-                "-o", str(output_path)
+                "--grammar",
+                str(grammar_path),
+                "--parser",
+                "python",
+                "-o",
+                str(output_path),
             )
 
-            assert returncode == 0, f"Expected success, got {returncode}\nstderr: {stderr}"
+            assert returncode == 0, (
+                f"Expected success, got {returncode}\nstderr: {stderr}"
+            )
             assert output_path.exists(), "Output file was not created"
 
             output_content = output_path.read_text()
@@ -349,6 +381,7 @@ class TestCLIParserPython:
             assert "def " in output_content or "class " in output_content
         finally:
             import shutil
+
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     def test_parser_python_is_valid_syntax(self):
@@ -358,19 +391,26 @@ class TestCLIParserPython:
         try:
             returncode, _stdout, stderr = run_cli(
                 str(proto_path),
-                "--grammar", str(grammar_path),
-                "--parser", "python",
-                "-o", str(output_path)
+                "--grammar",
+                str(grammar_path),
+                "--parser",
+                "python",
+                "-o",
+                str(output_path),
             )
 
-            assert returncode == 0, f"Expected success, got {returncode}\nstderr: {stderr}"
+            assert returncode == 0, (
+                f"Expected success, got {returncode}\nstderr: {stderr}"
+            )
             assert output_path.exists(), "Output file was not created"
 
             # Try to compile the Python file to check syntax
             import py_compile
+
             py_compile.compile(str(output_path), doraise=True)
         finally:
             import shutil
+
             shutil.rmtree(temp_dir, ignore_errors=True)
 
 
@@ -379,10 +419,7 @@ class TestCLIErrorHandling:
 
     def test_missing_proto_file(self):
         """Test error when proto file doesn't exist."""
-        returncode, _stdout, stderr = run_cli(
-            "nonexistent.proto",
-            "--proto"
-        )
+        returncode, _stdout, stderr = run_cli("nonexistent.proto", "--proto")
 
         assert returncode != 0, "Expected failure for missing file"
         assert "not found" in stderr.lower() or "error" in stderr.lower()
@@ -392,28 +429,25 @@ class TestCLIErrorHandling:
         proto_path, _grammar_path, temp_dir = create_test_files()
         try:
             returncode, _stdout, stderr = run_cli(
-                str(proto_path),
-                "--grammar", "nonexistent.y",
-                "--parser", "ir"
+                str(proto_path), "--grammar", "nonexistent.y", "--parser", "ir"
             )
 
             assert returncode != 0, "Expected failure for missing grammar"
             assert "not found" in stderr.lower() or "error" in stderr.lower()
         finally:
             import shutil
+
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     def test_parser_requires_grammar(self):
         """Test that --parser requires --grammar."""
         proto_path, _grammar_path, temp_dir = create_test_files()
         try:
-            returncode, _stdout, stderr = run_cli(
-                str(proto_path),
-                "--parser", "python"
-            )
+            returncode, _stdout, stderr = run_cli(str(proto_path), "--parser", "python")
 
             assert returncode != 0, "Expected failure when --grammar is missing"
             assert "grammar" in stderr.lower() or "required" in stderr.lower()
         finally:
             import shutil
+
             shutil.rmtree(temp_dir, ignore_errors=True)

@@ -29,21 +29,20 @@ Example:
 
 import re
 from pathlib import Path
-from typing import Dict
 
-from .proto_ast import ProtoMessage, ProtoEnum, ProtoField, ProtoOneof, ProtoReserved
+from .proto_ast import ProtoEnum, ProtoField, ProtoMessage, ProtoOneof, ProtoReserved
 
 # Regex patterns for parsing protobuf syntax
-_LINE_COMMENT_PATTERN = re.compile(r'//.*?\n')
-_BLOCK_COMMENT_PATTERN = re.compile(r'/\*.*?\*/', re.DOTALL)
-_MESSAGE_PATTERN = re.compile(r'message\s+(\w+)\s*\{')
-_ENUM_PATTERN = re.compile(r'enum\s+(\w+)\s*\{')
-_NESTED_ENUM_PATTERN = re.compile(r'enum\s+(\w+)\s*\{([^}]+)\}')
-_ONEOF_PATTERN = re.compile(r'oneof\s+(\w+)\s*\{((?:[^{}]|\{[^}]*\})*)\}')
-_FIELD_PATTERN = re.compile(r'(repeated|optional)?\s*(\w+)\s+(\w+)\s*=\s*(\d+);')
-_ONEOF_FIELD_PATTERN = re.compile(r'(\w+)\s+(\w+)\s*=\s*(\d+);')
-_ENUM_VALUE_PATTERN = re.compile(r'(\w+)\s*=\s*(\d+);')
-_RESERVED_PATTERN = re.compile(r'reserved\s+([^;]+);')
+_LINE_COMMENT_PATTERN = re.compile(r"//.*?\n")
+_BLOCK_COMMENT_PATTERN = re.compile(r"/\*.*?\*/", re.DOTALL)
+_MESSAGE_PATTERN = re.compile(r"message\s+(\w+)\s*\{")
+_ENUM_PATTERN = re.compile(r"enum\s+(\w+)\s*\{")
+_NESTED_ENUM_PATTERN = re.compile(r"enum\s+(\w+)\s*\{([^}]+)\}")
+_ONEOF_PATTERN = re.compile(r"oneof\s+(\w+)\s*\{((?:[^{}]|\{[^}]*\})*)\}")
+_FIELD_PATTERN = re.compile(r"(repeated|optional)?\s*(\w+)\s+(\w+)\s*=\s*(\d+);")
+_ONEOF_FIELD_PATTERN = re.compile(r"(\w+)\s+(\w+)\s*=\s*(\d+);")
+_ENUM_VALUE_PATTERN = re.compile(r"(\w+)\s*=\s*(\d+);")
+_RESERVED_PATTERN = re.compile(r"reserved\s+([^;]+);")
 
 
 class ProtoParser:
@@ -67,9 +66,10 @@ class ProtoParser:
         >>> parser.messages["Expr"].module
         'logic'
     """
+
     def __init__(self):
-        self.messages: Dict[str, ProtoMessage] = {}
-        self.enums: Dict[str, ProtoEnum] = {}
+        self.messages: dict[str, ProtoMessage] = {}
+        self.enums: dict[str, ProtoEnum] = {}
         self.current_module: str = ""
 
     def parse_file(self, filepath: Path) -> None:
@@ -81,8 +81,8 @@ class ProtoParser:
 
     def _remove_comments(self, content: str) -> str:
         """Remove C-style comments."""
-        content = _LINE_COMMENT_PATTERN.sub('\n', content)
-        content = _BLOCK_COMMENT_PATTERN.sub('', content)
+        content = _LINE_COMMENT_PATTERN.sub("\n", content)
+        content = _BLOCK_COMMENT_PATTERN.sub("", content)
         return content
 
     def _parse_content(self, content: str) -> None:
@@ -114,24 +114,24 @@ class ProtoParser:
         depth = 1
         i = start
         while i < len(content) and depth > 0:
-            if content[i] == '{':
+            if content[i] == "{":
                 depth += 1
-            elif content[i] == '}':
+            elif content[i] == "}":
                 depth -= 1
             i += 1
-        return content[start:i-1], i
+        return content[start : i - 1], i
 
     def _parse_reserved(self, content: str) -> ProtoReserved:
         """Parse reserved statement content into numbers, ranges, and names."""
         reserved = ProtoReserved()
-        parts = [p.strip() for p in content.split(',')]
+        parts = [p.strip() for p in content.split(",")]
 
         for part in parts:
             if '"' in part:
                 name = part.strip('"').strip("'")
                 reserved.names.append(name)
-            elif ' to ' in part:
-                range_parts = part.split(' to ')
+            elif " to " in part:
+                range_parts = part.split(" to ")
                 start = int(range_parts[0].strip())
                 end = int(range_parts[1].strip())
                 reserved.ranges.append((start, end))
@@ -158,9 +158,7 @@ class ProtoParser:
                 field_name = field_match.group(2)
                 field_number = int(field_match.group(3))
                 proto_field = ProtoField(
-                    name=field_name,
-                    type=field_type,
-                    number=field_number
+                    name=field_name, type=field_type, number=field_number
                 )
                 oneof.fields.append(proto_field)
 
@@ -175,8 +173,10 @@ class ProtoParser:
         # Parse regular fields (excluding those inside oneofs and reserved)
         excluded_spans = oneof_spans + reserved_spans
         for match in _FIELD_PATTERN.finditer(body):
-            if any(start <= match.start() and match.end() <= end
-                   for start, end in excluded_spans):
+            if any(
+                start <= match.start() and match.end() <= end
+                for start, end in excluded_spans
+            ):
                 continue
 
             modifier = match.group(1)
@@ -188,8 +188,8 @@ class ProtoParser:
                 name=field_name,
                 type=field_type,
                 number=field_number,
-                is_repeated=modifier == 'repeated',
-                is_optional=modifier == 'optional'
+                is_repeated=modifier == "repeated",
+                is_optional=modifier == "optional",
             )
             message.fields.append(proto_field)
 

@@ -18,10 +18,11 @@ Example:
     'tmp2'
 """
 
+from collections.abc import Iterator
 from itertools import count
-from typing import Iterator
 
 _global_id: Iterator[int] = count(0)
+
 
 def reset(start: int = 0) -> None:
     """Reset the global ID counter.
@@ -35,6 +36,7 @@ def reset(start: int = 0) -> None:
     global _global_id
     _global_id = count(start)
 
+
 def next_id() -> int:
     """Return the next unique ID from the global counter.
 
@@ -42,6 +44,7 @@ def next_id() -> int:
         An integer that has not been returned before.
     """
     return next(_global_id)
+
 
 def gensym(prefix: str = "_t") -> str:
     """Generate a unique symbol name with the given prefix.

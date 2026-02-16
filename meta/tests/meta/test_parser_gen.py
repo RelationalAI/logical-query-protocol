@@ -3,14 +3,34 @@
 
 import sys
 from pathlib import Path
+
 import pytest
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
-from meta.grammar import Grammar, Rule, Nonterminal, LitTerminal, NamedTerminal, Option, Star, Sequence
-from meta.target import Lambda, Var, MessageType, ParseNonterminalDef, BaseType, ListType
-from meta.parser_gen import generate_parse_functions, GrammarConflictError, AmbiguousGrammarError
+from meta.grammar import (
+    Grammar,
+    LitTerminal,
+    NamedTerminal,
+    Nonterminal,
+    Option,
+    Rule,
+    Sequence,
+    Star,
+)
+from meta.parser_gen import (
+    GrammarConflictError,
+    generate_parse_functions,
+)
+from meta.target import (
+    BaseType,
+    Lambda,
+    ListType,
+    MessageType,
+    ParseNonterminalDef,
+    Var,
+)
 
 
 def test_generate_parse_functions_simple():
@@ -73,8 +93,6 @@ def test_generate_parse_functions_with_nonterminal():
     assert len(defs) == 2
     nonterminal_names = {d.nonterminal.name for d in defs}
     assert nonterminal_names == {"S", "A"}
-
-
 
 
 def test_generate_parse_functions_with_option():
@@ -215,7 +233,9 @@ def test_generate_parse_functions_with_named_terminal():
     id_terminal = NamedTerminal("ID", BaseType("String"))
 
     grammar = Grammar(start=s)
-    action = Lambda([Var("id", BaseType("String"))], s_type, Var("id", BaseType("String")))
+    action = Lambda(
+        [Var("id", BaseType("String"))], s_type, Var("id", BaseType("String"))
+    )
     grammar.add_rule(Rule(s, id_terminal, action))
 
     defs = generate_parse_functions(grammar)
@@ -290,7 +310,9 @@ def test_complex_star_sequence():
 
     # S -> "(" A* ")"
     rhs = Sequence((lit_lparen, Star(a), lit_rparen))
-    action_s = Lambda([Var("list", ListType(a_type))], s_type, Var("list", ListType(a_type)))
+    action_s = Lambda(
+        [Var("list", ListType(a_type))], s_type, Var("list", ListType(a_type))
+    )
     grammar.add_rule(Rule(s, rhs, action_s))
 
     # Should generate successfully since ")" provides clear boundary
@@ -298,12 +320,10 @@ def test_complex_star_sequence():
     assert len(defs) == 2
 
 
-
 if __name__ == "__main__":
     test_generate_parse_functions_simple()
     test_generate_parse_functions_multiple_alternatives()
     test_generate_parse_functions_with_nonterminal()
-
 
     test_generate_parse_functions_with_option()
     test_generate_parse_functions_with_star()

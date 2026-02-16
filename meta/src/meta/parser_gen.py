@@ -76,14 +76,40 @@ The generated IR for expr (simplified) would be:
         t  # semantic action
 """
 
-from typing import Dict, List, Optional, Set, Tuple
-from .grammar import Grammar, Rule, Rhs, LitTerminal, NamedTerminal, Nonterminal, Star, Option, Terminal, Sequence
+from .gensym import gensym
+from .grammar import (
+    Grammar,
+    LitTerminal,
+    NamedTerminal,
+    Nonterminal,
+    Option,
+    Rhs,
+    Rule,
+    Sequence,
+    Star,
+    Terminal,
+)
 from .grammar_utils import is_epsilon, rhs_elements
-from .target import Lambda, Call, ParseNonterminalDef, Var, Lit, Let, IfElse, BaseType, ListType, ListExpr, TargetExpr, Seq, While, Assign, ParseNonterminal
+from .target import (
+    Assign,
+    BaseType,
+    Call,
+    IfElse,
+    Lambda,
+    Let,
+    ListExpr,
+    ListType,
+    Lit,
+    ParseNonterminal,
+    ParseNonterminalDef,
+    Seq,
+    TargetExpr,
+    Var,
+    While,
+)
 from .target_builtins import make_builtin, make_builtin_with_type
 from .target_utils import apply_lambda
-from .gensym import gensym
-from .terminal_sequence_set import TerminalSequenceSet, FollowSet, FirstSet, ConcatSet
+from .terminal_sequence_set import ConcatSet, FirstSet, FollowSet, TerminalSequenceSet
 
 # Maximum lookahead depth for LL(k) parsing.
 # Set to 3 because this is sufficient for parsing S-expressions in LQP.
@@ -95,15 +121,19 @@ MAX_LOOKAHEAD = 3
 
 class GrammarConflictError(Exception):
     """Raised when grammar has LL(k) conflicts that cannot be resolved within MAX_LOOKAHEAD."""
+
     pass
 
 
 class AmbiguousGrammarError(Exception):
     """Raised when Option or Star cannot be distinguished from follow set."""
+
     pass
 
 
-def generate_parse_functions(grammar: Grammar, indent: str = "") -> List[ParseNonterminalDef]:
+def generate_parse_functions(
+    grammar: Grammar, indent: str = ""
+) -> list[ParseNonterminalDef]:
     parser_methods = []
     reachable, _ = grammar.analysis.partition_nonterminals_by_reachability()
     for nt in reachable:
@@ -112,35 +142,57 @@ def generate_parse_functions(grammar: Grammar, indent: str = "") -> List[ParseNo
         parser_methods.append(method_code)
     return parser_methods
 
-def _generate_parse_method(lhs: Nonterminal, rules: List[Rule], grammar: Grammar, indent: str = "") -> ParseNonterminalDef:
+
+def _generate_parse_method(
+    lhs: Nonterminal, rules: list[Rule], grammar: Grammar, indent: str = ""
+) -> ParseNonterminalDef:
     """Generate parse method code as string (preserving existing logic)."""
     return_type = None
     rhs = None
     follow_set = FollowSet(grammar, lhs)
     if len(rules) == 1:
         rule = rules[0]
-        rhs = _generate_parse_rhs_ir(rule.rhs, grammar, follow_set, True, rule.constructor)
+        rhs = _generate_parse_rhs_ir(
+            rule.rhs, grammar, follow_set, True, rule.constructor
+        )
         return_type = rule.constructor.return_type
     else:
         predictor = _build_predictor(grammar, rules)
-        prediction = gensym('prediction')
-        has_epsilon = any((is_epsilon(rule.rhs) for rule in rules))
+        prediction = gensym("prediction")
+        has_epsilon = any(is_epsilon(rule.rhs) for rule in rules)
         if has_epsilon:
             tail = Lit(None)
         else:
-            tail = Call(make_builtin('error_with_token'), [Lit(f'Unexpected token in {lhs}'), Call(make_builtin('current_token'), [])])
+            tail = Call(
+                make_builtin("error_with_token"),
+                [
+                    Lit(f"Unexpected token in {lhs}"),
+                    Call(make_builtin("current_token"), []),
+                ],
+            )
         for i, rule in enumerate(rules):
             # Ensure the return type is the same for all actions for this nonterminal.
-            assert return_type is None or return_type == rule.constructor.return_type, f'Return type mismatch at rule {i}: {return_type} != {rule.constructor.return_type}'
+            assert return_type is None or return_type == rule.constructor.return_type, (
+                f"Return type mismatch at rule {i}: {return_type} != {rule.constructor.return_type}"
+            )
             return_type = rule.constructor.return_type
             if is_epsilon(rule.rhs):
                 continue
-            tail = IfElse(Call(make_builtin('equal'), [Var(prediction, BaseType('Int64')), Lit(i)]), _generate_parse_rhs_ir(rule.rhs, grammar, follow_set, True, rule.constructor), tail)
-        rhs = Let(Var(prediction, BaseType('Int64')), predictor, tail)
+            tail = IfElse(
+                Call(
+                    make_builtin("equal"), [Var(prediction, BaseType("Int64")), Lit(i)]
+                ),
+                _generate_parse_rhs_ir(
+                    rule.rhs, grammar, follow_set, True, rule.constructor
+                ),
+                tail,
+            )
+        rhs = Let(Var(prediction, BaseType("Int64")), predictor, tail)
     assert return_type is not None
     return ParseNonterminalDef(lhs, [], return_type, rhs, indent)
 
-def _build_predictor(grammar: Grammar, rules: List[Rule]) -> TargetExpr:
+
+def _build_predictor(grammar: Grammar, rules: list[Rule]) -> TargetExpr:
     """Build a predictor expression that returns the index of the matching rule.
 
     Uses FIRST_k lookahead to distinguish between alternatives. Builds a
@@ -156,9 +208,19 @@ def _build_predictor(grammar: Grammar, rules: List[Rule]) -> TargetExpr:
             epsilon_index = i
             break
     default = Lit(epsilon_index) if epsilon_index is not None else Lit(-1)
-    return _build_predictor_tree(grammar, rules, active_indices, nullable, default, depth=0)
+    return _build_predictor_tree(
+        grammar, rules, active_indices, nullable, default, depth=0
+    )
 
-def _build_predictor_tree(grammar: Grammar, rules: List[Rule], active_indices: List[int], nullable: Dict[Nonterminal, bool], default: TargetExpr, depth: int) -> TargetExpr:
+
+def _build_predictor_tree(
+    grammar: Grammar,
+    rules: list[Rule],
+    active_indices: list[int],
+    nullable: dict[Nonterminal, bool],
+    default: TargetExpr,
+    depth: int,
+) -> TargetExpr:
     """Build a decision tree for predicting which rule matches.
 
     Lazily computes FIRST_k at each depth, only for rules that need more
@@ -167,14 +229,16 @@ def _build_predictor_tree(grammar: Grammar, rules: List[Rule], active_indices: L
     if not active_indices:
         return default
     if depth >= MAX_LOOKAHEAD:
-        conflict_rules = '\n  '.join((f'Rule {i}: {rules[i]}' for i in active_indices))
-        raise GrammarConflictError(f'Grammar conflict at lookahead depth {depth}:\n  {conflict_rules}')
-    groups: Dict[Terminal, List[int]] = {}
-    exhausted: Set[int] = set()
+        conflict_rules = "\n  ".join(f"Rule {i}: {rules[i]}" for i in active_indices)
+        raise GrammarConflictError(
+            f"Grammar conflict at lookahead depth {depth}:\n  {conflict_rules}"
+        )
+    groups: dict[Terminal, list[int]] = {}
+    exhausted: set[int] = set()
     for rule_idx in active_indices:
         rule = rules[rule_idx]
         rule_first = grammar.analysis.first_k_of(depth + 1, rule.rhs)
-        tokens_at_depth: Set[Terminal] = set()
+        tokens_at_depth: set[Terminal] = set()
         for seq in sorted(rule_first, key=lambda s: tuple(str(t) for t in s)):
             if len(seq) > depth:
                 tokens_at_depth.add(seq[depth])
@@ -185,11 +249,9 @@ def _build_predictor_tree(grammar: Grammar, rules: List[Rule], active_indices: L
                 groups[token] = []
             groups[token].append(rule_idx)
     if len(exhausted) > 1:
-        conflict_rules = '\n  '.join(
-            (f'Rule {i}: {rules[i]}' for i in sorted(exhausted))
-        )
+        conflict_rules = "\n  ".join(f"Rule {i}: {rules[i]}" for i in sorted(exhausted))
         raise GrammarConflictError(
-            f'Grammar conflict: multiple rules fully consumed at lookahead depth {depth}:\n  {conflict_rules}'
+            f"Grammar conflict: multiple rules fully consumed at lookahead depth {depth}:\n  {conflict_rules}"
         )
     elif len(exhausted) == 1:
         exhausted_idx = next(iter(exhausted))
@@ -199,6 +261,7 @@ def _build_predictor_tree(grammar: Grammar, rules: List[Rule], active_indices: L
     if not groups:
         return subtree_default
     result = subtree_default
+
     # Build IfElse chain with specific ordering for literal string matching.
     # We iterate through tokens and wrap each new condition around the previous result:
     #   result = IfElse(check_token_n, ..., result)
@@ -213,25 +276,36 @@ def _build_predictor_tree(grammar: Grammar, rules: List[Rule], active_indices: L
         #   1 = LitTerminals (processed last, become outer/first-checked conditions)
         iteration_order = 1 if isinstance(token, LitTerminal) else 0
         return (iteration_order, str(token))
+
     for token, indices in sorted(groups.items(), key=token_sort_key):
         check = _build_token_check(token, depth)
         if len(indices) == 1:
             then_branch = Lit(indices[0])
         else:
-            then_branch = _build_predictor_tree(grammar, rules, indices, nullable, subtree_default, depth + 1)
+            then_branch = _build_predictor_tree(
+                grammar, rules, indices, nullable, subtree_default, depth + 1
+            )
         result = IfElse(check, then_branch, result)
     return result
+
 
 def _build_token_check(term: Terminal, depth: int) -> TargetExpr:
     """Build a check for a single token at a given lookahead depth."""
     if isinstance(term, LitTerminal):
-        return Call(make_builtin('match_lookahead_literal'), [Lit(term.name), Lit(depth)])
+        return Call(
+            make_builtin("match_lookahead_literal"), [Lit(term.name), Lit(depth)]
+        )
     elif isinstance(term, NamedTerminal):
-        return Call(make_builtin('match_lookahead_terminal'), [Lit(term.name), Lit(depth)])
+        return Call(
+            make_builtin("match_lookahead_terminal"), [Lit(term.name), Lit(depth)]
+        )
     else:
         return Lit(False)
 
-def _build_lookahead_check(token_sequences: Set[Tuple[Terminal, ...]], depth: int) -> TargetExpr:
+
+def _build_lookahead_check(
+    token_sequences: set[tuple[Terminal, ...]], depth: int
+) -> TargetExpr:
     """Build a boolean expression that checks if lookahead matches any of the token sequences.
 
     Args:
@@ -243,7 +317,7 @@ def _build_lookahead_check(token_sequences: Set[Tuple[Terminal, ...]], depth: in
     if not token_sequences:
         return Lit(False)
 
-    groups: Dict[Terminal, Set[Tuple[Terminal, ...]]] = {}
+    groups: dict[Terminal, set[tuple[Terminal, ...]]] = {}
     short_sequences = False
 
     for seq in sorted(token_sequences, key=lambda s: tuple(str(t) for t in s)):
@@ -275,7 +349,10 @@ def _build_lookahead_check(token_sequences: Set[Tuple[Terminal, ...]], depth: in
         result = IfElse(result, Lit(True), cond)
     return result
 
-def _build_option_predictor(grammar: Grammar, element: Rhs, follow_set: TerminalSequenceSet) -> TargetExpr:
+
+def _build_option_predictor(
+    grammar: Grammar, element: Rhs, follow_set: TerminalSequenceSet
+) -> TargetExpr:
     """Build a predicate that checks if we should enter an Option or continue a Star.
 
     Returns a boolean expression that's true if the lookahead matches the element,
@@ -290,10 +367,17 @@ def _build_option_predictor(grammar: Grammar, element: Rhs, follow_set: Terminal
 
     # Still conflicts at MAX_LOOKAHEAD
     element_first = grammar.analysis.first_k_of(MAX_LOOKAHEAD, element)
-    conflict_msg = f'Ambiguous Option/Star: FIRST_{MAX_LOOKAHEAD}({element}) and follow set overlap'
+    conflict_msg = f"Ambiguous Option/Star: FIRST_{MAX_LOOKAHEAD}({element}) and follow set overlap"
     raise AmbiguousGrammarError(conflict_msg)
 
-def _generate_parse_rhs_ir(rhs: Rhs, grammar: Grammar, follow_set: TerminalSequenceSet, apply_action: bool=False, action: Optional[Lambda]=None) -> TargetExpr:
+
+def _generate_parse_rhs_ir(
+    rhs: Rhs,
+    grammar: Grammar,
+    follow_set: TerminalSequenceSet,
+    apply_action: bool = False,
+    action: Lambda | None = None,
+) -> TargetExpr:
     """Generate IR for parsing an RHS.
 
     Args:
@@ -307,60 +391,74 @@ def _generate_parse_rhs_ir(rhs: Rhs, grammar: Grammar, follow_set: TerminalSeque
     Returns None for complex cases that still use string generation.
     """
     if isinstance(rhs, Sequence):
-        return _generate_parse_rhs_ir_sequence(rhs, grammar, follow_set, apply_action, action)
+        return _generate_parse_rhs_ir_sequence(
+            rhs, grammar, follow_set, apply_action, action
+        )
     elif isinstance(rhs, LitTerminal):
-        parse_expr = Call(make_builtin('consume_literal'), [Lit(rhs.name)])
+        parse_expr = Call(make_builtin("consume_literal"), [Lit(rhs.name)])
         if apply_action and action:
-            return Seq([parse_expr, apply_lambda(action,[])])
+            return Seq([parse_expr, apply_lambda(action, [])])
         return parse_expr
     elif isinstance(rhs, NamedTerminal):
         # Use terminal's actual type for consume_terminal instead of generic Token
         from .target import FunctionType
+
         terminal_type = rhs.target_type()
         consume_builtin = make_builtin_with_type(
-            'consume_terminal',
-            FunctionType([BaseType('String')], terminal_type)
+            "consume_terminal", FunctionType([BaseType("String")], terminal_type)
         )
         parse_expr = Call(consume_builtin, [Lit(rhs.name)])
         if apply_action and action:
             if len(action.params) == 0:
-                return Seq([parse_expr, apply_lambda(action,[])])
+                return Seq([parse_expr, apply_lambda(action, [])])
             var_name = gensym(action.params[0].name)
             var = Var(var_name, rhs.target_type())
-            return Let(var, parse_expr, apply_lambda(action,[var]))
+            return Let(var, parse_expr, apply_lambda(action, [var]))
         return parse_expr
     elif isinstance(rhs, Nonterminal):
         parse_expr = Call(ParseNonterminal(rhs), [])
         if apply_action and action:
             if len(action.params) == 0:
-                return Seq([parse_expr, apply_lambda(action,[])])
+                return Seq([parse_expr, apply_lambda(action, [])])
             var_name = gensym(action.params[0].name)
             var = Var(var_name, rhs.target_type())
-            return Let(var, parse_expr, apply_lambda(action,[var]))
+            return Let(var, parse_expr, apply_lambda(action, [var]))
         return parse_expr
     elif isinstance(rhs, Option):
         assert grammar is not None
         predictor = _build_option_predictor(grammar, rhs.rhs, follow_set)
         parse_result = _generate_parse_rhs_ir(rhs.rhs, grammar, follow_set, False, None)
-        return IfElse(predictor, Call(make_builtin('some'), [parse_result]), Lit(None))
+        return IfElse(predictor, Call(make_builtin("some"), [parse_result]), Lit(None))
     elif isinstance(rhs, Star):
         assert grammar is not None
-        xs = Var(gensym('xs'), ListType(rhs.rhs.target_type()))
-        cond = Var(gensym('cond'), BaseType('Boolean'))
+        xs = Var(gensym("xs"), ListType(rhs.rhs.target_type()))
+        cond = Var(gensym("cond"), BaseType("Boolean"))
         predictor = _build_option_predictor(grammar, rhs.rhs, follow_set)
         parse_item = _generate_parse_rhs_ir(rhs.rhs, grammar, follow_set, False, None)
-        item = Var(gensym('item'), rhs.rhs.target_type())
-        loop_body = Seq([
-            Assign(item, parse_item),
-            Call(make_builtin('list_push'), [xs, item]),
-            Assign(cond, predictor)
-        ])
-        return Let(xs, ListExpr([], rhs.rhs.target_type()),
-                   Let(cond, predictor, Seq([While(cond, loop_body), xs])))
+        item = Var(gensym("item"), rhs.rhs.target_type())
+        loop_body = Seq(
+            [
+                Assign(item, parse_item),
+                Call(make_builtin("list_push"), [xs, item]),
+                Assign(cond, predictor),
+            ]
+        )
+        return Let(
+            xs,
+            ListExpr([], rhs.rhs.target_type()),
+            Let(cond, predictor, Seq([While(cond, loop_body), xs])),
+        )
     else:
-        raise NotImplementedError(f'Unsupported Rhs type: {type(rhs)}')
+        raise NotImplementedError(f"Unsupported Rhs type: {type(rhs)}")
 
-def _generate_parse_rhs_ir_sequence(rhs: Sequence, grammar: Grammar, follow_set: TerminalSequenceSet, apply_action: bool=False, action: Optional[Lambda]=None) -> TargetExpr:
+
+def _generate_parse_rhs_ir_sequence(
+    rhs: Sequence,
+    grammar: Grammar,
+    follow_set: TerminalSequenceSet,
+    apply_action: bool = False,
+    action: Lambda | None = None,
+) -> TargetExpr:
     if is_epsilon(rhs):
         return Lit(None)
 
@@ -370,7 +468,7 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, grammar: Grammar, follow_set:
     non_literal_count = 0
     for i, elem in enumerate(elems):
         if i + 1 < len(elems):
-            following = Sequence(tuple(elems[i+1:]))
+            following = Sequence(tuple(elems[i + 1 :]))
             first_following = FirstSet(grammar, following)
             follow_set_i = ConcatSet(first_following, follow_set)
         else:
@@ -384,20 +482,20 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, grammar: Grammar, follow_set:
             else:
                 if action is not None and non_literal_count >= len(action.params):
                     raise ValueError(
-                        f'Action parameter count mismatch: action has {len(action.params)} params '
-                        f'but sequence has at least {non_literal_count + 1} non-literal elements'
+                        f"Action parameter count mismatch: action has {len(action.params)} params "
+                        f"but sequence has at least {non_literal_count + 1} non-literal elements"
                     )
-                var_name = gensym('arg')
+                var_name = gensym("arg")
             var = Var(var_name, elem.target_type())
             exprs.append(Assign(var, elem_ir))
             arg_vars.append(var)
             non_literal_count += 1
     if apply_action and action:
-        lambda_call = apply_lambda(action,arg_vars)
+        lambda_call = apply_lambda(action, arg_vars)
         exprs.append(lambda_call)
     elif len(arg_vars) > 1:
         # Multiple values - wrap in tuple
-        exprs.append(Call(make_builtin('tuple'), arg_vars))
+        exprs.append(Call(make_builtin("tuple"), arg_vars))
     elif len(arg_vars) == 1:
         # Single value - return the variable
         exprs.append(arg_vars[0])
@@ -409,4 +507,3 @@ def _generate_parse_rhs_ir_sequence(rhs: Sequence, grammar: Grammar, follow_set:
         return exprs[0]
     else:
         return Seq(exprs)
-

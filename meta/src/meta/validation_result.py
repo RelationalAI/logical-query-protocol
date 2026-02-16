@@ -1,29 +1,37 @@
 """Validation result data structures for grammar validation."""
 
-from dataclasses import dataclass, field as dataclass_field
-from typing import List, Optional
+from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 
 
 @dataclass
 class ValidationError:
     """A single validation error."""
+
     category: str  # "completeness", "field_coverage", "oneof_coverage", "soundness"
     message: str
-    proto_type: Optional[str] = None
-    rule_name: Optional[str] = None
+    proto_type: str | None = None
+    rule_name: str | None = None
 
 
 @dataclass
 class ValidationResult:
     """Result of grammar validation."""
-    errors: List[ValidationError] = dataclass_field(default_factory=list)
+
+    errors: list[ValidationError] = dataclass_field(default_factory=list)
 
     @property
     def is_valid(self) -> bool:
         """True if no errors."""
         return len(self.errors) == 0
 
-    def add_error(self, category: str, message: str, proto_type: Optional[str] = None, rule_name: Optional[str] = None) -> None:
+    def add_error(
+        self,
+        category: str,
+        message: str,
+        proto_type: str | None = None,
+        rule_name: str | None = None,
+    ) -> None:
         self.errors.append(ValidationError(category, message, proto_type, rule_name))
 
     def summary(self) -> str:

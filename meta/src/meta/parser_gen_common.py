@@ -6,7 +6,6 @@ generate parse functions, collect token specs, and format the template.
 
 import re
 from pathlib import Path
-from typing import Optional
 
 from .codegen_base import CodeGenerator
 from .grammar import Grammar
@@ -18,7 +17,7 @@ def generate_parser(
     grammar: Grammar,
     codegen: CodeGenerator,
     template_path: Path,
-    command_line: Optional[str] = None,
+    command_line: str | None = None,
 ) -> str:
     """Generate a parser from a grammar using the given code generator and template.
 
@@ -45,7 +44,9 @@ def generate_parser(
         function_lines.append(codegen.generate_method_def(fundef, indent))
     named_function_defns = "\n".join(function_lines) if function_lines else ""
 
-    command_line_comment = codegen.format_command_line_comment(command_line) if command_line else ""
+    command_line_comment = (
+        codegen.format_command_line_comment(command_line) if command_line else ""
+    )
 
     token_specs = _build_token_specs(grammar, codegen)
 
@@ -75,7 +76,9 @@ def _build_token_specs(grammar: Grammar, codegen: CodeGenerator) -> str:
         token_specs_lines.append(codegen.format_literal_token_spec(escaped))
 
     for token in grammar.tokens:
-        token_specs_lines.append(codegen.format_named_token_spec(token.name, token.pattern))
+        token_specs_lines.append(
+            codegen.format_named_token_spec(token.name, token.pattern)
+        )
 
     if token_specs_lines:
         return "\n".join(token_specs_lines) + "\n"

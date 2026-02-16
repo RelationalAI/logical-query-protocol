@@ -25,7 +25,9 @@ def format_message(msg, indent=0):
         if field.is_optional:
             modifiers.append("optional")
         modifier_str = " ".join(modifiers) + " " if modifiers else ""
-        lines.append(f"{prefix}  {modifier_str}{field.type} {field.name} = {field.number};")
+        lines.append(
+            f"{prefix}  {modifier_str}{field.type} {field.name} = {field.number};"
+        )
 
     lines.append(f"{prefix}}}")
     return "\n".join(lines)

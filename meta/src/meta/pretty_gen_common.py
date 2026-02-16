@@ -1,7 +1,6 @@
 """Common pretty printer generation logic shared across all target languages."""
 
 from pathlib import Path
-from typing import Optional
 
 from .codegen_base import CodeGenerator
 from .grammar import Grammar
@@ -12,7 +11,7 @@ def generate_pretty_printer(
     grammar: Grammar,
     codegen: CodeGenerator,
     template_path: Path,
-    command_line: Optional[str] = None,
+    command_line: str | None = None,
 ) -> str:
     """Generate a pretty printer from a grammar using the given code generator and template."""
     template = template_path.read_text()
@@ -32,7 +31,9 @@ def generate_pretty_printer(
         function_lines.append(codegen.generate_method_def(fundef, indent))
     named_function_defns = "\n".join(function_lines) if function_lines else ""
 
-    command_line_comment = codegen.format_command_line_comment(command_line) if command_line else ""
+    command_line_comment = (
+        codegen.format_command_line_comment(command_line) if command_line else ""
+    )
 
     return template.format(
         command_line_comment=command_line_comment,

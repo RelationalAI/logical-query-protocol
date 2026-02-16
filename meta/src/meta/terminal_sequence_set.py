@@ -36,7 +36,7 @@ constituent set based on the requested k value.
 """
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Dict, Set, Tuple
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .grammar import Grammar, Nonterminal, Rhs, Terminal
@@ -55,7 +55,7 @@ class TerminalSequenceSet:
     - ConcatSet: concatenates two sets (for computing FIRST of sequences)
     """
 
-    def get(self, k: int) -> Set[Tuple['Terminal', ...]]:
+    def get(self, k: int) -> set[tuple["Terminal", ...]]:
         """Get sequences of length up to k, computing and caching if needed.
 
         Args:
@@ -83,11 +83,11 @@ class FollowSet(TerminalSequenceSet):
     which can start with 'x' or 'y'.
     """
 
-    grammar: 'Grammar'
-    lhs: 'Nonterminal'
-    _cache: Dict[int, Set[Tuple['Terminal', ...]]] = field(default_factory=dict)
+    grammar: "Grammar"
+    lhs: "Nonterminal"
+    _cache: dict[int, set[tuple["Terminal", ...]]] = field(default_factory=dict)
 
-    def get(self, k: int) -> Set[Tuple['Terminal', ...]]:
+    def get(self, k: int) -> set[tuple["Terminal", ...]]:
         """Get FOLLOW_k set for the nonterminal, computing and caching if needed."""
         if k not in self._cache:
             self._cache[k] = self.grammar.analysis.follow_k_of(k, self.lhs)
@@ -112,11 +112,11 @@ class FirstSet(TerminalSequenceSet):
     - A can produce ε, then B produces 'b' → ('b',)
     """
 
-    grammar: 'Grammar'
-    rhs: 'Rhs'
-    _cache: Dict[int, Set[Tuple['Terminal', ...]]] = field(default_factory=dict)
+    grammar: "Grammar"
+    rhs: "Rhs"
+    _cache: dict[int, set[tuple["Terminal", ...]]] = field(default_factory=dict)
 
-    def get(self, k: int) -> Set[Tuple['Terminal', ...]]:
+    def get(self, k: int) -> set[tuple["Terminal", ...]]:
         """Get FIRST_k set for the RHS, computing and caching if needed."""
         if k not in self._cache:
             self._cache[k] = self.grammar.analysis.first_k_of(k, self.rhs)
@@ -143,9 +143,9 @@ class ConcatSet(TerminalSequenceSet):
 
     first: TerminalSequenceSet
     second: TerminalSequenceSet
-    _cache: Dict[int, Set[Tuple['Terminal', ...]]] = field(default_factory=dict)
+    _cache: dict[int, set[tuple["Terminal", ...]]] = field(default_factory=dict)
 
-    def get(self, k: int) -> Set[Tuple['Terminal', ...]]:
+    def get(self, k: int) -> set[tuple["Terminal", ...]]:
         """Get concatenation of first and second sets, truncated to length k."""
         if k in self._cache:
             return self._cache[k]
@@ -162,6 +162,7 @@ class ConcatSet(TerminalSequenceSet):
             else:
                 # Import locally to avoid circular dependency with grammar_analysis
                 from .grammar_analysis import GrammarAnalysis
+
                 second_set = self.second.get(needed_second_k)
                 result = GrammarAnalysis.concat_k(first_set, second_set, k)
         else:

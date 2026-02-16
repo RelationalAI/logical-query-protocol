@@ -1,18 +1,28 @@
 """Utility functions for grammar manipulation."""
 
-from typing import Dict, List, Optional, Tuple, Type, TypeVar, Union, cast
-from .grammar import Sequence, Star, Option, Rhs, Nonterminal, NamedTerminal, LitTerminal, Rule
+from typing import TypeVar, cast
 
-T = TypeVar('T', bound=Rhs)
+from .grammar import (
+    LitTerminal,
+    NamedTerminal,
+    Nonterminal,
+    Option,
+    Rhs,
+    Rule,
+    Sequence,
+    Star,
+)
+
+T = TypeVar("T", bound=Rhs)
 
 
-def collect(rhs: Rhs, target_type: Type[T]) -> List[T]:
+def collect(rhs: Rhs, target_type: type[T]) -> list[T]:
     """Collect all instances of target_type from the Rhs tree.
 
     Traverses the Rhs structure and returns a deduplicated list of all
     nodes matching the given type, preserving first-occurrence order.
     """
-    results: List[T] = []
+    results: list[T] = []
 
     if isinstance(rhs, target_type):
         results.append(rhs)
@@ -25,17 +35,17 @@ def collect(rhs: Rhs, target_type: Type[T]) -> List[T]:
     return list(dict.fromkeys(results))
 
 
-def get_nonterminals(rhs: Rhs) -> List[Nonterminal]:
+def get_nonterminals(rhs: Rhs) -> list[Nonterminal]:
     """Return the list of all nonterminals referenced in a Rhs."""
     return collect(rhs, Nonterminal)
 
 
-def get_literals(rhs: Rhs) -> List[LitTerminal]:
+def get_literals(rhs: Rhs) -> list[LitTerminal]:
     """Return the list of all literals referenced in a Rhs."""
     return collect(rhs, LitTerminal)
 
 
-def _rewrite_rhs(rhs: Rhs, replacements: Dict[Rhs, Rhs]) -> Optional[Rhs]:
+def _rewrite_rhs(rhs: Rhs, replacements: dict[Rhs, Rhs]) -> Rhs | None:
     """Rewrite RHS by replacing symbols according to the mapping.
 
     Returns new_rhs if changed, None otherwise.
@@ -59,18 +69,18 @@ def _rewrite_rhs(rhs: Rhs, replacements: Dict[Rhs, Rhs]) -> Optional[Rhs]:
     elif isinstance(rhs, Star):
         new_inner = _rewrite_rhs(rhs.rhs, replacements)
         if new_inner is not None:
-            return Star(cast(Union[Nonterminal, NamedTerminal], new_inner))
+            return Star(cast(Nonterminal | NamedTerminal, new_inner))
         return None
     elif isinstance(rhs, Option):
         new_inner = _rewrite_rhs(rhs.rhs, replacements)
         if new_inner is not None:
-            return Option(cast(Union[Nonterminal, NamedTerminal], new_inner))
+            return Option(cast(Nonterminal | NamedTerminal, new_inner))
         return None
     else:
         return None
 
 
-def rewrite_rule(rule: Rule, replacements: Dict[Rhs, Rhs]) -> Rule:
+def rewrite_rule(rule: Rule, replacements: dict[Rhs, Rhs]) -> Rule:
     """Rewrite rule by replacing symbols in RHS.
 
     Returns the rewritten rule, or the original if no replacements matched.
@@ -82,7 +92,7 @@ def rewrite_rule(rule: Rule, replacements: Dict[Rhs, Rhs]) -> Rule:
             rhs=new_rhs,
             constructor=rule.constructor,
             deconstructor=rule.deconstructor,
-            source_type=rule.source_type
+            source_type=rule.source_type,
         )
     return rule
 
@@ -92,7 +102,7 @@ def is_epsilon(rhs: Rhs) -> bool:
     return isinstance(rhs, Sequence) and len(rhs.elements) == 0
 
 
-def rhs_elements(rhs: Rhs) -> Tuple[Rhs, ...]:
+def rhs_elements(rhs: Rhs) -> tuple[Rhs, ...]:
     """Return tuple of elements in RHS."""
     if isinstance(rhs, Sequence):
         return rhs.elements

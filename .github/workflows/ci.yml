@@ -28,20 +28,21 @@ jobs:
         uv run ruff check
         uv run ruff format --check
 
-    - name: Install meta dependencies
+    - name: Lint meta
       run: |
         cd meta
-        python -m pip install -e ".[test]"
+        uv run ruff check
+        uv run ruff format --check
 
     - name: Test meta with pytest
       run: |
         cd meta
-        python -m pytest
+        uv run python -m pytest
 
     - name: Type check meta
       run: |
         cd meta
-        pyrefly check
+        uv run pyrefly check
 
     - name: Run tests
       run: |

@@ -25,11 +25,11 @@ import argparse
 import sys
 from pathlib import Path
 
-from .proto_parser import ProtoParser
-from .grammar_validator import validate_grammar
 from .grammar import Grammar
+from .grammar_validator import validate_grammar
+from .proto_parser import ProtoParser
+from .proto_print import format_enum, format_message
 from .yacc_parser import load_yacc_grammar_file
-from .proto_print import format_message, format_enum
 
 
 def parse_args():
@@ -38,44 +38,33 @@ def parse_args():
         description="Parse protobuf specifications and validate grammar"
     )
     parser.add_argument(
-        "proto_files",
-        nargs="+",
-        type=Path,
-        help="Protobuf files to parse"
+        "proto_files", nargs="+", type=Path, help="Protobuf files to parse"
     )
     parser.add_argument(
-        "--grammar",
-        type=Path,
-        help="Path to grammar file (required for --parser)"
+        "--grammar", type=Path, help="Path to grammar file (required for --parser)"
     )
     parser.add_argument(
-        "--no-validate",
-        action="store_true",
-        help="Skip grammar validation"
+        "--no-validate", action="store_true", help="Skip grammar validation"
     )
 
     output_group = parser.add_argument_group("output options")
     output_group.add_argument(
-        "-o", "--output",
-        type=Path,
-        help="Output file (default: stdout)"
+        "-o", "--output", type=Path, help="Output file (default: stdout)"
     )
     output_group.add_argument(
-        "--proto",
-        action="store_true",
-        help="Output the parsed protobuf specification"
+        "--proto", action="store_true", help="Output the parsed protobuf specification"
     )
     output_group.add_argument(
         "--parser",
         type=str,
         choices=["ir", "python", "julia", "go"],
-        help="Output the generated parser (ir, python, julia, or go)"
+        help="Output the generated parser (ir, python, julia, or go)",
     )
     output_group.add_argument(
         "--printer",
         type=str,
         choices=["ir", "python"],
-        help="Output the generated pretty printer (ir or python)"
+        help="Output the generated pretty printer (ir or python)",
     )
 
     args = parser.parse_args()
@@ -124,12 +113,17 @@ def run(args) -> int:
             output_lines.append(format_enum(enum))
             output_lines.append("")
         output_text = "\n".join(output_lines)
-        write_output(output_text, args.output, f"Protobuf specification written to {args.output}")
+        write_output(
+            output_text, args.output, f"Protobuf specification written to {args.output}"
+        )
         return 0
 
     # If no --grammar provided and not --proto, nothing to do
     if not args.grammar:
-        print("Nothing to do. Use --grammar to validate or --proto to output protobuf spec.", file=sys.stderr)
+        print(
+            "Nothing to do. Use --grammar to validate or --proto to output protobuf spec.",
+            file=sys.stderr,
+        )
         return 0
 
     grammar_path = args.grammar
@@ -138,10 +132,14 @@ def run(args) -> int:
         return 1
 
     # Transform messages dict from {name: ProtoMessage} to {(module, name): ProtoMessage}
-    proto_messages = {(msg.module, name): msg for name, msg in proto_parser.messages.items()}
+    proto_messages = {
+        (msg.module, name): msg for name, msg in proto_parser.messages.items()
+    }
 
     # Load grammar rules from file (yacc format)
-    grammar_config = load_yacc_grammar_file(grammar_path, proto_messages, proto_parser.enums)
+    grammar_config = load_yacc_grammar_file(
+        grammar_path, proto_messages, proto_parser.enums
+    )
 
     # Build Grammar object from loaded config
     if not grammar_config.rules:
@@ -155,12 +153,15 @@ def run(args) -> int:
             start = nt
             break
     if start is None:
-        print(f"Error: Start symbol '{grammar_config.start_symbol}' has no rules", file=sys.stderr)
+        print(
+            f"Error: Start symbol '{grammar_config.start_symbol}' has no rules",
+            file=sys.stderr,
+        )
         return 1
     grammar = Grammar(
         start=start,
         ignored_completeness=grammar_config.ignored_completeness,
-        function_defs=grammar_config.function_defs
+        function_defs=grammar_config.function_defs,
     )
     for _, rules in grammar_config.rules.items():
         for rule in rules:
@@ -168,9 +169,12 @@ def run(args) -> int:
 
     # Add tokens with patterns from terminal declarations in grammar file
     from .grammar import Token
+
     for terminal_name, terminal_def in grammar_config.terminal_patterns.items():
         if terminal_def.pattern is not None:
-            grammar.tokens.append(Token(terminal_name, terminal_def.pattern, terminal_def.type))
+            grammar.tokens.append(
+                Token(terminal_name, terminal_def.pattern, terminal_def.type)
+            )
 
     # Run validation if --grammar is provided (unless --no-validate)
     if args.grammar and not args.no_validate:
@@ -182,7 +186,10 @@ def run(args) -> int:
 
             # Block code generation if there are validation errors
             if args.parser or args.printer:
-                print("Error: Cannot generate code due to validation errors (use --no-validate to skip)", file=sys.stderr)
+                print(
+                    "Error: Cannot generate code due to validation errors (use --no-validate to skip)",
+                    file=sys.stderr,
+                )
 
             return 1
 
@@ -196,15 +203,22 @@ def run(args) -> int:
     if args.parser:
         if args.parser == "ir":
             from .parser_gen import generate_parse_functions
+
             parse_functions = generate_parse_functions(grammar)
             output_lines = []
             for defn in parse_functions:
                 output_lines.append(str(defn))
                 output_lines.append("")
             output_text = "\n".join(output_lines)
-            write_output(output_text, args.output, f"Generated parser IR written to {args.output}")
+            write_output(
+                output_text,
+                args.output,
+                f"Generated parser IR written to {args.output}",
+            )
         elif args.parser in ("python", "julia", "go"):
-            proto_messages = {(msg.module, name): msg for name, msg in proto_parser.messages.items()}
+            proto_messages = {
+                (msg.module, name): msg for name, msg in proto_parser.messages.items()
+            }
             command_line = " ".join(
                 ["python -m meta.cli"]
                 + [str(f) for f in args.proto_files]
@@ -213,27 +227,43 @@ def run(args) -> int:
             )
             if args.parser == "python":
                 from .parser_gen_python import generate_parser_python
-                output_text = generate_parser_python(grammar, command_line, proto_messages)
+
+                output_text = generate_parser_python(
+                    grammar, command_line, proto_messages
+                )
             elif args.parser == "julia":
                 from .parser_gen_julia import generate_parser_julia
-                output_text = generate_parser_julia(grammar, command_line, proto_messages)
+
+                output_text = generate_parser_julia(
+                    grammar, command_line, proto_messages
+                )
             else:
                 from .parser_gen_go import generate_parser_go
+
                 output_text = generate_parser_go(grammar, command_line, proto_messages)
-            write_output(output_text, args.output, f"Generated parser written to {args.output}")
+            write_output(
+                output_text, args.output, f"Generated parser written to {args.output}"
+            )
 
     if args.printer:
         if args.printer == "ir":
             from .pretty_gen import generate_pretty_functions
+
             pretty_functions = generate_pretty_functions(grammar)
             output_lines = []
             for defn in pretty_functions:
                 output_lines.append(str(defn))
                 output_lines.append("")
             output_text = "\n".join(output_lines)
-            write_output(output_text, args.output, f"Generated printer IR written to {args.output}")
+            write_output(
+                output_text,
+                args.output,
+                f"Generated printer IR written to {args.output}",
+            )
         elif args.printer == "python":
-            proto_messages = {(msg.module, name): msg for name, msg in proto_parser.messages.items()}
+            proto_messages = {
+                (msg.module, name): msg for name, msg in proto_parser.messages.items()
+            }
             command_line = " ".join(
                 ["python -m meta.cli"]
                 + [str(f) for f in args.proto_files]
@@ -241,8 +271,15 @@ def run(args) -> int:
                 + ["--printer", args.printer]
             )
             from .pretty_gen_python import generate_pretty_printer_python
-            output_text = generate_pretty_printer_python(grammar, command_line, proto_messages)
-            write_output(output_text, args.output, f"Generated pretty printer written to {args.output}")
+
+            output_text = generate_pretty_printer_python(
+                grammar, command_line, proto_messages
+            )
+            write_output(
+                output_text,
+                args.output,
+                f"Generated pretty printer written to {args.output}",
+            )
 
     return 0
 

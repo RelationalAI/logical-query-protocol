@@ -1,20 +1,40 @@
 #!/usr/bin/env python3
 """Tests for Go code generation from action AST."""
 
-from meta.target import (
-    Var, Lit, Symbol, NewMessage, ListExpr, Call, Let,
-    IfElse, Seq, While, Assign, Return, FunDef, ParseNonterminalDef,
-    BaseType, MessageType, ListType, OptionType, GetElement,
-)
-from meta.target_builtins import make_builtin
-from meta.grammar import Nonterminal
 from meta.codegen_go import (
     GoCodeGenerator,
-    escape_identifier as escape_go,
-    generate_go_lines as generate_go,
     to_pascal_case,
 )
+from meta.codegen_go import (
+    escape_identifier as escape_go,
+)
+from meta.codegen_go import (
+    generate_go_lines as generate_go,
+)
 from meta.gensym import reset as reset_gensym
+from meta.grammar import Nonterminal
+from meta.target import (
+    Assign,
+    BaseType,
+    Call,
+    FunDef,
+    GetElement,
+    IfElse,
+    Let,
+    ListExpr,
+    ListType,
+    Lit,
+    MessageType,
+    NewMessage,
+    OptionType,
+    ParseNonterminalDef,
+    Return,
+    Seq,
+    Symbol,
+    Var,
+    While,
+)
+from meta.target_builtins import make_builtin
 
 _any_type = BaseType("Any")
 _int_type = BaseType("Int64")
@@ -94,7 +114,9 @@ def test_go_let_generation():
     reset_gensym()
 
     lines = []
-    let_expr = Let(Var("x", _any_type), Call(Var("parse_foo", _any_type), []), Var("x", _any_type))
+    let_expr = Let(
+        Var("x", _any_type), Call(Var("parse_foo", _any_type), []), Var("x", _any_type)
+    )
     result = gen.generate_lines(let_expr, lines, "")
     code = "\n".join(lines)
     assert "parse_foo()" in code
@@ -256,7 +278,7 @@ def test_go_while_generation():
     reset_gensym()
     lines = []
     expr = While(Var("running", _bool_type), Call(Var("do_work", _any_type), []))
-    result = gen.generate_lines(expr, lines, "")
+    gen.generate_lines(expr, lines, "")
     code = "\n".join(lines)
     assert "for running {" in code
     assert "do_work()" in code
@@ -269,11 +291,13 @@ def test_go_seq_generation():
 
     reset_gensym()
     lines = []
-    expr = Seq([
-        Call(Var("setup", _any_type), []),
-        Call(Var("process", _any_type), []),
-        Var("result", _any_type),
-    ])
+    expr = Seq(
+        [
+            Call(Var("setup", _any_type), []),
+            Call(Var("process", _any_type), []),
+            Var("result", _any_type),
+        ]
+    )
     result = gen.generate_lines(expr, lines, "")
     assert result == "result"
     code = "\n".join(lines)
@@ -290,7 +314,7 @@ def test_go_message_generation():
     reset_gensym()
     lines = []
     expr = NewMessage("logic", "Expr", ())
-    result = gen.generate_lines(expr, lines, "")
+    gen.generate_lines(expr, lines, "")
     code = "\n".join(lines)
     assert "&pb.Expr{}" in code
 
@@ -373,19 +397,26 @@ def test_go_and_short_circuit_with_side_effects():
     # and(a, f(x) == 42)
     # The call f(x) generates a temp-var assignment.
     # That assignment must be guarded by the if.
-    expr = Call(make_builtin("and"), [
-        Var("a", _bool_type),
-        Call(make_builtin("equal"), [
-            Call(Var("f", _any_type), [Var("x", _any_type)]),
-            Lit(42),
-        ]),
-    ])
+    expr = Call(
+        make_builtin("and"),
+        [
+            Var("a", _bool_type),
+            Call(
+                make_builtin("equal"),
+                [
+                    Call(Var("f", _any_type), [Var("x", _any_type)]),
+                    Lit(42),
+                ],
+            ),
+        ],
+    )
     result = gen.generate_lines(expr, lines, "")
     code = "\n".join(lines)
 
     assert result is not None
-    assert "f(x)" not in code.split("if ")[0], \
+    assert "f(x)" not in code.split("if ")[0], (
         f"f(x) was hoisted above the if guard:\n{code}"
+    )
     assert "if " in code, f"Expected if-else for short-circuit, got:\n{code}"
     assert "} else {" in code
 
@@ -398,19 +429,26 @@ def test_go_or_short_circuit_with_side_effects():
     lines = []
 
     # or(a, f(x) == 42)
-    expr = Call(make_builtin("or"), [
-        Var("a", _bool_type),
-        Call(make_builtin("equal"), [
-            Call(Var("f", _any_type), [Var("x", _any_type)]),
-            Lit(42),
-        ]),
-    ])
+    expr = Call(
+        make_builtin("or"),
+        [
+            Var("a", _bool_type),
+            Call(
+                make_builtin("equal"),
+                [
+                    Call(Var("f", _any_type), [Var("x", _any_type)]),
+                    Lit(42),
+                ],
+            ),
+        ],
+    )
     result = gen.generate_lines(expr, lines, "")
     code = "\n".join(lines)
 
     assert result is not None
-    assert "f(x)" not in code.split("if ")[0], \
+    assert "f(x)" not in code.split("if ")[0], (
         f"f(x) was hoisted above the if guard:\n{code}"
+    )
     assert "if " in code, f"Expected if-else for short-circuit, got:\n{code}"
     assert "} else {" in code
 
@@ -422,10 +460,13 @@ def test_go_and_without_side_effects_uses_template():
     reset_gensym()
     lines = []
 
-    expr = Call(make_builtin("and"), [
-        Var("a", _bool_type),
-        Var("b", _bool_type),
-    ])
+    expr = Call(
+        make_builtin("and"),
+        [
+            Var("a", _bool_type),
+            Var("b", _bool_type),
+        ],
+    )
     result = gen.generate_lines(expr, lines, "")
     assert result == "(a && b)"
     assert len(lines) == 0
@@ -438,10 +479,13 @@ def test_go_or_without_side_effects_uses_template():
     reset_gensym()
     lines = []
 
-    expr = Call(make_builtin("or"), [
-        Var("a", _bool_type),
-        Var("b", _bool_type),
-    ])
+    expr = Call(
+        make_builtin("or"),
+        [
+            Var("a", _bool_type),
+            Var("b", _bool_type),
+        ],
+    )
     result = gen.generate_lines(expr, lines, "")
     assert result == "(a || b)"
     assert len(lines) == 0

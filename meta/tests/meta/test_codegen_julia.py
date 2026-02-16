@@ -1,19 +1,40 @@
 #!/usr/bin/env python3
 """Tests for Julia code generation from action AST."""
 
-from meta.target import (
-    Var, Lit, Symbol, NamedFun, NewMessage, ListExpr, Call, Lambda, Let,
-    IfElse, Seq, While, Assign, Return, FunDef, ParseNonterminalDef,
-    BaseType, MessageType, ListType, OptionType, GetElement, FunctionType,
-)
-from meta.target_builtins import make_builtin
-from meta.grammar import Nonterminal
 from meta.codegen_julia import (
-    generate_julia,
-    escape_identifier as escape_julia,
     JuliaCodeGenerator,
+    generate_julia,
+)
+from meta.codegen_julia import (
+    escape_identifier as escape_julia,
 )
 from meta.gensym import reset as reset_gensym
+from meta.grammar import Nonterminal
+from meta.target import (
+    Assign,
+    BaseType,
+    Call,
+    FunctionType,
+    FunDef,
+    GetElement,
+    IfElse,
+    Lambda,
+    Let,
+    ListExpr,
+    ListType,
+    Lit,
+    MessageType,
+    NamedFun,
+    NewMessage,
+    OptionType,
+    ParseNonterminalDef,
+    Return,
+    Seq,
+    Symbol,
+    Var,
+    While,
+)
+from meta.target_builtins import make_builtin
 
 _any_type = BaseType("Any")
 _int_type = BaseType("Int64")
@@ -51,7 +72,9 @@ def test_julia_call_generation():
     assert code_kw == 'var"function"(arg)'
 
     # Nested call
-    nested = Call(Var("wrap", _any_type), [Call(Var("inner", _any_type), [Var("z", _any_type)])])
+    nested = Call(
+        Var("wrap", _any_type), [Call(Var("inner", _any_type), [Var("z", _any_type)])]
+    )
     code_nested = generate_julia(nested)
     assert code_nested == "wrap(inner(z))"
 
@@ -59,21 +82,31 @@ def test_julia_call_generation():
 def test_julia_let_generation():
     """Test Julia Let-binding generation."""
     # Simple let
-    let_expr = Let(Var("x", _any_type), Call(Var("parse_foo", _any_type), []), Var("x", _any_type))
+    let_expr = Let(
+        Var("x", _any_type), Call(Var("parse_foo", _any_type), []), Var("x", _any_type)
+    )
     code = generate_julia(let_expr)
     assert "parse_foo()" in code and "x = " in code
 
     # Nested let
-    nested_let = Let(Var("x", _any_type), Call(Var("parse_a", _any_type), []),
-                     Let(Var("y", _any_type), Call(Var("parse_b", _any_type), []),
-                         Call(Var("make", _any_type), [Var("x", _any_type), Var("y", _any_type)])))
+    nested_let = Let(
+        Var("x", _any_type),
+        Call(Var("parse_a", _any_type), []),
+        Let(
+            Var("y", _any_type),
+            Call(Var("parse_b", _any_type), []),
+            Call(Var("make", _any_type), [Var("x", _any_type), Var("y", _any_type)]),
+        ),
+    )
     code_nested = generate_julia(nested_let)
     assert "parse_a()" in code_nested and "x = " in code_nested
     assert "parse_b()" in code_nested and "y = " in code_nested
     assert "make(x, y)" in code_nested
 
     # Let with keyword variable
-    let_kw = Let(Var("end", _any_type), Call(Var("parse", _any_type), []), Var("end", _any_type))
+    let_kw = Let(
+        Var("end", _any_type), Call(Var("parse", _any_type), []), Var("end", _any_type)
+    )
     code_kw = generate_julia(let_kw)
     assert 'var"end"' in code_kw
 
@@ -81,12 +114,20 @@ def test_julia_let_generation():
 def test_julia_lambda_generation():
     """Test Julia anonymous function generation."""
     # Simple lambda
-    lam = Lambda([Var("x", _any_type), Var("y", _any_type)], _any_type, Call(Var("Add", _any_type), [Var("x", _any_type), Var("y", _any_type)]))
+    lam = Lambda(
+        [Var("x", _any_type), Var("y", _any_type)],
+        _any_type,
+        Call(Var("Add", _any_type), [Var("x", _any_type), Var("y", _any_type)]),
+    )
     code = generate_julia(lam)
     assert code == "(x, y) -> Add(x, y)"
 
     # Lambda with keyword parameter
-    lam_kw = Lambda([Var("struct", _any_type), Var("value", _any_type)], _any_type, Var("value", _any_type))
+    lam_kw = Lambda(
+        [Var("struct", _any_type), Var("value", _any_type)],
+        _any_type,
+        Var("value", _any_type),
+    )
     code_kw = generate_julia(lam_kw)
     assert 'var"struct"' in code_kw
 
@@ -113,14 +154,20 @@ def test_julia_builtin_generation():
     # Test 'list_concat' builtin (handles None second argument like Python)
     reset_gensym()
     lines = []
-    expr = Call(make_builtin("list_concat"), [Var("lst", ListType(_int_type)), Var("other", ListType(_int_type))])
+    expr = Call(
+        make_builtin("list_concat"),
+        [Var("lst", ListType(_int_type)), Var("other", ListType(_int_type))],
+    )
     result = gen.generate_lines(expr, lines, "")
     assert result == "vcat(lst, !isnothing(other) ? other : [])"
 
     # Test 'list_push' builtin (mutating push with statement)
     reset_gensym()
     lines = []
-    expr = Call(make_builtin("list_push"), [Var("lst", ListType(_int_type)), Var("item", _int_type)])
+    expr = Call(
+        make_builtin("list_push"),
+        [Var("lst", ListType(_int_type)), Var("item", _int_type)],
+    )
     result = gen.generate_lines(expr, lines, "")
     assert result == "nothing"
     assert lines == ["push!(lst, item)"]
@@ -383,11 +430,13 @@ def test_julia_seq_generation():
     # Sequence of expressions
     reset_gensym()
     lines = []
-    expr = Seq([
-        Call(Var("setup", _any_type), []),
-        Call(Var("process", _any_type), []),
-        Var("result", _any_type),
-    ])
+    expr = Seq(
+        [
+            Call(Var("setup", _any_type), []),
+            Call(Var("process", _any_type), []),
+            Var("result", _any_type),
+        ]
+    )
     result = gen.generate_lines(expr, lines, "")
     assert result == "result"
     code = "\n".join(lines)
@@ -488,7 +537,9 @@ def test_julia_helper_function_with_if():
         ),
     )
     code = gen.generate_def(func)
-    assert "function check_value(v::Union{Nothing, Int64}, default::Int64)::Int64" in code
+    assert (
+        "function check_value(v::Union{Nothing, Int64}, default::Int64)::Int64" in code
+    )
     assert "if isnothing(v)" in code
     assert "return default" in code
     assert "return v" in code
@@ -508,10 +559,12 @@ def test_julia_helper_function_with_assignment():
         name="transform",
         params=[Var("x", _int_type)],
         return_type=_int_type,
-        body=Seq([
-            Assign(Var("result", _int_type), Var("x", _int_type)),
-            Return(Var("result", _int_type)),
-        ]),
+        body=Seq(
+            [
+                Assign(Var("result", _int_type), Var("x", _int_type)),
+                Return(Var("result", _int_type)),
+            ]
+        ),
     )
     code = gen.generate_def(func)
     assert "function transform(x::Int64)::Int64" in code
@@ -552,7 +605,10 @@ def test_julia_helper_function_calling_another():
         name="wrapper",
         params=[Var("x", _int_type)],
         return_type=_int_type,
-        body=Call(NamedFun("helper", FunctionType([_int_type], _int_type)), [Var("x", _int_type)]),
+        body=Call(
+            NamedFun("helper", FunctionType([_int_type], _int_type)),
+            [Var("x", _int_type)],
+        ),
     )
     code = gen.generate_def(func)
     assert "function wrapper(x::Int64)::Int64" in code
@@ -568,19 +624,26 @@ def test_julia_and_short_circuit_with_side_effects():
     # and(a, f(x) == 42)
     # The call f(x) generates a temp-var assignment.
     # That assignment must be guarded by the if.
-    expr = Call(make_builtin("and"), [
-        Var("a", _bool_type),
-        Call(make_builtin("equal"), [
-            Call(Var("f", _any_type), [Var("x", _any_type)]),
-            Lit(42),
-        ]),
-    ])
+    expr = Call(
+        make_builtin("and"),
+        [
+            Var("a", _bool_type),
+            Call(
+                make_builtin("equal"),
+                [
+                    Call(Var("f", _any_type), [Var("x", _any_type)]),
+                    Lit(42),
+                ],
+            ),
+        ],
+    )
     result = gen.generate_lines(expr, lines, "")
     code = "\n".join(lines)
 
     assert result is not None
-    assert "f(x)" not in code.split("if ")[0], \
+    assert "f(x)" not in code.split("if ")[0], (
         f"f(x) was hoisted above the if guard:\n{code}"
+    )
     assert "if " in code, f"Expected if-else for short-circuit, got:\n{code}"
     assert "end" in code
 
@@ -592,19 +655,26 @@ def test_julia_or_short_circuit_with_side_effects():
     lines = []
 
     # or(a, f(x) == 42)
-    expr = Call(make_builtin("or"), [
-        Var("a", _bool_type),
-        Call(make_builtin("equal"), [
-            Call(Var("f", _any_type), [Var("x", _any_type)]),
-            Lit(42),
-        ]),
-    ])
+    expr = Call(
+        make_builtin("or"),
+        [
+            Var("a", _bool_type),
+            Call(
+                make_builtin("equal"),
+                [
+                    Call(Var("f", _any_type), [Var("x", _any_type)]),
+                    Lit(42),
+                ],
+            ),
+        ],
+    )
     result = gen.generate_lines(expr, lines, "")
     code = "\n".join(lines)
 
     assert result is not None
-    assert "f(x)" not in code.split("if ")[0], \
+    assert "f(x)" not in code.split("if ")[0], (
         f"f(x) was hoisted above the if guard:\n{code}"
+    )
     assert "if " in code, f"Expected if-else for short-circuit, got:\n{code}"
     assert "end" in code
 
@@ -615,10 +685,13 @@ def test_julia_and_without_side_effects_uses_template():
     reset_gensym()
     lines = []
 
-    expr = Call(make_builtin("and"), [
-        Var("a", _bool_type),
-        Var("b", _bool_type),
-    ])
+    expr = Call(
+        make_builtin("and"),
+        [
+            Var("a", _bool_type),
+            Var("b", _bool_type),
+        ],
+    )
     result = gen.generate_lines(expr, lines, "")
     assert result == "(a && b)"
     assert len(lines) == 0
@@ -630,10 +703,13 @@ def test_julia_or_without_side_effects_uses_template():
     reset_gensym()
     lines = []
 
-    expr = Call(make_builtin("or"), [
-        Var("a", _bool_type),
-        Var("b", _bool_type),
-    ])
+    expr = Call(
+        make_builtin("or"),
+        [
+            Var("a", _bool_type),
+            Var("b", _bool_type),
+        ],
+    )
     result = gen.generate_lines(expr, lines, "")
     assert result == "(a || b)"
     assert len(lines) == 0

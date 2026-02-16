@@ -20,11 +20,23 @@ Example:
     Call(Builtin('print'), [Lit("hello")])
 """
 
-from typing import Mapping, Sequence
+from collections.abc import Mapping, Sequence
 
 from .target import (
-    BaseType, Builtin, Lambda, Var, Lit, Call, TargetExpr, TargetType,
-    SequenceType, ListType, OptionType, TupleType, DictType, VarType
+    BaseType,
+    Builtin,
+    Call,
+    DictType,
+    Lambda,
+    ListType,
+    Lit,
+    OptionType,
+    SequenceType,
+    TargetExpr,
+    TargetType,
+    TupleType,
+    Var,
+    VarType,
 )
 from .target_builtins import make_builtin
 
@@ -104,20 +116,25 @@ def type_join(t1: TargetType, t2: TargetType) -> TargetType:
     if isinstance(t1, TupleType) and isinstance(t2, TupleType):
         if len(t1.elements) != len(t2.elements):
             raise TypeError(f"Cannot join tuples of different lengths: {t1} and {t2}")
-        return TupleType(tuple(type_join(a, b) for a, b in zip(t1.elements, t2.elements)))
+        return TupleType(
+            tuple(type_join(a, b) for a, b in zip(t1.elements, t2.elements))
+        )
     if isinstance(t1, DictType) and isinstance(t2, DictType):
         if t1.key_type != t2.key_type:
-            raise TypeError(f"Cannot join dicts with different key types: {t1.key_type} and {t2.key_type}")
+            raise TypeError(
+                f"Cannot join dicts with different key types: {t1.key_type} and {t2.key_type}"
+            )
         return DictType(t1.key_type, type_join(t1.value_type, t2.value_type))
     raise TypeError(f"Cannot join types: {t1} and {t2}")
 
 
 # Common types used throughout grammar generation
 # These correspond to protobuf primitive types
-STRING_TYPE = BaseType('String')     # string, bytes
-INT64_TYPE = BaseType('Int64')       # int32, int64, uint32, uint64, fixed64
-FLOAT64_TYPE = BaseType('Float64')   # double, float
-BOOLEAN_TYPE = BaseType('Boolean')   # bool
+STRING_TYPE = BaseType("String")  # string, bytes
+INT64_TYPE = BaseType("Int64")  # int32, int64, uint32, uint64, fixed64
+FLOAT64_TYPE = BaseType("Float64")  # double, float
+BOOLEAN_TYPE = BaseType("Boolean")  # bool
+
 
 def create_identity_function(param_type: TargetType) -> Lambda:
     """Create an identity function: lambda x -> x with the given type.
@@ -128,25 +145,34 @@ def create_identity_function(param_type: TargetType) -> Lambda:
     Returns:
         Lambda expression representing the identity function
     """
-    param = Var('x', param_type)
+    param = Var("x", param_type)
     return Lambda([param], param_type, param)
-
-
-
 
 
 def _is_simple_expr(expr: TargetExpr) -> bool:
     """Check if an expression is cheap to evaluate and has no side effects."""
     from .target import IfElse, Let
+
     if isinstance(expr, (Var, Lit)):
         return True
     if isinstance(expr, Call):
         if not all(_is_simple_expr(arg) for arg in expr.args):
             return False
         if isinstance(expr.func, Builtin):
-            return expr.func.name in ('equal', 'greater', 'not_equal', 'Some', 'is_none', 'unwrap_option_or')
+            return expr.func.name in (
+                "equal",
+                "greater",
+                "not_equal",
+                "Some",
+                "is_none",
+                "unwrap_option_or",
+            )
     if isinstance(expr, IfElse):
-        return _is_simple_expr(expr.condition) and _is_simple_expr(expr.then_branch) and _is_simple_expr(expr.else_branch)
+        return (
+            _is_simple_expr(expr.condition)
+            and _is_simple_expr(expr.then_branch)
+            and _is_simple_expr(expr.else_branch)
+        )
     if isinstance(expr, Let):
         return _is_simple_expr(expr.init) and _is_simple_expr(expr.body)
     return False
@@ -154,7 +180,21 @@ def _is_simple_expr(expr: TargetExpr) -> bool:
 
 def _count_var_occurrences(expr: TargetExpr, var: str) -> int:
     """Count occurrences of a variable in an expression."""
-    from .target import Let, Assign, Seq, IfElse, While, Foreach, ForeachEnumerated, Return, NewMessage, GetField, GetElement, ListExpr
+    from .target import (
+        Assign,
+        Foreach,
+        ForeachEnumerated,
+        GetElement,
+        GetField,
+        IfElse,
+        Let,
+        ListExpr,
+        NewMessage,
+        Return,
+        Seq,
+        While,
+    )
+
     if isinstance(expr, Var) and expr.name == var:
         return 1
     elif isinstance(expr, Lambda):
@@ -164,7 +204,9 @@ def _count_var_occurrences(expr: TargetExpr, var: str) -> int:
     elif isinstance(expr, Let):
         if expr.var.name == var:
             return _count_var_occurrences(expr.init, var)
-        return _count_var_occurrences(expr.init, var) + _count_var_occurrences(expr.body, var)
+        return _count_var_occurrences(expr.init, var) + _count_var_occurrences(
+            expr.body, var
+        )
     elif isinstance(expr, Assign):
         return _count_var_occurrences(expr.expr, var)
     elif isinstance(expr, Call):
@@ -178,11 +220,15 @@ def _count_var_occurrences(expr: TargetExpr, var: str) -> int:
             count += _count_var_occurrences(e, var)
         return count
     elif isinstance(expr, IfElse):
-        return (_count_var_occurrences(expr.condition, var) +
-                _count_var_occurrences(expr.then_branch, var) +
-                _count_var_occurrences(expr.else_branch, var))
+        return (
+            _count_var_occurrences(expr.condition, var)
+            + _count_var_occurrences(expr.then_branch, var)
+            + _count_var_occurrences(expr.else_branch, var)
+        )
     elif isinstance(expr, While):
-        return _count_var_occurrences(expr.condition, var) + _count_var_occurrences(expr.body, var)
+        return _count_var_occurrences(expr.condition, var) + _count_var_occurrences(
+            expr.body, var
+        )
     elif isinstance(expr, Foreach):
         count = _count_var_occurrences(expr.collection, var)
         if expr.var.name != var:
@@ -220,55 +266,116 @@ def _new_mapping(mapping: Mapping[str, TargetExpr], shadowed: list[str]):
 
 def _subst_inner(expr: TargetExpr, mapping: Mapping[str, TargetExpr]) -> TargetExpr:
     """Inner substitution helper - performs actual substitution."""
-    from .target import Let, Assign, Seq, IfElse, While, Foreach, ForeachEnumerated, Return, NewMessage, GetField, GetElement, ListExpr
+    from .target import (
+        Assign,
+        Foreach,
+        ForeachEnumerated,
+        GetElement,
+        GetField,
+        IfElse,
+        Let,
+        ListExpr,
+        NewMessage,
+        Return,
+        Seq,
+        While,
+    )
+
     if isinstance(expr, Var) and expr.name in mapping:
         return mapping[expr.name]
     elif isinstance(expr, Lambda):
         shadowed = [p.name for p in expr.params if p.name in mapping]
         new_mapping = _new_mapping(mapping, shadowed)
-        return Lambda(params=expr.params, return_type=expr.return_type, body=_subst_inner(expr.body, new_mapping))
+        return Lambda(
+            params=expr.params,
+            return_type=expr.return_type,
+            body=_subst_inner(expr.body, new_mapping),
+        )
     elif isinstance(expr, Let):
         new_mapping = _new_mapping(mapping, [expr.var.name])
-        return Let(expr.var, _subst_inner(expr.init, mapping), _subst_inner(expr.body, new_mapping))
+        return Let(
+            expr.var,
+            _subst_inner(expr.init, mapping),
+            _subst_inner(expr.body, new_mapping),
+        )
     elif isinstance(expr, Assign):
         return Assign(expr.var, _subst_inner(expr.expr, mapping))
     elif isinstance(expr, Call):
-        return Call(_subst_inner(expr.func, mapping), [_subst_inner(arg, mapping) for arg in expr.args])
+        return Call(
+            _subst_inner(expr.func, mapping),
+            [_subst_inner(arg, mapping) for arg in expr.args],
+        )
     elif isinstance(expr, Seq):
         return Seq([_subst_inner(arg, mapping) for arg in expr.exprs])
     elif isinstance(expr, IfElse):
-        return IfElse(_subst_inner(expr.condition, mapping), _subst_inner(expr.then_branch, mapping), _subst_inner(expr.else_branch, mapping))
+        return IfElse(
+            _subst_inner(expr.condition, mapping),
+            _subst_inner(expr.then_branch, mapping),
+            _subst_inner(expr.else_branch, mapping),
+        )
     elif isinstance(expr, While):
-        return While(_subst_inner(expr.condition, mapping), _subst_inner(expr.body, mapping))
+        return While(
+            _subst_inner(expr.condition, mapping), _subst_inner(expr.body, mapping)
+        )
     elif isinstance(expr, Foreach):
         new_mapping = _new_mapping(mapping, [expr.var.name])
-        return Foreach(expr.var, _subst_inner(expr.collection, mapping), _subst_inner(expr.body, new_mapping))
+        return Foreach(
+            expr.var,
+            _subst_inner(expr.collection, mapping),
+            _subst_inner(expr.body, new_mapping),
+        )
     elif isinstance(expr, ForeachEnumerated):
         new_mapping = _new_mapping(mapping, [expr.index_var.name, expr.var.name])
-        return ForeachEnumerated(expr.index_var, expr.var, _subst_inner(expr.collection, mapping), _subst_inner(expr.body, new_mapping))
+        return ForeachEnumerated(
+            expr.index_var,
+            expr.var,
+            _subst_inner(expr.collection, mapping),
+            _subst_inner(expr.body, new_mapping),
+        )
     elif isinstance(expr, Return):
         return Return(_subst_inner(expr.expr, mapping))
     elif isinstance(expr, NewMessage):
         if expr.fields:
-            new_fields = tuple((name, _subst_inner(field_expr, mapping)) for name, field_expr in expr.fields)
+            new_fields = tuple(
+                (name, _subst_inner(field_expr, mapping))
+                for name, field_expr in expr.fields
+            )
             return NewMessage(expr.module, expr.name, new_fields)
         return expr
     elif isinstance(expr, GetField):
-        return GetField(_subst_inner(expr.object, mapping), expr.field_name, expr.message_type, expr.field_type)
+        return GetField(
+            _subst_inner(expr.object, mapping),
+            expr.field_name,
+            expr.message_type,
+            expr.field_type,
+        )
     elif isinstance(expr, GetElement):
         return GetElement(_subst_inner(expr.tuple_expr, mapping), expr.index)
     elif isinstance(expr, ListExpr):
-        return ListExpr([_subst_inner(elem, mapping) for elem in expr.elements], expr.element_type)
+        return ListExpr(
+            [_subst_inner(elem, mapping) for elem in expr.elements], expr.element_type
+        )
     return expr
 
 
 def _validate_subst_types(expr: TargetExpr, mapping: Mapping[str, TargetExpr]) -> None:
     """Check that substitution values have compatible types with their target variables."""
-    from .target import Let, Assign, Seq, IfElse, While, Foreach, ForeachEnumerated, Return
+    from .target import (
+        Assign,
+        Foreach,
+        ForeachEnumerated,
+        IfElse,
+        Let,
+        Return,
+        Seq,
+        While,
+    )
+
     if isinstance(expr, Var) and expr.name in mapping:
         val = mapping[expr.name]
-        assert is_subtype(val.target_type(), expr.type), \
+        assert is_subtype(val.target_type(), expr.type), (
             f"Type mismatch in subst: {expr.name} has type {expr.type} but value has type {val.target_type()}"
+        )
     elif isinstance(expr, Lambda):
         shadowed = {p.name for p in expr.params}
         filtered = {k: v for k, v in mapping.items() if k not in shadowed}
@@ -300,7 +407,11 @@ def _validate_subst_types(expr: TargetExpr, mapping: Mapping[str, TargetExpr]) -
             _validate_subst_types(expr.body, filtered)
     elif isinstance(expr, ForeachEnumerated):
         _validate_subst_types(expr.collection, mapping)
-        filtered = {k: v for k, v in mapping.items() if k not in {expr.index_var.name, expr.var.name}}
+        filtered = {
+            k: v
+            for k, v in mapping.items()
+            if k not in {expr.index_var.name, expr.var.name}
+        }
         if filtered:
             _validate_subst_types(expr.body, filtered)
     elif isinstance(expr, Assign):
@@ -321,8 +432,9 @@ def subst(expr: TargetExpr, mapping: Mapping[str, TargetExpr]) -> TargetExpr:
         and its variable occurs more than once, introduces a Let binding
         to avoid duplicating side effects.
     """
-    from .target import Let
     from .gensym import gensym
+    from .target import Let
+
     if not mapping:
         return expr
 
@@ -341,7 +453,7 @@ def subst(expr: TargetExpr, mapping: Mapping[str, TargetExpr]) -> TargetExpr:
             simple_mapping[var] = val
         else:
             # Multiple occurrences and val has side effects - need Let
-            fresh_var = Var(gensym('subst'), val.target_type())
+            fresh_var = Var(gensym("subst"), val.target_type())
             lets_needed.append((fresh_var, val))
             simple_mapping[var] = fresh_var
 
@@ -358,58 +470,72 @@ def subst(expr: TargetExpr, mapping: Mapping[str, TargetExpr]) -> TargetExpr:
 # These functions construct calls to builtin operations that must be
 # implemented by the target language runtime
 
+
 def make_equal(left, right):
     """Construct equality test: left == right."""
-    return Call(make_builtin('equal'), [left, right])
+    return Call(make_builtin("equal"), [left, right])
+
 
 def make_which_oneof(msg, oneof_name):
     """Get which field is set in a oneof group."""
-    return Call(make_builtin('which_one_of'), [msg, oneof_name])
+    return Call(make_builtin("which_one_of"), [msg, oneof_name])
+
 
 def make_get_field(obj, field_name, message_type, field_type):
     """Get field value from message: obj.field_name."""
     from .target import GetField
+
     # If field_name is a Lit, extract the string value
     if isinstance(field_name, Lit):
         field_name = field_name.value
     return GetField(obj, field_name, message_type, field_type)
 
+
 def make_some(value):
     """Wrap value in Option/Maybe: Some(value)."""
-    return Call(make_builtin('some'), [value])
+    return Call(make_builtin("some"), [value])
+
 
 def make_tuple(*args):
     """Construct tuple from values: (arg1, arg2, ...)."""
-    return Call(make_builtin('tuple'), list(args))
+    return Call(make_builtin("tuple"), list(args))
+
 
 def make_get_element(tuple_expr, index):
     """Extract element from tuple at constant index: tuple_expr[index]."""
     from .target import GetElement
+
     return GetElement(tuple_expr, index)
+
 
 def make_fst(pair):
     """Extract first element of tuple: pair[0]."""
     return make_get_element(pair, 0)
 
+
 def make_snd(pair):
     """Extract second element of tuple: pair[1]."""
     return make_get_element(pair, 1)
 
+
 def make_is_empty(collection):
     """Check if collection is empty: len(collection) == 0."""
-    return Call(make_builtin('is_empty'), [collection])
+    return Call(make_builtin("is_empty"), [collection])
+
 
 def make_concat(left, right):
     """Concatenate two lists: left + right."""
-    return Call(make_builtin('list_concat'), [left, right])
+    return Call(make_builtin("list_concat"), [left, right])
+
 
 def make_length(collection):
     """Get collection length: len(collection)."""
-    return Call(make_builtin('length'), [collection])
+    return Call(make_builtin("length"), [collection])
+
 
 def make_unwrap_option_or(option, default):
     """Unwrap Option with default: option if Some(x) else default."""
-    return Call(make_builtin('unwrap_option_or'), [option, default])
+    return Call(make_builtin("unwrap_option_or"), [option, default])
 
 
 def apply_lambda(func: Lambda, args: Sequence[TargetExpr]) -> TargetExpr:
@@ -428,10 +554,16 @@ def apply_lambda(func: Lambda, args: Sequence[TargetExpr]) -> TargetExpr:
         Expression with lambda applied
     """
     from .target import Let
+
     if len(args) == 0 and len(func.params) == 0:
         return func.body
     if len(func.params) > 0 and len(args) > 0:
-        body = apply_lambda(Lambda(params=func.params[1:], return_type=func.return_type, body=func.body), args[1:])
+        body = apply_lambda(
+            Lambda(
+                params=func.params[1:], return_type=func.return_type, body=func.body
+            ),
+            args[1:],
+        )
         if isinstance(args[0], (Var, Lit)):
             return _subst_inner(body, {func.params[0].name: args[0]})
         return Let(func.params[0], args[0], body)

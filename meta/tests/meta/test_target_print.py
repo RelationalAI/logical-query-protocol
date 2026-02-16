@@ -5,17 +5,29 @@ These tests verify that parsing a restricted Python expression and then
 pretty-printing it back yields the same string.
 """
 
+import ast
+
 import pytest
-from typing import List, Optional
 
 from meta.target import (
-    TargetType, BaseType, MessageType, ListType, OptionType, TupleType,
-    DictType, FunctionType, TargetExpr, Var, Lit, Call, Lambda, ListExpr,
+    BaseType,
+    Call,
+    DictType,
+    FunctionType,
+    Lambda,
+    ListExpr,
+    ListType,
+    Lit,
+    MessageType,
+    OptionType,
+    TargetExpr,
+    TargetType,
+    TupleType,
+    Var,
 )
 from meta.target_builtins import make_builtin
 from meta.target_print import expr_to_str, type_to_str
 from meta.yacc_action_parser import TypeContext, YaccGrammarError
-import ast
 
 
 def make_ctx() -> TypeContext:
@@ -23,18 +35,21 @@ def make_ctx() -> TypeContext:
     return TypeContext()
 
 
-def parse_expr(text: str, ctx: TypeContext, extra_vars: Optional[dict] = None) -> 'TargetExpr':
+def parse_expr(
+    text: str, ctx: TypeContext, extra_vars: dict | None = None
+) -> "TargetExpr":
     """Parse a simple expression for testing.
 
     This is a simplified wrapper that doesn't use $N parameter references,
     just extra_vars for variable bindings.
     """
     from meta.yacc_action_parser import _convert_node_with_vars
+
     if extra_vars is None:
         extra_vars = {}
 
     # Parse as Python expression
-    tree = ast.parse(text, mode='eval')
+    tree = ast.parse(text, mode="eval")
 
     # Create empty param_info and params (no $N references in tests)
     param_info = []
@@ -46,32 +61,41 @@ def parse_expr(text: str, ctx: TypeContext, extra_vars: Optional[dict] = None) -
 class TestTypeRoundtrip:
     """Roundtrip tests for type_to_str."""
 
-    @pytest.mark.parametrize("type_str", [
-        "String",
-        "Int64",
-        "Float64",
-        "Boolean",
-    ])
+    @pytest.mark.parametrize(
+        "type_str",
+        [
+            "String",
+            "Int64",
+            "Float64",
+            "Boolean",
+        ],
+    )
     def test_base_types(self, type_str: str):
         """Test base type roundtrips."""
         typ = BaseType(type_str)
         assert type_to_str(typ) == type_str
 
-    @pytest.mark.parametrize("module,name,expected", [
-        ("logic", "Value", "logic.Value"),
-        ("proto", "Formula", "proto.Formula"),
-        ("lqp", "Term", "lqp.Term"),
-    ])
+    @pytest.mark.parametrize(
+        "module,name,expected",
+        [
+            ("logic", "Value", "logic.Value"),
+            ("proto", "Formula", "proto.Formula"),
+            ("lqp", "Term", "lqp.Term"),
+        ],
+    )
     def test_message_types(self, module: str, name: str, expected: str):
         """Test message type roundtrips."""
         typ = MessageType(module, name)
         assert type_to_str(typ) == expected
 
-    @pytest.mark.parametrize("elem,expected", [
-        (BaseType("Int64"), "List[Int64]"),
-        (BaseType("String"), "List[String]"),
-        (MessageType("logic", "Value"), "List[logic.Value]"),
-    ])
+    @pytest.mark.parametrize(
+        "elem,expected",
+        [
+            (BaseType("Int64"), "List[Int64]"),
+            (BaseType("String"), "List[String]"),
+            (MessageType("logic", "Value"), "List[logic.Value]"),
+        ],
+    )
     def test_list_types(self, elem: TargetType, expected: str):
         """Test list type roundtrips."""
         typ = ListType(elem)
@@ -82,21 +106,30 @@ class TestTypeRoundtrip:
         typ = ListType(ListType(BaseType("Int64")))
         assert type_to_str(typ) == "List[List[Int64]]"
 
-    @pytest.mark.parametrize("elem,expected", [
-        (BaseType("Int64"), "Optional[Int64]"),
-        (BaseType("String"), "Optional[String]"),
-        (MessageType("logic", "Value"), "Optional[logic.Value]"),
-    ])
+    @pytest.mark.parametrize(
+        "elem,expected",
+        [
+            (BaseType("Int64"), "Optional[Int64]"),
+            (BaseType("String"), "Optional[String]"),
+            (MessageType("logic", "Value"), "Optional[logic.Value]"),
+        ],
+    )
     def test_option_types(self, elem: TargetType, expected: str):
         """Test option type roundtrips."""
         typ = OptionType(elem)
         assert type_to_str(typ) == expected
 
-    @pytest.mark.parametrize("elems,expected", [
-        ([BaseType("Int64"), BaseType("String")], "Tuple[Int64, String]"),
-        ([BaseType("Int64"), BaseType("String"), BaseType("Boolean")], "Tuple[Int64, String, Boolean]"),
-    ])
-    def test_tuple_types(self, elems: List[TargetType], expected: str):
+    @pytest.mark.parametrize(
+        "elems,expected",
+        [
+            ([BaseType("Int64"), BaseType("String")], "Tuple[Int64, String]"),
+            (
+                [BaseType("Int64"), BaseType("String"), BaseType("Boolean")],
+                "Tuple[Int64, String, Boolean]",
+            ),
+        ],
+    )
+    def test_tuple_types(self, elems: list[TargetType], expected: str):
         """Test tuple type roundtrips."""
         typ = TupleType(elems)
         assert type_to_str(typ) == expected
@@ -120,15 +153,18 @@ class TestTypeRoundtrip:
 class TestExprRoundtrip:
     """Roundtrip tests for expr_to_str with parsing."""
 
-    @pytest.mark.parametrize("expr_str", [
-        "42",
-        "0",
-        "3.14",
-        "'hello'",
-        "\"world\"",
-        "True",
-        "False",
-    ])
+    @pytest.mark.parametrize(
+        "expr_str",
+        [
+            "42",
+            "0",
+            "3.14",
+            "'hello'",
+            '"world"',
+            "True",
+            "False",
+        ],
+    )
     def test_literals(self, expr_str: str):
         """Test literal roundtrips."""
         ctx = make_ctx()
@@ -148,7 +184,10 @@ class TestExprRoundtrip:
     def test_builtin_call(self):
         """Test builtin function call roundtrip."""
         ctx = make_ctx()
-        extra_vars = {"x": ListType(BaseType("Int64")), "y": ListType(BaseType("Int64"))}
+        extra_vars = {
+            "x": ListType(BaseType("Int64")),
+            "y": ListType(BaseType("Int64")),
+        }
         expr = parse_expr("list_concat(x, y)", ctx, extra_vars)
         assert expr_to_str(expr) == "builtin.list_concat(x, y)"
 
@@ -208,7 +247,11 @@ class TestExprRoundtrip:
     def test_conditional_expression(self):
         """Test conditional (ternary) expression."""
         ctx = make_ctx()
-        extra_vars = {"cond": BaseType("Boolean"), "x": BaseType("Int64"), "y": BaseType("Int64")}
+        extra_vars = {
+            "cond": BaseType("Boolean"),
+            "x": BaseType("Int64"),
+            "y": BaseType("Int64"),
+        }
         expr = parse_expr("x if cond else y", ctx, extra_vars)
         assert expr_to_str(expr) == "(x if cond else y)"
 
@@ -235,7 +278,11 @@ class TestExprRoundtrip:
     def test_seq_multiple_expressions(self):
         """Test seq with multiple expressions."""
         ctx = make_ctx()
-        extra_vars = {"x": BaseType("Int64"), "y": BaseType("Int64"), "z": BaseType("Int64")}
+        extra_vars = {
+            "x": BaseType("Int64"),
+            "y": BaseType("Int64"),
+            "z": BaseType("Int64"),
+        }
         expr = parse_expr("seq(x, y, z)", ctx, extra_vars)
         assert expr_to_str(expr) == "seq(x; y; z)"
 
@@ -256,7 +303,11 @@ class TestExprRoundtrip:
     def test_nested_call(self):
         """Test nested function calls."""
         ctx = make_ctx()
-        extra_vars = {"x": ListType(BaseType("Int64")), "y": ListType(BaseType("Int64")), "z": ListType(BaseType("Int64"))}
+        extra_vars = {
+            "x": ListType(BaseType("Int64")),
+            "y": ListType(BaseType("Int64")),
+            "z": ListType(BaseType("Int64")),
+        }
         expr = parse_expr("list_concat(list_concat(x, y), z)", ctx, extra_vars)
         assert expr_to_str(expr) == "builtin.list_concat(builtin.list_concat(x, y), z)"
 
@@ -289,12 +340,14 @@ class TestExprDirect:
     def test_symbol(self):
         """Test symbol expression."""
         from meta.target import Symbol
+
         sym = Symbol("field_name")
         assert expr_to_str(sym) == ":field_name"
 
     def test_get_field(self):
         """Test field access expression."""
-        from meta.target import GetField, BaseType
+        from meta.target import BaseType, GetField
+
         msg_type = MessageType("logic", "Value")
         obj = Var("msg", msg_type)
         field = GetField(obj, "int_value", msg_type, BaseType("Int64"))
@@ -303,6 +356,7 @@ class TestExprDirect:
     def test_nested_get_field(self):
         """Test nested field access."""
         from meta.target import GetField
+
         outer_type = MessageType("logic", "Outer")
         inner_type = MessageType("logic", "Inner")
         obj = Var("msg", outer_type)
@@ -313,6 +367,7 @@ class TestExprDirect:
     def test_has_proto_field(self):
         """Test has_proto_field builtin call."""
         from meta.target import Call
+
         obj = Var("msg", MessageType("logic", "Value"))
         has = Call(make_builtin("has_proto_field"), [obj, Lit("int_value")])
         assert expr_to_str(has) == "builtin.has_proto_field(msg, 'int_value')"
@@ -320,13 +375,17 @@ class TestExprDirect:
     def test_dict_from_list(self):
         """Test dict_from_list builtin call."""
         from meta.target import Call
-        pairs = Var("pairs", ListType(TupleType([BaseType("String"), BaseType("Int64")])))
+
+        pairs = Var(
+            "pairs", ListType(TupleType([BaseType("String"), BaseType("Int64")]))
+        )
         d = Call(make_builtin("dict_from_list"), [pairs])
         assert expr_to_str(d) == "builtin.dict_from_list(pairs)"
 
     def test_dict_lookup(self):
         """Test dict_get builtin call."""
         from meta.target import Call
+
         d = Var("d", DictType(BaseType("String"), BaseType("Int64")))
         key = Lit("key")
         lookup = Call(make_builtin("dict_get"), [d, key])
@@ -335,6 +394,7 @@ class TestExprDirect:
     def test_assign(self):
         """Test assignment expression."""
         from meta.target import Assign
+
         var = Var("x", BaseType("Int64"))
         expr = Lit(42)
         assign = Assign(var, expr)
@@ -343,6 +403,7 @@ class TestExprDirect:
     def test_return(self):
         """Test return expression."""
         from meta.target import Return
+
         expr = Var("x", BaseType("Int64"))
         ret = Return(expr)
         assert expr_to_str(ret) == "return x"
@@ -350,6 +411,7 @@ class TestExprDirect:
     def test_while(self):
         """Test while expression."""
         from meta.target import While
+
         cond = Var("running", BaseType("Boolean"))
         body = Lit(42)
         loop = While(cond, body)
@@ -358,6 +420,7 @@ class TestExprDirect:
     def test_oneof(self):
         """Test oneof expression."""
         from meta.target import OneOf
+
         _any_type = BaseType("Any")
         oneof = OneOf("value", FunctionType([_any_type], _any_type))
         assert expr_to_str(oneof) == "oneof(value)"
@@ -365,6 +428,7 @@ class TestExprDirect:
     def test_named_fun(self):
         """Test named function reference."""
         from meta.target import NamedFun
+
         _any_type = BaseType("Any")
         fun = NamedFun("my_func", FunctionType([], _any_type))
         assert expr_to_str(fun) == "my_func"
@@ -380,8 +444,9 @@ class TestFunDefPrint:
 
     def test_simple_function(self):
         """Test simple function definition."""
-        from meta.target_print import fundef_to_str
         from meta.target import FunDef
+        from meta.target_print import fundef_to_str
+
         param = Var("x", BaseType("Int64"))
         body = Var("x", BaseType("Int64"))
         fundef = FunDef("identity", [param], BaseType("Int64"), body)
@@ -390,8 +455,9 @@ class TestFunDefPrint:
 
     def test_function_multiple_params(self):
         """Test function with multiple parameters."""
-        from meta.target_print import fundef_to_str
         from meta.target import FunDef
+        from meta.target_print import fundef_to_str
+
         p1 = Var("x", BaseType("Int64"))
         p2 = Var("y", BaseType("String"))
         body = Var("x", BaseType("Int64"))
@@ -401,8 +467,9 @@ class TestFunDefPrint:
 
     def test_function_no_params(self):
         """Test function with no parameters."""
-        from meta.target_print import fundef_to_str
         from meta.target import FunDef
+        from meta.target_print import fundef_to_str
+
         body = Lit(42)
         fundef = FunDef("get_answer", [], BaseType("Int64"), body)
         result = fundef_to_str(fundef)

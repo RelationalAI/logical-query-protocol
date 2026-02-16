@@ -30,7 +30,7 @@ Example:
 """
 
 from dataclasses import dataclass, field
-from typing import List, Tuple
+
 
 @dataclass
 class ProtoField:
@@ -50,6 +50,7 @@ class ProtoField:
         optional int32 age = 2;  ->
         ProtoField(name="age", type="int32", number=2, is_optional=True)
     """
+
     name: str
     type: str
     number: int
@@ -78,8 +79,9 @@ class ProtoOneof:
             ProtoField(name="binary", type="bytes", number=2)
         ])
     """
+
     name: str
-    fields: List[ProtoField] = field(default_factory=list)
+    fields: list[ProtoField] = field(default_factory=list)
 
 
 @dataclass
@@ -103,9 +105,10 @@ class ProtoEnum:
             ("INACTIVE", 2)
         ])
     """
+
     name: str
     module: str = ""
-    values: List[Tuple[str, int]] = field(default_factory=list)
+    values: list[tuple[str, int]] = field(default_factory=list)
 
 
 @dataclass
@@ -127,9 +130,10 @@ class ProtoReserved:
         reserved "foo", "bar";  ->
         ProtoReserved(names=["foo", "bar"])
     """
-    numbers: List[int] = field(default_factory=list)
-    ranges: List[Tuple[int, int]] = field(default_factory=list)
-    names: List[str] = field(default_factory=list)
+
+    numbers: list[int] = field(default_factory=list)
+    ranges: list[tuple[int, int]] = field(default_factory=list)
+    names: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -173,9 +177,10 @@ class ProtoMessage:
             reserved=[ProtoReserved(numbers=[5, 6])]
         )
     """
+
     name: str
     module: str = ""
-    fields: List[ProtoField] = field(default_factory=list)
-    oneofs: List[ProtoOneof] = field(default_factory=list)
-    enums: List[ProtoEnum] = field(default_factory=list)
-    reserved: List[ProtoReserved] = field(default_factory=list)
+    fields: list[ProtoField] = field(default_factory=list)
+    oneofs: list[ProtoOneof] = field(default_factory=list)
+    enums: list[ProtoEnum] = field(default_factory=list)
+    reserved: list[ProtoReserved] = field(default_factory=list)

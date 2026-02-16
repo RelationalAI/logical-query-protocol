@@ -1,19 +1,40 @@
 #!/usr/bin/env python3
 """Tests for Python code generation from action AST."""
 
-from meta.target import (
-    Var, Lit, Symbol, NamedFun, NewMessage, ListExpr, Call, Lambda, Let,
-    IfElse, Seq, While, Assign, Return, FunDef, ParseNonterminalDef,
-    BaseType, MessageType, ListType, OptionType, GetElement, FunctionType,
-)
-from meta.target_builtins import make_builtin
-from meta.grammar import Nonterminal
 from meta.codegen_python import (
-    generate_python,
-    escape_identifier as escape_python,
     PythonCodeGenerator,
+    generate_python,
+)
+from meta.codegen_python import (
+    escape_identifier as escape_python,
 )
 from meta.gensym import reset as reset_gensym
+from meta.grammar import Nonterminal
+from meta.target import (
+    Assign,
+    BaseType,
+    Call,
+    FunctionType,
+    FunDef,
+    GetElement,
+    IfElse,
+    Lambda,
+    Let,
+    ListExpr,
+    ListType,
+    Lit,
+    MessageType,
+    NamedFun,
+    NewMessage,
+    OptionType,
+    ParseNonterminalDef,
+    Return,
+    Seq,
+    Symbol,
+    Var,
+    While,
+)
+from meta.target_builtins import make_builtin
 
 _any_type = BaseType("Any")
 _int_type = BaseType("Int64")
@@ -51,7 +72,9 @@ def test_python_call_generation():
     assert code_kw == "class_(arg)"
 
     # Nested call
-    nested = Call(Var("outer", _any_type), [Call(Var("inner", _any_type), [Var("z", _any_type)])])
+    nested = Call(
+        Var("outer", _any_type), [Call(Var("inner", _any_type), [Var("z", _any_type)])]
+    )
     code_nested = generate_python(nested)
     assert code_nested == "outer(inner(z))"
 
@@ -61,7 +84,9 @@ def test_python_let_generation():
     reset_gensym()
 
     # Simple let
-    let_expr = Let(Var("x", _any_type), Call(Var("parse_foo", _any_type), []), Var("x", _any_type))
+    let_expr = Let(
+        Var("x", _any_type), Call(Var("parse_foo", _any_type), []), Var("x", _any_type)
+    )
     code = generate_python(let_expr)
     assert "_t" in code and "parse_foo()" in code
     assert any(s in code for s in ("x = _t", "x = parse_foo()"))
@@ -69,9 +94,15 @@ def test_python_let_generation():
 
     # Nested let
     reset_gensym()
-    nested_let = Let(Var("x", _any_type), Call(Var("parse_a", _any_type), []),
-                     Let(Var("y", _any_type), Call(Var("parse_b", _any_type), []),
-                         Call(Var("make", _any_type), [Var("x", _any_type), Var("y", _any_type)])))
+    nested_let = Let(
+        Var("x", _any_type),
+        Call(Var("parse_a", _any_type), []),
+        Let(
+            Var("y", _any_type),
+            Call(Var("parse_b", _any_type), []),
+            Call(Var("make", _any_type), [Var("x", _any_type), Var("y", _any_type)]),
+        ),
+    )
     code_nested = generate_python(nested_let)
     assert "parse_a()" in code_nested and "x = " in code_nested
     assert "parse_b()" in code_nested and "y = " in code_nested
@@ -79,7 +110,11 @@ def test_python_let_generation():
 
     # Let with keyword variable
     reset_gensym()
-    let_kw = Let(Var("class", _any_type), Call(Var("parse", _any_type), []), Var("class", _any_type))
+    let_kw = Let(
+        Var("class", _any_type),
+        Call(Var("parse", _any_type), []),
+        Var("class", _any_type),
+    )
     code_kw = generate_python(let_kw)
     assert "parse()" in code_kw and "class_ = " in code_kw
     assert code_kw.strip().endswith("class_")
@@ -88,12 +123,20 @@ def test_python_let_generation():
 def test_python_lambda_generation():
     """Test Python lambda generation."""
     # Simple lambda
-    lam = Lambda([Var("x", _any_type), Var("y", _any_type)], _any_type, Call(Var("Add", _any_type), [Var("x", _any_type), Var("y", _any_type)]))
+    lam = Lambda(
+        [Var("x", _any_type), Var("y", _any_type)],
+        _any_type,
+        Call(Var("Add", _any_type), [Var("x", _any_type), Var("y", _any_type)]),
+    )
     code = generate_python(lam)
     assert code == "lambda x, y: Add(x, y)"
 
     # Lambda with keyword parameter
-    lam_kw = Lambda([Var("class", _any_type), Var("value", _any_type)], _any_type, Var("value", _any_type))
+    lam_kw = Lambda(
+        [Var("class", _any_type), Var("value", _any_type)],
+        _any_type,
+        Var("value", _any_type),
+    )
     code_kw = generate_python(lam_kw)
     assert code_kw == "lambda class_, value: value"
 
@@ -120,14 +163,20 @@ def test_python_builtin_generation():
     # Test 'list_concat' builtin
     reset_gensym()
     lines = []
-    expr = Call(make_builtin("list_concat"), [Var("lst", ListType(_int_type)), Var("other", ListType(_int_type))])
+    expr = Call(
+        make_builtin("list_concat"),
+        [Var("lst", ListType(_int_type)), Var("other", ListType(_int_type))],
+    )
     result = gen.generate_lines(expr, lines, "")
     assert result == "(list(lst) + list(other if other is not None else []))"
 
     # Test 'list_push' builtin (mutating push with statement)
     reset_gensym()
     lines = []
-    expr = Call(make_builtin("list_push"), [Var("lst", ListType(_int_type)), Var("item", _int_type)])
+    expr = Call(
+        make_builtin("list_push"),
+        [Var("lst", ListType(_int_type)), Var("item", _int_type)],
+    )
     result = gen.generate_lines(expr, lines, "")
     assert result == "None"
     assert lines == ["lst.append(item)"]
@@ -225,11 +274,13 @@ def test_python_seq_generation():
     # Sequence of expressions
     reset_gensym()
     lines = []
-    expr = Seq([
-        Call(Var("setup", _any_type), []),
-        Call(Var("process", _any_type), []),
-        Var("result", _any_type),
-    ])
+    expr = Seq(
+        [
+            Call(Var("setup", _any_type), []),
+            Call(Var("process", _any_type), []),
+            Var("result", _any_type),
+        ]
+    )
     result = gen.generate_lines(expr, lines, "")
     assert result == "result"
     code = "\n".join(lines)
@@ -416,6 +467,7 @@ def test_python_type_generation():
 
 # Tests for helper function codegen (FunDef from yacc grammar)
 
+
 def test_python_helper_function_simple():
     """Test Python code generation for a simple helper function."""
     gen = PythonCodeGenerator()
@@ -474,10 +526,12 @@ def test_python_helper_function_with_assignment():
         name="transform",
         params=[Var("x", _int_type)],
         return_type=_int_type,
-        body=Seq([
-            Assign(Var("result", _int_type), Var("x", _int_type)),
-            Return(Var("result", _int_type)),
-        ]),
+        body=Seq(
+            [
+                Assign(Var("result", _int_type), Var("x", _int_type)),
+                Return(Var("result", _int_type)),
+            ]
+        ),
     )
     code = gen.generate_def(func)
     assert "def transform(x: int) -> int:" in code
@@ -517,7 +571,10 @@ def test_python_helper_function_calling_another():
         name="wrapper",
         params=[Var("x", _int_type)],
         return_type=_int_type,
-        body=Call(NamedFun("helper", FunctionType([_int_type], _int_type)), [Var("x", _int_type)]),
+        body=Call(
+            NamedFun("helper", FunctionType([_int_type], _int_type)),
+            [Var("x", _int_type)],
+        ),
     )
     code = gen.generate_def(func)
     assert "def wrapper(x: int) -> int:" in code
@@ -538,20 +595,27 @@ def test_python_and_short_circuit_with_side_effects():
     # and(a, f(x) == 42)
     # The call f(x) generates a temp-var assignment line.
     # That assignment must be guarded by the 'and' LHS.
-    expr = Call(make_builtin("and"), [
-        Var("a", _bool_type),
-        Call(make_builtin("equal"), [
-            Call(Var("f", _any_type), [Var("x", _any_type)]),
-            Lit(42),
-        ]),
-    ])
+    expr = Call(
+        make_builtin("and"),
+        [
+            Var("a", _bool_type),
+            Call(
+                make_builtin("equal"),
+                [
+                    Call(Var("f", _any_type), [Var("x", _any_type)]),
+                    Lit(42),
+                ],
+            ),
+        ],
+    )
     result = gen.generate_lines(expr, lines, "")
     code = "\n".join(lines)
 
     assert result is not None
     # f(x) call must be inside the if body, not before it
-    assert "f(x)" not in code.split("if ")[0], \
+    assert "f(x)" not in code.split("if ")[0], (
         f"f(x) was hoisted above the if guard:\n{code}"
+    )
     assert "if " in code, f"Expected if-else for short-circuit, got:\n{code}"
 
 
@@ -563,19 +627,26 @@ def test_python_or_short_circuit_with_side_effects():
 
     # or(a, f(x) == 42)
     # f(x) side-effects must only execute when a is falsy.
-    expr = Call(make_builtin("or"), [
-        Var("a", _bool_type),
-        Call(make_builtin("equal"), [
-            Call(Var("f", _any_type), [Var("x", _any_type)]),
-            Lit(42),
-        ]),
-    ])
+    expr = Call(
+        make_builtin("or"),
+        [
+            Var("a", _bool_type),
+            Call(
+                make_builtin("equal"),
+                [
+                    Call(Var("f", _any_type), [Var("x", _any_type)]),
+                    Lit(42),
+                ],
+            ),
+        ],
+    )
     result = gen.generate_lines(expr, lines, "")
     code = "\n".join(lines)
 
     assert result is not None
-    assert "f(x)" not in code.split("if ")[0], \
+    assert "f(x)" not in code.split("if ")[0], (
         f"f(x) was hoisted above the if guard:\n{code}"
+    )
     assert "if " in code, f"Expected if-else for short-circuit, got:\n{code}"
 
 
@@ -586,10 +657,13 @@ def test_python_and_without_side_effects_uses_template():
     lines = []
 
     # and(a, b) with no side-effects should produce (a and b)
-    expr = Call(make_builtin("and"), [
-        Var("a", _bool_type),
-        Var("b", _bool_type),
-    ])
+    expr = Call(
+        make_builtin("and"),
+        [
+            Var("a", _bool_type),
+            Var("b", _bool_type),
+        ],
+    )
     result = gen.generate_lines(expr, lines, "")
     assert result == "(a and b)"
     assert len(lines) == 0
@@ -601,16 +675,19 @@ def test_python_or_without_side_effects_uses_template():
     reset_gensym()
     lines = []
 
-    expr = Call(make_builtin("or"), [
-        Var("a", _bool_type),
-        Var("b", _bool_type),
-    ])
+    expr = Call(
+        make_builtin("or"),
+        [
+            Var("a", _bool_type),
+            Var("b", _bool_type),
+        ],
+    )
     result = gen.generate_lines(expr, lines, "")
     assert result == "(a or b)"
     assert len(lines) == 0
 
 
-def test_python_and_short_circuit_with_side_effects():
+def test_python_and_short_circuit_with_unwrap_side_effects():
     """Test that 'and' preserves short-circuit semantics when RHS has side-effects.
 
     When the RHS of 'and' contains a builtin like unwrap_option that emits
@@ -624,24 +701,33 @@ def test_python_and_short_circuit_with_side_effects():
     # and(x is not None, unwrap_option(x) == 42)
     # unwrap_option emits `assert x is not None` as a side-effect.
     # That assert must NOT execute when x is None.
-    expr = Call(make_builtin("and"), [
-        Call(make_builtin("is_some"), [Var("x", OptionType(_int_type))]),
-        Call(make_builtin("equal"), [
-            Call(make_builtin("unwrap_option"), [Var("x", OptionType(_int_type))]),
-            Lit(42),
-        ]),
-    ])
+    expr = Call(
+        make_builtin("and"),
+        [
+            Call(make_builtin("is_some"), [Var("x", OptionType(_int_type))]),
+            Call(
+                make_builtin("equal"),
+                [
+                    Call(
+                        make_builtin("unwrap_option"), [Var("x", OptionType(_int_type))]
+                    ),
+                    Lit(42),
+                ],
+            ),
+        ],
+    )
     result = gen.generate_lines(expr, lines, "")
     code = "\n".join(lines)
 
     # The assert from unwrap_option must be inside the if body, not at the top
     assert result is not None
-    assert "assert" not in code.split("if ")[0], \
+    assert "assert" not in code.split("if ")[0], (
         f"assert was hoisted above the if guard:\n{code}"
+    )
     assert "if " in code, f"Expected if-else for short-circuit, got:\n{code}"
 
 
-def test_python_or_short_circuit_with_side_effects():
+def test_python_or_short_circuit_with_unwrap_side_effects():
     """Test that 'or' preserves short-circuit semantics when RHS has side-effects."""
     gen = PythonCodeGenerator()
     reset_gensym()
@@ -649,51 +735,29 @@ def test_python_or_short_circuit_with_side_effects():
 
     # or(x is None, unwrap_option(x) == 42)
     # unwrap_option side-effects must only execute when x is NOT None.
-    expr = Call(make_builtin("or"), [
-        Call(make_builtin("is_none"), [Var("x", OptionType(_int_type))]),
-        Call(make_builtin("equal"), [
-            Call(make_builtin("unwrap_option"), [Var("x", OptionType(_int_type))]),
-            Lit(42),
-        ]),
-    ])
+    expr = Call(
+        make_builtin("or"),
+        [
+            Call(make_builtin("is_none"), [Var("x", OptionType(_int_type))]),
+            Call(
+                make_builtin("equal"),
+                [
+                    Call(
+                        make_builtin("unwrap_option"), [Var("x", OptionType(_int_type))]
+                    ),
+                    Lit(42),
+                ],
+            ),
+        ],
+    )
     result = gen.generate_lines(expr, lines, "")
     code = "\n".join(lines)
 
     assert result is not None
-    assert "assert" not in code.split("if ")[0], \
+    assert "assert" not in code.split("if ")[0], (
         f"assert was hoisted above the if guard:\n{code}"
+    )
     assert "if " in code, f"Expected if-else for short-circuit, got:\n{code}"
-
-
-def test_python_and_without_side_effects_uses_template():
-    """Test that 'and' without side-effects uses the simple template."""
-    gen = PythonCodeGenerator()
-    reset_gensym()
-    lines = []
-
-    # and(a, b) with no side-effects should produce (a and b)
-    expr = Call(make_builtin("and"), [
-        Var("a", _bool_type),
-        Var("b", _bool_type),
-    ])
-    result = gen.generate_lines(expr, lines, "")
-    assert result == "(a and b)"
-    assert len(lines) == 0
-
-
-def test_python_or_without_side_effects_uses_template():
-    """Test that 'or' without side-effects uses the simple template."""
-    gen = PythonCodeGenerator()
-    reset_gensym()
-    lines = []
-
-    expr = Call(make_builtin("or"), [
-        Var("a", _bool_type),
-        Var("b", _bool_type),
-    ])
-    result = gen.generate_lines(expr, lines, "")
-    assert result == "(a or b)"
-    assert len(lines) == 0
 
 
 if __name__ == "__main__":

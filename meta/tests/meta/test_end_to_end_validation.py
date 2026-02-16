@@ -5,21 +5,21 @@ These tests validate complete grammar files against protobuf specifications,
 testing all validation error cases.
 """
 
-from pathlib import Path
 import tempfile
+from pathlib import Path
 from textwrap import dedent
 
-from meta.proto_parser import ProtoParser
+from meta.grammar import Grammar
 from meta.grammar_validator import validate_grammar
+from meta.proto_parser import ProtoParser
 from meta.validation_result import ValidationResult
 from meta.yacc_parser import load_yacc_grammar_file
-from meta.grammar import Grammar
 
 
 def create_temp_file(content: str, suffix: str = ".txt") -> Path:
     """Create a temporary file with given content."""
     fd, path = tempfile.mkstemp(suffix=suffix)
-    with open(fd, 'w') as f:
+    with open(fd, "w") as f:
         f.write(dedent(content))
     return Path(path)
 
@@ -200,7 +200,9 @@ pair
 
         result = parse_and_validate(grammar_content, proto_content)
         assert not result.is_valid, f"Expected errors but got: {result.summary()}"
-        assert any(e.category == "type_tuple_element" for e in result.errors), f"Expected type_tuple_element error, got: {[e.category for e in result.errors]}"
+        assert any(e.category == "type_tuple_element" for e in result.errors), (
+            f"Expected type_tuple_element error, got: {[e.category for e in result.errors]}"
+        )
         assert any("out of bounds" in e.message for e in result.errors)
 
     def test_getelement_non_tuple_type(self):
@@ -404,7 +406,10 @@ unknown_rule
 
         result = parse_and_validate(grammar_content, proto_content)
         assert any(e.category == "soundness" for e in result.errors)
-        assert any("unknown_rule" in e.message and "is not a valid type" in e.message for e in result.errors)
+        assert any(
+            "unknown_rule" in e.message and "is not a valid type" in e.message
+            for e in result.errors
+        )
 
 
 class TestUnreachableRules:

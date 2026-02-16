@@ -7,11 +7,19 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from meta.grammar import (
-    LitTerminal, NamedTerminal, Nonterminal, Sequence, Rule, Grammar,
+    Grammar,
+    LitTerminal,
+    NamedTerminal,
+    Nonterminal,
+    Rule,
+    Sequence,
 )
-from meta.target import BaseType, MessageType, Lambda, Var
+from meta.target import BaseType, Lambda, MessageType, Var
 from meta.terminal_sequence_set import (
-    TerminalSequenceSet, FollowSet, FirstSet, ConcatSet,
+    ConcatSet,
+    FirstSet,
+    FollowSet,
+    TerminalSequenceSet,
 )
 
 
@@ -35,10 +43,14 @@ def make_simple_grammar():
     construct_action_s = Lambda([param_a, param_b], MessageType("proto", "S"), param_a)
     grammar.add_rule(Rule(s, Sequence((a, b)), construct_action_s))
 
-    construct_action_a = Lambda([], MessageType("proto", "A"), Var("x", MessageType("proto", "A")))
+    construct_action_a = Lambda(
+        [], MessageType("proto", "A"), Var("x", MessageType("proto", "A"))
+    )
     grammar.add_rule(Rule(a, lit_a, construct_action_a))
 
-    construct_action_b = Lambda([], MessageType("proto", "B"), Var("y", MessageType("proto", "B")))
+    construct_action_b = Lambda(
+        [], MessageType("proto", "B"), Var("y", MessageType("proto", "B"))
+    )
     grammar.add_rule(Rule(b, lit_b, construct_action_b))
 
     return grammar, s, a, b, lit_a, lit_b
@@ -64,13 +76,19 @@ def make_nullable_grammar():
     construct_action_s = Lambda([param_a, param_b], MessageType("proto", "S"), param_a)
     grammar.add_rule(Rule(s, Sequence((a, b)), construct_action_s))
 
-    construct_action_a1 = Lambda([], MessageType("proto", "A"), Var("x", MessageType("proto", "A")))
+    construct_action_a1 = Lambda(
+        [], MessageType("proto", "A"), Var("x", MessageType("proto", "A"))
+    )
     grammar.add_rule(Rule(a, lit_a, construct_action_a1))
 
-    construct_action_a2 = Lambda([], MessageType("proto", "A"), Var("x", MessageType("proto", "A")))
+    construct_action_a2 = Lambda(
+        [], MessageType("proto", "A"), Var("x", MessageType("proto", "A"))
+    )
     grammar.add_rule(Rule(a, Sequence(()), construct_action_a2))
 
-    construct_action_b = Lambda([], MessageType("proto", "B"), Var("y", MessageType("proto", "B")))
+    construct_action_b = Lambda(
+        [], MessageType("proto", "B"), Var("y", MessageType("proto", "B"))
+    )
     grammar.add_rule(Rule(b, lit_b, construct_action_b))
 
     return grammar, s, a, b, lit_a, lit_b
@@ -133,7 +151,7 @@ class TestFollowSet:
         follow_s = FollowSet(grammar, s)
         result = follow_s.get(1)
 
-        eof = NamedTerminal('$', BaseType('EOF'))
+        eof = NamedTerminal("$", BaseType("EOF"))
         assert result == {(eof,)}
 
 

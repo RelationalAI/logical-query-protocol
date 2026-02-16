@@ -49,7 +49,7 @@ GO_TEMPLATE := meta/src/meta/templates/parser.go.template
 # Printer templates
 PY_PRINTER_TEMPLATE := meta/src/meta/templates/pretty_printer.py.template
 
-META_CLI := cd meta && PYTHONPATH=src python -m meta.cli
+META_CLI := cd meta && uv run python -m meta.cli
 META_PROTO_ARGS := \
 	../$(PROTO_DIR)/relationalai/lqp/v1/fragments.proto \
 	../$(PROTO_DIR)/relationalai/lqp/v1/logic.proto \
@@ -74,7 +74,7 @@ JL_PROTO_GENERATED := \
 	force-parsers force-parser-python force-parser-julia force-parser-go \
 	printers printer-python force-printers force-printer-python \
 	test test-python test-python-update-snapshots test-julia test-go \
-	test-meta check-python check-meta \
+	test-meta check-python check-meta lint-meta format-meta \
 	lint-python format-python clean
 
 all: protobuf parsers printers
@@ -175,10 +175,17 @@ format-python:
 	cd python-tools && uv run ruff format
 
 test-meta: check-meta
-	cd meta && python -m pytest
+	cd meta && uv run python -m pytest
 
-check-meta:
-	cd meta && pyrefly check
+check-meta: lint-meta
+	cd meta && uv run pyrefly check
+
+lint-meta:
+	cd meta && uv run ruff check
+	cd meta && uv run ruff format --check
+
+format-meta:
+	cd meta && uv run ruff format
 
 # ---------- cleanup ----------
 
