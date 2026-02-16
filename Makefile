@@ -14,9 +14,11 @@
 #   make test         Run tests for all languages.
 #   make test-X       Run tests for one language (X = python, julia, go).
 #   make test-python-update-snapshots  Update Python pretty printer snapshots.
+#   make lint-python  Run ruff lint and format checks.
+#   make format-python  Auto-format Python code with ruff.
 #   make clean        Remove temporary generated files.
 #
-# Prerequisites: buf, python (with lqp[test] installed), julia, go.
+# Prerequisites: buf, uv (python), julia, go.
 
 PROTO_DIR := proto
 PROTO_FILES := \
@@ -73,7 +75,7 @@ JL_PROTO_GENERATED := \
 	printers printer-python force-printers force-printer-python \
 	test test-python test-python-update-snapshots test-julia test-go \
 	test-meta check-python check-meta \
-	clean
+	lint-python format-python clean
 
 all: protobuf parsers printers
 
@@ -151,10 +153,10 @@ force-printer-python:
 test: test-meta test-python test-julia test-go
 
 test-python: $(PY_PARSER) $(PY_PROTO_GENERATED) check-python
-	cd python-tools && python -m pytest
+	cd python-tools && uv run python -m pytest
 
 test-python-update-snapshots: $(PY_PARSER) $(PY_PROTO_GENERATED)
-	cd python-tools && python -m pytest --snapshot-update
+	cd python-tools && uv run python -m pytest --snapshot-update
 
 test-julia: $(JL_PARSER) $(JL_PROTO_GENERATED)
 	cd julia && julia --project=LogicalQueryProtocol -e 'using Pkg; Pkg.test()'
@@ -162,8 +164,15 @@ test-julia: $(JL_PARSER) $(JL_PROTO_GENERATED)
 test-go: $(GO_PARSER) $(GO_PROTO_GENERATED)
 	cd go && go test ./test/...
 
-check-python:
-	cd python-tools && pyrefly check
+check-python: lint-python
+	cd python-tools && uv run pyrefly check
+
+lint-python:
+	cd python-tools && uv run ruff check
+	cd python-tools && uv run ruff format --check
+
+format-python:
+	cd python-tools && uv run ruff format
 
 test-meta: check-meta
 	cd meta && python -m pytest

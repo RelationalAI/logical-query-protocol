@@ -8,7 +8,6 @@ meta/src/*.egg-info/
 # Python SDK
 .venv
 .pytest_cache
-**/uv.lock
 __pycache__/
 python-tools/dist/
 python-tools/build/
