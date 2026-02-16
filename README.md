@@ -31,28 +31,22 @@ lockstep, so compatibility in both directions is key. The vast majority of proto
 should be extensions. Existing messages can only be changed or removed when we can guarantee
 that they are no longer in use by existing clients in the wild. 
 
-In order to validate your changes and check for compatibility issues such as accidental
-reuse of field numbers, run
-
-```
-make protobuf-lint
-```
-
-Please refer to the [buf
-documentation](https://buf.build/docs/cli/quickstart/#detect-breaking-changes) to understand
-any warnings that this check may produce.
-
-To regenerate the ProtoBuf code for each of the three first-class languages, run
+In order to regenerate the ProtoBuf code for each of the three first-class languages, run:
 
 ```
 make protobuf
 ```
 
+This will also validate your changes and check for compatibility issues such as accidental
+reuse of field numbers. Please refer to the [buf
+documentation](https://buf.build/docs/cli/quickstart/#detect-breaking-changes) to understand
+any warnings that this check may produce.
+
 Check in your changes and then move on to updating the SDKs.
 
 ### Adding tests
 
-Protocol extensions should be covered by tests, which are all located in `test/`. Just add
+Protocol extensions should be covered by tests, which are all located in `tests/`. Just add
 new `.lqp` files that make use of the new construct you are introducing. To run the tests:
 
 ```
@@ -80,11 +74,17 @@ The code generators are implemented in `meta/`.
 
 Releasing a new version of the LQP is done by releasing new versions of each of the SDKs.
 
-This package is [deployed to PyPI](https://pypi.org/project/lqp/). For maintainers, these
-are the steps to deploy a new version:
+The Python SDK is [deployed to PyPI](https://pypi.org/project/lqp/). Publishing is automated
+via GitHub Actions: creating a GitHub release triggers a workflow that builds and uploads the
+package to PyPI. To release a new version:
 
-1. `cd` into sdks/python in the LQP repo
-2. Make sure the `dist` directory is empty if it exists
-3. `python -m build`
-4. `python -m twine upload dist/*`
-   * You will need to enter your API token for PyPi
+1. Update the version in `sdks/python/pyproject.toml`
+2. Create a new GitHub release
+
+To publish manually instead:
+
+```bash
+cd sdks/python
+uv run python -m build
+uv run twine upload dist/*
+```
