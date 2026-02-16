@@ -697,7 +697,7 @@ def to_str(node: Union[ir.LqpNode, ir.Type, ir.Value, ir.SpecializedValue, int, 
             lqp += line_conf_f('path', node.path) + "\n"
         else:
             lqp += line_conf_f('path', '<hidden filename>') + "\n"
-        lqp += line('export_def', to_str(node.table_def, 0, options, debug_info)) + "\n"
+        lqp += ind + conf.SIND() + to_str(node.table_def, 0, options, debug_info) + "\n"
 
         config_dict: dict[str, Any] = {}
         config_dict['partition_size'] = node.partition_size if node.partition_size is not None else 0

@@ -35,12 +35,11 @@ export: "(export" (export_csv_config | export_csv_table_config) ")"
 abort: "(abort" name? relation_id ")"
 
 export_csv_config: "(export_csv_config" export_path export_columns config_dict ")"
-export_csv_table_config: "(export_csv_table_config" export_path export_table_def config_dict ")"
+export_csv_table_config: "(export_csv_table_config" export_path relation_id config_dict ")"
 
 export_columns: "(columns" export_column* ")"
 export_column: "(column" STRING relation_id ")"
 export_path: "(path" STRING ")"
-export_table_def: "(export_def" relation_id ")"
 
 fragment: "(fragment" fragment_id declaration* ")"
 
@@ -301,7 +300,7 @@ class LQPTransformer(Transformer):
         )
 
     def export_csv_table_config(self, meta, items):
-        assert len(items) >= 2, "Export CSV table config must have at least table_def and path"
+        assert len(items) >= 2, "Export CSV table config must have at least relation_id and path"
 
         export_fields = {}
         for i in items[2:]:
@@ -328,9 +327,6 @@ class LQPTransformer(Transformer):
         )
 
     def export_path(self, meta, items):
-        return items[0]
-
-    def export_table_def(self, meta, items):
         return items[0]
 
     def abort(self, meta, items):

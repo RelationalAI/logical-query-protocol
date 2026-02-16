@@ -1080,11 +1080,7 @@ func (pp PrettyParams) pprint(node interface{}) {
 					pp.pprint(n.GetPath())
 				})
 				pp.NEWLINE()
-				pp.PARENS(func(pp PrettyParams) {
-					pp.Write("export_def")
-					pp.SPACE()
-					pp.pprint(n.GetTableDef())
-				})
+				pp.pprint(n.GetTableDef())
 				pp.NEWLINE()
 				configDict := make(map[string]interface{})
 				configDict["partition_size"] = n.GetPartitionSize()
