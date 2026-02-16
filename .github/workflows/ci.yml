@@ -71,7 +71,7 @@ jobs:
 
     - name: Run tests
       run: |
-        cd julia/LogicalQueryProtocol
+        cd sdks/julia/LogicalQueryProtocol
         julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.test()'
 
   go-test:
@@ -91,5 +91,5 @@ jobs:
 
     - name: Run tests
       run: |
-        cd go
+        cd sdks/go
         go test -v ./test/print_test.go

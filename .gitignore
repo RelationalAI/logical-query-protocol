@@ -17,7 +17,7 @@ sdks/python/.lsp/.cache
 sdks/python/.clj-kondo
 
 # Julia SDK
-julia/LogicalQueryProtocol/Manifest.toml
+sdks/julia/LogicalQueryProtocol/Manifest.toml
 
 # Other
 .DS_Store

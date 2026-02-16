@@ -30,8 +30,8 @@ for file in sdks/python/src/lqp/proto/v1/*_pb2.py*; do
 done
 
 # Copy generated Go protobuf files to the go directory
-mkdir -p go/src/lqp/v1
-cp -r gen/go/relationalai/lqp/v1/*.go go/src/lqp/v1/
+mkdir -p sdks/go/src/lqp/v1
+cp -r gen/go/relationalai/lqp/v1/*.go sdks/go/src/lqp/v1/
 
 # Clean up temporary generated files
 rm -rf gen/python

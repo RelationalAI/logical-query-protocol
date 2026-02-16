@@ -20,8 +20,8 @@ func TestPrintBinaryFiles(t *testing.T) {
 		t.Fatalf("Failed to get test directory: %v", err)
 	}
 
-	// Go up to the repository root (from go/test to repo root)
-	repoRoot := filepath.Join(testDir, "..", "..")
+	// Go up to the repository root (from sdks/go/test to repo root)
+	repoRoot := filepath.Join(testDir, "..", "..", "..")
 
 	binDir := filepath.Join(repoRoot, "tests", "bin")
 	expectedDir := filepath.Join(repoRoot, "tests", "pretty")
