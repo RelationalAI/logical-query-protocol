@@ -11,14 +11,14 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11"]
 
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
+
     steps:
     - uses: actions/checkout@v4
 
     - name: Install uv
       uses: astral-sh/setup-uv@v5
-
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -31,7 +31,7 @@ jobs:
     - name: Run tests
       run: |
         cd python-tools
-        uv run --python ${{ matrix.python-version }} python -m pytest
+        uv run python -m pytest
 
     - name: Type check
       run: |
