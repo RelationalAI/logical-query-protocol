@@ -14,9 +14,11 @@
 #   make test         Run tests for all languages.
 #   make test-X       Run tests for one language (X = python, julia, go).
 #   make test-python-update-snapshots  Update Python pretty printer snapshots.
+#   make lint-python  Run ruff lint and format checks.
+#   make format-python  Auto-format Python code with ruff.
 #   make clean        Remove temporary generated files.
 #
-# Prerequisites: buf, python (with lqp[test] installed), julia, go.
+# Prerequisites: buf, uv (python), julia, go.
 
 PROTO_DIR := proto
 PROTO_FILES := \
@@ -47,7 +49,7 @@ GO_TEMPLATE := python-tools/src/meta/templates/parser.go.template
 # Printer templates
 PY_PRINTER_TEMPLATE := python-tools/src/meta/templates/pretty_printer.py.template
 
-META_CLI := cd python-tools && PYTHONPATH=src python -m meta.cli
+META_CLI := cd python-tools && PYTHONPATH=src uv run python -m meta.cli
 META_PROTO_ARGS := \
 	../$(PROTO_DIR)/relationalai/lqp/v1/fragments.proto \
 	../$(PROTO_DIR)/relationalai/lqp/v1/logic.proto \
@@ -72,7 +74,7 @@ JL_PROTO_GENERATED := \
 	force-parsers force-parser-python force-parser-julia force-parser-go \
 	printers printer-python force-printers force-printer-python \
 	test test-python test-python-update-snapshots test-julia test-go check-python \
-	clean
+	lint-python format-python clean
 
 all: protobuf parsers printers
 
@@ -150,10 +152,10 @@ force-printer-python:
 test: test-python test-julia test-go
 
 test-python: $(PY_PARSER) $(PY_PROTO_GENERATED) check-python
-	cd python-tools && python -m pytest
+	cd python-tools && uv run python -m pytest
 
 test-python-update-snapshots: $(PY_PARSER) $(PY_PROTO_GENERATED)
-	cd python-tools && python -m pytest --snapshot-update
+	cd python-tools && uv run python -m pytest --snapshot-update
 
 test-julia: $(JL_PARSER) $(JL_PROTO_GENERATED)
 	cd julia && julia --project=LogicalQueryProtocol -e 'using Pkg; Pkg.test()'
@@ -161,8 +163,15 @@ test-julia: $(JL_PARSER) $(JL_PROTO_GENERATED)
 test-go: $(GO_PARSER) $(GO_PROTO_GENERATED)
 	cd go && go test ./test/...
 
-check-python:
-	cd python-tools && pyrefly check
+check-python: lint-python
+	cd python-tools && uv run pyrefly check
+
+lint-python:
+	cd python-tools && uv run ruff check
+	cd python-tools && uv run ruff format --check
+
+format-python:
+	cd python-tools && uv run ruff format
 
 # ---------- cleanup ----------
 

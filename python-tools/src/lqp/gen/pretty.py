@@ -11,7 +11,7 @@ Command: python -m meta.cli ../proto/relationalai/lqp/v1/fragments.proto ../prot
 
 from io import StringIO
 from collections.abc import Sequence
-from typing import Any, IO, Never, Optional
+from typing import Any, IO, NoReturn, Optional
 
 from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
 
@@ -543,7 +543,7 @@ class PrettyPrinter:
 
     # --- Pretty-print methods ---
 
-    def pretty_transaction(self, msg: transactions_pb2.Transaction) -> Optional[Never]:
+    def pretty_transaction(self, msg: transactions_pb2.Transaction) -> Optional[NoReturn]:
         def _t490(_dollar_dollar):
             
             if _dollar_dollar.HasField('configure'):
@@ -594,7 +594,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_configure(self, msg: transactions_pb2.Configure) -> Optional[Never]:
+    def pretty_configure(self, msg: transactions_pb2.Configure) -> Optional[NoReturn]:
         def _t499(_dollar_dollar):
             _t500 = self.deconstruct_configure(_dollar_dollar)
             return _t500
@@ -611,7 +611,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_config_dict(self, msg: Sequence[tuple[str, logic_pb2.Value]]) -> Optional[Never]:
+    def pretty_config_dict(self, msg: Sequence[tuple[str, logic_pb2.Value]]) -> Optional[NoReturn]:
         def _t503(_dollar_dollar):
             return _dollar_dollar
         _t504 = _t503(msg)
@@ -628,7 +628,7 @@ class PrettyPrinter:
         self.write('}')
         return None
 
-    def pretty_config_key_value(self, msg: tuple[str, logic_pb2.Value]) -> Optional[Never]:
+    def pretty_config_key_value(self, msg: tuple[str, logic_pb2.Value]) -> Optional[NoReturn]:
         def _t506(_dollar_dollar):
             return (_dollar_dollar[0], _dollar_dollar[1],)
         _t507 = _t506(msg)
@@ -643,7 +643,7 @@ class PrettyPrinter:
         _t508 = self.pretty_value(field18)
         return _t508
 
-    def pretty_value(self, msg: logic_pb2.Value) -> Optional[Never]:
+    def pretty_value(self, msg: logic_pb2.Value) -> Optional[NoReturn]:
         def _t509(_dollar_dollar):
             
             if _dollar_dollar.HasField('date_value'):
@@ -788,7 +788,7 @@ class PrettyPrinter:
             _t512 = _t517
         return _t512
 
-    def pretty_date(self, msg: logic_pb2.DateValue) -> Optional[Never]:
+    def pretty_date(self, msg: logic_pb2.DateValue) -> Optional[NoReturn]:
         def _t550(_dollar_dollar):
             return (int(_dollar_dollar.year), int(_dollar_dollar.month), int(_dollar_dollar.day),)
         _t551 = _t550(msg)
@@ -811,7 +811,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_datetime(self, msg: logic_pb2.DateTimeValue) -> Optional[Never]:
+    def pretty_datetime(self, msg: logic_pb2.DateTimeValue) -> Optional[NoReturn]:
         def _t552(_dollar_dollar):
             return (int(_dollar_dollar.year), int(_dollar_dollar.month), int(_dollar_dollar.day), int(_dollar_dollar.hour), int(_dollar_dollar.minute), int(_dollar_dollar.second), int(_dollar_dollar.microsecond),)
         _t553 = _t552(msg)
@@ -849,7 +849,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_boolean_value(self, msg: bool) -> Optional[Never]:
+    def pretty_boolean_value(self, msg: bool) -> Optional[NoReturn]:
         def _t554(_dollar_dollar):
             
             if _dollar_dollar:
@@ -877,7 +877,7 @@ class PrettyPrinter:
                 raise ParseError('No matching rule for boolean_value')
         return None
 
-    def pretty_sync(self, msg: transactions_pb2.Sync) -> Optional[Never]:
+    def pretty_sync(self, msg: transactions_pb2.Sync) -> Optional[NoReturn]:
         def _t560(_dollar_dollar):
             return _dollar_dollar.fragments
         _t561 = _t560(msg)
@@ -897,7 +897,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_fragment_id(self, msg: fragments_pb2.FragmentId) -> Optional[Never]:
+    def pretty_fragment_id(self, msg: fragments_pb2.FragmentId) -> Optional[NoReturn]:
         def _t563(_dollar_dollar):
             return self.fragment_id_to_string(_dollar_dollar)
         _t564 = _t563(msg)
@@ -908,7 +908,7 @@ class PrettyPrinter:
         self.write(unwrapped_fields52)
         return None
 
-    def pretty_epoch(self, msg: transactions_pb2.Epoch) -> Optional[Never]:
+    def pretty_epoch(self, msg: transactions_pb2.Epoch) -> Optional[NoReturn]:
         def _t565(_dollar_dollar):
             
             if not len(_dollar_dollar.writes) == 0:
@@ -952,7 +952,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_epoch_writes(self, msg: Sequence[transactions_pb2.Write]) -> Optional[Never]:
+    def pretty_epoch_writes(self, msg: Sequence[transactions_pb2.Write]) -> Optional[NoReturn]:
         def _t573(_dollar_dollar):
             return _dollar_dollar
         _t574 = _t573(msg)
@@ -972,7 +972,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_write(self, msg: transactions_pb2.Write) -> Optional[Never]:
+    def pretty_write(self, msg: transactions_pb2.Write) -> Optional[NoReturn]:
         def _t576(_dollar_dollar):
             
             if _dollar_dollar.HasField('define'):
@@ -1020,7 +1020,7 @@ class PrettyPrinter:
             _t579 = _t584
         return _t579
 
-    def pretty_define(self, msg: transactions_pb2.Define) -> Optional[Never]:
+    def pretty_define(self, msg: transactions_pb2.Define) -> Optional[NoReturn]:
         def _t591(_dollar_dollar):
             return _dollar_dollar.fragment
         _t592 = _t591(msg)
@@ -1036,7 +1036,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_fragment(self, msg: fragments_pb2.Fragment) -> Optional[Never]:
+    def pretty_fragment(self, msg: fragments_pb2.Fragment) -> Optional[NoReturn]:
         def _t594(_dollar_dollar):
             _t595 = self.start_pretty_fragment(_dollar_dollar)
             return (_dollar_dollar.id, _dollar_dollar.declarations,)
@@ -1061,7 +1061,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_new_fragment_id(self, msg: fragments_pb2.FragmentId) -> Optional[Never]:
+    def pretty_new_fragment_id(self, msg: fragments_pb2.FragmentId) -> Optional[NoReturn]:
         def _t599(_dollar_dollar):
             return _dollar_dollar
         _t600 = _t599(msg)
@@ -1071,7 +1071,7 @@ class PrettyPrinter:
         _t601 = self.pretty_fragment_id(unwrapped_fields75)
         return _t601
 
-    def pretty_declaration(self, msg: logic_pb2.Declaration) -> Optional[Never]:
+    def pretty_declaration(self, msg: logic_pb2.Declaration) -> Optional[NoReturn]:
         def _t602(_dollar_dollar):
             
             if _dollar_dollar.HasField('def'):
@@ -1134,7 +1134,7 @@ class PrettyPrinter:
             _t605 = _t610
         return _t605
 
-    def pretty_def(self, msg: logic_pb2.Def) -> Optional[Never]:
+    def pretty_def(self, msg: logic_pb2.Def) -> Optional[NoReturn]:
         def _t622(_dollar_dollar):
             
             if not len(_dollar_dollar.attrs) == 0:
@@ -1169,7 +1169,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_relation_id(self, msg: logic_pb2.RelationId) -> Optional[Never]:
+    def pretty_relation_id(self, msg: logic_pb2.RelationId) -> Optional[NoReturn]:
         def _t629(_dollar_dollar):
             _t630 = self.deconstruct_relation_id_string(_dollar_dollar)
             return _t630
@@ -1190,7 +1190,7 @@ class PrettyPrinter:
                 raise ParseError('No matching rule for relation_id')
         return None
 
-    def pretty_abstraction(self, msg: logic_pb2.Abstraction) -> Optional[Never]:
+    def pretty_abstraction(self, msg: logic_pb2.Abstraction) -> Optional[NoReturn]:
         def _t635(_dollar_dollar):
             _t636 = self.deconstruct_bindings(_dollar_dollar)
             return (_t636, _dollar_dollar.value,)
@@ -1207,7 +1207,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_bindings(self, msg: tuple[Sequence[logic_pb2.Binding], Sequence[logic_pb2.Binding]]) -> Optional[Never]:
+    def pretty_bindings(self, msg: tuple[Sequence[logic_pb2.Binding], Sequence[logic_pb2.Binding]]) -> Optional[NoReturn]:
         def _t640(_dollar_dollar):
             
             if not len(_dollar_dollar[1]) == 0:
@@ -1238,7 +1238,7 @@ class PrettyPrinter:
         self.write(']')
         return None
 
-    def pretty_binding(self, msg: logic_pb2.Binding) -> Optional[Never]:
+    def pretty_binding(self, msg: logic_pb2.Binding) -> Optional[NoReturn]:
         def _t646(_dollar_dollar):
             return (_dollar_dollar.var.name, _dollar_dollar.type,)
         _t647 = _t646(msg)
@@ -1252,7 +1252,7 @@ class PrettyPrinter:
         _t648 = self.pretty_type(field102)
         return _t648
 
-    def pretty_type(self, msg: logic_pb2.Type) -> Optional[Never]:
+    def pretty_type(self, msg: logic_pb2.Type) -> Optional[NoReturn]:
         def _t649(_dollar_dollar):
             
             if _dollar_dollar.HasField('unspecified_type'):
@@ -1420,7 +1420,7 @@ class PrettyPrinter:
             _t652 = _t657
         return _t652
 
-    def pretty_unspecified_type(self, msg: logic_pb2.UnspecifiedType) -> Optional[Never]:
+    def pretty_unspecified_type(self, msg: logic_pb2.UnspecifiedType) -> Optional[NoReturn]:
         def _t704(_dollar_dollar):
             return _dollar_dollar
         _t705 = _t704(msg)
@@ -1430,7 +1430,7 @@ class PrettyPrinter:
         self.write('UNKNOWN')
         return None
 
-    def pretty_string_type(self, msg: logic_pb2.StringType) -> Optional[Never]:
+    def pretty_string_type(self, msg: logic_pb2.StringType) -> Optional[NoReturn]:
         def _t706(_dollar_dollar):
             return _dollar_dollar
         _t707 = _t706(msg)
@@ -1440,7 +1440,7 @@ class PrettyPrinter:
         self.write('STRING')
         return None
 
-    def pretty_int_type(self, msg: logic_pb2.IntType) -> Optional[Never]:
+    def pretty_int_type(self, msg: logic_pb2.IntType) -> Optional[NoReturn]:
         def _t708(_dollar_dollar):
             return _dollar_dollar
         _t709 = _t708(msg)
@@ -1450,7 +1450,7 @@ class PrettyPrinter:
         self.write('INT')
         return None
 
-    def pretty_float_type(self, msg: logic_pb2.FloatType) -> Optional[Never]:
+    def pretty_float_type(self, msg: logic_pb2.FloatType) -> Optional[NoReturn]:
         def _t710(_dollar_dollar):
             return _dollar_dollar
         _t711 = _t710(msg)
@@ -1460,7 +1460,7 @@ class PrettyPrinter:
         self.write('FLOAT')
         return None
 
-    def pretty_uint128_type(self, msg: logic_pb2.UInt128Type) -> Optional[Never]:
+    def pretty_uint128_type(self, msg: logic_pb2.UInt128Type) -> Optional[NoReturn]:
         def _t712(_dollar_dollar):
             return _dollar_dollar
         _t713 = _t712(msg)
@@ -1470,7 +1470,7 @@ class PrettyPrinter:
         self.write('UINT128')
         return None
 
-    def pretty_int128_type(self, msg: logic_pb2.Int128Type) -> Optional[Never]:
+    def pretty_int128_type(self, msg: logic_pb2.Int128Type) -> Optional[NoReturn]:
         def _t714(_dollar_dollar):
             return _dollar_dollar
         _t715 = _t714(msg)
@@ -1480,7 +1480,7 @@ class PrettyPrinter:
         self.write('INT128')
         return None
 
-    def pretty_date_type(self, msg: logic_pb2.DateType) -> Optional[Never]:
+    def pretty_date_type(self, msg: logic_pb2.DateType) -> Optional[NoReturn]:
         def _t716(_dollar_dollar):
             return _dollar_dollar
         _t717 = _t716(msg)
@@ -1490,7 +1490,7 @@ class PrettyPrinter:
         self.write('DATE')
         return None
 
-    def pretty_datetime_type(self, msg: logic_pb2.DateTimeType) -> Optional[Never]:
+    def pretty_datetime_type(self, msg: logic_pb2.DateTimeType) -> Optional[NoReturn]:
         def _t718(_dollar_dollar):
             return _dollar_dollar
         _t719 = _t718(msg)
@@ -1500,7 +1500,7 @@ class PrettyPrinter:
         self.write('DATETIME')
         return None
 
-    def pretty_missing_type(self, msg: logic_pb2.MissingType) -> Optional[Never]:
+    def pretty_missing_type(self, msg: logic_pb2.MissingType) -> Optional[NoReturn]:
         def _t720(_dollar_dollar):
             return _dollar_dollar
         _t721 = _t720(msg)
@@ -1510,7 +1510,7 @@ class PrettyPrinter:
         self.write('MISSING')
         return None
 
-    def pretty_decimal_type(self, msg: logic_pb2.DecimalType) -> Optional[Never]:
+    def pretty_decimal_type(self, msg: logic_pb2.DecimalType) -> Optional[NoReturn]:
         def _t722(_dollar_dollar):
             return (int(_dollar_dollar.precision), int(_dollar_dollar.scale),)
         _t723 = _t722(msg)
@@ -1530,7 +1530,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_boolean_type(self, msg: logic_pb2.BooleanType) -> Optional[Never]:
+    def pretty_boolean_type(self, msg: logic_pb2.BooleanType) -> Optional[NoReturn]:
         def _t724(_dollar_dollar):
             return _dollar_dollar
         _t725 = _t724(msg)
@@ -1540,7 +1540,7 @@ class PrettyPrinter:
         self.write('BOOLEAN')
         return None
 
-    def pretty_value_bindings(self, msg: Sequence[logic_pb2.Binding]) -> Optional[Never]:
+    def pretty_value_bindings(self, msg: Sequence[logic_pb2.Binding]) -> Optional[NoReturn]:
         def _t726(_dollar_dollar):
             return _dollar_dollar
         _t727 = _t726(msg)
@@ -1556,7 +1556,7 @@ class PrettyPrinter:
                 _t728 = self.pretty_binding(elem140)
         return None
 
-    def pretty_formula(self, msg: logic_pb2.Formula) -> Optional[Never]:
+    def pretty_formula(self, msg: logic_pb2.Formula) -> Optional[NoReturn]:
         def _t729(_dollar_dollar):
             
             if (_dollar_dollar.HasField('conjunction') and len(_dollar_dollar.conjunction.args) == 0):
@@ -1754,7 +1754,7 @@ class PrettyPrinter:
             _t732 = _t737
         return _t732
 
-    def pretty_true(self, msg: logic_pb2.Conjunction) -> Optional[Never]:
+    def pretty_true(self, msg: logic_pb2.Conjunction) -> Optional[NoReturn]:
         def _t794(_dollar_dollar):
             return _dollar_dollar
         _t795 = _t794(msg)
@@ -1766,7 +1766,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_false(self, msg: logic_pb2.Disjunction) -> Optional[Never]:
+    def pretty_false(self, msg: logic_pb2.Disjunction) -> Optional[NoReturn]:
         def _t796(_dollar_dollar):
             return _dollar_dollar
         _t797 = _t796(msg)
@@ -1778,7 +1778,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_exists(self, msg: logic_pb2.Exists) -> Optional[Never]:
+    def pretty_exists(self, msg: logic_pb2.Exists) -> Optional[NoReturn]:
         def _t798(_dollar_dollar):
             _t799 = self.deconstruct_bindings(_dollar_dollar.body)
             return (_t799, _dollar_dollar.body.value,)
@@ -1799,7 +1799,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_reduce(self, msg: logic_pb2.Reduce) -> Optional[Never]:
+    def pretty_reduce(self, msg: logic_pb2.Reduce) -> Optional[NoReturn]:
         def _t803(_dollar_dollar):
             return (_dollar_dollar.op, _dollar_dollar.body, _dollar_dollar.terms,)
         _t804 = _t803(msg)
@@ -1822,7 +1822,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_terms(self, msg: Sequence[logic_pb2.Term]) -> Optional[Never]:
+    def pretty_terms(self, msg: Sequence[logic_pb2.Term]) -> Optional[NoReturn]:
         def _t808(_dollar_dollar):
             return _dollar_dollar
         _t809 = _t808(msg)
@@ -1842,7 +1842,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_term(self, msg: logic_pb2.Term) -> Optional[Never]:
+    def pretty_term(self, msg: logic_pb2.Term) -> Optional[NoReturn]:
         def _t811(_dollar_dollar):
             
             if _dollar_dollar.HasField('var'):
@@ -1875,7 +1875,7 @@ class PrettyPrinter:
             _t814 = _t819
         return _t814
 
-    def pretty_var(self, msg: logic_pb2.Var) -> Optional[Never]:
+    def pretty_var(self, msg: logic_pb2.Var) -> Optional[NoReturn]:
         def _t821(_dollar_dollar):
             return _dollar_dollar.name
         _t822 = _t821(msg)
@@ -1885,7 +1885,7 @@ class PrettyPrinter:
         self.write(unwrapped_fields175)
         return None
 
-    def pretty_constant(self, msg: logic_pb2.Value) -> Optional[Never]:
+    def pretty_constant(self, msg: logic_pb2.Value) -> Optional[NoReturn]:
         def _t823(_dollar_dollar):
             return _dollar_dollar
         _t824 = _t823(msg)
@@ -1895,7 +1895,7 @@ class PrettyPrinter:
         _t825 = self.pretty_value(unwrapped_fields177)
         return _t825
 
-    def pretty_conjunction(self, msg: logic_pb2.Conjunction) -> Optional[Never]:
+    def pretty_conjunction(self, msg: logic_pb2.Conjunction) -> Optional[NoReturn]:
         def _t826(_dollar_dollar):
             return _dollar_dollar.args
         _t827 = _t826(msg)
@@ -1915,7 +1915,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_disjunction(self, msg: logic_pb2.Disjunction) -> Optional[Never]:
+    def pretty_disjunction(self, msg: logic_pb2.Disjunction) -> Optional[NoReturn]:
         def _t829(_dollar_dollar):
             return _dollar_dollar.args
         _t830 = _t829(msg)
@@ -1935,7 +1935,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_not(self, msg: logic_pb2.Not) -> Optional[Never]:
+    def pretty_not(self, msg: logic_pb2.Not) -> Optional[NoReturn]:
         def _t832(_dollar_dollar):
             return _dollar_dollar.arg
         _t833 = _t832(msg)
@@ -1951,7 +1951,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_ffi(self, msg: logic_pb2.FFI) -> Optional[Never]:
+    def pretty_ffi(self, msg: logic_pb2.FFI) -> Optional[NoReturn]:
         def _t835(_dollar_dollar):
             return (_dollar_dollar.name, _dollar_dollar.args, _dollar_dollar.terms,)
         _t836 = _t835(msg)
@@ -1974,7 +1974,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_name(self, msg: str) -> Optional[Never]:
+    def pretty_name(self, msg: str) -> Optional[NoReturn]:
         def _t840(_dollar_dollar):
             return _dollar_dollar
         _t841 = _t840(msg)
@@ -1985,7 +1985,7 @@ class PrettyPrinter:
         self.write(unwrapped_fields194)
         return None
 
-    def pretty_ffi_args(self, msg: Sequence[logic_pb2.Abstraction]) -> Optional[Never]:
+    def pretty_ffi_args(self, msg: Sequence[logic_pb2.Abstraction]) -> Optional[NoReturn]:
         def _t842(_dollar_dollar):
             return _dollar_dollar
         _t843 = _t842(msg)
@@ -2005,7 +2005,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_atom(self, msg: logic_pb2.Atom) -> Optional[Never]:
+    def pretty_atom(self, msg: logic_pb2.Atom) -> Optional[NoReturn]:
         def _t845(_dollar_dollar):
             return (_dollar_dollar.name, _dollar_dollar.terms,)
         _t846 = _t845(msg)
@@ -2029,7 +2029,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_pragma(self, msg: logic_pb2.Pragma) -> Optional[Never]:
+    def pretty_pragma(self, msg: logic_pb2.Pragma) -> Optional[NoReturn]:
         def _t849(_dollar_dollar):
             return (_dollar_dollar.name, _dollar_dollar.terms,)
         _t850 = _t849(msg)
@@ -2053,7 +2053,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_primitive(self, msg: logic_pb2.Primitive) -> Optional[Never]:
+    def pretty_primitive(self, msg: logic_pb2.Primitive) -> Optional[NoReturn]:
         def _t853(_dollar_dollar):
             
             if _dollar_dollar.name == 'rel_primitive_eq':
@@ -2212,7 +2212,7 @@ class PrettyPrinter:
             _t856 = _t861
         return _t856
 
-    def pretty_eq(self, msg: logic_pb2.Primitive) -> Optional[Never]:
+    def pretty_eq(self, msg: logic_pb2.Primitive) -> Optional[NoReturn]:
         def _t902(_dollar_dollar):
             
             if _dollar_dollar.name == 'rel_primitive_eq':
@@ -2237,7 +2237,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_lt(self, msg: logic_pb2.Primitive) -> Optional[Never]:
+    def pretty_lt(self, msg: logic_pb2.Primitive) -> Optional[NoReturn]:
         def _t907(_dollar_dollar):
             
             if _dollar_dollar.name == 'rel_primitive_lt_monotype':
@@ -2262,7 +2262,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_lt_eq(self, msg: logic_pb2.Primitive) -> Optional[Never]:
+    def pretty_lt_eq(self, msg: logic_pb2.Primitive) -> Optional[NoReturn]:
         def _t912(_dollar_dollar):
             
             if _dollar_dollar.name == 'rel_primitive_lt_eq_monotype':
@@ -2287,7 +2287,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_gt(self, msg: logic_pb2.Primitive) -> Optional[Never]:
+    def pretty_gt(self, msg: logic_pb2.Primitive) -> Optional[NoReturn]:
         def _t917(_dollar_dollar):
             
             if _dollar_dollar.name == 'rel_primitive_gt_monotype':
@@ -2312,7 +2312,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_gt_eq(self, msg: logic_pb2.Primitive) -> Optional[Never]:
+    def pretty_gt_eq(self, msg: logic_pb2.Primitive) -> Optional[NoReturn]:
         def _t922(_dollar_dollar):
             
             if _dollar_dollar.name == 'rel_primitive_gt_eq_monotype':
@@ -2337,7 +2337,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_add(self, msg: logic_pb2.Primitive) -> Optional[Never]:
+    def pretty_add(self, msg: logic_pb2.Primitive) -> Optional[NoReturn]:
         def _t927(_dollar_dollar):
             
             if _dollar_dollar.name == 'rel_primitive_add_monotype':
@@ -2365,7 +2365,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_minus(self, msg: logic_pb2.Primitive) -> Optional[Never]:
+    def pretty_minus(self, msg: logic_pb2.Primitive) -> Optional[NoReturn]:
         def _t933(_dollar_dollar):
             
             if _dollar_dollar.name == 'rel_primitive_subtract_monotype':
@@ -2393,7 +2393,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_multiply(self, msg: logic_pb2.Primitive) -> Optional[Never]:
+    def pretty_multiply(self, msg: logic_pb2.Primitive) -> Optional[NoReturn]:
         def _t939(_dollar_dollar):
             
             if _dollar_dollar.name == 'rel_primitive_multiply_monotype':
@@ -2421,7 +2421,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_divide(self, msg: logic_pb2.Primitive) -> Optional[Never]:
+    def pretty_divide(self, msg: logic_pb2.Primitive) -> Optional[NoReturn]:
         def _t945(_dollar_dollar):
             
             if _dollar_dollar.name == 'rel_primitive_divide_monotype':
@@ -2449,7 +2449,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_rel_term(self, msg: logic_pb2.RelTerm) -> Optional[Never]:
+    def pretty_rel_term(self, msg: logic_pb2.RelTerm) -> Optional[NoReturn]:
         def _t951(_dollar_dollar):
             
             if _dollar_dollar.HasField('specialized_value'):
@@ -2482,7 +2482,7 @@ class PrettyPrinter:
             _t954 = _t959
         return _t954
 
-    def pretty_specialized_value(self, msg: logic_pb2.Value) -> Optional[Never]:
+    def pretty_specialized_value(self, msg: logic_pb2.Value) -> Optional[NoReturn]:
         def _t961(_dollar_dollar):
             return _dollar_dollar
         _t962 = _t961(msg)
@@ -2493,7 +2493,7 @@ class PrettyPrinter:
         _t963 = self.pretty_value(unwrapped_fields269)
         return _t963
 
-    def pretty_rel_atom(self, msg: logic_pb2.RelAtom) -> Optional[Never]:
+    def pretty_rel_atom(self, msg: logic_pb2.RelAtom) -> Optional[NoReturn]:
         def _t964(_dollar_dollar):
             return (_dollar_dollar.name, _dollar_dollar.terms,)
         _t965 = _t964(msg)
@@ -2517,7 +2517,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_cast(self, msg: logic_pb2.Cast) -> Optional[Never]:
+    def pretty_cast(self, msg: logic_pb2.Cast) -> Optional[NoReturn]:
         def _t968(_dollar_dollar):
             return (_dollar_dollar.input, _dollar_dollar.result,)
         _t969 = _t968(msg)
@@ -2537,7 +2537,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_attrs(self, msg: Sequence[logic_pb2.Attribute]) -> Optional[Never]:
+    def pretty_attrs(self, msg: Sequence[logic_pb2.Attribute]) -> Optional[NoReturn]:
         def _t972(_dollar_dollar):
             return _dollar_dollar
         _t973 = _t972(msg)
@@ -2557,7 +2557,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_attribute(self, msg: logic_pb2.Attribute) -> Optional[Never]:
+    def pretty_attribute(self, msg: logic_pb2.Attribute) -> Optional[NoReturn]:
         def _t975(_dollar_dollar):
             return (_dollar_dollar.name, _dollar_dollar.args,)
         _t976 = _t975(msg)
@@ -2581,7 +2581,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_algorithm(self, msg: logic_pb2.Algorithm) -> Optional[Never]:
+    def pretty_algorithm(self, msg: logic_pb2.Algorithm) -> Optional[NoReturn]:
         def _t979(_dollar_dollar):
             return (getattr(_dollar_dollar, 'global'), _dollar_dollar.body,)
         _t980 = _t979(msg)
@@ -2605,7 +2605,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_script(self, msg: logic_pb2.Script) -> Optional[Never]:
+    def pretty_script(self, msg: logic_pb2.Script) -> Optional[NoReturn]:
         def _t983(_dollar_dollar):
             return _dollar_dollar.constructs
         _t984 = _t983(msg)
@@ -2625,7 +2625,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_construct(self, msg: logic_pb2.Construct) -> Optional[Never]:
+    def pretty_construct(self, msg: logic_pb2.Construct) -> Optional[NoReturn]:
         def _t986(_dollar_dollar):
             
             if _dollar_dollar.HasField('loop'):
@@ -2658,7 +2658,7 @@ class PrettyPrinter:
             _t989 = _t994
         return _t989
 
-    def pretty_loop(self, msg: logic_pb2.Loop) -> Optional[Never]:
+    def pretty_loop(self, msg: logic_pb2.Loop) -> Optional[NoReturn]:
         def _t996(_dollar_dollar):
             return (_dollar_dollar.init, _dollar_dollar.body,)
         _t997 = _t996(msg)
@@ -2678,7 +2678,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_init(self, msg: Sequence[logic_pb2.Instruction]) -> Optional[Never]:
+    def pretty_init(self, msg: Sequence[logic_pb2.Instruction]) -> Optional[NoReturn]:
         def _t1000(_dollar_dollar):
             return _dollar_dollar
         _t1001 = _t1000(msg)
@@ -2698,7 +2698,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_instruction(self, msg: logic_pb2.Instruction) -> Optional[Never]:
+    def pretty_instruction(self, msg: logic_pb2.Instruction) -> Optional[NoReturn]:
         def _t1003(_dollar_dollar):
             
             if _dollar_dollar.HasField('assign'):
@@ -2776,7 +2776,7 @@ class PrettyPrinter:
             _t1006 = _t1011
         return _t1006
 
-    def pretty_assign(self, msg: logic_pb2.Assign) -> Optional[Never]:
+    def pretty_assign(self, msg: logic_pb2.Assign) -> Optional[NoReturn]:
         def _t1028(_dollar_dollar):
             
             if not len(_dollar_dollar.attrs) == 0:
@@ -2811,7 +2811,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_upsert(self, msg: logic_pb2.Upsert) -> Optional[Never]:
+    def pretty_upsert(self, msg: logic_pb2.Upsert) -> Optional[NoReturn]:
         def _t1035(_dollar_dollar):
             
             if not len(_dollar_dollar.attrs) == 0:
@@ -2846,7 +2846,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_abstraction_with_arity(self, msg: tuple[logic_pb2.Abstraction, int]) -> Optional[Never]:
+    def pretty_abstraction_with_arity(self, msg: tuple[logic_pb2.Abstraction, int]) -> Optional[NoReturn]:
         def _t1042(_dollar_dollar):
             _t1043 = self.deconstruct_bindings_with_arity(_dollar_dollar[0], _dollar_dollar[1])
             return (_t1043, _dollar_dollar[0].value,)
@@ -2863,7 +2863,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_break(self, msg: logic_pb2.Break) -> Optional[Never]:
+    def pretty_break(self, msg: logic_pb2.Break) -> Optional[NoReturn]:
         def _t1047(_dollar_dollar):
             
             if not len(_dollar_dollar.attrs) == 0:
@@ -2898,7 +2898,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_monoid_def(self, msg: logic_pb2.MonoidDef) -> Optional[Never]:
+    def pretty_monoid_def(self, msg: logic_pb2.MonoidDef) -> Optional[NoReturn]:
         def _t1054(_dollar_dollar):
             
             if not len(_dollar_dollar.attrs) == 0:
@@ -2936,7 +2936,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_monoid(self, msg: logic_pb2.Monoid) -> Optional[Never]:
+    def pretty_monoid(self, msg: logic_pb2.Monoid) -> Optional[NoReturn]:
         def _t1062(_dollar_dollar):
             
             if _dollar_dollar.HasField('or_monoid'):
@@ -2999,7 +2999,7 @@ class PrettyPrinter:
             _t1065 = _t1070
         return _t1065
 
-    def pretty_or_monoid(self, msg: logic_pb2.OrMonoid) -> Optional[Never]:
+    def pretty_or_monoid(self, msg: logic_pb2.OrMonoid) -> Optional[NoReturn]:
         def _t1082(_dollar_dollar):
             return _dollar_dollar
         _t1083 = _t1082(msg)
@@ -3011,7 +3011,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_min_monoid(self, msg: logic_pb2.MinMonoid) -> Optional[Never]:
+    def pretty_min_monoid(self, msg: logic_pb2.MinMonoid) -> Optional[NoReturn]:
         def _t1084(_dollar_dollar):
             return _dollar_dollar.type
         _t1085 = _t1084(msg)
@@ -3027,7 +3027,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_max_monoid(self, msg: logic_pb2.MaxMonoid) -> Optional[Never]:
+    def pretty_max_monoid(self, msg: logic_pb2.MaxMonoid) -> Optional[NoReturn]:
         def _t1087(_dollar_dollar):
             return _dollar_dollar.type
         _t1088 = _t1087(msg)
@@ -3043,7 +3043,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_sum_monoid(self, msg: logic_pb2.SumMonoid) -> Optional[Never]:
+    def pretty_sum_monoid(self, msg: logic_pb2.SumMonoid) -> Optional[NoReturn]:
         def _t1090(_dollar_dollar):
             return _dollar_dollar.type
         _t1091 = _t1090(msg)
@@ -3059,7 +3059,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_monus_def(self, msg: logic_pb2.MonusDef) -> Optional[Never]:
+    def pretty_monus_def(self, msg: logic_pb2.MonusDef) -> Optional[NoReturn]:
         def _t1093(_dollar_dollar):
             
             if not len(_dollar_dollar.attrs) == 0:
@@ -3097,7 +3097,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_constraint(self, msg: logic_pb2.Constraint) -> Optional[Never]:
+    def pretty_constraint(self, msg: logic_pb2.Constraint) -> Optional[NoReturn]:
         def _t1101(_dollar_dollar):
             return (_dollar_dollar.name, _dollar_dollar.functional_dependency.guard, _dollar_dollar.functional_dependency.keys, _dollar_dollar.functional_dependency.values,)
         _t1102 = _t1101(msg)
@@ -3123,7 +3123,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_functional_dependency_keys(self, msg: Sequence[logic_pb2.Var]) -> Optional[Never]:
+    def pretty_functional_dependency_keys(self, msg: Sequence[logic_pb2.Var]) -> Optional[NoReturn]:
         def _t1107(_dollar_dollar):
             return _dollar_dollar
         _t1108 = _t1107(msg)
@@ -3143,7 +3143,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_functional_dependency_values(self, msg: Sequence[logic_pb2.Var]) -> Optional[Never]:
+    def pretty_functional_dependency_values(self, msg: Sequence[logic_pb2.Var]) -> Optional[NoReturn]:
         def _t1110(_dollar_dollar):
             return _dollar_dollar
         _t1111 = _t1110(msg)
@@ -3163,7 +3163,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_data(self, msg: logic_pb2.Data) -> Optional[Never]:
+    def pretty_data(self, msg: logic_pb2.Data) -> Optional[NoReturn]:
         def _t1113(_dollar_dollar):
             
             if _dollar_dollar.HasField('rel_edb'):
@@ -3211,7 +3211,7 @@ class PrettyPrinter:
             _t1116 = _t1121
         return _t1116
 
-    def pretty_rel_edb(self, msg: logic_pb2.RelEDB) -> Optional[Never]:
+    def pretty_rel_edb(self, msg: logic_pb2.RelEDB) -> Optional[NoReturn]:
         def _t1128(_dollar_dollar):
             return (_dollar_dollar.target_id, _dollar_dollar.path, _dollar_dollar.types,)
         _t1129 = _t1128(msg)
@@ -3234,7 +3234,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_rel_edb_path(self, msg: Sequence[str]) -> Optional[Never]:
+    def pretty_rel_edb_path(self, msg: Sequence[str]) -> Optional[NoReturn]:
         def _t1133(_dollar_dollar):
             return _dollar_dollar
         _t1134 = _t1133(msg)
@@ -3249,7 +3249,7 @@ class PrettyPrinter:
         self.write(']')
         return None
 
-    def pretty_rel_edb_types(self, msg: Sequence[logic_pb2.Type]) -> Optional[Never]:
+    def pretty_rel_edb_types(self, msg: Sequence[logic_pb2.Type]) -> Optional[NoReturn]:
         def _t1135(_dollar_dollar):
             return _dollar_dollar
         _t1136 = _t1135(msg)
@@ -3264,7 +3264,7 @@ class PrettyPrinter:
         self.write(']')
         return None
 
-    def pretty_betree_relation(self, msg: logic_pb2.BeTreeRelation) -> Optional[Never]:
+    def pretty_betree_relation(self, msg: logic_pb2.BeTreeRelation) -> Optional[NoReturn]:
         def _t1138(_dollar_dollar):
             return (_dollar_dollar.name, _dollar_dollar.relation_info,)
         _t1139 = _t1138(msg)
@@ -3284,7 +3284,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_betree_info(self, msg: logic_pb2.BeTreeInfo) -> Optional[Never]:
+    def pretty_betree_info(self, msg: logic_pb2.BeTreeInfo) -> Optional[NoReturn]:
         def _t1142(_dollar_dollar):
             _t1143 = self.deconstruct_betree_info_config(_dollar_dollar)
             return (_dollar_dollar.key_types, _dollar_dollar.value_types, _t1143,)
@@ -3308,7 +3308,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_betree_info_key_types(self, msg: Sequence[logic_pb2.Type]) -> Optional[Never]:
+    def pretty_betree_info_key_types(self, msg: Sequence[logic_pb2.Type]) -> Optional[NoReturn]:
         def _t1148(_dollar_dollar):
             return _dollar_dollar
         _t1149 = _t1148(msg)
@@ -3328,7 +3328,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_betree_info_value_types(self, msg: Sequence[logic_pb2.Type]) -> Optional[Never]:
+    def pretty_betree_info_value_types(self, msg: Sequence[logic_pb2.Type]) -> Optional[NoReturn]:
         def _t1151(_dollar_dollar):
             return _dollar_dollar
         _t1152 = _t1151(msg)
@@ -3348,7 +3348,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_csv_data(self, msg: logic_pb2.CSVData) -> Optional[Never]:
+    def pretty_csv_data(self, msg: logic_pb2.CSVData) -> Optional[NoReturn]:
         def _t1154(_dollar_dollar):
             return (_dollar_dollar.locator, _dollar_dollar.config, _dollar_dollar.columns, _dollar_dollar.asof,)
         _t1155 = _t1154(msg)
@@ -3374,7 +3374,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_csvlocator(self, msg: logic_pb2.CSVLocator) -> Optional[Never]:
+    def pretty_csvlocator(self, msg: logic_pb2.CSVLocator) -> Optional[NoReturn]:
         def _t1160(_dollar_dollar):
             
             if not len(_dollar_dollar.paths) == 0:
@@ -3418,7 +3418,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_csv_locator_paths(self, msg: Sequence[str]) -> Optional[Never]:
+    def pretty_csv_locator_paths(self, msg: Sequence[str]) -> Optional[NoReturn]:
         def _t1168(_dollar_dollar):
             return _dollar_dollar
         _t1169 = _t1168(msg)
@@ -3438,7 +3438,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_csv_locator_inline_data(self, msg: str) -> Optional[Never]:
+    def pretty_csv_locator_inline_data(self, msg: str) -> Optional[NoReturn]:
         def _t1170(_dollar_dollar):
             return _dollar_dollar
         _t1171 = _t1170(msg)
@@ -3454,7 +3454,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_csv_config(self, msg: logic_pb2.CSVConfig) -> Optional[Never]:
+    def pretty_csv_config(self, msg: logic_pb2.CSVConfig) -> Optional[NoReturn]:
         def _t1172(_dollar_dollar):
             _t1173 = self.deconstruct_csv_config(_dollar_dollar)
             return _t1173
@@ -3471,7 +3471,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_csv_columns(self, msg: Sequence[logic_pb2.CSVColumn]) -> Optional[Never]:
+    def pretty_csv_columns(self, msg: Sequence[logic_pb2.CSVColumn]) -> Optional[NoReturn]:
         def _t1176(_dollar_dollar):
             return _dollar_dollar
         _t1177 = _t1176(msg)
@@ -3491,7 +3491,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_csv_column(self, msg: logic_pb2.CSVColumn) -> Optional[Never]:
+    def pretty_csv_column(self, msg: logic_pb2.CSVColumn) -> Optional[NoReturn]:
         def _t1179(_dollar_dollar):
             return (_dollar_dollar.column_name, _dollar_dollar.target_id, _dollar_dollar.types,)
         _t1180 = _t1179(msg)
@@ -3519,7 +3519,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_csv_asof(self, msg: str) -> Optional[Never]:
+    def pretty_csv_asof(self, msg: str) -> Optional[NoReturn]:
         def _t1183(_dollar_dollar):
             return _dollar_dollar
         _t1184 = _t1183(msg)
@@ -3535,7 +3535,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_undefine(self, msg: transactions_pb2.Undefine) -> Optional[Never]:
+    def pretty_undefine(self, msg: transactions_pb2.Undefine) -> Optional[NoReturn]:
         def _t1185(_dollar_dollar):
             return _dollar_dollar.fragment_id
         _t1186 = _t1185(msg)
@@ -3551,7 +3551,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_context(self, msg: transactions_pb2.Context) -> Optional[Never]:
+    def pretty_context(self, msg: transactions_pb2.Context) -> Optional[NoReturn]:
         def _t1188(_dollar_dollar):
             return _dollar_dollar.relations
         _t1189 = _t1188(msg)
@@ -3571,7 +3571,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_epoch_reads(self, msg: Sequence[transactions_pb2.Read]) -> Optional[Never]:
+    def pretty_epoch_reads(self, msg: Sequence[transactions_pb2.Read]) -> Optional[NoReturn]:
         def _t1191(_dollar_dollar):
             return _dollar_dollar
         _t1192 = _t1191(msg)
@@ -3591,7 +3591,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_read(self, msg: transactions_pb2.Read) -> Optional[Never]:
+    def pretty_read(self, msg: transactions_pb2.Read) -> Optional[NoReturn]:
         def _t1194(_dollar_dollar):
             
             if _dollar_dollar.HasField('demand'):
@@ -3669,7 +3669,7 @@ class PrettyPrinter:
             _t1197 = _t1202
         return _t1197
 
-    def pretty_demand(self, msg: transactions_pb2.Demand) -> Optional[Never]:
+    def pretty_demand(self, msg: transactions_pb2.Demand) -> Optional[NoReturn]:
         def _t1219(_dollar_dollar):
             return _dollar_dollar.relation_id
         _t1220 = _t1219(msg)
@@ -3685,7 +3685,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_output(self, msg: transactions_pb2.Output) -> Optional[Never]:
+    def pretty_output(self, msg: transactions_pb2.Output) -> Optional[NoReturn]:
         def _t1222(_dollar_dollar):
             return (_dollar_dollar.name, _dollar_dollar.relation_id,)
         _t1223 = _t1222(msg)
@@ -3705,7 +3705,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_what_if(self, msg: transactions_pb2.WhatIf) -> Optional[Never]:
+    def pretty_what_if(self, msg: transactions_pb2.WhatIf) -> Optional[NoReturn]:
         def _t1226(_dollar_dollar):
             return (_dollar_dollar.branch, _dollar_dollar.epoch,)
         _t1227 = _t1226(msg)
@@ -3725,7 +3725,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_abort(self, msg: transactions_pb2.Abort) -> Optional[Never]:
+    def pretty_abort(self, msg: transactions_pb2.Abort) -> Optional[NoReturn]:
         def _t1230(_dollar_dollar):
             
             if _dollar_dollar.name != 'abort':
@@ -3757,7 +3757,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_export(self, msg: transactions_pb2.Export) -> Optional[Never]:
+    def pretty_export(self, msg: transactions_pb2.Export) -> Optional[NoReturn]:
         def _t1236(_dollar_dollar):
             return _dollar_dollar.csv_config
         _t1237 = _t1236(msg)
@@ -3773,7 +3773,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_export_csv_config(self, msg: transactions_pb2.ExportCSVConfig) -> Optional[Never]:
+    def pretty_export_csv_config(self, msg: transactions_pb2.ExportCSVConfig) -> Optional[NoReturn]:
         def _t1239(_dollar_dollar):
             _t1240 = self.deconstruct_export_csv_config(_dollar_dollar)
             return (_dollar_dollar.path, _dollar_dollar.data_columns, _t1240,)
@@ -3797,7 +3797,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_export_csv_path(self, msg: str) -> Optional[Never]:
+    def pretty_export_csv_path(self, msg: str) -> Optional[NoReturn]:
         def _t1245(_dollar_dollar):
             return _dollar_dollar
         _t1246 = _t1245(msg)
@@ -3813,7 +3813,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_export_csv_columns(self, msg: Sequence[transactions_pb2.ExportCSVColumn]) -> Optional[Never]:
+    def pretty_export_csv_columns(self, msg: Sequence[transactions_pb2.ExportCSVColumn]) -> Optional[NoReturn]:
         def _t1247(_dollar_dollar):
             return _dollar_dollar
         _t1248 = _t1247(msg)
@@ -3833,7 +3833,7 @@ class PrettyPrinter:
         self.write(')')
         return None
 
-    def pretty_export_csv_column(self, msg: transactions_pb2.ExportCSVColumn) -> Optional[Never]:
+    def pretty_export_csv_column(self, msg: transactions_pb2.ExportCSVColumn) -> Optional[NoReturn]:
         def _t1250(_dollar_dollar):
             return (_dollar_dollar.column_name, _dollar_dollar.column_data,)
         _t1251 = _t1250(msg)

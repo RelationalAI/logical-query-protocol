@@ -17,6 +17,7 @@ def get_all_files(dir, file_extension):
                 all_files.append(os.path.join(root, file))
     return all_files
 
+
 def get_lqp_input_files():
     """Find all .lqp files in the test inputs directory."""
     return get_all_files(TEST_INPUTS_DIR, ".lqp")
