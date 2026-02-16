@@ -5,30 +5,33 @@ Operates on protobuf messages (transactions_pb2.Transaction).
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Set, Optional, Tuple, Union, cast
-from google.protobuf.message import Message
-from google.protobuf.descriptor import Descriptor, FieldDescriptor
+from typing import Any, cast
 
-from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
+from google.protobuf.descriptor import Descriptor, FieldDescriptor
+from google.protobuf.message import Message
+
+from lqp.proto.v1 import fragments_pb2, logic_pb2, transactions_pb2
 
 
 class ValidationError(Exception):
     pass
 
+
 # Proto instruction types that have `name: RelationId` and `body: Abstraction`.
-_InstructionLike = Union[
-    logic_pb2.Def,
-    logic_pb2.Assign,
-    logic_pb2.Upsert,
-    logic_pb2.Break,
-    logic_pb2.MonoidDef,
-    logic_pb2.MonusDef,
-]
+_InstructionLike = (
+    logic_pb2.Def
+    | logic_pb2.Assign
+    | logic_pb2.Upsert
+    | logic_pb2.Break
+    | logic_pb2.MonoidDef
+    | logic_pb2.MonusDef
+)
 
 
 # --- Helpers ---
 
-def relation_id_key(rid: logic_pb2.RelationId) -> Tuple[int, int]:
+
+def relation_id_key(rid: logic_pb2.RelationId) -> tuple[int, int]:
     """Hashable key for a RelationId."""
     return (rid.id_low, rid.id_high)
 
@@ -84,7 +87,7 @@ def get_value_type_name(value_msg: logic_pb2.Value) -> str:
     return _VALUE_ONEOF_TO_TYPE_NAME.get(which, "UNSPECIFIED")
 
 
-def build_debug_info(debug_info: fragments_pb2.DebugInfo) -> Dict[Tuple[int, int], str]:
+def build_debug_info(debug_info: fragments_pb2.DebugInfo) -> dict[tuple[int, int], str]:
     """Convert DebugInfo parallel arrays to a dict keyed by (id_low, id_high)."""
     result = {}
     for rid, name in zip(debug_info.ids, debug_info.orig_names):
@@ -134,56 +137,57 @@ def _format_value(val: logic_pb2.Value) -> str:
 
 # --- Oneof unwrappers ---
 
-def unwrap_declaration(decl: logic_pb2.Declaration) -> Optional[Message]:
+
+def unwrap_declaration(decl: logic_pb2.Declaration) -> Message | None:
     which = decl.WhichOneof("declaration_type")
     if which is None:
         return None
     return getattr(decl, which)
 
 
-def unwrap_instruction(instr: logic_pb2.Instruction) -> Optional[Message]:
+def unwrap_instruction(instr: logic_pb2.Instruction) -> Message | None:
     which = instr.WhichOneof("instr_type")
     if which is None:
         return None
     return getattr(instr, which)
 
 
-def unwrap_formula(formula: logic_pb2.Formula) -> Optional[Message]:
+def unwrap_formula(formula: logic_pb2.Formula) -> Message | None:
     which = formula.WhichOneof("formula_type")
     if which is None:
         return None
     return getattr(formula, which)
 
 
-def unwrap_construct(construct: logic_pb2.Construct) -> Optional[Message]:
+def unwrap_construct(construct: logic_pb2.Construct) -> Message | None:
     which = construct.WhichOneof("construct_type")
     if which is None:
         return None
     return getattr(construct, which)
 
 
-def unwrap_write(write: transactions_pb2.Write) -> Optional[Message]:
+def unwrap_write(write: transactions_pb2.Write) -> Message | None:
     which = write.WhichOneof("write_type")
     if which is None:
         return None
     return getattr(write, which)
 
 
-def unwrap_read(read: transactions_pb2.Read) -> Optional[Message]:
+def unwrap_read(read: transactions_pb2.Read) -> Message | None:
     which = read.WhichOneof("read_type")
     if which is None:
         return None
     return getattr(read, which)
 
 
-def unwrap_constraint(constraint: logic_pb2.Constraint) -> Optional[Message]:
+def unwrap_constraint(constraint: logic_pb2.Constraint) -> Message | None:
     which = constraint.WhichOneof("constraint_type")
     if which is None:
         return None
     return getattr(constraint, which)
 
 
-def unwrap_data(data: logic_pb2.Data) -> Optional[Message]:
+def unwrap_data(data: logic_pb2.Data) -> Message | None:
     which = data.WhichOneof("data_type")
     if which is None:
         return None
@@ -208,8 +212,8 @@ _WRAPPER_TYPES = {
 
 class ProtoVisitor:
     def __init__(self):
-        self.original_names: Dict[Tuple[int, int], str] = {}
-        self._visit_cache: Dict[str, Any] = {}
+        self.original_names: dict[tuple[int, int], str] = {}
+        self._visit_cache: dict[str, Any] = {}
 
     def get_original_name(self, rid: logic_pb2.RelationId) -> str:
         key = relation_id_key(rid)
@@ -253,10 +257,11 @@ class ProtoVisitor:
 
 # --- Validation visitors ---
 
+
 class UnusedVariableVisitor(ProtoVisitor):
     def __init__(self, txn: transactions_pb2.Transaction):
         super().__init__()
-        self.scopes: List[Tuple[Set[str], Set[str]]] = []
+        self.scopes: list[tuple[set[str], set[str]]] = []
         self.visit(txn)
 
     def _declare_var(self, var_name: str):
@@ -286,7 +291,9 @@ class UnusedVariableVisitor(ProtoVisitor):
     def visit_Var(self, node: logic_pb2.Var, *args: Any):
         self._mark_var_used(node.name)
 
-    def visit_FunctionalDependency(self, node: logic_pb2.FunctionalDependency, *args: Any):
+    def visit_FunctionalDependency(
+        self, node: logic_pb2.FunctionalDependency, *args: Any
+    ):
         self.visit(node.guard, *args)
 
 
@@ -296,7 +303,7 @@ class ShadowedVariableFinder(ProtoVisitor):
         self.visit(txn)
 
     def visit_Abstraction(self, node: logic_pb2.Abstraction, *args: Any):
-        in_scope_names: Set[str] = set() if len(args) == 0 else args[0]
+        in_scope_names: set[str] = set() if len(args) == 0 else args[0]
         for binding in node.vars:
             name = binding.var.name
             if name in in_scope_names:
@@ -308,9 +315,9 @@ class ShadowedVariableFinder(ProtoVisitor):
 class DuplicateRelationIdFinder(ProtoVisitor):
     def __init__(self, txn: transactions_pb2.Transaction):
         super().__init__()
-        self.seen_ids: Dict[Tuple[int, int], Tuple[int, Optional[bytes]]] = {}
+        self.seen_ids: dict[tuple[int, int], tuple[int, bytes | None]] = {}
         self.curr_epoch: int = 0
-        self.curr_fragment: Optional[bytes] = None
+        self.curr_fragment: bytes | None = None
         self.visit(txn)
 
     def visit_Def(self, node: logic_pb2.Def, *args: Any):
@@ -346,9 +353,7 @@ class DuplicateRelationIdFinder(ProtoVisitor):
             key = relation_id_key(rid)
             if key in self.seen_ids:
                 original_name = self.get_original_name(rid)
-                raise ValidationError(
-                    f"Duplicate declaration: '{original_name}'"
-                )
+                raise ValidationError(f"Duplicate declaration: '{original_name}'")
             else:
                 self.seen_ids[key] = (self.curr_epoch, self.curr_fragment)
 
@@ -356,7 +361,7 @@ class DuplicateRelationIdFinder(ProtoVisitor):
 class DuplicateFragmentDefinitionFinder(ProtoVisitor):
     def __init__(self, txn: transactions_pb2.Transaction):
         super().__init__()
-        self.seen_ids: Set[bytes] = set()
+        self.seen_ids: set[bytes] = set()
         self.visit(txn)
 
     def visit_Epoch(self, node: transactions_pb2.Epoch, *args: Any):
@@ -367,9 +372,7 @@ class DuplicateFragmentDefinitionFinder(ProtoVisitor):
         frag_id = node.fragment.id.id
         if frag_id in self.seen_ids:
             id_str = frag_id.decode("utf-8")
-            raise ValidationError(
-                f"Duplicate fragment within an epoch: '{id_str}'"
-            )
+            raise ValidationError(f"Duplicate fragment within an epoch: '{id_str}'")
         else:
             self.seen_ids.add(frag_id)
 
@@ -378,6 +381,7 @@ class AtomTypeChecker(ProtoVisitor):
     @staticmethod
     def collect_global_defs(txn: transactions_pb2.Transaction) -> list:
         """Collect globally visible instruction-like declarations."""
+
         class DefCollector(ProtoVisitor):
             def __init__(self, txn):
                 self.atoms = []
@@ -393,10 +397,18 @@ class AtomTypeChecker(ProtoVisitor):
                     if inner is not None:
                         inner_name = type(inner).__name__
                         if inner_name == "Instruction":
-                            instr = unwrap_instruction(cast(logic_pb2.Instruction, inner))
+                            instr = unwrap_instruction(
+                                cast(logic_pb2.Instruction, inner)
+                            )
                             if instr is not None:
                                 self.atoms.append((type(instr).__name__, instr))
-                        elif inner_name in ("Assign", "Upsert", "Break", "MonoidDef", "MonusDef"):
+                        elif inner_name in (
+                            "Assign",
+                            "Upsert",
+                            "Break",
+                            "MonoidDef",
+                            "MonusDef",
+                        ):
                             self.atoms.append((inner_name, inner))
 
             def visit_Loop(self, node: logic_pb2.Loop):
@@ -408,7 +420,7 @@ class AtomTypeChecker(ProtoVisitor):
         return DefCollector(txn).atoms
 
     @staticmethod
-    def get_relation_sig(node) -> List[str]:
+    def get_relation_sig(node) -> list[str]:
         """Return a list of the type names of the parameters of a Def-like node."""
         return [get_type_name(b.type) for b in node.body.vars]
 
@@ -418,8 +430,8 @@ class AtomTypeChecker(ProtoVisitor):
 
     @dataclass(frozen=True)
     class State:
-        relation_types: Dict[Tuple[int, int], List[str]]
-        var_types: Dict[str, str]
+        relation_types: dict[tuple[int, int], list[str]]
+        var_types: dict[str, str]
 
     def __init__(self, txn: transactions_pb2.Transaction):
         super().__init__()
@@ -453,7 +465,10 @@ class AtomTypeChecker(ProtoVisitor):
                 continue
             inner_name = type(inner).__name__
             if inner_name == "Instruction":
-                actual_instr = cast(_InstructionLike, unwrap_instruction(cast(logic_pb2.Instruction, inner)))
+                actual_instr = cast(
+                    _InstructionLike,
+                    unwrap_instruction(cast(logic_pb2.Instruction, inner)),
+                )
                 if actual_instr is not None:
                     key = relation_id_key(actual_instr.name)
                     sig = [get_type_name(b.type) for b in actual_instr.body.vars]
@@ -527,8 +542,8 @@ class LoopyBadBreakFinder(ProtoVisitor):
 class LoopyBadGlobalFinder(ProtoVisitor):
     def __init__(self, txn: transactions_pb2.Transaction):
         super().__init__()
-        self.globals: Set[Tuple[int, int]] = set()
-        self.init: Set[Tuple[int, int]] = set()
+        self.globals: set[tuple[int, int]] = set()
+        self.init: set[tuple[int, int]] = set()
         self.visit(txn)
 
     # Instruction types that count as "init" declarations in Algorithm.body.
@@ -546,8 +561,14 @@ class LoopyBadGlobalFinder(ProtoVisitor):
                 continue
             inner_name = type(inner).__name__
             if inner_name == "Instruction":
-                actual = cast(_InstructionLike, unwrap_instruction(cast(logic_pb2.Instruction, inner)))
-                if actual is not None and type(actual).__name__ in self._ALGORITHM_INIT_TYPES:
+                actual = cast(
+                    _InstructionLike,
+                    unwrap_instruction(cast(logic_pb2.Instruction, inner)),
+                )
+                if (
+                    actual is not None
+                    and type(actual).__name__ in self._ALGORITHM_INIT_TYPES
+                ):
                     self.init.add(relation_id_key(actual.name))
             elif inner_name == "Loop":
                 self.visit(inner)
@@ -564,8 +585,14 @@ class LoopyBadGlobalFinder(ProtoVisitor):
                 continue
             inner_name = type(inner).__name__
             if inner_name == "Instruction":
-                actual = cast(_InstructionLike, unwrap_instruction(cast(logic_pb2.Instruction, inner)))
-                if actual is not None and type(actual).__name__ in self._LOOP_INSTR_TYPES:
+                actual = cast(
+                    _InstructionLike,
+                    unwrap_instruction(cast(logic_pb2.Instruction, inner)),
+                )
+                if (
+                    actual is not None
+                    and type(actual).__name__ in self._LOOP_INSTR_TYPES
+                ):
                     key = relation_id_key(actual.name)
                     if key in self.globals and key not in self.init:
                         original_name = self.get_original_name(actual.name)
@@ -583,9 +610,7 @@ class LoopyUpdatesShouldBeAtoms(ProtoVisitor):
         formula = node.body.value
         which = formula.WhichOneof("formula_type")
         if which != "atom":
-            raise ValidationError(
-                f"{instr_type_name} must have an Atom as its value"
-            )
+            raise ValidationError(f"{instr_type_name} must have an Atom as its value")
 
     def visit_Upsert(self, node: logic_pb2.Upsert, *args: Any):
         self._check_atom_body(node, "Upsert")
@@ -601,7 +626,7 @@ class CSVConfigChecker(ProtoVisitor):
     def __init__(self, txn: transactions_pb2.Transaction):
         super().__init__()
         global_defs = AtomTypeChecker.collect_global_defs(txn)
-        self.relation_types: Dict[Tuple[int, int], List[str]] = {}
+        self.relation_types: dict[tuple[int, int], list[str]] = {}
         for _, node in global_defs:
             rid = AtomTypeChecker.get_relation_id(node)
             key = relation_id_key(rid)
@@ -629,8 +654,8 @@ class CSVConfigChecker(ProtoVisitor):
                 f"CSV compression should be one of {valid_compressions}, got '{node.compression}'"
             )
 
-        column_0_key_types: Optional[List[str]] = None
-        column_0_name: Optional[str] = None
+        column_0_key_types: list[str] | None = None
+        column_0_name: str | None = None
         for column in node.data_columns:
             key = relation_id_key(column.column_data)
             if key not in self.relation_types:
@@ -660,7 +685,9 @@ class FDVarsChecker(ProtoVisitor):
         super().__init__()
         self.visit(txn)
 
-    def visit_FunctionalDependency(self, node: logic_pb2.FunctionalDependency, *args: Any):
+    def visit_FunctionalDependency(
+        self, node: logic_pb2.FunctionalDependency, *args: Any
+    ):
         guard_var_names = {b.var.name for b in node.guard.vars}
         for var in node.keys:
             if var.name not in guard_var_names:
@@ -675,6 +702,7 @@ class FDVarsChecker(ProtoVisitor):
 
 
 # --- Entry point ---
+
 
 def validate_proto(txn: transactions_pb2.Transaction) -> None:
     """Validate a protobuf Transaction message."""

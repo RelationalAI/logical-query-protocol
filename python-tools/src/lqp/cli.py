@@ -6,12 +6,13 @@ import argparse
 import os
 import sys
 from importlib.metadata import version
+
 from google.protobuf.json_format import MessageToJson
 
 from lqp.gen.parser import parse
 from lqp.gen.pretty import pretty
-from lqp.proto_validator import validate_proto
 from lqp.proto.v1 import transactions_pb2
+from lqp.proto_validator import validate_proto
 
 
 def parse_input(filename: str, validate: bool = True):
@@ -22,7 +23,7 @@ def parse_input(filename: str, validate: bool = True):
         txn = transactions_pb2.Transaction()
         txn.ParseFromString(data)
     else:
-        with open(filename, "r") as f:
+        with open(filename) as f:
             lqp_text = f.read()
         txn = parse(lqp_text)
 
@@ -96,7 +97,9 @@ def main():
         description="Parse, validate, and translate LQP files."
     )
     arg_parser.add_argument(
-        "-v", "--version", action="version",
+        "-v",
+        "--version",
+        action="version",
         version=f"%(prog)s {get_package_version()}",
     )
     arg_parser.add_argument(
@@ -104,25 +107,30 @@ def main():
         help=".lqp or .bin file, or a directory",
     )
     arg_parser.add_argument(
-        "--no-validation", action="store_true",
+        "--no-validation",
+        action="store_true",
         help="skip validation",
     )
     arg_parser.add_argument(
-        "--out", action="store_true",
+        "--out",
+        action="store_true",
         help="write output to stdout",
     )
 
     fmt_group = arg_parser.add_mutually_exclusive_group()
     fmt_group.add_argument(
-        "--bin", action="store_true",
+        "--bin",
+        action="store_true",
         help="write protobuf binary output",
     )
     fmt_group.add_argument(
-        "--json", action="store_true",
+        "--json",
+        action="store_true",
         help="write protobuf JSON output",
     )
     fmt_group.add_argument(
-        "--lqp", action="store_true",
+        "--lqp",
+        action="store_true",
         help="pretty-print LQP output",
     )
 
