@@ -71,6 +71,9 @@ message ExportCSVConfig {
   string path = 1;
   repeated ExportCSVColumn data_columns = 2;
 
+  ExportCSVSource csv_source = 10;
+  CSVConfig csv_config = 11;
+
   optional int64 partition_size = 3;
   optional string compression = 4;
   optional bool             syntax_header_row = 5;
@@ -85,6 +88,17 @@ message ExportCSVConfig {
 message ExportCSVColumn {
   string column_name = 1;
   RelationId column_data = 2;
+}
+
+message ExportCSVColumns {
+  repeated ExportCSVColumn columns = 1;
+}
+
+message ExportCSVSource {
+  oneof csv_source {
+    ExportCSVColumns gnf_columns = 1;
+    RelationId table_def = 2;
+  }
 }
 
 //
