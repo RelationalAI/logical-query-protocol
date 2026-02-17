@@ -11,7 +11,12 @@ Command: python -m meta.cli ../proto/relationalai/lqp/v1/fragments.proto ../prot
 
 from io import StringIO
 from collections.abc import Sequence
-from typing import Any, IO, Never, Optional
+import sys
+
+if sys.version_info >= (3, 11):
+    from typing import Any, IO, Never, Optional
+else:
+    from typing import Any, IO, NoReturn as Never, Optional
 
 from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
 
