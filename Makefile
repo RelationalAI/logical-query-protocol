@@ -13,9 +13,12 @@
 #   make force-printer-X    Force-regenerate a single printer.
 #   make test         Run tests for all languages.
 #   make test-X       Run tests for one language (X = python, julia, go).
+#   make test-python-update-snapshots  Update Python pretty printer snapshots.
+#   make lint-python  Run ruff lint and format checks.
+#   make format-python  Auto-format Python code with ruff.
 #   make clean        Remove temporary generated files.
 #
-# Prerequisites: buf, python (with lqp[test] installed), julia, go.
+# Prerequisites: buf, uv (python), julia, go.
 
 PROTO_DIR := proto
 PROTO_FILES := \
@@ -23,7 +26,7 @@ PROTO_FILES := \
 	$(PROTO_DIR)/relationalai/lqp/v1/fragments.proto \
 	$(PROTO_DIR)/relationalai/lqp/v1/transactions.proto
 
-GRAMMAR := python-tools/src/meta/grammar.y
+GRAMMAR := meta/src/meta/grammar.y
 
 # Generated protobuf outputs
 PY_PROTO_DIR := python-tools/src/lqp/proto/v1
@@ -41,16 +44,15 @@ GO_PRINTER := go/src/pretty.go
 JL_PRINTER := julia/LogicalQueryProtocol/src/pretty.jl
 
 # Parser templates
-PY_TEMPLATE := python-tools/src/meta/templates/parser.py.template
-JL_TEMPLATE := python-tools/src/meta/templates/parser.jl.template
-GO_TEMPLATE := python-tools/src/meta/templates/parser.go.template
+PY_TEMPLATE := meta/src/meta/templates/parser.py.template
+JL_TEMPLATE := meta/src/meta/templates/parser.jl.template
+GO_TEMPLATE := meta/src/meta/templates/parser.go.template
 
 # Printer templates
-PY_PRINTER_TEMPLATE := python-tools/src/meta/templates/pretty_printer.py.template
-GO_PRINTER_TEMPLATE := python-tools/src/meta/templates/pretty_printer.go.template
-JL_PRINTER_TEMPLATE := python-tools/src/meta/templates/pretty_printer.jl.template
+PY_PRINTER_TEMPLATE := meta/src/meta/templates/pretty_printer.py.template
+JL_PRINTER_TEMPLATE := meta/src/meta/templates/pretty_printer.jl.template
 
-META_CLI := cd python-tools && PYTHONPATH=src python -m meta.cli
+META_CLI := cd meta && uv run python -m meta.cli
 META_PROTO_ARGS := \
 	../$(PROTO_DIR)/relationalai/lqp/v1/fragments.proto \
 	../$(PROTO_DIR)/relationalai/lqp/v1/logic.proto \
@@ -75,8 +77,9 @@ JL_PROTO_GENERATED := \
 	force-parsers force-parser-python force-parser-julia force-parser-go \
 	printers printer-python printer-julia printer-go \
 	force-printers force-printer-python force-printer-julia force-printer-go \
-	test test-python test-julia test-go check-python \
-	clean
+	test test-python test-python-update-snapshots test-julia test-go \
+	test-meta check-python check-meta lint-meta format-meta \
+	lint-python format-python clean
 
 all: protobuf parsers printers
 
@@ -115,7 +118,7 @@ parsers: parser-python parser-julia parser-go
 
 parser-python: $(PY_PARSER)
 $(PY_PARSER): $(PROTO_FILES) $(GRAMMAR) $(PY_TEMPLATE)
-	$(META_CLI) $(META_PROTO_ARGS) --parser python -o src/lqp/gen/parser.py
+	$(META_CLI) $(META_PROTO_ARGS) --parser python -o ../python-tools/src/lqp/gen/parser.py
 
 parser-julia: $(JL_PARSER)
 $(JL_PARSER): $(PROTO_FILES) $(GRAMMAR) $(JL_TEMPLATE)
@@ -128,7 +131,7 @@ $(GO_PARSER): $(PROTO_FILES) $(GRAMMAR) $(GO_TEMPLATE)
 force-parsers: force-parser-python force-parser-julia force-parser-go
 
 force-parser-python:
-	$(META_CLI) $(META_PROTO_ARGS) --parser python -o src/lqp/gen/parser.py
+	$(META_CLI) $(META_PROTO_ARGS) --parser python -o ../python-tools/src/lqp/gen/parser.py
 
 force-parser-julia:
 	$(META_CLI) $(META_PROTO_ARGS) --parser julia -o ../julia/LogicalQueryProtocol/src/parser.jl
@@ -142,20 +145,20 @@ printers: printer-python printer-julia printer-go
 
 printer-python: $(PY_PRINTER)
 $(PY_PRINTER): $(PROTO_FILES) $(GRAMMAR) $(PY_PRINTER_TEMPLATE)
-	$(META_CLI) $(META_PROTO_ARGS) --printer python -o src/lqp/gen/pretty.py
+	$(META_CLI) $(META_PROTO_ARGS) --printer python -o ../python-tools/src/lqp/gen/pretty.py
 
 printer-julia: $(JL_PRINTER)
 $(JL_PRINTER): $(PROTO_FILES) $(GRAMMAR) $(JL_PRINTER_TEMPLATE)
 	$(META_CLI) $(META_PROTO_ARGS) --printer julia -o ../julia/LogicalQueryProtocol/src/pretty.jl
 
 printer-go: $(GO_PRINTER)
-$(GO_PRINTER): $(PROTO_FILES) $(GRAMMAR) $(GO_PRINTER_TEMPLATE)
+$(GO_PRINTER):
 	@echo "Generating the Go pretty printer is not yet supported"
 
 force-printers: force-printer-python force-printer-julia force-printer-go
 
 force-printer-python:
-	$(META_CLI) $(META_PROTO_ARGS) --printer python -o src/lqp/gen/pretty.py
+	$(META_CLI) $(META_PROTO_ARGS) --printer python -o ../python-tools/src/lqp/gen/pretty.py
 
 force-printer-julia:
 	$(META_CLI) $(META_PROTO_ARGS) --printer julia -o ../julia/LogicalQueryProtocol/src/pretty.jl
@@ -165,10 +168,13 @@ force-printer-go:
 
 # ---------- testing ----------
 
-test: test-python test-julia test-go
+test: test-meta test-python test-julia test-go
 
 test-python: $(PY_PARSER) $(PY_PROTO_GENERATED) check-python
-	cd python-tools && python -m pytest
+	cd python-tools && uv run python -m pytest
+
+test-python-update-snapshots: $(PY_PARSER) $(PY_PROTO_GENERATED)
+	cd python-tools && uv run python -m pytest --snapshot-update
 
 test-julia: $(JL_PARSER) $(JL_PROTO_GENERATED)
 	cd julia && julia --project=LogicalQueryProtocol -e 'using Pkg; Pkg.test()'
@@ -176,8 +182,28 @@ test-julia: $(JL_PARSER) $(JL_PROTO_GENERATED)
 test-go: $(GO_PARSER) $(GO_PROTO_GENERATED)
 	cd go && go test ./test/...
 
-check-python:
-	cd python-tools && pyrefly check
+check-python: lint-python
+	cd python-tools && uv run pyrefly check
+
+lint-python:
+	cd python-tools && uv run ruff check
+	cd python-tools && uv run ruff format --check
+
+format-python:
+	cd python-tools && uv run ruff format
+
+test-meta: check-meta
+	cd meta && uv run python -m pytest
+
+check-meta: lint-meta
+	cd meta && uv run pyrefly check
+
+lint-meta:
+	cd meta && uv run ruff check
+	cd meta && uv run ruff format --check
+
+format-meta:
+	cd meta && uv run ruff format
 
 # ---------- cleanup ----------
 

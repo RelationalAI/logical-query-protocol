@@ -62,9 +62,9 @@ make test
 ### Updating the SDKs
 
 Changes to the ProtoBuf specification need to be reflected in the language-independent
-grammar in `meta/grammar.y`. From the grammar we can automatically derive parsers and pretty
-printers for the S-expression representation of LQP, which is used for testing and
-debugging.
+grammar in `meta/src/meta/grammar.y`. From the grammar we can automatically derive parsers
+and pretty printers for the S-expression representation of LQP, which is used for testing
+and debugging.
 
 When you have updated the grammar, you can regenerate the parsers and verify that they match
 by running
@@ -73,6 +73,8 @@ by running
 make parsers
 make test
 ```
+
+The code generators are implemented in `meta/`.
 
 ### Release (for Maintainers)
 

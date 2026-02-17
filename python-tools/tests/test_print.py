@@ -1,102 +1,91 @@
-import pytest
 import os
-import dataclasses
-from math import isnan
+import re
 
-from lqp import parser
-from lqp import print as lqp_print
-from lqp import ir
-from .utils import get_lqp_input_files, TEST_INPUTS_DIR
+import pytest
 
-def assert_lqp_nodes_equal(obj1, obj2):
-    if isinstance(obj1, ir.LqpNode) and isinstance(obj2, ir.LqpNode):
-        if obj1.__class__ is not obj2.__class__:
-            raise AssertionError(f"Node types differ: {obj1.__class__} vs {obj2.__class__}")
-        # Special case for ExportCSVConfig: Weak comparison, don't compare when default values are used
-        elif isinstance(obj1, ir.ExportCSVConfig) and isinstance(obj2, ir.ExportCSVConfig):
-            for field_info in dataclasses.fields(type(obj1)):
-                if field_info.name == 'meta':
-                    continue
-                if field_info.name.startswith('debug_'):
-                    continue
-                val1 = getattr(obj1, field_info.name)
-                val2 = getattr(obj2, field_info.name)
-                # Only compare if both values are not None
-                if val1 is not None and val2 is not None:
-                    assert_lqp_nodes_equal(val1, val2)
-        else:
-            for field_info in dataclasses.fields(type(obj1)):
-                if field_info.name == 'meta':
-                    continue
-                if field_info.name.startswith('debug_'):
-                    continue
-                assert_lqp_nodes_equal(getattr(obj1, field_info.name), getattr(obj2, field_info.name))
-    elif isinstance(obj1, (list, tuple)) and isinstance(obj2, (list, tuple)):
-        if len(obj1) != len(obj2):
-            raise AssertionError(f"Sequence lengths differ: {len(obj1)} vs {len(obj2)}")
-        for i, (item1, item2) in enumerate(zip(obj1, obj2)):
-            assert_lqp_nodes_equal(item1, item2)
-    elif isinstance(obj1, float) and isinstance(obj2, float):
-        if isnan(obj1) and isnan(obj2):
-            return
-        if obj1 != obj2:
-            raise AssertionError(f"Values differ: {obj1} vs {obj2}")
-    elif obj1 != obj2:
-        raise AssertionError(f"Values differ: {obj1} vs {obj2}")
+from lqp.gen.parser import parse
+from lqp.gen.pretty import pretty
 
-@pytest.mark.parametrize("input_file", get_lqp_input_files())
-def test_print_snapshot(snapshot, input_file):
-    with open(input_file, "r") as f:
-        original_lqp_str = f.read()
-    parsed_node = parser.parse_lqp(input_file, original_lqp_str)
-    options = lqp_print.ugly_config.copy()
-    options[str(lqp_print.PrettyOptions.PRINT_DEBUG)] = False
-    printed_lqp_str = lqp_print.to_string(parsed_node, options)
-    snapshot.snapshot_dir = "tests/lqp_output"
-    snapshot.assert_match(printed_lqp_str, os.path.basename(input_file))
-    re_parsed_node = parser.parse_lqp("reparsed_output.lqp", printed_lqp_str)
-    assert_lqp_nodes_equal(re_parsed_node, parsed_node)
+from .utils import REPO_ROOT, get_lqp_input_files
 
-@pytest.mark.parametrize("input_file", get_lqp_input_files())
-def test_print_debug_snapshot(snapshot, input_file):
-    with open(input_file, "r") as f:
-        original_lqp_str = f.read()
-    parsed_node = parser.parse_lqp(input_file, original_lqp_str)
-    options = lqp_print.ugly_config.copy()
-    options[str(lqp_print.PrettyOptions.PRINT_DEBUG)] = True
-    printed_lqp_str = lqp_print.to_string(parsed_node, options)
-    snapshot.snapshot_dir = "tests/lqp_debug_output"
-    snapshot.assert_match(printed_lqp_str, os.path.basename(input_file))
-    re_parsed_node = parser.parse_lqp("reparsed_output.lqp", printed_lqp_str)
-    assert_lqp_nodes_equal(re_parsed_node, parsed_node)
+PRETTY_SNAPSHOTS_DIR = REPO_ROOT / "tests" / "pretty"
+
+
+def _normalize_primitives(s: str) -> str:
+    """Normalize shorthand primitive syntax to verbose form."""
+    s = re.sub(r"\(\s*=\s+", "(primitive :rel_primitive_eq ", s)
+    s = re.sub(r"\(\s*<=\s+", "(primitive :rel_primitive_lt_eq_monotype ", s)
+    s = re.sub(r"\(\s*>=\s+", "(primitive :rel_primitive_gt_eq_monotype ", s)
+    s = re.sub(r"\(\s*<\s+", "(primitive :rel_primitive_lt_monotype ", s)
+    s = re.sub(r"\(\s*>\s+", "(primitive :rel_primitive_gt_monotype ", s)
+    s = re.sub(r"\(\s*\+\s+", "(primitive :rel_primitive_add_monotype ", s)
+    s = re.sub(r"\(\s*-\s+", "(primitive :rel_primitive_subtract_monotype ", s)
+    s = re.sub(r"\(\s*\*\s+", "(primitive :rel_primitive_multiply_monotype ", s)
+    s = re.sub(r"\(\s*/\s+", "(primitive :rel_primitive_divide_monotype ", s)
+    return s
+
+
+def _normalize_formulas(s: str) -> str:
+    """Normalize (true) to (and) and (false) to (or)."""
+    s = re.sub(r"\(\s*true\s*\)", "(and)", s)
+    s = re.sub(r"\(\s*false\s*\)", "(or)", s)
+    return s
+
+
+def _normalize_header_row(s: str) -> str:
+    """Normalize :syntax_header_row bool/int differences."""
+    s = re.sub(r":syntax_header_row\s+1\b", ":syntax_header_row true", s)
+    s = re.sub(r":syntax_header_row\s+0\b", ":syntax_header_row false", s)
+    return s
+
+
+def _normalize_ws(s: str) -> str:
+    """Collapse all whitespace sequences to a single space, strip spaces before closing brackets."""
+    s = re.sub(r"\s+", " ", s).strip()
+    s = re.sub(r"\s+([)\]}])", r"\1", s)
+    return s
+
+
+def _normalize(s: str) -> str:
+    """Apply all normalizations."""
+    s = _normalize_primitives(s)
+    s = _normalize_formulas(s)
+    s = _normalize_header_row(s)
+    s = _normalize_ws(s)
+    return s
+
 
 @pytest.mark.parametrize("input_file", get_lqp_input_files())
-def test_print_pretty_snapshot(snapshot, input_file):
-    with open(input_file, "r") as f:
-        original_lqp_str = f.read()
-    parsed_node = parser.parse_lqp(input_file, original_lqp_str)
-    lqp_print.to_string(parsed_node, {})
-    options = lqp_print.ugly_config.copy()
-    options[str(lqp_print.PrettyOptions.PRINT_NAMES)] = True
-    options[str(lqp_print.PrettyOptions.PRINT_DEBUG)] = False
-    pretty_printed_lqp_str = lqp_print.to_string(parsed_node, options)
-    snapshot.snapshot_dir = "tests/lqp_pretty_output"
-    snapshot.assert_match(pretty_printed_lqp_str, os.path.basename(input_file))
-    re_parsed_node = parser.parse_lqp("reparsed_output.lqp", pretty_printed_lqp_str)
-    assert_lqp_nodes_equal(re_parsed_node, parsed_node)
+def test_pretty_print_roundtrip(input_file):
+    """Test that pretty-printing then re-parsing produces the same binary."""
+    with open(input_file) as f:
+        original_text = f.read()
 
-@pytest.mark.parametrize("input_file", [
-    os.path.join(TEST_INPUTS_DIR, "simple_export.lqp"),
-    os.path.join(TEST_INPUTS_DIR, "multiple_export.lqp"),
-])
-def test_print_no_csv_filename_snapshot(snapshot, input_file):
-    with open(input_file, "r") as f:
-        original_lqp_str = f.read()
-    parsed_node = parser.parse_lqp(input_file, original_lqp_str)
-    options = lqp_print.ugly_config.copy()
-    options[str(lqp_print.PrettyOptions.PRINT_NAMES)] = True
-    options[str(lqp_print.PrettyOptions.PRINT_DEBUG)] = False
-    options[str(lqp_print.PrettyOptions.PRINT_CSV_FILENAME)] = False
-    pretty_printed_lqp_str = lqp_print.to_string(parsed_node, options)
-    snapshot.snapshot_dir = "tests/lqp_no_csv_filename_output"
-    snapshot.assert_match(pretty_printed_lqp_str, os.path.basename(input_file))
+    txn = parse(original_text)
+    original_binary = txn.SerializeToString()
+
+    printed = pretty(txn)
+    re_parsed = parse(printed)
+    re_parsed_binary = re_parsed.SerializeToString()
+
+    assert original_binary == re_parsed_binary, f"Round-trip mismatch for {input_file}"
+
+
+@pytest.mark.parametrize("input_file", get_lqp_input_files())
+def test_pretty_print_snapshot(input_file):
+    """Test that pretty-printed output matches snapshots (with normalization)."""
+    with open(input_file) as f:
+        content = f.read()
+
+    txn = parse(content)
+    printed = pretty(txn)
+
+    snapshot_file = os.path.join(PRETTY_SNAPSHOTS_DIR, os.path.basename(input_file))
+    with open(snapshot_file) as f:
+        expected = f.read()
+
+    assert _normalize(printed) == _normalize(expected), (
+        f"Snapshot mismatch for {input_file}.\n"
+        f"=== Generated ===\n{printed}\n"
+        f"=== Snapshot ===\n{expected}"
+    )

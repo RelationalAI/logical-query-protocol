@@ -1,7 +1,13 @@
-# Python
+# Code generators
+meta/build/
+meta/src/*.egg-info/
+
+# Proto generated files
+/gen
+
+# Python SDK
 .venv
 .pytest_cache
-**/uv.lock
 __pycache__/
 python-tools/dist/
 python-tools/build/
@@ -10,10 +16,7 @@ python-tools/out/
 python-tools/.lsp/.cache
 python-tools/.clj-kondo
 
-# Proto generated files
-/gen
-
-# Julia
+# Julia SDK
 julia/LogicalQueryProtocol/Manifest.toml
 
 # Other
@@ -21,4 +24,3 @@ julia/LogicalQueryProtocol/Manifest.toml
 .envrc
 .lsp
 .clj-kondo
-

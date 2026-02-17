@@ -11,30 +11,35 @@ authors = [
     { name = "Sławek Staworko", email = "slawek.staworko@relational.ai" },
     { name = "Nate Nystrom", email = "nate.nystrom@relational.ai" },
 ]
+requires-python = ">=3.10"
 dependencies = [
-    "lark>=1.1.9",
     "protobuf>=3.20.3,<5.0.0",
-    "colorama",
-    "more-itertools",
 ]
 
 [project.scripts]
 lqp = "lqp.cli:main"
-lqp-meta-tool = "meta.cli:main"
 
-[project.optional-dependencies]
-test = [
+[dependency-groups]
+dev = [
+    "build",
     "pytest>=7.0.0",
     "pytest-snapshot",
     "pyrefly==0.25.1",
+    "ruff",
 ]
 
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools.package-data]
-meta = ["grammar.y", "*.template"]
+[tool.ruff]
+exclude = ["src/lqp/proto", "src/lqp/gen"]
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+ignore = ["E501"]
+
 
 [tool.pyright]
 include = ["src", "tests"]

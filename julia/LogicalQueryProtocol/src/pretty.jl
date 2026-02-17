@@ -122,374 +122,64 @@ end
 
 # --- Helper functions ---
 
-function _extract_value_int32(pp::PrettyPrinter, value::Union{Nothing, Proto.Value}, default::Int64)::Int32
-    if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
-        return Int32(_get_oneof_field(value, :int_value))
-    end
-    return Int32(default)
-end
-
-function _extract_value_int64(pp::PrettyPrinter, value::Union{Nothing, Proto.Value}, default::Int64)::Int64
-    if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
-        return _get_oneof_field(value, :int_value)
-    end
-    return default
-end
-
-function _extract_value_float64(pp::PrettyPrinter, value::Union{Nothing, Proto.Value}, default::Float64)::Float64
-    if (!isnothing(value) && _has_proto_field(value, Symbol("float_value")))
-        return _get_oneof_field(value, :float_value)
-    end
-    return default
-end
-
-function _extract_value_string(pp::PrettyPrinter, value::Union{Nothing, Proto.Value}, default::String)::String
-    if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
-        return _get_oneof_field(value, :string_value)
-    end
-    return default
-end
-
-function _extract_value_boolean(pp::PrettyPrinter, value::Union{Nothing, Proto.Value}, default::Bool)::Bool
-    if (!isnothing(value) && _has_proto_field(value, Symbol("boolean_value")))
-        return _get_oneof_field(value, :boolean_value)
-    end
-    return default
-end
-
-function _extract_value_bytes(pp::PrettyPrinter, value::Union{Nothing, Proto.Value}, default::Vector{UInt8})::Vector{UInt8}
-    if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
-        return Vector{UInt8}(_get_oneof_field(value, :string_value))
-    end
-    return default
-end
-
-function _extract_value_uint128(pp::PrettyPrinter, value::Union{Nothing, Proto.Value}, default::Proto.UInt128Value)::Proto.UInt128Value
-    if (!isnothing(value) && _has_proto_field(value, Symbol("uint128_value")))
-        return _get_oneof_field(value, :uint128_value)
-    end
-    return default
-end
-
-function _extract_value_string_list(pp::PrettyPrinter, value::Union{Nothing, Proto.Value}, default::Vector{String})::Vector{String}
-    if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
-        return String[_get_oneof_field(value, :string_value)]
-    end
-    return default
-end
-
-function _try_extract_value_int64(pp::PrettyPrinter, value::Union{Nothing, Proto.Value})::Union{Nothing, Int64}
-    if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
-        return _get_oneof_field(value, :int_value)
-    end
-    return nothing
-end
-
-function _try_extract_value_float64(pp::PrettyPrinter, value::Union{Nothing, Proto.Value})::Union{Nothing, Float64}
-    if (!isnothing(value) && _has_proto_field(value, Symbol("float_value")))
-        return _get_oneof_field(value, :float_value)
-    end
-    return nothing
-end
-
-function _try_extract_value_string(pp::PrettyPrinter, value::Union{Nothing, Proto.Value})::Union{Nothing, String}
-    if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
-        return _get_oneof_field(value, :string_value)
-    end
-    return nothing
-end
-
-function _try_extract_value_bytes(pp::PrettyPrinter, value::Union{Nothing, Proto.Value})::Union{Nothing, Vector{UInt8}}
-    if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
-        return Vector{UInt8}(_get_oneof_field(value, :string_value))
-    end
-    return nothing
-end
-
-function _try_extract_value_uint128(pp::PrettyPrinter, value::Union{Nothing, Proto.Value})::Union{Nothing, Proto.UInt128Value}
-    if (!isnothing(value) && _has_proto_field(value, Symbol("uint128_value")))
-        return _get_oneof_field(value, :uint128_value)
-    end
-    return nothing
-end
-
-function _try_extract_value_string_list(pp::PrettyPrinter, value::Union{Nothing, Proto.Value})::Union{Nothing, Vector{String}}
-    if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
-        return String[_get_oneof_field(value, :string_value)]
-    end
-    return nothing
-end
-
-function construct_csv_config(pp::PrettyPrinter, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.CSVConfig
-    config = Dict(config_dict)
-    _t1284 = _extract_value_int32(parser, get(config, "csv_header_row", nothing), 1)
-    header_row = _t1284
-    _t1285 = _extract_value_int64(parser, get(config, "csv_skip", nothing), 0)
-    skip = _t1285
-    _t1286 = _extract_value_string(parser, get(config, "csv_new_line", nothing), "")
-    new_line = _t1286
-    _t1287 = _extract_value_string(parser, get(config, "csv_delimiter", nothing), ",")
-    delimiter = _t1287
-    _t1288 = _extract_value_string(parser, get(config, "csv_quotechar", nothing), "\"")
-    quotechar = _t1288
-    _t1289 = _extract_value_string(parser, get(config, "csv_escapechar", nothing), "\"")
-    escapechar = _t1289
-    _t1290 = _extract_value_string(parser, get(config, "csv_comment", nothing), "")
-    comment = _t1290
-    _t1291 = _extract_value_string_list(parser, get(config, "csv_missing_strings", nothing), String[])
-    missing_strings = _t1291
-    _t1292 = _extract_value_string(parser, get(config, "csv_decimal_separator", nothing), ".")
-    decimal_separator = _t1292
-    _t1293 = _extract_value_string(parser, get(config, "csv_encoding", nothing), "utf-8")
-    encoding = _t1293
-    _t1294 = _extract_value_string(parser, get(config, "csv_compression", nothing), "auto")
-    compression = _t1294
-    _t1295 = Proto.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression)
-    return _t1295
-end
-
-function construct_betree_info(pp::PrettyPrinter, key_types::Vector{Proto.var"#Type"}, value_types::Vector{Proto.var"#Type"}, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.BeTreeInfo
-    config = Dict(config_dict)
-    _t1296 = _try_extract_value_float64(parser, get(config, "betree_config_epsilon", nothing))
-    epsilon = _t1296
-    _t1297 = _try_extract_value_int64(parser, get(config, "betree_config_max_pivots", nothing))
-    max_pivots = _t1297
-    _t1298 = _try_extract_value_int64(parser, get(config, "betree_config_max_deltas", nothing))
-    max_deltas = _t1298
-    _t1299 = _try_extract_value_int64(parser, get(config, "betree_config_max_leaf", nothing))
-    max_leaf = _t1299
-    _t1300 = Proto.BeTreeConfig(epsilon=epsilon, max_pivots=max_pivots, max_deltas=max_deltas, max_leaf=max_leaf)
-    storage_config = _t1300
-    _t1301 = _try_extract_value_uint128(parser, get(config, "betree_locator_root_pageid", nothing))
-    root_pageid = _t1301
-    _t1302 = _try_extract_value_bytes(parser, get(config, "betree_locator_inline_data", nothing))
-    inline_data = _t1302
-    _t1303 = _try_extract_value_int64(parser, get(config, "betree_locator_element_count", nothing))
-    element_count = _t1303
-    _t1304 = _try_extract_value_int64(parser, get(config, "betree_locator_tree_height", nothing))
-    tree_height = _t1304
-    _t1305 = Proto.BeTreeLocator(location=(!isnothing(root_pageid) ? OneOf(:root_pageid, root_pageid) : (!isnothing(inline_data) ? OneOf(:inline_data, inline_data) : nothing)), element_count=element_count, tree_height=tree_height)
-    relation_locator = _t1305
-    _t1306 = Proto.BeTreeInfo(key_types=key_types, value_types=value_types, storage_config=storage_config, relation_locator=relation_locator)
-    return _t1306
-end
-
-function default_configure(pp::PrettyPrinter)::Proto.Configure
-    _t1307 = Proto.IVMConfig(level=Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF)
-    ivm_config = _t1307
-    _t1308 = Proto.Configure(semantics_version=0, ivm_config=ivm_config)
-    return _t1308
-end
-
-function construct_configure(pp::PrettyPrinter, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.Configure
-    config = Dict(config_dict)
-    maintenance_level_val = get(config, "ivm.maintenance_level", nothing)
-    maintenance_level = Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
-    if (!isnothing(maintenance_level_val) && _has_proto_field(maintenance_level_val, Symbol("string_value")))
-        if _get_oneof_field(maintenance_level_val, :string_value) == "off"
-            maintenance_level = Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
-        else
-            if _get_oneof_field(maintenance_level_val, :string_value) == "auto"
-                maintenance_level = Proto.MaintenanceLevel.MAINTENANCE_LEVEL_AUTO
-            else
-                if _get_oneof_field(maintenance_level_val, :string_value) == "all"
-                    maintenance_level = Proto.MaintenanceLevel.MAINTENANCE_LEVEL_ALL
-                else
-                    maintenance_level = Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
-                end
-            end
-        end
-    end
-    _t1309 = Proto.IVMConfig(level=maintenance_level)
-    ivm_config = _t1309
-    _t1310 = _extract_value_int64(parser, get(config, "semantics_version", nothing), 0)
-    semantics_version = _t1310
-    _t1311 = Proto.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
-    return _t1311
-end
-
-function export_csv_config(pp::PrettyPrinter, path::String, columns::Vector{Proto.ExportCSVColumn}, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.ExportCSVConfig
-    config = Dict(config_dict)
-    _t1312 = _extract_value_int64(parser, get(config, "partition_size", nothing), 0)
-    partition_size = _t1312
-    _t1313 = _extract_value_string(parser, get(config, "compression", nothing), "")
-    compression = _t1313
-    _t1314 = _extract_value_boolean(parser, get(config, "syntax_header_row", nothing), true)
-    syntax_header_row = _t1314
-    _t1315 = _extract_value_string(parser, get(config, "syntax_missing_string", nothing), "")
-    syntax_missing_string = _t1315
-    _t1316 = _extract_value_string(parser, get(config, "syntax_delim", nothing), ",")
-    syntax_delim = _t1316
-    _t1317 = _extract_value_string(parser, get(config, "syntax_quotechar", nothing), "\"")
-    syntax_quotechar = _t1317
-    _t1318 = _extract_value_string(parser, get(config, "syntax_escapechar", nothing), "\\")
-    syntax_escapechar = _t1318
-    _t1319 = Proto.ExportCSVConfig(path=path, data_columns=columns, partition_size=partition_size, compression=compression, syntax_header_row=syntax_header_row, syntax_missing_string=syntax_missing_string, syntax_delim=syntax_delim, syntax_quotechar=syntax_quotechar, syntax_escapechar=syntax_escapechar)
-    return _t1319
-end
-
 function _make_value_int32(pp::PrettyPrinter, v::Int32)::Proto.Value
-    _t1320 = Proto.Value(value=OneOf(:int_value, Int64(v)))
-    return _t1320
-end
-
-function _make_value_int64(pp::PrettyPrinter, v::Int64)::Proto.Value
-    _t1321 = Proto.Value(value=OneOf(:int_value, v))
-    return _t1321
-end
-
-function _make_value_float64(pp::PrettyPrinter, v::Float64)::Proto.Value
-    _t1322 = Proto.Value(value=OneOf(:float_value, v))
-    return _t1322
+    _t1284 = Proto.Value(value=OneOf(:int_value, Int64(v)))
+    return _t1284
 end
 
 function _make_value_string(pp::PrettyPrinter, v::String)::Proto.Value
-    _t1323 = Proto.Value(value=OneOf(:string_value, v))
-    return _t1323
-end
-
-function _make_value_boolean(pp::PrettyPrinter, v::Bool)::Proto.Value
-    _t1324 = Proto.Value(value=OneOf(:boolean_value, v))
-    return _t1324
+    _t1285 = Proto.Value(value=OneOf(:string_value, v))
+    return _t1285
 end
 
 function _make_value_uint128(pp::PrettyPrinter, v::Proto.UInt128Value)::Proto.Value
-    _t1325 = Proto.Value(value=OneOf(:uint128_value, v))
-    return _t1325
+    _t1286 = Proto.Value(value=OneOf(:uint128_value, v))
+    return _t1286
 end
 
-function is_default_configure(pp::PrettyPrinter, cfg::Proto.Configure)::Bool
-    if cfg.semantics_version != 0
-        return false
-    end
-    if cfg.ivm_config.level != Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
-        return false
-    end
-    return true
+function _make_value_float64(pp::PrettyPrinter, v::Float64)::Proto.Value
+    _t1287 = Proto.Value(value=OneOf(:float_value, v))
+    return _t1287
 end
 
-function deconstruct_configure(pp::PrettyPrinter, msg::Proto.Configure)::Vector{Tuple{String, Proto.Value}}
-    result = Tuple{String, Proto.Value}[]
-    if msg.ivm_config.level == Proto.MaintenanceLevel.MAINTENANCE_LEVEL_AUTO
-        _t1326 = _make_value_string(parser, "auto")
-        push!(result, ("ivm.maintenance_level", _t1326,))
-    else
-        if msg.ivm_config.level == Proto.MaintenanceLevel.MAINTENANCE_LEVEL_ALL
-            _t1327 = _make_value_string(parser, "all")
-            push!(result, ("ivm.maintenance_level", _t1327,))
-        else
-            if msg.ivm_config.level == Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
-                _t1328 = _make_value_string(parser, "off")
-                push!(result, ("ivm.maintenance_level", _t1328,))
-            end
-        end
-    end
-    _t1329 = _make_value_int64(parser, msg.semantics_version)
-    push!(result, ("semantics_version", _t1329,))
-    return sort(result)
+function _make_value_boolean(pp::PrettyPrinter, v::Bool)::Proto.Value
+    _t1288 = Proto.Value(value=OneOf(:boolean_value, v))
+    return _t1288
 end
 
-function deconstruct_csv_config(pp::PrettyPrinter, msg::Proto.CSVConfig)::Vector{Tuple{String, Proto.Value}}
-    result = Tuple{String, Proto.Value}[]
-    _t1330 = _make_value_int32(parser, msg.header_row)
-    push!(result, ("csv_header_row", _t1330,))
-    _t1331 = _make_value_int64(parser, msg.skip)
-    push!(result, ("csv_skip", _t1331,))
-    if msg.new_line != ""
-        _t1332 = _make_value_string(parser, msg.new_line)
-        push!(result, ("csv_new_line", _t1332,))
-    end
-    _t1333 = _make_value_string(parser, msg.delimiter)
-    push!(result, ("csv_delimiter", _t1333,))
-    _t1334 = _make_value_string(parser, msg.quotechar)
-    push!(result, ("csv_quotechar", _t1334,))
-    _t1335 = _make_value_string(parser, msg.escapechar)
-    push!(result, ("csv_escapechar", _t1335,))
-    if msg.comment != ""
-        _t1336 = _make_value_string(parser, msg.comment)
-        push!(result, ("csv_comment", _t1336,))
-    end
-    for missing_string in msg.missing_strings
-        _t1337 = _make_value_string(parser, missing_string)
-        push!(result, ("csv_missing_strings", _t1337,))
-    end
-    _t1338 = _make_value_string(parser, msg.decimal_separator)
-    push!(result, ("csv_decimal_separator", _t1338,))
-    _t1339 = _make_value_string(parser, msg.encoding)
-    push!(result, ("csv_encoding", _t1339,))
-    _t1340 = _make_value_string(parser, msg.compression)
-    push!(result, ("csv_compression", _t1340,))
-    return sort(result)
+function deconstruct_bindings_with_arity(pp::PrettyPrinter, abs::Proto.Abstraction, value_arity::Int64)::Tuple{Vector{Proto.Binding}, Vector{Proto.Binding}}
+    n = length(abs.vars)
+    key_end = (n - value_arity)
+    return (abs.vars[0:key_end], abs.vars[key_end:n],)
 end
 
 function deconstruct_betree_info_config(pp::PrettyPrinter, msg::Proto.BeTreeInfo)::Vector{Tuple{String, Proto.Value}}
     result = Tuple{String, Proto.Value}[]
-    _t1341 = _make_value_float64(parser, msg.storage_config.epsilon)
-    push!(result, ("betree_config_epsilon", _t1341,))
-    _t1342 = _make_value_int64(parser, msg.storage_config.max_pivots)
-    push!(result, ("betree_config_max_pivots", _t1342,))
-    _t1343 = _make_value_int64(parser, msg.storage_config.max_deltas)
-    push!(result, ("betree_config_max_deltas", _t1343,))
-    _t1344 = _make_value_int64(parser, msg.storage_config.max_leaf)
-    push!(result, ("betree_config_max_leaf", _t1344,))
+    _t1289 = _make_value_float64(parser, msg.storage_config.epsilon)
+    push!(result, ("betree_config_epsilon", _t1289,))
+    _t1290 = _make_value_int64(parser, msg.storage_config.max_pivots)
+    push!(result, ("betree_config_max_pivots", _t1290,))
+    _t1291 = _make_value_int64(parser, msg.storage_config.max_deltas)
+    push!(result, ("betree_config_max_deltas", _t1291,))
+    _t1292 = _make_value_int64(parser, msg.storage_config.max_leaf)
+    push!(result, ("betree_config_max_leaf", _t1292,))
     if _has_proto_field(msg.relation_locator, Symbol("root_pageid"))
         if !isnothing(_get_oneof_field(msg.relation_locator, :root_pageid))
-            _t1345 = _make_value_uint128(parser, _get_oneof_field(msg.relation_locator, :root_pageid))
-            push!(result, ("betree_locator_root_pageid", _t1345,))
+            _t1293 = _make_value_uint128(parser, _get_oneof_field(msg.relation_locator, :root_pageid))
+            push!(result, ("betree_locator_root_pageid", _t1293,))
         end
     end
     if _has_proto_field(msg.relation_locator, Symbol("inline_data"))
         if !isnothing(_get_oneof_field(msg.relation_locator, :inline_data))
-            _t1346 = _make_value_string(parser, String(_get_oneof_field(msg.relation_locator, :inline_data)))
-            push!(result, ("betree_locator_inline_data", _t1346,))
+            _t1294 = _make_value_string(parser, String(_get_oneof_field(msg.relation_locator, :inline_data)))
+            push!(result, ("betree_locator_inline_data", _t1294,))
         end
     end
-    _t1347 = _make_value_int64(parser, msg.relation_locator.element_count)
-    push!(result, ("betree_locator_element_count", _t1347,))
-    _t1348 = _make_value_int64(parser, msg.relation_locator.tree_height)
-    push!(result, ("betree_locator_tree_height", _t1348,))
+    _t1295 = _make_value_int64(parser, msg.relation_locator.element_count)
+    push!(result, ("betree_locator_element_count", _t1295,))
+    _t1296 = _make_value_int64(parser, msg.relation_locator.tree_height)
+    push!(result, ("betree_locator_tree_height", _t1296,))
     return sort(result)
-end
-
-function deconstruct_export_csv_config(pp::PrettyPrinter, msg::Proto.ExportCSVConfig)::Vector{Tuple{String, Proto.Value}}
-    result = Tuple{String, Proto.Value}[]
-    if !isnothing(msg.partition_size)
-        _t1349 = _make_value_int64(parser, msg.partition_size)
-        push!(result, ("partition_size", _t1349,))
-    end
-    if !isnothing(msg.compression)
-        _t1350 = _make_value_string(parser, msg.compression)
-        push!(result, ("compression", _t1350,))
-    end
-    if !isnothing(msg.syntax_header_row)
-        _t1351 = _make_value_boolean(parser, msg.syntax_header_row)
-        push!(result, ("syntax_header_row", _t1351,))
-    end
-    if !isnothing(msg.syntax_missing_string)
-        _t1352 = _make_value_string(parser, msg.syntax_missing_string)
-        push!(result, ("syntax_missing_string", _t1352,))
-    end
-    if !isnothing(msg.syntax_delim)
-        _t1353 = _make_value_string(parser, msg.syntax_delim)
-        push!(result, ("syntax_delim", _t1353,))
-    end
-    if !isnothing(msg.syntax_quotechar)
-        _t1354 = _make_value_string(parser, msg.syntax_quotechar)
-        push!(result, ("syntax_quotechar", _t1354,))
-    end
-    if !isnothing(msg.syntax_escapechar)
-        _t1355 = _make_value_string(parser, msg.syntax_escapechar)
-        push!(result, ("syntax_escapechar", _t1355,))
-    end
-    return sort(result)
-end
-
-function deconstruct_relation_id_string(pp::PrettyPrinter, msg::Proto.RelationId)::Union{Nothing, String}
-    name = relation_id_to_string(pp, msg)
-    if name != ""
-        return name
-    end
-    return nothing
 end
 
 function deconstruct_relation_id_uint128(pp::PrettyPrinter, msg::Proto.RelationId)::Union{Nothing, Proto.UInt128Value}
@@ -505,10 +195,104 @@ function deconstruct_bindings(pp::PrettyPrinter, abs::Proto.Abstraction)::Tuple{
     return (abs.vars[0:n], Proto.Binding[],)
 end
 
-function deconstruct_bindings_with_arity(pp::PrettyPrinter, abs::Proto.Abstraction, value_arity::Int64)::Tuple{Vector{Proto.Binding}, Vector{Proto.Binding}}
-    n = length(abs.vars)
-    key_end = (n - value_arity)
-    return (abs.vars[0:key_end], abs.vars[key_end:n],)
+function deconstruct_csv_config(pp::PrettyPrinter, msg::Proto.CSVConfig)::Vector{Tuple{String, Proto.Value}}
+    result = Tuple{String, Proto.Value}[]
+    _t1297 = _make_value_int32(parser, msg.header_row)
+    push!(result, ("csv_header_row", _t1297,))
+    _t1298 = _make_value_int64(parser, msg.skip)
+    push!(result, ("csv_skip", _t1298,))
+    if msg.new_line != ""
+        _t1299 = _make_value_string(parser, msg.new_line)
+        push!(result, ("csv_new_line", _t1299,))
+    end
+    _t1300 = _make_value_string(parser, msg.delimiter)
+    push!(result, ("csv_delimiter", _t1300,))
+    _t1301 = _make_value_string(parser, msg.quotechar)
+    push!(result, ("csv_quotechar", _t1301,))
+    _t1302 = _make_value_string(parser, msg.escapechar)
+    push!(result, ("csv_escapechar", _t1302,))
+    if msg.comment != ""
+        _t1303 = _make_value_string(parser, msg.comment)
+        push!(result, ("csv_comment", _t1303,))
+    end
+    for missing_string in msg.missing_strings
+        _t1304 = _make_value_string(parser, missing_string)
+        push!(result, ("csv_missing_strings", _t1304,))
+    end
+    _t1305 = _make_value_string(parser, msg.decimal_separator)
+    push!(result, ("csv_decimal_separator", _t1305,))
+    _t1306 = _make_value_string(parser, msg.encoding)
+    push!(result, ("csv_encoding", _t1306,))
+    _t1307 = _make_value_string(parser, msg.compression)
+    push!(result, ("csv_compression", _t1307,))
+    return sort(result)
+end
+
+function deconstruct_relation_id_string(pp::PrettyPrinter, msg::Proto.RelationId)::Union{Nothing, String}
+    name = relation_id_to_string(pp, msg)
+    if name != ""
+        return name
+    end
+    return nothing
+end
+
+function _make_value_int64(pp::PrettyPrinter, v::Int64)::Proto.Value
+    _t1308 = Proto.Value(value=OneOf(:int_value, v))
+    return _t1308
+end
+
+function deconstruct_configure(pp::PrettyPrinter, msg::Proto.Configure)::Vector{Tuple{String, Proto.Value}}
+    result = Tuple{String, Proto.Value}[]
+    if msg.ivm_config.level == Proto.MaintenanceLevel.MAINTENANCE_LEVEL_AUTO
+        _t1309 = _make_value_string(parser, "auto")
+        push!(result, ("ivm.maintenance_level", _t1309,))
+    else
+        if msg.ivm_config.level == Proto.MaintenanceLevel.MAINTENANCE_LEVEL_ALL
+            _t1310 = _make_value_string(parser, "all")
+            push!(result, ("ivm.maintenance_level", _t1310,))
+        else
+            if msg.ivm_config.level == Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
+                _t1311 = _make_value_string(parser, "off")
+                push!(result, ("ivm.maintenance_level", _t1311,))
+            end
+        end
+    end
+    _t1312 = _make_value_int64(parser, msg.semantics_version)
+    push!(result, ("semantics_version", _t1312,))
+    return sort(result)
+end
+
+function deconstruct_export_csv_config(pp::PrettyPrinter, msg::Proto.ExportCSVConfig)::Vector{Tuple{String, Proto.Value}}
+    result = Tuple{String, Proto.Value}[]
+    if !isnothing(msg.partition_size)
+        _t1313 = _make_value_int64(parser, msg.partition_size)
+        push!(result, ("partition_size", _t1313,))
+    end
+    if !isnothing(msg.compression)
+        _t1314 = _make_value_string(parser, msg.compression)
+        push!(result, ("compression", _t1314,))
+    end
+    if !isnothing(msg.syntax_header_row)
+        _t1315 = _make_value_boolean(parser, msg.syntax_header_row)
+        push!(result, ("syntax_header_row", _t1315,))
+    end
+    if !isnothing(msg.syntax_missing_string)
+        _t1316 = _make_value_string(parser, msg.syntax_missing_string)
+        push!(result, ("syntax_missing_string", _t1316,))
+    end
+    if !isnothing(msg.syntax_delim)
+        _t1317 = _make_value_string(parser, msg.syntax_delim)
+        push!(result, ("syntax_delim", _t1317,))
+    end
+    if !isnothing(msg.syntax_quotechar)
+        _t1318 = _make_value_string(parser, msg.syntax_quotechar)
+        push!(result, ("syntax_quotechar", _t1318,))
+    end
+    if !isnothing(msg.syntax_escapechar)
+        _t1319 = _make_value_string(parser, msg.syntax_escapechar)
+        push!(result, ("syntax_escapechar", _t1319,))
+    end
+    return sort(result)
 end
 
 # --- Pretty-print functions ---
