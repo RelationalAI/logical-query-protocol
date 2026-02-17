@@ -103,6 +103,7 @@ class CodeGenerator(ABC):
     ) -> None:
         self.builtin_registry: dict[str, BuiltinSpec] = {}
         self.proto_messages = proto_messages or {}
+        self._generate_cache: dict[type, Callable] = {}
 
     @abstractmethod
     def escape_keyword(self, name: str) -> str:
@@ -467,81 +468,46 @@ class CodeGenerator(ABC):
         Returns the value expression as a string, or None if the expression
         returns (i.e., contains a Return node that was executed).
         """
-        if isinstance(expr, Var):
-            return self.escape_identifier(expr.name)
+        t = type(expr)
+        method = self._generate_cache.get(t)
+        if method is None:
+            method = getattr(self, f"_generate_{t.__name__}", None)
+            if method is None:
+                raise ValueError(f"Unknown expression type: {t.__name__}")
+            self._generate_cache[t] = method
+        return method(expr, lines, indent)
 
-        elif isinstance(expr, Lit):
-            return self.gen_literal(expr.value)
+    def _generate_Var(self, expr: Var, lines: list[str], indent: str) -> str:
+        return self.escape_identifier(expr.name)
 
-        elif isinstance(expr, Symbol):
-            return self.gen_symbol(expr.name)
+    def _generate_Lit(self, expr: Lit, lines: list[str], indent: str) -> str:
+        return self.gen_literal(expr.value)
 
-        elif isinstance(expr, NewMessage):
-            return self._generate_newmessage(expr, lines, indent)
+    def _generate_Symbol(self, expr: Symbol, lines: list[str], indent: str) -> str:
+        return self.gen_symbol(expr.name)
 
-        elif isinstance(expr, EnumValue):
-            return self._generate_enum_value(expr, lines, indent)
+    def _generate_Builtin(self, expr: Builtin, lines: list[str], indent: str) -> str:
+        return self.gen_builtin_ref(expr.name)
 
-        elif isinstance(expr, Builtin):
-            return self.gen_builtin_ref(expr.name)
+    def _generate_NamedFun(self, expr: NamedFun, lines: list[str], indent: str) -> str:
+        return self.gen_named_fun_ref(expr.name)
 
-        elif isinstance(expr, NamedFun):
-            return self.gen_named_fun_ref(expr.name)
+    def _generate_PrintNonterminal(
+        self, expr: PrintNonterminal, lines: list[str], indent: str
+    ) -> str:
+        return self.gen_pretty_nonterminal_ref(expr.nonterminal.name)
 
-        elif isinstance(expr, PrintNonterminal):
-            return self.gen_pretty_nonterminal_ref(expr.nonterminal.name)
+    def _generate_ParseNonterminal(
+        self, expr: ParseNonterminal, lines: list[str], indent: str
+    ) -> str:
+        return self.gen_parse_nonterminal_ref(expr.nonterminal.name)
 
-        elif isinstance(expr, ParseNonterminal):
-            return self.gen_parse_nonterminal_ref(expr.nonterminal.name)
+    def _generate_GetField(self, expr: GetField, lines: list[str], indent: str) -> str:
+        obj_code = self.generate_lines(expr.object, lines, indent)
+        assert obj_code is not None, "GetField object should not contain a return"
+        return self.gen_field_access(obj_code, expr.field_name)
 
-        elif isinstance(expr, OneOf):
-            return self._generate_oneof(expr, lines, indent)
-
-        elif isinstance(expr, ListExpr):
-            return self._generate_list_expr(expr, lines, indent)
-
-        elif isinstance(expr, GetField):
-            obj_code = self.generate_lines(expr.object, lines, indent)
-            assert obj_code is not None, "GetField object should not contain a return"
-            return self.gen_field_access(obj_code, expr.field_name)
-
-        elif isinstance(expr, GetElement):
-            return self._generate_get_element(expr, lines, indent)
-
-        elif isinstance(expr, Call):
-            return self._generate_call(expr, lines, indent)
-
-        elif isinstance(expr, Lambda):
-            return self._generate_lambda(expr, lines, indent)
-
-        elif isinstance(expr, Let):
-            return self._generate_let(expr, lines, indent)
-
-        elif isinstance(expr, IfElse):
-            return self._generate_if_else(expr, lines, indent)
-
-        elif isinstance(expr, Seq):
-            return self._generate_seq(expr, lines, indent)
-
-        elif isinstance(expr, While):
-            return self._generate_while(expr, lines, indent)
-
-        elif isinstance(expr, Foreach):
-            return self._generate_foreach(expr, lines, indent)
-
-        elif isinstance(expr, ForeachEnumerated):
-            return self._generate_foreach_enumerated(expr, lines, indent)
-
-        elif isinstance(expr, Assign):
-            return self._generate_assign(expr, lines, indent)
-
-        elif isinstance(expr, Return):
-            return self._generate_return(expr, lines, indent)
-
-        else:
-            raise ValueError(f"Unknown expression type: {type(expr)}")
-
-    def _generate_call(self, expr: Call, lines: list[str], indent: str) -> str | None:
+    def _generate_Call(self, expr: Call, lines: list[str], indent: str) -> str | None:
         """Generate code for a function call."""
         # NewMessage should be handled directly, not wrapped in Call
         assert not isinstance(expr.func, NewMessage), (
@@ -651,7 +617,7 @@ class CodeGenerator(ABC):
             lines.append(f"{indent}{end}")
         return tmp
 
-    def _generate_newmessage(
+    def _generate_NewMessage(
         self, expr: NewMessage, lines: list[str], indent: str
     ) -> str:
         """Generate code for a NewMessage expression.
@@ -687,7 +653,7 @@ class CodeGenerator(ABC):
         lines.append(f"{indent}{self.gen_assignment(tmp, call, is_declaration=True)}")
         return tmp
 
-    def _generate_get_element(
+    def _generate_GetElement(
         self, expr: GetElement, lines: list[str], indent: str
     ) -> str:
         """Generate code for a GetElement expression.
@@ -698,13 +664,13 @@ class CodeGenerator(ABC):
         tuple_code = self.generate_lines(expr.tuple_expr, lines, indent)
         return f"{tuple_code}[{expr.index}]"
 
-    def _generate_enum_value(
+    def _generate_EnumValue(
         self, expr: EnumValue, lines: list[str], indent: str
     ) -> str:
         """Generate code for an enum value reference."""
         return self.gen_enum_value(expr.module, expr.enum_name, expr.value_name)
 
-    def _generate_oneof(self, expr: OneOf, lines: list[str], indent: str) -> str:
+    def _generate_OneOf(self, expr: OneOf, lines: list[str], indent: str) -> str:
         """Generate code for a OneOf expression.
 
         Default implementation treats it as an error since OneOf should only
@@ -715,7 +681,7 @@ class CodeGenerator(ABC):
             f"OneOf should only appear as arguments to Message constructors: {expr}"
         )
 
-    def _generate_list_expr(self, expr: ListExpr, lines: list[str], indent: str) -> str:
+    def _generate_ListExpr(self, expr: ListExpr, lines: list[str], indent: str) -> str:
         """Generate code for a list expression."""
         elements: list[str] = []
         for elem in expr.elements:
@@ -724,7 +690,7 @@ class CodeGenerator(ABC):
             elements.append(elem_code)
         return self.gen_list_literal(elements, expr.element_type)
 
-    def _generate_lambda(self, expr: Lambda, lines: list[str], indent: str) -> str:
+    def _generate_Lambda(self, expr: Lambda, lines: list[str], indent: str) -> str:
         """Generate code for a lambda expression."""
         params = [self.escape_identifier(p.name) for p in expr.params]
         f = gensym()
@@ -744,7 +710,7 @@ class CodeGenerator(ABC):
             lines.append(f"{indent}{after}")
         return f
 
-    def _generate_let(self, expr: Let, lines: list[str], indent: str) -> str | None:
+    def _generate_Let(self, expr: Let, lines: list[str], indent: str) -> str | None:
         """Generate code for a let binding."""
         var_name = self.escape_identifier(expr.var.name)
         init_val = self.generate_lines(expr.init, lines, indent)
@@ -754,7 +720,7 @@ class CodeGenerator(ABC):
         )
         return self.generate_lines(expr.body, lines, indent)
 
-    def _generate_if_else(
+    def _generate_IfElse(
         self, expr: IfElse, lines: list[str], indent: str
     ) -> str | None:
         """Generate code for an if-else expression."""
@@ -862,7 +828,7 @@ class CodeGenerator(ABC):
         lines.append(f"{body_indent}{self.gen_assignment(tmp, else_code)}")
         return else_code
 
-    def _generate_seq(self, expr: Seq, lines: list[str], indent: str) -> str | None:
+    def _generate_Seq(self, expr: Seq, lines: list[str], indent: str) -> str | None:
         """Generate code for a sequence of expressions.
 
         If any expression returns None (indicating a return statement was executed),
@@ -875,7 +841,7 @@ class CodeGenerator(ABC):
                 break
         return result
 
-    def _generate_while(self, expr: While, lines: list[str], indent: str) -> str:
+    def _generate_While(self, expr: While, lines: list[str], indent: str) -> str:
         """Generate code for a while loop."""
         m = len(lines)
         cond_code = self.generate_lines(expr.condition, lines, indent)
@@ -904,7 +870,7 @@ class CodeGenerator(ABC):
 
         return self.gen_none()
 
-    def _generate_foreach(self, expr: Foreach, lines: list[str], indent: str) -> str:
+    def _generate_Foreach(self, expr: Foreach, lines: list[str], indent: str) -> str:
         """Generate code for a foreach loop."""
         collection_code = self.generate_lines(expr.collection, lines, indent)
         assert collection_code is not None, (
@@ -922,7 +888,7 @@ class CodeGenerator(ABC):
 
         return self.gen_none()
 
-    def _generate_foreach_enumerated(
+    def _generate_ForeachEnumerated(
         self, expr: ForeachEnumerated, lines: list[str], indent: str
     ) -> str:
         """Generate code for a foreach enumerated loop."""
@@ -945,7 +911,7 @@ class CodeGenerator(ABC):
 
         return self.gen_none()
 
-    def _generate_assign(self, expr: Assign, lines: list[str], indent: str) -> str:
+    def _generate_Assign(self, expr: Assign, lines: list[str], indent: str) -> str:
         """Generate code for an assignment."""
         var_name = self.escape_identifier(expr.var.name)
         expr_code = self.generate_lines(expr.expr, lines, indent)
@@ -955,7 +921,7 @@ class CodeGenerator(ABC):
         lines.append(f"{indent}{self.gen_assignment(var_name, expr_code)}")
         return self.gen_none()
 
-    def _generate_return(self, expr: Return, lines: list[str], indent: str) -> None:
+    def _generate_Return(self, expr: Return, lines: list[str], indent: str) -> None:
         """Generate code for a return statement.
 
         Returns None to indicate that the caller should not add another return
@@ -971,9 +937,7 @@ class CodeGenerator(ABC):
     # --- Function definition generation ---
 
     def generate_def(
-        self,
-        expr: FunDef | ParseNonterminalDef | PrintNonterminalDef,
-        indent: str = "",
+        self, expr: FunDef | ParseNonterminalDef | PrintNonterminalDef, indent: str = ""
     ) -> str:
         """Generate a function definition."""
         if isinstance(expr, FunDef):

@@ -129,9 +129,7 @@ class GoCodeGenerator(CodeGenerator):
         self._declared_vars = set()
 
     def set_current_return_type(
-        self,
-        return_type: str | None,
-        return_target_type: TargetType | None = None,
+        self, return_type: str | None, return_target_type: TargetType | None = None
     ) -> None:
         """Set the current function's return type for zero value generation."""
         from .target import OptionType
@@ -402,7 +400,7 @@ class GoCodeGenerator(CodeGenerator):
         """Go's var declarations zero-initialize, so no else branch needed."""
         return self.gen_none()
 
-    def _generate_get_element(
+    def _generate_GetElement(
         self, expr: GetElement, lines: list[str], indent: str
     ) -> str:
         """Go uses 0-based indexing with type assertion for tuple elements."""
@@ -438,21 +436,15 @@ class GoCodeGenerator(CodeGenerator):
         inner_go = self.gen_type(expr.field_type.element_type)
         return not self._is_nullable_go_type(inner_go)
 
-    def generate_lines(
-        self, expr: TargetExpr, lines: list[str], indent: str = ""
-    ) -> str | None:
-        from .target import GetField
-
-        # For optional scalar proto fields, use direct PascalCase access
-        # to preserve pointer type (getters strip it).
-        if isinstance(expr, GetField) and self._is_optional_scalar_field(expr):
+    def _generate_GetField(self, expr, lines: list[str], indent: str) -> str:
+        if self._is_optional_scalar_field(expr):
             obj_code = self.generate_lines(expr.object, lines, indent)
             assert obj_code is not None
             pascal_field = to_pascal_case(expr.field_name)
             return f"{obj_code}.{pascal_field}"
-        return super().generate_lines(expr, lines, indent)
+        return super()._generate_GetField(expr, lines, indent)
 
-    def _generate_seq(self, expr: Seq, lines: list[str], indent: str) -> str | None:
+    def _generate_Seq(self, expr: Seq, lines: list[str], indent: str) -> str | None:
         """Generate Go sequence, suppressing unused variable errors.
 
         In Go, declared-but-unused variables are compile errors. When an
@@ -473,7 +465,7 @@ class GoCodeGenerator(CodeGenerator):
                 lines.append(f"{indent}_ = {result}")
         return result
 
-    def _generate_newmessage(
+    def _generate_NewMessage(
         self, expr: NewMessage, lines: list[str], indent: str
     ) -> str:
         """Generate Go code for NewMessage with fields containing OneOf calls.
@@ -636,7 +628,7 @@ class GoCodeGenerator(CodeGenerator):
 
         return tmp
 
-    def _generate_call(self, expr: Call, lines: list[str], indent: str) -> str | None:
+    def _generate_Call(self, expr: Call, lines: list[str], indent: str) -> str | None:
         """Override to handle OneOf, Parse/PrintNonterminal, NamedFun, and option builtins for Go."""
         from .target import (
             BaseType,
@@ -715,7 +707,7 @@ class GoCodeGenerator(CodeGenerator):
             return tmp
 
         # Fall back to base implementation
-        return super()._generate_call(expr, lines, indent)
+        return super()._generate_Call(expr, lines, indent)
 
     def _generate_option_builtin(
         self, expr: Call, lines: list[str], indent: str
@@ -801,9 +793,9 @@ class GoCodeGenerator(CodeGenerator):
             return f"deref({opt_code}, {default_code})"
 
         # Should not reach here
-        return super()._generate_call(expr, lines, indent)
+        return super()._generate_Call(expr, lines, indent)
 
-    def _generate_oneof(self, expr: OneOf, lines: list[str], indent: str) -> str:
+    def _generate_OneOf(self, expr: OneOf, lines: list[str], indent: str) -> str:
         """Generate Go OneOf reference.
 
         OneOf should only appear as the function in Call(OneOf(...), [value]).
@@ -813,7 +805,7 @@ class GoCodeGenerator(CodeGenerator):
             f"OneOf should only appear in Call(OneOf(...), [value]) pattern: {expr}"
         )
 
-    def _generate_return(self, expr, lines: list[str], indent: str) -> None:
+    def _generate_Return(self, expr, lines: list[str], indent: str) -> None:
         """Generate Go return statement, wrapping with ptr() for Option types when needed."""
         from .target import Builtin, Call, Lit
 
@@ -843,7 +835,7 @@ class GoCodeGenerator(CodeGenerator):
         lines.append(f"{indent}{self.gen_return(expr_code)}")
         return None
 
-    def _generate_assign(self, expr, lines: list[str], indent: str) -> str:
+    def _generate_Assign(self, expr, lines: list[str], indent: str) -> str:
         """Generate Go assignment, handling type-annotated nil declarations.
 
         In Go, `var_name := nil` is not valid because nil has no type.
