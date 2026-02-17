@@ -17,7 +17,6 @@ from lqp.proto.v1 import fragments_pb2, logic_pb2
 
 from .utils import TEST_INPUTS_DIR, get_lqp_input_files
 
-
 # ---------------------------------------------------------------------------
 # Roundtrip tests: parse -> pretty -> re-parse, compare protobuf bytes
 # ---------------------------------------------------------------------------
