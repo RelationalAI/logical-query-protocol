@@ -1,0 +1,54 @@
+;; Snapshot action: define relations, then capture them as EDBs in a separate epoch.
+(transaction
+  (epoch
+    (writes
+      ;; Define the EDBs we're going to be referring to.
+      (define
+        (fragment :snapshots
+          (rel_edb :snapshot1 ["my_edb"] [])
+          (rel_edb :snapshot2 ["database" "table"] [])
+          (rel_edb :snapshot3 ["schema" "namespace" "relation"] [])))
+      (define
+        (fragment :frag1
+          (def :my_rel
+            ([x::INT y::STRING]
+              (and
+                (= x 1)
+                (= y "hello"))))
+          (csv_data
+            (csv_locator
+              (inline_data "id,big_signed,big_unsigned\n1,170141183460469231731687303715884105727,340282366920938463463374607431768211455\n2,-170141183460469231731687303715884105728,0\n3,0,1"))
+            (csv_config
+              {:csv_header_row 1
+               :csv_delimiter ","
+               :csv_quotechar "\""
+               :csv_escapechar "\\"})
+            (columns
+              (column "id" :id [INT INT])
+              (column "big_signed" :big_signed [INT INT128])
+              (column "big_unsigned" :big_unsigned [INT UINT128]))
+            (asof "2025-01-01T00:00:00Z"))
+          (algorithm :computed :input
+            (script
+              (assign :computed
+                ([a::INT b::INT]
+                  (and
+                    (atom :input a)
+                    (= b a)))))))))
+    ;; Snapshots are empty at this point.
+    (reads
+      (output :snapshot1 :snapshot1)
+      (output :snapshot2 :snapshot2)
+      (output :snapshot3 :snapshot3)))
+
+  ;; Snapshot the defined relations as EDBs
+  (epoch
+    (writes
+      (snapshot ["my_edb"] :my_rel)
+      (snapshot ["database" "table"] :computed)
+      (snapshot ["schema" "namespace" "relation"] :big_signed))
+    ;; Snapshots should match the relations now.
+    (reads
+      (output :snapshot1 :snapshot1)
+      (output :snapshot2 :snapshot2)
+      (output :snapshot3 :snapshot3))))
