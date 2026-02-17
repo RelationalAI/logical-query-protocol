@@ -40,7 +40,7 @@ class PythonCodeGenerator(CodeGenerator):
         'Boolean': 'bool',
         'Bytes': 'bytes',
         'Void': 'None',
-        'Never': 'NoReturn',
+        'Never': 'Never',
     }
 
     def __init__(self, proto_messages=None):
@@ -90,7 +90,13 @@ class PythonCodeGenerator(CodeGenerator):
         return "True" if value else "False"
 
     def gen_string(self, value: str) -> str:
-        return repr(value)
+        if '"' in value and "'" not in value:
+            return repr(value)
+        r = repr(value)
+        if r.startswith("'") and r.endswith("'"):
+            inner = r[1:-1].replace("\\'", "'").replace('"', '\\"')
+            return f'"{inner}"'
+        return r
 
     # --- Symbol and constructor generation ---
 
@@ -268,9 +274,9 @@ class PythonCodeGenerator(CodeGenerator):
 
         for field_name, field_value in deferred_fields:
             if field_is_repeated.get(field_name, False):
-                lines.append(f"{indent}getattr({tmp}, '{field_name}').extend({field_value})")
+                lines.append(f'{indent}getattr({tmp}, "{field_name}").extend({field_value})')
             else:
-                lines.append(f"{indent}getattr({tmp}, '{field_name}').CopyFrom({field_value})")
+                lines.append(f'{indent}getattr({tmp}, "{field_name}").CopyFrom({field_value})')
 
     def _build_message_field_map(self) -> dict:
         """Build field mapping from proto message definitions.
@@ -357,11 +363,30 @@ class PythonCodeGenerator(CodeGenerator):
     # Parser generation settings
     parse_def_indent = "    "
 
+    @staticmethod
+    def _regex_literal(pattern: str) -> str:
+        """Format a regex pattern string, using single quotes if pattern contains double quotes."""
+        if '"' in pattern:
+            return f"r'{pattern}'"
+        return f'r"{pattern}"'
+
     def format_literal_token_spec(self, escaped_literal: str) -> str:
-        return f"            ('LITERAL', re.compile(r'{escaped_literal}'), lambda x: x),"
+        regex = self._regex_literal(escaped_literal)
+        return f'            ("LITERAL", re.compile({regex}), lambda x: x),'
 
     def format_named_token_spec(self, token_name: str, token_pattern: str) -> str:
-        return f"            ('{token_name}', re.compile(r'{token_pattern}'), lambda x: Lexer.scan_{token_name.lower()}(x)),"
+        regex = self._regex_literal(token_pattern)
+        scan = f"Lexer.scan_{token_name.lower()}"
+        one_line = f'            ("{token_name}", re.compile({regex}), lambda x: {scan}(x)),'
+        if len(one_line) <= 88:
+            return one_line
+        return (
+            f"            (\n"
+            f'                "{token_name}",\n'
+            f"                re.compile({regex}),\n"
+            f"                lambda x: {scan}(x),\n"
+            f"            ),"
+        )
 
     def format_command_line_comment(self, command_line: str) -> str:
         return f"\nCommand: {command_line}\n"

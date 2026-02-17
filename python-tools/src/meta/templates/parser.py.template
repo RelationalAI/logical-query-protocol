@@ -19,11 +19,13 @@ from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
 
 class ParseError(Exception):
     """Parse error exception."""
+
     pass
 
 
 class Token:
     """Token representation."""
+
     def __init__(self, type: str, value: str, pos: int):
         self.type = type
         self.value = value
@@ -35,6 +37,7 @@ class Token:
 
 class Lexer:
     """Tokenizer for the input."""
+
     def __init__(self, input_str: str):
         self.input = input_str
         self.pos = 0
@@ -46,8 +49,8 @@ class Lexer:
         token_specs = [
 {token_specs}        ]
 
-        whitespace_re = re.compile(r'\s+')
-        comment_re = re.compile(r';;.*')
+        whitespace_re = re.compile(r"\s+")
+        comment_re = re.compile(r";;.*")
 
         while self.pos < len(self.input):
             match = whitespace_re.match(self.input, self.pos)
@@ -70,14 +73,16 @@ class Lexer:
                     candidates.append((token_type, value, action, match.end()))
 
             if not candidates:
-                raise ParseError(f'Unexpected character at position {{self.pos}}: {{self.input[self.pos]!r}}')
+                raise ParseError(
+                    f"Unexpected character at position {{self.pos}}: {{self.input[self.pos]!r}}"
+                )
 
             # Pick the longest match
             token_type, value, action, end_pos = max(candidates, key=lambda x: x[3])
             self.tokens.append(Token(token_type, action(value), self.pos))
             self.pos = end_pos
 
-        self.tokens.append(Token('$', '', self.pos))
+        self.tokens.append(Token("$", "", self.pos))
 
     @staticmethod
     def scan_symbol(s: str) -> str:
@@ -99,16 +104,16 @@ class Lexer:
         """Parse INT token."""
         val = int(n)
         if val < -(1 << 63) or val >= (1 << 63):
-            raise ParseError(f'Integer literal out of 64-bit range: {{n}}')
+            raise ParseError(f"Integer literal out of 64-bit range: {{n}}")
         return val
 
     @staticmethod
     def scan_float(f: str) -> float:
         """Parse FLOAT token."""
-        if f == 'inf':
-            return float('inf')
-        elif f == 'nan':
-            return float('nan')
+        if f == "inf":
+            return float("inf")
+        elif f == "nan":
+            return float("nan")
         return float(f)
 
     @staticmethod
@@ -116,7 +121,7 @@ class Lexer:
         """Parse UINT128 token."""
         uint128_val = int(u, 16)
         if uint128_val < 0 or uint128_val >= (1 << 128):
-            raise ParseError(f'UInt128 literal out of range: {{u}}')
+            raise ParseError(f"UInt128 literal out of range: {{u}}")
         low = uint128_val & 0xFFFFFFFFFFFFFFFF
         high = (uint128_val >> 64) & 0xFFFFFFFFFFFFFFFF
         return logic_pb2.UInt128Value(low=low, high=high)
@@ -124,10 +129,10 @@ class Lexer:
     @staticmethod
     def scan_int128(u: str) -> Any:
         """Parse INT128 token."""
-        u = u[:-4]  # Remove the 'i128' suffix
+        u = u[:-4]  # Remove the "i128" suffix
         int128_val = int(u)
         if int128_val < -(1 << 127) or int128_val >= (1 << 127):
-            raise ParseError(f'Int128 literal out of range: {{u}}')
+            raise ParseError(f"Int128 literal out of range: {{u}}")
         low = int128_val & 0xFFFFFFFFFFFFFFFF
         high = (int128_val >> 64) & 0xFFFFFFFFFFFFFFFF
         return logic_pb2.Int128Value(low=low, high=high)
@@ -135,15 +140,15 @@ class Lexer:
     @staticmethod
     def scan_decimal(d: str) -> Any:
         """Parse DECIMAL token."""
-        # Decimal is a string like '123.456d12' where the last part after `d` is the
+        # Decimal is a string like "123.456d12" where the last part after `d` is the
         # precision, and the scale is the number of digits between the decimal point and `d`
-        parts = d.split('d')
+        parts = d.split("d")
         if len(parts) != 2:
-            raise ValueError(f'Invalid decimal format: {{d}}')
-        scale = len(parts[0].split('.')[1])
+            raise ValueError(f"Invalid decimal format: {{d}}")
+        scale = len(parts[0].split(".")[1])
         precision = int(parts[1])
-        # Parse the integer value directly without calling scan_int128 which strips 'i128' suffix
-        int_str = parts[0].replace('.', '')
+        # Parse the integer value directly without calling scan_int128 which strips "i128" suffix
+        int_str = parts[0].replace(".", "")
         int128_val = int(int_str)
         low = int128_val & 0xFFFFFFFFFFFFFFFF
         high = (int128_val >> 64) & 0xFFFFFFFFFFFFFFFF
@@ -153,6 +158,7 @@ class Lexer:
 
 class Parser:
     """LL(k) recursive-descent parser with backtracking."""
+
     def __init__(self, tokens: List[Token]):
         self.tokens = tokens
         self.pos = 0
@@ -163,20 +169,24 @@ class Parser:
     def lookahead(self, k: int = 0) -> Token:
         """Get lookahead token at offset k."""
         idx = self.pos + k
-        return self.tokens[idx] if idx < len(self.tokens) else Token('$', '', -1)
+        return self.tokens[idx] if idx < len(self.tokens) else Token("$", "", -1)
 
     def consume_literal(self, expected: str) -> None:
         """Consume a literal token."""
         if not self.match_lookahead_literal(expected, 0):
             token = self.lookahead(0)
-            raise ParseError(f'Expected literal {{expected!r}} but got {{token.type}}=`{{token.value!r}}` at position {{token.pos}}')
+            raise ParseError(
+                f"Expected literal {{expected!r}} but got {{token.type}}=`{{token.value!r}}` at position {{token.pos}}"
+            )
         self.pos += 1
 
     def consume_terminal(self, expected: str) -> Any:
         """Consume a terminal token and return parsed value."""
         if not self.match_lookahead_terminal(expected, 0):
             token = self.lookahead(0)
-            raise ParseError(f'Expected terminal {{expected}} but got {{token.type}}=`{{token.value!r}}` at position {{token.pos}}')
+            raise ParseError(
+                f"Expected terminal {{expected}} but got {{token.type}}=`{{token.value!r}}` at position {{token.pos}}"
+            )
         token = self.lookahead(0)
         self.pos += 1
         return token.value
@@ -188,9 +198,9 @@ class Parser:
         so we check both LITERAL and SYMBOL token types.
         """
         token = self.lookahead(k)
-        if token.type == 'LITERAL' and token.value == literal:
+        if token.type == "LITERAL" and token.value == literal:
             return True
-        if token.type == 'SYMBOL' and token.value == literal:
+        if token.type == "SYMBOL" and token.value == literal:
             return True
         return False
 
@@ -199,7 +209,9 @@ class Parser:
         token = self.lookahead(k)
         return token.type == terminal
 
-    def start_fragment(self, fragment_id: fragments_pb2.FragmentId) -> fragments_pb2.FragmentId:
+    def start_fragment(
+        self, fragment_id: fragments_pb2.FragmentId
+    ) -> fragments_pb2.FragmentId:
         """Set current fragment ID for debug info tracking."""
         self._current_fragment_id = fragment_id.id
         return fragment_id
@@ -215,11 +227,16 @@ class Parser:
         if self._current_fragment_id is not None:
             if self._current_fragment_id not in self.id_to_debuginfo:
                 self.id_to_debuginfo[self._current_fragment_id] = {{}}
-            self.id_to_debuginfo[self._current_fragment_id][(relation_id.id_low, relation_id.id_high)] = name
+            key = (relation_id.id_low, relation_id.id_high)
+            self.id_to_debuginfo[self._current_fragment_id][key] = name
 
         return relation_id
 
-    def construct_fragment(self, fragment_id: fragments_pb2.FragmentId, declarations: List[logic_pb2.Declaration]) -> fragments_pb2.Fragment:
+    def construct_fragment(
+        self,
+        fragment_id: fragments_pb2.FragmentId,
+        declarations: List[logic_pb2.Declaration],
+    ) -> fragments_pb2.Fragment:
         """Construct Fragment from fragment_id, declarations, and debug info from parser state."""
         # Get the debug info for this fragment
         debug_info_dict = self.id_to_debuginfo.get(fragment_id.id, {{}})
@@ -238,15 +255,21 @@ class Parser:
         self._current_fragment_id = None
 
         # Create and return Fragment
-        return fragments_pb2.Fragment(id=fragment_id, declarations=declarations, debug_info=debug_info)
+        return fragments_pb2.Fragment(
+            id=fragment_id, declarations=declarations, debug_info=debug_info
+        )
 
     def relation_id_to_string(self, msg) -> str:
         """Stub: only used in pretty printer."""
-        raise NotImplementedError("relation_id_to_string is only available in PrettyPrinter")
+        raise NotImplementedError(
+            "relation_id_to_string is only available in PrettyPrinter"
+        )
 
     def relation_id_to_uint128(self, msg):
         """Stub: only used in pretty printer."""
-        raise NotImplementedError("relation_id_to_uint128 is only available in PrettyPrinter")
+        raise NotImplementedError(
+            "relation_id_to_uint128 is only available in PrettyPrinter"
+        )
 
     # --- Helper functions ---
 {named_function_defns}
@@ -262,6 +285,6 @@ def parse(input_str: str) -> Any:
     # Check for unconsumed tokens (except EOF)
     if parser.pos < len(parser.tokens):
         remaining_token = parser.lookahead(0)
-        if remaining_token.type != '$':
+        if remaining_token.type != "$":
             raise ParseError(f"Unexpected token at end of input: {{remaining_token}}")
     return result

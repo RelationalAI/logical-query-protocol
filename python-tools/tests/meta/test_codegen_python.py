@@ -253,7 +253,7 @@ def test_python_assign_generation():
     lines = []
     expr = Assign(Var("class", _str_type), Lit("MyClass"))
     result = gen.generate_lines(expr, lines, "")
-    assert "class_ = 'MyClass'" in lines[0]
+    assert 'class_ = "MyClass"' in lines[0]
 
 
 def test_python_return_generation():

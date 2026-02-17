@@ -16,7 +16,7 @@ from .target import (
     BaseType, SequenceType, ListType, TupleType, TargetExpr, Seq, PrintNonterminal, gensym,
     OptionType, ForeachEnumerated, GetElement
 )
-from .target_builtins import make_builtin
+from .target_builtins import make_builtin, NONE
 
 
 def generate_pretty_functions(grammar: Grammar,
@@ -50,7 +50,7 @@ def _generate_pretty_method(lhs: Nonterminal, rules: List[Rule],
     return PrintNonterminalDef(
         nonterminal=nt,
         params=[msg_param],
-        return_type=OptionType(BaseType("Never")),
+        return_type=NONE,
         body=body
     )
 
