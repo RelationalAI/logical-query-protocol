@@ -226,6 +226,7 @@ GO_TEMPLATES: dict[str, BuiltinTemplate] = {
     "to_ptr_bool": BuiltinTemplate("ptrBool({0})"),
     "map": BuiltinTemplate("mapSlice({1}, {0})"),
     "list_push": BuiltinTemplate("nil", ["{0} = append({0}, {1})"]),
+    "list_slice": BuiltinTemplate("{0}[{1}:{2}]"),
     "list_concat": BuiltinTemplate("listConcat({0}, {1})"),
     "list_sort": BuiltinTemplate("listSort({0})"),
     "fragment_id_from_string": BuiltinTemplate("&pb.FragmentId{{Id: []byte({0})}}"),

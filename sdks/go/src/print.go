@@ -966,6 +966,18 @@ func (pp PrettyParams) pprint(node interface{}) {
 					})
 				})
 			})
+		} else if snap := n.GetSnapshot(); snap != nil {
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("snapshot")
+				pp.SPACE()
+				pp.BRACKET(func(pp PrettyParams) {
+					hsep(pp, snap.GetDestinationPath(), " ", func(s string) {
+						pp.Write(fmt.Sprintf("%q", s))
+					})
+				})
+				pp.SPACE()
+				pp.pprint(snap.GetSourceRelation())
+			})
 		}
 
 	case *pb.FragmentId:
