@@ -1,23 +1,26 @@
-# Python
-.venv
-.pytest_cache
-__pycache__/
-python-tools/dist/
-python-tools/build/
-python-tools/src/*.egg-info/
-python-tools/out/
-python-tools/.lsp/.cache
-python-tools/.clj-kondo
+# Code generators
+meta/build/
+meta/src/*.egg-info/
 
 # Proto generated files
 /gen
 
-# Julia
-julia/LogicalQueryProtocol/Manifest.toml
+# Python SDK
+.venv
+.pytest_cache
+__pycache__/
+sdks/python/dist/
+sdks/python/build/
+sdks/python/src/*.egg-info/
+sdks/python/out/
+sdks/python/.lsp/.cache
+sdks/python/.clj-kondo
+
+# Julia SDK
+sdks/julia/LogicalQueryProtocol/Manifest.toml
 
 # Other
 .DS_Store
 .envrc
 .lsp
 .clj-kondo
-
