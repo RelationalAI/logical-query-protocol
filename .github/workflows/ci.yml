@@ -28,6 +28,22 @@ jobs:
         uv run ruff check
         uv run ruff format --check
 
+    - name: Lint meta
+      run: |
+        cd meta
+        uv run ruff check
+        uv run ruff format --check
+
+    - name: Test meta with pytest
+      run: |
+        cd meta
+        uv run python -m pytest
+
+    - name: Type check meta
+      run: |
+        cd meta
+        uv run pyrefly check
+
     - name: Run tests
       run: |
         cd python-tools

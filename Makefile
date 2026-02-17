@@ -26,7 +26,7 @@ PROTO_FILES := \
 	$(PROTO_DIR)/relationalai/lqp/v1/fragments.proto \
 	$(PROTO_DIR)/relationalai/lqp/v1/transactions.proto
 
-GRAMMAR := python-tools/src/meta/grammar.y
+GRAMMAR := meta/src/meta/grammar.y
 
 # Generated protobuf outputs
 PY_PROTO_DIR := python-tools/src/lqp/proto/v1
@@ -42,14 +42,14 @@ GO_PARSER := go/src/parser.go
 PY_PRINTER := python-tools/src/lqp/gen/pretty.py
 
 # Parser templates
-PY_TEMPLATE := python-tools/src/meta/templates/parser.py.template
-JL_TEMPLATE := python-tools/src/meta/templates/parser.jl.template
-GO_TEMPLATE := python-tools/src/meta/templates/parser.go.template
+PY_TEMPLATE := meta/src/meta/templates/parser.py.template
+JL_TEMPLATE := meta/src/meta/templates/parser.jl.template
+GO_TEMPLATE := meta/src/meta/templates/parser.go.template
 
 # Printer templates
-PY_PRINTER_TEMPLATE := python-tools/src/meta/templates/pretty_printer.py.template
+PY_PRINTER_TEMPLATE := meta/src/meta/templates/pretty_printer.py.template
 
-META_CLI := cd python-tools && PYTHONPATH=src uv run python -m meta.cli
+META_CLI := cd meta && uv run python -m meta.cli
 META_PROTO_ARGS := \
 	../$(PROTO_DIR)/relationalai/lqp/v1/fragments.proto \
 	../$(PROTO_DIR)/relationalai/lqp/v1/logic.proto \
@@ -73,7 +73,8 @@ JL_PROTO_GENERATED := \
 .PHONY: all protobuf parsers parser-python parser-julia parser-go \
 	force-parsers force-parser-python force-parser-julia force-parser-go \
 	printers printer-python force-printers force-printer-python \
-	test test-python test-python-update-snapshots test-julia test-go check-python \
+	test test-python test-python-update-snapshots test-julia test-go \
+	test-meta check-python check-meta lint-meta format-meta \
 	lint-python format-python clean
 
 all: protobuf parsers printers
@@ -113,7 +114,7 @@ parsers: parser-python parser-julia parser-go
 
 parser-python: $(PY_PARSER)
 $(PY_PARSER): $(PROTO_FILES) $(GRAMMAR) $(PY_TEMPLATE)
-	$(META_CLI) $(META_PROTO_ARGS) --parser python -o src/lqp/gen/parser.py
+	$(META_CLI) $(META_PROTO_ARGS) --parser python -o ../python-tools/src/lqp/gen/parser.py
 
 parser-julia: $(JL_PARSER)
 $(JL_PARSER): $(PROTO_FILES) $(GRAMMAR) $(JL_TEMPLATE)
@@ -126,7 +127,7 @@ $(GO_PARSER): $(PROTO_FILES) $(GRAMMAR) $(GO_TEMPLATE)
 force-parsers: force-parser-python force-parser-julia force-parser-go
 
 force-parser-python:
-	$(META_CLI) $(META_PROTO_ARGS) --parser python -o src/lqp/gen/parser.py
+	$(META_CLI) $(META_PROTO_ARGS) --parser python -o ../python-tools/src/lqp/gen/parser.py
 
 force-parser-julia:
 	$(META_CLI) $(META_PROTO_ARGS) --parser julia -o ../julia/LogicalQueryProtocol/src/parser.jl
@@ -140,16 +141,16 @@ printers: printer-python
 
 printer-python: $(PY_PRINTER)
 $(PY_PRINTER): $(PROTO_FILES) $(GRAMMAR) $(PY_PRINTER_TEMPLATE)
-	$(META_CLI) $(META_PROTO_ARGS) --printer python -o src/lqp/gen/pretty.py
+	$(META_CLI) $(META_PROTO_ARGS) --printer python -o ../python-tools/src/lqp/gen/pretty.py
 
 force-printers: force-printer-python
 
 force-printer-python:
-	$(META_CLI) $(META_PROTO_ARGS) --printer python -o src/lqp/gen/pretty.py
+	$(META_CLI) $(META_PROTO_ARGS) --printer python -o ../python-tools/src/lqp/gen/pretty.py
 
 # ---------- testing ----------
 
-test: test-python test-julia test-go
+test: test-meta test-python test-julia test-go
 
 test-python: $(PY_PARSER) $(PY_PROTO_GENERATED) check-python
 	cd python-tools && uv run python -m pytest
@@ -172,6 +173,19 @@ lint-python:
 
 format-python:
 	cd python-tools && uv run ruff format
+
+test-meta: check-meta
+	cd meta && uv run python -m pytest
+
+check-meta: lint-meta
+	cd meta && uv run pyrefly check
+
+lint-meta:
+	cd meta && uv run ruff check
+	cd meta && uv run ruff format --check
+
+format-meta:
+	cd meta && uv run ruff format
 
 # ---------- cleanup ----------
 

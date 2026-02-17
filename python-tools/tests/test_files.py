@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from .utils import BIN_SNAPSHOTS_DIR, PARENT_DIR, get_all_files, get_lqp_input_files
+from .utils import BIN_SNAPSHOTS_DIR, REPO_ROOT, get_all_files, get_lqp_input_files
 
 
 def get_base_filename(filepath):
@@ -18,7 +18,7 @@ def check_output_files_have_corresponding_inputs():
     missing_inputs = []
 
     output_files = [
-        (PARENT_DIR / "lqp_pretty_output", ".lqp"),
+        (REPO_ROOT / "tests" / "pretty", ".lqp"),
         (BIN_SNAPSHOTS_DIR, ".bin"),
     ]
 
