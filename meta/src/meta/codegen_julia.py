@@ -4,7 +4,7 @@ This module generates Julia code from semantic action expressions,
 with proper keyword escaping and idiomatic Julia style.
 """
 
-from .codegen_base import PARSER_MODE, CodegenConfig, CodeGenerator
+from .codegen_base import CodegenConfig, CodeGenerator
 from .codegen_templates import JULIA_TEMPLATES
 from .gensym import gensym
 from .target import (
@@ -101,7 +101,7 @@ class JuliaCodeGenerator(CodeGenerator):
         "Void": "Nothing",
     }
 
-    def __init__(self, proto_messages=None, config: CodegenConfig = PARSER_MODE):
+    def __init__(self, proto_messages=None, *, config: CodegenConfig):
         super().__init__(proto_messages, config=config)
         self._oneof_alt_set: set[tuple] | None = None
         self._register_builtins()
@@ -636,26 +636,29 @@ def escape_identifier(name: str) -> str:
     return name
 
 
-def generate_julia_type(typ) -> str:
+def generate_julia_type(typ, *, config: CodegenConfig) -> str:
     """Generate Julia type annotation from a Type expression."""
-    return JuliaCodeGenerator().gen_type(typ)
+    return JuliaCodeGenerator(config=config).gen_type(typ)
 
 
 def generate_julia_lines(
-    expr: TargetExpr, lines: list[str], indent: str = ""
+    expr: TargetExpr, lines: list[str], indent: str = "", *, config: CodegenConfig
 ) -> str | None:
     """Generate Julia code from a target IR expression."""
-    return JuliaCodeGenerator().generate_lines(expr, lines, indent)
+    return JuliaCodeGenerator(config=config).generate_lines(expr, lines, indent)
 
 
 def generate_julia_def(
-    expr: FunDef | ParseNonterminalDef | PrintNonterminalDef, indent: str = ""
+    expr: FunDef | ParseNonterminalDef | PrintNonterminalDef,
+    indent: str = "",
+    *,
+    config: CodegenConfig,
 ) -> str:
     """Generate Julia function definition."""
-    return JuliaCodeGenerator().generate_def(expr, indent)
+    return JuliaCodeGenerator(config=config).generate_def(expr, indent)
 
 
-def generate_julia(expr: TargetExpr, indent: str = "") -> str:
+def generate_julia(expr: TargetExpr, indent: str = "", *, config: CodegenConfig) -> str:
     """Generate Julia code for a single expression (inline style)."""
     if isinstance(expr, Var):
         return escape_identifier(expr.name)
@@ -671,31 +674,33 @@ def generate_julia(expr: TargetExpr, indent: str = "") -> str:
         if not expr.elements:
             return "[]"
         elements_code = ", ".join(
-            generate_julia(elem, indent) for elem in expr.elements
+            generate_julia(elem, indent, config=config) for elem in expr.elements
         )
         return f"[{elements_code}]"
     elif isinstance(expr, Call):
-        func_code = generate_julia(expr.func, indent)
-        args_code = ", ".join(generate_julia(arg, indent) for arg in expr.args)
+        func_code = generate_julia(expr.func, indent, config=config)
+        args_code = ", ".join(
+            generate_julia(arg, indent, config=config) for arg in expr.args
+        )
         return f"{func_code}({args_code})"
     elif isinstance(expr, Lambda):
         params = [escape_identifier(p.name) for p in expr.params]
         params_str = ", ".join(params) if params else ""
-        body_code = generate_julia(expr.body, indent)
+        body_code = generate_julia(expr.body, indent, config=config)
         if params:
             return f"({params_str}) -> {body_code}"
         else:
             return f"() -> {body_code}"
     elif isinstance(expr, Let):
         lines: list[str] = []
-        result = generate_julia_lines(expr, lines, indent)
+        result = generate_julia_lines(expr, lines, indent, config=config)
         result_str = result if result is not None else ""
         if lines:
             return "\n".join(lines) + "\n" + result_str
         return result_str
     else:
         lines = []
-        result = generate_julia_lines(expr, lines, indent)
+        result = generate_julia_lines(expr, lines, indent, config=config)
         result_str = result if result is not None else ""
         if lines:
             return "\n".join(lines) + "\n" + result_str

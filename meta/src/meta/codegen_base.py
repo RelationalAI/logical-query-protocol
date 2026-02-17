@@ -64,10 +64,10 @@ class CodegenConfig:
     first_param: str  # Julia first param: "parser::Parser" or "pp::PrettyPrinter"
 
 
-PARSER_MODE = CodegenConfig(
+PARSER_CONFIG = CodegenConfig(
     receiver_type="Parser", receiver_var="p", first_param="parser::Parser"
 )
-PRINTER_MODE = CodegenConfig(
+PRINTER_CONFIG = CodegenConfig(
     receiver_type="PrettyPrinter", receiver_var="p", first_param="pp::PrettyPrinter"
 )
 
@@ -118,7 +118,7 @@ class CodeGenerator(ABC):
     def __init__(
         self,
         proto_messages: dict[tuple[str, str], Any] | None = None,
-        config: CodegenConfig = PARSER_MODE,
+        config: CodegenConfig = PARSER_CONFIG,
     ) -> None:
         self.builtin_registry: dict[str, BuiltinSpec] = {}
         self.proto_messages = proto_messages or {}

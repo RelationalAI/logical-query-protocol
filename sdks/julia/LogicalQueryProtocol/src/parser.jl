@@ -323,81 +323,24 @@ end
 
 # --- Helper functions ---
 
-function _extract_value_string(parser::Parser, value::Union{Nothing, Proto.Value}, default::String)::String
-    if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
-        return _get_oneof_field(value, :string_value)
-    end
-    return default
-end
-
-function _try_extract_value_int64(parser::Parser, value::Union{Nothing, Proto.Value})::Union{Nothing, Int64}
-    if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
-        return _get_oneof_field(value, :int_value)
-    end
-    return nothing
-end
-
-function default_configure(parser::Parser)::Proto.Configure
-    _t945 = Proto.IVMConfig(level=Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF)
-    ivm_config = _t945
-    _t946 = Proto.Configure(semantics_version=0, ivm_config=ivm_config)
-    return _t946
-end
-
-function _extract_value_boolean(parser::Parser, value::Union{Nothing, Proto.Value}, default::Bool)::Bool
-    if (!isnothing(value) && _has_proto_field(value, Symbol("boolean_value")))
-        return _get_oneof_field(value, :boolean_value)
-    end
-    return default
-end
-
-function _try_extract_value_uint128(parser::Parser, value::Union{Nothing, Proto.Value})::Union{Nothing, Proto.UInt128Value}
-    if (!isnothing(value) && _has_proto_field(value, Symbol("uint128_value")))
-        return _get_oneof_field(value, :uint128_value)
-    end
-    return nothing
-end
-
-function _try_extract_value_bytes(parser::Parser, value::Union{Nothing, Proto.Value})::Union{Nothing, Vector{UInt8}}
-    if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
-        return Vector{UInt8}(_get_oneof_field(value, :string_value))
-    end
-    return nothing
-end
-
-function construct_csv_config(parser::Parser, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.CSVConfig
+function export_csv_config(parser::Parser, path::String, columns::Vector{Proto.ExportCSVColumn}, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.ExportCSVConfig
     config = Dict(config_dict)
-    _t947 = _extract_value_int32(parser, get(config, "csv_header_row", nothing), 1)
-    header_row = _t947
-    _t948 = _extract_value_int64(parser, get(config, "csv_skip", nothing), 0)
-    skip = _t948
-    _t949 = _extract_value_string(parser, get(config, "csv_new_line", nothing), "")
-    new_line = _t949
-    _t950 = _extract_value_string(parser, get(config, "csv_delimiter", nothing), ",")
-    delimiter = _t950
-    _t951 = _extract_value_string(parser, get(config, "csv_quotechar", nothing), "\"")
-    quotechar = _t951
-    _t952 = _extract_value_string(parser, get(config, "csv_escapechar", nothing), "\"")
-    escapechar = _t952
-    _t953 = _extract_value_string(parser, get(config, "csv_comment", nothing), "")
-    comment = _t953
-    _t954 = _extract_value_string_list(parser, get(config, "csv_missing_strings", nothing), String[])
-    missing_strings = _t954
-    _t955 = _extract_value_string(parser, get(config, "csv_decimal_separator", nothing), ".")
-    decimal_separator = _t955
-    _t956 = _extract_value_string(parser, get(config, "csv_encoding", nothing), "utf-8")
-    encoding = _t956
-    _t957 = _extract_value_string(parser, get(config, "csv_compression", nothing), "auto")
-    compression = _t957
-    _t958 = Proto.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression)
-    return _t958
-end
-
-function _extract_value_string_list(parser::Parser, value::Union{Nothing, Proto.Value}, default::Vector{String})::Vector{String}
-    if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
-        return String[_get_oneof_field(value, :string_value)]
-    end
-    return default
+    _t945 = _extract_value_int64(parser, get(config, "partition_size", nothing), 0)
+    partition_size = _t945
+    _t946 = _extract_value_string(parser, get(config, "compression", nothing), "")
+    compression = _t946
+    _t947 = _extract_value_boolean(parser, get(config, "syntax_header_row", nothing), true)
+    syntax_header_row = _t947
+    _t948 = _extract_value_string(parser, get(config, "syntax_missing_string", nothing), "")
+    syntax_missing_string = _t948
+    _t949 = _extract_value_string(parser, get(config, "syntax_delim", nothing), ",")
+    syntax_delim = _t949
+    _t950 = _extract_value_string(parser, get(config, "syntax_quotechar", nothing), "\"")
+    syntax_quotechar = _t950
+    _t951 = _extract_value_string(parser, get(config, "syntax_escapechar", nothing), "\\")
+    syntax_escapechar = _t951
+    _t952 = Proto.ExportCSVConfig(path=path, data_columns=columns, partition_size=partition_size, compression=compression, syntax_header_row=syntax_header_row, syntax_missing_string=syntax_missing_string, syntax_delim=syntax_delim, syntax_quotechar=syntax_quotechar, syntax_escapechar=syntax_escapechar)
+    return _t952
 end
 
 function construct_configure(parser::Parser, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.Configure
@@ -419,46 +362,82 @@ function construct_configure(parser::Parser, config_dict::Vector{Tuple{String, P
             end
         end
     end
-    _t959 = Proto.IVMConfig(level=maintenance_level)
-    ivm_config = _t959
-    _t960 = _extract_value_int64(parser, get(config, "semantics_version", nothing), 0)
-    semantics_version = _t960
-    _t961 = Proto.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
-    return _t961
+    _t953 = Proto.IVMConfig(level=maintenance_level)
+    ivm_config = _t953
+    _t954 = _extract_value_int64(parser, get(config, "semantics_version", nothing), 0)
+    semantics_version = _t954
+    _t955 = Proto.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
+    return _t955
 end
 
-function export_csv_config(parser::Parser, path::String, columns::Vector{Proto.ExportCSVColumn}, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.ExportCSVConfig
-    config = Dict(config_dict)
-    _t962 = _extract_value_int64(parser, get(config, "partition_size", nothing), 0)
-    partition_size = _t962
-    _t963 = _extract_value_string(parser, get(config, "compression", nothing), "")
-    compression = _t963
-    _t964 = _extract_value_boolean(parser, get(config, "syntax_header_row", nothing), true)
-    syntax_header_row = _t964
-    _t965 = _extract_value_string(parser, get(config, "syntax_missing_string", nothing), "")
-    syntax_missing_string = _t965
-    _t966 = _extract_value_string(parser, get(config, "syntax_delim", nothing), ",")
-    syntax_delim = _t966
-    _t967 = _extract_value_string(parser, get(config, "syntax_quotechar", nothing), "\"")
-    syntax_quotechar = _t967
-    _t968 = _extract_value_string(parser, get(config, "syntax_escapechar", nothing), "\\")
-    syntax_escapechar = _t968
-    _t969 = Proto.ExportCSVConfig(path=path, data_columns=columns, partition_size=partition_size, compression=compression, syntax_header_row=syntax_header_row, syntax_missing_string=syntax_missing_string, syntax_delim=syntax_delim, syntax_quotechar=syntax_quotechar, syntax_escapechar=syntax_escapechar)
-    return _t969
-end
-
-function _try_extract_value_float64(parser::Parser, value::Union{Nothing, Proto.Value})::Union{Nothing, Float64}
-    if (!isnothing(value) && _has_proto_field(value, Symbol("float_value")))
-        return _get_oneof_field(value, :float_value)
+function _try_extract_value_int64(parser::Parser, value::Union{Nothing, Proto.Value})::Union{Nothing, Int64}
+    if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
+        return _get_oneof_field(value, :int_value)
     end
     return nothing
 end
 
-function _extract_value_int64(parser::Parser, value::Union{Nothing, Proto.Value}, default::Int64)::Int64
-    if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
-        return _get_oneof_field(value, :int_value)
+function _extract_value_boolean(parser::Parser, value::Union{Nothing, Proto.Value}, default::Bool)::Bool
+    if (!isnothing(value) && _has_proto_field(value, Symbol("boolean_value")))
+        return _get_oneof_field(value, :boolean_value)
     end
     return default
+end
+
+function _extract_value_int32(parser::Parser, value::Union{Nothing, Proto.Value}, default::Int64)::Int32
+    if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
+        return Int32(_get_oneof_field(value, :int_value))
+    end
+    return Int32(default)
+end
+
+function _try_extract_value_uint128(parser::Parser, value::Union{Nothing, Proto.Value})::Union{Nothing, Proto.UInt128Value}
+    if (!isnothing(value) && _has_proto_field(value, Symbol("uint128_value")))
+        return _get_oneof_field(value, :uint128_value)
+    end
+    return nothing
+end
+
+function _try_extract_value_bytes(parser::Parser, value::Union{Nothing, Proto.Value})::Union{Nothing, Vector{UInt8}}
+    if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
+        return Vector{UInt8}(_get_oneof_field(value, :string_value))
+    end
+    return nothing
+end
+
+function default_configure(parser::Parser)::Proto.Configure
+    _t956 = Proto.IVMConfig(level=Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF)
+    ivm_config = _t956
+    _t957 = Proto.Configure(semantics_version=0, ivm_config=ivm_config)
+    return _t957
+end
+
+function construct_csv_config(parser::Parser, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.CSVConfig
+    config = Dict(config_dict)
+    _t958 = _extract_value_int32(parser, get(config, "csv_header_row", nothing), 1)
+    header_row = _t958
+    _t959 = _extract_value_int64(parser, get(config, "csv_skip", nothing), 0)
+    skip = _t959
+    _t960 = _extract_value_string(parser, get(config, "csv_new_line", nothing), "")
+    new_line = _t960
+    _t961 = _extract_value_string(parser, get(config, "csv_delimiter", nothing), ",")
+    delimiter = _t961
+    _t962 = _extract_value_string(parser, get(config, "csv_quotechar", nothing), "\"")
+    quotechar = _t962
+    _t963 = _extract_value_string(parser, get(config, "csv_escapechar", nothing), "\"")
+    escapechar = _t963
+    _t964 = _extract_value_string(parser, get(config, "csv_comment", nothing), "")
+    comment = _t964
+    _t965 = _extract_value_string_list(parser, get(config, "csv_missing_strings", nothing), String[])
+    missing_strings = _t965
+    _t966 = _extract_value_string(parser, get(config, "csv_decimal_separator", nothing), ".")
+    decimal_separator = _t966
+    _t967 = _extract_value_string(parser, get(config, "csv_encoding", nothing), "utf-8")
+    encoding = _t967
+    _t968 = _extract_value_string(parser, get(config, "csv_compression", nothing), "auto")
+    compression = _t968
+    _t969 = Proto.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression)
+    return _t969
 end
 
 function construct_betree_info(parser::Parser, key_types::Vector{Proto.var"#Type"}, value_types::Vector{Proto.var"#Type"}, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.BeTreeInfo
@@ -487,11 +466,32 @@ function construct_betree_info(parser::Parser, key_types::Vector{Proto.var"#Type
     return _t980
 end
 
-function _extract_value_int32(parser::Parser, value::Union{Nothing, Proto.Value}, default::Int64)::Int32
-    if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
-        return Int32(_get_oneof_field(value, :int_value))
+function _extract_value_string(parser::Parser, value::Union{Nothing, Proto.Value}, default::String)::String
+    if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
+        return _get_oneof_field(value, :string_value)
     end
-    return Int32(default)
+    return default
+end
+
+function _extract_value_string_list(parser::Parser, value::Union{Nothing, Proto.Value}, default::Vector{String})::Vector{String}
+    if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
+        return String[_get_oneof_field(value, :string_value)]
+    end
+    return default
+end
+
+function _extract_value_int64(parser::Parser, value::Union{Nothing, Proto.Value}, default::Int64)::Int64
+    if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
+        return _get_oneof_field(value, :int_value)
+    end
+    return default
+end
+
+function _try_extract_value_float64(parser::Parser, value::Union{Nothing, Proto.Value})::Union{Nothing, Float64}
+    if (!isnothing(value) && _has_proto_field(value, Symbol("float_value")))
+        return _get_oneof_field(value, :float_value)
+    end
+    return nothing
 end
 
 # --- Parse functions ---
