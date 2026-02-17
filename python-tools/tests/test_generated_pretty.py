@@ -21,6 +21,7 @@ from .utils import TEST_INPUTS_DIR, get_lqp_input_files
 # Roundtrip tests: parse -> pretty -> re-parse, compare protobuf bytes
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.parametrize("input_file", get_lqp_input_files())
 def test_roundtrip(input_file):
     """Pretty-printed output must re-parse to the same protobuf."""
@@ -41,6 +42,7 @@ def test_roundtrip(input_file):
 # Snapshot tests
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.parametrize("input_file", get_lqp_input_files())
 def test_pretty_snapshot(snapshot, input_file):
     """Pretty output must match saved snapshots."""
@@ -55,6 +57,7 @@ def test_pretty_snapshot(snapshot, input_file):
 # ---------------------------------------------------------------------------
 # max_width tests
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.parametrize("input_file", get_lqp_input_files())
 def test_roundtrip_narrow(input_file):
@@ -84,7 +87,7 @@ def test_narrow_width_produces_more_lines():
     proto = generated_parse(content)
     default_output = pretty(proto)
     narrow_output = pretty(proto, max_width=40)
-    assert narrow_output.count('\n') >= default_output.count('\n')
+    assert narrow_output.count("\n") >= default_output.count("\n")
 
 
 def test_wide_width_produces_fewer_lines():
@@ -93,12 +96,13 @@ def test_wide_width_produces_fewer_lines():
     proto = generated_parse(content)
     default_output = pretty(proto)
     wide_output = pretty(proto, max_width=1000)
-    assert wide_output.count('\n') <= default_output.count('\n')
+    assert wide_output.count("\n") <= default_output.count("\n")
 
 
 # ---------------------------------------------------------------------------
 # IO parameter tests
 # ---------------------------------------------------------------------------
+
 
 def test_pretty_writes_to_provided_io():
     """When an IO object is provided, pretty printer writes to it."""
@@ -123,6 +127,7 @@ def test_pretty_returns_string_without_io():
 # PrettyPrinter unit tests
 # ---------------------------------------------------------------------------
 
+
 class TestPrettyPrinterWrite:
     def test_write_indentation(self):
         """indent() pushes the current column as the new indent level."""
@@ -137,7 +142,7 @@ class TestPrettyPrinterWrite:
 
     def test_write_no_indent_in_flat_mode(self):
         pp = PrettyPrinter()
-        pp.separator = ' '
+        pp.separator = " "
         pp.at_line_start = False
         pp.indent()
         pp.newline()
@@ -158,10 +163,10 @@ class TestPrettyPrinterWrite:
     def test_indent_dedent(self):
         pp = PrettyPrinter()
         pp.write("(")
-        pp.indent()   # pushes column 1
+        pp.indent()  # pushes column 1
         pp.newline()
         pp.write("(")
-        pp.indent()   # pushes column 2
+        pp.indent()  # pushes column 2
         pp.newline()
         pp.write("a")
         pp.dedent()
@@ -298,7 +303,7 @@ class TestTryFlat:
         proto = generated_parse(content)
         wide = pretty(proto, max_width=1000)
         narrow = pretty(proto, max_width=20)
-        assert narrow.count('\n') >= wide.count('\n')
+        assert narrow.count("\n") >= wide.count("\n")
 
     def test_memo_caching(self):
         """Flat representations should be memoized."""
@@ -328,6 +333,7 @@ class TestGetOutput:
 # Output content sanity checks
 # ---------------------------------------------------------------------------
 
+
 class TestOutputContent:
     def test_output_starts_with_transaction(self):
         content = Path(TEST_INPUTS_DIR / "simple_relatom.lqp").read_text()
@@ -347,8 +353,8 @@ class TestOutputContent:
                 content = f.read()
             proto = generated_parse(content)
             output = pretty(proto)
-            opens = output.count('(')
-            closes = output.count(')')
+            opens = output.count("(")
+            closes = output.count(")")
             assert opens == closes, (
                 f"Unbalanced parens in {Path(input_file).name}: "
                 f"{opens} opens vs {closes} closes"
@@ -360,8 +366,8 @@ class TestOutputContent:
                 content = f.read()
             proto = generated_parse(content)
             output = pretty(proto)
-            opens = output.count('[')
-            closes = output.count(']')
+            opens = output.count("[")
+            closes = output.count("]")
             assert opens == closes, (
                 f"Unbalanced brackets in {Path(input_file).name}: "
                 f"{opens} opens vs {closes} closes"
@@ -371,8 +377,16 @@ class TestOutputContent:
         content = Path(TEST_INPUTS_DIR / "values.lqp").read_text()
         proto = generated_parse(content)
         output = pretty(proto)
-        for kw in ["transaction", "epoch", "writes", "define", "fragment",
-                    "def", "reads", "output"]:
+        for kw in [
+            "transaction",
+            "epoch",
+            "writes",
+            "define",
+            "fragment",
+            "def",
+            "reads",
+            "output",
+        ]:
             assert kw in output, f"Missing keyword '{kw}' in values output"
 
     def test_arithmetic_contains_operators(self):
@@ -389,7 +403,7 @@ class TestOutputContent:
                 content = f.read()
             proto = generated_parse(content)
             output = pretty(proto)
-            for i, line in enumerate(output.split('\n'), 1):
+            for i, line in enumerate(output.split("\n"), 1):
                 assert line == line.rstrip(), (
                     f"Trailing whitespace on line {i} of "
                     f"{Path(input_file).name}: {line!r}"
