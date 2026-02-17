@@ -78,7 +78,7 @@ PYTHON_TEMPLATES: dict[str, BuiltinTemplate] = {
     "construct_fragment": BuiltinTemplate("self.construct_fragment({0}, {1})"),
     "error": BuiltinTemplate(None, ["raise ParseError({0})"]),
     "error_with_token": BuiltinTemplate(
-        None, ['raise ParseError(f"{{{0}}}: {{{1}.type}}=`{{{1}.value}}`")']
+        None, ['raise ParseError({0} + f": {{{1}.type}}=`{{{1}.value}}`")']
     ),
     # Pretty-printing builtins
     "write_io": BuiltinTemplate("None", ["self.write({0})"]),

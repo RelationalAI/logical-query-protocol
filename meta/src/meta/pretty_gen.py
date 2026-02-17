@@ -340,38 +340,22 @@ def _generate_pretty_sequence_from_fields(
     # Count non-literal elements to determine if fields_var is a tuple or single value
     non_lit_count = sum(1 for e in elems if not isinstance(e, LitTerminal))
 
-    # Detect bracket group: "[" ... "]" with non-literal children
     first_elem = elems[0] if elems else None
     last_elem = elems[-1] if elems else None
-    is_bracket_group = (
-        non_lit_count > 0
-        and len(elems) >= 2
-        and isinstance(first_elem, LitTerminal)
-        and first_elem.name == "["
-        and isinstance(last_elem, LitTerminal)
-        and last_elem.name == "]"
-    )
 
-    # Detect non-keyword paren group: "(" ... ")" with non-literal children, not a sexp
-    is_paren_group = (
-        non_lit_count > 0
-        and not is_sexp
-        and len(elems) >= 2
-        and isinstance(first_elem, LitTerminal)
-        and first_elem.name == "("
-        and isinstance(last_elem, LitTerminal)
-        and last_elem.name == ")"
-    )
+    def _is_delimited(open_delim: str, close_delim: str) -> bool:
+        return (
+            non_lit_count > 0
+            and len(elems) >= 2
+            and isinstance(first_elem, LitTerminal)
+            and first_elem.name == open_delim
+            and isinstance(last_elem, LitTerminal)
+            and last_elem.name == close_delim
+        )
 
-    # Detect curly brace group: "{" ... "}" with non-literal children
-    is_brace_group = (
-        non_lit_count > 0
-        and len(elems) >= 2
-        and isinstance(first_elem, LitTerminal)
-        and first_elem.name == "{"
-        and isinstance(last_elem, LitTerminal)
-        and last_elem.name == "}"
-    )
+    is_bracket_group = _is_delimited("[", "]")
+    is_paren_group = not is_sexp and _is_delimited("(", ")")
+    is_brace_group = _is_delimited("{", "}")
 
     # Whether this is a structured group that uses newlines between children
     is_group = is_sexp or is_bracket_group or is_paren_group or is_brace_group
@@ -417,21 +401,22 @@ def _generate_pretty_sequence_from_fields(
         if isinstance(elem, LitTerminal):
             is_keyword = is_sexp and i == 1
 
-            # Closing brackets: emit dedent before
-            if is_sexp and elem.name == ")" and non_lit_count > 0:
-                stmts.append(Call(make_builtin("dedent_io"), []))
-            elif is_bracket_group and elem.name == "]":
-                stmts.append(Call(make_builtin("dedent_io"), []))
-            elif is_paren_group and elem.name == ")":
+            # Closing delimiter: emit dedent before
+            is_closing = (
+                (is_sexp and elem.name == ")" and non_lit_count > 0)
+                or (is_bracket_group and elem.name == "]")
+                or (is_paren_group and elem.name == ")")
+            )
+            if is_closing:
                 stmts.append(Call(make_builtin("dedent_io"), []))
             stmts.append(_format_literal(elem))
 
-            # Opening brackets/keyword: emit indent after
+            # Opening delimiter/keyword: emit indent after
             if is_keyword and non_lit_count > 0:
                 stmts.append(Call(make_builtin("indent_sexp_io"), []))
-            elif is_bracket_group and elem.name == "[":
-                stmts.append(Call(make_builtin("indent_io"), []))
-            elif is_paren_group and elem.name == "(":
+            elif (is_bracket_group and elem.name == "[") or (
+                is_paren_group and elem.name == "("
+            ):
                 stmts.append(Call(make_builtin("indent_io"), []))
             prev_lit_name = elem.name
         else:
