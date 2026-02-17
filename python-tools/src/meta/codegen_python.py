@@ -40,6 +40,7 @@ class PythonCodeGenerator(CodeGenerator):
         'Boolean': 'bool',
         'Bytes': 'bytes',
         'Void': 'None',
+        'Never': 'NoReturn',
     }
 
     def __init__(self, proto_messages=None):
