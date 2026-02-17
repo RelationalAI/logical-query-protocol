@@ -1,32 +1,40 @@
-# python-tools
+# LQP Python SDK
 
-A command-line tool to parse Logical Query Protocol (LQP) S-expressions into Protobuf binary
-and JSON formats.
+Python SDK for the [Logical Query Protocol](../../README.md) (LQP). Provides ProtoBuf
+bindings, a parser and pretty-printer for the human-readable S-expression syntax, and a
+CLI for converting between S-expression and ProtoBuf formats.
 
 ## Installation
 
-The `lqp` package is available on PyPi through `pip`. Use
+The `lqp` package is available on [PyPI](https://pypi.org/project/lqp/). Install it with
 ```bash
-pip install lqp
+uv add lqp
+```
+or, equivalently, `pip install lqp`.
+
+## CLI Usage
+
+To run the CLI without installing it into your project, use `uvx`:
+```bash
+uvx lqp --help
 ```
 
-## Usage
-
 ```
-usage: lqp [-h] [-v] [--no-validation] [--bin] [--json] [--out] input
+usage: lqp [-h] [-v] [--no-validation] [--out] [--bin | --json | --lqp] input
 
-Parse LQP S-expression into Protobuf binary and JSON files.
+Parse, validate, and translate LQP files.
 
 positional arguments:
-  input            directory holding .lqp files, or a single .lqp file
+  input            .lqp or .bin file, or a directory
 
 options:
   -h, --help       show this help message and exit
   -v, --version    show program's version number and exit
-  --no-validation  don't validate parsed LQP
-  --bin            encode emitted ProtoBuf into binary
-  --json           encode emitted ProtoBuf into JSON
-  --out            write emitted binary or JSON to stdout
+  --no-validation  skip validation
+  --out            write output to stdout
+  --bin            write protobuf binary output
+  --json           write protobuf JSON output
+  --lqp            pretty-print LQP output
 ```
 
 ## Examples
@@ -85,7 +93,7 @@ make check-python                    # lint + type check only
 make format-python                   # auto-format with ruff
 ```
 
-Or run tools directly from within `python-tools/`:
+Or run tools directly from within `sdks/python/`:
 ```bash
 uv run lqp --help                         # run the lqp CLI from source
 uv run python -m pytest                   # run tests

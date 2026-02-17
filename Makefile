@@ -29,17 +29,17 @@ PROTO_FILES := \
 GRAMMAR := meta/src/meta/grammar.y
 
 # Generated protobuf outputs
-PY_PROTO_DIR := python-tools/src/lqp/proto/v1
-JL_PROTO_DIR := julia/LogicalQueryProtocol/src/gen/relationalai/lqp/v1
-GO_PROTO_DIR := go/src/lqp/v1
+PY_PROTO_DIR := sdks/python/src/lqp/proto/v1
+JL_PROTO_DIR := sdks/julia/LogicalQueryProtocol/src/gen/relationalai/lqp/v1
+GO_PROTO_DIR := sdks/go/src/lqp/v1
 
 # Generated parser outputs
-PY_PARSER := python-tools/src/lqp/gen/parser.py
-JL_PARSER := julia/LogicalQueryProtocol/src/parser.jl
-GO_PARSER := go/src/parser.go
+PY_PARSER := sdks/python/src/lqp/gen/parser.py
+JL_PARSER := sdks/julia/LogicalQueryProtocol/src/parser.jl
+GO_PARSER := sdks/go/src/parser.go
 
 # Generated printer outputs
-PY_PRINTER := python-tools/src/lqp/gen/pretty.py
+PY_PRINTER := sdks/python/src/lqp/gen/pretty.py
 
 # Parser templates
 PY_TEMPLATE := meta/src/meta/templates/parser.py.template
@@ -79,7 +79,7 @@ JL_PROTO_GENERATED := \
 
 all: protobuf parsers printers
 
-# ---------- protobuf build (replaces ./build script) ----------
+# ---------- protobuf build ----------
 
 protobuf: $(PY_PROTO_GENERATED) $(GO_PROTO_GENERATED) $(JL_PROTO_GENERATED)
 
@@ -106,7 +106,7 @@ $(PY_PROTO_GENERATED) $(GO_PROTO_GENERATED): $(PROTO_FILES)
 $(JL_PROTO_GENERATED): $(PROTO_FILES)
 	buf lint
 	buf breaking --against ".git#branch=main,subdir=proto"
-	cd julia && julia --project=LogicalQueryProtocol generate_proto.jl
+	cd sdks/julia && julia --project=LogicalQueryProtocol generate_proto.jl
 
 # ---------- parser generation ----------
 
@@ -114,26 +114,26 @@ parsers: parser-python parser-julia parser-go
 
 parser-python: $(PY_PARSER)
 $(PY_PARSER): $(PROTO_FILES) $(GRAMMAR) $(PY_TEMPLATE)
-	$(META_CLI) $(META_PROTO_ARGS) --parser python -o ../python-tools/src/lqp/gen/parser.py
+	$(META_CLI) $(META_PROTO_ARGS) --parser python -o ../sdks/python/src/lqp/gen/parser.py
 
 parser-julia: $(JL_PARSER)
 $(JL_PARSER): $(PROTO_FILES) $(GRAMMAR) $(JL_TEMPLATE)
-	$(META_CLI) $(META_PROTO_ARGS) --parser julia -o ../julia/LogicalQueryProtocol/src/parser.jl
+	$(META_CLI) $(META_PROTO_ARGS) --parser julia -o ../sdks/julia/LogicalQueryProtocol/src/parser.jl
 
 parser-go: $(GO_PARSER)
 $(GO_PARSER): $(PROTO_FILES) $(GRAMMAR) $(GO_TEMPLATE)
-	$(META_CLI) $(META_PROTO_ARGS) --parser go -o ../go/src/parser.go
+	$(META_CLI) $(META_PROTO_ARGS) --parser go -o ../sdks/go/src/parser.go
 
 force-parsers: force-parser-python force-parser-julia force-parser-go
 
 force-parser-python:
-	$(META_CLI) $(META_PROTO_ARGS) --parser python -o ../python-tools/src/lqp/gen/parser.py
+	$(META_CLI) $(META_PROTO_ARGS) --parser python -o ../sdks/python/src/lqp/gen/parser.py
 
 force-parser-julia:
-	$(META_CLI) $(META_PROTO_ARGS) --parser julia -o ../julia/LogicalQueryProtocol/src/parser.jl
+	$(META_CLI) $(META_PROTO_ARGS) --parser julia -o ../sdks/julia/LogicalQueryProtocol/src/parser.jl
 
 force-parser-go:
-	$(META_CLI) $(META_PROTO_ARGS) --parser go -o ../go/src/parser.go
+	$(META_CLI) $(META_PROTO_ARGS) --parser go -o ../sdks/go/src/parser.go
 
 # ---------- printer generation ----------
 
@@ -141,38 +141,38 @@ printers: printer-python
 
 printer-python: $(PY_PRINTER)
 $(PY_PRINTER): $(PROTO_FILES) $(GRAMMAR) $(PY_PRINTER_TEMPLATE)
-	$(META_CLI) $(META_PROTO_ARGS) --printer python -o ../python-tools/src/lqp/gen/pretty.py
+	$(META_CLI) $(META_PROTO_ARGS) --printer python -o ../sdks/python/src/lqp/gen/pretty.py
 
 force-printers: force-printer-python
 
 force-printer-python:
-	$(META_CLI) $(META_PROTO_ARGS) --printer python -o ../python-tools/src/lqp/gen/pretty.py
+	$(META_CLI) $(META_PROTO_ARGS) --printer python -o ../sdks/python/src/lqp/gen/pretty.py
 
 # ---------- testing ----------
 
 test: test-meta test-python test-julia test-go
 
 test-python: $(PY_PARSER) $(PY_PROTO_GENERATED) check-python
-	cd python-tools && uv run python -m pytest
+	cd sdks/python && uv run python -m pytest
 
 test-python-update-snapshots: $(PY_PARSER) $(PY_PROTO_GENERATED)
-	cd python-tools && uv run python -m pytest --snapshot-update
+	cd sdks/python && uv run python -m pytest --snapshot-update
 
 test-julia: $(JL_PARSER) $(JL_PROTO_GENERATED)
-	cd julia && julia --project=LogicalQueryProtocol -e 'using Pkg; Pkg.test()'
+	cd sdks/julia && julia --project=LogicalQueryProtocol -e 'using Pkg; Pkg.test()'
 
 test-go: $(GO_PARSER) $(GO_PROTO_GENERATED)
-	cd go && go test ./test/...
+	cd sdks/go && go test ./test/...
 
 check-python: lint-python
-	cd python-tools && uv run pyrefly check
+	cd sdks/python && uv run pyrefly check
 
 lint-python:
-	cd python-tools && uv run ruff check
-	cd python-tools && uv run ruff format --check
+	cd sdks/python && uv run ruff check
+	cd sdks/python && uv run ruff format --check
 
 format-python:
-	cd python-tools && uv run ruff format
+	cd sdks/python && uv run ruff format
 
 test-meta: check-meta
 	cd meta && uv run python -m pytest
