@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Optional
 
 from .codegen_base import CodeGenerator
+from .dead_functions import live_functions
 from .grammar import Grammar
 from .pretty_gen import generate_pretty_functions
 
@@ -26,8 +27,13 @@ def generate_pretty_printer(
     lines.append("")
     pretty_nonterminal_defns = "\n".join(lines)
 
+    live_funs = live_functions(
+        [defn.body for defn in defns],
+        grammar.function_defs,
+    )
+
     function_lines = []
-    for fundef in grammar.function_defs.values():
+    for fundef in live_funs.values():
         function_lines.append("")
         function_lines.append(codegen.generate_method_def(fundef, indent))
     named_function_defns = "\n".join(function_lines) if function_lines else ""

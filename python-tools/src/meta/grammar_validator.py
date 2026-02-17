@@ -26,9 +26,11 @@ from .grammar import Grammar, Rule, Nonterminal, Rhs, LitTerminal, NamedTerminal
 from .proto_parser import ProtoParser
 from .proto_ast import ProtoMessage, ProtoField
 from .target import (
-    TargetType, TargetExpr, Call, NewMessage, Builtin, IfElse, Let, Seq, ListExpr, GetField,
-    GetElement, BaseType, VarType, MessageType, SequenceType, ListType, OptionType, TupleType, Lambda, OneOf
+    TargetType, TargetExpr, Call, NewMessage, Builtin, IfElse, Let, ListExpr, GetField,
+    GetElement, BaseType, VarType, MessageType, SequenceType, ListType, OptionType, TupleType,
+    Lambda, OneOf,
 )
+from .target_visitor import TargetExprVisitor
 from .type_env import TypeEnv
 from .validation_result import ValidationResult
 
@@ -177,80 +179,8 @@ class GrammarValidator:
         return None
 
     def _check_expr_types(self, expr: TargetExpr, context: str) -> None:
-        """Recursively type check an expression.
-
-        Validates:
-        - Message constructor calls have correct argument types
-        - Builtin calls have correct argument types
-        """
-        if isinstance(expr, Call):
-            if isinstance(expr.func, Builtin):
-                self._check_builtin_call_types(expr.func, expr.args, context)
-            else:
-                # Recursively check function and args
-                self._check_expr_types(expr.func, context)
-
-            for arg in expr.args:
-                self._check_expr_types(arg, context)
-
-        elif isinstance(expr, Let):
-            self._check_expr_types(expr.init, context)
-            self._check_expr_types(expr.body, context)
-
-        elif isinstance(expr, IfElse):
-            self._check_expr_types(expr.condition, context)
-            self._check_expr_types(expr.then_branch, context)
-            self._check_expr_types(expr.else_branch, context)
-
-        elif isinstance(expr, Seq):
-            for sub in expr.exprs:
-                self._check_expr_types(sub, context)
-
-        elif isinstance(expr, ListExpr):
-            for elem in expr.elements:
-                self._check_expr_types(elem, context)
-
-        elif isinstance(expr, GetField):
-            # Check the object expression
-            self._check_expr_types(expr.object, context)
-            # Check that object type matches expected message_type
-            obj_type = self._infer_expr_type(expr.object)
-            if obj_type is not None and not self._is_subtype(obj_type, expr.message_type):
-                self.result.add_error(
-                    "type_field_access",
-                    f"In {context}: GetField expects object of type {expr.message_type}, got {obj_type}",
-                    rule_name=context
-                )
-
-        elif isinstance(expr, GetElement):
-            # Check the tuple expression
-            self._check_expr_types(expr.tuple_expr, context)
-            # Check that tuple_expr has tuple type
-            tuple_type = self._infer_expr_type(expr.tuple_expr)
-            if tuple_type is not None and not isinstance(tuple_type, TupleType):
-                self.result.add_error(
-                    "type_tuple_element",
-                    f"In {context}: GetElement expects tuple type, got {tuple_type}",
-                    rule_name=context
-                )
-            # Check index bounds
-            if isinstance(tuple_type, TupleType):
-                if expr.index < 0 or expr.index >= len(tuple_type.elements):
-                    self.result.add_error(
-                        "type_tuple_element",
-                        f"In {context}: GetElement index {expr.index} out of bounds for tuple with {len(tuple_type.elements)} elements",
-                        rule_name=context
-                    )
-
-        elif isinstance(expr, NewMessage):
-            # Check field names and types against proto spec
-            self._check_new_message_types(expr, context)
-            # Recursively check field expressions
-            for _, field_expr in expr.fields:
-                self._check_expr_types(field_expr, context)
-
-        # Other expression types (Var, Lit, Symbol, Builtin, etc.) are leaves
-        return None
+        """Recursively type check an expression."""
+        _ExprTypeChecker(self, context).visit(expr)
 
     def _check_new_message_types(self, new_msg: NewMessage, context: str) -> None:
         """Check that NewMessage has correct field names and types.
@@ -790,6 +720,55 @@ class GrammarValidator:
 
         visit(rhs)
         return names
+
+class _ExprTypeChecker(TargetExprVisitor):
+    """Type checker for TargetExpr trees."""
+
+    def __init__(self, validator: GrammarValidator, context: str):
+        super().__init__()
+        self._validator = validator
+        self._context = context
+
+    def visit_Call(self, expr: Call) -> None:
+        if isinstance(expr.func, Builtin):
+            self._validator._check_builtin_call_types(expr.func, expr.args, self._context)
+        else:
+            self.visit(expr.func)
+        for arg in expr.args:
+            self.visit(arg)
+
+    def visit_NewMessage(self, expr: NewMessage) -> None:
+        self._validator._check_new_message_types(expr, self._context)
+        for _, field_expr in expr.fields:
+            self.visit(field_expr)
+
+    def visit_GetField(self, expr: GetField) -> None:
+        self.visit(expr.object)
+        obj_type = self._validator._infer_expr_type(expr.object)
+        if obj_type is not None and not self._validator._is_subtype(obj_type, expr.message_type):
+            self._validator.result.add_error(
+                "type_field_access",
+                f"In {self._context}: GetField expects object of type {expr.message_type}, got {obj_type}",
+                rule_name=self._context
+            )
+
+    def visit_GetElement(self, expr: GetElement) -> None:
+        self.visit(expr.tuple_expr)
+        tuple_type = self._validator._infer_expr_type(expr.tuple_expr)
+        if tuple_type is not None and not isinstance(tuple_type, TupleType):
+            self._validator.result.add_error(
+                "type_tuple_element",
+                f"In {self._context}: GetElement expects tuple type, got {tuple_type}",
+                rule_name=self._context
+            )
+        if isinstance(tuple_type, TupleType):
+            if expr.index < 0 or expr.index >= len(tuple_type.elements):
+                self._validator.result.add_error(
+                    "type_tuple_element",
+                    f"In {self._context}: GetElement index {expr.index} out of bounds for tuple with {len(tuple_type.elements)} elements",
+                    rule_name=self._context
+                )
+
 
 def validate_grammar(
     grammar: Grammar,
