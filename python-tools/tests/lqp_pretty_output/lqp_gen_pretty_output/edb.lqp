@@ -1,0 +1,127 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (betree_relation
+            :edb
+            (betree_info
+              (key_types INT)
+              (value_types STRING INT)
+              { :betree_config_epsilon 0.5
+              :betree_config_max_deltas 16
+              :betree_config_max_leaf 16
+              :betree_config_max_pivots 4
+              :betree_locator_element_count 0
+              :betree_locator_root_pageid 0x1234567890123456789012
+              :betree_locator_tree_height 0}))
+          (betree_relation
+            :multi_key
+            (betree_info
+              (key_types INT STRING)
+              (value_types FLOAT)
+              { :betree_config_epsilon 0.8
+              :betree_config_max_deltas 32
+              :betree_config_max_leaf 32
+              :betree_config_max_pivots 8
+              :betree_locator_element_count 100
+              :betree_locator_root_pageid 0xabcdef1234567890abcdef
+              :betree_locator_tree_height 2}))
+          (betree_relation
+            :numeric_types
+            (betree_info
+              (key_types UINT128)
+              (value_types INT FLOAT (DECIMAL 18 4))
+              { :betree_config_epsilon 0.3
+              :betree_config_max_deltas 20
+              :betree_config_max_leaf 64
+              :betree_config_max_pivots 10
+              :betree_locator_element_count 500
+              :betree_locator_root_pageid 0xfedcba9876543210fedcba
+              :betree_locator_tree_height 3}))
+          (betree_relation
+            :temporal_data
+            (betree_info
+              (key_types DATE)
+              (value_types DATETIME STRING)
+              { :betree_config_epsilon 0.6
+              :betree_config_max_deltas 24
+              :betree_config_max_leaf 48
+              :betree_config_max_pivots 6
+              :betree_locator_element_count 250
+              :betree_locator_root_pageid 0x9999888877776666555544
+              :betree_locator_tree_height 2}))
+          (betree_relation
+            :boolean_data
+            (betree_info
+              (key_types STRING)
+              (value_types BOOLEAN MISSING)
+              { :betree_config_epsilon 0.7
+              :betree_config_max_deltas 15
+              :betree_config_max_leaf 20
+              :betree_config_max_pivots 5
+              :betree_locator_element_count 75
+              :betree_locator_root_pageid 0x1111222233334444555566
+              :betree_locator_tree_height 1}))
+          (betree_relation
+            :key_only
+            (betree_info
+              (key_types INT STRING)
+              (value_types)
+              { :betree_config_epsilon 0.4
+              :betree_config_max_deltas 18
+              :betree_config_max_leaf 40
+              :betree_config_max_pivots 12
+              :betree_locator_element_count 10
+              :betree_locator_root_pageid 0x7777888899990000111122
+              :betree_locator_tree_height 1}))
+          (rel_edb :path_simple ["my_base_relation"] [INT STRING FLOAT])
+          (rel_edb :path_specialized ["another" "path"] [INT STRING])
+          (rel_edb :path_mixed ["complex" "path" "here"] [(DECIMAL 10 2) INT STRING])
+          (rel_edb :path_empty ["empty_path"] [])
+          (def :foo ([x::INT] (= x 1)))
+          (algorithm :bar :baz (script (assign :bar ([y::INT] (= y 2)))))))
+      (define
+        (fragment
+          :f2
+          (betree_relation
+            :another_edb
+            (betree_info
+              (key_types STRING)
+              (value_types INT)
+              { :betree_config_epsilon 0.5
+              :betree_config_max_deltas 16
+              :betree_config_max_leaf 16
+              :betree_config_max_pivots 4
+              :betree_locator_element_count 1000
+              :betree_locator_root_pageid 0x3333444455556666777788
+              :betree_locator_tree_height 4}))
+          (betree_relation
+            :inline_edb
+            (betree_info
+              (key_types INT)
+              (value_types STRING)
+              { :betree_config_epsilon 0.5
+              :betree_config_max_deltas 16
+              :betree_config_max_leaf 16
+              :betree_config_max_pivots 4
+              :betree_locator_element_count 42
+              :betree_locator_inline_data "binary_blob_data_here"
+              :betree_locator_tree_height 1})))))
+    (reads
+      (output :foo :foo)
+      (output :edb :edb)
+      (output :multi_key :multi_key)
+      (output :numeric_types :numeric_types)
+      (output :temporal_data :temporal_data)
+      (output :boolean_data :boolean_data)
+      (output :key_only :key_only)
+      (output :path_simple :path_simple)
+      (output :path_specialized :path_specialized)
+      (output :path_mixed :path_mixed)
+      (output :path_empty :path_empty)
+      (output :bar :bar)
+      (output :another_edb :another_edb)
+      (output :inline_edb :inline_edb))))

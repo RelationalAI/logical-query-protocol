@@ -25,7 +25,8 @@ class PrettyPrinter:
 
     def __init__(self, io: Optional[IO[str]] = None, max_width: int = 92):
         self.io = io if io is not None else StringIO()
-        self.indent_level = 0
+        self.indent_stack: list[int] = [0]
+        self.column = 0
         self.at_line_start = True
         self.separator = '\n'
         self.max_width = max_width
@@ -34,28 +35,46 @@ class PrettyPrinter:
         self._memo_refs: list[Any] = []
         self._debug_info: dict[tuple[int, int], str] = {}
 
+    @property
+    def indent_level(self) -> int:
+        """Current indentation column."""
+        return self.indent_stack[-1] if self.indent_stack else 0
+
     def write(self, s: str) -> None:
         """Write a string to the output, with indentation at line start."""
         if self.separator == '\n' and self.at_line_start and s.strip():
-            self.io.write('  ' * self.indent_level)
+            spaces = self.indent_level
+            self.io.write(' ' * spaces)
+            self.column = spaces
             self.at_line_start = False
         self.io.write(s)
+        if '\n' in s:
+            self.column = len(s) - s.rfind('\n') - 1
+        else:
+            self.column += len(s)
 
     def newline(self) -> None:
         """Write separator (newline or space depending on mode)."""
         self.io.write(self.separator)
         if self.separator == '\n':
             self.at_line_start = True
+            self.column = 0
 
-    def indent(self, delta: int = 1) -> None:
-        """Increase indentation level (no-op in flat mode)."""
+    def indent(self) -> None:
+        """Push current column as new indentation level (no-op in flat mode)."""
         if self.separator == '\n':
-            self.indent_level += delta
+            self.indent_stack.append(self.column)
 
-    def dedent(self, delta: int = 1) -> None:
-        """Decrease indentation level (no-op in flat mode)."""
+    def indent_sexp(self) -> None:
+        """Push parent indent + 2 for sexp body indentation (no-op in flat mode)."""
         if self.separator == '\n':
-            self.indent_level = max(0, self.indent_level - delta)
+            self.indent_stack.append(self.indent_level + 2)
+
+    def dedent(self) -> None:
+        """Pop indentation level (no-op in flat mode)."""
+        if self.separator == '\n':
+            if len(self.indent_stack) > 1:
+                self.indent_stack.pop()
 
     def _try_flat(self, msg: Any, pretty_fn: Any) -> Optional[str]:
         """Try to render msg flat (space-separated). Return flat string if it fits, else None."""
@@ -64,12 +83,14 @@ class PrettyPrinter:
             self._computing.add(msg_id)
             saved_io = self.io
             saved_sep = self.separator
-            saved_indent = self.indent_level
+            saved_indent = self.indent_stack
+            saved_col = self.column
             saved_at_line_start = self.at_line_start
             try:
                 self.io = StringIO()
                 self.separator = ' '
-                self.indent_level = 0
+                self.indent_stack = [0]
+                self.column = 0
                 self.at_line_start = False
                 pretty_fn(msg)
                 self._memo[msg_id] = self.io.getvalue()
@@ -77,14 +98,16 @@ class PrettyPrinter:
             finally:
                 self.io = saved_io
                 self.separator = saved_sep
-                self.indent_level = saved_indent
+                self.indent_stack = saved_indent
+                self.column = saved_col
                 self.at_line_start = saved_at_line_start
                 self._computing.discard(msg_id)
         if msg_id in self._memo:
             flat = self._memo[msg_id]
             if self.separator != '\n':
                 return flat
-            if len(flat) + 2 * self.indent_level <= self.max_width:
+            effective_col = self.column if not self.at_line_start else self.indent_level
+            if len(flat) + effective_col <= self.max_width:
                 return flat
         return None
 
@@ -605,7 +628,7 @@ class PrettyPrinter:
         unwrapped_fields1 = fields0
         self.write('(')
         self.write('transaction')
-        self.indent()
+        self.indent_sexp()
         field2 = unwrapped_fields1[0]
         
         if field2 is not None:
@@ -651,7 +674,7 @@ class PrettyPrinter:
         unwrapped_fields10 = fields9
         self.write('(')
         self.write('configure')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         _t502 = self.pretty_config_dict(unwrapped_fields10)
         self.dedent()
@@ -860,7 +883,7 @@ class PrettyPrinter:
         unwrapped_fields31 = fields30
         self.write('(')
         self.write('date')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field32 = unwrapped_fields31[0]
         self.write(str(field32))
@@ -887,7 +910,7 @@ class PrettyPrinter:
         unwrapped_fields36 = fields35
         self.write('(')
         self.write('datetime')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field37 = unwrapped_fields36[0]
         self.write(str(field37))
@@ -961,7 +984,7 @@ class PrettyPrinter:
         unwrapped_fields48 = fields47
         self.write('(')
         self.write('sync')
-        self.indent()
+        self.indent_sexp()
         if not len(unwrapped_fields48) == 0:
             self.newline()
             for i50, elem49 in enumerate(unwrapped_fields48):
@@ -1010,7 +1033,7 @@ class PrettyPrinter:
         unwrapped_fields54 = fields53
         self.write('(')
         self.write('epoch')
-        self.indent()
+        self.indent_sexp()
         field55 = unwrapped_fields54[0]
         
         if field55 is not None:
@@ -1048,7 +1071,7 @@ class PrettyPrinter:
         unwrapped_fields60 = fields59
         self.write('(')
         self.write('writes')
-        self.indent()
+        self.indent_sexp()
         if not len(unwrapped_fields60) == 0:
             self.newline()
             for i62, elem61 in enumerate(unwrapped_fields60):
@@ -1124,7 +1147,7 @@ class PrettyPrinter:
         unwrapped_fields67 = fields66
         self.write('(')
         self.write('define')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         _t593 = self.pretty_fragment(unwrapped_fields67)
         self.dedent()
@@ -1145,7 +1168,7 @@ class PrettyPrinter:
         unwrapped_fields69 = fields68
         self.write('(')
         self.write('fragment')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field70 = unwrapped_fields69[0]
         _t597 = self.pretty_new_fragment_id(field70)
@@ -1259,7 +1282,7 @@ class PrettyPrinter:
         unwrapped_fields81 = fields80
         self.write('(')
         self.write('def')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field82 = unwrapped_fields81[0]
         _t625 = self.pretty_relation_id(field82)
@@ -1318,11 +1341,13 @@ class PrettyPrinter:
         assert fields88 is not None
         unwrapped_fields89 = fields88
         self.write('(')
+        self.indent()
         field90 = unwrapped_fields89[0]
         _t638 = self.pretty_bindings(field90)
-        self.write(' ')
+        self.newline()
         field91 = unwrapped_fields89[1]
         _t639 = self.pretty_formula(field91)
+        self.dedent()
         self.write(')')
         return None
 
@@ -1343,6 +1368,7 @@ class PrettyPrinter:
         assert fields92 is not None
         unwrapped_fields93 = fields92
         self.write('[')
+        self.indent()
         field94 = unwrapped_fields93[0]
         for i96, elem95 in enumerate(field94):
             if (i96 > 0):
@@ -1351,13 +1377,14 @@ class PrettyPrinter:
         field97 = unwrapped_fields93[1]
         
         if field97 is not None:
-            self.write(' ')
+            self.newline()
             assert field97 is not None
             opt_val98 = field97
             _t645 = self.pretty_value_bindings(opt_val98)
             _t644 = _t645
         else:
             _t644 = None
+        self.dedent()
         self.write(']')
         return None
 
@@ -1690,7 +1717,7 @@ class PrettyPrinter:
         unwrapped_fields133 = fields132
         self.write('(')
         self.write('DECIMAL')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field134 = unwrapped_fields133[0]
         self.write(str(field134))
@@ -1983,7 +2010,7 @@ class PrettyPrinter:
         unwrapped_fields160 = fields159
         self.write('(')
         self.write('exists')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field161 = unwrapped_fields160[0]
         _t801 = self.pretty_bindings(field161)
@@ -2007,7 +2034,7 @@ class PrettyPrinter:
         unwrapped_fields164 = fields163
         self.write('(')
         self.write('reduce')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field165 = unwrapped_fields164[0]
         _t805 = self.pretty_abstraction(field165)
@@ -2034,7 +2061,7 @@ class PrettyPrinter:
         unwrapped_fields169 = fields168
         self.write('(')
         self.write('terms')
-        self.indent()
+        self.indent_sexp()
         if not len(unwrapped_fields169) == 0:
             self.newline()
             for i171, elem170 in enumerate(unwrapped_fields169):
@@ -2123,7 +2150,7 @@ class PrettyPrinter:
         unwrapped_fields179 = fields178
         self.write('(')
         self.write('and')
-        self.indent()
+        self.indent_sexp()
         if not len(unwrapped_fields179) == 0:
             self.newline()
             for i181, elem180 in enumerate(unwrapped_fields179):
@@ -2147,7 +2174,7 @@ class PrettyPrinter:
         unwrapped_fields183 = fields182
         self.write('(')
         self.write('or')
-        self.indent()
+        self.indent_sexp()
         if not len(unwrapped_fields183) == 0:
             self.newline()
             for i185, elem184 in enumerate(unwrapped_fields183):
@@ -2171,7 +2198,7 @@ class PrettyPrinter:
         unwrapped_fields187 = fields186
         self.write('(')
         self.write('not')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         _t834 = self.pretty_formula(unwrapped_fields187)
         self.dedent()
@@ -2191,7 +2218,7 @@ class PrettyPrinter:
         unwrapped_fields189 = fields188
         self.write('(')
         self.write('ffi')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field190 = unwrapped_fields189[0]
         _t837 = self.pretty_name(field190)
@@ -2233,7 +2260,7 @@ class PrettyPrinter:
         unwrapped_fields196 = fields195
         self.write('(')
         self.write('args')
-        self.indent()
+        self.indent_sexp()
         if not len(unwrapped_fields196) == 0:
             self.newline()
             for i198, elem197 in enumerate(unwrapped_fields196):
@@ -2257,7 +2284,7 @@ class PrettyPrinter:
         unwrapped_fields200 = fields199
         self.write('(')
         self.write('atom')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field201 = unwrapped_fields200[0]
         _t847 = self.pretty_relation_id(field201)
@@ -2285,7 +2312,7 @@ class PrettyPrinter:
         unwrapped_fields206 = fields205
         self.write('(')
         self.write('pragma')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field207 = unwrapped_fields206[0]
         _t851 = self.pretty_name(field207)
@@ -2439,7 +2466,7 @@ class PrettyPrinter:
                                             unwrapped_fields212 = fields211
                                             self.write('(')
                                             self.write('primitive')
-                                            self.indent()
+                                            self.indent_sexp()
                                             self.newline()
                                             field213 = unwrapped_fields212[0]
                                             _t900 = self.pretty_name(field213)
@@ -2481,7 +2508,7 @@ class PrettyPrinter:
         unwrapped_fields227 = fields226
         self.write('(')
         self.write('=')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field228 = unwrapped_fields227[0]
         _t905 = self.pretty_term(field228)
@@ -2510,7 +2537,7 @@ class PrettyPrinter:
         unwrapped_fields231 = fields230
         self.write('(')
         self.write('<')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field232 = unwrapped_fields231[0]
         _t910 = self.pretty_term(field232)
@@ -2539,7 +2566,7 @@ class PrettyPrinter:
         unwrapped_fields235 = fields234
         self.write('(')
         self.write('<=')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field236 = unwrapped_fields235[0]
         _t915 = self.pretty_term(field236)
@@ -2568,7 +2595,7 @@ class PrettyPrinter:
         unwrapped_fields239 = fields238
         self.write('(')
         self.write('>')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field240 = unwrapped_fields239[0]
         _t920 = self.pretty_term(field240)
@@ -2597,7 +2624,7 @@ class PrettyPrinter:
         unwrapped_fields243 = fields242
         self.write('(')
         self.write('>=')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field244 = unwrapped_fields243[0]
         _t925 = self.pretty_term(field244)
@@ -2626,7 +2653,7 @@ class PrettyPrinter:
         unwrapped_fields247 = fields246
         self.write('(')
         self.write('+')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field248 = unwrapped_fields247[0]
         _t930 = self.pretty_term(field248)
@@ -2658,7 +2685,7 @@ class PrettyPrinter:
         unwrapped_fields252 = fields251
         self.write('(')
         self.write('-')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field253 = unwrapped_fields252[0]
         _t936 = self.pretty_term(field253)
@@ -2690,7 +2717,7 @@ class PrettyPrinter:
         unwrapped_fields257 = fields256
         self.write('(')
         self.write('*')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field258 = unwrapped_fields257[0]
         _t942 = self.pretty_term(field258)
@@ -2722,7 +2749,7 @@ class PrettyPrinter:
         unwrapped_fields262 = fields261
         self.write('(')
         self.write('/')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field263 = unwrapped_fields262[0]
         _t948 = self.pretty_term(field263)
@@ -2801,7 +2828,7 @@ class PrettyPrinter:
         unwrapped_fields271 = fields270
         self.write('(')
         self.write('relatom')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field272 = unwrapped_fields271[0]
         _t966 = self.pretty_name(field272)
@@ -2829,7 +2856,7 @@ class PrettyPrinter:
         unwrapped_fields277 = fields276
         self.write('(')
         self.write('cast')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field278 = unwrapped_fields277[0]
         _t970 = self.pretty_term(field278)
@@ -2853,7 +2880,7 @@ class PrettyPrinter:
         unwrapped_fields281 = fields280
         self.write('(')
         self.write('attrs')
-        self.indent()
+        self.indent_sexp()
         if not len(unwrapped_fields281) == 0:
             self.newline()
             for i283, elem282 in enumerate(unwrapped_fields281):
@@ -2877,7 +2904,7 @@ class PrettyPrinter:
         unwrapped_fields285 = fields284
         self.write('(')
         self.write('attribute')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field286 = unwrapped_fields285[0]
         _t977 = self.pretty_name(field286)
@@ -2905,7 +2932,7 @@ class PrettyPrinter:
         unwrapped_fields291 = fields290
         self.write('(')
         self.write('algorithm')
-        self.indent()
+        self.indent_sexp()
         field292 = unwrapped_fields291[0]
         if not len(field292) == 0:
             self.newline()
@@ -2933,7 +2960,7 @@ class PrettyPrinter:
         unwrapped_fields297 = fields296
         self.write('(')
         self.write('script')
-        self.indent()
+        self.indent_sexp()
         if not len(unwrapped_fields297) == 0:
             self.newline()
             for i299, elem298 in enumerate(unwrapped_fields297):
@@ -2994,7 +3021,7 @@ class PrettyPrinter:
         unwrapped_fields303 = fields302
         self.write('(')
         self.write('loop')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field304 = unwrapped_fields303[0]
         _t998 = self.pretty_init(field304)
@@ -3018,7 +3045,7 @@ class PrettyPrinter:
         unwrapped_fields307 = fields306
         self.write('(')
         self.write('init')
-        self.indent()
+        self.indent_sexp()
         if not len(unwrapped_fields307) == 0:
             self.newline()
             for i309, elem308 in enumerate(unwrapped_fields307):
@@ -3129,7 +3156,7 @@ class PrettyPrinter:
         unwrapped_fields316 = fields315
         self.write('(')
         self.write('assign')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field317 = unwrapped_fields316[0]
         _t1031 = self.pretty_relation_id(field317)
@@ -3168,7 +3195,7 @@ class PrettyPrinter:
         unwrapped_fields322 = fields321
         self.write('(')
         self.write('upsert')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field323 = unwrapped_fields322[0]
         _t1038 = self.pretty_relation_id(field323)
@@ -3202,11 +3229,13 @@ class PrettyPrinter:
         assert fields327 is not None
         unwrapped_fields328 = fields327
         self.write('(')
+        self.indent()
         field329 = unwrapped_fields328[0]
         _t1045 = self.pretty_bindings(field329)
-        self.write(' ')
+        self.newline()
         field330 = unwrapped_fields328[1]
         _t1046 = self.pretty_formula(field330)
+        self.dedent()
         self.write(')')
         return None
 
@@ -3228,7 +3257,7 @@ class PrettyPrinter:
         unwrapped_fields332 = fields331
         self.write('(')
         self.write('break')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field333 = unwrapped_fields332[0]
         _t1050 = self.pretty_relation_id(field333)
@@ -3267,7 +3296,7 @@ class PrettyPrinter:
         unwrapped_fields338 = fields337
         self.write('(')
         self.write('monoid')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field339 = unwrapped_fields338[0]
         _t1057 = self.pretty_monoid(field339)
@@ -3387,7 +3416,7 @@ class PrettyPrinter:
         unwrapped_fields351 = fields350
         self.write('(')
         self.write('min')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         _t1086 = self.pretty_type(unwrapped_fields351)
         self.dedent()
@@ -3407,7 +3436,7 @@ class PrettyPrinter:
         unwrapped_fields353 = fields352
         self.write('(')
         self.write('max')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         _t1089 = self.pretty_type(unwrapped_fields353)
         self.dedent()
@@ -3427,7 +3456,7 @@ class PrettyPrinter:
         unwrapped_fields355 = fields354
         self.write('(')
         self.write('sum')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         _t1092 = self.pretty_type(unwrapped_fields355)
         self.dedent()
@@ -3452,7 +3481,7 @@ class PrettyPrinter:
         unwrapped_fields357 = fields356
         self.write('(')
         self.write('monus')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field358 = unwrapped_fields357[0]
         _t1096 = self.pretty_monoid(field358)
@@ -3489,7 +3518,7 @@ class PrettyPrinter:
         unwrapped_fields364 = fields363
         self.write('(')
         self.write('functional_dependency')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field365 = unwrapped_fields364[0]
         _t1103 = self.pretty_relation_id(field365)
@@ -3519,7 +3548,7 @@ class PrettyPrinter:
         unwrapped_fields370 = fields369
         self.write('(')
         self.write('keys')
-        self.indent()
+        self.indent_sexp()
         if not len(unwrapped_fields370) == 0:
             self.newline()
             for i372, elem371 in enumerate(unwrapped_fields370):
@@ -3543,7 +3572,7 @@ class PrettyPrinter:
         unwrapped_fields374 = fields373
         self.write('(')
         self.write('values')
-        self.indent()
+        self.indent_sexp()
         if not len(unwrapped_fields374) == 0:
             self.newline()
             for i376, elem375 in enumerate(unwrapped_fields374):
@@ -3619,7 +3648,7 @@ class PrettyPrinter:
         unwrapped_fields381 = fields380
         self.write('(')
         self.write('rel_edb')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field382 = unwrapped_fields381[0]
         _t1130 = self.pretty_relation_id(field382)
@@ -3645,10 +3674,12 @@ class PrettyPrinter:
         assert fields385 is not None
         unwrapped_fields386 = fields385
         self.write('[')
+        self.indent()
         for i388, elem387 in enumerate(unwrapped_fields386):
             if (i388 > 0):
                 self.newline()
             self.write(self.format_string_value(elem387))
+        self.dedent()
         self.write(']')
         return None
 
@@ -3664,10 +3695,12 @@ class PrettyPrinter:
         assert fields389 is not None
         unwrapped_fields390 = fields389
         self.write('[')
+        self.indent()
         for i392, elem391 in enumerate(unwrapped_fields390):
             if (i392 > 0):
                 self.newline()
             _t1137 = self.pretty_type(elem391)
+        self.dedent()
         self.write(']')
         return None
 
@@ -3684,7 +3717,7 @@ class PrettyPrinter:
         unwrapped_fields394 = fields393
         self.write('(')
         self.write('betree_relation')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field395 = unwrapped_fields394[0]
         _t1140 = self.pretty_relation_id(field395)
@@ -3709,7 +3742,7 @@ class PrettyPrinter:
         unwrapped_fields398 = fields397
         self.write('(')
         self.write('betree_info')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field399 = unwrapped_fields398[0]
         _t1145 = self.pretty_betree_info_key_types(field399)
@@ -3736,7 +3769,7 @@ class PrettyPrinter:
         unwrapped_fields403 = fields402
         self.write('(')
         self.write('key_types')
-        self.indent()
+        self.indent_sexp()
         if not len(unwrapped_fields403) == 0:
             self.newline()
             for i405, elem404 in enumerate(unwrapped_fields403):
@@ -3760,7 +3793,7 @@ class PrettyPrinter:
         unwrapped_fields407 = fields406
         self.write('(')
         self.write('value_types')
-        self.indent()
+        self.indent_sexp()
         if not len(unwrapped_fields407) == 0:
             self.newline()
             for i409, elem408 in enumerate(unwrapped_fields407):
@@ -3784,7 +3817,7 @@ class PrettyPrinter:
         unwrapped_fields411 = fields410
         self.write('(')
         self.write('csv_data')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field412 = unwrapped_fields411[0]
         _t1156 = self.pretty_csvlocator(field412)
@@ -3824,7 +3857,7 @@ class PrettyPrinter:
         unwrapped_fields417 = fields416
         self.write('(')
         self.write('csv_locator')
-        self.indent()
+        self.indent_sexp()
         field418 = unwrapped_fields417[0]
         
         if field418 is not None:
@@ -3862,7 +3895,7 @@ class PrettyPrinter:
         unwrapped_fields423 = fields422
         self.write('(')
         self.write('paths')
-        self.indent()
+        self.indent_sexp()
         if not len(unwrapped_fields423) == 0:
             self.newline()
             for i425, elem424 in enumerate(unwrapped_fields423):
@@ -3886,7 +3919,7 @@ class PrettyPrinter:
         unwrapped_fields427 = fields426
         self.write('(')
         self.write('inline_data')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         self.write(self.format_string_value(unwrapped_fields427))
         self.dedent()
@@ -3907,7 +3940,7 @@ class PrettyPrinter:
         unwrapped_fields429 = fields428
         self.write('(')
         self.write('csv_config')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         _t1175 = self.pretty_config_dict(unwrapped_fields429)
         self.dedent()
@@ -3927,7 +3960,7 @@ class PrettyPrinter:
         unwrapped_fields431 = fields430
         self.write('(')
         self.write('columns')
-        self.indent()
+        self.indent_sexp()
         if not len(unwrapped_fields431) == 0:
             self.newline()
             for i433, elem432 in enumerate(unwrapped_fields431):
@@ -3951,7 +3984,7 @@ class PrettyPrinter:
         unwrapped_fields435 = fields434
         self.write('(')
         self.write('column')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field436 = unwrapped_fields435[0]
         self.write(self.format_string_value(field436))
@@ -3983,7 +4016,7 @@ class PrettyPrinter:
         unwrapped_fields442 = fields441
         self.write('(')
         self.write('asof')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         self.write(self.format_string_value(unwrapped_fields442))
         self.dedent()
@@ -4003,7 +4036,7 @@ class PrettyPrinter:
         unwrapped_fields444 = fields443
         self.write('(')
         self.write('undefine')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         _t1187 = self.pretty_fragment_id(unwrapped_fields444)
         self.dedent()
@@ -4023,7 +4056,7 @@ class PrettyPrinter:
         unwrapped_fields446 = fields445
         self.write('(')
         self.write('context')
-        self.indent()
+        self.indent_sexp()
         if not len(unwrapped_fields446) == 0:
             self.newline()
             for i448, elem447 in enumerate(unwrapped_fields446):
@@ -4047,7 +4080,7 @@ class PrettyPrinter:
         unwrapped_fields450 = fields449
         self.write('(')
         self.write('reads')
-        self.indent()
+        self.indent_sexp()
         if not len(unwrapped_fields450) == 0:
             self.newline()
             for i452, elem451 in enumerate(unwrapped_fields450):
@@ -4153,7 +4186,7 @@ class PrettyPrinter:
         unwrapped_fields459 = fields458
         self.write('(')
         self.write('demand')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         _t1221 = self.pretty_relation_id(unwrapped_fields459)
         self.dedent()
@@ -4173,7 +4206,7 @@ class PrettyPrinter:
         unwrapped_fields461 = fields460
         self.write('(')
         self.write('output')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field462 = unwrapped_fields461[0]
         _t1224 = self.pretty_name(field462)
@@ -4197,7 +4230,7 @@ class PrettyPrinter:
         unwrapped_fields465 = fields464
         self.write('(')
         self.write('what_if')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field466 = unwrapped_fields465[0]
         _t1228 = self.pretty_name(field466)
@@ -4226,7 +4259,7 @@ class PrettyPrinter:
         unwrapped_fields469 = fields468
         self.write('(')
         self.write('abort')
-        self.indent()
+        self.indent_sexp()
         field470 = unwrapped_fields469[0]
         
         if field470 is not None:
@@ -4257,7 +4290,7 @@ class PrettyPrinter:
         unwrapped_fields474 = fields473
         self.write('(')
         self.write('export')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         _t1238 = self.pretty_export_csv_config(unwrapped_fields474)
         self.dedent()
@@ -4278,7 +4311,7 @@ class PrettyPrinter:
         unwrapped_fields476 = fields475
         self.write('(')
         self.write('export_csv_config')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field477 = unwrapped_fields476[0]
         _t1242 = self.pretty_export_csv_path(field477)
@@ -4305,7 +4338,7 @@ class PrettyPrinter:
         unwrapped_fields481 = fields480
         self.write('(')
         self.write('path')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         self.write(self.format_string_value(unwrapped_fields481))
         self.dedent()
@@ -4325,7 +4358,7 @@ class PrettyPrinter:
         unwrapped_fields483 = fields482
         self.write('(')
         self.write('columns')
-        self.indent()
+        self.indent_sexp()
         if not len(unwrapped_fields483) == 0:
             self.newline()
             for i485, elem484 in enumerate(unwrapped_fields483):
@@ -4349,7 +4382,7 @@ class PrettyPrinter:
         unwrapped_fields487 = fields486
         self.write('(')
         self.write('column')
-        self.indent()
+        self.indent_sexp()
         self.newline()
         field488 = unwrapped_fields487[0]
         self.write(self.format_string_value(field488))
@@ -4367,3 +4400,4 @@ def pretty(msg: Any, io: Optional[IO[str]] = None, max_width: int = 92) -> str:
     printer.pretty_transaction(msg)
     printer.newline()
     return printer.get_output()
+

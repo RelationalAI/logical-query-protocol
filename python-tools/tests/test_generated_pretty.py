@@ -48,7 +48,7 @@ def test_pretty_snapshot(snapshot, input_file):
         content = f.read()
     proto = generated_parse(content)
     printed = pretty(proto)
-    snapshot.snapshot_dir = "tests/lqp_gen_pretty_output"
+    snapshot.snapshot_dir = "tests/lqp_pretty_output"
     snapshot.assert_match(printed, os.path.basename(input_file))
 
 
@@ -125,12 +125,15 @@ def test_pretty_returns_string_without_io():
 
 class TestPrettyPrinterWrite:
     def test_write_indentation(self):
+        """indent() pushes the current column as the new indent level."""
         pp = PrettyPrinter()
+        # Write '(' so column is 1, then indent pushes column 1
+        pp.write("(")
         pp.indent()
         pp.newline()
         pp.write("hello")
         output = pp.get_output()
-        assert output == "\n  hello"
+        assert output == "(\n hello"
 
     def test_write_no_indent_in_flat_mode(self):
         pp = PrettyPrinter()
@@ -142,20 +145,35 @@ class TestPrettyPrinterWrite:
         output = pp.get_output()
         assert output == " hello"
 
+    def test_indent_sexp(self):
+        """indent_sexp() pushes parent indent + 2."""
+        pp = PrettyPrinter()
+        pp.write("(keyword")
+        pp.indent_sexp()
+        pp.newline()
+        pp.write("child")
+        output = pp.get_output()
+        assert output == "(keyword\n  child"
+
     def test_indent_dedent(self):
         pp = PrettyPrinter()
-        pp.indent(3)
+        pp.write("(")
+        pp.indent()   # pushes column 1
+        pp.newline()
+        pp.write("(")
+        pp.indent()   # pushes column 2
         pp.newline()
         pp.write("a")
-        pp.dedent(2)
+        pp.dedent()
         pp.newline()
         pp.write("b")
         output = pp.get_output()
-        assert output == "\n      a\n  b"
+        assert output == "(\n (\n  a\n b"
 
-    def test_dedent_does_not_go_negative(self):
+    def test_dedent_does_not_go_below_initial(self):
         pp = PrettyPrinter()
-        pp.dedent(5)
+        pp.dedent()
+        pp.dedent()
         assert pp.indent_level == 0
 
 
