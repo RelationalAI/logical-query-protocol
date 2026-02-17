@@ -8,7 +8,7 @@ from lqp.gen.pretty import pretty
 
 from .utils import REPO_ROOT, get_lqp_input_files
 
-PRETTY_SNAPSHOTS_DIR = REPO_ROOT / "tests" / "pretty-go"
+PRETTY_SNAPSHOTS_DIR = REPO_ROOT / "tests" / "pretty"
 
 
 def _normalize_primitives(s: str) -> str:
