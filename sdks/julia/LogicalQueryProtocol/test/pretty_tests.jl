@@ -1,8 +1,8 @@
 @testitem "Pretty printer - snapshot" begin
     using LogicalQueryProtocol: parse, pretty, Proto
 
-    test_files_dir = joinpath(@__DIR__, "../../../tests/lqp")
-    snapshot_dir = joinpath(@__DIR__, "lqp_output")
+    test_files_dir = joinpath(@__DIR__, "../../../../tests/lqp")
+    snapshot_dir = joinpath(@__DIR__, "lqp_pretty_output")
     @test isdir(test_files_dir)
 
     update_snapshots = get(ENV, "UPDATE_SNAPSHOTS", "false") == "true"
@@ -35,7 +35,7 @@ end
 @testitem "Pretty printer - round trip" begin
     using LogicalQueryProtocol: parse, pretty, Proto
 
-    test_files_dir = joinpath(@__DIR__, "../../../tests/lqp")
+    test_files_dir = joinpath(@__DIR__, "../../../../tests/lqp")
     @test isdir(test_files_dir)
 
     lqp_files = sort(filter(f -> endswith(f, ".lqp"), readdir(test_files_dir)))
