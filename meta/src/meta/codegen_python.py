@@ -330,11 +330,11 @@ class PythonCodeGenerator(CodeGenerator):
         for field_name, field_value in deferred_fields:
             if field_is_repeated.get(field_name, False):
                 lines.append(
-                    f'{indent}getattr({tmp}, "{field_name}").extend({field_value})'
+                    f"{indent}getattr({tmp}, '{field_name}').extend({field_value})"
                 )
             else:
                 lines.append(
-                    f'{indent}getattr({tmp}, "{field_name}").CopyFrom({field_value})'
+                    f"{indent}getattr({tmp}, '{field_name}').CopyFrom({field_value})"
                 )
 
     def _build_message_field_map(self) -> dict:

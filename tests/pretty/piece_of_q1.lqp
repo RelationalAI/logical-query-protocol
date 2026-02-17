@@ -1,0 +1,18 @@
+(transaction
+  (configure
+    { :ivm.maintenance_level "off"
+      :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          (def :common
+            ([_lineitem::UINT128 _lineitem_l_returnflag::STRING _lineitem_l_linestatus::STRING]
+              (exists [_lineitem_l_shipdate::DATE _date_limit::DATE]
+                (and
+                  (relatom :LineItem _lineitem)
+                  (relatom :l_shipdate _lineitem _lineitem_l_shipdate)
+                  (relatom :l_returnflag _lineitem _lineitem_l_returnflag)
+                  (relatom :l_linestatus _lineitem _lineitem_l_linestatus)
+                  (relatom :date_limit _date_limit)
+                  (primitive :rel_primitive_lt_eq_monotype _lineitem_l_shipdate _date_limit))))))))))

@@ -424,7 +424,6 @@ def _generate_pretty_sequence_from_fields(
                 stmts.append(Call(make_builtin("dedent_io"), []))
             elif is_paren_group and elem.name == ")":
                 stmts.append(Call(make_builtin("dedent_io"), []))
-
             stmts.append(_format_literal(elem))
 
             # Opening brackets/keyword: emit indent after
@@ -434,7 +433,6 @@ def _generate_pretty_sequence_from_fields(
                 stmts.append(Call(make_builtin("indent_io"), []))
             elif is_paren_group and elem.name == "(":
                 stmts.append(Call(make_builtin("indent_io"), []))
-
             prev_lit_name = elem.name
         else:
             # For non-optional, non-star elements, emit spacing unconditionally
