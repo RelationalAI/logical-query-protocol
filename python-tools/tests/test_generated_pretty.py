@@ -5,16 +5,17 @@ verifying roundtrip correctness (parse -> pretty -> re-parse),
 snapshot output stability, and internal formatting behavior.
 """
 
-import pytest
 import os
 from io import StringIO
 from pathlib import Path
 
+import pytest
+
 from lqp.gen.parser import parse as generated_parse
 from lqp.gen.pretty import PrettyPrinter, pretty
-from lqp.proto.v1 import logic_pb2, fragments_pb2
+from lqp.proto.v1 import fragments_pb2, logic_pb2
 
-from .utils import get_lqp_input_files, TEST_INPUTS_DIR
+from .utils import TEST_INPUTS_DIR, get_lqp_input_files
 
 
 # ---------------------------------------------------------------------------
@@ -24,7 +25,7 @@ from .utils import get_lqp_input_files, TEST_INPUTS_DIR
 @pytest.mark.parametrize("input_file", get_lqp_input_files())
 def test_roundtrip(input_file):
     """Pretty-printed output must re-parse to the same protobuf."""
-    with open(input_file, "r") as f:
+    with open(input_file) as f:
         content = f.read()
     proto = generated_parse(content)
     printed = pretty(proto)
@@ -44,7 +45,7 @@ def test_roundtrip(input_file):
 @pytest.mark.parametrize("input_file", get_lqp_input_files())
 def test_pretty_snapshot(snapshot, input_file):
     """Pretty output must match saved snapshots."""
-    with open(input_file, "r") as f:
+    with open(input_file) as f:
         content = f.read()
     proto = generated_parse(content)
     printed = pretty(proto)
@@ -59,7 +60,7 @@ def test_pretty_snapshot(snapshot, input_file):
 @pytest.mark.parametrize("input_file", get_lqp_input_files())
 def test_roundtrip_narrow(input_file):
     """Roundtrip still works with a very narrow max_width (forces multi-line)."""
-    with open(input_file, "r") as f:
+    with open(input_file) as f:
         content = f.read()
     proto = generated_parse(content)
     printed = pretty(proto, max_width=40)
@@ -70,7 +71,7 @@ def test_roundtrip_narrow(input_file):
 @pytest.mark.parametrize("input_file", get_lqp_input_files())
 def test_roundtrip_wide(input_file):
     """Roundtrip still works with a very wide max_width (forces flat where possible)."""
-    with open(input_file, "r") as f:
+    with open(input_file) as f:
         content = f.read()
     proto = generated_parse(content)
     printed = pretty(proto, max_width=1000)
@@ -343,7 +344,7 @@ class TestOutputContent:
 
     def test_output_has_balanced_parens(self):
         for input_file in get_lqp_input_files():
-            with open(input_file, "r") as f:
+            with open(input_file) as f:
                 content = f.read()
             proto = generated_parse(content)
             output = pretty(proto)
@@ -356,7 +357,7 @@ class TestOutputContent:
 
     def test_output_has_balanced_brackets(self):
         for input_file in get_lqp_input_files():
-            with open(input_file, "r") as f:
+            with open(input_file) as f:
                 content = f.read()
             proto = generated_parse(content)
             output = pretty(proto)
@@ -385,7 +386,7 @@ class TestOutputContent:
     def test_no_trailing_whitespace(self):
         """No line should have trailing whitespace."""
         for input_file in get_lqp_input_files():
-            with open(input_file, "r") as f:
+            with open(input_file) as f:
                 content = f.read()
             proto = generated_parse(content)
             output = pretty(proto)
