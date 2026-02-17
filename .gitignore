@@ -9,15 +9,15 @@ meta/src/*.egg-info/
 .venv
 .pytest_cache
 __pycache__/
-python-tools/dist/
-python-tools/build/
-python-tools/src/*.egg-info/
-python-tools/out/
-python-tools/.lsp/.cache
-python-tools/.clj-kondo
+sdks/python/dist/
+sdks/python/build/
+sdks/python/src/*.egg-info/
+sdks/python/out/
+sdks/python/.lsp/.cache
+sdks/python/.clj-kondo
 
 # Julia SDK
-julia/LogicalQueryProtocol/Manifest.toml
+sdks/julia/LogicalQueryProtocol/Manifest.toml
 
 # Other
 .DS_Store

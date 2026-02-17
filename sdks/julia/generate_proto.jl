@@ -7,7 +7,7 @@ Pkg.instantiate()
 using ProtoBuf
 
 # Generate Julia code from proto files
-proto_dir = "../proto"
+proto_dir = "../../proto"
 output_dir = "LogicalQueryProtocol/src/gen"
 
 protojl(

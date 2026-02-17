@@ -40,8 +40,8 @@ func TestParseLQPFiles(t *testing.T) {
 		t.Fatalf("Failed to get test directory: %v", err)
 	}
 
-	// Go up to the repository root (from go/test to repo root)
-	repoRoot := filepath.Join(testDir, "..", "..")
+	// Go up to the repository root (from sdks/go/test to repo root)
+	repoRoot := filepath.Join(testDir, "..", "..", "..")
 
 	lqpDir := filepath.Join(repoRoot, "tests", "lqp")
 	binDir := filepath.Join(repoRoot, "tests", "bin")

@@ -72,7 +72,7 @@ def test_pretty_print_roundtrip(input_file):
 
 
 @pytest.mark.parametrize("input_file", get_lqp_input_files())
-def test_pretty_print_snapshot(input_file):
+def test_pretty_print_snapshot(request, input_file):
     """Test that pretty-printed output matches snapshots (with normalization)."""
     with open(input_file) as f:
         content = f.read()
@@ -81,6 +81,14 @@ def test_pretty_print_snapshot(input_file):
     printed = pretty(txn)
 
     snapshot_file = os.path.join(PRETTY_SNAPSHOTS_DIR, os.path.basename(input_file))
+    update_snapshots = request.config.getoption("--snapshot-update", default=False)
+
+    if update_snapshots or not os.path.exists(snapshot_file):
+        os.makedirs(PRETTY_SNAPSHOTS_DIR, exist_ok=True)
+        with open(snapshot_file, "w") as f:
+            f.write(printed)
+        return
+
     with open(snapshot_file) as f:
         expected = f.read()
 
