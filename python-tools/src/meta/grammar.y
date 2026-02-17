@@ -101,7 +101,7 @@
 %nonterm export_csv_columns Sequence[transactions.ExportCSVColumn]
 %nonterm export_csv_config transactions.ExportCSVConfig
 %nonterm export_csv_path String
-%nonterm export_csv_source transactions.ExportCSVSource
+%nonterm export_csv_source Any
 %nonterm false logic.Disjunction
 %nonterm ffi logic.FFI
 %nonterm ffi_args Sequence[logic.Abstraction]
@@ -177,6 +177,7 @@
 %validator_ignore_completeness BeTreeLocator
 %validator_ignore_completeness BeTreeConfig
 %validator_ignore_completeness ExportCSVColumns
+%validator_ignore_completeness ExportCSVSource
 %validator_ignore_completeness CSVConfig
 
 %%
@@ -1052,11 +1053,11 @@ export
 
 export_csv_config
     : "(" "export_csv_config" export_csv_path export_csv_source csv_config? config_dict ")"
-      construct: $$ = construct_export_csv_config($3, $4, builtin.unwrap_option_or($5, None), $6)
+      construct: $$ = construct_export_csv_config($3, $4, $5, $6)
       deconstruct:
         $3: String = $$.path
         $4: transactions.ExportCSVSource = $$.csv_source
-        $5: logic.CSVConfig = $$.csv_config
+        $5: Optional[logic.CSVConfig] = $$.csv_config if $$.csv_config != None else None
         $6: Sequence[Tuple[String, logic.Value]] = deconstruct_export_csv_config($$)
 
 #     | "(" "export_csv_config" export_csv_path "(" "columns" export_csv_column* ")" config_dict ")"
@@ -1080,12 +1081,12 @@ export_csv_source
     : "(" "columns" export_csv_column* ")"
     | "(" "gnf_columns" export_csv_column* ")"
       construct: $$ = transactions.ExportCSVSource(gnf_columns=transactions.ExportCSVColumns(columns=$3))
-      deconstruct if builtin.has_proto_field($$, 'gnf_columns'):
-        $3: Sequence[transactions.ExportCSVColumn] = $$.gnf_columns.columns
+#       deconstruct if builtin.has_proto_field($$, 'gnf_columns'):
+#         $3: Sequence[transactions.ExportCSVColumn] = $$.gnf_columns.columns
     | "(" "table_def" relation_id ")"
       construct: $$ = transactions.ExportCSVSource(table_def=$3)
-      deconstruct if builtin.has_proto_field($$, 'table_def'):
-        $3: logic.RelationId = $$.table_def
+#       deconstruct if builtin.has_proto_field($$, 'table_def'):
+#         $3: logic.RelationId = $$.table_def
 
 
 %%
@@ -1266,14 +1267,13 @@ def construct_configure(config_dict: Sequence[Tuple[String, logic.Value]]) -> tr
 
 def construct_export_csv_config(
     path: String,
-    csv_source: Sequence[transactions.ExportCSVColumn] | transactions.ExportCSVSource,
+    csv_source: Any,
     csv_config: Optional[logic.CSVConfig],
     config_dict: Sequence[Tuple[String, logic.Value]],
 ) -> transactions.ExportCSVConfig:
     config: Dict[String, logic.Value] = builtin.dict_from_list(config_dict)
     partition_size: int = _extract_value_int64(builtin.dict_get(config, "partition_size"), 0)
-    if isinstance(csv_source, transactions.ExportCSVSource):
-        assert csv_config
+    if builtin.has_proto_field(csv_source, 'gnf_columns') or builtin.has_proto_field(csv_source, 'table_def'):
         return transactions.ExportCSVConfig(
             path=path,
             csv_source=csv_source,
@@ -1289,7 +1289,7 @@ def construct_export_csv_config(
         syntax_escapechar: str = _extract_value_string(builtin.dict_get(config, "syntax_escapechar"), "\\")
         return transactions.ExportCSVConfig(
             path=path,
-            data_columns=columns,
+            data_columns=csv_source,
             partition_size=builtin.some(partition_size),
             compression=builtin.some(compression),
             syntax_header_row=builtin.some(syntax_header_row),
