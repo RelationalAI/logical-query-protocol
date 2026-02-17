@@ -70,59 +70,35 @@ lqp --bin --out foo.lqp
 Will write the ProtoBuf binary parsed from the `foo.lqp` to stdout. The result can be piped
 into the desired output file, e.g., `lqp --bin --out foo.lqp > foo.bin`.
 
-## Setup
-It is recommended to use a Python `virtualenv`. Set one up in the `python-tools` directory
-by:
+## Development
+
+This project uses [uv](https://docs.astral.sh/uv/) for dependency management. A `uv.lock`
+file is committed to the repo to ensure reproducible builds. There is no manual setup
+required — `uv run` automatically creates a virtualenv and installs locked dependencies on
+first use.
+
+From the repo root, common tasks are available via `make`:
 ```bash
-cd python-tools
-python -m venv .venv
+make test-python                     # run tests (includes lint + type check)
+make test-python-update-snapshots    # update test snapshots
+make check-python                    # lint + type check only
+make format-python                   # auto-format with ruff
 ```
 
-Then activate the virtual environment:
+Or run tools directly from within `python-tools/`:
 ```bash
-source .venv/bin/activate
-```
-
-## Build
-
-Install preprequisites:
-```bash
-pip install pip build setuptools wheel
-```
-
-Then build the module itself:
-```bash
-python -m build
-```
-
-Install locally:
-```bash
-pip install [--user] [--force-reinstall] dist/lqp-0.1.0-py3-none-any.whl
-```
-
-## Running tests
-
-Within `python-tools`,
-
-Setup:
-```bash
-python -m pip install -e ".[test]"
-python -m pip install pyrefly
-```
-
-Running tests:
-```bash
-python -m pytest
+uv run lqp --help                         # run the lqp CLI from source
+uv run python -m pytest                   # run tests
+uv run python -m pytest --snapshot-update # update snapshots
+uv run ruff check                         # lint
+uv run ruff format                        # auto-format
+uv run pyrefly check                      # type check
+uv run python -m build                    # build distribution
 ```
 
 To add testcases, add a `.lqp` file to the top-level `tests/lqp` directory. New
 files get picked up automatically. To generate or update the corresponding output files
 (binary, debug mode, and pretty-printing snapshots), run `pytest --snapshot-update`.
-
-Type checking:
-```bash
-pyrefly check
-```
 
 ## Formatting
 

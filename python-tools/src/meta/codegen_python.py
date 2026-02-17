@@ -40,6 +40,7 @@ class PythonCodeGenerator(CodeGenerator):
         'Boolean': 'bool',
         'Bytes': 'bytes',
         'Void': 'None',
+        'Never': 'NoReturn',
     }
 
     def __init__(self, proto_messages=None):
@@ -201,7 +202,7 @@ class PythonCodeGenerator(CodeGenerator):
 
     # --- NewMessage generation for Python protobuf ---
 
-    def _generate_newmessage(self, expr: NewMessage, lines: List[str], indent: str) -> str:
+    def _generate_NewMessage(self, expr: NewMessage, lines: List[str], indent: str) -> str:
         """Generate Python code for NewMessage with keyword-safe field handling.
 
         Python protobuf constructors use keyword arguments, but field names

@@ -1,117 +1,89 @@
 """
 CLI entry point for LQP validator and translation.
-
-This module provides file processing and command-line interface functionality.
 """
 
 import argparse
 import os
-import shutil
 import sys
 from importlib.metadata import version
+
 from google.protobuf.json_format import MessageToJson
 
-from lqp.parser import parse_lqp
-from lqp.emit import ir_to_proto
-from lqp.validator import validate_lqp
-import lqp.ir as ir
+from lqp.gen.parser import parse
+from lqp.gen.pretty import pretty
+from lqp.proto.v1 import transactions_pb2
+from lqp.proto_validator import validate_proto
 
 
-def parse_lqp_to_proto(filename, use_generated=False, validate=True):
-    """Parse an LQP text file and return a protobuf message."""
-    with open(filename, "r") as f:
-        lqp_text = f.read()
-
-    if use_generated:
-        from lqp.gen.parser import parse
-        from lqp.proto_validator import validate_proto
-        lqp_proto = parse(lqp_text)
-        if validate:
-            validate_proto(lqp_proto)
+def parse_input(filename: str, validate: bool = True):
+    """Parse an input file (.lqp or .bin) and return a protobuf Transaction."""
+    if filename.endswith(".bin"):
+        with open(filename, "rb") as f:
+            data = f.read()
+        txn = transactions_pb2.Transaction()
+        txn.ParseFromString(data)
     else:
-        lqp = parse_lqp(filename, lqp_text)
-        if validate and isinstance(lqp, ir.Transaction):
-            validate_lqp(lqp)
-        lqp_proto = ir_to_proto(lqp)
+        with open(filename) as f:
+            lqp_text = f.read()
+        txn = parse(lqp_text)
 
-    return lqp_proto
+    if validate:
+        validate_proto(txn)
+
+    return txn
 
 
-def process_file(filename, bin, json, validate=True, use_generated=False):
-    """Process a single LQP file and output binary and/or JSON."""
-    lqp_proto = parse_lqp_to_proto(filename, use_generated, validate)
+def output_path(filename: str, ext: str) -> str:
+    """Return the output path for a file with the given extension."""
+    base, _ = os.path.splitext(filename)
+    return base + ext
 
-    # Write binary output to the configured directories, using the same filename.
-    if bin:
-        lqp_bin = lqp_proto.SerializeToString()
-        if bin == "-":
-            sys.stdout.buffer.write(lqp_bin)
+
+def process_file(filename: str, fmt: str, out: bool, validate: bool = True):
+    """Process a single input file and produce requested output."""
+    txn = parse_input(filename, validate)
+
+    if fmt == "bin":
+        data = txn.SerializeToString()
+        if out:
+            sys.stdout.buffer.write(data)
         else:
-            with open(bin, "wb") as f:
-                f.write(lqp_bin)
-            print(f"Successfully wrote {filename} to bin at {bin}")
-
-    # Write JSON output
-    if json:
-        lqp_json = MessageToJson(lqp_proto, preserving_proto_field_name=True)
-        if json == "-":
-            sys.stdout.write(lqp_json)
+            dest = output_path(filename, ".bin")
+            with open(dest, "wb") as f:
+                f.write(data)
+            print(f"Successfully wrote {filename} to {dest}")
+    elif fmt == "json":
+        json_str = MessageToJson(txn, preserving_proto_field_name=True)
+        if out:
+            sys.stdout.write(json_str)
         else:
-            with open(json, "w") as f:
-                f.write(lqp_json)
-            print(f"Successfully wrote {filename} to JSON at {json}")
+            dest = output_path(filename, ".json")
+            with open(dest, "w") as f:
+                f.write(json_str)
+            print(f"Successfully wrote {filename} to {dest}")
+    elif fmt == "lqp":
+        text = pretty(txn)
+        if out:
+            sys.stdout.write(text)
+        else:
+            dest = output_path(filename, ".lqp")
+            with open(dest, "w") as f:
+                f.write(text)
+            print(f"Successfully wrote {filename} to {dest}")
 
 
-def process_directory(lqp_directory, bin, json, validate=True, use_generated=False):
-    """Process all LQP files in a directory."""
-    # Create bin directory at parent level if needed
-    bin_dir = None
-    if bin:
-        parent_dir = os.path.dirname(lqp_directory)
-        bin_dir = os.path.join(parent_dir, "bin")
-        os.makedirs(bin_dir, exist_ok=True)
-
-    # Create json directory at parent level if needed
-    json_dir = None
-    if json:
-        parent_dir = os.path.dirname(lqp_directory)
-        json_dir = os.path.join(parent_dir, "json")
-        os.makedirs(json_dir, exist_ok=True)
-
-    # Process each LQP file in the directory
-    for file in os.listdir(lqp_directory):
-        if not file.endswith(".lqp"):
-            continue
-
-        filename = os.path.join(lqp_directory, file)
-        basename = os.path.splitext(file)[0]
-
-        bin_output = os.path.join(bin_dir, basename + ".bin") if bin_dir else None
-        json_output = os.path.join(json_dir, basename + ".json") if json_dir else None
-
-        process_file(filename, bin_output, json_output, validate, use_generated)
-
-
-def look_for_lqp_directory(directory):
-    """Find or create an 'lqp' directory within the given directory."""
-    for root, dirs, _ in os.walk(directory):
-        if "lqp" in dirs:
-            return os.path.join(root, "lqp")
-
-    # If we didn't find a 'lqp' directory, create one
-    lqp_dir = os.path.join(directory, "lqp")
-    os.makedirs(lqp_dir, exist_ok=True)
-    print(f"LQP home directory not found, created one at {directory}")
-    return lqp_dir
-
-
-def get_lqp_files(directory):
-    """Get all .lqp files in a directory."""
-    lqp_files = []
-    for file in os.listdir(directory):
-        if file.endswith(".lqp"):
-            lqp_files.append(os.path.join(directory, file))
-    return lqp_files
+def collect_input_files(path: str):
+    """Collect input files from a path (file or directory)."""
+    if os.path.isfile(path):
+        return [path]
+    elif os.path.isdir(path):
+        files = []
+        for f in sorted(os.listdir(path)):
+            if f.endswith(".lqp") or f.endswith(".bin"):
+                files.append(os.path.join(path, f))
+        return files
+    else:
+        return []
 
 
 def get_package_version():
@@ -121,58 +93,74 @@ def get_package_version():
 
 def main():
     """Main entry point for the lqp CLI."""
-    arg_parser = argparse.ArgumentParser(description="Parse LQP S-expression into Protobuf binary and JSON files.")
-    arg_parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {get_package_version()}", help="show program's version number and exit")
-    arg_parser.add_argument("input", help="directory holding .lqp files, or a single .lqp file")
-    arg_parser.add_argument("--no-validation", action="store_true", help="don't validate parsed LQP")
-    arg_parser.add_argument("--bin", action="store_true", help="encode emitted ProtoBuf into binary")
-    arg_parser.add_argument("--json", action="store_true", help="encode emitted ProtoBuf into JSON")
-    arg_parser.add_argument("--out", action="store_true", help="write emitted binary or JSON to stdout")
+    arg_parser = argparse.ArgumentParser(
+        description="Parse, validate, and translate LQP files."
+    )
+    arg_parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version=f"%(prog)s {get_package_version()}",
+    )
+    arg_parser.add_argument(
+        "input",
+        help=".lqp or .bin file, or a directory",
+    )
+    arg_parser.add_argument(
+        "--no-validation",
+        action="store_true",
+        help="skip validation",
+    )
+    arg_parser.add_argument(
+        "--out",
+        action="store_true",
+        help="write output to stdout",
+    )
 
-    # Parser selection options (mutually exclusive)
-    parser_group = arg_parser.add_mutually_exclusive_group()
-    parser_group.add_argument("--generated", action="store_true", help="use generated parser instead of Lark parser")
-    parser_group.add_argument("--lark", action="store_true", help="use Lark parser (default)")
+    fmt_group = arg_parser.add_mutually_exclusive_group()
+    fmt_group.add_argument(
+        "--bin",
+        action="store_true",
+        help="write protobuf binary output",
+    )
+    fmt_group.add_argument(
+        "--json",
+        action="store_true",
+        help="write protobuf JSON output",
+    )
+    fmt_group.add_argument(
+        "--lqp",
+        action="store_true",
+        help="pretty-print LQP output",
+    )
 
     args = arg_parser.parse_args()
-
     validate = not args.no_validation
-    bin = args.bin
-    json = args.json
-    # Default to generated parser unless --lark is explicitly specified
-    use_generated = not args.lark if args.lark else args.generated
+
+    fmt = None
+    if args.bin:
+        fmt = "bin"
+    elif args.json:
+        fmt = "json"
+    elif args.lqp:
+        fmt = "lqp"
 
     if os.path.isfile(args.input):
         filename = args.input
-
-        if not filename.endswith(".lqp"):
-            arg_parser.error(f"The input {filename} does not seem to be an LQP file")
-
-        if args.out:
-            if args.bin and args.json:
-                arg_parser.error("Cannot specify both --bin and --json with --out option")
-
-        basename = os.path.splitext(filename)[0]
-
-        bin_name = None
-        json_name = None
-
-        if args.bin:
-            bin_name = "-" if args.out else basename + ".bin"
-
-        if args.json:
-            json_name = "-" if args.out else basename + ".json"
-
-        process_file(filename, bin_name, json_name, validate, use_generated)
+        if not (filename.endswith(".lqp") or filename.endswith(".bin")):
+            arg_parser.error(f"Unsupported file type: {filename}")
+        if fmt:
+            process_file(filename, fmt, args.out, validate)
+        else:
+            parse_input(filename, validate)
     elif os.path.isdir(args.input):
-        lqp_directory = look_for_lqp_directory(args.input)
-        lqp_files = get_lqp_files(args.input)
-        for file in lqp_files:
-            shutil.move(file, lqp_directory)
-
-        process_directory(lqp_directory, bin, json, validate, use_generated)
+        for filename in collect_input_files(args.input):
+            if fmt:
+                process_file(filename, fmt, args.out, validate)
+            else:
+                parse_input(filename, validate)
     else:
-        print("Input is not a valid file nor directory")
+        arg_parser.error(f"Input is not a valid file or directory: {args.input}")
 
 
 if __name__ == "__main__":
