@@ -8,6 +8,7 @@ import re
 from pathlib import Path
 
 from .codegen_base import CodeGenerator
+from .dead_functions import live_functions
 from .grammar import Grammar
 from .grammar_utils import get_literals
 from .parser_gen import generate_parse_functions
@@ -38,8 +39,13 @@ def generate_parser(
     lines.append("")
     parse_nonterminal_defns = "\n".join(lines)
 
+    live_funs = live_functions(
+        [defn.body for defn in defns],
+        grammar.function_defs,
+    )
+
     function_lines = []
-    for fundef in grammar.function_defs.values():
+    for fundef in live_funs.values():
         function_lines.append("")
         function_lines.append(codegen.generate_method_def(fundef, indent))
     named_function_defns = "\n".join(function_lines) if function_lines else ""

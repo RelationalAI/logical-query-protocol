@@ -190,7 +190,7 @@ class JuliaCodeGenerator(CodeGenerator):
 
     def gen_named_fun_ref(self, name: str) -> str:
         # In Julia, named functions are regular functions (not methods on Parser)
-        # They take parser as the first argument, handled in _generate_call
+        # They take parser as the first argument, handled in _generate_Call
         return name
 
     def gen_parse_nonterminal_ref(self, name: str) -> str:
@@ -312,7 +312,7 @@ class JuliaCodeGenerator(CodeGenerator):
     def gen_func_def_end(self) -> str:
         return "end"
 
-    def _generate_foreach_enumerated(self, expr, lines: list[str], indent: str) -> str:
+    def _generate_ForeachEnumerated(self, expr, lines: list[str], indent: str) -> str:
         """Override to adjust for Julia's 1-based enumerate.
 
         The IR generates guards like `index > 0` assuming 0-based indexing.
@@ -337,7 +337,7 @@ class JuliaCodeGenerator(CodeGenerator):
         lines.append(f"{indent}end")
         return self.gen_none()
 
-    def _generate_get_element(
+    def _generate_GetElement(
         self, expr: GetElement, lines: list[str], indent: str
     ) -> str:
         """Julia uses 1-based indexing."""
@@ -357,7 +357,7 @@ class JuliaCodeGenerator(CodeGenerator):
         self._oneof_alt_set = result
         return result
 
-    def _generate_newmessage(
+    def _generate_NewMessage(
         self, expr: NewMessage, lines: list[str], indent: str
     ) -> str:
         """Generate NewMessage for Julia proto structs.
@@ -380,7 +380,7 @@ class JuliaCodeGenerator(CodeGenerator):
         proto_msg = self.proto_messages.get(msg_key)
 
         if proto_msg is None:
-            return super()._generate_newmessage(expr, lines, indent)
+            return super()._generate_NewMessage(expr, lines, indent)
 
         # Build alt_name → oneof_parent_name mapping
         alt_to_parent: dict[str, str] = {}
@@ -467,17 +467,14 @@ class JuliaCodeGenerator(CodeGenerator):
         key = (expr.message_type.module, expr.message_type.name, expr.field_name)
         return key in self._build_oneof_alt_set()
 
-    def generate_lines(
-        self, expr: "TargetExpr", lines: list[str], indent: str = ""
-    ) -> str | None:
-        """Override to intercept GetField for OneOf alternatives."""
-        if isinstance(expr, GetField) and self._is_oneof_getfield(expr):
+    def _generate_GetField(self, expr: GetField, lines: list[str], indent: str) -> str:
+        if self._is_oneof_getfield(expr):
             obj_code = self.generate_lines(expr.object, lines, indent)
             sym = self._gen_oneof_symbol(expr.field_name)
             return f"_get_oneof_field({obj_code}, {sym})"
-        return super().generate_lines(expr, lines, indent)
+        return super()._generate_GetField(expr, lines, indent)
 
-    def _generate_call(self, expr: Call, lines: list[str], indent: str) -> str | None:
+    def _generate_Call(self, expr: Call, lines: list[str], indent: str) -> str | None:
         """Override to handle OneOf and Parse/PrintNonterminal specially for Julia."""
         # Check for Call(OneOf(Symbol), [value]) pattern (not in Message constructor)
         if isinstance(expr.func, OneOf) and len(expr.args) == 1:
@@ -513,9 +510,9 @@ class JuliaCodeGenerator(CodeGenerator):
             return tmp
 
         # Fall back to base implementation
-        return super()._generate_call(expr, lines, indent)
+        return super()._generate_Call(expr, lines, indent)
 
-    def _generate_oneof(self, expr: OneOf, lines: list[str], indent: str) -> str:
+    def _generate_OneOf(self, expr: OneOf, lines: list[str], indent: str) -> str:
         """Generate Julia OneOf reference.
 
         OneOf should only appear as the function in Call(OneOf(...), [value]).

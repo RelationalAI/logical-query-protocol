@@ -251,7 +251,7 @@ class PythonCodeGenerator(CodeGenerator):
 
     # --- NewMessage generation for Python protobuf ---
 
-    def _generate_newmessage(
+    def _generate_NewMessage(
         self, expr: NewMessage, lines: list[str], indent: str
     ) -> str:
         """Generate Python code for NewMessage with keyword-safe field handling.
