@@ -325,6 +325,20 @@ end
 
 # --- Helper functions ---
 
+function _extract_value_boolean(parser::Parser, value::Union{Nothing, Proto.Value}, default::Bool)::Bool
+    if (!isnothing(value) && _has_proto_field(value, Symbol("boolean_value")))
+        return _get_oneof_field(value, :boolean_value)
+    end
+    return default
+end
+
+function _try_extract_value_bytes(parser::Parser, value::Union{Nothing, Proto.Value})::Union{Nothing, Vector{UInt8}}
+    if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
+        return Vector{UInt8}(_get_oneof_field(value, :string_value))
+    end
+    return nothing
+end
+
 function construct_configure(parser::Parser, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.Configure
     config = Dict(config_dict)
     maintenance_level_val = get(config, "ivm.maintenance_level", nothing)
@@ -352,23 +366,9 @@ function construct_configure(parser::Parser, config_dict::Vector{Tuple{String, P
     return _t947
 end
 
-function _try_extract_value_int64(parser::Parser, value::Union{Nothing, Proto.Value})::Union{Nothing, Int64}
-    if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
-        return _get_oneof_field(value, :int_value)
-    end
-    return nothing
-end
-
-function _try_extract_value_bytes(parser::Parser, value::Union{Nothing, Proto.Value})::Union{Nothing, Vector{UInt8}}
+function _extract_value_string_list(parser::Parser, value::Union{Nothing, Proto.Value}, default::Vector{String})::Vector{String}
     if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
-        return Vector{UInt8}(_get_oneof_field(value, :string_value))
-    end
-    return nothing
-end
-
-function _extract_value_int64(parser::Parser, value::Union{Nothing, Proto.Value}, default::Int64)::Int64
-    if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
-        return _get_oneof_field(value, :int_value)
+        return String[_get_oneof_field(value, :string_value)]
     end
     return default
 end
@@ -393,53 +393,6 @@ function export_csv_config(parser::Parser, path::String, columns::Vector{Proto.E
     return _t955
 end
 
-function _extract_value_boolean(parser::Parser, value::Union{Nothing, Proto.Value}, default::Bool)::Bool
-    if (!isnothing(value) && _has_proto_field(value, Symbol("boolean_value")))
-        return _get_oneof_field(value, :boolean_value)
-    end
-    return default
-end
-
-function construct_betree_info(parser::Parser, key_types::Vector{Proto.var"#Type"}, value_types::Vector{Proto.var"#Type"}, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.BeTreeInfo
-    config = Dict(config_dict)
-    _t956 = _try_extract_value_float64(parser, get(config, "betree_config_epsilon", nothing))
-    epsilon = _t956
-    _t957 = _try_extract_value_int64(parser, get(config, "betree_config_max_pivots", nothing))
-    max_pivots = _t957
-    _t958 = _try_extract_value_int64(parser, get(config, "betree_config_max_deltas", nothing))
-    max_deltas = _t958
-    _t959 = _try_extract_value_int64(parser, get(config, "betree_config_max_leaf", nothing))
-    max_leaf = _t959
-    _t960 = Proto.BeTreeConfig(epsilon=epsilon, max_pivots=max_pivots, max_deltas=max_deltas, max_leaf=max_leaf)
-    storage_config = _t960
-    _t961 = _try_extract_value_uint128(parser, get(config, "betree_locator_root_pageid", nothing))
-    root_pageid = _t961
-    _t962 = _try_extract_value_bytes(parser, get(config, "betree_locator_inline_data", nothing))
-    inline_data = _t962
-    _t963 = _try_extract_value_int64(parser, get(config, "betree_locator_element_count", nothing))
-    element_count = _t963
-    _t964 = _try_extract_value_int64(parser, get(config, "betree_locator_tree_height", nothing))
-    tree_height = _t964
-    _t965 = Proto.BeTreeLocator(location=(!isnothing(root_pageid) ? OneOf(:root_pageid, root_pageid) : (!isnothing(inline_data) ? OneOf(:inline_data, inline_data) : nothing)), element_count=element_count, tree_height=tree_height)
-    relation_locator = _t965
-    _t966 = Proto.BeTreeInfo(key_types=key_types, value_types=value_types, storage_config=storage_config, relation_locator=relation_locator)
-    return _t966
-end
-
-function _extract_value_string_list(parser::Parser, value::Union{Nothing, Proto.Value}, default::Vector{String})::Vector{String}
-    if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
-        return String[_get_oneof_field(value, :string_value)]
-    end
-    return default
-end
-
-function _try_extract_value_float64(parser::Parser, value::Union{Nothing, Proto.Value})::Union{Nothing, Float64}
-    if (!isnothing(value) && _has_proto_field(value, Symbol("float_value")))
-        return _get_oneof_field(value, :float_value)
-    end
-    return nothing
-end
-
 function _extract_value_string(parser::Parser, value::Union{Nothing, Proto.Value}, default::String)::String
     if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
         return _get_oneof_field(value, :string_value)
@@ -447,11 +400,39 @@ function _extract_value_string(parser::Parser, value::Union{Nothing, Proto.Value
     return default
 end
 
-function default_configure(parser::Parser)::Proto.Configure
-    _t967 = Proto.IVMConfig(level=Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF)
-    ivm_config = _t967
-    _t968 = Proto.Configure(semantics_version=0, ivm_config=ivm_config)
-    return _t968
+function construct_csv_config(parser::Parser, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.CSVConfig
+    config = Dict(config_dict)
+    _t956 = _extract_value_int32(parser, get(config, "csv_header_row", nothing), 1)
+    header_row = _t956
+    _t957 = _extract_value_int64(parser, get(config, "csv_skip", nothing), 0)
+    skip = _t957
+    _t958 = _extract_value_string(parser, get(config, "csv_new_line", nothing), "")
+    new_line = _t958
+    _t959 = _extract_value_string(parser, get(config, "csv_delimiter", nothing), ",")
+    delimiter = _t959
+    _t960 = _extract_value_string(parser, get(config, "csv_quotechar", nothing), "\"")
+    quotechar = _t960
+    _t961 = _extract_value_string(parser, get(config, "csv_escapechar", nothing), "\"")
+    escapechar = _t961
+    _t962 = _extract_value_string(parser, get(config, "csv_comment", nothing), "")
+    comment = _t962
+    _t963 = _extract_value_string_list(parser, get(config, "csv_missing_strings", nothing), String[])
+    missing_strings = _t963
+    _t964 = _extract_value_string(parser, get(config, "csv_decimal_separator", nothing), ".")
+    decimal_separator = _t964
+    _t965 = _extract_value_string(parser, get(config, "csv_encoding", nothing), "utf-8")
+    encoding = _t965
+    _t966 = _extract_value_string(parser, get(config, "csv_compression", nothing), "auto")
+    compression = _t966
+    _t967 = Proto.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression)
+    return _t967
+end
+
+function _extract_value_int64(parser::Parser, value::Union{Nothing, Proto.Value}, default::Int64)::Int64
+    if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
+        return _get_oneof_field(value, :int_value)
+    end
+    return default
 end
 
 function _try_extract_value_uint128(parser::Parser, value::Union{Nothing, Proto.Value})::Union{Nothing, Proto.UInt128Value}
@@ -461,31 +442,43 @@ function _try_extract_value_uint128(parser::Parser, value::Union{Nothing, Proto.
     return nothing
 end
 
-function construct_csv_config(parser::Parser, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.CSVConfig
+function construct_betree_info(parser::Parser, key_types::Vector{Proto.var"#Type"}, value_types::Vector{Proto.var"#Type"}, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.BeTreeInfo
     config = Dict(config_dict)
-    _t969 = _extract_value_int32(parser, get(config, "csv_header_row", nothing), 1)
-    header_row = _t969
-    _t970 = _extract_value_int64(parser, get(config, "csv_skip", nothing), 0)
-    skip = _t970
-    _t971 = _extract_value_string(parser, get(config, "csv_new_line", nothing), "")
-    new_line = _t971
-    _t972 = _extract_value_string(parser, get(config, "csv_delimiter", nothing), ",")
-    delimiter = _t972
-    _t973 = _extract_value_string(parser, get(config, "csv_quotechar", nothing), "\"")
-    quotechar = _t973
-    _t974 = _extract_value_string(parser, get(config, "csv_escapechar", nothing), "\"")
-    escapechar = _t974
-    _t975 = _extract_value_string(parser, get(config, "csv_comment", nothing), "")
-    comment = _t975
-    _t976 = _extract_value_string_list(parser, get(config, "csv_missing_strings", nothing), String[])
-    missing_strings = _t976
-    _t977 = _extract_value_string(parser, get(config, "csv_decimal_separator", nothing), ".")
-    decimal_separator = _t977
-    _t978 = _extract_value_string(parser, get(config, "csv_encoding", nothing), "utf-8")
-    encoding = _t978
-    _t979 = _extract_value_string(parser, get(config, "csv_compression", nothing), "auto")
-    compression = _t979
-    _t980 = Proto.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression)
+    _t968 = _try_extract_value_float64(parser, get(config, "betree_config_epsilon", nothing))
+    epsilon = _t968
+    _t969 = _try_extract_value_int64(parser, get(config, "betree_config_max_pivots", nothing))
+    max_pivots = _t969
+    _t970 = _try_extract_value_int64(parser, get(config, "betree_config_max_deltas", nothing))
+    max_deltas = _t970
+    _t971 = _try_extract_value_int64(parser, get(config, "betree_config_max_leaf", nothing))
+    max_leaf = _t971
+    _t972 = Proto.BeTreeConfig(epsilon=epsilon, max_pivots=max_pivots, max_deltas=max_deltas, max_leaf=max_leaf)
+    storage_config = _t972
+    _t973 = _try_extract_value_uint128(parser, get(config, "betree_locator_root_pageid", nothing))
+    root_pageid = _t973
+    _t974 = _try_extract_value_bytes(parser, get(config, "betree_locator_inline_data", nothing))
+    inline_data = _t974
+    _t975 = _try_extract_value_int64(parser, get(config, "betree_locator_element_count", nothing))
+    element_count = _t975
+    _t976 = _try_extract_value_int64(parser, get(config, "betree_locator_tree_height", nothing))
+    tree_height = _t976
+    _t977 = Proto.BeTreeLocator(location=(!isnothing(root_pageid) ? OneOf(:root_pageid, root_pageid) : (!isnothing(inline_data) ? OneOf(:inline_data, inline_data) : nothing)), element_count=element_count, tree_height=tree_height)
+    relation_locator = _t977
+    _t978 = Proto.BeTreeInfo(key_types=key_types, value_types=value_types, storage_config=storage_config, relation_locator=relation_locator)
+    return _t978
+end
+
+function _try_extract_value_int64(parser::Parser, value::Union{Nothing, Proto.Value})::Union{Nothing, Int64}
+    if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
+        return _get_oneof_field(value, :int_value)
+    end
+    return nothing
+end
+
+function default_configure(parser::Parser)::Proto.Configure
+    _t979 = Proto.IVMConfig(level=Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF)
+    ivm_config = _t979
+    _t980 = Proto.Configure(semantics_version=0, ivm_config=ivm_config)
     return _t980
 end
 
@@ -494,6 +487,13 @@ function _extract_value_int32(parser::Parser, value::Union{Nothing, Proto.Value}
         return Int32(_get_oneof_field(value, :int_value))
     end
     return Int32(default)
+end
+
+function _try_extract_value_float64(parser::Parser, value::Union{Nothing, Proto.Value})::Union{Nothing, Float64}
+    if (!isnothing(value) && _has_proto_field(value, Symbol("float_value")))
+        return _get_oneof_field(value, :float_value)
+    end
+    return nothing
 end
 
 # --- Parse functions ---
