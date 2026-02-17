@@ -24,7 +24,7 @@ func TestPrintBinaryFiles(t *testing.T) {
 	repoRoot := filepath.Join(testDir, "..", "..", "..")
 
 	binDir := filepath.Join(repoRoot, "tests", "bin")
-	expectedDir := filepath.Join(repoRoot, "tests", "pretty-go")
+	expectedDir := filepath.Join(testDir, "pretty")
 
 	// Read all .bin files
 	entries, err := os.ReadDir(binDir)
