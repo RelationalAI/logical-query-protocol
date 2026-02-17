@@ -8,9 +8,9 @@
 #   make force-parsers      Force-regenerate all parsers.
 #   make force-parser-X     Force-regenerate a single parser.
 #   make printers     Regenerate pretty printers from the grammar.
-#   make printer-python     Regenerate the Python pretty printer.
+#   make printer-X    Regenerate a single printer (X = python, julia, go).
 #   make force-printers     Force-regenerate all printers.
-#   make force-printer-python  Force-regenerate the Python pretty printer.
+#   make force-printer-X    Force-regenerate a single printer.
 #   make test         Run tests for all languages.
 #   make test-X       Run tests for one language (X = python, julia, go).
 #   make clean        Remove temporary generated files.
@@ -37,6 +37,8 @@ GO_PARSER := go/src/parser.go
 
 # Generated printer outputs
 PY_PRINTER := python-tools/src/lqp/gen/pretty.py
+GO_PRINTER := go/src/pretty.go
+JL_PRINTER := julia/LogicalQueryProtocol/src/pretty.jl
 
 # Parser templates
 PY_TEMPLATE := python-tools/src/meta/templates/parser.py.template
@@ -45,6 +47,8 @@ GO_TEMPLATE := python-tools/src/meta/templates/parser.go.template
 
 # Printer templates
 PY_PRINTER_TEMPLATE := python-tools/src/meta/templates/pretty_printer.py.template
+GO_PRINTER_TEMPLATE := python-tools/src/meta/templates/pretty_printer.go.template
+JL_PRINTER_TEMPLATE := python-tools/src/meta/templates/pretty_printer.jl.template
 
 META_CLI := cd python-tools && PYTHONPATH=src python -m meta.cli
 META_PROTO_ARGS := \
@@ -69,7 +73,8 @@ JL_PROTO_GENERATED := \
 
 .PHONY: all protobuf parsers parser-python parser-julia parser-go \
 	force-parsers force-parser-python force-parser-julia force-parser-go \
-	printers printer-python force-printers force-printer-python \
+	printers printer-python printer-julia printer-go \
+	force-printers force-printer-python force-printer-julia force-printer-go \
 	test test-python test-julia test-go check-python \
 	clean
 
@@ -133,16 +138,30 @@ force-parser-go:
 
 # ---------- printer generation ----------
 
-printers: printer-python
+printers: printer-python printer-julia printer-go
 
 printer-python: $(PY_PRINTER)
 $(PY_PRINTER): $(PROTO_FILES) $(GRAMMAR) $(PY_PRINTER_TEMPLATE)
 	$(META_CLI) $(META_PROTO_ARGS) --printer python -o src/lqp/gen/pretty.py
 
-force-printers: force-printer-python
+printer-julia: $(JL_PRINTER)
+$(JL_PRINTER): $(PROTO_FILES) $(GRAMMAR) $(JL_PRINTER_TEMPLATE)
+	$(META_CLI) $(META_PROTO_ARGS) --printer julia -o ../julia/LogicalQueryProtocol/src/pretty.jl
+
+printer-go: $(GO_PRINTER)
+$(GO_PRINTER): $(PROTO_FILES) $(GRAMMAR) $(GO_PRINTER_TEMPLATE)
+	@echo "Generating the Go pretty printer is not yet supported"
+
+force-printers: force-printer-python force-printer-julia force-printer-go
 
 force-printer-python:
 	$(META_CLI) $(META_PROTO_ARGS) --printer python -o src/lqp/gen/pretty.py
+
+force-printer-julia:
+	$(META_CLI) $(META_PROTO_ARGS) --printer julia -o ../julia/LogicalQueryProtocol/src/pretty.jl
+
+force-printer-go:
+	@echo "Generating the Go pretty printer is not yet supported"
 
 # ---------- testing ----------
 

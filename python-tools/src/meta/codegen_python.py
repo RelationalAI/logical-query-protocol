@@ -186,8 +186,8 @@ class PythonCodeGenerator(CodeGenerator):
 
     # --- Lambda and function definition syntax ---
 
-    def gen_lambda_start(self, params: List[str], return_type: Optional[str]) -> Tuple[str, str]:
-        params_str = ', '.join(params) if params else ''
+    def gen_lambda_start(self, params: List[Tuple[str, Optional[str]]], return_type: Optional[str]) -> Tuple[str, str]:
+        params_str = ', '.join(n for n, _ in params) if params else ''
         return (f"def __FUNC__({params_str}):", "")
 
     def gen_func_def_header(self, name: str, params: List[Tuple[str, str]],
@@ -317,14 +317,15 @@ class PythonCodeGenerator(CodeGenerator):
         if params_str:
             params_str = ', ' + params_str
 
-        ret_hint = f" -> {self.gen_type(return_type)}" if return_type else ""
+        is_void = return_type is not None and self._is_void_type(return_type)
+        ret_hint = "" if not return_type or is_void else f" -> {self.gen_type(return_type)}"
 
         body_lines: List[str] = []
         if body is None:
             body_lines.append(f"{indent}    pass")
         else:
             body_inner = self.generate_lines(body, body_lines, indent + "    ")
-            if body_inner is not None:
+            if body_inner is not None and not is_void:
                 body_lines.append(f"{indent}    return {body_inner}")
         body_code = "\n".join(body_lines)
 

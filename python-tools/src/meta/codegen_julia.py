@@ -6,15 +6,16 @@ with proper keyword escaping and idiomatic Julia style.
 
 from typing import Dict, List, Optional, Set, Tuple, Union
 
-from .codegen_base import CodeGenerator
+from .codegen_base import CodeGenerator, CodegenConfig, PARSER_MODE
 from .codegen_templates import JULIA_TEMPLATES
 from .target import (
     TargetExpr, Var, Lit, Symbol, NamedFun, NewMessage, OneOf, ListExpr, Call, Lambda, Let,
     FunDef, ParseNonterminalDef, PrintNonterminalDef,
     ParseNonterminal, PrintNonterminal,
-    GetField, GetElement, BaseType, MessageType,
+    GetField, GetElement, MessageType,
 )
 from .gensym import gensym
+from .target_builtins import NEVER
 
 
 # Julia reserved keywords that ProtoBuf.jl escapes with '#' prefix.
@@ -51,13 +52,10 @@ class JuliaCodeGenerator(CodeGenerator):
         'str': 'String',
         'bool': 'Bool',
         'bytes': 'Vector{UInt8}',
-        # Special types
-        'Never': 'Union{}',
-        'Void': 'Nothing',
     }
 
-    def __init__(self, proto_messages=None):
-        super().__init__(proto_messages)
+    def __init__(self, proto_messages=None, config: CodegenConfig = PARSER_MODE):
+        super().__init__(proto_messages, config=config)
         self._oneof_alt_set: Optional[Set[tuple]] = None
         self._register_builtins()
 
@@ -80,18 +78,18 @@ class JuliaCodeGenerator(CodeGenerator):
 
         self.register_builtin("enum_value", enum_value_handler)
 
+        def tuple_handler(args: List[str], lines: List[str], indent: str) -> BuiltinResult:
+            if len(args) == 0:
+                return BuiltinResult("()", [])
+            elif len(args) == 1:
+                return BuiltinResult(f"({args[0]},)", [])
+            else:
+                return BuiltinResult(f"({', '.join(args)},)", [])
+
+        self.register_builtin("tuple", tuple_handler)
+
     def escape_keyword(self, name: str) -> str:
         return f'var"{name}"'
-
-    def _escape_proto_field(self, name: str) -> str:
-        """Escape a proto field name matching ProtoBuf.jl's convention.
-
-        ProtoBuf.jl prefixes Julia keywords with '#' in struct field names,
-        e.g., `type` becomes `var"#type"`.
-        """
-        if name in JULIA_KEYWORDS:
-            return f'var"#{name}"'
-        return name
 
     # --- Literal generation ---
 
@@ -190,7 +188,7 @@ class JuliaCodeGenerator(CodeGenerator):
             type_code = self.gen_type(element_type)
             return f"{type_code}[{', '.join(elements)}]"
         # For empty lists with Never type (no type info), use untyped []
-        if isinstance(element_type, BaseType) and element_type.name == "Never":
+        if element_type == NEVER:
             return "[]"
         # For empty lists with known type, use typed syntax
         type_code = self.gen_type(element_type)
@@ -243,8 +241,8 @@ class JuliaCodeGenerator(CodeGenerator):
 
     # --- Lambda and function definition syntax ---
 
-    def gen_lambda_start(self, params: List[str], return_type: Optional[str]) -> Tuple[str, str]:
-        params_str = ', '.join(params) if params else ''
+    def gen_lambda_start(self, params: List[Tuple[str, Optional[str]]], return_type: Optional[str]) -> Tuple[str, str]:
+        params_str = ', '.join(n for n, _ in params) if params else ''
         return (f"function __FUNC__({params_str})", "end")
 
     def gen_func_def_header(self, name: str, params: List[Tuple[str, str]],
@@ -461,7 +459,7 @@ class JuliaCodeGenerator(CodeGenerator):
             typed_params.append(f"{escaped_name}::{type_hint}")
 
         params_str = ', '.join(typed_params)
-        ret_hint = f"::{self.gen_type(return_type)}" if return_type else ""
+        ret_hint = f"::{self.gen_type(return_type)}" if return_type and not self._is_void_type(return_type) else ""
 
         if body is None:
             body_code = f"{indent}{self.indent_str}{self.gen_empty_body()}"
@@ -477,14 +475,14 @@ class JuliaCodeGenerator(CodeGenerator):
     def _generate_parse_def(self, expr: ParseNonterminalDef, indent: str) -> str:
         """Generate a parse method definition."""
         return self._generate_julia_function(
-            f"parse_{expr.nonterminal.name}", "parser::Parser",
+            f"parse_{expr.nonterminal.name}", self.config.first_param,
             expr.params, expr.body, expr.return_type, indent
         )
 
     def _generate_pretty_def(self, expr: PrintNonterminalDef, indent: str) -> str:
         """Generate a pretty-print function definition."""
         return self._generate_julia_function(
-            f"pretty_{expr.nonterminal.name}", "pp::PrettyPrinter",
+            f"pretty_{expr.nonterminal.name}", self.config.first_param,
             expr.params, expr.body, expr.return_type, indent
         )
 
@@ -496,12 +494,12 @@ class JuliaCodeGenerator(CodeGenerator):
         return f'        ("{token_name}", r"{escaped_pattern}", scan_{token_name.lower()}),'
 
     def format_command_line_comment(self, command_line: str) -> str:
-        return f"\nCommand: {command_line}\n"
+        return f"Command: {command_line}"
 
     def generate_method_def(self, expr: FunDef, indent: str) -> str:
-        """Generate a function definition with parser as first parameter."""
+        """Generate a function definition with receiver as first parameter."""
         return self._generate_julia_function(
-            self.escape_identifier(expr.name), "parser::Parser",
+            self.escape_identifier(expr.name), self.config.first_param,
             expr.params, expr.body, expr.return_type, indent
         )
 

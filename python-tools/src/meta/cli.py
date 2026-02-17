@@ -74,8 +74,8 @@ def parse_args():
     output_group.add_argument(
         "--printer",
         type=str,
-        choices=["ir", "python"],
-        help="Output the generated pretty printer (ir or python)"
+        choices=["ir", "python", "julia"],
+        help="Output the generated pretty printer (ir, python, or julia)"
     )
 
     args = parser.parse_args()
@@ -232,7 +232,7 @@ def run(args) -> int:
                 output_lines.append("")
             output_text = "\n".join(output_lines)
             write_output(output_text, args.output, f"Generated printer IR written to {args.output}")
-        elif args.printer == "python":
+        elif args.printer in ("python", "julia"):
             proto_messages = {(msg.module, name): msg for name, msg in proto_parser.messages.items()}
             command_line = " ".join(
                 ["python -m meta.cli"]
@@ -240,8 +240,14 @@ def run(args) -> int:
                 + ["--grammar", str(args.grammar)]
                 + ["--printer", args.printer]
             )
-            from .pretty_gen_python import generate_pretty_printer_python
-            output_text = generate_pretty_printer_python(grammar, command_line, proto_messages)
+            if args.printer == "python":
+                from .pretty_gen_python import generate_pretty_printer_python
+                output_text = generate_pretty_printer_python(grammar, command_line, proto_messages)
+            elif args.printer == "julia":
+                from .pretty_gen_julia import generate_pretty_printer_julia
+                output_text = generate_pretty_printer_julia(grammar, command_line, proto_messages)
+            else:
+                assert False
             write_output(output_text, args.output, f"Generated pretty printer written to {args.output}")
 
     return 0
