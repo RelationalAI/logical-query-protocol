@@ -337,6 +337,16 @@ def _generate_pretty_sequence_from_fields(
         and elems[1].name != "("
     )
 
+    # Detect brace-delimited block: "{" ... "}"
+    last_elem = elems[-1] if elems else None
+    is_brace = (
+        len(elems) >= 2
+        and isinstance(elems[0], LitTerminal)
+        and elems[0].name == "{"
+        and isinstance(last_elem, LitTerminal)
+        and last_elem.name == "}"
+    )
+
     # Count non-literal elements to determine if fields_var is a tuple or single value
     non_lit_count = sum(1 for e in elems if not isinstance(e, LitTerminal))
 
@@ -352,7 +362,10 @@ def _generate_pretty_sequence_from_fields(
             if is_sexp and i >= 2 and elem.name not in NO_LEADING_SPACE:
                 # Sexp spacing: newline before non-bracket-closing literals
                 stmts.append(Call(make_builtin("newline_io"), []))
-            elif not is_sexp and stmts:
+            elif is_brace and i >= 1 and elem.name not in NO_LEADING_SPACE:
+                # Brace spacing: newline before non-bracket-closing literals
+                stmts.append(Call(make_builtin("newline_io"), []))
+            elif not is_sexp and not is_brace and stmts:
                 cur_lit_name = elem.name
                 suppress = False
                 if prev_lit_name in NO_TRAILING_SPACE:
@@ -369,6 +382,14 @@ def _generate_pretty_sequence_from_fields(
                 else:
                     # Sexp spacing: newline before each non-literal
                     leading_ws = [Call(make_builtin("newline_io"), [])]
+            elif is_brace:
+                if prev_lit_name == "{":
+                    # First element after {: space, not newline
+                    leading_ws = [Call(make_builtin("write_io"), [Lit(" ")])]
+                elif prev_lit_name in NO_TRAILING_SPACE:
+                    pass
+                else:
+                    leading_ws = [Call(make_builtin("newline_io"), [])]
             elif stmts:
                 # Non-sexp spacing between elements
                 cur_lit_name = None
@@ -383,9 +404,15 @@ def _generate_pretty_sequence_from_fields(
             # For sexp closing paren, emit dedent if we indented
             if is_sexp and elem.name == ")" and non_lit_count > 0:
                 stmts.append(Call(make_builtin("dedent_io"), []))
+            # For brace closing, emit dedent if we indented
+            if is_brace and elem.name == "}" and non_lit_count > 0:
+                stmts.append(Call(make_builtin("dedent_io"), []))
             stmts.append(_format_literal(elem))
             # After sexp keyword, emit indent (always, not conditional on Option)
             if is_keyword and non_lit_count > 0:
+                stmts.append(Call(make_builtin("indent_io"), []))
+            # After opening brace, emit indent
+            if is_brace and elem.name == "{" and non_lit_count > 0:
                 stmts.append(Call(make_builtin("indent_io"), []))
             prev_lit_name = elem.name
         else:
