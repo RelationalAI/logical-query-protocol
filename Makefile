@@ -79,7 +79,7 @@ JL_PROTO_GENERATED := \
 
 all: protobuf parsers printers
 
-# ---------- protobuf build (replaces ./build script) ----------
+# ---------- protobuf build ----------
 
 protobuf: $(PY_PROTO_GENERATED) $(GO_PROTO_GENERATED) $(JL_PROTO_GENERATED)
 
