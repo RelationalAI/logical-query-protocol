@@ -309,6 +309,9 @@ message CSVConfig {
 
   // Compression
   string compression = 11; // "none", "gzip", "zstd", "auto" (default: "auto")
+
+  // Partitioning (for export)
+  int64 partition_size = 12;
 }
 
 message CSVColumn {
