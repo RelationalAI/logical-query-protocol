@@ -3,7 +3,7 @@ from pathlib import Path
 
 # Directory constants
 PARENT_DIR = Path(__file__).parent
-REPO_ROOT = PARENT_DIR.parent.parent
+REPO_ROOT = PARENT_DIR.parent.parent.parent
 TEST_INPUTS_DIR = REPO_ROOT / "tests" / "lqp"
 BIN_SNAPSHOTS_DIR = REPO_ROOT / "tests" / "bin"
 
