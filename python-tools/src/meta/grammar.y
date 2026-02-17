@@ -101,6 +101,7 @@
 %nonterm export_csv_columns Sequence[transactions.ExportCSVColumn]
 %nonterm export_csv_config transactions.ExportCSVConfig
 %nonterm export_csv_path String
+%nonterm export_csv_source transactions.ExportCSVSource
 %nonterm false logic.Disjunction
 %nonterm ffi logic.FFI
 %nonterm ffi_args Sequence[logic.Abstraction]
@@ -175,6 +176,8 @@
 %validator_ignore_completeness DecimalValue
 %validator_ignore_completeness BeTreeLocator
 %validator_ignore_completeness BeTreeConfig
+%validator_ignore_completeness ExportCSVColumns
+%validator_ignore_completeness CSVConfig
 
 %%
 
@@ -1048,18 +1051,23 @@ export
       deconstruct: $3: transactions.ExportCSVConfig = $$.csv_config
 
 export_csv_config
-    : "(" "export_csv_config" export_csv_path export_csv_columns config_dict ")"
-      construct: $$ = export_csv_config($3, $4, $5)
+    : "(" "export_csv_config" export_csv_path export_csv_source csv_config? config_dict ")"
+      construct: $$ = construct_export_csv_config($3, $4, builtin.unwrap_option_or($5, None), $6)
       deconstruct:
         $3: String = $$.path
-        $4: Sequence[transactions.ExportCSVColumn] = $$.data_columns
-        $5: Sequence[Tuple[String, logic.Value]] = deconstruct_export_csv_config($$)
+        $4: transactions.ExportCSVSource = $$.csv_source
+        $5: logic.CSVConfig = $$.csv_config
+        $6: Sequence[Tuple[String, logic.Value]] = deconstruct_export_csv_config($$)
+
+#     | "(" "export_csv_config" export_csv_path "(" "columns" export_csv_column* ")" config_dict ")"
+#       construct: $$ = export_csv_config($3, $6, $8)
+#       deconstruct if not builtin.has_proto_field($$, 'csv_source'):
+#         $3: String = $$.path
+#         $6: Sequence[transactions.ExportCSVColumn] = $$.data_columns
+#         $8: Sequence[Tuple[String, logic.Value]] = deconstruct_export_csv_config($$)
 
 export_csv_path
     : "(" "path" STRING ")"
-
-export_csv_columns
-    : "(" "columns" export_csv_column* ")"
 
 export_csv_column
     : "(" "column" STRING relation_id ")"
@@ -1067,6 +1075,17 @@ export_csv_column
       deconstruct:
         $3: String = $$.column_name
         $4: logic.RelationId = $$.column_data
+
+export_csv_source
+    : "(" "columns" export_csv_column* ")"
+    | "(" "gnf_columns" export_csv_column* ")"
+      construct: $$ = transactions.ExportCSVSource(gnf_columns=transactions.ExportCSVColumns(columns=$3))
+      deconstruct if builtin.has_proto_field($$, 'gnf_columns'):
+        $3: Sequence[transactions.ExportCSVColumn] = $$.gnf_columns.columns
+    | "(" "table_def" relation_id ")"
+      construct: $$ = transactions.ExportCSVSource(table_def=$3)
+      deconstruct if builtin.has_proto_field($$, 'table_def'):
+        $3: logic.RelationId = $$.table_def
 
 
 %%
@@ -1245,30 +1264,40 @@ def construct_configure(config_dict: Sequence[Tuple[String, logic.Value]]) -> tr
     )
 
 
-def export_csv_config(
+def construct_export_csv_config(
     path: String,
-    columns: Sequence[transactions.ExportCSVColumn],
+    csv_source: Sequence[transactions.ExportCSVColumn] | transactions.ExportCSVSource,
+    csv_config: Optional[logic.CSVConfig],
     config_dict: Sequence[Tuple[String, logic.Value]],
 ) -> transactions.ExportCSVConfig:
     config: Dict[String, logic.Value] = builtin.dict_from_list(config_dict)
     partition_size: int = _extract_value_int64(builtin.dict_get(config, "partition_size"), 0)
-    compression: str = _extract_value_string(builtin.dict_get(config, "compression"), "")
-    syntax_header_row: bool = _extract_value_boolean(builtin.dict_get(config, "syntax_header_row"), True)
-    syntax_missing_string: str = _extract_value_string(builtin.dict_get(config, "syntax_missing_string"), "")
-    syntax_delim: str = _extract_value_string(builtin.dict_get(config, "syntax_delim"), ",")
-    syntax_quotechar: str = _extract_value_string(builtin.dict_get(config, "syntax_quotechar"), '"')
-    syntax_escapechar: str = _extract_value_string(builtin.dict_get(config, "syntax_escapechar"), "\\")
-    return transactions.ExportCSVConfig(
-        path=path,
-        data_columns=columns,
-        partition_size=builtin.some(partition_size),
-        compression=builtin.some(compression),
-        syntax_header_row=builtin.some(syntax_header_row),
-        syntax_missing_string=builtin.some(syntax_missing_string),
-        syntax_delim=builtin.some(syntax_delim),
-        syntax_quotechar=builtin.some(syntax_quotechar),
-        syntax_escapechar=builtin.some(syntax_escapechar),
-    )
+    if isinstance(csv_source, transactions.ExportCSVSource):
+        assert csv_config
+        return transactions.ExportCSVConfig(
+            path=path,
+            csv_source=csv_source,
+            csv_config=csv_config,
+            partition_size=builtin.some(partition_size),
+        )
+    else:
+        compression: str = _extract_value_string(builtin.dict_get(config, "compression"), "")
+        syntax_header_row: bool = _extract_value_boolean(builtin.dict_get(config, "syntax_header_row"), True)
+        syntax_missing_string: str = _extract_value_string(builtin.dict_get(config, "syntax_missing_string"), "")
+        syntax_delim: str = _extract_value_string(builtin.dict_get(config, "syntax_delim"), ",")
+        syntax_quotechar: str = _extract_value_string(builtin.dict_get(config, "syntax_quotechar"), '"')
+        syntax_escapechar: str = _extract_value_string(builtin.dict_get(config, "syntax_escapechar"), "\\")
+        return transactions.ExportCSVConfig(
+            path=path,
+            data_columns=columns,
+            partition_size=builtin.some(partition_size),
+            compression=builtin.some(compression),
+            syntax_header_row=builtin.some(syntax_header_row),
+            syntax_missing_string=builtin.some(syntax_missing_string),
+            syntax_delim=builtin.some(syntax_delim),
+            syntax_quotechar=builtin.some(syntax_quotechar),
+            syntax_escapechar=builtin.some(syntax_escapechar),
+        )
 
 
 def _make_value_int32(v: Int32) -> logic.Value:
