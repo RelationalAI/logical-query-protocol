@@ -78,6 +78,10 @@ function format_uint128(pp::PrettyPrinter, msg::Proto.UInt128Value)::String
     return "0x" * string(value, base=16)
 end
 
+function format_float64(v::Float64)::String
+    return lowercase(string(v))
+end
+
 function format_string_value(s::AbstractString)::String
     escaped = replace(s, "\\" => "\\\\")
     escaped = replace(escaped, "\"" => "\\\"")

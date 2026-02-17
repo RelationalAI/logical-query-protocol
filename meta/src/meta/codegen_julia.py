@@ -139,6 +139,19 @@ class JuliaCodeGenerator(CodeGenerator):
 
         self.register_builtin("tuple", tuple_handler)
 
+        def has_proto_field_handler(
+            args: list[str], lines: list[str], indent: str
+        ) -> BuiltinResult:
+            obj_code = args[0]
+            field_name = args[1].strip('"')
+            if field_name in JULIA_KEYWORDS:
+                field_name = f"#{field_name}"
+            return BuiltinResult(
+                f'_has_proto_field({obj_code}, Symbol("{field_name}"))', []
+            )
+
+        self.register_builtin("has_proto_field", has_proto_field_handler)
+
     def escape_keyword(self, name: str) -> str:
         return f'var"{name}"'
 
@@ -170,6 +183,9 @@ class JuliaCodeGenerator(CodeGenerator):
         if name in JULIA_KEYWORDS:
             return f'var"#{name}"'
         return name
+
+    def gen_field_access(self, obj_code: str, field_name: str) -> str:
+        return f"{obj_code}.{self._escape_proto_field(field_name)}"
 
     def _gen_oneof_symbol(self, name: str) -> str:
         """Generate a Julia symbol for a OneOf field name, escaping keywords.
@@ -498,8 +514,14 @@ class JuliaCodeGenerator(CodeGenerator):
                     "Function argument should not contain a return"
                 )
                 args.append(arg_code)
-            # PrintNonterminal uses "pp" (PrettyPrinter), others use "parser"
-            receiver = "pp" if isinstance(expr.func, PrintNonterminal) else "parser"
+            # The receiver name comes from the config's first_param (e.g. "parser::Parser" -> "parser")
+            # except PrintNonterminal always uses "pp" and ParseNonterminal always uses "parser"
+            if isinstance(expr.func, PrintNonterminal):
+                receiver = "pp"
+            elif isinstance(expr.func, ParseNonterminal):
+                receiver = "parser"
+            else:
+                receiver = self.config.first_param.split("::")[0]
             all_args = [receiver] + args
             args_code = ", ".join(all_args)
             if self._is_void_expr(expr):

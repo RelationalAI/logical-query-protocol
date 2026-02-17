@@ -1,0 +1,92 @@
+(transaction
+  (configure
+    { :ivm.maintenance_level "off"
+    :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (def
+            :foo
+            ([category::STRING
+            amount::FLOAT] (or
+              (and
+                (=
+                  category
+                  "food")
+                (=
+                  amount
+                  1.23))
+              (and
+                (=
+                  category
+                  "food")
+                (=
+                  amount
+                  10.23))
+              (and
+                (=
+                  category
+                  "food")
+                (=
+                  amount
+                  13.0))
+              (and
+                (=
+                  category
+                  "drink")
+                (=
+                  amount
+                  6.34))
+              (and
+                (=
+                  category
+                  "drink")
+                (=
+                  amount
+                  2.82)))))
+          (def
+            :sum
+            ([cat::STRING
+            x::FLOAT] (reduce
+              ([a::FLOAT
+              b::FLOAT
+              c::FLOAT] (+
+                a
+                b
+                c))
+              ([num::FLOAT] (atom
+                :foo
+                cat
+                num))
+              (terms
+                x))))
+          (def
+            :count
+            ([cat::STRING
+            x::INT] (reduce
+              ([a::FLOAT
+              b::FLOAT
+              c::FLOAT] (+
+                a
+                b
+                c))
+              ([num::FLOAT
+              one::INT] (and
+                (atom
+                  :foo
+                  cat
+                  num)
+                (=
+                  one
+                  1)))
+              (terms
+                x)))))))
+    (reads
+      (output
+        :items_sum
+        :sum)
+      (output
+        :items_count
+        :count))))
