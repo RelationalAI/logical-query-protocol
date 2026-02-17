@@ -694,7 +694,7 @@ class PrettyPrinter:
         unwrapped_fields12 = fields11
         self.write('{')
         if not len(unwrapped_fields12) == 0:
-            self.write(' ')
+            self.newline()
             for i14, elem13 in enumerate(unwrapped_fields12):
                 if (i14 > 0):
                     self.newline()
@@ -4400,4 +4400,3 @@ def pretty(msg: Any, io: Optional[IO[str]] = None, max_width: int = 92) -> str:
     printer.pretty_transaction(msg)
     printer.newline()
     return printer.get_output()
-
