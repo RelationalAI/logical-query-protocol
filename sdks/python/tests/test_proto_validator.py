@@ -1,29 +1,16 @@
 import os
-import re
-from pathlib import Path
 
 import pytest
 
 from lqp.gen.parser import parse
 from lqp.proto_validator import ValidationError, validate_proto
 
-from .utils import get_lqp_input_files
-
-VALIDATOR_DIR = Path(__file__).parent / "validator"
-
-
-def strip_source_location(error_str: str) -> str:
-    """Remove 'at <file>:<line>:<col>' from an error string."""
-    return re.sub(r"\s+at\s+\S+:\d+:\d+", "", error_str)
-
-
-def extract_expected_error(file_path):
-    with open(file_path) as f:
-        content = f.read()
-    error_match = re.search(r";;\s*ERROR:\s*(.+)(?:\n|\r\n?)", content)
-    if error_match:
-        return error_match.group(1).strip()
-    return None
+from .utils import (
+    VALIDATOR_DIR,
+    extract_expected_error,
+    get_lqp_input_files,
+    strip_source_location,
+)
 
 
 @pytest.mark.parametrize("input_file", get_lqp_input_files())

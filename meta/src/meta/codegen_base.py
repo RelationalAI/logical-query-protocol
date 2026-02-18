@@ -52,7 +52,7 @@ from .target import (
     VarType,
     While,
 )
-from .target_builtins import NEVER, NONE, get_builtin
+from .target_builtins import NEVER, get_builtin
 
 
 @dataclass
@@ -99,6 +99,14 @@ class BuiltinSpec:
 
     name: str
     generator: BuiltinGenerator
+
+
+@dataclass
+class NewMessageFieldGroups:
+    """Result of separating NewMessage fields into regular and oneof groups."""
+
+    regular: list[tuple[str, str]]  # (field_name, value_code)
+    oneof: list[tuple[str, str, str]]  # (parent_field_name, alt_name, value_code)
 
 
 class CodeGenerator(ABC):
@@ -281,6 +289,8 @@ class CodeGenerator(ABC):
                 self.gen_type(typ.key_type), self.gen_type(typ.value_type)
             )
         elif isinstance(typ, OptionType):
+            if typ.element_type == NEVER:
+                return self.base_type_map.get("Void", "None")
             return self.gen_option_type(self.gen_type(typ.element_type))
         elif isinstance(typ, FunctionType):
             param_types = [self.gen_type(pt) for pt in typ.param_types]
@@ -389,6 +399,17 @@ class CodeGenerator(ABC):
         """Generate function definition end (e.g., '' or 'end' or '}')."""
         pass
 
+    # --- Tuple builtin ---
+
+    @staticmethod
+    def _gen_tuple_builtin(args, lines, indent):
+        if len(args) == 0:
+            return BuiltinResult("()", [])
+        elif len(args) == 1:
+            return BuiltinResult(f"({args[0]},)", [])
+        else:
+            return BuiltinResult(f"({', '.join(args)},)", [])
+
     # --- Builtin operations ---
 
     def register_builtin(self, name: str, generator: BuiltinGenerator) -> None:
@@ -457,11 +478,7 @@ class CodeGenerator(ABC):
     @staticmethod
     def _is_void_type(t: TargetType) -> bool:
         """Check if a type represents void (no useful return value)."""
-        if isinstance(t, BaseType) and t.name in ("None",):
-            return True
-        if t == NONE:
-            return True
-        return False
+        return isinstance(t, BaseType) and t.name == "Void"
 
     def _is_void_expr(self, expr: TargetExpr) -> bool:
         """Check if expression is side-effect only (no useful return value)."""
@@ -1015,20 +1032,97 @@ class CodeGenerator(ABC):
             return f"{indent}{header}\n{body_code}\n{indent}{end}"
         return f"{indent}{header}\n{body_code}"
 
-    @abstractmethod
+    # --- Method definition generation ---
+
+    def _pre_method_def(self, params) -> None:
+        """Hook called before building method parameters. Override for setup."""
+        pass
+
+    def _post_method_header(self, ret_type_str: str | None, return_type) -> None:
+        """Hook called after computing the return type, before generating the body."""
+        pass
+
+    def _post_method_def(self) -> None:
+        """Hook called after generating the method body. Override for cleanup."""
+        pass
+
+    def _method_return_type(self, return_type) -> str | None:
+        """Compute the return type string for a method definition."""
+        if return_type and not self._is_void_type(return_type):
+            return self.gen_type(return_type)
+        return None
+
+    def _should_emit_method_return(self, return_type) -> bool:
+        """Whether to emit a return statement for the method body result."""
+        return True
+
+    def _gen_method_empty_body(self, ret_type_str: str | None, indent: str) -> str:
+        """Generate the body for a method with no body expression."""
+        return f"{indent}{self.indent_str}{self.gen_empty_body()}"
+
+    def _generate_method_def(
+        self, func_name: str, params, body, return_type, indent: str
+    ) -> str:
+        """Generate a method definition. Shared skeleton for all languages."""
+        self._pre_method_def(params)
+
+        typed_params = [
+            (self.escape_identifier(p.name), self.gen_type(p.type)) for p in params
+        ]
+        ret_type = self._method_return_type(return_type)
+        header = self.gen_func_def_header(
+            func_name, typed_params, ret_type, is_method=True
+        )
+
+        self._post_method_header(ret_type, return_type)
+
+        if body is None:
+            body_code = self._gen_method_empty_body(ret_type, indent)
+        else:
+            body_lines: list[str] = []
+            body_inner = self.generate_lines(body, body_lines, indent + self.indent_str)
+            if body_inner is not None and self._should_emit_method_return(return_type):
+                body_lines.append(
+                    f"{indent}{self.indent_str}{self.gen_return(body_inner)}"
+                )
+            body_code = "\n".join(body_lines)
+
+        self._post_method_def()
+
+        end = self.gen_func_def_end()
+        if end:
+            return f"{indent}{header}\n{body_code}\n{indent}{end}"
+        return f"{indent}{header}\n{body_code}"
+
     def generate_method_def(self, expr: FunDef, indent: str) -> str:
-        """Generate a function definition as a method on Parser."""
-        pass
+        """Generate a function definition as a method."""
+        return self._generate_method_def(
+            self.escape_identifier(expr.name),
+            expr.params,
+            expr.body,
+            expr.return_type,
+            indent,
+        )
 
-    @abstractmethod
     def _generate_parse_def(self, expr: ParseNonterminalDef, indent: str) -> str:
-        """Generate a parse method definition. Language-specific due to method syntax."""
-        pass
+        """Generate a parse method definition."""
+        return self._generate_method_def(
+            f"parse_{expr.nonterminal.name}",
+            expr.params,
+            expr.body,
+            expr.return_type,
+            indent,
+        )
 
-    @abstractmethod
     def _generate_pretty_def(self, expr: PrintNonterminalDef, indent: str) -> str:
-        """Generate a pretty-print method definition. Language-specific due to method syntax."""
-        pass
+        """Generate a pretty-print method definition."""
+        return self._generate_method_def(
+            f"pretty_{expr.nonterminal.name}",
+            expr.params,
+            expr.body,
+            expr.return_type,
+            indent,
+        )
 
     # --- Token spec formatting for parser generation ---
 

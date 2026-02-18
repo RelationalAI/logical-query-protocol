@@ -274,17 +274,6 @@ class TestRelationIdLookup:
         msg = logic_pb2.RelationId(id_low=42, id_high=0)
         assert pp.relation_id_to_string(msg) == ""
 
-    def test_relation_id_to_int_small(self):
-        pp = PrettyPrinter()
-        msg = logic_pb2.RelationId(id_low=100, id_high=0)
-        assert pp.relation_id_to_int(msg) == 100
-
-    def test_relation_id_to_int_large(self):
-        pp = PrettyPrinter()
-        msg = logic_pb2.RelationId(id_low=0, id_high=1)
-        # (1 << 64) > 0x7FFFFFFFFFFFFFFF, so should return None
-        assert pp.relation_id_to_int(msg) is None
-
     def test_fragment_id_to_string(self):
         pp = PrettyPrinter()
         msg = fragments_pb2.FragmentId(id=b"my_fragment")

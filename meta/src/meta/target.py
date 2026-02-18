@@ -38,6 +38,7 @@ Type expressions (TargetType subclasses):
     FunctionType        - Function type with parameter types and return type
 """
 
+from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Optional
@@ -68,14 +69,13 @@ class TargetNode:
 
 
 @dataclass(frozen=True)
-class TargetExpr(TargetNode):
+class TargetExpr(TargetNode, ABC):
     """Base class for target language expressions."""
 
+    @abstractmethod
     def target_type(self) -> "TargetType":
         """Return the type of this expression."""
-        raise NotImplementedError(
-            f"target_type not implemented for {type(self).__name__}"
-        )
+        ...
 
 
 @dataclass(frozen=True)
@@ -321,7 +321,7 @@ class PrintNonterminal(TargetExpr):
         return f"pretty_{self.nonterminal.name}"
 
     def target_type(self) -> "TargetType":
-        return self.nonterminal.target_type()
+        return BaseType("Void")
 
 
 @dataclass(frozen=True)
@@ -545,7 +545,7 @@ class While(TargetExpr):
         return f"while ({self.condition}) {self.body}"
 
     def target_type(self) -> "TargetType":
-        return OptionType(BaseType("Never"))
+        return BaseType("Void")
 
 
 @dataclass(frozen=True)
@@ -560,7 +560,7 @@ class Foreach(TargetExpr):
         return f"for {self.var.name} in {self.collection} do {self.body}"
 
     def target_type(self) -> "TargetType":
-        return OptionType(BaseType("Never"))
+        return BaseType("Void")
 
 
 @dataclass(frozen=True)
@@ -576,14 +576,14 @@ class ForeachEnumerated(TargetExpr):
         return f"for ({self.index_var.name}, {self.var.name}) in enumerate({self.collection}) do {self.body}"
 
     def target_type(self) -> "TargetType":
-        return OptionType(BaseType("Never"))
+        return BaseType("Void")
 
 
 @dataclass(frozen=True)
 class Assign(TargetExpr):
     """Assignment statement: var = expr.
 
-    Returns None after performing the assignment.
+    Returns Void after performing the assignment.
     """
 
     var: "Var"
@@ -593,7 +593,7 @@ class Assign(TargetExpr):
         return f"{self.var.name} = {self.expr}"
 
     def target_type(self) -> "TargetType":
-        return OptionType(BaseType("Never"))
+        return BaseType("Void")
 
 
 @dataclass(frozen=True)

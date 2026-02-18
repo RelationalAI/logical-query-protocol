@@ -73,6 +73,9 @@ class GoCodeGenerator(CodeGenerator):
     base_type_map = {
         "Int32": "int32",
         "Int64": "int64",
+        "UInt32": "uint32",
+        "UInt64": "uint64",
+        "Float32": "float32",
         "Float64": "float64",
         "String": "string",
         "Boolean": "bool",
@@ -187,15 +190,14 @@ class GoCodeGenerator(CodeGenerator):
 
         # 'consume_terminal' builtin - returns typed value from Token
         # Map terminal names to Go types for type assertion
-        # Map terminal names to TokenValue accessor methods
-        terminal_accessor_map = {
-            "INT": "AsInt64",
-            "FLOAT": "AsFloat64",
-            "STRING": "AsString",
-            "SYMBOL": "AsString",
-            "DECIMAL": "AsDecimal",
-            "INT128": "AsInt128",
-            "UINT128": "AsUint128",
+        terminal_field_map = {
+            "INT": "i64",
+            "FLOAT": "f64",
+            "STRING": "str",
+            "SYMBOL": "str",
+            "DECIMAL": "decimal",
+            "INT128": "int128",
+            "UINT128": "uint128",
         }
 
         def consume_terminal_generator(
@@ -205,14 +207,8 @@ class GoCodeGenerator(CodeGenerator):
                 return BuiltinResult("p.consumeTerminal()", [])
             terminal_arg = args[0]
             terminal_name = terminal_arg.strip('"')
-            accessor = terminal_accessor_map.get(terminal_name)
-            if accessor:
-                return BuiltinResult(
-                    f"p.consumeTerminal({terminal_arg}).Value.{accessor}()", []
-                )
-            return BuiltinResult(
-                f"p.consumeTerminal({terminal_arg}).Value.AsString()", []
-            )
+            field = terminal_field_map.get(terminal_name, "str")
+            return BuiltinResult(f"p.consumeTerminal({terminal_arg}).Value.{field}", [])
 
         self.register_builtin("consume_terminal", consume_terminal_generator)
 
@@ -577,30 +573,7 @@ class GoCodeGenerator(CodeGenerator):
                     field_value = self.generate_lines(field_expr, lines, indent)
                     assert field_value is not None
                     pascal_field = to_pascal_case(field_name)
-
-                    # Unwrap Option type for struct field assignment
-                    if isinstance(field_expr, Var) and field_expr.type is not None:
-                        if isinstance(field_expr.type, OptionType):
-                            inner_type = self.gen_type(field_expr.type.element_type)
-                            is_nullable = self._is_nullable_go_type(inner_type)
-                            if is_nullable:
-                                zero = "nil"
-                            else:
-                                zero = self._go_zero_values.get(inner_type, "nil")
-                            if is_nullable:
-                                if zero == "nil":
-                                    pass  # already the right value
-                                else:
-                                    tmp = gensym()
-                                    lines.append(f"{indent}{tmp} := {field_value}")
-                                    self.mark_declared(tmp)
-                                    lines.append(f"{indent}if {field_value} == nil {{")
-                                    lines.append(f"{indent}\t{tmp} = {zero}")
-                                    lines.append(f"{indent}}}")
-                                    field_value = tmp
-                            else:
-                                field_value = f"deref({field_value}, {zero})"
-
+                    _, field_value = unwrap_if_option(field_expr, field_value)
                     regular_assignments.append(f"{pascal_field}: {field_value}")
 
         # Generate struct literal with regular fields only
@@ -866,142 +839,50 @@ class GoCodeGenerator(CodeGenerator):
         lines.append(f"{indent}{self.gen_assignment(var_name, expr_code)}")
         return self.gen_none()
 
-    def _generate_parse_def(self, expr: ParseNonterminalDef, indent: str) -> str:
-        """Generate a parse method definition."""
+    def _pre_method_def(self, params) -> None:
         self.reset_declared_vars()
+        for p in params:
+            self.mark_declared(self.escape_identifier(p.name))
 
-        func_name = f"parse_{expr.nonterminal.name}"
+    def _post_method_header(self, ret_type_str, return_type) -> None:
+        self.set_current_return_type(ret_type_str, return_type)
 
-        params = []
-        for param in expr.params:
-            escaped_name = self.escape_identifier(param.name)
-            type_hint = self.gen_type(param.type)
-            params.append((escaped_name, type_hint))
-            self.mark_declared(escaped_name)
-
-        ret_type = (
-            self.gen_type(expr.return_type) if expr.return_type else "interface{}"
-        )
-        self.set_current_return_type(ret_type, expr.return_type)
-
-        header = self.gen_func_def_header(func_name, params, ret_type, is_method=True)
-
-        if expr.body is None:
-            zero = self._go_zero_values.get(ret_type, "nil")
-            body_code = f"{indent}{self.indent_str}return {zero}"
-        else:
-            body_lines: list[str] = []
-            body_inner = self.generate_lines(
-                expr.body, body_lines, indent + self.indent_str
-            )
-            if body_inner is not None:
-                body_lines.append(f"{indent}{self.indent_str}return {body_inner}")
-            body_code = "\n".join(body_lines)
-
+    def _post_method_def(self) -> None:
         self.set_current_return_type(None)
 
-        end = self.gen_func_def_end()
-        return f"{indent}{header}\n{body_code}\n{indent}{end}"
+    def _method_return_type(self, return_type) -> str | None:
+        return self.gen_type(return_type) if return_type else "interface{}"
 
-    def _generate_pretty_def(self, expr: PrintNonterminalDef, indent: str) -> str:
-        """Generate a pretty-print method definition."""
-        self.reset_declared_vars()
-
-        func_name = f"pretty_{expr.nonterminal.name}"
-
-        params = []
-        for param in expr.params:
-            escaped_name = self.escape_identifier(param.name)
-            type_hint = self.gen_type(param.type)
-            params.append((escaped_name, type_hint))
-            self.mark_declared(escaped_name)
-
-        ret_type = (
-            self.gen_type(expr.return_type) if expr.return_type else "interface{}"
-        )
-        self.set_current_return_type(ret_type, expr.return_type)
-
-        header = self.gen_func_def_header(func_name, params, ret_type, is_method=True)
-
-        if expr.body is None:
-            zero = self._go_zero_values.get(ret_type, "nil")
-            body_code = f"{indent}{self.indent_str}return {zero}"
-        else:
-            body_lines: list[str] = []
-            body_inner = self.generate_lines(
-                expr.body, body_lines, indent + self.indent_str
-            )
-            if body_inner is not None:
-                body_lines.append(f"{indent}{self.indent_str}return {body_inner}")
-            body_code = "\n".join(body_lines)
-
-        self.set_current_return_type(None)
-
-        end = self.gen_func_def_end()
-        return f"{indent}{header}\n{body_code}\n{indent}{end}"
+    def _gen_method_empty_body(self, ret_type_str, indent) -> str:
+        zero = self._go_zero_values.get(ret_type_str or "", "nil")
+        return f"{indent}{self.indent_str}return {zero}"
 
     def format_literal_token_spec(self, escaped_literal: str) -> str:
-        return f'\t\t{{"LITERAL", regexp.MustCompile(`^{escaped_literal}`), func(s string) TokenValue {{ return stringTokenValue(s) }}}},'
+        return f'\t\t{{"LITERAL", regexp.MustCompile(`^{escaped_literal}`), func(s string) TokenValue {{ return TokenValue{{kind: kindString, str: s}} }}}},'
 
-    # Map from token name to the TokenValue wrapper function
-    _token_value_wrappers = {
-        "SYMBOL": ("scanSymbol", "stringTokenValue"),
-        "STRING": ("scanString", "stringTokenValue"),
-        "INT": ("scanInt", "intTokenValue"),
-        "FLOAT": ("scanFloat", "floatTokenValue"),
-        "UINT128": ("scanUint128", "uint128TokenValue"),
-        "INT128": ("scanInt128", "int128TokenValue"),
-        "DECIMAL": ("scanDecimal", "decimalTokenValue"),
+    # Map from token name to (scan function, kind, field) for TokenValue construction
+    _token_value_specs = {
+        "SYMBOL": ("scanSymbol", "kindString", "str"),
+        "STRING": ("scanString", "kindString", "str"),
+        "INT": ("scanInt", "kindInt64", "i64"),
+        "FLOAT": ("scanFloat", "kindFloat64", "f64"),
+        "UINT128": ("scanUint128", "kindUint128", "uint128"),
+        "INT128": ("scanInt128", "kindInt128", "int128"),
+        "DECIMAL": ("scanDecimal", "kindDecimal", "decimal"),
     }
 
     def format_named_token_spec(self, token_name: str, token_pattern: str) -> str:
         escaped_pattern = token_pattern.replace("`", '` + "`" + `')
         if not escaped_pattern.startswith("^"):
             escaped_pattern = "^" + escaped_pattern
-        scan_func, wrapper_func = self._token_value_wrappers.get(
+        scan_func, kind, field = self._token_value_specs.get(
             token_name,
-            (f"scan{token_name.capitalize()}", "stringTokenValue"),
+            (f"scan{token_name.capitalize()}", "kindString", "str"),
         )
-        return f'\t\t{{"{token_name}", regexp.MustCompile(`{escaped_pattern}`), func(s string) TokenValue {{ return {wrapper_func}({scan_func}(s)) }}}},'
+        return f'\t\t{{"{token_name}", regexp.MustCompile(`{escaped_pattern}`), func(s string) TokenValue {{ return TokenValue{{kind: {kind}, {field}: {scan_func}(s)}} }}}},'
 
     def format_command_line_comment(self, command_line: str) -> str:
         return f"Command: {command_line}"
-
-    def generate_method_def(self, expr: FunDef, indent: str) -> str:
-        """Generate a function definition as a method on Parser."""
-        self.reset_declared_vars()
-
-        func_name = self.escape_identifier(expr.name)
-        params = []
-        for param in expr.params:
-            escaped_name = self.escape_identifier(param.name)
-            type_hint = self.gen_type(param.type)
-            params.append((escaped_name, type_hint))
-            self.mark_declared(escaped_name)
-
-        ret_type = (
-            self.gen_type(expr.return_type) if expr.return_type else "interface{}"
-        )
-        self.set_current_return_type(ret_type, expr.return_type)
-
-        header = self.gen_func_def_header(func_name, params, ret_type, is_method=True)
-
-        if expr.body is None:
-            zero = self._go_zero_values.get(ret_type, "nil")
-            body_code = f"{indent}{self.indent_str}return {zero}"
-        else:
-            body_lines: list[str] = []
-            body_inner = self.generate_lines(
-                expr.body, body_lines, indent + self.indent_str
-            )
-            if body_inner is not None:
-                body_lines.append(f"{indent}{self.indent_str}return {body_inner}")
-            body_code = "\n".join(body_lines)
-
-        self.set_current_return_type(None)
-
-        end = self.gen_func_def_end()
-        return f"{indent}{header}\n{body_code}\n{indent}{end}"
 
 
 def escape_identifier(name: str) -> str:
