@@ -421,7 +421,7 @@ class CSVLocator(_message.Message):
     def __init__(self, paths: _Optional[_Iterable[str]] = ..., inline_data: _Optional[bytes] = ...) -> None: ...
 
 class CSVConfig(_message.Message):
-    __slots__ = ("header_row", "skip", "new_line", "delimiter", "quotechar", "escapechar", "comment", "missing_strings", "decimal_separator", "encoding", "compression", "partition_size")
+    __slots__ = ("header_row", "skip", "new_line", "delimiter", "quotechar", "escapechar", "comment", "missing_strings", "decimal_separator", "encoding", "compression", "partition_size_mb")
     HEADER_ROW_FIELD_NUMBER: _ClassVar[int]
     SKIP_FIELD_NUMBER: _ClassVar[int]
     NEW_LINE_FIELD_NUMBER: _ClassVar[int]
@@ -433,7 +433,7 @@ class CSVConfig(_message.Message):
     DECIMAL_SEPARATOR_FIELD_NUMBER: _ClassVar[int]
     ENCODING_FIELD_NUMBER: _ClassVar[int]
     COMPRESSION_FIELD_NUMBER: _ClassVar[int]
-    PARTITION_SIZE_FIELD_NUMBER: _ClassVar[int]
+    PARTITION_SIZE_MB_FIELD_NUMBER: _ClassVar[int]
     header_row: int
     skip: int
     new_line: str
@@ -445,8 +445,8 @@ class CSVConfig(_message.Message):
     decimal_separator: str
     encoding: str
     compression: str
-    partition_size: int
-    def __init__(self, header_row: _Optional[int] = ..., skip: _Optional[int] = ..., new_line: _Optional[str] = ..., delimiter: _Optional[str] = ..., quotechar: _Optional[str] = ..., escapechar: _Optional[str] = ..., comment: _Optional[str] = ..., missing_strings: _Optional[_Iterable[str]] = ..., decimal_separator: _Optional[str] = ..., encoding: _Optional[str] = ..., compression: _Optional[str] = ..., partition_size: _Optional[int] = ...) -> None: ...
+    partition_size_mb: int
+    def __init__(self, header_row: _Optional[int] = ..., skip: _Optional[int] = ..., new_line: _Optional[str] = ..., delimiter: _Optional[str] = ..., quotechar: _Optional[str] = ..., escapechar: _Optional[str] = ..., comment: _Optional[str] = ..., missing_strings: _Optional[_Iterable[str]] = ..., decimal_separator: _Optional[str] = ..., encoding: _Optional[str] = ..., compression: _Optional[str] = ..., partition_size_mb: _Optional[int] = ...) -> None: ...
 
 class CSVColumn(_message.Message):
     __slots__ = ("column_name", "target_id", "types")

@@ -1060,7 +1060,7 @@ export_csv_config
         $5: logic.CSVConfig = $$.csv_config
     | "(" "export_csv_config" export_csv_path "(" "columns" export_csv_column* ")" config_dict ")"
       construct: $$ = construct_export_csv_config($3, $6, $8)
-      deconstruct if not builtin.has_proto_field($$, 'csv_source'):
+      deconstruct:
         $3: String = $$.path
         $6: Sequence[transactions.ExportCSVColumn] = $$.data_columns
         $8: Sequence[Tuple[String, logic.Value]] = deconstruct_export_csv_config($$)
@@ -1184,7 +1184,7 @@ def construct_csv_config(config_dict: Sequence[Tuple[String, logic.Value]]) -> l
     decimal_separator: str = _extract_value_string(builtin.dict_get(config, "csv_decimal_separator"), ".")
     encoding: str = _extract_value_string(builtin.dict_get(config, "csv_encoding"), "utf-8")
     compression: str = _extract_value_string(builtin.dict_get(config, "csv_compression"), "auto")
-    partition_size: int = _extract_value_int64(builtin.dict_get(config, "partition_size"), 0)
+    partition_size: int = _extract_value_int64(builtin.dict_get(config, "csv_partition_size_mb"), 0)
     return logic.CSVConfig(
         header_row=header_row,
         skip=skip,
@@ -1197,7 +1197,7 @@ def construct_csv_config(config_dict: Sequence[Tuple[String, logic.Value]]) -> l
         decimal_separator=decimal_separator,
         encoding=encoding,
         compression=compression,
-        partition_size=partition_size,
+        partition_size_mb=partition_size,
     )
 
 
@@ -1360,8 +1360,8 @@ def deconstruct_csv_config(msg: logic.CSVConfig) -> List[Tuple[String, logic.Val
     builtin.list_push(result, builtin.tuple("csv_decimal_separator", _make_value_string(msg.decimal_separator)))
     builtin.list_push(result, builtin.tuple("csv_encoding", _make_value_string(msg.encoding)))
     builtin.list_push(result, builtin.tuple("csv_compression", _make_value_string(msg.compression)))
-    if msg.partition_size != 0:
-      builtin.list_push(result, builtin.tuple("csv_partition_size", _make_value_int64(msg.partition_size)))
+    if msg.partition_size_mb != 0:
+      builtin.list_push(result, builtin.tuple("csv_partition_size_mb", _make_value_int64(msg.partition_size_mb)))
     return builtin.list_sort(result)
 
 
