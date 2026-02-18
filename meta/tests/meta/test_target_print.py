@@ -43,19 +43,13 @@ def parse_expr(
     This is a simplified wrapper that doesn't use $N parameter references,
     just extra_vars for variable bindings.
     """
-    from meta.yacc_action_parser import _convert_node_with_vars
+    from meta.yacc_action_parser import _convert_expr
 
     if extra_vars is None:
         extra_vars = {}
 
-    # Parse as Python expression
     tree = ast.parse(text, mode="eval")
-
-    # Create empty param_info and params (no $N references in tests)
-    param_info = []
-    params = []
-
-    return _convert_node_with_vars(tree.body, param_info, params, ctx, None, extra_vars)
+    return _convert_expr(tree.body, ctx, None, extra_vars)
 
 
 class TestTypeRoundtrip:

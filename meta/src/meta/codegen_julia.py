@@ -4,11 +4,10 @@ This module generates Julia code from semantic action expressions,
 with proper keyword escaping and idiomatic Julia style.
 """
 
-from .codegen_base import CodeGenerator
+from .codegen_base import CodegenConfig, CodeGenerator
 from .codegen_templates import JULIA_TEMPLATES
 from .gensym import gensym
 from .target import (
-    BaseType,
     Call,
     FunDef,
     GetElement,
@@ -29,6 +28,7 @@ from .target import (
     TargetExpr,
     Var,
 )
+from .target_builtins import NEVER
 
 # Julia reserved keywords that ProtoBuf.jl escapes with '#' prefix.
 # This must match ProtoBuf.jl's JULIA_RESERVED_KEYWORDS exactly so that
@@ -86,6 +86,9 @@ class JuliaCodeGenerator(CodeGenerator):
         # Capitalized forms (from protobuf)
         "Int32": "Int32",
         "Int64": "Int64",
+        "UInt32": "UInt32",
+        "UInt64": "UInt64",
+        "Float32": "Float32",
         "Float64": "Float64",
         "String": "String",
         "Boolean": "Bool",
@@ -101,8 +104,8 @@ class JuliaCodeGenerator(CodeGenerator):
         "Void": "Nothing",
     }
 
-    def __init__(self, proto_messages=None):
-        super().__init__(proto_messages)
+    def __init__(self, proto_messages=None, *, config: CodegenConfig):
+        super().__init__(proto_messages, config=config)
         self._oneof_alt_set: set[tuple] | None = None
         self._register_builtins()
 
@@ -127,18 +130,23 @@ class JuliaCodeGenerator(CodeGenerator):
 
         self.register_builtin("enum_value", enum_value_handler)
 
+        self.register_builtin("tuple", self._gen_tuple_builtin)
+
+        def has_proto_field_handler(
+            args: list[str], lines: list[str], indent: str
+        ) -> BuiltinResult:
+            obj_code = args[0]
+            field_name = args[1].strip('"')
+            if field_name in JULIA_KEYWORDS:
+                field_name = f"#{field_name}"
+            return BuiltinResult(
+                f'_has_proto_field({obj_code}, Symbol("{field_name}"))', []
+            )
+
+        self.register_builtin("has_proto_field", has_proto_field_handler)
+
     def escape_keyword(self, name: str) -> str:
         return f'var"{name}"'
-
-    def _escape_proto_field(self, name: str) -> str:
-        """Escape a proto field name matching ProtoBuf.jl's convention.
-
-        ProtoBuf.jl prefixes Julia keywords with '#' in struct field names,
-        e.g., `type` becomes `var"#type"`.
-        """
-        if name in JULIA_KEYWORDS:
-            return f'var"#{name}"'
-        return name
 
     # --- Literal generation ---
 
@@ -168,6 +176,9 @@ class JuliaCodeGenerator(CodeGenerator):
         if name in JULIA_KEYWORDS:
             return f'var"#{name}"'
         return name
+
+    def gen_field_access(self, obj_code: str, field_name: str) -> str:
+        return f"{obj_code}.{self._escape_proto_field(field_name)}"
 
     def _gen_oneof_symbol(self, name: str) -> str:
         """Generate a Julia symbol for a OneOf field name, escaping keywords.
@@ -237,7 +248,7 @@ class JuliaCodeGenerator(CodeGenerator):
             type_code = self.gen_type(element_type)
             return f"{type_code}[{', '.join(elements)}]"
         # For empty lists with Never type (no type info), use untyped []
-        if isinstance(element_type, BaseType) and element_type.name == "Never":
+        if element_type == NEVER:
             return "[]"
         # For empty lists with known type, use typed syntax
         type_code = self.gen_type(element_type)
@@ -293,9 +304,9 @@ class JuliaCodeGenerator(CodeGenerator):
     # --- Lambda and function definition syntax ---
 
     def gen_lambda_start(
-        self, params: list[str], return_type: str | None
+        self, params: list[tuple[str, str | None]], return_type: str | None
     ) -> tuple[str, str]:
-        params_str = ", ".join(params) if params else ""
+        params_str = ", ".join(n for n, _ in params) if params else ""
         return (f"function __FUNC__({params_str})", "end")
 
     def gen_func_def_header(
@@ -305,7 +316,10 @@ class JuliaCodeGenerator(CodeGenerator):
         return_type: str | None,
         is_method: bool = False,
     ) -> str:
-        params_str = ", ".join(f"{n}::{t}" for n, t in params)
+        typed = [f"{n}::{t}" for n, t in params]
+        if is_method:
+            typed.insert(0, self.config.first_param)
+        params_str = ", ".join(typed)
         ret_hint = f"::{return_type}" if return_type else ""
         return f"function {name}({params_str}){ret_hint}"
 
@@ -496,8 +510,14 @@ class JuliaCodeGenerator(CodeGenerator):
                     "Function argument should not contain a return"
                 )
                 args.append(arg_code)
-            # PrintNonterminal uses "pp" (PrettyPrinter), others use "parser"
-            receiver = "pp" if isinstance(expr.func, PrintNonterminal) else "parser"
+            # The receiver name comes from the config's first_param (e.g. "parser::Parser" -> "parser")
+            # except PrintNonterminal always uses "pp" and ParseNonterminal always uses "parser"
+            if isinstance(expr.func, PrintNonterminal):
+                receiver = "pp"
+            elif isinstance(expr.func, ParseNonterminal):
+                receiver = "parser"
+            else:
+                receiver = self.config.first_param.split("::")[0]
             all_args = [receiver] + args
             args_code = ", ".join(all_args)
             if self._is_void_expr(expr):
@@ -522,83 +542,15 @@ class JuliaCodeGenerator(CodeGenerator):
             f"OneOf should only appear in Call(OneOf(...), [value]) pattern: {expr}"
         )
 
-    def _generate_julia_function(
-        self, func_name: str, first_param: str, params, body, return_type, indent: str
-    ) -> str:
-        """Generate a Julia function definition with a typed first parameter.
-
-        Args:
-            func_name: The function name.
-            first_param: The first parameter string (e.g. "parser::Parser").
-            params: List of Param objects (each with .name and .type).
-            body: The function body expression, or None for an empty body.
-            return_type: The return type, or None.
-            indent: Indentation prefix.
-        """
-        typed_params = [first_param]
-        for param in params:
-            escaped_name = self.escape_identifier(param.name)
-            type_hint = self.gen_type(param.type)
-            typed_params.append(f"{escaped_name}::{type_hint}")
-
-        params_str = ", ".join(typed_params)
-        ret_hint = f"::{self.gen_type(return_type)}" if return_type else ""
-
-        if body is None:
-            body_code = f"{indent}{self.indent_str}{self.gen_empty_body()}"
-        else:
-            body_lines: list[str] = []
-            body_inner = self.generate_lines(body, body_lines, indent + self.indent_str)
-            if body_inner is not None:
-                body_lines.append(
-                    f"{indent}{self.indent_str}{self.gen_return(body_inner)}"
-                )
-            body_code = "\n".join(body_lines)
-
-        return f"{indent}function {func_name}({params_str}){ret_hint}\n{body_code}\n{indent}end"
-
-    def _generate_parse_def(self, expr: ParseNonterminalDef, indent: str) -> str:
-        """Generate a parse method definition."""
-        return self._generate_julia_function(
-            f"parse_{expr.nonterminal.name}",
-            "parser::Parser",
-            expr.params,
-            expr.body,
-            expr.return_type,
-            indent,
-        )
-
-    def _generate_pretty_def(self, expr: PrintNonterminalDef, indent: str) -> str:
-        """Generate a pretty-print function definition."""
-        return self._generate_julia_function(
-            f"pretty_{expr.nonterminal.name}",
-            "pp::PrettyPrinter",
-            expr.params,
-            expr.body,
-            expr.return_type,
-            indent,
-        )
-
     def format_literal_token_spec(self, escaped_literal: str) -> str:
-        return f'        ("LITERAL", r"{escaped_literal}", identity),'
+        return f'    ("LITERAL", r"{escaped_literal}", identity),'
 
     def format_named_token_spec(self, token_name: str, token_pattern: str) -> str:
         escaped_pattern = token_pattern.replace('"', '\\"')
-        return f'        ("{token_name}", r"{escaped_pattern}", scan_{token_name.lower()}),'
+        return f'    ("{token_name}", r"{escaped_pattern}", scan_{token_name.lower()}),'
 
     def format_command_line_comment(self, command_line: str) -> str:
-        return f"\nCommand: {command_line}\n"
-
-    def generate_method_def(self, expr: FunDef, indent: str) -> str:
-        """Generate a function definition with parser as first parameter."""
-        return self._generate_julia_function(
-            self.escape_identifier(expr.name),
-            "parser::Parser",
-            expr.params,
-            expr.body,
-            expr.return_type,
-            indent,
-        )
+        return f"Command: {command_line}"
 
 
 def escape_identifier(name: str) -> str:
@@ -608,26 +560,29 @@ def escape_identifier(name: str) -> str:
     return name
 
 
-def generate_julia_type(typ) -> str:
+def generate_julia_type(typ, *, config: CodegenConfig) -> str:
     """Generate Julia type annotation from a Type expression."""
-    return JuliaCodeGenerator().gen_type(typ)
+    return JuliaCodeGenerator(config=config).gen_type(typ)
 
 
 def generate_julia_lines(
-    expr: TargetExpr, lines: list[str], indent: str = ""
+    expr: TargetExpr, lines: list[str], indent: str = "", *, config: CodegenConfig
 ) -> str | None:
     """Generate Julia code from a target IR expression."""
-    return JuliaCodeGenerator().generate_lines(expr, lines, indent)
+    return JuliaCodeGenerator(config=config).generate_lines(expr, lines, indent)
 
 
 def generate_julia_def(
-    expr: FunDef | ParseNonterminalDef | PrintNonterminalDef, indent: str = ""
+    expr: FunDef | ParseNonterminalDef | PrintNonterminalDef,
+    indent: str = "",
+    *,
+    config: CodegenConfig,
 ) -> str:
     """Generate Julia function definition."""
-    return JuliaCodeGenerator().generate_def(expr, indent)
+    return JuliaCodeGenerator(config=config).generate_def(expr, indent)
 
 
-def generate_julia(expr: TargetExpr, indent: str = "") -> str:
+def generate_julia(expr: TargetExpr, indent: str = "", *, config: CodegenConfig) -> str:
     """Generate Julia code for a single expression (inline style)."""
     if isinstance(expr, Var):
         return escape_identifier(expr.name)
@@ -643,31 +598,33 @@ def generate_julia(expr: TargetExpr, indent: str = "") -> str:
         if not expr.elements:
             return "[]"
         elements_code = ", ".join(
-            generate_julia(elem, indent) for elem in expr.elements
+            generate_julia(elem, indent, config=config) for elem in expr.elements
         )
         return f"[{elements_code}]"
     elif isinstance(expr, Call):
-        func_code = generate_julia(expr.func, indent)
-        args_code = ", ".join(generate_julia(arg, indent) for arg in expr.args)
+        func_code = generate_julia(expr.func, indent, config=config)
+        args_code = ", ".join(
+            generate_julia(arg, indent, config=config) for arg in expr.args
+        )
         return f"{func_code}({args_code})"
     elif isinstance(expr, Lambda):
         params = [escape_identifier(p.name) for p in expr.params]
         params_str = ", ".join(params) if params else ""
-        body_code = generate_julia(expr.body, indent)
+        body_code = generate_julia(expr.body, indent, config=config)
         if params:
             return f"({params_str}) -> {body_code}"
         else:
             return f"() -> {body_code}"
     elif isinstance(expr, Let):
         lines: list[str] = []
-        result = generate_julia_lines(expr, lines, indent)
+        result = generate_julia_lines(expr, lines, indent, config=config)
         result_str = result if result is not None else ""
         if lines:
             return "\n".join(lines) + "\n" + result_str
         return result_str
     else:
         lines = []
-        result = generate_julia_lines(expr, lines, indent)
+        result = generate_julia_lines(expr, lines, indent, config=config)
         result_str = result if result is not None else ""
         if lines:
             return "\n".join(lines) + "\n" + result_str

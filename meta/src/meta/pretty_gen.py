@@ -34,6 +34,7 @@ from .target import (
     OptionType,
     PrintNonterminal,
     PrintNonterminalDef,
+    Return,
     Seq,
     SequenceType,
     TargetExpr,
@@ -41,7 +42,7 @@ from .target import (
     Var,
     gensym,
 )
-from .target_builtins import make_builtin
+from .target_builtins import STRING, VOID, make_builtin
 
 
 def generate_pretty_functions(
@@ -78,11 +79,46 @@ def _generate_pretty_method(
     else:
         body = _generate_pretty_alternatives(rules, msg_param, grammar, proto_messages)
 
+    if not _is_all_literals(rules):
+        body = _wrap_with_try_flat(nt, msg_param, body)
+
     return PrintNonterminalDef(
         nonterminal=nt,
         params=[msg_param],
-        return_type=OptionType(BaseType("Never")),
+        return_type=VOID,
         body=body,
+    )
+
+
+def _wrap_with_try_flat(
+    nt: Nonterminal, msg_param: Var, body: TargetExpr
+) -> TargetExpr:
+    """Wrap a pretty function body with a try_flat preamble.
+
+    Generates the equivalent of:
+        _flat = try_flat(pp, msg, pretty_<nt>)
+        if _flat is not nothing
+            write(pp, _flat)
+            return nothing
+        else
+            <body>
+        end
+    """
+    flat_var = Var(gensym("flat"), OptionType(STRING))
+    try_flat_call = Call(make_builtin("try_flat_io"), [msg_param, PrintNonterminal(nt)])
+    flat_write = Seq(
+        [
+            Call(
+                make_builtin("write_io"),
+                [Call(make_builtin("unwrap_option"), [flat_var])],
+            ),
+            Return(Lit(None)),
+        ]
+    )
+    return Let(
+        flat_var,
+        try_flat_call,
+        IfElse(Call(make_builtin("is_some"), [flat_var]), flat_write, body),
     )
 
 
@@ -131,15 +167,22 @@ def _generate_pretty_alternatives(
                 gensym("deconstruct_result"), rule.deconstructor.return_type
             )
             deconstruct_call = Call(rule.deconstructor, [msg_param])
+            # Unwrap the option inside the is_some guard
+            inner_type = rule.deconstructor.return_type.element_type
+            unwrapped_var = Var(gensym("unwrapped"), inner_type)
             pretty_body = _generate_pretty_from_fields(
-                rule.rhs, deconstruct_result_var, grammar, proto_messages
+                rule.rhs, unwrapped_var, grammar, proto_messages
             )
             result = Let(
                 deconstruct_result_var,
                 deconstruct_call,
                 IfElse(
                     Call(make_builtin("is_some"), [deconstruct_result_var]),
-                    pretty_body,
+                    Let(
+                        unwrapped_var,
+                        Call(make_builtin("unwrap_option"), [deconstruct_result_var]),
+                        pretty_body,
+                    ),
                     result,
                 ),
             )
@@ -337,8 +380,38 @@ def _generate_pretty_sequence_from_fields(
         and elems[1].name != "("
     )
 
+    # Detect brace-delimited block: "{" ... "}"
+    last_elem = elems[-1] if elems else None
+    is_brace = (
+        len(elems) >= 2
+        and isinstance(elems[0], LitTerminal)
+        and elems[0].name == "{"
+        and isinstance(last_elem, LitTerminal)
+        and last_elem.name == "}"
+    )
+
     # Count non-literal elements to determine if fields_var is a tuple or single value
     non_lit_count = sum(1 for e in elems if not isinstance(e, LitTerminal))
+
+    first_elem = elems[0] if elems else None
+    last_elem = elems[-1] if elems else None
+
+    def _is_delimited(open_delim: str, close_delim: str) -> bool:
+        return (
+            non_lit_count > 0
+            and len(elems) >= 2
+            and isinstance(first_elem, LitTerminal)
+            and first_elem.name == open_delim
+            and isinstance(last_elem, LitTerminal)
+            and last_elem.name == close_delim
+        )
+
+    is_bracket_group = _is_delimited("[", "]")
+    is_paren_group = not is_sexp and _is_delimited("(", ")")
+    is_brace_group = _is_delimited("{", "}")
+
+    # Whether this is a structured group that uses newlines between children
+    is_group = is_sexp or is_bracket_group or is_paren_group or is_brace_group
 
     # Track the previous element's literal name for spacing decisions
     prev_lit_name: str | None = None
@@ -349,10 +422,13 @@ def _generate_pretty_sequence_from_fields(
         # Compute leading whitespace for this element
         leading_ws: list[TargetExpr] = []
         if isinstance(elem, LitTerminal):
-            if is_sexp and i >= 2 and elem.name not in NO_LEADING_SPACE:
-                # Sexp spacing: newline before non-bracket-closing literals
+            if is_group and i >= 2 and elem.name not in NO_LEADING_SPACE:
+                # Group spacing: newline before non-bracket-closing literals
                 stmts.append(Call(make_builtin("newline_io"), []))
-            elif not is_sexp and stmts:
+            elif is_brace and i >= 1 and elem.name not in NO_LEADING_SPACE:
+                # Brace spacing: newline before non-bracket-closing literals
+                stmts.append(Call(make_builtin("newline_io"), []))
+            elif not is_group and not is_brace and stmts:
                 cur_lit_name = elem.name
                 suppress = False
                 if prev_lit_name in NO_TRAILING_SPACE:
@@ -362,15 +438,23 @@ def _generate_pretty_sequence_from_fields(
                 if not suppress:
                     stmts.append(Call(make_builtin("write_io"), [Lit(" ")]))
         else:
-            if is_sexp:
+            if is_group:
                 if prev_lit_name in NO_TRAILING_SPACE:
                     # After opening brackets, no whitespace
                     pass
                 else:
-                    # Sexp spacing: newline before each non-literal
+                    # Group spacing: newline before each non-literal
+                    leading_ws = [Call(make_builtin("newline_io"), [])]
+            elif is_brace:
+                if prev_lit_name == "{":
+                    # First element after {: space, not newline
+                    leading_ws = [Call(make_builtin("write_io"), [Lit(" ")])]
+                elif prev_lit_name in NO_TRAILING_SPACE:
+                    pass
+                else:
                     leading_ws = [Call(make_builtin("newline_io"), [])]
             elif stmts:
-                # Non-sexp spacing between elements
+                # Non-group spacing between elements
                 cur_lit_name = None
                 suppress = False
                 if prev_lit_name in NO_TRAILING_SPACE:
@@ -380,12 +464,29 @@ def _generate_pretty_sequence_from_fields(
 
         if isinstance(elem, LitTerminal):
             is_keyword = is_sexp and i == 1
-            # For sexp closing paren, emit dedent if we indented
-            if is_sexp and elem.name == ")" and non_lit_count > 0:
+
+            # Closing delimiter: emit dedent before
+            is_closing = (
+                (is_sexp and elem.name == ")" and non_lit_count > 0)
+                or (is_bracket_group and elem.name == "]")
+                or (is_paren_group and elem.name == ")")
+            )
+            if is_closing:
+                stmts.append(Call(make_builtin("dedent_io"), []))
+            # For brace closing, emit dedent if we indented
+            if is_brace and elem.name == "}" and non_lit_count > 0:
                 stmts.append(Call(make_builtin("dedent_io"), []))
             stmts.append(_format_literal(elem))
-            # After sexp keyword, emit indent (always, not conditional on Option)
+
+            # Opening delimiter/keyword: emit indent after
             if is_keyword and non_lit_count > 0:
+                stmts.append(Call(make_builtin("indent_sexp_io"), []))
+            elif (is_bracket_group and elem.name == "[") or (
+                is_paren_group and elem.name == "("
+            ):
+                stmts.append(Call(make_builtin("indent_io"), []))
+            # After opening brace, emit indent
+            if is_brace and elem.name == "{" and non_lit_count > 0:
                 stmts.append(Call(make_builtin("indent_io"), []))
             prev_lit_name = elem.name
         else:
@@ -581,27 +682,52 @@ def _format_terminal(terminal: NamedTerminal, value_var: Var) -> TargetExpr:
 # --- Utility functions ---
 
 
-def _is_trivial_deconstruct(deconstructor: Lambda) -> bool:
-    """Check if a deconstructor is trivial (just returns msg or msg.field)."""
+def _is_all_literals(rules: list[Rule]) -> bool:
+    """Check if all rules produce only literal output (no fields to format)."""
+    for rule in rules:
+        for elem in rhs_elements(rule.rhs):
+            if not isinstance(elem, LitTerminal):
+                return False
+    return True
+
+
+def _is_identity_deconstruct(deconstructor: Lambda) -> bool:
+    """Check if a deconstructor is an identity function (lambda x: x)."""
+    if len(deconstructor.params) != 1:
+        return False
+    return deconstructor.body == deconstructor.params[0]
+
+
+def _is_some_identity_deconstruct(deconstructor: Lambda) -> bool:
+    """Check if a deconstructor is lambda x: some(x)."""
+    if len(deconstructor.params) != 1:
+        return False
     body = deconstructor.body
-    if isinstance(body, Var) and body.name == "msg":
-        return True
-    if (
+    return (
         isinstance(body, Call)
         and isinstance(body.func, Builtin)
         and body.func.name == "some"
         and len(body.args) == 1
-        and isinstance(body.args[0], Var)
-        and body.args[0].name == "msg"
-    ):
-        return True
-    return False
+        and body.args[0] == deconstructor.params[0]
+    )
+
+
+def _is_trivial_deconstruct(deconstructor: Lambda) -> bool:
+    """Check if a deconstructor is trivial (identity or some(identity))."""
+    return _is_identity_deconstruct(deconstructor) or _is_some_identity_deconstruct(
+        deconstructor
+    )
 
 
 def _extract_trivial_deconstruct_result(
     deconstructor: Lambda, msg_param: Var
 ) -> TargetExpr:
-    """Extract the result expression from a trivial deconstructor."""
+    """Extract the result expression from a trivial deconstructor.
+
+    For identity (lambda x: x), returns msg_param directly.
+    For some-identity (lambda x: some(x)), also returns msg_param since
+    the caller handles unwrapping the OptionType.
+    """
     return msg_param
 
 

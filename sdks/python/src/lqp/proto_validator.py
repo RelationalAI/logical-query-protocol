@@ -5,7 +5,7 @@ Operates on protobuf messages (transactions_pb2.Transaction).
 """
 
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Any
 
 from google.protobuf.descriptor import Descriptor, FieldDescriptor
 from google.protobuf.message import Message
@@ -15,17 +15,6 @@ from lqp.proto.v1 import fragments_pb2, logic_pb2, transactions_pb2
 
 class ValidationError(Exception):
     pass
-
-
-# Proto instruction types that have `name: RelationId` and `body: Abstraction`.
-_InstructionLike = (
-    logic_pb2.Def
-    | logic_pb2.Assign
-    | logic_pb2.Upsert
-    | logic_pb2.Break
-    | logic_pb2.MonoidDef
-    | logic_pb2.MonusDef
-)
 
 
 # --- Helpers ---
@@ -235,7 +224,7 @@ class ProtoVisitor:
         # Unwrap oneof wrappers
         unwrapper = _WRAPPER_TYPES.get(type_name)
         if unwrapper is not None:
-            inner = unwrapper(cast(Any, node))
+            inner = unwrapper(node)  # type: ignore[arg-type]
             if inner is not None:
                 self.visit(inner, *args)
             return
@@ -243,7 +232,7 @@ class ProtoVisitor:
         return self._resolve_visitor(type_name)(node, *args)
 
     def generic_visit(self, node: Message, *args: Any) -> None:
-        descriptor = cast(Descriptor, node.DESCRIPTOR)
+        descriptor: Descriptor = node.DESCRIPTOR  # type: ignore[assignment]
         for field_desc in descriptor.fields:
             value = getattr(node, field_desc.name)
             if field_desc.label == FieldDescriptor.LABEL_REPEATED:
@@ -397,9 +386,7 @@ class AtomTypeChecker(ProtoVisitor):
                     if inner is not None:
                         inner_name = type(inner).__name__
                         if inner_name == "Instruction":
-                            instr = unwrap_instruction(
-                                cast(logic_pb2.Instruction, inner)
-                            )
+                            instr = unwrap_instruction(inner)  # type: ignore[arg-type]
                             if instr is not None:
                                 self.atoms.append((type(instr).__name__, instr))
                         elif inner_name in (
@@ -465,22 +452,18 @@ class AtomTypeChecker(ProtoVisitor):
                 continue
             inner_name = type(inner).__name__
             if inner_name == "Instruction":
-                actual_instr = cast(
-                    _InstructionLike,
-                    unwrap_instruction(cast(logic_pb2.Instruction, inner)),
-                )
+                actual_instr = unwrap_instruction(inner)  # type: ignore[arg-type]
                 if actual_instr is not None:
-                    key = relation_id_key(actual_instr.name)
-                    sig = [get_type_name(b.type) for b in actual_instr.body.vars]
+                    key = relation_id_key(actual_instr.name)  # type: ignore[union-attr]
+                    sig = [get_type_name(b.type) for b in actual_instr.body.vars]  # type: ignore[union-attr]
                     new_state = AtomTypeChecker.State(
                         {key: sig, **state.relation_types},
                         state.var_types,
                     )
                     self.visit(actual_instr, new_state)
             elif inner_name in ("Assign", "Upsert", "Break", "MonoidDef", "MonusDef"):
-                typed_inner = cast(_InstructionLike, inner)
-                key = relation_id_key(typed_inner.name)
-                sig = [get_type_name(b.type) for b in typed_inner.body.vars]
+                key = relation_id_key(inner.name)  # type: ignore[union-attr]
+                sig = [get_type_name(b.type) for b in inner.body.vars]  # type: ignore[union-attr]
                 new_state = AtomTypeChecker.State(
                     {key: sig, **state.relation_types},
                     state.var_types,
@@ -561,41 +544,35 @@ class LoopyBadGlobalFinder(ProtoVisitor):
                 continue
             inner_name = type(inner).__name__
             if inner_name == "Instruction":
-                actual = cast(
-                    _InstructionLike,
-                    unwrap_instruction(cast(logic_pb2.Instruction, inner)),
-                )
+                actual = unwrap_instruction(inner)  # type: ignore[arg-type]
                 if (
                     actual is not None
                     and type(actual).__name__ in self._ALGORITHM_INIT_TYPES
                 ):
-                    self.init.add(relation_id_key(actual.name))
+                    self.init.add(relation_id_key(actual.name))  # type: ignore[union-attr]
             elif inner_name == "Loop":
                 self.visit(inner)
         self.globals.clear()
 
     def visit_Loop(self, node: logic_pb2.Loop, *args: Any):
         for instr_wrapper in node.init:
-            instr = cast(_InstructionLike, unwrap_instruction(instr_wrapper))
+            instr = unwrap_instruction(instr_wrapper)
             if instr is not None and type(instr).__name__ in self._LOOP_INSTR_TYPES:
-                self.init.add(relation_id_key(instr.name))
+                self.init.add(relation_id_key(instr.name))  # type: ignore[union-attr]
         for construct in node.body.constructs:
             inner = unwrap_construct(construct)
             if inner is None:
                 continue
             inner_name = type(inner).__name__
             if inner_name == "Instruction":
-                actual = cast(
-                    _InstructionLike,
-                    unwrap_instruction(cast(logic_pb2.Instruction, inner)),
-                )
+                actual = unwrap_instruction(inner)  # type: ignore[arg-type]
                 if (
                     actual is not None
                     and type(actual).__name__ in self._LOOP_INSTR_TYPES
                 ):
-                    key = relation_id_key(actual.name)
+                    key = relation_id_key(actual.name)  # type: ignore[union-attr]
                     if key in self.globals and key not in self.init:
-                        original_name = self.get_original_name(actual.name)
+                        original_name = self.get_original_name(actual.name)  # type: ignore[union-attr]
                         raise ValidationError(
                             f"Global rule found in body: '{original_name}'"
                         )
@@ -606,8 +583,8 @@ class LoopyUpdatesShouldBeAtoms(ProtoVisitor):
         super().__init__()
         self.visit(txn)
 
-    def _check_atom_body(self, node: _InstructionLike, instr_type_name: str):
-        formula = node.body.value
+    def _check_atom_body(self, node: Message, instr_type_name: str):
+        formula = node.body.value  # type: ignore[union-attr]
         which = formula.WhichOneof("formula_type")
         if which != "atom":
             raise ValidationError(f"{instr_type_name} must have an Atom as its value")
@@ -704,15 +681,26 @@ class FDVarsChecker(ProtoVisitor):
 # --- Entry point ---
 
 
+_VALIDATORS: list[tuple[str, Any]] = [
+    ("shadowed variable check", ShadowedVariableFinder),
+    ("unused variable check", UnusedVariableVisitor),
+    ("duplicate relation ID check", DuplicateRelationIdFinder),
+    ("duplicate fragment check", DuplicateFragmentDefinitionFinder),
+    ("atom type check", AtomTypeChecker),
+    ("loop break check", LoopyBadBreakFinder),
+    ("loop global check", LoopyBadGlobalFinder),
+    ("loop update check", LoopyUpdatesShouldBeAtoms),
+    ("CSV config check", CSVConfigChecker),
+    ("FD variable check", FDVarsChecker),
+]
+
+
 def validate_proto(txn: transactions_pb2.Transaction) -> None:
     """Validate a protobuf Transaction message."""
-    ShadowedVariableFinder(txn)
-    UnusedVariableVisitor(txn)
-    DuplicateRelationIdFinder(txn)
-    DuplicateFragmentDefinitionFinder(txn)
-    AtomTypeChecker(txn)
-    LoopyBadBreakFinder(txn)
-    LoopyBadGlobalFinder(txn)
-    LoopyUpdatesShouldBeAtoms(txn)
-    CSVConfigChecker(txn)
-    FDVarsChecker(txn)
+    for name, validator_cls in _VALIDATORS:
+        try:
+            validator_cls(txn)
+        except ValidationError:
+            raise
+        except Exception as e:
+            raise ValidationError(f"{name}: {e}") from e

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Tests for Julia code generation from action AST."""
 
+from meta.codegen_base import PARSER_CONFIG
 from meta.codegen_julia import (
     JuliaCodeGenerator,
     generate_julia,
@@ -55,7 +56,7 @@ def test_julia_keyword_escaping():
 
     # Test in expressions
     var = Var("function", _any_type)
-    code = generate_julia(var)
+    code = generate_julia(var, config=PARSER_CONFIG)
     assert code == 'var"function"'
 
 
@@ -63,19 +64,19 @@ def test_julia_call_generation():
     """Test Julia function call generation."""
     # Simple call
     call = Call(Var("foo", _any_type), [Var("x", _any_type), Var("y", _any_type)])
-    code = generate_julia(call)
+    code = generate_julia(call, config=PARSER_CONFIG)
     assert code == "foo(x, y)"
 
     # Call with keyword function name
     call_kw = Call(Var("function", _any_type), [Var("arg", _any_type)])
-    code_kw = generate_julia(call_kw)
+    code_kw = generate_julia(call_kw, config=PARSER_CONFIG)
     assert code_kw == 'var"function"(arg)'
 
     # Nested call
     nested = Call(
         Var("wrap", _any_type), [Call(Var("inner", _any_type), [Var("z", _any_type)])]
     )
-    code_nested = generate_julia(nested)
+    code_nested = generate_julia(nested, config=PARSER_CONFIG)
     assert code_nested == "wrap(inner(z))"
 
 
@@ -85,7 +86,7 @@ def test_julia_let_generation():
     let_expr = Let(
         Var("x", _any_type), Call(Var("parse_foo", _any_type), []), Var("x", _any_type)
     )
-    code = generate_julia(let_expr)
+    code = generate_julia(let_expr, config=PARSER_CONFIG)
     assert "parse_foo()" in code and "x = " in code
 
     # Nested let
@@ -98,7 +99,7 @@ def test_julia_let_generation():
             Call(Var("make", _any_type), [Var("x", _any_type), Var("y", _any_type)]),
         ),
     )
-    code_nested = generate_julia(nested_let)
+    code_nested = generate_julia(nested_let, config=PARSER_CONFIG)
     assert "parse_a()" in code_nested and "x = " in code_nested
     assert "parse_b()" in code_nested and "y = " in code_nested
     assert "make(x, y)" in code_nested
@@ -107,7 +108,7 @@ def test_julia_let_generation():
     let_kw = Let(
         Var("end", _any_type), Call(Var("parse", _any_type), []), Var("end", _any_type)
     )
-    code_kw = generate_julia(let_kw)
+    code_kw = generate_julia(let_kw, config=PARSER_CONFIG)
     assert 'var"end"' in code_kw
 
 
@@ -119,7 +120,7 @@ def test_julia_lambda_generation():
         _any_type,
         Call(Var("Add", _any_type), [Var("x", _any_type), Var("y", _any_type)]),
     )
-    code = generate_julia(lam)
+    code = generate_julia(lam, config=PARSER_CONFIG)
     assert code == "(x, y) -> Add(x, y)"
 
     # Lambda with keyword parameter
@@ -128,13 +129,13 @@ def test_julia_lambda_generation():
         _any_type,
         Var("value", _any_type),
     )
-    code_kw = generate_julia(lam_kw)
+    code_kw = generate_julia(lam_kw, config=PARSER_CONFIG)
     assert 'var"struct"' in code_kw
 
 
 def test_julia_builtin_generation():
     """Test Julia builtin function code generation."""
-    gen = JuliaCodeGenerator()
+    gen = JuliaCodeGenerator(config=PARSER_CONFIG)
 
     # Test 'not' builtin
     reset_gensym()
@@ -224,7 +225,7 @@ def test_julia_builtin_generation():
 
 def test_julia_get_element_generation():
     """Test Julia GetElement with 1-based indexing."""
-    gen = JuliaCodeGenerator()
+    gen = JuliaCodeGenerator(config=PARSER_CONFIG)
 
     # GetElement uses 1-based indexing in Julia
     reset_gensym()
@@ -242,7 +243,7 @@ def test_julia_get_element_generation():
 
 def test_julia_if_else_generation():
     """Test Julia if-else code generation."""
-    gen = JuliaCodeGenerator()
+    gen = JuliaCodeGenerator(config=PARSER_CONFIG)
 
     # Basic if-else
     reset_gensym()
@@ -276,7 +277,7 @@ def test_julia_if_else_generation():
 
 def test_julia_symbol_generation():
     """Test Julia symbol code generation."""
-    gen = JuliaCodeGenerator()
+    gen = JuliaCodeGenerator(config=PARSER_CONFIG)
 
     reset_gensym()
     lines = []
@@ -287,7 +288,7 @@ def test_julia_symbol_generation():
 
 def test_julia_list_expr_generation():
     """Test Julia list expression code generation."""
-    gen = JuliaCodeGenerator()
+    gen = JuliaCodeGenerator(config=PARSER_CONFIG)
 
     # Empty list
     reset_gensym()
@@ -308,7 +309,7 @@ def test_julia_list_expr_generation():
 
 def test_julia_type_generation():
     """Test Julia type hint generation."""
-    gen = JuliaCodeGenerator()
+    gen = JuliaCodeGenerator(config=PARSER_CONFIG)
 
     # Base types
     assert gen.gen_type(BaseType("Int32")) == "Int32"
@@ -330,7 +331,7 @@ def test_julia_type_generation():
 
 def test_julia_fun_def_generation():
     """Test Julia function definition code generation."""
-    gen = JuliaCodeGenerator()
+    gen = JuliaCodeGenerator(config=PARSER_CONFIG)
 
     # Simple function
     reset_gensym()
@@ -360,7 +361,7 @@ def test_julia_fun_def_generation():
 
 def test_julia_visit_nonterminal_def_generation():
     """Test Julia ParseNonterminalDef code generation."""
-    gen = JuliaCodeGenerator()
+    gen = JuliaCodeGenerator(config=PARSER_CONFIG)
 
     # Create a nonterminal
     nt = Nonterminal("expr", MessageType("logic", "Expr"))
@@ -392,7 +393,7 @@ def test_julia_visit_nonterminal_def_generation():
 
 def test_julia_return_generation():
     """Test Julia return statement code generation."""
-    gen = JuliaCodeGenerator()
+    gen = JuliaCodeGenerator(config=PARSER_CONFIG)
 
     reset_gensym()
     lines = []
@@ -406,7 +407,7 @@ def test_julia_return_generation():
 
 def test_julia_assign_generation():
     """Test Julia assignment code generation."""
-    gen = JuliaCodeGenerator()
+    gen = JuliaCodeGenerator(config=PARSER_CONFIG)
 
     reset_gensym()
     lines = []
@@ -425,7 +426,7 @@ def test_julia_assign_generation():
 
 def test_julia_seq_generation():
     """Test Julia sequence expression code generation."""
-    gen = JuliaCodeGenerator()
+    gen = JuliaCodeGenerator(config=PARSER_CONFIG)
 
     # Sequence of expressions
     reset_gensym()
@@ -446,7 +447,7 @@ def test_julia_seq_generation():
 
 def test_julia_while_generation():
     """Test Julia while loop code generation."""
-    gen = JuliaCodeGenerator()
+    gen = JuliaCodeGenerator(config=PARSER_CONFIG)
 
     # Simple while loop
     reset_gensym()
@@ -462,7 +463,7 @@ def test_julia_while_generation():
 
 def test_julia_message_generation():
     """Test Julia NewMessage constructor code generation."""
-    gen = JuliaCodeGenerator()
+    gen = JuliaCodeGenerator(config=PARSER_CONFIG)
 
     # Simple message with no fields
     reset_gensym()
@@ -485,7 +486,7 @@ def test_julia_message_generation():
 
 def test_julia_oneof_generation():
     """Test Julia OneOf field code generation."""
-    gen = JuliaCodeGenerator()
+    gen = JuliaCodeGenerator(config=PARSER_CONFIG)
 
     # OneOf in NewMessage constructor
     reset_gensym()
@@ -499,7 +500,7 @@ def test_julia_oneof_generation():
 
 def test_julia_helper_function_simple():
     """Test Julia code generation for a simple helper function."""
-    gen = JuliaCodeGenerator()
+    gen = JuliaCodeGenerator(config=PARSER_CONFIG)
     reset_gensym()
 
     # Equivalent to: function add_one(x::Int64)::Int64 return x + 1 end
@@ -516,7 +517,7 @@ def test_julia_helper_function_simple():
 
 def test_julia_helper_function_with_if():
     """Test Julia code generation for helper function with if-else."""
-    gen = JuliaCodeGenerator()
+    gen = JuliaCodeGenerator(config=PARSER_CONFIG)
     reset_gensym()
 
     # Equivalent to:
@@ -547,7 +548,7 @@ def test_julia_helper_function_with_if():
 
 def test_julia_helper_function_with_assignment():
     """Test Julia code generation for helper function with variable assignment."""
-    gen = JuliaCodeGenerator()
+    gen = JuliaCodeGenerator(config=PARSER_CONFIG)
     reset_gensym()
 
     # Equivalent to:
@@ -574,7 +575,7 @@ def test_julia_helper_function_with_assignment():
 
 def test_julia_helper_function_message_constructor():
     """Test Julia code generation for helper function constructing a message."""
-    gen = JuliaCodeGenerator()
+    gen = JuliaCodeGenerator(config=PARSER_CONFIG)
     reset_gensym()
 
     # Equivalent to:
@@ -594,7 +595,7 @@ def test_julia_helper_function_message_constructor():
 
 def test_julia_helper_function_calling_another():
     """Test Julia code generation for helper function calling another function."""
-    gen = JuliaCodeGenerator()
+    gen = JuliaCodeGenerator(config=PARSER_CONFIG)
     reset_gensym()
 
     # Equivalent to:
@@ -617,7 +618,7 @@ def test_julia_helper_function_calling_another():
 
 def test_julia_and_short_circuit_with_side_effects():
     """Test that 'and' preserves short-circuit semantics when RHS has side-effects."""
-    gen = JuliaCodeGenerator()
+    gen = JuliaCodeGenerator(config=PARSER_CONFIG)
     reset_gensym()
     lines = []
 
@@ -650,7 +651,7 @@ def test_julia_and_short_circuit_with_side_effects():
 
 def test_julia_or_short_circuit_with_side_effects():
     """Test that 'or' preserves short-circuit semantics when RHS has side-effects."""
-    gen = JuliaCodeGenerator()
+    gen = JuliaCodeGenerator(config=PARSER_CONFIG)
     reset_gensym()
     lines = []
 
@@ -681,7 +682,7 @@ def test_julia_or_short_circuit_with_side_effects():
 
 def test_julia_and_without_side_effects_uses_template():
     """Test that 'and' without side-effects uses the simple template."""
-    gen = JuliaCodeGenerator()
+    gen = JuliaCodeGenerator(config=PARSER_CONFIG)
     reset_gensym()
     lines = []
 
@@ -699,7 +700,7 @@ def test_julia_and_without_side_effects_uses_template():
 
 def test_julia_or_without_side_effects_uses_template():
     """Test that 'or' without side-effects uses the simple template."""
-    gen = JuliaCodeGenerator()
+    gen = JuliaCodeGenerator(config=PARSER_CONFIG)
     reset_gensym()
     lines = []
 

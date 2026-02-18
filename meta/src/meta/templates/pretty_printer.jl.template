@@ -1,0 +1,210 @@
+# Auto-generated pretty printer.
+#
+# Generated from protobuf specifications.
+# Do not modify this file! If you need to modify the pretty printer, edit the generator code
+# in `python-tools/src/meta` or edit the protobuf specification in `proto/v1`.
+#
+# {command_line_comment}
+
+mutable struct PrettyPrinter
+    io::IOBuffer
+    indent_stack::Vector{{Int}}
+    column::Int
+    at_line_start::Bool
+    separator::String
+    max_width::Int
+    _computing::Set{{UInt}}
+    _memo::Dict{{UInt,String}}
+    _memo_refs::Vector{{Any}}
+    debug_info::Dict{{Tuple{{UInt64,UInt64}},String}}
+end
+
+function PrettyPrinter(; max_width::Int=92)
+    return PrettyPrinter(
+        IOBuffer(), [0], 0, true, "\n", max_width,
+        Set{{UInt}}(), Dict{{UInt,String}}(), Any[],
+        Dict{{Tuple{{UInt64,UInt64}},String}}(),
+    )
+end
+
+function indent_level(pp::PrettyPrinter)::Int
+    return isempty(pp.indent_stack) ? 0 : last(pp.indent_stack)
+end
+
+function Base.write(pp::PrettyPrinter, s::AbstractString)
+    if pp.separator == "\n" && pp.at_line_start && !isempty(strip(s))
+        spaces = indent_level(pp)
+        Base.write(pp.io, " " ^ spaces)
+        pp.column = spaces
+        pp.at_line_start = false
+    end
+    Base.write(pp.io, s)
+    nl_pos = findlast('\n', s)
+    if !isnothing(nl_pos)
+        pp.column = length(s) - nl_pos
+    else
+        pp.column += length(s)
+    end
+    return nothing
+end
+
+function newline(pp::PrettyPrinter)
+    Base.write(pp.io, pp.separator)
+    if pp.separator == "\n"
+        pp.at_line_start = true
+        pp.column = 0
+    end
+    return nothing
+end
+
+function indent!(pp::PrettyPrinter)
+    if pp.separator == "\n"
+        push!(pp.indent_stack, pp.column)
+    end
+    return nothing
+end
+
+function indent_sexp!(pp::PrettyPrinter)
+    if pp.separator == "\n"
+        push!(pp.indent_stack, indent_level(pp) + 2)
+    end
+    return nothing
+end
+
+function dedent!(pp::PrettyPrinter)
+    if pp.separator == "\n" && length(pp.indent_stack) > 1
+        pop!(pp.indent_stack)
+    end
+    return nothing
+end
+
+function try_flat(pp::PrettyPrinter, msg, pretty_fn::Function)
+    msg_id = objectid(msg)
+    if !haskey(pp._memo, msg_id) && !(msg_id in pp._computing)
+        push!(pp._computing, msg_id)
+        saved_io = pp.io
+        saved_sep = pp.separator
+        saved_indent = pp.indent_stack
+        saved_col = pp.column
+        saved_at_line_start = pp.at_line_start
+        try
+            pp.io = IOBuffer()
+            pp.separator = " "
+            pp.indent_stack = [0]
+            pp.column = 0
+            pp.at_line_start = false
+            pretty_fn(pp, msg)
+            pp._memo[msg_id] = String(copy(pp.io.data[1:pp.io.size]))
+            push!(pp._memo_refs, msg)
+        finally
+            pp.io = saved_io
+            pp.separator = saved_sep
+            pp.indent_stack = saved_indent
+            pp.column = saved_col
+            pp.at_line_start = saved_at_line_start
+            delete!(pp._computing, msg_id)
+        end
+    end
+    if haskey(pp._memo, msg_id)
+        flat = pp._memo[msg_id]
+        if pp.separator != "\n"
+            return flat
+        end
+        effective_col = pp.at_line_start ? indent_level(pp) : pp.column
+        if length(flat) + effective_col <= pp.max_width
+            return flat
+        end
+    end
+    return nothing
+end
+
+function get_output(pp::PrettyPrinter)::String
+    return String(copy(pp.io.data[1:pp.io.size]))
+end
+
+function format_decimal(pp::PrettyPrinter, msg::Proto.DecimalValue)::String
+    int_val = Int128(msg.value.high) << 64 | Int128(msg.value.low)
+    if msg.value.high & (UInt64(1) << 63) != 0
+        int_val -= Int128(1) << 128
+    end
+    sign = ""
+    if int_val < 0
+        sign = "-"
+        int_val = -int_val
+    end
+    digits = string(int_val)
+    scale = Int(msg.scale)
+    if scale <= 0
+        decimal_str = digits * "." * repeat("0", -scale)
+    elseif scale >= length(digits)
+        decimal_str = "0." * repeat("0", scale - length(digits)) * digits
+    else
+        decimal_str = digits[1:end-scale] * "." * digits[end-scale+1:end]
+    end
+    return sign * decimal_str * "d" * string(msg.precision)
+end
+
+function format_int128(pp::PrettyPrinter, msg::Proto.Int128Value)::String
+    value = Int128(msg.high) << 64 | Int128(msg.low)
+    if msg.high & (UInt64(1) << 63) != 0
+        value -= Int128(1) << 128
+    end
+    return string(value) * "i128"
+end
+
+function format_uint128(pp::PrettyPrinter, msg::Proto.UInt128Value)::String
+    value = UInt128(msg.high) << 64 | UInt128(msg.low)
+    return "0x" * string(value, base=16)
+end
+
+function format_float64(v::Float64)::String
+    return lowercase(string(v))
+end
+
+function format_string_value(s::AbstractString)::String
+    escaped = replace(s, "\\" => "\\\\")
+    escaped = replace(escaped, "\"" => "\\\"")
+    escaped = replace(escaped, "\n" => "\\n")
+    escaped = replace(escaped, "\r" => "\\r")
+    escaped = replace(escaped, "\t" => "\\t")
+    return "\"" * escaped * "\""
+end
+
+function fragment_id_to_string(pp::PrettyPrinter, msg::Proto.FragmentId)::String
+    if isempty(msg.id)
+        return ""
+    end
+    return String(copy(msg.id))
+end
+
+function start_pretty_fragment(pp::PrettyPrinter, msg::Proto.Fragment)::Nothing
+    debug_info = msg.debug_info
+    if isnothing(debug_info)
+        return nothing
+    end
+    for (rid, name) in zip(debug_info.ids, debug_info.orig_names)
+        pp.debug_info[(rid.id_low, rid.id_high)] = name
+    end
+    return nothing
+end
+
+function relation_id_to_string(pp::PrettyPrinter, msg::Proto.RelationId)::String
+    return get(pp.debug_info, (msg.id_low, msg.id_high), "")
+end
+
+function relation_id_to_uint128(pp::PrettyPrinter, msg::Proto.RelationId)
+    return Proto.UInt128Value(msg.id_low, msg.id_high)
+end
+
+# --- Helper functions ---
+{named_function_defns}
+
+# --- Pretty-print functions ---
+{pretty_nonterminal_defns}
+
+function pretty(msg::Proto.Transaction; max_width::Int=92)::String
+    pp = PrettyPrinter(max_width=max_width)
+    pretty_{start_name}(pp, msg)
+    newline(pp)
+    return get_output(pp)
+end
