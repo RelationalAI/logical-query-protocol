@@ -15,7 +15,6 @@ import (
 	"math/big"
 	"reflect"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -63,20 +62,6 @@ type TokenValue struct {
 	decimal *pb.DecimalValue
 }
 
-func stringTokenValue(s string) TokenValue              { return TokenValue{kind: kindString, str: s} }
-func intTokenValue(n int64) TokenValue                  { return TokenValue{kind: kindInt64, i64: n} }
-func floatTokenValue(f float64) TokenValue              { return TokenValue{kind: kindFloat64, f64: f} }
-func uint128TokenValue(v *pb.UInt128Value) TokenValue   { return TokenValue{kind: kindUint128, uint128: v} }
-func int128TokenValue(v *pb.Int128Value) TokenValue     { return TokenValue{kind: kindInt128, int128: v} }
-func decimalTokenValue(v *pb.DecimalValue) TokenValue   { return TokenValue{kind: kindDecimal, decimal: v} }
-
-func (tv TokenValue) AsString() string              { return tv.str }
-func (tv TokenValue) AsInt64() int64                { return tv.i64 }
-func (tv TokenValue) AsFloat64() float64            { return tv.f64 }
-func (tv TokenValue) AsUint128() *pb.UInt128Value   { return tv.uint128 }
-func (tv TokenValue) AsInt128() *pb.Int128Value     { return tv.int128 }
-func (tv TokenValue) AsDecimal() *pb.DecimalValue   { return tv.decimal }
-
 func (tv TokenValue) String() string {
 	switch tv.kind {
 	case kindInt64:
@@ -112,6 +97,39 @@ type tokenSpec struct {
 	action func(string) TokenValue
 }
 
+var (
+	whitespaceRe = regexp.MustCompile(`^\s+`)
+	commentRe    = regexp.MustCompile(`^;;.*`)
+	tokenSpecs   = []tokenSpec{
+		{"LITERAL", regexp.MustCompile(`^::`), func(s string) TokenValue { return TokenValue{kind: kindString, str: s} }},
+		{"LITERAL", regexp.MustCompile(`^<=`), func(s string) TokenValue { return TokenValue{kind: kindString, str: s} }},
+		{"LITERAL", regexp.MustCompile(`^>=`), func(s string) TokenValue { return TokenValue{kind: kindString, str: s} }},
+		{"LITERAL", regexp.MustCompile(`^\#`), func(s string) TokenValue { return TokenValue{kind: kindString, str: s} }},
+		{"LITERAL", regexp.MustCompile(`^\(`), func(s string) TokenValue { return TokenValue{kind: kindString, str: s} }},
+		{"LITERAL", regexp.MustCompile(`^\)`), func(s string) TokenValue { return TokenValue{kind: kindString, str: s} }},
+		{"LITERAL", regexp.MustCompile(`^\*`), func(s string) TokenValue { return TokenValue{kind: kindString, str: s} }},
+		{"LITERAL", regexp.MustCompile(`^\+`), func(s string) TokenValue { return TokenValue{kind: kindString, str: s} }},
+		{"LITERAL", regexp.MustCompile(`^\-`), func(s string) TokenValue { return TokenValue{kind: kindString, str: s} }},
+		{"LITERAL", regexp.MustCompile(`^/`), func(s string) TokenValue { return TokenValue{kind: kindString, str: s} }},
+		{"LITERAL", regexp.MustCompile(`^:`), func(s string) TokenValue { return TokenValue{kind: kindString, str: s} }},
+		{"LITERAL", regexp.MustCompile(`^<`), func(s string) TokenValue { return TokenValue{kind: kindString, str: s} }},
+		{"LITERAL", regexp.MustCompile(`^=`), func(s string) TokenValue { return TokenValue{kind: kindString, str: s} }},
+		{"LITERAL", regexp.MustCompile(`^>`), func(s string) TokenValue { return TokenValue{kind: kindString, str: s} }},
+		{"LITERAL", regexp.MustCompile(`^\[`), func(s string) TokenValue { return TokenValue{kind: kindString, str: s} }},
+		{"LITERAL", regexp.MustCompile(`^\]`), func(s string) TokenValue { return TokenValue{kind: kindString, str: s} }},
+		{"LITERAL", regexp.MustCompile(`^\{`), func(s string) TokenValue { return TokenValue{kind: kindString, str: s} }},
+		{"LITERAL", regexp.MustCompile(`^\|`), func(s string) TokenValue { return TokenValue{kind: kindString, str: s} }},
+		{"LITERAL", regexp.MustCompile(`^\}`), func(s string) TokenValue { return TokenValue{kind: kindString, str: s} }},
+		{"DECIMAL", regexp.MustCompile(`^[-]?\d+\.\d+d\d+`), func(s string) TokenValue { return TokenValue{kind: kindDecimal, decimal: scanDecimal(s)} }},
+		{"FLOAT", regexp.MustCompile(`^([-]?\d+\.\d+|inf|nan)`), func(s string) TokenValue { return TokenValue{kind: kindFloat64, f64: scanFloat(s)} }},
+		{"INT", regexp.MustCompile(`^[-]?\d+`), func(s string) TokenValue { return TokenValue{kind: kindInt64, i64: scanInt(s)} }},
+		{"INT128", regexp.MustCompile(`^[-]?\d+i128`), func(s string) TokenValue { return TokenValue{kind: kindInt128, int128: scanInt128(s)} }},
+		{"STRING", regexp.MustCompile(`^"(?:[^"\\]|\\.)*"`), func(s string) TokenValue { return TokenValue{kind: kindString, str: scanString(s)} }},
+		{"SYMBOL", regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_.-]*`), func(s string) TokenValue { return TokenValue{kind: kindString, str: scanSymbol(s)} }},
+		{"UINT128", regexp.MustCompile(`^0x[0-9a-fA-F]+`), func(s string) TokenValue { return TokenValue{kind: kindUint128, uint128: scanUint128(s)} }},
+	}
+)
+
 // Lexer tokenizes input
 type Lexer struct {
 	input  string
@@ -131,38 +149,6 @@ func NewLexer(input string) *Lexer {
 }
 
 func (l *Lexer) tokenize() {
-	tokenSpecs := []tokenSpec{
-		{"LITERAL", regexp.MustCompile(`^::`), func(s string) TokenValue { return stringTokenValue(s) }},
-		{"LITERAL", regexp.MustCompile(`^<=`), func(s string) TokenValue { return stringTokenValue(s) }},
-		{"LITERAL", regexp.MustCompile(`^>=`), func(s string) TokenValue { return stringTokenValue(s) }},
-		{"LITERAL", regexp.MustCompile(`^\#`), func(s string) TokenValue { return stringTokenValue(s) }},
-		{"LITERAL", regexp.MustCompile(`^\(`), func(s string) TokenValue { return stringTokenValue(s) }},
-		{"LITERAL", regexp.MustCompile(`^\)`), func(s string) TokenValue { return stringTokenValue(s) }},
-		{"LITERAL", regexp.MustCompile(`^\*`), func(s string) TokenValue { return stringTokenValue(s) }},
-		{"LITERAL", regexp.MustCompile(`^\+`), func(s string) TokenValue { return stringTokenValue(s) }},
-		{"LITERAL", regexp.MustCompile(`^\-`), func(s string) TokenValue { return stringTokenValue(s) }},
-		{"LITERAL", regexp.MustCompile(`^/`), func(s string) TokenValue { return stringTokenValue(s) }},
-		{"LITERAL", regexp.MustCompile(`^:`), func(s string) TokenValue { return stringTokenValue(s) }},
-		{"LITERAL", regexp.MustCompile(`^<`), func(s string) TokenValue { return stringTokenValue(s) }},
-		{"LITERAL", regexp.MustCompile(`^=`), func(s string) TokenValue { return stringTokenValue(s) }},
-		{"LITERAL", regexp.MustCompile(`^>`), func(s string) TokenValue { return stringTokenValue(s) }},
-		{"LITERAL", regexp.MustCompile(`^\[`), func(s string) TokenValue { return stringTokenValue(s) }},
-		{"LITERAL", regexp.MustCompile(`^\]`), func(s string) TokenValue { return stringTokenValue(s) }},
-		{"LITERAL", regexp.MustCompile(`^\{`), func(s string) TokenValue { return stringTokenValue(s) }},
-		{"LITERAL", regexp.MustCompile(`^\|`), func(s string) TokenValue { return stringTokenValue(s) }},
-		{"LITERAL", regexp.MustCompile(`^\}`), func(s string) TokenValue { return stringTokenValue(s) }},
-		{"DECIMAL", regexp.MustCompile(`^[-]?\d+\.\d+d\d+`), func(s string) TokenValue { return decimalTokenValue(scanDecimal(s)) }},
-		{"FLOAT", regexp.MustCompile(`^([-]?\d+\.\d+|inf|nan)`), func(s string) TokenValue { return floatTokenValue(scanFloat(s)) }},
-		{"INT", regexp.MustCompile(`^[-]?\d+`), func(s string) TokenValue { return intTokenValue(scanInt(s)) }},
-		{"INT128", regexp.MustCompile(`^[-]?\d+i128`), func(s string) TokenValue { return int128TokenValue(scanInt128(s)) }},
-		{"STRING", regexp.MustCompile(`^"(?:[^"\\]|\\.)*"`), func(s string) TokenValue { return stringTokenValue(scanString(s)) }},
-		{"SYMBOL", regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_.-]*`), func(s string) TokenValue { return stringTokenValue(scanSymbol(s)) }},
-		{"UINT128", regexp.MustCompile(`^0x[0-9a-fA-F]+`), func(s string) TokenValue { return uint128TokenValue(scanUint128(s)) }},
-	}
-
-	whitespaceRe := regexp.MustCompile(`^\s+`)
-	commentRe := regexp.MustCompile(`^;;.*`)
-
 	for l.pos < len(l.input) {
 		remaining := l.input[l.pos:]
 
@@ -219,7 +205,7 @@ func (l *Lexer) tokenize() {
 		l.pos = best.endPos
 	}
 
-	l.tokens = append(l.tokens, Token{Type: "$", Value: stringTokenValue(""), Pos: l.pos})
+	l.tokens = append(l.tokens, Token{Type: "$", Value: TokenValue{}, Pos: l.pos})
 }
 
 // Scanner functions for each token type
@@ -357,7 +343,7 @@ func (p *Parser) lookahead(k int) Token {
 	if idx < len(p.tokens) {
 		return p.tokens[idx]
 	}
-	return Token{Type: "$", Value: stringTokenValue(""), Pos: -1}
+	return Token{Type: "$", Value: TokenValue{}, Pos: -1}
 }
 
 func (p *Parser) consumeLiteral(expected string) {
@@ -381,10 +367,10 @@ func (p *Parser) consumeTerminal(expected string) Token {
 func (p *Parser) matchLookaheadLiteral(literal string, k int) bool {
 	token := p.lookahead(k)
 	// Support soft keywords: alphanumeric literals are lexed as SYMBOL tokens
-	if token.Type == "LITERAL" && token.Value.AsString() == literal {
+	if token.Type == "LITERAL" && token.Value.str == literal {
 		return true
 	}
-	if token.Type == "SYMBOL" && token.Value.AsString() == literal {
+	if token.Type == "SYMBOL" && token.Value.str == literal {
 		return true
 	}
 	return false
@@ -467,13 +453,6 @@ func dictFromList(pairs [][]interface{}) map[string]interface{} {
 	return result
 }
 
-func dictGet(m map[string]interface{}, key string) interface{} {
-	if v, ok := m[key]; ok {
-		return v
-	}
-	return nil
-}
-
 // dictGetValue retrieves a Value from the config dict with type assertion
 func dictGetValue(m map[string]interface{}, key string) *pb.Value {
 	if v, ok := m[key]; ok {
@@ -484,80 +463,6 @@ func dictGetValue(m map[string]interface{}, key string) *pb.Value {
 	return nil
 }
 
-func stringInList(s string, list []string) bool {
-	for _, item := range list {
-		if item == s {
-			return true
-		}
-	}
-	return false
-}
-
-
-// Type conversion helpers for interface{} to concrete types
-func toInt32(v interface{}) int32 {
-	if v == nil { return 0 }
-	switch x := v.(type) {
-	case int32: return x
-	case int64: return int32(x)
-	case int: return int32(x)
-	default: return 0
-	}
-}
-
-func toInt64(v interface{}) int64 {
-	if v == nil { return 0 }
-	switch x := v.(type) {
-	case int64: return x
-	case int32: return int64(x)
-	case int: return int64(x)
-	default: return 0
-	}
-}
-
-func toFloat64(v interface{}) float64 {
-	if v == nil { return 0.0 }
-	if f, ok := v.(float64); ok { return f }
-	return 0.0
-}
-
-func toString(v interface{}) string {
-	if v == nil { return "" }
-	if s, ok := v.(string); ok { return s }
-	return ""
-}
-
-func toBool(v interface{}) bool {
-	if v == nil { return false }
-	if b, ok := v.(bool); ok { return b }
-	return false
-}
-
-// Pointer conversion helpers for optional proto3 fields
-func ptrInt32(v int32) *int32 { return &v }
-func ptrInt64(v int64) *int64 { return &v }
-func ptrFloat64(v float64) *float64 { return &v }
-func ptrString(v string) *string { return &v }
-func ptrBool(v bool) *bool { return &v }
-func ptrBytes(v []byte) *[]byte { return &v }
-
-func mapSlice[T any, U any](slice []T, f func(T) U) []U {
-	result := make([]U, len(slice))
-	for i, v := range slice {
-		result[i] = f(v)
-	}
-	return result
-}
-
-func listSort(s [][]interface{}) [][]interface{} {
-	sort.Slice(s, func(i, j int) bool {
-		ki, _ := s[i][0].(string)
-		kj, _ := s[j][0].(string)
-		return ki < kj
-	})
-	return s
-}
-
 func listConcat[T any](a []T, b []T) []T {
 	if b == nil {
 		return a
@@ -566,23 +471,6 @@ func listConcat[T any](a []T, b []T) []T {
 	copy(result, a)
 	copy(result[len(a):], b)
 	return result
-}
-
-// listConcatAny concatenates two slices passed as interface{}.
-// Used when type information is lost through tuple indexing.
-func listConcatAny(a interface{}, b interface{}) interface{} {
-	if a == nil {
-		return b
-	}
-	if b == nil {
-		return a
-	}
-	aVal := reflect.ValueOf(a)
-	bVal := reflect.ValueOf(b)
-	result := reflect.MakeSlice(aVal.Type(), aVal.Len()+bVal.Len(), aVal.Len()+bVal.Len())
-	reflect.Copy(result, aVal)
-	reflect.Copy(result.Slice(aVal.Len(), result.Len()), bVal)
-	return result.Interface()
 }
 
 // hasProtoField checks if a proto message has a non-nil field by name
@@ -888,7 +776,7 @@ func (p *Parser) parse_config_dict() [][]interface{} {
 
 func (p *Parser) parse_config_key_value() []interface{} {
 	p.consumeLiteral(":")
-	symbol364 := p.consumeTerminal("SYMBOL").Value.AsString()
+	symbol364 := p.consumeTerminal("SYMBOL").Value.str
 	_t717 := p.parse_value()
 	value365 := _t717
 	return []interface{}{symbol364, value365}
@@ -986,42 +874,42 @@ func (p *Parser) parse_value() *pb.Value {
 		} else {
 			var _t736 *pb.Value
 			if prediction366 == 7 {
-				decimal374 := p.consumeTerminal("DECIMAL").Value.AsDecimal()
+				decimal374 := p.consumeTerminal("DECIMAL").Value.decimal
 				_t737 := &pb.Value{}
 				_t737.Value = &pb.Value_DecimalValue{DecimalValue: decimal374}
 				_t736 = _t737
 			} else {
 				var _t738 *pb.Value
 				if prediction366 == 6 {
-					int128373 := p.consumeTerminal("INT128").Value.AsInt128()
+					int128373 := p.consumeTerminal("INT128").Value.int128
 					_t739 := &pb.Value{}
 					_t739.Value = &pb.Value_Int128Value{Int128Value: int128373}
 					_t738 = _t739
 				} else {
 					var _t740 *pb.Value
 					if prediction366 == 5 {
-						uint128372 := p.consumeTerminal("UINT128").Value.AsUint128()
+						uint128372 := p.consumeTerminal("UINT128").Value.uint128
 						_t741 := &pb.Value{}
 						_t741.Value = &pb.Value_Uint128Value{Uint128Value: uint128372}
 						_t740 = _t741
 					} else {
 						var _t742 *pb.Value
 						if prediction366 == 4 {
-							float371 := p.consumeTerminal("FLOAT").Value.AsFloat64()
+							float371 := p.consumeTerminal("FLOAT").Value.f64
 							_t743 := &pb.Value{}
 							_t743.Value = &pb.Value_FloatValue{FloatValue: float371}
 							_t742 = _t743
 						} else {
 							var _t744 *pb.Value
 							if prediction366 == 3 {
-								int370 := p.consumeTerminal("INT").Value.AsInt64()
+								int370 := p.consumeTerminal("INT").Value.i64
 								_t745 := &pb.Value{}
 								_t745.Value = &pb.Value_IntValue{IntValue: int370}
 								_t744 = _t745
 							} else {
 								var _t746 *pb.Value
 								if prediction366 == 2 {
-									string369 := p.consumeTerminal("STRING").Value.AsString()
+									string369 := p.consumeTerminal("STRING").Value.str
 									_t747 := &pb.Value{}
 									_t747.Value = &pb.Value_StringValue{StringValue: string369}
 									_t746 = _t747
@@ -1068,9 +956,9 @@ func (p *Parser) parse_value() *pb.Value {
 func (p *Parser) parse_date() *pb.DateValue {
 	p.consumeLiteral("(")
 	p.consumeLiteral("date")
-	int376 := p.consumeTerminal("INT").Value.AsInt64()
-	int_3377 := p.consumeTerminal("INT").Value.AsInt64()
-	int_4378 := p.consumeTerminal("INT").Value.AsInt64()
+	int376 := p.consumeTerminal("INT").Value.i64
+	int_3377 := p.consumeTerminal("INT").Value.i64
+	int_4378 := p.consumeTerminal("INT").Value.i64
 	p.consumeLiteral(")")
 	_t754 := &pb.DateValue{Year: int32(int376), Month: int32(int_3377), Day: int32(int_4378)}
 	return _t754
@@ -1079,15 +967,15 @@ func (p *Parser) parse_date() *pb.DateValue {
 func (p *Parser) parse_datetime() *pb.DateTimeValue {
 	p.consumeLiteral("(")
 	p.consumeLiteral("datetime")
-	int379 := p.consumeTerminal("INT").Value.AsInt64()
-	int_3380 := p.consumeTerminal("INT").Value.AsInt64()
-	int_4381 := p.consumeTerminal("INT").Value.AsInt64()
-	int_5382 := p.consumeTerminal("INT").Value.AsInt64()
-	int_6383 := p.consumeTerminal("INT").Value.AsInt64()
-	int_7384 := p.consumeTerminal("INT").Value.AsInt64()
+	int379 := p.consumeTerminal("INT").Value.i64
+	int_3380 := p.consumeTerminal("INT").Value.i64
+	int_4381 := p.consumeTerminal("INT").Value.i64
+	int_5382 := p.consumeTerminal("INT").Value.i64
+	int_6383 := p.consumeTerminal("INT").Value.i64
+	int_7384 := p.consumeTerminal("INT").Value.i64
 	var _t755 *int64
 	if p.matchLookaheadTerminal("INT", 0) {
-		_t755 = ptr(p.consumeTerminal("INT").Value.AsInt64())
+		_t755 = ptr(p.consumeTerminal("INT").Value.i64)
 	}
 	int_8385 := _t755
 	p.consumeLiteral(")")
@@ -1145,7 +1033,7 @@ func (p *Parser) parse_sync() *pb.Sync {
 
 func (p *Parser) parse_fragment_id() *pb.FragmentId {
 	p.consumeLiteral(":")
-	symbol391 := p.consumeTerminal("SYMBOL").Value.AsString()
+	symbol391 := p.consumeTerminal("SYMBOL").Value.str
 	return &pb.FragmentId{Id: []byte(symbol391)}
 }
 
@@ -1412,13 +1300,13 @@ func (p *Parser) parse_relation_id() *pb.RelationId {
 	prediction417 := _t814
 	var _t816 *pb.RelationId
 	if prediction417 == 1 {
-		uint128419 := p.consumeTerminal("UINT128").Value.AsUint128()
+		uint128419 := p.consumeTerminal("UINT128").Value.uint128
 		_t816 = &pb.RelationId{IdLow: uint128419.Low, IdHigh: uint128419.High}
 	} else {
 		var _t817 *pb.RelationId
 		if prediction417 == 0 {
 			p.consumeLiteral(":")
-			symbol418 := p.consumeTerminal("SYMBOL").Value.AsString()
+			symbol418 := p.consumeTerminal("SYMBOL").Value.str
 			_t817 = p.relationIdFromString(symbol418)
 		} else {
 			panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in relation_id", p.lookahead(0).Type, p.lookahead(0).Value)})
@@ -1465,7 +1353,7 @@ func (p *Parser) parse_bindings() []interface{} {
 }
 
 func (p *Parser) parse_binding() *pb.Binding {
-	symbol427 := p.consumeTerminal("SYMBOL").Value.AsString()
+	symbol427 := p.consumeTerminal("SYMBOL").Value.str
 	p.consumeLiteral("::")
 	_t825 := p.parse_type()
 	type428 := _t825
@@ -1712,8 +1600,8 @@ func (p *Parser) parse_missing_type() *pb.MissingType {
 func (p *Parser) parse_decimal_type() *pb.DecimalType {
 	p.consumeLiteral("(")
 	p.consumeLiteral("DECIMAL")
-	int441 := p.consumeTerminal("INT").Value.AsInt64()
-	int_3442 := p.consumeTerminal("INT").Value.AsInt64()
+	int441 := p.consumeTerminal("INT").Value.i64
+	int_3442 := p.consumeTerminal("INT").Value.i64
 	p.consumeLiteral(")")
 	_t881 := &pb.DecimalType{Precision: int32(int441), Scale: int32(int_3442)}
 	return _t881
@@ -2163,7 +2051,7 @@ func (p *Parser) parse_term() *pb.Term {
 }
 
 func (p *Parser) parse_var() *pb.Var {
-	symbol473 := p.consumeTerminal("SYMBOL").Value.AsString()
+	symbol473 := p.consumeTerminal("SYMBOL").Value.str
 	_t974 := &pb.Var{Name: symbol473}
 	return _t974
 }
@@ -2234,7 +2122,7 @@ func (p *Parser) parse_ffi() *pb.FFI {
 
 func (p *Parser) parse_name() string {
 	p.consumeLiteral(":")
-	symbol487 := p.consumeTerminal("SYMBOL").Value.AsString()
+	symbol487 := p.consumeTerminal("SYMBOL").Value.str
 	return symbol487
 }
 
@@ -3374,7 +3262,7 @@ func (p *Parser) parse_rel_edb_path() []string {
 	xs629 := []string{}
 	cond630 := p.matchLookaheadTerminal("STRING", 0)
 	for cond630 {
-		item631 := p.consumeTerminal("STRING").Value.AsString()
+		item631 := p.consumeTerminal("STRING").Value.str
 		xs629 = append(xs629, item631)
 		cond630 = p.matchLookaheadTerminal("STRING", 0)
 	}
@@ -3502,7 +3390,7 @@ func (p *Parser) parse_csv_locator_paths() []string {
 	xs656 := []string{}
 	cond657 := p.matchLookaheadTerminal("STRING", 0)
 	for cond657 {
-		item658 := p.consumeTerminal("STRING").Value.AsString()
+		item658 := p.consumeTerminal("STRING").Value.str
 		xs656 = append(xs656, item658)
 		cond657 = p.matchLookaheadTerminal("STRING", 0)
 	}
@@ -3514,7 +3402,7 @@ func (p *Parser) parse_csv_locator_paths() []string {
 func (p *Parser) parse_csv_locator_inline_data() string {
 	p.consumeLiteral("(")
 	p.consumeLiteral("inline_data")
-	string660 := p.consumeTerminal("STRING").Value.AsString()
+	string660 := p.consumeTerminal("STRING").Value.str
 	p.consumeLiteral(")")
 	return string660
 }
@@ -3548,7 +3436,7 @@ func (p *Parser) parse_csv_columns() []*pb.CSVColumn {
 func (p *Parser) parse_csv_column() *pb.CSVColumn {
 	p.consumeLiteral("(")
 	p.consumeLiteral("column")
-	string666 := p.consumeTerminal("STRING").Value.AsString()
+	string666 := p.consumeTerminal("STRING").Value.str
 	_t1259 := p.parse_relation_id()
 	relation_id667 := _t1259
 	p.consumeLiteral("[")
@@ -3570,7 +3458,7 @@ func (p *Parser) parse_csv_column() *pb.CSVColumn {
 func (p *Parser) parse_csv_asof() string {
 	p.consumeLiteral("(")
 	p.consumeLiteral("asof")
-	string672 := p.consumeTerminal("STRING").Value.AsString()
+	string672 := p.consumeTerminal("STRING").Value.str
 	p.consumeLiteral(")")
 	return string672
 }
@@ -3787,7 +3675,7 @@ func (p *Parser) parse_export_csv_config() *pb.ExportCSVConfig {
 func (p *Parser) parse_export_csv_path() string {
 	p.consumeLiteral("(")
 	p.consumeLiteral("path")
-	string699 := p.consumeTerminal("STRING").Value.AsString()
+	string699 := p.consumeTerminal("STRING").Value.str
 	p.consumeLiteral(")")
 	return string699
 }
@@ -3811,7 +3699,7 @@ func (p *Parser) parse_export_csv_columns() []*pb.ExportCSVColumn {
 func (p *Parser) parse_export_csv_column() *pb.ExportCSVColumn {
 	p.consumeLiteral("(")
 	p.consumeLiteral("column")
-	string704 := p.consumeTerminal("STRING").Value.AsString()
+	string704 := p.consumeTerminal("STRING").Value.str
 	_t1307 := p.parse_relation_id()
 	relation_id705 := _t1307
 	p.consumeLiteral(")")

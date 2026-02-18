@@ -68,92 +68,18 @@ mutable struct Lexer
 end
 
 
-function tokenize!(lexer::Lexer)
-    token_specs = [
-        ("LITERAL", r"::", identity),
-        ("LITERAL", r"<=", identity),
-        ("LITERAL", r">=", identity),
-        ("LITERAL", r"\#", identity),
-        ("LITERAL", r"\(", identity),
-        ("LITERAL", r"\)", identity),
-        ("LITERAL", r"\*", identity),
-        ("LITERAL", r"\+", identity),
-        ("LITERAL", r"\-", identity),
-        ("LITERAL", r"/", identity),
-        ("LITERAL", r":", identity),
-        ("LITERAL", r"<", identity),
-        ("LITERAL", r"=", identity),
-        ("LITERAL", r">", identity),
-        ("LITERAL", r"\[", identity),
-        ("LITERAL", r"\]", identity),
-        ("LITERAL", r"\{", identity),
-        ("LITERAL", r"\|", identity),
-        ("LITERAL", r"\}", identity),
-        ("DECIMAL", r"[-]?\d+\.\d+d\d+", scan_decimal),
-        ("FLOAT", r"([-]?\d+\.\d+|inf|nan)", scan_float),
-        ("INT", r"[-]?\d+", scan_int),
-        ("INT128", r"[-]?\d+i128", scan_int128),
-        ("STRING", r"\"(?:[^\"\\]|\\.)*\"", scan_string),
-        ("SYMBOL", r"[a-zA-Z_][a-zA-Z0-9_.-]*", scan_symbol),
-        ("UINT128", r"0x[0-9a-fA-F]+", scan_uint128),
-    ]
-
-    whitespace_re = r"\s+"
-    comment_re = r";;.*"
-
-    # Use ncodeunits for byte-based position tracking (UTF-8 safe)
-    while lexer.pos <= ncodeunits(lexer.input)
-        # Skip whitespace
-        m = match(whitespace_re, lexer.input, lexer.pos)
-        if m !== nothing && m.offset == lexer.pos
-            lexer.pos = m.offset + ncodeunits(m.match)
-            continue
-        end
-
-        # Skip comments
-        m = match(comment_re, lexer.input, lexer.pos)
-        if m !== nothing && m.offset == lexer.pos
-            lexer.pos = m.offset + ncodeunits(m.match)
-            continue
-        end
-
-        # Collect all matching tokens
-        candidates = Tuple{String,String,Function,Int}[]
-
-        for (token_type, regex, action) in token_specs
-            m = match(regex, lexer.input, lexer.pos)
-            if m !== nothing && m.offset == lexer.pos
-                value = m.match
-                push!(candidates, (token_type, value, action, m.offset + ncodeunits(value)))
-            end
-        end
-
-        if isempty(candidates)
-            throw(ParseError("Unexpected character at position $(lexer.pos): $(repr(lexer.input[lexer.pos]))"))
-        end
-
-        # Pick the longest match
-        token_type, value, action, end_pos = candidates[argmax([c[4] for c in candidates])]
-        push!(lexer.tokens, Token(token_type, action(value), lexer.pos))
-        lexer.pos = end_pos
-    end
-
-    push!(lexer.tokens, Token("\$", "", lexer.pos))
-    return nothing
-end
-
-
 # Scanner functions for each token type
 scan_symbol(s::String) = s
 function scan_string(s::String)
     # Strip quotes using Unicode-safe chop (handles multi-byte characters)
     content = chop(s, head=1, tail=1)
-    # Simple escape processing - Julia handles most escapes natively
-    result = replace(content, "\\n" => "\n")
+    # Process \\ first so that \\n doesn't become a newline.
+    result = replace(content, "\\\\" => "\x00")
+    result = replace(result, "\\n" => "\n")
     result = replace(result, "\\t" => "\t")
     result = replace(result, "\\r" => "\r")
-    result = replace(result, "\\\\" => "\\")
     result = replace(result, "\\\"" => "\"")
+    result = replace(result, "\x00" => "\\")
     return result
 end
 
@@ -202,6 +128,79 @@ function scan_decimal(d::String)
     high = UInt64((int128_val >> 64) & 0xFFFFFFFFFFFFFFFF)
     value = Proto.Int128Value(low, high)
     return Proto.DecimalValue(precision, scale, value)
+end
+
+const _WHITESPACE_RE = r"\s+"
+const _COMMENT_RE = r";;.*"
+const _TOKEN_SPECS = [
+    ("LITERAL", r"::", identity),
+    ("LITERAL", r"<=", identity),
+    ("LITERAL", r">=", identity),
+    ("LITERAL", r"\#", identity),
+    ("LITERAL", r"\(", identity),
+    ("LITERAL", r"\)", identity),
+    ("LITERAL", r"\*", identity),
+    ("LITERAL", r"\+", identity),
+    ("LITERAL", r"\-", identity),
+    ("LITERAL", r"/", identity),
+    ("LITERAL", r":", identity),
+    ("LITERAL", r"<", identity),
+    ("LITERAL", r"=", identity),
+    ("LITERAL", r">", identity),
+    ("LITERAL", r"\[", identity),
+    ("LITERAL", r"\]", identity),
+    ("LITERAL", r"\{", identity),
+    ("LITERAL", r"\|", identity),
+    ("LITERAL", r"\}", identity),
+    ("DECIMAL", r"[-]?\d+\.\d+d\d+", scan_decimal),
+    ("FLOAT", r"([-]?\d+\.\d+|inf|nan)", scan_float),
+    ("INT", r"[-]?\d+", scan_int),
+    ("INT128", r"[-]?\d+i128", scan_int128),
+    ("STRING", r"\"(?:[^\"\\]|\\.)*\"", scan_string),
+    ("SYMBOL", r"[a-zA-Z_][a-zA-Z0-9_.-]*", scan_symbol),
+    ("UINT128", r"0x[0-9a-fA-F]+", scan_uint128),
+]
+
+function tokenize!(lexer::Lexer)
+    # Use ncodeunits for byte-based position tracking (UTF-8 safe)
+    while lexer.pos <= ncodeunits(lexer.input)
+        # Skip whitespace
+        m = match(_WHITESPACE_RE, lexer.input, lexer.pos)
+        if m !== nothing && m.offset == lexer.pos
+            lexer.pos = m.offset + ncodeunits(m.match)
+            continue
+        end
+
+        # Skip comments
+        m = match(_COMMENT_RE, lexer.input, lexer.pos)
+        if m !== nothing && m.offset == lexer.pos
+            lexer.pos = m.offset + ncodeunits(m.match)
+            continue
+        end
+
+        # Collect all matching tokens
+        candidates = Tuple{String,String,Function,Int}[]
+
+        for (token_type, regex, action) in _TOKEN_SPECS
+            m = match(regex, lexer.input, lexer.pos)
+            if m !== nothing && m.offset == lexer.pos
+                value = m.match
+                push!(candidates, (token_type, value, action, m.offset + ncodeunits(value)))
+            end
+        end
+
+        if isempty(candidates)
+            throw(ParseError("Unexpected character at position $(lexer.pos): $(repr(lexer.input[lexer.pos]))"))
+        end
+
+        # Pick the longest match
+        token_type, value, action, end_pos = candidates[argmax([c[4] for c in candidates])]
+        push!(lexer.tokens, Token(token_type, action(value), lexer.pos))
+        lexer.pos = end_pos
+    end
+
+    push!(lexer.tokens, Token("\$", "", lexer.pos))
+    return nothing
 end
 
 

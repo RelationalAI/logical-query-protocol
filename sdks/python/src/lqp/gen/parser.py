@@ -37,6 +37,38 @@ class Token:
         return f"Token({self.type}, {self.value!r}, {self.pos})"
 
 
+_WHITESPACE_RE = re.compile(r"\s+")
+_COMMENT_RE = re.compile(r";;.*")
+_TOKEN_SPECS = [
+    ("LITERAL", re.compile(r"::"), lambda x: x),
+    ("LITERAL", re.compile(r"<="), lambda x: x),
+    ("LITERAL", re.compile(r">="), lambda x: x),
+    ("LITERAL", re.compile(r"\#"), lambda x: x),
+    ("LITERAL", re.compile(r"\("), lambda x: x),
+    ("LITERAL", re.compile(r"\)"), lambda x: x),
+    ("LITERAL", re.compile(r"\*"), lambda x: x),
+    ("LITERAL", re.compile(r"\+"), lambda x: x),
+    ("LITERAL", re.compile(r"\-"), lambda x: x),
+    ("LITERAL", re.compile(r"/"), lambda x: x),
+    ("LITERAL", re.compile(r":"), lambda x: x),
+    ("LITERAL", re.compile(r"<"), lambda x: x),
+    ("LITERAL", re.compile(r"="), lambda x: x),
+    ("LITERAL", re.compile(r">"), lambda x: x),
+    ("LITERAL", re.compile(r"\["), lambda x: x),
+    ("LITERAL", re.compile(r"\]"), lambda x: x),
+    ("LITERAL", re.compile(r"\{"), lambda x: x),
+    ("LITERAL", re.compile(r"\|"), lambda x: x),
+    ("LITERAL", re.compile(r"\}"), lambda x: x),
+    ("DECIMAL", re.compile(r"[-]?\d+\.\d+d\d+"), lambda x: Lexer.scan_decimal(x)),
+    ("FLOAT", re.compile(r"([-]?\d+\.\d+|inf|nan)"), lambda x: Lexer.scan_float(x)),
+    ("INT", re.compile(r"[-]?\d+"), lambda x: Lexer.scan_int(x)),
+    ("INT128", re.compile(r"[-]?\d+i128"), lambda x: Lexer.scan_int128(x)),
+    ("STRING", re.compile(r'"(?:[^"\\]|\\.)*"'), lambda x: Lexer.scan_string(x)),
+    ("SYMBOL", re.compile(r"[a-zA-Z_][a-zA-Z0-9_.-]*"), lambda x: Lexer.scan_symbol(x)),
+    ("UINT128", re.compile(r"0x[0-9a-fA-F]+"), lambda x: Lexer.scan_uint128(x)),
+]
+
+
 class Lexer:
     """Tokenizer for the input."""
 
@@ -48,61 +80,13 @@ class Lexer:
 
     def _tokenize(self) -> None:
         """Tokenize the input string."""
-        token_specs = [
-            ("LITERAL", re.compile(r"::"), lambda x: x),
-            ("LITERAL", re.compile(r"<="), lambda x: x),
-            ("LITERAL", re.compile(r">="), lambda x: x),
-            ("LITERAL", re.compile(r"\#"), lambda x: x),
-            ("LITERAL", re.compile(r"\("), lambda x: x),
-            ("LITERAL", re.compile(r"\)"), lambda x: x),
-            ("LITERAL", re.compile(r"\*"), lambda x: x),
-            ("LITERAL", re.compile(r"\+"), lambda x: x),
-            ("LITERAL", re.compile(r"\-"), lambda x: x),
-            ("LITERAL", re.compile(r"/"), lambda x: x),
-            ("LITERAL", re.compile(r":"), lambda x: x),
-            ("LITERAL", re.compile(r"<"), lambda x: x),
-            ("LITERAL", re.compile(r"="), lambda x: x),
-            ("LITERAL", re.compile(r">"), lambda x: x),
-            ("LITERAL", re.compile(r"\["), lambda x: x),
-            ("LITERAL", re.compile(r"\]"), lambda x: x),
-            ("LITERAL", re.compile(r"\{"), lambda x: x),
-            ("LITERAL", re.compile(r"\|"), lambda x: x),
-            ("LITERAL", re.compile(r"\}"), lambda x: x),
-            (
-                "DECIMAL",
-                re.compile(r"[-]?\d+\.\d+d\d+"),
-                lambda x: Lexer.scan_decimal(x),
-            ),
-            (
-                "FLOAT",
-                re.compile(r"([-]?\d+\.\d+|inf|nan)"),
-                lambda x: Lexer.scan_float(x),
-            ),
-            ("INT", re.compile(r"[-]?\d+"), lambda x: Lexer.scan_int(x)),
-            ("INT128", re.compile(r"[-]?\d+i128"), lambda x: Lexer.scan_int128(x)),
-            (
-                "STRING",
-                re.compile(r'"(?:[^"\\]|\\.)*"'),
-                lambda x: Lexer.scan_string(x),
-            ),
-            (
-                "SYMBOL",
-                re.compile(r"[a-zA-Z_][a-zA-Z0-9_.-]*"),
-                lambda x: Lexer.scan_symbol(x),
-            ),
-            ("UINT128", re.compile(r"0x[0-9a-fA-F]+"), lambda x: Lexer.scan_uint128(x)),
-        ]
-
-        whitespace_re = re.compile(r"\s+")
-        comment_re = re.compile(r";;.*")
-
         while self.pos < len(self.input):
-            match = whitespace_re.match(self.input, self.pos)
+            match = _WHITESPACE_RE.match(self.input, self.pos)
             if match:
                 self.pos = match.end()
                 continue
 
-            match = comment_re.match(self.input, self.pos)
+            match = _COMMENT_RE.match(self.input, self.pos)
             if match:
                 self.pos = match.end()
                 continue
@@ -110,7 +94,7 @@ class Lexer:
             # Collect all matching tokens
             candidates = []
 
-            for token_type, regex, action in token_specs:
+            for token_type, regex, action in _TOKEN_SPECS:
                 match = regex.match(self.input, self.pos)
                 if match:
                     value = match.group(0)
