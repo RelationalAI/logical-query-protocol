@@ -46,13 +46,6 @@ def parse_args():
     parser.add_argument(
         "--no-validate", action="store_true", help="Skip grammar validation"
     )
-    parser.add_argument(
-        "--no-typecheck", action="store_true", help="Skip target IR type checking"
-    )
-    parser.add_argument(
-        "--typecheck", action="store_true", help="Fail on target IR type errors"
-    )
-
     output_group = parser.add_argument_group("output options")
     output_group.add_argument(
         "-o", "--output", type=Path, help="Output file (default: stdout)"
@@ -207,7 +200,7 @@ def run(args) -> int:
         return 0
 
     # Run target IR type checker when generating code
-    if (args.parser or args.printer) and not args.no_typecheck and not args.no_validate:
+    if (args.parser or args.printer) and not args.no_validate:
         from .parser_gen import generate_parse_functions
         from .pretty_gen import generate_pretty_functions
         from .target_typer import typecheck_ir
@@ -220,13 +213,11 @@ def run(args) -> int:
         if errors:
             for e in errors:
                 print(f"typecheck: {e}", file=sys.stderr)
-            if args.typecheck:
-                print(
-                    f"\nError: {len(errors)} type error(s) in generated IR "
-                    f"(use --no-typecheck to skip)",
-                    file=sys.stderr,
-                )
-                return 1
+            print(
+                f"\nError: {len(errors)} type error(s) in generated IR",
+                file=sys.stderr,
+            )
+            return 1
 
     if args.parser:
         if args.parser == "ir":
