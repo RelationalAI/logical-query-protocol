@@ -1054,13 +1054,13 @@ export
 export_csv_config
     : "(" "export_csv_config_v2" export_csv_path export_csv_source csv_config ")"
       construct: $$ = construct_export_csv_config_with_source($3, $4, $5)
-      deconstruct:
+      deconstruct if builtin.length($$.data_columns) == 0:
         $3: String = $$.path
         $4: transactions.ExportCSVSource = $$.csv_source
         $5: logic.CSVConfig = $$.csv_config
     | "(" "export_csv_config" export_csv_path "(" "columns" export_csv_column* ")" config_dict ")"
       construct: $$ = construct_export_csv_config($3, $6, $8)
-      deconstruct:
+      deconstruct if builtin.length($$.data_columns) != 0:
         $3: String = $$.path
         $6: Sequence[transactions.ExportCSVColumn] = $$.data_columns
         $8: Sequence[Tuple[String, logic.Value]] = deconstruct_export_csv_config($$)
@@ -1290,8 +1290,8 @@ def construct_export_csv_config(
 
 def construct_export_csv_config_with_source(
     path: String,
-    csv_source: Any,
-    csv_config: Optional[logic.CSVConfig],
+    csv_source: transactions.ExportCSVSource,
+    csv_config: logic.CSVConfig,
 ) -> transactions.ExportCSVConfig:
     return transactions.ExportCSVConfig(
         path=path,
