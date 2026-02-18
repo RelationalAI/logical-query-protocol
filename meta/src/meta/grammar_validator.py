@@ -695,6 +695,7 @@ class GrammarValidator:
                 result.append(nt)
         return result
 
+
 class _ExprTypeChecker(TargetExprVisitor):
     """Type checker for TargetExpr trees."""
 

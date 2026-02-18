@@ -190,15 +190,14 @@ class GoCodeGenerator(CodeGenerator):
 
         # 'consume_terminal' builtin - returns typed value from Token
         # Map terminal names to Go types for type assertion
-        # Map terminal names to TokenValue accessor methods
-        terminal_accessor_map = {
-            "INT": "AsInt64",
-            "FLOAT": "AsFloat64",
-            "STRING": "AsString",
-            "SYMBOL": "AsString",
-            "DECIMAL": "AsDecimal",
-            "INT128": "AsInt128",
-            "UINT128": "AsUint128",
+        terminal_field_map = {
+            "INT": "i64",
+            "FLOAT": "f64",
+            "STRING": "str",
+            "SYMBOL": "str",
+            "DECIMAL": "decimal",
+            "INT128": "int128",
+            "UINT128": "uint128",
         }
 
         def consume_terminal_generator(
@@ -208,14 +207,8 @@ class GoCodeGenerator(CodeGenerator):
                 return BuiltinResult("p.consumeTerminal()", [])
             terminal_arg = args[0]
             terminal_name = terminal_arg.strip('"')
-            accessor = terminal_accessor_map.get(terminal_name)
-            if accessor:
-                return BuiltinResult(
-                    f"p.consumeTerminal({terminal_arg}).Value.{accessor}()", []
-                )
-            return BuiltinResult(
-                f"p.consumeTerminal({terminal_arg}).Value.AsString()", []
-            )
+            field = terminal_field_map.get(terminal_name, "str")
+            return BuiltinResult(f"p.consumeTerminal({terminal_arg}).Value.{field}", [])
 
         self.register_builtin("consume_terminal", consume_terminal_generator)
 
@@ -900,28 +893,28 @@ class GoCodeGenerator(CodeGenerator):
         )
 
     def format_literal_token_spec(self, escaped_literal: str) -> str:
-        return f'\t\t{{"LITERAL", regexp.MustCompile(`^{escaped_literal}`), func(s string) TokenValue {{ return stringTokenValue(s) }}}},'
+        return f'\t\t{{"LITERAL", regexp.MustCompile(`^{escaped_literal}`), func(s string) TokenValue {{ return TokenValue{{kind: kindString, str: s}} }}}},'
 
-    # Map from token name to the TokenValue wrapper function
-    _token_value_wrappers = {
-        "SYMBOL": ("scanSymbol", "stringTokenValue"),
-        "STRING": ("scanString", "stringTokenValue"),
-        "INT": ("scanInt", "intTokenValue"),
-        "FLOAT": ("scanFloat", "floatTokenValue"),
-        "UINT128": ("scanUint128", "uint128TokenValue"),
-        "INT128": ("scanInt128", "int128TokenValue"),
-        "DECIMAL": ("scanDecimal", "decimalTokenValue"),
+    # Map from token name to (scan function, kind, field) for TokenValue construction
+    _token_value_specs = {
+        "SYMBOL": ("scanSymbol", "kindString", "str"),
+        "STRING": ("scanString", "kindString", "str"),
+        "INT": ("scanInt", "kindInt64", "i64"),
+        "FLOAT": ("scanFloat", "kindFloat64", "f64"),
+        "UINT128": ("scanUint128", "kindUint128", "uint128"),
+        "INT128": ("scanInt128", "kindInt128", "int128"),
+        "DECIMAL": ("scanDecimal", "kindDecimal", "decimal"),
     }
 
     def format_named_token_spec(self, token_name: str, token_pattern: str) -> str:
         escaped_pattern = token_pattern.replace("`", '` + "`" + `')
         if not escaped_pattern.startswith("^"):
             escaped_pattern = "^" + escaped_pattern
-        scan_func, wrapper_func = self._token_value_wrappers.get(
+        scan_func, kind, field = self._token_value_specs.get(
             token_name,
-            (f"scan{token_name.capitalize()}", "stringTokenValue"),
+            (f"scan{token_name.capitalize()}", "kindString", "str"),
         )
-        return f'\t\t{{"{token_name}", regexp.MustCompile(`{escaped_pattern}`), func(s string) TokenValue {{ return {wrapper_func}({scan_func}(s)) }}}},'
+        return f'\t\t{{"{token_name}", regexp.MustCompile(`{escaped_pattern}`), func(s string) TokenValue {{ return TokenValue{{kind: {kind}, {field}: {scan_func}(s)}} }}}},'
 
     def format_command_line_comment(self, command_line: str) -> str:
         return f"Command: {command_line}"

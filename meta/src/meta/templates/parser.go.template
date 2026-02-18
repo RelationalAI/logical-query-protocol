@@ -62,20 +62,6 @@ type TokenValue struct {{
 	decimal *pb.DecimalValue
 }}
 
-func stringTokenValue(s string) TokenValue              {{ return TokenValue{{kind: kindString, str: s}} }}
-func intTokenValue(n int64) TokenValue                  {{ return TokenValue{{kind: kindInt64, i64: n}} }}
-func floatTokenValue(f float64) TokenValue              {{ return TokenValue{{kind: kindFloat64, f64: f}} }}
-func uint128TokenValue(v *pb.UInt128Value) TokenValue   {{ return TokenValue{{kind: kindUint128, uint128: v}} }}
-func int128TokenValue(v *pb.Int128Value) TokenValue     {{ return TokenValue{{kind: kindInt128, int128: v}} }}
-func decimalTokenValue(v *pb.DecimalValue) TokenValue   {{ return TokenValue{{kind: kindDecimal, decimal: v}} }}
-
-func (tv TokenValue) AsString() string              {{ return tv.str }}
-func (tv TokenValue) AsInt64() int64                {{ return tv.i64 }}
-func (tv TokenValue) AsFloat64() float64            {{ return tv.f64 }}
-func (tv TokenValue) AsUint128() *pb.UInt128Value   {{ return tv.uint128 }}
-func (tv TokenValue) AsInt128() *pb.Int128Value     {{ return tv.int128 }}
-func (tv TokenValue) AsDecimal() *pb.DecimalValue   {{ return tv.decimal }}
-
 func (tv TokenValue) String() string {{
 	switch tv.kind {{
 	case kindInt64:
@@ -192,7 +178,7 @@ func (l *Lexer) tokenize() {{
 		l.pos = best.endPos
 	}}
 
-	l.tokens = append(l.tokens, Token{{Type: "$", Value: stringTokenValue(""), Pos: l.pos}})
+	l.tokens = append(l.tokens, Token{{Type: "$", Value: TokenValue{{}}, Pos: l.pos}})
 }}
 
 // Scanner functions for each token type
@@ -330,7 +316,7 @@ func (p *Parser) lookahead(k int) Token {{
 	if idx < len(p.tokens) {{
 		return p.tokens[idx]
 	}}
-	return Token{{Type: "$", Value: stringTokenValue(""), Pos: -1}}
+	return Token{{Type: "$", Value: TokenValue{{}}, Pos: -1}}
 }}
 
 func (p *Parser) consumeLiteral(expected string) {{
@@ -354,10 +340,10 @@ func (p *Parser) consumeTerminal(expected string) Token {{
 func (p *Parser) matchLookaheadLiteral(literal string, k int) bool {{
 	token := p.lookahead(k)
 	// Support soft keywords: alphanumeric literals are lexed as SYMBOL tokens
-	if token.Type == "LITERAL" && token.Value.AsString() == literal {{
+	if token.Type == "LITERAL" && token.Value.str == literal {{
 		return true
 	}}
-	if token.Type == "SYMBOL" && token.Value.AsString() == literal {{
+	if token.Type == "SYMBOL" && token.Value.str == literal {{
 		return true
 	}}
 	return false
