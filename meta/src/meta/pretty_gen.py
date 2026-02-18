@@ -401,11 +401,13 @@ def _generate_pretty_sequence_from_fields(
                 and isinstance(fields_var.type.element_type, TupleType)
             )
             if non_lit_count > 1 and is_tuple_type:
-                elem_type = (
-                    fields_var.type.elements[field_idx]
-                    if isinstance(fields_var.type, TupleType)
-                    else fields_var.type.element_type.elements[field_idx]
-                )
+                if isinstance(fields_var.type, TupleType):
+                    elem_type = fields_var.type.elements[field_idx]
+                else:
+                    assert isinstance(fields_var.type, OptionType) and isinstance(
+                        fields_var.type.element_type, TupleType
+                    )
+                    elem_type = fields_var.type.element_type.elements[field_idx]
                 elem_var = Var(gensym("field"), elem_type)
                 elem_expr = GetElement(fields_var, field_idx)
                 pretty_elem = _pretty_print_element(
