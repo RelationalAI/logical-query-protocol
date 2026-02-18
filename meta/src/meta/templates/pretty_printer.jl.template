@@ -8,39 +8,113 @@
 
 mutable struct PrettyPrinter
     io::IOBuffer
-    indent_level::Int
+    indent_stack::Vector{{Int}}
+    column::Int
     at_line_start::Bool
+    separator::String
+    max_width::Int
+    _computing::Set{{UInt}}
+    _memo::Dict{{UInt,String}}
+    _memo_refs::Vector{{Any}}
     debug_info::Dict{{Tuple{{UInt64,UInt64}},String}}
 end
 
-PrettyPrinter() = PrettyPrinter(IOBuffer(), 0, true, Dict{{Tuple{{UInt64,UInt64}},String}}())
+function PrettyPrinter(; max_width::Int=92)
+    return PrettyPrinter(
+        IOBuffer(), [0], 0, true, "\n", max_width,
+        Set{{UInt}}(), Dict{{UInt,String}}(), Any[],
+        Dict{{Tuple{{UInt64,UInt64}},String}}(),
+    )
+end
+
+function indent_level(pp::PrettyPrinter)::Int
+    return isempty(pp.indent_stack) ? 0 : last(pp.indent_stack)
+end
 
 function Base.write(pp::PrettyPrinter, s::AbstractString)
-    if pp.at_line_start && !isempty(strip(s))
-        Base.write(pp.io, repeat("  ", pp.indent_level))
+    if pp.separator == "\n" && pp.at_line_start && !isempty(strip(s))
+        spaces = indent_level(pp)
+        Base.write(pp.io, " " ^ spaces)
+        pp.column = spaces
         pp.at_line_start = false
     end
-    return Base.write(pp.io, s)
+    Base.write(pp.io, s)
+    nl_pos = findlast('\n', s)
+    if !isnothing(nl_pos)
+        pp.column = length(s) - nl_pos
+    else
+        pp.column += length(s)
+    end
+    return nothing
 end
 
 function newline(pp::PrettyPrinter)
-    Base.write(pp.io, "\n")
-    pp.at_line_start = true
+    Base.write(pp.io, pp.separator)
+    if pp.separator == "\n"
+        pp.at_line_start = true
+        pp.column = 0
+    end
     return nothing
 end
 
 function indent!(pp::PrettyPrinter)
-    pp.indent_level += 1
+    if pp.separator == "\n"
+        push!(pp.indent_stack, pp.column)
+    end
     return nothing
 end
 
 function indent_sexp!(pp::PrettyPrinter)
-    pp.indent_level += 1
+    if pp.separator == "\n"
+        push!(pp.indent_stack, indent_level(pp) + 2)
+    end
     return nothing
 end
 
 function dedent!(pp::PrettyPrinter)
-    pp.indent_level = max(0, pp.indent_level - 1)
+    if pp.separator == "\n" && length(pp.indent_stack) > 1
+        pop!(pp.indent_stack)
+    end
+    return nothing
+end
+
+function try_flat(pp::PrettyPrinter, msg, pretty_fn::Function)
+    msg_id = objectid(msg)
+    if !haskey(pp._memo, msg_id) && !(msg_id in pp._computing)
+        push!(pp._computing, msg_id)
+        saved_io = pp.io
+        saved_sep = pp.separator
+        saved_indent = pp.indent_stack
+        saved_col = pp.column
+        saved_at_line_start = pp.at_line_start
+        try
+            pp.io = IOBuffer()
+            pp.separator = " "
+            pp.indent_stack = [0]
+            pp.column = 0
+            pp.at_line_start = false
+            pretty_fn(pp, msg)
+            pp._memo[msg_id] = String(copy(pp.io.data[1:pp.io.size]))
+            push!(pp._memo_refs, msg)
+        finally
+            pp.io = saved_io
+            pp.separator = saved_sep
+            pp.indent_stack = saved_indent
+            pp.column = saved_col
+            pp.at_line_start = saved_at_line_start
+            delete!(pp._computing, msg_id)
+        end
+    end
+    if haskey(pp._memo, msg_id)
+        flat = pp._memo[msg_id]
+        if pp.separator != "\n"
+            return flat
+        end
+        effective_col = pp.at_line_start ? indent_level(pp) : pp.column
+        if length(flat) + effective_col <= pp.max_width
+            return flat
+        end
+    end
     return nothing
 end
 
@@ -135,8 +209,8 @@ end
 # --- Pretty-print functions ---
 {pretty_nonterminal_defns}
 
-function pretty(msg::Proto.Transaction)::String
-    pp = PrettyPrinter()
+function pretty(msg::Proto.Transaction; max_width::Int=92)::String
+    pp = PrettyPrinter(max_width=max_width)
     pretty_{start_name}(pp, msg)
     newline(pp)
     return get_output(pp)

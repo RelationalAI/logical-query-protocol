@@ -34,6 +34,7 @@ from .target import (
     OptionType,
     PrintNonterminal,
     PrintNonterminalDef,
+    Return,
     Seq,
     SequenceType,
     TargetExpr,
@@ -41,7 +42,7 @@ from .target import (
     Var,
     gensym,
 )
-from .target_builtins import NONE, make_builtin
+from .target_builtins import NONE, STRING, make_builtin
 
 
 def generate_pretty_functions(
@@ -78,11 +79,45 @@ def _generate_pretty_method(
     else:
         body = _generate_pretty_alternatives(rules, msg_param, grammar, proto_messages)
 
+    body = _wrap_with_try_flat(nt, msg_param, body)
+
     return PrintNonterminalDef(
         nonterminal=nt,
         params=[msg_param],
         return_type=NONE,
         body=body,
+    )
+
+
+def _wrap_with_try_flat(
+    nt: Nonterminal, msg_param: Var, body: TargetExpr
+) -> TargetExpr:
+    """Wrap a pretty function body with a try_flat preamble.
+
+    Generates the equivalent of:
+        _flat = try_flat(pp, msg, pretty_<nt>)
+        if _flat is not nothing
+            write(pp, _flat)
+            return nothing
+        else
+            <body>
+        end
+    """
+    flat_var = Var(gensym("flat"), OptionType(STRING))
+    try_flat_call = Call(make_builtin("try_flat_io"), [msg_param, PrintNonterminal(nt)])
+    flat_write = Seq(
+        [
+            Call(
+                make_builtin("write_io"),
+                [Call(make_builtin("unwrap_option"), [flat_var])],
+            ),
+            Return(Lit(None)),
+        ]
+    )
+    return Let(
+        flat_var,
+        try_flat_call,
+        IfElse(Call(make_builtin("is_some"), [flat_var]), flat_write, body),
     )
 
 
