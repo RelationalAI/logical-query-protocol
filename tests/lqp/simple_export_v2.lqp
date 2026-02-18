@@ -1,0 +1,21 @@
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          (def :my_table
+            ([col1::INT col2::STRING]
+              (or
+                (and (= col1 1) (= col2 "hello"))
+                (and (= col1 2) (= col2 "world"))))))))
+
+    (reads
+      (export
+        (export_csv_config_v2
+          (path "output.csv")
+          (table_def :my_table)
+          (csv_config
+            { :csv_partition_size_mb 10
+              :csv_compression ""
+              :csv_quotechar "\""
+              :csv_escapechar "\\" }))))))
