@@ -50,7 +50,7 @@ def test_pretty_snapshot(snapshot, input_file):
         content = f.read()
     proto = generated_parse(content)
     printed = pretty(proto)
-    snapshot.snapshot_dir = str(REPO_ROOT / "tests" / "pretty" / "lqp_pretty_output")
+    snapshot.snapshot_dir = str(REPO_ROOT / "tests" / "pretty")
     snapshot.assert_match(printed, os.path.basename(input_file))
 
 
