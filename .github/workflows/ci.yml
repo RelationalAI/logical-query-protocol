@@ -24,18 +24,34 @@ jobs:
 
     - name: Lint
       run: |
-        cd python-tools
+        cd sdks/python
         uv run ruff check
         uv run ruff format --check
 
+    - name: Lint meta
+      run: |
+        cd meta
+        uv run ruff check
+        uv run ruff format --check
+
+    - name: Test meta with pytest
+      run: |
+        cd meta
+        uv run python -m pytest
+
+    - name: Type check meta
+      run: |
+        cd meta
+        uv run pyrefly check
+
     - name: Run tests
       run: |
-        cd python-tools
+        cd sdks/python
         uv run python -m pytest
 
     - name: Type check
       run: |
-        cd python-tools
+        cd sdks/python
         uv run pyrefly check
 
   julia-test:
@@ -55,7 +71,7 @@ jobs:
 
     - name: Run tests
       run: |
-        cd julia/LogicalQueryProtocol
+        cd sdks/julia/LogicalQueryProtocol
         julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.test()'
 
   go-test:
@@ -75,5 +91,5 @@ jobs:
 
     - name: Run tests
       run: |
-        cd go
+        cd sdks/go
         go test -v ./test/print_test.go
