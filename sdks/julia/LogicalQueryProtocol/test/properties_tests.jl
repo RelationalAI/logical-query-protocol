@@ -82,7 +82,8 @@ end
     @test is_write_only(epoch_w)
 
     # Epoch with a read
-    output = Output(; name=RelationId(; id_low=UInt64(1), id_high=UInt64(0)))
+    rid = RelationId(; id_low=UInt64(1), id_high=UInt64(0))
+    output = Output(; name="test_output", relation_id=rid)
     rd = Read(; read_type=OneOf(:output, output))
     epoch_r = Epoch(; writes=Write[], reads=[rd])
     @test is_read_only(epoch_r)
