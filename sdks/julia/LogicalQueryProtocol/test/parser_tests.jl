@@ -17,8 +17,8 @@ end
     using LogicalQueryProtocol: parse, Proto
     using ProtoBuf: ProtoBuf
 
-    test_files_dir = joinpath(@__DIR__, "../../../../tests/lqp")
-    bin_files_dir = joinpath(@__DIR__, "../../../../tests/bin")
+    test_files_dir = joinpath(@__DIR__, "lqp")
+    bin_files_dir = joinpath(@__DIR__, "bin")
     @test isdir(test_files_dir)
 
     lqp_files = sort(filter(f -> endswith(f, ".lqp"), readdir(test_files_dir)))

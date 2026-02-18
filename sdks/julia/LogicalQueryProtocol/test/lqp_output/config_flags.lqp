@@ -1,0 +1,13 @@
+(transaction
+  (configure
+    { :ivm.maintenance_level "auto"
+      :semantics_version 1})
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          (def :output
+            ([v::INT]
+              (primitive :rel_primitive_add_monotype 1 1 v))))))
+    (reads
+      (output :output :output))))

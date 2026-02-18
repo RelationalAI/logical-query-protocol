@@ -32,4 +32,5 @@ include("equality.jl")
 include("protobuf-helpers.jl")
 include("properties.jl")
 include("parser.jl")
+include("pretty.jl")
 end

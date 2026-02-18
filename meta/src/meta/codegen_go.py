@@ -368,9 +368,13 @@ class GoCodeGenerator(CodeGenerator):
     # --- Lambda and function definition syntax ---
 
     def gen_lambda_start(
-        self, params: list[str], return_type: str | None
+        self, params: list[tuple[str, str | None]], return_type: str | None
     ) -> tuple[str, str]:
-        params_str = ", ".join(f"{p} interface{{}}" for p in params) if params else ""
+        params_str = (
+            ", ".join(f"{n} {t if t else 'interface{}'}" for n, t in params)
+            if params
+            else ""
+        )
         ret = return_type if return_type else "interface{}"
         return (f"__FUNC__ := func({params_str}) {ret} {{", "}")
 

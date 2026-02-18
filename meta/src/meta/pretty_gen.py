@@ -34,6 +34,7 @@ from .target import (
     OptionType,
     PrintNonterminal,
     PrintNonterminalDef,
+    Return,
     Seq,
     SequenceType,
     TargetExpr,
@@ -41,7 +42,7 @@ from .target import (
     Var,
     gensym,
 )
-from .target_builtins import NONE, make_builtin
+from .target_builtins import NONE, STRING, make_builtin
 
 
 def generate_pretty_functions(
@@ -78,11 +79,45 @@ def _generate_pretty_method(
     else:
         body = _generate_pretty_alternatives(rules, msg_param, grammar, proto_messages)
 
+    body = _wrap_with_try_flat(nt, msg_param, body)
+
     return PrintNonterminalDef(
         nonterminal=nt,
         params=[msg_param],
         return_type=NONE,
         body=body,
+    )
+
+
+def _wrap_with_try_flat(
+    nt: Nonterminal, msg_param: Var, body: TargetExpr
+) -> TargetExpr:
+    """Wrap a pretty function body with a try_flat preamble.
+
+    Generates the equivalent of:
+        _flat = try_flat(pp, msg, pretty_<nt>)
+        if _flat is not nothing
+            write(pp, _flat)
+            return nothing
+        else
+            <body>
+        end
+    """
+    flat_var = Var(gensym("flat"), OptionType(STRING))
+    try_flat_call = Call(make_builtin("try_flat_io"), [msg_param, PrintNonterminal(nt)])
+    flat_write = Seq(
+        [
+            Call(
+                make_builtin("write_io"),
+                [Call(make_builtin("unwrap_option"), [flat_var])],
+            ),
+            Return(Lit(None)),
+        ]
+    )
+    return Let(
+        flat_var,
+        try_flat_call,
+        IfElse(Call(make_builtin("is_some"), [flat_var]), flat_write, body),
     )
 
 
@@ -337,6 +372,16 @@ def _generate_pretty_sequence_from_fields(
         and elems[1].name != "("
     )
 
+    # Detect brace-delimited block: "{" ... "}"
+    last_elem = elems[-1] if elems else None
+    is_brace = (
+        len(elems) >= 2
+        and isinstance(elems[0], LitTerminal)
+        and elems[0].name == "{"
+        and isinstance(last_elem, LitTerminal)
+        and last_elem.name == "}"
+    )
+
     # Count non-literal elements to determine if fields_var is a tuple or single value
     non_lit_count = sum(1 for e in elems if not isinstance(e, LitTerminal))
 
@@ -372,7 +417,10 @@ def _generate_pretty_sequence_from_fields(
             if is_group and i >= 2 and elem.name not in NO_LEADING_SPACE:
                 # Group spacing: newline before non-bracket-closing literals
                 stmts.append(Call(make_builtin("newline_io"), []))
-            elif not is_group and stmts:
+            elif is_brace and i >= 1 and elem.name not in NO_LEADING_SPACE:
+                # Brace spacing: newline before non-bracket-closing literals
+                stmts.append(Call(make_builtin("newline_io"), []))
+            elif not is_group and not is_brace and stmts:
                 cur_lit_name = elem.name
                 suppress = False
                 if prev_lit_name in NO_TRAILING_SPACE:
@@ -388,6 +436,14 @@ def _generate_pretty_sequence_from_fields(
                     pass
                 else:
                     # Group spacing: newline before each non-literal
+                    leading_ws = [Call(make_builtin("newline_io"), [])]
+            elif is_brace:
+                if prev_lit_name == "{":
+                    # First element after {: space, not newline
+                    leading_ws = [Call(make_builtin("write_io"), [Lit(" ")])]
+                elif prev_lit_name in NO_TRAILING_SPACE:
+                    pass
+                else:
                     leading_ws = [Call(make_builtin("newline_io"), [])]
             elif stmts:
                 # Non-group spacing between elements
@@ -409,6 +465,9 @@ def _generate_pretty_sequence_from_fields(
             )
             if is_closing:
                 stmts.append(Call(make_builtin("dedent_io"), []))
+            # For brace closing, emit dedent if we indented
+            if is_brace and elem.name == "}" and non_lit_count > 0:
+                stmts.append(Call(make_builtin("dedent_io"), []))
             stmts.append(_format_literal(elem))
 
             # Opening delimiter/keyword: emit indent after
@@ -417,6 +476,9 @@ def _generate_pretty_sequence_from_fields(
             elif (is_bracket_group and elem.name == "[") or (
                 is_paren_group and elem.name == "("
             ):
+                stmts.append(Call(make_builtin("indent_io"), []))
+            # After opening brace, emit indent
+            if is_brace and elem.name == "{" and non_lit_count > 0:
                 stmts.append(Call(make_builtin("indent_io"), []))
             prev_lit_name = elem.name
         else:

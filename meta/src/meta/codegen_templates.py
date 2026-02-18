@@ -86,6 +86,7 @@ PYTHON_TEMPLATES: dict[str, BuiltinTemplate] = {
     "indent_io": BuiltinTemplate("None", ["self.indent()"]),
     "indent_sexp_io": BuiltinTemplate("None", ["self.indent_sexp()"]),
     "dedent_io": BuiltinTemplate("None", ["self.dedent()"]),
+    "try_flat_io": BuiltinTemplate("self._try_flat({0}, {1})"),
     "format_int64": BuiltinTemplate("str({0})"),
     "format_int32": BuiltinTemplate("str({0})"),
     "format_float64": BuiltinTemplate("str({0})"),
@@ -105,6 +106,9 @@ PYTHON_TEMPLATES: dict[str, BuiltinTemplate] = {
     "relation_id_to_string": BuiltinTemplate("self.relation_id_to_string({0})"),
     "relation_id_to_int": BuiltinTemplate("self.relation_id_to_int({0})"),
     "relation_id_to_uint128": BuiltinTemplate("self.relation_id_to_uint128({0})"),
+    "start_pretty_fragment": BuiltinTemplate(
+        "{0}", ["self.start_pretty_fragment({0})"]
+    ),
 }
 
 
@@ -140,7 +144,7 @@ JULIA_TEMPLATES: dict[str, BuiltinTemplate] = {
     "map": BuiltinTemplate("map({0}, {1})"),
     "list_concat": BuiltinTemplate("vcat({0}, !isnothing({1}) ? {1} : [])"),
     "list_push": BuiltinTemplate("nothing", ["push!({0}, {1})"]),
-    "list_slice": BuiltinTemplate("{0}[{1}:{2}]"),
+    "list_slice": BuiltinTemplate("{0}[{1} + 1:{2}]"),
     "list_sort": BuiltinTemplate("sort({0})"),
     "fragment_id_from_string": BuiltinTemplate(
         "Proto.FragmentId(Vector{{UInt8}}({0}))"
@@ -171,9 +175,10 @@ JULIA_TEMPLATES: dict[str, BuiltinTemplate] = {
     "indent_io": BuiltinTemplate("nothing", ["indent!(pp)"]),
     "indent_sexp_io": BuiltinTemplate("nothing", ["indent_sexp!(pp)"]),
     "dedent_io": BuiltinTemplate("nothing", ["dedent!(pp)"]),
+    "try_flat_io": BuiltinTemplate("try_flat(pp, {0}, {1})"),
     "format_int64": BuiltinTemplate("string({0})"),
     "format_int32": BuiltinTemplate("string({0})"),
-    "format_float64": BuiltinTemplate("string({0})"),
+    "format_float64": BuiltinTemplate("format_float64({0})"),
     "format_string": BuiltinTemplate("format_string_value({0})"),
     "format_symbol": BuiltinTemplate("{0}"),
     "format_bool": BuiltinTemplate('({0} ? "true" : "false")'),
@@ -185,11 +190,12 @@ JULIA_TEMPLATES: dict[str, BuiltinTemplate] = {
     # Type conversions used by pretty printer
     "int32_to_int64": BuiltinTemplate("Int64({0})"),
     "is_empty": BuiltinTemplate("isempty({0})"),
-    "decode_string": BuiltinTemplate("String({0})"),
+    "decode_string": BuiltinTemplate("String(copy({0}))"),
     "fragment_id_to_string": BuiltinTemplate("fragment_id_to_string(pp, {0})"),
     "relation_id_to_string": BuiltinTemplate("relation_id_to_string(pp, {0})"),
     "relation_id_to_int": BuiltinTemplate("relation_id_to_int(pp, {0})"),
     "relation_id_to_uint128": BuiltinTemplate("relation_id_to_uint128(pp, {0})"),
+    "start_pretty_fragment": BuiltinTemplate("{0}", ["start_pretty_fragment(pp, {0})"]),
 }
 
 
@@ -258,6 +264,7 @@ GO_TEMPLATES: dict[str, BuiltinTemplate] = {
     "indent_io": BuiltinTemplate("nil", ["p.indent()"]),
     "indent_sexp_io": BuiltinTemplate("nil", ["p.indentSexp()"]),
     "dedent_io": BuiltinTemplate("nil", ["p.dedent()"]),
+    "try_flat_io": BuiltinTemplate("nil"),
     "format_int64": BuiltinTemplate('fmt.Sprintf("%d", {0})'),
     "format_int32": BuiltinTemplate('fmt.Sprintf("%d", {0})'),
     "format_float64": BuiltinTemplate('fmt.Sprintf("%g", {0})'),
