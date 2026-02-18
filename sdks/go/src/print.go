@@ -433,6 +433,9 @@ func (pp PrettyParams) pprint(node interface{}) {
 				configDict["csv_decimal_separator"] = n.GetDecimalSeparator()
 				configDict["csv_encoding"] = n.GetEncoding()
 				configDict["csv_compression"] = n.GetCompression()
+				if n.GetPartitionSizeMb() != 0 {
+					configDict["csv_partition_size_mb"] = n.GetPartitionSizeMb()
+				}
 				pp.configDictToStr(configDict)
 			})
 		})
@@ -1019,40 +1022,84 @@ func (pp PrettyParams) pprint(node interface{}) {
 			})
 		}
 
-	case *pb.ExportCSVConfig:
-		pp.PARENS(func(pp PrettyParams) {
-			pp.Write("export_csv_config")
-			pp.NEWLINE()
-			pp.INDENT(2, func(pp PrettyParams) {
-				pp.PARENS(func(pp PrettyParams) {
-					pp.Write("path")
-					pp.SPACE()
-					pp.pprint(n.GetPath())
-				})
-				pp.NEWLINE()
-				pp.PARENS(func(pp PrettyParams) {
-					pp.Write("columns")
-					pp.SPACE()
-					hsep(pp, n.GetDataColumns(), " ", func(x *pb.ExportCSVColumn) {
-						pp.pprint(x)
+	case *pb.ExportCSVSource:
+		if gnfColumns := n.GetGnfColumns(); gnfColumns != nil {
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("gnf_columns")
+				if len(gnfColumns.GetColumns()) > 0 {
+					pp.NEWLINE()
+					pp.INDENT(2, func(pp PrettyParams) {
+						vsep(pp, gnfColumns.GetColumns(), "", func(col *pb.ExportCSVColumn) {
+							pp.pprint(col)
+						})
 					})
-				})
-				pp.NEWLINE()
-				configDict := make(map[string]interface{})
-				configDict["partition_size"] = n.GetPartitionSize()
-				configDict["compression"] = n.GetCompression()
-				if n.GetSyntaxHeaderRow() {
-					configDict["syntax_header_row"] = 1
-				} else {
-					configDict["syntax_header_row"] = 0
 				}
-				configDict["syntax_missing_string"] = n.GetSyntaxMissingString()
-				configDict["syntax_delim"] = n.GetSyntaxDelim()
-				configDict["syntax_quotechar"] = n.GetSyntaxQuotechar()
-				configDict["syntax_escapechar"] = n.GetSyntaxEscapechar()
-				pp.configDictToStr(configDict)
 			})
-		})
+		} else if tableDef := n.GetTableDef(); tableDef != nil {
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("table_def")
+				pp.NEWLINE()
+				pp.INDENT(2, func(pp PrettyParams) {
+					pp.pprint(tableDef)
+				})
+			})
+		}
+
+	case *pb.ExportCSVConfig:
+		// Check if this is v2 format (with csv_source) or old format (with data_columns)
+		if len(n.GetDataColumns()) == 0 {
+			// v2 format: export_csv_config_v2
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("export_csv_config_v2")
+				pp.NEWLINE()
+				pp.INDENT(2, func(pp PrettyParams) {
+					pp.PARENS(func(pp PrettyParams) {
+						pp.Write("path")
+						pp.SPACE()
+						pp.pprint(n.GetPath())
+					})
+					pp.NEWLINE()
+					pp.pprint(n.GetCsvSource())
+					pp.NEWLINE()
+					pp.pprint(n.GetCsvConfig())
+				})
+			})
+		} else {
+			// Old format: export_csv_config
+			pp.PARENS(func(pp PrettyParams) {
+				pp.Write("export_csv_config")
+				pp.NEWLINE()
+				pp.INDENT(2, func(pp PrettyParams) {
+					pp.PARENS(func(pp PrettyParams) {
+						pp.Write("path")
+						pp.SPACE()
+						pp.pprint(n.GetPath())
+					})
+					pp.NEWLINE()
+					pp.PARENS(func(pp PrettyParams) {
+						pp.Write("columns")
+						pp.SPACE()
+						hsep(pp, n.GetDataColumns(), " ", func(x *pb.ExportCSVColumn) {
+							pp.pprint(x)
+						})
+					})
+					pp.NEWLINE()
+					configDict := make(map[string]interface{})
+					configDict["partition_size"] = n.GetPartitionSize()
+					configDict["compression"] = n.GetCompression()
+					if n.GetSyntaxHeaderRow() {
+						configDict["syntax_header_row"] = 1
+					} else {
+						configDict["syntax_header_row"] = 0
+					}
+					configDict["syntax_missing_string"] = n.GetSyntaxMissingString()
+					configDict["syntax_delim"] = n.GetSyntaxDelim()
+					configDict["syntax_quotechar"] = n.GetSyntaxQuotechar()
+					configDict["syntax_escapechar"] = n.GetSyntaxEscapechar()
+					pp.configDictToStr(configDict)
+				})
+			})
+		}
 
 	case *pb.ExportCSVColumn:
 		pp.PARENS(func(pp PrettyParams) {
