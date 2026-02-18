@@ -611,8 +611,8 @@ end
 
     v1 = Value(value=OneOf(:string_value, "true"))
     v2 = Value(value=OneOf(:string_value, "false"))
-    t1 = Term(term_type=OneOf(:value, v1))
-    t2 = Term(term_type=OneOf(:value, v2))
+    t1 = Term(term_type=OneOf(:constant, v1))
+    t2 = Term(term_type=OneOf(:constant, v2))
 
     p1 = Pragma(name="inline", terms=[t1])
     p2 = Pragma(name="inline", terms=[t1])
@@ -648,10 +648,10 @@ end
     input_term = Term(term_type=OneOf(:var, v))
 
     val1 = Value(value=OneOf(:int_value, 42))
-    result_term1 = Term(term_type=OneOf(:value, val1))
+    result_term1 = Term(term_type=OneOf(:constant, val1))
 
     val2 = Value(value=OneOf(:int_value, 99))
-    result_term2 = Term(term_type=OneOf(:value, val2))
+    result_term2 = Term(term_type=OneOf(:constant, val2))
 
     c1 = Cast(input=input_term, result=result_term1)
     c2 = Cast(input=input_term, result=result_term1)
