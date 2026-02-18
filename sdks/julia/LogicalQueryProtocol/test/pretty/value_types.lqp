@@ -1,0 +1,16 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (def :output_decimal64 ([v::(DECIMAL 18 6)] (relatom :dec64 v)))
+          (def :output_decimal128 ([v::(DECIMAL 38 10)] (relatom :dec128 v)))
+          (def :output_date ([v::DATE] (relatom :date v)))
+          (def :output_datetime ([v::DATETIME] (relatom :datetime v))))))
+    (reads
+      (output :dec64 :output_decimal64)
+      (output :dec128 :output_decimal128)
+      (output :date :output_date)
+      (output :datetime :output_datetime))))

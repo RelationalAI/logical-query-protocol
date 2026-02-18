@@ -1,0 +1,25 @@
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          (def :col1
+            ([row::INT v::INT]
+              (and
+                (= row 1)
+                (= 2 v))))
+          (def :col2
+            ([row::INT v::STRING]
+              (and
+                (= row 1)
+                (= v "hello")))))))
+
+    (reads
+      (export
+        (export_csv_config
+          (path "wrong")
+          (columns (column "col1name" :col1) (column "col2name" :col2))
+          { :partition_size 10
+            :compression ""
+            :syntax_quotechar "\""
+            :syntax_escapechar "\\"})))))
