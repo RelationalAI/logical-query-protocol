@@ -687,17 +687,6 @@ class GrammarValidator:
         """Check if message contains only a single oneof and no other fields."""
         return len(message.oneofs) > 0 and len(message.fields) == 0
 
-    def _is_message_type(self, type_name: str) -> bool:
-        """Check if type is a proto message type."""
-        return type_name in self.parser.messages
-
-    def _find_nonterminal(self, name: str) -> Nonterminal | None:
-        """Find nonterminal by name."""
-        for nt in self.grammar.rules.keys():
-            if nt.name == name:
-                return nt
-        return None
-
     def _find_nonterminals_by_type(self, target_type: TargetType) -> list[Nonterminal]:
         """Find all nonterminals with the given type."""
         result = []
@@ -705,26 +694,6 @@ class GrammarValidator:
             if nt.type == target_type:
                 result.append(nt)
         return result
-
-    def _get_rhs_nonterminal_names(self, rhs: Rhs) -> set[str]:
-        """Get all nonterminal names referenced in RHS."""
-        names: set[str] = set()
-
-        def visit(r: Rhs) -> None:
-            if isinstance(r, Nonterminal):
-                names.add(r.name)
-            elif isinstance(r, Star):
-                visit(r.rhs)
-            elif isinstance(r, Option):
-                visit(r.rhs)
-            elif isinstance(r, Sequence):
-                for elem in r.elements:
-                    visit(elem)
-            return None
-
-        visit(rhs)
-        return names
-
 
 class _ExprTypeChecker(TargetExprVisitor):
     """Type checker for TargetExpr trees."""

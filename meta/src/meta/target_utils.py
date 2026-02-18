@@ -487,16 +487,6 @@ def make_get_element(tuple_expr, index):
     return GetElement(tuple_expr, index)
 
 
-def make_fst(pair):
-    """Extract first element of tuple: pair[0]."""
-    return make_get_element(pair, 0)
-
-
-def make_snd(pair):
-    """Extract second element of tuple: pair[1]."""
-    return make_get_element(pair, 1)
-
-
 def make_is_empty(collection):
     """Check if collection is empty: len(collection) == 0."""
     return Call(make_builtin("is_empty"), [collection])
