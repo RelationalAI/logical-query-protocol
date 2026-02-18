@@ -98,17 +98,6 @@ class PythonCodeGenerator(CodeGenerator):
         self.register_builtin("unwrap_option", self._gen_unwrap_option_builtin)
 
     @staticmethod
-    def _gen_tuple_builtin(args, lines, indent):
-        from .codegen_base import BuiltinResult
-
-        if len(args) == 0:
-            return BuiltinResult("()", [])
-        elif len(args) == 1:
-            return BuiltinResult(f"({args[0]},)", [])
-        else:
-            return BuiltinResult(f"({', '.join(args)},)", [])
-
-    @staticmethod
     def _gen_unwrap_option_builtin(args, lines, indent):
         from .codegen_base import BuiltinResult
 
@@ -253,6 +242,9 @@ class PythonCodeGenerator(CodeGenerator):
     ) -> str:
         params_str = ", ".join(f"{n}: {t}" for n, t in params)
         ret_hint = f" -> {return_type}" if return_type else ""
+        if is_method:
+            prefix = "self, " if params_str else "self"
+            return f"def {name}({prefix}{params_str}){ret_hint}:"
         return f"def {name}({params_str}){ret_hint}:"
 
     def gen_func_def_end(self) -> str:
@@ -366,63 +358,8 @@ class PythonCodeGenerator(CodeGenerator):
         self._message_field_map = field_map
         return field_map
 
-    def _generate_self_method(
-        self, func_name: str, params, body, return_type, indent: str
-    ) -> str:
-        """Generate a method definition with `self` as first parameter.
-
-        Args:
-            func_name: The method name.
-            params: List of Param objects (each with .name and .type).
-            body: The method body expression, or None for an empty body.
-            return_type: The return type, or None.
-            indent: Indentation prefix.
-        """
-        typed_params = []
-        for param in params:
-            escaped_name = self.escape_identifier(param.name)
-            type_hint = self.gen_type(param.type)
-            typed_params.append(f"{escaped_name}: {type_hint}")
-
-        params_str = ", ".join(typed_params) if typed_params else ""
-        if params_str:
-            params_str = ", " + params_str
-
-        is_void = return_type is not None and self._is_void_type(return_type)
-        ret_hint = (
-            "" if not return_type or is_void else f" -> {self.gen_type(return_type)}"
-        )
-
-        body_lines: list[str] = []
-        if body is None:
-            body_lines.append(f"{indent}    pass")
-        else:
-            body_inner = self.generate_lines(body, body_lines, indent + "    ")
-            if body_inner is not None and not is_void:
-                body_lines.append(f"{indent}    return {body_inner}")
-        body_code = "\n".join(body_lines)
-
-        return f"{indent}def {func_name}(self{params_str}){ret_hint}:\n{body_code}"
-
-    def _generate_parse_def(self, expr: ParseNonterminalDef, indent: str) -> str:
-        """Generate a parse method definition."""
-        return self._generate_self_method(
-            f"parse_{expr.nonterminal.name}",
-            expr.params,
-            expr.body,
-            expr.return_type,
-            indent,
-        )
-
-    def _generate_pretty_def(self, expr: PrintNonterminalDef, indent: str) -> str:
-        """Generate a pretty-print method definition."""
-        return self._generate_self_method(
-            f"pretty_{expr.nonterminal.name}",
-            expr.params,
-            expr.body,
-            expr.return_type,
-            indent,
-        )
+    def _should_emit_method_return(self, return_type) -> bool:
+        return not (return_type is not None and self._is_void_type(return_type))
 
     # Parser generation settings
     parse_def_indent = "    "
@@ -441,9 +378,7 @@ class PythonCodeGenerator(CodeGenerator):
     def format_named_token_spec(self, token_name: str, token_pattern: str) -> str:
         regex = self._regex_literal(token_pattern)
         scan = f"Lexer.scan_{token_name.lower()}"
-        one_line = (
-            f'    ("{token_name}", re.compile({regex}), lambda x: {scan}(x)),'
-        )
+        one_line = f'    ("{token_name}", re.compile({regex}), lambda x: {scan}(x)),'
         if len(one_line) <= 88:
             return one_line
         return (
@@ -456,16 +391,6 @@ class PythonCodeGenerator(CodeGenerator):
 
     def format_command_line_comment(self, command_line: str) -> str:
         return f"\nCommand: {command_line}\n"
-
-    def generate_method_def(self, expr: FunDef, indent: str) -> str:
-        """Generate a function definition as an instance method."""
-        return self._generate_self_method(
-            self.escape_identifier(expr.name),
-            expr.params,
-            expr.body,
-            expr.return_type,
-            indent,
-        )
 
 
 def escape_identifier(name: str) -> str:

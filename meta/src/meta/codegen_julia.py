@@ -130,17 +130,7 @@ class JuliaCodeGenerator(CodeGenerator):
 
         self.register_builtin("enum_value", enum_value_handler)
 
-        def tuple_handler(
-            args: list[str], lines: list[str], indent: str
-        ) -> BuiltinResult:
-            if len(args) == 0:
-                return BuiltinResult("()", [])
-            elif len(args) == 1:
-                return BuiltinResult(f"({args[0]},)", [])
-            else:
-                return BuiltinResult(f"({', '.join(args)},)", [])
-
-        self.register_builtin("tuple", tuple_handler)
+        self.register_builtin("tuple", self._gen_tuple_builtin)
 
         def has_proto_field_handler(
             args: list[str], lines: list[str], indent: str
@@ -326,7 +316,10 @@ class JuliaCodeGenerator(CodeGenerator):
         return_type: str | None,
         is_method: bool = False,
     ) -> str:
-        params_str = ", ".join(f"{n}::{t}" for n, t in params)
+        typed = [f"{n}::{t}" for n, t in params]
+        if is_method:
+            typed.insert(0, self.config.first_param)
+        params_str = ", ".join(typed)
         ret_hint = f"::{return_type}" if return_type else ""
         return f"function {name}({params_str}){ret_hint}"
 
@@ -549,67 +542,6 @@ class JuliaCodeGenerator(CodeGenerator):
             f"OneOf should only appear in Call(OneOf(...), [value]) pattern: {expr}"
         )
 
-    def _generate_julia_function(
-        self, func_name: str, first_param: str, params, body, return_type, indent: str
-    ) -> str:
-        """Generate a Julia function definition with a typed first parameter.
-
-        Args:
-            func_name: The function name.
-            first_param: The first parameter string (e.g. "parser::Parser").
-            params: List of Param objects (each with .name and .type).
-            body: The function body expression, or None for an empty body.
-            return_type: The return type, or None.
-            indent: Indentation prefix.
-        """
-        typed_params = [first_param]
-        for param in params:
-            escaped_name = self.escape_identifier(param.name)
-            type_hint = self.gen_type(param.type)
-            typed_params.append(f"{escaped_name}::{type_hint}")
-
-        params_str = ", ".join(typed_params)
-        ret_hint = (
-            f"::{self.gen_type(return_type)}"
-            if return_type and not self._is_void_type(return_type)
-            else ""
-        )
-
-        if body is None:
-            body_code = f"{indent}{self.indent_str}{self.gen_empty_body()}"
-        else:
-            body_lines: list[str] = []
-            body_inner = self.generate_lines(body, body_lines, indent + self.indent_str)
-            if body_inner is not None:
-                body_lines.append(
-                    f"{indent}{self.indent_str}{self.gen_return(body_inner)}"
-                )
-            body_code = "\n".join(body_lines)
-
-        return f"{indent}function {func_name}({params_str}){ret_hint}\n{body_code}\n{indent}end"
-
-    def _generate_parse_def(self, expr: ParseNonterminalDef, indent: str) -> str:
-        """Generate a parse method definition."""
-        return self._generate_julia_function(
-            f"parse_{expr.nonterminal.name}",
-            self.config.first_param,
-            expr.params,
-            expr.body,
-            expr.return_type,
-            indent,
-        )
-
-    def _generate_pretty_def(self, expr: PrintNonterminalDef, indent: str) -> str:
-        """Generate a pretty-print function definition."""
-        return self._generate_julia_function(
-            f"pretty_{expr.nonterminal.name}",
-            self.config.first_param,
-            expr.params,
-            expr.body,
-            expr.return_type,
-            indent,
-        )
-
     def format_literal_token_spec(self, escaped_literal: str) -> str:
         return f'    ("LITERAL", r"{escaped_literal}", identity),'
 
@@ -619,17 +551,6 @@ class JuliaCodeGenerator(CodeGenerator):
 
     def format_command_line_comment(self, command_line: str) -> str:
         return f"Command: {command_line}"
-
-    def generate_method_def(self, expr: FunDef, indent: str) -> str:
-        """Generate a function definition with receiver as first parameter."""
-        return self._generate_julia_function(
-            self.escape_identifier(expr.name),
-            self.config.first_param,
-            expr.params,
-            expr.body,
-            expr.return_type,
-            indent,
-        )
 
 
 def escape_identifier(name: str) -> str:
