@@ -1,44 +1,33 @@
 (transaction
   (configure
     { :ivm.maintenance_level "off"
-    :semantics_version 0})
+      :semantics_version 0})
   (epoch
     (writes
       (define
-        (fragment
-          :f1
-          (def
-            :my_table
-            ([col1::INT
-            col2::STRING] (or
-              (and
-                (=
-                  col1
-                  1)
-                (=
-                  col2
-                  "hello"))
-              (and
-                (=
-                  col1
-                  2)
-                (=
-                  col2
-                  "world"))))))))
+        (fragment :f1
+          (def :my_table
+            ([col1::INT col2::STRING]
+              (or
+                (and
+                  (primitive :rel_primitive_eq col1 1)
+                  (primitive :rel_primitive_eq col2 "hello"))
+                (and
+                  (primitive :rel_primitive_eq col1 2)
+                  (primitive :rel_primitive_eq col2 "world"))))))))
     (reads
       (export
         (export_csv_config_v2
-          (path
-            "output.csv")
+          (path "output.csv")
           (table_def
             :my_table)
           (csv_config
             { :csv_compression ""
-            :csv_decimal_separator "."
-            :csv_delimiter ","
-            :csv_encoding "utf-8"
-            :csv_escapechar "\\"
-            :csv_header_row 1
-            :csv_partition_size_mb 10
-            :csv_quotechar "\""
-            :csv_skip 0}))))))
+              :csv_decimal_separator "."
+              :csv_delimiter ","
+              :csv_encoding "utf-8"
+              :csv_escapechar "\\"
+              :csv_header_row 1
+              :csv_partition_size_mb 10
+              :csv_quotechar "\""
+              :csv_skip 0}))))))
