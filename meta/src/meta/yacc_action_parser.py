@@ -509,6 +509,15 @@ def _convert_node_with_vars(
         cond = convert(node.test)
         then_branch = convert(node.body)
         else_branch = convert(node.orelse)
+        # `x if cond else None` → `some(x) if cond else None`
+        # so the join is Option[T] + Option[Never] = Option[T]
+        if isinstance(else_branch, Lit) and else_branch.value is None:
+            try:
+                then_type = then_branch.target_type()
+                if not isinstance(then_type, OptionType):
+                    then_branch = Call(make_builtin("some"), [then_branch])
+            except (NotImplementedError, ValueError, TypeError):
+                pass
         return IfElse(cond, then_branch, else_branch)
 
     elif isinstance(node, ast.Compare):
@@ -1408,6 +1417,14 @@ def _convert_func_expr(
         cond = _convert_func_expr(node.test, ctx, line, local_vars)
         then_branch = _convert_func_expr(node.body, ctx, line, local_vars)
         else_branch = _convert_func_expr(node.orelse, ctx, line, local_vars)
+        # `x if cond else None` → `some(x) if cond else None`
+        if isinstance(else_branch, Lit) and else_branch.value is None:
+            try:
+                then_type = then_branch.target_type()
+                if not isinstance(then_type, OptionType):
+                    then_branch = Call(make_builtin("some"), [then_branch])
+            except (NotImplementedError, ValueError, TypeError):
+                pass
         return IfElse(cond, then_branch, else_branch)
 
     elif isinstance(node, ast.Compare):

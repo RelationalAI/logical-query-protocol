@@ -321,7 +321,7 @@ class PrintNonterminal(TargetExpr):
         return f"pretty_{self.nonterminal.name}"
 
     def target_type(self) -> "TargetType":
-        return self.nonterminal.target_type()
+        return BaseType("Void")
 
 
 @dataclass(frozen=True)
