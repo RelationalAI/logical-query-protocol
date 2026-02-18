@@ -131,15 +131,22 @@ def _generate_pretty_alternatives(
                 gensym("deconstruct_result"), rule.deconstructor.return_type
             )
             deconstruct_call = Call(rule.deconstructor, [msg_param])
+            # Unwrap the optional inside the is_some branch so the pretty
+            # body receives the inner type, not Optional.
+            inner_type = rule.deconstructor.return_type.element_type
+            unwrapped_var = Var(gensym("unwrapped_deconstruct"), inner_type)
+            unwrap_expr = Call(
+                make_builtin("unwrap_option"), [deconstruct_result_var]
+            )
             pretty_body = _generate_pretty_from_fields(
-                rule.rhs, deconstruct_result_var, grammar, proto_messages
+                rule.rhs, unwrapped_var, grammar, proto_messages
             )
             result = Let(
                 deconstruct_result_var,
                 deconstruct_call,
                 IfElse(
                     Call(make_builtin("is_some"), [deconstruct_result_var]),
-                    pretty_body,
+                    Let(unwrapped_var, unwrap_expr, pretty_body),
                     result,
                 ),
             )
@@ -270,21 +277,22 @@ def _generate_pretty_with_deconstruct(
 
     if isinstance(deconstructor.return_type, OptionType):
         unwrapped_type = deconstructor.return_type.element_type
+        unwrapped_var = Var(gensym("unwrapped_fields"), unwrapped_type)
+        unwrap_expr = Call(make_builtin("unwrap_option"), [deconstruct_result_var])
+        pretty_body = _generate_pretty_from_fields(
+            rule.rhs, unwrapped_var, grammar, proto_messages
+        )
+        return Let(
+            deconstruct_result_var,
+            deconstruct_call,
+            Let(unwrapped_var, unwrap_expr, pretty_body),
+        )
     else:
-        unwrapped_type = deconstructor.return_type
-
-    unwrapped_var = Var(gensym("unwrapped_fields"), unwrapped_type)
-    unwrap_expr = Call(make_builtin("unwrap_option"), [deconstruct_result_var])
-
-    pretty_body = _generate_pretty_from_fields(
-        rule.rhs, unwrapped_var, grammar, proto_messages
-    )
-
-    return Let(
-        deconstruct_result_var,
-        deconstruct_call,
-        Let(unwrapped_var, unwrap_expr, pretty_body),
-    )
+        # Non-optional return: use deconstruct result directly
+        pretty_body = _generate_pretty_from_fields(
+            rule.rhs, deconstruct_result_var, grammar, proto_messages
+        )
+        return Let(deconstruct_result_var, deconstruct_call, pretty_body)
 
 
 def _generate_pretty_from_fields(

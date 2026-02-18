@@ -63,8 +63,8 @@ def parse_args():
     output_group.add_argument(
         "--printer",
         type=str,
-        choices=["ir", "python", "julia"],
-        help="Output the generated pretty printer (ir, python, or julia)",
+        choices=["ir", "python", "julia", "go"],
+        help="Output the generated pretty printer (ir, python, julia, or go)",
     )
 
     args = parser.parse_args()
@@ -260,7 +260,7 @@ def run(args) -> int:
                 args.output,
                 f"Generated printer IR written to {args.output}",
             )
-        elif args.printer in ("python", "julia"):
+        elif args.printer in ("python", "julia", "go"):
             proto_messages = {
                 (msg.module, name): msg for name, msg in proto_parser.messages.items()
             }
@@ -280,6 +280,12 @@ def run(args) -> int:
                 from .pretty_gen_julia import generate_pretty_printer_julia
 
                 output_text = generate_pretty_printer_julia(
+                    grammar, command_line, proto_messages
+                )
+            elif args.printer == "go":
+                from .pretty_gen_go import generate_pretty_printer_go
+
+                output_text = generate_pretty_printer_go(
                     grammar, command_line, proto_messages
                 )
             else:

@@ -810,13 +810,7 @@ class CodeGenerator(ABC):
                         return result.value
 
         # Determine expression type for typed variable declarations.
-        type_hint = None
-        try:
-            expr_type = expr.target_type()
-            if expr_type is not None:
-                type_hint = self.gen_type(expr_type)
-        except (NotImplementedError, ValueError, TypeError):
-            pass
+        type_hint = self._ifelse_type_hint(expr)
 
         tmp = gensym()
         lines.append(f"{indent}{self.gen_var_declaration(tmp, type_hint)}")
@@ -860,6 +854,19 @@ class CodeGenerator(ABC):
         lines.append(f"{indent}{self.gen_else()}")
         lines.append(f"{body_indent}{self.gen_assignment(tmp, else_code)}")
         return else_code
+
+    def _ifelse_type_hint(self, expr: IfElse) -> str | None:
+        """Compute a type hint for the IfElse temp variable.
+
+        Subclasses may override to provide better type inference.
+        """
+        try:
+            expr_type = expr.target_type()
+            if expr_type is not None:
+                return self.gen_type(expr_type)
+        except (NotImplementedError, ValueError, TypeError):
+            pass
+        return None
 
     def _generate_Seq(self, expr: Seq, lines: list[str], indent: str) -> str | None:
         """Generate code for a sequence of expressions.

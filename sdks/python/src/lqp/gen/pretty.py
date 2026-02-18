@@ -118,14 +118,8 @@ class PrettyPrinter:
 
     # --- Helper functions ---
 
-    def deconstruct_relation_id_uint128(self, msg: logic_pb2.RelationId) -> Optional[logic_pb2.UInt128Value]:
-        name = self.relation_id_to_string(msg)
-        if name == '':
-            return self.relation_id_to_uint128(msg)
-        return None
-
-    def _make_value_int64(self, v: int) -> logic_pb2.Value:
-        _t1252 = logic_pb2.Value(int_value=v)
+    def _make_value_boolean(self, v: bool) -> logic_pb2.Value:
+        _t1252 = logic_pb2.Value(boolean_value=v)
         return _t1252
 
     def _make_value_string(self, v: str) -> logic_pb2.Value:
@@ -136,97 +130,123 @@ class PrettyPrinter:
         _t1254 = logic_pb2.Value(float_value=v)
         return _t1254
 
+    def deconstruct_csv_config(self, msg: logic_pb2.CSVConfig) -> list[tuple[str, logic_pb2.Value]]:
+        result = []
+        _t1255 = self._make_value_int32(msg.header_row)
+        result.append(('csv_header_row', _t1255,))
+        _t1256 = self._make_value_int64(msg.skip)
+        result.append(('csv_skip', _t1256,))
+        if msg.new_line != '':
+            _t1257 = self._make_value_string(msg.new_line)
+            result.append(('csv_new_line', _t1257,))
+        _t1258 = self._make_value_string(msg.delimiter)
+        result.append(('csv_delimiter', _t1258,))
+        _t1259 = self._make_value_string(msg.quotechar)
+        result.append(('csv_quotechar', _t1259,))
+        _t1260 = self._make_value_string(msg.escapechar)
+        result.append(('csv_escapechar', _t1260,))
+        if msg.comment != '':
+            _t1261 = self._make_value_string(msg.comment)
+            result.append(('csv_comment', _t1261,))
+        for missing_string in msg.missing_strings:
+            _t1262 = self._make_value_string(missing_string)
+            result.append(('csv_missing_strings', _t1262,))
+        _t1263 = self._make_value_string(msg.decimal_separator)
+        result.append(('csv_decimal_separator', _t1263,))
+        _t1264 = self._make_value_string(msg.encoding)
+        result.append(('csv_encoding', _t1264,))
+        _t1265 = self._make_value_string(msg.compression)
+        result.append(('csv_compression', _t1265,))
+        return sorted(result)
+
+    def deconstruct_betree_info_config(self, msg: logic_pb2.BeTreeInfo) -> list[tuple[str, logic_pb2.Value]]:
+        result = []
+        _t1266 = self._make_value_float64(msg.storage_config.epsilon)
+        result.append(('betree_config_epsilon', _t1266,))
+        _t1267 = self._make_value_int64(msg.storage_config.max_pivots)
+        result.append(('betree_config_max_pivots', _t1267,))
+        _t1268 = self._make_value_int64(msg.storage_config.max_deltas)
+        result.append(('betree_config_max_deltas', _t1268,))
+        _t1269 = self._make_value_int64(msg.storage_config.max_leaf)
+        result.append(('betree_config_max_leaf', _t1269,))
+        if msg.relation_locator.HasField('root_pageid'):
+            if msg.relation_locator.root_pageid is not None:
+                assert msg.relation_locator.root_pageid is not None
+                _t1270 = self._make_value_uint128(msg.relation_locator.root_pageid)
+                result.append(('betree_locator_root_pageid', _t1270,))
+        if msg.relation_locator.HasField('inline_data'):
+            if msg.relation_locator.inline_data is not None:
+                assert msg.relation_locator.inline_data is not None
+                _t1271 = self._make_value_string(msg.relation_locator.inline_data.decode('utf-8'))
+                result.append(('betree_locator_inline_data', _t1271,))
+        _t1272 = self._make_value_int64(msg.relation_locator.element_count)
+        result.append(('betree_locator_element_count', _t1272,))
+        _t1273 = self._make_value_int64(msg.relation_locator.tree_height)
+        result.append(('betree_locator_tree_height', _t1273,))
+        return sorted(result)
+
     def deconstruct_export_csv_config(self, msg: transactions_pb2.ExportCSVConfig) -> list[tuple[str, logic_pb2.Value]]:
         result = []
         if msg.partition_size is not None:
             assert msg.partition_size is not None
-            _t1255 = self._make_value_int64(msg.partition_size)
-            result.append(('partition_size', _t1255,))
+            _t1274 = self._make_value_int64(msg.partition_size)
+            result.append(('partition_size', _t1274,))
         if msg.compression is not None:
             assert msg.compression is not None
-            _t1256 = self._make_value_string(msg.compression)
-            result.append(('compression', _t1256,))
+            _t1275 = self._make_value_string(msg.compression)
+            result.append(('compression', _t1275,))
         if msg.syntax_header_row is not None:
             assert msg.syntax_header_row is not None
-            _t1257 = self._make_value_boolean(msg.syntax_header_row)
-            result.append(('syntax_header_row', _t1257,))
+            _t1276 = self._make_value_boolean(msg.syntax_header_row)
+            result.append(('syntax_header_row', _t1276,))
         if msg.syntax_missing_string is not None:
             assert msg.syntax_missing_string is not None
-            _t1258 = self._make_value_string(msg.syntax_missing_string)
-            result.append(('syntax_missing_string', _t1258,))
+            _t1277 = self._make_value_string(msg.syntax_missing_string)
+            result.append(('syntax_missing_string', _t1277,))
         if msg.syntax_delim is not None:
             assert msg.syntax_delim is not None
-            _t1259 = self._make_value_string(msg.syntax_delim)
-            result.append(('syntax_delim', _t1259,))
+            _t1278 = self._make_value_string(msg.syntax_delim)
+            result.append(('syntax_delim', _t1278,))
         if msg.syntax_quotechar is not None:
             assert msg.syntax_quotechar is not None
-            _t1260 = self._make_value_string(msg.syntax_quotechar)
-            result.append(('syntax_quotechar', _t1260,))
+            _t1279 = self._make_value_string(msg.syntax_quotechar)
+            result.append(('syntax_quotechar', _t1279,))
         if msg.syntax_escapechar is not None:
             assert msg.syntax_escapechar is not None
-            _t1261 = self._make_value_string(msg.syntax_escapechar)
-            result.append(('syntax_escapechar', _t1261,))
+            _t1280 = self._make_value_string(msg.syntax_escapechar)
+            result.append(('syntax_escapechar', _t1280,))
         return sorted(result)
+
+    def _make_value_int64(self, v: int) -> logic_pb2.Value:
+        _t1281 = logic_pb2.Value(int_value=v)
+        return _t1281
+
+    def deconstruct_relation_id_uint128(self, msg: logic_pb2.RelationId) -> Optional[logic_pb2.UInt128Value]:
+        name = self.relation_id_to_string(msg)
+        if name == '':
+            return self.relation_id_to_uint128(msg)
+        return None
 
     def deconstruct_configure(self, msg: transactions_pb2.Configure) -> list[tuple[str, logic_pb2.Value]]:
         result = []
         if msg.ivm_config.level == transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_AUTO:
-            _t1262 = self._make_value_string('auto')
-            result.append(('ivm.maintenance_level', _t1262,))
+            _t1282 = self._make_value_string('auto')
+            result.append(('ivm.maintenance_level', _t1282,))
         else:
             if msg.ivm_config.level == transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_ALL:
-                _t1263 = self._make_value_string('all')
-                result.append(('ivm.maintenance_level', _t1263,))
+                _t1283 = self._make_value_string('all')
+                result.append(('ivm.maintenance_level', _t1283,))
             else:
                 if msg.ivm_config.level == transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_OFF:
-                    _t1264 = self._make_value_string('off')
-                    result.append(('ivm.maintenance_level', _t1264,))
-        _t1265 = self._make_value_int64(msg.semantics_version)
-        result.append(('semantics_version', _t1265,))
+                    _t1284 = self._make_value_string('off')
+                    result.append(('ivm.maintenance_level', _t1284,))
+        _t1285 = self._make_value_int64(msg.semantics_version)
+        result.append(('semantics_version', _t1285,))
         return sorted(result)
-
-    def _make_value_int32(self, v: int) -> logic_pb2.Value:
-        _t1266 = logic_pb2.Value(int_value=int(v))
-        return _t1266
 
     def _make_value_uint128(self, v: logic_pb2.UInt128Value) -> logic_pb2.Value:
-        _t1267 = logic_pb2.Value(uint128_value=v)
-        return _t1267
-
-    def deconstruct_bindings_with_arity(self, abs: logic_pb2.Abstraction, value_arity: int) -> tuple[Sequence[logic_pb2.Binding], Sequence[logic_pb2.Binding]]:
-        n = len(abs.vars)
-        key_end = (n - value_arity)
-        return (abs.vars[0:key_end], abs.vars[key_end:n],)
-
-    def deconstruct_betree_info_config(self, msg: logic_pb2.BeTreeInfo) -> list[tuple[str, logic_pb2.Value]]:
-        result = []
-        _t1268 = self._make_value_float64(msg.storage_config.epsilon)
-        result.append(('betree_config_epsilon', _t1268,))
-        _t1269 = self._make_value_int64(msg.storage_config.max_pivots)
-        result.append(('betree_config_max_pivots', _t1269,))
-        _t1270 = self._make_value_int64(msg.storage_config.max_deltas)
-        result.append(('betree_config_max_deltas', _t1270,))
-        _t1271 = self._make_value_int64(msg.storage_config.max_leaf)
-        result.append(('betree_config_max_leaf', _t1271,))
-        if msg.relation_locator.HasField('root_pageid'):
-            if msg.relation_locator.root_pageid is not None:
-                assert msg.relation_locator.root_pageid is not None
-                _t1272 = self._make_value_uint128(msg.relation_locator.root_pageid)
-                result.append(('betree_locator_root_pageid', _t1272,))
-        if msg.relation_locator.HasField('inline_data'):
-            if msg.relation_locator.inline_data is not None:
-                assert msg.relation_locator.inline_data is not None
-                _t1273 = self._make_value_string(msg.relation_locator.inline_data.decode('utf-8'))
-                result.append(('betree_locator_inline_data', _t1273,))
-        _t1274 = self._make_value_int64(msg.relation_locator.element_count)
-        result.append(('betree_locator_element_count', _t1274,))
-        _t1275 = self._make_value_int64(msg.relation_locator.tree_height)
-        result.append(('betree_locator_tree_height', _t1275,))
-        return sorted(result)
-
-    def deconstruct_bindings(self, abs: logic_pb2.Abstraction) -> tuple[Sequence[logic_pb2.Binding], Sequence[logic_pb2.Binding]]:
-        n = len(abs.vars)
-        return (abs.vars[0:n], [],)
+        _t1286 = logic_pb2.Value(uint128_value=v)
+        return _t1286
 
     def deconstruct_relation_id_string(self, msg: logic_pb2.RelationId) -> Optional[str]:
         name = self.relation_id_to_string(msg)
@@ -234,37 +254,17 @@ class PrettyPrinter:
             return name
         return None
 
-    def deconstruct_csv_config(self, msg: logic_pb2.CSVConfig) -> list[tuple[str, logic_pb2.Value]]:
-        result = []
-        _t1276 = self._make_value_int32(msg.header_row)
-        result.append(('csv_header_row', _t1276,))
-        _t1277 = self._make_value_int64(msg.skip)
-        result.append(('csv_skip', _t1277,))
-        if msg.new_line != '':
-            _t1278 = self._make_value_string(msg.new_line)
-            result.append(('csv_new_line', _t1278,))
-        _t1279 = self._make_value_string(msg.delimiter)
-        result.append(('csv_delimiter', _t1279,))
-        _t1280 = self._make_value_string(msg.quotechar)
-        result.append(('csv_quotechar', _t1280,))
-        _t1281 = self._make_value_string(msg.escapechar)
-        result.append(('csv_escapechar', _t1281,))
-        if msg.comment != '':
-            _t1282 = self._make_value_string(msg.comment)
-            result.append(('csv_comment', _t1282,))
-        for missing_string in msg.missing_strings:
-            _t1283 = self._make_value_string(missing_string)
-            result.append(('csv_missing_strings', _t1283,))
-        _t1284 = self._make_value_string(msg.decimal_separator)
-        result.append(('csv_decimal_separator', _t1284,))
-        _t1285 = self._make_value_string(msg.encoding)
-        result.append(('csv_encoding', _t1285,))
-        _t1286 = self._make_value_string(msg.compression)
-        result.append(('csv_compression', _t1286,))
-        return sorted(result)
+    def deconstruct_bindings_with_arity(self, abs: logic_pb2.Abstraction, value_arity: int) -> tuple[Sequence[logic_pb2.Binding], Sequence[logic_pb2.Binding]]:
+        n = len(abs.vars)
+        key_end = (n - value_arity)
+        return (abs.vars[0:key_end], abs.vars[key_end:n],)
 
-    def _make_value_boolean(self, v: bool) -> logic_pb2.Value:
-        _t1287 = logic_pb2.Value(boolean_value=v)
+    def deconstruct_bindings(self, abs: logic_pb2.Abstraction) -> tuple[Sequence[logic_pb2.Binding], Sequence[logic_pb2.Binding]]:
+        n = len(abs.vars)
+        return (abs.vars[0:n], [],)
+
+    def _make_value_int32(self, v: int) -> logic_pb2.Value:
+        _t1287 = logic_pb2.Value(int_value=int(v))
         return _t1287
 
     # --- Pretty-print methods ---

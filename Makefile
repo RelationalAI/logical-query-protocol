@@ -51,6 +51,7 @@ GO_TEMPLATE := meta/src/meta/templates/parser.go.template
 # Printer templates
 PY_PRINTER_TEMPLATE := meta/src/meta/templates/pretty_printer.py.template
 JL_PRINTER_TEMPLATE := meta/src/meta/templates/pretty_printer.jl.template
+GO_PRINTER_TEMPLATE := meta/src/meta/templates/pretty_printer.go.template
 
 META_CLI := cd meta && uv run python -m meta.cli
 META_PROTO_ARGS := \
@@ -152,8 +153,8 @@ $(JL_PRINTER): $(PROTO_FILES) $(GRAMMAR) $(JL_PRINTER_TEMPLATE)
 	$(META_CLI) $(META_PROTO_ARGS) --printer julia -o ../sdks/julia/LogicalQueryProtocol/src/pretty.jl
 
 printer-go: $(GO_PRINTER)
-$(GO_PRINTER):
-	@echo "Generating the Go pretty printer is not yet supported"
+$(GO_PRINTER): $(PROTO_FILES) $(GRAMMAR) $(GO_PRINTER_TEMPLATE)
+	$(META_CLI) $(META_PROTO_ARGS) --printer go -o ../sdks/go/src/pretty.go
 
 force-printers: force-printer-python force-printer-julia force-printer-go
 
@@ -164,7 +165,7 @@ force-printer-julia:
 	$(META_CLI) $(META_PROTO_ARGS) --printer julia -o ../sdks/julia/LogicalQueryProtocol/src/pretty.jl
 
 force-printer-go:
-	@echo "Generating the Go pretty printer is not yet supported"
+	$(META_CLI) $(META_PROTO_ARGS) --printer go -o ../sdks/go/src/pretty.go
 
 # ---------- testing ----------
 

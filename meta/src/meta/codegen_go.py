@@ -8,9 +8,12 @@ from .codegen_base import PARSER_CONFIG, CodegenConfig, CodeGenerator
 from .codegen_templates import GO_TEMPLATES
 from .gensym import gensym
 from .target import (
+    BaseType,
     Call,
     FunDef,
     GetElement,
+    IfElse,
+    Let,
     ListExpr,
     NewMessage,
     OneOf,
@@ -108,6 +111,84 @@ class GoCodeGenerator(CodeGenerator):
             or type_str.startswith("map[")
             or type_str == "interface{}"
         )
+
+    def _is_void_expr(self, expr: TargetExpr) -> bool:
+        """Detect void expressions involving PrintNonterminal calls.
+
+        In Go, unused variables are compile errors, so we need to detect void
+        expressions more aggressively to avoid generating unused temp variables.
+        PrintNonterminal calls are always void (pretty functions write to a
+        buffer and return nothing).
+        """
+        if isinstance(expr, Call) and isinstance(expr.func, PrintNonterminal):
+            return True
+        if isinstance(expr, IfElse):
+            # A branch that diverges (Never) also produces no value.
+            def _no_value(e: TargetExpr) -> bool:
+                return self._is_void_expr(e) or self._is_never_expr(e)
+
+            return _no_value(expr.then_branch) and _no_value(expr.else_branch)
+        if isinstance(expr, Seq):
+            return self._is_void_expr(expr.exprs[-1])
+        if isinstance(expr, Let):
+            return self._is_void_expr(expr.body)
+        return super()._is_void_expr(expr)
+
+    def _ifelse_type_hint(self, expr) -> str | None:
+        """Override with Go-specific fallbacks when type_join produces interface{}.
+
+        When the else branch is Lit(None), Go can use the then-branch type
+        directly (nil is assignable to any nullable Go type). If the
+        then-branch type is generic (interface{} from unresolved type
+        variables), fall back to the enclosing lambda's return type.
+        """
+        from .target import Lit
+
+        hint = super()._ifelse_type_hint(expr)
+        # If we got a concrete type (not interface{}), use it.
+        if hint is not None and hint != "interface{}":
+            return hint
+        # When else is Lit(None), try harder to find a specific type.
+        if expr.else_branch == Lit(None):
+            # Try the then-branch type directly.
+            try:
+                then_type = expr.then_branch.target_type()
+                if then_type is not None:
+                    h = self.gen_type(then_type)
+                    if h != "interface{}":
+                        return h
+            except (NotImplementedError, ValueError, TypeError):
+                pass
+            # Then-branch is also generic; use enclosing return type.
+            if self._current_return_type is not None:
+                return self._current_return_type
+        return hint
+
+    def _generate_Lambda(self, expr, lines: list[str], indent: str) -> str:
+        """Override to propagate the lambda's return type as context.
+
+        This allows _ifelse_type_hint to use the lambda return type as
+        fallback when the IfElse type_join fails.
+        """
+        from .target import Lambda
+
+        assert isinstance(expr, Lambda)
+        # Save current return type context
+        old_return = self._current_return_type
+        old_option = self._current_return_is_option
+        old_ptr = self._current_return_option_needs_ptr
+        ret_type = (
+            self.gen_type(expr.return_type)
+            if expr.return_type and not self._is_void_type(expr.return_type)
+            else None
+        )
+        self.set_current_return_type(ret_type, expr.return_type)
+        result = super()._generate_Lambda(expr, lines, indent)
+        # Restore
+        self._current_return_type = old_return
+        self._current_return_is_option = old_option
+        self._current_return_option_needs_ptr = old_ptr
+        return result
 
     # Zero values for Go types
     _go_zero_values: dict[str, str] = {
@@ -766,7 +847,8 @@ class GoCodeGenerator(CodeGenerator):
                 )
                 args.append(arg_code)
             args_code = ", ".join(args)
-            if self._is_void_expr(expr):
+            # PrintNonterminal calls are always void (pretty functions write to a buffer)
+            if isinstance(expr.func, PrintNonterminal) or self._is_void_expr(expr):
                 lines.append(f"{indent}{f}({args_code})")
                 return self.gen_none()
             tmp = gensym()
