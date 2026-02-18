@@ -410,9 +410,9 @@ Base.hash(a::IVMConfig, h::UInt) = hash(a.level, h)
 Base.isequal(a::IVMConfig, b::IVMConfig) = isequal(a.level, b.level)
 
 # Configure
-Base.:(==)(a::Configure, b::Configure) = a.ivm_config == b.ivm_config
-Base.hash(a::Configure, h::UInt) = hash(a.ivm_config, h)
-Base.isequal(a::Configure, b::Configure) = isequal(a.ivm_config, b.ivm_config)
+Base.:(==)(a::Configure, b::Configure) = a.semantics_version == b.semantics_version && a.ivm_config == b.ivm_config
+Base.hash(a::Configure, h::UInt) = hash(a.ivm_config, hash(a.semantics_version, h))
+Base.isequal(a::Configure, b::Configure) = isequal(a.semantics_version, b.semantics_version) && isequal(a.ivm_config, b.ivm_config)
 
 # Epoch
 Base.:(==)(a::Epoch, b::Epoch) = a.writes == b.writes && a.reads == b.reads
@@ -431,9 +431,9 @@ function Base.isequal(a::Read, b::Read)
 end
 
 # Transaction
-Base.:(==)(a::Transaction, b::Transaction) = a.epochs == b.epochs && a.configure == b.configure
-Base.hash(a::Transaction, h::UInt) = hash(a.configure, hash(a.epochs, h))
-Base.isequal(a::Transaction, b::Transaction) = isequal(a.epochs, b.epochs) && isequal(a.configure, b.configure)
+Base.:(==)(a::Transaction, b::Transaction) = a.epochs == b.epochs && a.configure == b.configure && a.sync == b.sync
+Base.hash(a::Transaction, h::UInt) = hash(a.sync, hash(a.configure, hash(a.epochs, h)))
+Base.isequal(a::Transaction, b::Transaction) = isequal(a.epochs, b.epochs) && isequal(a.configure, b.configure) && isequal(a.sync, b.sync)
 
 # WhatIf
 Base.:(==)(a::WhatIf, b::WhatIf) = a.branch == b.branch && a.epoch == b.epoch
