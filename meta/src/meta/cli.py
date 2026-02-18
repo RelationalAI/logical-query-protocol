@@ -201,12 +201,18 @@ def run(args) -> int:
 
     # Run target IR type checker when generating code
     if (args.parser or args.printer) and not args.no_validate:
-        from .parser_gen import generate_parse_functions
-        from .pretty_gen import generate_pretty_functions
         from .target_typer import typecheck_ir
 
-        parse_functions = generate_parse_functions(grammar)
-        pretty_functions = generate_pretty_functions(grammar)
+        parse_functions = []
+        pretty_functions = []
+        if args.parser:
+            from .parser_gen import generate_parse_functions
+
+            parse_functions = generate_parse_functions(grammar)
+        if args.printer:
+            from .pretty_gen import generate_pretty_functions
+
+            pretty_functions = generate_pretty_functions(grammar)
         errors = typecheck_ir(
             parse_functions, pretty_functions, list(grammar.function_defs.values())
         )
