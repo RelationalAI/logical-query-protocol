@@ -1,17 +1,10 @@
 (transaction
-  (configure
-    { :ivm.maintenance_level "off"
-      :semantics_version 0})
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
   (epoch
     (writes
       (define
-        (fragment :f1
-          (def :foo
-            ([x::INT]
-              (relatom :hello x)))
-          (def :bar
-            ([x::INT y::STRING]
-              (relatom :bar #"sp_str" x #123 y))))))
-    (reads
-      (output :foo :foo)
-      (output :bar :bar))))
+        (fragment
+          :f1
+          (def :foo ([x::INT] (relatom :hello x)))
+          (def :bar ([x::INT y::STRING] (relatom :bar #"sp_str" x #123 y))))))
+    (reads (output :foo :foo) (output :bar :bar))))

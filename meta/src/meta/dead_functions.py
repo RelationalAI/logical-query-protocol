@@ -56,4 +56,4 @@ def live_functions(
                 seen.add(ref)
                 worklist.append(ref)
 
-    return {name: function_defs[name] for name in seen if name in function_defs}
+    return {name: fd for name, fd in function_defs.items() if name in seen}

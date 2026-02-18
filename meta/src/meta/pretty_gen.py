@@ -41,7 +41,7 @@ from .target import (
     Var,
     gensym,
 )
-from .target_builtins import make_builtin
+from .target_builtins import NONE, make_builtin
 
 
 def generate_pretty_functions(
@@ -81,7 +81,7 @@ def _generate_pretty_method(
     return PrintNonterminalDef(
         nonterminal=nt,
         params=[msg_param],
-        return_type=OptionType(BaseType("Never")),
+        return_type=NONE,
         body=body,
     )
 
@@ -349,6 +349,26 @@ def _generate_pretty_sequence_from_fields(
     # Count non-literal elements to determine if fields_var is a tuple or single value
     non_lit_count = sum(1 for e in elems if not isinstance(e, LitTerminal))
 
+    first_elem = elems[0] if elems else None
+    last_elem = elems[-1] if elems else None
+
+    def _is_delimited(open_delim: str, close_delim: str) -> bool:
+        return (
+            non_lit_count > 0
+            and len(elems) >= 2
+            and isinstance(first_elem, LitTerminal)
+            and first_elem.name == open_delim
+            and isinstance(last_elem, LitTerminal)
+            and last_elem.name == close_delim
+        )
+
+    is_bracket_group = _is_delimited("[", "]")
+    is_paren_group = not is_sexp and _is_delimited("(", ")")
+    is_brace_group = _is_delimited("{", "}")
+
+    # Whether this is a structured group that uses newlines between children
+    is_group = is_sexp or is_bracket_group or is_paren_group or is_brace_group
+
     # Track the previous element's literal name for spacing decisions
     prev_lit_name: str | None = None
 
@@ -358,10 +378,10 @@ def _generate_pretty_sequence_from_fields(
         # Compute leading whitespace for this element
         leading_ws: list[TargetExpr] = []
         if isinstance(elem, LitTerminal):
-            if is_sexp and i >= 2 and elem.name not in NO_LEADING_SPACE:
-                # Sexp spacing: newline before non-bracket-closing literals
+            if is_group and i >= 2 and elem.name not in NO_LEADING_SPACE:
+                # Group spacing: newline before non-bracket-closing literals
                 stmts.append(Call(make_builtin("newline_io"), []))
-            elif not is_sexp and stmts:
+            elif not is_group and stmts:
                 cur_lit_name = elem.name
                 suppress = False
                 if prev_lit_name in NO_TRAILING_SPACE:
@@ -371,15 +391,15 @@ def _generate_pretty_sequence_from_fields(
                 if not suppress:
                     stmts.append(Call(make_builtin("write_io"), [Lit(" ")]))
         else:
-            if is_sexp:
+            if is_group:
                 if prev_lit_name in NO_TRAILING_SPACE:
                     # After opening brackets, no whitespace
                     pass
                 else:
-                    # Sexp spacing: newline before each non-literal
+                    # Group spacing: newline before each non-literal
                     leading_ws = [Call(make_builtin("newline_io"), [])]
             elif stmts:
-                # Non-sexp spacing between elements
+                # Non-group spacing between elements
                 cur_lit_name = None
                 suppress = False
                 if prev_lit_name in NO_TRAILING_SPACE:
@@ -389,12 +409,23 @@ def _generate_pretty_sequence_from_fields(
 
         if isinstance(elem, LitTerminal):
             is_keyword = is_sexp and i == 1
-            # For sexp closing paren, emit dedent if we indented
-            if is_sexp and elem.name == ")" and non_lit_count > 0:
+
+            # Closing delimiter: emit dedent before
+            is_closing = (
+                (is_sexp and elem.name == ")" and non_lit_count > 0)
+                or (is_bracket_group and elem.name == "]")
+                or (is_paren_group and elem.name == ")")
+            )
+            if is_closing:
                 stmts.append(Call(make_builtin("dedent_io"), []))
             stmts.append(_format_literal(elem))
-            # After sexp keyword, emit indent (always, not conditional on Option)
+
+            # Opening delimiter/keyword: emit indent after
             if is_keyword and non_lit_count > 0:
+                stmts.append(Call(make_builtin("indent_sexp_io"), []))
+            elif (is_bracket_group and elem.name == "[") or (
+                is_paren_group and elem.name == "("
+            ):
                 stmts.append(Call(make_builtin("indent_io"), []))
             prev_lit_name = elem.name
         else:
