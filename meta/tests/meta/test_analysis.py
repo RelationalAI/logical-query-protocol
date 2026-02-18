@@ -77,7 +77,7 @@ def _grammar(text):
 
     Returns (Grammar, nonterminals dict, named terminals dict).
     """
-    lines = [l.strip() for l in text.strip().split("\n") if l.strip()]
+    lines = [ln.strip() for ln in text.strip().split("\n") if ln.strip()]
 
     nt_names = set()
     for line in lines:
@@ -969,24 +969,24 @@ class TestDragonBookExamples:
             L -> L "+" D | D
             D -> "0" | "1"
         """)
-        l, d = nt["L"], nt["D"]
+        list_nt, d = nt["L"], nt["D"]
         plus = LitTerminal("+")
         zero, one = LitTerminal("0"), LitTerminal("1")
 
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
-        assert not nullable[l]
+        assert not nullable[list_nt]
         assert not nullable[d]
 
         first = GrammarAnalysis.compute_first_static(grammar, nullable)
-        assert zero in first[l]
-        assert one in first[l]
+        assert zero in first[list_nt]
+        assert one in first[list_nt]
         assert zero in first[d]
         assert one in first[d]
 
         follow = GrammarAnalysis.compute_follow_static(grammar, nullable, first)
         eof = NamedTerminal("$", BaseType("EOF"))
-        assert eof in follow[l]
-        assert plus in follow[l]
+        assert eof in follow[list_nt]
+        assert plus in follow[list_nt]
         assert eof in follow[d]
         assert plus in follow[d]
 
@@ -1025,7 +1025,7 @@ class TestDragonBookExamples:
             S -> "a" A "a" | "b" A "b"
             A -> "a" | "b"
         """)
-        s, a = nt["S"], nt["A"]
+        s, _a = nt["S"], nt["A"]
         lit_a, lit_b = LitTerminal("a"), LitTerminal("b")
 
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
@@ -1209,7 +1209,7 @@ class TestAppelChapter3Examples:
         """)
         s, sp = nt["S"], nt["Sp"]
         e, ep = nt["E"], nt["Ep"]
-        l, lp = nt["L"], nt["Lp"]
+        l_nt, lp = nt["L"], nt["Lp"]
         id_tok, num_tok = tok["id"], tok["num"]
         semi = LitTerminal(";")
         plus = LitTerminal("+")
@@ -1222,7 +1222,7 @@ class TestAppelChapter3Examples:
         assert nullable[lp]
         assert not nullable[s]
         assert not nullable[e]
-        assert not nullable[l]
+        assert not nullable[l_nt]
 
         first = GrammarAnalysis.compute_first_static(grammar, nullable)
         assert id_tok in first[s]
@@ -1291,25 +1291,25 @@ class TestAppelChapter3Examples:
             L -> S Lp
             Lp -> S Lp | eps
         """)
-        s, l, lp = nt["S"], nt["L"], nt["Lp"]
+        s, l_nt, lp = nt["S"], nt["L"], nt["Lp"]
         lparen, rparen = LitTerminal("("), LitTerminal(")")
         x_tok = LitTerminal("x")
 
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
         assert nullable[lp]
         assert not nullable[s]
-        assert not nullable[l]
+        assert not nullable[l_nt]
 
         first = GrammarAnalysis.compute_first_static(grammar, nullable)
         assert first[s] == {lparen, x_tok}
-        assert first[l] == {lparen, x_tok}
+        assert first[l_nt] == {lparen, x_tok}
         assert first[lp] == {lparen, x_tok}
 
         follow = GrammarAnalysis.compute_follow_static(grammar, nullable, first)
         eof = NamedTerminal("$", BaseType("EOF"))
         assert eof in follow[s]
         assert rparen in follow[s]
-        assert rparen in follow[l]
+        assert rparen in follow[l_nt]
         assert rparen in follow[lp]
 
     def test_exercise_3_5_grammar(self):
