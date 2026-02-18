@@ -85,15 +85,16 @@ def process_file(filename: str, fmt: str, out: bool, validate: bool = True):
 
 
 def collect_input_files(path: str):
-    """Collect input files from a path (file or directory)."""
+    """Collect .lqp and .bin files from a path (file or directory, recursive)."""
     if os.path.isfile(path):
         return [path]
     elif os.path.isdir(path):
         files = []
-        for f in sorted(os.listdir(path)):
-            if f.endswith(".lqp") or f.endswith(".bin"):
-                files.append(os.path.join(path, f))
-        return files
+        for root, _, filenames in os.walk(path):
+            for f in filenames:
+                if f.endswith(".lqp") or f.endswith(".bin"):
+                    files.append(os.path.join(root, f))
+        return sorted(files)
     else:
         return []
 
