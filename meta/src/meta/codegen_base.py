@@ -595,7 +595,9 @@ class CodeGenerator(ABC):
 
         # RHS has side-effects — guard them with an if-else
         tmp = gensym()
-        lines.append(f"{indent}{self.gen_var_declaration(tmp)}")
+        var_decl = self.gen_var_declaration(tmp)
+        if var_decl:
+            lines.append(f"{indent}{var_decl}")
         if op == "and":
             lines.append(f"{indent}{self.gen_if_start(left_code)}")
             lines.extend(rhs_lines)
@@ -786,7 +788,9 @@ class CodeGenerator(ABC):
             pass
 
         tmp = gensym()
-        lines.append(f"{indent}{self.gen_var_declaration(tmp, type_hint)}")
+        var_decl = self.gen_var_declaration(tmp, type_hint)
+        if var_decl:
+            lines.append(f"{indent}{var_decl}")
         lines.append(f"{indent}{self.gen_if_start(cond_code)}")
 
         body_indent = indent + self.indent_str

@@ -13,7 +13,7 @@
 #   make force-printer-python  Force-regenerate the Python pretty printer.
 #   make test         Run tests for all languages.
 #   make test-X       Run tests for one language (X = python, julia, go).
-#   make test-python-update-snapshots  Update Python pretty printer snapshots.
+#   make update-snapshots  Regenerate Python snapshot test outputs.
 #   make lint-python  Run ruff lint and format checks.
 #   make format-python  Auto-format Python code with ruff.
 #   make clean        Remove temporary generated files.
@@ -73,7 +73,7 @@ JL_PROTO_GENERATED := \
 .PHONY: all protobuf parsers parser-python parser-julia parser-go \
 	force-parsers force-parser-python force-parser-julia force-parser-go \
 	printers printer-python force-printers force-printer-python \
-	test test-python test-python-update-snapshots test-julia test-go \
+	test test-python update-snapshots test-julia test-go \
 	test-meta check-python check-meta lint-meta format-meta \
 	lint-python format-python clean
 
@@ -155,7 +155,7 @@ test: test-meta test-python test-julia test-go
 test-python: $(PY_PARSER) $(PY_PROTO_GENERATED) check-python
 	cd sdks/python && uv run python -m pytest
 
-test-python-update-snapshots: $(PY_PARSER) $(PY_PROTO_GENERATED)
+update-snapshots: $(PY_PARSER) $(PY_PROTO_GENERATED)
 	cd sdks/python && uv run python -m pytest --snapshot-update
 
 test-julia: $(JL_PARSER) $(JL_PROTO_GENERATED)

@@ -232,6 +232,7 @@ register_builtin("to_string", [T], STRING)
 register_builtin("write_io", [STRING], NONE)
 register_builtin("newline_io", [], NONE)
 register_builtin("indent_io", [], NONE)
+register_builtin("indent_sexp_io", [], NONE)
 register_builtin("dedent_io", [], NONE)
 
 # === Formatting for terminal types ===
