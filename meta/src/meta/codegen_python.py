@@ -73,6 +73,9 @@ class PythonCodeGenerator(CodeGenerator):
     base_type_map = {
         "Int32": "int",
         "Int64": "int",
+        "UInt32": "int",
+        "UInt64": "int",
+        "Float32": "float",
         "Float64": "float",
         "String": "str",
         "Boolean": "bool",

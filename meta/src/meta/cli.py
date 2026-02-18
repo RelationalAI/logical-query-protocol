@@ -46,6 +46,12 @@ def parse_args():
     parser.add_argument(
         "--no-validate", action="store_true", help="Skip grammar validation"
     )
+    parser.add_argument(
+        "--no-typecheck", action="store_true", help="Skip target IR type checking"
+    )
+    parser.add_argument(
+        "--typecheck", action="store_true", help="Fail on target IR type errors"
+    )
 
     output_group = parser.add_argument_group("output options")
     output_group.add_argument(
@@ -200,11 +206,33 @@ def run(args) -> int:
         print(f"Grammar written to {args.output}")
         return 0
 
+    # Run target IR type checker when generating code
+    if (args.parser or args.printer) and not args.no_typecheck and not args.no_validate:
+        from .parser_gen import generate_parse_functions
+        from .pretty_gen import generate_pretty_functions
+        from .target_typer import typecheck_ir
+
+        parse_functions = generate_parse_functions(grammar)
+        pretty_functions = generate_pretty_functions(grammar)
+        errors = typecheck_ir(
+            parse_functions, pretty_functions, list(grammar.function_defs.values())
+        )
+        if errors:
+            for e in errors:
+                print(f"typecheck: {e}", file=sys.stderr)
+            if args.typecheck:
+                print(
+                    f"\nError: {len(errors)} type error(s) in generated IR "
+                    f"(use --no-typecheck to skip)",
+                    file=sys.stderr,
+                )
+                return 1
+
     if args.parser:
         if args.parser == "ir":
-            from .parser_gen import generate_parse_functions
+            from .parser_gen import generate_parse_functions as gen_parse
 
-            parse_functions = generate_parse_functions(grammar)
+            parse_functions = gen_parse(grammar)
             output_lines = []
             for defn in parse_functions:
                 output_lines.append(str(defn))
@@ -247,9 +275,9 @@ def run(args) -> int:
 
     if args.printer:
         if args.printer == "ir":
-            from .pretty_gen import generate_pretty_functions
+            from .pretty_gen import generate_pretty_functions as gen_pretty
 
-            pretty_functions = generate_pretty_functions(grammar)
+            pretty_functions = gen_pretty(grammar)
             output_lines = []
             for defn in pretty_functions:
                 output_lines.append(str(defn))

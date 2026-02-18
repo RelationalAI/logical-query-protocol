@@ -73,6 +73,9 @@ class GoCodeGenerator(CodeGenerator):
     base_type_map = {
         "Int32": "int32",
         "Int64": "int64",
+        "UInt32": "uint32",
+        "UInt64": "uint64",
+        "Float32": "float32",
         "Float64": "float64",
         "String": "string",
         "Boolean": "bool",

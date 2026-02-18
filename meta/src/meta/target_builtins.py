@@ -35,6 +35,7 @@ STRING = BaseType("String")
 BOOLEAN = BaseType("Boolean")
 BYTES = BaseType("Bytes")
 TOKEN = VarType("Token")
+VOID = BaseType("Void")
 NONE = OptionType(BaseType("Never"))  # the type of None
 NEVER = BaseType("Never")
 
@@ -134,7 +135,7 @@ register_builtin("unwrap_option_or", [OptionType(T), T], T)
 # === List/Sequence operations ===
 register_builtin("list_concat", [SequenceType(T), SequenceType(T)], ListType(T))
 register_builtin(
-    "list_push", [ListType(T), T], NONE
+    "list_push", [ListType(T), T], VOID
 )  # Mutating push: list.append(item) / push!(list, item)
 register_builtin(
     "list_slice", [SequenceType(T), INT64, INT64], ListType(T)
@@ -165,7 +166,7 @@ register_builtin("to_ptr_bool", [BOOLEAN], OptionType(BOOLEAN))
 # === Parser primitives (lexer/parser operations) ===
 register_builtin("match_lookahead_terminal", [STRING, INT64], BOOLEAN)
 register_builtin("match_lookahead_literal", [STRING, INT64], BOOLEAN)
-register_builtin("consume_literal", [STRING], BaseType("None"))
+register_builtin("consume_literal", [STRING], VOID)
 register_builtin("consume_terminal", [STRING], TOKEN)
 register_builtin("consume", [STRING], TOKEN)  # Generic consume
 register_builtin("current_token", [], TOKEN)
@@ -207,12 +208,8 @@ register_builtin(
     ],
     MessageType("fragments", "Fragment"),
 )
-register_builtin(
-    "start_fragment", [MessageType("fragments", "FragmentId")], BaseType("None")
-)
-register_builtin(
-    "start_pretty_fragment", [MessageType("fragments", "Fragment")], BaseType("None")
-)
+register_builtin("start_fragment", [MessageType("fragments", "FragmentId")], VOID)
+register_builtin("start_pretty_fragment", [MessageType("fragments", "Fragment")], VOID)
 
 # === Dict operations ===
 register_builtin("dict_from_list", [SequenceType(TupleType([K, V]))], DictType(K, V))
@@ -229,11 +226,11 @@ register_builtin("greater", [INT64, INT64], BOOLEAN)
 register_builtin("to_string", [T], STRING)
 
 # === Pretty-printing IO operations ===
-register_builtin("write_io", [STRING], NONE)
-register_builtin("newline_io", [], NONE)
-register_builtin("indent_io", [], NONE)
-register_builtin("indent_sexp_io", [], NONE)
-register_builtin("dedent_io", [], NONE)
+register_builtin("write_io", [STRING], VOID)
+register_builtin("newline_io", [], VOID)
+register_builtin("indent_io", [], VOID)
+register_builtin("indent_sexp_io", [], VOID)
+register_builtin("dedent_io", [], VOID)
 
 # === Formatting for terminal types ===
 register_builtin("format_int64", [INT64], STRING)
@@ -326,6 +323,7 @@ __all__ = [
     "STRING",
     "BOOLEAN",
     "BYTES",
+    "VOID",
     "NONE",
     "NEVER",
     "T",

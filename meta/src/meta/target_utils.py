@@ -117,6 +117,15 @@ def type_join(t1: TargetType, t2: TargetType) -> TargetType:
         return t1
     if isinstance(t2, BaseType) and t2.name == "Any":
         return t2
+    # Void + OptionType(Never) = Void: in IfElse(cond, <void-stmt>, Lit(None))
+    if isinstance(t1, BaseType) and t1.name == "Void" and isinstance(t2, OptionType):
+        inner = t2.element_type
+        if isinstance(inner, BaseType) and inner.name == "Never":
+            return t1
+    if isinstance(t2, BaseType) and t2.name == "Void" and isinstance(t1, OptionType):
+        inner = t1.element_type
+        if isinstance(inner, BaseType) and inner.name == "Never":
+            return t2
     if isinstance(t1, OptionType) and isinstance(t2, OptionType):
         return OptionType(type_join(t1.element_type, t2.element_type))
     if isinstance(t1, SequenceType) and isinstance(t2, SequenceType):

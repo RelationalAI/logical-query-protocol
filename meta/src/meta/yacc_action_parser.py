@@ -36,6 +36,7 @@ from .target import (
     BaseType,
     Call,
     DictType,
+    EnumType,
     EnumValue,
     Foreach,
     ForeachEnumerated,
@@ -427,7 +428,7 @@ def _convert_node_with_vars(
             and not args
             and not node.keywords
         ):
-            elem_type = _annotation_to_type(func.slice, line or 0)
+            elem_type = _annotation_to_type(func.slice, line or 0, ctx.enum_lookup)
             return ListExpr([], elem_type)
 
         # Handle builtin.foo(...) syntax for builtins
@@ -800,7 +801,7 @@ def parse_deconstruct_action(
                 dollar_idx = int(target.id[8:])  # 1-indexed
                 assignments[dollar_idx] = stmt.value
                 type_annotations[dollar_idx] = _annotation_to_type(
-                    stmt.annotation, line or 0
+                    stmt.annotation, line or 0, ctx.enum_lookup
                 )
                 continue
         raise YaccGrammarError(
@@ -982,7 +983,7 @@ def prescan_helper_function_names(
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef):
             try:
-                params, return_type = _extract_function_signature(node, start_line)
+                params, return_type = _extract_function_signature(node, start_line, ctx)
                 func_type = FunctionType([p.type for p in params], return_type)
                 ctx.functions[node.name] = func_type
             except YaccGrammarError:
@@ -1022,7 +1023,7 @@ def parse_helper_functions(
         if isinstance(node, ast.FunctionDef):
             func_nodes.append(node)
             if node.name not in ctx.functions:
-                params, return_type = _extract_function_signature(node, start_line)
+                params, return_type = _extract_function_signature(node, start_line, ctx)
                 func_type = FunctionType([p.type for p in params], return_type)
                 ctx.functions[node.name] = func_type
 
@@ -1036,13 +1037,14 @@ def parse_helper_functions(
 
 
 def _extract_function_signature(
-    node: ast.FunctionDef, base_line: int
+    node: ast.FunctionDef, base_line: int, ctx: "TypeContext | None" = None
 ) -> tuple[tuple[Var, ...], TargetType]:
     """Extract function signature (params, return type) without converting body.
 
     Returns (params, return_type). The function name is available from node.name.
     """
     name = node.name
+    enum_lookup = ctx.enum_lookup if ctx is not None else None
 
     # Parse parameters with type annotations
     params = []
@@ -1053,7 +1055,9 @@ def _extract_function_signature(
                 f"Parameter {param_name} in {name} missing type annotation",
                 base_line + node.lineno,
             )
-        param_type = _annotation_to_type(arg.annotation, base_line + node.lineno)
+        param_type = _annotation_to_type(
+            arg.annotation, base_line + node.lineno, enum_lookup
+        )
         params.append(Var(param_name, param_type))
 
     # Parse return type
@@ -1061,7 +1065,9 @@ def _extract_function_signature(
         raise YaccGrammarError(
             f"Function {name} missing return type annotation", base_line + node.lineno
         )
-    return_type = _annotation_to_type(node.returns, base_line + node.lineno)
+    return_type = _annotation_to_type(
+        node.returns, base_line + node.lineno, enum_lookup
+    )
 
     return tuple(params), return_type
 
@@ -1082,7 +1088,9 @@ def _convert_function_def(
                 f"Parameter {param_name} in {name} missing type annotation",
                 base_line + node.lineno,
             )
-        param_type = _annotation_to_type(arg.annotation, base_line + node.lineno)
+        param_type = _annotation_to_type(
+            arg.annotation, base_line + node.lineno, ctx.enum_lookup
+        )
         params.append(Var(param_name, param_type))
         param_vars[param_name] = param_type
 
@@ -1091,7 +1099,9 @@ def _convert_function_def(
         raise YaccGrammarError(
             f"Function {name} missing return type annotation", base_line + node.lineno
         )
-    return_type = _annotation_to_type(node.returns, base_line + node.lineno)
+    return_type = _annotation_to_type(
+        node.returns, base_line + node.lineno, ctx.enum_lookup
+    )
 
     # Convert function body statements to target IR
     body = _convert_function_body(node.body, ctx, base_line + node.lineno, param_vars)
@@ -1160,7 +1170,7 @@ def _convert_stmt(
         if not isinstance(stmt.target, ast.Name):
             raise YaccGrammarError("Only simple variable assignment supported", line)
         var_name = stmt.target.id
-        var_type = _annotation_to_type(stmt.annotation, line)
+        var_type = _annotation_to_type(stmt.annotation, line, ctx.enum_lookup)
         local_vars[var_name] = var_type
         if stmt.value is None:
             # Declaration without initialization - use None
@@ -1314,7 +1324,7 @@ def _convert_func_expr(
             and not args
             and not node.keywords
         ):
-            elem_type = _annotation_to_type(func.slice, line)
+            elem_type = _annotation_to_type(func.slice, line, ctx.enum_lookup)
             return ListExpr([], elem_type)
 
         # Handle builtin.foo(...) syntax for builtins
@@ -1520,7 +1530,11 @@ _PYTHON_TYPE_MAP = {
 }
 
 
-def _annotation_to_type(node: ast.AST, line: int) -> TargetType:
+def _annotation_to_type(
+    node: ast.AST,
+    line: int,
+    enum_lookup: "Callable[[str, str], list[tuple[str, int]] | None] | None" = None,
+) -> TargetType:
     """Convert a Python type annotation AST to TargetType."""
     if isinstance(node, ast.Constant) and node.value is None:
         return OptionType(BaseType("Never"))
@@ -1530,30 +1544,41 @@ def _annotation_to_type(node: ast.AST, line: int) -> TargetType:
         return BaseType(type_name)
     elif isinstance(node, ast.Attribute):
         if isinstance(node.value, ast.Name):
-            return MessageType(node.value.id, node.attr)
+            module = node.value.id
+            name = node.attr
+            if enum_lookup is not None and enum_lookup(module, name) is not None:
+                return EnumType(module, name)
+            return MessageType(module, name)
         raise YaccGrammarError(f"Invalid type annotation: {ast.dump(node)}", line)
     elif isinstance(node, ast.Subscript):
         if isinstance(node.value, ast.Name):
             container = node.value.id
             if container == "Sequence":
-                elem_type = _annotation_to_type(node.slice, line)
+                elem_type = _annotation_to_type(node.slice, line, enum_lookup)
                 return SequenceType(elem_type)
             elif container == "List" or container == "list":
-                elem_type = _annotation_to_type(node.slice, line)
+                elem_type = _annotation_to_type(node.slice, line, enum_lookup)
                 return ListType(elem_type)
             elif container == "Optional":
-                elem_type = _annotation_to_type(node.slice, line)
+                elem_type = _annotation_to_type(node.slice, line, enum_lookup)
                 return OptionType(elem_type)
             elif container == "Tuple" or container == "tuple":
                 if isinstance(node.slice, ast.Tuple):
-                    elem_types = [_annotation_to_type(e, line) for e in node.slice.elts]
+                    elem_types = [
+                        _annotation_to_type(e, line, enum_lookup)
+                        for e in node.slice.elts
+                    ]
                 else:
-                    elem_types = [_annotation_to_type(node.slice, line)]
+                    elem_types = [_annotation_to_type(node.slice, line, enum_lookup)]
                 return TupleType(tuple(elem_types))
             elif container == "Dict" or container == "dict":
                 if isinstance(node.slice, ast.Tuple) and len(node.slice.elts) == 2:
-                    key_type = _annotation_to_type(node.slice.elts[0], line)
-                    value_type = _annotation_to_type(node.slice.elts[1], line)
+                    key_type = _annotation_to_type(
+                        node.slice.elts[0], line, enum_lookup
+                    )
+                    value_type = _annotation_to_type(
+                        node.slice.elts[1], line, enum_lookup
+                    )
                     return DictType(key_type, value_type)
                 raise YaccGrammarError(
                     "dict type requires exactly 2 type arguments", line

@@ -431,14 +431,10 @@ class CodeGenerator(ABC):
     # --- Type-based expression classification ---
 
     def _is_void_expr(self, expr: TargetExpr) -> bool:
-        """Check if expression has type OptionType(Never) — side-effect only, value always None."""
+        """Check if expression has type Void — side-effect only, no value produced."""
         try:
             t = expr.target_type()
-            return (
-                isinstance(t, OptionType)
-                and isinstance(t.element_type, BaseType)
-                and t.element_type.name == "Never"
-            )
+            return isinstance(t, BaseType) and t.name == "Void"
         except (NotImplementedError, ValueError, TypeError):
             return False
 

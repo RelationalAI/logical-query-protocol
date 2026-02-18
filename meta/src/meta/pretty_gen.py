@@ -41,7 +41,7 @@ from .target import (
     Var,
     gensym,
 )
-from .target_builtins import NONE, make_builtin
+from .target_builtins import VOID, make_builtin
 
 
 def generate_pretty_functions(
@@ -81,7 +81,7 @@ def _generate_pretty_method(
     return PrintNonterminalDef(
         nonterminal=nt,
         params=[msg_param],
-        return_type=NONE,
+        return_type=VOID,
         body=body,
     )
 
@@ -131,15 +131,22 @@ def _generate_pretty_alternatives(
                 gensym("deconstruct_result"), rule.deconstructor.return_type
             )
             deconstruct_call = Call(rule.deconstructor, [msg_param])
+            # Unwrap the option inside the is_some guard
+            inner_type = rule.deconstructor.return_type.element_type
+            unwrapped_var = Var(gensym("unwrapped"), inner_type)
             pretty_body = _generate_pretty_from_fields(
-                rule.rhs, deconstruct_result_var, grammar, proto_messages
+                rule.rhs, unwrapped_var, grammar, proto_messages
             )
             result = Let(
                 deconstruct_result_var,
                 deconstruct_call,
                 IfElse(
                     Call(make_builtin("is_some"), [deconstruct_result_var]),
-                    pretty_body,
+                    Let(
+                        unwrapped_var,
+                        Call(make_builtin("unwrap_option"), [deconstruct_result_var]),
+                        pretty_body,
+                    ),
                     result,
                 ),
             )

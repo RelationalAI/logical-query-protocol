@@ -545,7 +545,7 @@ class While(TargetExpr):
         return f"while ({self.condition}) {self.body}"
 
     def target_type(self) -> "TargetType":
-        return OptionType(BaseType("Never"))
+        return BaseType("Void")
 
 
 @dataclass(frozen=True)
@@ -560,7 +560,7 @@ class Foreach(TargetExpr):
         return f"for {self.var.name} in {self.collection} do {self.body}"
 
     def target_type(self) -> "TargetType":
-        return OptionType(BaseType("Never"))
+        return BaseType("Void")
 
 
 @dataclass(frozen=True)
@@ -576,14 +576,14 @@ class ForeachEnumerated(TargetExpr):
         return f"for ({self.index_var.name}, {self.var.name}) in enumerate({self.collection}) do {self.body}"
 
     def target_type(self) -> "TargetType":
-        return OptionType(BaseType("Never"))
+        return BaseType("Void")
 
 
 @dataclass(frozen=True)
 class Assign(TargetExpr):
     """Assignment statement: var = expr.
 
-    Returns None after performing the assignment.
+    Returns Void after performing the assignment.
     """
 
     var: "Var"
@@ -593,7 +593,7 @@ class Assign(TargetExpr):
         return f"{self.var.name} = {self.expr}"
 
     def target_type(self) -> "TargetType":
-        return OptionType(BaseType("Never"))
+        return BaseType("Void")
 
 
 @dataclass(frozen=True)
