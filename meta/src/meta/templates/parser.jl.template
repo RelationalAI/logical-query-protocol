@@ -121,12 +121,13 @@ scan_symbol(s::String) = s
 function scan_string(s::String)
     # Strip quotes using Unicode-safe chop (handles multi-byte characters)
     content = chop(s, head=1, tail=1)
-    # Simple escape processing - Julia handles most escapes natively
-    result = replace(content, "\\n" => "\n")
+    # Process \\ first so that \\n doesn't become a newline.
+    result = replace(content, "\\\\" => "\x00")
+    result = replace(result, "\\n" => "\n")
     result = replace(result, "\\t" => "\t")
     result = replace(result, "\\r" => "\r")
-    result = replace(result, "\\\\" => "\\")
     result = replace(result, "\\\"" => "\"")
+    result = replace(result, "\x00" => "\\")
     return result
 end
 
