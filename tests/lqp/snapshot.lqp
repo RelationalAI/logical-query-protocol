@@ -1,5 +1,6 @@
 ;; Snapshot action: define relations, then capture them as EDBs in a separate epoch.
 (transaction
+  (configure {:ivm.maintenance_level "off" :semantics_version 1})
   (epoch
     (writes
       ;; Define the EDBs we're going to be referring to.
