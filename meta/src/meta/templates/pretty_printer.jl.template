@@ -34,6 +34,11 @@ function indent!(pp::PrettyPrinter)
     return nothing
 end
 
+function indent_sexp!(pp::PrettyPrinter)
+    pp.indent_level += 1
+    return nothing
+end
+
 function dedent!(pp::PrettyPrinter)
     pp.indent_level = max(0, pp.indent_level - 1)
     return nothing
