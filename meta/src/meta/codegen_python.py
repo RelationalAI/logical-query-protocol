@@ -436,22 +436,22 @@ class PythonCodeGenerator(CodeGenerator):
 
     def format_literal_token_spec(self, escaped_literal: str) -> str:
         regex = self._regex_literal(escaped_literal)
-        return f'            ("LITERAL", re.compile({regex}), lambda x: x),'
+        return f'    ("LITERAL", re.compile({regex}), lambda x: x),'
 
     def format_named_token_spec(self, token_name: str, token_pattern: str) -> str:
         regex = self._regex_literal(token_pattern)
         scan = f"Lexer.scan_{token_name.lower()}"
         one_line = (
-            f'            ("{token_name}", re.compile({regex}), lambda x: {scan}(x)),'
+            f'    ("{token_name}", re.compile({regex}), lambda x: {scan}(x)),'
         )
         if len(one_line) <= 88:
             return one_line
         return (
-            f"            (\n"
-            f'                "{token_name}",\n'
-            f"                re.compile({regex}),\n"
-            f"                lambda x: {scan}(x),\n"
-            f"            ),"
+            f"    (\n"
+            f'        "{token_name}",\n'
+            f"        re.compile({regex}),\n"
+            f"        lambda x: {scan}(x),\n"
+            f"    ),"
         )
 
     def format_command_line_comment(self, command_line: str) -> str:

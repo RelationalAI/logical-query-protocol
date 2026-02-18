@@ -68,24 +68,23 @@ mutable struct Lexer
 end
 
 
+const _WHITESPACE_RE = r"\s+"
+const _COMMENT_RE = r";;.*"
+const _TOKEN_SPECS = [
+{token_specs}]
+
 function tokenize!(lexer::Lexer)
-    token_specs = [
-{token_specs}    ]
-
-    whitespace_re = r"\s+"
-    comment_re = r";;.*"
-
     # Use ncodeunits for byte-based position tracking (UTF-8 safe)
     while lexer.pos <= ncodeunits(lexer.input)
         # Skip whitespace
-        m = match(whitespace_re, lexer.input, lexer.pos)
+        m = match(_WHITESPACE_RE, lexer.input, lexer.pos)
         if m !== nothing && m.offset == lexer.pos
             lexer.pos = m.offset + ncodeunits(m.match)
             continue
         end
 
         # Skip comments
-        m = match(comment_re, lexer.input, lexer.pos)
+        m = match(_COMMENT_RE, lexer.input, lexer.pos)
         if m !== nothing && m.offset == lexer.pos
             lexer.pos = m.offset + ncodeunits(m.match)
             continue
@@ -94,7 +93,7 @@ function tokenize!(lexer::Lexer)
         # Collect all matching tokens
         candidates = Tuple{{String,String,Function,Int}}[]
 
-        for (token_type, regex, action) in token_specs
+        for (token_type, regex, action) in _TOKEN_SPECS
             m = match(regex, lexer.input, lexer.pos)
             if m !== nothing && m.offset == lexer.pos
                 value = m.match

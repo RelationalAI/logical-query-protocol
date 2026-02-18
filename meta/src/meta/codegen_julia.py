@@ -611,11 +611,11 @@ class JuliaCodeGenerator(CodeGenerator):
         )
 
     def format_literal_token_spec(self, escaped_literal: str) -> str:
-        return f'        ("LITERAL", r"{escaped_literal}", identity),'
+        return f'    ("LITERAL", r"{escaped_literal}", identity),'
 
     def format_named_token_spec(self, token_name: str, token_pattern: str) -> str:
         escaped_pattern = token_pattern.replace('"', '\\"')
-        return f'        ("{token_name}", r"{escaped_pattern}", scan_{token_name.lower()}),'
+        return f'    ("{token_name}", r"{escaped_pattern}", scan_{token_name.lower()}),'
 
     def format_command_line_comment(self, command_line: str) -> str:
         return f"Command: {command_line}"

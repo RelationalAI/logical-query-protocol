@@ -97,6 +97,13 @@ type tokenSpec struct {{
 	action func(string) TokenValue
 }}
 
+var (
+	whitespaceRe = regexp.MustCompile(`^\s+`)
+	commentRe    = regexp.MustCompile(`^;;.*`)
+	tokenSpecs   = []tokenSpec{{
+{token_specs}	}}
+)
+
 // Lexer tokenizes input
 type Lexer struct {{
 	input  string
@@ -116,12 +123,6 @@ func NewLexer(input string) *Lexer {{
 }}
 
 func (l *Lexer) tokenize() {{
-	tokenSpecs := []tokenSpec{{
-{token_specs}	}}
-
-	whitespaceRe := regexp.MustCompile(`^\s+`)
-	commentRe := regexp.MustCompile(`^;;.*`)
-
 	for l.pos < len(l.input) {{
 		remaining := l.input[l.pos:]
 

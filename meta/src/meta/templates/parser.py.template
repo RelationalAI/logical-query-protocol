@@ -35,6 +35,12 @@ class Token:
         return f"Token({{self.type}}, {{self.value!r}}, {{self.pos}})"
 
 
+_WHITESPACE_RE = re.compile(r"\s+")
+_COMMENT_RE = re.compile(r";;.*")
+_TOKEN_SPECS = [
+{token_specs}]
+
+
 class Lexer:
     """Tokenizer for the input."""
 
@@ -46,19 +52,13 @@ class Lexer:
 
     def _tokenize(self) -> None:
         """Tokenize the input string."""
-        token_specs = [
-{token_specs}        ]
-
-        whitespace_re = re.compile(r"\s+")
-        comment_re = re.compile(r";;.*")
-
         while self.pos < len(self.input):
-            match = whitespace_re.match(self.input, self.pos)
+            match = _WHITESPACE_RE.match(self.input, self.pos)
             if match:
                 self.pos = match.end()
                 continue
 
-            match = comment_re.match(self.input, self.pos)
+            match = _COMMENT_RE.match(self.input, self.pos)
             if match:
                 self.pos = match.end()
                 continue
@@ -66,7 +66,7 @@ class Lexer:
             # Collect all matching tokens
             candidates = []
 
-            for token_type, regex, action in token_specs:
+            for token_type, regex, action in _TOKEN_SPECS:
                 match = regex.match(self.input, self.pos)
                 if match:
                     value = match.group(0)
