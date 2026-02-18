@@ -1,0 +1,216 @@
+// Auto-generated pretty printer.
+//
+// Generated from protobuf specifications.
+// Do not modify this file! If you need to modify the pretty printer, edit the generator code
+// in `python-tools/src/meta` or edit the protobuf specification in `proto/v1`.
+//
+// {command_line_comment}
+
+package lqp
+
+import (
+	"bytes"
+	"fmt"
+	"math/big"
+	"strings"
+
+	pb "logical-query-protocol/src/lqp/v1"
+)
+
+// PrettyPrinter holds state for pretty printing protobuf messages.
+type PrettyPrinter struct {{
+	w           *bytes.Buffer
+	indentLevel int
+	atLineStart bool
+	debugInfo   map[[2]uint64]string
+}}
+
+func (p *PrettyPrinter) write(s string) {{
+	if p.atLineStart && strings.TrimSpace(s) != "" {{
+		p.w.WriteString(strings.Repeat("  ", p.indentLevel))
+		p.atLineStart = false
+	}}
+	p.w.WriteString(s)
+}}
+
+func (p *PrettyPrinter) newline() {{
+	p.w.WriteString("\n")
+	p.atLineStart = true
+}}
+
+func (p *PrettyPrinter) indent() {{
+	p.indentLevel++
+}}
+
+func (p *PrettyPrinter) dedent() {{
+	if p.indentLevel > 0 {{
+		p.indentLevel--
+	}}
+}}
+
+func (p *PrettyPrinter) getOutput() string {{
+	return p.w.String()
+}}
+
+// formatDecimal formats a DecimalValue as "<digits>d<precision>".
+func (p *PrettyPrinter) formatDecimal(msg *pb.DecimalValue) string {{
+	low := msg.GetValue().GetLow()
+	high := msg.GetValue().GetHigh()
+
+	// Compute 128-bit signed integer from high/low
+	intVal := new(big.Int).SetUint64(high)
+	intVal.Lsh(intVal, 64)
+	intVal.Add(intVal, new(big.Int).SetUint64(low))
+	if high&(1<<63) != 0 {{
+		// Negative: subtract 2^128
+		twoTo128 := new(big.Int).Lsh(big.NewInt(1), 128)
+		intVal.Sub(intVal, twoTo128)
+	}}
+
+	sign := ""
+	if intVal.Sign() < 0 {{
+		sign = "-"
+		intVal.Neg(intVal)
+	}}
+
+	digits := intVal.String()
+	scale := int(msg.GetScale())
+	precision := msg.GetPrecision()
+
+	var decimalStr string
+	if scale <= 0 {{
+		decimalStr = digits + "." + strings.Repeat("0", -scale)
+	}} else if scale >= len(digits) {{
+		decimalStr = "0." + strings.Repeat("0", scale-len(digits)) + digits
+	}} else {{
+		decimalStr = digits[:len(digits)-scale] + "." + digits[len(digits)-scale:]
+	}}
+
+	return fmt.Sprintf("%s%sd%d", sign, decimalStr, precision)
+}}
+
+// formatInt128 formats an Int128Value as "<value>i128".
+func (p *PrettyPrinter) formatInt128(msg *pb.Int128Value) string {{
+	return int128ToString(msg.GetLow(), msg.GetHigh()) + "i128"
+}}
+
+// formatUint128 formats a UInt128Value as "0x<hex>".
+func (p *PrettyPrinter) formatUint128(msg *pb.UInt128Value) string {{
+	return "0x" + uint128ToHexString(msg.GetLow(), msg.GetHigh())
+}}
+
+// formatStringValue escapes and quotes a string for LQP output.
+func (p *PrettyPrinter) formatStringValue(s string) string {{
+	escaped := strings.ReplaceAll(s, "\\", "\\\\")
+	escaped = strings.ReplaceAll(escaped, "\"", "\\\"")
+	escaped = strings.ReplaceAll(escaped, "\n", "\\n")
+	escaped = strings.ReplaceAll(escaped, "\r", "\\r")
+	escaped = strings.ReplaceAll(escaped, "\t", "\\t")
+	return "\"" + escaped + "\""
+}}
+
+// fragmentIdToString decodes a FragmentId's bytes to a string.
+func (p *PrettyPrinter) fragmentIdToString(msg *pb.FragmentId) string {{
+	if msg.GetId() == nil {{
+		return ""
+	}}
+	return string(msg.GetId())
+}}
+
+// startPrettyFragment extracts debug info from a Fragment for relation ID lookup.
+func (p *PrettyPrinter) startPrettyFragment(msg *pb.Fragment) {{
+	debugInfo := msg.GetDebugInfo()
+	if debugInfo == nil {{
+		return
+	}}
+	ids := debugInfo.GetIds()
+	names := debugInfo.GetOrigNames()
+	for i, rid := range ids {{
+		if i < len(names) {{
+			key := [2]uint64{{rid.GetIdLow(), rid.GetIdHigh()}}
+			p.debugInfo[key] = names[i]
+		}}
+	}}
+}}
+
+// relationIdToString looks up a RelationId in the debug info map.
+func (p *PrettyPrinter) relationIdToString(msg *pb.RelationId) string {{
+	key := [2]uint64{{msg.GetIdLow(), msg.GetIdHigh()}}
+	if name, ok := p.debugInfo[key]; ok {{
+		return name
+	}}
+	return ""
+}}
+
+// relationIdToInt returns a pointer to int64 if the RelationId fits in
+// signed 64-bit range, nil otherwise.
+func (p *PrettyPrinter) relationIdToInt(msg *pb.RelationId) *int64 {{
+	if msg.GetIdHigh() == 0 && msg.GetIdLow() <= 0x7FFFFFFFFFFFFFFF {{
+		v := int64(msg.GetIdLow())
+		return &v
+	}}
+	return nil
+}}
+
+// relationIdToUint128 converts a RelationId to a UInt128Value.
+func (p *PrettyPrinter) relationIdToUint128(msg *pb.RelationId) *pb.UInt128Value {{
+	return &pb.UInt128Value{{Low: msg.GetIdLow(), High: msg.GetIdHigh()}}
+}}
+
+// --- Free functions ---
+
+func uint128ToString(low, high uint64) string {{
+	if high == 0 {{
+		return fmt.Sprintf("%d", low)
+	}}
+	result := new(big.Int).SetUint64(high)
+	result.Lsh(result, 64)
+	result.Add(result, new(big.Int).SetUint64(low))
+	return result.String()
+}}
+
+func int128ToString(low, high uint64) string {{
+	isNegative := (high & 0x8000000000000000) != 0
+	if !isNegative {{
+		return uint128ToString(low, high)
+	}}
+	result := new(big.Int).SetUint64(^high)
+	result.Lsh(result, 64)
+	result.Add(result, new(big.Int).SetUint64(^low))
+	result.Add(result, big.NewInt(1))
+	return "-" + result.String()
+}}
+
+func uint128ToHexString(low, high uint64) string {{
+	if high == 0 {{
+		return fmt.Sprintf("%x", low)
+	}}
+	return fmt.Sprintf("%x%016x", high, low)
+}}
+
+func formatBool(b bool) string {{
+	if b {{
+		return "true"
+	}}
+	return "false"
+}}
+
+// --- Helper functions ---
+{named_function_defns}
+
+// --- Pretty-print methods ---
+{pretty_nonterminal_defns}
+
+// ProgramToStr pretty-prints a Transaction protobuf message to a string.
+func ProgramToStr(msg *pb.Transaction) string {{
+	var buf bytes.Buffer
+	p := &PrettyPrinter{{
+		w:           &buf,
+		indentLevel: 0,
+		atLineStart: true,
+		debugInfo:   make(map[[2]uint64]string),
+	}}
+	p.pretty_{start_name}(msg)
+	p.newline()
+	return p.getOutput()
+}}

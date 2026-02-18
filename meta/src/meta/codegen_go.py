@@ -4,7 +4,7 @@ This module generates Go code from semantic action expressions,
 with proper keyword escaping and idiomatic Go style.
 """
 
-from .codegen_base import CodeGenerator
+from .codegen_base import PARSER_CONFIG, CodegenConfig, CodeGenerator
 from .codegen_templates import GO_TEMPLATES
 from .gensym import gensym
 from .target import (
@@ -22,6 +22,7 @@ from .target import (
     TargetExpr,
     TargetType,
 )
+from .target_builtins import NEVER
 
 # Go keywords that need escaping
 GO_KEYWORDS: set[str] = {
@@ -59,6 +60,12 @@ def to_pascal_case(name: str) -> str:
     return "".join(part.capitalize() for part in parts)
 
 
+def to_camel_case(name: str) -> str:
+    """Convert snake_case to camelCase for Go method/function names."""
+    parts = name.split("_")
+    return parts[0] + "".join(part.capitalize() for part in parts[1:])
+
+
 class GoCodeGenerator(CodeGenerator):
     """Go code generator.
 
@@ -77,12 +84,9 @@ class GoCodeGenerator(CodeGenerator):
         "String": "string",
         "Boolean": "bool",
         "Bytes": "[]byte",
-        "Void": "interface{}",
-        "Never": "interface{}",
         "None": "interface{}",
         "Any": "interface{}",
         "Symbol": "string",
-        "Unknown": "interface{}",
         "EOF": "interface{}",
         # Python-ish names that might appear
         "int": "int64",
@@ -115,8 +119,8 @@ class GoCodeGenerator(CodeGenerator):
         "[]byte": "nil",
     }
 
-    def __init__(self, proto_messages=None):
-        super().__init__(proto_messages)
+    def __init__(self, proto_messages=None, config: CodegenConfig = PARSER_CONFIG):
+        super().__init__(proto_messages, config=config)
         self._oneof_field_to_parent = self._build_oneof_field_map()
         self._declared_vars: set[str] = set()
         self._current_return_type: str | None = None
@@ -135,8 +139,10 @@ class GoCodeGenerator(CodeGenerator):
         from .target import OptionType
 
         self._current_return_type = return_type
-        if return_target_type is not None and isinstance(
-            return_target_type, OptionType
+        if (
+            return_target_type is not None
+            and isinstance(return_target_type, OptionType)
+            and not self._is_void_type(return_target_type)
         ):
             inner = self.gen_type(return_target_type.element_type)
             self._current_return_is_option = True
@@ -254,10 +260,10 @@ class GoCodeGenerator(CodeGenerator):
         return f"&pb.{name}{{}}"
 
     def gen_builtin_ref(self, name: str) -> str:
-        return f"p.{name}"
+        return f"p.{to_camel_case(name)}"
 
     def gen_named_fun_ref(self, name: str) -> str:
-        return f"p.{name}"
+        return f"p.{to_camel_case(name)}"
 
     def gen_parse_nonterminal_ref(self, name: str) -> str:
         return f"p.parse_{name}"
@@ -293,15 +299,9 @@ class GoCodeGenerator(CodeGenerator):
         return f"*{element_type}"
 
     def gen_list_literal(self, elements: list[str], element_type: TargetType) -> str:
-        from .target import BaseType
-
         # For empty lists with unknown element type, use nil (Go infers the type from context)
         if not elements:
-            if isinstance(element_type, BaseType) and element_type.name in (
-                "Unknown",
-                "Never",
-                "Any",
-            ):
+            if element_type == NEVER:
                 return "nil"
             type_code = self.gen_type(element_type)
             return "[]" + type_code + "{}"
@@ -388,7 +388,9 @@ class GoCodeGenerator(CodeGenerator):
         params_str = ", ".join(f"{n} {t}" for n, t in params)
         ret = f" {return_type}" if return_type else ""
         if is_method:
-            return f"func (p *Parser) {name}({params_str}){ret} {{"
+            rv = self.config.receiver_var
+            rt = self.config.receiver_type
+            return f"func ({rv} *{rt}) {name}({params_str}){ret} {{"
         return f"func {name}({params_str}){ret} {{"
 
     def gen_func_def_end(self) -> str:
@@ -407,17 +409,91 @@ class GoCodeGenerator(CodeGenerator):
     def _generate_GetElement(
         self, expr: GetElement, lines: list[str], indent: str
     ) -> str:
-        """Go uses 0-based indexing with type assertion for tuple elements."""
+        """Go uses 0-based indexing with type assertion for tuple elements.
+
+        Type assertions are needed only when the container is []interface{}
+        (tuples). Typed slices already return the correct type.
+
+        Optional elements need nil-safe type assertions: extract as interface{},
+        nil-check, then type-assert inside the check, producing a properly typed
+        Go optional value.
+        """
+        from .target import ListType, OptionType, SequenceType
+
         tuple_code = self.generate_lines(expr.tuple_expr, lines, indent)
-        # Add type assertion since tuple elements are interface{}
+        assert tuple_code is not None
+        needs_assertion = True
         try:
-            elem_type = expr.target_type()
-            if elem_type is not None:
-                go_type = self.gen_type(elem_type)
-                return f"{tuple_code}[{expr.index}].({go_type})"
-        except (NotImplementedError, ValueError):
+            container_type = expr.tuple_expr.target_type()
+            if isinstance(container_type, (ListType, SequenceType)):
+                needs_assertion = False
+        except (NotImplementedError, ValueError, TypeError):
             pass
+        if needs_assertion:
+            try:
+                elem_type = expr.target_type()
+                if elem_type is not None:
+                    if isinstance(elem_type, OptionType):
+                        return self._generate_get_optional_element(
+                            tuple_code,
+                            expr.index,
+                            elem_type,
+                            lines,
+                            indent,
+                        )
+                    else:
+                        go_type = self.gen_type(elem_type)
+                        return f"{tuple_code}[{expr.index}].({go_type})"
+            except (NotImplementedError, ValueError):
+                pass
         return f"{tuple_code}[{expr.index}]"
+
+    def _generate_get_optional_element(
+        self,
+        tuple_code: str,
+        index: int,
+        elem_type,
+        lines: list[str],
+        indent: str,
+    ) -> str:
+        """Extract an optional element from a []interface{} tuple with nil-safe type assertion.
+
+        For nullable inner types (pointers, slices), the value is stored as the
+        inner type directly. For non-nullable inner types (string, int64), the
+        value may be stored as either T (bare, from IfElse) or *T (via ptr(),
+        from some()). We use comma-ok assertions to handle both cases.
+        """
+        from .target import OptionType
+
+        assert isinstance(elem_type, OptionType)
+        inner_go = self.gen_type(elem_type.element_type)
+        opt_go = self.gen_option_type(inner_go)
+        raw = gensym()
+        tmp = gensym()
+        lines.append(f"{indent}{raw} := {tuple_code}[{index}]")
+        self.mark_declared(raw)
+        lines.append(f"{indent}var {tmp} {opt_go}")
+        self.mark_declared(tmp)
+        if self._is_nullable_go_type(inner_go):
+            # Nullable inner type (e.g. *pb.Sync, []*pb.Write):
+            # opt_go == inner_go, value is always stored as the inner type.
+            lines.append(f"{indent}if {raw} != nil {{")
+            lines.append(f"{indent}\t{tmp} = {raw}.({opt_go})")
+            lines.append(f"{indent}}}")
+        else:
+            # Non-nullable inner type (e.g. string, int64):
+            # Value may be stored as *T (via ptr/some) or T (bare from IfElse).
+            ptr_tmp = gensym()
+            lines.append(f"{indent}if {raw} != nil {{")
+            lines.append(f"{indent}\tif {ptr_tmp}, ok := {raw}.({opt_go}); ok {{")
+            lines.append(f"{indent}\t\t{tmp} = {ptr_tmp}")
+            lines.append(f"{indent}\t}} else {{")
+            val = gensym()
+            lines.append(f"{indent}\t\t{val} := {raw}.({inner_go})")
+            lines.append(f"{indent}\t\t{tmp} = &{val}")
+            lines.append(f"{indent}\t}}")
+            lines.append(f"{indent}}}")
+        return tmp
 
     def gen_field_access(self, obj_code: str, field_name: str) -> str:
         """Generate Go field access using getter methods (nil-safe)."""
@@ -467,6 +543,27 @@ class GoCodeGenerator(CodeGenerator):
                 and result.startswith("_t")
             ):
                 lines.append(f"{indent}_ = {result}")
+        return result
+
+    def _generate_Let(self, expr, lines: list[str], indent: str) -> str | None:
+        """Override to suppress unused variable errors in Go.
+
+        After generating the Let body, checks whether the bound variable
+        appears in any of the body's generated lines. If not, emits
+        `_ = var` to satisfy Go's unused variable rule.
+        """
+        var_name = self.escape_identifier(expr.var.name)
+        init_val = self.generate_lines(expr.init, lines, indent)
+        assert init_val is not None, "Let initializer should not contain a return"
+        lines.append(
+            f"{indent}{self.gen_assignment(var_name, init_val, is_declaration=True)}"
+        )
+        body_start = len(lines)
+        result = self.generate_lines(expr.body, lines, indent)
+        # Check if var_name appears in any body line
+        used = any(var_name in line for line in lines[body_start:])
+        if not used:
+            lines.insert(body_start, f"{indent}_ = {var_name}")
         return result
 
     def _generate_NewMessage(
@@ -635,7 +732,6 @@ class GoCodeGenerator(CodeGenerator):
     def _generate_Call(self, expr: Call, lines: list[str], indent: str) -> str | None:
         """Override to handle OneOf, Parse/PrintNonterminal, NamedFun, and option builtins for Go."""
         from .target import (
-            BaseType,
             Builtin,
             FunctionType,
             ListType,
@@ -670,6 +766,9 @@ class GoCodeGenerator(CodeGenerator):
                 )
                 args.append(arg_code)
             args_code = ", ".join(args)
+            if self._is_void_expr(expr):
+                lines.append(f"{indent}{f}({args_code})")
+                return self.gen_none()
             tmp = gensym()
             lines.append(
                 f"{indent}{self.gen_assignment(tmp, f'{f}({args_code})', is_declaration=True)}"
@@ -681,19 +780,18 @@ class GoCodeGenerator(CodeGenerator):
             func_type = expr.func.type
             args: list[str] = []
             for i, arg in enumerate(expr.args):
-                # Check if arg is a ListExpr with Unknown element type
-                if isinstance(arg, ListExpr) and isinstance(arg.element_type, BaseType):
-                    if arg.element_type.name in ("Unknown", "Never"):
-                        # Try to get expected type from parameter
-                        if i < len(func_type.param_types):
-                            param_type = func_type.param_types[i]
-                            if isinstance(param_type, ListType):
-                                # Generate list with correct element type
-                                arg_code = self.gen_list_literal(
-                                    [], param_type.element_type
-                                )
-                                args.append(arg_code)
-                                continue
+                # Check if arg is a ListExpr with Never element type
+                if isinstance(arg, ListExpr) and arg.element_type == NEVER:
+                    # Try to get expected type from parameter
+                    if i < len(func_type.param_types):
+                        param_type = func_type.param_types[i]
+                        if isinstance(param_type, ListType):
+                            # Generate list with correct element type
+                            arg_code = self.gen_list_literal(
+                                [], param_type.element_type
+                            )
+                            args.append(arg_code)
+                            continue
                 arg_code = self.generate_lines(arg, lines, indent)
                 assert arg_code is not None, (
                     "Function argument should not contain a return"
@@ -702,7 +800,7 @@ class GoCodeGenerator(CodeGenerator):
 
             # Generate the function call
             assert isinstance(expr.func, NamedFun)
-            func_name = f"p.{self.escape_identifier(expr.func.name)}"
+            func_name = f"p.{to_camel_case(self.escape_identifier(expr.func.name))}"
             args_code = ", ".join(args)
             tmp = gensym()
             lines.append(
@@ -853,7 +951,11 @@ class GoCodeGenerator(CodeGenerator):
         # Check for nil assignment with known type
         if isinstance(expr.expr, Lit) and expr.expr.value is None:
             # Use proper var declaration with type
-            var_type = self.gen_type(expr.var.type) if expr.var.type else "interface{}"
+            var_type = (
+                self.gen_type(expr.var.type)
+                if expr.var.type and not self._is_void_type(expr.var.type)
+                else "interface{}"
+            )
             lines.append(f"{indent}var {var_name} {var_type}")
             self.mark_declared(var_name)
             return self.gen_none()
@@ -880,24 +982,14 @@ class GoCodeGenerator(CodeGenerator):
             self.mark_declared(escaped_name)
 
         ret_type = (
-            self.gen_type(expr.return_type) if expr.return_type else "interface{}"
+            self.gen_type(expr.return_type)
+            if expr.return_type and not self._is_void_type(expr.return_type)
+            else None
         )
         self.set_current_return_type(ret_type, expr.return_type)
 
         header = self.gen_func_def_header(func_name, params, ret_type, is_method=True)
-
-        if expr.body is None:
-            zero = self._go_zero_values.get(ret_type, "nil")
-            body_code = f"{indent}{self.indent_str}return {zero}"
-        else:
-            body_lines: list[str] = []
-            body_inner = self.generate_lines(
-                expr.body, body_lines, indent + self.indent_str
-            )
-            if body_inner is not None:
-                body_lines.append(f"{indent}{self.indent_str}return {body_inner}")
-            body_code = "\n".join(body_lines)
-
+        body_code = self._generate_method_body(expr.body, ret_type, indent)
         self.set_current_return_type(None)
 
         end = self.gen_func_def_end()
@@ -917,24 +1009,14 @@ class GoCodeGenerator(CodeGenerator):
             self.mark_declared(escaped_name)
 
         ret_type = (
-            self.gen_type(expr.return_type) if expr.return_type else "interface{}"
+            self.gen_type(expr.return_type)
+            if expr.return_type and not self._is_void_type(expr.return_type)
+            else None
         )
         self.set_current_return_type(ret_type, expr.return_type)
 
         header = self.gen_func_def_header(func_name, params, ret_type, is_method=True)
-
-        if expr.body is None:
-            zero = self._go_zero_values.get(ret_type, "nil")
-            body_code = f"{indent}{self.indent_str}return {zero}"
-        else:
-            body_lines: list[str] = []
-            body_inner = self.generate_lines(
-                expr.body, body_lines, indent + self.indent_str
-            )
-            if body_inner is not None:
-                body_lines.append(f"{indent}{self.indent_str}return {body_inner}")
-            body_code = "\n".join(body_lines)
-
+        body_code = self._generate_method_body(expr.body, ret_type, indent)
         self.set_current_return_type(None)
 
         end = self.gen_func_def_end()
@@ -971,7 +1053,7 @@ class GoCodeGenerator(CodeGenerator):
         """Generate a function definition as a method on Parser."""
         self.reset_declared_vars()
 
-        func_name = self.escape_identifier(expr.name)
+        func_name = to_camel_case(self.escape_identifier(expr.name))
         params = []
         for param in expr.params:
             escaped_name = self.escape_identifier(param.name)
@@ -980,28 +1062,33 @@ class GoCodeGenerator(CodeGenerator):
             self.mark_declared(escaped_name)
 
         ret_type = (
-            self.gen_type(expr.return_type) if expr.return_type else "interface{}"
+            self.gen_type(expr.return_type)
+            if expr.return_type and not self._is_void_type(expr.return_type)
+            else None
         )
         self.set_current_return_type(ret_type, expr.return_type)
 
         header = self.gen_func_def_header(func_name, params, ret_type, is_method=True)
-
-        if expr.body is None:
-            zero = self._go_zero_values.get(ret_type, "nil")
-            body_code = f"{indent}{self.indent_str}return {zero}"
-        else:
-            body_lines: list[str] = []
-            body_inner = self.generate_lines(
-                expr.body, body_lines, indent + self.indent_str
-            )
-            if body_inner is not None:
-                body_lines.append(f"{indent}{self.indent_str}return {body_inner}")
-            body_code = "\n".join(body_lines)
-
+        body_code = self._generate_method_body(expr.body, ret_type, indent)
         self.set_current_return_type(None)
 
         end = self.gen_func_def_end()
         return f"{indent}{header}\n{body_code}\n{indent}{end}"
+
+    def _generate_method_body(
+        self, body: TargetExpr | None, ret_type: str | None, indent: str
+    ) -> str:
+        """Generate the body of a Go method, handling void vs value returns."""
+        if body is None:
+            if ret_type is None:
+                return f"{indent}{self.indent_str}return"
+            zero = self._go_zero_values.get(ret_type, "nil")
+            return f"{indent}{self.indent_str}return {zero}"
+        body_lines: list[str] = []
+        body_inner = self.generate_lines(body, body_lines, indent + self.indent_str)
+        if body_inner is not None and ret_type is not None:
+            body_lines.append(f"{indent}{self.indent_str}return {body_inner}")
+        return "\n".join(body_lines)
 
 
 def escape_identifier(name: str) -> str:
