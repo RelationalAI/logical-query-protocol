@@ -32,6 +32,57 @@ from .proto_print import format_enum, format_message
 from .yacc_parser import load_yacc_grammar_file
 
 
+def _gen_parser_python(grammar, command_line, proto_messages):
+    from .parser_gen_python import generate_parser_python
+
+    return generate_parser_python(grammar, command_line, proto_messages)
+
+
+def _gen_parser_julia(grammar, command_line, proto_messages):
+    from .parser_gen_julia import generate_parser_julia
+
+    return generate_parser_julia(grammar, command_line, proto_messages)
+
+
+def _gen_parser_go(grammar, command_line, proto_messages):
+    from .parser_gen_go import generate_parser_go
+
+    return generate_parser_go(grammar, command_line, proto_messages)
+
+
+def _gen_printer_python(grammar, command_line, proto_messages):
+    from .pretty_gen_python import generate_pretty_printer_python
+
+    return generate_pretty_printer_python(grammar, command_line, proto_messages)
+
+
+def _gen_printer_julia(grammar, command_line, proto_messages):
+    from .pretty_gen_julia import generate_pretty_printer_julia
+
+    return generate_pretty_printer_julia(grammar, command_line, proto_messages)
+
+
+def _gen_printer_go(grammar, command_line, proto_messages):
+    from .pretty_gen_go import generate_pretty_printer_go
+
+    return generate_pretty_printer_go(grammar, command_line, proto_messages)
+
+
+_PARSER_GENERATORS = {
+    "python": _gen_parser_python,
+    "julia": _gen_parser_julia,
+    "go": _gen_parser_go,
+}
+
+_PRINTER_GENERATORS = {
+    "python": _gen_printer_python,
+    "julia": _gen_printer_julia,
+    "go": _gen_printer_go,
+}
+
+_LANGUAGES = sorted(set(_PARSER_GENERATORS) | set(_PRINTER_GENERATORS))
+
+
 def parse_args():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
@@ -56,14 +107,14 @@ def parse_args():
     output_group.add_argument(
         "--parser",
         type=str,
-        choices=["ir", "python", "julia", "go"],
-        help="Output the generated parser (ir, python, julia, or go)",
+        choices=["ir"] + _LANGUAGES,
+        help="Output the generated parser",
     )
     output_group.add_argument(
         "--printer",
         type=str,
-        choices=["ir", "python", "julia", "go"],
-        help="Output the generated pretty printer (ir, python, julia, or go)",
+        choices=["ir"] + _LANGUAGES,
+        help="Output the generated pretty printer",
     )
 
     args = parser.parse_args()
@@ -240,29 +291,15 @@ def run(args) -> int:
                 args.output,
                 f"Generated parser IR written to {args.output}",
             )
-        elif args.parser in ("python", "julia", "go"):
+        elif args.parser in _PARSER_GENERATORS:
             command_line = " ".join(
                 ["python -m meta.cli"]
                 + [str(f) for f in args.proto_files]
                 + ["--grammar", str(args.grammar)]
                 + ["--parser", args.parser]
             )
-            if args.parser == "python":
-                from .parser_gen_python import generate_parser_python
-
-                output_text = generate_parser_python(
-                    grammar, command_line, proto_messages
-                )
-            elif args.parser == "julia":
-                from .parser_gen_julia import generate_parser_julia
-
-                output_text = generate_parser_julia(
-                    grammar, command_line, proto_messages
-                )
-            else:
-                from .parser_gen_go import generate_parser_go
-
-                output_text = generate_parser_go(grammar, command_line, proto_messages)
+            gen_fn = _PARSER_GENERATORS[args.parser]
+            output_text = gen_fn(grammar, command_line, proto_messages)
             write_output(
                 output_text, args.output, f"Generated parser written to {args.output}"
             )
@@ -282,33 +319,15 @@ def run(args) -> int:
                 args.output,
                 f"Generated printer IR written to {args.output}",
             )
-        elif args.printer in ("python", "julia", "go"):
+        elif args.printer in _PRINTER_GENERATORS:
             command_line = " ".join(
                 ["python -m meta.cli"]
                 + [str(f) for f in args.proto_files]
                 + ["--grammar", str(args.grammar)]
                 + ["--printer", args.printer]
             )
-            if args.printer == "python":
-                from .pretty_gen_python import generate_pretty_printer_python
-
-                output_text = generate_pretty_printer_python(
-                    grammar, command_line, proto_messages
-                )
-            elif args.printer == "julia":
-                from .pretty_gen_julia import generate_pretty_printer_julia
-
-                output_text = generate_pretty_printer_julia(
-                    grammar, command_line, proto_messages
-                )
-            elif args.printer == "go":
-                from .pretty_gen_go import generate_pretty_printer_go
-
-                output_text = generate_pretty_printer_go(
-                    grammar, command_line, proto_messages
-                )
-            else:
-                assert False
+            gen_fn = _PRINTER_GENERATORS[args.printer]
+            output_text = gen_fn(grammar, command_line, proto_messages)
             write_output(
                 output_text,
                 args.output,

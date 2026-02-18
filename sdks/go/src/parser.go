@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	pb "logical-query-protocol/src/lqp/v1"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 // ParseError represents a parse error
@@ -473,13 +474,20 @@ func listConcat[T any](a []T, b []T) []T {
 	return result
 }
 
-// hasProtoField checks if a proto message has a non-nil field by name
-// This uses reflection to check for oneOf fields
+// hasProtoField checks if a proto message field is populated.
+// Uses the proto reflection API for correct oneof detection.
 func hasProtoField(msg interface{}, fieldName string) bool {
 	if msg == nil {
 		return false
 	}
-
+	if pm, ok := msg.(protoreflect.ProtoMessage); ok {
+		m := pm.ProtoReflect()
+		fd := m.Descriptor().Fields().ByName(protoreflect.Name(fieldName))
+		if fd != nil {
+			return m.Has(fd)
+		}
+	}
+	// Fallback: getter-based reflection for non-proto types.
 	val := reflect.ValueOf(msg)
 	if val.Kind() == reflect.Ptr {
 		val = val.Elem()
@@ -487,19 +495,15 @@ func hasProtoField(msg interface{}, fieldName string) bool {
 	if val.Kind() != reflect.Struct {
 		return false
 	}
-
-	// Try to find a getter method: Get + PascalCase(fieldName)
 	methodName := "Get" + toPascalCase(fieldName)
 	method := reflect.ValueOf(msg).MethodByName(methodName)
 	if !method.IsValid() {
 		return false
 	}
-
 	results := method.Call(nil)
 	if len(results) == 0 {
 		return false
 	}
-
 	result := results[0]
 	if result.Kind() == reflect.Ptr || result.Kind() == reflect.Interface {
 		return !result.IsNil()
@@ -1301,6 +1305,7 @@ func (p *Parser) parse_relation_id() *pb.RelationId {
 	var _t816 *pb.RelationId
 	if prediction417 == 1 {
 		uint128419 := p.consumeTerminal("UINT128").Value.uint128
+		_ = uint128419
 		_t816 = &pb.RelationId{IdLow: uint128419.Low, IdHigh: uint128419.High}
 	} else {
 		var _t817 *pb.RelationId

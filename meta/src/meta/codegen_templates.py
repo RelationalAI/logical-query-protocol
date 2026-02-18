@@ -251,10 +251,10 @@ GO_TEMPLATES: dict[str, BuiltinTemplate] = {
     "indent_io": BuiltinTemplate("nil", ["p.indent()"]),
     "indent_sexp_io": BuiltinTemplate("nil", ["p.indentSexp()"]),
     "dedent_io": BuiltinTemplate("nil", ["p.dedent()"]),
-    "try_flat_io": BuiltinTemplate("nil"),
+    "try_flat_io": BuiltinTemplate("p.tryFlat({0}, func() {{ {1}({0}) }})"),
     "format_int64": BuiltinTemplate('fmt.Sprintf("%d", {0})'),
     "format_int32": BuiltinTemplate('fmt.Sprintf("%d", {0})'),
-    "format_float64": BuiltinTemplate('fmt.Sprintf("%g", {0})'),
+    "format_float64": BuiltinTemplate("formatFloat64({0})"),
     "format_string": BuiltinTemplate("p.formatStringValue({0})"),
     "format_symbol": BuiltinTemplate("{0}"),
     "format_bool": BuiltinTemplate("formatBool({0})"),
@@ -270,6 +270,7 @@ GO_TEMPLATES: dict[str, BuiltinTemplate] = {
     "fragment_id_to_string": BuiltinTemplate("p.fragmentIdToString({0})"),
     "relation_id_to_string": BuiltinTemplate("p.relationIdToString({0})"),
     "relation_id_to_uint128": BuiltinTemplate("p.relationIdToUint128({0})"),
+    "start_pretty_fragment": BuiltinTemplate("{0}", ["p.startPrettyFragment({0})"]),
 }
 
 __all__ = [

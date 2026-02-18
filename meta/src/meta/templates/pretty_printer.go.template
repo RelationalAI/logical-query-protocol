@@ -12,40 +12,138 @@ import (
 	"bytes"
 	"fmt"
 	"math/big"
+	"reflect"
+	"sort"
 	"strings"
 
 	pb "logical-query-protocol/src/lqp/v1"
 )
 
+const maxWidth = 92
+
 // PrettyPrinter holds state for pretty printing protobuf messages.
 type PrettyPrinter struct {{
 	w           *bytes.Buffer
-	indentLevel int
+	indentStack []int
+	column      int
 	atLineStart bool
+	separator   string
+	maxWidth    int
+	computing   map[uintptr]bool
+	memo        map[uintptr]string
+	memoRefs    []interface{{}}
 	debugInfo   map[[2]uint64]string
 }}
 
+func (p *PrettyPrinter) indentLevel() int {{
+	if len(p.indentStack) > 0 {{
+		return p.indentStack[len(p.indentStack)-1]
+	}}
+	return 0
+}}
+
 func (p *PrettyPrinter) write(s string) {{
-	if p.atLineStart && strings.TrimSpace(s) != "" {{
-		p.w.WriteString(strings.Repeat("  ", p.indentLevel))
+	if p.separator == "\n" && p.atLineStart && strings.TrimSpace(s) != "" {{
+		spaces := p.indentLevel()
+		p.w.WriteString(strings.Repeat(" ", spaces))
+		p.column = spaces
 		p.atLineStart = false
 	}}
 	p.w.WriteString(s)
+	if idx := strings.LastIndex(s, "\n"); idx >= 0 {{
+		p.column = len(s) - idx - 1
+	}} else {{
+		p.column += len(s)
+	}}
 }}
 
 func (p *PrettyPrinter) newline() {{
-	p.w.WriteString("\n")
-	p.atLineStart = true
+	p.w.WriteString(p.separator)
+	if p.separator == "\n" {{
+		p.atLineStart = true
+		p.column = 0
+	}}
 }}
 
 func (p *PrettyPrinter) indent() {{
-	p.indentLevel++
+	if p.separator == "\n" {{
+		p.indentStack = append(p.indentStack, p.column)
+	}}
+}}
+
+func (p *PrettyPrinter) indentSexp() {{
+	if p.separator == "\n" {{
+		p.indentStack = append(p.indentStack, p.indentLevel()+2)
+	}}
 }}
 
 func (p *PrettyPrinter) dedent() {{
-	if p.indentLevel > 0 {{
-		p.indentLevel--
+	if p.separator == "\n" && len(p.indentStack) > 1 {{
+		p.indentStack = p.indentStack[:len(p.indentStack)-1]
 	}}
+}}
+
+func (p *PrettyPrinter) tryFlat(msg interface{{}}, prettyFn func()) *string {{
+	v := reflect.ValueOf(msg)
+	// Only memoize pointer types. Slices share underlying array
+	// pointers (especially nil/empty slices), causing collisions.
+	canMemo := v.Kind() == reflect.Ptr
+	if canMemo {{
+		key := v.Pointer()
+		if _, ok := p.memo[key]; !ok && !p.computing[key] {{
+			p.computing[key] = true
+			flat := p.renderFlat(prettyFn)
+			p.memo[key] = flat
+			p.memoRefs = append(p.memoRefs, msg)
+			delete(p.computing, key)
+		}}
+		if flat, ok := p.memo[key]; ok {{
+			return p.fitsWidth(flat)
+		}}
+		return nil
+	}}
+	// If already in flat mode, return nil to prevent infinite recursion.
+	if p.separator != "\n" {{
+		return nil
+	}}
+	flat := p.renderFlat(prettyFn)
+	return p.fitsWidth(flat)
+}}
+
+func (p *PrettyPrinter) renderFlat(prettyFn func()) string {{
+	savedW := p.w
+	savedSep := p.separator
+	savedIndent := p.indentStack
+	savedCol := p.column
+	savedAtLineStart := p.atLineStart
+	var buf bytes.Buffer
+	p.w = &buf
+	p.separator = " "
+	p.indentStack = []int{{0}}
+	p.column = 0
+	p.atLineStart = false
+	prettyFn()
+	result := buf.String()
+	p.w = savedW
+	p.separator = savedSep
+	p.indentStack = savedIndent
+	p.column = savedCol
+	p.atLineStart = savedAtLineStart
+	return result
+}}
+
+func (p *PrettyPrinter) fitsWidth(flat string) *string {{
+	if p.separator != "\n" {{
+		return &flat
+	}}
+	effectiveCol := p.column
+	if p.atLineStart {{
+		effectiveCol = p.indentLevel()
+	}}
+	if len(flat)+effectiveCol <= p.maxWidth {{
+		return &flat
+	}}
+	return nil
 }}
 
 func (p *PrettyPrinter) getOutput() string {{
@@ -157,6 +255,16 @@ func (p *PrettyPrinter) relationIdToUint128(msg *pb.RelationId) *pb.UInt128Value
 	return &pb.UInt128Value{{Low: msg.GetIdLow(), High: msg.GetIdHigh()}}
 }}
 
+// listSort sorts a slice of []interface{{}} pairs by their first element (string key).
+func listSort(pairs [][]interface{{}}) [][]interface{{}} {{
+	sort.Slice(pairs, func(i, j int) bool {{
+		ki, _ := pairs[i][0].(string)
+		kj, _ := pairs[j][0].(string)
+		return ki < kj
+	}})
+	return pairs
+}}
+
 // --- Free functions ---
 
 func uint128ToString(low, high uint64) string {{
@@ -188,6 +296,17 @@ func uint128ToHexString(low, high uint64) string {{
 	return fmt.Sprintf("%x%016x", high, low)
 }}
 
+func formatFloat64(v float64) string {{
+	s := fmt.Sprintf("%g", v)
+	// Match Python's str(float) output: lowercase, no leading +.
+	s = strings.ToLower(s)
+	s = strings.TrimPrefix(s, "+")
+	if !strings.ContainsAny(s, ".einn") {{
+		s += ".0"
+	}}
+	return s
+}}
+
 func formatBool(b bool) string {{
 	if b {{
 		return "true"
@@ -206,8 +325,13 @@ func ProgramToStr(msg *pb.Transaction) string {{
 	var buf bytes.Buffer
 	p := &PrettyPrinter{{
 		w:           &buf,
-		indentLevel: 0,
+		indentStack: []int{{0}},
+		column:      0,
 		atLineStart: true,
+		separator:   "\n",
+		maxWidth:    maxWidth,
+		computing:   make(map[uintptr]bool),
+		memo:        make(map[uintptr]string),
 		debugInfo:   make(map[[2]uint64]string),
 	}}
 	p.pretty_{start_name}(msg)

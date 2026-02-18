@@ -829,13 +829,7 @@ class CodeGenerator(ABC):
                         return result.value
 
         # Determine expression type for typed variable declarations.
-        type_hint = None
-        try:
-            expr_type = expr.target_type()
-            if expr_type is not None:
-                type_hint = self.gen_type(expr_type)
-        except (NotImplementedError, ValueError, TypeError):
-            pass
+        type_hint = self._ifelse_type_hint(expr)
 
         tmp = gensym()
         var_decl = self.gen_var_declaration(tmp, type_hint)
@@ -865,6 +859,16 @@ class CodeGenerator(ABC):
             return None
 
         return tmp
+
+    def _ifelse_type_hint(self, expr: IfElse) -> str | None:
+        """Compute the type hint for the merge variable of an IfElse expression."""
+        try:
+            expr_type = expr.target_type()
+            if expr_type is not None:
+                return self.gen_type(expr_type)
+        except (NotImplementedError, ValueError, TypeError):
+            pass
+        return None
 
     def _generate_nil_else_branch(
         self,
