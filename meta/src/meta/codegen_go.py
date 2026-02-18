@@ -869,33 +869,33 @@ class GoCodeGenerator(CodeGenerator):
         lines.append(f"{indent}{self.gen_assignment(var_name, expr_code)}")
         return self.gen_none()
 
-    def _generate_parse_def(self, expr: ParseNonterminalDef, indent: str) -> str:
-        """Generate a parse method definition."""
+    def _generate_go_method(
+        self, func_name: str, params, body, return_type, indent: str
+    ) -> str:
+        """Generate a Go method definition on the receiver type."""
         self.reset_declared_vars()
 
-        func_name = f"parse_{expr.nonterminal.name}"
-
-        params = []
-        for param in expr.params:
+        typed_params = []
+        for param in params:
             escaped_name = self.escape_identifier(param.name)
             type_hint = self.gen_type(param.type)
-            params.append((escaped_name, type_hint))
+            typed_params.append((escaped_name, type_hint))
             self.mark_declared(escaped_name)
 
         ret_type = (
-            self.gen_type(expr.return_type) if expr.return_type else "interface{}"
+            self.gen_type(return_type) if return_type else "interface{}"
         )
-        self.set_current_return_type(ret_type, expr.return_type)
+        self.set_current_return_type(ret_type, return_type)
 
-        header = self.gen_func_def_header(func_name, params, ret_type, is_method=True)
+        header = self.gen_func_def_header(func_name, typed_params, ret_type, is_method=True)
 
-        if expr.body is None:
+        if body is None:
             zero = self._go_zero_values.get(ret_type, "nil")
             body_code = f"{indent}{self.indent_str}return {zero}"
         else:
             body_lines: list[str] = []
             body_inner = self.generate_lines(
-                expr.body, body_lines, indent + self.indent_str
+                body, body_lines, indent + self.indent_str
             )
             if body_inner is not None:
                 body_lines.append(f"{indent}{self.indent_str}return {body_inner}")
@@ -905,43 +905,18 @@ class GoCodeGenerator(CodeGenerator):
 
         end = self.gen_func_def_end()
         return f"{indent}{header}\n{body_code}\n{indent}{end}"
+
+    def _generate_parse_def(self, expr: ParseNonterminalDef, indent: str) -> str:
+        return self._generate_go_method(
+            f"parse_{expr.nonterminal.name}",
+            expr.params, expr.body, expr.return_type, indent,
+        )
 
     def _generate_pretty_def(self, expr: PrintNonterminalDef, indent: str) -> str:
-        """Generate a pretty-print method definition."""
-        self.reset_declared_vars()
-
-        func_name = f"pretty_{expr.nonterminal.name}"
-
-        params = []
-        for param in expr.params:
-            escaped_name = self.escape_identifier(param.name)
-            type_hint = self.gen_type(param.type)
-            params.append((escaped_name, type_hint))
-            self.mark_declared(escaped_name)
-
-        ret_type = (
-            self.gen_type(expr.return_type) if expr.return_type else "interface{}"
+        return self._generate_go_method(
+            f"pretty_{expr.nonterminal.name}",
+            expr.params, expr.body, expr.return_type, indent,
         )
-        self.set_current_return_type(ret_type, expr.return_type)
-
-        header = self.gen_func_def_header(func_name, params, ret_type, is_method=True)
-
-        if expr.body is None:
-            zero = self._go_zero_values.get(ret_type, "nil")
-            body_code = f"{indent}{self.indent_str}return {zero}"
-        else:
-            body_lines: list[str] = []
-            body_inner = self.generate_lines(
-                expr.body, body_lines, indent + self.indent_str
-            )
-            if body_inner is not None:
-                body_lines.append(f"{indent}{self.indent_str}return {body_inner}")
-            body_code = "\n".join(body_lines)
-
-        self.set_current_return_type(None)
-
-        end = self.gen_func_def_end()
-        return f"{indent}{header}\n{body_code}\n{indent}{end}"
 
     def format_literal_token_spec(self, escaped_literal: str) -> str:
         return f'\t\t{{"LITERAL", regexp.MustCompile(`^{escaped_literal}`), func(s string) TokenValue {{ return stringTokenValue(s) }}}},'
@@ -971,40 +946,10 @@ class GoCodeGenerator(CodeGenerator):
         return f"Command: {command_line}"
 
     def generate_method_def(self, expr: FunDef, indent: str) -> str:
-        """Generate a function definition as a method on Parser."""
-        self.reset_declared_vars()
-
-        func_name = self.escape_identifier(expr.name)
-        params = []
-        for param in expr.params:
-            escaped_name = self.escape_identifier(param.name)
-            type_hint = self.gen_type(param.type)
-            params.append((escaped_name, type_hint))
-            self.mark_declared(escaped_name)
-
-        ret_type = (
-            self.gen_type(expr.return_type) if expr.return_type else "interface{}"
+        return self._generate_go_method(
+            self.escape_identifier(expr.name),
+            expr.params, expr.body, expr.return_type, indent,
         )
-        self.set_current_return_type(ret_type, expr.return_type)
-
-        header = self.gen_func_def_header(func_name, params, ret_type, is_method=True)
-
-        if expr.body is None:
-            zero = self._go_zero_values.get(ret_type, "nil")
-            body_code = f"{indent}{self.indent_str}return {zero}"
-        else:
-            body_lines: list[str] = []
-            body_inner = self.generate_lines(
-                expr.body, body_lines, indent + self.indent_str
-            )
-            if body_inner is not None:
-                body_lines.append(f"{indent}{self.indent_str}return {body_inner}")
-            body_code = "\n".join(body_lines)
-
-        self.set_current_return_type(None)
-
-        end = self.gen_func_def_end()
-        return f"{indent}{header}\n{body_code}\n{indent}{end}"
 
 
 def escape_identifier(name: str) -> str:
