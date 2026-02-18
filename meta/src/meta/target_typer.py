@@ -196,7 +196,8 @@ class _TypeCheckVisitor(TargetExprVisitor):
     def visit_Lambda(self, expr: Lambda) -> None:
         self.visit(expr.body)
         body_type = self._expr_type(expr.body)
-        if (body_type is not None
+        if (
+            body_type is not None
             and not _contains_var_type(body_type)
             and not is_subtype(body_type, expr.return_type)
         ):
