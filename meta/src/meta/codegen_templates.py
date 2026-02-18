@@ -201,7 +201,7 @@ JULIA_TEMPLATES: dict[str, BuiltinTemplate] = {
 # The templates here serve as fallbacks.
 GO_TEMPLATES: dict[str, BuiltinTemplate] = {
     "some": BuiltinTemplate("ptr({0})"),
-    "not": BuiltinTemplate("!{0}"),
+    "not": BuiltinTemplate("!({0})"),
     "and": BuiltinTemplate("({0} && {1})"),
     "or": BuiltinTemplate("({0} || {1})"),
     "equal": BuiltinTemplate("{0} == {1}"),
