@@ -63,7 +63,9 @@ def is_subtype(t1: TargetType, t2: TargetType) -> bool:
     - Never <: T for all T (Never is the bottom type)
     - T <: Any for all T (Any is the top type)
     - T <: VarType for all T (type variables are wildcards)
-    - List is covariant: List[A] <: List[B] if A <: B
+    - List is invariant: List[A] <: List[B] iff A == B
+    - List[T] <: Sequence[U] if T <: U
+    - Sequence is covariant: Sequence[A] <: Sequence[B] if A <: B
     - Option is covariant: Option[A] <: Option[B] if A <: B
     - Tuple is covariant: (A1, A2, ...) <: (B1, B2, ...) if Ai <: Bi for all i
     """
@@ -98,6 +100,11 @@ def is_subtype(t1: TargetType, t2: TargetType) -> bool:
     return False
 
 
+def types_compatible(t1: TargetType, t2: TargetType) -> bool:
+    """Check if types are compatible (t1 <: t2 or t2 <: t1)."""
+    return is_subtype(t1, t2) or is_subtype(t2, t1)
+
+
 def type_join(t1: TargetType, t2: TargetType) -> TargetType:
     """Compute the join (least upper bound) of two types.
 
@@ -117,6 +124,15 @@ def type_join(t1: TargetType, t2: TargetType) -> TargetType:
         return t1
     if isinstance(t2, BaseType) and t2.name == "Any":
         return t2
+    # Void + OptionType(Never) = Void: in IfElse(cond, <void-stmt>, Lit(None))
+    if isinstance(t1, BaseType) and t1.name == "Void" and isinstance(t2, OptionType):
+        inner = t2.element_type
+        if isinstance(inner, BaseType) and inner.name == "Never":
+            return t1
+    if isinstance(t2, BaseType) and t2.name == "Void" and isinstance(t1, OptionType):
+        inner = t1.element_type
+        if isinstance(inner, BaseType) and inner.name == "Never":
+            return t2
     if isinstance(t1, OptionType) and isinstance(t2, OptionType):
         return OptionType(type_join(t1.element_type, t2.element_type))
     if isinstance(t1, SequenceType) and isinstance(t2, SequenceType):
@@ -469,16 +485,6 @@ def make_tuple(*args):
 def make_get_element(tuple_expr, index):
     """Extract element from tuple at constant index: tuple_expr[index]."""
     return GetElement(tuple_expr, index)
-
-
-def make_fst(pair):
-    """Extract first element of tuple: pair[0]."""
-    return make_get_element(pair, 0)
-
-
-def make_snd(pair):
-    """Extract second element of tuple: pair[1]."""
-    return make_get_element(pair, 1)
 
 
 def make_is_empty(collection):

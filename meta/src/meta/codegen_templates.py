@@ -30,9 +30,8 @@ PYTHON_TEMPLATES: dict[str, BuiltinTemplate] = {
     "add": BuiltinTemplate("({0} + {1})"),
     "is_none": BuiltinTemplate("{0} is None"),
     "is_some": BuiltinTemplate("{0} is not None"),
-    "unwrap_option": BuiltinTemplate("{0}"),
     "none": BuiltinTemplate("None"),
-    "make_empty_bytes": BuiltinTemplate("b''"),
+    "make_empty_bytes": BuiltinTemplate('b""'),
     "dict_from_list": BuiltinTemplate("dict({0})"),
     "dict_get": BuiltinTemplate("{0}.get({1})"),
     "has_proto_field": BuiltinTemplate("{0}.HasField({1})"),
@@ -41,7 +40,6 @@ PYTHON_TEMPLATES: dict[str, BuiltinTemplate] = {
     "subtract": BuiltinTemplate("({0} - {1})"),
     "string_concat": BuiltinTemplate("({0} + {1})"),
     "encode_string": BuiltinTemplate("{0}.encode()"),
-    "tuple": BuiltinTemplate("({args},)"),
     "length": BuiltinTemplate("len({0})"),
     "unwrap_option_or": BuiltinTemplate("({0} if {0} is not None else {1})"),
     "int64_to_int32": BuiltinTemplate("int({0})"),
@@ -59,9 +57,6 @@ PYTHON_TEMPLATES: dict[str, BuiltinTemplate] = {
         "fragments_pb2.FragmentId(id={0}.encode())"
     ),
     "relation_id_from_string": BuiltinTemplate("self.relation_id_from_string({0})"),
-    "relation_id_from_int": BuiltinTemplate(
-        "logic_pb2.RelationId(id_low={0} & 0xFFFFFFFFFFFFFFFF, id_high=({0} >> 64) & 0xFFFFFFFFFFFFFFFF)"
-    ),
     "relation_id_from_uint128": BuiltinTemplate(
         "logic_pb2.RelationId(id_low={0}.low, id_high={0}.high)"
     ),
@@ -78,19 +73,21 @@ PYTHON_TEMPLATES: dict[str, BuiltinTemplate] = {
     "construct_fragment": BuiltinTemplate("self.construct_fragment({0}, {1})"),
     "error": BuiltinTemplate(None, ["raise ParseError({0})"]),
     "error_with_token": BuiltinTemplate(
-        None, ['raise ParseError(f"{{{0}}}: {{{1}.type}}=`{{{1}.value}}`")']
+        None, ['raise ParseError({0} + f": {{{1}.type}}=`{{{1}.value}}`")']
     ),
     # Pretty-printing builtins
     "write_io": BuiltinTemplate("None", ["self.write({0})"]),
     "newline_io": BuiltinTemplate("None", ["self.newline()"]),
     "indent_io": BuiltinTemplate("None", ["self.indent()"]),
+    "indent_sexp_io": BuiltinTemplate("None", ["self.indent_sexp()"]),
     "dedent_io": BuiltinTemplate("None", ["self.dedent()"]),
+    "try_flat_io": BuiltinTemplate("self._try_flat({0}, {1})"),
     "format_int64": BuiltinTemplate("str({0})"),
     "format_int32": BuiltinTemplate("str({0})"),
     "format_float64": BuiltinTemplate("str({0})"),
     "format_string": BuiltinTemplate("self.format_string_value({0})"),
     "format_symbol": BuiltinTemplate("{0}"),
-    "format_bool": BuiltinTemplate("('true' if {0} else 'false')"),
+    "format_bool": BuiltinTemplate('("true" if {0} else "false")'),
     "format_decimal": BuiltinTemplate("self.format_decimal({0})"),
     "format_int128": BuiltinTemplate("self.format_int128({0})"),
     "format_uint128": BuiltinTemplate("self.format_uint128({0})"),
@@ -102,7 +99,6 @@ PYTHON_TEMPLATES: dict[str, BuiltinTemplate] = {
     "decode_string": BuiltinTemplate("{0}.decode('utf-8')"),
     "fragment_id_to_string": BuiltinTemplate("self.fragment_id_to_string({0})"),
     "relation_id_to_string": BuiltinTemplate("self.relation_id_to_string({0})"),
-    "relation_id_to_int": BuiltinTemplate("self.relation_id_to_int({0})"),
     "relation_id_to_uint128": BuiltinTemplate("self.relation_id_to_uint128({0})"),
     "start_pretty_fragment": BuiltinTemplate(
         "{0}", ["self.start_pretty_fragment({0})"]
@@ -132,7 +128,6 @@ JULIA_TEMPLATES: dict[str, BuiltinTemplate] = {
     "subtract": BuiltinTemplate("({0} - {1})"),
     "string_concat": BuiltinTemplate("({0} * {1})"),
     "encode_string": BuiltinTemplate("Vector{{UInt8}}({0})"),
-    "tuple": BuiltinTemplate("({args},)"),
     "length": BuiltinTemplate("length({0})"),
     "unwrap_option_or": BuiltinTemplate("(!isnothing({0}) ? {0} : {1})"),
     "int64_to_int32": BuiltinTemplate("Int32({0})"),
@@ -148,9 +143,6 @@ JULIA_TEMPLATES: dict[str, BuiltinTemplate] = {
         "Proto.FragmentId(Vector{{UInt8}}({0}))"
     ),
     "relation_id_from_string": BuiltinTemplate("relation_id_from_string(parser, {0})"),
-    "relation_id_from_int": BuiltinTemplate(
-        "Proto.RelationId({0} & 0xFFFFFFFFFFFFFFFF, ({0} >> 64) & 0xFFFFFFFFFFFFFFFF)"
-    ),
     "relation_id_from_uint128": BuiltinTemplate("Proto.RelationId({0}.low, {0}.high)"),
     "match_lookahead_terminal": BuiltinTemplate(
         "match_lookahead_terminal(parser, {0}, {1})"
@@ -171,7 +163,9 @@ JULIA_TEMPLATES: dict[str, BuiltinTemplate] = {
     "write_io": BuiltinTemplate("nothing", ["write(pp, {0})"]),
     "newline_io": BuiltinTemplate("nothing", ["newline(pp)"]),
     "indent_io": BuiltinTemplate("nothing", ["indent!(pp)"]),
+    "indent_sexp_io": BuiltinTemplate("nothing", ["indent_sexp!(pp)"]),
     "dedent_io": BuiltinTemplate("nothing", ["dedent!(pp)"]),
+    "try_flat_io": BuiltinTemplate("try_flat(pp, {0}, {1})"),
     "format_int64": BuiltinTemplate("string({0})"),
     "format_int32": BuiltinTemplate("string({0})"),
     "format_float64": BuiltinTemplate("format_float64({0})"),
@@ -189,7 +183,6 @@ JULIA_TEMPLATES: dict[str, BuiltinTemplate] = {
     "decode_string": BuiltinTemplate("String(copy({0}))"),
     "fragment_id_to_string": BuiltinTemplate("fragment_id_to_string(pp, {0})"),
     "relation_id_to_string": BuiltinTemplate("relation_id_to_string(pp, {0})"),
-    "relation_id_to_int": BuiltinTemplate("relation_id_to_int(pp, {0})"),
     "relation_id_to_uint128": BuiltinTemplate("relation_id_to_uint128(pp, {0})"),
     "start_pretty_fragment": BuiltinTemplate("{0}", ["start_pretty_fragment(pp, {0})"]),
 }
@@ -235,9 +228,6 @@ GO_TEMPLATES: dict[str, BuiltinTemplate] = {
     "list_sort": BuiltinTemplate("listSort({0})"),
     "fragment_id_from_string": BuiltinTemplate("&pb.FragmentId{{Id: []byte({0})}}"),
     "relation_id_from_string": BuiltinTemplate("p.relationIdFromString({0})"),
-    "relation_id_from_int": BuiltinTemplate(
-        "&pb.RelationId{{IdLow: uint64({0}) & 0xFFFFFFFFFFFFFFFF, IdHigh: uint64({0}) >> 64 & 0xFFFFFFFFFFFFFFFF}}"
-    ),
     "relation_id_from_uint128": BuiltinTemplate(
         "&pb.RelationId{{IdLow: {0}.Low, IdHigh: {0}.High}}"
     ),
@@ -259,7 +249,9 @@ GO_TEMPLATES: dict[str, BuiltinTemplate] = {
     "write_io": BuiltinTemplate("nil", ["p.write({0})"]),
     "newline_io": BuiltinTemplate("nil", ["p.newline()"]),
     "indent_io": BuiltinTemplate("nil", ["p.indent()"]),
+    "indent_sexp_io": BuiltinTemplate("nil", ["p.indentSexp()"]),
     "dedent_io": BuiltinTemplate("nil", ["p.dedent()"]),
+    "try_flat_io": BuiltinTemplate("nil"),
     "format_int64": BuiltinTemplate('fmt.Sprintf("%d", {0})'),
     "format_int32": BuiltinTemplate('fmt.Sprintf("%d", {0})'),
     "format_float64": BuiltinTemplate('fmt.Sprintf("%g", {0})'),
@@ -277,7 +269,6 @@ GO_TEMPLATES: dict[str, BuiltinTemplate] = {
     "decode_string": BuiltinTemplate("string({0})"),
     "fragment_id_to_string": BuiltinTemplate("p.fragmentIdToString({0})"),
     "relation_id_to_string": BuiltinTemplate("p.relationIdToString({0})"),
-    "relation_id_to_int": BuiltinTemplate("p.relationIdToInt({0})"),
     "relation_id_to_uint128": BuiltinTemplate("p.relationIdToUint128({0})"),
 }
 
