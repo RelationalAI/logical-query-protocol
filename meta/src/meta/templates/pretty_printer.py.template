@@ -165,13 +165,6 @@ class PrettyPrinter:
         """Convert RelationId to string representation using debug info."""
         return self._debug_info.get((msg.id_low, msg.id_high), "")
 
-    def relation_id_to_int(self, msg: logic_pb2.RelationId) -> Optional[int]:
-        """Convert RelationId to int if it fits in signed 64-bit range."""
-        value = (msg.id_high << 64) | msg.id_low
-        if value <= 0x7FFFFFFFFFFFFFFF:
-            return value
-        return None
-
     def relation_id_to_uint128(self, msg: logic_pb2.RelationId) -> logic_pb2.UInt128Value:
         """Convert RelationId to UInt128Value representation."""
         return logic_pb2.UInt128Value(low=msg.id_low, high=msg.id_high)

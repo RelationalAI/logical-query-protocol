@@ -430,14 +430,6 @@ func (p *Parser) relationIdToUint128(msg *pb.RelationId) *pb.UInt128Value {{
 	return &pb.UInt128Value{{Low: msg.GetIdLow(), High: msg.GetIdHigh()}}
 }}
 
-func (p *Parser) relationIdToInt(msg *pb.RelationId) *int64 {{
-	value := int64(msg.GetIdHigh()<<64 | msg.GetIdLow())
-	if value >= 0 {{
-		return &value
-	}}
-	return nil
-}}
-
 // Helper functions
 func dictFromList(pairs [][]interface{{}}) map[string]interface{{}} {{
 	result := make(map[string]interface{{}})

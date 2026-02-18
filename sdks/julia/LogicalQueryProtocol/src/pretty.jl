@@ -192,13 +192,6 @@ function relation_id_to_string(pp::PrettyPrinter, msg::Proto.RelationId)::String
     return get(pp.debug_info, (msg.id_low, msg.id_high), "")
 end
 
-function relation_id_to_int(pp::PrettyPrinter, msg::Proto.RelationId)
-    if msg.id_high == 0 && msg.id_low <= 0x7FFFFFFFFFFFFFFF
-        return Int64(msg.id_low)
-    end
-    return nothing
-end
-
 function relation_id_to_uint128(pp::PrettyPrinter, msg::Proto.RelationId)
     return Proto.UInt128Value(msg.id_low, msg.id_high)
 end

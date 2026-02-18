@@ -59,9 +59,6 @@ PYTHON_TEMPLATES: dict[str, BuiltinTemplate] = {
         "fragments_pb2.FragmentId(id={0}.encode())"
     ),
     "relation_id_from_string": BuiltinTemplate("self.relation_id_from_string({0})"),
-    "relation_id_from_int": BuiltinTemplate(
-        "logic_pb2.RelationId(id_low={0} & 0xFFFFFFFFFFFFFFFF, id_high=({0} >> 64) & 0xFFFFFFFFFFFFFFFF)"
-    ),
     "relation_id_from_uint128": BuiltinTemplate(
         "logic_pb2.RelationId(id_low={0}.low, id_high={0}.high)"
     ),
@@ -104,7 +101,6 @@ PYTHON_TEMPLATES: dict[str, BuiltinTemplate] = {
     "decode_string": BuiltinTemplate("{0}.decode('utf-8')"),
     "fragment_id_to_string": BuiltinTemplate("self.fragment_id_to_string({0})"),
     "relation_id_to_string": BuiltinTemplate("self.relation_id_to_string({0})"),
-    "relation_id_to_int": BuiltinTemplate("self.relation_id_to_int({0})"),
     "relation_id_to_uint128": BuiltinTemplate("self.relation_id_to_uint128({0})"),
     "start_pretty_fragment": BuiltinTemplate(
         "{0}", ["self.start_pretty_fragment({0})"]
@@ -150,9 +146,6 @@ JULIA_TEMPLATES: dict[str, BuiltinTemplate] = {
         "Proto.FragmentId(Vector{{UInt8}}({0}))"
     ),
     "relation_id_from_string": BuiltinTemplate("relation_id_from_string(parser, {0})"),
-    "relation_id_from_int": BuiltinTemplate(
-        "Proto.RelationId({0} & 0xFFFFFFFFFFFFFFFF, ({0} >> 64) & 0xFFFFFFFFFFFFFFFF)"
-    ),
     "relation_id_from_uint128": BuiltinTemplate("Proto.RelationId({0}.low, {0}.high)"),
     "match_lookahead_terminal": BuiltinTemplate(
         "match_lookahead_terminal(parser, {0}, {1})"
@@ -193,7 +186,6 @@ JULIA_TEMPLATES: dict[str, BuiltinTemplate] = {
     "decode_string": BuiltinTemplate("String(copy({0}))"),
     "fragment_id_to_string": BuiltinTemplate("fragment_id_to_string(pp, {0})"),
     "relation_id_to_string": BuiltinTemplate("relation_id_to_string(pp, {0})"),
-    "relation_id_to_int": BuiltinTemplate("relation_id_to_int(pp, {0})"),
     "relation_id_to_uint128": BuiltinTemplate("relation_id_to_uint128(pp, {0})"),
     "start_pretty_fragment": BuiltinTemplate("{0}", ["start_pretty_fragment(pp, {0})"]),
 }
@@ -238,9 +230,6 @@ GO_TEMPLATES: dict[str, BuiltinTemplate] = {
     "list_sort": BuiltinTemplate("listSort({0})"),
     "fragment_id_from_string": BuiltinTemplate("&pb.FragmentId{{Id: []byte({0})}}"),
     "relation_id_from_string": BuiltinTemplate("p.relationIdFromString({0})"),
-    "relation_id_from_int": BuiltinTemplate(
-        "&pb.RelationId{{IdLow: uint64({0}) & 0xFFFFFFFFFFFFFFFF, IdHigh: uint64({0}) >> 64 & 0xFFFFFFFFFFFFFFFF}}"
-    ),
     "relation_id_from_uint128": BuiltinTemplate(
         "&pb.RelationId{{IdLow: {0}.Low, IdHigh: {0}.High}}"
     ),
@@ -282,7 +271,6 @@ GO_TEMPLATES: dict[str, BuiltinTemplate] = {
     "decode_string": BuiltinTemplate("string({0})"),
     "fragment_id_to_string": BuiltinTemplate("p.fragmentIdToString({0})"),
     "relation_id_to_string": BuiltinTemplate("p.relationIdToString({0})"),
-    "relation_id_to_int": BuiltinTemplate("p.relationIdToInt({0})"),
     "relation_id_to_uint128": BuiltinTemplate("p.relationIdToUint128({0})"),
 }
 
