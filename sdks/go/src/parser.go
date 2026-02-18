@@ -3829,11 +3829,12 @@ func (p *Parser) parse_export_csv_column() *pb.ExportCSVColumn {
 
 
 // Parse parses the input string and returns the result
-func Parse(input string) (*pb.Transaction, error) {
+func Parse(input string) (result *pb.Transaction, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			if pe, ok := r.(ParseError); ok {
-				panic(pe)
+				err = pe
+				return
 			}
 			panic(r)
 		}
@@ -3841,7 +3842,7 @@ func Parse(input string) (*pb.Transaction, error) {
 
 	lexer := NewLexer(input)
 	parser := NewParser(lexer.tokens)
-	result := parser.parse_transaction()
+	result = parser.parse_transaction()
 
 	// Check for unconsumed tokens (except EOF)
 	if parser.pos < len(parser.tokens) {
