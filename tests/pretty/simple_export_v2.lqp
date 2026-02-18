@@ -14,7 +14,9 @@
                   (primitive :rel_primitive_eq col2 "hello"))
                 (and
                   (primitive :rel_primitive_eq col1 2)
-                  (primitive :rel_primitive_eq col2 "world"))))))))
+                  (primitive :rel_primitive_eq col2 "world"))))
+            (attrs
+              (attribute :csv_export))))))
     (reads
       (export
         (export_csv_config_v2
