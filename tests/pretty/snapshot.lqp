@@ -1,45 +1,40 @@
 (transaction
-  (configure
-    { :ivm.maintenance_level "off"
-      :semantics_version 0})
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
   (epoch
     (writes
       (define
-        (fragment :snapshots
+        (fragment
+          :snapshots
           (rel_edb :snapshot1 ["my_edb"] [])
           (rel_edb :snapshot2 ["database" "table"] [])
           (rel_edb :snapshot3 ["schema" "namespace" "relation"] [])))
       (define
-        (fragment :frag1
-          (def :my_rel
-            ([x::INT y::STRING]
-              (and
-                (primitive :rel_primitive_eq x 1)
-                (primitive :rel_primitive_eq y "hello"))))
+        (fragment
+          :frag1
+          (def :my_rel ([x::INT y::STRING] (and (= x 1) (= y "hello"))))
           (csv_data
             (csv_locator
-              (inline_data "id,big_signed,big_unsigned\n1,170141183460469231731687303715884105727,340282366920938463463374607431768211455\n2,-170141183460469231731687303715884105728,0\n3,0,1"))
+              (inline_data
+                "id,big_signed,big_unsigned\n1,170141183460469231731687303715884105727,340282366920938463463374607431768211455\n2,-170141183460469231731687303715884105728,0\n3,0,1"))
             (csv_config
-              { :csv_compression "auto"
-                :csv_decimal_separator "."
-                :csv_delimiter ","
-                :csv_encoding "utf-8"
-                :csv_escapechar "\\"
-                :csv_header_row 1
-                :csv_quotechar "\""
-                :csv_skip 0})
+              {
+               :csv_compression "auto"
+               :csv_decimal_separator "."
+               :csv_delimiter ","
+               :csv_encoding "utf-8"
+               :csv_escapechar "\\"
+               :csv_header_row 1
+               :csv_quotechar "\""
+               :csv_skip 0})
             (columns
               (column "id" :id [INT INT])
               (column "big_signed" :big_signed [INT INT128])
               (column "big_unsigned" :big_unsigned [INT UINT128]))
             (asof "2025-01-01T00:00:00Z"))
-          (algorithm :computed :input
-            (script
-              (assign :computed
-                ([a::INT b::INT]
-                  (and
-                    (atom :input a)
-                    (primitive :rel_primitive_eq b a)))))))))
+          (algorithm
+            :computed
+            :input
+            (script (assign :computed ([a::INT b::INT] (and (atom :input a) (= b a)))))))))
     (reads
       (output :snapshot1 :snapshot1)
       (output :snapshot2 :snapshot2)
