@@ -646,34 +646,6 @@ func (p *Parser) default_configure() *pb.Configure {
 	return _t957
 }
 
-func (p *Parser) _extract_value_boolean(value *pb.Value, default_ bool) bool {
-	if (value != nil && hasProtoField(value, "boolean_value")) {
-		return value.GetBooleanValue()
-	}
-	return default_
-}
-
-func (p *Parser) _extract_value_string(value *pb.Value, default_ string) string {
-	if (value != nil && hasProtoField(value, "string_value")) {
-		return value.GetStringValue()
-	}
-	return default_
-}
-
-func (p *Parser) _try_extract_value_float64(value *pb.Value) *float64 {
-	if (value != nil && hasProtoField(value, "float_value")) {
-		return ptr(value.GetFloatValue())
-	}
-	return nil
-}
-
-func (p *Parser) _try_extract_value_int64(value *pb.Value) *int64 {
-	if (value != nil && hasProtoField(value, "int_value")) {
-		return ptr(value.GetIntValue())
-	}
-	return nil
-}
-
 func (p *Parser) construct_betree_info(key_types []*pb.Type, value_types []*pb.Type, config_dict [][]interface{}) *pb.BeTreeInfo {
 	config := dictFromList(config_dict)
 	_t958 := p._try_extract_value_float64(dictGetValue(config, "betree_config_epsilon"))
@@ -705,41 +677,6 @@ func (p *Parser) construct_betree_info(key_types []*pb.Type, value_types []*pb.T
 	return _t968
 }
 
-func (p *Parser) _try_extract_value_bytes(value *pb.Value) []byte {
-	if (value != nil && hasProtoField(value, "string_value")) {
-		return []byte(value.GetStringValue())
-	}
-	return nil
-}
-
-func (p *Parser) construct_csv_config(config_dict [][]interface{}) *pb.CSVConfig {
-	config := dictFromList(config_dict)
-	_t969 := p._extract_value_int32(dictGetValue(config, "csv_header_row"), 1)
-	header_row := _t969
-	_t970 := p._extract_value_int64(dictGetValue(config, "csv_skip"), 0)
-	skip := _t970
-	_t971 := p._extract_value_string(dictGetValue(config, "csv_new_line"), "")
-	new_line := _t971
-	_t972 := p._extract_value_string(dictGetValue(config, "csv_delimiter"), ",")
-	delimiter := _t972
-	_t973 := p._extract_value_string(dictGetValue(config, "csv_quotechar"), "\"")
-	quotechar := _t973
-	_t974 := p._extract_value_string(dictGetValue(config, "csv_escapechar"), "\"")
-	escapechar := _t974
-	_t975 := p._extract_value_string(dictGetValue(config, "csv_comment"), "")
-	comment := _t975
-	_t976 := p._extract_value_string_list(dictGetValue(config, "csv_missing_strings"), []string{})
-	missing_strings := _t976
-	_t977 := p._extract_value_string(dictGetValue(config, "csv_decimal_separator"), ".")
-	decimal_separator := _t977
-	_t978 := p._extract_value_string(dictGetValue(config, "csv_encoding"), "utf-8")
-	encoding := _t978
-	_t979 := p._extract_value_string(dictGetValue(config, "csv_compression"), "auto")
-	compression := _t979
-	_t980 := &pb.CSVConfig{HeaderRow: header_row, Skip: skip, NewLine: new_line, Delimiter: delimiter, Quotechar: quotechar, Escapechar: escapechar, Comment: comment, MissingStrings: missing_strings, DecimalSeparator: decimal_separator, Encoding: encoding, Compression: compression}
-	return _t980
-}
-
 func (p *Parser) _extract_value_int32(value *pb.Value, default_ int64) int32 {
 	if (value != nil && hasProtoField(value, "int_value")) {
 		return int32(value.GetIntValue())
@@ -747,23 +684,9 @@ func (p *Parser) _extract_value_int32(value *pb.Value, default_ int64) int32 {
 	return int32(default_)
 }
 
-func (p *Parser) _extract_value_string_list(value *pb.Value, default_ []string) []string {
-	if (value != nil && hasProtoField(value, "string_value")) {
-		return []string{value.GetStringValue()}
-	}
-	return default_
-}
-
-func (p *Parser) _extract_value_int64(value *pb.Value, default_ int64) int64 {
-	if (value != nil && hasProtoField(value, "int_value")) {
-		return value.GetIntValue()
-	}
-	return default_
-}
-
-func (p *Parser) _try_extract_value_uint128(value *pb.Value) *pb.UInt128Value {
-	if (value != nil && hasProtoField(value, "uint128_value")) {
-		return value.GetUint128Value()
+func (p *Parser) _try_extract_value_float64(value *pb.Value) *float64 {
+	if (value != nil && hasProtoField(value, "float_value")) {
+		return ptr(value.GetFloatValue())
 	}
 	return nil
 }
@@ -787,32 +710,109 @@ func (p *Parser) construct_configure(config_dict [][]interface{}) *pb.Configure 
 			}
 		}
 	}
-	_t981 := &pb.IVMConfig{Level: maintenance_level}
-	ivm_config := _t981
-	_t982 := p._extract_value_int64(dictGetValue(config, "semantics_version"), 0)
-	semantics_version := _t982
-	_t983 := &pb.Configure{SemanticsVersion: semantics_version, IvmConfig: ivm_config}
-	return _t983
+	_t969 := &pb.IVMConfig{Level: maintenance_level}
+	ivm_config := _t969
+	_t970 := p._extract_value_int64(dictGetValue(config, "semantics_version"), 0)
+	semantics_version := _t970
+	_t971 := &pb.Configure{SemanticsVersion: semantics_version, IvmConfig: ivm_config}
+	return _t971
+}
+
+func (p *Parser) _try_extract_value_uint128(value *pb.Value) *pb.UInt128Value {
+	if (value != nil && hasProtoField(value, "uint128_value")) {
+		return value.GetUint128Value()
+	}
+	return nil
 }
 
 func (p *Parser) export_csv_config(path string, columns []*pb.ExportCSVColumn, config_dict [][]interface{}) *pb.ExportCSVConfig {
 	config := dictFromList(config_dict)
-	_t984 := p._extract_value_int64(dictGetValue(config, "partition_size"), 0)
-	partition_size := _t984
-	_t985 := p._extract_value_string(dictGetValue(config, "compression"), "")
-	compression := _t985
-	_t986 := p._extract_value_boolean(dictGetValue(config, "syntax_header_row"), true)
-	syntax_header_row := _t986
-	_t987 := p._extract_value_string(dictGetValue(config, "syntax_missing_string"), "")
-	syntax_missing_string := _t987
-	_t988 := p._extract_value_string(dictGetValue(config, "syntax_delim"), ",")
-	syntax_delim := _t988
-	_t989 := p._extract_value_string(dictGetValue(config, "syntax_quotechar"), "\"")
-	syntax_quotechar := _t989
-	_t990 := p._extract_value_string(dictGetValue(config, "syntax_escapechar"), "\\")
-	syntax_escapechar := _t990
-	_t991 := &pb.ExportCSVConfig{Path: path, DataColumns: columns, PartitionSize: ptr(partition_size), Compression: ptr(compression), SyntaxHeaderRow: ptr(syntax_header_row), SyntaxMissingString: ptr(syntax_missing_string), SyntaxDelim: ptr(syntax_delim), SyntaxQuotechar: ptr(syntax_quotechar), SyntaxEscapechar: ptr(syntax_escapechar)}
+	_t972 := p._extract_value_int64(dictGetValue(config, "partition_size"), 0)
+	partition_size := _t972
+	_t973 := p._extract_value_string(dictGetValue(config, "compression"), "")
+	compression := _t973
+	_t974 := p._extract_value_boolean(dictGetValue(config, "syntax_header_row"), true)
+	syntax_header_row := _t974
+	_t975 := p._extract_value_string(dictGetValue(config, "syntax_missing_string"), "")
+	syntax_missing_string := _t975
+	_t976 := p._extract_value_string(dictGetValue(config, "syntax_delim"), ",")
+	syntax_delim := _t976
+	_t977 := p._extract_value_string(dictGetValue(config, "syntax_quotechar"), "\"")
+	syntax_quotechar := _t977
+	_t978 := p._extract_value_string(dictGetValue(config, "syntax_escapechar"), "\\")
+	syntax_escapechar := _t978
+	_t979 := &pb.ExportCSVConfig{Path: path, DataColumns: columns, PartitionSize: ptr(partition_size), Compression: ptr(compression), SyntaxHeaderRow: ptr(syntax_header_row), SyntaxMissingString: ptr(syntax_missing_string), SyntaxDelim: ptr(syntax_delim), SyntaxQuotechar: ptr(syntax_quotechar), SyntaxEscapechar: ptr(syntax_escapechar)}
+	return _t979
+}
+
+func (p *Parser) _extract_value_boolean(value *pb.Value, default_ bool) bool {
+	if (value != nil && hasProtoField(value, "boolean_value")) {
+		return value.GetBooleanValue()
+	}
+	return default_
+}
+
+func (p *Parser) _try_extract_value_bytes(value *pb.Value) []byte {
+	if (value != nil && hasProtoField(value, "string_value")) {
+		return []byte(value.GetStringValue())
+	}
+	return nil
+}
+
+func (p *Parser) _extract_value_string(value *pb.Value, default_ string) string {
+	if (value != nil && hasProtoField(value, "string_value")) {
+		return value.GetStringValue()
+	}
+	return default_
+}
+
+func (p *Parser) _extract_value_string_list(value *pb.Value, default_ []string) []string {
+	if (value != nil && hasProtoField(value, "string_value")) {
+		return []string{value.GetStringValue()}
+	}
+	return default_
+}
+
+func (p *Parser) construct_csv_config(config_dict [][]interface{}) *pb.CSVConfig {
+	config := dictFromList(config_dict)
+	_t980 := p._extract_value_int32(dictGetValue(config, "csv_header_row"), 1)
+	header_row := _t980
+	_t981 := p._extract_value_int64(dictGetValue(config, "csv_skip"), 0)
+	skip := _t981
+	_t982 := p._extract_value_string(dictGetValue(config, "csv_new_line"), "")
+	new_line := _t982
+	_t983 := p._extract_value_string(dictGetValue(config, "csv_delimiter"), ",")
+	delimiter := _t983
+	_t984 := p._extract_value_string(dictGetValue(config, "csv_quotechar"), "\"")
+	quotechar := _t984
+	_t985 := p._extract_value_string(dictGetValue(config, "csv_escapechar"), "\"")
+	escapechar := _t985
+	_t986 := p._extract_value_string(dictGetValue(config, "csv_comment"), "")
+	comment := _t986
+	_t987 := p._extract_value_string_list(dictGetValue(config, "csv_missing_strings"), []string{})
+	missing_strings := _t987
+	_t988 := p._extract_value_string(dictGetValue(config, "csv_decimal_separator"), ".")
+	decimal_separator := _t988
+	_t989 := p._extract_value_string(dictGetValue(config, "csv_encoding"), "utf-8")
+	encoding := _t989
+	_t990 := p._extract_value_string(dictGetValue(config, "csv_compression"), "auto")
+	compression := _t990
+	_t991 := &pb.CSVConfig{HeaderRow: header_row, Skip: skip, NewLine: new_line, Delimiter: delimiter, Quotechar: quotechar, Escapechar: escapechar, Comment: comment, MissingStrings: missing_strings, DecimalSeparator: decimal_separator, Encoding: encoding, Compression: compression}
 	return _t991
+}
+
+func (p *Parser) _extract_value_int64(value *pb.Value, default_ int64) int64 {
+	if (value != nil && hasProtoField(value, "int_value")) {
+		return value.GetIntValue()
+	}
+	return default_
+}
+
+func (p *Parser) _try_extract_value_int64(value *pb.Value) *int64 {
+	if (value != nil && hasProtoField(value, "int_value")) {
+		return ptr(value.GetIntValue())
+	}
+	return nil
 }
 
 // --- Parse functions ---

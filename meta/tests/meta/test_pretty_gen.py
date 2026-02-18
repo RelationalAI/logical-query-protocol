@@ -176,9 +176,7 @@ class TestPrettyGenOptionTupleUnwrap:
         assert if_else is not None
 
         get_elems = _collect_nodes(if_else.then_branch, GetElement)
-        assert len(get_elems) == 3, (
-            f"Expected 3 GetElement nodes, got {len(get_elems)}"
-        )
+        assert len(get_elems) == 3, f"Expected 3 GetElement nodes, got {len(get_elems)}"
         indices = sorted(ge.index for ge in get_elems)
         assert indices == [0, 1, 2]
 
@@ -206,8 +204,6 @@ class TestPrettyGenPlainTuple:
         defn = _get_pretty_def(grammar, "pair")
 
         get_elems = _collect_nodes(defn.body, GetElement)
-        assert len(get_elems) == 2, (
-            f"Expected 2 GetElement nodes, got {len(get_elems)}"
-        )
+        assert len(get_elems) == 2, f"Expected 2 GetElement nodes, got {len(get_elems)}"
         indices = sorted(ge.index for ge in get_elems)
         assert indices == [0, 1]
