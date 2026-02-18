@@ -38,6 +38,7 @@ Type expressions (TargetType subclasses):
     FunctionType        - Function type with parameter types and return type
 """
 
+from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Optional
@@ -68,14 +69,13 @@ class TargetNode:
 
 
 @dataclass(frozen=True)
-class TargetExpr(TargetNode):
+class TargetExpr(TargetNode, ABC):
     """Base class for target language expressions."""
 
+    @abstractmethod
     def target_type(self) -> "TargetType":
         """Return the type of this expression."""
-        raise NotImplementedError(
-            f"target_type not implemented for {type(self).__name__}"
-        )
+        ...
 
 
 @dataclass(frozen=True)

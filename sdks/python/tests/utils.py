@@ -21,3 +21,8 @@ def get_all_files(dir, file_extension):
 def get_lqp_input_files():
     """Find all .lqp files in the test inputs directory."""
     return get_all_files(TEST_INPUTS_DIR, ".lqp")
+
+
+def get_bin_input_files():
+    """Find all .bin files in the binary snapshots directory."""
+    return get_all_files(BIN_SNAPSHOTS_DIR, ".bin")

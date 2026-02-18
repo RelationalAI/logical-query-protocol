@@ -4,6 +4,7 @@ This module defines the data structures for representing context-free grammars
 with semantic actions, including support for normalization and left-factoring.
 """
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Optional
 
@@ -28,7 +29,7 @@ if TYPE_CHECKING:
 
 
 @dataclass(frozen=True)
-class Rhs:
+class Rhs(ABC):
     """Base class for right-hand sides of grammar rules.
 
     Rhs nodes represent the right-hand side of a grammar production rule.
@@ -61,11 +62,10 @@ class Rhs:
         # rhs.target_type() returns TupleType([String, List[proto.Expr]])
     """
 
+    @abstractmethod
     def target_type(self) -> TargetType:
         """Return the target type for this RHS element."""
-        raise NotImplementedError(
-            f"target_type not implemented for {type(self).__name__}"
-        )
+        ...
 
 
 @dataclass(frozen=True)

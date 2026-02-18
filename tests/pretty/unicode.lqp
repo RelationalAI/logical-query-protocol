@@ -11,14 +11,14 @@
                 "id,name,city,greeting\n1,François,Paris,Bonjour\n2,田中,東京,こんにちは\n3,Müller,München,Grüß Gott\n4,Иван,Москва,Привет"))
             (csv_config
               {
-              :csv_compression "auto"
-              :csv_decimal_separator "."
-              :csv_delimiter ","
-              :csv_encoding "utf-8"
-              :csv_escapechar "\\"
-              :csv_header_row 1
-              :csv_quotechar "\""
-              :csv_skip 0})
+               :csv_compression "auto"
+               :csv_decimal_separator "."
+               :csv_delimiter ","
+               :csv_encoding "utf-8"
+               :csv_escapechar "\\"
+               :csv_header_row 1
+               :csv_quotechar "\""
+               :csv_skip 0})
             (columns
               (column "id" :id [INT INT])
               (column "name" :name [INT STRING])

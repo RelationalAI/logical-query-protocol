@@ -231,6 +231,7 @@ register_builtin("newline_io", [], VOID)
 register_builtin("indent_io", [], VOID)
 register_builtin("indent_sexp_io", [], VOID)
 register_builtin("dedent_io", [], VOID)
+register_builtin("try_flat_io", [T, T1], OptionType(STRING))
 
 # === Formatting for terminal types ===
 register_builtin("format_int64", [INT64], STRING)

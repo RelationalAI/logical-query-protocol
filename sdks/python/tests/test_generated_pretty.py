@@ -13,9 +13,9 @@ import pytest
 
 from lqp.gen.parser import parse as generated_parse
 from lqp.gen.pretty import PrettyPrinter, pretty
-from lqp.proto.v1 import fragments_pb2, logic_pb2
+from lqp.proto.v1 import fragments_pb2, logic_pb2, transactions_pb2
 
-from .utils import REPO_ROOT, TEST_INPUTS_DIR, get_lqp_input_files
+from .utils import REPO_ROOT, TEST_INPUTS_DIR, get_bin_input_files, get_lqp_input_files
 
 # ---------------------------------------------------------------------------
 # Roundtrip tests: parse -> pretty -> re-parse, compare protobuf bytes
@@ -408,3 +408,35 @@ class TestOutputContent:
                     f"Trailing whitespace on line {i} of "
                     f"{Path(input_file).name}: {line!r}"
                 )
+
+
+# ---------------------------------------------------------------------------
+# Binary input tests: decode protobuf binary, then pretty-print
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("bin_file", get_bin_input_files())
+def test_pretty_from_binary_snapshot(snapshot, bin_file):
+    """Pretty-printing a decoded binary must match the saved snapshot."""
+    with open(bin_file, "rb") as f:
+        data = f.read()
+    txn = transactions_pb2.Transaction()
+    txn.ParseFromString(data)
+    printed = pretty(txn)
+    snapshot.snapshot_dir = str(REPO_ROOT / "tests" / "pretty")
+    snapshot_filename = os.path.basename(bin_file).replace(".bin", ".lqp")
+    snapshot.assert_match(printed, snapshot_filename)
+
+
+@pytest.mark.parametrize("bin_file", get_bin_input_files())
+def test_pretty_from_binary_roundtrip(bin_file):
+    """Pretty-printed output from binary must re-parse to the same protobuf."""
+    with open(bin_file, "rb") as f:
+        data = f.read()
+    txn = transactions_pb2.Transaction()
+    txn.ParseFromString(data)
+    printed = pretty(txn)
+    re_proto = generated_parse(printed)
+    assert txn.SerializeToString() == re_proto.SerializeToString(), (
+        f"Binary roundtrip failed for {Path(bin_file).name}"
+    )

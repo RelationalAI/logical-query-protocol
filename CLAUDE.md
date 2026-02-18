@@ -14,3 +14,7 @@ Any changes to the protobuf specification will need to be reflected in all SDKs.
 Any changes to the protobuf specification should be covered by tests in `tests/`.
 
 Building and testing of the ProtoBuf code and SDKs is driven by the top-level `Makefile`.
+
+IMPORTANT: Do not edit generated source files directly. Instead edit either the protobuf
+specifications in `proto/` or the meta-tooling in `meta/`.
+

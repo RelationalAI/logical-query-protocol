@@ -52,7 +52,24 @@ from .target import (
     VarType,
     While,
 )
-from .target_builtins import get_builtin
+from .target_builtins import NEVER, get_builtin
+
+
+@dataclass
+class CodegenConfig:
+    """Configuration for parser vs printer code generation."""
+
+    receiver_type: str  # Go method receiver type: "Parser" or "PrettyPrinter"
+    receiver_var: str  # Go receiver variable: "p"
+    first_param: str  # Julia first param: "parser::Parser" or "pp::PrettyPrinter"
+
+
+PARSER_CONFIG = CodegenConfig(
+    receiver_type="Parser", receiver_var="p", first_param="parser::Parser"
+)
+PRINTER_CONFIG = CodegenConfig(
+    receiver_type="PrettyPrinter", receiver_var="p", first_param="pp::PrettyPrinter"
+)
 
 
 @dataclass
@@ -99,10 +116,13 @@ class CodeGenerator(ABC):
     base_type_map: dict[str, str] = {}
 
     def __init__(
-        self, proto_messages: dict[tuple[str, str], Any] | None = None
+        self,
+        proto_messages: dict[tuple[str, str], Any] | None = None,
+        config: CodegenConfig = PARSER_CONFIG,
     ) -> None:
         self.builtin_registry: dict[str, BuiltinSpec] = {}
         self.proto_messages = proto_messages or {}
+        self.config = config
         self._generate_cache: dict[type, Callable] = {}
 
     @abstractmethod
@@ -240,6 +260,9 @@ class CodeGenerator(ABC):
 
     def gen_type(self, typ: TargetType) -> str:
         """Generate a type expression."""
+        assert typ != NEVER, (
+            "BaseType('Never') should never be translated to a target type"
+        )
         if isinstance(typ, BaseType):
             return self.base_type_map.get(typ.name, typ.name)
         elif isinstance(typ, MessageType):
@@ -258,6 +281,8 @@ class CodeGenerator(ABC):
                 self.gen_type(typ.key_type), self.gen_type(typ.value_type)
             )
         elif isinstance(typ, OptionType):
+            if typ.element_type == NEVER:
+                return self.base_type_map.get("Void", "None")
             return self.gen_option_type(self.gen_type(typ.element_type))
         elif isinstance(typ, FunctionType):
             param_types = [self.gen_type(pt) for pt in typ.param_types]
@@ -336,10 +361,11 @@ class CodeGenerator(ABC):
 
     @abstractmethod
     def gen_lambda_start(
-        self, params: list[str], return_type: str | None
+        self, params: list[tuple[str, str | None]], return_type: str | None
     ) -> tuple[str, str]:
         """Generate start of lambda definition.
 
+        params: list of (name, type_str) pairs. type_str may be None.
         Returns (before_body, after_body) strings.
         For Python: ('def _t0():', '')
         For Julia: ('function _t0()', 'end')
@@ -430,11 +456,15 @@ class CodeGenerator(ABC):
 
     # --- Type-based expression classification ---
 
+    @staticmethod
+    def _is_void_type(t: TargetType) -> bool:
+        """Check if a type represents void (no useful return value)."""
+        return isinstance(t, BaseType) and t.name == "Void"
+
     def _is_void_expr(self, expr: TargetExpr) -> bool:
-        """Check if expression has type Void — side-effect only, no value produced."""
+        """Check if expression is side-effect only (no useful return value)."""
         try:
-            t = expr.target_type()
-            return isinstance(t, BaseType) and t.name == "Void"
+            return self._is_void_type(expr.target_type())
         except (NotImplementedError, ValueError, TypeError):
             return False
 
@@ -532,9 +562,7 @@ class CodeGenerator(ABC):
                     lines.append(f"{indent}{stmt}")
                 # Check if builtin returns Never (like error builtins)
                 builtin_sig = get_builtin(expr.func.name)
-                if builtin_sig is not None and builtin_sig.return_type == BaseType(
-                    "Never"
-                ):
+                if builtin_sig is not None and builtin_sig.return_type == NEVER:
                     return None
                 return result.value
 
@@ -690,9 +718,16 @@ class CodeGenerator(ABC):
 
     def _generate_Lambda(self, expr: Lambda, lines: list[str], indent: str) -> str:
         """Generate code for a lambda expression."""
-        params = [self.escape_identifier(p.name) for p in expr.params]
+        params = [
+            (self.escape_identifier(p.name), self.gen_type(p.type) if p.type else None)
+            for p in expr.params
+        ]
         f = gensym()
-        ret_type = self.gen_type(expr.return_type) if expr.return_type else None
+        ret_type = (
+            self.gen_type(expr.return_type)
+            if expr.return_type and not self._is_void_type(expr.return_type)
+            else None
+        )
 
         before, after = self.gen_lambda_start(params, ret_type)
         # Replace placeholder with actual function name
@@ -955,7 +990,11 @@ class CodeGenerator(ABC):
         params = [
             (self.escape_identifier(p.name), self.gen_type(p.type)) for p in expr.params
         ]
-        ret_type = self.gen_type(expr.return_type) if expr.return_type else None
+        ret_type = (
+            self.gen_type(expr.return_type)
+            if expr.return_type and not self._is_void_type(expr.return_type)
+            else None
+        )
 
         header = self.gen_func_def_header(func_name, params, ret_type)
 
