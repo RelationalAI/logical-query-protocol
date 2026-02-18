@@ -1,41 +1,19 @@
 #!/usr/bin/env python3
 """Tests for pretty_gen: generating pretty-printer IR from grammar rules."""
 
-from meta.grammar import (
-    Grammar,
-    LitTerminal,
-    Nonterminal,
-    Rule,
-    Sequence,
-)
+from textwrap import dedent
+
+from meta.grammar import Grammar
 from meta.pretty_gen import generate_pretty_functions
 from meta.target import (
-    BaseType,
     Call,
     GetElement,
     IfElse,
-    Lambda,
     Let,
-    Lit,
-    MessageType,
-    OptionType,
     PrintNonterminalDef,
     Seq,
-    TupleType,
-    Var,
 )
-
-
-def _msg_type(name: str) -> MessageType:
-    return MessageType("proto", name)
-
-
-def _nonterminal(name: str, t=None) -> Nonterminal:
-    return Nonterminal(name, t or BaseType("String"))
-
-
-def _seq(*elems) -> Sequence:
-    return Sequence(tuple(elems))
+from meta.yacc_parser import load_yacc_grammar
 
 
 def _collect_nodes(expr, node_type):
@@ -59,14 +37,6 @@ def _collect_nodes(expr, node_type):
     return results
 
 
-def _make_grammar(start_nt, rules):
-    """Build a Grammar and add rules."""
-    grammar = Grammar(start=start_nt)
-    for rule in rules:
-        grammar.add_rule(rule)
-    return grammar
-
-
 def _find_if_else(expr):
     """Find the first IfElse node in the IR tree."""
     if isinstance(expr, IfElse):
@@ -84,82 +54,71 @@ def _find_if_else(expr):
     return None
 
 
-def _make_guarded_deconstructor(lhs_type, tuple_type):
-    """Build a non-trivial deconstructor returning OptionType(tuple_type).
+def _build_grammar(text):
+    """Parse a grammar string and build a Grammar object."""
+    config = load_yacc_grammar(dedent(text).lstrip())
+    start = None
+    for nt in config.rules:
+        if nt.name == config.start_symbol:
+            start = nt
+            break
+    assert start is not None
+    grammar = Grammar(start=start, function_defs=config.function_defs)
+    for rules in config.rules.values():
+        for rule in rules:
+            grammar.add_rule(rule)
+    return grammar
 
-    The body is a dummy IfElse — pretty_gen only cares about the return type.
-    """
-    dd = Var("_dollar_dollar", lhs_type)
-    return Lambda(
-        [dd],
-        OptionType(tuple_type),
-        # Non-trivial body so pretty_gen doesn't shortcut
-        IfElse(Lit(True), Lit(None), Lit(None)),
-    )
 
-
-def _make_deconstructor(lhs_type, return_type):
-    """Build a non-trivial deconstructor returning return_type."""
-    dd = Var("_dollar_dollar", lhs_type)
-    return Lambda(
-        [dd],
-        return_type,
-        Lit(42),  # Non-trivial body
-    )
+def _get_pretty_def(grammar, name):
+    """Generate pretty functions and return the one for the given nonterminal."""
+    defs = generate_pretty_functions(grammar)
+    matches = [d for d in defs if d.nonterminal.name == name]
+    assert len(matches) == 1, f"Expected 1 def for {name}, got {len(matches)}"
+    return matches[0]
 
 
 class TestPrettyGenOptionTupleUnwrap:
     """Test that guarded alternatives with OptionType(TupleType(...)) properly
     extract tuple fields via GetElement."""
 
+    GRAMMAR_TWO_FIELDS = """\
+        %token STRING String r'"[^"]*"'
+        %token SYMBOL String r'[a-z]+'
+        %nonterm config test.Config
+        %nonterm path String
+        %nonterm source String
+        %start config
+        %%
+        config
+            : "(" "config_v2" path source ")"
+              construct: $$ = test.Config(path=$3, source=$4)
+              deconstruct if True:
+                $3: String = $$.path
+                $4: String = $$.source
+            | "(" "config" path ")"
+              construct: $$ = test.Config(path=$3)
+              deconstruct:
+                $3: String = $$.path
+
+        path
+            : STRING
+
+        source
+            : SYMBOL
+        %%
+    """
+
     def test_guarded_alternative_extracts_tuple_fields(self):
         """When a guarded deconstructor returns Option[Tuple[...]],
         the then-branch should extract individual fields via GetElement."""
-        cfg_type = _msg_type("Config")
-        nt = _nonterminal("config", cfg_type)
+        grammar = _build_grammar(self.GRAMMAR_TWO_FIELDS)
+        defn = _get_pretty_def(grammar, "config")
+        assert isinstance(defn, PrintNonterminalDef)
 
-        guarded_rhs = _seq(
-            LitTerminal("("),
-            LitTerminal("config_v2"),
-            _nonterminal("path", BaseType("String")),
-            _nonterminal("source", BaseType("String")),
-            LitTerminal(")"),
-        )
-        guarded_constructor = Lambda(
-            [Var("p", BaseType("String")), Var("s", BaseType("String"))],
-            cfg_type,
-            Var("result", cfg_type),
-        )
-        tuple_type = TupleType([BaseType("String"), BaseType("String")])
-        guarded_deconstructor = _make_guarded_deconstructor(cfg_type, tuple_type)
-
-        fallback_rhs = _seq(
-            LitTerminal("("),
-            LitTerminal("config"),
-            _nonterminal("path", BaseType("String")),
-            LitTerminal(")"),
-        )
-        fallback_constructor = Lambda(
-            [Var("p", BaseType("String"))],
-            cfg_type,
-            Var("result", cfg_type),
-        )
-        fallback_deconstructor = _make_deconstructor(cfg_type, BaseType("String"))
-
-        grammar = _make_grammar(nt, [
-            Rule(nt, guarded_rhs, guarded_constructor, guarded_deconstructor),
-            Rule(nt, fallback_rhs, fallback_constructor, fallback_deconstructor),
-        ])
-
-        defs = generate_pretty_functions(grammar, proto_messages=None)
-        assert len(defs) == 1
-        assert isinstance(defs[0], PrintNonterminalDef)
-
-        body = defs[0].body
-        if_else = _find_if_else(body)
+        if_else = _find_if_else(defn.body)
         assert if_else is not None, "Expected IfElse for guarded alternative"
 
-        # The then-branch (Some case) should extract fields via GetElement
         get_elems = _collect_nodes(if_else.then_branch, GetElement)
         assert len(get_elems) == 2, (
             f"Expected 2 GetElement nodes for 2 tuple fields, got {len(get_elems)}"
@@ -170,49 +129,12 @@ class TestPrettyGenOptionTupleUnwrap:
     def test_guarded_fallback_has_no_get_element(self):
         """The fallback (None/else) branch with a single field should not
         use GetElement."""
-        cfg_type = _msg_type("Config")
-        nt = _nonterminal("config", cfg_type)
+        grammar = _build_grammar(self.GRAMMAR_TWO_FIELDS)
+        defn = _get_pretty_def(grammar, "config")
 
-        guarded_rhs = _seq(
-            LitTerminal("("),
-            LitTerminal("config_v2"),
-            _nonterminal("path", BaseType("String")),
-            _nonterminal("source", BaseType("String")),
-            LitTerminal(")"),
-        )
-        guarded_constructor = Lambda(
-            [Var("p", BaseType("String")), Var("s", BaseType("String"))],
-            cfg_type,
-            Var("result", cfg_type),
-        )
-        tuple_type = TupleType([BaseType("String"), BaseType("String")])
-        guarded_deconstructor = _make_guarded_deconstructor(cfg_type, tuple_type)
-
-        fallback_rhs = _seq(
-            LitTerminal("("),
-            LitTerminal("config"),
-            _nonterminal("path", BaseType("String")),
-            LitTerminal(")"),
-        )
-        fallback_constructor = Lambda(
-            [Var("p", BaseType("String"))],
-            cfg_type,
-            Var("result", cfg_type),
-        )
-        fallback_deconstructor = _make_deconstructor(cfg_type, BaseType("String"))
-
-        grammar = _make_grammar(nt, [
-            Rule(nt, guarded_rhs, guarded_constructor, guarded_deconstructor),
-            Rule(nt, fallback_rhs, fallback_constructor, fallback_deconstructor),
-        ])
-
-        defs = generate_pretty_functions(grammar, proto_messages=None)
-        body = defs[0].body
-
-        if_else = _find_if_else(body)
+        if_else = _find_if_else(defn.body)
         assert if_else is not None
 
-        # Else-branch (fallback) has single field — no GetElement needed
         get_elems = _collect_nodes(if_else.else_branch, GetElement)
         assert len(get_elems) == 0, (
             f"Expected no GetElement in fallback branch, got {len(get_elems)}"
@@ -220,48 +142,37 @@ class TestPrettyGenOptionTupleUnwrap:
 
     def test_guarded_three_fields(self):
         """Guarded alternative with 3 tuple fields extracts all via GetElement."""
-        cfg_type = _msg_type("ExportConfig")
-        nt = _nonterminal("export_config", cfg_type)
+        grammar = _build_grammar("""\
+            %token STRING String r'"[^"]*"'
+            %token SYMBOL String r'[a-z]+'
+            %nonterm export test.Export
+            %nonterm path String
+            %nonterm source String
+            %nonterm cfg String
+            %start export
+            %%
+            export
+                : "(" "export_v2" path source cfg ")"
+                  construct: $$ = test.Export(path=$3, source=$4, cfg=$5)
+                  deconstruct if True:
+                    $3: String = $$.path
+                    $4: String = $$.source
+                    $5: String = $$.cfg
+                | "(" "export" path ")"
 
-        guarded_rhs = _seq(
-            LitTerminal("("),
-            LitTerminal("export_v2"),
-            _nonterminal("path", BaseType("String")),
-            _nonterminal("source", BaseType("String")),
-            _nonterminal("config", BaseType("String")),
-            LitTerminal(")"),
-        )
-        guarded_constructor = Lambda(
-            [
-                Var("p", BaseType("String")),
-                Var("s", BaseType("String")),
-                Var("c", BaseType("String")),
-            ],
-            cfg_type,
-            Var("result", cfg_type),
-        )
-        tuple_type = TupleType([
-            BaseType("String"), BaseType("String"), BaseType("String"),
-        ])
-        guarded_deconstructor = _make_guarded_deconstructor(cfg_type, tuple_type)
+            path
+                : STRING
 
-        # Fallback: all literals
-        fallback_rhs = _seq(
-            LitTerminal("("),
-            LitTerminal("export"),
-            LitTerminal(")"),
-        )
-        fallback_constructor = Lambda([], cfg_type, Var("result", cfg_type))
+            source
+                : SYMBOL
 
-        grammar = _make_grammar(nt, [
-            Rule(nt, guarded_rhs, guarded_constructor, guarded_deconstructor),
-            Rule(nt, fallback_rhs, fallback_constructor),
-        ])
+            cfg
+                : SYMBOL
+            %%
+        """)
+        defn = _get_pretty_def(grammar, "export")
 
-        defs = generate_pretty_functions(grammar, proto_messages=None)
-        body = defs[0].body
-
-        if_else = _find_if_else(body)
+        if_else = _find_if_else(defn.body)
         assert if_else is not None
 
         get_elems = _collect_nodes(if_else.then_branch, GetElement)
@@ -276,35 +187,25 @@ class TestPrettyGenPlainTuple:
     """Test that non-guarded rules with plain TupleType still extract fields."""
 
     def test_single_rule_tuple_extracts_fields(self):
-        """A single rule with a TupleType deconstructor should extract
+        """A single rule with multiple non-literal elements should extract
         fields via GetElement."""
-        cfg_type = _msg_type("Pair")
-        nt = _nonterminal("pair", cfg_type)
+        grammar = _build_grammar("""\
+            %token STRING String r'"[^"]*"'
+            %token INT Int64 r'[0-9]+'
+            %nonterm pair test.Pair
+            %start pair
+            %%
+            pair
+                : "(" "pair" STRING INT ")"
+                  construct: $$ = test.Pair(first=$3, second=$4)
+                  deconstruct:
+                    $3: String = $$.first
+                    $4: Int64 = $$.second
+            %%
+        """)
+        defn = _get_pretty_def(grammar, "pair")
 
-        rhs = _seq(
-            LitTerminal("("),
-            LitTerminal("pair"),
-            _nonterminal("first", BaseType("String")),
-            _nonterminal("second", BaseType("Int64")),
-            LitTerminal(")"),
-        )
-        constructor = Lambda(
-            [Var("a", BaseType("String")), Var("b", BaseType("Int64"))],
-            cfg_type,
-            Var("result", cfg_type),
-        )
-        tuple_type = TupleType([BaseType("String"), BaseType("Int64")])
-        deconstructor = _make_deconstructor(cfg_type, tuple_type)
-
-        grammar = _make_grammar(nt, [
-            Rule(nt, rhs, constructor, deconstructor),
-        ])
-
-        defs = generate_pretty_functions(grammar, proto_messages=None)
-        assert len(defs) == 1
-        body = defs[0].body
-
-        get_elems = _collect_nodes(body, GetElement)
+        get_elems = _collect_nodes(defn.body, GetElement)
         assert len(get_elems) == 2, (
             f"Expected 2 GetElement nodes, got {len(get_elems)}"
         )
