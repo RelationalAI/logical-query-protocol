@@ -76,7 +76,10 @@ The Python SDK is [deployed to PyPI](https://pypi.org/project/lqp/). Publishing 
 via GitHub Actions: creating a GitHub release triggers a workflow that builds and uploads the
 package to PyPI. To release a new version:
 
-1. Update the version in `sdks/python/pyproject.toml` and merge into `main`.
+1. File a PR that updates the version in `sdks/python/pyproject.toml` and
+   `sdks/julia/LogicalQueryProtocol/Project.toml`. Note that the Go SDK version is
+   automatically determined by the release tag in GitHub.
+2. Get approval and merge into `main`.
 2. Create a new GitHub release from `main` with a tag matching the version (e.g.
    `gh release create v0.3.0 --title "v0.3.0" --generate-notes`). The release must be
    created after merging the version bump, since the workflow checks out the default branch.
