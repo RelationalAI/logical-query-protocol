@@ -241,9 +241,6 @@ def run(args) -> int:
                 f"Generated parser IR written to {args.output}",
             )
         elif args.parser in ("python", "julia", "go"):
-            proto_messages = {
-                (msg.module, name): msg for name, msg in proto_parser.messages.items()
-            }
             command_line = " ".join(
                 ["python -m meta.cli"]
                 + [str(f) for f in args.proto_files]
@@ -286,9 +283,6 @@ def run(args) -> int:
                 f"Generated printer IR written to {args.output}",
             )
         elif args.printer in ("python", "julia"):
-            proto_messages = {
-                (msg.module, name): msg for name, msg in proto_parser.messages.items()
-            }
             command_line = " ".join(
                 ["python -m meta.cli"]
                 + [str(f) for f in args.proto_files]
