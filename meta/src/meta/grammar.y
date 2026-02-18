@@ -36,7 +36,7 @@
 # Token declarations: %token NAME Type PATTERN
 # PATTERN can be r'...' for regex or '...' for fixed string
 %token DECIMAL logic.DecimalValue r'[-]?\d+\.\d+d\d+'
-%token FLOAT Float64 r'[-]?\d+\.\d+|inf|nan'
+%token FLOAT Float64 r'([-]?\d+\.\d+|inf|nan)'
 %token INT Int64 r'[-]?\d+'
 %token INT128 logic.Int128Value r'[-]?\d+i128'
 %token STRING String r'"(?:[^"\\]|\\.)*"'

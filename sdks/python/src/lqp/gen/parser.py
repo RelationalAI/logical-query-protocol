@@ -75,7 +75,7 @@ class Lexer:
             ),
             (
                 "FLOAT",
-                re.compile(r"[-]?\d+\.\d+|inf|nan"),
+                re.compile(r"([-]?\d+\.\d+|inf|nan)"),
                 lambda x: Lexer.scan_float(x),
             ),
             ("INT", re.compile(r"[-]?\d+"), lambda x: Lexer.scan_int(x)),
@@ -132,11 +132,6 @@ class Lexer:
     def scan_symbol(s: str) -> str:
         """Parse SYMBOL token."""
         return s
-
-    @staticmethod
-    def scan_colon_symbol(s: str) -> str:
-        """Parse COLON_SYMBOL token."""
-        return s[1:]
 
     @staticmethod
     def scan_string(s: str) -> str:

@@ -79,7 +79,8 @@ def _generate_pretty_method(
     else:
         body = _generate_pretty_alternatives(rules, msg_param, grammar, proto_messages)
 
-    body = _wrap_with_try_flat(nt, msg_param, body)
+    if not _is_all_literals(rules):
+        body = _wrap_with_try_flat(nt, msg_param, body)
 
     return PrintNonterminalDef(
         nonterminal=nt,
@@ -681,27 +682,52 @@ def _format_terminal(terminal: NamedTerminal, value_var: Var) -> TargetExpr:
 # --- Utility functions ---
 
 
-def _is_trivial_deconstruct(deconstructor: Lambda) -> bool:
-    """Check if a deconstructor is trivial (just returns msg or msg.field)."""
+def _is_all_literals(rules: list[Rule]) -> bool:
+    """Check if all rules produce only literal output (no fields to format)."""
+    for rule in rules:
+        for elem in rhs_elements(rule.rhs):
+            if not isinstance(elem, LitTerminal):
+                return False
+    return True
+
+
+def _is_identity_deconstruct(deconstructor: Lambda) -> bool:
+    """Check if a deconstructor is an identity function (lambda x: x)."""
+    if len(deconstructor.params) != 1:
+        return False
+    return deconstructor.body == deconstructor.params[0]
+
+
+def _is_some_identity_deconstruct(deconstructor: Lambda) -> bool:
+    """Check if a deconstructor is lambda x: some(x)."""
+    if len(deconstructor.params) != 1:
+        return False
     body = deconstructor.body
-    if isinstance(body, Var) and body.name == "msg":
-        return True
-    if (
+    return (
         isinstance(body, Call)
         and isinstance(body.func, Builtin)
         and body.func.name == "some"
         and len(body.args) == 1
-        and isinstance(body.args[0], Var)
-        and body.args[0].name == "msg"
-    ):
-        return True
-    return False
+        and body.args[0] == deconstructor.params[0]
+    )
+
+
+def _is_trivial_deconstruct(deconstructor: Lambda) -> bool:
+    """Check if a deconstructor is trivial (identity or some(identity))."""
+    return _is_identity_deconstruct(deconstructor) or _is_some_identity_deconstruct(
+        deconstructor
+    )
 
 
 def _extract_trivial_deconstruct_result(
     deconstructor: Lambda, msg_param: Var
 ) -> TargetExpr:
-    """Extract the result expression from a trivial deconstructor."""
+    """Extract the result expression from a trivial deconstructor.
+
+    For identity (lambda x: x), returns msg_param directly.
+    For some-identity (lambda x: some(x)), also returns msg_param since
+    the caller handles unwrapping the OptionType.
+    """
     return msg_param
 
 

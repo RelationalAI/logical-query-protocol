@@ -90,7 +90,7 @@ function tokenize!(lexer::Lexer)
         ("LITERAL", r"\|", identity),
         ("LITERAL", r"\}", identity),
         ("DECIMAL", r"[-]?\d+\.\d+d\d+", scan_decimal),
-        ("FLOAT", r"[-]?\d+\.\d+|inf|nan", scan_float),
+        ("FLOAT", r"([-]?\d+\.\d+|inf|nan)", scan_float),
         ("INT", r"[-]?\d+", scan_int),
         ("INT128", r"[-]?\d+i128", scan_int128),
         ("STRING", r"\"(?:[^\"\\]|\\.)*\"", scan_string),
@@ -145,8 +145,6 @@ end
 
 # Scanner functions for each token type
 scan_symbol(s::String) = s
-scan_colon_symbol(s::String) = chop(s, head=1, tail=0)
-
 function scan_string(s::String)
     # Strip quotes using Unicode-safe chop (handles multi-byte characters)
     content = chop(s, head=1, tail=1)
