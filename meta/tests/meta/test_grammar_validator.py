@@ -14,7 +14,6 @@ from meta.grammar import (
     Star,
 )
 from meta.grammar_validator import GrammarValidator
-from meta.target_utils import is_subtype, types_compatible
 from meta.proto_ast import ProtoField, ProtoMessage
 from meta.proto_parser import ProtoParser
 from meta.target import (
@@ -39,6 +38,7 @@ from meta.target import (
     Var,
 )
 from meta.target_builtins import make_builtin
+from meta.target_utils import is_subtype, types_compatible
 
 # Dummy type for test builtins
 _ANY = BaseType("Any")
@@ -1179,25 +1179,19 @@ class TestIsSubtype:
         """List is invariant: List[List[Never]] is NOT a subtype of List[List[Int64]]."""
         never = BaseType("Never")
         int64 = BaseType("Int64")
-        assert not is_subtype(
-            ListType(ListType(never)), ListType(ListType(int64))
-        )
+        assert not is_subtype(ListType(ListType(never)), ListType(ListType(int64)))
 
     def test_nested_option_covariance(self, validator):
         """Option[Option[Never]] <: Option[Option[Int64]]."""
         never = BaseType("Never")
         int64 = BaseType("Int64")
-        assert is_subtype(
-            OptionType(OptionType(never)), OptionType(OptionType(int64))
-        )
+        assert is_subtype(OptionType(OptionType(never)), OptionType(OptionType(int64)))
 
     def test_list_of_option_invariance(self, validator):
         """List is invariant, so List[Option[Never]] is NOT <: List[Option[Int64]]."""
         never = BaseType("Never")
         int64 = BaseType("Int64")
-        assert not is_subtype(
-            ListType(OptionType(never)), ListType(OptionType(int64))
-        )
+        assert not is_subtype(ListType(OptionType(never)), ListType(OptionType(int64)))
 
     def test_sequence_of_option_covariance(self, validator):
         """Sequence[Option[Never]] <: Sequence[Option[Int64]]."""
@@ -1211,9 +1205,7 @@ class TestIsSubtype:
         """Option[List[Never]] is NOT <: Option[List[Int64]] because List is invariant."""
         never = BaseType("Never")
         int64 = BaseType("Int64")
-        assert not is_subtype(
-            OptionType(ListType(never)), OptionType(ListType(int64))
-        )
+        assert not is_subtype(OptionType(ListType(never)), OptionType(ListType(int64)))
 
     def test_option_of_sequence_covariance(self, validator):
         """Option[Sequence[Never]] <: Option[Sequence[Int64]]."""
@@ -1406,9 +1398,7 @@ class TestTypesCompatible:
         ]
         for t1 in types:
             for t2 in types:
-                assert types_compatible(
-                    t1, t2
-                ) == types_compatible(t2, t1)
+                assert types_compatible(t1, t2) == types_compatible(t2, t1)
 
     def test_reflexive(self, validator):
         """types_compatible(t, t) is True."""
@@ -1508,9 +1498,7 @@ class TestTypesCompatible:
         """Sequence[Int64] is not compatible with Sequence[String]."""
         int64 = BaseType("Int64")
         string = BaseType("String")
-        assert not types_compatible(
-            SequenceType(int64), SequenceType(string)
-        )
+        assert not types_compatible(SequenceType(int64), SequenceType(string))
 
     def test_sequence_option_not_compatible(self, validator):
         """Sequence[T] is not compatible with Option[T]."""

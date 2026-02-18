@@ -270,9 +270,7 @@ class GrammarValidator:
             actual_type = self._infer_expr_type(field_expr)
 
             # Check actual type is a subtype of expected type (actual_type <: expected_type)
-            if actual_type is not None and not is_subtype(
-                actual_type, expected_type
-            ):
+            if actual_type is not None and not is_subtype(actual_type, expected_type):
                 self.result.add_error(
                     "field_type",
                     f"In {context}: NewMessage {new_msg.name} field '{field_name}' has type {actual_type}, expected {expected_type}",
@@ -754,9 +752,7 @@ class _ExprTypeChecker(TargetExprVisitor):
     def visit_GetField(self, expr: GetField) -> None:
         self.visit(expr.object)
         obj_type = self._validator._infer_expr_type(expr.object)
-        if obj_type is not None and not is_subtype(
-            obj_type, expr.message_type
-        ):
+        if obj_type is not None and not is_subtype(obj_type, expr.message_type):
             self._validator.result.add_error(
                 "type_field_access",
                 f"In {self._context}: GetField expects object of type {expr.message_type}, got {obj_type}",
