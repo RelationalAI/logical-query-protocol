@@ -63,7 +63,9 @@ def is_subtype(t1: TargetType, t2: TargetType) -> bool:
     - Never <: T for all T (Never is the bottom type)
     - T <: Any for all T (Any is the top type)
     - T <: VarType for all T (type variables are wildcards)
-    - List is covariant: List[A] <: List[B] if A <: B
+    - List is invariant: List[A] <: List[B] iff A == B
+    - List[T] <: Sequence[U] if T <: U
+    - Sequence is covariant: Sequence[A] <: Sequence[B] if A <: B
     - Option is covariant: Option[A] <: Option[B] if A <: B
     - Tuple is covariant: (A1, A2, ...) <: (B1, B2, ...) if Ai <: Bi for all i
     """
@@ -96,6 +98,11 @@ def is_subtype(t1: TargetType, t2: TargetType) -> bool:
             return False
         return all(is_subtype(e1, e2) for e1, e2 in zip(t1.elements, t2.elements))
     return False
+
+
+def types_compatible(t1: TargetType, t2: TargetType) -> bool:
+    """Check if types are compatible (t1 <: t2 or t2 <: t1)."""
+    return is_subtype(t1, t2) or is_subtype(t2, t1)
 
 
 def type_join(t1: TargetType, t2: TargetType) -> TargetType:

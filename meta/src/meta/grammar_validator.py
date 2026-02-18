@@ -56,6 +56,7 @@ from .target import (
     TupleType,
     VarType,
 )
+from .target_utils import is_subtype, types_compatible
 from .target_visitor import TargetExprVisitor
 from .type_env import TypeEnv
 from .validation_result import ValidationResult
@@ -177,7 +178,7 @@ class GrammarValidator:
         # Check each parameter type matches corresponding RHS element type
         # RHS element type should be a subtype of param type (rhs_type <: param_type)
         for i, (param_type, rhs_type) in enumerate(zip(param_types, rhs_types)):
-            if not self._is_subtype(rhs_type, param_type):
+            if not is_subtype(rhs_type, param_type):
                 param_name = rule.constructor.params[i].name
                 self.result.add_error(
                     "type_param",
@@ -192,7 +193,7 @@ class GrammarValidator:
         body_type = self._infer_expr_type(rule.constructor.body)
 
         # If we can infer the body type, check it is a subtype of the declared return type
-        if body_type is not None and not self._is_subtype(body_type, lhs_type):
+        if body_type is not None and not is_subtype(body_type, lhs_type):
             self.result.add_error(
                 "type_return",
                 f"Rule '{rule_name}': lambda body has type {body_type} but LHS expects {lhs_type}",
@@ -269,7 +270,7 @@ class GrammarValidator:
             actual_type = self._infer_expr_type(field_expr)
 
             # Check actual type is a subtype of expected type (actual_type <: expected_type)
-            if actual_type is not None and not self._is_subtype(
+            if actual_type is not None and not is_subtype(
                 actual_type, expected_type
             ):
                 self.result.add_error(
@@ -332,7 +333,7 @@ class GrammarValidator:
                     # Check that types have a common supertype
                     t = arg0_type.element_type
                     u = arg1_type
-                    if not self._types_compatible(t, u):
+                    if not types_compatible(t, u):
                         self.result.add_error(
                             "type_builtin_arg",
                             f"In {context}: builtin 'unwrap_option_or' types {t} and {u} have no common supertype",
@@ -380,7 +381,7 @@ class GrammarValidator:
                     # Check that element types have a common supertype
                     t = arg0_type.element_type
                     u = arg1_type.element_type
-                    if not self._types_compatible(t, u):
+                    if not types_compatible(t, u):
                         self.result.add_error(
                             "type_builtin_arg",
                             f"In {context}: builtin 'list_concat' element types {t} and {u} have no common supertype",
@@ -473,54 +474,6 @@ class GrammarValidator:
 
         visit(rhs)
         return types
-
-    def _is_subtype(self, t1: TargetType, t2: TargetType) -> bool:
-        """Check if t1 is a subtype of t2 (t1 <: t2).
-
-        Subtyping rules:
-        - Reflexivity: T <: T
-        - Never <: T for all T (Never is the bottom type)
-        - T <: Any for all T (Any is the top type)
-        - List[T] <: Sequence[T]
-        - List is invariant: List[A] <: List[B] iff A == B
-        - Sequence is covariant: Sequence[A] <: Sequence[B] if A <: B
-        - Option is covariant: Option[A] <: Option[B] if A <: B
-        - Tuple is covariant: (A1, A2, ...) <: (B1, B2, ...) if Ai <: Bi for all i
-        """
-        if t1 == t2:
-            return True
-        # Never is a subtype of everything (bottom type)
-        if isinstance(t1, BaseType) and t1.name == "Never":
-            return True
-        # T <: Any for all T (Any is the top type)
-        if isinstance(t2, BaseType) and t2.name == "Any":
-            return True
-        # List[T] <: Sequence[T] (by transitivity with Sequence covariance: List[T] <: Sequence[U] if T <: U)
-        if isinstance(t1, ListType) and isinstance(t2, SequenceType):
-            return self._is_subtype(t1.element_type, t2.element_type)
-        # Sequence is covariant: Sequence[A] <: Sequence[B] if A <: B
-        if isinstance(t1, SequenceType) and isinstance(t2, SequenceType):
-            return self._is_subtype(t1.element_type, t2.element_type)
-        # List is invariant (equality handled by reflexivity above)
-        # Option is covariant: Option[A] <: Option[B] if A <: B
-        if isinstance(t1, OptionType) and isinstance(t2, OptionType):
-            return self._is_subtype(t1.element_type, t2.element_type)
-        # Tuple is covariant: check element-wise
-        if isinstance(t1, TupleType) and isinstance(t2, TupleType):
-            if len(t1.elements) != len(t2.elements):
-                return False
-            return all(
-                self._is_subtype(e1, e2) for e1, e2 in zip(t1.elements, t2.elements)
-            )
-        return False
-
-    def _types_compatible(self, t1: TargetType, t2: TargetType) -> bool:
-        """Check if types are compatible (t1 <: t2 or t2 <: t1).
-
-        Two types are compatible if one is a subtype of the other,
-        meaning they have a common supertype.
-        """
-        return self._is_subtype(t1, t2) or self._is_subtype(t2, t1)
 
     def _check_message_coverage(self) -> None:
         """Check that every proto message has at least one grammar rule producing it.
@@ -801,7 +754,7 @@ class _ExprTypeChecker(TargetExprVisitor):
     def visit_GetField(self, expr: GetField) -> None:
         self.visit(expr.object)
         obj_type = self._validator._infer_expr_type(expr.object)
-        if obj_type is not None and not self._validator._is_subtype(
+        if obj_type is not None and not is_subtype(
             obj_type, expr.message_type
         ):
             self._validator.result.add_error(
