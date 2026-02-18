@@ -580,30 +580,7 @@ class GoCodeGenerator(CodeGenerator):
                     field_value = self.generate_lines(field_expr, lines, indent)
                     assert field_value is not None
                     pascal_field = to_pascal_case(field_name)
-
-                    # Unwrap Option type for struct field assignment
-                    if isinstance(field_expr, Var) and field_expr.type is not None:
-                        if isinstance(field_expr.type, OptionType):
-                            inner_type = self.gen_type(field_expr.type.element_type)
-                            is_nullable = self._is_nullable_go_type(inner_type)
-                            if is_nullable:
-                                zero = "nil"
-                            else:
-                                zero = self._go_zero_values.get(inner_type, "nil")
-                            if is_nullable:
-                                if zero == "nil":
-                                    pass  # already the right value
-                                else:
-                                    tmp = gensym()
-                                    lines.append(f"{indent}{tmp} := {field_value}")
-                                    self.mark_declared(tmp)
-                                    lines.append(f"{indent}if {field_value} == nil {{")
-                                    lines.append(f"{indent}\t{tmp} = {zero}")
-                                    lines.append(f"{indent}}}")
-                                    field_value = tmp
-                            else:
-                                field_value = f"deref({field_value}, {zero})"
-
+                    _, field_value = unwrap_if_option(field_expr, field_value)
                     regular_assignments.append(f"{pascal_field}: {field_value}")
 
         # Generate struct literal with regular fields only
@@ -882,21 +859,19 @@ class GoCodeGenerator(CodeGenerator):
             typed_params.append((escaped_name, type_hint))
             self.mark_declared(escaped_name)
 
-        ret_type = (
-            self.gen_type(return_type) if return_type else "interface{}"
-        )
+        ret_type = self.gen_type(return_type) if return_type else "interface{}"
         self.set_current_return_type(ret_type, return_type)
 
-        header = self.gen_func_def_header(func_name, typed_params, ret_type, is_method=True)
+        header = self.gen_func_def_header(
+            func_name, typed_params, ret_type, is_method=True
+        )
 
         if body is None:
             zero = self._go_zero_values.get(ret_type, "nil")
             body_code = f"{indent}{self.indent_str}return {zero}"
         else:
             body_lines: list[str] = []
-            body_inner = self.generate_lines(
-                body, body_lines, indent + self.indent_str
-            )
+            body_inner = self.generate_lines(body, body_lines, indent + self.indent_str)
             if body_inner is not None:
                 body_lines.append(f"{indent}{self.indent_str}return {body_inner}")
             body_code = "\n".join(body_lines)
@@ -909,13 +884,19 @@ class GoCodeGenerator(CodeGenerator):
     def _generate_parse_def(self, expr: ParseNonterminalDef, indent: str) -> str:
         return self._generate_go_method(
             f"parse_{expr.nonterminal.name}",
-            expr.params, expr.body, expr.return_type, indent,
+            expr.params,
+            expr.body,
+            expr.return_type,
+            indent,
         )
 
     def _generate_pretty_def(self, expr: PrintNonterminalDef, indent: str) -> str:
         return self._generate_go_method(
             f"pretty_{expr.nonterminal.name}",
-            expr.params, expr.body, expr.return_type, indent,
+            expr.params,
+            expr.body,
+            expr.return_type,
+            indent,
         )
 
     def format_literal_token_spec(self, escaped_literal: str) -> str:
@@ -948,7 +929,10 @@ class GoCodeGenerator(CodeGenerator):
     def generate_method_def(self, expr: FunDef, indent: str) -> str:
         return self._generate_go_method(
             self.escape_identifier(expr.name),
-            expr.params, expr.body, expr.return_type, indent,
+            expr.params,
+            expr.body,
+            expr.return_type,
+            indent,
         )
 
 
