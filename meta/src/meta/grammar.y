@@ -178,8 +178,6 @@
 %validator_ignore_completeness BeTreeLocator
 %validator_ignore_completeness BeTreeConfig
 %validator_ignore_completeness ExportCSVColumns
-%validator_ignore_completeness ExportCSVSource
-%validator_ignore_completeness CSVConfig
 
 %%
 
