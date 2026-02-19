@@ -272,7 +272,7 @@ class TestRelationIdLookup:
     def test_relation_id_to_string_without_debug_info(self):
         pp = PrettyPrinter()
         msg = logic_pb2.RelationId(id_low=42, id_high=0)
-        assert pp.relation_id_to_string(msg) == ""
+        assert pp.relation_id_to_string(msg) is None
 
     def test_fragment_id_to_string(self):
         pp = PrettyPrinter()

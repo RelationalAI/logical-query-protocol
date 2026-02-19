@@ -1384,15 +1384,15 @@ def deconstruct_export_csv_config(msg: transactions.ExportCSVConfig) -> List[Tup
 
 
 def deconstruct_relation_id_string(msg: logic.RelationId) -> Optional[String]:
-    name: String = builtin.relation_id_to_string(msg)
-    if name != "":
-        return name
+    name: Optional[String] = builtin.relation_id_to_string(msg)
+    if name is not None:
+        return builtin.unwrap_option(name)
     return None
 
 
 def deconstruct_relation_id_uint128(msg: logic.RelationId) -> Optional[logic.UInt128Value]:
-    name: String = builtin.relation_id_to_string(msg)
-    if name == "":
+    name: Optional[String] = builtin.relation_id_to_string(msg)
+    if name is None:
         return builtin.relation_id_to_uint128(msg)
     return None
 

@@ -164,11 +164,11 @@ class PrettyPrinter:
         for rid, name in zip(debug_info.ids, debug_info.orig_names):
             self._debug_info[(rid.id_low, rid.id_high)] = name
 
-    def relation_id_to_string(self, msg: logic_pb2.RelationId) -> str:
+    def relation_id_to_string(self, msg: logic_pb2.RelationId) -> str | None:
         """Convert RelationId to string representation using debug info."""
         if not self.print_symbolic_relation_ids:
-            return ""
-        return self._debug_info.get((msg.id_low, msg.id_high), "")
+            return None
+        return self._debug_info.get((msg.id_low, msg.id_high), None)
 
     def relation_id_to_uint128(self, msg: logic_pb2.RelationId) -> logic_pb2.UInt128Value:
         """Convert RelationId to UInt128Value representation."""
@@ -322,7 +322,8 @@ class PrettyPrinter:
 
     def deconstruct_relation_id_string(self, msg: logic_pb2.RelationId) -> Optional[str]:
         name = self.relation_id_to_string(msg)
-        if name != "":
+        if name is not None:
+            assert name is not None
             return name
         else:
             _t1689 = None
@@ -330,7 +331,7 @@ class PrettyPrinter:
 
     def deconstruct_relation_id_uint128(self, msg: logic_pb2.RelationId) -> Optional[logic_pb2.UInt128Value]:
         name = self.relation_id_to_string(msg)
-        if name == "":
+        if name is None:
             return self.relation_id_to_uint128(msg)
         else:
             _t1690 = None

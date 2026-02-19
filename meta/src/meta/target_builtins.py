@@ -190,7 +190,9 @@ register_builtin(
     [MessageType("logic", "UInt128Value")],
     MessageType("logic", "RelationId"),
 )
-register_builtin("relation_id_to_string", [MessageType("logic", "RelationId")], STRING)
+register_builtin(
+    "relation_id_to_string", [MessageType("logic", "RelationId")], OptionType(STRING)
+)
 register_builtin(
     "relation_id_to_uint128",
     [MessageType("logic", "RelationId")],

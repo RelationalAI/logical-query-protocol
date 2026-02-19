@@ -233,26 +233,17 @@ func (p *PrettyPrinter) startPrettyFragment(msg *pb.Fragment) {
 }
 
 // relationIdToString looks up a RelationId in the debug info map.
-func (p *PrettyPrinter) relationIdToString(msg *pb.RelationId) string {
+func (p *PrettyPrinter) relationIdToString(msg *pb.RelationId) *string {
 	if !p.printSymbolicRelationIds {
-		return ""
+		return nil
 	}
 	key := [2]uint64{msg.GetIdLow(), msg.GetIdHigh()}
 	if name, ok := p.debugInfo[key]; ok {
-		return name
-	}
-	return ""
-}
-
-// relationIdToInt returns a pointer to int64 if the RelationId fits in
-// signed 64-bit range, nil otherwise.
-func (p *PrettyPrinter) relationIdToInt(msg *pb.RelationId) *int64 {
-	if msg.GetIdHigh() == 0 && msg.GetIdLow() <= 0x7FFFFFFFFFFFFFFF {
-		v := int64(msg.GetIdLow())
-		return &v
+		return &name
 	}
 	return nil
 }
+
 
 // relationIdToUint128 converts a RelationId to a UInt128Value.
 func (p *PrettyPrinter) relationIdToUint128(msg *pb.RelationId) *pb.UInt128Value {
@@ -472,8 +463,8 @@ func (p *PrettyPrinter) deconstruct_export_csv_config(msg *pb.ExportCSVConfig) [
 func (p *PrettyPrinter) deconstruct_relation_id_string(msg *pb.RelationId) *string {
 	name := p.relationIdToString(msg)
 	var _t1689 interface{}
-	if name != "" {
-		return ptr(name)
+	if name != nil {
+		return ptr(*name)
 	}
 	_ = _t1689
 	return nil
@@ -482,7 +473,7 @@ func (p *PrettyPrinter) deconstruct_relation_id_string(msg *pb.RelationId) *stri
 func (p *PrettyPrinter) deconstruct_relation_id_uint128(msg *pb.RelationId) *pb.UInt128Value {
 	name := p.relationIdToString(msg)
 	var _t1690 interface{}
-	if name == "" {
+	if name == nil {
 		return p.relationIdToUint128(msg)
 	}
 	_ = _t1690

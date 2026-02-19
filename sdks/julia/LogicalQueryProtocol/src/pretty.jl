@@ -190,9 +190,9 @@ function start_pretty_fragment(pp::PrettyPrinter, msg::Proto.Fragment)::Nothing
     return nothing
 end
 
-function relation_id_to_string(pp::PrettyPrinter, msg::Proto.RelationId)::String
-    !pp.print_symbolic_relation_ids && return ""
-    return get(pp.debug_info, (msg.id_low, msg.id_high), "")
+function relation_id_to_string(pp::PrettyPrinter, msg::Proto.RelationId)::Union{String,Nothing}
+    !pp.print_symbolic_relation_ids && return nothing
+    return get(pp.debug_info, (msg.id_low, msg.id_high), nothing)
 end
 
 function relation_id_to_uint128(pp::PrettyPrinter, msg::Proto.RelationId)
@@ -361,7 +361,7 @@ end
 
 function deconstruct_relation_id_string(pp::PrettyPrinter, msg::Proto.RelationId)::Union{Nothing, String}
     name = relation_id_to_string(pp, msg)
-    if name != ""
+    if !isnothing(name)
         return name
     else
         _t1721 = nothing
@@ -371,7 +371,7 @@ end
 
 function deconstruct_relation_id_uint128(pp::PrettyPrinter, msg::Proto.RelationId)::Union{Nothing, Proto.UInt128Value}
     name = relation_id_to_string(pp, msg)
-    if name == ""
+    if isnothing(name)
         return relation_id_to_uint128(pp, msg)
     else
         _t1722 = nothing
