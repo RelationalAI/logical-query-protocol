@@ -241,6 +241,13 @@ register_builtin("format_bool", [BOOLEAN], STRING)
 register_builtin("format_decimal", [MessageType("logic", "DecimalValue")], STRING)
 register_builtin("format_int128", [MessageType("logic", "Int128Value")], STRING)
 register_builtin("format_uint128", [MessageType("logic", "UInt128Value")], STRING)
+register_builtin("format_bytes", [BYTES], STRING)
+
+# === Pretty-printing dispatch ===
+register_builtin("pp_dispatch", [T], VOID)
+
+# === Sequence indexing ===
+register_builtin("get_at", [SequenceType(T), INT64], T)
 
 
 # === Validation functions ===

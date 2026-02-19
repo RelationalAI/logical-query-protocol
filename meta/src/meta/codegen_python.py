@@ -155,8 +155,9 @@ class PythonCodeGenerator(CodeGenerator):
     def gen_message_type(self, module: str, name: str) -> str:
         return f"{module}_pb2.{name}"
 
-    def gen_enum_type(self, module: str, name: str) -> str:
-        return f"{module}_pb2.{name}"
+    def gen_enum_type(self, module: str, name: str) -> str:  # noqa: ARG002
+        # Proto3 enums are int-valued in Python; use int for type annotations.
+        return "int"
 
     def gen_enum_value(self, module: str, enum_name: str, value_name: str) -> str:
         return f"{module}_pb2.{enum_name}.{value_name}"
@@ -391,6 +392,38 @@ class PythonCodeGenerator(CodeGenerator):
 
     def format_command_line_comment(self, command_line: str) -> str:
         return f"\nCommand: {command_line}\n"
+
+    def gen_dispatch_function(
+        self, entries: list[tuple[str, str]], enum_entries: list[tuple[str, str]]
+    ) -> str:
+        """Generate the Python isinstance-chain pprint_dispatch method."""
+        indent = self.parse_def_indent
+        bi = indent + self.indent_str
+        lines: list[str] = []
+        lines.append(f"{indent}def pprint_dispatch(self, msg):")
+        first = True
+        for type_str, func_ref in entries:
+            # Skip parameterized types (Sequence[T], tuple[...]) — these are
+            # list-typed grammar nonterminals, not individual proto messages.
+            if "[" in type_str:
+                continue
+            cond = "if" if first else "elif"
+            first = False
+            lines.append(f"{bi}{cond} isinstance(msg, {type_str}):")
+            lines.append(f"{bi}    {func_ref}(msg)")
+        for enum_type, func_ref in enum_entries:
+            # Enums in Python protobuf are ints, so we need type() check
+            cond = "elif" if not first else "if"
+            first = False
+            lines.append(f"{bi}# enum: {enum_type}")
+            lines.append(f"{bi}{cond} isinstance(msg, int):")
+            lines.append(f"{bi}    {func_ref}(msg)")
+        if not first:
+            lines.append(f"{bi}else:")
+            lines.append(
+                f'{bi}    raise ParseError(f"no pretty printer for {{type(msg)}}")'
+            )
+        return "\n".join(lines)
 
 
 def escape_identifier(name: str) -> str:

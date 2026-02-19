@@ -194,7 +194,12 @@ class PrettyPrinter:
     # --- Pretty-print methods ---
 {pretty_nonterminal_defns}
 
+    # --- Auto-generated printers for uncovered proto types ---
+{extra_pretty_defns}
+
+    # --- Dispatch ---
 {pprint_dispatch_defns}
+{dispatch_function}
 
 def pretty(msg: Any, io: Optional[IO[str]] = None, max_width: int = 92) -> str:
     """Pretty print a protobuf message and return the string representation."""

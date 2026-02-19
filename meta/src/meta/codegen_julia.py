@@ -221,9 +221,10 @@ class JuliaCodeGenerator(CodeGenerator):
         return f"Proto.{name}"
 
     def gen_enum_type(self, module: str, name: str) -> str:
+        # EnumX enums: the dispatch type is Proto.EnumName.T
         if name in self.keywords:
-            return f'Proto.var"#{name}"'
-        return f"Proto.{name}"
+            return f'Proto.var"#{name}".T'
+        return f"Proto.{name}.T"
 
     def gen_enum_value(self, module: str, enum_name: str, value_name: str) -> str:
         if enum_name in self.keywords:

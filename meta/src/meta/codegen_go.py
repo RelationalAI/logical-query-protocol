@@ -947,6 +947,25 @@ class GoCodeGenerator(CodeGenerator):
     def format_command_line_comment(self, command_line: str) -> str:
         return f"Command: {command_line}"
 
+    def gen_dispatch_function(
+        self, entries: list[tuple[str, str]], enum_entries: list[tuple[str, str]]
+    ) -> str:
+        """Generate the Go type-switch pprintDispatch method."""
+        lines: list[str] = []
+        lines.append("func (p *PrettyPrinter) pprintDispatch(msg interface{}) {")
+        lines.append("\tswitch m := msg.(type) {")
+        for type_str, func_ref in entries:
+            lines.append(f"\tcase {type_str}:")
+            lines.append(f"\t\t{func_ref}(m)")
+        for enum_type, func_ref in enum_entries:
+            lines.append(f"\tcase {enum_type}:")
+            lines.append(f"\t\t{func_ref}(m)")
+        lines.append("\tdefault:")
+        lines.append('\t\tpanic(fmt.Sprintf("no pretty printer for %T", msg))')
+        lines.append("\t}")
+        lines.append("}")
+        return "\n".join(lines)
+
 
 def escape_identifier(name: str) -> str:
     """Escape a Go identifier if it's a keyword."""

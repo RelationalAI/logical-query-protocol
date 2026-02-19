@@ -358,10 +358,12 @@ def
 relation_id
     : ":" SYMBOL
       construct: $$ = builtin.relation_id_from_string($2)
-      deconstruct: $2: String = deconstruct_relation_id_string($$)
+      deconstruct if builtin.relation_id_to_string($$) is not None:
+        $2: String = deconstruct_relation_id_string($$)
     | UINT128
       construct: $$ = builtin.relation_id_from_uint128($1)
-      deconstruct: $1: logic.UInt128Value = deconstruct_relation_id_uint128($$)
+      deconstruct:
+        $1: logic.UInt128Value = deconstruct_relation_id_uint128($$)
 
 abstraction
     : "(" bindings formula ")"
@@ -1383,11 +1385,9 @@ def deconstruct_export_csv_config(msg: transactions.ExportCSVConfig) -> List[Tup
     return builtin.list_sort(result)
 
 
-def deconstruct_relation_id_string(msg: logic.RelationId) -> Optional[String]:
+def deconstruct_relation_id_string(msg: logic.RelationId) -> String:
     name: Optional[String] = builtin.relation_id_to_string(msg)
-    if name is not None:
-        return builtin.unwrap_option(name)
-    return None
+    return builtin.unwrap_option(name)
 
 
 def deconstruct_relation_id_uint128(msg: logic.RelationId) -> Optional[logic.UInt128Value]:

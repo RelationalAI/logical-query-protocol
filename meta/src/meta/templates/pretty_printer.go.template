@@ -314,6 +314,12 @@ func formatBool(b bool) string {{
 // --- Pretty-print methods ---
 {pretty_nonterminal_defns}
 
+// --- Auto-generated printers for uncovered proto types ---
+{extra_pretty_defns}
+
+// --- Dispatch function ---
+{dispatch_function}
+
 // writeDebugInfo writes accumulated debug info as comments at the end of the output.
 func (p *PrettyPrinter) writeDebugInfo() {{
 	if len(p.debugInfo) == 0 {{

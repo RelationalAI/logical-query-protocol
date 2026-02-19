@@ -217,6 +217,9 @@ end
 # --- Pretty-print functions ---
 {pretty_nonterminal_defns}
 
+# --- Auto-generated printers for uncovered proto types ---
+{extra_pretty_defns}
+
 # --- pprint dispatch (generated) ---
 {pprint_dispatch_defns}
 

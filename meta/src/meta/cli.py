@@ -52,57 +52,6 @@ _PRINTER_GENERATORS = {
 _LANGUAGES = sorted(set(_PARSER_GENERATORS) | set(_PRINTER_GENERATORS))
 
 
-def _gen_parser_python(grammar, command_line, proto_messages):
-    from .parser_gen_python import generate_parser_python
-
-    return generate_parser_python(grammar, command_line, proto_messages)
-
-
-def _gen_parser_julia(grammar, command_line, proto_messages):
-    from .parser_gen_julia import generate_parser_julia
-
-    return generate_parser_julia(grammar, command_line, proto_messages)
-
-
-def _gen_parser_go(grammar, command_line, proto_messages):
-    from .parser_gen_go import generate_parser_go
-
-    return generate_parser_go(grammar, command_line, proto_messages)
-
-
-def _gen_printer_python(grammar, command_line, proto_messages):
-    from .pretty_gen_python import generate_pretty_printer_python
-
-    return generate_pretty_printer_python(grammar, command_line, proto_messages)
-
-
-def _gen_printer_julia(grammar, command_line, proto_messages):
-    from .pretty_gen_julia import generate_pretty_printer_julia
-
-    return generate_pretty_printer_julia(grammar, command_line, proto_messages)
-
-
-def _gen_printer_go(grammar, command_line, proto_messages):
-    from .pretty_gen_go import generate_pretty_printer_go
-
-    return generate_pretty_printer_go(grammar, command_line, proto_messages)
-
-
-_PARSER_GENERATORS = {
-    "python": _gen_parser_python,
-    "julia": _gen_parser_julia,
-    "go": _gen_parser_go,
-}
-
-_PRINTER_GENERATORS = {
-    "python": _gen_printer_python,
-    "julia": _gen_printer_julia,
-    "go": _gen_printer_go,
-}
-
-_LANGUAGES = sorted(set(_PARSER_GENERATORS) | set(_PRINTER_GENERATORS))
-
-
 def parse_args():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
@@ -347,7 +296,9 @@ def run(args) -> int:
                 + ["--printer", args.printer]
             )
             gen_fn = _PRINTER_GENERATORS[args.printer]
-            output_text = gen_fn(grammar, command_line, proto_messages)
+            output_text = gen_fn(
+                grammar, command_line, proto_messages, proto_enums=proto_parser.enums
+            )
             write_output(
                 output_text,
                 args.output,

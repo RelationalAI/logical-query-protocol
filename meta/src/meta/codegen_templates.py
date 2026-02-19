@@ -103,6 +103,9 @@ PYTHON_TEMPLATES: dict[str, BuiltinTemplate] = {
     "start_pretty_fragment": BuiltinTemplate(
         "{0}", ["self.start_pretty_fragment({0})"]
     ),
+    "format_bytes": BuiltinTemplate('"0x" + {0}.hex()'),
+    "pp_dispatch": BuiltinTemplate("None", ["self.pprint_dispatch({0})"]),
+    "get_at": BuiltinTemplate("{0}[{1}]"),
 }
 
 
@@ -185,6 +188,9 @@ JULIA_TEMPLATES: dict[str, BuiltinTemplate] = {
     "relation_id_to_string": BuiltinTemplate("relation_id_to_string(pp, {0})"),
     "relation_id_to_uint128": BuiltinTemplate("relation_id_to_uint128(pp, {0})"),
     "start_pretty_fragment": BuiltinTemplate("{0}", ["start_pretty_fragment(pp, {0})"]),
+    "format_bytes": BuiltinTemplate('"0x" * bytes2hex({0})'),
+    "pp_dispatch": BuiltinTemplate("nothing", ["_pprint_dispatch(pp, {0})"]),
+    "get_at": BuiltinTemplate("{0}[{1} + 1]"),
 }
 
 
@@ -271,6 +277,9 @@ GO_TEMPLATES: dict[str, BuiltinTemplate] = {
     "relation_id_to_string": BuiltinTemplate("p.relationIdToString({0})"),
     "relation_id_to_uint128": BuiltinTemplate("p.relationIdToUint128({0})"),
     "start_pretty_fragment": BuiltinTemplate("{0}", ["p.startPrettyFragment({0})"]),
+    "format_bytes": BuiltinTemplate('fmt.Sprintf("0x%x", {0})'),
+    "pp_dispatch": BuiltinTemplate("nil", ["p.pprintDispatch({0})"]),
+    "get_at": BuiltinTemplate("{0}[{1}]"),
 }
 
 __all__ = [
