@@ -6,28 +6,32 @@
         (fragment
           :f1
           (algorithm
-            0xa791366f6f620125
-            0xd653b016db1da8f5
+            0x0000000000000000a791366f6f620125
+            0x0000000000000000d653b016db1da8f5
             (script
               (loop
                 (init
                   (assign
-                    0xa791366f6f620125
+                    0x0000000000000000a791366f6f620125
                     ([a::INT b::INT] (or (and (= a 1) (= b 2)) (and (= a 2) (= b 3)))))
                   (assign
-                    0xd653b016db1da8f5
+                    0x0000000000000000d653b016db1da8f5
                     ([a::INT b::INT] (or (and (= a 1) (= b 2)) (and (= a 2) (= b 3)))))
-                  (assign 0xa25513c7e0f6eaa8 ([a::INT b::INT] (and (= a 1) (= b 3))))
-                  (assign 0x9cdc6c47aa193ae7 ([] (false))))
+                  (assign
+                    0x0000000000000000a25513c7e0f6eaa8
+                    ([a::INT b::INT] (and (= a 1) (= b 3))))
+                  (assign 0x00000000000000009cdc6c47aa193ae7 ([] (false))))
                 (script
                   (upsert
-                    0xa791366f6f620125
-                    ([a::INT b::INT] (atom 0xa25513c7e0f6eaa8 a b)))
+                    0x0000000000000000a791366f6f620125
+                    ([a::INT b::INT] (atom 0x0000000000000000a25513c7e0f6eaa8 a b)))
                   (upsert
-                    0xd653b016db1da8f5
-                    ([a::INT | b::INT] (atom 0xa25513c7e0f6eaa8 a b)))
-                  (break 0x9cdc6c47aa193ae7 ([] (true))))))))))
-    (reads (output :R1 0xa791366f6f620125) (output :R2 0xd653b016db1da8f5))))
+                    0x0000000000000000d653b016db1da8f5
+                    ([a::INT | b::INT] (atom 0x0000000000000000a25513c7e0f6eaa8 a b)))
+                  (break 0x00000000000000009cdc6c47aa193ae7 ([] (true))))))))))
+    (reads
+      (output :R1 0x0000000000000000a791366f6f620125)
+      (output :R2 0x0000000000000000d653b016db1da8f5))))
 
 ;; Debug information
 ;; -----------------------

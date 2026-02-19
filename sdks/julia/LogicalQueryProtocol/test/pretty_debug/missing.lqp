@@ -5,9 +5,11 @@
       (define
         (fragment
           :f1
-          (def 0xf032dded6d0944fa ([v::MISSING] (= missing v)))
-          (def 0x6b1d74b99dae825f ([v::STRING] (= "missing" v))))))
-    (reads (output :miss1 0xf032dded6d0944fa) (output :miss2 0x6b1d74b99dae825f))))
+          (def 0x0000000000000000f032dded6d0944fa ([v::MISSING] (= missing v)))
+          (def 0x00000000000000006b1d74b99dae825f ([v::STRING] (= "missing" v))))))
+    (reads
+      (output :miss1 0x0000000000000000f032dded6d0944fa)
+      (output :miss2 0x00000000000000006b1d74b99dae825f))))
 
 ;; Debug information
 ;; -----------------------

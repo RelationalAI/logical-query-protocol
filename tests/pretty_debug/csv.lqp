@@ -18,9 +18,9 @@
                :csv_quotechar "\""
                :csv_skip 0})
             (columns
-              (column "user_id" 0xf89d6b6960453241 [INT])
-              (column "name" 0x2e0d0e00d49ec4d3 [STRING])
-              (column "score" 0xd080921d895bacdb [FLOAT]))
+              (column "user_id" 0x0000000000000000f89d6b6960453241 [INT])
+              (column "name" 0x00000000000000002e0d0e00d49ec4d3 [STRING])
+              (column "score" 0x0000000000000000d080921d895bacdb [FLOAT]))
             (asof "2025-01-01T00:00:00Z"))
           (csv_data
             (csv_locator (paths "https://example.com/data.csv"))
@@ -37,8 +37,8 @@
                :csv_quotechar "'"
                :csv_skip 1})
             (columns
-              (column "timestamp" 0x44ad63f60af0f6db [DATETIME])
-              (column "value" 0x97dfc65f74283f60 [(DECIMAL 18 4)]))
+              (column "timestamp" 0x000000000000000044ad63f60af0f6db [DATETIME])
+              (column "value" 0x000000000000000097dfc65f74283f60 [(DECIMAL 18 4)]))
             (asof "2025-01-15T12:00:00Z"))
           (csv_data
             (csv_locator (inline_data "user_id,name,score\n1,Alice,95.5\n2,Bob,87.3"))
@@ -53,9 +53,9 @@
                :csv_quotechar "\""
                :csv_skip 0})
             (columns
-              (column "user_id" 0x1802f277114b102f [INT])
-              (column "name" 0x26ce8135e472b083 [STRING])
-              (column "score" 0x1fbccc1771050306 [FLOAT]))
+              (column "user_id" 0x00000000000000001802f277114b102f [INT])
+              (column "name" 0x000000000000000026ce8135e472b083 [STRING])
+              (column "score" 0x00000000000000001fbccc1771050306 [FLOAT]))
             (asof "2025-01-01T00:00:00Z"))
           (csv_data
             (csv_locator (paths "/local/path/data.csv"))
@@ -70,8 +70,8 @@
                :csv_quotechar "\""
                :csv_skip 0})
             (columns
-              (column "id" 0xbd9cecd5353749e9 [INT STRING])
-              (column "data" 0x450b548547f965e [STRING FLOAT BOOLEAN]))
+              (column "id" 0x0000000000000000bd9cecd5353749e9 [INT STRING])
+              (column "data" 0x00000000000000000450b548547f965e [STRING FLOAT BOOLEAN]))
             (asof "2025-02-01T00:00:00Z"))
           (csv_data
             (csv_locator (paths "data/infer.csv"))
@@ -86,22 +86,22 @@
                :csv_quotechar "\""
                :csv_skip 0})
             (columns
-              (column "col1" 0xd7ccbace08a86f7d [])
-              (column "col2" 0x59fd8313b61172d2 []))
+              (column "col1" 0x0000000000000000d7ccbace08a86f7d [])
+              (column "col2" 0x000000000000000059fd8313b61172d2 []))
             (asof "2025-03-01T00:00:00Z")))))
     (reads
-      (output :user_id 0xf89d6b6960453241)
-      (output :user_name 0x2e0d0e00d49ec4d3)
-      (output :user_score 0xd080921d895bacdb)
-      (output :ts 0x44ad63f60af0f6db)
-      (output :val 0x97dfc65f74283f60)
-      (output :inline_user_id 0x1802f277114b102f)
-      (output :inline_user_name 0x26ce8135e472b083)
-      (output :inline_user_score 0x1fbccc1771050306)
-      (output :multi_id 0xbd9cecd5353749e9)
-      (output :multi_data 0x450b548547f965e)
-      (output :inferred1 0xd7ccbace08a86f7d)
-      (output :inferred2 0x59fd8313b61172d2))))
+      (output :user_id 0x0000000000000000f89d6b6960453241)
+      (output :user_name 0x00000000000000002e0d0e00d49ec4d3)
+      (output :user_score 0x0000000000000000d080921d895bacdb)
+      (output :ts 0x000000000000000044ad63f60af0f6db)
+      (output :val 0x000000000000000097dfc65f74283f60)
+      (output :inline_user_id 0x00000000000000001802f277114b102f)
+      (output :inline_user_name 0x000000000000000026ce8135e472b083)
+      (output :inline_user_score 0x00000000000000001fbccc1771050306)
+      (output :multi_id 0x0000000000000000bd9cecd5353749e9)
+      (output :multi_data 0x00000000000000000450b548547f965e)
+      (output :inferred1 0x0000000000000000d7ccbace08a86f7d)
+      (output :inferred2 0x000000000000000059fd8313b61172d2))))
 
 ;; Debug information
 ;; -----------------------

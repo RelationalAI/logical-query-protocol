@@ -27,7 +27,11 @@
                (= v 170141183460469231731687303715884105727i128))))
           (def
             :uint128
-            ([v::UINT128] (or (= v 0x0) (= v 0x1) (= v 0xffffffffffffffffffffffffffffffff))))
+            ([v::UINT128]
+             (or
+               (= v 0x00000000000000000000000000000000)
+               (= v 0x00000000000000000000000000000001)
+               (= v 0xffffffffffffffffffffffffffffffff))))
           (def :float ([v::FLOAT] (or (= v -4.5) (= v -4.4) (= v 4.4) (= v 4.5))))
           (def
             :date

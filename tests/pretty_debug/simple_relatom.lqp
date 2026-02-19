@@ -5,9 +5,13 @@
       (define
         (fragment
           :f1
-          (def 0x2c26b46b68ffc68f ([x::INT] (relatom :hello x)))
-          (def 0xfcde2b2edba56bf4 ([x::INT y::STRING] (relatom :bar #"sp_str" x #123 y))))))
-    (reads (output :foo 0x2c26b46b68ffc68f) (output :bar 0xfcde2b2edba56bf4))))
+          (def 0x00000000000000002c26b46b68ffc68f ([x::INT] (relatom :hello x)))
+          (def
+            0x0000000000000000fcde2b2edba56bf4
+            ([x::INT y::STRING] (relatom :bar #"sp_str" x #123 y))))))
+    (reads
+      (output :foo 0x00000000000000002c26b46b68ffc68f)
+      (output :bar 0x0000000000000000fcde2b2edba56bf4))))
 
 ;; Debug information
 ;; -----------------------

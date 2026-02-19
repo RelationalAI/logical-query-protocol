@@ -13,7 +13,7 @@
              (and
                (= row_1 "b")
                (primitive :rel_primitive_parse_decimal #64 #6 "12.12" row_2)
-               (= row_3 0x123abc)
+               (= row_3 0x00000000000000000000000000123abc)
                (= row_4 1.234)
                (= v 6.1))))
           (def
@@ -22,7 +22,7 @@
              (and
                (= row_1 "b")
                (primitive :rel_primitive_parse_decimal #64 #6 "12.12" row_2)
-               (= row_3 0x123abc)
+               (= row_3 0x00000000000000000000000000123abc)
                (= row_4 1.234)
                (= v 123)))))))
     (reads

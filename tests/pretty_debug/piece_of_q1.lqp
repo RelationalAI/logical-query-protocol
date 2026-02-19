@@ -6,7 +6,7 @@
         (fragment
           :f1
           (def
-            0x92a5dc04bd6f9fb8
+            0x000000000000000092a5dc04bd6f9fb8
             ([_lineitem::UINT128
               _lineitem_l_returnflag::STRING
               _lineitem_l_linestatus::STRING]

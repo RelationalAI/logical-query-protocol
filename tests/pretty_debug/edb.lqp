@@ -6,7 +6,7 @@
         (fragment
           :f1
           (betree_relation
-            0xa9e35fa05f07f5bc
+            0x0000000000000000a9e35fa05f07f5bc
             (betree_info
               (key_types INT)
               (value_types STRING INT)
@@ -16,10 +16,10 @@
                :betree_config_max_leaf 16
                :betree_config_max_pivots 4
                :betree_locator_element_count 0
-               :betree_locator_root_pageid 0x1234567890123456789012
+               :betree_locator_root_pageid 0x00000000001234567890123456789012
                :betree_locator_tree_height 0}))
           (betree_relation
-            0x9cc5c01c151a49f3
+            0x00000000000000009cc5c01c151a49f3
             (betree_info
               (key_types INT STRING)
               (value_types FLOAT)
@@ -29,10 +29,10 @@
                :betree_config_max_leaf 32
                :betree_config_max_pivots 8
                :betree_locator_element_count 100
-               :betree_locator_root_pageid 0xabcdef1234567890abcdef
+               :betree_locator_root_pageid 0x0000000000abcdef1234567890abcdef
                :betree_locator_tree_height 2}))
           (betree_relation
-            0x22ee775a8c966d84
+            0x000000000000000022ee775a8c966d84
             (betree_info
               (key_types UINT128)
               (value_types INT FLOAT (DECIMAL 18 4))
@@ -42,10 +42,10 @@
                :betree_config_max_leaf 64
                :betree_config_max_pivots 10
                :betree_locator_element_count 500
-               :betree_locator_root_pageid 0xfedcba9876543210fedcba
+               :betree_locator_root_pageid 0x0000000000fedcba9876543210fedcba
                :betree_locator_tree_height 3}))
           (betree_relation
-            0x927cb0b0096c1296
+            0x0000000000000000927cb0b0096c1296
             (betree_info
               (key_types DATE)
               (value_types DATETIME STRING)
@@ -55,10 +55,10 @@
                :betree_config_max_leaf 48
                :betree_config_max_pivots 6
                :betree_locator_element_count 250
-               :betree_locator_root_pageid 0x9999888877776666555544
+               :betree_locator_root_pageid 0x00000000009999888877776666555544
                :betree_locator_tree_height 2}))
           (betree_relation
-            0xe52f262b796e7dd2
+            0x0000000000000000e52f262b796e7dd2
             (betree_info
               (key_types STRING)
               (value_types BOOLEAN MISSING)
@@ -68,10 +68,10 @@
                :betree_config_max_leaf 20
                :betree_config_max_pivots 5
                :betree_locator_element_count 75
-               :betree_locator_root_pageid 0x1111222233334444555566
+               :betree_locator_root_pageid 0x00000000001111222233334444555566
                :betree_locator_tree_height 1}))
           (betree_relation
-            0x67a0ea198e6e91f9
+            0x000000000000000067a0ea198e6e91f9
             (betree_info
               (key_types INT STRING)
               (value_types)
@@ -81,22 +81,28 @@
                :betree_config_max_leaf 40
                :betree_config_max_pivots 12
                :betree_locator_element_count 10
-               :betree_locator_root_pageid 0x7777888899990000111122
+               :betree_locator_root_pageid 0x00000000007777888899990000111122
                :betree_locator_tree_height 1}))
-          (rel_edb 0x15840b06a27cfd50 ["my_base_relation"] [INT STRING FLOAT])
-          (rel_edb 0xd18eb5ae6b1c6d60 ["another" "path"] [INT STRING])
-          (rel_edb 0x1d55ba4ed7a92d94 ["complex" "path" "here"] [(DECIMAL 10 2) INT STRING])
-          (rel_edb 0xce18a64a245dea33 ["empty_path"] [])
-          (def 0x2c26b46b68ffc68f ([x::INT] (= x 1)))
+          (rel_edb
+            0x000000000000000015840b06a27cfd50
+            ["my_base_relation"]
+            [INT STRING FLOAT])
+          (rel_edb 0x0000000000000000d18eb5ae6b1c6d60 ["another" "path"] [INT STRING])
+          (rel_edb
+            0x00000000000000001d55ba4ed7a92d94
+            ["complex" "path" "here"]
+            [(DECIMAL 10 2) INT STRING])
+          (rel_edb 0x0000000000000000ce18a64a245dea33 ["empty_path"] [])
+          (def 0x00000000000000002c26b46b68ffc68f ([x::INT] (= x 1)))
           (algorithm
-            0xfcde2b2edba56bf4
-            0xbaa5a0964d3320fb
-            (script (assign 0xfcde2b2edba56bf4 ([y::INT] (= y 2)))))))
+            0x0000000000000000fcde2b2edba56bf4
+            0x0000000000000000baa5a0964d3320fb
+            (script (assign 0x0000000000000000fcde2b2edba56bf4 ([y::INT] (= y 2)))))))
       (define
         (fragment
           :f2
           (betree_relation
-            0xd7458e7387db7526
+            0x0000000000000000d7458e7387db7526
             (betree_info
               (key_types STRING)
               (value_types INT)
@@ -106,10 +112,10 @@
                :betree_config_max_leaf 16
                :betree_config_max_pivots 4
                :betree_locator_element_count 1000
-               :betree_locator_root_pageid 0x3333444455556666777788
+               :betree_locator_root_pageid 0x00000000003333444455556666777788
                :betree_locator_tree_height 4}))
           (betree_relation
-            0x40295aa31ad63d24
+            0x000000000000000040295aa31ad63d24
             (betree_info
               (key_types INT)
               (value_types STRING)
@@ -122,20 +128,20 @@
                :betree_locator_inline_data "binary_blob_data_here"
                :betree_locator_tree_height 1})))))
     (reads
-      (output :foo 0x2c26b46b68ffc68f)
-      (output :edb 0xa9e35fa05f07f5bc)
-      (output :multi_key 0x9cc5c01c151a49f3)
-      (output :numeric_types 0x22ee775a8c966d84)
-      (output :temporal_data 0x927cb0b0096c1296)
-      (output :boolean_data 0xe52f262b796e7dd2)
-      (output :key_only 0x67a0ea198e6e91f9)
-      (output :path_simple 0x15840b06a27cfd50)
-      (output :path_specialized 0xd18eb5ae6b1c6d60)
-      (output :path_mixed 0x1d55ba4ed7a92d94)
-      (output :path_empty 0xce18a64a245dea33)
-      (output :bar 0xfcde2b2edba56bf4)
-      (output :another_edb 0xd7458e7387db7526)
-      (output :inline_edb 0x40295aa31ad63d24))))
+      (output :foo 0x00000000000000002c26b46b68ffc68f)
+      (output :edb 0x0000000000000000a9e35fa05f07f5bc)
+      (output :multi_key 0x00000000000000009cc5c01c151a49f3)
+      (output :numeric_types 0x000000000000000022ee775a8c966d84)
+      (output :temporal_data 0x0000000000000000927cb0b0096c1296)
+      (output :boolean_data 0x0000000000000000e52f262b796e7dd2)
+      (output :key_only 0x000000000000000067a0ea198e6e91f9)
+      (output :path_simple 0x000000000000000015840b06a27cfd50)
+      (output :path_specialized 0x0000000000000000d18eb5ae6b1c6d60)
+      (output :path_mixed 0x00000000000000001d55ba4ed7a92d94)
+      (output :path_empty 0x0000000000000000ce18a64a245dea33)
+      (output :bar 0x0000000000000000fcde2b2edba56bf4)
+      (output :another_edb 0x0000000000000000d7458e7387db7526)
+      (output :inline_edb 0x000000000000000040295aa31ad63d24))))
 
 ;; Debug information
 ;; -----------------------

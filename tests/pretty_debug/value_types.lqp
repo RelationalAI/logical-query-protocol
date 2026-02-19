@@ -5,15 +5,17 @@
       (define
         (fragment
           :f1
-          (def 0x99d0b9775c18b59e ([v::(DECIMAL 18 6)] (relatom :dec64 v)))
-          (def 0xf889d8ce58451c30 ([v::(DECIMAL 38 10)] (relatom :dec128 v)))
-          (def 0x47bbe0f73840e6e9 ([v::DATE] (relatom :date v)))
-          (def 0x147e4ac0bf80f683 ([v::DATETIME] (relatom :datetime v))))))
+          (def 0x000000000000000099d0b9775c18b59e ([v::(DECIMAL 18 6)] (relatom :dec64 v)))
+          (def
+            0x0000000000000000f889d8ce58451c30
+            ([v::(DECIMAL 38 10)] (relatom :dec128 v)))
+          (def 0x000000000000000047bbe0f73840e6e9 ([v::DATE] (relatom :date v)))
+          (def 0x0000000000000000147e4ac0bf80f683 ([v::DATETIME] (relatom :datetime v))))))
     (reads
-      (output :dec64 0x99d0b9775c18b59e)
-      (output :dec128 0xf889d8ce58451c30)
-      (output :date 0x47bbe0f73840e6e9)
-      (output :datetime 0x147e4ac0bf80f683))))
+      (output :dec64 0x000000000000000099d0b9775c18b59e)
+      (output :dec128 0x0000000000000000f889d8ce58451c30)
+      (output :date 0x000000000000000047bbe0f73840e6e9)
+      (output :datetime 0x0000000000000000147e4ac0bf80f683))))
 
 ;; Debug information
 ;; -----------------------

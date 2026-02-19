@@ -150,7 +150,7 @@ class PrettyPrinter:
     def format_uint128(self, msg: logic_pb2.UInt128Value) -> str:
         """Format a UInt128Value protobuf message as a hex string."""
         value = (msg.high << 64) | msg.low
-        return f"0x{{value:x}}"
+        return f"0x{{value:032x}}"
 
     def fragment_id_to_string(self, msg: fragments_pb2.FragmentId) -> str:
         """Convert FragmentId to string representation."""

@@ -6,24 +6,24 @@
         (fragment
           :f1
           (def
-            0x8c2574892063f995
+            0x00000000000000008c2574892063f995
             ([a::INT b::INT c::INT]
              (or
                (and (= a 1) (= b 2) (= c 0))
                (and (= a 1) (= b 3) (= c 0))
                (and (= a 1) (= b 4) (= c 0)))))
           (def
-            0x8de0b3c47f112c59
+            0x00000000000000008de0b3c47f112c59
             ([b::INT a::INT]
              (or (and (= b 2) (= a 1)) (and (= b 3) (= a 1)) (and (= b 4) (= a 1)))))
           (def
-            0x2c26b46b68ffc68f
+            0x00000000000000002c26b46b68ffc68f
             ([a::INT b::INT c::INT]
              (and
-               (atom 0x8c2574892063f995 a b c)
-               (atom 0x8de0b3c47f112c59 b a)
+               (atom 0x00000000000000008c2574892063f995 a b c)
+               (atom 0x00000000000000008de0b3c47f112c59 b a)
                (pragma :rel_primitive_force_var_order c b a)))))))
-    (reads (output :foo 0x2c26b46b68ffc68f))))
+    (reads (output :foo 0x00000000000000002c26b46b68ffc68f))))
 
 ;; Debug information
 ;; -----------------------
