@@ -134,7 +134,7 @@ def test_go_builtin_generation():
     lines = []
     expr = Call(make_builtin("not"), [Var("x", _bool_type)])
     result = gen.generate_lines(expr, lines, "")
-    assert result == "!x"
+    assert result == "!(x)"
 
     # Test 'equal' builtin
     reset_gensym()
