@@ -21,7 +21,7 @@ const LQPSyntax = Union{
     RelAtom,Abstraction,Algorithm,Assign,Break,Conjunction,Def,Disjunction,
     Exists,FFI,MonoidDef,MonusDef,Not,Reduce,Script,Upsert,Construct,Declaration,
     Loop,Formula,Instruction,FragmentId,DebugInfo,Fragment,ExportCSVColumn,
-    ExportCSVConfig,Demand,Undefine,Configure,Define,Context,Sync,Abort,Output,Write,
+    ExportCSVConfig,Demand,Undefine,Configure,Snapshot,Define,Context,Sync,Abort,Output,Write,
     Export,Epoch,Read,Transaction,WhatIf,Constraint,FunctionalDependency
 }
 
@@ -32,4 +32,5 @@ include("equality.jl")
 include("protobuf-helpers.jl")
 include("properties.jl")
 include("parser.jl")
+include("pretty.jl")
 end

@@ -39,49 +39,62 @@ def output_path(filename: str, ext: str) -> str:
     return base + ext
 
 
+FORMAT_TABLE: dict[str, tuple[str, bool]] = {
+    "bin": (".bin", True),
+    "json": (".json", False),
+    "lqp": (".lqp", False),
+}
+
+
+def serialize(txn, fmt: str) -> str | bytes:
+    """Serialize a transaction to the given format."""
+    if fmt == "bin":
+        return txn.SerializeToString()
+    elif fmt == "json":
+        return MessageToJson(txn, preserving_proto_field_name=True)
+    elif fmt == "lqp":
+        return pretty(txn)
+    else:
+        raise ValueError(f"Unknown format: {fmt}")
+
+
 def process_file(filename: str, fmt: str, out: bool, validate: bool = True):
     """Process a single input file and produce requested output."""
     txn = parse_input(filename, validate)
+    ext, is_binary = FORMAT_TABLE[fmt]
+    data = serialize(txn, fmt)
 
-    if fmt == "bin":
-        data = txn.SerializeToString()
-        if out:
+    if out:
+        if is_binary:
+            assert isinstance(data, bytes)
             sys.stdout.buffer.write(data)
         else:
-            dest = output_path(filename, ".bin")
+            assert isinstance(data, str)
+            sys.stdout.write(data)
+    else:
+        dest = output_path(filename, ext)
+        if is_binary:
+            assert isinstance(data, bytes)
             with open(dest, "wb") as f:
                 f.write(data)
-            print(f"Successfully wrote {filename} to {dest}")
-    elif fmt == "json":
-        json_str = MessageToJson(txn, preserving_proto_field_name=True)
-        if out:
-            sys.stdout.write(json_str)
         else:
-            dest = output_path(filename, ".json")
+            assert isinstance(data, str)
             with open(dest, "w") as f:
-                f.write(json_str)
-            print(f"Successfully wrote {filename} to {dest}")
-    elif fmt == "lqp":
-        text = pretty(txn)
-        if out:
-            sys.stdout.write(text)
-        else:
-            dest = output_path(filename, ".lqp")
-            with open(dest, "w") as f:
-                f.write(text)
-            print(f"Successfully wrote {filename} to {dest}")
+                f.write(data)
+        print(f"Successfully wrote {filename} to {dest}")
 
 
 def collect_input_files(path: str):
-    """Collect input files from a path (file or directory)."""
+    """Collect .lqp and .bin files from a path (file or directory, recursive)."""
     if os.path.isfile(path):
         return [path]
     elif os.path.isdir(path):
         files = []
-        for f in sorted(os.listdir(path)):
-            if f.endswith(".lqp") or f.endswith(".bin"):
-                files.append(os.path.join(path, f))
-        return files
+        for root, _, filenames in os.walk(path):
+            for f in filenames:
+                if f.endswith(".lqp") or f.endswith(".bin"):
+                    files.append(os.path.join(root, f))
+        return sorted(files)
     else:
         return []
 
@@ -153,12 +166,14 @@ def main():
             process_file(filename, fmt, args.out, validate)
         else:
             parse_input(filename, validate)
+            print(f"OK: {filename}")
     elif os.path.isdir(args.input):
         for filename in collect_input_files(args.input):
             if fmt:
                 process_file(filename, fmt, args.out, validate)
             else:
                 parse_input(filename, validate)
+                print(f"OK: {filename}")
     else:
         arg_parser.error(f"Input is not a valid file or directory: {args.input}")
 

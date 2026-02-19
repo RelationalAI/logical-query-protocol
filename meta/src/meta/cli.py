@@ -46,7 +46,6 @@ def parse_args():
     parser.add_argument(
         "--no-validate", action="store_true", help="Skip grammar validation"
     )
-
     output_group = parser.add_argument_group("output options")
     output_group.add_argument(
         "-o", "--output", type=Path, help="Output file (default: stdout)"
@@ -63,8 +62,8 @@ def parse_args():
     output_group.add_argument(
         "--printer",
         type=str,
-        choices=["ir", "python"],
-        help="Output the generated pretty printer (ir or python)",
+        choices=["ir", "python", "julia"],
+        help="Output the generated pretty printer (ir, python, or julia)",
     )
 
     args = parser.parse_args()
@@ -200,11 +199,37 @@ def run(args) -> int:
         print(f"Grammar written to {args.output}")
         return 0
 
-    if args.parser:
-        if args.parser == "ir":
+    # Run target IR type checker when generating code
+    if (args.parser or args.printer) and not args.no_validate:
+        from .target_typer import typecheck_ir
+
+        parse_functions = []
+        pretty_functions = []
+        if args.parser:
             from .parser_gen import generate_parse_functions
 
             parse_functions = generate_parse_functions(grammar)
+        if args.printer:
+            from .pretty_gen import generate_pretty_functions
+
+            pretty_functions = generate_pretty_functions(grammar)
+        errors = typecheck_ir(
+            parse_functions, pretty_functions, list(grammar.function_defs.values())
+        )
+        if errors:
+            for e in errors:
+                print(f"typecheck: {e}", file=sys.stderr)
+            print(
+                f"\nError: {len(errors)} type error(s) in generated IR",
+                file=sys.stderr,
+            )
+            return 1
+
+    if args.parser:
+        if args.parser == "ir":
+            from .parser_gen import generate_parse_functions as gen_parse
+
+            parse_functions = gen_parse(grammar)
             output_lines = []
             for defn in parse_functions:
                 output_lines.append(str(defn))
@@ -216,9 +241,6 @@ def run(args) -> int:
                 f"Generated parser IR written to {args.output}",
             )
         elif args.parser in ("python", "julia", "go"):
-            proto_messages = {
-                (msg.module, name): msg for name, msg in proto_parser.messages.items()
-            }
             command_line = " ".join(
                 ["python -m meta.cli"]
                 + [str(f) for f in args.proto_files]
@@ -247,9 +269,9 @@ def run(args) -> int:
 
     if args.printer:
         if args.printer == "ir":
-            from .pretty_gen import generate_pretty_functions
+            from .pretty_gen import generate_pretty_functions as gen_pretty
 
-            pretty_functions = generate_pretty_functions(grammar)
+            pretty_functions = gen_pretty(grammar)
             output_lines = []
             for defn in pretty_functions:
                 output_lines.append(str(defn))
@@ -260,21 +282,27 @@ def run(args) -> int:
                 args.output,
                 f"Generated printer IR written to {args.output}",
             )
-        elif args.printer == "python":
-            proto_messages = {
-                (msg.module, name): msg for name, msg in proto_parser.messages.items()
-            }
+        elif args.printer in ("python", "julia"):
             command_line = " ".join(
                 ["python -m meta.cli"]
                 + [str(f) for f in args.proto_files]
                 + ["--grammar", str(args.grammar)]
                 + ["--printer", args.printer]
             )
-            from .pretty_gen_python import generate_pretty_printer_python
+            if args.printer == "python":
+                from .pretty_gen_python import generate_pretty_printer_python
 
-            output_text = generate_pretty_printer_python(
-                grammar, command_line, proto_messages
-            )
+                output_text = generate_pretty_printer_python(
+                    grammar, command_line, proto_messages
+                )
+            elif args.printer == "julia":
+                from .pretty_gen_julia import generate_pretty_printer_julia
+
+                output_text = generate_pretty_printer_julia(
+                    grammar, command_line, proto_messages
+                )
+            else:
+                assert False
             write_output(
                 output_text,
                 args.output,

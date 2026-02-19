@@ -8,12 +8,12 @@
 #   make force-parsers      Force-regenerate all parsers.
 #   make force-parser-X     Force-regenerate a single parser.
 #   make printers     Regenerate pretty printers from the grammar.
-#   make printer-python     Regenerate the Python pretty printer.
+#   make printer-X    Regenerate a single printer (X = python, julia, go).
 #   make force-printers     Force-regenerate all printers.
-#   make force-printer-python  Force-regenerate the Python pretty printer.
+#   make force-printer-X    Force-regenerate a single printer.
 #   make test         Run tests for all languages.
 #   make test-X       Run tests for one language (X = python, julia, go).
-#   make test-python-update-snapshots  Update Python pretty printer snapshots.
+#   make update-snapshots  Regenerate Python snapshot test outputs.
 #   make lint-python  Run ruff lint and format checks.
 #   make format-python  Auto-format Python code with ruff.
 #   make clean        Remove temporary generated files.
@@ -40,6 +40,8 @@ GO_PARSER := sdks/go/src/parser.go
 
 # Generated printer outputs
 PY_PRINTER := sdks/python/src/lqp/gen/pretty.py
+GO_PRINTER := sdks/go/src/pretty.go
+JL_PRINTER := sdks/julia/LogicalQueryProtocol/src/pretty.jl
 
 # Parser templates
 PY_TEMPLATE := meta/src/meta/templates/parser.py.template
@@ -48,6 +50,7 @@ GO_TEMPLATE := meta/src/meta/templates/parser.go.template
 
 # Printer templates
 PY_PRINTER_TEMPLATE := meta/src/meta/templates/pretty_printer.py.template
+JL_PRINTER_TEMPLATE := meta/src/meta/templates/pretty_printer.jl.template
 
 META_CLI := cd meta && uv run python -m meta.cli
 META_PROTO_ARGS := \
@@ -72,10 +75,12 @@ JL_PROTO_GENERATED := \
 
 .PHONY: all protobuf parsers parser-python parser-julia parser-go \
 	force-parsers force-parser-python force-parser-julia force-parser-go \
-	printers printer-python force-printers force-printer-python \
-	test test-python test-python-update-snapshots test-julia test-go \
+	printers printer-python printer-julia printer-go \
+	force-printers force-printer-python force-printer-julia force-printer-go \
+	test test-python update-snapshots test-julia test-go \
 	test-meta check-python check-meta lint-meta format-meta \
-	lint-python format-python clean
+	lint-python format-python clean \
+	sync-julia-test-data
 
 all: protobuf parsers printers
 
@@ -137,16 +142,30 @@ force-parser-go:
 
 # ---------- printer generation ----------
 
-printers: printer-python
+printers: printer-python printer-julia printer-go
 
 printer-python: $(PY_PRINTER)
 $(PY_PRINTER): $(PROTO_FILES) $(GRAMMAR) $(PY_PRINTER_TEMPLATE)
 	$(META_CLI) $(META_PROTO_ARGS) --printer python -o ../sdks/python/src/lqp/gen/pretty.py
 
-force-printers: force-printer-python
+printer-julia: $(JL_PRINTER)
+$(JL_PRINTER): $(PROTO_FILES) $(GRAMMAR) $(JL_PRINTER_TEMPLATE)
+	$(META_CLI) $(META_PROTO_ARGS) --printer julia -o ../sdks/julia/LogicalQueryProtocol/src/pretty.jl
+
+printer-go: $(GO_PRINTER)
+$(GO_PRINTER):
+	@echo "Generating the Go pretty printer is not yet supported"
+
+force-printers: force-printer-python force-printer-julia force-printer-go
 
 force-printer-python:
 	$(META_CLI) $(META_PROTO_ARGS) --printer python -o ../sdks/python/src/lqp/gen/pretty.py
+
+force-printer-julia:
+	$(META_CLI) $(META_PROTO_ARGS) --printer julia -o ../sdks/julia/LogicalQueryProtocol/src/pretty.jl
+
+force-printer-go:
+	@echo "Generating the Go pretty printer is not yet supported"
 
 # ---------- testing ----------
 
@@ -155,10 +174,18 @@ test: test-meta test-python test-julia test-go
 test-python: $(PY_PARSER) $(PY_PROTO_GENERATED) check-python
 	cd sdks/python && uv run python -m pytest
 
-test-python-update-snapshots: $(PY_PARSER) $(PY_PROTO_GENERATED)
+update-snapshots: $(PY_PARSER) $(PY_PROTO_GENERATED)
 	cd sdks/python && uv run python -m pytest --snapshot-update
 
-test-julia: $(JL_PARSER) $(JL_PROTO_GENERATED)
+JL_TEST_DIR := sdks/julia/LogicalQueryProtocol/test
+
+sync-julia-test-data:
+	@mkdir -p $(JL_TEST_DIR)/lqp $(JL_TEST_DIR)/pretty $(JL_TEST_DIR)/bin
+	cp tests/lqp/*.lqp $(JL_TEST_DIR)/lqp/
+	cp tests/pretty/*.lqp $(JL_TEST_DIR)/pretty/
+	cp tests/bin/*.bin $(JL_TEST_DIR)/bin/
+
+test-julia: $(JL_PARSER) $(JL_PROTO_GENERATED) sync-julia-test-data
 	cd sdks/julia && julia --project=LogicalQueryProtocol -e 'using Pkg; Pkg.test()'
 
 test-go: $(GO_PARSER) $(GO_PROTO_GENERATED)

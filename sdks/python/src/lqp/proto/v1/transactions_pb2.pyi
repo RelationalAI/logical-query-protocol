@@ -59,14 +59,16 @@ class Epoch(_message.Message):
     def __init__(self, writes: _Optional[_Iterable[_Union[Write, _Mapping]]] = ..., reads: _Optional[_Iterable[_Union[Read, _Mapping]]] = ...) -> None: ...
 
 class Write(_message.Message):
-    __slots__ = ("define", "undefine", "context")
+    __slots__ = ("define", "undefine", "context", "snapshot")
     DEFINE_FIELD_NUMBER: _ClassVar[int]
     UNDEFINE_FIELD_NUMBER: _ClassVar[int]
     CONTEXT_FIELD_NUMBER: _ClassVar[int]
+    SNAPSHOT_FIELD_NUMBER: _ClassVar[int]
     define: Define
     undefine: Undefine
     context: Context
-    def __init__(self, define: _Optional[_Union[Define, _Mapping]] = ..., undefine: _Optional[_Union[Undefine, _Mapping]] = ..., context: _Optional[_Union[Context, _Mapping]] = ...) -> None: ...
+    snapshot: Snapshot
+    def __init__(self, define: _Optional[_Union[Define, _Mapping]] = ..., undefine: _Optional[_Union[Undefine, _Mapping]] = ..., context: _Optional[_Union[Context, _Mapping]] = ..., snapshot: _Optional[_Union[Snapshot, _Mapping]] = ...) -> None: ...
 
 class Define(_message.Message):
     __slots__ = ("fragment",)
@@ -85,6 +87,14 @@ class Context(_message.Message):
     RELATIONS_FIELD_NUMBER: _ClassVar[int]
     relations: _containers.RepeatedCompositeFieldContainer[_logic_pb2.RelationId]
     def __init__(self, relations: _Optional[_Iterable[_Union[_logic_pb2.RelationId, _Mapping]]] = ...) -> None: ...
+
+class Snapshot(_message.Message):
+    __slots__ = ("destination_path", "source_relation")
+    DESTINATION_PATH_FIELD_NUMBER: _ClassVar[int]
+    SOURCE_RELATION_FIELD_NUMBER: _ClassVar[int]
+    destination_path: _containers.RepeatedScalarFieldContainer[str]
+    source_relation: _logic_pb2.RelationId
+    def __init__(self, destination_path: _Optional[_Iterable[str]] = ..., source_relation: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ...) -> None: ...
 
 class ExportCSVConfig(_message.Message):
     __slots__ = ("path", "data_columns", "csv_source", "csv_config", "partition_size", "compression", "syntax_header_row", "syntax_missing_string", "syntax_delim", "syntax_quotechar", "syntax_escapechar")

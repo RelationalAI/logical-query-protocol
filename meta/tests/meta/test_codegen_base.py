@@ -24,12 +24,20 @@ def test_generator_instance_isolation():
 
 
 def test_template_dictionaries_have_matching_keys():
-    """Test that Python and Julia template dictionaries have the same keys."""
+    """Test that Python and Julia template dictionaries have the same keys.
+
+    Some builtins are registered via custom handlers rather than templates,
+    so they don't appear in the template dicts.
+    """
     python_keys = set(PYTHON_TEMPLATES.keys())
     julia_keys = set(JULIA_TEMPLATES.keys())
 
-    missing_in_julia = python_keys - julia_keys
-    missing_in_python = julia_keys - python_keys
+    # Builtins with custom handlers instead of templates
+    python_custom = {"unwrap_option", "tuple"}
+    julia_custom = {"tuple"}
+
+    missing_in_julia = python_keys - julia_keys - julia_custom
+    missing_in_python = julia_keys - python_keys - python_custom
 
     assert not missing_in_julia, f"Templates missing in Julia: {missing_in_julia}"
     assert not missing_in_python, f"Templates missing in Python: {missing_in_python}"

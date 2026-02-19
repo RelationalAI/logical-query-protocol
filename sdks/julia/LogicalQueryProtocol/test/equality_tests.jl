@@ -611,8 +611,8 @@ end
 
     v1 = Value(value=OneOf(:string_value, "true"))
     v2 = Value(value=OneOf(:string_value, "false"))
-    t1 = Term(term_type=OneOf(:value, v1))
-    t2 = Term(term_type=OneOf(:value, v2))
+    t1 = Term(term_type=OneOf(:constant, v1))
+    t2 = Term(term_type=OneOf(:constant, v2))
 
     p1 = Pragma(name="inline", terms=[t1])
     p2 = Pragma(name="inline", terms=[t1])
@@ -648,10 +648,10 @@ end
     input_term = Term(term_type=OneOf(:var, v))
 
     val1 = Value(value=OneOf(:int_value, 42))
-    result_term1 = Term(term_type=OneOf(:value, val1))
+    result_term1 = Term(term_type=OneOf(:constant, val1))
 
     val2 = Value(value=OneOf(:int_value, 99))
-    result_term2 = Term(term_type=OneOf(:value, val2))
+    result_term2 = Term(term_type=OneOf(:constant, val2))
 
     c1 = Cast(input=input_term, result=result_term1)
     c2 = Cast(input=input_term, result=result_term1)
@@ -1361,6 +1361,46 @@ end
 
     # Transitivity
     @test d1 == d2 && d2 == d4 && d1 == d4
+end
+
+@testitem "Equality for Snapshot" tags=[:ring1, :unit] begin
+    using LogicalQueryProtocol: Snapshot, RelationId
+
+    r1 = RelationId(id_low=0x1234, id_high=0x0)
+    r2 = RelationId(id_low=0x1234, id_high=0x0)
+    r3 = RelationId(id_low=0x5678, id_high=0x0)
+
+    s1 = Snapshot(destination_path=["my_edb"], source_relation=r1)
+    s2 = Snapshot(destination_path=["my_edb"], source_relation=r2)
+    s3 = Snapshot(destination_path=["other_edb"], source_relation=r1)
+    s4 = Snapshot(destination_path=["my_edb"], source_relation=r3)
+    s5 = Snapshot(destination_path=["my_edb"], source_relation=r1)
+
+    # Equality and inequality
+    @test s1 == s2
+    @test s1 != s3
+    @test s1 != s4
+    @test isequal(s1, s2)
+
+    # Hash consistency
+    @test hash(s1) == hash(s2)
+
+    # Reflexivity
+    @test s1 == s1
+    @test isequal(s1, s1)
+
+    # Symmetry
+    @test s1 == s2 && s2 == s1
+
+    # Transitivity
+    @test s1 == s2 && s2 == s5 && s1 == s5
+
+    # Multi-segment path
+    s6 = Snapshot(destination_path=["schema", "table"], source_relation=r1)
+    s7 = Snapshot(destination_path=["schema", "table"], source_relation=r1)
+    @test s6 == s7
+    @test hash(s6) == hash(s7)
+    @test s6 != s1
 end
 
 @testitem "Equality for Configure" tags=[:ring1, :unit] begin
