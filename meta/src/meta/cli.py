@@ -27,9 +27,29 @@ from pathlib import Path
 
 from .grammar import Grammar
 from .grammar_validator import validate_grammar
+from .parser_gen_go import generate_parser_go
+from .parser_gen_julia import generate_parser_julia
+from .parser_gen_python import generate_parser_python
+from .pretty_gen_go import generate_pretty_printer_go
+from .pretty_gen_julia import generate_pretty_printer_julia
+from .pretty_gen_python import generate_pretty_printer_python
 from .proto_parser import ProtoParser
 from .proto_print import format_enum, format_message
 from .yacc_parser import load_yacc_grammar_file
+
+_PARSER_GENERATORS = {
+    "python": generate_parser_python,
+    "julia": generate_parser_julia,
+    "go": generate_parser_go,
+}
+
+_PRINTER_GENERATORS = {
+    "python": generate_pretty_printer_python,
+    "julia": generate_pretty_printer_julia,
+    "go": generate_pretty_printer_go,
+}
+
+_LANGUAGES = sorted(set(_PARSER_GENERATORS) | set(_PRINTER_GENERATORS))
 
 
 def _gen_parser_python(grammar, command_line, proto_messages):

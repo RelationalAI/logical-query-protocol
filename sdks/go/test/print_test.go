@@ -105,6 +105,7 @@ func TestPrintDebugBinaryFiles(t *testing.T) {
 	}
 }
 
+
 // TestRoundtripLQP verifies parse → pretty → parse → pretty stability for .lqp files.
 func TestRoundtripLQP(t *testing.T) {
 	root := repoRoot(t)

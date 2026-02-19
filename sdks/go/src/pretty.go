@@ -244,7 +244,6 @@ func (p *PrettyPrinter) relationIdToString(msg *pb.RelationId) *string {
 	return nil
 }
 
-
 // relationIdToUint128 converts a RelationId to a UInt128Value.
 func (p *PrettyPrinter) relationIdToUint128(msg *pb.RelationId) *pb.UInt128Value {
 	return &pb.UInt128Value{Low: msg.GetIdLow(), High: msg.GetIdHigh()}
@@ -4401,6 +4400,7 @@ func (p *PrettyPrinter) writeDebugInfo() {
 		p.w.WriteString(fmt.Sprintf(";; \t ID `0x%x` -> `%s`\n", value, e.name))
 	}
 }
+
 
 // ProgramToStr pretty-prints a Transaction protobuf message to a string.
 func ProgramToStr(msg *pb.Transaction) string {
