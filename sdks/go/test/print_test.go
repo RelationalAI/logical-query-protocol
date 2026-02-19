@@ -12,21 +12,24 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// TestPrintBinaryFiles reads binary files, prints them, and compares with expected output
+// TestPrintBinaryFiles reads binary files, prints them, and compares with expected output.
+// Go pretty-printer output is written to sdks/go/test/lqp_pretty_output/ for inspection.
 func TestPrintBinaryFiles(t *testing.T) {
-	// Get the repository root directory (go up two levels from test directory)
 	testDir, err := filepath.Abs(".")
 	if err != nil {
 		t.Fatalf("Failed to get test directory: %v", err)
 	}
 
-	// Go up to the repository root (from sdks/go/test to repo root)
 	repoRoot := filepath.Join(testDir, "..", "..", "..")
 
 	binDir := filepath.Join(repoRoot, "tests", "bin")
-	expectedDir := filepath.Join(testDir, "pretty")
+	expectedDir := filepath.Join(repoRoot, "tests", "pretty")
+	outputDir := filepath.Join(testDir, "lqp_pretty_output")
 
-	// Read all .bin files
+	if err := os.MkdirAll(outputDir, 0o755); err != nil {
+		t.Fatalf("Failed to create output directory: %v", err)
+	}
+
 	entries, err := os.ReadDir(binDir)
 	if err != nil {
 		t.Fatalf("Failed to read bin directory: %v", err)
@@ -37,36 +40,36 @@ func TestPrintBinaryFiles(t *testing.T) {
 			continue
 		}
 
-		// Run each test case
 		t.Run(entry.Name(), func(t *testing.T) {
-			// Read binary file
 			binPath := filepath.Join(binDir, entry.Name())
 			data, err := os.ReadFile(binPath)
 			if err != nil {
 				t.Fatalf("Failed to read binary file %s: %v", entry.Name(), err)
 			}
 
-			// Deserialize as Transaction
 			transaction := &pb.Transaction{}
-			err = proto.Unmarshal(data, transaction)
-			if err != nil {
+			if err = proto.Unmarshal(data, transaction); err != nil {
 				t.Fatalf("Failed to unmarshal binary file %s: %v", entry.Name(), err)
 			}
 
 			printed := lqp.ProgramToStr(transaction)
 
-			// Read expected output
-			expectedName := strings.Replace(entry.Name(), ".bin", ".lqp", 1)
-			expectedPath := filepath.Join(expectedDir, expectedName)
+			// Write output for inspection
+			outName := strings.Replace(entry.Name(), ".bin", ".lqp", 1)
+			outPath := filepath.Join(outputDir, outName)
+			if err := os.WriteFile(outPath, []byte(printed), 0o644); err != nil {
+				t.Fatalf("Failed to write output file %s: %v", outName, err)
+			}
+
+			// Compare against expected snapshot
+			expectedPath := filepath.Join(expectedDir, outName)
 			expectedData, err := os.ReadFile(expectedPath)
 			if err != nil {
-				t.Fatalf("Failed to read expected output file %s: %v", expectedName, err)
+				t.Fatalf("Failed to read expected output file %s: %v", outName, err)
 			}
-			expected := string(expectedData)
 
-			// Compare
-			if printed != expected {
-				t.Errorf("Output mismatch for %s\n\nExpected:\n%s\n\nGot:\n%s", entry.Name(), expected, printed)
+			if printed != string(expectedData) {
+				t.Errorf("Output mismatch for %s\n\nExpected:\n%s\n\nGot:\n%s", entry.Name(), string(expectedData), printed)
 			}
 		})
 	}
