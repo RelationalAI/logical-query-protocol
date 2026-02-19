@@ -6,6 +6,7 @@ from textwrap import dedent
 from meta.grammar import Grammar
 from meta.pretty_gen import generate_pretty_functions
 from meta.target import (
+    Builtin,
     Call,
     GetElement,
     IfElse,
@@ -37,11 +38,29 @@ def _collect_nodes(expr, node_type):
     return results
 
 
+def _is_try_flat_let(expr):
+    """Check if a Let is the try_flat wrapper (init calls try_flat_io)."""
+    return (
+        isinstance(expr, Let)
+        and isinstance(expr.init, Call)
+        and isinstance(expr.init.func, Builtin)
+        and expr.init.func.name == "try_flat_io"
+        and isinstance(expr.body, IfElse)
+    )
+
+
 def _find_if_else(expr):
-    """Find the first IfElse node in the IR tree."""
+    """Find the first guarded-alternative IfElse node in the IR tree.
+
+    Skips past the try_flat wrapper IfElse (Let with try_flat_io init)
+    and searches its else_branch instead.
+    """
     if isinstance(expr, IfElse):
         return expr
     if isinstance(expr, Let):
+        if _is_try_flat_let(expr):
+            assert isinstance(expr.body, IfElse)
+            return _find_if_else(expr.body.else_branch)
         result = _find_if_else(expr.body)
         if result is not None:
             return result
