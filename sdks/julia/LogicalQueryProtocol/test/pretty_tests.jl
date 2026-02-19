@@ -48,6 +48,9 @@ end
         reparsed = parse(printed)
         @test reparsed isa Proto.Transaction
         @test reparsed == parsed
+
+        reprinted = pretty(reparsed)
+        @test printed == reprinted
     end
 end
 
@@ -102,5 +105,8 @@ end
         reparsed = parse(printed)
         @test reparsed isa Proto.Transaction
         @test reparsed == txn
+
+        reprinted = pretty(reparsed)
+        @test printed == reprinted
     end
 end

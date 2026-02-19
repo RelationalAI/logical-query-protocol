@@ -12,7 +12,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// TestBasicParsing tests simple transaction parsing
+// TestBasicParsing tests simple transaction parsing.
 func TestBasicParsing(t *testing.T) {
 	input := `
 (transaction
@@ -32,21 +32,12 @@ func TestBasicParsing(t *testing.T) {
 	}
 }
 
-// TestParseLQPFiles parses all LQP files and compares against binary snapshots
+// TestParseLQPFiles parses all LQP files and compares against binary snapshots.
 func TestParseLQPFiles(t *testing.T) {
-	// Get the repository root directory (go up two levels from test directory)
-	testDir, err := filepath.Abs(".")
-	if err != nil {
-		t.Fatalf("Failed to get test directory: %v", err)
-	}
+	root := repoRoot(t)
+	lqpDir := filepath.Join(root, "tests", "lqp")
+	binDir := filepath.Join(root, "tests", "bin")
 
-	// Go up to the repository root (from sdks/go/test to repo root)
-	repoRoot := filepath.Join(testDir, "..", "..", "..")
-
-	lqpDir := filepath.Join(repoRoot, "tests", "lqp")
-	binDir := filepath.Join(repoRoot, "tests", "bin")
-
-	// Read all .lqp files
 	entries, err := os.ReadDir(lqpDir)
 	if err != nil {
 		t.Fatalf("Failed to read LQP directory: %v", err)
@@ -58,14 +49,11 @@ func TestParseLQPFiles(t *testing.T) {
 		}
 
 		t.Run(entry.Name(), func(t *testing.T) {
-			// Read LQP file
-			lqpPath := filepath.Join(lqpDir, entry.Name())
-			content, err := os.ReadFile(lqpPath)
+			content, err := os.ReadFile(filepath.Join(lqpDir, entry.Name()))
 			if err != nil {
 				t.Fatalf("Failed to read LQP file %s: %v", entry.Name(), err)
 			}
 
-			// Parse the LQP file
 			result, err := lqp.Parse(string(content))
 			if err != nil {
 				t.Fatalf("Failed to parse LQP file %s: %v", entry.Name(), err)
@@ -74,35 +62,29 @@ func TestParseLQPFiles(t *testing.T) {
 				t.Fatalf("Parse returned nil for %s", entry.Name())
 			}
 
-			// Serialize to binary
 			generatedBinary, err := proto.Marshal(result)
 			if err != nil {
 				t.Fatalf("Failed to marshal parsed result for %s: %v", entry.Name(), err)
 			}
 
-			// Read expected binary
 			binName := strings.Replace(entry.Name(), ".lqp", ".bin", 1)
-			binPath := filepath.Join(binDir, binName)
-			expectedBinary, err := os.ReadFile(binPath)
+			expectedBinary, err := os.ReadFile(filepath.Join(binDir, binName))
 			if err != nil {
 				t.Logf("Warning: No binary snapshot found for %s, skipping binary comparison", entry.Name())
 				return
 			}
 
-			// Compare binaries
 			if string(generatedBinary) != string(expectedBinary) {
-				// If binaries don't match exactly, parse both and compare via pretty-print
-				// (protobuf serialization can vary in field order, especially for maps/repeated fields)
 				expectedTransaction := &pb.Transaction{}
 				if err := proto.Unmarshal(expectedBinary, expectedTransaction); err != nil {
 					t.Fatalf("Failed to unmarshal expected binary for %s: %v", entry.Name(), err)
 				}
 
-				// Compare via pretty-print since debug_info ordering may vary
 				generatedPretty := lqp.ProgramToStr(result)
 				expectedPretty := lqp.ProgramToStr(expectedTransaction)
 				if generatedPretty != expectedPretty {
-					t.Errorf("Parsed result does not match expected for %s\n\nParsed:\n%s\n\nExpected:\n%s", entry.Name(), generatedPretty, expectedPretty)
+					t.Errorf("Parsed result does not match expected for %s\n\nParsed:\n%s\n\nExpected:\n%s",
+						entry.Name(), generatedPretty, expectedPretty)
 				}
 			}
 		})
