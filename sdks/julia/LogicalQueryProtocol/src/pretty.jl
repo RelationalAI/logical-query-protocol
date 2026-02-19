@@ -16,13 +16,15 @@ mutable struct PrettyPrinter
     _computing::Set{UInt}
     _memo::Dict{UInt,String}
     _memo_refs::Vector{Any}
+    print_symbolic_relation_ids::Bool
     debug_info::Dict{Tuple{UInt64,UInt64},String}
 end
 
-function PrettyPrinter(; max_width::Int=92)
+function PrettyPrinter(; max_width::Int=92, print_symbolic_relation_ids::Bool=true)
     return PrettyPrinter(
         IOBuffer(), [0], 0, true, "\n", max_width,
         Set{UInt}(), Dict{UInt,String}(), Any[],
+        print_symbolic_relation_ids,
         Dict{Tuple{UInt64,UInt64},String}(),
     )
 end
@@ -189,11 +191,24 @@ function start_pretty_fragment(pp::PrettyPrinter, msg::Proto.Fragment)::Nothing
 end
 
 function relation_id_to_string(pp::PrettyPrinter, msg::Proto.RelationId)::String
+    !pp.print_symbolic_relation_ids && return ""
     return get(pp.debug_info, (msg.id_low, msg.id_high), "")
 end
 
 function relation_id_to_uint128(pp::PrettyPrinter, msg::Proto.RelationId)
     return Proto.UInt128Value(msg.id_low, msg.id_high)
+end
+
+function write_debug_info(pp::PrettyPrinter)::Nothing
+    isempty(pp.debug_info) && return nothing
+    Base.write(pp.io, "\n;; Debug information\n")
+    Base.write(pp.io, ";; -----------------------\n")
+    Base.write(pp.io, ";; Original names\n")
+    for ((id_low, id_high), name) in pp.debug_info
+        value = UInt128(id_high) << 64 | UInt128(id_low)
+        Base.write(pp.io, ";; \t ID `0x" * string(value, base=16) * "` -> `" * name * "`\n")
+    end
+    return nothing
 end
 
 # --- Helper functions ---
@@ -1596,7 +1611,7 @@ function pretty_formula(pp::PrettyPrinter, msg::Proto.Formula)
                         pretty_reduce(pp, unwrapped832)
                     else
                         function _t1411(_dollar_dollar)
-                            if _has_proto_field(_dollar_dollar, Symbol("conjunction"))
+                            if (_has_proto_field(_dollar_dollar, Symbol("conjunction")) && !isempty(_get_oneof_field(_dollar_dollar, :conjunction).args))
                                 _t1412 = _get_oneof_field(_dollar_dollar, :conjunction)
                             else
                                 _t1412 = nothing
@@ -1610,7 +1625,7 @@ function pretty_formula(pp::PrettyPrinter, msg::Proto.Formula)
                             pretty_conjunction(pp, unwrapped830)
                         else
                             function _t1414(_dollar_dollar)
-                                if _has_proto_field(_dollar_dollar, Symbol("disjunction"))
+                                if (_has_proto_field(_dollar_dollar, Symbol("disjunction")) && !isempty(_get_oneof_field(_dollar_dollar, :disjunction).args))
                                     _t1415 = _get_oneof_field(_dollar_dollar, :disjunction)
                                 else
                                     _t1415 = nothing
@@ -4369,9 +4384,151 @@ function pretty_export_csv_column(pp::PrettyPrinter, msg::Proto.ExportCSVColumn)
 end
 
 
+# --- pprint dispatch (generated) ---
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Transaction) = pretty_transaction(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Configure) = pretty_configure(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Vector{Tuple{String, Proto.Value}}) = pretty_config_dict(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Tuple{String, Proto.Value}) = pretty_config_key_value(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Value) = pretty_value(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.DateValue) = pretty_date(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.DateTimeValue) = pretty_datetime(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Bool) = pretty_boolean_value(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Sync) = pretty_sync(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.FragmentId) = pretty_fragment_id(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Epoch) = pretty_epoch(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Vector{Proto.Write}) = pretty_epoch_writes(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Write) = pretty_write(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Define) = pretty_define(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Fragment) = pretty_fragment(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Declaration) = pretty_declaration(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Def) = pretty_def(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.RelationId) = pretty_relation_id(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Abstraction) = pretty_abstraction(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Tuple{Vector{Proto.Binding}, Vector{Proto.Binding}}) = pretty_bindings(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Binding) = pretty_binding(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.var"#Type") = pretty_type(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.UnspecifiedType) = pretty_unspecified_type(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.StringType) = pretty_string_type(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.IntType) = pretty_int_type(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.FloatType) = pretty_float_type(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.UInt128Type) = pretty_uint128_type(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Int128Type) = pretty_int128_type(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.DateType) = pretty_date_type(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.DateTimeType) = pretty_datetime_type(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.MissingType) = pretty_missing_type(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.DecimalType) = pretty_decimal_type(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.BooleanType) = pretty_boolean_type(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Vector{Proto.Binding}) = pretty_value_bindings(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Formula) = pretty_formula(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Conjunction) = pretty_conjunction(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Disjunction) = pretty_disjunction(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Exists) = pretty_exists(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Reduce) = pretty_reduce(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Vector{Proto.Term}) = pretty_terms(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Term) = pretty_term(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Var) = pretty_var(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Not) = pretty_not(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.FFI) = pretty_ffi(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::String) = pretty_name(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Vector{Proto.Abstraction}) = pretty_ffi_args(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Atom) = pretty_atom(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Pragma) = pretty_pragma(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Primitive) = pretty_primitive(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.RelTerm) = pretty_rel_term(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.RelAtom) = pretty_rel_atom(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Cast) = pretty_cast(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Vector{Proto.Attribute}) = pretty_attrs(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Attribute) = pretty_attribute(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Algorithm) = pretty_algorithm(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Script) = pretty_script(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Construct) = pretty_construct(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Loop) = pretty_loop(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Vector{Proto.Instruction}) = pretty_init(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Instruction) = pretty_instruction(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Assign) = pretty_assign(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Upsert) = pretty_upsert(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Tuple{Proto.Abstraction, Int64}) = pretty_abstraction_with_arity(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Break) = pretty_break(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.MonoidDef) = pretty_monoid_def(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Monoid) = pretty_monoid(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.OrMonoid) = pretty_or_monoid(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.MinMonoid) = pretty_min_monoid(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.MaxMonoid) = pretty_max_monoid(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.SumMonoid) = pretty_sum_monoid(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.MonusDef) = pretty_monus_def(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Constraint) = pretty_constraint(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Vector{Proto.Var}) = pretty_functional_dependency_keys(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Data) = pretty_data(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.RelEDB) = pretty_rel_edb(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Vector{String}) = pretty_rel_edb_path(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Vector{Proto.var"#Type"}) = pretty_rel_edb_types(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.BeTreeRelation) = pretty_betree_relation(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.BeTreeInfo) = pretty_betree_info(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.CSVData) = pretty_csv_data(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.CSVLocator) = pretty_csvlocator(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.CSVConfig) = pretty_csv_config(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Vector{Proto.CSVColumn}) = pretty_csv_columns(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.CSVColumn) = pretty_csv_column(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Undefine) = pretty_undefine(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Context) = pretty_context(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Snapshot) = pretty_snapshot(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Vector{Proto.Read}) = pretty_epoch_reads(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Read) = pretty_read(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Demand) = pretty_demand(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Output) = pretty_output(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.WhatIf) = pretty_what_if(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Abort) = pretty_abort(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.Export) = pretty_export(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.ExportCSVConfig) = pretty_export_csv_config(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Vector{Proto.ExportCSVColumn}) = pretty_export_csv_columns(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.ExportCSVColumn) = pretty_export_csv_column(pp, x)
+
+# --- pprint API ---
+
+struct LQPSyntaxWithDebug{T<:LQPSyntax}
+    syntax::T
+    debug_info::Proto.DebugInfo
+end
+
+function pprint(io::IO, x::LQPSyntax; max_width::Int=92)
+    pp = PrettyPrinter(max_width=max_width)
+    _pprint_dispatch(pp, x)
+    newline(pp)
+    print(io, get_output(pp))
+    return nothing
+end
+
+function pprint(io::IO, x::LQPSyntaxWithDebug; max_width::Int=92)
+    pp = PrettyPrinter(max_width=max_width, print_symbolic_relation_ids=false)
+    di = x.debug_info
+    for (rid, name) in zip(di.ids, di.orig_names)
+        pp.debug_info[(rid.id_low, rid.id_high)] = name
+    end
+    _pprint_dispatch(pp, x.syntax)
+    newline(pp)
+    write_debug_info(pp)
+    print(io, get_output(pp))
+    return nothing
+end
+
+function pprint(io::IO, x::LQPFragmentId)
+    print(io, String(copy(x.id)))
+    return nothing
+end
+
+pprint(x; max_width::Int=92) = pprint(stdout, x; max_width=max_width)
+
 function pretty(msg::Proto.Transaction; max_width::Int=92)::String
     pp = PrettyPrinter(max_width=max_width)
     pretty_transaction(pp, msg)
     newline(pp)
+    return get_output(pp)
+end
+
+function pretty_debug(msg::Proto.Transaction; max_width::Int=92)::String
+    pp = PrettyPrinter(max_width=max_width, print_symbolic_relation_ids=false)
+    pretty_transaction(pp, msg)
+    newline(pp)
+    write_debug_info(pp)
     return get_output(pp)
 end

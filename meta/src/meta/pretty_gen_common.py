@@ -46,9 +46,9 @@ def _generate_pprint_dispatch(
                     best = (nt_name, func_ref)
                     break
             _, func_ref = best
-        lines.append(
-            f"_pprint_dispatch(pp::PrettyPrinter, x::{type_str}) = {func_ref}(pp, x)"
-        )
+        line = codegen.gen_pprint_dispatch_line(type_str, func_ref)
+        if line is not None:
+            lines.append(line)
 
     return "\n".join(lines)
 

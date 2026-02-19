@@ -1141,5 +1141,12 @@ class CodeGenerator(ABC):
         """Format a command line comment for the generated file header."""
         pass
 
+    def gen_pprint_dispatch_line(self, type_str: str, func_ref: str) -> str | None:
+        """Generate a pprint dispatch line for the given type and function.
+
+        Returns None if the language does not support pprint dispatch generation.
+        """
+        return None
+
     # Parser generation indent for parse method definitions
     parse_def_indent: str = ""

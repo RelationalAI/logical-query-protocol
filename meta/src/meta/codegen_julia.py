@@ -210,6 +210,9 @@ class JuliaCodeGenerator(CodeGenerator):
     def gen_pretty_nonterminal_ref(self, name: str) -> str:
         return f"pretty_{name}"
 
+    def gen_pprint_dispatch_line(self, type_str: str, func_ref: str) -> str | None:
+        return f"_pprint_dispatch(pp::PrettyPrinter, x::{type_str}) = {func_ref}(pp, x)"
+
     # --- Type generation ---
 
     def gen_message_type(self, module: str, name: str) -> str:
