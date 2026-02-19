@@ -760,6 +760,70 @@ def test_python_or_short_circuit_with_unwrap_side_effects():
     assert "if " in code, f"Expected if-else for short-circuit, got:\n{code}"
 
 
+def test_python_empty_string_literal():
+    """Empty string literal generates correctly."""
+    gen = PythonCodeGenerator()
+    lines = []
+    result = gen.generate_lines(Lit(""), lines, "")
+    assert result == '""'
+
+
+def test_python_deeply_nested_calls():
+    """4-level nested Call produces valid output."""
+    gen = PythonCodeGenerator()
+    reset_gensym()
+    lines = []
+    inner = Call(Var("d", _any_type), [Var("x", _any_type)])
+    level3 = Call(Var("c", _any_type), [inner])
+    level2 = Call(Var("b", _any_type), [level3])
+    expr = Call(Var("a", _any_type), [level2])
+    result = gen.generate_lines(expr, lines, "")
+    assert result is not None
+    code = "\n".join(lines) + "\n" + result
+    assert "d(x)" in code
+    assert "a(" in code
+
+
+def test_python_long_variable_name():
+    """Variable with 100-char name renders correctly."""
+    gen = PythonCodeGenerator()
+    long_name = "v" * 100
+    lines = []
+    result = gen.generate_lines(Var(long_name, _any_type), lines, "")
+    assert result == long_name
+
+
+def test_python_nested_if_else():
+    """3-level nested IfElse produces valid output."""
+    gen = PythonCodeGenerator()
+    reset_gensym()
+    lines = []
+    inner = IfElse(Var("c", _bool_type), Lit("x"), Lit("y"))
+    mid = IfElse(Var("b", _bool_type), inner, Lit("z"))
+    expr = IfElse(Var("a", _bool_type), mid, Lit("w"))
+    result = gen.generate_lines(expr, lines, "")
+    assert result is not None
+    code = "\n".join(lines)
+    assert code.count("if ") >= 3
+
+
+def test_python_two_element_seq():
+    """Minimal Seq (2 elements) returns last element's value."""
+    gen = PythonCodeGenerator()
+    reset_gensym()
+    lines = []
+    result = gen.generate_lines(Seq([Lit(1), Lit(2)]), lines, "")
+    assert result == "2"
+
+
+def test_python_option_none_lit():
+    """Lit(None) generates correctly."""
+    gen = PythonCodeGenerator()
+    lines = []
+    result = gen.generate_lines(Lit(None), lines, "")
+    assert result == "None"
+
+
 if __name__ == "__main__":
     test_python_keyword_escaping()
     test_python_call_generation()
@@ -788,3 +852,9 @@ if __name__ == "__main__":
     test_python_or_short_circuit_with_side_effects()
     test_python_and_without_side_effects_uses_template()
     test_python_or_without_side_effects_uses_template()
+    test_python_empty_string_literal()
+    test_python_deeply_nested_calls()
+    test_python_long_variable_name()
+    test_python_nested_if_else()
+    test_python_two_element_seq()
+    test_python_option_none_lit()

@@ -17,8 +17,109 @@ from meta.grammar import (
     Star,
 )
 from meta.grammar_analysis import GrammarAnalysis
-from meta.target import BaseType, Call, Lambda, MessageType, OptionType, Var
-from meta.target_builtins import make_builtin
+from meta.target import BaseType, Lambda, MessageType, Var
+
+
+def _rule(lhs, *rhs_symbols):
+    """Build a Rule with a dummy constructor for analysis tests.
+
+    The constructor body is irrelevant for grammar analysis (FIRST, FOLLOW,
+    nullable, etc.), so this helper auto-generates a minimal Lambda.
+    """
+    params = []
+    for i, sym in enumerate(rhs_symbols):
+        if isinstance(sym, (Nonterminal, NamedTerminal)):
+            params.append(Var(f"p{i}", sym.type))
+    body = params[0] if params else Var("_", lhs.type)
+    constructor = Lambda(params, lhs.type, body)
+
+    if len(rhs_symbols) == 0:
+        rhs = Sequence(())
+    elif len(rhs_symbols) == 1:
+        rhs = rhs_symbols[0]
+    else:
+        rhs = Sequence(tuple(rhs_symbols))
+
+    return Rule(lhs, rhs, constructor)
+
+
+_str_type = BaseType("String")
+
+
+def _tokenize_rhs(text):
+    """Split an RHS string into tokens, handling quoted strings."""
+    tokens = []
+    i = 0
+    while i < len(text):
+        if text[i].isspace():
+            i += 1
+        elif text[i] == '"':
+            j = text.index('"', i + 1)
+            tokens.append(text[i : j + 1])
+            i = j + 1
+        else:
+            j = i
+            while j < len(text) and not text[j].isspace():
+                j += 1
+            tokens.append(text[i:j])
+            i = j
+    return tokens
+
+
+def _grammar(text):
+    """Parse a BNF grammar for analysis tests.
+
+    Nonterminals: words appearing on the left of ->.
+    Named terminals: non-quoted words that are not nonterminals.
+    Literal terminals: quoted strings.
+    Epsilon: 'eps' as the sole symbol of an alternative.
+    All types default to BaseType("String").
+
+    Returns (Grammar, nonterminals dict, named terminals dict).
+    """
+    lines = [ln.strip() for ln in text.strip().split("\n") if ln.strip()]
+
+    nt_names = set()
+    for line in lines:
+        lhs, _ = line.split("->", 1)
+        nt_names.add(lhs.strip())
+
+    nts = {name: Nonterminal(name, _str_type) for name in nt_names}
+    named_terms = {}
+    all_rules = []
+    start: Nonterminal | None = None
+
+    for line in lines:
+        lhs_str, rhs_str = line.split("->", 1)
+        lhs = nts[lhs_str.strip()]
+        if start is None:
+            start = lhs
+
+        for alt in rhs_str.split("|"):
+            alt = alt.strip()
+            if alt == "eps":
+                all_rules.append(_rule(lhs))
+                continue
+
+            symbols = []
+            for tok in _tokenize_rhs(alt):
+                if tok.startswith('"') and tok.endswith('"'):
+                    symbols.append(LitTerminal(tok[1:-1]))
+                elif tok in nts:
+                    symbols.append(nts[tok])
+                else:
+                    if tok not in named_terms:
+                        named_terms[tok] = NamedTerminal(tok, _str_type)
+                    symbols.append(named_terms[tok])
+
+            all_rules.append(_rule(lhs, *symbols))
+
+    assert start is not None, "Grammar must have at least one rule"
+    grammar = Grammar(start)
+    for rule in all_rules:
+        grammar.add_rule(rule)
+
+    return grammar, nts, named_terms
 
 
 def make_simple_grammar():
@@ -782,122 +883,30 @@ class TestDragonBookExamples:
     def test_dragon_book_example_4_28(self):
         """Test grammar from Dragon Book Example 4.28.
 
-        Grammar:
-        E -> T E'
-        E' -> + T E' | epsilon
-        T -> F T'
-        T' -> * F T' | epsilon
-        F -> ( E ) | id
-
-        Types:
-        E :: Exp, T :: Exp, F :: Exp
-        E' :: Option[Exp], T' :: Option[Exp]
-        id :: Exp
+        E -> T Ep, Ep -> + T Ep | eps, T -> F Tp,
+        Tp -> * F Tp | eps, F -> ( E ) | id
         """
-        exp_type = MessageType("proto", "Exp")
-        e = Nonterminal("E", exp_type)
-        e_prime = Nonterminal("E'", OptionType(exp_type))
-        t = Nonterminal("T", exp_type)
-        t_prime = Nonterminal("T'", OptionType(exp_type))
-        f = Nonterminal("F", exp_type)
+        grammar, nt, tok = _grammar("""
+            E -> T Ep
+            Ep -> "+" T Ep | eps
+            T -> F Tp
+            Tp -> "*" F Tp | eps
+            F -> "(" E ")" | id
+        """)
+        e, ep = nt["E"], nt["Ep"]
+        t, tp = nt["T"], nt["Tp"]
+        f = nt["F"]
+        id_tok = tok["id"]
+        plus, star = LitTerminal("+"), LitTerminal("*")
+        lparen, rparen = LitTerminal("("), LitTerminal(")")
 
-        plus = LitTerminal("+")
-        star = LitTerminal("*")
-        lparen = LitTerminal("(")
-        rparen = LitTerminal(")")
-        id_tok = NamedTerminal("id", exp_type)
-
-        grammar = Grammar(e)
-
-        # E -> T E'
-        param_t = Var("t", exp_type)
-        param_ep = Var("ep", OptionType(exp_type))
-        grammar.add_rule(
-            Rule(
-                e,
-                Sequence((t, e_prime)),
-                Lambda([param_t, param_ep], exp_type, param_t),
-            )
-        )
-
-        # E' -> + T E'
-        param_t2 = Var("t2", exp_type)
-        param_ep2 = Var("ep2", OptionType(exp_type))
-        grammar.add_rule(
-            Rule(
-                e_prime,
-                Sequence((plus, t, e_prime)),
-                Lambda(
-                    [param_t2, param_ep2],
-                    OptionType(exp_type),
-                    Call(make_builtin("some"), [param_t2]),
-                ),
-            )
-        )
-
-        # E' -> epsilon
-        grammar.add_rule(
-            Rule(
-                e_prime,
-                Sequence(()),
-                Lambda([], OptionType(exp_type), Call(make_builtin("none"), [])),
-            )
-        )
-
-        # T -> F T'
-        param_f = Var("f", exp_type)
-        param_tp = Var("tp", OptionType(exp_type))
-        grammar.add_rule(
-            Rule(
-                t,
-                Sequence((f, t_prime)),
-                Lambda([param_f, param_tp], exp_type, param_f),
-            )
-        )
-
-        # T' -> * F T'
-        param_f2 = Var("f2", exp_type)
-        param_tp2 = Var("tp2", OptionType(exp_type))
-        grammar.add_rule(
-            Rule(
-                t_prime,
-                Sequence((star, f, t_prime)),
-                Lambda(
-                    [param_f2, param_tp2],
-                    OptionType(exp_type),
-                    Call(make_builtin("some"), [param_f2]),
-                ),
-            )
-        )
-
-        # T' -> epsilon
-        grammar.add_rule(
-            Rule(
-                t_prime,
-                Sequence(()),
-                Lambda([], OptionType(exp_type), Call(make_builtin("none"), [])),
-            )
-        )
-
-        # F -> ( E )
-        param_e = Var("e", exp_type)
-        grammar.add_rule(
-            Rule(f, Sequence((lparen, e, rparen)), Lambda([param_e], exp_type, param_e))
-        )
-
-        # F -> id
-        param_id = Var("i", exp_type)
-        grammar.add_rule(Rule(f, id_tok, Lambda([param_id], exp_type, param_id)))
-
-        # Compute nullable
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
-        assert nullable[e_prime]
-        assert nullable[t_prime]
+        assert nullable[ep]
+        assert nullable[tp]
         assert not nullable[e]
         assert not nullable[t]
         assert not nullable[f]
 
-        # Compute FIRST
         first = GrammarAnalysis.compute_first_static(grammar, nullable)
         assert lparen in first[e]
         assert id_tok in first[e]
@@ -905,323 +914,104 @@ class TestDragonBookExamples:
         assert id_tok in first[t]
         assert lparen in first[f]
         assert id_tok in first[f]
-        assert plus in first[e_prime]
-        assert star in first[t_prime]
+        assert plus in first[ep]
+        assert star in first[tp]
 
-        # Compute FOLLOW
-        # FOLLOW(E) = {$, )}
-        # FOLLOW(E') = FOLLOW(E) = {$, )}
-        # FOLLOW(T) = FIRST(E') ∪ FOLLOW(E) = {+, $, )}
-        # FOLLOW(T') = FOLLOW(T) = {+, $, )}
-        # FOLLOW(F) = FIRST(T') ∪ FOLLOW(T) = {*, +, $, )}
         follow = GrammarAnalysis.compute_follow_static(grammar, nullable, first)
         eof = NamedTerminal("$", BaseType("EOF"))
-
-        # FOLLOW(E)
         assert eof in follow[e]
         assert rparen in follow[e]
-
-        # FOLLOW(E')
-        assert eof in follow[e_prime]
-        assert rparen in follow[e_prime]
-
-        # FOLLOW(T)
+        assert eof in follow[ep]
+        assert rparen in follow[ep]
         assert plus in follow[t]
-
-        # FOLLOW(T')
-        assert plus in follow[t_prime]
-
-        # FOLLOW(F) = FIRST(T') = {*}
-        # Note: Should also include FOLLOW(T) since T' is nullable, but implementation may not do this
+        assert plus in follow[tp]
         assert star in follow[f]
 
     def test_dragon_book_example_4_31(self):
         """Test grammar from Dragon Book Example 4.31.
 
-        Grammar:
-        S -> i E t S S' | a
-        S' -> e S | epsilon
-        E -> b
+        S -> if E then S Sp | a, Sp -> else S | eps, E -> b
         """
-        s = Nonterminal("S", MessageType("proto", "S"))
-        s_prime = Nonterminal("S'", MessageType("proto", "SPrime"))
-        e = Nonterminal("E", MessageType("proto", "E"))
-
+        grammar, nt, _ = _grammar("""
+            S -> "if" E "then" S Sp | "a"
+            Sp -> "else" S | eps
+            E -> "b"
+        """)
+        s, sp, e = nt["S"], nt["Sp"], nt["E"]
         if_tok = LitTerminal("if")
-        then_tok = LitTerminal("then")
-        else_tok = LitTerminal("else")
         a_tok = LitTerminal("a")
+        else_tok = LitTerminal("else")
+        then_tok = LitTerminal("then")
         b_tok = LitTerminal("b")
 
-        grammar = Grammar(s)
-
-        # S -> if E then S S'
-        param_e = Var("e", MessageType("proto", "E"))
-        param_s1 = Var("s1", MessageType("proto", "S"))
-        param_sp = Var("sp", MessageType("proto", "SPrime"))
-        grammar.add_rule(
-            Rule(
-                s,
-                Sequence((if_tok, e, then_tok, s, s_prime)),
-                Lambda(
-                    [param_e, param_s1, param_sp], MessageType("proto", "S"), param_e
-                ),
-            )
-        )
-
-        # S -> a
-        grammar.add_rule(
-            Rule(
-                s,
-                a_tok,
-                Lambda(
-                    [], MessageType("proto", "S"), Var("x", MessageType("proto", "S"))
-                ),
-            )
-        )
-
-        # S' -> else S
-        param_s2 = Var("s2", MessageType("proto", "S"))
-        grammar.add_rule(
-            Rule(
-                s_prime,
-                Sequence((else_tok, s)),
-                Lambda([param_s2], MessageType("proto", "SPrime"), param_s2),
-            )
-        )
-
-        # S' -> epsilon
-        grammar.add_rule(
-            Rule(
-                s_prime,
-                Sequence(()),
-                Lambda(
-                    [],
-                    MessageType("proto", "SPrime"),
-                    Var("y", MessageType("proto", "SPrime")),
-                ),
-            )
-        )
-
-        # E -> b
-        grammar.add_rule(
-            Rule(
-                e,
-                b_tok,
-                Lambda(
-                    [], MessageType("proto", "E"), Var("z", MessageType("proto", "E"))
-                ),
-            )
-        )
-
-        # Compute nullable
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
-        assert nullable[s_prime]
+        assert nullable[sp]
         assert not nullable[s]
         assert not nullable[e]
 
-        # Compute FIRST
         first = GrammarAnalysis.compute_first_static(grammar, nullable)
         assert if_tok in first[s]
         assert a_tok in first[s]
-        assert else_tok in first[s_prime]
+        assert else_tok in first[sp]
         assert b_tok in first[e]
 
-        # Compute FOLLOW
         follow = GrammarAnalysis.compute_follow_static(grammar, nullable, first)
         eof = NamedTerminal("$", BaseType("EOF"))
         assert eof in follow[s]
         assert else_tok in follow[s]
-        assert eof in follow[s_prime]
-        assert else_tok in follow[s_prime]
+        assert eof in follow[sp]
+        assert else_tok in follow[sp]
         assert then_tok in follow[e]
 
     def test_dragon_book_list_grammar(self):
-        """Test simple list grammar from Dragon Book.
-
-        Grammar:
-        list -> list + digit | digit
-        digit -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
-        """
-        list_nt = Nonterminal("list", MessageType("proto", "List"))
-        digit = Nonterminal("digit", MessageType("proto", "Digit"))
-
+        """Test simple list grammar: L -> L + D | D, D -> 0 | 1."""
+        grammar, nt, _ = _grammar("""
+            L -> L "+" D | D
+            D -> "0" | "1"
+        """)
+        list_nt, d = nt["L"], nt["D"]
         plus = LitTerminal("+")
-        zero = LitTerminal("0")
-        one = LitTerminal("1")
+        zero, one = LitTerminal("0"), LitTerminal("1")
 
-        grammar = Grammar(list_nt)
-
-        # list -> list + digit
-        param_list = Var("l", MessageType("proto", "List"))
-        param_digit = Var("d", MessageType("proto", "Digit"))
-        grammar.add_rule(
-            Rule(
-                list_nt,
-                Sequence((list_nt, plus, digit)),
-                Lambda(
-                    [param_list, param_digit], MessageType("proto", "List"), param_list
-                ),
-            )
-        )
-
-        # list -> digit
-        param_digit2 = Var("d2", MessageType("proto", "Digit"))
-        grammar.add_rule(
-            Rule(
-                list_nt,
-                digit,
-                Lambda([param_digit2], MessageType("proto", "List"), param_digit2),
-            )
-        )
-
-        # digit -> 0
-        grammar.add_rule(
-            Rule(
-                digit,
-                zero,
-                Lambda(
-                    [],
-                    MessageType("proto", "Digit"),
-                    Var("x", MessageType("proto", "Digit")),
-                ),
-            )
-        )
-
-        # digit -> 1
-        grammar.add_rule(
-            Rule(
-                digit,
-                one,
-                Lambda(
-                    [],
-                    MessageType("proto", "Digit"),
-                    Var("y", MessageType("proto", "Digit")),
-                ),
-            )
-        )
-
-        # Compute nullable
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
         assert not nullable[list_nt]
-        assert not nullable[digit]
+        assert not nullable[d]
 
-        # Compute FIRST
         first = GrammarAnalysis.compute_first_static(grammar, nullable)
         assert zero in first[list_nt]
         assert one in first[list_nt]
-        assert zero in first[digit]
-        assert one in first[digit]
+        assert zero in first[d]
+        assert one in first[d]
 
-        # Compute FOLLOW
         follow = GrammarAnalysis.compute_follow_static(grammar, nullable, first)
         eof = NamedTerminal("$", BaseType("EOF"))
         assert eof in follow[list_nt]
         assert plus in follow[list_nt]
-        assert eof in follow[digit]
-        assert plus in follow[digit]
+        assert eof in follow[d]
+        assert plus in follow[d]
 
     def test_dragon_book_nullable_propagation(self):
-        """Test nullable propagation example.
+        """Test nullable propagation: S -> A B C, A -> a | eps, B -> b | eps, C -> c."""
+        grammar, nt, _ = _grammar("""
+            S -> A B C
+            A -> "a" | eps
+            B -> "b" | eps
+            C -> "c"
+        """)
+        s, a, b, c = nt["S"], nt["A"], nt["B"], nt["C"]
+        lit_a, lit_b, lit_c = LitTerminal("a"), LitTerminal("b"), LitTerminal("c")
 
-        Grammar:
-        S -> A B C
-        A -> a | epsilon
-        B -> b | epsilon
-        C -> c
-        """
-        s = Nonterminal("S", MessageType("proto", "S"))
-        a = Nonterminal("A", MessageType("proto", "A"))
-        b = Nonterminal("B", MessageType("proto", "B"))
-        c = Nonterminal("C", MessageType("proto", "C"))
-
-        lit_a = LitTerminal("a")
-        lit_b = LitTerminal("b")
-        lit_c = LitTerminal("c")
-
-        grammar = Grammar(s)
-
-        # S -> A B C
-        param_a = Var("x", MessageType("proto", "A"))
-        param_b = Var("y", MessageType("proto", "B"))
-        param_c = Var("z", MessageType("proto", "C"))
-        grammar.add_rule(
-            Rule(
-                s,
-                Sequence((a, b, c)),
-                Lambda([param_a, param_b, param_c], MessageType("proto", "S"), param_a),
-            )
-        )
-
-        # A -> a
-        grammar.add_rule(
-            Rule(
-                a,
-                lit_a,
-                Lambda(
-                    [], MessageType("proto", "A"), Var("v", MessageType("proto", "A"))
-                ),
-            )
-        )
-
-        # A -> epsilon
-        grammar.add_rule(
-            Rule(
-                a,
-                Sequence(()),
-                Lambda(
-                    [], MessageType("proto", "A"), Var("w", MessageType("proto", "A"))
-                ),
-            )
-        )
-
-        # B -> b
-        grammar.add_rule(
-            Rule(
-                b,
-                lit_b,
-                Lambda(
-                    [], MessageType("proto", "B"), Var("u", MessageType("proto", "B"))
-                ),
-            )
-        )
-
-        # B -> epsilon
-        grammar.add_rule(
-            Rule(
-                b,
-                Sequence(()),
-                Lambda(
-                    [], MessageType("proto", "B"), Var("t", MessageType("proto", "B"))
-                ),
-            )
-        )
-
-        # C -> c
-        grammar.add_rule(
-            Rule(
-                c,
-                lit_c,
-                Lambda(
-                    [], MessageType("proto", "C"), Var("s", MessageType("proto", "C"))
-                ),
-            )
-        )
-
-        # Compute nullable
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
         assert nullable[a]
         assert nullable[b]
         assert not nullable[c]
         assert not nullable[s]
 
-        # Compute FIRST
         first = GrammarAnalysis.compute_first_static(grammar, nullable)
         assert lit_a in first[s]
         assert lit_b in first[s]
         assert lit_c in first[s]
 
-        # Compute FOLLOW - this tests propagation through nullable nonterminals
         follow = GrammarAnalysis.compute_follow_static(grammar, nullable, first)
         assert lit_b in follow[a]
         assert lit_c in follow[b]
@@ -1229,67 +1019,20 @@ class TestDragonBookExamples:
     def test_dragon_book_first_k_example(self):
         """Test FIRST_k for grammar requiring lookahead k>1.
 
-        Grammar:
-        S -> a A a | b A b
-        A -> a | b
+        S -> a A a | b A b, A -> a | b
         """
-        s = Nonterminal("S", MessageType("proto", "S"))
-        a_nt = Nonterminal("A", MessageType("proto", "A"))
+        grammar, nt, _ = _grammar("""
+            S -> "a" A "a" | "b" A "b"
+            A -> "a" | "b"
+        """)
+        s, _a = nt["S"], nt["A"]
+        lit_a, lit_b = LitTerminal("a"), LitTerminal("b")
 
-        lit_a = LitTerminal("a")
-        lit_b = LitTerminal("b")
-
-        grammar = Grammar(s)
-
-        # S -> a A a
-        param_a1 = Var("x", MessageType("proto", "A"))
-        grammar.add_rule(
-            Rule(
-                s,
-                Sequence((lit_a, a_nt, lit_a)),
-                Lambda([param_a1], MessageType("proto", "S"), param_a1),
-            )
-        )
-
-        # S -> b A b
-        param_a2 = Var("y", MessageType("proto", "A"))
-        grammar.add_rule(
-            Rule(
-                s,
-                Sequence((lit_b, a_nt, lit_b)),
-                Lambda([param_a2], MessageType("proto", "S"), param_a2),
-            )
-        )
-
-        # A -> a
-        grammar.add_rule(
-            Rule(
-                a_nt,
-                lit_a,
-                Lambda(
-                    [], MessageType("proto", "A"), Var("v", MessageType("proto", "A"))
-                ),
-            )
-        )
-
-        # A -> b
-        grammar.add_rule(
-            Rule(
-                a_nt,
-                lit_b,
-                Lambda(
-                    [], MessageType("proto", "A"), Var("w", MessageType("proto", "A"))
-                ),
-            )
-        )
-
-        # With k=1, FIRST(S) = {a, b} - ambiguous
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
         first = GrammarAnalysis.compute_first_static(grammar, nullable)
         assert lit_a in first[s]
         assert lit_b in first[s]
 
-        # With k=3, we can distinguish: FIRST_3(S) = {(a,a,a), (a,b,a), (b,a,b), (b,b,b)}
         first_k = GrammarAnalysis.compute_first_k_static(
             grammar, k=3, nullable=nullable
         )
@@ -1301,81 +1044,17 @@ class TestDragonBookExamples:
     def test_dragon_book_dangling_else_with_follow_k(self):
         """Test dangling else ambiguity with FOLLOW_k.
 
-        Grammar:
-        S -> if E then S S' | other
-        S' -> else S | epsilon
-        E -> expr
+        S -> if E then S Sp | other, Sp -> else S | eps, E -> expr
         """
-        s = Nonterminal("S", MessageType("proto", "S"))
-        s_prime = Nonterminal("S'", MessageType("proto", "SPrime"))
-        e = Nonterminal("E", MessageType("proto", "E"))
-
+        grammar, nt, _ = _grammar("""
+            S -> "if" E "then" S Sp | "other"
+            Sp -> "else" S | eps
+            E -> "expr"
+        """)
+        sp = nt["Sp"]
         if_tok = LitTerminal("if")
-        then_tok = LitTerminal("then")
         else_tok = LitTerminal("else")
         other_tok = LitTerminal("other")
-        expr_tok = LitTerminal("expr")
-
-        grammar = Grammar(s)
-
-        # S -> if E then S S'
-        param_e = Var("e", MessageType("proto", "E"))
-        param_s = Var("s", MessageType("proto", "S"))
-        param_sp = Var("sp", MessageType("proto", "SPrime"))
-        grammar.add_rule(
-            Rule(
-                s,
-                Sequence((if_tok, e, then_tok, s, s_prime)),
-                Lambda(
-                    [param_e, param_s, param_sp], MessageType("proto", "S"), param_e
-                ),
-            )
-        )
-
-        # S -> other
-        grammar.add_rule(
-            Rule(
-                s,
-                other_tok,
-                Lambda(
-                    [], MessageType("proto", "S"), Var("x", MessageType("proto", "S"))
-                ),
-            )
-        )
-
-        # S' -> else S
-        param_s2 = Var("s2", MessageType("proto", "S"))
-        grammar.add_rule(
-            Rule(
-                s_prime,
-                Sequence((else_tok, s)),
-                Lambda([param_s2], MessageType("proto", "SPrime"), param_s2),
-            )
-        )
-
-        # S' -> epsilon
-        grammar.add_rule(
-            Rule(
-                s_prime,
-                Sequence(()),
-                Lambda(
-                    [],
-                    MessageType("proto", "SPrime"),
-                    Var("y", MessageType("proto", "SPrime")),
-                ),
-            )
-        )
-
-        # E -> expr
-        grammar.add_rule(
-            Rule(
-                e,
-                expr_tok,
-                Lambda(
-                    [], MessageType("proto", "E"), Var("z", MessageType("proto", "E"))
-                ),
-            )
-        )
 
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
         first_k = GrammarAnalysis.compute_first_k_static(
@@ -1385,11 +1064,10 @@ class TestDragonBookExamples:
             grammar, k=2, nullable=nullable, first_k=first_k
         )
 
-        # FOLLOW_2(S') should include EOF and pairs with else
         eof = NamedTerminal("$", BaseType("EOF"))
-        assert (eof,) in follow_k[s_prime]
-        assert (else_tok, if_tok) in follow_k[s_prime]
-        assert (else_tok, other_tok) in follow_k[s_prime]
+        assert (eof,) in follow_k[sp]
+        assert (else_tok, if_tok) in follow_k[sp]
+        assert (else_tok, other_tok) in follow_k[sp]
 
 
 class TestIntegration:
@@ -1482,741 +1160,208 @@ class TestAppelChapter3Examples:
     """Tests based on examples from Appel's Modern Compiler Implementation, Chapter 3."""
 
     def test_grammar_3_12_nullable_first_follow(self):
-        """Test Grammar 3.12 from Appel's book (page 48).
+        """Test Grammar 3.12 (page 48).
 
-        Grammar:
-        Z -> d | X Y Z
-        Y -> epsilon | c
-        X -> Y | a
-
-        Expected results (from page 50):
-        - X: nullable=yes, FIRST={a,c}, FOLLOW={a,c,d}
-        - Y: nullable=yes, FIRST={c}, FOLLOW={a,c,d}
-        - Z: nullable=no, FIRST={a,c,d}, FOLLOW={$}
+        Z -> d | X Y Z, Y -> eps | c, X -> Y | a
         """
-        z = Nonterminal("Z", MessageType("proto", "Z"))
-        y = Nonterminal("Y", MessageType("proto", "Y"))
-        x = Nonterminal("X", MessageType("proto", "X"))
+        grammar, nt, _ = _grammar("""
+            Z -> "d" | X Y Z
+            Y -> eps | "c"
+            X -> Y | "a"
+        """)
+        z, y, x = nt["Z"], nt["Y"], nt["X"]
+        lit_a, lit_c, lit_d = LitTerminal("a"), LitTerminal("c"), LitTerminal("d")
 
-        lit_a = LitTerminal("a")
-        lit_c = LitTerminal("c")
-        lit_d = LitTerminal("d")
-
-        grammar = Grammar(z)
-
-        # Z -> d
-        grammar.add_rule(
-            Rule(
-                z,
-                lit_d,
-                Lambda(
-                    [], MessageType("proto", "Z"), Var("v", MessageType("proto", "Z"))
-                ),
-            )
-        )
-
-        # Z -> X Y Z
-        param_x = Var("x", MessageType("proto", "X"))
-        param_y = Var("y", MessageType("proto", "Y"))
-        param_z = Var("z", MessageType("proto", "Z"))
-        grammar.add_rule(
-            Rule(
-                z,
-                Sequence((x, y, z)),
-                Lambda([param_x, param_y, param_z], MessageType("proto", "Z"), param_x),
-            )
-        )
-
-        # Y -> epsilon
-        grammar.add_rule(
-            Rule(
-                y,
-                Sequence(()),
-                Lambda(
-                    [], MessageType("proto", "Y"), Var("w", MessageType("proto", "Y"))
-                ),
-            )
-        )
-
-        # Y -> c
-        grammar.add_rule(
-            Rule(
-                y,
-                lit_c,
-                Lambda(
-                    [], MessageType("proto", "Y"), Var("u", MessageType("proto", "Y"))
-                ),
-            )
-        )
-
-        # X -> Y
-        param_y2 = Var("y2", MessageType("proto", "Y"))
-        grammar.add_rule(
-            Rule(x, y, Lambda([param_y2], MessageType("proto", "X"), param_y2))
-        )
-
-        # X -> a
-        grammar.add_rule(
-            Rule(
-                x,
-                lit_a,
-                Lambda(
-                    [], MessageType("proto", "X"), Var("t", MessageType("proto", "X"))
-                ),
-            )
-        )
-
-        # Compute nullable - from page 50
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
         assert nullable[x], "X should be nullable (X -> Y -> epsilon)"
         assert nullable[y], "Y should be nullable (Y -> epsilon)"
         assert not nullable[z], "Z should not be nullable"
 
-        # Compute FIRST - from page 50
         first = GrammarAnalysis.compute_first_static(grammar, nullable)
-        # FIRST(X) = {a, c}
-        assert lit_a in first[x], "FIRST(X) should contain 'a'"
-        assert lit_c in first[x], "FIRST(X) should contain 'c'"
-        assert len(first[x]) == 2, f"FIRST(X) should be {{a, c}}, got {first[x]}"
+        assert first[x] == {lit_a, lit_c}, (
+            f"FIRST(X) should be {{a, c}}, got {first[x]}"
+        )
+        assert first[y] == {lit_c}, f"FIRST(Y) should be {{c}}, got {first[y]}"
+        assert first[z] == {lit_a, lit_c, lit_d}, (
+            f"FIRST(Z) should be {{a, c, d}}, got {first[z]}"
+        )
 
-        # FIRST(Y) = {c}
-        assert lit_c in first[y], "FIRST(Y) should contain 'c'"
-        assert len(first[y]) == 1, f"FIRST(Y) should be {{c}}, got {first[y]}"
-
-        # FIRST(Z) = {a, c, d}
-        assert lit_a in first[z], "FIRST(Z) should contain 'a'"
-        assert lit_c in first[z], "FIRST(Z) should contain 'c'"
-        assert lit_d in first[z], "FIRST(Z) should contain 'd'"
-        assert len(first[z]) == 3, f"FIRST(Z) should be {{a, c, d}}, got {first[z]}"
-
-        # Compute FOLLOW - from page 50
         follow = GrammarAnalysis.compute_follow_static(grammar, nullable, first)
         eof = NamedTerminal("$", BaseType("EOF"))
-
-        # FOLLOW(X) = {a, c, d}
-        assert lit_a in follow[x], "FOLLOW(X) should contain 'a'"
-        assert lit_c in follow[x], "FOLLOW(X) should contain 'c'"
-        assert lit_d in follow[x], "FOLLOW(X) should contain 'd'"
-
-        # FOLLOW(Y) = {a, c, d}
-        assert lit_a in follow[y], "FOLLOW(Y) should contain 'a'"
-        assert lit_c in follow[y], "FOLLOW(Y) should contain 'c'"
-        assert lit_d in follow[y], "FOLLOW(Y) should contain 'd'"
-
-        # FOLLOW(Z) = {$}
-        assert eof in follow[z], "FOLLOW(Z) should contain '$'"
+        assert lit_a in follow[x]
+        assert lit_c in follow[x]
+        assert lit_d in follow[x]
+        assert lit_a in follow[y]
+        assert lit_c in follow[y]
+        assert lit_d in follow[y]
+        assert eof in follow[z]
 
     def test_grammar_3_1_straight_line(self):
         """Test simplified straight-line grammar from Grammar 3.1 (page 41).
 
-        Grammar (simplified):
-        S -> S ; S | id := E | print ( L )
-        E -> id | num | E + E | ( S , E )
-        L -> E | L , E
-
-        For this test, we use a non-left-recursive version:
-        S -> id := E S' | print ( L ) S'
-        S' -> ; S | epsilon
-        E -> id E' | num E'
-        E' -> + E | epsilon
-        L -> E L'
-        L' -> , E L' | epsilon
+        S -> id := E Sp | print ( L ) Sp, Sp -> ; S | eps,
+        E -> id Ep | num Ep, Ep -> + E | eps,
+        L -> E Lp, Lp -> , E Lp | eps
         """
-        s = Nonterminal("S", MessageType("proto", "S"))
-        s_prime = Nonterminal("S'", MessageType("proto", "SPrime"))
-        e = Nonterminal("E", MessageType("proto", "E"))
-        e_prime = Nonterminal("E'", MessageType("proto", "EPrime"))
-        l_nt = Nonterminal("L", MessageType("proto", "L"))
-        l_prime = Nonterminal("L'", MessageType("proto", "LPrime"))
-
-        id_tok = NamedTerminal("id", BaseType("String"))
-        num_tok = NamedTerminal("num", BaseType("Int64"))
-        assign = LitTerminal(":=")
-        print_tok = LitTerminal("print")
+        grammar, nt, tok = _grammar("""
+            S -> id ":=" E Sp | "print" "(" L ")" Sp
+            Sp -> ";" S | eps
+            E -> id Ep | num Ep
+            Ep -> "+" E | eps
+            L -> E Lp
+            Lp -> "," E Lp | eps
+        """)
+        s, sp = nt["S"], nt["Sp"]
+        e, ep = nt["E"], nt["Ep"]
+        l_nt, lp = nt["L"], nt["Lp"]
+        id_tok, num_tok = tok["id"], tok["num"]
         semi = LitTerminal(";")
         plus = LitTerminal("+")
         comma = LitTerminal(",")
-        lparen = LitTerminal("(")
-        rparen = LitTerminal(")")
+        print_tok = LitTerminal("print")
 
-        grammar = Grammar(s)
-
-        # S -> id := E S' (3 non-literal elements: id, E, S')
-        p1 = Var("p1", BaseType("String"))
-        p2 = Var("p2", MessageType("proto", "E"))
-        p3 = Var("p3", MessageType("proto", "SPrime"))
-        grammar.add_rule(
-            Rule(
-                s,
-                Sequence((id_tok, assign, e, s_prime)),
-                Lambda([p1, p2, p3], MessageType("proto", "S"), p2),
-            )
-        )
-
-        # S -> print ( L ) S' (2 non-literal elements: L, S')
-        p4 = Var("p4", MessageType("proto", "L"))
-        p5 = Var("p5", MessageType("proto", "SPrime"))
-        grammar.add_rule(
-            Rule(
-                s,
-                Sequence((print_tok, lparen, l_nt, rparen, s_prime)),
-                Lambda([p4, p5], MessageType("proto", "S"), p4),
-            )
-        )
-
-        # S' -> ; S (1 non-literal element: S)
-        p6 = Var("p6", MessageType("proto", "S"))
-        grammar.add_rule(
-            Rule(
-                s_prime,
-                Sequence((semi, s)),
-                Lambda([p6], MessageType("proto", "SPrime"), p6),
-            )
-        )
-
-        # S' -> epsilon
-        grammar.add_rule(
-            Rule(
-                s_prime,
-                Sequence(()),
-                Lambda(
-                    [],
-                    MessageType("proto", "SPrime"),
-                    Var("w", MessageType("proto", "SPrime")),
-                ),
-            )
-        )
-
-        # E -> id E' (2 non-literal elements: id, E')
-        p7 = Var("p7", BaseType("String"))
-        p8 = Var("p8", MessageType("proto", "EPrime"))
-        grammar.add_rule(
-            Rule(
-                e,
-                Sequence((id_tok, e_prime)),
-                Lambda([p7, p8], MessageType("proto", "E"), p7),
-            )
-        )
-
-        # E -> num E' (2 non-literal elements: num, E')
-        p9 = Var("p9", BaseType("Int64"))
-        p10 = Var("p10", MessageType("proto", "EPrime"))
-        grammar.add_rule(
-            Rule(
-                e,
-                Sequence((num_tok, e_prime)),
-                Lambda([p9, p10], MessageType("proto", "E"), p9),
-            )
-        )
-
-        # E' -> + E (1 non-literal element: E)
-        p11 = Var("p11", MessageType("proto", "E"))
-        grammar.add_rule(
-            Rule(
-                e_prime,
-                Sequence((plus, e)),
-                Lambda([p11], MessageType("proto", "EPrime"), p11),
-            )
-        )
-
-        # E' -> epsilon
-        grammar.add_rule(
-            Rule(
-                e_prime,
-                Sequence(()),
-                Lambda(
-                    [],
-                    MessageType("proto", "EPrime"),
-                    Var("s", MessageType("proto", "EPrime")),
-                ),
-            )
-        )
-
-        # L -> E L' (2 non-literal elements: E, L')
-        p12 = Var("p12", MessageType("proto", "E"))
-        p13 = Var("p13", MessageType("proto", "LPrime"))
-        grammar.add_rule(
-            Rule(
-                l_nt,
-                Sequence((e, l_prime)),
-                Lambda([p12, p13], MessageType("proto", "L"), p12),
-            )
-        )
-
-        # L' -> , E L' (2 non-literal elements: E, L')
-        p14 = Var("p14", MessageType("proto", "E"))
-        p15 = Var("p15", MessageType("proto", "LPrime"))
-        grammar.add_rule(
-            Rule(
-                l_prime,
-                Sequence((comma, e, l_prime)),
-                Lambda([p14, p15], MessageType("proto", "LPrime"), p14),
-            )
-        )
-
-        # L' -> epsilon
-        grammar.add_rule(
-            Rule(
-                l_prime,
-                Sequence(()),
-                Lambda(
-                    [],
-                    MessageType("proto", "LPrime"),
-                    Var("p", MessageType("proto", "LPrime")),
-                ),
-            )
-        )
-
-        # Compute nullable
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
-        assert nullable[s_prime], "S' should be nullable"
-        assert nullable[e_prime], "E' should be nullable"
-        assert nullable[l_prime], "L' should be nullable"
-        assert not nullable[s], "S should not be nullable"
-        assert not nullable[e], "E should not be nullable"
-        assert not nullable[l_nt], "L should not be nullable"
+        assert nullable[sp]
+        assert nullable[ep]
+        assert nullable[lp]
+        assert not nullable[s]
+        assert not nullable[e]
+        assert not nullable[l_nt]
 
-        # Compute FIRST
         first = GrammarAnalysis.compute_first_static(grammar, nullable)
-
-        # FIRST(S) = {id, print}
         assert id_tok in first[s]
         assert print_tok in first[s]
-
-        # FIRST(E) = {id, num}
         assert id_tok in first[e]
         assert num_tok in first[e]
-
-        # FIRST(S') = {;}
-        assert semi in first[s_prime]
-
-        # FIRST(E') = {+}
-        assert plus in first[e_prime]
-
-        # FIRST(L') = {,}
-        assert comma in first[l_prime]
+        assert semi in first[sp]
+        assert plus in first[ep]
+        assert comma in first[lp]
 
     def test_grammar_3_8_expression_precedence(self):
-        """Test expression grammar with precedence from Grammar 3.8 (page 45).
+        """Test expression grammar from Grammar 3.8 (page 45).
 
-        Grammar:
-        E -> E + T | T
-        T -> T * F | F
-        F -> id | ( E )
-
-        Using left-recursion eliminated version:
-        E -> T E'
-        E' -> + T E' | epsilon
-        T -> F T'
-        T' -> * F T' | epsilon
+        E -> T Ep, Ep -> + T Ep | eps, T -> F Tp, Tp -> * F Tp | eps,
         F -> id | ( E )
         """
-        e = Nonterminal("E", MessageType("proto", "E"))
-        e_prime = Nonterminal("E'", MessageType("proto", "EPrime"))
-        t = Nonterminal("T", MessageType("proto", "T"))
-        t_prime = Nonterminal("T'", MessageType("proto", "TPrime"))
-        f = Nonterminal("F", MessageType("proto", "F"))
+        grammar, nt, tok = _grammar("""
+            E -> T Ep
+            Ep -> "+" T Ep | eps
+            T -> F Tp
+            Tp -> "*" F Tp | eps
+            F -> id | "(" E ")"
+        """)
+        e, ep = nt["E"], nt["Ep"]
+        t, tp = nt["T"], nt["Tp"]
+        f = nt["F"]
+        id_tok = tok["id"]
+        plus, star = LitTerminal("+"), LitTerminal("*")
+        lparen, rparen = LitTerminal("("), LitTerminal(")")
 
-        plus = LitTerminal("+")
-        star = LitTerminal("*")
-        id_tok = NamedTerminal("id", BaseType("String"))
-        lparen = LitTerminal("(")
-        rparen = LitTerminal(")")
-
-        grammar = Grammar(e)
-
-        # E -> T E' (2 non-literal elements)
-        p_t = Var("t", MessageType("proto", "T"))
-        p_ep = Var("ep", MessageType("proto", "EPrime"))
-        grammar.add_rule(
-            Rule(
-                e,
-                Sequence((t, e_prime)),
-                Lambda([p_t, p_ep], MessageType("proto", "E"), p_t),
-            )
-        )
-
-        # E' -> + T E' (2 non-literal elements)
-        p_t2 = Var("t2", MessageType("proto", "T"))
-        p_ep2 = Var("ep2", MessageType("proto", "EPrime"))
-        grammar.add_rule(
-            Rule(
-                e_prime,
-                Sequence((plus, t, e_prime)),
-                Lambda([p_t2, p_ep2], MessageType("proto", "EPrime"), p_t2),
-            )
-        )
-
-        # E' -> epsilon
-        grammar.add_rule(
-            Rule(
-                e_prime,
-                Sequence(()),
-                Lambda(
-                    [],
-                    MessageType("proto", "EPrime"),
-                    Var("z", MessageType("proto", "EPrime")),
-                ),
-            )
-        )
-
-        # T -> F T' (2 non-literal elements)
-        p_f = Var("f", MessageType("proto", "F"))
-        p_tp = Var("tp", MessageType("proto", "TPrime"))
-        grammar.add_rule(
-            Rule(
-                t,
-                Sequence((f, t_prime)),
-                Lambda([p_f, p_tp], MessageType("proto", "T"), p_f),
-            )
-        )
-
-        # T' -> * F T' (2 non-literal elements)
-        p_f2 = Var("f2", MessageType("proto", "F"))
-        p_tp2 = Var("tp2", MessageType("proto", "TPrime"))
-        grammar.add_rule(
-            Rule(
-                t_prime,
-                Sequence((star, f, t_prime)),
-                Lambda([p_f2, p_tp2], MessageType("proto", "TPrime"), p_f2),
-            )
-        )
-
-        # T' -> epsilon
-        grammar.add_rule(
-            Rule(
-                t_prime,
-                Sequence(()),
-                Lambda(
-                    [],
-                    MessageType("proto", "TPrime"),
-                    Var("u", MessageType("proto", "TPrime")),
-                ),
-            )
-        )
-
-        # F -> id (1 non-literal element)
-        p_id = Var("id", BaseType("String"))
-        grammar.add_rule(
-            Rule(f, id_tok, Lambda([p_id], MessageType("proto", "F"), p_id))
-        )
-
-        # F -> ( E ) (1 non-literal element)
-        p_e = Var("e", MessageType("proto", "E"))
-        grammar.add_rule(
-            Rule(
-                f,
-                Sequence((lparen, e, rparen)),
-                Lambda([p_e], MessageType("proto", "F"), p_e),
-            )
-        )
-
-        # Compute nullable
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
-        assert nullable[e_prime], "E' should be nullable"
-        assert nullable[t_prime], "T' should be nullable"
-        assert not nullable[e], "E should not be nullable"
-        assert not nullable[t], "T should not be nullable"
-        assert not nullable[f], "F should not be nullable"
+        assert nullable[ep]
+        assert nullable[tp]
+        assert not nullable[e]
+        assert not nullable[t]
+        assert not nullable[f]
 
-        # Compute FIRST
         first = GrammarAnalysis.compute_first_static(grammar, nullable)
-
-        # FIRST(F) = {id, (}
-        assert id_tok in first[f]
-        assert lparen in first[f]
-        assert len(first[f]) == 2
-
-        # FIRST(T) = FIRST(F) = {id, (}
+        assert first[f] == {id_tok, lparen}
         assert id_tok in first[t]
         assert lparen in first[t]
-
-        # FIRST(E) = FIRST(T) = {id, (}
         assert id_tok in first[e]
         assert lparen in first[e]
+        assert first[ep] == {plus}
+        assert first[tp] == {star}
 
-        # FIRST(E') = {+}
-        assert plus in first[e_prime]
-        assert len(first[e_prime]) == 1
-
-        # FIRST(T') = {*}
-        assert star in first[t_prime]
-        assert len(first[t_prime]) == 1
-
-        # Compute FOLLOW
         follow = GrammarAnalysis.compute_follow_static(grammar, nullable, first)
         eof = NamedTerminal("$", BaseType("EOF"))
-
-        # FOLLOW(E) = {$, )}
         assert eof in follow[e]
         assert rparen in follow[e]
-
-        # FOLLOW(E') = FOLLOW(E) = {$, )}
-        assert eof in follow[e_prime]
-        assert rparen in follow[e_prime]
-
-        # FOLLOW(T) includes FIRST(E') = {+} and FOLLOW(E) since E' is nullable
+        assert eof in follow[ep]
+        assert rparen in follow[ep]
         assert plus in follow[t]
         assert eof in follow[t]
         assert rparen in follow[t]
-
-        # FOLLOW(T') = FOLLOW(T)
-        assert plus in follow[t_prime]
-
-        # FOLLOW(F) includes FIRST(T') = {*} and FOLLOW(T) since T' is nullable
+        assert plus in follow[tp]
         assert star in follow[f]
 
     def test_grammar_3_20_sexp(self):
         """Test S-expression grammar from Grammar 3.20 (page 62).
 
-        Grammar:
-        S -> ( L ) | x
-        L -> S L'
-        L' -> S L' | epsilon
+        S -> ( L ) | x, L -> S Lp, Lp -> S Lp | eps
         """
-        s = Nonterminal("S", MessageType("proto", "S"))
-        l_nt = Nonterminal("L", MessageType("proto", "L"))
-        l_prime = Nonterminal("L'", MessageType("proto", "LPrime"))
-
-        lparen = LitTerminal("(")
-        rparen = LitTerminal(")")
+        grammar, nt, _ = _grammar("""
+            S -> "(" L ")" | "x"
+            L -> S Lp
+            Lp -> S Lp | eps
+        """)
+        s, l_nt, lp = nt["S"], nt["L"], nt["Lp"]
+        lparen, rparen = LitTerminal("("), LitTerminal(")")
         x_tok = LitTerminal("x")
 
-        grammar = Grammar(s)
-
-        # S -> ( L ) (1 non-literal element)
-        p_l = Var("l", MessageType("proto", "L"))
-        grammar.add_rule(
-            Rule(
-                s,
-                Sequence((lparen, l_nt, rparen)),
-                Lambda([p_l], MessageType("proto", "S"), p_l),
-            )
-        )
-
-        # S -> x (0 non-literal elements - x is a LitTerminal)
-        grammar.add_rule(
-            Rule(
-                s,
-                x_tok,
-                Lambda(
-                    [], MessageType("proto", "S"), Var("b", MessageType("proto", "S"))
-                ),
-            )
-        )
-
-        # L -> S L' (2 non-literal elements)
-        p_s = Var("s", MessageType("proto", "S"))
-        p_lp = Var("lp", MessageType("proto", "LPrime"))
-        grammar.add_rule(
-            Rule(
-                l_nt,
-                Sequence((s, l_prime)),
-                Lambda([p_s, p_lp], MessageType("proto", "L"), p_s),
-            )
-        )
-
-        # L' -> S L' (2 non-literal elements)
-        p_s2 = Var("s2", MessageType("proto", "S"))
-        p_lp2 = Var("lp2", MessageType("proto", "LPrime"))
-        grammar.add_rule(
-            Rule(
-                l_prime,
-                Sequence((s, l_prime)),
-                Lambda([p_s2, p_lp2], MessageType("proto", "LPrime"), p_s2),
-            )
-        )
-
-        # L' -> epsilon
-        grammar.add_rule(
-            Rule(
-                l_prime,
-                Sequence(()),
-                Lambda(
-                    [],
-                    MessageType("proto", "LPrime"),
-                    Var("e", MessageType("proto", "LPrime")),
-                ),
-            )
-        )
-
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
-        assert nullable[l_prime], "L' should be nullable"
-        assert not nullable[s], "S should not be nullable"
-        assert not nullable[l_nt], "L should not be nullable"
+        assert nullable[lp]
+        assert not nullable[s]
+        assert not nullable[l_nt]
 
         first = GrammarAnalysis.compute_first_static(grammar, nullable)
-
-        # FIRST(S) = {(, x}
-        assert lparen in first[s]
-        assert x_tok in first[s]
-        assert len(first[s]) == 2
-
-        # FIRST(L) = FIRST(S) = {(, x}
-        assert lparen in first[l_nt]
-        assert x_tok in first[l_nt]
-
-        # FIRST(L') = FIRST(S) = {(, x}
-        assert lparen in first[l_prime]
-        assert x_tok in first[l_prime]
+        assert first[s] == {lparen, x_tok}
+        assert first[l_nt] == {lparen, x_tok}
+        assert first[lp] == {lparen, x_tok}
 
         follow = GrammarAnalysis.compute_follow_static(grammar, nullable, first)
         eof = NamedTerminal("$", BaseType("EOF"))
-
-        # FOLLOW(S) = {$, ), (, x}
         assert eof in follow[s]
         assert rparen in follow[s]
-
-        # FOLLOW(L) = {)}
         assert rparen in follow[l_nt]
-
-        # FOLLOW(L') = FOLLOW(L) = {)}
-        assert rparen in follow[l_prime]
+        assert rparen in follow[lp]
 
     def test_exercise_3_5_grammar(self):
-        """Test grammar from Exercise 3.5.
-
-        Grammar:
-        S -> a S a | a a
-
-        This is not LL(1) because both productions start with 'a'.
-        But we can still compute FIRST and FOLLOW.
-        """
-        s = Nonterminal("S", MessageType("proto", "S"))
+        """Test grammar from Exercise 3.5: S -> a S a | a a."""
+        grammar, nt, _ = _grammar("""
+            S -> "a" S "a" | "a" "a"
+        """)
+        s = nt["S"]
         lit_a = LitTerminal("a")
 
-        grammar = Grammar(s)
-
-        # S -> a S a (1 non-literal element)
-        p_s = Var("s", MessageType("proto", "S"))
-        grammar.add_rule(
-            Rule(
-                s,
-                Sequence((lit_a, s, lit_a)),
-                Lambda([p_s], MessageType("proto", "S"), p_s),
-            )
-        )
-
-        # S -> a a (0 non-literal elements - both are LitTerminals)
-        grammar.add_rule(
-            Rule(
-                s,
-                Sequence((lit_a, lit_a)),
-                Lambda(
-                    [], MessageType("proto", "S"), Var("y", MessageType("proto", "S"))
-                ),
-            )
-        )
-
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
-        assert not nullable[s], "S should not be nullable"
+        assert not nullable[s]
 
         first = GrammarAnalysis.compute_first_static(grammar, nullable)
-        # FIRST(S) = {a}
-        assert lit_a in first[s]
-        assert len(first[s]) == 1
+        assert first[s] == {lit_a}
 
         follow = GrammarAnalysis.compute_follow_static(grammar, nullable, first)
         eof = NamedTerminal("$", BaseType("EOF"))
-
-        # FOLLOW(S) = {a, $}
         assert lit_a in follow[s]
         assert eof in follow[s]
 
     def test_first_k_grammar_3_12(self):
-        """Test FIRST_k for Grammar 3.12.
+        """Test FIRST_k for Grammar 3.12 with k=2.
 
-        With k=2, we can distinguish more productions.
+        Z -> d | X Y Z, Y -> eps | c, X -> Y | a
         """
-        z = Nonterminal("Z", MessageType("proto", "Z"))
-        y = Nonterminal("Y", MessageType("proto", "Y"))
-        x = Nonterminal("X", MessageType("proto", "X"))
-
-        lit_a = LitTerminal("a")
-        lit_c = LitTerminal("c")
-        lit_d = LitTerminal("d")
-
-        grammar = Grammar(z)
-
-        # Z -> d (0 non-literal elements)
-        grammar.add_rule(
-            Rule(
-                z,
-                lit_d,
-                Lambda(
-                    [], MessageType("proto", "Z"), Var("v", MessageType("proto", "Z"))
-                ),
-            )
-        )
-
-        # Z -> X Y Z (3 non-literal elements)
-        p_x = Var("x", MessageType("proto", "X"))
-        p_y = Var("y", MessageType("proto", "Y"))
-        p_z = Var("z", MessageType("proto", "Z"))
-        grammar.add_rule(
-            Rule(
-                z,
-                Sequence((x, y, z)),
-                Lambda([p_x, p_y, p_z], MessageType("proto", "Z"), p_x),
-            )
-        )
-
-        # Y -> epsilon
-        grammar.add_rule(
-            Rule(
-                y,
-                Sequence(()),
-                Lambda(
-                    [], MessageType("proto", "Y"), Var("u", MessageType("proto", "Y"))
-                ),
-            )
-        )
-
-        # Y -> c (0 non-literal elements)
-        grammar.add_rule(
-            Rule(
-                y,
-                lit_c,
-                Lambda(
-                    [], MessageType("proto", "Y"), Var("t", MessageType("proto", "Y"))
-                ),
-            )
-        )
-
-        # X -> Y (1 non-literal element)
-        p_y2 = Var("y2", MessageType("proto", "Y"))
-        grammar.add_rule(Rule(x, y, Lambda([p_y2], MessageType("proto", "X"), p_y2)))
-
-        # X -> a (0 non-literal elements)
-        grammar.add_rule(
-            Rule(
-                x,
-                lit_a,
-                Lambda(
-                    [], MessageType("proto", "X"), Var("r", MessageType("proto", "X"))
-                ),
-            )
-        )
+        grammar, nt, _ = _grammar("""
+            Z -> "d" | X Y Z
+            Y -> eps | "c"
+            X -> Y | "a"
+        """)
+        z, y, x = nt["Z"], nt["Y"], nt["X"]
+        lit_a, lit_c, lit_d = LitTerminal("a"), LitTerminal("c"), LitTerminal("d")
 
         nullable = GrammarAnalysis.compute_nullable_static(grammar)
         first_k = GrammarAnalysis.compute_first_k_static(
             grammar, k=2, nullable=nullable
         )
 
-        # FIRST_2(X) includes: (a,), (c,), ()
         assert (lit_a,) in first_k[x]
         assert (lit_c,) in first_k[x]
-        assert () in first_k[x]  # X is nullable via X -> Y -> epsilon
-
-        # FIRST_2(Y) includes: (c,), ()
+        assert () in first_k[x]
         assert (lit_c,) in first_k[y]
         assert () in first_k[y]
-
-        # FIRST_2(Z) includes: (d,), and combinations from X Y Z
         assert (lit_d,) in first_k[z]
-        assert (lit_a, lit_a) in first_k[z]  # X=a, Y=eps, Z starts with a
-        assert (lit_a, lit_c) in first_k[z]  # X=a, Y=c or X=a, Y=eps, Z starts with c
-        assert (lit_a, lit_d) in first_k[z]  # X=a, Y=eps, Z=d
-        assert (lit_c, lit_a) in first_k[z]  # X=Y=c, Z starts with a
-        assert (lit_c, lit_c) in first_k[z]  # X=Y=c, Z starts with c
-        assert (lit_c, lit_d) in first_k[z]  # X=Y=c, Z=d
+        assert (lit_a, lit_a) in first_k[z]
+        assert (lit_a, lit_c) in first_k[z]
+        assert (lit_a, lit_d) in first_k[z]
+        assert (lit_c, lit_a) in first_k[z]
+        assert (lit_c, lit_c) in first_k[z]
+        assert (lit_c, lit_d) in first_k[z]
