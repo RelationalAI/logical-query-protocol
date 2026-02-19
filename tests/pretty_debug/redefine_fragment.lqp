@@ -1,0 +1,21 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (def 0xd9298a10d1b07358 ([v::INT] (+ 1 1 v)))
+          (def 0xe0ee8bb50685e05f ([v::INT] (= v 101))))))
+    (reads (output :output_0 0xe0ee8bb50685e05f) (output :other_0 0xd9298a10d1b07358)))
+  (epoch
+    (writes
+      (undefine :f1)
+      (define (fragment :f1 (def 0xe0ee8bb50685e05f ([v::STRING] (= v "hello"))))))
+    (reads (output :output_1 0xe0ee8bb50685e05f) (output :other_1 0xd9298a10d1b07358))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `0xd9298a10d1b07358` -> `other`
+;; 	 ID `0xe0ee8bb50685e05f` -> `output`

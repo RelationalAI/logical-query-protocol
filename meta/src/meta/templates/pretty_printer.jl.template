@@ -204,7 +204,7 @@ function write_debug_info(pp::PrettyPrinter)::Nothing
     Base.write(pp.io, "\n;; Debug information\n")
     Base.write(pp.io, ";; -----------------------\n")
     Base.write(pp.io, ";; Original names\n")
-    for ((id_low, id_high), name) in pp.debug_info
+    for ((id_low, id_high), name) in sort(collect(pp.debug_info); by=x -> x[2])
         value = UInt128(id_high) << 64 | UInt128(id_low)
         Base.write(pp.io, ";; \t ID `0x" * string(value, base=16) * "` -> `" * name * "`\n")
     end

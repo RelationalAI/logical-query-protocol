@@ -186,7 +186,7 @@ class PrettyPrinter:
         self.io.write('\n;; Debug information\n')
         self.io.write(';; -----------------------\n')
         self.io.write(';; Original names\n')
-        for (id_low, id_high), name in self._debug_info.items():
+        for (id_low, id_high), name in sorted(self._debug_info.items(), key=lambda x: x[1]):
             value = (id_high << 64) | id_low
             self.io.write(f';; \t ID `0x{value:x}` -> `{name}`\n')
 

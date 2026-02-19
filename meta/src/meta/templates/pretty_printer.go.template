@@ -329,14 +329,26 @@ func (p *PrettyPrinter) writeDebugInfo() {{
 	if len(p.debugInfo) == 0 {{
 		return
 	}}
+	// Collect and sort entries by name for deterministic output.
+	type debugEntry struct {{
+		key  [2]uint64
+		name string
+	}}
+	entries := make([]debugEntry, 0, len(p.debugInfo))
+	for key, name := range p.debugInfo {{
+		entries = append(entries, debugEntry{{key, name}})
+	}}
+	sort.Slice(entries, func(i, j int) bool {{
+		return entries[i].name < entries[j].name
+	}})
 	p.w.WriteString("\n;; Debug information\n")
 	p.w.WriteString(";; -----------------------\n")
 	p.w.WriteString(";; Original names\n")
-	for key, name := range p.debugInfo {{
-		value := new(big.Int).SetUint64(key[1])
+	for _, e := range entries {{
+		value := new(big.Int).SetUint64(e.key[1])
 		value.Lsh(value, 64)
-		value.Or(value, new(big.Int).SetUint64(key[0]))
-		p.w.WriteString(fmt.Sprintf(";; \t ID `0x%x` -> `%s`\n", value, name))
+		value.Or(value, new(big.Int).SetUint64(e.key[0]))
+		p.w.WriteString(fmt.Sprintf(";; \t ID `0x%x` -> `%s`\n", value, e.name))
 	}}
 }}
 

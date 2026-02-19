@@ -83,6 +83,35 @@ end
     end
 end
 
+@testitem "Pretty printer - debug from binary snapshot" begin
+    using LogicalQueryProtocol: pretty_debug, Proto
+    using ProtoBuf: ProtoBuf
+
+    bin_files_dir = joinpath(@__DIR__, "bin")
+    snapshot_dir = joinpath(@__DIR__, "pretty_debug")
+    @test isdir(bin_files_dir)
+    @test isdir(snapshot_dir)
+
+    bin_files = sort(filter(f -> endswith(f, ".bin"), readdir(bin_files_dir)))
+    @test !isempty(bin_files)
+
+    for bin_file in bin_files
+        bin_path = joinpath(bin_files_dir, bin_file)
+        data = read(bin_path)
+
+        txn = ProtoBuf.decode(ProtoBuf.ProtoDecoder(IOBuffer(data)), Proto.Transaction)
+
+        printed = pretty_debug(txn)
+        @test !isempty(printed)
+
+        snapshot_file = replace(bin_file, ".bin" => ".lqp")
+        snapshot_path = joinpath(snapshot_dir, snapshot_file)
+        @test isfile(snapshot_path)
+        expected = read(snapshot_path, String)
+        @test printed == expected
+    end
+end
+
 @testitem "Pretty printer - binary round trip" begin
     using LogicalQueryProtocol: parse, pretty, Proto
     using ProtoBuf: ProtoBuf

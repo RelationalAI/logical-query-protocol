@@ -181,9 +181,10 @@ update-snapshots: $(PY_PARSER) $(PY_PROTO_GENERATED)
 JL_TEST_DIR := sdks/julia/LogicalQueryProtocol/test
 
 sync-julia-test-data:
-	@mkdir -p $(JL_TEST_DIR)/lqp $(JL_TEST_DIR)/pretty $(JL_TEST_DIR)/bin
+	@mkdir -p $(JL_TEST_DIR)/lqp $(JL_TEST_DIR)/pretty $(JL_TEST_DIR)/pretty_debug $(JL_TEST_DIR)/bin
 	cp tests/lqp/*.lqp $(JL_TEST_DIR)/lqp/
 	cp tests/pretty/*.lqp $(JL_TEST_DIR)/pretty/
+	cp tests/pretty_debug/*.lqp $(JL_TEST_DIR)/pretty_debug/
 	cp tests/bin/*.bin $(JL_TEST_DIR)/bin/
 
 test-julia: $(JL_PARSER) $(JL_PROTO_GENERATED) sync-julia-test-data

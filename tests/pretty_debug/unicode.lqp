@@ -1,0 +1,47 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (csv_data
+            (csv_locator
+              (inline_data
+                "id,name,city,greeting\n1,François,Paris,Bonjour\n2,田中,東京,こんにちは\n3,Müller,München,Grüß Gott\n4,Иван,Москва,Привет"))
+            (csv_config
+              {
+               :csv_compression "auto"
+               :csv_decimal_separator "."
+               :csv_delimiter ","
+               :csv_encoding "utf-8"
+               :csv_escapechar "\\"
+               :csv_header_row 1
+               :csv_quotechar "\""
+               :csv_skip 0})
+            (columns
+              (column "id" 0xa56145270ce6b3be [INT INT])
+              (column "name" 0x82a3537ff0dbce7e [INT STRING])
+              (column "city" 0x11a62c23412b7747 [INT STRING])
+              (column "greeting" 0x18f6b0200b6fd32c [INT STRING]))
+            (asof "2025-01-01T00:00:00Z"))
+          (def
+            0x7260ba22cddf4132
+            ([id::INT name::STRING city::STRING greeting::STRING]
+             (exists
+               [row::INT]
+               (and
+                 (atom 0xa56145270ce6b3be row id)
+                 (atom 0x82a3537ff0dbce7e row name)
+                 (atom 0x11a62c23412b7747 row city)
+                 (atom 0x18f6b0200b6fd32c row greeting))))))))
+    (reads (output :unicode_data 0x7260ba22cddf4132))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `0x11a62c23412b7747` -> `city`
+;; 	 ID `0x18f6b0200b6fd32c` -> `greeting`
+;; 	 ID `0xa56145270ce6b3be` -> `id`
+;; 	 ID `0x82a3537ff0dbce7e` -> `name`
+;; 	 ID `0x7260ba22cddf4132` -> `unicode_data`
