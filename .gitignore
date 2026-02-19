@@ -21,9 +21,18 @@ sdks/julia/LogicalQueryProtocol/Manifest.toml
 sdks/julia/LogicalQueryProtocol/test/lqp/**
 sdks/julia/LogicalQueryProtocol/test/bin/**
 sdks/julia/LogicalQueryProtocol/test/pretty/**
-sdks/julia/LogicalQueryProtocol/test/lqp_output/**
+sdks/julia/LogicalQueryProtocol/test/pretty_debug/**
 sdks/julia/LogicalQueryProtocol/test/lqp_output/**
 sdks/julia/LogicalQueryProtocol/test/lqp_pretty_output/**
+sdks/julia/LogicalQueryProtocol/test/lqp_pretty_debug_output/**
+
+# Go SDK
+sdks/go/test/lqp/**
+sdks/go/test/bin/**
+sdks/go/test/pretty/**
+sdks/go/test/lqp_output/**
+sdks/go/test/lqp_pretty_output/**
+sdks/go/test/lqp_pretty_debug_output/**
 
 # Other
 .DS_Store
