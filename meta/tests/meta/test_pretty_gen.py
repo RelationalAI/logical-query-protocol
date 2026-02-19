@@ -11,6 +11,7 @@ from meta.target import (
     IfElse,
     Let,
     PrintNonterminalDef,
+    Return,
     Seq,
 )
 from meta.yacc_parser import load_yacc_grammar
@@ -37,10 +38,25 @@ def _collect_nodes(expr, node_type):
     return results
 
 
+def _is_try_flat_if(if_else):
+    """Check if an IfElse is a try_flat wrapper (then-branch contains Return)."""
+    then = if_else.then_branch
+    if isinstance(then, Return):
+        return True
+    if isinstance(then, Seq):
+        return any(isinstance(e, Return) for e in then.exprs)
+    return False
+
+
 def _find_if_else(expr):
-    """Find the first IfElse node in the IR tree."""
+    """Find the first guarded IfElse node, skipping try_flat wrappers."""
     if isinstance(expr, IfElse):
-        return expr
+        if not _is_try_flat_if(expr):
+            return expr
+        result = _find_if_else(expr.else_branch)
+        if result is not None:
+            return result
+        return _find_if_else(expr.then_branch)
     if isinstance(expr, Let):
         result = _find_if_else(expr.body)
         if result is not None:
