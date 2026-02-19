@@ -1,0 +1,340 @@
+// Auto-generated pretty printer.
+//
+// Generated from protobuf specifications.
+// Do not modify this file! If you need to modify the pretty printer, edit the generator code
+// in `python-tools/src/meta` or edit the protobuf specification in `proto/v1`.
+//
+// {command_line_comment}
+
+package lqp
+
+import (
+	"bytes"
+	"fmt"
+	"math/big"
+	"reflect"
+	"sort"
+	"strings"
+
+	pb "logical-query-protocol/src/lqp/v1"
+)
+
+const maxWidth = 92
+
+// PrettyPrinter holds state for pretty printing protobuf messages.
+type PrettyPrinter struct {{
+	w           *bytes.Buffer
+	indentStack []int
+	column      int
+	atLineStart bool
+	separator   string
+	maxWidth    int
+	computing   map[uintptr]bool
+	memo        map[uintptr]string
+	memoRefs    []interface{{}}
+	debugInfo   map[[2]uint64]string
+}}
+
+func (p *PrettyPrinter) indentLevel() int {{
+	if len(p.indentStack) > 0 {{
+		return p.indentStack[len(p.indentStack)-1]
+	}}
+	return 0
+}}
+
+func (p *PrettyPrinter) write(s string) {{
+	if p.separator == "\n" && p.atLineStart && strings.TrimSpace(s) != "" {{
+		spaces := p.indentLevel()
+		p.w.WriteString(strings.Repeat(" ", spaces))
+		p.column = spaces
+		p.atLineStart = false
+	}}
+	p.w.WriteString(s)
+	if idx := strings.LastIndex(s, "\n"); idx >= 0 {{
+		p.column = len(s) - idx - 1
+	}} else {{
+		p.column += len(s)
+	}}
+}}
+
+func (p *PrettyPrinter) newline() {{
+	p.w.WriteString(p.separator)
+	if p.separator == "\n" {{
+		p.atLineStart = true
+		p.column = 0
+	}}
+}}
+
+func (p *PrettyPrinter) indent() {{
+	if p.separator == "\n" {{
+		p.indentStack = append(p.indentStack, p.column)
+	}}
+}}
+
+func (p *PrettyPrinter) indentSexp() {{
+	if p.separator == "\n" {{
+		p.indentStack = append(p.indentStack, p.indentLevel()+2)
+	}}
+}}
+
+func (p *PrettyPrinter) dedent() {{
+	if p.separator == "\n" && len(p.indentStack) > 1 {{
+		p.indentStack = p.indentStack[:len(p.indentStack)-1]
+	}}
+}}
+
+func (p *PrettyPrinter) tryFlat(msg interface{{}}, prettyFn func()) *string {{
+	v := reflect.ValueOf(msg)
+	// Only memoize pointer types. Slices share underlying array
+	// pointers (especially nil/empty slices), causing collisions.
+	canMemo := v.Kind() == reflect.Ptr
+	if canMemo {{
+		key := v.Pointer()
+		if _, ok := p.memo[key]; !ok && !p.computing[key] {{
+			p.computing[key] = true
+			flat := p.renderFlat(prettyFn)
+			p.memo[key] = flat
+			p.memoRefs = append(p.memoRefs, msg)
+			delete(p.computing, key)
+		}}
+		if flat, ok := p.memo[key]; ok {{
+			return p.fitsWidth(flat)
+		}}
+		return nil
+	}}
+	// If already in flat mode, return nil to prevent infinite recursion.
+	if p.separator != "\n" {{
+		return nil
+	}}
+	flat := p.renderFlat(prettyFn)
+	return p.fitsWidth(flat)
+}}
+
+func (p *PrettyPrinter) renderFlat(prettyFn func()) string {{
+	savedW := p.w
+	savedSep := p.separator
+	savedIndent := p.indentStack
+	savedCol := p.column
+	savedAtLineStart := p.atLineStart
+	var buf bytes.Buffer
+	p.w = &buf
+	p.separator = " "
+	p.indentStack = []int{{0}}
+	p.column = 0
+	p.atLineStart = false
+	prettyFn()
+	result := buf.String()
+	p.w = savedW
+	p.separator = savedSep
+	p.indentStack = savedIndent
+	p.column = savedCol
+	p.atLineStart = savedAtLineStart
+	return result
+}}
+
+func (p *PrettyPrinter) fitsWidth(flat string) *string {{
+	if p.separator != "\n" {{
+		return &flat
+	}}
+	effectiveCol := p.column
+	if p.atLineStart {{
+		effectiveCol = p.indentLevel()
+	}}
+	if len(flat)+effectiveCol <= p.maxWidth {{
+		return &flat
+	}}
+	return nil
+}}
+
+func (p *PrettyPrinter) getOutput() string {{
+	return p.w.String()
+}}
+
+// formatDecimal formats a DecimalValue as "<digits>d<precision>".
+func (p *PrettyPrinter) formatDecimal(msg *pb.DecimalValue) string {{
+	low := msg.GetValue().GetLow()
+	high := msg.GetValue().GetHigh()
+
+	// Compute 128-bit signed integer from high/low
+	intVal := new(big.Int).SetUint64(high)
+	intVal.Lsh(intVal, 64)
+	intVal.Add(intVal, new(big.Int).SetUint64(low))
+	if high&(1<<63) != 0 {{
+		// Negative: subtract 2^128
+		twoTo128 := new(big.Int).Lsh(big.NewInt(1), 128)
+		intVal.Sub(intVal, twoTo128)
+	}}
+
+	sign := ""
+	if intVal.Sign() < 0 {{
+		sign = "-"
+		intVal.Neg(intVal)
+	}}
+
+	digits := intVal.String()
+	scale := int(msg.GetScale())
+	precision := msg.GetPrecision()
+
+	var decimalStr string
+	if scale <= 0 {{
+		decimalStr = digits + "." + strings.Repeat("0", -scale)
+	}} else if scale >= len(digits) {{
+		decimalStr = "0." + strings.Repeat("0", scale-len(digits)) + digits
+	}} else {{
+		decimalStr = digits[:len(digits)-scale] + "." + digits[len(digits)-scale:]
+	}}
+
+	return fmt.Sprintf("%s%sd%d", sign, decimalStr, precision)
+}}
+
+// formatInt128 formats an Int128Value as "<value>i128".
+func (p *PrettyPrinter) formatInt128(msg *pb.Int128Value) string {{
+	return int128ToString(msg.GetLow(), msg.GetHigh()) + "i128"
+}}
+
+// formatUint128 formats a UInt128Value as "0x<hex>".
+func (p *PrettyPrinter) formatUint128(msg *pb.UInt128Value) string {{
+	return "0x" + uint128ToHexString(msg.GetLow(), msg.GetHigh())
+}}
+
+// formatStringValue escapes and quotes a string for LQP output.
+func (p *PrettyPrinter) formatStringValue(s string) string {{
+	escaped := strings.ReplaceAll(s, "\\", "\\\\")
+	escaped = strings.ReplaceAll(escaped, "\"", "\\\"")
+	escaped = strings.ReplaceAll(escaped, "\n", "\\n")
+	escaped = strings.ReplaceAll(escaped, "\r", "\\r")
+	escaped = strings.ReplaceAll(escaped, "\t", "\\t")
+	return "\"" + escaped + "\""
+}}
+
+// fragmentIdToString decodes a FragmentId's bytes to a string.
+func (p *PrettyPrinter) fragmentIdToString(msg *pb.FragmentId) string {{
+	if msg.GetId() == nil {{
+		return ""
+	}}
+	return string(msg.GetId())
+}}
+
+// startPrettyFragment extracts debug info from a Fragment for relation ID lookup.
+func (p *PrettyPrinter) startPrettyFragment(msg *pb.Fragment) {{
+	debugInfo := msg.GetDebugInfo()
+	if debugInfo == nil {{
+		return
+	}}
+	ids := debugInfo.GetIds()
+	names := debugInfo.GetOrigNames()
+	for i, rid := range ids {{
+		if i < len(names) {{
+			key := [2]uint64{{rid.GetIdLow(), rid.GetIdHigh()}}
+			p.debugInfo[key] = names[i]
+		}}
+	}}
+}}
+
+// relationIdToString looks up a RelationId in the debug info map.
+func (p *PrettyPrinter) relationIdToString(msg *pb.RelationId) string {{
+	key := [2]uint64{{msg.GetIdLow(), msg.GetIdHigh()}}
+	if name, ok := p.debugInfo[key]; ok {{
+		return name
+	}}
+	return ""
+}}
+
+// relationIdToInt returns a pointer to int64 if the RelationId fits in
+// signed 64-bit range, nil otherwise.
+func (p *PrettyPrinter) relationIdToInt(msg *pb.RelationId) *int64 {{
+	if msg.GetIdHigh() == 0 && msg.GetIdLow() <= 0x7FFFFFFFFFFFFFFF {{
+		v := int64(msg.GetIdLow())
+		return &v
+	}}
+	return nil
+}}
+
+// relationIdToUint128 converts a RelationId to a UInt128Value.
+func (p *PrettyPrinter) relationIdToUint128(msg *pb.RelationId) *pb.UInt128Value {{
+	return &pb.UInt128Value{{Low: msg.GetIdLow(), High: msg.GetIdHigh()}}
+}}
+
+// listSort sorts a slice of []interface{{}} pairs by their first element (string key).
+func listSort(pairs [][]interface{{}}) [][]interface{{}} {{
+	sort.Slice(pairs, func(i, j int) bool {{
+		ki, _ := pairs[i][0].(string)
+		kj, _ := pairs[j][0].(string)
+		return ki < kj
+	}})
+	return pairs
+}}
+
+// --- Free functions ---
+
+func uint128ToString(low, high uint64) string {{
+	if high == 0 {{
+		return fmt.Sprintf("%d", low)
+	}}
+	result := new(big.Int).SetUint64(high)
+	result.Lsh(result, 64)
+	result.Add(result, new(big.Int).SetUint64(low))
+	return result.String()
+}}
+
+func int128ToString(low, high uint64) string {{
+	isNegative := (high & 0x8000000000000000) != 0
+	if !isNegative {{
+		return uint128ToString(low, high)
+	}}
+	result := new(big.Int).SetUint64(^high)
+	result.Lsh(result, 64)
+	result.Add(result, new(big.Int).SetUint64(^low))
+	result.Add(result, big.NewInt(1))
+	return "-" + result.String()
+}}
+
+func uint128ToHexString(low, high uint64) string {{
+	if high == 0 {{
+		return fmt.Sprintf("%x", low)
+	}}
+	return fmt.Sprintf("%x%016x", high, low)
+}}
+
+func formatFloat64(v float64) string {{
+	s := fmt.Sprintf("%g", v)
+	// Match Python's str(float) output: lowercase, no leading +.
+	s = strings.ToLower(s)
+	s = strings.TrimPrefix(s, "+")
+	if !strings.ContainsAny(s, ".einn") {{
+		s += ".0"
+	}}
+	return s
+}}
+
+func formatBool(b bool) string {{
+	if b {{
+		return "true"
+	}}
+	return "false"
+}}
+
+// --- Helper functions ---
+{named_function_defns}
+
+// --- Pretty-print methods ---
+{pretty_nonterminal_defns}
+
+// ProgramToStr pretty-prints a Transaction protobuf message to a string.
+func ProgramToStr(msg *pb.Transaction) string {{
+	var buf bytes.Buffer
+	p := &PrettyPrinter{{
+		w:           &buf,
+		indentStack: []int{{0}},
+		column:      0,
+		atLineStart: true,
+		separator:   "\n",
+		maxWidth:    maxWidth,
+		computing:   make(map[uintptr]bool),
+		memo:        make(map[uintptr]string),
+		debugInfo:   make(map[[2]uint64]string),
+	}}
+	p.pretty_{start_name}(msg)
+	p.newline()
+	return p.getOutput()
+}}

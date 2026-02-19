@@ -194,7 +194,7 @@ JULIA_TEMPLATES: dict[str, BuiltinTemplate] = {
 # The templates here serve as fallbacks.
 GO_TEMPLATES: dict[str, BuiltinTemplate] = {
     "some": BuiltinTemplate("ptr({0})"),
-    "not": BuiltinTemplate("!{0}"),
+    "not": BuiltinTemplate("!({0})"),
     "and": BuiltinTemplate("({0} && {1})"),
     "or": BuiltinTemplate("({0} || {1})"),
     "equal": BuiltinTemplate("{0} == {1}"),
@@ -224,6 +224,7 @@ GO_TEMPLATES: dict[str, BuiltinTemplate] = {
     "map": BuiltinTemplate("mapSlice({1}, {0})"),
     "list_push": BuiltinTemplate("nil", ["{0} = append({0}, {1})"]),
     "list_concat": BuiltinTemplate("listConcat({0}, {1})"),
+    "list_slice": BuiltinTemplate("{0}[{1}:{2}]"),
     "list_sort": BuiltinTemplate("listSort({0})"),
     "fragment_id_from_string": BuiltinTemplate("&pb.FragmentId{{Id: []byte({0})}}"),
     "relation_id_from_string": BuiltinTemplate("p.relationIdFromString({0})"),
@@ -250,10 +251,10 @@ GO_TEMPLATES: dict[str, BuiltinTemplate] = {
     "indent_io": BuiltinTemplate("nil", ["p.indent()"]),
     "indent_sexp_io": BuiltinTemplate("nil", ["p.indentSexp()"]),
     "dedent_io": BuiltinTemplate("nil", ["p.dedent()"]),
-    "try_flat_io": BuiltinTemplate("nil"),
+    "try_flat_io": BuiltinTemplate("p.tryFlat({0}, func() {{ {1}({0}) }})"),
     "format_int64": BuiltinTemplate('fmt.Sprintf("%d", {0})'),
     "format_int32": BuiltinTemplate('fmt.Sprintf("%d", {0})'),
-    "format_float64": BuiltinTemplate('fmt.Sprintf("%g", {0})'),
+    "format_float64": BuiltinTemplate("formatFloat64({0})"),
     "format_string": BuiltinTemplate("p.formatStringValue({0})"),
     "format_symbol": BuiltinTemplate("{0}"),
     "format_bool": BuiltinTemplate("formatBool({0})"),
@@ -269,6 +270,7 @@ GO_TEMPLATES: dict[str, BuiltinTemplate] = {
     "fragment_id_to_string": BuiltinTemplate("p.fragmentIdToString({0})"),
     "relation_id_to_string": BuiltinTemplate("p.relationIdToString({0})"),
     "relation_id_to_uint128": BuiltinTemplate("p.relationIdToUint128({0})"),
+    "start_pretty_fragment": BuiltinTemplate("{0}", ["p.startPrettyFragment({0})"]),
 }
 
 __all__ = [

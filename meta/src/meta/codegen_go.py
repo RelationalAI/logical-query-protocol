@@ -4,13 +4,14 @@ This module generates Go code from semantic action expressions,
 with proper keyword escaping and idiomatic Go style.
 """
 
-from .codegen_base import CodeGenerator
+from .codegen_base import PARSER_CONFIG, CodegenConfig, CodeGenerator
 from .codegen_templates import GO_TEMPLATES
 from .gensym import gensym
 from .target import (
     Call,
     FunDef,
     GetElement,
+    Let,
     ListExpr,
     NewMessage,
     OneOf,
@@ -118,13 +119,14 @@ class GoCodeGenerator(CodeGenerator):
         "[]byte": "nil",
     }
 
-    def __init__(self, proto_messages=None):
-        super().__init__(proto_messages)
+    def __init__(self, proto_messages=None, config: CodegenConfig = PARSER_CONFIG):
+        super().__init__(proto_messages, config)
         self._oneof_field_to_parent = self._build_oneof_field_map()
         self._declared_vars: set[str] = set()
         self._current_return_type: str | None = None
         self._current_return_is_option: bool = False
         self._current_return_option_needs_ptr: bool = False
+        self._lambda_return_type_stack: list[str | None] = []
         self._register_builtins()
 
     def reset_declared_vars(self) -> None:
@@ -384,11 +386,41 @@ class GoCodeGenerator(CodeGenerator):
         params_str = ", ".join(f"{n} {t}" for n, t in params)
         ret = f" {return_type}" if return_type else ""
         if is_method:
-            return f"func (p *Parser) {name}({params_str}){ret} {{"
+            return f"func (p *{self.config.receiver_type}) {name}({params_str}){ret} {{"
         return f"func {name}({params_str}){ret} {{"
 
     def gen_func_def_end(self) -> str:
         return "}"
+
+    def _generate_Lambda(self, expr, lines: list[str], indent: str) -> str:
+        """Track lambda return type for IfElse type hint inference."""
+        from .target import Lambda
+
+        assert isinstance(expr, Lambda)
+        ret_type = (
+            self.gen_type(expr.return_type)
+            if expr.return_type and not self._is_void_type(expr.return_type)
+            else None
+        )
+        self._lambda_return_type_stack.append(ret_type)
+        try:
+            result = super()._generate_Lambda(expr, lines, indent)
+        finally:
+            self._lambda_return_type_stack.pop()
+        return result
+
+    def _ifelse_type_hint(self, expr) -> str | None:
+        """Improve IfElse type hint when the overall type resolves to interface{}.
+
+        When the IfElse type has unresolved type variables (yielding interface{}),
+        use the enclosing lambda's return type as a better hint.
+        """
+        hint = super()._ifelse_type_hint(expr)
+        if hint == "interface{}" and self._lambda_return_type_stack:
+            lambda_ret = self._lambda_return_type_stack[-1]
+            if lambda_ret is not None and lambda_ret != "interface{}":
+                return lambda_ret
+        return hint
 
     def _generate_nil_else_branch(
         self,
@@ -403,9 +435,23 @@ class GoCodeGenerator(CodeGenerator):
     def _generate_GetElement(
         self, expr: GetElement, lines: list[str], indent: str
     ) -> str:
-        """Go uses 0-based indexing with type assertion for tuple elements."""
+        """Go uses 0-based indexing with type assertion for tuple elements.
+
+        Type assertions are only needed when the container is []interface{}
+        (Go tuple). For typed slices (protobuf repeated fields), the element
+        type is already correct and assertion would fail.
+        """
+        from .target import ListType, SequenceType
+
         tuple_code = self.generate_lines(expr.tuple_expr, lines, indent)
-        # Add type assertion since tuple elements are interface{}
+        # Check if the container is a typed slice (no assertion needed)
+        try:
+            container_type = expr.tuple_expr.target_type()
+            if isinstance(container_type, (SequenceType, ListType)):
+                return f"{tuple_code}[{expr.index}]"
+        except (NotImplementedError, ValueError, TypeError):
+            pass
+        # For tuples ([]interface{}), add type assertion
         try:
             elem_type = expr.target_type()
             if elem_type is not None:
@@ -443,6 +489,23 @@ class GoCodeGenerator(CodeGenerator):
             pascal_field = to_pascal_case(expr.field_name)
             return f"{obj_code}.{pascal_field}"
         return super()._generate_GetField(expr, lines, indent)
+
+    def _generate_Let(self, expr: Let, lines: list[str], indent: str) -> str | None:
+        """Generate Go let binding, suppressing unused variable errors."""
+        var_name = self.escape_identifier(expr.var.name)
+        init_val = self.generate_lines(expr.init, lines, indent)
+        assert init_val is not None, "Let initializer should not contain a return"
+        lines.append(
+            f"{indent}{self.gen_assignment(var_name, init_val, is_declaration=True)}"
+        )
+        body_start = len(lines)
+        result = self.generate_lines(expr.body, lines, indent)
+        # Suppress unused variable if the body didn't reference it.
+        body_lines = lines[body_start:]
+        var_used = any(var_name in line for line in body_lines) or result == var_name
+        if not var_used:
+            lines.insert(body_start, f"{indent}_ = {var_name}")
+        return result
 
     def _generate_Seq(self, expr: Seq, lines: list[str], indent: str) -> str | None:
         """Generate Go sequence, suppressing unused variable errors.
@@ -643,6 +706,9 @@ class GoCodeGenerator(CodeGenerator):
                 )
                 args.append(arg_code)
             args_code = ", ".join(args)
+            if self._is_void_expr(expr):
+                lines.append(f"{indent}{f}({args_code})")
+                return self.gen_none()
             tmp = gensym()
             lines.append(
                 f"{indent}{self.gen_assignment(tmp, f'{f}({args_code})', is_declaration=True)}"
@@ -731,11 +797,8 @@ class GoCodeGenerator(CodeGenerator):
                     if self._is_nullable_go_type(inner_go):
                         return arg_code
                 else:
-                    # Non-OptionType (e.g., oneof fields): check if the Go
-                    # type is already nullable, in which case no deref needed.
-                    go_type = self.gen_type(arg_type)
-                    if self._is_nullable_go_type(go_type):
-                        return arg_code
+                    # Non-OptionType: return as-is (no deref needed).
+                    return arg_code
             except (NotImplementedError, ValueError, TypeError):
                 pass
             return f"*{arg_code}"

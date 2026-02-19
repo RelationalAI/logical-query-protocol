@@ -12,6 +12,7 @@ from meta.target import (
     IfElse,
     Let,
     PrintNonterminalDef,
+    Return,
     Seq,
 )
 from meta.yacc_parser import load_yacc_grammar
@@ -49,14 +50,25 @@ def _is_try_flat_let(expr):
     )
 
 
-def _find_if_else(expr):
-    """Find the first guarded-alternative IfElse node in the IR tree.
+def _is_try_flat_if(if_else):
+    """Check if an IfElse is a try_flat wrapper (then-branch contains Return)."""
+    then = if_else.then_branch
+    if isinstance(then, Return):
+        return True
+    if isinstance(then, Seq):
+        return any(isinstance(e, Return) for e in then.exprs)
+    return False
 
-    Skips past the try_flat wrapper IfElse (Let with try_flat_io init)
-    and searches its else_branch instead.
-    """
+
+def _find_if_else(expr):
+    """Find the first guarded IfElse node, skipping try_flat wrappers."""
     if isinstance(expr, IfElse):
-        return expr
+        if not _is_try_flat_if(expr):
+            return expr
+        result = _find_if_else(expr.else_branch)
+        if result is not None:
+            return result
+        return _find_if_else(expr.then_branch)
     if isinstance(expr, Let):
         if _is_try_flat_let(expr):
             assert isinstance(expr.body, IfElse)
