@@ -5,47 +5,31 @@
       (define
         (fragment
           :f1
+          (def 0xb4baca894ba024f0 ([x::STRING y::STRING] (and (= x "a") (= y "b"))))
+          (def 0xbee95ea87c7ca866 ([x::STRING y::STRING] (and (= x "b") (= y "c"))))
+          (def 0x5aed700ad29d503 ([x::STRING y::STRING] (and (= x "b") (= y "d"))))
+          (def 0x651bbd6dbf7b1548 ([x::STRING y::STRING] (and (= x "d") (= y "e"))))
           (def
-            0x0000000000000000b4baca894ba024f0
-            ([x::STRING y::STRING] (and (= x "a") (= y "b"))))
-          (def
-            0x0000000000000000bee95ea87c7ca866
-            ([x::STRING y::STRING] (and (= x "b") (= y "c"))))
-          (def
-            0x000000000000000005aed700ad29d503
-            ([x::STRING y::STRING] (and (= x "b") (= y "d"))))
-          (def
-            0x0000000000000000651bbd6dbf7b1548
-            ([x::STRING y::STRING] (and (= x "d") (= y "e"))))
-          (def
-            0x0000000000000000a1cb100f57e971ca
+            0xa1cb100f57e971ca
             ([x::STRING y::STRING]
              (or
-               (atom 0x0000000000000000b4baca894ba024f0 x y)
-               (atom 0x0000000000000000bee95ea87c7ca866 x y)
-               (atom 0x000000000000000005aed700ad29d503 x y)
-               (atom 0x0000000000000000651bbd6dbf7b1548 x y))))
+               (atom 0xb4baca894ba024f0 x y)
+               (atom 0xbee95ea87c7ca866 x y)
+               (atom 0x5aed700ad29d503 x y)
+               (atom 0x651bbd6dbf7b1548 x y))))
+          (def 0x9b337ac875ffe61c ([x::STRING y::STRING] (atom 0xa1cb100f57e971ca x y)))
           (def
-            0x00000000000000009b337ac875ffe61c
-            ([x::STRING y::STRING] (atom 0x0000000000000000a1cb100f57e971ca x y)))
-          (def
-            0x00000000000000001ed02f257edc80df
+            0x1ed02f257edc80df
             ([x::STRING z::STRING]
              (exists
                [y::STRING]
-               (and
-                 (atom 0x0000000000000000a1cb100f57e971ca x y)
-                 (atom 0x0000000000000000a0af9f865bf637e6 y z)))))
+               (and (atom 0xa1cb100f57e971ca x y) (atom 0xa0af9f865bf637e6 y z)))))
           (def
-            0x0000000000000000a0af9f865bf637e6
+            0xa0af9f865bf637e6
             ([x::STRING y::STRING]
-             (or
-               (atom 0x00000000000000009b337ac875ffe61c x y)
-               (atom 0x00000000000000001ed02f257edc80df x y))))
-          (def
-            0x0000000000000000e0ee8bb50685e05f
-            ([x::STRING y::STRING] (atom 0x0000000000000000a0af9f865bf637e6 x y))))))
-    (reads (output :result 0x0000000000000000e0ee8bb50685e05f))))
+             (or (atom 0x9b337ac875ffe61c x y) (atom 0x1ed02f257edc80df x y))))
+          (def 0xe0ee8bb50685e05f ([x::STRING y::STRING] (atom 0xa0af9f865bf637e6 x y))))))
+    (reads (output :result 0xe0ee8bb50685e05f))))
 
 ;; Debug information
 ;; -----------------------

@@ -16,7 +16,7 @@
                :betree_config_max_leaf 16
                :betree_config_max_pivots 4
                :betree_locator_element_count 0
-               :betree_locator_root_pageid 0x00000000001234567890123456789012
+               :betree_locator_root_pageid 0x1234567890123456789012
                :betree_locator_tree_height 0}))
           (betree_relation
             :multi_key
@@ -29,7 +29,7 @@
                :betree_config_max_leaf 32
                :betree_config_max_pivots 8
                :betree_locator_element_count 100
-               :betree_locator_root_pageid 0x0000000000abcdef1234567890abcdef
+               :betree_locator_root_pageid 0xabcdef1234567890abcdef
                :betree_locator_tree_height 2}))
           (betree_relation
             :numeric_types
@@ -42,7 +42,7 @@
                :betree_config_max_leaf 64
                :betree_config_max_pivots 10
                :betree_locator_element_count 500
-               :betree_locator_root_pageid 0x0000000000fedcba9876543210fedcba
+               :betree_locator_root_pageid 0xfedcba9876543210fedcba
                :betree_locator_tree_height 3}))
           (betree_relation
             :temporal_data
@@ -55,7 +55,7 @@
                :betree_config_max_leaf 48
                :betree_config_max_pivots 6
                :betree_locator_element_count 250
-               :betree_locator_root_pageid 0x00000000009999888877776666555544
+               :betree_locator_root_pageid 0x9999888877776666555544
                :betree_locator_tree_height 2}))
           (betree_relation
             :boolean_data
@@ -68,7 +68,7 @@
                :betree_config_max_leaf 20
                :betree_config_max_pivots 5
                :betree_locator_element_count 75
-               :betree_locator_root_pageid 0x00000000001111222233334444555566
+               :betree_locator_root_pageid 0x1111222233334444555566
                :betree_locator_tree_height 1}))
           (betree_relation
             :key_only
@@ -81,7 +81,7 @@
                :betree_config_max_leaf 40
                :betree_config_max_pivots 12
                :betree_locator_element_count 10
-               :betree_locator_root_pageid 0x00000000007777888899990000111122
+               :betree_locator_root_pageid 0x7777888899990000111122
                :betree_locator_tree_height 1}))
           (rel_edb :path_simple ["my_base_relation"] [INT STRING FLOAT])
           (rel_edb :path_specialized ["another" "path"] [INT STRING])
@@ -103,7 +103,7 @@
                :betree_config_max_leaf 16
                :betree_config_max_pivots 4
                :betree_locator_element_count 1000
-               :betree_locator_root_pageid 0x00000000003333444455556666777788
+               :betree_locator_root_pageid 0x3333444455556666777788
                :betree_locator_tree_height 4}))
           (betree_relation
             :inline_edb

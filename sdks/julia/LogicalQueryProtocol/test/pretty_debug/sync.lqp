@@ -3,10 +3,7 @@
   (sync :foo :bar)
   (epoch
     (writes
-      (define
-        (fragment
-          :frag
-          (def 0x00000000000000009f86d081884c7d65 ([x::INT y::INT] (not (= x y)))))))))
+      (define (fragment :frag (def 0x9f86d081884c7d65 ([x::INT y::INT] (not (= x y)))))))))
 
 ;; Debug information
 ;; -----------------------

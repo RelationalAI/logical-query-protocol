@@ -5,15 +5,13 @@
       (define
         (fragment
           :snapshots
-          (rel_edb 0x0000000000000000cd3b9ab2de079088 ["my_edb"] [])
-          (rel_edb 0x00000000000000000d1e6d3706be27c8 ["database" "table"] [])
-          (rel_edb 0x0000000000000000c6e65c9a8c481ef1 ["schema" "namespace" "relation"] [])))
+          (rel_edb 0xcd3b9ab2de079088 ["my_edb"] [])
+          (rel_edb 0xd1e6d3706be27c8 ["database" "table"] [])
+          (rel_edb 0xc6e65c9a8c481ef1 ["schema" "namespace" "relation"] [])))
       (define
         (fragment
           :frag1
-          (def
-            0x0000000000000000aacb662458c1cddb
-            ([x::INT y::STRING] (and (= x 1) (= y "hello"))))
+          (def 0xaacb662458c1cddb ([x::INT y::STRING] (and (= x 1) (= y "hello"))))
           (csv_data
             (csv_locator
               (inline_data
@@ -29,30 +27,30 @@
                :csv_quotechar "\""
                :csv_skip 0})
             (columns
-              (column "id" 0x0000000000000000a56145270ce6b3be [INT INT])
-              (column "big_signed" 0x0000000000000000ca186c6bd1825179 [INT INT128])
-              (column "big_unsigned" 0x000000000000000043a8f1e6ecb2ce47 [INT UINT128]))
+              (column "id" 0xa56145270ce6b3be [INT INT])
+              (column "big_signed" 0xca186c6bd1825179 [INT INT128])
+              (column "big_unsigned" 0x43a8f1e6ecb2ce47 [INT UINT128]))
             (asof "2025-01-01T00:00:00Z"))
           (algorithm
-            0x00000000000000005aa562409c66b3b3
-            0x0000000000000000c96c6d5be8d08a12
+            0x5aa562409c66b3b3
+            0xc96c6d5be8d08a12
             (script
               (assign
-                0x00000000000000005aa562409c66b3b3
-                ([a::INT b::INT] (and (atom 0x0000000000000000c96c6d5be8d08a12 a) (= b a)))))))))
+                0x5aa562409c66b3b3
+                ([a::INT b::INT] (and (atom 0xc96c6d5be8d08a12 a) (= b a)))))))))
     (reads
-      (output :snapshot1 0x0000000000000000cd3b9ab2de079088)
-      (output :snapshot2 0x00000000000000000d1e6d3706be27c8)
-      (output :snapshot3 0x0000000000000000c6e65c9a8c481ef1)))
+      (output :snapshot1 0xcd3b9ab2de079088)
+      (output :snapshot2 0xd1e6d3706be27c8)
+      (output :snapshot3 0xc6e65c9a8c481ef1)))
   (epoch
     (writes
-      (snapshot ["my_edb"] 0x0000000000000000aacb662458c1cddb)
-      (snapshot ["database" "table"] 0x00000000000000005aa562409c66b3b3)
-      (snapshot ["schema" "namespace" "relation"] 0x0000000000000000ca186c6bd1825179))
+      (snapshot ["my_edb"] 0xaacb662458c1cddb)
+      (snapshot ["database" "table"] 0x5aa562409c66b3b3)
+      (snapshot ["schema" "namespace" "relation"] 0xca186c6bd1825179))
     (reads
-      (output :snapshot1 0x0000000000000000cd3b9ab2de079088)
-      (output :snapshot2 0x00000000000000000d1e6d3706be27c8)
-      (output :snapshot3 0x0000000000000000c6e65c9a8c481ef1))))
+      (output :snapshot1 0xcd3b9ab2de079088)
+      (output :snapshot2 0xd1e6d3706be27c8)
+      (output :snapshot3 0xc6e65c9a8c481ef1))))
 
 ;; Debug information
 ;; -----------------------

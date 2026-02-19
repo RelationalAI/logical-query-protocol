@@ -3,18 +3,11 @@
   (epoch
     (writes
       (define
-        (fragment
-          :f1
-          (def
-            0x0000000000000000e0ee8bb50685e05f
-            ([v::INT] (atom 0x00000000000000002cf24dba5fb0a30e v))))))
-    (reads
-      (output :epoch0 0x0000000000000000e0ee8bb50685e05f)
-      (output :nonexistent 0x00000000000000007945bc2d6e4fd0a0)))
+        (fragment :f1 (def 0xe0ee8bb50685e05f ([v::INT] (atom 0x2cf24dba5fb0a30e v))))))
+    (reads (output :epoch0 0xe0ee8bb50685e05f) (output :nonexistent 0x7945bc2d6e4fd0a0)))
   (epoch
-    (writes
-      (define (fragment :f2 (def 0x00000000000000002cf24dba5fb0a30e ([v::INT] (= v 101))))))
-    (reads (output :epoch1 0x0000000000000000e0ee8bb50685e05f))))
+    (writes (define (fragment :f2 (def 0x2cf24dba5fb0a30e ([v::INT] (= v 101))))))
+    (reads (output :epoch1 0xe0ee8bb50685e05f))))
 
 ;; Debug information
 ;; -----------------------

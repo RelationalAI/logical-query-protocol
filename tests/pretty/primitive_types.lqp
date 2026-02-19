@@ -10,7 +10,7 @@
           (def :int128_s ([v::INT128] (= v 21i128)))
           (def :int128_l ([v::INT128] (= v 85968058283706962486085i128)))
           (def :int128_n ([v::INT128] (= v -5968058283706962486085i128)))
-          (def :uint128 ([v::UINT128] (= v 0x000000000000123456789abcdef12345)))
+          (def :uint128 ([v::UINT128] (= v 0x123456789abcdef12345)))
           (def :float ([v::FLOAT] (= v 1.23)))
           (def :float_inf ([v::FLOAT] (= v inf)))
           (def :float_nan ([v::FLOAT] (= v nan)))
@@ -37,9 +37,7 @@
           (def
             :output_uint128
             ([v::UINT128]
-             (and
-               (= v 0x000000000000123456789abcdef12345)
-               (atom :uint128 0x000000000000123456789abcdef12345))))
+             (and (= v 0x123456789abcdef12345) (atom :uint128 0x123456789abcdef12345))))
           (def :output_float ([v::FLOAT] (and (= v 1.23) (atom :float 1.23))))
           (def :output_float_inf ([v::FLOAT] (and (= v inf) (atom :float_inf inf))))
           (def :output_float_nan ([v::FLOAT] (and (= v nan) (atom :float_nan nan))))

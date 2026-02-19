@@ -5,91 +5,89 @@
       (define
         (fragment
           :person_model
-          (def 0x00000000000000006007db63e18e532c ([id::INT] (or (= id 1) (= id 2))))
+          (def 0x6007db63e18e532c ([id::INT] (or (= id 1) (= id 2))))
           (def
-            0x0000000000000000efa5ff7eefcfbef0
+            0xefa5ff7eefcfbef0
             ([id::INT n::STRING]
              (or (and (= id 1) (= n "SSN#Alice")) (and (= id 2) (= n "SSN#Bob"))))
             (attrs (attribute :function "checked")))
           (functional_dependency
-            0x00000000000000008e8376f9710788de
-            ([n::STRING id::INT] (atom 0x0000000000000000efa5ff7eefcfbef0 id n))
+            0x8e8376f9710788de
+            ([n::STRING id::INT] (atom 0xefa5ff7eefcfbef0 id n))
             (keys n)
             (values id))
           (def
-            0x000000000000000005416fbf98c1d659
+            0x5416fbf98c1d659
             ([id::INT fn::STRING]
              (or (and (= id 1) (= fn "Alice")) (and (= id 2) (= fn "Bob"))))
             (attrs (attribute :function "checked")))
           (def
-            0x00000000000000002326b8630011d51c
+            0x2326b8630011d51c
             ([id::INT ln::STRING]
              (or (and (= id 1) (= ln "Smith")) (and (= id 2) (= ln "Johnson"))))
             (attrs (attribute :function "checked")))
           (functional_dependency
-            0x00000000000000000c3f56e92809c666
+            0xc3f56e92809c666
             ([fn::STRING ln::STRING id::INT]
-             (and
-               (atom 0x000000000000000005416fbf98c1d659 id fn)
-               (atom 0x00000000000000002326b8630011d51c id ln)))
+             (and (atom 0x5416fbf98c1d659 id fn) (atom 0x2326b8630011d51c id ln)))
             (keys fn ln)
             (values id))))
       (define
         (fragment
           :emp_model
-          (def 0x000000000000000014014e6a57032789 ([id::INT] (= id 1)))
+          (def 0x14014e6a57032789 ([id::INT] (= id 1)))
           (def
-            0x0000000000000000426f6eb9e6a97a37
+            0x426f6eb9e6a97a37
             ([id::INT eid::INT] (and (= id 1) (= eid 1001)))
             (attrs (attribute :function "checked")))
           (functional_dependency
-            0x0000000000000000e5b5fc109170b537
-            ([n::STRING id::INT] (atom 0x0000000000000000efa5ff7eefcfbef0 id n))
+            0xe5b5fc109170b537
+            ([n::STRING id::INT] (atom 0xefa5ff7eefcfbef0 id n))
             (keys n)
             (values id))
           (functional_dependency
-            0x00000000000000007634153440f8a51c
-            ([eid::INT id::INT] (atom 0x0000000000000000426f6eb9e6a97a37 id eid))
+            0x7634153440f8a51c
+            ([eid::INT id::INT] (atom 0x426f6eb9e6a97a37 id eid))
             (keys eid)
             (values id))))
       (define
         (fragment
           :query1
           (def
-            0x00000000000000002e87d494473e3166
+            0x2e87d494473e3166
             ([n::STRING fn::STRING ln::STRING eid::INT]
              (exists
                [person_id::INT]
                (and
-                 (atom 0x0000000000000000efa5ff7eefcfbef0 person_id n)
-                 (atom 0x000000000000000005416fbf98c1d659 person_id fn)
-                 (atom 0x00000000000000002326b8630011d51c person_id ln)
-                 (atom 0x0000000000000000426f6eb9e6a97a37 person_id eid)
-                 (atom 0x000000000000000014014e6a57032789 person_id))))))))
-    (reads (output :output1 0x00000000000000002e87d494473e3166)))
+                 (atom 0xefa5ff7eefcfbef0 person_id n)
+                 (atom 0x5416fbf98c1d659 person_id fn)
+                 (atom 0x2326b8630011d51c person_id ln)
+                 (atom 0x426f6eb9e6a97a37 person_id eid)
+                 (atom 0x14014e6a57032789 person_id))))))))
+    (reads (output :output1 0x2e87d494473e3166)))
   (epoch
     (writes
       (define
         (fragment
           :car_model
-          (def 0x0000000000000000a5cdf07dbbc15892 ([id::INT] (or (= id 3) (= id 4))))
+          (def 0xa5cdf07dbbc15892 ([id::INT] (or (= id 3) (= id 4))))
           (def
-            0x00000000000000008a2539e2b69d9daf
+            0x8a2539e2b69d9daf
             ([id::INT v::STRING]
              (or (and (= id 3) (= v "VIN#Honda")) (and (= id 4) (= v "VIN#Toyota"))))
             (attrs (attribute :function "checked")))
           (functional_dependency
-            0x0000000000000000bc9b6f54da25926c
-            ([v::STRING id::INT] (atom 0x00000000000000008a2539e2b69d9daf id v))
+            0xbc9b6f54da25926c
+            ([v::STRING id::INT] (atom 0x8a2539e2b69d9daf id v))
             (keys v)
             (values id))
           (def
-            0x0000000000000000d05aa2a15fb3c40e
+            0xd05aa2a15fb3c40e
             ([id::INT m::STRING]
              (or (and (= id 3) (= m "Honda")) (and (= id 4) (= m "Toyota"))))
             (attrs (attribute :function "checked")))
           (def
-            0x000000000000000022025b5071a4ea68
+            0x22025b5071a4ea68
             ([person_id::INT car_id::INT date::STRING amount::INT]
              (or
                (and (= person_id 1) (= car_id 3) (= date "2020-01-15") (= amount 20000))
@@ -101,28 +99,28 @@
         (fragment
           :car_purchase_fd
           (functional_dependency
-            0x0000000000000000e7a51e3214ced7ef
+            0xe7a51e3214ced7ef
             ([person_id::INT car_id::INT date::STRING amount::INT]
-             (atom 0x000000000000000022025b5071a4ea68 person_id car_id date amount))
+             (atom 0x22025b5071a4ea68 person_id car_id date amount))
             (keys car_id date)
             (values person_id))))
       (define
         (fragment
           :ownership_model
           (def
-            0x0000000000000000aafa8285ee3a8fc0
+            0xaafa8285ee3a8fc0
             ([person_id::INT car_id::INT]
              (exists
                [date::STRING amount::INT]
                (and
-                 (atom 0x000000000000000022025b5071a4ea68 person_id car_id date amount)
+                 (atom 0x22025b5071a4ea68 person_id car_id date amount)
                  (>= amount 20000)))))
           (functional_dependency
-            0x0000000000000000b8662ba7011b5258
+            0xb8662ba7011b5258
             ([person_id::INT car_id::INT]
              (and
-               (atom 0x0000000000000000aafa8285ee3a8fc0 person_id car_id)
-               (atom 0x00000000000000006007db63e18e532c person_id)))
+               (atom 0xaafa8285ee3a8fc0 person_id car_id)
+               (atom 0x6007db63e18e532c person_id)))
             (keys person_id)
             (values car_id))))))
   (epoch
@@ -131,15 +129,14 @@
         (fragment
           :ownership_model
           (def
-            0x0000000000000000aafa8285ee3a8fc0
+            0xaafa8285ee3a8fc0
             ([person_id::INT car_id::INT]
              (exists
                [date::STRING amount::INT]
-               (atom 0x000000000000000022025b5071a4ea68 person_id car_id date amount))))
+               (atom 0x22025b5071a4ea68 person_id car_id date amount))))
           (functional_dependency
-            0x0000000000000000db22feaba0887298
-            ([person_id::INT car_id::INT]
-             (atom 0x0000000000000000aafa8285ee3a8fc0 person_id car_id))
+            0xdb22feaba0887298
+            ([person_id::INT car_id::INT] (atom 0xaafa8285ee3a8fc0 person_id car_id))
             (keys car_id)
             (values person_id))))
       (undefine :emp_model)))
@@ -149,26 +146,26 @@
         (fragment
           :query2
           (functional_dependency
-            0x0000000000000000e1f440a0b3957f3e
+            0xe1f440a0b3957f3e
             ([n::STRING car_id::INT person_id::INT v::STRING]
              (and
-               (atom 0x0000000000000000efa5ff7eefcfbef0 person_id n)
-               (atom 0x00000000000000008a2539e2b69d9daf car_id v)
-               (atom 0x0000000000000000aafa8285ee3a8fc0 person_id car_id)))
+               (atom 0xefa5ff7eefcfbef0 person_id n)
+               (atom 0x8a2539e2b69d9daf car_id v)
+               (atom 0xaafa8285ee3a8fc0 person_id car_id)))
             (keys v)
             (values n))
           (def
-            0x000000000000000037417896f56cfc7a
+            0x37417896f56cfc7a
             ([n::STRING fn::STRING ln::STRING v::STRING]
              (exists
                [person_id::INT car_id::INT]
                (and
-                 (atom 0x0000000000000000efa5ff7eefcfbef0 person_id n)
-                 (atom 0x000000000000000005416fbf98c1d659 person_id fn)
-                 (atom 0x00000000000000002326b8630011d51c person_id ln)
-                 (atom 0x0000000000000000aafa8285ee3a8fc0 person_id car_id)
-                 (atom 0x00000000000000008a2539e2b69d9daf car_id v))))))))
-    (reads (output :output2 0x000000000000000037417896f56cfc7a))))
+                 (atom 0xefa5ff7eefcfbef0 person_id n)
+                 (atom 0x5416fbf98c1d659 person_id fn)
+                 (atom 0x2326b8630011d51c person_id ln)
+                 (atom 0xaafa8285ee3a8fc0 person_id car_id)
+                 (atom 0x8a2539e2b69d9daf car_id v))))))))
+    (reads (output :output2 0x37417896f56cfc7a))))
 
 ;; Debug information
 ;; -----------------------

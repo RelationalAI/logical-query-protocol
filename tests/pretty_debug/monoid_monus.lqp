@@ -6,56 +6,56 @@
         (fragment
           :f1
           (algorithm
-            0x0000000000000000a791366f6f620125
-            0x0000000000000000d653b016db1da8f5
-            0x0000000000000000021bbd75cf6530bd
-            0x0000000000000000ec7e008b5f4d05c4
+            0xa791366f6f620125
+            0xd653b016db1da8f5
+            0x21bbd75cf6530bd
+            0xec7e008b5f4d05c4
             (script
               (loop
                 (init
                   (assign
-                    0x0000000000000000a791366f6f620125
+                    0xa791366f6f620125
                     ([x::INT y::INT] (or (and (= x 1) (= y 10)) (and (= x 2) (= y 3)))))
                   (assign
-                    0x0000000000000000d653b016db1da8f5
+                    0xd653b016db1da8f5
                     ([x::INT y::INT] (or (and (= x 1) (= y 10)) (and (= x 2) (= y 3)))))
                   (assign
-                    0x0000000000000000021bbd75cf6530bd
+                    0x21bbd75cf6530bd
                     ([x::INT y::INT] (or (and (= x 1) (= y 5)) (and (= x 2) (= y 20)))))
                   (assign
-                    0x0000000000000000ec7e008b5f4d05c4
+                    0xec7e008b5f4d05c4
                     ([x::INT y::INT] (or (and (= x 1) (= y 7)) (and (= x 2) (= y 25)))))
                   (assign
-                    0x0000000000000000a25513c7e0f6eaa8
+                    0xa25513c7e0f6eaa8
                     ([x::INT y::INT] (or (and (= x 1) (= y 5)) (and (= x 2) (= y 20))))
                     (attrs (attribute :function)))
-                  (assign 0x00000000000000009cdc6c47aa193ae7 ([] (false))))
+                  (assign 0x9cdc6c47aa193ae7 ([] (false))))
                 (script
                   (monoid
                     (min INT)
-                    0x0000000000000000a791366f6f620125
-                    ([x::INT | y::INT] (atom 0x0000000000000000a25513c7e0f6eaa8 x y))
+                    0xa791366f6f620125
+                    ([x::INT | y::INT] (atom 0xa25513c7e0f6eaa8 x y))
                     (attrs (attribute :function)))
                   (monoid
                     (or)
-                    0x0000000000000000d653b016db1da8f5
-                    ([x::INT y::INT] (atom 0x0000000000000000a25513c7e0f6eaa8 x y)))
+                    0xd653b016db1da8f5
+                    ([x::INT y::INT] (atom 0xa25513c7e0f6eaa8 x y)))
                   (monus
                     (or)
-                    0x0000000000000000021bbd75cf6530bd
-                    ([x::INT | y::INT] (atom 0x0000000000000000a25513c7e0f6eaa8 x y))
+                    0x21bbd75cf6530bd
+                    ([x::INT | y::INT] (atom 0xa25513c7e0f6eaa8 x y))
                     (attrs (attribute :function)))
                   (monus
                     (sum INT)
-                    0x0000000000000000ec7e008b5f4d05c4
-                    ([x::INT | y::INT] (atom 0x0000000000000000a25513c7e0f6eaa8 x y))
+                    0xec7e008b5f4d05c4
+                    ([x::INT | y::INT] (atom 0xa25513c7e0f6eaa8 x y))
                     (attrs (attribute :function)))
-                  (break 0x00000000000000009cdc6c47aa193ae7 ([] (true))))))))))
+                  (break 0x9cdc6c47aa193ae7 ([] (true))))))))))
     (reads
-      (output :R1 0x0000000000000000a791366f6f620125)
-      (output :R2 0x0000000000000000d653b016db1da8f5)
-      (output :R3 0x0000000000000000021bbd75cf6530bd)
-      (output :R4 0x0000000000000000ec7e008b5f4d05c4))))
+      (output :R1 0xa791366f6f620125)
+      (output :R2 0xd653b016db1da8f5)
+      (output :R3 0x21bbd75cf6530bd)
+      (output :R4 0xec7e008b5f4d05c4))))
 
 ;; Debug information
 ;; -----------------------

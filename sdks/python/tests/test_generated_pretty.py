@@ -217,7 +217,7 @@ class TestFormatHelpers:
     def test_format_uint128_zero(self):
         pp = PrettyPrinter()
         msg = logic_pb2.UInt128Value(low=0, high=0)
-        assert pp.format_uint128(msg) == "0x00000000000000000000000000000000"
+        assert pp.format_uint128(msg) == "0x0"
 
     def test_format_uint128_max(self):
         pp = PrettyPrinter()

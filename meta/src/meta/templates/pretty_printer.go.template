@@ -285,7 +285,10 @@ func int128ToString(low, high uint64) string {{
 }}
 
 func uint128ToHexString(low, high uint64) string {{
-	return fmt.Sprintf("%016x%016x", high, low)
+	if high == 0 {{
+		return fmt.Sprintf("%x", low)
+	}}
+	return fmt.Sprintf("%x%016x", high, low)
 }}
 
 func formatFloat64(v float64) string {{

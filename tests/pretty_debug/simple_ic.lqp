@@ -5,16 +5,10 @@
       (define
         (fragment
           :f1
-          (def 0x00000000000000002c26b46b68ffc68f ([] (= 1 1)))
-          (def
-            0x00000000000000003a53db8a2c8a17ee
-            ([] (atom 0x00000000000000002c26b46b68ffc68f)))
-          (def
-            0x0000000000000000e0ee8bb50685e05f
-            ([] (atom 0x00000000000000002c26b46b68ffc68f))))))
-    (reads
-      (output :result 0x0000000000000000e0ee8bb50685e05f)
-      (abort :abort_1_eq_1 0x00000000000000003a53db8a2c8a17ee))))
+          (def 0x2c26b46b68ffc68f ([] (= 1 1)))
+          (def 0x3a53db8a2c8a17ee ([] (atom 0x2c26b46b68ffc68f)))
+          (def 0xe0ee8bb50685e05f ([] (atom 0x2c26b46b68ffc68f))))))
+    (reads (output :result 0xe0ee8bb50685e05f) (abort :abort_1_eq_1 0x3a53db8a2c8a17ee))))
 
 ;; Debug information
 ;; -----------------------

@@ -5,27 +5,25 @@
       (define
         (fragment
           :primitives
-          (def 0x0000000000000000f3c7807d475073ba ([v::INT] (or (= v 5) (= v 12) (= v 3))))
+          (def 0xf3c7807d475073ba ([v::INT] (or (= v 5) (= v 12) (= v 3))))
           (def
-            0x0000000000000000249cb94181ef29a3
+            0x249cb94181ef29a3
             ([ord::INT v::INT]
              (ffi
                :rel_primitive_sort
-               (args ([x::INT] (atom 0x0000000000000000f3c7807d475073ba x)))
+               (args ([x::INT] (atom 0xf3c7807d475073ba x)))
                (terms ord v))))
           (def
-            0x00000000000000006722f23c985dd9fa
+            0x6722f23c985dd9fa
             ([ord::INT v::INT]
              (ffi
                :rel_primitive_top
-               (args
-                 ([x::INT] (atom 0x0000000000000000f3c7807d475073ba x))
-                 ([limit::INT] (= limit 2)))
+               (args ([x::INT] (atom 0xf3c7807d475073ba x)) ([limit::INT] (= limit 2)))
                (terms ord v)))))))
     (reads
-      (output :numbers 0x0000000000000000f3c7807d475073ba)
-      (output :limit_sorted_numbers 0x00000000000000006722f23c985dd9fa)
-      (output :sorted_numbers 0x0000000000000000249cb94181ef29a3))))
+      (output :numbers 0xf3c7807d475073ba)
+      (output :limit_sorted_numbers 0x6722f23c985dd9fa)
+      (output :sorted_numbers 0x249cb94181ef29a3))))
 
 ;; Debug information
 ;; -----------------------

@@ -156,7 +156,7 @@ end
 
 function format_uint128(pp::PrettyPrinter, msg::Proto.UInt128Value)::String
     value = UInt128(msg.high) << 64 | UInt128(msg.low)
-    return "0x" * lpad(string(value, base=16), 32, '0')
+    return "0x" * string(value, base=16)
 end
 
 function format_float64(v::Float64)::String

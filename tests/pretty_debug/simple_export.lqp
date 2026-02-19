@@ -5,19 +5,15 @@
       (define
         (fragment
           :f1
-          (def
-            0x0000000000000000f030f5088e744d22
-            ([row::INT v::INT] (and (= row 1) (= 2 v))))
-          (def
-            0x00000000000000006f2f3abd5cd439ac
-            ([row::INT v::STRING] (and (= row 1) (= v "hello")))))))
+          (def 0xf030f5088e744d22 ([row::INT v::INT] (and (= row 1) (= 2 v))))
+          (def 0x6f2f3abd5cd439ac ([row::INT v::STRING] (and (= row 1) (= v "hello")))))))
     (reads
       (export
         (export_csv_config
           (path "wrong")
           (columns
-            (column "col1name" 0x0000000000000000f030f5088e744d22)
-            (column "col2name" 0x00000000000000006f2f3abd5cd439ac))
+            (column "col1name" 0xf030f5088e744d22)
+            (column "col2name" 0x6f2f3abd5cd439ac))
           {
            :compression ""
            :partition_size 10

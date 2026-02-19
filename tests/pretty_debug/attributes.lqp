@@ -6,11 +6,11 @@
         (fragment
           :f1
           (def
-            0x00000000000000002c26b46b68ffc68f
+            0x2c26b46b68ffc68f
             ([a::INT b::INT]
              (or (and (= a 1) (= b 2)) (and (= a 1) (= b 3)) (and (= a 1) (= b 4))))
             (attrs (attribute :function) (attribute :inspect "normalizer" 2))))))
-    (reads (output :foo 0x00000000000000002c26b46b68ffc68f))))
+    (reads (output :foo 0x2c26b46b68ffc68f))))
 
 ;; Debug information
 ;; -----------------------
