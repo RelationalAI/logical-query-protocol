@@ -1363,6 +1363,46 @@ end
     @test d1 == d2 && d2 == d4 && d1 == d4
 end
 
+@testitem "Equality for Snapshot" tags=[:ring1, :unit] begin
+    using LogicalQueryProtocol: Snapshot, RelationId
+
+    r1 = RelationId(id_low=0x1234, id_high=0x0)
+    r2 = RelationId(id_low=0x1234, id_high=0x0)
+    r3 = RelationId(id_low=0x5678, id_high=0x0)
+
+    s1 = Snapshot(destination_path=["my_edb"], source_relation=r1)
+    s2 = Snapshot(destination_path=["my_edb"], source_relation=r2)
+    s3 = Snapshot(destination_path=["other_edb"], source_relation=r1)
+    s4 = Snapshot(destination_path=["my_edb"], source_relation=r3)
+    s5 = Snapshot(destination_path=["my_edb"], source_relation=r1)
+
+    # Equality and inequality
+    @test s1 == s2
+    @test s1 != s3
+    @test s1 != s4
+    @test isequal(s1, s2)
+
+    # Hash consistency
+    @test hash(s1) == hash(s2)
+
+    # Reflexivity
+    @test s1 == s1
+    @test isequal(s1, s1)
+
+    # Symmetry
+    @test s1 == s2 && s2 == s1
+
+    # Transitivity
+    @test s1 == s2 && s2 == s5 && s1 == s5
+
+    # Multi-segment path
+    s6 = Snapshot(destination_path=["schema", "table"], source_relation=r1)
+    s7 = Snapshot(destination_path=["schema", "table"], source_relation=r1)
+    @test s6 == s7
+    @test hash(s6) == hash(s7)
+    @test s6 != s1
+end
+
 @testitem "Equality for Configure" tags=[:ring1, :unit] begin
     using LogicalQueryProtocol: Configure, IVMConfig, MaintenanceLevel
 

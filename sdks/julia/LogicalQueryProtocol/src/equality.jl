@@ -362,6 +362,11 @@ Base.:(==)(a::Define, b::Define) = a.fragment == b.fragment
 Base.hash(a::Define, h::UInt) = hash(a.fragment, h)
 Base.isequal(a::Define, b::Define) = isequal(a.fragment, b.fragment)
 
+# Snapshot
+Base.:(==)(a::Snapshot, b::Snapshot) = a.destination_path == b.destination_path && a.source_relation == b.source_relation
+Base.hash(a::Snapshot, h::UInt) = hash(a.source_relation, hash(a.destination_path, h))
+Base.isequal(a::Snapshot, b::Snapshot) = isequal(a.destination_path, b.destination_path) && isequal(a.source_relation, b.source_relation)
+
 # Context
 Base.:(==)(a::Context, b::Context) = a.relations == b.relations
 Base.hash(a::Context, h::UInt) = hash(a.relations, h)

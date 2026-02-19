@@ -1,8 +1,6 @@
 # Logical Query Protocol
 
-[[Design document](https://docs.google.com/document/d/1QXRU7zc1SUvYkyMCG0KZINZtFgzWsl9-XHxMssdXZzg)]
-
-This repository contains the ProtoBuf specification for the Logical Query Protocol (LQP),
+This repository contains the ProtoBuf specification for the [Logical Query Protocol (LQP)](docs/lqp.md),
 along with SDKs for the three first-class supported languages: Python, Go, and Julia.
 
 The SDK for each language contains the generated ProtoBuf code, along with a native parser

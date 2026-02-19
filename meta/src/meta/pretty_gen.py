@@ -357,6 +357,15 @@ def _generate_pretty_from_fields(
         assert False, f"Unsupported Rhs type: {type(rhs)}"
 
 
+def _get_tuple_type(t) -> TupleType | None:
+    """Unwrap OptionType if present and return TupleType, or None."""
+    if isinstance(t, TupleType):
+        return t
+    if isinstance(t, OptionType) and isinstance(t.element_type, TupleType):
+        return t.element_type
+    return None
+
+
 def _generate_pretty_sequence_from_fields(
     rhs: Sequence, fields_var: Var, grammar: Grammar, proto_messages: dict | None
 ) -> TargetExpr:
@@ -496,8 +505,9 @@ def _generate_pretty_sequence_from_fields(
             prev_lit_name = None
 
             # Extract field from tuple or use directly
-            if non_lit_count > 1 and isinstance(fields_var.type, TupleType):
-                elem_type = fields_var.type.elements[field_idx]
+            tuple_type = _get_tuple_type(fields_var.type)
+            if tuple_type is not None:
+                elem_type = tuple_type.elements[field_idx]
                 elem_var = Var(gensym("field"), elem_type)
                 elem_expr = GetElement(fields_var, field_idx)
                 pretty_elem = _pretty_print_element(
