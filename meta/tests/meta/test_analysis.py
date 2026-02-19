@@ -87,7 +87,7 @@ def _grammar(text):
     nts = {name: Nonterminal(name, _str_type) for name in nt_names}
     named_terms = {}
     all_rules = []
-    start = None
+    start: Nonterminal | None = None
 
     for line in lines:
         lhs_str, rhs_str = line.split("->", 1)
@@ -1178,9 +1178,13 @@ class TestAppelChapter3Examples:
         assert not nullable[z], "Z should not be nullable"
 
         first = GrammarAnalysis.compute_first_static(grammar, nullable)
-        assert first[x] == {lit_a, lit_c}, f"FIRST(X) should be {{a, c}}, got {first[x]}"
+        assert first[x] == {lit_a, lit_c}, (
+            f"FIRST(X) should be {{a, c}}, got {first[x]}"
+        )
         assert first[y] == {lit_c}, f"FIRST(Y) should be {{c}}, got {first[y]}"
-        assert first[z] == {lit_a, lit_c, lit_d}, f"FIRST(Z) should be {{a, c, d}}, got {first[z]}"
+        assert first[z] == {lit_a, lit_c, lit_d}, (
+            f"FIRST(Z) should be {{a, c, d}}, got {first[z]}"
+        )
 
         follow = GrammarAnalysis.compute_follow_static(grammar, nullable, first)
         eof = NamedTerminal("$", BaseType("EOF"))
