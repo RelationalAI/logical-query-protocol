@@ -27,57 +27,26 @@ from pathlib import Path
 
 from .grammar import Grammar
 from .grammar_validator import validate_grammar
+from .parser_gen_go import generate_parser_go
+from .parser_gen_julia import generate_parser_julia
+from .parser_gen_python import generate_parser_python
+from .pretty_gen_go import generate_pretty_printer_go
+from .pretty_gen_julia import generate_pretty_printer_julia
+from .pretty_gen_python import generate_pretty_printer_python
 from .proto_parser import ProtoParser
 from .proto_print import format_enum, format_message
 from .yacc_parser import load_yacc_grammar_file
 
-
-def _gen_parser_python(grammar, command_line, proto_messages):
-    from .parser_gen_python import generate_parser_python
-
-    return generate_parser_python(grammar, command_line, proto_messages)
-
-
-def _gen_parser_julia(grammar, command_line, proto_messages):
-    from .parser_gen_julia import generate_parser_julia
-
-    return generate_parser_julia(grammar, command_line, proto_messages)
-
-
-def _gen_parser_go(grammar, command_line, proto_messages):
-    from .parser_gen_go import generate_parser_go
-
-    return generate_parser_go(grammar, command_line, proto_messages)
-
-
-def _gen_printer_python(grammar, command_line, proto_messages):
-    from .pretty_gen_python import generate_pretty_printer_python
-
-    return generate_pretty_printer_python(grammar, command_line, proto_messages)
-
-
-def _gen_printer_julia(grammar, command_line, proto_messages):
-    from .pretty_gen_julia import generate_pretty_printer_julia
-
-    return generate_pretty_printer_julia(grammar, command_line, proto_messages)
-
-
-def _gen_printer_go(grammar, command_line, proto_messages):
-    from .pretty_gen_go import generate_pretty_printer_go
-
-    return generate_pretty_printer_go(grammar, command_line, proto_messages)
-
-
 _PARSER_GENERATORS = {
-    "python": _gen_parser_python,
-    "julia": _gen_parser_julia,
-    "go": _gen_parser_go,
+    "python": generate_parser_python,
+    "julia": generate_parser_julia,
+    "go": generate_parser_go,
 }
 
 _PRINTER_GENERATORS = {
-    "python": _gen_printer_python,
-    "julia": _gen_printer_julia,
-    "go": _gen_printer_go,
+    "python": generate_pretty_printer_python,
+    "julia": generate_pretty_printer_julia,
+    "go": generate_pretty_printer_go,
 }
 
 _LANGUAGES = sorted(set(_PARSER_GENERATORS) | set(_PRINTER_GENERATORS))
