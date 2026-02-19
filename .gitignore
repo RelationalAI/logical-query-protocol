@@ -30,6 +30,7 @@ sdks/julia/LogicalQueryProtocol/test/lqp_pretty_debug_output/**
 sdks/go/test/lqp/**
 sdks/go/test/bin/**
 sdks/go/test/pretty/**
+sdks/go/test/pretty_debug/**
 sdks/go/test/lqp_output/**
 sdks/go/test/lqp_pretty_output/**
 sdks/go/test/lqp_pretty_debug_output/**
