@@ -25,6 +25,9 @@ sdks/julia/LogicalQueryProtocol/test/lqp_output/**
 sdks/julia/LogicalQueryProtocol/test/lqp_output/**
 sdks/julia/LogicalQueryProtocol/test/lqp_pretty_output/**
 
+# Go SDK
+sdks/go/test/lqp_pretty_output
+
 # Other
 .DS_Store
 .envrc
