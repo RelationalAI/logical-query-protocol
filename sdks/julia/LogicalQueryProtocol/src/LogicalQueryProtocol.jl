@@ -44,6 +44,17 @@ include("pretty.jl")
 # Export submodules for access as LogicalQueryProtocol.Parser, LogicalQueryProtocol.Pretty
 export Parser, Pretty, Proto
 
+# Re-import public API names from submodules so they are accessible via
+# `using LogicalQueryProtocol: name` and `LogicalQueryProtocol.name`.
+# This is needed for method extension (e.g., custom ConstantFormatter subtypes).
+using .Parser: parse, ParseError, Lexer,
+    scan_string, scan_int, scan_float, scan_int128, scan_uint128, scan_decimal
+using .Pretty: PrettyPrinter, ConstantFormatter, DefaultConstantFormatter,
+    format_decimal, format_int128, format_uint128, format_int, format_float,
+    format_string, format_bool, format_string_value, format_float64,
+    _pprint_dispatch, get_output, pprint, pretty, pretty_debug,
+    indent!, dedent!, indent_sexp!, indent_level, try_flat
+
 include("show.jl")
 
 end
