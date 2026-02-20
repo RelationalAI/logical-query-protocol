@@ -41,24 +41,8 @@ include("properties.jl")
 include("parser.jl")
 include("pretty.jl")
 
-# Re-export from submodules
-using .Parser: parse, ParseError, scan_string, scan_int, scan_float, scan_int128, scan_uint128, scan_decimal, Lexer
-using .Pretty: ConstantFormatter, DefaultConstantFormatter, DEFAULT_CONSTANT_FORMATTER
-using .Pretty: format_decimal, format_int128, format_uint128, format_int, format_float, format_string, format_bool
-using .Pretty: format_float64, format_string_value
-using .Pretty: pprint, pretty, pretty_debug, PrettyPrinter, _pprint_dispatch, get_output
-using .Pretty: indent_level, indent!, try_flat
-
+# Export submodules for access as LogicalQueryProtocol.Parser, LogicalQueryProtocol.Pretty
 export Parser, Pretty, Proto
-export parse, ParseError
-export ConstantFormatter, DefaultConstantFormatter, DEFAULT_CONSTANT_FORMATTER
-export format_decimal, format_int128, format_uint128, format_int, format_float, format_string, format_bool
-export pprint, pretty, pretty_debug, PrettyPrinter
-# Export for testing
-export _pprint_dispatch, get_output
-export scan_string, scan_int, scan_float, scan_int128, scan_uint128, scan_decimal, Lexer
-export format_float64, format_string_value
-export indent_level, indent!, try_flat
 
 include("show.jl")
 
