@@ -1,5 +1,4 @@
-@testitem "Pretty printer - format_string_value" begin
-    using LogicalQueryProtocol: format_string_value
+@testitem "Pretty printer - format_string_value" setup=[PrettySetup] begin
     @test format_string_value("hello") == "\"hello\""
     @test format_string_value("") == "\"\""
     @test format_string_value("a\"b") == "\"a\\\"b\""
@@ -9,8 +8,7 @@
     @test format_string_value("a\rb") == "\"a\\rb\""
 end
 
-@testitem "Pretty printer - format_int128" begin
-    using LogicalQueryProtocol: format_int128, PrettyPrinter, Proto
+@testitem "Pretty printer - format_int128" setup=[PrettySetup] begin
     pp = PrettyPrinter()
 
     # zero
@@ -26,8 +24,7 @@ end
     @test format_int128(pp, msg) == "-1i128"
 end
 
-@testitem "Pretty printer - format_uint128" begin
-    using LogicalQueryProtocol: format_uint128, PrettyPrinter, Proto
+@testitem "Pretty printer - format_uint128" setup=[PrettySetup] begin
     pp = PrettyPrinter()
 
     msg = Proto.UInt128Value(UInt64(0), UInt64(0))
@@ -37,8 +34,7 @@ end
     @test format_uint128(pp, msg) == "0xffffffffffffffffffffffffffffffff"
 end
 
-@testitem "Pretty printer - format_decimal" begin
-    using LogicalQueryProtocol: format_decimal, PrettyPrinter, Proto
+@testitem "Pretty printer - format_decimal" setup=[PrettySetup] begin
     pp = PrettyPrinter()
 
     # 123.456d6 => value=123456, scale=3, precision=6
@@ -52,16 +48,14 @@ end
     @test format_decimal(pp, msg) == "0.0d1"
 end
 
-@testitem "Pretty printer - format_float64" begin
-    using LogicalQueryProtocol: format_float64
+@testitem "Pretty printer - format_float64" setup=[PrettySetup] begin
     @test format_float64(3.14) == "3.14"
     @test format_float64(-1.5) == "-1.5"
     @test format_float64(Inf) == "inf"
     @test format_float64(NaN) == "nan"
 end
 
-@testitem "Pretty printer - indent/dedent" begin
-    using LogicalQueryProtocol: PrettyPrinter, indent!, dedent!, indent_sexp!, indent_level
+@testitem "Pretty printer - indent/dedent" setup=[PrettySetup] begin
     pp = PrettyPrinter()
     @test indent_level(pp) == 0
 
@@ -90,8 +84,7 @@ end
     @test length(pp.indent_stack) == 1
 end
 
-@testitem "Pretty printer - try_flat memoization" begin
-    using LogicalQueryProtocol: PrettyPrinter, try_flat, Proto
+@testitem "Pretty printer - try_flat memoization" setup=[PrettySetup] begin
 
     pp = PrettyPrinter()
     txn = Proto.Transaction(Proto.Epoch[], nothing, nothing)
@@ -105,8 +98,7 @@ end
     @test pp._memo[msg_id] == "(transaction)"
 end
 
-@testitem "Pretty printer - narrow width roundtrip" begin
-    using LogicalQueryProtocol: parse, pretty, Proto
+@testitem "Pretty printer - narrow width roundtrip" setup=[ParserSetup, PrettySetup] begin
 
     test_files_dir = joinpath(@__DIR__, "lqp")
     isdir(test_files_dir) || return
@@ -114,16 +106,15 @@ end
     lqp_files = sort(filter(f -> endswith(f, ".lqp"), readdir(test_files_dir)))
     for lqp_file in lqp_files
         content = read(joinpath(test_files_dir, lqp_file), String)
-        parsed = parse(content)
+        parsed = Parser.parse(content)
 
         narrow = pretty(parsed; max_width=40)
-        reparsed = parse(narrow)
+        reparsed = Parser.parse(narrow)
         @test reparsed == parsed
     end
 end
 
-@testitem "Pretty printer - wide width roundtrip" begin
-    using LogicalQueryProtocol: parse, pretty, Proto
+@testitem "Pretty printer - wide width roundtrip" setup=[ParserSetup, PrettySetup] begin
 
     test_files_dir = joinpath(@__DIR__, "lqp")
     isdir(test_files_dir) || return
@@ -131,16 +122,15 @@ end
     lqp_files = sort(filter(f -> endswith(f, ".lqp"), readdir(test_files_dir)))
     for lqp_file in lqp_files
         content = read(joinpath(test_files_dir, lqp_file), String)
-        parsed = parse(content)
+        parsed = Parser.parse(content)
 
         wide = pretty(parsed; max_width=1000)
-        reparsed = parse(wide)
+        reparsed = Parser.parse(wide)
         @test reparsed == parsed
     end
 end
 
-@testitem "Pretty printer - width affects line count" begin
-    using LogicalQueryProtocol: parse, pretty, Proto
+@testitem "Pretty printer - width affects line count" setup=[ParserSetup, PrettySetup] begin
 
     test_files_dir = joinpath(@__DIR__, "lqp")
     isdir(test_files_dir) || return
@@ -148,7 +138,7 @@ end
     lqp_files = sort(filter(f -> endswith(f, ".lqp"), readdir(test_files_dir)))
     for lqp_file in lqp_files
         content = read(joinpath(test_files_dir, lqp_file), String)
-        parsed = parse(content)
+        parsed = Parser.parse(content)
 
         narrow = pretty(parsed; max_width=40)
         default = pretty(parsed)
@@ -163,8 +153,7 @@ end
     end
 end
 
-@testitem "Pretty printer - output invariants" begin
-    using LogicalQueryProtocol: parse, pretty, Proto
+@testitem "Pretty printer - output invariants" setup=[ParserSetup, PrettySetup] begin
 
     test_files_dir = joinpath(@__DIR__, "lqp")
     isdir(test_files_dir) || return
@@ -172,7 +161,7 @@ end
     lqp_files = sort(filter(f -> endswith(f, ".lqp"), readdir(test_files_dir)))
     for lqp_file in lqp_files
         content = read(joinpath(test_files_dir, lqp_file), String)
-        parsed = parse(content)
+        parsed = Parser.parse(content)
         printed = pretty(parsed)
 
         # Starts with (transaction
@@ -194,8 +183,7 @@ end
     end
 end
 
-@testitem "Pretty printer - snapshot" begin
-    using LogicalQueryProtocol: parse, pretty, Proto
+@testitem "Pretty printer - snapshot" setup=[ParserSetup, PrettySetup] begin
 
     test_files_dir = joinpath(@__DIR__, "lqp")
     snapshot_dir = joinpath(@__DIR__, "pretty")
@@ -209,7 +197,7 @@ end
         lqp_path = joinpath(test_files_dir, lqp_file)
         content = read(lqp_path, String)
 
-        parsed = parse(content)
+        parsed = Parser.parse(content)
         @test parsed isa Proto.Transaction
 
         printed = pretty(parsed)
@@ -222,8 +210,7 @@ end
     end
 end
 
-@testitem "Pretty printer - round trip" begin
-    using LogicalQueryProtocol: parse, pretty, Proto
+@testitem "Pretty printer - round trip" setup=[ParserSetup, PrettySetup] begin
 
     test_files_dir = joinpath(@__DIR__, "lqp")
     @test isdir(test_files_dir)
@@ -235,13 +222,13 @@ end
         lqp_path = joinpath(test_files_dir, lqp_file)
         content = read(lqp_path, String)
 
-        parsed = parse(content)
+        parsed = Parser.parse(content)
         @test parsed isa Proto.Transaction
 
         printed = pretty(parsed)
         @test !isempty(printed)
 
-        reparsed = parse(printed)
+        reparsed = Parser.parse(printed)
         @test reparsed isa Proto.Transaction
         @test reparsed == parsed
 
@@ -250,8 +237,7 @@ end
     end
 end
 
-@testitem "Pretty printer - from binary snapshot" begin
-    using LogicalQueryProtocol: pretty, Proto
+@testitem "Pretty printer - from binary snapshot" setup=[PrettySetup] begin
     using ProtoBuf: ProtoBuf
 
     bin_files_dir = joinpath(@__DIR__, "bin")
@@ -279,8 +265,7 @@ end
     end
 end
 
-@testitem "Pretty printer - debug from binary snapshot" begin
-    using LogicalQueryProtocol: pretty_debug, Proto
+@testitem "Pretty printer - debug from binary snapshot" setup=[PrettySetup] begin
     using ProtoBuf: ProtoBuf
 
     bin_files_dir = joinpath(@__DIR__, "bin")
@@ -308,8 +293,7 @@ end
     end
 end
 
-@testitem "Pretty printer - binary round trip" begin
-    using LogicalQueryProtocol: parse, pretty, Proto
+@testitem "Pretty printer - binary round trip" setup=[ParserSetup, PrettySetup] begin
     using ProtoBuf: ProtoBuf
 
     bin_files_dir = joinpath(@__DIR__, "bin")
@@ -327,7 +311,7 @@ end
         printed = pretty(txn)
         @test !isempty(printed)
 
-        reparsed = parse(printed)
+        reparsed = Parser.parse(printed)
         @test reparsed isa Proto.Transaction
         @test reparsed == txn
 

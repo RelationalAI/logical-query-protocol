@@ -1,7 +1,4 @@
-@testitem "Default formatter - int" begin
-    using LogicalQueryProtocol: format_int, PrettyPrinter
-    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
-
+@testitem "Default formatter - int" setup=[PrettySetup] begin
     pp = PrettyPrinter()
 
     # Test positive Int64
@@ -20,10 +17,7 @@
     @test format_int(pp, Int64(9223372036854775807)) == "9223372036854775807"
 end
 
-@testitem "Default formatter - float" begin
-    using LogicalQueryProtocol: format_float, PrettyPrinter
-    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
-
+@testitem "Default formatter - float" setup=[PrettySetup] begin
     pp = PrettyPrinter()
 
     # Test positive float
@@ -44,10 +38,7 @@ end
     @test format_float(pp, 1.23e10) == "1.23e10"
 end
 
-@testitem "Default formatter - string" begin
-    using LogicalQueryProtocol: format_string, PrettyPrinter
-    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
-
+@testitem "Default formatter - string" setup=[PrettySetup] begin
     pp = PrettyPrinter()
 
     # Test simple string
@@ -67,10 +58,7 @@ end
     @test format_string(pp, "\\\"\n\r\t") == "\"\\\\\\\"\\n\\r\\t\""
 end
 
-@testitem "Default formatter - bool" begin
-    using LogicalQueryProtocol: format_bool, PrettyPrinter
-    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
-
+@testitem "Default formatter - bool" setup=[PrettySetup] begin
     pp = PrettyPrinter()
 
     # Test true
@@ -80,10 +68,7 @@ end
     @test format_bool(pp, false) == "false"
 end
 
-@testitem "Default formatter - decimal" begin
-    using LogicalQueryProtocol: format_decimal, PrettyPrinter
-    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
-
+@testitem "Default formatter - decimal" setup=[PrettySetup] begin
     pp = PrettyPrinter()
 
     # Test positive decimal
@@ -111,10 +96,7 @@ end
     @test format_decimal(pp, decimal_msg3) == "123.00d6"
 end
 
-@testitem "Default formatter - int128" begin
-    using LogicalQueryProtocol: format_int128, PrettyPrinter
-    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
-
+@testitem "Default formatter - int128" setup=[PrettySetup] begin
     pp = PrettyPrinter()
 
     # Test positive int128
@@ -130,10 +112,7 @@ end
     @test format_int128(pp, int128_msg_zero) == "0i128"
 end
 
-@testitem "Default formatter - uint128" begin
-    using LogicalQueryProtocol: format_uint128, PrettyPrinter
-    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
-
+@testitem "Default formatter - uint128" setup=[PrettySetup] begin
     pp = PrettyPrinter()
 
     # Test uint128
@@ -153,16 +132,11 @@ end
     @test format_uint128(pp, uint128_msg_high) == "0x10000000000000042"
 end
 
-@testitem "Custom formatter - decimal only" begin
-    using LogicalQueryProtocol: ConstantFormatter, DefaultConstantFormatter
-    using LogicalQueryProtocol: format_decimal, format_int128, format_uint128
-    using LogicalQueryProtocol: PrettyPrinter, _pprint_dispatch, get_output
-    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
-
+@testitem "Custom formatter - decimal only" setup=[PrettySetup] begin
     # Define custom formatter that only overrides decimal
     struct DecimalOnlyFormatter <: ConstantFormatter end
 
-    function LogicalQueryProtocol.format_decimal(
+    function Pretty.format_decimal(
         formatter::DecimalOnlyFormatter,
         pp::PrettyPrinter,
         msg::Proto.DecimalValue
@@ -193,16 +167,11 @@ end
     @test get_output(pp) == "0xff"
 end
 
-@testitem "Custom formatter - int128 only" begin
-    using LogicalQueryProtocol: ConstantFormatter, DefaultConstantFormatter
-    using LogicalQueryProtocol: format_decimal, format_int128, format_uint128
-    using LogicalQueryProtocol: PrettyPrinter, _pprint_dispatch, get_output
-    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
-
+@testitem "Custom formatter - int128 only" setup=[PrettySetup] begin
     # Define custom formatter that only overrides int128
     struct Int128OnlyFormatter <: ConstantFormatter end
 
-    function LogicalQueryProtocol.format_int128(
+    function Pretty.format_int128(
         formatter::Int128OnlyFormatter,
         pp::PrettyPrinter,
         msg::Proto.Int128Value
@@ -233,16 +202,11 @@ end
     @test get_output(pp) == "0xff"
 end
 
-@testitem "Custom formatter - uint128 only" begin
-    using LogicalQueryProtocol: ConstantFormatter, DefaultConstantFormatter
-    using LogicalQueryProtocol: format_decimal, format_int128, format_uint128
-    using LogicalQueryProtocol: PrettyPrinter, _pprint_dispatch, get_output
-    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
-
+@testitem "Custom formatter - uint128 only" setup=[PrettySetup] begin
     # Define custom formatter that only overrides uint128
     struct UInt128OnlyFormatter <: ConstantFormatter end
 
-    function LogicalQueryProtocol.format_uint128(
+    function Pretty.format_uint128(
         formatter::UInt128OnlyFormatter,
         pp::PrettyPrinter,
         msg::Proto.UInt128Value
@@ -273,16 +237,11 @@ end
     @test get_output(pp) == "42i128"
 end
 
-@testitem "Custom formatter - all types" begin
-    using LogicalQueryProtocol: ConstantFormatter, DefaultConstantFormatter
-    using LogicalQueryProtocol: format_decimal, format_int128, format_uint128
-    using LogicalQueryProtocol: PrettyPrinter, _pprint_dispatch, get_output
-    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
-
+@testitem "Custom formatter - all types" setup=[PrettySetup] begin
     # Define custom formatter that overrides all types
     struct AllCustomFormatter <: ConstantFormatter end
 
-    function LogicalQueryProtocol.format_decimal(
+    function Pretty.format_decimal(
         formatter::AllCustomFormatter,
         pp::PrettyPrinter,
         msg::Proto.DecimalValue
@@ -290,7 +249,7 @@ end
         return "DECIMAL"
     end
 
-    function LogicalQueryProtocol.format_int128(
+    function Pretty.format_int128(
         formatter::AllCustomFormatter,
         pp::PrettyPrinter,
         msg::Proto.Int128Value
@@ -298,7 +257,7 @@ end
         return "INT128"
     end
 
-    function LogicalQueryProtocol.format_uint128(
+    function Pretty.format_uint128(
         formatter::AllCustomFormatter,
         pp::PrettyPrinter,
         msg::Proto.UInt128Value
@@ -329,17 +288,13 @@ end
     @test get_output(pp) == "UINT128"
 end
 
-@testitem "Custom formatter - pprint API integration" begin
-    using LogicalQueryProtocol
-    using LogicalQueryProtocol: ConstantFormatter, pprint
-    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
-
+@testitem "Custom formatter - pprint API integration" setup=[PrettySetup] begin
     # Define custom formatter
     struct ApiTestFormatter <: ConstantFormatter end
 
-    function LogicalQueryProtocol.format_decimal(
+    function Pretty.format_decimal(
         formatter::ApiTestFormatter,
-        pp::LogicalQueryProtocol.PrettyPrinter,
+        pp::PrettyPrinter,
         msg::Proto.DecimalValue
     )::String
         return "FORMATTED"
@@ -361,16 +316,11 @@ end
     @test String(take!(io)) == "123.456d6\n"
 end
 
-@testitem "Custom formatter - access to pp parameter" begin
-    using LogicalQueryProtocol: ConstantFormatter, DefaultConstantFormatter
-    using LogicalQueryProtocol: format_int128
-    using LogicalQueryProtocol: PrettyPrinter, _pprint_dispatch, get_output
-    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
-
+@testitem "Custom formatter - access to pp parameter" setup=[PrettySetup] begin
     # Define custom formatter that uses pp parameter
     struct PpAwareFormatter <: ConstantFormatter end
 
-    function LogicalQueryProtocol.format_int128(
+    function Pretty.format_int128(
         formatter::PpAwareFormatter,
         pp::PrettyPrinter,
         msg::Proto.Int128Value
@@ -395,16 +345,11 @@ end
     @test get_output(pp) == "NARROW"
 end
 
-@testitem "Custom formatter - scientific notation for decimals" begin
-    using LogicalQueryProtocol: ConstantFormatter, DefaultConstantFormatter
-    using LogicalQueryProtocol: format_decimal
-    using LogicalQueryProtocol: PrettyPrinter, _pprint_dispatch, get_output
-    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
-
+@testitem "Custom formatter - scientific notation for decimals" setup=[PrettySetup] begin
     # Define formatter that uses scientific notation
     struct ScientificFormatter <: ConstantFormatter end
 
-    function LogicalQueryProtocol.format_decimal(
+    function Pretty.format_decimal(
         formatter::ScientificFormatter,
         pp::PrettyPrinter,
         msg::Proto.DecimalValue
@@ -433,11 +378,7 @@ end
     @test contains(output, "123.456")
 end
 
-@testitem "Custom formatter - backward compatibility methods" begin
-    using LogicalQueryProtocol: format_decimal, format_int128, format_uint128
-    using LogicalQueryProtocol: PrettyPrinter
-    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
-
+@testitem "Custom formatter - backward compatibility methods" setup=[PrettySetup] begin
     # Test that old 2-argument signature still works (backward compatibility)
     pp = PrettyPrinter()
 
@@ -458,17 +399,12 @@ end
     @test format_uint128(pp, uint128_msg) == "0xff"
 end
 
-@testitem "Custom formatter - multiple instances" begin
-    using LogicalQueryProtocol: ConstantFormatter
-    using LogicalQueryProtocol: format_int128
-    using LogicalQueryProtocol: PrettyPrinter, _pprint_dispatch, get_output
-    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
-
+@testitem "Custom formatter - multiple instances" setup=[PrettySetup] begin
     # Define two different formatters
     struct FormatterA <: ConstantFormatter end
     struct FormatterB <: ConstantFormatter end
 
-    function LogicalQueryProtocol.format_int128(
+    function Pretty.format_int128(
         formatter::FormatterA,
         pp::PrettyPrinter,
         msg::Proto.Int128Value
@@ -476,7 +412,7 @@ end
         return "FORMAT_A"
     end
 
-    function LogicalQueryProtocol.format_int128(
+    function Pretty.format_int128(
         formatter::FormatterB,
         pp::PrettyPrinter,
         msg::Proto.Int128Value
@@ -497,16 +433,11 @@ end
     @test get_output(pp) == "FORMAT_B"
 end
 
-@testitem "Custom formatter - int (Int64)" begin
-    using LogicalQueryProtocol: ConstantFormatter, DefaultConstantFormatter
-    using LogicalQueryProtocol: format_int
-    using LogicalQueryProtocol: PrettyPrinter, format_int
-    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
-
+@testitem "Custom formatter - int (Int64)" setup=[PrettySetup] begin
     # Define custom formatter that overrides int
     struct IntFormatter <: ConstantFormatter end
 
-    function LogicalQueryProtocol.format_int(
+    function Pretty.format_int(
         formatter::IntFormatter,
         pp::PrettyPrinter,
         v::Integer
@@ -528,16 +459,11 @@ end
     @test result == "INT[99]"
 end
 
-@testitem "Custom formatter - float" begin
-    using LogicalQueryProtocol: ConstantFormatter, DefaultConstantFormatter
-    using LogicalQueryProtocol: format_float
-    using LogicalQueryProtocol: PrettyPrinter
-    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
-
+@testitem "Custom formatter - float" setup=[PrettySetup] begin
     # Define custom formatter that overrides float
     struct FloatFormatter <: ConstantFormatter end
 
-    function LogicalQueryProtocol.format_float(
+    function Pretty.format_float(
         formatter::FloatFormatter,
         pp::PrettyPrinter,
         v::Float64
@@ -559,16 +485,11 @@ end
     @test result == "FLOAT[Inf]"
 end
 
-@testitem "Custom formatter - string" begin
-    using LogicalQueryProtocol: ConstantFormatter, DefaultConstantFormatter
-    using LogicalQueryProtocol: format_string
-    using LogicalQueryProtocol: PrettyPrinter
-    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
-
+@testitem "Custom formatter - string" setup=[PrettySetup] begin
     # Define custom formatter that overrides string
     struct StringFormatter <: ConstantFormatter end
 
-    function LogicalQueryProtocol.format_string(
+    function Pretty.format_string(
         formatter::StringFormatter,
         pp::PrettyPrinter,
         s::AbstractString
@@ -590,16 +511,11 @@ end
     @test result == "STR<hello\nworld>"
 end
 
-@testitem "Custom formatter - bool" begin
-    using LogicalQueryProtocol: ConstantFormatter, DefaultConstantFormatter
-    using LogicalQueryProtocol: format_bool
-    using LogicalQueryProtocol: PrettyPrinter
-    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
-
+@testitem "Custom formatter - bool" setup=[PrettySetup] begin
     # Define custom formatter that overrides bool
     struct BoolFormatter <: ConstantFormatter end
 
-    function LogicalQueryProtocol.format_bool(
+    function Pretty.format_bool(
         formatter::BoolFormatter,
         pp::PrettyPrinter,
         v::Bool
@@ -616,27 +532,21 @@ end
     @test result == "NO"
 end
 
-@testitem "Custom formatter - all types combined" begin
-    using LogicalQueryProtocol: ConstantFormatter, DefaultConstantFormatter
-    using LogicalQueryProtocol: format_int, format_float, format_string, format_bool
-    using LogicalQueryProtocol: format_decimal, format_int128, format_uint128
-    using LogicalQueryProtocol: PrettyPrinter
-    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
-
+@testitem "Custom formatter - all types combined" setup=[PrettySetup] begin
     # Define custom formatter that overrides all types with a prefix
     struct PrefixFormatter <: ConstantFormatter end
 
-    LogicalQueryProtocol.format_int(formatter::PrefixFormatter, pp::PrettyPrinter, v::Integer)::String = "i:$(v)"
-    LogicalQueryProtocol.format_float(formatter::PrefixFormatter, pp::PrettyPrinter, v::Float64)::String = "f:$(v)"
-    LogicalQueryProtocol.format_string(formatter::PrefixFormatter, pp::PrettyPrinter, s::AbstractString)::String = "s:$(s)"
-    LogicalQueryProtocol.format_bool(formatter::PrefixFormatter, pp::PrettyPrinter, v::Bool)::String = "b:$(v)"
-    function LogicalQueryProtocol.format_decimal(formatter::PrefixFormatter, pp::PrettyPrinter, msg::Proto.DecimalValue)::String
+    Pretty.format_int(formatter::PrefixFormatter, pp::PrettyPrinter, v::Integer)::String = "i:$(v)"
+    Pretty.format_float(formatter::PrefixFormatter, pp::PrettyPrinter, v::Float64)::String = "f:$(v)"
+    Pretty.format_string(formatter::PrefixFormatter, pp::PrettyPrinter, s::AbstractString)::String = "s:$(s)"
+    Pretty.format_bool(formatter::PrefixFormatter, pp::PrettyPrinter, v::Bool)::String = "b:$(v)"
+    function Pretty.format_decimal(formatter::PrefixFormatter, pp::PrettyPrinter, msg::Proto.DecimalValue)::String
         return "d:DECIMAL"
     end
-    function LogicalQueryProtocol.format_int128(formatter::PrefixFormatter, pp::PrettyPrinter, msg::Proto.Int128Value)::String
+    function Pretty.format_int128(formatter::PrefixFormatter, pp::PrettyPrinter, msg::Proto.Int128Value)::String
         return "i128:INT128"
     end
-    function LogicalQueryProtocol.format_uint128(formatter::PrefixFormatter, pp::PrettyPrinter, msg::Proto.UInt128Value)::String
+    function Pretty.format_uint128(formatter::PrefixFormatter, pp::PrettyPrinter, msg::Proto.UInt128Value)::String
         return "u128:UINT128"
     end
 
