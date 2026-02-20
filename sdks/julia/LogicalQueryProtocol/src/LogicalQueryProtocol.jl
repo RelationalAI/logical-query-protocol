@@ -42,7 +42,7 @@ include("show.jl")
 # Export ConstantFormatter types for user customization
 export ConstantFormatter, DefaultConstantFormatter, DEFAULT_CONSTANT_FORMATTER
 # Export format functions for users to extend
-export format_decimal, format_int128, format_uint128
+export format_decimal, format_int128, format_uint128, format_int, format_float, format_string, format_bool
 # Export pprint API
 export pprint
 end

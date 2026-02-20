@@ -209,22 +209,32 @@ function format_uint128(formatter::DefaultConstantFormatter, pp::PrettyPrinter, 
     return "0x" * string(value, base=16)
 end
 
-# Fallback methods for custom formatters that don't override all types
-# These delegate to the default formatter
-format_decimal(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.DecimalValue)::String = format_decimal(DEFAULT_CONSTANT_FORMATTER, pp, msg)
-format_int128(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.Int128Value)::String = format_int128(DEFAULT_CONSTANT_FORMATTER, pp, msg)
-format_uint128(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.UInt128Value)::String = format_uint128(DEFAULT_CONSTANT_FORMATTER, pp, msg)
+"""
+    format_int(formatter::ConstantFormatter, pp::PrettyPrinter, v::Integer)::String
 
-# Backward compatibility: convenience methods that use pp.constant_formatter
-format_decimal(pp::PrettyPrinter, msg::Proto.DecimalValue)::String = format_decimal(pp.constant_formatter, pp, msg)
-format_int128(pp::PrettyPrinter, msg::Proto.Int128Value)::String = format_int128(pp.constant_formatter, pp, msg)
-format_uint128(pp::PrettyPrinter, msg::Proto.UInt128Value)::String = format_uint128(pp.constant_formatter, pp, msg)
+Format an integer value as a string.
 
-function format_float64(v::Float64)::String
-    return lowercase(string(v))
-end
+Override this function for custom ConstantFormatter subtypes to customize integer formatting.
+"""
+format_int(formatter::DefaultConstantFormatter, pp::PrettyPrinter, v::Integer)::String = string(v)
 
-function format_string_value(s::AbstractString)::String
+"""
+    format_float(formatter::ConstantFormatter, pp::PrettyPrinter, v::Float64)::String
+
+Format a Float64 value as a string.
+
+Override this function for custom ConstantFormatter subtypes to customize float formatting.
+"""
+format_float(formatter::DefaultConstantFormatter, pp::PrettyPrinter, v::Float64)::String = lowercase(string(v))
+
+"""
+    format_string(formatter::ConstantFormatter, pp::PrettyPrinter, s::AbstractString)::String
+
+Format a string value with proper escaping.
+
+Override this function for custom ConstantFormatter subtypes to customize string formatting.
+"""
+function format_string(formatter::DefaultConstantFormatter, pp::PrettyPrinter, s::AbstractString)::String
     escaped = replace(s, "\\" => "\\\\")
     escaped = replace(escaped, "\"" => "\\\"")
     escaped = replace(escaped, "\n" => "\\n")
@@ -232,6 +242,38 @@ function format_string_value(s::AbstractString)::String
     escaped = replace(escaped, "\t" => "\\t")
     return "\"" * escaped * "\""
 end
+
+"""
+    format_bool(formatter::ConstantFormatter, pp::PrettyPrinter, v::Bool)::String
+
+Format a boolean value as a string.
+
+Override this function for custom ConstantFormatter subtypes to customize boolean formatting.
+"""
+format_bool(formatter::DefaultConstantFormatter, pp::PrettyPrinter, v::Bool)::String = v ? "true" : "false"
+
+# Fallback methods for custom formatters that don't override all types
+# These delegate to the default formatter
+format_decimal(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.DecimalValue)::String = format_decimal(DEFAULT_CONSTANT_FORMATTER, pp, msg)
+format_int128(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.Int128Value)::String = format_int128(DEFAULT_CONSTANT_FORMATTER, pp, msg)
+format_uint128(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.UInt128Value)::String = format_uint128(DEFAULT_CONSTANT_FORMATTER, pp, msg)
+format_int(formatter::ConstantFormatter, pp::PrettyPrinter, v::Integer)::String = format_int(DEFAULT_CONSTANT_FORMATTER, pp, v)
+format_float(formatter::ConstantFormatter, pp::PrettyPrinter, v::Float64)::String = format_float(DEFAULT_CONSTANT_FORMATTER, pp, v)
+format_string(formatter::ConstantFormatter, pp::PrettyPrinter, s::AbstractString)::String = format_string(DEFAULT_CONSTANT_FORMATTER, pp, s)
+format_bool(formatter::ConstantFormatter, pp::PrettyPrinter, v::Bool)::String = format_bool(DEFAULT_CONSTANT_FORMATTER, pp, v)
+
+# Backward compatibility: convenience methods that use pp.constant_formatter
+format_decimal(pp::PrettyPrinter, msg::Proto.DecimalValue)::String = format_decimal(pp.constant_formatter, pp, msg)
+format_int128(pp::PrettyPrinter, msg::Proto.Int128Value)::String = format_int128(pp.constant_formatter, pp, msg)
+format_uint128(pp::PrettyPrinter, msg::Proto.UInt128Value)::String = format_uint128(pp.constant_formatter, pp, msg)
+format_int(pp::PrettyPrinter, v::Integer)::String = format_int(pp.constant_formatter, pp, v)
+format_float(pp::PrettyPrinter, v::Float64)::String = format_float(pp.constant_formatter, pp, v)
+format_string(pp::PrettyPrinter, s::AbstractString)::String = format_string(pp.constant_formatter, pp, s)
+format_bool(pp::PrettyPrinter, v::Bool)::String = format_bool(pp.constant_formatter, pp, v)
+
+# Legacy function names for backward compatibility
+format_float64(v::Float64)::String = lowercase(string(v))
+format_string_value(s::AbstractString)::String = format_string(DEFAULT_CONSTANT_FORMATTER, nothing, s)
 
 function fragment_id_to_string(pp::PrettyPrinter, msg::Proto.FragmentId)::String
     if isempty(msg.id)
@@ -619,7 +661,7 @@ function pretty_value(pp::PrettyPrinter, msg::Proto.Value)
                 deconstruct_result664 = _t1277
                 if !isnothing(deconstruct_result664)
                     unwrapped665 = deconstruct_result664
-                    write(pp, format_string_value(unwrapped665))
+                    write(pp, format_string(pp, unwrapped665))
                 else
                     function _t1278(_dollar_dollar)
                         if _has_proto_field(_dollar_dollar, Symbol("int_value"))
@@ -633,7 +675,7 @@ function pretty_value(pp::PrettyPrinter, msg::Proto.Value)
                     deconstruct_result662 = _t1280
                     if !isnothing(deconstruct_result662)
                         unwrapped663 = deconstruct_result662
-                        write(pp, string(unwrapped663))
+                        write(pp, format_int(pp, unwrapped663))
                     else
                         function _t1281(_dollar_dollar)
                             if _has_proto_field(_dollar_dollar, Symbol("float_value"))
@@ -647,7 +689,7 @@ function pretty_value(pp::PrettyPrinter, msg::Proto.Value)
                         deconstruct_result660 = _t1283
                         if !isnothing(deconstruct_result660)
                             unwrapped661 = deconstruct_result660
-                            write(pp, format_float64(unwrapped661))
+                            write(pp, format_float(pp, unwrapped661))
                         else
                             function _t1284(_dollar_dollar)
                                 if _has_proto_field(_dollar_dollar, Symbol("uint128_value"))
@@ -661,7 +703,7 @@ function pretty_value(pp::PrettyPrinter, msg::Proto.Value)
                             deconstruct_result658 = _t1286
                             if !isnothing(deconstruct_result658)
                                 unwrapped659 = deconstruct_result658
-                                write(pp, format_uint128(pp.constant_formatter, pp, unwrapped659))
+                                write(pp, format_uint128(pp, unwrapped659))
                             else
                                 function _t1287(_dollar_dollar)
                                     if _has_proto_field(_dollar_dollar, Symbol("int128_value"))
@@ -675,7 +717,7 @@ function pretty_value(pp::PrettyPrinter, msg::Proto.Value)
                                 deconstruct_result656 = _t1289
                                 if !isnothing(deconstruct_result656)
                                     unwrapped657 = deconstruct_result656
-                                    write(pp, format_int128(pp.constant_formatter, pp, unwrapped657))
+                                    write(pp, format_int128(pp, unwrapped657))
                                 else
                                     function _t1290(_dollar_dollar)
                                         if _has_proto_field(_dollar_dollar, Symbol("decimal_value"))
@@ -689,7 +731,7 @@ function pretty_value(pp::PrettyPrinter, msg::Proto.Value)
                                     deconstruct_result654 = _t1292
                                     if !isnothing(deconstruct_result654)
                                         unwrapped655 = deconstruct_result654
-                                        write(pp, format_decimal(pp.constant_formatter, pp, unwrapped655))
+                                        write(pp, format_decimal(pp, unwrapped655))
                                     else
                                         function _t1293(_dollar_dollar)
                                             if _has_proto_field(_dollar_dollar, Symbol("boolean_value"))
@@ -737,13 +779,13 @@ function pretty_date(pp::PrettyPrinter, msg::Proto.DateValue)
         indent_sexp!(pp)
         newline(pp)
         field673 = unwrapped_fields672[1]
-        write(pp, string(field673))
+        write(pp, format_int(pp, field673))
         newline(pp)
         field674 = unwrapped_fields672[2]
-        write(pp, string(field674))
+        write(pp, format_int(pp, field674))
         newline(pp)
         field675 = unwrapped_fields672[3]
-        write(pp, string(field675))
+        write(pp, format_int(pp, field675))
         dedent!(pp)
         write(pp, ")")
     end
@@ -767,27 +809,27 @@ function pretty_datetime(pp::PrettyPrinter, msg::Proto.DateTimeValue)
         indent_sexp!(pp)
         newline(pp)
         field679 = unwrapped_fields678[1]
-        write(pp, string(field679))
+        write(pp, format_int(pp, field679))
         newline(pp)
         field680 = unwrapped_fields678[2]
-        write(pp, string(field680))
+        write(pp, format_int(pp, field680))
         newline(pp)
         field681 = unwrapped_fields678[3]
-        write(pp, string(field681))
+        write(pp, format_int(pp, field681))
         newline(pp)
         field682 = unwrapped_fields678[4]
-        write(pp, string(field682))
+        write(pp, format_int(pp, field682))
         newline(pp)
         field683 = unwrapped_fields678[5]
-        write(pp, string(field683))
+        write(pp, format_int(pp, field683))
         newline(pp)
         field684 = unwrapped_fields678[6]
-        write(pp, string(field684))
+        write(pp, format_int(pp, field684))
         field685 = unwrapped_fields678[7]
         if !isnothing(field685)
             newline(pp)
             opt_val686 = field685
-            write(pp, string(opt_val686))
+            write(pp, format_int(pp, opt_val686))
         end
         dedent!(pp)
         write(pp, ")")
@@ -1229,7 +1271,7 @@ function pretty_relation_id(pp::PrettyPrinter, msg::Proto.RelationId)
             deconstruct_result748 = _t1354
             if !isnothing(deconstruct_result748)
                 unwrapped749 = deconstruct_result748
-                write(pp, format_uint128(pp.constant_formatter, pp, unwrapped749))
+                write(pp, format_uint128(pp, unwrapped749))
             else
                 throw(ParseError("No matching rule for relation_id"))
             end
@@ -1571,10 +1613,10 @@ function pretty_decimal_type(pp::PrettyPrinter, msg::Proto.DecimalType)
         indent_sexp!(pp)
         newline(pp)
         field805 = unwrapped_fields804[1]
-        write(pp, string(field805))
+        write(pp, format_int(pp, field805))
         newline(pp)
         field806 = unwrapped_fields804[2]
-        write(pp, string(field806))
+        write(pp, format_int(pp, field806))
         dedent!(pp)
         write(pp, ")")
     end
@@ -3648,7 +3690,7 @@ function pretty_rel_edb_path(pp::PrettyPrinter, msg::Vector{String})
             if (i1129 > 0)
                 newline(pp)
             end
-            write(pp, format_string_value(elem1128))
+            write(pp, format_string(pp, elem1128))
         end
         dedent!(pp)
         write(pp, "]")
@@ -3881,7 +3923,7 @@ function pretty_csv_locator_paths(pp::PrettyPrinter, msg::Vector{String})
                 if (i1170 > 0)
                     newline(pp)
                 end
-                write(pp, format_string_value(elem1169))
+                write(pp, format_string(pp, elem1169))
             end
         end
         dedent!(pp)
@@ -3901,7 +3943,7 @@ function pretty_csv_locator_inline_data(pp::PrettyPrinter, msg::String)
         write(pp, "inline_data")
         indent_sexp!(pp)
         newline(pp)
-        write(pp, format_string_value(fields1172))
+        write(pp, format_string(pp, fields1172))
         dedent!(pp)
         write(pp, ")")
     end
@@ -3975,7 +4017,7 @@ function pretty_csv_column(pp::PrettyPrinter, msg::Proto.CSVColumn)
         indent_sexp!(pp)
         newline(pp)
         field1183 = unwrapped_fields1182[1]
-        write(pp, format_string_value(field1183))
+        write(pp, format_string(pp, field1183))
         newline(pp)
         field1184 = unwrapped_fields1182[2]
         pretty_relation_id(pp, field1184)
@@ -4007,7 +4049,7 @@ function pretty_csv_asof(pp::PrettyPrinter, msg::String)
         write(pp, "asof")
         indent_sexp!(pp)
         newline(pp)
-        write(pp, format_string_value(fields1189))
+        write(pp, format_string(pp, fields1189))
         dedent!(pp)
         write(pp, ")")
     end
@@ -4384,7 +4426,7 @@ function pretty_export_csv_path(pp::PrettyPrinter, msg::String)
         write(pp, "path")
         indent_sexp!(pp)
         newline(pp)
-        write(pp, format_string_value(fields1247))
+        write(pp, format_string(pp, fields1247))
         dedent!(pp)
         write(pp, ")")
     end
@@ -4434,7 +4476,7 @@ function pretty_export_csv_column(pp::PrettyPrinter, msg::Proto.ExportCSVColumn)
         indent_sexp!(pp)
         newline(pp)
         field1255 = unwrapped_fields1254[1]
-        write(pp, format_string_value(field1255))
+        write(pp, format_string(pp, field1255))
         newline(pp)
         field1256 = unwrapped_fields1254[2]
         pretty_relation_id(pp, field1256)
@@ -4457,7 +4499,7 @@ function pretty_debug_info(pp::PrettyPrinter, msg::Proto.DebugInfo)
         _t1724 = Proto.UInt128Value(low=_rid.id_low, high=_rid.id_high)
         _pprint_dispatch(pp, _t1724)
         write(pp, " ")
-        write(pp, format_string_value(msg.orig_names[_idx + 1]))
+        write(pp, format_string(pp, msg.orig_names[_idx + 1]))
         write(pp, ")")
     end
     write(pp, ")")
@@ -4470,16 +4512,16 @@ function pretty_be_tree_config(pp::PrettyPrinter, msg::Proto.BeTreeConfig)
     indent_sexp!(pp)
     newline(pp)
     write(pp, ":epsilon ")
-    write(pp, format_float64(msg.epsilon))
+    write(pp, format_float(pp, msg.epsilon))
     newline(pp)
     write(pp, ":max_pivots ")
-    write(pp, string(msg.max_pivots))
+    write(pp, format_int(pp, msg.max_pivots))
     newline(pp)
     write(pp, ":max_deltas ")
-    write(pp, string(msg.max_deltas))
+    write(pp, format_int(pp, msg.max_deltas))
     newline(pp)
     write(pp, ":max_leaf ")
-    write(pp, string(msg.max_leaf))
+    write(pp, format_int(pp, msg.max_leaf))
     write(pp, ")")
     dedent!(pp)
     return nothing
@@ -4490,10 +4532,10 @@ function pretty_be_tree_locator(pp::PrettyPrinter, msg::Proto.BeTreeLocator)
     indent_sexp!(pp)
     newline(pp)
     write(pp, ":element_count ")
-    write(pp, string(msg.element_count))
+    write(pp, format_int(pp, msg.element_count))
     newline(pp)
     write(pp, ":tree_height ")
-    write(pp, string(msg.tree_height))
+    write(pp, format_int(pp, msg.tree_height))
     newline(pp)
     write(pp, ":location ")
     if _has_proto_field(msg, Symbol("root_pageid"))
@@ -4515,7 +4557,7 @@ function pretty_be_tree_locator(pp::PrettyPrinter, msg::Proto.BeTreeLocator)
 end
 
 function pretty_decimal_value(pp::PrettyPrinter, msg::Proto.DecimalValue)
-    write(pp, format_decimal(pp.constant_formatter, pp, msg))
+    write(pp, format_decimal(pp, msg))
     return nothing
 end
 
@@ -4553,7 +4595,7 @@ function pretty_functional_dependency(pp::PrettyPrinter, msg::Proto.FunctionalDe
 end
 
 function pretty_int128_value(pp::PrettyPrinter, msg::Proto.Int128Value)
-    write(pp, format_int128(pp.constant_formatter, pp, msg))
+    write(pp, format_int128(pp, msg))
     return nothing
 end
 
@@ -4563,7 +4605,7 @@ function pretty_missing_value(pp::PrettyPrinter, msg::Proto.MissingValue)
 end
 
 function pretty_u_int128_value(pp::PrettyPrinter, msg::Proto.UInt128Value)
-    write(pp, format_uint128(pp.constant_formatter, pp, msg))
+    write(pp, format_uint128(pp, msg))
     return nothing
 end
 

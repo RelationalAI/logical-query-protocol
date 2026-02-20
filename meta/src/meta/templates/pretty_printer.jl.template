@@ -209,22 +209,32 @@ function format_uint128(formatter::DefaultConstantFormatter, pp::PrettyPrinter, 
     return "0x" * string(value, base=16)
 end
 
-# Fallback methods for custom formatters that don't override all types
-# These delegate to the default formatter
-format_decimal(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.DecimalValue)::String = format_decimal(DEFAULT_CONSTANT_FORMATTER, pp, msg)
-format_int128(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.Int128Value)::String = format_int128(DEFAULT_CONSTANT_FORMATTER, pp, msg)
-format_uint128(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.UInt128Value)::String = format_uint128(DEFAULT_CONSTANT_FORMATTER, pp, msg)
+"""
+    format_int(formatter::ConstantFormatter, pp::PrettyPrinter, v::Integer)::String
 
-# Backward compatibility: convenience methods that use pp.constant_formatter
-format_decimal(pp::PrettyPrinter, msg::Proto.DecimalValue)::String = format_decimal(pp.constant_formatter, pp, msg)
-format_int128(pp::PrettyPrinter, msg::Proto.Int128Value)::String = format_int128(pp.constant_formatter, pp, msg)
-format_uint128(pp::PrettyPrinter, msg::Proto.UInt128Value)::String = format_uint128(pp.constant_formatter, pp, msg)
+Format an integer value as a string.
 
-function format_float64(v::Float64)::String
-    return lowercase(string(v))
-end
+Override this function for custom ConstantFormatter subtypes to customize integer formatting.
+"""
+format_int(formatter::DefaultConstantFormatter, pp::PrettyPrinter, v::Integer)::String = string(v)
 
-function format_string_value(s::AbstractString)::String
+"""
+    format_float(formatter::ConstantFormatter, pp::PrettyPrinter, v::Float64)::String
+
+Format a Float64 value as a string.
+
+Override this function for custom ConstantFormatter subtypes to customize float formatting.
+"""
+format_float(formatter::DefaultConstantFormatter, pp::PrettyPrinter, v::Float64)::String = lowercase(string(v))
+
+"""
+    format_string(formatter::ConstantFormatter, pp::PrettyPrinter, s::AbstractString)::String
+
+Format a string value with proper escaping.
+
+Override this function for custom ConstantFormatter subtypes to customize string formatting.
+"""
+function format_string(formatter::DefaultConstantFormatter, pp::PrettyPrinter, s::AbstractString)::String
     escaped = replace(s, "\\" => "\\\\")
     escaped = replace(escaped, "\"" => "\\\"")
     escaped = replace(escaped, "\n" => "\\n")
@@ -232,6 +242,38 @@ function format_string_value(s::AbstractString)::String
     escaped = replace(escaped, "\t" => "\\t")
     return "\"" * escaped * "\""
 end
+
+"""
+    format_bool(formatter::ConstantFormatter, pp::PrettyPrinter, v::Bool)::String
+
+Format a boolean value as a string.
+
+Override this function for custom ConstantFormatter subtypes to customize boolean formatting.
+"""
+format_bool(formatter::DefaultConstantFormatter, pp::PrettyPrinter, v::Bool)::String = v ? "true" : "false"
+
+# Fallback methods for custom formatters that don't override all types
+# These delegate to the default formatter
+format_decimal(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.DecimalValue)::String = format_decimal(DEFAULT_CONSTANT_FORMATTER, pp, msg)
+format_int128(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.Int128Value)::String = format_int128(DEFAULT_CONSTANT_FORMATTER, pp, msg)
+format_uint128(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.UInt128Value)::String = format_uint128(DEFAULT_CONSTANT_FORMATTER, pp, msg)
+format_int(formatter::ConstantFormatter, pp::PrettyPrinter, v::Integer)::String = format_int(DEFAULT_CONSTANT_FORMATTER, pp, v)
+format_float(formatter::ConstantFormatter, pp::PrettyPrinter, v::Float64)::String = format_float(DEFAULT_CONSTANT_FORMATTER, pp, v)
+format_string(formatter::ConstantFormatter, pp::PrettyPrinter, s::AbstractString)::String = format_string(DEFAULT_CONSTANT_FORMATTER, pp, s)
+format_bool(formatter::ConstantFormatter, pp::PrettyPrinter, v::Bool)::String = format_bool(DEFAULT_CONSTANT_FORMATTER, pp, v)
+
+# Backward compatibility: convenience methods that use pp.constant_formatter
+format_decimal(pp::PrettyPrinter, msg::Proto.DecimalValue)::String = format_decimal(pp.constant_formatter, pp, msg)
+format_int128(pp::PrettyPrinter, msg::Proto.Int128Value)::String = format_int128(pp.constant_formatter, pp, msg)
+format_uint128(pp::PrettyPrinter, msg::Proto.UInt128Value)::String = format_uint128(pp.constant_formatter, pp, msg)
+format_int(pp::PrettyPrinter, v::Integer)::String = format_int(pp.constant_formatter, pp, v)
+format_float(pp::PrettyPrinter, v::Float64)::String = format_float(pp.constant_formatter, pp, v)
+format_string(pp::PrettyPrinter, s::AbstractString)::String = format_string(pp.constant_formatter, pp, s)
+format_bool(pp::PrettyPrinter, v::Bool)::String = format_bool(pp.constant_formatter, pp, v)
+
+# Legacy function names for backward compatibility
+format_float64(v::Float64)::String = lowercase(string(v))
+format_string_value(s::AbstractString)::String = format_string(DEFAULT_CONSTANT_FORMATTER, nothing, s)
 
 function fragment_id_to_string(pp::PrettyPrinter, msg::Proto.FragmentId)::String
     if isempty(msg.id)
