@@ -1,5 +1,4 @@
-@testitem "Extra pretty - token: DecimalValue" begin
-    using LogicalQueryProtocol: PrettyPrinter, _pprint_dispatch, get_output, Proto
+@testitem "Extra pretty - token: DecimalValue" setup=[PrettySetup] begin
 
     pp = PrettyPrinter()
     msg = Proto.DecimalValue(
@@ -11,8 +10,7 @@
     @test get_output(pp) == "123.456789d18"
 end
 
-@testitem "Extra pretty - token: Int128Value" begin
-    using LogicalQueryProtocol: PrettyPrinter, _pprint_dispatch, get_output, Proto
+@testitem "Extra pretty - token: Int128Value" setup=[PrettySetup] begin
 
     pp = PrettyPrinter()
     msg = Proto.Int128Value(UInt64(42), UInt64(0))
@@ -25,8 +23,7 @@ end
     @test get_output(pp2) == "-1i128"
 end
 
-@testitem "Extra pretty - token: UInt128Value" begin
-    using LogicalQueryProtocol: PrettyPrinter, _pprint_dispatch, get_output, Proto
+@testitem "Extra pretty - token: UInt128Value" setup=[PrettySetup] begin
 
     pp = PrettyPrinter()
     msg = Proto.UInt128Value(UInt64(0xff), UInt64(0))
@@ -39,16 +36,14 @@ end
     @test get_output(pp2) == "0x0"
 end
 
-@testitem "Extra pretty - special: MissingValue" begin
-    using LogicalQueryProtocol: PrettyPrinter, _pprint_dispatch, get_output, Proto
+@testitem "Extra pretty - special: MissingValue" setup=[PrettySetup] begin
 
     pp = PrettyPrinter()
     _pprint_dispatch(pp, Proto.MissingValue())
     @test get_output(pp) == "missing"
 end
 
-@testitem "Extra pretty - special: DebugInfo" begin
-    using LogicalQueryProtocol: PrettyPrinter, _pprint_dispatch, get_output, Proto
+@testitem "Extra pretty - special: DebugInfo" setup=[PrettySetup] begin
 
     pp = PrettyPrinter()
     _pprint_dispatch(pp, Proto.DebugInfo())
@@ -63,8 +58,7 @@ end
     @test get_output(pp2) == "(debug_info\n  (0x1 \"my_rel\"))"
 end
 
-@testitem "Extra pretty - generic: BeTreeConfig" begin
-    using LogicalQueryProtocol: PrettyPrinter, _pprint_dispatch, get_output, Proto
+@testitem "Extra pretty - generic: BeTreeConfig" setup=[PrettySetup] begin
 
     pp = PrettyPrinter()
     msg = Proto.BeTreeConfig(
@@ -78,8 +72,7 @@ end
     @test get_output(pp) == expected
 end
 
-@testitem "Extra pretty - generic: IVMConfig" begin
-    using LogicalQueryProtocol: PrettyPrinter, _pprint_dispatch, get_output, Proto
+@testitem "Extra pretty - generic: IVMConfig" setup=[PrettySetup] begin
 
     pp = PrettyPrinter()
     msg = Proto.IVMConfig(level=Proto.MaintenanceLevel.MAINTENANCE_LEVEL_AUTO)
@@ -92,8 +85,7 @@ end
     @test get_output(pp2) == "(ivm_config\n  :level off)"
 end
 
-@testitem "Extra pretty - generic: BeTreeLocator" begin
-    using LogicalQueryProtocol: PrettyPrinter, _pprint_dispatch, get_output, Proto
+@testitem "Extra pretty - generic: BeTreeLocator" setup=[PrettySetup] begin
     using ProtoBuf: OneOf
 
     pp = PrettyPrinter()
@@ -123,8 +115,7 @@ end
     @test get_output(pp3) == "(be_tree_locator\n  :element_count 0\n  :tree_height 0\n  :location nothing)"
 end
 
-@testitem "Extra pretty - enum: MaintenanceLevel" begin
-    using LogicalQueryProtocol: PrettyPrinter, _pprint_dispatch, get_output, Proto
+@testitem "Extra pretty - enum: MaintenanceLevel" setup=[PrettySetup] begin
 
     for (val, str) in [
         (Proto.MaintenanceLevel.MAINTENANCE_LEVEL_UNSPECIFIED, "unspecified"),
@@ -138,8 +129,7 @@ end
     end
 end
 
-@testitem "Extra pretty - oneof: Term" begin
-    using LogicalQueryProtocol: PrettyPrinter, _pprint_dispatch, get_output, Proto
+@testitem "Extra pretty - oneof: Term" setup=[PrettySetup] begin
     using ProtoBuf: OneOf
 
     pp = PrettyPrinter()
@@ -153,8 +143,7 @@ end
     @test get_output(pp2) == "42"
 end
 
-@testitem "Extra pretty - oneof: Value" begin
-    using LogicalQueryProtocol: PrettyPrinter, _pprint_dispatch, get_output, Proto
+@testitem "Extra pretty - oneof: Value" setup=[PrettySetup] begin
     using ProtoBuf: OneOf
 
     pp = PrettyPrinter()
@@ -170,8 +159,7 @@ end
     @test get_output(pp3) == "missing"
 end
 
-@testitem "Extra pretty - oneof: Monoid" begin
-    using LogicalQueryProtocol: PrettyPrinter, _pprint_dispatch, get_output, Proto
+@testitem "Extra pretty - oneof: Monoid" setup=[PrettySetup] begin
     using ProtoBuf: OneOf
 
     pp = PrettyPrinter()
@@ -179,8 +167,7 @@ end
     @test get_output(pp) == "(or)"
 end
 
-@testitem "Extra pretty - oneof: Instruction" begin
-    using LogicalQueryProtocol: PrettyPrinter, _pprint_dispatch, get_output, Proto
+@testitem "Extra pretty - oneof: Instruction" setup=[PrettySetup] begin
     using ProtoBuf: OneOf
 
     pp = PrettyPrinter()
@@ -195,8 +182,7 @@ end
     @test startswith(get_output(pp), "(assign")
 end
 
-@testitem "Extra pretty - oneof: Data" begin
-    using LogicalQueryProtocol: PrettyPrinter, _pprint_dispatch, get_output, Proto
+@testitem "Extra pretty - oneof: Data" setup=[PrettySetup] begin
     using ProtoBuf: OneOf
 
     pp = PrettyPrinter()
@@ -209,8 +195,7 @@ end
     @test startswith(get_output(pp), "(rel_edb")
 end
 
-@testitem "Extra pretty - oneof: Read" begin
-    using LogicalQueryProtocol: PrettyPrinter, _pprint_dispatch, get_output, Proto
+@testitem "Extra pretty - oneof: Read" setup=[PrettySetup] begin
     using ProtoBuf: OneOf
 
     pp = PrettyPrinter()

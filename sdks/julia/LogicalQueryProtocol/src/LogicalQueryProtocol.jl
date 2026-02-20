@@ -2,6 +2,7 @@ module LogicalQueryProtocol
 
 include("gen/relationalai/relationalai.jl")
 using .relationalai.lqp.v1
+const Proto = relationalai.lqp.v1
 
 # Convenience identifiers for LQP Syntax.
 const LQPFormula = Union{Atom,Cast,RelAtom,Primitive,Reduce,FFI,
@@ -35,7 +36,15 @@ include("types.jl")
 include("equality.jl")
 include("protobuf-helpers.jl")
 include("properties.jl")
+
+# Include parser and pretty printer as submodules
 include("parser.jl")
 include("pretty.jl")
+
+# Export submodules for access as LogicalQueryProtocol.Parser, LogicalQueryProtocol.Pretty
+export Parser, Pretty, Proto
+
+
 include("show.jl")
+
 end

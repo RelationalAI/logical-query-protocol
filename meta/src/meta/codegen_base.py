@@ -65,7 +65,7 @@ class CodegenConfig:
 
 
 PARSER_CONFIG = CodegenConfig(
-    receiver_type="Parser", receiver_var="p", first_param="parser::Parser"
+    receiver_type="Parser", receiver_var="p", first_param="parser::ParserState"
 )
 PRINTER_CONFIG = CodegenConfig(
     receiver_type="PrettyPrinter", receiver_var="p", first_param="pp::PrettyPrinter"
