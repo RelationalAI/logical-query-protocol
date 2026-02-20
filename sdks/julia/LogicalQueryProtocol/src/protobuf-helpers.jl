@@ -1,4 +1,37 @@
 """
+    _has_proto_field(obj, field_sym::Symbol)::Bool
+
+Check if a protobuf object has a field (including OneOf fields).
+"""
+function _has_proto_field(obj, field_sym::Symbol)::Bool
+    if hasproperty(obj, field_sym)
+        return !isnothing(getproperty(obj, field_sym))
+    end
+    for fname in fieldnames(typeof(obj))
+        fval = getfield(obj, fname)
+        if fval isa ProtoBuf.OneOf && fval.name == field_sym
+            return true
+        end
+    end
+    return false
+end
+
+"""
+    _get_oneof_field(obj, field_sym::Symbol)
+
+Get the value of a OneOf field from a protobuf object.
+"""
+function _get_oneof_field(obj, field_sym::Symbol)
+    for fname in fieldnames(typeof(obj))
+        fval = getfield(obj, fname)
+        if fval isa ProtoBuf.OneOf && fval.name == field_sym
+            return fval[]
+        end
+    end
+    error("No oneof field $field_sym on $(typeof(obj))")
+end
+
+"""
     unwrap(obj)
 
 Extract the actual value from a OneOf field in a protobuf message.

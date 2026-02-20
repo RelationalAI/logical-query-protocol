@@ -1,42 +1,24 @@
 """
-Auto-generated LL(k) recursive-descent parser.
+    Parser
+
+Auto-generated LL(k) recursive-descent parser module.
 
 Generated from protobuf specifications.
 Do not modify this file! If you need to modify the parser, edit the generator code
 in `meta/` or edit the protobuf specification in `proto/v1`.
 
-Command: python -m meta.cli ../proto/relationalai/lqp/v1/fragments.proto ../proto/relationalai/lqp/v1/logic.proto ../proto/relationalai/lqp/v1/transactions.proto --grammar src/meta/grammar.y --parser julia"""
+Command: python -m meta.cli ../proto/relationalai/lqp/v1/fragments.proto ../proto/relationalai/lqp/v1/logic.proto ../proto/relationalai/lqp/v1/transactions.proto --grammar src/meta/grammar.y --parser julia
+"""
+module Parser
 
 using SHA
 using ProtoBuf: OneOf
 
-# Import protobuf modules
-include("proto_generated.jl")
-using .Proto
-
-
-function _has_proto_field(obj, field_sym::Symbol)::Bool
-    if hasproperty(obj, field_sym)
-        return !isnothing(getproperty(obj, field_sym))
-    end
-    for fname in fieldnames(typeof(obj))
-        fval = getfield(obj, fname)
-        if fval isa OneOf && fval.name == field_sym
-            return true
-        end
-    end
-    return false
-end
-
-function _get_oneof_field(obj, field_sym::Symbol)
-    for fname in fieldnames(typeof(obj))
-        fval = getfield(obj, fname)
-        if fval isa OneOf && fval.name == field_sym
-            return fval[]
-        end
-    end
-    error("No oneof field $field_sym on $(typeof(obj))")
-end
+# Import protobuf modules and helpers from parent
+using ..relationalai: relationalai
+using ..relationalai.lqp.v1
+using ..LogicalQueryProtocol: _has_proto_field, _get_oneof_field
+const Proto = relationalai.lqp.v1
 
 
 struct ParseError <: Exception
@@ -204,26 +186,26 @@ function tokenize!(lexer::Lexer)
 end
 
 
-mutable struct Parser
+mutable struct ParserState
     tokens::Vector{Token}
     pos::Int
     id_to_debuginfo::Dict{Vector{UInt8},Vector{Pair{Tuple{UInt64,UInt64},String}}}
     _current_fragment_id::Union{Nothing,Vector{UInt8}}
     _relation_id_to_name::Dict{Tuple{UInt64,UInt64},String}
 
-    function Parser(tokens::Vector{Token})
+    function ParserState(tokens::Vector{Token})
         return new(tokens, 1, Dict(), nothing, Dict())
     end
 end
 
 
-function lookahead(parser::Parser, k::Int=0)::Token
+function lookahead(parser::ParserState, k::Int=0)::Token
     idx = parser.pos + k
     return idx <= length(parser.tokens) ? parser.tokens[idx] : Token("\$", "", -1)
 end
 
 
-function consume_literal!(parser::Parser, expected::String)
+function consume_literal!(parser::ParserState, expected::String)
     if !match_lookahead_literal(parser, expected, 0)
         token = lookahead(parser, 0)
         throw(ParseError("Expected literal $(repr(expected)) but got $(token.type)=`$(repr(token.value))` at position $(token.pos)"))
@@ -233,7 +215,7 @@ function consume_literal!(parser::Parser, expected::String)
 end
 
 
-function consume_terminal!(parser::Parser, expected::String)
+function consume_terminal!(parser::ParserState, expected::String)
     if !match_lookahead_terminal(parser, expected, 0)
         token = lookahead(parser, 0)
         throw(ParseError("Expected terminal $expected but got $(token.type)=`$(repr(token.value))` at position $(token.pos)"))
@@ -244,7 +226,7 @@ function consume_terminal!(parser::Parser, expected::String)
 end
 
 
-function match_lookahead_literal(parser::Parser, literal::String, k::Int)::Bool
+function match_lookahead_literal(parser::ParserState, literal::String, k::Int)::Bool
     token = lookahead(parser, k)
     # Support soft keywords: alphanumeric literals are lexed as SYMBOL tokens
     if token.type == "LITERAL" && token.value == literal
@@ -257,19 +239,19 @@ function match_lookahead_literal(parser::Parser, literal::String, k::Int)::Bool
 end
 
 
-function match_lookahead_terminal(parser::Parser, terminal::String, k::Int)::Bool
+function match_lookahead_terminal(parser::ParserState, terminal::String, k::Int)::Bool
     token = lookahead(parser, k)
     return token.type == terminal
 end
 
 
-function start_fragment!(parser::Parser, fragment_id::Proto.FragmentId)
+function start_fragment!(parser::ParserState, fragment_id::Proto.FragmentId)
     parser._current_fragment_id = fragment_id.id
     return fragment_id
 end
 
 
-function relation_id_from_string(parser::Parser, name::String)
+function relation_id_from_string(parser::ParserState, name::String)
     # Create RelationId from string and track mapping for debug info
     hash_bytes = sha256(name)
     id_low = Base.parse(UInt64, bytes2hex(hash_bytes[1:8]), base=16)
@@ -292,7 +274,7 @@ function relation_id_from_string(parser::Parser, name::String)
 end
 
 function construct_fragment(
-    parser::Parser,
+    parser::ParserState,
     fragment_id::Proto.FragmentId,
     declarations::Vector{Proto.Declaration}
 )
@@ -319,7 +301,7 @@ end
 
 # --- Helper functions ---
 
-function _extract_value_int32(parser::Parser, value::Union{Nothing, Proto.Value}, default::Int64)::Int32
+function _extract_value_int32(parser::ParserState, value::Union{Nothing, Proto.Value}, default::Int64)::Int32
     if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
         return Int32(_get_oneof_field(value, :int_value))
     else
@@ -328,7 +310,7 @@ function _extract_value_int32(parser::Parser, value::Union{Nothing, Proto.Value}
     return Int32(default)
 end
 
-function _extract_value_int64(parser::Parser, value::Union{Nothing, Proto.Value}, default::Int64)::Int64
+function _extract_value_int64(parser::ParserState, value::Union{Nothing, Proto.Value}, default::Int64)::Int64
     if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
         return _get_oneof_field(value, :int_value)
     else
@@ -337,7 +319,7 @@ function _extract_value_int64(parser::Parser, value::Union{Nothing, Proto.Value}
     return default
 end
 
-function _extract_value_string(parser::Parser, value::Union{Nothing, Proto.Value}, default::String)::String
+function _extract_value_string(parser::ParserState, value::Union{Nothing, Proto.Value}, default::String)::String
     if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
         return _get_oneof_field(value, :string_value)
     else
@@ -346,7 +328,7 @@ function _extract_value_string(parser::Parser, value::Union{Nothing, Proto.Value
     return default
 end
 
-function _extract_value_boolean(parser::Parser, value::Union{Nothing, Proto.Value}, default::Bool)::Bool
+function _extract_value_boolean(parser::ParserState, value::Union{Nothing, Proto.Value}, default::Bool)::Bool
     if (!isnothing(value) && _has_proto_field(value, Symbol("boolean_value")))
         return _get_oneof_field(value, :boolean_value)
     else
@@ -355,7 +337,7 @@ function _extract_value_boolean(parser::Parser, value::Union{Nothing, Proto.Valu
     return default
 end
 
-function _extract_value_string_list(parser::Parser, value::Union{Nothing, Proto.Value}, default::Vector{String})::Vector{String}
+function _extract_value_string_list(parser::ParserState, value::Union{Nothing, Proto.Value}, default::Vector{String})::Vector{String}
     if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
         return String[_get_oneof_field(value, :string_value)]
     else
@@ -364,7 +346,7 @@ function _extract_value_string_list(parser::Parser, value::Union{Nothing, Proto.
     return default
 end
 
-function _try_extract_value_int64(parser::Parser, value::Union{Nothing, Proto.Value})::Union{Nothing, Int64}
+function _try_extract_value_int64(parser::ParserState, value::Union{Nothing, Proto.Value})::Union{Nothing, Int64}
     if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
         return _get_oneof_field(value, :int_value)
     else
@@ -373,7 +355,7 @@ function _try_extract_value_int64(parser::Parser, value::Union{Nothing, Proto.Va
     return nothing
 end
 
-function _try_extract_value_float64(parser::Parser, value::Union{Nothing, Proto.Value})::Union{Nothing, Float64}
+function _try_extract_value_float64(parser::ParserState, value::Union{Nothing, Proto.Value})::Union{Nothing, Float64}
     if (!isnothing(value) && _has_proto_field(value, Symbol("float_value")))
         return _get_oneof_field(value, :float_value)
     else
@@ -382,7 +364,7 @@ function _try_extract_value_float64(parser::Parser, value::Union{Nothing, Proto.
     return nothing
 end
 
-function _try_extract_value_bytes(parser::Parser, value::Union{Nothing, Proto.Value})::Union{Nothing, Vector{UInt8}}
+function _try_extract_value_bytes(parser::ParserState, value::Union{Nothing, Proto.Value})::Union{Nothing, Vector{UInt8}}
     if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
         return Vector{UInt8}(_get_oneof_field(value, :string_value))
     else
@@ -391,7 +373,7 @@ function _try_extract_value_bytes(parser::Parser, value::Union{Nothing, Proto.Va
     return nothing
 end
 
-function _try_extract_value_uint128(parser::Parser, value::Union{Nothing, Proto.Value})::Union{Nothing, Proto.UInt128Value}
+function _try_extract_value_uint128(parser::ParserState, value::Union{Nothing, Proto.Value})::Union{Nothing, Proto.UInt128Value}
     if (!isnothing(value) && _has_proto_field(value, Symbol("uint128_value")))
         return _get_oneof_field(value, :uint128_value)
     else
@@ -400,7 +382,7 @@ function _try_extract_value_uint128(parser::Parser, value::Union{Nothing, Proto.
     return nothing
 end
 
-function construct_csv_config(parser::Parser, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.CSVConfig
+function construct_csv_config(parser::ParserState, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.CSVConfig
     config = Dict(config_dict)
     _t1320 = _extract_value_int32(parser, get(config, "csv_header_row", nothing), 1)
     header_row = _t1320
@@ -428,7 +410,7 @@ function construct_csv_config(parser::Parser, config_dict::Vector{Tuple{String, 
     return _t1331
 end
 
-function construct_betree_info(parser::Parser, key_types::Vector{Proto.var"#Type"}, value_types::Vector{Proto.var"#Type"}, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.BeTreeInfo
+function construct_betree_info(parser::ParserState, key_types::Vector{Proto.var"#Type"}, value_types::Vector{Proto.var"#Type"}, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.BeTreeInfo
     config = Dict(config_dict)
     _t1332 = _try_extract_value_float64(parser, get(config, "betree_config_epsilon", nothing))
     epsilon = _t1332
@@ -454,14 +436,14 @@ function construct_betree_info(parser::Parser, key_types::Vector{Proto.var"#Type
     return _t1342
 end
 
-function default_configure(parser::Parser)::Proto.Configure
+function default_configure(parser::ParserState)::Proto.Configure
     _t1343 = Proto.IVMConfig(level=Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF)
     ivm_config = _t1343
     _t1344 = Proto.Configure(semantics_version=0, ivm_config=ivm_config)
     return _t1344
 end
 
-function construct_configure(parser::Parser, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.Configure
+function construct_configure(parser::ParserState, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.Configure
     config = Dict(config_dict)
     maintenance_level_val = get(config, "ivm.maintenance_level", nothing)
     maintenance_level = Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
@@ -488,7 +470,7 @@ function construct_configure(parser::Parser, config_dict::Vector{Tuple{String, P
     return _t1347
 end
 
-function export_csv_config(parser::Parser, path::String, columns::Vector{Proto.ExportCSVColumn}, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.ExportCSVConfig
+function export_csv_config(parser::ParserState, path::String, columns::Vector{Proto.ExportCSVColumn}, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.ExportCSVConfig
     config = Dict(config_dict)
     _t1348 = _extract_value_int64(parser, get(config, "partition_size", nothing), 0)
     partition_size = _t1348
@@ -510,7 +492,7 @@ end
 
 # --- Parse functions ---
 
-function parse_transaction(parser::Parser)::Proto.Transaction
+function parse_transaction(parser::ParserState)::Proto.Transaction
     consume_literal!(parser, "(")
     consume_literal!(parser, "transaction")
     if (match_lookahead_literal(parser, "(", 0) && match_lookahead_literal(parser, "configure", 1))
@@ -542,7 +524,7 @@ function parse_transaction(parser::Parser)::Proto.Transaction
     return _t718
 end
 
-function parse_configure(parser::Parser)::Proto.Configure
+function parse_configure(parser::ParserState)::Proto.Configure
     consume_literal!(parser, "(")
     consume_literal!(parser, "configure")
     _t719 = parse_config_dict(parser)
@@ -552,7 +534,7 @@ function parse_configure(parser::Parser)::Proto.Configure
     return _t720
 end
 
-function parse_config_dict(parser::Parser)::Vector{Tuple{String, Proto.Value}}
+function parse_config_dict(parser::ParserState)::Vector{Tuple{String, Proto.Value}}
     consume_literal!(parser, "{")
     xs363 = Tuple{String, Proto.Value}[]
     cond364 = match_lookahead_literal(parser, ":", 0)
@@ -567,7 +549,7 @@ function parse_config_dict(parser::Parser)::Vector{Tuple{String, Proto.Value}}
     return config_key_values366
 end
 
-function parse_config_key_value(parser::Parser)::Tuple{String, Proto.Value}
+function parse_config_key_value(parser::ParserState)::Tuple{String, Proto.Value}
     consume_literal!(parser, ":")
     symbol367 = consume_terminal!(parser, "SYMBOL")
     _t722 = parse_value(parser)
@@ -575,7 +557,7 @@ function parse_config_key_value(parser::Parser)::Tuple{String, Proto.Value}
     return (symbol367, value368,)
 end
 
-function parse_value(parser::Parser)::Proto.Value
+function parse_value(parser::ParserState)::Proto.Value
     if match_lookahead_literal(parser, "true", 0)
         _t723 = 9
     else
@@ -714,7 +696,7 @@ function parse_value(parser::Parser)::Proto.Value
     return _t735
 end
 
-function parse_date(parser::Parser)::Proto.DateValue
+function parse_date(parser::ParserState)::Proto.DateValue
     consume_literal!(parser, "(")
     consume_literal!(parser, "date")
     int379 = consume_terminal!(parser, "INT")
@@ -725,7 +707,7 @@ function parse_date(parser::Parser)::Proto.DateValue
     return _t759
 end
 
-function parse_datetime(parser::Parser)::Proto.DateTimeValue
+function parse_datetime(parser::ParserState)::Proto.DateTimeValue
     consume_literal!(parser, "(")
     consume_literal!(parser, "datetime")
     int382 = consume_terminal!(parser, "INT")
@@ -745,7 +727,7 @@ function parse_datetime(parser::Parser)::Proto.DateTimeValue
     return _t761
 end
 
-function parse_boolean_value(parser::Parser)::Bool
+function parse_boolean_value(parser::ParserState)::Bool
     if match_lookahead_literal(parser, "true", 0)
         _t762 = 0
     else
@@ -772,7 +754,7 @@ function parse_boolean_value(parser::Parser)::Bool
     return _t764
 end
 
-function parse_sync(parser::Parser)::Proto.Sync
+function parse_sync(parser::ParserState)::Proto.Sync
     consume_literal!(parser, "(")
     consume_literal!(parser, "sync")
     xs390 = Proto.FragmentId[]
@@ -789,13 +771,13 @@ function parse_sync(parser::Parser)::Proto.Sync
     return _t767
 end
 
-function parse_fragment_id(parser::Parser)::Proto.FragmentId
+function parse_fragment_id(parser::ParserState)::Proto.FragmentId
     consume_literal!(parser, ":")
     symbol394 = consume_terminal!(parser, "SYMBOL")
     return Proto.FragmentId(Vector{UInt8}(symbol394))
 end
 
-function parse_epoch(parser::Parser)::Proto.Epoch
+function parse_epoch(parser::ParserState)::Proto.Epoch
     consume_literal!(parser, "(")
     consume_literal!(parser, "epoch")
     if (match_lookahead_literal(parser, "(", 0) && match_lookahead_literal(parser, "writes", 1))
@@ -817,7 +799,7 @@ function parse_epoch(parser::Parser)::Proto.Epoch
     return _t772
 end
 
-function parse_epoch_writes(parser::Parser)::Vector{Proto.Write}
+function parse_epoch_writes(parser::ParserState)::Vector{Proto.Write}
     consume_literal!(parser, "(")
     consume_literal!(parser, "writes")
     xs397 = Proto.Write[]
@@ -833,7 +815,7 @@ function parse_epoch_writes(parser::Parser)::Vector{Proto.Write}
     return writes400
 end
 
-function parse_write(parser::Parser)::Proto.Write
+function parse_write(parser::ParserState)::Proto.Write
     if match_lookahead_literal(parser, "(", 0)
         if match_lookahead_literal(parser, "undefine", 1)
             _t775 = 1
@@ -895,7 +877,7 @@ function parse_write(parser::Parser)::Proto.Write
     return _t779
 end
 
-function parse_define(parser::Parser)::Proto.Define
+function parse_define(parser::ParserState)::Proto.Define
     consume_literal!(parser, "(")
     consume_literal!(parser, "define")
     _t791 = parse_fragment(parser)
@@ -905,7 +887,7 @@ function parse_define(parser::Parser)::Proto.Define
     return _t792
 end
 
-function parse_fragment(parser::Parser)::Proto.Fragment
+function parse_fragment(parser::ParserState)::Proto.Fragment
     consume_literal!(parser, "(")
     consume_literal!(parser, "fragment")
     _t793 = parse_new_fragment_id(parser)
@@ -923,14 +905,14 @@ function parse_fragment(parser::Parser)::Proto.Fragment
     return construct_fragment(parser, new_fragment_id407, declarations411)
 end
 
-function parse_new_fragment_id(parser::Parser)::Proto.FragmentId
+function parse_new_fragment_id(parser::ParserState)::Proto.FragmentId
     _t795 = parse_fragment_id(parser)
     fragment_id412 = _t795
     start_fragment!(parser, fragment_id412)
     return fragment_id412
 end
 
-function parse_declaration(parser::Parser)::Proto.Declaration
+function parse_declaration(parser::ParserState)::Proto.Declaration
     if match_lookahead_literal(parser, "(", 0)
         if match_lookahead_literal(parser, "rel_edb", 1)
             _t797 = 3
@@ -1002,7 +984,7 @@ function parse_declaration(parser::Parser)::Proto.Declaration
     return _t803
 end
 
-function parse_def(parser::Parser)::Proto.Def
+function parse_def(parser::ParserState)::Proto.Def
     consume_literal!(parser, "(")
     consume_literal!(parser, "def")
     _t815 = parse_relation_id(parser)
@@ -1021,7 +1003,7 @@ function parse_def(parser::Parser)::Proto.Def
     return _t819
 end
 
-function parse_relation_id(parser::Parser)::Proto.RelationId
+function parse_relation_id(parser::ParserState)::Proto.RelationId
     if match_lookahead_literal(parser, ":", 0)
         _t820 = 0
     else
@@ -1049,7 +1031,7 @@ function parse_relation_id(parser::Parser)::Proto.RelationId
     return _t822
 end
 
-function parse_abstraction(parser::Parser)::Proto.Abstraction
+function parse_abstraction(parser::ParserState)::Proto.Abstraction
     consume_literal!(parser, "(")
     _t824 = parse_bindings(parser)
     bindings424 = _t824
@@ -1060,7 +1042,7 @@ function parse_abstraction(parser::Parser)::Proto.Abstraction
     return _t826
 end
 
-function parse_bindings(parser::Parser)::Tuple{Vector{Proto.Binding}, Vector{Proto.Binding}}
+function parse_bindings(parser::ParserState)::Tuple{Vector{Proto.Binding}, Vector{Proto.Binding}}
     consume_literal!(parser, "[")
     xs426 = Proto.Binding[]
     cond427 = match_lookahead_terminal(parser, "SYMBOL", 0)
@@ -1082,7 +1064,7 @@ function parse_bindings(parser::Parser)::Tuple{Vector{Proto.Binding}, Vector{Pro
     return (bindings429, (!isnothing(value_bindings430) ? value_bindings430 : Proto.Binding[]),)
 end
 
-function parse_binding(parser::Parser)::Proto.Binding
+function parse_binding(parser::ParserState)::Proto.Binding
     symbol431 = consume_terminal!(parser, "SYMBOL")
     consume_literal!(parser, "::")
     _t830 = parse_type(parser)
@@ -1092,7 +1074,7 @@ function parse_binding(parser::Parser)::Proto.Binding
     return _t832
 end
 
-function parse_type(parser::Parser)::Proto.var"#Type"
+function parse_type(parser::ParserState)::Proto.var"#Type"
     if match_lookahead_literal(parser, "UNKNOWN", 0)
         _t833 = 0
     else
@@ -1240,61 +1222,61 @@ function parse_type(parser::Parser)::Proto.var"#Type"
     return _t844
 end
 
-function parse_unspecified_type(parser::Parser)::Proto.UnspecifiedType
+function parse_unspecified_type(parser::ParserState)::Proto.UnspecifiedType
     consume_literal!(parser, "UNKNOWN")
     _t877 = Proto.UnspecifiedType()
     return _t877
 end
 
-function parse_string_type(parser::Parser)::Proto.StringType
+function parse_string_type(parser::ParserState)::Proto.StringType
     consume_literal!(parser, "STRING")
     _t878 = Proto.StringType()
     return _t878
 end
 
-function parse_int_type(parser::Parser)::Proto.IntType
+function parse_int_type(parser::ParserState)::Proto.IntType
     consume_literal!(parser, "INT")
     _t879 = Proto.IntType()
     return _t879
 end
 
-function parse_float_type(parser::Parser)::Proto.FloatType
+function parse_float_type(parser::ParserState)::Proto.FloatType
     consume_literal!(parser, "FLOAT")
     _t880 = Proto.FloatType()
     return _t880
 end
 
-function parse_uint128_type(parser::Parser)::Proto.UInt128Type
+function parse_uint128_type(parser::ParserState)::Proto.UInt128Type
     consume_literal!(parser, "UINT128")
     _t881 = Proto.UInt128Type()
     return _t881
 end
 
-function parse_int128_type(parser::Parser)::Proto.Int128Type
+function parse_int128_type(parser::ParserState)::Proto.Int128Type
     consume_literal!(parser, "INT128")
     _t882 = Proto.Int128Type()
     return _t882
 end
 
-function parse_date_type(parser::Parser)::Proto.DateType
+function parse_date_type(parser::ParserState)::Proto.DateType
     consume_literal!(parser, "DATE")
     _t883 = Proto.DateType()
     return _t883
 end
 
-function parse_datetime_type(parser::Parser)::Proto.DateTimeType
+function parse_datetime_type(parser::ParserState)::Proto.DateTimeType
     consume_literal!(parser, "DATETIME")
     _t884 = Proto.DateTimeType()
     return _t884
 end
 
-function parse_missing_type(parser::Parser)::Proto.MissingType
+function parse_missing_type(parser::ParserState)::Proto.MissingType
     consume_literal!(parser, "MISSING")
     _t885 = Proto.MissingType()
     return _t885
 end
 
-function parse_decimal_type(parser::Parser)::Proto.DecimalType
+function parse_decimal_type(parser::ParserState)::Proto.DecimalType
     consume_literal!(parser, "(")
     consume_literal!(parser, "DECIMAL")
     int445 = consume_terminal!(parser, "INT")
@@ -1304,13 +1286,13 @@ function parse_decimal_type(parser::Parser)::Proto.DecimalType
     return _t886
 end
 
-function parse_boolean_type(parser::Parser)::Proto.BooleanType
+function parse_boolean_type(parser::ParserState)::Proto.BooleanType
     consume_literal!(parser, "BOOLEAN")
     _t887 = Proto.BooleanType()
     return _t887
 end
 
-function parse_value_bindings(parser::Parser)::Vector{Proto.Binding}
+function parse_value_bindings(parser::ParserState)::Vector{Proto.Binding}
     consume_literal!(parser, "|")
     xs447 = Proto.Binding[]
     cond448 = match_lookahead_terminal(parser, "SYMBOL", 0)
@@ -1324,7 +1306,7 @@ function parse_value_bindings(parser::Parser)::Vector{Proto.Binding}
     return bindings450
 end
 
-function parse_formula(parser::Parser)::Proto.Formula
+function parse_formula(parser::ParserState)::Proto.Formula
     if match_lookahead_literal(parser, "(", 0)
         if match_lookahead_literal(parser, "true", 1)
             _t890 = 0
@@ -1548,7 +1530,7 @@ function parse_formula(parser::Parser)::Proto.Formula
     return _t912
 end
 
-function parse_true(parser::Parser)::Proto.Conjunction
+function parse_true(parser::ParserState)::Proto.Conjunction
     consume_literal!(parser, "(")
     consume_literal!(parser, "true")
     consume_literal!(parser, ")")
@@ -1556,7 +1538,7 @@ function parse_true(parser::Parser)::Proto.Conjunction
     return _t951
 end
 
-function parse_false(parser::Parser)::Proto.Disjunction
+function parse_false(parser::ParserState)::Proto.Disjunction
     consume_literal!(parser, "(")
     consume_literal!(parser, "false")
     consume_literal!(parser, ")")
@@ -1564,7 +1546,7 @@ function parse_false(parser::Parser)::Proto.Disjunction
     return _t952
 end
 
-function parse_exists(parser::Parser)::Proto.Exists
+function parse_exists(parser::ParserState)::Proto.Exists
     consume_literal!(parser, "(")
     consume_literal!(parser, "exists")
     _t953 = parse_bindings(parser)
@@ -1577,7 +1559,7 @@ function parse_exists(parser::Parser)::Proto.Exists
     return _t956
 end
 
-function parse_reduce(parser::Parser)::Proto.Reduce
+function parse_reduce(parser::ParserState)::Proto.Reduce
     consume_literal!(parser, "(")
     consume_literal!(parser, "reduce")
     _t957 = parse_abstraction(parser)
@@ -1591,7 +1573,7 @@ function parse_reduce(parser::Parser)::Proto.Reduce
     return _t960
 end
 
-function parse_terms(parser::Parser)::Vector{Proto.Term}
+function parse_terms(parser::ParserState)::Vector{Proto.Term}
     consume_literal!(parser, "(")
     consume_literal!(parser, "terms")
     xs470 = Proto.Term[]
@@ -1607,7 +1589,7 @@ function parse_terms(parser::Parser)::Vector{Proto.Term}
     return terms473
 end
 
-function parse_term(parser::Parser)::Proto.Term
+function parse_term(parser::ParserState)::Proto.Term
     if match_lookahead_literal(parser, "true", 0)
         _t962 = 1
     else
@@ -1683,19 +1665,19 @@ function parse_term(parser::Parser)::Proto.Term
     return _t973
 end
 
-function parse_var(parser::Parser)::Proto.Var
+function parse_var(parser::ParserState)::Proto.Var
     symbol477 = consume_terminal!(parser, "SYMBOL")
     _t979 = Proto.Var(name=symbol477)
     return _t979
 end
 
-function parse_constant(parser::Parser)::Proto.Value
+function parse_constant(parser::ParserState)::Proto.Value
     _t980 = parse_value(parser)
     value478 = _t980
     return value478
 end
 
-function parse_conjunction(parser::Parser)::Proto.Conjunction
+function parse_conjunction(parser::ParserState)::Proto.Conjunction
     consume_literal!(parser, "(")
     consume_literal!(parser, "and")
     xs479 = Proto.Formula[]
@@ -1712,7 +1694,7 @@ function parse_conjunction(parser::Parser)::Proto.Conjunction
     return _t982
 end
 
-function parse_disjunction(parser::Parser)::Proto.Disjunction
+function parse_disjunction(parser::ParserState)::Proto.Disjunction
     consume_literal!(parser, "(")
     consume_literal!(parser, "or")
     xs483 = Proto.Formula[]
@@ -1729,7 +1711,7 @@ function parse_disjunction(parser::Parser)::Proto.Disjunction
     return _t984
 end
 
-function parse_not(parser::Parser)::Proto.Not
+function parse_not(parser::ParserState)::Proto.Not
     consume_literal!(parser, "(")
     consume_literal!(parser, "not")
     _t985 = parse_formula(parser)
@@ -1739,7 +1721,7 @@ function parse_not(parser::Parser)::Proto.Not
     return _t986
 end
 
-function parse_ffi(parser::Parser)::Proto.FFI
+function parse_ffi(parser::ParserState)::Proto.FFI
     consume_literal!(parser, "(")
     consume_literal!(parser, "ffi")
     _t987 = parse_name(parser)
@@ -1753,13 +1735,13 @@ function parse_ffi(parser::Parser)::Proto.FFI
     return _t990
 end
 
-function parse_name(parser::Parser)::String
+function parse_name(parser::ParserState)::String
     consume_literal!(parser, ":")
     symbol491 = consume_terminal!(parser, "SYMBOL")
     return symbol491
 end
 
-function parse_ffi_args(parser::Parser)::Vector{Proto.Abstraction}
+function parse_ffi_args(parser::ParserState)::Vector{Proto.Abstraction}
     consume_literal!(parser, "(")
     consume_literal!(parser, "args")
     xs492 = Proto.Abstraction[]
@@ -1775,7 +1757,7 @@ function parse_ffi_args(parser::Parser)::Vector{Proto.Abstraction}
     return abstractions495
 end
 
-function parse_atom(parser::Parser)::Proto.Atom
+function parse_atom(parser::ParserState)::Proto.Atom
     consume_literal!(parser, "(")
     consume_literal!(parser, "atom")
     _t992 = parse_relation_id(parser)
@@ -1794,7 +1776,7 @@ function parse_atom(parser::Parser)::Proto.Atom
     return _t994
 end
 
-function parse_pragma(parser::Parser)::Proto.Pragma
+function parse_pragma(parser::ParserState)::Proto.Pragma
     consume_literal!(parser, "(")
     consume_literal!(parser, "pragma")
     _t995 = parse_name(parser)
@@ -1813,7 +1795,7 @@ function parse_pragma(parser::Parser)::Proto.Pragma
     return _t997
 end
 
-function parse_primitive(parser::Parser)::Proto.Primitive
+function parse_primitive(parser::ParserState)::Proto.Primitive
     if match_lookahead_literal(parser, "(", 0)
         if match_lookahead_literal(parser, "primitive", 1)
             _t999 = 9
@@ -1956,7 +1938,7 @@ function parse_primitive(parser::Parser)::Proto.Primitive
     return _t1009
 end
 
-function parse_eq(parser::Parser)::Proto.Primitive
+function parse_eq(parser::ParserState)::Proto.Primitive
     consume_literal!(parser, "(")
     consume_literal!(parser, "=")
     _t1031 = parse_term(parser)
@@ -1970,7 +1952,7 @@ function parse_eq(parser::Parser)::Proto.Primitive
     return _t1035
 end
 
-function parse_lt(parser::Parser)::Proto.Primitive
+function parse_lt(parser::ParserState)::Proto.Primitive
     consume_literal!(parser, "(")
     consume_literal!(parser, "<")
     _t1036 = parse_term(parser)
@@ -1984,7 +1966,7 @@ function parse_lt(parser::Parser)::Proto.Primitive
     return _t1040
 end
 
-function parse_lt_eq(parser::Parser)::Proto.Primitive
+function parse_lt_eq(parser::ParserState)::Proto.Primitive
     consume_literal!(parser, "(")
     consume_literal!(parser, "<=")
     _t1041 = parse_term(parser)
@@ -1998,7 +1980,7 @@ function parse_lt_eq(parser::Parser)::Proto.Primitive
     return _t1045
 end
 
-function parse_gt(parser::Parser)::Proto.Primitive
+function parse_gt(parser::ParserState)::Proto.Primitive
     consume_literal!(parser, "(")
     consume_literal!(parser, ">")
     _t1046 = parse_term(parser)
@@ -2012,7 +1994,7 @@ function parse_gt(parser::Parser)::Proto.Primitive
     return _t1050
 end
 
-function parse_gt_eq(parser::Parser)::Proto.Primitive
+function parse_gt_eq(parser::ParserState)::Proto.Primitive
     consume_literal!(parser, "(")
     consume_literal!(parser, ">=")
     _t1051 = parse_term(parser)
@@ -2026,7 +2008,7 @@ function parse_gt_eq(parser::Parser)::Proto.Primitive
     return _t1055
 end
 
-function parse_add(parser::Parser)::Proto.Primitive
+function parse_add(parser::ParserState)::Proto.Primitive
     consume_literal!(parser, "(")
     consume_literal!(parser, "+")
     _t1056 = parse_term(parser)
@@ -2043,7 +2025,7 @@ function parse_add(parser::Parser)::Proto.Primitive
     return _t1062
 end
 
-function parse_minus(parser::Parser)::Proto.Primitive
+function parse_minus(parser::ParserState)::Proto.Primitive
     consume_literal!(parser, "(")
     consume_literal!(parser, "-")
     _t1063 = parse_term(parser)
@@ -2060,7 +2042,7 @@ function parse_minus(parser::Parser)::Proto.Primitive
     return _t1069
 end
 
-function parse_multiply(parser::Parser)::Proto.Primitive
+function parse_multiply(parser::ParserState)::Proto.Primitive
     consume_literal!(parser, "(")
     consume_literal!(parser, "*")
     _t1070 = parse_term(parser)
@@ -2077,7 +2059,7 @@ function parse_multiply(parser::Parser)::Proto.Primitive
     return _t1076
 end
 
-function parse_divide(parser::Parser)::Proto.Primitive
+function parse_divide(parser::ParserState)::Proto.Primitive
     consume_literal!(parser, "(")
     consume_literal!(parser, "/")
     _t1077 = parse_term(parser)
@@ -2094,7 +2076,7 @@ function parse_divide(parser::Parser)::Proto.Primitive
     return _t1083
 end
 
-function parse_rel_term(parser::Parser)::Proto.RelTerm
+function parse_rel_term(parser::ParserState)::Proto.RelTerm
     if match_lookahead_literal(parser, "true", 0)
         _t1084 = 1
     else
@@ -2175,14 +2157,14 @@ function parse_rel_term(parser::Parser)::Proto.RelTerm
     return _t1096
 end
 
-function parse_specialized_value(parser::Parser)::Proto.Value
+function parse_specialized_value(parser::ParserState)::Proto.Value
     consume_literal!(parser, "#")
     _t1102 = parse_value(parser)
     value546 = _t1102
     return value546
 end
 
-function parse_rel_atom(parser::Parser)::Proto.RelAtom
+function parse_rel_atom(parser::ParserState)::Proto.RelAtom
     consume_literal!(parser, "(")
     consume_literal!(parser, "relatom")
     _t1103 = parse_name(parser)
@@ -2201,7 +2183,7 @@ function parse_rel_atom(parser::Parser)::Proto.RelAtom
     return _t1105
 end
 
-function parse_cast(parser::Parser)::Proto.Cast
+function parse_cast(parser::ParserState)::Proto.Cast
     consume_literal!(parser, "(")
     consume_literal!(parser, "cast")
     _t1106 = parse_term(parser)
@@ -2213,7 +2195,7 @@ function parse_cast(parser::Parser)::Proto.Cast
     return _t1108
 end
 
-function parse_attrs(parser::Parser)::Vector{Proto.Attribute}
+function parse_attrs(parser::ParserState)::Vector{Proto.Attribute}
     consume_literal!(parser, "(")
     consume_literal!(parser, "attrs")
     xs554 = Proto.Attribute[]
@@ -2229,7 +2211,7 @@ function parse_attrs(parser::Parser)::Vector{Proto.Attribute}
     return attributes557
 end
 
-function parse_attribute(parser::Parser)::Proto.Attribute
+function parse_attribute(parser::ParserState)::Proto.Attribute
     consume_literal!(parser, "(")
     consume_literal!(parser, "attribute")
     _t1110 = parse_name(parser)
@@ -2248,7 +2230,7 @@ function parse_attribute(parser::Parser)::Proto.Attribute
     return _t1112
 end
 
-function parse_algorithm(parser::Parser)::Proto.Algorithm
+function parse_algorithm(parser::ParserState)::Proto.Algorithm
     consume_literal!(parser, "(")
     consume_literal!(parser, "algorithm")
     xs563 = Proto.RelationId[]
@@ -2267,7 +2249,7 @@ function parse_algorithm(parser::Parser)::Proto.Algorithm
     return _t1115
 end
 
-function parse_script(parser::Parser)::Proto.Script
+function parse_script(parser::ParserState)::Proto.Script
     consume_literal!(parser, "(")
     consume_literal!(parser, "script")
     xs568 = Proto.Construct[]
@@ -2284,7 +2266,7 @@ function parse_script(parser::Parser)::Proto.Script
     return _t1117
 end
 
-function parse_construct(parser::Parser)::Proto.Construct
+function parse_construct(parser::ParserState)::Proto.Construct
     if match_lookahead_literal(parser, "(", 0)
         if match_lookahead_literal(parser, "upsert", 1)
             _t1119 = 1
@@ -2340,7 +2322,7 @@ function parse_construct(parser::Parser)::Proto.Construct
     return _t1125
 end
 
-function parse_loop(parser::Parser)::Proto.Loop
+function parse_loop(parser::ParserState)::Proto.Loop
     consume_literal!(parser, "(")
     consume_literal!(parser, "loop")
     _t1131 = parse_init(parser)
@@ -2352,7 +2334,7 @@ function parse_loop(parser::Parser)::Proto.Loop
     return _t1133
 end
 
-function parse_init(parser::Parser)::Vector{Proto.Instruction}
+function parse_init(parser::ParserState)::Vector{Proto.Instruction}
     consume_literal!(parser, "(")
     consume_literal!(parser, "init")
     xs577 = Proto.Instruction[]
@@ -2368,7 +2350,7 @@ function parse_init(parser::Parser)::Vector{Proto.Instruction}
     return instructions580
 end
 
-function parse_instruction(parser::Parser)::Proto.Instruction
+function parse_instruction(parser::ParserState)::Proto.Instruction
     if match_lookahead_literal(parser, "(", 0)
         if match_lookahead_literal(parser, "upsert", 1)
             _t1136 = 1
@@ -2443,7 +2425,7 @@ function parse_instruction(parser::Parser)::Proto.Instruction
     return _t1141
 end
 
-function parse_assign(parser::Parser)::Proto.Assign
+function parse_assign(parser::ParserState)::Proto.Assign
     consume_literal!(parser, "(")
     consume_literal!(parser, "assign")
     _t1156 = parse_relation_id(parser)
@@ -2462,7 +2444,7 @@ function parse_assign(parser::Parser)::Proto.Assign
     return _t1160
 end
 
-function parse_upsert(parser::Parser)::Proto.Upsert
+function parse_upsert(parser::ParserState)::Proto.Upsert
     consume_literal!(parser, "(")
     consume_literal!(parser, "upsert")
     _t1161 = parse_relation_id(parser)
@@ -2481,7 +2463,7 @@ function parse_upsert(parser::Parser)::Proto.Upsert
     return _t1165
 end
 
-function parse_abstraction_with_arity(parser::Parser)::Tuple{Proto.Abstraction, Int64}
+function parse_abstraction_with_arity(parser::ParserState)::Tuple{Proto.Abstraction, Int64}
     consume_literal!(parser, "(")
     _t1166 = parse_bindings(parser)
     bindings593 = _t1166
@@ -2492,7 +2474,7 @@ function parse_abstraction_with_arity(parser::Parser)::Tuple{Proto.Abstraction, 
     return (_t1168, length(bindings593[2]),)
 end
 
-function parse_break(parser::Parser)::Proto.Break
+function parse_break(parser::ParserState)::Proto.Break
     consume_literal!(parser, "(")
     consume_literal!(parser, "break")
     _t1169 = parse_relation_id(parser)
@@ -2511,7 +2493,7 @@ function parse_break(parser::Parser)::Proto.Break
     return _t1173
 end
 
-function parse_monoid_def(parser::Parser)::Proto.MonoidDef
+function parse_monoid_def(parser::ParserState)::Proto.MonoidDef
     consume_literal!(parser, "(")
     consume_literal!(parser, "monoid")
     _t1174 = parse_monoid(parser)
@@ -2532,7 +2514,7 @@ function parse_monoid_def(parser::Parser)::Proto.MonoidDef
     return _t1179
 end
 
-function parse_monoid(parser::Parser)::Proto.Monoid
+function parse_monoid(parser::ParserState)::Proto.Monoid
     if match_lookahead_literal(parser, "(", 0)
         if match_lookahead_literal(parser, "sum", 1)
             _t1181 = 3
@@ -2594,7 +2576,7 @@ function parse_monoid(parser::Parser)::Proto.Monoid
     return _t1185
 end
 
-function parse_or_monoid(parser::Parser)::Proto.OrMonoid
+function parse_or_monoid(parser::ParserState)::Proto.OrMonoid
     consume_literal!(parser, "(")
     consume_literal!(parser, "or")
     consume_literal!(parser, ")")
@@ -2602,7 +2584,7 @@ function parse_or_monoid(parser::Parser)::Proto.OrMonoid
     return _t1197
 end
 
-function parse_min_monoid(parser::Parser)::Proto.MinMonoid
+function parse_min_monoid(parser::ParserState)::Proto.MinMonoid
     consume_literal!(parser, "(")
     consume_literal!(parser, "min")
     _t1198 = parse_type(parser)
@@ -2612,7 +2594,7 @@ function parse_min_monoid(parser::Parser)::Proto.MinMonoid
     return _t1199
 end
 
-function parse_max_monoid(parser::Parser)::Proto.MaxMonoid
+function parse_max_monoid(parser::ParserState)::Proto.MaxMonoid
     consume_literal!(parser, "(")
     consume_literal!(parser, "max")
     _t1200 = parse_type(parser)
@@ -2622,7 +2604,7 @@ function parse_max_monoid(parser::Parser)::Proto.MaxMonoid
     return _t1201
 end
 
-function parse_sum_monoid(parser::Parser)::Proto.SumMonoid
+function parse_sum_monoid(parser::ParserState)::Proto.SumMonoid
     consume_literal!(parser, "(")
     consume_literal!(parser, "sum")
     _t1202 = parse_type(parser)
@@ -2632,7 +2614,7 @@ function parse_sum_monoid(parser::Parser)::Proto.SumMonoid
     return _t1203
 end
 
-function parse_monus_def(parser::Parser)::Proto.MonusDef
+function parse_monus_def(parser::ParserState)::Proto.MonusDef
     consume_literal!(parser, "(")
     consume_literal!(parser, "monus")
     _t1204 = parse_monoid(parser)
@@ -2653,7 +2635,7 @@ function parse_monus_def(parser::Parser)::Proto.MonusDef
     return _t1209
 end
 
-function parse_constraint(parser::Parser)::Proto.Constraint
+function parse_constraint(parser::ParserState)::Proto.Constraint
     consume_literal!(parser, "(")
     consume_literal!(parser, "functional_dependency")
     _t1210 = parse_relation_id(parser)
@@ -2670,7 +2652,7 @@ function parse_constraint(parser::Parser)::Proto.Constraint
     return _t1215
 end
 
-function parse_functional_dependency_keys(parser::Parser)::Vector{Proto.Var}
+function parse_functional_dependency_keys(parser::ParserState)::Vector{Proto.Var}
     consume_literal!(parser, "(")
     consume_literal!(parser, "keys")
     xs618 = Proto.Var[]
@@ -2686,7 +2668,7 @@ function parse_functional_dependency_keys(parser::Parser)::Vector{Proto.Var}
     return vars621
 end
 
-function parse_functional_dependency_values(parser::Parser)::Vector{Proto.Var}
+function parse_functional_dependency_values(parser::ParserState)::Vector{Proto.Var}
     consume_literal!(parser, "(")
     consume_literal!(parser, "values")
     xs622 = Proto.Var[]
@@ -2702,7 +2684,7 @@ function parse_functional_dependency_values(parser::Parser)::Vector{Proto.Var}
     return vars625
 end
 
-function parse_data(parser::Parser)::Proto.Data
+function parse_data(parser::ParserState)::Proto.Data
     if match_lookahead_literal(parser, "(", 0)
         if match_lookahead_literal(parser, "rel_edb", 1)
             _t1219 = 0
@@ -2751,7 +2733,7 @@ function parse_data(parser::Parser)::Proto.Data
     return _t1222
 end
 
-function parse_rel_edb(parser::Parser)::Proto.RelEDB
+function parse_rel_edb(parser::ParserState)::Proto.RelEDB
     consume_literal!(parser, "(")
     consume_literal!(parser, "rel_edb")
     _t1231 = parse_relation_id(parser)
@@ -2765,7 +2747,7 @@ function parse_rel_edb(parser::Parser)::Proto.RelEDB
     return _t1234
 end
 
-function parse_rel_edb_path(parser::Parser)::Vector{String}
+function parse_rel_edb_path(parser::ParserState)::Vector{String}
     consume_literal!(parser, "[")
     xs633 = String[]
     cond634 = match_lookahead_terminal(parser, "STRING", 0)
@@ -2779,7 +2761,7 @@ function parse_rel_edb_path(parser::Parser)::Vector{String}
     return strings636
 end
 
-function parse_rel_edb_types(parser::Parser)::Vector{Proto.var"#Type"}
+function parse_rel_edb_types(parser::ParserState)::Vector{Proto.var"#Type"}
     consume_literal!(parser, "[")
     xs637 = Proto.var"#Type"[]
     cond638 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "BOOLEAN", 0)) || match_lookahead_literal(parser, "DATE", 0)) || match_lookahead_literal(parser, "DATETIME", 0)) || match_lookahead_literal(parser, "FLOAT", 0)) || match_lookahead_literal(parser, "INT", 0)) || match_lookahead_literal(parser, "INT128", 0)) || match_lookahead_literal(parser, "MISSING", 0)) || match_lookahead_literal(parser, "STRING", 0)) || match_lookahead_literal(parser, "UINT128", 0)) || match_lookahead_literal(parser, "UNKNOWN", 0))
@@ -2794,7 +2776,7 @@ function parse_rel_edb_types(parser::Parser)::Vector{Proto.var"#Type"}
     return types640
 end
 
-function parse_betree_relation(parser::Parser)::Proto.BeTreeRelation
+function parse_betree_relation(parser::ParserState)::Proto.BeTreeRelation
     consume_literal!(parser, "(")
     consume_literal!(parser, "betree_relation")
     _t1236 = parse_relation_id(parser)
@@ -2806,7 +2788,7 @@ function parse_betree_relation(parser::Parser)::Proto.BeTreeRelation
     return _t1238
 end
 
-function parse_betree_info(parser::Parser)::Proto.BeTreeInfo
+function parse_betree_info(parser::ParserState)::Proto.BeTreeInfo
     consume_literal!(parser, "(")
     consume_literal!(parser, "betree_info")
     _t1239 = parse_betree_info_key_types(parser)
@@ -2820,7 +2802,7 @@ function parse_betree_info(parser::Parser)::Proto.BeTreeInfo
     return _t1242
 end
 
-function parse_betree_info_key_types(parser::Parser)::Vector{Proto.var"#Type"}
+function parse_betree_info_key_types(parser::ParserState)::Vector{Proto.var"#Type"}
     consume_literal!(parser, "(")
     consume_literal!(parser, "key_types")
     xs646 = Proto.var"#Type"[]
@@ -2836,7 +2818,7 @@ function parse_betree_info_key_types(parser::Parser)::Vector{Proto.var"#Type"}
     return types649
 end
 
-function parse_betree_info_value_types(parser::Parser)::Vector{Proto.var"#Type"}
+function parse_betree_info_value_types(parser::ParserState)::Vector{Proto.var"#Type"}
     consume_literal!(parser, "(")
     consume_literal!(parser, "value_types")
     xs650 = Proto.var"#Type"[]
@@ -2852,7 +2834,7 @@ function parse_betree_info_value_types(parser::Parser)::Vector{Proto.var"#Type"}
     return types653
 end
 
-function parse_csv_data(parser::Parser)::Proto.CSVData
+function parse_csv_data(parser::ParserState)::Proto.CSVData
     consume_literal!(parser, "(")
     consume_literal!(parser, "csv_data")
     _t1245 = parse_csvlocator(parser)
@@ -2868,7 +2850,7 @@ function parse_csv_data(parser::Parser)::Proto.CSVData
     return _t1249
 end
 
-function parse_csvlocator(parser::Parser)::Proto.CSVLocator
+function parse_csvlocator(parser::ParserState)::Proto.CSVLocator
     consume_literal!(parser, "(")
     consume_literal!(parser, "csv_locator")
     if (match_lookahead_literal(parser, "(", 0) && match_lookahead_literal(parser, "paths", 1))
@@ -2890,7 +2872,7 @@ function parse_csvlocator(parser::Parser)::Proto.CSVLocator
     return _t1254
 end
 
-function parse_csv_locator_paths(parser::Parser)::Vector{String}
+function parse_csv_locator_paths(parser::ParserState)::Vector{String}
     consume_literal!(parser, "(")
     consume_literal!(parser, "paths")
     xs660 = String[]
@@ -2905,7 +2887,7 @@ function parse_csv_locator_paths(parser::Parser)::Vector{String}
     return strings663
 end
 
-function parse_csv_locator_inline_data(parser::Parser)::String
+function parse_csv_locator_inline_data(parser::ParserState)::String
     consume_literal!(parser, "(")
     consume_literal!(parser, "inline_data")
     string664 = consume_terminal!(parser, "STRING")
@@ -2913,7 +2895,7 @@ function parse_csv_locator_inline_data(parser::Parser)::String
     return string664
 end
 
-function parse_csv_config(parser::Parser)::Proto.CSVConfig
+function parse_csv_config(parser::ParserState)::Proto.CSVConfig
     consume_literal!(parser, "(")
     consume_literal!(parser, "csv_config")
     _t1255 = parse_config_dict(parser)
@@ -2923,7 +2905,7 @@ function parse_csv_config(parser::Parser)::Proto.CSVConfig
     return _t1256
 end
 
-function parse_csv_columns(parser::Parser)::Vector{Proto.CSVColumn}
+function parse_csv_columns(parser::ParserState)::Vector{Proto.CSVColumn}
     consume_literal!(parser, "(")
     consume_literal!(parser, "columns")
     xs666 = Proto.CSVColumn[]
@@ -2939,7 +2921,7 @@ function parse_csv_columns(parser::Parser)::Vector{Proto.CSVColumn}
     return csv_columns669
 end
 
-function parse_csv_column(parser::Parser)::Proto.CSVColumn
+function parse_csv_column(parser::ParserState)::Proto.CSVColumn
     consume_literal!(parser, "(")
     consume_literal!(parser, "column")
     string670 = consume_terminal!(parser, "STRING")
@@ -2961,7 +2943,7 @@ function parse_csv_column(parser::Parser)::Proto.CSVColumn
     return _t1260
 end
 
-function parse_csv_asof(parser::Parser)::String
+function parse_csv_asof(parser::ParserState)::String
     consume_literal!(parser, "(")
     consume_literal!(parser, "asof")
     string676 = consume_terminal!(parser, "STRING")
@@ -2969,7 +2951,7 @@ function parse_csv_asof(parser::Parser)::String
     return string676
 end
 
-function parse_undefine(parser::Parser)::Proto.Undefine
+function parse_undefine(parser::ParserState)::Proto.Undefine
     consume_literal!(parser, "(")
     consume_literal!(parser, "undefine")
     _t1261 = parse_fragment_id(parser)
@@ -2979,7 +2961,7 @@ function parse_undefine(parser::Parser)::Proto.Undefine
     return _t1262
 end
 
-function parse_context(parser::Parser)::Proto.Context
+function parse_context(parser::ParserState)::Proto.Context
     consume_literal!(parser, "(")
     consume_literal!(parser, "context")
     xs678 = Proto.RelationId[]
@@ -2996,7 +2978,7 @@ function parse_context(parser::Parser)::Proto.Context
     return _t1264
 end
 
-function parse_snapshot(parser::Parser)::Proto.Snapshot
+function parse_snapshot(parser::ParserState)::Proto.Snapshot
     consume_literal!(parser, "(")
     consume_literal!(parser, "snapshot")
     _t1265 = parse_rel_edb_path(parser)
@@ -3008,7 +2990,7 @@ function parse_snapshot(parser::Parser)::Proto.Snapshot
     return _t1267
 end
 
-function parse_epoch_reads(parser::Parser)::Vector{Proto.Read}
+function parse_epoch_reads(parser::ParserState)::Vector{Proto.Read}
     consume_literal!(parser, "(")
     consume_literal!(parser, "reads")
     xs684 = Proto.Read[]
@@ -3024,7 +3006,7 @@ function parse_epoch_reads(parser::Parser)::Vector{Proto.Read}
     return reads687
 end
 
-function parse_read(parser::Parser)::Proto.Read
+function parse_read(parser::ParserState)::Proto.Read
     if match_lookahead_literal(parser, "(", 0)
         if match_lookahead_literal(parser, "what_if", 1)
             _t1270 = 2
@@ -3099,7 +3081,7 @@ function parse_read(parser::Parser)::Proto.Read
     return _t1275
 end
 
-function parse_demand(parser::Parser)::Proto.Demand
+function parse_demand(parser::ParserState)::Proto.Demand
     consume_literal!(parser, "(")
     consume_literal!(parser, "demand")
     _t1290 = parse_relation_id(parser)
@@ -3109,7 +3091,7 @@ function parse_demand(parser::Parser)::Proto.Demand
     return _t1291
 end
 
-function parse_output(parser::Parser)::Proto.Output
+function parse_output(parser::ParserState)::Proto.Output
     consume_literal!(parser, "(")
     consume_literal!(parser, "output")
     _t1292 = parse_name(parser)
@@ -3121,7 +3103,7 @@ function parse_output(parser::Parser)::Proto.Output
     return _t1294
 end
 
-function parse_what_if(parser::Parser)::Proto.WhatIf
+function parse_what_if(parser::ParserState)::Proto.WhatIf
     consume_literal!(parser, "(")
     consume_literal!(parser, "what_if")
     _t1295 = parse_name(parser)
@@ -3133,7 +3115,7 @@ function parse_what_if(parser::Parser)::Proto.WhatIf
     return _t1297
 end
 
-function parse_abort(parser::Parser)::Proto.Abort
+function parse_abort(parser::ParserState)::Proto.Abort
     consume_literal!(parser, "(")
     consume_literal!(parser, "abort")
     if (match_lookahead_literal(parser, ":", 0) && match_lookahead_terminal(parser, "SYMBOL", 1))
@@ -3150,7 +3132,7 @@ function parse_abort(parser::Parser)::Proto.Abort
     return _t1301
 end
 
-function parse_export(parser::Parser)::Proto.Export
+function parse_export(parser::ParserState)::Proto.Export
     consume_literal!(parser, "(")
     consume_literal!(parser, "export")
     _t1302 = parse_export_csv_config(parser)
@@ -3160,7 +3142,7 @@ function parse_export(parser::Parser)::Proto.Export
     return _t1303
 end
 
-function parse_export_csv_config(parser::Parser)::Proto.ExportCSVConfig
+function parse_export_csv_config(parser::ParserState)::Proto.ExportCSVConfig
     consume_literal!(parser, "(")
     consume_literal!(parser, "export_csv_config")
     _t1304 = parse_export_csv_path(parser)
@@ -3174,7 +3156,7 @@ function parse_export_csv_config(parser::Parser)::Proto.ExportCSVConfig
     return _t1307
 end
 
-function parse_export_csv_path(parser::Parser)::String
+function parse_export_csv_path(parser::ParserState)::String
     consume_literal!(parser, "(")
     consume_literal!(parser, "path")
     string705 = consume_terminal!(parser, "STRING")
@@ -3182,7 +3164,7 @@ function parse_export_csv_path(parser::Parser)::String
     return string705
 end
 
-function parse_export_csv_columns(parser::Parser)::Vector{Proto.ExportCSVColumn}
+function parse_export_csv_columns(parser::ParserState)::Vector{Proto.ExportCSVColumn}
     consume_literal!(parser, "(")
     consume_literal!(parser, "columns")
     xs706 = Proto.ExportCSVColumn[]
@@ -3198,7 +3180,7 @@ function parse_export_csv_columns(parser::Parser)::Vector{Proto.ExportCSVColumn}
     return export_csv_columns709
 end
 
-function parse_export_csv_column(parser::Parser)::Proto.ExportCSVColumn
+function parse_export_csv_column(parser::ParserState)::Proto.ExportCSVColumn
     consume_literal!(parser, "(")
     consume_literal!(parser, "column")
     string710 = consume_terminal!(parser, "STRING")
@@ -3212,7 +3194,7 @@ end
 
 function parse(input::String)
     lexer = Lexer(input)
-    parser = Parser(lexer.tokens)
+    parser = ParserState(lexer.tokens)
     result = parse_transaction(parser)
     # Check for unconsumed tokens (except EOF)
     if parser.pos <= length(parser.tokens)
@@ -3223,3 +3205,12 @@ function parse(input::String)
     end
     return result
 end
+
+# Export main parse function and error type
+export parse, ParseError
+# Export scanner functions for testing
+export scan_string, scan_int, scan_float, scan_int128, scan_uint128, scan_decimal
+# Export Lexer for testing
+export Lexer
+
+end # module Parser

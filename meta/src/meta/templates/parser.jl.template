@@ -1,42 +1,24 @@
 """
-Auto-generated LL(k) recursive-descent parser.
+    Parser
+
+Auto-generated LL(k) recursive-descent parser module.
 
 Generated from protobuf specifications.
 Do not modify this file! If you need to modify the parser, edit the generator code
 in `meta/` or edit the protobuf specification in `proto/v1`.
 
-{command_line_comment}"""
+{command_line_comment}
+"""
+module Parser
 
 using SHA
 using ProtoBuf: OneOf
 
-# Import protobuf modules
-include("proto_generated.jl")
-using .Proto
-
-
-function _has_proto_field(obj, field_sym::Symbol)::Bool
-    if hasproperty(obj, field_sym)
-        return !isnothing(getproperty(obj, field_sym))
-    end
-    for fname in fieldnames(typeof(obj))
-        fval = getfield(obj, fname)
-        if fval isa OneOf && fval.name == field_sym
-            return true
-        end
-    end
-    return false
-end
-
-function _get_oneof_field(obj, field_sym::Symbol)
-    for fname in fieldnames(typeof(obj))
-        fval = getfield(obj, fname)
-        if fval isa OneOf && fval.name == field_sym
-            return fval[]
-        end
-    end
-    error("No oneof field $field_sym on $(typeof(obj))")
-end
+# Import protobuf modules and helpers from parent
+using ..relationalai: relationalai
+using ..relationalai.lqp.v1
+using ..LogicalQueryProtocol: _has_proto_field, _get_oneof_field
+const Proto = relationalai.lqp.v1
 
 
 struct ParseError <: Exception
@@ -178,26 +160,26 @@ function tokenize!(lexer::Lexer)
 end
 
 
-mutable struct Parser
+mutable struct ParserState
     tokens::Vector{{Token}}
     pos::Int
     id_to_debuginfo::Dict{{Vector{{UInt8}},Vector{{Pair{{Tuple{{UInt64,UInt64}},String}}}}}}
     _current_fragment_id::Union{{Nothing,Vector{{UInt8}}}}
     _relation_id_to_name::Dict{{Tuple{{UInt64,UInt64}},String}}
 
-    function Parser(tokens::Vector{{Token}})
+    function ParserState(tokens::Vector{{Token}})
         return new(tokens, 1, Dict(), nothing, Dict())
     end
 end
 
 
-function lookahead(parser::Parser, k::Int=0)::Token
+function lookahead(parser::ParserState, k::Int=0)::Token
     idx = parser.pos + k
     return idx <= length(parser.tokens) ? parser.tokens[idx] : Token("\$", "", -1)
 end
 
 
-function consume_literal!(parser::Parser, expected::String)
+function consume_literal!(parser::ParserState, expected::String)
     if !match_lookahead_literal(parser, expected, 0)
         token = lookahead(parser, 0)
         throw(ParseError("Expected literal $(repr(expected)) but got $(token.type)=`$(repr(token.value))` at position $(token.pos)"))
@@ -207,7 +189,7 @@ function consume_literal!(parser::Parser, expected::String)
 end
 
 
-function consume_terminal!(parser::Parser, expected::String)
+function consume_terminal!(parser::ParserState, expected::String)
     if !match_lookahead_terminal(parser, expected, 0)
         token = lookahead(parser, 0)
         throw(ParseError("Expected terminal $expected but got $(token.type)=`$(repr(token.value))` at position $(token.pos)"))
@@ -218,7 +200,7 @@ function consume_terminal!(parser::Parser, expected::String)
 end
 
 
-function match_lookahead_literal(parser::Parser, literal::String, k::Int)::Bool
+function match_lookahead_literal(parser::ParserState, literal::String, k::Int)::Bool
     token = lookahead(parser, k)
     # Support soft keywords: alphanumeric literals are lexed as SYMBOL tokens
     if token.type == "LITERAL" && token.value == literal
@@ -231,19 +213,19 @@ function match_lookahead_literal(parser::Parser, literal::String, k::Int)::Bool
 end
 
 
-function match_lookahead_terminal(parser::Parser, terminal::String, k::Int)::Bool
+function match_lookahead_terminal(parser::ParserState, terminal::String, k::Int)::Bool
     token = lookahead(parser, k)
     return token.type == terminal
 end
 
 
-function start_fragment!(parser::Parser, fragment_id::Proto.FragmentId)
+function start_fragment!(parser::ParserState, fragment_id::Proto.FragmentId)
     parser._current_fragment_id = fragment_id.id
     return fragment_id
 end
 
 
-function relation_id_from_string(parser::Parser, name::String)
+function relation_id_from_string(parser::ParserState, name::String)
     # Create RelationId from string and track mapping for debug info
     hash_bytes = sha256(name)
     id_low = Base.parse(UInt64, bytes2hex(hash_bytes[1:8]), base=16)
@@ -266,7 +248,7 @@ function relation_id_from_string(parser::Parser, name::String)
 end
 
 function construct_fragment(
-    parser::Parser,
+    parser::ParserState,
     fragment_id::Proto.FragmentId,
     declarations::Vector{{Proto.Declaration}}
 )
@@ -299,7 +281,7 @@ end
 
 function parse(input::String)
     lexer = Lexer(input)
-    parser = Parser(lexer.tokens)
+    parser = ParserState(lexer.tokens)
     result = parse_{start_name}(parser)
     # Check for unconsumed tokens (except EOF)
     if parser.pos <= length(parser.tokens)
@@ -310,3 +292,12 @@ function parse(input::String)
     end
     return result
 end
+
+# Export main parse function and error type
+export parse, ParseError
+# Export scanner functions for testing
+export scan_string, scan_int, scan_float, scan_int128, scan_uint128, scan_decimal
+# Export Lexer for testing
+export Lexer
+
+end # module Parser

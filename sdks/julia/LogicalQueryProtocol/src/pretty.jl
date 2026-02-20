@@ -1,10 +1,23 @@
-# Auto-generated pretty printer.
-#
-# Generated from protobuf specifications.
+"""
+    Pretty
+
+Auto-generated pretty printer module.
+
+Generated from protobuf specifications.
 # Do not modify this file! If you need to modify the pretty printer, edit the generator code
-# in `python-tools/src/meta` or edit the protobuf specification in `proto/v1`.
-#
-# Command: python -m meta.cli ../proto/relationalai/lqp/v1/fragments.proto ../proto/relationalai/lqp/v1/logic.proto ../proto/relationalai/lqp/v1/transactions.proto --grammar src/meta/grammar.y --printer julia
+in `meta/` or edit the protobuf specification in `proto/v1`.
+
+Command: python -m meta.cli ../proto/relationalai/lqp/v1/fragments.proto ../proto/relationalai/lqp/v1/logic.proto ../proto/relationalai/lqp/v1/transactions.proto --grammar src/meta/grammar.y --printer julia
+"""
+module Pretty
+
+using ProtoBuf: OneOf
+
+# Import protobuf modules and helpers from parent
+using ..relationalai: relationalai
+using ..relationalai.lqp.v1
+using ..LogicalQueryProtocol: LQPSyntax, LQPFragmentId, _has_proto_field, _get_oneof_field
+const Proto = relationalai.lqp.v1
 
 """
     ConstantFormatter
@@ -273,7 +286,14 @@ format_bool(pp::PrettyPrinter, v::Bool)::String = format_bool(pp.constant_format
 
 # Legacy function names for backward compatibility
 format_float64(v::Float64)::String = lowercase(string(v))
-format_string_value(s::AbstractString)::String = format_string(DEFAULT_CONSTANT_FORMATTER, nothing, s)
+function format_string_value(s::AbstractString)::String
+    escaped = replace(s, "\\" => "\\\\")
+    escaped = replace(escaped, "\"" => "\\\"")
+    escaped = replace(escaped, "\n" => "\\n")
+    escaped = replace(escaped, "\r" => "\\r")
+    escaped = replace(escaped, "\t" => "\\t")
+    return "\"" * escaped * "\""
+end
 
 function fragment_id_to_string(pp::PrettyPrinter, msg::Proto.FragmentId)::String
     if isempty(msg.id)
@@ -4797,3 +4817,17 @@ function pretty_debug(msg::Proto.Transaction; max_width::Int=92, constant_format
     write_debug_info(pp)
     return get_output(pp)
 end
+
+# Export ConstantFormatter types for user customization
+export ConstantFormatter, DefaultConstantFormatter, DEFAULT_CONSTANT_FORMATTER
+# Export format functions for users to extend
+export format_decimal, format_int128, format_uint128, format_int, format_float, format_string, format_bool
+# Export legacy format functions for backward compatibility
+export format_float64, format_string_value
+# Export pretty printing API
+export pprint, pretty, pretty_debug
+export PrettyPrinter
+# Export internal helpers for testing
+export indent_level, indent!, try_flat
+
+end # module Pretty
