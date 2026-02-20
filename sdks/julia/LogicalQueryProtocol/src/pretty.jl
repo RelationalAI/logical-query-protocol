@@ -26,6 +26,13 @@ Default constant formatter that produces standard formatting for all constants.
 """
 struct DefaultConstantFormatter <: ConstantFormatter end
 
+"""
+    DEFAULT_CONSTANT_FORMATTER
+
+Singleton instance of DefaultConstantFormatter.
+"""
+const DEFAULT_CONSTANT_FORMATTER = DefaultConstantFormatter()
+
 mutable struct PrettyPrinter
     io::IOBuffer
     indent_stack::Vector{Int}
@@ -41,7 +48,7 @@ mutable struct PrettyPrinter
     constant_formatter::ConstantFormatter
 end
 
-function PrettyPrinter(; max_width::Int=92, print_symbolic_relation_ids::Bool=true, constant_formatter::ConstantFormatter=DefaultConstantFormatter())
+function PrettyPrinter(; max_width::Int=92, print_symbolic_relation_ids::Bool=true, constant_formatter::ConstantFormatter=DEFAULT_CONSTANT_FORMATTER)
     return PrettyPrinter(
         IOBuffer(), [0], 0, true, "\n", max_width,
         Set{UInt}(), Dict{UInt,String}(), Any[],
@@ -201,6 +208,12 @@ function format_uint128(formatter::DefaultConstantFormatter, pp::PrettyPrinter, 
     value = UInt128(msg.high) << 64 | UInt128(msg.low)
     return "0x" * string(value, base=16)
 end
+
+# Fallback methods for custom formatters that don't override all types
+# These delegate to the default formatter
+format_decimal(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.DecimalValue)::String = format_decimal(DEFAULT_CONSTANT_FORMATTER, pp, msg)
+format_int128(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.Int128Value)::String = format_int128(DEFAULT_CONSTANT_FORMATTER, pp, msg)
+format_uint128(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.UInt128Value)::String = format_uint128(DEFAULT_CONSTANT_FORMATTER, pp, msg)
 
 # Backward compatibility: convenience methods that use pp.constant_formatter
 format_decimal(pp::PrettyPrinter, msg::Proto.DecimalValue)::String = format_decimal(pp.constant_formatter, pp, msg)
@@ -4700,7 +4713,7 @@ struct LQPSyntaxWithDebug{T<:LQPSyntax}
     debug_info::Proto.DebugInfo
 end
 
-function pprint(io::IO, x::LQPSyntax; max_width::Int=92, constant_formatter::ConstantFormatter=DefaultConstantFormatter())
+function pprint(io::IO, x::LQPSyntax; max_width::Int=92, constant_formatter::ConstantFormatter=DEFAULT_CONSTANT_FORMATTER)
     pp = PrettyPrinter(max_width=max_width, constant_formatter=constant_formatter)
     _pprint_dispatch(pp, x)
     newline(pp)
@@ -4708,7 +4721,7 @@ function pprint(io::IO, x::LQPSyntax; max_width::Int=92, constant_formatter::Con
     return nothing
 end
 
-function pprint(io::IO, x::LQPSyntaxWithDebug; max_width::Int=92, constant_formatter::ConstantFormatter=DefaultConstantFormatter())
+function pprint(io::IO, x::LQPSyntaxWithDebug; max_width::Int=92, constant_formatter::ConstantFormatter=DEFAULT_CONSTANT_FORMATTER)
     pp = PrettyPrinter(max_width=max_width, print_symbolic_relation_ids=false, constant_formatter=constant_formatter)
     di = x.debug_info
     for (rid, name) in zip(di.ids, di.orig_names)
@@ -4726,16 +4739,16 @@ function pprint(io::IO, x::LQPFragmentId)
     return nothing
 end
 
-pprint(x; max_width::Int=92, constant_formatter::ConstantFormatter=DefaultConstantFormatter()) = pprint(stdout, x; max_width=max_width, constant_formatter=constant_formatter)
+pprint(x; max_width::Int=92, constant_formatter::ConstantFormatter=DEFAULT_CONSTANT_FORMATTER) = pprint(stdout, x; max_width=max_width, constant_formatter=constant_formatter)
 
-function pretty(msg::Proto.Transaction; max_width::Int=92, constant_formatter::ConstantFormatter=DefaultConstantFormatter())::String
+function pretty(msg::Proto.Transaction; max_width::Int=92, constant_formatter::ConstantFormatter=DEFAULT_CONSTANT_FORMATTER)::String
     pp = PrettyPrinter(max_width=max_width, constant_formatter=constant_formatter)
     pretty_transaction(pp, msg)
     newline(pp)
     return get_output(pp)
 end
 
-function pretty_debug(msg::Proto.Transaction; max_width::Int=92, constant_formatter::ConstantFormatter=DefaultConstantFormatter())::String
+function pretty_debug(msg::Proto.Transaction; max_width::Int=92, constant_formatter::ConstantFormatter=DEFAULT_CONSTANT_FORMATTER)::String
     pp = PrettyPrinter(max_width=max_width, print_symbolic_relation_ids=false, constant_formatter=constant_formatter)
     pretty_transaction(pp, msg)
     newline(pp)

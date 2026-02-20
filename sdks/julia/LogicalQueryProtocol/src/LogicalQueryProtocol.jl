@@ -40,7 +40,7 @@ include("pretty.jl")
 include("show.jl")
 
 # Export ConstantFormatter types for user customization
-export ConstantFormatter, DefaultConstantFormatter
+export ConstantFormatter, DefaultConstantFormatter, DEFAULT_CONSTANT_FORMATTER
 # Export format functions for users to extend
 export format_decimal, format_int128, format_uint128
 # Export pprint API
