@@ -107,7 +107,7 @@ Returns the LQP type corresponding to the given LQP value.
 """
 function value_to_type(value::Value)
     value_field = value.value
-    @assert !isnothing(value_field)
+    isnothing(value_field) && error("Value has no value field set")
     value_type_tag = value_field.name
     if value_type_tag == :string_value
         return var"#Type"(OneOf(:string_type, StringType()))

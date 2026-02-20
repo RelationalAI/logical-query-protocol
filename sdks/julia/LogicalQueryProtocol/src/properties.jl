@@ -105,16 +105,18 @@ persistent_id(def::Def) = persistent_id(def.name::RelationId)
 persistent_id(constraint::Constraint) = persistent_id(constraint.name::RelationId)
 
 function global_ids(declaration::Declaration)
-    if declaration.declaration_type.name == :def
+    dt = declaration.declaration_type
+    isnothing(dt) && error("Declaration has no declaration_type set")
+    if dt.name == :def
         def = unwrap(declaration)::Def
         return [persistent_id(def)]
-    elseif declaration.declaration_type.name == :algorithm
+    elseif dt.name == :algorithm
         algorithm = unwrap(declaration)::Algorithm
         return [persistent_id(out) for out in algorithm.var"#global"]
-    elseif declaration.declaration_type.name == :data
-        data = declaration.declaration_type[]::Data
+    elseif dt.name == :data
+        data = dt[]::Data
         return global_ids(data)
-    elseif declaration.declaration_type.name == :constraint
+    elseif dt.name == :constraint
         constraint = unwrap(declaration)::Constraint
         return [persistent_id(constraint)]
     else
@@ -123,20 +125,23 @@ function global_ids(declaration::Declaration)
 end
 
 function _is_valid_declaration(declaration::Declaration)
-    return declaration.declaration_type.name in [:def, :algorithm, :data, :constraint]
+    dt = declaration.declaration_type
+    return !isnothing(dt) && dt.name in [:def, :algorithm, :data, :constraint]
 end
 
 function global_ids(data::Data)
-    if data.data_type.name == :rel_edb
-        rel_edb = data.data_type[]::RelEDB
+    dt = data.data_type
+    isnothing(dt) && error("Data has no data_type set")
+    if dt.name == :rel_edb
+        rel_edb = dt[]::RelEDB
         @assert !isnothing(rel_edb.target_id)
         return [persistent_id(rel_edb.target_id)]
-    elseif data.data_type.name == :betree_relation
-        betree_relation = data.data_type[]::BeTreeRelation
+    elseif dt.name == :betree_relation
+        betree_relation = dt[]::BeTreeRelation
         @assert !isnothing(betree_relation.name)
         return [persistent_id(betree_relation.name)]
-    elseif data.data_type.name == :csv_data
-        csv_data = data.data_type[]::CSVData
+    elseif dt.name == :csv_data
+        csv_data = dt[]::CSVData
         ids = LQPRelationId[]
         for column in csv_data.columns
             if !isnothing(column.target_id)
@@ -150,5 +155,6 @@ function global_ids(data::Data)
 end
 
 function _is_valid_data(data::Data)
-    return data.data_type.name in [:rel_edb, :betree_relation, :csv_data]
+    dt = data.data_type
+    return !isnothing(dt) && dt.name in [:rel_edb, :betree_relation, :csv_data]
 end
