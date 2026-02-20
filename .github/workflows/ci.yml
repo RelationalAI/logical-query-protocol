@@ -69,13 +69,6 @@ jobs:
       with:
         version: ${{ matrix.julia-version }}
 
-    - name: Sync test data
-      run: |
-        mkdir -p sdks/julia/LogicalQueryProtocol/test/lqp sdks/julia/LogicalQueryProtocol/test/pretty sdks/julia/LogicalQueryProtocol/test/bin
-        cp tests/lqp/*.lqp sdks/julia/LogicalQueryProtocol/test/lqp/
-        cp tests/pretty/*.lqp sdks/julia/LogicalQueryProtocol/test/pretty/
-        cp tests/bin/*.bin sdks/julia/LogicalQueryProtocol/test/bin/
-
     - name: Run tests
       run: |
         cd sdks/julia/LogicalQueryProtocol

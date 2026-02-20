@@ -190,7 +190,9 @@ register_builtin(
     [MessageType("logic", "UInt128Value")],
     MessageType("logic", "RelationId"),
 )
-register_builtin("relation_id_to_string", [MessageType("logic", "RelationId")], STRING)
+register_builtin(
+    "relation_id_to_string", [MessageType("logic", "RelationId")], OptionType(STRING)
+)
 register_builtin(
     "relation_id_to_uint128",
     [MessageType("logic", "RelationId")],
@@ -239,6 +241,13 @@ register_builtin("format_bool", [BOOLEAN], STRING)
 register_builtin("format_decimal", [MessageType("logic", "DecimalValue")], STRING)
 register_builtin("format_int128", [MessageType("logic", "Int128Value")], STRING)
 register_builtin("format_uint128", [MessageType("logic", "UInt128Value")], STRING)
+register_builtin("format_bytes", [BYTES], STRING)
+
+# === Pretty-printing dispatch ===
+register_builtin("pp_dispatch", [T], VOID)
+
+# === Sequence indexing ===
+register_builtin("get_at", [SequenceType(T), INT64], T)
 
 
 # === Validation functions ===

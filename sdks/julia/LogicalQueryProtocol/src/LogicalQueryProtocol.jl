@@ -22,7 +22,11 @@ const LQPSyntax = Union{
     Exists,FFI,MonoidDef,MonusDef,Not,Reduce,Script,Upsert,Construct,Declaration,
     Loop,Formula,Instruction,FragmentId,DebugInfo,Fragment,ExportCSVColumn,
     ExportCSVConfig,Demand,Undefine,Configure,Snapshot,Define,Context,Sync,Abort,Output,Write,
-    Export,Epoch,Read,Transaction,WhatIf,Constraint,FunctionalDependency
+    Export,Epoch,Read,Transaction,WhatIf,Constraint,FunctionalDependency,
+    DateTimeValue,DateValue,DecimalValue,
+    BeTreeInfo,BeTreeRelation,
+    CSVLocator,CSVConfig,CSVColumn,CSVData,
+    RelEDB,Data,
 }
 
 using ProtoBuf: ProtoBuf
@@ -33,4 +37,5 @@ include("protobuf-helpers.jl")
 include("properties.jl")
 include("parser.jl")
 include("pretty.jl")
+include("show.jl")
 end

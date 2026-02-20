@@ -23,16 +23,17 @@ const maxWidth = 92
 
 // PrettyPrinter holds state for pretty printing protobuf messages.
 type PrettyPrinter struct {{
-	w           *bytes.Buffer
-	indentStack []int
-	column      int
-	atLineStart bool
-	separator   string
-	maxWidth    int
-	computing   map[uintptr]bool
-	memo        map[uintptr]string
-	memoRefs    []interface{{}}
-	debugInfo   map[[2]uint64]string
+	w                       *bytes.Buffer
+	indentStack             []int
+	column                  int
+	atLineStart             bool
+	separator               string
+	maxWidth                int
+	computing               map[uintptr]bool
+	memo                    map[uintptr]string
+	memoRefs                []interface{{}}
+	debugInfo               map[[2]uint64]string
+	printSymbolicRelationIds bool
 }}
 
 func (p *PrettyPrinter) indentLevel() int {{
@@ -232,20 +233,13 @@ func (p *PrettyPrinter) startPrettyFragment(msg *pb.Fragment) {{
 }}
 
 // relationIdToString looks up a RelationId in the debug info map.
-func (p *PrettyPrinter) relationIdToString(msg *pb.RelationId) string {{
+func (p *PrettyPrinter) relationIdToString(msg *pb.RelationId) *string {{
+	if !p.printSymbolicRelationIds {{
+		return nil
+	}}
 	key := [2]uint64{{msg.GetIdLow(), msg.GetIdHigh()}}
 	if name, ok := p.debugInfo[key]; ok {{
-		return name
-	}}
-	return ""
-}}
-
-// relationIdToInt returns a pointer to int64 if the RelationId fits in
-// signed 64-bit range, nil otherwise.
-func (p *PrettyPrinter) relationIdToInt(msg *pb.RelationId) *int64 {{
-	if msg.GetIdHigh() == 0 && msg.GetIdLow() <= 0x7FFFFFFFFFFFFFFF {{
-		v := int64(msg.GetIdLow())
-		return &v
+		return &name
 	}}
 	return nil
 }}
@@ -320,21 +314,78 @@ func formatBool(b bool) string {{
 // --- Pretty-print methods ---
 {pretty_nonterminal_defns}
 
+// --- Auto-generated printers for uncovered proto types ---
+{extra_pretty_defns}
+
+// --- Dispatch function ---
+{dispatch_function}
+
+// writeDebugInfo writes accumulated debug info as comments at the end of the output.
+func (p *PrettyPrinter) writeDebugInfo() {{
+	if len(p.debugInfo) == 0 {{
+		return
+	}}
+	// Collect and sort entries by name for deterministic output.
+	type debugEntry struct {{
+		key  [2]uint64
+		name string
+	}}
+	entries := make([]debugEntry, 0, len(p.debugInfo))
+	for key, name := range p.debugInfo {{
+		entries = append(entries, debugEntry{{key, name}})
+	}}
+	sort.Slice(entries, func(i, j int) bool {{
+		return entries[i].name < entries[j].name
+	}})
+	p.w.WriteString("\n;; Debug information\n")
+	p.w.WriteString(";; -----------------------\n")
+	p.w.WriteString(";; Original names\n")
+	for _, e := range entries {{
+		value := new(big.Int).SetUint64(e.key[1])
+		value.Lsh(value, 64)
+		value.Or(value, new(big.Int).SetUint64(e.key[0]))
+		p.w.WriteString(fmt.Sprintf(";; \t ID `0x%x` -> `%s`\n", value, e.name))
+	}}
+}}
+
+
 // ProgramToStr pretty-prints a Transaction protobuf message to a string.
 func ProgramToStr(msg *pb.Transaction) string {{
 	var buf bytes.Buffer
 	p := &PrettyPrinter{{
-		w:           &buf,
-		indentStack: []int{{0}},
-		column:      0,
-		atLineStart: true,
-		separator:   "\n",
-		maxWidth:    maxWidth,
-		computing:   make(map[uintptr]bool),
-		memo:        make(map[uintptr]string),
-		debugInfo:   make(map[[2]uint64]string),
+		w:                       &buf,
+		indentStack:             []int{{0}},
+		column:                  0,
+		atLineStart:             true,
+		separator:               "\n",
+		maxWidth:                maxWidth,
+		computing:               make(map[uintptr]bool),
+		memo:                    make(map[uintptr]string),
+		debugInfo:               make(map[[2]uint64]string),
+		printSymbolicRelationIds: true,
 	}}
 	p.pretty_{start_name}(msg)
 	p.newline()
+	return p.getOutput()
+}}
+
+// ProgramToStrDebug pretty-prints with raw relation IDs and debug info appended as comments.
+func ProgramToStrDebug(msg *pb.Transaction) string {{
+	var buf bytes.Buffer
+	p := &PrettyPrinter{{
+		w:                       &buf,
+		indentStack:             []int{{0}},
+		column:                  0,
+		atLineStart:             true,
+		separator:               "\n",
+		maxWidth:                maxWidth,
+		computing:               make(map[uintptr]bool),
+		memo:                    make(map[uintptr]string),
+		debugInfo:               make(map[[2]uint64]string),
+		printSymbolicRelationIds: false,
+	}}
+	p.pretty_{start_name}(msg)
+	p.newline()
+	p.writeDebugInfo()
 	return p.getOutput()
 }}

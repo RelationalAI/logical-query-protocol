@@ -1145,5 +1145,25 @@ class CodeGenerator(ABC):
         """Format a command line comment for the generated file header."""
         pass
 
+    def gen_pprint_dispatch_line(self, type_str: str, func_ref: str) -> str | None:
+        """Generate a pprint dispatch line for the given type and function.
+
+        Returns None if the language does not support pprint dispatch generation.
+        """
+        return None
+
+    def gen_dispatch_function(
+        self,
+        entries: list[tuple[str, str]],
+        enum_entries: list[tuple[str, str]],
+    ) -> str:
+        """Generate a dispatch function for all pretty printer entries.
+
+        Returns empty string by default. Override in language-specific
+        generators that need a centralized dispatch function (Go, Python).
+        Julia uses multiple dispatch instead.
+        """
+        return ""
+
     # Parser generation indent for parse method definitions
     parse_def_indent: str = ""

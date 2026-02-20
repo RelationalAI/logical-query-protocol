@@ -210,6 +210,9 @@ class JuliaCodeGenerator(CodeGenerator):
     def gen_pretty_nonterminal_ref(self, name: str) -> str:
         return f"pretty_{name}"
 
+    def gen_pprint_dispatch_line(self, type_str: str, func_ref: str) -> str | None:
+        return f"_pprint_dispatch(pp::PrettyPrinter, x::{type_str}) = {func_ref}(pp, x)"
+
     # --- Type generation ---
 
     def gen_message_type(self, module: str, name: str) -> str:
@@ -218,9 +221,10 @@ class JuliaCodeGenerator(CodeGenerator):
         return f"Proto.{name}"
 
     def gen_enum_type(self, module: str, name: str) -> str:
+        # EnumX enums: the dispatch type is Proto.EnumName.T
         if name in self.keywords:
-            return f'Proto.var"#{name}"'
-        return f"Proto.{name}"
+            return f'Proto.var"#{name}".T'
+        return f"Proto.{name}.T"
 
     def gen_enum_value(self, module: str, enum_name: str, value_name: str) -> str:
         if enum_name in self.keywords:

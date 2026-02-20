@@ -16,13 +16,15 @@ mutable struct PrettyPrinter
     _computing::Set{{UInt}}
     _memo::Dict{{UInt,String}}
     _memo_refs::Vector{{Any}}
+    print_symbolic_relation_ids::Bool
     debug_info::Dict{{Tuple{{UInt64,UInt64}},String}}
 end
 
-function PrettyPrinter(; max_width::Int=92)
+function PrettyPrinter(; max_width::Int=92, print_symbolic_relation_ids::Bool=true)
     return PrettyPrinter(
         IOBuffer(), [0], 0, true, "\n", max_width,
         Set{{UInt}}(), Dict{{UInt,String}}(), Any[],
+        print_symbolic_relation_ids,
         Dict{{Tuple{{UInt64,UInt64}},String}}(),
     )
 end
@@ -188,12 +190,25 @@ function start_pretty_fragment(pp::PrettyPrinter, msg::Proto.Fragment)::Nothing
     return nothing
 end
 
-function relation_id_to_string(pp::PrettyPrinter, msg::Proto.RelationId)::String
-    return get(pp.debug_info, (msg.id_low, msg.id_high), "")
+function relation_id_to_string(pp::PrettyPrinter, msg::Proto.RelationId)::Union{{String,Nothing}}
+    !pp.print_symbolic_relation_ids && return nothing
+    return get(pp.debug_info, (msg.id_low, msg.id_high), nothing)
 end
 
 function relation_id_to_uint128(pp::PrettyPrinter, msg::Proto.RelationId)
     return Proto.UInt128Value(msg.id_low, msg.id_high)
+end
+
+function write_debug_info(pp::PrettyPrinter)::Nothing
+    isempty(pp.debug_info) && return nothing
+    Base.write(pp.io, "\n;; Debug information\n")
+    Base.write(pp.io, ";; -----------------------\n")
+    Base.write(pp.io, ";; Original names\n")
+    for ((id_low, id_high), name) in sort(collect(pp.debug_info); by=x -> x[2])
+        value = UInt128(id_high) << 64 | UInt128(id_low)
+        Base.write(pp.io, ";; \t ID `0x" * string(value, base=16) * "` -> `" * name * "`\n")
+    end
+    return nothing
 end
 
 # --- Helper functions ---
@@ -202,9 +217,58 @@ end
 # --- Pretty-print functions ---
 {pretty_nonterminal_defns}
 
+# --- Auto-generated printers for uncovered proto types ---
+{extra_pretty_defns}
+
+# --- pprint dispatch (generated) ---
+{pprint_dispatch_defns}
+
+# --- pprint API ---
+
+struct LQPSyntaxWithDebug{{T<:LQPSyntax}}
+    syntax::T
+    debug_info::Proto.DebugInfo
+end
+
+function pprint(io::IO, x::LQPSyntax; max_width::Int=92)
+    pp = PrettyPrinter(max_width=max_width)
+    _pprint_dispatch(pp, x)
+    newline(pp)
+    print(io, get_output(pp))
+    return nothing
+end
+
+function pprint(io::IO, x::LQPSyntaxWithDebug; max_width::Int=92)
+    pp = PrettyPrinter(max_width=max_width, print_symbolic_relation_ids=false)
+    di = x.debug_info
+    for (rid, name) in zip(di.ids, di.orig_names)
+        pp.debug_info[(rid.id_low, rid.id_high)] = name
+    end
+    _pprint_dispatch(pp, x.syntax)
+    newline(pp)
+    write_debug_info(pp)
+    print(io, get_output(pp))
+    return nothing
+end
+
+function pprint(io::IO, x::LQPFragmentId)
+    print(io, String(copy(x.id)))
+    return nothing
+end
+
+pprint(x; max_width::Int=92) = pprint(stdout, x; max_width=max_width)
+
 function pretty(msg::Proto.Transaction; max_width::Int=92)::String
     pp = PrettyPrinter(max_width=max_width)
     pretty_{start_name}(pp, msg)
     newline(pp)
+    return get_output(pp)
+end
+
+function pretty_debug(msg::Proto.Transaction; max_width::Int=92)::String
+    pp = PrettyPrinter(max_width=max_width, print_symbolic_relation_ids=false)
+    pretty_{start_name}(pp, msg)
+    newline(pp)
+    write_debug_info(pp)
     return get_output(pp)
 end
