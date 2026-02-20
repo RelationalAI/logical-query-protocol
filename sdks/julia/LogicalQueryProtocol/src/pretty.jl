@@ -6,6 +6,26 @@
 #
 # Command: python -m meta.cli ../proto/relationalai/lqp/v1/fragments.proto ../proto/relationalai/lqp/v1/logic.proto ../proto/relationalai/lqp/v1/transactions.proto --grammar src/meta/grammar.y --printer julia
 
+"""
+    ConstantFormatter
+
+Abstract type for customizing how constants are formatted in the pretty printer.
+
+Users can define subtypes of `ConstantFormatter` and override format functions
+(like `format_decimal`, `format_int128`, `format_uint128`) to customize how
+constants are displayed.
+
+See `DefaultConstantFormatter` for the default implementation.
+"""
+abstract type ConstantFormatter end
+
+"""
+    DefaultConstantFormatter <: ConstantFormatter
+
+Default constant formatter that produces standard formatting for all constants.
+"""
+struct DefaultConstantFormatter <: ConstantFormatter end
+
 mutable struct PrettyPrinter
     io::IOBuffer
     indent_stack::Vector{Int}
@@ -18,14 +38,16 @@ mutable struct PrettyPrinter
     _memo_refs::Vector{Any}
     print_symbolic_relation_ids::Bool
     debug_info::Dict{Tuple{UInt64,UInt64},String}
+    constant_formatter::ConstantFormatter
 end
 
-function PrettyPrinter(; max_width::Int=92, print_symbolic_relation_ids::Bool=true)
+function PrettyPrinter(; max_width::Int=92, print_symbolic_relation_ids::Bool=true, constant_formatter::ConstantFormatter=DefaultConstantFormatter())
     return PrettyPrinter(
         IOBuffer(), [0], 0, true, "\n", max_width,
         Set{UInt}(), Dict{UInt,String}(), Any[],
         print_symbolic_relation_ids,
         Dict{Tuple{UInt64,UInt64},String}(),
+        constant_formatter,
     )
 end
 
@@ -124,7 +146,14 @@ function get_output(pp::PrettyPrinter)::String
     return String(copy(pp.io.data[1:pp.io.size]))
 end
 
-function format_decimal(pp::PrettyPrinter, msg::Proto.DecimalValue)::String
+"""
+    format_decimal(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.DecimalValue)::String
+
+Format a DecimalValue as a string.
+
+Override this function for custom ConstantFormatter subtypes to customize decimal formatting.
+"""
+function format_decimal(formatter::DefaultConstantFormatter, pp::PrettyPrinter, msg::Proto.DecimalValue)::String
     int_val = Int128(msg.value.high) << 64 | Int128(msg.value.low)
     if msg.value.high & (UInt64(1) << 63) != 0
         int_val -= Int128(1) << 128
@@ -146,7 +175,14 @@ function format_decimal(pp::PrettyPrinter, msg::Proto.DecimalValue)::String
     return sign * decimal_str * "d" * string(msg.precision)
 end
 
-function format_int128(pp::PrettyPrinter, msg::Proto.Int128Value)::String
+"""
+    format_int128(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.Int128Value)::String
+
+Format an Int128Value as a string.
+
+Override this function for custom ConstantFormatter subtypes to customize int128 formatting.
+"""
+function format_int128(formatter::DefaultConstantFormatter, pp::PrettyPrinter, msg::Proto.Int128Value)::String
     value = Int128(msg.high) << 64 | Int128(msg.low)
     if msg.high & (UInt64(1) << 63) != 0
         value -= Int128(1) << 128
@@ -154,10 +190,22 @@ function format_int128(pp::PrettyPrinter, msg::Proto.Int128Value)::String
     return string(value) * "i128"
 end
 
-function format_uint128(pp::PrettyPrinter, msg::Proto.UInt128Value)::String
+"""
+    format_uint128(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.UInt128Value)::String
+
+Format a UInt128Value as a string.
+
+Override this function for custom ConstantFormatter subtypes to customize uint128 formatting.
+"""
+function format_uint128(formatter::DefaultConstantFormatter, pp::PrettyPrinter, msg::Proto.UInt128Value)::String
     value = UInt128(msg.high) << 64 | UInt128(msg.low)
     return "0x" * string(value, base=16)
 end
+
+# Backward compatibility: convenience methods that use pp.constant_formatter
+format_decimal(pp::PrettyPrinter, msg::Proto.DecimalValue)::String = format_decimal(pp.constant_formatter, pp, msg)
+format_int128(pp::PrettyPrinter, msg::Proto.Int128Value)::String = format_int128(pp.constant_formatter, pp, msg)
+format_uint128(pp::PrettyPrinter, msg::Proto.UInt128Value)::String = format_uint128(pp.constant_formatter, pp, msg)
 
 function format_float64(v::Float64)::String
     return lowercase(string(v))
@@ -600,7 +648,7 @@ function pretty_value(pp::PrettyPrinter, msg::Proto.Value)
                             deconstruct_result658 = _t1286
                             if !isnothing(deconstruct_result658)
                                 unwrapped659 = deconstruct_result658
-                                write(pp, format_uint128(pp, unwrapped659))
+                                write(pp, format_uint128(pp.constant_formatter, pp, unwrapped659))
                             else
                                 function _t1287(_dollar_dollar)
                                     if _has_proto_field(_dollar_dollar, Symbol("int128_value"))
@@ -614,7 +662,7 @@ function pretty_value(pp::PrettyPrinter, msg::Proto.Value)
                                 deconstruct_result656 = _t1289
                                 if !isnothing(deconstruct_result656)
                                     unwrapped657 = deconstruct_result656
-                                    write(pp, format_int128(pp, unwrapped657))
+                                    write(pp, format_int128(pp.constant_formatter, pp, unwrapped657))
                                 else
                                     function _t1290(_dollar_dollar)
                                         if _has_proto_field(_dollar_dollar, Symbol("decimal_value"))
@@ -628,7 +676,7 @@ function pretty_value(pp::PrettyPrinter, msg::Proto.Value)
                                     deconstruct_result654 = _t1292
                                     if !isnothing(deconstruct_result654)
                                         unwrapped655 = deconstruct_result654
-                                        write(pp, format_decimal(pp, unwrapped655))
+                                        write(pp, format_decimal(pp.constant_formatter, pp, unwrapped655))
                                     else
                                         function _t1293(_dollar_dollar)
                                             if _has_proto_field(_dollar_dollar, Symbol("boolean_value"))
@@ -1168,7 +1216,7 @@ function pretty_relation_id(pp::PrettyPrinter, msg::Proto.RelationId)
             deconstruct_result748 = _t1354
             if !isnothing(deconstruct_result748)
                 unwrapped749 = deconstruct_result748
-                write(pp, format_uint128(pp, unwrapped749))
+                write(pp, format_uint128(pp.constant_formatter, pp, unwrapped749))
             else
                 throw(ParseError("No matching rule for relation_id"))
             end
@@ -4454,7 +4502,7 @@ function pretty_be_tree_locator(pp::PrettyPrinter, msg::Proto.BeTreeLocator)
 end
 
 function pretty_decimal_value(pp::PrettyPrinter, msg::Proto.DecimalValue)
-    write(pp, format_decimal(pp, msg))
+    write(pp, format_decimal(pp.constant_formatter, pp, msg))
     return nothing
 end
 
@@ -4492,7 +4540,7 @@ function pretty_functional_dependency(pp::PrettyPrinter, msg::Proto.FunctionalDe
 end
 
 function pretty_int128_value(pp::PrettyPrinter, msg::Proto.Int128Value)
-    write(pp, format_int128(pp, msg))
+    write(pp, format_int128(pp.constant_formatter, pp, msg))
     return nothing
 end
 
@@ -4502,7 +4550,7 @@ function pretty_missing_value(pp::PrettyPrinter, msg::Proto.MissingValue)
 end
 
 function pretty_u_int128_value(pp::PrettyPrinter, msg::Proto.UInt128Value)
-    write(pp, format_uint128(pp, msg))
+    write(pp, format_uint128(pp.constant_formatter, pp, msg))
     return nothing
 end
 
@@ -4652,16 +4700,16 @@ struct LQPSyntaxWithDebug{T<:LQPSyntax}
     debug_info::Proto.DebugInfo
 end
 
-function pprint(io::IO, x::LQPSyntax; max_width::Int=92)
-    pp = PrettyPrinter(max_width=max_width)
+function pprint(io::IO, x::LQPSyntax; max_width::Int=92, constant_formatter::ConstantFormatter=DefaultConstantFormatter())
+    pp = PrettyPrinter(max_width=max_width, constant_formatter=constant_formatter)
     _pprint_dispatch(pp, x)
     newline(pp)
     print(io, get_output(pp))
     return nothing
 end
 
-function pprint(io::IO, x::LQPSyntaxWithDebug; max_width::Int=92)
-    pp = PrettyPrinter(max_width=max_width, print_symbolic_relation_ids=false)
+function pprint(io::IO, x::LQPSyntaxWithDebug; max_width::Int=92, constant_formatter::ConstantFormatter=DefaultConstantFormatter())
+    pp = PrettyPrinter(max_width=max_width, print_symbolic_relation_ids=false, constant_formatter=constant_formatter)
     di = x.debug_info
     for (rid, name) in zip(di.ids, di.orig_names)
         pp.debug_info[(rid.id_low, rid.id_high)] = name
@@ -4678,17 +4726,17 @@ function pprint(io::IO, x::LQPFragmentId)
     return nothing
 end
 
-pprint(x; max_width::Int=92) = pprint(stdout, x; max_width=max_width)
+pprint(x; max_width::Int=92, constant_formatter::ConstantFormatter=DefaultConstantFormatter()) = pprint(stdout, x; max_width=max_width, constant_formatter=constant_formatter)
 
-function pretty(msg::Proto.Transaction; max_width::Int=92)::String
-    pp = PrettyPrinter(max_width=max_width)
+function pretty(msg::Proto.Transaction; max_width::Int=92, constant_formatter::ConstantFormatter=DefaultConstantFormatter())::String
+    pp = PrettyPrinter(max_width=max_width, constant_formatter=constant_formatter)
     pretty_transaction(pp, msg)
     newline(pp)
     return get_output(pp)
 end
 
-function pretty_debug(msg::Proto.Transaction; max_width::Int=92)::String
-    pp = PrettyPrinter(max_width=max_width, print_symbolic_relation_ids=false)
+function pretty_debug(msg::Proto.Transaction; max_width::Int=92, constant_formatter::ConstantFormatter=DefaultConstantFormatter())::String
+    pp = PrettyPrinter(max_width=max_width, print_symbolic_relation_ids=false, constant_formatter=constant_formatter)
     pretty_transaction(pp, msg)
     newline(pp)
     write_debug_info(pp)

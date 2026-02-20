@@ -38,4 +38,11 @@ include("properties.jl")
 include("parser.jl")
 include("pretty.jl")
 include("show.jl")
+
+# Export ConstantFormatter types for user customization
+export ConstantFormatter, DefaultConstantFormatter
+# Export format functions for users to extend
+export format_decimal, format_int128, format_uint128
+# Export pprint API
+export pprint
 end

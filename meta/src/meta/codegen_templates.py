@@ -175,9 +175,9 @@ JULIA_TEMPLATES: dict[str, BuiltinTemplate] = {
     "format_string": BuiltinTemplate("format_string_value({0})"),
     "format_symbol": BuiltinTemplate("{0}"),
     "format_bool": BuiltinTemplate('({0} ? "true" : "false")'),
-    "format_decimal": BuiltinTemplate("format_decimal(pp, {0})"),
-    "format_int128": BuiltinTemplate("format_int128(pp, {0})"),
-    "format_uint128": BuiltinTemplate("format_uint128(pp, {0})"),
+    "format_decimal": BuiltinTemplate("format_decimal(pp.constant_formatter, pp, {0})"),
+    "format_int128": BuiltinTemplate("format_int128(pp.constant_formatter, pp, {0})"),
+    "format_uint128": BuiltinTemplate("format_uint128(pp.constant_formatter, pp, {0})"),
     "greater": BuiltinTemplate("({0} > {1})"),
     "to_string": BuiltinTemplate("string({0})"),
     # Type conversions used by pretty printer
