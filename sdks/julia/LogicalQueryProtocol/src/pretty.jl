@@ -17,6 +17,7 @@ using ProtoBuf: OneOf
 using ..relationalai: relationalai
 using ..relationalai.lqp.v1
 using ..LogicalQueryProtocol: LQPSyntax, LQPFragmentId, _has_proto_field, _get_oneof_field
+using ..Parser: ParseError
 const Proto = relationalai.lqp.v1
 
 """
