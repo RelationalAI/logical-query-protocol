@@ -10,8 +10,8 @@
     # Test zero
     @test format_int(pp, Int64(0)) == "0"
 
-    # Test Int32
-    @test format_int(pp, Int32(99)) == "99"
+    # Test Int64
+    @test format_int(pp, Int64(99)) == "99"
 
     # Test large values
     @test format_int(pp, Int64(9223372036854775807)) == "9223372036854775807"
@@ -440,7 +440,7 @@ end
     function Pretty.format_int(
         formatter::IntFormatter,
         pp::PrettyPrinter,
-        v::Integer
+        v::Int64
     )::String
         return "INT[$(v)]"
     end
@@ -454,8 +454,8 @@ end
     result = format_int(pp, Int64(-123))
     @test result == "INT[-123]"
 
-    # Test with Int32
-    result = format_int(pp, Int32(99))
+    # Test with Int64
+    result = format_int(pp, Int64(99))
     @test result == "INT[99]"
 end
 
@@ -536,7 +536,7 @@ end
     # Define custom formatter that overrides all types with a prefix
     struct PrefixFormatter <: ConstantFormatter end
 
-    Pretty.format_int(formatter::PrefixFormatter, pp::PrettyPrinter, v::Integer)::String = "i:$(v)"
+    Pretty.format_int(formatter::PrefixFormatter, pp::PrettyPrinter, v::Int64)::String = "i:$(v)"
     Pretty.format_float(formatter::PrefixFormatter, pp::PrettyPrinter, v::Float64)::String = "f:$(v)"
     Pretty.format_string(formatter::PrefixFormatter, pp::PrettyPrinter, s::AbstractString)::String = "s:$(s)"
     Pretty.format_bool(formatter::PrefixFormatter, pp::PrettyPrinter, v::Bool)::String = "b:$(v)"

@@ -170,7 +170,7 @@ JULIA_TEMPLATES: dict[str, BuiltinTemplate] = {
     "dedent_io": BuiltinTemplate("nothing", ["dedent!(pp)"]),
     "try_flat_io": BuiltinTemplate("try_flat(pp, {0}, {1})"),
     "format_int64": BuiltinTemplate("format_int(pp, {0})"),
-    "format_int32": BuiltinTemplate("format_int(pp, {0})"),
+    "format_int32": BuiltinTemplate("format_int(pp, Int64({0}))"),
     "format_float64": BuiltinTemplate("format_float(pp, {0})"),
     "format_string": BuiltinTemplate("format_string(pp, {0})"),
     "format_symbol": BuiltinTemplate("{0}"),

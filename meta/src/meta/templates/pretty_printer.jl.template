@@ -224,13 +224,13 @@ function format_uint128(formatter::DefaultConstantFormatter, pp::PrettyPrinter, 
 end
 
 """
-    format_int(formatter::ConstantFormatter, pp::PrettyPrinter, v::Integer)::String
+    format_int(formatter::ConstantFormatter, pp::PrettyPrinter, v::Int64)::String
 
 Format an integer value as a string.
 
 Override this function for custom ConstantFormatter subtypes to customize integer formatting.
 """
-format_int(formatter::DefaultConstantFormatter, pp::PrettyPrinter, v::Integer)::String = string(v)
+format_int(formatter::DefaultConstantFormatter, pp::PrettyPrinter, v::Int64)::String = string(v)
 
 """
     format_float(formatter::ConstantFormatter, pp::PrettyPrinter, v::Float64)::String
@@ -271,7 +271,7 @@ format_bool(formatter::DefaultConstantFormatter, pp::PrettyPrinter, v::Bool)::St
 format_decimal(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.DecimalValue)::String = format_decimal(DEFAULT_CONSTANT_FORMATTER, pp, msg)
 format_int128(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.Int128Value)::String = format_int128(DEFAULT_CONSTANT_FORMATTER, pp, msg)
 format_uint128(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.UInt128Value)::String = format_uint128(DEFAULT_CONSTANT_FORMATTER, pp, msg)
-format_int(formatter::ConstantFormatter, pp::PrettyPrinter, v::Integer)::String = format_int(DEFAULT_CONSTANT_FORMATTER, pp, v)
+format_int(formatter::ConstantFormatter, pp::PrettyPrinter, v::Int64)::String = format_int(DEFAULT_CONSTANT_FORMATTER, pp, v)
 format_float(formatter::ConstantFormatter, pp::PrettyPrinter, v::Float64)::String = format_float(DEFAULT_CONSTANT_FORMATTER, pp, v)
 format_string(formatter::ConstantFormatter, pp::PrettyPrinter, s::AbstractString)::String = format_string(DEFAULT_CONSTANT_FORMATTER, pp, s)
 format_bool(formatter::ConstantFormatter, pp::PrettyPrinter, v::Bool)::String = format_bool(DEFAULT_CONSTANT_FORMATTER, pp, v)
@@ -280,7 +280,7 @@ format_bool(formatter::ConstantFormatter, pp::PrettyPrinter, v::Bool)::String = 
 format_decimal(pp::PrettyPrinter, msg::Proto.DecimalValue)::String = format_decimal(pp.constant_formatter, pp, msg)
 format_int128(pp::PrettyPrinter, msg::Proto.Int128Value)::String = format_int128(pp.constant_formatter, pp, msg)
 format_uint128(pp::PrettyPrinter, msg::Proto.UInt128Value)::String = format_uint128(pp.constant_formatter, pp, msg)
-format_int(pp::PrettyPrinter, v::Integer)::String = format_int(pp.constant_formatter, pp, v)
+format_int(pp::PrettyPrinter, v::Int64)::String = format_int(pp.constant_formatter, pp, v)
 format_float(pp::PrettyPrinter, v::Float64)::String = format_float(pp.constant_formatter, pp, v)
 format_string(pp::PrettyPrinter, s::AbstractString)::String = format_string(pp.constant_formatter, pp, s)
 format_bool(pp::PrettyPrinter, v::Bool)::String = format_bool(pp.constant_formatter, pp, v)
