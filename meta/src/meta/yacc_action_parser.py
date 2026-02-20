@@ -34,6 +34,7 @@ from .grammar import (
 from .target import (
     Assign,
     BaseType,
+    Builtin,
     Call,
     DictType,
     EnumType,
@@ -184,14 +185,21 @@ def _infer_type(
         # Let expression has the type of its body
         return _infer_type(expr.body, line, ctx)
     elif isinstance(expr, IfElse):
-        # Conditional has the type of its branches (assume they're the same)
-        return _infer_type(expr.then_branch, line, ctx)
+        then_type = _infer_type(expr.then_branch, line, ctx)
+        if expr.else_branch == Lit(None):
+            # IfElse with else=None is Optional: Some(value) or None
+            if not isinstance(then_type, OptionType):
+                return OptionType(then_type)
+        return then_type
     elif isinstance(expr, Seq):
         # Sequence has the type of its last expression
         if expr.exprs:
             return _infer_type(expr.exprs[-1], line, ctx)
         raise YaccGrammarError("Cannot infer type of empty sequence", line)
     elif isinstance(expr, Call):
+        # The tuple builtin's FunctionType (T, T, ...) -> T loses tuple structure.
+        if isinstance(expr.func, Builtin) and expr.func.name == "tuple":
+            return TupleType(tuple(_infer_type(a, line, ctx) for a in expr.args))
         # Call.target_type() handles getting return type from FunctionType
         try:
             return expr.target_type()

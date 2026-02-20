@@ -134,7 +134,7 @@ def test_go_builtin_generation():
     lines = []
     expr = Call(make_builtin("not"), [Var("x", _bool_type)])
     result = gen.generate_lines(expr, lines, "")
-    assert result == "!x"
+    assert result == "!(x)"
 
     # Test 'equal' builtin
     reset_gensym()
@@ -491,6 +491,73 @@ def test_go_or_without_side_effects_uses_template():
     assert len(lines) == 0
 
 
+def test_go_empty_string_literal():
+    """Empty string literal generates correctly."""
+    gen = GoCodeGenerator()
+    lines = []
+    result = gen.generate_lines(Lit(""), lines, "")
+    assert result == '""'
+
+
+def test_go_deeply_nested_calls():
+    """4-level nested Call produces valid output."""
+    gen = GoCodeGenerator()
+    gen.reset_declared_vars()
+    reset_gensym()
+    lines = []
+    inner = Call(Var("d", _any_type), [Var("x", _any_type)])
+    level3 = Call(Var("c", _any_type), [inner])
+    level2 = Call(Var("b", _any_type), [level3])
+    expr = Call(Var("a", _any_type), [level2])
+    result = gen.generate_lines(expr, lines, "")
+    assert result is not None
+    code = "\n".join(lines) + "\n" + result
+    assert "d(x)" in code
+    assert "a(" in code
+
+
+def test_go_long_variable_name():
+    """Variable with 100-char name renders correctly."""
+    gen = GoCodeGenerator()
+    long_name = "v" * 100
+    lines = []
+    result = gen.generate_lines(Var(long_name, _any_type), lines, "")
+    assert result == long_name
+
+
+def test_go_nested_if_else():
+    """3-level nested IfElse produces valid output."""
+    gen = GoCodeGenerator()
+    gen.reset_declared_vars()
+    reset_gensym()
+    lines = []
+    inner = IfElse(Var("c", _bool_type), Lit("x"), Lit("y"))
+    mid = IfElse(Var("b", _bool_type), inner, Lit("z"))
+    expr = IfElse(Var("a", _bool_type), mid, Lit("w"))
+    result = gen.generate_lines(expr, lines, "")
+    assert result is not None
+    code = "\n".join(lines)
+    assert code.count("if ") >= 3
+
+
+def test_go_two_element_seq():
+    """Minimal Seq (2 elements) returns last element's value."""
+    gen = GoCodeGenerator()
+    gen.reset_declared_vars()
+    reset_gensym()
+    lines = []
+    result = gen.generate_lines(Seq([Lit(1), Lit(2)]), lines, "")
+    assert result == "2"
+
+
+def test_go_option_none_lit():
+    """Lit(None) generates correctly."""
+    gen = GoCodeGenerator()
+    lines = []
+    result = gen.generate_lines(Lit(None), lines, "")
+    assert result == "nil"
+
+
 if __name__ == "__main__":
     test_go_keyword_escaping()
     test_go_pascal_case()
@@ -516,3 +583,9 @@ if __name__ == "__main__":
     test_go_or_short_circuit_with_side_effects()
     test_go_and_without_side_effects_uses_template()
     test_go_or_without_side_effects_uses_template()
+    test_go_empty_string_literal()
+    test_go_deeply_nested_calls()
+    test_go_long_variable_name()
+    test_go_nested_if_else()
+    test_go_two_element_seq()
+    test_go_option_none_lit()

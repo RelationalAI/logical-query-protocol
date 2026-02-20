@@ -18,11 +18,15 @@ sdks/python/.clj-kondo
 
 # Julia SDK
 sdks/julia/LogicalQueryProtocol/Manifest.toml
-sdks/julia/LogicalQueryProtocol/test/lqp
-sdks/julia/LogicalQueryProtocol/test/bin
-sdks/julia/LogicalQueryProtocol/test/pretty
-sdks/julia/LogicalQueryProtocol/test/lqp_output
-sdks/julia/LogicalQueryProtocol/test/lqp_pretty_output
+sdks/julia/LogicalQueryProtocol/test/lqp/**
+sdks/julia/LogicalQueryProtocol/test/bin/**
+sdks/julia/LogicalQueryProtocol/test/pretty/**
+sdks/julia/LogicalQueryProtocol/test/lqp_output/**
+sdks/julia/LogicalQueryProtocol/test/lqp_output/**
+sdks/julia/LogicalQueryProtocol/test/lqp_pretty_output/**
+
+# Go SDK
+sdks/go/test/lqp_pretty_output
 
 # Other
 .DS_Store
