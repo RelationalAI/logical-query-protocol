@@ -375,7 +375,7 @@ def test_julia_visit_nonterminal_def_generation():
         body=NewMessage("logic", "Expr", ()),
     )
     code = gen.generate_def(parse_def)
-    assert "function parse_expr(parser::Parser)::Proto.Expr" in code
+    assert "function parse_expr(parser::ParserState)::Proto.Expr" in code
     assert "return" in code
     assert "end" in code
 
@@ -388,7 +388,7 @@ def test_julia_visit_nonterminal_def_generation():
         body=Var("result", MessageType("logic", "Expr")),
     )
     code = gen.generate_def(parse_def)
-    assert "function parse_expr(parser::Parser, context::String)::Proto.Expr" in code
+    assert "function parse_expr(parser::ParserState, context::String)::Proto.Expr" in code
 
 
 def test_julia_return_generation():
