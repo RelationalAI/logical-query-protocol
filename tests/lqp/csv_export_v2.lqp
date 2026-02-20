@@ -1,0 +1,203 @@
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          ;; Simple table with multiple columns
+          (def :users
+            ([id::INT name::STRING score::FLOAT]
+              (or
+                (and (= id 100) (= name "Alice") (= score 95.5))
+                (and (= id 200) (= name "Bob") (= score 87.3)))))
+
+          ;; Table with various data types
+          (def :products
+            ([id::INT name::STRING price::(DECIMAL 10 2) active::BOOLEAN]
+              (or
+                (and (= id 1) (= name "Widget") (= price 19.99) (= active true))
+                (and (= id 2) (= name "Gadget") (= price 29.50) (= active false)))))
+
+          ;; Table with timestamp
+          (def :events
+            ([event_id::INT timestamp::DATETIME description::STRING]
+              (or
+                (and (= event_id 1) (= timestamp (datetime 2025 1 1 10 30 0 0)) (= description "Start"))
+                (and (= event_id 2) (= timestamp (datetime 2025 1 2 14 45 0 0)) (= description "End")))))
+
+          ;; Simple two-column table
+          (def :simple
+            ([key::STRING value::INT]
+              (or
+                (and (= key "a") (= value 1))
+                (and (= key "b") (= value 2)))))
+
+          ;; Single column table
+          (def :names
+            ([name::STRING]
+              (or
+                (= name "Alice")
+                (= name "Bob")
+                (= name "Carol"))))
+
+          ;; Individual column definitions for gnf_columns tests
+          (def :col_id
+            ([row::INT v::INT]
+              (or
+                (and (= row 1) (= v 100))
+                (and (= row 2) (= v 200))
+                (and (= row 3) (= v 300)))))
+
+          (def :col_name
+            ([row::INT v::STRING]
+              (or
+                (and (= row 1) (= v "Alice"))
+                (and (= row 2) (= v "Bob"))
+                (and (= row 3) (= v "Carol")))))
+
+          (def :col_score
+            ([row::INT v::FLOAT]
+              (or
+                (and (= row 1) (= v 95.5))
+                (and (= row 2) (= v 87.3))
+                (and (= row 3) (= v 92.0)))))
+
+          (def :col_active
+            ([row::INT v::BOOLEAN]
+              (or
+                (and (= row 1) (= v true))
+                (and (= row 2) (= v false))
+                (and (= row 3) (= v true))))))))
+
+    (reads
+      ;; Test 1: Basic table export with default config
+      (export
+        (export_csv_config_v2
+          (path "users_basic.csv")
+          (table_def :users)
+          (csv_config {})))
+
+      ;; Test 2: Table export with custom delimiter
+      (export
+        (export_csv_config_v2
+          (path "users_pipe.csv")
+          (table_def :users)
+          (csv_config
+            { :csv_header_row 1
+              :csv_delimiter "|"
+              :csv_quotechar "\""
+              :csv_escapechar "\\" })))
+
+      ;; Test 3: Table export with compression
+      (export
+        (export_csv_config_v2
+          (path "users_compressed.csv.gz")
+          (table_def :users)
+          (csv_config
+            { :csv_partition_size_mb 1000
+              :csv_compression "gzip"
+              :csv_quotechar "\""
+              :csv_escapechar "\\" })))
+
+      ;; Test 4: Products table with decimal type
+      (export
+        (export_csv_config_v2
+          (path "products.csv")
+          (table_def :products)
+          (csv_config
+            { :csv_header_row 1
+              :csv_delimiter ","
+              :csv_quotechar "\""
+              :csv_escapechar "\\" })))
+
+      ;; Test 5: Events table with timestamp
+      (export
+        (export_csv_config_v2
+          (path "events.csv")
+          (table_def :events)
+          (csv_config
+            { :csv_header_row 1
+              :csv_delimiter ","
+              :csv_quotechar "\""
+              :csv_escapechar "\\" })))
+
+      ;; Test 6: Tab-separated values
+      (export
+        (export_csv_config_v2
+          (path "users.tsv")
+          (table_def :users)
+          (csv_config
+            { :csv_header_row 1
+              :csv_delimiter "\t"
+              :csv_quotechar "\""
+              :csv_escapechar "\\" })))
+
+      ;; Test 7: Export without header row
+      (export
+        (export_csv_config_v2
+          (path "simple_no_header.csv")
+          (table_def :simple)
+          (csv_config
+            { :csv_header_row 0
+              :csv_delimiter ","
+              :csv_quotechar "\""
+              :csv_escapechar "\\" })))
+
+      ;; Test 8: Single column export
+      (export
+        (export_csv_config_v2
+          (path "names_only.csv")
+          (table_def :names)
+          (csv_config
+            { :csv_header_row 1 })))
+
+      ;; Test 9: gnf_columns with all columns
+      (export
+        (export_csv_config_v2
+          (path "gnf_all_columns.csv")
+          (gnf_columns
+            (column "id" :col_id)
+            (column "name" :col_name)
+            (column "score" :col_score)
+            (column "active" :col_active))
+          (csv_config
+            { :csv_header_row 1
+              :csv_delimiter ","
+              :csv_quotechar "\""
+              :csv_escapechar "\\" })))
+
+      ;; Test 10: gnf_columns with subset of columns
+      (export
+        (export_csv_config_v2
+          (path "gnf_subset.csv")
+          (gnf_columns
+            (column "user_id" :col_id)
+            (column "user_name" :col_name))
+          (csv_config
+            { :csv_header_row 1
+              :csv_delimiter ","
+              :csv_quotechar "\""
+              :csv_escapechar "\\" })))
+
+      ;; Test 11: gnf_columns with custom delimiter and compression
+      (export
+        (export_csv_config_v2
+          (path "gnf_custom.csv.gz")
+          (gnf_columns
+            (column "id" :col_id)
+            (column "score" :col_score))
+          (csv_config
+            { :partition_size 500
+              :compression "gzip"
+              :syntax_header_row true
+              :syntax_delim "|"
+              :syntax_quotechar "'"
+              :syntax_escapechar "\\" })))
+
+      ;; Test 12: gnf_columns single column
+      (export
+        (export_csv_config_v2
+          (path "gnf_single.csv")
+          (gnf_columns
+            (column "score" :col_score))
+          (csv_config
+            { :csv_header_row 1 }))))))

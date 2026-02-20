@@ -1,0 +1,28 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (def
+            :my_table
+            ([col1::INT col2::STRING]
+             (or (and (= col1 1) (= col2 "hello")) (and (= col1 2) (= col2 "world"))))
+            (attrs (attribute :csv_export))))))
+    (reads
+      (export
+        (export_csv_config_v2
+          (path "output.csv")
+          (table_def :my_table)
+          (csv_config
+            {
+             :csv_compression ""
+             :csv_decimal_separator "."
+             :csv_delimiter ","
+             :csv_encoding "utf-8"
+             :csv_escapechar "\\"
+             :csv_header_row 1
+             :csv_partition_size_mb 10
+             :csv_quotechar "\""
+             :csv_skip 0}))))))
