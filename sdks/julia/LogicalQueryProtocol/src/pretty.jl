@@ -4798,7 +4798,8 @@ function pprint(io::IO, x::LQPSyntaxWithDebug; max_width::Int=92, constant_forma
 end
 
 function pprint(io::IO, x::LQPFragmentId)
-    print(io, String(copy(x.id)))
+    original_id = replace(String(copy(x.id)), '\0' => "\\0")
+    print(io, ":", original_id)
     return nothing
 end
 
