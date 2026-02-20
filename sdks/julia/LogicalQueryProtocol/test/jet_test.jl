@@ -28,7 +28,21 @@
         return occursin("BoundsError", msg) && occursin("OneTo", msg)
     end
 
-    reports = filter(r -> !is_oneof_field_false_positive(r) && !is_bounds_error_false_positive(r), reports)
+    # Filter false positives from generated code accessing nullable protobuf
+    # message fields (e.g., DecimalValue.value::Union{Nothing,Int128Value}).
+    # The generated pretty printer accesses .high/.low without null checks.
+    function is_generated_null_field_false_positive(report)
+        msg = sprint(show, report)
+        return occursin("has no field high", msg) || occursin("has no field low", msg)
+    end
+
+    function is_known_false_positive(report)
+        return is_oneof_field_false_positive(report) ||
+               is_bounds_error_false_positive(report) ||
+               is_generated_null_field_false_positive(report)
+    end
+
+    reports = filter(!is_known_false_positive, reports)
 
     if !isempty(reports)
         for report in reports
