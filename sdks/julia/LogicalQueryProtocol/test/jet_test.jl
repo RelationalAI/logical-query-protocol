@@ -20,7 +20,15 @@
         return occursin("has no field args", msg) || occursin("has no field scale", msg)
     end
 
-    reports = filter(!is_oneof_field_false_positive, reports)
+    # Filter BoundsError false positives from array internals in generated code.
+    # The generated parser uses `vcat` with mixed vector types, which causes JET
+    # to flag a potential BoundsError on axes tuples deep in Base array code.
+    function is_bounds_error_false_positive(report)
+        msg = sprint(show, report)
+        return occursin("BoundsError", msg) && occursin("OneTo", msg)
+    end
+
+    reports = filter(r -> !is_oneof_field_false_positive(r) && !is_bounds_error_false_positive(r), reports)
 
     if !isempty(reports)
         for report in reports
