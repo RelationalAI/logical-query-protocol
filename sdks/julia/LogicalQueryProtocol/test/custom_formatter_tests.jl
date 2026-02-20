@@ -1,3 +1,158 @@
+@testitem "Default formatter - int" begin
+    using LogicalQueryProtocol: format_int, PrettyPrinter
+    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
+
+    pp = PrettyPrinter()
+
+    # Test positive Int64
+    @test format_int(pp, Int64(42)) == "42"
+
+    # Test negative Int64
+    @test format_int(pp, Int64(-123)) == "-123"
+
+    # Test zero
+    @test format_int(pp, Int64(0)) == "0"
+
+    # Test Int32
+    @test format_int(pp, Int32(99)) == "99"
+
+    # Test large values
+    @test format_int(pp, Int64(9223372036854775807)) == "9223372036854775807"
+end
+
+@testitem "Default formatter - float" begin
+    using LogicalQueryProtocol: format_float, PrettyPrinter
+    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
+
+    pp = PrettyPrinter()
+
+    # Test positive float
+    @test format_float(pp, 3.14) == "3.14"
+
+    # Test negative float
+    @test format_float(pp, -2.5) == "-2.5"
+
+    # Test zero
+    @test format_float(pp, 0.0) == "0.0"
+
+    # Test special values (lowercase for default formatter)
+    @test format_float(pp, Inf) == "inf"
+    @test format_float(pp, -Inf) == "-inf"
+    @test format_float(pp, NaN) == "nan"
+
+    # Test scientific notation
+    @test format_float(pp, 1.23e10) == "1.23e10"
+end
+
+@testitem "Default formatter - string" begin
+    using LogicalQueryProtocol: format_string, PrettyPrinter
+    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
+
+    pp = PrettyPrinter()
+
+    # Test simple string
+    @test format_string(pp, "hello") == "\"hello\""
+
+    # Test empty string
+    @test format_string(pp, "") == "\"\""
+
+    # Test string with escaped characters
+    @test format_string(pp, "hello\"world") == "\"hello\\\"world\""
+    @test format_string(pp, "hello\\world") == "\"hello\\\\world\""
+    @test format_string(pp, "hello\nworld") == "\"hello\\nworld\""
+    @test format_string(pp, "hello\rworld") == "\"hello\\rworld\""
+    @test format_string(pp, "hello\tworld") == "\"hello\\tworld\""
+
+    # Test all escapes together
+    @test format_string(pp, "\\\"\n\r\t") == "\"\\\\\\\"\\n\\r\\t\""
+end
+
+@testitem "Default formatter - bool" begin
+    using LogicalQueryProtocol: format_bool, PrettyPrinter
+    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
+
+    pp = PrettyPrinter()
+
+    # Test true
+    @test format_bool(pp, true) == "true"
+
+    # Test false
+    @test format_bool(pp, false) == "false"
+end
+
+@testitem "Default formatter - decimal" begin
+    using LogicalQueryProtocol: format_decimal, PrettyPrinter
+    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
+
+    pp = PrettyPrinter()
+
+    # Test positive decimal
+    decimal_msg = Proto.DecimalValue(
+        precision=Int32(18),
+        scale=Int32(6),
+        value=Proto.Int128Value(UInt64(123456789), UInt64(0)),
+    )
+    @test format_decimal(pp, decimal_msg) == "123.456789d18"
+
+    # Test decimal with leading zeros after decimal point
+    decimal_msg2 = Proto.DecimalValue(
+        precision=Int32(6),
+        scale=Int32(5),
+        value=Proto.Int128Value(UInt64(123), UInt64(0)),
+    )
+    @test format_decimal(pp, decimal_msg2) == "0.00123d6"
+
+    # Test decimal with trailing zeros (negative scale)
+    decimal_msg3 = Proto.DecimalValue(
+        precision=Int32(6),
+        scale=Int32(-2),
+        value=Proto.Int128Value(UInt64(123), UInt64(0)),
+    )
+    @test format_decimal(pp, decimal_msg3) == "123.00d6"
+end
+
+@testitem "Default formatter - int128" begin
+    using LogicalQueryProtocol: format_int128, PrettyPrinter
+    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
+
+    pp = PrettyPrinter()
+
+    # Test positive int128
+    int128_msg = Proto.Int128Value(UInt64(42), UInt64(0))
+    @test format_int128(pp, int128_msg) == "42i128"
+
+    # Test negative int128 (using two's complement)
+    int128_msg_neg = Proto.Int128Value(UInt64(0xFFFFFFFFFFFFFFFF), UInt64(0xFFFFFFFFFFFFFFFF))
+    @test format_int128(pp, int128_msg_neg) == "-1i128"
+
+    # Test zero
+    int128_msg_zero = Proto.Int128Value(UInt64(0), UInt64(0))
+    @test format_int128(pp, int128_msg_zero) == "0i128"
+end
+
+@testitem "Default formatter - uint128" begin
+    using LogicalQueryProtocol: format_uint128, PrettyPrinter
+    const Proto = LogicalQueryProtocol.relationalai.lqp.v1
+
+    pp = PrettyPrinter()
+
+    # Test uint128
+    uint128_msg = Proto.UInt128Value(UInt64(255), UInt64(0))
+    @test format_uint128(pp, uint128_msg) == "0xff"
+
+    # Test zero
+    uint128_msg_zero = Proto.UInt128Value(UInt64(0), UInt64(0))
+    @test format_uint128(pp, uint128_msg_zero) == "0x0"
+
+    # Test max value in low part
+    uint128_msg_max = Proto.UInt128Value(UInt64(0xFFFFFFFFFFFFFFFF), UInt64(0))
+    @test format_uint128(pp, uint128_msg_max) == "0xffffffffffffffff"
+
+    # Test with high part set
+    uint128_msg_high = Proto.UInt128Value(UInt64(0x42), UInt64(0x1))
+    @test format_uint128(pp, uint128_msg_high) == "0x10000000000000042"
+end
+
 @testitem "Custom formatter - decimal only" begin
     using LogicalQueryProtocol: ConstantFormatter, DefaultConstantFormatter
     using LogicalQueryProtocol: format_decimal, format_int128, format_uint128
