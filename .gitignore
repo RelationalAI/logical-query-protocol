@@ -16,9 +16,6 @@ sdks/python/out/
 sdks/python/.lsp/.cache
 sdks/python/.clj-kondo
 
-# Julia SDK
-sdks/julia/LogicalQueryProtocol/Manifest.toml
-
 # Go SDK
 sdks/go/test/lqp_pretty_output
 
