@@ -30,18 +30,18 @@ GRAMMAR := meta/src/meta/grammar.y
 
 # Generated protobuf outputs
 PY_PROTO_DIR := sdks/python/src/lqp/proto/v1
-JL_PROTO_DIR := sdks/julia/LogicalQueryProtocol/src/gen/relationalai/lqp/v1
+JL_PROTO_DIR := sdks/julia/LogicalQueryProtocol.jl/src/gen/relationalai/lqp/v1
 GO_PROTO_DIR := sdks/go/src/lqp/v1
 
 # Generated parser outputs
 PY_PARSER := sdks/python/src/lqp/gen/parser.py
-JL_PARSER := sdks/julia/LogicalQueryProtocol/src/parser.jl
+JL_PARSER := sdks/julia/LogicalQueryProtocol.jl/src/parser.jl
 GO_PARSER := sdks/go/src/parser.go
 
 # Generated printer outputs
 PY_PRINTER := sdks/python/src/lqp/gen/pretty.py
 GO_PRINTER := sdks/go/src/pretty.go
-JL_PRINTER := sdks/julia/LogicalQueryProtocol/src/pretty.jl
+JL_PRINTER := sdks/julia/LogicalQueryProtocol.jl/src/pretty.jl
 
 # Parser templates
 PY_TEMPLATE := meta/src/meta/templates/parser.py.template
@@ -111,7 +111,7 @@ $(PY_PROTO_GENERATED) $(GO_PROTO_GENERATED): $(PROTO_FILES)
 $(JL_PROTO_GENERATED): $(PROTO_FILES)
 	buf lint
 	buf breaking --against ".git#branch=main,subdir=proto"
-	cd sdks/julia && julia --project=LogicalQueryProtocol generate_proto.jl
+	cd sdks/julia && julia --project=LogicalQueryProtocol.jl generate_proto.jl
 
 # ---------- parser generation ----------
 
@@ -123,7 +123,7 @@ $(PY_PARSER): $(PROTO_FILES) $(GRAMMAR) $(PY_TEMPLATE)
 
 parser-julia: $(JL_PARSER)
 $(JL_PARSER): $(PROTO_FILES) $(GRAMMAR) $(JL_TEMPLATE)
-	$(META_CLI) $(META_PROTO_ARGS) --parser julia -o ../sdks/julia/LogicalQueryProtocol/src/parser.jl
+	$(META_CLI) $(META_PROTO_ARGS) --parser julia -o ../sdks/julia/LogicalQueryProtocol.jl/src/parser.jl
 
 parser-go: $(GO_PARSER)
 $(GO_PARSER): $(PROTO_FILES) $(GRAMMAR) $(GO_TEMPLATE)
@@ -135,7 +135,7 @@ force-parser-python:
 	$(META_CLI) $(META_PROTO_ARGS) --parser python -o ../sdks/python/src/lqp/gen/parser.py
 
 force-parser-julia:
-	$(META_CLI) $(META_PROTO_ARGS) --parser julia -o ../sdks/julia/LogicalQueryProtocol/src/parser.jl
+	$(META_CLI) $(META_PROTO_ARGS) --parser julia -o ../sdks/julia/LogicalQueryProtocol.jl/src/parser.jl
 
 force-parser-go:
 	$(META_CLI) $(META_PROTO_ARGS) --parser go -o ../sdks/go/src/parser.go
@@ -150,7 +150,7 @@ $(PY_PRINTER): $(PROTO_FILES) $(GRAMMAR) $(PY_PRINTER_TEMPLATE)
 
 printer-julia: $(JL_PRINTER)
 $(JL_PRINTER): $(PROTO_FILES) $(GRAMMAR) $(JL_PRINTER_TEMPLATE)
-	$(META_CLI) $(META_PROTO_ARGS) --printer julia -o ../sdks/julia/LogicalQueryProtocol/src/pretty.jl
+	$(META_CLI) $(META_PROTO_ARGS) --printer julia -o ../sdks/julia/LogicalQueryProtocol.jl/src/pretty.jl
 
 printer-go: $(GO_PRINTER)
 $(GO_PRINTER): $(PROTO_FILES) $(GRAMMAR) $(GO_PRINTER_TEMPLATE)
@@ -162,7 +162,7 @@ force-printer-python:
 	$(META_CLI) $(META_PROTO_ARGS) --printer python -o ../sdks/python/src/lqp/gen/pretty.py
 
 force-printer-julia:
-	$(META_CLI) $(META_PROTO_ARGS) --printer julia -o ../sdks/julia/LogicalQueryProtocol/src/pretty.jl
+	$(META_CLI) $(META_PROTO_ARGS) --printer julia -o ../sdks/julia/LogicalQueryProtocol.jl/src/pretty.jl
 
 force-printer-go:
 	$(META_CLI) $(META_PROTO_ARGS) --printer go -o ../sdks/go/src/pretty.go
@@ -178,7 +178,7 @@ update-snapshots: $(PY_PARSER) $(PY_PROTO_GENERATED)
 	cd sdks/python && uv run python -m pytest --snapshot-update
 
 test-julia: $(JL_PARSER) $(JL_PROTO_GENERATED)
-	cd sdks/julia && julia --project=LogicalQueryProtocol -e 'using Pkg; Pkg.test()'
+	cd sdks/julia && julia --project=LogicalQueryProtocol.jl -e 'using Pkg; Pkg.test()'
 
 test-go: $(GO_PARSER) $(GO_PROTO_GENERATED)
 	cd sdks/go && go test ./test/...

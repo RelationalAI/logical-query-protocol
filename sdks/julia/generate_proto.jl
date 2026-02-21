@@ -1,14 +1,14 @@
 #!/usr/bin/env julia
 
 using Pkg
-Pkg.activate("LogicalQueryProtocol")
+Pkg.activate("LogicalQueryProtocol.jl")
 Pkg.instantiate()
 
 using ProtoBuf
 
 # Generate Julia code from proto files
 proto_dir = "../../proto"
-output_dir = "LogicalQueryProtocol/src/gen"
+output_dir = "LogicalQueryProtocol.jl/src/gen"
 
 protojl(
     [

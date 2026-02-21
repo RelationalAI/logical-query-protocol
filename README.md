@@ -78,7 +78,7 @@ package to PyPI. To release a new version:
 
 1. Make sure that everything is up-to-date by running `make`.
 2. File a PR that updates the version in `sdks/python/pyproject.toml` and
-   `sdks/julia/LogicalQueryProtocol/Project.toml`. Note that the Go SDK version is
+   `sdks/julia/LogicalQueryProtocol.jl/Project.toml`. Note that the Go SDK version is
    automatically determined by the release tag in GitHub.
 3. Get approval and merge into `main`.
 4. Create a new GitHub release from `main` with a tag matching the version (e.g.
