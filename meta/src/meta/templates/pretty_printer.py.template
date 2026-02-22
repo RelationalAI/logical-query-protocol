@@ -26,7 +26,7 @@ class ParseError(Exception):
 class PrettyPrinter:
     """Pretty printer for protobuf messages."""
 
-    def __init__(self, io: Optional[IO[str]] = None, max_width: int = 92):
+    def __init__(self, io: Optional[IO[str]] = None, max_width: int = 92, print_symbolic_relation_ids: bool = True):
         self.io = io if io is not None else StringIO()
         self.indent_stack: list[int] = [0]
         self.column = 0
@@ -36,6 +36,7 @@ class PrettyPrinter:
         self._computing: set[int] = set()
         self._memo: dict[int, str] = {{}}
         self._memo_refs: list[Any] = []
+        self.print_symbolic_relation_ids = print_symbolic_relation_ids
         self._debug_info: dict[tuple[int, int], str] = {{}}
 
     @property
@@ -161,9 +162,11 @@ class PrettyPrinter:
         for rid, name in zip(debug_info.ids, debug_info.orig_names):
             self._debug_info[(rid.id_low, rid.id_high)] = name
 
-    def relation_id_to_string(self, msg: logic_pb2.RelationId) -> str:
+    def relation_id_to_string(self, msg: logic_pb2.RelationId) -> str | None:
         """Convert RelationId to string representation using debug info."""
-        return self._debug_info.get((msg.id_low, msg.id_high), "")
+        if not self.print_symbolic_relation_ids:
+            return None
+        return self._debug_info.get((msg.id_low, msg.id_high), None)
 
     def relation_id_to_uint128(self, msg: logic_pb2.RelationId) -> logic_pb2.UInt128Value:
         """Convert RelationId to UInt128Value representation."""
@@ -174,15 +177,42 @@ class PrettyPrinter:
         escaped = s.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t')
         return '"' + escaped + '"'
 
+    def write_debug_info(self) -> None:
+        """Write accumulated debug info as comments at the end of the output."""
+        if not self._debug_info:
+            return
+        self.io.write('\n;; Debug information\n')
+        self.io.write(';; -----------------------\n')
+        self.io.write(';; Original names\n')
+        for (id_low, id_high), name in sorted(self._debug_info.items(), key=lambda x: x[1]):
+            value = (id_high << 64) | id_low
+            self.io.write(f';; \t ID `0x{{value:x}}` -> `{{name}}`\n')
+
     # --- Helper functions ---
 {named_function_defns}
 
     # --- Pretty-print methods ---
 {pretty_nonterminal_defns}
 
+    # --- Auto-generated printers for uncovered proto types ---
+{extra_pretty_defns}
+
+    # --- Dispatch ---
+{pprint_dispatch_defns}
+{dispatch_function}
+
 def pretty(msg: Any, io: Optional[IO[str]] = None, max_width: int = 92) -> str:
     """Pretty print a protobuf message and return the string representation."""
     printer = PrettyPrinter(io, max_width=max_width)
     printer.pretty_{start_name}(msg)
     printer.newline()
+    return printer.get_output()
+
+
+def pretty_debug(msg: Any, io: Optional[IO[str]] = None, max_width: int = 92) -> str:
+    """Pretty print a protobuf message with raw relation IDs and debug info appended as comments."""
+    printer = PrettyPrinter(io, max_width=max_width, print_symbolic_relation_ids=False)
+    printer.pretty_{start_name}(msg)
+    printer.newline()
+    printer.write_debug_info()
     return printer.get_output()

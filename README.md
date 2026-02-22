@@ -58,11 +58,11 @@ grammar in `meta/src/meta/grammar.y`. From the grammar we can automatically deri
 and pretty printers for the S-expression representation of LQP, which is used for testing
 and debugging.
 
-When you have updated the grammar, you can regenerate the parsers and verify that they match
-by running
+When you have updated the grammar, you can regenerate the SDKs (protobuf bindings, parser,
+and pretty printer for each language) and run the tests to verify them.
 
 ```
-make parsers
+make
 make test
 ```
 
@@ -76,8 +76,14 @@ The Python SDK is [deployed to PyPI](https://pypi.org/project/lqp/). Publishing 
 via GitHub Actions: creating a GitHub release triggers a workflow that builds and uploads the
 package to PyPI. To release a new version:
 
-1. Update the version in `sdks/python/pyproject.toml`
-2. Create a new GitHub release
+1. Make sure that everything is up-to-date by running `make`.
+2. File a PR that updates the version in `sdks/python/pyproject.toml` and
+   `sdks/julia/LogicalQueryProtocol.jl/Project.toml`. Note that the Go SDK version is
+   automatically determined by the release tag in GitHub.
+3. Get approval and merge into `main`.
+4. Create a new GitHub release from `main` with a tag matching the version (e.g.
+   `gh release create v0.3.0 --title "v0.3.0" --generate-notes`). The release must be
+   created after merging the version bump, since the workflow checks out the default branch.
 
 To publish manually instead:
 

@@ -360,10 +360,12 @@ def
 relation_id
     : ":" SYMBOL
       construct: $$ = builtin.relation_id_from_string($2)
-      deconstruct: $2: String = deconstruct_relation_id_string($$)
+      deconstruct if builtin.relation_id_to_string($$) is not None:
+        $2: String = deconstruct_relation_id_string($$)
     | UINT128
       construct: $$ = builtin.relation_id_from_uint128($1)
-      deconstruct: $1: logic.UInt128Value = deconstruct_relation_id_uint128($$)
+      deconstruct:
+        $1: logic.UInt128Value = deconstruct_relation_id_uint128($$)
 
 abstraction
     : "(" bindings formula ")"
@@ -501,11 +503,11 @@ formula
         $1: logic.Reduce = $$.reduce
     | conjunction
       construct: $$ = logic.Formula(conjunction=$1)
-      deconstruct if builtin.has_proto_field($$, 'conjunction'):
+      deconstruct if builtin.has_proto_field($$, 'conjunction') and not builtin.is_empty($$.conjunction.args):
         $1: logic.Conjunction = $$.conjunction
     | disjunction
       construct: $$ = logic.Formula(disjunction=$1)
-      deconstruct if builtin.has_proto_field($$, 'disjunction'):
+      deconstruct if builtin.has_proto_field($$, 'disjunction') and not builtin.is_empty($$.disjunction.args):
         $1: logic.Disjunction = $$.disjunction
     | not
       construct: $$ = logic.Formula(not=$1)
@@ -1415,16 +1417,14 @@ def deconstruct_export_csv_config(msg: transactions.ExportCSVConfig) -> List[Tup
     return builtin.list_sort(result)
 
 
-def deconstruct_relation_id_string(msg: logic.RelationId) -> Optional[String]:
-    name: String = builtin.relation_id_to_string(msg)
-    if name != "":
-        return name
-    return None
+def deconstruct_relation_id_string(msg: logic.RelationId) -> String:
+    name: Optional[String] = builtin.relation_id_to_string(msg)
+    return builtin.unwrap_option(name)
 
 
 def deconstruct_relation_id_uint128(msg: logic.RelationId) -> Optional[logic.UInt128Value]:
-    name: String = builtin.relation_id_to_string(msg)
-    if name == "":
+    name: Optional[String] = builtin.relation_id_to_string(msg)
+    if name is None:
         return builtin.relation_id_to_uint128(msg)
     return None
 

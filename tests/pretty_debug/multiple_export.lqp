@@ -1,0 +1,64 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (def 0x208b0074ba2817b6 ([row::INT v::INT] (and (= row 1) (= 2 v))))
+          (def 0x2a98c62d6dc8f9c1 ([row::INT v::STRING] (and (= row 1) (= v "hello"))))
+          (def
+            0x32310ae0104571ed
+            ([row_1::STRING row_2::(DECIMAL 18 6) row_3::UINT128 row_4::FLOAT v::FLOAT]
+             (and
+               (= row_1 "b")
+               (primitive :rel_primitive_parse_decimal #64 #6 "12.12" row_2)
+               (= row_3 0x123abc)
+               (= row_4 1.234)
+               (= v 6.1))))
+          (def
+            0xa4404e192fa9020f
+            ([row_1::STRING row_2::(DECIMAL 18 6) row_3::UINT128 row_4::FLOAT v::INT]
+             (and
+               (= row_1 "b")
+               (primitive :rel_primitive_parse_decimal #64 #6 "12.12" row_2)
+               (= row_3 0x123abc)
+               (= row_4 1.234)
+               (= v 123)))))))
+    (reads
+      (export
+        (export_csv_config
+          (path "wrong")
+          (columns
+            (column "col1name" 0x208b0074ba2817b6)
+            (column "col2name" 0x2a98c62d6dc8f9c1))
+          {
+           :compression ""
+           :partition_size 10
+           :syntax_delim ","
+           :syntax_escapechar "\\"
+           :syntax_header_row true
+           :syntax_missing_string ""
+           :syntax_quotechar "\""}))
+      (export
+        (export_csv_config
+          (path "wrong")
+          (columns
+            (column "blahblah" 0x32310ae0104571ed)
+            (column "foofoo" 0xa4404e192fa9020f))
+          {
+           :compression ""
+           :partition_size 0
+           :syntax_delim ","
+           :syntax_escapechar "\\"
+           :syntax_header_row true
+           :syntax_missing_string ""
+           :syntax_quotechar "\""})))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `0x208b0074ba2817b6` -> `cola1`
+;; 	 ID `0x2a98c62d6dc8f9c1` -> `cola2`
+;; 	 ID `0x32310ae0104571ed` -> `colb1`
+;; 	 ID `0xa4404e192fa9020f` -> `colb2`

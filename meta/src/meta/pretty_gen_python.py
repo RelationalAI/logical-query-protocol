@@ -10,8 +10,18 @@ _TEMPLATE_PATH = Path(__file__).parent / "templates" / "pretty_printer.py.templa
 
 
 def generate_pretty_printer_python(
-    grammar: Grammar, command_line: str | None = None, proto_messages=None
+    grammar: Grammar,
+    command_line: str | None = None,
+    proto_messages=None,
+    proto_enums=None,
 ) -> str:
     """Generate pretty printer in Python."""
     codegen = PythonCodeGenerator(proto_messages=proto_messages)
-    return generate_pretty_printer(grammar, codegen, _TEMPLATE_PATH, command_line)
+    return generate_pretty_printer(
+        grammar,
+        codegen,
+        _TEMPLATE_PATH,
+        command_line,
+        proto_messages=proto_messages,
+        proto_enums=proto_enums,
+    )

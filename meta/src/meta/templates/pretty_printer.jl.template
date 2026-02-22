@@ -1,10 +1,51 @@
-# Auto-generated pretty printer.
-#
-# Generated from protobuf specifications.
+"""
+    Pretty
+
+Auto-generated pretty printer module.
+
+Generated from protobuf specifications.
 # Do not modify this file! If you need to modify the pretty printer, edit the generator code
-# in `python-tools/src/meta` or edit the protobuf specification in `proto/v1`.
-#
-# {command_line_comment}
+in `meta/` or edit the protobuf specification in `proto/v1`.
+
+{command_line_comment}
+"""
+module Pretty
+
+using ProtoBuf: OneOf
+
+# Import protobuf modules and helpers from parent
+using ..relationalai: relationalai
+using ..relationalai.lqp.v1
+using ..LogicalQueryProtocol: LQPSyntax, LQPFragmentId, _has_proto_field, _get_oneof_field
+using ..Parser: ParseError
+const Proto = relationalai.lqp.v1
+
+"""
+    ConstantFormatter
+
+Abstract type for customizing how constants are formatted in the pretty printer.
+
+Users can define subtypes of `ConstantFormatter` and override format functions
+(like `format_decimal`, `format_int128`, `format_uint128`) to customize how
+constants are displayed.
+
+See `DefaultConstantFormatter` for the default implementation.
+"""
+abstract type ConstantFormatter end
+
+"""
+    DefaultConstantFormatter <: ConstantFormatter
+
+Default constant formatter that produces standard formatting for all constants.
+"""
+struct DefaultConstantFormatter <: ConstantFormatter end
+
+"""
+    DEFAULT_CONSTANT_FORMATTER
+
+Singleton instance of DefaultConstantFormatter.
+"""
+const DEFAULT_CONSTANT_FORMATTER = DefaultConstantFormatter()
 
 mutable struct PrettyPrinter
     io::IOBuffer
@@ -16,14 +57,18 @@ mutable struct PrettyPrinter
     _computing::Set{{UInt}}
     _memo::Dict{{UInt,String}}
     _memo_refs::Vector{{Any}}
+    print_symbolic_relation_ids::Bool
     debug_info::Dict{{Tuple{{UInt64,UInt64}},String}}
+    constant_formatter::ConstantFormatter
 end
 
-function PrettyPrinter(; max_width::Int=92)
+function PrettyPrinter(; max_width::Int=92, print_symbolic_relation_ids::Bool=true, constant_formatter::ConstantFormatter=DEFAULT_CONSTANT_FORMATTER)
     return PrettyPrinter(
         IOBuffer(), [0], 0, true, "\n", max_width,
         Set{{UInt}}(), Dict{{UInt,String}}(), Any[],
+        print_symbolic_relation_ids,
         Dict{{Tuple{{UInt64,UInt64}},String}}(),
+        constant_formatter,
     )
 end
 
@@ -122,7 +167,14 @@ function get_output(pp::PrettyPrinter)::String
     return String(copy(pp.io.data[1:pp.io.size]))
 end
 
-function format_decimal(pp::PrettyPrinter, msg::Proto.DecimalValue)::String
+"""
+    format_decimal(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.DecimalValue)::String
+
+Format a DecimalValue as a string.
+
+Override this function for custom ConstantFormatter subtypes to customize decimal formatting.
+"""
+function format_decimal(formatter::DefaultConstantFormatter, pp::PrettyPrinter, msg::Proto.DecimalValue)::String
     int_val = Int128(msg.value.high) << 64 | Int128(msg.value.low)
     if msg.value.high & (UInt64(1) << 63) != 0
         int_val -= Int128(1) << 128
@@ -144,7 +196,14 @@ function format_decimal(pp::PrettyPrinter, msg::Proto.DecimalValue)::String
     return sign * decimal_str * "d" * string(msg.precision)
 end
 
-function format_int128(pp::PrettyPrinter, msg::Proto.Int128Value)::String
+"""
+    format_int128(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.Int128Value)::String
+
+Format an Int128Value as a string.
+
+Override this function for custom ConstantFormatter subtypes to customize int128 formatting.
+"""
+function format_int128(formatter::DefaultConstantFormatter, pp::PrettyPrinter, msg::Proto.Int128Value)::String
     value = Int128(msg.high) << 64 | Int128(msg.low)
     if msg.high & (UInt64(1) << 63) != 0
         value -= Int128(1) << 128
@@ -152,15 +211,82 @@ function format_int128(pp::PrettyPrinter, msg::Proto.Int128Value)::String
     return string(value) * "i128"
 end
 
-function format_uint128(pp::PrettyPrinter, msg::Proto.UInt128Value)::String
+"""
+    format_uint128(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.UInt128Value)::String
+
+Format a UInt128Value as a string.
+
+Override this function for custom ConstantFormatter subtypes to customize uint128 formatting.
+"""
+function format_uint128(formatter::DefaultConstantFormatter, pp::PrettyPrinter, msg::Proto.UInt128Value)::String
     value = UInt128(msg.high) << 64 | UInt128(msg.low)
     return "0x" * string(value, base=16)
 end
 
-function format_float64(v::Float64)::String
-    return lowercase(string(v))
+"""
+    format_int(formatter::ConstantFormatter, pp::PrettyPrinter, v::Int64)::String
+
+Format an integer value as a string.
+
+Override this function for custom ConstantFormatter subtypes to customize integer formatting.
+"""
+format_int(formatter::DefaultConstantFormatter, pp::PrettyPrinter, v::Int64)::String = string(v)
+
+"""
+    format_float(formatter::ConstantFormatter, pp::PrettyPrinter, v::Float64)::String
+
+Format a Float64 value as a string.
+
+Override this function for custom ConstantFormatter subtypes to customize float formatting.
+"""
+format_float(formatter::DefaultConstantFormatter, pp::PrettyPrinter, v::Float64)::String = lowercase(string(v))
+
+"""
+    format_string(formatter::ConstantFormatter, pp::PrettyPrinter, s::AbstractString)::String
+
+Format a string value with proper escaping.
+
+Override this function for custom ConstantFormatter subtypes to customize string formatting.
+"""
+function format_string(formatter::DefaultConstantFormatter, pp::PrettyPrinter, s::AbstractString)::String
+    escaped = replace(s, "\\" => "\\\\")
+    escaped = replace(escaped, "\"" => "\\\"")
+    escaped = replace(escaped, "\n" => "\\n")
+    escaped = replace(escaped, "\r" => "\\r")
+    escaped = replace(escaped, "\t" => "\\t")
+    return "\"" * escaped * "\""
 end
 
+"""
+    format_bool(formatter::ConstantFormatter, pp::PrettyPrinter, v::Bool)::String
+
+Format a boolean value as a string.
+
+Override this function for custom ConstantFormatter subtypes to customize boolean formatting.
+"""
+format_bool(formatter::DefaultConstantFormatter, pp::PrettyPrinter, v::Bool)::String = v ? "true" : "false"
+
+# Fallback methods for custom formatters that don't override all types
+# These delegate to the default formatter
+format_decimal(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.DecimalValue)::String = format_decimal(DEFAULT_CONSTANT_FORMATTER, pp, msg)
+format_int128(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.Int128Value)::String = format_int128(DEFAULT_CONSTANT_FORMATTER, pp, msg)
+format_uint128(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.UInt128Value)::String = format_uint128(DEFAULT_CONSTANT_FORMATTER, pp, msg)
+format_int(formatter::ConstantFormatter, pp::PrettyPrinter, v::Int64)::String = format_int(DEFAULT_CONSTANT_FORMATTER, pp, v)
+format_float(formatter::ConstantFormatter, pp::PrettyPrinter, v::Float64)::String = format_float(DEFAULT_CONSTANT_FORMATTER, pp, v)
+format_string(formatter::ConstantFormatter, pp::PrettyPrinter, s::AbstractString)::String = format_string(DEFAULT_CONSTANT_FORMATTER, pp, s)
+format_bool(formatter::ConstantFormatter, pp::PrettyPrinter, v::Bool)::String = format_bool(DEFAULT_CONSTANT_FORMATTER, pp, v)
+
+# Backward compatibility: convenience methods that use pp.constant_formatter
+format_decimal(pp::PrettyPrinter, msg::Proto.DecimalValue)::String = format_decimal(pp.constant_formatter, pp, msg)
+format_int128(pp::PrettyPrinter, msg::Proto.Int128Value)::String = format_int128(pp.constant_formatter, pp, msg)
+format_uint128(pp::PrettyPrinter, msg::Proto.UInt128Value)::String = format_uint128(pp.constant_formatter, pp, msg)
+format_int(pp::PrettyPrinter, v::Int64)::String = format_int(pp.constant_formatter, pp, v)
+format_float(pp::PrettyPrinter, v::Float64)::String = format_float(pp.constant_formatter, pp, v)
+format_string(pp::PrettyPrinter, s::AbstractString)::String = format_string(pp.constant_formatter, pp, s)
+format_bool(pp::PrettyPrinter, v::Bool)::String = format_bool(pp.constant_formatter, pp, v)
+
+# Legacy function names for backward compatibility
+format_float64(v::Float64)::String = lowercase(string(v))
 function format_string_value(s::AbstractString)::String
     escaped = replace(s, "\\" => "\\\\")
     escaped = replace(escaped, "\"" => "\\\"")
@@ -188,12 +314,25 @@ function start_pretty_fragment(pp::PrettyPrinter, msg::Proto.Fragment)::Nothing
     return nothing
 end
 
-function relation_id_to_string(pp::PrettyPrinter, msg::Proto.RelationId)::String
-    return get(pp.debug_info, (msg.id_low, msg.id_high), "")
+function relation_id_to_string(pp::PrettyPrinter, msg::Proto.RelationId)::Union{{String,Nothing}}
+    !pp.print_symbolic_relation_ids && return nothing
+    return get(pp.debug_info, (msg.id_low, msg.id_high), nothing)
 end
 
 function relation_id_to_uint128(pp::PrettyPrinter, msg::Proto.RelationId)
     return Proto.UInt128Value(msg.id_low, msg.id_high)
+end
+
+function write_debug_info(pp::PrettyPrinter)::Nothing
+    isempty(pp.debug_info) && return nothing
+    Base.write(pp.io, "\n;; Debug information\n")
+    Base.write(pp.io, ";; -----------------------\n")
+    Base.write(pp.io, ";; Original names\n")
+    for ((id_low, id_high), name) in sort(collect(pp.debug_info); by=x -> x[2])
+        value = UInt128(id_high) << 64 | UInt128(id_low)
+        Base.write(pp.io, ";; \t ID `0x" * string(value, base=16) * "` -> `" * name * "`\n")
+    end
+    return nothing
 end
 
 # --- Helper functions ---
@@ -202,9 +341,72 @@ end
 # --- Pretty-print functions ---
 {pretty_nonterminal_defns}
 
-function pretty(msg::Proto.Transaction; max_width::Int=92)::String
-    pp = PrettyPrinter(max_width=max_width)
+# --- Auto-generated printers for uncovered proto types ---
+{extra_pretty_defns}
+
+# --- pprint dispatch (generated) ---
+{pprint_dispatch_defns}
+
+# --- pprint API ---
+
+struct LQPSyntaxWithDebug{{T<:LQPSyntax}}
+    syntax::T
+    debug_info::Proto.DebugInfo
+end
+
+function pprint(io::IO, x::LQPSyntax; max_width::Int=92, constant_formatter::ConstantFormatter=DEFAULT_CONSTANT_FORMATTER)
+    pp = PrettyPrinter(max_width=max_width, constant_formatter=constant_formatter)
+    _pprint_dispatch(pp, x)
+    newline(pp)
+    print(io, get_output(pp))
+    return nothing
+end
+
+function pprint(io::IO, x::LQPSyntaxWithDebug; max_width::Int=92, constant_formatter::ConstantFormatter=DEFAULT_CONSTANT_FORMATTER)
+    pp = PrettyPrinter(max_width=max_width, print_symbolic_relation_ids=false, constant_formatter=constant_formatter)
+    di = x.debug_info
+    for (rid, name) in zip(di.ids, di.orig_names)
+        pp.debug_info[(rid.id_low, rid.id_high)] = name
+    end
+    _pprint_dispatch(pp, x.syntax)
+    newline(pp)
+    write_debug_info(pp)
+    print(io, get_output(pp))
+    return nothing
+end
+
+function pprint(io::IO, x::LQPFragmentId)
+    print(io, String(copy(x.id)))
+    return nothing
+end
+
+pprint(x; max_width::Int=92, constant_formatter::ConstantFormatter=DEFAULT_CONSTANT_FORMATTER) = pprint(stdout, x; max_width=max_width, constant_formatter=constant_formatter)
+
+function pretty(msg::Proto.Transaction; max_width::Int=92, constant_formatter::ConstantFormatter=DEFAULT_CONSTANT_FORMATTER)::String
+    pp = PrettyPrinter(max_width=max_width, constant_formatter=constant_formatter)
     pretty_{start_name}(pp, msg)
     newline(pp)
     return get_output(pp)
 end
+
+function pretty_debug(msg::Proto.Transaction; max_width::Int=92, constant_formatter::ConstantFormatter=DEFAULT_CONSTANT_FORMATTER)::String
+    pp = PrettyPrinter(max_width=max_width, print_symbolic_relation_ids=false, constant_formatter=constant_formatter)
+    pretty_{start_name}(pp, msg)
+    newline(pp)
+    write_debug_info(pp)
+    return get_output(pp)
+end
+
+# Export ConstantFormatter types for user customization
+export ConstantFormatter, DefaultConstantFormatter, DEFAULT_CONSTANT_FORMATTER
+# Export format functions for users to extend
+export format_decimal, format_int128, format_uint128, format_int, format_float, format_string, format_bool
+# Export legacy format functions for backward compatibility
+export format_float64, format_string_value
+# Export pretty printing API
+export pprint, pretty, pretty_debug
+export PrettyPrinter
+# Export internal helpers for testing
+export indent_level, indent!, try_flat
+
+end # module Pretty

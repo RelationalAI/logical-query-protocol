@@ -296,7 +296,9 @@ def run(args) -> int:
                 + ["--printer", args.printer]
             )
             gen_fn = _PRINTER_GENERATORS[args.printer]
-            output_text = gen_fn(grammar, command_line, proto_messages)
+            output_text = gen_fn(
+                grammar, command_line, proto_messages, proto_enums=proto_parser.enums
+            )
             write_output(
                 output_text,
                 args.output,

@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 
 from lqp.gen.parser import parse as generated_parse
-from lqp.gen.pretty import PrettyPrinter, pretty
+from lqp.gen.pretty import PrettyPrinter, pretty, pretty_debug
 from lqp.proto.v1 import fragments_pb2, logic_pb2, transactions_pb2
 
 from .utils import REPO_ROOT, TEST_INPUTS_DIR, get_bin_input_files, get_lqp_input_files
@@ -272,7 +272,7 @@ class TestRelationIdLookup:
     def test_relation_id_to_string_without_debug_info(self):
         pp = PrettyPrinter()
         msg = logic_pb2.RelationId(id_low=42, id_high=0)
-        assert pp.relation_id_to_string(msg) == ""
+        assert pp.relation_id_to_string(msg) is None
 
     def test_fragment_id_to_string(self):
         pp = PrettyPrinter()
@@ -413,6 +413,19 @@ def test_pretty_from_binary_snapshot(snapshot, bin_file):
     txn.ParseFromString(data)
     printed = pretty(txn)
     snapshot.snapshot_dir = str(REPO_ROOT / "tests" / "pretty")
+    snapshot_filename = os.path.basename(bin_file).replace(".bin", ".lqp")
+    snapshot.assert_match(printed, snapshot_filename)
+
+
+@pytest.mark.parametrize("bin_file", get_bin_input_files())
+def test_pretty_debug_from_binary_snapshot(snapshot, bin_file):
+    """Debug pretty-printing a decoded binary must match the saved snapshot."""
+    with open(bin_file, "rb") as f:
+        data = f.read()
+    txn = transactions_pb2.Transaction()
+    txn.ParseFromString(data)
+    printed = pretty_debug(txn)
+    snapshot.snapshot_dir = str(REPO_ROOT / "tests" / "pretty_debug")
     snapshot_filename = os.path.basename(bin_file).replace(".bin", ".lqp")
     snapshot.assert_match(printed, snapshot_filename)
 

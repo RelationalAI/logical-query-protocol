@@ -1,0 +1,25 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (def 0x3a6eb0790f39ac87 ([] (= 1 1)))
+          (def 0x1 ([] (atom 0x3a6eb0790f39ac87))))))
+    (reads (demand 0x3a6eb0790f39ac87) (abort 0x1)))
+  (epoch
+    (writes (define (fragment :f2 (def 0x19b409021a6c5960 ([] (= 2 2))))))
+    (reads
+      (what_if
+        :my_branch
+        (epoch
+          (writes (define (fragment :f3 (def 0x33bf6fbd7cd83797 ([] (= 3 3))))))
+          (reads (output :inner_out 0x33bf6fbd7cd83797)))))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `0x19b409021a6c5960` -> `branch_data`
+;; 	 ID `0x3a6eb0790f39ac87` -> `data`
+;; 	 ID `0x33bf6fbd7cd83797` -> `inner`
