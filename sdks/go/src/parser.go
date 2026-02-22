@@ -629,8 +629,8 @@ func (p *Parser) construct_csv_config(config_dict [][]interface{}) *pb.CSVConfig
 	_t1380 := p._extract_value_string(dictGetValue(config, "csv_compression"), "auto")
 	compression := _t1380
 	_t1381 := p._extract_value_int64(dictGetValue(config, "csv_partition_size_mb"), 0)
-	partition_size := _t1381
-	_t1382 := &pb.CSVConfig{HeaderRow: header_row, Skip: skip, NewLine: new_line, Delimiter: delimiter, Quotechar: quotechar, Escapechar: escapechar, Comment: comment, MissingStrings: missing_strings, DecimalSeparator: decimal_separator, Encoding: encoding, Compression: compression, PartitionSizeMb: partition_size}
+	partition_size_mb := _t1381
+	_t1382 := &pb.CSVConfig{HeaderRow: header_row, Skip: skip, NewLine: new_line, Delimiter: delimiter, Quotechar: quotechar, Escapechar: escapechar, Comment: comment, MissingStrings: missing_strings, DecimalSeparator: decimal_separator, Encoding: encoding, Compression: compression, PartitionSizeMb: partition_size_mb}
 	return _t1382
 }
 

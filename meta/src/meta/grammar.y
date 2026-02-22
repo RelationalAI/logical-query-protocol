@@ -1199,7 +1199,7 @@ def construct_csv_config(config_dict: Sequence[Tuple[String, logic.Value]]) -> l
     decimal_separator: str = _extract_value_string(builtin.dict_get(config, "csv_decimal_separator"), ".")
     encoding: str = _extract_value_string(builtin.dict_get(config, "csv_encoding"), "utf-8")
     compression: str = _extract_value_string(builtin.dict_get(config, "csv_compression"), "auto")
-    partition_size: int = _extract_value_int64(builtin.dict_get(config, "csv_partition_size_mb"), 0)
+    partition_size_mb: int = _extract_value_int64(builtin.dict_get(config, "csv_partition_size_mb"), 0)
     return logic.CSVConfig(
         header_row=header_row,
         skip=skip,
@@ -1212,7 +1212,7 @@ def construct_csv_config(config_dict: Sequence[Tuple[String, logic.Value]]) -> l
         decimal_separator=decimal_separator,
         encoding=encoding,
         compression=compression,
-        partition_size_mb=partition_size,
+        partition_size_mb=partition_size_mb,
     )
 
 

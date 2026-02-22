@@ -407,8 +407,8 @@ function construct_csv_config(parser::ParserState, config_dict::Vector{Tuple{Str
     _t1369 = _extract_value_string(parser, get(config, "csv_compression", nothing), "auto")
     compression = _t1369
     _t1370 = _extract_value_int64(parser, get(config, "csv_partition_size_mb", nothing), 0)
-    partition_size = _t1370
-    _t1371 = Proto.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression, partition_size_mb=partition_size)
+    partition_size_mb = _t1370
+    _t1371 = Proto.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression, partition_size_mb=partition_size_mb)
     return _t1371
 end
 
