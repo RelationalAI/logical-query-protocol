@@ -4463,7 +4463,7 @@ function pretty_export_csv_config(pp::PrettyPrinter, msg::Proto.ExportCSVConfig)
                 pretty_export_csv_path(pp, field1255)
                 newline(pp)
                 field1256 = unwrapped1254[2]
-                pretty_export_csv_columns(pp, field1256)
+                pretty_export_csv_columns_list(pp, field1256)
                 newline(pp)
                 field1257 = unwrapped1254[3]
                 pretty_config_dict(pp, field1257)
@@ -4583,8 +4583,8 @@ function pretty_export_csv_column(pp::PrettyPrinter, msg::Proto.ExportCSVColumn)
     return nothing
 end
 
-function pretty_export_csv_columns(pp::PrettyPrinter, msg::Vector{Proto.ExportCSVColumn})
-    flat1281 = try_flat(pp, msg, pretty_export_csv_columns)
+function pretty_export_csv_columns_list(pp::PrettyPrinter, msg::Vector{Proto.ExportCSVColumn})
+    flat1281 = try_flat(pp, msg, pretty_export_csv_columns_list)
     if !isnothing(flat1281)
         write(pp, flat1281)
         return nothing
@@ -4879,7 +4879,7 @@ _pprint_dispatch(pp::PrettyPrinter, x::Proto.Export) = pretty_export(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.ExportCSVConfig) = pretty_export_csv_config(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.ExportCSVSource) = pretty_export_csv_source(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.ExportCSVColumn) = pretty_export_csv_column(pp, x)
-_pprint_dispatch(pp::PrettyPrinter, x::Vector{Proto.ExportCSVColumn}) = pretty_export_csv_columns(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Vector{Proto.ExportCSVColumn}) = pretty_export_csv_columns_list(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.DebugInfo) = pretty_debug_info(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.BeTreeConfig) = pretty_be_tree_config(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.BeTreeLocator) = pretty_be_tree_locator(pp, x)

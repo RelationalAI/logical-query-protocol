@@ -3761,7 +3761,7 @@ class PrettyPrinter:
                     self.pretty_export_csv_path(field1255)
                     self.newline()
                     field1256 = unwrapped1254[1]
-                    self.pretty_export_csv_columns(field1256)
+                    self.pretty_export_csv_columns_list(field1256)
                     self.newline()
                     field1257 = unwrapped1254[2]
                     self.pretty_config_dict(field1257)
@@ -3862,8 +3862,8 @@ class PrettyPrinter:
             self.dedent()
             self.write(")")
 
-    def pretty_export_csv_columns(self, msg: Sequence[transactions_pb2.ExportCSVColumn]):
-        flat1281 = self._try_flat(msg, self.pretty_export_csv_columns)
+    def pretty_export_csv_columns_list(self, msg: Sequence[transactions_pb2.ExportCSVColumn]):
+        flat1281 = self._try_flat(msg, self.pretty_export_csv_columns_list)
         if flat1281 is not None:
             assert flat1281 is not None
             self.write(flat1281)

@@ -98,7 +98,7 @@
 %nonterm exists logic.Exists
 %nonterm export transactions.Export
 %nonterm export_csv_column transactions.ExportCSVColumn
-%nonterm export_csv_columns Sequence[transactions.ExportCSVColumn]
+%nonterm export_csv_columns_list Sequence[transactions.ExportCSVColumn]
 %nonterm export_csv_config transactions.ExportCSVConfig
 %nonterm export_csv_path String
 %nonterm export_csv_source transactions.ExportCSVSource
@@ -1070,7 +1070,7 @@ export_csv_config
         $3: String = $$.path
         $4: transactions.ExportCSVSource = $$.csv_source
         $5: logic.CSVConfig = $$.csv_config
-    | "(" "export_csv_config" export_csv_path export_csv_columns config_dict ")"
+    | "(" "export_csv_config" export_csv_path export_csv_columns_list config_dict ")"
       construct: $$ = construct_export_csv_config($3, $4, $5)
       deconstruct if builtin.length($$.data_columns) != 0:
         $3: String = $$.path
@@ -1080,7 +1080,7 @@ export_csv_config
 export_csv_path
     : "(" "path" STRING ")"
 
-export_csv_columns
+export_csv_columns_list
     : "(" "columns" export_csv_column* ")"
 
 export_csv_column

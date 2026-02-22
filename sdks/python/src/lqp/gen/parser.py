@@ -2829,12 +2829,12 @@ class Parser:
             self.consume_literal("export_csv_config")
             _t1328 = self.parse_export_csv_path()
             export_csv_path716 = _t1328
-            _t1329 = self.parse_export_csv_columns()
-            export_csv_columns717 = _t1329
+            _t1329 = self.parse_export_csv_columns_list()
+            export_csv_columns_list717 = _t1329
             _t1330 = self.parse_config_dict()
             config_dict718 = _t1330
             self.consume_literal(")")
-            _t1331 = self.construct_export_csv_config(export_csv_path716, export_csv_columns717, config_dict718)
+            _t1331 = self.construct_export_csv_config(export_csv_path716, export_csv_columns_list717, config_dict718)
             _t1327 = _t1331
         else:
             if prediction712 == 0:
@@ -2914,7 +2914,7 @@ class Parser:
         _t1348 = transactions_pb2.ExportCSVColumn(column_name=string726, column_data=relation_id727)
         return _t1348
 
-    def parse_export_csv_columns(self) -> Sequence[transactions_pb2.ExportCSVColumn]:
+    def parse_export_csv_columns_list(self) -> Sequence[transactions_pb2.ExportCSVColumn]:
         self.consume_literal("(")
         self.consume_literal("columns")
         xs728 = []

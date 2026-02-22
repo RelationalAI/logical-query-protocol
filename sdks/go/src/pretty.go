@@ -4326,7 +4326,7 @@ func (p *PrettyPrinter) pretty_export_csv_config(msg *pb.ExportCSVConfig) interf
 				p.pretty_export_csv_path(field1255)
 				p.newline()
 				field1256 := unwrapped1254[1].([]*pb.ExportCSVColumn)
-				p.pretty_export_csv_columns(field1256)
+				p.pretty_export_csv_columns_list(field1256)
 				p.newline()
 				field1257 := unwrapped1254[2].([][]interface{})
 				p.pretty_config_dict(field1257)
@@ -4443,8 +4443,8 @@ func (p *PrettyPrinter) pretty_export_csv_column(msg *pb.ExportCSVColumn) interf
 	return nil
 }
 
-func (p *PrettyPrinter) pretty_export_csv_columns(msg []*pb.ExportCSVColumn) interface{} {
-	flat1281 := p.tryFlat(msg, func() { p.pretty_export_csv_columns(msg) })
+func (p *PrettyPrinter) pretty_export_csv_columns_list(msg []*pb.ExportCSVColumn) interface{} {
+	flat1281 := p.tryFlat(msg, func() { p.pretty_export_csv_columns_list(msg) })
 	if flat1281 != nil {
 		p.write(*flat1281)
 		return nil
@@ -4830,7 +4830,7 @@ func (p *PrettyPrinter) pprintDispatch(msg interface{}) {
 	case *pb.ExportCSVColumn:
 		p.pretty_export_csv_column(m)
 	case []*pb.ExportCSVColumn:
-		p.pretty_export_csv_columns(m)
+		p.pretty_export_csv_columns_list(m)
 	case *pb.DebugInfo:
 		p.pretty_debug_info(m)
 	case *pb.BeTreeConfig:

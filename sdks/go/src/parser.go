@@ -3724,12 +3724,12 @@ func (p *Parser) parse_export_csv_config() *pb.ExportCSVConfig {
 		p.consumeLiteral("export_csv_config")
 		_t1339 := p.parse_export_csv_path()
 		export_csv_path716 := _t1339
-		_t1340 := p.parse_export_csv_columns()
-		export_csv_columns717 := _t1340
+		_t1340 := p.parse_export_csv_columns_list()
+		export_csv_columns_list717 := _t1340
 		_t1341 := p.parse_config_dict()
 		config_dict718 := _t1341
 		p.consumeLiteral(")")
-		_t1342 := p.construct_export_csv_config(export_csv_path716, export_csv_columns717, config_dict718)
+		_t1342 := p.construct_export_csv_config(export_csv_path716, export_csv_columns_list717, config_dict718)
 		_t1338 = _t1342
 	} else {
 		var _t1343 *pb.ExportCSVConfig
@@ -3829,7 +3829,7 @@ func (p *Parser) parse_export_csv_column() *pb.ExportCSVColumn {
 	return _t1359
 }
 
-func (p *Parser) parse_export_csv_columns() []*pb.ExportCSVColumn {
+func (p *Parser) parse_export_csv_columns_list() []*pb.ExportCSVColumn {
 	p.consumeLiteral("(")
 	p.consumeLiteral("columns")
 	xs728 := []*pb.ExportCSVColumn{}

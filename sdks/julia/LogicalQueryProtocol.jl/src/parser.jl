@@ -3171,12 +3171,12 @@ function parse_export_csv_config(parser::ParserState)::Proto.ExportCSVConfig
         consume_literal!(parser, "export_csv_config")
         _t1328 = parse_export_csv_path(parser)
         export_csv_path716 = _t1328
-        _t1329 = parse_export_csv_columns(parser)
-        export_csv_columns717 = _t1329
+        _t1329 = parse_export_csv_columns_list(parser)
+        export_csv_columns_list717 = _t1329
         _t1330 = parse_config_dict(parser)
         config_dict718 = _t1330
         consume_literal!(parser, ")")
-        _t1331 = construct_export_csv_config(parser, export_csv_path716, export_csv_columns717, config_dict718)
+        _t1331 = construct_export_csv_config(parser, export_csv_path716, export_csv_columns_list717, config_dict718)
         _t1327 = _t1331
     else
         if prediction712 == 0
@@ -3268,7 +3268,7 @@ function parse_export_csv_column(parser::ParserState)::Proto.ExportCSVColumn
     return _t1348
 end
 
-function parse_export_csv_columns(parser::ParserState)::Vector{Proto.ExportCSVColumn}
+function parse_export_csv_columns_list(parser::ParserState)::Vector{Proto.ExportCSVColumn}
     consume_literal!(parser, "(")
     consume_literal!(parser, "columns")
     xs728 = Proto.ExportCSVColumn[]
