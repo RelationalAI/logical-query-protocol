@@ -18,7 +18,7 @@ import (
 	"strconv"
 	"strings"
 
-	pb "logical-query-protocol/src/lqp/v1"
+	pb "github.com/RelationalAI/logical-query-protocol/sdks/go/src/lqp/v1"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 

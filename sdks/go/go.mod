@@ -1,4 +1,4 @@
-module logical-query-protocol
+module github.com/RelationalAI/logical-query-protocol/sdks/go
 
 go 1.25.4
 

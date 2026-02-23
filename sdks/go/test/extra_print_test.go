@@ -3,8 +3,8 @@ package test
 import (
 	"testing"
 
-	lqp "logical-query-protocol/src"
-	pb "logical-query-protocol/src/lqp/v1"
+	lqp "github.com/RelationalAI/logical-query-protocol/sdks/go/src"
+	pb "github.com/RelationalAI/logical-query-protocol/sdks/go/src/lqp/v1"
 )
 
 // ---------------------------------------------------------------------------
