@@ -90,5 +90,5 @@ To publish manually instead:
 ```bash
 cd sdks/python
 uv run python -m build
-uv run twine upload dist/*
+uv publish dist/*
 ```
