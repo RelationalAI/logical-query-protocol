@@ -16,7 +16,7 @@ import (
 	"sort"
 	"strings"
 
-	pb "logical-query-protocol/src/lqp/v1"
+	pb "github.com/RelationalAI/logical-query-protocol/sdks/go/src/lqp/v1"
 )
 
 const maxWidth = 92
