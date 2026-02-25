@@ -49,8 +49,8 @@ def warmup(fn):
 
 def bench_old(lqp_files, iterations):
     """Benchmark the old Lark-based parser and pretty-printer."""
-    from lqp.parser import parse_lqp
     from lqp.emit import ir_to_proto
+    from lqp.parser import parse_lqp
     from lqp.print import to_string
 
     results = []
