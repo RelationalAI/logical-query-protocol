@@ -277,7 +277,7 @@ message BeTreeLocator {
 message CSVData {
   CSVLocator locator = 1;
   CSVConfig config = 2;
-  repeated CSVColumn columns = 3;
+  repeated GNFColumn columns = 3;
   string asof = 4; // Blob storage timestamp for freshness requirements
 }
 
@@ -311,7 +311,7 @@ message CSVConfig {
   string compression = 11; // "none", "gzip", "zstd", "auto" (default: "auto")
 }
 
-message CSVColumn {
+message GNFColumn {
   repeated string column_path = 1; // Column identifier path (was: string column_name)
   optional RelationId target_id = 2; // Target relation (now explicit optional)
   repeated Type types = 3; // Relation signature (key types + value types)

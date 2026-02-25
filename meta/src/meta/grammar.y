@@ -71,10 +71,10 @@
 %nonterm construct logic.Construct
 %nonterm context transactions.Context
 %nonterm csv_asof String
-%nonterm csv_column logic.CSVColumn
+%nonterm csv_column logic.GNFColumn
 %nonterm csv_column_path Sequence[String]
 %nonterm csv_column_tail Tuple[Optional[logic.RelationId], Sequence[logic.Type]]
-%nonterm csv_columns Sequence[logic.CSVColumn]
+%nonterm csv_columns Sequence[logic.GNFColumn]
 %nonterm csv_config logic.CSVConfig
 %nonterm csv_data logic.CSVData
 %nonterm csv_locator_inline_data String
@@ -961,7 +961,7 @@ csv_data
       deconstruct:
         $3: logic.CSVLocator = $$.locator
         $4: logic.CSVConfig = $$.config
-        $5: Sequence[logic.CSVColumn] = $$.columns
+        $5: Sequence[logic.GNFColumn] = $$.columns
         $6: String = $$.asof
 
 csv_locator_paths
@@ -1407,14 +1407,14 @@ def deconstruct_export_csv_config(msg: transactions.ExportCSVConfig) -> List[Tup
     return builtin.list_sort(result)
 
 
-def construct_csv_column(path: Sequence[String], tail: Optional[Tuple[Optional[logic.RelationId], Sequence[logic.Type]]]) -> logic.CSVColumn:
+def construct_csv_column(path: Sequence[String], tail: Optional[Tuple[Optional[logic.RelationId], Sequence[logic.Type]]]) -> logic.GNFColumn:
     if tail is not None:
         t: Tuple[Optional[logic.RelationId], Sequence[logic.Type]] = builtin.unwrap_option(tail)
-        return logic.CSVColumn(column_path=path, target_id=t[0], types=t[1])
-    return logic.CSVColumn(column_path=path, target_id=None, types=list[logic.Type]())
+        return logic.GNFColumn(column_path=path, target_id=t[0], types=t[1])
+    return logic.GNFColumn(column_path=path, target_id=None, types=list[logic.Type]())
 
 
-def deconstruct_csv_column_tail(col: logic.CSVColumn) -> Optional[Tuple[Optional[logic.RelationId], Sequence[logic.Type]]]:
+def deconstruct_csv_column_tail(col: logic.GNFColumn) -> Optional[Tuple[Optional[logic.RelationId], Sequence[logic.Type]]]:
     if builtin.has_proto_field(col, 'target_id') or not builtin.is_empty(col.types):
         return builtin.some(builtin.tuple(col.target_id, col.types))
     return None
