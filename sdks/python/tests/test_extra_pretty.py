@@ -221,16 +221,16 @@ class TestOneofOnlyMessages:
         result = _pp(msg)
         assert result.startswith("(assign")
 
-    def test_data_rel_edb(self):
+    def test_data_edb(self):
         msg = logic_pb2.Data(
-            rel_edb=logic_pb2.RelEDB(
+            edb=logic_pb2.EDB(
                 target_id=logic_pb2.RelationId(id_low=1, id_high=0),
                 path=["base", "rel"],
                 types=[],
             )
         )
         result = _pp(msg)
-        assert result.startswith("(rel_edb")
+        assert result.startswith("(edb")
 
     def test_read_demand(self):
         msg = transactions_pb2.Read(

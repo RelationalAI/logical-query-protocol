@@ -572,7 +572,7 @@ func (x *Context) GetRelations() []*RelationId {
 }
 
 // Demand the source IDB, take an immutable snapshot, and turn it into an EDB under the
-// given path (specified as a sequence of strings, see RelEDB).
+// given path (specified as a sequence of strings, see EDB).
 type Snapshot struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	DestinationPath []string               `protobuf:"bytes,1,rep,name=destination_path,json=destinationPath,proto3" json:"destination_path,omitempty"`

@@ -487,20 +487,20 @@ function Base.isequal(a::BeTreeLocator, b::BeTreeLocator)
     _isequal_oneof(a.location, b.location) && isequal(a.element_count, b.element_count) && isequal(a.tree_height, b.tree_height)
 end
 
-# RelEDB
-Base.:(==)(a::RelEDB, b::RelEDB) = a.target_id == b.target_id && a.path == b.path && a.types == b.types
-Base.hash(a::RelEDB, h::UInt) = hash(a.types, hash(a.path, hash(a.target_id, h)))
-Base.isequal(a::RelEDB, b::RelEDB) = isequal(a.target_id, b.target_id) && isequal(a.path, b.path) && isequal(a.types, b.types)
+# EDB
+Base.:(==)(a::EDB, b::EDB) = a.target_id == b.target_id && a.path == b.path && a.types == b.types
+Base.hash(a::EDB, h::UInt) = hash(a.types, hash(a.path, hash(a.target_id, h)))
+Base.isequal(a::EDB, b::EDB) = isequal(a.target_id, b.target_id) && isequal(a.path, b.path) && isequal(a.types, b.types)
 
 # BeTreeInfo
 Base.:(==)(a::BeTreeInfo, b::BeTreeInfo) = a.key_types == b.key_types && a.value_types == b.value_types && a.storage_config == b.storage_config && a.relation_locator == b.relation_locator
 Base.hash(a::BeTreeInfo, h::UInt) = hash(a.relation_locator, hash(a.storage_config, hash(a.value_types, hash(a.key_types, h))))
 Base.isequal(a::BeTreeInfo, b::BeTreeInfo) = isequal(a.key_types, b.key_types) && isequal(a.value_types, b.value_types) && isequal(a.storage_config, b.storage_config) && isequal(a.relation_locator, b.relation_locator)
 
-# CSVColumn
-Base.:(==)(a::CSVColumn, b::CSVColumn) = a.column_path == b.column_path && a.target_id == b.target_id && a.types == b.types
-Base.hash(a::CSVColumn, h::UInt) = hash(a.types, hash(a.target_id, hash(a.column_path, h)))
-Base.isequal(a::CSVColumn, b::CSVColumn) = isequal(a.column_path, b.column_path) && isequal(a.target_id, b.target_id) && isequal(a.types, b.types)
+# GNFColumn
+Base.:(==)(a::GNFColumn, b::GNFColumn) = a.column_path == b.column_path && a.target_id == b.target_id && a.types == b.types
+Base.hash(a::GNFColumn, h::UInt) = hash(a.types, hash(a.target_id, hash(a.column_path, h)))
+Base.isequal(a::GNFColumn, b::GNFColumn) = isequal(a.column_path, b.column_path) && isequal(a.target_id, b.target_id) && isequal(a.types, b.types)
 
 # BeTreeRelation
 Base.:(==)(a::BeTreeRelation, b::BeTreeRelation) = a.name == b.name && a.relation_info == b.relation_info

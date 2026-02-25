@@ -337,16 +337,16 @@ class Attribute(_message.Message):
     def __init__(self, name: _Optional[str] = ..., args: _Optional[_Iterable[_Union[Value, _Mapping]]] = ...) -> None: ...
 
 class Data(_message.Message):
-    __slots__ = ("rel_edb", "betree_relation", "csv_data")
-    REL_EDB_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("edb", "betree_relation", "csv_data")
+    EDB_FIELD_NUMBER: _ClassVar[int]
     BETREE_RELATION_FIELD_NUMBER: _ClassVar[int]
     CSV_DATA_FIELD_NUMBER: _ClassVar[int]
-    rel_edb: RelEDB
+    edb: EDB
     betree_relation: BeTreeRelation
     csv_data: CSVData
-    def __init__(self, rel_edb: _Optional[_Union[RelEDB, _Mapping]] = ..., betree_relation: _Optional[_Union[BeTreeRelation, _Mapping]] = ..., csv_data: _Optional[_Union[CSVData, _Mapping]] = ...) -> None: ...
+    def __init__(self, edb: _Optional[_Union[EDB, _Mapping]] = ..., betree_relation: _Optional[_Union[BeTreeRelation, _Mapping]] = ..., csv_data: _Optional[_Union[CSVData, _Mapping]] = ...) -> None: ...
 
-class RelEDB(_message.Message):
+class EDB(_message.Message):
     __slots__ = ("target_id", "path", "types")
     TARGET_ID_FIELD_NUMBER: _ClassVar[int]
     PATH_FIELD_NUMBER: _ClassVar[int]
@@ -408,9 +408,9 @@ class CSVData(_message.Message):
     ASOF_FIELD_NUMBER: _ClassVar[int]
     locator: CSVLocator
     config: CSVConfig
-    columns: _containers.RepeatedCompositeFieldContainer[CSVColumn]
+    columns: _containers.RepeatedCompositeFieldContainer[GNFColumn]
     asof: str
-    def __init__(self, locator: _Optional[_Union[CSVLocator, _Mapping]] = ..., config: _Optional[_Union[CSVConfig, _Mapping]] = ..., columns: _Optional[_Iterable[_Union[CSVColumn, _Mapping]]] = ..., asof: _Optional[str] = ...) -> None: ...
+    def __init__(self, locator: _Optional[_Union[CSVLocator, _Mapping]] = ..., config: _Optional[_Union[CSVConfig, _Mapping]] = ..., columns: _Optional[_Iterable[_Union[GNFColumn, _Mapping]]] = ..., asof: _Optional[str] = ...) -> None: ...
 
 class CSVLocator(_message.Message):
     __slots__ = ("paths", "inline_data")
@@ -446,7 +446,7 @@ class CSVConfig(_message.Message):
     compression: str
     def __init__(self, header_row: _Optional[int] = ..., skip: _Optional[int] = ..., new_line: _Optional[str] = ..., delimiter: _Optional[str] = ..., quotechar: _Optional[str] = ..., escapechar: _Optional[str] = ..., comment: _Optional[str] = ..., missing_strings: _Optional[_Iterable[str]] = ..., decimal_separator: _Optional[str] = ..., encoding: _Optional[str] = ..., compression: _Optional[str] = ...) -> None: ...
 
-class CSVColumn(_message.Message):
+class GNFColumn(_message.Message):
     __slots__ = ("column_path", "target_id", "types")
     COLUMN_PATH_FIELD_NUMBER: _ClassVar[int]
     TARGET_ID_FIELD_NUMBER: _ClassVar[int]

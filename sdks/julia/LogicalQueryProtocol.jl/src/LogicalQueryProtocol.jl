@@ -26,8 +26,8 @@ const LQPSyntax = Union{
     Export,Epoch,Read,Transaction,WhatIf,Constraint,FunctionalDependency,
     DateTimeValue,DateValue,DecimalValue,
     BeTreeInfo,BeTreeRelation,
-    CSVLocator,CSVConfig,CSVColumn,CSVData,
-    RelEDB,Data,
+    CSVLocator,CSVConfig,GNFColumn,CSVData,
+    EDB,Data,
 }
 
 using ProtoBuf: ProtoBuf
