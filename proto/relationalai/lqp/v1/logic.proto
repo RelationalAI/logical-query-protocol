@@ -235,7 +235,7 @@ message Data {
     RelEDB rel_edb = 1;
     BeTreeRelation betree_relation = 2;
     CSVData csv_data = 3;
-    // IcebergRelation iceberg_relation = 4;
+    // IcebergData iceberg_data = 4;
   }
 }
 
