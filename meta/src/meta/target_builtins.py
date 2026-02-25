@@ -217,12 +217,6 @@ register_builtin("dict_get", [DictType(K, V), K], OptionType(V))
 register_builtin("has_proto_field", [T, STRING], BOOLEAN)  # msg.HasField(field_name)
 register_builtin("which_one_of", [T, STRING], STRING)  # msg.WhichOneof(oneof_name)
 
-# === Provenance tracking ===
-register_builtin("push_path", [INT64], VOID)
-register_builtin("pop_path", [], VOID)
-register_builtin("span_start", [], INT64)
-register_builtin("record_span", [INT64], VOID)
-
 # === General helpers ===
 register_builtin("is_empty", [SequenceType(T)], BOOLEAN)  # len(list) == 0
 register_builtin("enum_value", [STRING, STRING], T)  # enum_value(EnumType, ValueName)

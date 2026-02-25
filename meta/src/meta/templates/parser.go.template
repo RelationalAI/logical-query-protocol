@@ -15,7 +15,6 @@ import (
 	"math/big"
 	"reflect"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -83,27 +82,13 @@ func (tv TokenValue) String() string {{
 
 // Token represents a lexer token
 type Token struct {{
-	Type     string
-	Value    TokenValue
-	StartPos int
-	EndPos   int
+	Type  string
+	Value TokenValue
+	Pos   int
 }}
 
 func (t Token) String() string {{
-	return fmt.Sprintf("Token(%s, %v, %d)", t.Type, t.Value, t.StartPos)
-}}
-
-// Location represents a source position with 1-based line and column.
-type Location struct {{
-	Line   int
-	Column int
-	Offset int
-}}
-
-// Span represents a source range.
-type Span struct {{
-	Start Location
-	End   Location
+	return fmt.Sprintf("Token(%s, %v, %d)", t.Type, t.Value, t.Pos)
 }}
 
 // tokenSpec represents a token specification for the lexer
@@ -188,15 +173,14 @@ func (l *Lexer) tokenize() {{
 		}}
 
 		l.tokens = append(l.tokens, Token{{
-			Type:     best.tokenType,
-			Value:    best.action(best.value),
-			StartPos: l.pos,
-			EndPos:   best.endPos,
+			Type:  best.tokenType,
+			Value: best.action(best.value),
+			Pos:   l.pos,
 		}})
 		l.pos = best.endPos
 	}}
 
-	l.tokens = append(l.tokens, Token{{Type: "$", Value: TokenValue{{}}, StartPos: l.pos, EndPos: l.pos}})
+	l.tokens = append(l.tokens, Token{{Type: "$", Value: TokenValue{{}}, Pos: l.pos}})
 }}
 
 // Scanner functions for each token type
@@ -317,43 +301,16 @@ type Parser struct {{
 	pos               int
 	idToDebugInfo     map[string]map[relationIdKey]string
 	currentFragmentID []byte
-	Provenance        map[string]Span
-	path              []int
-	lineStarts        []int
 }}
 
 // NewParser creates a new parser
-func NewParser(tokens []Token, input string) *Parser {{
+func NewParser(tokens []Token) *Parser {{
 	return &Parser{{
 		tokens:            tokens,
 		pos:               0,
 		idToDebugInfo:     make(map[string]map[relationIdKey]string),
 		currentFragmentID: nil,
-		Provenance:        make(map[string]Span),
-		path:              make([]int, 0),
-		lineStarts:        computeLineStarts(input),
 	}}
-}}
-
-func computeLineStarts(text string) []int {{
-	starts := []int{{0}}
-	for i, ch := range text {{
-		if ch == '\n' {{
-			starts = append(starts, i+1)
-		}}
-	}}
-	return starts
-}}
-
-func pathKey(path []int) string {{
-	if len(path) == 0 {{
-		return ""
-	}}
-	parts := make([]string, len(path))
-	for i, v := range path {{
-		parts[i] = strconv.Itoa(v)
-	}}
-	return strings.Join(parts, ",")
 }}
 
 func (p *Parser) lookahead(k int) Token {{
@@ -361,13 +318,13 @@ func (p *Parser) lookahead(k int) Token {{
 	if idx < len(p.tokens) {{
 		return p.tokens[idx]
 	}}
-	return Token{{Type: "$", Value: TokenValue{{}}, StartPos: -1, EndPos: -1}}
+	return Token{{Type: "$", Value: TokenValue{{}}, Pos: -1}}
 }}
 
 func (p *Parser) consumeLiteral(expected string) {{
 	if !p.matchLookaheadLiteral(expected, 0) {{
 		token := p.lookahead(0)
-		panic(ParseError{{msg: fmt.Sprintf("Expected literal %q but got %s=`%v` at position %d", expected, token.Type, token.Value, token.StartPos)}})
+		panic(ParseError{{msg: fmt.Sprintf("Expected literal %q but got %s=`%v` at position %d", expected, token.Type, token.Value, token.Pos)}})
 	}}
 	p.pos++
 }}
@@ -375,7 +332,7 @@ func (p *Parser) consumeLiteral(expected string) {{
 func (p *Parser) consumeTerminal(expected string) Token {{
 	if !p.matchLookaheadTerminal(expected, 0) {{
 		token := p.lookahead(0)
-		panic(ParseError{{msg: fmt.Sprintf("Expected terminal %s but got %s=`%v` at position %d", expected, token.Type, token.Value, token.StartPos)}})
+		panic(ParseError{{msg: fmt.Sprintf("Expected terminal %s but got %s=`%v` at position %d", expected, token.Type, token.Value, token.Pos)}})
 	}}
 	token := p.lookahead(0)
 	p.pos++
@@ -397,34 +354,6 @@ func (p *Parser) matchLookaheadLiteral(literal string, k int) bool {{
 func (p *Parser) matchLookaheadTerminal(terminal string, k int) bool {{
 	token := p.lookahead(k)
 	return token.Type == terminal
-}}
-
-func (p *Parser) pushPath(n int) {{
-	p.path = append(p.path, n)
-}}
-
-func (p *Parser) popPath() {{
-	p.path = p.path[:len(p.path)-1]
-}}
-
-func (p *Parser) spanStart() int {{
-	return p.tokens[p.pos].StartPos
-}}
-
-func (p *Parser) recordSpan(startOffset int) {{
-	endOffset := p.tokens[p.pos-1].EndPos
-	key := pathKey(p.path)
-	p.Provenance[key] = Span{{
-		Start: p.makeLocation(startOffset),
-		End:   p.makeLocation(endOffset),
-	}}
-}}
-
-func (p *Parser) makeLocation(offset int) Location {{
-	// Binary search for the line containing offset
-	line := sort.SearchInts(p.lineStarts, offset+1)
-	column := offset - p.lineStarts[line-1] + 1
-	return Location{{Line: line, Column: column, Offset: offset}}
 }}
 
 func (p *Parser) startFragment(fragmentID *pb.FragmentId) *pb.FragmentId {{
@@ -572,8 +501,8 @@ func toPascalCase(s string) string {{
 // --- Parse functions ---
 {parse_nonterminal_defns}
 
-// Parse parses the input string and returns the result and provenance map
-func Parse(input string) (result *pb.Transaction, provenance map[string]Span, err error) {{
+// Parse parses the input string and returns the result
+func Parse(input string) (result *pb.Transaction, err error) {{
 	defer func() {{
 		if r := recover(); r != nil {{
 			if pe, ok := r.(ParseError); ok {{
@@ -585,15 +514,15 @@ func Parse(input string) (result *pb.Transaction, provenance map[string]Span, er
 	}}()
 
 	lexer := NewLexer(input)
-	parser := NewParser(lexer.tokens, input)
+	parser := NewParser(lexer.tokens)
 	result = parser.parse_{start_name}()
 
 	// Check for unconsumed tokens (except EOF)
 	if parser.pos < len(parser.tokens) {{
 		remainingToken := parser.lookahead(0)
 		if remainingToken.Type != "$" {{
-			return nil, nil, ParseError{{msg: fmt.Sprintf("Unexpected token at end of input: %v", remainingToken)}}
+			return nil, ParseError{{msg: fmt.Sprintf("Unexpected token at end of input: %v", remainingToken)}}
 		}}
 	}}
-	return result, parser.Provenance, nil
+	return result, nil
 }}
