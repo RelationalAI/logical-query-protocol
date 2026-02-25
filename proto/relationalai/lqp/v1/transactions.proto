@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "logical-query-protocol/lqp/v1";
+option go_package = "github.com/RelationalAI/logical-query-protocol/sdks/go/src/lqp/v1";
 
 package relationalai.lqp.v1;
 
@@ -48,6 +48,7 @@ message Write {
     Define define = 1;
     Undefine undefine = 2;
     Context context = 3;
+    Snapshot snapshot = 5;
   }
 }
 
@@ -61,6 +62,13 @@ message Undefine {
 
 message Context {
   repeated RelationId relations = 1;
+}
+
+// Demand the source IDB, take an immutable snapshot, and turn it into an EDB under the
+// given path (specified as a sequence of strings, see RelEDB).
+message Snapshot {
+  repeated string destination_path = 1;
+  RelationId source_relation = 2;
 }
 
 //
