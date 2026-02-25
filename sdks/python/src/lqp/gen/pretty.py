@@ -193,131 +193,131 @@ class PrettyPrinter:
     # --- Helper functions ---
 
     def _make_value_int32(self, v: int) -> logic_pb2.Value:
-        _t1654 = logic_pb2.Value(int_value=int(v))
-        return _t1654
+        _t1366 = logic_pb2.Value(int_value=int(v))
+        return _t1366
 
     def _make_value_int64(self, v: int) -> logic_pb2.Value:
-        _t1655 = logic_pb2.Value(int_value=v)
-        return _t1655
+        _t1367 = logic_pb2.Value(int_value=v)
+        return _t1367
 
     def _make_value_float64(self, v: float) -> logic_pb2.Value:
-        _t1656 = logic_pb2.Value(float_value=v)
-        return _t1656
+        _t1368 = logic_pb2.Value(float_value=v)
+        return _t1368
 
     def _make_value_string(self, v: str) -> logic_pb2.Value:
-        _t1657 = logic_pb2.Value(string_value=v)
-        return _t1657
+        _t1369 = logic_pb2.Value(string_value=v)
+        return _t1369
 
     def _make_value_boolean(self, v: bool) -> logic_pb2.Value:
-        _t1658 = logic_pb2.Value(boolean_value=v)
-        return _t1658
+        _t1370 = logic_pb2.Value(boolean_value=v)
+        return _t1370
 
     def _make_value_uint128(self, v: logic_pb2.UInt128Value) -> logic_pb2.Value:
-        _t1659 = logic_pb2.Value(uint128_value=v)
-        return _t1659
+        _t1371 = logic_pb2.Value(uint128_value=v)
+        return _t1371
 
     def deconstruct_configure(self, msg: transactions_pb2.Configure) -> list[tuple[str, logic_pb2.Value]]:
         result = []
         if msg.ivm_config.level == transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_AUTO:
-            _t1660 = self._make_value_string("auto")
-            result.append(("ivm.maintenance_level", _t1660,))
+            _t1372 = self._make_value_string("auto")
+            result.append(("ivm.maintenance_level", _t1372,))
         else:
             if msg.ivm_config.level == transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_ALL:
-                _t1661 = self._make_value_string("all")
-                result.append(("ivm.maintenance_level", _t1661,))
+                _t1373 = self._make_value_string("all")
+                result.append(("ivm.maintenance_level", _t1373,))
             else:
                 if msg.ivm_config.level == transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_OFF:
-                    _t1662 = self._make_value_string("off")
-                    result.append(("ivm.maintenance_level", _t1662,))
-        _t1663 = self._make_value_int64(msg.semantics_version)
-        result.append(("semantics_version", _t1663,))
+                    _t1374 = self._make_value_string("off")
+                    result.append(("ivm.maintenance_level", _t1374,))
+        _t1375 = self._make_value_int64(msg.semantics_version)
+        result.append(("semantics_version", _t1375,))
         return sorted(result)
 
     def deconstruct_csv_config(self, msg: logic_pb2.CSVConfig) -> list[tuple[str, logic_pb2.Value]]:
         result = []
-        _t1664 = self._make_value_int32(msg.header_row)
-        result.append(("csv_header_row", _t1664,))
-        _t1665 = self._make_value_int64(msg.skip)
-        result.append(("csv_skip", _t1665,))
+        _t1376 = self._make_value_int32(msg.header_row)
+        result.append(("csv_header_row", _t1376,))
+        _t1377 = self._make_value_int64(msg.skip)
+        result.append(("csv_skip", _t1377,))
         if msg.new_line != "":
-            _t1666 = self._make_value_string(msg.new_line)
-            result.append(("csv_new_line", _t1666,))
-        _t1667 = self._make_value_string(msg.delimiter)
-        result.append(("csv_delimiter", _t1667,))
-        _t1668 = self._make_value_string(msg.quotechar)
-        result.append(("csv_quotechar", _t1668,))
-        _t1669 = self._make_value_string(msg.escapechar)
-        result.append(("csv_escapechar", _t1669,))
+            _t1378 = self._make_value_string(msg.new_line)
+            result.append(("csv_new_line", _t1378,))
+        _t1379 = self._make_value_string(msg.delimiter)
+        result.append(("csv_delimiter", _t1379,))
+        _t1380 = self._make_value_string(msg.quotechar)
+        result.append(("csv_quotechar", _t1380,))
+        _t1381 = self._make_value_string(msg.escapechar)
+        result.append(("csv_escapechar", _t1381,))
         if msg.comment != "":
-            _t1670 = self._make_value_string(msg.comment)
-            result.append(("csv_comment", _t1670,))
+            _t1382 = self._make_value_string(msg.comment)
+            result.append(("csv_comment", _t1382,))
         for missing_string in msg.missing_strings:
-            _t1671 = self._make_value_string(missing_string)
-            result.append(("csv_missing_strings", _t1671,))
-        _t1672 = self._make_value_string(msg.decimal_separator)
-        result.append(("csv_decimal_separator", _t1672,))
-        _t1673 = self._make_value_string(msg.encoding)
-        result.append(("csv_encoding", _t1673,))
-        _t1674 = self._make_value_string(msg.compression)
-        result.append(("csv_compression", _t1674,))
+            _t1383 = self._make_value_string(missing_string)
+            result.append(("csv_missing_strings", _t1383,))
+        _t1384 = self._make_value_string(msg.decimal_separator)
+        result.append(("csv_decimal_separator", _t1384,))
+        _t1385 = self._make_value_string(msg.encoding)
+        result.append(("csv_encoding", _t1385,))
+        _t1386 = self._make_value_string(msg.compression)
+        result.append(("csv_compression", _t1386,))
         return sorted(result)
 
     def deconstruct_betree_info_config(self, msg: logic_pb2.BeTreeInfo) -> list[tuple[str, logic_pb2.Value]]:
         result = []
-        _t1675 = self._make_value_float64(msg.storage_config.epsilon)
-        result.append(("betree_config_epsilon", _t1675,))
-        _t1676 = self._make_value_int64(msg.storage_config.max_pivots)
-        result.append(("betree_config_max_pivots", _t1676,))
-        _t1677 = self._make_value_int64(msg.storage_config.max_deltas)
-        result.append(("betree_config_max_deltas", _t1677,))
-        _t1678 = self._make_value_int64(msg.storage_config.max_leaf)
-        result.append(("betree_config_max_leaf", _t1678,))
+        _t1387 = self._make_value_float64(msg.storage_config.epsilon)
+        result.append(("betree_config_epsilon", _t1387,))
+        _t1388 = self._make_value_int64(msg.storage_config.max_pivots)
+        result.append(("betree_config_max_pivots", _t1388,))
+        _t1389 = self._make_value_int64(msg.storage_config.max_deltas)
+        result.append(("betree_config_max_deltas", _t1389,))
+        _t1390 = self._make_value_int64(msg.storage_config.max_leaf)
+        result.append(("betree_config_max_leaf", _t1390,))
         if msg.relation_locator.HasField("root_pageid"):
             if msg.relation_locator.root_pageid is not None:
                 assert msg.relation_locator.root_pageid is not None
-                _t1679 = self._make_value_uint128(msg.relation_locator.root_pageid)
-                result.append(("betree_locator_root_pageid", _t1679,))
+                _t1391 = self._make_value_uint128(msg.relation_locator.root_pageid)
+                result.append(("betree_locator_root_pageid", _t1391,))
         if msg.relation_locator.HasField("inline_data"):
             if msg.relation_locator.inline_data is not None:
                 assert msg.relation_locator.inline_data is not None
-                _t1680 = self._make_value_string(msg.relation_locator.inline_data.decode('utf-8'))
-                result.append(("betree_locator_inline_data", _t1680,))
-        _t1681 = self._make_value_int64(msg.relation_locator.element_count)
-        result.append(("betree_locator_element_count", _t1681,))
-        _t1682 = self._make_value_int64(msg.relation_locator.tree_height)
-        result.append(("betree_locator_tree_height", _t1682,))
+                _t1392 = self._make_value_string(msg.relation_locator.inline_data.decode('utf-8'))
+                result.append(("betree_locator_inline_data", _t1392,))
+        _t1393 = self._make_value_int64(msg.relation_locator.element_count)
+        result.append(("betree_locator_element_count", _t1393,))
+        _t1394 = self._make_value_int64(msg.relation_locator.tree_height)
+        result.append(("betree_locator_tree_height", _t1394,))
         return sorted(result)
 
     def deconstruct_export_csv_config(self, msg: transactions_pb2.ExportCSVConfig) -> list[tuple[str, logic_pb2.Value]]:
         result = []
         if msg.partition_size is not None:
             assert msg.partition_size is not None
-            _t1683 = self._make_value_int64(msg.partition_size)
-            result.append(("partition_size", _t1683,))
+            _t1395 = self._make_value_int64(msg.partition_size)
+            result.append(("partition_size", _t1395,))
         if msg.compression is not None:
             assert msg.compression is not None
-            _t1684 = self._make_value_string(msg.compression)
-            result.append(("compression", _t1684,))
+            _t1396 = self._make_value_string(msg.compression)
+            result.append(("compression", _t1396,))
         if msg.syntax_header_row is not None:
             assert msg.syntax_header_row is not None
-            _t1685 = self._make_value_boolean(msg.syntax_header_row)
-            result.append(("syntax_header_row", _t1685,))
+            _t1397 = self._make_value_boolean(msg.syntax_header_row)
+            result.append(("syntax_header_row", _t1397,))
         if msg.syntax_missing_string is not None:
             assert msg.syntax_missing_string is not None
-            _t1686 = self._make_value_string(msg.syntax_missing_string)
-            result.append(("syntax_missing_string", _t1686,))
+            _t1398 = self._make_value_string(msg.syntax_missing_string)
+            result.append(("syntax_missing_string", _t1398,))
         if msg.syntax_delim is not None:
             assert msg.syntax_delim is not None
-            _t1687 = self._make_value_string(msg.syntax_delim)
-            result.append(("syntax_delim", _t1687,))
+            _t1399 = self._make_value_string(msg.syntax_delim)
+            result.append(("syntax_delim", _t1399,))
         if msg.syntax_quotechar is not None:
             assert msg.syntax_quotechar is not None
-            _t1688 = self._make_value_string(msg.syntax_quotechar)
-            result.append(("syntax_quotechar", _t1688,))
+            _t1400 = self._make_value_string(msg.syntax_quotechar)
+            result.append(("syntax_quotechar", _t1400,))
         if msg.syntax_escapechar is not None:
             assert msg.syntax_escapechar is not None
-            _t1689 = self._make_value_string(msg.syntax_escapechar)
-            result.append(("syntax_escapechar", _t1689,))
+            _t1401 = self._make_value_string(msg.syntax_escapechar)
+            result.append(("syntax_escapechar", _t1401,))
         return sorted(result)
 
     def deconstruct_relation_id_string(self, msg: logic_pb2.RelationId) -> str:
@@ -330,7 +330,7 @@ class PrettyPrinter:
         if name is None:
             return self.relation_id_to_uint128(msg)
         else:
-            _t1690 = None
+            _t1402 = None
         return None
 
     def deconstruct_bindings(self, abs: logic_pb2.Abstraction) -> tuple[Sequence[logic_pb2.Binding], Sequence[logic_pb2.Binding]]:
@@ -351,22 +351,19 @@ class PrettyPrinter:
             self.write(flat638)
             return None
         else:
-            def _t1258(_dollar_dollar):
-                if _dollar_dollar.HasField("configure"):
-                    _t1259 = _dollar_dollar.configure
-                else:
-                    _t1259 = None
-                if _dollar_dollar.HasField("sync"):
-                    _t1260 = _dollar_dollar.sync
-                else:
-                    _t1260 = None
-                return (_t1259, _t1260, _dollar_dollar.epochs,)
-            _t1261 = _t1258(msg)
-            fields629 = _t1261
+            _dollar_dollar = msg
+            if _dollar_dollar.HasField("configure"):
+                _t1258 = _dollar_dollar.configure
+            else:
+                _t1258 = None
+            if _dollar_dollar.HasField("sync"):
+                _t1259 = _dollar_dollar.sync
+            else:
+                _t1259 = None
+            fields629 = (_t1258, _t1259, _dollar_dollar.epochs,)
             assert fields629 is not None
             unwrapped_fields630 = fields629
-            self.write("(")
-            self.write("transaction")
+            self.write("(transaction")
             self.indent_sexp()
             field631 = unwrapped_fields630[0]
             if field631 is not None:
@@ -397,15 +394,12 @@ class PrettyPrinter:
             self.write(flat641)
             return None
         else:
-            def _t1262(_dollar_dollar):
-                _t1263 = self.deconstruct_configure(_dollar_dollar)
-                return _t1263
-            _t1264 = _t1262(msg)
-            fields639 = _t1264
+            _dollar_dollar = msg
+            _t1260 = self.deconstruct_configure(_dollar_dollar)
+            fields639 = _t1260
             assert fields639 is not None
             unwrapped_fields640 = fields639
-            self.write("(")
-            self.write("configure")
+            self.write("(configure")
             self.indent_sexp()
             self.newline()
             self.pretty_config_dict(unwrapped_fields640)
@@ -438,10 +432,8 @@ class PrettyPrinter:
             self.write(flat650)
             return None
         else:
-            def _t1265(_dollar_dollar):
-                return (_dollar_dollar[0], _dollar_dollar[1],)
-            _t1266 = _t1265(msg)
-            fields646 = _t1266
+            _dollar_dollar = msg
+            fields646 = (_dollar_dollar[0], _dollar_dollar[1],)
             assert fields646 is not None
             unwrapped_fields647 = fields646
             self.write(":")
@@ -458,118 +450,100 @@ class PrettyPrinter:
             self.write(flat670)
             return None
         else:
-            def _t1267(_dollar_dollar):
-                if _dollar_dollar.HasField("date_value"):
-                    _t1268 = _dollar_dollar.date_value
-                else:
-                    _t1268 = None
-                return _t1268
-            _t1269 = _t1267(msg)
-            deconstruct_result668 = _t1269
+            _dollar_dollar = msg
+            if _dollar_dollar.HasField("date_value"):
+                _t1261 = _dollar_dollar.date_value
+            else:
+                _t1261 = None
+            deconstruct_result668 = _t1261
             if deconstruct_result668 is not None:
                 assert deconstruct_result668 is not None
                 unwrapped669 = deconstruct_result668
                 self.pretty_date(unwrapped669)
             else:
-                def _t1270(_dollar_dollar):
-                    if _dollar_dollar.HasField("datetime_value"):
-                        _t1271 = _dollar_dollar.datetime_value
-                    else:
-                        _t1271 = None
-                    return _t1271
-                _t1272 = _t1270(msg)
-                deconstruct_result666 = _t1272
+                _dollar_dollar = msg
+                if _dollar_dollar.HasField("datetime_value"):
+                    _t1262 = _dollar_dollar.datetime_value
+                else:
+                    _t1262 = None
+                deconstruct_result666 = _t1262
                 if deconstruct_result666 is not None:
                     assert deconstruct_result666 is not None
                     unwrapped667 = deconstruct_result666
                     self.pretty_datetime(unwrapped667)
                 else:
-                    def _t1273(_dollar_dollar):
-                        if _dollar_dollar.HasField("string_value"):
-                            _t1274 = _dollar_dollar.string_value
-                        else:
-                            _t1274 = None
-                        return _t1274
-                    _t1275 = _t1273(msg)
-                    deconstruct_result664 = _t1275
+                    _dollar_dollar = msg
+                    if _dollar_dollar.HasField("string_value"):
+                        _t1263 = _dollar_dollar.string_value
+                    else:
+                        _t1263 = None
+                    deconstruct_result664 = _t1263
                     if deconstruct_result664 is not None:
                         assert deconstruct_result664 is not None
                         unwrapped665 = deconstruct_result664
                         self.write(self.format_string_value(unwrapped665))
                     else:
-                        def _t1276(_dollar_dollar):
-                            if _dollar_dollar.HasField("int_value"):
-                                _t1277 = _dollar_dollar.int_value
-                            else:
-                                _t1277 = None
-                            return _t1277
-                        _t1278 = _t1276(msg)
-                        deconstruct_result662 = _t1278
+                        _dollar_dollar = msg
+                        if _dollar_dollar.HasField("int_value"):
+                            _t1264 = _dollar_dollar.int_value
+                        else:
+                            _t1264 = None
+                        deconstruct_result662 = _t1264
                         if deconstruct_result662 is not None:
                             assert deconstruct_result662 is not None
                             unwrapped663 = deconstruct_result662
                             self.write(str(unwrapped663))
                         else:
-                            def _t1279(_dollar_dollar):
-                                if _dollar_dollar.HasField("float_value"):
-                                    _t1280 = _dollar_dollar.float_value
-                                else:
-                                    _t1280 = None
-                                return _t1280
-                            _t1281 = _t1279(msg)
-                            deconstruct_result660 = _t1281
+                            _dollar_dollar = msg
+                            if _dollar_dollar.HasField("float_value"):
+                                _t1265 = _dollar_dollar.float_value
+                            else:
+                                _t1265 = None
+                            deconstruct_result660 = _t1265
                             if deconstruct_result660 is not None:
                                 assert deconstruct_result660 is not None
                                 unwrapped661 = deconstruct_result660
                                 self.write(str(unwrapped661))
                             else:
-                                def _t1282(_dollar_dollar):
-                                    if _dollar_dollar.HasField("uint128_value"):
-                                        _t1283 = _dollar_dollar.uint128_value
-                                    else:
-                                        _t1283 = None
-                                    return _t1283
-                                _t1284 = _t1282(msg)
-                                deconstruct_result658 = _t1284
+                                _dollar_dollar = msg
+                                if _dollar_dollar.HasField("uint128_value"):
+                                    _t1266 = _dollar_dollar.uint128_value
+                                else:
+                                    _t1266 = None
+                                deconstruct_result658 = _t1266
                                 if deconstruct_result658 is not None:
                                     assert deconstruct_result658 is not None
                                     unwrapped659 = deconstruct_result658
                                     self.write(self.format_uint128(unwrapped659))
                                 else:
-                                    def _t1285(_dollar_dollar):
-                                        if _dollar_dollar.HasField("int128_value"):
-                                            _t1286 = _dollar_dollar.int128_value
-                                        else:
-                                            _t1286 = None
-                                        return _t1286
-                                    _t1287 = _t1285(msg)
-                                    deconstruct_result656 = _t1287
+                                    _dollar_dollar = msg
+                                    if _dollar_dollar.HasField("int128_value"):
+                                        _t1267 = _dollar_dollar.int128_value
+                                    else:
+                                        _t1267 = None
+                                    deconstruct_result656 = _t1267
                                     if deconstruct_result656 is not None:
                                         assert deconstruct_result656 is not None
                                         unwrapped657 = deconstruct_result656
                                         self.write(self.format_int128(unwrapped657))
                                     else:
-                                        def _t1288(_dollar_dollar):
-                                            if _dollar_dollar.HasField("decimal_value"):
-                                                _t1289 = _dollar_dollar.decimal_value
-                                            else:
-                                                _t1289 = None
-                                            return _t1289
-                                        _t1290 = _t1288(msg)
-                                        deconstruct_result654 = _t1290
+                                        _dollar_dollar = msg
+                                        if _dollar_dollar.HasField("decimal_value"):
+                                            _t1268 = _dollar_dollar.decimal_value
+                                        else:
+                                            _t1268 = None
+                                        deconstruct_result654 = _t1268
                                         if deconstruct_result654 is not None:
                                             assert deconstruct_result654 is not None
                                             unwrapped655 = deconstruct_result654
                                             self.write(self.format_decimal(unwrapped655))
                                         else:
-                                            def _t1291(_dollar_dollar):
-                                                if _dollar_dollar.HasField("boolean_value"):
-                                                    _t1292 = _dollar_dollar.boolean_value
-                                                else:
-                                                    _t1292 = None
-                                                return _t1292
-                                            _t1293 = _t1291(msg)
-                                            deconstruct_result652 = _t1293
+                                            _dollar_dollar = msg
+                                            if _dollar_dollar.HasField("boolean_value"):
+                                                _t1269 = _dollar_dollar.boolean_value
+                                            else:
+                                                _t1269 = None
+                                            deconstruct_result652 = _t1269
                                             if deconstruct_result652 is not None:
                                                 assert deconstruct_result652 is not None
                                                 unwrapped653 = deconstruct_result652
@@ -585,14 +559,11 @@ class PrettyPrinter:
             self.write(flat676)
             return None
         else:
-            def _t1294(_dollar_dollar):
-                return (int(_dollar_dollar.year), int(_dollar_dollar.month), int(_dollar_dollar.day),)
-            _t1295 = _t1294(msg)
-            fields671 = _t1295
+            _dollar_dollar = msg
+            fields671 = (int(_dollar_dollar.year), int(_dollar_dollar.month), int(_dollar_dollar.day),)
             assert fields671 is not None
             unwrapped_fields672 = fields671
-            self.write("(")
-            self.write("date")
+            self.write("(date")
             self.indent_sexp()
             self.newline()
             field673 = unwrapped_fields672[0]
@@ -613,14 +584,11 @@ class PrettyPrinter:
             self.write(flat687)
             return None
         else:
-            def _t1296(_dollar_dollar):
-                return (int(_dollar_dollar.year), int(_dollar_dollar.month), int(_dollar_dollar.day), int(_dollar_dollar.hour), int(_dollar_dollar.minute), int(_dollar_dollar.second), int(_dollar_dollar.microsecond),)
-            _t1297 = _t1296(msg)
-            fields677 = _t1297
+            _dollar_dollar = msg
+            fields677 = (int(_dollar_dollar.year), int(_dollar_dollar.month), int(_dollar_dollar.day), int(_dollar_dollar.hour), int(_dollar_dollar.minute), int(_dollar_dollar.second), int(_dollar_dollar.microsecond),)
             assert fields677 is not None
             unwrapped_fields678 = fields677
-            self.write("(")
-            self.write("datetime")
+            self.write("(datetime")
             self.indent_sexp()
             self.newline()
             field679 = unwrapped_fields678[0]
@@ -650,27 +618,23 @@ class PrettyPrinter:
             self.write(")")
 
     def pretty_boolean_value(self, msg: bool):
-        def _t1298(_dollar_dollar):
-            if _dollar_dollar:
-                _t1299 = ()
-            else:
-                _t1299 = None
-            return _t1299
-        _t1300 = _t1298(msg)
-        deconstruct_result690 = _t1300
+        _dollar_dollar = msg
+        if _dollar_dollar:
+            _t1270 = ()
+        else:
+            _t1270 = None
+        deconstruct_result690 = _t1270
         if deconstruct_result690 is not None:
             assert deconstruct_result690 is not None
             unwrapped691 = deconstruct_result690
             self.write("true")
         else:
-            def _t1301(_dollar_dollar):
-                if not _dollar_dollar:
-                    _t1302 = ()
-                else:
-                    _t1302 = None
-                return _t1302
-            _t1303 = _t1301(msg)
-            deconstruct_result688 = _t1303
+            _dollar_dollar = msg
+            if not _dollar_dollar:
+                _t1271 = ()
+            else:
+                _t1271 = None
+            deconstruct_result688 = _t1271
             if deconstruct_result688 is not None:
                 assert deconstruct_result688 is not None
                 unwrapped689 = deconstruct_result688
@@ -685,14 +649,11 @@ class PrettyPrinter:
             self.write(flat696)
             return None
         else:
-            def _t1304(_dollar_dollar):
-                return _dollar_dollar.fragments
-            _t1305 = _t1304(msg)
-            fields692 = _t1305
+            _dollar_dollar = msg
+            fields692 = _dollar_dollar.fragments
             assert fields692 is not None
             unwrapped_fields693 = fields692
-            self.write("(")
-            self.write("sync")
+            self.write("(sync")
             self.indent_sexp()
             if not len(unwrapped_fields693) == 0:
                 self.newline()
@@ -710,10 +671,8 @@ class PrettyPrinter:
             self.write(flat699)
             return None
         else:
-            def _t1306(_dollar_dollar):
-                return self.fragment_id_to_string(_dollar_dollar)
-            _t1307 = _t1306(msg)
-            fields697 = _t1307
+            _dollar_dollar = msg
+            fields697 = self.fragment_id_to_string(_dollar_dollar)
             assert fields697 is not None
             unwrapped_fields698 = fields697
             self.write(":")
@@ -726,22 +685,19 @@ class PrettyPrinter:
             self.write(flat706)
             return None
         else:
-            def _t1308(_dollar_dollar):
-                if not len(_dollar_dollar.writes) == 0:
-                    _t1309 = _dollar_dollar.writes
-                else:
-                    _t1309 = None
-                if not len(_dollar_dollar.reads) == 0:
-                    _t1310 = _dollar_dollar.reads
-                else:
-                    _t1310 = None
-                return (_t1309, _t1310,)
-            _t1311 = _t1308(msg)
-            fields700 = _t1311
+            _dollar_dollar = msg
+            if not len(_dollar_dollar.writes) == 0:
+                _t1272 = _dollar_dollar.writes
+            else:
+                _t1272 = None
+            if not len(_dollar_dollar.reads) == 0:
+                _t1273 = _dollar_dollar.reads
+            else:
+                _t1273 = None
+            fields700 = (_t1272, _t1273,)
             assert fields700 is not None
             unwrapped_fields701 = fields700
-            self.write("(")
-            self.write("epoch")
+            self.write("(epoch")
             self.indent_sexp()
             field702 = unwrapped_fields701[0]
             if field702 is not None:
@@ -766,8 +722,7 @@ class PrettyPrinter:
             return None
         else:
             fields707 = msg
-            self.write("(")
-            self.write("writes")
+            self.write("(writes")
             self.indent_sexp()
             if not len(fields707) == 0:
                 self.newline()
@@ -785,53 +740,45 @@ class PrettyPrinter:
             self.write(flat719)
             return None
         else:
-            def _t1312(_dollar_dollar):
-                if _dollar_dollar.HasField("define"):
-                    _t1313 = _dollar_dollar.define
-                else:
-                    _t1313 = None
-                return _t1313
-            _t1314 = _t1312(msg)
-            deconstruct_result717 = _t1314
+            _dollar_dollar = msg
+            if _dollar_dollar.HasField("define"):
+                _t1274 = _dollar_dollar.define
+            else:
+                _t1274 = None
+            deconstruct_result717 = _t1274
             if deconstruct_result717 is not None:
                 assert deconstruct_result717 is not None
                 unwrapped718 = deconstruct_result717
                 self.pretty_define(unwrapped718)
             else:
-                def _t1315(_dollar_dollar):
-                    if _dollar_dollar.HasField("undefine"):
-                        _t1316 = _dollar_dollar.undefine
-                    else:
-                        _t1316 = None
-                    return _t1316
-                _t1317 = _t1315(msg)
-                deconstruct_result715 = _t1317
+                _dollar_dollar = msg
+                if _dollar_dollar.HasField("undefine"):
+                    _t1275 = _dollar_dollar.undefine
+                else:
+                    _t1275 = None
+                deconstruct_result715 = _t1275
                 if deconstruct_result715 is not None:
                     assert deconstruct_result715 is not None
                     unwrapped716 = deconstruct_result715
                     self.pretty_undefine(unwrapped716)
                 else:
-                    def _t1318(_dollar_dollar):
-                        if _dollar_dollar.HasField("context"):
-                            _t1319 = _dollar_dollar.context
-                        else:
-                            _t1319 = None
-                        return _t1319
-                    _t1320 = _t1318(msg)
-                    deconstruct_result713 = _t1320
+                    _dollar_dollar = msg
+                    if _dollar_dollar.HasField("context"):
+                        _t1276 = _dollar_dollar.context
+                    else:
+                        _t1276 = None
+                    deconstruct_result713 = _t1276
                     if deconstruct_result713 is not None:
                         assert deconstruct_result713 is not None
                         unwrapped714 = deconstruct_result713
                         self.pretty_context(unwrapped714)
                     else:
-                        def _t1321(_dollar_dollar):
-                            if _dollar_dollar.HasField("snapshot"):
-                                _t1322 = _dollar_dollar.snapshot
-                            else:
-                                _t1322 = None
-                            return _t1322
-                        _t1323 = _t1321(msg)
-                        deconstruct_result711 = _t1323
+                        _dollar_dollar = msg
+                        if _dollar_dollar.HasField("snapshot"):
+                            _t1277 = _dollar_dollar.snapshot
+                        else:
+                            _t1277 = None
+                        deconstruct_result711 = _t1277
                         if deconstruct_result711 is not None:
                             assert deconstruct_result711 is not None
                             unwrapped712 = deconstruct_result711
@@ -846,14 +793,11 @@ class PrettyPrinter:
             self.write(flat722)
             return None
         else:
-            def _t1324(_dollar_dollar):
-                return _dollar_dollar.fragment
-            _t1325 = _t1324(msg)
-            fields720 = _t1325
+            _dollar_dollar = msg
+            fields720 = _dollar_dollar.fragment
             assert fields720 is not None
             unwrapped_fields721 = fields720
-            self.write("(")
-            self.write("define")
+            self.write("(define")
             self.indent_sexp()
             self.newline()
             self.pretty_fragment(unwrapped_fields721)
@@ -867,15 +811,12 @@ class PrettyPrinter:
             self.write(flat729)
             return None
         else:
-            def _t1326(_dollar_dollar):
-                self.start_pretty_fragment(_dollar_dollar)
-                return (_dollar_dollar.id, _dollar_dollar.declarations,)
-            _t1327 = _t1326(msg)
-            fields723 = _t1327
+            _dollar_dollar = msg
+            self.start_pretty_fragment(_dollar_dollar)
+            fields723 = (_dollar_dollar.id, _dollar_dollar.declarations,)
             assert fields723 is not None
             unwrapped_fields724 = fields723
-            self.write("(")
-            self.write("fragment")
+            self.write("(fragment")
             self.indent_sexp()
             self.newline()
             field725 = unwrapped_fields724[0]
@@ -907,53 +848,45 @@ class PrettyPrinter:
             self.write(flat740)
             return None
         else:
-            def _t1328(_dollar_dollar):
-                if _dollar_dollar.HasField("def"):
-                    _t1329 = getattr(_dollar_dollar, 'def')
-                else:
-                    _t1329 = None
-                return _t1329
-            _t1330 = _t1328(msg)
-            deconstruct_result738 = _t1330
+            _dollar_dollar = msg
+            if _dollar_dollar.HasField("def"):
+                _t1278 = getattr(_dollar_dollar, 'def')
+            else:
+                _t1278 = None
+            deconstruct_result738 = _t1278
             if deconstruct_result738 is not None:
                 assert deconstruct_result738 is not None
                 unwrapped739 = deconstruct_result738
                 self.pretty_def(unwrapped739)
             else:
-                def _t1331(_dollar_dollar):
-                    if _dollar_dollar.HasField("algorithm"):
-                        _t1332 = _dollar_dollar.algorithm
-                    else:
-                        _t1332 = None
-                    return _t1332
-                _t1333 = _t1331(msg)
-                deconstruct_result736 = _t1333
+                _dollar_dollar = msg
+                if _dollar_dollar.HasField("algorithm"):
+                    _t1279 = _dollar_dollar.algorithm
+                else:
+                    _t1279 = None
+                deconstruct_result736 = _t1279
                 if deconstruct_result736 is not None:
                     assert deconstruct_result736 is not None
                     unwrapped737 = deconstruct_result736
                     self.pretty_algorithm(unwrapped737)
                 else:
-                    def _t1334(_dollar_dollar):
-                        if _dollar_dollar.HasField("constraint"):
-                            _t1335 = _dollar_dollar.constraint
-                        else:
-                            _t1335 = None
-                        return _t1335
-                    _t1336 = _t1334(msg)
-                    deconstruct_result734 = _t1336
+                    _dollar_dollar = msg
+                    if _dollar_dollar.HasField("constraint"):
+                        _t1280 = _dollar_dollar.constraint
+                    else:
+                        _t1280 = None
+                    deconstruct_result734 = _t1280
                     if deconstruct_result734 is not None:
                         assert deconstruct_result734 is not None
                         unwrapped735 = deconstruct_result734
                         self.pretty_constraint(unwrapped735)
                     else:
-                        def _t1337(_dollar_dollar):
-                            if _dollar_dollar.HasField("data"):
-                                _t1338 = _dollar_dollar.data
-                            else:
-                                _t1338 = None
-                            return _t1338
-                        _t1339 = _t1337(msg)
-                        deconstruct_result732 = _t1339
+                        _dollar_dollar = msg
+                        if _dollar_dollar.HasField("data"):
+                            _t1281 = _dollar_dollar.data
+                        else:
+                            _t1281 = None
+                        deconstruct_result732 = _t1281
                         if deconstruct_result732 is not None:
                             assert deconstruct_result732 is not None
                             unwrapped733 = deconstruct_result732
@@ -968,18 +901,15 @@ class PrettyPrinter:
             self.write(flat747)
             return None
         else:
-            def _t1340(_dollar_dollar):
-                if not len(_dollar_dollar.attrs) == 0:
-                    _t1341 = _dollar_dollar.attrs
-                else:
-                    _t1341 = None
-                return (_dollar_dollar.name, _dollar_dollar.body, _t1341,)
-            _t1342 = _t1340(msg)
-            fields741 = _t1342
+            _dollar_dollar = msg
+            if not len(_dollar_dollar.attrs) == 0:
+                _t1282 = _dollar_dollar.attrs
+            else:
+                _t1282 = None
+            fields741 = (_dollar_dollar.name, _dollar_dollar.body, _t1282,)
             assert fields741 is not None
             unwrapped_fields742 = fields741
-            self.write("(")
-            self.write("def")
+            self.write("(def")
             self.indent_sexp()
             self.newline()
             field743 = unwrapped_fields742[0]
@@ -1003,26 +933,22 @@ class PrettyPrinter:
             self.write(flat752)
             return None
         else:
-            def _t1343(_dollar_dollar):
-                if self.relation_id_to_string(_dollar_dollar) is not None:
-                    _t1345 = self.deconstruct_relation_id_string(_dollar_dollar)
-                    _t1344 = _t1345
-                else:
-                    _t1344 = None
-                return _t1344
-            _t1346 = _t1343(msg)
-            deconstruct_result750 = _t1346
+            _dollar_dollar = msg
+            if self.relation_id_to_string(_dollar_dollar) is not None:
+                _t1284 = self.deconstruct_relation_id_string(_dollar_dollar)
+                _t1283 = _t1284
+            else:
+                _t1283 = None
+            deconstruct_result750 = _t1283
             if deconstruct_result750 is not None:
                 assert deconstruct_result750 is not None
                 unwrapped751 = deconstruct_result750
                 self.write(":")
                 self.write(unwrapped751)
             else:
-                def _t1347(_dollar_dollar):
-                    _t1348 = self.deconstruct_relation_id_uint128(_dollar_dollar)
-                    return _t1348
-                _t1349 = _t1347(msg)
-                deconstruct_result748 = _t1349
+                _dollar_dollar = msg
+                _t1285 = self.deconstruct_relation_id_uint128(_dollar_dollar)
+                deconstruct_result748 = _t1285
                 if deconstruct_result748 is not None:
                     assert deconstruct_result748 is not None
                     unwrapped749 = deconstruct_result748
@@ -1037,11 +963,9 @@ class PrettyPrinter:
             self.write(flat757)
             return None
         else:
-            def _t1350(_dollar_dollar):
-                _t1351 = self.deconstruct_bindings(_dollar_dollar)
-                return (_t1351, _dollar_dollar.value,)
-            _t1352 = _t1350(msg)
-            fields753 = _t1352
+            _dollar_dollar = msg
+            _t1286 = self.deconstruct_bindings(_dollar_dollar)
+            fields753 = (_t1286, _dollar_dollar.value,)
             assert fields753 is not None
             unwrapped_fields754 = fields753
             self.write("(")
@@ -1061,14 +985,12 @@ class PrettyPrinter:
             self.write(flat765)
             return None
         else:
-            def _t1353(_dollar_dollar):
-                if not len(_dollar_dollar[1]) == 0:
-                    _t1354 = _dollar_dollar[1]
-                else:
-                    _t1354 = None
-                return (_dollar_dollar[0], _t1354,)
-            _t1355 = _t1353(msg)
-            fields758 = _t1355
+            _dollar_dollar = msg
+            if not len(_dollar_dollar[1]) == 0:
+                _t1287 = _dollar_dollar[1]
+            else:
+                _t1287 = None
+            fields758 = (_dollar_dollar[0], _t1287,)
             assert fields758 is not None
             unwrapped_fields759 = fields758
             self.write("[")
@@ -1094,10 +1016,8 @@ class PrettyPrinter:
             self.write(flat770)
             return None
         else:
-            def _t1356(_dollar_dollar):
-                return (_dollar_dollar.var.name, _dollar_dollar.type,)
-            _t1357 = _t1356(msg)
-            fields766 = _t1357
+            _dollar_dollar = msg
+            fields766 = (_dollar_dollar.var.name, _dollar_dollar.type,)
             assert fields766 is not None
             unwrapped_fields767 = fields766
             field768 = unwrapped_fields767[0]
@@ -1113,144 +1033,122 @@ class PrettyPrinter:
             self.write(flat793)
             return None
         else:
-            def _t1358(_dollar_dollar):
-                if _dollar_dollar.HasField("unspecified_type"):
-                    _t1359 = _dollar_dollar.unspecified_type
-                else:
-                    _t1359 = None
-                return _t1359
-            _t1360 = _t1358(msg)
-            deconstruct_result791 = _t1360
+            _dollar_dollar = msg
+            if _dollar_dollar.HasField("unspecified_type"):
+                _t1288 = _dollar_dollar.unspecified_type
+            else:
+                _t1288 = None
+            deconstruct_result791 = _t1288
             if deconstruct_result791 is not None:
                 assert deconstruct_result791 is not None
                 unwrapped792 = deconstruct_result791
                 self.pretty_unspecified_type(unwrapped792)
             else:
-                def _t1361(_dollar_dollar):
-                    if _dollar_dollar.HasField("string_type"):
-                        _t1362 = _dollar_dollar.string_type
-                    else:
-                        _t1362 = None
-                    return _t1362
-                _t1363 = _t1361(msg)
-                deconstruct_result789 = _t1363
+                _dollar_dollar = msg
+                if _dollar_dollar.HasField("string_type"):
+                    _t1289 = _dollar_dollar.string_type
+                else:
+                    _t1289 = None
+                deconstruct_result789 = _t1289
                 if deconstruct_result789 is not None:
                     assert deconstruct_result789 is not None
                     unwrapped790 = deconstruct_result789
                     self.pretty_string_type(unwrapped790)
                 else:
-                    def _t1364(_dollar_dollar):
-                        if _dollar_dollar.HasField("int_type"):
-                            _t1365 = _dollar_dollar.int_type
-                        else:
-                            _t1365 = None
-                        return _t1365
-                    _t1366 = _t1364(msg)
-                    deconstruct_result787 = _t1366
+                    _dollar_dollar = msg
+                    if _dollar_dollar.HasField("int_type"):
+                        _t1290 = _dollar_dollar.int_type
+                    else:
+                        _t1290 = None
+                    deconstruct_result787 = _t1290
                     if deconstruct_result787 is not None:
                         assert deconstruct_result787 is not None
                         unwrapped788 = deconstruct_result787
                         self.pretty_int_type(unwrapped788)
                     else:
-                        def _t1367(_dollar_dollar):
-                            if _dollar_dollar.HasField("float_type"):
-                                _t1368 = _dollar_dollar.float_type
-                            else:
-                                _t1368 = None
-                            return _t1368
-                        _t1369 = _t1367(msg)
-                        deconstruct_result785 = _t1369
+                        _dollar_dollar = msg
+                        if _dollar_dollar.HasField("float_type"):
+                            _t1291 = _dollar_dollar.float_type
+                        else:
+                            _t1291 = None
+                        deconstruct_result785 = _t1291
                         if deconstruct_result785 is not None:
                             assert deconstruct_result785 is not None
                             unwrapped786 = deconstruct_result785
                             self.pretty_float_type(unwrapped786)
                         else:
-                            def _t1370(_dollar_dollar):
-                                if _dollar_dollar.HasField("uint128_type"):
-                                    _t1371 = _dollar_dollar.uint128_type
-                                else:
-                                    _t1371 = None
-                                return _t1371
-                            _t1372 = _t1370(msg)
-                            deconstruct_result783 = _t1372
+                            _dollar_dollar = msg
+                            if _dollar_dollar.HasField("uint128_type"):
+                                _t1292 = _dollar_dollar.uint128_type
+                            else:
+                                _t1292 = None
+                            deconstruct_result783 = _t1292
                             if deconstruct_result783 is not None:
                                 assert deconstruct_result783 is not None
                                 unwrapped784 = deconstruct_result783
                                 self.pretty_uint128_type(unwrapped784)
                             else:
-                                def _t1373(_dollar_dollar):
-                                    if _dollar_dollar.HasField("int128_type"):
-                                        _t1374 = _dollar_dollar.int128_type
-                                    else:
-                                        _t1374 = None
-                                    return _t1374
-                                _t1375 = _t1373(msg)
-                                deconstruct_result781 = _t1375
+                                _dollar_dollar = msg
+                                if _dollar_dollar.HasField("int128_type"):
+                                    _t1293 = _dollar_dollar.int128_type
+                                else:
+                                    _t1293 = None
+                                deconstruct_result781 = _t1293
                                 if deconstruct_result781 is not None:
                                     assert deconstruct_result781 is not None
                                     unwrapped782 = deconstruct_result781
                                     self.pretty_int128_type(unwrapped782)
                                 else:
-                                    def _t1376(_dollar_dollar):
-                                        if _dollar_dollar.HasField("date_type"):
-                                            _t1377 = _dollar_dollar.date_type
-                                        else:
-                                            _t1377 = None
-                                        return _t1377
-                                    _t1378 = _t1376(msg)
-                                    deconstruct_result779 = _t1378
+                                    _dollar_dollar = msg
+                                    if _dollar_dollar.HasField("date_type"):
+                                        _t1294 = _dollar_dollar.date_type
+                                    else:
+                                        _t1294 = None
+                                    deconstruct_result779 = _t1294
                                     if deconstruct_result779 is not None:
                                         assert deconstruct_result779 is not None
                                         unwrapped780 = deconstruct_result779
                                         self.pretty_date_type(unwrapped780)
                                     else:
-                                        def _t1379(_dollar_dollar):
-                                            if _dollar_dollar.HasField("datetime_type"):
-                                                _t1380 = _dollar_dollar.datetime_type
-                                            else:
-                                                _t1380 = None
-                                            return _t1380
-                                        _t1381 = _t1379(msg)
-                                        deconstruct_result777 = _t1381
+                                        _dollar_dollar = msg
+                                        if _dollar_dollar.HasField("datetime_type"):
+                                            _t1295 = _dollar_dollar.datetime_type
+                                        else:
+                                            _t1295 = None
+                                        deconstruct_result777 = _t1295
                                         if deconstruct_result777 is not None:
                                             assert deconstruct_result777 is not None
                                             unwrapped778 = deconstruct_result777
                                             self.pretty_datetime_type(unwrapped778)
                                         else:
-                                            def _t1382(_dollar_dollar):
-                                                if _dollar_dollar.HasField("missing_type"):
-                                                    _t1383 = _dollar_dollar.missing_type
-                                                else:
-                                                    _t1383 = None
-                                                return _t1383
-                                            _t1384 = _t1382(msg)
-                                            deconstruct_result775 = _t1384
+                                            _dollar_dollar = msg
+                                            if _dollar_dollar.HasField("missing_type"):
+                                                _t1296 = _dollar_dollar.missing_type
+                                            else:
+                                                _t1296 = None
+                                            deconstruct_result775 = _t1296
                                             if deconstruct_result775 is not None:
                                                 assert deconstruct_result775 is not None
                                                 unwrapped776 = deconstruct_result775
                                                 self.pretty_missing_type(unwrapped776)
                                             else:
-                                                def _t1385(_dollar_dollar):
-                                                    if _dollar_dollar.HasField("decimal_type"):
-                                                        _t1386 = _dollar_dollar.decimal_type
-                                                    else:
-                                                        _t1386 = None
-                                                    return _t1386
-                                                _t1387 = _t1385(msg)
-                                                deconstruct_result773 = _t1387
+                                                _dollar_dollar = msg
+                                                if _dollar_dollar.HasField("decimal_type"):
+                                                    _t1297 = _dollar_dollar.decimal_type
+                                                else:
+                                                    _t1297 = None
+                                                deconstruct_result773 = _t1297
                                                 if deconstruct_result773 is not None:
                                                     assert deconstruct_result773 is not None
                                                     unwrapped774 = deconstruct_result773
                                                     self.pretty_decimal_type(unwrapped774)
                                                 else:
-                                                    def _t1388(_dollar_dollar):
-                                                        if _dollar_dollar.HasField("boolean_type"):
-                                                            _t1389 = _dollar_dollar.boolean_type
-                                                        else:
-                                                            _t1389 = None
-                                                        return _t1389
-                                                    _t1390 = _t1388(msg)
-                                                    deconstruct_result771 = _t1390
+                                                    _dollar_dollar = msg
+                                                    if _dollar_dollar.HasField("boolean_type"):
+                                                        _t1298 = _dollar_dollar.boolean_type
+                                                    else:
+                                                        _t1298 = None
+                                                    deconstruct_result771 = _t1298
                                                     if deconstruct_result771 is not None:
                                                         assert deconstruct_result771 is not None
                                                         unwrapped772 = deconstruct_result771
@@ -1301,14 +1199,11 @@ class PrettyPrinter:
             self.write(flat807)
             return None
         else:
-            def _t1391(_dollar_dollar):
-                return (int(_dollar_dollar.precision), int(_dollar_dollar.scale),)
-            _t1392 = _t1391(msg)
-            fields803 = _t1392
+            _dollar_dollar = msg
+            fields803 = (int(_dollar_dollar.precision), int(_dollar_dollar.scale),)
             assert fields803 is not None
             unwrapped_fields804 = fields803
-            self.write("(")
-            self.write("DECIMAL")
+            self.write("(DECIMAL")
             self.indent_sexp()
             self.newline()
             field805 = unwrapped_fields804[0]
@@ -1346,170 +1241,144 @@ class PrettyPrinter:
             self.write(flat839)
             return None
         else:
-            def _t1393(_dollar_dollar):
-                if (_dollar_dollar.HasField("conjunction") and len(_dollar_dollar.conjunction.args) == 0):
-                    _t1394 = _dollar_dollar.conjunction
-                else:
-                    _t1394 = None
-                return _t1394
-            _t1395 = _t1393(msg)
-            deconstruct_result837 = _t1395
+            _dollar_dollar = msg
+            if (_dollar_dollar.HasField("conjunction") and len(_dollar_dollar.conjunction.args) == 0):
+                _t1299 = _dollar_dollar.conjunction
+            else:
+                _t1299 = None
+            deconstruct_result837 = _t1299
             if deconstruct_result837 is not None:
                 assert deconstruct_result837 is not None
                 unwrapped838 = deconstruct_result837
                 self.pretty_true(unwrapped838)
             else:
-                def _t1396(_dollar_dollar):
-                    if (_dollar_dollar.HasField("disjunction") and len(_dollar_dollar.disjunction.args) == 0):
-                        _t1397 = _dollar_dollar.disjunction
-                    else:
-                        _t1397 = None
-                    return _t1397
-                _t1398 = _t1396(msg)
-                deconstruct_result835 = _t1398
+                _dollar_dollar = msg
+                if (_dollar_dollar.HasField("disjunction") and len(_dollar_dollar.disjunction.args) == 0):
+                    _t1300 = _dollar_dollar.disjunction
+                else:
+                    _t1300 = None
+                deconstruct_result835 = _t1300
                 if deconstruct_result835 is not None:
                     assert deconstruct_result835 is not None
                     unwrapped836 = deconstruct_result835
                     self.pretty_false(unwrapped836)
                 else:
-                    def _t1399(_dollar_dollar):
-                        if _dollar_dollar.HasField("exists"):
-                            _t1400 = _dollar_dollar.exists
-                        else:
-                            _t1400 = None
-                        return _t1400
-                    _t1401 = _t1399(msg)
-                    deconstruct_result833 = _t1401
+                    _dollar_dollar = msg
+                    if _dollar_dollar.HasField("exists"):
+                        _t1301 = _dollar_dollar.exists
+                    else:
+                        _t1301 = None
+                    deconstruct_result833 = _t1301
                     if deconstruct_result833 is not None:
                         assert deconstruct_result833 is not None
                         unwrapped834 = deconstruct_result833
                         self.pretty_exists(unwrapped834)
                     else:
-                        def _t1402(_dollar_dollar):
-                            if _dollar_dollar.HasField("reduce"):
-                                _t1403 = _dollar_dollar.reduce
-                            else:
-                                _t1403 = None
-                            return _t1403
-                        _t1404 = _t1402(msg)
-                        deconstruct_result831 = _t1404
+                        _dollar_dollar = msg
+                        if _dollar_dollar.HasField("reduce"):
+                            _t1302 = _dollar_dollar.reduce
+                        else:
+                            _t1302 = None
+                        deconstruct_result831 = _t1302
                         if deconstruct_result831 is not None:
                             assert deconstruct_result831 is not None
                             unwrapped832 = deconstruct_result831
                             self.pretty_reduce(unwrapped832)
                         else:
-                            def _t1405(_dollar_dollar):
-                                if (_dollar_dollar.HasField("conjunction") and not len(_dollar_dollar.conjunction.args) == 0):
-                                    _t1406 = _dollar_dollar.conjunction
-                                else:
-                                    _t1406 = None
-                                return _t1406
-                            _t1407 = _t1405(msg)
-                            deconstruct_result829 = _t1407
+                            _dollar_dollar = msg
+                            if (_dollar_dollar.HasField("conjunction") and not len(_dollar_dollar.conjunction.args) == 0):
+                                _t1303 = _dollar_dollar.conjunction
+                            else:
+                                _t1303 = None
+                            deconstruct_result829 = _t1303
                             if deconstruct_result829 is not None:
                                 assert deconstruct_result829 is not None
                                 unwrapped830 = deconstruct_result829
                                 self.pretty_conjunction(unwrapped830)
                             else:
-                                def _t1408(_dollar_dollar):
-                                    if (_dollar_dollar.HasField("disjunction") and not len(_dollar_dollar.disjunction.args) == 0):
-                                        _t1409 = _dollar_dollar.disjunction
-                                    else:
-                                        _t1409 = None
-                                    return _t1409
-                                _t1410 = _t1408(msg)
-                                deconstruct_result827 = _t1410
+                                _dollar_dollar = msg
+                                if (_dollar_dollar.HasField("disjunction") and not len(_dollar_dollar.disjunction.args) == 0):
+                                    _t1304 = _dollar_dollar.disjunction
+                                else:
+                                    _t1304 = None
+                                deconstruct_result827 = _t1304
                                 if deconstruct_result827 is not None:
                                     assert deconstruct_result827 is not None
                                     unwrapped828 = deconstruct_result827
                                     self.pretty_disjunction(unwrapped828)
                                 else:
-                                    def _t1411(_dollar_dollar):
-                                        if _dollar_dollar.HasField("not"):
-                                            _t1412 = getattr(_dollar_dollar, 'not')
-                                        else:
-                                            _t1412 = None
-                                        return _t1412
-                                    _t1413 = _t1411(msg)
-                                    deconstruct_result825 = _t1413
+                                    _dollar_dollar = msg
+                                    if _dollar_dollar.HasField("not"):
+                                        _t1305 = getattr(_dollar_dollar, 'not')
+                                    else:
+                                        _t1305 = None
+                                    deconstruct_result825 = _t1305
                                     if deconstruct_result825 is not None:
                                         assert deconstruct_result825 is not None
                                         unwrapped826 = deconstruct_result825
                                         self.pretty_not(unwrapped826)
                                     else:
-                                        def _t1414(_dollar_dollar):
-                                            if _dollar_dollar.HasField("ffi"):
-                                                _t1415 = _dollar_dollar.ffi
-                                            else:
-                                                _t1415 = None
-                                            return _t1415
-                                        _t1416 = _t1414(msg)
-                                        deconstruct_result823 = _t1416
+                                        _dollar_dollar = msg
+                                        if _dollar_dollar.HasField("ffi"):
+                                            _t1306 = _dollar_dollar.ffi
+                                        else:
+                                            _t1306 = None
+                                        deconstruct_result823 = _t1306
                                         if deconstruct_result823 is not None:
                                             assert deconstruct_result823 is not None
                                             unwrapped824 = deconstruct_result823
                                             self.pretty_ffi(unwrapped824)
                                         else:
-                                            def _t1417(_dollar_dollar):
-                                                if _dollar_dollar.HasField("atom"):
-                                                    _t1418 = _dollar_dollar.atom
-                                                else:
-                                                    _t1418 = None
-                                                return _t1418
-                                            _t1419 = _t1417(msg)
-                                            deconstruct_result821 = _t1419
+                                            _dollar_dollar = msg
+                                            if _dollar_dollar.HasField("atom"):
+                                                _t1307 = _dollar_dollar.atom
+                                            else:
+                                                _t1307 = None
+                                            deconstruct_result821 = _t1307
                                             if deconstruct_result821 is not None:
                                                 assert deconstruct_result821 is not None
                                                 unwrapped822 = deconstruct_result821
                                                 self.pretty_atom(unwrapped822)
                                             else:
-                                                def _t1420(_dollar_dollar):
-                                                    if _dollar_dollar.HasField("pragma"):
-                                                        _t1421 = _dollar_dollar.pragma
-                                                    else:
-                                                        _t1421 = None
-                                                    return _t1421
-                                                _t1422 = _t1420(msg)
-                                                deconstruct_result819 = _t1422
+                                                _dollar_dollar = msg
+                                                if _dollar_dollar.HasField("pragma"):
+                                                    _t1308 = _dollar_dollar.pragma
+                                                else:
+                                                    _t1308 = None
+                                                deconstruct_result819 = _t1308
                                                 if deconstruct_result819 is not None:
                                                     assert deconstruct_result819 is not None
                                                     unwrapped820 = deconstruct_result819
                                                     self.pretty_pragma(unwrapped820)
                                                 else:
-                                                    def _t1423(_dollar_dollar):
-                                                        if _dollar_dollar.HasField("primitive"):
-                                                            _t1424 = _dollar_dollar.primitive
-                                                        else:
-                                                            _t1424 = None
-                                                        return _t1424
-                                                    _t1425 = _t1423(msg)
-                                                    deconstruct_result817 = _t1425
+                                                    _dollar_dollar = msg
+                                                    if _dollar_dollar.HasField("primitive"):
+                                                        _t1309 = _dollar_dollar.primitive
+                                                    else:
+                                                        _t1309 = None
+                                                    deconstruct_result817 = _t1309
                                                     if deconstruct_result817 is not None:
                                                         assert deconstruct_result817 is not None
                                                         unwrapped818 = deconstruct_result817
                                                         self.pretty_primitive(unwrapped818)
                                                     else:
-                                                        def _t1426(_dollar_dollar):
-                                                            if _dollar_dollar.HasField("rel_atom"):
-                                                                _t1427 = _dollar_dollar.rel_atom
-                                                            else:
-                                                                _t1427 = None
-                                                            return _t1427
-                                                        _t1428 = _t1426(msg)
-                                                        deconstruct_result815 = _t1428
+                                                        _dollar_dollar = msg
+                                                        if _dollar_dollar.HasField("rel_atom"):
+                                                            _t1310 = _dollar_dollar.rel_atom
+                                                        else:
+                                                            _t1310 = None
+                                                        deconstruct_result815 = _t1310
                                                         if deconstruct_result815 is not None:
                                                             assert deconstruct_result815 is not None
                                                             unwrapped816 = deconstruct_result815
                                                             self.pretty_rel_atom(unwrapped816)
                                                         else:
-                                                            def _t1429(_dollar_dollar):
-                                                                if _dollar_dollar.HasField("cast"):
-                                                                    _t1430 = _dollar_dollar.cast
-                                                                else:
-                                                                    _t1430 = None
-                                                                return _t1430
-                                                            _t1431 = _t1429(msg)
-                                                            deconstruct_result813 = _t1431
+                                                            _dollar_dollar = msg
+                                                            if _dollar_dollar.HasField("cast"):
+                                                                _t1311 = _dollar_dollar.cast
+                                                            else:
+                                                                _t1311 = None
+                                                            deconstruct_result813 = _t1311
                                                             if deconstruct_result813 is not None:
                                                                 assert deconstruct_result813 is not None
                                                                 unwrapped814 = deconstruct_result813
@@ -1519,15 +1388,11 @@ class PrettyPrinter:
 
     def pretty_true(self, msg: logic_pb2.Conjunction):
         fields840 = msg
-        self.write("(")
-        self.write("true")
-        self.write(")")
+        self.write("(true)")
 
     def pretty_false(self, msg: logic_pb2.Disjunction):
         fields841 = msg
-        self.write("(")
-        self.write("false")
-        self.write(")")
+        self.write("(false)")
 
     def pretty_exists(self, msg: logic_pb2.Exists):
         flat846 = self._try_flat(msg, self.pretty_exists)
@@ -1536,15 +1401,12 @@ class PrettyPrinter:
             self.write(flat846)
             return None
         else:
-            def _t1432(_dollar_dollar):
-                _t1433 = self.deconstruct_bindings(_dollar_dollar.body)
-                return (_t1433, _dollar_dollar.body.value,)
-            _t1434 = _t1432(msg)
-            fields842 = _t1434
+            _dollar_dollar = msg
+            _t1312 = self.deconstruct_bindings(_dollar_dollar.body)
+            fields842 = (_t1312, _dollar_dollar.body.value,)
             assert fields842 is not None
             unwrapped_fields843 = fields842
-            self.write("(")
-            self.write("exists")
+            self.write("(exists")
             self.indent_sexp()
             self.newline()
             field844 = unwrapped_fields843[0]
@@ -1562,14 +1424,11 @@ class PrettyPrinter:
             self.write(flat852)
             return None
         else:
-            def _t1435(_dollar_dollar):
-                return (_dollar_dollar.op, _dollar_dollar.body, _dollar_dollar.terms,)
-            _t1436 = _t1435(msg)
-            fields847 = _t1436
+            _dollar_dollar = msg
+            fields847 = (_dollar_dollar.op, _dollar_dollar.body, _dollar_dollar.terms,)
             assert fields847 is not None
             unwrapped_fields848 = fields847
-            self.write("(")
-            self.write("reduce")
+            self.write("(reduce")
             self.indent_sexp()
             self.newline()
             field849 = unwrapped_fields848[0]
@@ -1591,8 +1450,7 @@ class PrettyPrinter:
             return None
         else:
             fields853 = msg
-            self.write("(")
-            self.write("terms")
+            self.write("(terms")
             self.indent_sexp()
             if not len(fields853) == 0:
                 self.newline()
@@ -1610,27 +1468,23 @@ class PrettyPrinter:
             self.write(flat861)
             return None
         else:
-            def _t1437(_dollar_dollar):
-                if _dollar_dollar.HasField("var"):
-                    _t1438 = _dollar_dollar.var
-                else:
-                    _t1438 = None
-                return _t1438
-            _t1439 = _t1437(msg)
-            deconstruct_result859 = _t1439
+            _dollar_dollar = msg
+            if _dollar_dollar.HasField("var"):
+                _t1313 = _dollar_dollar.var
+            else:
+                _t1313 = None
+            deconstruct_result859 = _t1313
             if deconstruct_result859 is not None:
                 assert deconstruct_result859 is not None
                 unwrapped860 = deconstruct_result859
                 self.pretty_var(unwrapped860)
             else:
-                def _t1440(_dollar_dollar):
-                    if _dollar_dollar.HasField("constant"):
-                        _t1441 = _dollar_dollar.constant
-                    else:
-                        _t1441 = None
-                    return _t1441
-                _t1442 = _t1440(msg)
-                deconstruct_result857 = _t1442
+                _dollar_dollar = msg
+                if _dollar_dollar.HasField("constant"):
+                    _t1314 = _dollar_dollar.constant
+                else:
+                    _t1314 = None
+                deconstruct_result857 = _t1314
                 if deconstruct_result857 is not None:
                     assert deconstruct_result857 is not None
                     unwrapped858 = deconstruct_result857
@@ -1645,10 +1499,8 @@ class PrettyPrinter:
             self.write(flat864)
             return None
         else:
-            def _t1443(_dollar_dollar):
-                return _dollar_dollar.name
-            _t1444 = _t1443(msg)
-            fields862 = _t1444
+            _dollar_dollar = msg
+            fields862 = _dollar_dollar.name
             assert fields862 is not None
             unwrapped_fields863 = fields862
             self.write(unwrapped_fields863)
@@ -1670,14 +1522,11 @@ class PrettyPrinter:
             self.write(flat871)
             return None
         else:
-            def _t1445(_dollar_dollar):
-                return _dollar_dollar.args
-            _t1446 = _t1445(msg)
-            fields867 = _t1446
+            _dollar_dollar = msg
+            fields867 = _dollar_dollar.args
             assert fields867 is not None
             unwrapped_fields868 = fields867
-            self.write("(")
-            self.write("and")
+            self.write("(and")
             self.indent_sexp()
             if not len(unwrapped_fields868) == 0:
                 self.newline()
@@ -1695,14 +1544,11 @@ class PrettyPrinter:
             self.write(flat876)
             return None
         else:
-            def _t1447(_dollar_dollar):
-                return _dollar_dollar.args
-            _t1448 = _t1447(msg)
-            fields872 = _t1448
+            _dollar_dollar = msg
+            fields872 = _dollar_dollar.args
             assert fields872 is not None
             unwrapped_fields873 = fields872
-            self.write("(")
-            self.write("or")
+            self.write("(or")
             self.indent_sexp()
             if not len(unwrapped_fields873) == 0:
                 self.newline()
@@ -1720,14 +1566,11 @@ class PrettyPrinter:
             self.write(flat879)
             return None
         else:
-            def _t1449(_dollar_dollar):
-                return _dollar_dollar.arg
-            _t1450 = _t1449(msg)
-            fields877 = _t1450
+            _dollar_dollar = msg
+            fields877 = _dollar_dollar.arg
             assert fields877 is not None
             unwrapped_fields878 = fields877
-            self.write("(")
-            self.write("not")
+            self.write("(not")
             self.indent_sexp()
             self.newline()
             self.pretty_formula(unwrapped_fields878)
@@ -1741,14 +1584,11 @@ class PrettyPrinter:
             self.write(flat885)
             return None
         else:
-            def _t1451(_dollar_dollar):
-                return (_dollar_dollar.name, _dollar_dollar.args, _dollar_dollar.terms,)
-            _t1452 = _t1451(msg)
-            fields880 = _t1452
+            _dollar_dollar = msg
+            fields880 = (_dollar_dollar.name, _dollar_dollar.args, _dollar_dollar.terms,)
             assert fields880 is not None
             unwrapped_fields881 = fields880
-            self.write("(")
-            self.write("ffi")
+            self.write("(ffi")
             self.indent_sexp()
             self.newline()
             field882 = unwrapped_fields881[0]
@@ -1781,8 +1621,7 @@ class PrettyPrinter:
             return None
         else:
             fields888 = msg
-            self.write("(")
-            self.write("args")
+            self.write("(args")
             self.indent_sexp()
             if not len(fields888) == 0:
                 self.newline()
@@ -1800,14 +1639,11 @@ class PrettyPrinter:
             self.write(flat898)
             return None
         else:
-            def _t1453(_dollar_dollar):
-                return (_dollar_dollar.name, _dollar_dollar.terms,)
-            _t1454 = _t1453(msg)
-            fields892 = _t1454
+            _dollar_dollar = msg
+            fields892 = (_dollar_dollar.name, _dollar_dollar.terms,)
             assert fields892 is not None
             unwrapped_fields893 = fields892
-            self.write("(")
-            self.write("atom")
+            self.write("(atom")
             self.indent_sexp()
             self.newline()
             field894 = unwrapped_fields893[0]
@@ -1829,14 +1665,11 @@ class PrettyPrinter:
             self.write(flat905)
             return None
         else:
-            def _t1455(_dollar_dollar):
-                return (_dollar_dollar.name, _dollar_dollar.terms,)
-            _t1456 = _t1455(msg)
-            fields899 = _t1456
+            _dollar_dollar = msg
+            fields899 = (_dollar_dollar.name, _dollar_dollar.terms,)
             assert fields899 is not None
             unwrapped_fields900 = fields899
-            self.write("(")
-            self.write("pragma")
+            self.write("(pragma")
             self.indent_sexp()
             self.newline()
             field901 = unwrapped_fields900[0]
@@ -1858,113 +1691,92 @@ class PrettyPrinter:
             self.write(flat921)
             return None
         else:
-            def _t1457(_dollar_dollar):
-                if _dollar_dollar.name == "rel_primitive_eq":
-                    _t1458 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term,)
-                else:
-                    _t1458 = None
-                return _t1458
-            _t1459 = _t1457(msg)
-            guard_result920 = _t1459
+            _dollar_dollar = msg
+            if _dollar_dollar.name == "rel_primitive_eq":
+                _t1315 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term,)
+            else:
+                _t1315 = None
+            guard_result920 = _t1315
             if guard_result920 is not None:
                 self.pretty_eq(msg)
             else:
-                def _t1460(_dollar_dollar):
-                    if _dollar_dollar.name == "rel_primitive_lt_monotype":
-                        _t1461 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term,)
-                    else:
-                        _t1461 = None
-                    return _t1461
-                _t1462 = _t1460(msg)
-                guard_result919 = _t1462
+                _dollar_dollar = msg
+                if _dollar_dollar.name == "rel_primitive_lt_monotype":
+                    _t1316 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term,)
+                else:
+                    _t1316 = None
+                guard_result919 = _t1316
                 if guard_result919 is not None:
                     self.pretty_lt(msg)
                 else:
-                    def _t1463(_dollar_dollar):
-                        if _dollar_dollar.name == "rel_primitive_lt_eq_monotype":
-                            _t1464 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term,)
-                        else:
-                            _t1464 = None
-                        return _t1464
-                    _t1465 = _t1463(msg)
-                    guard_result918 = _t1465
+                    _dollar_dollar = msg
+                    if _dollar_dollar.name == "rel_primitive_lt_eq_monotype":
+                        _t1317 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term,)
+                    else:
+                        _t1317 = None
+                    guard_result918 = _t1317
                     if guard_result918 is not None:
                         self.pretty_lt_eq(msg)
                     else:
-                        def _t1466(_dollar_dollar):
-                            if _dollar_dollar.name == "rel_primitive_gt_monotype":
-                                _t1467 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term,)
-                            else:
-                                _t1467 = None
-                            return _t1467
-                        _t1468 = _t1466(msg)
-                        guard_result917 = _t1468
+                        _dollar_dollar = msg
+                        if _dollar_dollar.name == "rel_primitive_gt_monotype":
+                            _t1318 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term,)
+                        else:
+                            _t1318 = None
+                        guard_result917 = _t1318
                         if guard_result917 is not None:
                             self.pretty_gt(msg)
                         else:
-                            def _t1469(_dollar_dollar):
-                                if _dollar_dollar.name == "rel_primitive_gt_eq_monotype":
-                                    _t1470 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term,)
-                                else:
-                                    _t1470 = None
-                                return _t1470
-                            _t1471 = _t1469(msg)
-                            guard_result916 = _t1471
+                            _dollar_dollar = msg
+                            if _dollar_dollar.name == "rel_primitive_gt_eq_monotype":
+                                _t1319 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term,)
+                            else:
+                                _t1319 = None
+                            guard_result916 = _t1319
                             if guard_result916 is not None:
                                 self.pretty_gt_eq(msg)
                             else:
-                                def _t1472(_dollar_dollar):
-                                    if _dollar_dollar.name == "rel_primitive_add_monotype":
-                                        _t1473 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term, _dollar_dollar.terms[2].term,)
-                                    else:
-                                        _t1473 = None
-                                    return _t1473
-                                _t1474 = _t1472(msg)
-                                guard_result915 = _t1474
+                                _dollar_dollar = msg
+                                if _dollar_dollar.name == "rel_primitive_add_monotype":
+                                    _t1320 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term, _dollar_dollar.terms[2].term,)
+                                else:
+                                    _t1320 = None
+                                guard_result915 = _t1320
                                 if guard_result915 is not None:
                                     self.pretty_add(msg)
                                 else:
-                                    def _t1475(_dollar_dollar):
-                                        if _dollar_dollar.name == "rel_primitive_subtract_monotype":
-                                            _t1476 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term, _dollar_dollar.terms[2].term,)
-                                        else:
-                                            _t1476 = None
-                                        return _t1476
-                                    _t1477 = _t1475(msg)
-                                    guard_result914 = _t1477
+                                    _dollar_dollar = msg
+                                    if _dollar_dollar.name == "rel_primitive_subtract_monotype":
+                                        _t1321 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term, _dollar_dollar.terms[2].term,)
+                                    else:
+                                        _t1321 = None
+                                    guard_result914 = _t1321
                                     if guard_result914 is not None:
                                         self.pretty_minus(msg)
                                     else:
-                                        def _t1478(_dollar_dollar):
-                                            if _dollar_dollar.name == "rel_primitive_multiply_monotype":
-                                                _t1479 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term, _dollar_dollar.terms[2].term,)
-                                            else:
-                                                _t1479 = None
-                                            return _t1479
-                                        _t1480 = _t1478(msg)
-                                        guard_result913 = _t1480
+                                        _dollar_dollar = msg
+                                        if _dollar_dollar.name == "rel_primitive_multiply_monotype":
+                                            _t1322 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term, _dollar_dollar.terms[2].term,)
+                                        else:
+                                            _t1322 = None
+                                        guard_result913 = _t1322
                                         if guard_result913 is not None:
                                             self.pretty_multiply(msg)
                                         else:
-                                            def _t1481(_dollar_dollar):
-                                                if _dollar_dollar.name == "rel_primitive_divide_monotype":
-                                                    _t1482 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term, _dollar_dollar.terms[2].term,)
-                                                else:
-                                                    _t1482 = None
-                                                return _t1482
-                                            _t1483 = _t1481(msg)
-                                            guard_result912 = _t1483
+                                            _dollar_dollar = msg
+                                            if _dollar_dollar.name == "rel_primitive_divide_monotype":
+                                                _t1323 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term, _dollar_dollar.terms[2].term,)
+                                            else:
+                                                _t1323 = None
+                                            guard_result912 = _t1323
                                             if guard_result912 is not None:
                                                 self.pretty_divide(msg)
                                             else:
-                                                def _t1484(_dollar_dollar):
-                                                    return (_dollar_dollar.name, _dollar_dollar.terms,)
-                                                _t1485 = _t1484(msg)
-                                                fields906 = _t1485
+                                                _dollar_dollar = msg
+                                                fields906 = (_dollar_dollar.name, _dollar_dollar.terms,)
                                                 assert fields906 is not None
                                                 unwrapped_fields907 = fields906
-                                                self.write("(")
-                                                self.write("primitive")
+                                                self.write("(primitive")
                                                 self.indent_sexp()
                                                 self.newline()
                                                 field908 = unwrapped_fields907[0]
@@ -1986,18 +1798,15 @@ class PrettyPrinter:
             self.write(flat926)
             return None
         else:
-            def _t1486(_dollar_dollar):
-                if _dollar_dollar.name == "rel_primitive_eq":
-                    _t1487 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term,)
-                else:
-                    _t1487 = None
-                return _t1487
-            _t1488 = _t1486(msg)
-            fields922 = _t1488
+            _dollar_dollar = msg
+            if _dollar_dollar.name == "rel_primitive_eq":
+                _t1324 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term,)
+            else:
+                _t1324 = None
+            fields922 = _t1324
             assert fields922 is not None
             unwrapped_fields923 = fields922
-            self.write("(")
-            self.write("=")
+            self.write("(=")
             self.indent_sexp()
             self.newline()
             field924 = unwrapped_fields923[0]
@@ -2015,18 +1824,15 @@ class PrettyPrinter:
             self.write(flat931)
             return None
         else:
-            def _t1489(_dollar_dollar):
-                if _dollar_dollar.name == "rel_primitive_lt_monotype":
-                    _t1490 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term,)
-                else:
-                    _t1490 = None
-                return _t1490
-            _t1491 = _t1489(msg)
-            fields927 = _t1491
+            _dollar_dollar = msg
+            if _dollar_dollar.name == "rel_primitive_lt_monotype":
+                _t1325 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term,)
+            else:
+                _t1325 = None
+            fields927 = _t1325
             assert fields927 is not None
             unwrapped_fields928 = fields927
-            self.write("(")
-            self.write("<")
+            self.write("(<")
             self.indent_sexp()
             self.newline()
             field929 = unwrapped_fields928[0]
@@ -2044,18 +1850,15 @@ class PrettyPrinter:
             self.write(flat936)
             return None
         else:
-            def _t1492(_dollar_dollar):
-                if _dollar_dollar.name == "rel_primitive_lt_eq_monotype":
-                    _t1493 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term,)
-                else:
-                    _t1493 = None
-                return _t1493
-            _t1494 = _t1492(msg)
-            fields932 = _t1494
+            _dollar_dollar = msg
+            if _dollar_dollar.name == "rel_primitive_lt_eq_monotype":
+                _t1326 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term,)
+            else:
+                _t1326 = None
+            fields932 = _t1326
             assert fields932 is not None
             unwrapped_fields933 = fields932
-            self.write("(")
-            self.write("<=")
+            self.write("(<=")
             self.indent_sexp()
             self.newline()
             field934 = unwrapped_fields933[0]
@@ -2073,18 +1876,15 @@ class PrettyPrinter:
             self.write(flat941)
             return None
         else:
-            def _t1495(_dollar_dollar):
-                if _dollar_dollar.name == "rel_primitive_gt_monotype":
-                    _t1496 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term,)
-                else:
-                    _t1496 = None
-                return _t1496
-            _t1497 = _t1495(msg)
-            fields937 = _t1497
+            _dollar_dollar = msg
+            if _dollar_dollar.name == "rel_primitive_gt_monotype":
+                _t1327 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term,)
+            else:
+                _t1327 = None
+            fields937 = _t1327
             assert fields937 is not None
             unwrapped_fields938 = fields937
-            self.write("(")
-            self.write(">")
+            self.write("(>")
             self.indent_sexp()
             self.newline()
             field939 = unwrapped_fields938[0]
@@ -2102,18 +1902,15 @@ class PrettyPrinter:
             self.write(flat946)
             return None
         else:
-            def _t1498(_dollar_dollar):
-                if _dollar_dollar.name == "rel_primitive_gt_eq_monotype":
-                    _t1499 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term,)
-                else:
-                    _t1499 = None
-                return _t1499
-            _t1500 = _t1498(msg)
-            fields942 = _t1500
+            _dollar_dollar = msg
+            if _dollar_dollar.name == "rel_primitive_gt_eq_monotype":
+                _t1328 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term,)
+            else:
+                _t1328 = None
+            fields942 = _t1328
             assert fields942 is not None
             unwrapped_fields943 = fields942
-            self.write("(")
-            self.write(">=")
+            self.write("(>=")
             self.indent_sexp()
             self.newline()
             field944 = unwrapped_fields943[0]
@@ -2131,18 +1928,15 @@ class PrettyPrinter:
             self.write(flat952)
             return None
         else:
-            def _t1501(_dollar_dollar):
-                if _dollar_dollar.name == "rel_primitive_add_monotype":
-                    _t1502 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term, _dollar_dollar.terms[2].term,)
-                else:
-                    _t1502 = None
-                return _t1502
-            _t1503 = _t1501(msg)
-            fields947 = _t1503
+            _dollar_dollar = msg
+            if _dollar_dollar.name == "rel_primitive_add_monotype":
+                _t1329 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term, _dollar_dollar.terms[2].term,)
+            else:
+                _t1329 = None
+            fields947 = _t1329
             assert fields947 is not None
             unwrapped_fields948 = fields947
-            self.write("(")
-            self.write("+")
+            self.write("(+")
             self.indent_sexp()
             self.newline()
             field949 = unwrapped_fields948[0]
@@ -2163,18 +1957,15 @@ class PrettyPrinter:
             self.write(flat958)
             return None
         else:
-            def _t1504(_dollar_dollar):
-                if _dollar_dollar.name == "rel_primitive_subtract_monotype":
-                    _t1505 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term, _dollar_dollar.terms[2].term,)
-                else:
-                    _t1505 = None
-                return _t1505
-            _t1506 = _t1504(msg)
-            fields953 = _t1506
+            _dollar_dollar = msg
+            if _dollar_dollar.name == "rel_primitive_subtract_monotype":
+                _t1330 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term, _dollar_dollar.terms[2].term,)
+            else:
+                _t1330 = None
+            fields953 = _t1330
             assert fields953 is not None
             unwrapped_fields954 = fields953
-            self.write("(")
-            self.write("-")
+            self.write("(-")
             self.indent_sexp()
             self.newline()
             field955 = unwrapped_fields954[0]
@@ -2195,18 +1986,15 @@ class PrettyPrinter:
             self.write(flat964)
             return None
         else:
-            def _t1507(_dollar_dollar):
-                if _dollar_dollar.name == "rel_primitive_multiply_monotype":
-                    _t1508 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term, _dollar_dollar.terms[2].term,)
-                else:
-                    _t1508 = None
-                return _t1508
-            _t1509 = _t1507(msg)
-            fields959 = _t1509
+            _dollar_dollar = msg
+            if _dollar_dollar.name == "rel_primitive_multiply_monotype":
+                _t1331 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term, _dollar_dollar.terms[2].term,)
+            else:
+                _t1331 = None
+            fields959 = _t1331
             assert fields959 is not None
             unwrapped_fields960 = fields959
-            self.write("(")
-            self.write("*")
+            self.write("(*")
             self.indent_sexp()
             self.newline()
             field961 = unwrapped_fields960[0]
@@ -2227,18 +2015,15 @@ class PrettyPrinter:
             self.write(flat970)
             return None
         else:
-            def _t1510(_dollar_dollar):
-                if _dollar_dollar.name == "rel_primitive_divide_monotype":
-                    _t1511 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term, _dollar_dollar.terms[2].term,)
-                else:
-                    _t1511 = None
-                return _t1511
-            _t1512 = _t1510(msg)
-            fields965 = _t1512
+            _dollar_dollar = msg
+            if _dollar_dollar.name == "rel_primitive_divide_monotype":
+                _t1332 = (_dollar_dollar.terms[0].term, _dollar_dollar.terms[1].term, _dollar_dollar.terms[2].term,)
+            else:
+                _t1332 = None
+            fields965 = _t1332
             assert fields965 is not None
             unwrapped_fields966 = fields965
-            self.write("(")
-            self.write("/")
+            self.write("(/")
             self.indent_sexp()
             self.newline()
             field967 = unwrapped_fields966[0]
@@ -2259,27 +2044,23 @@ class PrettyPrinter:
             self.write(flat975)
             return None
         else:
-            def _t1513(_dollar_dollar):
-                if _dollar_dollar.HasField("specialized_value"):
-                    _t1514 = _dollar_dollar.specialized_value
-                else:
-                    _t1514 = None
-                return _t1514
-            _t1515 = _t1513(msg)
-            deconstruct_result973 = _t1515
+            _dollar_dollar = msg
+            if _dollar_dollar.HasField("specialized_value"):
+                _t1333 = _dollar_dollar.specialized_value
+            else:
+                _t1333 = None
+            deconstruct_result973 = _t1333
             if deconstruct_result973 is not None:
                 assert deconstruct_result973 is not None
                 unwrapped974 = deconstruct_result973
                 self.pretty_specialized_value(unwrapped974)
             else:
-                def _t1516(_dollar_dollar):
-                    if _dollar_dollar.HasField("term"):
-                        _t1517 = _dollar_dollar.term
-                    else:
-                        _t1517 = None
-                    return _t1517
-                _t1518 = _t1516(msg)
-                deconstruct_result971 = _t1518
+                _dollar_dollar = msg
+                if _dollar_dollar.HasField("term"):
+                    _t1334 = _dollar_dollar.term
+                else:
+                    _t1334 = None
+                deconstruct_result971 = _t1334
                 if deconstruct_result971 is not None:
                     assert deconstruct_result971 is not None
                     unwrapped972 = deconstruct_result971
@@ -2305,14 +2086,11 @@ class PrettyPrinter:
             self.write(flat984)
             return None
         else:
-            def _t1519(_dollar_dollar):
-                return (_dollar_dollar.name, _dollar_dollar.terms,)
-            _t1520 = _t1519(msg)
-            fields978 = _t1520
+            _dollar_dollar = msg
+            fields978 = (_dollar_dollar.name, _dollar_dollar.terms,)
             assert fields978 is not None
             unwrapped_fields979 = fields978
-            self.write("(")
-            self.write("relatom")
+            self.write("(relatom")
             self.indent_sexp()
             self.newline()
             field980 = unwrapped_fields979[0]
@@ -2334,14 +2112,11 @@ class PrettyPrinter:
             self.write(flat989)
             return None
         else:
-            def _t1521(_dollar_dollar):
-                return (_dollar_dollar.input, _dollar_dollar.result,)
-            _t1522 = _t1521(msg)
-            fields985 = _t1522
+            _dollar_dollar = msg
+            fields985 = (_dollar_dollar.input, _dollar_dollar.result,)
             assert fields985 is not None
             unwrapped_fields986 = fields985
-            self.write("(")
-            self.write("cast")
+            self.write("(cast")
             self.indent_sexp()
             self.newline()
             field987 = unwrapped_fields986[0]
@@ -2360,8 +2135,7 @@ class PrettyPrinter:
             return None
         else:
             fields990 = msg
-            self.write("(")
-            self.write("attrs")
+            self.write("(attrs")
             self.indent_sexp()
             if not len(fields990) == 0:
                 self.newline()
@@ -2379,14 +2153,11 @@ class PrettyPrinter:
             self.write(flat1000)
             return None
         else:
-            def _t1523(_dollar_dollar):
-                return (_dollar_dollar.name, _dollar_dollar.args,)
-            _t1524 = _t1523(msg)
-            fields994 = _t1524
+            _dollar_dollar = msg
+            fields994 = (_dollar_dollar.name, _dollar_dollar.args,)
             assert fields994 is not None
             unwrapped_fields995 = fields994
-            self.write("(")
-            self.write("attribute")
+            self.write("(attribute")
             self.indent_sexp()
             self.newline()
             field996 = unwrapped_fields995[0]
@@ -2408,14 +2179,11 @@ class PrettyPrinter:
             self.write(flat1007)
             return None
         else:
-            def _t1525(_dollar_dollar):
-                return (getattr(_dollar_dollar, 'global'), _dollar_dollar.body,)
-            _t1526 = _t1525(msg)
-            fields1001 = _t1526
+            _dollar_dollar = msg
+            fields1001 = (getattr(_dollar_dollar, 'global'), _dollar_dollar.body,)
             assert fields1001 is not None
             unwrapped_fields1002 = fields1001
-            self.write("(")
-            self.write("algorithm")
+            self.write("(algorithm")
             self.indent_sexp()
             field1003 = unwrapped_fields1002[0]
             if not len(field1003) == 0:
@@ -2437,14 +2205,11 @@ class PrettyPrinter:
             self.write(flat1012)
             return None
         else:
-            def _t1527(_dollar_dollar):
-                return _dollar_dollar.constructs
-            _t1528 = _t1527(msg)
-            fields1008 = _t1528
+            _dollar_dollar = msg
+            fields1008 = _dollar_dollar.constructs
             assert fields1008 is not None
             unwrapped_fields1009 = fields1008
-            self.write("(")
-            self.write("script")
+            self.write("(script")
             self.indent_sexp()
             if not len(unwrapped_fields1009) == 0:
                 self.newline()
@@ -2462,27 +2227,23 @@ class PrettyPrinter:
             self.write(flat1017)
             return None
         else:
-            def _t1529(_dollar_dollar):
-                if _dollar_dollar.HasField("loop"):
-                    _t1530 = _dollar_dollar.loop
-                else:
-                    _t1530 = None
-                return _t1530
-            _t1531 = _t1529(msg)
-            deconstruct_result1015 = _t1531
+            _dollar_dollar = msg
+            if _dollar_dollar.HasField("loop"):
+                _t1335 = _dollar_dollar.loop
+            else:
+                _t1335 = None
+            deconstruct_result1015 = _t1335
             if deconstruct_result1015 is not None:
                 assert deconstruct_result1015 is not None
                 unwrapped1016 = deconstruct_result1015
                 self.pretty_loop(unwrapped1016)
             else:
-                def _t1532(_dollar_dollar):
-                    if _dollar_dollar.HasField("instruction"):
-                        _t1533 = _dollar_dollar.instruction
-                    else:
-                        _t1533 = None
-                    return _t1533
-                _t1534 = _t1532(msg)
-                deconstruct_result1013 = _t1534
+                _dollar_dollar = msg
+                if _dollar_dollar.HasField("instruction"):
+                    _t1336 = _dollar_dollar.instruction
+                else:
+                    _t1336 = None
+                deconstruct_result1013 = _t1336
                 if deconstruct_result1013 is not None:
                     assert deconstruct_result1013 is not None
                     unwrapped1014 = deconstruct_result1013
@@ -2497,14 +2258,11 @@ class PrettyPrinter:
             self.write(flat1022)
             return None
         else:
-            def _t1535(_dollar_dollar):
-                return (_dollar_dollar.init, _dollar_dollar.body,)
-            _t1536 = _t1535(msg)
-            fields1018 = _t1536
+            _dollar_dollar = msg
+            fields1018 = (_dollar_dollar.init, _dollar_dollar.body,)
             assert fields1018 is not None
             unwrapped_fields1019 = fields1018
-            self.write("(")
-            self.write("loop")
+            self.write("(loop")
             self.indent_sexp()
             self.newline()
             field1020 = unwrapped_fields1019[0]
@@ -2523,8 +2281,7 @@ class PrettyPrinter:
             return None
         else:
             fields1023 = msg
-            self.write("(")
-            self.write("init")
+            self.write("(init")
             self.indent_sexp()
             if not len(fields1023) == 0:
                 self.newline()
@@ -2542,66 +2299,56 @@ class PrettyPrinter:
             self.write(flat1037)
             return None
         else:
-            def _t1537(_dollar_dollar):
-                if _dollar_dollar.HasField("assign"):
-                    _t1538 = _dollar_dollar.assign
-                else:
-                    _t1538 = None
-                return _t1538
-            _t1539 = _t1537(msg)
-            deconstruct_result1035 = _t1539
+            _dollar_dollar = msg
+            if _dollar_dollar.HasField("assign"):
+                _t1337 = _dollar_dollar.assign
+            else:
+                _t1337 = None
+            deconstruct_result1035 = _t1337
             if deconstruct_result1035 is not None:
                 assert deconstruct_result1035 is not None
                 unwrapped1036 = deconstruct_result1035
                 self.pretty_assign(unwrapped1036)
             else:
-                def _t1540(_dollar_dollar):
-                    if _dollar_dollar.HasField("upsert"):
-                        _t1541 = _dollar_dollar.upsert
-                    else:
-                        _t1541 = None
-                    return _t1541
-                _t1542 = _t1540(msg)
-                deconstruct_result1033 = _t1542
+                _dollar_dollar = msg
+                if _dollar_dollar.HasField("upsert"):
+                    _t1338 = _dollar_dollar.upsert
+                else:
+                    _t1338 = None
+                deconstruct_result1033 = _t1338
                 if deconstruct_result1033 is not None:
                     assert deconstruct_result1033 is not None
                     unwrapped1034 = deconstruct_result1033
                     self.pretty_upsert(unwrapped1034)
                 else:
-                    def _t1543(_dollar_dollar):
-                        if _dollar_dollar.HasField("break"):
-                            _t1544 = getattr(_dollar_dollar, 'break')
-                        else:
-                            _t1544 = None
-                        return _t1544
-                    _t1545 = _t1543(msg)
-                    deconstruct_result1031 = _t1545
+                    _dollar_dollar = msg
+                    if _dollar_dollar.HasField("break"):
+                        _t1339 = getattr(_dollar_dollar, 'break')
+                    else:
+                        _t1339 = None
+                    deconstruct_result1031 = _t1339
                     if deconstruct_result1031 is not None:
                         assert deconstruct_result1031 is not None
                         unwrapped1032 = deconstruct_result1031
                         self.pretty_break(unwrapped1032)
                     else:
-                        def _t1546(_dollar_dollar):
-                            if _dollar_dollar.HasField("monoid_def"):
-                                _t1547 = _dollar_dollar.monoid_def
-                            else:
-                                _t1547 = None
-                            return _t1547
-                        _t1548 = _t1546(msg)
-                        deconstruct_result1029 = _t1548
+                        _dollar_dollar = msg
+                        if _dollar_dollar.HasField("monoid_def"):
+                            _t1340 = _dollar_dollar.monoid_def
+                        else:
+                            _t1340 = None
+                        deconstruct_result1029 = _t1340
                         if deconstruct_result1029 is not None:
                             assert deconstruct_result1029 is not None
                             unwrapped1030 = deconstruct_result1029
                             self.pretty_monoid_def(unwrapped1030)
                         else:
-                            def _t1549(_dollar_dollar):
-                                if _dollar_dollar.HasField("monus_def"):
-                                    _t1550 = _dollar_dollar.monus_def
-                                else:
-                                    _t1550 = None
-                                return _t1550
-                            _t1551 = _t1549(msg)
-                            deconstruct_result1027 = _t1551
+                            _dollar_dollar = msg
+                            if _dollar_dollar.HasField("monus_def"):
+                                _t1341 = _dollar_dollar.monus_def
+                            else:
+                                _t1341 = None
+                            deconstruct_result1027 = _t1341
                             if deconstruct_result1027 is not None:
                                 assert deconstruct_result1027 is not None
                                 unwrapped1028 = deconstruct_result1027
@@ -2616,18 +2363,15 @@ class PrettyPrinter:
             self.write(flat1044)
             return None
         else:
-            def _t1552(_dollar_dollar):
-                if not len(_dollar_dollar.attrs) == 0:
-                    _t1553 = _dollar_dollar.attrs
-                else:
-                    _t1553 = None
-                return (_dollar_dollar.name, _dollar_dollar.body, _t1553,)
-            _t1554 = _t1552(msg)
-            fields1038 = _t1554
+            _dollar_dollar = msg
+            if not len(_dollar_dollar.attrs) == 0:
+                _t1342 = _dollar_dollar.attrs
+            else:
+                _t1342 = None
+            fields1038 = (_dollar_dollar.name, _dollar_dollar.body, _t1342,)
             assert fields1038 is not None
             unwrapped_fields1039 = fields1038
-            self.write("(")
-            self.write("assign")
+            self.write("(assign")
             self.indent_sexp()
             self.newline()
             field1040 = unwrapped_fields1039[0]
@@ -2651,18 +2395,15 @@ class PrettyPrinter:
             self.write(flat1051)
             return None
         else:
-            def _t1555(_dollar_dollar):
-                if not len(_dollar_dollar.attrs) == 0:
-                    _t1556 = _dollar_dollar.attrs
-                else:
-                    _t1556 = None
-                return (_dollar_dollar.name, (_dollar_dollar.body, _dollar_dollar.value_arity,), _t1556,)
-            _t1557 = _t1555(msg)
-            fields1045 = _t1557
+            _dollar_dollar = msg
+            if not len(_dollar_dollar.attrs) == 0:
+                _t1343 = _dollar_dollar.attrs
+            else:
+                _t1343 = None
+            fields1045 = (_dollar_dollar.name, (_dollar_dollar.body, _dollar_dollar.value_arity,), _t1343,)
             assert fields1045 is not None
             unwrapped_fields1046 = fields1045
-            self.write("(")
-            self.write("upsert")
+            self.write("(upsert")
             self.indent_sexp()
             self.newline()
             field1047 = unwrapped_fields1046[0]
@@ -2686,11 +2427,9 @@ class PrettyPrinter:
             self.write(flat1056)
             return None
         else:
-            def _t1558(_dollar_dollar):
-                _t1559 = self.deconstruct_bindings_with_arity(_dollar_dollar[0], _dollar_dollar[1])
-                return (_t1559, _dollar_dollar[0].value,)
-            _t1560 = _t1558(msg)
-            fields1052 = _t1560
+            _dollar_dollar = msg
+            _t1344 = self.deconstruct_bindings_with_arity(_dollar_dollar[0], _dollar_dollar[1])
+            fields1052 = (_t1344, _dollar_dollar[0].value,)
             assert fields1052 is not None
             unwrapped_fields1053 = fields1052
             self.write("(")
@@ -2710,18 +2449,15 @@ class PrettyPrinter:
             self.write(flat1063)
             return None
         else:
-            def _t1561(_dollar_dollar):
-                if not len(_dollar_dollar.attrs) == 0:
-                    _t1562 = _dollar_dollar.attrs
-                else:
-                    _t1562 = None
-                return (_dollar_dollar.name, _dollar_dollar.body, _t1562,)
-            _t1563 = _t1561(msg)
-            fields1057 = _t1563
+            _dollar_dollar = msg
+            if not len(_dollar_dollar.attrs) == 0:
+                _t1345 = _dollar_dollar.attrs
+            else:
+                _t1345 = None
+            fields1057 = (_dollar_dollar.name, _dollar_dollar.body, _t1345,)
             assert fields1057 is not None
             unwrapped_fields1058 = fields1057
-            self.write("(")
-            self.write("break")
+            self.write("(break")
             self.indent_sexp()
             self.newline()
             field1059 = unwrapped_fields1058[0]
@@ -2745,18 +2481,15 @@ class PrettyPrinter:
             self.write(flat1071)
             return None
         else:
-            def _t1564(_dollar_dollar):
-                if not len(_dollar_dollar.attrs) == 0:
-                    _t1565 = _dollar_dollar.attrs
-                else:
-                    _t1565 = None
-                return (_dollar_dollar.monoid, _dollar_dollar.name, (_dollar_dollar.body, _dollar_dollar.value_arity,), _t1565,)
-            _t1566 = _t1564(msg)
-            fields1064 = _t1566
+            _dollar_dollar = msg
+            if not len(_dollar_dollar.attrs) == 0:
+                _t1346 = _dollar_dollar.attrs
+            else:
+                _t1346 = None
+            fields1064 = (_dollar_dollar.monoid, _dollar_dollar.name, (_dollar_dollar.body, _dollar_dollar.value_arity,), _t1346,)
             assert fields1064 is not None
             unwrapped_fields1065 = fields1064
-            self.write("(")
-            self.write("monoid")
+            self.write("(monoid")
             self.indent_sexp()
             self.newline()
             field1066 = unwrapped_fields1065[0]
@@ -2783,53 +2516,45 @@ class PrettyPrinter:
             self.write(flat1080)
             return None
         else:
-            def _t1567(_dollar_dollar):
-                if _dollar_dollar.HasField("or_monoid"):
-                    _t1568 = _dollar_dollar.or_monoid
-                else:
-                    _t1568 = None
-                return _t1568
-            _t1569 = _t1567(msg)
-            deconstruct_result1078 = _t1569
+            _dollar_dollar = msg
+            if _dollar_dollar.HasField("or_monoid"):
+                _t1347 = _dollar_dollar.or_monoid
+            else:
+                _t1347 = None
+            deconstruct_result1078 = _t1347
             if deconstruct_result1078 is not None:
                 assert deconstruct_result1078 is not None
                 unwrapped1079 = deconstruct_result1078
                 self.pretty_or_monoid(unwrapped1079)
             else:
-                def _t1570(_dollar_dollar):
-                    if _dollar_dollar.HasField("min_monoid"):
-                        _t1571 = _dollar_dollar.min_monoid
-                    else:
-                        _t1571 = None
-                    return _t1571
-                _t1572 = _t1570(msg)
-                deconstruct_result1076 = _t1572
+                _dollar_dollar = msg
+                if _dollar_dollar.HasField("min_monoid"):
+                    _t1348 = _dollar_dollar.min_monoid
+                else:
+                    _t1348 = None
+                deconstruct_result1076 = _t1348
                 if deconstruct_result1076 is not None:
                     assert deconstruct_result1076 is not None
                     unwrapped1077 = deconstruct_result1076
                     self.pretty_min_monoid(unwrapped1077)
                 else:
-                    def _t1573(_dollar_dollar):
-                        if _dollar_dollar.HasField("max_monoid"):
-                            _t1574 = _dollar_dollar.max_monoid
-                        else:
-                            _t1574 = None
-                        return _t1574
-                    _t1575 = _t1573(msg)
-                    deconstruct_result1074 = _t1575
+                    _dollar_dollar = msg
+                    if _dollar_dollar.HasField("max_monoid"):
+                        _t1349 = _dollar_dollar.max_monoid
+                    else:
+                        _t1349 = None
+                    deconstruct_result1074 = _t1349
                     if deconstruct_result1074 is not None:
                         assert deconstruct_result1074 is not None
                         unwrapped1075 = deconstruct_result1074
                         self.pretty_max_monoid(unwrapped1075)
                     else:
-                        def _t1576(_dollar_dollar):
-                            if _dollar_dollar.HasField("sum_monoid"):
-                                _t1577 = _dollar_dollar.sum_monoid
-                            else:
-                                _t1577 = None
-                            return _t1577
-                        _t1578 = _t1576(msg)
-                        deconstruct_result1072 = _t1578
+                        _dollar_dollar = msg
+                        if _dollar_dollar.HasField("sum_monoid"):
+                            _t1350 = _dollar_dollar.sum_monoid
+                        else:
+                            _t1350 = None
+                        deconstruct_result1072 = _t1350
                         if deconstruct_result1072 is not None:
                             assert deconstruct_result1072 is not None
                             unwrapped1073 = deconstruct_result1072
@@ -2839,9 +2564,7 @@ class PrettyPrinter:
 
     def pretty_or_monoid(self, msg: logic_pb2.OrMonoid):
         fields1081 = msg
-        self.write("(")
-        self.write("or")
-        self.write(")")
+        self.write("(or)")
 
     def pretty_min_monoid(self, msg: logic_pb2.MinMonoid):
         flat1084 = self._try_flat(msg, self.pretty_min_monoid)
@@ -2850,14 +2573,11 @@ class PrettyPrinter:
             self.write(flat1084)
             return None
         else:
-            def _t1579(_dollar_dollar):
-                return _dollar_dollar.type
-            _t1580 = _t1579(msg)
-            fields1082 = _t1580
+            _dollar_dollar = msg
+            fields1082 = _dollar_dollar.type
             assert fields1082 is not None
             unwrapped_fields1083 = fields1082
-            self.write("(")
-            self.write("min")
+            self.write("(min")
             self.indent_sexp()
             self.newline()
             self.pretty_type(unwrapped_fields1083)
@@ -2871,14 +2591,11 @@ class PrettyPrinter:
             self.write(flat1087)
             return None
         else:
-            def _t1581(_dollar_dollar):
-                return _dollar_dollar.type
-            _t1582 = _t1581(msg)
-            fields1085 = _t1582
+            _dollar_dollar = msg
+            fields1085 = _dollar_dollar.type
             assert fields1085 is not None
             unwrapped_fields1086 = fields1085
-            self.write("(")
-            self.write("max")
+            self.write("(max")
             self.indent_sexp()
             self.newline()
             self.pretty_type(unwrapped_fields1086)
@@ -2892,14 +2609,11 @@ class PrettyPrinter:
             self.write(flat1090)
             return None
         else:
-            def _t1583(_dollar_dollar):
-                return _dollar_dollar.type
-            _t1584 = _t1583(msg)
-            fields1088 = _t1584
+            _dollar_dollar = msg
+            fields1088 = _dollar_dollar.type
             assert fields1088 is not None
             unwrapped_fields1089 = fields1088
-            self.write("(")
-            self.write("sum")
+            self.write("(sum")
             self.indent_sexp()
             self.newline()
             self.pretty_type(unwrapped_fields1089)
@@ -2913,18 +2627,15 @@ class PrettyPrinter:
             self.write(flat1098)
             return None
         else:
-            def _t1585(_dollar_dollar):
-                if not len(_dollar_dollar.attrs) == 0:
-                    _t1586 = _dollar_dollar.attrs
-                else:
-                    _t1586 = None
-                return (_dollar_dollar.monoid, _dollar_dollar.name, (_dollar_dollar.body, _dollar_dollar.value_arity,), _t1586,)
-            _t1587 = _t1585(msg)
-            fields1091 = _t1587
+            _dollar_dollar = msg
+            if not len(_dollar_dollar.attrs) == 0:
+                _t1351 = _dollar_dollar.attrs
+            else:
+                _t1351 = None
+            fields1091 = (_dollar_dollar.monoid, _dollar_dollar.name, (_dollar_dollar.body, _dollar_dollar.value_arity,), _t1351,)
             assert fields1091 is not None
             unwrapped_fields1092 = fields1091
-            self.write("(")
-            self.write("monus")
+            self.write("(monus")
             self.indent_sexp()
             self.newline()
             field1093 = unwrapped_fields1092[0]
@@ -2951,14 +2662,11 @@ class PrettyPrinter:
             self.write(flat1105)
             return None
         else:
-            def _t1588(_dollar_dollar):
-                return (_dollar_dollar.name, _dollar_dollar.functional_dependency.guard, _dollar_dollar.functional_dependency.keys, _dollar_dollar.functional_dependency.values,)
-            _t1589 = _t1588(msg)
-            fields1099 = _t1589
+            _dollar_dollar = msg
+            fields1099 = (_dollar_dollar.name, _dollar_dollar.functional_dependency.guard, _dollar_dollar.functional_dependency.keys, _dollar_dollar.functional_dependency.values,)
             assert fields1099 is not None
             unwrapped_fields1100 = fields1099
-            self.write("(")
-            self.write("functional_dependency")
+            self.write("(functional_dependency")
             self.indent_sexp()
             self.newline()
             field1101 = unwrapped_fields1100[0]
@@ -2983,8 +2691,7 @@ class PrettyPrinter:
             return None
         else:
             fields1106 = msg
-            self.write("(")
-            self.write("keys")
+            self.write("(keys")
             self.indent_sexp()
             if not len(fields1106) == 0:
                 self.newline()
@@ -3003,8 +2710,7 @@ class PrettyPrinter:
             return None
         else:
             fields1110 = msg
-            self.write("(")
-            self.write("values")
+            self.write("(values")
             self.indent_sexp()
             if not len(fields1110) == 0:
                 self.newline()
@@ -3022,40 +2728,34 @@ class PrettyPrinter:
             self.write(flat1120)
             return None
         else:
-            def _t1590(_dollar_dollar):
-                if _dollar_dollar.HasField("rel_edb"):
-                    _t1591 = _dollar_dollar.rel_edb
-                else:
-                    _t1591 = None
-                return _t1591
-            _t1592 = _t1590(msg)
-            deconstruct_result1118 = _t1592
+            _dollar_dollar = msg
+            if _dollar_dollar.HasField("rel_edb"):
+                _t1352 = _dollar_dollar.rel_edb
+            else:
+                _t1352 = None
+            deconstruct_result1118 = _t1352
             if deconstruct_result1118 is not None:
                 assert deconstruct_result1118 is not None
                 unwrapped1119 = deconstruct_result1118
                 self.pretty_rel_edb(unwrapped1119)
             else:
-                def _t1593(_dollar_dollar):
-                    if _dollar_dollar.HasField("betree_relation"):
-                        _t1594 = _dollar_dollar.betree_relation
-                    else:
-                        _t1594 = None
-                    return _t1594
-                _t1595 = _t1593(msg)
-                deconstruct_result1116 = _t1595
+                _dollar_dollar = msg
+                if _dollar_dollar.HasField("betree_relation"):
+                    _t1353 = _dollar_dollar.betree_relation
+                else:
+                    _t1353 = None
+                deconstruct_result1116 = _t1353
                 if deconstruct_result1116 is not None:
                     assert deconstruct_result1116 is not None
                     unwrapped1117 = deconstruct_result1116
                     self.pretty_betree_relation(unwrapped1117)
                 else:
-                    def _t1596(_dollar_dollar):
-                        if _dollar_dollar.HasField("csv_data"):
-                            _t1597 = _dollar_dollar.csv_data
-                        else:
-                            _t1597 = None
-                        return _t1597
-                    _t1598 = _t1596(msg)
-                    deconstruct_result1114 = _t1598
+                    _dollar_dollar = msg
+                    if _dollar_dollar.HasField("csv_data"):
+                        _t1354 = _dollar_dollar.csv_data
+                    else:
+                        _t1354 = None
+                    deconstruct_result1114 = _t1354
                     if deconstruct_result1114 is not None:
                         assert deconstruct_result1114 is not None
                         unwrapped1115 = deconstruct_result1114
@@ -3070,14 +2770,11 @@ class PrettyPrinter:
             self.write(flat1126)
             return None
         else:
-            def _t1599(_dollar_dollar):
-                return (_dollar_dollar.target_id, _dollar_dollar.path, _dollar_dollar.types,)
-            _t1600 = _t1599(msg)
-            fields1121 = _t1600
+            _dollar_dollar = msg
+            fields1121 = (_dollar_dollar.target_id, _dollar_dollar.path, _dollar_dollar.types,)
             assert fields1121 is not None
             unwrapped_fields1122 = fields1121
-            self.write("(")
-            self.write("rel_edb")
+            self.write("(rel_edb")
             self.indent_sexp()
             self.newline()
             field1123 = unwrapped_fields1122[0]
@@ -3132,14 +2829,11 @@ class PrettyPrinter:
             self.write(flat1139)
             return None
         else:
-            def _t1601(_dollar_dollar):
-                return (_dollar_dollar.name, _dollar_dollar.relation_info,)
-            _t1602 = _t1601(msg)
-            fields1135 = _t1602
+            _dollar_dollar = msg
+            fields1135 = (_dollar_dollar.name, _dollar_dollar.relation_info,)
             assert fields1135 is not None
             unwrapped_fields1136 = fields1135
-            self.write("(")
-            self.write("betree_relation")
+            self.write("(betree_relation")
             self.indent_sexp()
             self.newline()
             field1137 = unwrapped_fields1136[0]
@@ -3157,15 +2851,12 @@ class PrettyPrinter:
             self.write(flat1145)
             return None
         else:
-            def _t1603(_dollar_dollar):
-                _t1604 = self.deconstruct_betree_info_config(_dollar_dollar)
-                return (_dollar_dollar.key_types, _dollar_dollar.value_types, _t1604,)
-            _t1605 = _t1603(msg)
-            fields1140 = _t1605
+            _dollar_dollar = msg
+            _t1355 = self.deconstruct_betree_info_config(_dollar_dollar)
+            fields1140 = (_dollar_dollar.key_types, _dollar_dollar.value_types, _t1355,)
             assert fields1140 is not None
             unwrapped_fields1141 = fields1140
-            self.write("(")
-            self.write("betree_info")
+            self.write("(betree_info")
             self.indent_sexp()
             self.newline()
             field1142 = unwrapped_fields1141[0]
@@ -3187,8 +2878,7 @@ class PrettyPrinter:
             return None
         else:
             fields1146 = msg
-            self.write("(")
-            self.write("key_types")
+            self.write("(key_types")
             self.indent_sexp()
             if not len(fields1146) == 0:
                 self.newline()
@@ -3207,8 +2897,7 @@ class PrettyPrinter:
             return None
         else:
             fields1150 = msg
-            self.write("(")
-            self.write("value_types")
+            self.write("(value_types")
             self.indent_sexp()
             if not len(fields1150) == 0:
                 self.newline()
@@ -3226,14 +2915,11 @@ class PrettyPrinter:
             self.write(flat1160)
             return None
         else:
-            def _t1606(_dollar_dollar):
-                return (_dollar_dollar.locator, _dollar_dollar.config, _dollar_dollar.columns, _dollar_dollar.asof,)
-            _t1607 = _t1606(msg)
-            fields1154 = _t1607
+            _dollar_dollar = msg
+            fields1154 = (_dollar_dollar.locator, _dollar_dollar.config, _dollar_dollar.columns, _dollar_dollar.asof,)
             assert fields1154 is not None
             unwrapped_fields1155 = fields1154
-            self.write("(")
-            self.write("csv_data")
+            self.write("(csv_data")
             self.indent_sexp()
             self.newline()
             field1156 = unwrapped_fields1155[0]
@@ -3257,22 +2943,19 @@ class PrettyPrinter:
             self.write(flat1167)
             return None
         else:
-            def _t1608(_dollar_dollar):
-                if not len(_dollar_dollar.paths) == 0:
-                    _t1609 = _dollar_dollar.paths
-                else:
-                    _t1609 = None
-                if _dollar_dollar.inline_data.decode('utf-8') != "":
-                    _t1610 = _dollar_dollar.inline_data.decode('utf-8')
-                else:
-                    _t1610 = None
-                return (_t1609, _t1610,)
-            _t1611 = _t1608(msg)
-            fields1161 = _t1611
+            _dollar_dollar = msg
+            if not len(_dollar_dollar.paths) == 0:
+                _t1356 = _dollar_dollar.paths
+            else:
+                _t1356 = None
+            if _dollar_dollar.inline_data.decode('utf-8') != "":
+                _t1357 = _dollar_dollar.inline_data.decode('utf-8')
+            else:
+                _t1357 = None
+            fields1161 = (_t1356, _t1357,)
             assert fields1161 is not None
             unwrapped_fields1162 = fields1161
-            self.write("(")
-            self.write("csv_locator")
+            self.write("(csv_locator")
             self.indent_sexp()
             field1163 = unwrapped_fields1162[0]
             if field1163 is not None:
@@ -3297,8 +2980,7 @@ class PrettyPrinter:
             return None
         else:
             fields1168 = msg
-            self.write("(")
-            self.write("paths")
+            self.write("(paths")
             self.indent_sexp()
             if not len(fields1168) == 0:
                 self.newline()
@@ -3317,8 +2999,7 @@ class PrettyPrinter:
             return None
         else:
             fields1172 = msg
-            self.write("(")
-            self.write("inline_data")
+            self.write("(inline_data")
             self.indent_sexp()
             self.newline()
             self.write(self.format_string_value(fields1172))
@@ -3332,15 +3013,12 @@ class PrettyPrinter:
             self.write(flat1176)
             return None
         else:
-            def _t1612(_dollar_dollar):
-                _t1613 = self.deconstruct_csv_config(_dollar_dollar)
-                return _t1613
-            _t1614 = _t1612(msg)
-            fields1174 = _t1614
+            _dollar_dollar = msg
+            _t1358 = self.deconstruct_csv_config(_dollar_dollar)
+            fields1174 = _t1358
             assert fields1174 is not None
             unwrapped_fields1175 = fields1174
-            self.write("(")
-            self.write("csv_config")
+            self.write("(csv_config")
             self.indent_sexp()
             self.newline()
             self.pretty_config_dict(unwrapped_fields1175)
@@ -3355,8 +3033,7 @@ class PrettyPrinter:
             return None
         else:
             fields1177 = msg
-            self.write("(")
-            self.write("columns")
+            self.write("(columns")
             self.indent_sexp()
             if not len(fields1177) == 0:
                 self.newline()
@@ -3374,14 +3051,11 @@ class PrettyPrinter:
             self.write(flat1188)
             return None
         else:
-            def _t1615(_dollar_dollar):
-                return (_dollar_dollar.column_name, _dollar_dollar.target_id, _dollar_dollar.types,)
-            _t1616 = _t1615(msg)
-            fields1181 = _t1616
+            _dollar_dollar = msg
+            fields1181 = (_dollar_dollar.column_name, _dollar_dollar.target_id, _dollar_dollar.types,)
             assert fields1181 is not None
             unwrapped_fields1182 = fields1181
-            self.write("(")
-            self.write("column")
+            self.write("(column")
             self.indent_sexp()
             self.newline()
             field1183 = unwrapped_fields1182[0]
@@ -3408,8 +3082,7 @@ class PrettyPrinter:
             return None
         else:
             fields1189 = msg
-            self.write("(")
-            self.write("asof")
+            self.write("(asof")
             self.indent_sexp()
             self.newline()
             self.write(self.format_string_value(fields1189))
@@ -3423,14 +3096,11 @@ class PrettyPrinter:
             self.write(flat1193)
             return None
         else:
-            def _t1617(_dollar_dollar):
-                return _dollar_dollar.fragment_id
-            _t1618 = _t1617(msg)
-            fields1191 = _t1618
+            _dollar_dollar = msg
+            fields1191 = _dollar_dollar.fragment_id
             assert fields1191 is not None
             unwrapped_fields1192 = fields1191
-            self.write("(")
-            self.write("undefine")
+            self.write("(undefine")
             self.indent_sexp()
             self.newline()
             self.pretty_fragment_id(unwrapped_fields1192)
@@ -3444,14 +3114,11 @@ class PrettyPrinter:
             self.write(flat1198)
             return None
         else:
-            def _t1619(_dollar_dollar):
-                return _dollar_dollar.relations
-            _t1620 = _t1619(msg)
-            fields1194 = _t1620
+            _dollar_dollar = msg
+            fields1194 = _dollar_dollar.relations
             assert fields1194 is not None
             unwrapped_fields1195 = fields1194
-            self.write("(")
-            self.write("context")
+            self.write("(context")
             self.indent_sexp()
             if not len(unwrapped_fields1195) == 0:
                 self.newline()
@@ -3469,14 +3136,11 @@ class PrettyPrinter:
             self.write(flat1203)
             return None
         else:
-            def _t1621(_dollar_dollar):
-                return (_dollar_dollar.destination_path, _dollar_dollar.source_relation,)
-            _t1622 = _t1621(msg)
-            fields1199 = _t1622
+            _dollar_dollar = msg
+            fields1199 = (_dollar_dollar.destination_path, _dollar_dollar.source_relation,)
             assert fields1199 is not None
             unwrapped_fields1200 = fields1199
-            self.write("(")
-            self.write("snapshot")
+            self.write("(snapshot")
             self.indent_sexp()
             self.newline()
             field1201 = unwrapped_fields1200[0]
@@ -3495,8 +3159,7 @@ class PrettyPrinter:
             return None
         else:
             fields1204 = msg
-            self.write("(")
-            self.write("reads")
+            self.write("(reads")
             self.indent_sexp()
             if not len(fields1204) == 0:
                 self.newline()
@@ -3514,66 +3177,56 @@ class PrettyPrinter:
             self.write(flat1218)
             return None
         else:
-            def _t1623(_dollar_dollar):
-                if _dollar_dollar.HasField("demand"):
-                    _t1624 = _dollar_dollar.demand
-                else:
-                    _t1624 = None
-                return _t1624
-            _t1625 = _t1623(msg)
-            deconstruct_result1216 = _t1625
+            _dollar_dollar = msg
+            if _dollar_dollar.HasField("demand"):
+                _t1359 = _dollar_dollar.demand
+            else:
+                _t1359 = None
+            deconstruct_result1216 = _t1359
             if deconstruct_result1216 is not None:
                 assert deconstruct_result1216 is not None
                 unwrapped1217 = deconstruct_result1216
                 self.pretty_demand(unwrapped1217)
             else:
-                def _t1626(_dollar_dollar):
-                    if _dollar_dollar.HasField("output"):
-                        _t1627 = _dollar_dollar.output
-                    else:
-                        _t1627 = None
-                    return _t1627
-                _t1628 = _t1626(msg)
-                deconstruct_result1214 = _t1628
+                _dollar_dollar = msg
+                if _dollar_dollar.HasField("output"):
+                    _t1360 = _dollar_dollar.output
+                else:
+                    _t1360 = None
+                deconstruct_result1214 = _t1360
                 if deconstruct_result1214 is not None:
                     assert deconstruct_result1214 is not None
                     unwrapped1215 = deconstruct_result1214
                     self.pretty_output(unwrapped1215)
                 else:
-                    def _t1629(_dollar_dollar):
-                        if _dollar_dollar.HasField("what_if"):
-                            _t1630 = _dollar_dollar.what_if
-                        else:
-                            _t1630 = None
-                        return _t1630
-                    _t1631 = _t1629(msg)
-                    deconstruct_result1212 = _t1631
+                    _dollar_dollar = msg
+                    if _dollar_dollar.HasField("what_if"):
+                        _t1361 = _dollar_dollar.what_if
+                    else:
+                        _t1361 = None
+                    deconstruct_result1212 = _t1361
                     if deconstruct_result1212 is not None:
                         assert deconstruct_result1212 is not None
                         unwrapped1213 = deconstruct_result1212
                         self.pretty_what_if(unwrapped1213)
                     else:
-                        def _t1632(_dollar_dollar):
-                            if _dollar_dollar.HasField("abort"):
-                                _t1633 = _dollar_dollar.abort
-                            else:
-                                _t1633 = None
-                            return _t1633
-                        _t1634 = _t1632(msg)
-                        deconstruct_result1210 = _t1634
+                        _dollar_dollar = msg
+                        if _dollar_dollar.HasField("abort"):
+                            _t1362 = _dollar_dollar.abort
+                        else:
+                            _t1362 = None
+                        deconstruct_result1210 = _t1362
                         if deconstruct_result1210 is not None:
                             assert deconstruct_result1210 is not None
                             unwrapped1211 = deconstruct_result1210
                             self.pretty_abort(unwrapped1211)
                         else:
-                            def _t1635(_dollar_dollar):
-                                if _dollar_dollar.HasField("export"):
-                                    _t1636 = _dollar_dollar.export
-                                else:
-                                    _t1636 = None
-                                return _t1636
-                            _t1637 = _t1635(msg)
-                            deconstruct_result1208 = _t1637
+                            _dollar_dollar = msg
+                            if _dollar_dollar.HasField("export"):
+                                _t1363 = _dollar_dollar.export
+                            else:
+                                _t1363 = None
+                            deconstruct_result1208 = _t1363
                             if deconstruct_result1208 is not None:
                                 assert deconstruct_result1208 is not None
                                 unwrapped1209 = deconstruct_result1208
@@ -3588,14 +3241,11 @@ class PrettyPrinter:
             self.write(flat1221)
             return None
         else:
-            def _t1638(_dollar_dollar):
-                return _dollar_dollar.relation_id
-            _t1639 = _t1638(msg)
-            fields1219 = _t1639
+            _dollar_dollar = msg
+            fields1219 = _dollar_dollar.relation_id
             assert fields1219 is not None
             unwrapped_fields1220 = fields1219
-            self.write("(")
-            self.write("demand")
+            self.write("(demand")
             self.indent_sexp()
             self.newline()
             self.pretty_relation_id(unwrapped_fields1220)
@@ -3609,14 +3259,11 @@ class PrettyPrinter:
             self.write(flat1226)
             return None
         else:
-            def _t1640(_dollar_dollar):
-                return (_dollar_dollar.name, _dollar_dollar.relation_id,)
-            _t1641 = _t1640(msg)
-            fields1222 = _t1641
+            _dollar_dollar = msg
+            fields1222 = (_dollar_dollar.name, _dollar_dollar.relation_id,)
             assert fields1222 is not None
             unwrapped_fields1223 = fields1222
-            self.write("(")
-            self.write("output")
+            self.write("(output")
             self.indent_sexp()
             self.newline()
             field1224 = unwrapped_fields1223[0]
@@ -3634,14 +3281,11 @@ class PrettyPrinter:
             self.write(flat1231)
             return None
         else:
-            def _t1642(_dollar_dollar):
-                return (_dollar_dollar.branch, _dollar_dollar.epoch,)
-            _t1643 = _t1642(msg)
-            fields1227 = _t1643
+            _dollar_dollar = msg
+            fields1227 = (_dollar_dollar.branch, _dollar_dollar.epoch,)
             assert fields1227 is not None
             unwrapped_fields1228 = fields1227
-            self.write("(")
-            self.write("what_if")
+            self.write("(what_if")
             self.indent_sexp()
             self.newline()
             field1229 = unwrapped_fields1228[0]
@@ -3659,18 +3303,15 @@ class PrettyPrinter:
             self.write(flat1237)
             return None
         else:
-            def _t1644(_dollar_dollar):
-                if _dollar_dollar.name != "abort":
-                    _t1645 = _dollar_dollar.name
-                else:
-                    _t1645 = None
-                return (_t1645, _dollar_dollar.relation_id,)
-            _t1646 = _t1644(msg)
-            fields1232 = _t1646
+            _dollar_dollar = msg
+            if _dollar_dollar.name != "abort":
+                _t1364 = _dollar_dollar.name
+            else:
+                _t1364 = None
+            fields1232 = (_t1364, _dollar_dollar.relation_id,)
             assert fields1232 is not None
             unwrapped_fields1233 = fields1232
-            self.write("(")
-            self.write("abort")
+            self.write("(abort")
             self.indent_sexp()
             field1234 = unwrapped_fields1233[0]
             if field1234 is not None:
@@ -3691,14 +3332,11 @@ class PrettyPrinter:
             self.write(flat1240)
             return None
         else:
-            def _t1647(_dollar_dollar):
-                return _dollar_dollar.csv_config
-            _t1648 = _t1647(msg)
-            fields1238 = _t1648
+            _dollar_dollar = msg
+            fields1238 = _dollar_dollar.csv_config
             assert fields1238 is not None
             unwrapped_fields1239 = fields1238
-            self.write("(")
-            self.write("export")
+            self.write("(export")
             self.indent_sexp()
             self.newline()
             self.pretty_export_csv_config(unwrapped_fields1239)
@@ -3712,15 +3350,12 @@ class PrettyPrinter:
             self.write(flat1246)
             return None
         else:
-            def _t1649(_dollar_dollar):
-                _t1650 = self.deconstruct_export_csv_config(_dollar_dollar)
-                return (_dollar_dollar.path, _dollar_dollar.data_columns, _t1650,)
-            _t1651 = _t1649(msg)
-            fields1241 = _t1651
+            _dollar_dollar = msg
+            _t1365 = self.deconstruct_export_csv_config(_dollar_dollar)
+            fields1241 = (_dollar_dollar.path, _dollar_dollar.data_columns, _t1365,)
             assert fields1241 is not None
             unwrapped_fields1242 = fields1241
-            self.write("(")
-            self.write("export_csv_config")
+            self.write("(export_csv_config")
             self.indent_sexp()
             self.newline()
             field1243 = unwrapped_fields1242[0]
@@ -3742,8 +3377,7 @@ class PrettyPrinter:
             return None
         else:
             fields1247 = msg
-            self.write("(")
-            self.write("path")
+            self.write("(path")
             self.indent_sexp()
             self.newline()
             self.write(self.format_string_value(fields1247))
@@ -3758,8 +3392,7 @@ class PrettyPrinter:
             return None
         else:
             fields1249 = msg
-            self.write("(")
-            self.write("columns")
+            self.write("(columns")
             self.indent_sexp()
             if not len(fields1249) == 0:
                 self.newline()
@@ -3777,14 +3410,11 @@ class PrettyPrinter:
             self.write(flat1257)
             return None
         else:
-            def _t1652(_dollar_dollar):
-                return (_dollar_dollar.column_name, _dollar_dollar.column_data,)
-            _t1653 = _t1652(msg)
-            fields1253 = _t1653
+            _dollar_dollar = msg
+            fields1253 = (_dollar_dollar.column_name, _dollar_dollar.column_data,)
             assert fields1253 is not None
             unwrapped_fields1254 = fields1253
-            self.write("(")
-            self.write("column")
+            self.write("(column")
             self.indent_sexp()
             self.newline()
             field1255 = unwrapped_fields1254[0]
@@ -3804,8 +3434,8 @@ class PrettyPrinter:
         for _idx, _rid in enumerate(msg.ids):
             self.newline()
             self.write("(")
-            _t1691 = logic_pb2.UInt128Value(low=_rid.id_low, high=_rid.id_high)
-            self.pprint_dispatch(_t1691)
+            _t1403 = logic_pb2.UInt128Value(low=_rid.id_low, high=_rid.id_high)
+            self.pprint_dispatch(_t1403)
             self.write(" ")
             self.write(self.format_string_value(msg.orig_names[_idx]))
             self.write(")")
@@ -3865,22 +3495,19 @@ class PrettyPrinter:
         self.write(":guard ")
         self.pprint_dispatch(msg.guard)
         self.newline()
-        self.write(":keys ")
-        self.write("(")
+        self.write(":keys (")
         for _idx, _elem in enumerate(msg.keys):
             if (_idx > 0):
                 self.write(" ")
             self.pprint_dispatch(_elem)
         self.write(")")
         self.newline()
-        self.write(":values ")
-        self.write("(")
+        self.write(":values (")
         for _idx, _elem in enumerate(msg.values):
             if (_idx > 0):
                 self.write(" ")
             self.pprint_dispatch(_elem)
-        self.write(")")
-        self.write(")")
+        self.write("))")
         self.dedent()
 
     def pretty_int128_value(self, msg: logic_pb2.Int128Value):
