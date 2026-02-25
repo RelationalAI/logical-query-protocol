@@ -312,8 +312,8 @@ message CSVConfig {
 }
 
 message CSVColumn {
-  string column_name = 1; // Name in CSV file
-  RelationId target_id = 2; // Target relation
+  repeated string column_path = 1; // Column identifier path (was: string column_name)
+  optional RelationId target_id = 2; // Target relation (now explicit optional)
   repeated Type types = 3; // Relation signature (key types + value types)
 }
 

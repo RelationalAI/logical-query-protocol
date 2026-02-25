@@ -72,6 +72,8 @@
 %nonterm context transactions.Context
 %nonterm csv_asof String
 %nonterm csv_column logic.CSVColumn
+%nonterm csv_column_path Sequence[String]
+%nonterm csv_column_tail Tuple[Optional[logic.RelationId], Sequence[logic.Type]]
 %nonterm csv_columns Sequence[logic.CSVColumn]
 %nonterm csv_config logic.CSVConfig
 %nonterm csv_data logic.CSVData
@@ -980,13 +982,33 @@ csv_config
       construct: $$ = construct_csv_config($3)
       deconstruct: $3: Sequence[Tuple[String, logic.Value]] = deconstruct_csv_config($$)
 
-csv_column
-    : "(" "column" STRING relation_id "[" type* "]" ")"
-      construct: $$ = logic.CSVColumn(column_name=$3, target_id=$4, types=$6)
+csv_column_path
+    : STRING
+      construct: $$ = [$1]
+      deconstruct if builtin.length($$) == 1:
+        $1: String = $$[0]
+    | "[" STRING* "]"
+      construct: $$ = $2
+      deconstruct if builtin.length($$) != 1:
+        $2: Sequence[String] = $$
+
+csv_column_tail
+    : relation_id "[" type* "]"
+      construct: $$ = builtin.tuple(builtin.some($1), $3)
+      deconstruct if $$[0] is not None:
+        $1: logic.RelationId = $$[0]
+        $3: Sequence[logic.Type] = $$[1]
+    | "[" type* "]"
+      construct: $$ = builtin.tuple(None, $2)
       deconstruct:
-        $3: String = $$.column_name
-        $4: logic.RelationId = $$.target_id
-        $6: Sequence[logic.Type] = $$.types
+        $2: Sequence[logic.Type] = $$[1]
+
+csv_column
+    : "(" "column" csv_column_path csv_column_tail? ")"
+      construct: $$ = construct_csv_column($3, $4)
+      deconstruct:
+        $3: Sequence[String] = $$.column_path
+        $4: Optional[Tuple[Optional[logic.RelationId], Sequence[logic.Type]]] = deconstruct_csv_column_tail($$)
 
 undefine
     : "(" "undefine" fragment_id ")"
@@ -1383,6 +1405,19 @@ def deconstruct_export_csv_config(msg: transactions.ExportCSVConfig) -> List[Tup
     if msg.syntax_escapechar is not None:
         builtin.list_push(result, builtin.tuple("syntax_escapechar", _make_value_string(builtin.unwrap_option(msg.syntax_escapechar))))
     return builtin.list_sort(result)
+
+
+def construct_csv_column(path: Sequence[String], tail: Optional[Tuple[Optional[logic.RelationId], Sequence[logic.Type]]]) -> logic.CSVColumn:
+    if tail is not None:
+        t: Tuple[Optional[logic.RelationId], Sequence[logic.Type]] = builtin.unwrap_option(tail)
+        return logic.CSVColumn(column_path=path, target_id=t[0], types=t[1])
+    return logic.CSVColumn(column_path=path, target_id=None, types=list[logic.Type]())
+
+
+def deconstruct_csv_column_tail(col: logic.CSVColumn) -> Optional[Tuple[Optional[logic.RelationId], Sequence[logic.Type]]]:
+    if builtin.has_proto_field(col, 'target_id') or not builtin.is_empty(col.types):
+        return builtin.some(builtin.tuple(col.target_id, col.types))
+    return None
 
 
 def deconstruct_relation_id_string(msg: logic.RelationId) -> String:

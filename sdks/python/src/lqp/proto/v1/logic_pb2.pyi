@@ -447,14 +447,14 @@ class CSVConfig(_message.Message):
     def __init__(self, header_row: _Optional[int] = ..., skip: _Optional[int] = ..., new_line: _Optional[str] = ..., delimiter: _Optional[str] = ..., quotechar: _Optional[str] = ..., escapechar: _Optional[str] = ..., comment: _Optional[str] = ..., missing_strings: _Optional[_Iterable[str]] = ..., decimal_separator: _Optional[str] = ..., encoding: _Optional[str] = ..., compression: _Optional[str] = ...) -> None: ...
 
 class CSVColumn(_message.Message):
-    __slots__ = ("column_name", "target_id", "types")
-    COLUMN_NAME_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("column_path", "target_id", "types")
+    COLUMN_PATH_FIELD_NUMBER: _ClassVar[int]
     TARGET_ID_FIELD_NUMBER: _ClassVar[int]
     TYPES_FIELD_NUMBER: _ClassVar[int]
-    column_name: str
+    column_path: _containers.RepeatedScalarFieldContainer[str]
     target_id: RelationId
     types: _containers.RepeatedCompositeFieldContainer[Type]
-    def __init__(self, column_name: _Optional[str] = ..., target_id: _Optional[_Union[RelationId, _Mapping]] = ..., types: _Optional[_Iterable[_Union[Type, _Mapping]]] = ...) -> None: ...
+    def __init__(self, column_path: _Optional[_Iterable[str]] = ..., target_id: _Optional[_Union[RelationId, _Mapping]] = ..., types: _Optional[_Iterable[_Union[Type, _Mapping]]] = ...) -> None: ...
 
 class RelationId(_message.Message):
     __slots__ = ("id_low", "id_high")

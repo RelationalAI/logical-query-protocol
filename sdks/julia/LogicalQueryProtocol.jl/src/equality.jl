@@ -498,9 +498,9 @@ Base.hash(a::BeTreeInfo, h::UInt) = hash(a.relation_locator, hash(a.storage_conf
 Base.isequal(a::BeTreeInfo, b::BeTreeInfo) = isequal(a.key_types, b.key_types) && isequal(a.value_types, b.value_types) && isequal(a.storage_config, b.storage_config) && isequal(a.relation_locator, b.relation_locator)
 
 # CSVColumn
-Base.:(==)(a::CSVColumn, b::CSVColumn) = a.column_name == b.column_name && a.target_id == b.target_id && a.types == b.types
-Base.hash(a::CSVColumn, h::UInt) = hash(a.types, hash(a.target_id, hash(a.column_name, h)))
-Base.isequal(a::CSVColumn, b::CSVColumn) = isequal(a.column_name, b.column_name) && isequal(a.target_id, b.target_id) && isequal(a.types, b.types)
+Base.:(==)(a::CSVColumn, b::CSVColumn) = a.column_path == b.column_path && a.target_id == b.target_id && a.types == b.types
+Base.hash(a::CSVColumn, h::UInt) = hash(a.types, hash(a.target_id, hash(a.column_path, h)))
+Base.isequal(a::CSVColumn, b::CSVColumn) = isequal(a.column_path, b.column_path) && isequal(a.target_id, b.target_id) && isequal(a.types, b.types)
 
 # BeTreeRelation
 Base.:(==)(a::BeTreeRelation, b::BeTreeRelation) = a.name == b.name && a.relation_info == b.relation_info

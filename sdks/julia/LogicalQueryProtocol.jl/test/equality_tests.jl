@@ -2022,11 +2022,11 @@ end
     r3 = RelationId(id_low=2, id_high=0)
     t1 = var"#Type"(var"#type"=OneOf(:int_type, IntType()))
 
-    c1 = CSVColumn(column_name="age", target_id=r1, types=[t1])
-    c2 = CSVColumn(column_name="age", target_id=r2, types=[t1])
-    c3 = CSVColumn(column_name="name", target_id=r1, types=[t1])
-    c4 = CSVColumn(column_name="age", target_id=r3, types=[t1])
-    c5 = CSVColumn(column_name="age", target_id=r1, types=[t1])
+    c1 = CSVColumn(column_path=["age"], target_id=r1, types=[t1])
+    c2 = CSVColumn(column_path=["age"], target_id=r2, types=[t1])
+    c3 = CSVColumn(column_path=["name"], target_id=r1, types=[t1])
+    c4 = CSVColumn(column_path=["age"], target_id=r3, types=[t1])
+    c5 = CSVColumn(column_path=["age"], target_id=r1, types=[t1])
 
     # Equality and inequality
     @test c1 == c2
@@ -2096,7 +2096,7 @@ end
     cfg2 = CSVConfig(header_row=1, skip=0, new_line="\n", delimiter=",", quotechar="\"", escapechar="\\", comment="", missing_strings=[], decimal_separator=".", encoding="", compression="")
     r1 = RelationId(id_low=1, id_high=0)
     t1 = var"#Type"(var"#type"=OneOf(:int_type, IntType()))
-    col1 = CSVColumn(column_name="age", target_id=r1, types=[t1])
+    col1 = CSVColumn(column_path=["age"], target_id=r1, types=[t1])
 
     d1 = CSVData(locator=loc1, config=cfg1, columns=[col1], asof="2024-01-01")
     d2 = CSVData(locator=loc2, config=cfg2, columns=[col1], asof="2024-01-01")
@@ -2138,7 +2138,7 @@ end
     betree1 = BeTreeRelation(name=r1, relation_info=info1)
     loc1 = CSVLocator(paths=["/file.csv"], inline_data=UInt8[])
     cfg1 = CSVConfig(header_row=1, skip=0, new_line="\n", delimiter=",", quotechar="\"", escapechar="\\", comment="", missing_strings=[], decimal_separator=".", encoding="", compression="")
-    col1 = CSVColumn(column_name="col", target_id=r1, types=[t1])
+    col1 = CSVColumn(column_path=["col"], target_id=r1, types=[t1])
     csv1 = CSVData(locator=loc1, config=cfg1, columns=[col1], asof="")
 
     d1 = Data(data_type=OneOf(:rel_edb, edb1))

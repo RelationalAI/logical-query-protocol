@@ -1,0 +1,36 @@
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          ;; CDC load with path-based columns
+          (csv_data
+            (csv_locator
+              (paths "s3://bucket/cdc/batch_001.csv"))
+            (csv_config {})
+            (columns
+              ;; Unbound column (schema only)
+              (column "raw_data")
+
+              ;; METADATA$KEY insert + delete deltas
+              (column ["append" "METADATA$KEY"] :mk_ins [UINT128])
+              (column ["delete" "METADATA$KEY"] :mk_del [UINT128])
+
+              ;; Data columns: insert-only deltas
+              (column ["append" "user_id"] :uid_ins [INT])
+              (column ["append" "name"] :name_ins [STRING])
+
+              ;; Full snapshot + delta on same column
+              (column "id" :entity_id [INT])
+              (column ["append" "id"] :eid_ins [INT])
+              (column ["delete" "id"] :eid_del [INT]))
+            (asof "2025-06-01T00:00:00Z")))))
+
+    (reads
+      (output :mk_ins :mk_ins)
+      (output :mk_del :mk_del)
+      (output :uid_ins :uid_ins)
+      (output :name_ins :name_ins)
+      (output :entity_id :entity_id)
+      (output :eid_ins :eid_ins)
+      (output :eid_del :eid_del))))

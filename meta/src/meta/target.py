@@ -345,6 +345,9 @@ class Call(TargetExpr):
     def target_type(self) -> "TargetType":
         if isinstance(self.func, (ParseNonterminal, PrintNonterminal)):
             return self.func.target_type()
+        # Special handling for tuple builtin: construct TupleType from argument types
+        if isinstance(self.func, Builtin) and self.func.name == "tuple":
+            return TupleType(tuple(arg.target_type() for arg in self.args))
         func_type = self.func.target_type()
         if isinstance(func_type, FunctionType):
             # Match parameter types against argument types to build type variable mapping
