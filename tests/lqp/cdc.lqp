@@ -10,7 +10,7 @@
             (csv_config {})
             (columns
               ;; Unbound column (schema only)
-              (column "raw_data")
+              (column "raw_data" [])
 
               ;; METADATA$KEY insert + delete deltas
               (column ["append" "METADATA$KEY"] :mk_ins [UINT128])

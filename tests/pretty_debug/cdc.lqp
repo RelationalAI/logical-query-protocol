@@ -18,7 +18,7 @@
                :csv_quotechar "\""
                :csv_skip 0})
             (columns
-              (column "raw_data")
+              (column "raw_data" [])
               (column ["append" "METADATA$KEY"] 0xb7219c9b1f7d843d [UINT128])
               (column ["delete" "METADATA$KEY"] 0xc45b4cf618eed32f [UINT128])
               (column ["append" "user_id"] 0x7982cff88800e869 [INT])
