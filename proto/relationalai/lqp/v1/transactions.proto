@@ -64,11 +64,16 @@ message Context {
   repeated RelationId relations = 1;
 }
 
-// Demand the source IDB, take an immutable snapshot, and turn it into an EDB under the
-// given path (specified as a sequence of strings, see EDB).
-message Snapshot {
+// A single (destination, source) pair within a Snapshot action.
+message SnapshotMapping {
   repeated string destination_path = 1;
   RelationId source_relation = 2;
+}
+
+// Demand the source IDBs, take immutable snapshots, and turn them into EDBs under the
+// given paths (specified as sequences of strings, see EDB).
+message Snapshot {
+  repeated SnapshotMapping mappings = 1;
 }
 
 //

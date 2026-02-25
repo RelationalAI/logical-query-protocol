@@ -1363,23 +1363,67 @@ end
     @test d1 == d2 && d2 == d4 && d1 == d4
 end
 
-@testitem "Equality for Snapshot" tags=[:ring1, :unit] begin
-    using LogicalQueryProtocol: Snapshot, RelationId
+@testitem "Equality for SnapshotMapping" tags=[:ring1, :unit] begin
+    using LogicalQueryProtocol: SnapshotMapping, RelationId
 
     r1 = RelationId(id_low=0x1234, id_high=0x0)
     r2 = RelationId(id_low=0x1234, id_high=0x0)
     r3 = RelationId(id_low=0x5678, id_high=0x0)
 
-    s1 = Snapshot(destination_path=["my_edb"], source_relation=r1)
-    s2 = Snapshot(destination_path=["my_edb"], source_relation=r2)
-    s3 = Snapshot(destination_path=["other_edb"], source_relation=r1)
-    s4 = Snapshot(destination_path=["my_edb"], source_relation=r3)
-    s5 = Snapshot(destination_path=["my_edb"], source_relation=r1)
+    m1 = SnapshotMapping(destination_path=["my_edb"], source_relation=r1)
+    m2 = SnapshotMapping(destination_path=["my_edb"], source_relation=r2)
+    m3 = SnapshotMapping(destination_path=["other_edb"], source_relation=r1)
+    m4 = SnapshotMapping(destination_path=["my_edb"], source_relation=r3)
+    m5 = SnapshotMapping(destination_path=["my_edb"], source_relation=r1)
+
+    # Equality and inequality
+    @test m1 == m2
+    @test m1 != m3
+    @test m1 != m4
+    @test isequal(m1, m2)
+
+    # Hash consistency
+    @test hash(m1) == hash(m2)
+
+    # Reflexivity
+    @test m1 == m1
+    @test isequal(m1, m1)
+
+    # Symmetry
+    @test m1 == m2 && m2 == m1
+
+    # Transitivity
+    @test m1 == m2 && m2 == m5 && m1 == m5
+
+    # Multi-segment path
+    m6 = SnapshotMapping(destination_path=["schema", "table"], source_relation=r1)
+    m7 = SnapshotMapping(destination_path=["schema", "table"], source_relation=r1)
+    @test m6 == m7
+    @test hash(m6) == hash(m7)
+    @test m6 != m1
+end
+
+@testitem "Equality for Snapshot" tags=[:ring1, :unit] begin
+    using LogicalQueryProtocol: Snapshot, SnapshotMapping, RelationId
+
+    r1 = RelationId(id_low=0x1234, id_high=0x0)
+    r2 = RelationId(id_low=0x1234, id_high=0x0)
+    r3 = RelationId(id_low=0x5678, id_high=0x0)
+
+    m1 = SnapshotMapping(destination_path=["my_edb"], source_relation=r1)
+    m2 = SnapshotMapping(destination_path=["other_edb"], source_relation=r3)
+
+    s1 = Snapshot(mappings=[m1, m2])
+    s2 = Snapshot(mappings=[
+        SnapshotMapping(destination_path=["my_edb"], source_relation=r2),
+        SnapshotMapping(destination_path=["other_edb"], source_relation=r3),
+    ])
+    s3 = Snapshot(mappings=[m1])
+    s4 = Snapshot(mappings=[m1, m2])
 
     # Equality and inequality
     @test s1 == s2
     @test s1 != s3
-    @test s1 != s4
     @test isequal(s1, s2)
 
     # Hash consistency
@@ -1393,14 +1437,7 @@ end
     @test s1 == s2 && s2 == s1
 
     # Transitivity
-    @test s1 == s2 && s2 == s5 && s1 == s5
-
-    # Multi-segment path
-    s6 = Snapshot(destination_path=["schema", "table"], source_relation=r1)
-    s7 = Snapshot(destination_path=["schema", "table"], source_relation=r1)
-    @test s6 == s7
-    @test hash(s6) == hash(s7)
-    @test s6 != s1
+    @test s1 == s2 && s2 == s4 && s1 == s4
 end
 
 @testitem "Equality for Configure" tags=[:ring1, :unit] begin

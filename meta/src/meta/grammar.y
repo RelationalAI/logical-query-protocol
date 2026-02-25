@@ -148,6 +148,7 @@
 %nonterm string_type logic.StringType
 %nonterm sum_monoid logic.SumMonoid
 %nonterm snapshot transactions.Snapshot
+%nonterm snapshot_mapping transactions.SnapshotMapping
 %nonterm sync transactions.Sync
 %nonterm term logic.Term
 %nonterm terms Sequence[logic.Term]
@@ -1009,12 +1010,17 @@ context
       construct: $$ = transactions.Context(relations=$3)
       deconstruct: $3: Sequence[logic.RelationId] = $$.relations
 
-snapshot
-    : "(" "snapshot" edb_path relation_id ")"
-      construct: $$ = transactions.Snapshot(destination_path=$3, source_relation=$4)
+snapshot_mapping
+    : edb_path relation_id
+      construct: $$ = transactions.SnapshotMapping(destination_path=$1, source_relation=$2)
       deconstruct:
-        $3: Sequence[String] = $$.destination_path
-        $4: logic.RelationId = $$.source_relation
+        $1: Sequence[String] = $$.destination_path
+        $2: logic.RelationId = $$.source_relation
+
+snapshot
+    : "(" "snapshot" snapshot_mapping* ")"
+      construct: $$ = transactions.Snapshot(mappings=$3)
+      deconstruct: $3: Sequence[transactions.SnapshotMapping] = $$.mappings
 
 epoch_reads
     : "(" "reads" read* ")"

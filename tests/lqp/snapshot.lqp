@@ -45,9 +45,10 @@
   ;; Snapshot the defined relations as EDBs
   (epoch
     (writes
-      (snapshot ["my_edb"] :my_rel)
-      (snapshot ["database" "table"] :computed)
-      (snapshot ["schema" "namespace" "relation"] :big_signed))
+      (snapshot
+        ["my_edb"] :my_rel
+        ["database" "table"] :computed
+        ["schema" "namespace" "relation"] :big_signed))
     ;; Snapshots should match the relations now.
     (reads
       (output :snapshot1 :snapshot1)

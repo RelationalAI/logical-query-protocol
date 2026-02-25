@@ -362,10 +362,15 @@ Base.:(==)(a::Define, b::Define) = a.fragment == b.fragment
 Base.hash(a::Define, h::UInt) = hash(a.fragment, h)
 Base.isequal(a::Define, b::Define) = isequal(a.fragment, b.fragment)
 
+# SnapshotMapping
+Base.:(==)(a::SnapshotMapping, b::SnapshotMapping) = a.destination_path == b.destination_path && a.source_relation == b.source_relation
+Base.hash(a::SnapshotMapping, h::UInt) = hash(a.source_relation, hash(a.destination_path, h))
+Base.isequal(a::SnapshotMapping, b::SnapshotMapping) = isequal(a.destination_path, b.destination_path) && isequal(a.source_relation, b.source_relation)
+
 # Snapshot
-Base.:(==)(a::Snapshot, b::Snapshot) = a.destination_path == b.destination_path && a.source_relation == b.source_relation
-Base.hash(a::Snapshot, h::UInt) = hash(a.source_relation, hash(a.destination_path, h))
-Base.isequal(a::Snapshot, b::Snapshot) = isequal(a.destination_path, b.destination_path) && isequal(a.source_relation, b.source_relation)
+Base.:(==)(a::Snapshot, b::Snapshot) = a.mappings == b.mappings
+Base.hash(a::Snapshot, h::UInt) = hash(a.mappings, h)
+Base.isequal(a::Snapshot, b::Snapshot) = isequal(a.mappings, b.mappings)
 
 # Context
 Base.:(==)(a::Context, b::Context) = a.relations == b.relations
