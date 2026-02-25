@@ -138,9 +138,9 @@
 %nonterm read transactions.Read
 %nonterm reduce logic.Reduce
 %nonterm rel_atom logic.RelAtom
-%nonterm rel_edb logic.RelEDB
-%nonterm rel_edb_path Sequence[String]
-%nonterm rel_edb_types Sequence[logic.Type]
+%nonterm edb logic.EDB
+%nonterm edb_path Sequence[String]
+%nonterm edb_types Sequence[logic.Type]
 %nonterm rel_term logic.RelTerm
 %nonterm relation_id logic.RelationId
 %nonterm script logic.Script
@@ -900,10 +900,10 @@ functional_dependency_values
     : "(" "values" var* ")"
 
 data
-    : rel_edb
-      construct: $$ = logic.Data(rel_edb=$1)
-      deconstruct if builtin.has_proto_field($$, 'rel_edb'):
-        $1: logic.RelEDB = $$.rel_edb
+    : edb
+      construct: $$ = logic.Data(edb=$1)
+      deconstruct if builtin.has_proto_field($$, 'edb'):
+        $1: logic.EDB = $$.edb
     | betree_relation
       construct: $$ = logic.Data(betree_relation=$1)
       deconstruct if builtin.has_proto_field($$, 'betree_relation'):
@@ -913,15 +913,15 @@ data
       deconstruct if builtin.has_proto_field($$, 'csv_data'):
         $1: logic.CSVData = $$.csv_data
 
-rel_edb_path
+edb_path
     : "[" STRING* "]"
 
-rel_edb_types
+edb_types
     : "[" type* "]"
 
-rel_edb
-    : "(" "rel_edb" relation_id rel_edb_path rel_edb_types ")"
-      construct: $$ = logic.RelEDB(target_id=$3, path=$4, types=$5)
+edb
+    : "(" "edb" relation_id edb_path edb_types ")"
+      construct: $$ = logic.EDB(target_id=$3, path=$4, types=$5)
       deconstruct:
         $3: logic.RelationId = $$.target_id
         $4: Sequence[String] = $$.path
@@ -1010,7 +1010,7 @@ context
       deconstruct: $3: Sequence[logic.RelationId] = $$.relations
 
 snapshot
-    : "(" "snapshot" rel_edb_path relation_id ")"
+    : "(" "snapshot" edb_path relation_id ")"
       construct: $$ = transactions.Snapshot(destination_path=$3, source_relation=$4)
       deconstruct:
         $3: Sequence[String] = $$.destination_path

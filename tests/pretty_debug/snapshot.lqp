@@ -5,9 +5,9 @@
       (define
         (fragment
           :snapshots
-          (rel_edb 0xcd3b9ab2de079088 ["my_edb"] [])
-          (rel_edb 0xd1e6d3706be27c8 ["database" "table"] [])
-          (rel_edb 0xc6e65c9a8c481ef1 ["schema" "namespace" "relation"] [])))
+          (edb 0xcd3b9ab2de079088 ["my_edb"] [])
+          (edb 0xd1e6d3706be27c8 ["database" "table"] [])
+          (edb 0xc6e65c9a8c481ef1 ["schema" "namespace" "relation"] [])))
       (define
         (fragment
           :frag1

@@ -5,9 +5,9 @@
       (define
         (fragment
           :snapshots
-          (rel_edb :snapshot1 ["my_edb"] [])
-          (rel_edb :snapshot2 ["database" "table"] [])
-          (rel_edb :snapshot3 ["schema" "namespace" "relation"] [])))
+          (edb :snapshot1 ["my_edb"] [])
+          (edb :snapshot2 ["database" "table"] [])
+          (edb :snapshot3 ["schema" "namespace" "relation"] [])))
       (define
         (fragment
           :frag1

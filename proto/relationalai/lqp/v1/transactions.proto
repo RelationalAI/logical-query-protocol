@@ -65,7 +65,7 @@ message Context {
 }
 
 // Demand the source IDB, take an immutable snapshot, and turn it into an EDB under the
-// given path (specified as a sequence of strings, see RelEDB).
+// given path (specified as a sequence of strings, see EDB).
 message Snapshot {
   repeated string destination_path = 1;
   RelationId source_relation = 2;

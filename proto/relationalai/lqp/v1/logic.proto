@@ -232,14 +232,14 @@ message Attribute {
 //
 message Data {
   oneof data_type {
-    RelEDB rel_edb = 1;
+    EDB edb = 1;
     BeTreeRelation betree_relation = 2;
     CSVData csv_data = 3;
     // IcebergData iceberg_data = 4;
   }
 }
 
-message RelEDB {
+message EDB {
   RelationId target_id = 1;
   repeated string path = 2;
   repeated Type types = 3;
