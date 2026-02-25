@@ -61,8 +61,8 @@ end
     _, provenance = Parser.parse(input)
 
     for (path, span) in provenance
-        @test span.start.offset <= getfield(span, :end).offset
-        @test span.start.line <= getfield(span, :end).line
+        @test span.start.offset <= span.stop.offset
+        @test span.start.line <= span.stop.line
     end
 end
 
@@ -96,5 +96,5 @@ end
     root_span = provenance[()]
     @test root_span isa Span
     @test root_span.start isa Location
-    @test getfield(root_span, :end) isa Location
+    @test root_span.stop isa Location
 end

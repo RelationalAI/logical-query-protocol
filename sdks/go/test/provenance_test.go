@@ -110,13 +110,13 @@ func TestProvenanceSpanOrdering(t *testing.T) {
 	}
 
 	for path, span := range provenance {
-		if span.Start.Offset > span.End.Offset {
+		if span.Start.Offset > span.Stop.Offset {
 			t.Errorf("Bad span at path %q: start %d > end %d",
-				path, span.Start.Offset, span.End.Offset)
+				path, span.Start.Offset, span.Stop.Offset)
 		}
-		if span.Start.Line > span.End.Line {
+		if span.Start.Line > span.Stop.Line {
 			t.Errorf("Bad line ordering at path %q: start %d > end %d",
-				path, span.Start.Line, span.End.Line)
+				path, span.Start.Line, span.Stop.Line)
 		}
 	}
 }

@@ -36,7 +36,7 @@ end
 
 struct Span
     start::Location
-    var"end"::Location
+    stop::Location
 end
 
 struct Token

@@ -29,10 +29,10 @@ type Location struct {{
 	Offset int
 }}
 
-// Span represents a source span from start to end location.
+// Span represents a source span from start to stop location.
 type Span struct {{
 	Start Location
-	End   Location
+	Stop  Location
 }}
 
 // ParseError represents a parse error
@@ -381,7 +381,7 @@ func (p *Parser) recordSpan(startOffset int) {{
 	}}
 	s := Span{{
 		Start: p.makeLocation(startOffset),
-		End:   p.makeLocation(endOffset),
+		Stop:  p.makeLocation(endOffset),
 	}}
 	// Build comma-separated path key
 	key := ""

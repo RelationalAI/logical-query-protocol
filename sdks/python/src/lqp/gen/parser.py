@@ -48,24 +48,24 @@ class Location:
 
 
 class Span:
-    """Source span from start to end location."""
+    """Source span from start to stop location."""
 
-    __slots__ = ("start", "end")
+    __slots__ = ("start", "stop")
 
-    def __init__(self, start: Location, end: Location):
+    def __init__(self, start: Location, stop: Location):
         self.start = start
-        self.end = end
+        self.stop = stop
 
     def __repr__(self) -> str:
-        return f"Span({self.start}, {self.end})"
+        return f"Span({self.start}, {self.stop})"
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, Span):
             return NotImplemented
-        return self.start == other.start and self.end == other.end
+        return self.start == other.start and self.stop == other.stop
 
     def __hash__(self) -> int:
-        return hash((self.start, self.end))
+        return hash((self.start, self.stop))
 
 
 class Token:

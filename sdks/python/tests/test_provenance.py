@@ -70,8 +70,8 @@ def test_provenance_span_ordering():
     """Verify start <= end for all spans."""
     _, provenance = parse(SIMPLE_INPUT)
     for path, span in provenance.items():
-        assert span.start.offset <= span.end.offset, f"Bad span at path {path}"
-        assert span.start.line <= span.end.line, f"Bad line ordering at path {path}"
+        assert span.start.offset <= span.stop.offset, f"Bad span at path {path}"
+        assert span.start.line <= span.stop.line, f"Bad line ordering at path {path}"
 
 
 def test_provenance_multiple_epochs():
@@ -107,9 +107,9 @@ def test_provenance_location_fields():
 
 
 def test_provenance_span_fields():
-    """Verify Span has start and end Location."""
+    """Verify Span has start and stop Location."""
     _, provenance = parse(SIMPLE_INPUT)
     root_span = provenance[()]
     assert isinstance(root_span, Span)
     assert isinstance(root_span.start, Location)
-    assert isinstance(root_span.end, Location)
+    assert isinstance(root_span.stop, Location)
