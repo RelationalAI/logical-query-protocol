@@ -25,7 +25,8 @@ function _get_oneof_field(obj, field_sym::Symbol)
     for fname in fieldnames(typeof(obj))
         fval = getfield(obj, fname)
         if fval isa ProtoBuf.OneOf && fval.name == field_sym
-            return fval[]
+            typ = ProtoBuf.oneof_field_types(typeof(obj))[fname][field_sym]
+            return fval[]::typ
         end
     end
     error("No oneof field $field_sym on $(typeof(obj))")
