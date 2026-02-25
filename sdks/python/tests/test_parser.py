@@ -14,7 +14,7 @@ def test_parse_lqp(snapshot: Snapshot, input_file):
     with open(input_file) as f:
         content = f.read()
 
-    txn = parse(content)
+    txn, _provenance = parse(content)
     assert txn is not None, f"Failed to parse {input_file}"
     binary_output = txn.SerializeToString()
     snapshot.snapshot_dir = BIN_SNAPSHOTS_DIR

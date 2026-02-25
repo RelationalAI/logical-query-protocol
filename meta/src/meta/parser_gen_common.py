@@ -19,6 +19,7 @@ def generate_parser(
     codegen: CodeGenerator,
     template_path: Path,
     command_line: str | None = None,
+    proto_messages=None,
 ) -> str:
     """Generate a parser from a grammar using the given code generator and template.
 
@@ -27,11 +28,14 @@ def generate_parser(
         codegen: Language-specific code generator
         template_path: Path to the language-specific template file
         command_line: Optional command line string for the file header
+        proto_messages: Optional proto message definitions for provenance tracking
     """
     template = template_path.read_text()
     indent = codegen.parse_def_indent
 
-    defns = generate_parse_functions(grammar, indent=indent)
+    defns = generate_parse_functions(
+        grammar, indent=indent, proto_messages=proto_messages
+    )
     lines = []
     for defn in defns:
         lines.append("")

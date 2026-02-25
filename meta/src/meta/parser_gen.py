@@ -90,6 +90,7 @@ from .grammar import (
     Terminal,
 )
 from .grammar_utils import is_epsilon, rhs_elements
+from .proto_ast import ProtoMessage
 from .target import (
     Assign,
     BaseType,
@@ -100,6 +101,8 @@ from .target import (
     ListExpr,
     ListType,
     Lit,
+    NewMessage,
+    OneOf,
     ParseNonterminal,
     ParseNonterminalDef,
     Seq,
@@ -131,29 +134,117 @@ class AmbiguousGrammarError(Exception):
     pass
 
 
+def _build_param_field_numbers(
+    action: Lambda,
+    proto_messages: dict[tuple[str, str], ProtoMessage] | None,
+) -> dict[int, int]:
+    """Map lambda parameter indices to protobuf field numbers.
+
+    Inspects the semantic action's body. When it is a NewMessage, cross-references
+    field names with proto_messages to find field numbers.
+
+    Returns dict mapping parameter index to proto field number.
+    """
+    if proto_messages is None:
+        return {}
+    body = action.body
+    if not isinstance(body, NewMessage):
+        return {}
+    key = (body.module, body.name)
+    proto_msg = proto_messages.get(key)
+    if proto_msg is None:
+        return {}
+    # Build name -> field number map from proto definition
+    name_to_number: dict[str, int] = {}
+    for f in proto_msg.fields:
+        name_to_number[f.name] = f.number
+    for oneof in proto_msg.oneofs:
+        for f in oneof.fields:
+            name_to_number[f.name] = f.number
+    # Map each message field to the lambda param that provides its value
+    param_names = [p.name for p in action.params]
+    result: dict[int, int] = {}
+    for field_name, field_expr in body.fields:
+        field_num = name_to_number.get(field_name)
+        if field_num is None:
+            continue
+        # Determine which param provides this field
+        param_name = _extract_param_name(field_expr, param_names)
+        if param_name is not None and param_name in param_names:
+            param_idx = param_names.index(param_name)
+            result[param_idx] = field_num
+    return result
+
+
+def _extract_param_name(expr: TargetExpr, param_names: list[str]) -> str | None:
+    """Extract the parameter name from a field expression.
+
+    Handles:
+    - Direct Var reference
+    - Call(OneOf(...), [Var(...)]) wrapper
+    - Call(Builtin(...), [Var(...), ...]) e.g. unwrap_option_or
+    """
+    from .target import Builtin
+
+    if isinstance(expr, Var) and expr.name in param_names:
+        return expr.name
+    if isinstance(expr, Call):
+        if isinstance(expr.func, OneOf) and expr.args:
+            return _extract_param_name(expr.args[0], param_names)
+        if isinstance(expr.func, Builtin) and expr.args:
+            return _extract_param_name(expr.args[0], param_names)
+    return None
+
+
 def generate_parse_functions(
-    grammar: Grammar, indent: str = ""
+    grammar: Grammar,
+    indent: str = "",
+    proto_messages: dict[tuple[str, str], ProtoMessage] | None = None,
 ) -> list[ParseNonterminalDef]:
     parser_methods = []
     reachable, _ = grammar.analysis.partition_nonterminals_by_reachability()
     for nt in reachable:
         rules = grammar.rules[nt]
-        method_code = _generate_parse_method(nt, rules, grammar, indent)
+        method_code = _generate_parse_method(nt, rules, grammar, indent, proto_messages)
         parser_methods.append(method_code)
     return parser_methods
 
 
+def _wrap_with_span(body: TargetExpr, return_type) -> TargetExpr:
+    """Wrap a nonterminal body with span_start/record_span."""
+    span_var = Var(gensym("span_start"), BaseType("Int64"))
+    result_var = Var(gensym("result"), return_type)
+    return Let(
+        span_var,
+        Call(make_builtin("span_start"), []),
+        Let(
+            result_var,
+            body,
+            Seq(
+                [
+                    Call(make_builtin("record_span"), [span_var]),
+                    result_var,
+                ]
+            ),
+        ),
+    )
+
+
 def _generate_parse_method(
-    lhs: Nonterminal, rules: list[Rule], grammar: Grammar, indent: str = ""
+    lhs: Nonterminal,
+    rules: list[Rule],
+    grammar: Grammar,
+    indent: str = "",
+    proto_messages: dict[tuple[str, str], ProtoMessage] | None = None,
 ) -> ParseNonterminalDef:
-    """Generate parse method code as string (preserving existing logic)."""
+    """Generate parse method for a nonterminal with provenance tracking."""
     return_type = None
     rhs = None
     follow_set = FollowSet(grammar, lhs)
     if len(rules) == 1:
         rule = rules[0]
         rhs = _generate_parse_rhs_ir(
-            rule.rhs, grammar, follow_set, True, rule.constructor
+            rule.rhs, grammar, follow_set, True, rule.constructor, proto_messages
         )
         return_type = rule.constructor.return_type
     else:
@@ -171,7 +262,6 @@ def _generate_parse_method(
                 ],
             )
         for i, rule in enumerate(rules):
-            # Ensure the return type is the same for all actions for this nonterminal.
             assert return_type is None or return_type == rule.constructor.return_type, (
                 f"Return type mismatch at rule {i}: {return_type} != {rule.constructor.return_type}"
             )
@@ -183,12 +273,18 @@ def _generate_parse_method(
                     make_builtin("equal"), [Var(prediction, BaseType("Int64")), Lit(i)]
                 ),
                 _generate_parse_rhs_ir(
-                    rule.rhs, grammar, follow_set, True, rule.constructor
+                    rule.rhs,
+                    grammar,
+                    follow_set,
+                    True,
+                    rule.constructor,
+                    proto_messages,
                 ),
                 tail,
             )
         rhs = Let(Var(prediction, BaseType("Int64")), predictor, tail)
     assert return_type is not None
+    rhs = _wrap_with_span(rhs, return_type)
     return ParseNonterminalDef(lhs, [], return_type, rhs, indent)
 
 
@@ -377,22 +473,12 @@ def _generate_parse_rhs_ir(
     follow_set: TerminalSequenceSet,
     apply_action: bool = False,
     action: Lambda | None = None,
+    proto_messages: dict[tuple[str, str], ProtoMessage] | None = None,
 ) -> TargetExpr:
-    """Generate IR for parsing an RHS.
-
-    Args:
-        rhs: The RHS to parse
-        grammar: The grammar
-        follow_set: TerminalSequenceSet for computing follow lazily
-        apply_action: Whether to apply the semantic action
-        action: The semantic action to apply (required if apply_action is True)
-
-    Returns IR expression for leaf nodes (Literal, Terminal, Nonterminal).
-    Returns None for complex cases that still use string generation.
-    """
+    """Generate IR for parsing an RHS with provenance tracking."""
     if isinstance(rhs, Sequence):
         return _generate_parse_rhs_ir_sequence(
-            rhs, grammar, follow_set, apply_action, action
+            rhs, grammar, follow_set, apply_action, action, proto_messages
         )
     elif isinstance(rhs, LitTerminal):
         parse_expr = Call(make_builtin("consume_literal"), [Lit(rhs.name)])
@@ -400,7 +486,6 @@ def _generate_parse_rhs_ir(
             return Seq([parse_expr, apply_lambda(action, [])])
         return parse_expr
     elif isinstance(rhs, NamedTerminal):
-        # Use terminal's actual type for consume_terminal instead of generic Token
         from .target import FunctionType
 
         terminal_type = rhs.target_type()
@@ -427,14 +512,18 @@ def _generate_parse_rhs_ir(
     elif isinstance(rhs, Option):
         assert grammar is not None
         predictor = _build_option_predictor(grammar, rhs.rhs, follow_set)
-        parse_result = _generate_parse_rhs_ir(rhs.rhs, grammar, follow_set, False, None)
+        parse_result = _generate_parse_rhs_ir(
+            rhs.rhs, grammar, follow_set, False, None, proto_messages
+        )
         return IfElse(predictor, Call(make_builtin("some"), [parse_result]), Lit(None))
     elif isinstance(rhs, Star):
         assert grammar is not None
         xs = Var(gensym("xs"), ListType(rhs.rhs.target_type()))
         cond = Var(gensym("cond"), BaseType("Boolean"))
         predictor = _build_option_predictor(grammar, rhs.rhs, follow_set)
-        parse_item = _generate_parse_rhs_ir(rhs.rhs, grammar, follow_set, False, None)
+        parse_item = _generate_parse_rhs_ir(
+            rhs.rhs, grammar, follow_set, False, None, proto_messages
+        )
         item = Var(gensym("item"), rhs.rhs.target_type())
         loop_body = Seq(
             [
@@ -452,15 +541,30 @@ def _generate_parse_rhs_ir(
         raise NotImplementedError(f"Unsupported Rhs type: {type(rhs)}")
 
 
+def _wrap_with_path(field_num: int, var: Var, inner: TargetExpr) -> list[TargetExpr]:
+    """Return statements that push path, assign inner to var, then pop path."""
+    return [
+        Call(make_builtin("push_path"), [Lit(field_num)]),
+        Assign(var, inner),
+        Call(make_builtin("pop_path"), []),
+    ]
+
+
 def _generate_parse_rhs_ir_sequence(
     rhs: Sequence,
     grammar: Grammar,
     follow_set: TerminalSequenceSet,
     apply_action: bool = False,
     action: Lambda | None = None,
+    proto_messages: dict[tuple[str, str], ProtoMessage] | None = None,
 ) -> TargetExpr:
     if is_epsilon(rhs):
         return Lit(None)
+
+    # Compute param->field_number mapping for provenance
+    param_field_numbers: dict[int, int] = {}
+    if action is not None and proto_messages is not None:
+        param_field_numbers = _build_param_field_numbers(action, proto_messages)
 
     exprs = []
     arg_vars = []
@@ -473,7 +577,9 @@ def _generate_parse_rhs_ir_sequence(
             follow_set_i = ConcatSet(first_following, follow_set)
         else:
             follow_set_i = follow_set
-        elem_ir = _generate_parse_rhs_ir(elem, grammar, follow_set_i, False, None)
+        elem_ir = _generate_parse_rhs_ir(
+            elem, grammar, follow_set_i, False, None, proto_messages
+        )
         if isinstance(elem, LitTerminal):
             exprs.append(elem_ir)
         else:
@@ -487,23 +593,80 @@ def _generate_parse_rhs_ir_sequence(
                     )
                 var_name = gensym("arg")
             var = Var(var_name, elem.target_type())
-            exprs.append(Assign(var, elem_ir))
+            field_num = param_field_numbers.get(non_literal_count)
+            if field_num is not None and isinstance(elem, Star):
+                # For repeated fields: push field number around the whole
+                # Star loop, and push/pop a 0-based index inside the loop
+                stmts = _wrap_star_with_index_path(
+                    elem, var, grammar, follow_set_i, field_num, proto_messages
+                )
+                exprs.extend(stmts)
+            elif field_num is not None:
+                exprs.extend(_wrap_with_path(field_num, var, elem_ir))
+            else:
+                exprs.append(Assign(var, elem_ir))
             arg_vars.append(var)
             non_literal_count += 1
     if apply_action and action:
         lambda_call = apply_lambda(action, arg_vars)
         exprs.append(lambda_call)
     elif len(arg_vars) > 1:
-        # Multiple values - wrap in tuple
         exprs.append(Call(make_builtin("tuple"), arg_vars))
     elif len(arg_vars) == 1:
-        # Single value - return the variable
         exprs.append(arg_vars[0])
     else:
-        # no non-literal elements, return None
         return Lit(None)
 
     if len(exprs) == 1:
         return exprs[0]
     else:
         return Seq(exprs)
+
+
+def _wrap_star_with_index_path(
+    star: Star,
+    result_var: Var,
+    grammar: Grammar,
+    follow_set: TerminalSequenceSet,
+    field_num: int,
+    proto_messages: dict[tuple[str, str], ProtoMessage] | None = None,
+) -> list[TargetExpr]:
+    """Return statements for a Star loop wrapped with push_path(field_num)
+    and push_path(index)/pop_path() around each element.
+    Assigns the resulting list to result_var."""
+    xs = Var(gensym("xs"), ListType(star.rhs.target_type()))
+    cond = Var(gensym("cond"), BaseType("Boolean"))
+    idx = Var(gensym("idx"), BaseType("Int64"))
+    predictor = _build_option_predictor(grammar, star.rhs, follow_set)
+    parse_item = _generate_parse_rhs_ir(
+        star.rhs, grammar, follow_set, False, None, proto_messages
+    )
+    item = Var(gensym("item"), star.rhs.target_type())
+    loop_body = Seq(
+        [
+            Call(make_builtin("push_path"), [idx]),
+            Assign(item, parse_item),
+            Call(make_builtin("pop_path"), []),
+            Call(make_builtin("list_push"), [xs, item]),
+            Assign(idx, Call(make_builtin("add"), [idx, Lit(1)])),
+            Assign(cond, predictor),
+        ]
+    )
+    inner = Let(
+        xs,
+        ListExpr([], star.rhs.target_type()),
+        Let(
+            cond,
+            predictor,
+            Let(
+                idx,
+                Lit(0),
+                Seq([While(cond, loop_body), xs]),
+            ),
+        ),
+    )
+    return [
+        Call(make_builtin("push_path"), [Lit(field_num)]),
+        Assign(result_var, inner),
+        Call(make_builtin("pop_path"), []),
+    ]

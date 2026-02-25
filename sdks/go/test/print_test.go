@@ -127,13 +127,13 @@ func TestRoundtripLQP(t *testing.T) {
 				t.Fatalf("Failed to read LQP file: %v", err)
 			}
 
-			parsed, err := lqp.Parse(string(content))
+			parsed, _, err := lqp.Parse(string(content))
 			if err != nil {
 				t.Fatalf("Failed to parse: %v", err)
 			}
 
 			printed := lqp.ProgramToStr(parsed)
-			reparsed, err := lqp.Parse(printed)
+			reparsed, _, err := lqp.Parse(printed)
 			if err != nil {
 				t.Fatalf("Failed to re-parse pretty output: %v", err)
 			}
@@ -174,7 +174,7 @@ func TestRoundtripBinary(t *testing.T) {
 			}
 
 			printed := lqp.ProgramToStr(transaction)
-			reparsed, err := lqp.Parse(printed)
+			reparsed, _, err := lqp.Parse(printed)
 			if err != nil {
 				t.Fatalf("Failed to re-parse pretty output: %v", err)
 			}

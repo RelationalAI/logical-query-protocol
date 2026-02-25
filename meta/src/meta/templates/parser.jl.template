@@ -28,13 +28,26 @@ end
 Base.showerror(io::IO, e::ParseError) = print(io, "ParseError: ", e.msg)
 
 
+struct Location
+    line::Int
+    column::Int
+    offset::Int
+end
+
+struct Span
+    start::Location
+    var"end"::Location
+end
+
 struct Token
     type::String
     value::Any
-    pos::Int
+    start_pos::Int
+    end_pos::Int
 end
 
-Base.show(io::IO, t::Token) = print(io, "Token(", t.type, ", ", repr(t.value), ", ", t.pos, ")")
+Base.show(io::IO, t::Token) = print(io, "Token(", t.type, ", ", repr(t.value), ", ", t.start_pos, ")")
+Base.getproperty(t::Token, s::Symbol) = s === :pos ? getfield(t, :start_pos) : getfield(t, s)
 
 
 mutable struct Lexer
@@ -151,14 +164,24 @@ function tokenize!(lexer::Lexer)
 
         # Pick the longest match
         token_type, value, action, end_pos = candidates[argmax([c[4] for c in candidates])]
-        push!(lexer.tokens, Token(token_type, action(value), lexer.pos))
+        push!(lexer.tokens, Token(token_type, action(value), lexer.pos, end_pos))
         lexer.pos = end_pos
     end
 
-    push!(lexer.tokens, Token("\$", "", lexer.pos))
+    push!(lexer.tokens, Token("\$", "", lexer.pos, lexer.pos))
     return nothing
 end
 
+
+function _compute_line_starts(text::String)::Vector{{Int}}
+    starts = [1]
+    for i in eachindex(text)
+        if text[i] == '\n'
+            push!(starts, nextind(text, i))
+        end
+    end
+    return starts
+end
 
 mutable struct ParserState
     tokens::Vector{{Token}}
@@ -166,16 +189,50 @@ mutable struct ParserState
     id_to_debuginfo::Dict{{Vector{{UInt8}},Vector{{Pair{{Tuple{{UInt64,UInt64}},String}}}}}}
     _current_fragment_id::Union{{Nothing,Vector{{UInt8}}}}
     _relation_id_to_name::Dict{{Tuple{{UInt64,UInt64}},String}}
+    provenance::Dict{{Tuple{{Vararg{{Int}}}},Span}}
+    _path::Vector{{Int}}
+    _line_starts::Vector{{Int}}
 
-    function ParserState(tokens::Vector{{Token}})
-        return new(tokens, 1, Dict(), nothing, Dict())
+    function ParserState(tokens::Vector{{Token}}, input_str::String)
+        return new(tokens, 1, Dict(), nothing, Dict(), Dict(), Int[], _compute_line_starts(input_str))
     end
 end
 
 
+function _make_location(parser::ParserState, offset::Int)::Location
+    line_idx = searchsortedlast(parser._line_starts, offset)
+    col = offset - parser._line_starts[line_idx]
+    return Location(line_idx, col + 1, offset)
+end
+
+function push_path!(parser::ParserState, n::Int)
+    push!(parser._path, n)
+    return nothing
+end
+
+function pop_path!(parser::ParserState)
+    pop!(parser._path)
+    return nothing
+end
+
+function span_start(parser::ParserState)::Int
+    return lookahead(parser, 0).start_pos
+end
+
+function record_span!(parser::ParserState, start_offset::Int)
+    if parser.pos > 1
+        end_offset = parser.tokens[parser.pos - 1].end_pos
+    else
+        end_offset = start_offset
+    end
+    s = Span(_make_location(parser, start_offset), _make_location(parser, end_offset))
+    parser.provenance[Tuple(parser._path)] = s
+    return nothing
+end
+
 function lookahead(parser::ParserState, k::Int=0)::Token
     idx = parser.pos + k
-    return idx <= length(parser.tokens) ? parser.tokens[idx] : Token("\$", "", -1)
+    return idx <= length(parser.tokens) ? parser.tokens[idx] : Token("\$", "", -1, -1)
 end
 
 
@@ -281,7 +338,7 @@ end
 
 function parse(input::String)
     lexer = Lexer(input)
-    parser = ParserState(lexer.tokens)
+    parser = ParserState(lexer.tokens, input)
     result = parse_{start_name}(parser)
     # Check for unconsumed tokens (except EOF)
     if parser.pos <= length(parser.tokens)
@@ -290,14 +347,14 @@ function parse(input::String)
             throw(ParseError("Unexpected token at end of input: $remaining_token"))
         end
     end
-    return result
+    return result, parser.provenance
 end
 
 # Export main parse function and error type
 export parse, ParseError
 # Export scanner functions for testing
 export scan_string, scan_int, scan_float, scan_int128, scan_uint128, scan_decimal
-# Export Lexer for testing
-export Lexer
+# Export Lexer and provenance types for testing
+export Lexer, Location, Span
 
 end # module Parser

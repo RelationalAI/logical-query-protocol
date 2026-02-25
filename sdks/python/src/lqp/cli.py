@@ -25,7 +25,7 @@ def parse_input(filename: str, validate: bool = True):
     else:
         with open(filename) as f:
             lqp_text = f.read()
-        txn = parse(lqp_text)
+        txn, _ = parse(lqp_text)
 
     if validate:
         validate_proto(txn)

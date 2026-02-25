@@ -14,4 +14,6 @@ def generate_parser_python(
 ) -> str:
     """Generate LL(k) recursive-descent parser in Python."""
     codegen = PythonCodeGenerator(proto_messages=proto_messages)
-    return generate_parser(grammar, codegen, _TEMPLATE_PATH, command_line)
+    return generate_parser(
+        grammar, codegen, _TEMPLATE_PATH, command_line, proto_messages
+    )

@@ -28,13 +28,26 @@ end
 Base.showerror(io::IO, e::ParseError) = print(io, "ParseError: ", e.msg)
 
 
+struct Location
+    line::Int
+    column::Int
+    offset::Int
+end
+
+struct Span
+    start::Location
+    var"end"::Location
+end
+
 struct Token
     type::String
     value::Any
-    pos::Int
+    start_pos::Int
+    end_pos::Int
 end
 
-Base.show(io::IO, t::Token) = print(io, "Token(", t.type, ", ", repr(t.value), ", ", t.pos, ")")
+Base.show(io::IO, t::Token) = print(io, "Token(", t.type, ", ", repr(t.value), ", ", t.start_pos, ")")
+Base.getproperty(t::Token, s::Symbol) = s === :pos ? getfield(t, :start_pos) : getfield(t, s)
 
 
 mutable struct Lexer
@@ -177,14 +190,24 @@ function tokenize!(lexer::Lexer)
 
         # Pick the longest match
         token_type, value, action, end_pos = candidates[argmax([c[4] for c in candidates])]
-        push!(lexer.tokens, Token(token_type, action(value), lexer.pos))
+        push!(lexer.tokens, Token(token_type, action(value), lexer.pos, end_pos))
         lexer.pos = end_pos
     end
 
-    push!(lexer.tokens, Token("\$", "", lexer.pos))
+    push!(lexer.tokens, Token("\$", "", lexer.pos, lexer.pos))
     return nothing
 end
 
+
+function _compute_line_starts(text::String)::Vector{Int}
+    starts = [1]
+    for i in eachindex(text)
+        if text[i] == '\n'
+            push!(starts, nextind(text, i))
+        end
+    end
+    return starts
+end
 
 mutable struct ParserState
     tokens::Vector{Token}
@@ -192,16 +215,50 @@ mutable struct ParserState
     id_to_debuginfo::Dict{Vector{UInt8},Vector{Pair{Tuple{UInt64,UInt64},String}}}
     _current_fragment_id::Union{Nothing,Vector{UInt8}}
     _relation_id_to_name::Dict{Tuple{UInt64,UInt64},String}
+    provenance::Dict{Tuple{Vararg{Int}},Span}
+    _path::Vector{Int}
+    _line_starts::Vector{Int}
 
-    function ParserState(tokens::Vector{Token})
-        return new(tokens, 1, Dict(), nothing, Dict())
+    function ParserState(tokens::Vector{Token}, input_str::String)
+        return new(tokens, 1, Dict(), nothing, Dict(), Dict(), Int[], _compute_line_starts(input_str))
     end
 end
 
 
+function _make_location(parser::ParserState, offset::Int)::Location
+    line_idx = searchsortedlast(parser._line_starts, offset)
+    col = offset - parser._line_starts[line_idx]
+    return Location(line_idx, col + 1, offset)
+end
+
+function push_path!(parser::ParserState, n::Int)
+    push!(parser._path, n)
+    return nothing
+end
+
+function pop_path!(parser::ParserState)
+    pop!(parser._path)
+    return nothing
+end
+
+function span_start(parser::ParserState)::Int
+    return lookahead(parser, 0).start_pos
+end
+
+function record_span!(parser::ParserState, start_offset::Int)
+    if parser.pos > 1
+        end_offset = parser.tokens[parser.pos - 1].end_pos
+    else
+        end_offset = start_offset
+    end
+    s = Span(_make_location(parser, start_offset), _make_location(parser, end_offset))
+    parser.provenance[Tuple(parser._path)] = s
+    return nothing
+end
+
 function lookahead(parser::ParserState, k::Int=0)::Token
     idx = parser.pos + k
-    return idx <= length(parser.tokens) ? parser.tokens[idx] : Token("\$", "", -1)
+    return idx <= length(parser.tokens) ? parser.tokens[idx] : Token("\$", "", -1, -1)
 end
 
 
@@ -305,7 +362,7 @@ function _extract_value_int32(parser::ParserState, value::Union{Nothing, Proto.V
     if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
         return Int32(_get_oneof_field(value, :int_value))
     else
-        _t1311 = nothing
+        _t1835 = nothing
     end
     return Int32(default)
 end
@@ -314,7 +371,7 @@ function _extract_value_int64(parser::ParserState, value::Union{Nothing, Proto.V
     if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
         return _get_oneof_field(value, :int_value)
     else
-        _t1312 = nothing
+        _t1836 = nothing
     end
     return default
 end
@@ -323,7 +380,7 @@ function _extract_value_string(parser::ParserState, value::Union{Nothing, Proto.
     if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
         return _get_oneof_field(value, :string_value)
     else
-        _t1313 = nothing
+        _t1837 = nothing
     end
     return default
 end
@@ -332,7 +389,7 @@ function _extract_value_boolean(parser::ParserState, value::Union{Nothing, Proto
     if (!isnothing(value) && _has_proto_field(value, Symbol("boolean_value")))
         return _get_oneof_field(value, :boolean_value)
     else
-        _t1314 = nothing
+        _t1838 = nothing
     end
     return default
 end
@@ -341,7 +398,7 @@ function _extract_value_string_list(parser::ParserState, value::Union{Nothing, P
     if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
         return String[_get_oneof_field(value, :string_value)]
     else
-        _t1315 = nothing
+        _t1839 = nothing
     end
     return default
 end
@@ -350,7 +407,7 @@ function _try_extract_value_int64(parser::ParserState, value::Union{Nothing, Pro
     if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
         return _get_oneof_field(value, :int_value)
     else
-        _t1316 = nothing
+        _t1840 = nothing
     end
     return nothing
 end
@@ -359,7 +416,7 @@ function _try_extract_value_float64(parser::ParserState, value::Union{Nothing, P
     if (!isnothing(value) && _has_proto_field(value, Symbol("float_value")))
         return _get_oneof_field(value, :float_value)
     else
-        _t1317 = nothing
+        _t1841 = nothing
     end
     return nothing
 end
@@ -368,7 +425,7 @@ function _try_extract_value_bytes(parser::ParserState, value::Union{Nothing, Pro
     if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
         return Vector{UInt8}(_get_oneof_field(value, :string_value))
     else
-        _t1318 = nothing
+        _t1842 = nothing
     end
     return nothing
 end
@@ -377,70 +434,70 @@ function _try_extract_value_uint128(parser::ParserState, value::Union{Nothing, P
     if (!isnothing(value) && _has_proto_field(value, Symbol("uint128_value")))
         return _get_oneof_field(value, :uint128_value)
     else
-        _t1319 = nothing
+        _t1843 = nothing
     end
     return nothing
 end
 
 function construct_csv_config(parser::ParserState, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.CSVConfig
     config = Dict(config_dict)
-    _t1320 = _extract_value_int32(parser, get(config, "csv_header_row", nothing), 1)
-    header_row = _t1320
-    _t1321 = _extract_value_int64(parser, get(config, "csv_skip", nothing), 0)
-    skip = _t1321
-    _t1322 = _extract_value_string(parser, get(config, "csv_new_line", nothing), "")
-    new_line = _t1322
-    _t1323 = _extract_value_string(parser, get(config, "csv_delimiter", nothing), ",")
-    delimiter = _t1323
-    _t1324 = _extract_value_string(parser, get(config, "csv_quotechar", nothing), "\"")
-    quotechar = _t1324
-    _t1325 = _extract_value_string(parser, get(config, "csv_escapechar", nothing), "\"")
-    escapechar = _t1325
-    _t1326 = _extract_value_string(parser, get(config, "csv_comment", nothing), "")
-    comment = _t1326
-    _t1327 = _extract_value_string_list(parser, get(config, "csv_missing_strings", nothing), String[])
-    missing_strings = _t1327
-    _t1328 = _extract_value_string(parser, get(config, "csv_decimal_separator", nothing), ".")
-    decimal_separator = _t1328
-    _t1329 = _extract_value_string(parser, get(config, "csv_encoding", nothing), "utf-8")
-    encoding = _t1329
-    _t1330 = _extract_value_string(parser, get(config, "csv_compression", nothing), "auto")
-    compression = _t1330
-    _t1331 = Proto.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression)
-    return _t1331
+    _t1844 = _extract_value_int32(parser, get(config, "csv_header_row", nothing), 1)
+    header_row = _t1844
+    _t1845 = _extract_value_int64(parser, get(config, "csv_skip", nothing), 0)
+    skip = _t1845
+    _t1846 = _extract_value_string(parser, get(config, "csv_new_line", nothing), "")
+    new_line = _t1846
+    _t1847 = _extract_value_string(parser, get(config, "csv_delimiter", nothing), ",")
+    delimiter = _t1847
+    _t1848 = _extract_value_string(parser, get(config, "csv_quotechar", nothing), "\"")
+    quotechar = _t1848
+    _t1849 = _extract_value_string(parser, get(config, "csv_escapechar", nothing), "\"")
+    escapechar = _t1849
+    _t1850 = _extract_value_string(parser, get(config, "csv_comment", nothing), "")
+    comment = _t1850
+    _t1851 = _extract_value_string_list(parser, get(config, "csv_missing_strings", nothing), String[])
+    missing_strings = _t1851
+    _t1852 = _extract_value_string(parser, get(config, "csv_decimal_separator", nothing), ".")
+    decimal_separator = _t1852
+    _t1853 = _extract_value_string(parser, get(config, "csv_encoding", nothing), "utf-8")
+    encoding = _t1853
+    _t1854 = _extract_value_string(parser, get(config, "csv_compression", nothing), "auto")
+    compression = _t1854
+    _t1855 = Proto.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression)
+    return _t1855
 end
 
 function construct_betree_info(parser::ParserState, key_types::Vector{Proto.var"#Type"}, value_types::Vector{Proto.var"#Type"}, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.BeTreeInfo
     config = Dict(config_dict)
-    _t1332 = _try_extract_value_float64(parser, get(config, "betree_config_epsilon", nothing))
-    epsilon = _t1332
-    _t1333 = _try_extract_value_int64(parser, get(config, "betree_config_max_pivots", nothing))
-    max_pivots = _t1333
-    _t1334 = _try_extract_value_int64(parser, get(config, "betree_config_max_deltas", nothing))
-    max_deltas = _t1334
-    _t1335 = _try_extract_value_int64(parser, get(config, "betree_config_max_leaf", nothing))
-    max_leaf = _t1335
-    _t1336 = Proto.BeTreeConfig(epsilon=epsilon, max_pivots=max_pivots, max_deltas=max_deltas, max_leaf=max_leaf)
-    storage_config = _t1336
-    _t1337 = _try_extract_value_uint128(parser, get(config, "betree_locator_root_pageid", nothing))
-    root_pageid = _t1337
-    _t1338 = _try_extract_value_bytes(parser, get(config, "betree_locator_inline_data", nothing))
-    inline_data = _t1338
-    _t1339 = _try_extract_value_int64(parser, get(config, "betree_locator_element_count", nothing))
-    element_count = _t1339
-    _t1340 = _try_extract_value_int64(parser, get(config, "betree_locator_tree_height", nothing))
-    tree_height = _t1340
-    _t1341 = Proto.BeTreeLocator(location=(!isnothing(root_pageid) ? OneOf(:root_pageid, root_pageid) : (!isnothing(inline_data) ? OneOf(:inline_data, inline_data) : nothing)), element_count=element_count, tree_height=tree_height)
-    relation_locator = _t1341
-    _t1342 = Proto.BeTreeInfo(key_types=key_types, value_types=value_types, storage_config=storage_config, relation_locator=relation_locator)
-    return _t1342
+    _t1856 = _try_extract_value_float64(parser, get(config, "betree_config_epsilon", nothing))
+    epsilon = _t1856
+    _t1857 = _try_extract_value_int64(parser, get(config, "betree_config_max_pivots", nothing))
+    max_pivots = _t1857
+    _t1858 = _try_extract_value_int64(parser, get(config, "betree_config_max_deltas", nothing))
+    max_deltas = _t1858
+    _t1859 = _try_extract_value_int64(parser, get(config, "betree_config_max_leaf", nothing))
+    max_leaf = _t1859
+    _t1860 = Proto.BeTreeConfig(epsilon=epsilon, max_pivots=max_pivots, max_deltas=max_deltas, max_leaf=max_leaf)
+    storage_config = _t1860
+    _t1861 = _try_extract_value_uint128(parser, get(config, "betree_locator_root_pageid", nothing))
+    root_pageid = _t1861
+    _t1862 = _try_extract_value_bytes(parser, get(config, "betree_locator_inline_data", nothing))
+    inline_data = _t1862
+    _t1863 = _try_extract_value_int64(parser, get(config, "betree_locator_element_count", nothing))
+    element_count = _t1863
+    _t1864 = _try_extract_value_int64(parser, get(config, "betree_locator_tree_height", nothing))
+    tree_height = _t1864
+    _t1865 = Proto.BeTreeLocator(location=(!isnothing(root_pageid) ? OneOf(:root_pageid, root_pageid) : (!isnothing(inline_data) ? OneOf(:inline_data, inline_data) : nothing)), element_count=element_count, tree_height=tree_height)
+    relation_locator = _t1865
+    _t1866 = Proto.BeTreeInfo(key_types=key_types, value_types=value_types, storage_config=storage_config, relation_locator=relation_locator)
+    return _t1866
 end
 
 function default_configure(parser::ParserState)::Proto.Configure
-    _t1343 = Proto.IVMConfig(level=Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF)
-    ivm_config = _t1343
-    _t1344 = Proto.Configure(semantics_version=0, ivm_config=ivm_config)
-    return _t1344
+    _t1867 = Proto.IVMConfig(level=Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF)
+    ivm_config = _t1867
+    _t1868 = Proto.Configure(semantics_version=0, ivm_config=ivm_config)
+    return _t1868
 end
 
 function construct_configure(parser::ParserState, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.Configure
@@ -462,2739 +519,3337 @@ function construct_configure(parser::ParserState, config_dict::Vector{Tuple{Stri
             end
         end
     end
-    _t1345 = Proto.IVMConfig(level=maintenance_level)
-    ivm_config = _t1345
-    _t1346 = _extract_value_int64(parser, get(config, "semantics_version", nothing), 0)
-    semantics_version = _t1346
-    _t1347 = Proto.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
-    return _t1347
+    _t1869 = Proto.IVMConfig(level=maintenance_level)
+    ivm_config = _t1869
+    _t1870 = _extract_value_int64(parser, get(config, "semantics_version", nothing), 0)
+    semantics_version = _t1870
+    _t1871 = Proto.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
+    return _t1871
 end
 
 function export_csv_config(parser::ParserState, path::String, columns::Vector{Proto.ExportCSVColumn}, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.ExportCSVConfig
     config = Dict(config_dict)
-    _t1348 = _extract_value_int64(parser, get(config, "partition_size", nothing), 0)
-    partition_size = _t1348
-    _t1349 = _extract_value_string(parser, get(config, "compression", nothing), "")
-    compression = _t1349
-    _t1350 = _extract_value_boolean(parser, get(config, "syntax_header_row", nothing), true)
-    syntax_header_row = _t1350
-    _t1351 = _extract_value_string(parser, get(config, "syntax_missing_string", nothing), "")
-    syntax_missing_string = _t1351
-    _t1352 = _extract_value_string(parser, get(config, "syntax_delim", nothing), ",")
-    syntax_delim = _t1352
-    _t1353 = _extract_value_string(parser, get(config, "syntax_quotechar", nothing), "\"")
-    syntax_quotechar = _t1353
-    _t1354 = _extract_value_string(parser, get(config, "syntax_escapechar", nothing), "\\")
-    syntax_escapechar = _t1354
-    _t1355 = Proto.ExportCSVConfig(path=path, data_columns=columns, partition_size=partition_size, compression=compression, syntax_header_row=syntax_header_row, syntax_missing_string=syntax_missing_string, syntax_delim=syntax_delim, syntax_quotechar=syntax_quotechar, syntax_escapechar=syntax_escapechar)
-    return _t1355
+    _t1872 = _extract_value_int64(parser, get(config, "partition_size", nothing), 0)
+    partition_size = _t1872
+    _t1873 = _extract_value_string(parser, get(config, "compression", nothing), "")
+    compression = _t1873
+    _t1874 = _extract_value_boolean(parser, get(config, "syntax_header_row", nothing), true)
+    syntax_header_row = _t1874
+    _t1875 = _extract_value_string(parser, get(config, "syntax_missing_string", nothing), "")
+    syntax_missing_string = _t1875
+    _t1876 = _extract_value_string(parser, get(config, "syntax_delim", nothing), ",")
+    syntax_delim = _t1876
+    _t1877 = _extract_value_string(parser, get(config, "syntax_quotechar", nothing), "\"")
+    syntax_quotechar = _t1877
+    _t1878 = _extract_value_string(parser, get(config, "syntax_escapechar", nothing), "\\")
+    syntax_escapechar = _t1878
+    _t1879 = Proto.ExportCSVConfig(path=path, data_columns=columns, partition_size=partition_size, compression=compression, syntax_header_row=syntax_header_row, syntax_missing_string=syntax_missing_string, syntax_delim=syntax_delim, syntax_quotechar=syntax_quotechar, syntax_escapechar=syntax_escapechar)
+    return _t1879
 end
 
 # --- Parse functions ---
 
 function parse_transaction(parser::ParserState)::Proto.Transaction
+    span_start602 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "transaction")
+    push_path!(parser, 2)
     if (match_lookahead_literal(parser, "(", 0) && match_lookahead_literal(parser, "configure", 1))
-        _t713 = parse_configure(parser)
-        _t712 = _t713
+        _t1237 = parse_configure(parser)
+        _t1236 = _t1237
     else
-        _t712 = nothing
+        _t1236 = nothing
     end
-    configure356 = _t712
+    configure592 = _t1236
+    pop_path!(parser)
+    push_path!(parser, 3)
     if (match_lookahead_literal(parser, "(", 0) && match_lookahead_literal(parser, "sync", 1))
-        _t715 = parse_sync(parser)
-        _t714 = _t715
+        _t1239 = parse_sync(parser)
+        _t1238 = _t1239
     else
-        _t714 = nothing
+        _t1238 = nothing
     end
-    sync357 = _t714
-    xs358 = Proto.Epoch[]
-    cond359 = match_lookahead_literal(parser, "(", 0)
-    while cond359
-        _t716 = parse_epoch(parser)
-        item360 = _t716
-        push!(xs358, item360)
-        cond359 = match_lookahead_literal(parser, "(", 0)
+    sync593 = _t1238
+    pop_path!(parser)
+    push_path!(parser, 1)
+    xs598 = Proto.Epoch[]
+    cond599 = match_lookahead_literal(parser, "(", 0)
+    idx600 = 0
+    while cond599
+        push_path!(parser, idx600)
+        _t1240 = parse_epoch(parser)
+        item601 = _t1240
+        pop_path!(parser)
+        push!(xs598, item601)
+        idx600 = (idx600 + 1)
+        cond599 = match_lookahead_literal(parser, "(", 0)
     end
-    epochs361 = xs358
+    epochs597 = xs598
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t717 = default_configure(parser)
-    _t718 = Proto.Transaction(epochs=epochs361, configure=(!isnothing(configure356) ? configure356 : _t717), sync=sync357)
-    return _t718
+    _t1241 = default_configure(parser)
+    _t1242 = Proto.Transaction(epochs=epochs597, configure=(!isnothing(configure592) ? configure592 : _t1241), sync=sync593)
+    result603 = _t1242
+    record_span!(parser, span_start602)
+    return result603
 end
 
 function parse_configure(parser::ParserState)::Proto.Configure
+    span_start605 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "configure")
-    _t719 = parse_config_dict(parser)
-    config_dict362 = _t719
+    _t1243 = parse_config_dict(parser)
+    config_dict604 = _t1243
     consume_literal!(parser, ")")
-    _t720 = construct_configure(parser, config_dict362)
-    return _t720
+    _t1244 = construct_configure(parser, config_dict604)
+    result606 = _t1244
+    record_span!(parser, span_start605)
+    return result606
 end
 
 function parse_config_dict(parser::ParserState)::Vector{Tuple{String, Proto.Value}}
+    span_start611 = span_start(parser)
     consume_literal!(parser, "{")
-    xs363 = Tuple{String, Proto.Value}[]
-    cond364 = match_lookahead_literal(parser, ":", 0)
-    while cond364
-        _t721 = parse_config_key_value(parser)
-        item365 = _t721
-        push!(xs363, item365)
-        cond364 = match_lookahead_literal(parser, ":", 0)
+    xs607 = Tuple{String, Proto.Value}[]
+    cond608 = match_lookahead_literal(parser, ":", 0)
+    while cond608
+        _t1245 = parse_config_key_value(parser)
+        item609 = _t1245
+        push!(xs607, item609)
+        cond608 = match_lookahead_literal(parser, ":", 0)
     end
-    config_key_values366 = xs363
+    config_key_values610 = xs607
     consume_literal!(parser, "}")
-    return config_key_values366
+    result612 = config_key_values610
+    record_span!(parser, span_start611)
+    return result612
 end
 
 function parse_config_key_value(parser::ParserState)::Tuple{String, Proto.Value}
+    span_start615 = span_start(parser)
     consume_literal!(parser, ":")
-    symbol367 = consume_terminal!(parser, "SYMBOL")
-    _t722 = parse_value(parser)
-    value368 = _t722
-    return (symbol367, value368,)
+    symbol613 = consume_terminal!(parser, "SYMBOL")
+    _t1246 = parse_value(parser)
+    value614 = _t1246
+    result616 = (symbol613, value614,)
+    record_span!(parser, span_start615)
+    return result616
 end
 
 function parse_value(parser::ParserState)::Proto.Value
+    span_start627 = span_start(parser)
     if match_lookahead_literal(parser, "true", 0)
-        _t723 = 9
+        _t1247 = 9
     else
         if match_lookahead_literal(parser, "missing", 0)
-            _t724 = 8
+            _t1248 = 8
         else
             if match_lookahead_literal(parser, "false", 0)
-                _t725 = 9
+                _t1249 = 9
             else
                 if match_lookahead_literal(parser, "(", 0)
                     if match_lookahead_literal(parser, "datetime", 1)
-                        _t727 = 1
+                        _t1251 = 1
                     else
                         if match_lookahead_literal(parser, "date", 1)
-                            _t728 = 0
+                            _t1252 = 0
                         else
-                            _t728 = -1
+                            _t1252 = -1
                         end
-                        _t727 = _t728
+                        _t1251 = _t1252
                     end
-                    _t726 = _t727
+                    _t1250 = _t1251
                 else
                     if match_lookahead_terminal(parser, "UINT128", 0)
-                        _t729 = 5
+                        _t1253 = 5
                     else
                         if match_lookahead_terminal(parser, "STRING", 0)
-                            _t730 = 2
+                            _t1254 = 2
                         else
                             if match_lookahead_terminal(parser, "INT128", 0)
-                                _t731 = 6
+                                _t1255 = 6
                             else
                                 if match_lookahead_terminal(parser, "INT", 0)
-                                    _t732 = 3
+                                    _t1256 = 3
                                 else
                                     if match_lookahead_terminal(parser, "FLOAT", 0)
-                                        _t733 = 4
+                                        _t1257 = 4
                                     else
                                         if match_lookahead_terminal(parser, "DECIMAL", 0)
-                                            _t734 = 7
+                                            _t1258 = 7
                                         else
-                                            _t734 = -1
+                                            _t1258 = -1
                                         end
-                                        _t733 = _t734
+                                        _t1257 = _t1258
                                     end
-                                    _t732 = _t733
+                                    _t1256 = _t1257
                                 end
-                                _t731 = _t732
+                                _t1255 = _t1256
                             end
-                            _t730 = _t731
+                            _t1254 = _t1255
                         end
-                        _t729 = _t730
+                        _t1253 = _t1254
                     end
-                    _t726 = _t729
+                    _t1250 = _t1253
                 end
-                _t725 = _t726
+                _t1249 = _t1250
             end
-            _t724 = _t725
+            _t1248 = _t1249
         end
-        _t723 = _t724
+        _t1247 = _t1248
     end
-    prediction369 = _t723
-    if prediction369 == 9
-        _t736 = parse_boolean_value(parser)
-        boolean_value378 = _t736
-        _t737 = Proto.Value(value=OneOf(:boolean_value, boolean_value378))
-        _t735 = _t737
+    prediction617 = _t1247
+    if prediction617 == 9
+        _t1260 = parse_boolean_value(parser)
+        boolean_value626 = _t1260
+        _t1261 = Proto.Value(value=OneOf(:boolean_value, boolean_value626))
+        _t1259 = _t1261
     else
-        if prediction369 == 8
+        if prediction617 == 8
             consume_literal!(parser, "missing")
-            _t739 = Proto.MissingValue()
-            _t740 = Proto.Value(value=OneOf(:missing_value, _t739))
-            _t738 = _t740
+            _t1263 = Proto.MissingValue()
+            _t1264 = Proto.Value(value=OneOf(:missing_value, _t1263))
+            _t1262 = _t1264
         else
-            if prediction369 == 7
-                decimal377 = consume_terminal!(parser, "DECIMAL")
-                _t742 = Proto.Value(value=OneOf(:decimal_value, decimal377))
-                _t741 = _t742
+            if prediction617 == 7
+                decimal625 = consume_terminal!(parser, "DECIMAL")
+                _t1266 = Proto.Value(value=OneOf(:decimal_value, decimal625))
+                _t1265 = _t1266
             else
-                if prediction369 == 6
-                    int128376 = consume_terminal!(parser, "INT128")
-                    _t744 = Proto.Value(value=OneOf(:int128_value, int128376))
-                    _t743 = _t744
+                if prediction617 == 6
+                    int128624 = consume_terminal!(parser, "INT128")
+                    _t1268 = Proto.Value(value=OneOf(:int128_value, int128624))
+                    _t1267 = _t1268
                 else
-                    if prediction369 == 5
-                        uint128375 = consume_terminal!(parser, "UINT128")
-                        _t746 = Proto.Value(value=OneOf(:uint128_value, uint128375))
-                        _t745 = _t746
+                    if prediction617 == 5
+                        uint128623 = consume_terminal!(parser, "UINT128")
+                        _t1270 = Proto.Value(value=OneOf(:uint128_value, uint128623))
+                        _t1269 = _t1270
                     else
-                        if prediction369 == 4
-                            float374 = consume_terminal!(parser, "FLOAT")
-                            _t748 = Proto.Value(value=OneOf(:float_value, float374))
-                            _t747 = _t748
+                        if prediction617 == 4
+                            float622 = consume_terminal!(parser, "FLOAT")
+                            _t1272 = Proto.Value(value=OneOf(:float_value, float622))
+                            _t1271 = _t1272
                         else
-                            if prediction369 == 3
-                                int373 = consume_terminal!(parser, "INT")
-                                _t750 = Proto.Value(value=OneOf(:int_value, int373))
-                                _t749 = _t750
+                            if prediction617 == 3
+                                int621 = consume_terminal!(parser, "INT")
+                                _t1274 = Proto.Value(value=OneOf(:int_value, int621))
+                                _t1273 = _t1274
                             else
-                                if prediction369 == 2
-                                    string372 = consume_terminal!(parser, "STRING")
-                                    _t752 = Proto.Value(value=OneOf(:string_value, string372))
-                                    _t751 = _t752
+                                if prediction617 == 2
+                                    string620 = consume_terminal!(parser, "STRING")
+                                    _t1276 = Proto.Value(value=OneOf(:string_value, string620))
+                                    _t1275 = _t1276
                                 else
-                                    if prediction369 == 1
-                                        _t754 = parse_datetime(parser)
-                                        datetime371 = _t754
-                                        _t755 = Proto.Value(value=OneOf(:datetime_value, datetime371))
-                                        _t753 = _t755
+                                    if prediction617 == 1
+                                        _t1278 = parse_datetime(parser)
+                                        datetime619 = _t1278
+                                        _t1279 = Proto.Value(value=OneOf(:datetime_value, datetime619))
+                                        _t1277 = _t1279
                                     else
-                                        if prediction369 == 0
-                                            _t757 = parse_date(parser)
-                                            date370 = _t757
-                                            _t758 = Proto.Value(value=OneOf(:date_value, date370))
-                                            _t756 = _t758
+                                        if prediction617 == 0
+                                            _t1281 = parse_date(parser)
+                                            date618 = _t1281
+                                            _t1282 = Proto.Value(value=OneOf(:date_value, date618))
+                                            _t1280 = _t1282
                                         else
                                             throw(ParseError("Unexpected token in value" * ": " * string(lookahead(parser, 0))))
                                         end
-                                        _t753 = _t756
+                                        _t1277 = _t1280
                                     end
-                                    _t751 = _t753
+                                    _t1275 = _t1277
                                 end
-                                _t749 = _t751
+                                _t1273 = _t1275
                             end
-                            _t747 = _t749
+                            _t1271 = _t1273
                         end
-                        _t745 = _t747
+                        _t1269 = _t1271
                     end
-                    _t743 = _t745
+                    _t1267 = _t1269
                 end
-                _t741 = _t743
+                _t1265 = _t1267
             end
-            _t738 = _t741
+            _t1262 = _t1265
         end
-        _t735 = _t738
+        _t1259 = _t1262
     end
-    return _t735
+    result628 = _t1259
+    record_span!(parser, span_start627)
+    return result628
 end
 
 function parse_date(parser::ParserState)::Proto.DateValue
+    span_start632 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "date")
-    int379 = consume_terminal!(parser, "INT")
-    int_3380 = consume_terminal!(parser, "INT")
-    int_4381 = consume_terminal!(parser, "INT")
+    push_path!(parser, 1)
+    int629 = consume_terminal!(parser, "INT")
+    pop_path!(parser)
+    push_path!(parser, 2)
+    int_3630 = consume_terminal!(parser, "INT")
+    pop_path!(parser)
+    push_path!(parser, 3)
+    int_4631 = consume_terminal!(parser, "INT")
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t759 = Proto.DateValue(year=Int32(int379), month=Int32(int_3380), day=Int32(int_4381))
-    return _t759
+    _t1283 = Proto.DateValue(year=Int32(int629), month=Int32(int_3630), day=Int32(int_4631))
+    result633 = _t1283
+    record_span!(parser, span_start632)
+    return result633
 end
 
 function parse_datetime(parser::ParserState)::Proto.DateTimeValue
+    span_start641 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "datetime")
-    int382 = consume_terminal!(parser, "INT")
-    int_3383 = consume_terminal!(parser, "INT")
-    int_4384 = consume_terminal!(parser, "INT")
-    int_5385 = consume_terminal!(parser, "INT")
-    int_6386 = consume_terminal!(parser, "INT")
-    int_7387 = consume_terminal!(parser, "INT")
+    push_path!(parser, 1)
+    int634 = consume_terminal!(parser, "INT")
+    pop_path!(parser)
+    push_path!(parser, 2)
+    int_3635 = consume_terminal!(parser, "INT")
+    pop_path!(parser)
+    push_path!(parser, 3)
+    int_4636 = consume_terminal!(parser, "INT")
+    pop_path!(parser)
+    push_path!(parser, 4)
+    int_5637 = consume_terminal!(parser, "INT")
+    pop_path!(parser)
+    push_path!(parser, 5)
+    int_6638 = consume_terminal!(parser, "INT")
+    pop_path!(parser)
+    push_path!(parser, 6)
+    int_7639 = consume_terminal!(parser, "INT")
+    pop_path!(parser)
+    push_path!(parser, 7)
     if match_lookahead_terminal(parser, "INT", 0)
-        _t760 = consume_terminal!(parser, "INT")
+        _t1284 = consume_terminal!(parser, "INT")
     else
-        _t760 = nothing
+        _t1284 = nothing
     end
-    int_8388 = _t760
+    int_8640 = _t1284
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t761 = Proto.DateTimeValue(year=Int32(int382), month=Int32(int_3383), day=Int32(int_4384), hour=Int32(int_5385), minute=Int32(int_6386), second=Int32(int_7387), microsecond=Int32((!isnothing(int_8388) ? int_8388 : 0)))
-    return _t761
+    _t1285 = Proto.DateTimeValue(year=Int32(int634), month=Int32(int_3635), day=Int32(int_4636), hour=Int32(int_5637), minute=Int32(int_6638), second=Int32(int_7639), microsecond=Int32((!isnothing(int_8640) ? int_8640 : 0)))
+    result642 = _t1285
+    record_span!(parser, span_start641)
+    return result642
 end
 
 function parse_boolean_value(parser::ParserState)::Bool
+    span_start644 = span_start(parser)
     if match_lookahead_literal(parser, "true", 0)
-        _t762 = 0
+        _t1286 = 0
     else
         if match_lookahead_literal(parser, "false", 0)
-            _t763 = 1
+            _t1287 = 1
         else
-            _t763 = -1
+            _t1287 = -1
         end
-        _t762 = _t763
+        _t1286 = _t1287
     end
-    prediction389 = _t762
-    if prediction389 == 1
+    prediction643 = _t1286
+    if prediction643 == 1
         consume_literal!(parser, "false")
-        _t764 = false
+        _t1288 = false
     else
-        if prediction389 == 0
+        if prediction643 == 0
             consume_literal!(parser, "true")
-            _t765 = true
+            _t1289 = true
         else
             throw(ParseError("Unexpected token in boolean_value" * ": " * string(lookahead(parser, 0))))
         end
-        _t764 = _t765
+        _t1288 = _t1289
     end
-    return _t764
+    result645 = _t1288
+    record_span!(parser, span_start644)
+    return result645
 end
 
 function parse_sync(parser::ParserState)::Proto.Sync
+    span_start654 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "sync")
-    xs390 = Proto.FragmentId[]
-    cond391 = match_lookahead_literal(parser, ":", 0)
-    while cond391
-        _t766 = parse_fragment_id(parser)
-        item392 = _t766
-        push!(xs390, item392)
-        cond391 = match_lookahead_literal(parser, ":", 0)
+    push_path!(parser, 1)
+    xs650 = Proto.FragmentId[]
+    cond651 = match_lookahead_literal(parser, ":", 0)
+    idx652 = 0
+    while cond651
+        push_path!(parser, idx652)
+        _t1290 = parse_fragment_id(parser)
+        item653 = _t1290
+        pop_path!(parser)
+        push!(xs650, item653)
+        idx652 = (idx652 + 1)
+        cond651 = match_lookahead_literal(parser, ":", 0)
     end
-    fragment_ids393 = xs390
+    fragment_ids649 = xs650
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t767 = Proto.Sync(fragments=fragment_ids393)
-    return _t767
+    _t1291 = Proto.Sync(fragments=fragment_ids649)
+    result655 = _t1291
+    record_span!(parser, span_start654)
+    return result655
 end
 
 function parse_fragment_id(parser::ParserState)::Proto.FragmentId
+    span_start657 = span_start(parser)
     consume_literal!(parser, ":")
-    symbol394 = consume_terminal!(parser, "SYMBOL")
-    return Proto.FragmentId(Vector{UInt8}(symbol394))
+    symbol656 = consume_terminal!(parser, "SYMBOL")
+    result658 = Proto.FragmentId(Vector{UInt8}(symbol656))
+    record_span!(parser, span_start657)
+    return result658
 end
 
 function parse_epoch(parser::ParserState)::Proto.Epoch
+    span_start661 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "epoch")
+    push_path!(parser, 1)
     if (match_lookahead_literal(parser, "(", 0) && match_lookahead_literal(parser, "writes", 1))
-        _t769 = parse_epoch_writes(parser)
-        _t768 = _t769
+        _t1293 = parse_epoch_writes(parser)
+        _t1292 = _t1293
     else
-        _t768 = nothing
+        _t1292 = nothing
     end
-    epoch_writes395 = _t768
+    epoch_writes659 = _t1292
+    pop_path!(parser)
+    push_path!(parser, 2)
     if match_lookahead_literal(parser, "(", 0)
-        _t771 = parse_epoch_reads(parser)
-        _t770 = _t771
+        _t1295 = parse_epoch_reads(parser)
+        _t1294 = _t1295
     else
-        _t770 = nothing
+        _t1294 = nothing
     end
-    epoch_reads396 = _t770
+    epoch_reads660 = _t1294
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t772 = Proto.Epoch(writes=(!isnothing(epoch_writes395) ? epoch_writes395 : Proto.Write[]), reads=(!isnothing(epoch_reads396) ? epoch_reads396 : Proto.Read[]))
-    return _t772
+    _t1296 = Proto.Epoch(writes=(!isnothing(epoch_writes659) ? epoch_writes659 : Proto.Write[]), reads=(!isnothing(epoch_reads660) ? epoch_reads660 : Proto.Read[]))
+    result662 = _t1296
+    record_span!(parser, span_start661)
+    return result662
 end
 
 function parse_epoch_writes(parser::ParserState)::Vector{Proto.Write}
+    span_start667 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "writes")
-    xs397 = Proto.Write[]
-    cond398 = match_lookahead_literal(parser, "(", 0)
-    while cond398
-        _t773 = parse_write(parser)
-        item399 = _t773
-        push!(xs397, item399)
-        cond398 = match_lookahead_literal(parser, "(", 0)
+    xs663 = Proto.Write[]
+    cond664 = match_lookahead_literal(parser, "(", 0)
+    while cond664
+        _t1297 = parse_write(parser)
+        item665 = _t1297
+        push!(xs663, item665)
+        cond664 = match_lookahead_literal(parser, "(", 0)
     end
-    writes400 = xs397
+    writes666 = xs663
     consume_literal!(parser, ")")
-    return writes400
+    result668 = writes666
+    record_span!(parser, span_start667)
+    return result668
 end
 
 function parse_write(parser::ParserState)::Proto.Write
+    span_start674 = span_start(parser)
     if match_lookahead_literal(parser, "(", 0)
         if match_lookahead_literal(parser, "undefine", 1)
-            _t775 = 1
+            _t1299 = 1
         else
             if match_lookahead_literal(parser, "snapshot", 1)
-                _t776 = 3
+                _t1300 = 3
             else
                 if match_lookahead_literal(parser, "define", 1)
-                    _t777 = 0
+                    _t1301 = 0
                 else
                     if match_lookahead_literal(parser, "context", 1)
-                        _t778 = 2
+                        _t1302 = 2
                     else
-                        _t778 = -1
+                        _t1302 = -1
                     end
-                    _t777 = _t778
+                    _t1301 = _t1302
                 end
-                _t776 = _t777
+                _t1300 = _t1301
             end
-            _t775 = _t776
+            _t1299 = _t1300
         end
-        _t774 = _t775
+        _t1298 = _t1299
     else
-        _t774 = -1
+        _t1298 = -1
     end
-    prediction401 = _t774
-    if prediction401 == 3
-        _t780 = parse_snapshot(parser)
-        snapshot405 = _t780
-        _t781 = Proto.Write(write_type=OneOf(:snapshot, snapshot405))
-        _t779 = _t781
+    prediction669 = _t1298
+    if prediction669 == 3
+        _t1304 = parse_snapshot(parser)
+        snapshot673 = _t1304
+        _t1305 = Proto.Write(write_type=OneOf(:snapshot, snapshot673))
+        _t1303 = _t1305
     else
-        if prediction401 == 2
-            _t783 = parse_context(parser)
-            context404 = _t783
-            _t784 = Proto.Write(write_type=OneOf(:context, context404))
-            _t782 = _t784
+        if prediction669 == 2
+            _t1307 = parse_context(parser)
+            context672 = _t1307
+            _t1308 = Proto.Write(write_type=OneOf(:context, context672))
+            _t1306 = _t1308
         else
-            if prediction401 == 1
-                _t786 = parse_undefine(parser)
-                undefine403 = _t786
-                _t787 = Proto.Write(write_type=OneOf(:undefine, undefine403))
-                _t785 = _t787
+            if prediction669 == 1
+                _t1310 = parse_undefine(parser)
+                undefine671 = _t1310
+                _t1311 = Proto.Write(write_type=OneOf(:undefine, undefine671))
+                _t1309 = _t1311
             else
-                if prediction401 == 0
-                    _t789 = parse_define(parser)
-                    define402 = _t789
-                    _t790 = Proto.Write(write_type=OneOf(:define, define402))
-                    _t788 = _t790
+                if prediction669 == 0
+                    _t1313 = parse_define(parser)
+                    define670 = _t1313
+                    _t1314 = Proto.Write(write_type=OneOf(:define, define670))
+                    _t1312 = _t1314
                 else
                     throw(ParseError("Unexpected token in write" * ": " * string(lookahead(parser, 0))))
                 end
-                _t785 = _t788
+                _t1309 = _t1312
             end
-            _t782 = _t785
+            _t1306 = _t1309
         end
-        _t779 = _t782
+        _t1303 = _t1306
     end
-    return _t779
+    result675 = _t1303
+    record_span!(parser, span_start674)
+    return result675
 end
 
 function parse_define(parser::ParserState)::Proto.Define
+    span_start677 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "define")
-    _t791 = parse_fragment(parser)
-    fragment406 = _t791
+    push_path!(parser, 1)
+    _t1315 = parse_fragment(parser)
+    fragment676 = _t1315
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t792 = Proto.Define(fragment=fragment406)
-    return _t792
+    _t1316 = Proto.Define(fragment=fragment676)
+    result678 = _t1316
+    record_span!(parser, span_start677)
+    return result678
 end
 
 function parse_fragment(parser::ParserState)::Proto.Fragment
+    span_start684 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "fragment")
-    _t793 = parse_new_fragment_id(parser)
-    new_fragment_id407 = _t793
-    xs408 = Proto.Declaration[]
-    cond409 = match_lookahead_literal(parser, "(", 0)
-    while cond409
-        _t794 = parse_declaration(parser)
-        item410 = _t794
-        push!(xs408, item410)
-        cond409 = match_lookahead_literal(parser, "(", 0)
+    _t1317 = parse_new_fragment_id(parser)
+    new_fragment_id679 = _t1317
+    xs680 = Proto.Declaration[]
+    cond681 = match_lookahead_literal(parser, "(", 0)
+    while cond681
+        _t1318 = parse_declaration(parser)
+        item682 = _t1318
+        push!(xs680, item682)
+        cond681 = match_lookahead_literal(parser, "(", 0)
     end
-    declarations411 = xs408
+    declarations683 = xs680
     consume_literal!(parser, ")")
-    return construct_fragment(parser, new_fragment_id407, declarations411)
+    result685 = construct_fragment(parser, new_fragment_id679, declarations683)
+    record_span!(parser, span_start684)
+    return result685
 end
 
 function parse_new_fragment_id(parser::ParserState)::Proto.FragmentId
-    _t795 = parse_fragment_id(parser)
-    fragment_id412 = _t795
-    start_fragment!(parser, fragment_id412)
-    return fragment_id412
+    span_start687 = span_start(parser)
+    _t1319 = parse_fragment_id(parser)
+    fragment_id686 = _t1319
+    start_fragment!(parser, fragment_id686)
+    result688 = fragment_id686
+    record_span!(parser, span_start687)
+    return result688
 end
 
 function parse_declaration(parser::ParserState)::Proto.Declaration
+    span_start694 = span_start(parser)
     if match_lookahead_literal(parser, "(", 0)
         if match_lookahead_literal(parser, "rel_edb", 1)
-            _t797 = 3
+            _t1321 = 3
         else
             if match_lookahead_literal(parser, "functional_dependency", 1)
-                _t798 = 2
+                _t1322 = 2
             else
                 if match_lookahead_literal(parser, "def", 1)
-                    _t799 = 0
+                    _t1323 = 0
                 else
                     if match_lookahead_literal(parser, "csv_data", 1)
-                        _t800 = 3
+                        _t1324 = 3
                     else
                         if match_lookahead_literal(parser, "betree_relation", 1)
-                            _t801 = 3
+                            _t1325 = 3
                         else
                             if match_lookahead_literal(parser, "algorithm", 1)
-                                _t802 = 1
+                                _t1326 = 1
                             else
-                                _t802 = -1
+                                _t1326 = -1
                             end
-                            _t801 = _t802
+                            _t1325 = _t1326
                         end
-                        _t800 = _t801
+                        _t1324 = _t1325
                     end
-                    _t799 = _t800
+                    _t1323 = _t1324
                 end
-                _t798 = _t799
+                _t1322 = _t1323
             end
-            _t797 = _t798
+            _t1321 = _t1322
         end
-        _t796 = _t797
+        _t1320 = _t1321
     else
-        _t796 = -1
+        _t1320 = -1
     end
-    prediction413 = _t796
-    if prediction413 == 3
-        _t804 = parse_data(parser)
-        data417 = _t804
-        _t805 = Proto.Declaration(declaration_type=OneOf(:data, data417))
-        _t803 = _t805
+    prediction689 = _t1320
+    if prediction689 == 3
+        _t1328 = parse_data(parser)
+        data693 = _t1328
+        _t1329 = Proto.Declaration(declaration_type=OneOf(:data, data693))
+        _t1327 = _t1329
     else
-        if prediction413 == 2
-            _t807 = parse_constraint(parser)
-            constraint416 = _t807
-            _t808 = Proto.Declaration(declaration_type=OneOf(:constraint, constraint416))
-            _t806 = _t808
+        if prediction689 == 2
+            _t1331 = parse_constraint(parser)
+            constraint692 = _t1331
+            _t1332 = Proto.Declaration(declaration_type=OneOf(:constraint, constraint692))
+            _t1330 = _t1332
         else
-            if prediction413 == 1
-                _t810 = parse_algorithm(parser)
-                algorithm415 = _t810
-                _t811 = Proto.Declaration(declaration_type=OneOf(:algorithm, algorithm415))
-                _t809 = _t811
+            if prediction689 == 1
+                _t1334 = parse_algorithm(parser)
+                algorithm691 = _t1334
+                _t1335 = Proto.Declaration(declaration_type=OneOf(:algorithm, algorithm691))
+                _t1333 = _t1335
             else
-                if prediction413 == 0
-                    _t813 = parse_def(parser)
-                    def414 = _t813
-                    _t814 = Proto.Declaration(declaration_type=OneOf(:def, def414))
-                    _t812 = _t814
+                if prediction689 == 0
+                    _t1337 = parse_def(parser)
+                    def690 = _t1337
+                    _t1338 = Proto.Declaration(declaration_type=OneOf(:def, def690))
+                    _t1336 = _t1338
                 else
                     throw(ParseError("Unexpected token in declaration" * ": " * string(lookahead(parser, 0))))
                 end
-                _t809 = _t812
+                _t1333 = _t1336
             end
-            _t806 = _t809
+            _t1330 = _t1333
         end
-        _t803 = _t806
+        _t1327 = _t1330
     end
-    return _t803
+    result695 = _t1327
+    record_span!(parser, span_start694)
+    return result695
 end
 
 function parse_def(parser::ParserState)::Proto.Def
+    span_start699 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "def")
-    _t815 = parse_relation_id(parser)
-    relation_id418 = _t815
-    _t816 = parse_abstraction(parser)
-    abstraction419 = _t816
+    push_path!(parser, 1)
+    _t1339 = parse_relation_id(parser)
+    relation_id696 = _t1339
+    pop_path!(parser)
+    push_path!(parser, 2)
+    _t1340 = parse_abstraction(parser)
+    abstraction697 = _t1340
+    pop_path!(parser)
+    push_path!(parser, 3)
     if match_lookahead_literal(parser, "(", 0)
-        _t818 = parse_attrs(parser)
-        _t817 = _t818
+        _t1342 = parse_attrs(parser)
+        _t1341 = _t1342
     else
-        _t817 = nothing
+        _t1341 = nothing
     end
-    attrs420 = _t817
+    attrs698 = _t1341
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t819 = Proto.Def(name=relation_id418, body=abstraction419, attrs=(!isnothing(attrs420) ? attrs420 : Proto.Attribute[]))
-    return _t819
+    _t1343 = Proto.Def(name=relation_id696, body=abstraction697, attrs=(!isnothing(attrs698) ? attrs698 : Proto.Attribute[]))
+    result700 = _t1343
+    record_span!(parser, span_start699)
+    return result700
 end
 
 function parse_relation_id(parser::ParserState)::Proto.RelationId
+    span_start704 = span_start(parser)
     if match_lookahead_literal(parser, ":", 0)
-        _t820 = 0
+        _t1344 = 0
     else
         if match_lookahead_terminal(parser, "UINT128", 0)
-            _t821 = 1
+            _t1345 = 1
         else
-            _t821 = -1
+            _t1345 = -1
         end
-        _t820 = _t821
+        _t1344 = _t1345
     end
-    prediction421 = _t820
-    if prediction421 == 1
-        uint128423 = consume_terminal!(parser, "UINT128")
-        _t822 = Proto.RelationId(uint128423.low, uint128423.high)
+    prediction701 = _t1344
+    if prediction701 == 1
+        uint128703 = consume_terminal!(parser, "UINT128")
+        _t1346 = Proto.RelationId(uint128703.low, uint128703.high)
     else
-        if prediction421 == 0
+        if prediction701 == 0
             consume_literal!(parser, ":")
-            symbol422 = consume_terminal!(parser, "SYMBOL")
-            _t823 = relation_id_from_string(parser, symbol422)
+            symbol702 = consume_terminal!(parser, "SYMBOL")
+            _t1347 = relation_id_from_string(parser, symbol702)
         else
             throw(ParseError("Unexpected token in relation_id" * ": " * string(lookahead(parser, 0))))
         end
-        _t822 = _t823
+        _t1346 = _t1347
     end
-    return _t822
+    result705 = _t1346
+    record_span!(parser, span_start704)
+    return result705
 end
 
 function parse_abstraction(parser::ParserState)::Proto.Abstraction
+    span_start708 = span_start(parser)
     consume_literal!(parser, "(")
-    _t824 = parse_bindings(parser)
-    bindings424 = _t824
-    _t825 = parse_formula(parser)
-    formula425 = _t825
+    _t1348 = parse_bindings(parser)
+    bindings706 = _t1348
+    push_path!(parser, 2)
+    _t1349 = parse_formula(parser)
+    formula707 = _t1349
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t826 = Proto.Abstraction(vars=vcat(bindings424[1], !isnothing(bindings424[2]) ? bindings424[2] : []), value=formula425)
-    return _t826
+    _t1350 = Proto.Abstraction(vars=vcat(bindings706[1], !isnothing(bindings706[2]) ? bindings706[2] : []), value=formula707)
+    result709 = _t1350
+    record_span!(parser, span_start708)
+    return result709
 end
 
 function parse_bindings(parser::ParserState)::Tuple{Vector{Proto.Binding}, Vector{Proto.Binding}}
+    span_start715 = span_start(parser)
     consume_literal!(parser, "[")
-    xs426 = Proto.Binding[]
-    cond427 = match_lookahead_terminal(parser, "SYMBOL", 0)
-    while cond427
-        _t827 = parse_binding(parser)
-        item428 = _t827
-        push!(xs426, item428)
-        cond427 = match_lookahead_terminal(parser, "SYMBOL", 0)
+    xs710 = Proto.Binding[]
+    cond711 = match_lookahead_terminal(parser, "SYMBOL", 0)
+    while cond711
+        _t1351 = parse_binding(parser)
+        item712 = _t1351
+        push!(xs710, item712)
+        cond711 = match_lookahead_terminal(parser, "SYMBOL", 0)
     end
-    bindings429 = xs426
+    bindings713 = xs710
     if match_lookahead_literal(parser, "|", 0)
-        _t829 = parse_value_bindings(parser)
-        _t828 = _t829
+        _t1353 = parse_value_bindings(parser)
+        _t1352 = _t1353
     else
-        _t828 = nothing
+        _t1352 = nothing
     end
-    value_bindings430 = _t828
+    value_bindings714 = _t1352
     consume_literal!(parser, "]")
-    return (bindings429, (!isnothing(value_bindings430) ? value_bindings430 : Proto.Binding[]),)
+    result716 = (bindings713, (!isnothing(value_bindings714) ? value_bindings714 : Proto.Binding[]),)
+    record_span!(parser, span_start715)
+    return result716
 end
 
 function parse_binding(parser::ParserState)::Proto.Binding
-    symbol431 = consume_terminal!(parser, "SYMBOL")
+    span_start719 = span_start(parser)
+    symbol717 = consume_terminal!(parser, "SYMBOL")
     consume_literal!(parser, "::")
-    _t830 = parse_type(parser)
-    type432 = _t830
-    _t831 = Proto.Var(name=symbol431)
-    _t832 = Proto.Binding(var=_t831, var"#type"=type432)
-    return _t832
+    push_path!(parser, 2)
+    _t1354 = parse_type(parser)
+    type718 = _t1354
+    pop_path!(parser)
+    _t1355 = Proto.Var(name=symbol717)
+    _t1356 = Proto.Binding(var=_t1355, var"#type"=type718)
+    result720 = _t1356
+    record_span!(parser, span_start719)
+    return result720
 end
 
 function parse_type(parser::ParserState)::Proto.var"#Type"
+    span_start733 = span_start(parser)
     if match_lookahead_literal(parser, "UNKNOWN", 0)
-        _t833 = 0
+        _t1357 = 0
     else
         if match_lookahead_literal(parser, "UINT128", 0)
-            _t834 = 4
+            _t1358 = 4
         else
             if match_lookahead_literal(parser, "STRING", 0)
-                _t835 = 1
+                _t1359 = 1
             else
                 if match_lookahead_literal(parser, "MISSING", 0)
-                    _t836 = 8
+                    _t1360 = 8
                 else
                     if match_lookahead_literal(parser, "INT128", 0)
-                        _t837 = 5
+                        _t1361 = 5
                     else
                         if match_lookahead_literal(parser, "INT", 0)
-                            _t838 = 2
+                            _t1362 = 2
                         else
                             if match_lookahead_literal(parser, "FLOAT", 0)
-                                _t839 = 3
+                                _t1363 = 3
                             else
                                 if match_lookahead_literal(parser, "DATETIME", 0)
-                                    _t840 = 7
+                                    _t1364 = 7
                                 else
                                     if match_lookahead_literal(parser, "DATE", 0)
-                                        _t841 = 6
+                                        _t1365 = 6
                                     else
                                         if match_lookahead_literal(parser, "BOOLEAN", 0)
-                                            _t842 = 10
+                                            _t1366 = 10
                                         else
                                             if match_lookahead_literal(parser, "(", 0)
-                                                _t843 = 9
+                                                _t1367 = 9
                                             else
-                                                _t843 = -1
+                                                _t1367 = -1
                                             end
-                                            _t842 = _t843
+                                            _t1366 = _t1367
                                         end
-                                        _t841 = _t842
+                                        _t1365 = _t1366
                                     end
-                                    _t840 = _t841
+                                    _t1364 = _t1365
                                 end
-                                _t839 = _t840
+                                _t1363 = _t1364
                             end
-                            _t838 = _t839
+                            _t1362 = _t1363
                         end
-                        _t837 = _t838
+                        _t1361 = _t1362
                     end
-                    _t836 = _t837
+                    _t1360 = _t1361
                 end
-                _t835 = _t836
+                _t1359 = _t1360
             end
-            _t834 = _t835
+            _t1358 = _t1359
         end
-        _t833 = _t834
+        _t1357 = _t1358
     end
-    prediction433 = _t833
-    if prediction433 == 10
-        _t845 = parse_boolean_type(parser)
-        boolean_type444 = _t845
-        _t846 = Proto.var"#Type"(var"#type"=OneOf(:boolean_type, boolean_type444))
-        _t844 = _t846
+    prediction721 = _t1357
+    if prediction721 == 10
+        _t1369 = parse_boolean_type(parser)
+        boolean_type732 = _t1369
+        _t1370 = Proto.var"#Type"(var"#type"=OneOf(:boolean_type, boolean_type732))
+        _t1368 = _t1370
     else
-        if prediction433 == 9
-            _t848 = parse_decimal_type(parser)
-            decimal_type443 = _t848
-            _t849 = Proto.var"#Type"(var"#type"=OneOf(:decimal_type, decimal_type443))
-            _t847 = _t849
+        if prediction721 == 9
+            _t1372 = parse_decimal_type(parser)
+            decimal_type731 = _t1372
+            _t1373 = Proto.var"#Type"(var"#type"=OneOf(:decimal_type, decimal_type731))
+            _t1371 = _t1373
         else
-            if prediction433 == 8
-                _t851 = parse_missing_type(parser)
-                missing_type442 = _t851
-                _t852 = Proto.var"#Type"(var"#type"=OneOf(:missing_type, missing_type442))
-                _t850 = _t852
+            if prediction721 == 8
+                _t1375 = parse_missing_type(parser)
+                missing_type730 = _t1375
+                _t1376 = Proto.var"#Type"(var"#type"=OneOf(:missing_type, missing_type730))
+                _t1374 = _t1376
             else
-                if prediction433 == 7
-                    _t854 = parse_datetime_type(parser)
-                    datetime_type441 = _t854
-                    _t855 = Proto.var"#Type"(var"#type"=OneOf(:datetime_type, datetime_type441))
-                    _t853 = _t855
+                if prediction721 == 7
+                    _t1378 = parse_datetime_type(parser)
+                    datetime_type729 = _t1378
+                    _t1379 = Proto.var"#Type"(var"#type"=OneOf(:datetime_type, datetime_type729))
+                    _t1377 = _t1379
                 else
-                    if prediction433 == 6
-                        _t857 = parse_date_type(parser)
-                        date_type440 = _t857
-                        _t858 = Proto.var"#Type"(var"#type"=OneOf(:date_type, date_type440))
-                        _t856 = _t858
+                    if prediction721 == 6
+                        _t1381 = parse_date_type(parser)
+                        date_type728 = _t1381
+                        _t1382 = Proto.var"#Type"(var"#type"=OneOf(:date_type, date_type728))
+                        _t1380 = _t1382
                     else
-                        if prediction433 == 5
-                            _t860 = parse_int128_type(parser)
-                            int128_type439 = _t860
-                            _t861 = Proto.var"#Type"(var"#type"=OneOf(:int128_type, int128_type439))
-                            _t859 = _t861
+                        if prediction721 == 5
+                            _t1384 = parse_int128_type(parser)
+                            int128_type727 = _t1384
+                            _t1385 = Proto.var"#Type"(var"#type"=OneOf(:int128_type, int128_type727))
+                            _t1383 = _t1385
                         else
-                            if prediction433 == 4
-                                _t863 = parse_uint128_type(parser)
-                                uint128_type438 = _t863
-                                _t864 = Proto.var"#Type"(var"#type"=OneOf(:uint128_type, uint128_type438))
-                                _t862 = _t864
+                            if prediction721 == 4
+                                _t1387 = parse_uint128_type(parser)
+                                uint128_type726 = _t1387
+                                _t1388 = Proto.var"#Type"(var"#type"=OneOf(:uint128_type, uint128_type726))
+                                _t1386 = _t1388
                             else
-                                if prediction433 == 3
-                                    _t866 = parse_float_type(parser)
-                                    float_type437 = _t866
-                                    _t867 = Proto.var"#Type"(var"#type"=OneOf(:float_type, float_type437))
-                                    _t865 = _t867
+                                if prediction721 == 3
+                                    _t1390 = parse_float_type(parser)
+                                    float_type725 = _t1390
+                                    _t1391 = Proto.var"#Type"(var"#type"=OneOf(:float_type, float_type725))
+                                    _t1389 = _t1391
                                 else
-                                    if prediction433 == 2
-                                        _t869 = parse_int_type(parser)
-                                        int_type436 = _t869
-                                        _t870 = Proto.var"#Type"(var"#type"=OneOf(:int_type, int_type436))
-                                        _t868 = _t870
+                                    if prediction721 == 2
+                                        _t1393 = parse_int_type(parser)
+                                        int_type724 = _t1393
+                                        _t1394 = Proto.var"#Type"(var"#type"=OneOf(:int_type, int_type724))
+                                        _t1392 = _t1394
                                     else
-                                        if prediction433 == 1
-                                            _t872 = parse_string_type(parser)
-                                            string_type435 = _t872
-                                            _t873 = Proto.var"#Type"(var"#type"=OneOf(:string_type, string_type435))
-                                            _t871 = _t873
+                                        if prediction721 == 1
+                                            _t1396 = parse_string_type(parser)
+                                            string_type723 = _t1396
+                                            _t1397 = Proto.var"#Type"(var"#type"=OneOf(:string_type, string_type723))
+                                            _t1395 = _t1397
                                         else
-                                            if prediction433 == 0
-                                                _t875 = parse_unspecified_type(parser)
-                                                unspecified_type434 = _t875
-                                                _t876 = Proto.var"#Type"(var"#type"=OneOf(:unspecified_type, unspecified_type434))
-                                                _t874 = _t876
+                                            if prediction721 == 0
+                                                _t1399 = parse_unspecified_type(parser)
+                                                unspecified_type722 = _t1399
+                                                _t1400 = Proto.var"#Type"(var"#type"=OneOf(:unspecified_type, unspecified_type722))
+                                                _t1398 = _t1400
                                             else
                                                 throw(ParseError("Unexpected token in type" * ": " * string(lookahead(parser, 0))))
                                             end
-                                            _t871 = _t874
+                                            _t1395 = _t1398
                                         end
-                                        _t868 = _t871
+                                        _t1392 = _t1395
                                     end
-                                    _t865 = _t868
+                                    _t1389 = _t1392
                                 end
-                                _t862 = _t865
+                                _t1386 = _t1389
                             end
-                            _t859 = _t862
+                            _t1383 = _t1386
                         end
-                        _t856 = _t859
+                        _t1380 = _t1383
                     end
-                    _t853 = _t856
+                    _t1377 = _t1380
                 end
-                _t850 = _t853
+                _t1374 = _t1377
             end
-            _t847 = _t850
+            _t1371 = _t1374
         end
-        _t844 = _t847
+        _t1368 = _t1371
     end
-    return _t844
+    result734 = _t1368
+    record_span!(parser, span_start733)
+    return result734
 end
 
 function parse_unspecified_type(parser::ParserState)::Proto.UnspecifiedType
+    span_start735 = span_start(parser)
     consume_literal!(parser, "UNKNOWN")
-    _t877 = Proto.UnspecifiedType()
-    return _t877
+    _t1401 = Proto.UnspecifiedType()
+    result736 = _t1401
+    record_span!(parser, span_start735)
+    return result736
 end
 
 function parse_string_type(parser::ParserState)::Proto.StringType
+    span_start737 = span_start(parser)
     consume_literal!(parser, "STRING")
-    _t878 = Proto.StringType()
-    return _t878
+    _t1402 = Proto.StringType()
+    result738 = _t1402
+    record_span!(parser, span_start737)
+    return result738
 end
 
 function parse_int_type(parser::ParserState)::Proto.IntType
+    span_start739 = span_start(parser)
     consume_literal!(parser, "INT")
-    _t879 = Proto.IntType()
-    return _t879
+    _t1403 = Proto.IntType()
+    result740 = _t1403
+    record_span!(parser, span_start739)
+    return result740
 end
 
 function parse_float_type(parser::ParserState)::Proto.FloatType
+    span_start741 = span_start(parser)
     consume_literal!(parser, "FLOAT")
-    _t880 = Proto.FloatType()
-    return _t880
+    _t1404 = Proto.FloatType()
+    result742 = _t1404
+    record_span!(parser, span_start741)
+    return result742
 end
 
 function parse_uint128_type(parser::ParserState)::Proto.UInt128Type
+    span_start743 = span_start(parser)
     consume_literal!(parser, "UINT128")
-    _t881 = Proto.UInt128Type()
-    return _t881
+    _t1405 = Proto.UInt128Type()
+    result744 = _t1405
+    record_span!(parser, span_start743)
+    return result744
 end
 
 function parse_int128_type(parser::ParserState)::Proto.Int128Type
+    span_start745 = span_start(parser)
     consume_literal!(parser, "INT128")
-    _t882 = Proto.Int128Type()
-    return _t882
+    _t1406 = Proto.Int128Type()
+    result746 = _t1406
+    record_span!(parser, span_start745)
+    return result746
 end
 
 function parse_date_type(parser::ParserState)::Proto.DateType
+    span_start747 = span_start(parser)
     consume_literal!(parser, "DATE")
-    _t883 = Proto.DateType()
-    return _t883
+    _t1407 = Proto.DateType()
+    result748 = _t1407
+    record_span!(parser, span_start747)
+    return result748
 end
 
 function parse_datetime_type(parser::ParserState)::Proto.DateTimeType
+    span_start749 = span_start(parser)
     consume_literal!(parser, "DATETIME")
-    _t884 = Proto.DateTimeType()
-    return _t884
+    _t1408 = Proto.DateTimeType()
+    result750 = _t1408
+    record_span!(parser, span_start749)
+    return result750
 end
 
 function parse_missing_type(parser::ParserState)::Proto.MissingType
+    span_start751 = span_start(parser)
     consume_literal!(parser, "MISSING")
-    _t885 = Proto.MissingType()
-    return _t885
+    _t1409 = Proto.MissingType()
+    result752 = _t1409
+    record_span!(parser, span_start751)
+    return result752
 end
 
 function parse_decimal_type(parser::ParserState)::Proto.DecimalType
+    span_start755 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "DECIMAL")
-    int445 = consume_terminal!(parser, "INT")
-    int_3446 = consume_terminal!(parser, "INT")
+    push_path!(parser, 1)
+    int753 = consume_terminal!(parser, "INT")
+    pop_path!(parser)
+    push_path!(parser, 2)
+    int_3754 = consume_terminal!(parser, "INT")
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t886 = Proto.DecimalType(precision=Int32(int445), scale=Int32(int_3446))
-    return _t886
+    _t1410 = Proto.DecimalType(precision=Int32(int753), scale=Int32(int_3754))
+    result756 = _t1410
+    record_span!(parser, span_start755)
+    return result756
 end
 
 function parse_boolean_type(parser::ParserState)::Proto.BooleanType
+    span_start757 = span_start(parser)
     consume_literal!(parser, "BOOLEAN")
-    _t887 = Proto.BooleanType()
-    return _t887
+    _t1411 = Proto.BooleanType()
+    result758 = _t1411
+    record_span!(parser, span_start757)
+    return result758
 end
 
 function parse_value_bindings(parser::ParserState)::Vector{Proto.Binding}
+    span_start763 = span_start(parser)
     consume_literal!(parser, "|")
-    xs447 = Proto.Binding[]
-    cond448 = match_lookahead_terminal(parser, "SYMBOL", 0)
-    while cond448
-        _t888 = parse_binding(parser)
-        item449 = _t888
-        push!(xs447, item449)
-        cond448 = match_lookahead_terminal(parser, "SYMBOL", 0)
+    xs759 = Proto.Binding[]
+    cond760 = match_lookahead_terminal(parser, "SYMBOL", 0)
+    while cond760
+        _t1412 = parse_binding(parser)
+        item761 = _t1412
+        push!(xs759, item761)
+        cond760 = match_lookahead_terminal(parser, "SYMBOL", 0)
     end
-    bindings450 = xs447
-    return bindings450
+    bindings762 = xs759
+    result764 = bindings762
+    record_span!(parser, span_start763)
+    return result764
 end
 
 function parse_formula(parser::ParserState)::Proto.Formula
+    span_start779 = span_start(parser)
     if match_lookahead_literal(parser, "(", 0)
         if match_lookahead_literal(parser, "true", 1)
-            _t890 = 0
+            _t1414 = 0
         else
             if match_lookahead_literal(parser, "relatom", 1)
-                _t891 = 11
+                _t1415 = 11
             else
                 if match_lookahead_literal(parser, "reduce", 1)
-                    _t892 = 3
+                    _t1416 = 3
                 else
                     if match_lookahead_literal(parser, "primitive", 1)
-                        _t893 = 10
+                        _t1417 = 10
                     else
                         if match_lookahead_literal(parser, "pragma", 1)
-                            _t894 = 9
+                            _t1418 = 9
                         else
                             if match_lookahead_literal(parser, "or", 1)
-                                _t895 = 5
+                                _t1419 = 5
                             else
                                 if match_lookahead_literal(parser, "not", 1)
-                                    _t896 = 6
+                                    _t1420 = 6
                                 else
                                     if match_lookahead_literal(parser, "ffi", 1)
-                                        _t897 = 7
+                                        _t1421 = 7
                                     else
                                         if match_lookahead_literal(parser, "false", 1)
-                                            _t898 = 1
+                                            _t1422 = 1
                                         else
                                             if match_lookahead_literal(parser, "exists", 1)
-                                                _t899 = 2
+                                                _t1423 = 2
                                             else
                                                 if match_lookahead_literal(parser, "cast", 1)
-                                                    _t900 = 12
+                                                    _t1424 = 12
                                                 else
                                                     if match_lookahead_literal(parser, "atom", 1)
-                                                        _t901 = 8
+                                                        _t1425 = 8
                                                     else
                                                         if match_lookahead_literal(parser, "and", 1)
-                                                            _t902 = 4
+                                                            _t1426 = 4
                                                         else
                                                             if match_lookahead_literal(parser, ">=", 1)
-                                                                _t903 = 10
+                                                                _t1427 = 10
                                                             else
                                                                 if match_lookahead_literal(parser, ">", 1)
-                                                                    _t904 = 10
+                                                                    _t1428 = 10
                                                                 else
                                                                     if match_lookahead_literal(parser, "=", 1)
-                                                                        _t905 = 10
+                                                                        _t1429 = 10
                                                                     else
                                                                         if match_lookahead_literal(parser, "<=", 1)
-                                                                            _t906 = 10
+                                                                            _t1430 = 10
                                                                         else
                                                                             if match_lookahead_literal(parser, "<", 1)
-                                                                                _t907 = 10
+                                                                                _t1431 = 10
                                                                             else
                                                                                 if match_lookahead_literal(parser, "/", 1)
-                                                                                    _t908 = 10
+                                                                                    _t1432 = 10
                                                                                 else
                                                                                     if match_lookahead_literal(parser, "-", 1)
-                                                                                        _t909 = 10
+                                                                                        _t1433 = 10
                                                                                     else
                                                                                         if match_lookahead_literal(parser, "+", 1)
-                                                                                            _t910 = 10
+                                                                                            _t1434 = 10
                                                                                         else
                                                                                             if match_lookahead_literal(parser, "*", 1)
-                                                                                                _t911 = 10
+                                                                                                _t1435 = 10
                                                                                             else
-                                                                                                _t911 = -1
+                                                                                                _t1435 = -1
                                                                                             end
-                                                                                            _t910 = _t911
+                                                                                            _t1434 = _t1435
                                                                                         end
-                                                                                        _t909 = _t910
+                                                                                        _t1433 = _t1434
                                                                                     end
-                                                                                    _t908 = _t909
+                                                                                    _t1432 = _t1433
                                                                                 end
-                                                                                _t907 = _t908
+                                                                                _t1431 = _t1432
                                                                             end
-                                                                            _t906 = _t907
+                                                                            _t1430 = _t1431
                                                                         end
-                                                                        _t905 = _t906
+                                                                        _t1429 = _t1430
                                                                     end
-                                                                    _t904 = _t905
+                                                                    _t1428 = _t1429
                                                                 end
-                                                                _t903 = _t904
+                                                                _t1427 = _t1428
                                                             end
-                                                            _t902 = _t903
+                                                            _t1426 = _t1427
                                                         end
-                                                        _t901 = _t902
+                                                        _t1425 = _t1426
                                                     end
-                                                    _t900 = _t901
+                                                    _t1424 = _t1425
                                                 end
-                                                _t899 = _t900
+                                                _t1423 = _t1424
                                             end
-                                            _t898 = _t899
+                                            _t1422 = _t1423
                                         end
-                                        _t897 = _t898
+                                        _t1421 = _t1422
                                     end
-                                    _t896 = _t897
+                                    _t1420 = _t1421
                                 end
-                                _t895 = _t896
+                                _t1419 = _t1420
                             end
-                            _t894 = _t895
+                            _t1418 = _t1419
                         end
-                        _t893 = _t894
+                        _t1417 = _t1418
                     end
-                    _t892 = _t893
+                    _t1416 = _t1417
                 end
-                _t891 = _t892
+                _t1415 = _t1416
             end
-            _t890 = _t891
+            _t1414 = _t1415
         end
-        _t889 = _t890
+        _t1413 = _t1414
     else
-        _t889 = -1
+        _t1413 = -1
     end
-    prediction451 = _t889
-    if prediction451 == 12
-        _t913 = parse_cast(parser)
-        cast464 = _t913
-        _t914 = Proto.Formula(formula_type=OneOf(:cast, cast464))
-        _t912 = _t914
+    prediction765 = _t1413
+    if prediction765 == 12
+        _t1437 = parse_cast(parser)
+        cast778 = _t1437
+        _t1438 = Proto.Formula(formula_type=OneOf(:cast, cast778))
+        _t1436 = _t1438
     else
-        if prediction451 == 11
-            _t916 = parse_rel_atom(parser)
-            rel_atom463 = _t916
-            _t917 = Proto.Formula(formula_type=OneOf(:rel_atom, rel_atom463))
-            _t915 = _t917
+        if prediction765 == 11
+            _t1440 = parse_rel_atom(parser)
+            rel_atom777 = _t1440
+            _t1441 = Proto.Formula(formula_type=OneOf(:rel_atom, rel_atom777))
+            _t1439 = _t1441
         else
-            if prediction451 == 10
-                _t919 = parse_primitive(parser)
-                primitive462 = _t919
-                _t920 = Proto.Formula(formula_type=OneOf(:primitive, primitive462))
-                _t918 = _t920
+            if prediction765 == 10
+                _t1443 = parse_primitive(parser)
+                primitive776 = _t1443
+                _t1444 = Proto.Formula(formula_type=OneOf(:primitive, primitive776))
+                _t1442 = _t1444
             else
-                if prediction451 == 9
-                    _t922 = parse_pragma(parser)
-                    pragma461 = _t922
-                    _t923 = Proto.Formula(formula_type=OneOf(:pragma, pragma461))
-                    _t921 = _t923
+                if prediction765 == 9
+                    _t1446 = parse_pragma(parser)
+                    pragma775 = _t1446
+                    _t1447 = Proto.Formula(formula_type=OneOf(:pragma, pragma775))
+                    _t1445 = _t1447
                 else
-                    if prediction451 == 8
-                        _t925 = parse_atom(parser)
-                        atom460 = _t925
-                        _t926 = Proto.Formula(formula_type=OneOf(:atom, atom460))
-                        _t924 = _t926
+                    if prediction765 == 8
+                        _t1449 = parse_atom(parser)
+                        atom774 = _t1449
+                        _t1450 = Proto.Formula(formula_type=OneOf(:atom, atom774))
+                        _t1448 = _t1450
                     else
-                        if prediction451 == 7
-                            _t928 = parse_ffi(parser)
-                            ffi459 = _t928
-                            _t929 = Proto.Formula(formula_type=OneOf(:ffi, ffi459))
-                            _t927 = _t929
+                        if prediction765 == 7
+                            _t1452 = parse_ffi(parser)
+                            ffi773 = _t1452
+                            _t1453 = Proto.Formula(formula_type=OneOf(:ffi, ffi773))
+                            _t1451 = _t1453
                         else
-                            if prediction451 == 6
-                                _t931 = parse_not(parser)
-                                not458 = _t931
-                                _t932 = Proto.Formula(formula_type=OneOf(:not, not458))
-                                _t930 = _t932
+                            if prediction765 == 6
+                                _t1455 = parse_not(parser)
+                                not772 = _t1455
+                                _t1456 = Proto.Formula(formula_type=OneOf(:not, not772))
+                                _t1454 = _t1456
                             else
-                                if prediction451 == 5
-                                    _t934 = parse_disjunction(parser)
-                                    disjunction457 = _t934
-                                    _t935 = Proto.Formula(formula_type=OneOf(:disjunction, disjunction457))
-                                    _t933 = _t935
+                                if prediction765 == 5
+                                    _t1458 = parse_disjunction(parser)
+                                    disjunction771 = _t1458
+                                    _t1459 = Proto.Formula(formula_type=OneOf(:disjunction, disjunction771))
+                                    _t1457 = _t1459
                                 else
-                                    if prediction451 == 4
-                                        _t937 = parse_conjunction(parser)
-                                        conjunction456 = _t937
-                                        _t938 = Proto.Formula(formula_type=OneOf(:conjunction, conjunction456))
-                                        _t936 = _t938
+                                    if prediction765 == 4
+                                        _t1461 = parse_conjunction(parser)
+                                        conjunction770 = _t1461
+                                        _t1462 = Proto.Formula(formula_type=OneOf(:conjunction, conjunction770))
+                                        _t1460 = _t1462
                                     else
-                                        if prediction451 == 3
-                                            _t940 = parse_reduce(parser)
-                                            reduce455 = _t940
-                                            _t941 = Proto.Formula(formula_type=OneOf(:reduce, reduce455))
-                                            _t939 = _t941
+                                        if prediction765 == 3
+                                            _t1464 = parse_reduce(parser)
+                                            reduce769 = _t1464
+                                            _t1465 = Proto.Formula(formula_type=OneOf(:reduce, reduce769))
+                                            _t1463 = _t1465
                                         else
-                                            if prediction451 == 2
-                                                _t943 = parse_exists(parser)
-                                                exists454 = _t943
-                                                _t944 = Proto.Formula(formula_type=OneOf(:exists, exists454))
-                                                _t942 = _t944
+                                            if prediction765 == 2
+                                                _t1467 = parse_exists(parser)
+                                                exists768 = _t1467
+                                                _t1468 = Proto.Formula(formula_type=OneOf(:exists, exists768))
+                                                _t1466 = _t1468
                                             else
-                                                if prediction451 == 1
-                                                    _t946 = parse_false(parser)
-                                                    false453 = _t946
-                                                    _t947 = Proto.Formula(formula_type=OneOf(:disjunction, false453))
-                                                    _t945 = _t947
+                                                if prediction765 == 1
+                                                    _t1470 = parse_false(parser)
+                                                    false767 = _t1470
+                                                    _t1471 = Proto.Formula(formula_type=OneOf(:disjunction, false767))
+                                                    _t1469 = _t1471
                                                 else
-                                                    if prediction451 == 0
-                                                        _t949 = parse_true(parser)
-                                                        true452 = _t949
-                                                        _t950 = Proto.Formula(formula_type=OneOf(:conjunction, true452))
-                                                        _t948 = _t950
+                                                    if prediction765 == 0
+                                                        _t1473 = parse_true(parser)
+                                                        true766 = _t1473
+                                                        _t1474 = Proto.Formula(formula_type=OneOf(:conjunction, true766))
+                                                        _t1472 = _t1474
                                                     else
                                                         throw(ParseError("Unexpected token in formula" * ": " * string(lookahead(parser, 0))))
                                                     end
-                                                    _t945 = _t948
+                                                    _t1469 = _t1472
                                                 end
-                                                _t942 = _t945
+                                                _t1466 = _t1469
                                             end
-                                            _t939 = _t942
+                                            _t1463 = _t1466
                                         end
-                                        _t936 = _t939
+                                        _t1460 = _t1463
                                     end
-                                    _t933 = _t936
+                                    _t1457 = _t1460
                                 end
-                                _t930 = _t933
+                                _t1454 = _t1457
                             end
-                            _t927 = _t930
+                            _t1451 = _t1454
                         end
-                        _t924 = _t927
+                        _t1448 = _t1451
                     end
-                    _t921 = _t924
+                    _t1445 = _t1448
                 end
-                _t918 = _t921
+                _t1442 = _t1445
             end
-            _t915 = _t918
+            _t1439 = _t1442
         end
-        _t912 = _t915
+        _t1436 = _t1439
     end
-    return _t912
+    result780 = _t1436
+    record_span!(parser, span_start779)
+    return result780
 end
 
 function parse_true(parser::ParserState)::Proto.Conjunction
+    span_start781 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "true")
     consume_literal!(parser, ")")
-    _t951 = Proto.Conjunction(args=Proto.Formula[])
-    return _t951
+    _t1475 = Proto.Conjunction(args=Proto.Formula[])
+    result782 = _t1475
+    record_span!(parser, span_start781)
+    return result782
 end
 
 function parse_false(parser::ParserState)::Proto.Disjunction
+    span_start783 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "false")
     consume_literal!(parser, ")")
-    _t952 = Proto.Disjunction(args=Proto.Formula[])
-    return _t952
+    _t1476 = Proto.Disjunction(args=Proto.Formula[])
+    result784 = _t1476
+    record_span!(parser, span_start783)
+    return result784
 end
 
 function parse_exists(parser::ParserState)::Proto.Exists
+    span_start787 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "exists")
-    _t953 = parse_bindings(parser)
-    bindings465 = _t953
-    _t954 = parse_formula(parser)
-    formula466 = _t954
+    _t1477 = parse_bindings(parser)
+    bindings785 = _t1477
+    _t1478 = parse_formula(parser)
+    formula786 = _t1478
     consume_literal!(parser, ")")
-    _t955 = Proto.Abstraction(vars=vcat(bindings465[1], !isnothing(bindings465[2]) ? bindings465[2] : []), value=formula466)
-    _t956 = Proto.Exists(body=_t955)
-    return _t956
+    _t1479 = Proto.Abstraction(vars=vcat(bindings785[1], !isnothing(bindings785[2]) ? bindings785[2] : []), value=formula786)
+    _t1480 = Proto.Exists(body=_t1479)
+    result788 = _t1480
+    record_span!(parser, span_start787)
+    return result788
 end
 
 function parse_reduce(parser::ParserState)::Proto.Reduce
+    span_start792 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "reduce")
-    _t957 = parse_abstraction(parser)
-    abstraction467 = _t957
-    _t958 = parse_abstraction(parser)
-    abstraction_3468 = _t958
-    _t959 = parse_terms(parser)
-    terms469 = _t959
+    push_path!(parser, 1)
+    _t1481 = parse_abstraction(parser)
+    abstraction789 = _t1481
+    pop_path!(parser)
+    push_path!(parser, 2)
+    _t1482 = parse_abstraction(parser)
+    abstraction_3790 = _t1482
+    pop_path!(parser)
+    push_path!(parser, 3)
+    _t1483 = parse_terms(parser)
+    terms791 = _t1483
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t960 = Proto.Reduce(op=abstraction467, body=abstraction_3468, terms=terms469)
-    return _t960
+    _t1484 = Proto.Reduce(op=abstraction789, body=abstraction_3790, terms=terms791)
+    result793 = _t1484
+    record_span!(parser, span_start792)
+    return result793
 end
 
 function parse_terms(parser::ParserState)::Vector{Proto.Term}
+    span_start798 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "terms")
-    xs470 = Proto.Term[]
-    cond471 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "false", 0)) || match_lookahead_literal(parser, "missing", 0)) || match_lookahead_literal(parser, "true", 0)) || match_lookahead_terminal(parser, "DECIMAL", 0)) || match_lookahead_terminal(parser, "FLOAT", 0)) || match_lookahead_terminal(parser, "INT", 0)) || match_lookahead_terminal(parser, "INT128", 0)) || match_lookahead_terminal(parser, "STRING", 0)) || match_lookahead_terminal(parser, "SYMBOL", 0)) || match_lookahead_terminal(parser, "UINT128", 0))
-    while cond471
-        _t961 = parse_term(parser)
-        item472 = _t961
-        push!(xs470, item472)
-        cond471 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "false", 0)) || match_lookahead_literal(parser, "missing", 0)) || match_lookahead_literal(parser, "true", 0)) || match_lookahead_terminal(parser, "DECIMAL", 0)) || match_lookahead_terminal(parser, "FLOAT", 0)) || match_lookahead_terminal(parser, "INT", 0)) || match_lookahead_terminal(parser, "INT128", 0)) || match_lookahead_terminal(parser, "STRING", 0)) || match_lookahead_terminal(parser, "SYMBOL", 0)) || match_lookahead_terminal(parser, "UINT128", 0))
+    xs794 = Proto.Term[]
+    cond795 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "false", 0)) || match_lookahead_literal(parser, "missing", 0)) || match_lookahead_literal(parser, "true", 0)) || match_lookahead_terminal(parser, "DECIMAL", 0)) || match_lookahead_terminal(parser, "FLOAT", 0)) || match_lookahead_terminal(parser, "INT", 0)) || match_lookahead_terminal(parser, "INT128", 0)) || match_lookahead_terminal(parser, "STRING", 0)) || match_lookahead_terminal(parser, "SYMBOL", 0)) || match_lookahead_terminal(parser, "UINT128", 0))
+    while cond795
+        _t1485 = parse_term(parser)
+        item796 = _t1485
+        push!(xs794, item796)
+        cond795 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "false", 0)) || match_lookahead_literal(parser, "missing", 0)) || match_lookahead_literal(parser, "true", 0)) || match_lookahead_terminal(parser, "DECIMAL", 0)) || match_lookahead_terminal(parser, "FLOAT", 0)) || match_lookahead_terminal(parser, "INT", 0)) || match_lookahead_terminal(parser, "INT128", 0)) || match_lookahead_terminal(parser, "STRING", 0)) || match_lookahead_terminal(parser, "SYMBOL", 0)) || match_lookahead_terminal(parser, "UINT128", 0))
     end
-    terms473 = xs470
+    terms797 = xs794
     consume_literal!(parser, ")")
-    return terms473
+    result799 = terms797
+    record_span!(parser, span_start798)
+    return result799
 end
 
 function parse_term(parser::ParserState)::Proto.Term
+    span_start803 = span_start(parser)
     if match_lookahead_literal(parser, "true", 0)
-        _t962 = 1
+        _t1486 = 1
     else
         if match_lookahead_literal(parser, "missing", 0)
-            _t963 = 1
+            _t1487 = 1
         else
             if match_lookahead_literal(parser, "false", 0)
-                _t964 = 1
+                _t1488 = 1
             else
                 if match_lookahead_literal(parser, "(", 0)
-                    _t965 = 1
+                    _t1489 = 1
                 else
                     if match_lookahead_terminal(parser, "UINT128", 0)
-                        _t966 = 1
+                        _t1490 = 1
                     else
                         if match_lookahead_terminal(parser, "SYMBOL", 0)
-                            _t967 = 0
+                            _t1491 = 0
                         else
                             if match_lookahead_terminal(parser, "STRING", 0)
-                                _t968 = 1
+                                _t1492 = 1
                             else
                                 if match_lookahead_terminal(parser, "INT128", 0)
-                                    _t969 = 1
+                                    _t1493 = 1
                                 else
                                     if match_lookahead_terminal(parser, "INT", 0)
-                                        _t970 = 1
+                                        _t1494 = 1
                                     else
                                         if match_lookahead_terminal(parser, "FLOAT", 0)
-                                            _t971 = 1
+                                            _t1495 = 1
                                         else
                                             if match_lookahead_terminal(parser, "DECIMAL", 0)
-                                                _t972 = 1
+                                                _t1496 = 1
                                             else
-                                                _t972 = -1
+                                                _t1496 = -1
                                             end
-                                            _t971 = _t972
+                                            _t1495 = _t1496
                                         end
-                                        _t970 = _t971
+                                        _t1494 = _t1495
                                     end
-                                    _t969 = _t970
+                                    _t1493 = _t1494
                                 end
-                                _t968 = _t969
+                                _t1492 = _t1493
                             end
-                            _t967 = _t968
+                            _t1491 = _t1492
                         end
-                        _t966 = _t967
+                        _t1490 = _t1491
                     end
-                    _t965 = _t966
+                    _t1489 = _t1490
                 end
-                _t964 = _t965
+                _t1488 = _t1489
             end
-            _t963 = _t964
+            _t1487 = _t1488
         end
-        _t962 = _t963
+        _t1486 = _t1487
     end
-    prediction474 = _t962
-    if prediction474 == 1
-        _t974 = parse_constant(parser)
-        constant476 = _t974
-        _t975 = Proto.Term(term_type=OneOf(:constant, constant476))
-        _t973 = _t975
+    prediction800 = _t1486
+    if prediction800 == 1
+        _t1498 = parse_constant(parser)
+        constant802 = _t1498
+        _t1499 = Proto.Term(term_type=OneOf(:constant, constant802))
+        _t1497 = _t1499
     else
-        if prediction474 == 0
-            _t977 = parse_var(parser)
-            var475 = _t977
-            _t978 = Proto.Term(term_type=OneOf(:var, var475))
-            _t976 = _t978
+        if prediction800 == 0
+            _t1501 = parse_var(parser)
+            var801 = _t1501
+            _t1502 = Proto.Term(term_type=OneOf(:var, var801))
+            _t1500 = _t1502
         else
             throw(ParseError("Unexpected token in term" * ": " * string(lookahead(parser, 0))))
         end
-        _t973 = _t976
+        _t1497 = _t1500
     end
-    return _t973
+    result804 = _t1497
+    record_span!(parser, span_start803)
+    return result804
 end
 
 function parse_var(parser::ParserState)::Proto.Var
-    symbol477 = consume_terminal!(parser, "SYMBOL")
-    _t979 = Proto.Var(name=symbol477)
-    return _t979
+    span_start806 = span_start(parser)
+    symbol805 = consume_terminal!(parser, "SYMBOL")
+    _t1503 = Proto.Var(name=symbol805)
+    result807 = _t1503
+    record_span!(parser, span_start806)
+    return result807
 end
 
 function parse_constant(parser::ParserState)::Proto.Value
-    _t980 = parse_value(parser)
-    value478 = _t980
-    return value478
+    span_start809 = span_start(parser)
+    _t1504 = parse_value(parser)
+    value808 = _t1504
+    result810 = value808
+    record_span!(parser, span_start809)
+    return result810
 end
 
 function parse_conjunction(parser::ParserState)::Proto.Conjunction
+    span_start819 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "and")
-    xs479 = Proto.Formula[]
-    cond480 = match_lookahead_literal(parser, "(", 0)
-    while cond480
-        _t981 = parse_formula(parser)
-        item481 = _t981
-        push!(xs479, item481)
-        cond480 = match_lookahead_literal(parser, "(", 0)
+    push_path!(parser, 1)
+    xs815 = Proto.Formula[]
+    cond816 = match_lookahead_literal(parser, "(", 0)
+    idx817 = 0
+    while cond816
+        push_path!(parser, idx817)
+        _t1505 = parse_formula(parser)
+        item818 = _t1505
+        pop_path!(parser)
+        push!(xs815, item818)
+        idx817 = (idx817 + 1)
+        cond816 = match_lookahead_literal(parser, "(", 0)
     end
-    formulas482 = xs479
+    formulas814 = xs815
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t982 = Proto.Conjunction(args=formulas482)
-    return _t982
+    _t1506 = Proto.Conjunction(args=formulas814)
+    result820 = _t1506
+    record_span!(parser, span_start819)
+    return result820
 end
 
 function parse_disjunction(parser::ParserState)::Proto.Disjunction
+    span_start829 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "or")
-    xs483 = Proto.Formula[]
-    cond484 = match_lookahead_literal(parser, "(", 0)
-    while cond484
-        _t983 = parse_formula(parser)
-        item485 = _t983
-        push!(xs483, item485)
-        cond484 = match_lookahead_literal(parser, "(", 0)
+    push_path!(parser, 1)
+    xs825 = Proto.Formula[]
+    cond826 = match_lookahead_literal(parser, "(", 0)
+    idx827 = 0
+    while cond826
+        push_path!(parser, idx827)
+        _t1507 = parse_formula(parser)
+        item828 = _t1507
+        pop_path!(parser)
+        push!(xs825, item828)
+        idx827 = (idx827 + 1)
+        cond826 = match_lookahead_literal(parser, "(", 0)
     end
-    formulas486 = xs483
+    formulas824 = xs825
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t984 = Proto.Disjunction(args=formulas486)
-    return _t984
+    _t1508 = Proto.Disjunction(args=formulas824)
+    result830 = _t1508
+    record_span!(parser, span_start829)
+    return result830
 end
 
 function parse_not(parser::ParserState)::Proto.Not
+    span_start832 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "not")
-    _t985 = parse_formula(parser)
-    formula487 = _t985
+    push_path!(parser, 1)
+    _t1509 = parse_formula(parser)
+    formula831 = _t1509
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t986 = Proto.Not(arg=formula487)
-    return _t986
+    _t1510 = Proto.Not(arg=formula831)
+    result833 = _t1510
+    record_span!(parser, span_start832)
+    return result833
 end
 
 function parse_ffi(parser::ParserState)::Proto.FFI
+    span_start837 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "ffi")
-    _t987 = parse_name(parser)
-    name488 = _t987
-    _t988 = parse_ffi_args(parser)
-    ffi_args489 = _t988
-    _t989 = parse_terms(parser)
-    terms490 = _t989
+    push_path!(parser, 1)
+    _t1511 = parse_name(parser)
+    name834 = _t1511
+    pop_path!(parser)
+    push_path!(parser, 2)
+    _t1512 = parse_ffi_args(parser)
+    ffi_args835 = _t1512
+    pop_path!(parser)
+    push_path!(parser, 3)
+    _t1513 = parse_terms(parser)
+    terms836 = _t1513
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t990 = Proto.FFI(name=name488, args=ffi_args489, terms=terms490)
-    return _t990
+    _t1514 = Proto.FFI(name=name834, args=ffi_args835, terms=terms836)
+    result838 = _t1514
+    record_span!(parser, span_start837)
+    return result838
 end
 
 function parse_name(parser::ParserState)::String
+    span_start840 = span_start(parser)
     consume_literal!(parser, ":")
-    symbol491 = consume_terminal!(parser, "SYMBOL")
-    return symbol491
+    symbol839 = consume_terminal!(parser, "SYMBOL")
+    result841 = symbol839
+    record_span!(parser, span_start840)
+    return result841
 end
 
 function parse_ffi_args(parser::ParserState)::Vector{Proto.Abstraction}
+    span_start846 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "args")
-    xs492 = Proto.Abstraction[]
-    cond493 = match_lookahead_literal(parser, "(", 0)
-    while cond493
-        _t991 = parse_abstraction(parser)
-        item494 = _t991
-        push!(xs492, item494)
-        cond493 = match_lookahead_literal(parser, "(", 0)
+    xs842 = Proto.Abstraction[]
+    cond843 = match_lookahead_literal(parser, "(", 0)
+    while cond843
+        _t1515 = parse_abstraction(parser)
+        item844 = _t1515
+        push!(xs842, item844)
+        cond843 = match_lookahead_literal(parser, "(", 0)
     end
-    abstractions495 = xs492
+    abstractions845 = xs842
     consume_literal!(parser, ")")
-    return abstractions495
+    result847 = abstractions845
+    record_span!(parser, span_start846)
+    return result847
 end
 
 function parse_atom(parser::ParserState)::Proto.Atom
+    span_start857 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "atom")
-    _t992 = parse_relation_id(parser)
-    relation_id496 = _t992
-    xs497 = Proto.Term[]
-    cond498 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "false", 0)) || match_lookahead_literal(parser, "missing", 0)) || match_lookahead_literal(parser, "true", 0)) || match_lookahead_terminal(parser, "DECIMAL", 0)) || match_lookahead_terminal(parser, "FLOAT", 0)) || match_lookahead_terminal(parser, "INT", 0)) || match_lookahead_terminal(parser, "INT128", 0)) || match_lookahead_terminal(parser, "STRING", 0)) || match_lookahead_terminal(parser, "SYMBOL", 0)) || match_lookahead_terminal(parser, "UINT128", 0))
-    while cond498
-        _t993 = parse_term(parser)
-        item499 = _t993
-        push!(xs497, item499)
-        cond498 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "false", 0)) || match_lookahead_literal(parser, "missing", 0)) || match_lookahead_literal(parser, "true", 0)) || match_lookahead_terminal(parser, "DECIMAL", 0)) || match_lookahead_terminal(parser, "FLOAT", 0)) || match_lookahead_terminal(parser, "INT", 0)) || match_lookahead_terminal(parser, "INT128", 0)) || match_lookahead_terminal(parser, "STRING", 0)) || match_lookahead_terminal(parser, "SYMBOL", 0)) || match_lookahead_terminal(parser, "UINT128", 0))
+    push_path!(parser, 1)
+    _t1516 = parse_relation_id(parser)
+    relation_id848 = _t1516
+    pop_path!(parser)
+    push_path!(parser, 2)
+    xs853 = Proto.Term[]
+    cond854 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "false", 0)) || match_lookahead_literal(parser, "missing", 0)) || match_lookahead_literal(parser, "true", 0)) || match_lookahead_terminal(parser, "DECIMAL", 0)) || match_lookahead_terminal(parser, "FLOAT", 0)) || match_lookahead_terminal(parser, "INT", 0)) || match_lookahead_terminal(parser, "INT128", 0)) || match_lookahead_terminal(parser, "STRING", 0)) || match_lookahead_terminal(parser, "SYMBOL", 0)) || match_lookahead_terminal(parser, "UINT128", 0))
+    idx855 = 0
+    while cond854
+        push_path!(parser, idx855)
+        _t1517 = parse_term(parser)
+        item856 = _t1517
+        pop_path!(parser)
+        push!(xs853, item856)
+        idx855 = (idx855 + 1)
+        cond854 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "false", 0)) || match_lookahead_literal(parser, "missing", 0)) || match_lookahead_literal(parser, "true", 0)) || match_lookahead_terminal(parser, "DECIMAL", 0)) || match_lookahead_terminal(parser, "FLOAT", 0)) || match_lookahead_terminal(parser, "INT", 0)) || match_lookahead_terminal(parser, "INT128", 0)) || match_lookahead_terminal(parser, "STRING", 0)) || match_lookahead_terminal(parser, "SYMBOL", 0)) || match_lookahead_terminal(parser, "UINT128", 0))
     end
-    terms500 = xs497
+    terms852 = xs853
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t994 = Proto.Atom(name=relation_id496, terms=terms500)
-    return _t994
+    _t1518 = Proto.Atom(name=relation_id848, terms=terms852)
+    result858 = _t1518
+    record_span!(parser, span_start857)
+    return result858
 end
 
 function parse_pragma(parser::ParserState)::Proto.Pragma
+    span_start868 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "pragma")
-    _t995 = parse_name(parser)
-    name501 = _t995
-    xs502 = Proto.Term[]
-    cond503 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "false", 0)) || match_lookahead_literal(parser, "missing", 0)) || match_lookahead_literal(parser, "true", 0)) || match_lookahead_terminal(parser, "DECIMAL", 0)) || match_lookahead_terminal(parser, "FLOAT", 0)) || match_lookahead_terminal(parser, "INT", 0)) || match_lookahead_terminal(parser, "INT128", 0)) || match_lookahead_terminal(parser, "STRING", 0)) || match_lookahead_terminal(parser, "SYMBOL", 0)) || match_lookahead_terminal(parser, "UINT128", 0))
-    while cond503
-        _t996 = parse_term(parser)
-        item504 = _t996
-        push!(xs502, item504)
-        cond503 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "false", 0)) || match_lookahead_literal(parser, "missing", 0)) || match_lookahead_literal(parser, "true", 0)) || match_lookahead_terminal(parser, "DECIMAL", 0)) || match_lookahead_terminal(parser, "FLOAT", 0)) || match_lookahead_terminal(parser, "INT", 0)) || match_lookahead_terminal(parser, "INT128", 0)) || match_lookahead_terminal(parser, "STRING", 0)) || match_lookahead_terminal(parser, "SYMBOL", 0)) || match_lookahead_terminal(parser, "UINT128", 0))
+    push_path!(parser, 1)
+    _t1519 = parse_name(parser)
+    name859 = _t1519
+    pop_path!(parser)
+    push_path!(parser, 2)
+    xs864 = Proto.Term[]
+    cond865 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "false", 0)) || match_lookahead_literal(parser, "missing", 0)) || match_lookahead_literal(parser, "true", 0)) || match_lookahead_terminal(parser, "DECIMAL", 0)) || match_lookahead_terminal(parser, "FLOAT", 0)) || match_lookahead_terminal(parser, "INT", 0)) || match_lookahead_terminal(parser, "INT128", 0)) || match_lookahead_terminal(parser, "STRING", 0)) || match_lookahead_terminal(parser, "SYMBOL", 0)) || match_lookahead_terminal(parser, "UINT128", 0))
+    idx866 = 0
+    while cond865
+        push_path!(parser, idx866)
+        _t1520 = parse_term(parser)
+        item867 = _t1520
+        pop_path!(parser)
+        push!(xs864, item867)
+        idx866 = (idx866 + 1)
+        cond865 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "false", 0)) || match_lookahead_literal(parser, "missing", 0)) || match_lookahead_literal(parser, "true", 0)) || match_lookahead_terminal(parser, "DECIMAL", 0)) || match_lookahead_terminal(parser, "FLOAT", 0)) || match_lookahead_terminal(parser, "INT", 0)) || match_lookahead_terminal(parser, "INT128", 0)) || match_lookahead_terminal(parser, "STRING", 0)) || match_lookahead_terminal(parser, "SYMBOL", 0)) || match_lookahead_terminal(parser, "UINT128", 0))
     end
-    terms505 = xs502
+    terms863 = xs864
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t997 = Proto.Pragma(name=name501, terms=terms505)
-    return _t997
+    _t1521 = Proto.Pragma(name=name859, terms=terms863)
+    result869 = _t1521
+    record_span!(parser, span_start868)
+    return result869
 end
 
 function parse_primitive(parser::ParserState)::Proto.Primitive
+    span_start889 = span_start(parser)
     if match_lookahead_literal(parser, "(", 0)
         if match_lookahead_literal(parser, "primitive", 1)
-            _t999 = 9
+            _t1523 = 9
         else
             if match_lookahead_literal(parser, ">=", 1)
-                _t1000 = 4
+                _t1524 = 4
             else
                 if match_lookahead_literal(parser, ">", 1)
-                    _t1001 = 3
+                    _t1525 = 3
                 else
                     if match_lookahead_literal(parser, "=", 1)
-                        _t1002 = 0
+                        _t1526 = 0
                     else
                         if match_lookahead_literal(parser, "<=", 1)
-                            _t1003 = 2
+                            _t1527 = 2
                         else
                             if match_lookahead_literal(parser, "<", 1)
-                                _t1004 = 1
+                                _t1528 = 1
                             else
                                 if match_lookahead_literal(parser, "/", 1)
-                                    _t1005 = 8
+                                    _t1529 = 8
                                 else
                                     if match_lookahead_literal(parser, "-", 1)
-                                        _t1006 = 6
+                                        _t1530 = 6
                                     else
                                         if match_lookahead_literal(parser, "+", 1)
-                                            _t1007 = 5
+                                            _t1531 = 5
                                         else
                                             if match_lookahead_literal(parser, "*", 1)
-                                                _t1008 = 7
+                                                _t1532 = 7
                                             else
-                                                _t1008 = -1
+                                                _t1532 = -1
                                             end
-                                            _t1007 = _t1008
+                                            _t1531 = _t1532
                                         end
-                                        _t1006 = _t1007
+                                        _t1530 = _t1531
                                     end
-                                    _t1005 = _t1006
+                                    _t1529 = _t1530
                                 end
-                                _t1004 = _t1005
+                                _t1528 = _t1529
                             end
-                            _t1003 = _t1004
+                            _t1527 = _t1528
                         end
-                        _t1002 = _t1003
+                        _t1526 = _t1527
                     end
-                    _t1001 = _t1002
+                    _t1525 = _t1526
                 end
-                _t1000 = _t1001
+                _t1524 = _t1525
             end
-            _t999 = _t1000
+            _t1523 = _t1524
         end
-        _t998 = _t999
+        _t1522 = _t1523
     else
-        _t998 = -1
+        _t1522 = -1
     end
-    prediction506 = _t998
-    if prediction506 == 9
+    prediction870 = _t1522
+    if prediction870 == 9
         consume_literal!(parser, "(")
         consume_literal!(parser, "primitive")
-        _t1010 = parse_name(parser)
-        name516 = _t1010
-        xs517 = Proto.RelTerm[]
-        cond518 = (((((((((((match_lookahead_literal(parser, "#", 0) || match_lookahead_literal(parser, "(", 0)) || match_lookahead_literal(parser, "false", 0)) || match_lookahead_literal(parser, "missing", 0)) || match_lookahead_literal(parser, "true", 0)) || match_lookahead_terminal(parser, "DECIMAL", 0)) || match_lookahead_terminal(parser, "FLOAT", 0)) || match_lookahead_terminal(parser, "INT", 0)) || match_lookahead_terminal(parser, "INT128", 0)) || match_lookahead_terminal(parser, "STRING", 0)) || match_lookahead_terminal(parser, "SYMBOL", 0)) || match_lookahead_terminal(parser, "UINT128", 0))
-        while cond518
-            _t1011 = parse_rel_term(parser)
-            item519 = _t1011
-            push!(xs517, item519)
-            cond518 = (((((((((((match_lookahead_literal(parser, "#", 0) || match_lookahead_literal(parser, "(", 0)) || match_lookahead_literal(parser, "false", 0)) || match_lookahead_literal(parser, "missing", 0)) || match_lookahead_literal(parser, "true", 0)) || match_lookahead_terminal(parser, "DECIMAL", 0)) || match_lookahead_terminal(parser, "FLOAT", 0)) || match_lookahead_terminal(parser, "INT", 0)) || match_lookahead_terminal(parser, "INT128", 0)) || match_lookahead_terminal(parser, "STRING", 0)) || match_lookahead_terminal(parser, "SYMBOL", 0)) || match_lookahead_terminal(parser, "UINT128", 0))
+        push_path!(parser, 1)
+        _t1534 = parse_name(parser)
+        name880 = _t1534
+        pop_path!(parser)
+        push_path!(parser, 2)
+        xs885 = Proto.RelTerm[]
+        cond886 = (((((((((((match_lookahead_literal(parser, "#", 0) || match_lookahead_literal(parser, "(", 0)) || match_lookahead_literal(parser, "false", 0)) || match_lookahead_literal(parser, "missing", 0)) || match_lookahead_literal(parser, "true", 0)) || match_lookahead_terminal(parser, "DECIMAL", 0)) || match_lookahead_terminal(parser, "FLOAT", 0)) || match_lookahead_terminal(parser, "INT", 0)) || match_lookahead_terminal(parser, "INT128", 0)) || match_lookahead_terminal(parser, "STRING", 0)) || match_lookahead_terminal(parser, "SYMBOL", 0)) || match_lookahead_terminal(parser, "UINT128", 0))
+        idx887 = 0
+        while cond886
+            push_path!(parser, idx887)
+            _t1535 = parse_rel_term(parser)
+            item888 = _t1535
+            pop_path!(parser)
+            push!(xs885, item888)
+            idx887 = (idx887 + 1)
+            cond886 = (((((((((((match_lookahead_literal(parser, "#", 0) || match_lookahead_literal(parser, "(", 0)) || match_lookahead_literal(parser, "false", 0)) || match_lookahead_literal(parser, "missing", 0)) || match_lookahead_literal(parser, "true", 0)) || match_lookahead_terminal(parser, "DECIMAL", 0)) || match_lookahead_terminal(parser, "FLOAT", 0)) || match_lookahead_terminal(parser, "INT", 0)) || match_lookahead_terminal(parser, "INT128", 0)) || match_lookahead_terminal(parser, "STRING", 0)) || match_lookahead_terminal(parser, "SYMBOL", 0)) || match_lookahead_terminal(parser, "UINT128", 0))
         end
-        rel_terms520 = xs517
+        rel_terms884 = xs885
+        pop_path!(parser)
         consume_literal!(parser, ")")
-        _t1012 = Proto.Primitive(name=name516, terms=rel_terms520)
-        _t1009 = _t1012
+        _t1536 = Proto.Primitive(name=name880, terms=rel_terms884)
+        _t1533 = _t1536
     else
-        if prediction506 == 8
-            _t1014 = parse_divide(parser)
-            divide515 = _t1014
-            _t1013 = divide515
+        if prediction870 == 8
+            _t1538 = parse_divide(parser)
+            divide879 = _t1538
+            _t1537 = divide879
         else
-            if prediction506 == 7
-                _t1016 = parse_multiply(parser)
-                multiply514 = _t1016
-                _t1015 = multiply514
+            if prediction870 == 7
+                _t1540 = parse_multiply(parser)
+                multiply878 = _t1540
+                _t1539 = multiply878
             else
-                if prediction506 == 6
-                    _t1018 = parse_minus(parser)
-                    minus513 = _t1018
-                    _t1017 = minus513
+                if prediction870 == 6
+                    _t1542 = parse_minus(parser)
+                    minus877 = _t1542
+                    _t1541 = minus877
                 else
-                    if prediction506 == 5
-                        _t1020 = parse_add(parser)
-                        add512 = _t1020
-                        _t1019 = add512
+                    if prediction870 == 5
+                        _t1544 = parse_add(parser)
+                        add876 = _t1544
+                        _t1543 = add876
                     else
-                        if prediction506 == 4
-                            _t1022 = parse_gt_eq(parser)
-                            gt_eq511 = _t1022
-                            _t1021 = gt_eq511
+                        if prediction870 == 4
+                            _t1546 = parse_gt_eq(parser)
+                            gt_eq875 = _t1546
+                            _t1545 = gt_eq875
                         else
-                            if prediction506 == 3
-                                _t1024 = parse_gt(parser)
-                                gt510 = _t1024
-                                _t1023 = gt510
+                            if prediction870 == 3
+                                _t1548 = parse_gt(parser)
+                                gt874 = _t1548
+                                _t1547 = gt874
                             else
-                                if prediction506 == 2
-                                    _t1026 = parse_lt_eq(parser)
-                                    lt_eq509 = _t1026
-                                    _t1025 = lt_eq509
+                                if prediction870 == 2
+                                    _t1550 = parse_lt_eq(parser)
+                                    lt_eq873 = _t1550
+                                    _t1549 = lt_eq873
                                 else
-                                    if prediction506 == 1
-                                        _t1028 = parse_lt(parser)
-                                        lt508 = _t1028
-                                        _t1027 = lt508
+                                    if prediction870 == 1
+                                        _t1552 = parse_lt(parser)
+                                        lt872 = _t1552
+                                        _t1551 = lt872
                                     else
-                                        if prediction506 == 0
-                                            _t1030 = parse_eq(parser)
-                                            eq507 = _t1030
-                                            _t1029 = eq507
+                                        if prediction870 == 0
+                                            _t1554 = parse_eq(parser)
+                                            eq871 = _t1554
+                                            _t1553 = eq871
                                         else
                                             throw(ParseError("Unexpected token in primitive" * ": " * string(lookahead(parser, 0))))
                                         end
-                                        _t1027 = _t1029
+                                        _t1551 = _t1553
                                     end
-                                    _t1025 = _t1027
+                                    _t1549 = _t1551
                                 end
-                                _t1023 = _t1025
+                                _t1547 = _t1549
                             end
-                            _t1021 = _t1023
+                            _t1545 = _t1547
                         end
-                        _t1019 = _t1021
+                        _t1543 = _t1545
                     end
-                    _t1017 = _t1019
+                    _t1541 = _t1543
                 end
-                _t1015 = _t1017
+                _t1539 = _t1541
             end
-            _t1013 = _t1015
+            _t1537 = _t1539
         end
-        _t1009 = _t1013
+        _t1533 = _t1537
     end
-    return _t1009
+    result890 = _t1533
+    record_span!(parser, span_start889)
+    return result890
 end
 
 function parse_eq(parser::ParserState)::Proto.Primitive
+    span_start893 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "=")
-    _t1031 = parse_term(parser)
-    term521 = _t1031
-    _t1032 = parse_term(parser)
-    term_3522 = _t1032
+    _t1555 = parse_term(parser)
+    term891 = _t1555
+    _t1556 = parse_term(parser)
+    term_3892 = _t1556
     consume_literal!(parser, ")")
-    _t1033 = Proto.RelTerm(rel_term_type=OneOf(:term, term521))
-    _t1034 = Proto.RelTerm(rel_term_type=OneOf(:term, term_3522))
-    _t1035 = Proto.Primitive(name="rel_primitive_eq", terms=Proto.RelTerm[_t1033, _t1034])
-    return _t1035
+    _t1557 = Proto.RelTerm(rel_term_type=OneOf(:term, term891))
+    _t1558 = Proto.RelTerm(rel_term_type=OneOf(:term, term_3892))
+    _t1559 = Proto.Primitive(name="rel_primitive_eq", terms=Proto.RelTerm[_t1557, _t1558])
+    result894 = _t1559
+    record_span!(parser, span_start893)
+    return result894
 end
 
 function parse_lt(parser::ParserState)::Proto.Primitive
+    span_start897 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "<")
-    _t1036 = parse_term(parser)
-    term523 = _t1036
-    _t1037 = parse_term(parser)
-    term_3524 = _t1037
+    _t1560 = parse_term(parser)
+    term895 = _t1560
+    _t1561 = parse_term(parser)
+    term_3896 = _t1561
     consume_literal!(parser, ")")
-    _t1038 = Proto.RelTerm(rel_term_type=OneOf(:term, term523))
-    _t1039 = Proto.RelTerm(rel_term_type=OneOf(:term, term_3524))
-    _t1040 = Proto.Primitive(name="rel_primitive_lt_monotype", terms=Proto.RelTerm[_t1038, _t1039])
-    return _t1040
+    _t1562 = Proto.RelTerm(rel_term_type=OneOf(:term, term895))
+    _t1563 = Proto.RelTerm(rel_term_type=OneOf(:term, term_3896))
+    _t1564 = Proto.Primitive(name="rel_primitive_lt_monotype", terms=Proto.RelTerm[_t1562, _t1563])
+    result898 = _t1564
+    record_span!(parser, span_start897)
+    return result898
 end
 
 function parse_lt_eq(parser::ParserState)::Proto.Primitive
+    span_start901 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "<=")
-    _t1041 = parse_term(parser)
-    term525 = _t1041
-    _t1042 = parse_term(parser)
-    term_3526 = _t1042
+    _t1565 = parse_term(parser)
+    term899 = _t1565
+    _t1566 = parse_term(parser)
+    term_3900 = _t1566
     consume_literal!(parser, ")")
-    _t1043 = Proto.RelTerm(rel_term_type=OneOf(:term, term525))
-    _t1044 = Proto.RelTerm(rel_term_type=OneOf(:term, term_3526))
-    _t1045 = Proto.Primitive(name="rel_primitive_lt_eq_monotype", terms=Proto.RelTerm[_t1043, _t1044])
-    return _t1045
+    _t1567 = Proto.RelTerm(rel_term_type=OneOf(:term, term899))
+    _t1568 = Proto.RelTerm(rel_term_type=OneOf(:term, term_3900))
+    _t1569 = Proto.Primitive(name="rel_primitive_lt_eq_monotype", terms=Proto.RelTerm[_t1567, _t1568])
+    result902 = _t1569
+    record_span!(parser, span_start901)
+    return result902
 end
 
 function parse_gt(parser::ParserState)::Proto.Primitive
+    span_start905 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, ">")
-    _t1046 = parse_term(parser)
-    term527 = _t1046
-    _t1047 = parse_term(parser)
-    term_3528 = _t1047
+    _t1570 = parse_term(parser)
+    term903 = _t1570
+    _t1571 = parse_term(parser)
+    term_3904 = _t1571
     consume_literal!(parser, ")")
-    _t1048 = Proto.RelTerm(rel_term_type=OneOf(:term, term527))
-    _t1049 = Proto.RelTerm(rel_term_type=OneOf(:term, term_3528))
-    _t1050 = Proto.Primitive(name="rel_primitive_gt_monotype", terms=Proto.RelTerm[_t1048, _t1049])
-    return _t1050
+    _t1572 = Proto.RelTerm(rel_term_type=OneOf(:term, term903))
+    _t1573 = Proto.RelTerm(rel_term_type=OneOf(:term, term_3904))
+    _t1574 = Proto.Primitive(name="rel_primitive_gt_monotype", terms=Proto.RelTerm[_t1572, _t1573])
+    result906 = _t1574
+    record_span!(parser, span_start905)
+    return result906
 end
 
 function parse_gt_eq(parser::ParserState)::Proto.Primitive
+    span_start909 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, ">=")
-    _t1051 = parse_term(parser)
-    term529 = _t1051
-    _t1052 = parse_term(parser)
-    term_3530 = _t1052
+    _t1575 = parse_term(parser)
+    term907 = _t1575
+    _t1576 = parse_term(parser)
+    term_3908 = _t1576
     consume_literal!(parser, ")")
-    _t1053 = Proto.RelTerm(rel_term_type=OneOf(:term, term529))
-    _t1054 = Proto.RelTerm(rel_term_type=OneOf(:term, term_3530))
-    _t1055 = Proto.Primitive(name="rel_primitive_gt_eq_monotype", terms=Proto.RelTerm[_t1053, _t1054])
-    return _t1055
+    _t1577 = Proto.RelTerm(rel_term_type=OneOf(:term, term907))
+    _t1578 = Proto.RelTerm(rel_term_type=OneOf(:term, term_3908))
+    _t1579 = Proto.Primitive(name="rel_primitive_gt_eq_monotype", terms=Proto.RelTerm[_t1577, _t1578])
+    result910 = _t1579
+    record_span!(parser, span_start909)
+    return result910
 end
 
 function parse_add(parser::ParserState)::Proto.Primitive
+    span_start914 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "+")
-    _t1056 = parse_term(parser)
-    term531 = _t1056
-    _t1057 = parse_term(parser)
-    term_3532 = _t1057
-    _t1058 = parse_term(parser)
-    term_4533 = _t1058
+    _t1580 = parse_term(parser)
+    term911 = _t1580
+    _t1581 = parse_term(parser)
+    term_3912 = _t1581
+    _t1582 = parse_term(parser)
+    term_4913 = _t1582
     consume_literal!(parser, ")")
-    _t1059 = Proto.RelTerm(rel_term_type=OneOf(:term, term531))
-    _t1060 = Proto.RelTerm(rel_term_type=OneOf(:term, term_3532))
-    _t1061 = Proto.RelTerm(rel_term_type=OneOf(:term, term_4533))
-    _t1062 = Proto.Primitive(name="rel_primitive_add_monotype", terms=Proto.RelTerm[_t1059, _t1060, _t1061])
-    return _t1062
+    _t1583 = Proto.RelTerm(rel_term_type=OneOf(:term, term911))
+    _t1584 = Proto.RelTerm(rel_term_type=OneOf(:term, term_3912))
+    _t1585 = Proto.RelTerm(rel_term_type=OneOf(:term, term_4913))
+    _t1586 = Proto.Primitive(name="rel_primitive_add_monotype", terms=Proto.RelTerm[_t1583, _t1584, _t1585])
+    result915 = _t1586
+    record_span!(parser, span_start914)
+    return result915
 end
 
 function parse_minus(parser::ParserState)::Proto.Primitive
+    span_start919 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "-")
-    _t1063 = parse_term(parser)
-    term534 = _t1063
-    _t1064 = parse_term(parser)
-    term_3535 = _t1064
-    _t1065 = parse_term(parser)
-    term_4536 = _t1065
+    _t1587 = parse_term(parser)
+    term916 = _t1587
+    _t1588 = parse_term(parser)
+    term_3917 = _t1588
+    _t1589 = parse_term(parser)
+    term_4918 = _t1589
     consume_literal!(parser, ")")
-    _t1066 = Proto.RelTerm(rel_term_type=OneOf(:term, term534))
-    _t1067 = Proto.RelTerm(rel_term_type=OneOf(:term, term_3535))
-    _t1068 = Proto.RelTerm(rel_term_type=OneOf(:term, term_4536))
-    _t1069 = Proto.Primitive(name="rel_primitive_subtract_monotype", terms=Proto.RelTerm[_t1066, _t1067, _t1068])
-    return _t1069
+    _t1590 = Proto.RelTerm(rel_term_type=OneOf(:term, term916))
+    _t1591 = Proto.RelTerm(rel_term_type=OneOf(:term, term_3917))
+    _t1592 = Proto.RelTerm(rel_term_type=OneOf(:term, term_4918))
+    _t1593 = Proto.Primitive(name="rel_primitive_subtract_monotype", terms=Proto.RelTerm[_t1590, _t1591, _t1592])
+    result920 = _t1593
+    record_span!(parser, span_start919)
+    return result920
 end
 
 function parse_multiply(parser::ParserState)::Proto.Primitive
+    span_start924 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "*")
-    _t1070 = parse_term(parser)
-    term537 = _t1070
-    _t1071 = parse_term(parser)
-    term_3538 = _t1071
-    _t1072 = parse_term(parser)
-    term_4539 = _t1072
+    _t1594 = parse_term(parser)
+    term921 = _t1594
+    _t1595 = parse_term(parser)
+    term_3922 = _t1595
+    _t1596 = parse_term(parser)
+    term_4923 = _t1596
     consume_literal!(parser, ")")
-    _t1073 = Proto.RelTerm(rel_term_type=OneOf(:term, term537))
-    _t1074 = Proto.RelTerm(rel_term_type=OneOf(:term, term_3538))
-    _t1075 = Proto.RelTerm(rel_term_type=OneOf(:term, term_4539))
-    _t1076 = Proto.Primitive(name="rel_primitive_multiply_monotype", terms=Proto.RelTerm[_t1073, _t1074, _t1075])
-    return _t1076
+    _t1597 = Proto.RelTerm(rel_term_type=OneOf(:term, term921))
+    _t1598 = Proto.RelTerm(rel_term_type=OneOf(:term, term_3922))
+    _t1599 = Proto.RelTerm(rel_term_type=OneOf(:term, term_4923))
+    _t1600 = Proto.Primitive(name="rel_primitive_multiply_monotype", terms=Proto.RelTerm[_t1597, _t1598, _t1599])
+    result925 = _t1600
+    record_span!(parser, span_start924)
+    return result925
 end
 
 function parse_divide(parser::ParserState)::Proto.Primitive
+    span_start929 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "/")
-    _t1077 = parse_term(parser)
-    term540 = _t1077
-    _t1078 = parse_term(parser)
-    term_3541 = _t1078
-    _t1079 = parse_term(parser)
-    term_4542 = _t1079
+    _t1601 = parse_term(parser)
+    term926 = _t1601
+    _t1602 = parse_term(parser)
+    term_3927 = _t1602
+    _t1603 = parse_term(parser)
+    term_4928 = _t1603
     consume_literal!(parser, ")")
-    _t1080 = Proto.RelTerm(rel_term_type=OneOf(:term, term540))
-    _t1081 = Proto.RelTerm(rel_term_type=OneOf(:term, term_3541))
-    _t1082 = Proto.RelTerm(rel_term_type=OneOf(:term, term_4542))
-    _t1083 = Proto.Primitive(name="rel_primitive_divide_monotype", terms=Proto.RelTerm[_t1080, _t1081, _t1082])
-    return _t1083
+    _t1604 = Proto.RelTerm(rel_term_type=OneOf(:term, term926))
+    _t1605 = Proto.RelTerm(rel_term_type=OneOf(:term, term_3927))
+    _t1606 = Proto.RelTerm(rel_term_type=OneOf(:term, term_4928))
+    _t1607 = Proto.Primitive(name="rel_primitive_divide_monotype", terms=Proto.RelTerm[_t1604, _t1605, _t1606])
+    result930 = _t1607
+    record_span!(parser, span_start929)
+    return result930
 end
 
 function parse_rel_term(parser::ParserState)::Proto.RelTerm
+    span_start934 = span_start(parser)
     if match_lookahead_literal(parser, "true", 0)
-        _t1084 = 1
+        _t1608 = 1
     else
         if match_lookahead_literal(parser, "missing", 0)
-            _t1085 = 1
+            _t1609 = 1
         else
             if match_lookahead_literal(parser, "false", 0)
-                _t1086 = 1
+                _t1610 = 1
             else
                 if match_lookahead_literal(parser, "(", 0)
-                    _t1087 = 1
+                    _t1611 = 1
                 else
                     if match_lookahead_literal(parser, "#", 0)
-                        _t1088 = 0
+                        _t1612 = 0
                     else
                         if match_lookahead_terminal(parser, "UINT128", 0)
-                            _t1089 = 1
+                            _t1613 = 1
                         else
                             if match_lookahead_terminal(parser, "SYMBOL", 0)
-                                _t1090 = 1
+                                _t1614 = 1
                             else
                                 if match_lookahead_terminal(parser, "STRING", 0)
-                                    _t1091 = 1
+                                    _t1615 = 1
                                 else
                                     if match_lookahead_terminal(parser, "INT128", 0)
-                                        _t1092 = 1
+                                        _t1616 = 1
                                     else
                                         if match_lookahead_terminal(parser, "INT", 0)
-                                            _t1093 = 1
+                                            _t1617 = 1
                                         else
                                             if match_lookahead_terminal(parser, "FLOAT", 0)
-                                                _t1094 = 1
+                                                _t1618 = 1
                                             else
                                                 if match_lookahead_terminal(parser, "DECIMAL", 0)
-                                                    _t1095 = 1
+                                                    _t1619 = 1
                                                 else
-                                                    _t1095 = -1
+                                                    _t1619 = -1
                                                 end
-                                                _t1094 = _t1095
+                                                _t1618 = _t1619
                                             end
-                                            _t1093 = _t1094
+                                            _t1617 = _t1618
                                         end
-                                        _t1092 = _t1093
+                                        _t1616 = _t1617
                                     end
-                                    _t1091 = _t1092
+                                    _t1615 = _t1616
                                 end
-                                _t1090 = _t1091
+                                _t1614 = _t1615
                             end
-                            _t1089 = _t1090
+                            _t1613 = _t1614
                         end
-                        _t1088 = _t1089
+                        _t1612 = _t1613
                     end
-                    _t1087 = _t1088
+                    _t1611 = _t1612
                 end
-                _t1086 = _t1087
+                _t1610 = _t1611
             end
-            _t1085 = _t1086
+            _t1609 = _t1610
         end
-        _t1084 = _t1085
+        _t1608 = _t1609
     end
-    prediction543 = _t1084
-    if prediction543 == 1
-        _t1097 = parse_term(parser)
-        term545 = _t1097
-        _t1098 = Proto.RelTerm(rel_term_type=OneOf(:term, term545))
-        _t1096 = _t1098
+    prediction931 = _t1608
+    if prediction931 == 1
+        _t1621 = parse_term(parser)
+        term933 = _t1621
+        _t1622 = Proto.RelTerm(rel_term_type=OneOf(:term, term933))
+        _t1620 = _t1622
     else
-        if prediction543 == 0
-            _t1100 = parse_specialized_value(parser)
-            specialized_value544 = _t1100
-            _t1101 = Proto.RelTerm(rel_term_type=OneOf(:specialized_value, specialized_value544))
-            _t1099 = _t1101
+        if prediction931 == 0
+            _t1624 = parse_specialized_value(parser)
+            specialized_value932 = _t1624
+            _t1625 = Proto.RelTerm(rel_term_type=OneOf(:specialized_value, specialized_value932))
+            _t1623 = _t1625
         else
             throw(ParseError("Unexpected token in rel_term" * ": " * string(lookahead(parser, 0))))
         end
-        _t1096 = _t1099
+        _t1620 = _t1623
     end
-    return _t1096
+    result935 = _t1620
+    record_span!(parser, span_start934)
+    return result935
 end
 
 function parse_specialized_value(parser::ParserState)::Proto.Value
+    span_start937 = span_start(parser)
     consume_literal!(parser, "#")
-    _t1102 = parse_value(parser)
-    value546 = _t1102
-    return value546
+    _t1626 = parse_value(parser)
+    value936 = _t1626
+    result938 = value936
+    record_span!(parser, span_start937)
+    return result938
 end
 
 function parse_rel_atom(parser::ParserState)::Proto.RelAtom
+    span_start948 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "relatom")
-    _t1103 = parse_name(parser)
-    name547 = _t1103
-    xs548 = Proto.RelTerm[]
-    cond549 = (((((((((((match_lookahead_literal(parser, "#", 0) || match_lookahead_literal(parser, "(", 0)) || match_lookahead_literal(parser, "false", 0)) || match_lookahead_literal(parser, "missing", 0)) || match_lookahead_literal(parser, "true", 0)) || match_lookahead_terminal(parser, "DECIMAL", 0)) || match_lookahead_terminal(parser, "FLOAT", 0)) || match_lookahead_terminal(parser, "INT", 0)) || match_lookahead_terminal(parser, "INT128", 0)) || match_lookahead_terminal(parser, "STRING", 0)) || match_lookahead_terminal(parser, "SYMBOL", 0)) || match_lookahead_terminal(parser, "UINT128", 0))
-    while cond549
-        _t1104 = parse_rel_term(parser)
-        item550 = _t1104
-        push!(xs548, item550)
-        cond549 = (((((((((((match_lookahead_literal(parser, "#", 0) || match_lookahead_literal(parser, "(", 0)) || match_lookahead_literal(parser, "false", 0)) || match_lookahead_literal(parser, "missing", 0)) || match_lookahead_literal(parser, "true", 0)) || match_lookahead_terminal(parser, "DECIMAL", 0)) || match_lookahead_terminal(parser, "FLOAT", 0)) || match_lookahead_terminal(parser, "INT", 0)) || match_lookahead_terminal(parser, "INT128", 0)) || match_lookahead_terminal(parser, "STRING", 0)) || match_lookahead_terminal(parser, "SYMBOL", 0)) || match_lookahead_terminal(parser, "UINT128", 0))
+    push_path!(parser, 3)
+    _t1627 = parse_name(parser)
+    name939 = _t1627
+    pop_path!(parser)
+    push_path!(parser, 2)
+    xs944 = Proto.RelTerm[]
+    cond945 = (((((((((((match_lookahead_literal(parser, "#", 0) || match_lookahead_literal(parser, "(", 0)) || match_lookahead_literal(parser, "false", 0)) || match_lookahead_literal(parser, "missing", 0)) || match_lookahead_literal(parser, "true", 0)) || match_lookahead_terminal(parser, "DECIMAL", 0)) || match_lookahead_terminal(parser, "FLOAT", 0)) || match_lookahead_terminal(parser, "INT", 0)) || match_lookahead_terminal(parser, "INT128", 0)) || match_lookahead_terminal(parser, "STRING", 0)) || match_lookahead_terminal(parser, "SYMBOL", 0)) || match_lookahead_terminal(parser, "UINT128", 0))
+    idx946 = 0
+    while cond945
+        push_path!(parser, idx946)
+        _t1628 = parse_rel_term(parser)
+        item947 = _t1628
+        pop_path!(parser)
+        push!(xs944, item947)
+        idx946 = (idx946 + 1)
+        cond945 = (((((((((((match_lookahead_literal(parser, "#", 0) || match_lookahead_literal(parser, "(", 0)) || match_lookahead_literal(parser, "false", 0)) || match_lookahead_literal(parser, "missing", 0)) || match_lookahead_literal(parser, "true", 0)) || match_lookahead_terminal(parser, "DECIMAL", 0)) || match_lookahead_terminal(parser, "FLOAT", 0)) || match_lookahead_terminal(parser, "INT", 0)) || match_lookahead_terminal(parser, "INT128", 0)) || match_lookahead_terminal(parser, "STRING", 0)) || match_lookahead_terminal(parser, "SYMBOL", 0)) || match_lookahead_terminal(parser, "UINT128", 0))
     end
-    rel_terms551 = xs548
+    rel_terms943 = xs944
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1105 = Proto.RelAtom(name=name547, terms=rel_terms551)
-    return _t1105
+    _t1629 = Proto.RelAtom(name=name939, terms=rel_terms943)
+    result949 = _t1629
+    record_span!(parser, span_start948)
+    return result949
 end
 
 function parse_cast(parser::ParserState)::Proto.Cast
+    span_start952 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "cast")
-    _t1106 = parse_term(parser)
-    term552 = _t1106
-    _t1107 = parse_term(parser)
-    term_3553 = _t1107
+    push_path!(parser, 2)
+    _t1630 = parse_term(parser)
+    term950 = _t1630
+    pop_path!(parser)
+    push_path!(parser, 3)
+    _t1631 = parse_term(parser)
+    term_3951 = _t1631
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1108 = Proto.Cast(input=term552, result=term_3553)
-    return _t1108
+    _t1632 = Proto.Cast(input=term950, result=term_3951)
+    result953 = _t1632
+    record_span!(parser, span_start952)
+    return result953
 end
 
 function parse_attrs(parser::ParserState)::Vector{Proto.Attribute}
+    span_start958 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "attrs")
-    xs554 = Proto.Attribute[]
-    cond555 = match_lookahead_literal(parser, "(", 0)
-    while cond555
-        _t1109 = parse_attribute(parser)
-        item556 = _t1109
-        push!(xs554, item556)
-        cond555 = match_lookahead_literal(parser, "(", 0)
+    xs954 = Proto.Attribute[]
+    cond955 = match_lookahead_literal(parser, "(", 0)
+    while cond955
+        _t1633 = parse_attribute(parser)
+        item956 = _t1633
+        push!(xs954, item956)
+        cond955 = match_lookahead_literal(parser, "(", 0)
     end
-    attributes557 = xs554
+    attributes957 = xs954
     consume_literal!(parser, ")")
-    return attributes557
+    result959 = attributes957
+    record_span!(parser, span_start958)
+    return result959
 end
 
 function parse_attribute(parser::ParserState)::Proto.Attribute
+    span_start969 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "attribute")
-    _t1110 = parse_name(parser)
-    name558 = _t1110
-    xs559 = Proto.Value[]
-    cond560 = (((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "false", 0)) || match_lookahead_literal(parser, "missing", 0)) || match_lookahead_literal(parser, "true", 0)) || match_lookahead_terminal(parser, "DECIMAL", 0)) || match_lookahead_terminal(parser, "FLOAT", 0)) || match_lookahead_terminal(parser, "INT", 0)) || match_lookahead_terminal(parser, "INT128", 0)) || match_lookahead_terminal(parser, "STRING", 0)) || match_lookahead_terminal(parser, "UINT128", 0))
-    while cond560
-        _t1111 = parse_value(parser)
-        item561 = _t1111
-        push!(xs559, item561)
-        cond560 = (((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "false", 0)) || match_lookahead_literal(parser, "missing", 0)) || match_lookahead_literal(parser, "true", 0)) || match_lookahead_terminal(parser, "DECIMAL", 0)) || match_lookahead_terminal(parser, "FLOAT", 0)) || match_lookahead_terminal(parser, "INT", 0)) || match_lookahead_terminal(parser, "INT128", 0)) || match_lookahead_terminal(parser, "STRING", 0)) || match_lookahead_terminal(parser, "UINT128", 0))
+    push_path!(parser, 1)
+    _t1634 = parse_name(parser)
+    name960 = _t1634
+    pop_path!(parser)
+    push_path!(parser, 2)
+    xs965 = Proto.Value[]
+    cond966 = (((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "false", 0)) || match_lookahead_literal(parser, "missing", 0)) || match_lookahead_literal(parser, "true", 0)) || match_lookahead_terminal(parser, "DECIMAL", 0)) || match_lookahead_terminal(parser, "FLOAT", 0)) || match_lookahead_terminal(parser, "INT", 0)) || match_lookahead_terminal(parser, "INT128", 0)) || match_lookahead_terminal(parser, "STRING", 0)) || match_lookahead_terminal(parser, "UINT128", 0))
+    idx967 = 0
+    while cond966
+        push_path!(parser, idx967)
+        _t1635 = parse_value(parser)
+        item968 = _t1635
+        pop_path!(parser)
+        push!(xs965, item968)
+        idx967 = (idx967 + 1)
+        cond966 = (((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "false", 0)) || match_lookahead_literal(parser, "missing", 0)) || match_lookahead_literal(parser, "true", 0)) || match_lookahead_terminal(parser, "DECIMAL", 0)) || match_lookahead_terminal(parser, "FLOAT", 0)) || match_lookahead_terminal(parser, "INT", 0)) || match_lookahead_terminal(parser, "INT128", 0)) || match_lookahead_terminal(parser, "STRING", 0)) || match_lookahead_terminal(parser, "UINT128", 0))
     end
-    values562 = xs559
+    values964 = xs965
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1112 = Proto.Attribute(name=name558, args=values562)
-    return _t1112
+    _t1636 = Proto.Attribute(name=name960, args=values964)
+    result970 = _t1636
+    record_span!(parser, span_start969)
+    return result970
 end
 
 function parse_algorithm(parser::ParserState)::Proto.Algorithm
+    span_start980 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "algorithm")
-    xs563 = Proto.RelationId[]
-    cond564 = (match_lookahead_literal(parser, ":", 0) || match_lookahead_terminal(parser, "UINT128", 0))
-    while cond564
-        _t1113 = parse_relation_id(parser)
-        item565 = _t1113
-        push!(xs563, item565)
-        cond564 = (match_lookahead_literal(parser, ":", 0) || match_lookahead_terminal(parser, "UINT128", 0))
+    push_path!(parser, 1)
+    xs975 = Proto.RelationId[]
+    cond976 = (match_lookahead_literal(parser, ":", 0) || match_lookahead_terminal(parser, "UINT128", 0))
+    idx977 = 0
+    while cond976
+        push_path!(parser, idx977)
+        _t1637 = parse_relation_id(parser)
+        item978 = _t1637
+        pop_path!(parser)
+        push!(xs975, item978)
+        idx977 = (idx977 + 1)
+        cond976 = (match_lookahead_literal(parser, ":", 0) || match_lookahead_terminal(parser, "UINT128", 0))
     end
-    relation_ids566 = xs563
-    _t1114 = parse_script(parser)
-    script567 = _t1114
+    relation_ids974 = xs975
+    pop_path!(parser)
+    push_path!(parser, 2)
+    _t1638 = parse_script(parser)
+    script979 = _t1638
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1115 = Proto.Algorithm(var"#global"=relation_ids566, body=script567)
-    return _t1115
+    _t1639 = Proto.Algorithm(var"#global"=relation_ids974, body=script979)
+    result981 = _t1639
+    record_span!(parser, span_start980)
+    return result981
 end
 
 function parse_script(parser::ParserState)::Proto.Script
+    span_start990 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "script")
-    xs568 = Proto.Construct[]
-    cond569 = match_lookahead_literal(parser, "(", 0)
-    while cond569
-        _t1116 = parse_construct(parser)
-        item570 = _t1116
-        push!(xs568, item570)
-        cond569 = match_lookahead_literal(parser, "(", 0)
+    push_path!(parser, 1)
+    xs986 = Proto.Construct[]
+    cond987 = match_lookahead_literal(parser, "(", 0)
+    idx988 = 0
+    while cond987
+        push_path!(parser, idx988)
+        _t1640 = parse_construct(parser)
+        item989 = _t1640
+        pop_path!(parser)
+        push!(xs986, item989)
+        idx988 = (idx988 + 1)
+        cond987 = match_lookahead_literal(parser, "(", 0)
     end
-    constructs571 = xs568
+    constructs985 = xs986
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1117 = Proto.Script(constructs=constructs571)
-    return _t1117
+    _t1641 = Proto.Script(constructs=constructs985)
+    result991 = _t1641
+    record_span!(parser, span_start990)
+    return result991
 end
 
 function parse_construct(parser::ParserState)::Proto.Construct
+    span_start995 = span_start(parser)
     if match_lookahead_literal(parser, "(", 0)
         if match_lookahead_literal(parser, "upsert", 1)
-            _t1119 = 1
+            _t1643 = 1
         else
             if match_lookahead_literal(parser, "monus", 1)
-                _t1120 = 1
+                _t1644 = 1
             else
                 if match_lookahead_literal(parser, "monoid", 1)
-                    _t1121 = 1
+                    _t1645 = 1
                 else
                     if match_lookahead_literal(parser, "loop", 1)
-                        _t1122 = 0
+                        _t1646 = 0
                     else
                         if match_lookahead_literal(parser, "break", 1)
-                            _t1123 = 1
+                            _t1647 = 1
                         else
                             if match_lookahead_literal(parser, "assign", 1)
-                                _t1124 = 1
+                                _t1648 = 1
                             else
-                                _t1124 = -1
+                                _t1648 = -1
                             end
-                            _t1123 = _t1124
+                            _t1647 = _t1648
                         end
-                        _t1122 = _t1123
+                        _t1646 = _t1647
                     end
-                    _t1121 = _t1122
+                    _t1645 = _t1646
                 end
-                _t1120 = _t1121
+                _t1644 = _t1645
             end
-            _t1119 = _t1120
+            _t1643 = _t1644
         end
-        _t1118 = _t1119
+        _t1642 = _t1643
     else
-        _t1118 = -1
+        _t1642 = -1
     end
-    prediction572 = _t1118
-    if prediction572 == 1
-        _t1126 = parse_instruction(parser)
-        instruction574 = _t1126
-        _t1127 = Proto.Construct(construct_type=OneOf(:instruction, instruction574))
-        _t1125 = _t1127
+    prediction992 = _t1642
+    if prediction992 == 1
+        _t1650 = parse_instruction(parser)
+        instruction994 = _t1650
+        _t1651 = Proto.Construct(construct_type=OneOf(:instruction, instruction994))
+        _t1649 = _t1651
     else
-        if prediction572 == 0
-            _t1129 = parse_loop(parser)
-            loop573 = _t1129
-            _t1130 = Proto.Construct(construct_type=OneOf(:loop, loop573))
-            _t1128 = _t1130
+        if prediction992 == 0
+            _t1653 = parse_loop(parser)
+            loop993 = _t1653
+            _t1654 = Proto.Construct(construct_type=OneOf(:loop, loop993))
+            _t1652 = _t1654
         else
             throw(ParseError("Unexpected token in construct" * ": " * string(lookahead(parser, 0))))
         end
-        _t1125 = _t1128
+        _t1649 = _t1652
     end
-    return _t1125
+    result996 = _t1649
+    record_span!(parser, span_start995)
+    return result996
 end
 
 function parse_loop(parser::ParserState)::Proto.Loop
+    span_start999 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "loop")
-    _t1131 = parse_init(parser)
-    init575 = _t1131
-    _t1132 = parse_script(parser)
-    script576 = _t1132
+    push_path!(parser, 1)
+    _t1655 = parse_init(parser)
+    init997 = _t1655
+    pop_path!(parser)
+    push_path!(parser, 2)
+    _t1656 = parse_script(parser)
+    script998 = _t1656
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1133 = Proto.Loop(init=init575, body=script576)
-    return _t1133
+    _t1657 = Proto.Loop(init=init997, body=script998)
+    result1000 = _t1657
+    record_span!(parser, span_start999)
+    return result1000
 end
 
 function parse_init(parser::ParserState)::Vector{Proto.Instruction}
+    span_start1005 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "init")
-    xs577 = Proto.Instruction[]
-    cond578 = match_lookahead_literal(parser, "(", 0)
-    while cond578
-        _t1134 = parse_instruction(parser)
-        item579 = _t1134
-        push!(xs577, item579)
-        cond578 = match_lookahead_literal(parser, "(", 0)
+    xs1001 = Proto.Instruction[]
+    cond1002 = match_lookahead_literal(parser, "(", 0)
+    while cond1002
+        _t1658 = parse_instruction(parser)
+        item1003 = _t1658
+        push!(xs1001, item1003)
+        cond1002 = match_lookahead_literal(parser, "(", 0)
     end
-    instructions580 = xs577
+    instructions1004 = xs1001
     consume_literal!(parser, ")")
-    return instructions580
+    result1006 = instructions1004
+    record_span!(parser, span_start1005)
+    return result1006
 end
 
 function parse_instruction(parser::ParserState)::Proto.Instruction
+    span_start1013 = span_start(parser)
     if match_lookahead_literal(parser, "(", 0)
         if match_lookahead_literal(parser, "upsert", 1)
-            _t1136 = 1
+            _t1660 = 1
         else
             if match_lookahead_literal(parser, "monus", 1)
-                _t1137 = 4
+                _t1661 = 4
             else
                 if match_lookahead_literal(parser, "monoid", 1)
-                    _t1138 = 3
+                    _t1662 = 3
                 else
                     if match_lookahead_literal(parser, "break", 1)
-                        _t1139 = 2
+                        _t1663 = 2
                     else
                         if match_lookahead_literal(parser, "assign", 1)
-                            _t1140 = 0
+                            _t1664 = 0
                         else
-                            _t1140 = -1
+                            _t1664 = -1
                         end
-                        _t1139 = _t1140
+                        _t1663 = _t1664
                     end
-                    _t1138 = _t1139
+                    _t1662 = _t1663
                 end
-                _t1137 = _t1138
+                _t1661 = _t1662
             end
-            _t1136 = _t1137
+            _t1660 = _t1661
         end
-        _t1135 = _t1136
+        _t1659 = _t1660
     else
-        _t1135 = -1
+        _t1659 = -1
     end
-    prediction581 = _t1135
-    if prediction581 == 4
-        _t1142 = parse_monus_def(parser)
-        monus_def586 = _t1142
-        _t1143 = Proto.Instruction(instr_type=OneOf(:monus_def, monus_def586))
-        _t1141 = _t1143
+    prediction1007 = _t1659
+    if prediction1007 == 4
+        _t1666 = parse_monus_def(parser)
+        monus_def1012 = _t1666
+        _t1667 = Proto.Instruction(instr_type=OneOf(:monus_def, monus_def1012))
+        _t1665 = _t1667
     else
-        if prediction581 == 3
-            _t1145 = parse_monoid_def(parser)
-            monoid_def585 = _t1145
-            _t1146 = Proto.Instruction(instr_type=OneOf(:monoid_def, monoid_def585))
-            _t1144 = _t1146
+        if prediction1007 == 3
+            _t1669 = parse_monoid_def(parser)
+            monoid_def1011 = _t1669
+            _t1670 = Proto.Instruction(instr_type=OneOf(:monoid_def, monoid_def1011))
+            _t1668 = _t1670
         else
-            if prediction581 == 2
-                _t1148 = parse_break(parser)
-                break584 = _t1148
-                _t1149 = Proto.Instruction(instr_type=OneOf(:var"#break", break584))
-                _t1147 = _t1149
+            if prediction1007 == 2
+                _t1672 = parse_break(parser)
+                break1010 = _t1672
+                _t1673 = Proto.Instruction(instr_type=OneOf(:var"#break", break1010))
+                _t1671 = _t1673
             else
-                if prediction581 == 1
-                    _t1151 = parse_upsert(parser)
-                    upsert583 = _t1151
-                    _t1152 = Proto.Instruction(instr_type=OneOf(:upsert, upsert583))
-                    _t1150 = _t1152
+                if prediction1007 == 1
+                    _t1675 = parse_upsert(parser)
+                    upsert1009 = _t1675
+                    _t1676 = Proto.Instruction(instr_type=OneOf(:upsert, upsert1009))
+                    _t1674 = _t1676
                 else
-                    if prediction581 == 0
-                        _t1154 = parse_assign(parser)
-                        assign582 = _t1154
-                        _t1155 = Proto.Instruction(instr_type=OneOf(:assign, assign582))
-                        _t1153 = _t1155
+                    if prediction1007 == 0
+                        _t1678 = parse_assign(parser)
+                        assign1008 = _t1678
+                        _t1679 = Proto.Instruction(instr_type=OneOf(:assign, assign1008))
+                        _t1677 = _t1679
                     else
                         throw(ParseError("Unexpected token in instruction" * ": " * string(lookahead(parser, 0))))
                     end
-                    _t1150 = _t1153
+                    _t1674 = _t1677
                 end
-                _t1147 = _t1150
+                _t1671 = _t1674
             end
-            _t1144 = _t1147
+            _t1668 = _t1671
         end
-        _t1141 = _t1144
+        _t1665 = _t1668
     end
-    return _t1141
+    result1014 = _t1665
+    record_span!(parser, span_start1013)
+    return result1014
 end
 
 function parse_assign(parser::ParserState)::Proto.Assign
+    span_start1018 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "assign")
-    _t1156 = parse_relation_id(parser)
-    relation_id587 = _t1156
-    _t1157 = parse_abstraction(parser)
-    abstraction588 = _t1157
+    push_path!(parser, 1)
+    _t1680 = parse_relation_id(parser)
+    relation_id1015 = _t1680
+    pop_path!(parser)
+    push_path!(parser, 2)
+    _t1681 = parse_abstraction(parser)
+    abstraction1016 = _t1681
+    pop_path!(parser)
+    push_path!(parser, 3)
     if match_lookahead_literal(parser, "(", 0)
-        _t1159 = parse_attrs(parser)
-        _t1158 = _t1159
+        _t1683 = parse_attrs(parser)
+        _t1682 = _t1683
     else
-        _t1158 = nothing
+        _t1682 = nothing
     end
-    attrs589 = _t1158
+    attrs1017 = _t1682
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1160 = Proto.Assign(name=relation_id587, body=abstraction588, attrs=(!isnothing(attrs589) ? attrs589 : Proto.Attribute[]))
-    return _t1160
+    _t1684 = Proto.Assign(name=relation_id1015, body=abstraction1016, attrs=(!isnothing(attrs1017) ? attrs1017 : Proto.Attribute[]))
+    result1019 = _t1684
+    record_span!(parser, span_start1018)
+    return result1019
 end
 
 function parse_upsert(parser::ParserState)::Proto.Upsert
+    span_start1023 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "upsert")
-    _t1161 = parse_relation_id(parser)
-    relation_id590 = _t1161
-    _t1162 = parse_abstraction_with_arity(parser)
-    abstraction_with_arity591 = _t1162
+    push_path!(parser, 1)
+    _t1685 = parse_relation_id(parser)
+    relation_id1020 = _t1685
+    pop_path!(parser)
+    _t1686 = parse_abstraction_with_arity(parser)
+    abstraction_with_arity1021 = _t1686
+    push_path!(parser, 3)
     if match_lookahead_literal(parser, "(", 0)
-        _t1164 = parse_attrs(parser)
-        _t1163 = _t1164
+        _t1688 = parse_attrs(parser)
+        _t1687 = _t1688
     else
-        _t1163 = nothing
+        _t1687 = nothing
     end
-    attrs592 = _t1163
+    attrs1022 = _t1687
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1165 = Proto.Upsert(name=relation_id590, body=abstraction_with_arity591[1], attrs=(!isnothing(attrs592) ? attrs592 : Proto.Attribute[]), value_arity=abstraction_with_arity591[2])
-    return _t1165
+    _t1689 = Proto.Upsert(name=relation_id1020, body=abstraction_with_arity1021[1], attrs=(!isnothing(attrs1022) ? attrs1022 : Proto.Attribute[]), value_arity=abstraction_with_arity1021[2])
+    result1024 = _t1689
+    record_span!(parser, span_start1023)
+    return result1024
 end
 
 function parse_abstraction_with_arity(parser::ParserState)::Tuple{Proto.Abstraction, Int64}
+    span_start1027 = span_start(parser)
     consume_literal!(parser, "(")
-    _t1166 = parse_bindings(parser)
-    bindings593 = _t1166
-    _t1167 = parse_formula(parser)
-    formula594 = _t1167
+    _t1690 = parse_bindings(parser)
+    bindings1025 = _t1690
+    _t1691 = parse_formula(parser)
+    formula1026 = _t1691
     consume_literal!(parser, ")")
-    _t1168 = Proto.Abstraction(vars=vcat(bindings593[1], !isnothing(bindings593[2]) ? bindings593[2] : []), value=formula594)
-    return (_t1168, length(bindings593[2]),)
+    _t1692 = Proto.Abstraction(vars=vcat(bindings1025[1], !isnothing(bindings1025[2]) ? bindings1025[2] : []), value=formula1026)
+    result1028 = (_t1692, length(bindings1025[2]),)
+    record_span!(parser, span_start1027)
+    return result1028
 end
 
 function parse_break(parser::ParserState)::Proto.Break
+    span_start1032 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "break")
-    _t1169 = parse_relation_id(parser)
-    relation_id595 = _t1169
-    _t1170 = parse_abstraction(parser)
-    abstraction596 = _t1170
+    push_path!(parser, 1)
+    _t1693 = parse_relation_id(parser)
+    relation_id1029 = _t1693
+    pop_path!(parser)
+    push_path!(parser, 2)
+    _t1694 = parse_abstraction(parser)
+    abstraction1030 = _t1694
+    pop_path!(parser)
+    push_path!(parser, 3)
     if match_lookahead_literal(parser, "(", 0)
-        _t1172 = parse_attrs(parser)
-        _t1171 = _t1172
+        _t1696 = parse_attrs(parser)
+        _t1695 = _t1696
     else
-        _t1171 = nothing
+        _t1695 = nothing
     end
-    attrs597 = _t1171
+    attrs1031 = _t1695
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1173 = Proto.Break(name=relation_id595, body=abstraction596, attrs=(!isnothing(attrs597) ? attrs597 : Proto.Attribute[]))
-    return _t1173
+    _t1697 = Proto.Break(name=relation_id1029, body=abstraction1030, attrs=(!isnothing(attrs1031) ? attrs1031 : Proto.Attribute[]))
+    result1033 = _t1697
+    record_span!(parser, span_start1032)
+    return result1033
 end
 
 function parse_monoid_def(parser::ParserState)::Proto.MonoidDef
+    span_start1038 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "monoid")
-    _t1174 = parse_monoid(parser)
-    monoid598 = _t1174
-    _t1175 = parse_relation_id(parser)
-    relation_id599 = _t1175
-    _t1176 = parse_abstraction_with_arity(parser)
-    abstraction_with_arity600 = _t1176
+    push_path!(parser, 1)
+    _t1698 = parse_monoid(parser)
+    monoid1034 = _t1698
+    pop_path!(parser)
+    push_path!(parser, 2)
+    _t1699 = parse_relation_id(parser)
+    relation_id1035 = _t1699
+    pop_path!(parser)
+    _t1700 = parse_abstraction_with_arity(parser)
+    abstraction_with_arity1036 = _t1700
+    push_path!(parser, 4)
     if match_lookahead_literal(parser, "(", 0)
-        _t1178 = parse_attrs(parser)
-        _t1177 = _t1178
+        _t1702 = parse_attrs(parser)
+        _t1701 = _t1702
     else
-        _t1177 = nothing
+        _t1701 = nothing
     end
-    attrs601 = _t1177
+    attrs1037 = _t1701
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1179 = Proto.MonoidDef(monoid=monoid598, name=relation_id599, body=abstraction_with_arity600[1], attrs=(!isnothing(attrs601) ? attrs601 : Proto.Attribute[]), value_arity=abstraction_with_arity600[2])
-    return _t1179
+    _t1703 = Proto.MonoidDef(monoid=monoid1034, name=relation_id1035, body=abstraction_with_arity1036[1], attrs=(!isnothing(attrs1037) ? attrs1037 : Proto.Attribute[]), value_arity=abstraction_with_arity1036[2])
+    result1039 = _t1703
+    record_span!(parser, span_start1038)
+    return result1039
 end
 
 function parse_monoid(parser::ParserState)::Proto.Monoid
+    span_start1045 = span_start(parser)
     if match_lookahead_literal(parser, "(", 0)
         if match_lookahead_literal(parser, "sum", 1)
-            _t1181 = 3
+            _t1705 = 3
         else
             if match_lookahead_literal(parser, "or", 1)
-                _t1182 = 0
+                _t1706 = 0
             else
                 if match_lookahead_literal(parser, "min", 1)
-                    _t1183 = 1
+                    _t1707 = 1
                 else
                     if match_lookahead_literal(parser, "max", 1)
-                        _t1184 = 2
+                        _t1708 = 2
                     else
-                        _t1184 = -1
+                        _t1708 = -1
                     end
-                    _t1183 = _t1184
+                    _t1707 = _t1708
                 end
-                _t1182 = _t1183
+                _t1706 = _t1707
             end
-            _t1181 = _t1182
+            _t1705 = _t1706
         end
-        _t1180 = _t1181
+        _t1704 = _t1705
     else
-        _t1180 = -1
+        _t1704 = -1
     end
-    prediction602 = _t1180
-    if prediction602 == 3
-        _t1186 = parse_sum_monoid(parser)
-        sum_monoid606 = _t1186
-        _t1187 = Proto.Monoid(value=OneOf(:sum_monoid, sum_monoid606))
-        _t1185 = _t1187
+    prediction1040 = _t1704
+    if prediction1040 == 3
+        _t1710 = parse_sum_monoid(parser)
+        sum_monoid1044 = _t1710
+        _t1711 = Proto.Monoid(value=OneOf(:sum_monoid, sum_monoid1044))
+        _t1709 = _t1711
     else
-        if prediction602 == 2
-            _t1189 = parse_max_monoid(parser)
-            max_monoid605 = _t1189
-            _t1190 = Proto.Monoid(value=OneOf(:max_monoid, max_monoid605))
-            _t1188 = _t1190
+        if prediction1040 == 2
+            _t1713 = parse_max_monoid(parser)
+            max_monoid1043 = _t1713
+            _t1714 = Proto.Monoid(value=OneOf(:max_monoid, max_monoid1043))
+            _t1712 = _t1714
         else
-            if prediction602 == 1
-                _t1192 = parse_min_monoid(parser)
-                min_monoid604 = _t1192
-                _t1193 = Proto.Monoid(value=OneOf(:min_monoid, min_monoid604))
-                _t1191 = _t1193
+            if prediction1040 == 1
+                _t1716 = parse_min_monoid(parser)
+                min_monoid1042 = _t1716
+                _t1717 = Proto.Monoid(value=OneOf(:min_monoid, min_monoid1042))
+                _t1715 = _t1717
             else
-                if prediction602 == 0
-                    _t1195 = parse_or_monoid(parser)
-                    or_monoid603 = _t1195
-                    _t1196 = Proto.Monoid(value=OneOf(:or_monoid, or_monoid603))
-                    _t1194 = _t1196
+                if prediction1040 == 0
+                    _t1719 = parse_or_monoid(parser)
+                    or_monoid1041 = _t1719
+                    _t1720 = Proto.Monoid(value=OneOf(:or_monoid, or_monoid1041))
+                    _t1718 = _t1720
                 else
                     throw(ParseError("Unexpected token in monoid" * ": " * string(lookahead(parser, 0))))
                 end
-                _t1191 = _t1194
+                _t1715 = _t1718
             end
-            _t1188 = _t1191
+            _t1712 = _t1715
         end
-        _t1185 = _t1188
+        _t1709 = _t1712
     end
-    return _t1185
+    result1046 = _t1709
+    record_span!(parser, span_start1045)
+    return result1046
 end
 
 function parse_or_monoid(parser::ParserState)::Proto.OrMonoid
+    span_start1047 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "or")
     consume_literal!(parser, ")")
-    _t1197 = Proto.OrMonoid()
-    return _t1197
+    _t1721 = Proto.OrMonoid()
+    result1048 = _t1721
+    record_span!(parser, span_start1047)
+    return result1048
 end
 
 function parse_min_monoid(parser::ParserState)::Proto.MinMonoid
+    span_start1050 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "min")
-    _t1198 = parse_type(parser)
-    type607 = _t1198
+    push_path!(parser, 1)
+    _t1722 = parse_type(parser)
+    type1049 = _t1722
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1199 = Proto.MinMonoid(var"#type"=type607)
-    return _t1199
+    _t1723 = Proto.MinMonoid(var"#type"=type1049)
+    result1051 = _t1723
+    record_span!(parser, span_start1050)
+    return result1051
 end
 
 function parse_max_monoid(parser::ParserState)::Proto.MaxMonoid
+    span_start1053 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "max")
-    _t1200 = parse_type(parser)
-    type608 = _t1200
+    push_path!(parser, 1)
+    _t1724 = parse_type(parser)
+    type1052 = _t1724
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1201 = Proto.MaxMonoid(var"#type"=type608)
-    return _t1201
+    _t1725 = Proto.MaxMonoid(var"#type"=type1052)
+    result1054 = _t1725
+    record_span!(parser, span_start1053)
+    return result1054
 end
 
 function parse_sum_monoid(parser::ParserState)::Proto.SumMonoid
+    span_start1056 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "sum")
-    _t1202 = parse_type(parser)
-    type609 = _t1202
+    push_path!(parser, 1)
+    _t1726 = parse_type(parser)
+    type1055 = _t1726
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1203 = Proto.SumMonoid(var"#type"=type609)
-    return _t1203
+    _t1727 = Proto.SumMonoid(var"#type"=type1055)
+    result1057 = _t1727
+    record_span!(parser, span_start1056)
+    return result1057
 end
 
 function parse_monus_def(parser::ParserState)::Proto.MonusDef
+    span_start1062 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "monus")
-    _t1204 = parse_monoid(parser)
-    monoid610 = _t1204
-    _t1205 = parse_relation_id(parser)
-    relation_id611 = _t1205
-    _t1206 = parse_abstraction_with_arity(parser)
-    abstraction_with_arity612 = _t1206
+    push_path!(parser, 1)
+    _t1728 = parse_monoid(parser)
+    monoid1058 = _t1728
+    pop_path!(parser)
+    push_path!(parser, 2)
+    _t1729 = parse_relation_id(parser)
+    relation_id1059 = _t1729
+    pop_path!(parser)
+    _t1730 = parse_abstraction_with_arity(parser)
+    abstraction_with_arity1060 = _t1730
+    push_path!(parser, 4)
     if match_lookahead_literal(parser, "(", 0)
-        _t1208 = parse_attrs(parser)
-        _t1207 = _t1208
+        _t1732 = parse_attrs(parser)
+        _t1731 = _t1732
     else
-        _t1207 = nothing
+        _t1731 = nothing
     end
-    attrs613 = _t1207
+    attrs1061 = _t1731
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1209 = Proto.MonusDef(monoid=monoid610, name=relation_id611, body=abstraction_with_arity612[1], attrs=(!isnothing(attrs613) ? attrs613 : Proto.Attribute[]), value_arity=abstraction_with_arity612[2])
-    return _t1209
+    _t1733 = Proto.MonusDef(monoid=monoid1058, name=relation_id1059, body=abstraction_with_arity1060[1], attrs=(!isnothing(attrs1061) ? attrs1061 : Proto.Attribute[]), value_arity=abstraction_with_arity1060[2])
+    result1063 = _t1733
+    record_span!(parser, span_start1062)
+    return result1063
 end
 
 function parse_constraint(parser::ParserState)::Proto.Constraint
+    span_start1068 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "functional_dependency")
-    _t1210 = parse_relation_id(parser)
-    relation_id614 = _t1210
-    _t1211 = parse_abstraction(parser)
-    abstraction615 = _t1211
-    _t1212 = parse_functional_dependency_keys(parser)
-    functional_dependency_keys616 = _t1212
-    _t1213 = parse_functional_dependency_values(parser)
-    functional_dependency_values617 = _t1213
+    push_path!(parser, 2)
+    _t1734 = parse_relation_id(parser)
+    relation_id1064 = _t1734
+    pop_path!(parser)
+    _t1735 = parse_abstraction(parser)
+    abstraction1065 = _t1735
+    _t1736 = parse_functional_dependency_keys(parser)
+    functional_dependency_keys1066 = _t1736
+    _t1737 = parse_functional_dependency_values(parser)
+    functional_dependency_values1067 = _t1737
     consume_literal!(parser, ")")
-    _t1214 = Proto.FunctionalDependency(guard=abstraction615, keys=functional_dependency_keys616, values=functional_dependency_values617)
-    _t1215 = Proto.Constraint(constraint_type=OneOf(:functional_dependency, _t1214), name=relation_id614)
-    return _t1215
+    _t1738 = Proto.FunctionalDependency(guard=abstraction1065, keys=functional_dependency_keys1066, values=functional_dependency_values1067)
+    _t1739 = Proto.Constraint(constraint_type=OneOf(:functional_dependency, _t1738), name=relation_id1064)
+    result1069 = _t1739
+    record_span!(parser, span_start1068)
+    return result1069
 end
 
 function parse_functional_dependency_keys(parser::ParserState)::Vector{Proto.Var}
+    span_start1074 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "keys")
-    xs618 = Proto.Var[]
-    cond619 = match_lookahead_terminal(parser, "SYMBOL", 0)
-    while cond619
-        _t1216 = parse_var(parser)
-        item620 = _t1216
-        push!(xs618, item620)
-        cond619 = match_lookahead_terminal(parser, "SYMBOL", 0)
+    xs1070 = Proto.Var[]
+    cond1071 = match_lookahead_terminal(parser, "SYMBOL", 0)
+    while cond1071
+        _t1740 = parse_var(parser)
+        item1072 = _t1740
+        push!(xs1070, item1072)
+        cond1071 = match_lookahead_terminal(parser, "SYMBOL", 0)
     end
-    vars621 = xs618
+    vars1073 = xs1070
     consume_literal!(parser, ")")
-    return vars621
+    result1075 = vars1073
+    record_span!(parser, span_start1074)
+    return result1075
 end
 
 function parse_functional_dependency_values(parser::ParserState)::Vector{Proto.Var}
+    span_start1080 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "values")
-    xs622 = Proto.Var[]
-    cond623 = match_lookahead_terminal(parser, "SYMBOL", 0)
-    while cond623
-        _t1217 = parse_var(parser)
-        item624 = _t1217
-        push!(xs622, item624)
-        cond623 = match_lookahead_terminal(parser, "SYMBOL", 0)
+    xs1076 = Proto.Var[]
+    cond1077 = match_lookahead_terminal(parser, "SYMBOL", 0)
+    while cond1077
+        _t1741 = parse_var(parser)
+        item1078 = _t1741
+        push!(xs1076, item1078)
+        cond1077 = match_lookahead_terminal(parser, "SYMBOL", 0)
     end
-    vars625 = xs622
+    vars1079 = xs1076
     consume_literal!(parser, ")")
-    return vars625
+    result1081 = vars1079
+    record_span!(parser, span_start1080)
+    return result1081
 end
 
 function parse_data(parser::ParserState)::Proto.Data
+    span_start1086 = span_start(parser)
     if match_lookahead_literal(parser, "(", 0)
         if match_lookahead_literal(parser, "rel_edb", 1)
-            _t1219 = 0
+            _t1743 = 0
         else
             if match_lookahead_literal(parser, "csv_data", 1)
-                _t1220 = 2
+                _t1744 = 2
             else
                 if match_lookahead_literal(parser, "betree_relation", 1)
-                    _t1221 = 1
+                    _t1745 = 1
                 else
-                    _t1221 = -1
+                    _t1745 = -1
                 end
-                _t1220 = _t1221
+                _t1744 = _t1745
             end
-            _t1219 = _t1220
+            _t1743 = _t1744
         end
-        _t1218 = _t1219
+        _t1742 = _t1743
     else
-        _t1218 = -1
+        _t1742 = -1
     end
-    prediction626 = _t1218
-    if prediction626 == 2
-        _t1223 = parse_csv_data(parser)
-        csv_data629 = _t1223
-        _t1224 = Proto.Data(data_type=OneOf(:csv_data, csv_data629))
-        _t1222 = _t1224
+    prediction1082 = _t1742
+    if prediction1082 == 2
+        _t1747 = parse_csv_data(parser)
+        csv_data1085 = _t1747
+        _t1748 = Proto.Data(data_type=OneOf(:csv_data, csv_data1085))
+        _t1746 = _t1748
     else
-        if prediction626 == 1
-            _t1226 = parse_betree_relation(parser)
-            betree_relation628 = _t1226
-            _t1227 = Proto.Data(data_type=OneOf(:betree_relation, betree_relation628))
-            _t1225 = _t1227
+        if prediction1082 == 1
+            _t1750 = parse_betree_relation(parser)
+            betree_relation1084 = _t1750
+            _t1751 = Proto.Data(data_type=OneOf(:betree_relation, betree_relation1084))
+            _t1749 = _t1751
         else
-            if prediction626 == 0
-                _t1229 = parse_rel_edb(parser)
-                rel_edb627 = _t1229
-                _t1230 = Proto.Data(data_type=OneOf(:rel_edb, rel_edb627))
-                _t1228 = _t1230
+            if prediction1082 == 0
+                _t1753 = parse_rel_edb(parser)
+                rel_edb1083 = _t1753
+                _t1754 = Proto.Data(data_type=OneOf(:rel_edb, rel_edb1083))
+                _t1752 = _t1754
             else
                 throw(ParseError("Unexpected token in data" * ": " * string(lookahead(parser, 0))))
             end
-            _t1225 = _t1228
+            _t1749 = _t1752
         end
-        _t1222 = _t1225
+        _t1746 = _t1749
     end
-    return _t1222
+    result1087 = _t1746
+    record_span!(parser, span_start1086)
+    return result1087
 end
 
 function parse_rel_edb(parser::ParserState)::Proto.RelEDB
+    span_start1091 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "rel_edb")
-    _t1231 = parse_relation_id(parser)
-    relation_id630 = _t1231
-    _t1232 = parse_rel_edb_path(parser)
-    rel_edb_path631 = _t1232
-    _t1233 = parse_rel_edb_types(parser)
-    rel_edb_types632 = _t1233
+    push_path!(parser, 1)
+    _t1755 = parse_relation_id(parser)
+    relation_id1088 = _t1755
+    pop_path!(parser)
+    push_path!(parser, 2)
+    _t1756 = parse_rel_edb_path(parser)
+    rel_edb_path1089 = _t1756
+    pop_path!(parser)
+    push_path!(parser, 3)
+    _t1757 = parse_rel_edb_types(parser)
+    rel_edb_types1090 = _t1757
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1234 = Proto.RelEDB(target_id=relation_id630, path=rel_edb_path631, types=rel_edb_types632)
-    return _t1234
+    _t1758 = Proto.RelEDB(target_id=relation_id1088, path=rel_edb_path1089, types=rel_edb_types1090)
+    result1092 = _t1758
+    record_span!(parser, span_start1091)
+    return result1092
 end
 
 function parse_rel_edb_path(parser::ParserState)::Vector{String}
+    span_start1097 = span_start(parser)
     consume_literal!(parser, "[")
-    xs633 = String[]
-    cond634 = match_lookahead_terminal(parser, "STRING", 0)
-    while cond634
-        item635 = consume_terminal!(parser, "STRING")
-        push!(xs633, item635)
-        cond634 = match_lookahead_terminal(parser, "STRING", 0)
+    xs1093 = String[]
+    cond1094 = match_lookahead_terminal(parser, "STRING", 0)
+    while cond1094
+        item1095 = consume_terminal!(parser, "STRING")
+        push!(xs1093, item1095)
+        cond1094 = match_lookahead_terminal(parser, "STRING", 0)
     end
-    strings636 = xs633
+    strings1096 = xs1093
     consume_literal!(parser, "]")
-    return strings636
+    result1098 = strings1096
+    record_span!(parser, span_start1097)
+    return result1098
 end
 
 function parse_rel_edb_types(parser::ParserState)::Vector{Proto.var"#Type"}
+    span_start1103 = span_start(parser)
     consume_literal!(parser, "[")
-    xs637 = Proto.var"#Type"[]
-    cond638 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "BOOLEAN", 0)) || match_lookahead_literal(parser, "DATE", 0)) || match_lookahead_literal(parser, "DATETIME", 0)) || match_lookahead_literal(parser, "FLOAT", 0)) || match_lookahead_literal(parser, "INT", 0)) || match_lookahead_literal(parser, "INT128", 0)) || match_lookahead_literal(parser, "MISSING", 0)) || match_lookahead_literal(parser, "STRING", 0)) || match_lookahead_literal(parser, "UINT128", 0)) || match_lookahead_literal(parser, "UNKNOWN", 0))
-    while cond638
-        _t1235 = parse_type(parser)
-        item639 = _t1235
-        push!(xs637, item639)
-        cond638 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "BOOLEAN", 0)) || match_lookahead_literal(parser, "DATE", 0)) || match_lookahead_literal(parser, "DATETIME", 0)) || match_lookahead_literal(parser, "FLOAT", 0)) || match_lookahead_literal(parser, "INT", 0)) || match_lookahead_literal(parser, "INT128", 0)) || match_lookahead_literal(parser, "MISSING", 0)) || match_lookahead_literal(parser, "STRING", 0)) || match_lookahead_literal(parser, "UINT128", 0)) || match_lookahead_literal(parser, "UNKNOWN", 0))
+    xs1099 = Proto.var"#Type"[]
+    cond1100 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "BOOLEAN", 0)) || match_lookahead_literal(parser, "DATE", 0)) || match_lookahead_literal(parser, "DATETIME", 0)) || match_lookahead_literal(parser, "FLOAT", 0)) || match_lookahead_literal(parser, "INT", 0)) || match_lookahead_literal(parser, "INT128", 0)) || match_lookahead_literal(parser, "MISSING", 0)) || match_lookahead_literal(parser, "STRING", 0)) || match_lookahead_literal(parser, "UINT128", 0)) || match_lookahead_literal(parser, "UNKNOWN", 0))
+    while cond1100
+        _t1759 = parse_type(parser)
+        item1101 = _t1759
+        push!(xs1099, item1101)
+        cond1100 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "BOOLEAN", 0)) || match_lookahead_literal(parser, "DATE", 0)) || match_lookahead_literal(parser, "DATETIME", 0)) || match_lookahead_literal(parser, "FLOAT", 0)) || match_lookahead_literal(parser, "INT", 0)) || match_lookahead_literal(parser, "INT128", 0)) || match_lookahead_literal(parser, "MISSING", 0)) || match_lookahead_literal(parser, "STRING", 0)) || match_lookahead_literal(parser, "UINT128", 0)) || match_lookahead_literal(parser, "UNKNOWN", 0))
     end
-    types640 = xs637
+    types1102 = xs1099
     consume_literal!(parser, "]")
-    return types640
+    result1104 = types1102
+    record_span!(parser, span_start1103)
+    return result1104
 end
 
 function parse_betree_relation(parser::ParserState)::Proto.BeTreeRelation
+    span_start1107 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "betree_relation")
-    _t1236 = parse_relation_id(parser)
-    relation_id641 = _t1236
-    _t1237 = parse_betree_info(parser)
-    betree_info642 = _t1237
+    push_path!(parser, 1)
+    _t1760 = parse_relation_id(parser)
+    relation_id1105 = _t1760
+    pop_path!(parser)
+    push_path!(parser, 2)
+    _t1761 = parse_betree_info(parser)
+    betree_info1106 = _t1761
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1238 = Proto.BeTreeRelation(name=relation_id641, relation_info=betree_info642)
-    return _t1238
+    _t1762 = Proto.BeTreeRelation(name=relation_id1105, relation_info=betree_info1106)
+    result1108 = _t1762
+    record_span!(parser, span_start1107)
+    return result1108
 end
 
 function parse_betree_info(parser::ParserState)::Proto.BeTreeInfo
+    span_start1112 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "betree_info")
-    _t1239 = parse_betree_info_key_types(parser)
-    betree_info_key_types643 = _t1239
-    _t1240 = parse_betree_info_value_types(parser)
-    betree_info_value_types644 = _t1240
-    _t1241 = parse_config_dict(parser)
-    config_dict645 = _t1241
+    _t1763 = parse_betree_info_key_types(parser)
+    betree_info_key_types1109 = _t1763
+    _t1764 = parse_betree_info_value_types(parser)
+    betree_info_value_types1110 = _t1764
+    _t1765 = parse_config_dict(parser)
+    config_dict1111 = _t1765
     consume_literal!(parser, ")")
-    _t1242 = construct_betree_info(parser, betree_info_key_types643, betree_info_value_types644, config_dict645)
-    return _t1242
+    _t1766 = construct_betree_info(parser, betree_info_key_types1109, betree_info_value_types1110, config_dict1111)
+    result1113 = _t1766
+    record_span!(parser, span_start1112)
+    return result1113
 end
 
 function parse_betree_info_key_types(parser::ParserState)::Vector{Proto.var"#Type"}
+    span_start1118 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "key_types")
-    xs646 = Proto.var"#Type"[]
-    cond647 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "BOOLEAN", 0)) || match_lookahead_literal(parser, "DATE", 0)) || match_lookahead_literal(parser, "DATETIME", 0)) || match_lookahead_literal(parser, "FLOAT", 0)) || match_lookahead_literal(parser, "INT", 0)) || match_lookahead_literal(parser, "INT128", 0)) || match_lookahead_literal(parser, "MISSING", 0)) || match_lookahead_literal(parser, "STRING", 0)) || match_lookahead_literal(parser, "UINT128", 0)) || match_lookahead_literal(parser, "UNKNOWN", 0))
-    while cond647
-        _t1243 = parse_type(parser)
-        item648 = _t1243
-        push!(xs646, item648)
-        cond647 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "BOOLEAN", 0)) || match_lookahead_literal(parser, "DATE", 0)) || match_lookahead_literal(parser, "DATETIME", 0)) || match_lookahead_literal(parser, "FLOAT", 0)) || match_lookahead_literal(parser, "INT", 0)) || match_lookahead_literal(parser, "INT128", 0)) || match_lookahead_literal(parser, "MISSING", 0)) || match_lookahead_literal(parser, "STRING", 0)) || match_lookahead_literal(parser, "UINT128", 0)) || match_lookahead_literal(parser, "UNKNOWN", 0))
+    xs1114 = Proto.var"#Type"[]
+    cond1115 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "BOOLEAN", 0)) || match_lookahead_literal(parser, "DATE", 0)) || match_lookahead_literal(parser, "DATETIME", 0)) || match_lookahead_literal(parser, "FLOAT", 0)) || match_lookahead_literal(parser, "INT", 0)) || match_lookahead_literal(parser, "INT128", 0)) || match_lookahead_literal(parser, "MISSING", 0)) || match_lookahead_literal(parser, "STRING", 0)) || match_lookahead_literal(parser, "UINT128", 0)) || match_lookahead_literal(parser, "UNKNOWN", 0))
+    while cond1115
+        _t1767 = parse_type(parser)
+        item1116 = _t1767
+        push!(xs1114, item1116)
+        cond1115 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "BOOLEAN", 0)) || match_lookahead_literal(parser, "DATE", 0)) || match_lookahead_literal(parser, "DATETIME", 0)) || match_lookahead_literal(parser, "FLOAT", 0)) || match_lookahead_literal(parser, "INT", 0)) || match_lookahead_literal(parser, "INT128", 0)) || match_lookahead_literal(parser, "MISSING", 0)) || match_lookahead_literal(parser, "STRING", 0)) || match_lookahead_literal(parser, "UINT128", 0)) || match_lookahead_literal(parser, "UNKNOWN", 0))
     end
-    types649 = xs646
+    types1117 = xs1114
     consume_literal!(parser, ")")
-    return types649
+    result1119 = types1117
+    record_span!(parser, span_start1118)
+    return result1119
 end
 
 function parse_betree_info_value_types(parser::ParserState)::Vector{Proto.var"#Type"}
+    span_start1124 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "value_types")
-    xs650 = Proto.var"#Type"[]
-    cond651 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "BOOLEAN", 0)) || match_lookahead_literal(parser, "DATE", 0)) || match_lookahead_literal(parser, "DATETIME", 0)) || match_lookahead_literal(parser, "FLOAT", 0)) || match_lookahead_literal(parser, "INT", 0)) || match_lookahead_literal(parser, "INT128", 0)) || match_lookahead_literal(parser, "MISSING", 0)) || match_lookahead_literal(parser, "STRING", 0)) || match_lookahead_literal(parser, "UINT128", 0)) || match_lookahead_literal(parser, "UNKNOWN", 0))
-    while cond651
-        _t1244 = parse_type(parser)
-        item652 = _t1244
-        push!(xs650, item652)
-        cond651 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "BOOLEAN", 0)) || match_lookahead_literal(parser, "DATE", 0)) || match_lookahead_literal(parser, "DATETIME", 0)) || match_lookahead_literal(parser, "FLOAT", 0)) || match_lookahead_literal(parser, "INT", 0)) || match_lookahead_literal(parser, "INT128", 0)) || match_lookahead_literal(parser, "MISSING", 0)) || match_lookahead_literal(parser, "STRING", 0)) || match_lookahead_literal(parser, "UINT128", 0)) || match_lookahead_literal(parser, "UNKNOWN", 0))
+    xs1120 = Proto.var"#Type"[]
+    cond1121 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "BOOLEAN", 0)) || match_lookahead_literal(parser, "DATE", 0)) || match_lookahead_literal(parser, "DATETIME", 0)) || match_lookahead_literal(parser, "FLOAT", 0)) || match_lookahead_literal(parser, "INT", 0)) || match_lookahead_literal(parser, "INT128", 0)) || match_lookahead_literal(parser, "MISSING", 0)) || match_lookahead_literal(parser, "STRING", 0)) || match_lookahead_literal(parser, "UINT128", 0)) || match_lookahead_literal(parser, "UNKNOWN", 0))
+    while cond1121
+        _t1768 = parse_type(parser)
+        item1122 = _t1768
+        push!(xs1120, item1122)
+        cond1121 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "BOOLEAN", 0)) || match_lookahead_literal(parser, "DATE", 0)) || match_lookahead_literal(parser, "DATETIME", 0)) || match_lookahead_literal(parser, "FLOAT", 0)) || match_lookahead_literal(parser, "INT", 0)) || match_lookahead_literal(parser, "INT128", 0)) || match_lookahead_literal(parser, "MISSING", 0)) || match_lookahead_literal(parser, "STRING", 0)) || match_lookahead_literal(parser, "UINT128", 0)) || match_lookahead_literal(parser, "UNKNOWN", 0))
     end
-    types653 = xs650
+    types1123 = xs1120
     consume_literal!(parser, ")")
-    return types653
+    result1125 = types1123
+    record_span!(parser, span_start1124)
+    return result1125
 end
 
 function parse_csv_data(parser::ParserState)::Proto.CSVData
+    span_start1130 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "csv_data")
-    _t1245 = parse_csvlocator(parser)
-    csvlocator654 = _t1245
-    _t1246 = parse_csv_config(parser)
-    csv_config655 = _t1246
-    _t1247 = parse_csv_columns(parser)
-    csv_columns656 = _t1247
-    _t1248 = parse_csv_asof(parser)
-    csv_asof657 = _t1248
+    push_path!(parser, 1)
+    _t1769 = parse_csvlocator(parser)
+    csvlocator1126 = _t1769
+    pop_path!(parser)
+    push_path!(parser, 2)
+    _t1770 = parse_csv_config(parser)
+    csv_config1127 = _t1770
+    pop_path!(parser)
+    push_path!(parser, 3)
+    _t1771 = parse_csv_columns(parser)
+    csv_columns1128 = _t1771
+    pop_path!(parser)
+    push_path!(parser, 4)
+    _t1772 = parse_csv_asof(parser)
+    csv_asof1129 = _t1772
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1249 = Proto.CSVData(locator=csvlocator654, config=csv_config655, columns=csv_columns656, asof=csv_asof657)
-    return _t1249
+    _t1773 = Proto.CSVData(locator=csvlocator1126, config=csv_config1127, columns=csv_columns1128, asof=csv_asof1129)
+    result1131 = _t1773
+    record_span!(parser, span_start1130)
+    return result1131
 end
 
 function parse_csvlocator(parser::ParserState)::Proto.CSVLocator
+    span_start1134 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "csv_locator")
+    push_path!(parser, 1)
     if (match_lookahead_literal(parser, "(", 0) && match_lookahead_literal(parser, "paths", 1))
-        _t1251 = parse_csv_locator_paths(parser)
-        _t1250 = _t1251
+        _t1775 = parse_csv_locator_paths(parser)
+        _t1774 = _t1775
     else
-        _t1250 = nothing
+        _t1774 = nothing
     end
-    csv_locator_paths658 = _t1250
+    csv_locator_paths1132 = _t1774
+    pop_path!(parser)
+    push_path!(parser, 2)
     if match_lookahead_literal(parser, "(", 0)
-        _t1253 = parse_csv_locator_inline_data(parser)
-        _t1252 = _t1253
+        _t1777 = parse_csv_locator_inline_data(parser)
+        _t1776 = _t1777
     else
-        _t1252 = nothing
+        _t1776 = nothing
     end
-    csv_locator_inline_data659 = _t1252
+    csv_locator_inline_data1133 = _t1776
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1254 = Proto.CSVLocator(paths=(!isnothing(csv_locator_paths658) ? csv_locator_paths658 : String[]), inline_data=Vector{UInt8}((!isnothing(csv_locator_inline_data659) ? csv_locator_inline_data659 : "")))
-    return _t1254
+    _t1778 = Proto.CSVLocator(paths=(!isnothing(csv_locator_paths1132) ? csv_locator_paths1132 : String[]), inline_data=Vector{UInt8}((!isnothing(csv_locator_inline_data1133) ? csv_locator_inline_data1133 : "")))
+    result1135 = _t1778
+    record_span!(parser, span_start1134)
+    return result1135
 end
 
 function parse_csv_locator_paths(parser::ParserState)::Vector{String}
+    span_start1140 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "paths")
-    xs660 = String[]
-    cond661 = match_lookahead_terminal(parser, "STRING", 0)
-    while cond661
-        item662 = consume_terminal!(parser, "STRING")
-        push!(xs660, item662)
-        cond661 = match_lookahead_terminal(parser, "STRING", 0)
+    xs1136 = String[]
+    cond1137 = match_lookahead_terminal(parser, "STRING", 0)
+    while cond1137
+        item1138 = consume_terminal!(parser, "STRING")
+        push!(xs1136, item1138)
+        cond1137 = match_lookahead_terminal(parser, "STRING", 0)
     end
-    strings663 = xs660
+    strings1139 = xs1136
     consume_literal!(parser, ")")
-    return strings663
+    result1141 = strings1139
+    record_span!(parser, span_start1140)
+    return result1141
 end
 
 function parse_csv_locator_inline_data(parser::ParserState)::String
+    span_start1143 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "inline_data")
-    string664 = consume_terminal!(parser, "STRING")
+    string1142 = consume_terminal!(parser, "STRING")
     consume_literal!(parser, ")")
-    return string664
+    result1144 = string1142
+    record_span!(parser, span_start1143)
+    return result1144
 end
 
 function parse_csv_config(parser::ParserState)::Proto.CSVConfig
+    span_start1146 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "csv_config")
-    _t1255 = parse_config_dict(parser)
-    config_dict665 = _t1255
+    _t1779 = parse_config_dict(parser)
+    config_dict1145 = _t1779
     consume_literal!(parser, ")")
-    _t1256 = construct_csv_config(parser, config_dict665)
-    return _t1256
+    _t1780 = construct_csv_config(parser, config_dict1145)
+    result1147 = _t1780
+    record_span!(parser, span_start1146)
+    return result1147
 end
 
 function parse_csv_columns(parser::ParserState)::Vector{Proto.CSVColumn}
+    span_start1152 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "columns")
-    xs666 = Proto.CSVColumn[]
-    cond667 = match_lookahead_literal(parser, "(", 0)
-    while cond667
-        _t1257 = parse_csv_column(parser)
-        item668 = _t1257
-        push!(xs666, item668)
-        cond667 = match_lookahead_literal(parser, "(", 0)
+    xs1148 = Proto.CSVColumn[]
+    cond1149 = match_lookahead_literal(parser, "(", 0)
+    while cond1149
+        _t1781 = parse_csv_column(parser)
+        item1150 = _t1781
+        push!(xs1148, item1150)
+        cond1149 = match_lookahead_literal(parser, "(", 0)
     end
-    csv_columns669 = xs666
+    csv_columns1151 = xs1148
     consume_literal!(parser, ")")
-    return csv_columns669
+    result1153 = csv_columns1151
+    record_span!(parser, span_start1152)
+    return result1153
 end
 
 function parse_csv_column(parser::ParserState)::Proto.CSVColumn
+    span_start1164 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "column")
-    string670 = consume_terminal!(parser, "STRING")
-    _t1258 = parse_relation_id(parser)
-    relation_id671 = _t1258
+    push_path!(parser, 1)
+    string1154 = consume_terminal!(parser, "STRING")
+    pop_path!(parser)
+    push_path!(parser, 2)
+    _t1782 = parse_relation_id(parser)
+    relation_id1155 = _t1782
+    pop_path!(parser)
     consume_literal!(parser, "[")
-    xs672 = Proto.var"#Type"[]
-    cond673 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "BOOLEAN", 0)) || match_lookahead_literal(parser, "DATE", 0)) || match_lookahead_literal(parser, "DATETIME", 0)) || match_lookahead_literal(parser, "FLOAT", 0)) || match_lookahead_literal(parser, "INT", 0)) || match_lookahead_literal(parser, "INT128", 0)) || match_lookahead_literal(parser, "MISSING", 0)) || match_lookahead_literal(parser, "STRING", 0)) || match_lookahead_literal(parser, "UINT128", 0)) || match_lookahead_literal(parser, "UNKNOWN", 0))
-    while cond673
-        _t1259 = parse_type(parser)
-        item674 = _t1259
-        push!(xs672, item674)
-        cond673 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "BOOLEAN", 0)) || match_lookahead_literal(parser, "DATE", 0)) || match_lookahead_literal(parser, "DATETIME", 0)) || match_lookahead_literal(parser, "FLOAT", 0)) || match_lookahead_literal(parser, "INT", 0)) || match_lookahead_literal(parser, "INT128", 0)) || match_lookahead_literal(parser, "MISSING", 0)) || match_lookahead_literal(parser, "STRING", 0)) || match_lookahead_literal(parser, "UINT128", 0)) || match_lookahead_literal(parser, "UNKNOWN", 0))
+    push_path!(parser, 3)
+    xs1160 = Proto.var"#Type"[]
+    cond1161 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "BOOLEAN", 0)) || match_lookahead_literal(parser, "DATE", 0)) || match_lookahead_literal(parser, "DATETIME", 0)) || match_lookahead_literal(parser, "FLOAT", 0)) || match_lookahead_literal(parser, "INT", 0)) || match_lookahead_literal(parser, "INT128", 0)) || match_lookahead_literal(parser, "MISSING", 0)) || match_lookahead_literal(parser, "STRING", 0)) || match_lookahead_literal(parser, "UINT128", 0)) || match_lookahead_literal(parser, "UNKNOWN", 0))
+    idx1162 = 0
+    while cond1161
+        push_path!(parser, idx1162)
+        _t1783 = parse_type(parser)
+        item1163 = _t1783
+        pop_path!(parser)
+        push!(xs1160, item1163)
+        idx1162 = (idx1162 + 1)
+        cond1161 = ((((((((((match_lookahead_literal(parser, "(", 0) || match_lookahead_literal(parser, "BOOLEAN", 0)) || match_lookahead_literal(parser, "DATE", 0)) || match_lookahead_literal(parser, "DATETIME", 0)) || match_lookahead_literal(parser, "FLOAT", 0)) || match_lookahead_literal(parser, "INT", 0)) || match_lookahead_literal(parser, "INT128", 0)) || match_lookahead_literal(parser, "MISSING", 0)) || match_lookahead_literal(parser, "STRING", 0)) || match_lookahead_literal(parser, "UINT128", 0)) || match_lookahead_literal(parser, "UNKNOWN", 0))
     end
-    types675 = xs672
+    types1159 = xs1160
+    pop_path!(parser)
     consume_literal!(parser, "]")
     consume_literal!(parser, ")")
-    _t1260 = Proto.CSVColumn(column_name=string670, target_id=relation_id671, types=types675)
-    return _t1260
+    _t1784 = Proto.CSVColumn(column_name=string1154, target_id=relation_id1155, types=types1159)
+    result1165 = _t1784
+    record_span!(parser, span_start1164)
+    return result1165
 end
 
 function parse_csv_asof(parser::ParserState)::String
+    span_start1167 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "asof")
-    string676 = consume_terminal!(parser, "STRING")
+    string1166 = consume_terminal!(parser, "STRING")
     consume_literal!(parser, ")")
-    return string676
+    result1168 = string1166
+    record_span!(parser, span_start1167)
+    return result1168
 end
 
 function parse_undefine(parser::ParserState)::Proto.Undefine
+    span_start1170 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "undefine")
-    _t1261 = parse_fragment_id(parser)
-    fragment_id677 = _t1261
+    push_path!(parser, 1)
+    _t1785 = parse_fragment_id(parser)
+    fragment_id1169 = _t1785
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1262 = Proto.Undefine(fragment_id=fragment_id677)
-    return _t1262
+    _t1786 = Proto.Undefine(fragment_id=fragment_id1169)
+    result1171 = _t1786
+    record_span!(parser, span_start1170)
+    return result1171
 end
 
 function parse_context(parser::ParserState)::Proto.Context
+    span_start1180 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "context")
-    xs678 = Proto.RelationId[]
-    cond679 = (match_lookahead_literal(parser, ":", 0) || match_lookahead_terminal(parser, "UINT128", 0))
-    while cond679
-        _t1263 = parse_relation_id(parser)
-        item680 = _t1263
-        push!(xs678, item680)
-        cond679 = (match_lookahead_literal(parser, ":", 0) || match_lookahead_terminal(parser, "UINT128", 0))
+    push_path!(parser, 1)
+    xs1176 = Proto.RelationId[]
+    cond1177 = (match_lookahead_literal(parser, ":", 0) || match_lookahead_terminal(parser, "UINT128", 0))
+    idx1178 = 0
+    while cond1177
+        push_path!(parser, idx1178)
+        _t1787 = parse_relation_id(parser)
+        item1179 = _t1787
+        pop_path!(parser)
+        push!(xs1176, item1179)
+        idx1178 = (idx1178 + 1)
+        cond1177 = (match_lookahead_literal(parser, ":", 0) || match_lookahead_terminal(parser, "UINT128", 0))
     end
-    relation_ids681 = xs678
+    relation_ids1175 = xs1176
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1264 = Proto.Context(relations=relation_ids681)
-    return _t1264
+    _t1788 = Proto.Context(relations=relation_ids1175)
+    result1181 = _t1788
+    record_span!(parser, span_start1180)
+    return result1181
 end
 
 function parse_snapshot(parser::ParserState)::Proto.Snapshot
+    span_start1184 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "snapshot")
-    _t1265 = parse_rel_edb_path(parser)
-    rel_edb_path682 = _t1265
-    _t1266 = parse_relation_id(parser)
-    relation_id683 = _t1266
+    push_path!(parser, 1)
+    _t1789 = parse_rel_edb_path(parser)
+    rel_edb_path1182 = _t1789
+    pop_path!(parser)
+    push_path!(parser, 2)
+    _t1790 = parse_relation_id(parser)
+    relation_id1183 = _t1790
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1267 = Proto.Snapshot(destination_path=rel_edb_path682, source_relation=relation_id683)
-    return _t1267
+    _t1791 = Proto.Snapshot(destination_path=rel_edb_path1182, source_relation=relation_id1183)
+    result1185 = _t1791
+    record_span!(parser, span_start1184)
+    return result1185
 end
 
 function parse_epoch_reads(parser::ParserState)::Vector{Proto.Read}
+    span_start1190 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "reads")
-    xs684 = Proto.Read[]
-    cond685 = match_lookahead_literal(parser, "(", 0)
-    while cond685
-        _t1268 = parse_read(parser)
-        item686 = _t1268
-        push!(xs684, item686)
-        cond685 = match_lookahead_literal(parser, "(", 0)
+    xs1186 = Proto.Read[]
+    cond1187 = match_lookahead_literal(parser, "(", 0)
+    while cond1187
+        _t1792 = parse_read(parser)
+        item1188 = _t1792
+        push!(xs1186, item1188)
+        cond1187 = match_lookahead_literal(parser, "(", 0)
     end
-    reads687 = xs684
+    reads1189 = xs1186
     consume_literal!(parser, ")")
-    return reads687
+    result1191 = reads1189
+    record_span!(parser, span_start1190)
+    return result1191
 end
 
 function parse_read(parser::ParserState)::Proto.Read
+    span_start1198 = span_start(parser)
     if match_lookahead_literal(parser, "(", 0)
         if match_lookahead_literal(parser, "what_if", 1)
-            _t1270 = 2
+            _t1794 = 2
         else
             if match_lookahead_literal(parser, "output", 1)
-                _t1271 = 1
+                _t1795 = 1
             else
                 if match_lookahead_literal(parser, "export", 1)
-                    _t1272 = 4
+                    _t1796 = 4
                 else
                     if match_lookahead_literal(parser, "demand", 1)
-                        _t1273 = 0
+                        _t1797 = 0
                     else
                         if match_lookahead_literal(parser, "abort", 1)
-                            _t1274 = 3
+                            _t1798 = 3
                         else
-                            _t1274 = -1
+                            _t1798 = -1
                         end
-                        _t1273 = _t1274
+                        _t1797 = _t1798
                     end
-                    _t1272 = _t1273
+                    _t1796 = _t1797
                 end
-                _t1271 = _t1272
+                _t1795 = _t1796
             end
-            _t1270 = _t1271
+            _t1794 = _t1795
         end
-        _t1269 = _t1270
+        _t1793 = _t1794
     else
-        _t1269 = -1
+        _t1793 = -1
     end
-    prediction688 = _t1269
-    if prediction688 == 4
-        _t1276 = parse_export(parser)
-        export693 = _t1276
-        _t1277 = Proto.Read(read_type=OneOf(:var"#export", export693))
-        _t1275 = _t1277
+    prediction1192 = _t1793
+    if prediction1192 == 4
+        _t1800 = parse_export(parser)
+        export1197 = _t1800
+        _t1801 = Proto.Read(read_type=OneOf(:var"#export", export1197))
+        _t1799 = _t1801
     else
-        if prediction688 == 3
-            _t1279 = parse_abort(parser)
-            abort692 = _t1279
-            _t1280 = Proto.Read(read_type=OneOf(:abort, abort692))
-            _t1278 = _t1280
+        if prediction1192 == 3
+            _t1803 = parse_abort(parser)
+            abort1196 = _t1803
+            _t1804 = Proto.Read(read_type=OneOf(:abort, abort1196))
+            _t1802 = _t1804
         else
-            if prediction688 == 2
-                _t1282 = parse_what_if(parser)
-                what_if691 = _t1282
-                _t1283 = Proto.Read(read_type=OneOf(:what_if, what_if691))
-                _t1281 = _t1283
+            if prediction1192 == 2
+                _t1806 = parse_what_if(parser)
+                what_if1195 = _t1806
+                _t1807 = Proto.Read(read_type=OneOf(:what_if, what_if1195))
+                _t1805 = _t1807
             else
-                if prediction688 == 1
-                    _t1285 = parse_output(parser)
-                    output690 = _t1285
-                    _t1286 = Proto.Read(read_type=OneOf(:output, output690))
-                    _t1284 = _t1286
+                if prediction1192 == 1
+                    _t1809 = parse_output(parser)
+                    output1194 = _t1809
+                    _t1810 = Proto.Read(read_type=OneOf(:output, output1194))
+                    _t1808 = _t1810
                 else
-                    if prediction688 == 0
-                        _t1288 = parse_demand(parser)
-                        demand689 = _t1288
-                        _t1289 = Proto.Read(read_type=OneOf(:demand, demand689))
-                        _t1287 = _t1289
+                    if prediction1192 == 0
+                        _t1812 = parse_demand(parser)
+                        demand1193 = _t1812
+                        _t1813 = Proto.Read(read_type=OneOf(:demand, demand1193))
+                        _t1811 = _t1813
                     else
                         throw(ParseError("Unexpected token in read" * ": " * string(lookahead(parser, 0))))
                     end
-                    _t1284 = _t1287
+                    _t1808 = _t1811
                 end
-                _t1281 = _t1284
+                _t1805 = _t1808
             end
-            _t1278 = _t1281
+            _t1802 = _t1805
         end
-        _t1275 = _t1278
+        _t1799 = _t1802
     end
-    return _t1275
+    result1199 = _t1799
+    record_span!(parser, span_start1198)
+    return result1199
 end
 
 function parse_demand(parser::ParserState)::Proto.Demand
+    span_start1201 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "demand")
-    _t1290 = parse_relation_id(parser)
-    relation_id694 = _t1290
+    push_path!(parser, 1)
+    _t1814 = parse_relation_id(parser)
+    relation_id1200 = _t1814
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1291 = Proto.Demand(relation_id=relation_id694)
-    return _t1291
+    _t1815 = Proto.Demand(relation_id=relation_id1200)
+    result1202 = _t1815
+    record_span!(parser, span_start1201)
+    return result1202
 end
 
 function parse_output(parser::ParserState)::Proto.Output
+    span_start1205 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "output")
-    _t1292 = parse_name(parser)
-    name695 = _t1292
-    _t1293 = parse_relation_id(parser)
-    relation_id696 = _t1293
+    push_path!(parser, 1)
+    _t1816 = parse_name(parser)
+    name1203 = _t1816
+    pop_path!(parser)
+    push_path!(parser, 2)
+    _t1817 = parse_relation_id(parser)
+    relation_id1204 = _t1817
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1294 = Proto.Output(name=name695, relation_id=relation_id696)
-    return _t1294
+    _t1818 = Proto.Output(name=name1203, relation_id=relation_id1204)
+    result1206 = _t1818
+    record_span!(parser, span_start1205)
+    return result1206
 end
 
 function parse_what_if(parser::ParserState)::Proto.WhatIf
+    span_start1209 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "what_if")
-    _t1295 = parse_name(parser)
-    name697 = _t1295
-    _t1296 = parse_epoch(parser)
-    epoch698 = _t1296
+    push_path!(parser, 1)
+    _t1819 = parse_name(parser)
+    name1207 = _t1819
+    pop_path!(parser)
+    push_path!(parser, 2)
+    _t1820 = parse_epoch(parser)
+    epoch1208 = _t1820
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1297 = Proto.WhatIf(branch=name697, epoch=epoch698)
-    return _t1297
+    _t1821 = Proto.WhatIf(branch=name1207, epoch=epoch1208)
+    result1210 = _t1821
+    record_span!(parser, span_start1209)
+    return result1210
 end
 
 function parse_abort(parser::ParserState)::Proto.Abort
+    span_start1213 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "abort")
+    push_path!(parser, 1)
     if (match_lookahead_literal(parser, ":", 0) && match_lookahead_terminal(parser, "SYMBOL", 1))
-        _t1299 = parse_name(parser)
-        _t1298 = _t1299
+        _t1823 = parse_name(parser)
+        _t1822 = _t1823
     else
-        _t1298 = nothing
+        _t1822 = nothing
     end
-    name699 = _t1298
-    _t1300 = parse_relation_id(parser)
-    relation_id700 = _t1300
+    name1211 = _t1822
+    pop_path!(parser)
+    push_path!(parser, 2)
+    _t1824 = parse_relation_id(parser)
+    relation_id1212 = _t1824
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1301 = Proto.Abort(name=(!isnothing(name699) ? name699 : "abort"), relation_id=relation_id700)
-    return _t1301
+    _t1825 = Proto.Abort(name=(!isnothing(name1211) ? name1211 : "abort"), relation_id=relation_id1212)
+    result1214 = _t1825
+    record_span!(parser, span_start1213)
+    return result1214
 end
 
 function parse_export(parser::ParserState)::Proto.Export
+    span_start1216 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "export")
-    _t1302 = parse_export_csv_config(parser)
-    export_csv_config701 = _t1302
+    push_path!(parser, 1)
+    _t1826 = parse_export_csv_config(parser)
+    export_csv_config1215 = _t1826
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1303 = Proto.Export(export_config=OneOf(:csv_config, export_csv_config701))
-    return _t1303
+    _t1827 = Proto.Export(export_config=OneOf(:csv_config, export_csv_config1215))
+    result1217 = _t1827
+    record_span!(parser, span_start1216)
+    return result1217
 end
 
 function parse_export_csv_config(parser::ParserState)::Proto.ExportCSVConfig
+    span_start1221 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "export_csv_config")
-    _t1304 = parse_export_csv_path(parser)
-    export_csv_path702 = _t1304
-    _t1305 = parse_export_csv_columns(parser)
-    export_csv_columns703 = _t1305
-    _t1306 = parse_config_dict(parser)
-    config_dict704 = _t1306
+    _t1828 = parse_export_csv_path(parser)
+    export_csv_path1218 = _t1828
+    _t1829 = parse_export_csv_columns(parser)
+    export_csv_columns1219 = _t1829
+    _t1830 = parse_config_dict(parser)
+    config_dict1220 = _t1830
     consume_literal!(parser, ")")
-    _t1307 = export_csv_config(parser, export_csv_path702, export_csv_columns703, config_dict704)
-    return _t1307
+    _t1831 = export_csv_config(parser, export_csv_path1218, export_csv_columns1219, config_dict1220)
+    result1222 = _t1831
+    record_span!(parser, span_start1221)
+    return result1222
 end
 
 function parse_export_csv_path(parser::ParserState)::String
+    span_start1224 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "path")
-    string705 = consume_terminal!(parser, "STRING")
+    string1223 = consume_terminal!(parser, "STRING")
     consume_literal!(parser, ")")
-    return string705
+    result1225 = string1223
+    record_span!(parser, span_start1224)
+    return result1225
 end
 
 function parse_export_csv_columns(parser::ParserState)::Vector{Proto.ExportCSVColumn}
+    span_start1230 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "columns")
-    xs706 = Proto.ExportCSVColumn[]
-    cond707 = match_lookahead_literal(parser, "(", 0)
-    while cond707
-        _t1308 = parse_export_csv_column(parser)
-        item708 = _t1308
-        push!(xs706, item708)
-        cond707 = match_lookahead_literal(parser, "(", 0)
+    xs1226 = Proto.ExportCSVColumn[]
+    cond1227 = match_lookahead_literal(parser, "(", 0)
+    while cond1227
+        _t1832 = parse_export_csv_column(parser)
+        item1228 = _t1832
+        push!(xs1226, item1228)
+        cond1227 = match_lookahead_literal(parser, "(", 0)
     end
-    export_csv_columns709 = xs706
+    export_csv_columns1229 = xs1226
     consume_literal!(parser, ")")
-    return export_csv_columns709
+    result1231 = export_csv_columns1229
+    record_span!(parser, span_start1230)
+    return result1231
 end
 
 function parse_export_csv_column(parser::ParserState)::Proto.ExportCSVColumn
+    span_start1234 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "column")
-    string710 = consume_terminal!(parser, "STRING")
-    _t1309 = parse_relation_id(parser)
-    relation_id711 = _t1309
+    push_path!(parser, 1)
+    string1232 = consume_terminal!(parser, "STRING")
+    pop_path!(parser)
+    push_path!(parser, 2)
+    _t1833 = parse_relation_id(parser)
+    relation_id1233 = _t1833
+    pop_path!(parser)
     consume_literal!(parser, ")")
-    _t1310 = Proto.ExportCSVColumn(column_name=string710, column_data=relation_id711)
-    return _t1310
+    _t1834 = Proto.ExportCSVColumn(column_name=string1232, column_data=relation_id1233)
+    result1235 = _t1834
+    record_span!(parser, span_start1234)
+    return result1235
 end
 
 
 function parse(input::String)
     lexer = Lexer(input)
-    parser = ParserState(lexer.tokens)
+    parser = ParserState(lexer.tokens, input)
     result = parse_transaction(parser)
     # Check for unconsumed tokens (except EOF)
     if parser.pos <= length(parser.tokens)
@@ -3203,14 +3858,14 @@ function parse(input::String)
             throw(ParseError("Unexpected token at end of input: $remaining_token"))
         end
     end
-    return result
+    return result, parser.provenance
 end
 
 # Export main parse function and error type
 export parse, ParseError
 # Export scanner functions for testing
 export scan_string, scan_int, scan_float, scan_int128, scan_uint128, scan_decimal
-# Export Lexer for testing
-export Lexer
+# Export Lexer and provenance types for testing
+export Lexer, Location, Span
 
 end # module Parser

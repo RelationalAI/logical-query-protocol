@@ -17,7 +17,7 @@ from .utils import (
 def test_validate_proto_lqp_inputs(input_file):
     with open(input_file) as f:
         content = f.read()
-    txn_proto = parse(content)
+    txn_proto, _ = parse(content)
     validate_proto(txn_proto)
 
 
@@ -29,7 +29,7 @@ def test_valid_proto_validator_files(validator_file):
     file_path = VALIDATOR_DIR / validator_file
     with open(file_path) as f:
         content = f.read()
-    txn_proto = parse(content)
+    txn_proto, _ = parse(content)
     validate_proto(txn_proto)
 
 
@@ -45,7 +45,7 @@ def test_proto_validator_failure_files(validator_file):
         return
     with open(file_path) as f:
         content = f.read()
-    txn_proto = parse(content)
+    txn_proto, _ = parse(content)
     with pytest.raises(ValidationError) as exc_info:
         validate_proto(txn_proto)
     error_message = str(exc_info.value)

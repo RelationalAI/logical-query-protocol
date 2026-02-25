@@ -6,7 +6,7 @@
         (writes)
         (reads)))
     """
-    result = Parser.parse(input)
+    result, _provenance = Parser.parse(input)
     @test !isnothing(result)
     @test result isa Proto.Transaction
     @test length(result.epochs) == 1
@@ -138,7 +138,7 @@ end
         bin_path = joinpath(bin_files_dir, replace(lqp_file, ".lqp" => ".bin"))
 
         content = read(lqp_path, String)
-        result = Parser.parse(content)
+        result, _ = Parser.parse(content)
         @test !isnothing(result)
         @test result isa Proto.Transaction
 

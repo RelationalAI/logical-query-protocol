@@ -20,7 +20,7 @@ func TestBasicParsing(t *testing.T) {
     (writes)
     (reads)))
 `
-	result, err := lqp.Parse(input)
+	result, _, err := lqp.Parse(input)
 	if err != nil {
 		t.Fatalf("Failed to parse basic transaction: %v", err)
 	}
@@ -54,7 +54,7 @@ func TestParseLQPFiles(t *testing.T) {
 				t.Fatalf("Failed to read LQP file %s: %v", entry.Name(), err)
 			}
 
-			result, err := lqp.Parse(string(content))
+			result, _, err := lqp.Parse(string(content))
 			if err != nil {
 				t.Fatalf("Failed to parse LQP file %s: %v", entry.Name(), err)
 			}
