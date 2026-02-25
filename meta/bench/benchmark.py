@@ -20,11 +20,13 @@ def detect_version():
     """Detect which lqp version is installed based on available modules."""
     try:
         from lqp.gen.parser import parse  # noqa: F401
+
         return "new"
     except ImportError:
         pass
     try:
         from lqp.parser import parse_lqp  # noqa: F401
+
         return "old"
     except ImportError:
         pass
@@ -64,7 +66,14 @@ def bench_old(lqp_files, iterations):
             _ = ir_to_proto(ir_node)
         except Exception:
             print(f"skip {name} (parse failed)", file=sys.stderr)
-            results.append({"file": name, "parse_ms": None, "parse_emit_ms": None, "pretty_ms": None})
+            results.append(
+                {
+                    "file": name,
+                    "parse_ms": None,
+                    "parse_emit_ms": None,
+                    "pretty_ms": None,
+                }
+            )
             continue
 
         def do_parse():
@@ -83,12 +92,14 @@ def bench_old(lqp_files, iterations):
         warmup(do_pretty)
         pretty_time = timeit.timeit(do_pretty, number=iterations)
 
-        results.append({
-            "file": name,
-            "parse_ms": parse_time / iterations * 1000,
-            "parse_emit_ms": parse_emit_time / iterations * 1000,
-            "pretty_ms": pretty_time / iterations * 1000,
-        })
+        results.append(
+            {
+                "file": name,
+                "parse_ms": parse_time / iterations * 1000,
+                "parse_emit_ms": parse_emit_time / iterations * 1000,
+                "pretty_ms": pretty_time / iterations * 1000,
+            }
+        )
 
     return results
 
@@ -122,11 +133,13 @@ def bench_new(lqp_files, iterations):
         warmup(do_pretty)
         pretty_time = timeit.timeit(do_pretty, number=iterations)
 
-        results.append({
-            "file": name,
-            "parse_ms": parse_time / iterations * 1000,
-            "pretty_ms": pretty_time / iterations * 1000,
-        })
+        results.append(
+            {
+                "file": name,
+                "parse_ms": parse_time / iterations * 1000,
+                "pretty_ms": pretty_time / iterations * 1000,
+            }
+        )
 
     return results
 

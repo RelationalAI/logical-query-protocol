@@ -26,9 +26,13 @@ def run_benchmark(label: str, with_pkg: str, iterations: int):
         "BENCH_ITERATIONS": str(iterations),
     }
     cmd = [
-        "uv", "run", "--no-project",
-        "--with", with_pkg,
-        "python", str(BENCHMARK_SCRIPT),
+        "uv",
+        "run",
+        "--no-project",
+        "--with",
+        with_pkg,
+        "python",
+        str(BENCHMARK_SCRIPT),
     ]
     print(f"Running {label} benchmarks...", file=sys.stderr)
     result = subprocess.run(cmd, capture_output=True, text=True, env=env)
@@ -84,8 +88,10 @@ def print_parse_table(old_by_file, new_by_file, all_files):
         print(f"{f:<25} {po:>9.3f}ms {pe:>10.3f}ms {pn:>9.3f}ms {fmt_speedup(pe, pn)}")
 
     print("-" * len(hdr))
-    print(f"{'TOTAL':<25} {total_old:>9.3f}ms {total_old_emit:>10.3f}ms"
-          f" {total_new:>9.3f}ms {fmt_speedup(total_old_emit, total_new)}")
+    print(
+        f"{'TOTAL':<25} {total_old:>9.3f}ms {total_old_emit:>10.3f}ms"
+        f" {total_new:>9.3f}ms {fmt_speedup(total_old_emit, total_new)}"
+    )
 
     print()
     print("old parse   = Lark parse to IR")
@@ -125,7 +131,9 @@ def print_pretty_table(old_by_file, new_by_file, all_files):
         print(f"{f:<25} {pro:>9.3f}ms {prn:>9.3f}ms {fmt_speedup(pro, prn)}")
 
     print("-" * len(hdr))
-    print(f"{'TOTAL':<25} {total_old:>9.3f}ms {total_new:>9.3f}ms {fmt_speedup(total_old, total_new)}")
+    print(
+        f"{'TOTAL':<25} {total_old:>9.3f}ms {total_new:>9.3f}ms {fmt_speedup(total_old, total_new)}"
+    )
 
     print()
     print("old = IR to text")
