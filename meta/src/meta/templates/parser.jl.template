@@ -190,11 +190,10 @@ mutable struct ParserState
     _current_fragment_id::Union{{Nothing,Vector{{UInt8}}}}
     _relation_id_to_name::Dict{{Tuple{{UInt64,UInt64}},String}}
     provenance::Dict{{Tuple{{Vararg{{Int}}}},Span}}
-    _path::Vector{{Int}}
     _line_starts::Vector{{Int}}
 
     function ParserState(tokens::Vector{{Token}}, input_str::String)
-        return new(tokens, 1, Dict(), nothing, Dict(), Dict(), Int[], _compute_line_starts(input_str))
+        return new(tokens, 1, Dict(), nothing, Dict(), Dict(), _compute_line_starts(input_str))
     end
 end
 
@@ -203,16 +202,6 @@ function _make_location(parser::ParserState, offset::Int)::Location
     line_idx = searchsortedlast(parser._line_starts, offset)
     col = offset - parser._line_starts[line_idx]
     return Location(line_idx, col + 1, offset)
-end
-
-function push_path!(parser::ParserState, n::Int)
-    push!(parser._path, n)
-    return nothing
-end
-
-function pop_path!(parser::ParserState)
-    pop!(parser._path)
-    return nothing
 end
 
 function span_start(parser::ParserState)::Int
@@ -226,7 +215,7 @@ function record_span!(parser::ParserState, start_offset::Int)
         end_offset = start_offset
     end
     s = Span(_make_location(parser, start_offset), _make_location(parser, end_offset))
-    parser.provenance[Tuple(parser._path)] = s
+    parser.provenance[tuple()] = s
     return nothing
 end
 

@@ -80,56 +80,6 @@ def test_provenance_root_spans_file(input_file):
 
 
 @pytest.mark.parametrize("input_file", get_lqp_input_files())
-def test_provenance_epoch_text(input_file):
-    """Each epoch span should start with '(epoch'."""
-    with open(input_file) as f:
-        content = f.read()
-
-    _, provenance = parse(content)
-
-    idx = 0
-    while True:
-        key = (1, idx)
-        if key not in provenance:
-            break
-        text = extract_text(content, provenance[key])
-        assert text.startswith("(epoch"), (
-            f"{os.path.basename(input_file)}: epoch {idx} span text starts with "
-            f"{text[:30]!r}, expected '(epoch'"
-        )
-        idx += 1
-
-    # Every file should have at least one epoch
-    assert idx > 0, f"No epoch provenance entries for {input_file}"
-
-
-@pytest.mark.parametrize("input_file", get_lqp_input_files())
-def test_provenance_writes_text(input_file):
-    """Each writes span within an epoch should start with '(' (a write action)."""
-    with open(input_file) as f:
-        content = f.read()
-
-    _, provenance = parse(content)
-
-    epoch_idx = 0
-    while (1, epoch_idx) in provenance:
-        # writes = field 1 within Epoch, each write is (1, epoch_idx, 1, write_idx)
-        write_idx = 0
-        while True:
-            key = (1, epoch_idx, 1, write_idx)
-            if key not in provenance:
-                break
-            span = provenance[key]
-            text = extract_text(content, span)
-            assert text.startswith("("), (
-                f"{os.path.basename(input_file)}: write {write_idx} in epoch "
-                f"{epoch_idx} span text starts with {text[:30]!r}"
-            )
-            write_idx += 1
-        epoch_idx += 1
-
-
-@pytest.mark.parametrize("input_file", get_lqp_input_files())
 def test_provenance_offsets_match_line_column(input_file):
     """Verify that offset is consistent with line and column."""
     with open(input_file) as f:

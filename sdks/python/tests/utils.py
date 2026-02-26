@@ -30,11 +30,6 @@ def get_bin_input_files():
     return get_all_files(BIN_SNAPSHOTS_DIR, ".bin")
 
 
-def strip_source_location(error_str: str) -> str:
-    """Remove 'at <file>:<line>:<col>' from an error string."""
-    return re.sub(r"\s+at\s+\S+:\d+:\d+", "", error_str)
-
-
 def extract_expected_error(file_path) -> str | None:
     """Extract the expected error from a ;; ERROR: comment in the file."""
     with open(file_path) as f:

@@ -1,7 +1,6 @@
 package test
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -106,42 +105,6 @@ func TestFileProvenanceRootSpansTransaction(t *testing.T) {
 			if !strings.HasPrefix(text, "(transaction") {
 				t.Errorf("%s: root span text starts with %q, expected '(transaction'",
 					name, text[:min(30, len(text))])
-			}
-		})
-	}
-}
-
-func TestFileProvenanceEpochText(t *testing.T) {
-	for _, file := range lqpFiles(t) {
-		name := filepath.Base(file)
-		t.Run(name, func(t *testing.T) {
-			data, err := os.ReadFile(file)
-			if err != nil {
-				t.Fatalf("Failed to read %s: %v", name, err)
-			}
-			content := string(data)
-
-			_, provenance, err := lqp.Parse(content)
-			if err != nil {
-				t.Fatalf("Failed to parse %s: %v", name, err)
-			}
-
-			epochCount := 0
-			for idx := 0; ; idx++ {
-				key := fmt.Sprintf("1,%d", idx)
-				span, ok := provenance[key]
-				if !ok {
-					break
-				}
-				text := content[span.Start.Offset:span.Stop.Offset]
-				if !strings.HasPrefix(text, "(epoch") {
-					t.Errorf("%s: epoch %d span text starts with %q, expected '(epoch'",
-						name, idx, text[:min(30, len(text))])
-				}
-				epochCount++
-			}
-			if epochCount == 0 {
-				t.Errorf("%s: no epoch provenance entries", name)
 			}
 		})
 	}

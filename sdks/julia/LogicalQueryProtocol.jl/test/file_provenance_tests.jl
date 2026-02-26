@@ -43,30 +43,6 @@ end
     end
 end
 
-@testitem "File provenance - epoch text" setup=[ParserSetup] begin
-    test_files_dir = joinpath(@__DIR__, "lqp")
-    lqp_files = sort(filter(f -> endswith(f, ".lqp"), readdir(test_files_dir)))
-
-    for lqp_file in lqp_files
-        lqp_path = joinpath(test_files_dir, lqp_file)
-        content = read(lqp_path, String)
-        _, provenance = Parser.parse(content)
-
-        epoch_count = 0
-        idx = 0
-        while true
-            key = (1, idx)
-            haskey(provenance, key) || break
-            span = provenance[key]
-            text = String(codeunits(content)[span.start.offset:span.stop.offset - 1])
-            @test startswith(text, "(epoch")
-            epoch_count += 1
-            idx += 1
-        end
-        @test epoch_count > 0
-    end
-end
-
 @testitem "File provenance - offsets match line and column" setup=[ParserSetup] begin
     test_files_dir = joinpath(@__DIR__, "lqp")
     lqp_files = sort(filter(f -> endswith(f, ".lqp"), readdir(test_files_dir)))

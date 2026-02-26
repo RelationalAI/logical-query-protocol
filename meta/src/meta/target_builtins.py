@@ -250,8 +250,6 @@ register_builtin("pp_dispatch", [T], VOID)
 register_builtin("get_at", [SequenceType(T), INT64], T)
 
 # === Provenance tracking ===
-register_builtin("push_path", [INT64], VOID)
-register_builtin("pop_path", [], VOID)
 register_builtin("span_start", [], INT64)
 register_builtin("record_span", [INT64], VOID)
 

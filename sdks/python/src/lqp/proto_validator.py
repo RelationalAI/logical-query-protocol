@@ -4,8 +4,9 @@ Validator for protobuf-based LQP messages.
 Operates on protobuf messages (transactions_pb2.Transaction).
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 from google.protobuf.descriptor import Descriptor, FieldDescriptor
 from google.protobuf.message import Message
@@ -183,52 +184,148 @@ def unwrap_data(data: logic_pb2.Data) -> Message | None:
     return getattr(data, which)
 
 
-# --- Base visitor ---
+# --- Identity-based provenance ---
+
+_Unwrapper = Callable[[Message], Message | None]
 
 # Wrapper types whose oneof should be unwrapped before visiting.
 # New proto wrapper types must be added here or they silently fall through to generic_visit.
-_WRAPPER_TYPES = {
-    "Declaration": unwrap_declaration,
-    "Instruction": unwrap_instruction,
-    "Formula": unwrap_formula,
-    "Construct": unwrap_construct,
-    "Write": unwrap_write,
-    "Read": unwrap_read,
-    "Constraint": unwrap_constraint,
-    "Data": unwrap_data,
+_WRAPPER_TYPES: dict[str, _Unwrapper] = {
+    "Declaration": cast(_Unwrapper, unwrap_declaration),
+    "Instruction": cast(_Unwrapper, unwrap_instruction),
+    "Formula": cast(_Unwrapper, unwrap_formula),
+    "Construct": cast(_Unwrapper, unwrap_construct),
+    "Write": cast(_Unwrapper, unwrap_write),
+    "Read": cast(_Unwrapper, unwrap_read),
+    "Constraint": cast(_Unwrapper, unwrap_constraint),
+    "Data": cast(_Unwrapper, unwrap_data),
 }
+
+
+class _NodeSpans:
+    """Identity-based provenance: maps id(node) -> span.
+
+    Keeps strong references to all nodes so their ids remain stable.
+    """
+
+    __slots__ = ("_spans", "_refs")
+
+    def __init__(self) -> None:
+        self._spans: dict[int, Any] = {}
+        self._refs: list[Message] = []
+
+    def record(self, node: Message, span: Any) -> None:
+        self._refs.append(node)
+        self._spans[id(node)] = span
+
+    def get(self, node_id: int) -> Any:
+        return self._spans.get(node_id)
+
+
+def _build_node_spans(
+    root: Message,
+    path_provenance: dict[tuple[int, ...], Any],
+) -> _NodeSpans:
+    """Convert path-based provenance to identity-based provenance."""
+    result = _NodeSpans()
+    _walk_node_spans(root, path_provenance, (), result)
+    return result
+
+
+def _walk_node_spans(
+    node: Message,
+    path_provenance: dict[tuple[int, ...], Any],
+    path: tuple[int, ...],
+    result: _NodeSpans,
+) -> None:
+    _record_best_span(node, path_provenance, path, result)
+
+    type_name = type(node).__name__
+    unwrapper = _WRAPPER_TYPES.get(type_name)
+    if unwrapper is not None:
+        inner = unwrapper(node)
+        if inner is not None:
+            descriptor: Descriptor = node.DESCRIPTOR  # type: ignore[assignment]
+            for field_desc in descriptor.fields:
+                if (
+                    node.HasField(field_desc.name)
+                    and getattr(node, field_desc.name) is inner
+                ):
+                    _walk_node_spans(
+                        inner,
+                        path_provenance,
+                        path + (field_desc.number,),
+                        result,
+                    )
+                    return
+        return
+
+    descriptor = node.DESCRIPTOR  # type: ignore[assignment]
+    for field_desc in descriptor.fields:
+        value = getattr(node, field_desc.name)
+        if field_desc.label == FieldDescriptor.LABEL_REPEATED:
+            for i, item in enumerate(value):
+                if isinstance(item, Message):
+                    _walk_node_spans(
+                        item,
+                        path_provenance,
+                        path + (field_desc.number, i),
+                        result,
+                    )
+        elif field_desc.message_type is not None and node.HasField(field_desc.name):
+            if isinstance(value, Message):
+                _walk_node_spans(
+                    value,
+                    path_provenance,
+                    path + (field_desc.number,),
+                    result,
+                )
+
+
+def _record_best_span(
+    node: Message,
+    path_provenance: dict[tuple[int, ...], Any],
+    path: tuple[int, ...],
+    result: _NodeSpans,
+) -> None:
+    """Record the best span for a node, trying current path then shorter prefixes."""
+    p = path
+    while True:
+        span = path_provenance.get(p)
+        if span is not None:
+            result.record(node, span)
+            return
+        if not p:
+            return
+        p = p[:-1]
+
+
+# --- Base visitor ---
 
 
 class ProtoVisitor:
     def __init__(
         self,
-        provenance: dict[tuple[int, ...], Any] | None = None,
+        provenance: _NodeSpans | None = None,
         filename: str | None = None,
     ):
         self.original_names: dict[tuple[int, int], str] = {}
         self._visit_cache: dict[str, Any] = {}
-        self._provenance = provenance or {}
+        self._provenance = provenance or _NodeSpans()
         self._filename = filename or ""
-        self._path: list[int] = []
 
     def get_original_name(self, rid: logic_pb2.RelationId) -> str:
         key = relation_id_key(rid)
         return self.original_names.get(key, relation_id_hex(rid))
 
-    def _location_str(self) -> str:
-        """Return ' at file:line:col' for the current path, or '' if unavailable."""
-        path = tuple(self._path)
-        # Try current path, then progressively shorter prefixes.
-        while len(path) >= 0:
-            span = self._provenance.get(path)
-            if span is not None:
-                loc = span.start
-                if self._filename:
-                    return f" at {self._filename}:{loc.line}:{loc.column}"
-                return f" at {loc.line}:{loc.column}"
-            if not path:
-                break
-            path = path[:-1]
+    def _location_str(self, node: Message) -> str:
+        """Return ' at file:line:col' for the given node, or '' if unavailable."""
+        span = self._provenance.get(id(node))
+        if span is not None:
+            loc = span.start
+            if self._filename:
+                return f" at {self._filename}:{loc.line}:{loc.column}"
+            return f" at {loc.line}:{loc.column}"
         return ""
 
     def _resolve_visitor(self, type_name: str):
@@ -244,22 +341,10 @@ class ProtoVisitor:
 
         type_name = type(node).__name__
 
-        # Unwrap oneof wrappers
         unwrapper = _WRAPPER_TYPES.get(type_name)
         if unwrapper is not None:
-            inner = unwrapper(node)  # type: ignore[arg-type]
+            inner = unwrapper(node)
             if inner is not None:
-                # Push the field number of the active oneof variant.
-                descriptor: Descriptor = node.DESCRIPTOR  # type: ignore[assignment]
-                for field_desc in descriptor.fields:
-                    if (
-                        node.HasField(field_desc.name)
-                        and getattr(node, field_desc.name) is inner
-                    ):
-                        self._path.append(field_desc.number)
-                        self.visit(inner, *args)
-                        self._path.pop()
-                        return
                 self.visit(inner, *args)
             return
 
@@ -270,18 +355,12 @@ class ProtoVisitor:
         for field_desc in descriptor.fields:
             value = getattr(node, field_desc.name)
             if field_desc.label == FieldDescriptor.LABEL_REPEATED:
-                for i, item in enumerate(value):
+                for item in value:
                     if isinstance(item, Message):
-                        self._path.append(field_desc.number)
-                        self._path.append(i)
                         self.visit(item, *args)
-                        self._path.pop()
-                        self._path.pop()
             elif field_desc.message_type is not None and node.HasField(field_desc.name):
                 if isinstance(value, Message):
-                    self._path.append(field_desc.number)
                     self.visit(value, *args)
-                    self._path.pop()
 
 
 # --- Validation visitors ---
@@ -297,13 +376,13 @@ class UnusedVariableVisitor(ProtoVisitor):
         if self.scopes:
             self.scopes[-1][0].add(var_name)
 
-    def _mark_var_used(self, var_name: str):
+    def _mark_var_used(self, var_name: str, node: Message):
         for declared, used in reversed(self.scopes):
             if var_name in declared:
                 used.add(var_name)
                 return
         raise ValidationError(
-            f"Undeclared variable used{self._location_str()}: '{var_name}'"
+            f"Undeclared variable used{self._location_str(node)}: '{var_name}'"
         )
 
     def visit_Abstraction(self, node: logic_pb2.Abstraction, *args: Any):
@@ -320,7 +399,7 @@ class UnusedVariableVisitor(ProtoVisitor):
                 raise ValidationError(f"Unused variable declared: '{var_name}'")
 
     def visit_Var(self, node: logic_pb2.Var, *args: Any):
-        self._mark_var_used(node.name)
+        self._mark_var_used(node.name, node)
 
     def visit_FunctionalDependency(
         self, node: logic_pb2.FunctionalDependency, *args: Any
@@ -339,7 +418,7 @@ class ShadowedVariableFinder(ProtoVisitor):
             name = binding.var.name
             if name in in_scope_names:
                 raise ValidationError(
-                    f"Shadowed variable{self._location_str()}: '{name}'"
+                    f"Shadowed variable{self._location_str(binding)}: '{name}'"
                 )
         new_scope = in_scope_names | {b.var.name for b in node.vars}
         self.visit(node.value, new_scope)
@@ -354,21 +433,21 @@ class DuplicateRelationIdFinder(ProtoVisitor):
         self.visit(txn)
 
     def visit_Def(self, node: logic_pb2.Def, *args: Any):
-        self._check_relation_id(node.name)
+        self._check_relation_id(node.name, node)
 
-    def _check_relation_id(self, rid: logic_pb2.RelationId):
+    def _check_relation_id(self, rid: logic_pb2.RelationId, node: Message):
         key = relation_id_key(rid)
         if key in self.seen_ids:
             seen_epoch, seen_frag = self.seen_ids[key]
             if self.curr_fragment != seen_frag:
                 original_name = self.get_original_name(rid)
                 raise ValidationError(
-                    f"Duplicate declaration across fragments{self._location_str()}: '{original_name}'"
+                    f"Duplicate declaration across fragments{self._location_str(node)}: '{original_name}'"
                 )
             elif self.curr_epoch == seen_epoch:
                 original_name = self.get_original_name(rid)
                 raise ValidationError(
-                    f"Duplicate declaration within fragment in epoch{self._location_str()}: '{original_name}'"
+                    f"Duplicate declaration within fragment in epoch{self._location_str(node)}: '{original_name}'"
                 )
         self.seen_ids[key] = (self.curr_epoch, self.curr_fragment)
 
@@ -381,13 +460,12 @@ class DuplicateRelationIdFinder(ProtoVisitor):
         self.generic_visit(node, *args)
 
     def visit_Algorithm(self, node: logic_pb2.Algorithm, *args: Any):
-        # `global` is a Python keyword, so we use getattr.
         for rid in getattr(node, "global"):
             key = relation_id_key(rid)
             if key in self.seen_ids:
                 original_name = self.get_original_name(rid)
                 raise ValidationError(
-                    f"Duplicate declaration{self._location_str()}: '{original_name}'"
+                    f"Duplicate declaration{self._location_str(rid)}: '{original_name}'"
                 )
             else:
                 self.seen_ids[key] = (self.curr_epoch, self.curr_fragment)
@@ -408,7 +486,7 @@ class DuplicateFragmentDefinitionFinder(ProtoVisitor):
         if frag_id in self.seen_ids:
             id_str = frag_id.decode("utf-8")
             raise ValidationError(
-                f"Duplicate fragment within an epoch{self._location_str()}: '{id_str}'"
+                f"Duplicate fragment within an epoch{self._location_str(node)}: '{id_str}'"
             )
         else:
             self.seen_ids.add(frag_id)
@@ -532,7 +610,7 @@ class AtomTypeChecker(ProtoVisitor):
         if atom_arity != relation_arity:
             original_name = self.get_original_name(node.name)
             raise ValidationError(
-                f"Incorrect arity for '{original_name}' atom{self._location_str()}: "
+                f"Incorrect arity for '{original_name}' atom{self._location_str(node)}: "
                 f"expected {relation_arity} term{'' if relation_arity == 1 else 's'}, got {atom_arity}"
             )
 
@@ -550,7 +628,7 @@ class AtomTypeChecker(ProtoVisitor):
                 original_name = self.get_original_name(node.name)
                 pretty_term = proto_term_str(term)
                 raise ValidationError(
-                    f"Incorrect type for '{original_name}' atom at index {i} ('{pretty_term}'){self._location_str()}: "
+                    f"Incorrect type for '{original_name}' atom at index {i} ('{pretty_term}'){self._location_str(node)}: "
                     f"expected {expected_type} term, got {term_type}"
                 )
 
@@ -566,7 +644,7 @@ class LoopyBadBreakFinder(ProtoVisitor):
                 brk = getattr(instr_wrapper, "break")
                 original_name = self.get_original_name(brk.name)
                 raise ValidationError(
-                    f"Break rule found outside of body{self._location_str()}: '{original_name}'"
+                    f"Break rule found outside of body{self._location_str(brk)}: '{original_name}'"
                 )
 
 
@@ -577,13 +655,10 @@ class LoopyBadGlobalFinder(ProtoVisitor):
         self.init: set[tuple[int, int]] = set()
         self.visit(txn)
 
-    # Instruction types that count as "init" declarations in Algorithm.body.
     _ALGORITHM_INIT_TYPES = {"Assign", "Upsert", "MonoidDef", "MonusDef"}
-    # Instruction types checked in Loop init and body, matching the IR validator.
     _LOOP_INSTR_TYPES = {"Break", "Assign", "Upsert"}
 
     def visit_Algorithm(self, node: logic_pb2.Algorithm, *args: Any):
-        # `global` is a Python keyword, so we use getattr.
         for rid in getattr(node, "global"):
             self.globals.add(relation_id_key(rid))
         for construct in node.body.constructs:
@@ -622,7 +697,7 @@ class LoopyBadGlobalFinder(ProtoVisitor):
                     if key in self.globals and key not in self.init:
                         original_name = self.get_original_name(actual.name)  # type: ignore[union-attr]
                         raise ValidationError(
-                            f"Global rule found in body{self._location_str()}: '{original_name}'"
+                            f"Global rule found in body{self._location_str(actual)}: '{original_name}'"
                         )
 
 
@@ -636,7 +711,7 @@ class LoopyUpdatesShouldBeAtoms(ProtoVisitor):
         which = formula.WhichOneof("formula_type")
         if which != "atom":
             raise ValidationError(
-                f"{instr_type_name}{self._location_str()} must have an Atom as its value"
+                f"{instr_type_name}{self._location_str(node)} must have an Atom as its value"
             )
 
     def visit_Upsert(self, node: logic_pb2.Upsert, *args: Any):
@@ -662,7 +737,7 @@ class CSVConfigChecker(ProtoVisitor):
         self.visit(txn)
 
     def visit_ExportCSVConfig(self, node: transactions_pb2.ExportCSVConfig, *args: Any):
-        loc = self._location_str()
+        loc = self._location_str(node)
         if node.HasField("syntax_delim") and len(node.syntax_delim) != 1:
             raise ValidationError(
                 f"CSV delimiter should be a single character{loc}, got '{node.syntax_delim}'"
@@ -720,12 +795,12 @@ class FDVarsChecker(ProtoVisitor):
         for var in node.keys:
             if var.name not in guard_var_names:
                 raise ValidationError(
-                    f"Key variable '{var.name}' not declared in guard{self._location_str()}"
+                    f"Key variable '{var.name}' not declared in guard{self._location_str(var)}"
                 )
         for var in node.values:
             if var.name not in guard_var_names:
                 raise ValidationError(
-                    f"Value variable '{var.name}' not declared in guard{self._location_str()}"
+                    f"Value variable '{var.name}' not declared in guard{self._location_str(var)}"
                 )
 
 
@@ -758,7 +833,7 @@ def validate_proto(
     """
     kwargs: dict[str, Any] = {}
     if provenance is not None:
-        kwargs["provenance"] = provenance
+        kwargs["provenance"] = _build_node_spans(txn, provenance)
     if filename is not None:
         kwargs["filename"] = filename
     for name, validator_cls in _VALIDATORS:

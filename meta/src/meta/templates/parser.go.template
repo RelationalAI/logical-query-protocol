@@ -330,7 +330,6 @@ type Parser struct {{
 	idToDebugInfo     map[string]map[relationIdKey]string
 	currentFragmentID []byte
 	Provenance        map[string]Span
-	path              []int
 	lineStarts        []int
 }}
 
@@ -342,7 +341,6 @@ func NewParser(tokens []Token, input string) *Parser {{
 		idToDebugInfo:     make(map[string]map[relationIdKey]string),
 		currentFragmentID: nil,
 		Provenance:        make(map[string]Span),
-		path:              nil,
 		lineStarts:        computeLineStarts(input),
 	}}
 }}
@@ -362,14 +360,6 @@ func (p *Parser) makeLocation(offset int) Location {{
 	return Location{{Line: lineIdx + 1, Column: col + 1, Offset: offset}}
 }}
 
-func (p *Parser) pushPath(n int) {{
-	p.path = append(p.path, n)
-}}
-
-func (p *Parser) popPath() {{
-	p.path = p.path[:len(p.path)-1]
-}}
-
 func (p *Parser) spanStart() int {{
 	return p.lookahead(0).StartPos
 }}
@@ -383,15 +373,7 @@ func (p *Parser) recordSpan(startOffset int) {{
 		Start: p.makeLocation(startOffset),
 		Stop:  p.makeLocation(endOffset),
 	}}
-	// Build comma-separated path key
-	key := ""
-	for i, v := range p.path {{
-		if i > 0 {{
-			key += ","
-		}}
-		key += fmt.Sprintf("%d", v)
-	}}
-	p.Provenance[key] = s
+	p.Provenance[""] = s
 }}
 
 func (p *Parser) lookahead(k int) Token {{

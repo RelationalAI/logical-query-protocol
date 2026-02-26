@@ -10,7 +10,6 @@ from .utils import (
     VALIDATOR_DIR,
     extract_expected_error,
     get_lqp_input_files,
-    strip_source_location,
 )
 
 
@@ -50,10 +49,8 @@ def test_proto_validator_failure_files(validator_file):
     with pytest.raises(ValidationError) as exc_info:
         validate_proto(txn_proto, provenance=provenance, filename=validator_file)
     error_message = str(exc_info.value)
-    stripped_expected = strip_source_location(expected_error)
-    stripped_actual = strip_source_location(error_message)
-    assert stripped_expected in stripped_actual, (
-        f"Expected '{stripped_expected}' in error message: '{error_message}'"
+    assert expected_error in error_message, (
+        f"Expected:\n  {expected_error}\nActual:\n  {error_message}"
     )
 
 

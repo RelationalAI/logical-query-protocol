@@ -90,7 +90,7 @@ from .grammar import (
     Terminal,
 )
 from .grammar_utils import is_epsilon, rhs_elements
-from .proto_ast import ProtoField, ProtoMessage
+from .proto_ast import ProtoMessage
 from .target import (
     Assign,
     BaseType,
@@ -101,8 +101,6 @@ from .target import (
     ListExpr,
     ListType,
     Lit,
-    NewMessage,
-    OneOf,
     ParseNonterminal,
     ParseNonterminalDef,
     Seq,
@@ -132,105 +130,6 @@ class AmbiguousGrammarError(Exception):
     """Raised when Option or Star cannot be distinguished from follow set."""
 
     pass
-
-
-def _proto_fields_by_name(
-    proto_messages: dict[tuple[str, str], ProtoMessage] | None,
-    module: str,
-    name: str,
-) -> dict[str, ProtoField]:
-    """Return a name->ProtoField map for a proto message, or {} if not found."""
-    if proto_messages is None:
-        return {}
-    proto_msg = proto_messages.get((module, name))
-    if proto_msg is None:
-        return {}
-    result: dict[str, ProtoField] = {}
-    for f in proto_msg.fields:
-        result[f.name] = f
-    for oneof in proto_msg.oneofs:
-        for f in oneof.fields:
-            result[f.name] = f
-    return result
-
-
-def _build_param_proto_fields(
-    action: Lambda,
-    proto_messages: dict[tuple[str, str], ProtoMessage] | None,
-) -> dict[int, ProtoField]:
-    """Map lambda parameter indices to protobuf ProtoField descriptors.
-
-    Inspects the semantic action's body. When it is a NewMessage, cross-references
-    field names with proto_messages to find proto fields.
-
-    As a fallback, when the action's return type is a known proto message,
-    matches parameter names to proto field names.
-
-    Returns dict mapping parameter index to ProtoField.
-    """
-    if proto_messages is None:
-        return {}
-    body = action.body
-    if isinstance(body, NewMessage):
-        fields_by_name = _proto_fields_by_name(proto_messages, body.module, body.name)
-        if not fields_by_name:
-            return {}
-        param_names = [p.name for p in action.params]
-        result: dict[int, ProtoField] = {}
-        for field_name, field_expr in body.fields:
-            pf = fields_by_name.get(field_name)
-            if pf is None:
-                continue
-            param_name = _extract_param_name(field_expr, param_names)
-            if param_name is not None and param_name in param_names:
-                param_idx = param_names.index(param_name)
-                result.setdefault(param_idx, pf)
-        return result
-    # Fallback: match parameter names against the return type's proto fields.
-    return _build_param_proto_fields_by_return_type(action, proto_messages)
-
-
-def _build_param_proto_fields_by_return_type(
-    action: Lambda,
-    proto_messages: dict[tuple[str, str], ProtoMessage] | None,
-) -> dict[int, ProtoField]:
-    """Fallback: match parameter names to proto fields via the return type."""
-    from .target import MessageType
-
-    if proto_messages is None:
-        return {}
-    rt = action.return_type
-    if not isinstance(rt, MessageType):
-        return {}
-    fields_by_name = _proto_fields_by_name(proto_messages, rt.module, rt.name)
-    if not fields_by_name:
-        return {}
-    result: dict[int, ProtoField] = {}
-    for i, param in enumerate(action.params):
-        pf = fields_by_name.get(param.name)
-        if pf is not None:
-            result[i] = pf
-    return result
-
-
-def _extract_param_name(expr: TargetExpr, param_names: list[str]) -> str | None:
-    """Extract the parameter name from a field expression.
-
-    Handles:
-    - Direct Var reference
-    - Call(OneOf(...), [Var(...)]) wrapper
-    - Call(Builtin(...), [Var(...), ...]) e.g. unwrap_option_or
-    """
-    from .target import Builtin
-
-    if isinstance(expr, Var) and expr.name in param_names:
-        return expr.name
-    if isinstance(expr, Call):
-        if isinstance(expr.func, OneOf) and expr.args:
-            return _extract_param_name(expr.args[0], param_names)
-        if isinstance(expr.func, Builtin) and expr.args:
-            return _extract_param_name(expr.args[0], param_names)
-    return None
 
 
 def generate_parse_functions(
@@ -544,15 +443,6 @@ def _generate_parse_rhs_ir(
                 return Seq([parse_expr, apply_lambda(action, [])])
             var_name = gensym(action.params[0].name)
             var = Var(var_name, rhs.target_type())
-            # Wrap with push_path when the action maps this param to a proto
-            # field (e.g., oneof dispatch: formula -> atom pushes the atom
-            # field number onto the provenance path).
-            if proto_messages is not None:
-                pf = _build_param_proto_fields(action, proto_messages).get(0)
-                if pf is not None:
-                    stmts = _wrap_with_path(pf.number, var, parse_expr)
-                    stmts.append(apply_lambda(action, [var]))
-                    return Seq(stmts)
             return Let(var, parse_expr, apply_lambda(action, [var]))
         return parse_expr
     elif isinstance(rhs, Option):
@@ -587,15 +477,6 @@ def _generate_parse_rhs_ir(
         raise NotImplementedError(f"Unsupported Rhs type: {type(rhs)}")
 
 
-def _wrap_with_path(field_num: int, var: Var, inner: TargetExpr) -> list[TargetExpr]:
-    """Return statements that push path, assign inner to var, then pop path."""
-    return [
-        Call(make_builtin("push_path"), [Lit(field_num)]),
-        Assign(var, inner),
-        Call(make_builtin("pop_path"), []),
-    ]
-
-
 def _generate_parse_rhs_ir_sequence(
     rhs: Sequence,
     grammar: Grammar,
@@ -606,11 +487,6 @@ def _generate_parse_rhs_ir_sequence(
 ) -> TargetExpr:
     if is_epsilon(rhs):
         return Lit(None)
-
-    # Compute param->proto field mapping for provenance
-    param_proto_fields: dict[int, ProtoField] = {}
-    if action is not None and proto_messages is not None:
-        param_proto_fields = _build_param_proto_fields(action, proto_messages)
 
     exprs = []
     arg_vars = []
@@ -639,25 +515,7 @@ def _generate_parse_rhs_ir_sequence(
                     )
                 var_name = gensym("arg")
             var = Var(var_name, elem.target_type())
-            pf = param_proto_fields.get(non_literal_count)
-            if pf is not None and pf.is_repeated and isinstance(elem, Star):
-                # Repeated proto field parsed as a Star: push field number
-                # around the whole loop and push/pop an index per element.
-                stmts = _wrap_star_with_index_path(
-                    elem, var, grammar, follow_set_i, pf.number, proto_messages
-                )
-                exprs.extend(stmts)
-            elif isinstance(elem, Star) and proto_messages is not None:
-                # Star without a repeated proto field (helper rule): still
-                # push/pop an index per element for provenance.
-                stmts = _wrap_star_with_index_path(
-                    elem, var, grammar, follow_set_i, None, proto_messages
-                )
-                exprs.extend(stmts)
-            elif pf is not None:
-                exprs.extend(_wrap_with_path(pf.number, var, elem_ir))
-            else:
-                exprs.append(Assign(var, elem_ir))
+            exprs.append(Assign(var, elem_ir))
             arg_vars.append(var)
             non_literal_count += 1
     if apply_action and action:
@@ -674,55 +532,3 @@ def _generate_parse_rhs_ir_sequence(
         return exprs[0]
     else:
         return Seq(exprs)
-
-
-def _wrap_star_with_index_path(
-    star: Star,
-    result_var: Var,
-    grammar: Grammar,
-    follow_set: TerminalSequenceSet,
-    field_num: int | None,
-    proto_messages: dict[tuple[str, str], ProtoMessage] | None = None,
-) -> list[TargetExpr]:
-    """Return statements for a Star loop with push_path(index)/pop_path()
-    around each element. When field_num is provided, the entire loop is
-    also wrapped with push_path(field_num)/pop_path().
-    Assigns the resulting list to result_var."""
-    xs = Var(gensym("xs"), ListType(star.rhs.target_type()))
-    cond = Var(gensym("cond"), BaseType("Boolean"))
-    idx = Var(gensym("idx"), BaseType("Int64"))
-    predictor = _build_option_predictor(grammar, star.rhs, follow_set)
-    parse_item = _generate_parse_rhs_ir(
-        star.rhs, grammar, follow_set, False, None, proto_messages
-    )
-    item = Var(gensym("item"), star.rhs.target_type())
-    loop_body = Seq(
-        [
-            Call(make_builtin("push_path"), [idx]),
-            Assign(item, parse_item),
-            Call(make_builtin("pop_path"), []),
-            Call(make_builtin("list_push"), [xs, item]),
-            Assign(idx, Call(make_builtin("add"), [idx, Lit(1)])),
-            Assign(cond, predictor),
-        ]
-    )
-    inner = Let(
-        xs,
-        ListExpr([], star.rhs.target_type()),
-        Let(
-            cond,
-            predictor,
-            Let(
-                idx,
-                Lit(0),
-                Seq([While(cond, loop_body), xs]),
-            ),
-        ),
-    )
-    if field_num is not None:
-        return [
-            Call(make_builtin("push_path"), [Lit(field_num)]),
-            Assign(result_var, inner),
-            Call(make_builtin("pop_path"), []),
-        ]
-    return [Assign(result_var, inner)]

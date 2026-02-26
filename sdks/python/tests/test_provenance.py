@@ -21,78 +21,12 @@ def test_provenance_root_transaction():
     assert span.start.column == 1
 
 
-def test_provenance_epoch():
-    """The first epoch should be at path (1, 0)."""
-    _, provenance = parse(SIMPLE_INPUT)
-    # epochs = field 1, index 0
-    key = (1, 0)
-    assert key in provenance
-    span = provenance[key]
-    # The epoch starts at "(epoch" which is indented on line 2
-    assert span.start.line == 2
-
-
-def test_provenance_writes():
-    """Writes section should be at path (1, 0, 1)."""
-    _, provenance = parse(SIMPLE_INPUT)
-    # epochs[0].writes = field 1 within Epoch
-    key = (1, 0, 1)
-    assert key in provenance
-    span = provenance[key]
-    assert span.start.line == 3
-
-
-def test_provenance_reads():
-    """Reads section should be at path (1, 0, 2)."""
-    _, provenance = parse(SIMPLE_INPUT)
-    # epochs[0].reads = field 2 within Epoch
-    key = (1, 0, 2)
-    assert key in provenance
-    span = provenance[key]
-    assert span.start.line == 4
-
-
-def test_provenance_span_covers_correct_text():
-    """Verify that spans map back to the correct substrings."""
-    _, provenance = parse(SIMPLE_INPUT)
-
-    # Root transaction span should cover from start
-    root_span = provenance[()]
-    assert root_span.start.offset == 0
-
-    # Epoch span should start at the '(' of '(epoch'
-    epoch_span = provenance[(1, 0)]
-    text_at_epoch = SIMPLE_INPUT[epoch_span.start.offset :]
-    assert text_at_epoch.startswith("(epoch")
-
-
 def test_provenance_span_ordering():
     """Verify start <= end for all spans."""
     _, provenance = parse(SIMPLE_INPUT)
     for path, span in provenance.items():
         assert span.start.offset <= span.stop.offset, f"Bad span at path {path}"
         assert span.start.line <= span.stop.line, f"Bad line ordering at path {path}"
-
-
-def test_provenance_multiple_epochs():
-    """Multiple epochs should be indexed correctly."""
-    input_str = """\
-(transaction
-  (epoch
-    (writes)
-    (reads))
-  (epoch
-    (writes)
-    (reads)))
-"""
-    _, provenance = parse(input_str)
-
-    # First epoch at (1, 0), second at (1, 1)
-    assert (1, 0) in provenance
-    assert (1, 1) in provenance
-
-    # First epoch starts before second
-    assert provenance[(1, 0)].start.offset < provenance[(1, 1)].start.offset
 
 
 def test_provenance_location_fields():
