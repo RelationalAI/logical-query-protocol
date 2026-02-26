@@ -13,6 +13,7 @@
 #   make force-printer-X    Force-regenerate a single printer.
 #   make test         Run tests for all languages.
 #   make test-X       Run tests for one language (X = python, julia, go).
+#   make update-bins       Regenerate binary test files from .lqp sources.
 #   make update-snapshots  Regenerate Python snapshot test outputs.
 #   make lint-python  Run ruff lint and format checks.
 #   make format-python  Auto-format Python code with ruff.
@@ -78,7 +79,7 @@ JL_PROTO_GENERATED := \
 	force-parsers force-parser-python force-parser-julia force-parser-go \
 	printers printer-python printer-julia printer-go \
 	force-printers force-printer-python force-printer-julia force-printer-go \
-	test test-python update-snapshots test-julia test-go \
+	test test-python update-bins update-snapshots test-julia test-go \
 	test-meta check-python check-meta lint-meta format-meta \
 	lint-python format-python clean
 
@@ -173,6 +174,12 @@ test: test-meta test-python test-julia test-go
 
 test-python: $(PY_PARSER) $(PY_PROTO_GENERATED) check-python
 	cd sdks/python && uv run python -m pytest
+
+update-bins: $(PY_PARSER) $(PY_PROTO_GENERATED)
+	@for lqp in tests/lqp/*.lqp; do \
+		name=$$(basename "$$lqp" .lqp); \
+		cd sdks/python && uv run lqp "../../$$lqp" --bin --out > "../../tests/bin/$${name}.bin" && cd ../..; \
+	done
 
 update-snapshots: $(PY_PARSER) $(PY_PROTO_GENERATED)
 	cd sdks/python && uv run python -m pytest --snapshot-update
