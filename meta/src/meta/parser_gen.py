@@ -90,7 +90,7 @@ from .grammar import (
     Terminal,
 )
 from .grammar_utils import is_epsilon, rhs_elements
-from .proto_ast import ProtoMessage
+from .proto_ast import ProtoField, ProtoMessage
 from .target import (
     Assign,
     BaseType,
@@ -134,45 +134,82 @@ class AmbiguousGrammarError(Exception):
     pass
 
 
-def _build_param_field_numbers(
+def _proto_fields_by_name(
+    proto_messages: dict[tuple[str, str], ProtoMessage] | None,
+    module: str,
+    name: str,
+) -> dict[str, ProtoField]:
+    """Return a name->ProtoField map for a proto message, or {} if not found."""
+    if proto_messages is None:
+        return {}
+    proto_msg = proto_messages.get((module, name))
+    if proto_msg is None:
+        return {}
+    result: dict[str, ProtoField] = {}
+    for f in proto_msg.fields:
+        result[f.name] = f
+    for oneof in proto_msg.oneofs:
+        for f in oneof.fields:
+            result[f.name] = f
+    return result
+
+
+def _build_param_proto_fields(
     action: Lambda,
     proto_messages: dict[tuple[str, str], ProtoMessage] | None,
-) -> dict[int, int]:
-    """Map lambda parameter indices to protobuf field numbers.
+) -> dict[int, ProtoField]:
+    """Map lambda parameter indices to protobuf ProtoField descriptors.
 
     Inspects the semantic action's body. When it is a NewMessage, cross-references
-    field names with proto_messages to find field numbers.
+    field names with proto_messages to find proto fields.
 
-    Returns dict mapping parameter index to proto field number.
+    As a fallback, when the action's return type is a known proto message,
+    matches parameter names to proto field names.
+
+    Returns dict mapping parameter index to ProtoField.
     """
     if proto_messages is None:
         return {}
     body = action.body
-    if not isinstance(body, NewMessage):
+    if isinstance(body, NewMessage):
+        fields_by_name = _proto_fields_by_name(proto_messages, body.module, body.name)
+        if not fields_by_name:
+            return {}
+        param_names = [p.name for p in action.params]
+        result: dict[int, ProtoField] = {}
+        for field_name, field_expr in body.fields:
+            pf = fields_by_name.get(field_name)
+            if pf is None:
+                continue
+            param_name = _extract_param_name(field_expr, param_names)
+            if param_name is not None and param_name in param_names:
+                param_idx = param_names.index(param_name)
+                result.setdefault(param_idx, pf)
+        return result
+    # Fallback: match parameter names against the return type's proto fields.
+    return _build_param_proto_fields_by_return_type(action, proto_messages)
+
+
+def _build_param_proto_fields_by_return_type(
+    action: Lambda,
+    proto_messages: dict[tuple[str, str], ProtoMessage] | None,
+) -> dict[int, ProtoField]:
+    """Fallback: match parameter names to proto fields via the return type."""
+    from .target import MessageType
+
+    if proto_messages is None:
         return {}
-    key = (body.module, body.name)
-    proto_msg = proto_messages.get(key)
-    if proto_msg is None:
+    rt = action.return_type
+    if not isinstance(rt, MessageType):
         return {}
-    # Build name -> field number map from proto definition
-    name_to_number: dict[str, int] = {}
-    for f in proto_msg.fields:
-        name_to_number[f.name] = f.number
-    for oneof in proto_msg.oneofs:
-        for f in oneof.fields:
-            name_to_number[f.name] = f.number
-    # Map each message field to the lambda param that provides its value
-    param_names = [p.name for p in action.params]
-    result: dict[int, int] = {}
-    for field_name, field_expr in body.fields:
-        field_num = name_to_number.get(field_name)
-        if field_num is None:
-            continue
-        # Determine which param provides this field
-        param_name = _extract_param_name(field_expr, param_names)
-        if param_name is not None and param_name in param_names:
-            param_idx = param_names.index(param_name)
-            result[param_idx] = field_num
+    fields_by_name = _proto_fields_by_name(proto_messages, rt.module, rt.name)
+    if not fields_by_name:
+        return {}
+    result: dict[int, ProtoField] = {}
+    for i, param in enumerate(action.params):
+        pf = fields_by_name.get(param.name)
+        if pf is not None:
+            result[i] = pf
     return result
 
 
@@ -507,6 +544,15 @@ def _generate_parse_rhs_ir(
                 return Seq([parse_expr, apply_lambda(action, [])])
             var_name = gensym(action.params[0].name)
             var = Var(var_name, rhs.target_type())
+            # Wrap with push_path when the action maps this param to a proto
+            # field (e.g., oneof dispatch: formula -> atom pushes the atom
+            # field number onto the provenance path).
+            if proto_messages is not None:
+                pf = _build_param_proto_fields(action, proto_messages).get(0)
+                if pf is not None:
+                    stmts = _wrap_with_path(pf.number, var, parse_expr)
+                    stmts.append(apply_lambda(action, [var]))
+                    return Seq(stmts)
             return Let(var, parse_expr, apply_lambda(action, [var]))
         return parse_expr
     elif isinstance(rhs, Option):
@@ -561,10 +607,10 @@ def _generate_parse_rhs_ir_sequence(
     if is_epsilon(rhs):
         return Lit(None)
 
-    # Compute param->field_number mapping for provenance
-    param_field_numbers: dict[int, int] = {}
+    # Compute param->proto field mapping for provenance
+    param_proto_fields: dict[int, ProtoField] = {}
     if action is not None and proto_messages is not None:
-        param_field_numbers = _build_param_field_numbers(action, proto_messages)
+        param_proto_fields = _build_param_proto_fields(action, proto_messages)
 
     exprs = []
     arg_vars = []
@@ -593,16 +639,23 @@ def _generate_parse_rhs_ir_sequence(
                     )
                 var_name = gensym("arg")
             var = Var(var_name, elem.target_type())
-            field_num = param_field_numbers.get(non_literal_count)
-            if field_num is not None and isinstance(elem, Star):
-                # For repeated fields: push field number around the whole
-                # Star loop, and push/pop a 0-based index inside the loop
+            pf = param_proto_fields.get(non_literal_count)
+            if pf is not None and pf.is_repeated and isinstance(elem, Star):
+                # Repeated proto field parsed as a Star: push field number
+                # around the whole loop and push/pop an index per element.
                 stmts = _wrap_star_with_index_path(
-                    elem, var, grammar, follow_set_i, field_num, proto_messages
+                    elem, var, grammar, follow_set_i, pf.number, proto_messages
                 )
                 exprs.extend(stmts)
-            elif field_num is not None:
-                exprs.extend(_wrap_with_path(field_num, var, elem_ir))
+            elif isinstance(elem, Star) and proto_messages is not None:
+                # Star without a repeated proto field (helper rule): still
+                # push/pop an index per element for provenance.
+                stmts = _wrap_star_with_index_path(
+                    elem, var, grammar, follow_set_i, None, proto_messages
+                )
+                exprs.extend(stmts)
+            elif pf is not None:
+                exprs.extend(_wrap_with_path(pf.number, var, elem_ir))
             else:
                 exprs.append(Assign(var, elem_ir))
             arg_vars.append(var)
@@ -628,11 +681,12 @@ def _wrap_star_with_index_path(
     result_var: Var,
     grammar: Grammar,
     follow_set: TerminalSequenceSet,
-    field_num: int,
+    field_num: int | None,
     proto_messages: dict[tuple[str, str], ProtoMessage] | None = None,
 ) -> list[TargetExpr]:
-    """Return statements for a Star loop wrapped with push_path(field_num)
-    and push_path(index)/pop_path() around each element.
+    """Return statements for a Star loop with push_path(index)/pop_path()
+    around each element. When field_num is provided, the entire loop is
+    also wrapped with push_path(field_num)/pop_path().
     Assigns the resulting list to result_var."""
     xs = Var(gensym("xs"), ListType(star.rhs.target_type()))
     cond = Var(gensym("cond"), BaseType("Boolean"))
@@ -665,8 +719,10 @@ def _wrap_star_with_index_path(
             ),
         ),
     )
-    return [
-        Call(make_builtin("push_path"), [Lit(field_num)]),
-        Assign(result_var, inner),
-        Call(make_builtin("pop_path"), []),
-    ]
+    if field_num is not None:
+        return [
+            Call(make_builtin("push_path"), [Lit(field_num)]),
+            Assign(result_var, inner),
+            Call(make_builtin("pop_path"), []),
+        ]
+    return [Assign(result_var, inner)]

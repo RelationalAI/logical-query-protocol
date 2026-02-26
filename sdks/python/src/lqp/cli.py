@@ -17,6 +17,7 @@ from lqp.proto_validator import validate_proto
 
 def parse_input(filename: str, validate: bool = True):
     """Parse an input file (.lqp or .bin) and return a protobuf Transaction."""
+    provenance = None
     if filename.endswith(".bin"):
         with open(filename, "rb") as f:
             data = f.read()
@@ -25,10 +26,10 @@ def parse_input(filename: str, validate: bool = True):
     else:
         with open(filename) as f:
             lqp_text = f.read()
-        txn, _ = parse(lqp_text)
+        txn, provenance = parse(lqp_text)
 
     if validate:
-        validate_proto(txn)
+        validate_proto(txn, provenance=provenance, filename=os.path.basename(filename))
 
     return txn
 
