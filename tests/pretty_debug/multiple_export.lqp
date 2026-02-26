@@ -5,10 +5,14 @@
       (define
         (fragment
           :f1
-          (def 0x208b0074ba2817b6 ([row::INT v::INT] (and (= row 1) (= 2 v))))
-          (def 0x2a98c62d6dc8f9c1 ([row::INT v::STRING] (and (= row 1) (= v "hello"))))
           (def
-            0x32310ae0104571ed
+            0x18f7c56b6bc385f3b61728ba74008b20
+            ([row::INT v::INT] (and (= row 1) (= 2 v))))
+          (def
+            0x9e35b312e1d09b3cc1f9c86d2dc6982a
+            ([row::INT v::STRING] (and (= row 1) (= v "hello"))))
+          (def
+            0x5bfbcdaf22f6c833ed714510e00a3132
             ([row_1::STRING row_2::(DECIMAL 18 6) row_3::UINT128 row_4::FLOAT v::FLOAT]
              (and
                (= row_1 "b")
@@ -17,7 +21,7 @@
                (= row_4 1.234)
                (= v 6.1))))
           (def
-            0xa4404e192fa9020f
+            0xb05d17c8dd055a800f02a92f194e40a4
             ([row_1::STRING row_2::(DECIMAL 18 6) row_3::UINT128 row_4::FLOAT v::INT]
              (and
                (= row_1 "b")
@@ -30,8 +34,8 @@
         (export_csv_config
           (path "wrong")
           (columns
-            (column "col1name" 0x208b0074ba2817b6)
-            (column "col2name" 0x2a98c62d6dc8f9c1))
+            (column "col1name" 0x18f7c56b6bc385f3b61728ba74008b20)
+            (column "col2name" 0x9e35b312e1d09b3cc1f9c86d2dc6982a))
           {
            :compression ""
            :partition_size 10
@@ -44,8 +48,8 @@
         (export_csv_config
           (path "wrong")
           (columns
-            (column "blahblah" 0x32310ae0104571ed)
-            (column "foofoo" 0xa4404e192fa9020f))
+            (column "blahblah" 0x5bfbcdaf22f6c833ed714510e00a3132)
+            (column "foofoo" 0xb05d17c8dd055a800f02a92f194e40a4))
           {
            :compression ""
            :partition_size 0
@@ -58,7 +62,7 @@
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0x208b0074ba2817b6` -> `cola1`
-;; 	 ID `0x2a98c62d6dc8f9c1` -> `cola2`
-;; 	 ID `0x32310ae0104571ed` -> `colb1`
-;; 	 ID `0xa4404e192fa9020f` -> `colb2`
+;; 	 ID `0x18f7c56b6bc385f3b61728ba74008b20` -> `cola1`
+;; 	 ID `0x9e35b312e1d09b3cc1f9c86d2dc6982a` -> `cola2`
+;; 	 ID `0x5bfbcdaf22f6c833ed714510e00a3132` -> `colb1`
+;; 	 ID `0xb05d17c8dd055a800f02a92f194e40a4` -> `colb2`

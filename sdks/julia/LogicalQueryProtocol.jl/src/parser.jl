@@ -254,8 +254,9 @@ end
 function relation_id_from_string(parser::ParserState, name::String)
     # Create RelationId from string and track mapping for debug info
     hash_bytes = sha256(name)
-    id_low = Base.parse(UInt64, bytes2hex(hash_bytes[1:8]), base=16)
-    id_high = UInt64(0)
+    # Match the convention in backir-to-lqp.jl
+    id_low = reinterpret(UInt64, hash_bytes[1:8])[1]
+    id_high = reinterpret(UInt64, hash_bytes[9:16])[1]
     relation_id = Proto.RelationId(id_low, id_high)
 
     # Store the mapping for the current fragment if we're inside one

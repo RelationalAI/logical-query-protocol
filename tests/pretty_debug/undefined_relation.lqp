@@ -3,14 +3,21 @@
   (epoch
     (writes
       (define
-        (fragment :f1 (def 0xe0ee8bb50685e05f ([v::INT] (atom 0x2cf24dba5fb0a30e v))))))
-    (reads (output :epoch0 0xe0ee8bb50685e05f) (output :nonexistent 0x7945bc2d6e4fd0a0)))
+        (fragment
+          :f1
+          (def
+            0x95ae0342d07ef4a05fe08506b58beee0
+            ([v::INT] (atom 0x9ee2b9c52a3be8260ea3b05fba4df22c v))))))
+    (reads
+      (output :epoch0 0x95ae0342d07ef4a05fe08506b58beee0)
+      (output :nonexistent 0xf4be5705461652bea0d04f6e2dbc4579)))
   (epoch
-    (writes (define (fragment :f2 (def 0x2cf24dba5fb0a30e ([v::INT] (= v 101))))))
-    (reads (output :epoch1 0xe0ee8bb50685e05f))))
+    (writes
+      (define (fragment :f2 (def 0x9ee2b9c52a3be8260ea3b05fba4df22c ([v::INT] (= v 101))))))
+    (reads (output :epoch1 0x95ae0342d07ef4a05fe08506b58beee0))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0x2cf24dba5fb0a30e` -> `hello`
-;; 	 ID `0xe0ee8bb50685e05f` -> `output`
+;; 	 ID `0x9ee2b9c52a3be8260ea3b05fba4df22c` -> `hello`
+;; 	 ID `0x95ae0342d07ef4a05fe08506b58beee0` -> `output`

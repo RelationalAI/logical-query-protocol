@@ -241,8 +241,9 @@ class Parser:
 
     def relation_id_from_string(self, name: str) -> Any:
         """Create RelationId from string and track mapping for debug info."""
-        id_low = int(hashlib.sha256(name.encode()).hexdigest()[:16], 16)
-        id_high = 0
+        hash_bytes = hashlib.sha256(name.encode()).digest()
+        id_low = int.from_bytes(hash_bytes[:8], byteorder='little')
+        id_high = int.from_bytes(hash_bytes[8:16], byteorder='little')
         relation_id = logic_pb2.RelationId(id_low=id_low, id_high=id_high)
 
         # Store the mapping for the current fragment if we're inside one

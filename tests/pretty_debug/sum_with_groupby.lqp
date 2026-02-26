@@ -6,7 +6,7 @@
         (fragment
           :f1
           (def
-            0x2c26b46b68ffc68f
+            0x3441301d3c459bf98fc6ff686bb4262c
             ([category::STRING amount::FLOAT]
              (or
                (and (= category "food") (= amount 1.23))
@@ -15,24 +15,27 @@
                (and (= category "drink") (= amount 6.34))
                (and (= category "drink") (= amount 2.82)))))
           (def
-            0x9f5ffef28309853
+            0x1b6ee5d0984a5c2653983028effff509
             ([cat::STRING x::FLOAT]
              (reduce
                ([a::FLOAT b::FLOAT c::FLOAT] (+ a b c))
-               ([num::FLOAT] (atom 0x2c26b46b68ffc68f cat num))
+               ([num::FLOAT] (atom 0x3441301d3c459bf98fc6ff686bb4262c cat num))
                (terms x))))
           (def
-            0x6c35493a2b937829
+            0x64f93ae2395c81c92978932b3a49356c
             ([cat::STRING x::INT]
              (reduce
                ([a::FLOAT b::FLOAT c::FLOAT] (+ a b c))
-               ([num::FLOAT one::INT] (and (atom 0x2c26b46b68ffc68f cat num) (= one 1)))
+               ([num::FLOAT one::INT]
+                (and (atom 0x3441301d3c459bf98fc6ff686bb4262c cat num) (= one 1)))
                (terms x)))))))
-    (reads (output :items_sum 0x9f5ffef28309853) (output :items_count 0x6c35493a2b937829))))
+    (reads
+      (output :items_sum 0x1b6ee5d0984a5c2653983028effff509)
+      (output :items_count 0x64f93ae2395c81c92978932b3a49356c))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0x6c35493a2b937829` -> `count`
-;; 	 ID `0x2c26b46b68ffc68f` -> `foo`
-;; 	 ID `0x9f5ffef28309853` -> `sum`
+;; 	 ID `0x64f93ae2395c81c92978932b3a49356c` -> `count`
+;; 	 ID `0x3441301d3c459bf98fc6ff686bb4262c` -> `foo`
+;; 	 ID `0x1b6ee5d0984a5c2653983028effff509` -> `sum`

@@ -6,31 +6,33 @@
         (fragment
           :f1
           (algorithm
-            0x8c2574892063f995
+            0xc1467fe0bc56f7fd95f963208974258c
             (script
               (loop
                 (init
                   (assign
-                    0x8c2574892063f995
+                    0xc1467fe0bc56f7fd95f963208974258c
                     ([a::INT b::INT] (or (and (= a 1) (= b 2)) (and (= a 2) (= b 3)))))
-                  (assign 0xa25513c7e0f6eaa8 ([a::INT b::INT] (and (= a 1) (= b 3))))
-                  (assign 0x9cdc6c47aa193ae7 ([] (false))))
+                  (assign
+                    0x9e1b0818ee37330aa8eaf6e0c71355a2
+                    ([a::INT b::INT] (and (= a 1) (= b 3))))
+                  (assign 0x8e118fa8576cabfde73a19aa476cdc9c ([] (false))))
                 (script
-                  (assign 0x7fd7a5b0a5375b09 ([] (false)))
+                  (assign 0x8b5d6362e02f7af4095b37a5b0a5d77f ([] (false)))
                   (loop
                     (init)
                     (script
                       (upsert
-                        0x8c2574892063f995
-                        ([a::INT b::INT] (atom 0xa25513c7e0f6eaa8 a b)))
-                      (break 0x7fd7a5b0a5375b09 ([] (true)))))
-                  (break 0x9cdc6c47aa193ae7 ([] (true))))))))))
-    (reads (output :R 0x8c2574892063f995))))
+                        0xc1467fe0bc56f7fd95f963208974258c
+                        ([a::INT b::INT] (atom 0x9e1b0818ee37330aa8eaf6e0c71355a2 a b)))
+                      (break 0x8b5d6362e02f7af4095b37a5b0a5d77f ([] (true)))))
+                  (break 0x8e118fa8576cabfde73a19aa476cdc9c ([] (true))))))))))
+    (reads (output :R 0xc1467fe0bc56f7fd95f963208974258c))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0x8c2574892063f995` -> `R`
-;; 	 ID `0xa25513c7e0f6eaa8` -> `U`
-;; 	 ID `0x9cdc6c47aa193ae7` -> `always`
-;; 	 ID `0x7fd7a5b0a5375b09` -> `always2`
+;; 	 ID `0xc1467fe0bc56f7fd95f963208974258c` -> `R`
+;; 	 ID `0x9e1b0818ee37330aa8eaf6e0c71355a2` -> `U`
+;; 	 ID `0x8e118fa8576cabfde73a19aa476cdc9c` -> `always`
+;; 	 ID `0x8b5d6362e02f7af4095b37a5b0a5d77f` -> `always2`
