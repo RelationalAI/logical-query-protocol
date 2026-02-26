@@ -392,22 +392,30 @@ class GoCodeGenerator(CodeGenerator):
     def gen_func_def_end(self) -> str:
         return "}"
 
-    def _generate_Lambda(self, expr, lines: list[str], indent: str) -> str:
-        """Track lambda return type for IfElse type hint inference."""
+    def _lambda_ret_type_str(self, expr) -> str | None:
         from .target import Lambda
 
         assert isinstance(expr, Lambda)
-        ret_type = (
+        return (
             self.gen_type(expr.return_type)
             if expr.return_type and not self._is_void_type(expr.return_type)
             else None
         )
-        self._lambda_return_type_stack.append(ret_type)
+
+    def _generate_Lambda(self, expr, lines: list[str], indent: str) -> str:
+        """Track lambda return type for IfElse type hint inference."""
+        self._lambda_return_type_stack.append(self._lambda_ret_type_str(expr))
         try:
             result = super()._generate_Lambda(expr, lines, indent)
         finally:
             self._lambda_return_type_stack.pop()
         return result
+
+    def _enter_beta_body(self, lam) -> None:
+        self._lambda_return_type_stack.append(self._lambda_ret_type_str(lam))
+
+    def _exit_beta_body(self, lam) -> None:
+        self._lambda_return_type_stack.pop()
 
     def _ifelse_type_hint(self, expr) -> str | None:
         """Improve IfElse type hint when the overall type resolves to interface{}.
