@@ -3,9 +3,17 @@ import os
 import pytest
 from pytest_snapshot.plugin import Snapshot
 
-from lqp.gen.parser import parse
+from lqp.gen.parser import Parser, parse
 
 from .utils import BIN_SNAPSHOTS_DIR, get_lqp_input_files
+
+
+def test_relation_id_from_string():
+    """All SDKs must produce the same id for the same string."""
+    parser = Parser([])
+    rid = parser.relation_id_from_string("my_relation")
+    assert rid.id_low == 0x5D33996702404F85
+    assert rid.id_high == 0x3B9AF8E72AF633F8
 
 
 @pytest.mark.parametrize("input_file", get_lqp_input_files())
