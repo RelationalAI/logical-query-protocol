@@ -83,16 +83,13 @@
                :betree_locator_element_count 10
                :betree_locator_root_pageid 0x7777888899990000111122
                :betree_locator_tree_height 1}))
-          (rel_edb
-            0xbf404e2094ce4b9950fd7ca2060b8415
-            ["my_base_relation"]
-            [INT STRING FLOAT])
-          (rel_edb 0x783a93b411dba24606d1c6baeb58ed1 ["another" "path"] [INT STRING])
-          (rel_edb
+          (edb 0xbf404e2094ce4b9950fd7ca2060b8415 ["my_base_relation"] [INT STRING FLOAT])
+          (edb 0x783a93b411dba24606d1c6baeb58ed1 ["another" "path"] [INT STRING])
+          (edb
             0xf6f4fc85040f9ff3942da9d74eba551d
             ["complex" "path" "here"]
             [(DECIMAL 10 2) INT STRING])
-          (rel_edb 0xf876b6eb1a49f4fe33ea5d244aa618ce ["empty_path"] [])
+          (edb 0xf876b6eb1a49f4fe33ea5d244aa618ce ["empty_path"] [])
           (def 0x3441301d3c459bf98fc6ff686bb4262c ([x::INT] (= x 1)))
           (algorithm
             0x5c9bfe21b71f6008f46ba5db2e2bdefc

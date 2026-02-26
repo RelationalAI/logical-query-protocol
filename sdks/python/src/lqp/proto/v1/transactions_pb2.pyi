@@ -88,13 +88,19 @@ class Context(_message.Message):
     relations: _containers.RepeatedCompositeFieldContainer[_logic_pb2.RelationId]
     def __init__(self, relations: _Optional[_Iterable[_Union[_logic_pb2.RelationId, _Mapping]]] = ...) -> None: ...
 
-class Snapshot(_message.Message):
+class SnapshotMapping(_message.Message):
     __slots__ = ("destination_path", "source_relation")
     DESTINATION_PATH_FIELD_NUMBER: _ClassVar[int]
     SOURCE_RELATION_FIELD_NUMBER: _ClassVar[int]
     destination_path: _containers.RepeatedScalarFieldContainer[str]
     source_relation: _logic_pb2.RelationId
     def __init__(self, destination_path: _Optional[_Iterable[str]] = ..., source_relation: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ...) -> None: ...
+
+class Snapshot(_message.Message):
+    __slots__ = ("mappings",)
+    MAPPINGS_FIELD_NUMBER: _ClassVar[int]
+    mappings: _containers.RepeatedCompositeFieldContainer[SnapshotMapping]
+    def __init__(self, mappings: _Optional[_Iterable[_Union[SnapshotMapping, _Mapping]]] = ...) -> None: ...
 
 class ExportCSVConfig(_message.Message):
     __slots__ = ("path", "data_columns", "partition_size", "compression", "syntax_header_row", "syntax_missing_string", "syntax_delim", "syntax_quotechar", "syntax_escapechar")

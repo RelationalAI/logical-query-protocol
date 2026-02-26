@@ -5,9 +5,9 @@
       (define
         (fragment
           :snapshots
-          (rel_edb 0x570a6b2c5652a23a889007deb29a3bcd ["my_edb"] [])
-          (rel_edb 0x7a6962a0dc04eea8c827be06376d1e0d ["database" "table"] [])
-          (rel_edb 0x1ba1a075d798280ef11e488c9a5ce6c6 ["schema" "namespace" "relation"] [])))
+          (edb 0x570a6b2c5652a23a889007deb29a3bcd ["my_edb"] [])
+          (edb 0x7a6962a0dc04eea8c827be06376d1e0d ["database" "table"] [])
+          (edb 0x1ba1a075d798280ef11e488c9a5ce6c6 ["schema" "namespace" "relation"] [])))
       (define
         (fragment
           :frag1
@@ -46,9 +46,10 @@
       (output :snapshot3 0x1ba1a075d798280ef11e488c9a5ce6c6)))
   (epoch
     (writes
-      (snapshot ["my_edb"] 0x41614649240f9718dbcdc1582466cbaa)
-      (snapshot ["database" "table"] 0xc11ab116e39edbb2b3b3669c4062a55a)
-      (snapshot ["schema" "namespace" "relation"] 0xf5faefdf48a8c90a795182d16b6c18ca))
+      (snapshot
+        ["my_edb"] 0x41614649240f9718dbcdc1582466cbaa
+        ["database" "table"] 0xc11ab116e39edbb2b3b3669c4062a55a
+        ["schema" "namespace" "relation"] 0xf5faefdf48a8c90a795182d16b6c18ca))
     (reads
       (output :snapshot1 0x570a6b2c5652a23a889007deb29a3bcd)
       (output :snapshot2 0x7a6962a0dc04eea8c827be06376d1e0d)

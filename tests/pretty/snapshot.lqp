@@ -5,9 +5,9 @@
       (define
         (fragment
           :snapshots
-          (rel_edb :snapshot1 ["my_edb"] [])
-          (rel_edb :snapshot2 ["database" "table"] [])
-          (rel_edb :snapshot3 ["schema" "namespace" "relation"] [])))
+          (edb :snapshot1 ["my_edb"] [])
+          (edb :snapshot2 ["database" "table"] [])
+          (edb :snapshot3 ["schema" "namespace" "relation"] [])))
       (define
         (fragment
           :frag1
@@ -41,9 +41,10 @@
       (output :snapshot3 :snapshot3)))
   (epoch
     (writes
-      (snapshot ["my_edb"] :my_rel)
-      (snapshot ["database" "table"] :computed)
-      (snapshot ["schema" "namespace" "relation"] :big_signed))
+      (snapshot
+        ["my_edb"] :my_rel
+        ["database" "table"] :computed
+        ["schema" "namespace" "relation"] :big_signed))
     (reads
       (output :snapshot1 :snapshot1)
       (output :snapshot2 :snapshot2)

@@ -22,12 +22,12 @@ const LQPSyntax = Union{
     RelAtom,Abstraction,Algorithm,Assign,Break,Conjunction,Def,Disjunction,
     Exists,FFI,MonoidDef,MonusDef,Not,Reduce,Script,Upsert,Construct,Declaration,
     Loop,Formula,Instruction,FragmentId,DebugInfo,Fragment,ExportCSVColumn,
-    ExportCSVConfig,Demand,Undefine,Configure,Snapshot,Define,Context,Sync,Abort,Output,Write,
+    ExportCSVConfig,Demand,Undefine,Configure,SnapshotMapping,Snapshot,Define,Context,Sync,Abort,Output,Write,
     Export,Epoch,Read,Transaction,WhatIf,Constraint,FunctionalDependency,
     DateTimeValue,DateValue,DecimalValue,
     BeTreeInfo,BeTreeRelation,
-    CSVLocator,CSVConfig,CSVColumn,CSVData,
-    RelEDB,Data,
+    CSVLocator,CSVConfig,GNFColumn,CSVData,
+    EDB,Data,
 }
 
 using ProtoBuf: ProtoBuf
