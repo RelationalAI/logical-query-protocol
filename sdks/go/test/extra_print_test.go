@@ -234,18 +234,18 @@ func TestInstructionAssign(t *testing.T) {
 	}
 }
 
-func TestDataRelEDB(t *testing.T) {
+func TestDataEDB(t *testing.T) {
 	msg := &pb.Data{
-		DataType: &pb.Data_RelEdb{
-			RelEdb: &pb.RelEDB{
+		DataType: &pb.Data_Edb{
+			Edb: &pb.EDB{
 				TargetId: &pb.RelationId{IdLow: 1, IdHigh: 0},
 				Path:     []string{"base", "rel"},
 			},
 		},
 	}
 	got := lqp.MsgToStr(msg)
-	if len(got) < 8 || got[:8] != "(rel_edb" {
-		t.Errorf("Data rel_edb: got %q", got)
+	if len(got) < 4 || got[:4] != "(edb" {
+		t.Errorf("Data edb: got %q", got)
 	}
 }
 

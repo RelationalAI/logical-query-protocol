@@ -71,8 +71,9 @@
 %nonterm construct logic.Construct
 %nonterm context transactions.Context
 %nonterm csv_asof String
-%nonterm csv_column logic.CSVColumn
-%nonterm csv_columns Sequence[logic.CSVColumn]
+%nonterm gnf_column logic.GNFColumn
+%nonterm gnf_column_path Sequence[String]
+%nonterm gnf_columns Sequence[logic.GNFColumn]
 %nonterm csv_config logic.CSVConfig
 %nonterm csv_data logic.CSVData
 %nonterm csv_locator_inline_data String
@@ -137,9 +138,9 @@
 %nonterm read transactions.Read
 %nonterm reduce logic.Reduce
 %nonterm rel_atom logic.RelAtom
-%nonterm rel_edb logic.RelEDB
-%nonterm rel_edb_path Sequence[String]
-%nonterm rel_edb_types Sequence[logic.Type]
+%nonterm edb logic.EDB
+%nonterm edb_path Sequence[String]
+%nonterm edb_types Sequence[logic.Type]
 %nonterm rel_term logic.RelTerm
 %nonterm relation_id logic.RelationId
 %nonterm script logic.Script
@@ -147,6 +148,7 @@
 %nonterm string_type logic.StringType
 %nonterm sum_monoid logic.SumMonoid
 %nonterm snapshot transactions.Snapshot
+%nonterm snapshot_mapping transactions.SnapshotMapping
 %nonterm sync transactions.Sync
 %nonterm term logic.Term
 %nonterm terms Sequence[logic.Term]
@@ -899,10 +901,10 @@ functional_dependency_values
     : "(" "values" var* ")"
 
 data
-    : rel_edb
-      construct: $$ = logic.Data(rel_edb=$1)
-      deconstruct if builtin.has_proto_field($$, 'rel_edb'):
-        $1: logic.RelEDB = $$.rel_edb
+    : edb
+      construct: $$ = logic.Data(edb=$1)
+      deconstruct if builtin.has_proto_field($$, 'edb'):
+        $1: logic.EDB = $$.edb
     | betree_relation
       construct: $$ = logic.Data(betree_relation=$1)
       deconstruct if builtin.has_proto_field($$, 'betree_relation'):
@@ -912,15 +914,15 @@ data
       deconstruct if builtin.has_proto_field($$, 'csv_data'):
         $1: logic.CSVData = $$.csv_data
 
-rel_edb_path
+edb_path
     : "[" STRING* "]"
 
-rel_edb_types
+edb_types
     : "[" type* "]"
 
-rel_edb
-    : "(" "rel_edb" relation_id rel_edb_path rel_edb_types ")"
-      construct: $$ = logic.RelEDB(target_id=$3, path=$4, types=$5)
+edb
+    : "(" "edb" relation_id edb_path edb_types ")"
+      construct: $$ = logic.EDB(target_id=$3, path=$4, types=$5)
       deconstruct:
         $3: logic.RelationId = $$.target_id
         $4: Sequence[String] = $$.path
@@ -947,19 +949,19 @@ betree_info_key_types
 betree_info_value_types
     : "(" "value_types" type* ")"
 
-csv_columns
-    : "(" "columns" csv_column* ")"
+gnf_columns
+    : "(" "columns" gnf_column* ")"
 
 csv_asof
     : "(" "asof" STRING ")"
 
 csv_data
-    : "(" "csv_data" csvlocator csv_config csv_columns csv_asof ")"
+    : "(" "csv_data" csvlocator csv_config gnf_columns csv_asof ")"
       construct: $$ = logic.CSVData(locator=$3, config=$4, columns=$5, asof=$6)
       deconstruct:
         $3: logic.CSVLocator = $$.locator
         $4: logic.CSVConfig = $$.config
-        $5: Sequence[logic.CSVColumn] = $$.columns
+        $5: Sequence[logic.GNFColumn] = $$.columns
         $6: String = $$.asof
 
 csv_locator_paths
@@ -980,12 +982,22 @@ csv_config
       construct: $$ = construct_csv_config($3)
       deconstruct: $3: Sequence[Tuple[String, logic.Value]] = deconstruct_csv_config($$)
 
-csv_column
-    : "(" "column" STRING relation_id "[" type* "]" ")"
-      construct: $$ = logic.CSVColumn(column_name=$3, target_id=$4, types=$6)
+gnf_column_path
+    : STRING
+      construct: $$ = [$1]
+      deconstruct if builtin.length($$) == 1:
+        $1: String = $$[0]
+    | "[" STRING* "]"
+      construct: $$ = $2
+      deconstruct if builtin.length($$) != 1:
+        $2: Sequence[String] = $$
+
+gnf_column
+    : "(" "column" gnf_column_path relation_id? "[" type* "]" ")"
+      construct: $$ = logic.GNFColumn(column_path=$3, target_id=$4, types=$6)
       deconstruct:
-        $3: String = $$.column_name
-        $4: logic.RelationId = $$.target_id
+        $3: Sequence[String] = $$.column_path
+        $4: Optional[logic.RelationId] = $$.target_id if builtin.has_proto_field($$, "target_id") else None
         $6: Sequence[logic.Type] = $$.types
 
 undefine
@@ -998,12 +1010,17 @@ context
       construct: $$ = transactions.Context(relations=$3)
       deconstruct: $3: Sequence[logic.RelationId] = $$.relations
 
-snapshot
-    : "(" "snapshot" rel_edb_path relation_id ")"
-      construct: $$ = transactions.Snapshot(destination_path=$3, source_relation=$4)
+snapshot_mapping
+    : edb_path relation_id
+      construct: $$ = transactions.SnapshotMapping(destination_path=$1, source_relation=$2)
       deconstruct:
-        $3: Sequence[String] = $$.destination_path
-        $4: logic.RelationId = $$.source_relation
+        $1: Sequence[String] = $$.destination_path
+        $2: logic.RelationId = $$.source_relation
+
+snapshot
+    : "(" "snapshot" snapshot_mapping* ")"
+      construct: $$ = transactions.Snapshot(mappings=$3)
+      deconstruct: $3: Sequence[transactions.SnapshotMapping] = $$.mappings
 
 epoch_reads
     : "(" "reads" read* ")"

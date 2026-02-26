@@ -169,15 +169,15 @@ def _infer_type(
     elif isinstance(expr, ListExpr):
         return ListType(expr.element_type)
     elif isinstance(expr, GetElement):
-        # Infer tuple element type
-        tuple_type = _infer_type(expr.tuple_expr, line, ctx)
-        if isinstance(tuple_type, TupleType) and 0 <= expr.index < len(
-            tuple_type.elements
+        # Infer element type from tuple or sequence/list indexing
+        container_type = _infer_type(expr.tuple_expr, line, ctx)
+        if isinstance(container_type, TupleType) and 0 <= expr.index < len(
+            container_type.elements
         ):
-            return tuple_type.elements[expr.index]
-        raise YaccGrammarError(
-            f"Cannot infer type of tuple element access: {expr}", line
-        )
+            return container_type.elements[expr.index]
+        if isinstance(container_type, (SequenceType, ListType)):
+            return container_type.element_type
+        raise YaccGrammarError(f"Cannot infer type of element access: {expr}", line)
     elif isinstance(expr, GetField):
         # GetField has field_type from proto schema lookup (or Unknown if not found)
         return expr.field_type

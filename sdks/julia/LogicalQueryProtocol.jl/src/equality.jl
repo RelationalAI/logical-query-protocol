@@ -362,10 +362,15 @@ Base.:(==)(a::Define, b::Define) = a.fragment == b.fragment
 Base.hash(a::Define, h::UInt) = hash(a.fragment, h)
 Base.isequal(a::Define, b::Define) = isequal(a.fragment, b.fragment)
 
+# SnapshotMapping
+Base.:(==)(a::SnapshotMapping, b::SnapshotMapping) = a.destination_path == b.destination_path && a.source_relation == b.source_relation
+Base.hash(a::SnapshotMapping, h::UInt) = hash(a.source_relation, hash(a.destination_path, h))
+Base.isequal(a::SnapshotMapping, b::SnapshotMapping) = isequal(a.destination_path, b.destination_path) && isequal(a.source_relation, b.source_relation)
+
 # Snapshot
-Base.:(==)(a::Snapshot, b::Snapshot) = a.destination_path == b.destination_path && a.source_relation == b.source_relation
-Base.hash(a::Snapshot, h::UInt) = hash(a.source_relation, hash(a.destination_path, h))
-Base.isequal(a::Snapshot, b::Snapshot) = isequal(a.destination_path, b.destination_path) && isequal(a.source_relation, b.source_relation)
+Base.:(==)(a::Snapshot, b::Snapshot) = a.mappings == b.mappings
+Base.hash(a::Snapshot, h::UInt) = hash(a.mappings, h)
+Base.isequal(a::Snapshot, b::Snapshot) = isequal(a.mappings, b.mappings)
 
 # Context
 Base.:(==)(a::Context, b::Context) = a.relations == b.relations
@@ -487,20 +492,20 @@ function Base.isequal(a::BeTreeLocator, b::BeTreeLocator)
     _isequal_oneof(a.location, b.location) && isequal(a.element_count, b.element_count) && isequal(a.tree_height, b.tree_height)
 end
 
-# RelEDB
-Base.:(==)(a::RelEDB, b::RelEDB) = a.target_id == b.target_id && a.path == b.path && a.types == b.types
-Base.hash(a::RelEDB, h::UInt) = hash(a.types, hash(a.path, hash(a.target_id, h)))
-Base.isequal(a::RelEDB, b::RelEDB) = isequal(a.target_id, b.target_id) && isequal(a.path, b.path) && isequal(a.types, b.types)
+# EDB
+Base.:(==)(a::EDB, b::EDB) = a.target_id == b.target_id && a.path == b.path && a.types == b.types
+Base.hash(a::EDB, h::UInt) = hash(a.types, hash(a.path, hash(a.target_id, h)))
+Base.isequal(a::EDB, b::EDB) = isequal(a.target_id, b.target_id) && isequal(a.path, b.path) && isequal(a.types, b.types)
 
 # BeTreeInfo
 Base.:(==)(a::BeTreeInfo, b::BeTreeInfo) = a.key_types == b.key_types && a.value_types == b.value_types && a.storage_config == b.storage_config && a.relation_locator == b.relation_locator
 Base.hash(a::BeTreeInfo, h::UInt) = hash(a.relation_locator, hash(a.storage_config, hash(a.value_types, hash(a.key_types, h))))
 Base.isequal(a::BeTreeInfo, b::BeTreeInfo) = isequal(a.key_types, b.key_types) && isequal(a.value_types, b.value_types) && isequal(a.storage_config, b.storage_config) && isequal(a.relation_locator, b.relation_locator)
 
-# CSVColumn
-Base.:(==)(a::CSVColumn, b::CSVColumn) = a.column_name == b.column_name && a.target_id == b.target_id && a.types == b.types
-Base.hash(a::CSVColumn, h::UInt) = hash(a.types, hash(a.target_id, hash(a.column_name, h)))
-Base.isequal(a::CSVColumn, b::CSVColumn) = isequal(a.column_name, b.column_name) && isequal(a.target_id, b.target_id) && isequal(a.types, b.types)
+# GNFColumn
+Base.:(==)(a::GNFColumn, b::GNFColumn) = a.column_path == b.column_path && a.target_id == b.target_id && a.types == b.types
+Base.hash(a::GNFColumn, h::UInt) = hash(a.types, hash(a.target_id, hash(a.column_path, h)))
+Base.isequal(a::GNFColumn, b::GNFColumn) = isequal(a.column_path, b.column_path) && isequal(a.target_id, b.target_id) && isequal(a.types, b.types)
 
 # BeTreeRelation
 Base.:(==)(a::BeTreeRelation, b::BeTreeRelation) = a.name == b.name && a.relation_info == b.relation_info
