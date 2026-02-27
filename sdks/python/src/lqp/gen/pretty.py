@@ -14,9 +14,9 @@ from collections.abc import Sequence
 import sys
 
 if sys.version_info >= (3, 11):
-    from typing import Any, IO, Never, Optional
+    from typing import Any, IO, Never
 else:
-    from typing import Any, IO, NoReturn as Never, Optional
+    from typing import Any, IO, NoReturn as Never
 
 from lqp.proto.v1 import logic_pb2, fragments_pb2, transactions_pb2
 
@@ -28,7 +28,7 @@ class ParseError(Exception):
 class PrettyPrinter:
     """Pretty printer for protobuf messages."""
 
-    def __init__(self, io: Optional[IO[str]] = None, max_width: int = 92, print_symbolic_relation_ids: bool = True):
+    def __init__(self, io: IO[str] | None = None, max_width: int = 92, print_symbolic_relation_ids: bool = True):
         self.io = io if io is not None else StringIO()
         self.indent_stack: list[int] = [0]
         self.column = 0
@@ -82,7 +82,7 @@ class PrettyPrinter:
             if len(self.indent_stack) > 1:
                 self.indent_stack.pop()
 
-    def _try_flat(self, msg: Any, pretty_fn: Any) -> Optional[str]:
+    def _try_flat(self, msg: Any, pretty_fn: Any) -> str | None:
         """Try to render msg flat (space-separated). Return flat string if it fits, else None."""
         msg_id = id(msg)
         if msg_id not in self._memo and msg_id not in self._computing:
@@ -328,7 +328,7 @@ class PrettyPrinter:
         assert name is not None
         return name
 
-    def deconstruct_relation_id_uint128(self, msg: logic_pb2.RelationId) -> Optional[logic_pb2.UInt128Value]:
+    def deconstruct_relation_id_uint128(self, msg: logic_pb2.RelationId) -> logic_pb2.UInt128Value | None:
         name = self.relation_id_to_string(msg)
         if name is None:
             return self.relation_id_to_uint128(msg)
@@ -3888,7 +3888,7 @@ class PrettyPrinter:
         else:
             raise ParseError(f"no pretty printer for {type(msg)}")
 
-def pretty(msg: Any, io: Optional[IO[str]] = None, max_width: int = 92) -> str:
+def pretty(msg: Any, io: IO[str] | None = None, max_width: int = 92) -> str:
     """Pretty print a protobuf message and return the string representation."""
     printer = PrettyPrinter(io, max_width=max_width)
     printer.pretty_transaction(msg)
@@ -3896,7 +3896,7 @@ def pretty(msg: Any, io: Optional[IO[str]] = None, max_width: int = 92) -> str:
     return printer.get_output()
 
 
-def pretty_debug(msg: Any, io: Optional[IO[str]] = None, max_width: int = 92) -> str:
+def pretty_debug(msg: Any, io: IO[str] | None = None, max_width: int = 92) -> str:
     """Pretty print a protobuf message with raw relation IDs and debug info appended as comments."""
     printer = PrettyPrinter(io, max_width=max_width, print_symbolic_relation_ids=False)
     printer.pretty_transaction(msg)

@@ -27,9 +27,9 @@ def test_roundtrip(input_file):
     """Pretty-printed output must re-parse to the same protobuf."""
     with open(input_file) as f:
         content = f.read()
-    proto = generated_parse(content)
+    proto, _ = generated_parse(content)
     printed = pretty(proto)
-    re_proto = generated_parse(printed)
+    re_proto, _ = generated_parse(printed)
     assert proto.SerializeToString() == re_proto.SerializeToString(), (
         f"Roundtrip failed for {Path(input_file).name}:\n"
         f"Original proto:\n{proto}\n"
@@ -48,7 +48,7 @@ def test_pretty_snapshot(snapshot, input_file):
     """Pretty output must match saved snapshots."""
     with open(input_file) as f:
         content = f.read()
-    proto = generated_parse(content)
+    proto, _ = generated_parse(content)
     printed = pretty(proto)
     snapshot.snapshot_dir = str(REPO_ROOT / "tests" / "pretty")
     snapshot.assert_match(printed, os.path.basename(input_file))
@@ -64,9 +64,9 @@ def test_roundtrip_narrow(input_file):
     """Roundtrip still works with a very narrow max_width (forces multi-line)."""
     with open(input_file) as f:
         content = f.read()
-    proto = generated_parse(content)
+    proto, _ = generated_parse(content)
     printed = pretty(proto, max_width=40)
-    re_proto = generated_parse(printed)
+    re_proto, _ = generated_parse(printed)
     assert proto.SerializeToString() == re_proto.SerializeToString()
 
 
@@ -75,16 +75,16 @@ def test_roundtrip_wide(input_file):
     """Roundtrip still works with a very wide max_width (forces flat where possible)."""
     with open(input_file) as f:
         content = f.read()
-    proto = generated_parse(content)
+    proto, _ = generated_parse(content)
     printed = pretty(proto, max_width=1000)
-    re_proto = generated_parse(printed)
+    re_proto, _ = generated_parse(printed)
     assert proto.SerializeToString() == re_proto.SerializeToString()
 
 
 def test_narrow_width_produces_more_lines():
     """A narrow width should produce at least as many lines as the default."""
     content = Path(TEST_INPUTS_DIR / "arithmetic.lqp").read_text()
-    proto = generated_parse(content)
+    proto, _ = generated_parse(content)
     default_output = pretty(proto)
     narrow_output = pretty(proto, max_width=40)
     assert narrow_output.count("\n") >= default_output.count("\n")
@@ -93,7 +93,7 @@ def test_narrow_width_produces_more_lines():
 def test_wide_width_produces_fewer_lines():
     """A very wide width should produce at most as many lines as the default."""
     content = Path(TEST_INPUTS_DIR / "arithmetic.lqp").read_text()
-    proto = generated_parse(content)
+    proto, _ = generated_parse(content)
     default_output = pretty(proto)
     wide_output = pretty(proto, max_width=1000)
     assert wide_output.count("\n") <= default_output.count("\n")
@@ -107,7 +107,7 @@ def test_wide_width_produces_fewer_lines():
 def test_pretty_writes_to_provided_io():
     """When an IO object is provided, pretty printer writes to it."""
     content = Path(TEST_INPUTS_DIR / "simple_relatom.lqp").read_text()
-    proto = generated_parse(content)
+    proto, _ = generated_parse(content)
     buf = StringIO()
     result = pretty(proto, io=buf)
     assert buf.getvalue() == result
@@ -117,7 +117,7 @@ def test_pretty_writes_to_provided_io():
 def test_pretty_returns_string_without_io():
     """Without an IO argument, pretty() returns the output as a string."""
     content = Path(TEST_INPUTS_DIR / "simple_relatom.lqp").read_text()
-    proto = generated_parse(content)
+    proto, _ = generated_parse(content)
     result = pretty(proto)
     assert isinstance(result, str)
     assert result.startswith("(transaction")
@@ -289,7 +289,7 @@ class TestTryFlat:
     def test_flat_rendering_short_message(self):
         """A short conjunction should render flat when it fits."""
         content = Path(TEST_INPUTS_DIR / "simple_relatom.lqp").read_text()
-        proto = generated_parse(content)
+        proto, _ = generated_parse(content)
         wide = pretty(proto, max_width=1000)
         narrow = pretty(proto, max_width=20)
         assert narrow.count("\n") >= wide.count("\n")
@@ -297,7 +297,7 @@ class TestTryFlat:
     def test_memo_caching(self):
         """Flat representations should be memoized."""
         content = Path(TEST_INPUTS_DIR / "simple_relatom.lqp").read_text()
-        proto = generated_parse(content)
+        proto, _ = generated_parse(content)
         pp = PrettyPrinter(max_width=92)
         pp.pretty_transaction(proto)
         # After printing, memo should have entries
@@ -326,13 +326,13 @@ class TestGetOutput:
 class TestOutputContent:
     def test_output_starts_with_transaction(self):
         content = Path(TEST_INPUTS_DIR / "simple_relatom.lqp").read_text()
-        proto = generated_parse(content)
+        proto, _ = generated_parse(content)
         output = pretty(proto)
         assert output.strip().startswith("(transaction")
 
     def test_output_ends_with_newline(self):
         content = Path(TEST_INPUTS_DIR / "simple_relatom.lqp").read_text()
-        proto = generated_parse(content)
+        proto, _ = generated_parse(content)
         output = pretty(proto)
         assert output.endswith("\n")
 
@@ -340,7 +340,7 @@ class TestOutputContent:
         for input_file in get_lqp_input_files():
             with open(input_file) as f:
                 content = f.read()
-            proto = generated_parse(content)
+            proto, _ = generated_parse(content)
             output = pretty(proto)
             opens = output.count("(")
             closes = output.count(")")
@@ -353,7 +353,7 @@ class TestOutputContent:
         for input_file in get_lqp_input_files():
             with open(input_file) as f:
                 content = f.read()
-            proto = generated_parse(content)
+            proto, _ = generated_parse(content)
             output = pretty(proto)
             opens = output.count("[")
             closes = output.count("]")
@@ -364,7 +364,7 @@ class TestOutputContent:
 
     def test_values_file_contains_expected_keywords(self):
         content = Path(TEST_INPUTS_DIR / "values.lqp").read_text()
-        proto = generated_parse(content)
+        proto, _ = generated_parse(content)
         output = pretty(proto)
         for kw in [
             "transaction",
@@ -380,7 +380,7 @@ class TestOutputContent:
 
     def test_arithmetic_contains_operators(self):
         content = Path(TEST_INPUTS_DIR / "arithmetic.lqp").read_text()
-        proto = generated_parse(content)
+        proto, _ = generated_parse(content)
         output = pretty(proto)
         for op in ["(+", "(-", "(*", "(/"]:
             assert op in output, f"Missing operator '{op}' in arithmetic output"
@@ -390,7 +390,7 @@ class TestOutputContent:
         for input_file in get_lqp_input_files():
             with open(input_file) as f:
                 content = f.read()
-            proto = generated_parse(content)
+            proto, _ = generated_parse(content)
             output = pretty(proto)
             for i, line in enumerate(output.split("\n"), 1):
                 assert line == line.rstrip(), (
@@ -438,7 +438,7 @@ def test_pretty_from_binary_roundtrip(bin_file):
     txn = transactions_pb2.Transaction()
     txn.ParseFromString(data)
     printed = pretty(txn)
-    re_proto = generated_parse(printed)
+    re_proto, _ = generated_parse(printed)
     assert txn.SerializeToString() == re_proto.SerializeToString(), (
         f"Binary roundtrip failed for {Path(bin_file).name}"
     )

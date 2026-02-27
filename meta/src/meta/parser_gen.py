@@ -90,6 +90,7 @@ from .grammar import (
     Terminal,
 )
 from .grammar_utils import is_epsilon, rhs_elements
+from .proto_ast import ProtoMessage
 from .target import (
     Assign,
     BaseType,
@@ -100,6 +101,7 @@ from .target import (
     ListExpr,
     ListType,
     Lit,
+    MessageType,
     ParseNonterminal,
     ParseNonterminalDef,
     Seq,
@@ -132,28 +134,55 @@ class AmbiguousGrammarError(Exception):
 
 
 def generate_parse_functions(
-    grammar: Grammar, indent: str = ""
+    grammar: Grammar,
+    indent: str = "",
+    proto_messages: dict[tuple[str, str], ProtoMessage] | None = None,
 ) -> list[ParseNonterminalDef]:
     parser_methods = []
     reachable, _ = grammar.analysis.partition_nonterminals_by_reachability()
     for nt in reachable:
         rules = grammar.rules[nt]
-        method_code = _generate_parse_method(nt, rules, grammar, indent)
+        method_code = _generate_parse_method(nt, rules, grammar, indent, proto_messages)
         parser_methods.append(method_code)
     return parser_methods
 
 
+def _wrap_with_span(body: TargetExpr, return_type) -> TargetExpr:
+    """Wrap a nonterminal body with span_start/record_span."""
+    span_var = Var(gensym("span_start"), BaseType("Int64"))
+    result_var = Var(gensym("result"), return_type)
+    type_name = return_type.name if isinstance(return_type, MessageType) else ""
+    return Let(
+        span_var,
+        Call(make_builtin("span_start"), []),
+        Let(
+            result_var,
+            body,
+            Seq(
+                [
+                    Call(make_builtin("record_span"), [span_var, Lit(type_name)]),
+                    result_var,
+                ]
+            ),
+        ),
+    )
+
+
 def _generate_parse_method(
-    lhs: Nonterminal, rules: list[Rule], grammar: Grammar, indent: str = ""
+    lhs: Nonterminal,
+    rules: list[Rule],
+    grammar: Grammar,
+    indent: str = "",
+    proto_messages: dict[tuple[str, str], ProtoMessage] | None = None,
 ) -> ParseNonterminalDef:
-    """Generate parse method code as string (preserving existing logic)."""
+    """Generate parse method for a nonterminal with provenance tracking."""
     return_type = None
     rhs = None
     follow_set = FollowSet(grammar, lhs)
     if len(rules) == 1:
         rule = rules[0]
         rhs = _generate_parse_rhs_ir(
-            rule.rhs, grammar, follow_set, True, rule.constructor
+            rule.rhs, grammar, follow_set, True, rule.constructor, proto_messages
         )
         return_type = rule.constructor.return_type
     else:
@@ -171,7 +200,6 @@ def _generate_parse_method(
                 ],
             )
         for i, rule in enumerate(rules):
-            # Ensure the return type is the same for all actions for this nonterminal.
             assert return_type is None or return_type == rule.constructor.return_type, (
                 f"Return type mismatch at rule {i}: {return_type} != {rule.constructor.return_type}"
             )
@@ -183,12 +211,19 @@ def _generate_parse_method(
                     make_builtin("equal"), [Var(prediction, BaseType("Int64")), Lit(i)]
                 ),
                 _generate_parse_rhs_ir(
-                    rule.rhs, grammar, follow_set, True, rule.constructor
+                    rule.rhs,
+                    grammar,
+                    follow_set,
+                    True,
+                    rule.constructor,
+                    proto_messages,
                 ),
                 tail,
             )
         rhs = Let(Var(prediction, BaseType("Int64")), predictor, tail)
     assert return_type is not None
+    if isinstance(return_type, MessageType):
+        rhs = _wrap_with_span(rhs, return_type)
     return ParseNonterminalDef(lhs, [], return_type, rhs, indent)
 
 
@@ -377,22 +412,12 @@ def _generate_parse_rhs_ir(
     follow_set: TerminalSequenceSet,
     apply_action: bool = False,
     action: Lambda | None = None,
+    proto_messages: dict[tuple[str, str], ProtoMessage] | None = None,
 ) -> TargetExpr:
-    """Generate IR for parsing an RHS.
-
-    Args:
-        rhs: The RHS to parse
-        grammar: The grammar
-        follow_set: TerminalSequenceSet for computing follow lazily
-        apply_action: Whether to apply the semantic action
-        action: The semantic action to apply (required if apply_action is True)
-
-    Returns IR expression for leaf nodes (Literal, Terminal, Nonterminal).
-    Returns None for complex cases that still use string generation.
-    """
+    """Generate IR for parsing an RHS with provenance tracking."""
     if isinstance(rhs, Sequence):
         return _generate_parse_rhs_ir_sequence(
-            rhs, grammar, follow_set, apply_action, action
+            rhs, grammar, follow_set, apply_action, action, proto_messages
         )
     elif isinstance(rhs, LitTerminal):
         parse_expr = Call(make_builtin("consume_literal"), [Lit(rhs.name)])
@@ -400,7 +425,6 @@ def _generate_parse_rhs_ir(
             return Seq([parse_expr, apply_lambda(action, [])])
         return parse_expr
     elif isinstance(rhs, NamedTerminal):
-        # Use terminal's actual type for consume_terminal instead of generic Token
         from .target import FunctionType
 
         terminal_type = rhs.target_type()
@@ -427,14 +451,18 @@ def _generate_parse_rhs_ir(
     elif isinstance(rhs, Option):
         assert grammar is not None
         predictor = _build_option_predictor(grammar, rhs.rhs, follow_set)
-        parse_result = _generate_parse_rhs_ir(rhs.rhs, grammar, follow_set, False, None)
+        parse_result = _generate_parse_rhs_ir(
+            rhs.rhs, grammar, follow_set, False, None, proto_messages
+        )
         return IfElse(predictor, Call(make_builtin("some"), [parse_result]), Lit(None))
     elif isinstance(rhs, Star):
         assert grammar is not None
         xs = Var(gensym("xs"), ListType(rhs.rhs.target_type()))
         cond = Var(gensym("cond"), BaseType("Boolean"))
         predictor = _build_option_predictor(grammar, rhs.rhs, follow_set)
-        parse_item = _generate_parse_rhs_ir(rhs.rhs, grammar, follow_set, False, None)
+        parse_item = _generate_parse_rhs_ir(
+            rhs.rhs, grammar, follow_set, False, None, proto_messages
+        )
         item = Var(gensym("item"), rhs.rhs.target_type())
         loop_body = Seq(
             [
@@ -458,6 +486,7 @@ def _generate_parse_rhs_ir_sequence(
     follow_set: TerminalSequenceSet,
     apply_action: bool = False,
     action: Lambda | None = None,
+    proto_messages: dict[tuple[str, str], ProtoMessage] | None = None,
 ) -> TargetExpr:
     if is_epsilon(rhs):
         return Lit(None)
@@ -473,7 +502,9 @@ def _generate_parse_rhs_ir_sequence(
             follow_set_i = ConcatSet(first_following, follow_set)
         else:
             follow_set_i = follow_set
-        elem_ir = _generate_parse_rhs_ir(elem, grammar, follow_set_i, False, None)
+        elem_ir = _generate_parse_rhs_ir(
+            elem, grammar, follow_set_i, False, None, proto_messages
+        )
         if isinstance(elem, LitTerminal):
             exprs.append(elem_ir)
         else:
@@ -494,13 +525,10 @@ def _generate_parse_rhs_ir_sequence(
         lambda_call = apply_lambda(action, arg_vars)
         exprs.append(lambda_call)
     elif len(arg_vars) > 1:
-        # Multiple values - wrap in tuple
         exprs.append(Call(make_builtin("tuple"), arg_vars))
     elif len(arg_vars) == 1:
-        # Single value - return the variable
         exprs.append(arg_vars[0])
     else:
-        # no non-literal elements, return None
         return Lit(None)
 
     if len(exprs) == 1:

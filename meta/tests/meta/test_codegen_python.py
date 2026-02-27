@@ -462,7 +462,7 @@ def test_python_type_generation():
     assert gen.gen_type(ListType(BaseType("Int64"))) == "list[int]"
 
     # Option type
-    assert gen.gen_type(OptionType(BaseType("String"))) == "Optional[str]"
+    assert gen.gen_type(OptionType(BaseType("String"))) == "str | None"
 
 
 # Tests for helper function codegen (FunDef from yacc grammar)
@@ -492,7 +492,7 @@ def test_python_helper_function_with_if():
     reset_gensym()
 
     # Equivalent to:
-    # def check_value(v: Optional[int], default: int) -> int:
+    # def check_value(v: int | None, default: int) -> int:
     #     if v is None:
     #         return default
     #     return v
@@ -507,7 +507,7 @@ def test_python_helper_function_with_if():
         ),
     )
     code = gen.generate_def(func)
-    assert "def check_value(v: Optional[int], default: int) -> int:" in code
+    assert "def check_value(v: int | None, default: int) -> int:" in code
     assert "if v is None:" in code
     assert "return default" in code
     assert "return v" in code

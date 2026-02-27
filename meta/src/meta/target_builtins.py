@@ -249,6 +249,10 @@ register_builtin("pp_dispatch", [T], VOID)
 # === Sequence indexing ===
 register_builtin("get_at", [SequenceType(T), INT64], T)
 
+# === Provenance tracking ===
+register_builtin("span_start", [], INT64)
+register_builtin("record_span", [INT64, STRING], VOID)
+
 
 # === Validation functions ===
 
