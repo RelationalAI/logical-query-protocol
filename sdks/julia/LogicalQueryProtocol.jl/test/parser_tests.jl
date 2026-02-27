@@ -127,7 +127,8 @@ end
 
 @testitem "parse delegates to parse_transaction" setup=[ParserSetup] begin
     input = "(transaction (epoch (writes) (reads)))"
-    @test Parser.parse(input) == Parser.parse_transaction(input)
+    result, _ = Parser.parse(input)
+    @test result == Parser.parse_transaction(input)
 end
 
 @testitem "parse_fragment rejects transaction" setup=[ParserSetup] begin

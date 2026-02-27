@@ -190,11 +190,11 @@ mutable struct ParserState
     id_to_debuginfo::Dict{{Vector{{UInt8}},Vector{{Pair{{Tuple{{UInt64,UInt64}},String}}}}}}
     _current_fragment_id::Union{{Nothing,Vector{{UInt8}}}}
     _relation_id_to_name::Dict{{Tuple{{UInt64,UInt64}},String}}
-    provenance::Dict{{Int,Span}}
+    provenance::Dict{{Any,Span}}
     _line_starts::Vector{{Int}}
 
     function ParserState(tokens::Vector{{Token}}, input_str::String)
-        return new(tokens, 1, Dict(), nothing, Dict(), Dict(), _compute_line_starts(input_str))
+        return new(tokens, 1, Dict(), nothing, Dict(), Dict{{Any,Span}}(), _compute_line_starts(input_str))
     end
 end
 
@@ -329,36 +329,43 @@ end
 # --- Parse functions ---
 {parse_nonterminal_defns}
 
-function parse_transaction(input::String)
-    lexer = Lexer(input)
-    parser = ParserState(lexer.tokens, input)
-    result = parse_{start_name}(parser)
-    # Check for unconsumed tokens (except EOF)
+function _check_eof(parser::ParserState)
     if parser.pos <= length(parser.tokens)
         remaining_token = lookahead(parser, 0)
         if remaining_token.type != "\$"
             throw(ParseError("Unexpected token at end of input: $remaining_token"))
         end
     end
-    return result, parser.provenance
+    return nothing
+end
+
+function parse_transaction(input::String)
+    lexer = Lexer(input)
+    parser = ParserState(lexer.tokens, input)
+    result = parse_{start_name}(parser)
+    _check_eof(parser)
+    return result
 end
 
 function parse_fragment(input::String)
     lexer = Lexer(input)
     parser = ParserState(lexer.tokens, input)
     result = parse_fragment(parser)
-    # Check for unconsumed tokens (except EOF)
-    if parser.pos <= length(parser.tokens)
-        remaining_token = lookahead(parser, 0)
-        if remaining_token.type != "\$"
-            throw(ParseError("Unexpected token at end of input: $remaining_token"))
-        end
-    end
-    return result, parser.provenance
+    _check_eof(parser)
+    return result
 end
 
 function parse(input::String)
-    return parse_transaction(input)
+    lexer = Lexer(input)
+    parser = ParserState(lexer.tokens, input)
+    result = parse_{start_name}(parser)
+    _check_eof(parser)
+    # Add root span at () key
+    root_offset = lexer.tokens[1].start_pos
+    if haskey(parser.provenance, root_offset)
+        parser.provenance[()] = parser.provenance[root_offset]
+    end
+    return result, parser.provenance
 end
 
 # Export main parse functions and error type
