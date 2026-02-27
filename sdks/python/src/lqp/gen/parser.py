@@ -2976,8 +2976,8 @@ class Parser:
         return export_csv_columns751
 
 
-def parse(input_str: str) -> Any:
-    """Parse input string and return parse tree."""
+def parse_transaction(input_str: str) -> Any:
+    """Parse input string and return a Transaction."""
     lexer = Lexer(input_str)
     parser = Parser(lexer.tokens)
     result = parser.parse_transaction()
@@ -2987,3 +2987,21 @@ def parse(input_str: str) -> Any:
         if remaining_token.type != "$":
             raise ParseError(f"Unexpected token at end of input: {remaining_token}")
     return result
+
+
+def parse_fragment(input_str: str) -> Any:
+    """Parse input string and return a Fragment."""
+    lexer = Lexer(input_str)
+    parser = Parser(lexer.tokens)
+    result = parser.parse_fragment()
+    # Check for unconsumed tokens (except EOF)
+    if parser.pos < len(parser.tokens):
+        remaining_token = parser.lookahead(0)
+        if remaining_token.type != "$":
+            raise ParseError(f"Unexpected token at end of input: {remaining_token}")
+    return result
+
+
+def parse(input_str: str) -> Any:
+    """Parse input string and return a Transaction."""
+    return parse_transaction(input_str)

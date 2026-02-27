@@ -3341,7 +3341,7 @@ function parse_export_csv_columns_list(parser::ParserState)::Vector{Proto.Export
 end
 
 
-function parse(input::String)
+function parse_transaction(input::String)
     lexer = Lexer(input)
     parser = ParserState(lexer.tokens)
     result = parse_transaction(parser)
@@ -3355,8 +3355,26 @@ function parse(input::String)
     return result
 end
 
-# Export main parse function and error type
-export parse, ParseError
+function parse_fragment(input::String)
+    lexer = Lexer(input)
+    parser = ParserState(lexer.tokens)
+    result = parse_fragment(parser)
+    # Check for unconsumed tokens (except EOF)
+    if parser.pos <= length(parser.tokens)
+        remaining_token = lookahead(parser, 0)
+        if remaining_token.type != "\$"
+            throw(ParseError("Unexpected token at end of input: $remaining_token"))
+        end
+    end
+    return result
+end
+
+function parse(input::String)
+    return parse_transaction(input)
+end
+
+# Export main parse functions and error type
+export parse, parse_transaction, parse_fragment, ParseError
 # Export scanner functions for testing
 export scan_string, scan_int, scan_float, scan_int128, scan_uint128, scan_decimal
 # Export Lexer for testing

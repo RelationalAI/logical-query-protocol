@@ -3906,8 +3906,8 @@ func (p *Parser) parse_export_csv_columns_list() []*pb.ExportCSVColumn {
 }
 
 
-// Parse parses the input string and returns the result
-func Parse(input string) (result *pb.Transaction, err error) {
+// ParseTransaction parses the input string and returns a Transaction
+func ParseTransaction(input string) (result *pb.Transaction, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			if pe, ok := r.(ParseError); ok {
@@ -3930,4 +3930,35 @@ func Parse(input string) (result *pb.Transaction, err error) {
 		}
 	}
 	return result, nil
+}
+
+// ParseFragment parses the input string and returns a Fragment
+func ParseFragment(input string) (result *pb.Fragment, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			if pe, ok := r.(ParseError); ok {
+				err = pe
+				return
+			}
+			panic(r)
+		}
+	}()
+
+	lexer := NewLexer(input)
+	parser := NewParser(lexer.tokens)
+	result = parser.parse_fragment()
+
+	// Check for unconsumed tokens (except EOF)
+	if parser.pos < len(parser.tokens) {
+		remainingToken := parser.lookahead(0)
+		if remainingToken.Type != "$" {
+			return nil, ParseError{msg: fmt.Sprintf("Unexpected token at end of input: %v", remainingToken)}
+		}
+	}
+	return result, nil
+}
+
+// Parse parses the input string and returns a Transaction
+func Parse(input string) (result *pb.Transaction, err error) {
+	return ParseTransaction(input)
 }
