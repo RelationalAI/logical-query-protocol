@@ -557,9 +557,9 @@ end
 
 struct ExportCSVConfig
     path::String
-    data_columns::Vector{ExportCSVColumn}
     csv_source::Union{Nothing,ExportCSVSource}
     csv_config::Union{Nothing,CSVConfig}
+    data_columns::Vector{ExportCSVColumn}
     partition_size::Int64
     compression::String
     syntax_header_row::Bool
@@ -568,15 +568,15 @@ struct ExportCSVConfig
     syntax_quotechar::String
     syntax_escapechar::String
 end
-ExportCSVConfig(;path = "", data_columns = Vector{ExportCSVColumn}(), csv_source = nothing, csv_config = nothing, partition_size = zero(Int64), compression = "", syntax_header_row = false, syntax_missing_string = "", syntax_delim = "", syntax_quotechar = "", syntax_escapechar = "") = ExportCSVConfig(path, data_columns, csv_source, csv_config, partition_size, compression, syntax_header_row, syntax_missing_string, syntax_delim, syntax_quotechar, syntax_escapechar)
-PB.default_values(::Type{ExportCSVConfig}) = (;path = "", data_columns = Vector{ExportCSVColumn}(), csv_source = nothing, csv_config = nothing, partition_size = zero(Int64), compression = "", syntax_header_row = false, syntax_missing_string = "", syntax_delim = "", syntax_quotechar = "", syntax_escapechar = "")
-PB.field_numbers(::Type{ExportCSVConfig}) = (;path = 1, data_columns = 2, csv_source = 10, csv_config = 11, partition_size = 3, compression = 4, syntax_header_row = 5, syntax_missing_string = 6, syntax_delim = 7, syntax_quotechar = 8, syntax_escapechar = 9)
+ExportCSVConfig(;path = "", csv_source = nothing, csv_config = nothing, data_columns = Vector{ExportCSVColumn}(), partition_size = zero(Int64), compression = "", syntax_header_row = false, syntax_missing_string = "", syntax_delim = "", syntax_quotechar = "", syntax_escapechar = "") = ExportCSVConfig(path, csv_source, csv_config, data_columns, partition_size, compression, syntax_header_row, syntax_missing_string, syntax_delim, syntax_quotechar, syntax_escapechar)
+PB.default_values(::Type{ExportCSVConfig}) = (;path = "", csv_source = nothing, csv_config = nothing, data_columns = Vector{ExportCSVColumn}(), partition_size = zero(Int64), compression = "", syntax_header_row = false, syntax_missing_string = "", syntax_delim = "", syntax_quotechar = "", syntax_escapechar = "")
+PB.field_numbers(::Type{ExportCSVConfig}) = (;path = 1, csv_source = 10, csv_config = 11, data_columns = 2, partition_size = 3, compression = 4, syntax_header_row = 5, syntax_missing_string = 6, syntax_delim = 7, syntax_quotechar = 8, syntax_escapechar = 9)
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:ExportCSVConfig})
     path = ""
-    data_columns = PB.BufferedVector{ExportCSVColumn}()
     csv_source = Ref{Union{Nothing,ExportCSVSource}}(nothing)
     csv_config = Ref{Union{Nothing,CSVConfig}}(nothing)
+    data_columns = PB.BufferedVector{ExportCSVColumn}()
     partition_size = zero(Int64)
     compression = ""
     syntax_header_row = false
@@ -588,12 +588,12 @@ function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:ExportCSVConfig})
         field_number, wire_type = PB.decode_tag(d)
         if field_number == 1
             path = PB.decode(d, String)
-        elseif field_number == 2
-            PB.decode!(d, data_columns)
         elseif field_number == 10
             PB.decode!(d, csv_source)
         elseif field_number == 11
             PB.decode!(d, csv_config)
+        elseif field_number == 2
+            PB.decode!(d, data_columns)
         elseif field_number == 3
             partition_size = PB.decode(d, Int64)
         elseif field_number == 4
@@ -612,15 +612,15 @@ function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:ExportCSVConfig})
             Base.skip(d, wire_type)
         end
     end
-    return ExportCSVConfig(path, data_columns[], csv_source[], csv_config[], partition_size, compression, syntax_header_row, syntax_missing_string, syntax_delim, syntax_quotechar, syntax_escapechar)
+    return ExportCSVConfig(path, csv_source[], csv_config[], data_columns[], partition_size, compression, syntax_header_row, syntax_missing_string, syntax_delim, syntax_quotechar, syntax_escapechar)
 end
 
 function PB.encode(e::PB.AbstractProtoEncoder, x::ExportCSVConfig)
     initpos = position(e.io)
     !isempty(x.path) && PB.encode(e, 1, x.path)
-    !isempty(x.data_columns) && PB.encode(e, 2, x.data_columns)
     !isnothing(x.csv_source) && PB.encode(e, 10, x.csv_source)
     !isnothing(x.csv_config) && PB.encode(e, 11, x.csv_config)
+    !isempty(x.data_columns) && PB.encode(e, 2, x.data_columns)
     x.partition_size != zero(Int64) && PB.encode(e, 3, x.partition_size)
     !isempty(x.compression) && PB.encode(e, 4, x.compression)
     x.syntax_header_row != false && PB.encode(e, 5, x.syntax_header_row)
@@ -633,9 +633,9 @@ end
 function PB._encoded_size(x::ExportCSVConfig)
     encoded_size = 0
     !isempty(x.path) && (encoded_size += PB._encoded_size(x.path, 1))
-    !isempty(x.data_columns) && (encoded_size += PB._encoded_size(x.data_columns, 2))
     !isnothing(x.csv_source) && (encoded_size += PB._encoded_size(x.csv_source, 10))
     !isnothing(x.csv_config) && (encoded_size += PB._encoded_size(x.csv_config, 11))
+    !isempty(x.data_columns) && (encoded_size += PB._encoded_size(x.data_columns, 2))
     x.partition_size != zero(Int64) && (encoded_size += PB._encoded_size(x.partition_size, 3))
     !isempty(x.compression) && (encoded_size += PB._encoded_size(x.compression, 4))
     x.syntax_header_row != false && (encoded_size += PB._encoded_size(x.syntax_header_row, 5))
