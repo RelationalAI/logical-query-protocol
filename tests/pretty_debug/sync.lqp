@@ -3,9 +3,12 @@
   (sync :foo :bar)
   (epoch
     (writes
-      (define (fragment :frag (def 0x9f86d081884c7d65 ([x::INT y::INT] (not (= x y)))))))))
+      (define
+        (fragment
+          :frag
+          (def 0x15d05ac5a0ea2f9a657d4c8881d0869f ([x::INT y::INT] (not (= x y)))))))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0x9f86d081884c7d65` -> `test`
+;; 	 ID `0x15d05ac5a0ea2f9a657d4c8881d0869f` -> `test`

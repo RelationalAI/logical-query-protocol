@@ -2,14 +2,16 @@
   (configure { :ivm.maintenance_level "off" :semantics_version 0})
   (epoch
     (writes
-      (define (fragment :f1 (def 0x3a6eb0790f39ac87 ([x::INT] (= x 1)))))
-      (context 0xd0d332779f54ce74 0x3ade11b0fceb3e01))
-    (reads (output :data 0x3a6eb0790f39ac87)))
-  (epoch (writes (define (fragment :f2 (def 0xd98cf53e0c8b77c1 ([x::INT] (= x 2)))))))
-  (epoch (reads (output :data 0x3a6eb0790f39ac87))))
+      (define (fragment :f1 (def 0x5d2cddb256384fc987ac390f79b06e3a ([x::INT] (= x 1)))))
+      (context 0xf05b0f3d5b9694ff74ce549f7732d3d0 0xf3742a62041ecf5b013eebfcb011de3a))
+    (reads (output :data 0x5d2cddb256384fc987ac390f79b06e3a)))
+  (epoch
+    (writes
+      (define (fragment :f2 (def 0x4258695b8d35964ac1778b0c3ef58cd9 ([x::INT] (= x 2)))))))
+  (epoch (reads (output :data 0x5d2cddb256384fc987ac390f79b06e3a))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0x3a6eb0790f39ac87` -> `data`
-;; 	 ID `0xd98cf53e0c8b77c1` -> `data2`
+;; 	 ID `0x5d2cddb256384fc987ac390f79b06e3a` -> `data`
+;; 	 ID `0x4258695b8d35964ac1778b0c3ef58cd9` -> `data2`

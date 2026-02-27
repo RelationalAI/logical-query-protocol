@@ -1,10 +1,10 @@
 (transaction
   (configure { :ivm.maintenance_level "all" :semantics_version 2})
   (epoch
-    (writes (define (fragment :f2 (def 0xdb77fd01af957221 ([] (= 2 2))))))
-    (reads (output :r2 0xdb77fd01af957221))))
+    (writes (define (fragment :f2 (def 0x830a77b3649b98a4217295af01fd77db ([] (= 2 2))))))
+    (reads (output :r2 0x830a77b3649b98a4217295af01fd77db))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0xdb77fd01af957221` -> `r2`
+;; 	 ID `0x830a77b3649b98a4217295af01fd77db` -> `r2`

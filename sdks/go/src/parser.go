@@ -10,6 +10,7 @@ package lqp
 
 import (
 	"crypto/sha256"
+	"encoding/binary"
 	"fmt"
 	"math"
 	"math/big"
@@ -388,16 +389,9 @@ func (p *Parser) startFragment(fragmentID *pb.FragmentId) *pb.FragmentId {
 }
 
 func (p *Parser) relationIdFromString(name string) *pb.RelationId {
-	// Create RelationId from string hash (matching Python implementation)
-	// Python uses: int(hashlib.sha256(name.encode()).hexdigest()[:16], 16)
-	// This takes only first 8 bytes (16 hex chars) as id_low, id_high is always 0
-	// Python interprets the hex as big-endian, so we read bytes in big-endian order
 	hash := sha256.Sum256([]byte(name))
-	var low uint64
-	for i := 0; i < 8; i++ {
-		low = (low << 8) | uint64(hash[i])
-	}
-	high := uint64(0)
+	low := binary.LittleEndian.Uint64(hash[:8])
+	high := binary.LittleEndian.Uint64(hash[8:16])
 	relationId := &pb.RelationId{IdLow: low, IdHigh: high}
 
 	// Store the mapping for the current fragment if we're inside one

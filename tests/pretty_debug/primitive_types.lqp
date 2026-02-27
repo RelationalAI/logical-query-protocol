@@ -5,115 +5,134 @@
       (define
         (fragment
           :f1
-          (def 0x6da88c34ba124c41 ([v::INT] (= v 21)))
-          (def 0xf6a2efa282ea487e ([v::INT] (= v -21)))
-          (def 0x11f5eb99c00e936a ([v::INT128] (= v 21i128)))
-          (def 0x9930c5b2f0cd6ccb ([v::INT128] (= v 85968058283706962486085i128)))
-          (def 0x602371f9ccea10c8 ([v::INT128] (= v -5968058283706962486085i128)))
-          (def 0xd085cf3027bc148e ([v::UINT128] (= v 0x123456789abcdef12345)))
-          (def 0x76a7e234dc54e9c6 ([v::FLOAT] (= v 1.23)))
-          (def 0xcecffbaf6b2b8ded ([v::FLOAT] (= v inf)))
-          (def 0xc6e98691b0bd6da8 ([v::FLOAT] (= v nan)))
-          (def 0xe87632cd46bd490 ([v::DATE] (= v (date 2025 8 1))))
-          (def 0x2763d133c5e59ca4 ([v::DATETIME] (= v (datetime 2025 8 1 20 3 4 123000))))
-          (def 0xe7502c799b8f76fb ([v::(DECIMAL 18 6)] (= v 123.456000d18)))
-          (def 0x8c25cb3686462e9a ([v::STRING] (= v "hello")))
-          (def 0xb760f44fa5965c24 ([v::BOOLEAN] (= v true)))
-          (def 0x29280a48db1af571 ([v::INT] (and (= v 21) (atom 0x6da88c34ba124c41 21))))
-          (def 0x680d4e76cfe96c15 ([v::INT] (and (= v -21) (atom 0xf6a2efa282ea487e -21))))
+          (def 0x1a5cfca466db77f9414c12ba348ca86d ([v::INT] (= v 21)))
+          (def 0xd97ecf504da0c0cd7e48ea82a2efa2f6 ([v::INT] (= v -21)))
+          (def 0xb609a84064adca266a930ec099ebf511 ([v::INT128] (= v 21i128)))
           (def
-            0xa6d172f21c940600
-            ([v::INT128] (and (= v 21i128) (atom 0x11f5eb99c00e936a 21i128))))
+            0xb164bbadc277f9afcb6ccdf0b2c53099
+            ([v::INT128] (= v 85968058283706962486085i128)))
           (def
-            0xabb2f2ab3cbb2da9
+            0xcbbbfbbff1ddd674c810eaccf9712360
+            ([v::INT128] (= v -5968058283706962486085i128)))
+          (def
+            0x1a72797fd698735d8e14bc2730cf85d0
+            ([v::UINT128] (= v 0x123456789abcdef12345)))
+          (def 0x952771df9fccb205c6e954dc34e2a776 ([v::FLOAT] (= v 1.23)))
+          (def 0xbc10e07f256da705ed8d2b6baffbcfce ([v::FLOAT] (= v inf)))
+          (def 0xe3ea072fe2f39fc0a86dbdb09186e9c6 ([v::FLOAT] (= v nan)))
+          (def 0xfe816deb1763517c90d46bd42c63870e ([v::DATE] (= v (date 2025 8 1))))
+          (def
+            0x4f22644831b913ada49ce5c533d16327
+            ([v::DATETIME] (= v (datetime 2025 8 1 20 3 4 123000))))
+          (def 0x6c955cdf27f07edfb768f9b792c50e7 ([v::(DECIMAL 18 6)] (= v 123.456000d18)))
+          (def 0x2fa288563c88d2869a2e468636cb258c ([v::STRING] (= v "hello")))
+          (def 0xc4227a4671b4a374245c96a54ff460b7 ([v::BOOLEAN] (= v true)))
+          (def
+            0xd8addb69cc80e2f771f51adb480a2829
+            ([v::INT] (and (= v 21) (atom 0x1a5cfca466db77f9414c12ba348ca86d 21))))
+          (def
+            0xaf25e1475afab09d156ce9cf764e0d68
+            ([v::INT] (and (= v -21) (atom 0xd97ecf504da0c0cd7e48ea82a2efa2f6 -21))))
+          (def
+            0xf7c84c934ccbf75f0006941cf272d1a6
+            ([v::INT128]
+             (and (= v 21i128) (atom 0xb609a84064adca266a930ec099ebf511 21i128))))
+          (def
+            0x1ba9daf955c2be73a92dbb3cabf2b2ab
             ([v::INT128]
              (and
                (= v 85968058283706962486085i128)
-               (atom 0x9930c5b2f0cd6ccb 85968058283706962486085i128))))
+               (atom 0xb164bbadc277f9afcb6ccdf0b2c53099 85968058283706962486085i128))))
           (def
-            0x7885e01de1cacaa7
+            0x7661a284328530d1a7cacae11de08578
             ([v::INT128]
              (and
                (= v -5968058283706962486085i128)
-               (atom 0x602371f9ccea10c8 -5968058283706962486085i128))))
+               (atom 0xcbbbfbbff1ddd674c810eaccf9712360 -5968058283706962486085i128))))
           (def
-            0x6829fcf78cf5b4ff
+            0x13de9c1955d5dfd2ffb4f58cf7fc2968
             ([v::UINT128]
              (and
                (= v 0x123456789abcdef12345)
-               (atom 0xd085cf3027bc148e 0x123456789abcdef12345))))
+               (atom 0x1a72797fd698735d8e14bc2730cf85d0 0x123456789abcdef12345))))
           (def
-            0xa258ef7de76717c3
-            ([v::FLOAT] (and (= v 1.23) (atom 0x76a7e234dc54e9c6 1.23))))
+            0xfecf608eab2f6d9ac31767e77def58a2
+            ([v::FLOAT] (and (= v 1.23) (atom 0x952771df9fccb205c6e954dc34e2a776 1.23))))
           (def
-            0x1126cea10c852660
-            ([v::FLOAT] (and (= v inf) (atom 0xcecffbaf6b2b8ded inf))))
+            0xc94ec96351da68d6026850ca1ce2611
+            ([v::FLOAT] (and (= v inf) (atom 0xbc10e07f256da705ed8d2b6baffbcfce inf))))
           (def
-            0xf737d26907ed37ef
-            ([v::FLOAT] (and (= v nan) (atom 0xc6e98691b0bd6da8 nan))))
+            0x95e9c15c6e73305eef37ed0769d237f7
+            ([v::FLOAT] (and (= v nan) (atom 0xe3ea072fe2f39fc0a86dbdb09186e9c6 nan))))
           (def
-            0x23bfa3dfd6ba4ed5
+            0xbca233aa396fc3c8d54ebad6dfa3bf23
             ([v::(DECIMAL 18 6)]
-             (and (= v 123.456000d18) (atom 0xe7502c799b8f76fb 123.456000d18))))
+             (and
+               (= v 123.456000d18)
+               (atom 0x6c955cdf27f07edfb768f9b792c50e7 123.456000d18))))
           (def
-            0x47bbe0f73840e6e9
-            ([v::DATE] (and (= v (date 2025 8 1)) (atom 0xe87632cd46bd490 (date 2025 8 1)))))
+            0x65edab7e93e482d5e9e64038f7e0bb47
+            ([v::DATE]
+             (and
+               (= v (date 2025 8 1))
+               (atom 0xfe816deb1763517c90d46bd42c63870e (date 2025 8 1)))))
           (def
-            0x147e4ac0bf80f683
+            0x50c236ba2aa6bb6083f680bfc04a7e14
             ([v::DATETIME]
              (and
                (= v (datetime 2025 8 1 20 3 4 123000))
-               (atom 0x2763d133c5e59ca4 (datetime 2025 8 1 20 3 4 123000)))))
+               (atom 0x4f22644831b913ada49ce5c533d16327 (datetime 2025 8 1 20 3 4 123000)))))
           (def
-            0x737b647384c86624
-            ([v::STRING] (and (= v "hello") (atom 0x8c25cb3686462e9a "hello"))))
+            0xd5485e9ab54a14fb2466c88473647b73
+            ([v::STRING]
+             (and (= v "hello") (atom 0x2fa288563c88d2869a2e468636cb258c "hello"))))
           (def
-            0x431ed2210676d9e9
-            ([v::BOOLEAN] (and (= v true) (atom 0xb760f44fa5965c24 true)))))))
+            0x34d06b7c09574e8fe9d9760621d21e43
+            ([v::BOOLEAN] (and (= v true) (atom 0xc4227a4671b4a374245c96a54ff460b7 true)))))))
     (reads
-      (output :int 0x29280a48db1af571)
-      (output :int_n 0x680d4e76cfe96c15)
-      (output :int128_s 0xa6d172f21c940600)
-      (output :int128_l 0xabb2f2ab3cbb2da9)
-      (output :int128_n 0x7885e01de1cacaa7)
-      (output :uint128 0x6829fcf78cf5b4ff)
-      (output :float 0xa258ef7de76717c3)
-      (output :float_inf 0x1126cea10c852660)
-      (output :float_nan 0xf737d26907ed37ef)
-      (output :dec 0x23bfa3dfd6ba4ed5)
-      (output :date 0x47bbe0f73840e6e9)
-      (output :datetime 0x147e4ac0bf80f683)
-      (output :str 0x737b647384c86624)
-      (output :bool 0x431ed2210676d9e9))))
+      (output :int 0xd8addb69cc80e2f771f51adb480a2829)
+      (output :int_n 0xaf25e1475afab09d156ce9cf764e0d68)
+      (output :int128_s 0xf7c84c934ccbf75f0006941cf272d1a6)
+      (output :int128_l 0x1ba9daf955c2be73a92dbb3cabf2b2ab)
+      (output :int128_n 0x7661a284328530d1a7cacae11de08578)
+      (output :uint128 0x13de9c1955d5dfd2ffb4f58cf7fc2968)
+      (output :float 0xfecf608eab2f6d9ac31767e77def58a2)
+      (output :float_inf 0xc94ec96351da68d6026850ca1ce2611)
+      (output :float_nan 0x95e9c15c6e73305eef37ed0769d237f7)
+      (output :dec 0xbca233aa396fc3c8d54ebad6dfa3bf23)
+      (output :date 0x65edab7e93e482d5e9e64038f7e0bb47)
+      (output :datetime 0x50c236ba2aa6bb6083f680bfc04a7e14)
+      (output :str 0xd5485e9ab54a14fb2466c88473647b73)
+      (output :bool 0x34d06b7c09574e8fe9d9760621d21e43))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0xb760f44fa5965c24` -> `bool`
-;; 	 ID `0xe87632cd46bd490` -> `date`
-;; 	 ID `0x2763d133c5e59ca4` -> `datetime`
-;; 	 ID `0xe7502c799b8f76fb` -> `dec`
-;; 	 ID `0x76a7e234dc54e9c6` -> `float`
-;; 	 ID `0xcecffbaf6b2b8ded` -> `float_inf`
-;; 	 ID `0xc6e98691b0bd6da8` -> `float_nan`
-;; 	 ID `0x6da88c34ba124c41` -> `int`
-;; 	 ID `0x9930c5b2f0cd6ccb` -> `int128_l`
-;; 	 ID `0x602371f9ccea10c8` -> `int128_n`
-;; 	 ID `0x11f5eb99c00e936a` -> `int128_s`
-;; 	 ID `0xf6a2efa282ea487e` -> `int_n`
-;; 	 ID `0x431ed2210676d9e9` -> `output_bool`
-;; 	 ID `0x47bbe0f73840e6e9` -> `output_date`
-;; 	 ID `0x147e4ac0bf80f683` -> `output_datetime`
-;; 	 ID `0x23bfa3dfd6ba4ed5` -> `output_dec`
-;; 	 ID `0xa258ef7de76717c3` -> `output_float`
-;; 	 ID `0x1126cea10c852660` -> `output_float_inf`
-;; 	 ID `0xf737d26907ed37ef` -> `output_float_nan`
-;; 	 ID `0x29280a48db1af571` -> `output_int`
-;; 	 ID `0xabb2f2ab3cbb2da9` -> `output_int128_l`
-;; 	 ID `0x7885e01de1cacaa7` -> `output_int128_n`
-;; 	 ID `0xa6d172f21c940600` -> `output_int128_s`
-;; 	 ID `0x680d4e76cfe96c15` -> `output_int_n`
-;; 	 ID `0x737b647384c86624` -> `output_str`
-;; 	 ID `0x6829fcf78cf5b4ff` -> `output_uint128`
-;; 	 ID `0x8c25cb3686462e9a` -> `str`
-;; 	 ID `0xd085cf3027bc148e` -> `uint128`
+;; 	 ID `0xc4227a4671b4a374245c96a54ff460b7` -> `bool`
+;; 	 ID `0xfe816deb1763517c90d46bd42c63870e` -> `date`
+;; 	 ID `0x4f22644831b913ada49ce5c533d16327` -> `datetime`
+;; 	 ID `0x6c955cdf27f07edfb768f9b792c50e7` -> `dec`
+;; 	 ID `0x952771df9fccb205c6e954dc34e2a776` -> `float`
+;; 	 ID `0xbc10e07f256da705ed8d2b6baffbcfce` -> `float_inf`
+;; 	 ID `0xe3ea072fe2f39fc0a86dbdb09186e9c6` -> `float_nan`
+;; 	 ID `0x1a5cfca466db77f9414c12ba348ca86d` -> `int`
+;; 	 ID `0xb164bbadc277f9afcb6ccdf0b2c53099` -> `int128_l`
+;; 	 ID `0xcbbbfbbff1ddd674c810eaccf9712360` -> `int128_n`
+;; 	 ID `0xb609a84064adca266a930ec099ebf511` -> `int128_s`
+;; 	 ID `0xd97ecf504da0c0cd7e48ea82a2efa2f6` -> `int_n`
+;; 	 ID `0x34d06b7c09574e8fe9d9760621d21e43` -> `output_bool`
+;; 	 ID `0x65edab7e93e482d5e9e64038f7e0bb47` -> `output_date`
+;; 	 ID `0x50c236ba2aa6bb6083f680bfc04a7e14` -> `output_datetime`
+;; 	 ID `0xbca233aa396fc3c8d54ebad6dfa3bf23` -> `output_dec`
+;; 	 ID `0xfecf608eab2f6d9ac31767e77def58a2` -> `output_float`
+;; 	 ID `0xc94ec96351da68d6026850ca1ce2611` -> `output_float_inf`
+;; 	 ID `0x95e9c15c6e73305eef37ed0769d237f7` -> `output_float_nan`
+;; 	 ID `0xd8addb69cc80e2f771f51adb480a2829` -> `output_int`
+;; 	 ID `0x1ba9daf955c2be73a92dbb3cabf2b2ab` -> `output_int128_l`
+;; 	 ID `0x7661a284328530d1a7cacae11de08578` -> `output_int128_n`
+;; 	 ID `0xf7c84c934ccbf75f0006941cf272d1a6` -> `output_int128_s`
+;; 	 ID `0xaf25e1475afab09d156ce9cf764e0d68` -> `output_int_n`
+;; 	 ID `0xd5485e9ab54a14fb2466c88473647b73` -> `output_str`
+;; 	 ID `0x13de9c1955d5dfd2ffb4f58cf7fc2968` -> `output_uint128`
+;; 	 ID `0x2fa288563c88d2869a2e468636cb258c` -> `str`
+;; 	 ID `0x1a72797fd698735d8e14bc2730cf85d0` -> `uint128`

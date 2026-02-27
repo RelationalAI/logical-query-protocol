@@ -112,6 +112,16 @@ end
     @test r.scale == 1
 end
 
+@testitem "Parser - relation_id_from_string" setup=[ParserSetup] begin
+    using LogicalQueryProtocol.Parser: ParserState, Token, relation_id_from_string
+
+    # All SDKs must produce the same id for the same string.
+    parser = ParserState(Token[])
+    rid = relation_id_from_string(parser, "my_relation")
+    @test rid.id_low == 0x5d33996702404f85
+    @test rid.id_high == 0x3b9af8e72af633f8
+end
+
 @testitem "Parser - Lexer tokenization" setup=[ParserSetup] begin
     lexer = Lexer("(transaction (epoch (writes) (reads)))")
     # Tokens: ( transaction ( epoch ( writes ) ( reads ) ) ) $

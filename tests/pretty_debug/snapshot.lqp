@@ -5,13 +5,15 @@
       (define
         (fragment
           :snapshots
-          (edb 0xcd3b9ab2de079088 ["my_edb"] [])
-          (edb 0xd1e6d3706be27c8 ["database" "table"] [])
-          (edb 0xc6e65c9a8c481ef1 ["schema" "namespace" "relation"] [])))
+          (edb 0x570a6b2c5652a23a889007deb29a3bcd ["my_edb"] [])
+          (edb 0x7a6962a0dc04eea8c827be06376d1e0d ["database" "table"] [])
+          (edb 0x1ba1a075d798280ef11e488c9a5ce6c6 ["schema" "namespace" "relation"] [])))
       (define
         (fragment
           :frag1
-          (def 0xaacb662458c1cddb ([x::INT y::STRING] (and (= x 1) (= y "hello"))))
+          (def
+            0x41614649240f9718dbcdc1582466cbaa
+            ([x::INT y::STRING] (and (= x 1) (= y "hello"))))
           (csv_data
             (csv_locator
               (inline_data
@@ -27,41 +29,41 @@
                :csv_quotechar "\""
                :csv_skip 0})
             (columns
-              (column "id" 0xa56145270ce6b3be [INT INT])
-              (column "big_signed" 0xca186c6bd1825179 [INT INT128])
-              (column "big_unsigned" 0x43a8f1e6ecb2ce47 [INT UINT128]))
+              (column "id" 0x674839b712d01dbdbeb3e60c274561a5 [INT INT])
+              (column "big_signed" 0xf5faefdf48a8c90a795182d16b6c18ca [INT INT128])
+              (column "big_unsigned" 0xfc99e21b2b3daa7747ceb2ece6f1a843 [INT UINT128]))
             (asof "2025-01-01T00:00:00Z"))
           (algorithm
-            0x5aa562409c66b3b3
-            0xc96c6d5be8d08a12
+            0xc11ab116e39edbb2b3b3669c4062a55a
+            0x6bfa07b2c1cdb5e7128ad0e85b6d6cc9
             (script
               (assign
-                0x5aa562409c66b3b3
-                ([a::INT b::INT] (and (atom 0xc96c6d5be8d08a12 a) (= b a)))))))))
+                0xc11ab116e39edbb2b3b3669c4062a55a
+                ([a::INT b::INT] (and (atom 0x6bfa07b2c1cdb5e7128ad0e85b6d6cc9 a) (= b a)))))))))
     (reads
-      (output :snapshot1 0xcd3b9ab2de079088)
-      (output :snapshot2 0xd1e6d3706be27c8)
-      (output :snapshot3 0xc6e65c9a8c481ef1)))
+      (output :snapshot1 0x570a6b2c5652a23a889007deb29a3bcd)
+      (output :snapshot2 0x7a6962a0dc04eea8c827be06376d1e0d)
+      (output :snapshot3 0x1ba1a075d798280ef11e488c9a5ce6c6)))
   (epoch
     (writes
       (snapshot
-        ["my_edb"] 0xaacb662458c1cddb
-        ["database" "table"] 0x5aa562409c66b3b3
-        ["schema" "namespace" "relation"] 0xca186c6bd1825179))
+        ["my_edb"] 0x41614649240f9718dbcdc1582466cbaa
+        ["database" "table"] 0xc11ab116e39edbb2b3b3669c4062a55a
+        ["schema" "namespace" "relation"] 0xf5faefdf48a8c90a795182d16b6c18ca))
     (reads
-      (output :snapshot1 0xcd3b9ab2de079088)
-      (output :snapshot2 0xd1e6d3706be27c8)
-      (output :snapshot3 0xc6e65c9a8c481ef1))))
+      (output :snapshot1 0x570a6b2c5652a23a889007deb29a3bcd)
+      (output :snapshot2 0x7a6962a0dc04eea8c827be06376d1e0d)
+      (output :snapshot3 0x1ba1a075d798280ef11e488c9a5ce6c6))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0xca186c6bd1825179` -> `big_signed`
-;; 	 ID `0x43a8f1e6ecb2ce47` -> `big_unsigned`
-;; 	 ID `0x5aa562409c66b3b3` -> `computed`
-;; 	 ID `0xa56145270ce6b3be` -> `id`
-;; 	 ID `0xc96c6d5be8d08a12` -> `input`
-;; 	 ID `0xaacb662458c1cddb` -> `my_rel`
-;; 	 ID `0xcd3b9ab2de079088` -> `snapshot1`
-;; 	 ID `0xd1e6d3706be27c8` -> `snapshot2`
-;; 	 ID `0xc6e65c9a8c481ef1` -> `snapshot3`
+;; 	 ID `0xf5faefdf48a8c90a795182d16b6c18ca` -> `big_signed`
+;; 	 ID `0xfc99e21b2b3daa7747ceb2ece6f1a843` -> `big_unsigned`
+;; 	 ID `0xc11ab116e39edbb2b3b3669c4062a55a` -> `computed`
+;; 	 ID `0x674839b712d01dbdbeb3e60c274561a5` -> `id`
+;; 	 ID `0x6bfa07b2c1cdb5e7128ad0e85b6d6cc9` -> `input`
+;; 	 ID `0x41614649240f9718dbcdc1582466cbaa` -> `my_rel`
+;; 	 ID `0x570a6b2c5652a23a889007deb29a3bcd` -> `snapshot1`
+;; 	 ID `0x7a6962a0dc04eea8c827be06376d1e0d` -> `snapshot2`
+;; 	 ID `0x1ba1a075d798280ef11e488c9a5ce6c6` -> `snapshot3`

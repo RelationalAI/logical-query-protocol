@@ -6,7 +6,7 @@
         (fragment
           :f1
           (def
-            0x6da88c34ba124c41
+            0x1a5cfca466db77f9414c12ba348ca86d
             ([v::INT]
              (or
                (= v -9223372036854775808)
@@ -15,7 +15,7 @@
                (= v 21)
                (= v 9223372036854775807))))
           (def
-            0x2c5a93435dc0f51a
+            0x463eaffc7108c93a1af5c05d43935a2c
             ([v::INT128]
              (or
                (= v -170141183460469231731687303715884105728i128)
@@ -26,13 +26,13 @@
                (= v 9223372036854775808i128)
                (= v 170141183460469231731687303715884105727i128))))
           (def
-            0xd085cf3027bc148e
+            0x1a72797fd698735d8e14bc2730cf85d0
             ([v::UINT128] (or (= v 0x0) (= v 0x1) (= v 0xffffffffffffffffffffffffffffffff))))
           (def
-            0x76a7e234dc54e9c6
+            0x952771df9fccb205c6e954dc34e2a776
             ([v::FLOAT] (or (= v -4.5) (= v -4.4) (= v 4.4) (= v 4.5))))
           (def
-            0xe87632cd46bd490
+            0xfe816deb1763517c90d46bd42c63870e
             ([v::DATE]
              (or
                (= v (date 1 1 1))
@@ -40,7 +40,7 @@
                (= v (date 2025 8 1))
                (= v (date 9999 12 31)))))
           (def
-            0x2763d133c5e59ca4
+            0x4f22644831b913ada49ce5c533d16327
             ([v::DATETIME]
              (or
                (= v (datetime 1 1 1 0 0 0 0))
@@ -48,35 +48,37 @@
                (= v (datetime 2025 8 1 20 3 4 123000))
                (= v (datetime 9999 12 31 23 59 59 999000)))))
           (def
-            0xe7502c799b8f76fb
+            0x6c955cdf27f07edfb768f9b792c50e7
             ([v::(DECIMAL 18 6)]
              (or
                (= v 0.000000d18)
                (= v -123.456789d18)
                (= v 123.456789d18)
                (= v 123456789012.345678d18))))
-          (def 0x8c25cb3686462e9a ([v::STRING] (= v "hello")))
-          (def 0xb760f44fa5965c24 ([v::BOOLEAN] (or (= v true) (= v false)))))))
+          (def 0x2fa288563c88d2869a2e468636cb258c ([v::STRING] (= v "hello")))
+          (def
+            0xc4227a4671b4a374245c96a54ff460b7
+            ([v::BOOLEAN] (or (= v true) (= v false)))))))
     (reads
-      (output :int 0x6da88c34ba124c41)
-      (output :int128 0x2c5a93435dc0f51a)
-      (output :uint128 0xd085cf3027bc148e)
-      (output :float 0x76a7e234dc54e9c6)
-      (output :dec 0xe7502c799b8f76fb)
-      (output :date 0xe87632cd46bd490)
-      (output :datetime 0x2763d133c5e59ca4)
-      (output :str 0x8c25cb3686462e9a)
-      (output :bool 0xb760f44fa5965c24))))
+      (output :int 0x1a5cfca466db77f9414c12ba348ca86d)
+      (output :int128 0x463eaffc7108c93a1af5c05d43935a2c)
+      (output :uint128 0x1a72797fd698735d8e14bc2730cf85d0)
+      (output :float 0x952771df9fccb205c6e954dc34e2a776)
+      (output :dec 0x6c955cdf27f07edfb768f9b792c50e7)
+      (output :date 0xfe816deb1763517c90d46bd42c63870e)
+      (output :datetime 0x4f22644831b913ada49ce5c533d16327)
+      (output :str 0x2fa288563c88d2869a2e468636cb258c)
+      (output :bool 0xc4227a4671b4a374245c96a54ff460b7))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0xb760f44fa5965c24` -> `bool`
-;; 	 ID `0xe87632cd46bd490` -> `date`
-;; 	 ID `0x2763d133c5e59ca4` -> `datetime`
-;; 	 ID `0xe7502c799b8f76fb` -> `dec`
-;; 	 ID `0x76a7e234dc54e9c6` -> `float`
-;; 	 ID `0x6da88c34ba124c41` -> `int`
-;; 	 ID `0x2c5a93435dc0f51a` -> `int128`
-;; 	 ID `0x8c25cb3686462e9a` -> `str`
-;; 	 ID `0xd085cf3027bc148e` -> `uint128`
+;; 	 ID `0xc4227a4671b4a374245c96a54ff460b7` -> `bool`
+;; 	 ID `0xfe816deb1763517c90d46bd42c63870e` -> `date`
+;; 	 ID `0x4f22644831b913ada49ce5c533d16327` -> `datetime`
+;; 	 ID `0x6c955cdf27f07edfb768f9b792c50e7` -> `dec`
+;; 	 ID `0x952771df9fccb205c6e954dc34e2a776` -> `float`
+;; 	 ID `0x1a5cfca466db77f9414c12ba348ca86d` -> `int`
+;; 	 ID `0x463eaffc7108c93a1af5c05d43935a2c` -> `int128`
+;; 	 ID `0x2fa288563c88d2869a2e468636cb258c` -> `str`
+;; 	 ID `0x1a72797fd698735d8e14bc2730cf85d0` -> `uint128`
