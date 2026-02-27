@@ -6,8 +6,9 @@ using ProtoBuf: OneOf
 using ProtoBuf.EnumX: @enumx
 
 export ExportCSVColumn, Demand, Undefine, MaintenanceLevel, Define, Context, Sync
-export SnapshotMapping, Abort, Output, ExportCSVConfig, IVMConfig, Snapshot, Export
-export Configure, Write, Epoch, Read, Transaction, WhatIf
+export SnapshotMapping, Abort, Output, ExportCSVColumns, IVMConfig, Snapshot
+export ExportCSVSource, Configure, Write, ExportCSVConfig, Export, Epoch, Read, Transaction
+export WhatIf
 abstract type var"##Abstract#Transaction" end
 abstract type var"##Abstract#Epoch" end
 abstract type var"##Abstract#Read" end
@@ -319,82 +320,34 @@ function PB._encoded_size(x::Output)
     return encoded_size
 end
 
-struct ExportCSVConfig
-    path::String
-    data_columns::Vector{ExportCSVColumn}
-    partition_size::Int64
-    compression::String
-    syntax_header_row::Bool
-    syntax_missing_string::String
-    syntax_delim::String
-    syntax_quotechar::String
-    syntax_escapechar::String
+struct ExportCSVColumns
+    columns::Vector{ExportCSVColumn}
 end
-ExportCSVConfig(;path = "", data_columns = Vector{ExportCSVColumn}(), partition_size = zero(Int64), compression = "", syntax_header_row = false, syntax_missing_string = "", syntax_delim = "", syntax_quotechar = "", syntax_escapechar = "") = ExportCSVConfig(path, data_columns, partition_size, compression, syntax_header_row, syntax_missing_string, syntax_delim, syntax_quotechar, syntax_escapechar)
-PB.default_values(::Type{ExportCSVConfig}) = (;path = "", data_columns = Vector{ExportCSVColumn}(), partition_size = zero(Int64), compression = "", syntax_header_row = false, syntax_missing_string = "", syntax_delim = "", syntax_quotechar = "", syntax_escapechar = "")
-PB.field_numbers(::Type{ExportCSVConfig}) = (;path = 1, data_columns = 2, partition_size = 3, compression = 4, syntax_header_row = 5, syntax_missing_string = 6, syntax_delim = 7, syntax_quotechar = 8, syntax_escapechar = 9)
+ExportCSVColumns(;columns = Vector{ExportCSVColumn}()) = ExportCSVColumns(columns)
+PB.default_values(::Type{ExportCSVColumns}) = (;columns = Vector{ExportCSVColumn}())
+PB.field_numbers(::Type{ExportCSVColumns}) = (;columns = 1)
 
-function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:ExportCSVConfig})
-    path = ""
-    data_columns = PB.BufferedVector{ExportCSVColumn}()
-    partition_size = zero(Int64)
-    compression = ""
-    syntax_header_row = false
-    syntax_missing_string = ""
-    syntax_delim = ""
-    syntax_quotechar = ""
-    syntax_escapechar = ""
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:ExportCSVColumns})
+    columns = PB.BufferedVector{ExportCSVColumn}()
     while !PB.message_done(d)
         field_number, wire_type = PB.decode_tag(d)
         if field_number == 1
-            path = PB.decode(d, String)
-        elseif field_number == 2
-            PB.decode!(d, data_columns)
-        elseif field_number == 3
-            partition_size = PB.decode(d, Int64)
-        elseif field_number == 4
-            compression = PB.decode(d, String)
-        elseif field_number == 5
-            syntax_header_row = PB.decode(d, Bool)
-        elseif field_number == 6
-            syntax_missing_string = PB.decode(d, String)
-        elseif field_number == 7
-            syntax_delim = PB.decode(d, String)
-        elseif field_number == 8
-            syntax_quotechar = PB.decode(d, String)
-        elseif field_number == 9
-            syntax_escapechar = PB.decode(d, String)
+            PB.decode!(d, columns)
         else
             Base.skip(d, wire_type)
         end
     end
-    return ExportCSVConfig(path, data_columns[], partition_size, compression, syntax_header_row, syntax_missing_string, syntax_delim, syntax_quotechar, syntax_escapechar)
+    return ExportCSVColumns(columns[])
 end
 
-function PB.encode(e::PB.AbstractProtoEncoder, x::ExportCSVConfig)
+function PB.encode(e::PB.AbstractProtoEncoder, x::ExportCSVColumns)
     initpos = position(e.io)
-    !isempty(x.path) && PB.encode(e, 1, x.path)
-    !isempty(x.data_columns) && PB.encode(e, 2, x.data_columns)
-    x.partition_size != zero(Int64) && PB.encode(e, 3, x.partition_size)
-    !isempty(x.compression) && PB.encode(e, 4, x.compression)
-    x.syntax_header_row != false && PB.encode(e, 5, x.syntax_header_row)
-    !isempty(x.syntax_missing_string) && PB.encode(e, 6, x.syntax_missing_string)
-    !isempty(x.syntax_delim) && PB.encode(e, 7, x.syntax_delim)
-    !isempty(x.syntax_quotechar) && PB.encode(e, 8, x.syntax_quotechar)
-    !isempty(x.syntax_escapechar) && PB.encode(e, 9, x.syntax_escapechar)
+    !isempty(x.columns) && PB.encode(e, 1, x.columns)
     return position(e.io) - initpos
 end
-function PB._encoded_size(x::ExportCSVConfig)
+function PB._encoded_size(x::ExportCSVColumns)
     encoded_size = 0
-    !isempty(x.path) && (encoded_size += PB._encoded_size(x.path, 1))
-    !isempty(x.data_columns) && (encoded_size += PB._encoded_size(x.data_columns, 2))
-    x.partition_size != zero(Int64) && (encoded_size += PB._encoded_size(x.partition_size, 3))
-    !isempty(x.compression) && (encoded_size += PB._encoded_size(x.compression, 4))
-    x.syntax_header_row != false && (encoded_size += PB._encoded_size(x.syntax_header_row, 5))
-    !isempty(x.syntax_missing_string) && (encoded_size += PB._encoded_size(x.syntax_missing_string, 6))
-    !isempty(x.syntax_delim) && (encoded_size += PB._encoded_size(x.syntax_delim, 7))
-    !isempty(x.syntax_quotechar) && (encoded_size += PB._encoded_size(x.syntax_quotechar, 8))
-    !isempty(x.syntax_escapechar) && (encoded_size += PB._encoded_size(x.syntax_escapechar, 9))
+    !isempty(x.columns) && (encoded_size += PB._encoded_size(x.columns, 1))
     return encoded_size
 end
 
@@ -460,42 +413,48 @@ function PB._encoded_size(x::Snapshot)
     return encoded_size
 end
 
-struct Export
-    export_config::Union{Nothing,OneOf{ExportCSVConfig}}
+struct ExportCSVSource
+    csv_source::Union{Nothing,OneOf{<:Union{ExportCSVColumns,RelationId}}}
 end
-Export(;export_config = nothing) = Export(export_config)
-PB.oneof_field_types(::Type{Export}) = (;
-    export_config = (;csv_config=ExportCSVConfig),
+ExportCSVSource(;csv_source = nothing) = ExportCSVSource(csv_source)
+PB.oneof_field_types(::Type{ExportCSVSource}) = (;
+    csv_source = (;gnf_columns=ExportCSVColumns, table_def=RelationId),
 )
-PB.default_values(::Type{Export}) = (;csv_config = nothing)
-PB.field_numbers(::Type{Export}) = (;csv_config = 1)
+PB.default_values(::Type{ExportCSVSource}) = (;gnf_columns = nothing, table_def = nothing)
+PB.field_numbers(::Type{ExportCSVSource}) = (;gnf_columns = 1, table_def = 2)
 
-function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Export})
-    export_config = nothing
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:ExportCSVSource})
+    csv_source = nothing
     while !PB.message_done(d)
         field_number, wire_type = PB.decode_tag(d)
         if field_number == 1
-            export_config = OneOf(:csv_config, PB.decode(d, Ref{ExportCSVConfig}))
+            csv_source = OneOf(:gnf_columns, PB.decode(d, Ref{ExportCSVColumns}))
+        elseif field_number == 2
+            csv_source = OneOf(:table_def, PB.decode(d, Ref{RelationId}))
         else
             Base.skip(d, wire_type)
         end
     end
-    return Export(export_config)
+    return ExportCSVSource(csv_source)
 end
 
-function PB.encode(e::PB.AbstractProtoEncoder, x::Export)
+function PB.encode(e::PB.AbstractProtoEncoder, x::ExportCSVSource)
     initpos = position(e.io)
-    if isnothing(x.export_config);
-    elseif x.export_config.name === :csv_config
-        PB.encode(e, 1, x.export_config[]::ExportCSVConfig)
+    if isnothing(x.csv_source);
+    elseif x.csv_source.name === :gnf_columns
+        PB.encode(e, 1, x.csv_source[]::ExportCSVColumns)
+    elseif x.csv_source.name === :table_def
+        PB.encode(e, 2, x.csv_source[]::RelationId)
     end
     return position(e.io) - initpos
 end
-function PB._encoded_size(x::Export)
+function PB._encoded_size(x::ExportCSVSource)
     encoded_size = 0
-    if isnothing(x.export_config);
-    elseif x.export_config.name === :csv_config
-        encoded_size += PB._encoded_size(x.export_config[]::ExportCSVConfig, 1)
+    if isnothing(x.csv_source);
+    elseif x.csv_source.name === :gnf_columns
+        encoded_size += PB._encoded_size(x.csv_source[]::ExportCSVColumns, 1)
+    elseif x.csv_source.name === :table_def
+        encoded_size += PB._encoded_size(x.csv_source[]::RelationId, 2)
     end
     return encoded_size
 end
@@ -592,6 +551,137 @@ function PB._encoded_size(x::Write)
         encoded_size += PB._encoded_size(x.write_type[]::Context, 3)
     elseif x.write_type.name === :snapshot
         encoded_size += PB._encoded_size(x.write_type[]::Snapshot, 5)
+    end
+    return encoded_size
+end
+
+struct ExportCSVConfig
+    path::String
+    csv_source::Union{Nothing,ExportCSVSource}
+    csv_config::Union{Nothing,CSVConfig}
+    data_columns::Vector{ExportCSVColumn}
+    partition_size::Int64
+    compression::String
+    syntax_header_row::Bool
+    syntax_missing_string::String
+    syntax_delim::String
+    syntax_quotechar::String
+    syntax_escapechar::String
+end
+ExportCSVConfig(;path = "", csv_source = nothing, csv_config = nothing, data_columns = Vector{ExportCSVColumn}(), partition_size = zero(Int64), compression = "", syntax_header_row = false, syntax_missing_string = "", syntax_delim = "", syntax_quotechar = "", syntax_escapechar = "") = ExportCSVConfig(path, csv_source, csv_config, data_columns, partition_size, compression, syntax_header_row, syntax_missing_string, syntax_delim, syntax_quotechar, syntax_escapechar)
+PB.default_values(::Type{ExportCSVConfig}) = (;path = "", csv_source = nothing, csv_config = nothing, data_columns = Vector{ExportCSVColumn}(), partition_size = zero(Int64), compression = "", syntax_header_row = false, syntax_missing_string = "", syntax_delim = "", syntax_quotechar = "", syntax_escapechar = "")
+PB.field_numbers(::Type{ExportCSVConfig}) = (;path = 1, csv_source = 10, csv_config = 11, data_columns = 2, partition_size = 3, compression = 4, syntax_header_row = 5, syntax_missing_string = 6, syntax_delim = 7, syntax_quotechar = 8, syntax_escapechar = 9)
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:ExportCSVConfig})
+    path = ""
+    csv_source = Ref{Union{Nothing,ExportCSVSource}}(nothing)
+    csv_config = Ref{Union{Nothing,CSVConfig}}(nothing)
+    data_columns = PB.BufferedVector{ExportCSVColumn}()
+    partition_size = zero(Int64)
+    compression = ""
+    syntax_header_row = false
+    syntax_missing_string = ""
+    syntax_delim = ""
+    syntax_quotechar = ""
+    syntax_escapechar = ""
+    while !PB.message_done(d)
+        field_number, wire_type = PB.decode_tag(d)
+        if field_number == 1
+            path = PB.decode(d, String)
+        elseif field_number == 10
+            PB.decode!(d, csv_source)
+        elseif field_number == 11
+            PB.decode!(d, csv_config)
+        elseif field_number == 2
+            PB.decode!(d, data_columns)
+        elseif field_number == 3
+            partition_size = PB.decode(d, Int64)
+        elseif field_number == 4
+            compression = PB.decode(d, String)
+        elseif field_number == 5
+            syntax_header_row = PB.decode(d, Bool)
+        elseif field_number == 6
+            syntax_missing_string = PB.decode(d, String)
+        elseif field_number == 7
+            syntax_delim = PB.decode(d, String)
+        elseif field_number == 8
+            syntax_quotechar = PB.decode(d, String)
+        elseif field_number == 9
+            syntax_escapechar = PB.decode(d, String)
+        else
+            Base.skip(d, wire_type)
+        end
+    end
+    return ExportCSVConfig(path, csv_source[], csv_config[], data_columns[], partition_size, compression, syntax_header_row, syntax_missing_string, syntax_delim, syntax_quotechar, syntax_escapechar)
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::ExportCSVConfig)
+    initpos = position(e.io)
+    !isempty(x.path) && PB.encode(e, 1, x.path)
+    !isnothing(x.csv_source) && PB.encode(e, 10, x.csv_source)
+    !isnothing(x.csv_config) && PB.encode(e, 11, x.csv_config)
+    !isempty(x.data_columns) && PB.encode(e, 2, x.data_columns)
+    x.partition_size != zero(Int64) && PB.encode(e, 3, x.partition_size)
+    !isempty(x.compression) && PB.encode(e, 4, x.compression)
+    x.syntax_header_row != false && PB.encode(e, 5, x.syntax_header_row)
+    !isempty(x.syntax_missing_string) && PB.encode(e, 6, x.syntax_missing_string)
+    !isempty(x.syntax_delim) && PB.encode(e, 7, x.syntax_delim)
+    !isempty(x.syntax_quotechar) && PB.encode(e, 8, x.syntax_quotechar)
+    !isempty(x.syntax_escapechar) && PB.encode(e, 9, x.syntax_escapechar)
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::ExportCSVConfig)
+    encoded_size = 0
+    !isempty(x.path) && (encoded_size += PB._encoded_size(x.path, 1))
+    !isnothing(x.csv_source) && (encoded_size += PB._encoded_size(x.csv_source, 10))
+    !isnothing(x.csv_config) && (encoded_size += PB._encoded_size(x.csv_config, 11))
+    !isempty(x.data_columns) && (encoded_size += PB._encoded_size(x.data_columns, 2))
+    x.partition_size != zero(Int64) && (encoded_size += PB._encoded_size(x.partition_size, 3))
+    !isempty(x.compression) && (encoded_size += PB._encoded_size(x.compression, 4))
+    x.syntax_header_row != false && (encoded_size += PB._encoded_size(x.syntax_header_row, 5))
+    !isempty(x.syntax_missing_string) && (encoded_size += PB._encoded_size(x.syntax_missing_string, 6))
+    !isempty(x.syntax_delim) && (encoded_size += PB._encoded_size(x.syntax_delim, 7))
+    !isempty(x.syntax_quotechar) && (encoded_size += PB._encoded_size(x.syntax_quotechar, 8))
+    !isempty(x.syntax_escapechar) && (encoded_size += PB._encoded_size(x.syntax_escapechar, 9))
+    return encoded_size
+end
+
+struct Export
+    export_config::Union{Nothing,OneOf{ExportCSVConfig}}
+end
+Export(;export_config = nothing) = Export(export_config)
+PB.oneof_field_types(::Type{Export}) = (;
+    export_config = (;csv_config=ExportCSVConfig),
+)
+PB.default_values(::Type{Export}) = (;csv_config = nothing)
+PB.field_numbers(::Type{Export}) = (;csv_config = 1)
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Export})
+    export_config = nothing
+    while !PB.message_done(d)
+        field_number, wire_type = PB.decode_tag(d)
+        if field_number == 1
+            export_config = OneOf(:csv_config, PB.decode(d, Ref{ExportCSVConfig}))
+        else
+            Base.skip(d, wire_type)
+        end
+    end
+    return Export(export_config)
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::Export)
+    initpos = position(e.io)
+    if isnothing(x.export_config);
+    elseif x.export_config.name === :csv_config
+        PB.encode(e, 1, x.export_config[]::ExportCSVConfig)
+    end
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::Export)
+    encoded_size = 0
+    if isnothing(x.export_config);
+    elseif x.export_config.name === :csv_config
+        encoded_size += PB._encoded_size(x.export_config[]::ExportCSVConfig, 1)
     end
     return encoded_size
 end

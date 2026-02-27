@@ -1,0 +1,255 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (def
+            0x7dfb4cf67742cb06
+            ([id::INT name::STRING score::FLOAT]
+             (or
+               (and (= id 100) (= name "Alice") (= score 95.5))
+               (and (= id 200) (= name "Bob") (= score 87.3)))))
+          (def
+            0xa3e27b8ca818264
+            ([id::INT name::STRING price::(DECIMAL 10 2) active::BOOLEAN]
+             (or
+               (and (= id 1) (= name "Widget") (= price 19.99) (= active true))
+               (and (= id 2) (= name "Gadget") (= price 29.5) (= active false)))))
+          (def
+            0x862417b9e7c3720b
+            ([event_id::INT timestamp::DATETIME description::STRING]
+             (or
+               (and
+                 (= event_id 1)
+                 (= timestamp (datetime 2025 1 1 10 30 0 0))
+                 (= description "Start"))
+               (and
+                 (= event_id 2)
+                 (= timestamp (datetime 2025 1 2 14 45 0 0))
+                 (= description "End")))))
+          (def
+            0xa7a39b72f29718e6
+            ([key::STRING value::INT]
+             (or (and (= key "a") (= value 1)) (and (= key "b") (= value 2)))))
+          (def
+            0xaeb24056810d3d1f
+            ([name::STRING] (or (= name "Alice") (= name "Bob") (= name "Carol"))))
+          (def
+            0x718827a01a28b6a9
+            ([row::INT v::INT]
+             (or
+               (and (= row 1) (= v 100))
+               (and (= row 2) (= v 200))
+               (and (= row 3) (= v 300)))))
+          (def
+            0xd0d5c8429362b4e3
+            ([row::INT v::STRING]
+             (or
+               (and (= row 1) (= v "Alice"))
+               (and (= row 2) (= v "Bob"))
+               (and (= row 3) (= v "Carol")))))
+          (def
+            0x6f442434acf7f56
+            ([row::INT v::FLOAT]
+             (or
+               (and (= row 1) (= v 95.5))
+               (and (= row 2) (= v 87.3))
+               (and (= row 3) (= v 92.0)))))
+          (def
+            0xa51e572880b40a50
+            ([row::INT v::BOOLEAN]
+             (or
+               (and (= row 1) (= v true))
+               (and (= row 2) (= v false))
+               (and (= row 3) (= v true))))))))
+    (reads
+      (export
+        (export_csv_config_v2
+          (path "users_basic.csv")
+          (table_def 0x7dfb4cf67742cb06)
+          (csv_config
+            {
+             :csv_compression "auto"
+             :csv_decimal_separator "."
+             :csv_delimiter ","
+             :csv_encoding "utf-8"
+             :csv_escapechar "\""
+             :csv_header_row 1
+             :csv_quotechar "\""
+             :csv_skip 0})))
+      (export
+        (export_csv_config_v2
+          (path "users_pipe.csv")
+          (table_def 0x7dfb4cf67742cb06)
+          (csv_config
+            {
+             :csv_compression "auto"
+             :csv_decimal_separator "."
+             :csv_delimiter "|"
+             :csv_encoding "utf-8"
+             :csv_escapechar "\\"
+             :csv_header_row 1
+             :csv_quotechar "\""
+             :csv_skip 0})))
+      (export
+        (export_csv_config_v2
+          (path "users_compressed.csv.gz")
+          (table_def 0x7dfb4cf67742cb06)
+          (csv_config
+            {
+             :csv_compression "gzip"
+             :csv_decimal_separator "."
+             :csv_delimiter ","
+             :csv_encoding "utf-8"
+             :csv_escapechar "\\"
+             :csv_header_row 1
+             :csv_partition_size_mb 1000
+             :csv_quotechar "\""
+             :csv_skip 0})))
+      (export
+        (export_csv_config_v2
+          (path "products.csv")
+          (table_def 0xa3e27b8ca818264)
+          (csv_config
+            {
+             :csv_compression "auto"
+             :csv_decimal_separator "."
+             :csv_delimiter ","
+             :csv_encoding "utf-8"
+             :csv_escapechar "\\"
+             :csv_header_row 1
+             :csv_quotechar "\""
+             :csv_skip 0})))
+      (export
+        (export_csv_config_v2
+          (path "events.csv")
+          (table_def 0x862417b9e7c3720b)
+          (csv_config
+            {
+             :csv_compression "auto"
+             :csv_decimal_separator "."
+             :csv_delimiter ","
+             :csv_encoding "utf-8"
+             :csv_escapechar "\\"
+             :csv_header_row 1
+             :csv_quotechar "\""
+             :csv_skip 0})))
+      (export
+        (export_csv_config_v2
+          (path "users.tsv")
+          (table_def 0x7dfb4cf67742cb06)
+          (csv_config
+            {
+             :csv_compression "auto"
+             :csv_decimal_separator "."
+             :csv_delimiter "\t"
+             :csv_encoding "utf-8"
+             :csv_escapechar "\\"
+             :csv_header_row 1
+             :csv_quotechar "\""
+             :csv_skip 0})))
+      (export
+        (export_csv_config_v2
+          (path "simple_no_header.csv")
+          (table_def 0xa7a39b72f29718e6)
+          (csv_config
+            {
+             :csv_compression "auto"
+             :csv_decimal_separator "."
+             :csv_delimiter ","
+             :csv_encoding "utf-8"
+             :csv_escapechar "\\"
+             :csv_header_row 0
+             :csv_quotechar "\""
+             :csv_skip 0})))
+      (export
+        (export_csv_config_v2
+          (path "names_only.csv")
+          (table_def 0xaeb24056810d3d1f)
+          (csv_config
+            {
+             :csv_compression "auto"
+             :csv_decimal_separator "."
+             :csv_delimiter ","
+             :csv_encoding "utf-8"
+             :csv_escapechar "\""
+             :csv_header_row 1
+             :csv_quotechar "\""
+             :csv_skip 0})))
+      (export
+        (export_csv_config_v2
+          (path "gnf_all_columns.csv")
+          (gnf_columns
+            (column "id" 0x718827a01a28b6a9)
+            (column "name" 0xd0d5c8429362b4e3)
+            (column "score" 0x6f442434acf7f56)
+            (column "active" 0xa51e572880b40a50))
+          (csv_config
+            {
+             :csv_compression "auto"
+             :csv_decimal_separator "."
+             :csv_delimiter ","
+             :csv_encoding "utf-8"
+             :csv_escapechar "\\"
+             :csv_header_row 1
+             :csv_quotechar "\""
+             :csv_skip 0})))
+      (export
+        (export_csv_config_v2
+          (path "gnf_subset.csv")
+          (gnf_columns
+            (column "user_id" 0x718827a01a28b6a9)
+            (column "user_name" 0xd0d5c8429362b4e3))
+          (csv_config
+            {
+             :csv_compression "auto"
+             :csv_decimal_separator "."
+             :csv_delimiter ","
+             :csv_encoding "utf-8"
+             :csv_escapechar "\\"
+             :csv_header_row 1
+             :csv_quotechar "\""
+             :csv_skip 0})))
+      (export
+        (export_csv_config_v2
+          (path "gnf_custom.csv.gz")
+          (gnf_columns (column "id" 0x718827a01a28b6a9) (column "score" 0x6f442434acf7f56))
+          (csv_config
+            {
+             :csv_compression "auto"
+             :csv_decimal_separator "."
+             :csv_delimiter ","
+             :csv_encoding "utf-8"
+             :csv_escapechar "\""
+             :csv_header_row 1
+             :csv_quotechar "\""
+             :csv_skip 0})))
+      (export
+        (export_csv_config_v2
+          (path "gnf_single.csv")
+          (gnf_columns (column "score" 0x6f442434acf7f56))
+          (csv_config
+            {
+             :csv_compression "auto"
+             :csv_decimal_separator "."
+             :csv_delimiter ","
+             :csv_encoding "utf-8"
+             :csv_escapechar "\""
+             :csv_header_row 1
+             :csv_quotechar "\""
+             :csv_skip 0}))))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `0xa51e572880b40a50` -> `col_active`
+;; 	 ID `0x718827a01a28b6a9` -> `col_id`
+;; 	 ID `0xd0d5c8429362b4e3` -> `col_name`
+;; 	 ID `0x6f442434acf7f56` -> `col_score`
+;; 	 ID `0x862417b9e7c3720b` -> `events`
+;; 	 ID `0xaeb24056810d3d1f` -> `names`
+;; 	 ID `0xa3e27b8ca818264` -> `products`
+;; 	 ID `0xa7a39b72f29718e6` -> `simple`
+;; 	 ID `0x7dfb4cf67742cb06` -> `users`
