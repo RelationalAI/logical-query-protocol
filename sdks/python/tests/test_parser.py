@@ -28,13 +28,13 @@ _SIMPLE_FRAGMENT = "(fragment :test_frag (def :my_rel ([x::INT] (relatom :my_rel
 
 
 def test_parse_transaction():
-    result = parse_transaction(_SIMPLE_TXN)
+    result, _provenance = parse_transaction(_SIMPLE_TXN)
     assert isinstance(result, transactions_pb2.Transaction)
     assert len(result.epochs) == 1
 
 
 def test_parse_fragment():
-    result = parse_fragment(_SIMPLE_FRAGMENT)
+    result, _provenance = parse_fragment(_SIMPLE_FRAGMENT)
     assert isinstance(result, fragments_pb2.Fragment)
 
 

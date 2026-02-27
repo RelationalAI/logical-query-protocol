@@ -345,7 +345,7 @@ end
 
 function parse_fragment(input::String)
     lexer = Lexer(input)
-    parser = ParserState(lexer.tokens)
+    parser = ParserState(lexer.tokens, input)
     result = parse_fragment(parser)
     # Check for unconsumed tokens (except EOF)
     if parser.pos <= length(parser.tokens)
@@ -354,7 +354,7 @@ function parse_fragment(input::String)
             throw(ParseError("Unexpected token at end of input: $remaining_token"))
         end
     end
-    return result
+    return result, parser.provenance
 end
 
 function parse(input::String)
