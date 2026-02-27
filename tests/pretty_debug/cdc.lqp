@@ -21,34 +21,34 @@
               (column "raw_data" [])
               (column
                 ["append" "METADATA$KEY"]
-                0x8dfeb4bd8f6d8c353d847d1f9b9c21b7
+                0xe348e3a60bf7ccc322536b128bcd1aa2
                 [UINT128])
               (column
                 ["delete" "METADATA$KEY"]
-                0xa91fbfb76393ae562fd3ee18f64c5bc4
+                0xa0d350324916137a4ef58919f39a6be8
                 [UINT128])
-              (column ["append" "user_id"] 0xf68f290595d54fb669e80088f8cf8279 [INT])
-              (column ["append" "name"] 0x2756fdf898b5a25ac7672f9f88c4b68c [STRING])
-              (column "id" 0xc0c8b0135d8dee07953f051a08bf6453 [INT])
-              (column ["append" "id"] 0xd21b8166f6243157d8a3e116326d322 [INT])
-              (column ["delete" "id"] 0xe870ce327bf8f16e6a2fbfb638907b33 [INT]))
+              (column ["append" "user_id"] 0x4b886cef3ff3ba81141649c956739174 [INT])
+              (column ["append" "name"] 0xa6ccd9cd9866f2456eb24dd82b7198ed [STRING])
+              (column "id" 0xa8a4dfd49c798f4c5219384c0eb11f79 [INT])
+              (column ["append" "id"] 0x4963a7a154f6f29fe0bf41c39d58c234 [INT])
+              (column ["delete" "id"] 0x7bf936c79584727680e49a87922f010e [INT]))
             (asof "2025-06-01T00:00:00Z")))))
     (reads
-      (output :mk_ins 0x8dfeb4bd8f6d8c353d847d1f9b9c21b7)
-      (output :mk_del 0xa91fbfb76393ae562fd3ee18f64c5bc4)
-      (output :uid_ins 0xf68f290595d54fb669e80088f8cf8279)
-      (output :name_ins 0x2756fdf898b5a25ac7672f9f88c4b68c)
-      (output :entity_id 0xc0c8b0135d8dee07953f051a08bf6453)
-      (output :eid_ins 0xd21b8166f6243157d8a3e116326d322)
-      (output :eid_del 0xe870ce327bf8f16e6a2fbfb638907b33))))
+      (output :mk_ins 0xe348e3a60bf7ccc322536b128bcd1aa2)
+      (output :mk_del 0xa0d350324916137a4ef58919f39a6be8)
+      (output :uid_ins 0x4b886cef3ff3ba81141649c956739174)
+      (output :name_ins 0xa6ccd9cd9866f2456eb24dd82b7198ed)
+      (output :entity_id 0xa8a4dfd49c798f4c5219384c0eb11f79)
+      (output :eid_ins 0x4963a7a154f6f29fe0bf41c39d58c234)
+      (output :eid_del 0x7bf936c79584727680e49a87922f010e))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0xe870ce327bf8f16e6a2fbfb638907b33` -> `eid_del`
-;; 	 ID `0xd21b8166f6243157d8a3e116326d322` -> `eid_ins`
-;; 	 ID `0xc0c8b0135d8dee07953f051a08bf6453` -> `entity_id`
-;; 	 ID `0xa91fbfb76393ae562fd3ee18f64c5bc4` -> `mk_del`
-;; 	 ID `0x8dfeb4bd8f6d8c353d847d1f9b9c21b7` -> `mk_ins`
-;; 	 ID `0x2756fdf898b5a25ac7672f9f88c4b68c` -> `name_ins`
-;; 	 ID `0xf68f290595d54fb669e80088f8cf8279` -> `uid_ins`
+;; 	 ID `0x7bf936c79584727680e49a87922f010e` -> `eid_del`
+;; 	 ID `0x4963a7a154f6f29fe0bf41c39d58c234` -> `eid_ins`
+;; 	 ID `0xa8a4dfd49c798f4c5219384c0eb11f79` -> `entity_id`
+;; 	 ID `0xa0d350324916137a4ef58919f39a6be8` -> `mk_del`
+;; 	 ID `0xe348e3a60bf7ccc322536b128bcd1aa2` -> `mk_ins`
+;; 	 ID `0xa6ccd9cd9866f2456eb24dd82b7198ed` -> `name_ins`
+;; 	 ID `0x4b886cef3ff3ba81141649c956739174` -> `uid_ins`

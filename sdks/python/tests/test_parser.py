@@ -12,8 +12,8 @@ def test_relation_id_from_string():
     """All SDKs must produce the same id for the same string."""
     parser = Parser([])
     rid = parser.relation_id_from_string("my_relation")
-    assert rid.id_low == 0x5D33996702404F85
-    assert rid.id_high == 0x3B9AF8E72AF633F8
+    assert rid.id_low == 0xF2FC83EC57CF8FBC
+    assert rid.id_high == 0x503F7DC862F367B7
 
 
 @pytest.mark.parametrize("input_file", get_lqp_input_files())

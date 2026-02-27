@@ -5,20 +5,22 @@
       (define
         (fragment
           :f1
-          (def 0x8060bff7287068139eb5185c77b9d099 ([v::(DECIMAL 18 6)] (relatom :dec64 v)))
-          (def 0x5356e4fc577bdf6301c4558ced889f8 ([v::(DECIMAL 38 10)] (relatom :dec128 v)))
-          (def 0x65edab7e93e482d5e9e64038f7e0bb47 ([v::DATE] (relatom :date v)))
-          (def 0x50c236ba2aa6bb6083f680bfc04a7e14 ([v::DATETIME] (relatom :datetime v))))))
+          (def 0x44f2ceee3184656a2759321d098ca3a3 ([v::(DECIMAL 18 6)] (relatom :dec64 v)))
+          (def
+            0x3cef165ba01022414b53e59dee8b173e
+            ([v::(DECIMAL 38 10)] (relatom :dec128 v)))
+          (def 0x218c9b2f9bfd811eb6ad928e2663cda5 ([v::DATE] (relatom :date v)))
+          (def 0x747ec02a9556547803e6a2f3322db032 ([v::DATETIME] (relatom :datetime v))))))
     (reads
-      (output :dec64 0x8060bff7287068139eb5185c77b9d099)
-      (output :dec128 0x5356e4fc577bdf6301c4558ced889f8)
-      (output :date 0x65edab7e93e482d5e9e64038f7e0bb47)
-      (output :datetime 0x50c236ba2aa6bb6083f680bfc04a7e14))))
+      (output :dec64 0x44f2ceee3184656a2759321d098ca3a3)
+      (output :dec128 0x3cef165ba01022414b53e59dee8b173e)
+      (output :date 0x218c9b2f9bfd811eb6ad928e2663cda5)
+      (output :datetime 0x747ec02a9556547803e6a2f3322db032))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0x65edab7e93e482d5e9e64038f7e0bb47` -> `output_date`
-;; 	 ID `0x50c236ba2aa6bb6083f680bfc04a7e14` -> `output_datetime`
-;; 	 ID `0x5356e4fc577bdf6301c4558ced889f8` -> `output_decimal128`
-;; 	 ID `0x8060bff7287068139eb5185c77b9d099` -> `output_decimal64`
+;; 	 ID `0x218c9b2f9bfd811eb6ad928e2663cda5` -> `output_date`
+;; 	 ID `0x747ec02a9556547803e6a2f3322db032` -> `output_datetime`
+;; 	 ID `0x3cef165ba01022414b53e59dee8b173e` -> `output_decimal128`
+;; 	 ID `0x44f2ceee3184656a2759321d098ca3a3` -> `output_decimal64`

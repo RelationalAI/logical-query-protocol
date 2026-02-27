@@ -6,7 +6,7 @@
         (fragment
           :f1
           (def
-            0x1a5cfca466db77f9414c12ba348ca86d
+            0x951708d285c81bb0d47c3206f4c27ca8
             ([v::INT]
              (or
                (= v -9223372036854775808)
@@ -15,7 +15,7 @@
                (= v 21)
                (= v 9223372036854775807))))
           (def
-            0x463eaffc7108c93a1af5c05d43935a2c
+            0x161c7bcbf88e7b6fb8ce65d0dbaaf14
             ([v::INT128]
              (or
                (= v -170141183460469231731687303715884105728i128)
@@ -26,13 +26,13 @@
                (= v 9223372036854775808i128)
                (= v 170141183460469231731687303715884105727i128))))
           (def
-            0x1a72797fd698735d8e14bc2730cf85d0
+            0x33bf30bb27799b496ef013bf7c7912f6
             ([v::UINT128] (or (= v 0x0) (= v 0x1) (= v 0xffffffffffffffffffffffffffffffff))))
           (def
-            0x952771df9fccb205c6e954dc34e2a776
+            0x26150df48c574bdfa69e436e0b3d5c18
             ([v::FLOAT] (or (= v -4.5) (= v -4.4) (= v 4.4) (= v 4.5))))
           (def
-            0xfe816deb1763517c90d46bd42c63870e
+            0xf921a23c7643018f21292894b470681
             ([v::DATE]
              (or
                (= v (date 1 1 1))
@@ -40,7 +40,7 @@
                (= v (date 2025 8 1))
                (= v (date 9999 12 31)))))
           (def
-            0x4f22644831b913ada49ce5c533d16327
+            0x3fe33b759a4c3e72fcc03b85ce71384d
             ([v::DATETIME]
              (or
                (= v (datetime 1 1 1 0 0 0 0))
@@ -48,37 +48,37 @@
                (= v (datetime 2025 8 1 20 3 4 123000))
                (= v (datetime 9999 12 31 23 59 59 999000)))))
           (def
-            0x6c955cdf27f07edfb768f9b792c50e7
+            0xab144d5b88ef09a71abc70b5fad601f1
             ([v::(DECIMAL 18 6)]
              (or
                (= v 0.000000d18)
                (= v -123.456789d18)
                (= v 123.456789d18)
                (= v 123456789012.345678d18))))
-          (def 0x2fa288563c88d2869a2e468636cb258c ([v::STRING] (= v "hello")))
+          (def 0xe738b0bbc85f458d2d2b5f3f667c6d5a ([v::STRING] (= v "hello")))
           (def
-            0xc4227a4671b4a374245c96a54ff460b7
+            0x3185152129295af588b022ae50b50903
             ([v::BOOLEAN] (or (= v true) (= v false)))))))
     (reads
-      (output :int 0x1a5cfca466db77f9414c12ba348ca86d)
-      (output :int128 0x463eaffc7108c93a1af5c05d43935a2c)
-      (output :uint128 0x1a72797fd698735d8e14bc2730cf85d0)
-      (output :float 0x952771df9fccb205c6e954dc34e2a776)
-      (output :dec 0x6c955cdf27f07edfb768f9b792c50e7)
-      (output :date 0xfe816deb1763517c90d46bd42c63870e)
-      (output :datetime 0x4f22644831b913ada49ce5c533d16327)
-      (output :str 0x2fa288563c88d2869a2e468636cb258c)
-      (output :bool 0xc4227a4671b4a374245c96a54ff460b7))))
+      (output :int 0x951708d285c81bb0d47c3206f4c27ca8)
+      (output :int128 0x161c7bcbf88e7b6fb8ce65d0dbaaf14)
+      (output :uint128 0x33bf30bb27799b496ef013bf7c7912f6)
+      (output :float 0x26150df48c574bdfa69e436e0b3d5c18)
+      (output :dec 0xab144d5b88ef09a71abc70b5fad601f1)
+      (output :date 0xf921a23c7643018f21292894b470681)
+      (output :datetime 0x3fe33b759a4c3e72fcc03b85ce71384d)
+      (output :str 0xe738b0bbc85f458d2d2b5f3f667c6d5a)
+      (output :bool 0x3185152129295af588b022ae50b50903))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0xc4227a4671b4a374245c96a54ff460b7` -> `bool`
-;; 	 ID `0xfe816deb1763517c90d46bd42c63870e` -> `date`
-;; 	 ID `0x4f22644831b913ada49ce5c533d16327` -> `datetime`
-;; 	 ID `0x6c955cdf27f07edfb768f9b792c50e7` -> `dec`
-;; 	 ID `0x952771df9fccb205c6e954dc34e2a776` -> `float`
-;; 	 ID `0x1a5cfca466db77f9414c12ba348ca86d` -> `int`
-;; 	 ID `0x463eaffc7108c93a1af5c05d43935a2c` -> `int128`
-;; 	 ID `0x2fa288563c88d2869a2e468636cb258c` -> `str`
-;; 	 ID `0x1a72797fd698735d8e14bc2730cf85d0` -> `uint128`
+;; 	 ID `0x3185152129295af588b022ae50b50903` -> `bool`
+;; 	 ID `0xf921a23c7643018f21292894b470681` -> `date`
+;; 	 ID `0x3fe33b759a4c3e72fcc03b85ce71384d` -> `datetime`
+;; 	 ID `0xab144d5b88ef09a71abc70b5fad601f1` -> `dec`
+;; 	 ID `0x26150df48c574bdfa69e436e0b3d5c18` -> `float`
+;; 	 ID `0x951708d285c81bb0d47c3206f4c27ca8` -> `int`
+;; 	 ID `0x161c7bcbf88e7b6fb8ce65d0dbaaf14` -> `int128`
+;; 	 ID `0xe738b0bbc85f458d2d2b5f3f667c6d5a` -> `str`
+;; 	 ID `0x33bf30bb27799b496ef013bf7c7912f6` -> `uint128`

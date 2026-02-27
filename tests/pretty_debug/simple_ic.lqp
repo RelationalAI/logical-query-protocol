@@ -5,20 +5,20 @@
       (define
         (fragment
           :f1
-          (def 0x3441301d3c459bf98fc6ff686bb4262c ([] (= 1 1)))
+          (def 0x13422d706483bfa0f98a5e886266e7ae ([] (= 1 1)))
           (def
-            0xc0186714bc67a63eee178a2c8adb533a
-            ([] (atom 0x3441301d3c459bf98fc6ff686bb4262c)))
+            0x4d4446dee670a46d426e563ced7bc2f
+            ([] (atom 0x13422d706483bfa0f98a5e886266e7ae)))
           (def
-            0x95ae0342d07ef4a05fe08506b58beee0
-            ([] (atom 0x3441301d3c459bf98fc6ff686bb4262c))))))
+            0x3fdfd055f5bd2892ea186504254f8c3a
+            ([] (atom 0x13422d706483bfa0f98a5e886266e7ae))))))
     (reads
-      (output :result 0x95ae0342d07ef4a05fe08506b58beee0)
-      (abort :abort_1_eq_1 0xc0186714bc67a63eee178a2c8adb533a))))
+      (output :result 0x3fdfd055f5bd2892ea186504254f8c3a)
+      (abort :abort_1_eq_1 0x4d4446dee670a46d426e563ced7bc2f))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0xc0186714bc67a63eee178a2c8adb533a` -> `abort`
-;; 	 ID `0x3441301d3c459bf98fc6ff686bb4262c` -> `foo`
-;; 	 ID `0x95ae0342d07ef4a05fe08506b58beee0` -> `output`
+;; 	 ID `0x4d4446dee670a46d426e563ced7bc2f` -> `abort`
+;; 	 ID `0x13422d706483bfa0f98a5e886266e7ae` -> `foo`
+;; 	 ID `0x3fdfd055f5bd2892ea186504254f8c3a` -> `output`

@@ -6,17 +6,17 @@
         (fragment
           :primitives
           (def
-            0xfe816deb1763517c90d46bd42c63870e
+            0xf921a23c7643018f21292894b470681
             ([v::DATE] (primitive :rel_primitive_parse_date "1998-12-01" "Y-m-d" v)))
           (def
-            0x188746b050759c919dc673d4434b6d3e
+            0xa2e66daf934e0428b401e230c5d34d85
             ([v::(DECIMAL 18 6)] (primitive :rel_primitive_parse_decimal #64 #6 "3.14" v))))))
     (reads
-      (output :date 0xfe816deb1763517c90d46bd42c63870e)
-      (output :decimal 0x188746b050759c919dc673d4434b6d3e))))
+      (output :date 0xf921a23c7643018f21292894b470681)
+      (output :decimal 0xa2e66daf934e0428b401e230c5d34d85))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0xfe816deb1763517c90d46bd42c63870e` -> `date`
-;; 	 ID `0x188746b050759c919dc673d4434b6d3e` -> `decimal`
+;; 	 ID `0xf921a23c7643018f21292894b470681` -> `date`
+;; 	 ID `0xa2e66daf934e0428b401e230c5d34d85` -> `decimal`

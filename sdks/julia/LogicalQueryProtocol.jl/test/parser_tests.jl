@@ -118,8 +118,8 @@ end
     # All SDKs must produce the same id for the same string.
     parser = ParserState(Token[])
     rid = relation_id_from_string(parser, "my_relation")
-    @test rid.id_low == 0x5d33996702404f85
-    @test rid.id_high == 0x3b9af8e72af633f8
+    @test rid.id_low == 0xf2fc83ec57cf8fbc
+    @test rid.id_high == 0x503f7dc862f367b7
 end
 
 @testitem "Parser - Lexer tokenization" setup=[ParserSetup] begin

@@ -5,14 +5,14 @@
       (define
         (fragment
           :f1
-          (def 0x111ac930b5f27768fa44096deddd32f0 ([v::MISSING] (= missing v)))
-          (def 0x3428c1b60cb11585f82ae9db9741d6b ([v::STRING] (= "missing" v))))))
+          (def 0x7d1cd0a0c386fc513fd8b028050353a ([v::MISSING] (= missing v)))
+          (def 0xb6b4f7d9d0732b9ce55bc023ea01f0aa ([v::STRING] (= "missing" v))))))
     (reads
-      (output :miss1 0x111ac930b5f27768fa44096deddd32f0)
-      (output :miss2 0x3428c1b60cb11585f82ae9db9741d6b))))
+      (output :miss1 0x7d1cd0a0c386fc513fd8b028050353a)
+      (output :miss2 0xb6b4f7d9d0732b9ce55bc023ea01f0aa))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0x111ac930b5f27768fa44096deddd32f0` -> `miss1`
-;; 	 ID `0x3428c1b60cb11585f82ae9db9741d6b` -> `miss2`
+;; 	 ID `0x7d1cd0a0c386fc513fd8b028050353a` -> `miss1`
+;; 	 ID `0xb6b4f7d9d0732b9ce55bc023ea01f0aa` -> `miss2`

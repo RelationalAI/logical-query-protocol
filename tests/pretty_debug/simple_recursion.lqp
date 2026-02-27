@@ -6,56 +6,56 @@
         (fragment
           :f1
           (def
-            0x2d7878837e46e6c5f024a04b89cabab4
+            0xe5061e031991f9850a7c73c6c8d326f4
             ([x::STRING y::STRING] (and (= x "a") (= y "b"))))
           (def
-            0x5fe4f7df6fe8130d66a87c7ca85ee9be
+            0xb3d9e9b14f08d349cbea1d0553e62950
             ([x::STRING y::STRING] (and (= x "b") (= y "c"))))
           (def
-            0xf1147b58beecbd4003d529ad00d7ae05
+            0x55e768e8d6ed766f2a3a9a06f5b8aec0
             ([x::STRING y::STRING] (and (= x "b") (= y "d"))))
           (def
-            0x186d5220481e213d48157bbf6dbd1b65
+            0x101193fff69bbfaaec0b85ddd75a97cc
             ([x::STRING y::STRING] (and (= x "d") (= y "e"))))
           (def
-            0xa63e4267c9e26cfca71e9570f10cba1
+            0x25a8e9d4bdd35e32df1a80b66b896254
             ([x::STRING y::STRING]
              (or
-               (atom 0x2d7878837e46e6c5f024a04b89cabab4 x y)
-               (atom 0x5fe4f7df6fe8130d66a87c7ca85ee9be x y)
-               (atom 0xf1147b58beecbd4003d529ad00d7ae05 x y)
-               (atom 0x186d5220481e213d48157bbf6dbd1b65 x y))))
+               (atom 0xe5061e031991f9850a7c73c6c8d326f4 x y)
+               (atom 0xb3d9e9b14f08d349cbea1d0553e62950 x y)
+               (atom 0x55e768e8d6ed766f2a3a9a06f5b8aec0 x y)
+               (atom 0x101193fff69bbfaaec0b85ddd75a97cc x y))))
           (def
-            0x4a514f0368775d391ce6ff75c87a339b
-            ([x::STRING y::STRING] (atom 0xa63e4267c9e26cfca71e9570f10cba1 x y)))
+            0x8e43dce70411fa3d46733482e464a6b8
+            ([x::STRING y::STRING] (atom 0x25a8e9d4bdd35e32df1a80b66b896254 x y)))
           (def
-            0x60fb1749aedd1b7adf80dc7e252fd01e
+            0x21de14f7894798aa261598cc5f91306f
             ([x::STRING z::STRING]
              (exists
                [y::STRING]
                (and
-                 (atom 0xa63e4267c9e26cfca71e9570f10cba1 x y)
-                 (atom 0x4c2e55cef4176873e637f65b869fafa0 y z)))))
+                 (atom 0x25a8e9d4bdd35e32df1a80b66b896254 x y)
+                 (atom 0xdf7b8c36ea75bc254c1d1f0af744b5bf y z)))))
           (def
-            0x4c2e55cef4176873e637f65b869fafa0
+            0xdf7b8c36ea75bc254c1d1f0af744b5bf
             ([x::STRING y::STRING]
              (or
-               (atom 0x4a514f0368775d391ce6ff75c87a339b x y)
-               (atom 0x60fb1749aedd1b7adf80dc7e252fd01e x y))))
+               (atom 0x8e43dce70411fa3d46733482e464a6b8 x y)
+               (atom 0x21de14f7894798aa261598cc5f91306f x y))))
           (def
-            0x95ae0342d07ef4a05fe08506b58beee0
-            ([x::STRING y::STRING] (atom 0x4c2e55cef4176873e637f65b869fafa0 x y))))))
-    (reads (output :result 0x95ae0342d07ef4a05fe08506b58beee0))))
+            0x3fdfd055f5bd2892ea186504254f8c3a
+            ([x::STRING y::STRING] (atom 0xdf7b8c36ea75bc254c1d1f0af744b5bf x y))))))
+    (reads (output :result 0x3fdfd055f5bd2892ea186504254f8c3a))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0xa63e4267c9e26cfca71e9570f10cba1` -> `edge`
-;; 	 ID `0x2d7878837e46e6c5f024a04b89cabab4` -> `edge1`
-;; 	 ID `0x5fe4f7df6fe8130d66a87c7ca85ee9be` -> `edge2`
-;; 	 ID `0xf1147b58beecbd4003d529ad00d7ae05` -> `edge3`
-;; 	 ID `0x186d5220481e213d48157bbf6dbd1b65` -> `edge4`
-;; 	 ID `0x95ae0342d07ef4a05fe08506b58beee0` -> `output`
-;; 	 ID `0x4c2e55cef4176873e637f65b869fafa0` -> `path`
-;; 	 ID `0x4a514f0368775d391ce6ff75c87a339b` -> `path1`
-;; 	 ID `0x60fb1749aedd1b7adf80dc7e252fd01e` -> `path2`
+;; 	 ID `0x25a8e9d4bdd35e32df1a80b66b896254` -> `edge`
+;; 	 ID `0xe5061e031991f9850a7c73c6c8d326f4` -> `edge1`
+;; 	 ID `0xb3d9e9b14f08d349cbea1d0553e62950` -> `edge2`
+;; 	 ID `0x55e768e8d6ed766f2a3a9a06f5b8aec0` -> `edge3`
+;; 	 ID `0x101193fff69bbfaaec0b85ddd75a97cc` -> `edge4`
+;; 	 ID `0x3fdfd055f5bd2892ea186504254f8c3a` -> `output`
+;; 	 ID `0xdf7b8c36ea75bc254c1d1f0af744b5bf` -> `path`
+;; 	 ID `0x8e43dce70411fa3d46733482e464a6b8` -> `path1`
+;; 	 ID `0x21de14f7894798aa261598cc5f91306f` -> `path2`

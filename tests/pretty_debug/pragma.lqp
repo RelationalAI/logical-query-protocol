@@ -6,28 +6,28 @@
         (fragment
           :f1
           (def
-            0xc1467fe0bc56f7fd95f963208974258c
+            0xa5193e54cd52837ed91e32008ccf41ac
             ([a::INT b::INT c::INT]
              (or
                (and (= a 1) (= b 2) (= c 0))
                (and (= a 1) (= b 3) (= c 0))
                (and (= a 1) (= b 4) (= c 0)))))
           (def
-            0x263269627a715f74592c117fc4b3e08d
+            0x4c422a7563954872e237b223af4ad643
             ([b::INT a::INT]
              (or (and (= b 2) (= a 1)) (and (= b 3) (= a 1)) (and (= b 4) (= a 1)))))
           (def
-            0x3441301d3c459bf98fc6ff686bb4262c
+            0x13422d706483bfa0f98a5e886266e7ae
             ([a::INT b::INT c::INT]
              (and
-               (atom 0xc1467fe0bc56f7fd95f963208974258c a b c)
-               (atom 0x263269627a715f74592c117fc4b3e08d b a)
+               (atom 0xa5193e54cd52837ed91e32008ccf41ac a b c)
+               (atom 0x4c422a7563954872e237b223af4ad643 b a)
                (pragma :rel_primitive_force_var_order c b a)))))))
-    (reads (output :foo 0x3441301d3c459bf98fc6ff686bb4262c))))
+    (reads (output :foo 0x13422d706483bfa0f98a5e886266e7ae))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0xc1467fe0bc56f7fd95f963208974258c` -> `R`
-;; 	 ID `0x263269627a715f74592c117fc4b3e08d` -> `S`
-;; 	 ID `0x3441301d3c459bf98fc6ff686bb4262c` -> `foo`
+;; 	 ID `0xa5193e54cd52837ed91e32008ccf41ac` -> `R`
+;; 	 ID `0x4c422a7563954872e237b223af4ad643` -> `S`
+;; 	 ID `0x13422d706483bfa0f98a5e886266e7ae` -> `foo`

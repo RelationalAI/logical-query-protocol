@@ -5,16 +5,16 @@
       (define
         (fragment
           :f1
-          (def 0x3441301d3c459bf98fc6ff686bb4262c ([x::INT] (relatom :hello x)))
+          (def 0x13422d706483bfa0f98a5e886266e7ae ([x::INT] (relatom :hello x)))
           (def
-            0x5c9bfe21b71f6008f46ba5db2e2bdefc
+            0x338d10ee429ea04fae5511b68fbf8fb9
             ([x::INT y::STRING] (relatom :bar #"sp_str" x #123 y))))))
     (reads
-      (output :foo 0x3441301d3c459bf98fc6ff686bb4262c)
-      (output :bar 0x5c9bfe21b71f6008f46ba5db2e2bdefc))))
+      (output :foo 0x13422d706483bfa0f98a5e886266e7ae)
+      (output :bar 0x338d10ee429ea04fae5511b68fbf8fb9))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0x5c9bfe21b71f6008f46ba5db2e2bdefc` -> `bar`
-;; 	 ID `0x3441301d3c459bf98fc6ff686bb4262c` -> `foo`
+;; 	 ID `0x338d10ee429ea04fae5511b68fbf8fb9` -> `bar`
+;; 	 ID `0x13422d706483bfa0f98a5e886266e7ae` -> `foo`

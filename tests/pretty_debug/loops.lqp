@@ -6,7 +6,7 @@
         (fragment
           :f1
           (def
-            0x84a3728d629304495dcce57979aa94f3
+            0x7b31a79c38a81db1da7df4ef1cf8be23
             ([a::INT b::INT]
              (or
                (and (= a 1) (= b 2))
@@ -16,76 +16,76 @@
                (and (= a 5) (= b 3))
                (and (= a 6) (= b 5)))))
           (algorithm
-            0x17070ea27f0409fc0bb1cf15f288f76e
+            0x1e49557482bbddb3b5998e8d02d347dc
             (script
               (loop
-                (init (assign 0x17070ea27f0409fc0bb1cf15f288f76e ([n::INT] (= n 1))))
+                (init (assign 0x1e49557482bbddb3b5998e8d02d347dc ([n::INT] (= n 1))))
                 (script
                   (assign
-                    0x5e62f14c0680d94c1e3f54c8a9c9c1c6
+                    0xeb61a90703b2464fff039f21682508b3
                     ([m::INT]
                      (or
-                       (atom 0x17070ea27f0409fc0bb1cf15f288f76e m)
+                       (atom 0x1e49557482bbddb3b5998e8d02d347dc m)
                        (exists
                          [n::INT]
                          (and
-                           (atom 0x17070ea27f0409fc0bb1cf15f288f76e n)
-                           (atom 0x84a3728d629304495dcce57979aa94f3 n m))))))
+                           (atom 0x1e49557482bbddb3b5998e8d02d347dc n)
+                           (atom 0x7b31a79c38a81db1da7df4ef1cf8be23 n m))))))
                   (break
-                    0x520d3e83dfd2fed248f209f5c97993aa
+                    0xdeedfd02377e258374f7113ca7e27cf3
                     ([]
                      (ffi
                        :rel_primitive_pairwise_equal
                        (args
-                         ([n::INT] (atom 0x17070ea27f0409fc0bb1cf15f288f76e n))
-                         ([n::INT] (atom 0x5e62f14c0680d94c1e3f54c8a9c9c1c6 n)))
+                         ([n::INT] (atom 0x1e49557482bbddb3b5998e8d02d347dc n))
+                         ([n::INT] (atom 0xeb61a90703b2464fff039f21682508b3 n)))
                        (terms))))
                   (assign
-                    0x17070ea27f0409fc0bb1cf15f288f76e
-                    ([n::INT] (atom 0x5e62f14c0680d94c1e3f54c8a9c9c1c6 n)))))))
+                    0x1e49557482bbddb3b5998e8d02d347dc
+                    ([n::INT] (atom 0xeb61a90703b2464fff039f21682508b3 n)))))))
           (algorithm
-            0xf8b6b224a8ba725a5b030da2745257c7
-            0xb190cbe916c87914b60bdf69bbdc1a01
+            0xfcc29ab184bd322947dd27b6168ab1aa
+            0xb0c38f4da1463b0ab9e63e99ece54266
             (script
               (loop
                 (init
-                  (assign 0xf8b6b224a8ba725a5b030da2745257c7 ([n::INT] (= n 1)))
-                  (assign 0xb190cbe916c87914b60bdf69bbdc1a01 ([_n::INT] (false))))
+                  (assign 0xfcc29ab184bd322947dd27b6168ab1aa ([n::INT] (= n 1)))
+                  (assign 0xb0c38f4da1463b0ab9e63e99ece54266 ([_n::INT] (false))))
                 (script
                   (upsert
-                    0xb190cbe916c87914b60bdf69bbdc1a01
-                    ([n::INT] (atom 0xf8b6b224a8ba725a5b030da2745257c7 n)))
+                    0xb0c38f4da1463b0ab9e63e99ece54266
+                    ([n::INT] (atom 0xfcc29ab184bd322947dd27b6168ab1aa n)))
                   (assign
-                    0x5e62f14c0680d94c1e3f54c8a9c9c1c6
+                    0xeb61a90703b2464fff039f21682508b3
                     ([m::INT]
                      (exists
                        [n::INT]
                        (and
                          (and
-                           (atom 0xf8b6b224a8ba725a5b030da2745257c7 n)
-                           (atom 0x84a3728d629304495dcce57979aa94f3 n m))
-                         (not (atom 0xb190cbe916c87914b60bdf69bbdc1a01 m))))))
+                           (atom 0xfcc29ab184bd322947dd27b6168ab1aa n)
+                           (atom 0x7b31a79c38a81db1da7df4ef1cf8be23 n m))
+                         (not (atom 0xb0c38f4da1463b0ab9e63e99ece54266 m))))))
                   (assign
-                    0xf8b6b224a8ba725a5b030da2745257c7
-                    ([n::INT] (atom 0x5e62f14c0680d94c1e3f54c8a9c9c1c6 n)))
+                    0xfcc29ab184bd322947dd27b6168ab1aa
+                    ([n::INT] (atom 0xeb61a90703b2464fff039f21682508b3 n)))
                   (break
-                    0xa98c6979947d0c47927082f60377b229
+                    0x192711127426b983f228e95fc746ab28
                     ([]
                      (ffi
                        :rel_primitive_all_empty
-                       (args ([n::INT] (atom 0xf8b6b224a8ba725a5b030da2745257c7 n)))
+                       (args ([n::INT] (atom 0xfcc29ab184bd322947dd27b6168ab1aa n)))
                        (terms)))))))))))
     (reads
-      (output :reachable 0x17070ea27f0409fc0bb1cf15f288f76e)
-      (output :reachable_2 0xb190cbe916c87914b60bdf69bbdc1a01))))
+      (output :reachable 0x1e49557482bbddb3b5998e8d02d347dc)
+      (output :reachable_2 0xb0c38f4da1463b0ab9e63e99ece54266))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0x84a3728d629304495dcce57979aa94f3` -> `edges`
-;; 	 ID `0xa98c6979947d0c47927082f60377b229` -> `empty_frontier`
-;; 	 ID `0xf8b6b224a8ba725a5b030da2745257c7` -> `frontier`
-;; 	 ID `0x5e62f14c0680d94c1e3f54c8a9c9c1c6` -> `next`
-;; 	 ID `0x520d3e83dfd2fed248f209f5c97993aa` -> `nothing_new`
-;; 	 ID `0x17070ea27f0409fc0bb1cf15f288f76e` -> `reachable`
-;; 	 ID `0xb190cbe916c87914b60bdf69bbdc1a01` -> `reachable_2`
+;; 	 ID `0x7b31a79c38a81db1da7df4ef1cf8be23` -> `edges`
+;; 	 ID `0x192711127426b983f228e95fc746ab28` -> `empty_frontier`
+;; 	 ID `0xfcc29ab184bd322947dd27b6168ab1aa` -> `frontier`
+;; 	 ID `0xeb61a90703b2464fff039f21682508b3` -> `next`
+;; 	 ID `0xdeedfd02377e258374f7113ca7e27cf3` -> `nothing_new`
+;; 	 ID `0x1e49557482bbddb3b5998e8d02d347dc` -> `reachable`
+;; 	 ID `0xb0c38f4da1463b0ab9e63e99ece54266` -> `reachable_2`
