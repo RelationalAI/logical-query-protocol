@@ -87,6 +87,7 @@ message ExportCSVConfig {
   ExportCSVSource csv_source = 10;
   CSVConfig csv_config = 11;
 
+  // Below are all deprecated in favour of the `csv_config` above.
   optional int64 partition_size = 3;
   optional string compression = 4;
   optional bool             syntax_header_row = 5;
