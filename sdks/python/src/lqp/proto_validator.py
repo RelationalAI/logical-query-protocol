@@ -222,82 +222,185 @@ class _NodeSpans:
         return self._spans.get(node_id)
 
 
+def _unwrap_oneof(node: Message) -> Message | None:
+    """Unwrap a oneof message to its inner message."""
+    desc: Descriptor = node.DESCRIPTOR  # type: ignore[assignment]
+    if not desc.oneofs:
+        return None
+    oneof = desc.oneofs[0]
+    which = node.WhichOneof(oneof.name)
+    if which is None:
+        return None
+    inner = getattr(node, which)
+    if isinstance(inner, Message):
+        return inner
+    return None
+
+
+# Types whose parse function immediately dispatches to the inner type's
+# parse function without consuming any tokens. These share the same parse
+# offset as their inner message and must be skipped during offset matching.
+_TRANSPARENT_WRAPPERS: set[str] = {
+    "Declaration", "Instruction", "Formula", "Construct",
+    "Write", "Read", "Data",
+    "Term", "Type", "RelTerm", "Monoid",
+}
+
+
+class _SpanNode:
+    """Node in the span nesting tree."""
+
+    __slots__ = ("offset", "span", "children", "_idx")
+
+    def __init__(self, offset: int, span: Any) -> None:
+        self.offset = offset
+        self.span = span
+        self.children: list[_SpanNode] = []
+        self._idx = 0
+
+    def next_child(self) -> "_SpanNode | None":
+        if self._idx < len(self.children):
+            child = self.children[self._idx]
+            self._idx += 1
+            return child
+        return None
+
+    def peek_child(self) -> "_SpanNode | None":
+        if self._idx < len(self.children):
+            return self.children[self._idx]
+        return None
+
+
+def _build_span_tree(provenance: dict[int, Any]) -> _SpanNode:
+    """Build a nesting tree from spans based on containment.
+
+    Each span's children are the spans directly contained within it.
+    Spans are sorted by start offset, with wider spans first for ties.
+    """
+    sorted_items = sorted(
+        provenance.items(), key=lambda x: (x[0], -x[1].stop.offset)
+    )
+    sentinel = _SpanNode(-1, None)
+    stack: list[tuple[_SpanNode, int]] = [(sentinel, 2**63)]
+    for offset, span in sorted_items:
+        end = span.stop.offset
+        while end > stack[-1][1]:
+            stack.pop()
+        node = _SpanNode(offset, span)
+        stack[-1][0].children.append(node)
+        stack.append((node, end))
+    return sentinel
+
+
 def _build_node_spans(
     root: Message,
-    path_provenance: dict[tuple[int, ...], Any],
+    offset_provenance: dict[int, Any],
 ) -> _NodeSpans:
-    """Convert path-based provenance to identity-based provenance."""
+    """Convert offset-based provenance to identity-based provenance.
+
+    Builds a span nesting tree and walks it alongside the protobuf tree.
+    Each proto node is matched to the next span child at the current
+    nesting level. Proto nodes without a corresponding span (inline
+    constructions) are skipped and their children use the parent's span
+    context.
+    """
     result = _NodeSpans()
-    _walk_node_spans(root, path_provenance, (), result)
+    span_tree = _build_span_tree(offset_provenance)
+    _walk_and_match(root, span_tree, result)
     return result
 
 
-def _walk_node_spans(
+def _walk_fields(
     node: Message,
-    path_provenance: dict[tuple[int, ...], Any],
-    path: tuple[int, ...],
+    active: _SpanNode,
     result: _NodeSpans,
 ) -> None:
-    _record_best_span(node, path_provenance, path, result)
-
-    type_name = type(node).__name__
-    unwrapper = _WRAPPER_TYPES.get(type_name)
-    if unwrapper is not None:
-        inner = unwrapper(node)
-        if inner is not None:
-            descriptor: Descriptor = node.DESCRIPTOR  # type: ignore[assignment]
-            for field_desc in descriptor.fields:
-                if (
-                    node.HasField(field_desc.name)
-                    and getattr(node, field_desc.name) is inner
-                ):
-                    _walk_node_spans(
-                        inner,
-                        path_provenance,
-                        path + (field_desc.number,),
-                        result,
-                    )
-                    return
-        return
-
-    descriptor = node.DESCRIPTOR  # type: ignore[assignment]
+    """Walk all message-typed fields of a node."""
+    descriptor: Descriptor = node.DESCRIPTOR  # type: ignore[assignment]
     for field_desc in descriptor.fields:
         value = getattr(node, field_desc.name)
         if field_desc.label == FieldDescriptor.LABEL_REPEATED:
-            for i, item in enumerate(value):
+            for item in value:
                 if isinstance(item, Message):
-                    _walk_node_spans(
-                        item,
-                        path_provenance,
-                        path + (field_desc.number, i),
-                        result,
-                    )
+                    _walk_and_match(item, active, result)
         elif field_desc.message_type is not None and node.HasField(field_desc.name):
             if isinstance(value, Message):
-                _walk_node_spans(
-                    value,
-                    path_provenance,
-                    path + (field_desc.number,),
-                    result,
-                )
+                _walk_and_match(value, active, result)
 
 
-def _record_best_span(
+def _try_consume(
+    type_name: str,
+    span_parent: _SpanNode,
+) -> _SpanNode | None:
+    """Consume the next span child if its type_name matches, else return None."""
+    peeked = span_parent.peek_child()
+    if peeked is not None and peeked.span.type_name == type_name:
+        return span_parent.next_child()
+    return None
+
+
+def _walk_and_match(
     node: Message,
-    path_provenance: dict[tuple[int, ...], Any],
-    path: tuple[int, ...],
+    span_parent: _SpanNode,
     result: _NodeSpans,
 ) -> None:
-    """Record the best span for a node, trying current path then shorter prefixes."""
-    p = path
-    while True:
-        span = path_provenance.get(p)
-        if span is not None:
-            result.record(node, span)
-            return
-        if not p:
-            return
-        p = p[:-1]
+    """Walk proto tree and span nesting tree simultaneously.
+
+    Each span carries a type_name recorded by the parser. A proto node
+    only consumes a span child whose type_name matches. Nodes created
+    inline (without their own parse function) have no matching span and
+    are skipped, preventing them from stealing sibling spans.
+    """
+    type_name = type(node).__name__
+
+    # Transparent wrappers: skip entirely, pass through to inner.
+    if type_name in _TRANSPARENT_WRAPPERS:
+        inner = _unwrap_oneof(node)
+        if inner is not None:
+            _walk_and_match(inner, span_parent, result)
+        return
+
+    # Non-transparent wrapper types (e.g. Constraint): consume a span,
+    # walk non-oneof fields first (they were parsed before the inner
+    # type's fields), then unwrap the oneof and walk the inner type's
+    # fields directly without consuming an additional span.
+    unwrapper = _WRAPPER_TYPES.get(type_name)
+    if unwrapper is not None:
+        matched = _try_consume(type_name, span_parent)
+        if matched is not None:
+            result.record(node, matched.span)
+        active = matched if matched is not None else span_parent
+
+        desc: Descriptor = node.DESCRIPTOR  # type: ignore[assignment]
+        oneof_field_names: set[str] = set()
+        for oneof_desc in desc.oneofs:
+            for field in oneof_desc.fields:
+                oneof_field_names.add(field.name)
+        for field_desc in desc.fields:
+            if field_desc.name in oneof_field_names:
+                continue
+            value = getattr(node, field_desc.name)
+            if field_desc.label == FieldDescriptor.LABEL_REPEATED:
+                for item in value:
+                    if isinstance(item, Message):
+                        _walk_and_match(item, active, result)
+            elif field_desc.message_type is not None and node.HasField(field_desc.name):
+                if isinstance(value, Message):
+                    _walk_and_match(value, active, result)
+
+        inner = unwrapper(node)
+        if inner is not None:
+            if matched is not None:
+                result.record(inner, matched.span)
+            _walk_fields(inner, active, result)
+        return
+
+    # Regular node: consume span only if type_name matches.
+    matched = _try_consume(type_name, span_parent)
+    if matched is not None:
+        result.record(node, matched.span)
+    active = matched if matched is not None else span_parent
+    _walk_fields(node, active, result)
 
 
 # --- Base visitor ---
@@ -823,7 +926,7 @@ _VALIDATORS: list[tuple[str, Any]] = [
 
 def validate_proto(
     txn: transactions_pb2.Transaction,
-    provenance: dict[tuple[int, ...], Any] | None = None,
+    provenance: dict[int, Any] | None = None,
     filename: str | None = None,
 ) -> None:
     """Validate a protobuf Transaction message.

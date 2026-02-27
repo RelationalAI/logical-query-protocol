@@ -37,6 +37,7 @@ end
 struct Span
     start::Location
     stop::Location
+    type_name::String
 end
 
 struct Token
@@ -189,7 +190,7 @@ mutable struct ParserState
     id_to_debuginfo::Dict{{Vector{{UInt8}},Vector{{Pair{{Tuple{{UInt64,UInt64}},String}}}}}}
     _current_fragment_id::Union{{Nothing,Vector{{UInt8}}}}
     _relation_id_to_name::Dict{{Tuple{{UInt64,UInt64}},String}}
-    provenance::Dict{{Tuple{{Vararg{{Int}}}},Span}}
+    provenance::Dict{{Int,Span}}
     _line_starts::Vector{{Int}}
 
     function ParserState(tokens::Vector{{Token}}, input_str::String)
@@ -208,14 +209,17 @@ function span_start(parser::ParserState)::Int
     return lookahead(parser, 0).start_pos
 end
 
-function record_span!(parser::ParserState, start_offset::Int)
+function record_span!(parser::ParserState, start_offset::Int, type_name::String="")
+    # First-wins: innermost parse function records first; outer wrappers
+    # that share the same offset do not overwrite.
+    haskey(parser.provenance, start_offset) && return nothing
     if parser.pos > 1
         end_offset = parser.tokens[parser.pos - 1].end_pos
     else
         end_offset = start_offset
     end
-    s = Span(_make_location(parser, start_offset), _make_location(parser, end_offset))
-    parser.provenance[tuple()] = s
+    s = Span(_make_location(parser, start_offset), _make_location(parser, end_offset), type_name)
+    parser.provenance[start_offset] = s
     return nothing
 end
 

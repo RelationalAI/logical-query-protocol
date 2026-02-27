@@ -56,26 +56,26 @@ func TestFileProvenanceSpansValid(t *testing.T) {
 				t.Fatalf("No provenance entries for %s", name)
 			}
 
-			for path, span := range provenance {
+			for offset, span := range provenance {
 				if span.Start.Offset > span.Stop.Offset {
-					t.Errorf("%s path %q: start offset %d > end offset %d",
-						name, path, span.Start.Offset, span.Stop.Offset)
+					t.Errorf("%s offset %d: start offset %d > end offset %d",
+						name, offset, span.Start.Offset, span.Stop.Offset)
 				}
 				if span.Start.Offset < 0 || span.Start.Offset > len(content) {
-					t.Errorf("%s path %q: start offset %d out of range",
-						name, path, span.Start.Offset)
+					t.Errorf("%s offset %d: start offset %d out of range",
+						name, offset, span.Start.Offset)
 				}
 				if span.Stop.Offset < 0 || span.Stop.Offset > len(content) {
-					t.Errorf("%s path %q: end offset %d out of range",
-						name, path, span.Stop.Offset)
+					t.Errorf("%s offset %d: end offset %d out of range",
+						name, offset, span.Stop.Offset)
 				}
 				if span.Start.Line < 1 {
-					t.Errorf("%s path %q: start line %d < 1",
-						name, path, span.Start.Line)
+					t.Errorf("%s offset %d: start line %d < 1",
+						name, offset, span.Start.Line)
 				}
 				if span.Start.Column < 1 {
-					t.Errorf("%s path %q: start column %d < 1",
-						name, path, span.Start.Column)
+					t.Errorf("%s offset %d: start column %d < 1",
+						name, offset, span.Start.Column)
 				}
 			}
 		})
@@ -97,9 +97,9 @@ func TestFileProvenanceRootSpansTransaction(t *testing.T) {
 				t.Fatalf("Failed to parse %s: %v", name, err)
 			}
 
-			span, ok := provenance[""]
+			span, ok := findSpanByType(provenance, "Transaction")
 			if !ok {
-				t.Fatalf("%s: no root provenance entry", name)
+				t.Fatalf("%s: no Transaction span in provenance", name)
 			}
 			text := content[span.Start.Offset:span.Stop.Offset]
 			if !strings.HasPrefix(text, "(transaction") {
@@ -126,13 +126,13 @@ func TestFileProvenanceOffsetsMatchLineColumn(t *testing.T) {
 				t.Fatalf("Failed to parse %s: %v", name, err)
 			}
 
-			for path, span := range provenance {
+			for offset, span := range provenance {
 				loc := span.Start
 				if loc.Line >= 1 && loc.Line <= len(offsets) {
 					expected := offsets[loc.Line-1] + (loc.Column - 1)
 					if loc.Offset != expected {
-						t.Errorf("%s path %q: offset %d != expected %d (line %d, col %d)",
-							name, path, loc.Offset, expected, loc.Line, loc.Column)
+						t.Errorf("%s offset %d: offset %d != expected %d (line %d, col %d)",
+							name, offset, loc.Offset, expected, loc.Line, loc.Column)
 					}
 				}
 			}

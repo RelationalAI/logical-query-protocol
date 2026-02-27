@@ -48,11 +48,12 @@ class Location:
 class Span:
     """Source span from start to stop location."""
 
-    __slots__ = ("start", "stop")
+    __slots__ = ("start", "stop", "type_name")
 
-    def __init__(self, start: Location, stop: Location):
+    def __init__(self, start: Location, stop: Location, type_name: str = ""):
         self.start = start
         self.stop = stop
+        self.type_name = type_name
 
     def __repr__(self) -> str:
         return f"Span({{self.start}}, {{self.stop}})"
@@ -217,7 +218,7 @@ class Parser:
         self.id_to_debuginfo = {{}}
         self._current_fragment_id: bytes | None = None
         self._relation_id_to_name = {{}}
-        self.provenance: dict[tuple[int, ...], Span] = {{}}
+        self.provenance: dict[int, Span] = {{}}
         self._line_starts = _compute_line_starts(input_str)
 
     def _make_location(self, offset: int) -> Location:
@@ -230,14 +231,20 @@ class Parser:
         """Return the start offset of the current token."""
         return self.lookahead(0).start_pos
 
-    def record_span(self, start_offset: int) -> None:
-        """Record a span from start_offset to the previous token's end."""
+    def record_span(self, start_offset: int, type_name: str = "") -> None:
+        """Record a span from start_offset to the previous token's end.
+
+        Uses first-wins semantics: the innermost parse function records first,
+        and outer wrappers that share the same offset do not overwrite.
+        """
+        if start_offset in self.provenance:
+            return
         if self.pos > 0:
             end_offset = self.tokens[self.pos - 1].end_pos
         else:
             end_offset = start_offset
-        span = Span(self._make_location(start_offset), self._make_location(end_offset))
-        self.provenance[tuple()] = span
+        span = Span(self._make_location(start_offset), self._make_location(end_offset), type_name)
+        self.provenance[start_offset] = span
 
     def lookahead(self, k: int = 0) -> Token:
         """Get lookahead token at offset k."""
@@ -349,7 +356,7 @@ class Parser:
     # --- Parse methods ---
 {parse_nonterminal_defns}
 
-def parse(input_str: str) -> tuple[Any, dict[tuple[int, ...], Span]]:
+def parse(input_str: str) -> tuple[Any, dict[int, Span]]:
     """Parse input string and return (result, provenance) tuple."""
     lexer = Lexer(input_str)
     parser = Parser(lexer.tokens, input_str)

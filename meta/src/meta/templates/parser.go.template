@@ -31,8 +31,9 @@ type Location struct {{
 
 // Span represents a source span from start to stop location.
 type Span struct {{
-	Start Location
-	Stop  Location
+	Start    Location
+	Stop     Location
+	TypeName string
 }}
 
 // ParseError represents a parse error
@@ -329,7 +330,7 @@ type Parser struct {{
 	pos               int
 	idToDebugInfo     map[string]map[relationIdKey]string
 	currentFragmentID []byte
-	Provenance        map[string]Span
+	Provenance        map[int]Span
 	lineStarts        []int
 }}
 
@@ -340,7 +341,7 @@ func NewParser(tokens []Token, input string) *Parser {{
 		pos:               0,
 		idToDebugInfo:     make(map[string]map[relationIdKey]string),
 		currentFragmentID: nil,
-		Provenance:        make(map[string]Span),
+		Provenance:        make(map[int]Span),
 		lineStarts:        computeLineStarts(input),
 	}}
 }}
@@ -364,16 +365,22 @@ func (p *Parser) spanStart() int {{
 	return p.lookahead(0).StartPos
 }}
 
-func (p *Parser) recordSpan(startOffset int) {{
+func (p *Parser) recordSpan(startOffset int, typeName string) {{
+	// First-wins: innermost parse function records first; outer wrappers
+	// that share the same offset do not overwrite.
+	if _, exists := p.Provenance[startOffset]; exists {{
+		return
+	}}
 	endOffset := startOffset
 	if p.pos > 0 {{
 		endOffset = p.tokens[p.pos-1].EndPos
 	}}
 	s := Span{{
-		Start: p.makeLocation(startOffset),
-		Stop:  p.makeLocation(endOffset),
+		Start:    p.makeLocation(startOffset),
+		Stop:     p.makeLocation(endOffset),
+		TypeName: typeName,
 	}}
-	p.Provenance[""] = s
+	p.Provenance[startOffset] = s
 }}
 
 func (p *Parser) lookahead(k int) Token {{
@@ -565,7 +572,7 @@ func toPascalCase(s string) string {{
 {parse_nonterminal_defns}
 
 // Parse parses the input string and returns (result, provenance, error).
-func Parse(input string) (result *pb.Transaction, provenance map[string]Span, err error) {{
+func Parse(input string) (result *pb.Transaction, provenance map[int]Span, err error) {{
 	defer func() {{
 		if r := recover(); r != nil {{
 			if pe, ok := r.(ParseError); ok {{

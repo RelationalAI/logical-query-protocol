@@ -108,7 +108,7 @@ PYTHON_TEMPLATES: dict[str, BuiltinTemplate] = {
     "get_at": BuiltinTemplate("{0}[{1}]"),
     # Provenance tracking
     "span_start": BuiltinTemplate("self.span_start()"),
-    "record_span": BuiltinTemplate("None", ["self.record_span({0})"]),
+    "record_span": BuiltinTemplate("None", ["self.record_span({0}, {1})"]),
 }
 
 
@@ -196,7 +196,7 @@ JULIA_TEMPLATES: dict[str, BuiltinTemplate] = {
     "get_at": BuiltinTemplate("{0}[{1} + 1]"),
     # Provenance tracking
     "span_start": BuiltinTemplate("span_start(parser)"),
-    "record_span": BuiltinTemplate("nothing", ["record_span!(parser, {0})"]),
+    "record_span": BuiltinTemplate("nothing", ["record_span!(parser, {0}, {1})"]),
 }
 
 
@@ -288,7 +288,7 @@ GO_TEMPLATES: dict[str, BuiltinTemplate] = {
     "get_at": BuiltinTemplate("{0}[{1}]"),
     # Provenance tracking
     "span_start": BuiltinTemplate("int64(p.spanStart())"),
-    "record_span": BuiltinTemplate("nil", ["p.recordSpan(int({0}))"]),
+    "record_span": BuiltinTemplate("nil", ["p.recordSpan(int({0}), {1})"]),
 }
 
 __all__ = [

@@ -251,7 +251,7 @@ register_builtin("get_at", [SequenceType(T), INT64], T)
 
 # === Provenance tracking ===
 register_builtin("span_start", [], INT64)
-register_builtin("record_span", [INT64], VOID)
+register_builtin("record_span", [INT64, STRING], VOID)
 
 
 # === Validation functions ===

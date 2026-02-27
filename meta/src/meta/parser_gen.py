@@ -101,6 +101,7 @@ from .target import (
     ListExpr,
     ListType,
     Lit,
+    MessageType,
     ParseNonterminal,
     ParseNonterminalDef,
     Seq,
@@ -150,6 +151,7 @@ def _wrap_with_span(body: TargetExpr, return_type) -> TargetExpr:
     """Wrap a nonterminal body with span_start/record_span."""
     span_var = Var(gensym("span_start"), BaseType("Int64"))
     result_var = Var(gensym("result"), return_type)
+    type_name = return_type.name if isinstance(return_type, MessageType) else ""
     return Let(
         span_var,
         Call(make_builtin("span_start"), []),
@@ -158,7 +160,7 @@ def _wrap_with_span(body: TargetExpr, return_type) -> TargetExpr:
             body,
             Seq(
                 [
-                    Call(make_builtin("record_span"), [span_var]),
+                    Call(make_builtin("record_span"), [span_var, Lit(type_name)]),
                     result_var,
                 ]
             ),
@@ -220,7 +222,8 @@ def _generate_parse_method(
             )
         rhs = Let(Var(prediction, BaseType("Int64")), predictor, tail)
     assert return_type is not None
-    rhs = _wrap_with_span(rhs, return_type)
+    if isinstance(return_type, MessageType):
+        rhs = _wrap_with_span(rhs, return_type)
     return ParseNonterminalDef(lhs, [], return_type, rhs, indent)
 
 
