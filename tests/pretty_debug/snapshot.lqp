@@ -5,9 +5,9 @@
       (define
         (fragment
           :snapshots
-          (rel_edb 0xcd3b9ab2de079088 ["my_edb"] [])
-          (rel_edb 0xd1e6d3706be27c8 ["database" "table"] [])
-          (rel_edb 0xc6e65c9a8c481ef1 ["schema" "namespace" "relation"] [])))
+          (edb 0xcd3b9ab2de079088 ["my_edb"] [])
+          (edb 0xd1e6d3706be27c8 ["database" "table"] [])
+          (edb 0xc6e65c9a8c481ef1 ["schema" "namespace" "relation"] [])))
       (define
         (fragment
           :frag1
@@ -44,9 +44,10 @@
       (output :snapshot3 0xc6e65c9a8c481ef1)))
   (epoch
     (writes
-      (snapshot ["my_edb"] 0xaacb662458c1cddb)
-      (snapshot ["database" "table"] 0x5aa562409c66b3b3)
-      (snapshot ["schema" "namespace" "relation"] 0xca186c6bd1825179))
+      (snapshot
+        ["my_edb"] 0xaacb662458c1cddb
+        ["database" "table"] 0x5aa562409c66b3b3
+        ["schema" "namespace" "relation"] 0xca186c6bd1825179))
     (reads
       (output :snapshot1 0xcd3b9ab2de079088)
       (output :snapshot2 0xd1e6d3706be27c8)

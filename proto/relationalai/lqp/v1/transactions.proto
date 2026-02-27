@@ -64,11 +64,16 @@ message Context {
   repeated RelationId relations = 1;
 }
 
-// Demand the source IDB, take an immutable snapshot, and turn it into an EDB under the
-// given path (specified as a sequence of strings, see RelEDB).
-message Snapshot {
+// A single (destination, source) pair within a Snapshot action.
+message SnapshotMapping {
   repeated string destination_path = 1;
   RelationId source_relation = 2;
+}
+
+// Demand the source IDBs, take immutable snapshots, and turn them into EDBs under the
+// given paths (specified as sequences of strings, see EDB).
+message Snapshot {
+  repeated SnapshotMapping mappings = 1;
 }
 
 //
@@ -77,6 +82,11 @@ message Snapshot {
 
 message ExportCSVConfig {
   string path = 1;
+
+  ExportCSVSource csv_source = 10;
+  CSVConfig csv_config = 11;
+
+  // Below are all deprecated in favour of the `csv_config` above.
   repeated ExportCSVColumn data_columns = 2;
 
   optional int64 partition_size = 3;
@@ -93,6 +103,17 @@ message ExportCSVConfig {
 message ExportCSVColumn {
   string column_name = 1;
   RelationId column_data = 2;
+}
+
+message ExportCSVColumns {
+  repeated ExportCSVColumn columns = 1;
+}
+
+message ExportCSVSource {
+  oneof csv_source {
+    ExportCSVColumns gnf_columns = 1;
+    RelationId table_def = 2;
+  }
 }
 
 //

@@ -112,6 +112,34 @@ end
     @test r.scale == 1
 end
 
+@testitem "parse_transaction entry point" setup=[ParserSetup] begin
+    input = "(transaction (epoch (writes) (reads)))"
+    result = Parser.parse_transaction(input)
+    @test result isa Proto.Transaction
+    @test length(result.epochs) == 1
+end
+
+@testitem "parse_fragment entry point" setup=[ParserSetup] begin
+    input = "(fragment :test_frag (def :my_rel ([x::INT] (relatom :my_rel x))))"
+    result = Parser.parse_fragment(input)
+    @test result isa Proto.Fragment
+end
+
+@testitem "parse delegates to parse_transaction" setup=[ParserSetup] begin
+    input = "(transaction (epoch (writes) (reads)))"
+    @test Parser.parse(input) == Parser.parse_transaction(input)
+end
+
+@testitem "parse_fragment rejects transaction" setup=[ParserSetup] begin
+    @test_throws ParseError Parser.parse_fragment("(transaction (epoch (writes) (reads)))")
+end
+
+@testitem "parse_transaction rejects fragment" setup=[ParserSetup] begin
+    @test_throws ParseError Parser.parse_transaction(
+        "(fragment :f (def :r ([x::INT] (relatom :r x))))"
+    )
+end
+
 @testitem "Parser - Lexer tokenization" setup=[ParserSetup] begin
     lexer = Lexer("(transaction (epoch (writes) (reads)))")
     # Tokens: ( transaction ( epoch ( writes ) ( reads ) ) ) $

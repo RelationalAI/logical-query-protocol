@@ -1363,23 +1363,67 @@ end
     @test d1 == d2 && d2 == d4 && d1 == d4
 end
 
-@testitem "Equality for Snapshot" tags=[:ring1, :unit] begin
-    using LogicalQueryProtocol: Snapshot, RelationId
+@testitem "Equality for SnapshotMapping" tags=[:ring1, :unit] begin
+    using LogicalQueryProtocol: SnapshotMapping, RelationId
 
     r1 = RelationId(id_low=0x1234, id_high=0x0)
     r2 = RelationId(id_low=0x1234, id_high=0x0)
     r3 = RelationId(id_low=0x5678, id_high=0x0)
 
-    s1 = Snapshot(destination_path=["my_edb"], source_relation=r1)
-    s2 = Snapshot(destination_path=["my_edb"], source_relation=r2)
-    s3 = Snapshot(destination_path=["other_edb"], source_relation=r1)
-    s4 = Snapshot(destination_path=["my_edb"], source_relation=r3)
-    s5 = Snapshot(destination_path=["my_edb"], source_relation=r1)
+    m1 = SnapshotMapping(destination_path=["my_edb"], source_relation=r1)
+    m2 = SnapshotMapping(destination_path=["my_edb"], source_relation=r2)
+    m3 = SnapshotMapping(destination_path=["other_edb"], source_relation=r1)
+    m4 = SnapshotMapping(destination_path=["my_edb"], source_relation=r3)
+    m5 = SnapshotMapping(destination_path=["my_edb"], source_relation=r1)
+
+    # Equality and inequality
+    @test m1 == m2
+    @test m1 != m3
+    @test m1 != m4
+    @test isequal(m1, m2)
+
+    # Hash consistency
+    @test hash(m1) == hash(m2)
+
+    # Reflexivity
+    @test m1 == m1
+    @test isequal(m1, m1)
+
+    # Symmetry
+    @test m1 == m2 && m2 == m1
+
+    # Transitivity
+    @test m1 == m2 && m2 == m5 && m1 == m5
+
+    # Multi-segment path
+    m6 = SnapshotMapping(destination_path=["schema", "table"], source_relation=r1)
+    m7 = SnapshotMapping(destination_path=["schema", "table"], source_relation=r1)
+    @test m6 == m7
+    @test hash(m6) == hash(m7)
+    @test m6 != m1
+end
+
+@testitem "Equality for Snapshot" tags=[:ring1, :unit] begin
+    using LogicalQueryProtocol: Snapshot, SnapshotMapping, RelationId
+
+    r1 = RelationId(id_low=0x1234, id_high=0x0)
+    r2 = RelationId(id_low=0x1234, id_high=0x0)
+    r3 = RelationId(id_low=0x5678, id_high=0x0)
+
+    m1 = SnapshotMapping(destination_path=["my_edb"], source_relation=r1)
+    m2 = SnapshotMapping(destination_path=["other_edb"], source_relation=r3)
+
+    s1 = Snapshot(mappings=[m1, m2])
+    s2 = Snapshot(mappings=[
+        SnapshotMapping(destination_path=["my_edb"], source_relation=r2),
+        SnapshotMapping(destination_path=["other_edb"], source_relation=r3),
+    ])
+    s3 = Snapshot(mappings=[m1])
+    s4 = Snapshot(mappings=[m1, m2])
 
     # Equality and inequality
     @test s1 == s2
     @test s1 != s3
-    @test s1 != s4
     @test isequal(s1, s2)
 
     # Hash consistency
@@ -1393,14 +1437,7 @@ end
     @test s1 == s2 && s2 == s1
 
     # Transitivity
-    @test s1 == s2 && s2 == s5 && s1 == s5
-
-    # Multi-segment path
-    s6 = Snapshot(destination_path=["schema", "table"], source_relation=r1)
-    s7 = Snapshot(destination_path=["schema", "table"], source_relation=r1)
-    @test s6 == s7
-    @test hash(s6) == hash(s7)
-    @test s6 != s1
+    @test s1 == s2 && s2 == s4 && s1 == s4
 end
 
 @testitem "Equality for Configure" tags=[:ring1, :unit] begin
@@ -1940,8 +1977,8 @@ end
     @test b1 != b5
 end
 
-@testitem "Equality for RelEDB" tags=[:ring1, :unit] begin
-    using LogicalQueryProtocol: RelEDB, RelationId, var"#Type", IntType
+@testitem "Equality for EDB" tags=[:ring1, :unit] begin
+    using LogicalQueryProtocol: EDB, RelationId, var"#Type", IntType
     using ProtoBuf: OneOf
 
     r1 = RelationId(id_low=1, id_high=0)
@@ -1949,11 +1986,11 @@ end
     r3 = RelationId(id_low=2, id_high=0)
     t1 = var"#Type"(var"#type"=OneOf(:int_type, IntType()))
 
-    e1 = RelEDB(target_id=r1, path=["table", "column"], types=[t1])
-    e2 = RelEDB(target_id=r2, path=["table", "column"], types=[t1])
-    e3 = RelEDB(target_id=r3, path=["table", "column"], types=[t1])
-    e4 = RelEDB(target_id=r1, path=["other", "column"], types=[t1])
-    e5 = RelEDB(target_id=r1, path=["table", "column"], types=[t1])
+    e1 = EDB(target_id=r1, path=["table", "column"], types=[t1])
+    e2 = EDB(target_id=r2, path=["table", "column"], types=[t1])
+    e3 = EDB(target_id=r3, path=["table", "column"], types=[t1])
+    e4 = EDB(target_id=r1, path=["other", "column"], types=[t1])
+    e5 = EDB(target_id=r1, path=["table", "column"], types=[t1])
 
     # Equality and inequality
     @test e1 == e2
@@ -2013,8 +2050,8 @@ end
     @test b1 == b2 && b2 == b5 && b1 == b5
 end
 
-@testitem "Equality for CSVColumn" tags=[:ring1, :unit] begin
-    using LogicalQueryProtocol: CSVColumn, RelationId, var"#Type", IntType
+@testitem "Equality for GNFColumn" tags=[:ring1, :unit] begin
+    using LogicalQueryProtocol: GNFColumn, RelationId, var"#Type", IntType
     using ProtoBuf: OneOf
 
     r1 = RelationId(id_low=1, id_high=0)
@@ -2022,11 +2059,11 @@ end
     r3 = RelationId(id_low=2, id_high=0)
     t1 = var"#Type"(var"#type"=OneOf(:int_type, IntType()))
 
-    c1 = CSVColumn(column_name="age", target_id=r1, types=[t1])
-    c2 = CSVColumn(column_name="age", target_id=r2, types=[t1])
-    c3 = CSVColumn(column_name="name", target_id=r1, types=[t1])
-    c4 = CSVColumn(column_name="age", target_id=r3, types=[t1])
-    c5 = CSVColumn(column_name="age", target_id=r1, types=[t1])
+    c1 = GNFColumn(column_path=["age"], target_id=r1, types=[t1])
+    c2 = GNFColumn(column_path=["age"], target_id=r2, types=[t1])
+    c3 = GNFColumn(column_path=["name"], target_id=r1, types=[t1])
+    c4 = GNFColumn(column_path=["age"], target_id=r3, types=[t1])
+    c5 = GNFColumn(column_path=["age"], target_id=r1, types=[t1])
 
     # Equality and inequality
     @test c1 == c2
@@ -2086,7 +2123,7 @@ end
 end
 
 @testitem "Equality for CSVData" tags=[:ring1, :unit] begin
-    using LogicalQueryProtocol: CSVData, CSVLocator, CSVConfig, CSVColumn, RelationId, var"#Type", IntType
+    using LogicalQueryProtocol: CSVData, CSVLocator, CSVConfig, GNFColumn, RelationId, var"#Type", IntType
     using ProtoBuf: OneOf
 
     loc1 = CSVLocator(paths=["/path/to/file.csv"], inline_data=UInt8[])
@@ -2096,7 +2133,7 @@ end
     cfg2 = CSVConfig(header_row=1, skip=0, new_line="\n", delimiter=",", quotechar="\"", escapechar="\\", comment="", missing_strings=[], decimal_separator=".", encoding="", compression="")
     r1 = RelationId(id_low=1, id_high=0)
     t1 = var"#Type"(var"#type"=OneOf(:int_type, IntType()))
-    col1 = CSVColumn(column_name="age", target_id=r1, types=[t1])
+    col1 = GNFColumn(column_path=["age"], target_id=r1, types=[t1])
 
     d1 = CSVData(locator=loc1, config=cfg1, columns=[col1], asof="2024-01-01")
     d2 = CSVData(locator=loc2, config=cfg2, columns=[col1], asof="2024-01-01")
@@ -2127,27 +2164,27 @@ end
 end
 
 @testitem "Equality for Data (OneOf type)" tags=[:ring1, :unit] begin
-    using LogicalQueryProtocol: Data, RelEDB, BeTreeRelation, CSVData, RelationId, BeTreeInfo, CSVLocator, CSVConfig, CSVColumn, var"#Type", IntType
+    using LogicalQueryProtocol: Data, EDB, BeTreeRelation, CSVData, RelationId, BeTreeInfo, CSVLocator, CSVConfig, GNFColumn, var"#Type", IntType
     using ProtoBuf: OneOf
 
     r1 = RelationId(id_low=1, id_high=0)
     t1 = var"#Type"(var"#type"=OneOf(:int_type, IntType()))
-    edb1 = RelEDB(target_id=r1, path=["table"], types=[t1])
-    edb2 = RelEDB(target_id=r1, path=["table"], types=[t1])
+    edb1 = EDB(target_id=r1, path=["table"], types=[t1])
+    edb2 = EDB(target_id=r1, path=["table"], types=[t1])
     info1 = BeTreeInfo(key_types=[t1], value_types=[], storage_config=nothing, relation_locator=nothing)
     betree1 = BeTreeRelation(name=r1, relation_info=info1)
     loc1 = CSVLocator(paths=["/file.csv"], inline_data=UInt8[])
     cfg1 = CSVConfig(header_row=1, skip=0, new_line="\n", delimiter=",", quotechar="\"", escapechar="\\", comment="", missing_strings=[], decimal_separator=".", encoding="", compression="")
-    col1 = CSVColumn(column_name="col", target_id=r1, types=[t1])
+    col1 = GNFColumn(column_path=["col"], target_id=r1, types=[t1])
     csv1 = CSVData(locator=loc1, config=cfg1, columns=[col1], asof="")
 
-    d1 = Data(data_type=OneOf(:rel_edb, edb1))
-    d2 = Data(data_type=OneOf(:rel_edb, edb2))
+    d1 = Data(data_type=OneOf(:edb, edb1))
+    d2 = Data(data_type=OneOf(:edb, edb2))
     d3 = Data(data_type=OneOf(:betree_relation, betree1))
     d4 = Data(data_type=OneOf(:csv_data, csv1))
     d5 = Data(data_type=nothing)
     d6 = Data(data_type=nothing)
-    d7 = Data(data_type=OneOf(:rel_edb, edb1))
+    d7 = Data(data_type=OneOf(:edb, edb1))
 
     # Same discriminant, same value
     @test d1 == d2

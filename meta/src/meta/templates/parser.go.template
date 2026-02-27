@@ -571,8 +571,8 @@ func toPascalCase(s string) string {{
 // --- Parse functions ---
 {parse_nonterminal_defns}
 
-// Parse parses the input string and returns (result, provenance, error).
-func Parse(input string) (result *pb.Transaction, provenance map[int]Span, err error) {{
+// ParseTransaction parses the input string and returns (result, provenance, error).
+func ParseTransaction(input string) (result *pb.Transaction, provenance map[int]Span, err error) {{
 	defer func() {{
 		if r := recover(); r != nil {{
 			if pe, ok := r.(ParseError); ok {{
@@ -595,4 +595,35 @@ func Parse(input string) (result *pb.Transaction, provenance map[int]Span, err e
 		}}
 	}}
 	return result, parser.Provenance, nil
+}}
+
+// ParseFragment parses the input string and returns (result, provenance, error).
+func ParseFragment(input string) (result *pb.Fragment, provenance map[int]Span, err error) {{
+	defer func() {{
+		if r := recover(); r != nil {{
+			if pe, ok := r.(ParseError); ok {{
+				err = pe
+				return
+			}}
+			panic(r)
+		}}
+	}}()
+
+	lexer := NewLexer(input)
+	parser := NewParser(lexer.tokens, input)
+	result = parser.parse_fragment()
+
+	// Check for unconsumed tokens (except EOF)
+	if parser.pos < len(parser.tokens) {{
+		remainingToken := parser.lookahead(0)
+		if remainingToken.Type != "$" {{
+			return nil, nil, ParseError{{msg: fmt.Sprintf("Unexpected token at end of input: %v", remainingToken)}}
+		}}
+	}}
+	return result, parser.Provenance, nil
+}}
+
+// Parse parses the input string and returns (result, provenance, error).
+func Parse(input string) (result *pb.Transaction, provenance map[int]Span, err error) {{
+	return ParseTransaction(input)
 }}

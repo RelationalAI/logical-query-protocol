@@ -71,8 +71,9 @@
 %nonterm construct logic.Construct
 %nonterm context transactions.Context
 %nonterm csv_asof String
-%nonterm csv_column logic.CSVColumn
-%nonterm csv_columns Sequence[logic.CSVColumn]
+%nonterm gnf_column logic.GNFColumn
+%nonterm gnf_column_path Sequence[String]
+%nonterm gnf_columns Sequence[logic.GNFColumn]
 %nonterm csv_config logic.CSVConfig
 %nonterm csv_data logic.CSVData
 %nonterm csv_locator_inline_data String
@@ -98,9 +99,10 @@
 %nonterm exists logic.Exists
 %nonterm export transactions.Export
 %nonterm export_csv_column transactions.ExportCSVColumn
-%nonterm export_csv_columns Sequence[transactions.ExportCSVColumn]
+%nonterm export_csv_columns_list Sequence[transactions.ExportCSVColumn]
 %nonterm export_csv_config transactions.ExportCSVConfig
 %nonterm export_csv_path String
+%nonterm export_csv_source transactions.ExportCSVSource
 %nonterm false logic.Disjunction
 %nonterm ffi logic.FFI
 %nonterm ffi_args Sequence[logic.Abstraction]
@@ -137,9 +139,9 @@
 %nonterm read transactions.Read
 %nonterm reduce logic.Reduce
 %nonterm rel_atom logic.RelAtom
-%nonterm rel_edb logic.RelEDB
-%nonterm rel_edb_path Sequence[String]
-%nonterm rel_edb_types Sequence[logic.Type]
+%nonterm edb logic.EDB
+%nonterm edb_path Sequence[String]
+%nonterm edb_types Sequence[logic.Type]
 %nonterm rel_term logic.RelTerm
 %nonterm relation_id logic.RelationId
 %nonterm script logic.Script
@@ -147,6 +149,7 @@
 %nonterm string_type logic.StringType
 %nonterm sum_monoid logic.SumMonoid
 %nonterm snapshot transactions.Snapshot
+%nonterm snapshot_mapping transactions.SnapshotMapping
 %nonterm sync transactions.Sync
 %nonterm term logic.Term
 %nonterm terms Sequence[logic.Term]
@@ -176,6 +179,7 @@
 %validator_ignore_completeness DecimalValue
 %validator_ignore_completeness BeTreeLocator
 %validator_ignore_completeness BeTreeConfig
+%validator_ignore_completeness ExportCSVColumns
 
 %%
 
@@ -899,10 +903,10 @@ functional_dependency_values
     : "(" "values" var* ")"
 
 data
-    : rel_edb
-      construct: $$ = logic.Data(rel_edb=$1)
-      deconstruct if builtin.has_proto_field($$, 'rel_edb'):
-        $1: logic.RelEDB = $$.rel_edb
+    : edb
+      construct: $$ = logic.Data(edb=$1)
+      deconstruct if builtin.has_proto_field($$, 'edb'):
+        $1: logic.EDB = $$.edb
     | betree_relation
       construct: $$ = logic.Data(betree_relation=$1)
       deconstruct if builtin.has_proto_field($$, 'betree_relation'):
@@ -912,15 +916,15 @@ data
       deconstruct if builtin.has_proto_field($$, 'csv_data'):
         $1: logic.CSVData = $$.csv_data
 
-rel_edb_path
+edb_path
     : "[" STRING* "]"
 
-rel_edb_types
+edb_types
     : "[" type* "]"
 
-rel_edb
-    : "(" "rel_edb" relation_id rel_edb_path rel_edb_types ")"
-      construct: $$ = logic.RelEDB(target_id=$3, path=$4, types=$5)
+edb
+    : "(" "edb" relation_id edb_path edb_types ")"
+      construct: $$ = logic.EDB(target_id=$3, path=$4, types=$5)
       deconstruct:
         $3: logic.RelationId = $$.target_id
         $4: Sequence[String] = $$.path
@@ -947,19 +951,19 @@ betree_info_key_types
 betree_info_value_types
     : "(" "value_types" type* ")"
 
-csv_columns
-    : "(" "columns" csv_column* ")"
+gnf_columns
+    : "(" "columns" gnf_column* ")"
 
 csv_asof
     : "(" "asof" STRING ")"
 
 csv_data
-    : "(" "csv_data" csvlocator csv_config csv_columns csv_asof ")"
+    : "(" "csv_data" csvlocator csv_config gnf_columns csv_asof ")"
       construct: $$ = logic.CSVData(locator=$3, config=$4, columns=$5, asof=$6)
       deconstruct:
         $3: logic.CSVLocator = $$.locator
         $4: logic.CSVConfig = $$.config
-        $5: Sequence[logic.CSVColumn] = $$.columns
+        $5: Sequence[logic.GNFColumn] = $$.columns
         $6: String = $$.asof
 
 csv_locator_paths
@@ -980,12 +984,22 @@ csv_config
       construct: $$ = construct_csv_config($3)
       deconstruct: $3: Sequence[Tuple[String, logic.Value]] = deconstruct_csv_config($$)
 
-csv_column
-    : "(" "column" STRING relation_id "[" type* "]" ")"
-      construct: $$ = logic.CSVColumn(column_name=$3, target_id=$4, types=$6)
+gnf_column_path
+    : STRING
+      construct: $$ = [$1]
+      deconstruct if builtin.length($$) == 1:
+        $1: String = $$[0]
+    | "[" STRING* "]"
+      construct: $$ = $2
+      deconstruct if builtin.length($$) != 1:
+        $2: Sequence[String] = $$
+
+gnf_column
+    : "(" "column" gnf_column_path relation_id? "[" type* "]" ")"
+      construct: $$ = logic.GNFColumn(column_path=$3, target_id=$4, types=$6)
       deconstruct:
-        $3: String = $$.column_name
-        $4: logic.RelationId = $$.target_id
+        $3: Sequence[String] = $$.column_path
+        $4: Optional[logic.RelationId] = $$.target_id if builtin.has_proto_field($$, "target_id") else None
         $6: Sequence[logic.Type] = $$.types
 
 undefine
@@ -998,12 +1012,17 @@ context
       construct: $$ = transactions.Context(relations=$3)
       deconstruct: $3: Sequence[logic.RelationId] = $$.relations
 
-snapshot
-    : "(" "snapshot" rel_edb_path relation_id ")"
-      construct: $$ = transactions.Snapshot(destination_path=$3, source_relation=$4)
+snapshot_mapping
+    : edb_path relation_id
+      construct: $$ = transactions.SnapshotMapping(destination_path=$1, source_relation=$2)
       deconstruct:
-        $3: Sequence[String] = $$.destination_path
-        $4: logic.RelationId = $$.source_relation
+        $1: Sequence[String] = $$.destination_path
+        $2: logic.RelationId = $$.source_relation
+
+snapshot
+    : "(" "snapshot" snapshot_mapping* ")"
+      construct: $$ = transactions.Snapshot(mappings=$3)
+      deconstruct: $3: Sequence[transactions.SnapshotMapping] = $$.mappings
 
 epoch_reads
     : "(" "reads" read* ")"
@@ -1062,9 +1081,15 @@ export
       deconstruct: $3: transactions.ExportCSVConfig = $$.csv_config
 
 export_csv_config
-    : "(" "export_csv_config" export_csv_path export_csv_columns config_dict ")"
-      construct: $$ = export_csv_config($3, $4, $5)
-      deconstruct:
+    : "(" "export_csv_config_v2" export_csv_path export_csv_source csv_config ")"
+      construct: $$ = construct_export_csv_config_with_source($3, $4, $5)
+      deconstruct if builtin.length($$.data_columns) == 0:
+        $3: String = $$.path
+        $4: transactions.ExportCSVSource = $$.csv_source
+        $5: logic.CSVConfig = $$.csv_config
+    | "(" "export_csv_config" export_csv_path export_csv_columns_list config_dict ")"
+      construct: $$ = construct_export_csv_config($3, $4, $5)
+      deconstruct if builtin.length($$.data_columns) != 0:
         $3: String = $$.path
         $4: Sequence[transactions.ExportCSVColumn] = $$.data_columns
         $5: Sequence[Tuple[String, logic.Value]] = deconstruct_export_csv_config($$)
@@ -1072,7 +1097,7 @@ export_csv_config
 export_csv_path
     : "(" "path" STRING ")"
 
-export_csv_columns
+export_csv_columns_list
     : "(" "columns" export_csv_column* ")"
 
 export_csv_column
@@ -1081,6 +1106,16 @@ export_csv_column
       deconstruct:
         $3: String = $$.column_name
         $4: logic.RelationId = $$.column_data
+
+export_csv_source
+    : "(" "gnf_columns" export_csv_column* ")"
+      construct: $$ = transactions.ExportCSVSource(gnf_columns=transactions.ExportCSVColumns(columns=$3))
+      deconstruct if builtin.has_proto_field($$, 'gnf_columns'):
+        $3: Sequence[transactions.ExportCSVColumn] = $$.gnf_columns.columns
+    | "(" "table_def" relation_id ")"
+      construct: $$ = transactions.ExportCSVSource(table_def=$3)
+      deconstruct if builtin.has_proto_field($$, 'table_def'):
+        $3: logic.RelationId = $$.table_def
 
 
 %%
@@ -1181,6 +1216,7 @@ def construct_csv_config(config_dict: Sequence[Tuple[String, logic.Value]]) -> l
     decimal_separator: str = _extract_value_string(builtin.dict_get(config, "csv_decimal_separator"), ".")
     encoding: str = _extract_value_string(builtin.dict_get(config, "csv_encoding"), "utf-8")
     compression: str = _extract_value_string(builtin.dict_get(config, "csv_compression"), "auto")
+    partition_size_mb: int = _extract_value_int64(builtin.dict_get(config, "csv_partition_size_mb"), 0)
     return logic.CSVConfig(
         header_row=header_row,
         skip=skip,
@@ -1193,6 +1229,7 @@ def construct_csv_config(config_dict: Sequence[Tuple[String, logic.Value]]) -> l
         decimal_separator=decimal_separator,
         encoding=encoding,
         compression=compression,
+        partition_size_mb=partition_size_mb,
     )
 
 
@@ -1258,8 +1295,7 @@ def construct_configure(config_dict: Sequence[Tuple[String, logic.Value]]) -> tr
         ivm_config=ivm_config,
     )
 
-
-def export_csv_config(
+def construct_export_csv_config(
     path: String,
     columns: Sequence[transactions.ExportCSVColumn],
     config_dict: Sequence[Tuple[String, logic.Value]],
@@ -1282,6 +1318,17 @@ def export_csv_config(
         syntax_delim=builtin.some(syntax_delim),
         syntax_quotechar=builtin.some(syntax_quotechar),
         syntax_escapechar=builtin.some(syntax_escapechar),
+    )
+
+def construct_export_csv_config_with_source(
+    path: String,
+    csv_source: transactions.ExportCSVSource,
+    csv_config: logic.CSVConfig,
+) -> transactions.ExportCSVConfig:
+    return transactions.ExportCSVConfig(
+        path=path,
+        csv_source=csv_source,
+        csv_config=csv_config,
     )
 
 
@@ -1345,6 +1392,8 @@ def deconstruct_csv_config(msg: logic.CSVConfig) -> List[Tuple[String, logic.Val
     builtin.list_push(result, builtin.tuple("csv_decimal_separator", _make_value_string(msg.decimal_separator)))
     builtin.list_push(result, builtin.tuple("csv_encoding", _make_value_string(msg.encoding)))
     builtin.list_push(result, builtin.tuple("csv_compression", _make_value_string(msg.compression)))
+    if msg.partition_size_mb != 0:
+      builtin.list_push(result, builtin.tuple("csv_partition_size_mb", _make_value_int64(msg.partition_size_mb)))
     return builtin.list_sort(result)
 
 
