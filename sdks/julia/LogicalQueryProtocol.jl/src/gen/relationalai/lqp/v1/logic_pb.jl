@@ -8,12 +8,12 @@ using ProtoBuf.EnumX: @enumx
 export DateTimeType, RelationId, Var, FloatType, UInt128Type, BeTreeConfig, DateTimeValue
 export DateValue, OrMonoid, CSVLocator, Int128Type, DecimalType, UnspecifiedType, DateType
 export MissingType, MissingValue, CSVConfig, IntType, StringType, Int128Value, UInt128Value
-export BooleanType, DecimalValue, BeTreeLocator, var"#Type", Value, RelEDB, MinMonoid
-export SumMonoid, MaxMonoid, BeTreeInfo, Binding, CSVColumn, Attribute, Term, Monoid
-export BeTreeRelation, CSVData, Cast, Pragma, Atom, RelTerm, Data, Primitive, RelAtom
-export Abstraction, Algorithm, Assign, Break, Conjunction, Constraint, Def, Disjunction
-export Exists, FFI, FunctionalDependency, MonoidDef, MonusDef, Not, Reduce, Script, Upsert
-export Construct, Loop, Declaration, Instruction, Formula
+export BooleanType, DecimalValue, BeTreeLocator, var"#Type", Value, GNFColumn, MinMonoid
+export SumMonoid, MaxMonoid, BeTreeInfo, Binding, EDB, Attribute, Term, CSVData, Monoid
+export BeTreeRelation, Cast, Pragma, Atom, RelTerm, Data, Primitive, RelAtom, Abstraction
+export Algorithm, Assign, Break, Conjunction, Constraint, Def, Disjunction, Exists, FFI
+export FunctionalDependency, MonoidDef, MonusDef, Not, Reduce, Script, Upsert, Construct
+export Loop, Declaration, Instruction, Formula
 abstract type var"##Abstract#Abstraction" end
 abstract type var"##Abstract#Not" end
 abstract type var"##Abstract#Break" end
@@ -1033,45 +1033,45 @@ function PB._encoded_size(x::Value)
     return encoded_size
 end
 
-struct RelEDB
+struct GNFColumn
+    column_path::Vector{String}
     target_id::Union{Nothing,RelationId}
-    path::Vector{String}
     types::Vector{var"#Type"}
 end
-RelEDB(;target_id = nothing, path = Vector{String}(), types = Vector{var"#Type"}()) = RelEDB(target_id, path, types)
-PB.default_values(::Type{RelEDB}) = (;target_id = nothing, path = Vector{String}(), types = Vector{var"#Type"}())
-PB.field_numbers(::Type{RelEDB}) = (;target_id = 1, path = 2, types = 3)
+GNFColumn(;column_path = Vector{String}(), target_id = nothing, types = Vector{var"#Type"}()) = GNFColumn(column_path, target_id, types)
+PB.default_values(::Type{GNFColumn}) = (;column_path = Vector{String}(), target_id = nothing, types = Vector{var"#Type"}())
+PB.field_numbers(::Type{GNFColumn}) = (;column_path = 1, target_id = 2, types = 3)
 
-function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:RelEDB})
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:GNFColumn})
+    column_path = PB.BufferedVector{String}()
     target_id = Ref{Union{Nothing,RelationId}}(nothing)
-    path = PB.BufferedVector{String}()
     types = PB.BufferedVector{var"#Type"}()
     while !PB.message_done(d)
         field_number, wire_type = PB.decode_tag(d)
         if field_number == 1
-            PB.decode!(d, target_id)
+            PB.decode!(d, column_path)
         elseif field_number == 2
-            PB.decode!(d, path)
+            PB.decode!(d, target_id)
         elseif field_number == 3
             PB.decode!(d, types)
         else
             Base.skip(d, wire_type)
         end
     end
-    return RelEDB(target_id[], path[], types[])
+    return GNFColumn(column_path[], target_id[], types[])
 end
 
-function PB.encode(e::PB.AbstractProtoEncoder, x::RelEDB)
+function PB.encode(e::PB.AbstractProtoEncoder, x::GNFColumn)
     initpos = position(e.io)
-    !isnothing(x.target_id) && PB.encode(e, 1, x.target_id)
-    !isempty(x.path) && PB.encode(e, 2, x.path)
+    !isempty(x.column_path) && PB.encode(e, 1, x.column_path)
+    !isnothing(x.target_id) && PB.encode(e, 2, x.target_id)
     !isempty(x.types) && PB.encode(e, 3, x.types)
     return position(e.io) - initpos
 end
-function PB._encoded_size(x::RelEDB)
+function PB._encoded_size(x::GNFColumn)
     encoded_size = 0
-    !isnothing(x.target_id) && (encoded_size += PB._encoded_size(x.target_id, 1))
-    !isempty(x.path) && (encoded_size += PB._encoded_size(x.path, 2))
+    !isempty(x.column_path) && (encoded_size += PB._encoded_size(x.column_path, 1))
+    !isnothing(x.target_id) && (encoded_size += PB._encoded_size(x.target_id, 2))
     !isempty(x.types) && (encoded_size += PB._encoded_size(x.types, 3))
     return encoded_size
 end
@@ -1256,45 +1256,45 @@ function PB._encoded_size(x::Binding)
     return encoded_size
 end
 
-struct CSVColumn
-    column_name::String
+struct EDB
     target_id::Union{Nothing,RelationId}
+    path::Vector{String}
     types::Vector{var"#Type"}
 end
-CSVColumn(;column_name = "", target_id = nothing, types = Vector{var"#Type"}()) = CSVColumn(column_name, target_id, types)
-PB.default_values(::Type{CSVColumn}) = (;column_name = "", target_id = nothing, types = Vector{var"#Type"}())
-PB.field_numbers(::Type{CSVColumn}) = (;column_name = 1, target_id = 2, types = 3)
+EDB(;target_id = nothing, path = Vector{String}(), types = Vector{var"#Type"}()) = EDB(target_id, path, types)
+PB.default_values(::Type{EDB}) = (;target_id = nothing, path = Vector{String}(), types = Vector{var"#Type"}())
+PB.field_numbers(::Type{EDB}) = (;target_id = 1, path = 2, types = 3)
 
-function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:CSVColumn})
-    column_name = ""
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:EDB})
     target_id = Ref{Union{Nothing,RelationId}}(nothing)
+    path = PB.BufferedVector{String}()
     types = PB.BufferedVector{var"#Type"}()
     while !PB.message_done(d)
         field_number, wire_type = PB.decode_tag(d)
         if field_number == 1
-            column_name = PB.decode(d, String)
-        elseif field_number == 2
             PB.decode!(d, target_id)
+        elseif field_number == 2
+            PB.decode!(d, path)
         elseif field_number == 3
             PB.decode!(d, types)
         else
             Base.skip(d, wire_type)
         end
     end
-    return CSVColumn(column_name, target_id[], types[])
+    return EDB(target_id[], path[], types[])
 end
 
-function PB.encode(e::PB.AbstractProtoEncoder, x::CSVColumn)
+function PB.encode(e::PB.AbstractProtoEncoder, x::EDB)
     initpos = position(e.io)
-    !isempty(x.column_name) && PB.encode(e, 1, x.column_name)
-    !isnothing(x.target_id) && PB.encode(e, 2, x.target_id)
+    !isnothing(x.target_id) && PB.encode(e, 1, x.target_id)
+    !isempty(x.path) && PB.encode(e, 2, x.path)
     !isempty(x.types) && PB.encode(e, 3, x.types)
     return position(e.io) - initpos
 end
-function PB._encoded_size(x::CSVColumn)
+function PB._encoded_size(x::EDB)
     encoded_size = 0
-    !isempty(x.column_name) && (encoded_size += PB._encoded_size(x.column_name, 1))
-    !isnothing(x.target_id) && (encoded_size += PB._encoded_size(x.target_id, 2))
+    !isnothing(x.target_id) && (encoded_size += PB._encoded_size(x.target_id, 1))
+    !isempty(x.path) && (encoded_size += PB._encoded_size(x.path, 2))
     !isempty(x.types) && (encoded_size += PB._encoded_size(x.types, 3))
     return encoded_size
 end
@@ -1379,6 +1379,55 @@ function PB._encoded_size(x::Term)
     elseif x.term_type.name === :constant
         encoded_size += PB._encoded_size(x.term_type[]::Value, 2)
     end
+    return encoded_size
+end
+
+struct CSVData
+    locator::Union{Nothing,CSVLocator}
+    config::Union{Nothing,CSVConfig}
+    columns::Vector{GNFColumn}
+    asof::String
+end
+CSVData(;locator = nothing, config = nothing, columns = Vector{GNFColumn}(), asof = "") = CSVData(locator, config, columns, asof)
+PB.default_values(::Type{CSVData}) = (;locator = nothing, config = nothing, columns = Vector{GNFColumn}(), asof = "")
+PB.field_numbers(::Type{CSVData}) = (;locator = 1, config = 2, columns = 3, asof = 4)
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:CSVData})
+    locator = Ref{Union{Nothing,CSVLocator}}(nothing)
+    config = Ref{Union{Nothing,CSVConfig}}(nothing)
+    columns = PB.BufferedVector{GNFColumn}()
+    asof = ""
+    while !PB.message_done(d)
+        field_number, wire_type = PB.decode_tag(d)
+        if field_number == 1
+            PB.decode!(d, locator)
+        elseif field_number == 2
+            PB.decode!(d, config)
+        elseif field_number == 3
+            PB.decode!(d, columns)
+        elseif field_number == 4
+            asof = PB.decode(d, String)
+        else
+            Base.skip(d, wire_type)
+        end
+    end
+    return CSVData(locator[], config[], columns[], asof)
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::CSVData)
+    initpos = position(e.io)
+    !isnothing(x.locator) && PB.encode(e, 1, x.locator)
+    !isnothing(x.config) && PB.encode(e, 2, x.config)
+    !isempty(x.columns) && PB.encode(e, 3, x.columns)
+    !isempty(x.asof) && PB.encode(e, 4, x.asof)
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::CSVData)
+    encoded_size = 0
+    !isnothing(x.locator) && (encoded_size += PB._encoded_size(x.locator, 1))
+    !isnothing(x.config) && (encoded_size += PB._encoded_size(x.config, 2))
+    !isempty(x.columns) && (encoded_size += PB._encoded_size(x.columns, 3))
+    !isempty(x.asof) && (encoded_size += PB._encoded_size(x.asof, 4))
     return encoded_size
 end
 
@@ -1474,55 +1523,6 @@ function PB._encoded_size(x::BeTreeRelation)
     encoded_size = 0
     !isnothing(x.name) && (encoded_size += PB._encoded_size(x.name, 1))
     !isnothing(x.relation_info) && (encoded_size += PB._encoded_size(x.relation_info, 2))
-    return encoded_size
-end
-
-struct CSVData
-    locator::Union{Nothing,CSVLocator}
-    config::Union{Nothing,CSVConfig}
-    columns::Vector{CSVColumn}
-    asof::String
-end
-CSVData(;locator = nothing, config = nothing, columns = Vector{CSVColumn}(), asof = "") = CSVData(locator, config, columns, asof)
-PB.default_values(::Type{CSVData}) = (;locator = nothing, config = nothing, columns = Vector{CSVColumn}(), asof = "")
-PB.field_numbers(::Type{CSVData}) = (;locator = 1, config = 2, columns = 3, asof = 4)
-
-function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:CSVData})
-    locator = Ref{Union{Nothing,CSVLocator}}(nothing)
-    config = Ref{Union{Nothing,CSVConfig}}(nothing)
-    columns = PB.BufferedVector{CSVColumn}()
-    asof = ""
-    while !PB.message_done(d)
-        field_number, wire_type = PB.decode_tag(d)
-        if field_number == 1
-            PB.decode!(d, locator)
-        elseif field_number == 2
-            PB.decode!(d, config)
-        elseif field_number == 3
-            PB.decode!(d, columns)
-        elseif field_number == 4
-            asof = PB.decode(d, String)
-        else
-            Base.skip(d, wire_type)
-        end
-    end
-    return CSVData(locator[], config[], columns[], asof)
-end
-
-function PB.encode(e::PB.AbstractProtoEncoder, x::CSVData)
-    initpos = position(e.io)
-    !isnothing(x.locator) && PB.encode(e, 1, x.locator)
-    !isnothing(x.config) && PB.encode(e, 2, x.config)
-    !isempty(x.columns) && PB.encode(e, 3, x.columns)
-    !isempty(x.asof) && PB.encode(e, 4, x.asof)
-    return position(e.io) - initpos
-end
-function PB._encoded_size(x::CSVData)
-    encoded_size = 0
-    !isnothing(x.locator) && (encoded_size += PB._encoded_size(x.locator, 1))
-    !isnothing(x.config) && (encoded_size += PB._encoded_size(x.config, 2))
-    !isempty(x.columns) && (encoded_size += PB._encoded_size(x.columns, 3))
-    !isempty(x.asof) && (encoded_size += PB._encoded_size(x.asof, 4))
     return encoded_size
 end
 
@@ -1684,21 +1684,21 @@ function PB._encoded_size(x::RelTerm)
 end
 
 struct Data
-    data_type::Union{Nothing,OneOf{<:Union{RelEDB,BeTreeRelation,CSVData}}}
+    data_type::Union{Nothing,OneOf{<:Union{EDB,BeTreeRelation,CSVData}}}
 end
 Data(;data_type = nothing) = Data(data_type)
 PB.oneof_field_types(::Type{Data}) = (;
-    data_type = (;rel_edb=RelEDB, betree_relation=BeTreeRelation, csv_data=CSVData),
+    data_type = (;edb=EDB, betree_relation=BeTreeRelation, csv_data=CSVData),
 )
-PB.default_values(::Type{Data}) = (;rel_edb = nothing, betree_relation = nothing, csv_data = nothing)
-PB.field_numbers(::Type{Data}) = (;rel_edb = 1, betree_relation = 2, csv_data = 3)
+PB.default_values(::Type{Data}) = (;edb = nothing, betree_relation = nothing, csv_data = nothing)
+PB.field_numbers(::Type{Data}) = (;edb = 1, betree_relation = 2, csv_data = 3)
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Data})
     data_type = nothing
     while !PB.message_done(d)
         field_number, wire_type = PB.decode_tag(d)
         if field_number == 1
-            data_type = OneOf(:rel_edb, PB.decode(d, Ref{RelEDB}))
+            data_type = OneOf(:edb, PB.decode(d, Ref{EDB}))
         elseif field_number == 2
             data_type = OneOf(:betree_relation, PB.decode(d, Ref{BeTreeRelation}))
         elseif field_number == 3
@@ -1713,8 +1713,8 @@ end
 function PB.encode(e::PB.AbstractProtoEncoder, x::Data)
     initpos = position(e.io)
     if isnothing(x.data_type);
-    elseif x.data_type.name === :rel_edb
-        PB.encode(e, 1, x.data_type[]::RelEDB)
+    elseif x.data_type.name === :edb
+        PB.encode(e, 1, x.data_type[]::EDB)
     elseif x.data_type.name === :betree_relation
         PB.encode(e, 2, x.data_type[]::BeTreeRelation)
     elseif x.data_type.name === :csv_data
@@ -1725,8 +1725,8 @@ end
 function PB._encoded_size(x::Data)
     encoded_size = 0
     if isnothing(x.data_type);
-    elseif x.data_type.name === :rel_edb
-        encoded_size += PB._encoded_size(x.data_type[]::RelEDB, 1)
+    elseif x.data_type.name === :edb
+        encoded_size += PB._encoded_size(x.data_type[]::EDB, 1)
     elseif x.data_type.name === :betree_relation
         encoded_size += PB._encoded_size(x.data_type[]::BeTreeRelation, 2)
     elseif x.data_type.name === :csv_data

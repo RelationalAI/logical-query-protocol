@@ -132,10 +132,10 @@ end
 function global_ids(data::Data)
     dt = data.data_type
     isnothing(dt) && error("Data has no data_type set")
-    if dt.name == :rel_edb
-        rel_edb = dt[]::RelEDB
-        @assert !isnothing(rel_edb.target_id)
-        return [persistent_id(rel_edb.target_id)]
+    if dt.name == :edb
+        edb = dt[]::EDB
+        @assert !isnothing(edb.target_id)
+        return [persistent_id(edb.target_id)]
     elseif dt.name == :betree_relation
         betree_relation = dt[]::BeTreeRelation
         @assert !isnothing(betree_relation.name)
@@ -156,5 +156,5 @@ end
 
 function _is_valid_data(data::Data)
     dt = data.data_type
-    return !isnothing(dt) && dt.name in [:rel_edb, :betree_relation, :csv_data]
+    return !isnothing(dt) && dt.name in [:edb, :betree_relation, :csv_data]
 end

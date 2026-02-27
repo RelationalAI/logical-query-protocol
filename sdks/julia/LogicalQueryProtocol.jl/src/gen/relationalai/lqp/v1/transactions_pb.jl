@@ -5,9 +5,10 @@ import ProtoBuf as PB
 using ProtoBuf: OneOf
 using ProtoBuf.EnumX: @enumx
 
-export ExportCSVColumn, Demand, Undefine, MaintenanceLevel, Snapshot, Define, Context, Sync
-export Abort, Output, ExportCSVColumns, IVMConfig, Write, ExportCSVSource, Configure
-export ExportCSVConfig, Export, Epoch, Read, Transaction, WhatIf
+export ExportCSVColumn, Demand, Undefine, MaintenanceLevel, Define, Context, Sync
+export SnapshotMapping, Abort, Output, ExportCSVColumns, IVMConfig, Snapshot
+export ExportCSVSource, Configure, Write, ExportCSVConfig, Export, Epoch, Read, Transaction
+export WhatIf
 abstract type var"##Abstract#Transaction" end
 abstract type var"##Abstract#Epoch" end
 abstract type var"##Abstract#Read" end
@@ -115,43 +116,6 @@ end
 
 @enumx MaintenanceLevel MAINTENANCE_LEVEL_UNSPECIFIED=0 MAINTENANCE_LEVEL_OFF=1 MAINTENANCE_LEVEL_AUTO=2 MAINTENANCE_LEVEL_ALL=3
 
-struct Snapshot
-    destination_path::Vector{String}
-    source_relation::Union{Nothing,RelationId}
-end
-Snapshot(;destination_path = Vector{String}(), source_relation = nothing) = Snapshot(destination_path, source_relation)
-PB.default_values(::Type{Snapshot}) = (;destination_path = Vector{String}(), source_relation = nothing)
-PB.field_numbers(::Type{Snapshot}) = (;destination_path = 1, source_relation = 2)
-
-function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Snapshot})
-    destination_path = PB.BufferedVector{String}()
-    source_relation = Ref{Union{Nothing,RelationId}}(nothing)
-    while !PB.message_done(d)
-        field_number, wire_type = PB.decode_tag(d)
-        if field_number == 1
-            PB.decode!(d, destination_path)
-        elseif field_number == 2
-            PB.decode!(d, source_relation)
-        else
-            Base.skip(d, wire_type)
-        end
-    end
-    return Snapshot(destination_path[], source_relation[])
-end
-
-function PB.encode(e::PB.AbstractProtoEncoder, x::Snapshot)
-    initpos = position(e.io)
-    !isempty(x.destination_path) && PB.encode(e, 1, x.destination_path)
-    !isnothing(x.source_relation) && PB.encode(e, 2, x.source_relation)
-    return position(e.io) - initpos
-end
-function PB._encoded_size(x::Snapshot)
-    encoded_size = 0
-    !isempty(x.destination_path) && (encoded_size += PB._encoded_size(x.destination_path, 1))
-    !isnothing(x.source_relation) && (encoded_size += PB._encoded_size(x.source_relation, 2))
-    return encoded_size
-end
-
 struct Define
     fragment::Union{Nothing,Fragment}
 end
@@ -242,6 +206,43 @@ end
 function PB._encoded_size(x::Sync)
     encoded_size = 0
     !isempty(x.fragments) && (encoded_size += PB._encoded_size(x.fragments, 1))
+    return encoded_size
+end
+
+struct SnapshotMapping
+    destination_path::Vector{String}
+    source_relation::Union{Nothing,RelationId}
+end
+SnapshotMapping(;destination_path = Vector{String}(), source_relation = nothing) = SnapshotMapping(destination_path, source_relation)
+PB.default_values(::Type{SnapshotMapping}) = (;destination_path = Vector{String}(), source_relation = nothing)
+PB.field_numbers(::Type{SnapshotMapping}) = (;destination_path = 1, source_relation = 2)
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:SnapshotMapping})
+    destination_path = PB.BufferedVector{String}()
+    source_relation = Ref{Union{Nothing,RelationId}}(nothing)
+    while !PB.message_done(d)
+        field_number, wire_type = PB.decode_tag(d)
+        if field_number == 1
+            PB.decode!(d, destination_path)
+        elseif field_number == 2
+            PB.decode!(d, source_relation)
+        else
+            Base.skip(d, wire_type)
+        end
+    end
+    return SnapshotMapping(destination_path[], source_relation[])
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::SnapshotMapping)
+    initpos = position(e.io)
+    !isempty(x.destination_path) && PB.encode(e, 1, x.destination_path)
+    !isnothing(x.source_relation) && PB.encode(e, 2, x.source_relation)
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::SnapshotMapping)
+    encoded_size = 0
+    !isempty(x.destination_path) && (encoded_size += PB._encoded_size(x.destination_path, 1))
+    !isnothing(x.source_relation) && (encoded_size += PB._encoded_size(x.source_relation, 2))
     return encoded_size
 end
 
@@ -381,62 +382,34 @@ function PB._encoded_size(x::IVMConfig)
     return encoded_size
 end
 
-struct Write
-    write_type::Union{Nothing,OneOf{<:Union{Define,Undefine,Context,Snapshot}}}
+struct Snapshot
+    mappings::Vector{SnapshotMapping}
 end
-Write(;write_type = nothing) = Write(write_type)
-PB.reserved_fields(::Type{Write}) = (names = String[], numbers = Union{Int,UnitRange{Int}}[4])
-PB.oneof_field_types(::Type{Write}) = (;
-    write_type = (;define=Define, undefine=Undefine, context=Context, snapshot=Snapshot),
-)
-PB.default_values(::Type{Write}) = (;define = nothing, undefine = nothing, context = nothing, snapshot = nothing)
-PB.field_numbers(::Type{Write}) = (;define = 1, undefine = 2, context = 3, snapshot = 5)
+Snapshot(;mappings = Vector{SnapshotMapping}()) = Snapshot(mappings)
+PB.default_values(::Type{Snapshot}) = (;mappings = Vector{SnapshotMapping}())
+PB.field_numbers(::Type{Snapshot}) = (;mappings = 1)
 
-function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Write})
-    write_type = nothing
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Snapshot})
+    mappings = PB.BufferedVector{SnapshotMapping}()
     while !PB.message_done(d)
         field_number, wire_type = PB.decode_tag(d)
         if field_number == 1
-            write_type = OneOf(:define, PB.decode(d, Ref{Define}))
-        elseif field_number == 2
-            write_type = OneOf(:undefine, PB.decode(d, Ref{Undefine}))
-        elseif field_number == 3
-            write_type = OneOf(:context, PB.decode(d, Ref{Context}))
-        elseif field_number == 5
-            write_type = OneOf(:snapshot, PB.decode(d, Ref{Snapshot}))
+            PB.decode!(d, mappings)
         else
             Base.skip(d, wire_type)
         end
     end
-    return Write(write_type)
+    return Snapshot(mappings[])
 end
 
-function PB.encode(e::PB.AbstractProtoEncoder, x::Write)
+function PB.encode(e::PB.AbstractProtoEncoder, x::Snapshot)
     initpos = position(e.io)
-    if isnothing(x.write_type);
-    elseif x.write_type.name === :define
-        PB.encode(e, 1, x.write_type[]::Define)
-    elseif x.write_type.name === :undefine
-        PB.encode(e, 2, x.write_type[]::Undefine)
-    elseif x.write_type.name === :context
-        PB.encode(e, 3, x.write_type[]::Context)
-    elseif x.write_type.name === :snapshot
-        PB.encode(e, 5, x.write_type[]::Snapshot)
-    end
+    !isempty(x.mappings) && PB.encode(e, 1, x.mappings)
     return position(e.io) - initpos
 end
-function PB._encoded_size(x::Write)
+function PB._encoded_size(x::Snapshot)
     encoded_size = 0
-    if isnothing(x.write_type);
-    elseif x.write_type.name === :define
-        encoded_size += PB._encoded_size(x.write_type[]::Define, 1)
-    elseif x.write_type.name === :undefine
-        encoded_size += PB._encoded_size(x.write_type[]::Undefine, 2)
-    elseif x.write_type.name === :context
-        encoded_size += PB._encoded_size(x.write_type[]::Context, 3)
-    elseif x.write_type.name === :snapshot
-        encoded_size += PB._encoded_size(x.write_type[]::Snapshot, 5)
-    end
+    !isempty(x.mappings) && (encoded_size += PB._encoded_size(x.mappings, 1))
     return encoded_size
 end
 
@@ -520,6 +493,65 @@ function PB._encoded_size(x::Configure)
     encoded_size = 0
     x.semantics_version != zero(Int64) && (encoded_size += PB._encoded_size(x.semantics_version, 1))
     !isnothing(x.ivm_config) && (encoded_size += PB._encoded_size(x.ivm_config, 2))
+    return encoded_size
+end
+
+struct Write
+    write_type::Union{Nothing,OneOf{<:Union{Define,Undefine,Context,Snapshot}}}
+end
+Write(;write_type = nothing) = Write(write_type)
+PB.reserved_fields(::Type{Write}) = (names = String[], numbers = Union{Int,UnitRange{Int}}[4])
+PB.oneof_field_types(::Type{Write}) = (;
+    write_type = (;define=Define, undefine=Undefine, context=Context, snapshot=Snapshot),
+)
+PB.default_values(::Type{Write}) = (;define = nothing, undefine = nothing, context = nothing, snapshot = nothing)
+PB.field_numbers(::Type{Write}) = (;define = 1, undefine = 2, context = 3, snapshot = 5)
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Write})
+    write_type = nothing
+    while !PB.message_done(d)
+        field_number, wire_type = PB.decode_tag(d)
+        if field_number == 1
+            write_type = OneOf(:define, PB.decode(d, Ref{Define}))
+        elseif field_number == 2
+            write_type = OneOf(:undefine, PB.decode(d, Ref{Undefine}))
+        elseif field_number == 3
+            write_type = OneOf(:context, PB.decode(d, Ref{Context}))
+        elseif field_number == 5
+            write_type = OneOf(:snapshot, PB.decode(d, Ref{Snapshot}))
+        else
+            Base.skip(d, wire_type)
+        end
+    end
+    return Write(write_type)
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::Write)
+    initpos = position(e.io)
+    if isnothing(x.write_type);
+    elseif x.write_type.name === :define
+        PB.encode(e, 1, x.write_type[]::Define)
+    elseif x.write_type.name === :undefine
+        PB.encode(e, 2, x.write_type[]::Undefine)
+    elseif x.write_type.name === :context
+        PB.encode(e, 3, x.write_type[]::Context)
+    elseif x.write_type.name === :snapshot
+        PB.encode(e, 5, x.write_type[]::Snapshot)
+    end
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::Write)
+    encoded_size = 0
+    if isnothing(x.write_type);
+    elseif x.write_type.name === :define
+        encoded_size += PB._encoded_size(x.write_type[]::Define, 1)
+    elseif x.write_type.name === :undefine
+        encoded_size += PB._encoded_size(x.write_type[]::Undefine, 2)
+    elseif x.write_type.name === :context
+        encoded_size += PB._encoded_size(x.write_type[]::Context, 3)
+    elseif x.write_type.name === :snapshot
+        encoded_size += PB._encoded_size(x.write_type[]::Snapshot, 5)
+    end
     return encoded_size
 end
 

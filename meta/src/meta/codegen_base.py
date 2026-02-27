@@ -473,6 +473,18 @@ class CodeGenerator(ABC):
                 return spec.generator(args, lines, indent)
         return None
 
+    # --- Beta reduction hooks ---
+
+    def _enter_beta_body(self, lam: Lambda) -> None:
+        """Called before evaluating a beta-reduced lambda body.
+
+        Subclasses can override to set up type context (e.g., Go's
+        lambda return type stack for IfElse type hints).
+        """
+
+    def _exit_beta_body(self, lam: Lambda) -> None:
+        """Called after evaluating a beta-reduced lambda body."""
+
     # --- Type-based expression classification ---
 
     @staticmethod
@@ -584,6 +596,24 @@ class CodeGenerator(ABC):
                 if builtin_sig is not None and builtin_sig.return_type == NEVER:
                     return None
                 return result.value
+
+        # Beta reduction: inline lambda calls instead of emitting closures.
+        # Call(Lambda([p1, ...], body), [a1, ...]) => assign args to params, eval body.
+        if isinstance(expr.func, Lambda) and len(expr.func.params) == len(expr.args):
+            for param, arg in zip(expr.func.params, expr.args):
+                arg_code = self.generate_lines(arg, lines, indent)
+                assert arg_code is not None, (
+                    "Function argument should not contain a return"
+                )
+                param_name = self.escape_identifier(param.name)
+                lines.append(
+                    f"{indent}{self.gen_assignment(param_name, arg_code, is_declaration=True)}"
+                )
+            self._enter_beta_body(expr.func)
+            try:
+                return self.generate_lines(expr.func.body, lines, indent)
+            finally:
+                self._exit_beta_body(expr.func)
 
         # Regular call
         f = self.generate_lines(expr.func, lines, indent)
@@ -886,17 +916,56 @@ class CodeGenerator(ABC):
         lines.append(f"{body_indent}{self.gen_assignment(tmp, else_code)}")
         return else_code
 
+    @staticmethod
+    def _extract_write_io_literal(expr: TargetExpr) -> str | None:
+        """If expr is Call(Builtin("write_io"), [Lit(s)]), return s."""
+        if (
+            isinstance(expr, Call)
+            and isinstance(expr.func, Builtin)
+            and expr.func.name == "write_io"
+            and len(expr.args) == 1
+            and isinstance(expr.args[0], Lit)
+            and isinstance(expr.args[0].value, str)
+        ):
+            return expr.args[0].value
+        return None
+
+    def _flush_write_io_literals(
+        self, strings: list[str], lines: list[str], indent: str
+    ) -> None:
+        """Emit a single write_io call for a run of string literals."""
+        merged = "".join(strings)
+        merged_str = self.gen_string(merged)
+        result = self.gen_builtin_call("write_io", [merged_str], lines, indent)
+        if result is not None:
+            for stmt in result.statements:
+                lines.append(f"{indent}{stmt}")
+
     def _generate_Seq(self, expr: Seq, lines: list[str], indent: str) -> str | None:
         """Generate code for a sequence of expressions.
 
         If any expression returns None (indicating a return statement was executed),
         stop processing and propagate None (subsequent expressions are unreachable).
+
+        Consecutive write_io calls with string literal arguments are merged into
+        a single call with the concatenated string.
         """
         result: str | None = self.gen_none()
+        pending_writes: list[str] = []
         for e in expr.exprs:
+            write_str = self._extract_write_io_literal(e)
+            if write_str is not None:
+                pending_writes.append(write_str)
+                result = self.gen_none()
+                continue
+            if pending_writes:
+                self._flush_write_io_literals(pending_writes, lines, indent)
+                pending_writes.clear()
             result = self.generate_lines(e, lines, indent)
             if result is None:
                 break
+        if pending_writes:
+            self._flush_write_io_literals(pending_writes, lines, indent)
         return result
 
     def _generate_While(self, expr: While, lines: list[str], indent: str) -> str:

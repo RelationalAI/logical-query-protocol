@@ -311,157 +311,157 @@ func formatBool(b bool) string {
 // --- Helper functions ---
 
 func (p *PrettyPrinter) _make_value_int32(v int32) *pb.Value {
-	_t1688 := &pb.Value{}
-	_t1688.Value = &pb.Value_IntValue{IntValue: int64(v)}
-	return _t1688
+	_t1423 := &pb.Value{}
+	_t1423.Value = &pb.Value_IntValue{IntValue: int64(v)}
+	return _t1423
 }
 
 func (p *PrettyPrinter) _make_value_int64(v int64) *pb.Value {
-	_t1689 := &pb.Value{}
-	_t1689.Value = &pb.Value_IntValue{IntValue: v}
-	return _t1689
+	_t1424 := &pb.Value{}
+	_t1424.Value = &pb.Value_IntValue{IntValue: v}
+	return _t1424
 }
 
 func (p *PrettyPrinter) _make_value_float64(v float64) *pb.Value {
-	_t1690 := &pb.Value{}
-	_t1690.Value = &pb.Value_FloatValue{FloatValue: v}
-	return _t1690
+	_t1425 := &pb.Value{}
+	_t1425.Value = &pb.Value_FloatValue{FloatValue: v}
+	return _t1425
 }
 
 func (p *PrettyPrinter) _make_value_string(v string) *pb.Value {
-	_t1691 := &pb.Value{}
-	_t1691.Value = &pb.Value_StringValue{StringValue: v}
-	return _t1691
+	_t1426 := &pb.Value{}
+	_t1426.Value = &pb.Value_StringValue{StringValue: v}
+	return _t1426
 }
 
 func (p *PrettyPrinter) _make_value_boolean(v bool) *pb.Value {
-	_t1692 := &pb.Value{}
-	_t1692.Value = &pb.Value_BooleanValue{BooleanValue: v}
-	return _t1692
+	_t1427 := &pb.Value{}
+	_t1427.Value = &pb.Value_BooleanValue{BooleanValue: v}
+	return _t1427
 }
 
 func (p *PrettyPrinter) _make_value_uint128(v *pb.UInt128Value) *pb.Value {
-	_t1693 := &pb.Value{}
-	_t1693.Value = &pb.Value_Uint128Value{Uint128Value: v}
-	return _t1693
+	_t1428 := &pb.Value{}
+	_t1428.Value = &pb.Value_Uint128Value{Uint128Value: v}
+	return _t1428
 }
 
 func (p *PrettyPrinter) deconstruct_configure(msg *pb.Configure) [][]interface{} {
 	result := [][]interface{}{}
 	if msg.GetIvmConfig().GetLevel() == pb.MaintenanceLevel_MAINTENANCE_LEVEL_AUTO {
-		_t1694 := p._make_value_string("auto")
-		result = append(result, []interface{}{"ivm.maintenance_level", _t1694})
+		_t1429 := p._make_value_string("auto")
+		result = append(result, []interface{}{"ivm.maintenance_level", _t1429})
 	} else {
 		if msg.GetIvmConfig().GetLevel() == pb.MaintenanceLevel_MAINTENANCE_LEVEL_ALL {
-			_t1695 := p._make_value_string("all")
-			result = append(result, []interface{}{"ivm.maintenance_level", _t1695})
+			_t1430 := p._make_value_string("all")
+			result = append(result, []interface{}{"ivm.maintenance_level", _t1430})
 		} else {
 			if msg.GetIvmConfig().GetLevel() == pb.MaintenanceLevel_MAINTENANCE_LEVEL_OFF {
-				_t1696 := p._make_value_string("off")
-				result = append(result, []interface{}{"ivm.maintenance_level", _t1696})
+				_t1431 := p._make_value_string("off")
+				result = append(result, []interface{}{"ivm.maintenance_level", _t1431})
 			}
 		}
 	}
-	_t1697 := p._make_value_int64(msg.GetSemanticsVersion())
-	result = append(result, []interface{}{"semantics_version", _t1697})
+	_t1432 := p._make_value_int64(msg.GetSemanticsVersion())
+	result = append(result, []interface{}{"semantics_version", _t1432})
 	return listSort(result)
 }
 
 func (p *PrettyPrinter) deconstruct_csv_config(msg *pb.CSVConfig) [][]interface{} {
 	result := [][]interface{}{}
-	_t1698 := p._make_value_int32(msg.GetHeaderRow())
-	result = append(result, []interface{}{"csv_header_row", _t1698})
-	_t1699 := p._make_value_int64(msg.GetSkip())
-	result = append(result, []interface{}{"csv_skip", _t1699})
+	_t1433 := p._make_value_int32(msg.GetHeaderRow())
+	result = append(result, []interface{}{"csv_header_row", _t1433})
+	_t1434 := p._make_value_int64(msg.GetSkip())
+	result = append(result, []interface{}{"csv_skip", _t1434})
 	if msg.GetNewLine() != "" {
-		_t1700 := p._make_value_string(msg.GetNewLine())
-		result = append(result, []interface{}{"csv_new_line", _t1700})
+		_t1435 := p._make_value_string(msg.GetNewLine())
+		result = append(result, []interface{}{"csv_new_line", _t1435})
 	}
-	_t1701 := p._make_value_string(msg.GetDelimiter())
-	result = append(result, []interface{}{"csv_delimiter", _t1701})
-	_t1702 := p._make_value_string(msg.GetQuotechar())
-	result = append(result, []interface{}{"csv_quotechar", _t1702})
-	_t1703 := p._make_value_string(msg.GetEscapechar())
-	result = append(result, []interface{}{"csv_escapechar", _t1703})
+	_t1436 := p._make_value_string(msg.GetDelimiter())
+	result = append(result, []interface{}{"csv_delimiter", _t1436})
+	_t1437 := p._make_value_string(msg.GetQuotechar())
+	result = append(result, []interface{}{"csv_quotechar", _t1437})
+	_t1438 := p._make_value_string(msg.GetEscapechar())
+	result = append(result, []interface{}{"csv_escapechar", _t1438})
 	if msg.GetComment() != "" {
-		_t1704 := p._make_value_string(msg.GetComment())
-		result = append(result, []interface{}{"csv_comment", _t1704})
+		_t1439 := p._make_value_string(msg.GetComment())
+		result = append(result, []interface{}{"csv_comment", _t1439})
 	}
 	for _, missing_string := range msg.GetMissingStrings() {
-		_t1705 := p._make_value_string(missing_string)
-		result = append(result, []interface{}{"csv_missing_strings", _t1705})
+		_t1440 := p._make_value_string(missing_string)
+		result = append(result, []interface{}{"csv_missing_strings", _t1440})
 	}
-	_t1706 := p._make_value_string(msg.GetDecimalSeparator())
-	result = append(result, []interface{}{"csv_decimal_separator", _t1706})
-	_t1707 := p._make_value_string(msg.GetEncoding())
-	result = append(result, []interface{}{"csv_encoding", _t1707})
-	_t1708 := p._make_value_string(msg.GetCompression())
-	result = append(result, []interface{}{"csv_compression", _t1708})
+	_t1441 := p._make_value_string(msg.GetDecimalSeparator())
+	result = append(result, []interface{}{"csv_decimal_separator", _t1441})
+	_t1442 := p._make_value_string(msg.GetEncoding())
+	result = append(result, []interface{}{"csv_encoding", _t1442})
+	_t1443 := p._make_value_string(msg.GetCompression())
+	result = append(result, []interface{}{"csv_compression", _t1443})
 	if msg.GetPartitionSizeMb() != 0 {
-		_t1709 := p._make_value_int64(msg.GetPartitionSizeMb())
-		result = append(result, []interface{}{"csv_partition_size_mb", _t1709})
+		_t1444 := p._make_value_int64(msg.GetPartitionSizeMb())
+		result = append(result, []interface{}{"csv_partition_size_mb", _t1444})
 	}
 	return listSort(result)
 }
 
 func (p *PrettyPrinter) deconstruct_betree_info_config(msg *pb.BeTreeInfo) [][]interface{} {
 	result := [][]interface{}{}
-	_t1710 := p._make_value_float64(msg.GetStorageConfig().GetEpsilon())
-	result = append(result, []interface{}{"betree_config_epsilon", _t1710})
-	_t1711 := p._make_value_int64(msg.GetStorageConfig().GetMaxPivots())
-	result = append(result, []interface{}{"betree_config_max_pivots", _t1711})
-	_t1712 := p._make_value_int64(msg.GetStorageConfig().GetMaxDeltas())
-	result = append(result, []interface{}{"betree_config_max_deltas", _t1712})
-	_t1713 := p._make_value_int64(msg.GetStorageConfig().GetMaxLeaf())
-	result = append(result, []interface{}{"betree_config_max_leaf", _t1713})
+	_t1445 := p._make_value_float64(msg.GetStorageConfig().GetEpsilon())
+	result = append(result, []interface{}{"betree_config_epsilon", _t1445})
+	_t1446 := p._make_value_int64(msg.GetStorageConfig().GetMaxPivots())
+	result = append(result, []interface{}{"betree_config_max_pivots", _t1446})
+	_t1447 := p._make_value_int64(msg.GetStorageConfig().GetMaxDeltas())
+	result = append(result, []interface{}{"betree_config_max_deltas", _t1447})
+	_t1448 := p._make_value_int64(msg.GetStorageConfig().GetMaxLeaf())
+	result = append(result, []interface{}{"betree_config_max_leaf", _t1448})
 	if hasProtoField(msg.GetRelationLocator(), "root_pageid") {
 		if msg.GetRelationLocator().GetRootPageid() != nil {
-			_t1714 := p._make_value_uint128(msg.GetRelationLocator().GetRootPageid())
-			result = append(result, []interface{}{"betree_locator_root_pageid", _t1714})
+			_t1449 := p._make_value_uint128(msg.GetRelationLocator().GetRootPageid())
+			result = append(result, []interface{}{"betree_locator_root_pageid", _t1449})
 		}
 	}
 	if hasProtoField(msg.GetRelationLocator(), "inline_data") {
 		if msg.GetRelationLocator().GetInlineData() != nil {
-			_t1715 := p._make_value_string(string(msg.GetRelationLocator().GetInlineData()))
-			result = append(result, []interface{}{"betree_locator_inline_data", _t1715})
+			_t1450 := p._make_value_string(string(msg.GetRelationLocator().GetInlineData()))
+			result = append(result, []interface{}{"betree_locator_inline_data", _t1450})
 		}
 	}
-	_t1716 := p._make_value_int64(msg.GetRelationLocator().GetElementCount())
-	result = append(result, []interface{}{"betree_locator_element_count", _t1716})
-	_t1717 := p._make_value_int64(msg.GetRelationLocator().GetTreeHeight())
-	result = append(result, []interface{}{"betree_locator_tree_height", _t1717})
+	_t1451 := p._make_value_int64(msg.GetRelationLocator().GetElementCount())
+	result = append(result, []interface{}{"betree_locator_element_count", _t1451})
+	_t1452 := p._make_value_int64(msg.GetRelationLocator().GetTreeHeight())
+	result = append(result, []interface{}{"betree_locator_tree_height", _t1452})
 	return listSort(result)
 }
 
 func (p *PrettyPrinter) deconstruct_export_csv_config(msg *pb.ExportCSVConfig) [][]interface{} {
 	result := [][]interface{}{}
 	if msg.PartitionSize != nil {
-		_t1718 := p._make_value_int64(*msg.PartitionSize)
-		result = append(result, []interface{}{"partition_size", _t1718})
+		_t1453 := p._make_value_int64(*msg.PartitionSize)
+		result = append(result, []interface{}{"partition_size", _t1453})
 	}
 	if msg.Compression != nil {
-		_t1719 := p._make_value_string(*msg.Compression)
-		result = append(result, []interface{}{"compression", _t1719})
+		_t1454 := p._make_value_string(*msg.Compression)
+		result = append(result, []interface{}{"compression", _t1454})
 	}
 	if msg.SyntaxHeaderRow != nil {
-		_t1720 := p._make_value_boolean(*msg.SyntaxHeaderRow)
-		result = append(result, []interface{}{"syntax_header_row", _t1720})
+		_t1455 := p._make_value_boolean(*msg.SyntaxHeaderRow)
+		result = append(result, []interface{}{"syntax_header_row", _t1455})
 	}
 	if msg.SyntaxMissingString != nil {
-		_t1721 := p._make_value_string(*msg.SyntaxMissingString)
-		result = append(result, []interface{}{"syntax_missing_string", _t1721})
+		_t1456 := p._make_value_string(*msg.SyntaxMissingString)
+		result = append(result, []interface{}{"syntax_missing_string", _t1456})
 	}
 	if msg.SyntaxDelim != nil {
-		_t1722 := p._make_value_string(*msg.SyntaxDelim)
-		result = append(result, []interface{}{"syntax_delim", _t1722})
+		_t1457 := p._make_value_string(*msg.SyntaxDelim)
+		result = append(result, []interface{}{"syntax_delim", _t1457})
 	}
 	if msg.SyntaxQuotechar != nil {
-		_t1723 := p._make_value_string(*msg.SyntaxQuotechar)
-		result = append(result, []interface{}{"syntax_quotechar", _t1723})
+		_t1458 := p._make_value_string(*msg.SyntaxQuotechar)
+		result = append(result, []interface{}{"syntax_quotechar", _t1458})
 	}
 	if msg.SyntaxEscapechar != nil {
-		_t1724 := p._make_value_string(*msg.SyntaxEscapechar)
-		result = append(result, []interface{}{"syntax_escapechar", _t1724})
+		_t1459 := p._make_value_string(*msg.SyntaxEscapechar)
+		result = append(result, []interface{}{"syntax_escapechar", _t1459})
 	}
 	return listSort(result)
 }
@@ -473,11 +473,11 @@ func (p *PrettyPrinter) deconstruct_relation_id_string(msg *pb.RelationId) strin
 
 func (p *PrettyPrinter) deconstruct_relation_id_uint128(msg *pb.RelationId) *pb.UInt128Value {
 	name := p.relationIdToString(msg)
-	var _t1725 interface{}
+	var _t1460 interface{}
 	if name == nil {
 		return p.relationIdToUint128(msg)
 	}
-	_ = _t1725
+	_ = _t1460
 	return nil
 }
 
@@ -495,48 +495,45 @@ func (p *PrettyPrinter) deconstruct_bindings_with_arity(abs *pb.Abstraction, val
 // --- Pretty-print methods ---
 
 func (p *PrettyPrinter) pretty_transaction(msg *pb.Transaction) interface{} {
-	flat650 := p.tryFlat(msg, func() { p.pretty_transaction(msg) })
-	if flat650 != nil {
-		p.write(*flat650)
+	flat663 := p.tryFlat(msg, func() { p.pretty_transaction(msg) })
+	if flat663 != nil {
+		p.write(*flat663)
 		return nil
 	} else {
-		_t1282 := func(_dollar_dollar *pb.Transaction) []interface{} {
-			var _t1283 *pb.Configure
-			if hasProtoField(_dollar_dollar, "configure") {
-				_t1283 = _dollar_dollar.GetConfigure()
-			}
-			var _t1284 *pb.Sync
-			if hasProtoField(_dollar_dollar, "sync") {
-				_t1284 = _dollar_dollar.GetSync()
-			}
-			return []interface{}{_t1283, _t1284, _dollar_dollar.GetEpochs()}
+		_dollar_dollar := msg
+		var _t1308 *pb.Configure
+		if hasProtoField(_dollar_dollar, "configure") {
+			_t1308 = _dollar_dollar.GetConfigure()
 		}
-		_t1285 := _t1282(msg)
-		fields641 := _t1285
-		unwrapped_fields642 := fields641
+		var _t1309 *pb.Sync
+		if hasProtoField(_dollar_dollar, "sync") {
+			_t1309 = _dollar_dollar.GetSync()
+		}
+		fields654 := []interface{}{_t1308, _t1309, _dollar_dollar.GetEpochs()}
+		unwrapped_fields655 := fields654
 		p.write("(")
 		p.write("transaction")
 		p.indentSexp()
-		field643 := unwrapped_fields642[0].(*pb.Configure)
-		if field643 != nil {
+		field656 := unwrapped_fields655[0].(*pb.Configure)
+		if field656 != nil {
 			p.newline()
-			opt_val644 := field643
-			p.pretty_configure(opt_val644)
+			opt_val657 := field656
+			p.pretty_configure(opt_val657)
 		}
-		field645 := unwrapped_fields642[1].(*pb.Sync)
-		if field645 != nil {
+		field658 := unwrapped_fields655[1].(*pb.Sync)
+		if field658 != nil {
 			p.newline()
-			opt_val646 := field645
-			p.pretty_sync(opt_val646)
+			opt_val659 := field658
+			p.pretty_sync(opt_val659)
 		}
-		field647 := unwrapped_fields642[2].([]*pb.Epoch)
-		if !(len(field647) == 0) {
+		field660 := unwrapped_fields655[2].([]*pb.Epoch)
+		if !(len(field660) == 0) {
 			p.newline()
-			for i649, elem648 := range field647 {
-				if (i649 > 0) {
+			for i662, elem661 := range field660 {
+				if (i662 > 0) {
 					p.newline()
 				}
-				p.pretty_epoch(elem648)
+				p.pretty_epoch(elem661)
 			}
 		}
 		p.dedent()
@@ -546,23 +543,20 @@ func (p *PrettyPrinter) pretty_transaction(msg *pb.Transaction) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_configure(msg *pb.Configure) interface{} {
-	flat653 := p.tryFlat(msg, func() { p.pretty_configure(msg) })
-	if flat653 != nil {
-		p.write(*flat653)
+	flat666 := p.tryFlat(msg, func() { p.pretty_configure(msg) })
+	if flat666 != nil {
+		p.write(*flat666)
 		return nil
 	} else {
-		_t1286 := func(_dollar_dollar *pb.Configure) [][]interface{} {
-			_t1287 := p.deconstruct_configure(_dollar_dollar)
-			return _t1287
-		}
-		_t1288 := _t1286(msg)
-		fields651 := _t1288
-		unwrapped_fields652 := fields651
+		_dollar_dollar := msg
+		_t1310 := p.deconstruct_configure(_dollar_dollar)
+		fields664 := _t1310
+		unwrapped_fields665 := fields664
 		p.write("(")
 		p.write("configure")
 		p.indentSexp()
 		p.newline()
-		p.pretty_config_dict(unwrapped_fields652)
+		p.pretty_config_dict(unwrapped_fields665)
 		p.dedent()
 		p.write(")")
 	}
@@ -570,21 +564,21 @@ func (p *PrettyPrinter) pretty_configure(msg *pb.Configure) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_config_dict(msg [][]interface{}) interface{} {
-	flat657 := p.tryFlat(msg, func() { p.pretty_config_dict(msg) })
-	if flat657 != nil {
-		p.write(*flat657)
+	flat670 := p.tryFlat(msg, func() { p.pretty_config_dict(msg) })
+	if flat670 != nil {
+		p.write(*flat670)
 		return nil
 	} else {
-		fields654 := msg
+		fields667 := msg
 		p.write("{")
 		p.indent()
-		if !(len(fields654) == 0) {
+		if !(len(fields667) == 0) {
 			p.newline()
-			for i656, elem655 := range fields654 {
-				if (i656 > 0) {
+			for i669, elem668 := range fields667 {
+				if (i669 > 0) {
 					p.newline()
 				}
-				p.pretty_config_key_value(elem655)
+				p.pretty_config_key_value(elem668)
 			}
 		}
 		p.dedent()
@@ -594,152 +588,122 @@ func (p *PrettyPrinter) pretty_config_dict(msg [][]interface{}) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_config_key_value(msg []interface{}) interface{} {
-	flat662 := p.tryFlat(msg, func() { p.pretty_config_key_value(msg) })
-	if flat662 != nil {
-		p.write(*flat662)
+	flat675 := p.tryFlat(msg, func() { p.pretty_config_key_value(msg) })
+	if flat675 != nil {
+		p.write(*flat675)
 		return nil
 	} else {
-		_t1289 := func(_dollar_dollar []interface{}) []interface{} {
-			return []interface{}{_dollar_dollar[0].(string), _dollar_dollar[1].(*pb.Value)}
-		}
-		_t1290 := _t1289(msg)
-		fields658 := _t1290
-		unwrapped_fields659 := fields658
+		_dollar_dollar := msg
+		fields671 := []interface{}{_dollar_dollar[0].(string), _dollar_dollar[1].(*pb.Value)}
+		unwrapped_fields672 := fields671
 		p.write(":")
-		field660 := unwrapped_fields659[0].(string)
-		p.write(field660)
+		field673 := unwrapped_fields672[0].(string)
+		p.write(field673)
 		p.write(" ")
-		field661 := unwrapped_fields659[1].(*pb.Value)
-		p.pretty_value(field661)
+		field674 := unwrapped_fields672[1].(*pb.Value)
+		p.pretty_value(field674)
 	}
 	return nil
 }
 
 func (p *PrettyPrinter) pretty_value(msg *pb.Value) interface{} {
-	flat682 := p.tryFlat(msg, func() { p.pretty_value(msg) })
-	if flat682 != nil {
-		p.write(*flat682)
+	flat695 := p.tryFlat(msg, func() { p.pretty_value(msg) })
+	if flat695 != nil {
+		p.write(*flat695)
 		return nil
 	} else {
-		_t1291 := func(_dollar_dollar *pb.Value) *pb.DateValue {
-			var _t1292 *pb.DateValue
-			if hasProtoField(_dollar_dollar, "date_value") {
-				_t1292 = _dollar_dollar.GetDateValue()
-			}
-			return _t1292
+		_dollar_dollar := msg
+		var _t1311 *pb.DateValue
+		if hasProtoField(_dollar_dollar, "date_value") {
+			_t1311 = _dollar_dollar.GetDateValue()
 		}
-		_t1293 := _t1291(msg)
-		deconstruct_result680 := _t1293
-		if deconstruct_result680 != nil {
-			unwrapped681 := deconstruct_result680
-			p.pretty_date(unwrapped681)
+		deconstruct_result693 := _t1311
+		if deconstruct_result693 != nil {
+			unwrapped694 := deconstruct_result693
+			p.pretty_date(unwrapped694)
 		} else {
-			_t1294 := func(_dollar_dollar *pb.Value) *pb.DateTimeValue {
-				var _t1295 *pb.DateTimeValue
-				if hasProtoField(_dollar_dollar, "datetime_value") {
-					_t1295 = _dollar_dollar.GetDatetimeValue()
-				}
-				return _t1295
+			_dollar_dollar := msg
+			var _t1312 *pb.DateTimeValue
+			if hasProtoField(_dollar_dollar, "datetime_value") {
+				_t1312 = _dollar_dollar.GetDatetimeValue()
 			}
-			_t1296 := _t1294(msg)
-			deconstruct_result678 := _t1296
-			if deconstruct_result678 != nil {
-				unwrapped679 := deconstruct_result678
-				p.pretty_datetime(unwrapped679)
+			deconstruct_result691 := _t1312
+			if deconstruct_result691 != nil {
+				unwrapped692 := deconstruct_result691
+				p.pretty_datetime(unwrapped692)
 			} else {
-				_t1297 := func(_dollar_dollar *pb.Value) *string {
-					var _t1298 *string
-					if hasProtoField(_dollar_dollar, "string_value") {
-						_t1298 = ptr(_dollar_dollar.GetStringValue())
-					}
-					return _t1298
+				_dollar_dollar := msg
+				var _t1313 *string
+				if hasProtoField(_dollar_dollar, "string_value") {
+					_t1313 = ptr(_dollar_dollar.GetStringValue())
 				}
-				_t1299 := _t1297(msg)
-				deconstruct_result676 := _t1299
-				if deconstruct_result676 != nil {
-					unwrapped677 := *deconstruct_result676
-					p.write(p.formatStringValue(unwrapped677))
+				deconstruct_result689 := _t1313
+				if deconstruct_result689 != nil {
+					unwrapped690 := *deconstruct_result689
+					p.write(p.formatStringValue(unwrapped690))
 				} else {
-					_t1300 := func(_dollar_dollar *pb.Value) *int64 {
-						var _t1301 *int64
-						if hasProtoField(_dollar_dollar, "int_value") {
-							_t1301 = ptr(_dollar_dollar.GetIntValue())
-						}
-						return _t1301
+					_dollar_dollar := msg
+					var _t1314 *int64
+					if hasProtoField(_dollar_dollar, "int_value") {
+						_t1314 = ptr(_dollar_dollar.GetIntValue())
 					}
-					_t1302 := _t1300(msg)
-					deconstruct_result674 := _t1302
-					if deconstruct_result674 != nil {
-						unwrapped675 := *deconstruct_result674
-						p.write(fmt.Sprintf("%d", unwrapped675))
+					deconstruct_result687 := _t1314
+					if deconstruct_result687 != nil {
+						unwrapped688 := *deconstruct_result687
+						p.write(fmt.Sprintf("%d", unwrapped688))
 					} else {
-						_t1303 := func(_dollar_dollar *pb.Value) *float64 {
-							var _t1304 *float64
-							if hasProtoField(_dollar_dollar, "float_value") {
-								_t1304 = ptr(_dollar_dollar.GetFloatValue())
-							}
-							return _t1304
+						_dollar_dollar := msg
+						var _t1315 *float64
+						if hasProtoField(_dollar_dollar, "float_value") {
+							_t1315 = ptr(_dollar_dollar.GetFloatValue())
 						}
-						_t1305 := _t1303(msg)
-						deconstruct_result672 := _t1305
-						if deconstruct_result672 != nil {
-							unwrapped673 := *deconstruct_result672
-							p.write(formatFloat64(unwrapped673))
+						deconstruct_result685 := _t1315
+						if deconstruct_result685 != nil {
+							unwrapped686 := *deconstruct_result685
+							p.write(formatFloat64(unwrapped686))
 						} else {
-							_t1306 := func(_dollar_dollar *pb.Value) *pb.UInt128Value {
-								var _t1307 *pb.UInt128Value
-								if hasProtoField(_dollar_dollar, "uint128_value") {
-									_t1307 = _dollar_dollar.GetUint128Value()
-								}
-								return _t1307
+							_dollar_dollar := msg
+							var _t1316 *pb.UInt128Value
+							if hasProtoField(_dollar_dollar, "uint128_value") {
+								_t1316 = _dollar_dollar.GetUint128Value()
 							}
-							_t1308 := _t1306(msg)
-							deconstruct_result670 := _t1308
-							if deconstruct_result670 != nil {
-								unwrapped671 := deconstruct_result670
-								p.write(p.formatUint128(unwrapped671))
+							deconstruct_result683 := _t1316
+							if deconstruct_result683 != nil {
+								unwrapped684 := deconstruct_result683
+								p.write(p.formatUint128(unwrapped684))
 							} else {
-								_t1309 := func(_dollar_dollar *pb.Value) *pb.Int128Value {
-									var _t1310 *pb.Int128Value
-									if hasProtoField(_dollar_dollar, "int128_value") {
-										_t1310 = _dollar_dollar.GetInt128Value()
-									}
-									return _t1310
+								_dollar_dollar := msg
+								var _t1317 *pb.Int128Value
+								if hasProtoField(_dollar_dollar, "int128_value") {
+									_t1317 = _dollar_dollar.GetInt128Value()
 								}
-								_t1311 := _t1309(msg)
-								deconstruct_result668 := _t1311
-								if deconstruct_result668 != nil {
-									unwrapped669 := deconstruct_result668
-									p.write(p.formatInt128(unwrapped669))
+								deconstruct_result681 := _t1317
+								if deconstruct_result681 != nil {
+									unwrapped682 := deconstruct_result681
+									p.write(p.formatInt128(unwrapped682))
 								} else {
-									_t1312 := func(_dollar_dollar *pb.Value) *pb.DecimalValue {
-										var _t1313 *pb.DecimalValue
-										if hasProtoField(_dollar_dollar, "decimal_value") {
-											_t1313 = _dollar_dollar.GetDecimalValue()
-										}
-										return _t1313
+									_dollar_dollar := msg
+									var _t1318 *pb.DecimalValue
+									if hasProtoField(_dollar_dollar, "decimal_value") {
+										_t1318 = _dollar_dollar.GetDecimalValue()
 									}
-									_t1314 := _t1312(msg)
-									deconstruct_result666 := _t1314
-									if deconstruct_result666 != nil {
-										unwrapped667 := deconstruct_result666
-										p.write(p.formatDecimal(unwrapped667))
+									deconstruct_result679 := _t1318
+									if deconstruct_result679 != nil {
+										unwrapped680 := deconstruct_result679
+										p.write(p.formatDecimal(unwrapped680))
 									} else {
-										_t1315 := func(_dollar_dollar *pb.Value) *bool {
-											var _t1316 *bool
-											if hasProtoField(_dollar_dollar, "boolean_value") {
-												_t1316 = ptr(_dollar_dollar.GetBooleanValue())
-											}
-											return _t1316
+										_dollar_dollar := msg
+										var _t1319 *bool
+										if hasProtoField(_dollar_dollar, "boolean_value") {
+											_t1319 = ptr(_dollar_dollar.GetBooleanValue())
 										}
-										_t1317 := _t1315(msg)
-										deconstruct_result664 := _t1317
-										if deconstruct_result664 != nil {
-											unwrapped665 := *deconstruct_result664
-											p.pretty_boolean_value(unwrapped665)
+										deconstruct_result677 := _t1319
+										if deconstruct_result677 != nil {
+											unwrapped678 := *deconstruct_result677
+											p.pretty_boolean_value(unwrapped678)
 										} else {
-											fields663 := msg
-											_ = fields663
+											fields676 := msg
+											_ = fields676
 											p.write("missing")
 										}
 									}
@@ -755,29 +719,26 @@ func (p *PrettyPrinter) pretty_value(msg *pb.Value) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_date(msg *pb.DateValue) interface{} {
-	flat688 := p.tryFlat(msg, func() { p.pretty_date(msg) })
-	if flat688 != nil {
-		p.write(*flat688)
+	flat701 := p.tryFlat(msg, func() { p.pretty_date(msg) })
+	if flat701 != nil {
+		p.write(*flat701)
 		return nil
 	} else {
-		_t1318 := func(_dollar_dollar *pb.DateValue) []interface{} {
-			return []interface{}{int64(_dollar_dollar.GetYear()), int64(_dollar_dollar.GetMonth()), int64(_dollar_dollar.GetDay())}
-		}
-		_t1319 := _t1318(msg)
-		fields683 := _t1319
-		unwrapped_fields684 := fields683
+		_dollar_dollar := msg
+		fields696 := []interface{}{int64(_dollar_dollar.GetYear()), int64(_dollar_dollar.GetMonth()), int64(_dollar_dollar.GetDay())}
+		unwrapped_fields697 := fields696
 		p.write("(")
 		p.write("date")
 		p.indentSexp()
 		p.newline()
-		field685 := unwrapped_fields684[0].(int64)
-		p.write(fmt.Sprintf("%d", field685))
+		field698 := unwrapped_fields697[0].(int64)
+		p.write(fmt.Sprintf("%d", field698))
 		p.newline()
-		field686 := unwrapped_fields684[1].(int64)
-		p.write(fmt.Sprintf("%d", field686))
+		field699 := unwrapped_fields697[1].(int64)
+		p.write(fmt.Sprintf("%d", field699))
 		p.newline()
-		field687 := unwrapped_fields684[2].(int64)
-		p.write(fmt.Sprintf("%d", field687))
+		field700 := unwrapped_fields697[2].(int64)
+		p.write(fmt.Sprintf("%d", field700))
 		p.dedent()
 		p.write(")")
 	}
@@ -785,43 +746,40 @@ func (p *PrettyPrinter) pretty_date(msg *pb.DateValue) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_datetime(msg *pb.DateTimeValue) interface{} {
-	flat699 := p.tryFlat(msg, func() { p.pretty_datetime(msg) })
-	if flat699 != nil {
-		p.write(*flat699)
+	flat712 := p.tryFlat(msg, func() { p.pretty_datetime(msg) })
+	if flat712 != nil {
+		p.write(*flat712)
 		return nil
 	} else {
-		_t1320 := func(_dollar_dollar *pb.DateTimeValue) []interface{} {
-			return []interface{}{int64(_dollar_dollar.GetYear()), int64(_dollar_dollar.GetMonth()), int64(_dollar_dollar.GetDay()), int64(_dollar_dollar.GetHour()), int64(_dollar_dollar.GetMinute()), int64(_dollar_dollar.GetSecond()), ptr(int64(_dollar_dollar.GetMicrosecond()))}
-		}
-		_t1321 := _t1320(msg)
-		fields689 := _t1321
-		unwrapped_fields690 := fields689
+		_dollar_dollar := msg
+		fields702 := []interface{}{int64(_dollar_dollar.GetYear()), int64(_dollar_dollar.GetMonth()), int64(_dollar_dollar.GetDay()), int64(_dollar_dollar.GetHour()), int64(_dollar_dollar.GetMinute()), int64(_dollar_dollar.GetSecond()), ptr(int64(_dollar_dollar.GetMicrosecond()))}
+		unwrapped_fields703 := fields702
 		p.write("(")
 		p.write("datetime")
 		p.indentSexp()
 		p.newline()
-		field691 := unwrapped_fields690[0].(int64)
-		p.write(fmt.Sprintf("%d", field691))
+		field704 := unwrapped_fields703[0].(int64)
+		p.write(fmt.Sprintf("%d", field704))
 		p.newline()
-		field692 := unwrapped_fields690[1].(int64)
-		p.write(fmt.Sprintf("%d", field692))
+		field705 := unwrapped_fields703[1].(int64)
+		p.write(fmt.Sprintf("%d", field705))
 		p.newline()
-		field693 := unwrapped_fields690[2].(int64)
-		p.write(fmt.Sprintf("%d", field693))
+		field706 := unwrapped_fields703[2].(int64)
+		p.write(fmt.Sprintf("%d", field706))
 		p.newline()
-		field694 := unwrapped_fields690[3].(int64)
-		p.write(fmt.Sprintf("%d", field694))
+		field707 := unwrapped_fields703[3].(int64)
+		p.write(fmt.Sprintf("%d", field707))
 		p.newline()
-		field695 := unwrapped_fields690[4].(int64)
-		p.write(fmt.Sprintf("%d", field695))
+		field708 := unwrapped_fields703[4].(int64)
+		p.write(fmt.Sprintf("%d", field708))
 		p.newline()
-		field696 := unwrapped_fields690[5].(int64)
-		p.write(fmt.Sprintf("%d", field696))
-		field697 := unwrapped_fields690[6].(*int64)
-		if field697 != nil {
+		field709 := unwrapped_fields703[5].(int64)
+		p.write(fmt.Sprintf("%d", field709))
+		field710 := unwrapped_fields703[6].(*int64)
+		if field710 != nil {
 			p.newline()
-			opt_val698 := *field697
-			p.write(fmt.Sprintf("%d", opt_val698))
+			opt_val711 := *field710
+			p.write(fmt.Sprintf("%d", opt_val711))
 		}
 		p.dedent()
 		p.write(")")
@@ -830,32 +788,26 @@ func (p *PrettyPrinter) pretty_datetime(msg *pb.DateTimeValue) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_boolean_value(msg bool) interface{} {
-	_t1322 := func(_dollar_dollar bool) []interface{} {
-		var _t1323 []interface{}
-		if _dollar_dollar {
-			_t1323 = []interface{}{}
-		}
-		return _t1323
+	_dollar_dollar := msg
+	var _t1320 []interface{}
+	if _dollar_dollar {
+		_t1320 = []interface{}{}
 	}
-	_t1324 := _t1322(msg)
-	deconstruct_result702 := _t1324
-	if deconstruct_result702 != nil {
-		unwrapped703 := deconstruct_result702
-		_ = unwrapped703
+	deconstruct_result715 := _t1320
+	if deconstruct_result715 != nil {
+		unwrapped716 := deconstruct_result715
+		_ = unwrapped716
 		p.write("true")
 	} else {
-		_t1325 := func(_dollar_dollar bool) []interface{} {
-			var _t1326 []interface{}
-			if !(_dollar_dollar) {
-				_t1326 = []interface{}{}
-			}
-			return _t1326
+		_dollar_dollar := msg
+		var _t1321 []interface{}
+		if !(_dollar_dollar) {
+			_t1321 = []interface{}{}
 		}
-		_t1327 := _t1325(msg)
-		deconstruct_result700 := _t1327
-		if deconstruct_result700 != nil {
-			unwrapped701 := deconstruct_result700
-			_ = unwrapped701
+		deconstruct_result713 := _t1321
+		if deconstruct_result713 != nil {
+			unwrapped714 := deconstruct_result713
+			_ = unwrapped714
 			p.write("false")
 		} else {
 			panic(ParseError{msg: "No matching rule for boolean_value"})
@@ -865,27 +817,24 @@ func (p *PrettyPrinter) pretty_boolean_value(msg bool) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_sync(msg *pb.Sync) interface{} {
-	flat708 := p.tryFlat(msg, func() { p.pretty_sync(msg) })
-	if flat708 != nil {
-		p.write(*flat708)
+	flat721 := p.tryFlat(msg, func() { p.pretty_sync(msg) })
+	if flat721 != nil {
+		p.write(*flat721)
 		return nil
 	} else {
-		_t1328 := func(_dollar_dollar *pb.Sync) []*pb.FragmentId {
-			return _dollar_dollar.GetFragments()
-		}
-		_t1329 := _t1328(msg)
-		fields704 := _t1329
-		unwrapped_fields705 := fields704
+		_dollar_dollar := msg
+		fields717 := _dollar_dollar.GetFragments()
+		unwrapped_fields718 := fields717
 		p.write("(")
 		p.write("sync")
 		p.indentSexp()
-		if !(len(unwrapped_fields705) == 0) {
+		if !(len(unwrapped_fields718) == 0) {
 			p.newline()
-			for i707, elem706 := range unwrapped_fields705 {
-				if (i707 > 0) {
+			for i720, elem719 := range unwrapped_fields718 {
+				if (i720 > 0) {
 					p.newline()
 				}
-				p.pretty_fragment_id(elem706)
+				p.pretty_fragment_id(elem719)
 			}
 		}
 		p.dedent()
@@ -895,57 +844,51 @@ func (p *PrettyPrinter) pretty_sync(msg *pb.Sync) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_fragment_id(msg *pb.FragmentId) interface{} {
-	flat711 := p.tryFlat(msg, func() { p.pretty_fragment_id(msg) })
-	if flat711 != nil {
-		p.write(*flat711)
+	flat724 := p.tryFlat(msg, func() { p.pretty_fragment_id(msg) })
+	if flat724 != nil {
+		p.write(*flat724)
 		return nil
 	} else {
-		_t1330 := func(_dollar_dollar *pb.FragmentId) string {
-			return p.fragmentIdToString(_dollar_dollar)
-		}
-		_t1331 := _t1330(msg)
-		fields709 := _t1331
-		unwrapped_fields710 := fields709
+		_dollar_dollar := msg
+		fields722 := p.fragmentIdToString(_dollar_dollar)
+		unwrapped_fields723 := fields722
 		p.write(":")
-		p.write(unwrapped_fields710)
+		p.write(unwrapped_fields723)
 	}
 	return nil
 }
 
 func (p *PrettyPrinter) pretty_epoch(msg *pb.Epoch) interface{} {
-	flat718 := p.tryFlat(msg, func() { p.pretty_epoch(msg) })
-	if flat718 != nil {
-		p.write(*flat718)
+	flat731 := p.tryFlat(msg, func() { p.pretty_epoch(msg) })
+	if flat731 != nil {
+		p.write(*flat731)
 		return nil
 	} else {
-		_t1332 := func(_dollar_dollar *pb.Epoch) []interface{} {
-			var _t1333 []*pb.Write
-			if !(len(_dollar_dollar.GetWrites()) == 0) {
-				_t1333 = _dollar_dollar.GetWrites()
-			}
-			var _t1334 []*pb.Read
-			if !(len(_dollar_dollar.GetReads()) == 0) {
-				_t1334 = _dollar_dollar.GetReads()
-			}
-			return []interface{}{_t1333, _t1334}
+		_dollar_dollar := msg
+		var _t1322 []*pb.Write
+		if !(len(_dollar_dollar.GetWrites()) == 0) {
+			_t1322 = _dollar_dollar.GetWrites()
 		}
-		_t1335 := _t1332(msg)
-		fields712 := _t1335
-		unwrapped_fields713 := fields712
+		var _t1323 []*pb.Read
+		if !(len(_dollar_dollar.GetReads()) == 0) {
+			_t1323 = _dollar_dollar.GetReads()
+		}
+		fields725 := []interface{}{_t1322, _t1323}
+		unwrapped_fields726 := fields725
 		p.write("(")
 		p.write("epoch")
 		p.indentSexp()
-		field714 := unwrapped_fields713[0].([]*pb.Write)
-		if field714 != nil {
+		field727 := unwrapped_fields726[0].([]*pb.Write)
+		if field727 != nil {
 			p.newline()
-			opt_val715 := field714
-			p.pretty_epoch_writes(opt_val715)
+			opt_val728 := field727
+			p.pretty_epoch_writes(opt_val728)
 		}
-		field716 := unwrapped_fields713[1].([]*pb.Read)
-		if field716 != nil {
+		field729 := unwrapped_fields726[1].([]*pb.Read)
+		if field729 != nil {
 			p.newline()
-			opt_val717 := field716
-			p.pretty_epoch_reads(opt_val717)
+			opt_val730 := field729
+			p.pretty_epoch_reads(opt_val730)
 		}
 		p.dedent()
 		p.write(")")
@@ -954,22 +897,22 @@ func (p *PrettyPrinter) pretty_epoch(msg *pb.Epoch) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_epoch_writes(msg []*pb.Write) interface{} {
-	flat722 := p.tryFlat(msg, func() { p.pretty_epoch_writes(msg) })
-	if flat722 != nil {
-		p.write(*flat722)
+	flat735 := p.tryFlat(msg, func() { p.pretty_epoch_writes(msg) })
+	if flat735 != nil {
+		p.write(*flat735)
 		return nil
 	} else {
-		fields719 := msg
+		fields732 := msg
 		p.write("(")
 		p.write("writes")
 		p.indentSexp()
-		if !(len(fields719) == 0) {
+		if !(len(fields732) == 0) {
 			p.newline()
-			for i721, elem720 := range fields719 {
-				if (i721 > 0) {
+			for i734, elem733 := range fields732 {
+				if (i734 > 0) {
 					p.newline()
 				}
-				p.pretty_write(elem720)
+				p.pretty_write(elem733)
 			}
 		}
 		p.dedent()
@@ -979,62 +922,50 @@ func (p *PrettyPrinter) pretty_epoch_writes(msg []*pb.Write) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_write(msg *pb.Write) interface{} {
-	flat731 := p.tryFlat(msg, func() { p.pretty_write(msg) })
-	if flat731 != nil {
-		p.write(*flat731)
+	flat744 := p.tryFlat(msg, func() { p.pretty_write(msg) })
+	if flat744 != nil {
+		p.write(*flat744)
 		return nil
 	} else {
-		_t1336 := func(_dollar_dollar *pb.Write) *pb.Define {
-			var _t1337 *pb.Define
-			if hasProtoField(_dollar_dollar, "define") {
-				_t1337 = _dollar_dollar.GetDefine()
-			}
-			return _t1337
+		_dollar_dollar := msg
+		var _t1324 *pb.Define
+		if hasProtoField(_dollar_dollar, "define") {
+			_t1324 = _dollar_dollar.GetDefine()
 		}
-		_t1338 := _t1336(msg)
-		deconstruct_result729 := _t1338
-		if deconstruct_result729 != nil {
-			unwrapped730 := deconstruct_result729
-			p.pretty_define(unwrapped730)
+		deconstruct_result742 := _t1324
+		if deconstruct_result742 != nil {
+			unwrapped743 := deconstruct_result742
+			p.pretty_define(unwrapped743)
 		} else {
-			_t1339 := func(_dollar_dollar *pb.Write) *pb.Undefine {
-				var _t1340 *pb.Undefine
-				if hasProtoField(_dollar_dollar, "undefine") {
-					_t1340 = _dollar_dollar.GetUndefine()
-				}
-				return _t1340
+			_dollar_dollar := msg
+			var _t1325 *pb.Undefine
+			if hasProtoField(_dollar_dollar, "undefine") {
+				_t1325 = _dollar_dollar.GetUndefine()
 			}
-			_t1341 := _t1339(msg)
-			deconstruct_result727 := _t1341
-			if deconstruct_result727 != nil {
-				unwrapped728 := deconstruct_result727
-				p.pretty_undefine(unwrapped728)
+			deconstruct_result740 := _t1325
+			if deconstruct_result740 != nil {
+				unwrapped741 := deconstruct_result740
+				p.pretty_undefine(unwrapped741)
 			} else {
-				_t1342 := func(_dollar_dollar *pb.Write) *pb.Context {
-					var _t1343 *pb.Context
-					if hasProtoField(_dollar_dollar, "context") {
-						_t1343 = _dollar_dollar.GetContext()
-					}
-					return _t1343
+				_dollar_dollar := msg
+				var _t1326 *pb.Context
+				if hasProtoField(_dollar_dollar, "context") {
+					_t1326 = _dollar_dollar.GetContext()
 				}
-				_t1344 := _t1342(msg)
-				deconstruct_result725 := _t1344
-				if deconstruct_result725 != nil {
-					unwrapped726 := deconstruct_result725
-					p.pretty_context(unwrapped726)
+				deconstruct_result738 := _t1326
+				if deconstruct_result738 != nil {
+					unwrapped739 := deconstruct_result738
+					p.pretty_context(unwrapped739)
 				} else {
-					_t1345 := func(_dollar_dollar *pb.Write) *pb.Snapshot {
-						var _t1346 *pb.Snapshot
-						if hasProtoField(_dollar_dollar, "snapshot") {
-							_t1346 = _dollar_dollar.GetSnapshot()
-						}
-						return _t1346
+					_dollar_dollar := msg
+					var _t1327 *pb.Snapshot
+					if hasProtoField(_dollar_dollar, "snapshot") {
+						_t1327 = _dollar_dollar.GetSnapshot()
 					}
-					_t1347 := _t1345(msg)
-					deconstruct_result723 := _t1347
-					if deconstruct_result723 != nil {
-						unwrapped724 := deconstruct_result723
-						p.pretty_snapshot(unwrapped724)
+					deconstruct_result736 := _t1327
+					if deconstruct_result736 != nil {
+						unwrapped737 := deconstruct_result736
+						p.pretty_snapshot(unwrapped737)
 					} else {
 						panic(ParseError{msg: "No matching rule for write"})
 					}
@@ -1046,22 +977,19 @@ func (p *PrettyPrinter) pretty_write(msg *pb.Write) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_define(msg *pb.Define) interface{} {
-	flat734 := p.tryFlat(msg, func() { p.pretty_define(msg) })
-	if flat734 != nil {
-		p.write(*flat734)
+	flat747 := p.tryFlat(msg, func() { p.pretty_define(msg) })
+	if flat747 != nil {
+		p.write(*flat747)
 		return nil
 	} else {
-		_t1348 := func(_dollar_dollar *pb.Define) *pb.Fragment {
-			return _dollar_dollar.GetFragment()
-		}
-		_t1349 := _t1348(msg)
-		fields732 := _t1349
-		unwrapped_fields733 := fields732
+		_dollar_dollar := msg
+		fields745 := _dollar_dollar.GetFragment()
+		unwrapped_fields746 := fields745
 		p.write("(")
 		p.write("define")
 		p.indentSexp()
 		p.newline()
-		p.pretty_fragment(unwrapped_fields733)
+		p.pretty_fragment(unwrapped_fields746)
 		p.dedent()
 		p.write(")")
 	}
@@ -1069,32 +997,29 @@ func (p *PrettyPrinter) pretty_define(msg *pb.Define) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_fragment(msg *pb.Fragment) interface{} {
-	flat741 := p.tryFlat(msg, func() { p.pretty_fragment(msg) })
-	if flat741 != nil {
-		p.write(*flat741)
+	flat754 := p.tryFlat(msg, func() { p.pretty_fragment(msg) })
+	if flat754 != nil {
+		p.write(*flat754)
 		return nil
 	} else {
-		_t1350 := func(_dollar_dollar *pb.Fragment) []interface{} {
-			p.startPrettyFragment(_dollar_dollar)
-			return []interface{}{_dollar_dollar.GetId(), _dollar_dollar.GetDeclarations()}
-		}
-		_t1351 := _t1350(msg)
-		fields735 := _t1351
-		unwrapped_fields736 := fields735
+		_dollar_dollar := msg
+		p.startPrettyFragment(_dollar_dollar)
+		fields748 := []interface{}{_dollar_dollar.GetId(), _dollar_dollar.GetDeclarations()}
+		unwrapped_fields749 := fields748
 		p.write("(")
 		p.write("fragment")
 		p.indentSexp()
 		p.newline()
-		field737 := unwrapped_fields736[0].(*pb.FragmentId)
-		p.pretty_new_fragment_id(field737)
-		field738 := unwrapped_fields736[1].([]*pb.Declaration)
-		if !(len(field738) == 0) {
+		field750 := unwrapped_fields749[0].(*pb.FragmentId)
+		p.pretty_new_fragment_id(field750)
+		field751 := unwrapped_fields749[1].([]*pb.Declaration)
+		if !(len(field751) == 0) {
 			p.newline()
-			for i740, elem739 := range field738 {
-				if (i740 > 0) {
+			for i753, elem752 := range field751 {
+				if (i753 > 0) {
 					p.newline()
 				}
-				p.pretty_declaration(elem739)
+				p.pretty_declaration(elem752)
 			}
 		}
 		p.dedent()
@@ -1104,74 +1029,62 @@ func (p *PrettyPrinter) pretty_fragment(msg *pb.Fragment) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_new_fragment_id(msg *pb.FragmentId) interface{} {
-	flat743 := p.tryFlat(msg, func() { p.pretty_new_fragment_id(msg) })
-	if flat743 != nil {
-		p.write(*flat743)
+	flat756 := p.tryFlat(msg, func() { p.pretty_new_fragment_id(msg) })
+	if flat756 != nil {
+		p.write(*flat756)
 		return nil
 	} else {
-		fields742 := msg
-		p.pretty_fragment_id(fields742)
+		fields755 := msg
+		p.pretty_fragment_id(fields755)
 	}
 	return nil
 }
 
 func (p *PrettyPrinter) pretty_declaration(msg *pb.Declaration) interface{} {
-	flat752 := p.tryFlat(msg, func() { p.pretty_declaration(msg) })
-	if flat752 != nil {
-		p.write(*flat752)
+	flat765 := p.tryFlat(msg, func() { p.pretty_declaration(msg) })
+	if flat765 != nil {
+		p.write(*flat765)
 		return nil
 	} else {
-		_t1352 := func(_dollar_dollar *pb.Declaration) *pb.Def {
-			var _t1353 *pb.Def
-			if hasProtoField(_dollar_dollar, "def") {
-				_t1353 = _dollar_dollar.GetDef()
-			}
-			return _t1353
+		_dollar_dollar := msg
+		var _t1328 *pb.Def
+		if hasProtoField(_dollar_dollar, "def") {
+			_t1328 = _dollar_dollar.GetDef()
 		}
-		_t1354 := _t1352(msg)
-		deconstruct_result750 := _t1354
-		if deconstruct_result750 != nil {
-			unwrapped751 := deconstruct_result750
-			p.pretty_def(unwrapped751)
+		deconstruct_result763 := _t1328
+		if deconstruct_result763 != nil {
+			unwrapped764 := deconstruct_result763
+			p.pretty_def(unwrapped764)
 		} else {
-			_t1355 := func(_dollar_dollar *pb.Declaration) *pb.Algorithm {
-				var _t1356 *pb.Algorithm
-				if hasProtoField(_dollar_dollar, "algorithm") {
-					_t1356 = _dollar_dollar.GetAlgorithm()
-				}
-				return _t1356
+			_dollar_dollar := msg
+			var _t1329 *pb.Algorithm
+			if hasProtoField(_dollar_dollar, "algorithm") {
+				_t1329 = _dollar_dollar.GetAlgorithm()
 			}
-			_t1357 := _t1355(msg)
-			deconstruct_result748 := _t1357
-			if deconstruct_result748 != nil {
-				unwrapped749 := deconstruct_result748
-				p.pretty_algorithm(unwrapped749)
+			deconstruct_result761 := _t1329
+			if deconstruct_result761 != nil {
+				unwrapped762 := deconstruct_result761
+				p.pretty_algorithm(unwrapped762)
 			} else {
-				_t1358 := func(_dollar_dollar *pb.Declaration) *pb.Constraint {
-					var _t1359 *pb.Constraint
-					if hasProtoField(_dollar_dollar, "constraint") {
-						_t1359 = _dollar_dollar.GetConstraint()
-					}
-					return _t1359
+				_dollar_dollar := msg
+				var _t1330 *pb.Constraint
+				if hasProtoField(_dollar_dollar, "constraint") {
+					_t1330 = _dollar_dollar.GetConstraint()
 				}
-				_t1360 := _t1358(msg)
-				deconstruct_result746 := _t1360
-				if deconstruct_result746 != nil {
-					unwrapped747 := deconstruct_result746
-					p.pretty_constraint(unwrapped747)
+				deconstruct_result759 := _t1330
+				if deconstruct_result759 != nil {
+					unwrapped760 := deconstruct_result759
+					p.pretty_constraint(unwrapped760)
 				} else {
-					_t1361 := func(_dollar_dollar *pb.Declaration) *pb.Data {
-						var _t1362 *pb.Data
-						if hasProtoField(_dollar_dollar, "data") {
-							_t1362 = _dollar_dollar.GetData()
-						}
-						return _t1362
+					_dollar_dollar := msg
+					var _t1331 *pb.Data
+					if hasProtoField(_dollar_dollar, "data") {
+						_t1331 = _dollar_dollar.GetData()
 					}
-					_t1363 := _t1361(msg)
-					deconstruct_result744 := _t1363
-					if deconstruct_result744 != nil {
-						unwrapped745 := deconstruct_result744
-						p.pretty_data(unwrapped745)
+					deconstruct_result757 := _t1331
+					if deconstruct_result757 != nil {
+						unwrapped758 := deconstruct_result757
+						p.pretty_data(unwrapped758)
 					} else {
 						panic(ParseError{msg: "No matching rule for declaration"})
 					}
@@ -1183,35 +1096,32 @@ func (p *PrettyPrinter) pretty_declaration(msg *pb.Declaration) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_def(msg *pb.Def) interface{} {
-	flat759 := p.tryFlat(msg, func() { p.pretty_def(msg) })
-	if flat759 != nil {
-		p.write(*flat759)
+	flat772 := p.tryFlat(msg, func() { p.pretty_def(msg) })
+	if flat772 != nil {
+		p.write(*flat772)
 		return nil
 	} else {
-		_t1364 := func(_dollar_dollar *pb.Def) []interface{} {
-			var _t1365 []*pb.Attribute
-			if !(len(_dollar_dollar.GetAttrs()) == 0) {
-				_t1365 = _dollar_dollar.GetAttrs()
-			}
-			return []interface{}{_dollar_dollar.GetName(), _dollar_dollar.GetBody(), _t1365}
+		_dollar_dollar := msg
+		var _t1332 []*pb.Attribute
+		if !(len(_dollar_dollar.GetAttrs()) == 0) {
+			_t1332 = _dollar_dollar.GetAttrs()
 		}
-		_t1366 := _t1364(msg)
-		fields753 := _t1366
-		unwrapped_fields754 := fields753
+		fields766 := []interface{}{_dollar_dollar.GetName(), _dollar_dollar.GetBody(), _t1332}
+		unwrapped_fields767 := fields766
 		p.write("(")
 		p.write("def")
 		p.indentSexp()
 		p.newline()
-		field755 := unwrapped_fields754[0].(*pb.RelationId)
-		p.pretty_relation_id(field755)
+		field768 := unwrapped_fields767[0].(*pb.RelationId)
+		p.pretty_relation_id(field768)
 		p.newline()
-		field756 := unwrapped_fields754[1].(*pb.Abstraction)
-		p.pretty_abstraction(field756)
-		field757 := unwrapped_fields754[2].([]*pb.Attribute)
-		if field757 != nil {
+		field769 := unwrapped_fields767[1].(*pb.Abstraction)
+		p.pretty_abstraction(field769)
+		field770 := unwrapped_fields767[2].([]*pb.Attribute)
+		if field770 != nil {
 			p.newline()
-			opt_val758 := field757
-			p.pretty_attrs(opt_val758)
+			opt_val771 := field770
+			p.pretty_attrs(opt_val771)
 		}
 		p.dedent()
 		p.write(")")
@@ -1220,35 +1130,29 @@ func (p *PrettyPrinter) pretty_def(msg *pb.Def) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_relation_id(msg *pb.RelationId) interface{} {
-	flat764 := p.tryFlat(msg, func() { p.pretty_relation_id(msg) })
-	if flat764 != nil {
-		p.write(*flat764)
+	flat777 := p.tryFlat(msg, func() { p.pretty_relation_id(msg) })
+	if flat777 != nil {
+		p.write(*flat777)
 		return nil
 	} else {
-		_t1367 := func(_dollar_dollar *pb.RelationId) *string {
-			var _t1368 *string
-			if p.relationIdToString(_dollar_dollar) != nil {
-				_t1369 := p.deconstruct_relation_id_string(_dollar_dollar)
-				_t1368 = ptr(_t1369)
-			}
-			return _t1368
+		_dollar_dollar := msg
+		var _t1333 *string
+		if p.relationIdToString(_dollar_dollar) != nil {
+			_t1334 := p.deconstruct_relation_id_string(_dollar_dollar)
+			_t1333 = ptr(_t1334)
 		}
-		_t1370 := _t1367(msg)
-		deconstruct_result762 := _t1370
-		if deconstruct_result762 != nil {
-			unwrapped763 := *deconstruct_result762
+		deconstruct_result775 := _t1333
+		if deconstruct_result775 != nil {
+			unwrapped776 := *deconstruct_result775
 			p.write(":")
-			p.write(unwrapped763)
+			p.write(unwrapped776)
 		} else {
-			_t1371 := func(_dollar_dollar *pb.RelationId) *pb.UInt128Value {
-				_t1372 := p.deconstruct_relation_id_uint128(_dollar_dollar)
-				return _t1372
-			}
-			_t1373 := _t1371(msg)
-			deconstruct_result760 := _t1373
-			if deconstruct_result760 != nil {
-				unwrapped761 := deconstruct_result760
-				p.write(p.formatUint128(unwrapped761))
+			_dollar_dollar := msg
+			_t1335 := p.deconstruct_relation_id_uint128(_dollar_dollar)
+			deconstruct_result773 := _t1335
+			if deconstruct_result773 != nil {
+				unwrapped774 := deconstruct_result773
+				p.write(p.formatUint128(unwrapped774))
 			} else {
 				panic(ParseError{msg: "No matching rule for relation_id"})
 			}
@@ -1258,25 +1162,22 @@ func (p *PrettyPrinter) pretty_relation_id(msg *pb.RelationId) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_abstraction(msg *pb.Abstraction) interface{} {
-	flat769 := p.tryFlat(msg, func() { p.pretty_abstraction(msg) })
-	if flat769 != nil {
-		p.write(*flat769)
+	flat782 := p.tryFlat(msg, func() { p.pretty_abstraction(msg) })
+	if flat782 != nil {
+		p.write(*flat782)
 		return nil
 	} else {
-		_t1374 := func(_dollar_dollar *pb.Abstraction) []interface{} {
-			_t1375 := p.deconstruct_bindings(_dollar_dollar)
-			return []interface{}{_t1375, _dollar_dollar.GetValue()}
-		}
-		_t1376 := _t1374(msg)
-		fields765 := _t1376
-		unwrapped_fields766 := fields765
+		_dollar_dollar := msg
+		_t1336 := p.deconstruct_bindings(_dollar_dollar)
+		fields778 := []interface{}{_t1336, _dollar_dollar.GetValue()}
+		unwrapped_fields779 := fields778
 		p.write("(")
 		p.indent()
-		field767 := unwrapped_fields766[0].([]interface{})
-		p.pretty_bindings(field767)
+		field780 := unwrapped_fields779[0].([]interface{})
+		p.pretty_bindings(field780)
 		p.newline()
-		field768 := unwrapped_fields766[1].(*pb.Formula)
-		p.pretty_formula(field768)
+		field781 := unwrapped_fields779[1].(*pb.Formula)
+		p.pretty_formula(field781)
 		p.dedent()
 		p.write(")")
 	}
@@ -1284,35 +1185,32 @@ func (p *PrettyPrinter) pretty_abstraction(msg *pb.Abstraction) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_bindings(msg []interface{}) interface{} {
-	flat777 := p.tryFlat(msg, func() { p.pretty_bindings(msg) })
-	if flat777 != nil {
-		p.write(*flat777)
+	flat790 := p.tryFlat(msg, func() { p.pretty_bindings(msg) })
+	if flat790 != nil {
+		p.write(*flat790)
 		return nil
 	} else {
-		_t1377 := func(_dollar_dollar []interface{}) []interface{} {
-			var _t1378 []*pb.Binding
-			if !(len(_dollar_dollar[1].([]*pb.Binding)) == 0) {
-				_t1378 = _dollar_dollar[1].([]*pb.Binding)
-			}
-			return []interface{}{_dollar_dollar[0].([]*pb.Binding), _t1378}
+		_dollar_dollar := msg
+		var _t1337 []*pb.Binding
+		if !(len(_dollar_dollar[1].([]*pb.Binding)) == 0) {
+			_t1337 = _dollar_dollar[1].([]*pb.Binding)
 		}
-		_t1379 := _t1377(msg)
-		fields770 := _t1379
-		unwrapped_fields771 := fields770
+		fields783 := []interface{}{_dollar_dollar[0].([]*pb.Binding), _t1337}
+		unwrapped_fields784 := fields783
 		p.write("[")
 		p.indent()
-		field772 := unwrapped_fields771[0].([]*pb.Binding)
-		for i774, elem773 := range field772 {
-			if (i774 > 0) {
+		field785 := unwrapped_fields784[0].([]*pb.Binding)
+		for i787, elem786 := range field785 {
+			if (i787 > 0) {
 				p.newline()
 			}
-			p.pretty_binding(elem773)
+			p.pretty_binding(elem786)
 		}
-		field775 := unwrapped_fields771[1].([]*pb.Binding)
-		if field775 != nil {
+		field788 := unwrapped_fields784[1].([]*pb.Binding)
+		if field788 != nil {
 			p.newline()
-			opt_val776 := field775
-			p.pretty_value_bindings(opt_val776)
+			opt_val789 := field788
+			p.pretty_value_bindings(opt_val789)
 		}
 		p.dedent()
 		p.write("]")
@@ -1321,174 +1219,138 @@ func (p *PrettyPrinter) pretty_bindings(msg []interface{}) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_binding(msg *pb.Binding) interface{} {
-	flat782 := p.tryFlat(msg, func() { p.pretty_binding(msg) })
-	if flat782 != nil {
-		p.write(*flat782)
+	flat795 := p.tryFlat(msg, func() { p.pretty_binding(msg) })
+	if flat795 != nil {
+		p.write(*flat795)
 		return nil
 	} else {
-		_t1380 := func(_dollar_dollar *pb.Binding) []interface{} {
-			return []interface{}{_dollar_dollar.GetVar().GetName(), _dollar_dollar.GetType()}
-		}
-		_t1381 := _t1380(msg)
-		fields778 := _t1381
-		unwrapped_fields779 := fields778
-		field780 := unwrapped_fields779[0].(string)
-		p.write(field780)
+		_dollar_dollar := msg
+		fields791 := []interface{}{_dollar_dollar.GetVar().GetName(), _dollar_dollar.GetType()}
+		unwrapped_fields792 := fields791
+		field793 := unwrapped_fields792[0].(string)
+		p.write(field793)
 		p.write("::")
-		field781 := unwrapped_fields779[1].(*pb.Type)
-		p.pretty_type(field781)
+		field794 := unwrapped_fields792[1].(*pb.Type)
+		p.pretty_type(field794)
 	}
 	return nil
 }
 
 func (p *PrettyPrinter) pretty_type(msg *pb.Type) interface{} {
-	flat805 := p.tryFlat(msg, func() { p.pretty_type(msg) })
-	if flat805 != nil {
-		p.write(*flat805)
+	flat818 := p.tryFlat(msg, func() { p.pretty_type(msg) })
+	if flat818 != nil {
+		p.write(*flat818)
 		return nil
 	} else {
-		_t1382 := func(_dollar_dollar *pb.Type) *pb.UnspecifiedType {
-			var _t1383 *pb.UnspecifiedType
-			if hasProtoField(_dollar_dollar, "unspecified_type") {
-				_t1383 = _dollar_dollar.GetUnspecifiedType()
-			}
-			return _t1383
+		_dollar_dollar := msg
+		var _t1338 *pb.UnspecifiedType
+		if hasProtoField(_dollar_dollar, "unspecified_type") {
+			_t1338 = _dollar_dollar.GetUnspecifiedType()
 		}
-		_t1384 := _t1382(msg)
-		deconstruct_result803 := _t1384
-		if deconstruct_result803 != nil {
-			unwrapped804 := deconstruct_result803
-			p.pretty_unspecified_type(unwrapped804)
+		deconstruct_result816 := _t1338
+		if deconstruct_result816 != nil {
+			unwrapped817 := deconstruct_result816
+			p.pretty_unspecified_type(unwrapped817)
 		} else {
-			_t1385 := func(_dollar_dollar *pb.Type) *pb.StringType {
-				var _t1386 *pb.StringType
-				if hasProtoField(_dollar_dollar, "string_type") {
-					_t1386 = _dollar_dollar.GetStringType()
-				}
-				return _t1386
+			_dollar_dollar := msg
+			var _t1339 *pb.StringType
+			if hasProtoField(_dollar_dollar, "string_type") {
+				_t1339 = _dollar_dollar.GetStringType()
 			}
-			_t1387 := _t1385(msg)
-			deconstruct_result801 := _t1387
-			if deconstruct_result801 != nil {
-				unwrapped802 := deconstruct_result801
-				p.pretty_string_type(unwrapped802)
+			deconstruct_result814 := _t1339
+			if deconstruct_result814 != nil {
+				unwrapped815 := deconstruct_result814
+				p.pretty_string_type(unwrapped815)
 			} else {
-				_t1388 := func(_dollar_dollar *pb.Type) *pb.IntType {
-					var _t1389 *pb.IntType
-					if hasProtoField(_dollar_dollar, "int_type") {
-						_t1389 = _dollar_dollar.GetIntType()
-					}
-					return _t1389
+				_dollar_dollar := msg
+				var _t1340 *pb.IntType
+				if hasProtoField(_dollar_dollar, "int_type") {
+					_t1340 = _dollar_dollar.GetIntType()
 				}
-				_t1390 := _t1388(msg)
-				deconstruct_result799 := _t1390
-				if deconstruct_result799 != nil {
-					unwrapped800 := deconstruct_result799
-					p.pretty_int_type(unwrapped800)
+				deconstruct_result812 := _t1340
+				if deconstruct_result812 != nil {
+					unwrapped813 := deconstruct_result812
+					p.pretty_int_type(unwrapped813)
 				} else {
-					_t1391 := func(_dollar_dollar *pb.Type) *pb.FloatType {
-						var _t1392 *pb.FloatType
-						if hasProtoField(_dollar_dollar, "float_type") {
-							_t1392 = _dollar_dollar.GetFloatType()
-						}
-						return _t1392
+					_dollar_dollar := msg
+					var _t1341 *pb.FloatType
+					if hasProtoField(_dollar_dollar, "float_type") {
+						_t1341 = _dollar_dollar.GetFloatType()
 					}
-					_t1393 := _t1391(msg)
-					deconstruct_result797 := _t1393
-					if deconstruct_result797 != nil {
-						unwrapped798 := deconstruct_result797
-						p.pretty_float_type(unwrapped798)
+					deconstruct_result810 := _t1341
+					if deconstruct_result810 != nil {
+						unwrapped811 := deconstruct_result810
+						p.pretty_float_type(unwrapped811)
 					} else {
-						_t1394 := func(_dollar_dollar *pb.Type) *pb.UInt128Type {
-							var _t1395 *pb.UInt128Type
-							if hasProtoField(_dollar_dollar, "uint128_type") {
-								_t1395 = _dollar_dollar.GetUint128Type()
-							}
-							return _t1395
+						_dollar_dollar := msg
+						var _t1342 *pb.UInt128Type
+						if hasProtoField(_dollar_dollar, "uint128_type") {
+							_t1342 = _dollar_dollar.GetUint128Type()
 						}
-						_t1396 := _t1394(msg)
-						deconstruct_result795 := _t1396
-						if deconstruct_result795 != nil {
-							unwrapped796 := deconstruct_result795
-							p.pretty_uint128_type(unwrapped796)
+						deconstruct_result808 := _t1342
+						if deconstruct_result808 != nil {
+							unwrapped809 := deconstruct_result808
+							p.pretty_uint128_type(unwrapped809)
 						} else {
-							_t1397 := func(_dollar_dollar *pb.Type) *pb.Int128Type {
-								var _t1398 *pb.Int128Type
-								if hasProtoField(_dollar_dollar, "int128_type") {
-									_t1398 = _dollar_dollar.GetInt128Type()
-								}
-								return _t1398
+							_dollar_dollar := msg
+							var _t1343 *pb.Int128Type
+							if hasProtoField(_dollar_dollar, "int128_type") {
+								_t1343 = _dollar_dollar.GetInt128Type()
 							}
-							_t1399 := _t1397(msg)
-							deconstruct_result793 := _t1399
-							if deconstruct_result793 != nil {
-								unwrapped794 := deconstruct_result793
-								p.pretty_int128_type(unwrapped794)
+							deconstruct_result806 := _t1343
+							if deconstruct_result806 != nil {
+								unwrapped807 := deconstruct_result806
+								p.pretty_int128_type(unwrapped807)
 							} else {
-								_t1400 := func(_dollar_dollar *pb.Type) *pb.DateType {
-									var _t1401 *pb.DateType
-									if hasProtoField(_dollar_dollar, "date_type") {
-										_t1401 = _dollar_dollar.GetDateType()
-									}
-									return _t1401
+								_dollar_dollar := msg
+								var _t1344 *pb.DateType
+								if hasProtoField(_dollar_dollar, "date_type") {
+									_t1344 = _dollar_dollar.GetDateType()
 								}
-								_t1402 := _t1400(msg)
-								deconstruct_result791 := _t1402
-								if deconstruct_result791 != nil {
-									unwrapped792 := deconstruct_result791
-									p.pretty_date_type(unwrapped792)
+								deconstruct_result804 := _t1344
+								if deconstruct_result804 != nil {
+									unwrapped805 := deconstruct_result804
+									p.pretty_date_type(unwrapped805)
 								} else {
-									_t1403 := func(_dollar_dollar *pb.Type) *pb.DateTimeType {
-										var _t1404 *pb.DateTimeType
-										if hasProtoField(_dollar_dollar, "datetime_type") {
-											_t1404 = _dollar_dollar.GetDatetimeType()
-										}
-										return _t1404
+									_dollar_dollar := msg
+									var _t1345 *pb.DateTimeType
+									if hasProtoField(_dollar_dollar, "datetime_type") {
+										_t1345 = _dollar_dollar.GetDatetimeType()
 									}
-									_t1405 := _t1403(msg)
-									deconstruct_result789 := _t1405
-									if deconstruct_result789 != nil {
-										unwrapped790 := deconstruct_result789
-										p.pretty_datetime_type(unwrapped790)
+									deconstruct_result802 := _t1345
+									if deconstruct_result802 != nil {
+										unwrapped803 := deconstruct_result802
+										p.pretty_datetime_type(unwrapped803)
 									} else {
-										_t1406 := func(_dollar_dollar *pb.Type) *pb.MissingType {
-											var _t1407 *pb.MissingType
-											if hasProtoField(_dollar_dollar, "missing_type") {
-												_t1407 = _dollar_dollar.GetMissingType()
-											}
-											return _t1407
+										_dollar_dollar := msg
+										var _t1346 *pb.MissingType
+										if hasProtoField(_dollar_dollar, "missing_type") {
+											_t1346 = _dollar_dollar.GetMissingType()
 										}
-										_t1408 := _t1406(msg)
-										deconstruct_result787 := _t1408
-										if deconstruct_result787 != nil {
-											unwrapped788 := deconstruct_result787
-											p.pretty_missing_type(unwrapped788)
+										deconstruct_result800 := _t1346
+										if deconstruct_result800 != nil {
+											unwrapped801 := deconstruct_result800
+											p.pretty_missing_type(unwrapped801)
 										} else {
-											_t1409 := func(_dollar_dollar *pb.Type) *pb.DecimalType {
-												var _t1410 *pb.DecimalType
-												if hasProtoField(_dollar_dollar, "decimal_type") {
-													_t1410 = _dollar_dollar.GetDecimalType()
-												}
-												return _t1410
+											_dollar_dollar := msg
+											var _t1347 *pb.DecimalType
+											if hasProtoField(_dollar_dollar, "decimal_type") {
+												_t1347 = _dollar_dollar.GetDecimalType()
 											}
-											_t1411 := _t1409(msg)
-											deconstruct_result785 := _t1411
-											if deconstruct_result785 != nil {
-												unwrapped786 := deconstruct_result785
-												p.pretty_decimal_type(unwrapped786)
+											deconstruct_result798 := _t1347
+											if deconstruct_result798 != nil {
+												unwrapped799 := deconstruct_result798
+												p.pretty_decimal_type(unwrapped799)
 											} else {
-												_t1412 := func(_dollar_dollar *pb.Type) *pb.BooleanType {
-													var _t1413 *pb.BooleanType
-													if hasProtoField(_dollar_dollar, "boolean_type") {
-														_t1413 = _dollar_dollar.GetBooleanType()
-													}
-													return _t1413
+												_dollar_dollar := msg
+												var _t1348 *pb.BooleanType
+												if hasProtoField(_dollar_dollar, "boolean_type") {
+													_t1348 = _dollar_dollar.GetBooleanType()
 												}
-												_t1414 := _t1412(msg)
-												deconstruct_result783 := _t1414
-												if deconstruct_result783 != nil {
-													unwrapped784 := deconstruct_result783
-													p.pretty_boolean_type(unwrapped784)
+												deconstruct_result796 := _t1348
+												if deconstruct_result796 != nil {
+													unwrapped797 := deconstruct_result796
+													p.pretty_boolean_type(unwrapped797)
 												} else {
 													panic(ParseError{msg: "No matching rule for type"})
 												}
@@ -1507,89 +1369,86 @@ func (p *PrettyPrinter) pretty_type(msg *pb.Type) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_unspecified_type(msg *pb.UnspecifiedType) interface{} {
-	fields806 := msg
-	_ = fields806
+	fields819 := msg
+	_ = fields819
 	p.write("UNKNOWN")
 	return nil
 }
 
 func (p *PrettyPrinter) pretty_string_type(msg *pb.StringType) interface{} {
-	fields807 := msg
-	_ = fields807
+	fields820 := msg
+	_ = fields820
 	p.write("STRING")
 	return nil
 }
 
 func (p *PrettyPrinter) pretty_int_type(msg *pb.IntType) interface{} {
-	fields808 := msg
-	_ = fields808
+	fields821 := msg
+	_ = fields821
 	p.write("INT")
 	return nil
 }
 
 func (p *PrettyPrinter) pretty_float_type(msg *pb.FloatType) interface{} {
-	fields809 := msg
-	_ = fields809
+	fields822 := msg
+	_ = fields822
 	p.write("FLOAT")
 	return nil
 }
 
 func (p *PrettyPrinter) pretty_uint128_type(msg *pb.UInt128Type) interface{} {
-	fields810 := msg
-	_ = fields810
+	fields823 := msg
+	_ = fields823
 	p.write("UINT128")
 	return nil
 }
 
 func (p *PrettyPrinter) pretty_int128_type(msg *pb.Int128Type) interface{} {
-	fields811 := msg
-	_ = fields811
+	fields824 := msg
+	_ = fields824
 	p.write("INT128")
 	return nil
 }
 
 func (p *PrettyPrinter) pretty_date_type(msg *pb.DateType) interface{} {
-	fields812 := msg
-	_ = fields812
+	fields825 := msg
+	_ = fields825
 	p.write("DATE")
 	return nil
 }
 
 func (p *PrettyPrinter) pretty_datetime_type(msg *pb.DateTimeType) interface{} {
-	fields813 := msg
-	_ = fields813
+	fields826 := msg
+	_ = fields826
 	p.write("DATETIME")
 	return nil
 }
 
 func (p *PrettyPrinter) pretty_missing_type(msg *pb.MissingType) interface{} {
-	fields814 := msg
-	_ = fields814
+	fields827 := msg
+	_ = fields827
 	p.write("MISSING")
 	return nil
 }
 
 func (p *PrettyPrinter) pretty_decimal_type(msg *pb.DecimalType) interface{} {
-	flat819 := p.tryFlat(msg, func() { p.pretty_decimal_type(msg) })
-	if flat819 != nil {
-		p.write(*flat819)
+	flat832 := p.tryFlat(msg, func() { p.pretty_decimal_type(msg) })
+	if flat832 != nil {
+		p.write(*flat832)
 		return nil
 	} else {
-		_t1415 := func(_dollar_dollar *pb.DecimalType) []interface{} {
-			return []interface{}{int64(_dollar_dollar.GetPrecision()), int64(_dollar_dollar.GetScale())}
-		}
-		_t1416 := _t1415(msg)
-		fields815 := _t1416
-		unwrapped_fields816 := fields815
+		_dollar_dollar := msg
+		fields828 := []interface{}{int64(_dollar_dollar.GetPrecision()), int64(_dollar_dollar.GetScale())}
+		unwrapped_fields829 := fields828
 		p.write("(")
 		p.write("DECIMAL")
 		p.indentSexp()
 		p.newline()
-		field817 := unwrapped_fields816[0].(int64)
-		p.write(fmt.Sprintf("%d", field817))
+		field830 := unwrapped_fields829[0].(int64)
+		p.write(fmt.Sprintf("%d", field830))
 		p.newline()
-		field818 := unwrapped_fields816[1].(int64)
-		p.write(fmt.Sprintf("%d", field818))
+		field831 := unwrapped_fields829[1].(int64)
+		p.write(fmt.Sprintf("%d", field831))
 		p.dedent()
 		p.write(")")
 	}
@@ -1597,27 +1456,27 @@ func (p *PrettyPrinter) pretty_decimal_type(msg *pb.DecimalType) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_boolean_type(msg *pb.BooleanType) interface{} {
-	fields820 := msg
-	_ = fields820
+	fields833 := msg
+	_ = fields833
 	p.write("BOOLEAN")
 	return nil
 }
 
 func (p *PrettyPrinter) pretty_value_bindings(msg []*pb.Binding) interface{} {
-	flat824 := p.tryFlat(msg, func() { p.pretty_value_bindings(msg) })
-	if flat824 != nil {
-		p.write(*flat824)
+	flat837 := p.tryFlat(msg, func() { p.pretty_value_bindings(msg) })
+	if flat837 != nil {
+		p.write(*flat837)
 		return nil
 	} else {
-		fields821 := msg
+		fields834 := msg
 		p.write("|")
-		if !(len(fields821) == 0) {
+		if !(len(fields834) == 0) {
 			p.write(" ")
-			for i823, elem822 := range fields821 {
-				if (i823 > 0) {
+			for i836, elem835 := range fields834 {
+				if (i836 > 0) {
 					p.newline()
 				}
-				p.pretty_binding(elem822)
+				p.pretty_binding(elem835)
 			}
 		}
 	}
@@ -1625,179 +1484,140 @@ func (p *PrettyPrinter) pretty_value_bindings(msg []*pb.Binding) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_formula(msg *pb.Formula) interface{} {
-	flat851 := p.tryFlat(msg, func() { p.pretty_formula(msg) })
-	if flat851 != nil {
-		p.write(*flat851)
+	flat864 := p.tryFlat(msg, func() { p.pretty_formula(msg) })
+	if flat864 != nil {
+		p.write(*flat864)
 		return nil
 	} else {
-		_t1417 := func(_dollar_dollar *pb.Formula) *pb.Conjunction {
-			var _t1418 *pb.Conjunction
-			if (hasProtoField(_dollar_dollar, "conjunction") && len(_dollar_dollar.GetConjunction().GetArgs()) == 0) {
-				_t1418 = _dollar_dollar.GetConjunction()
-			}
-			return _t1418
+		_dollar_dollar := msg
+		var _t1349 *pb.Conjunction
+		if (hasProtoField(_dollar_dollar, "conjunction") && len(_dollar_dollar.GetConjunction().GetArgs()) == 0) {
+			_t1349 = _dollar_dollar.GetConjunction()
 		}
-		_t1419 := _t1417(msg)
-		deconstruct_result849 := _t1419
-		if deconstruct_result849 != nil {
-			unwrapped850 := deconstruct_result849
-			p.pretty_true(unwrapped850)
+		deconstruct_result862 := _t1349
+		if deconstruct_result862 != nil {
+			unwrapped863 := deconstruct_result862
+			p.pretty_true(unwrapped863)
 		} else {
-			_t1420 := func(_dollar_dollar *pb.Formula) *pb.Disjunction {
-				var _t1421 *pb.Disjunction
-				if (hasProtoField(_dollar_dollar, "disjunction") && len(_dollar_dollar.GetDisjunction().GetArgs()) == 0) {
-					_t1421 = _dollar_dollar.GetDisjunction()
-				}
-				return _t1421
+			_dollar_dollar := msg
+			var _t1350 *pb.Disjunction
+			if (hasProtoField(_dollar_dollar, "disjunction") && len(_dollar_dollar.GetDisjunction().GetArgs()) == 0) {
+				_t1350 = _dollar_dollar.GetDisjunction()
 			}
-			_t1422 := _t1420(msg)
-			deconstruct_result847 := _t1422
-			if deconstruct_result847 != nil {
-				unwrapped848 := deconstruct_result847
-				p.pretty_false(unwrapped848)
+			deconstruct_result860 := _t1350
+			if deconstruct_result860 != nil {
+				unwrapped861 := deconstruct_result860
+				p.pretty_false(unwrapped861)
 			} else {
-				_t1423 := func(_dollar_dollar *pb.Formula) *pb.Exists {
-					var _t1424 *pb.Exists
-					if hasProtoField(_dollar_dollar, "exists") {
-						_t1424 = _dollar_dollar.GetExists()
-					}
-					return _t1424
+				_dollar_dollar := msg
+				var _t1351 *pb.Exists
+				if hasProtoField(_dollar_dollar, "exists") {
+					_t1351 = _dollar_dollar.GetExists()
 				}
-				_t1425 := _t1423(msg)
-				deconstruct_result845 := _t1425
-				if deconstruct_result845 != nil {
-					unwrapped846 := deconstruct_result845
-					p.pretty_exists(unwrapped846)
+				deconstruct_result858 := _t1351
+				if deconstruct_result858 != nil {
+					unwrapped859 := deconstruct_result858
+					p.pretty_exists(unwrapped859)
 				} else {
-					_t1426 := func(_dollar_dollar *pb.Formula) *pb.Reduce {
-						var _t1427 *pb.Reduce
-						if hasProtoField(_dollar_dollar, "reduce") {
-							_t1427 = _dollar_dollar.GetReduce()
-						}
-						return _t1427
+					_dollar_dollar := msg
+					var _t1352 *pb.Reduce
+					if hasProtoField(_dollar_dollar, "reduce") {
+						_t1352 = _dollar_dollar.GetReduce()
 					}
-					_t1428 := _t1426(msg)
-					deconstruct_result843 := _t1428
-					if deconstruct_result843 != nil {
-						unwrapped844 := deconstruct_result843
-						p.pretty_reduce(unwrapped844)
+					deconstruct_result856 := _t1352
+					if deconstruct_result856 != nil {
+						unwrapped857 := deconstruct_result856
+						p.pretty_reduce(unwrapped857)
 					} else {
-						_t1429 := func(_dollar_dollar *pb.Formula) *pb.Conjunction {
-							var _t1430 *pb.Conjunction
-							if (hasProtoField(_dollar_dollar, "conjunction") && !(len(_dollar_dollar.GetConjunction().GetArgs()) == 0)) {
-								_t1430 = _dollar_dollar.GetConjunction()
-							}
-							return _t1430
+						_dollar_dollar := msg
+						var _t1353 *pb.Conjunction
+						if (hasProtoField(_dollar_dollar, "conjunction") && !(len(_dollar_dollar.GetConjunction().GetArgs()) == 0)) {
+							_t1353 = _dollar_dollar.GetConjunction()
 						}
-						_t1431 := _t1429(msg)
-						deconstruct_result841 := _t1431
-						if deconstruct_result841 != nil {
-							unwrapped842 := deconstruct_result841
-							p.pretty_conjunction(unwrapped842)
+						deconstruct_result854 := _t1353
+						if deconstruct_result854 != nil {
+							unwrapped855 := deconstruct_result854
+							p.pretty_conjunction(unwrapped855)
 						} else {
-							_t1432 := func(_dollar_dollar *pb.Formula) *pb.Disjunction {
-								var _t1433 *pb.Disjunction
-								if (hasProtoField(_dollar_dollar, "disjunction") && !(len(_dollar_dollar.GetDisjunction().GetArgs()) == 0)) {
-									_t1433 = _dollar_dollar.GetDisjunction()
-								}
-								return _t1433
+							_dollar_dollar := msg
+							var _t1354 *pb.Disjunction
+							if (hasProtoField(_dollar_dollar, "disjunction") && !(len(_dollar_dollar.GetDisjunction().GetArgs()) == 0)) {
+								_t1354 = _dollar_dollar.GetDisjunction()
 							}
-							_t1434 := _t1432(msg)
-							deconstruct_result839 := _t1434
-							if deconstruct_result839 != nil {
-								unwrapped840 := deconstruct_result839
-								p.pretty_disjunction(unwrapped840)
+							deconstruct_result852 := _t1354
+							if deconstruct_result852 != nil {
+								unwrapped853 := deconstruct_result852
+								p.pretty_disjunction(unwrapped853)
 							} else {
-								_t1435 := func(_dollar_dollar *pb.Formula) *pb.Not {
-									var _t1436 *pb.Not
-									if hasProtoField(_dollar_dollar, "not") {
-										_t1436 = _dollar_dollar.GetNot()
-									}
-									return _t1436
+								_dollar_dollar := msg
+								var _t1355 *pb.Not
+								if hasProtoField(_dollar_dollar, "not") {
+									_t1355 = _dollar_dollar.GetNot()
 								}
-								_t1437 := _t1435(msg)
-								deconstruct_result837 := _t1437
-								if deconstruct_result837 != nil {
-									unwrapped838 := deconstruct_result837
-									p.pretty_not(unwrapped838)
+								deconstruct_result850 := _t1355
+								if deconstruct_result850 != nil {
+									unwrapped851 := deconstruct_result850
+									p.pretty_not(unwrapped851)
 								} else {
-									_t1438 := func(_dollar_dollar *pb.Formula) *pb.FFI {
-										var _t1439 *pb.FFI
-										if hasProtoField(_dollar_dollar, "ffi") {
-											_t1439 = _dollar_dollar.GetFfi()
-										}
-										return _t1439
+									_dollar_dollar := msg
+									var _t1356 *pb.FFI
+									if hasProtoField(_dollar_dollar, "ffi") {
+										_t1356 = _dollar_dollar.GetFfi()
 									}
-									_t1440 := _t1438(msg)
-									deconstruct_result835 := _t1440
-									if deconstruct_result835 != nil {
-										unwrapped836 := deconstruct_result835
-										p.pretty_ffi(unwrapped836)
+									deconstruct_result848 := _t1356
+									if deconstruct_result848 != nil {
+										unwrapped849 := deconstruct_result848
+										p.pretty_ffi(unwrapped849)
 									} else {
-										_t1441 := func(_dollar_dollar *pb.Formula) *pb.Atom {
-											var _t1442 *pb.Atom
-											if hasProtoField(_dollar_dollar, "atom") {
-												_t1442 = _dollar_dollar.GetAtom()
-											}
-											return _t1442
+										_dollar_dollar := msg
+										var _t1357 *pb.Atom
+										if hasProtoField(_dollar_dollar, "atom") {
+											_t1357 = _dollar_dollar.GetAtom()
 										}
-										_t1443 := _t1441(msg)
-										deconstruct_result833 := _t1443
-										if deconstruct_result833 != nil {
-											unwrapped834 := deconstruct_result833
-											p.pretty_atom(unwrapped834)
+										deconstruct_result846 := _t1357
+										if deconstruct_result846 != nil {
+											unwrapped847 := deconstruct_result846
+											p.pretty_atom(unwrapped847)
 										} else {
-											_t1444 := func(_dollar_dollar *pb.Formula) *pb.Pragma {
-												var _t1445 *pb.Pragma
-												if hasProtoField(_dollar_dollar, "pragma") {
-													_t1445 = _dollar_dollar.GetPragma()
-												}
-												return _t1445
+											_dollar_dollar := msg
+											var _t1358 *pb.Pragma
+											if hasProtoField(_dollar_dollar, "pragma") {
+												_t1358 = _dollar_dollar.GetPragma()
 											}
-											_t1446 := _t1444(msg)
-											deconstruct_result831 := _t1446
-											if deconstruct_result831 != nil {
-												unwrapped832 := deconstruct_result831
-												p.pretty_pragma(unwrapped832)
+											deconstruct_result844 := _t1358
+											if deconstruct_result844 != nil {
+												unwrapped845 := deconstruct_result844
+												p.pretty_pragma(unwrapped845)
 											} else {
-												_t1447 := func(_dollar_dollar *pb.Formula) *pb.Primitive {
-													var _t1448 *pb.Primitive
-													if hasProtoField(_dollar_dollar, "primitive") {
-														_t1448 = _dollar_dollar.GetPrimitive()
-													}
-													return _t1448
+												_dollar_dollar := msg
+												var _t1359 *pb.Primitive
+												if hasProtoField(_dollar_dollar, "primitive") {
+													_t1359 = _dollar_dollar.GetPrimitive()
 												}
-												_t1449 := _t1447(msg)
-												deconstruct_result829 := _t1449
-												if deconstruct_result829 != nil {
-													unwrapped830 := deconstruct_result829
-													p.pretty_primitive(unwrapped830)
+												deconstruct_result842 := _t1359
+												if deconstruct_result842 != nil {
+													unwrapped843 := deconstruct_result842
+													p.pretty_primitive(unwrapped843)
 												} else {
-													_t1450 := func(_dollar_dollar *pb.Formula) *pb.RelAtom {
-														var _t1451 *pb.RelAtom
-														if hasProtoField(_dollar_dollar, "rel_atom") {
-															_t1451 = _dollar_dollar.GetRelAtom()
-														}
-														return _t1451
+													_dollar_dollar := msg
+													var _t1360 *pb.RelAtom
+													if hasProtoField(_dollar_dollar, "rel_atom") {
+														_t1360 = _dollar_dollar.GetRelAtom()
 													}
-													_t1452 := _t1450(msg)
-													deconstruct_result827 := _t1452
-													if deconstruct_result827 != nil {
-														unwrapped828 := deconstruct_result827
-														p.pretty_rel_atom(unwrapped828)
+													deconstruct_result840 := _t1360
+													if deconstruct_result840 != nil {
+														unwrapped841 := deconstruct_result840
+														p.pretty_rel_atom(unwrapped841)
 													} else {
-														_t1453 := func(_dollar_dollar *pb.Formula) *pb.Cast {
-															var _t1454 *pb.Cast
-															if hasProtoField(_dollar_dollar, "cast") {
-																_t1454 = _dollar_dollar.GetCast()
-															}
-															return _t1454
+														_dollar_dollar := msg
+														var _t1361 *pb.Cast
+														if hasProtoField(_dollar_dollar, "cast") {
+															_t1361 = _dollar_dollar.GetCast()
 														}
-														_t1455 := _t1453(msg)
-														deconstruct_result825 := _t1455
-														if deconstruct_result825 != nil {
-															unwrapped826 := deconstruct_result825
-															p.pretty_cast(unwrapped826)
+														deconstruct_result838 := _t1361
+														if deconstruct_result838 != nil {
+															unwrapped839 := deconstruct_result838
+															p.pretty_cast(unwrapped839)
 														} else {
 															panic(ParseError{msg: "No matching rule for formula"})
 														}
@@ -1818,8 +1638,8 @@ func (p *PrettyPrinter) pretty_formula(msg *pb.Formula) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_true(msg *pb.Conjunction) interface{} {
-	fields852 := msg
-	_ = fields852
+	fields865 := msg
+	_ = fields865
 	p.write("(")
 	p.write("true")
 	p.write(")")
@@ -1827,8 +1647,8 @@ func (p *PrettyPrinter) pretty_true(msg *pb.Conjunction) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_false(msg *pb.Disjunction) interface{} {
-	fields853 := msg
-	_ = fields853
+	fields866 := msg
+	_ = fields866
 	p.write("(")
 	p.write("false")
 	p.write(")")
@@ -1836,27 +1656,24 @@ func (p *PrettyPrinter) pretty_false(msg *pb.Disjunction) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_exists(msg *pb.Exists) interface{} {
-	flat858 := p.tryFlat(msg, func() { p.pretty_exists(msg) })
-	if flat858 != nil {
-		p.write(*flat858)
+	flat871 := p.tryFlat(msg, func() { p.pretty_exists(msg) })
+	if flat871 != nil {
+		p.write(*flat871)
 		return nil
 	} else {
-		_t1456 := func(_dollar_dollar *pb.Exists) []interface{} {
-			_t1457 := p.deconstruct_bindings(_dollar_dollar.GetBody())
-			return []interface{}{_t1457, _dollar_dollar.GetBody().GetValue()}
-		}
-		_t1458 := _t1456(msg)
-		fields854 := _t1458
-		unwrapped_fields855 := fields854
+		_dollar_dollar := msg
+		_t1362 := p.deconstruct_bindings(_dollar_dollar.GetBody())
+		fields867 := []interface{}{_t1362, _dollar_dollar.GetBody().GetValue()}
+		unwrapped_fields868 := fields867
 		p.write("(")
 		p.write("exists")
 		p.indentSexp()
 		p.newline()
-		field856 := unwrapped_fields855[0].([]interface{})
-		p.pretty_bindings(field856)
+		field869 := unwrapped_fields868[0].([]interface{})
+		p.pretty_bindings(field869)
 		p.newline()
-		field857 := unwrapped_fields855[1].(*pb.Formula)
-		p.pretty_formula(field857)
+		field870 := unwrapped_fields868[1].(*pb.Formula)
+		p.pretty_formula(field870)
 		p.dedent()
 		p.write(")")
 	}
@@ -1864,29 +1681,26 @@ func (p *PrettyPrinter) pretty_exists(msg *pb.Exists) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_reduce(msg *pb.Reduce) interface{} {
-	flat864 := p.tryFlat(msg, func() { p.pretty_reduce(msg) })
-	if flat864 != nil {
-		p.write(*flat864)
+	flat877 := p.tryFlat(msg, func() { p.pretty_reduce(msg) })
+	if flat877 != nil {
+		p.write(*flat877)
 		return nil
 	} else {
-		_t1459 := func(_dollar_dollar *pb.Reduce) []interface{} {
-			return []interface{}{_dollar_dollar.GetOp(), _dollar_dollar.GetBody(), _dollar_dollar.GetTerms()}
-		}
-		_t1460 := _t1459(msg)
-		fields859 := _t1460
-		unwrapped_fields860 := fields859
+		_dollar_dollar := msg
+		fields872 := []interface{}{_dollar_dollar.GetOp(), _dollar_dollar.GetBody(), _dollar_dollar.GetTerms()}
+		unwrapped_fields873 := fields872
 		p.write("(")
 		p.write("reduce")
 		p.indentSexp()
 		p.newline()
-		field861 := unwrapped_fields860[0].(*pb.Abstraction)
-		p.pretty_abstraction(field861)
+		field874 := unwrapped_fields873[0].(*pb.Abstraction)
+		p.pretty_abstraction(field874)
 		p.newline()
-		field862 := unwrapped_fields860[1].(*pb.Abstraction)
-		p.pretty_abstraction(field862)
+		field875 := unwrapped_fields873[1].(*pb.Abstraction)
+		p.pretty_abstraction(field875)
 		p.newline()
-		field863 := unwrapped_fields860[2].([]*pb.Term)
-		p.pretty_terms(field863)
+		field876 := unwrapped_fields873[2].([]*pb.Term)
+		p.pretty_terms(field876)
 		p.dedent()
 		p.write(")")
 	}
@@ -1894,22 +1708,22 @@ func (p *PrettyPrinter) pretty_reduce(msg *pb.Reduce) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_terms(msg []*pb.Term) interface{} {
-	flat868 := p.tryFlat(msg, func() { p.pretty_terms(msg) })
-	if flat868 != nil {
-		p.write(*flat868)
+	flat881 := p.tryFlat(msg, func() { p.pretty_terms(msg) })
+	if flat881 != nil {
+		p.write(*flat881)
 		return nil
 	} else {
-		fields865 := msg
+		fields878 := msg
 		p.write("(")
 		p.write("terms")
 		p.indentSexp()
-		if !(len(fields865) == 0) {
+		if !(len(fields878) == 0) {
 			p.newline()
-			for i867, elem866 := range fields865 {
-				if (i867 > 0) {
+			for i880, elem879 := range fields878 {
+				if (i880 > 0) {
 					p.newline()
 				}
-				p.pretty_term(elem866)
+				p.pretty_term(elem879)
 			}
 		}
 		p.dedent()
@@ -1919,36 +1733,30 @@ func (p *PrettyPrinter) pretty_terms(msg []*pb.Term) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_term(msg *pb.Term) interface{} {
-	flat873 := p.tryFlat(msg, func() { p.pretty_term(msg) })
-	if flat873 != nil {
-		p.write(*flat873)
+	flat886 := p.tryFlat(msg, func() { p.pretty_term(msg) })
+	if flat886 != nil {
+		p.write(*flat886)
 		return nil
 	} else {
-		_t1461 := func(_dollar_dollar *pb.Term) *pb.Var {
-			var _t1462 *pb.Var
-			if hasProtoField(_dollar_dollar, "var") {
-				_t1462 = _dollar_dollar.GetVar()
-			}
-			return _t1462
+		_dollar_dollar := msg
+		var _t1363 *pb.Var
+		if hasProtoField(_dollar_dollar, "var") {
+			_t1363 = _dollar_dollar.GetVar()
 		}
-		_t1463 := _t1461(msg)
-		deconstruct_result871 := _t1463
-		if deconstruct_result871 != nil {
-			unwrapped872 := deconstruct_result871
-			p.pretty_var(unwrapped872)
+		deconstruct_result884 := _t1363
+		if deconstruct_result884 != nil {
+			unwrapped885 := deconstruct_result884
+			p.pretty_var(unwrapped885)
 		} else {
-			_t1464 := func(_dollar_dollar *pb.Term) *pb.Value {
-				var _t1465 *pb.Value
-				if hasProtoField(_dollar_dollar, "constant") {
-					_t1465 = _dollar_dollar.GetConstant()
-				}
-				return _t1465
+			_dollar_dollar := msg
+			var _t1364 *pb.Value
+			if hasProtoField(_dollar_dollar, "constant") {
+				_t1364 = _dollar_dollar.GetConstant()
 			}
-			_t1466 := _t1464(msg)
-			deconstruct_result869 := _t1466
-			if deconstruct_result869 != nil {
-				unwrapped870 := deconstruct_result869
-				p.pretty_constant(unwrapped870)
+			deconstruct_result882 := _t1364
+			if deconstruct_result882 != nil {
+				unwrapped883 := deconstruct_result882
+				p.pretty_constant(unwrapped883)
 			} else {
 				panic(ParseError{msg: "No matching rule for term"})
 			}
@@ -1958,56 +1766,50 @@ func (p *PrettyPrinter) pretty_term(msg *pb.Term) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_var(msg *pb.Var) interface{} {
-	flat876 := p.tryFlat(msg, func() { p.pretty_var(msg) })
-	if flat876 != nil {
-		p.write(*flat876)
+	flat889 := p.tryFlat(msg, func() { p.pretty_var(msg) })
+	if flat889 != nil {
+		p.write(*flat889)
 		return nil
 	} else {
-		_t1467 := func(_dollar_dollar *pb.Var) string {
-			return _dollar_dollar.GetName()
-		}
-		_t1468 := _t1467(msg)
-		fields874 := _t1468
-		unwrapped_fields875 := fields874
-		p.write(unwrapped_fields875)
+		_dollar_dollar := msg
+		fields887 := _dollar_dollar.GetName()
+		unwrapped_fields888 := fields887
+		p.write(unwrapped_fields888)
 	}
 	return nil
 }
 
 func (p *PrettyPrinter) pretty_constant(msg *pb.Value) interface{} {
-	flat878 := p.tryFlat(msg, func() { p.pretty_constant(msg) })
-	if flat878 != nil {
-		p.write(*flat878)
+	flat891 := p.tryFlat(msg, func() { p.pretty_constant(msg) })
+	if flat891 != nil {
+		p.write(*flat891)
 		return nil
 	} else {
-		fields877 := msg
-		p.pretty_value(fields877)
+		fields890 := msg
+		p.pretty_value(fields890)
 	}
 	return nil
 }
 
 func (p *PrettyPrinter) pretty_conjunction(msg *pb.Conjunction) interface{} {
-	flat883 := p.tryFlat(msg, func() { p.pretty_conjunction(msg) })
-	if flat883 != nil {
-		p.write(*flat883)
+	flat896 := p.tryFlat(msg, func() { p.pretty_conjunction(msg) })
+	if flat896 != nil {
+		p.write(*flat896)
 		return nil
 	} else {
-		_t1469 := func(_dollar_dollar *pb.Conjunction) []*pb.Formula {
-			return _dollar_dollar.GetArgs()
-		}
-		_t1470 := _t1469(msg)
-		fields879 := _t1470
-		unwrapped_fields880 := fields879
+		_dollar_dollar := msg
+		fields892 := _dollar_dollar.GetArgs()
+		unwrapped_fields893 := fields892
 		p.write("(")
 		p.write("and")
 		p.indentSexp()
-		if !(len(unwrapped_fields880) == 0) {
+		if !(len(unwrapped_fields893) == 0) {
 			p.newline()
-			for i882, elem881 := range unwrapped_fields880 {
-				if (i882 > 0) {
+			for i895, elem894 := range unwrapped_fields893 {
+				if (i895 > 0) {
 					p.newline()
 				}
-				p.pretty_formula(elem881)
+				p.pretty_formula(elem894)
 			}
 		}
 		p.dedent()
@@ -2017,27 +1819,24 @@ func (p *PrettyPrinter) pretty_conjunction(msg *pb.Conjunction) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_disjunction(msg *pb.Disjunction) interface{} {
-	flat888 := p.tryFlat(msg, func() { p.pretty_disjunction(msg) })
-	if flat888 != nil {
-		p.write(*flat888)
+	flat901 := p.tryFlat(msg, func() { p.pretty_disjunction(msg) })
+	if flat901 != nil {
+		p.write(*flat901)
 		return nil
 	} else {
-		_t1471 := func(_dollar_dollar *pb.Disjunction) []*pb.Formula {
-			return _dollar_dollar.GetArgs()
-		}
-		_t1472 := _t1471(msg)
-		fields884 := _t1472
-		unwrapped_fields885 := fields884
+		_dollar_dollar := msg
+		fields897 := _dollar_dollar.GetArgs()
+		unwrapped_fields898 := fields897
 		p.write("(")
 		p.write("or")
 		p.indentSexp()
-		if !(len(unwrapped_fields885) == 0) {
+		if !(len(unwrapped_fields898) == 0) {
 			p.newline()
-			for i887, elem886 := range unwrapped_fields885 {
-				if (i887 > 0) {
+			for i900, elem899 := range unwrapped_fields898 {
+				if (i900 > 0) {
 					p.newline()
 				}
-				p.pretty_formula(elem886)
+				p.pretty_formula(elem899)
 			}
 		}
 		p.dedent()
@@ -2047,22 +1846,19 @@ func (p *PrettyPrinter) pretty_disjunction(msg *pb.Disjunction) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_not(msg *pb.Not) interface{} {
-	flat891 := p.tryFlat(msg, func() { p.pretty_not(msg) })
-	if flat891 != nil {
-		p.write(*flat891)
+	flat904 := p.tryFlat(msg, func() { p.pretty_not(msg) })
+	if flat904 != nil {
+		p.write(*flat904)
 		return nil
 	} else {
-		_t1473 := func(_dollar_dollar *pb.Not) *pb.Formula {
-			return _dollar_dollar.GetArg()
-		}
-		_t1474 := _t1473(msg)
-		fields889 := _t1474
-		unwrapped_fields890 := fields889
+		_dollar_dollar := msg
+		fields902 := _dollar_dollar.GetArg()
+		unwrapped_fields903 := fields902
 		p.write("(")
 		p.write("not")
 		p.indentSexp()
 		p.newline()
-		p.pretty_formula(unwrapped_fields890)
+		p.pretty_formula(unwrapped_fields903)
 		p.dedent()
 		p.write(")")
 	}
@@ -2070,29 +1866,26 @@ func (p *PrettyPrinter) pretty_not(msg *pb.Not) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_ffi(msg *pb.FFI) interface{} {
-	flat897 := p.tryFlat(msg, func() { p.pretty_ffi(msg) })
-	if flat897 != nil {
-		p.write(*flat897)
+	flat910 := p.tryFlat(msg, func() { p.pretty_ffi(msg) })
+	if flat910 != nil {
+		p.write(*flat910)
 		return nil
 	} else {
-		_t1475 := func(_dollar_dollar *pb.FFI) []interface{} {
-			return []interface{}{_dollar_dollar.GetName(), _dollar_dollar.GetArgs(), _dollar_dollar.GetTerms()}
-		}
-		_t1476 := _t1475(msg)
-		fields892 := _t1476
-		unwrapped_fields893 := fields892
+		_dollar_dollar := msg
+		fields905 := []interface{}{_dollar_dollar.GetName(), _dollar_dollar.GetArgs(), _dollar_dollar.GetTerms()}
+		unwrapped_fields906 := fields905
 		p.write("(")
 		p.write("ffi")
 		p.indentSexp()
 		p.newline()
-		field894 := unwrapped_fields893[0].(string)
-		p.pretty_name(field894)
+		field907 := unwrapped_fields906[0].(string)
+		p.pretty_name(field907)
 		p.newline()
-		field895 := unwrapped_fields893[1].([]*pb.Abstraction)
-		p.pretty_ffi_args(field895)
+		field908 := unwrapped_fields906[1].([]*pb.Abstraction)
+		p.pretty_ffi_args(field908)
 		p.newline()
-		field896 := unwrapped_fields893[2].([]*pb.Term)
-		p.pretty_terms(field896)
+		field909 := unwrapped_fields906[2].([]*pb.Term)
+		p.pretty_terms(field909)
 		p.dedent()
 		p.write(")")
 	}
@@ -2100,35 +1893,35 @@ func (p *PrettyPrinter) pretty_ffi(msg *pb.FFI) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_name(msg string) interface{} {
-	flat899 := p.tryFlat(msg, func() { p.pretty_name(msg) })
-	if flat899 != nil {
-		p.write(*flat899)
+	flat912 := p.tryFlat(msg, func() { p.pretty_name(msg) })
+	if flat912 != nil {
+		p.write(*flat912)
 		return nil
 	} else {
-		fields898 := msg
+		fields911 := msg
 		p.write(":")
-		p.write(fields898)
+		p.write(fields911)
 	}
 	return nil
 }
 
 func (p *PrettyPrinter) pretty_ffi_args(msg []*pb.Abstraction) interface{} {
-	flat903 := p.tryFlat(msg, func() { p.pretty_ffi_args(msg) })
-	if flat903 != nil {
-		p.write(*flat903)
+	flat916 := p.tryFlat(msg, func() { p.pretty_ffi_args(msg) })
+	if flat916 != nil {
+		p.write(*flat916)
 		return nil
 	} else {
-		fields900 := msg
+		fields913 := msg
 		p.write("(")
 		p.write("args")
 		p.indentSexp()
-		if !(len(fields900) == 0) {
+		if !(len(fields913) == 0) {
 			p.newline()
-			for i902, elem901 := range fields900 {
-				if (i902 > 0) {
+			for i915, elem914 := range fields913 {
+				if (i915 > 0) {
 					p.newline()
 				}
-				p.pretty_abstraction(elem901)
+				p.pretty_abstraction(elem914)
 			}
 		}
 		p.dedent()
@@ -2138,31 +1931,28 @@ func (p *PrettyPrinter) pretty_ffi_args(msg []*pb.Abstraction) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_atom(msg *pb.Atom) interface{} {
-	flat910 := p.tryFlat(msg, func() { p.pretty_atom(msg) })
-	if flat910 != nil {
-		p.write(*flat910)
+	flat923 := p.tryFlat(msg, func() { p.pretty_atom(msg) })
+	if flat923 != nil {
+		p.write(*flat923)
 		return nil
 	} else {
-		_t1477 := func(_dollar_dollar *pb.Atom) []interface{} {
-			return []interface{}{_dollar_dollar.GetName(), _dollar_dollar.GetTerms()}
-		}
-		_t1478 := _t1477(msg)
-		fields904 := _t1478
-		unwrapped_fields905 := fields904
+		_dollar_dollar := msg
+		fields917 := []interface{}{_dollar_dollar.GetName(), _dollar_dollar.GetTerms()}
+		unwrapped_fields918 := fields917
 		p.write("(")
 		p.write("atom")
 		p.indentSexp()
 		p.newline()
-		field906 := unwrapped_fields905[0].(*pb.RelationId)
-		p.pretty_relation_id(field906)
-		field907 := unwrapped_fields905[1].([]*pb.Term)
-		if !(len(field907) == 0) {
+		field919 := unwrapped_fields918[0].(*pb.RelationId)
+		p.pretty_relation_id(field919)
+		field920 := unwrapped_fields918[1].([]*pb.Term)
+		if !(len(field920) == 0) {
 			p.newline()
-			for i909, elem908 := range field907 {
-				if (i909 > 0) {
+			for i922, elem921 := range field920 {
+				if (i922 > 0) {
 					p.newline()
 				}
-				p.pretty_term(elem908)
+				p.pretty_term(elem921)
 			}
 		}
 		p.dedent()
@@ -2172,31 +1962,28 @@ func (p *PrettyPrinter) pretty_atom(msg *pb.Atom) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_pragma(msg *pb.Pragma) interface{} {
-	flat917 := p.tryFlat(msg, func() { p.pretty_pragma(msg) })
-	if flat917 != nil {
-		p.write(*flat917)
+	flat930 := p.tryFlat(msg, func() { p.pretty_pragma(msg) })
+	if flat930 != nil {
+		p.write(*flat930)
 		return nil
 	} else {
-		_t1479 := func(_dollar_dollar *pb.Pragma) []interface{} {
-			return []interface{}{_dollar_dollar.GetName(), _dollar_dollar.GetTerms()}
-		}
-		_t1480 := _t1479(msg)
-		fields911 := _t1480
-		unwrapped_fields912 := fields911
+		_dollar_dollar := msg
+		fields924 := []interface{}{_dollar_dollar.GetName(), _dollar_dollar.GetTerms()}
+		unwrapped_fields925 := fields924
 		p.write("(")
 		p.write("pragma")
 		p.indentSexp()
 		p.newline()
-		field913 := unwrapped_fields912[0].(string)
-		p.pretty_name(field913)
-		field914 := unwrapped_fields912[1].([]*pb.Term)
-		if !(len(field914) == 0) {
+		field926 := unwrapped_fields925[0].(string)
+		p.pretty_name(field926)
+		field927 := unwrapped_fields925[1].([]*pb.Term)
+		if !(len(field927) == 0) {
 			p.newline()
-			for i916, elem915 := range field914 {
-				if (i916 > 0) {
+			for i929, elem928 := range field927 {
+				if (i929 > 0) {
 					p.newline()
 				}
-				p.pretty_term(elem915)
+				p.pretty_term(elem928)
 			}
 		}
 		p.dedent()
@@ -2206,139 +1993,109 @@ func (p *PrettyPrinter) pretty_pragma(msg *pb.Pragma) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_primitive(msg *pb.Primitive) interface{} {
-	flat933 := p.tryFlat(msg, func() { p.pretty_primitive(msg) })
-	if flat933 != nil {
-		p.write(*flat933)
+	flat946 := p.tryFlat(msg, func() { p.pretty_primitive(msg) })
+	if flat946 != nil {
+		p.write(*flat946)
 		return nil
 	} else {
-		_t1481 := func(_dollar_dollar *pb.Primitive) []interface{} {
-			var _t1482 []interface{}
-			if _dollar_dollar.GetName() == "rel_primitive_eq" {
-				_t1482 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm()}
-			}
-			return _t1482
+		_dollar_dollar := msg
+		var _t1365 []interface{}
+		if _dollar_dollar.GetName() == "rel_primitive_eq" {
+			_t1365 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm()}
 		}
-		_t1483 := _t1481(msg)
-		guard_result932 := _t1483
-		if guard_result932 != nil {
+		guard_result945 := _t1365
+		if guard_result945 != nil {
 			p.pretty_eq(msg)
 		} else {
-			_t1484 := func(_dollar_dollar *pb.Primitive) []interface{} {
-				var _t1485 []interface{}
-				if _dollar_dollar.GetName() == "rel_primitive_lt_monotype" {
-					_t1485 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm()}
-				}
-				return _t1485
+			_dollar_dollar := msg
+			var _t1366 []interface{}
+			if _dollar_dollar.GetName() == "rel_primitive_lt_monotype" {
+				_t1366 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm()}
 			}
-			_t1486 := _t1484(msg)
-			guard_result931 := _t1486
-			if guard_result931 != nil {
+			guard_result944 := _t1366
+			if guard_result944 != nil {
 				p.pretty_lt(msg)
 			} else {
-				_t1487 := func(_dollar_dollar *pb.Primitive) []interface{} {
-					var _t1488 []interface{}
-					if _dollar_dollar.GetName() == "rel_primitive_lt_eq_monotype" {
-						_t1488 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm()}
-					}
-					return _t1488
+				_dollar_dollar := msg
+				var _t1367 []interface{}
+				if _dollar_dollar.GetName() == "rel_primitive_lt_eq_monotype" {
+					_t1367 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm()}
 				}
-				_t1489 := _t1487(msg)
-				guard_result930 := _t1489
-				if guard_result930 != nil {
+				guard_result943 := _t1367
+				if guard_result943 != nil {
 					p.pretty_lt_eq(msg)
 				} else {
-					_t1490 := func(_dollar_dollar *pb.Primitive) []interface{} {
-						var _t1491 []interface{}
-						if _dollar_dollar.GetName() == "rel_primitive_gt_monotype" {
-							_t1491 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm()}
-						}
-						return _t1491
+					_dollar_dollar := msg
+					var _t1368 []interface{}
+					if _dollar_dollar.GetName() == "rel_primitive_gt_monotype" {
+						_t1368 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm()}
 					}
-					_t1492 := _t1490(msg)
-					guard_result929 := _t1492
-					if guard_result929 != nil {
+					guard_result942 := _t1368
+					if guard_result942 != nil {
 						p.pretty_gt(msg)
 					} else {
-						_t1493 := func(_dollar_dollar *pb.Primitive) []interface{} {
-							var _t1494 []interface{}
-							if _dollar_dollar.GetName() == "rel_primitive_gt_eq_monotype" {
-								_t1494 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm()}
-							}
-							return _t1494
+						_dollar_dollar := msg
+						var _t1369 []interface{}
+						if _dollar_dollar.GetName() == "rel_primitive_gt_eq_monotype" {
+							_t1369 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm()}
 						}
-						_t1495 := _t1493(msg)
-						guard_result928 := _t1495
-						if guard_result928 != nil {
+						guard_result941 := _t1369
+						if guard_result941 != nil {
 							p.pretty_gt_eq(msg)
 						} else {
-							_t1496 := func(_dollar_dollar *pb.Primitive) []interface{} {
-								var _t1497 []interface{}
-								if _dollar_dollar.GetName() == "rel_primitive_add_monotype" {
-									_t1497 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm(), _dollar_dollar.GetTerms()[2].GetTerm()}
-								}
-								return _t1497
+							_dollar_dollar := msg
+							var _t1370 []interface{}
+							if _dollar_dollar.GetName() == "rel_primitive_add_monotype" {
+								_t1370 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm(), _dollar_dollar.GetTerms()[2].GetTerm()}
 							}
-							_t1498 := _t1496(msg)
-							guard_result927 := _t1498
-							if guard_result927 != nil {
+							guard_result940 := _t1370
+							if guard_result940 != nil {
 								p.pretty_add(msg)
 							} else {
-								_t1499 := func(_dollar_dollar *pb.Primitive) []interface{} {
-									var _t1500 []interface{}
-									if _dollar_dollar.GetName() == "rel_primitive_subtract_monotype" {
-										_t1500 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm(), _dollar_dollar.GetTerms()[2].GetTerm()}
-									}
-									return _t1500
+								_dollar_dollar := msg
+								var _t1371 []interface{}
+								if _dollar_dollar.GetName() == "rel_primitive_subtract_monotype" {
+									_t1371 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm(), _dollar_dollar.GetTerms()[2].GetTerm()}
 								}
-								_t1501 := _t1499(msg)
-								guard_result926 := _t1501
-								if guard_result926 != nil {
+								guard_result939 := _t1371
+								if guard_result939 != nil {
 									p.pretty_minus(msg)
 								} else {
-									_t1502 := func(_dollar_dollar *pb.Primitive) []interface{} {
-										var _t1503 []interface{}
-										if _dollar_dollar.GetName() == "rel_primitive_multiply_monotype" {
-											_t1503 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm(), _dollar_dollar.GetTerms()[2].GetTerm()}
-										}
-										return _t1503
+									_dollar_dollar := msg
+									var _t1372 []interface{}
+									if _dollar_dollar.GetName() == "rel_primitive_multiply_monotype" {
+										_t1372 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm(), _dollar_dollar.GetTerms()[2].GetTerm()}
 									}
-									_t1504 := _t1502(msg)
-									guard_result925 := _t1504
-									if guard_result925 != nil {
+									guard_result938 := _t1372
+									if guard_result938 != nil {
 										p.pretty_multiply(msg)
 									} else {
-										_t1505 := func(_dollar_dollar *pb.Primitive) []interface{} {
-											var _t1506 []interface{}
-											if _dollar_dollar.GetName() == "rel_primitive_divide_monotype" {
-												_t1506 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm(), _dollar_dollar.GetTerms()[2].GetTerm()}
-											}
-											return _t1506
+										_dollar_dollar := msg
+										var _t1373 []interface{}
+										if _dollar_dollar.GetName() == "rel_primitive_divide_monotype" {
+											_t1373 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm(), _dollar_dollar.GetTerms()[2].GetTerm()}
 										}
-										_t1507 := _t1505(msg)
-										guard_result924 := _t1507
-										if guard_result924 != nil {
+										guard_result937 := _t1373
+										if guard_result937 != nil {
 											p.pretty_divide(msg)
 										} else {
-											_t1508 := func(_dollar_dollar *pb.Primitive) []interface{} {
-												return []interface{}{_dollar_dollar.GetName(), _dollar_dollar.GetTerms()}
-											}
-											_t1509 := _t1508(msg)
-											fields918 := _t1509
-											unwrapped_fields919 := fields918
+											_dollar_dollar := msg
+											fields931 := []interface{}{_dollar_dollar.GetName(), _dollar_dollar.GetTerms()}
+											unwrapped_fields932 := fields931
 											p.write("(")
 											p.write("primitive")
 											p.indentSexp()
 											p.newline()
-											field920 := unwrapped_fields919[0].(string)
-											p.pretty_name(field920)
-											field921 := unwrapped_fields919[1].([]*pb.RelTerm)
-											if !(len(field921) == 0) {
+											field933 := unwrapped_fields932[0].(string)
+											p.pretty_name(field933)
+											field934 := unwrapped_fields932[1].([]*pb.RelTerm)
+											if !(len(field934) == 0) {
 												p.newline()
-												for i923, elem922 := range field921 {
-													if (i923 > 0) {
+												for i936, elem935 := range field934 {
+													if (i936 > 0) {
 														p.newline()
 													}
-													p.pretty_rel_term(elem922)
+													p.pretty_rel_term(elem935)
 												}
 											}
 											p.dedent()
@@ -2357,30 +2114,27 @@ func (p *PrettyPrinter) pretty_primitive(msg *pb.Primitive) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_eq(msg *pb.Primitive) interface{} {
-	flat938 := p.tryFlat(msg, func() { p.pretty_eq(msg) })
-	if flat938 != nil {
-		p.write(*flat938)
+	flat951 := p.tryFlat(msg, func() { p.pretty_eq(msg) })
+	if flat951 != nil {
+		p.write(*flat951)
 		return nil
 	} else {
-		_t1510 := func(_dollar_dollar *pb.Primitive) []interface{} {
-			var _t1511 []interface{}
-			if _dollar_dollar.GetName() == "rel_primitive_eq" {
-				_t1511 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm()}
-			}
-			return _t1511
+		_dollar_dollar := msg
+		var _t1374 []interface{}
+		if _dollar_dollar.GetName() == "rel_primitive_eq" {
+			_t1374 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm()}
 		}
-		_t1512 := _t1510(msg)
-		fields934 := _t1512
-		unwrapped_fields935 := fields934
+		fields947 := _t1374
+		unwrapped_fields948 := fields947
 		p.write("(")
 		p.write("=")
 		p.indentSexp()
 		p.newline()
-		field936 := unwrapped_fields935[0].(*pb.Term)
-		p.pretty_term(field936)
+		field949 := unwrapped_fields948[0].(*pb.Term)
+		p.pretty_term(field949)
 		p.newline()
-		field937 := unwrapped_fields935[1].(*pb.Term)
-		p.pretty_term(field937)
+		field950 := unwrapped_fields948[1].(*pb.Term)
+		p.pretty_term(field950)
 		p.dedent()
 		p.write(")")
 	}
@@ -2388,30 +2142,27 @@ func (p *PrettyPrinter) pretty_eq(msg *pb.Primitive) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_lt(msg *pb.Primitive) interface{} {
-	flat943 := p.tryFlat(msg, func() { p.pretty_lt(msg) })
-	if flat943 != nil {
-		p.write(*flat943)
+	flat956 := p.tryFlat(msg, func() { p.pretty_lt(msg) })
+	if flat956 != nil {
+		p.write(*flat956)
 		return nil
 	} else {
-		_t1513 := func(_dollar_dollar *pb.Primitive) []interface{} {
-			var _t1514 []interface{}
-			if _dollar_dollar.GetName() == "rel_primitive_lt_monotype" {
-				_t1514 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm()}
-			}
-			return _t1514
+		_dollar_dollar := msg
+		var _t1375 []interface{}
+		if _dollar_dollar.GetName() == "rel_primitive_lt_monotype" {
+			_t1375 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm()}
 		}
-		_t1515 := _t1513(msg)
-		fields939 := _t1515
-		unwrapped_fields940 := fields939
+		fields952 := _t1375
+		unwrapped_fields953 := fields952
 		p.write("(")
 		p.write("<")
 		p.indentSexp()
 		p.newline()
-		field941 := unwrapped_fields940[0].(*pb.Term)
-		p.pretty_term(field941)
+		field954 := unwrapped_fields953[0].(*pb.Term)
+		p.pretty_term(field954)
 		p.newline()
-		field942 := unwrapped_fields940[1].(*pb.Term)
-		p.pretty_term(field942)
+		field955 := unwrapped_fields953[1].(*pb.Term)
+		p.pretty_term(field955)
 		p.dedent()
 		p.write(")")
 	}
@@ -2419,30 +2170,27 @@ func (p *PrettyPrinter) pretty_lt(msg *pb.Primitive) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_lt_eq(msg *pb.Primitive) interface{} {
-	flat948 := p.tryFlat(msg, func() { p.pretty_lt_eq(msg) })
-	if flat948 != nil {
-		p.write(*flat948)
+	flat961 := p.tryFlat(msg, func() { p.pretty_lt_eq(msg) })
+	if flat961 != nil {
+		p.write(*flat961)
 		return nil
 	} else {
-		_t1516 := func(_dollar_dollar *pb.Primitive) []interface{} {
-			var _t1517 []interface{}
-			if _dollar_dollar.GetName() == "rel_primitive_lt_eq_monotype" {
-				_t1517 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm()}
-			}
-			return _t1517
+		_dollar_dollar := msg
+		var _t1376 []interface{}
+		if _dollar_dollar.GetName() == "rel_primitive_lt_eq_monotype" {
+			_t1376 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm()}
 		}
-		_t1518 := _t1516(msg)
-		fields944 := _t1518
-		unwrapped_fields945 := fields944
+		fields957 := _t1376
+		unwrapped_fields958 := fields957
 		p.write("(")
 		p.write("<=")
 		p.indentSexp()
 		p.newline()
-		field946 := unwrapped_fields945[0].(*pb.Term)
-		p.pretty_term(field946)
+		field959 := unwrapped_fields958[0].(*pb.Term)
+		p.pretty_term(field959)
 		p.newline()
-		field947 := unwrapped_fields945[1].(*pb.Term)
-		p.pretty_term(field947)
+		field960 := unwrapped_fields958[1].(*pb.Term)
+		p.pretty_term(field960)
 		p.dedent()
 		p.write(")")
 	}
@@ -2450,30 +2198,27 @@ func (p *PrettyPrinter) pretty_lt_eq(msg *pb.Primitive) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_gt(msg *pb.Primitive) interface{} {
-	flat953 := p.tryFlat(msg, func() { p.pretty_gt(msg) })
-	if flat953 != nil {
-		p.write(*flat953)
+	flat966 := p.tryFlat(msg, func() { p.pretty_gt(msg) })
+	if flat966 != nil {
+		p.write(*flat966)
 		return nil
 	} else {
-		_t1519 := func(_dollar_dollar *pb.Primitive) []interface{} {
-			var _t1520 []interface{}
-			if _dollar_dollar.GetName() == "rel_primitive_gt_monotype" {
-				_t1520 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm()}
-			}
-			return _t1520
+		_dollar_dollar := msg
+		var _t1377 []interface{}
+		if _dollar_dollar.GetName() == "rel_primitive_gt_monotype" {
+			_t1377 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm()}
 		}
-		_t1521 := _t1519(msg)
-		fields949 := _t1521
-		unwrapped_fields950 := fields949
+		fields962 := _t1377
+		unwrapped_fields963 := fields962
 		p.write("(")
 		p.write(">")
 		p.indentSexp()
 		p.newline()
-		field951 := unwrapped_fields950[0].(*pb.Term)
-		p.pretty_term(field951)
+		field964 := unwrapped_fields963[0].(*pb.Term)
+		p.pretty_term(field964)
 		p.newline()
-		field952 := unwrapped_fields950[1].(*pb.Term)
-		p.pretty_term(field952)
+		field965 := unwrapped_fields963[1].(*pb.Term)
+		p.pretty_term(field965)
 		p.dedent()
 		p.write(")")
 	}
@@ -2481,30 +2226,27 @@ func (p *PrettyPrinter) pretty_gt(msg *pb.Primitive) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_gt_eq(msg *pb.Primitive) interface{} {
-	flat958 := p.tryFlat(msg, func() { p.pretty_gt_eq(msg) })
-	if flat958 != nil {
-		p.write(*flat958)
+	flat971 := p.tryFlat(msg, func() { p.pretty_gt_eq(msg) })
+	if flat971 != nil {
+		p.write(*flat971)
 		return nil
 	} else {
-		_t1522 := func(_dollar_dollar *pb.Primitive) []interface{} {
-			var _t1523 []interface{}
-			if _dollar_dollar.GetName() == "rel_primitive_gt_eq_monotype" {
-				_t1523 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm()}
-			}
-			return _t1523
+		_dollar_dollar := msg
+		var _t1378 []interface{}
+		if _dollar_dollar.GetName() == "rel_primitive_gt_eq_monotype" {
+			_t1378 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm()}
 		}
-		_t1524 := _t1522(msg)
-		fields954 := _t1524
-		unwrapped_fields955 := fields954
+		fields967 := _t1378
+		unwrapped_fields968 := fields967
 		p.write("(")
 		p.write(">=")
 		p.indentSexp()
 		p.newline()
-		field956 := unwrapped_fields955[0].(*pb.Term)
-		p.pretty_term(field956)
+		field969 := unwrapped_fields968[0].(*pb.Term)
+		p.pretty_term(field969)
 		p.newline()
-		field957 := unwrapped_fields955[1].(*pb.Term)
-		p.pretty_term(field957)
+		field970 := unwrapped_fields968[1].(*pb.Term)
+		p.pretty_term(field970)
 		p.dedent()
 		p.write(")")
 	}
@@ -2512,33 +2254,30 @@ func (p *PrettyPrinter) pretty_gt_eq(msg *pb.Primitive) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_add(msg *pb.Primitive) interface{} {
-	flat964 := p.tryFlat(msg, func() { p.pretty_add(msg) })
-	if flat964 != nil {
-		p.write(*flat964)
+	flat977 := p.tryFlat(msg, func() { p.pretty_add(msg) })
+	if flat977 != nil {
+		p.write(*flat977)
 		return nil
 	} else {
-		_t1525 := func(_dollar_dollar *pb.Primitive) []interface{} {
-			var _t1526 []interface{}
-			if _dollar_dollar.GetName() == "rel_primitive_add_monotype" {
-				_t1526 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm(), _dollar_dollar.GetTerms()[2].GetTerm()}
-			}
-			return _t1526
+		_dollar_dollar := msg
+		var _t1379 []interface{}
+		if _dollar_dollar.GetName() == "rel_primitive_add_monotype" {
+			_t1379 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm(), _dollar_dollar.GetTerms()[2].GetTerm()}
 		}
-		_t1527 := _t1525(msg)
-		fields959 := _t1527
-		unwrapped_fields960 := fields959
+		fields972 := _t1379
+		unwrapped_fields973 := fields972
 		p.write("(")
 		p.write("+")
 		p.indentSexp()
 		p.newline()
-		field961 := unwrapped_fields960[0].(*pb.Term)
-		p.pretty_term(field961)
+		field974 := unwrapped_fields973[0].(*pb.Term)
+		p.pretty_term(field974)
 		p.newline()
-		field962 := unwrapped_fields960[1].(*pb.Term)
-		p.pretty_term(field962)
+		field975 := unwrapped_fields973[1].(*pb.Term)
+		p.pretty_term(field975)
 		p.newline()
-		field963 := unwrapped_fields960[2].(*pb.Term)
-		p.pretty_term(field963)
+		field976 := unwrapped_fields973[2].(*pb.Term)
+		p.pretty_term(field976)
 		p.dedent()
 		p.write(")")
 	}
@@ -2546,33 +2285,30 @@ func (p *PrettyPrinter) pretty_add(msg *pb.Primitive) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_minus(msg *pb.Primitive) interface{} {
-	flat970 := p.tryFlat(msg, func() { p.pretty_minus(msg) })
-	if flat970 != nil {
-		p.write(*flat970)
+	flat983 := p.tryFlat(msg, func() { p.pretty_minus(msg) })
+	if flat983 != nil {
+		p.write(*flat983)
 		return nil
 	} else {
-		_t1528 := func(_dollar_dollar *pb.Primitive) []interface{} {
-			var _t1529 []interface{}
-			if _dollar_dollar.GetName() == "rel_primitive_subtract_monotype" {
-				_t1529 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm(), _dollar_dollar.GetTerms()[2].GetTerm()}
-			}
-			return _t1529
+		_dollar_dollar := msg
+		var _t1380 []interface{}
+		if _dollar_dollar.GetName() == "rel_primitive_subtract_monotype" {
+			_t1380 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm(), _dollar_dollar.GetTerms()[2].GetTerm()}
 		}
-		_t1530 := _t1528(msg)
-		fields965 := _t1530
-		unwrapped_fields966 := fields965
+		fields978 := _t1380
+		unwrapped_fields979 := fields978
 		p.write("(")
 		p.write("-")
 		p.indentSexp()
 		p.newline()
-		field967 := unwrapped_fields966[0].(*pb.Term)
-		p.pretty_term(field967)
+		field980 := unwrapped_fields979[0].(*pb.Term)
+		p.pretty_term(field980)
 		p.newline()
-		field968 := unwrapped_fields966[1].(*pb.Term)
-		p.pretty_term(field968)
+		field981 := unwrapped_fields979[1].(*pb.Term)
+		p.pretty_term(field981)
 		p.newline()
-		field969 := unwrapped_fields966[2].(*pb.Term)
-		p.pretty_term(field969)
+		field982 := unwrapped_fields979[2].(*pb.Term)
+		p.pretty_term(field982)
 		p.dedent()
 		p.write(")")
 	}
@@ -2580,33 +2316,30 @@ func (p *PrettyPrinter) pretty_minus(msg *pb.Primitive) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_multiply(msg *pb.Primitive) interface{} {
-	flat976 := p.tryFlat(msg, func() { p.pretty_multiply(msg) })
-	if flat976 != nil {
-		p.write(*flat976)
+	flat989 := p.tryFlat(msg, func() { p.pretty_multiply(msg) })
+	if flat989 != nil {
+		p.write(*flat989)
 		return nil
 	} else {
-		_t1531 := func(_dollar_dollar *pb.Primitive) []interface{} {
-			var _t1532 []interface{}
-			if _dollar_dollar.GetName() == "rel_primitive_multiply_monotype" {
-				_t1532 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm(), _dollar_dollar.GetTerms()[2].GetTerm()}
-			}
-			return _t1532
+		_dollar_dollar := msg
+		var _t1381 []interface{}
+		if _dollar_dollar.GetName() == "rel_primitive_multiply_monotype" {
+			_t1381 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm(), _dollar_dollar.GetTerms()[2].GetTerm()}
 		}
-		_t1533 := _t1531(msg)
-		fields971 := _t1533
-		unwrapped_fields972 := fields971
+		fields984 := _t1381
+		unwrapped_fields985 := fields984
 		p.write("(")
 		p.write("*")
 		p.indentSexp()
 		p.newline()
-		field973 := unwrapped_fields972[0].(*pb.Term)
-		p.pretty_term(field973)
+		field986 := unwrapped_fields985[0].(*pb.Term)
+		p.pretty_term(field986)
 		p.newline()
-		field974 := unwrapped_fields972[1].(*pb.Term)
-		p.pretty_term(field974)
+		field987 := unwrapped_fields985[1].(*pb.Term)
+		p.pretty_term(field987)
 		p.newline()
-		field975 := unwrapped_fields972[2].(*pb.Term)
-		p.pretty_term(field975)
+		field988 := unwrapped_fields985[2].(*pb.Term)
+		p.pretty_term(field988)
 		p.dedent()
 		p.write(")")
 	}
@@ -2614,33 +2347,30 @@ func (p *PrettyPrinter) pretty_multiply(msg *pb.Primitive) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_divide(msg *pb.Primitive) interface{} {
-	flat982 := p.tryFlat(msg, func() { p.pretty_divide(msg) })
-	if flat982 != nil {
-		p.write(*flat982)
+	flat995 := p.tryFlat(msg, func() { p.pretty_divide(msg) })
+	if flat995 != nil {
+		p.write(*flat995)
 		return nil
 	} else {
-		_t1534 := func(_dollar_dollar *pb.Primitive) []interface{} {
-			var _t1535 []interface{}
-			if _dollar_dollar.GetName() == "rel_primitive_divide_monotype" {
-				_t1535 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm(), _dollar_dollar.GetTerms()[2].GetTerm()}
-			}
-			return _t1535
+		_dollar_dollar := msg
+		var _t1382 []interface{}
+		if _dollar_dollar.GetName() == "rel_primitive_divide_monotype" {
+			_t1382 = []interface{}{_dollar_dollar.GetTerms()[0].GetTerm(), _dollar_dollar.GetTerms()[1].GetTerm(), _dollar_dollar.GetTerms()[2].GetTerm()}
 		}
-		_t1536 := _t1534(msg)
-		fields977 := _t1536
-		unwrapped_fields978 := fields977
+		fields990 := _t1382
+		unwrapped_fields991 := fields990
 		p.write("(")
 		p.write("/")
 		p.indentSexp()
 		p.newline()
-		field979 := unwrapped_fields978[0].(*pb.Term)
-		p.pretty_term(field979)
+		field992 := unwrapped_fields991[0].(*pb.Term)
+		p.pretty_term(field992)
 		p.newline()
-		field980 := unwrapped_fields978[1].(*pb.Term)
-		p.pretty_term(field980)
+		field993 := unwrapped_fields991[1].(*pb.Term)
+		p.pretty_term(field993)
 		p.newline()
-		field981 := unwrapped_fields978[2].(*pb.Term)
-		p.pretty_term(field981)
+		field994 := unwrapped_fields991[2].(*pb.Term)
+		p.pretty_term(field994)
 		p.dedent()
 		p.write(")")
 	}
@@ -2648,36 +2378,30 @@ func (p *PrettyPrinter) pretty_divide(msg *pb.Primitive) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_rel_term(msg *pb.RelTerm) interface{} {
-	flat987 := p.tryFlat(msg, func() { p.pretty_rel_term(msg) })
-	if flat987 != nil {
-		p.write(*flat987)
+	flat1000 := p.tryFlat(msg, func() { p.pretty_rel_term(msg) })
+	if flat1000 != nil {
+		p.write(*flat1000)
 		return nil
 	} else {
-		_t1537 := func(_dollar_dollar *pb.RelTerm) *pb.Value {
-			var _t1538 *pb.Value
-			if hasProtoField(_dollar_dollar, "specialized_value") {
-				_t1538 = _dollar_dollar.GetSpecializedValue()
-			}
-			return _t1538
+		_dollar_dollar := msg
+		var _t1383 *pb.Value
+		if hasProtoField(_dollar_dollar, "specialized_value") {
+			_t1383 = _dollar_dollar.GetSpecializedValue()
 		}
-		_t1539 := _t1537(msg)
-		deconstruct_result985 := _t1539
-		if deconstruct_result985 != nil {
-			unwrapped986 := deconstruct_result985
-			p.pretty_specialized_value(unwrapped986)
+		deconstruct_result998 := _t1383
+		if deconstruct_result998 != nil {
+			unwrapped999 := deconstruct_result998
+			p.pretty_specialized_value(unwrapped999)
 		} else {
-			_t1540 := func(_dollar_dollar *pb.RelTerm) *pb.Term {
-				var _t1541 *pb.Term
-				if hasProtoField(_dollar_dollar, "term") {
-					_t1541 = _dollar_dollar.GetTerm()
-				}
-				return _t1541
+			_dollar_dollar := msg
+			var _t1384 *pb.Term
+			if hasProtoField(_dollar_dollar, "term") {
+				_t1384 = _dollar_dollar.GetTerm()
 			}
-			_t1542 := _t1540(msg)
-			deconstruct_result983 := _t1542
-			if deconstruct_result983 != nil {
-				unwrapped984 := deconstruct_result983
-				p.pretty_term(unwrapped984)
+			deconstruct_result996 := _t1384
+			if deconstruct_result996 != nil {
+				unwrapped997 := deconstruct_result996
+				p.pretty_term(unwrapped997)
 			} else {
 				panic(ParseError{msg: "No matching rule for rel_term"})
 			}
@@ -2687,44 +2411,41 @@ func (p *PrettyPrinter) pretty_rel_term(msg *pb.RelTerm) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_specialized_value(msg *pb.Value) interface{} {
-	flat989 := p.tryFlat(msg, func() { p.pretty_specialized_value(msg) })
-	if flat989 != nil {
-		p.write(*flat989)
+	flat1002 := p.tryFlat(msg, func() { p.pretty_specialized_value(msg) })
+	if flat1002 != nil {
+		p.write(*flat1002)
 		return nil
 	} else {
-		fields988 := msg
+		fields1001 := msg
 		p.write("#")
-		p.pretty_value(fields988)
+		p.pretty_value(fields1001)
 	}
 	return nil
 }
 
 func (p *PrettyPrinter) pretty_rel_atom(msg *pb.RelAtom) interface{} {
-	flat996 := p.tryFlat(msg, func() { p.pretty_rel_atom(msg) })
-	if flat996 != nil {
-		p.write(*flat996)
+	flat1009 := p.tryFlat(msg, func() { p.pretty_rel_atom(msg) })
+	if flat1009 != nil {
+		p.write(*flat1009)
 		return nil
 	} else {
-		_t1543 := func(_dollar_dollar *pb.RelAtom) []interface{} {
-			return []interface{}{_dollar_dollar.GetName(), _dollar_dollar.GetTerms()}
-		}
-		_t1544 := _t1543(msg)
-		fields990 := _t1544
-		unwrapped_fields991 := fields990
+		_dollar_dollar := msg
+		fields1003 := []interface{}{_dollar_dollar.GetName(), _dollar_dollar.GetTerms()}
+		unwrapped_fields1004 := fields1003
 		p.write("(")
 		p.write("relatom")
 		p.indentSexp()
 		p.newline()
-		field992 := unwrapped_fields991[0].(string)
-		p.pretty_name(field992)
-		field993 := unwrapped_fields991[1].([]*pb.RelTerm)
-		if !(len(field993) == 0) {
+		field1005 := unwrapped_fields1004[0].(string)
+		p.pretty_name(field1005)
+		field1006 := unwrapped_fields1004[1].([]*pb.RelTerm)
+		if !(len(field1006) == 0) {
 			p.newline()
-			for i995, elem994 := range field993 {
-				if (i995 > 0) {
+			for i1008, elem1007 := range field1006 {
+				if (i1008 > 0) {
 					p.newline()
 				}
-				p.pretty_rel_term(elem994)
+				p.pretty_rel_term(elem1007)
 			}
 		}
 		p.dedent()
@@ -2734,26 +2455,23 @@ func (p *PrettyPrinter) pretty_rel_atom(msg *pb.RelAtom) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_cast(msg *pb.Cast) interface{} {
-	flat1001 := p.tryFlat(msg, func() { p.pretty_cast(msg) })
-	if flat1001 != nil {
-		p.write(*flat1001)
+	flat1014 := p.tryFlat(msg, func() { p.pretty_cast(msg) })
+	if flat1014 != nil {
+		p.write(*flat1014)
 		return nil
 	} else {
-		_t1545 := func(_dollar_dollar *pb.Cast) []interface{} {
-			return []interface{}{_dollar_dollar.GetInput(), _dollar_dollar.GetResult()}
-		}
-		_t1546 := _t1545(msg)
-		fields997 := _t1546
-		unwrapped_fields998 := fields997
+		_dollar_dollar := msg
+		fields1010 := []interface{}{_dollar_dollar.GetInput(), _dollar_dollar.GetResult()}
+		unwrapped_fields1011 := fields1010
 		p.write("(")
 		p.write("cast")
 		p.indentSexp()
 		p.newline()
-		field999 := unwrapped_fields998[0].(*pb.Term)
-		p.pretty_term(field999)
+		field1012 := unwrapped_fields1011[0].(*pb.Term)
+		p.pretty_term(field1012)
 		p.newline()
-		field1000 := unwrapped_fields998[1].(*pb.Term)
-		p.pretty_term(field1000)
+		field1013 := unwrapped_fields1011[1].(*pb.Term)
+		p.pretty_term(field1013)
 		p.dedent()
 		p.write(")")
 	}
@@ -2761,22 +2479,22 @@ func (p *PrettyPrinter) pretty_cast(msg *pb.Cast) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_attrs(msg []*pb.Attribute) interface{} {
-	flat1005 := p.tryFlat(msg, func() { p.pretty_attrs(msg) })
-	if flat1005 != nil {
-		p.write(*flat1005)
+	flat1018 := p.tryFlat(msg, func() { p.pretty_attrs(msg) })
+	if flat1018 != nil {
+		p.write(*flat1018)
 		return nil
 	} else {
-		fields1002 := msg
+		fields1015 := msg
 		p.write("(")
 		p.write("attrs")
 		p.indentSexp()
-		if !(len(fields1002) == 0) {
+		if !(len(fields1015) == 0) {
 			p.newline()
-			for i1004, elem1003 := range fields1002 {
-				if (i1004 > 0) {
+			for i1017, elem1016 := range fields1015 {
+				if (i1017 > 0) {
 					p.newline()
 				}
-				p.pretty_attribute(elem1003)
+				p.pretty_attribute(elem1016)
 			}
 		}
 		p.dedent()
@@ -2786,31 +2504,28 @@ func (p *PrettyPrinter) pretty_attrs(msg []*pb.Attribute) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_attribute(msg *pb.Attribute) interface{} {
-	flat1012 := p.tryFlat(msg, func() { p.pretty_attribute(msg) })
-	if flat1012 != nil {
-		p.write(*flat1012)
+	flat1025 := p.tryFlat(msg, func() { p.pretty_attribute(msg) })
+	if flat1025 != nil {
+		p.write(*flat1025)
 		return nil
 	} else {
-		_t1547 := func(_dollar_dollar *pb.Attribute) []interface{} {
-			return []interface{}{_dollar_dollar.GetName(), _dollar_dollar.GetArgs()}
-		}
-		_t1548 := _t1547(msg)
-		fields1006 := _t1548
-		unwrapped_fields1007 := fields1006
+		_dollar_dollar := msg
+		fields1019 := []interface{}{_dollar_dollar.GetName(), _dollar_dollar.GetArgs()}
+		unwrapped_fields1020 := fields1019
 		p.write("(")
 		p.write("attribute")
 		p.indentSexp()
 		p.newline()
-		field1008 := unwrapped_fields1007[0].(string)
-		p.pretty_name(field1008)
-		field1009 := unwrapped_fields1007[1].([]*pb.Value)
-		if !(len(field1009) == 0) {
+		field1021 := unwrapped_fields1020[0].(string)
+		p.pretty_name(field1021)
+		field1022 := unwrapped_fields1020[1].([]*pb.Value)
+		if !(len(field1022) == 0) {
 			p.newline()
-			for i1011, elem1010 := range field1009 {
-				if (i1011 > 0) {
+			for i1024, elem1023 := range field1022 {
+				if (i1024 > 0) {
 					p.newline()
 				}
-				p.pretty_value(elem1010)
+				p.pretty_value(elem1023)
 			}
 		}
 		p.dedent()
@@ -2820,33 +2535,30 @@ func (p *PrettyPrinter) pretty_attribute(msg *pb.Attribute) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_algorithm(msg *pb.Algorithm) interface{} {
-	flat1019 := p.tryFlat(msg, func() { p.pretty_algorithm(msg) })
-	if flat1019 != nil {
-		p.write(*flat1019)
+	flat1032 := p.tryFlat(msg, func() { p.pretty_algorithm(msg) })
+	if flat1032 != nil {
+		p.write(*flat1032)
 		return nil
 	} else {
-		_t1549 := func(_dollar_dollar *pb.Algorithm) []interface{} {
-			return []interface{}{_dollar_dollar.GetGlobal(), _dollar_dollar.GetBody()}
-		}
-		_t1550 := _t1549(msg)
-		fields1013 := _t1550
-		unwrapped_fields1014 := fields1013
+		_dollar_dollar := msg
+		fields1026 := []interface{}{_dollar_dollar.GetGlobal(), _dollar_dollar.GetBody()}
+		unwrapped_fields1027 := fields1026
 		p.write("(")
 		p.write("algorithm")
 		p.indentSexp()
-		field1015 := unwrapped_fields1014[0].([]*pb.RelationId)
-		if !(len(field1015) == 0) {
+		field1028 := unwrapped_fields1027[0].([]*pb.RelationId)
+		if !(len(field1028) == 0) {
 			p.newline()
-			for i1017, elem1016 := range field1015 {
-				if (i1017 > 0) {
+			for i1030, elem1029 := range field1028 {
+				if (i1030 > 0) {
 					p.newline()
 				}
-				p.pretty_relation_id(elem1016)
+				p.pretty_relation_id(elem1029)
 			}
 		}
 		p.newline()
-		field1018 := unwrapped_fields1014[1].(*pb.Script)
-		p.pretty_script(field1018)
+		field1031 := unwrapped_fields1027[1].(*pb.Script)
+		p.pretty_script(field1031)
 		p.dedent()
 		p.write(")")
 	}
@@ -2854,27 +2566,24 @@ func (p *PrettyPrinter) pretty_algorithm(msg *pb.Algorithm) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_script(msg *pb.Script) interface{} {
-	flat1024 := p.tryFlat(msg, func() { p.pretty_script(msg) })
-	if flat1024 != nil {
-		p.write(*flat1024)
+	flat1037 := p.tryFlat(msg, func() { p.pretty_script(msg) })
+	if flat1037 != nil {
+		p.write(*flat1037)
 		return nil
 	} else {
-		_t1551 := func(_dollar_dollar *pb.Script) []*pb.Construct {
-			return _dollar_dollar.GetConstructs()
-		}
-		_t1552 := _t1551(msg)
-		fields1020 := _t1552
-		unwrapped_fields1021 := fields1020
+		_dollar_dollar := msg
+		fields1033 := _dollar_dollar.GetConstructs()
+		unwrapped_fields1034 := fields1033
 		p.write("(")
 		p.write("script")
 		p.indentSexp()
-		if !(len(unwrapped_fields1021) == 0) {
+		if !(len(unwrapped_fields1034) == 0) {
 			p.newline()
-			for i1023, elem1022 := range unwrapped_fields1021 {
-				if (i1023 > 0) {
+			for i1036, elem1035 := range unwrapped_fields1034 {
+				if (i1036 > 0) {
 					p.newline()
 				}
-				p.pretty_construct(elem1022)
+				p.pretty_construct(elem1035)
 			}
 		}
 		p.dedent()
@@ -2884,36 +2593,30 @@ func (p *PrettyPrinter) pretty_script(msg *pb.Script) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_construct(msg *pb.Construct) interface{} {
-	flat1029 := p.tryFlat(msg, func() { p.pretty_construct(msg) })
-	if flat1029 != nil {
-		p.write(*flat1029)
+	flat1042 := p.tryFlat(msg, func() { p.pretty_construct(msg) })
+	if flat1042 != nil {
+		p.write(*flat1042)
 		return nil
 	} else {
-		_t1553 := func(_dollar_dollar *pb.Construct) *pb.Loop {
-			var _t1554 *pb.Loop
-			if hasProtoField(_dollar_dollar, "loop") {
-				_t1554 = _dollar_dollar.GetLoop()
-			}
-			return _t1554
+		_dollar_dollar := msg
+		var _t1385 *pb.Loop
+		if hasProtoField(_dollar_dollar, "loop") {
+			_t1385 = _dollar_dollar.GetLoop()
 		}
-		_t1555 := _t1553(msg)
-		deconstruct_result1027 := _t1555
-		if deconstruct_result1027 != nil {
-			unwrapped1028 := deconstruct_result1027
-			p.pretty_loop(unwrapped1028)
+		deconstruct_result1040 := _t1385
+		if deconstruct_result1040 != nil {
+			unwrapped1041 := deconstruct_result1040
+			p.pretty_loop(unwrapped1041)
 		} else {
-			_t1556 := func(_dollar_dollar *pb.Construct) *pb.Instruction {
-				var _t1557 *pb.Instruction
-				if hasProtoField(_dollar_dollar, "instruction") {
-					_t1557 = _dollar_dollar.GetInstruction()
-				}
-				return _t1557
+			_dollar_dollar := msg
+			var _t1386 *pb.Instruction
+			if hasProtoField(_dollar_dollar, "instruction") {
+				_t1386 = _dollar_dollar.GetInstruction()
 			}
-			_t1558 := _t1556(msg)
-			deconstruct_result1025 := _t1558
-			if deconstruct_result1025 != nil {
-				unwrapped1026 := deconstruct_result1025
-				p.pretty_instruction(unwrapped1026)
+			deconstruct_result1038 := _t1386
+			if deconstruct_result1038 != nil {
+				unwrapped1039 := deconstruct_result1038
+				p.pretty_instruction(unwrapped1039)
 			} else {
 				panic(ParseError{msg: "No matching rule for construct"})
 			}
@@ -2923,26 +2626,23 @@ func (p *PrettyPrinter) pretty_construct(msg *pb.Construct) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_loop(msg *pb.Loop) interface{} {
-	flat1034 := p.tryFlat(msg, func() { p.pretty_loop(msg) })
-	if flat1034 != nil {
-		p.write(*flat1034)
+	flat1047 := p.tryFlat(msg, func() { p.pretty_loop(msg) })
+	if flat1047 != nil {
+		p.write(*flat1047)
 		return nil
 	} else {
-		_t1559 := func(_dollar_dollar *pb.Loop) []interface{} {
-			return []interface{}{_dollar_dollar.GetInit(), _dollar_dollar.GetBody()}
-		}
-		_t1560 := _t1559(msg)
-		fields1030 := _t1560
-		unwrapped_fields1031 := fields1030
+		_dollar_dollar := msg
+		fields1043 := []interface{}{_dollar_dollar.GetInit(), _dollar_dollar.GetBody()}
+		unwrapped_fields1044 := fields1043
 		p.write("(")
 		p.write("loop")
 		p.indentSexp()
 		p.newline()
-		field1032 := unwrapped_fields1031[0].([]*pb.Instruction)
-		p.pretty_init(field1032)
+		field1045 := unwrapped_fields1044[0].([]*pb.Instruction)
+		p.pretty_init(field1045)
 		p.newline()
-		field1033 := unwrapped_fields1031[1].(*pb.Script)
-		p.pretty_script(field1033)
+		field1046 := unwrapped_fields1044[1].(*pb.Script)
+		p.pretty_script(field1046)
 		p.dedent()
 		p.write(")")
 	}
@@ -2950,22 +2650,22 @@ func (p *PrettyPrinter) pretty_loop(msg *pb.Loop) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_init(msg []*pb.Instruction) interface{} {
-	flat1038 := p.tryFlat(msg, func() { p.pretty_init(msg) })
-	if flat1038 != nil {
-		p.write(*flat1038)
+	flat1051 := p.tryFlat(msg, func() { p.pretty_init(msg) })
+	if flat1051 != nil {
+		p.write(*flat1051)
 		return nil
 	} else {
-		fields1035 := msg
+		fields1048 := msg
 		p.write("(")
 		p.write("init")
 		p.indentSexp()
-		if !(len(fields1035) == 0) {
+		if !(len(fields1048) == 0) {
 			p.newline()
-			for i1037, elem1036 := range fields1035 {
-				if (i1037 > 0) {
+			for i1050, elem1049 := range fields1048 {
+				if (i1050 > 0) {
 					p.newline()
 				}
-				p.pretty_instruction(elem1036)
+				p.pretty_instruction(elem1049)
 			}
 		}
 		p.dedent()
@@ -2975,75 +2675,60 @@ func (p *PrettyPrinter) pretty_init(msg []*pb.Instruction) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_instruction(msg *pb.Instruction) interface{} {
-	flat1049 := p.tryFlat(msg, func() { p.pretty_instruction(msg) })
-	if flat1049 != nil {
-		p.write(*flat1049)
+	flat1062 := p.tryFlat(msg, func() { p.pretty_instruction(msg) })
+	if flat1062 != nil {
+		p.write(*flat1062)
 		return nil
 	} else {
-		_t1561 := func(_dollar_dollar *pb.Instruction) *pb.Assign {
-			var _t1562 *pb.Assign
-			if hasProtoField(_dollar_dollar, "assign") {
-				_t1562 = _dollar_dollar.GetAssign()
-			}
-			return _t1562
+		_dollar_dollar := msg
+		var _t1387 *pb.Assign
+		if hasProtoField(_dollar_dollar, "assign") {
+			_t1387 = _dollar_dollar.GetAssign()
 		}
-		_t1563 := _t1561(msg)
-		deconstruct_result1047 := _t1563
-		if deconstruct_result1047 != nil {
-			unwrapped1048 := deconstruct_result1047
-			p.pretty_assign(unwrapped1048)
+		deconstruct_result1060 := _t1387
+		if deconstruct_result1060 != nil {
+			unwrapped1061 := deconstruct_result1060
+			p.pretty_assign(unwrapped1061)
 		} else {
-			_t1564 := func(_dollar_dollar *pb.Instruction) *pb.Upsert {
-				var _t1565 *pb.Upsert
-				if hasProtoField(_dollar_dollar, "upsert") {
-					_t1565 = _dollar_dollar.GetUpsert()
-				}
-				return _t1565
+			_dollar_dollar := msg
+			var _t1388 *pb.Upsert
+			if hasProtoField(_dollar_dollar, "upsert") {
+				_t1388 = _dollar_dollar.GetUpsert()
 			}
-			_t1566 := _t1564(msg)
-			deconstruct_result1045 := _t1566
-			if deconstruct_result1045 != nil {
-				unwrapped1046 := deconstruct_result1045
-				p.pretty_upsert(unwrapped1046)
+			deconstruct_result1058 := _t1388
+			if deconstruct_result1058 != nil {
+				unwrapped1059 := deconstruct_result1058
+				p.pretty_upsert(unwrapped1059)
 			} else {
-				_t1567 := func(_dollar_dollar *pb.Instruction) *pb.Break {
-					var _t1568 *pb.Break
-					if hasProtoField(_dollar_dollar, "break") {
-						_t1568 = _dollar_dollar.GetBreak()
-					}
-					return _t1568
+				_dollar_dollar := msg
+				var _t1389 *pb.Break
+				if hasProtoField(_dollar_dollar, "break") {
+					_t1389 = _dollar_dollar.GetBreak()
 				}
-				_t1569 := _t1567(msg)
-				deconstruct_result1043 := _t1569
-				if deconstruct_result1043 != nil {
-					unwrapped1044 := deconstruct_result1043
-					p.pretty_break(unwrapped1044)
+				deconstruct_result1056 := _t1389
+				if deconstruct_result1056 != nil {
+					unwrapped1057 := deconstruct_result1056
+					p.pretty_break(unwrapped1057)
 				} else {
-					_t1570 := func(_dollar_dollar *pb.Instruction) *pb.MonoidDef {
-						var _t1571 *pb.MonoidDef
-						if hasProtoField(_dollar_dollar, "monoid_def") {
-							_t1571 = _dollar_dollar.GetMonoidDef()
-						}
-						return _t1571
+					_dollar_dollar := msg
+					var _t1390 *pb.MonoidDef
+					if hasProtoField(_dollar_dollar, "monoid_def") {
+						_t1390 = _dollar_dollar.GetMonoidDef()
 					}
-					_t1572 := _t1570(msg)
-					deconstruct_result1041 := _t1572
-					if deconstruct_result1041 != nil {
-						unwrapped1042 := deconstruct_result1041
-						p.pretty_monoid_def(unwrapped1042)
+					deconstruct_result1054 := _t1390
+					if deconstruct_result1054 != nil {
+						unwrapped1055 := deconstruct_result1054
+						p.pretty_monoid_def(unwrapped1055)
 					} else {
-						_t1573 := func(_dollar_dollar *pb.Instruction) *pb.MonusDef {
-							var _t1574 *pb.MonusDef
-							if hasProtoField(_dollar_dollar, "monus_def") {
-								_t1574 = _dollar_dollar.GetMonusDef()
-							}
-							return _t1574
+						_dollar_dollar := msg
+						var _t1391 *pb.MonusDef
+						if hasProtoField(_dollar_dollar, "monus_def") {
+							_t1391 = _dollar_dollar.GetMonusDef()
 						}
-						_t1575 := _t1573(msg)
-						deconstruct_result1039 := _t1575
-						if deconstruct_result1039 != nil {
-							unwrapped1040 := deconstruct_result1039
-							p.pretty_monus_def(unwrapped1040)
+						deconstruct_result1052 := _t1391
+						if deconstruct_result1052 != nil {
+							unwrapped1053 := deconstruct_result1052
+							p.pretty_monus_def(unwrapped1053)
 						} else {
 							panic(ParseError{msg: "No matching rule for instruction"})
 						}
@@ -3056,35 +2741,32 @@ func (p *PrettyPrinter) pretty_instruction(msg *pb.Instruction) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_assign(msg *pb.Assign) interface{} {
-	flat1056 := p.tryFlat(msg, func() { p.pretty_assign(msg) })
-	if flat1056 != nil {
-		p.write(*flat1056)
+	flat1069 := p.tryFlat(msg, func() { p.pretty_assign(msg) })
+	if flat1069 != nil {
+		p.write(*flat1069)
 		return nil
 	} else {
-		_t1576 := func(_dollar_dollar *pb.Assign) []interface{} {
-			var _t1577 []*pb.Attribute
-			if !(len(_dollar_dollar.GetAttrs()) == 0) {
-				_t1577 = _dollar_dollar.GetAttrs()
-			}
-			return []interface{}{_dollar_dollar.GetName(), _dollar_dollar.GetBody(), _t1577}
+		_dollar_dollar := msg
+		var _t1392 []*pb.Attribute
+		if !(len(_dollar_dollar.GetAttrs()) == 0) {
+			_t1392 = _dollar_dollar.GetAttrs()
 		}
-		_t1578 := _t1576(msg)
-		fields1050 := _t1578
-		unwrapped_fields1051 := fields1050
+		fields1063 := []interface{}{_dollar_dollar.GetName(), _dollar_dollar.GetBody(), _t1392}
+		unwrapped_fields1064 := fields1063
 		p.write("(")
 		p.write("assign")
 		p.indentSexp()
 		p.newline()
-		field1052 := unwrapped_fields1051[0].(*pb.RelationId)
-		p.pretty_relation_id(field1052)
+		field1065 := unwrapped_fields1064[0].(*pb.RelationId)
+		p.pretty_relation_id(field1065)
 		p.newline()
-		field1053 := unwrapped_fields1051[1].(*pb.Abstraction)
-		p.pretty_abstraction(field1053)
-		field1054 := unwrapped_fields1051[2].([]*pb.Attribute)
-		if field1054 != nil {
+		field1066 := unwrapped_fields1064[1].(*pb.Abstraction)
+		p.pretty_abstraction(field1066)
+		field1067 := unwrapped_fields1064[2].([]*pb.Attribute)
+		if field1067 != nil {
 			p.newline()
-			opt_val1055 := field1054
-			p.pretty_attrs(opt_val1055)
+			opt_val1068 := field1067
+			p.pretty_attrs(opt_val1068)
 		}
 		p.dedent()
 		p.write(")")
@@ -3093,35 +2775,32 @@ func (p *PrettyPrinter) pretty_assign(msg *pb.Assign) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_upsert(msg *pb.Upsert) interface{} {
-	flat1063 := p.tryFlat(msg, func() { p.pretty_upsert(msg) })
-	if flat1063 != nil {
-		p.write(*flat1063)
+	flat1076 := p.tryFlat(msg, func() { p.pretty_upsert(msg) })
+	if flat1076 != nil {
+		p.write(*flat1076)
 		return nil
 	} else {
-		_t1579 := func(_dollar_dollar *pb.Upsert) []interface{} {
-			var _t1580 []*pb.Attribute
-			if !(len(_dollar_dollar.GetAttrs()) == 0) {
-				_t1580 = _dollar_dollar.GetAttrs()
-			}
-			return []interface{}{_dollar_dollar.GetName(), []interface{}{_dollar_dollar.GetBody(), _dollar_dollar.GetValueArity()}, _t1580}
+		_dollar_dollar := msg
+		var _t1393 []*pb.Attribute
+		if !(len(_dollar_dollar.GetAttrs()) == 0) {
+			_t1393 = _dollar_dollar.GetAttrs()
 		}
-		_t1581 := _t1579(msg)
-		fields1057 := _t1581
-		unwrapped_fields1058 := fields1057
+		fields1070 := []interface{}{_dollar_dollar.GetName(), []interface{}{_dollar_dollar.GetBody(), _dollar_dollar.GetValueArity()}, _t1393}
+		unwrapped_fields1071 := fields1070
 		p.write("(")
 		p.write("upsert")
 		p.indentSexp()
 		p.newline()
-		field1059 := unwrapped_fields1058[0].(*pb.RelationId)
-		p.pretty_relation_id(field1059)
+		field1072 := unwrapped_fields1071[0].(*pb.RelationId)
+		p.pretty_relation_id(field1072)
 		p.newline()
-		field1060 := unwrapped_fields1058[1].([]interface{})
-		p.pretty_abstraction_with_arity(field1060)
-		field1061 := unwrapped_fields1058[2].([]*pb.Attribute)
-		if field1061 != nil {
+		field1073 := unwrapped_fields1071[1].([]interface{})
+		p.pretty_abstraction_with_arity(field1073)
+		field1074 := unwrapped_fields1071[2].([]*pb.Attribute)
+		if field1074 != nil {
 			p.newline()
-			opt_val1062 := field1061
-			p.pretty_attrs(opt_val1062)
+			opt_val1075 := field1074
+			p.pretty_attrs(opt_val1075)
 		}
 		p.dedent()
 		p.write(")")
@@ -3130,25 +2809,22 @@ func (p *PrettyPrinter) pretty_upsert(msg *pb.Upsert) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_abstraction_with_arity(msg []interface{}) interface{} {
-	flat1068 := p.tryFlat(msg, func() { p.pretty_abstraction_with_arity(msg) })
-	if flat1068 != nil {
-		p.write(*flat1068)
+	flat1081 := p.tryFlat(msg, func() { p.pretty_abstraction_with_arity(msg) })
+	if flat1081 != nil {
+		p.write(*flat1081)
 		return nil
 	} else {
-		_t1582 := func(_dollar_dollar []interface{}) []interface{} {
-			_t1583 := p.deconstruct_bindings_with_arity(_dollar_dollar[0].(*pb.Abstraction), _dollar_dollar[1].(int64))
-			return []interface{}{_t1583, _dollar_dollar[0].(*pb.Abstraction).GetValue()}
-		}
-		_t1584 := _t1582(msg)
-		fields1064 := _t1584
-		unwrapped_fields1065 := fields1064
+		_dollar_dollar := msg
+		_t1394 := p.deconstruct_bindings_with_arity(_dollar_dollar[0].(*pb.Abstraction), _dollar_dollar[1].(int64))
+		fields1077 := []interface{}{_t1394, _dollar_dollar[0].(*pb.Abstraction).GetValue()}
+		unwrapped_fields1078 := fields1077
 		p.write("(")
 		p.indent()
-		field1066 := unwrapped_fields1065[0].([]interface{})
-		p.pretty_bindings(field1066)
+		field1079 := unwrapped_fields1078[0].([]interface{})
+		p.pretty_bindings(field1079)
 		p.newline()
-		field1067 := unwrapped_fields1065[1].(*pb.Formula)
-		p.pretty_formula(field1067)
+		field1080 := unwrapped_fields1078[1].(*pb.Formula)
+		p.pretty_formula(field1080)
 		p.dedent()
 		p.write(")")
 	}
@@ -3156,35 +2832,32 @@ func (p *PrettyPrinter) pretty_abstraction_with_arity(msg []interface{}) interfa
 }
 
 func (p *PrettyPrinter) pretty_break(msg *pb.Break) interface{} {
-	flat1075 := p.tryFlat(msg, func() { p.pretty_break(msg) })
-	if flat1075 != nil {
-		p.write(*flat1075)
+	flat1088 := p.tryFlat(msg, func() { p.pretty_break(msg) })
+	if flat1088 != nil {
+		p.write(*flat1088)
 		return nil
 	} else {
-		_t1585 := func(_dollar_dollar *pb.Break) []interface{} {
-			var _t1586 []*pb.Attribute
-			if !(len(_dollar_dollar.GetAttrs()) == 0) {
-				_t1586 = _dollar_dollar.GetAttrs()
-			}
-			return []interface{}{_dollar_dollar.GetName(), _dollar_dollar.GetBody(), _t1586}
+		_dollar_dollar := msg
+		var _t1395 []*pb.Attribute
+		if !(len(_dollar_dollar.GetAttrs()) == 0) {
+			_t1395 = _dollar_dollar.GetAttrs()
 		}
-		_t1587 := _t1585(msg)
-		fields1069 := _t1587
-		unwrapped_fields1070 := fields1069
+		fields1082 := []interface{}{_dollar_dollar.GetName(), _dollar_dollar.GetBody(), _t1395}
+		unwrapped_fields1083 := fields1082
 		p.write("(")
 		p.write("break")
 		p.indentSexp()
 		p.newline()
-		field1071 := unwrapped_fields1070[0].(*pb.RelationId)
-		p.pretty_relation_id(field1071)
+		field1084 := unwrapped_fields1083[0].(*pb.RelationId)
+		p.pretty_relation_id(field1084)
 		p.newline()
-		field1072 := unwrapped_fields1070[1].(*pb.Abstraction)
-		p.pretty_abstraction(field1072)
-		field1073 := unwrapped_fields1070[2].([]*pb.Attribute)
-		if field1073 != nil {
+		field1085 := unwrapped_fields1083[1].(*pb.Abstraction)
+		p.pretty_abstraction(field1085)
+		field1086 := unwrapped_fields1083[2].([]*pb.Attribute)
+		if field1086 != nil {
 			p.newline()
-			opt_val1074 := field1073
-			p.pretty_attrs(opt_val1074)
+			opt_val1087 := field1086
+			p.pretty_attrs(opt_val1087)
 		}
 		p.dedent()
 		p.write(")")
@@ -3193,38 +2866,35 @@ func (p *PrettyPrinter) pretty_break(msg *pb.Break) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_monoid_def(msg *pb.MonoidDef) interface{} {
-	flat1083 := p.tryFlat(msg, func() { p.pretty_monoid_def(msg) })
-	if flat1083 != nil {
-		p.write(*flat1083)
+	flat1096 := p.tryFlat(msg, func() { p.pretty_monoid_def(msg) })
+	if flat1096 != nil {
+		p.write(*flat1096)
 		return nil
 	} else {
-		_t1588 := func(_dollar_dollar *pb.MonoidDef) []interface{} {
-			var _t1589 []*pb.Attribute
-			if !(len(_dollar_dollar.GetAttrs()) == 0) {
-				_t1589 = _dollar_dollar.GetAttrs()
-			}
-			return []interface{}{_dollar_dollar.GetMonoid(), _dollar_dollar.GetName(), []interface{}{_dollar_dollar.GetBody(), _dollar_dollar.GetValueArity()}, _t1589}
+		_dollar_dollar := msg
+		var _t1396 []*pb.Attribute
+		if !(len(_dollar_dollar.GetAttrs()) == 0) {
+			_t1396 = _dollar_dollar.GetAttrs()
 		}
-		_t1590 := _t1588(msg)
-		fields1076 := _t1590
-		unwrapped_fields1077 := fields1076
+		fields1089 := []interface{}{_dollar_dollar.GetMonoid(), _dollar_dollar.GetName(), []interface{}{_dollar_dollar.GetBody(), _dollar_dollar.GetValueArity()}, _t1396}
+		unwrapped_fields1090 := fields1089
 		p.write("(")
 		p.write("monoid")
 		p.indentSexp()
 		p.newline()
-		field1078 := unwrapped_fields1077[0].(*pb.Monoid)
-		p.pretty_monoid(field1078)
+		field1091 := unwrapped_fields1090[0].(*pb.Monoid)
+		p.pretty_monoid(field1091)
 		p.newline()
-		field1079 := unwrapped_fields1077[1].(*pb.RelationId)
-		p.pretty_relation_id(field1079)
+		field1092 := unwrapped_fields1090[1].(*pb.RelationId)
+		p.pretty_relation_id(field1092)
 		p.newline()
-		field1080 := unwrapped_fields1077[2].([]interface{})
-		p.pretty_abstraction_with_arity(field1080)
-		field1081 := unwrapped_fields1077[3].([]*pb.Attribute)
-		if field1081 != nil {
+		field1093 := unwrapped_fields1090[2].([]interface{})
+		p.pretty_abstraction_with_arity(field1093)
+		field1094 := unwrapped_fields1090[3].([]*pb.Attribute)
+		if field1094 != nil {
 			p.newline()
-			opt_val1082 := field1081
-			p.pretty_attrs(opt_val1082)
+			opt_val1095 := field1094
+			p.pretty_attrs(opt_val1095)
 		}
 		p.dedent()
 		p.write(")")
@@ -3233,62 +2903,50 @@ func (p *PrettyPrinter) pretty_monoid_def(msg *pb.MonoidDef) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_monoid(msg *pb.Monoid) interface{} {
-	flat1092 := p.tryFlat(msg, func() { p.pretty_monoid(msg) })
-	if flat1092 != nil {
-		p.write(*flat1092)
+	flat1105 := p.tryFlat(msg, func() { p.pretty_monoid(msg) })
+	if flat1105 != nil {
+		p.write(*flat1105)
 		return nil
 	} else {
-		_t1591 := func(_dollar_dollar *pb.Monoid) *pb.OrMonoid {
-			var _t1592 *pb.OrMonoid
-			if hasProtoField(_dollar_dollar, "or_monoid") {
-				_t1592 = _dollar_dollar.GetOrMonoid()
-			}
-			return _t1592
+		_dollar_dollar := msg
+		var _t1397 *pb.OrMonoid
+		if hasProtoField(_dollar_dollar, "or_monoid") {
+			_t1397 = _dollar_dollar.GetOrMonoid()
 		}
-		_t1593 := _t1591(msg)
-		deconstruct_result1090 := _t1593
-		if deconstruct_result1090 != nil {
-			unwrapped1091 := deconstruct_result1090
-			p.pretty_or_monoid(unwrapped1091)
+		deconstruct_result1103 := _t1397
+		if deconstruct_result1103 != nil {
+			unwrapped1104 := deconstruct_result1103
+			p.pretty_or_monoid(unwrapped1104)
 		} else {
-			_t1594 := func(_dollar_dollar *pb.Monoid) *pb.MinMonoid {
-				var _t1595 *pb.MinMonoid
-				if hasProtoField(_dollar_dollar, "min_monoid") {
-					_t1595 = _dollar_dollar.GetMinMonoid()
-				}
-				return _t1595
+			_dollar_dollar := msg
+			var _t1398 *pb.MinMonoid
+			if hasProtoField(_dollar_dollar, "min_monoid") {
+				_t1398 = _dollar_dollar.GetMinMonoid()
 			}
-			_t1596 := _t1594(msg)
-			deconstruct_result1088 := _t1596
-			if deconstruct_result1088 != nil {
-				unwrapped1089 := deconstruct_result1088
-				p.pretty_min_monoid(unwrapped1089)
+			deconstruct_result1101 := _t1398
+			if deconstruct_result1101 != nil {
+				unwrapped1102 := deconstruct_result1101
+				p.pretty_min_monoid(unwrapped1102)
 			} else {
-				_t1597 := func(_dollar_dollar *pb.Monoid) *pb.MaxMonoid {
-					var _t1598 *pb.MaxMonoid
-					if hasProtoField(_dollar_dollar, "max_monoid") {
-						_t1598 = _dollar_dollar.GetMaxMonoid()
-					}
-					return _t1598
+				_dollar_dollar := msg
+				var _t1399 *pb.MaxMonoid
+				if hasProtoField(_dollar_dollar, "max_monoid") {
+					_t1399 = _dollar_dollar.GetMaxMonoid()
 				}
-				_t1599 := _t1597(msg)
-				deconstruct_result1086 := _t1599
-				if deconstruct_result1086 != nil {
-					unwrapped1087 := deconstruct_result1086
-					p.pretty_max_monoid(unwrapped1087)
+				deconstruct_result1099 := _t1399
+				if deconstruct_result1099 != nil {
+					unwrapped1100 := deconstruct_result1099
+					p.pretty_max_monoid(unwrapped1100)
 				} else {
-					_t1600 := func(_dollar_dollar *pb.Monoid) *pb.SumMonoid {
-						var _t1601 *pb.SumMonoid
-						if hasProtoField(_dollar_dollar, "sum_monoid") {
-							_t1601 = _dollar_dollar.GetSumMonoid()
-						}
-						return _t1601
+					_dollar_dollar := msg
+					var _t1400 *pb.SumMonoid
+					if hasProtoField(_dollar_dollar, "sum_monoid") {
+						_t1400 = _dollar_dollar.GetSumMonoid()
 					}
-					_t1602 := _t1600(msg)
-					deconstruct_result1084 := _t1602
-					if deconstruct_result1084 != nil {
-						unwrapped1085 := deconstruct_result1084
-						p.pretty_sum_monoid(unwrapped1085)
+					deconstruct_result1097 := _t1400
+					if deconstruct_result1097 != nil {
+						unwrapped1098 := deconstruct_result1097
+						p.pretty_sum_monoid(unwrapped1098)
 					} else {
 						panic(ParseError{msg: "No matching rule for monoid"})
 					}
@@ -3300,8 +2958,8 @@ func (p *PrettyPrinter) pretty_monoid(msg *pb.Monoid) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_or_monoid(msg *pb.OrMonoid) interface{} {
-	fields1093 := msg
-	_ = fields1093
+	fields1106 := msg
+	_ = fields1106
 	p.write("(")
 	p.write("or")
 	p.write(")")
@@ -3309,22 +2967,19 @@ func (p *PrettyPrinter) pretty_or_monoid(msg *pb.OrMonoid) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_min_monoid(msg *pb.MinMonoid) interface{} {
-	flat1096 := p.tryFlat(msg, func() { p.pretty_min_monoid(msg) })
-	if flat1096 != nil {
-		p.write(*flat1096)
+	flat1109 := p.tryFlat(msg, func() { p.pretty_min_monoid(msg) })
+	if flat1109 != nil {
+		p.write(*flat1109)
 		return nil
 	} else {
-		_t1603 := func(_dollar_dollar *pb.MinMonoid) *pb.Type {
-			return _dollar_dollar.GetType()
-		}
-		_t1604 := _t1603(msg)
-		fields1094 := _t1604
-		unwrapped_fields1095 := fields1094
+		_dollar_dollar := msg
+		fields1107 := _dollar_dollar.GetType()
+		unwrapped_fields1108 := fields1107
 		p.write("(")
 		p.write("min")
 		p.indentSexp()
 		p.newline()
-		p.pretty_type(unwrapped_fields1095)
+		p.pretty_type(unwrapped_fields1108)
 		p.dedent()
 		p.write(")")
 	}
@@ -3332,22 +2987,19 @@ func (p *PrettyPrinter) pretty_min_monoid(msg *pb.MinMonoid) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_max_monoid(msg *pb.MaxMonoid) interface{} {
-	flat1099 := p.tryFlat(msg, func() { p.pretty_max_monoid(msg) })
-	if flat1099 != nil {
-		p.write(*flat1099)
+	flat1112 := p.tryFlat(msg, func() { p.pretty_max_monoid(msg) })
+	if flat1112 != nil {
+		p.write(*flat1112)
 		return nil
 	} else {
-		_t1605 := func(_dollar_dollar *pb.MaxMonoid) *pb.Type {
-			return _dollar_dollar.GetType()
-		}
-		_t1606 := _t1605(msg)
-		fields1097 := _t1606
-		unwrapped_fields1098 := fields1097
+		_dollar_dollar := msg
+		fields1110 := _dollar_dollar.GetType()
+		unwrapped_fields1111 := fields1110
 		p.write("(")
 		p.write("max")
 		p.indentSexp()
 		p.newline()
-		p.pretty_type(unwrapped_fields1098)
+		p.pretty_type(unwrapped_fields1111)
 		p.dedent()
 		p.write(")")
 	}
@@ -3355,22 +3007,19 @@ func (p *PrettyPrinter) pretty_max_monoid(msg *pb.MaxMonoid) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_sum_monoid(msg *pb.SumMonoid) interface{} {
-	flat1102 := p.tryFlat(msg, func() { p.pretty_sum_monoid(msg) })
-	if flat1102 != nil {
-		p.write(*flat1102)
+	flat1115 := p.tryFlat(msg, func() { p.pretty_sum_monoid(msg) })
+	if flat1115 != nil {
+		p.write(*flat1115)
 		return nil
 	} else {
-		_t1607 := func(_dollar_dollar *pb.SumMonoid) *pb.Type {
-			return _dollar_dollar.GetType()
-		}
-		_t1608 := _t1607(msg)
-		fields1100 := _t1608
-		unwrapped_fields1101 := fields1100
+		_dollar_dollar := msg
+		fields1113 := _dollar_dollar.GetType()
+		unwrapped_fields1114 := fields1113
 		p.write("(")
 		p.write("sum")
 		p.indentSexp()
 		p.newline()
-		p.pretty_type(unwrapped_fields1101)
+		p.pretty_type(unwrapped_fields1114)
 		p.dedent()
 		p.write(")")
 	}
@@ -3378,38 +3027,35 @@ func (p *PrettyPrinter) pretty_sum_monoid(msg *pb.SumMonoid) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_monus_def(msg *pb.MonusDef) interface{} {
-	flat1110 := p.tryFlat(msg, func() { p.pretty_monus_def(msg) })
-	if flat1110 != nil {
-		p.write(*flat1110)
+	flat1123 := p.tryFlat(msg, func() { p.pretty_monus_def(msg) })
+	if flat1123 != nil {
+		p.write(*flat1123)
 		return nil
 	} else {
-		_t1609 := func(_dollar_dollar *pb.MonusDef) []interface{} {
-			var _t1610 []*pb.Attribute
-			if !(len(_dollar_dollar.GetAttrs()) == 0) {
-				_t1610 = _dollar_dollar.GetAttrs()
-			}
-			return []interface{}{_dollar_dollar.GetMonoid(), _dollar_dollar.GetName(), []interface{}{_dollar_dollar.GetBody(), _dollar_dollar.GetValueArity()}, _t1610}
+		_dollar_dollar := msg
+		var _t1401 []*pb.Attribute
+		if !(len(_dollar_dollar.GetAttrs()) == 0) {
+			_t1401 = _dollar_dollar.GetAttrs()
 		}
-		_t1611 := _t1609(msg)
-		fields1103 := _t1611
-		unwrapped_fields1104 := fields1103
+		fields1116 := []interface{}{_dollar_dollar.GetMonoid(), _dollar_dollar.GetName(), []interface{}{_dollar_dollar.GetBody(), _dollar_dollar.GetValueArity()}, _t1401}
+		unwrapped_fields1117 := fields1116
 		p.write("(")
 		p.write("monus")
 		p.indentSexp()
 		p.newline()
-		field1105 := unwrapped_fields1104[0].(*pb.Monoid)
-		p.pretty_monoid(field1105)
+		field1118 := unwrapped_fields1117[0].(*pb.Monoid)
+		p.pretty_monoid(field1118)
 		p.newline()
-		field1106 := unwrapped_fields1104[1].(*pb.RelationId)
-		p.pretty_relation_id(field1106)
+		field1119 := unwrapped_fields1117[1].(*pb.RelationId)
+		p.pretty_relation_id(field1119)
 		p.newline()
-		field1107 := unwrapped_fields1104[2].([]interface{})
-		p.pretty_abstraction_with_arity(field1107)
-		field1108 := unwrapped_fields1104[3].([]*pb.Attribute)
-		if field1108 != nil {
+		field1120 := unwrapped_fields1117[2].([]interface{})
+		p.pretty_abstraction_with_arity(field1120)
+		field1121 := unwrapped_fields1117[3].([]*pb.Attribute)
+		if field1121 != nil {
 			p.newline()
-			opt_val1109 := field1108
-			p.pretty_attrs(opt_val1109)
+			opt_val1122 := field1121
+			p.pretty_attrs(opt_val1122)
 		}
 		p.dedent()
 		p.write(")")
@@ -3418,32 +3064,29 @@ func (p *PrettyPrinter) pretty_monus_def(msg *pb.MonusDef) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_constraint(msg *pb.Constraint) interface{} {
-	flat1117 := p.tryFlat(msg, func() { p.pretty_constraint(msg) })
-	if flat1117 != nil {
-		p.write(*flat1117)
+	flat1130 := p.tryFlat(msg, func() { p.pretty_constraint(msg) })
+	if flat1130 != nil {
+		p.write(*flat1130)
 		return nil
 	} else {
-		_t1612 := func(_dollar_dollar *pb.Constraint) []interface{} {
-			return []interface{}{_dollar_dollar.GetName(), _dollar_dollar.GetFunctionalDependency().GetGuard(), _dollar_dollar.GetFunctionalDependency().GetKeys(), _dollar_dollar.GetFunctionalDependency().GetValues()}
-		}
-		_t1613 := _t1612(msg)
-		fields1111 := _t1613
-		unwrapped_fields1112 := fields1111
+		_dollar_dollar := msg
+		fields1124 := []interface{}{_dollar_dollar.GetName(), _dollar_dollar.GetFunctionalDependency().GetGuard(), _dollar_dollar.GetFunctionalDependency().GetKeys(), _dollar_dollar.GetFunctionalDependency().GetValues()}
+		unwrapped_fields1125 := fields1124
 		p.write("(")
 		p.write("functional_dependency")
 		p.indentSexp()
 		p.newline()
-		field1113 := unwrapped_fields1112[0].(*pb.RelationId)
-		p.pretty_relation_id(field1113)
+		field1126 := unwrapped_fields1125[0].(*pb.RelationId)
+		p.pretty_relation_id(field1126)
 		p.newline()
-		field1114 := unwrapped_fields1112[1].(*pb.Abstraction)
-		p.pretty_abstraction(field1114)
+		field1127 := unwrapped_fields1125[1].(*pb.Abstraction)
+		p.pretty_abstraction(field1127)
 		p.newline()
-		field1115 := unwrapped_fields1112[2].([]*pb.Var)
-		p.pretty_functional_dependency_keys(field1115)
+		field1128 := unwrapped_fields1125[2].([]*pb.Var)
+		p.pretty_functional_dependency_keys(field1128)
 		p.newline()
-		field1116 := unwrapped_fields1112[3].([]*pb.Var)
-		p.pretty_functional_dependency_values(field1116)
+		field1129 := unwrapped_fields1125[3].([]*pb.Var)
+		p.pretty_functional_dependency_values(field1129)
 		p.dedent()
 		p.write(")")
 	}
@@ -3451,22 +3094,22 @@ func (p *PrettyPrinter) pretty_constraint(msg *pb.Constraint) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_functional_dependency_keys(msg []*pb.Var) interface{} {
-	flat1121 := p.tryFlat(msg, func() { p.pretty_functional_dependency_keys(msg) })
-	if flat1121 != nil {
-		p.write(*flat1121)
+	flat1134 := p.tryFlat(msg, func() { p.pretty_functional_dependency_keys(msg) })
+	if flat1134 != nil {
+		p.write(*flat1134)
 		return nil
 	} else {
-		fields1118 := msg
+		fields1131 := msg
 		p.write("(")
 		p.write("keys")
 		p.indentSexp()
-		if !(len(fields1118) == 0) {
+		if !(len(fields1131) == 0) {
 			p.newline()
-			for i1120, elem1119 := range fields1118 {
-				if (i1120 > 0) {
+			for i1133, elem1132 := range fields1131 {
+				if (i1133 > 0) {
 					p.newline()
 				}
-				p.pretty_var(elem1119)
+				p.pretty_var(elem1132)
 			}
 		}
 		p.dedent()
@@ -3476,22 +3119,22 @@ func (p *PrettyPrinter) pretty_functional_dependency_keys(msg []*pb.Var) interfa
 }
 
 func (p *PrettyPrinter) pretty_functional_dependency_values(msg []*pb.Var) interface{} {
-	flat1125 := p.tryFlat(msg, func() { p.pretty_functional_dependency_values(msg) })
-	if flat1125 != nil {
-		p.write(*flat1125)
+	flat1138 := p.tryFlat(msg, func() { p.pretty_functional_dependency_values(msg) })
+	if flat1138 != nil {
+		p.write(*flat1138)
 		return nil
 	} else {
-		fields1122 := msg
+		fields1135 := msg
 		p.write("(")
 		p.write("values")
 		p.indentSexp()
-		if !(len(fields1122) == 0) {
+		if !(len(fields1135) == 0) {
 			p.newline()
-			for i1124, elem1123 := range fields1122 {
-				if (i1124 > 0) {
+			for i1137, elem1136 := range fields1135 {
+				if (i1137 > 0) {
 					p.newline()
 				}
-				p.pretty_var(elem1123)
+				p.pretty_var(elem1136)
 			}
 		}
 		p.dedent()
@@ -3501,49 +3144,40 @@ func (p *PrettyPrinter) pretty_functional_dependency_values(msg []*pb.Var) inter
 }
 
 func (p *PrettyPrinter) pretty_data(msg *pb.Data) interface{} {
-	flat1132 := p.tryFlat(msg, func() { p.pretty_data(msg) })
-	if flat1132 != nil {
-		p.write(*flat1132)
+	flat1145 := p.tryFlat(msg, func() { p.pretty_data(msg) })
+	if flat1145 != nil {
+		p.write(*flat1145)
 		return nil
 	} else {
-		_t1614 := func(_dollar_dollar *pb.Data) *pb.RelEDB {
-			var _t1615 *pb.RelEDB
-			if hasProtoField(_dollar_dollar, "rel_edb") {
-				_t1615 = _dollar_dollar.GetRelEdb()
-			}
-			return _t1615
+		_dollar_dollar := msg
+		var _t1402 *pb.EDB
+		if hasProtoField(_dollar_dollar, "edb") {
+			_t1402 = _dollar_dollar.GetEdb()
 		}
-		_t1616 := _t1614(msg)
-		deconstruct_result1130 := _t1616
-		if deconstruct_result1130 != nil {
-			unwrapped1131 := deconstruct_result1130
-			p.pretty_rel_edb(unwrapped1131)
+		deconstruct_result1143 := _t1402
+		if deconstruct_result1143 != nil {
+			unwrapped1144 := deconstruct_result1143
+			p.pretty_edb(unwrapped1144)
 		} else {
-			_t1617 := func(_dollar_dollar *pb.Data) *pb.BeTreeRelation {
-				var _t1618 *pb.BeTreeRelation
-				if hasProtoField(_dollar_dollar, "betree_relation") {
-					_t1618 = _dollar_dollar.GetBetreeRelation()
-				}
-				return _t1618
+			_dollar_dollar := msg
+			var _t1403 *pb.BeTreeRelation
+			if hasProtoField(_dollar_dollar, "betree_relation") {
+				_t1403 = _dollar_dollar.GetBetreeRelation()
 			}
-			_t1619 := _t1617(msg)
-			deconstruct_result1128 := _t1619
-			if deconstruct_result1128 != nil {
-				unwrapped1129 := deconstruct_result1128
-				p.pretty_betree_relation(unwrapped1129)
+			deconstruct_result1141 := _t1403
+			if deconstruct_result1141 != nil {
+				unwrapped1142 := deconstruct_result1141
+				p.pretty_betree_relation(unwrapped1142)
 			} else {
-				_t1620 := func(_dollar_dollar *pb.Data) *pb.CSVData {
-					var _t1621 *pb.CSVData
-					if hasProtoField(_dollar_dollar, "csv_data") {
-						_t1621 = _dollar_dollar.GetCsvData()
-					}
-					return _t1621
+				_dollar_dollar := msg
+				var _t1404 *pb.CSVData
+				if hasProtoField(_dollar_dollar, "csv_data") {
+					_t1404 = _dollar_dollar.GetCsvData()
 				}
-				_t1622 := _t1620(msg)
-				deconstruct_result1126 := _t1622
-				if deconstruct_result1126 != nil {
-					unwrapped1127 := deconstruct_result1126
-					p.pretty_csv_data(unwrapped1127)
+				deconstruct_result1139 := _t1404
+				if deconstruct_result1139 != nil {
+					unwrapped1140 := deconstruct_result1139
+					p.pretty_csv_data(unwrapped1140)
 				} else {
 					panic(ParseError{msg: "No matching rule for data"})
 				}
@@ -3553,50 +3187,47 @@ func (p *PrettyPrinter) pretty_data(msg *pb.Data) interface{} {
 	return nil
 }
 
-func (p *PrettyPrinter) pretty_rel_edb(msg *pb.RelEDB) interface{} {
-	flat1138 := p.tryFlat(msg, func() { p.pretty_rel_edb(msg) })
-	if flat1138 != nil {
-		p.write(*flat1138)
+func (p *PrettyPrinter) pretty_edb(msg *pb.EDB) interface{} {
+	flat1151 := p.tryFlat(msg, func() { p.pretty_edb(msg) })
+	if flat1151 != nil {
+		p.write(*flat1151)
 		return nil
 	} else {
-		_t1623 := func(_dollar_dollar *pb.RelEDB) []interface{} {
-			return []interface{}{_dollar_dollar.GetTargetId(), _dollar_dollar.GetPath(), _dollar_dollar.GetTypes()}
-		}
-		_t1624 := _t1623(msg)
-		fields1133 := _t1624
-		unwrapped_fields1134 := fields1133
+		_dollar_dollar := msg
+		fields1146 := []interface{}{_dollar_dollar.GetTargetId(), _dollar_dollar.GetPath(), _dollar_dollar.GetTypes()}
+		unwrapped_fields1147 := fields1146
 		p.write("(")
-		p.write("rel_edb")
+		p.write("edb")
 		p.indentSexp()
 		p.newline()
-		field1135 := unwrapped_fields1134[0].(*pb.RelationId)
-		p.pretty_relation_id(field1135)
+		field1148 := unwrapped_fields1147[0].(*pb.RelationId)
+		p.pretty_relation_id(field1148)
 		p.newline()
-		field1136 := unwrapped_fields1134[1].([]string)
-		p.pretty_rel_edb_path(field1136)
+		field1149 := unwrapped_fields1147[1].([]string)
+		p.pretty_edb_path(field1149)
 		p.newline()
-		field1137 := unwrapped_fields1134[2].([]*pb.Type)
-		p.pretty_rel_edb_types(field1137)
+		field1150 := unwrapped_fields1147[2].([]*pb.Type)
+		p.pretty_edb_types(field1150)
 		p.dedent()
 		p.write(")")
 	}
 	return nil
 }
 
-func (p *PrettyPrinter) pretty_rel_edb_path(msg []string) interface{} {
-	flat1142 := p.tryFlat(msg, func() { p.pretty_rel_edb_path(msg) })
-	if flat1142 != nil {
-		p.write(*flat1142)
+func (p *PrettyPrinter) pretty_edb_path(msg []string) interface{} {
+	flat1155 := p.tryFlat(msg, func() { p.pretty_edb_path(msg) })
+	if flat1155 != nil {
+		p.write(*flat1155)
 		return nil
 	} else {
-		fields1139 := msg
+		fields1152 := msg
 		p.write("[")
 		p.indent()
-		for i1141, elem1140 := range fields1139 {
-			if (i1141 > 0) {
+		for i1154, elem1153 := range fields1152 {
+			if (i1154 > 0) {
 				p.newline()
 			}
-			p.write(p.formatStringValue(elem1140))
+			p.write(p.formatStringValue(elem1153))
 		}
 		p.dedent()
 		p.write("]")
@@ -3604,20 +3235,20 @@ func (p *PrettyPrinter) pretty_rel_edb_path(msg []string) interface{} {
 	return nil
 }
 
-func (p *PrettyPrinter) pretty_rel_edb_types(msg []*pb.Type) interface{} {
-	flat1146 := p.tryFlat(msg, func() { p.pretty_rel_edb_types(msg) })
-	if flat1146 != nil {
-		p.write(*flat1146)
+func (p *PrettyPrinter) pretty_edb_types(msg []*pb.Type) interface{} {
+	flat1159 := p.tryFlat(msg, func() { p.pretty_edb_types(msg) })
+	if flat1159 != nil {
+		p.write(*flat1159)
 		return nil
 	} else {
-		fields1143 := msg
+		fields1156 := msg
 		p.write("[")
 		p.indent()
-		for i1145, elem1144 := range fields1143 {
-			if (i1145 > 0) {
+		for i1158, elem1157 := range fields1156 {
+			if (i1158 > 0) {
 				p.newline()
 			}
-			p.pretty_type(elem1144)
+			p.pretty_type(elem1157)
 		}
 		p.dedent()
 		p.write("]")
@@ -3626,26 +3257,23 @@ func (p *PrettyPrinter) pretty_rel_edb_types(msg []*pb.Type) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_betree_relation(msg *pb.BeTreeRelation) interface{} {
-	flat1151 := p.tryFlat(msg, func() { p.pretty_betree_relation(msg) })
-	if flat1151 != nil {
-		p.write(*flat1151)
+	flat1164 := p.tryFlat(msg, func() { p.pretty_betree_relation(msg) })
+	if flat1164 != nil {
+		p.write(*flat1164)
 		return nil
 	} else {
-		_t1625 := func(_dollar_dollar *pb.BeTreeRelation) []interface{} {
-			return []interface{}{_dollar_dollar.GetName(), _dollar_dollar.GetRelationInfo()}
-		}
-		_t1626 := _t1625(msg)
-		fields1147 := _t1626
-		unwrapped_fields1148 := fields1147
+		_dollar_dollar := msg
+		fields1160 := []interface{}{_dollar_dollar.GetName(), _dollar_dollar.GetRelationInfo()}
+		unwrapped_fields1161 := fields1160
 		p.write("(")
 		p.write("betree_relation")
 		p.indentSexp()
 		p.newline()
-		field1149 := unwrapped_fields1148[0].(*pb.RelationId)
-		p.pretty_relation_id(field1149)
+		field1162 := unwrapped_fields1161[0].(*pb.RelationId)
+		p.pretty_relation_id(field1162)
 		p.newline()
-		field1150 := unwrapped_fields1148[1].(*pb.BeTreeInfo)
-		p.pretty_betree_info(field1150)
+		field1163 := unwrapped_fields1161[1].(*pb.BeTreeInfo)
+		p.pretty_betree_info(field1163)
 		p.dedent()
 		p.write(")")
 	}
@@ -3653,30 +3281,27 @@ func (p *PrettyPrinter) pretty_betree_relation(msg *pb.BeTreeRelation) interface
 }
 
 func (p *PrettyPrinter) pretty_betree_info(msg *pb.BeTreeInfo) interface{} {
-	flat1157 := p.tryFlat(msg, func() { p.pretty_betree_info(msg) })
-	if flat1157 != nil {
-		p.write(*flat1157)
+	flat1170 := p.tryFlat(msg, func() { p.pretty_betree_info(msg) })
+	if flat1170 != nil {
+		p.write(*flat1170)
 		return nil
 	} else {
-		_t1627 := func(_dollar_dollar *pb.BeTreeInfo) []interface{} {
-			_t1628 := p.deconstruct_betree_info_config(_dollar_dollar)
-			return []interface{}{_dollar_dollar.GetKeyTypes(), _dollar_dollar.GetValueTypes(), _t1628}
-		}
-		_t1629 := _t1627(msg)
-		fields1152 := _t1629
-		unwrapped_fields1153 := fields1152
+		_dollar_dollar := msg
+		_t1405 := p.deconstruct_betree_info_config(_dollar_dollar)
+		fields1165 := []interface{}{_dollar_dollar.GetKeyTypes(), _dollar_dollar.GetValueTypes(), _t1405}
+		unwrapped_fields1166 := fields1165
 		p.write("(")
 		p.write("betree_info")
 		p.indentSexp()
 		p.newline()
-		field1154 := unwrapped_fields1153[0].([]*pb.Type)
-		p.pretty_betree_info_key_types(field1154)
+		field1167 := unwrapped_fields1166[0].([]*pb.Type)
+		p.pretty_betree_info_key_types(field1167)
 		p.newline()
-		field1155 := unwrapped_fields1153[1].([]*pb.Type)
-		p.pretty_betree_info_value_types(field1155)
+		field1168 := unwrapped_fields1166[1].([]*pb.Type)
+		p.pretty_betree_info_value_types(field1168)
 		p.newline()
-		field1156 := unwrapped_fields1153[2].([][]interface{})
-		p.pretty_config_dict(field1156)
+		field1169 := unwrapped_fields1166[2].([][]interface{})
+		p.pretty_config_dict(field1169)
 		p.dedent()
 		p.write(")")
 	}
@@ -3684,22 +3309,22 @@ func (p *PrettyPrinter) pretty_betree_info(msg *pb.BeTreeInfo) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_betree_info_key_types(msg []*pb.Type) interface{} {
-	flat1161 := p.tryFlat(msg, func() { p.pretty_betree_info_key_types(msg) })
-	if flat1161 != nil {
-		p.write(*flat1161)
+	flat1174 := p.tryFlat(msg, func() { p.pretty_betree_info_key_types(msg) })
+	if flat1174 != nil {
+		p.write(*flat1174)
 		return nil
 	} else {
-		fields1158 := msg
+		fields1171 := msg
 		p.write("(")
 		p.write("key_types")
 		p.indentSexp()
-		if !(len(fields1158) == 0) {
+		if !(len(fields1171) == 0) {
 			p.newline()
-			for i1160, elem1159 := range fields1158 {
-				if (i1160 > 0) {
+			for i1173, elem1172 := range fields1171 {
+				if (i1173 > 0) {
 					p.newline()
 				}
-				p.pretty_type(elem1159)
+				p.pretty_type(elem1172)
 			}
 		}
 		p.dedent()
@@ -3709,22 +3334,22 @@ func (p *PrettyPrinter) pretty_betree_info_key_types(msg []*pb.Type) interface{}
 }
 
 func (p *PrettyPrinter) pretty_betree_info_value_types(msg []*pb.Type) interface{} {
-	flat1165 := p.tryFlat(msg, func() { p.pretty_betree_info_value_types(msg) })
-	if flat1165 != nil {
-		p.write(*flat1165)
+	flat1178 := p.tryFlat(msg, func() { p.pretty_betree_info_value_types(msg) })
+	if flat1178 != nil {
+		p.write(*flat1178)
 		return nil
 	} else {
-		fields1162 := msg
+		fields1175 := msg
 		p.write("(")
 		p.write("value_types")
 		p.indentSexp()
-		if !(len(fields1162) == 0) {
+		if !(len(fields1175) == 0) {
 			p.newline()
-			for i1164, elem1163 := range fields1162 {
-				if (i1164 > 0) {
+			for i1177, elem1176 := range fields1175 {
+				if (i1177 > 0) {
 					p.newline()
 				}
-				p.pretty_type(elem1163)
+				p.pretty_type(elem1176)
 			}
 		}
 		p.dedent()
@@ -3734,32 +3359,29 @@ func (p *PrettyPrinter) pretty_betree_info_value_types(msg []*pb.Type) interface
 }
 
 func (p *PrettyPrinter) pretty_csv_data(msg *pb.CSVData) interface{} {
-	flat1172 := p.tryFlat(msg, func() { p.pretty_csv_data(msg) })
-	if flat1172 != nil {
-		p.write(*flat1172)
+	flat1185 := p.tryFlat(msg, func() { p.pretty_csv_data(msg) })
+	if flat1185 != nil {
+		p.write(*flat1185)
 		return nil
 	} else {
-		_t1630 := func(_dollar_dollar *pb.CSVData) []interface{} {
-			return []interface{}{_dollar_dollar.GetLocator(), _dollar_dollar.GetConfig(), _dollar_dollar.GetColumns(), _dollar_dollar.GetAsof()}
-		}
-		_t1631 := _t1630(msg)
-		fields1166 := _t1631
-		unwrapped_fields1167 := fields1166
+		_dollar_dollar := msg
+		fields1179 := []interface{}{_dollar_dollar.GetLocator(), _dollar_dollar.GetConfig(), _dollar_dollar.GetColumns(), _dollar_dollar.GetAsof()}
+		unwrapped_fields1180 := fields1179
 		p.write("(")
 		p.write("csv_data")
 		p.indentSexp()
 		p.newline()
-		field1168 := unwrapped_fields1167[0].(*pb.CSVLocator)
-		p.pretty_csvlocator(field1168)
+		field1181 := unwrapped_fields1180[0].(*pb.CSVLocator)
+		p.pretty_csvlocator(field1181)
 		p.newline()
-		field1169 := unwrapped_fields1167[1].(*pb.CSVConfig)
-		p.pretty_csv_config(field1169)
+		field1182 := unwrapped_fields1180[1].(*pb.CSVConfig)
+		p.pretty_csv_config(field1182)
 		p.newline()
-		field1170 := unwrapped_fields1167[2].([]*pb.CSVColumn)
-		p.pretty_csv_columns(field1170)
+		field1183 := unwrapped_fields1180[2].([]*pb.GNFColumn)
+		p.pretty_gnf_columns(field1183)
 		p.newline()
-		field1171 := unwrapped_fields1167[3].(string)
-		p.pretty_csv_asof(field1171)
+		field1184 := unwrapped_fields1180[3].(string)
+		p.pretty_csv_asof(field1184)
 		p.dedent()
 		p.write(")")
 	}
@@ -3767,39 +3389,36 @@ func (p *PrettyPrinter) pretty_csv_data(msg *pb.CSVData) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_csvlocator(msg *pb.CSVLocator) interface{} {
-	flat1179 := p.tryFlat(msg, func() { p.pretty_csvlocator(msg) })
-	if flat1179 != nil {
-		p.write(*flat1179)
+	flat1192 := p.tryFlat(msg, func() { p.pretty_csvlocator(msg) })
+	if flat1192 != nil {
+		p.write(*flat1192)
 		return nil
 	} else {
-		_t1632 := func(_dollar_dollar *pb.CSVLocator) []interface{} {
-			var _t1633 []string
-			if !(len(_dollar_dollar.GetPaths()) == 0) {
-				_t1633 = _dollar_dollar.GetPaths()
-			}
-			var _t1634 *string
-			if string(_dollar_dollar.GetInlineData()) != "" {
-				_t1634 = ptr(string(_dollar_dollar.GetInlineData()))
-			}
-			return []interface{}{_t1633, _t1634}
+		_dollar_dollar := msg
+		var _t1406 []string
+		if !(len(_dollar_dollar.GetPaths()) == 0) {
+			_t1406 = _dollar_dollar.GetPaths()
 		}
-		_t1635 := _t1632(msg)
-		fields1173 := _t1635
-		unwrapped_fields1174 := fields1173
+		var _t1407 *string
+		if string(_dollar_dollar.GetInlineData()) != "" {
+			_t1407 = ptr(string(_dollar_dollar.GetInlineData()))
+		}
+		fields1186 := []interface{}{_t1406, _t1407}
+		unwrapped_fields1187 := fields1186
 		p.write("(")
 		p.write("csv_locator")
 		p.indentSexp()
-		field1175 := unwrapped_fields1174[0].([]string)
-		if field1175 != nil {
+		field1188 := unwrapped_fields1187[0].([]string)
+		if field1188 != nil {
 			p.newline()
-			opt_val1176 := field1175
-			p.pretty_csv_locator_paths(opt_val1176)
+			opt_val1189 := field1188
+			p.pretty_csv_locator_paths(opt_val1189)
 		}
-		field1177 := unwrapped_fields1174[1].(*string)
-		if field1177 != nil {
+		field1190 := unwrapped_fields1187[1].(*string)
+		if field1190 != nil {
 			p.newline()
-			opt_val1178 := *field1177
-			p.pretty_csv_locator_inline_data(opt_val1178)
+			opt_val1191 := *field1190
+			p.pretty_csv_locator_inline_data(opt_val1191)
 		}
 		p.dedent()
 		p.write(")")
@@ -3808,22 +3427,22 @@ func (p *PrettyPrinter) pretty_csvlocator(msg *pb.CSVLocator) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_csv_locator_paths(msg []string) interface{} {
-	flat1183 := p.tryFlat(msg, func() { p.pretty_csv_locator_paths(msg) })
-	if flat1183 != nil {
-		p.write(*flat1183)
+	flat1196 := p.tryFlat(msg, func() { p.pretty_csv_locator_paths(msg) })
+	if flat1196 != nil {
+		p.write(*flat1196)
 		return nil
 	} else {
-		fields1180 := msg
+		fields1193 := msg
 		p.write("(")
 		p.write("paths")
 		p.indentSexp()
-		if !(len(fields1180) == 0) {
+		if !(len(fields1193) == 0) {
 			p.newline()
-			for i1182, elem1181 := range fields1180 {
-				if (i1182 > 0) {
+			for i1195, elem1194 := range fields1193 {
+				if (i1195 > 0) {
 					p.newline()
 				}
-				p.write(p.formatStringValue(elem1181))
+				p.write(p.formatStringValue(elem1194))
 			}
 		}
 		p.dedent()
@@ -3833,17 +3452,17 @@ func (p *PrettyPrinter) pretty_csv_locator_paths(msg []string) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_csv_locator_inline_data(msg string) interface{} {
-	flat1185 := p.tryFlat(msg, func() { p.pretty_csv_locator_inline_data(msg) })
-	if flat1185 != nil {
-		p.write(*flat1185)
+	flat1198 := p.tryFlat(msg, func() { p.pretty_csv_locator_inline_data(msg) })
+	if flat1198 != nil {
+		p.write(*flat1198)
 		return nil
 	} else {
-		fields1184 := msg
+		fields1197 := msg
 		p.write("(")
 		p.write("inline_data")
 		p.indentSexp()
 		p.newline()
-		p.write(p.formatStringValue(fields1184))
+		p.write(p.formatStringValue(fields1197))
 		p.dedent()
 		p.write(")")
 	}
@@ -3851,46 +3470,43 @@ func (p *PrettyPrinter) pretty_csv_locator_inline_data(msg string) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_csv_config(msg *pb.CSVConfig) interface{} {
-	flat1188 := p.tryFlat(msg, func() { p.pretty_csv_config(msg) })
-	if flat1188 != nil {
-		p.write(*flat1188)
+	flat1201 := p.tryFlat(msg, func() { p.pretty_csv_config(msg) })
+	if flat1201 != nil {
+		p.write(*flat1201)
 		return nil
 	} else {
-		_t1636 := func(_dollar_dollar *pb.CSVConfig) [][]interface{} {
-			_t1637 := p.deconstruct_csv_config(_dollar_dollar)
-			return _t1637
-		}
-		_t1638 := _t1636(msg)
-		fields1186 := _t1638
-		unwrapped_fields1187 := fields1186
+		_dollar_dollar := msg
+		_t1408 := p.deconstruct_csv_config(_dollar_dollar)
+		fields1199 := _t1408
+		unwrapped_fields1200 := fields1199
 		p.write("(")
 		p.write("csv_config")
 		p.indentSexp()
 		p.newline()
-		p.pretty_config_dict(unwrapped_fields1187)
+		p.pretty_config_dict(unwrapped_fields1200)
 		p.dedent()
 		p.write(")")
 	}
 	return nil
 }
 
-func (p *PrettyPrinter) pretty_csv_columns(msg []*pb.CSVColumn) interface{} {
-	flat1192 := p.tryFlat(msg, func() { p.pretty_csv_columns(msg) })
-	if flat1192 != nil {
-		p.write(*flat1192)
+func (p *PrettyPrinter) pretty_gnf_columns(msg []*pb.GNFColumn) interface{} {
+	flat1205 := p.tryFlat(msg, func() { p.pretty_gnf_columns(msg) })
+	if flat1205 != nil {
+		p.write(*flat1205)
 		return nil
 	} else {
-		fields1189 := msg
+		fields1202 := msg
 		p.write("(")
 		p.write("columns")
 		p.indentSexp()
-		if !(len(fields1189) == 0) {
+		if !(len(fields1202) == 0) {
 			p.newline()
-			for i1191, elem1190 := range fields1189 {
-				if (i1191 > 0) {
+			for i1204, elem1203 := range fields1202 {
+				if (i1204 > 0) {
 					p.newline()
 				}
-				p.pretty_csv_column(elem1190)
+				p.pretty_gnf_column(elem1203)
 			}
 		}
 		p.dedent()
@@ -3899,35 +3515,39 @@ func (p *PrettyPrinter) pretty_csv_columns(msg []*pb.CSVColumn) interface{} {
 	return nil
 }
 
-func (p *PrettyPrinter) pretty_csv_column(msg *pb.CSVColumn) interface{} {
-	flat1200 := p.tryFlat(msg, func() { p.pretty_csv_column(msg) })
-	if flat1200 != nil {
-		p.write(*flat1200)
+func (p *PrettyPrinter) pretty_gnf_column(msg *pb.GNFColumn) interface{} {
+	flat1214 := p.tryFlat(msg, func() { p.pretty_gnf_column(msg) })
+	if flat1214 != nil {
+		p.write(*flat1214)
 		return nil
 	} else {
-		_t1639 := func(_dollar_dollar *pb.CSVColumn) []interface{} {
-			return []interface{}{_dollar_dollar.GetColumnName(), _dollar_dollar.GetTargetId(), _dollar_dollar.GetTypes()}
+		_dollar_dollar := msg
+		var _t1409 *pb.RelationId
+		if hasProtoField(_dollar_dollar, "target_id") {
+			_t1409 = _dollar_dollar.GetTargetId()
 		}
-		_t1640 := _t1639(msg)
-		fields1193 := _t1640
-		unwrapped_fields1194 := fields1193
+		fields1206 := []interface{}{_dollar_dollar.GetColumnPath(), _t1409, _dollar_dollar.GetTypes()}
+		unwrapped_fields1207 := fields1206
 		p.write("(")
 		p.write("column")
 		p.indentSexp()
 		p.newline()
-		field1195 := unwrapped_fields1194[0].(string)
-		p.write(p.formatStringValue(field1195))
-		p.newline()
-		field1196 := unwrapped_fields1194[1].(*pb.RelationId)
-		p.pretty_relation_id(field1196)
+		field1208 := unwrapped_fields1207[0].([]string)
+		p.pretty_gnf_column_path(field1208)
+		field1209 := unwrapped_fields1207[1].(*pb.RelationId)
+		if field1209 != nil {
+			p.newline()
+			opt_val1210 := field1209
+			p.pretty_relation_id(opt_val1210)
+		}
 		p.newline()
 		p.write("[")
-		field1197 := unwrapped_fields1194[2].([]*pb.Type)
-		for i1199, elem1198 := range field1197 {
-			if (i1199 > 0) {
+		field1211 := unwrapped_fields1207[2].([]*pb.Type)
+		for i1213, elem1212 := range field1211 {
+			if (i1213 > 0) {
 				p.newline()
 			}
-			p.pretty_type(elem1198)
+			p.pretty_type(elem1212)
 		}
 		p.write("]")
 		p.dedent()
@@ -3936,18 +3556,60 @@ func (p *PrettyPrinter) pretty_csv_column(msg *pb.CSVColumn) interface{} {
 	return nil
 }
 
-func (p *PrettyPrinter) pretty_csv_asof(msg string) interface{} {
-	flat1202 := p.tryFlat(msg, func() { p.pretty_csv_asof(msg) })
-	if flat1202 != nil {
-		p.write(*flat1202)
+func (p *PrettyPrinter) pretty_gnf_column_path(msg []string) interface{} {
+	flat1221 := p.tryFlat(msg, func() { p.pretty_gnf_column_path(msg) })
+	if flat1221 != nil {
+		p.write(*flat1221)
 		return nil
 	} else {
-		fields1201 := msg
+		_dollar_dollar := msg
+		var _t1410 *string
+		if int64(len(_dollar_dollar)) == 1 {
+			_t1410 = ptr(_dollar_dollar[0])
+		}
+		deconstruct_result1219 := _t1410
+		if deconstruct_result1219 != nil {
+			unwrapped1220 := *deconstruct_result1219
+			p.write(p.formatStringValue(unwrapped1220))
+		} else {
+			_dollar_dollar := msg
+			var _t1411 []string
+			if int64(len(_dollar_dollar)) != 1 {
+				_t1411 = _dollar_dollar
+			}
+			deconstruct_result1215 := _t1411
+			if deconstruct_result1215 != nil {
+				unwrapped1216 := deconstruct_result1215
+				p.write("[")
+				p.indent()
+				for i1218, elem1217 := range unwrapped1216 {
+					if (i1218 > 0) {
+						p.newline()
+					}
+					p.write(p.formatStringValue(elem1217))
+				}
+				p.dedent()
+				p.write("]")
+			} else {
+				panic(ParseError{msg: "No matching rule for gnf_column_path"})
+			}
+		}
+	}
+	return nil
+}
+
+func (p *PrettyPrinter) pretty_csv_asof(msg string) interface{} {
+	flat1223 := p.tryFlat(msg, func() { p.pretty_csv_asof(msg) })
+	if flat1223 != nil {
+		p.write(*flat1223)
+		return nil
+	} else {
+		fields1222 := msg
 		p.write("(")
 		p.write("asof")
 		p.indentSexp()
 		p.newline()
-		p.write(p.formatStringValue(fields1201))
+		p.write(p.formatStringValue(fields1222))
 		p.dedent()
 		p.write(")")
 	}
@@ -3955,22 +3617,19 @@ func (p *PrettyPrinter) pretty_csv_asof(msg string) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_undefine(msg *pb.Undefine) interface{} {
-	flat1205 := p.tryFlat(msg, func() { p.pretty_undefine(msg) })
-	if flat1205 != nil {
-		p.write(*flat1205)
+	flat1226 := p.tryFlat(msg, func() { p.pretty_undefine(msg) })
+	if flat1226 != nil {
+		p.write(*flat1226)
 		return nil
 	} else {
-		_t1641 := func(_dollar_dollar *pb.Undefine) *pb.FragmentId {
-			return _dollar_dollar.GetFragmentId()
-		}
-		_t1642 := _t1641(msg)
-		fields1203 := _t1642
-		unwrapped_fields1204 := fields1203
+		_dollar_dollar := msg
+		fields1224 := _dollar_dollar.GetFragmentId()
+		unwrapped_fields1225 := fields1224
 		p.write("(")
 		p.write("undefine")
 		p.indentSexp()
 		p.newline()
-		p.pretty_fragment_id(unwrapped_fields1204)
+		p.pretty_fragment_id(unwrapped_fields1225)
 		p.dedent()
 		p.write(")")
 	}
@@ -3978,27 +3637,24 @@ func (p *PrettyPrinter) pretty_undefine(msg *pb.Undefine) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_context(msg *pb.Context) interface{} {
-	flat1210 := p.tryFlat(msg, func() { p.pretty_context(msg) })
-	if flat1210 != nil {
-		p.write(*flat1210)
+	flat1231 := p.tryFlat(msg, func() { p.pretty_context(msg) })
+	if flat1231 != nil {
+		p.write(*flat1231)
 		return nil
 	} else {
-		_t1643 := func(_dollar_dollar *pb.Context) []*pb.RelationId {
-			return _dollar_dollar.GetRelations()
-		}
-		_t1644 := _t1643(msg)
-		fields1206 := _t1644
-		unwrapped_fields1207 := fields1206
+		_dollar_dollar := msg
+		fields1227 := _dollar_dollar.GetRelations()
+		unwrapped_fields1228 := fields1227
 		p.write("(")
 		p.write("context")
 		p.indentSexp()
-		if !(len(unwrapped_fields1207) == 0) {
+		if !(len(unwrapped_fields1228) == 0) {
 			p.newline()
-			for i1209, elem1208 := range unwrapped_fields1207 {
-				if (i1209 > 0) {
+			for i1230, elem1229 := range unwrapped_fields1228 {
+				if (i1230 > 0) {
 					p.newline()
 				}
-				p.pretty_relation_id(elem1208)
+				p.pretty_relation_id(elem1229)
 			}
 		}
 		p.dedent()
@@ -4008,49 +3664,67 @@ func (p *PrettyPrinter) pretty_context(msg *pb.Context) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_snapshot(msg *pb.Snapshot) interface{} {
-	flat1215 := p.tryFlat(msg, func() { p.pretty_snapshot(msg) })
-	if flat1215 != nil {
-		p.write(*flat1215)
+	flat1236 := p.tryFlat(msg, func() { p.pretty_snapshot(msg) })
+	if flat1236 != nil {
+		p.write(*flat1236)
 		return nil
 	} else {
-		_t1645 := func(_dollar_dollar *pb.Snapshot) []interface{} {
-			return []interface{}{_dollar_dollar.GetDestinationPath(), _dollar_dollar.GetSourceRelation()}
-		}
-		_t1646 := _t1645(msg)
-		fields1211 := _t1646
-		unwrapped_fields1212 := fields1211
+		_dollar_dollar := msg
+		fields1232 := _dollar_dollar.GetMappings()
+		unwrapped_fields1233 := fields1232
 		p.write("(")
 		p.write("snapshot")
 		p.indentSexp()
-		p.newline()
-		field1213 := unwrapped_fields1212[0].([]string)
-		p.pretty_rel_edb_path(field1213)
-		p.newline()
-		field1214 := unwrapped_fields1212[1].(*pb.RelationId)
-		p.pretty_relation_id(field1214)
+		if !(len(unwrapped_fields1233) == 0) {
+			p.newline()
+			for i1235, elem1234 := range unwrapped_fields1233 {
+				if (i1235 > 0) {
+					p.newline()
+				}
+				p.pretty_snapshot_mapping(elem1234)
+			}
+		}
 		p.dedent()
 		p.write(")")
 	}
 	return nil
 }
 
-func (p *PrettyPrinter) pretty_epoch_reads(msg []*pb.Read) interface{} {
-	flat1219 := p.tryFlat(msg, func() { p.pretty_epoch_reads(msg) })
-	if flat1219 != nil {
-		p.write(*flat1219)
+func (p *PrettyPrinter) pretty_snapshot_mapping(msg *pb.SnapshotMapping) interface{} {
+	flat1241 := p.tryFlat(msg, func() { p.pretty_snapshot_mapping(msg) })
+	if flat1241 != nil {
+		p.write(*flat1241)
 		return nil
 	} else {
-		fields1216 := msg
+		_dollar_dollar := msg
+		fields1237 := []interface{}{_dollar_dollar.GetDestinationPath(), _dollar_dollar.GetSourceRelation()}
+		unwrapped_fields1238 := fields1237
+		field1239 := unwrapped_fields1238[0].([]string)
+		p.pretty_edb_path(field1239)
+		p.write(" ")
+		field1240 := unwrapped_fields1238[1].(*pb.RelationId)
+		p.pretty_relation_id(field1240)
+	}
+	return nil
+}
+
+func (p *PrettyPrinter) pretty_epoch_reads(msg []*pb.Read) interface{} {
+	flat1245 := p.tryFlat(msg, func() { p.pretty_epoch_reads(msg) })
+	if flat1245 != nil {
+		p.write(*flat1245)
+		return nil
+	} else {
+		fields1242 := msg
 		p.write("(")
 		p.write("reads")
 		p.indentSexp()
-		if !(len(fields1216) == 0) {
+		if !(len(fields1242) == 0) {
 			p.newline()
-			for i1218, elem1217 := range fields1216 {
-				if (i1218 > 0) {
+			for i1244, elem1243 := range fields1242 {
+				if (i1244 > 0) {
 					p.newline()
 				}
-				p.pretty_read(elem1217)
+				p.pretty_read(elem1243)
 			}
 		}
 		p.dedent()
@@ -4060,75 +3734,60 @@ func (p *PrettyPrinter) pretty_epoch_reads(msg []*pb.Read) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_read(msg *pb.Read) interface{} {
-	flat1230 := p.tryFlat(msg, func() { p.pretty_read(msg) })
-	if flat1230 != nil {
-		p.write(*flat1230)
+	flat1256 := p.tryFlat(msg, func() { p.pretty_read(msg) })
+	if flat1256 != nil {
+		p.write(*flat1256)
 		return nil
 	} else {
-		_t1647 := func(_dollar_dollar *pb.Read) *pb.Demand {
-			var _t1648 *pb.Demand
-			if hasProtoField(_dollar_dollar, "demand") {
-				_t1648 = _dollar_dollar.GetDemand()
-			}
-			return _t1648
+		_dollar_dollar := msg
+		var _t1412 *pb.Demand
+		if hasProtoField(_dollar_dollar, "demand") {
+			_t1412 = _dollar_dollar.GetDemand()
 		}
-		_t1649 := _t1647(msg)
-		deconstruct_result1228 := _t1649
-		if deconstruct_result1228 != nil {
-			unwrapped1229 := deconstruct_result1228
-			p.pretty_demand(unwrapped1229)
+		deconstruct_result1254 := _t1412
+		if deconstruct_result1254 != nil {
+			unwrapped1255 := deconstruct_result1254
+			p.pretty_demand(unwrapped1255)
 		} else {
-			_t1650 := func(_dollar_dollar *pb.Read) *pb.Output {
-				var _t1651 *pb.Output
-				if hasProtoField(_dollar_dollar, "output") {
-					_t1651 = _dollar_dollar.GetOutput()
-				}
-				return _t1651
+			_dollar_dollar := msg
+			var _t1413 *pb.Output
+			if hasProtoField(_dollar_dollar, "output") {
+				_t1413 = _dollar_dollar.GetOutput()
 			}
-			_t1652 := _t1650(msg)
-			deconstruct_result1226 := _t1652
-			if deconstruct_result1226 != nil {
-				unwrapped1227 := deconstruct_result1226
-				p.pretty_output(unwrapped1227)
+			deconstruct_result1252 := _t1413
+			if deconstruct_result1252 != nil {
+				unwrapped1253 := deconstruct_result1252
+				p.pretty_output(unwrapped1253)
 			} else {
-				_t1653 := func(_dollar_dollar *pb.Read) *pb.WhatIf {
-					var _t1654 *pb.WhatIf
-					if hasProtoField(_dollar_dollar, "what_if") {
-						_t1654 = _dollar_dollar.GetWhatIf()
-					}
-					return _t1654
+				_dollar_dollar := msg
+				var _t1414 *pb.WhatIf
+				if hasProtoField(_dollar_dollar, "what_if") {
+					_t1414 = _dollar_dollar.GetWhatIf()
 				}
-				_t1655 := _t1653(msg)
-				deconstruct_result1224 := _t1655
-				if deconstruct_result1224 != nil {
-					unwrapped1225 := deconstruct_result1224
-					p.pretty_what_if(unwrapped1225)
+				deconstruct_result1250 := _t1414
+				if deconstruct_result1250 != nil {
+					unwrapped1251 := deconstruct_result1250
+					p.pretty_what_if(unwrapped1251)
 				} else {
-					_t1656 := func(_dollar_dollar *pb.Read) *pb.Abort {
-						var _t1657 *pb.Abort
-						if hasProtoField(_dollar_dollar, "abort") {
-							_t1657 = _dollar_dollar.GetAbort()
-						}
-						return _t1657
+					_dollar_dollar := msg
+					var _t1415 *pb.Abort
+					if hasProtoField(_dollar_dollar, "abort") {
+						_t1415 = _dollar_dollar.GetAbort()
 					}
-					_t1658 := _t1656(msg)
-					deconstruct_result1222 := _t1658
-					if deconstruct_result1222 != nil {
-						unwrapped1223 := deconstruct_result1222
-						p.pretty_abort(unwrapped1223)
+					deconstruct_result1248 := _t1415
+					if deconstruct_result1248 != nil {
+						unwrapped1249 := deconstruct_result1248
+						p.pretty_abort(unwrapped1249)
 					} else {
-						_t1659 := func(_dollar_dollar *pb.Read) *pb.Export {
-							var _t1660 *pb.Export
-							if hasProtoField(_dollar_dollar, "export") {
-								_t1660 = _dollar_dollar.GetExport()
-							}
-							return _t1660
+						_dollar_dollar := msg
+						var _t1416 *pb.Export
+						if hasProtoField(_dollar_dollar, "export") {
+							_t1416 = _dollar_dollar.GetExport()
 						}
-						_t1661 := _t1659(msg)
-						deconstruct_result1220 := _t1661
-						if deconstruct_result1220 != nil {
-							unwrapped1221 := deconstruct_result1220
-							p.pretty_export(unwrapped1221)
+						deconstruct_result1246 := _t1416
+						if deconstruct_result1246 != nil {
+							unwrapped1247 := deconstruct_result1246
+							p.pretty_export(unwrapped1247)
 						} else {
 							panic(ParseError{msg: "No matching rule for read"})
 						}
@@ -4141,22 +3800,19 @@ func (p *PrettyPrinter) pretty_read(msg *pb.Read) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_demand(msg *pb.Demand) interface{} {
-	flat1233 := p.tryFlat(msg, func() { p.pretty_demand(msg) })
-	if flat1233 != nil {
-		p.write(*flat1233)
+	flat1259 := p.tryFlat(msg, func() { p.pretty_demand(msg) })
+	if flat1259 != nil {
+		p.write(*flat1259)
 		return nil
 	} else {
-		_t1662 := func(_dollar_dollar *pb.Demand) *pb.RelationId {
-			return _dollar_dollar.GetRelationId()
-		}
-		_t1663 := _t1662(msg)
-		fields1231 := _t1663
-		unwrapped_fields1232 := fields1231
+		_dollar_dollar := msg
+		fields1257 := _dollar_dollar.GetRelationId()
+		unwrapped_fields1258 := fields1257
 		p.write("(")
 		p.write("demand")
 		p.indentSexp()
 		p.newline()
-		p.pretty_relation_id(unwrapped_fields1232)
+		p.pretty_relation_id(unwrapped_fields1258)
 		p.dedent()
 		p.write(")")
 	}
@@ -4164,26 +3820,23 @@ func (p *PrettyPrinter) pretty_demand(msg *pb.Demand) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_output(msg *pb.Output) interface{} {
-	flat1238 := p.tryFlat(msg, func() { p.pretty_output(msg) })
-	if flat1238 != nil {
-		p.write(*flat1238)
+	flat1264 := p.tryFlat(msg, func() { p.pretty_output(msg) })
+	if flat1264 != nil {
+		p.write(*flat1264)
 		return nil
 	} else {
-		_t1664 := func(_dollar_dollar *pb.Output) []interface{} {
-			return []interface{}{_dollar_dollar.GetName(), _dollar_dollar.GetRelationId()}
-		}
-		_t1665 := _t1664(msg)
-		fields1234 := _t1665
-		unwrapped_fields1235 := fields1234
+		_dollar_dollar := msg
+		fields1260 := []interface{}{_dollar_dollar.GetName(), _dollar_dollar.GetRelationId()}
+		unwrapped_fields1261 := fields1260
 		p.write("(")
 		p.write("output")
 		p.indentSexp()
 		p.newline()
-		field1236 := unwrapped_fields1235[0].(string)
-		p.pretty_name(field1236)
+		field1262 := unwrapped_fields1261[0].(string)
+		p.pretty_name(field1262)
 		p.newline()
-		field1237 := unwrapped_fields1235[1].(*pb.RelationId)
-		p.pretty_relation_id(field1237)
+		field1263 := unwrapped_fields1261[1].(*pb.RelationId)
+		p.pretty_relation_id(field1263)
 		p.dedent()
 		p.write(")")
 	}
@@ -4191,26 +3844,23 @@ func (p *PrettyPrinter) pretty_output(msg *pb.Output) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_what_if(msg *pb.WhatIf) interface{} {
-	flat1243 := p.tryFlat(msg, func() { p.pretty_what_if(msg) })
-	if flat1243 != nil {
-		p.write(*flat1243)
+	flat1269 := p.tryFlat(msg, func() { p.pretty_what_if(msg) })
+	if flat1269 != nil {
+		p.write(*flat1269)
 		return nil
 	} else {
-		_t1666 := func(_dollar_dollar *pb.WhatIf) []interface{} {
-			return []interface{}{_dollar_dollar.GetBranch(), _dollar_dollar.GetEpoch()}
-		}
-		_t1667 := _t1666(msg)
-		fields1239 := _t1667
-		unwrapped_fields1240 := fields1239
+		_dollar_dollar := msg
+		fields1265 := []interface{}{_dollar_dollar.GetBranch(), _dollar_dollar.GetEpoch()}
+		unwrapped_fields1266 := fields1265
 		p.write("(")
 		p.write("what_if")
 		p.indentSexp()
 		p.newline()
-		field1241 := unwrapped_fields1240[0].(string)
-		p.pretty_name(field1241)
+		field1267 := unwrapped_fields1266[0].(string)
+		p.pretty_name(field1267)
 		p.newline()
-		field1242 := unwrapped_fields1240[1].(*pb.Epoch)
-		p.pretty_epoch(field1242)
+		field1268 := unwrapped_fields1266[1].(*pb.Epoch)
+		p.pretty_epoch(field1268)
 		p.dedent()
 		p.write(")")
 	}
@@ -4218,33 +3868,30 @@ func (p *PrettyPrinter) pretty_what_if(msg *pb.WhatIf) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_abort(msg *pb.Abort) interface{} {
-	flat1249 := p.tryFlat(msg, func() { p.pretty_abort(msg) })
-	if flat1249 != nil {
-		p.write(*flat1249)
+	flat1275 := p.tryFlat(msg, func() { p.pretty_abort(msg) })
+	if flat1275 != nil {
+		p.write(*flat1275)
 		return nil
 	} else {
-		_t1668 := func(_dollar_dollar *pb.Abort) []interface{} {
-			var _t1669 *string
-			if _dollar_dollar.GetName() != "abort" {
-				_t1669 = ptr(_dollar_dollar.GetName())
-			}
-			return []interface{}{_t1669, _dollar_dollar.GetRelationId()}
+		_dollar_dollar := msg
+		var _t1417 *string
+		if _dollar_dollar.GetName() != "abort" {
+			_t1417 = ptr(_dollar_dollar.GetName())
 		}
-		_t1670 := _t1668(msg)
-		fields1244 := _t1670
-		unwrapped_fields1245 := fields1244
+		fields1270 := []interface{}{_t1417, _dollar_dollar.GetRelationId()}
+		unwrapped_fields1271 := fields1270
 		p.write("(")
 		p.write("abort")
 		p.indentSexp()
-		field1246 := unwrapped_fields1245[0].(*string)
-		if field1246 != nil {
+		field1272 := unwrapped_fields1271[0].(*string)
+		if field1272 != nil {
 			p.newline()
-			opt_val1247 := *field1246
-			p.pretty_name(opt_val1247)
+			opt_val1273 := *field1272
+			p.pretty_name(opt_val1273)
 		}
 		p.newline()
-		field1248 := unwrapped_fields1245[1].(*pb.RelationId)
-		p.pretty_relation_id(field1248)
+		field1274 := unwrapped_fields1271[1].(*pb.RelationId)
+		p.pretty_relation_id(field1274)
 		p.dedent()
 		p.write(")")
 	}
@@ -4252,22 +3899,19 @@ func (p *PrettyPrinter) pretty_abort(msg *pb.Abort) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_export(msg *pb.Export) interface{} {
-	flat1252 := p.tryFlat(msg, func() { p.pretty_export(msg) })
-	if flat1252 != nil {
-		p.write(*flat1252)
+	flat1278 := p.tryFlat(msg, func() { p.pretty_export(msg) })
+	if flat1278 != nil {
+		p.write(*flat1278)
 		return nil
 	} else {
-		_t1671 := func(_dollar_dollar *pb.Export) *pb.ExportCSVConfig {
-			return _dollar_dollar.GetCsvConfig()
-		}
-		_t1672 := _t1671(msg)
-		fields1250 := _t1672
-		unwrapped_fields1251 := fields1250
+		_dollar_dollar := msg
+		fields1276 := _dollar_dollar.GetCsvConfig()
+		unwrapped_fields1277 := fields1276
 		p.write("(")
 		p.write("export")
 		p.indentSexp()
 		p.newline()
-		p.pretty_export_csv_config(unwrapped_fields1251)
+		p.pretty_export_csv_config(unwrapped_fields1277)
 		p.dedent()
 		p.write(")")
 	}
@@ -4275,61 +3919,55 @@ func (p *PrettyPrinter) pretty_export(msg *pb.Export) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_export_csv_config(msg *pb.ExportCSVConfig) interface{} {
-	flat1263 := p.tryFlat(msg, func() { p.pretty_export_csv_config(msg) })
-	if flat1263 != nil {
-		p.write(*flat1263)
+	flat1289 := p.tryFlat(msg, func() { p.pretty_export_csv_config(msg) })
+	if flat1289 != nil {
+		p.write(*flat1289)
 		return nil
 	} else {
-		_t1673 := func(_dollar_dollar *pb.ExportCSVConfig) []interface{} {
-			var _t1674 []interface{}
-			if int64(len(_dollar_dollar.GetDataColumns())) == 0 {
-				_t1674 = []interface{}{_dollar_dollar.GetPath(), _dollar_dollar.GetCsvSource(), _dollar_dollar.GetCsvConfig()}
-			}
-			return _t1674
+		_dollar_dollar := msg
+		var _t1418 []interface{}
+		if int64(len(_dollar_dollar.GetDataColumns())) == 0 {
+			_t1418 = []interface{}{_dollar_dollar.GetPath(), _dollar_dollar.GetCsvSource(), _dollar_dollar.GetCsvConfig()}
 		}
-		_t1675 := _t1673(msg)
-		deconstruct_result1258 := _t1675
-		if deconstruct_result1258 != nil {
-			unwrapped1259 := deconstruct_result1258
+		deconstruct_result1284 := _t1418
+		if deconstruct_result1284 != nil {
+			unwrapped1285 := deconstruct_result1284
 			p.write("(")
 			p.write("export_csv_config_v2")
 			p.indentSexp()
 			p.newline()
-			field1260 := unwrapped1259[0].(string)
-			p.pretty_export_csv_path(field1260)
+			field1286 := unwrapped1285[0].(string)
+			p.pretty_export_csv_path(field1286)
 			p.newline()
-			field1261 := unwrapped1259[1].(*pb.ExportCSVSource)
-			p.pretty_export_csv_source(field1261)
+			field1287 := unwrapped1285[1].(*pb.ExportCSVSource)
+			p.pretty_export_csv_source(field1287)
 			p.newline()
-			field1262 := unwrapped1259[2].(*pb.CSVConfig)
-			p.pretty_csv_config(field1262)
+			field1288 := unwrapped1285[2].(*pb.CSVConfig)
+			p.pretty_csv_config(field1288)
 			p.dedent()
 			p.write(")")
 		} else {
-			_t1676 := func(_dollar_dollar *pb.ExportCSVConfig) []interface{} {
-				var _t1677 []interface{}
-				if int64(len(_dollar_dollar.GetDataColumns())) != 0 {
-					_t1678 := p.deconstruct_export_csv_config(_dollar_dollar)
-					_t1677 = []interface{}{_dollar_dollar.GetPath(), _dollar_dollar.GetDataColumns(), _t1678}
-				}
-				return _t1677
+			_dollar_dollar := msg
+			var _t1419 []interface{}
+			if int64(len(_dollar_dollar.GetDataColumns())) != 0 {
+				_t1420 := p.deconstruct_export_csv_config(_dollar_dollar)
+				_t1419 = []interface{}{_dollar_dollar.GetPath(), _dollar_dollar.GetDataColumns(), _t1420}
 			}
-			_t1679 := _t1676(msg)
-			deconstruct_result1253 := _t1679
-			if deconstruct_result1253 != nil {
-				unwrapped1254 := deconstruct_result1253
+			deconstruct_result1279 := _t1419
+			if deconstruct_result1279 != nil {
+				unwrapped1280 := deconstruct_result1279
 				p.write("(")
 				p.write("export_csv_config")
 				p.indentSexp()
 				p.newline()
-				field1255 := unwrapped1254[0].(string)
-				p.pretty_export_csv_path(field1255)
+				field1281 := unwrapped1280[0].(string)
+				p.pretty_export_csv_path(field1281)
 				p.newline()
-				field1256 := unwrapped1254[1].([]*pb.ExportCSVColumn)
-				p.pretty_export_csv_columns_list(field1256)
+				field1282 := unwrapped1280[1].([]*pb.ExportCSVColumn)
+				p.pretty_export_csv_columns_list(field1282)
 				p.newline()
-				field1257 := unwrapped1254[2].([][]interface{})
-				p.pretty_config_dict(field1257)
+				field1283 := unwrapped1280[2].([][]interface{})
+				p.pretty_config_dict(field1283)
 				p.dedent()
 				p.write(")")
 			} else {
@@ -4341,17 +3979,17 @@ func (p *PrettyPrinter) pretty_export_csv_config(msg *pb.ExportCSVConfig) interf
 }
 
 func (p *PrettyPrinter) pretty_export_csv_path(msg string) interface{} {
-	flat1265 := p.tryFlat(msg, func() { p.pretty_export_csv_path(msg) })
-	if flat1265 != nil {
-		p.write(*flat1265)
+	flat1291 := p.tryFlat(msg, func() { p.pretty_export_csv_path(msg) })
+	if flat1291 != nil {
+		p.write(*flat1291)
 		return nil
 	} else {
-		fields1264 := msg
+		fields1290 := msg
 		p.write("(")
 		p.write("path")
 		p.indentSexp()
 		p.newline()
-		p.write(p.formatStringValue(fields1264))
+		p.write(p.formatStringValue(fields1290))
 		p.dedent()
 		p.write(")")
 	}
@@ -4359,53 +3997,47 @@ func (p *PrettyPrinter) pretty_export_csv_path(msg string) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_export_csv_source(msg *pb.ExportCSVSource) interface{} {
-	flat1272 := p.tryFlat(msg, func() { p.pretty_export_csv_source(msg) })
-	if flat1272 != nil {
-		p.write(*flat1272)
+	flat1298 := p.tryFlat(msg, func() { p.pretty_export_csv_source(msg) })
+	if flat1298 != nil {
+		p.write(*flat1298)
 		return nil
 	} else {
-		_t1680 := func(_dollar_dollar *pb.ExportCSVSource) []*pb.ExportCSVColumn {
-			var _t1681 []*pb.ExportCSVColumn
-			if hasProtoField(_dollar_dollar, "gnf_columns") {
-				_t1681 = _dollar_dollar.GetGnfColumns().GetColumns()
-			}
-			return _t1681
+		_dollar_dollar := msg
+		var _t1421 []*pb.ExportCSVColumn
+		if hasProtoField(_dollar_dollar, "gnf_columns") {
+			_t1421 = _dollar_dollar.GetGnfColumns().GetColumns()
 		}
-		_t1682 := _t1680(msg)
-		deconstruct_result1268 := _t1682
-		if deconstruct_result1268 != nil {
-			unwrapped1269 := deconstruct_result1268
+		deconstruct_result1294 := _t1421
+		if deconstruct_result1294 != nil {
+			unwrapped1295 := deconstruct_result1294
 			p.write("(")
 			p.write("gnf_columns")
 			p.indentSexp()
-			if !(len(unwrapped1269) == 0) {
+			if !(len(unwrapped1295) == 0) {
 				p.newline()
-				for i1271, elem1270 := range unwrapped1269 {
-					if (i1271 > 0) {
+				for i1297, elem1296 := range unwrapped1295 {
+					if (i1297 > 0) {
 						p.newline()
 					}
-					p.pretty_export_csv_column(elem1270)
+					p.pretty_export_csv_column(elem1296)
 				}
 			}
 			p.dedent()
 			p.write(")")
 		} else {
-			_t1683 := func(_dollar_dollar *pb.ExportCSVSource) *pb.RelationId {
-				var _t1684 *pb.RelationId
-				if hasProtoField(_dollar_dollar, "table_def") {
-					_t1684 = _dollar_dollar.GetTableDef()
-				}
-				return _t1684
+			_dollar_dollar := msg
+			var _t1422 *pb.RelationId
+			if hasProtoField(_dollar_dollar, "table_def") {
+				_t1422 = _dollar_dollar.GetTableDef()
 			}
-			_t1685 := _t1683(msg)
-			deconstruct_result1266 := _t1685
-			if deconstruct_result1266 != nil {
-				unwrapped1267 := deconstruct_result1266
+			deconstruct_result1292 := _t1422
+			if deconstruct_result1292 != nil {
+				unwrapped1293 := deconstruct_result1292
 				p.write("(")
 				p.write("table_def")
 				p.indentSexp()
 				p.newline()
-				p.pretty_relation_id(unwrapped1267)
+				p.pretty_relation_id(unwrapped1293)
 				p.dedent()
 				p.write(")")
 			} else {
@@ -4417,26 +4049,23 @@ func (p *PrettyPrinter) pretty_export_csv_source(msg *pb.ExportCSVSource) interf
 }
 
 func (p *PrettyPrinter) pretty_export_csv_column(msg *pb.ExportCSVColumn) interface{} {
-	flat1277 := p.tryFlat(msg, func() { p.pretty_export_csv_column(msg) })
-	if flat1277 != nil {
-		p.write(*flat1277)
+	flat1303 := p.tryFlat(msg, func() { p.pretty_export_csv_column(msg) })
+	if flat1303 != nil {
+		p.write(*flat1303)
 		return nil
 	} else {
-		_t1686 := func(_dollar_dollar *pb.ExportCSVColumn) []interface{} {
-			return []interface{}{_dollar_dollar.GetColumnName(), _dollar_dollar.GetColumnData()}
-		}
-		_t1687 := _t1686(msg)
-		fields1273 := _t1687
-		unwrapped_fields1274 := fields1273
+		_dollar_dollar := msg
+		fields1299 := []interface{}{_dollar_dollar.GetColumnName(), _dollar_dollar.GetColumnData()}
+		unwrapped_fields1300 := fields1299
 		p.write("(")
 		p.write("column")
 		p.indentSexp()
 		p.newline()
-		field1275 := unwrapped_fields1274[0].(string)
-		p.write(p.formatStringValue(field1275))
+		field1301 := unwrapped_fields1300[0].(string)
+		p.write(p.formatStringValue(field1301))
 		p.newline()
-		field1276 := unwrapped_fields1274[1].(*pb.RelationId)
-		p.pretty_relation_id(field1276)
+		field1302 := unwrapped_fields1300[1].(*pb.RelationId)
+		p.pretty_relation_id(field1302)
 		p.dedent()
 		p.write(")")
 	}
@@ -4444,22 +4073,22 @@ func (p *PrettyPrinter) pretty_export_csv_column(msg *pb.ExportCSVColumn) interf
 }
 
 func (p *PrettyPrinter) pretty_export_csv_columns_list(msg []*pb.ExportCSVColumn) interface{} {
-	flat1281 := p.tryFlat(msg, func() { p.pretty_export_csv_columns_list(msg) })
-	if flat1281 != nil {
-		p.write(*flat1281)
+	flat1307 := p.tryFlat(msg, func() { p.pretty_export_csv_columns_list(msg) })
+	if flat1307 != nil {
+		p.write(*flat1307)
 		return nil
 	} else {
-		fields1278 := msg
+		fields1304 := msg
 		p.write("(")
 		p.write("columns")
 		p.indentSexp()
-		if !(len(fields1278) == 0) {
+		if !(len(fields1304) == 0) {
 			p.newline()
-			for i1280, elem1279 := range fields1278 {
-				if (i1280 > 0) {
+			for i1306, elem1305 := range fields1304 {
+				if (i1306 > 0) {
 					p.newline()
 				}
-				p.pretty_export_csv_column(elem1279)
+				p.pretty_export_csv_column(elem1305)
 			}
 		}
 		p.dedent()
@@ -4477,8 +4106,8 @@ func (p *PrettyPrinter) pretty_debug_info(msg *pb.DebugInfo) interface{} {
 	for _idx, _rid := range msg.GetIds() {
 		p.newline()
 		p.write("(")
-		_t1726 := &pb.UInt128Value{Low: _rid.GetIdLow(), High: _rid.GetIdHigh()}
-		p.pprintDispatch(_t1726)
+		_t1461 := &pb.UInt128Value{Low: _rid.GetIdLow(), High: _rid.GetIdHigh()}
+		p.pprintDispatch(_t1461)
 		p.write(" ")
 		p.write(p.formatStringValue(msg.GetOrigNames()[_idx]))
 		p.write(")")
@@ -4783,12 +4412,12 @@ func (p *PrettyPrinter) pprintDispatch(msg interface{}) {
 		p.pretty_functional_dependency_keys(m)
 	case *pb.Data:
 		p.pretty_data(m)
-	case *pb.RelEDB:
-		p.pretty_rel_edb(m)
+	case *pb.EDB:
+		p.pretty_edb(m)
 	case []string:
-		p.pretty_rel_edb_path(m)
+		p.pretty_edb_path(m)
 	case []*pb.Type:
-		p.pretty_rel_edb_types(m)
+		p.pretty_edb_types(m)
 	case *pb.BeTreeRelation:
 		p.pretty_betree_relation(m)
 	case *pb.BeTreeInfo:
@@ -4799,16 +4428,18 @@ func (p *PrettyPrinter) pprintDispatch(msg interface{}) {
 		p.pretty_csvlocator(m)
 	case *pb.CSVConfig:
 		p.pretty_csv_config(m)
-	case []*pb.CSVColumn:
-		p.pretty_csv_columns(m)
-	case *pb.CSVColumn:
-		p.pretty_csv_column(m)
+	case []*pb.GNFColumn:
+		p.pretty_gnf_columns(m)
+	case *pb.GNFColumn:
+		p.pretty_gnf_column(m)
 	case *pb.Undefine:
 		p.pretty_undefine(m)
 	case *pb.Context:
 		p.pretty_context(m)
 	case *pb.Snapshot:
 		p.pretty_snapshot(m)
+	case *pb.SnapshotMapping:
+		p.pretty_snapshot_mapping(m)
 	case []*pb.Read:
 		p.pretty_epoch_reads(m)
 	case *pb.Read:

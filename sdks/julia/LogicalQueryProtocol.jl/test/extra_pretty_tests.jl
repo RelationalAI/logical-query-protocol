@@ -186,13 +186,13 @@ end
     using ProtoBuf: OneOf
 
     pp = PrettyPrinter()
-    rel_edb = Proto.RelEDB(
+    edb = Proto.EDB(
         target_id=Proto.RelationId(UInt64(1), UInt64(0)),
         path=["base", "rel"],
     )
-    msg = Proto.Data(OneOf(:rel_edb, rel_edb))
+    msg = Proto.Data(OneOf(:edb, edb))
     _pprint_dispatch(pp, msg)
-    @test startswith(get_output(pp), "(rel_edb")
+    @test startswith(get_output(pp), "(edb")
 end
 
 @testitem "Extra pretty - oneof: Read" setup=[PrettySetup] begin
