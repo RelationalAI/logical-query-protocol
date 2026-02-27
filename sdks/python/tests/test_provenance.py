@@ -33,7 +33,9 @@ def test_provenance_span_ordering():
     _, provenance = parse(SIMPLE_INPUT)
     for offset, span in provenance.items():
         assert span.start.offset <= span.stop.offset, f"Bad span at offset {offset}"
-        assert span.start.line <= span.stop.line, f"Bad line ordering at offset {offset}"
+        assert span.start.line <= span.stop.line, (
+            f"Bad line ordering at offset {offset}"
+        )
 
 
 def test_provenance_location_fields():

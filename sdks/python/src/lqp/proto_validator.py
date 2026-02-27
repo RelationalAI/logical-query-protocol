@@ -241,9 +241,17 @@ def _unwrap_oneof(node: Message) -> Message | None:
 # parse function without consuming any tokens. These share the same parse
 # offset as their inner message and must be skipped during offset matching.
 _TRANSPARENT_WRAPPERS: set[str] = {
-    "Declaration", "Instruction", "Formula", "Construct",
-    "Write", "Read", "Data",
-    "Term", "Type", "RelTerm", "Monoid",
+    "Declaration",
+    "Instruction",
+    "Formula",
+    "Construct",
+    "Write",
+    "Read",
+    "Data",
+    "Term",
+    "Type",
+    "RelTerm",
+    "Monoid",
 }
 
 
@@ -277,9 +285,7 @@ def _build_span_tree(provenance: dict[int, Any]) -> _SpanNode:
     Each span's children are the spans directly contained within it.
     Spans are sorted by start offset, with wider spans first for ties.
     """
-    sorted_items = sorted(
-        provenance.items(), key=lambda x: (x[0], -x[1].stop.offset)
-    )
+    sorted_items = sorted(provenance.items(), key=lambda x: (x[0], -x[1].stop.offset))
     sentinel = _SpanNode(-1, None)
     stack: list[tuple[_SpanNode, int]] = [(sentinel, 2**63)]
     for offset, span in sorted_items:
