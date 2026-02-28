@@ -82,13 +82,13 @@ package to PyPI. To release a new version:
    automatically determined by the release tag in GitHub.
 3. Get approval and merge into `main`.
 4. Create a new GitHub release from `main` with a tag matching the version (e.g.
-   `gh release create v0.3.0 --title "v0.3.0" --generate-notes`). The release must be
+   `gh release create v0.4.0 --title "v0.4.0" --generate-notes`). The release must be
    created after merging the version bump, since the workflow checks out the default branch.
 5. Tag the release for the Go submodule. Go requires a separate tag with the subdirectory
    prefix for modules that live outside the repository root:
    ```bash
-   git tag sdks/go/v0.3.0 v0.3.0
-   git push origin sdks/go/v0.3.0
+   git tag sdks/go/v0.4.0 v0.4.0
+   git push origin sdks/go/v0.4.0
    ```
    Without this tag, `go get` will not be able to resolve the module at the released version.
 
