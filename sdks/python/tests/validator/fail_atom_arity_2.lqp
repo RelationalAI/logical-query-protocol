@@ -1,4 +1,4 @@
-;; ERROR: Incorrect arity for 'foo' atom at fail_atom_arity_2.lqp:8:25: expected 2 terms, got 1
+;; ERROR: fail_atom_arity_2.lqp:8:25: Incorrect arity for 'foo' atom: expected 2 terms, got 1
 (transaction
   (epoch
     (writes

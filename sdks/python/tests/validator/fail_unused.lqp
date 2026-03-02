@@ -1,4 +1,4 @@
-;; ERROR: Unused variable declared at fail_unused.lqp:7:30: 'unused'
+;; ERROR: fail_unused.lqp:7:30: Unused variable declared: 'unused'
 (transaction
   (epoch
     (writes

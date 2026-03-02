@@ -1,4 +1,4 @@
-;; ERROR: Value variable 'd' not declared in guard at fail_fd_value_variable.lqp:11:21
+;; ERROR: fail_fd_value_variable.lqp:11:21: Value variable 'd' not declared in guard
 (transaction
   (epoch
     (writes

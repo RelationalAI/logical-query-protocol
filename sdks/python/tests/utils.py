@@ -34,7 +34,7 @@ def extract_expected_error(file_path) -> str | None:
     """Extract the expected error from a ;; ERROR: comment in the file."""
     with open(file_path) as f:
         content = f.read()
-    error_match = re.search(r";;\s*ERROR:\s*(.+)(?:\n|\r\n?)", content)
+    error_match = re.search(r";;\s*(.+?)(?:\n|\r\n?|\Z)", content)
     if error_match:
         return error_match.group(1).strip()
     return None

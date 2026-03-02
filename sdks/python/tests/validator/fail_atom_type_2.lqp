@@ -1,4 +1,4 @@
-;; ERROR: Incorrect type for 'foo' atom at index 0 ('z') at fail_atom_type_2.lqp:8:31: expected FLOAT term, got INT
+;; ERROR: fail_atom_type_2.lqp:8:31: Incorrect type for 'foo' atom at index 0 ('z'): expected FLOAT term, got INT
 (transaction
   (epoch
     (writes

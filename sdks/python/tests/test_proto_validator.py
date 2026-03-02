@@ -66,7 +66,7 @@ def test_proto_validator_error_has_location(validator_file):
         pytest.skip(f"No expected error comment found in {validator_file}")
         return
     # Skip files whose expected error doesn't include a location.
-    if not re.search(r"at\s+\S+:\d+:\d+", expected_error):
+    if not re.search(r"\S+:\d+:\d+:", expected_error):
         pytest.skip(f"Expected error has no location: {validator_file}")
         return
     with open(file_path) as f:
@@ -75,6 +75,6 @@ def test_proto_validator_error_has_location(validator_file):
     with pytest.raises(ValidationError) as exc_info:
         validate_proto(txn_proto, provenance=provenance, filename=validator_file)
     error_message = str(exc_info.value)
-    assert re.search(r"at\s+\S+:\d+:\d+", error_message), (
+    assert re.search(r"\S+:\d+:\d+:", error_message), (
         f"Error message missing location: '{error_message}'"
     )

@@ -427,14 +427,14 @@ class ProtoVisitor:
         key = relation_id_key(rid)
         return self.original_names.get(key, relation_id_hex(rid))
 
-    def _location_str(self, node: Message) -> str:
-        """Return ' at file:line:col' for the given node, or '' if unavailable."""
+    def _location_prefix(self, node: Message) -> str:
+        """Return 'file:line:col: ' for the given node, or '' if unavailable."""
         span = self._provenance.get(id(node))
         if span is not None:
             loc = span.start
             if self._filename:
-                return f" at {self._filename}:{loc.line}:{loc.column}"
-            return f" at {loc.line}:{loc.column}"
+                return f"{self._filename}:{loc.line}:{loc.column}: "
+            return f"{loc.line}:{loc.column}: "
         return ""
 
     def _resolve_visitor(self, type_name: str):
@@ -491,7 +491,7 @@ class UnusedVariableVisitor(ProtoVisitor):
                 used.add(var_name)
                 return
         raise ValidationError(
-            f"Undeclared variable used{self._location_str(node)}: '{var_name}'"
+            f"ERROR: {self._location_prefix(node)}Undeclared variable used: '{var_name}'"
         )
 
     def visit_Abstraction(self, node: logic_pb2.Abstraction, *args: Any):
@@ -509,7 +509,7 @@ class UnusedVariableVisitor(ProtoVisitor):
                 continue
             b = binding_map[var_name]
             raise ValidationError(
-                f"Unused variable declared{self._location_str(b)}: '{var_name}'"
+                f"ERROR: {self._location_prefix(b)}Unused variable declared: '{var_name}'"
             )
 
     def visit_Var(self, node: logic_pb2.Var, *args: Any):
@@ -532,7 +532,7 @@ class ShadowedVariableFinder(ProtoVisitor):
             name = binding.var.name
             if name in in_scope_names:
                 raise ValidationError(
-                    f"Shadowed variable{self._location_str(binding)}: '{name}'"
+                    f"ERROR: {self._location_prefix(binding)}Shadowed variable: '{name}'"
                 )
         new_scope = in_scope_names | {b.var.name for b in node.vars}
         self.visit(node.value, new_scope)
@@ -556,12 +556,12 @@ class DuplicateRelationIdFinder(ProtoVisitor):
             if self.curr_fragment != seen_frag:
                 original_name = self.get_original_name(rid)
                 raise ValidationError(
-                    f"Duplicate declaration across fragments{self._location_str(node)}: '{original_name}'"
+                    f"ERROR: {self._location_prefix(node)}Duplicate declaration across fragments: '{original_name}'"
                 )
             elif self.curr_epoch == seen_epoch:
                 original_name = self.get_original_name(rid)
                 raise ValidationError(
-                    f"Duplicate declaration within fragment in epoch{self._location_str(node)}: '{original_name}'"
+                    f"ERROR: {self._location_prefix(node)}Duplicate declaration within fragment in epoch: '{original_name}'"
                 )
         self.seen_ids[key] = (self.curr_epoch, self.curr_fragment)
 
@@ -579,7 +579,7 @@ class DuplicateRelationIdFinder(ProtoVisitor):
             if key in self.seen_ids:
                 original_name = self.get_original_name(rid)
                 raise ValidationError(
-                    f"Duplicate declaration{self._location_str(rid)}: '{original_name}'"
+                    f"ERROR: {self._location_prefix(rid)}Duplicate declaration: '{original_name}'"
                 )
             else:
                 self.seen_ids[key] = (self.curr_epoch, self.curr_fragment)
@@ -600,7 +600,7 @@ class DuplicateFragmentDefinitionFinder(ProtoVisitor):
         if frag_id in self.seen_ids:
             id_str = frag_id.decode("utf-8")
             raise ValidationError(
-                f"Duplicate fragment within an epoch{self._location_str(node)}: '{id_str}'"
+                f"ERROR: {self._location_prefix(node)}Duplicate fragment within an epoch: '{id_str}'"
             )
         else:
             self.seen_ids.add(frag_id)
@@ -724,7 +724,8 @@ class AtomTypeChecker(ProtoVisitor):
         if atom_arity != relation_arity:
             original_name = self.get_original_name(node.name)
             raise ValidationError(
-                f"Incorrect arity for '{original_name}' atom{self._location_str(node)}: "
+                f"ERROR: {self._location_prefix(node)}"
+                f"Incorrect arity for '{original_name}' atom: "
                 f"expected {relation_arity} term{'' if relation_arity == 1 else 's'}, got {atom_arity}"
             )
 
@@ -742,7 +743,8 @@ class AtomTypeChecker(ProtoVisitor):
                 original_name = self.get_original_name(node.name)
                 pretty_term = proto_term_str(term)
                 raise ValidationError(
-                    f"Incorrect type for '{original_name}' atom at index {i} ('{pretty_term}'){self._location_str(node)}: "
+                    f"ERROR: {self._location_prefix(node)}"
+                    f"Incorrect type for '{original_name}' atom at index {i} ('{pretty_term}'): "
                     f"expected {expected_type} term, got {term_type}"
                 )
 
@@ -758,7 +760,7 @@ class LoopyBadBreakFinder(ProtoVisitor):
                 brk = getattr(instr_wrapper, "break")
                 original_name = self.get_original_name(brk.name)
                 raise ValidationError(
-                    f"Break rule found outside of body{self._location_str(brk)}: '{original_name}'"
+                    f"ERROR: {self._location_prefix(brk)}Break rule found outside of body: '{original_name}'"
                 )
 
 
@@ -811,7 +813,7 @@ class LoopyBadGlobalFinder(ProtoVisitor):
                     if key in self.globals and key not in self.init:
                         original_name = self.get_original_name(actual.name)  # type: ignore[union-attr]
                         raise ValidationError(
-                            f"Global rule found in body{self._location_str(actual)}: '{original_name}'"
+                            f"ERROR: {self._location_prefix(actual)}Global rule found in body: '{original_name}'"
                         )
 
 
@@ -825,7 +827,7 @@ class LoopyUpdatesShouldBeAtoms(ProtoVisitor):
         which = formula.WhichOneof("formula_type")
         if which != "atom":
             raise ValidationError(
-                f"{instr_type_name}{self._location_str(node)} must have an Atom as its value"
+                f"ERROR: {self._location_prefix(node)}{instr_type_name} must have an Atom as its value"
             )
 
     def visit_Upsert(self, node: logic_pb2.Upsert, *args: Any):
@@ -851,24 +853,24 @@ class CSVConfigChecker(ProtoVisitor):
         self.visit(txn)
 
     def visit_ExportCSVConfig(self, node: transactions_pb2.ExportCSVConfig, *args: Any):
-        loc = self._location_str(node)
+        loc = self._location_prefix(node)
         if node.HasField("syntax_delim") and len(node.syntax_delim) != 1:
             raise ValidationError(
-                f"CSV delimiter should be a single character{loc}, got '{node.syntax_delim}'"
+                f"ERROR: {loc}CSV delimiter should be a single character, got '{node.syntax_delim}'"
             )
         if node.HasField("syntax_quotechar") and len(node.syntax_quotechar) != 1:
             raise ValidationError(
-                f"CSV quotechar should be a single character{loc}, got '{node.syntax_quotechar}'"
+                f"ERROR: {loc}CSV quotechar should be a single character, got '{node.syntax_quotechar}'"
             )
         if node.HasField("syntax_escapechar") and len(node.syntax_escapechar) != 1:
             raise ValidationError(
-                f"CSV escapechar should be a single character{loc}, got '{node.syntax_escapechar}'"
+                f"ERROR: {loc}CSV escapechar should be a single character, got '{node.syntax_escapechar}'"
             )
 
         valid_compressions = {"", "gzip"}
         if node.HasField("compression") and node.compression not in valid_compressions:
             raise ValidationError(
-                f"CSV compression should be one of {valid_compressions}{loc}, got '{node.compression}'"
+                f"ERROR: {loc}CSV compression should be one of {valid_compressions}, got '{node.compression}'"
             )
 
         column_0_key_types: list[str] | None = None
@@ -881,7 +883,7 @@ class CSVConfigChecker(ProtoVisitor):
             column_types = self.relation_types[key]
             if len(column_types) < 1:
                 raise ValidationError(
-                    f"Data column relation must have at least one column{loc}, "
+                    f"ERROR: {loc}Data column relation must have at least one column, "
                     f"got zero columns in '{self.get_original_name(column.column_data)}'"
                 )
             key_types = column_types[:-1]
@@ -891,7 +893,7 @@ class CSVConfigChecker(ProtoVisitor):
             else:
                 if column_0_key_types != key_types:
                     raise ValidationError(
-                        f"All data columns in ExportCSVConfig{loc} must have the same key types. "
+                        f"ERROR: {loc}All data columns in ExportCSVConfig must have the same key types. "
                         f"Got '{column_0_name}' with key types {[str(t) for t in column_0_key_types]} "
                         f"and '{self.get_original_name(column.column_data)}' with key types {[str(t) for t in key_types]}."
                     )
@@ -909,12 +911,12 @@ class FDVarsChecker(ProtoVisitor):
         for var in node.keys:
             if var.name not in guard_var_names:
                 raise ValidationError(
-                    f"Key variable '{var.name}' not declared in guard{self._location_str(var)}"
+                    f"ERROR: {self._location_prefix(var)}Key variable '{var.name}' not declared in guard"
                 )
         for var in node.values:
             if var.name not in guard_var_names:
                 raise ValidationError(
-                    f"Value variable '{var.name}' not declared in guard{self._location_str(var)}"
+                    f"ERROR: {self._location_prefix(var)}Value variable '{var.name}' not declared in guard"
                 )
 
 

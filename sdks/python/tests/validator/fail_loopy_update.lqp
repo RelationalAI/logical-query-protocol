@@ -1,4 +1,4 @@
-;; ERROR: Upsert at fail_loopy_update.lqp:9:15 must have an Atom as its value
+;; ERROR: fail_loopy_update.lqp:9:15: Upsert must have an Atom as its value
 (transaction
   (epoch
     (writes

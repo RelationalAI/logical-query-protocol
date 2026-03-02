@@ -1,4 +1,4 @@
-;; ERROR: Key variable 'd' not declared in guard at fail_fd_key_variable.lqp:10:21
+;; ERROR: fail_fd_key_variable.lqp:10:21: Key variable 'd' not declared in guard
 (transaction
   (epoch
     (writes

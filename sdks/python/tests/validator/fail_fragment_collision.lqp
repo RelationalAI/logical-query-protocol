@@ -1,4 +1,4 @@
-;; ERROR: Duplicate declaration within fragment in epoch at fail_fragment_collision.lqp:10:11: 'output'
+;; ERROR: fail_fragment_collision.lqp:10:11: Duplicate declaration within fragment in epoch: 'output'
 (transaction
   (epoch
     (writes
