@@ -3,10 +3,18 @@ import os
 import pytest
 from pytest_snapshot.plugin import Snapshot
 
-from lqp.gen.parser import ParseError, parse, parse_fragment, parse_transaction
+from lqp.gen.parser import ParseError, Parser, parse, parse_fragment, parse_transaction
 from lqp.proto.v1 import fragments_pb2, transactions_pb2
 
 from .utils import BIN_SNAPSHOTS_DIR, get_lqp_input_files
+
+
+def test_relation_id_from_string():
+    """All SDKs must produce the same id for the same string."""
+    parser = Parser([])
+    rid = parser.relation_id_from_string("my_relation")
+    assert rid.id_low == 0xF2FC83EC57CF8FBC
+    assert rid.id_high == 0x503F7DC862F367B7
 
 
 @pytest.mark.parametrize("input_file", get_lqp_input_files())

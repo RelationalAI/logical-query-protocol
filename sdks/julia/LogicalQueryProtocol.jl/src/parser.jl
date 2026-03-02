@@ -304,8 +304,9 @@ end
 function relation_id_from_string(parser::ParserState, name::String)
     # Create RelationId from string and track mapping for debug info
     hash_bytes = sha256(name)
-    id_low = Base.parse(UInt64, bytes2hex(hash_bytes[1:8]), base=16)
-    id_high = UInt64(0)
+    # Use big-endian and the lower 128 bits of the hash, consistent with pyrel.
+    id_high = ntoh(reinterpret(UInt64, hash_bytes[17:24])[1])
+    id_low = ntoh(reinterpret(UInt64, hash_bytes[25:32])[1])
     relation_id = Proto.RelationId(id_low, id_high)
 
     # Store the mapping for the current fragment if we're inside one
