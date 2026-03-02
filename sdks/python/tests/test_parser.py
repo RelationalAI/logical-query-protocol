@@ -11,7 +11,7 @@ from .utils import BIN_SNAPSHOTS_DIR, get_lqp_input_files
 
 def test_relation_id_from_string():
     """All SDKs must produce the same id for the same string."""
-    parser = Parser([])
+    parser = Parser([], "")
     rid = parser.relation_id_from_string("my_relation")
     assert rid.id_low == 0xF2FC83EC57CF8FBC
     assert rid.id_high == 0x503F7DC862F367B7
