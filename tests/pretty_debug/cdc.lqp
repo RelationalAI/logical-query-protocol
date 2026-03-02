@@ -19,30 +19,36 @@
                :csv_skip 0})
             (columns
               (column "raw_data" [])
-              (column ["append" "METADATA$KEY"] 0xb7219c9b1f7d843d [UINT128])
-              (column ["delete" "METADATA$KEY"] 0xc45b4cf618eed32f [UINT128])
-              (column ["append" "user_id"] 0x7982cff88800e869 [INT])
-              (column ["append" "name"] 0x8cb6c4889f2f67c7 [STRING])
-              (column "id" 0x5364bf081a053f95 [INT])
-              (column ["append" "id"] 0x22d32663113e8a7d [INT])
-              (column ["delete" "id"] 0x337b9038b6bf2f6a [INT]))
+              (column
+                ["append" "METADATA$KEY"]
+                0xe348e3a60bf7ccc322536b128bcd1aa2
+                [UINT128])
+              (column
+                ["delete" "METADATA$KEY"]
+                0xa0d350324916137a4ef58919f39a6be8
+                [UINT128])
+              (column ["append" "user_id"] 0x4b886cef3ff3ba81141649c956739174 [INT])
+              (column ["append" "name"] 0xa6ccd9cd9866f2456eb24dd82b7198ed [STRING])
+              (column "id" 0xa8a4dfd49c798f4c5219384c0eb11f79 [INT])
+              (column ["append" "id"] 0x4963a7a154f6f29fe0bf41c39d58c234 [INT])
+              (column ["delete" "id"] 0x7bf936c79584727680e49a87922f010e [INT]))
             (asof "2025-06-01T00:00:00Z")))))
     (reads
-      (output :mk_ins 0xb7219c9b1f7d843d)
-      (output :mk_del 0xc45b4cf618eed32f)
-      (output :uid_ins 0x7982cff88800e869)
-      (output :name_ins 0x8cb6c4889f2f67c7)
-      (output :entity_id 0x5364bf081a053f95)
-      (output :eid_ins 0x22d32663113e8a7d)
-      (output :eid_del 0x337b9038b6bf2f6a))))
+      (output :mk_ins 0xe348e3a60bf7ccc322536b128bcd1aa2)
+      (output :mk_del 0xa0d350324916137a4ef58919f39a6be8)
+      (output :uid_ins 0x4b886cef3ff3ba81141649c956739174)
+      (output :name_ins 0xa6ccd9cd9866f2456eb24dd82b7198ed)
+      (output :entity_id 0xa8a4dfd49c798f4c5219384c0eb11f79)
+      (output :eid_ins 0x4963a7a154f6f29fe0bf41c39d58c234)
+      (output :eid_del 0x7bf936c79584727680e49a87922f010e))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0x337b9038b6bf2f6a` -> `eid_del`
-;; 	 ID `0x22d32663113e8a7d` -> `eid_ins`
-;; 	 ID `0x5364bf081a053f95` -> `entity_id`
-;; 	 ID `0xc45b4cf618eed32f` -> `mk_del`
-;; 	 ID `0xb7219c9b1f7d843d` -> `mk_ins`
-;; 	 ID `0x8cb6c4889f2f67c7` -> `name_ins`
-;; 	 ID `0x7982cff88800e869` -> `uid_ins`
+;; 	 ID `0x7bf936c79584727680e49a87922f010e` -> `eid_del`
+;; 	 ID `0x4963a7a154f6f29fe0bf41c39d58c234` -> `eid_ins`
+;; 	 ID `0xa8a4dfd49c798f4c5219384c0eb11f79` -> `entity_id`
+;; 	 ID `0xa0d350324916137a4ef58919f39a6be8` -> `mk_del`
+;; 	 ID `0xe348e3a60bf7ccc322536b128bcd1aa2` -> `mk_ins`
+;; 	 ID `0xa6ccd9cd9866f2456eb24dd82b7198ed` -> `name_ins`
+;; 	 ID `0x4b886cef3ff3ba81141649c956739174` -> `uid_ins`

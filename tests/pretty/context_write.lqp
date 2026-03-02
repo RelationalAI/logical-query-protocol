@@ -3,7 +3,7 @@
   (epoch
     (writes
       (define (fragment :f1 (def :data ([x::INT] (= x 1)))))
-      (context 0xd0d332779f54ce74 0x3ade11b0fceb3e01))
+      (context 0xef2d3cf12a6745c5485c7aeaf26d7e24 0xefbc92f5bf93034978c02ace451fc15f))
     (reads (output :data :data)))
   (epoch (writes (define (fragment :f2 (def :data2 ([x::INT] (= x 2)))))))
   (epoch (reads (output :data :data))))
