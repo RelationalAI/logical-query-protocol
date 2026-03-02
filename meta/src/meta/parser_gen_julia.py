@@ -15,7 +15,9 @@ def generate_parser_julia(
 ) -> str:
     """Generate LL(k) recursive-descent parser in Julia."""
     codegen = JuliaCodeGenerator(proto_messages=proto_messages, config=PARSER_CONFIG)
-    return generate_parser(grammar, codegen, _TEMPLATE_PATH, command_line)
+    return generate_parser(
+        grammar, codegen, _TEMPLATE_PATH, command_line, proto_messages
+    )
 
 
 __all__ = [

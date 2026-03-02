@@ -14,7 +14,9 @@ def generate_parser_go(
 ) -> str:
     """Generate LL(k) recursive-descent parser in Go."""
     codegen = GoCodeGenerator(proto_messages=proto_messages)
-    return generate_parser(grammar, codegen, _TEMPLATE_PATH, command_line)
+    return generate_parser(
+        grammar, codegen, _TEMPLATE_PATH, command_line, proto_messages
+    )
 
 
 __all__ = [

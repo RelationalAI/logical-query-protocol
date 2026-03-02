@@ -20,7 +20,7 @@ func TestBasicParsing(t *testing.T) {
     (writes)
     (reads)))
 `
-	result, err := lqp.Parse(input)
+	result, _, err := lqp.Parse(input)
 	if err != nil {
 		t.Fatalf("Failed to parse basic transaction: %v", err)
 	}
@@ -35,7 +35,7 @@ func TestBasicParsing(t *testing.T) {
 // TestParseTransaction tests the ParseTransaction entry point.
 func TestParseTransaction(t *testing.T) {
 	input := `(transaction (epoch (writes) (reads)))`
-	result, err := lqp.ParseTransaction(input)
+	result, _, err := lqp.ParseTransaction(input)
 	if err != nil {
 		t.Fatalf("Failed to parse transaction: %v", err)
 	}
@@ -50,7 +50,7 @@ func TestParseTransaction(t *testing.T) {
 // TestParseFragment tests the ParseFragment entry point.
 func TestParseFragment(t *testing.T) {
 	input := `(fragment :test_frag (def :my_rel ([x::INT] (relatom :my_rel x))))`
-	result, err := lqp.ParseFragment(input)
+	result, _, err := lqp.ParseFragment(input)
 	if err != nil {
 		t.Fatalf("Failed to parse fragment: %v", err)
 	}
@@ -62,11 +62,11 @@ func TestParseFragment(t *testing.T) {
 // TestParseDelegatesToParseTransaction verifies Parse and ParseTransaction return equal results.
 func TestParseDelegatesToParseTransaction(t *testing.T) {
 	input := `(transaction (epoch (writes) (reads)))`
-	r1, err := lqp.Parse(input)
+	r1, _, err := lqp.Parse(input)
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
-	r2, err := lqp.ParseTransaction(input)
+	r2, _, err := lqp.ParseTransaction(input)
 	if err != nil {
 		t.Fatalf("ParseTransaction failed: %v", err)
 	}
@@ -77,7 +77,7 @@ func TestParseDelegatesToParseTransaction(t *testing.T) {
 
 // TestParseFragmentRejectsTransaction verifies ParseFragment rejects transaction input.
 func TestParseFragmentRejectsTransaction(t *testing.T) {
-	_, err := lqp.ParseFragment(`(transaction (epoch (writes) (reads)))`)
+	_, _, err := lqp.ParseFragment(`(transaction (epoch (writes) (reads)))`)
 	if err == nil {
 		t.Error("ParseFragment should reject transaction input")
 	}
@@ -85,7 +85,7 @@ func TestParseFragmentRejectsTransaction(t *testing.T) {
 
 // TestParseTransactionRejectsFragment verifies ParseTransaction rejects fragment input.
 func TestParseTransactionRejectsFragment(t *testing.T) {
-	_, err := lqp.ParseTransaction(`(fragment :f (def :r ([x::INT] (relatom :r x))))`)
+	_, _, err := lqp.ParseTransaction(`(fragment :f (def :r ([x::INT] (relatom :r x)))`)
 	if err == nil {
 		t.Error("ParseTransaction should reject fragment input")
 	}
@@ -113,7 +113,7 @@ func TestParseLQPFiles(t *testing.T) {
 				t.Fatalf("Failed to read LQP file %s: %v", entry.Name(), err)
 			}
 
-			result, err := lqp.Parse(string(content))
+			result, _, err := lqp.Parse(string(content))
 			if err != nil {
 				t.Fatalf("Failed to parse LQP file %s: %v", entry.Name(), err)
 			}

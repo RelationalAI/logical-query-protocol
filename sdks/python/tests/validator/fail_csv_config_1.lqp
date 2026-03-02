@@ -1,4 +1,4 @@
-;; ERROR: CSV quotechar should be a single character at fail_csv_config_1.lqp:20:9, got 'hello'
+;; ERROR: fail_csv_config_1.lqp:20:9: CSV quotechar should be a single character, got 'hello'
 (transaction
   (epoch
     (writes

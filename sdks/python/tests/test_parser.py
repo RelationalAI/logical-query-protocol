@@ -11,7 +11,7 @@ from .utils import BIN_SNAPSHOTS_DIR, get_lqp_input_files
 
 def test_relation_id_from_string():
     """All SDKs must produce the same id for the same string."""
-    parser = Parser([])
+    parser = Parser([], "")
     rid = parser.relation_id_from_string("my_relation")
     assert rid.id_low == 0xF2FC83EC57CF8FBC
     assert rid.id_high == 0x503F7DC862F367B7
@@ -23,7 +23,7 @@ def test_parse_lqp(snapshot: Snapshot, input_file):
     with open(input_file) as f:
         content = f.read()
 
-    txn = parse(content)
+    txn, _provenance = parse(content)
     assert txn is not None, f"Failed to parse {input_file}"
     binary_output = txn.SerializeToString()
     snapshot.snapshot_dir = BIN_SNAPSHOTS_DIR
@@ -36,13 +36,13 @@ _SIMPLE_FRAGMENT = "(fragment :test_frag (def :my_rel ([x::INT] (relatom :my_rel
 
 
 def test_parse_transaction():
-    result = parse_transaction(_SIMPLE_TXN)
+    result, _provenance = parse_transaction(_SIMPLE_TXN)
     assert isinstance(result, transactions_pb2.Transaction)
     assert len(result.epochs) == 1
 
 
 def test_parse_fragment():
-    result = parse_fragment(_SIMPLE_FRAGMENT)
+    result, _provenance = parse_fragment(_SIMPLE_FRAGMENT)
     assert isinstance(result, fragments_pb2.Fragment)
 
 

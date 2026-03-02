@@ -174,7 +174,7 @@ class PythonCodeGenerator(CodeGenerator):
         return f"list[{element_type}]"
 
     def gen_option_type(self, element_type: str) -> str:
-        return f"Optional[{element_type}]"
+        return f"{element_type} | None"
 
     def gen_dict_type(self, key_type: str, value_type: str) -> str:
         return f"dict[{key_type}, {value_type}]"

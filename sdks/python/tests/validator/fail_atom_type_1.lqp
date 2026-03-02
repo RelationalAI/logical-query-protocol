@@ -1,4 +1,4 @@
-;; ERROR: Incorrect type for 'foo' atom at index 1 ('2') at fail_atom_type_1.lqp:8:25: expected STRING term, got INT
+;; ERROR: fail_atom_type_1.lqp:8:25: Incorrect type for 'foo' atom at index 1 ('2'): expected STRING term, got INT
 (transaction
   (epoch
     (writes

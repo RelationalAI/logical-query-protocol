@@ -1,4 +1,4 @@
-;; ERROR: Duplicate declaration at fail_dup_id_4.lqp:7:20: 'foo'
+;; ERROR: fail_dup_id_4.lqp:7:20: Duplicate declaration: 'foo'
 (transaction
   (epoch
     (writes

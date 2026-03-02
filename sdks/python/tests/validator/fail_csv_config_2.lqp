@@ -1,4 +1,4 @@
-;; ERROR: All data columns in ExportCSVConfig at fail_csv_config_2.lqp:20:9 must have the same key types. Got 'col1' with key types ['STRING'] and 'col2' with key types ['INT'].
+;; ERROR: fail_csv_config_2.lqp:20:9: All data columns in ExportCSVConfig must have the same key types. Got 'col1' with key types ['STRING'] and 'col2' with key types ['INT'].
 (transaction
   (epoch
     (writes

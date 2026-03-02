@@ -1,4 +1,4 @@
-;; ERROR: Undeclared variable used at fail_undeclared.lqp:11:23: 'some_limit'
+;; ERROR: fail_undeclared.lqp:11:23: Undeclared variable used: 'some_limit'
 (transaction
   (epoch
     (writes

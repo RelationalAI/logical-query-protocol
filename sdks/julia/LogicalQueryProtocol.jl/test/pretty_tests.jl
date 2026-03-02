@@ -106,10 +106,10 @@ end
     lqp_files = sort(filter(f -> endswith(f, ".lqp"), readdir(test_files_dir)))
     for lqp_file in lqp_files
         content = read(joinpath(test_files_dir, lqp_file), String)
-        parsed = Parser.parse(content)
+        parsed, _ = Parser.parse(content)
 
         narrow = pretty(parsed; max_width=40)
-        reparsed = Parser.parse(narrow)
+        reparsed, _ = Parser.parse(narrow)
         @test reparsed == parsed
     end
 end
@@ -122,10 +122,10 @@ end
     lqp_files = sort(filter(f -> endswith(f, ".lqp"), readdir(test_files_dir)))
     for lqp_file in lqp_files
         content = read(joinpath(test_files_dir, lqp_file), String)
-        parsed = Parser.parse(content)
+        parsed, _ = Parser.parse(content)
 
         wide = pretty(parsed; max_width=1000)
-        reparsed = Parser.parse(wide)
+        reparsed, _ = Parser.parse(wide)
         @test reparsed == parsed
     end
 end
@@ -138,7 +138,7 @@ end
     lqp_files = sort(filter(f -> endswith(f, ".lqp"), readdir(test_files_dir)))
     for lqp_file in lqp_files
         content = read(joinpath(test_files_dir, lqp_file), String)
-        parsed = Parser.parse(content)
+        parsed, _ = Parser.parse(content)
 
         narrow = pretty(parsed; max_width=40)
         default = pretty(parsed)
@@ -161,7 +161,7 @@ end
     lqp_files = sort(filter(f -> endswith(f, ".lqp"), readdir(test_files_dir)))
     for lqp_file in lqp_files
         content = read(joinpath(test_files_dir, lqp_file), String)
-        parsed = Parser.parse(content)
+        parsed, _ = Parser.parse(content)
         printed = pretty(parsed)
 
         # Starts with (transaction
@@ -197,7 +197,7 @@ end
         lqp_path = joinpath(test_files_dir, lqp_file)
         content = read(lqp_path, String)
 
-        parsed = Parser.parse(content)
+        parsed, _ = Parser.parse(content)
         @test parsed isa Proto.Transaction
 
         printed = pretty(parsed)
@@ -222,13 +222,13 @@ end
         lqp_path = joinpath(test_files_dir, lqp_file)
         content = read(lqp_path, String)
 
-        parsed = Parser.parse(content)
+        parsed, _ = Parser.parse(content)
         @test parsed isa Proto.Transaction
 
         printed = pretty(parsed)
         @test !isempty(printed)
 
-        reparsed = Parser.parse(printed)
+        reparsed, _ = Parser.parse(printed)
         @test reparsed isa Proto.Transaction
         @test reparsed == parsed
 
@@ -311,7 +311,7 @@ end
         printed = pretty(txn)
         @test !isempty(printed)
 
-        reparsed = Parser.parse(printed)
+        reparsed, _ = Parser.parse(printed)
         @test reparsed isa Proto.Transaction
         @test reparsed == txn
 

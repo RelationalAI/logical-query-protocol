@@ -106,6 +106,9 @@ PYTHON_TEMPLATES: dict[str, BuiltinTemplate] = {
     "format_bytes": BuiltinTemplate('"0x" + {0}.hex()'),
     "pp_dispatch": BuiltinTemplate("None", ["self.pprint_dispatch({0})"]),
     "get_at": BuiltinTemplate("{0}[{1}]"),
+    # Provenance tracking
+    "span_start": BuiltinTemplate("self.span_start()"),
+    "record_span": BuiltinTemplate("None", ["self.record_span({0}, {1})"]),
 }
 
 
@@ -191,6 +194,9 @@ JULIA_TEMPLATES: dict[str, BuiltinTemplate] = {
     "format_bytes": BuiltinTemplate('"0x" * bytes2hex({0})'),
     "pp_dispatch": BuiltinTemplate("nothing", ["_pprint_dispatch(pp, {0})"]),
     "get_at": BuiltinTemplate("{0}[{1} + 1]"),
+    # Provenance tracking
+    "span_start": BuiltinTemplate("span_start(parser)"),
+    "record_span": BuiltinTemplate("nothing", ["record_span!(parser, {0}, {1})"]),
 }
 
 
@@ -280,6 +286,9 @@ GO_TEMPLATES: dict[str, BuiltinTemplate] = {
     "format_bytes": BuiltinTemplate('fmt.Sprintf("0x%x", {0})'),
     "pp_dispatch": BuiltinTemplate("nil", ["p.pprintDispatch({0})"]),
     "get_at": BuiltinTemplate("{0}[{1}]"),
+    # Provenance tracking
+    "span_start": BuiltinTemplate("int64(p.spanStart())"),
+    "record_span": BuiltinTemplate("nil", ["p.recordSpan(int({0}), {1})"]),
 }
 
 __all__ = [

@@ -1,4 +1,4 @@
-;; ERROR: Duplicate fragment within an epoch at fail_dup_fragment_id.lqp:9:7: 'frag'
+;; ERROR: fail_dup_fragment_id.lqp:9:7: Duplicate fragment within an epoch: 'frag'
 (transaction
   (epoch
     (writes

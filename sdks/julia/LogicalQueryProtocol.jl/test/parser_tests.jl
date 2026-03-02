@@ -6,7 +6,7 @@
         (writes)
         (reads)))
     """
-    result = Parser.parse(input)
+    result, _provenance = Parser.parse(input)
     @test !isnothing(result)
     @test result isa Proto.Transaction
     @test length(result.epochs) == 1
@@ -116,7 +116,7 @@ end
     using LogicalQueryProtocol.Parser: ParserState, Token, relation_id_from_string
 
     # All SDKs must produce the same id for the same string.
-    parser = ParserState(Token[])
+    parser = ParserState(Token[], "")
     rid = relation_id_from_string(parser, "my_relation")
     @test rid.id_low == 0xf2fc83ec57cf8fbc
     @test rid.id_high == 0x503f7dc862f367b7
@@ -137,7 +137,8 @@ end
 
 @testitem "parse delegates to parse_transaction" setup=[ParserSetup] begin
     input = "(transaction (epoch (writes) (reads)))"
-    @test Parser.parse(input) == Parser.parse_transaction(input)
+    result, _ = Parser.parse(input)
+    @test result == Parser.parse_transaction(input)
 end
 
 @testitem "parse_fragment rejects transaction" setup=[ParserSetup] begin
@@ -176,7 +177,7 @@ end
         bin_path = joinpath(bin_files_dir, replace(lqp_file, ".lqp" => ".bin"))
 
         content = read(lqp_path, String)
-        result = Parser.parse(content)
+        result, _ = Parser.parse(content)
         @test !isnothing(result)
         @test result isa Proto.Transaction
 
