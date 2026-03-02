@@ -153,7 +153,7 @@ const _TOKEN_SPECS = [
     ("INT", r"[-]?\d+", scan_int),
     ("INT128", r"[-]?\d+i128", scan_int128),
     ("STRING", r"\"(?:[^\"\\]|\\.)*\"", scan_string),
-    ("SYMBOL", r"[a-zA-Z_][a-zA-Z0-9_.-]*", scan_symbol),
+    ("SYMBOL", r"[a-zA-Z_][a-zA-Z0-9_./#,-]*", scan_symbol),
     ("UINT128", r"0x[0-9a-fA-F]+", scan_uint128),
 ]
 

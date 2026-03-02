@@ -1,0 +1,28 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (def
+            0x15c3d261e9b87ddca0f3e13e054457bd
+            ([x::INT] (and (= x 1) (atom 0x91b51012f825fc7c589f890a3b18cfd4 x x))))
+          (def
+            0x1e9de369d8c3c11ff417a9c0c86e7ebe
+            ([x::INT y::INT] (and (atom 0x15c3d261e9b87ddca0f3e13e054457bd x) (= y x))))
+          (def
+            0xcdd1079222948b600fa246777af00460
+            ([x::INT] (atom 0x15c3d261e9b87ddca0f3e13e054457bd x))))))
+    (reads
+      (output :my/relation 0x15c3d261e9b87ddca0f3e13e054457bd)
+      (output :my#relation 0x1e9de369d8c3c11ff417a9c0c86e7ebe)
+      (output :my,relation 0xcdd1079222948b600fa246777af00460))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `0x1e9de369d8c3c11ff417a9c0c86e7ebe` -> `my#relation`
+;; 	 ID `0xcdd1079222948b600fa246777af00460` -> `my,relation`
+;; 	 ID `0x15c3d261e9b87ddca0f3e13e054457bd` -> `my/relation`
+;; 	 ID `0x91b51012f825fc7c589f890a3b18cfd4` -> `other/rel`
