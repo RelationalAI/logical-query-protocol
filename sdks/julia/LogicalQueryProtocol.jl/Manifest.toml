@@ -2,7 +2,7 @@
 
 julia_version = "1.10.5"
 manifest_format = "2.0"
-project_hash = "6d203c6dbc5dc43498c40210362c16f727fc69f1"
+project_hash = "9a6ca1f29b65ed1f7de9aa2c6b7731ddadcac330"
 
 [[deps.BufferedStreams]]
 git-tree-sha1 = "6863c5b7fc997eadcabdbaf6c5f201dc30032643"
