@@ -3,6 +3,7 @@
 # Usage:
 #   make              Build protobuf bindings, parsers, and printers.
 #   make protobuf     Lint, check breaking changes, and generate protobuf code.
+#   make force-protobuf  Force-regenerate all protobuf code.
 #   make parsers      Regenerate Python, Julia, and Go parsers from the grammar.
 #   make parser-X     Regenerate a single parser (X = python, julia, go).
 #   make force-parsers      Force-regenerate all parsers.
@@ -74,7 +75,7 @@ JL_PROTO_GENERATED := \
 	$(JL_PROTO_DIR)/fragments_pb.jl \
 	$(JL_PROTO_DIR)/transactions_pb.jl
 
-.PHONY: all protobuf parsers parser-python parser-julia parser-go \
+.PHONY: all protobuf force-protobuf parsers parser-python parser-julia parser-go \
 	force-parsers force-parser-python force-parser-julia force-parser-go \
 	printers printer-python printer-julia printer-go \
 	force-printers force-printer-python force-printer-julia force-printer-go \
@@ -91,6 +92,23 @@ protobuf: $(PY_PROTO_GENERATED) $(GO_PROTO_GENERATED) $(JL_PROTO_GENERATED)
 # This rule is there to trick a later run of make to not regenerate the protobuf files
 touch-proto-generated:
 	touch $(PY_PROTO_GENERATED) $(GO_PROTO_GENERATED) $(JL_PROTO_GENERATED)
+
+force-protobuf:
+	buf lint
+	buf breaking --against ".git#branch=main,subdir=proto"
+	buf generate
+	mkdir -p $(PY_PROTO_DIR)
+	cp gen/python/relationalai/lqp/v1/*_pb2.py* $(PY_PROTO_DIR)/
+	for file in $(PY_PROTO_DIR)/*_pb2.py*; do \
+		sed 's/from relationalai\.lqp\.v1/from lqp\.proto\.v1/g' "$$file" > "$$file.tmp" && \
+		mv "$$file.tmp" "$$file"; \
+		sed 's/import relationalai\.lqp\.v1/import lqp\.proto\.v1/g' "$$file" > "$$file.tmp" && \
+		mv "$$file.tmp" "$$file"; \
+	done
+	mkdir -p $(GO_PROTO_DIR)
+	cp gen/go/relationalai/lqp/v1/*.pb.go $(GO_PROTO_DIR)/
+	rm -rf gen/python gen/go
+	cd sdks/julia && julia --project=LogicalQueryProtocol.jl generate_proto.jl
 
 $(PY_PROTO_GENERATED) $(GO_PROTO_GENERATED): $(PROTO_FILES)
 	buf lint
