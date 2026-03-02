@@ -99,9 +99,10 @@
 %nonterm exists logic.Exists
 %nonterm export transactions.Export
 %nonterm export_csv_column transactions.ExportCSVColumn
-%nonterm export_csv_columns Sequence[transactions.ExportCSVColumn]
+%nonterm export_csv_columns_list Sequence[transactions.ExportCSVColumn]
 %nonterm export_csv_config transactions.ExportCSVConfig
 %nonterm export_csv_path String
+%nonterm export_csv_source transactions.ExportCSVSource
 %nonterm false logic.Disjunction
 %nonterm ffi logic.FFI
 %nonterm ffi_args Sequence[logic.Abstraction]
@@ -178,6 +179,7 @@
 %validator_ignore_completeness DecimalValue
 %validator_ignore_completeness BeTreeLocator
 %validator_ignore_completeness BeTreeConfig
+%validator_ignore_completeness ExportCSVColumns
 
 %%
 
@@ -1079,9 +1081,15 @@ export
       deconstruct: $3: transactions.ExportCSVConfig = $$.csv_config
 
 export_csv_config
-    : "(" "export_csv_config" export_csv_path export_csv_columns config_dict ")"
-      construct: $$ = export_csv_config($3, $4, $5)
-      deconstruct:
+    : "(" "export_csv_config_v2" export_csv_path export_csv_source csv_config ")"
+      construct: $$ = construct_export_csv_config_with_source($3, $4, $5)
+      deconstruct if builtin.length($$.data_columns) == 0:
+        $3: String = $$.path
+        $4: transactions.ExportCSVSource = $$.csv_source
+        $5: logic.CSVConfig = $$.csv_config
+    | "(" "export_csv_config" export_csv_path export_csv_columns_list config_dict ")"
+      construct: $$ = construct_export_csv_config($3, $4, $5)
+      deconstruct if builtin.length($$.data_columns) != 0:
         $3: String = $$.path
         $4: Sequence[transactions.ExportCSVColumn] = $$.data_columns
         $5: Sequence[Tuple[String, logic.Value]] = deconstruct_export_csv_config($$)
@@ -1089,7 +1097,7 @@ export_csv_config
 export_csv_path
     : "(" "path" STRING ")"
 
-export_csv_columns
+export_csv_columns_list
     : "(" "columns" export_csv_column* ")"
 
 export_csv_column
@@ -1098,6 +1106,16 @@ export_csv_column
       deconstruct:
         $3: String = $$.column_name
         $4: logic.RelationId = $$.column_data
+
+export_csv_source
+    : "(" "gnf_columns" export_csv_column* ")"
+      construct: $$ = transactions.ExportCSVSource(gnf_columns=transactions.ExportCSVColumns(columns=$3))
+      deconstruct if builtin.has_proto_field($$, 'gnf_columns'):
+        $3: Sequence[transactions.ExportCSVColumn] = $$.gnf_columns.columns
+    | "(" "table_def" relation_id ")"
+      construct: $$ = transactions.ExportCSVSource(table_def=$3)
+      deconstruct if builtin.has_proto_field($$, 'table_def'):
+        $3: logic.RelationId = $$.table_def
 
 
 %%
@@ -1198,6 +1216,7 @@ def construct_csv_config(config_dict: Sequence[Tuple[String, logic.Value]]) -> l
     decimal_separator: str = _extract_value_string(builtin.dict_get(config, "csv_decimal_separator"), ".")
     encoding: str = _extract_value_string(builtin.dict_get(config, "csv_encoding"), "utf-8")
     compression: str = _extract_value_string(builtin.dict_get(config, "csv_compression"), "auto")
+    partition_size_mb: int = _extract_value_int64(builtin.dict_get(config, "csv_partition_size_mb"), 0)
     return logic.CSVConfig(
         header_row=header_row,
         skip=skip,
@@ -1210,6 +1229,7 @@ def construct_csv_config(config_dict: Sequence[Tuple[String, logic.Value]]) -> l
         decimal_separator=decimal_separator,
         encoding=encoding,
         compression=compression,
+        partition_size_mb=partition_size_mb,
     )
 
 
@@ -1275,8 +1295,7 @@ def construct_configure(config_dict: Sequence[Tuple[String, logic.Value]]) -> tr
         ivm_config=ivm_config,
     )
 
-
-def export_csv_config(
+def construct_export_csv_config(
     path: String,
     columns: Sequence[transactions.ExportCSVColumn],
     config_dict: Sequence[Tuple[String, logic.Value]],
@@ -1299,6 +1318,17 @@ def export_csv_config(
         syntax_delim=builtin.some(syntax_delim),
         syntax_quotechar=builtin.some(syntax_quotechar),
         syntax_escapechar=builtin.some(syntax_escapechar),
+    )
+
+def construct_export_csv_config_with_source(
+    path: String,
+    csv_source: transactions.ExportCSVSource,
+    csv_config: logic.CSVConfig,
+) -> transactions.ExportCSVConfig:
+    return transactions.ExportCSVConfig(
+        path=path,
+        csv_source=csv_source,
+        csv_config=csv_config,
     )
 
 
@@ -1362,6 +1392,8 @@ def deconstruct_csv_config(msg: logic.CSVConfig) -> List[Tuple[String, logic.Val
     builtin.list_push(result, builtin.tuple("csv_decimal_separator", _make_value_string(msg.decimal_separator)))
     builtin.list_push(result, builtin.tuple("csv_encoding", _make_value_string(msg.encoding)))
     builtin.list_push(result, builtin.tuple("csv_compression", _make_value_string(msg.compression)))
+    if msg.partition_size_mb != 0:
+      builtin.list_push(result, builtin.tuple("csv_partition_size_mb", _make_value_int64(msg.partition_size_mb)))
     return builtin.list_sort(result)
 
 

@@ -32,6 +32,65 @@ func TestBasicParsing(t *testing.T) {
 	}
 }
 
+// TestParseTransaction tests the ParseTransaction entry point.
+func TestParseTransaction(t *testing.T) {
+	input := `(transaction (epoch (writes) (reads)))`
+	result, err := lqp.ParseTransaction(input)
+	if err != nil {
+		t.Fatalf("Failed to parse transaction: %v", err)
+	}
+	if result == nil {
+		t.Fatal("ParseTransaction returned nil")
+	}
+	if len(result.Epochs) != 1 {
+		t.Errorf("Expected 1 epoch, got %d", len(result.Epochs))
+	}
+}
+
+// TestParseFragment tests the ParseFragment entry point.
+func TestParseFragment(t *testing.T) {
+	input := `(fragment :test_frag (def :my_rel ([x::INT] (relatom :my_rel x))))`
+	result, err := lqp.ParseFragment(input)
+	if err != nil {
+		t.Fatalf("Failed to parse fragment: %v", err)
+	}
+	if result == nil {
+		t.Fatal("ParseFragment returned nil")
+	}
+}
+
+// TestParseDelegatesToParseTransaction verifies Parse and ParseTransaction return equal results.
+func TestParseDelegatesToParseTransaction(t *testing.T) {
+	input := `(transaction (epoch (writes) (reads)))`
+	r1, err := lqp.Parse(input)
+	if err != nil {
+		t.Fatalf("Parse failed: %v", err)
+	}
+	r2, err := lqp.ParseTransaction(input)
+	if err != nil {
+		t.Fatalf("ParseTransaction failed: %v", err)
+	}
+	if !proto.Equal(r1, r2) {
+		t.Error("Parse and ParseTransaction should return equal results")
+	}
+}
+
+// TestParseFragmentRejectsTransaction verifies ParseFragment rejects transaction input.
+func TestParseFragmentRejectsTransaction(t *testing.T) {
+	_, err := lqp.ParseFragment(`(transaction (epoch (writes) (reads)))`)
+	if err == nil {
+		t.Error("ParseFragment should reject transaction input")
+	}
+}
+
+// TestParseTransactionRejectsFragment verifies ParseTransaction rejects fragment input.
+func TestParseTransactionRejectsFragment(t *testing.T) {
+	_, err := lqp.ParseTransaction(`(fragment :f (def :r ([x::INT] (relatom :r x))))`)
+	if err == nil {
+		t.Error("ParseTransaction should reject fragment input")
+	}
+}
+
 // TestParseLQPFiles parses all LQP files and compares against binary snapshots.
 func TestParseLQPFiles(t *testing.T) {
 	root := repoRoot(t)
