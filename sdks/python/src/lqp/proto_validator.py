@@ -496,16 +496,21 @@ class UnusedVariableVisitor(ProtoVisitor):
 
     def visit_Abstraction(self, node: logic_pb2.Abstraction, *args: Any):
         self.scopes.append((set(), set()))
+        binding_map: dict[str, logic_pb2.Binding] = {}
         for binding in node.vars:
-            self._declare_var(binding.var.name)
+            name = binding.var.name
+            self._declare_var(name)
+            binding_map[name] = binding
         self.visit(node.value, *args)
         declared, used = self.scopes.pop()
         unused = declared - used
-        if unused:
-            for var_name in unused:
-                if var_name.startswith("_"):
-                    continue
-                raise ValidationError(f"Unused variable declared: '{var_name}'")
+        for var_name in unused:
+            if var_name.startswith("_"):
+                continue
+            b = binding_map[var_name]
+            raise ValidationError(
+                f"Unused variable declared{self._location_str(b)}: '{var_name}'"
+            )
 
     def visit_Var(self, node: logic_pb2.Var, *args: Any):
         self._mark_var_used(node.name, node)
