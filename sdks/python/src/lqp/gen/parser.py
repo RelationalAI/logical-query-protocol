@@ -115,7 +115,7 @@ _TOKEN_SPECS = [
     ("STRING", re.compile(r'"(?:[^"\\]|\\.)*"'), lambda x: Lexer.scan_string(x)),
     (
         "SYMBOL",
-        re.compile(r"[a-zA-Z_][a-zA-Z0-9_./#,-]*"),
+        re.compile(r"[a-zA-Z_][a-zA-Z0-9_./#-]*"),
         lambda x: Lexer.scan_symbol(x),
     ),
     ("UINT128", re.compile(r"0x[0-9a-fA-F]+"), lambda x: Lexer.scan_uint128(x)),
