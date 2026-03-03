@@ -40,7 +40,7 @@
 %token INT Int64 r'[-]?\d+'
 %token INT128 logic.Int128Value r'[-]?\d+i128'
 %token STRING String r'"(?:[^"\\]|\\.)*"'
-%token SYMBOL String r'[a-zA-Z_][a-zA-Z0-9_.-]*'
+%token SYMBOL String r'[a-zA-Z_][a-zA-Z0-9_./#-]*'
 %token UINT128 logic.UInt128Value r'0x[0-9a-fA-F]+'
 
 # Type declarations for rules
