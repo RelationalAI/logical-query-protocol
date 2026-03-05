@@ -194,7 +194,9 @@ class GoCodeGenerator(CodeGenerator):
         # Map terminal names to Go types for type assertion
         terminal_field_map = {
             "INT": "i64",
+            "INT32": "i32",
             "FLOAT": "f64",
+            "FLOAT32": "f32",
             "STRING": "str",
             "SYMBOL": "str",
             "DECIMAL": "decimal",
@@ -936,7 +938,9 @@ class GoCodeGenerator(CodeGenerator):
         "SYMBOL": ("scanSymbol", "kindString", "str"),
         "STRING": ("scanString", "kindString", "str"),
         "INT": ("scanInt", "kindInt64", "i64"),
+        "INT32": ("scanInt32", "kindInt32", "i32"),
         "FLOAT": ("scanFloat", "kindFloat64", "f64"),
+        "FLOAT32": ("scanFloat32", "kindFloat32", "f32"),
         "UINT128": ("scanUint128", "kindUint128", "uint128"),
         "INT128": ("scanInt128", "kindInt128", "int128"),
         "DECIMAL": ("scanDecimal", "kindDecimal", "decimal"),
