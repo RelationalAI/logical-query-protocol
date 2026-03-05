@@ -19,9 +19,7 @@
             ([v::UINT128] (= v 0x123456789abcdef12345)))
           (def 0x5434f66a742f009c01b33597509bf953 ([v::INT32] (= v 42i32)))
           (def 0x6dbcab937ed297eeba50b9f7eed63afb ([v::INT32] (= v -42i32)))
-          (def
-            0xfc8aa7c5cf3d1ab920633d31f1452d0c
-            ([v::FLOAT32] (= v 1.2300000190734863f32)))
+          (def 0xfc8aa7c5cf3d1ab920633d31f1452d0c ([v::FLOAT32] (= v 1.23f32)))
           (def 0x26150df48c574bdfa69e436e0b3d5c18 ([v::FLOAT] (= v 1.23)))
           (def 0xbe200df2e3189f85e43fd26b4641043a ([v::FLOAT] (= v inf)))
           (def 0xc8e07fb317f80ba716824aae05679cc7 ([v::FLOAT] (= v nan)))
@@ -69,9 +67,7 @@
           (def
             0x399ec3de4696f5651e0bdecb92a651dc
             ([v::FLOAT32]
-             (and
-               (= v 1.2300000190734863f32)
-               (atom 0xfc8aa7c5cf3d1ab920633d31f1452d0c 1.2300000190734863f32))))
+             (and (= v 1.23f32) (atom 0xfc8aa7c5cf3d1ab920633d31f1452d0c 1.23f32))))
           (def
             0x36db9cebd42255a7687c86bc5ded861
             ([v::FLOAT] (and (= v 1.23) (atom 0x26150df48c574bdfa69e436e0b3d5c18 1.23))))

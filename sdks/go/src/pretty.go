@@ -14,6 +14,7 @@ import (
 	"math/big"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 
 	pb "github.com/RelationalAI/logical-query-protocol/sdks/go/src/lqp/v1"
@@ -720,7 +721,7 @@ func (p *PrettyPrinter) pretty_value(msg *pb.Value) interface{} {
 												deconstruct_result687 := _t1341
 												if deconstruct_result687 != nil {
 													unwrapped688 := *deconstruct_result687
-													p.write(fmt.Sprintf("%sf32", formatFloat64(float64(unwrapped688))))
+													p.write(fmt.Sprintf("%sf32", strconv.FormatFloat(float64(unwrapped688), 'g', -1, 32)))
 												} else {
 													fields686 := msg
 													_ = fields686

@@ -85,9 +85,11 @@ PYTHON_TEMPLATES: dict[str, BuiltinTemplate] = {
     "try_flat_io": BuiltinTemplate("self._try_flat({0}, {1})"),
     "format_int64": BuiltinTemplate("str({0})"),
     "format_int32": BuiltinTemplate("str({0})"),
-    "format_float32": BuiltinTemplate("str({0})"),
+    "format_float32": BuiltinTemplate("self.format_float32_value({0})"),
     "format_int32_literal": BuiltinTemplate("(str({0}) + 'i32')"),
-    "format_float32_literal": BuiltinTemplate("(str(float({0})) + 'f32')"),
+    "format_float32_literal": BuiltinTemplate(
+        "(self.format_float32_value({0}) + 'f32')"
+    ),
     "format_float64": BuiltinTemplate("str({0})"),
     "format_string": BuiltinTemplate("self.format_string_value({0})"),
     "format_symbol": BuiltinTemplate("{0}"),
@@ -180,11 +182,9 @@ JULIA_TEMPLATES: dict[str, BuiltinTemplate] = {
     "try_flat_io": BuiltinTemplate("try_flat(pp, {0}, {1})"),
     "format_int64": BuiltinTemplate("format_int(pp, {0})"),
     "format_int32": BuiltinTemplate("format_int(pp, Int64({0}))"),
-    "format_float32": BuiltinTemplate("format_float(pp, Float64({0}))"),
+    "format_float32": BuiltinTemplate("lowercase(string({0}))"),
     "format_int32_literal": BuiltinTemplate('(string(Int64({0})) * "i32")'),
-    "format_float32_literal": BuiltinTemplate(
-        '(lowercase(string(Float64({0}))) * "f32")'
-    ),
+    "format_float32_literal": BuiltinTemplate('(lowercase(string({0})) * "f32")'),
     "format_float64": BuiltinTemplate("format_float(pp, {0})"),
     "format_string": BuiltinTemplate("format_string(pp, {0})"),
     "format_symbol": BuiltinTemplate("{0}"),
@@ -279,10 +279,10 @@ GO_TEMPLATES: dict[str, BuiltinTemplate] = {
     "try_flat_io": BuiltinTemplate("p.tryFlat({0}, func() {{ {1}({0}) }})"),
     "format_int64": BuiltinTemplate('fmt.Sprintf("%d", {0})'),
     "format_int32": BuiltinTemplate('fmt.Sprintf("%d", {0})'),
-    "format_float32": BuiltinTemplate("formatFloat64(float64({0}))"),
+    "format_float32": BuiltinTemplate("strconv.FormatFloat(float64({0}), 'g', -1, 32)"),
     "format_int32_literal": BuiltinTemplate('fmt.Sprintf("%di32", {0})'),
     "format_float32_literal": BuiltinTemplate(
-        'fmt.Sprintf("%sf32", formatFloat64(float64({0})))'
+        "fmt.Sprintf(\"%sf32\", strconv.FormatFloat(float64({0}), 'g', -1, 32))"
     ),
     "format_float64": BuiltinTemplate("formatFloat64({0})"),
     "format_string": BuiltinTemplate("p.formatStringValue({0})"),

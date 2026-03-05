@@ -754,7 +754,7 @@ function pretty_value(pp::PrettyPrinter, msg::Proto.Value)
                                                 deconstruct_result687 = _t1343
                                                 if !isnothing(deconstruct_result687)
                                                     unwrapped688 = deconstruct_result687
-                                                    write(pp, (lowercase(string(Float64(unwrapped688))) * "f32"))
+                                                    write(pp, (lowercase(string(unwrapped688)) * "f32"))
                                                 else
                                                     fields686 = msg
                                                     write(pp, "missing")

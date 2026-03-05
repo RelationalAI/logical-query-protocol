@@ -174,6 +174,20 @@ class PrettyPrinter:
         """Convert RelationId to UInt128Value representation."""
         return logic_pb2.UInt128Value(low=msg.id_low, high=msg.id_high)
 
+    @staticmethod
+    def format_float32_value(v: float) -> str:
+        """Format a float32 value at 32-bit precision."""
+        import struct
+        # Round-trip through float32 to get the exact 32-bit value,
+        # then format with enough precision to distinguish it.
+        f32 = struct.unpack('f', struct.pack('f', v))[0]
+        # Use repr-style formatting: shortest string that round-trips
+        s = f"{f32:.8g}"
+        # Ensure it looks like a float (has a decimal point)
+        if '.' not in s and 'e' not in s and 'inf' not in s and 'nan' not in s:
+            s += '.0'
+        return s
+
     def format_string_value(self, s: str) -> str:
         """Format a string value with double quotes for LQP output."""
         escaped = s.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t')
@@ -572,7 +586,7 @@ class PrettyPrinter:
                                                     if deconstruct_result687 is not None:
                                                         assert deconstruct_result687 is not None
                                                         unwrapped688 = deconstruct_result687
-                                                        self.write((str(float(unwrapped688)) + 'f32'))
+                                                        self.write((self.format_float32_value(unwrapped688) + 'f32'))
                                                     else:
                                                         fields686 = msg
                                                         self.write("missing")
