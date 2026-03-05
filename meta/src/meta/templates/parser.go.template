@@ -61,7 +61,9 @@ type tokenKind int
 const (
 	kindString tokenKind = iota
 	kindInt64
+	kindInt32
 	kindFloat64
+	kindFloat32
 	kindUint128
 	kindInt128
 	kindDecimal
@@ -72,7 +74,9 @@ type TokenValue struct {{
 	kind    tokenKind
 	str     string
 	i64     int64
+	i32     int32
 	f64     float64
+	f32     float32
 	uint128 *pb.UInt128Value
 	int128  *pb.Int128Value
 	decimal *pb.DecimalValue
@@ -82,8 +86,12 @@ func (tv TokenValue) String() string {{
 	switch tv.kind {{
 	case kindInt64:
 		return strconv.FormatInt(tv.i64, 10)
+	case kindInt32:
+		return fmt.Sprintf("%di32", tv.i32)
 	case kindFloat64:
 		return strconv.FormatFloat(tv.f64, 'g', -1, 64)
+	case kindFloat32:
+		return fmt.Sprintf("%sf32", strconv.FormatFloat(float64(tv.f32), 'g', -1, 32))
 	case kindUint128:
 		return fmt.Sprintf("0x%016x%016x", tv.uint128.High, tv.uint128.Low)
 	case kindInt128:
@@ -223,6 +231,24 @@ func scanInt(s string) int64 {{
 		panic(ParseError{{msg: fmt.Sprintf("Invalid integer: %s", s)}})
 	}}
 	return n
+}}
+
+func scanInt32(s string) int32 {{
+	numStr := s[:len(s)-3] // Remove "i32" suffix
+	n, err := strconv.ParseInt(numStr, 10, 32)
+	if err != nil {{
+		panic(ParseError{{msg: fmt.Sprintf("Invalid int32: %s", s)}})
+	}}
+	return int32(n)
+}}
+
+func scanFloat32(s string) float32 {{
+	numStr := s[:len(s)-3] // Remove "f32" suffix
+	f, err := strconv.ParseFloat(numStr, 32)
+	if err != nil {{
+		panic(ParseError{{msg: fmt.Sprintf("Invalid float32: %s", s)}})
+	}}
+	return float32(f)
 }}
 
 func scanFloat(s string) float64 {{

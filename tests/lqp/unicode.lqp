@@ -8,7 +8,7 @@
             (csv_locator
               (inline_data "id,name,city,greeting\n1,François,Paris,Bonjour\n2,田中,東京,こんにちは\n3,Müller,München,Grüß Gott\n4,Иван,Москва,Привет"))
             (csv_config
-              {:csv_header_row 1
+              {:csv_header_row 1i32
                :csv_delimiter ","
                :csv_quotechar "\""
                :csv_escapechar "\\"

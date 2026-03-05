@@ -37,7 +37,9 @@
 # PATTERN can be r'...' for regex or '...' for fixed string
 %token DECIMAL logic.DecimalValue r'[-]?\d+\.\d+d\d+'
 %token FLOAT Float64 r'([-]?\d+\.\d+|inf|nan)'
+%token FLOAT32 Float32 r'[-]?\d+\.\d+f32'
 %token INT Int64 r'[-]?\d+'
+%token INT32 Int32 r'[-]?\d+i32'
 %token INT128 logic.Int128Value r'[-]?\d+i128'
 %token STRING String r'"(?:[^"\\]|\\.)*"'
 %token SYMBOL String r'[a-zA-Z_][a-zA-Z0-9_./#-]*'
@@ -107,6 +109,7 @@
 %nonterm ffi logic.FFI
 %nonterm ffi_args Sequence[logic.Abstraction]
 %nonterm float_type logic.FloatType
+%nonterm float32_type logic.Float32Type
 %nonterm formula logic.Formula
 %nonterm fragment fragments.Fragment
 %nonterm fragment_id fragments.FragmentId
@@ -117,6 +120,7 @@
 %nonterm init Sequence[logic.Instruction]
 %nonterm instruction logic.Instruction
 %nonterm int_type logic.IntType
+%nonterm int32_type logic.Int32Type
 %nonterm int128_type logic.Int128Type
 %nonterm loop logic.Loop
 %nonterm lt logic.Primitive
@@ -245,6 +249,14 @@ value
       construct: $$ = logic.Value(boolean_value=$1)
       deconstruct if builtin.has_proto_field($$, 'boolean_value'):
         $1: Boolean = $$.boolean_value
+    | INT32
+      construct: $$ = logic.Value(int32_value=$1)
+      deconstruct if builtin.has_proto_field($$, 'int32_value'):
+        $1: Int32 = $$.int32_value
+    | FLOAT32
+      construct: $$ = logic.Value(float32_value=$1)
+      deconstruct if builtin.has_proto_field($$, 'float32_value'):
+        $1: Float32 = $$.float32_value
 
 date
     : "(" "date" INT INT INT ")"
@@ -435,6 +447,14 @@ type
       construct: $$ = logic.Type(boolean_type=$1)
       deconstruct if builtin.has_proto_field($$, 'boolean_type'):
         $1: logic.BooleanType = $$.boolean_type
+    | int32_type
+      construct: $$ = logic.Type(int32_type=$1)
+      deconstruct if builtin.has_proto_field($$, 'int32_type'):
+        $1: logic.Int32Type = $$.int32_type
+    | float32_type
+      construct: $$ = logic.Type(float32_type=$1)
+      deconstruct if builtin.has_proto_field($$, 'float32_type'):
+        $1: logic.Float32Type = $$.float32_type
 
 unspecified_type
     : "UNKNOWN"
@@ -478,6 +498,14 @@ decimal_type
       deconstruct:
         $3: Int64 = builtin.int32_to_int64($$.precision)
         $4: Int64 = builtin.int32_to_int64($$.scale)
+
+int32_type
+    : "INT32"
+      construct: $$ = logic.Int32Type()
+
+float32_type
+    : "FLOAT32"
+      construct: $$ = logic.Float32Type()
 
 boolean_type
     : "BOOLEAN"
@@ -1122,8 +1150,8 @@ export_csv_source
 
 
 def _extract_value_int32(value: Optional[logic.Value], default: int) -> Int32:
-    if value is not None and builtin.has_proto_field(builtin.unwrap_option(value), 'int_value'):
-        return builtin.int64_to_int32(builtin.unwrap_option(value).int_value)
+    if value is not None and builtin.has_proto_field(builtin.unwrap_option(value), 'int32_value'):
+        return builtin.unwrap_option(value).int32_value
     return builtin.int64_to_int32(default)
 
 
@@ -1333,7 +1361,7 @@ def construct_export_csv_config_with_source(
 
 
 def _make_value_int32(v: Int32) -> logic.Value:
-    return logic.Value(int_value=builtin.int32_to_int64(v))
+    return logic.Value(int32_value=v)
 
 
 def _make_value_int64(v: int) -> logic.Value:

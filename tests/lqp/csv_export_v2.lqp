@@ -82,7 +82,7 @@
           (path "users_pipe.csv")
           (table_def :users)
           (csv_config
-            { :csv_header_row 1
+            { :csv_header_row 1i32
               :csv_delimiter "|"
               :csv_quotechar "\""
               :csv_escapechar "\\" })))
@@ -104,7 +104,7 @@
           (path "products.csv")
           (table_def :products)
           (csv_config
-            { :csv_header_row 1
+            { :csv_header_row 1i32
               :csv_delimiter ","
               :csv_quotechar "\""
               :csv_escapechar "\\" })))
@@ -115,7 +115,7 @@
           (path "events.csv")
           (table_def :events)
           (csv_config
-            { :csv_header_row 1
+            { :csv_header_row 1i32
               :csv_delimiter ","
               :csv_quotechar "\""
               :csv_escapechar "\\" })))
@@ -126,7 +126,7 @@
           (path "users.tsv")
           (table_def :users)
           (csv_config
-            { :csv_header_row 1
+            { :csv_header_row 1i32
               :csv_delimiter "\t"
               :csv_quotechar "\""
               :csv_escapechar "\\" })))
@@ -137,7 +137,7 @@
           (path "simple_no_header.csv")
           (table_def :simple)
           (csv_config
-            { :csv_header_row 0
+            { :csv_header_row 0i32
               :csv_delimiter ","
               :csv_quotechar "\""
               :csv_escapechar "\\" })))
@@ -148,7 +148,7 @@
           (path "names_only.csv")
           (table_def :names)
           (csv_config
-            { :csv_header_row 1 })))
+            { :csv_header_row 1i32 })))
 
       ;; Test 9: gnf_columns with all columns
       (export
@@ -160,7 +160,7 @@
             (column "score" :col_score)
             (column "active" :col_active))
           (csv_config
-            { :csv_header_row 1
+            { :csv_header_row 1i32
               :csv_delimiter ","
               :csv_quotechar "\""
               :csv_escapechar "\\" })))
@@ -173,7 +173,7 @@
             (column "user_id" :col_id)
             (column "user_name" :col_name))
           (csv_config
-            { :csv_header_row 1
+            { :csv_header_row 1i32
               :csv_delimiter ","
               :csv_quotechar "\""
               :csv_escapechar "\\" })))
@@ -200,4 +200,4 @@
           (gnf_columns
             (column "score" :col_score))
           (csv_config
-            { :csv_header_row 1 }))))))
+            { :csv_header_row 1i32 }))))))
