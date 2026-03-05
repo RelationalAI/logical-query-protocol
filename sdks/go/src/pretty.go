@@ -313,7 +313,7 @@ func formatBool(b bool) string {
 
 func (p *PrettyPrinter) _make_value_int32(v int32) *pb.Value {
 	_t1447 := &pb.Value{}
-	_t1447.Value = &pb.Value_IntValue{IntValue: int64(v)}
+	_t1447.Value = &pb.Value_Int32Value{Int32Value: v}
 	return _t1447
 }
 

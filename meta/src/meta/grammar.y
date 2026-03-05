@@ -1150,8 +1150,8 @@ export_csv_source
 
 
 def _extract_value_int32(value: Optional[logic.Value], default: int) -> Int32:
-    if value is not None and builtin.has_proto_field(builtin.unwrap_option(value), 'int_value'):
-        return builtin.int64_to_int32(builtin.unwrap_option(value).int_value)
+    if value is not None and builtin.has_proto_field(builtin.unwrap_option(value), 'int32_value'):
+        return builtin.unwrap_option(value).int32_value
     return builtin.int64_to_int32(default)
 
 
@@ -1361,7 +1361,7 @@ def construct_export_csv_config_with_source(
 
 
 def _make_value_int32(v: Int32) -> logic.Value:
-    return logic.Value(int_value=builtin.int32_to_int64(v))
+    return logic.Value(int32_value=v)
 
 
 def _make_value_int64(v: int) -> logic.Value:

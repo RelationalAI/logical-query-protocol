@@ -406,12 +406,12 @@ class Parser:
     def _extract_value_int32(self, value: logic_pb2.Value | None, default: int) -> int:
         if value is not None:
             assert value is not None
-            _t1794 = value.HasField("int_value")
+            _t1794 = value.HasField("int32_value")
         else:
             _t1794 = False
         if _t1794:
             assert value is not None
-            return int(value.int_value)
+            return value.int32_value
         else:
             _t1795 = None
         return int(default)

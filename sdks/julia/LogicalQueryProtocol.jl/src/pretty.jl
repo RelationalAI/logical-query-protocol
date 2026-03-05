@@ -338,7 +338,7 @@ end
 # --- Helper functions ---
 
 function _make_value_int32(pp::PrettyPrinter, v::Int32)::Proto.Value
-    _t1482 = Proto.Value(value=OneOf(:int_value, Int64(v)))
+    _t1482 = Proto.Value(value=OneOf(:int32_value, v))
     return _t1482
 end
 

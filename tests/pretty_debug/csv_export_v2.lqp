@@ -76,7 +76,7 @@
              :csv_delimiter ","
              :csv_encoding "utf-8"
              :csv_escapechar "\""
-             :csv_header_row 1
+             :csv_header_row 1i32
              :csv_quotechar "\""
              :csv_skip 0})))
       (export
@@ -90,7 +90,7 @@
              :csv_delimiter "|"
              :csv_encoding "utf-8"
              :csv_escapechar "\\"
-             :csv_header_row 1
+             :csv_header_row 1i32
              :csv_quotechar "\""
              :csv_skip 0})))
       (export
@@ -104,7 +104,7 @@
              :csv_delimiter ","
              :csv_encoding "utf-8"
              :csv_escapechar "\\"
-             :csv_header_row 1
+             :csv_header_row 1i32
              :csv_partition_size_mb 1000
              :csv_quotechar "\""
              :csv_skip 0})))
@@ -119,7 +119,7 @@
              :csv_delimiter ","
              :csv_encoding "utf-8"
              :csv_escapechar "\\"
-             :csv_header_row 1
+             :csv_header_row 1i32
              :csv_quotechar "\""
              :csv_skip 0})))
       (export
@@ -133,7 +133,7 @@
              :csv_delimiter ","
              :csv_encoding "utf-8"
              :csv_escapechar "\\"
-             :csv_header_row 1
+             :csv_header_row 1i32
              :csv_quotechar "\""
              :csv_skip 0})))
       (export
@@ -147,7 +147,7 @@
              :csv_delimiter "\t"
              :csv_encoding "utf-8"
              :csv_escapechar "\\"
-             :csv_header_row 1
+             :csv_header_row 1i32
              :csv_quotechar "\""
              :csv_skip 0})))
       (export
@@ -161,7 +161,7 @@
              :csv_delimiter ","
              :csv_encoding "utf-8"
              :csv_escapechar "\\"
-             :csv_header_row 0
+             :csv_header_row 0i32
              :csv_quotechar "\""
              :csv_skip 0})))
       (export
@@ -175,7 +175,7 @@
              :csv_delimiter ","
              :csv_encoding "utf-8"
              :csv_escapechar "\""
-             :csv_header_row 1
+             :csv_header_row 1i32
              :csv_quotechar "\""
              :csv_skip 0})))
       (export
@@ -193,7 +193,7 @@
              :csv_delimiter ","
              :csv_encoding "utf-8"
              :csv_escapechar "\\"
-             :csv_header_row 1
+             :csv_header_row 1i32
              :csv_quotechar "\""
              :csv_skip 0})))
       (export
@@ -209,7 +209,7 @@
              :csv_delimiter ","
              :csv_encoding "utf-8"
              :csv_escapechar "\\"
-             :csv_header_row 1
+             :csv_header_row 1i32
              :csv_quotechar "\""
              :csv_skip 0})))
       (export
@@ -225,7 +225,7 @@
              :csv_delimiter ","
              :csv_encoding "utf-8"
              :csv_escapechar "\""
-             :csv_header_row 1
+             :csv_header_row 1i32
              :csv_quotechar "\""
              :csv_skip 0})))
       (export
@@ -239,7 +239,7 @@
              :csv_delimiter ","
              :csv_encoding "utf-8"
              :csv_escapechar "\""
-             :csv_header_row 1
+             :csv_header_row 1i32
              :csv_quotechar "\""
              :csv_skip 0}))))))
 

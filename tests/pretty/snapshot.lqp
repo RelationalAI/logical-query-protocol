@@ -23,7 +23,7 @@
                :csv_delimiter ","
                :csv_encoding "utf-8"
                :csv_escapechar "\\"
-               :csv_header_row 1
+               :csv_header_row 1i32
                :csv_quotechar "\""
                :csv_skip 0})
             (columns

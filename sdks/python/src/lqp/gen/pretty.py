@@ -207,7 +207,7 @@ class PrettyPrinter:
     # --- Helper functions ---
 
     def _make_value_int32(self, v: int) -> logic_pb2.Value:
-        _t1447 = logic_pb2.Value(int_value=int(v))
+        _t1447 = logic_pb2.Value(int32_value=v)
         return _t1447
 
     def _make_value_int64(self, v: int) -> logic_pb2.Value:

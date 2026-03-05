@@ -359,8 +359,8 @@ end
 # --- Helper functions ---
 
 function _extract_value_int32(parser::ParserState, value::Union{Nothing, Proto.Value}, default::Int64)::Int32
-    if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
-        return Int32(_get_oneof_field(value, :int_value))
+    if (!isnothing(value) && _has_proto_field(value, Symbol("int32_value")))
+        return _get_oneof_field(value, :int32_value)
     else
         _t1794 = nothing
     end

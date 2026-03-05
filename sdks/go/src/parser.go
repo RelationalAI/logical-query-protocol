@@ -618,8 +618,8 @@ func toPascalCase(s string) string {
 
 func (p *Parser) _extract_value_int32(value *pb.Value, default_ int64) int32 {
 	var _t1805 interface{}
-	if (value != nil && hasProtoField(value, "int_value")) {
-		return int32(value.GetIntValue())
+	if (value != nil && hasProtoField(value, "int32_value")) {
+		return value.GetInt32Value()
 	}
 	_ = _t1805
 	return int32(default_)
