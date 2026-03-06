@@ -62,6 +62,7 @@ const (
 	kindString tokenKind = iota
 	kindInt64
 	kindInt32
+	kindUint32
 	kindFloat64
 	kindFloat32
 	kindUint128
@@ -75,6 +76,7 @@ type TokenValue struct {{
 	str     string
 	i64     int64
 	i32     int32
+	u32     uint32
 	f64     float64
 	f32     float32
 	uint128 *pb.UInt128Value
@@ -88,6 +90,8 @@ func (tv TokenValue) String() string {{
 		return strconv.FormatInt(tv.i64, 10)
 	case kindInt32:
 		return fmt.Sprintf("%di32", tv.i32)
+	case kindUint32:
+		return fmt.Sprintf("%du32", tv.u32)
 	case kindFloat64:
 		return strconv.FormatFloat(tv.f64, 'g', -1, 64)
 	case kindFloat32:
@@ -240,6 +244,15 @@ func scanInt32(s string) int32 {{
 		panic(ParseError{{msg: fmt.Sprintf("Invalid int32: %s", s)}})
 	}}
 	return int32(n)
+}}
+
+func scanUint32(s string) uint32 {{
+	numStr := s[:len(s)-3] // Remove "u32" suffix
+	n, err := strconv.ParseUint(numStr, 10, 32)
+	if err != nil {{
+		panic(ParseError{{msg: fmt.Sprintf("Invalid uint32: %s", s)}})
+	}}
+	return uint32(n)
 }}
 
 func scanFloat32(s string) float32 {{

@@ -43,6 +43,7 @@ PYTHON_TEMPLATES: dict[str, BuiltinTemplate] = {
     "length": BuiltinTemplate("len({0})"),
     "unwrap_option_or": BuiltinTemplate("({0} if {0} is not None else {1})"),
     "int64_to_int32": BuiltinTemplate("int({0})"),
+    "int64_to_uint32": BuiltinTemplate("int({0})"),
     "float64_to_float32": BuiltinTemplate("float({0})"),
     "to_ptr_int64": BuiltinTemplate("{0}"),  # Python doesn't need pointers
     "to_ptr_string": BuiltinTemplate("{0}"),
@@ -85,6 +86,7 @@ PYTHON_TEMPLATES: dict[str, BuiltinTemplate] = {
     "try_flat_io": BuiltinTemplate("self._try_flat({0}, {1})"),
     "format_int64": BuiltinTemplate("str({0})"),
     "format_int32": BuiltinTemplate("(str({0}) + 'i32')"),
+    "format_uint32": BuiltinTemplate("(str({0}) + 'u32')"),
     "format_float32": BuiltinTemplate("(self.format_float32_value({0}) + 'f32')"),
     "format_float64": BuiltinTemplate("str({0})"),
     "format_string": BuiltinTemplate("self.format_string_value({0})"),
@@ -97,6 +99,7 @@ PYTHON_TEMPLATES: dict[str, BuiltinTemplate] = {
     "to_string": BuiltinTemplate("str({0})"),
     # Type conversions used by pretty printer
     "int32_to_int64": BuiltinTemplate("int({0})"),
+    "uint32_to_int64": BuiltinTemplate("int({0})"),
     "float32_to_float64": BuiltinTemplate("float({0})"),
     "is_empty": BuiltinTemplate("len({0}) == 0"),
     "decode_string": BuiltinTemplate("{0}.decode('utf-8')"),
@@ -140,6 +143,7 @@ JULIA_TEMPLATES: dict[str, BuiltinTemplate] = {
     "length": BuiltinTemplate("length({0})"),
     "unwrap_option_or": BuiltinTemplate("(!isnothing({0}) ? {0} : {1})"),
     "int64_to_int32": BuiltinTemplate("Int32({0})"),
+    "int64_to_uint32": BuiltinTemplate("UInt32({0})"),
     "float64_to_float32": BuiltinTemplate("Float32({0})"),
     "to_ptr_int64": BuiltinTemplate("{0}"),  # Julia doesn't need pointers
     "to_ptr_string": BuiltinTemplate("{0}"),
@@ -178,6 +182,7 @@ JULIA_TEMPLATES: dict[str, BuiltinTemplate] = {
     "try_flat_io": BuiltinTemplate("try_flat(pp, {0}, {1})"),
     "format_int64": BuiltinTemplate("format_int(pp, {0})"),
     "format_int32": BuiltinTemplate('(string(Int64({0})) * "i32")'),
+    "format_uint32": BuiltinTemplate('(string(Int64({0})) * "u32")'),
     "format_float32": BuiltinTemplate('(lowercase(string({0})) * "f32")'),
     "format_float64": BuiltinTemplate("format_float(pp, {0})"),
     "format_string": BuiltinTemplate("format_string(pp, {0})"),
@@ -190,6 +195,7 @@ JULIA_TEMPLATES: dict[str, BuiltinTemplate] = {
     "to_string": BuiltinTemplate("string({0})"),
     # Type conversions used by pretty printer
     "int32_to_int64": BuiltinTemplate("Int64({0})"),
+    "uint32_to_int64": BuiltinTemplate("Int64({0})"),
     "float32_to_float64": BuiltinTemplate("Float64({0})"),
     "is_empty": BuiltinTemplate("isempty({0})"),
     "decode_string": BuiltinTemplate("String(copy({0}))"),
@@ -236,6 +242,7 @@ GO_TEMPLATES: dict[str, BuiltinTemplate] = {
     # unwrap_option_or is handled specially in codegen_go.py due to Go's lack of ternary
     "unwrap_option_or": BuiltinTemplate("{0}"),  # Placeholder - overridden in codegen
     "int64_to_int32": BuiltinTemplate("int32({0})"),
+    "int64_to_uint32": BuiltinTemplate("uint32({0})"),
     "float64_to_float32": BuiltinTemplate("float32({0})"),
     "to_ptr_int64": BuiltinTemplate("ptrInt64({0})"),
     "to_ptr_string": BuiltinTemplate("ptrString({0})"),
@@ -273,6 +280,7 @@ GO_TEMPLATES: dict[str, BuiltinTemplate] = {
     "try_flat_io": BuiltinTemplate("p.tryFlat({0}, func() {{ {1}({0}) }})"),
     "format_int64": BuiltinTemplate('fmt.Sprintf("%d", {0})'),
     "format_int32": BuiltinTemplate('fmt.Sprintf("%di32", {0})'),
+    "format_uint32": BuiltinTemplate('fmt.Sprintf("%du32", {0})'),
     "format_float32": BuiltinTemplate(
         "fmt.Sprintf(\"%sf32\", strconv.FormatFloat(float64({0}), 'g', -1, 32))"
     ),
@@ -287,6 +295,7 @@ GO_TEMPLATES: dict[str, BuiltinTemplate] = {
     "to_string": BuiltinTemplate('fmt.Sprintf("%v", {0})'),
     # Type conversions used by pretty printer
     "int32_to_int64": BuiltinTemplate("int64({0})"),
+    "uint32_to_int64": BuiltinTemplate("int64({0})"),
     "float32_to_float64": BuiltinTemplate("float64({0})"),
     "is_empty": BuiltinTemplate("len({0}) == 0"),
     "decode_string": BuiltinTemplate("string({0})"),
