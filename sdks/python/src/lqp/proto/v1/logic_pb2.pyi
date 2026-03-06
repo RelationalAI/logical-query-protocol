@@ -467,7 +467,7 @@ class RelationId(_message.Message):
     def __init__(self, id_low: _Optional[int] = ..., id_high: _Optional[int] = ...) -> None: ...
 
 class Type(_message.Message):
-    __slots__ = ("unspecified_type", "string_type", "int_type", "float_type", "uint128_type", "int128_type", "date_type", "datetime_type", "missing_type", "decimal_type", "boolean_type", "int32_type", "float32_type")
+    __slots__ = ("unspecified_type", "string_type", "int_type", "float_type", "uint128_type", "int128_type", "date_type", "datetime_type", "missing_type", "decimal_type", "boolean_type", "int32_type", "float32_type", "uint32_type")
     UNSPECIFIED_TYPE_FIELD_NUMBER: _ClassVar[int]
     STRING_TYPE_FIELD_NUMBER: _ClassVar[int]
     INT_TYPE_FIELD_NUMBER: _ClassVar[int]
@@ -481,6 +481,7 @@ class Type(_message.Message):
     BOOLEAN_TYPE_FIELD_NUMBER: _ClassVar[int]
     INT32_TYPE_FIELD_NUMBER: _ClassVar[int]
     FLOAT32_TYPE_FIELD_NUMBER: _ClassVar[int]
+    UINT32_TYPE_FIELD_NUMBER: _ClassVar[int]
     unspecified_type: UnspecifiedType
     string_type: StringType
     int_type: IntType
@@ -494,7 +495,8 @@ class Type(_message.Message):
     boolean_type: BooleanType
     int32_type: Int32Type
     float32_type: Float32Type
-    def __init__(self, unspecified_type: _Optional[_Union[UnspecifiedType, _Mapping]] = ..., string_type: _Optional[_Union[StringType, _Mapping]] = ..., int_type: _Optional[_Union[IntType, _Mapping]] = ..., float_type: _Optional[_Union[FloatType, _Mapping]] = ..., uint128_type: _Optional[_Union[UInt128Type, _Mapping]] = ..., int128_type: _Optional[_Union[Int128Type, _Mapping]] = ..., date_type: _Optional[_Union[DateType, _Mapping]] = ..., datetime_type: _Optional[_Union[DateTimeType, _Mapping]] = ..., missing_type: _Optional[_Union[MissingType, _Mapping]] = ..., decimal_type: _Optional[_Union[DecimalType, _Mapping]] = ..., boolean_type: _Optional[_Union[BooleanType, _Mapping]] = ..., int32_type: _Optional[_Union[Int32Type, _Mapping]] = ..., float32_type: _Optional[_Union[Float32Type, _Mapping]] = ...) -> None: ...
+    uint32_type: UInt32Type
+    def __init__(self, unspecified_type: _Optional[_Union[UnspecifiedType, _Mapping]] = ..., string_type: _Optional[_Union[StringType, _Mapping]] = ..., int_type: _Optional[_Union[IntType, _Mapping]] = ..., float_type: _Optional[_Union[FloatType, _Mapping]] = ..., uint128_type: _Optional[_Union[UInt128Type, _Mapping]] = ..., int128_type: _Optional[_Union[Int128Type, _Mapping]] = ..., date_type: _Optional[_Union[DateType, _Mapping]] = ..., datetime_type: _Optional[_Union[DateTimeType, _Mapping]] = ..., missing_type: _Optional[_Union[MissingType, _Mapping]] = ..., decimal_type: _Optional[_Union[DecimalType, _Mapping]] = ..., boolean_type: _Optional[_Union[BooleanType, _Mapping]] = ..., int32_type: _Optional[_Union[Int32Type, _Mapping]] = ..., float32_type: _Optional[_Union[Float32Type, _Mapping]] = ..., uint32_type: _Optional[_Union[UInt32Type, _Mapping]] = ...) -> None: ...
 
 class UnspecifiedType(_message.Message):
     __slots__ = ()
@@ -552,8 +554,12 @@ class Float32Type(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
 
+class UInt32Type(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
+
 class Value(_message.Message):
-    __slots__ = ("string_value", "int_value", "float_value", "uint128_value", "int128_value", "missing_value", "date_value", "datetime_value", "decimal_value", "boolean_value", "int32_value", "float32_value")
+    __slots__ = ("string_value", "int_value", "float_value", "uint128_value", "int128_value", "missing_value", "date_value", "datetime_value", "decimal_value", "boolean_value", "int32_value", "float32_value", "uint32_value")
     STRING_VALUE_FIELD_NUMBER: _ClassVar[int]
     INT_VALUE_FIELD_NUMBER: _ClassVar[int]
     FLOAT_VALUE_FIELD_NUMBER: _ClassVar[int]
@@ -566,6 +572,7 @@ class Value(_message.Message):
     BOOLEAN_VALUE_FIELD_NUMBER: _ClassVar[int]
     INT32_VALUE_FIELD_NUMBER: _ClassVar[int]
     FLOAT32_VALUE_FIELD_NUMBER: _ClassVar[int]
+    UINT32_VALUE_FIELD_NUMBER: _ClassVar[int]
     string_value: str
     int_value: int
     float_value: float
@@ -578,7 +585,8 @@ class Value(_message.Message):
     boolean_value: bool
     int32_value: int
     float32_value: float
-    def __init__(self, string_value: _Optional[str] = ..., int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128Value, _Mapping]] = ..., int128_value: _Optional[_Union[Int128Value, _Mapping]] = ..., missing_value: _Optional[_Union[MissingValue, _Mapping]] = ..., date_value: _Optional[_Union[DateValue, _Mapping]] = ..., datetime_value: _Optional[_Union[DateTimeValue, _Mapping]] = ..., decimal_value: _Optional[_Union[DecimalValue, _Mapping]] = ..., boolean_value: _Optional[bool] = ..., int32_value: _Optional[int] = ..., float32_value: _Optional[float] = ...) -> None: ...
+    uint32_value: int
+    def __init__(self, string_value: _Optional[str] = ..., int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128Value, _Mapping]] = ..., int128_value: _Optional[_Union[Int128Value, _Mapping]] = ..., missing_value: _Optional[_Union[MissingValue, _Mapping]] = ..., date_value: _Optional[_Union[DateValue, _Mapping]] = ..., datetime_value: _Optional[_Union[DateTimeValue, _Mapping]] = ..., decimal_value: _Optional[_Union[DecimalValue, _Mapping]] = ..., boolean_value: _Optional[bool] = ..., int32_value: _Optional[int] = ..., float32_value: _Optional[float] = ..., uint32_value: _Optional[int] = ...) -> None: ...
 
 class UInt128Value(_message.Message):
     __slots__ = ("low", "high")
