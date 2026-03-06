@@ -247,6 +247,22 @@ register_builtin("format_int128", [MessageType("logic", "Int128Value")], STRING)
 register_builtin("format_uint128", [MessageType("logic", "UInt128Value")], STRING)
 register_builtin("format_bytes", [BYTES], STRING)
 
+# Formatted variants (use constant_formatter hooks in Julia, same as base in Python/Go)
+register_builtin("format_int64_formatted", [INT64], STRING)
+register_builtin("format_int32_formatted", [INT32], STRING)
+register_builtin("format_float32_formatted", [FLOAT32], STRING)
+register_builtin("format_float64_formatted", [FLOAT64], STRING)
+register_builtin("format_string_formatted", [STRING], STRING)
+register_builtin(
+    "format_decimal_formatted", [MessageType("logic", "DecimalValue")], STRING
+)
+register_builtin(
+    "format_int128_formatted", [MessageType("logic", "Int128Value")], STRING
+)
+register_builtin(
+    "format_uint128_formatted", [MessageType("logic", "UInt128Value")], STRING
+)
+
 # === Pretty-printing dispatch ===
 register_builtin("pp_dispatch", [T], VOID)
 

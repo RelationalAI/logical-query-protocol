@@ -93,6 +93,17 @@ PYTHON_TEMPLATES: dict[str, BuiltinTemplate] = {
     "format_decimal": BuiltinTemplate("self.format_decimal({0})"),
     "format_int128": BuiltinTemplate("self.format_int128({0})"),
     "format_uint128": BuiltinTemplate("self.format_uint128({0})"),
+    # Formatted variants (same as base in Python)
+    "format_int64_formatted": BuiltinTemplate("str({0})"),
+    "format_int32_formatted": BuiltinTemplate("(str({0}) + 'i32')"),
+    "format_float32_formatted": BuiltinTemplate(
+        "(self.format_float32_value({0}) + 'f32')"
+    ),
+    "format_float64_formatted": BuiltinTemplate("str({0})"),
+    "format_string_formatted": BuiltinTemplate("self.format_string_value({0})"),
+    "format_decimal_formatted": BuiltinTemplate("self.format_decimal({0})"),
+    "format_int128_formatted": BuiltinTemplate("self.format_int128({0})"),
+    "format_uint128_formatted": BuiltinTemplate("self.format_uint128({0})"),
     "greater": BuiltinTemplate("({0} > {1})"),
     "to_string": BuiltinTemplate("str({0})"),
     # Type conversions used by pretty printer
@@ -176,16 +187,33 @@ JULIA_TEMPLATES: dict[str, BuiltinTemplate] = {
     "indent_sexp_io": BuiltinTemplate("nothing", ["indent_sexp!(pp)"]),
     "dedent_io": BuiltinTemplate("nothing", ["dedent!(pp)"]),
     "try_flat_io": BuiltinTemplate("try_flat(pp, {0}, {1})"),
-    "format_int64": BuiltinTemplate("format_int(pp, {0})"),
+    "format_int64": BuiltinTemplate("string({0})"),
     "format_int32": BuiltinTemplate('(string(Int64({0})) * "i32")'),
     "format_float32": BuiltinTemplate('(lowercase(string({0})) * "f32")'),
-    "format_float64": BuiltinTemplate("format_float(pp, {0})"),
-    "format_string": BuiltinTemplate("format_string(pp, {0})"),
+    "format_float64": BuiltinTemplate("lowercase(string({0}))"),
+    "format_string": BuiltinTemplate(
+        "format_string(DEFAULT_CONSTANT_FORMATTER, pp, {0})"
+    ),
     "format_symbol": BuiltinTemplate("{0}"),
     "format_bool": BuiltinTemplate("format_bool(pp, {0})"),
-    "format_decimal": BuiltinTemplate("format_decimal(pp, {0})"),
-    "format_int128": BuiltinTemplate("format_int128(pp, {0})"),
-    "format_uint128": BuiltinTemplate("format_uint128(pp, {0})"),
+    "format_decimal": BuiltinTemplate(
+        "format_decimal(DEFAULT_CONSTANT_FORMATTER, pp, {0})"
+    ),
+    "format_int128": BuiltinTemplate(
+        "format_int128(DEFAULT_CONSTANT_FORMATTER, pp, {0})"
+    ),
+    "format_uint128": BuiltinTemplate(
+        "format_uint128(DEFAULT_CONSTANT_FORMATTER, pp, {0})"
+    ),
+    # Formatted variants (use constant_formatter hooks in Julia)
+    "format_int64_formatted": BuiltinTemplate("format_int(pp, {0})"),
+    "format_int32_formatted": BuiltinTemplate("format_int32(pp, {0})"),
+    "format_float32_formatted": BuiltinTemplate("format_float32(pp, {0})"),
+    "format_float64_formatted": BuiltinTemplate("format_float(pp, {0})"),
+    "format_string_formatted": BuiltinTemplate("format_string(pp, {0})"),
+    "format_decimal_formatted": BuiltinTemplate("format_decimal(pp, {0})"),
+    "format_int128_formatted": BuiltinTemplate("format_int128(pp, {0})"),
+    "format_uint128_formatted": BuiltinTemplate("format_uint128(pp, {0})"),
     "greater": BuiltinTemplate("({0} > {1})"),
     "to_string": BuiltinTemplate("string({0})"),
     # Type conversions used by pretty printer
@@ -283,6 +311,17 @@ GO_TEMPLATES: dict[str, BuiltinTemplate] = {
     "format_decimal": BuiltinTemplate("p.formatDecimal({0})"),
     "format_int128": BuiltinTemplate("p.formatInt128({0})"),
     "format_uint128": BuiltinTemplate("p.formatUint128({0})"),
+    # Formatted variants (same as base in Go)
+    "format_int64_formatted": BuiltinTemplate('fmt.Sprintf("%d", {0})'),
+    "format_int32_formatted": BuiltinTemplate('fmt.Sprintf("%di32", {0})'),
+    "format_float32_formatted": BuiltinTemplate(
+        "fmt.Sprintf(\"%sf32\", strconv.FormatFloat(float64({0}), 'g', -1, 32))"
+    ),
+    "format_float64_formatted": BuiltinTemplate("formatFloat64({0})"),
+    "format_string_formatted": BuiltinTemplate("p.formatStringValue({0})"),
+    "format_decimal_formatted": BuiltinTemplate("p.formatDecimal({0})"),
+    "format_int128_formatted": BuiltinTemplate("p.formatInt128({0})"),
+    "format_uint128_formatted": BuiltinTemplate("p.formatUint128({0})"),
     "greater": BuiltinTemplate("({0} > {1})"),
     "to_string": BuiltinTemplate('fmt.Sprintf("%v", {0})'),
     # Type conversions used by pretty printer

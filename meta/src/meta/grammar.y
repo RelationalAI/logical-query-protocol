@@ -45,6 +45,16 @@
 %token SYMBOL String r'[a-zA-Z_][a-zA-Z0-9_./#-]*'
 %token UINT128 logic.UInt128Value r'0x[0-9a-fA-F]+'
 
+# Token aliases for formula constants (use hookable formatting in pretty printer)
+%token_alias FORMATTED_INT INT
+%token_alias FORMATTED_FLOAT FLOAT
+%token_alias FORMATTED_STRING STRING
+%token_alias FORMATTED_INT32 INT32
+%token_alias FORMATTED_FLOAT32 FLOAT32
+%token_alias FORMATTED_DECIMAL DECIMAL
+%token_alias FORMATTED_INT128 INT128
+%token_alias FORMATTED_UINT128 UINT128
+
 # Type declarations for rules
 %nonterm abstraction logic.Abstraction
 %nonterm abstraction_with_arity Tuple[logic.Abstraction, Int64]
@@ -68,7 +78,6 @@
 %nonterm config_key_value Tuple[String, logic.Value]
 %nonterm configure transactions.Configure
 %nonterm conjunction logic.Conjunction
-%nonterm constant logic.Value
 %nonterm constraint logic.Constraint
 %nonterm construct logic.Construct
 %nonterm context transactions.Context
@@ -140,6 +149,9 @@
 %nonterm output transactions.Output
 %nonterm pragma logic.Pragma
 %nonterm primitive logic.Primitive
+%nonterm raw_date logic.DateValue
+%nonterm raw_datetime logic.DateTimeValue
+%nonterm raw_value logic.Value
 %nonterm read transactions.Read
 %nonterm reduce logic.Reduce
 %nonterm rel_atom logic.RelAtom
@@ -204,7 +216,7 @@ config_dict
     : "{" config_key_value* "}"
 
 config_key_value
-    : ":" SYMBOL value
+    : ":" SYMBOL raw_value
       construct: $$ = builtin.tuple($2, $3)
       deconstruct:
         $2: String = $$[0]
@@ -219,14 +231,70 @@ value
       construct: $$ = logic.Value(datetime_value=$1)
       deconstruct if builtin.has_proto_field($$, 'datetime_value'):
         $1: logic.DateTimeValue = $$.datetime_value
+    | FORMATTED_STRING
+      construct: $$ = logic.Value(string_value=$1)
+      deconstruct if builtin.has_proto_field($$, 'string_value'):
+        $1: String = $$.string_value
+    | FORMATTED_INT32
+      construct: $$ = logic.Value(int32_value=$1)
+      deconstruct if builtin.has_proto_field($$, 'int32_value'):
+        $1: Int32 = $$.int32_value
+    | FORMATTED_INT
+      construct: $$ = logic.Value(int_value=$1)
+      deconstruct if builtin.has_proto_field($$, 'int_value'):
+        $1: Int64 = $$.int_value
+    | FORMATTED_FLOAT32
+      construct: $$ = logic.Value(float32_value=$1)
+      deconstruct if builtin.has_proto_field($$, 'float32_value'):
+        $1: Float32 = $$.float32_value
+    | FORMATTED_FLOAT
+      construct: $$ = logic.Value(float_value=$1)
+      deconstruct if builtin.has_proto_field($$, 'float_value'):
+        $1: Float64 = $$.float_value
+    | FORMATTED_UINT128
+      construct: $$ = logic.Value(uint128_value=$1)
+      deconstruct if builtin.has_proto_field($$, 'uint128_value'):
+        $1: logic.UInt128Value = $$.uint128_value
+    | FORMATTED_INT128
+      construct: $$ = logic.Value(int128_value=$1)
+      deconstruct if builtin.has_proto_field($$, 'int128_value'):
+        $1: logic.Int128Value = $$.int128_value
+    | FORMATTED_DECIMAL
+      construct: $$ = logic.Value(decimal_value=$1)
+      deconstruct if builtin.has_proto_field($$, 'decimal_value'):
+        $1: logic.DecimalValue = $$.decimal_value
+    | "missing"
+      construct: $$ = logic.Value(missing_value=logic.MissingValue())
+    | boolean_value
+      construct: $$ = logic.Value(boolean_value=$1)
+      deconstruct if builtin.has_proto_field($$, 'boolean_value'):
+        $1: Boolean = $$.boolean_value
+
+raw_value
+    : raw_date
+      construct: $$ = logic.Value(date_value=$1)
+      deconstruct if builtin.has_proto_field($$, 'date_value'):
+        $1: logic.DateValue = $$.date_value
+    | raw_datetime
+      construct: $$ = logic.Value(datetime_value=$1)
+      deconstruct if builtin.has_proto_field($$, 'datetime_value'):
+        $1: logic.DateTimeValue = $$.datetime_value
     | STRING
       construct: $$ = logic.Value(string_value=$1)
       deconstruct if builtin.has_proto_field($$, 'string_value'):
         $1: String = $$.string_value
+    | INT32
+      construct: $$ = logic.Value(int32_value=$1)
+      deconstruct if builtin.has_proto_field($$, 'int32_value'):
+        $1: Int32 = $$.int32_value
     | INT
       construct: $$ = logic.Value(int_value=$1)
       deconstruct if builtin.has_proto_field($$, 'int_value'):
         $1: Int64 = $$.int_value
+    | FLOAT32
+      construct: $$ = logic.Value(float32_value=$1)
+      deconstruct if builtin.has_proto_field($$, 'float32_value'):
+        $1: Float32 = $$.float32_value
     | FLOAT
       construct: $$ = logic.Value(float_value=$1)
       deconstruct if builtin.has_proto_field($$, 'float_value'):
@@ -249,16 +317,8 @@ value
       construct: $$ = logic.Value(boolean_value=$1)
       deconstruct if builtin.has_proto_field($$, 'boolean_value'):
         $1: Boolean = $$.boolean_value
-    | INT32
-      construct: $$ = logic.Value(int32_value=$1)
-      deconstruct if builtin.has_proto_field($$, 'int32_value'):
-        $1: Int32 = $$.int32_value
-    | FLOAT32
-      construct: $$ = logic.Value(float32_value=$1)
-      deconstruct if builtin.has_proto_field($$, 'float32_value'):
-        $1: Float32 = $$.float32_value
 
-date
+raw_date
     : "(" "date" INT INT INT ")"
       construct: $$ = logic.DateValue(year=builtin.int64_to_int32($3), month=builtin.int64_to_int32($4), day=builtin.int64_to_int32($5))
       deconstruct:
@@ -266,8 +326,28 @@ date
         $4: Int64 = builtin.int32_to_int64($$.month)
         $5: Int64 = builtin.int32_to_int64($$.day)
 
-datetime
+date
+    : "(" "date" FORMATTED_INT FORMATTED_INT FORMATTED_INT ")"
+      construct: $$ = logic.DateValue(year=builtin.int64_to_int32($3), month=builtin.int64_to_int32($4), day=builtin.int64_to_int32($5))
+      deconstruct:
+        $3: Int64 = builtin.int32_to_int64($$.year)
+        $4: Int64 = builtin.int32_to_int64($$.month)
+        $5: Int64 = builtin.int32_to_int64($$.day)
+
+raw_datetime
     : "(" "datetime" INT INT INT INT INT INT INT? ")"
+      construct: $$ = logic.DateTimeValue(year=builtin.int64_to_int32($3), month=builtin.int64_to_int32($4), day=builtin.int64_to_int32($5), hour=builtin.int64_to_int32($6), minute=builtin.int64_to_int32($7), second=builtin.int64_to_int32($8), microsecond=builtin.int64_to_int32(builtin.unwrap_option_or($9, 0)))
+      deconstruct:
+        $3: Int64 = builtin.int32_to_int64($$.year)
+        $4: Int64 = builtin.int32_to_int64($$.month)
+        $5: Int64 = builtin.int32_to_int64($$.day)
+        $6: Int64 = builtin.int32_to_int64($$.hour)
+        $7: Int64 = builtin.int32_to_int64($$.minute)
+        $8: Int64 = builtin.int32_to_int64($$.second)
+        $9: Optional[Int64] = builtin.some(builtin.int32_to_int64($$.microsecond))
+
+datetime
+    : "(" "datetime" FORMATTED_INT FORMATTED_INT FORMATTED_INT FORMATTED_INT FORMATTED_INT FORMATTED_INT FORMATTED_INT? ")"
       construct: $$ = logic.DateTimeValue(year=builtin.int64_to_int32($3), month=builtin.int64_to_int32($4), day=builtin.int64_to_int32($5), hour=builtin.int64_to_int32($6), minute=builtin.int64_to_int32($7), second=builtin.int64_to_int32($8), microsecond=builtin.int64_to_int32(builtin.unwrap_option_or($9, 0)))
       deconstruct:
         $3: Int64 = builtin.int32_to_int64($$.year)
@@ -596,7 +676,7 @@ term
       construct: $$ = logic.Term(var=$1)
       deconstruct if builtin.has_proto_field($$, 'var'):
         $1: logic.Var = $$.var
-    | constant
+    | value
       construct: $$ = logic.Term(constant=$1)
       deconstruct if builtin.has_proto_field($$, 'constant'):
         $1: logic.Value = $$.constant
@@ -605,9 +685,6 @@ var
     : SYMBOL
       construct: $$ = logic.Var(name=$1)
       deconstruct: $1: String = $$.name
-
-constant
-    : value
 
 conjunction
     : "(" "and" formula* ")"
@@ -749,7 +826,7 @@ rel_term
         $1: logic.Term = $$.term
 
 specialized_value
-    : "#" value
+    : "#" raw_value
 
 rel_atom
     : "(" "relatom" name rel_term* ")"
@@ -769,7 +846,7 @@ attrs
     : "(" "attrs" attribute* ")"
 
 attribute
-    : "(" "attribute" name value* ")"
+    : "(" "attribute" name raw_value* ")"
       construct: $$ = logic.Attribute(name=$3, args=$4)
       deconstruct:
         $3: String = $$.name
