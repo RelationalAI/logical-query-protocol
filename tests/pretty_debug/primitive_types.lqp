@@ -19,6 +19,7 @@
             ([v::UINT128] (= v 0x123456789abcdef12345)))
           (def 0x5434f66a742f009c01b33597509bf953 ([v::INT32] (= v 42i32)))
           (def 0x6dbcab937ed297eeba50b9f7eed63afb ([v::INT32] (= v -42i32)))
+          (def 0x1f6ccad84a982c2034d9693403089b91 ([v::UINT32] (= v 42u32)))
           (def 0xfc8aa7c5cf3d1ab920633d31f1452d0c ([v::FLOAT32] (= v 1.23f32)))
           (def 0x26150df48c574bdfa69e436e0b3d5c18 ([v::FLOAT] (= v 1.23)))
           (def 0xbe200df2e3189f85e43fd26b4641043a ([v::FLOAT] (= v inf)))
@@ -64,6 +65,9 @@
           (def
             0xdc90706dfa73ce934aaec8621fbaf77b
             ([v::INT32] (and (= v -42i32) (atom 0x6dbcab937ed297eeba50b9f7eed63afb -42i32))))
+          (def
+            0x76e89517bf5f376d14faac56276af9e5
+            ([v::UINT32] (and (= v 42u32) (atom 0x1f6ccad84a982c2034d9693403089b91 42u32))))
           (def
             0x399ec3de4696f5651e0bdecb92a651dc
             ([v::FLOAT32]
@@ -111,6 +115,7 @@
       (output :uint128 0xbfa75d6b7fea7c49da95b7335d3513b4)
       (output :int32 0x217f241bdc087040e164113b85e45053)
       (output :int32_n 0xdc90706dfa73ce934aaec8621fbaf77b)
+      (output :uint32 0x76e89517bf5f376d14faac56276af9e5)
       (output :float32 0x399ec3de4696f5651e0bdecb92a651dc)
       (output :float 0x36db9cebd42255a7687c86bc5ded861)
       (output :float_inf 0xc1c3cd8136b946100be4dc57455d7234)
@@ -156,5 +161,7 @@
 ;; 	 ID `0xf4c51810c6e0e43c215dad297b1739e4` -> `output_int_n`
 ;; 	 ID `0xa01ef781c732128dc380d8c45b0e695e` -> `output_str`
 ;; 	 ID `0xbfa75d6b7fea7c49da95b7335d3513b4` -> `output_uint128`
+;; 	 ID `0x76e89517bf5f376d14faac56276af9e5` -> `output_uint32`
 ;; 	 ID `0xe738b0bbc85f458d2d2b5f3f667c6d5a` -> `str`
 ;; 	 ID `0x33bf30bb27799b496ef013bf7c7912f6` -> `uint128`
+;; 	 ID `0x1f6ccad84a982c2034d9693403089b91` -> `uint32`

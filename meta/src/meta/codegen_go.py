@@ -195,6 +195,7 @@ class GoCodeGenerator(CodeGenerator):
         terminal_field_map = {
             "INT": "i64",
             "INT32": "i32",
+            "UINT32": "u32",
             "FLOAT": "f64",
             "FLOAT32": "f32",
             "STRING": "str",
@@ -939,6 +940,7 @@ class GoCodeGenerator(CodeGenerator):
         "STRING": ("scanString", "kindString", "str"),
         "INT": ("scanInt", "kindInt64", "i64"),
         "INT32": ("scanInt32", "kindInt32", "i32"),
+        "UINT32": ("scanUint32", "kindUint32", "u32"),
         "FLOAT": ("scanFloat", "kindFloat64", "f64"),
         "FLOAT32": ("scanFloat32", "kindFloat32", "f32"),
         "UINT128": ("scanUint128", "kindUint128", "uint128"),

@@ -161,6 +161,15 @@ class Lexer:
         return val
 
     @staticmethod
+    def scan_uint32(n: str) -> int:
+        """Parse UINT32 token."""
+        n = n[:-3]  # Remove "u32" suffix
+        val = int(n)
+        if val < 0 or val >= (1 << 32):
+            raise ParseError(f"UInt32 literal out of range: {{n}}")
+        return val
+
+    @staticmethod
     def scan_float32(f: str) -> float:
         """Parse FLOAT32 token."""
         f = f[:-3]  # Remove "f32" suffix
