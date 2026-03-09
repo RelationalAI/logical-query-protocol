@@ -109,7 +109,7 @@ force-protobuf:
 	mkdir -p $(GO_PROTO_DIR)
 	cp gen/go/relationalai/lqp/v1/*.pb.go $(GO_PROTO_DIR)/
 	rm -rf gen/python gen/go
-	cd sdks/julia && julia --project=LogicalQueryProtocol.jl generate_proto.jl
+	cd sdks/julia && julia --startup-file=no --project=LogicalQueryProtocol.jl generate_proto.jl
 
 $(PY_PROTO_GENERATED) $(GO_PROTO_GENERATED): $(PROTO_FILES)
 	buf lint
@@ -130,7 +130,7 @@ $(PY_PROTO_GENERATED) $(GO_PROTO_GENERATED): $(PROTO_FILES)
 $(JL_PROTO_GENERATED): $(PROTO_FILES)
 	buf lint
 	buf breaking --against ".git#branch=main,subdir=proto"
-	cd sdks/julia && julia --project=LogicalQueryProtocol.jl generate_proto.jl
+	cd sdks/julia && julia --startup-file=no --project=LogicalQueryProtocol.jl generate_proto.jl
 
 # ---------- parser generation ----------
 
