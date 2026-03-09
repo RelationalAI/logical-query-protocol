@@ -282,7 +282,7 @@ Format a Float32 value as a string with the `f32` suffix.
 
 Override this function for custom ConstantFormatter subtypes to customize Float32 formatting.
 """
-format_float32(formatter::DefaultConstantFormatter, pp::PrettyPrinter, v::Float32)::String = lowercase(string(v)) * "f32"
+format_float32(formatter::DefaultConstantFormatter, pp::PrettyPrinter, v::Float32)::String = format_float32_literal(v)
 
 """
     format_uint32(formatter::ConstantFormatter, pp::PrettyPrinter, v::UInt32)::String
@@ -317,6 +317,12 @@ format_bool(pp::PrettyPrinter, v::Bool)::String = format_bool(pp.constant_format
 format_int32(pp::PrettyPrinter, v::Int32)::String = format_int32(pp.constant_formatter, pp, v)
 format_uint32(pp::PrettyPrinter, v::UInt32)::String = format_uint32(pp.constant_formatter, pp, v)
 format_float32(pp::PrettyPrinter, v::Float32)::String = format_float32(pp.constant_formatter, pp, v)
+
+function format_float32_literal(v::Float32)::String
+    isinf(v) && return "inf32"
+    isnan(v) && return "nan32"
+    return lowercase(string(v)) * "f32"
+end
 
 # Legacy function names for backward compatibility
 format_float64(v::Float64)::String = lowercase(string(v))

@@ -176,7 +176,7 @@ class PrettyPrinter:
 
     @staticmethod
     def format_float32_value(v: float) -> str:
-        """Format a float32 value at 32-bit precision."""
+        """Format a float32 value at 32-bit precision (without suffix)."""
         import struct
         # Round-trip through float32 to get the exact 32-bit value,
         # then format with enough precision to distinguish it.
@@ -187,6 +187,16 @@ class PrettyPrinter:
         if '.' not in s and 'e' not in s and 'inf' not in s and 'nan' not in s:
             s += '.0'
         return s
+
+    @staticmethod
+    def format_float32_literal(v: float) -> str:
+        """Format a float32 value as an LQP literal with the f32 suffix."""
+        import math
+        if math.isinf(v):
+            return 'inf32'
+        if math.isnan(v):
+            return 'nan32'
+        return PrettyPrinter.format_float32_value(v) + 'f32'
 
     def format_string_value(self, s: str) -> str:
         """Format a string value with double quotes for LQP output."""
@@ -531,7 +541,7 @@ class PrettyPrinter:
                                 if deconstruct_result745 is not None:
                                     assert deconstruct_result745 is not None
                                     unwrapped746 = deconstruct_result745
-                                    self.write((self.format_float32_value(unwrapped746) + 'f32'))
+                                    self.write(self.format_float32_literal(unwrapped746))
                                 else:
                                     _dollar_dollar = msg
                                     if _dollar_dollar.HasField("float_value"):
@@ -545,59 +555,59 @@ class PrettyPrinter:
                                         self.write(str(unwrapped744))
                                     else:
                                         _dollar_dollar = msg
-                                        if _dollar_dollar.HasField("uint128_value"):
-                                            _t1430 = _dollar_dollar.uint128_value
+                                        if _dollar_dollar.HasField("uint32_value"):
+                                            _t1430 = _dollar_dollar.uint32_value
                                         else:
                                             _t1430 = None
                                         deconstruct_result741 = _t1430
                                         if deconstruct_result741 is not None:
                                             assert deconstruct_result741 is not None
                                             unwrapped742 = deconstruct_result741
-                                            self.write(self.format_uint128(unwrapped742))
+                                            self.write((str(unwrapped742) + 'u32'))
                                         else:
                                             _dollar_dollar = msg
-                                            if _dollar_dollar.HasField("int128_value"):
-                                                _t1431 = _dollar_dollar.int128_value
+                                            if _dollar_dollar.HasField("uint128_value"):
+                                                _t1431 = _dollar_dollar.uint128_value
                                             else:
                                                 _t1431 = None
                                             deconstruct_result739 = _t1431
                                             if deconstruct_result739 is not None:
                                                 assert deconstruct_result739 is not None
                                                 unwrapped740 = deconstruct_result739
-                                                self.write(self.format_int128(unwrapped740))
+                                                self.write(self.format_uint128(unwrapped740))
                                             else:
                                                 _dollar_dollar = msg
-                                                if _dollar_dollar.HasField("decimal_value"):
-                                                    _t1432 = _dollar_dollar.decimal_value
+                                                if _dollar_dollar.HasField("int128_value"):
+                                                    _t1432 = _dollar_dollar.int128_value
                                                 else:
                                                     _t1432 = None
                                                 deconstruct_result737 = _t1432
                                                 if deconstruct_result737 is not None:
                                                     assert deconstruct_result737 is not None
                                                     unwrapped738 = deconstruct_result737
-                                                    self.write(self.format_decimal(unwrapped738))
+                                                    self.write(self.format_int128(unwrapped738))
                                                 else:
                                                     _dollar_dollar = msg
-                                                    if _dollar_dollar.HasField("boolean_value"):
-                                                        _t1433 = _dollar_dollar.boolean_value
+                                                    if _dollar_dollar.HasField("decimal_value"):
+                                                        _t1433 = _dollar_dollar.decimal_value
                                                     else:
                                                         _t1433 = None
                                                     deconstruct_result735 = _t1433
                                                     if deconstruct_result735 is not None:
                                                         assert deconstruct_result735 is not None
                                                         unwrapped736 = deconstruct_result735
-                                                        self.pretty_boolean_value(unwrapped736)
+                                                        self.write(self.format_decimal(unwrapped736))
                                                     else:
                                                         _dollar_dollar = msg
-                                                        if _dollar_dollar.HasField("uint32_value"):
-                                                            _t1434 = _dollar_dollar.uint32_value
+                                                        if _dollar_dollar.HasField("boolean_value"):
+                                                            _t1434 = _dollar_dollar.boolean_value
                                                         else:
                                                             _t1434 = None
                                                         deconstruct_result733 = _t1434
                                                         if deconstruct_result733 is not None:
                                                             assert deconstruct_result733 is not None
                                                             unwrapped734 = deconstruct_result733
-                                                            self.write((str(unwrapped734) + 'u32'))
+                                                            self.pretty_boolean_value(unwrapped734)
                                                         else:
                                                             fields732 = msg
                                                             self.write("missing")
@@ -1671,7 +1681,7 @@ class PrettyPrinter:
                                 if deconstruct_result974 is not None:
                                     assert deconstruct_result974 is not None
                                     unwrapped975 = deconstruct_result974
-                                    self.write((self.format_float32_value(unwrapped975) + 'f32'))
+                                    self.write(self.format_float32_literal(unwrapped975))
                                 else:
                                     _dollar_dollar = msg
                                     if _dollar_dollar.HasField("float_value"):

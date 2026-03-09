@@ -87,7 +87,7 @@ PYTHON_TEMPLATES: dict[str, BuiltinTemplate] = {
     "format_int64": BuiltinTemplate("str({0})"),
     "format_int32": BuiltinTemplate("(str({0}) + 'i32')"),
     "format_uint32": BuiltinTemplate("(str({0}) + 'u32')"),
-    "format_float32": BuiltinTemplate("(self.format_float32_value({0}) + 'f32')"),
+    "format_float32": BuiltinTemplate("self.format_float32_literal({0})"),
     "format_float64": BuiltinTemplate("str({0})"),
     "format_string": BuiltinTemplate("self.format_string_value({0})"),
     "format_symbol": BuiltinTemplate("{0}"),
@@ -100,7 +100,7 @@ PYTHON_TEMPLATES: dict[str, BuiltinTemplate] = {
     "format_int32_formatted": BuiltinTemplate("(str({0}) + 'i32')"),
     "format_uint32_formatted": BuiltinTemplate("(str({0}) + 'u32')"),
     "format_float32_formatted": BuiltinTemplate(
-        "(self.format_float32_value({0}) + 'f32')"
+        "self.format_float32_literal({0})"
     ),
     "format_float64_formatted": BuiltinTemplate("str({0})"),
     "format_string_formatted": BuiltinTemplate("self.format_string_value({0})"),
@@ -195,7 +195,7 @@ JULIA_TEMPLATES: dict[str, BuiltinTemplate] = {
     "format_int64": BuiltinTemplate("string({0})"),
     "format_int32": BuiltinTemplate('(string(Int64({0})) * "i32")'),
     "format_uint32": BuiltinTemplate('(string(Int64({0})) * "u32")'),
-    "format_float32": BuiltinTemplate('(lowercase(string({0})) * "f32")'),
+    "format_float32": BuiltinTemplate("format_float32_literal({0})"),
     "format_float64": BuiltinTemplate("lowercase(string({0}))"),
     "format_string": BuiltinTemplate(
         "format_string(DEFAULT_CONSTANT_FORMATTER, pp, {0})"
@@ -311,9 +311,7 @@ GO_TEMPLATES: dict[str, BuiltinTemplate] = {
     "format_int64": BuiltinTemplate('fmt.Sprintf("%d", {0})'),
     "format_int32": BuiltinTemplate('fmt.Sprintf("%di32", {0})'),
     "format_uint32": BuiltinTemplate('fmt.Sprintf("%du32", {0})'),
-    "format_float32": BuiltinTemplate(
-        "fmt.Sprintf(\"%sf32\", strconv.FormatFloat(float64({0}), 'g', -1, 32))"
-    ),
+    "format_float32": BuiltinTemplate("formatFloat32({0})"),
     "format_float64": BuiltinTemplate("formatFloat64({0})"),
     "format_string": BuiltinTemplate("p.formatStringValue({0})"),
     "format_symbol": BuiltinTemplate("{0}"),
@@ -325,9 +323,7 @@ GO_TEMPLATES: dict[str, BuiltinTemplate] = {
     "format_int64_formatted": BuiltinTemplate('fmt.Sprintf("%d", {0})'),
     "format_int32_formatted": BuiltinTemplate('fmt.Sprintf("%di32", {0})'),
     "format_uint32_formatted": BuiltinTemplate('fmt.Sprintf("%du32", {0})'),
-    "format_float32_formatted": BuiltinTemplate(
-        "fmt.Sprintf(\"%sf32\", strconv.FormatFloat(float64({0}), 'g', -1, 32))"
-    ),
+    "format_float32_formatted": BuiltinTemplate("formatFloat32({0})"),
     "format_float64_formatted": BuiltinTemplate("formatFloat64({0})"),
     "format_string_formatted": BuiltinTemplate("p.formatStringValue({0})"),
     "format_decimal_formatted": BuiltinTemplate("p.formatDecimal({0})"),

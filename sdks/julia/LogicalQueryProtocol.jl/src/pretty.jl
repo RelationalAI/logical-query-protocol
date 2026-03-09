@@ -282,7 +282,7 @@ Format a Float32 value as a string with the `f32` suffix.
 
 Override this function for custom ConstantFormatter subtypes to customize Float32 formatting.
 """
-format_float32(formatter::DefaultConstantFormatter, pp::PrettyPrinter, v::Float32)::String = lowercase(string(v)) * "f32"
+format_float32(formatter::DefaultConstantFormatter, pp::PrettyPrinter, v::Float32)::String = format_float32_literal(v)
 
 """
     format_uint32(formatter::ConstantFormatter, pp::PrettyPrinter, v::UInt32)::String
@@ -317,6 +317,12 @@ format_bool(pp::PrettyPrinter, v::Bool)::String = format_bool(pp.constant_format
 format_int32(pp::PrettyPrinter, v::Int32)::String = format_int32(pp.constant_formatter, pp, v)
 format_uint32(pp::PrettyPrinter, v::UInt32)::String = format_uint32(pp.constant_formatter, pp, v)
 format_float32(pp::PrettyPrinter, v::Float32)::String = format_float32(pp.constant_formatter, pp, v)
+
+function format_float32_literal(v::Float32)::String
+    isinf(v) && return "inf32"
+    isnan(v) && return "nan32"
+    return lowercase(string(v)) * "f32"
+end
 
 # Legacy function names for backward compatibility
 format_float64(v::Float64)::String = lowercase(string(v))
@@ -732,7 +738,7 @@ function pretty_raw_value(pp::PrettyPrinter, msg::Proto.Value)
                             deconstruct_result745 = _t1430
                             if !isnothing(deconstruct_result745)
                                 unwrapped746 = deconstruct_result745
-                                write(pp, (lowercase(string(unwrapped746)) * "f32"))
+                                write(pp, format_float32_literal(unwrapped746))
                             else
                                 _dollar_dollar = msg
                                 if _has_proto_field(_dollar_dollar, Symbol("float_value"))
@@ -746,59 +752,59 @@ function pretty_raw_value(pp::PrettyPrinter, msg::Proto.Value)
                                     write(pp, lowercase(string(unwrapped744)))
                                 else
                                     _dollar_dollar = msg
-                                    if _has_proto_field(_dollar_dollar, Symbol("uint128_value"))
-                                        _t1432 = _get_oneof_field(_dollar_dollar, :uint128_value)
+                                    if _has_proto_field(_dollar_dollar, Symbol("uint32_value"))
+                                        _t1432 = _get_oneof_field(_dollar_dollar, :uint32_value)
                                     else
                                         _t1432 = nothing
                                     end
                                     deconstruct_result741 = _t1432
                                     if !isnothing(deconstruct_result741)
                                         unwrapped742 = deconstruct_result741
-                                        write(pp, format_uint128(DEFAULT_CONSTANT_FORMATTER, pp, unwrapped742))
+                                        write(pp, (string(Int64(unwrapped742)) * "u32"))
                                     else
                                         _dollar_dollar = msg
-                                        if _has_proto_field(_dollar_dollar, Symbol("int128_value"))
-                                            _t1433 = _get_oneof_field(_dollar_dollar, :int128_value)
+                                        if _has_proto_field(_dollar_dollar, Symbol("uint128_value"))
+                                            _t1433 = _get_oneof_field(_dollar_dollar, :uint128_value)
                                         else
                                             _t1433 = nothing
                                         end
                                         deconstruct_result739 = _t1433
                                         if !isnothing(deconstruct_result739)
                                             unwrapped740 = deconstruct_result739
-                                            write(pp, format_int128(DEFAULT_CONSTANT_FORMATTER, pp, unwrapped740))
+                                            write(pp, format_uint128(DEFAULT_CONSTANT_FORMATTER, pp, unwrapped740))
                                         else
                                             _dollar_dollar = msg
-                                            if _has_proto_field(_dollar_dollar, Symbol("decimal_value"))
-                                                _t1434 = _get_oneof_field(_dollar_dollar, :decimal_value)
+                                            if _has_proto_field(_dollar_dollar, Symbol("int128_value"))
+                                                _t1434 = _get_oneof_field(_dollar_dollar, :int128_value)
                                             else
                                                 _t1434 = nothing
                                             end
                                             deconstruct_result737 = _t1434
                                             if !isnothing(deconstruct_result737)
                                                 unwrapped738 = deconstruct_result737
-                                                write(pp, format_decimal(DEFAULT_CONSTANT_FORMATTER, pp, unwrapped738))
+                                                write(pp, format_int128(DEFAULT_CONSTANT_FORMATTER, pp, unwrapped738))
                                             else
                                                 _dollar_dollar = msg
-                                                if _has_proto_field(_dollar_dollar, Symbol("boolean_value"))
-                                                    _t1435 = _get_oneof_field(_dollar_dollar, :boolean_value)
+                                                if _has_proto_field(_dollar_dollar, Symbol("decimal_value"))
+                                                    _t1435 = _get_oneof_field(_dollar_dollar, :decimal_value)
                                                 else
                                                     _t1435 = nothing
                                                 end
                                                 deconstruct_result735 = _t1435
                                                 if !isnothing(deconstruct_result735)
                                                     unwrapped736 = deconstruct_result735
-                                                    pretty_boolean_value(pp, unwrapped736)
+                                                    write(pp, format_decimal(DEFAULT_CONSTANT_FORMATTER, pp, unwrapped736))
                                                 else
                                                     _dollar_dollar = msg
-                                                    if _has_proto_field(_dollar_dollar, Symbol("uint32_value"))
-                                                        _t1436 = _get_oneof_field(_dollar_dollar, :uint32_value)
+                                                    if _has_proto_field(_dollar_dollar, Symbol("boolean_value"))
+                                                        _t1436 = _get_oneof_field(_dollar_dollar, :boolean_value)
                                                     else
                                                         _t1436 = nothing
                                                     end
                                                     deconstruct_result733 = _t1436
                                                     if !isnothing(deconstruct_result733)
                                                         unwrapped734 = deconstruct_result733
-                                                        write(pp, (string(Int64(unwrapped734)) * "u32"))
+                                                        pretty_boolean_value(pp, unwrapped734)
                                                     else
                                                         fields732 = msg
                                                         write(pp, "missing")

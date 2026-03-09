@@ -36,10 +36,10 @@
 # Token declarations: %token NAME Type PATTERN
 # PATTERN can be r'...' for regex or '...' for fixed string
 %token DECIMAL logic.DecimalValue r'[-]?\d+\.\d+d\d+'
+%token FLOAT32 Float32 r'([-]?\d+\.\d+f32|inf32|nan32)'
 %token FLOAT Float64 r'([-]?\d+\.\d+|inf|nan)'
-%token FLOAT32 Float32 r'[-]?\d+\.\d+f32'
-%token INT Int64 r'[-]?\d+'
 %token INT32 Int32 r'[-]?\d+i32'
+%token INT Int64 r'[-]?\d+'
 %token UINT32 UInt32 r'\d+u32'
 %token INT128 logic.Int128Value r'[-]?\d+i128'
 %token STRING String r'"(?:[^"\\]|\\.)*"'
@@ -306,6 +306,10 @@ raw_value
       construct: $$ = logic.Value(float_value=$1)
       deconstruct if builtin.has_proto_field($$, 'float_value'):
         $1: Float64 = $$.float_value
+    | UINT32
+      construct: $$ = logic.Value(uint32_value=$1)
+      deconstruct if builtin.has_proto_field($$, 'uint32_value'):
+        $1: UInt32 = $$.uint32_value
     | UINT128
       construct: $$ = logic.Value(uint128_value=$1)
       deconstruct if builtin.has_proto_field($$, 'uint128_value'):
@@ -324,10 +328,6 @@ raw_value
       construct: $$ = logic.Value(boolean_value=$1)
       deconstruct if builtin.has_proto_field($$, 'boolean_value'):
         $1: Boolean = $$.boolean_value
-    | UINT32
-      construct: $$ = logic.Value(uint32_value=$1)
-      deconstruct if builtin.has_proto_field($$, 'uint32_value'):
-        $1: UInt32 = $$.uint32_value
 
 raw_date
     : "(" "date" INT INT INT ")"
@@ -559,13 +559,25 @@ string_type
     : "STRING"
       construct: $$ = logic.StringType()
 
+int32_type
+    : "INT32"
+      construct: $$ = logic.Int32Type()
+
 int_type
     : "INT"
       construct: $$ = logic.IntType()
 
+float32_type
+    : "FLOAT32"
+      construct: $$ = logic.Float32Type()
+
 float_type
     : "FLOAT"
       construct: $$ = logic.FloatType()
+
+uint32_type
+    : "UINT32"
+      construct: $$ = logic.UInt32Type()
 
 uint128_type
     : "UINT128"
@@ -593,18 +605,6 @@ decimal_type
       deconstruct:
         $3: Int64 = builtin.int32_to_int64($$.precision)
         $4: Int64 = builtin.int32_to_int64($$.scale)
-
-int32_type
-    : "INT32"
-      construct: $$ = logic.Int32Type()
-
-float32_type
-    : "FLOAT32"
-      construct: $$ = logic.Float32Type()
-
-uint32_type
-    : "UINT32"
-      construct: $$ = logic.UInt32Type()
 
 boolean_type
     : "BOOLEAN"

@@ -85,7 +85,14 @@ scan_int32(n::String) = Base.parse(Int32, n[1:end-3])  # Remove "i32" suffix
 
 scan_uint32(n::String) = Base.parse(UInt32, n[1:end-3])  # Remove "u32" suffix
 
-scan_float32(f::String) = Base.parse(Float32, f[1:end-3])  # Remove "f32" suffix
+function scan_float32(f::String)
+    if f == "inf32"
+        return Float32(Inf)
+    elseif f == "nan32"
+        return Float32(NaN)
+    end
+    return Base.parse(Float32, f[1:end-3])  # Remove "f32" suffix
+end
 
 function scan_float(f::String)
     if f == "inf"
@@ -155,10 +162,10 @@ const _TOKEN_SPECS = [
     ("LITERAL", r"\|", identity),
     ("LITERAL", r"\}", identity),
     ("DECIMAL", r"[-]?\d+\.\d+d\d+", scan_decimal),
+    ("FLOAT32", r"([-]?\d+\.\d+f32|inf32|nan32)", scan_float32),
     ("FLOAT", r"([-]?\d+\.\d+|inf|nan)", scan_float),
-    ("FLOAT32", r"[-]?\d+\.\d+f32", scan_float32),
-    ("INT", r"[-]?\d+", scan_int),
     ("INT32", r"[-]?\d+i32", scan_int32),
+    ("INT", r"[-]?\d+", scan_int),
     ("UINT32", r"\d+u32", scan_uint32),
     ("INT128", r"[-]?\d+i128", scan_int128),
     ("STRING", r"\"(?:[^\"\\]|\\.)*\"", scan_string),
@@ -633,13 +640,13 @@ end
 function parse_raw_value(parser::ParserState)::Proto.Value
     span_start634 = span_start(parser)
     if match_lookahead_literal(parser, "true", 0)
-        _t1219 = 11
+        _t1219 = 12
     else
         if match_lookahead_literal(parser, "missing", 0)
-            _t1220 = 10
+            _t1220 = 11
         else
             if match_lookahead_literal(parser, "false", 0)
-                _t1221 = 11
+                _t1221 = 12
             else
                 if match_lookahead_literal(parser, "(", 0)
                     if match_lookahead_literal(parser, "datetime", 1)
@@ -655,10 +662,10 @@ function parse_raw_value(parser::ParserState)::Proto.Value
                     _t1222 = _t1223
                 else
                     if match_lookahead_terminal(parser, "UINT32", 0)
-                        _t1225 = 12
+                        _t1225 = 7
                     else
                         if match_lookahead_terminal(parser, "UINT128", 0)
-                            _t1226 = 7
+                            _t1226 = 8
                         else
                             if match_lookahead_terminal(parser, "STRING", 0)
                                 _t1227 = 2
@@ -667,7 +674,7 @@ function parse_raw_value(parser::ParserState)::Proto.Value
                                     _t1228 = 3
                                 else
                                     if match_lookahead_terminal(parser, "INT128", 0)
-                                        _t1229 = 8
+                                        _t1229 = 9
                                     else
                                         if match_lookahead_terminal(parser, "INT", 0)
                                             _t1230 = 4
@@ -679,7 +686,7 @@ function parse_raw_value(parser::ParserState)::Proto.Value
                                                     _t1232 = 6
                                                 else
                                                     if match_lookahead_terminal(parser, "DECIMAL", 0)
-                                                        _t1233 = 9
+                                                        _t1233 = 10
                                                     else
                                                         _t1233 = -1
                                                     end
@@ -709,35 +716,35 @@ function parse_raw_value(parser::ParserState)::Proto.Value
     end
     prediction621 = _t1219
     if prediction621 == 12
-        uint32633 = consume_terminal!(parser, "UINT32")
-        _t1235 = Proto.Value(value=OneOf(:uint32_value, uint32633))
-        _t1234 = _t1235
+        _t1235 = parse_boolean_value(parser)
+        boolean_value633 = _t1235
+        _t1236 = Proto.Value(value=OneOf(:boolean_value, boolean_value633))
+        _t1234 = _t1236
     else
         if prediction621 == 11
-            _t1237 = parse_boolean_value(parser)
-            boolean_value632 = _t1237
-            _t1238 = Proto.Value(value=OneOf(:boolean_value, boolean_value632))
-            _t1236 = _t1238
+            consume_literal!(parser, "missing")
+            _t1238 = Proto.MissingValue()
+            _t1239 = Proto.Value(value=OneOf(:missing_value, _t1238))
+            _t1237 = _t1239
         else
             if prediction621 == 10
-                consume_literal!(parser, "missing")
-                _t1240 = Proto.MissingValue()
-                _t1241 = Proto.Value(value=OneOf(:missing_value, _t1240))
-                _t1239 = _t1241
+                decimal632 = consume_terminal!(parser, "DECIMAL")
+                _t1241 = Proto.Value(value=OneOf(:decimal_value, decimal632))
+                _t1240 = _t1241
             else
                 if prediction621 == 9
-                    decimal631 = consume_terminal!(parser, "DECIMAL")
-                    _t1243 = Proto.Value(value=OneOf(:decimal_value, decimal631))
+                    int128631 = consume_terminal!(parser, "INT128")
+                    _t1243 = Proto.Value(value=OneOf(:int128_value, int128631))
                     _t1242 = _t1243
                 else
                     if prediction621 == 8
-                        int128630 = consume_terminal!(parser, "INT128")
-                        _t1245 = Proto.Value(value=OneOf(:int128_value, int128630))
+                        uint128630 = consume_terminal!(parser, "UINT128")
+                        _t1245 = Proto.Value(value=OneOf(:uint128_value, uint128630))
                         _t1244 = _t1245
                     else
                         if prediction621 == 7
-                            uint128629 = consume_terminal!(parser, "UINT128")
-                            _t1247 = Proto.Value(value=OneOf(:uint128_value, uint128629))
+                            uint32629 = consume_terminal!(parser, "UINT32")
+                            _t1247 = Proto.Value(value=OneOf(:uint32_value, uint32629))
                             _t1246 = _t1247
                         else
                             if prediction621 == 6
@@ -797,11 +804,11 @@ function parse_raw_value(parser::ParserState)::Proto.Value
                     end
                     _t1242 = _t1244
                 end
-                _t1239 = _t1242
+                _t1240 = _t1242
             end
-            _t1236 = _t1239
+            _t1237 = _t1240
         end
-        _t1234 = _t1236
+        _t1234 = _t1237
     end
     result635 = _t1234
     record_span!(parser, span_start634, "Value")

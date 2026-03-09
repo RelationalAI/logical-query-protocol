@@ -109,10 +109,14 @@ _TOKEN_SPECS = [
     ("LITERAL", re.compile(r"\|"), lambda x: x),
     ("LITERAL", re.compile(r"\}"), lambda x: x),
     ("DECIMAL", re.compile(r"[-]?\d+\.\d+d\d+"), lambda x: Lexer.scan_decimal(x)),
+    (
+        "FLOAT32",
+        re.compile(r"([-]?\d+\.\d+f32|inf32|nan32)"),
+        lambda x: Lexer.scan_float32(x),
+    ),
     ("FLOAT", re.compile(r"([-]?\d+\.\d+|inf|nan)"), lambda x: Lexer.scan_float(x)),
-    ("FLOAT32", re.compile(r"[-]?\d+\.\d+f32"), lambda x: Lexer.scan_float32(x)),
-    ("INT", re.compile(r"[-]?\d+"), lambda x: Lexer.scan_int(x)),
     ("INT32", re.compile(r"[-]?\d+i32"), lambda x: Lexer.scan_int32(x)),
+    ("INT", re.compile(r"[-]?\d+"), lambda x: Lexer.scan_int(x)),
     ("UINT32", re.compile(r"\d+u32"), lambda x: Lexer.scan_uint32(x)),
     ("INT128", re.compile(r"[-]?\d+i128"), lambda x: Lexer.scan_int128(x)),
     ("STRING", re.compile(r'"(?:[^"\\]|\\.)*"'), lambda x: Lexer.scan_string(x)),
@@ -207,6 +211,10 @@ class Lexer:
     @staticmethod
     def scan_float32(f: str) -> float:
         """Parse FLOAT32 token."""
+        if f == "inf32":
+            return float("inf")
+        elif f == "nan32":
+            return float("nan")
         f = f[:-3]  # Remove "f32" suffix
         return float(f)
 
@@ -703,13 +711,13 @@ class Parser:
     def parse_raw_value(self) -> logic_pb2.Value:
         span_start634 = self.span_start()
         if self.match_lookahead_literal("true", 0):
-            _t1219 = 11
+            _t1219 = 12
         else:
             if self.match_lookahead_literal("missing", 0):
-                _t1220 = 10
+                _t1220 = 11
             else:
                 if self.match_lookahead_literal("false", 0):
-                    _t1221 = 11
+                    _t1221 = 12
                 else:
                     if self.match_lookahead_literal("(", 0):
                         if self.match_lookahead_literal("datetime", 1):
@@ -723,10 +731,10 @@ class Parser:
                         _t1222 = _t1223
                     else:
                         if self.match_lookahead_terminal("UINT32", 0):
-                            _t1225 = 12
+                            _t1225 = 7
                         else:
                             if self.match_lookahead_terminal("UINT128", 0):
-                                _t1226 = 7
+                                _t1226 = 8
                             else:
                                 if self.match_lookahead_terminal("STRING", 0):
                                     _t1227 = 2
@@ -735,7 +743,7 @@ class Parser:
                                         _t1228 = 3
                                     else:
                                         if self.match_lookahead_terminal("INT128", 0):
-                                            _t1229 = 8
+                                            _t1229 = 9
                                         else:
                                             if self.match_lookahead_terminal("INT", 0):
                                                 _t1230 = 4
@@ -747,7 +755,7 @@ class Parser:
                                                         _t1232 = 6
                                                     else:
                                                         if self.match_lookahead_terminal("DECIMAL", 0):
-                                                            _t1233 = 9
+                                                            _t1233 = 10
                                                         else:
                                                             _t1233 = -1
                                                         _t1232 = _t1233
@@ -764,35 +772,35 @@ class Parser:
             _t1219 = _t1220
         prediction621 = _t1219
         if prediction621 == 12:
-            uint32633 = self.consume_terminal("UINT32")
-            _t1235 = logic_pb2.Value(uint32_value=uint32633)
-            _t1234 = _t1235
+            _t1235 = self.parse_boolean_value()
+            boolean_value633 = _t1235
+            _t1236 = logic_pb2.Value(boolean_value=boolean_value633)
+            _t1234 = _t1236
         else:
             if prediction621 == 11:
-                _t1237 = self.parse_boolean_value()
-                boolean_value632 = _t1237
-                _t1238 = logic_pb2.Value(boolean_value=boolean_value632)
-                _t1236 = _t1238
+                self.consume_literal("missing")
+                _t1238 = logic_pb2.MissingValue()
+                _t1239 = logic_pb2.Value(missing_value=_t1238)
+                _t1237 = _t1239
             else:
                 if prediction621 == 10:
-                    self.consume_literal("missing")
-                    _t1240 = logic_pb2.MissingValue()
-                    _t1241 = logic_pb2.Value(missing_value=_t1240)
-                    _t1239 = _t1241
+                    decimal632 = self.consume_terminal("DECIMAL")
+                    _t1241 = logic_pb2.Value(decimal_value=decimal632)
+                    _t1240 = _t1241
                 else:
                     if prediction621 == 9:
-                        decimal631 = self.consume_terminal("DECIMAL")
-                        _t1243 = logic_pb2.Value(decimal_value=decimal631)
+                        int128631 = self.consume_terminal("INT128")
+                        _t1243 = logic_pb2.Value(int128_value=int128631)
                         _t1242 = _t1243
                     else:
                         if prediction621 == 8:
-                            int128630 = self.consume_terminal("INT128")
-                            _t1245 = logic_pb2.Value(int128_value=int128630)
+                            uint128630 = self.consume_terminal("UINT128")
+                            _t1245 = logic_pb2.Value(uint128_value=uint128630)
                             _t1244 = _t1245
                         else:
                             if prediction621 == 7:
-                                uint128629 = self.consume_terminal("UINT128")
-                                _t1247 = logic_pb2.Value(uint128_value=uint128629)
+                                uint32629 = self.consume_terminal("UINT32")
+                                _t1247 = logic_pb2.Value(uint32_value=uint32629)
                                 _t1246 = _t1247
                             else:
                                 if prediction621 == 6:
@@ -842,9 +850,9 @@ class Parser:
                                 _t1246 = _t1248
                             _t1244 = _t1246
                         _t1242 = _t1244
-                    _t1239 = _t1242
-                _t1236 = _t1239
-            _t1234 = _t1236
+                    _t1240 = _t1242
+                _t1237 = _t1240
+            _t1234 = _t1237
         result635 = _t1234
         self.record_span(span_start634, "Value")
         return result635

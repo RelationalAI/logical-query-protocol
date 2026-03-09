@@ -14,8 +14,8 @@ end
     @test format_float32(pp, Float32(3.14)) == "3.14f32"
     @test format_float32(pp, Float32(-2.5)) == "-2.5f32"
     @test format_float32(pp, Float32(0.0)) == "0.0f32"
-    @test format_float32(pp, Float32(Inf)) == "inff32"
-    @test format_float32(pp, Float32(NaN)) == "nanf32"
+    @test format_float32(pp, Float32(Inf)) == "inf32"
+    @test format_float32(pp, Float32(NaN)) == "nan32"
 end
 
 @testitem "Custom formatter - int32" setup=[PrettySetup] begin
@@ -188,7 +188,6 @@ end
 end
 
 @testitem "Formatted constants - int32/float32 value types round trip" setup=[ParserSetup, PrettySetup] begin
-    # Test that int32 and float32 values survive parse/pretty round trip
     lqp = """
     (transaction
       (epoch
@@ -203,6 +202,27 @@ end
     """
     parsed, _ = Parser.parse(lqp)
     printed = pretty(parsed)
+    reparsed, _ = Parser.parse(printed)
+    @test reparsed == parsed
+end
+
+@testitem "Formatted constants - inf32/nan32 round trip" setup=[ParserSetup, PrettySetup] begin
+    lqp = """
+    (transaction
+      (epoch
+        (writes
+          (define
+            (fragment :f1
+              (def :foo ([v::FLOAT32] (= v inf32)))
+              (def :bar ([v::FLOAT32] (= v nan32))))))
+        (reads
+          (output :foo :foo)
+          (output :bar :bar))))
+    """
+    parsed, _ = Parser.parse(lqp)
+    printed = pretty(parsed)
+    @test occursin("inf32", printed)
+    @test occursin("nan32", printed)
     reparsed, _ = Parser.parse(printed)
     @test reparsed == parsed
 end

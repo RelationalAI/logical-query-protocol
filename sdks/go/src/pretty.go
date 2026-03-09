@@ -11,6 +11,7 @@ package lqp
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"math/big"
 	"reflect"
 	"sort"
@@ -300,6 +301,16 @@ func formatFloat64(v float64) string {
 		s += ".0"
 	}
 	return s
+}
+
+func formatFloat32(v float32) string {
+	if math.IsInf(float64(v), 0) {
+		return "inf32"
+	}
+	if math.IsNaN(float64(v)) {
+		return "nan32"
+	}
+	return fmt.Sprintf("%sf32", strconv.FormatFloat(float64(v), 'g', -1, 32))
 }
 
 func formatBool(b bool) string {
@@ -671,7 +682,7 @@ func (p *PrettyPrinter) pretty_raw_value(msg *pb.Value) interface{} {
 							deconstruct_result745 := _t1428
 							if deconstruct_result745 != nil {
 								unwrapped746 := *deconstruct_result745
-								p.write(fmt.Sprintf("%sf32", strconv.FormatFloat(float64(unwrapped746), 'g', -1, 32)))
+								p.write(formatFloat32(unwrapped746))
 							} else {
 								_dollar_dollar := msg
 								var _t1429 *float64
@@ -684,54 +695,54 @@ func (p *PrettyPrinter) pretty_raw_value(msg *pb.Value) interface{} {
 									p.write(formatFloat64(unwrapped744))
 								} else {
 									_dollar_dollar := msg
-									var _t1430 *pb.UInt128Value
-									if hasProtoField(_dollar_dollar, "uint128_value") {
-										_t1430 = _dollar_dollar.GetUint128Value()
+									var _t1430 *uint32
+									if hasProtoField(_dollar_dollar, "uint32_value") {
+										_t1430 = ptr(_dollar_dollar.GetUint32Value())
 									}
 									deconstruct_result741 := _t1430
 									if deconstruct_result741 != nil {
-										unwrapped742 := deconstruct_result741
-										p.write(p.formatUint128(unwrapped742))
+										unwrapped742 := *deconstruct_result741
+										p.write(fmt.Sprintf("%du32", unwrapped742))
 									} else {
 										_dollar_dollar := msg
-										var _t1431 *pb.Int128Value
-										if hasProtoField(_dollar_dollar, "int128_value") {
-											_t1431 = _dollar_dollar.GetInt128Value()
+										var _t1431 *pb.UInt128Value
+										if hasProtoField(_dollar_dollar, "uint128_value") {
+											_t1431 = _dollar_dollar.GetUint128Value()
 										}
 										deconstruct_result739 := _t1431
 										if deconstruct_result739 != nil {
 											unwrapped740 := deconstruct_result739
-											p.write(p.formatInt128(unwrapped740))
+											p.write(p.formatUint128(unwrapped740))
 										} else {
 											_dollar_dollar := msg
-											var _t1432 *pb.DecimalValue
-											if hasProtoField(_dollar_dollar, "decimal_value") {
-												_t1432 = _dollar_dollar.GetDecimalValue()
+											var _t1432 *pb.Int128Value
+											if hasProtoField(_dollar_dollar, "int128_value") {
+												_t1432 = _dollar_dollar.GetInt128Value()
 											}
 											deconstruct_result737 := _t1432
 											if deconstruct_result737 != nil {
 												unwrapped738 := deconstruct_result737
-												p.write(p.formatDecimal(unwrapped738))
+												p.write(p.formatInt128(unwrapped738))
 											} else {
 												_dollar_dollar := msg
-												var _t1433 *bool
-												if hasProtoField(_dollar_dollar, "boolean_value") {
-													_t1433 = ptr(_dollar_dollar.GetBooleanValue())
+												var _t1433 *pb.DecimalValue
+												if hasProtoField(_dollar_dollar, "decimal_value") {
+													_t1433 = _dollar_dollar.GetDecimalValue()
 												}
 												deconstruct_result735 := _t1433
 												if deconstruct_result735 != nil {
-													unwrapped736 := *deconstruct_result735
-													p.pretty_boolean_value(unwrapped736)
+													unwrapped736 := deconstruct_result735
+													p.write(p.formatDecimal(unwrapped736))
 												} else {
 													_dollar_dollar := msg
-													var _t1434 *uint32
-													if hasProtoField(_dollar_dollar, "uint32_value") {
-														_t1434 = ptr(_dollar_dollar.GetUint32Value())
+													var _t1434 *bool
+													if hasProtoField(_dollar_dollar, "boolean_value") {
+														_t1434 = ptr(_dollar_dollar.GetBooleanValue())
 													}
 													deconstruct_result733 := _t1434
 													if deconstruct_result733 != nil {
 														unwrapped734 := *deconstruct_result733
-														p.write(fmt.Sprintf("%du32", unwrapped734))
+														p.pretty_boolean_value(unwrapped734)
 													} else {
 														fields732 := msg
 														_ = fields732
@@ -1931,7 +1942,7 @@ func (p *PrettyPrinter) pretty_value(msg *pb.Value) interface{} {
 							deconstruct_result974 := _t1488
 							if deconstruct_result974 != nil {
 								unwrapped975 := *deconstruct_result974
-								p.write(fmt.Sprintf("%sf32", strconv.FormatFloat(float64(unwrapped975), 'g', -1, 32)))
+								p.write(formatFloat32(unwrapped975))
 							} else {
 								_dollar_dollar := msg
 								var _t1489 *float64

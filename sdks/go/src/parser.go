@@ -95,6 +95,12 @@ func (tv TokenValue) String() string {
 	case kindFloat64:
 		return strconv.FormatFloat(tv.f64, 'g', -1, 64)
 	case kindFloat32:
+		if math.IsInf(float64(tv.f32), 0) {
+			return "inf32"
+		}
+		if math.IsNaN(float64(tv.f32)) {
+			return "nan32"
+		}
 		return fmt.Sprintf("%sf32", strconv.FormatFloat(float64(tv.f32), 'g', -1, 32))
 	case kindUint128:
 		return fmt.Sprintf("0x%016x%016x", tv.uint128.High, tv.uint128.Low)
@@ -153,10 +159,10 @@ var (
 		{"LITERAL", regexp.MustCompile(`^\|`), func(s string) TokenValue { return TokenValue{kind: kindString, str: s} }},
 		{"LITERAL", regexp.MustCompile(`^\}`), func(s string) TokenValue { return TokenValue{kind: kindString, str: s} }},
 		{"DECIMAL", regexp.MustCompile(`^[-]?\d+\.\d+d\d+`), func(s string) TokenValue { return TokenValue{kind: kindDecimal, decimal: scanDecimal(s)} }},
+		{"FLOAT32", regexp.MustCompile(`^([-]?\d+\.\d+f32|inf32|nan32)`), func(s string) TokenValue { return TokenValue{kind: kindFloat32, f32: scanFloat32(s)} }},
 		{"FLOAT", regexp.MustCompile(`^([-]?\d+\.\d+|inf|nan)`), func(s string) TokenValue { return TokenValue{kind: kindFloat64, f64: scanFloat(s)} }},
-		{"FLOAT32", regexp.MustCompile(`^[-]?\d+\.\d+f32`), func(s string) TokenValue { return TokenValue{kind: kindFloat32, f32: scanFloat32(s)} }},
-		{"INT", regexp.MustCompile(`^[-]?\d+`), func(s string) TokenValue { return TokenValue{kind: kindInt64, i64: scanInt(s)} }},
 		{"INT32", regexp.MustCompile(`^[-]?\d+i32`), func(s string) TokenValue { return TokenValue{kind: kindInt32, i32: scanInt32(s)} }},
+		{"INT", regexp.MustCompile(`^[-]?\d+`), func(s string) TokenValue { return TokenValue{kind: kindInt64, i64: scanInt(s)} }},
 		{"UINT32", regexp.MustCompile(`^\d+u32`), func(s string) TokenValue { return TokenValue{kind: kindUint32, u32: scanUint32(s)} }},
 		{"INT128", regexp.MustCompile(`^[-]?\d+i128`), func(s string) TokenValue { return TokenValue{kind: kindInt128, int128: scanInt128(s)} }},
 		{"STRING", regexp.MustCompile(`^"(?:[^"\\]|\\.)*"`), func(s string) TokenValue { return TokenValue{kind: kindString, str: scanString(s)} }},
@@ -285,6 +291,11 @@ func scanUint32(s string) uint32 {
 }
 
 func scanFloat32(s string) float32 {
+	if s == "inf32" {
+		return float32(math.Inf(1))
+	} else if s == "nan32" {
+		return float32(math.NaN())
+	}
 	numStr := s[:len(s)-3] // Remove "f32" suffix
 	f, err := strconv.ParseFloat(numStr, 32)
 	if err != nil {
@@ -910,15 +921,15 @@ func (p *Parser) parse_raw_value() *pb.Value {
 	span_start634 := int64(p.spanStart())
 	var _t1220 int64
 	if p.matchLookaheadLiteral("true", 0) {
-		_t1220 = 11
+		_t1220 = 12
 	} else {
 		var _t1221 int64
 		if p.matchLookaheadLiteral("missing", 0) {
-			_t1221 = 10
+			_t1221 = 11
 		} else {
 			var _t1222 int64
 			if p.matchLookaheadLiteral("false", 0) {
-				_t1222 = 11
+				_t1222 = 12
 			} else {
 				var _t1223 int64
 				if p.matchLookaheadLiteral("(", 0) {
@@ -938,11 +949,11 @@ func (p *Parser) parse_raw_value() *pb.Value {
 				} else {
 					var _t1226 int64
 					if p.matchLookaheadTerminal("UINT32", 0) {
-						_t1226 = 12
+						_t1226 = 7
 					} else {
 						var _t1227 int64
 						if p.matchLookaheadTerminal("UINT128", 0) {
-							_t1227 = 7
+							_t1227 = 8
 						} else {
 							var _t1228 int64
 							if p.matchLookaheadTerminal("STRING", 0) {
@@ -954,7 +965,7 @@ func (p *Parser) parse_raw_value() *pb.Value {
 								} else {
 									var _t1230 int64
 									if p.matchLookaheadTerminal("INT128", 0) {
-										_t1230 = 8
+										_t1230 = 9
 									} else {
 										var _t1231 int64
 										if p.matchLookaheadTerminal("INT", 0) {
@@ -970,7 +981,7 @@ func (p *Parser) parse_raw_value() *pb.Value {
 												} else {
 													var _t1234 int64
 													if p.matchLookaheadTerminal("DECIMAL", 0) {
-														_t1234 = 9
+														_t1234 = 10
 													} else {
 														_t1234 = -1
 													}
@@ -1001,46 +1012,46 @@ func (p *Parser) parse_raw_value() *pb.Value {
 	prediction621 := _t1220
 	var _t1235 *pb.Value
 	if prediction621 == 12 {
-		uint32633 := p.consumeTerminal("UINT32").Value.u32
-		_t1236 := &pb.Value{}
-		_t1236.Value = &pb.Value_Uint32Value{Uint32Value: uint32633}
-		_t1235 = _t1236
+		_t1236 := p.parse_boolean_value()
+		boolean_value633 := _t1236
+		_t1237 := &pb.Value{}
+		_t1237.Value = &pb.Value_BooleanValue{BooleanValue: boolean_value633}
+		_t1235 = _t1237
 	} else {
-		var _t1237 *pb.Value
+		var _t1238 *pb.Value
 		if prediction621 == 11 {
-			_t1238 := p.parse_boolean_value()
-			boolean_value632 := _t1238
-			_t1239 := &pb.Value{}
-			_t1239.Value = &pb.Value_BooleanValue{BooleanValue: boolean_value632}
-			_t1237 = _t1239
+			p.consumeLiteral("missing")
+			_t1239 := &pb.MissingValue{}
+			_t1240 := &pb.Value{}
+			_t1240.Value = &pb.Value_MissingValue{MissingValue: _t1239}
+			_t1238 = _t1240
 		} else {
-			var _t1240 *pb.Value
+			var _t1241 *pb.Value
 			if prediction621 == 10 {
-				p.consumeLiteral("missing")
-				_t1241 := &pb.MissingValue{}
+				decimal632 := p.consumeTerminal("DECIMAL").Value.decimal
 				_t1242 := &pb.Value{}
-				_t1242.Value = &pb.Value_MissingValue{MissingValue: _t1241}
-				_t1240 = _t1242
+				_t1242.Value = &pb.Value_DecimalValue{DecimalValue: decimal632}
+				_t1241 = _t1242
 			} else {
 				var _t1243 *pb.Value
 				if prediction621 == 9 {
-					decimal631 := p.consumeTerminal("DECIMAL").Value.decimal
+					int128631 := p.consumeTerminal("INT128").Value.int128
 					_t1244 := &pb.Value{}
-					_t1244.Value = &pb.Value_DecimalValue{DecimalValue: decimal631}
+					_t1244.Value = &pb.Value_Int128Value{Int128Value: int128631}
 					_t1243 = _t1244
 				} else {
 					var _t1245 *pb.Value
 					if prediction621 == 8 {
-						int128630 := p.consumeTerminal("INT128").Value.int128
+						uint128630 := p.consumeTerminal("UINT128").Value.uint128
 						_t1246 := &pb.Value{}
-						_t1246.Value = &pb.Value_Int128Value{Int128Value: int128630}
+						_t1246.Value = &pb.Value_Uint128Value{Uint128Value: uint128630}
 						_t1245 = _t1246
 					} else {
 						var _t1247 *pb.Value
 						if prediction621 == 7 {
-							uint128629 := p.consumeTerminal("UINT128").Value.uint128
+							uint32629 := p.consumeTerminal("UINT32").Value.u32
 							_t1248 := &pb.Value{}
-							_t1248.Value = &pb.Value_Uint128Value{Uint128Value: uint128629}
+							_t1248.Value = &pb.Value_Uint32Value{Uint32Value: uint32629}
 							_t1247 = _t1248
 						} else {
 							var _t1249 *pb.Value
@@ -1114,11 +1125,11 @@ func (p *Parser) parse_raw_value() *pb.Value {
 					}
 					_t1243 = _t1245
 				}
-				_t1240 = _t1243
+				_t1241 = _t1243
 			}
-			_t1237 = _t1240
+			_t1238 = _t1241
 		}
-		_t1235 = _t1237
+		_t1235 = _t1238
 	}
 	result635 := _t1235
 	p.recordSpan(int(span_start634), "Value")
