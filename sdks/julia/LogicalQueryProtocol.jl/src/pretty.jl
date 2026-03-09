@@ -284,15 +284,6 @@ Override this function for custom ConstantFormatter subtypes to customize Float3
 """
 format_float32(formatter::DefaultConstantFormatter, pp::PrettyPrinter, v::Float32)::String = lowercase(string(v)) * "f32"
 
-"""
-    format_uint32(formatter::ConstantFormatter, pp::PrettyPrinter, v::UInt32)::String
-
-Format a UInt32 value as a string with the `u32` suffix.
-
-Override this function for custom ConstantFormatter subtypes to customize UInt32 formatting.
-"""
-format_uint32(formatter::DefaultConstantFormatter, pp::PrettyPrinter, v::UInt32)::String = string(Int64(v)) * "u32"
-
 # Fallback methods for custom formatters that don't override all types
 # These delegate to the default formatter
 format_decimal(formatter::ConstantFormatter, pp::PrettyPrinter, msg::Proto.DecimalValue)::String = format_decimal(DEFAULT_CONSTANT_FORMATTER, pp, msg)
@@ -303,7 +294,6 @@ format_float(formatter::ConstantFormatter, pp::PrettyPrinter, v::Float64)::Strin
 format_string(formatter::ConstantFormatter, pp::PrettyPrinter, s::AbstractString)::String = format_string(DEFAULT_CONSTANT_FORMATTER, pp, s)
 format_bool(formatter::ConstantFormatter, pp::PrettyPrinter, v::Bool)::String = format_bool(DEFAULT_CONSTANT_FORMATTER, pp, v)
 format_int32(formatter::ConstantFormatter, pp::PrettyPrinter, v::Int32)::String = format_int32(DEFAULT_CONSTANT_FORMATTER, pp, v)
-format_uint32(formatter::ConstantFormatter, pp::PrettyPrinter, v::UInt32)::String = format_uint32(DEFAULT_CONSTANT_FORMATTER, pp, v)
 format_float32(formatter::ConstantFormatter, pp::PrettyPrinter, v::Float32)::String = format_float32(DEFAULT_CONSTANT_FORMATTER, pp, v)
 
 # Convenience methods that use pp.constant_formatter
@@ -315,7 +305,6 @@ format_float(pp::PrettyPrinter, v::Float64)::String = format_float(pp.constant_f
 format_string(pp::PrettyPrinter, s::AbstractString)::String = format_string(pp.constant_formatter, pp, s)
 format_bool(pp::PrettyPrinter, v::Bool)::String = format_bool(pp.constant_formatter, pp, v)
 format_int32(pp::PrettyPrinter, v::Int32)::String = format_int32(pp.constant_formatter, pp, v)
-format_uint32(pp::PrettyPrinter, v::UInt32)::String = format_uint32(pp.constant_formatter, pp, v)
 format_float32(pp::PrettyPrinter, v::Float32)::String = format_float32(pp.constant_formatter, pp, v)
 
 # Legacy function names for backward compatibility
@@ -4827,7 +4816,7 @@ end
 # Export ConstantFormatter types for user customization
 export ConstantFormatter, DefaultConstantFormatter, DEFAULT_CONSTANT_FORMATTER
 # Export format functions for users to extend
-export format_decimal, format_int128, format_uint128, format_int, format_float, format_string, format_bool, format_int32, format_uint32, format_float32
+export format_decimal, format_int128, format_uint128, format_int, format_float, format_string, format_bool, format_int32, format_float32
 # Export legacy format functions for backward compatibility
 export format_float64, format_string_value
 # Export pretty printing API
