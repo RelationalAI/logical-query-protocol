@@ -4,7 +4,14 @@ import os
 import pytest
 from pytest_snapshot.plugin import Snapshot
 
-from lqp.gen.parser import Lexer, ParseError, Parser, parse, parse_fragment, parse_transaction
+from lqp.gen.parser import (
+    Lexer,
+    ParseError,
+    Parser,
+    parse,
+    parse_fragment,
+    parse_transaction,
+)
 from lqp.proto.v1 import fragments_pb2, transactions_pb2
 
 from .utils import BIN_SNAPSHOTS_DIR, get_lqp_input_files
@@ -83,12 +90,16 @@ class TestScanFloat32:
     def test_tokenize_inf32(self):
         tokens = Lexer("inf32").tokens
         assert tokens[0].type == "FLOAT32"
-        assert math.isinf(tokens[0].value)
+        value = tokens[0].value
+        assert isinstance(value, float)
+        assert math.isinf(value)
 
     def test_tokenize_nan32(self):
         tokens = Lexer("nan32").tokens
         assert tokens[0].type == "FLOAT32"
-        assert math.isnan(tokens[0].value)
+        value = tokens[0].value
+        assert isinstance(value, float)
+        assert math.isnan(value)
 
     def test_round_trip_inf32(self):
         lqp = """(transaction (epoch (writes (define (fragment :f1

@@ -99,9 +99,7 @@ PYTHON_TEMPLATES: dict[str, BuiltinTemplate] = {
     "format_int64_formatted": BuiltinTemplate("str({0})"),
     "format_int32_formatted": BuiltinTemplate("(str({0}) + 'i32')"),
     "format_uint32_formatted": BuiltinTemplate("(str({0}) + 'u32')"),
-    "format_float32_formatted": BuiltinTemplate(
-        "self.format_float32_literal({0})"
-    ),
+    "format_float32_formatted": BuiltinTemplate("self.format_float32_literal({0})"),
     "format_float64_formatted": BuiltinTemplate("str({0})"),
     "format_string_formatted": BuiltinTemplate("self.format_string_value({0})"),
     "format_decimal_formatted": BuiltinTemplate("self.format_decimal({0})"),
