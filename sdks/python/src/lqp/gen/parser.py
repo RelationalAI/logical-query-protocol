@@ -113,6 +113,7 @@ _TOKEN_SPECS = [
     ("FLOAT32", re.compile(r"[-]?\d+\.\d+f32"), lambda x: Lexer.scan_float32(x)),
     ("INT", re.compile(r"[-]?\d+"), lambda x: Lexer.scan_int(x)),
     ("INT32", re.compile(r"[-]?\d+i32"), lambda x: Lexer.scan_int32(x)),
+    ("UINT32", re.compile(r"\d+u32"), lambda x: Lexer.scan_uint32(x)),
     ("INT128", re.compile(r"[-]?\d+i128"), lambda x: Lexer.scan_int128(x)),
     ("STRING", re.compile(r'"(?:[^"\\]|\\.)*"'), lambda x: Lexer.scan_string(x)),
     (
@@ -192,6 +193,15 @@ class Lexer:
         val = int(n)
         if val < -(1 << 31) or val >= (1 << 31):
             raise ParseError(f"Int32 literal out of range: {n}")
+        return val
+
+    @staticmethod
+    def scan_uint32(n: str) -> int:
+        """Parse UINT32 token."""
+        n = n[:-3]  # Remove "u32" suffix
+        val = int(n)
+        if val < 0 or val >= (1 << 32):
+            raise ParseError(f"UInt32 literal out of range: {n}")
         return val
 
     @staticmethod
@@ -406,179 +416,179 @@ class Parser:
     def _extract_value_int32(self, value: logic_pb2.Value | None, default: int) -> int:
         if value is not None:
             assert value is not None
-            _t1888 = value.HasField("int32_value")
+            _t1911 = value.HasField("int32_value")
         else:
-            _t1888 = False
-        if _t1888:
+            _t1911 = False
+        if _t1911:
             assert value is not None
             return value.int32_value
         else:
-            _t1889 = None
+            _t1912 = None
         return int(default)
 
     def _extract_value_int64(self, value: logic_pb2.Value | None, default: int) -> int:
         if value is not None:
             assert value is not None
-            _t1890 = value.HasField("int_value")
+            _t1913 = value.HasField("int_value")
         else:
-            _t1890 = False
-        if _t1890:
+            _t1913 = False
+        if _t1913:
             assert value is not None
             return value.int_value
         else:
-            _t1891 = None
+            _t1914 = None
         return default
 
     def _extract_value_string(self, value: logic_pb2.Value | None, default: str) -> str:
         if value is not None:
             assert value is not None
-            _t1892 = value.HasField("string_value")
+            _t1915 = value.HasField("string_value")
         else:
-            _t1892 = False
-        if _t1892:
+            _t1915 = False
+        if _t1915:
             assert value is not None
             return value.string_value
         else:
-            _t1893 = None
+            _t1916 = None
         return default
 
     def _extract_value_boolean(self, value: logic_pb2.Value | None, default: bool) -> bool:
         if value is not None:
             assert value is not None
-            _t1894 = value.HasField("boolean_value")
+            _t1917 = value.HasField("boolean_value")
         else:
-            _t1894 = False
-        if _t1894:
+            _t1917 = False
+        if _t1917:
             assert value is not None
             return value.boolean_value
         else:
-            _t1895 = None
+            _t1918 = None
         return default
 
     def _extract_value_string_list(self, value: logic_pb2.Value | None, default: Sequence[str]) -> Sequence[str]:
         if value is not None:
             assert value is not None
-            _t1896 = value.HasField("string_value")
+            _t1919 = value.HasField("string_value")
         else:
-            _t1896 = False
-        if _t1896:
+            _t1919 = False
+        if _t1919:
             assert value is not None
             return [value.string_value]
         else:
-            _t1897 = None
+            _t1920 = None
         return default
 
     def _try_extract_value_int64(self, value: logic_pb2.Value | None) -> int | None:
         if value is not None:
             assert value is not None
-            _t1898 = value.HasField("int_value")
+            _t1921 = value.HasField("int_value")
         else:
-            _t1898 = False
-        if _t1898:
+            _t1921 = False
+        if _t1921:
             assert value is not None
             return value.int_value
         else:
-            _t1899 = None
+            _t1922 = None
         return None
 
     def _try_extract_value_float64(self, value: logic_pb2.Value | None) -> float | None:
         if value is not None:
             assert value is not None
-            _t1900 = value.HasField("float_value")
+            _t1923 = value.HasField("float_value")
         else:
-            _t1900 = False
-        if _t1900:
+            _t1923 = False
+        if _t1923:
             assert value is not None
             return value.float_value
         else:
-            _t1901 = None
+            _t1924 = None
         return None
 
     def _try_extract_value_bytes(self, value: logic_pb2.Value | None) -> bytes | None:
         if value is not None:
             assert value is not None
-            _t1902 = value.HasField("string_value")
+            _t1925 = value.HasField("string_value")
         else:
-            _t1902 = False
-        if _t1902:
+            _t1925 = False
+        if _t1925:
             assert value is not None
             return value.string_value.encode()
         else:
-            _t1903 = None
+            _t1926 = None
         return None
 
     def _try_extract_value_uint128(self, value: logic_pb2.Value | None) -> logic_pb2.UInt128Value | None:
         if value is not None:
             assert value is not None
-            _t1904 = value.HasField("uint128_value")
+            _t1927 = value.HasField("uint128_value")
         else:
-            _t1904 = False
-        if _t1904:
+            _t1927 = False
+        if _t1927:
             assert value is not None
             return value.uint128_value
         else:
-            _t1905 = None
+            _t1928 = None
         return None
 
     def construct_csv_config(self, config_dict: Sequence[tuple[str, logic_pb2.Value]]) -> logic_pb2.CSVConfig:
         config = dict(config_dict)
-        _t1906 = self._extract_value_int32(config.get("csv_header_row"), 1)
-        header_row = _t1906
-        _t1907 = self._extract_value_int64(config.get("csv_skip"), 0)
-        skip = _t1907
-        _t1908 = self._extract_value_string(config.get("csv_new_line"), "")
-        new_line = _t1908
-        _t1909 = self._extract_value_string(config.get("csv_delimiter"), ",")
-        delimiter = _t1909
-        _t1910 = self._extract_value_string(config.get("csv_quotechar"), '"')
-        quotechar = _t1910
-        _t1911 = self._extract_value_string(config.get("csv_escapechar"), '"')
-        escapechar = _t1911
-        _t1912 = self._extract_value_string(config.get("csv_comment"), "")
-        comment = _t1912
-        _t1913 = self._extract_value_string_list(config.get("csv_missing_strings"), [])
-        missing_strings = _t1913
-        _t1914 = self._extract_value_string(config.get("csv_decimal_separator"), ".")
-        decimal_separator = _t1914
-        _t1915 = self._extract_value_string(config.get("csv_encoding"), "utf-8")
-        encoding = _t1915
-        _t1916 = self._extract_value_string(config.get("csv_compression"), "auto")
-        compression = _t1916
-        _t1917 = self._extract_value_int64(config.get("csv_partition_size_mb"), 0)
-        partition_size_mb = _t1917
-        _t1918 = logic_pb2.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression, partition_size_mb=partition_size_mb)
-        return _t1918
+        _t1929 = self._extract_value_int32(config.get("csv_header_row"), 1)
+        header_row = _t1929
+        _t1930 = self._extract_value_int64(config.get("csv_skip"), 0)
+        skip = _t1930
+        _t1931 = self._extract_value_string(config.get("csv_new_line"), "")
+        new_line = _t1931
+        _t1932 = self._extract_value_string(config.get("csv_delimiter"), ",")
+        delimiter = _t1932
+        _t1933 = self._extract_value_string(config.get("csv_quotechar"), '"')
+        quotechar = _t1933
+        _t1934 = self._extract_value_string(config.get("csv_escapechar"), '"')
+        escapechar = _t1934
+        _t1935 = self._extract_value_string(config.get("csv_comment"), "")
+        comment = _t1935
+        _t1936 = self._extract_value_string_list(config.get("csv_missing_strings"), [])
+        missing_strings = _t1936
+        _t1937 = self._extract_value_string(config.get("csv_decimal_separator"), ".")
+        decimal_separator = _t1937
+        _t1938 = self._extract_value_string(config.get("csv_encoding"), "utf-8")
+        encoding = _t1938
+        _t1939 = self._extract_value_string(config.get("csv_compression"), "auto")
+        compression = _t1939
+        _t1940 = self._extract_value_int64(config.get("csv_partition_size_mb"), 0)
+        partition_size_mb = _t1940
+        _t1941 = logic_pb2.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression, partition_size_mb=partition_size_mb)
+        return _t1941
 
     def construct_betree_info(self, key_types: Sequence[logic_pb2.Type], value_types: Sequence[logic_pb2.Type], config_dict: Sequence[tuple[str, logic_pb2.Value]]) -> logic_pb2.BeTreeInfo:
         config = dict(config_dict)
-        _t1919 = self._try_extract_value_float64(config.get("betree_config_epsilon"))
-        epsilon = _t1919
-        _t1920 = self._try_extract_value_int64(config.get("betree_config_max_pivots"))
-        max_pivots = _t1920
-        _t1921 = self._try_extract_value_int64(config.get("betree_config_max_deltas"))
-        max_deltas = _t1921
-        _t1922 = self._try_extract_value_int64(config.get("betree_config_max_leaf"))
-        max_leaf = _t1922
-        _t1923 = logic_pb2.BeTreeConfig(epsilon=epsilon, max_pivots=max_pivots, max_deltas=max_deltas, max_leaf=max_leaf)
-        storage_config = _t1923
-        _t1924 = self._try_extract_value_uint128(config.get("betree_locator_root_pageid"))
-        root_pageid = _t1924
-        _t1925 = self._try_extract_value_bytes(config.get("betree_locator_inline_data"))
-        inline_data = _t1925
-        _t1926 = self._try_extract_value_int64(config.get("betree_locator_element_count"))
-        element_count = _t1926
-        _t1927 = self._try_extract_value_int64(config.get("betree_locator_tree_height"))
-        tree_height = _t1927
-        _t1928 = logic_pb2.BeTreeLocator(root_pageid=root_pageid, inline_data=inline_data, element_count=element_count, tree_height=tree_height)
-        relation_locator = _t1928
-        _t1929 = logic_pb2.BeTreeInfo(key_types=key_types, value_types=value_types, storage_config=storage_config, relation_locator=relation_locator)
-        return _t1929
+        _t1942 = self._try_extract_value_float64(config.get("betree_config_epsilon"))
+        epsilon = _t1942
+        _t1943 = self._try_extract_value_int64(config.get("betree_config_max_pivots"))
+        max_pivots = _t1943
+        _t1944 = self._try_extract_value_int64(config.get("betree_config_max_deltas"))
+        max_deltas = _t1944
+        _t1945 = self._try_extract_value_int64(config.get("betree_config_max_leaf"))
+        max_leaf = _t1945
+        _t1946 = logic_pb2.BeTreeConfig(epsilon=epsilon, max_pivots=max_pivots, max_deltas=max_deltas, max_leaf=max_leaf)
+        storage_config = _t1946
+        _t1947 = self._try_extract_value_uint128(config.get("betree_locator_root_pageid"))
+        root_pageid = _t1947
+        _t1948 = self._try_extract_value_bytes(config.get("betree_locator_inline_data"))
+        inline_data = _t1948
+        _t1949 = self._try_extract_value_int64(config.get("betree_locator_element_count"))
+        element_count = _t1949
+        _t1950 = self._try_extract_value_int64(config.get("betree_locator_tree_height"))
+        tree_height = _t1950
+        _t1951 = logic_pb2.BeTreeLocator(root_pageid=root_pageid, inline_data=inline_data, element_count=element_count, tree_height=tree_height)
+        relation_locator = _t1951
+        _t1952 = logic_pb2.BeTreeInfo(key_types=key_types, value_types=value_types, storage_config=storage_config, relation_locator=relation_locator)
+        return _t1952
 
     def default_configure(self) -> transactions_pb2.Configure:
-        _t1930 = transactions_pb2.IVMConfig(level=transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_OFF)
-        ivm_config = _t1930
-        _t1931 = transactions_pb2.Configure(semantics_version=0, ivm_config=ivm_config)
-        return _t1931
+        _t1953 = transactions_pb2.IVMConfig(level=transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_OFF)
+        ivm_config = _t1953
+        _t1954 = transactions_pb2.Configure(semantics_version=0, ivm_config=ivm_config)
+        return _t1954
 
     def construct_configure(self, config_dict: Sequence[tuple[str, logic_pb2.Value]]) -> transactions_pb2.Configure:
         config = dict(config_dict)
@@ -595,3017 +605,3064 @@ class Parser:
                         maintenance_level = transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_ALL
                     else:
                         maintenance_level = transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
-        _t1932 = transactions_pb2.IVMConfig(level=maintenance_level)
-        ivm_config = _t1932
-        _t1933 = self._extract_value_int64(config.get("semantics_version"), 0)
-        semantics_version = _t1933
-        _t1934 = transactions_pb2.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
-        return _t1934
+        _t1955 = transactions_pb2.IVMConfig(level=maintenance_level)
+        ivm_config = _t1955
+        _t1956 = self._extract_value_int64(config.get("semantics_version"), 0)
+        semantics_version = _t1956
+        _t1957 = transactions_pb2.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
+        return _t1957
 
     def construct_export_csv_config(self, path: str, columns: Sequence[transactions_pb2.ExportCSVColumn], config_dict: Sequence[tuple[str, logic_pb2.Value]]) -> transactions_pb2.ExportCSVConfig:
         config = dict(config_dict)
-        _t1935 = self._extract_value_int64(config.get("partition_size"), 0)
-        partition_size = _t1935
-        _t1936 = self._extract_value_string(config.get("compression"), "")
-        compression = _t1936
-        _t1937 = self._extract_value_boolean(config.get("syntax_header_row"), True)
-        syntax_header_row = _t1937
-        _t1938 = self._extract_value_string(config.get("syntax_missing_string"), "")
-        syntax_missing_string = _t1938
-        _t1939 = self._extract_value_string(config.get("syntax_delim"), ",")
-        syntax_delim = _t1939
-        _t1940 = self._extract_value_string(config.get("syntax_quotechar"), '"')
-        syntax_quotechar = _t1940
-        _t1941 = self._extract_value_string(config.get("syntax_escapechar"), "\\")
-        syntax_escapechar = _t1941
-        _t1942 = transactions_pb2.ExportCSVConfig(path=path, data_columns=columns, partition_size=partition_size, compression=compression, syntax_header_row=syntax_header_row, syntax_missing_string=syntax_missing_string, syntax_delim=syntax_delim, syntax_quotechar=syntax_quotechar, syntax_escapechar=syntax_escapechar)
-        return _t1942
+        _t1958 = self._extract_value_int64(config.get("partition_size"), 0)
+        partition_size = _t1958
+        _t1959 = self._extract_value_string(config.get("compression"), "")
+        compression = _t1959
+        _t1960 = self._extract_value_boolean(config.get("syntax_header_row"), True)
+        syntax_header_row = _t1960
+        _t1961 = self._extract_value_string(config.get("syntax_missing_string"), "")
+        syntax_missing_string = _t1961
+        _t1962 = self._extract_value_string(config.get("syntax_delim"), ",")
+        syntax_delim = _t1962
+        _t1963 = self._extract_value_string(config.get("syntax_quotechar"), '"')
+        syntax_quotechar = _t1963
+        _t1964 = self._extract_value_string(config.get("syntax_escapechar"), "\\")
+        syntax_escapechar = _t1964
+        _t1965 = transactions_pb2.ExportCSVConfig(path=path, data_columns=columns, partition_size=partition_size, compression=compression, syntax_header_row=syntax_header_row, syntax_missing_string=syntax_missing_string, syntax_delim=syntax_delim, syntax_quotechar=syntax_quotechar, syntax_escapechar=syntax_escapechar)
+        return _t1965
 
     def construct_export_csv_config_with_source(self, path: str, csv_source: transactions_pb2.ExportCSVSource, csv_config: logic_pb2.CSVConfig) -> transactions_pb2.ExportCSVConfig:
-        _t1943 = transactions_pb2.ExportCSVConfig(path=path, csv_source=csv_source, csv_config=csv_config)
-        return _t1943
+        _t1966 = transactions_pb2.ExportCSVConfig(path=path, csv_source=csv_source, csv_config=csv_config)
+        return _t1966
 
     # --- Parse methods ---
 
     def parse_transaction(self) -> transactions_pb2.Transaction:
-        span_start605 = self.span_start()
+        span_start610 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("transaction")
         if (self.match_lookahead_literal("(", 0) and self.match_lookahead_literal("configure", 1)):
-            _t1199 = self.parse_configure()
-            _t1198 = _t1199
+            _t1209 = self.parse_configure()
+            _t1208 = _t1209
         else:
-            _t1198 = None
-        configure599 = _t1198
+            _t1208 = None
+        configure604 = _t1208
         if (self.match_lookahead_literal("(", 0) and self.match_lookahead_literal("sync", 1)):
-            _t1201 = self.parse_sync()
-            _t1200 = _t1201
+            _t1211 = self.parse_sync()
+            _t1210 = _t1211
         else:
-            _t1200 = None
-        sync600 = _t1200
-        xs601 = []
-        cond602 = self.match_lookahead_literal("(", 0)
-        while cond602:
-            _t1202 = self.parse_epoch()
-            item603 = _t1202
-            xs601.append(item603)
-            cond602 = self.match_lookahead_literal("(", 0)
-        epochs604 = xs601
+            _t1210 = None
+        sync605 = _t1210
+        xs606 = []
+        cond607 = self.match_lookahead_literal("(", 0)
+        while cond607:
+            _t1212 = self.parse_epoch()
+            item608 = _t1212
+            xs606.append(item608)
+            cond607 = self.match_lookahead_literal("(", 0)
+        epochs609 = xs606
         self.consume_literal(")")
-        _t1203 = self.default_configure()
-        _t1204 = transactions_pb2.Transaction(epochs=epochs604, configure=(configure599 if configure599 is not None else _t1203), sync=sync600)
-        result606 = _t1204
-        self.record_span(span_start605, "Transaction")
-        return result606
+        _t1213 = self.default_configure()
+        _t1214 = transactions_pb2.Transaction(epochs=epochs609, configure=(configure604 if configure604 is not None else _t1213), sync=sync605)
+        result611 = _t1214
+        self.record_span(span_start610, "Transaction")
+        return result611
 
     def parse_configure(self) -> transactions_pb2.Configure:
-        span_start608 = self.span_start()
+        span_start613 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("configure")
-        _t1205 = self.parse_config_dict()
-        config_dict607 = _t1205
+        _t1215 = self.parse_config_dict()
+        config_dict612 = _t1215
         self.consume_literal(")")
-        _t1206 = self.construct_configure(config_dict607)
-        result609 = _t1206
-        self.record_span(span_start608, "Configure")
-        return result609
+        _t1216 = self.construct_configure(config_dict612)
+        result614 = _t1216
+        self.record_span(span_start613, "Configure")
+        return result614
 
     def parse_config_dict(self) -> Sequence[tuple[str, logic_pb2.Value]]:
         self.consume_literal("{")
-        xs610 = []
-        cond611 = self.match_lookahead_literal(":", 0)
-        while cond611:
-            _t1207 = self.parse_config_key_value()
-            item612 = _t1207
-            xs610.append(item612)
-            cond611 = self.match_lookahead_literal(":", 0)
-        config_key_values613 = xs610
+        xs615 = []
+        cond616 = self.match_lookahead_literal(":", 0)
+        while cond616:
+            _t1217 = self.parse_config_key_value()
+            item617 = _t1217
+            xs615.append(item617)
+            cond616 = self.match_lookahead_literal(":", 0)
+        config_key_values618 = xs615
         self.consume_literal("}")
-        return config_key_values613
+        return config_key_values618
 
     def parse_config_key_value(self) -> tuple[str, logic_pb2.Value]:
         self.consume_literal(":")
-        symbol614 = self.consume_terminal("SYMBOL")
-        _t1208 = self.parse_raw_value()
-        raw_value615 = _t1208
-        return (symbol614, raw_value615,)
+        symbol619 = self.consume_terminal("SYMBOL")
+        _t1218 = self.parse_raw_value()
+        raw_value620 = _t1218
+        return (symbol619, raw_value620,)
 
     def parse_raw_value(self) -> logic_pb2.Value:
-        span_start628 = self.span_start()
+        span_start634 = self.span_start()
         if self.match_lookahead_literal("true", 0):
-            _t1209 = 11
+            _t1219 = 11
         else:
             if self.match_lookahead_literal("missing", 0):
-                _t1210 = 10
+                _t1220 = 10
             else:
                 if self.match_lookahead_literal("false", 0):
-                    _t1211 = 11
+                    _t1221 = 11
                 else:
                     if self.match_lookahead_literal("(", 0):
                         if self.match_lookahead_literal("datetime", 1):
-                            _t1213 = 1
+                            _t1223 = 1
                         else:
                             if self.match_lookahead_literal("date", 1):
-                                _t1214 = 0
+                                _t1224 = 0
                             else:
-                                _t1214 = -1
-                            _t1213 = _t1214
-                        _t1212 = _t1213
+                                _t1224 = -1
+                            _t1223 = _t1224
+                        _t1222 = _t1223
                     else:
-                        if self.match_lookahead_terminal("UINT128", 0):
-                            _t1215 = 7
+                        if self.match_lookahead_terminal("UINT32", 0):
+                            _t1225 = 12
                         else:
-                            if self.match_lookahead_terminal("STRING", 0):
-                                _t1216 = 2
+                            if self.match_lookahead_terminal("UINT128", 0):
+                                _t1226 = 7
                             else:
-                                if self.match_lookahead_terminal("INT32", 0):
-                                    _t1217 = 3
+                                if self.match_lookahead_terminal("STRING", 0):
+                                    _t1227 = 2
                                 else:
-                                    if self.match_lookahead_terminal("INT128", 0):
-                                        _t1218 = 8
+                                    if self.match_lookahead_terminal("INT32", 0):
+                                        _t1228 = 3
                                     else:
-                                        if self.match_lookahead_terminal("INT", 0):
-                                            _t1219 = 4
+                                        if self.match_lookahead_terminal("INT128", 0):
+                                            _t1229 = 8
                                         else:
-                                            if self.match_lookahead_terminal("FLOAT32", 0):
-                                                _t1220 = 5
+                                            if self.match_lookahead_terminal("INT", 0):
+                                                _t1230 = 4
                                             else:
-                                                if self.match_lookahead_terminal("FLOAT", 0):
-                                                    _t1221 = 6
+                                                if self.match_lookahead_terminal("FLOAT32", 0):
+                                                    _t1231 = 5
                                                 else:
-                                                    if self.match_lookahead_terminal("DECIMAL", 0):
-                                                        _t1222 = 9
+                                                    if self.match_lookahead_terminal("FLOAT", 0):
+                                                        _t1232 = 6
                                                     else:
-                                                        _t1222 = -1
-                                                    _t1221 = _t1222
-                                                _t1220 = _t1221
-                                            _t1219 = _t1220
-                                        _t1218 = _t1219
-                                    _t1217 = _t1218
-                                _t1216 = _t1217
-                            _t1215 = _t1216
-                        _t1212 = _t1215
-                    _t1211 = _t1212
-                _t1210 = _t1211
-            _t1209 = _t1210
-        prediction616 = _t1209
-        if prediction616 == 11:
-            _t1224 = self.parse_boolean_value()
-            boolean_value627 = _t1224
-            _t1225 = logic_pb2.Value(boolean_value=boolean_value627)
-            _t1223 = _t1225
+                                                        if self.match_lookahead_terminal("DECIMAL", 0):
+                                                            _t1233 = 9
+                                                        else:
+                                                            _t1233 = -1
+                                                        _t1232 = _t1233
+                                                    _t1231 = _t1232
+                                                _t1230 = _t1231
+                                            _t1229 = _t1230
+                                        _t1228 = _t1229
+                                    _t1227 = _t1228
+                                _t1226 = _t1227
+                            _t1225 = _t1226
+                        _t1222 = _t1225
+                    _t1221 = _t1222
+                _t1220 = _t1221
+            _t1219 = _t1220
+        prediction621 = _t1219
+        if prediction621 == 12:
+            uint32633 = self.consume_terminal("UINT32")
+            _t1235 = logic_pb2.Value(uint32_value=uint32633)
+            _t1234 = _t1235
         else:
-            if prediction616 == 10:
-                self.consume_literal("missing")
-                _t1227 = logic_pb2.MissingValue()
-                _t1228 = logic_pb2.Value(missing_value=_t1227)
-                _t1226 = _t1228
+            if prediction621 == 11:
+                _t1237 = self.parse_boolean_value()
+                boolean_value632 = _t1237
+                _t1238 = logic_pb2.Value(boolean_value=boolean_value632)
+                _t1236 = _t1238
             else:
-                if prediction616 == 9:
-                    decimal626 = self.consume_terminal("DECIMAL")
-                    _t1230 = logic_pb2.Value(decimal_value=decimal626)
-                    _t1229 = _t1230
+                if prediction621 == 10:
+                    self.consume_literal("missing")
+                    _t1240 = logic_pb2.MissingValue()
+                    _t1241 = logic_pb2.Value(missing_value=_t1240)
+                    _t1239 = _t1241
                 else:
-                    if prediction616 == 8:
-                        int128625 = self.consume_terminal("INT128")
-                        _t1232 = logic_pb2.Value(int128_value=int128625)
-                        _t1231 = _t1232
+                    if prediction621 == 9:
+                        decimal631 = self.consume_terminal("DECIMAL")
+                        _t1243 = logic_pb2.Value(decimal_value=decimal631)
+                        _t1242 = _t1243
                     else:
-                        if prediction616 == 7:
-                            uint128624 = self.consume_terminal("UINT128")
-                            _t1234 = logic_pb2.Value(uint128_value=uint128624)
-                            _t1233 = _t1234
+                        if prediction621 == 8:
+                            int128630 = self.consume_terminal("INT128")
+                            _t1245 = logic_pb2.Value(int128_value=int128630)
+                            _t1244 = _t1245
                         else:
-                            if prediction616 == 6:
-                                float623 = self.consume_terminal("FLOAT")
-                                _t1236 = logic_pb2.Value(float_value=float623)
-                                _t1235 = _t1236
+                            if prediction621 == 7:
+                                uint128629 = self.consume_terminal("UINT128")
+                                _t1247 = logic_pb2.Value(uint128_value=uint128629)
+                                _t1246 = _t1247
                             else:
-                                if prediction616 == 5:
-                                    float32622 = self.consume_terminal("FLOAT32")
-                                    _t1238 = logic_pb2.Value(float32_value=float32622)
-                                    _t1237 = _t1238
+                                if prediction621 == 6:
+                                    float628 = self.consume_terminal("FLOAT")
+                                    _t1249 = logic_pb2.Value(float_value=float628)
+                                    _t1248 = _t1249
                                 else:
-                                    if prediction616 == 4:
-                                        int621 = self.consume_terminal("INT")
-                                        _t1240 = logic_pb2.Value(int_value=int621)
-                                        _t1239 = _t1240
+                                    if prediction621 == 5:
+                                        float32627 = self.consume_terminal("FLOAT32")
+                                        _t1251 = logic_pb2.Value(float32_value=float32627)
+                                        _t1250 = _t1251
                                     else:
-                                        if prediction616 == 3:
-                                            int32620 = self.consume_terminal("INT32")
-                                            _t1242 = logic_pb2.Value(int32_value=int32620)
-                                            _t1241 = _t1242
+                                        if prediction621 == 4:
+                                            int626 = self.consume_terminal("INT")
+                                            _t1253 = logic_pb2.Value(int_value=int626)
+                                            _t1252 = _t1253
                                         else:
-                                            if prediction616 == 2:
-                                                string619 = self.consume_terminal("STRING")
-                                                _t1244 = logic_pb2.Value(string_value=string619)
-                                                _t1243 = _t1244
+                                            if prediction621 == 3:
+                                                int32625 = self.consume_terminal("INT32")
+                                                _t1255 = logic_pb2.Value(int32_value=int32625)
+                                                _t1254 = _t1255
                                             else:
-                                                if prediction616 == 1:
-                                                    _t1246 = self.parse_raw_datetime()
-                                                    raw_datetime618 = _t1246
-                                                    _t1247 = logic_pb2.Value(datetime_value=raw_datetime618)
-                                                    _t1245 = _t1247
+                                                if prediction621 == 2:
+                                                    string624 = self.consume_terminal("STRING")
+                                                    _t1257 = logic_pb2.Value(string_value=string624)
+                                                    _t1256 = _t1257
                                                 else:
-                                                    if prediction616 == 0:
-                                                        _t1249 = self.parse_raw_date()
-                                                        raw_date617 = _t1249
-                                                        _t1250 = logic_pb2.Value(date_value=raw_date617)
-                                                        _t1248 = _t1250
+                                                    if prediction621 == 1:
+                                                        _t1259 = self.parse_raw_datetime()
+                                                        raw_datetime623 = _t1259
+                                                        _t1260 = logic_pb2.Value(datetime_value=raw_datetime623)
+                                                        _t1258 = _t1260
                                                     else:
-                                                        raise ParseError("Unexpected token in raw_value" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
-                                                    _t1245 = _t1248
-                                                _t1243 = _t1245
-                                            _t1241 = _t1243
-                                        _t1239 = _t1241
-                                    _t1237 = _t1239
-                                _t1235 = _t1237
-                            _t1233 = _t1235
-                        _t1231 = _t1233
-                    _t1229 = _t1231
-                _t1226 = _t1229
-            _t1223 = _t1226
-        result629 = _t1223
-        self.record_span(span_start628, "Value")
-        return result629
+                                                        if prediction621 == 0:
+                                                            _t1262 = self.parse_raw_date()
+                                                            raw_date622 = _t1262
+                                                            _t1263 = logic_pb2.Value(date_value=raw_date622)
+                                                            _t1261 = _t1263
+                                                        else:
+                                                            raise ParseError("Unexpected token in raw_value" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
+                                                        _t1258 = _t1261
+                                                    _t1256 = _t1258
+                                                _t1254 = _t1256
+                                            _t1252 = _t1254
+                                        _t1250 = _t1252
+                                    _t1248 = _t1250
+                                _t1246 = _t1248
+                            _t1244 = _t1246
+                        _t1242 = _t1244
+                    _t1239 = _t1242
+                _t1236 = _t1239
+            _t1234 = _t1236
+        result635 = _t1234
+        self.record_span(span_start634, "Value")
+        return result635
 
     def parse_raw_date(self) -> logic_pb2.DateValue:
-        span_start633 = self.span_start()
+        span_start639 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("date")
-        int630 = self.consume_terminal("INT")
-        int_3631 = self.consume_terminal("INT")
-        int_4632 = self.consume_terminal("INT")
+        int636 = self.consume_terminal("INT")
+        int_3637 = self.consume_terminal("INT")
+        int_4638 = self.consume_terminal("INT")
         self.consume_literal(")")
-        _t1251 = logic_pb2.DateValue(year=int(int630), month=int(int_3631), day=int(int_4632))
-        result634 = _t1251
-        self.record_span(span_start633, "DateValue")
-        return result634
+        _t1264 = logic_pb2.DateValue(year=int(int636), month=int(int_3637), day=int(int_4638))
+        result640 = _t1264
+        self.record_span(span_start639, "DateValue")
+        return result640
 
     def parse_raw_datetime(self) -> logic_pb2.DateTimeValue:
-        span_start642 = self.span_start()
+        span_start648 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("datetime")
-        int635 = self.consume_terminal("INT")
-        int_3636 = self.consume_terminal("INT")
-        int_4637 = self.consume_terminal("INT")
-        int_5638 = self.consume_terminal("INT")
-        int_6639 = self.consume_terminal("INT")
-        int_7640 = self.consume_terminal("INT")
+        int641 = self.consume_terminal("INT")
+        int_3642 = self.consume_terminal("INT")
+        int_4643 = self.consume_terminal("INT")
+        int_5644 = self.consume_terminal("INT")
+        int_6645 = self.consume_terminal("INT")
+        int_7646 = self.consume_terminal("INT")
         if self.match_lookahead_terminal("INT", 0):
-            _t1252 = self.consume_terminal("INT")
+            _t1265 = self.consume_terminal("INT")
         else:
-            _t1252 = None
-        int_8641 = _t1252
+            _t1265 = None
+        int_8647 = _t1265
         self.consume_literal(")")
-        _t1253 = logic_pb2.DateTimeValue(year=int(int635), month=int(int_3636), day=int(int_4637), hour=int(int_5638), minute=int(int_6639), second=int(int_7640), microsecond=int((int_8641 if int_8641 is not None else 0)))
-        result643 = _t1253
-        self.record_span(span_start642, "DateTimeValue")
-        return result643
+        _t1266 = logic_pb2.DateTimeValue(year=int(int641), month=int(int_3642), day=int(int_4643), hour=int(int_5644), minute=int(int_6645), second=int(int_7646), microsecond=int((int_8647 if int_8647 is not None else 0)))
+        result649 = _t1266
+        self.record_span(span_start648, "DateTimeValue")
+        return result649
 
     def parse_boolean_value(self) -> bool:
         if self.match_lookahead_literal("true", 0):
-            _t1254 = 0
+            _t1267 = 0
         else:
             if self.match_lookahead_literal("false", 0):
-                _t1255 = 1
+                _t1268 = 1
             else:
-                _t1255 = -1
-            _t1254 = _t1255
-        prediction644 = _t1254
-        if prediction644 == 1:
+                _t1268 = -1
+            _t1267 = _t1268
+        prediction650 = _t1267
+        if prediction650 == 1:
             self.consume_literal("false")
-            _t1256 = False
+            _t1269 = False
         else:
-            if prediction644 == 0:
+            if prediction650 == 0:
                 self.consume_literal("true")
-                _t1257 = True
+                _t1270 = True
             else:
                 raise ParseError("Unexpected token in boolean_value" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
-            _t1256 = _t1257
-        return _t1256
+            _t1269 = _t1270
+        return _t1269
 
     def parse_sync(self) -> transactions_pb2.Sync:
-        span_start649 = self.span_start()
+        span_start655 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("sync")
-        xs645 = []
-        cond646 = self.match_lookahead_literal(":", 0)
-        while cond646:
-            _t1258 = self.parse_fragment_id()
-            item647 = _t1258
-            xs645.append(item647)
-            cond646 = self.match_lookahead_literal(":", 0)
-        fragment_ids648 = xs645
+        xs651 = []
+        cond652 = self.match_lookahead_literal(":", 0)
+        while cond652:
+            _t1271 = self.parse_fragment_id()
+            item653 = _t1271
+            xs651.append(item653)
+            cond652 = self.match_lookahead_literal(":", 0)
+        fragment_ids654 = xs651
         self.consume_literal(")")
-        _t1259 = transactions_pb2.Sync(fragments=fragment_ids648)
-        result650 = _t1259
-        self.record_span(span_start649, "Sync")
-        return result650
+        _t1272 = transactions_pb2.Sync(fragments=fragment_ids654)
+        result656 = _t1272
+        self.record_span(span_start655, "Sync")
+        return result656
 
     def parse_fragment_id(self) -> fragments_pb2.FragmentId:
-        span_start652 = self.span_start()
+        span_start658 = self.span_start()
         self.consume_literal(":")
-        symbol651 = self.consume_terminal("SYMBOL")
-        result653 = fragments_pb2.FragmentId(id=symbol651.encode())
-        self.record_span(span_start652, "FragmentId")
-        return result653
+        symbol657 = self.consume_terminal("SYMBOL")
+        result659 = fragments_pb2.FragmentId(id=symbol657.encode())
+        self.record_span(span_start658, "FragmentId")
+        return result659
 
     def parse_epoch(self) -> transactions_pb2.Epoch:
-        span_start656 = self.span_start()
+        span_start662 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("epoch")
         if (self.match_lookahead_literal("(", 0) and self.match_lookahead_literal("writes", 1)):
-            _t1261 = self.parse_epoch_writes()
-            _t1260 = _t1261
+            _t1274 = self.parse_epoch_writes()
+            _t1273 = _t1274
         else:
-            _t1260 = None
-        epoch_writes654 = _t1260
+            _t1273 = None
+        epoch_writes660 = _t1273
         if self.match_lookahead_literal("(", 0):
-            _t1263 = self.parse_epoch_reads()
-            _t1262 = _t1263
+            _t1276 = self.parse_epoch_reads()
+            _t1275 = _t1276
         else:
-            _t1262 = None
-        epoch_reads655 = _t1262
+            _t1275 = None
+        epoch_reads661 = _t1275
         self.consume_literal(")")
-        _t1264 = transactions_pb2.Epoch(writes=(epoch_writes654 if epoch_writes654 is not None else []), reads=(epoch_reads655 if epoch_reads655 is not None else []))
-        result657 = _t1264
-        self.record_span(span_start656, "Epoch")
-        return result657
+        _t1277 = transactions_pb2.Epoch(writes=(epoch_writes660 if epoch_writes660 is not None else []), reads=(epoch_reads661 if epoch_reads661 is not None else []))
+        result663 = _t1277
+        self.record_span(span_start662, "Epoch")
+        return result663
 
     def parse_epoch_writes(self) -> Sequence[transactions_pb2.Write]:
         self.consume_literal("(")
         self.consume_literal("writes")
-        xs658 = []
-        cond659 = self.match_lookahead_literal("(", 0)
-        while cond659:
-            _t1265 = self.parse_write()
-            item660 = _t1265
-            xs658.append(item660)
-            cond659 = self.match_lookahead_literal("(", 0)
-        writes661 = xs658
+        xs664 = []
+        cond665 = self.match_lookahead_literal("(", 0)
+        while cond665:
+            _t1278 = self.parse_write()
+            item666 = _t1278
+            xs664.append(item666)
+            cond665 = self.match_lookahead_literal("(", 0)
+        writes667 = xs664
         self.consume_literal(")")
-        return writes661
+        return writes667
 
     def parse_write(self) -> transactions_pb2.Write:
-        span_start667 = self.span_start()
+        span_start673 = self.span_start()
         if self.match_lookahead_literal("(", 0):
             if self.match_lookahead_literal("undefine", 1):
-                _t1267 = 1
+                _t1280 = 1
             else:
                 if self.match_lookahead_literal("snapshot", 1):
-                    _t1268 = 3
+                    _t1281 = 3
                 else:
                     if self.match_lookahead_literal("define", 1):
-                        _t1269 = 0
+                        _t1282 = 0
                     else:
                         if self.match_lookahead_literal("context", 1):
-                            _t1270 = 2
+                            _t1283 = 2
                         else:
-                            _t1270 = -1
-                        _t1269 = _t1270
-                    _t1268 = _t1269
-                _t1267 = _t1268
-            _t1266 = _t1267
+                            _t1283 = -1
+                        _t1282 = _t1283
+                    _t1281 = _t1282
+                _t1280 = _t1281
+            _t1279 = _t1280
         else:
-            _t1266 = -1
-        prediction662 = _t1266
-        if prediction662 == 3:
-            _t1272 = self.parse_snapshot()
-            snapshot666 = _t1272
-            _t1273 = transactions_pb2.Write(snapshot=snapshot666)
-            _t1271 = _t1273
+            _t1279 = -1
+        prediction668 = _t1279
+        if prediction668 == 3:
+            _t1285 = self.parse_snapshot()
+            snapshot672 = _t1285
+            _t1286 = transactions_pb2.Write(snapshot=snapshot672)
+            _t1284 = _t1286
         else:
-            if prediction662 == 2:
-                _t1275 = self.parse_context()
-                context665 = _t1275
-                _t1276 = transactions_pb2.Write(context=context665)
-                _t1274 = _t1276
+            if prediction668 == 2:
+                _t1288 = self.parse_context()
+                context671 = _t1288
+                _t1289 = transactions_pb2.Write(context=context671)
+                _t1287 = _t1289
             else:
-                if prediction662 == 1:
-                    _t1278 = self.parse_undefine()
-                    undefine664 = _t1278
-                    _t1279 = transactions_pb2.Write(undefine=undefine664)
-                    _t1277 = _t1279
+                if prediction668 == 1:
+                    _t1291 = self.parse_undefine()
+                    undefine670 = _t1291
+                    _t1292 = transactions_pb2.Write(undefine=undefine670)
+                    _t1290 = _t1292
                 else:
-                    if prediction662 == 0:
-                        _t1281 = self.parse_define()
-                        define663 = _t1281
-                        _t1282 = transactions_pb2.Write(define=define663)
-                        _t1280 = _t1282
+                    if prediction668 == 0:
+                        _t1294 = self.parse_define()
+                        define669 = _t1294
+                        _t1295 = transactions_pb2.Write(define=define669)
+                        _t1293 = _t1295
                     else:
                         raise ParseError("Unexpected token in write" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
-                    _t1277 = _t1280
-                _t1274 = _t1277
-            _t1271 = _t1274
-        result668 = _t1271
-        self.record_span(span_start667, "Write")
-        return result668
+                    _t1290 = _t1293
+                _t1287 = _t1290
+            _t1284 = _t1287
+        result674 = _t1284
+        self.record_span(span_start673, "Write")
+        return result674
 
     def parse_define(self) -> transactions_pb2.Define:
-        span_start670 = self.span_start()
+        span_start676 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("define")
-        _t1283 = self.parse_fragment()
-        fragment669 = _t1283
+        _t1296 = self.parse_fragment()
+        fragment675 = _t1296
         self.consume_literal(")")
-        _t1284 = transactions_pb2.Define(fragment=fragment669)
-        result671 = _t1284
-        self.record_span(span_start670, "Define")
-        return result671
+        _t1297 = transactions_pb2.Define(fragment=fragment675)
+        result677 = _t1297
+        self.record_span(span_start676, "Define")
+        return result677
 
     def parse_fragment(self) -> fragments_pb2.Fragment:
-        span_start677 = self.span_start()
+        span_start683 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("fragment")
-        _t1285 = self.parse_new_fragment_id()
-        new_fragment_id672 = _t1285
-        xs673 = []
-        cond674 = self.match_lookahead_literal("(", 0)
-        while cond674:
-            _t1286 = self.parse_declaration()
-            item675 = _t1286
-            xs673.append(item675)
-            cond674 = self.match_lookahead_literal("(", 0)
-        declarations676 = xs673
+        _t1298 = self.parse_new_fragment_id()
+        new_fragment_id678 = _t1298
+        xs679 = []
+        cond680 = self.match_lookahead_literal("(", 0)
+        while cond680:
+            _t1299 = self.parse_declaration()
+            item681 = _t1299
+            xs679.append(item681)
+            cond680 = self.match_lookahead_literal("(", 0)
+        declarations682 = xs679
         self.consume_literal(")")
-        result678 = self.construct_fragment(new_fragment_id672, declarations676)
-        self.record_span(span_start677, "Fragment")
-        return result678
+        result684 = self.construct_fragment(new_fragment_id678, declarations682)
+        self.record_span(span_start683, "Fragment")
+        return result684
 
     def parse_new_fragment_id(self) -> fragments_pb2.FragmentId:
-        span_start680 = self.span_start()
-        _t1287 = self.parse_fragment_id()
-        fragment_id679 = _t1287
-        self.start_fragment(fragment_id679)
-        result681 = fragment_id679
-        self.record_span(span_start680, "FragmentId")
-        return result681
+        span_start686 = self.span_start()
+        _t1300 = self.parse_fragment_id()
+        fragment_id685 = _t1300
+        self.start_fragment(fragment_id685)
+        result687 = fragment_id685
+        self.record_span(span_start686, "FragmentId")
+        return result687
 
     def parse_declaration(self) -> logic_pb2.Declaration:
-        span_start687 = self.span_start()
+        span_start693 = self.span_start()
         if self.match_lookahead_literal("(", 0):
             if self.match_lookahead_literal("functional_dependency", 1):
-                _t1289 = 2
+                _t1302 = 2
             else:
                 if self.match_lookahead_literal("edb", 1):
-                    _t1290 = 3
+                    _t1303 = 3
                 else:
                     if self.match_lookahead_literal("def", 1):
-                        _t1291 = 0
+                        _t1304 = 0
                     else:
                         if self.match_lookahead_literal("csv_data", 1):
-                            _t1292 = 3
+                            _t1305 = 3
                         else:
                             if self.match_lookahead_literal("betree_relation", 1):
-                                _t1293 = 3
+                                _t1306 = 3
                             else:
                                 if self.match_lookahead_literal("algorithm", 1):
-                                    _t1294 = 1
+                                    _t1307 = 1
                                 else:
-                                    _t1294 = -1
-                                _t1293 = _t1294
-                            _t1292 = _t1293
-                        _t1291 = _t1292
-                    _t1290 = _t1291
-                _t1289 = _t1290
-            _t1288 = _t1289
+                                    _t1307 = -1
+                                _t1306 = _t1307
+                            _t1305 = _t1306
+                        _t1304 = _t1305
+                    _t1303 = _t1304
+                _t1302 = _t1303
+            _t1301 = _t1302
         else:
-            _t1288 = -1
-        prediction682 = _t1288
-        if prediction682 == 3:
-            _t1296 = self.parse_data()
-            data686 = _t1296
-            _t1297 = logic_pb2.Declaration(data=data686)
-            _t1295 = _t1297
+            _t1301 = -1
+        prediction688 = _t1301
+        if prediction688 == 3:
+            _t1309 = self.parse_data()
+            data692 = _t1309
+            _t1310 = logic_pb2.Declaration(data=data692)
+            _t1308 = _t1310
         else:
-            if prediction682 == 2:
-                _t1299 = self.parse_constraint()
-                constraint685 = _t1299
-                _t1300 = logic_pb2.Declaration(constraint=constraint685)
-                _t1298 = _t1300
+            if prediction688 == 2:
+                _t1312 = self.parse_constraint()
+                constraint691 = _t1312
+                _t1313 = logic_pb2.Declaration(constraint=constraint691)
+                _t1311 = _t1313
             else:
-                if prediction682 == 1:
-                    _t1302 = self.parse_algorithm()
-                    algorithm684 = _t1302
-                    _t1303 = logic_pb2.Declaration(algorithm=algorithm684)
-                    _t1301 = _t1303
+                if prediction688 == 1:
+                    _t1315 = self.parse_algorithm()
+                    algorithm690 = _t1315
+                    _t1316 = logic_pb2.Declaration(algorithm=algorithm690)
+                    _t1314 = _t1316
                 else:
-                    if prediction682 == 0:
-                        _t1305 = self.parse_def()
-                        def683 = _t1305
-                        _t1306 = logic_pb2.Declaration()
-                        getattr(_t1306, 'def').CopyFrom(def683)
-                        _t1304 = _t1306
+                    if prediction688 == 0:
+                        _t1318 = self.parse_def()
+                        def689 = _t1318
+                        _t1319 = logic_pb2.Declaration()
+                        getattr(_t1319, 'def').CopyFrom(def689)
+                        _t1317 = _t1319
                     else:
                         raise ParseError("Unexpected token in declaration" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
-                    _t1301 = _t1304
-                _t1298 = _t1301
-            _t1295 = _t1298
-        result688 = _t1295
-        self.record_span(span_start687, "Declaration")
-        return result688
+                    _t1314 = _t1317
+                _t1311 = _t1314
+            _t1308 = _t1311
+        result694 = _t1308
+        self.record_span(span_start693, "Declaration")
+        return result694
 
     def parse_def(self) -> logic_pb2.Def:
-        span_start692 = self.span_start()
+        span_start698 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("def")
-        _t1307 = self.parse_relation_id()
-        relation_id689 = _t1307
-        _t1308 = self.parse_abstraction()
-        abstraction690 = _t1308
+        _t1320 = self.parse_relation_id()
+        relation_id695 = _t1320
+        _t1321 = self.parse_abstraction()
+        abstraction696 = _t1321
         if self.match_lookahead_literal("(", 0):
-            _t1310 = self.parse_attrs()
-            _t1309 = _t1310
+            _t1323 = self.parse_attrs()
+            _t1322 = _t1323
         else:
-            _t1309 = None
-        attrs691 = _t1309
+            _t1322 = None
+        attrs697 = _t1322
         self.consume_literal(")")
-        _t1311 = logic_pb2.Def(name=relation_id689, body=abstraction690, attrs=(attrs691 if attrs691 is not None else []))
-        result693 = _t1311
-        self.record_span(span_start692, "Def")
-        return result693
+        _t1324 = logic_pb2.Def(name=relation_id695, body=abstraction696, attrs=(attrs697 if attrs697 is not None else []))
+        result699 = _t1324
+        self.record_span(span_start698, "Def")
+        return result699
 
     def parse_relation_id(self) -> logic_pb2.RelationId:
-        span_start697 = self.span_start()
+        span_start703 = self.span_start()
         if self.match_lookahead_literal(":", 0):
-            _t1312 = 0
+            _t1325 = 0
         else:
             if self.match_lookahead_terminal("UINT128", 0):
-                _t1313 = 1
+                _t1326 = 1
             else:
-                _t1313 = -1
-            _t1312 = _t1313
-        prediction694 = _t1312
-        if prediction694 == 1:
-            uint128696 = self.consume_terminal("UINT128")
-            _t1314 = logic_pb2.RelationId(id_low=uint128696.low, id_high=uint128696.high)
+                _t1326 = -1
+            _t1325 = _t1326
+        prediction700 = _t1325
+        if prediction700 == 1:
+            uint128702 = self.consume_terminal("UINT128")
+            _t1327 = logic_pb2.RelationId(id_low=uint128702.low, id_high=uint128702.high)
         else:
-            if prediction694 == 0:
+            if prediction700 == 0:
                 self.consume_literal(":")
-                symbol695 = self.consume_terminal("SYMBOL")
-                _t1315 = self.relation_id_from_string(symbol695)
+                symbol701 = self.consume_terminal("SYMBOL")
+                _t1328 = self.relation_id_from_string(symbol701)
             else:
                 raise ParseError("Unexpected token in relation_id" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
-            _t1314 = _t1315
-        result698 = _t1314
-        self.record_span(span_start697, "RelationId")
-        return result698
+            _t1327 = _t1328
+        result704 = _t1327
+        self.record_span(span_start703, "RelationId")
+        return result704
 
     def parse_abstraction(self) -> logic_pb2.Abstraction:
-        span_start701 = self.span_start()
+        span_start707 = self.span_start()
         self.consume_literal("(")
-        _t1316 = self.parse_bindings()
-        bindings699 = _t1316
-        _t1317 = self.parse_formula()
-        formula700 = _t1317
+        _t1329 = self.parse_bindings()
+        bindings705 = _t1329
+        _t1330 = self.parse_formula()
+        formula706 = _t1330
         self.consume_literal(")")
-        _t1318 = logic_pb2.Abstraction(vars=(list(bindings699[0]) + list(bindings699[1] if bindings699[1] is not None else [])), value=formula700)
-        result702 = _t1318
-        self.record_span(span_start701, "Abstraction")
-        return result702
+        _t1331 = logic_pb2.Abstraction(vars=(list(bindings705[0]) + list(bindings705[1] if bindings705[1] is not None else [])), value=formula706)
+        result708 = _t1331
+        self.record_span(span_start707, "Abstraction")
+        return result708
 
     def parse_bindings(self) -> tuple[Sequence[logic_pb2.Binding], Sequence[logic_pb2.Binding]]:
         self.consume_literal("[")
-        xs703 = []
-        cond704 = self.match_lookahead_terminal("SYMBOL", 0)
-        while cond704:
-            _t1319 = self.parse_binding()
-            item705 = _t1319
-            xs703.append(item705)
-            cond704 = self.match_lookahead_terminal("SYMBOL", 0)
-        bindings706 = xs703
+        xs709 = []
+        cond710 = self.match_lookahead_terminal("SYMBOL", 0)
+        while cond710:
+            _t1332 = self.parse_binding()
+            item711 = _t1332
+            xs709.append(item711)
+            cond710 = self.match_lookahead_terminal("SYMBOL", 0)
+        bindings712 = xs709
         if self.match_lookahead_literal("|", 0):
-            _t1321 = self.parse_value_bindings()
-            _t1320 = _t1321
+            _t1334 = self.parse_value_bindings()
+            _t1333 = _t1334
         else:
-            _t1320 = None
-        value_bindings707 = _t1320
+            _t1333 = None
+        value_bindings713 = _t1333
         self.consume_literal("]")
-        return (bindings706, (value_bindings707 if value_bindings707 is not None else []),)
+        return (bindings712, (value_bindings713 if value_bindings713 is not None else []),)
 
     def parse_binding(self) -> logic_pb2.Binding:
-        span_start710 = self.span_start()
-        symbol708 = self.consume_terminal("SYMBOL")
+        span_start716 = self.span_start()
+        symbol714 = self.consume_terminal("SYMBOL")
         self.consume_literal("::")
-        _t1322 = self.parse_type()
-        type709 = _t1322
-        _t1323 = logic_pb2.Var(name=symbol708)
-        _t1324 = logic_pb2.Binding(var=_t1323, type=type709)
-        result711 = _t1324
-        self.record_span(span_start710, "Binding")
-        return result711
+        _t1335 = self.parse_type()
+        type715 = _t1335
+        _t1336 = logic_pb2.Var(name=symbol714)
+        _t1337 = logic_pb2.Binding(var=_t1336, type=type715)
+        result717 = _t1337
+        self.record_span(span_start716, "Binding")
+        return result717
 
     def parse_type(self) -> logic_pb2.Type:
-        span_start726 = self.span_start()
+        span_start733 = self.span_start()
         if self.match_lookahead_literal("UNKNOWN", 0):
-            _t1325 = 0
+            _t1338 = 0
         else:
-            if self.match_lookahead_literal("UINT128", 0):
-                _t1326 = 4
+            if self.match_lookahead_literal("UINT32", 0):
+                _t1339 = 13
             else:
-                if self.match_lookahead_literal("STRING", 0):
-                    _t1327 = 1
+                if self.match_lookahead_literal("UINT128", 0):
+                    _t1340 = 4
                 else:
-                    if self.match_lookahead_literal("MISSING", 0):
-                        _t1328 = 8
+                    if self.match_lookahead_literal("STRING", 0):
+                        _t1341 = 1
                     else:
-                        if self.match_lookahead_literal("INT32", 0):
-                            _t1329 = 11
+                        if self.match_lookahead_literal("MISSING", 0):
+                            _t1342 = 8
                         else:
-                            if self.match_lookahead_literal("INT128", 0):
-                                _t1330 = 5
+                            if self.match_lookahead_literal("INT32", 0):
+                                _t1343 = 11
                             else:
-                                if self.match_lookahead_literal("INT", 0):
-                                    _t1331 = 2
+                                if self.match_lookahead_literal("INT128", 0):
+                                    _t1344 = 5
                                 else:
-                                    if self.match_lookahead_literal("FLOAT32", 0):
-                                        _t1332 = 12
+                                    if self.match_lookahead_literal("INT", 0):
+                                        _t1345 = 2
                                     else:
-                                        if self.match_lookahead_literal("FLOAT", 0):
-                                            _t1333 = 3
+                                        if self.match_lookahead_literal("FLOAT32", 0):
+                                            _t1346 = 12
                                         else:
-                                            if self.match_lookahead_literal("DATETIME", 0):
-                                                _t1334 = 7
+                                            if self.match_lookahead_literal("FLOAT", 0):
+                                                _t1347 = 3
                                             else:
-                                                if self.match_lookahead_literal("DATE", 0):
-                                                    _t1335 = 6
+                                                if self.match_lookahead_literal("DATETIME", 0):
+                                                    _t1348 = 7
                                                 else:
-                                                    if self.match_lookahead_literal("BOOLEAN", 0):
-                                                        _t1336 = 10
+                                                    if self.match_lookahead_literal("DATE", 0):
+                                                        _t1349 = 6
                                                     else:
-                                                        if self.match_lookahead_literal("(", 0):
-                                                            _t1337 = 9
+                                                        if self.match_lookahead_literal("BOOLEAN", 0):
+                                                            _t1350 = 10
                                                         else:
-                                                            _t1337 = -1
-                                                        _t1336 = _t1337
-                                                    _t1335 = _t1336
-                                                _t1334 = _t1335
-                                            _t1333 = _t1334
-                                        _t1332 = _t1333
-                                    _t1331 = _t1332
-                                _t1330 = _t1331
-                            _t1329 = _t1330
-                        _t1328 = _t1329
-                    _t1327 = _t1328
-                _t1326 = _t1327
-            _t1325 = _t1326
-        prediction712 = _t1325
-        if prediction712 == 12:
-            _t1339 = self.parse_float32_type()
-            float32_type725 = _t1339
-            _t1340 = logic_pb2.Type(float32_type=float32_type725)
-            _t1338 = _t1340
+                                                            if self.match_lookahead_literal("(", 0):
+                                                                _t1351 = 9
+                                                            else:
+                                                                _t1351 = -1
+                                                            _t1350 = _t1351
+                                                        _t1349 = _t1350
+                                                    _t1348 = _t1349
+                                                _t1347 = _t1348
+                                            _t1346 = _t1347
+                                        _t1345 = _t1346
+                                    _t1344 = _t1345
+                                _t1343 = _t1344
+                            _t1342 = _t1343
+                        _t1341 = _t1342
+                    _t1340 = _t1341
+                _t1339 = _t1340
+            _t1338 = _t1339
+        prediction718 = _t1338
+        if prediction718 == 13:
+            _t1353 = self.parse_uint32_type()
+            uint32_type732 = _t1353
+            _t1354 = logic_pb2.Type(uint32_type=uint32_type732)
+            _t1352 = _t1354
         else:
-            if prediction712 == 11:
-                _t1342 = self.parse_int32_type()
-                int32_type724 = _t1342
-                _t1343 = logic_pb2.Type(int32_type=int32_type724)
-                _t1341 = _t1343
+            if prediction718 == 12:
+                _t1356 = self.parse_float32_type()
+                float32_type731 = _t1356
+                _t1357 = logic_pb2.Type(float32_type=float32_type731)
+                _t1355 = _t1357
             else:
-                if prediction712 == 10:
-                    _t1345 = self.parse_boolean_type()
-                    boolean_type723 = _t1345
-                    _t1346 = logic_pb2.Type(boolean_type=boolean_type723)
-                    _t1344 = _t1346
+                if prediction718 == 11:
+                    _t1359 = self.parse_int32_type()
+                    int32_type730 = _t1359
+                    _t1360 = logic_pb2.Type(int32_type=int32_type730)
+                    _t1358 = _t1360
                 else:
-                    if prediction712 == 9:
-                        _t1348 = self.parse_decimal_type()
-                        decimal_type722 = _t1348
-                        _t1349 = logic_pb2.Type(decimal_type=decimal_type722)
-                        _t1347 = _t1349
+                    if prediction718 == 10:
+                        _t1362 = self.parse_boolean_type()
+                        boolean_type729 = _t1362
+                        _t1363 = logic_pb2.Type(boolean_type=boolean_type729)
+                        _t1361 = _t1363
                     else:
-                        if prediction712 == 8:
-                            _t1351 = self.parse_missing_type()
-                            missing_type721 = _t1351
-                            _t1352 = logic_pb2.Type(missing_type=missing_type721)
-                            _t1350 = _t1352
+                        if prediction718 == 9:
+                            _t1365 = self.parse_decimal_type()
+                            decimal_type728 = _t1365
+                            _t1366 = logic_pb2.Type(decimal_type=decimal_type728)
+                            _t1364 = _t1366
                         else:
-                            if prediction712 == 7:
-                                _t1354 = self.parse_datetime_type()
-                                datetime_type720 = _t1354
-                                _t1355 = logic_pb2.Type(datetime_type=datetime_type720)
-                                _t1353 = _t1355
+                            if prediction718 == 8:
+                                _t1368 = self.parse_missing_type()
+                                missing_type727 = _t1368
+                                _t1369 = logic_pb2.Type(missing_type=missing_type727)
+                                _t1367 = _t1369
                             else:
-                                if prediction712 == 6:
-                                    _t1357 = self.parse_date_type()
-                                    date_type719 = _t1357
-                                    _t1358 = logic_pb2.Type(date_type=date_type719)
-                                    _t1356 = _t1358
+                                if prediction718 == 7:
+                                    _t1371 = self.parse_datetime_type()
+                                    datetime_type726 = _t1371
+                                    _t1372 = logic_pb2.Type(datetime_type=datetime_type726)
+                                    _t1370 = _t1372
                                 else:
-                                    if prediction712 == 5:
-                                        _t1360 = self.parse_int128_type()
-                                        int128_type718 = _t1360
-                                        _t1361 = logic_pb2.Type(int128_type=int128_type718)
-                                        _t1359 = _t1361
+                                    if prediction718 == 6:
+                                        _t1374 = self.parse_date_type()
+                                        date_type725 = _t1374
+                                        _t1375 = logic_pb2.Type(date_type=date_type725)
+                                        _t1373 = _t1375
                                     else:
-                                        if prediction712 == 4:
-                                            _t1363 = self.parse_uint128_type()
-                                            uint128_type717 = _t1363
-                                            _t1364 = logic_pb2.Type(uint128_type=uint128_type717)
-                                            _t1362 = _t1364
+                                        if prediction718 == 5:
+                                            _t1377 = self.parse_int128_type()
+                                            int128_type724 = _t1377
+                                            _t1378 = logic_pb2.Type(int128_type=int128_type724)
+                                            _t1376 = _t1378
                                         else:
-                                            if prediction712 == 3:
-                                                _t1366 = self.parse_float_type()
-                                                float_type716 = _t1366
-                                                _t1367 = logic_pb2.Type(float_type=float_type716)
-                                                _t1365 = _t1367
+                                            if prediction718 == 4:
+                                                _t1380 = self.parse_uint128_type()
+                                                uint128_type723 = _t1380
+                                                _t1381 = logic_pb2.Type(uint128_type=uint128_type723)
+                                                _t1379 = _t1381
                                             else:
-                                                if prediction712 == 2:
-                                                    _t1369 = self.parse_int_type()
-                                                    int_type715 = _t1369
-                                                    _t1370 = logic_pb2.Type(int_type=int_type715)
-                                                    _t1368 = _t1370
+                                                if prediction718 == 3:
+                                                    _t1383 = self.parse_float_type()
+                                                    float_type722 = _t1383
+                                                    _t1384 = logic_pb2.Type(float_type=float_type722)
+                                                    _t1382 = _t1384
                                                 else:
-                                                    if prediction712 == 1:
-                                                        _t1372 = self.parse_string_type()
-                                                        string_type714 = _t1372
-                                                        _t1373 = logic_pb2.Type(string_type=string_type714)
-                                                        _t1371 = _t1373
+                                                    if prediction718 == 2:
+                                                        _t1386 = self.parse_int_type()
+                                                        int_type721 = _t1386
+                                                        _t1387 = logic_pb2.Type(int_type=int_type721)
+                                                        _t1385 = _t1387
                                                     else:
-                                                        if prediction712 == 0:
-                                                            _t1375 = self.parse_unspecified_type()
-                                                            unspecified_type713 = _t1375
-                                                            _t1376 = logic_pb2.Type(unspecified_type=unspecified_type713)
-                                                            _t1374 = _t1376
+                                                        if prediction718 == 1:
+                                                            _t1389 = self.parse_string_type()
+                                                            string_type720 = _t1389
+                                                            _t1390 = logic_pb2.Type(string_type=string_type720)
+                                                            _t1388 = _t1390
                                                         else:
-                                                            raise ParseError("Unexpected token in type" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
-                                                        _t1371 = _t1374
-                                                    _t1368 = _t1371
-                                                _t1365 = _t1368
-                                            _t1362 = _t1365
-                                        _t1359 = _t1362
-                                    _t1356 = _t1359
-                                _t1353 = _t1356
-                            _t1350 = _t1353
-                        _t1347 = _t1350
-                    _t1344 = _t1347
-                _t1341 = _t1344
-            _t1338 = _t1341
-        result727 = _t1338
-        self.record_span(span_start726, "Type")
-        return result727
+                                                            if prediction718 == 0:
+                                                                _t1392 = self.parse_unspecified_type()
+                                                                unspecified_type719 = _t1392
+                                                                _t1393 = logic_pb2.Type(unspecified_type=unspecified_type719)
+                                                                _t1391 = _t1393
+                                                            else:
+                                                                raise ParseError("Unexpected token in type" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
+                                                            _t1388 = _t1391
+                                                        _t1385 = _t1388
+                                                    _t1382 = _t1385
+                                                _t1379 = _t1382
+                                            _t1376 = _t1379
+                                        _t1373 = _t1376
+                                    _t1370 = _t1373
+                                _t1367 = _t1370
+                            _t1364 = _t1367
+                        _t1361 = _t1364
+                    _t1358 = _t1361
+                _t1355 = _t1358
+            _t1352 = _t1355
+        result734 = _t1352
+        self.record_span(span_start733, "Type")
+        return result734
 
     def parse_unspecified_type(self) -> logic_pb2.UnspecifiedType:
-        span_start728 = self.span_start()
+        span_start735 = self.span_start()
         self.consume_literal("UNKNOWN")
-        _t1377 = logic_pb2.UnspecifiedType()
-        result729 = _t1377
-        self.record_span(span_start728, "UnspecifiedType")
-        return result729
+        _t1394 = logic_pb2.UnspecifiedType()
+        result736 = _t1394
+        self.record_span(span_start735, "UnspecifiedType")
+        return result736
 
     def parse_string_type(self) -> logic_pb2.StringType:
-        span_start730 = self.span_start()
+        span_start737 = self.span_start()
         self.consume_literal("STRING")
-        _t1378 = logic_pb2.StringType()
-        result731 = _t1378
-        self.record_span(span_start730, "StringType")
-        return result731
+        _t1395 = logic_pb2.StringType()
+        result738 = _t1395
+        self.record_span(span_start737, "StringType")
+        return result738
 
     def parse_int_type(self) -> logic_pb2.IntType:
-        span_start732 = self.span_start()
+        span_start739 = self.span_start()
         self.consume_literal("INT")
-        _t1379 = logic_pb2.IntType()
-        result733 = _t1379
-        self.record_span(span_start732, "IntType")
-        return result733
+        _t1396 = logic_pb2.IntType()
+        result740 = _t1396
+        self.record_span(span_start739, "IntType")
+        return result740
 
     def parse_float_type(self) -> logic_pb2.FloatType:
-        span_start734 = self.span_start()
+        span_start741 = self.span_start()
         self.consume_literal("FLOAT")
-        _t1380 = logic_pb2.FloatType()
-        result735 = _t1380
-        self.record_span(span_start734, "FloatType")
-        return result735
+        _t1397 = logic_pb2.FloatType()
+        result742 = _t1397
+        self.record_span(span_start741, "FloatType")
+        return result742
 
     def parse_uint128_type(self) -> logic_pb2.UInt128Type:
-        span_start736 = self.span_start()
+        span_start743 = self.span_start()
         self.consume_literal("UINT128")
-        _t1381 = logic_pb2.UInt128Type()
-        result737 = _t1381
-        self.record_span(span_start736, "UInt128Type")
-        return result737
+        _t1398 = logic_pb2.UInt128Type()
+        result744 = _t1398
+        self.record_span(span_start743, "UInt128Type")
+        return result744
 
     def parse_int128_type(self) -> logic_pb2.Int128Type:
-        span_start738 = self.span_start()
+        span_start745 = self.span_start()
         self.consume_literal("INT128")
-        _t1382 = logic_pb2.Int128Type()
-        result739 = _t1382
-        self.record_span(span_start738, "Int128Type")
-        return result739
+        _t1399 = logic_pb2.Int128Type()
+        result746 = _t1399
+        self.record_span(span_start745, "Int128Type")
+        return result746
 
     def parse_date_type(self) -> logic_pb2.DateType:
-        span_start740 = self.span_start()
+        span_start747 = self.span_start()
         self.consume_literal("DATE")
-        _t1383 = logic_pb2.DateType()
-        result741 = _t1383
-        self.record_span(span_start740, "DateType")
-        return result741
+        _t1400 = logic_pb2.DateType()
+        result748 = _t1400
+        self.record_span(span_start747, "DateType")
+        return result748
 
     def parse_datetime_type(self) -> logic_pb2.DateTimeType:
-        span_start742 = self.span_start()
+        span_start749 = self.span_start()
         self.consume_literal("DATETIME")
-        _t1384 = logic_pb2.DateTimeType()
-        result743 = _t1384
-        self.record_span(span_start742, "DateTimeType")
-        return result743
+        _t1401 = logic_pb2.DateTimeType()
+        result750 = _t1401
+        self.record_span(span_start749, "DateTimeType")
+        return result750
 
     def parse_missing_type(self) -> logic_pb2.MissingType:
-        span_start744 = self.span_start()
+        span_start751 = self.span_start()
         self.consume_literal("MISSING")
-        _t1385 = logic_pb2.MissingType()
-        result745 = _t1385
-        self.record_span(span_start744, "MissingType")
-        return result745
+        _t1402 = logic_pb2.MissingType()
+        result752 = _t1402
+        self.record_span(span_start751, "MissingType")
+        return result752
 
     def parse_decimal_type(self) -> logic_pb2.DecimalType:
-        span_start748 = self.span_start()
+        span_start755 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("DECIMAL")
-        int746 = self.consume_terminal("INT")
-        int_3747 = self.consume_terminal("INT")
+        int753 = self.consume_terminal("INT")
+        int_3754 = self.consume_terminal("INT")
         self.consume_literal(")")
-        _t1386 = logic_pb2.DecimalType(precision=int(int746), scale=int(int_3747))
-        result749 = _t1386
-        self.record_span(span_start748, "DecimalType")
-        return result749
+        _t1403 = logic_pb2.DecimalType(precision=int(int753), scale=int(int_3754))
+        result756 = _t1403
+        self.record_span(span_start755, "DecimalType")
+        return result756
 
     def parse_boolean_type(self) -> logic_pb2.BooleanType:
-        span_start750 = self.span_start()
+        span_start757 = self.span_start()
         self.consume_literal("BOOLEAN")
-        _t1387 = logic_pb2.BooleanType()
-        result751 = _t1387
-        self.record_span(span_start750, "BooleanType")
-        return result751
+        _t1404 = logic_pb2.BooleanType()
+        result758 = _t1404
+        self.record_span(span_start757, "BooleanType")
+        return result758
 
     def parse_int32_type(self) -> logic_pb2.Int32Type:
-        span_start752 = self.span_start()
+        span_start759 = self.span_start()
         self.consume_literal("INT32")
-        _t1388 = logic_pb2.Int32Type()
-        result753 = _t1388
-        self.record_span(span_start752, "Int32Type")
-        return result753
+        _t1405 = logic_pb2.Int32Type()
+        result760 = _t1405
+        self.record_span(span_start759, "Int32Type")
+        return result760
 
     def parse_float32_type(self) -> logic_pb2.Float32Type:
-        span_start754 = self.span_start()
+        span_start761 = self.span_start()
         self.consume_literal("FLOAT32")
-        _t1389 = logic_pb2.Float32Type()
-        result755 = _t1389
-        self.record_span(span_start754, "Float32Type")
-        return result755
+        _t1406 = logic_pb2.Float32Type()
+        result762 = _t1406
+        self.record_span(span_start761, "Float32Type")
+        return result762
+
+    def parse_uint32_type(self) -> logic_pb2.UInt32Type:
+        span_start763 = self.span_start()
+        self.consume_literal("UINT32")
+        _t1407 = logic_pb2.UInt32Type()
+        result764 = _t1407
+        self.record_span(span_start763, "UInt32Type")
+        return result764
 
     def parse_value_bindings(self) -> Sequence[logic_pb2.Binding]:
         self.consume_literal("|")
-        xs756 = []
-        cond757 = self.match_lookahead_terminal("SYMBOL", 0)
-        while cond757:
-            _t1390 = self.parse_binding()
-            item758 = _t1390
-            xs756.append(item758)
-            cond757 = self.match_lookahead_terminal("SYMBOL", 0)
-        bindings759 = xs756
-        return bindings759
+        xs765 = []
+        cond766 = self.match_lookahead_terminal("SYMBOL", 0)
+        while cond766:
+            _t1408 = self.parse_binding()
+            item767 = _t1408
+            xs765.append(item767)
+            cond766 = self.match_lookahead_terminal("SYMBOL", 0)
+        bindings768 = xs765
+        return bindings768
 
     def parse_formula(self) -> logic_pb2.Formula:
-        span_start774 = self.span_start()
+        span_start783 = self.span_start()
         if self.match_lookahead_literal("(", 0):
             if self.match_lookahead_literal("true", 1):
-                _t1392 = 0
+                _t1410 = 0
             else:
                 if self.match_lookahead_literal("relatom", 1):
-                    _t1393 = 11
+                    _t1411 = 11
                 else:
                     if self.match_lookahead_literal("reduce", 1):
-                        _t1394 = 3
+                        _t1412 = 3
                     else:
                         if self.match_lookahead_literal("primitive", 1):
-                            _t1395 = 10
+                            _t1413 = 10
                         else:
                             if self.match_lookahead_literal("pragma", 1):
-                                _t1396 = 9
+                                _t1414 = 9
                             else:
                                 if self.match_lookahead_literal("or", 1):
-                                    _t1397 = 5
+                                    _t1415 = 5
                                 else:
                                     if self.match_lookahead_literal("not", 1):
-                                        _t1398 = 6
+                                        _t1416 = 6
                                     else:
                                         if self.match_lookahead_literal("ffi", 1):
-                                            _t1399 = 7
+                                            _t1417 = 7
                                         else:
                                             if self.match_lookahead_literal("false", 1):
-                                                _t1400 = 1
+                                                _t1418 = 1
                                             else:
                                                 if self.match_lookahead_literal("exists", 1):
-                                                    _t1401 = 2
+                                                    _t1419 = 2
                                                 else:
                                                     if self.match_lookahead_literal("cast", 1):
-                                                        _t1402 = 12
+                                                        _t1420 = 12
                                                     else:
                                                         if self.match_lookahead_literal("atom", 1):
-                                                            _t1403 = 8
+                                                            _t1421 = 8
                                                         else:
                                                             if self.match_lookahead_literal("and", 1):
-                                                                _t1404 = 4
+                                                                _t1422 = 4
                                                             else:
                                                                 if self.match_lookahead_literal(">=", 1):
-                                                                    _t1405 = 10
+                                                                    _t1423 = 10
                                                                 else:
                                                                     if self.match_lookahead_literal(">", 1):
-                                                                        _t1406 = 10
+                                                                        _t1424 = 10
                                                                     else:
                                                                         if self.match_lookahead_literal("=", 1):
-                                                                            _t1407 = 10
+                                                                            _t1425 = 10
                                                                         else:
                                                                             if self.match_lookahead_literal("<=", 1):
-                                                                                _t1408 = 10
+                                                                                _t1426 = 10
                                                                             else:
                                                                                 if self.match_lookahead_literal("<", 1):
-                                                                                    _t1409 = 10
+                                                                                    _t1427 = 10
                                                                                 else:
                                                                                     if self.match_lookahead_literal("/", 1):
-                                                                                        _t1410 = 10
+                                                                                        _t1428 = 10
                                                                                     else:
                                                                                         if self.match_lookahead_literal("-", 1):
-                                                                                            _t1411 = 10
+                                                                                            _t1429 = 10
                                                                                         else:
                                                                                             if self.match_lookahead_literal("+", 1):
-                                                                                                _t1412 = 10
+                                                                                                _t1430 = 10
                                                                                             else:
                                                                                                 if self.match_lookahead_literal("*", 1):
-                                                                                                    _t1413 = 10
+                                                                                                    _t1431 = 10
                                                                                                 else:
-                                                                                                    _t1413 = -1
-                                                                                                _t1412 = _t1413
-                                                                                            _t1411 = _t1412
-                                                                                        _t1410 = _t1411
-                                                                                    _t1409 = _t1410
-                                                                                _t1408 = _t1409
-                                                                            _t1407 = _t1408
-                                                                        _t1406 = _t1407
-                                                                    _t1405 = _t1406
-                                                                _t1404 = _t1405
-                                                            _t1403 = _t1404
-                                                        _t1402 = _t1403
-                                                    _t1401 = _t1402
-                                                _t1400 = _t1401
-                                            _t1399 = _t1400
-                                        _t1398 = _t1399
-                                    _t1397 = _t1398
-                                _t1396 = _t1397
-                            _t1395 = _t1396
-                        _t1394 = _t1395
-                    _t1393 = _t1394
-                _t1392 = _t1393
-            _t1391 = _t1392
+                                                                                                    _t1431 = -1
+                                                                                                _t1430 = _t1431
+                                                                                            _t1429 = _t1430
+                                                                                        _t1428 = _t1429
+                                                                                    _t1427 = _t1428
+                                                                                _t1426 = _t1427
+                                                                            _t1425 = _t1426
+                                                                        _t1424 = _t1425
+                                                                    _t1423 = _t1424
+                                                                _t1422 = _t1423
+                                                            _t1421 = _t1422
+                                                        _t1420 = _t1421
+                                                    _t1419 = _t1420
+                                                _t1418 = _t1419
+                                            _t1417 = _t1418
+                                        _t1416 = _t1417
+                                    _t1415 = _t1416
+                                _t1414 = _t1415
+                            _t1413 = _t1414
+                        _t1412 = _t1413
+                    _t1411 = _t1412
+                _t1410 = _t1411
+            _t1409 = _t1410
         else:
-            _t1391 = -1
-        prediction760 = _t1391
-        if prediction760 == 12:
-            _t1415 = self.parse_cast()
-            cast773 = _t1415
-            _t1416 = logic_pb2.Formula(cast=cast773)
-            _t1414 = _t1416
+            _t1409 = -1
+        prediction769 = _t1409
+        if prediction769 == 12:
+            _t1433 = self.parse_cast()
+            cast782 = _t1433
+            _t1434 = logic_pb2.Formula(cast=cast782)
+            _t1432 = _t1434
         else:
-            if prediction760 == 11:
-                _t1418 = self.parse_rel_atom()
-                rel_atom772 = _t1418
-                _t1419 = logic_pb2.Formula(rel_atom=rel_atom772)
-                _t1417 = _t1419
+            if prediction769 == 11:
+                _t1436 = self.parse_rel_atom()
+                rel_atom781 = _t1436
+                _t1437 = logic_pb2.Formula(rel_atom=rel_atom781)
+                _t1435 = _t1437
             else:
-                if prediction760 == 10:
-                    _t1421 = self.parse_primitive()
-                    primitive771 = _t1421
-                    _t1422 = logic_pb2.Formula(primitive=primitive771)
-                    _t1420 = _t1422
+                if prediction769 == 10:
+                    _t1439 = self.parse_primitive()
+                    primitive780 = _t1439
+                    _t1440 = logic_pb2.Formula(primitive=primitive780)
+                    _t1438 = _t1440
                 else:
-                    if prediction760 == 9:
-                        _t1424 = self.parse_pragma()
-                        pragma770 = _t1424
-                        _t1425 = logic_pb2.Formula(pragma=pragma770)
-                        _t1423 = _t1425
+                    if prediction769 == 9:
+                        _t1442 = self.parse_pragma()
+                        pragma779 = _t1442
+                        _t1443 = logic_pb2.Formula(pragma=pragma779)
+                        _t1441 = _t1443
                     else:
-                        if prediction760 == 8:
-                            _t1427 = self.parse_atom()
-                            atom769 = _t1427
-                            _t1428 = logic_pb2.Formula(atom=atom769)
-                            _t1426 = _t1428
+                        if prediction769 == 8:
+                            _t1445 = self.parse_atom()
+                            atom778 = _t1445
+                            _t1446 = logic_pb2.Formula(atom=atom778)
+                            _t1444 = _t1446
                         else:
-                            if prediction760 == 7:
-                                _t1430 = self.parse_ffi()
-                                ffi768 = _t1430
-                                _t1431 = logic_pb2.Formula(ffi=ffi768)
-                                _t1429 = _t1431
+                            if prediction769 == 7:
+                                _t1448 = self.parse_ffi()
+                                ffi777 = _t1448
+                                _t1449 = logic_pb2.Formula(ffi=ffi777)
+                                _t1447 = _t1449
                             else:
-                                if prediction760 == 6:
-                                    _t1433 = self.parse_not()
-                                    not767 = _t1433
-                                    _t1434 = logic_pb2.Formula()
-                                    getattr(_t1434, 'not').CopyFrom(not767)
-                                    _t1432 = _t1434
+                                if prediction769 == 6:
+                                    _t1451 = self.parse_not()
+                                    not776 = _t1451
+                                    _t1452 = logic_pb2.Formula()
+                                    getattr(_t1452, 'not').CopyFrom(not776)
+                                    _t1450 = _t1452
                                 else:
-                                    if prediction760 == 5:
-                                        _t1436 = self.parse_disjunction()
-                                        disjunction766 = _t1436
-                                        _t1437 = logic_pb2.Formula(disjunction=disjunction766)
-                                        _t1435 = _t1437
+                                    if prediction769 == 5:
+                                        _t1454 = self.parse_disjunction()
+                                        disjunction775 = _t1454
+                                        _t1455 = logic_pb2.Formula(disjunction=disjunction775)
+                                        _t1453 = _t1455
                                     else:
-                                        if prediction760 == 4:
-                                            _t1439 = self.parse_conjunction()
-                                            conjunction765 = _t1439
-                                            _t1440 = logic_pb2.Formula(conjunction=conjunction765)
-                                            _t1438 = _t1440
+                                        if prediction769 == 4:
+                                            _t1457 = self.parse_conjunction()
+                                            conjunction774 = _t1457
+                                            _t1458 = logic_pb2.Formula(conjunction=conjunction774)
+                                            _t1456 = _t1458
                                         else:
-                                            if prediction760 == 3:
-                                                _t1442 = self.parse_reduce()
-                                                reduce764 = _t1442
-                                                _t1443 = logic_pb2.Formula(reduce=reduce764)
-                                                _t1441 = _t1443
+                                            if prediction769 == 3:
+                                                _t1460 = self.parse_reduce()
+                                                reduce773 = _t1460
+                                                _t1461 = logic_pb2.Formula(reduce=reduce773)
+                                                _t1459 = _t1461
                                             else:
-                                                if prediction760 == 2:
-                                                    _t1445 = self.parse_exists()
-                                                    exists763 = _t1445
-                                                    _t1446 = logic_pb2.Formula(exists=exists763)
-                                                    _t1444 = _t1446
+                                                if prediction769 == 2:
+                                                    _t1463 = self.parse_exists()
+                                                    exists772 = _t1463
+                                                    _t1464 = logic_pb2.Formula(exists=exists772)
+                                                    _t1462 = _t1464
                                                 else:
-                                                    if prediction760 == 1:
-                                                        _t1448 = self.parse_false()
-                                                        false762 = _t1448
-                                                        _t1449 = logic_pb2.Formula(disjunction=false762)
-                                                        _t1447 = _t1449
+                                                    if prediction769 == 1:
+                                                        _t1466 = self.parse_false()
+                                                        false771 = _t1466
+                                                        _t1467 = logic_pb2.Formula(disjunction=false771)
+                                                        _t1465 = _t1467
                                                     else:
-                                                        if prediction760 == 0:
-                                                            _t1451 = self.parse_true()
-                                                            true761 = _t1451
-                                                            _t1452 = logic_pb2.Formula(conjunction=true761)
-                                                            _t1450 = _t1452
+                                                        if prediction769 == 0:
+                                                            _t1469 = self.parse_true()
+                                                            true770 = _t1469
+                                                            _t1470 = logic_pb2.Formula(conjunction=true770)
+                                                            _t1468 = _t1470
                                                         else:
                                                             raise ParseError("Unexpected token in formula" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
-                                                        _t1447 = _t1450
-                                                    _t1444 = _t1447
-                                                _t1441 = _t1444
-                                            _t1438 = _t1441
-                                        _t1435 = _t1438
-                                    _t1432 = _t1435
-                                _t1429 = _t1432
-                            _t1426 = _t1429
-                        _t1423 = _t1426
-                    _t1420 = _t1423
-                _t1417 = _t1420
-            _t1414 = _t1417
-        result775 = _t1414
-        self.record_span(span_start774, "Formula")
-        return result775
+                                                        _t1465 = _t1468
+                                                    _t1462 = _t1465
+                                                _t1459 = _t1462
+                                            _t1456 = _t1459
+                                        _t1453 = _t1456
+                                    _t1450 = _t1453
+                                _t1447 = _t1450
+                            _t1444 = _t1447
+                        _t1441 = _t1444
+                    _t1438 = _t1441
+                _t1435 = _t1438
+            _t1432 = _t1435
+        result784 = _t1432
+        self.record_span(span_start783, "Formula")
+        return result784
 
     def parse_true(self) -> logic_pb2.Conjunction:
-        span_start776 = self.span_start()
+        span_start785 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("true")
         self.consume_literal(")")
-        _t1453 = logic_pb2.Conjunction(args=[])
-        result777 = _t1453
-        self.record_span(span_start776, "Conjunction")
-        return result777
+        _t1471 = logic_pb2.Conjunction(args=[])
+        result786 = _t1471
+        self.record_span(span_start785, "Conjunction")
+        return result786
 
     def parse_false(self) -> logic_pb2.Disjunction:
-        span_start778 = self.span_start()
+        span_start787 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("false")
         self.consume_literal(")")
-        _t1454 = logic_pb2.Disjunction(args=[])
-        result779 = _t1454
-        self.record_span(span_start778, "Disjunction")
-        return result779
+        _t1472 = logic_pb2.Disjunction(args=[])
+        result788 = _t1472
+        self.record_span(span_start787, "Disjunction")
+        return result788
 
     def parse_exists(self) -> logic_pb2.Exists:
-        span_start782 = self.span_start()
+        span_start791 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("exists")
-        _t1455 = self.parse_bindings()
-        bindings780 = _t1455
-        _t1456 = self.parse_formula()
-        formula781 = _t1456
+        _t1473 = self.parse_bindings()
+        bindings789 = _t1473
+        _t1474 = self.parse_formula()
+        formula790 = _t1474
         self.consume_literal(")")
-        _t1457 = logic_pb2.Abstraction(vars=(list(bindings780[0]) + list(bindings780[1] if bindings780[1] is not None else [])), value=formula781)
-        _t1458 = logic_pb2.Exists(body=_t1457)
-        result783 = _t1458
-        self.record_span(span_start782, "Exists")
-        return result783
+        _t1475 = logic_pb2.Abstraction(vars=(list(bindings789[0]) + list(bindings789[1] if bindings789[1] is not None else [])), value=formula790)
+        _t1476 = logic_pb2.Exists(body=_t1475)
+        result792 = _t1476
+        self.record_span(span_start791, "Exists")
+        return result792
 
     def parse_reduce(self) -> logic_pb2.Reduce:
-        span_start787 = self.span_start()
+        span_start796 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("reduce")
-        _t1459 = self.parse_abstraction()
-        abstraction784 = _t1459
-        _t1460 = self.parse_abstraction()
-        abstraction_3785 = _t1460
-        _t1461 = self.parse_terms()
-        terms786 = _t1461
+        _t1477 = self.parse_abstraction()
+        abstraction793 = _t1477
+        _t1478 = self.parse_abstraction()
+        abstraction_3794 = _t1478
+        _t1479 = self.parse_terms()
+        terms795 = _t1479
         self.consume_literal(")")
-        _t1462 = logic_pb2.Reduce(op=abstraction784, body=abstraction_3785, terms=terms786)
-        result788 = _t1462
-        self.record_span(span_start787, "Reduce")
-        return result788
+        _t1480 = logic_pb2.Reduce(op=abstraction793, body=abstraction_3794, terms=terms795)
+        result797 = _t1480
+        self.record_span(span_start796, "Reduce")
+        return result797
 
     def parse_terms(self) -> Sequence[logic_pb2.Term]:
         self.consume_literal("(")
         self.consume_literal("terms")
-        xs789 = []
-        cond790 = ((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("false", 0)) or self.match_lookahead_literal("missing", 0)) or self.match_lookahead_literal("true", 0)) or self.match_lookahead_terminal("DECIMAL", 0)) or self.match_lookahead_terminal("FLOAT", 0)) or self.match_lookahead_terminal("FLOAT32", 0)) or self.match_lookahead_terminal("INT", 0)) or self.match_lookahead_terminal("INT128", 0)) or self.match_lookahead_terminal("INT32", 0)) or self.match_lookahead_terminal("STRING", 0)) or self.match_lookahead_terminal("UINT128", 0)) or self.match_lookahead_terminal("SYMBOL", 0))
-        while cond790:
-            _t1463 = self.parse_term()
-            item791 = _t1463
-            xs789.append(item791)
-            cond790 = ((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("false", 0)) or self.match_lookahead_literal("missing", 0)) or self.match_lookahead_literal("true", 0)) or self.match_lookahead_terminal("DECIMAL", 0)) or self.match_lookahead_terminal("FLOAT", 0)) or self.match_lookahead_terminal("FLOAT32", 0)) or self.match_lookahead_terminal("INT", 0)) or self.match_lookahead_terminal("INT128", 0)) or self.match_lookahead_terminal("INT32", 0)) or self.match_lookahead_terminal("STRING", 0)) or self.match_lookahead_terminal("UINT128", 0)) or self.match_lookahead_terminal("SYMBOL", 0))
-        terms792 = xs789
+        xs798 = []
+        cond799 = (((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("false", 0)) or self.match_lookahead_literal("missing", 0)) or self.match_lookahead_literal("true", 0)) or self.match_lookahead_terminal("DECIMAL", 0)) or self.match_lookahead_terminal("FLOAT", 0)) or self.match_lookahead_terminal("FLOAT32", 0)) or self.match_lookahead_terminal("INT", 0)) or self.match_lookahead_terminal("INT128", 0)) or self.match_lookahead_terminal("INT32", 0)) or self.match_lookahead_terminal("STRING", 0)) or self.match_lookahead_terminal("UINT128", 0)) or self.match_lookahead_terminal("UINT32", 0)) or self.match_lookahead_terminal("SYMBOL", 0))
+        while cond799:
+            _t1481 = self.parse_term()
+            item800 = _t1481
+            xs798.append(item800)
+            cond799 = (((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("false", 0)) or self.match_lookahead_literal("missing", 0)) or self.match_lookahead_literal("true", 0)) or self.match_lookahead_terminal("DECIMAL", 0)) or self.match_lookahead_terminal("FLOAT", 0)) or self.match_lookahead_terminal("FLOAT32", 0)) or self.match_lookahead_terminal("INT", 0)) or self.match_lookahead_terminal("INT128", 0)) or self.match_lookahead_terminal("INT32", 0)) or self.match_lookahead_terminal("STRING", 0)) or self.match_lookahead_terminal("UINT128", 0)) or self.match_lookahead_terminal("UINT32", 0)) or self.match_lookahead_terminal("SYMBOL", 0))
+        terms801 = xs798
         self.consume_literal(")")
-        return terms792
+        return terms801
 
     def parse_term(self) -> logic_pb2.Term:
-        span_start796 = self.span_start()
+        span_start805 = self.span_start()
         if self.match_lookahead_literal("true", 0):
-            _t1464 = 1
+            _t1482 = 1
         else:
             if self.match_lookahead_literal("missing", 0):
-                _t1465 = 1
+                _t1483 = 1
             else:
                 if self.match_lookahead_literal("false", 0):
-                    _t1466 = 1
+                    _t1484 = 1
                 else:
                     if self.match_lookahead_literal("(", 0):
-                        _t1467 = 1
+                        _t1485 = 1
                     else:
                         if self.match_lookahead_terminal("SYMBOL", 0):
-                            _t1468 = 0
+                            _t1486 = 0
                         else:
-                            if self.match_lookahead_terminal("UINT128", 0):
-                                _t1469 = 1
+                            if self.match_lookahead_terminal("UINT32", 0):
+                                _t1487 = 1
                             else:
-                                if self.match_lookahead_terminal("STRING", 0):
-                                    _t1470 = 1
+                                if self.match_lookahead_terminal("UINT128", 0):
+                                    _t1488 = 1
                                 else:
-                                    if self.match_lookahead_terminal("INT32", 0):
-                                        _t1471 = 1
+                                    if self.match_lookahead_terminal("STRING", 0):
+                                        _t1489 = 1
                                     else:
-                                        if self.match_lookahead_terminal("INT128", 0):
-                                            _t1472 = 1
+                                        if self.match_lookahead_terminal("INT32", 0):
+                                            _t1490 = 1
                                         else:
-                                            if self.match_lookahead_terminal("INT", 0):
-                                                _t1473 = 1
+                                            if self.match_lookahead_terminal("INT128", 0):
+                                                _t1491 = 1
                                             else:
-                                                if self.match_lookahead_terminal("FLOAT32", 0):
-                                                    _t1474 = 1
+                                                if self.match_lookahead_terminal("INT", 0):
+                                                    _t1492 = 1
                                                 else:
-                                                    if self.match_lookahead_terminal("FLOAT", 0):
-                                                        _t1475 = 1
+                                                    if self.match_lookahead_terminal("FLOAT32", 0):
+                                                        _t1493 = 1
                                                     else:
-                                                        if self.match_lookahead_terminal("DECIMAL", 0):
-                                                            _t1476 = 1
+                                                        if self.match_lookahead_terminal("FLOAT", 0):
+                                                            _t1494 = 1
                                                         else:
-                                                            _t1476 = -1
-                                                        _t1475 = _t1476
-                                                    _t1474 = _t1475
-                                                _t1473 = _t1474
-                                            _t1472 = _t1473
-                                        _t1471 = _t1472
-                                    _t1470 = _t1471
-                                _t1469 = _t1470
-                            _t1468 = _t1469
-                        _t1467 = _t1468
-                    _t1466 = _t1467
-                _t1465 = _t1466
-            _t1464 = _t1465
-        prediction793 = _t1464
-        if prediction793 == 1:
-            _t1478 = self.parse_value()
-            value795 = _t1478
-            _t1479 = logic_pb2.Term(constant=value795)
-            _t1477 = _t1479
+                                                            if self.match_lookahead_terminal("DECIMAL", 0):
+                                                                _t1495 = 1
+                                                            else:
+                                                                _t1495 = -1
+                                                            _t1494 = _t1495
+                                                        _t1493 = _t1494
+                                                    _t1492 = _t1493
+                                                _t1491 = _t1492
+                                            _t1490 = _t1491
+                                        _t1489 = _t1490
+                                    _t1488 = _t1489
+                                _t1487 = _t1488
+                            _t1486 = _t1487
+                        _t1485 = _t1486
+                    _t1484 = _t1485
+                _t1483 = _t1484
+            _t1482 = _t1483
+        prediction802 = _t1482
+        if prediction802 == 1:
+            _t1497 = self.parse_value()
+            value804 = _t1497
+            _t1498 = logic_pb2.Term(constant=value804)
+            _t1496 = _t1498
         else:
-            if prediction793 == 0:
-                _t1481 = self.parse_var()
-                var794 = _t1481
-                _t1482 = logic_pb2.Term(var=var794)
-                _t1480 = _t1482
+            if prediction802 == 0:
+                _t1500 = self.parse_var()
+                var803 = _t1500
+                _t1501 = logic_pb2.Term(var=var803)
+                _t1499 = _t1501
             else:
                 raise ParseError("Unexpected token in term" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
-            _t1477 = _t1480
-        result797 = _t1477
-        self.record_span(span_start796, "Term")
-        return result797
+            _t1496 = _t1499
+        result806 = _t1496
+        self.record_span(span_start805, "Term")
+        return result806
 
     def parse_var(self) -> logic_pb2.Var:
-        span_start799 = self.span_start()
-        symbol798 = self.consume_terminal("SYMBOL")
-        _t1483 = logic_pb2.Var(name=symbol798)
-        result800 = _t1483
-        self.record_span(span_start799, "Var")
-        return result800
+        span_start808 = self.span_start()
+        symbol807 = self.consume_terminal("SYMBOL")
+        _t1502 = logic_pb2.Var(name=symbol807)
+        result809 = _t1502
+        self.record_span(span_start808, "Var")
+        return result809
 
     def parse_value(self) -> logic_pb2.Value:
-        span_start813 = self.span_start()
+        span_start823 = self.span_start()
         if self.match_lookahead_literal("true", 0):
-            _t1484 = 11
+            _t1503 = 12
         else:
             if self.match_lookahead_literal("missing", 0):
-                _t1485 = 10
+                _t1504 = 11
             else:
                 if self.match_lookahead_literal("false", 0):
-                    _t1486 = 11
+                    _t1505 = 12
                 else:
                     if self.match_lookahead_literal("(", 0):
                         if self.match_lookahead_literal("datetime", 1):
-                            _t1488 = 1
+                            _t1507 = 1
                         else:
                             if self.match_lookahead_literal("date", 1):
-                                _t1489 = 0
+                                _t1508 = 0
                             else:
-                                _t1489 = -1
-                            _t1488 = _t1489
-                        _t1487 = _t1488
-                    else:
-                        if self.match_lookahead_terminal("UINT128", 0):
-                            _t1490 = 7
-                        else:
-                            if self.match_lookahead_terminal("STRING", 0):
-                                _t1491 = 2
-                            else:
-                                if self.match_lookahead_terminal("INT32", 0):
-                                    _t1492 = 3
-                                else:
-                                    if self.match_lookahead_terminal("INT128", 0):
-                                        _t1493 = 8
-                                    else:
-                                        if self.match_lookahead_terminal("INT", 0):
-                                            _t1494 = 4
-                                        else:
-                                            if self.match_lookahead_terminal("FLOAT32", 0):
-                                                _t1495 = 5
-                                            else:
-                                                if self.match_lookahead_terminal("FLOAT", 0):
-                                                    _t1496 = 6
-                                                else:
-                                                    if self.match_lookahead_terminal("DECIMAL", 0):
-                                                        _t1497 = 9
-                                                    else:
-                                                        _t1497 = -1
-                                                    _t1496 = _t1497
-                                                _t1495 = _t1496
-                                            _t1494 = _t1495
-                                        _t1493 = _t1494
-                                    _t1492 = _t1493
-                                _t1491 = _t1492
-                            _t1490 = _t1491
-                        _t1487 = _t1490
-                    _t1486 = _t1487
-                _t1485 = _t1486
-            _t1484 = _t1485
-        prediction801 = _t1484
-        if prediction801 == 11:
-            _t1499 = self.parse_boolean_value()
-            boolean_value812 = _t1499
-            _t1500 = logic_pb2.Value(boolean_value=boolean_value812)
-            _t1498 = _t1500
-        else:
-            if prediction801 == 10:
-                self.consume_literal("missing")
-                _t1502 = logic_pb2.MissingValue()
-                _t1503 = logic_pb2.Value(missing_value=_t1502)
-                _t1501 = _t1503
-            else:
-                if prediction801 == 9:
-                    formatted_decimal811 = self.consume_terminal("DECIMAL")
-                    _t1505 = logic_pb2.Value(decimal_value=formatted_decimal811)
-                    _t1504 = _t1505
-                else:
-                    if prediction801 == 8:
-                        formatted_int128810 = self.consume_terminal("INT128")
-                        _t1507 = logic_pb2.Value(int128_value=formatted_int128810)
+                                _t1508 = -1
+                            _t1507 = _t1508
                         _t1506 = _t1507
                     else:
-                        if prediction801 == 7:
-                            formatted_uint128809 = self.consume_terminal("UINT128")
-                            _t1509 = logic_pb2.Value(uint128_value=formatted_uint128809)
-                            _t1508 = _t1509
+                        if self.match_lookahead_terminal("UINT32", 0):
+                            _t1509 = 7
                         else:
-                            if prediction801 == 6:
-                                formatted_float808 = self.consume_terminal("FLOAT")
-                                _t1511 = logic_pb2.Value(float_value=formatted_float808)
-                                _t1510 = _t1511
+                            if self.match_lookahead_terminal("UINT128", 0):
+                                _t1510 = 8
                             else:
-                                if prediction801 == 5:
-                                    formatted_float32807 = self.consume_terminal("FLOAT32")
-                                    _t1513 = logic_pb2.Value(float32_value=formatted_float32807)
-                                    _t1512 = _t1513
+                                if self.match_lookahead_terminal("STRING", 0):
+                                    _t1511 = 2
                                 else:
-                                    if prediction801 == 4:
-                                        formatted_int806 = self.consume_terminal("INT")
-                                        _t1515 = logic_pb2.Value(int_value=formatted_int806)
-                                        _t1514 = _t1515
+                                    if self.match_lookahead_terminal("INT32", 0):
+                                        _t1512 = 3
                                     else:
-                                        if prediction801 == 3:
-                                            formatted_int32805 = self.consume_terminal("INT32")
-                                            _t1517 = logic_pb2.Value(int32_value=formatted_int32805)
-                                            _t1516 = _t1517
+                                        if self.match_lookahead_terminal("INT128", 0):
+                                            _t1513 = 9
                                         else:
-                                            if prediction801 == 2:
-                                                formatted_string804 = self.consume_terminal("STRING")
-                                                _t1519 = logic_pb2.Value(string_value=formatted_string804)
-                                                _t1518 = _t1519
+                                            if self.match_lookahead_terminal("INT", 0):
+                                                _t1514 = 4
                                             else:
-                                                if prediction801 == 1:
-                                                    _t1521 = self.parse_datetime()
-                                                    datetime803 = _t1521
-                                                    _t1522 = logic_pb2.Value(datetime_value=datetime803)
-                                                    _t1520 = _t1522
+                                                if self.match_lookahead_terminal("FLOAT32", 0):
+                                                    _t1515 = 5
                                                 else:
-                                                    if prediction801 == 0:
-                                                        _t1524 = self.parse_date()
-                                                        date802 = _t1524
-                                                        _t1525 = logic_pb2.Value(date_value=date802)
-                                                        _t1523 = _t1525
+                                                    if self.match_lookahead_terminal("FLOAT", 0):
+                                                        _t1516 = 6
                                                     else:
-                                                        raise ParseError("Unexpected token in value" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
-                                                    _t1520 = _t1523
-                                                _t1518 = _t1520
-                                            _t1516 = _t1518
-                                        _t1514 = _t1516
-                                    _t1512 = _t1514
-                                _t1510 = _t1512
-                            _t1508 = _t1510
-                        _t1506 = _t1508
-                    _t1504 = _t1506
-                _t1501 = _t1504
-            _t1498 = _t1501
-        result814 = _t1498
-        self.record_span(span_start813, "Value")
-        return result814
+                                                        if self.match_lookahead_terminal("DECIMAL", 0):
+                                                            _t1517 = 10
+                                                        else:
+                                                            _t1517 = -1
+                                                        _t1516 = _t1517
+                                                    _t1515 = _t1516
+                                                _t1514 = _t1515
+                                            _t1513 = _t1514
+                                        _t1512 = _t1513
+                                    _t1511 = _t1512
+                                _t1510 = _t1511
+                            _t1509 = _t1510
+                        _t1506 = _t1509
+                    _t1505 = _t1506
+                _t1504 = _t1505
+            _t1503 = _t1504
+        prediction810 = _t1503
+        if prediction810 == 12:
+            _t1519 = self.parse_boolean_value()
+            boolean_value822 = _t1519
+            _t1520 = logic_pb2.Value(boolean_value=boolean_value822)
+            _t1518 = _t1520
+        else:
+            if prediction810 == 11:
+                self.consume_literal("missing")
+                _t1522 = logic_pb2.MissingValue()
+                _t1523 = logic_pb2.Value(missing_value=_t1522)
+                _t1521 = _t1523
+            else:
+                if prediction810 == 10:
+                    formatted_decimal821 = self.consume_terminal("DECIMAL")
+                    _t1525 = logic_pb2.Value(decimal_value=formatted_decimal821)
+                    _t1524 = _t1525
+                else:
+                    if prediction810 == 9:
+                        formatted_int128820 = self.consume_terminal("INT128")
+                        _t1527 = logic_pb2.Value(int128_value=formatted_int128820)
+                        _t1526 = _t1527
+                    else:
+                        if prediction810 == 8:
+                            formatted_uint128819 = self.consume_terminal("UINT128")
+                            _t1529 = logic_pb2.Value(uint128_value=formatted_uint128819)
+                            _t1528 = _t1529
+                        else:
+                            if prediction810 == 7:
+                                formatted_uint32818 = self.consume_terminal("UINT32")
+                                _t1531 = logic_pb2.Value(uint32_value=formatted_uint32818)
+                                _t1530 = _t1531
+                            else:
+                                if prediction810 == 6:
+                                    formatted_float817 = self.consume_terminal("FLOAT")
+                                    _t1533 = logic_pb2.Value(float_value=formatted_float817)
+                                    _t1532 = _t1533
+                                else:
+                                    if prediction810 == 5:
+                                        formatted_float32816 = self.consume_terminal("FLOAT32")
+                                        _t1535 = logic_pb2.Value(float32_value=formatted_float32816)
+                                        _t1534 = _t1535
+                                    else:
+                                        if prediction810 == 4:
+                                            formatted_int815 = self.consume_terminal("INT")
+                                            _t1537 = logic_pb2.Value(int_value=formatted_int815)
+                                            _t1536 = _t1537
+                                        else:
+                                            if prediction810 == 3:
+                                                formatted_int32814 = self.consume_terminal("INT32")
+                                                _t1539 = logic_pb2.Value(int32_value=formatted_int32814)
+                                                _t1538 = _t1539
+                                            else:
+                                                if prediction810 == 2:
+                                                    formatted_string813 = self.consume_terminal("STRING")
+                                                    _t1541 = logic_pb2.Value(string_value=formatted_string813)
+                                                    _t1540 = _t1541
+                                                else:
+                                                    if prediction810 == 1:
+                                                        _t1543 = self.parse_datetime()
+                                                        datetime812 = _t1543
+                                                        _t1544 = logic_pb2.Value(datetime_value=datetime812)
+                                                        _t1542 = _t1544
+                                                    else:
+                                                        if prediction810 == 0:
+                                                            _t1546 = self.parse_date()
+                                                            date811 = _t1546
+                                                            _t1547 = logic_pb2.Value(date_value=date811)
+                                                            _t1545 = _t1547
+                                                        else:
+                                                            raise ParseError("Unexpected token in value" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
+                                                        _t1542 = _t1545
+                                                    _t1540 = _t1542
+                                                _t1538 = _t1540
+                                            _t1536 = _t1538
+                                        _t1534 = _t1536
+                                    _t1532 = _t1534
+                                _t1530 = _t1532
+                            _t1528 = _t1530
+                        _t1526 = _t1528
+                    _t1524 = _t1526
+                _t1521 = _t1524
+            _t1518 = _t1521
+        result824 = _t1518
+        self.record_span(span_start823, "Value")
+        return result824
 
     def parse_date(self) -> logic_pb2.DateValue:
-        span_start818 = self.span_start()
+        span_start828 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("date")
-        formatted_int815 = self.consume_terminal("INT")
-        formatted_int_3816 = self.consume_terminal("INT")
-        formatted_int_4817 = self.consume_terminal("INT")
+        formatted_int825 = self.consume_terminal("INT")
+        formatted_int_3826 = self.consume_terminal("INT")
+        formatted_int_4827 = self.consume_terminal("INT")
         self.consume_literal(")")
-        _t1526 = logic_pb2.DateValue(year=int(formatted_int815), month=int(formatted_int_3816), day=int(formatted_int_4817))
-        result819 = _t1526
-        self.record_span(span_start818, "DateValue")
-        return result819
+        _t1548 = logic_pb2.DateValue(year=int(formatted_int825), month=int(formatted_int_3826), day=int(formatted_int_4827))
+        result829 = _t1548
+        self.record_span(span_start828, "DateValue")
+        return result829
 
     def parse_datetime(self) -> logic_pb2.DateTimeValue:
-        span_start827 = self.span_start()
+        span_start837 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("datetime")
-        formatted_int820 = self.consume_terminal("INT")
-        formatted_int_3821 = self.consume_terminal("INT")
-        formatted_int_4822 = self.consume_terminal("INT")
-        formatted_int_5823 = self.consume_terminal("INT")
-        formatted_int_6824 = self.consume_terminal("INT")
-        formatted_int_7825 = self.consume_terminal("INT")
+        formatted_int830 = self.consume_terminal("INT")
+        formatted_int_3831 = self.consume_terminal("INT")
+        formatted_int_4832 = self.consume_terminal("INT")
+        formatted_int_5833 = self.consume_terminal("INT")
+        formatted_int_6834 = self.consume_terminal("INT")
+        formatted_int_7835 = self.consume_terminal("INT")
         if self.match_lookahead_terminal("INT", 0):
-            _t1527 = self.consume_terminal("INT")
+            _t1549 = self.consume_terminal("INT")
         else:
-            _t1527 = None
-        formatted_int_8826 = _t1527
+            _t1549 = None
+        formatted_int_8836 = _t1549
         self.consume_literal(")")
-        _t1528 = logic_pb2.DateTimeValue(year=int(formatted_int820), month=int(formatted_int_3821), day=int(formatted_int_4822), hour=int(formatted_int_5823), minute=int(formatted_int_6824), second=int(formatted_int_7825), microsecond=int((formatted_int_8826 if formatted_int_8826 is not None else 0)))
-        result828 = _t1528
-        self.record_span(span_start827, "DateTimeValue")
-        return result828
+        _t1550 = logic_pb2.DateTimeValue(year=int(formatted_int830), month=int(formatted_int_3831), day=int(formatted_int_4832), hour=int(formatted_int_5833), minute=int(formatted_int_6834), second=int(formatted_int_7835), microsecond=int((formatted_int_8836 if formatted_int_8836 is not None else 0)))
+        result838 = _t1550
+        self.record_span(span_start837, "DateTimeValue")
+        return result838
 
     def parse_conjunction(self) -> logic_pb2.Conjunction:
-        span_start833 = self.span_start()
+        span_start843 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("and")
-        xs829 = []
-        cond830 = self.match_lookahead_literal("(", 0)
-        while cond830:
-            _t1529 = self.parse_formula()
-            item831 = _t1529
-            xs829.append(item831)
-            cond830 = self.match_lookahead_literal("(", 0)
-        formulas832 = xs829
+        xs839 = []
+        cond840 = self.match_lookahead_literal("(", 0)
+        while cond840:
+            _t1551 = self.parse_formula()
+            item841 = _t1551
+            xs839.append(item841)
+            cond840 = self.match_lookahead_literal("(", 0)
+        formulas842 = xs839
         self.consume_literal(")")
-        _t1530 = logic_pb2.Conjunction(args=formulas832)
-        result834 = _t1530
-        self.record_span(span_start833, "Conjunction")
-        return result834
+        _t1552 = logic_pb2.Conjunction(args=formulas842)
+        result844 = _t1552
+        self.record_span(span_start843, "Conjunction")
+        return result844
 
     def parse_disjunction(self) -> logic_pb2.Disjunction:
-        span_start839 = self.span_start()
+        span_start849 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("or")
-        xs835 = []
-        cond836 = self.match_lookahead_literal("(", 0)
-        while cond836:
-            _t1531 = self.parse_formula()
-            item837 = _t1531
-            xs835.append(item837)
-            cond836 = self.match_lookahead_literal("(", 0)
-        formulas838 = xs835
+        xs845 = []
+        cond846 = self.match_lookahead_literal("(", 0)
+        while cond846:
+            _t1553 = self.parse_formula()
+            item847 = _t1553
+            xs845.append(item847)
+            cond846 = self.match_lookahead_literal("(", 0)
+        formulas848 = xs845
         self.consume_literal(")")
-        _t1532 = logic_pb2.Disjunction(args=formulas838)
-        result840 = _t1532
-        self.record_span(span_start839, "Disjunction")
-        return result840
+        _t1554 = logic_pb2.Disjunction(args=formulas848)
+        result850 = _t1554
+        self.record_span(span_start849, "Disjunction")
+        return result850
 
     def parse_not(self) -> logic_pb2.Not:
-        span_start842 = self.span_start()
+        span_start852 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("not")
-        _t1533 = self.parse_formula()
-        formula841 = _t1533
+        _t1555 = self.parse_formula()
+        formula851 = _t1555
         self.consume_literal(")")
-        _t1534 = logic_pb2.Not(arg=formula841)
-        result843 = _t1534
-        self.record_span(span_start842, "Not")
-        return result843
+        _t1556 = logic_pb2.Not(arg=formula851)
+        result853 = _t1556
+        self.record_span(span_start852, "Not")
+        return result853
 
     def parse_ffi(self) -> logic_pb2.FFI:
-        span_start847 = self.span_start()
+        span_start857 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("ffi")
-        _t1535 = self.parse_name()
-        name844 = _t1535
-        _t1536 = self.parse_ffi_args()
-        ffi_args845 = _t1536
-        _t1537 = self.parse_terms()
-        terms846 = _t1537
+        _t1557 = self.parse_name()
+        name854 = _t1557
+        _t1558 = self.parse_ffi_args()
+        ffi_args855 = _t1558
+        _t1559 = self.parse_terms()
+        terms856 = _t1559
         self.consume_literal(")")
-        _t1538 = logic_pb2.FFI(name=name844, args=ffi_args845, terms=terms846)
-        result848 = _t1538
-        self.record_span(span_start847, "FFI")
-        return result848
+        _t1560 = logic_pb2.FFI(name=name854, args=ffi_args855, terms=terms856)
+        result858 = _t1560
+        self.record_span(span_start857, "FFI")
+        return result858
 
     def parse_name(self) -> str:
         self.consume_literal(":")
-        symbol849 = self.consume_terminal("SYMBOL")
-        return symbol849
+        symbol859 = self.consume_terminal("SYMBOL")
+        return symbol859
 
     def parse_ffi_args(self) -> Sequence[logic_pb2.Abstraction]:
         self.consume_literal("(")
         self.consume_literal("args")
-        xs850 = []
-        cond851 = self.match_lookahead_literal("(", 0)
-        while cond851:
-            _t1539 = self.parse_abstraction()
-            item852 = _t1539
-            xs850.append(item852)
-            cond851 = self.match_lookahead_literal("(", 0)
-        abstractions853 = xs850
+        xs860 = []
+        cond861 = self.match_lookahead_literal("(", 0)
+        while cond861:
+            _t1561 = self.parse_abstraction()
+            item862 = _t1561
+            xs860.append(item862)
+            cond861 = self.match_lookahead_literal("(", 0)
+        abstractions863 = xs860
         self.consume_literal(")")
-        return abstractions853
+        return abstractions863
 
     def parse_atom(self) -> logic_pb2.Atom:
-        span_start859 = self.span_start()
+        span_start869 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("atom")
-        _t1540 = self.parse_relation_id()
-        relation_id854 = _t1540
-        xs855 = []
-        cond856 = ((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("false", 0)) or self.match_lookahead_literal("missing", 0)) or self.match_lookahead_literal("true", 0)) or self.match_lookahead_terminal("DECIMAL", 0)) or self.match_lookahead_terminal("FLOAT", 0)) or self.match_lookahead_terminal("FLOAT32", 0)) or self.match_lookahead_terminal("INT", 0)) or self.match_lookahead_terminal("INT128", 0)) or self.match_lookahead_terminal("INT32", 0)) or self.match_lookahead_terminal("STRING", 0)) or self.match_lookahead_terminal("UINT128", 0)) or self.match_lookahead_terminal("SYMBOL", 0))
-        while cond856:
-            _t1541 = self.parse_term()
-            item857 = _t1541
-            xs855.append(item857)
-            cond856 = ((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("false", 0)) or self.match_lookahead_literal("missing", 0)) or self.match_lookahead_literal("true", 0)) or self.match_lookahead_terminal("DECIMAL", 0)) or self.match_lookahead_terminal("FLOAT", 0)) or self.match_lookahead_terminal("FLOAT32", 0)) or self.match_lookahead_terminal("INT", 0)) or self.match_lookahead_terminal("INT128", 0)) or self.match_lookahead_terminal("INT32", 0)) or self.match_lookahead_terminal("STRING", 0)) or self.match_lookahead_terminal("UINT128", 0)) or self.match_lookahead_terminal("SYMBOL", 0))
-        terms858 = xs855
+        _t1562 = self.parse_relation_id()
+        relation_id864 = _t1562
+        xs865 = []
+        cond866 = (((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("false", 0)) or self.match_lookahead_literal("missing", 0)) or self.match_lookahead_literal("true", 0)) or self.match_lookahead_terminal("DECIMAL", 0)) or self.match_lookahead_terminal("FLOAT", 0)) or self.match_lookahead_terminal("FLOAT32", 0)) or self.match_lookahead_terminal("INT", 0)) or self.match_lookahead_terminal("INT128", 0)) or self.match_lookahead_terminal("INT32", 0)) or self.match_lookahead_terminal("STRING", 0)) or self.match_lookahead_terminal("UINT128", 0)) or self.match_lookahead_terminal("UINT32", 0)) or self.match_lookahead_terminal("SYMBOL", 0))
+        while cond866:
+            _t1563 = self.parse_term()
+            item867 = _t1563
+            xs865.append(item867)
+            cond866 = (((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("false", 0)) or self.match_lookahead_literal("missing", 0)) or self.match_lookahead_literal("true", 0)) or self.match_lookahead_terminal("DECIMAL", 0)) or self.match_lookahead_terminal("FLOAT", 0)) or self.match_lookahead_terminal("FLOAT32", 0)) or self.match_lookahead_terminal("INT", 0)) or self.match_lookahead_terminal("INT128", 0)) or self.match_lookahead_terminal("INT32", 0)) or self.match_lookahead_terminal("STRING", 0)) or self.match_lookahead_terminal("UINT128", 0)) or self.match_lookahead_terminal("UINT32", 0)) or self.match_lookahead_terminal("SYMBOL", 0))
+        terms868 = xs865
         self.consume_literal(")")
-        _t1542 = logic_pb2.Atom(name=relation_id854, terms=terms858)
-        result860 = _t1542
-        self.record_span(span_start859, "Atom")
-        return result860
+        _t1564 = logic_pb2.Atom(name=relation_id864, terms=terms868)
+        result870 = _t1564
+        self.record_span(span_start869, "Atom")
+        return result870
 
     def parse_pragma(self) -> logic_pb2.Pragma:
-        span_start866 = self.span_start()
+        span_start876 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("pragma")
-        _t1543 = self.parse_name()
-        name861 = _t1543
-        xs862 = []
-        cond863 = ((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("false", 0)) or self.match_lookahead_literal("missing", 0)) or self.match_lookahead_literal("true", 0)) or self.match_lookahead_terminal("DECIMAL", 0)) or self.match_lookahead_terminal("FLOAT", 0)) or self.match_lookahead_terminal("FLOAT32", 0)) or self.match_lookahead_terminal("INT", 0)) or self.match_lookahead_terminal("INT128", 0)) or self.match_lookahead_terminal("INT32", 0)) or self.match_lookahead_terminal("STRING", 0)) or self.match_lookahead_terminal("UINT128", 0)) or self.match_lookahead_terminal("SYMBOL", 0))
-        while cond863:
-            _t1544 = self.parse_term()
-            item864 = _t1544
-            xs862.append(item864)
-            cond863 = ((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("false", 0)) or self.match_lookahead_literal("missing", 0)) or self.match_lookahead_literal("true", 0)) or self.match_lookahead_terminal("DECIMAL", 0)) or self.match_lookahead_terminal("FLOAT", 0)) or self.match_lookahead_terminal("FLOAT32", 0)) or self.match_lookahead_terminal("INT", 0)) or self.match_lookahead_terminal("INT128", 0)) or self.match_lookahead_terminal("INT32", 0)) or self.match_lookahead_terminal("STRING", 0)) or self.match_lookahead_terminal("UINT128", 0)) or self.match_lookahead_terminal("SYMBOL", 0))
-        terms865 = xs862
+        _t1565 = self.parse_name()
+        name871 = _t1565
+        xs872 = []
+        cond873 = (((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("false", 0)) or self.match_lookahead_literal("missing", 0)) or self.match_lookahead_literal("true", 0)) or self.match_lookahead_terminal("DECIMAL", 0)) or self.match_lookahead_terminal("FLOAT", 0)) or self.match_lookahead_terminal("FLOAT32", 0)) or self.match_lookahead_terminal("INT", 0)) or self.match_lookahead_terminal("INT128", 0)) or self.match_lookahead_terminal("INT32", 0)) or self.match_lookahead_terminal("STRING", 0)) or self.match_lookahead_terminal("UINT128", 0)) or self.match_lookahead_terminal("UINT32", 0)) or self.match_lookahead_terminal("SYMBOL", 0))
+        while cond873:
+            _t1566 = self.parse_term()
+            item874 = _t1566
+            xs872.append(item874)
+            cond873 = (((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("false", 0)) or self.match_lookahead_literal("missing", 0)) or self.match_lookahead_literal("true", 0)) or self.match_lookahead_terminal("DECIMAL", 0)) or self.match_lookahead_terminal("FLOAT", 0)) or self.match_lookahead_terminal("FLOAT32", 0)) or self.match_lookahead_terminal("INT", 0)) or self.match_lookahead_terminal("INT128", 0)) or self.match_lookahead_terminal("INT32", 0)) or self.match_lookahead_terminal("STRING", 0)) or self.match_lookahead_terminal("UINT128", 0)) or self.match_lookahead_terminal("UINT32", 0)) or self.match_lookahead_terminal("SYMBOL", 0))
+        terms875 = xs872
         self.consume_literal(")")
-        _t1545 = logic_pb2.Pragma(name=name861, terms=terms865)
-        result867 = _t1545
-        self.record_span(span_start866, "Pragma")
-        return result867
+        _t1567 = logic_pb2.Pragma(name=name871, terms=terms875)
+        result877 = _t1567
+        self.record_span(span_start876, "Pragma")
+        return result877
 
     def parse_primitive(self) -> logic_pb2.Primitive:
-        span_start883 = self.span_start()
+        span_start893 = self.span_start()
         if self.match_lookahead_literal("(", 0):
             if self.match_lookahead_literal("primitive", 1):
-                _t1547 = 9
+                _t1569 = 9
             else:
                 if self.match_lookahead_literal(">=", 1):
-                    _t1548 = 4
+                    _t1570 = 4
                 else:
                     if self.match_lookahead_literal(">", 1):
-                        _t1549 = 3
+                        _t1571 = 3
                     else:
                         if self.match_lookahead_literal("=", 1):
-                            _t1550 = 0
+                            _t1572 = 0
                         else:
                             if self.match_lookahead_literal("<=", 1):
-                                _t1551 = 2
+                                _t1573 = 2
                             else:
                                 if self.match_lookahead_literal("<", 1):
-                                    _t1552 = 1
+                                    _t1574 = 1
                                 else:
                                     if self.match_lookahead_literal("/", 1):
-                                        _t1553 = 8
+                                        _t1575 = 8
                                     else:
                                         if self.match_lookahead_literal("-", 1):
-                                            _t1554 = 6
+                                            _t1576 = 6
                                         else:
                                             if self.match_lookahead_literal("+", 1):
-                                                _t1555 = 5
+                                                _t1577 = 5
                                             else:
                                                 if self.match_lookahead_literal("*", 1):
-                                                    _t1556 = 7
+                                                    _t1578 = 7
                                                 else:
-                                                    _t1556 = -1
-                                                _t1555 = _t1556
-                                            _t1554 = _t1555
-                                        _t1553 = _t1554
-                                    _t1552 = _t1553
-                                _t1551 = _t1552
-                            _t1550 = _t1551
-                        _t1549 = _t1550
-                    _t1548 = _t1549
-                _t1547 = _t1548
-            _t1546 = _t1547
+                                                    _t1578 = -1
+                                                _t1577 = _t1578
+                                            _t1576 = _t1577
+                                        _t1575 = _t1576
+                                    _t1574 = _t1575
+                                _t1573 = _t1574
+                            _t1572 = _t1573
+                        _t1571 = _t1572
+                    _t1570 = _t1571
+                _t1569 = _t1570
+            _t1568 = _t1569
         else:
-            _t1546 = -1
-        prediction868 = _t1546
-        if prediction868 == 9:
+            _t1568 = -1
+        prediction878 = _t1568
+        if prediction878 == 9:
             self.consume_literal("(")
             self.consume_literal("primitive")
-            _t1558 = self.parse_name()
-            name878 = _t1558
-            xs879 = []
-            cond880 = (((((((((((((self.match_lookahead_literal("#", 0) or self.match_lookahead_literal("(", 0)) or self.match_lookahead_literal("false", 0)) or self.match_lookahead_literal("missing", 0)) or self.match_lookahead_literal("true", 0)) or self.match_lookahead_terminal("DECIMAL", 0)) or self.match_lookahead_terminal("FLOAT", 0)) or self.match_lookahead_terminal("FLOAT32", 0)) or self.match_lookahead_terminal("INT", 0)) or self.match_lookahead_terminal("INT128", 0)) or self.match_lookahead_terminal("INT32", 0)) or self.match_lookahead_terminal("STRING", 0)) or self.match_lookahead_terminal("UINT128", 0)) or self.match_lookahead_terminal("SYMBOL", 0))
-            while cond880:
-                _t1559 = self.parse_rel_term()
-                item881 = _t1559
-                xs879.append(item881)
-                cond880 = (((((((((((((self.match_lookahead_literal("#", 0) or self.match_lookahead_literal("(", 0)) or self.match_lookahead_literal("false", 0)) or self.match_lookahead_literal("missing", 0)) or self.match_lookahead_literal("true", 0)) or self.match_lookahead_terminal("DECIMAL", 0)) or self.match_lookahead_terminal("FLOAT", 0)) or self.match_lookahead_terminal("FLOAT32", 0)) or self.match_lookahead_terminal("INT", 0)) or self.match_lookahead_terminal("INT128", 0)) or self.match_lookahead_terminal("INT32", 0)) or self.match_lookahead_terminal("STRING", 0)) or self.match_lookahead_terminal("UINT128", 0)) or self.match_lookahead_terminal("SYMBOL", 0))
-            rel_terms882 = xs879
+            _t1580 = self.parse_name()
+            name888 = _t1580
+            xs889 = []
+            cond890 = ((((((((((((((self.match_lookahead_literal("#", 0) or self.match_lookahead_literal("(", 0)) or self.match_lookahead_literal("false", 0)) or self.match_lookahead_literal("missing", 0)) or self.match_lookahead_literal("true", 0)) or self.match_lookahead_terminal("DECIMAL", 0)) or self.match_lookahead_terminal("FLOAT", 0)) or self.match_lookahead_terminal("FLOAT32", 0)) or self.match_lookahead_terminal("INT", 0)) or self.match_lookahead_terminal("INT128", 0)) or self.match_lookahead_terminal("INT32", 0)) or self.match_lookahead_terminal("STRING", 0)) or self.match_lookahead_terminal("UINT128", 0)) or self.match_lookahead_terminal("UINT32", 0)) or self.match_lookahead_terminal("SYMBOL", 0))
+            while cond890:
+                _t1581 = self.parse_rel_term()
+                item891 = _t1581
+                xs889.append(item891)
+                cond890 = ((((((((((((((self.match_lookahead_literal("#", 0) or self.match_lookahead_literal("(", 0)) or self.match_lookahead_literal("false", 0)) or self.match_lookahead_literal("missing", 0)) or self.match_lookahead_literal("true", 0)) or self.match_lookahead_terminal("DECIMAL", 0)) or self.match_lookahead_terminal("FLOAT", 0)) or self.match_lookahead_terminal("FLOAT32", 0)) or self.match_lookahead_terminal("INT", 0)) or self.match_lookahead_terminal("INT128", 0)) or self.match_lookahead_terminal("INT32", 0)) or self.match_lookahead_terminal("STRING", 0)) or self.match_lookahead_terminal("UINT128", 0)) or self.match_lookahead_terminal("UINT32", 0)) or self.match_lookahead_terminal("SYMBOL", 0))
+            rel_terms892 = xs889
             self.consume_literal(")")
-            _t1560 = logic_pb2.Primitive(name=name878, terms=rel_terms882)
-            _t1557 = _t1560
+            _t1582 = logic_pb2.Primitive(name=name888, terms=rel_terms892)
+            _t1579 = _t1582
         else:
-            if prediction868 == 8:
-                _t1562 = self.parse_divide()
-                divide877 = _t1562
-                _t1561 = divide877
+            if prediction878 == 8:
+                _t1584 = self.parse_divide()
+                divide887 = _t1584
+                _t1583 = divide887
             else:
-                if prediction868 == 7:
-                    _t1564 = self.parse_multiply()
-                    multiply876 = _t1564
-                    _t1563 = multiply876
+                if prediction878 == 7:
+                    _t1586 = self.parse_multiply()
+                    multiply886 = _t1586
+                    _t1585 = multiply886
                 else:
-                    if prediction868 == 6:
-                        _t1566 = self.parse_minus()
-                        minus875 = _t1566
-                        _t1565 = minus875
+                    if prediction878 == 6:
+                        _t1588 = self.parse_minus()
+                        minus885 = _t1588
+                        _t1587 = minus885
                     else:
-                        if prediction868 == 5:
-                            _t1568 = self.parse_add()
-                            add874 = _t1568
-                            _t1567 = add874
+                        if prediction878 == 5:
+                            _t1590 = self.parse_add()
+                            add884 = _t1590
+                            _t1589 = add884
                         else:
-                            if prediction868 == 4:
-                                _t1570 = self.parse_gt_eq()
-                                gt_eq873 = _t1570
-                                _t1569 = gt_eq873
+                            if prediction878 == 4:
+                                _t1592 = self.parse_gt_eq()
+                                gt_eq883 = _t1592
+                                _t1591 = gt_eq883
                             else:
-                                if prediction868 == 3:
-                                    _t1572 = self.parse_gt()
-                                    gt872 = _t1572
-                                    _t1571 = gt872
+                                if prediction878 == 3:
+                                    _t1594 = self.parse_gt()
+                                    gt882 = _t1594
+                                    _t1593 = gt882
                                 else:
-                                    if prediction868 == 2:
-                                        _t1574 = self.parse_lt_eq()
-                                        lt_eq871 = _t1574
-                                        _t1573 = lt_eq871
+                                    if prediction878 == 2:
+                                        _t1596 = self.parse_lt_eq()
+                                        lt_eq881 = _t1596
+                                        _t1595 = lt_eq881
                                     else:
-                                        if prediction868 == 1:
-                                            _t1576 = self.parse_lt()
-                                            lt870 = _t1576
-                                            _t1575 = lt870
+                                        if prediction878 == 1:
+                                            _t1598 = self.parse_lt()
+                                            lt880 = _t1598
+                                            _t1597 = lt880
                                         else:
-                                            if prediction868 == 0:
-                                                _t1578 = self.parse_eq()
-                                                eq869 = _t1578
-                                                _t1577 = eq869
+                                            if prediction878 == 0:
+                                                _t1600 = self.parse_eq()
+                                                eq879 = _t1600
+                                                _t1599 = eq879
                                             else:
                                                 raise ParseError("Unexpected token in primitive" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
-                                            _t1575 = _t1577
-                                        _t1573 = _t1575
-                                    _t1571 = _t1573
-                                _t1569 = _t1571
-                            _t1567 = _t1569
-                        _t1565 = _t1567
-                    _t1563 = _t1565
-                _t1561 = _t1563
-            _t1557 = _t1561
-        result884 = _t1557
-        self.record_span(span_start883, "Primitive")
-        return result884
+                                            _t1597 = _t1599
+                                        _t1595 = _t1597
+                                    _t1593 = _t1595
+                                _t1591 = _t1593
+                            _t1589 = _t1591
+                        _t1587 = _t1589
+                    _t1585 = _t1587
+                _t1583 = _t1585
+            _t1579 = _t1583
+        result894 = _t1579
+        self.record_span(span_start893, "Primitive")
+        return result894
 
     def parse_eq(self) -> logic_pb2.Primitive:
-        span_start887 = self.span_start()
+        span_start897 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("=")
-        _t1579 = self.parse_term()
-        term885 = _t1579
-        _t1580 = self.parse_term()
-        term_3886 = _t1580
+        _t1601 = self.parse_term()
+        term895 = _t1601
+        _t1602 = self.parse_term()
+        term_3896 = _t1602
         self.consume_literal(")")
-        _t1581 = logic_pb2.RelTerm(term=term885)
-        _t1582 = logic_pb2.RelTerm(term=term_3886)
-        _t1583 = logic_pb2.Primitive(name="rel_primitive_eq", terms=[_t1581, _t1582])
-        result888 = _t1583
-        self.record_span(span_start887, "Primitive")
-        return result888
+        _t1603 = logic_pb2.RelTerm(term=term895)
+        _t1604 = logic_pb2.RelTerm(term=term_3896)
+        _t1605 = logic_pb2.Primitive(name="rel_primitive_eq", terms=[_t1603, _t1604])
+        result898 = _t1605
+        self.record_span(span_start897, "Primitive")
+        return result898
 
     def parse_lt(self) -> logic_pb2.Primitive:
-        span_start891 = self.span_start()
+        span_start901 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("<")
-        _t1584 = self.parse_term()
-        term889 = _t1584
-        _t1585 = self.parse_term()
-        term_3890 = _t1585
+        _t1606 = self.parse_term()
+        term899 = _t1606
+        _t1607 = self.parse_term()
+        term_3900 = _t1607
         self.consume_literal(")")
-        _t1586 = logic_pb2.RelTerm(term=term889)
-        _t1587 = logic_pb2.RelTerm(term=term_3890)
-        _t1588 = logic_pb2.Primitive(name="rel_primitive_lt_monotype", terms=[_t1586, _t1587])
-        result892 = _t1588
-        self.record_span(span_start891, "Primitive")
-        return result892
+        _t1608 = logic_pb2.RelTerm(term=term899)
+        _t1609 = logic_pb2.RelTerm(term=term_3900)
+        _t1610 = logic_pb2.Primitive(name="rel_primitive_lt_monotype", terms=[_t1608, _t1609])
+        result902 = _t1610
+        self.record_span(span_start901, "Primitive")
+        return result902
 
     def parse_lt_eq(self) -> logic_pb2.Primitive:
-        span_start895 = self.span_start()
+        span_start905 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("<=")
-        _t1589 = self.parse_term()
-        term893 = _t1589
-        _t1590 = self.parse_term()
-        term_3894 = _t1590
+        _t1611 = self.parse_term()
+        term903 = _t1611
+        _t1612 = self.parse_term()
+        term_3904 = _t1612
         self.consume_literal(")")
-        _t1591 = logic_pb2.RelTerm(term=term893)
-        _t1592 = logic_pb2.RelTerm(term=term_3894)
-        _t1593 = logic_pb2.Primitive(name="rel_primitive_lt_eq_monotype", terms=[_t1591, _t1592])
-        result896 = _t1593
-        self.record_span(span_start895, "Primitive")
-        return result896
+        _t1613 = logic_pb2.RelTerm(term=term903)
+        _t1614 = logic_pb2.RelTerm(term=term_3904)
+        _t1615 = logic_pb2.Primitive(name="rel_primitive_lt_eq_monotype", terms=[_t1613, _t1614])
+        result906 = _t1615
+        self.record_span(span_start905, "Primitive")
+        return result906
 
     def parse_gt(self) -> logic_pb2.Primitive:
-        span_start899 = self.span_start()
+        span_start909 = self.span_start()
         self.consume_literal("(")
         self.consume_literal(">")
-        _t1594 = self.parse_term()
-        term897 = _t1594
-        _t1595 = self.parse_term()
-        term_3898 = _t1595
+        _t1616 = self.parse_term()
+        term907 = _t1616
+        _t1617 = self.parse_term()
+        term_3908 = _t1617
         self.consume_literal(")")
-        _t1596 = logic_pb2.RelTerm(term=term897)
-        _t1597 = logic_pb2.RelTerm(term=term_3898)
-        _t1598 = logic_pb2.Primitive(name="rel_primitive_gt_monotype", terms=[_t1596, _t1597])
-        result900 = _t1598
-        self.record_span(span_start899, "Primitive")
-        return result900
+        _t1618 = logic_pb2.RelTerm(term=term907)
+        _t1619 = logic_pb2.RelTerm(term=term_3908)
+        _t1620 = logic_pb2.Primitive(name="rel_primitive_gt_monotype", terms=[_t1618, _t1619])
+        result910 = _t1620
+        self.record_span(span_start909, "Primitive")
+        return result910
 
     def parse_gt_eq(self) -> logic_pb2.Primitive:
-        span_start903 = self.span_start()
-        self.consume_literal("(")
-        self.consume_literal(">=")
-        _t1599 = self.parse_term()
-        term901 = _t1599
-        _t1600 = self.parse_term()
-        term_3902 = _t1600
-        self.consume_literal(")")
-        _t1601 = logic_pb2.RelTerm(term=term901)
-        _t1602 = logic_pb2.RelTerm(term=term_3902)
-        _t1603 = logic_pb2.Primitive(name="rel_primitive_gt_eq_monotype", terms=[_t1601, _t1602])
-        result904 = _t1603
-        self.record_span(span_start903, "Primitive")
-        return result904
-
-    def parse_add(self) -> logic_pb2.Primitive:
-        span_start908 = self.span_start()
-        self.consume_literal("(")
-        self.consume_literal("+")
-        _t1604 = self.parse_term()
-        term905 = _t1604
-        _t1605 = self.parse_term()
-        term_3906 = _t1605
-        _t1606 = self.parse_term()
-        term_4907 = _t1606
-        self.consume_literal(")")
-        _t1607 = logic_pb2.RelTerm(term=term905)
-        _t1608 = logic_pb2.RelTerm(term=term_3906)
-        _t1609 = logic_pb2.RelTerm(term=term_4907)
-        _t1610 = logic_pb2.Primitive(name="rel_primitive_add_monotype", terms=[_t1607, _t1608, _t1609])
-        result909 = _t1610
-        self.record_span(span_start908, "Primitive")
-        return result909
-
-    def parse_minus(self) -> logic_pb2.Primitive:
         span_start913 = self.span_start()
         self.consume_literal("(")
-        self.consume_literal("-")
-        _t1611 = self.parse_term()
-        term910 = _t1611
-        _t1612 = self.parse_term()
-        term_3911 = _t1612
-        _t1613 = self.parse_term()
-        term_4912 = _t1613
+        self.consume_literal(">=")
+        _t1621 = self.parse_term()
+        term911 = _t1621
+        _t1622 = self.parse_term()
+        term_3912 = _t1622
         self.consume_literal(")")
-        _t1614 = logic_pb2.RelTerm(term=term910)
-        _t1615 = logic_pb2.RelTerm(term=term_3911)
-        _t1616 = logic_pb2.RelTerm(term=term_4912)
-        _t1617 = logic_pb2.Primitive(name="rel_primitive_subtract_monotype", terms=[_t1614, _t1615, _t1616])
-        result914 = _t1617
+        _t1623 = logic_pb2.RelTerm(term=term911)
+        _t1624 = logic_pb2.RelTerm(term=term_3912)
+        _t1625 = logic_pb2.Primitive(name="rel_primitive_gt_eq_monotype", terms=[_t1623, _t1624])
+        result914 = _t1625
         self.record_span(span_start913, "Primitive")
         return result914
 
-    def parse_multiply(self) -> logic_pb2.Primitive:
+    def parse_add(self) -> logic_pb2.Primitive:
         span_start918 = self.span_start()
         self.consume_literal("(")
-        self.consume_literal("*")
-        _t1618 = self.parse_term()
-        term915 = _t1618
-        _t1619 = self.parse_term()
-        term_3916 = _t1619
-        _t1620 = self.parse_term()
-        term_4917 = _t1620
+        self.consume_literal("+")
+        _t1626 = self.parse_term()
+        term915 = _t1626
+        _t1627 = self.parse_term()
+        term_3916 = _t1627
+        _t1628 = self.parse_term()
+        term_4917 = _t1628
         self.consume_literal(")")
-        _t1621 = logic_pb2.RelTerm(term=term915)
-        _t1622 = logic_pb2.RelTerm(term=term_3916)
-        _t1623 = logic_pb2.RelTerm(term=term_4917)
-        _t1624 = logic_pb2.Primitive(name="rel_primitive_multiply_monotype", terms=[_t1621, _t1622, _t1623])
-        result919 = _t1624
+        _t1629 = logic_pb2.RelTerm(term=term915)
+        _t1630 = logic_pb2.RelTerm(term=term_3916)
+        _t1631 = logic_pb2.RelTerm(term=term_4917)
+        _t1632 = logic_pb2.Primitive(name="rel_primitive_add_monotype", terms=[_t1629, _t1630, _t1631])
+        result919 = _t1632
         self.record_span(span_start918, "Primitive")
         return result919
 
-    def parse_divide(self) -> logic_pb2.Primitive:
+    def parse_minus(self) -> logic_pb2.Primitive:
         span_start923 = self.span_start()
         self.consume_literal("(")
-        self.consume_literal("/")
-        _t1625 = self.parse_term()
-        term920 = _t1625
-        _t1626 = self.parse_term()
-        term_3921 = _t1626
-        _t1627 = self.parse_term()
-        term_4922 = _t1627
+        self.consume_literal("-")
+        _t1633 = self.parse_term()
+        term920 = _t1633
+        _t1634 = self.parse_term()
+        term_3921 = _t1634
+        _t1635 = self.parse_term()
+        term_4922 = _t1635
         self.consume_literal(")")
-        _t1628 = logic_pb2.RelTerm(term=term920)
-        _t1629 = logic_pb2.RelTerm(term=term_3921)
-        _t1630 = logic_pb2.RelTerm(term=term_4922)
-        _t1631 = logic_pb2.Primitive(name="rel_primitive_divide_monotype", terms=[_t1628, _t1629, _t1630])
-        result924 = _t1631
+        _t1636 = logic_pb2.RelTerm(term=term920)
+        _t1637 = logic_pb2.RelTerm(term=term_3921)
+        _t1638 = logic_pb2.RelTerm(term=term_4922)
+        _t1639 = logic_pb2.Primitive(name="rel_primitive_subtract_monotype", terms=[_t1636, _t1637, _t1638])
+        result924 = _t1639
         self.record_span(span_start923, "Primitive")
         return result924
 
-    def parse_rel_term(self) -> logic_pb2.RelTerm:
+    def parse_multiply(self) -> logic_pb2.Primitive:
         span_start928 = self.span_start()
-        if self.match_lookahead_literal("true", 0):
-            _t1632 = 1
-        else:
-            if self.match_lookahead_literal("missing", 0):
-                _t1633 = 1
-            else:
-                if self.match_lookahead_literal("false", 0):
-                    _t1634 = 1
-                else:
-                    if self.match_lookahead_literal("(", 0):
-                        _t1635 = 1
-                    else:
-                        if self.match_lookahead_literal("#", 0):
-                            _t1636 = 0
-                        else:
-                            if self.match_lookahead_terminal("SYMBOL", 0):
-                                _t1637 = 1
-                            else:
-                                if self.match_lookahead_terminal("UINT128", 0):
-                                    _t1638 = 1
-                                else:
-                                    if self.match_lookahead_terminal("STRING", 0):
-                                        _t1639 = 1
-                                    else:
-                                        if self.match_lookahead_terminal("INT32", 0):
-                                            _t1640 = 1
-                                        else:
-                                            if self.match_lookahead_terminal("INT128", 0):
-                                                _t1641 = 1
-                                            else:
-                                                if self.match_lookahead_terminal("INT", 0):
-                                                    _t1642 = 1
-                                                else:
-                                                    if self.match_lookahead_terminal("FLOAT32", 0):
-                                                        _t1643 = 1
-                                                    else:
-                                                        if self.match_lookahead_terminal("FLOAT", 0):
-                                                            _t1644 = 1
-                                                        else:
-                                                            if self.match_lookahead_terminal("DECIMAL", 0):
-                                                                _t1645 = 1
-                                                            else:
-                                                                _t1645 = -1
-                                                            _t1644 = _t1645
-                                                        _t1643 = _t1644
-                                                    _t1642 = _t1643
-                                                _t1641 = _t1642
-                                            _t1640 = _t1641
-                                        _t1639 = _t1640
-                                    _t1638 = _t1639
-                                _t1637 = _t1638
-                            _t1636 = _t1637
-                        _t1635 = _t1636
-                    _t1634 = _t1635
-                _t1633 = _t1634
-            _t1632 = _t1633
-        prediction925 = _t1632
-        if prediction925 == 1:
-            _t1647 = self.parse_term()
-            term927 = _t1647
-            _t1648 = logic_pb2.RelTerm(term=term927)
-            _t1646 = _t1648
-        else:
-            if prediction925 == 0:
-                _t1650 = self.parse_specialized_value()
-                specialized_value926 = _t1650
-                _t1651 = logic_pb2.RelTerm(specialized_value=specialized_value926)
-                _t1649 = _t1651
-            else:
-                raise ParseError("Unexpected token in rel_term" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
-            _t1646 = _t1649
+        self.consume_literal("(")
+        self.consume_literal("*")
+        _t1640 = self.parse_term()
+        term925 = _t1640
+        _t1641 = self.parse_term()
+        term_3926 = _t1641
+        _t1642 = self.parse_term()
+        term_4927 = _t1642
+        self.consume_literal(")")
+        _t1643 = logic_pb2.RelTerm(term=term925)
+        _t1644 = logic_pb2.RelTerm(term=term_3926)
+        _t1645 = logic_pb2.RelTerm(term=term_4927)
+        _t1646 = logic_pb2.Primitive(name="rel_primitive_multiply_monotype", terms=[_t1643, _t1644, _t1645])
         result929 = _t1646
-        self.record_span(span_start928, "RelTerm")
+        self.record_span(span_start928, "Primitive")
         return result929
 
-    def parse_specialized_value(self) -> logic_pb2.Value:
-        span_start931 = self.span_start()
-        self.consume_literal("#")
-        _t1652 = self.parse_raw_value()
-        raw_value930 = _t1652
-        result932 = raw_value930
-        self.record_span(span_start931, "Value")
-        return result932
-
-    def parse_rel_atom(self) -> logic_pb2.RelAtom:
-        span_start938 = self.span_start()
+    def parse_divide(self) -> logic_pb2.Primitive:
+        span_start933 = self.span_start()
         self.consume_literal("(")
-        self.consume_literal("relatom")
-        _t1653 = self.parse_name()
-        name933 = _t1653
-        xs934 = []
-        cond935 = (((((((((((((self.match_lookahead_literal("#", 0) or self.match_lookahead_literal("(", 0)) or self.match_lookahead_literal("false", 0)) or self.match_lookahead_literal("missing", 0)) or self.match_lookahead_literal("true", 0)) or self.match_lookahead_terminal("DECIMAL", 0)) or self.match_lookahead_terminal("FLOAT", 0)) or self.match_lookahead_terminal("FLOAT32", 0)) or self.match_lookahead_terminal("INT", 0)) or self.match_lookahead_terminal("INT128", 0)) or self.match_lookahead_terminal("INT32", 0)) or self.match_lookahead_terminal("STRING", 0)) or self.match_lookahead_terminal("UINT128", 0)) or self.match_lookahead_terminal("SYMBOL", 0))
-        while cond935:
-            _t1654 = self.parse_rel_term()
-            item936 = _t1654
-            xs934.append(item936)
-            cond935 = (((((((((((((self.match_lookahead_literal("#", 0) or self.match_lookahead_literal("(", 0)) or self.match_lookahead_literal("false", 0)) or self.match_lookahead_literal("missing", 0)) or self.match_lookahead_literal("true", 0)) or self.match_lookahead_terminal("DECIMAL", 0)) or self.match_lookahead_terminal("FLOAT", 0)) or self.match_lookahead_terminal("FLOAT32", 0)) or self.match_lookahead_terminal("INT", 0)) or self.match_lookahead_terminal("INT128", 0)) or self.match_lookahead_terminal("INT32", 0)) or self.match_lookahead_terminal("STRING", 0)) or self.match_lookahead_terminal("UINT128", 0)) or self.match_lookahead_terminal("SYMBOL", 0))
-        rel_terms937 = xs934
+        self.consume_literal("/")
+        _t1647 = self.parse_term()
+        term930 = _t1647
+        _t1648 = self.parse_term()
+        term_3931 = _t1648
+        _t1649 = self.parse_term()
+        term_4932 = _t1649
         self.consume_literal(")")
-        _t1655 = logic_pb2.RelAtom(name=name933, terms=rel_terms937)
-        result939 = _t1655
-        self.record_span(span_start938, "RelAtom")
+        _t1650 = logic_pb2.RelTerm(term=term930)
+        _t1651 = logic_pb2.RelTerm(term=term_3931)
+        _t1652 = logic_pb2.RelTerm(term=term_4932)
+        _t1653 = logic_pb2.Primitive(name="rel_primitive_divide_monotype", terms=[_t1650, _t1651, _t1652])
+        result934 = _t1653
+        self.record_span(span_start933, "Primitive")
+        return result934
+
+    def parse_rel_term(self) -> logic_pb2.RelTerm:
+        span_start938 = self.span_start()
+        if self.match_lookahead_literal("true", 0):
+            _t1654 = 1
+        else:
+            if self.match_lookahead_literal("missing", 0):
+                _t1655 = 1
+            else:
+                if self.match_lookahead_literal("false", 0):
+                    _t1656 = 1
+                else:
+                    if self.match_lookahead_literal("(", 0):
+                        _t1657 = 1
+                    else:
+                        if self.match_lookahead_literal("#", 0):
+                            _t1658 = 0
+                        else:
+                            if self.match_lookahead_terminal("SYMBOL", 0):
+                                _t1659 = 1
+                            else:
+                                if self.match_lookahead_terminal("UINT32", 0):
+                                    _t1660 = 1
+                                else:
+                                    if self.match_lookahead_terminal("UINT128", 0):
+                                        _t1661 = 1
+                                    else:
+                                        if self.match_lookahead_terminal("STRING", 0):
+                                            _t1662 = 1
+                                        else:
+                                            if self.match_lookahead_terminal("INT32", 0):
+                                                _t1663 = 1
+                                            else:
+                                                if self.match_lookahead_terminal("INT128", 0):
+                                                    _t1664 = 1
+                                                else:
+                                                    if self.match_lookahead_terminal("INT", 0):
+                                                        _t1665 = 1
+                                                    else:
+                                                        if self.match_lookahead_terminal("FLOAT32", 0):
+                                                            _t1666 = 1
+                                                        else:
+                                                            if self.match_lookahead_terminal("FLOAT", 0):
+                                                                _t1667 = 1
+                                                            else:
+                                                                if self.match_lookahead_terminal("DECIMAL", 0):
+                                                                    _t1668 = 1
+                                                                else:
+                                                                    _t1668 = -1
+                                                                _t1667 = _t1668
+                                                            _t1666 = _t1667
+                                                        _t1665 = _t1666
+                                                    _t1664 = _t1665
+                                                _t1663 = _t1664
+                                            _t1662 = _t1663
+                                        _t1661 = _t1662
+                                    _t1660 = _t1661
+                                _t1659 = _t1660
+                            _t1658 = _t1659
+                        _t1657 = _t1658
+                    _t1656 = _t1657
+                _t1655 = _t1656
+            _t1654 = _t1655
+        prediction935 = _t1654
+        if prediction935 == 1:
+            _t1670 = self.parse_term()
+            term937 = _t1670
+            _t1671 = logic_pb2.RelTerm(term=term937)
+            _t1669 = _t1671
+        else:
+            if prediction935 == 0:
+                _t1673 = self.parse_specialized_value()
+                specialized_value936 = _t1673
+                _t1674 = logic_pb2.RelTerm(specialized_value=specialized_value936)
+                _t1672 = _t1674
+            else:
+                raise ParseError("Unexpected token in rel_term" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
+            _t1669 = _t1672
+        result939 = _t1669
+        self.record_span(span_start938, "RelTerm")
         return result939
 
+    def parse_specialized_value(self) -> logic_pb2.Value:
+        span_start941 = self.span_start()
+        self.consume_literal("#")
+        _t1675 = self.parse_raw_value()
+        raw_value940 = _t1675
+        result942 = raw_value940
+        self.record_span(span_start941, "Value")
+        return result942
+
+    def parse_rel_atom(self) -> logic_pb2.RelAtom:
+        span_start948 = self.span_start()
+        self.consume_literal("(")
+        self.consume_literal("relatom")
+        _t1676 = self.parse_name()
+        name943 = _t1676
+        xs944 = []
+        cond945 = ((((((((((((((self.match_lookahead_literal("#", 0) or self.match_lookahead_literal("(", 0)) or self.match_lookahead_literal("false", 0)) or self.match_lookahead_literal("missing", 0)) or self.match_lookahead_literal("true", 0)) or self.match_lookahead_terminal("DECIMAL", 0)) or self.match_lookahead_terminal("FLOAT", 0)) or self.match_lookahead_terminal("FLOAT32", 0)) or self.match_lookahead_terminal("INT", 0)) or self.match_lookahead_terminal("INT128", 0)) or self.match_lookahead_terminal("INT32", 0)) or self.match_lookahead_terminal("STRING", 0)) or self.match_lookahead_terminal("UINT128", 0)) or self.match_lookahead_terminal("UINT32", 0)) or self.match_lookahead_terminal("SYMBOL", 0))
+        while cond945:
+            _t1677 = self.parse_rel_term()
+            item946 = _t1677
+            xs944.append(item946)
+            cond945 = ((((((((((((((self.match_lookahead_literal("#", 0) or self.match_lookahead_literal("(", 0)) or self.match_lookahead_literal("false", 0)) or self.match_lookahead_literal("missing", 0)) or self.match_lookahead_literal("true", 0)) or self.match_lookahead_terminal("DECIMAL", 0)) or self.match_lookahead_terminal("FLOAT", 0)) or self.match_lookahead_terminal("FLOAT32", 0)) or self.match_lookahead_terminal("INT", 0)) or self.match_lookahead_terminal("INT128", 0)) or self.match_lookahead_terminal("INT32", 0)) or self.match_lookahead_terminal("STRING", 0)) or self.match_lookahead_terminal("UINT128", 0)) or self.match_lookahead_terminal("UINT32", 0)) or self.match_lookahead_terminal("SYMBOL", 0))
+        rel_terms947 = xs944
+        self.consume_literal(")")
+        _t1678 = logic_pb2.RelAtom(name=name943, terms=rel_terms947)
+        result949 = _t1678
+        self.record_span(span_start948, "RelAtom")
+        return result949
+
     def parse_cast(self) -> logic_pb2.Cast:
-        span_start942 = self.span_start()
+        span_start952 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("cast")
-        _t1656 = self.parse_term()
-        term940 = _t1656
-        _t1657 = self.parse_term()
-        term_3941 = _t1657
+        _t1679 = self.parse_term()
+        term950 = _t1679
+        _t1680 = self.parse_term()
+        term_3951 = _t1680
         self.consume_literal(")")
-        _t1658 = logic_pb2.Cast(input=term940, result=term_3941)
-        result943 = _t1658
-        self.record_span(span_start942, "Cast")
-        return result943
+        _t1681 = logic_pb2.Cast(input=term950, result=term_3951)
+        result953 = _t1681
+        self.record_span(span_start952, "Cast")
+        return result953
 
     def parse_attrs(self) -> Sequence[logic_pb2.Attribute]:
         self.consume_literal("(")
         self.consume_literal("attrs")
-        xs944 = []
-        cond945 = self.match_lookahead_literal("(", 0)
-        while cond945:
-            _t1659 = self.parse_attribute()
-            item946 = _t1659
-            xs944.append(item946)
-            cond945 = self.match_lookahead_literal("(", 0)
-        attributes947 = xs944
+        xs954 = []
+        cond955 = self.match_lookahead_literal("(", 0)
+        while cond955:
+            _t1682 = self.parse_attribute()
+            item956 = _t1682
+            xs954.append(item956)
+            cond955 = self.match_lookahead_literal("(", 0)
+        attributes957 = xs954
         self.consume_literal(")")
-        return attributes947
+        return attributes957
 
     def parse_attribute(self) -> logic_pb2.Attribute:
-        span_start953 = self.span_start()
+        span_start963 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("attribute")
-        _t1660 = self.parse_name()
-        name948 = _t1660
-        xs949 = []
-        cond950 = (((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("false", 0)) or self.match_lookahead_literal("missing", 0)) or self.match_lookahead_literal("true", 0)) or self.match_lookahead_terminal("DECIMAL", 0)) or self.match_lookahead_terminal("FLOAT", 0)) or self.match_lookahead_terminal("FLOAT32", 0)) or self.match_lookahead_terminal("INT", 0)) or self.match_lookahead_terminal("INT128", 0)) or self.match_lookahead_terminal("INT32", 0)) or self.match_lookahead_terminal("STRING", 0)) or self.match_lookahead_terminal("UINT128", 0))
-        while cond950:
-            _t1661 = self.parse_raw_value()
-            item951 = _t1661
-            xs949.append(item951)
-            cond950 = (((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("false", 0)) or self.match_lookahead_literal("missing", 0)) or self.match_lookahead_literal("true", 0)) or self.match_lookahead_terminal("DECIMAL", 0)) or self.match_lookahead_terminal("FLOAT", 0)) or self.match_lookahead_terminal("FLOAT32", 0)) or self.match_lookahead_terminal("INT", 0)) or self.match_lookahead_terminal("INT128", 0)) or self.match_lookahead_terminal("INT32", 0)) or self.match_lookahead_terminal("STRING", 0)) or self.match_lookahead_terminal("UINT128", 0))
-        raw_values952 = xs949
+        _t1683 = self.parse_name()
+        name958 = _t1683
+        xs959 = []
+        cond960 = ((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("false", 0)) or self.match_lookahead_literal("missing", 0)) or self.match_lookahead_literal("true", 0)) or self.match_lookahead_terminal("DECIMAL", 0)) or self.match_lookahead_terminal("FLOAT", 0)) or self.match_lookahead_terminal("FLOAT32", 0)) or self.match_lookahead_terminal("INT", 0)) or self.match_lookahead_terminal("INT128", 0)) or self.match_lookahead_terminal("INT32", 0)) or self.match_lookahead_terminal("STRING", 0)) or self.match_lookahead_terminal("UINT128", 0)) or self.match_lookahead_terminal("UINT32", 0))
+        while cond960:
+            _t1684 = self.parse_raw_value()
+            item961 = _t1684
+            xs959.append(item961)
+            cond960 = ((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("false", 0)) or self.match_lookahead_literal("missing", 0)) or self.match_lookahead_literal("true", 0)) or self.match_lookahead_terminal("DECIMAL", 0)) or self.match_lookahead_terminal("FLOAT", 0)) or self.match_lookahead_terminal("FLOAT32", 0)) or self.match_lookahead_terminal("INT", 0)) or self.match_lookahead_terminal("INT128", 0)) or self.match_lookahead_terminal("INT32", 0)) or self.match_lookahead_terminal("STRING", 0)) or self.match_lookahead_terminal("UINT128", 0)) or self.match_lookahead_terminal("UINT32", 0))
+        raw_values962 = xs959
         self.consume_literal(")")
-        _t1662 = logic_pb2.Attribute(name=name948, args=raw_values952)
-        result954 = _t1662
-        self.record_span(span_start953, "Attribute")
-        return result954
+        _t1685 = logic_pb2.Attribute(name=name958, args=raw_values962)
+        result964 = _t1685
+        self.record_span(span_start963, "Attribute")
+        return result964
 
     def parse_algorithm(self) -> logic_pb2.Algorithm:
-        span_start960 = self.span_start()
+        span_start970 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("algorithm")
-        xs955 = []
-        cond956 = (self.match_lookahead_literal(":", 0) or self.match_lookahead_terminal("UINT128", 0))
-        while cond956:
-            _t1663 = self.parse_relation_id()
-            item957 = _t1663
-            xs955.append(item957)
-            cond956 = (self.match_lookahead_literal(":", 0) or self.match_lookahead_terminal("UINT128", 0))
-        relation_ids958 = xs955
-        _t1664 = self.parse_script()
-        script959 = _t1664
+        xs965 = []
+        cond966 = (self.match_lookahead_literal(":", 0) or self.match_lookahead_terminal("UINT128", 0))
+        while cond966:
+            _t1686 = self.parse_relation_id()
+            item967 = _t1686
+            xs965.append(item967)
+            cond966 = (self.match_lookahead_literal(":", 0) or self.match_lookahead_terminal("UINT128", 0))
+        relation_ids968 = xs965
+        _t1687 = self.parse_script()
+        script969 = _t1687
         self.consume_literal(")")
-        _t1665 = logic_pb2.Algorithm(body=script959)
-        getattr(_t1665, 'global').extend(relation_ids958)
-        result961 = _t1665
-        self.record_span(span_start960, "Algorithm")
-        return result961
+        _t1688 = logic_pb2.Algorithm(body=script969)
+        getattr(_t1688, 'global').extend(relation_ids968)
+        result971 = _t1688
+        self.record_span(span_start970, "Algorithm")
+        return result971
 
     def parse_script(self) -> logic_pb2.Script:
-        span_start966 = self.span_start()
+        span_start976 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("script")
-        xs962 = []
-        cond963 = self.match_lookahead_literal("(", 0)
-        while cond963:
-            _t1666 = self.parse_construct()
-            item964 = _t1666
-            xs962.append(item964)
-            cond963 = self.match_lookahead_literal("(", 0)
-        constructs965 = xs962
+        xs972 = []
+        cond973 = self.match_lookahead_literal("(", 0)
+        while cond973:
+            _t1689 = self.parse_construct()
+            item974 = _t1689
+            xs972.append(item974)
+            cond973 = self.match_lookahead_literal("(", 0)
+        constructs975 = xs972
         self.consume_literal(")")
-        _t1667 = logic_pb2.Script(constructs=constructs965)
-        result967 = _t1667
-        self.record_span(span_start966, "Script")
-        return result967
+        _t1690 = logic_pb2.Script(constructs=constructs975)
+        result977 = _t1690
+        self.record_span(span_start976, "Script")
+        return result977
 
     def parse_construct(self) -> logic_pb2.Construct:
-        span_start971 = self.span_start()
+        span_start981 = self.span_start()
         if self.match_lookahead_literal("(", 0):
             if self.match_lookahead_literal("upsert", 1):
-                _t1669 = 1
+                _t1692 = 1
             else:
                 if self.match_lookahead_literal("monus", 1):
-                    _t1670 = 1
+                    _t1693 = 1
                 else:
                     if self.match_lookahead_literal("monoid", 1):
-                        _t1671 = 1
+                        _t1694 = 1
                     else:
                         if self.match_lookahead_literal("loop", 1):
-                            _t1672 = 0
+                            _t1695 = 0
                         else:
                             if self.match_lookahead_literal("break", 1):
-                                _t1673 = 1
+                                _t1696 = 1
                             else:
                                 if self.match_lookahead_literal("assign", 1):
-                                    _t1674 = 1
+                                    _t1697 = 1
                                 else:
-                                    _t1674 = -1
-                                _t1673 = _t1674
-                            _t1672 = _t1673
-                        _t1671 = _t1672
-                    _t1670 = _t1671
-                _t1669 = _t1670
-            _t1668 = _t1669
+                                    _t1697 = -1
+                                _t1696 = _t1697
+                            _t1695 = _t1696
+                        _t1694 = _t1695
+                    _t1693 = _t1694
+                _t1692 = _t1693
+            _t1691 = _t1692
         else:
-            _t1668 = -1
-        prediction968 = _t1668
-        if prediction968 == 1:
-            _t1676 = self.parse_instruction()
-            instruction970 = _t1676
-            _t1677 = logic_pb2.Construct(instruction=instruction970)
-            _t1675 = _t1677
+            _t1691 = -1
+        prediction978 = _t1691
+        if prediction978 == 1:
+            _t1699 = self.parse_instruction()
+            instruction980 = _t1699
+            _t1700 = logic_pb2.Construct(instruction=instruction980)
+            _t1698 = _t1700
         else:
-            if prediction968 == 0:
-                _t1679 = self.parse_loop()
-                loop969 = _t1679
-                _t1680 = logic_pb2.Construct(loop=loop969)
-                _t1678 = _t1680
+            if prediction978 == 0:
+                _t1702 = self.parse_loop()
+                loop979 = _t1702
+                _t1703 = logic_pb2.Construct(loop=loop979)
+                _t1701 = _t1703
             else:
                 raise ParseError("Unexpected token in construct" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
-            _t1675 = _t1678
-        result972 = _t1675
-        self.record_span(span_start971, "Construct")
-        return result972
+            _t1698 = _t1701
+        result982 = _t1698
+        self.record_span(span_start981, "Construct")
+        return result982
 
     def parse_loop(self) -> logic_pb2.Loop:
-        span_start975 = self.span_start()
+        span_start985 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("loop")
-        _t1681 = self.parse_init()
-        init973 = _t1681
-        _t1682 = self.parse_script()
-        script974 = _t1682
+        _t1704 = self.parse_init()
+        init983 = _t1704
+        _t1705 = self.parse_script()
+        script984 = _t1705
         self.consume_literal(")")
-        _t1683 = logic_pb2.Loop(init=init973, body=script974)
-        result976 = _t1683
-        self.record_span(span_start975, "Loop")
-        return result976
+        _t1706 = logic_pb2.Loop(init=init983, body=script984)
+        result986 = _t1706
+        self.record_span(span_start985, "Loop")
+        return result986
 
     def parse_init(self) -> Sequence[logic_pb2.Instruction]:
         self.consume_literal("(")
         self.consume_literal("init")
-        xs977 = []
-        cond978 = self.match_lookahead_literal("(", 0)
-        while cond978:
-            _t1684 = self.parse_instruction()
-            item979 = _t1684
-            xs977.append(item979)
-            cond978 = self.match_lookahead_literal("(", 0)
-        instructions980 = xs977
+        xs987 = []
+        cond988 = self.match_lookahead_literal("(", 0)
+        while cond988:
+            _t1707 = self.parse_instruction()
+            item989 = _t1707
+            xs987.append(item989)
+            cond988 = self.match_lookahead_literal("(", 0)
+        instructions990 = xs987
         self.consume_literal(")")
-        return instructions980
+        return instructions990
 
     def parse_instruction(self) -> logic_pb2.Instruction:
-        span_start987 = self.span_start()
+        span_start997 = self.span_start()
         if self.match_lookahead_literal("(", 0):
             if self.match_lookahead_literal("upsert", 1):
-                _t1686 = 1
+                _t1709 = 1
             else:
                 if self.match_lookahead_literal("monus", 1):
-                    _t1687 = 4
+                    _t1710 = 4
                 else:
                     if self.match_lookahead_literal("monoid", 1):
-                        _t1688 = 3
+                        _t1711 = 3
                     else:
                         if self.match_lookahead_literal("break", 1):
-                            _t1689 = 2
+                            _t1712 = 2
                         else:
                             if self.match_lookahead_literal("assign", 1):
-                                _t1690 = 0
+                                _t1713 = 0
                             else:
-                                _t1690 = -1
-                            _t1689 = _t1690
-                        _t1688 = _t1689
-                    _t1687 = _t1688
-                _t1686 = _t1687
-            _t1685 = _t1686
-        else:
-            _t1685 = -1
-        prediction981 = _t1685
-        if prediction981 == 4:
-            _t1692 = self.parse_monus_def()
-            monus_def986 = _t1692
-            _t1693 = logic_pb2.Instruction(monus_def=monus_def986)
-            _t1691 = _t1693
-        else:
-            if prediction981 == 3:
-                _t1695 = self.parse_monoid_def()
-                monoid_def985 = _t1695
-                _t1696 = logic_pb2.Instruction(monoid_def=monoid_def985)
-                _t1694 = _t1696
-            else:
-                if prediction981 == 2:
-                    _t1698 = self.parse_break()
-                    break984 = _t1698
-                    _t1699 = logic_pb2.Instruction()
-                    getattr(_t1699, 'break').CopyFrom(break984)
-                    _t1697 = _t1699
-                else:
-                    if prediction981 == 1:
-                        _t1701 = self.parse_upsert()
-                        upsert983 = _t1701
-                        _t1702 = logic_pb2.Instruction(upsert=upsert983)
-                        _t1700 = _t1702
-                    else:
-                        if prediction981 == 0:
-                            _t1704 = self.parse_assign()
-                            assign982 = _t1704
-                            _t1705 = logic_pb2.Instruction(assign=assign982)
-                            _t1703 = _t1705
-                        else:
-                            raise ParseError("Unexpected token in instruction" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
-                        _t1700 = _t1703
-                    _t1697 = _t1700
-                _t1694 = _t1697
-            _t1691 = _t1694
-        result988 = _t1691
-        self.record_span(span_start987, "Instruction")
-        return result988
-
-    def parse_assign(self) -> logic_pb2.Assign:
-        span_start992 = self.span_start()
-        self.consume_literal("(")
-        self.consume_literal("assign")
-        _t1706 = self.parse_relation_id()
-        relation_id989 = _t1706
-        _t1707 = self.parse_abstraction()
-        abstraction990 = _t1707
-        if self.match_lookahead_literal("(", 0):
-            _t1709 = self.parse_attrs()
+                                _t1713 = -1
+                            _t1712 = _t1713
+                        _t1711 = _t1712
+                    _t1710 = _t1711
+                _t1709 = _t1710
             _t1708 = _t1709
         else:
-            _t1708 = None
-        attrs991 = _t1708
+            _t1708 = -1
+        prediction991 = _t1708
+        if prediction991 == 4:
+            _t1715 = self.parse_monus_def()
+            monus_def996 = _t1715
+            _t1716 = logic_pb2.Instruction(monus_def=monus_def996)
+            _t1714 = _t1716
+        else:
+            if prediction991 == 3:
+                _t1718 = self.parse_monoid_def()
+                monoid_def995 = _t1718
+                _t1719 = logic_pb2.Instruction(monoid_def=monoid_def995)
+                _t1717 = _t1719
+            else:
+                if prediction991 == 2:
+                    _t1721 = self.parse_break()
+                    break994 = _t1721
+                    _t1722 = logic_pb2.Instruction()
+                    getattr(_t1722, 'break').CopyFrom(break994)
+                    _t1720 = _t1722
+                else:
+                    if prediction991 == 1:
+                        _t1724 = self.parse_upsert()
+                        upsert993 = _t1724
+                        _t1725 = logic_pb2.Instruction(upsert=upsert993)
+                        _t1723 = _t1725
+                    else:
+                        if prediction991 == 0:
+                            _t1727 = self.parse_assign()
+                            assign992 = _t1727
+                            _t1728 = logic_pb2.Instruction(assign=assign992)
+                            _t1726 = _t1728
+                        else:
+                            raise ParseError("Unexpected token in instruction" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
+                        _t1723 = _t1726
+                    _t1720 = _t1723
+                _t1717 = _t1720
+            _t1714 = _t1717
+        result998 = _t1714
+        self.record_span(span_start997, "Instruction")
+        return result998
+
+    def parse_assign(self) -> logic_pb2.Assign:
+        span_start1002 = self.span_start()
+        self.consume_literal("(")
+        self.consume_literal("assign")
+        _t1729 = self.parse_relation_id()
+        relation_id999 = _t1729
+        _t1730 = self.parse_abstraction()
+        abstraction1000 = _t1730
+        if self.match_lookahead_literal("(", 0):
+            _t1732 = self.parse_attrs()
+            _t1731 = _t1732
+        else:
+            _t1731 = None
+        attrs1001 = _t1731
         self.consume_literal(")")
-        _t1710 = logic_pb2.Assign(name=relation_id989, body=abstraction990, attrs=(attrs991 if attrs991 is not None else []))
-        result993 = _t1710
-        self.record_span(span_start992, "Assign")
-        return result993
+        _t1733 = logic_pb2.Assign(name=relation_id999, body=abstraction1000, attrs=(attrs1001 if attrs1001 is not None else []))
+        result1003 = _t1733
+        self.record_span(span_start1002, "Assign")
+        return result1003
 
     def parse_upsert(self) -> logic_pb2.Upsert:
-        span_start997 = self.span_start()
+        span_start1007 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("upsert")
-        _t1711 = self.parse_relation_id()
-        relation_id994 = _t1711
-        _t1712 = self.parse_abstraction_with_arity()
-        abstraction_with_arity995 = _t1712
+        _t1734 = self.parse_relation_id()
+        relation_id1004 = _t1734
+        _t1735 = self.parse_abstraction_with_arity()
+        abstraction_with_arity1005 = _t1735
         if self.match_lookahead_literal("(", 0):
-            _t1714 = self.parse_attrs()
-            _t1713 = _t1714
+            _t1737 = self.parse_attrs()
+            _t1736 = _t1737
         else:
-            _t1713 = None
-        attrs996 = _t1713
+            _t1736 = None
+        attrs1006 = _t1736
         self.consume_literal(")")
-        _t1715 = logic_pb2.Upsert(name=relation_id994, body=abstraction_with_arity995[0], attrs=(attrs996 if attrs996 is not None else []), value_arity=abstraction_with_arity995[1])
-        result998 = _t1715
-        self.record_span(span_start997, "Upsert")
-        return result998
+        _t1738 = logic_pb2.Upsert(name=relation_id1004, body=abstraction_with_arity1005[0], attrs=(attrs1006 if attrs1006 is not None else []), value_arity=abstraction_with_arity1005[1])
+        result1008 = _t1738
+        self.record_span(span_start1007, "Upsert")
+        return result1008
 
     def parse_abstraction_with_arity(self) -> tuple[logic_pb2.Abstraction, int]:
         self.consume_literal("(")
-        _t1716 = self.parse_bindings()
-        bindings999 = _t1716
-        _t1717 = self.parse_formula()
-        formula1000 = _t1717
+        _t1739 = self.parse_bindings()
+        bindings1009 = _t1739
+        _t1740 = self.parse_formula()
+        formula1010 = _t1740
         self.consume_literal(")")
-        _t1718 = logic_pb2.Abstraction(vars=(list(bindings999[0]) + list(bindings999[1] if bindings999[1] is not None else [])), value=formula1000)
-        return (_t1718, len(bindings999[1]),)
+        _t1741 = logic_pb2.Abstraction(vars=(list(bindings1009[0]) + list(bindings1009[1] if bindings1009[1] is not None else [])), value=formula1010)
+        return (_t1741, len(bindings1009[1]),)
 
     def parse_break(self) -> logic_pb2.Break:
-        span_start1004 = self.span_start()
+        span_start1014 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("break")
-        _t1719 = self.parse_relation_id()
-        relation_id1001 = _t1719
-        _t1720 = self.parse_abstraction()
-        abstraction1002 = _t1720
+        _t1742 = self.parse_relation_id()
+        relation_id1011 = _t1742
+        _t1743 = self.parse_abstraction()
+        abstraction1012 = _t1743
         if self.match_lookahead_literal("(", 0):
-            _t1722 = self.parse_attrs()
-            _t1721 = _t1722
+            _t1745 = self.parse_attrs()
+            _t1744 = _t1745
         else:
-            _t1721 = None
-        attrs1003 = _t1721
+            _t1744 = None
+        attrs1013 = _t1744
         self.consume_literal(")")
-        _t1723 = logic_pb2.Break(name=relation_id1001, body=abstraction1002, attrs=(attrs1003 if attrs1003 is not None else []))
-        result1005 = _t1723
-        self.record_span(span_start1004, "Break")
-        return result1005
+        _t1746 = logic_pb2.Break(name=relation_id1011, body=abstraction1012, attrs=(attrs1013 if attrs1013 is not None else []))
+        result1015 = _t1746
+        self.record_span(span_start1014, "Break")
+        return result1015
 
     def parse_monoid_def(self) -> logic_pb2.MonoidDef:
-        span_start1010 = self.span_start()
+        span_start1020 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("monoid")
-        _t1724 = self.parse_monoid()
-        monoid1006 = _t1724
-        _t1725 = self.parse_relation_id()
-        relation_id1007 = _t1725
-        _t1726 = self.parse_abstraction_with_arity()
-        abstraction_with_arity1008 = _t1726
+        _t1747 = self.parse_monoid()
+        monoid1016 = _t1747
+        _t1748 = self.parse_relation_id()
+        relation_id1017 = _t1748
+        _t1749 = self.parse_abstraction_with_arity()
+        abstraction_with_arity1018 = _t1749
         if self.match_lookahead_literal("(", 0):
-            _t1728 = self.parse_attrs()
-            _t1727 = _t1728
+            _t1751 = self.parse_attrs()
+            _t1750 = _t1751
         else:
-            _t1727 = None
-        attrs1009 = _t1727
+            _t1750 = None
+        attrs1019 = _t1750
         self.consume_literal(")")
-        _t1729 = logic_pb2.MonoidDef(monoid=monoid1006, name=relation_id1007, body=abstraction_with_arity1008[0], attrs=(attrs1009 if attrs1009 is not None else []), value_arity=abstraction_with_arity1008[1])
-        result1011 = _t1729
-        self.record_span(span_start1010, "MonoidDef")
-        return result1011
+        _t1752 = logic_pb2.MonoidDef(monoid=monoid1016, name=relation_id1017, body=abstraction_with_arity1018[0], attrs=(attrs1019 if attrs1019 is not None else []), value_arity=abstraction_with_arity1018[1])
+        result1021 = _t1752
+        self.record_span(span_start1020, "MonoidDef")
+        return result1021
 
     def parse_monoid(self) -> logic_pb2.Monoid:
-        span_start1017 = self.span_start()
+        span_start1027 = self.span_start()
         if self.match_lookahead_literal("(", 0):
             if self.match_lookahead_literal("sum", 1):
-                _t1731 = 3
+                _t1754 = 3
             else:
                 if self.match_lookahead_literal("or", 1):
-                    _t1732 = 0
+                    _t1755 = 0
                 else:
                     if self.match_lookahead_literal("min", 1):
-                        _t1733 = 1
+                        _t1756 = 1
                     else:
                         if self.match_lookahead_literal("max", 1):
-                            _t1734 = 2
+                            _t1757 = 2
                         else:
-                            _t1734 = -1
-                        _t1733 = _t1734
-                    _t1732 = _t1733
-                _t1731 = _t1732
-            _t1730 = _t1731
+                            _t1757 = -1
+                        _t1756 = _t1757
+                    _t1755 = _t1756
+                _t1754 = _t1755
+            _t1753 = _t1754
         else:
-            _t1730 = -1
-        prediction1012 = _t1730
-        if prediction1012 == 3:
-            _t1736 = self.parse_sum_monoid()
-            sum_monoid1016 = _t1736
-            _t1737 = logic_pb2.Monoid(sum_monoid=sum_monoid1016)
-            _t1735 = _t1737
+            _t1753 = -1
+        prediction1022 = _t1753
+        if prediction1022 == 3:
+            _t1759 = self.parse_sum_monoid()
+            sum_monoid1026 = _t1759
+            _t1760 = logic_pb2.Monoid(sum_monoid=sum_monoid1026)
+            _t1758 = _t1760
         else:
-            if prediction1012 == 2:
-                _t1739 = self.parse_max_monoid()
-                max_monoid1015 = _t1739
-                _t1740 = logic_pb2.Monoid(max_monoid=max_monoid1015)
-                _t1738 = _t1740
+            if prediction1022 == 2:
+                _t1762 = self.parse_max_monoid()
+                max_monoid1025 = _t1762
+                _t1763 = logic_pb2.Monoid(max_monoid=max_monoid1025)
+                _t1761 = _t1763
             else:
-                if prediction1012 == 1:
-                    _t1742 = self.parse_min_monoid()
-                    min_monoid1014 = _t1742
-                    _t1743 = logic_pb2.Monoid(min_monoid=min_monoid1014)
-                    _t1741 = _t1743
+                if prediction1022 == 1:
+                    _t1765 = self.parse_min_monoid()
+                    min_monoid1024 = _t1765
+                    _t1766 = logic_pb2.Monoid(min_monoid=min_monoid1024)
+                    _t1764 = _t1766
                 else:
-                    if prediction1012 == 0:
-                        _t1745 = self.parse_or_monoid()
-                        or_monoid1013 = _t1745
-                        _t1746 = logic_pb2.Monoid(or_monoid=or_monoid1013)
-                        _t1744 = _t1746
+                    if prediction1022 == 0:
+                        _t1768 = self.parse_or_monoid()
+                        or_monoid1023 = _t1768
+                        _t1769 = logic_pb2.Monoid(or_monoid=or_monoid1023)
+                        _t1767 = _t1769
                     else:
                         raise ParseError("Unexpected token in monoid" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
-                    _t1741 = _t1744
-                _t1738 = _t1741
-            _t1735 = _t1738
-        result1018 = _t1735
-        self.record_span(span_start1017, "Monoid")
-        return result1018
+                    _t1764 = _t1767
+                _t1761 = _t1764
+            _t1758 = _t1761
+        result1028 = _t1758
+        self.record_span(span_start1027, "Monoid")
+        return result1028
 
     def parse_or_monoid(self) -> logic_pb2.OrMonoid:
-        span_start1019 = self.span_start()
+        span_start1029 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("or")
         self.consume_literal(")")
-        _t1747 = logic_pb2.OrMonoid()
-        result1020 = _t1747
-        self.record_span(span_start1019, "OrMonoid")
-        return result1020
+        _t1770 = logic_pb2.OrMonoid()
+        result1030 = _t1770
+        self.record_span(span_start1029, "OrMonoid")
+        return result1030
 
     def parse_min_monoid(self) -> logic_pb2.MinMonoid:
-        span_start1022 = self.span_start()
+        span_start1032 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("min")
-        _t1748 = self.parse_type()
-        type1021 = _t1748
+        _t1771 = self.parse_type()
+        type1031 = _t1771
         self.consume_literal(")")
-        _t1749 = logic_pb2.MinMonoid(type=type1021)
-        result1023 = _t1749
-        self.record_span(span_start1022, "MinMonoid")
-        return result1023
+        _t1772 = logic_pb2.MinMonoid(type=type1031)
+        result1033 = _t1772
+        self.record_span(span_start1032, "MinMonoid")
+        return result1033
 
     def parse_max_monoid(self) -> logic_pb2.MaxMonoid:
-        span_start1025 = self.span_start()
+        span_start1035 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("max")
-        _t1750 = self.parse_type()
-        type1024 = _t1750
+        _t1773 = self.parse_type()
+        type1034 = _t1773
         self.consume_literal(")")
-        _t1751 = logic_pb2.MaxMonoid(type=type1024)
-        result1026 = _t1751
-        self.record_span(span_start1025, "MaxMonoid")
-        return result1026
+        _t1774 = logic_pb2.MaxMonoid(type=type1034)
+        result1036 = _t1774
+        self.record_span(span_start1035, "MaxMonoid")
+        return result1036
 
     def parse_sum_monoid(self) -> logic_pb2.SumMonoid:
-        span_start1028 = self.span_start()
+        span_start1038 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("sum")
-        _t1752 = self.parse_type()
-        type1027 = _t1752
+        _t1775 = self.parse_type()
+        type1037 = _t1775
         self.consume_literal(")")
-        _t1753 = logic_pb2.SumMonoid(type=type1027)
-        result1029 = _t1753
-        self.record_span(span_start1028, "SumMonoid")
-        return result1029
+        _t1776 = logic_pb2.SumMonoid(type=type1037)
+        result1039 = _t1776
+        self.record_span(span_start1038, "SumMonoid")
+        return result1039
 
     def parse_monus_def(self) -> logic_pb2.MonusDef:
-        span_start1034 = self.span_start()
+        span_start1044 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("monus")
-        _t1754 = self.parse_monoid()
-        monoid1030 = _t1754
-        _t1755 = self.parse_relation_id()
-        relation_id1031 = _t1755
-        _t1756 = self.parse_abstraction_with_arity()
-        abstraction_with_arity1032 = _t1756
+        _t1777 = self.parse_monoid()
+        monoid1040 = _t1777
+        _t1778 = self.parse_relation_id()
+        relation_id1041 = _t1778
+        _t1779 = self.parse_abstraction_with_arity()
+        abstraction_with_arity1042 = _t1779
         if self.match_lookahead_literal("(", 0):
-            _t1758 = self.parse_attrs()
-            _t1757 = _t1758
+            _t1781 = self.parse_attrs()
+            _t1780 = _t1781
         else:
-            _t1757 = None
-        attrs1033 = _t1757
+            _t1780 = None
+        attrs1043 = _t1780
         self.consume_literal(")")
-        _t1759 = logic_pb2.MonusDef(monoid=monoid1030, name=relation_id1031, body=abstraction_with_arity1032[0], attrs=(attrs1033 if attrs1033 is not None else []), value_arity=abstraction_with_arity1032[1])
-        result1035 = _t1759
-        self.record_span(span_start1034, "MonusDef")
-        return result1035
+        _t1782 = logic_pb2.MonusDef(monoid=monoid1040, name=relation_id1041, body=abstraction_with_arity1042[0], attrs=(attrs1043 if attrs1043 is not None else []), value_arity=abstraction_with_arity1042[1])
+        result1045 = _t1782
+        self.record_span(span_start1044, "MonusDef")
+        return result1045
 
     def parse_constraint(self) -> logic_pb2.Constraint:
-        span_start1040 = self.span_start()
+        span_start1050 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("functional_dependency")
-        _t1760 = self.parse_relation_id()
-        relation_id1036 = _t1760
-        _t1761 = self.parse_abstraction()
-        abstraction1037 = _t1761
-        _t1762 = self.parse_functional_dependency_keys()
-        functional_dependency_keys1038 = _t1762
-        _t1763 = self.parse_functional_dependency_values()
-        functional_dependency_values1039 = _t1763
+        _t1783 = self.parse_relation_id()
+        relation_id1046 = _t1783
+        _t1784 = self.parse_abstraction()
+        abstraction1047 = _t1784
+        _t1785 = self.parse_functional_dependency_keys()
+        functional_dependency_keys1048 = _t1785
+        _t1786 = self.parse_functional_dependency_values()
+        functional_dependency_values1049 = _t1786
         self.consume_literal(")")
-        _t1764 = logic_pb2.FunctionalDependency(guard=abstraction1037, keys=functional_dependency_keys1038, values=functional_dependency_values1039)
-        _t1765 = logic_pb2.Constraint(name=relation_id1036, functional_dependency=_t1764)
-        result1041 = _t1765
-        self.record_span(span_start1040, "Constraint")
-        return result1041
+        _t1787 = logic_pb2.FunctionalDependency(guard=abstraction1047, keys=functional_dependency_keys1048, values=functional_dependency_values1049)
+        _t1788 = logic_pb2.Constraint(name=relation_id1046, functional_dependency=_t1787)
+        result1051 = _t1788
+        self.record_span(span_start1050, "Constraint")
+        return result1051
 
     def parse_functional_dependency_keys(self) -> Sequence[logic_pb2.Var]:
         self.consume_literal("(")
         self.consume_literal("keys")
-        xs1042 = []
-        cond1043 = self.match_lookahead_terminal("SYMBOL", 0)
-        while cond1043:
-            _t1766 = self.parse_var()
-            item1044 = _t1766
-            xs1042.append(item1044)
-            cond1043 = self.match_lookahead_terminal("SYMBOL", 0)
-        vars1045 = xs1042
+        xs1052 = []
+        cond1053 = self.match_lookahead_terminal("SYMBOL", 0)
+        while cond1053:
+            _t1789 = self.parse_var()
+            item1054 = _t1789
+            xs1052.append(item1054)
+            cond1053 = self.match_lookahead_terminal("SYMBOL", 0)
+        vars1055 = xs1052
         self.consume_literal(")")
-        return vars1045
+        return vars1055
 
     def parse_functional_dependency_values(self) -> Sequence[logic_pb2.Var]:
         self.consume_literal("(")
         self.consume_literal("values")
-        xs1046 = []
-        cond1047 = self.match_lookahead_terminal("SYMBOL", 0)
-        while cond1047:
-            _t1767 = self.parse_var()
-            item1048 = _t1767
-            xs1046.append(item1048)
-            cond1047 = self.match_lookahead_terminal("SYMBOL", 0)
-        vars1049 = xs1046
+        xs1056 = []
+        cond1057 = self.match_lookahead_terminal("SYMBOL", 0)
+        while cond1057:
+            _t1790 = self.parse_var()
+            item1058 = _t1790
+            xs1056.append(item1058)
+            cond1057 = self.match_lookahead_terminal("SYMBOL", 0)
+        vars1059 = xs1056
         self.consume_literal(")")
-        return vars1049
+        return vars1059
 
     def parse_data(self) -> logic_pb2.Data:
-        span_start1054 = self.span_start()
+        span_start1064 = self.span_start()
         if self.match_lookahead_literal("(", 0):
             if self.match_lookahead_literal("edb", 1):
-                _t1769 = 0
+                _t1792 = 0
             else:
                 if self.match_lookahead_literal("csv_data", 1):
-                    _t1770 = 2
+                    _t1793 = 2
                 else:
                     if self.match_lookahead_literal("betree_relation", 1):
-                        _t1771 = 1
+                        _t1794 = 1
                     else:
-                        _t1771 = -1
-                    _t1770 = _t1771
-                _t1769 = _t1770
-            _t1768 = _t1769
+                        _t1794 = -1
+                    _t1793 = _t1794
+                _t1792 = _t1793
+            _t1791 = _t1792
         else:
-            _t1768 = -1
-        prediction1050 = _t1768
-        if prediction1050 == 2:
-            _t1773 = self.parse_csv_data()
-            csv_data1053 = _t1773
-            _t1774 = logic_pb2.Data(csv_data=csv_data1053)
-            _t1772 = _t1774
+            _t1791 = -1
+        prediction1060 = _t1791
+        if prediction1060 == 2:
+            _t1796 = self.parse_csv_data()
+            csv_data1063 = _t1796
+            _t1797 = logic_pb2.Data(csv_data=csv_data1063)
+            _t1795 = _t1797
         else:
-            if prediction1050 == 1:
-                _t1776 = self.parse_betree_relation()
-                betree_relation1052 = _t1776
-                _t1777 = logic_pb2.Data(betree_relation=betree_relation1052)
-                _t1775 = _t1777
+            if prediction1060 == 1:
+                _t1799 = self.parse_betree_relation()
+                betree_relation1062 = _t1799
+                _t1800 = logic_pb2.Data(betree_relation=betree_relation1062)
+                _t1798 = _t1800
             else:
-                if prediction1050 == 0:
-                    _t1779 = self.parse_edb()
-                    edb1051 = _t1779
-                    _t1780 = logic_pb2.Data(edb=edb1051)
-                    _t1778 = _t1780
+                if prediction1060 == 0:
+                    _t1802 = self.parse_edb()
+                    edb1061 = _t1802
+                    _t1803 = logic_pb2.Data(edb=edb1061)
+                    _t1801 = _t1803
                 else:
                     raise ParseError("Unexpected token in data" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
-                _t1775 = _t1778
-            _t1772 = _t1775
-        result1055 = _t1772
-        self.record_span(span_start1054, "Data")
-        return result1055
+                _t1798 = _t1801
+            _t1795 = _t1798
+        result1065 = _t1795
+        self.record_span(span_start1064, "Data")
+        return result1065
 
     def parse_edb(self) -> logic_pb2.EDB:
-        span_start1059 = self.span_start()
+        span_start1069 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("edb")
-        _t1781 = self.parse_relation_id()
-        relation_id1056 = _t1781
-        _t1782 = self.parse_edb_path()
-        edb_path1057 = _t1782
-        _t1783 = self.parse_edb_types()
-        edb_types1058 = _t1783
+        _t1804 = self.parse_relation_id()
+        relation_id1066 = _t1804
+        _t1805 = self.parse_edb_path()
+        edb_path1067 = _t1805
+        _t1806 = self.parse_edb_types()
+        edb_types1068 = _t1806
         self.consume_literal(")")
-        _t1784 = logic_pb2.EDB(target_id=relation_id1056, path=edb_path1057, types=edb_types1058)
-        result1060 = _t1784
-        self.record_span(span_start1059, "EDB")
-        return result1060
+        _t1807 = logic_pb2.EDB(target_id=relation_id1066, path=edb_path1067, types=edb_types1068)
+        result1070 = _t1807
+        self.record_span(span_start1069, "EDB")
+        return result1070
 
     def parse_edb_path(self) -> Sequence[str]:
         self.consume_literal("[")
-        xs1061 = []
-        cond1062 = self.match_lookahead_terminal("STRING", 0)
-        while cond1062:
-            item1063 = self.consume_terminal("STRING")
-            xs1061.append(item1063)
-            cond1062 = self.match_lookahead_terminal("STRING", 0)
-        strings1064 = xs1061
+        xs1071 = []
+        cond1072 = self.match_lookahead_terminal("STRING", 0)
+        while cond1072:
+            item1073 = self.consume_terminal("STRING")
+            xs1071.append(item1073)
+            cond1072 = self.match_lookahead_terminal("STRING", 0)
+        strings1074 = xs1071
         self.consume_literal("]")
-        return strings1064
+        return strings1074
 
     def parse_edb_types(self) -> Sequence[logic_pb2.Type]:
         self.consume_literal("[")
-        xs1065 = []
-        cond1066 = ((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("BOOLEAN", 0)) or self.match_lookahead_literal("DATE", 0)) or self.match_lookahead_literal("DATETIME", 0)) or self.match_lookahead_literal("FLOAT", 0)) or self.match_lookahead_literal("FLOAT32", 0)) or self.match_lookahead_literal("INT", 0)) or self.match_lookahead_literal("INT128", 0)) or self.match_lookahead_literal("INT32", 0)) or self.match_lookahead_literal("MISSING", 0)) or self.match_lookahead_literal("STRING", 0)) or self.match_lookahead_literal("UINT128", 0)) or self.match_lookahead_literal("UNKNOWN", 0))
-        while cond1066:
-            _t1785 = self.parse_type()
-            item1067 = _t1785
-            xs1065.append(item1067)
-            cond1066 = ((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("BOOLEAN", 0)) or self.match_lookahead_literal("DATE", 0)) or self.match_lookahead_literal("DATETIME", 0)) or self.match_lookahead_literal("FLOAT", 0)) or self.match_lookahead_literal("FLOAT32", 0)) or self.match_lookahead_literal("INT", 0)) or self.match_lookahead_literal("INT128", 0)) or self.match_lookahead_literal("INT32", 0)) or self.match_lookahead_literal("MISSING", 0)) or self.match_lookahead_literal("STRING", 0)) or self.match_lookahead_literal("UINT128", 0)) or self.match_lookahead_literal("UNKNOWN", 0))
-        types1068 = xs1065
+        xs1075 = []
+        cond1076 = (((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("BOOLEAN", 0)) or self.match_lookahead_literal("DATE", 0)) or self.match_lookahead_literal("DATETIME", 0)) or self.match_lookahead_literal("FLOAT", 0)) or self.match_lookahead_literal("FLOAT32", 0)) or self.match_lookahead_literal("INT", 0)) or self.match_lookahead_literal("INT128", 0)) or self.match_lookahead_literal("INT32", 0)) or self.match_lookahead_literal("MISSING", 0)) or self.match_lookahead_literal("STRING", 0)) or self.match_lookahead_literal("UINT128", 0)) or self.match_lookahead_literal("UINT32", 0)) or self.match_lookahead_literal("UNKNOWN", 0))
+        while cond1076:
+            _t1808 = self.parse_type()
+            item1077 = _t1808
+            xs1075.append(item1077)
+            cond1076 = (((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("BOOLEAN", 0)) or self.match_lookahead_literal("DATE", 0)) or self.match_lookahead_literal("DATETIME", 0)) or self.match_lookahead_literal("FLOAT", 0)) or self.match_lookahead_literal("FLOAT32", 0)) or self.match_lookahead_literal("INT", 0)) or self.match_lookahead_literal("INT128", 0)) or self.match_lookahead_literal("INT32", 0)) or self.match_lookahead_literal("MISSING", 0)) or self.match_lookahead_literal("STRING", 0)) or self.match_lookahead_literal("UINT128", 0)) or self.match_lookahead_literal("UINT32", 0)) or self.match_lookahead_literal("UNKNOWN", 0))
+        types1078 = xs1075
         self.consume_literal("]")
-        return types1068
+        return types1078
 
     def parse_betree_relation(self) -> logic_pb2.BeTreeRelation:
-        span_start1071 = self.span_start()
+        span_start1081 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("betree_relation")
-        _t1786 = self.parse_relation_id()
-        relation_id1069 = _t1786
-        _t1787 = self.parse_betree_info()
-        betree_info1070 = _t1787
+        _t1809 = self.parse_relation_id()
+        relation_id1079 = _t1809
+        _t1810 = self.parse_betree_info()
+        betree_info1080 = _t1810
         self.consume_literal(")")
-        _t1788 = logic_pb2.BeTreeRelation(name=relation_id1069, relation_info=betree_info1070)
-        result1072 = _t1788
-        self.record_span(span_start1071, "BeTreeRelation")
-        return result1072
+        _t1811 = logic_pb2.BeTreeRelation(name=relation_id1079, relation_info=betree_info1080)
+        result1082 = _t1811
+        self.record_span(span_start1081, "BeTreeRelation")
+        return result1082
 
     def parse_betree_info(self) -> logic_pb2.BeTreeInfo:
-        span_start1076 = self.span_start()
+        span_start1086 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("betree_info")
-        _t1789 = self.parse_betree_info_key_types()
-        betree_info_key_types1073 = _t1789
-        _t1790 = self.parse_betree_info_value_types()
-        betree_info_value_types1074 = _t1790
-        _t1791 = self.parse_config_dict()
-        config_dict1075 = _t1791
+        _t1812 = self.parse_betree_info_key_types()
+        betree_info_key_types1083 = _t1812
+        _t1813 = self.parse_betree_info_value_types()
+        betree_info_value_types1084 = _t1813
+        _t1814 = self.parse_config_dict()
+        config_dict1085 = _t1814
         self.consume_literal(")")
-        _t1792 = self.construct_betree_info(betree_info_key_types1073, betree_info_value_types1074, config_dict1075)
-        result1077 = _t1792
-        self.record_span(span_start1076, "BeTreeInfo")
-        return result1077
+        _t1815 = self.construct_betree_info(betree_info_key_types1083, betree_info_value_types1084, config_dict1085)
+        result1087 = _t1815
+        self.record_span(span_start1086, "BeTreeInfo")
+        return result1087
 
     def parse_betree_info_key_types(self) -> Sequence[logic_pb2.Type]:
         self.consume_literal("(")
         self.consume_literal("key_types")
-        xs1078 = []
-        cond1079 = ((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("BOOLEAN", 0)) or self.match_lookahead_literal("DATE", 0)) or self.match_lookahead_literal("DATETIME", 0)) or self.match_lookahead_literal("FLOAT", 0)) or self.match_lookahead_literal("FLOAT32", 0)) or self.match_lookahead_literal("INT", 0)) or self.match_lookahead_literal("INT128", 0)) or self.match_lookahead_literal("INT32", 0)) or self.match_lookahead_literal("MISSING", 0)) or self.match_lookahead_literal("STRING", 0)) or self.match_lookahead_literal("UINT128", 0)) or self.match_lookahead_literal("UNKNOWN", 0))
-        while cond1079:
-            _t1793 = self.parse_type()
-            item1080 = _t1793
-            xs1078.append(item1080)
-            cond1079 = ((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("BOOLEAN", 0)) or self.match_lookahead_literal("DATE", 0)) or self.match_lookahead_literal("DATETIME", 0)) or self.match_lookahead_literal("FLOAT", 0)) or self.match_lookahead_literal("FLOAT32", 0)) or self.match_lookahead_literal("INT", 0)) or self.match_lookahead_literal("INT128", 0)) or self.match_lookahead_literal("INT32", 0)) or self.match_lookahead_literal("MISSING", 0)) or self.match_lookahead_literal("STRING", 0)) or self.match_lookahead_literal("UINT128", 0)) or self.match_lookahead_literal("UNKNOWN", 0))
-        types1081 = xs1078
+        xs1088 = []
+        cond1089 = (((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("BOOLEAN", 0)) or self.match_lookahead_literal("DATE", 0)) or self.match_lookahead_literal("DATETIME", 0)) or self.match_lookahead_literal("FLOAT", 0)) or self.match_lookahead_literal("FLOAT32", 0)) or self.match_lookahead_literal("INT", 0)) or self.match_lookahead_literal("INT128", 0)) or self.match_lookahead_literal("INT32", 0)) or self.match_lookahead_literal("MISSING", 0)) or self.match_lookahead_literal("STRING", 0)) or self.match_lookahead_literal("UINT128", 0)) or self.match_lookahead_literal("UINT32", 0)) or self.match_lookahead_literal("UNKNOWN", 0))
+        while cond1089:
+            _t1816 = self.parse_type()
+            item1090 = _t1816
+            xs1088.append(item1090)
+            cond1089 = (((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("BOOLEAN", 0)) or self.match_lookahead_literal("DATE", 0)) or self.match_lookahead_literal("DATETIME", 0)) or self.match_lookahead_literal("FLOAT", 0)) or self.match_lookahead_literal("FLOAT32", 0)) or self.match_lookahead_literal("INT", 0)) or self.match_lookahead_literal("INT128", 0)) or self.match_lookahead_literal("INT32", 0)) or self.match_lookahead_literal("MISSING", 0)) or self.match_lookahead_literal("STRING", 0)) or self.match_lookahead_literal("UINT128", 0)) or self.match_lookahead_literal("UINT32", 0)) or self.match_lookahead_literal("UNKNOWN", 0))
+        types1091 = xs1088
         self.consume_literal(")")
-        return types1081
+        return types1091
 
     def parse_betree_info_value_types(self) -> Sequence[logic_pb2.Type]:
         self.consume_literal("(")
         self.consume_literal("value_types")
-        xs1082 = []
-        cond1083 = ((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("BOOLEAN", 0)) or self.match_lookahead_literal("DATE", 0)) or self.match_lookahead_literal("DATETIME", 0)) or self.match_lookahead_literal("FLOAT", 0)) or self.match_lookahead_literal("FLOAT32", 0)) or self.match_lookahead_literal("INT", 0)) or self.match_lookahead_literal("INT128", 0)) or self.match_lookahead_literal("INT32", 0)) or self.match_lookahead_literal("MISSING", 0)) or self.match_lookahead_literal("STRING", 0)) or self.match_lookahead_literal("UINT128", 0)) or self.match_lookahead_literal("UNKNOWN", 0))
-        while cond1083:
-            _t1794 = self.parse_type()
-            item1084 = _t1794
-            xs1082.append(item1084)
-            cond1083 = ((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("BOOLEAN", 0)) or self.match_lookahead_literal("DATE", 0)) or self.match_lookahead_literal("DATETIME", 0)) or self.match_lookahead_literal("FLOAT", 0)) or self.match_lookahead_literal("FLOAT32", 0)) or self.match_lookahead_literal("INT", 0)) or self.match_lookahead_literal("INT128", 0)) or self.match_lookahead_literal("INT32", 0)) or self.match_lookahead_literal("MISSING", 0)) or self.match_lookahead_literal("STRING", 0)) or self.match_lookahead_literal("UINT128", 0)) or self.match_lookahead_literal("UNKNOWN", 0))
-        types1085 = xs1082
+        xs1092 = []
+        cond1093 = (((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("BOOLEAN", 0)) or self.match_lookahead_literal("DATE", 0)) or self.match_lookahead_literal("DATETIME", 0)) or self.match_lookahead_literal("FLOAT", 0)) or self.match_lookahead_literal("FLOAT32", 0)) or self.match_lookahead_literal("INT", 0)) or self.match_lookahead_literal("INT128", 0)) or self.match_lookahead_literal("INT32", 0)) or self.match_lookahead_literal("MISSING", 0)) or self.match_lookahead_literal("STRING", 0)) or self.match_lookahead_literal("UINT128", 0)) or self.match_lookahead_literal("UINT32", 0)) or self.match_lookahead_literal("UNKNOWN", 0))
+        while cond1093:
+            _t1817 = self.parse_type()
+            item1094 = _t1817
+            xs1092.append(item1094)
+            cond1093 = (((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("BOOLEAN", 0)) or self.match_lookahead_literal("DATE", 0)) or self.match_lookahead_literal("DATETIME", 0)) or self.match_lookahead_literal("FLOAT", 0)) or self.match_lookahead_literal("FLOAT32", 0)) or self.match_lookahead_literal("INT", 0)) or self.match_lookahead_literal("INT128", 0)) or self.match_lookahead_literal("INT32", 0)) or self.match_lookahead_literal("MISSING", 0)) or self.match_lookahead_literal("STRING", 0)) or self.match_lookahead_literal("UINT128", 0)) or self.match_lookahead_literal("UINT32", 0)) or self.match_lookahead_literal("UNKNOWN", 0))
+        types1095 = xs1092
         self.consume_literal(")")
-        return types1085
+        return types1095
 
     def parse_csv_data(self) -> logic_pb2.CSVData:
-        span_start1090 = self.span_start()
+        span_start1100 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("csv_data")
-        _t1795 = self.parse_csvlocator()
-        csvlocator1086 = _t1795
-        _t1796 = self.parse_csv_config()
-        csv_config1087 = _t1796
-        _t1797 = self.parse_gnf_columns()
-        gnf_columns1088 = _t1797
-        _t1798 = self.parse_csv_asof()
-        csv_asof1089 = _t1798
+        _t1818 = self.parse_csvlocator()
+        csvlocator1096 = _t1818
+        _t1819 = self.parse_csv_config()
+        csv_config1097 = _t1819
+        _t1820 = self.parse_gnf_columns()
+        gnf_columns1098 = _t1820
+        _t1821 = self.parse_csv_asof()
+        csv_asof1099 = _t1821
         self.consume_literal(")")
-        _t1799 = logic_pb2.CSVData(locator=csvlocator1086, config=csv_config1087, columns=gnf_columns1088, asof=csv_asof1089)
-        result1091 = _t1799
-        self.record_span(span_start1090, "CSVData")
-        return result1091
+        _t1822 = logic_pb2.CSVData(locator=csvlocator1096, config=csv_config1097, columns=gnf_columns1098, asof=csv_asof1099)
+        result1101 = _t1822
+        self.record_span(span_start1100, "CSVData")
+        return result1101
 
     def parse_csvlocator(self) -> logic_pb2.CSVLocator:
-        span_start1094 = self.span_start()
+        span_start1104 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("csv_locator")
         if (self.match_lookahead_literal("(", 0) and self.match_lookahead_literal("paths", 1)):
-            _t1801 = self.parse_csv_locator_paths()
-            _t1800 = _t1801
+            _t1824 = self.parse_csv_locator_paths()
+            _t1823 = _t1824
         else:
-            _t1800 = None
-        csv_locator_paths1092 = _t1800
+            _t1823 = None
+        csv_locator_paths1102 = _t1823
         if self.match_lookahead_literal("(", 0):
-            _t1803 = self.parse_csv_locator_inline_data()
-            _t1802 = _t1803
+            _t1826 = self.parse_csv_locator_inline_data()
+            _t1825 = _t1826
         else:
-            _t1802 = None
-        csv_locator_inline_data1093 = _t1802
+            _t1825 = None
+        csv_locator_inline_data1103 = _t1825
         self.consume_literal(")")
-        _t1804 = logic_pb2.CSVLocator(paths=(csv_locator_paths1092 if csv_locator_paths1092 is not None else []), inline_data=(csv_locator_inline_data1093 if csv_locator_inline_data1093 is not None else "").encode())
-        result1095 = _t1804
-        self.record_span(span_start1094, "CSVLocator")
-        return result1095
+        _t1827 = logic_pb2.CSVLocator(paths=(csv_locator_paths1102 if csv_locator_paths1102 is not None else []), inline_data=(csv_locator_inline_data1103 if csv_locator_inline_data1103 is not None else "").encode())
+        result1105 = _t1827
+        self.record_span(span_start1104, "CSVLocator")
+        return result1105
 
     def parse_csv_locator_paths(self) -> Sequence[str]:
         self.consume_literal("(")
         self.consume_literal("paths")
-        xs1096 = []
-        cond1097 = self.match_lookahead_terminal("STRING", 0)
-        while cond1097:
-            item1098 = self.consume_terminal("STRING")
-            xs1096.append(item1098)
-            cond1097 = self.match_lookahead_terminal("STRING", 0)
-        strings1099 = xs1096
+        xs1106 = []
+        cond1107 = self.match_lookahead_terminal("STRING", 0)
+        while cond1107:
+            item1108 = self.consume_terminal("STRING")
+            xs1106.append(item1108)
+            cond1107 = self.match_lookahead_terminal("STRING", 0)
+        strings1109 = xs1106
         self.consume_literal(")")
-        return strings1099
+        return strings1109
 
     def parse_csv_locator_inline_data(self) -> str:
         self.consume_literal("(")
         self.consume_literal("inline_data")
-        string1100 = self.consume_terminal("STRING")
+        string1110 = self.consume_terminal("STRING")
         self.consume_literal(")")
-        return string1100
+        return string1110
 
     def parse_csv_config(self) -> logic_pb2.CSVConfig:
-        span_start1102 = self.span_start()
+        span_start1112 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("csv_config")
-        _t1805 = self.parse_config_dict()
-        config_dict1101 = _t1805
+        _t1828 = self.parse_config_dict()
+        config_dict1111 = _t1828
         self.consume_literal(")")
-        _t1806 = self.construct_csv_config(config_dict1101)
-        result1103 = _t1806
-        self.record_span(span_start1102, "CSVConfig")
-        return result1103
+        _t1829 = self.construct_csv_config(config_dict1111)
+        result1113 = _t1829
+        self.record_span(span_start1112, "CSVConfig")
+        return result1113
 
     def parse_gnf_columns(self) -> Sequence[logic_pb2.GNFColumn]:
         self.consume_literal("(")
         self.consume_literal("columns")
-        xs1104 = []
-        cond1105 = self.match_lookahead_literal("(", 0)
-        while cond1105:
-            _t1807 = self.parse_gnf_column()
-            item1106 = _t1807
-            xs1104.append(item1106)
-            cond1105 = self.match_lookahead_literal("(", 0)
-        gnf_columns1107 = xs1104
+        xs1114 = []
+        cond1115 = self.match_lookahead_literal("(", 0)
+        while cond1115:
+            _t1830 = self.parse_gnf_column()
+            item1116 = _t1830
+            xs1114.append(item1116)
+            cond1115 = self.match_lookahead_literal("(", 0)
+        gnf_columns1117 = xs1114
         self.consume_literal(")")
-        return gnf_columns1107
+        return gnf_columns1117
 
     def parse_gnf_column(self) -> logic_pb2.GNFColumn:
-        span_start1114 = self.span_start()
+        span_start1124 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("column")
-        _t1808 = self.parse_gnf_column_path()
-        gnf_column_path1108 = _t1808
+        _t1831 = self.parse_gnf_column_path()
+        gnf_column_path1118 = _t1831
         if (self.match_lookahead_literal(":", 0) or self.match_lookahead_terminal("UINT128", 0)):
-            _t1810 = self.parse_relation_id()
-            _t1809 = _t1810
+            _t1833 = self.parse_relation_id()
+            _t1832 = _t1833
         else:
-            _t1809 = None
-        relation_id1109 = _t1809
+            _t1832 = None
+        relation_id1119 = _t1832
         self.consume_literal("[")
-        xs1110 = []
-        cond1111 = ((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("BOOLEAN", 0)) or self.match_lookahead_literal("DATE", 0)) or self.match_lookahead_literal("DATETIME", 0)) or self.match_lookahead_literal("FLOAT", 0)) or self.match_lookahead_literal("FLOAT32", 0)) or self.match_lookahead_literal("INT", 0)) or self.match_lookahead_literal("INT128", 0)) or self.match_lookahead_literal("INT32", 0)) or self.match_lookahead_literal("MISSING", 0)) or self.match_lookahead_literal("STRING", 0)) or self.match_lookahead_literal("UINT128", 0)) or self.match_lookahead_literal("UNKNOWN", 0))
-        while cond1111:
-            _t1811 = self.parse_type()
-            item1112 = _t1811
-            xs1110.append(item1112)
-            cond1111 = ((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("BOOLEAN", 0)) or self.match_lookahead_literal("DATE", 0)) or self.match_lookahead_literal("DATETIME", 0)) or self.match_lookahead_literal("FLOAT", 0)) or self.match_lookahead_literal("FLOAT32", 0)) or self.match_lookahead_literal("INT", 0)) or self.match_lookahead_literal("INT128", 0)) or self.match_lookahead_literal("INT32", 0)) or self.match_lookahead_literal("MISSING", 0)) or self.match_lookahead_literal("STRING", 0)) or self.match_lookahead_literal("UINT128", 0)) or self.match_lookahead_literal("UNKNOWN", 0))
-        types1113 = xs1110
+        xs1120 = []
+        cond1121 = (((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("BOOLEAN", 0)) or self.match_lookahead_literal("DATE", 0)) or self.match_lookahead_literal("DATETIME", 0)) or self.match_lookahead_literal("FLOAT", 0)) or self.match_lookahead_literal("FLOAT32", 0)) or self.match_lookahead_literal("INT", 0)) or self.match_lookahead_literal("INT128", 0)) or self.match_lookahead_literal("INT32", 0)) or self.match_lookahead_literal("MISSING", 0)) or self.match_lookahead_literal("STRING", 0)) or self.match_lookahead_literal("UINT128", 0)) or self.match_lookahead_literal("UINT32", 0)) or self.match_lookahead_literal("UNKNOWN", 0))
+        while cond1121:
+            _t1834 = self.parse_type()
+            item1122 = _t1834
+            xs1120.append(item1122)
+            cond1121 = (((((((((((((self.match_lookahead_literal("(", 0) or self.match_lookahead_literal("BOOLEAN", 0)) or self.match_lookahead_literal("DATE", 0)) or self.match_lookahead_literal("DATETIME", 0)) or self.match_lookahead_literal("FLOAT", 0)) or self.match_lookahead_literal("FLOAT32", 0)) or self.match_lookahead_literal("INT", 0)) or self.match_lookahead_literal("INT128", 0)) or self.match_lookahead_literal("INT32", 0)) or self.match_lookahead_literal("MISSING", 0)) or self.match_lookahead_literal("STRING", 0)) or self.match_lookahead_literal("UINT128", 0)) or self.match_lookahead_literal("UINT32", 0)) or self.match_lookahead_literal("UNKNOWN", 0))
+        types1123 = xs1120
         self.consume_literal("]")
         self.consume_literal(")")
-        _t1812 = logic_pb2.GNFColumn(column_path=gnf_column_path1108, target_id=relation_id1109, types=types1113)
-        result1115 = _t1812
-        self.record_span(span_start1114, "GNFColumn")
-        return result1115
+        _t1835 = logic_pb2.GNFColumn(column_path=gnf_column_path1118, target_id=relation_id1119, types=types1123)
+        result1125 = _t1835
+        self.record_span(span_start1124, "GNFColumn")
+        return result1125
 
     def parse_gnf_column_path(self) -> Sequence[str]:
         if self.match_lookahead_literal("[", 0):
-            _t1813 = 1
+            _t1836 = 1
         else:
             if self.match_lookahead_terminal("STRING", 0):
-                _t1814 = 0
+                _t1837 = 0
             else:
-                _t1814 = -1
-            _t1813 = _t1814
-        prediction1116 = _t1813
-        if prediction1116 == 1:
+                _t1837 = -1
+            _t1836 = _t1837
+        prediction1126 = _t1836
+        if prediction1126 == 1:
             self.consume_literal("[")
-            xs1118 = []
-            cond1119 = self.match_lookahead_terminal("STRING", 0)
-            while cond1119:
-                item1120 = self.consume_terminal("STRING")
-                xs1118.append(item1120)
-                cond1119 = self.match_lookahead_terminal("STRING", 0)
-            strings1121 = xs1118
+            xs1128 = []
+            cond1129 = self.match_lookahead_terminal("STRING", 0)
+            while cond1129:
+                item1130 = self.consume_terminal("STRING")
+                xs1128.append(item1130)
+                cond1129 = self.match_lookahead_terminal("STRING", 0)
+            strings1131 = xs1128
             self.consume_literal("]")
-            _t1815 = strings1121
+            _t1838 = strings1131
         else:
-            if prediction1116 == 0:
-                string1117 = self.consume_terminal("STRING")
-                _t1816 = [string1117]
+            if prediction1126 == 0:
+                string1127 = self.consume_terminal("STRING")
+                _t1839 = [string1127]
             else:
                 raise ParseError("Unexpected token in gnf_column_path" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
-            _t1815 = _t1816
-        return _t1815
+            _t1838 = _t1839
+        return _t1838
 
     def parse_csv_asof(self) -> str:
         self.consume_literal("(")
         self.consume_literal("asof")
-        string1122 = self.consume_terminal("STRING")
+        string1132 = self.consume_terminal("STRING")
         self.consume_literal(")")
-        return string1122
+        return string1132
 
     def parse_undefine(self) -> transactions_pb2.Undefine:
-        span_start1124 = self.span_start()
+        span_start1134 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("undefine")
-        _t1817 = self.parse_fragment_id()
-        fragment_id1123 = _t1817
+        _t1840 = self.parse_fragment_id()
+        fragment_id1133 = _t1840
         self.consume_literal(")")
-        _t1818 = transactions_pb2.Undefine(fragment_id=fragment_id1123)
-        result1125 = _t1818
-        self.record_span(span_start1124, "Undefine")
-        return result1125
+        _t1841 = transactions_pb2.Undefine(fragment_id=fragment_id1133)
+        result1135 = _t1841
+        self.record_span(span_start1134, "Undefine")
+        return result1135
 
     def parse_context(self) -> transactions_pb2.Context:
-        span_start1130 = self.span_start()
+        span_start1140 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("context")
-        xs1126 = []
-        cond1127 = (self.match_lookahead_literal(":", 0) or self.match_lookahead_terminal("UINT128", 0))
-        while cond1127:
-            _t1819 = self.parse_relation_id()
-            item1128 = _t1819
-            xs1126.append(item1128)
-            cond1127 = (self.match_lookahead_literal(":", 0) or self.match_lookahead_terminal("UINT128", 0))
-        relation_ids1129 = xs1126
+        xs1136 = []
+        cond1137 = (self.match_lookahead_literal(":", 0) or self.match_lookahead_terminal("UINT128", 0))
+        while cond1137:
+            _t1842 = self.parse_relation_id()
+            item1138 = _t1842
+            xs1136.append(item1138)
+            cond1137 = (self.match_lookahead_literal(":", 0) or self.match_lookahead_terminal("UINT128", 0))
+        relation_ids1139 = xs1136
         self.consume_literal(")")
-        _t1820 = transactions_pb2.Context(relations=relation_ids1129)
-        result1131 = _t1820
-        self.record_span(span_start1130, "Context")
-        return result1131
+        _t1843 = transactions_pb2.Context(relations=relation_ids1139)
+        result1141 = _t1843
+        self.record_span(span_start1140, "Context")
+        return result1141
 
     def parse_snapshot(self) -> transactions_pb2.Snapshot:
-        span_start1136 = self.span_start()
+        span_start1146 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("snapshot")
-        xs1132 = []
-        cond1133 = self.match_lookahead_literal("[", 0)
-        while cond1133:
-            _t1821 = self.parse_snapshot_mapping()
-            item1134 = _t1821
-            xs1132.append(item1134)
-            cond1133 = self.match_lookahead_literal("[", 0)
-        snapshot_mappings1135 = xs1132
+        xs1142 = []
+        cond1143 = self.match_lookahead_literal("[", 0)
+        while cond1143:
+            _t1844 = self.parse_snapshot_mapping()
+            item1144 = _t1844
+            xs1142.append(item1144)
+            cond1143 = self.match_lookahead_literal("[", 0)
+        snapshot_mappings1145 = xs1142
         self.consume_literal(")")
-        _t1822 = transactions_pb2.Snapshot(mappings=snapshot_mappings1135)
-        result1137 = _t1822
-        self.record_span(span_start1136, "Snapshot")
-        return result1137
+        _t1845 = transactions_pb2.Snapshot(mappings=snapshot_mappings1145)
+        result1147 = _t1845
+        self.record_span(span_start1146, "Snapshot")
+        return result1147
 
     def parse_snapshot_mapping(self) -> transactions_pb2.SnapshotMapping:
-        span_start1140 = self.span_start()
-        _t1823 = self.parse_edb_path()
-        edb_path1138 = _t1823
-        _t1824 = self.parse_relation_id()
-        relation_id1139 = _t1824
-        _t1825 = transactions_pb2.SnapshotMapping(destination_path=edb_path1138, source_relation=relation_id1139)
-        result1141 = _t1825
-        self.record_span(span_start1140, "SnapshotMapping")
-        return result1141
+        span_start1150 = self.span_start()
+        _t1846 = self.parse_edb_path()
+        edb_path1148 = _t1846
+        _t1847 = self.parse_relation_id()
+        relation_id1149 = _t1847
+        _t1848 = transactions_pb2.SnapshotMapping(destination_path=edb_path1148, source_relation=relation_id1149)
+        result1151 = _t1848
+        self.record_span(span_start1150, "SnapshotMapping")
+        return result1151
 
     def parse_epoch_reads(self) -> Sequence[transactions_pb2.Read]:
         self.consume_literal("(")
         self.consume_literal("reads")
-        xs1142 = []
-        cond1143 = self.match_lookahead_literal("(", 0)
-        while cond1143:
-            _t1826 = self.parse_read()
-            item1144 = _t1826
-            xs1142.append(item1144)
-            cond1143 = self.match_lookahead_literal("(", 0)
-        reads1145 = xs1142
+        xs1152 = []
+        cond1153 = self.match_lookahead_literal("(", 0)
+        while cond1153:
+            _t1849 = self.parse_read()
+            item1154 = _t1849
+            xs1152.append(item1154)
+            cond1153 = self.match_lookahead_literal("(", 0)
+        reads1155 = xs1152
         self.consume_literal(")")
-        return reads1145
+        return reads1155
 
     def parse_read(self) -> transactions_pb2.Read:
-        span_start1152 = self.span_start()
+        span_start1162 = self.span_start()
         if self.match_lookahead_literal("(", 0):
             if self.match_lookahead_literal("what_if", 1):
-                _t1828 = 2
+                _t1851 = 2
             else:
                 if self.match_lookahead_literal("output", 1):
-                    _t1829 = 1
+                    _t1852 = 1
                 else:
                     if self.match_lookahead_literal("export", 1):
-                        _t1830 = 4
+                        _t1853 = 4
                     else:
                         if self.match_lookahead_literal("demand", 1):
-                            _t1831 = 0
+                            _t1854 = 0
                         else:
                             if self.match_lookahead_literal("abort", 1):
-                                _t1832 = 3
+                                _t1855 = 3
                             else:
-                                _t1832 = -1
-                            _t1831 = _t1832
-                        _t1830 = _t1831
-                    _t1829 = _t1830
-                _t1828 = _t1829
-            _t1827 = _t1828
+                                _t1855 = -1
+                            _t1854 = _t1855
+                        _t1853 = _t1854
+                    _t1852 = _t1853
+                _t1851 = _t1852
+            _t1850 = _t1851
         else:
-            _t1827 = -1
-        prediction1146 = _t1827
-        if prediction1146 == 4:
-            _t1834 = self.parse_export()
-            export1151 = _t1834
-            _t1835 = transactions_pb2.Read(export=export1151)
-            _t1833 = _t1835
+            _t1850 = -1
+        prediction1156 = _t1850
+        if prediction1156 == 4:
+            _t1857 = self.parse_export()
+            export1161 = _t1857
+            _t1858 = transactions_pb2.Read(export=export1161)
+            _t1856 = _t1858
         else:
-            if prediction1146 == 3:
-                _t1837 = self.parse_abort()
-                abort1150 = _t1837
-                _t1838 = transactions_pb2.Read(abort=abort1150)
-                _t1836 = _t1838
+            if prediction1156 == 3:
+                _t1860 = self.parse_abort()
+                abort1160 = _t1860
+                _t1861 = transactions_pb2.Read(abort=abort1160)
+                _t1859 = _t1861
             else:
-                if prediction1146 == 2:
-                    _t1840 = self.parse_what_if()
-                    what_if1149 = _t1840
-                    _t1841 = transactions_pb2.Read(what_if=what_if1149)
-                    _t1839 = _t1841
+                if prediction1156 == 2:
+                    _t1863 = self.parse_what_if()
+                    what_if1159 = _t1863
+                    _t1864 = transactions_pb2.Read(what_if=what_if1159)
+                    _t1862 = _t1864
                 else:
-                    if prediction1146 == 1:
-                        _t1843 = self.parse_output()
-                        output1148 = _t1843
-                        _t1844 = transactions_pb2.Read(output=output1148)
-                        _t1842 = _t1844
+                    if prediction1156 == 1:
+                        _t1866 = self.parse_output()
+                        output1158 = _t1866
+                        _t1867 = transactions_pb2.Read(output=output1158)
+                        _t1865 = _t1867
                     else:
-                        if prediction1146 == 0:
-                            _t1846 = self.parse_demand()
-                            demand1147 = _t1846
-                            _t1847 = transactions_pb2.Read(demand=demand1147)
-                            _t1845 = _t1847
+                        if prediction1156 == 0:
+                            _t1869 = self.parse_demand()
+                            demand1157 = _t1869
+                            _t1870 = transactions_pb2.Read(demand=demand1157)
+                            _t1868 = _t1870
                         else:
                             raise ParseError("Unexpected token in read" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
-                        _t1842 = _t1845
-                    _t1839 = _t1842
-                _t1836 = _t1839
-            _t1833 = _t1836
-        result1153 = _t1833
-        self.record_span(span_start1152, "Read")
-        return result1153
+                        _t1865 = _t1868
+                    _t1862 = _t1865
+                _t1859 = _t1862
+            _t1856 = _t1859
+        result1163 = _t1856
+        self.record_span(span_start1162, "Read")
+        return result1163
 
     def parse_demand(self) -> transactions_pb2.Demand:
-        span_start1155 = self.span_start()
+        span_start1165 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("demand")
-        _t1848 = self.parse_relation_id()
-        relation_id1154 = _t1848
+        _t1871 = self.parse_relation_id()
+        relation_id1164 = _t1871
         self.consume_literal(")")
-        _t1849 = transactions_pb2.Demand(relation_id=relation_id1154)
-        result1156 = _t1849
-        self.record_span(span_start1155, "Demand")
-        return result1156
+        _t1872 = transactions_pb2.Demand(relation_id=relation_id1164)
+        result1166 = _t1872
+        self.record_span(span_start1165, "Demand")
+        return result1166
 
     def parse_output(self) -> transactions_pb2.Output:
-        span_start1159 = self.span_start()
+        span_start1169 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("output")
-        _t1850 = self.parse_name()
-        name1157 = _t1850
-        _t1851 = self.parse_relation_id()
-        relation_id1158 = _t1851
+        _t1873 = self.parse_name()
+        name1167 = _t1873
+        _t1874 = self.parse_relation_id()
+        relation_id1168 = _t1874
         self.consume_literal(")")
-        _t1852 = transactions_pb2.Output(name=name1157, relation_id=relation_id1158)
-        result1160 = _t1852
-        self.record_span(span_start1159, "Output")
-        return result1160
+        _t1875 = transactions_pb2.Output(name=name1167, relation_id=relation_id1168)
+        result1170 = _t1875
+        self.record_span(span_start1169, "Output")
+        return result1170
 
     def parse_what_if(self) -> transactions_pb2.WhatIf:
-        span_start1163 = self.span_start()
+        span_start1173 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("what_if")
-        _t1853 = self.parse_name()
-        name1161 = _t1853
-        _t1854 = self.parse_epoch()
-        epoch1162 = _t1854
+        _t1876 = self.parse_name()
+        name1171 = _t1876
+        _t1877 = self.parse_epoch()
+        epoch1172 = _t1877
         self.consume_literal(")")
-        _t1855 = transactions_pb2.WhatIf(branch=name1161, epoch=epoch1162)
-        result1164 = _t1855
-        self.record_span(span_start1163, "WhatIf")
-        return result1164
+        _t1878 = transactions_pb2.WhatIf(branch=name1171, epoch=epoch1172)
+        result1174 = _t1878
+        self.record_span(span_start1173, "WhatIf")
+        return result1174
 
     def parse_abort(self) -> transactions_pb2.Abort:
-        span_start1167 = self.span_start()
+        span_start1177 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("abort")
         if (self.match_lookahead_literal(":", 0) and self.match_lookahead_terminal("SYMBOL", 1)):
-            _t1857 = self.parse_name()
-            _t1856 = _t1857
+            _t1880 = self.parse_name()
+            _t1879 = _t1880
         else:
-            _t1856 = None
-        name1165 = _t1856
-        _t1858 = self.parse_relation_id()
-        relation_id1166 = _t1858
+            _t1879 = None
+        name1175 = _t1879
+        _t1881 = self.parse_relation_id()
+        relation_id1176 = _t1881
         self.consume_literal(")")
-        _t1859 = transactions_pb2.Abort(name=(name1165 if name1165 is not None else "abort"), relation_id=relation_id1166)
-        result1168 = _t1859
-        self.record_span(span_start1167, "Abort")
-        return result1168
+        _t1882 = transactions_pb2.Abort(name=(name1175 if name1175 is not None else "abort"), relation_id=relation_id1176)
+        result1178 = _t1882
+        self.record_span(span_start1177, "Abort")
+        return result1178
 
     def parse_export(self) -> transactions_pb2.Export:
-        span_start1170 = self.span_start()
+        span_start1180 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("export")
-        _t1860 = self.parse_export_csv_config()
-        export_csv_config1169 = _t1860
+        _t1883 = self.parse_export_csv_config()
+        export_csv_config1179 = _t1883
         self.consume_literal(")")
-        _t1861 = transactions_pb2.Export(csv_config=export_csv_config1169)
-        result1171 = _t1861
-        self.record_span(span_start1170, "Export")
-        return result1171
+        _t1884 = transactions_pb2.Export(csv_config=export_csv_config1179)
+        result1181 = _t1884
+        self.record_span(span_start1180, "Export")
+        return result1181
 
     def parse_export_csv_config(self) -> transactions_pb2.ExportCSVConfig:
-        span_start1179 = self.span_start()
+        span_start1189 = self.span_start()
         if self.match_lookahead_literal("(", 0):
             if self.match_lookahead_literal("export_csv_config_v2", 1):
-                _t1863 = 0
+                _t1886 = 0
             else:
                 if self.match_lookahead_literal("export_csv_config", 1):
-                    _t1864 = 1
+                    _t1887 = 1
                 else:
-                    _t1864 = -1
-                _t1863 = _t1864
-            _t1862 = _t1863
+                    _t1887 = -1
+                _t1886 = _t1887
+            _t1885 = _t1886
         else:
-            _t1862 = -1
-        prediction1172 = _t1862
-        if prediction1172 == 1:
+            _t1885 = -1
+        prediction1182 = _t1885
+        if prediction1182 == 1:
             self.consume_literal("(")
             self.consume_literal("export_csv_config")
-            _t1866 = self.parse_export_csv_path()
-            export_csv_path1176 = _t1866
-            _t1867 = self.parse_export_csv_columns_list()
-            export_csv_columns_list1177 = _t1867
-            _t1868 = self.parse_config_dict()
-            config_dict1178 = _t1868
+            _t1889 = self.parse_export_csv_path()
+            export_csv_path1186 = _t1889
+            _t1890 = self.parse_export_csv_columns_list()
+            export_csv_columns_list1187 = _t1890
+            _t1891 = self.parse_config_dict()
+            config_dict1188 = _t1891
             self.consume_literal(")")
-            _t1869 = self.construct_export_csv_config(export_csv_path1176, export_csv_columns_list1177, config_dict1178)
-            _t1865 = _t1869
+            _t1892 = self.construct_export_csv_config(export_csv_path1186, export_csv_columns_list1187, config_dict1188)
+            _t1888 = _t1892
         else:
-            if prediction1172 == 0:
+            if prediction1182 == 0:
                 self.consume_literal("(")
                 self.consume_literal("export_csv_config_v2")
-                _t1871 = self.parse_export_csv_path()
-                export_csv_path1173 = _t1871
-                _t1872 = self.parse_export_csv_source()
-                export_csv_source1174 = _t1872
-                _t1873 = self.parse_csv_config()
-                csv_config1175 = _t1873
+                _t1894 = self.parse_export_csv_path()
+                export_csv_path1183 = _t1894
+                _t1895 = self.parse_export_csv_source()
+                export_csv_source1184 = _t1895
+                _t1896 = self.parse_csv_config()
+                csv_config1185 = _t1896
                 self.consume_literal(")")
-                _t1874 = self.construct_export_csv_config_with_source(export_csv_path1173, export_csv_source1174, csv_config1175)
-                _t1870 = _t1874
+                _t1897 = self.construct_export_csv_config_with_source(export_csv_path1183, export_csv_source1184, csv_config1185)
+                _t1893 = _t1897
             else:
                 raise ParseError("Unexpected token in export_csv_config" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
-            _t1865 = _t1870
-        result1180 = _t1865
-        self.record_span(span_start1179, "ExportCSVConfig")
-        return result1180
+            _t1888 = _t1893
+        result1190 = _t1888
+        self.record_span(span_start1189, "ExportCSVConfig")
+        return result1190
 
     def parse_export_csv_path(self) -> str:
         self.consume_literal("(")
         self.consume_literal("path")
-        string1181 = self.consume_terminal("STRING")
+        string1191 = self.consume_terminal("STRING")
         self.consume_literal(")")
-        return string1181
+        return string1191
 
     def parse_export_csv_source(self) -> transactions_pb2.ExportCSVSource:
-        span_start1188 = self.span_start()
+        span_start1198 = self.span_start()
         if self.match_lookahead_literal("(", 0):
             if self.match_lookahead_literal("table_def", 1):
-                _t1876 = 1
+                _t1899 = 1
             else:
                 if self.match_lookahead_literal("gnf_columns", 1):
-                    _t1877 = 0
+                    _t1900 = 0
                 else:
-                    _t1877 = -1
-                _t1876 = _t1877
-            _t1875 = _t1876
+                    _t1900 = -1
+                _t1899 = _t1900
+            _t1898 = _t1899
         else:
-            _t1875 = -1
-        prediction1182 = _t1875
-        if prediction1182 == 1:
+            _t1898 = -1
+        prediction1192 = _t1898
+        if prediction1192 == 1:
             self.consume_literal("(")
             self.consume_literal("table_def")
-            _t1879 = self.parse_relation_id()
-            relation_id1187 = _t1879
+            _t1902 = self.parse_relation_id()
+            relation_id1197 = _t1902
             self.consume_literal(")")
-            _t1880 = transactions_pb2.ExportCSVSource(table_def=relation_id1187)
-            _t1878 = _t1880
+            _t1903 = transactions_pb2.ExportCSVSource(table_def=relation_id1197)
+            _t1901 = _t1903
         else:
-            if prediction1182 == 0:
+            if prediction1192 == 0:
                 self.consume_literal("(")
                 self.consume_literal("gnf_columns")
-                xs1183 = []
-                cond1184 = self.match_lookahead_literal("(", 0)
-                while cond1184:
-                    _t1882 = self.parse_export_csv_column()
-                    item1185 = _t1882
-                    xs1183.append(item1185)
-                    cond1184 = self.match_lookahead_literal("(", 0)
-                export_csv_columns1186 = xs1183
+                xs1193 = []
+                cond1194 = self.match_lookahead_literal("(", 0)
+                while cond1194:
+                    _t1905 = self.parse_export_csv_column()
+                    item1195 = _t1905
+                    xs1193.append(item1195)
+                    cond1194 = self.match_lookahead_literal("(", 0)
+                export_csv_columns1196 = xs1193
                 self.consume_literal(")")
-                _t1883 = transactions_pb2.ExportCSVColumns(columns=export_csv_columns1186)
-                _t1884 = transactions_pb2.ExportCSVSource(gnf_columns=_t1883)
-                _t1881 = _t1884
+                _t1906 = transactions_pb2.ExportCSVColumns(columns=export_csv_columns1196)
+                _t1907 = transactions_pb2.ExportCSVSource(gnf_columns=_t1906)
+                _t1904 = _t1907
             else:
                 raise ParseError("Unexpected token in export_csv_source" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
-            _t1878 = _t1881
-        result1189 = _t1878
-        self.record_span(span_start1188, "ExportCSVSource")
-        return result1189
+            _t1901 = _t1904
+        result1199 = _t1901
+        self.record_span(span_start1198, "ExportCSVSource")
+        return result1199
 
     def parse_export_csv_column(self) -> transactions_pb2.ExportCSVColumn:
-        span_start1192 = self.span_start()
+        span_start1202 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("column")
-        string1190 = self.consume_terminal("STRING")
-        _t1885 = self.parse_relation_id()
-        relation_id1191 = _t1885
+        string1200 = self.consume_terminal("STRING")
+        _t1908 = self.parse_relation_id()
+        relation_id1201 = _t1908
         self.consume_literal(")")
-        _t1886 = transactions_pb2.ExportCSVColumn(column_name=string1190, column_data=relation_id1191)
-        result1193 = _t1886
-        self.record_span(span_start1192, "ExportCSVColumn")
-        return result1193
+        _t1909 = transactions_pb2.ExportCSVColumn(column_name=string1200, column_data=relation_id1201)
+        result1203 = _t1909
+        self.record_span(span_start1202, "ExportCSVColumn")
+        return result1203
 
     def parse_export_csv_columns_list(self) -> Sequence[transactions_pb2.ExportCSVColumn]:
         self.consume_literal("(")
         self.consume_literal("columns")
-        xs1194 = []
-        cond1195 = self.match_lookahead_literal("(", 0)
-        while cond1195:
-            _t1887 = self.parse_export_csv_column()
-            item1196 = _t1887
-            xs1194.append(item1196)
-            cond1195 = self.match_lookahead_literal("(", 0)
-        export_csv_columns1197 = xs1194
+        xs1204 = []
+        cond1205 = self.match_lookahead_literal("(", 0)
+        while cond1205:
+            _t1910 = self.parse_export_csv_column()
+            item1206 = _t1910
+            xs1204.append(item1206)
+            cond1205 = self.match_lookahead_literal("(", 0)
+        export_csv_columns1207 = xs1204
         self.consume_literal(")")
-        return export_csv_columns1197
+        return export_csv_columns1207
 
 
 def parse_transaction(input_str: str) -> tuple[Any, dict[int, Span]]:

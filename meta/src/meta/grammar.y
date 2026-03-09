@@ -40,6 +40,7 @@
 %token FLOAT32 Float32 r'[-]?\d+\.\d+f32'
 %token INT Int64 r'[-]?\d+'
 %token INT32 Int32 r'[-]?\d+i32'
+%token UINT32 UInt32 r'\d+u32'
 %token INT128 logic.Int128Value r'[-]?\d+i128'
 %token STRING String r'"(?:[^"\\]|\\.)*"'
 %token SYMBOL String r'[a-zA-Z_][a-zA-Z0-9_./#-]*'
@@ -53,6 +54,7 @@
 %token_alias FORMATTED_FLOAT32 FLOAT32
 %token_alias FORMATTED_DECIMAL DECIMAL
 %token_alias FORMATTED_INT128 INT128
+%token_alias FORMATTED_UINT32 UINT32
 %token_alias FORMATTED_UINT128 UINT128
 
 # Type declarations for rules
@@ -130,6 +132,7 @@
 %nonterm instruction logic.Instruction
 %nonterm int_type logic.IntType
 %nonterm int32_type logic.Int32Type
+%nonterm uint32_type logic.UInt32Type
 %nonterm int128_type logic.Int128Type
 %nonterm loop logic.Loop
 %nonterm lt logic.Primitive
@@ -251,6 +254,10 @@ value
       construct: $$ = logic.Value(float_value=$1)
       deconstruct if builtin.has_proto_field($$, 'float_value'):
         $1: Float64 = $$.float_value
+    | FORMATTED_UINT32
+      construct: $$ = logic.Value(uint32_value=$1)
+      deconstruct if builtin.has_proto_field($$, 'uint32_value'):
+        $1: UInt32 = $$.uint32_value
     | FORMATTED_UINT128
       construct: $$ = logic.Value(uint128_value=$1)
       deconstruct if builtin.has_proto_field($$, 'uint128_value'):
@@ -317,6 +324,10 @@ raw_value
       construct: $$ = logic.Value(boolean_value=$1)
       deconstruct if builtin.has_proto_field($$, 'boolean_value'):
         $1: Boolean = $$.boolean_value
+    | UINT32
+      construct: $$ = logic.Value(uint32_value=$1)
+      deconstruct if builtin.has_proto_field($$, 'uint32_value'):
+        $1: UInt32 = $$.uint32_value
 
 raw_date
     : "(" "date" INT INT INT ")"
@@ -535,6 +546,10 @@ type
       construct: $$ = logic.Type(float32_type=$1)
       deconstruct if builtin.has_proto_field($$, 'float32_type'):
         $1: logic.Float32Type = $$.float32_type
+    | uint32_type
+      construct: $$ = logic.Type(uint32_type=$1)
+      deconstruct if builtin.has_proto_field($$, 'uint32_type'):
+        $1: logic.UInt32Type = $$.uint32_type
 
 unspecified_type
     : "UNKNOWN"
@@ -586,6 +601,10 @@ int32_type
 float32_type
     : "FLOAT32"
       construct: $$ = logic.Float32Type()
+
+uint32_type
+    : "UINT32"
+      construct: $$ = logic.UInt32Type()
 
 boolean_type
     : "BOOLEAN"

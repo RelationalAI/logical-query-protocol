@@ -787,7 +787,7 @@ def _proto_type_to_target_type(
     scalar_map = {
         "int32": BaseType("Int32"),
         "int64": BaseType("Int64"),
-        "uint32": BaseType("Int64"),  # Map to Int64 for simplicity
+        "uint32": BaseType("UInt32"),
         "uint64": BaseType("Int64"),
         "float": BaseType("Float32"),
         "double": BaseType("Float64"),

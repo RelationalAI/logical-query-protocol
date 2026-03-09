@@ -679,6 +679,7 @@ _TERMINAL_FORMAT_BUILTINS: dict[str, str] = {
     "FLOAT32": "format_float32",
     "DECIMAL": "format_decimal",
     "BOOL": "format_bool",
+    "UINT32": "format_uint32",
     "UINT128": "format_uint128",
     "FORMATTED_STRING": "format_string_formatted",
     "FORMATTED_INT": "format_int64_formatted",
@@ -687,6 +688,7 @@ _TERMINAL_FORMAT_BUILTINS: dict[str, str] = {
     "FORMATTED_FLOAT": "format_float64_formatted",
     "FORMATTED_FLOAT32": "format_float32_formatted",
     "FORMATTED_DECIMAL": "format_decimal_formatted",
+    "FORMATTED_UINT32": "format_uint32_formatted",
     "FORMATTED_UINT128": "format_uint128_formatted",
 }
 
