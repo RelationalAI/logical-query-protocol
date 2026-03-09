@@ -203,7 +203,7 @@ update-snapshots: $(PY_PARSER) $(PY_PROTO_GENERATED)
 	cd sdks/python && uv run python -m pytest --snapshot-update
 
 test-julia: $(JL_PARSER) $(JL_PROTO_GENERATED)
-	cd sdks/julia && julia --project=LogicalQueryProtocol.jl -e 'using Pkg; Pkg.test()'
+	cd sdks/julia && julia --startup-file=no --project=LogicalQueryProtocol.jl -e 'using Pkg; Pkg.test()'
 
 test-go: $(GO_PARSER) $(GO_PROTO_GENERATED)
 	cd sdks/go && go test ./test/...
