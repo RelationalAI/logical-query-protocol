@@ -91,6 +91,46 @@ func TestParseTransactionRejectsFragment(t *testing.T) {
 	}
 }
 
+// TestParseFloat32Inf tests parsing inf32 literal and round-tripping through pretty-printer.
+func TestParseFloat32Inf(t *testing.T) {
+	input := `(transaction (epoch (writes (define (fragment :f1 (def :foo ([v::FLOAT32] (= v inf32)))))) (reads (output :foo :foo))))`
+	result, _, err := lqp.Parse(input)
+	if err != nil {
+		t.Fatalf("Failed to parse inf32: %v", err)
+	}
+	if result == nil {
+		t.Fatal("Parse returned nil")
+	}
+	pretty := lqp.ProgramToStr(result)
+	if !strings.Contains(pretty, "inf32") {
+		t.Errorf("Pretty-printed output should contain 'inf32', got:\n%s", pretty)
+	}
+	// Round-trip: parse the pretty-printed output
+	result2, _, err := lqp.Parse(pretty)
+	if err != nil {
+		t.Fatalf("Failed to re-parse pretty-printed inf32: %v", err)
+	}
+	if !proto.Equal(result, result2) {
+		t.Error("Round-trip failed: parsed results differ")
+	}
+}
+
+// TestParseFloat32Nan tests parsing nan32 literal and round-tripping through pretty-printer.
+func TestParseFloat32Nan(t *testing.T) {
+	input := `(transaction (epoch (writes (define (fragment :f1 (def :foo ([v::FLOAT32] (= v nan32)))))) (reads (output :foo :foo))))`
+	result, _, err := lqp.Parse(input)
+	if err != nil {
+		t.Fatalf("Failed to parse nan32: %v", err)
+	}
+	if result == nil {
+		t.Fatal("Parse returned nil")
+	}
+	pretty := lqp.ProgramToStr(result)
+	if !strings.Contains(pretty, "nan32") {
+		t.Errorf("Pretty-printed output should contain 'nan32', got:\n%s", pretty)
+	}
+}
+
 // TestParseLQPFiles parses all LQP files and compares against binary snapshots.
 func TestParseLQPFiles(t *testing.T) {
 	root := repoRoot(t)

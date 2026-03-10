@@ -179,6 +179,7 @@ def run(args) -> int:
         return 1
     grammar = Grammar(
         start=start,
+        token_aliases=grammar_config.token_aliases,
         ignored_completeness=grammar_config.ignored_completeness,
         function_defs=grammar_config.function_defs,
     )
@@ -186,7 +187,8 @@ def run(args) -> int:
         for rule in rules:
             grammar.add_rule(rule)
 
-    # Add tokens with patterns from terminal declarations in grammar file
+    # Add tokens with patterns from terminal declarations in grammar file.
+    # Skip aliases — they share the base token's pattern and shouldn't be in the lexer.
     from .grammar import Token
 
     for terminal_name, terminal_def in grammar_config.terminal_patterns.items():

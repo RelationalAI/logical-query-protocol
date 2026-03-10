@@ -313,7 +313,7 @@ def _build_predictor_tree(
         return (iteration_order, str(token))
 
     for token, indices in sorted(groups.items(), key=token_sort_key):
-        check = _build_token_check(token, depth)
+        check = _build_token_check(token, depth, grammar.token_aliases)
         if len(indices) == 1:
             then_branch = Lit(indices[0])
         else:
@@ -324,28 +324,34 @@ def _build_predictor_tree(
     return result
 
 
-def _build_token_check(term: Terminal, depth: int) -> TargetExpr:
+def _build_token_check(
+    term: Terminal, depth: int, alias_map: dict[str, str] | None = None
+) -> TargetExpr:
     """Build a check for a single token at a given lookahead depth."""
     if isinstance(term, LitTerminal):
         return Call(
             make_builtin("match_lookahead_literal"), [Lit(term.name), Lit(depth)]
         )
     elif isinstance(term, NamedTerminal):
-        return Call(
-            make_builtin("match_lookahead_terminal"), [Lit(term.name), Lit(depth)]
-        )
+        name = term.name
+        if alias_map:
+            name = alias_map.get(name, name)
+        return Call(make_builtin("match_lookahead_terminal"), [Lit(name), Lit(depth)])
     else:
         return Lit(False)
 
 
 def _build_lookahead_check(
-    token_sequences: set[tuple[Terminal, ...]], depth: int
+    token_sequences: set[tuple[Terminal, ...]],
+    depth: int,
+    alias_map: dict[str, str] | None = None,
 ) -> TargetExpr:
     """Build a boolean expression that checks if lookahead matches any of the token sequences.
 
     Args:
         token_sequences: Set of token sequences to match
         depth: Current lookahead depth
+        alias_map: Optional mapping from alias token names to base token names
 
     Returns a boolean expression.
     """
@@ -372,8 +378,8 @@ def _build_lookahead_check(
 
     conditions = []
     for token, subsequences in sorted(groups.items(), key=lambda item: str(item[0])):
-        token_check = _build_token_check(token, depth)
-        deeper_check = _build_lookahead_check(subsequences, depth + 1)
+        token_check = _build_token_check(token, depth, alias_map)
+        deeper_check = _build_lookahead_check(subsequences, depth + 1, alias_map)
         if isinstance(deeper_check, Lit) and deeper_check.value is True:
             conditions.append(token_check)
         else:
@@ -398,7 +404,9 @@ def _build_option_predictor(
         element_first = grammar.analysis.first_k_of(k, element)
         follow_k = follow_set.get(k)
         if not (element_first & follow_k):
-            return _build_lookahead_check(element_first, depth=0)
+            return _build_lookahead_check(
+                element_first, depth=0, alias_map=grammar.token_aliases
+            )
 
     # Still conflicts at MAX_LOOKAHEAD
     element_first = grammar.analysis.first_k_of(MAX_LOOKAHEAD, element)
@@ -431,7 +439,9 @@ def _generate_parse_rhs_ir(
         consume_builtin = make_builtin_with_type(
             "consume_terminal", FunctionType([BaseType("String")], terminal_type)
         )
-        parse_expr = Call(consume_builtin, [Lit(rhs.name)])
+        # Use base token name for aliases so the lexer can recognize them
+        consume_name = grammar.token_aliases.get(rhs.name, rhs.name)
+        parse_expr = Call(consume_builtin, [Lit(consume_name)])
         if apply_action and action:
             if len(action.params) == 0:
                 return Seq([parse_expr, apply_lambda(action, [])])

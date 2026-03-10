@@ -21,6 +21,8 @@
           (def 0x6dbcab937ed297eeba50b9f7eed63afb ([v::INT32] (= v -42i32)))
           (def 0x1f6ccad84a982c2034d9693403089b91 ([v::UINT32] (= v 42u32)))
           (def 0xfc8aa7c5cf3d1ab920633d31f1452d0c ([v::FLOAT32] (= v 1.23f32)))
+          (def 0x53408dadc0bdf725dba2c3416131821a ([v::FLOAT32] (= v inf32)))
+          (def 0x355715249b4aa96989299bf93d60e370 ([v::FLOAT32] (= v nan32)))
           (def 0x26150df48c574bdfa69e436e0b3d5c18 ([v::FLOAT] (= v 1.23)))
           (def 0xbe200df2e3189f85e43fd26b4641043a ([v::FLOAT] (= v inf)))
           (def 0xc8e07fb317f80ba716824aae05679cc7 ([v::FLOAT] (= v nan)))
@@ -73,6 +75,12 @@
             ([v::FLOAT32]
              (and (= v 1.23f32) (atom 0xfc8aa7c5cf3d1ab920633d31f1452d0c 1.23f32))))
           (def
+            0x85ecb666da21657ad337442e7e74a313
+            ([v::FLOAT32] (and (= v inf32) (atom 0x53408dadc0bdf725dba2c3416131821a inf32))))
+          (def
+            0xdf0e52716350ece83c8ef54417a7d39a
+            ([v::FLOAT32] (and (= v nan32) (atom 0x355715249b4aa96989299bf93d60e370 nan32))))
+          (def
             0x36db9cebd42255a7687c86bc5ded861
             ([v::FLOAT] (and (= v 1.23) (atom 0x26150df48c574bdfa69e436e0b3d5c18 1.23))))
           (def
@@ -117,6 +125,8 @@
       (output :int32_n 0xdc90706dfa73ce934aaec8621fbaf77b)
       (output :uint32 0x76e89517bf5f376d14faac56276af9e5)
       (output :float32 0x399ec3de4696f5651e0bdecb92a651dc)
+      (output :float32_inf 0x85ecb666da21657ad337442e7e74a313)
+      (output :float32_nan 0xdf0e52716350ece83c8ef54417a7d39a)
       (output :float 0x36db9cebd42255a7687c86bc5ded861)
       (output :float_inf 0xc1c3cd8136b946100be4dc57455d7234)
       (output :float_nan 0xce2bebf498d8815ec0ad90db8ad0d0f8)
@@ -135,6 +145,8 @@
 ;; 	 ID `0xab144d5b88ef09a71abc70b5fad601f1` -> `dec`
 ;; 	 ID `0x26150df48c574bdfa69e436e0b3d5c18` -> `float`
 ;; 	 ID `0xfc8aa7c5cf3d1ab920633d31f1452d0c` -> `float32`
+;; 	 ID `0x53408dadc0bdf725dba2c3416131821a` -> `float32_inf`
+;; 	 ID `0x355715249b4aa96989299bf93d60e370` -> `float32_nan`
 ;; 	 ID `0xbe200df2e3189f85e43fd26b4641043a` -> `float_inf`
 ;; 	 ID `0xc8e07fb317f80ba716824aae05679cc7` -> `float_nan`
 ;; 	 ID `0x951708d285c81bb0d47c3206f4c27ca8` -> `int`
@@ -150,6 +162,8 @@
 ;; 	 ID `0xf65b3db6f8c5bbf61e3012c91fcd87ed` -> `output_dec`
 ;; 	 ID `0x36db9cebd42255a7687c86bc5ded861` -> `output_float`
 ;; 	 ID `0x399ec3de4696f5651e0bdecb92a651dc` -> `output_float32`
+;; 	 ID `0x85ecb666da21657ad337442e7e74a313` -> `output_float32_inf`
+;; 	 ID `0xdf0e52716350ece83c8ef54417a7d39a` -> `output_float32_nan`
 ;; 	 ID `0xc1c3cd8136b946100be4dc57455d7234` -> `output_float_inf`
 ;; 	 ID `0xce2bebf498d8815ec0ad90db8ad0d0f8` -> `output_float_nan`
 ;; 	 ID `0xa87d36f21053ed12bc9afac49c0c3eb6` -> `output_int`

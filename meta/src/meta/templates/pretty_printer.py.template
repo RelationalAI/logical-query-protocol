@@ -174,7 +174,7 @@ class PrettyPrinter:
 
     @staticmethod
     def format_float32_value(v: float) -> str:
-        """Format a float32 value at 32-bit precision."""
+        """Format a float32 value at 32-bit precision (without suffix)."""
         import struct
         # Round-trip through float32 to get the exact 32-bit value,
         # then format with enough precision to distinguish it.
@@ -185,6 +185,16 @@ class PrettyPrinter:
         if '.' not in s and 'e' not in s and 'inf' not in s and 'nan' not in s:
             s += '.0'
         return s
+
+    @staticmethod
+    def format_float32_literal(v: float) -> str:
+        """Format a float32 value as an LQP literal with the f32 suffix."""
+        import math
+        if math.isinf(v):
+            return 'inf32'
+        if math.isnan(v):
+            return 'nan32'
+        return PrettyPrinter.format_float32_value(v) + 'f32'
 
     def format_string_value(self, s: str) -> str:
         """Format a string value with double quotes for LQP output."""

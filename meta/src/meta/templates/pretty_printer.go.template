@@ -11,6 +11,7 @@ package lqp
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"math/big"
 	"reflect"
 	"sort"
@@ -300,6 +301,16 @@ func formatFloat64(v float64) string {{
 		s += ".0"
 	}}
 	return s
+}}
+
+func formatFloat32(v float32) string {{
+	if math.IsInf(float64(v), 0) {{
+		return "inf32"
+	}}
+	if math.IsNaN(float64(v)) {{
+		return "nan32"
+	}}
+	return fmt.Sprintf("%sf32", strconv.FormatFloat(float64(v), 'g', -1, 32))
 }}
 
 func formatBool(b bool) string {{
