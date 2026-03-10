@@ -25,7 +25,7 @@
         check_no_stale_explicit_imports(
             LogicalQueryProtocol;
             ignore=reexported_names,
-            allow_unanalyzable=(LogicalQueryProtocol.MaintenanceLevel,),
+            allow_unanalyzable=(LogicalQueryProtocol.OptimizationLevel, LogicalQueryProtocol.MaintenanceLevel,),
         )
         check_all_explicit_imports_via_owners(LogicalQueryProtocol)
         check_all_qualified_accesses_via_owners(

@@ -5,8 +5,8 @@ import ProtoBuf as PB
 using ProtoBuf: OneOf
 using ProtoBuf.EnumX: @enumx
 
-export ExportCSVColumn, Demand, Undefine, MaintenanceLevel, Define, Context, Sync
-export SnapshotMapping, Abort, Output, ExportCSVColumns, IVMConfig, Snapshot
+export ExportCSVColumn, OptimizationLevel, Demand, Undefine, MaintenanceLevel, Define
+export Context, Sync, SnapshotMapping, Abort, Output, ExportCSVColumns, IVMConfig, Snapshot
 export ExportCSVSource, Configure, Write, ExportCSVConfig, Export, Epoch, Read, Transaction
 export WhatIf
 abstract type var"##Abstract#Transaction" end
@@ -51,6 +51,8 @@ function PB._encoded_size(x::ExportCSVColumn)
     !isnothing(x.column_data) && (encoded_size += PB._encoded_size(x.column_data, 2))
     return encoded_size
 end
+
+@enumx OptimizationLevel OPTIMIZATION_LEVEL_UNSPECIFIED=0 OPTIMIZATION_LEVEL_DEFAULT=1 OPTIMIZATION_LEVEL_CONSERVATIVE=2 OPTIMIZATION_LEVEL_AGGRESSIVE=3
 
 struct Demand
     relation_id::Union{Nothing,RelationId}
@@ -462,37 +464,43 @@ end
 struct Configure
     semantics_version::Int64
     ivm_config::Union{Nothing,IVMConfig}
+    optimization_level::OptimizationLevel.T
 end
-Configure(;semantics_version = zero(Int64), ivm_config = nothing) = Configure(semantics_version, ivm_config)
-PB.default_values(::Type{Configure}) = (;semantics_version = zero(Int64), ivm_config = nothing)
-PB.field_numbers(::Type{Configure}) = (;semantics_version = 1, ivm_config = 2)
+Configure(;semantics_version = zero(Int64), ivm_config = nothing, optimization_level = OptimizationLevel.OPTIMIZATION_LEVEL_UNSPECIFIED) = Configure(semantics_version, ivm_config, optimization_level)
+PB.default_values(::Type{Configure}) = (;semantics_version = zero(Int64), ivm_config = nothing, optimization_level = OptimizationLevel.OPTIMIZATION_LEVEL_UNSPECIFIED)
+PB.field_numbers(::Type{Configure}) = (;semantics_version = 1, ivm_config = 2, optimization_level = 3)
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Configure}, _endpos::Int=0, _group::Bool=false)
     semantics_version = zero(Int64)
     ivm_config = Ref{Union{Nothing,IVMConfig}}(nothing)
+    optimization_level = OptimizationLevel.OPTIMIZATION_LEVEL_UNSPECIFIED
     while !PB.message_done(d, _endpos, _group)
         field_number, wire_type = PB.decode_tag(d)
         if field_number == 1
             semantics_version = PB.decode(d, Int64)
         elseif field_number == 2
             PB.decode!(d, ivm_config)
+        elseif field_number == 3
+            optimization_level = PB.decode(d, OptimizationLevel.T)
         else
             Base.skip(d, wire_type)
         end
     end
-    return Configure(semantics_version, ivm_config[])
+    return Configure(semantics_version, ivm_config[], optimization_level)
 end
 
 function PB.encode(e::PB.AbstractProtoEncoder, x::Configure)
     initpos = position(e.io)
     x.semantics_version != zero(Int64) && PB.encode(e, 1, x.semantics_version)
     !isnothing(x.ivm_config) && PB.encode(e, 2, x.ivm_config)
+    x.optimization_level != OptimizationLevel.OPTIMIZATION_LEVEL_UNSPECIFIED && PB.encode(e, 3, x.optimization_level)
     return position(e.io) - initpos
 end
 function PB._encoded_size(x::Configure)
     encoded_size = 0
     x.semantics_version != zero(Int64) && (encoded_size += PB._encoded_size(x.semantics_version, 1))
     !isnothing(x.ivm_config) && (encoded_size += PB._encoded_size(x.ivm_config, 2))
+    x.optimization_level != OptimizationLevel.OPTIMIZATION_LEVEL_UNSPECIFIED && (encoded_size += PB._encoded_size(x.optimization_level, 3))
     return encoded_size
 end
 

@@ -243,98 +243,109 @@ class PrettyPrinter:
                 if msg.ivm_config.level == transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_OFF:
                     _t1467 = self._make_value_string("off")
                     result.append(("ivm.maintenance_level", _t1467,))
-        _t1468 = self._make_value_int64(msg.semantics_version)
-        result.append(("semantics_version", _t1468,))
+        if msg.optimization_level == transactions_pb2.OptimizationLevel.OPTIMIZATION_LEVEL_DEFAULT:
+            _t1468 = self._make_value_string("default")
+            result.append(("optimization_level", _t1468,))
+        else:
+            if msg.optimization_level == transactions_pb2.OptimizationLevel.OPTIMIZATION_LEVEL_CONSERVATIVE:
+                _t1469 = self._make_value_string("conservative")
+                result.append(("optimization_level", _t1469,))
+            else:
+                if msg.optimization_level == transactions_pb2.OptimizationLevel.OPTIMIZATION_LEVEL_AGGRESSIVE:
+                    _t1470 = self._make_value_string("aggressive")
+                    result.append(("optimization_level", _t1470,))
+        _t1471 = self._make_value_int64(msg.semantics_version)
+        result.append(("semantics_version", _t1471,))
         return sorted(result)
 
     def deconstruct_csv_config(self, msg: logic_pb2.CSVConfig) -> list[tuple[str, logic_pb2.Value]]:
         result = []
-        _t1469 = self._make_value_int32(msg.header_row)
-        result.append(("csv_header_row", _t1469,))
-        _t1470 = self._make_value_int64(msg.skip)
-        result.append(("csv_skip", _t1470,))
+        _t1472 = self._make_value_int32(msg.header_row)
+        result.append(("csv_header_row", _t1472,))
+        _t1473 = self._make_value_int64(msg.skip)
+        result.append(("csv_skip", _t1473,))
         if msg.new_line != "":
-            _t1471 = self._make_value_string(msg.new_line)
-            result.append(("csv_new_line", _t1471,))
-        _t1472 = self._make_value_string(msg.delimiter)
-        result.append(("csv_delimiter", _t1472,))
-        _t1473 = self._make_value_string(msg.quotechar)
-        result.append(("csv_quotechar", _t1473,))
-        _t1474 = self._make_value_string(msg.escapechar)
-        result.append(("csv_escapechar", _t1474,))
+            _t1474 = self._make_value_string(msg.new_line)
+            result.append(("csv_new_line", _t1474,))
+        _t1475 = self._make_value_string(msg.delimiter)
+        result.append(("csv_delimiter", _t1475,))
+        _t1476 = self._make_value_string(msg.quotechar)
+        result.append(("csv_quotechar", _t1476,))
+        _t1477 = self._make_value_string(msg.escapechar)
+        result.append(("csv_escapechar", _t1477,))
         if msg.comment != "":
-            _t1475 = self._make_value_string(msg.comment)
-            result.append(("csv_comment", _t1475,))
+            _t1478 = self._make_value_string(msg.comment)
+            result.append(("csv_comment", _t1478,))
         for missing_string in msg.missing_strings:
-            _t1476 = self._make_value_string(missing_string)
-            result.append(("csv_missing_strings", _t1476,))
-        _t1477 = self._make_value_string(msg.decimal_separator)
-        result.append(("csv_decimal_separator", _t1477,))
-        _t1478 = self._make_value_string(msg.encoding)
-        result.append(("csv_encoding", _t1478,))
-        _t1479 = self._make_value_string(msg.compression)
-        result.append(("csv_compression", _t1479,))
+            _t1479 = self._make_value_string(missing_string)
+            result.append(("csv_missing_strings", _t1479,))
+        _t1480 = self._make_value_string(msg.decimal_separator)
+        result.append(("csv_decimal_separator", _t1480,))
+        _t1481 = self._make_value_string(msg.encoding)
+        result.append(("csv_encoding", _t1481,))
+        _t1482 = self._make_value_string(msg.compression)
+        result.append(("csv_compression", _t1482,))
         if msg.partition_size_mb != 0:
-            _t1480 = self._make_value_int64(msg.partition_size_mb)
-            result.append(("csv_partition_size_mb", _t1480,))
+            _t1483 = self._make_value_int64(msg.partition_size_mb)
+            result.append(("csv_partition_size_mb", _t1483,))
         return sorted(result)
 
     def deconstruct_betree_info_config(self, msg: logic_pb2.BeTreeInfo) -> list[tuple[str, logic_pb2.Value]]:
         result = []
-        _t1481 = self._make_value_float64(msg.storage_config.epsilon)
-        result.append(("betree_config_epsilon", _t1481,))
-        _t1482 = self._make_value_int64(msg.storage_config.max_pivots)
-        result.append(("betree_config_max_pivots", _t1482,))
-        _t1483 = self._make_value_int64(msg.storage_config.max_deltas)
-        result.append(("betree_config_max_deltas", _t1483,))
-        _t1484 = self._make_value_int64(msg.storage_config.max_leaf)
-        result.append(("betree_config_max_leaf", _t1484,))
+        _t1484 = self._make_value_float64(msg.storage_config.epsilon)
+        result.append(("betree_config_epsilon", _t1484,))
+        _t1485 = self._make_value_int64(msg.storage_config.max_pivots)
+        result.append(("betree_config_max_pivots", _t1485,))
+        _t1486 = self._make_value_int64(msg.storage_config.max_deltas)
+        result.append(("betree_config_max_deltas", _t1486,))
+        _t1487 = self._make_value_int64(msg.storage_config.max_leaf)
+        result.append(("betree_config_max_leaf", _t1487,))
         if msg.relation_locator.HasField("root_pageid"):
             if msg.relation_locator.root_pageid is not None:
                 assert msg.relation_locator.root_pageid is not None
-                _t1485 = self._make_value_uint128(msg.relation_locator.root_pageid)
-                result.append(("betree_locator_root_pageid", _t1485,))
+                _t1488 = self._make_value_uint128(msg.relation_locator.root_pageid)
+                result.append(("betree_locator_root_pageid", _t1488,))
         if msg.relation_locator.HasField("inline_data"):
             if msg.relation_locator.inline_data is not None:
                 assert msg.relation_locator.inline_data is not None
-                _t1486 = self._make_value_string(msg.relation_locator.inline_data.decode('utf-8'))
-                result.append(("betree_locator_inline_data", _t1486,))
-        _t1487 = self._make_value_int64(msg.relation_locator.element_count)
-        result.append(("betree_locator_element_count", _t1487,))
-        _t1488 = self._make_value_int64(msg.relation_locator.tree_height)
-        result.append(("betree_locator_tree_height", _t1488,))
+                _t1489 = self._make_value_string(msg.relation_locator.inline_data.decode('utf-8'))
+                result.append(("betree_locator_inline_data", _t1489,))
+        _t1490 = self._make_value_int64(msg.relation_locator.element_count)
+        result.append(("betree_locator_element_count", _t1490,))
+        _t1491 = self._make_value_int64(msg.relation_locator.tree_height)
+        result.append(("betree_locator_tree_height", _t1491,))
         return sorted(result)
 
     def deconstruct_export_csv_config(self, msg: transactions_pb2.ExportCSVConfig) -> list[tuple[str, logic_pb2.Value]]:
         result = []
         if msg.partition_size is not None:
             assert msg.partition_size is not None
-            _t1489 = self._make_value_int64(msg.partition_size)
-            result.append(("partition_size", _t1489,))
+            _t1492 = self._make_value_int64(msg.partition_size)
+            result.append(("partition_size", _t1492,))
         if msg.compression is not None:
             assert msg.compression is not None
-            _t1490 = self._make_value_string(msg.compression)
-            result.append(("compression", _t1490,))
+            _t1493 = self._make_value_string(msg.compression)
+            result.append(("compression", _t1493,))
         if msg.syntax_header_row is not None:
             assert msg.syntax_header_row is not None
-            _t1491 = self._make_value_boolean(msg.syntax_header_row)
-            result.append(("syntax_header_row", _t1491,))
+            _t1494 = self._make_value_boolean(msg.syntax_header_row)
+            result.append(("syntax_header_row", _t1494,))
         if msg.syntax_missing_string is not None:
             assert msg.syntax_missing_string is not None
-            _t1492 = self._make_value_string(msg.syntax_missing_string)
-            result.append(("syntax_missing_string", _t1492,))
+            _t1495 = self._make_value_string(msg.syntax_missing_string)
+            result.append(("syntax_missing_string", _t1495,))
         if msg.syntax_delim is not None:
             assert msg.syntax_delim is not None
-            _t1493 = self._make_value_string(msg.syntax_delim)
-            result.append(("syntax_delim", _t1493,))
+            _t1496 = self._make_value_string(msg.syntax_delim)
+            result.append(("syntax_delim", _t1496,))
         if msg.syntax_quotechar is not None:
             assert msg.syntax_quotechar is not None
-            _t1494 = self._make_value_string(msg.syntax_quotechar)
-            result.append(("syntax_quotechar", _t1494,))
+            _t1497 = self._make_value_string(msg.syntax_quotechar)
+            result.append(("syntax_quotechar", _t1497,))
         if msg.syntax_escapechar is not None:
             assert msg.syntax_escapechar is not None
-            _t1495 = self._make_value_string(msg.syntax_escapechar)
-            result.append(("syntax_escapechar", _t1495,))
+            _t1498 = self._make_value_string(msg.syntax_escapechar)
+            result.append(("syntax_escapechar", _t1498,))
         return sorted(result)
 
     def deconstruct_relation_id_string(self, msg: logic_pb2.RelationId) -> str:
@@ -347,7 +358,7 @@ class PrettyPrinter:
         if name is None:
             return self.relation_id_to_uint128(msg)
         else:
-            _t1496 = None
+            _t1499 = None
         return None
 
     def deconstruct_bindings(self, abs: logic_pb2.Abstraction) -> tuple[Sequence[logic_pb2.Binding], Sequence[logic_pb2.Binding]]:
@@ -3666,8 +3677,8 @@ class PrettyPrinter:
         for _idx, _rid in enumerate(msg.ids):
             self.newline()
             self.write("(")
-            _t1497 = logic_pb2.UInt128Value(low=_rid.id_low, high=_rid.id_high)
-            self.pprint_dispatch(_t1497)
+            _t1500 = logic_pb2.UInt128Value(low=_rid.id_low, high=_rid.id_high)
+            self.pprint_dispatch(_t1500)
             self.write(" ")
             self.write(self.format_string_value(msg.orig_names[_idx]))
             self.write(")")
@@ -3784,6 +3795,19 @@ class PrettyPrinter:
                 else:
                     if x == transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_ALL:
                         self.write("all")
+
+    def pretty_optimization_level(self, x: int):
+        if x == transactions_pb2.OptimizationLevel.OPTIMIZATION_LEVEL_UNSPECIFIED:
+            self.write("unspecified")
+        else:
+            if x == transactions_pb2.OptimizationLevel.OPTIMIZATION_LEVEL_DEFAULT:
+                self.write("default")
+            else:
+                if x == transactions_pb2.OptimizationLevel.OPTIMIZATION_LEVEL_CONSERVATIVE:
+                    self.write("conservative")
+                else:
+                    if x == transactions_pb2.OptimizationLevel.OPTIMIZATION_LEVEL_AGGRESSIVE:
+                        self.write("aggressive")
 
     # --- Dispatch ---
 
@@ -3983,6 +4007,9 @@ class PrettyPrinter:
         # enum: int
         elif isinstance(msg, int):
             self.pretty_maintenance_level(msg)
+        # enum: int
+        elif isinstance(msg, int):
+            self.pretty_optimization_level(msg)
         else:
             raise ParseError(f"no pretty printer for {type(msg)}")
 

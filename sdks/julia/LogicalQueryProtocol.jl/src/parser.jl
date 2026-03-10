@@ -501,7 +501,7 @@ end
 function default_configure(parser::ParserState)::Proto.Configure
     _t1845 = Proto.IVMConfig(level=Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF)
     ivm_config = _t1845
-    _t1846 = Proto.Configure(semantics_version=0, ivm_config=ivm_config)
+    _t1846 = Proto.Configure(semantics_version=0, ivm_config=ivm_config, optimization_level=Proto.OptimizationLevel.OPTIMIZATION_LEVEL_DEFAULT)
     return _t1846
 end
 
@@ -528,7 +528,24 @@ function construct_configure(parser::ParserState, config_dict::Vector{Tuple{Stri
     ivm_config = _t1847
     _t1848 = _extract_value_int64(parser, get(config, "semantics_version", nothing), 0)
     semantics_version = _t1848
-    _t1849 = Proto.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
+    optimization_level_val = get(config, "optimization_level", nothing)
+    optimization_level = Proto.OptimizationLevel.OPTIMIZATION_LEVEL_DEFAULT
+    if (!isnothing(optimization_level_val) && _has_proto_field(optimization_level_val, Symbol("string_value")))
+        if _get_oneof_field(optimization_level_val, :string_value) == "default"
+            optimization_level = Proto.OptimizationLevel.OPTIMIZATION_LEVEL_DEFAULT
+        else
+            if _get_oneof_field(optimization_level_val, :string_value) == "conservative"
+                optimization_level = Proto.OptimizationLevel.OPTIMIZATION_LEVEL_CONSERVATIVE
+            else
+                if _get_oneof_field(optimization_level_val, :string_value) == "aggressive"
+                    optimization_level = Proto.OptimizationLevel.OPTIMIZATION_LEVEL_AGGRESSIVE
+                else
+                    optimization_level = Proto.OptimizationLevel.OPTIMIZATION_LEVEL_DEFAULT
+                end
+            end
+        end
+    end
+    _t1849 = Proto.Configure(semantics_version=semantics_version, ivm_config=ivm_config, optimization_level=optimization_level)
     return _t1849
 end
 

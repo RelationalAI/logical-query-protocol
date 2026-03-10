@@ -16,6 +16,7 @@ message Transaction {
 message Configure {
   int64 semantics_version = 1;
   IVMConfig ivm_config = 2;
+  OptimizationLevel optimization_level = 3;
 } 
 
 message IVMConfig {
@@ -27,6 +28,13 @@ enum MaintenanceLevel {
   MAINTENANCE_LEVEL_OFF = 1;
   MAINTENANCE_LEVEL_AUTO = 2;
   MAINTENANCE_LEVEL_ALL = 3;
+}
+
+enum OptimizationLevel {
+  OPTIMIZATION_LEVEL_UNSPECIFIED = 0;
+  OPTIMIZATION_LEVEL_DEFAULT = 1;
+  OPTIMIZATION_LEVEL_CONSERVATIVE = 2;
+  OPTIMIZATION_LEVEL_AGGRESSIVE = 3;
 }
 
 message Sync {

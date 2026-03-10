@@ -587,7 +587,7 @@ class Parser:
     def default_configure(self) -> transactions_pb2.Configure:
         _t1854 = transactions_pb2.IVMConfig(level=transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_OFF)
         ivm_config = _t1854
-        _t1855 = transactions_pb2.Configure(semantics_version=0, ivm_config=ivm_config)
+        _t1855 = transactions_pb2.Configure(semantics_version=0, ivm_config=ivm_config, optimization_level=transactions_pb2.OptimizationLevel.OPTIMIZATION_LEVEL_DEFAULT)
         return _t1855
 
     def construct_configure(self, config_dict: Sequence[tuple[str, logic_pb2.Value]]) -> transactions_pb2.Configure:
@@ -609,7 +609,20 @@ class Parser:
         ivm_config = _t1856
         _t1857 = self._extract_value_int64(config.get("semantics_version"), 0)
         semantics_version = _t1857
-        _t1858 = transactions_pb2.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
+        optimization_level_val = config.get("optimization_level")
+        optimization_level = transactions_pb2.OptimizationLevel.OPTIMIZATION_LEVEL_DEFAULT
+        if (optimization_level_val is not None and optimization_level_val.HasField("string_value")):
+            if optimization_level_val.string_value == "default":
+                optimization_level = transactions_pb2.OptimizationLevel.OPTIMIZATION_LEVEL_DEFAULT
+            else:
+                if optimization_level_val.string_value == "conservative":
+                    optimization_level = transactions_pb2.OptimizationLevel.OPTIMIZATION_LEVEL_CONSERVATIVE
+                else:
+                    if optimization_level_val.string_value == "aggressive":
+                        optimization_level = transactions_pb2.OptimizationLevel.OPTIMIZATION_LEVEL_AGGRESSIVE
+                    else:
+                        optimization_level = transactions_pb2.OptimizationLevel.OPTIMIZATION_LEVEL_DEFAULT
+        _t1858 = transactions_pb2.Configure(semantics_version=semantics_version, ivm_config=ivm_config, optimization_level=optimization_level)
         return _t1858
 
     def construct_export_csv_config(self, path: str, columns: Sequence[transactions_pb2.ExportCSVColumn], config_dict: Sequence[tuple[str, logic_pb2.Value]]) -> transactions_pb2.ExportCSVConfig:

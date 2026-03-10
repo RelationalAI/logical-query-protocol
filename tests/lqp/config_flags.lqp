@@ -1,6 +1,7 @@
 (transaction
   (configure
     { :ivm.maintenance_level "auto"
+      :optimization_level "aggressive"
       :semantics_version 1})
   (epoch
     (writes

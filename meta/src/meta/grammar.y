@@ -1314,6 +1314,7 @@ def default_configure() -> transactions.Configure:
     return transactions.Configure(
         semantics_version=0,
         ivm_config=ivm_config,
+        optimization_level=transactions.OptimizationLevel.OPTIMIZATION_LEVEL_DEFAULT,
     )
 
 def construct_configure(config_dict: Sequence[Tuple[String, logic.Value]]) -> transactions.Configure:
@@ -1332,9 +1333,24 @@ def construct_configure(config_dict: Sequence[Tuple[String, logic.Value]]) -> tr
             maintenance_level = transactions.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
     ivm_config: transactions.IVMConfig = transactions.IVMConfig(level=maintenance_level)
     semantics_version: int = _extract_value_int64(builtin.dict_get(config, "semantics_version"), 0)
+    
+    optimization_level_val: Optional[logic.Value] = builtin.dict_get(config, "optimization_level")
+    optimization_level: transactions.OptimizationLevel = transactions.OptimizationLevel.OPTIMIZATION_LEVEL_DEFAULT
+    if (optimization_level_val is not None
+            and builtin.has_proto_field(optimization_level_val, 'string_value')):
+        if optimization_level_val.string_value == "default":
+            optimization_level = transactions.OptimizationLevel.OPTIMIZATION_LEVEL_DEFAULT
+        elif optimization_level_val.string_value == "conservative":
+            optimization_level = transactions.OptimizationLevel.OPTIMIZATION_LEVEL_CONSERVATIVE
+        elif optimization_level_val.string_value == "aggressive":
+            optimization_level = transactions.OptimizationLevel.OPTIMIZATION_LEVEL_AGGRESSIVE
+        else:
+            optimization_level = transactions.OptimizationLevel.OPTIMIZATION_LEVEL_DEFAULT
+    
     return transactions.Configure(
         semantics_version=semantics_version,
         ivm_config=ivm_config,
+        optimization_level=optimization_level,
     )
 
 def construct_export_csv_config(
@@ -1414,6 +1430,12 @@ def deconstruct_configure(msg: transactions.Configure) -> List[Tuple[String, log
         builtin.list_push(result, builtin.tuple("ivm.maintenance_level", _make_value_string("all")))
     elif msg.ivm_config.level == transactions.MaintenanceLevel.MAINTENANCE_LEVEL_OFF:
         builtin.list_push(result, builtin.tuple("ivm.maintenance_level", _make_value_string("off")))
+    if msg.optimization_level == transactions.OptimizationLevel.OPTIMIZATION_LEVEL_DEFAULT:
+        builtin.list_push(result, builtin.tuple("optimization_level", _make_value_string("default")))
+    elif msg.optimization_level == transactions.OptimizationLevel.OPTIMIZATION_LEVEL_CONSERVATIVE:
+        builtin.list_push(result, builtin.tuple("optimization_level", _make_value_string("conservative")))
+    elif msg.optimization_level == transactions.OptimizationLevel.OPTIMIZATION_LEVEL_AGGRESSIVE:
+        builtin.list_push(result, builtin.tuple("optimization_level", _make_value_string("aggressive")))
     builtin.list_push(result, builtin.tuple("semantics_version", _make_value_int64(msg.semantics_version)))
     return builtin.list_sort(result)
 

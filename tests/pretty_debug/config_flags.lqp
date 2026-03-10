@@ -1,5 +1,6 @@
 (transaction
-  (configure { :ivm.maintenance_level "auto" :semantics_version 1})
+  (configure
+    { :ivm.maintenance_level "auto" :optimization_level "aggressive" :semantics_version 1})
   (epoch
     (writes
       (define (fragment :f1 (def 0x3fdfd055f5bd2892ea186504254f8c3a ([v::INT] (+ 1 1 v))))))
