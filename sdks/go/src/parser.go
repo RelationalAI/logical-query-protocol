@@ -775,7 +775,7 @@ func (p *Parser) construct_betree_info(key_types []*pb.Type, value_types []*pb.T
 func (p *Parser) default_configure() *pb.Configure {
 	_t1856 := &pb.IVMConfig{Level: pb.MaintenanceLevel_MAINTENANCE_LEVEL_OFF}
 	ivm_config := _t1856
-	_t1857 := &pb.Configure{SemanticsVersion: 0, IvmConfig: ivm_config}
+	_t1857 := &pb.Configure{SemanticsVersion: 0, IvmConfig: ivm_config, OptimizationLevel: pb.OptimizationLevel_OPTIMIZATION_LEVEL_DEFAULT}
 	return _t1857
 }
 
@@ -802,7 +802,24 @@ func (p *Parser) construct_configure(config_dict [][]interface{}) *pb.Configure 
 	ivm_config := _t1858
 	_t1859 := p._extract_value_int64(dictGetValue(config, "semantics_version"), 0)
 	semantics_version := _t1859
-	_t1860 := &pb.Configure{SemanticsVersion: semantics_version, IvmConfig: ivm_config}
+	optimization_level_val := dictGetValue(config, "optimization_level")
+	optimization_level := pb.OptimizationLevel_OPTIMIZATION_LEVEL_DEFAULT
+	if (optimization_level_val != nil && hasProtoField(optimization_level_val, "string_value")) {
+		if optimization_level_val.GetStringValue() == "default" {
+			optimization_level = pb.OptimizationLevel_OPTIMIZATION_LEVEL_DEFAULT
+		} else {
+			if optimization_level_val.GetStringValue() == "conservative" {
+				optimization_level = pb.OptimizationLevel_OPTIMIZATION_LEVEL_CONSERVATIVE
+			} else {
+				if optimization_level_val.GetStringValue() == "aggressive" {
+					optimization_level = pb.OptimizationLevel_OPTIMIZATION_LEVEL_AGGRESSIVE
+				} else {
+					optimization_level = pb.OptimizationLevel_OPTIMIZATION_LEVEL_DEFAULT
+				}
+			}
+		}
+	}
+	_t1860 := &pb.Configure{SemanticsVersion: semantics_version, IvmConfig: ivm_config, OptimizationLevel: optimization_level}
 	return _t1860
 }
 
