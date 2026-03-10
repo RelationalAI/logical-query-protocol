@@ -1,0 +1,160 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (betree_relation
+            0xb7c7514c7a8d6f916722b366047f554c
+            (betree_info
+              (key_types INT)
+              (value_types STRING INT)
+              {
+               :betree_config_epsilon 0.5
+               :betree_config_max_deltas 16
+               :betree_config_max_leaf 16
+               :betree_config_max_pivots 4
+               :betree_locator_element_count 0
+               :betree_locator_root_pageid 0x1234567890123456789012
+               :betree_locator_tree_height 0}))
+          (betree_relation
+            0xe9f39712641002803dab2752eecab70f
+            (betree_info
+              (key_types INT STRING)
+              (value_types FLOAT)
+              {
+               :betree_config_epsilon 0.8
+               :betree_config_max_deltas 32
+               :betree_config_max_leaf 32
+               :betree_config_max_pivots 8
+               :betree_locator_element_count 100
+               :betree_locator_root_pageid 0xabcdef1234567890abcdef
+               :betree_locator_tree_height 2}))
+          (betree_relation
+            0xf7273790031b9604f61e283d078d899c
+            (betree_info
+              (key_types UINT128)
+              (value_types INT FLOAT (DECIMAL 18 4))
+              {
+               :betree_config_epsilon 0.3
+               :betree_config_max_deltas 20
+               :betree_config_max_leaf 64
+               :betree_config_max_pivots 10
+               :betree_locator_element_count 500
+               :betree_locator_root_pageid 0xfedcba9876543210fedcba
+               :betree_locator_tree_height 3}))
+          (betree_relation
+            0x79a179644e3998e7de4e1c1c615f19ef
+            (betree_info
+              (key_types DATE)
+              (value_types DATETIME STRING)
+              {
+               :betree_config_epsilon 0.6
+               :betree_config_max_deltas 24
+               :betree_config_max_leaf 48
+               :betree_config_max_pivots 6
+               :betree_locator_element_count 250
+               :betree_locator_root_pageid 0x9999888877776666555544
+               :betree_locator_tree_height 2}))
+          (betree_relation
+            0x6a9fae95572ecfc07ba796b624391b91
+            (betree_info
+              (key_types STRING)
+              (value_types BOOLEAN MISSING)
+              {
+               :betree_config_epsilon 0.7
+               :betree_config_max_deltas 15
+               :betree_config_max_leaf 20
+               :betree_config_max_pivots 5
+               :betree_locator_element_count 75
+               :betree_locator_root_pageid 0x1111222233334444555566
+               :betree_locator_tree_height 1}))
+          (betree_relation
+            0x28c373b85ecb82f504f27f8a686482fb
+            (betree_info
+              (key_types INT STRING)
+              (value_types)
+              {
+               :betree_config_epsilon 0.4
+               :betree_config_max_deltas 18
+               :betree_config_max_leaf 40
+               :betree_config_max_pivots 12
+               :betree_locator_element_count 10
+               :betree_locator_root_pageid 0x7777888899990000111122
+               :betree_locator_tree_height 1}))
+          (edb 0x20454ac63c3b79ab2d426911a5256c4f ["my_base_relation"] [INT STRING FLOAT])
+          (edb 0x51d9840801708794c4ef100f5968bcaf ["another" "path"] [INT STRING])
+          (edb
+            0xadb5d8cb4fd4cfc955e4041370991023
+            ["complex" "path" "here"]
+            [(DECIMAL 10 2) INT STRING])
+          (edb 0x9797a4ff975af9e71de0fac229797734 ["empty_path"] [])
+          (def 0x13422d706483bfa0f98a5e886266e7ae ([x::INT] (= x 1)))
+          (algorithm
+            0x338d10ee429ea04fae5511b68fbf8fb9
+            0x513ea24ab8fd0577034804a967248096
+            (script (assign 0x338d10ee429ea04fae5511b68fbf8fb9 ([y::INT] (= y 2)))))))
+      (define
+        (fragment
+          :f2
+          (betree_relation
+            0xd3d1c0f985aba52a85e2440a727bb4f3
+            (betree_info
+              (key_types STRING)
+              (value_types INT)
+              {
+               :betree_config_epsilon 0.5
+               :betree_config_max_deltas 16
+               :betree_config_max_leaf 16
+               :betree_config_max_pivots 4
+               :betree_locator_element_count 1000
+               :betree_locator_root_pageid 0x3333444455556666777788
+               :betree_locator_tree_height 4}))
+          (betree_relation
+            0x19d24ce33c2f520d28f8a2912f277bff
+            (betree_info
+              (key_types INT)
+              (value_types STRING)
+              {
+               :betree_config_epsilon 0.5
+               :betree_config_max_deltas 16
+               :betree_config_max_leaf 16
+               :betree_config_max_pivots 4
+               :betree_locator_element_count 42
+               :betree_locator_inline_data "binary_blob_data_here"
+               :betree_locator_tree_height 1})))))
+    (reads
+      (output :foo 0x13422d706483bfa0f98a5e886266e7ae)
+      (output :edb 0xb7c7514c7a8d6f916722b366047f554c)
+      (output :multi_key 0xe9f39712641002803dab2752eecab70f)
+      (output :numeric_types 0xf7273790031b9604f61e283d078d899c)
+      (output :temporal_data 0x79a179644e3998e7de4e1c1c615f19ef)
+      (output :boolean_data 0x6a9fae95572ecfc07ba796b624391b91)
+      (output :key_only 0x28c373b85ecb82f504f27f8a686482fb)
+      (output :path_simple 0x20454ac63c3b79ab2d426911a5256c4f)
+      (output :path_specialized 0x51d9840801708794c4ef100f5968bcaf)
+      (output :path_mixed 0xadb5d8cb4fd4cfc955e4041370991023)
+      (output :path_empty 0x9797a4ff975af9e71de0fac229797734)
+      (output :bar 0x338d10ee429ea04fae5511b68fbf8fb9)
+      (output :another_edb 0xd3d1c0f985aba52a85e2440a727bb4f3)
+      (output :inline_edb 0x19d24ce33c2f520d28f8a2912f277bff))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `0xd3d1c0f985aba52a85e2440a727bb4f3` -> `another_edb`
+;; 	 ID `0x338d10ee429ea04fae5511b68fbf8fb9` -> `bar`
+;; 	 ID `0x513ea24ab8fd0577034804a967248096` -> `baz`
+;; 	 ID `0x6a9fae95572ecfc07ba796b624391b91` -> `boolean_data`
+;; 	 ID `0xb7c7514c7a8d6f916722b366047f554c` -> `edb`
+;; 	 ID `0x13422d706483bfa0f98a5e886266e7ae` -> `foo`
+;; 	 ID `0x19d24ce33c2f520d28f8a2912f277bff` -> `inline_edb`
+;; 	 ID `0x28c373b85ecb82f504f27f8a686482fb` -> `key_only`
+;; 	 ID `0xe9f39712641002803dab2752eecab70f` -> `multi_key`
+;; 	 ID `0xf7273790031b9604f61e283d078d899c` -> `numeric_types`
+;; 	 ID `0x9797a4ff975af9e71de0fac229797734` -> `path_empty`
+;; 	 ID `0xadb5d8cb4fd4cfc955e4041370991023` -> `path_mixed`
+;; 	 ID `0x20454ac63c3b79ab2d426911a5256c4f` -> `path_simple`
+;; 	 ID `0x51d9840801708794c4ef100f5968bcaf` -> `path_specialized`
+;; 	 ID `0x79a179644e3998e7de4e1c1c615f19ef` -> `temporal_data`

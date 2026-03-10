@@ -1,0 +1,38 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (algorithm
+            0xa5193e54cd52837ed91e32008ccf41ac
+            (script
+              (loop
+                (init
+                  (assign
+                    0xa5193e54cd52837ed91e32008ccf41ac
+                    ([a::INT b::INT] (or (and (= a 1) (= b 2)) (and (= a 2) (= b 3)))))
+                  (assign
+                    0x2ed09e00af8531c8f7bb2542764027e7
+                    ([a::INT b::INT] (and (= a 1) (= b 3))))
+                  (assign 0xadbe254c82095d39531f5e5c1314bdd ([] (false))))
+                (script
+                  (assign 0x8c53b1c4fc3e7870d5da24230e8729c3 ([] (false)))
+                  (loop
+                    (init)
+                    (script
+                      (upsert
+                        0xa5193e54cd52837ed91e32008ccf41ac
+                        ([a::INT b::INT] (atom 0x2ed09e00af8531c8f7bb2542764027e7 a b)))
+                      (break 0x8c53b1c4fc3e7870d5da24230e8729c3 ([] (true)))))
+                  (break 0xadbe254c82095d39531f5e5c1314bdd ([] (true))))))))))
+    (reads (output :R 0xa5193e54cd52837ed91e32008ccf41ac))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `0xa5193e54cd52837ed91e32008ccf41ac` -> `R`
+;; 	 ID `0x2ed09e00af8531c8f7bb2542764027e7` -> `U`
+;; 	 ID `0xadbe254c82095d39531f5e5c1314bdd` -> `always`
+;; 	 ID `0x8c53b1c4fc3e7870d5da24230e8729c3` -> `always2`

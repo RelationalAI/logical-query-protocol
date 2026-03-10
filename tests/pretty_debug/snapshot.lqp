@@ -1,0 +1,69 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 1})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :snapshots
+          (edb 0x3624e471390d4119e743ba2750262197 ["my_edb"] [])
+          (edb 0xceba74ef3d3b0152a90894dc7ae1c114 ["database" "table"] [])
+          (edb 0xc772efb99999f4e6a9aefdc272b64ec8 ["schema" "namespace" "relation"] [])))
+      (define
+        (fragment
+          :frag1
+          (def
+            0x6a1bb464a40d07263ff95ce83517a614
+            ([x::INT y::STRING] (and (= x 1) (= y "hello"))))
+          (csv_data
+            (csv_locator
+              (inline_data
+                "id,big_signed,big_unsigned\n1,170141183460469231731687303715884105727,340282366920938463463374607431768211455\n2,-170141183460469231731687303715884105728,0\n3,0,1"))
+            (csv_config
+              {
+               :csv_compression "auto"
+               :csv_decimal_separator "."
+               :csv_delimiter ","
+               :csv_encoding "utf-8"
+               :csv_escapechar "\\"
+               :csv_header_row 1i32
+               :csv_quotechar "\""
+               :csv_skip 0})
+            (columns
+              (column "id" 0x7dd618d496488bc608a3cb43ce3547dd [INT INT])
+              (column "big_signed" 0xc00744ac4c3b7e574fb72f89046b65c [INT INT128])
+              (column "big_unsigned" 0xca1213b25dd3745c22023b4e849c54eb [INT UINT128]))
+            (asof "2025-01-01T00:00:00Z"))
+          (algorithm
+            0x80ad6fa1421c555c156fcefb75cfa12f
+            0x2430974c86803d8891675e76fd992c20
+            (script
+              (assign
+                0x80ad6fa1421c555c156fcefb75cfa12f
+                ([a::INT b::INT] (and (atom 0x2430974c86803d8891675e76fd992c20 a) (= b a)))))))))
+    (reads
+      (output :snapshot1 0x3624e471390d4119e743ba2750262197)
+      (output :snapshot2 0xceba74ef3d3b0152a90894dc7ae1c114)
+      (output :snapshot3 0xc772efb99999f4e6a9aefdc272b64ec8)))
+  (epoch
+    (writes
+      (snapshot
+        ["my_edb"] 0x6a1bb464a40d07263ff95ce83517a614
+        ["database" "table"] 0x80ad6fa1421c555c156fcefb75cfa12f
+        ["schema" "namespace" "relation"] 0xc00744ac4c3b7e574fb72f89046b65c))
+    (reads
+      (output :snapshot1 0x3624e471390d4119e743ba2750262197)
+      (output :snapshot2 0xceba74ef3d3b0152a90894dc7ae1c114)
+      (output :snapshot3 0xc772efb99999f4e6a9aefdc272b64ec8))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `0xc00744ac4c3b7e574fb72f89046b65c` -> `big_signed`
+;; 	 ID `0xca1213b25dd3745c22023b4e849c54eb` -> `big_unsigned`
+;; 	 ID `0x80ad6fa1421c555c156fcefb75cfa12f` -> `computed`
+;; 	 ID `0x7dd618d496488bc608a3cb43ce3547dd` -> `id`
+;; 	 ID `0x2430974c86803d8891675e76fd992c20` -> `input`
+;; 	 ID `0x6a1bb464a40d07263ff95ce83517a614` -> `my_rel`
+;; 	 ID `0x3624e471390d4119e743ba2750262197` -> `snapshot1`
+;; 	 ID `0xceba74ef3d3b0152a90894dc7ae1c114` -> `snapshot2`
+;; 	 ID `0xc772efb99999f4e6a9aefdc272b64ec8` -> `snapshot3`

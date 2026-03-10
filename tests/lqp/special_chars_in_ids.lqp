@@ -1,0 +1,19 @@
+;; Test that identifiers can contain / # characters
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          (def :my/relation
+            ([x::INT]
+              (and
+                (= x 1)
+                (atom :other/rel x x))))
+          (def :my#relation
+            ([x::INT y::INT]
+              (and
+                (atom :my/relation x)
+                (= y x)))))))
+    (reads
+      (output :my/relation :my/relation)
+      (output :my#relation :my#relation))))

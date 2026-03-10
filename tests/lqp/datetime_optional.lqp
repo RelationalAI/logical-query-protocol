@@ -1,0 +1,11 @@
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          (def :dt ([v::DATETIME]
+            (or
+              (= v (datetime 2024 06 15 10 30 00))
+              (= v (datetime 2025 01 01 00 00 00))))))))
+    (reads
+      (output :dt :dt))))

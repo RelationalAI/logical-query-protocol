@@ -1,0 +1,8 @@
+;; ERROR: fail_unused.lqp:7:30: Unused variable declared: 'unused'
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :frag
+          (def :foo ([x::INT unused::STRING] (= x 1))))))
+    (reads)))

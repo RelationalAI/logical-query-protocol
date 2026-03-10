@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "logical-query-protocol/lqp/v1";
+option go_package = "github.com/RelationalAI/logical-query-protocol/sdks/go/src/lqp/v1";
 
 package relationalai.lqp.v1;
 
@@ -56,6 +56,7 @@ message Write {
     Define define = 1;
     Undefine undefine = 2;
     Context context = 3;
+    Snapshot snapshot = 5;
   }
 }
 
@@ -71,12 +72,29 @@ message Context {
   repeated RelationId relations = 1;
 }
 
+// A single (destination, source) pair within a Snapshot action.
+message SnapshotMapping {
+  repeated string destination_path = 1;
+  RelationId source_relation = 2;
+}
+
+// Demand the source IDBs, take immutable snapshots, and turn them into EDBs under the
+// given paths (specified as sequences of strings, see EDB).
+message Snapshot {
+  repeated SnapshotMapping mappings = 1;
+}
+
 //
 // Export config
 //
 
 message ExportCSVConfig {
   string path = 1;
+
+  ExportCSVSource csv_source = 10;
+  CSVConfig csv_config = 11;
+
+  // Below are all deprecated in favour of the `csv_config` above.
   repeated ExportCSVColumn data_columns = 2;
 
   optional int64 partition_size = 3;
@@ -93,6 +111,17 @@ message ExportCSVConfig {
 message ExportCSVColumn {
   string column_name = 1;
   RelationId column_data = 2;
+}
+
+message ExportCSVColumns {
+  repeated ExportCSVColumn columns = 1;
+}
+
+message ExportCSVSource {
+  oneof csv_source {
+    ExportCSVColumns gnf_columns = 1;
+    RelationId table_def = 2;
+  }
 }
 
 //

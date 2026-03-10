@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "logical-query-protocol/lqp/v1";
+option go_package = "github.com/RelationalAI/logical-query-protocol/sdks/go/src/lqp/v1";
 
 package relationalai.lqp.v1;
 

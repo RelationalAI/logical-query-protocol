@@ -1,0 +1,91 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (def
+            0x7b31a79c38a81db1da7df4ef1cf8be23
+            ([a::INT b::INT]
+             (or
+               (and (= a 1) (= b 2))
+               (and (= a 2) (= b 3))
+               (and (= a 3) (= b 4))
+               (and (= a 2) (= b 5))
+               (and (= a 5) (= b 3))
+               (and (= a 6) (= b 5)))))
+          (algorithm
+            0x1e49557482bbddb3b5998e8d02d347dc
+            (script
+              (loop
+                (init (assign 0x1e49557482bbddb3b5998e8d02d347dc ([n::INT] (= n 1))))
+                (script
+                  (assign
+                    0xeb61a90703b2464fff039f21682508b3
+                    ([m::INT]
+                     (or
+                       (atom 0x1e49557482bbddb3b5998e8d02d347dc m)
+                       (exists
+                         [n::INT]
+                         (and
+                           (atom 0x1e49557482bbddb3b5998e8d02d347dc n)
+                           (atom 0x7b31a79c38a81db1da7df4ef1cf8be23 n m))))))
+                  (break
+                    0xdeedfd02377e258374f7113ca7e27cf3
+                    ([]
+                     (ffi
+                       :rel_primitive_pairwise_equal
+                       (args
+                         ([n::INT] (atom 0x1e49557482bbddb3b5998e8d02d347dc n))
+                         ([n::INT] (atom 0xeb61a90703b2464fff039f21682508b3 n)))
+                       (terms))))
+                  (assign
+                    0x1e49557482bbddb3b5998e8d02d347dc
+                    ([n::INT] (atom 0xeb61a90703b2464fff039f21682508b3 n)))))))
+          (algorithm
+            0xfcc29ab184bd322947dd27b6168ab1aa
+            0xb0c38f4da1463b0ab9e63e99ece54266
+            (script
+              (loop
+                (init
+                  (assign 0xfcc29ab184bd322947dd27b6168ab1aa ([n::INT] (= n 1)))
+                  (assign 0xb0c38f4da1463b0ab9e63e99ece54266 ([_n::INT] (false))))
+                (script
+                  (upsert
+                    0xb0c38f4da1463b0ab9e63e99ece54266
+                    ([n::INT] (atom 0xfcc29ab184bd322947dd27b6168ab1aa n)))
+                  (assign
+                    0xeb61a90703b2464fff039f21682508b3
+                    ([m::INT]
+                     (exists
+                       [n::INT]
+                       (and
+                         (and
+                           (atom 0xfcc29ab184bd322947dd27b6168ab1aa n)
+                           (atom 0x7b31a79c38a81db1da7df4ef1cf8be23 n m))
+                         (not (atom 0xb0c38f4da1463b0ab9e63e99ece54266 m))))))
+                  (assign
+                    0xfcc29ab184bd322947dd27b6168ab1aa
+                    ([n::INT] (atom 0xeb61a90703b2464fff039f21682508b3 n)))
+                  (break
+                    0x192711127426b983f228e95fc746ab28
+                    ([]
+                     (ffi
+                       :rel_primitive_all_empty
+                       (args ([n::INT] (atom 0xfcc29ab184bd322947dd27b6168ab1aa n)))
+                       (terms)))))))))))
+    (reads
+      (output :reachable 0x1e49557482bbddb3b5998e8d02d347dc)
+      (output :reachable_2 0xb0c38f4da1463b0ab9e63e99ece54266))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `0x7b31a79c38a81db1da7df4ef1cf8be23` -> `edges`
+;; 	 ID `0x192711127426b983f228e95fc746ab28` -> `empty_frontier`
+;; 	 ID `0xfcc29ab184bd322947dd27b6168ab1aa` -> `frontier`
+;; 	 ID `0xeb61a90703b2464fff039f21682508b3` -> `next`
+;; 	 ID `0xdeedfd02377e258374f7113ca7e27cf3` -> `nothing_new`
+;; 	 ID `0x1e49557482bbddb3b5998e8d02d347dc` -> `reachable`
+;; 	 ID `0xb0c38f4da1463b0ab9e63e99ece54266` -> `reachable_2`

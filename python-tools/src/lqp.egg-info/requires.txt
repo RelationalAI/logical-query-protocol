@@ -1,0 +1,9 @@
+lark>=1.1.9
+protobuf<5.0.0,>=3.20.3
+colorama
+more-itertools
+
+[test]
+pytest>=7.0.0
+pytest-snapshot
+pyrefly==0.25.1

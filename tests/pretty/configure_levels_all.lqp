@@ -1,0 +1,3 @@
+(transaction
+  (configure { :ivm.maintenance_level "all" :semantics_version 2})
+  (epoch (writes (define (fragment :f2 (def :r2 ([] (= 2 2)))))) (reads (output :r2 :r2))))

@@ -1,0 +1,167 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (def 0x951708d285c81bb0d47c3206f4c27ca8 ([v::INT] (= v 21)))
+          (def 0xfe945580a90006a1972194051e971371 ([v::INT] (= v -21)))
+          (def 0x5e1c57b6df403819c765dc1295bc13cd ([v::INT128] (= v 21i128)))
+          (def
+            0x77641b56ccd92b85ff89d318fd2d802d
+            ([v::INT128] (= v 85968058283706962486085i128)))
+          (def
+            0x1ddd423dd881aeb12298763deeb6c78e
+            ([v::INT128] (= v -5968058283706962486085i128)))
+          (def
+            0x33bf30bb27799b496ef013bf7c7912f6
+            ([v::UINT128] (= v 0x123456789abcdef12345)))
+          (def 0x5434f66a742f009c01b33597509bf953 ([v::INT32] (= v 42i32)))
+          (def 0x6dbcab937ed297eeba50b9f7eed63afb ([v::INT32] (= v -42i32)))
+          (def 0x1f6ccad84a982c2034d9693403089b91 ([v::UINT32] (= v 42u32)))
+          (def 0xfc8aa7c5cf3d1ab920633d31f1452d0c ([v::FLOAT32] (= v 1.23f32)))
+          (def 0x26150df48c574bdfa69e436e0b3d5c18 ([v::FLOAT] (= v 1.23)))
+          (def 0xbe200df2e3189f85e43fd26b4641043a ([v::FLOAT] (= v inf)))
+          (def 0xc8e07fb317f80ba716824aae05679cc7 ([v::FLOAT] (= v nan)))
+          (def 0xf921a23c7643018f21292894b470681 ([v::DATE] (= v (date 2025 8 1))))
+          (def
+            0x3fe33b759a4c3e72fcc03b85ce71384d
+            ([v::DATETIME] (= v (datetime 2025 8 1 20 3 4 123000))))
+          (def 0xab144d5b88ef09a71abc70b5fad601f1 ([v::(DECIMAL 18 6)] (= v 123.456000d18)))
+          (def 0xe738b0bbc85f458d2d2b5f3f667c6d5a ([v::STRING] (= v "hello")))
+          (def 0x3185152129295af588b022ae50b50903 ([v::BOOLEAN] (= v true)))
+          (def
+            0xa87d36f21053ed12bc9afac49c0c3eb6
+            ([v::INT] (and (= v 21) (atom 0x951708d285c81bb0d47c3206f4c27ca8 21))))
+          (def
+            0xf4c51810c6e0e43c215dad297b1739e4
+            ([v::INT] (and (= v -21) (atom 0xfe945580a90006a1972194051e971371 -21))))
+          (def
+            0xe6f2d4218e8a6a29ca1393e6001325f2
+            ([v::INT128]
+             (and (= v 21i128) (atom 0x5e1c57b6df403819c765dc1295bc13cd 21i128))))
+          (def
+            0xe9dee2df288836c6eda7cda6b92f5b23
+            ([v::INT128]
+             (and
+               (= v 85968058283706962486085i128)
+               (atom 0x77641b56ccd92b85ff89d318fd2d802d 85968058283706962486085i128))))
+          (def
+            0x4abc20ba14ab6876e4a62b16540a17bf
+            ([v::INT128]
+             (and
+               (= v -5968058283706962486085i128)
+               (atom 0x1ddd423dd881aeb12298763deeb6c78e -5968058283706962486085i128))))
+          (def
+            0xbfa75d6b7fea7c49da95b7335d3513b4
+            ([v::UINT128]
+             (and
+               (= v 0x123456789abcdef12345)
+               (atom 0x33bf30bb27799b496ef013bf7c7912f6 0x123456789abcdef12345))))
+          (def
+            0x217f241bdc087040e164113b85e45053
+            ([v::INT32] (and (= v 42i32) (atom 0x5434f66a742f009c01b33597509bf953 42i32))))
+          (def
+            0xdc90706dfa73ce934aaec8621fbaf77b
+            ([v::INT32] (and (= v -42i32) (atom 0x6dbcab937ed297eeba50b9f7eed63afb -42i32))))
+          (def
+            0x76e89517bf5f376d14faac56276af9e5
+            ([v::UINT32] (and (= v 42u32) (atom 0x1f6ccad84a982c2034d9693403089b91 42u32))))
+          (def
+            0x399ec3de4696f5651e0bdecb92a651dc
+            ([v::FLOAT32]
+             (and (= v 1.23f32) (atom 0xfc8aa7c5cf3d1ab920633d31f1452d0c 1.23f32))))
+          (def
+            0x36db9cebd42255a7687c86bc5ded861
+            ([v::FLOAT] (and (= v 1.23) (atom 0x26150df48c574bdfa69e436e0b3d5c18 1.23))))
+          (def
+            0xc1c3cd8136b946100be4dc57455d7234
+            ([v::FLOAT] (and (= v inf) (atom 0xbe200df2e3189f85e43fd26b4641043a inf))))
+          (def
+            0xce2bebf498d8815ec0ad90db8ad0d0f8
+            ([v::FLOAT] (and (= v nan) (atom 0xc8e07fb317f80ba716824aae05679cc7 nan))))
+          (def
+            0xf65b3db6f8c5bbf61e3012c91fcd87ed
+            ([v::(DECIMAL 18 6)]
+             (and
+               (= v 123.456000d18)
+               (atom 0xab144d5b88ef09a71abc70b5fad601f1 123.456000d18))))
+          (def
+            0x218c9b2f9bfd811eb6ad928e2663cda5
+            ([v::DATE]
+             (and
+               (= v (date 2025 8 1))
+               (atom 0xf921a23c7643018f21292894b470681 (date 2025 8 1)))))
+          (def
+            0x747ec02a9556547803e6a2f3322db032
+            ([v::DATETIME]
+             (and
+               (= v (datetime 2025 8 1 20 3 4 123000))
+               (atom 0x3fe33b759a4c3e72fcc03b85ce71384d (datetime 2025 8 1 20 3 4 123000)))))
+          (def
+            0xa01ef781c732128dc380d8c45b0e695e
+            ([v::STRING]
+             (and (= v "hello") (atom 0xe738b0bbc85f458d2d2b5f3f667c6d5a "hello"))))
+          (def
+            0x99b3fb2054e11268e02c012f5e84dbd9
+            ([v::BOOLEAN] (and (= v true) (atom 0x3185152129295af588b022ae50b50903 true)))))))
+    (reads
+      (output :int 0xa87d36f21053ed12bc9afac49c0c3eb6)
+      (output :int_n 0xf4c51810c6e0e43c215dad297b1739e4)
+      (output :int128_s 0xe6f2d4218e8a6a29ca1393e6001325f2)
+      (output :int128_l 0xe9dee2df288836c6eda7cda6b92f5b23)
+      (output :int128_n 0x4abc20ba14ab6876e4a62b16540a17bf)
+      (output :uint128 0xbfa75d6b7fea7c49da95b7335d3513b4)
+      (output :int32 0x217f241bdc087040e164113b85e45053)
+      (output :int32_n 0xdc90706dfa73ce934aaec8621fbaf77b)
+      (output :uint32 0x76e89517bf5f376d14faac56276af9e5)
+      (output :float32 0x399ec3de4696f5651e0bdecb92a651dc)
+      (output :float 0x36db9cebd42255a7687c86bc5ded861)
+      (output :float_inf 0xc1c3cd8136b946100be4dc57455d7234)
+      (output :float_nan 0xce2bebf498d8815ec0ad90db8ad0d0f8)
+      (output :dec 0xf65b3db6f8c5bbf61e3012c91fcd87ed)
+      (output :date 0x218c9b2f9bfd811eb6ad928e2663cda5)
+      (output :datetime 0x747ec02a9556547803e6a2f3322db032)
+      (output :str 0xa01ef781c732128dc380d8c45b0e695e)
+      (output :bool 0x99b3fb2054e11268e02c012f5e84dbd9))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `0x3185152129295af588b022ae50b50903` -> `bool`
+;; 	 ID `0xf921a23c7643018f21292894b470681` -> `date`
+;; 	 ID `0x3fe33b759a4c3e72fcc03b85ce71384d` -> `datetime`
+;; 	 ID `0xab144d5b88ef09a71abc70b5fad601f1` -> `dec`
+;; 	 ID `0x26150df48c574bdfa69e436e0b3d5c18` -> `float`
+;; 	 ID `0xfc8aa7c5cf3d1ab920633d31f1452d0c` -> `float32`
+;; 	 ID `0xbe200df2e3189f85e43fd26b4641043a` -> `float_inf`
+;; 	 ID `0xc8e07fb317f80ba716824aae05679cc7` -> `float_nan`
+;; 	 ID `0x951708d285c81bb0d47c3206f4c27ca8` -> `int`
+;; 	 ID `0x77641b56ccd92b85ff89d318fd2d802d` -> `int128_l`
+;; 	 ID `0x1ddd423dd881aeb12298763deeb6c78e` -> `int128_n`
+;; 	 ID `0x5e1c57b6df403819c765dc1295bc13cd` -> `int128_s`
+;; 	 ID `0x5434f66a742f009c01b33597509bf953` -> `int32`
+;; 	 ID `0x6dbcab937ed297eeba50b9f7eed63afb` -> `int32_n`
+;; 	 ID `0xfe945580a90006a1972194051e971371` -> `int_n`
+;; 	 ID `0x99b3fb2054e11268e02c012f5e84dbd9` -> `output_bool`
+;; 	 ID `0x218c9b2f9bfd811eb6ad928e2663cda5` -> `output_date`
+;; 	 ID `0x747ec02a9556547803e6a2f3322db032` -> `output_datetime`
+;; 	 ID `0xf65b3db6f8c5bbf61e3012c91fcd87ed` -> `output_dec`
+;; 	 ID `0x36db9cebd42255a7687c86bc5ded861` -> `output_float`
+;; 	 ID `0x399ec3de4696f5651e0bdecb92a651dc` -> `output_float32`
+;; 	 ID `0xc1c3cd8136b946100be4dc57455d7234` -> `output_float_inf`
+;; 	 ID `0xce2bebf498d8815ec0ad90db8ad0d0f8` -> `output_float_nan`
+;; 	 ID `0xa87d36f21053ed12bc9afac49c0c3eb6` -> `output_int`
+;; 	 ID `0xe9dee2df288836c6eda7cda6b92f5b23` -> `output_int128_l`
+;; 	 ID `0x4abc20ba14ab6876e4a62b16540a17bf` -> `output_int128_n`
+;; 	 ID `0xe6f2d4218e8a6a29ca1393e6001325f2` -> `output_int128_s`
+;; 	 ID `0x217f241bdc087040e164113b85e45053` -> `output_int32`
+;; 	 ID `0xdc90706dfa73ce934aaec8621fbaf77b` -> `output_int32_n`
+;; 	 ID `0xf4c51810c6e0e43c215dad297b1739e4` -> `output_int_n`
+;; 	 ID `0xa01ef781c732128dc380d8c45b0e695e` -> `output_str`
+;; 	 ID `0xbfa75d6b7fea7c49da95b7335d3513b4` -> `output_uint128`
+;; 	 ID `0x76e89517bf5f376d14faac56276af9e5` -> `output_uint32`
+;; 	 ID `0xe738b0bbc85f458d2d2b5f3f667c6d5a` -> `str`
+;; 	 ID `0x33bf30bb27799b496ef013bf7c7912f6` -> `uint128`
+;; 	 ID `0x1f6ccad84a982c2034d9693403089b91` -> `uint32`

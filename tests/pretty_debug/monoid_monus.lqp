@@ -1,0 +1,68 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (algorithm
+            0x2d8a69513b5e1e29a29a4048ffb16e27
+            0xadffeb38ae46cc701e3462343727717b
+            0x188f4a8c51c9ebe112daef408a498e56
+            0xb8e4452e3e29f9e4a1ad8833078a6907
+            (script
+              (loop
+                (init
+                  (assign
+                    0x2d8a69513b5e1e29a29a4048ffb16e27
+                    ([x::INT y::INT] (or (and (= x 1) (= y 10)) (and (= x 2) (= y 3)))))
+                  (assign
+                    0xadffeb38ae46cc701e3462343727717b
+                    ([x::INT y::INT] (or (and (= x 1) (= y 10)) (and (= x 2) (= y 3)))))
+                  (assign
+                    0x188f4a8c51c9ebe112daef408a498e56
+                    ([x::INT y::INT] (or (and (= x 1) (= y 5)) (and (= x 2) (= y 20)))))
+                  (assign
+                    0xb8e4452e3e29f9e4a1ad8833078a6907
+                    ([x::INT y::INT] (or (and (= x 1) (= y 7)) (and (= x 2) (= y 25)))))
+                  (assign
+                    0x2ed09e00af8531c8f7bb2542764027e7
+                    ([x::INT y::INT] (or (and (= x 1) (= y 5)) (and (= x 2) (= y 20))))
+                    (attrs (attribute :function)))
+                  (assign 0xadbe254c82095d39531f5e5c1314bdd ([] (false))))
+                (script
+                  (monoid
+                    (min INT)
+                    0x2d8a69513b5e1e29a29a4048ffb16e27
+                    ([x::INT | y::INT] (atom 0x2ed09e00af8531c8f7bb2542764027e7 x y))
+                    (attrs (attribute :function)))
+                  (monoid
+                    (or)
+                    0xadffeb38ae46cc701e3462343727717b
+                    ([x::INT y::INT] (atom 0x2ed09e00af8531c8f7bb2542764027e7 x y)))
+                  (monus
+                    (or)
+                    0x188f4a8c51c9ebe112daef408a498e56
+                    ([x::INT | y::INT] (atom 0x2ed09e00af8531c8f7bb2542764027e7 x y))
+                    (attrs (attribute :function)))
+                  (monus
+                    (sum INT)
+                    0xb8e4452e3e29f9e4a1ad8833078a6907
+                    ([x::INT | y::INT] (atom 0x2ed09e00af8531c8f7bb2542764027e7 x y))
+                    (attrs (attribute :function)))
+                  (break 0xadbe254c82095d39531f5e5c1314bdd ([] (true))))))))))
+    (reads
+      (output :R1 0x2d8a69513b5e1e29a29a4048ffb16e27)
+      (output :R2 0xadffeb38ae46cc701e3462343727717b)
+      (output :R3 0x188f4a8c51c9ebe112daef408a498e56)
+      (output :R4 0xb8e4452e3e29f9e4a1ad8833078a6907))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `0x2d8a69513b5e1e29a29a4048ffb16e27` -> `R1`
+;; 	 ID `0xadffeb38ae46cc701e3462343727717b` -> `R2`
+;; 	 ID `0x188f4a8c51c9ebe112daef408a498e56` -> `R3`
+;; 	 ID `0xb8e4452e3e29f9e4a1ad8833078a6907` -> `R4`
+;; 	 ID `0x2ed09e00af8531c8f7bb2542764027e7` -> `U`
+;; 	 ID `0xadbe254c82095d39531f5e5c1314bdd` -> `always`

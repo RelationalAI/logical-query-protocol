@@ -1,0 +1,14 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (sync :foo :bar)
+  (epoch
+    (writes
+      (define
+        (fragment
+          :frag
+          (def 0xa3bf4f1b2b0b822cd15d6c15b0f00a08 ([x::INT y::INT] (not (= x y)))))))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `0xa3bf4f1b2b0b822cd15d6c15b0f00a08` -> `test`

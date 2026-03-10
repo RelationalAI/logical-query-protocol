@@ -1,0 +1,3 @@
+[console_scripts]
+lqp = lqp.cli:main
+lqp-meta-tool = meta.cli:main

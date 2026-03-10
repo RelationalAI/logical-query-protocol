@@ -1,8 +1,0 @@
-;; ERROR: Unused variable declared: 'unused'
-(transaction
-  (epoch
-    (writes
-      (define
-        (fragment :frag
-          (def :foo ([x::INT unused::STRING] (= x 1))))))
-    (reads)))

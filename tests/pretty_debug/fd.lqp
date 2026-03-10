@@ -1,0 +1,197 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :person_model
+          (def 0x810aa75cad165b8d2e5d8b08085c3d ([id::INT] (or (= id 1) (= id 2))))
+          (def
+            0xdd1a81e6ae15eddd01bb2095934aa0e0
+            ([id::INT n::STRING]
+             (or (and (= id 1) (= n "SSN#Alice")) (and (= id 2) (= n "SSN#Bob"))))
+            (attrs (attribute :function "checked")))
+          (functional_dependency
+            0x2655b588a5ab786d997cfe24fd21a250
+            ([n::STRING id::INT] (atom 0xdd1a81e6ae15eddd01bb2095934aa0e0 id n))
+            (keys n)
+            (values id))
+          (def
+            0x1c58b8263a8fa1b0b94d78987a712ba2
+            ([id::INT fn::STRING]
+             (or (and (= id 1) (= fn "Alice")) (and (= id 2) (= fn "Bob"))))
+            (attrs (attribute :function "checked")))
+          (def
+            0x35edb833b357569626b4b7cc62b1144b
+            ([id::INT ln::STRING]
+             (or (and (= id 1) (= ln "Smith")) (and (= id 2) (= ln "Johnson"))))
+            (attrs (attribute :function "checked")))
+          (functional_dependency
+            0xc292afe3b4ffeef3cfd7c0528976ec2e
+            ([fn::STRING ln::STRING id::INT]
+             (and
+               (atom 0x1c58b8263a8fa1b0b94d78987a712ba2 id fn)
+               (atom 0x35edb833b357569626b4b7cc62b1144b id ln)))
+            (keys fn ln)
+            (values id))))
+      (define
+        (fragment
+          :emp_model
+          (def 0xc8c84d3594c867af4cefb5a7e9fb4eac ([id::INT] (= id 1)))
+          (def
+            0x4b7d982a77a5f6a8646f12de62d2daa8
+            ([id::INT eid::INT] (and (= id 1) (= eid 1001)))
+            (attrs (attribute :function "checked")))
+          (functional_dependency
+            0x1f5d7bc6f94de5e61150ca51817b3bd6
+            ([n::STRING id::INT] (atom 0xdd1a81e6ae15eddd01bb2095934aa0e0 id n))
+            (keys n)
+            (values id))
+          (functional_dependency
+            0xc88a59dfe82a64c0712f3718edb9062a
+            ([eid::INT id::INT] (atom 0x4b7d982a77a5f6a8646f12de62d2daa8 id eid))
+            (keys eid)
+            (values id))))
+      (define
+        (fragment
+          :query1
+          (def
+            0x4581895a8ae0daa86ed9f59e1f6b8682
+            ([n::STRING fn::STRING ln::STRING eid::INT]
+             (exists
+               [person_id::INT]
+               (and
+                 (atom 0xdd1a81e6ae15eddd01bb2095934aa0e0 person_id n)
+                 (atom 0x1c58b8263a8fa1b0b94d78987a712ba2 person_id fn)
+                 (atom 0x35edb833b357569626b4b7cc62b1144b person_id ln)
+                 (atom 0x4b7d982a77a5f6a8646f12de62d2daa8 person_id eid)
+                 (atom 0xc8c84d3594c867af4cefb5a7e9fb4eac person_id))))))))
+    (reads (output :output1 0x4581895a8ae0daa86ed9f59e1f6b8682)))
+  (epoch
+    (writes
+      (define
+        (fragment
+          :car_model
+          (def 0x330393705ce470b22f0194f582234371 ([id::INT] (or (= id 3) (= id 4))))
+          (def
+            0x4ef984015881f541b940755c92d0747f
+            ([id::INT v::STRING]
+             (or (and (= id 3) (= v "VIN#Honda")) (and (= id 4) (= v "VIN#Toyota"))))
+            (attrs (attribute :function "checked")))
+          (functional_dependency
+            0xe7708433dc0cbf40e92157c81901ec57
+            ([v::STRING id::INT] (atom 0x4ef984015881f541b940755c92d0747f id v))
+            (keys v)
+            (values id))
+          (def
+            0x74484cf01c8fb2da90ca6695a5531
+            ([id::INT m::STRING]
+             (or (and (= id 3) (= m "Honda")) (and (= id 4) (= m "Toyota"))))
+            (attrs (attribute :function "checked")))
+          (def
+            0x119e761cf99d9d2c4f87a3b252093938
+            ([person_id::INT car_id::INT date::STRING amount::INT]
+             (or
+               (and (= person_id 1) (= car_id 3) (= date "2020-01-15") (= amount 20000))
+               (and (= person_id 2) (= car_id 4) (= date "2021-06-30") (= amount 25000))))
+            (attrs (attribute :function "checked" 2)))))))
+  (epoch
+    (writes
+      (define
+        (fragment
+          :car_purchase_fd
+          (functional_dependency
+            0x5f8e787e2b651fc8183292e3b060f8a9
+            ([person_id::INT car_id::INT date::STRING amount::INT]
+             (atom 0x119e761cf99d9d2c4f87a3b252093938 person_id car_id date amount))
+            (keys car_id date)
+            (values person_id))))
+      (define
+        (fragment
+          :ownership_model
+          (def
+            0xb8068deb2855b334f2e511e84b942c12
+            ([person_id::INT car_id::INT]
+             (exists
+               [date::STRING amount::INT]
+               (and
+                 (atom 0x119e761cf99d9d2c4f87a3b252093938 person_id car_id date amount)
+                 (>= amount 20000)))))
+          (functional_dependency
+            0x5bc8afca8480ce1ab4b65e3fab58171a
+            ([person_id::INT car_id::INT]
+             (and
+               (atom 0xb8068deb2855b334f2e511e84b942c12 person_id car_id)
+               (atom 0x810aa75cad165b8d2e5d8b08085c3d person_id)))
+            (keys person_id)
+            (values car_id))))))
+  (epoch
+    (writes
+      (define
+        (fragment
+          :ownership_model
+          (def
+            0xb8068deb2855b334f2e511e84b942c12
+            ([person_id::INT car_id::INT]
+             (exists
+               [date::STRING amount::INT]
+               (atom 0x119e761cf99d9d2c4f87a3b252093938 person_id car_id date amount))))
+          (functional_dependency
+            0x7a1d0793f38ac392ee29ebbd70190890
+            ([person_id::INT car_id::INT]
+             (atom 0xb8068deb2855b334f2e511e84b942c12 person_id car_id))
+            (keys car_id)
+            (values person_id))))
+      (undefine :emp_model)))
+  (epoch
+    (writes
+      (define
+        (fragment
+          :query2
+          (functional_dependency
+            0xd6d4319f03a5f58e4ab9b363a1fbbffd
+            ([n::STRING car_id::INT person_id::INT v::STRING]
+             (and
+               (atom 0xdd1a81e6ae15eddd01bb2095934aa0e0 person_id n)
+               (atom 0x4ef984015881f541b940755c92d0747f car_id v)
+               (atom 0xb8068deb2855b334f2e511e84b942c12 person_id car_id)))
+            (keys v)
+            (values n))
+          (def
+            0xb24dee6317986e40b8145878df503ceb
+            ([n::STRING fn::STRING ln::STRING v::STRING]
+             (exists
+               [person_id::INT car_id::INT]
+               (and
+                 (atom 0xdd1a81e6ae15eddd01bb2095934aa0e0 person_id n)
+                 (atom 0x1c58b8263a8fa1b0b94d78987a712ba2 person_id fn)
+                 (atom 0x35edb833b357569626b4b7cc62b1144b person_id ln)
+                 (atom 0xb8068deb2855b334f2e511e84b942c12 person_id car_id)
+                 (atom 0x4ef984015881f541b940755c92d0747f car_id v))))))))
+    (reads (output :output2 0xb24dee6317986e40b8145878df503ceb))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `0x330393705ce470b22f0194f582234371` -> `Car`
+;; 	 ID `0xc8c84d3594c867af4cefb5a7e9fb4eac` -> `Employee`
+;; 	 ID `0x810aa75cad165b8d2e5d8b08085c3d` -> `Person`
+;; 	 ID `0x5bc8afca8480ce1ab4b65e3fab58171a` -> `car_determines_owner`
+;; 	 ID `0x7a1d0793f38ac392ee29ebbd70190890` -> `car_has_at_most_one_owner`
+;; 	 ID `0x5f8e787e2b651fc8183292e3b060f8a9` -> `date_and_car_determine_person`
+;; 	 ID `0x4b7d982a77a5f6a8646f12de62d2daa8` -> `emp_id`
+;; 	 ID `0xc88a59dfe82a64c0712f3718edb9062a` -> `emp_id_is_employee_key`
+;; 	 ID `0x1c58b8263a8fa1b0b94d78987a712ba2` -> `first_name`
+;; 	 ID `0x35edb833b357569626b4b7cc62b1144b` -> `last_name`
+;; 	 ID `0x74484cf01c8fb2da90ca6695a5531` -> `make`
+;; 	 ID `0xc292afe3b4ffeef3cfd7c0528976ec2e` -> `name_is_person_key`
+;; 	 ID `0xb8068deb2855b334f2e511e84b942c12` -> `owns`
+;; 	 ID `0x119e761cf99d9d2c4f87a3b252093938` -> `purchased_on_for`
+;; 	 ID `0x4581895a8ae0daa86ed9f59e1f6b8682` -> `query1`
+;; 	 ID `0xb24dee6317986e40b8145878df503ceb` -> `query2`
+;; 	 ID `0xdd1a81e6ae15eddd01bb2095934aa0e0` -> `ssn`
+;; 	 ID `0x1f5d7bc6f94de5e61150ca51817b3bd6` -> `ssn_is_employee_key`
+;; 	 ID `0x2655b588a5ab786d997cfe24fd21a250` -> `ssn_is_person_key`
+;; 	 ID `0x4ef984015881f541b940755c92d0747f` -> `vin`
+;; 	 ID `0xd6d4319f03a5f58e4ab9b363a1fbbffd` -> `vin_determines_owner`
+;; 	 ID `0xe7708433dc0cbf40e92157c81901ec57` -> `vin_is_car_key`

@@ -5,16 +5,16 @@ class".
 The protobuf specification is located in the `proto/` sub-directory. Auto-generated code by
 the protobuf compiler should be in `gen/`.
 
-Python tooling is in `python-tools/`. Check the `python-tools/README.md` for more
-instructions, e.g. how to verify your changes.
+SDKs for each first-class language are in `sdks/`. Check the respective README's for more
+instructions. Each SDK contains a parser and pretty-printer for a S-expression
+representation of the LQP, which is human-readable and meant for testing and debugging.
 
-For each of the three first class languages, we intend to provide the following tools:
+Any changes to the protobuf specification will need to be reflected in all SDKs.
 
-1. A parser for the S-expression based human-readable representation of LQP.
-2. A pretty printer, to convert from proto messages to the human-readable representation.
-3. An IR.
+Any changes to the protobuf specification should be covered by tests in `tests/`.
 
-Any changes to the protobuf specification will need to be reflected in all three of those.
+Building and testing of the ProtoBuf code and SDKs is driven by the top-level `Makefile`.
 
-Once the parser is updated, the test cases in `python-tools/tests/test_files/lqp` may need
-to be updated accordingly.
+IMPORTANT: Do not edit generated source files directly. Instead edit either the protobuf
+specifications in `proto/` or the meta-tooling in `meta/`.
+

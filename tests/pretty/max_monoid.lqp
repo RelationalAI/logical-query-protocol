@@ -1,0 +1,29 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (algorithm
+            :R1
+            (script
+              (loop
+                (init
+                  (assign
+                    :R1
+                    ([x::INT y::INT] (or (and (= x 1) (= y 10)) (and (= x 2) (= y 20)))))
+                  (assign
+                    :U
+                    ([x::INT y::INT] (and (= x 1) (= y 15)))
+                    (attrs (attribute :function)))
+                  (assign :always ([] (false))))
+                (script
+                  (monoid
+                    (max INT)
+                    :R1
+                    ([x::INT | y::INT] (atom :U x y))
+                    (attrs (attribute :function)))
+                  (upsert :R1 ([x::INT y::INT] (atom :U x y)) (attrs (attribute :function)))
+                  (break :always ([] (true)) (attrs (attribute :function))))))))))
+    (reads (output :R1 :R1))))
