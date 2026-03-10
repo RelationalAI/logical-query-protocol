@@ -6,27 +6,15 @@ using ProtoBuf: OneOf
 using ProtoBuf.EnumX: @enumx
 
 export DateTimeType, RelationId, Var, FloatType, UInt128Type, Int32Type, Float32Type
-<<<<<<< HEAD
 export BeTreeConfig, DateTimeValue, IcebergLocator, DateValue, OrMonoid, CSVLocator
 export Int128Type, DecimalType, UnspecifiedType, DateType, MissingType, MissingValue
 export CSVConfig, IcebergConfig, IntType, StringType, Int128Value, UInt128Value
-export BooleanType, DecimalValue, BeTreeLocator, var"#Type", Value, GNFColumn, MinMonoid
-export SumMonoid, MaxMonoid, BeTreeInfo, Binding, EDB, Attribute, Term, CSVData
+export BooleanType, UInt32Type, DecimalValue, BeTreeLocator, var"#Type", Value, GNFColumn
+export MinMonoid, SumMonoid, MaxMonoid, BeTreeInfo, Binding, EDB, Attribute, Term, CSVData
 export IcebergData, Monoid, BeTreeRelation, Cast, Pragma, Atom, RelTerm, Data, Primitive
 export RelAtom, Abstraction, Algorithm, Assign, Break, Conjunction, Constraint, Def
 export Disjunction, Exists, FFI, FunctionalDependency, MonoidDef, MonusDef, Not, Reduce
 export Script, Upsert, Construct, Loop, Declaration, Instruction, Formula
-=======
-export BeTreeConfig, DateTimeValue, DateValue, OrMonoid, CSVLocator, Int128Type
-export DecimalType, UnspecifiedType, DateType, MissingType, MissingValue, CSVConfig
-export IntType, StringType, Int128Value, UInt128Value, BooleanType, UInt32Type
-export DecimalValue, BeTreeLocator, var"#Type", Value, GNFColumn, MinMonoid, SumMonoid
-export MaxMonoid, BeTreeInfo, Binding, EDB, Attribute, Term, CSVData, Monoid
-export BeTreeRelation, Cast, Pragma, Atom, RelTerm, Data, Primitive, RelAtom, Abstraction
-export Algorithm, Assign, Break, Conjunction, Constraint, Def, Disjunction, Exists, FFI
-export FunctionalDependency, MonoidDef, MonusDef, Not, Reduce, Script, Upsert, Construct
-export Loop, Declaration, Instruction, Formula
->>>>>>> fc217ea070f8112b6e8950d12a97b7f27827bacd
 abstract type var"##Abstract#Abstraction" end
 abstract type var"##Abstract#Not" end
 abstract type var"##Abstract#Break" end
