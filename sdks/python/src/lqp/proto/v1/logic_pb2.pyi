@@ -1,8 +1,7 @@
 from google.protobuf.internal import containers as _containers
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from collections.abc import Iterable as _Iterable, Mapping as _Mapping
-from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
+from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Mapping, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -337,14 +336,16 @@ class Attribute(_message.Message):
     def __init__(self, name: _Optional[str] = ..., args: _Optional[_Iterable[_Union[Value, _Mapping]]] = ...) -> None: ...
 
 class Data(_message.Message):
-    __slots__ = ("edb", "betree_relation", "csv_data")
+    __slots__ = ("edb", "betree_relation", "csv_data", "iceberg_data")
     EDB_FIELD_NUMBER: _ClassVar[int]
     BETREE_RELATION_FIELD_NUMBER: _ClassVar[int]
     CSV_DATA_FIELD_NUMBER: _ClassVar[int]
+    ICEBERG_DATA_FIELD_NUMBER: _ClassVar[int]
     edb: EDB
     betree_relation: BeTreeRelation
     csv_data: CSVData
-    def __init__(self, edb: _Optional[_Union[EDB, _Mapping]] = ..., betree_relation: _Optional[_Union[BeTreeRelation, _Mapping]] = ..., csv_data: _Optional[_Union[CSVData, _Mapping]] = ...) -> None: ...
+    iceberg_data: IcebergData
+    def __init__(self, edb: _Optional[_Union[EDB, _Mapping]] = ..., betree_relation: _Optional[_Union[BeTreeRelation, _Mapping]] = ..., csv_data: _Optional[_Union[CSVData, _Mapping]] = ..., iceberg_data: _Optional[_Union[IcebergData, _Mapping]] = ...) -> None: ...
 
 class EDB(_message.Message):
     __slots__ = ("target_id", "path", "types")
@@ -447,6 +448,54 @@ class CSVConfig(_message.Message):
     compression: str
     partition_size_mb: int
     def __init__(self, header_row: _Optional[int] = ..., skip: _Optional[int] = ..., new_line: _Optional[str] = ..., delimiter: _Optional[str] = ..., quotechar: _Optional[str] = ..., escapechar: _Optional[str] = ..., comment: _Optional[str] = ..., missing_strings: _Optional[_Iterable[str]] = ..., decimal_separator: _Optional[str] = ..., encoding: _Optional[str] = ..., compression: _Optional[str] = ..., partition_size_mb: _Optional[int] = ...) -> None: ...
+
+class IcebergData(_message.Message):
+    __slots__ = ("locator", "config", "columns", "to_snapshot")
+    LOCATOR_FIELD_NUMBER: _ClassVar[int]
+    CONFIG_FIELD_NUMBER: _ClassVar[int]
+    COLUMNS_FIELD_NUMBER: _ClassVar[int]
+    TO_SNAPSHOT_FIELD_NUMBER: _ClassVar[int]
+    locator: IcebergLocator
+    config: IcebergConfig
+    columns: _containers.RepeatedCompositeFieldContainer[GNFColumn]
+    to_snapshot: str
+    def __init__(self, locator: _Optional[_Union[IcebergLocator, _Mapping]] = ..., config: _Optional[_Union[IcebergConfig, _Mapping]] = ..., columns: _Optional[_Iterable[_Union[GNFColumn, _Mapping]]] = ..., to_snapshot: _Optional[str] = ...) -> None: ...
+
+class IcebergLocator(_message.Message):
+    __slots__ = ("table_name", "namespace", "warehouse")
+    TABLE_NAME_FIELD_NUMBER: _ClassVar[int]
+    NAMESPACE_FIELD_NUMBER: _ClassVar[int]
+    WAREHOUSE_FIELD_NUMBER: _ClassVar[int]
+    table_name: str
+    namespace: _containers.RepeatedScalarFieldContainer[str]
+    warehouse: str
+    def __init__(self, table_name: _Optional[str] = ..., namespace: _Optional[_Iterable[str]] = ..., warehouse: _Optional[str] = ...) -> None: ...
+
+class IcebergConfig(_message.Message):
+    __slots__ = ("catalog_uri", "scope", "properties", "credentials")
+    class PropertiesEntry(_message.Message):
+        __slots__ = ("key", "value")
+        KEY_FIELD_NUMBER: _ClassVar[int]
+        VALUE_FIELD_NUMBER: _ClassVar[int]
+        key: str
+        value: str
+        def __init__(self, key: _Optional[str] = ..., value: _Optional[str] = ...) -> None: ...
+    class CredentialsEntry(_message.Message):
+        __slots__ = ("key", "value")
+        KEY_FIELD_NUMBER: _ClassVar[int]
+        VALUE_FIELD_NUMBER: _ClassVar[int]
+        key: str
+        value: str
+        def __init__(self, key: _Optional[str] = ..., value: _Optional[str] = ...) -> None: ...
+    CATALOG_URI_FIELD_NUMBER: _ClassVar[int]
+    SCOPE_FIELD_NUMBER: _ClassVar[int]
+    PROPERTIES_FIELD_NUMBER: _ClassVar[int]
+    CREDENTIALS_FIELD_NUMBER: _ClassVar[int]
+    catalog_uri: str
+    scope: str
+    properties: _containers.ScalarMap[str, str]
+    credentials: _containers.ScalarMap[str, str]
+    def __init__(self, catalog_uri: _Optional[str] = ..., scope: _Optional[str] = ..., properties: _Optional[_Mapping[str, str]] = ..., credentials: _Optional[_Mapping[str, str]] = ...) -> None: ...
 
 class GNFColumn(_message.Message):
     __slots__ = ("column_path", "target_id", "types")
@@ -578,7 +627,7 @@ class Value(_message.Message):
     boolean_value: bool
     int32_value: int
     float32_value: float
-    def __init__(self, string_value: _Optional[str] = ..., int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128Value, _Mapping]] = ..., int128_value: _Optional[_Union[Int128Value, _Mapping]] = ..., missing_value: _Optional[_Union[MissingValue, _Mapping]] = ..., date_value: _Optional[_Union[DateValue, _Mapping]] = ..., datetime_value: _Optional[_Union[DateTimeValue, _Mapping]] = ..., decimal_value: _Optional[_Union[DecimalValue, _Mapping]] = ..., boolean_value: _Optional[bool] = ..., int32_value: _Optional[int] = ..., float32_value: _Optional[float] = ...) -> None: ...
+    def __init__(self, string_value: _Optional[str] = ..., int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128Value, _Mapping]] = ..., int128_value: _Optional[_Union[Int128Value, _Mapping]] = ..., missing_value: _Optional[_Union[MissingValue, _Mapping]] = ..., date_value: _Optional[_Union[DateValue, _Mapping]] = ..., datetime_value: _Optional[_Union[DateTimeValue, _Mapping]] = ..., decimal_value: _Optional[_Union[DecimalValue, _Mapping]] = ..., boolean_value: bool = ..., int32_value: _Optional[int] = ..., float32_value: _Optional[float] = ...) -> None: ...
 
 class UInt128Value(_message.Message):
     __slots__ = ("low", "high")
