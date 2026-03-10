@@ -29,6 +29,7 @@ from .target import (
 # Type aliases for convenience
 ANY = VarType("Any")
 INT32 = BaseType("Int32")
+UINT32 = BaseType("UInt32")
 INT64 = BaseType("Int64")
 FLOAT32 = BaseType("Float32")
 FLOAT64 = BaseType("Float64")
@@ -159,6 +160,8 @@ register_builtin("encode_string", [STRING], BYTES)
 # === Type conversions ===
 register_builtin("int64_to_int32", [INT64], INT32)
 register_builtin("int32_to_int64", [INT32], INT64)
+register_builtin("int64_to_uint32", [INT64], UINT32)
+register_builtin("uint32_to_int64", [UINT32], INT64)
 register_builtin("float64_to_float32", [FLOAT64], FLOAT32)
 register_builtin("float32_to_float64", [FLOAT32], FLOAT64)
 register_builtin("decode_string", [BYTES], STRING)
@@ -237,6 +240,7 @@ register_builtin("try_flat_io", [T, T1], OptionType(STRING))
 # === Formatting for terminal types ===
 register_builtin("format_int64", [INT64], STRING)
 register_builtin("format_int32", [INT32], STRING)
+register_builtin("format_uint32", [UINT32], STRING)
 register_builtin("format_float32", [FLOAT32], STRING)
 register_builtin("format_float64", [FLOAT64], STRING)
 register_builtin("format_string", [STRING], STRING)
@@ -333,6 +337,7 @@ __all__ = [
     "ANY",
     "INT64",
     "INT32",
+    "UINT32",
     "FLOAT32",
     "FLOAT64",
     "STRING",

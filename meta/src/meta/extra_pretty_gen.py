@@ -57,7 +57,7 @@ PROTO_FORMAT_MAP: dict[str, str] = {
     "string": "format_string",
     "int32": "format_int32",
     "int64": "format_int64",
-    "uint32": "format_int64",
+    "uint32": "format_uint32",
     "uint64": "format_int64",
     "fixed64": "format_int64",
     "float": "format_float32",

@@ -40,6 +40,7 @@
 %token FLOAT32 Float32 r'[-]?\d+\.\d+f32'
 %token INT Int64 r'[-]?\d+'
 %token INT32 Int32 r'[-]?\d+i32'
+%token UINT32 UInt32 r'\d+u32'
 %token INT128 logic.Int128Value r'[-]?\d+i128'
 %token STRING String r'"(?:[^"\\]|\\.)*"'
 %token SYMBOL String r'[a-zA-Z_][a-zA-Z0-9_./#-]*'
@@ -121,6 +122,7 @@
 %nonterm instruction logic.Instruction
 %nonterm int_type logic.IntType
 %nonterm int32_type logic.Int32Type
+%nonterm uint32_type logic.UInt32Type
 %nonterm int128_type logic.Int128Type
 %nonterm loop logic.Loop
 %nonterm lt logic.Primitive
@@ -257,6 +259,10 @@ value
       construct: $$ = logic.Value(float32_value=$1)
       deconstruct if builtin.has_proto_field($$, 'float32_value'):
         $1: Float32 = $$.float32_value
+    | UINT32
+      construct: $$ = logic.Value(uint32_value=$1)
+      deconstruct if builtin.has_proto_field($$, 'uint32_value'):
+        $1: UInt32 = $$.uint32_value
 
 date
     : "(" "date" INT INT INT ")"
@@ -455,6 +461,10 @@ type
       construct: $$ = logic.Type(float32_type=$1)
       deconstruct if builtin.has_proto_field($$, 'float32_type'):
         $1: logic.Float32Type = $$.float32_type
+    | uint32_type
+      construct: $$ = logic.Type(uint32_type=$1)
+      deconstruct if builtin.has_proto_field($$, 'uint32_type'):
+        $1: logic.UInt32Type = $$.uint32_type
 
 unspecified_type
     : "UNKNOWN"
@@ -506,6 +516,10 @@ int32_type
 float32_type
     : "FLOAT32"
       construct: $$ = logic.Float32Type()
+
+uint32_type
+    : "UINT32"
+      construct: $$ = logic.UInt32Type()
 
 boolean_type
     : "BOOLEAN"

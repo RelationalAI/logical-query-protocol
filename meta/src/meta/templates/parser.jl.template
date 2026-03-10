@@ -83,6 +83,8 @@ scan_int(n::String) = Base.parse(Int64, n)
 
 scan_int32(n::String) = Base.parse(Int32, n[1:end-3])  # Remove "i32" suffix
 
+scan_uint32(n::String) = Base.parse(UInt32, n[1:end-3])  # Remove "u32" suffix
+
 scan_float32(f::String) = Base.parse(Float32, f[1:end-3])  # Remove "f32" suffix
 
 function scan_float(f::String)
@@ -376,7 +378,7 @@ end
 # Export main parse functions and error type
 export parse, parse_transaction, parse_fragment, ParseError
 # Export scanner functions for testing
-export scan_string, scan_int, scan_int32, scan_float, scan_float32, scan_int128, scan_uint128, scan_decimal
+export scan_string, scan_int, scan_int32, scan_uint32, scan_float, scan_float32, scan_int128, scan_uint128, scan_decimal
 # Export Lexer and provenance types for testing
 export Lexer, Location, Span
 

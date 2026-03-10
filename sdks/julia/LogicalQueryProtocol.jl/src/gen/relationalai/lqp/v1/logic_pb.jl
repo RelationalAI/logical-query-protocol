@@ -6,6 +6,7 @@ using ProtoBuf: OneOf
 using ProtoBuf.EnumX: @enumx
 
 export DateTimeType, RelationId, Var, FloatType, UInt128Type, Int32Type, Float32Type
+<<<<<<< HEAD
 export BeTreeConfig, DateTimeValue, IcebergLocator, DateValue, OrMonoid, CSVLocator
 export Int128Type, DecimalType, UnspecifiedType, DateType, MissingType, MissingValue
 export CSVConfig, IcebergConfig, IntType, StringType, Int128Value, UInt128Value
@@ -15,6 +16,17 @@ export IcebergData, Monoid, BeTreeRelation, Cast, Pragma, Atom, RelTerm, Data, P
 export RelAtom, Abstraction, Algorithm, Assign, Break, Conjunction, Constraint, Def
 export Disjunction, Exists, FFI, FunctionalDependency, MonoidDef, MonusDef, Not, Reduce
 export Script, Upsert, Construct, Loop, Declaration, Instruction, Formula
+=======
+export BeTreeConfig, DateTimeValue, DateValue, OrMonoid, CSVLocator, Int128Type
+export DecimalType, UnspecifiedType, DateType, MissingType, MissingValue, CSVConfig
+export IntType, StringType, Int128Value, UInt128Value, BooleanType, UInt32Type
+export DecimalValue, BeTreeLocator, var"#Type", Value, GNFColumn, MinMonoid, SumMonoid
+export MaxMonoid, BeTreeInfo, Binding, EDB, Attribute, Term, CSVData, Monoid
+export BeTreeRelation, Cast, Pragma, Atom, RelTerm, Data, Primitive, RelAtom, Abstraction
+export Algorithm, Assign, Break, Conjunction, Constraint, Def, Disjunction, Exists, FFI
+export FunctionalDependency, MonoidDef, MonusDef, Not, Reduce, Script, Upsert, Construct
+export Loop, Declaration, Instruction, Formula
+>>>>>>> fc217ea070f8112b6e8950d12a97b7f27827bacd
 abstract type var"##Abstract#Abstraction" end
 abstract type var"##Abstract#Not" end
 abstract type var"##Abstract#Break" end
@@ -869,6 +881,25 @@ function PB._encoded_size(x::BooleanType)
     return encoded_size
 end
 
+struct UInt32Type end
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:UInt32Type}, _endpos::Int=0, _group::Bool=false)
+    while !PB.message_done(d, _endpos, _group)
+        field_number, wire_type = PB.decode_tag(d)
+        Base.skip(d, wire_type)
+    end
+    return UInt32Type()
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::UInt32Type)
+    initpos = position(e.io)
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::UInt32Type)
+    encoded_size = 0
+    return encoded_size
+end
+
 struct DecimalValue
     precision::Int32
     scale::Int32
@@ -971,14 +1002,14 @@ function PB._encoded_size(x::BeTreeLocator)
 end
 
 struct var"#Type"
-    var"#type"::Union{Nothing,OneOf{<:Union{UnspecifiedType,StringType,IntType,FloatType,UInt128Type,Int128Type,DateType,DateTimeType,MissingType,DecimalType,BooleanType,Int32Type,Float32Type}}}
+    var"#type"::Union{Nothing,OneOf{<:Union{UnspecifiedType,StringType,IntType,FloatType,UInt128Type,Int128Type,DateType,DateTimeType,MissingType,DecimalType,BooleanType,Int32Type,Float32Type,UInt32Type}}}
 end
 var"#Type"(;var"#type" = nothing) = var"#Type"(var"#type")
 PB.oneof_field_types(::Type{var"#Type"}) = (;
-    var"#type" = (;unspecified_type=UnspecifiedType, string_type=StringType, int_type=IntType, float_type=FloatType, uint128_type=UInt128Type, int128_type=Int128Type, date_type=DateType, datetime_type=DateTimeType, missing_type=MissingType, decimal_type=DecimalType, boolean_type=BooleanType, int32_type=Int32Type, float32_type=Float32Type),
+    var"#type" = (;unspecified_type=UnspecifiedType, string_type=StringType, int_type=IntType, float_type=FloatType, uint128_type=UInt128Type, int128_type=Int128Type, date_type=DateType, datetime_type=DateTimeType, missing_type=MissingType, decimal_type=DecimalType, boolean_type=BooleanType, int32_type=Int32Type, float32_type=Float32Type, uint32_type=UInt32Type),
 )
-PB.default_values(::Type{var"#Type"}) = (;unspecified_type = nothing, string_type = nothing, int_type = nothing, float_type = nothing, uint128_type = nothing, int128_type = nothing, date_type = nothing, datetime_type = nothing, missing_type = nothing, decimal_type = nothing, boolean_type = nothing, int32_type = nothing, float32_type = nothing)
-PB.field_numbers(::Type{var"#Type"}) = (;unspecified_type = 1, string_type = 2, int_type = 3, float_type = 4, uint128_type = 5, int128_type = 6, date_type = 7, datetime_type = 8, missing_type = 9, decimal_type = 10, boolean_type = 11, int32_type = 12, float32_type = 13)
+PB.default_values(::Type{var"#Type"}) = (;unspecified_type = nothing, string_type = nothing, int_type = nothing, float_type = nothing, uint128_type = nothing, int128_type = nothing, date_type = nothing, datetime_type = nothing, missing_type = nothing, decimal_type = nothing, boolean_type = nothing, int32_type = nothing, float32_type = nothing, uint32_type = nothing)
+PB.field_numbers(::Type{var"#Type"}) = (;unspecified_type = 1, string_type = 2, int_type = 3, float_type = 4, uint128_type = 5, int128_type = 6, date_type = 7, datetime_type = 8, missing_type = 9, decimal_type = 10, boolean_type = 11, int32_type = 12, float32_type = 13, uint32_type = 14)
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:var"#Type"}, _endpos::Int=0, _group::Bool=false)
     var"#type" = nothing
@@ -1010,6 +1041,8 @@ function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:var"#Type"}, _endpos::In
             var"#type" = OneOf(:int32_type, PB.decode(d, Ref{Int32Type}))
         elseif field_number == 13
             var"#type" = OneOf(:float32_type, PB.decode(d, Ref{Float32Type}))
+        elseif field_number == 14
+            var"#type" = OneOf(:uint32_type, PB.decode(d, Ref{UInt32Type}))
         else
             Base.skip(d, wire_type)
         end
@@ -1046,6 +1079,8 @@ function PB.encode(e::PB.AbstractProtoEncoder, x::var"#Type")
         PB.encode(e, 12, x.var"#type"[]::Int32Type)
     elseif x.var"#type".name === :float32_type
         PB.encode(e, 13, x.var"#type"[]::Float32Type)
+    elseif x.var"#type".name === :uint32_type
+        PB.encode(e, 14, x.var"#type"[]::UInt32Type)
     end
     return position(e.io) - initpos
 end
@@ -1078,19 +1113,21 @@ function PB._encoded_size(x::var"#Type")
         encoded_size += PB._encoded_size(x.var"#type"[]::Int32Type, 12)
     elseif x.var"#type".name === :float32_type
         encoded_size += PB._encoded_size(x.var"#type"[]::Float32Type, 13)
+    elseif x.var"#type".name === :uint32_type
+        encoded_size += PB._encoded_size(x.var"#type"[]::UInt32Type, 14)
     end
     return encoded_size
 end
 
 struct Value
-    value::Union{Nothing,OneOf{<:Union{String,Int64,Float64,UInt128Value,Int128Value,MissingValue,DateValue,DateTimeValue,DecimalValue,Bool,Int32,Float32}}}
+    value::Union{Nothing,OneOf{<:Union{String,Int64,Float64,UInt128Value,Int128Value,MissingValue,DateValue,DateTimeValue,DecimalValue,Bool,Int32,Float32,UInt32}}}
 end
 Value(;value = nothing) = Value(value)
 PB.oneof_field_types(::Type{Value}) = (;
-    value = (;string_value=String, int_value=Int64, float_value=Float64, uint128_value=UInt128Value, int128_value=Int128Value, missing_value=MissingValue, date_value=DateValue, datetime_value=DateTimeValue, decimal_value=DecimalValue, boolean_value=Bool, int32_value=Int32, float32_value=Float32),
+    value = (;string_value=String, int_value=Int64, float_value=Float64, uint128_value=UInt128Value, int128_value=Int128Value, missing_value=MissingValue, date_value=DateValue, datetime_value=DateTimeValue, decimal_value=DecimalValue, boolean_value=Bool, int32_value=Int32, float32_value=Float32, uint32_value=UInt32),
 )
-PB.default_values(::Type{Value}) = (;string_value = "", int_value = zero(Int64), float_value = zero(Float64), uint128_value = nothing, int128_value = nothing, missing_value = nothing, date_value = nothing, datetime_value = nothing, decimal_value = nothing, boolean_value = false, int32_value = zero(Int32), float32_value = zero(Float32))
-PB.field_numbers(::Type{Value}) = (;string_value = 1, int_value = 2, float_value = 3, uint128_value = 4, int128_value = 5, missing_value = 6, date_value = 7, datetime_value = 8, decimal_value = 9, boolean_value = 10, int32_value = 11, float32_value = 12)
+PB.default_values(::Type{Value}) = (;string_value = "", int_value = zero(Int64), float_value = zero(Float64), uint128_value = nothing, int128_value = nothing, missing_value = nothing, date_value = nothing, datetime_value = nothing, decimal_value = nothing, boolean_value = false, int32_value = zero(Int32), float32_value = zero(Float32), uint32_value = zero(UInt32))
+PB.field_numbers(::Type{Value}) = (;string_value = 1, int_value = 2, float_value = 3, uint128_value = 4, int128_value = 5, missing_value = 6, date_value = 7, datetime_value = 8, decimal_value = 9, boolean_value = 10, int32_value = 11, float32_value = 12, uint32_value = 13)
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Value}, _endpos::Int=0, _group::Bool=false)
     value = nothing
@@ -1120,6 +1157,8 @@ function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Value}, _endpos::Int=0, 
             value = OneOf(:int32_value, PB.decode(d, Int32))
         elseif field_number == 12
             value = OneOf(:float32_value, PB.decode(d, Float32))
+        elseif field_number == 13
+            value = OneOf(:uint32_value, PB.decode(d, UInt32))
         else
             Base.skip(d, wire_type)
         end
@@ -1154,6 +1193,8 @@ function PB.encode(e::PB.AbstractProtoEncoder, x::Value)
         PB.encode(e, 11, x.value[]::Int32)
     elseif x.value.name === :float32_value
         PB.encode(e, 12, x.value[]::Float32)
+    elseif x.value.name === :uint32_value
+        PB.encode(e, 13, x.value[]::UInt32)
     end
     return position(e.io) - initpos
 end
@@ -1184,6 +1225,8 @@ function PB._encoded_size(x::Value)
         encoded_size += PB._encoded_size(x.value[]::Int32, 11)
     elseif x.value.name === :float32_value
         encoded_size += PB._encoded_size(x.value[]::Float32, 12)
+    elseif x.value.name === :uint32_value
+        encoded_size += PB._encoded_size(x.value[]::UInt32, 13)
     end
     return encoded_size
 end

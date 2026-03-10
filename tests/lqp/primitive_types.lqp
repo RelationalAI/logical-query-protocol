@@ -11,6 +11,7 @@
           (def :uint128 ([v::UINT128] (= v 0x123456789abcdef12345)))
           (def :int32 ([v::INT32] (= v 42i32)))
           (def :int32_n ([v::INT32] (= v -42i32)))
+          (def :uint32 ([v::UINT32] (= v 42u32)))
           (def :float32 ([v::FLOAT32] (= v 1.23f32)))
           (def :float ([v::FLOAT] (= v 1.23)))
           (def :float_inf ([v::FLOAT] (= v inf)))
@@ -60,6 +61,11 @@
               (and
                 (= v -42i32)
                 (atom :int32_n -42i32))))
+          (def :output_uint32
+            ([v::UINT32]
+              (and
+                (= v 42u32)
+                (atom :uint32 42u32))))
           (def :output_float32
             ([v::FLOAT32]
               (and
@@ -115,6 +121,7 @@
       (output :uint128 :output_uint128)
       (output :int32 :output_int32)
       (output :int32_n :output_int32_n)
+      (output :uint32 :output_uint32)
       (output :float32 :output_float32)
       (output :float :output_float)
       (output :float_inf :output_float_inf)

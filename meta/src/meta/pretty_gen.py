@@ -677,6 +677,8 @@ def _format_terminal(terminal: NamedTerminal, value_var: Var) -> TargetExpr:
         return Call(make_builtin("format_int64"), [value_var])
     elif terminal.name == "INT32":
         return Call(make_builtin("format_int32"), [value_var])
+    elif terminal.name == "UINT32":
+        return Call(make_builtin("format_uint32"), [value_var])
     elif terminal.name == "INT128":
         return Call(make_builtin("format_int128"), [value_var])
     elif terminal.name == "FLOAT":

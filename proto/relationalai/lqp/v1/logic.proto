@@ -363,6 +363,7 @@ message Type {
     BooleanType boolean_type = 11;
     Int32Type int32_type = 12;
     Float32Type float32_type = 13;
+    UInt32Type uint32_type = 14;
   }
 }
 
@@ -395,6 +396,8 @@ message Int32Type {}
 
 message Float32Type {}
 
+message UInt32Type {}
+
 message Value {
   oneof value {
     string string_value = 1;
@@ -409,6 +412,7 @@ message Value {
     bool boolean_value = 10;
     int32 int32_value = 11;
     float float32_value = 12;
+    uint32 uint32_value = 13;
   }
 }
 
