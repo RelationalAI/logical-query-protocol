@@ -135,7 +135,7 @@ JULIA_TEMPLATES: dict[str, BuiltinTemplate] = {
     "make_empty_bytes": BuiltinTemplate("UInt8[]"),
     "dict_from_list": BuiltinTemplate("Dict({0})"),
     "dict_get": BuiltinTemplate("get({0}, {1}, nothing)"),
-    "dict_to_pairs": BuiltinTemplate("sort(collect(pairs({0})))"),
+    "dict_to_pairs": BuiltinTemplate("sort([(k, v) for (k, v) in {0}])"),
     "has_proto_field": BuiltinTemplate("_has_proto_field({0}, Symbol({1}))"),
     "string_to_upper": BuiltinTemplate("uppercase({0})"),
     "string_in_list": BuiltinTemplate("({0} in {1})"),

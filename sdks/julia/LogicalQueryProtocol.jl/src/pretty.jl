@@ -338,151 +338,151 @@ end
 # --- Helper functions ---
 
 function _make_value_int32(pp::PrettyPrinter, v::Int32)::Proto.Value
-    _t1595 = Proto.Value(value=OneOf(:int32_value, v))
-    return _t1595
+    _t1594 = Proto.Value(value=OneOf(:int32_value, v))
+    return _t1594
 end
 
 function _make_value_int64(pp::PrettyPrinter, v::Int64)::Proto.Value
-    _t1596 = Proto.Value(value=OneOf(:int_value, v))
-    return _t1596
+    _t1595 = Proto.Value(value=OneOf(:int_value, v))
+    return _t1595
 end
 
 function _make_value_float64(pp::PrettyPrinter, v::Float64)::Proto.Value
-    _t1597 = Proto.Value(value=OneOf(:float_value, v))
-    return _t1597
+    _t1596 = Proto.Value(value=OneOf(:float_value, v))
+    return _t1596
 end
 
 function _make_value_string(pp::PrettyPrinter, v::String)::Proto.Value
-    _t1598 = Proto.Value(value=OneOf(:string_value, v))
-    return _t1598
+    _t1597 = Proto.Value(value=OneOf(:string_value, v))
+    return _t1597
 end
 
 function _make_value_boolean(pp::PrettyPrinter, v::Bool)::Proto.Value
-    _t1599 = Proto.Value(value=OneOf(:boolean_value, v))
-    return _t1599
+    _t1598 = Proto.Value(value=OneOf(:boolean_value, v))
+    return _t1598
 end
 
 function _make_value_uint128(pp::PrettyPrinter, v::Proto.UInt128Value)::Proto.Value
-    _t1600 = Proto.Value(value=OneOf(:uint128_value, v))
-    return _t1600
+    _t1599 = Proto.Value(value=OneOf(:uint128_value, v))
+    return _t1599
 end
 
 function deconstruct_configure(pp::PrettyPrinter, msg::Proto.Configure)::Vector{Tuple{String, Proto.Value}}
     result = Tuple{String, Proto.Value}[]
     if msg.ivm_config.level == Proto.MaintenanceLevel.MAINTENANCE_LEVEL_AUTO
-        _t1601 = _make_value_string(pp, "auto")
-        push!(result, ("ivm.maintenance_level", _t1601,))
+        _t1600 = _make_value_string(pp, "auto")
+        push!(result, ("ivm.maintenance_level", _t1600,))
     else
         if msg.ivm_config.level == Proto.MaintenanceLevel.MAINTENANCE_LEVEL_ALL
-            _t1602 = _make_value_string(pp, "all")
-            push!(result, ("ivm.maintenance_level", _t1602,))
+            _t1601 = _make_value_string(pp, "all")
+            push!(result, ("ivm.maintenance_level", _t1601,))
         else
             if msg.ivm_config.level == Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
-                _t1603 = _make_value_string(pp, "off")
-                push!(result, ("ivm.maintenance_level", _t1603,))
+                _t1602 = _make_value_string(pp, "off")
+                push!(result, ("ivm.maintenance_level", _t1602,))
             end
         end
     end
-    _t1604 = _make_value_int64(pp, msg.semantics_version)
-    push!(result, ("semantics_version", _t1604,))
+    _t1603 = _make_value_int64(pp, msg.semantics_version)
+    push!(result, ("semantics_version", _t1603,))
     return sort(result)
 end
 
 function deconstruct_csv_config(pp::PrettyPrinter, msg::Proto.CSVConfig)::Vector{Tuple{String, Proto.Value}}
     result = Tuple{String, Proto.Value}[]
-    _t1605 = _make_value_int32(pp, msg.header_row)
-    push!(result, ("csv_header_row", _t1605,))
-    _t1606 = _make_value_int64(pp, msg.skip)
-    push!(result, ("csv_skip", _t1606,))
+    _t1604 = _make_value_int32(pp, msg.header_row)
+    push!(result, ("csv_header_row", _t1604,))
+    _t1605 = _make_value_int64(pp, msg.skip)
+    push!(result, ("csv_skip", _t1605,))
     if msg.new_line != ""
-        _t1607 = _make_value_string(pp, msg.new_line)
-        push!(result, ("csv_new_line", _t1607,))
+        _t1606 = _make_value_string(pp, msg.new_line)
+        push!(result, ("csv_new_line", _t1606,))
     end
-    _t1608 = _make_value_string(pp, msg.delimiter)
-    push!(result, ("csv_delimiter", _t1608,))
-    _t1609 = _make_value_string(pp, msg.quotechar)
-    push!(result, ("csv_quotechar", _t1609,))
-    _t1610 = _make_value_string(pp, msg.escapechar)
-    push!(result, ("csv_escapechar", _t1610,))
+    _t1607 = _make_value_string(pp, msg.delimiter)
+    push!(result, ("csv_delimiter", _t1607,))
+    _t1608 = _make_value_string(pp, msg.quotechar)
+    push!(result, ("csv_quotechar", _t1608,))
+    _t1609 = _make_value_string(pp, msg.escapechar)
+    push!(result, ("csv_escapechar", _t1609,))
     if msg.comment != ""
-        _t1611 = _make_value_string(pp, msg.comment)
-        push!(result, ("csv_comment", _t1611,))
+        _t1610 = _make_value_string(pp, msg.comment)
+        push!(result, ("csv_comment", _t1610,))
     end
     for missing_string in msg.missing_strings
-        _t1612 = _make_value_string(pp, missing_string)
-        push!(result, ("csv_missing_strings", _t1612,))
+        _t1611 = _make_value_string(pp, missing_string)
+        push!(result, ("csv_missing_strings", _t1611,))
     end
-    _t1613 = _make_value_string(pp, msg.decimal_separator)
-    push!(result, ("csv_decimal_separator", _t1613,))
-    _t1614 = _make_value_string(pp, msg.encoding)
-    push!(result, ("csv_encoding", _t1614,))
-    _t1615 = _make_value_string(pp, msg.compression)
-    push!(result, ("csv_compression", _t1615,))
+    _t1612 = _make_value_string(pp, msg.decimal_separator)
+    push!(result, ("csv_decimal_separator", _t1612,))
+    _t1613 = _make_value_string(pp, msg.encoding)
+    push!(result, ("csv_encoding", _t1613,))
+    _t1614 = _make_value_string(pp, msg.compression)
+    push!(result, ("csv_compression", _t1614,))
     if msg.partition_size_mb != 0
-        _t1616 = _make_value_int64(pp, msg.partition_size_mb)
-        push!(result, ("csv_partition_size_mb", _t1616,))
+        _t1615 = _make_value_int64(pp, msg.partition_size_mb)
+        push!(result, ("csv_partition_size_mb", _t1615,))
     end
     return sort(result)
 end
 
 function deconstruct_betree_info_config(pp::PrettyPrinter, msg::Proto.BeTreeInfo)::Vector{Tuple{String, Proto.Value}}
     result = Tuple{String, Proto.Value}[]
-    _t1617 = _make_value_float64(pp, msg.storage_config.epsilon)
-    push!(result, ("betree_config_epsilon", _t1617,))
-    _t1618 = _make_value_int64(pp, msg.storage_config.max_pivots)
-    push!(result, ("betree_config_max_pivots", _t1618,))
-    _t1619 = _make_value_int64(pp, msg.storage_config.max_deltas)
-    push!(result, ("betree_config_max_deltas", _t1619,))
-    _t1620 = _make_value_int64(pp, msg.storage_config.max_leaf)
-    push!(result, ("betree_config_max_leaf", _t1620,))
+    _t1616 = _make_value_float64(pp, msg.storage_config.epsilon)
+    push!(result, ("betree_config_epsilon", _t1616,))
+    _t1617 = _make_value_int64(pp, msg.storage_config.max_pivots)
+    push!(result, ("betree_config_max_pivots", _t1617,))
+    _t1618 = _make_value_int64(pp, msg.storage_config.max_deltas)
+    push!(result, ("betree_config_max_deltas", _t1618,))
+    _t1619 = _make_value_int64(pp, msg.storage_config.max_leaf)
+    push!(result, ("betree_config_max_leaf", _t1619,))
     if _has_proto_field(msg.relation_locator, Symbol("root_pageid"))
         if !isnothing(_get_oneof_field(msg.relation_locator, :root_pageid))
-            _t1621 = _make_value_uint128(pp, _get_oneof_field(msg.relation_locator, :root_pageid))
-            push!(result, ("betree_locator_root_pageid", _t1621,))
+            _t1620 = _make_value_uint128(pp, _get_oneof_field(msg.relation_locator, :root_pageid))
+            push!(result, ("betree_locator_root_pageid", _t1620,))
         end
     end
     if _has_proto_field(msg.relation_locator, Symbol("inline_data"))
         if !isnothing(_get_oneof_field(msg.relation_locator, :inline_data))
-            _t1622 = _make_value_string(pp, String(copy(_get_oneof_field(msg.relation_locator, :inline_data))))
-            push!(result, ("betree_locator_inline_data", _t1622,))
+            _t1621 = _make_value_string(pp, String(copy(_get_oneof_field(msg.relation_locator, :inline_data))))
+            push!(result, ("betree_locator_inline_data", _t1621,))
         end
     end
-    _t1623 = _make_value_int64(pp, msg.relation_locator.element_count)
-    push!(result, ("betree_locator_element_count", _t1623,))
-    _t1624 = _make_value_int64(pp, msg.relation_locator.tree_height)
-    push!(result, ("betree_locator_tree_height", _t1624,))
+    _t1622 = _make_value_int64(pp, msg.relation_locator.element_count)
+    push!(result, ("betree_locator_element_count", _t1622,))
+    _t1623 = _make_value_int64(pp, msg.relation_locator.tree_height)
+    push!(result, ("betree_locator_tree_height", _t1623,))
     return sort(result)
 end
 
 function deconstruct_export_csv_config(pp::PrettyPrinter, msg::Proto.ExportCSVConfig)::Vector{Tuple{String, Proto.Value}}
     result = Tuple{String, Proto.Value}[]
     if !isnothing(msg.partition_size)
-        _t1625 = _make_value_int64(pp, msg.partition_size)
-        push!(result, ("partition_size", _t1625,))
+        _t1624 = _make_value_int64(pp, msg.partition_size)
+        push!(result, ("partition_size", _t1624,))
     end
     if !isnothing(msg.compression)
-        _t1626 = _make_value_string(pp, msg.compression)
-        push!(result, ("compression", _t1626,))
+        _t1625 = _make_value_string(pp, msg.compression)
+        push!(result, ("compression", _t1625,))
     end
     if !isnothing(msg.syntax_header_row)
-        _t1627 = _make_value_boolean(pp, msg.syntax_header_row)
-        push!(result, ("syntax_header_row", _t1627,))
+        _t1626 = _make_value_boolean(pp, msg.syntax_header_row)
+        push!(result, ("syntax_header_row", _t1626,))
     end
     if !isnothing(msg.syntax_missing_string)
-        _t1628 = _make_value_string(pp, msg.syntax_missing_string)
-        push!(result, ("syntax_missing_string", _t1628,))
+        _t1627 = _make_value_string(pp, msg.syntax_missing_string)
+        push!(result, ("syntax_missing_string", _t1627,))
     end
     if !isnothing(msg.syntax_delim)
-        _t1629 = _make_value_string(pp, msg.syntax_delim)
-        push!(result, ("syntax_delim", _t1629,))
+        _t1628 = _make_value_string(pp, msg.syntax_delim)
+        push!(result, ("syntax_delim", _t1628,))
     end
     if !isnothing(msg.syntax_quotechar)
-        _t1630 = _make_value_string(pp, msg.syntax_quotechar)
-        push!(result, ("syntax_quotechar", _t1630,))
+        _t1629 = _make_value_string(pp, msg.syntax_quotechar)
+        push!(result, ("syntax_quotechar", _t1629,))
     end
     if !isnothing(msg.syntax_escapechar)
-        _t1631 = _make_value_string(pp, msg.syntax_escapechar)
-        push!(result, ("syntax_escapechar", _t1631,))
+        _t1630 = _make_value_string(pp, msg.syntax_escapechar)
+        push!(result, ("syntax_escapechar", _t1630,))
     end
     return sort(result)
 end
@@ -497,7 +497,7 @@ function deconstruct_relation_id_uint128(pp::PrettyPrinter, msg::Proto.RelationI
     if isnothing(name)
         return relation_id_to_uint128(pp, msg)
     else
-        _t1632 = nothing
+        _t1631 = nothing
     end
     return nothing
 end
@@ -3875,17 +3875,12 @@ function pretty_iceberg_config(pp::PrettyPrinter, msg::Proto.IcebergConfig)
         else
             _t1574 = nothing
         end
-        if !isempty(sort(collect(pairs(_dollar_dollar.properties))))
-            _t1575 = sort(collect(pairs(_dollar_dollar.properties)))
+        if !isempty(sort([(k, v) for (k, v) in _dollar_dollar.properties]))
+            _t1575 = sort([(k, v) for (k, v) in _dollar_dollar.properties])
         else
             _t1575 = nothing
         end
-        if !isempty(sort(collect(pairs(_dollar_dollar.credentials))))
-            _t1576 = sort(collect(pairs(_dollar_dollar.credentials)))
-        else
-            _t1576 = nothing
-        end
-        fields1321 = (_dollar_dollar.catalog_uri, _t1574, _t1575, _t1576,)
+        fields1321 = (_dollar_dollar.catalog_uri, _t1574, _t1575, nothing,)
         unwrapped_fields1322 = fields1321
         write(pp, "(iceberg_config")
         indent_sexp!(pp)
@@ -3944,8 +3939,8 @@ function pretty_iceberg_config_properties(pp::PrettyPrinter, msg::Vector{Tuple{S
         indent_sexp!(pp)
         if !isempty(fields1333)
             newline(pp)
-            for (i1577, elem1334) in enumerate(fields1333)
-                i1335 = i1577 - 1
+            for (i1576, elem1334) in enumerate(fields1333)
+                i1335 = i1576 - 1
                 if (i1335 > 0)
                     newline(pp)
                 end
@@ -3991,8 +3986,8 @@ function pretty_iceberg_config_credentials(pp::PrettyPrinter, msg::Vector{Tuple{
         indent_sexp!(pp)
         if !isempty(fields1342)
             newline(pp)
-            for (i1578, elem1343) in enumerate(fields1342)
-                i1344 = i1578 - 1
+            for (i1577, elem1343) in enumerate(fields1342)
+                i1344 = i1577 - 1
                 if (i1344 > 0)
                     newline(pp)
                 end
@@ -4054,8 +4049,8 @@ function pretty_context(pp::PrettyPrinter, msg::Proto.Context)
         indent_sexp!(pp)
         if !isempty(unwrapped_fields1352)
             newline(pp)
-            for (i1579, elem1353) in enumerate(unwrapped_fields1352)
-                i1354 = i1579 - 1
+            for (i1578, elem1353) in enumerate(unwrapped_fields1352)
+                i1354 = i1578 - 1
                 if (i1354 > 0)
                     newline(pp)
                 end
@@ -4081,8 +4076,8 @@ function pretty_snapshot(pp::PrettyPrinter, msg::Proto.Snapshot)
         indent_sexp!(pp)
         if !isempty(unwrapped_fields1357)
             newline(pp)
-            for (i1580, elem1358) in enumerate(unwrapped_fields1357)
-                i1359 = i1580 - 1
+            for (i1579, elem1358) in enumerate(unwrapped_fields1357)
+                i1359 = i1579 - 1
                 if (i1359 > 0)
                     newline(pp)
                 end
@@ -4124,8 +4119,8 @@ function pretty_epoch_reads(pp::PrettyPrinter, msg::Vector{Proto.Read})
         indent_sexp!(pp)
         if !isempty(fields1366)
             newline(pp)
-            for (i1581, elem1367) in enumerate(fields1366)
-                i1368 = i1581 - 1
+            for (i1580, elem1367) in enumerate(fields1366)
+                i1368 = i1580 - 1
                 if (i1368 > 0)
                     newline(pp)
                 end
@@ -4146,55 +4141,55 @@ function pretty_read(pp::PrettyPrinter, msg::Proto.Read)
     else
         _dollar_dollar = msg
         if _has_proto_field(_dollar_dollar, Symbol("demand"))
-            _t1582 = _get_oneof_field(_dollar_dollar, :demand)
+            _t1581 = _get_oneof_field(_dollar_dollar, :demand)
         else
-            _t1582 = nothing
+            _t1581 = nothing
         end
-        deconstruct_result1378 = _t1582
+        deconstruct_result1378 = _t1581
         if !isnothing(deconstruct_result1378)
             unwrapped1379 = deconstruct_result1378
             pretty_demand(pp, unwrapped1379)
         else
             _dollar_dollar = msg
             if _has_proto_field(_dollar_dollar, Symbol("output"))
-                _t1583 = _get_oneof_field(_dollar_dollar, :output)
+                _t1582 = _get_oneof_field(_dollar_dollar, :output)
             else
-                _t1583 = nothing
+                _t1582 = nothing
             end
-            deconstruct_result1376 = _t1583
+            deconstruct_result1376 = _t1582
             if !isnothing(deconstruct_result1376)
                 unwrapped1377 = deconstruct_result1376
                 pretty_output(pp, unwrapped1377)
             else
                 _dollar_dollar = msg
                 if _has_proto_field(_dollar_dollar, Symbol("what_if"))
-                    _t1584 = _get_oneof_field(_dollar_dollar, :what_if)
+                    _t1583 = _get_oneof_field(_dollar_dollar, :what_if)
                 else
-                    _t1584 = nothing
+                    _t1583 = nothing
                 end
-                deconstruct_result1374 = _t1584
+                deconstruct_result1374 = _t1583
                 if !isnothing(deconstruct_result1374)
                     unwrapped1375 = deconstruct_result1374
                     pretty_what_if(pp, unwrapped1375)
                 else
                     _dollar_dollar = msg
                     if _has_proto_field(_dollar_dollar, Symbol("abort"))
-                        _t1585 = _get_oneof_field(_dollar_dollar, :abort)
+                        _t1584 = _get_oneof_field(_dollar_dollar, :abort)
                     else
-                        _t1585 = nothing
+                        _t1584 = nothing
                     end
-                    deconstruct_result1372 = _t1585
+                    deconstruct_result1372 = _t1584
                     if !isnothing(deconstruct_result1372)
                         unwrapped1373 = deconstruct_result1372
                         pretty_abort(pp, unwrapped1373)
                     else
                         _dollar_dollar = msg
                         if _has_proto_field(_dollar_dollar, Symbol("#export"))
-                            _t1586 = _get_oneof_field(_dollar_dollar, :var"#export")
+                            _t1585 = _get_oneof_field(_dollar_dollar, :var"#export")
                         else
-                            _t1586 = nothing
+                            _t1585 = nothing
                         end
-                        deconstruct_result1370 = _t1586
+                        deconstruct_result1370 = _t1585
                         if !isnothing(deconstruct_result1370)
                             unwrapped1371 = deconstruct_result1370
                             pretty_export(pp, unwrapped1371)
@@ -4282,11 +4277,11 @@ function pretty_abort(pp::PrettyPrinter, msg::Proto.Abort)
     else
         _dollar_dollar = msg
         if _dollar_dollar.name != "abort"
-            _t1587 = _dollar_dollar.name
+            _t1586 = _dollar_dollar.name
         else
-            _t1587 = nothing
+            _t1586 = nothing
         end
-        fields1394 = (_t1587, _dollar_dollar.relation_id,)
+        fields1394 = (_t1586, _dollar_dollar.relation_id,)
         unwrapped_fields1395 = fields1394
         write(pp, "(abort")
         indent_sexp!(pp)
@@ -4332,11 +4327,11 @@ function pretty_export_csv_config(pp::PrettyPrinter, msg::Proto.ExportCSVConfig)
     else
         _dollar_dollar = msg
         if length(_dollar_dollar.data_columns) == 0
-            _t1588 = (_dollar_dollar.path, _dollar_dollar.csv_source, _dollar_dollar.csv_config,)
+            _t1587 = (_dollar_dollar.path, _dollar_dollar.csv_source, _dollar_dollar.csv_config,)
         else
-            _t1588 = nothing
+            _t1587 = nothing
         end
-        deconstruct_result1408 = _t1588
+        deconstruct_result1408 = _t1587
         if !isnothing(deconstruct_result1408)
             unwrapped1409 = deconstruct_result1408
             write(pp, "(export_csv_config_v2")
@@ -4355,12 +4350,12 @@ function pretty_export_csv_config(pp::PrettyPrinter, msg::Proto.ExportCSVConfig)
         else
             _dollar_dollar = msg
             if length(_dollar_dollar.data_columns) != 0
-                _t1590 = deconstruct_export_csv_config(pp, _dollar_dollar)
-                _t1589 = (_dollar_dollar.path, _dollar_dollar.data_columns, _t1590,)
+                _t1589 = deconstruct_export_csv_config(pp, _dollar_dollar)
+                _t1588 = (_dollar_dollar.path, _dollar_dollar.data_columns, _t1589,)
             else
-                _t1589 = nothing
+                _t1588 = nothing
             end
-            deconstruct_result1403 = _t1589
+            deconstruct_result1403 = _t1588
             if !isnothing(deconstruct_result1403)
                 unwrapped1404 = deconstruct_result1403
                 write(pp, "(export_csv_config")
@@ -4409,19 +4404,19 @@ function pretty_export_csv_source(pp::PrettyPrinter, msg::Proto.ExportCSVSource)
     else
         _dollar_dollar = msg
         if _has_proto_field(_dollar_dollar, Symbol("gnf_columns"))
-            _t1591 = _get_oneof_field(_dollar_dollar, :gnf_columns).columns
+            _t1590 = _get_oneof_field(_dollar_dollar, :gnf_columns).columns
         else
-            _t1591 = nothing
+            _t1590 = nothing
         end
-        deconstruct_result1418 = _t1591
+        deconstruct_result1418 = _t1590
         if !isnothing(deconstruct_result1418)
             unwrapped1419 = deconstruct_result1418
             write(pp, "(gnf_columns")
             indent_sexp!(pp)
             if !isempty(unwrapped1419)
                 newline(pp)
-                for (i1592, elem1420) in enumerate(unwrapped1419)
-                    i1421 = i1592 - 1
+                for (i1591, elem1420) in enumerate(unwrapped1419)
+                    i1421 = i1591 - 1
                     if (i1421 > 0)
                         newline(pp)
                     end
@@ -4433,11 +4428,11 @@ function pretty_export_csv_source(pp::PrettyPrinter, msg::Proto.ExportCSVSource)
         else
             _dollar_dollar = msg
             if _has_proto_field(_dollar_dollar, Symbol("table_def"))
-                _t1593 = _get_oneof_field(_dollar_dollar, :table_def)
+                _t1592 = _get_oneof_field(_dollar_dollar, :table_def)
             else
-                _t1593 = nothing
+                _t1592 = nothing
             end
-            deconstruct_result1416 = _t1593
+            deconstruct_result1416 = _t1592
             if !isnothing(deconstruct_result1416)
                 unwrapped1417 = deconstruct_result1416
                 write(pp, "(table_def")
@@ -4488,8 +4483,8 @@ function pretty_export_csv_columns_list(pp::PrettyPrinter, msg::Vector{Proto.Exp
         indent_sexp!(pp)
         if !isempty(fields1428)
             newline(pp)
-            for (i1594, elem1429) in enumerate(fields1428)
-                i1430 = i1594 - 1
+            for (i1593, elem1429) in enumerate(fields1428)
+                i1430 = i1593 - 1
                 if (i1430 > 0)
                     newline(pp)
                 end
@@ -4508,12 +4503,12 @@ end
 function pretty_debug_info(pp::PrettyPrinter, msg::Proto.DebugInfo)
     write(pp, "(debug_info")
     indent_sexp!(pp)
-    for (i1633, _rid) in enumerate(msg.ids)
-        _idx = i1633 - 1
+    for (i1632, _rid) in enumerate(msg.ids)
+        _idx = i1632 - 1
         newline(pp)
         write(pp, "(")
-        _t1634 = Proto.UInt128Value(low=_rid.id_low, high=_rid.id_high)
-        _pprint_dispatch(pp, _t1634)
+        _t1633 = Proto.UInt128Value(low=_rid.id_low, high=_rid.id_high)
+        _pprint_dispatch(pp, _t1633)
         write(pp, " ")
         write(pp, format_string(pp, msg.orig_names[_idx + 1]))
         write(pp, ")")
@@ -4585,8 +4580,8 @@ function pretty_functional_dependency(pp::PrettyPrinter, msg::Proto.FunctionalDe
     _pprint_dispatch(pp, msg.guard)
     newline(pp)
     write(pp, ":keys (")
-    for (i1635, _elem) in enumerate(msg.keys)
-        _idx = i1635 - 1
+    for (i1634, _elem) in enumerate(msg.keys)
+        _idx = i1634 - 1
         if (_idx > 0)
             write(pp, " ")
         end
@@ -4595,8 +4590,8 @@ function pretty_functional_dependency(pp::PrettyPrinter, msg::Proto.FunctionalDe
     write(pp, ")")
     newline(pp)
     write(pp, ":values (")
-    for (i1636, _elem) in enumerate(msg.values)
-        _idx = i1636 - 1
+    for (i1635, _elem) in enumerate(msg.values)
+        _idx = i1635 - 1
         if (_idx > 0)
             write(pp, " ")
         end
@@ -4627,8 +4622,8 @@ function pretty_export_csv_columns(pp::PrettyPrinter, msg::Proto.ExportCSVColumn
     indent_sexp!(pp)
     newline(pp)
     write(pp, ":columns (")
-    for (i1637, _elem) in enumerate(msg.columns)
-        _idx = i1637 - 1
+    for (i1636, _elem) in enumerate(msg.columns)
+        _idx = i1636 - 1
         if (_idx > 0)
             write(pp, " ")
         end

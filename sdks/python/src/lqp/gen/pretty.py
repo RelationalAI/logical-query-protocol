@@ -207,134 +207,134 @@ class PrettyPrinter:
     # --- Helper functions ---
 
     def _make_value_int32(self, v: int) -> logic_pb2.Value:
-        _t1557 = logic_pb2.Value(int32_value=v)
-        return _t1557
+        _t1556 = logic_pb2.Value(int32_value=v)
+        return _t1556
 
     def _make_value_int64(self, v: int) -> logic_pb2.Value:
-        _t1558 = logic_pb2.Value(int_value=v)
-        return _t1558
+        _t1557 = logic_pb2.Value(int_value=v)
+        return _t1557
 
     def _make_value_float64(self, v: float) -> logic_pb2.Value:
-        _t1559 = logic_pb2.Value(float_value=v)
-        return _t1559
+        _t1558 = logic_pb2.Value(float_value=v)
+        return _t1558
 
     def _make_value_string(self, v: str) -> logic_pb2.Value:
-        _t1560 = logic_pb2.Value(string_value=v)
-        return _t1560
+        _t1559 = logic_pb2.Value(string_value=v)
+        return _t1559
 
     def _make_value_boolean(self, v: bool) -> logic_pb2.Value:
-        _t1561 = logic_pb2.Value(boolean_value=v)
-        return _t1561
+        _t1560 = logic_pb2.Value(boolean_value=v)
+        return _t1560
 
     def _make_value_uint128(self, v: logic_pb2.UInt128Value) -> logic_pb2.Value:
-        _t1562 = logic_pb2.Value(uint128_value=v)
-        return _t1562
+        _t1561 = logic_pb2.Value(uint128_value=v)
+        return _t1561
 
     def deconstruct_configure(self, msg: transactions_pb2.Configure) -> list[tuple[str, logic_pb2.Value]]:
         result = []
         if msg.ivm_config.level == transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_AUTO:
-            _t1563 = self._make_value_string("auto")
-            result.append(("ivm.maintenance_level", _t1563,))
+            _t1562 = self._make_value_string("auto")
+            result.append(("ivm.maintenance_level", _t1562,))
         else:
             if msg.ivm_config.level == transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_ALL:
-                _t1564 = self._make_value_string("all")
-                result.append(("ivm.maintenance_level", _t1564,))
+                _t1563 = self._make_value_string("all")
+                result.append(("ivm.maintenance_level", _t1563,))
             else:
                 if msg.ivm_config.level == transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_OFF:
-                    _t1565 = self._make_value_string("off")
-                    result.append(("ivm.maintenance_level", _t1565,))
-        _t1566 = self._make_value_int64(msg.semantics_version)
-        result.append(("semantics_version", _t1566,))
+                    _t1564 = self._make_value_string("off")
+                    result.append(("ivm.maintenance_level", _t1564,))
+        _t1565 = self._make_value_int64(msg.semantics_version)
+        result.append(("semantics_version", _t1565,))
         return sorted(result)
 
     def deconstruct_csv_config(self, msg: logic_pb2.CSVConfig) -> list[tuple[str, logic_pb2.Value]]:
         result = []
-        _t1567 = self._make_value_int32(msg.header_row)
-        result.append(("csv_header_row", _t1567,))
-        _t1568 = self._make_value_int64(msg.skip)
-        result.append(("csv_skip", _t1568,))
+        _t1566 = self._make_value_int32(msg.header_row)
+        result.append(("csv_header_row", _t1566,))
+        _t1567 = self._make_value_int64(msg.skip)
+        result.append(("csv_skip", _t1567,))
         if msg.new_line != "":
-            _t1569 = self._make_value_string(msg.new_line)
-            result.append(("csv_new_line", _t1569,))
-        _t1570 = self._make_value_string(msg.delimiter)
-        result.append(("csv_delimiter", _t1570,))
-        _t1571 = self._make_value_string(msg.quotechar)
-        result.append(("csv_quotechar", _t1571,))
-        _t1572 = self._make_value_string(msg.escapechar)
-        result.append(("csv_escapechar", _t1572,))
+            _t1568 = self._make_value_string(msg.new_line)
+            result.append(("csv_new_line", _t1568,))
+        _t1569 = self._make_value_string(msg.delimiter)
+        result.append(("csv_delimiter", _t1569,))
+        _t1570 = self._make_value_string(msg.quotechar)
+        result.append(("csv_quotechar", _t1570,))
+        _t1571 = self._make_value_string(msg.escapechar)
+        result.append(("csv_escapechar", _t1571,))
         if msg.comment != "":
-            _t1573 = self._make_value_string(msg.comment)
-            result.append(("csv_comment", _t1573,))
+            _t1572 = self._make_value_string(msg.comment)
+            result.append(("csv_comment", _t1572,))
         for missing_string in msg.missing_strings:
-            _t1574 = self._make_value_string(missing_string)
-            result.append(("csv_missing_strings", _t1574,))
-        _t1575 = self._make_value_string(msg.decimal_separator)
-        result.append(("csv_decimal_separator", _t1575,))
-        _t1576 = self._make_value_string(msg.encoding)
-        result.append(("csv_encoding", _t1576,))
-        _t1577 = self._make_value_string(msg.compression)
-        result.append(("csv_compression", _t1577,))
+            _t1573 = self._make_value_string(missing_string)
+            result.append(("csv_missing_strings", _t1573,))
+        _t1574 = self._make_value_string(msg.decimal_separator)
+        result.append(("csv_decimal_separator", _t1574,))
+        _t1575 = self._make_value_string(msg.encoding)
+        result.append(("csv_encoding", _t1575,))
+        _t1576 = self._make_value_string(msg.compression)
+        result.append(("csv_compression", _t1576,))
         if msg.partition_size_mb != 0:
-            _t1578 = self._make_value_int64(msg.partition_size_mb)
-            result.append(("csv_partition_size_mb", _t1578,))
+            _t1577 = self._make_value_int64(msg.partition_size_mb)
+            result.append(("csv_partition_size_mb", _t1577,))
         return sorted(result)
 
     def deconstruct_betree_info_config(self, msg: logic_pb2.BeTreeInfo) -> list[tuple[str, logic_pb2.Value]]:
         result = []
-        _t1579 = self._make_value_float64(msg.storage_config.epsilon)
-        result.append(("betree_config_epsilon", _t1579,))
-        _t1580 = self._make_value_int64(msg.storage_config.max_pivots)
-        result.append(("betree_config_max_pivots", _t1580,))
-        _t1581 = self._make_value_int64(msg.storage_config.max_deltas)
-        result.append(("betree_config_max_deltas", _t1581,))
-        _t1582 = self._make_value_int64(msg.storage_config.max_leaf)
-        result.append(("betree_config_max_leaf", _t1582,))
+        _t1578 = self._make_value_float64(msg.storage_config.epsilon)
+        result.append(("betree_config_epsilon", _t1578,))
+        _t1579 = self._make_value_int64(msg.storage_config.max_pivots)
+        result.append(("betree_config_max_pivots", _t1579,))
+        _t1580 = self._make_value_int64(msg.storage_config.max_deltas)
+        result.append(("betree_config_max_deltas", _t1580,))
+        _t1581 = self._make_value_int64(msg.storage_config.max_leaf)
+        result.append(("betree_config_max_leaf", _t1581,))
         if msg.relation_locator.HasField("root_pageid"):
             if msg.relation_locator.root_pageid is not None:
                 assert msg.relation_locator.root_pageid is not None
-                _t1583 = self._make_value_uint128(msg.relation_locator.root_pageid)
-                result.append(("betree_locator_root_pageid", _t1583,))
+                _t1582 = self._make_value_uint128(msg.relation_locator.root_pageid)
+                result.append(("betree_locator_root_pageid", _t1582,))
         if msg.relation_locator.HasField("inline_data"):
             if msg.relation_locator.inline_data is not None:
                 assert msg.relation_locator.inline_data is not None
-                _t1584 = self._make_value_string(msg.relation_locator.inline_data.decode('utf-8'))
-                result.append(("betree_locator_inline_data", _t1584,))
-        _t1585 = self._make_value_int64(msg.relation_locator.element_count)
-        result.append(("betree_locator_element_count", _t1585,))
-        _t1586 = self._make_value_int64(msg.relation_locator.tree_height)
-        result.append(("betree_locator_tree_height", _t1586,))
+                _t1583 = self._make_value_string(msg.relation_locator.inline_data.decode('utf-8'))
+                result.append(("betree_locator_inline_data", _t1583,))
+        _t1584 = self._make_value_int64(msg.relation_locator.element_count)
+        result.append(("betree_locator_element_count", _t1584,))
+        _t1585 = self._make_value_int64(msg.relation_locator.tree_height)
+        result.append(("betree_locator_tree_height", _t1585,))
         return sorted(result)
 
     def deconstruct_export_csv_config(self, msg: transactions_pb2.ExportCSVConfig) -> list[tuple[str, logic_pb2.Value]]:
         result = []
         if msg.partition_size is not None:
             assert msg.partition_size is not None
-            _t1587 = self._make_value_int64(msg.partition_size)
-            result.append(("partition_size", _t1587,))
+            _t1586 = self._make_value_int64(msg.partition_size)
+            result.append(("partition_size", _t1586,))
         if msg.compression is not None:
             assert msg.compression is not None
-            _t1588 = self._make_value_string(msg.compression)
-            result.append(("compression", _t1588,))
+            _t1587 = self._make_value_string(msg.compression)
+            result.append(("compression", _t1587,))
         if msg.syntax_header_row is not None:
             assert msg.syntax_header_row is not None
-            _t1589 = self._make_value_boolean(msg.syntax_header_row)
-            result.append(("syntax_header_row", _t1589,))
+            _t1588 = self._make_value_boolean(msg.syntax_header_row)
+            result.append(("syntax_header_row", _t1588,))
         if msg.syntax_missing_string is not None:
             assert msg.syntax_missing_string is not None
-            _t1590 = self._make_value_string(msg.syntax_missing_string)
-            result.append(("syntax_missing_string", _t1590,))
+            _t1589 = self._make_value_string(msg.syntax_missing_string)
+            result.append(("syntax_missing_string", _t1589,))
         if msg.syntax_delim is not None:
             assert msg.syntax_delim is not None
-            _t1591 = self._make_value_string(msg.syntax_delim)
-            result.append(("syntax_delim", _t1591,))
+            _t1590 = self._make_value_string(msg.syntax_delim)
+            result.append(("syntax_delim", _t1590,))
         if msg.syntax_quotechar is not None:
             assert msg.syntax_quotechar is not None
-            _t1592 = self._make_value_string(msg.syntax_quotechar)
-            result.append(("syntax_quotechar", _t1592,))
+            _t1591 = self._make_value_string(msg.syntax_quotechar)
+            result.append(("syntax_quotechar", _t1591,))
         if msg.syntax_escapechar is not None:
             assert msg.syntax_escapechar is not None
-            _t1593 = self._make_value_string(msg.syntax_escapechar)
-            result.append(("syntax_escapechar", _t1593,))
+            _t1592 = self._make_value_string(msg.syntax_escapechar)
+            result.append(("syntax_escapechar", _t1592,))
         return sorted(result)
 
     def deconstruct_relation_id_string(self, msg: logic_pb2.RelationId) -> str:
@@ -347,7 +347,7 @@ class PrettyPrinter:
         if name is None:
             return self.relation_id_to_uint128(msg)
         else:
-            _t1594 = None
+            _t1593 = None
         return None
 
     def deconstruct_bindings(self, abs: logic_pb2.Abstraction) -> tuple[Sequence[logic_pb2.Binding], Sequence[logic_pb2.Binding]]:
@@ -3331,11 +3331,7 @@ class PrettyPrinter:
                 _t1544 = sorted(_dollar_dollar.properties.items())
             else:
                 _t1544 = None
-            if not len(sorted(_dollar_dollar.credentials.items())) == 0:
-                _t1545 = sorted(_dollar_dollar.credentials.items())
-            else:
-                _t1545 = None
-            fields1321 = (_dollar_dollar.catalog_uri, _t1543, _t1544, _t1545,)
+            fields1321 = (_dollar_dollar.catalog_uri, _t1543, _t1544, None,)
             assert fields1321 is not None
             unwrapped_fields1322 = fields1321
             self.write("(iceberg_config")
@@ -3560,10 +3556,10 @@ class PrettyPrinter:
         else:
             _dollar_dollar = msg
             if _dollar_dollar.HasField("demand"):
-                _t1546 = _dollar_dollar.demand
+                _t1545 = _dollar_dollar.demand
             else:
-                _t1546 = None
-            deconstruct_result1378 = _t1546
+                _t1545 = None
+            deconstruct_result1378 = _t1545
             if deconstruct_result1378 is not None:
                 assert deconstruct_result1378 is not None
                 unwrapped1379 = deconstruct_result1378
@@ -3571,10 +3567,10 @@ class PrettyPrinter:
             else:
                 _dollar_dollar = msg
                 if _dollar_dollar.HasField("output"):
-                    _t1547 = _dollar_dollar.output
+                    _t1546 = _dollar_dollar.output
                 else:
-                    _t1547 = None
-                deconstruct_result1376 = _t1547
+                    _t1546 = None
+                deconstruct_result1376 = _t1546
                 if deconstruct_result1376 is not None:
                     assert deconstruct_result1376 is not None
                     unwrapped1377 = deconstruct_result1376
@@ -3582,10 +3578,10 @@ class PrettyPrinter:
                 else:
                     _dollar_dollar = msg
                     if _dollar_dollar.HasField("what_if"):
-                        _t1548 = _dollar_dollar.what_if
+                        _t1547 = _dollar_dollar.what_if
                     else:
-                        _t1548 = None
-                    deconstruct_result1374 = _t1548
+                        _t1547 = None
+                    deconstruct_result1374 = _t1547
                     if deconstruct_result1374 is not None:
                         assert deconstruct_result1374 is not None
                         unwrapped1375 = deconstruct_result1374
@@ -3593,10 +3589,10 @@ class PrettyPrinter:
                     else:
                         _dollar_dollar = msg
                         if _dollar_dollar.HasField("abort"):
-                            _t1549 = _dollar_dollar.abort
+                            _t1548 = _dollar_dollar.abort
                         else:
-                            _t1549 = None
-                        deconstruct_result1372 = _t1549
+                            _t1548 = None
+                        deconstruct_result1372 = _t1548
                         if deconstruct_result1372 is not None:
                             assert deconstruct_result1372 is not None
                             unwrapped1373 = deconstruct_result1372
@@ -3604,10 +3600,10 @@ class PrettyPrinter:
                         else:
                             _dollar_dollar = msg
                             if _dollar_dollar.HasField("export"):
-                                _t1550 = _dollar_dollar.export
+                                _t1549 = _dollar_dollar.export
                             else:
-                                _t1550 = None
-                            deconstruct_result1370 = _t1550
+                                _t1549 = None
+                            deconstruct_result1370 = _t1549
                             if deconstruct_result1370 is not None:
                                 assert deconstruct_result1370 is not None
                                 unwrapped1371 = deconstruct_result1370
@@ -3686,10 +3682,10 @@ class PrettyPrinter:
         else:
             _dollar_dollar = msg
             if _dollar_dollar.name != "abort":
-                _t1551 = _dollar_dollar.name
+                _t1550 = _dollar_dollar.name
             else:
-                _t1551 = None
-            fields1394 = (_t1551, _dollar_dollar.relation_id,)
+                _t1550 = None
+            fields1394 = (_t1550, _dollar_dollar.relation_id,)
             assert fields1394 is not None
             unwrapped_fields1395 = fields1394
             self.write("(abort")
@@ -3733,10 +3729,10 @@ class PrettyPrinter:
         else:
             _dollar_dollar = msg
             if len(_dollar_dollar.data_columns) == 0:
-                _t1552 = (_dollar_dollar.path, _dollar_dollar.csv_source, _dollar_dollar.csv_config,)
+                _t1551 = (_dollar_dollar.path, _dollar_dollar.csv_source, _dollar_dollar.csv_config,)
             else:
-                _t1552 = None
-            deconstruct_result1408 = _t1552
+                _t1551 = None
+            deconstruct_result1408 = _t1551
             if deconstruct_result1408 is not None:
                 assert deconstruct_result1408 is not None
                 unwrapped1409 = deconstruct_result1408
@@ -3756,11 +3752,11 @@ class PrettyPrinter:
             else:
                 _dollar_dollar = msg
                 if len(_dollar_dollar.data_columns) != 0:
-                    _t1554 = self.deconstruct_export_csv_config(_dollar_dollar)
-                    _t1553 = (_dollar_dollar.path, _dollar_dollar.data_columns, _t1554,)
+                    _t1553 = self.deconstruct_export_csv_config(_dollar_dollar)
+                    _t1552 = (_dollar_dollar.path, _dollar_dollar.data_columns, _t1553,)
                 else:
-                    _t1553 = None
-                deconstruct_result1403 = _t1553
+                    _t1552 = None
+                deconstruct_result1403 = _t1552
                 if deconstruct_result1403 is not None:
                     assert deconstruct_result1403 is not None
                     unwrapped1404 = deconstruct_result1403
@@ -3804,10 +3800,10 @@ class PrettyPrinter:
         else:
             _dollar_dollar = msg
             if _dollar_dollar.HasField("gnf_columns"):
-                _t1555 = _dollar_dollar.gnf_columns.columns
+                _t1554 = _dollar_dollar.gnf_columns.columns
             else:
-                _t1555 = None
-            deconstruct_result1418 = _t1555
+                _t1554 = None
+            deconstruct_result1418 = _t1554
             if deconstruct_result1418 is not None:
                 assert deconstruct_result1418 is not None
                 unwrapped1419 = deconstruct_result1418
@@ -3824,10 +3820,10 @@ class PrettyPrinter:
             else:
                 _dollar_dollar = msg
                 if _dollar_dollar.HasField("table_def"):
-                    _t1556 = _dollar_dollar.table_def
+                    _t1555 = _dollar_dollar.table_def
                 else:
-                    _t1556 = None
-                deconstruct_result1416 = _t1556
+                    _t1555 = None
+                deconstruct_result1416 = _t1555
                 if deconstruct_result1416 is not None:
                     assert deconstruct_result1416 is not None
                     unwrapped1417 = deconstruct_result1416
@@ -3890,8 +3886,8 @@ class PrettyPrinter:
         for _idx, _rid in enumerate(msg.ids):
             self.newline()
             self.write("(")
-            _t1595 = logic_pb2.UInt128Value(low=_rid.id_low, high=_rid.id_high)
-            self.pprint_dispatch(_t1595)
+            _t1594 = logic_pb2.UInt128Value(low=_rid.id_low, high=_rid.id_high)
+            self.pprint_dispatch(_t1594)
             self.write(" ")
             self.write(self.format_string_value(msg.orig_names[_idx]))
             self.write(")")

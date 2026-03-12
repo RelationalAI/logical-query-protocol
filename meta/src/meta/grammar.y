@@ -1066,7 +1066,7 @@ iceberg_config
         $3: String = $$.catalog_uri
         $4: Optional[String] = $$.scope if $$.scope != "" else None
         $5: Optional[Sequence[Tuple[String, String]]] = builtin.dict_to_pairs($$.properties) if not builtin.is_empty(builtin.dict_to_pairs($$.properties)) else None
-        $6: Optional[Sequence[Tuple[String, String]]] = builtin.dict_to_pairs($$.credentials) if not builtin.is_empty(builtin.dict_to_pairs($$.credentials)) else None
+        $6: Optional[Sequence[Tuple[String, String]]] = builtin.none()
 
 iceberg_config_scope
     : "(" "scope" STRING ")"

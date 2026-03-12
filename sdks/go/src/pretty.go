@@ -312,157 +312,157 @@ func formatBool(b bool) string {
 // --- Helper functions ---
 
 func (p *PrettyPrinter) _make_value_int32(v int32) *pb.Value {
-	_t1557 := &pb.Value{}
-	_t1557.Value = &pb.Value_Int32Value{Int32Value: v}
-	return _t1557
+	_t1556 := &pb.Value{}
+	_t1556.Value = &pb.Value_Int32Value{Int32Value: v}
+	return _t1556
 }
 
 func (p *PrettyPrinter) _make_value_int64(v int64) *pb.Value {
-	_t1558 := &pb.Value{}
-	_t1558.Value = &pb.Value_IntValue{IntValue: v}
-	return _t1558
+	_t1557 := &pb.Value{}
+	_t1557.Value = &pb.Value_IntValue{IntValue: v}
+	return _t1557
 }
 
 func (p *PrettyPrinter) _make_value_float64(v float64) *pb.Value {
-	_t1559 := &pb.Value{}
-	_t1559.Value = &pb.Value_FloatValue{FloatValue: v}
-	return _t1559
+	_t1558 := &pb.Value{}
+	_t1558.Value = &pb.Value_FloatValue{FloatValue: v}
+	return _t1558
 }
 
 func (p *PrettyPrinter) _make_value_string(v string) *pb.Value {
-	_t1560 := &pb.Value{}
-	_t1560.Value = &pb.Value_StringValue{StringValue: v}
-	return _t1560
+	_t1559 := &pb.Value{}
+	_t1559.Value = &pb.Value_StringValue{StringValue: v}
+	return _t1559
 }
 
 func (p *PrettyPrinter) _make_value_boolean(v bool) *pb.Value {
-	_t1561 := &pb.Value{}
-	_t1561.Value = &pb.Value_BooleanValue{BooleanValue: v}
-	return _t1561
+	_t1560 := &pb.Value{}
+	_t1560.Value = &pb.Value_BooleanValue{BooleanValue: v}
+	return _t1560
 }
 
 func (p *PrettyPrinter) _make_value_uint128(v *pb.UInt128Value) *pb.Value {
-	_t1562 := &pb.Value{}
-	_t1562.Value = &pb.Value_Uint128Value{Uint128Value: v}
-	return _t1562
+	_t1561 := &pb.Value{}
+	_t1561.Value = &pb.Value_Uint128Value{Uint128Value: v}
+	return _t1561
 }
 
 func (p *PrettyPrinter) deconstruct_configure(msg *pb.Configure) [][]interface{} {
 	result := [][]interface{}{}
 	if msg.GetIvmConfig().GetLevel() == pb.MaintenanceLevel_MAINTENANCE_LEVEL_AUTO {
-		_t1563 := p._make_value_string("auto")
-		result = append(result, []interface{}{"ivm.maintenance_level", _t1563})
+		_t1562 := p._make_value_string("auto")
+		result = append(result, []interface{}{"ivm.maintenance_level", _t1562})
 	} else {
 		if msg.GetIvmConfig().GetLevel() == pb.MaintenanceLevel_MAINTENANCE_LEVEL_ALL {
-			_t1564 := p._make_value_string("all")
-			result = append(result, []interface{}{"ivm.maintenance_level", _t1564})
+			_t1563 := p._make_value_string("all")
+			result = append(result, []interface{}{"ivm.maintenance_level", _t1563})
 		} else {
 			if msg.GetIvmConfig().GetLevel() == pb.MaintenanceLevel_MAINTENANCE_LEVEL_OFF {
-				_t1565 := p._make_value_string("off")
-				result = append(result, []interface{}{"ivm.maintenance_level", _t1565})
+				_t1564 := p._make_value_string("off")
+				result = append(result, []interface{}{"ivm.maintenance_level", _t1564})
 			}
 		}
 	}
-	_t1566 := p._make_value_int64(msg.GetSemanticsVersion())
-	result = append(result, []interface{}{"semantics_version", _t1566})
+	_t1565 := p._make_value_int64(msg.GetSemanticsVersion())
+	result = append(result, []interface{}{"semantics_version", _t1565})
 	return listSort(result)
 }
 
 func (p *PrettyPrinter) deconstruct_csv_config(msg *pb.CSVConfig) [][]interface{} {
 	result := [][]interface{}{}
-	_t1567 := p._make_value_int32(msg.GetHeaderRow())
-	result = append(result, []interface{}{"csv_header_row", _t1567})
-	_t1568 := p._make_value_int64(msg.GetSkip())
-	result = append(result, []interface{}{"csv_skip", _t1568})
+	_t1566 := p._make_value_int32(msg.GetHeaderRow())
+	result = append(result, []interface{}{"csv_header_row", _t1566})
+	_t1567 := p._make_value_int64(msg.GetSkip())
+	result = append(result, []interface{}{"csv_skip", _t1567})
 	if msg.GetNewLine() != "" {
-		_t1569 := p._make_value_string(msg.GetNewLine())
-		result = append(result, []interface{}{"csv_new_line", _t1569})
+		_t1568 := p._make_value_string(msg.GetNewLine())
+		result = append(result, []interface{}{"csv_new_line", _t1568})
 	}
-	_t1570 := p._make_value_string(msg.GetDelimiter())
-	result = append(result, []interface{}{"csv_delimiter", _t1570})
-	_t1571 := p._make_value_string(msg.GetQuotechar())
-	result = append(result, []interface{}{"csv_quotechar", _t1571})
-	_t1572 := p._make_value_string(msg.GetEscapechar())
-	result = append(result, []interface{}{"csv_escapechar", _t1572})
+	_t1569 := p._make_value_string(msg.GetDelimiter())
+	result = append(result, []interface{}{"csv_delimiter", _t1569})
+	_t1570 := p._make_value_string(msg.GetQuotechar())
+	result = append(result, []interface{}{"csv_quotechar", _t1570})
+	_t1571 := p._make_value_string(msg.GetEscapechar())
+	result = append(result, []interface{}{"csv_escapechar", _t1571})
 	if msg.GetComment() != "" {
-		_t1573 := p._make_value_string(msg.GetComment())
-		result = append(result, []interface{}{"csv_comment", _t1573})
+		_t1572 := p._make_value_string(msg.GetComment())
+		result = append(result, []interface{}{"csv_comment", _t1572})
 	}
 	for _, missing_string := range msg.GetMissingStrings() {
-		_t1574 := p._make_value_string(missing_string)
-		result = append(result, []interface{}{"csv_missing_strings", _t1574})
+		_t1573 := p._make_value_string(missing_string)
+		result = append(result, []interface{}{"csv_missing_strings", _t1573})
 	}
-	_t1575 := p._make_value_string(msg.GetDecimalSeparator())
-	result = append(result, []interface{}{"csv_decimal_separator", _t1575})
-	_t1576 := p._make_value_string(msg.GetEncoding())
-	result = append(result, []interface{}{"csv_encoding", _t1576})
-	_t1577 := p._make_value_string(msg.GetCompression())
-	result = append(result, []interface{}{"csv_compression", _t1577})
+	_t1574 := p._make_value_string(msg.GetDecimalSeparator())
+	result = append(result, []interface{}{"csv_decimal_separator", _t1574})
+	_t1575 := p._make_value_string(msg.GetEncoding())
+	result = append(result, []interface{}{"csv_encoding", _t1575})
+	_t1576 := p._make_value_string(msg.GetCompression())
+	result = append(result, []interface{}{"csv_compression", _t1576})
 	if msg.GetPartitionSizeMb() != 0 {
-		_t1578 := p._make_value_int64(msg.GetPartitionSizeMb())
-		result = append(result, []interface{}{"csv_partition_size_mb", _t1578})
+		_t1577 := p._make_value_int64(msg.GetPartitionSizeMb())
+		result = append(result, []interface{}{"csv_partition_size_mb", _t1577})
 	}
 	return listSort(result)
 }
 
 func (p *PrettyPrinter) deconstruct_betree_info_config(msg *pb.BeTreeInfo) [][]interface{} {
 	result := [][]interface{}{}
-	_t1579 := p._make_value_float64(msg.GetStorageConfig().GetEpsilon())
-	result = append(result, []interface{}{"betree_config_epsilon", _t1579})
-	_t1580 := p._make_value_int64(msg.GetStorageConfig().GetMaxPivots())
-	result = append(result, []interface{}{"betree_config_max_pivots", _t1580})
-	_t1581 := p._make_value_int64(msg.GetStorageConfig().GetMaxDeltas())
-	result = append(result, []interface{}{"betree_config_max_deltas", _t1581})
-	_t1582 := p._make_value_int64(msg.GetStorageConfig().GetMaxLeaf())
-	result = append(result, []interface{}{"betree_config_max_leaf", _t1582})
+	_t1578 := p._make_value_float64(msg.GetStorageConfig().GetEpsilon())
+	result = append(result, []interface{}{"betree_config_epsilon", _t1578})
+	_t1579 := p._make_value_int64(msg.GetStorageConfig().GetMaxPivots())
+	result = append(result, []interface{}{"betree_config_max_pivots", _t1579})
+	_t1580 := p._make_value_int64(msg.GetStorageConfig().GetMaxDeltas())
+	result = append(result, []interface{}{"betree_config_max_deltas", _t1580})
+	_t1581 := p._make_value_int64(msg.GetStorageConfig().GetMaxLeaf())
+	result = append(result, []interface{}{"betree_config_max_leaf", _t1581})
 	if hasProtoField(msg.GetRelationLocator(), "root_pageid") {
 		if msg.GetRelationLocator().GetRootPageid() != nil {
-			_t1583 := p._make_value_uint128(msg.GetRelationLocator().GetRootPageid())
-			result = append(result, []interface{}{"betree_locator_root_pageid", _t1583})
+			_t1582 := p._make_value_uint128(msg.GetRelationLocator().GetRootPageid())
+			result = append(result, []interface{}{"betree_locator_root_pageid", _t1582})
 		}
 	}
 	if hasProtoField(msg.GetRelationLocator(), "inline_data") {
 		if msg.GetRelationLocator().GetInlineData() != nil {
-			_t1584 := p._make_value_string(string(msg.GetRelationLocator().GetInlineData()))
-			result = append(result, []interface{}{"betree_locator_inline_data", _t1584})
+			_t1583 := p._make_value_string(string(msg.GetRelationLocator().GetInlineData()))
+			result = append(result, []interface{}{"betree_locator_inline_data", _t1583})
 		}
 	}
-	_t1585 := p._make_value_int64(msg.GetRelationLocator().GetElementCount())
-	result = append(result, []interface{}{"betree_locator_element_count", _t1585})
-	_t1586 := p._make_value_int64(msg.GetRelationLocator().GetTreeHeight())
-	result = append(result, []interface{}{"betree_locator_tree_height", _t1586})
+	_t1584 := p._make_value_int64(msg.GetRelationLocator().GetElementCount())
+	result = append(result, []interface{}{"betree_locator_element_count", _t1584})
+	_t1585 := p._make_value_int64(msg.GetRelationLocator().GetTreeHeight())
+	result = append(result, []interface{}{"betree_locator_tree_height", _t1585})
 	return listSort(result)
 }
 
 func (p *PrettyPrinter) deconstruct_export_csv_config(msg *pb.ExportCSVConfig) [][]interface{} {
 	result := [][]interface{}{}
 	if msg.PartitionSize != nil {
-		_t1587 := p._make_value_int64(*msg.PartitionSize)
-		result = append(result, []interface{}{"partition_size", _t1587})
+		_t1586 := p._make_value_int64(*msg.PartitionSize)
+		result = append(result, []interface{}{"partition_size", _t1586})
 	}
 	if msg.Compression != nil {
-		_t1588 := p._make_value_string(*msg.Compression)
-		result = append(result, []interface{}{"compression", _t1588})
+		_t1587 := p._make_value_string(*msg.Compression)
+		result = append(result, []interface{}{"compression", _t1587})
 	}
 	if msg.SyntaxHeaderRow != nil {
-		_t1589 := p._make_value_boolean(*msg.SyntaxHeaderRow)
-		result = append(result, []interface{}{"syntax_header_row", _t1589})
+		_t1588 := p._make_value_boolean(*msg.SyntaxHeaderRow)
+		result = append(result, []interface{}{"syntax_header_row", _t1588})
 	}
 	if msg.SyntaxMissingString != nil {
-		_t1590 := p._make_value_string(*msg.SyntaxMissingString)
-		result = append(result, []interface{}{"syntax_missing_string", _t1590})
+		_t1589 := p._make_value_string(*msg.SyntaxMissingString)
+		result = append(result, []interface{}{"syntax_missing_string", _t1589})
 	}
 	if msg.SyntaxDelim != nil {
-		_t1591 := p._make_value_string(*msg.SyntaxDelim)
-		result = append(result, []interface{}{"syntax_delim", _t1591})
+		_t1590 := p._make_value_string(*msg.SyntaxDelim)
+		result = append(result, []interface{}{"syntax_delim", _t1590})
 	}
 	if msg.SyntaxQuotechar != nil {
-		_t1592 := p._make_value_string(*msg.SyntaxQuotechar)
-		result = append(result, []interface{}{"syntax_quotechar", _t1592})
+		_t1591 := p._make_value_string(*msg.SyntaxQuotechar)
+		result = append(result, []interface{}{"syntax_quotechar", _t1591})
 	}
 	if msg.SyntaxEscapechar != nil {
-		_t1593 := p._make_value_string(*msg.SyntaxEscapechar)
-		result = append(result, []interface{}{"syntax_escapechar", _t1593})
+		_t1592 := p._make_value_string(*msg.SyntaxEscapechar)
+		result = append(result, []interface{}{"syntax_escapechar", _t1592})
 	}
 	return listSort(result)
 }
@@ -474,11 +474,11 @@ func (p *PrettyPrinter) deconstruct_relation_id_string(msg *pb.RelationId) strin
 
 func (p *PrettyPrinter) deconstruct_relation_id_uint128(msg *pb.RelationId) *pb.UInt128Value {
 	name := p.relationIdToString(msg)
-	var _t1594 interface{}
+	var _t1593 interface{}
 	if name == nil {
 		return p.relationIdToUint128(msg)
 	}
-	_ = _t1594
+	_ = _t1593
 	return nil
 }
 
@@ -3815,11 +3815,7 @@ func (p *PrettyPrinter) pretty_iceberg_config(msg *pb.IcebergConfig) interface{}
 		if !(len(dictToPairs(_dollar_dollar.GetProperties())) == 0) {
 			_t1544 = dictToPairs(_dollar_dollar.GetProperties())
 		}
-		var _t1545 [][]interface{}
-		if !(len(dictToPairs(_dollar_dollar.GetCredentials())) == 0) {
-			_t1545 = dictToPairs(_dollar_dollar.GetCredentials())
-		}
-		fields1321 := []interface{}{_dollar_dollar.GetCatalogUri(), _t1543, _t1544, _t1545}
+		fields1321 := []interface{}{_dollar_dollar.GetCatalogUri(), _t1543, _t1544, nil}
 		unwrapped_fields1322 := fields1321
 		p.write("(")
 		p.write("iceberg_config")
@@ -3839,7 +3835,7 @@ func (p *PrettyPrinter) pretty_iceberg_config(msg *pb.IcebergConfig) interface{}
 			opt_val1327 := field1326
 			p.pretty_iceberg_config_properties(opt_val1327)
 		}
-		field1328 := unwrapped_fields1322[3].([][]interface{})
+		field1328 := unwrapped_fields1322[3].(interface{})
 		if field1328 != nil {
 			p.newline()
 			opt_val1329 := field1328
@@ -4083,51 +4079,51 @@ func (p *PrettyPrinter) pretty_read(msg *pb.Read) interface{} {
 		return nil
 	} else {
 		_dollar_dollar := msg
-		var _t1546 *pb.Demand
+		var _t1545 *pb.Demand
 		if hasProtoField(_dollar_dollar, "demand") {
-			_t1546 = _dollar_dollar.GetDemand()
+			_t1545 = _dollar_dollar.GetDemand()
 		}
-		deconstruct_result1378 := _t1546
+		deconstruct_result1378 := _t1545
 		if deconstruct_result1378 != nil {
 			unwrapped1379 := deconstruct_result1378
 			p.pretty_demand(unwrapped1379)
 		} else {
 			_dollar_dollar := msg
-			var _t1547 *pb.Output
+			var _t1546 *pb.Output
 			if hasProtoField(_dollar_dollar, "output") {
-				_t1547 = _dollar_dollar.GetOutput()
+				_t1546 = _dollar_dollar.GetOutput()
 			}
-			deconstruct_result1376 := _t1547
+			deconstruct_result1376 := _t1546
 			if deconstruct_result1376 != nil {
 				unwrapped1377 := deconstruct_result1376
 				p.pretty_output(unwrapped1377)
 			} else {
 				_dollar_dollar := msg
-				var _t1548 *pb.WhatIf
+				var _t1547 *pb.WhatIf
 				if hasProtoField(_dollar_dollar, "what_if") {
-					_t1548 = _dollar_dollar.GetWhatIf()
+					_t1547 = _dollar_dollar.GetWhatIf()
 				}
-				deconstruct_result1374 := _t1548
+				deconstruct_result1374 := _t1547
 				if deconstruct_result1374 != nil {
 					unwrapped1375 := deconstruct_result1374
 					p.pretty_what_if(unwrapped1375)
 				} else {
 					_dollar_dollar := msg
-					var _t1549 *pb.Abort
+					var _t1548 *pb.Abort
 					if hasProtoField(_dollar_dollar, "abort") {
-						_t1549 = _dollar_dollar.GetAbort()
+						_t1548 = _dollar_dollar.GetAbort()
 					}
-					deconstruct_result1372 := _t1549
+					deconstruct_result1372 := _t1548
 					if deconstruct_result1372 != nil {
 						unwrapped1373 := deconstruct_result1372
 						p.pretty_abort(unwrapped1373)
 					} else {
 						_dollar_dollar := msg
-						var _t1550 *pb.Export
+						var _t1549 *pb.Export
 						if hasProtoField(_dollar_dollar, "export") {
-							_t1550 = _dollar_dollar.GetExport()
+							_t1549 = _dollar_dollar.GetExport()
 						}
-						deconstruct_result1370 := _t1550
+						deconstruct_result1370 := _t1549
 						if deconstruct_result1370 != nil {
 							unwrapped1371 := deconstruct_result1370
 							p.pretty_export(unwrapped1371)
@@ -4217,11 +4213,11 @@ func (p *PrettyPrinter) pretty_abort(msg *pb.Abort) interface{} {
 		return nil
 	} else {
 		_dollar_dollar := msg
-		var _t1551 *string
+		var _t1550 *string
 		if _dollar_dollar.GetName() != "abort" {
-			_t1551 = ptr(_dollar_dollar.GetName())
+			_t1550 = ptr(_dollar_dollar.GetName())
 		}
-		fields1394 := []interface{}{_t1551, _dollar_dollar.GetRelationId()}
+		fields1394 := []interface{}{_t1550, _dollar_dollar.GetRelationId()}
 		unwrapped_fields1395 := fields1394
 		p.write("(")
 		p.write("abort")
@@ -4268,11 +4264,11 @@ func (p *PrettyPrinter) pretty_export_csv_config(msg *pb.ExportCSVConfig) interf
 		return nil
 	} else {
 		_dollar_dollar := msg
-		var _t1552 []interface{}
+		var _t1551 []interface{}
 		if int64(len(_dollar_dollar.GetDataColumns())) == 0 {
-			_t1552 = []interface{}{_dollar_dollar.GetPath(), _dollar_dollar.GetCsvSource(), _dollar_dollar.GetCsvConfig()}
+			_t1551 = []interface{}{_dollar_dollar.GetPath(), _dollar_dollar.GetCsvSource(), _dollar_dollar.GetCsvConfig()}
 		}
-		deconstruct_result1408 := _t1552
+		deconstruct_result1408 := _t1551
 		if deconstruct_result1408 != nil {
 			unwrapped1409 := deconstruct_result1408
 			p.write("(")
@@ -4291,12 +4287,12 @@ func (p *PrettyPrinter) pretty_export_csv_config(msg *pb.ExportCSVConfig) interf
 			p.write(")")
 		} else {
 			_dollar_dollar := msg
-			var _t1553 []interface{}
+			var _t1552 []interface{}
 			if int64(len(_dollar_dollar.GetDataColumns())) != 0 {
-				_t1554 := p.deconstruct_export_csv_config(_dollar_dollar)
-				_t1553 = []interface{}{_dollar_dollar.GetPath(), _dollar_dollar.GetDataColumns(), _t1554}
+				_t1553 := p.deconstruct_export_csv_config(_dollar_dollar)
+				_t1552 = []interface{}{_dollar_dollar.GetPath(), _dollar_dollar.GetDataColumns(), _t1553}
 			}
-			deconstruct_result1403 := _t1553
+			deconstruct_result1403 := _t1552
 			if deconstruct_result1403 != nil {
 				unwrapped1404 := deconstruct_result1403
 				p.write("(")
@@ -4346,11 +4342,11 @@ func (p *PrettyPrinter) pretty_export_csv_source(msg *pb.ExportCSVSource) interf
 		return nil
 	} else {
 		_dollar_dollar := msg
-		var _t1555 []*pb.ExportCSVColumn
+		var _t1554 []*pb.ExportCSVColumn
 		if hasProtoField(_dollar_dollar, "gnf_columns") {
-			_t1555 = _dollar_dollar.GetGnfColumns().GetColumns()
+			_t1554 = _dollar_dollar.GetGnfColumns().GetColumns()
 		}
-		deconstruct_result1418 := _t1555
+		deconstruct_result1418 := _t1554
 		if deconstruct_result1418 != nil {
 			unwrapped1419 := deconstruct_result1418
 			p.write("(")
@@ -4369,11 +4365,11 @@ func (p *PrettyPrinter) pretty_export_csv_source(msg *pb.ExportCSVSource) interf
 			p.write(")")
 		} else {
 			_dollar_dollar := msg
-			var _t1556 *pb.RelationId
+			var _t1555 *pb.RelationId
 			if hasProtoField(_dollar_dollar, "table_def") {
-				_t1556 = _dollar_dollar.GetTableDef()
+				_t1555 = _dollar_dollar.GetTableDef()
 			}
-			deconstruct_result1416 := _t1556
+			deconstruct_result1416 := _t1555
 			if deconstruct_result1416 != nil {
 				unwrapped1417 := deconstruct_result1416
 				p.write("(")
@@ -4449,8 +4445,8 @@ func (p *PrettyPrinter) pretty_debug_info(msg *pb.DebugInfo) interface{} {
 	for _idx, _rid := range msg.GetIds() {
 		p.newline()
 		p.write("(")
-		_t1595 := &pb.UInt128Value{Low: _rid.GetIdLow(), High: _rid.GetIdHigh()}
-		p.pprintDispatch(_t1595)
+		_t1594 := &pb.UInt128Value{Low: _rid.GetIdLow(), High: _rid.GetIdHigh()}
+		p.pprintDispatch(_t1594)
 		p.write(" ")
 		p.write(p.formatStringValue(msg.GetOrigNames()[_idx]))
 		p.write(")")
