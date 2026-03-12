@@ -228,14 +228,14 @@ message Attribute {
 }
 
 //
-// Input data (base relations, CSVs)
+// Input data (base relations, CSVs, Iceberg)
 //
 message Data {
   oneof data_type {
     EDB edb = 1;
     BeTreeRelation betree_relation = 2;
     CSVData csv_data = 3;
-    // IcebergData iceberg_data = 4;
+    IcebergData iceberg_data = 4;
   }
 }
 
@@ -312,6 +312,26 @@ message CSVConfig {
 
   // Partitioning (for export)
   int64 partition_size_mb = 12;
+}
+
+message IcebergData {
+  IcebergLocator locator = 1;
+  IcebergConfig config = 2;
+  repeated GNFColumn columns = 3;
+  optional string to_snapshot = 4;
+}
+
+message IcebergLocator {
+  string table_name = 1;
+  repeated string namespace = 2;
+  string warehouse = 3;
+}
+
+message IcebergConfig {
+  string catalog_uri = 1;
+  optional string scope = 2;
+  map<string, string> properties = 3;
+  map<string, string> credentials = 4;
 }
 
 message GNFColumn {

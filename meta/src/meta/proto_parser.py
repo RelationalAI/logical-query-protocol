@@ -40,6 +40,7 @@ _ENUM_PATTERN = re.compile(r"enum\s+(\w+)\s*\{")
 _NESTED_ENUM_PATTERN = re.compile(r"enum\s+(\w+)\s*\{([^}]+)\}")
 _ONEOF_PATTERN = re.compile(r"oneof\s+(\w+)\s*\{((?:[^{}]|\{[^}]*\})*)\}")
 _FIELD_PATTERN = re.compile(r"(repeated|optional)?\s*(\w+)\s+(\w+)\s*=\s*(\d+);")
+_MAP_FIELD_PATTERN = re.compile(r"map<\s*(\w+)\s*,\s*(\w+)\s*>\s+(\w+)\s*=\s*(\d+);")
 _ONEOF_FIELD_PATTERN = re.compile(r"(\w+)\s+(\w+)\s*=\s*(\d+);")
 _ENUM_VALUE_PATTERN = re.compile(r"(\w+)\s*=\s*(\d+);")
 _RESERVED_PATTERN = re.compile(r"reserved\s+([^;]+);")
@@ -190,6 +191,29 @@ class ProtoParser:
                 number=field_number,
                 is_repeated=modifier == "repeated",
                 is_optional=modifier == "optional",
+            )
+            message.fields.append(proto_field)
+
+        # Parse map fields
+        for match in _MAP_FIELD_PATTERN.finditer(body):
+            if any(
+                start <= match.start() and match.end() <= end
+                for start, end in excluded_spans
+            ):
+                continue
+
+            key_type = match.group(1)
+            value_type = match.group(2)
+            field_name = match.group(3)
+            field_number = int(match.group(4))
+
+            proto_field = ProtoField(
+                name=field_name,
+                type=f"map<{key_type},{value_type}>",
+                number=field_number,
+                is_map=True,
+                map_key_type=key_type,
+                map_value_type=value_type,
             )
             message.fields.append(proto_field)
 

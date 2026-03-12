@@ -70,6 +70,7 @@ from .grammar import (
 )
 from .target import (
     BaseType,
+    DictType,
     ListType,
     MessageType,
     OptionType,
@@ -739,10 +740,19 @@ def _make_field_type_lookup(
 
     for (module, msg_name), proto_msg in proto_messages.items():
         for field in proto_msg.fields:
-            field_type = _proto_type_to_target_type(
-                field.type, field.is_repeated, field.is_optional, name_to_module
-            )
-            field_types[(module, msg_name, field.name)] = field_type
+            if field.is_map:
+                key_type = _proto_type_to_target_type(
+                    field.map_key_type, False, name_to_module=name_to_module
+                )
+                value_type = _proto_type_to_target_type(
+                    field.map_value_type, False, name_to_module=name_to_module
+                )
+                field_types[(module, msg_name, field.name)] = DictType(key_type, value_type)
+            else:
+                field_type = _proto_type_to_target_type(
+                    field.type, field.is_repeated, field.is_optional, name_to_module
+                )
+                field_types[(module, msg_name, field.name)] = field_type
 
         # Also add oneof fields
         for oneof in proto_msg.oneofs:
