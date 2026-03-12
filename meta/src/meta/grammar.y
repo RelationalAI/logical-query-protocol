@@ -83,6 +83,15 @@
 %nonterm csv_locator_paths Sequence[String]
 %nonterm csvlocator logic.CSVLocator
 %nonterm data logic.Data
+%nonterm iceberg_config logic.IcebergConfig
+%nonterm iceberg_config_credentials Sequence[Tuple[String, String]]
+%nonterm iceberg_config_properties Sequence[Tuple[String, String]]
+%nonterm iceberg_config_scope String
+%nonterm iceberg_data logic.IcebergData
+%nonterm iceberg_kv_pair Tuple[String, String]
+%nonterm iceberg_locator logic.IcebergLocator
+%nonterm iceberg_locator_namespace Sequence[String]
+%nonterm iceberg_to_snapshot String
 %nonterm date logic.DateValue
 %nonterm date_type logic.DateType
 %nonterm datetime logic.DateTimeValue
@@ -957,6 +966,10 @@ data
       construct: $$ = logic.Data(csv_data=$1)
       deconstruct if builtin.has_proto_field($$, 'csv_data'):
         $1: logic.CSVData = $$.csv_data
+    | iceberg_data
+      construct: $$ = logic.Data(iceberg_data=$1)
+      deconstruct if builtin.has_proto_field($$, 'iceberg_data'):
+        $1: logic.IcebergData = $$.iceberg_data
 
 edb_path
     : "[" STRING* "]"
@@ -1025,6 +1038,54 @@ csv_config
     : "(" "csv_config" config_dict ")"
       construct: $$ = construct_csv_config($3)
       deconstruct: $3: Sequence[Tuple[String, logic.Value]] = deconstruct_csv_config($$)
+
+iceberg_data
+    : "(" "iceberg_data" iceberg_locator iceberg_config gnf_columns iceberg_to_snapshot? ")"
+      construct: $$ = logic.IcebergData(locator=$3, config=$4, columns=$5, to_snapshot=$6)
+      deconstruct:
+        $3: logic.IcebergLocator = $$.locator
+        $4: logic.IcebergConfig = $$.config
+        $5: Sequence[logic.GNFColumn] = $$.columns
+        $6: Optional[String] = $$.to_snapshot
+
+iceberg_locator_namespace
+    : "(" "namespace" STRING* ")"
+
+iceberg_locator
+    : "(" "iceberg_locator" STRING iceberg_locator_namespace STRING ")"
+      construct: $$ = logic.IcebergLocator(table_name=$3, namespace=$4, warehouse=$5)
+      deconstruct:
+        $3: String = $$.table_name
+        $4: Sequence[String] = $$.namespace
+        $5: String = $$.warehouse
+
+iceberg_config
+    : "(" "iceberg_config" STRING iceberg_config_scope? iceberg_config_properties? iceberg_config_credentials? ")"
+      construct: $$ = construct_iceberg_config($3, $4, $5, $6)
+      deconstruct:
+        $3: String = $$.catalog_uri
+        $4: Optional[String] = $$.scope if $$.scope != "" else None
+        $5: Optional[Sequence[Tuple[String, String]]] = builtin.dict_to_pairs($$.properties) if not builtin.is_empty(builtin.dict_to_pairs($$.properties)) else None
+        $6: Optional[Sequence[Tuple[String, String]]] = builtin.dict_to_pairs($$.credentials) if not builtin.is_empty(builtin.dict_to_pairs($$.credentials)) else None
+
+iceberg_config_scope
+    : "(" "scope" STRING ")"
+
+iceberg_config_properties
+    : "(" "properties" iceberg_kv_pair* ")"
+
+iceberg_config_credentials
+    : "(" "credentials" iceberg_kv_pair* ")"
+
+iceberg_kv_pair
+    : "(" STRING STRING ")"
+      construct: $$ = builtin.tuple($2, $3)
+      deconstruct:
+        $2: String = $$[0]
+        $3: String = $$[1]
+
+iceberg_to_snapshot
+    : "(" "to_snapshot" STRING ")"
 
 gnf_column_path
     : STRING
@@ -1437,6 +1498,23 @@ def deconstruct_csv_config(msg: logic.CSVConfig) -> List[Tuple[String, logic.Val
     if msg.partition_size_mb != 0:
       builtin.list_push(result, builtin.tuple("csv_partition_size_mb", _make_value_int64(msg.partition_size_mb)))
     return builtin.list_sort(result)
+
+
+def construct_iceberg_config(
+    catalog_uri: String,
+    scope: Optional[String],
+    properties: Optional[Sequence[Tuple[String, String]]],
+    credentials: Optional[Sequence[Tuple[String, String]]],
+) -> logic.IcebergConfig:
+    props: Dict[String, String] = builtin.dict_from_list(builtin.unwrap_option_or(properties, list[Tuple[String, String]]()))
+    creds: Dict[String, String] = builtin.dict_from_list(builtin.unwrap_option_or(credentials, list[Tuple[String, String]]()))
+    return logic.IcebergConfig(
+        catalog_uri=catalog_uri,
+        scope=builtin.unwrap_option_or(scope, ""),
+        properties=props,
+        credentials=creds,
+    )
+
 
 
 

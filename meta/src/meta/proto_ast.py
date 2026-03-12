@@ -56,6 +56,9 @@ class ProtoField:
     number: int
     is_repeated: bool = False
     is_optional: bool = False
+    is_map: bool = False
+    map_key_type: str = ""
+    map_value_type: str = ""
 
 
 @dataclass
