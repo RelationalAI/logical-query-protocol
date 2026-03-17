@@ -32,10 +32,11 @@ from .target import (
 from .target_builtins import INT64, STRING, VOID, make_builtin
 
 # Token-type messages that have format_* helpers in the templates.
+# Use the _formatted variants to go through the constant_formatter hooks.
 TOKEN_MESSAGES: dict[str, str] = {
-    "DecimalValue": "format_decimal",
-    "Int128Value": "format_int128",
-    "UInt128Value": "format_uint128",
+    "DecimalValue": "format_decimal_formatted",
+    "Int128Value": "format_int128_formatted",
+    "UInt128Value": "format_uint128_formatted",
 }
 
 # Proto scalar type -> target IR base type

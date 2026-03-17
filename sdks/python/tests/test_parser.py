@@ -1,9 +1,17 @@
+import math
 import os
 
 import pytest
 from pytest_snapshot.plugin import Snapshot
 
-from lqp.gen.parser import ParseError, Parser, parse, parse_fragment, parse_transaction
+from lqp.gen.parser import (
+    Lexer,
+    ParseError,
+    Parser,
+    parse,
+    parse_fragment,
+    parse_transaction,
+)
 from lqp.proto.v1 import fragments_pb2, transactions_pb2
 
 from .utils import BIN_SNAPSHOTS_DIR, get_lqp_input_files
@@ -58,3 +66,49 @@ def test_parse_fragment_rejects_transaction():
 def test_parse_transaction_rejects_fragment():
     with pytest.raises(ParseError):
         parse_transaction(_SIMPLE_FRAGMENT)
+
+
+class TestScanFloat32:
+    """Tests for parsing float32 literals including inf32 and nan32."""
+
+    def test_numeric(self):
+        assert Lexer.scan_float32("3.14f32") == pytest.approx(3.14, abs=1e-5)
+
+    def test_negative(self):
+        assert Lexer.scan_float32("-1.5f32") == pytest.approx(-1.5)
+
+    def test_zero(self):
+        assert Lexer.scan_float32("0.0f32") == 0.0
+
+    def test_inf32(self):
+        assert math.isinf(Lexer.scan_float32("inf32"))
+        assert Lexer.scan_float32("inf32") > 0
+
+    def test_nan32(self):
+        assert math.isnan(Lexer.scan_float32("nan32"))
+
+    def test_tokenize_inf32(self):
+        tokens = Lexer("inf32").tokens
+        assert tokens[0].type == "FLOAT32"
+        value = tokens[0].value
+        assert isinstance(value, float)
+        assert math.isinf(value)
+
+    def test_tokenize_nan32(self):
+        tokens = Lexer("nan32").tokens
+        assert tokens[0].type == "FLOAT32"
+        value = tokens[0].value
+        assert isinstance(value, float)
+        assert math.isnan(value)
+
+    def test_round_trip_inf32(self):
+        lqp = """(transaction (epoch (writes (define (fragment :f1
+            (def :foo ([v::FLOAT32] (= v inf32)))))) (reads (output :foo :foo))))"""
+        txn, _ = parse(lqp)
+        assert txn is not None
+
+    def test_round_trip_nan32(self):
+        lqp = """(transaction (epoch (writes (define (fragment :f1
+            (def :foo ([v::FLOAT32] (= v nan32)))))) (reads (output :foo :foo))))"""
+        txn, _ = parse(lqp)
+        assert txn is not None

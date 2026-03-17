@@ -172,6 +172,10 @@ class Lexer:
     @staticmethod
     def scan_float32(f: str) -> float:
         """Parse FLOAT32 token."""
+        if f == "inf32":
+            return float("inf")
+        elif f == "nan32":
+            return float("nan")
         f = f[:-3]  # Remove "f32" suffix
         return float(f)
 

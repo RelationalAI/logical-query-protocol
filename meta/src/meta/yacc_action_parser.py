@@ -1381,6 +1381,8 @@ class TypeContext:
     enum_lookup: Callable[[str, str], list[tuple[str, int]] | None] | None = None
     # Callback to check if (module, name) is a message type
     message_lookup: Callable[[str, str], bool] | None = None
+    # Token aliases: alias name -> base token name
+    token_aliases: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass

@@ -67,6 +67,16 @@ end
     @test isnan(scan_float("nan"))
 end
 
+@testitem "Parser - scan_float32" setup=[ParserSetup] begin
+    @test scan_float32("3.14f32") == Float32(3.14)
+    @test scan_float32("-1.5f32") == Float32(-1.5)
+    @test scan_float32("0.0f32") == Float32(0.0)
+    @test scan_float32("inf32") == Float32(Inf)
+    @test isinf(scan_float32("inf32"))
+    @test scan_float32("nan32") === Float32(NaN)
+    @test isnan(scan_float32("nan32"))
+end
+
 @testitem "Parser - scan_int128" setup=[ParserSetup] begin
     r = scan_int128("0i128")
     @test r isa Proto.Int128Value

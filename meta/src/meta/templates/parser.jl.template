@@ -85,7 +85,14 @@ scan_int32(n::String) = Base.parse(Int32, n[1:end-3])  # Remove "i32" suffix
 
 scan_uint32(n::String) = Base.parse(UInt32, n[1:end-3])  # Remove "u32" suffix
 
-scan_float32(f::String) = Base.parse(Float32, f[1:end-3])  # Remove "f32" suffix
+function scan_float32(f::String)
+    if f == "inf32"
+        return Float32(Inf)
+    elseif f == "nan32"
+        return Float32(NaN)
+    end
+    return Base.parse(Float32, f[1:end-3])  # Remove "f32" suffix
+end
 
 function scan_float(f::String)
     if f == "inf"

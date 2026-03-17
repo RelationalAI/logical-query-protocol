@@ -667,32 +667,38 @@ def _format_literal(lit: LitTerminal) -> TargetExpr:
     return Call(make_builtin("write_io"), [Lit(lit.name)])
 
 
+_TERMINAL_FORMAT_BUILTINS: dict[str, str] = {
+    "SYMBOL": "format_symbol",
+    "IDENTIFIER": "format_symbol",
+    "STRING": "format_string",
+    "INT": "format_int64",
+    "NUMBER": "format_int64",
+    "INT32": "format_int32",
+    "INT128": "format_int128",
+    "FLOAT": "format_float64",
+    "FLOAT32": "format_float32",
+    "DECIMAL": "format_decimal",
+    "BOOL": "format_bool",
+    "UINT32": "format_uint32",
+    "UINT128": "format_uint128",
+    "FORMATTED_STRING": "format_string_formatted",
+    "FORMATTED_INT": "format_int64_formatted",
+    "FORMATTED_INT32": "format_int32_formatted",
+    "FORMATTED_INT128": "format_int128_formatted",
+    "FORMATTED_FLOAT": "format_float64_formatted",
+    "FORMATTED_FLOAT32": "format_float32_formatted",
+    "FORMATTED_DECIMAL": "format_decimal_formatted",
+    "FORMATTED_UINT32": "format_uint32_formatted",
+    "FORMATTED_UINT128": "format_uint128_formatted",
+}
+
+
 def _format_terminal(terminal: NamedTerminal, value_var: Var) -> TargetExpr:
     """Format a terminal value for pretty printing."""
-    if terminal.name in ["SYMBOL", "IDENTIFIER"]:
-        return Call(make_builtin("format_symbol"), [value_var])
-    elif terminal.name == "STRING":
-        return Call(make_builtin("format_string"), [value_var])
-    elif terminal.name in ["INT", "NUMBER"]:
-        return Call(make_builtin("format_int64"), [value_var])
-    elif terminal.name == "INT32":
-        return Call(make_builtin("format_int32"), [value_var])
-    elif terminal.name == "UINT32":
-        return Call(make_builtin("format_uint32"), [value_var])
-    elif terminal.name == "INT128":
-        return Call(make_builtin("format_int128"), [value_var])
-    elif terminal.name == "FLOAT":
-        return Call(make_builtin("format_float64"), [value_var])
-    elif terminal.name == "FLOAT32":
-        return Call(make_builtin("format_float32"), [value_var])
-    elif terminal.name == "DECIMAL":
-        return Call(make_builtin("format_decimal"), [value_var])
-    elif terminal.name == "BOOL":
-        return Call(make_builtin("format_bool"), [value_var])
-    elif terminal.name == "UINT128":
-        return Call(make_builtin("format_uint128"), [value_var])
-    else:
-        return Call(make_builtin("to_string"), [value_var])
+    builtin_name = _TERMINAL_FORMAT_BUILTINS.get(terminal.name)
+    if builtin_name is not None:
+        return Call(make_builtin(builtin_name), [value_var])
+    return Call(make_builtin("to_string"), [value_var])
 
 
 # --- Utility functions ---

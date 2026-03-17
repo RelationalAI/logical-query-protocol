@@ -247,7 +247,24 @@ def parse_directives(lines: list[str]) -> tuple[TypeContext, list[str], int]:
             return ctx, ignored_completeness, i
 
         # Parse directive
-        if line.startswith("%token"):
+        if line.startswith("%token_alias"):
+            rest = line[12:].strip()
+            parts = rest.split(None, 1)
+            if len(parts) != 2:
+                raise YaccGrammarError(
+                    f"Invalid %token_alias directive (expected NAME BASE): {line}", i
+                )
+            alias_name, base_name = parts
+            if base_name not in ctx.terminals:
+                raise YaccGrammarError(
+                    f"%token_alias base '{base_name}' is not a declared %token", i
+                )
+            if alias_name in ctx.terminals:
+                raise YaccGrammarError(f"Duplicate token declaration: {alias_name}", i)
+            ctx.terminals[alias_name] = ctx.terminals[base_name]
+            ctx.token_aliases[alias_name] = base_name
+
+        elif line.startswith("%token"):
             rest = line[6:].strip()
             # Split name from type+pattern
             space_idx = rest.find(" ")
@@ -929,6 +946,7 @@ def load_yacc_grammar(
         rules=rules_dict,
         ignored_completeness=ignored_completeness,
         function_defs=functions,
+        token_aliases=ctx.token_aliases,
     )
 
 

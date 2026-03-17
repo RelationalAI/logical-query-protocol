@@ -281,6 +281,9 @@ class Grammar:
     start: Nonterminal
     rules: dict[Nonterminal, list[Rule]] = field(default_factory=dict)
     tokens: list[Token] = field(default_factory=list)
+    token_aliases: dict[str, str] = field(
+        default_factory=dict
+    )  # alias name -> base token name
     ignored_completeness: list[str] = field(
         default_factory=list
     )  # Message names to ignore in completeness checks
@@ -446,6 +449,9 @@ class GrammarConfig:
     rules: dict[Nonterminal, list[Rule]] = field(default_factory=dict)
     ignored_completeness: list[str] = field(default_factory=list)
     function_defs: dict[str, FunDef] = field(default_factory=dict)
+    token_aliases: dict[str, str] = field(
+        default_factory=dict
+    )  # alias name -> base name
 
 
 # Import traversal utilities here to avoid circular imports
