@@ -2,7 +2,7 @@ version: v2
 clean: true # Cleans the output directory before generation
 plugins:
   # - protoc_builtin: python
-  - remote: buf.build/protocolbuffers/python:v25.6
+  - remote: buf.build/protocolbuffers/python:v28.3
     out: gen/python
     opt: []
   - protoc_builtin: pyi
