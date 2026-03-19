@@ -116,6 +116,25 @@ message ExportCSVSource {
   }
 }
 
+// Iceberg Export config
+
+message IcebergCatalogProperties {
+  string warehouse = 1;
+  optional string token = 2;
+  optional string credential = 3;
+}
+
+message ExportIcebergConfig {
+  string catalog_uri = 1;
+  repeated string namespace = 2;
+  string table_name = 3;
+  IcebergCatalogProperties catalog_properties = 4;
+  string schema = 5;
+  optional string prefix = 6;                    // Default: "data"
+  optional int64 target_file_size_bytes = 7;     // Default: 512 MB
+  string compression = 8;                        // UNCOMPRESSED, SNAPPY, GZIP, LZ4, ZSTD
+}
+
 //
 // Read operations
 //
@@ -142,8 +161,7 @@ message Output {
 message Export {
   oneof export_config {
     ExportCSVConfig csv_config = 1;
-
-    // TODO: support JSON export
+    ExportIcebergConfig iceberg_config = 2;
   }
 }
 

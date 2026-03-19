@@ -150,6 +150,36 @@ class ExportCSVSource(_message.Message):
     table_def: _logic_pb2.RelationId
     def __init__(self, gnf_columns: _Optional[_Union[ExportCSVColumns, _Mapping]] = ..., table_def: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ...) -> None: ...
 
+class IcebergCatalogProperties(_message.Message):
+    __slots__ = ("warehouse", "token", "credential")
+    WAREHOUSE_FIELD_NUMBER: _ClassVar[int]
+    TOKEN_FIELD_NUMBER: _ClassVar[int]
+    CREDENTIAL_FIELD_NUMBER: _ClassVar[int]
+    warehouse: str
+    token: str
+    credential: str
+    def __init__(self, warehouse: _Optional[str] = ..., token: _Optional[str] = ..., credential: _Optional[str] = ...) -> None: ...
+
+class ExportIcebergConfig(_message.Message):
+    __slots__ = ("catalog_uri", "namespace", "table_name", "catalog_properties", "schema", "prefix", "target_file_size_bytes", "compression")
+    CATALOG_URI_FIELD_NUMBER: _ClassVar[int]
+    NAMESPACE_FIELD_NUMBER: _ClassVar[int]
+    TABLE_NAME_FIELD_NUMBER: _ClassVar[int]
+    CATALOG_PROPERTIES_FIELD_NUMBER: _ClassVar[int]
+    SCHEMA_FIELD_NUMBER: _ClassVar[int]
+    PREFIX_FIELD_NUMBER: _ClassVar[int]
+    TARGET_FILE_SIZE_BYTES_FIELD_NUMBER: _ClassVar[int]
+    COMPRESSION_FIELD_NUMBER: _ClassVar[int]
+    catalog_uri: str
+    namespace: _containers.RepeatedScalarFieldContainer[str]
+    table_name: str
+    catalog_properties: IcebergCatalogProperties
+    schema: str
+    prefix: str
+    target_file_size_bytes: int
+    compression: str
+    def __init__(self, catalog_uri: _Optional[str] = ..., namespace: _Optional[_Iterable[str]] = ..., table_name: _Optional[str] = ..., catalog_properties: _Optional[_Union[IcebergCatalogProperties, _Mapping]] = ..., schema: _Optional[str] = ..., prefix: _Optional[str] = ..., target_file_size_bytes: _Optional[int] = ..., compression: _Optional[str] = ...) -> None: ...
+
 class Read(_message.Message):
     __slots__ = ("demand", "output", "what_if", "abort", "export")
     DEMAND_FIELD_NUMBER: _ClassVar[int]
@@ -179,10 +209,12 @@ class Output(_message.Message):
     def __init__(self, name: _Optional[str] = ..., relation_id: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ...) -> None: ...
 
 class Export(_message.Message):
-    __slots__ = ("csv_config",)
+    __slots__ = ("csv_config", "iceberg_config")
     CSV_CONFIG_FIELD_NUMBER: _ClassVar[int]
+    ICEBERG_CONFIG_FIELD_NUMBER: _ClassVar[int]
     csv_config: ExportCSVConfig
-    def __init__(self, csv_config: _Optional[_Union[ExportCSVConfig, _Mapping]] = ...) -> None: ...
+    iceberg_config: ExportIcebergConfig
+    def __init__(self, csv_config: _Optional[_Union[ExportCSVConfig, _Mapping]] = ..., iceberg_config: _Optional[_Union[ExportIcebergConfig, _Mapping]] = ...) -> None: ...
 
 class WhatIf(_message.Message):
     __slots__ = ("branch", "epoch")

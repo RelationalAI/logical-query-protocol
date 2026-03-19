@@ -1,0 +1,64 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (def
+            :sales
+            ([id::INT region::STRING amount::FLOAT]
+             (or
+               (and (= id 1) (= region "us-east") (= amount 100.0))
+               (and (= id 2) (= region "eu-west") (= amount 250.5))))))))
+    (reads
+      (export_iceberg
+        (export_iceberg_config
+          (
+          catalog_uri
+          "https://catalog.example.com")
+        (
+        namespace
+        "db"
+        "schema")
+      (
+      table_name
+      "sales")
+    (catalog_properties ( warehouse "s3://bucket/warehouse"))
+    (
+    schema
+    "id:int,region:string,amount:float")))
+(export_iceberg
+  (export_iceberg_config
+    (
+    catalog_uri
+    "https://catalog.example.com")
+  (
+  namespace
+  "production")
+(
+table_name
+"sales_archive")
+(catalog_properties
+  (
+  warehouse
+  "s3://bucket/warehouse")
+{ :credential "my-credential" :token "secret-token-123"})
+(
+schema
+"id:int,region:string,amount:float")
+{ :compression "SNAPPY" :prefix "part" :target_file_size_bytes 268435456}))
+(export_iceberg
+  (export_iceberg_config
+    (
+    catalog_uri
+    "https://catalog.example.com")
+  (
+  namespace)
+(
+table_name
+"flat_table")
+(catalog_properties ( warehouse "s3://bucket/default"))
+(
+schema
+"id:int"))))))

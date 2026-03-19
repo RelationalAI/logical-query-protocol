@@ -1,0 +1,42 @@
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          (def :sales
+            ([id::INT region::STRING amount::FLOAT]
+              (or
+                (and (= id 1) (= region "us-east") (= amount 100.0))
+                (and (= id 2) (= region "eu-west") (= amount 250.5))))))))
+    (reads
+      ;; Minimal config (warehouse only, no optional catalog/export fields)
+      (export_iceberg
+        (export_iceberg_config
+          (catalog_uri "https://catalog.example.com")
+          (namespace "db" "schema")
+          (table_name "sales")
+          (catalog_properties
+            (warehouse "s3://bucket/warehouse"))
+          (schema "id:int,region:string,amount:float")))
+
+      ;; Full config with all optional fields
+      (export_iceberg
+        (export_iceberg_config
+          (catalog_uri "https://catalog.example.com")
+          (namespace "production")
+          (table_name "sales_archive")
+          (catalog_properties
+            (warehouse "s3://bucket/warehouse")
+            {:token "secret-token-123" :credential "my-credential"})
+          (schema "id:int,region:string,amount:float")
+          {:prefix "part" :target_file_size_bytes 268435456 :compression "SNAPPY"}))
+
+      ;; Empty namespace
+      (export_iceberg
+        (export_iceberg_config
+          (catalog_uri "https://catalog.example.com")
+          (namespace)
+          (table_name "flat_table")
+          (catalog_properties
+            (warehouse "s3://bucket/default"))
+          (schema "id:int"))))))

@@ -347,6 +347,16 @@ Base.:(==)(a::ExportCSVConfig, b::ExportCSVConfig) = a.path == b.path && a.data_
 Base.hash(a::ExportCSVConfig, h::UInt) = hash(a.syntax_escapechar, hash(a.syntax_quotechar, hash(a.syntax_delim, hash(a.syntax_missing_string, hash(a.syntax_header_row, hash(a.compression, hash(a.partition_size, hash(a.data_columns, hash(a.path, h)))))))))
 Base.isequal(a::ExportCSVConfig, b::ExportCSVConfig) = isequal(a.path, b.path) && isequal(a.data_columns, b.data_columns) && isequal(a.partition_size, b.partition_size) && isequal(a.compression, b.compression) && isequal(a.syntax_header_row, b.syntax_header_row) && isequal(a.syntax_missing_string, b.syntax_missing_string) && isequal(a.syntax_delim, b.syntax_delim) && isequal(a.syntax_quotechar, b.syntax_quotechar) && isequal(a.syntax_escapechar, b.syntax_escapechar)
 
+# IcebergCatalogProperties
+Base.:(==)(a::IcebergCatalogProperties, b::IcebergCatalogProperties) = a.warehouse == b.warehouse && a.token == b.token && a.credential == b.credential
+Base.hash(a::IcebergCatalogProperties, h::UInt) = hash(a.credential, hash(a.token, hash(a.warehouse, h)))
+Base.isequal(a::IcebergCatalogProperties, b::IcebergCatalogProperties) = isequal(a.warehouse, b.warehouse) && isequal(a.token, b.token) && isequal(a.credential, b.credential)
+
+# ExportIcebergConfig
+Base.:(==)(a::ExportIcebergConfig, b::ExportIcebergConfig) = a.catalog_uri == b.catalog_uri && a.namespace == b.namespace && a.table_name == b.table_name && a.catalog_properties == b.catalog_properties && a.schema == b.schema && a.prefix == b.prefix && a.target_file_size_bytes == b.target_file_size_bytes && a.compression == b.compression
+Base.hash(a::ExportIcebergConfig, h::UInt) = hash(a.compression, hash(a.target_file_size_bytes, hash(a.prefix, hash(a.schema, hash(a.catalog_properties, hash(a.table_name, hash(a.namespace, hash(a.catalog_uri, h))))))))
+Base.isequal(a::ExportIcebergConfig, b::ExportIcebergConfig) = isequal(a.catalog_uri, b.catalog_uri) && isequal(a.namespace, b.namespace) && isequal(a.table_name, b.table_name) && isequal(a.catalog_properties, b.catalog_properties) && isequal(a.schema, b.schema) && isequal(a.prefix, b.prefix) && isequal(a.target_file_size_bytes, b.target_file_size_bytes) && isequal(a.compression, b.compression)
+
 # Demand
 Base.:(==)(a::Demand, b::Demand) = a.relation_id == b.relation_id
 Base.hash(a::Demand, h::UInt) = hash(a.relation_id, h)
