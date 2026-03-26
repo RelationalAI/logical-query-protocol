@@ -567,8 +567,7 @@ end
 function construct_iceberg_config(parser::ParserState, catalog_uri::String, scope_opt::Union{Nothing, String}, property_pairs::Vector{Tuple{String, String}}, auth_property_pairs::Vector{Tuple{String, String}})::Proto.IcebergConfig
     props = Dict(property_pairs)
     auth_props = Dict(auth_property_pairs)
-    scope_pb = (!isnothing(scope_opt) ? scope_opt : "")
-    _t2086 = Proto.IcebergConfig(catalog_uri=catalog_uri, scope=scope_pb, properties=props, auth_properties=auth_props)
+    _t2086 = Proto.IcebergConfig(catalog_uri=catalog_uri, scope=scope_opt, properties=props, auth_properties=auth_props)
     return _t2086
 end
 
@@ -3712,7 +3711,7 @@ function parse_iceberg_data(parser::ParserState)::Proto.IcebergData
     end
     iceberg_to_snapshot1184 = _t1942
     consume_literal!(parser, ")")
-    _t1944 = Proto.IcebergData(locator=iceberg_locator1181, config=iceberg_config1182, columns=gnf_columns1183, to_snapshot=(!isnothing(iceberg_to_snapshot1184) ? iceberg_to_snapshot1184 : ""))
+    _t1944 = Proto.IcebergData(locator=iceberg_locator1181, config=iceberg_config1182, columns=gnf_columns1183, to_snapshot=iceberg_to_snapshot1184)
     result1186 = _t1944
     record_span!(parser, span_start1185, "IcebergData")
     return result1186
