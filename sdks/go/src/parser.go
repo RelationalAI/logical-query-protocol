@@ -572,6 +572,19 @@ func dictFromList(pairs [][]interface{}) map[string]interface{} {
 	return result
 }
 
+// stringMapFromPairs builds map[string]string from (prop key value) pair rows.
+func stringMapFromPairs(pairs [][]interface{}) map[string]string {
+	out := make(map[string]string)
+	for _, pair := range pairs {
+		if len(pair) >= 2 {
+			k, _ := pair[0].(string)
+			v, _ := pair[1].(string)
+			out[k] = v
+		}
+	}
+	return out
+}
+
 // dictGetValue retrieves a Value from the config dict with type assertion
 func dictGetValue(m map[string]interface{}, key string) *pb.Value {
 	if v, ok := m[key]; ok {
@@ -843,11 +856,11 @@ func (p *Parser) construct_export_csv_config_with_source(path string, csv_source
 }
 
 func (p *Parser) construct_iceberg_config(catalog_uri string, scope_opt *string, property_pairs [][]interface{}, auth_property_pairs [][]interface{}) *pb.IcebergConfig {
-	props := dictFromList(property_pairs)
-	auth_props := dictFromList(auth_property_pairs)
+	props := stringMapFromPairs(property_pairs)
+	auth_props := stringMapFromPairs(auth_property_pairs)
 	_t2098 := p.iceberg_optional_string_field(scope_opt)
 	scope_pb := _t2098
-	_t2099 := &pb.IcebergConfig{CatalogUri: catalog_uri, Scope: deref(scope_pb, ""), Properties: props, AuthProperties: auth_props}
+	_t2099 := &pb.IcebergConfig{CatalogUri: catalog_uri, Scope: scope_pb, Properties: props, AuthProperties: auth_props}
 	return _t2099
 }
 
@@ -862,7 +875,7 @@ func (p *Parser) iceberg_optional_string_field(s *string) *string {
 
 func (p *Parser) construct_export_iceberg_config_full(locator *pb.IcebergLocator, config *pb.IcebergConfig, columns []*pb.IcebergExportColumn, config_dict [][]interface{}) *pb.ExportIcebergConfig {
 	prefix := ""
-	target_file_size_bytes := 0
+	target_file_size_bytes := int64(0)
 	compression := ""
 	if config_dict != nil {
 		cfg := dictFromList(config_dict)
