@@ -9,34 +9,52 @@
                 (and (= id 1) (= region "us-east") (= amount 100.0))
                 (and (= id 2) (= region "eu-west") (= amount 250.5))))))))
     (reads
-      ;; Minimal config (warehouse only, no optional catalog/export fields)
+      ;; Minimal export
       (export_iceberg
         (export_iceberg_config
-          (catalog_uri "https://catalog.example.com")
-          (namespace "db" "schema")
-          (table_name "sales")
-          (catalog_properties
+          (iceberg_locator
+            (table_name "sales")
+            (namespace "db" "schema")
             (warehouse "s3://bucket/warehouse"))
-          (schema "id:int,region:string,amount:float")))
+          (iceberg_config
+            (catalog_uri "https://catalog.example.com")
+            (properties)
+            (auth_properties))
+          (columns
+            (iceberg_column "id" INT false)
+            (iceberg_column "region" STRING false)
+            (iceberg_column "amount" FLOAT false))))
 
-      ;; Full config with all optional fields
+      ;; Full export with scope, property maps, and trailing export options
       (export_iceberg
         (export_iceberg_config
-          (catalog_uri "https://catalog.example.com")
-          (namespace "production")
-          (table_name "sales_archive")
-          (catalog_properties
-            (warehouse "s3://bucket/warehouse")
-            {:token "secret-token-123" :credential "my-credential"})
-          (schema "id:int,region:string,amount:float")
+          (iceberg_locator
+            (table_name "sales_archive")
+            (namespace "production")
+            (warehouse "s3://bucket/warehouse"))
+          (iceberg_config
+            (catalog_uri "https://catalog.example.com")
+            (scope "read-only")
+            (properties (prop "client.region" "us-east-1"))
+            (auth_properties
+              (prop "credential" "my-credential")
+              (prop "token" "secret-token-123")))
+          (columns
+            (iceberg_column "id" INT false)
+            (iceberg_column "region" STRING false)
+            (iceberg_column "amount" FLOAT false))
           {:prefix "part" :target_file_size_bytes 268435456 :compression "SNAPPY"}))
 
-      ;; Empty namespace
+      ;; Empty namespace on the locator
       (export_iceberg
         (export_iceberg_config
-          (catalog_uri "https://catalog.example.com")
-          (namespace)
-          (table_name "flat_table")
-          (catalog_properties
+          (iceberg_locator
+            (table_name "flat_table")
+            (namespace)
             (warehouse "s3://bucket/default"))
-          (schema "id:int"))))))
+          (iceberg_config
+            (catalog_uri "https://catalog.example.com")
+            (properties)
+            (auth_properties))
+          (columns
+            (iceberg_column "id" INT false)))))))

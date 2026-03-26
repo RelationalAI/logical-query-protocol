@@ -1,0 +1,17 @@
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          (iceberg_data
+            (iceberg_locator
+              (table_name "events")
+              (namespace "analytics" "raw")
+              (warehouse "wh"))
+            (iceberg_config
+              (catalog_uri "https://catalog.example")
+              (properties (prop "type" "rest"))
+              (auth_properties (prop "token" "random token")))
+            (columns
+              (column "id" [INT]))
+            (to_snapshot "snap-abc")))))))
