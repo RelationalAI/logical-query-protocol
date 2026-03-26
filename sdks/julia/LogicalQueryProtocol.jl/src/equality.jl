@@ -384,7 +384,7 @@ Base.hash(a::ExportIcebergConfig, h::UInt) = hash(
     a.compression,
     hash(
         a.target_file_size_bytes,
-        hash(a.prefix, hash(a.columns, hash(a.config, hash(a.locator, h))))),
+        hash(a.prefix, hash(a.columns, hash(a.config, hash(a.locator, h)))),
     ),
 )
 Base.isequal(a::ExportIcebergConfig, b::ExportIcebergConfig) =
