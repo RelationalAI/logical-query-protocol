@@ -562,15 +562,7 @@ class GoCodeGenerator(CodeGenerator):
         # option_var is the original Option variable name for checking .Valid
         oneof_groups: dict[str, list[tuple[str, str, str]]] = {}
 
-        from .target import Builtin, OptionType, Var
-
-        def _go_optional_string_unwrap_needs_ptr(field_expr: TargetExpr) -> bool:
-            """unwrap_option_or yields a plain string; optional proto fields need *string."""
-            return (
-                isinstance(field_expr, Call)
-                and isinstance(field_expr.func, Builtin)
-                and field_expr.func.name == "unwrap_option_or"
-            )
+        from .target import OptionType, Var
 
         def unwrap_if_option(field_expr, field_value: str) -> tuple[str, str]:
             """Unwrap Option type values for struct field assignment.
@@ -600,13 +592,6 @@ class GoCodeGenerator(CodeGenerator):
                         lines.append(f"{indent}}}")
                         return (field_value, tmp)
                     else:
-                        # Ptr-wrapped scalar: usually deref for plain struct fields (float64, int64, …).
-                        # Proto `optional string` fields are *string in Go — pass *string through.
-                        inner_go = self.gen_type(field_expr.type.element_type)
-                        if inner_go == "string":
-                            opt_go = self.gen_option_type(inner_go)
-                            if opt_go.startswith("*"):
-                                return (field_value, field_value)
                         return (field_value, f"deref({field_value}, {zero})")
             return (field_value, field_value)
 
@@ -662,21 +647,6 @@ class GoCodeGenerator(CodeGenerator):
                     assert field_value is not None
                     pascal_field = to_pascal_case(field_name)
                     _, field_value = unwrap_if_option(field_expr, field_value)
-
-                    proto_msg = self.proto_messages.get((expr.module, expr.name))
-                    if proto_msg is not None:
-                        pf = next(
-                            (f for f in proto_msg.fields if f.name == field_name),
-                            None,
-                        )
-                        if (
-                            pf is not None
-                            and pf.is_optional
-                            and not pf.is_repeated
-                            and pf.type == "string"
-                            and _go_optional_string_unwrap_needs_ptr(field_expr)
-                        ):
-                            field_value = f"ptr({field_value})"
 
                     regular_assignments.append(f"{pascal_field}: {field_value}")
 
