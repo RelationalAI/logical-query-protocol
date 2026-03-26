@@ -863,20 +863,19 @@ func (p *Parser) construct_iceberg_config(catalog_uri string, scope_opt *string,
 }
 
 func (p *Parser) construct_export_iceberg_config_full(locator *pb.IcebergLocator, config *pb.IcebergConfig, columns []*pb.IcebergExportColumn, config_dict [][]interface{}) *pb.ExportIcebergConfig {
-	prefix := ""
-	target_file_size_bytes := int64(0)
-	compression := ""
-	if config_dict != nil {
-		cfg := dictFromList(config_dict)
-		_t2098 := p._extract_value_string(dictGetValue(cfg, "prefix"), "")
-		prefix = _t2098
-		_t2099 := p._extract_value_int64(dictGetValue(cfg, "target_file_size_bytes"), 0)
-		target_file_size_bytes = _t2099
-		_t2100 := p._extract_value_string(dictGetValue(cfg, "compression"), "")
-		compression = _t2100
+	_t2098 := config_dict
+	if config_dict == nil {
+		_t2098 = [][]interface{}{}
 	}
-	_t2101 := &pb.ExportIcebergConfig{Locator: locator, Config: config, Columns: columns, Prefix: ptr(prefix), TargetFileSizeBytes: ptr(target_file_size_bytes), Compression: compression}
-	return _t2101
+	cfg := dictFromList(_t2098)
+	_t2099 := p._extract_value_string(dictGetValue(cfg, "prefix"), "")
+	prefix := _t2099
+	_t2100 := p._extract_value_int64(dictGetValue(cfg, "target_file_size_bytes"), 0)
+	target_file_size_bytes := _t2100
+	_t2101 := p._extract_value_string(dictGetValue(cfg, "compression"), "")
+	compression := _t2101
+	_t2102 := &pb.ExportIcebergConfig{Locator: locator, Config: config, Columns: columns, Prefix: ptr(prefix), TargetFileSizeBytes: ptr(target_file_size_bytes), Compression: compression}
+	return _t2102
 }
 
 // --- Parse functions ---

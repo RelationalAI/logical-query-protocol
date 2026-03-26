@@ -572,18 +572,13 @@ function construct_iceberg_config(parser::ParserState, catalog_uri::String, scop
 end
 
 function construct_export_iceberg_config_full(parser::ParserState, locator::Proto.IcebergLocator, config::Proto.IcebergConfig, columns::Vector{Proto.IcebergExportColumn}, config_dict::Union{Nothing, Vector{Tuple{String, Proto.Value}}})::Proto.ExportIcebergConfig
-    prefix = ""
-    target_file_size_bytes = 0
-    compression = ""
-    if !isnothing(config_dict)
-        cfg = Dict(config_dict)
-        _t2087 = _extract_value_string(parser, get(cfg, "prefix", nothing), "")
-        prefix = _t2087
-        _t2088 = _extract_value_int64(parser, get(cfg, "target_file_size_bytes", nothing), 0)
-        target_file_size_bytes = _t2088
-        _t2089 = _extract_value_string(parser, get(cfg, "compression", nothing), "")
-        compression = _t2089
-    end
+    cfg = Dict((!isnothing(config_dict) ? config_dict : Tuple{String, Proto.Value}[]))
+    _t2087 = _extract_value_string(parser, get(cfg, "prefix", nothing), "")
+    prefix = _t2087
+    _t2088 = _extract_value_int64(parser, get(cfg, "target_file_size_bytes", nothing), 0)
+    target_file_size_bytes = _t2088
+    _t2089 = _extract_value_string(parser, get(cfg, "compression", nothing), "")
+    compression = _t2089
     _t2090 = Proto.ExportIcebergConfig(locator=locator, config=config, columns=columns, prefix=prefix, target_file_size_bytes=target_file_size_bytes, compression=compression)
     return _t2090
 end

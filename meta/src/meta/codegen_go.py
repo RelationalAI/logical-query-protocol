@@ -935,20 +935,6 @@ class GoCodeGenerator(CodeGenerator):
             self.mark_declared(var_name)
             return self.gen_none()
 
-        # Integer literal with explicit Int32/Int64/... annotation: avoid untyped `:= 0` (int)
-        # so later assignments from int64 (e.g. _extract_value_int64) type-check.
-        if (
-            isinstance(expr.expr, Lit)
-            and type(expr.expr.value) is int
-            and expr.var.type is not None
-        ):
-            var_type = self.gen_type(expr.var.type)
-            if var_type in ("int64", "int32", "uint32", "uint64"):
-                lines.append(
-                    f"{indent}{self.gen_assignment(var_name, f'{var_type}({expr.expr.value})')}"
-                )
-                return self.gen_none()
-
         # Regular assignment
         expr_code = self.generate_lines(expr.expr, lines, indent)
         assert expr_code is not None, (

@@ -1328,7 +1328,7 @@ def _extract_value_int32(value: Optional[logic.Value], default: int) -> Int32:
     return builtin.int64_to_int32(default)
 
 
-def _extract_value_int64(value: Optional[logic.Value], default: int) -> Int64:
+def _extract_value_int64(value: Optional[logic.Value], default: int) -> int:
     if value is not None and builtin.has_proto_field(builtin.unwrap_option(value), 'int_value'):
         return builtin.unwrap_option(value).int_value
     return default
@@ -1669,14 +1669,10 @@ def construct_export_iceberg_config_full(
     columns: Sequence[transactions.IcebergExportColumn],
     config_dict: Optional[Sequence[Tuple[String, logic.Value]]],
 ) -> transactions.ExportIcebergConfig:
-    prefix: String = ""
-    target_file_size_bytes: Int64 = 0
-    compression: String = ""
-    if config_dict is not None:
-        cfg: Dict[String, logic.Value] = builtin.dict_from_list(builtin.unwrap_option(config_dict))
-        prefix = _extract_value_string(builtin.dict_get(cfg, "prefix"), "")
-        target_file_size_bytes = _extract_value_int64(builtin.dict_get(cfg, "target_file_size_bytes"), 0)
-        compression = _extract_value_string(builtin.dict_get(cfg, "compression"), "")
+    cfg: Dict[String, logic.Value] = builtin.dict_from_list(builtin.unwrap_option_or(config_dict, list[Tuple[String, logic.Value]]()))
+    prefix: String = _extract_value_string(builtin.dict_get(cfg, "prefix"), "")
+    target_file_size_bytes: int = _extract_value_int64(builtin.dict_get(cfg, "target_file_size_bytes"), 0)
+    compression: String = _extract_value_string(builtin.dict_get(cfg, "compression"), "")
     return transactions.ExportIcebergConfig(
         locator=locator,
         config=config,

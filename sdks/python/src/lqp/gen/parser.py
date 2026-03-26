@@ -650,18 +650,13 @@ class Parser:
         return _t2095
 
     def construct_export_iceberg_config_full(self, locator: logic_pb2.IcebergLocator, config: logic_pb2.IcebergConfig, columns: Sequence[transactions_pb2.IcebergExportColumn], config_dict: Sequence[tuple[str, logic_pb2.Value]] | None) -> transactions_pb2.ExportIcebergConfig:
-        prefix = ""
-        target_file_size_bytes = 0
-        compression = ""
-        if config_dict is not None:
-            assert config_dict is not None
-            cfg = dict(config_dict)
-            _t2096 = self._extract_value_string(cfg.get("prefix"), "")
-            prefix = _t2096
-            _t2097 = self._extract_value_int64(cfg.get("target_file_size_bytes"), 0)
-            target_file_size_bytes = _t2097
-            _t2098 = self._extract_value_string(cfg.get("compression"), "")
-            compression = _t2098
+        cfg = dict((config_dict if config_dict is not None else []))
+        _t2096 = self._extract_value_string(cfg.get("prefix"), "")
+        prefix = _t2096
+        _t2097 = self._extract_value_int64(cfg.get("target_file_size_bytes"), 0)
+        target_file_size_bytes = _t2097
+        _t2098 = self._extract_value_string(cfg.get("compression"), "")
+        compression = _t2098
         _t2099 = transactions_pb2.ExportIcebergConfig(locator=locator, config=config, columns=columns, prefix=prefix, target_file_size_bytes=target_file_size_bytes, compression=compression)
         return _t2099
 
