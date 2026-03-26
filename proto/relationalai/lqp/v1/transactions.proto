@@ -121,11 +121,10 @@ message ExportCSVSource {
 message ExportIcebergConfig {
   IcebergLocator locator = 1;
   IcebergConfig config = 2;
-  IcebergCatalogProperties catalog_properties = 3;
-  repeated IcebergExportColumn columns = 4;
-  optional string prefix = 5;                    // Default: "data"
-  optional int64 target_file_size_bytes = 6;     // Default: 512 MB
-  string compression = 7;                        // UNCOMPRESSED, SNAPPY, GZIP, LZ4, ZSTD
+  repeated IcebergExportColumn columns = 3;
+  optional string prefix = 4;                    // Default: "data"
+  optional int64 target_file_size_bytes = 5;     // Default: 512 MB
+  string compression = 6;                        // UNCOMPRESSED, SNAPPY, GZIP, LZ4, ZSTD
 }
 
 message IcebergExportColumn {
