@@ -592,6 +592,7 @@ class GoCodeGenerator(CodeGenerator):
                         lines.append(f"{indent}}}")
                         return (field_value, tmp)
                     else:
+                        # Ptr-wrapped scalar: use deref()
                         return (field_value, f"deref({field_value}, {zero})")
             return (field_value, field_value)
 
@@ -647,7 +648,6 @@ class GoCodeGenerator(CodeGenerator):
                     assert field_value is not None
                     pascal_field = to_pascal_case(field_name)
                     _, field_value = unwrap_if_option(field_expr, field_value)
-
                     regular_assignments.append(f"{pascal_field}: {field_value}")
 
         # Generate struct literal with regular fields only
