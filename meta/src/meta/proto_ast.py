@@ -60,6 +60,7 @@ class ProtoField:
     map_key_type: str = ""
     map_value_type: str = ""
 
+
 @dataclass
 class ProtoOneof:
     """Oneof group in a protobuf message.

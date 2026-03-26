@@ -27,6 +27,7 @@ _PRIMITIVE_TO_BASE_TYPE = {
     "bytes": "Bytes",
 }
 
+
 def _scalar_to_target(type_name: str) -> TargetType:
     """Convert a scalar proto type name to a TargetType."""
     if type_name in _PRIMITIVE_TO_BASE_TYPE:

@@ -764,7 +764,9 @@ def _make_field_type_lookup(
                 value_type = _proto_type_to_target_type(
                     field.map_value_type, False, name_to_module=name_to_module
                 )
-                field_types[(module, msg_name, field.name)] = DictType(key_type, value_type)
+                field_types[(module, msg_name, field.name)] = DictType(
+                    key_type, value_type
+                )
             else:
                 field_type = _proto_type_to_target_type(
                     field.type, field.is_repeated, field.is_optional, name_to_module
