@@ -920,9 +920,7 @@ class GoCodeGenerator(CodeGenerator):
         ):
             var_type = self.gen_type(expr.var.type)
             if var_type in ("int64", "int32", "uint32", "uint64"):
-                lines.append(
-                    f"{indent}{var_name} := {var_type}({expr.expr.value})"
-                )
+                lines.append(f"{indent}{var_name} := {var_type}({expr.expr.value})")
                 self.mark_declared(var_name)
                 return self.gen_none()
 
