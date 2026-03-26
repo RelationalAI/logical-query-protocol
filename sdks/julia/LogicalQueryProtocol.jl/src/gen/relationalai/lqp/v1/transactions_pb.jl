@@ -5,15 +5,58 @@ import ProtoBuf as PB
 using ProtoBuf: OneOf
 using ProtoBuf.EnumX: @enumx
 
-export ExportCSVColumn, Demand, Undefine, MaintenanceLevel, Define, Context, Sync
-export SnapshotMapping, IcebergCatalogProperties, Abort, Output, ExportCSVColumns
-export IVMConfig, Snapshot, ExportIcebergConfig, ExportCSVSource, Configure, Write
-export ExportCSVConfig, Export, Epoch, Read, Transaction, WhatIf
+export IcebergExportColumn, ExportCSVColumn, Demand, Undefine, MaintenanceLevel, Define
+export Context, Sync, SnapshotMapping, Abort, Output, ExportIcebergConfig, ExportCSVColumns
+export IVMConfig, Snapshot, ExportCSVSource, Configure, Write, ExportCSVConfig, Export
+export Epoch, Read, Transaction, WhatIf
 abstract type var"##Abstract#Transaction" end
 abstract type var"##Abstract#Epoch" end
 abstract type var"##Abstract#Read" end
 abstract type var"##Abstract#WhatIf" end
 
+
+struct IcebergExportColumn
+    name::String
+    var"#type"::Union{Nothing,var"#Type"}
+    nullable::Bool
+end
+IcebergExportColumn(;name = "", var"#type" = nothing, nullable = false) = IcebergExportColumn(name, var"#type", nullable)
+PB.default_values(::Type{IcebergExportColumn}) = (;name = "", var"#type" = nothing, nullable = false)
+PB.field_numbers(::Type{IcebergExportColumn}) = (;name = 1, var"#type" = 2, nullable = 3)
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:IcebergExportColumn}, _endpos::Int=0, _group::Bool=false)
+    name = ""
+    var"#type" = Ref{Union{Nothing,var"#Type"}}(nothing)
+    nullable = false
+    while !PB.message_done(d, _endpos, _group)
+        field_number, wire_type = PB.decode_tag(d)
+        if field_number == 1
+            name = PB.decode(d, String)
+        elseif field_number == 2
+            PB.decode!(d, var"#type")
+        elseif field_number == 3
+            nullable = PB.decode(d, Bool)
+        else
+            Base.skip(d, wire_type)
+        end
+    end
+    return IcebergExportColumn(name, var"#type"[], nullable)
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::IcebergExportColumn)
+    initpos = position(e.io)
+    !isempty(x.name) && PB.encode(e, 1, x.name)
+    !isnothing(x.var"#type") && PB.encode(e, 2, x.var"#type")
+    x.nullable != false && PB.encode(e, 3, x.nullable)
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::IcebergExportColumn)
+    encoded_size = 0
+    !isempty(x.name) && (encoded_size += PB._encoded_size(x.name, 1))
+    !isnothing(x.var"#type") && (encoded_size += PB._encoded_size(x.var"#type", 2))
+    x.nullable != false && (encoded_size += PB._encoded_size(x.nullable, 3))
+    return encoded_size
+end
 
 struct ExportCSVColumn
     column_name::String
@@ -246,49 +289,6 @@ function PB._encoded_size(x::SnapshotMapping)
     return encoded_size
 end
 
-struct IcebergCatalogProperties
-    warehouse::String
-    token::String
-    credential::String
-end
-IcebergCatalogProperties(;warehouse = "", token = "", credential = "") = IcebergCatalogProperties(warehouse, token, credential)
-PB.default_values(::Type{IcebergCatalogProperties}) = (;warehouse = "", token = "", credential = "")
-PB.field_numbers(::Type{IcebergCatalogProperties}) = (;warehouse = 1, token = 2, credential = 3)
-
-function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:IcebergCatalogProperties}, _endpos::Int=0, _group::Bool=false)
-    warehouse = ""
-    token = ""
-    credential = ""
-    while !PB.message_done(d, _endpos, _group)
-        field_number, wire_type = PB.decode_tag(d)
-        if field_number == 1
-            warehouse = PB.decode(d, String)
-        elseif field_number == 2
-            token = PB.decode(d, String)
-        elseif field_number == 3
-            credential = PB.decode(d, String)
-        else
-            Base.skip(d, wire_type)
-        end
-    end
-    return IcebergCatalogProperties(warehouse, token, credential)
-end
-
-function PB.encode(e::PB.AbstractProtoEncoder, x::IcebergCatalogProperties)
-    initpos = position(e.io)
-    !isempty(x.warehouse) && PB.encode(e, 1, x.warehouse)
-    !isempty(x.token) && PB.encode(e, 2, x.token)
-    !isempty(x.credential) && PB.encode(e, 3, x.credential)
-    return position(e.io) - initpos
-end
-function PB._encoded_size(x::IcebergCatalogProperties)
-    encoded_size = 0
-    !isempty(x.warehouse) && (encoded_size += PB._encoded_size(x.warehouse, 1))
-    !isempty(x.token) && (encoded_size += PB._encoded_size(x.token, 2))
-    !isempty(x.credential) && (encoded_size += PB._encoded_size(x.credential, 3))
-    return encoded_size
-end
-
 struct Abort
     name::String
     relation_id::Union{Nothing,RelationId}
@@ -360,6 +360,67 @@ function PB._encoded_size(x::Output)
     encoded_size = 0
     !isempty(x.name) && (encoded_size += PB._encoded_size(x.name, 1))
     !isnothing(x.relation_id) && (encoded_size += PB._encoded_size(x.relation_id, 2))
+    return encoded_size
+end
+
+struct ExportIcebergConfig
+    locator::Union{Nothing,IcebergLocator}
+    config::Union{Nothing,IcebergConfig}
+    columns::Vector{IcebergExportColumn}
+    prefix::String
+    target_file_size_bytes::Int64
+    compression::String
+end
+ExportIcebergConfig(;locator = nothing, config = nothing, columns = Vector{IcebergExportColumn}(), prefix = "", target_file_size_bytes = zero(Int64), compression = "") = ExportIcebergConfig(locator, config, columns, prefix, target_file_size_bytes, compression)
+PB.default_values(::Type{ExportIcebergConfig}) = (;locator = nothing, config = nothing, columns = Vector{IcebergExportColumn}(), prefix = "", target_file_size_bytes = zero(Int64), compression = "")
+PB.field_numbers(::Type{ExportIcebergConfig}) = (;locator = 1, config = 2, columns = 3, prefix = 4, target_file_size_bytes = 5, compression = 6)
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:ExportIcebergConfig}, _endpos::Int=0, _group::Bool=false)
+    locator = Ref{Union{Nothing,IcebergLocator}}(nothing)
+    config = Ref{Union{Nothing,IcebergConfig}}(nothing)
+    columns = PB.BufferedVector{IcebergExportColumn}()
+    prefix = ""
+    target_file_size_bytes = zero(Int64)
+    compression = ""
+    while !PB.message_done(d, _endpos, _group)
+        field_number, wire_type = PB.decode_tag(d)
+        if field_number == 1
+            PB.decode!(d, locator)
+        elseif field_number == 2
+            PB.decode!(d, config)
+        elseif field_number == 3
+            PB.decode!(d, columns)
+        elseif field_number == 4
+            prefix = PB.decode(d, String)
+        elseif field_number == 5
+            target_file_size_bytes = PB.decode(d, Int64)
+        elseif field_number == 6
+            compression = PB.decode(d, String)
+        else
+            Base.skip(d, wire_type)
+        end
+    end
+    return ExportIcebergConfig(locator[], config[], columns[], prefix, target_file_size_bytes, compression)
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::ExportIcebergConfig)
+    initpos = position(e.io)
+    !isnothing(x.locator) && PB.encode(e, 1, x.locator)
+    !isnothing(x.config) && PB.encode(e, 2, x.config)
+    !isempty(x.columns) && PB.encode(e, 3, x.columns)
+    !isempty(x.prefix) && PB.encode(e, 4, x.prefix)
+    x.target_file_size_bytes != zero(Int64) && PB.encode(e, 5, x.target_file_size_bytes)
+    !isempty(x.compression) && PB.encode(e, 6, x.compression)
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::ExportIcebergConfig)
+    encoded_size = 0
+    !isnothing(x.locator) && (encoded_size += PB._encoded_size(x.locator, 1))
+    !isnothing(x.config) && (encoded_size += PB._encoded_size(x.config, 2))
+    !isempty(x.columns) && (encoded_size += PB._encoded_size(x.columns, 3))
+    !isempty(x.prefix) && (encoded_size += PB._encoded_size(x.prefix, 4))
+    x.target_file_size_bytes != zero(Int64) && (encoded_size += PB._encoded_size(x.target_file_size_bytes, 5))
+    !isempty(x.compression) && (encoded_size += PB._encoded_size(x.compression, 6))
     return encoded_size
 end
 
@@ -453,79 +514,6 @@ end
 function PB._encoded_size(x::Snapshot)
     encoded_size = 0
     !isempty(x.mappings) && (encoded_size += PB._encoded_size(x.mappings, 1))
-    return encoded_size
-end
-
-struct ExportIcebergConfig
-    catalog_uri::String
-    namespace::Vector{String}
-    table_name::String
-    catalog_properties::Union{Nothing,IcebergCatalogProperties}
-    schema::String
-    prefix::String
-    target_file_size_bytes::Int64
-    compression::String
-end
-ExportIcebergConfig(;catalog_uri = "", namespace = Vector{String}(), table_name = "", catalog_properties = nothing, schema = "", prefix = "", target_file_size_bytes = zero(Int64), compression = "") = ExportIcebergConfig(catalog_uri, namespace, table_name, catalog_properties, schema, prefix, target_file_size_bytes, compression)
-PB.default_values(::Type{ExportIcebergConfig}) = (;catalog_uri = "", namespace = Vector{String}(), table_name = "", catalog_properties = nothing, schema = "", prefix = "", target_file_size_bytes = zero(Int64), compression = "")
-PB.field_numbers(::Type{ExportIcebergConfig}) = (;catalog_uri = 1, namespace = 2, table_name = 3, catalog_properties = 4, schema = 5, prefix = 6, target_file_size_bytes = 7, compression = 8)
-
-function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:ExportIcebergConfig}, _endpos::Int=0, _group::Bool=false)
-    catalog_uri = ""
-    namespace = PB.BufferedVector{String}()
-    table_name = ""
-    catalog_properties = Ref{Union{Nothing,IcebergCatalogProperties}}(nothing)
-    schema = ""
-    prefix = ""
-    target_file_size_bytes = zero(Int64)
-    compression = ""
-    while !PB.message_done(d, _endpos, _group)
-        field_number, wire_type = PB.decode_tag(d)
-        if field_number == 1
-            catalog_uri = PB.decode(d, String)
-        elseif field_number == 2
-            PB.decode!(d, namespace)
-        elseif field_number == 3
-            table_name = PB.decode(d, String)
-        elseif field_number == 4
-            PB.decode!(d, catalog_properties)
-        elseif field_number == 5
-            schema = PB.decode(d, String)
-        elseif field_number == 6
-            prefix = PB.decode(d, String)
-        elseif field_number == 7
-            target_file_size_bytes = PB.decode(d, Int64)
-        elseif field_number == 8
-            compression = PB.decode(d, String)
-        else
-            Base.skip(d, wire_type)
-        end
-    end
-    return ExportIcebergConfig(catalog_uri, namespace[], table_name, catalog_properties[], schema, prefix, target_file_size_bytes, compression)
-end
-
-function PB.encode(e::PB.AbstractProtoEncoder, x::ExportIcebergConfig)
-    initpos = position(e.io)
-    !isempty(x.catalog_uri) && PB.encode(e, 1, x.catalog_uri)
-    !isempty(x.namespace) && PB.encode(e, 2, x.namespace)
-    !isempty(x.table_name) && PB.encode(e, 3, x.table_name)
-    !isnothing(x.catalog_properties) && PB.encode(e, 4, x.catalog_properties)
-    !isempty(x.schema) && PB.encode(e, 5, x.schema)
-    !isempty(x.prefix) && PB.encode(e, 6, x.prefix)
-    x.target_file_size_bytes != zero(Int64) && PB.encode(e, 7, x.target_file_size_bytes)
-    !isempty(x.compression) && PB.encode(e, 8, x.compression)
-    return position(e.io) - initpos
-end
-function PB._encoded_size(x::ExportIcebergConfig)
-    encoded_size = 0
-    !isempty(x.catalog_uri) && (encoded_size += PB._encoded_size(x.catalog_uri, 1))
-    !isempty(x.namespace) && (encoded_size += PB._encoded_size(x.namespace, 2))
-    !isempty(x.table_name) && (encoded_size += PB._encoded_size(x.table_name, 3))
-    !isnothing(x.catalog_properties) && (encoded_size += PB._encoded_size(x.catalog_properties, 4))
-    !isempty(x.schema) && (encoded_size += PB._encoded_size(x.schema, 5))
-    !isempty(x.prefix) && (encoded_size += PB._encoded_size(x.prefix, 6))
-    x.target_file_size_bytes != zero(Int64) && (encoded_size += PB._encoded_size(x.target_file_size_bytes, 7))
-    !isempty(x.compression) && (encoded_size += PB._encoded_size(x.compression, 8))
     return encoded_size
 end
 
