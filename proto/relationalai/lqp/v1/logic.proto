@@ -331,9 +331,7 @@ message IcebergConfig {
   string catalog_uri = 1;
   optional string scope = 2;
   map<string, string> properties = 3;
-  optional string credential = 4;
-  optional string token = 5;
-  optional string token_file = 6;
+  map<string, string> auth_properties = 4;
 }
 
 message GNFColumn {
