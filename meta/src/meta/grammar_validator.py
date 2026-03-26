@@ -66,9 +66,7 @@ def _optional_string_allows_plain_string(
     actual: TargetType, expected: TargetType
 ) -> bool:
     """True if actual is String and expected is Option[String] (optional proto string)."""
-    if isinstance(expected, OptionType) and isinstance(
-        expected.element_type, BaseType
-    ):
+    if isinstance(expected, OptionType) and isinstance(expected.element_type, BaseType):
         if expected.element_type.name != "String":
             return False
         return isinstance(actual, BaseType) and actual.name == "String"
