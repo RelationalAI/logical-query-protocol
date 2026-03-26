@@ -232,13 +232,13 @@ def test_go_assignment_generation():
     lines = []
     expr = Assign(Var("x", _int_type), Lit(42))
     gen.generate_lines(expr, lines, "")
-    assert "x := 42" in lines[0]
+    assert "x := int64(42)" in lines[0]
 
     # Second assignment uses =
     lines = []
     expr = Assign(Var("x", _int_type), Lit(100))
     gen.generate_lines(expr, lines, "")
-    assert "x = 100" in lines[0]
+    assert "x = int64(100)" in lines[0]
 
 
 def test_go_return_generation():

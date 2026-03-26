@@ -62,6 +62,19 @@ from .type_env import TypeEnv
 from .validation_result import ValidationResult
 
 
+def _optional_string_allows_plain_string(
+    actual: TargetType, expected: TargetType
+) -> bool:
+    """True if actual is String and expected is Option[String] (optional proto string)."""
+    if isinstance(expected, OptionType) and isinstance(
+        expected.element_type, BaseType
+    ):
+        if expected.element_type.name != "String":
+            return False
+        return isinstance(actual, BaseType) and actual.name == "String"
+    return False
+
+
 class GrammarValidator:
     """Validates grammar against protobuf specification."""
 
@@ -271,12 +284,17 @@ class GrammarValidator:
 
             # Check actual type is a subtype of expected type (actual_type <: expected_type)
             if actual_type is not None and not is_subtype(actual_type, expected_type):
-                self.result.add_error(
-                    "field_type",
-                    f"In {context}: NewMessage {new_msg.name} field '{field_name}' has type {actual_type}, expected {expected_type}",
-                    proto_type=new_msg.name,
-                    rule_name=context,
-                )
+                # Optional proto string fields are often represented as plain String at runtime
+                # (e.g. ProtoBuf.jl uses "" for unset); allow String where Option[String] is expected.
+                if _optional_string_allows_plain_string(actual_type, expected_type):
+                    pass
+                else:
+                    self.result.add_error(
+                        "field_type",
+                        f"In {context}: NewMessage {new_msg.name} field '{field_name}' has type {actual_type}, expected {expected_type}",
+                        proto_type=new_msg.name,
+                        rule_name=context,
+                    )
 
         # Check for missing fields
         for field in proto_message.fields:

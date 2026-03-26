@@ -1182,7 +1182,7 @@ iceberg_to_snapshot
 
 iceberg_data
     : "(" "iceberg_data" iceberg_locator iceberg_config gnf_columns iceberg_to_snapshot? ")"
-      construct: $$ = logic.IcebergData(locator=$3, config=$4, columns=$5, to_snapshot=iceberg_optional_string_field($6))
+      construct: $$ = logic.IcebergData(locator=$3, config=$4, columns=$5, to_snapshot=builtin.unwrap_option_or($6, ""))
       deconstruct:
         $3: logic.IcebergLocator = $$.locator
         $4: logic.IcebergConfig = $$.config
@@ -1643,19 +1643,13 @@ def construct_iceberg_config(
 ) -> logic.IcebergConfig:
     props: Dict[String, String] = builtin.string_map_from_pairs(property_pairs)
     auth_props: Dict[String, String] = builtin.string_map_from_pairs(auth_property_pairs)
-    scope_pb: Optional[String] = iceberg_optional_string_field(scope_opt)
+    scope_pb: String = builtin.unwrap_option_or(scope_opt, "")
     return logic.IcebergConfig(
         catalog_uri=catalog_uri,
         scope=scope_pb,
         properties=props,
         auth_properties=auth_props,
     )
-
-
-def iceberg_optional_string_field(s: Optional[String]) -> Optional[String]:
-    if s is None:
-        return builtin.none()
-    return builtin.some(s)
 
 
 def deconstruct_iceberg_config_scope_optional(msg: logic.IcebergConfig) -> Optional[String]:

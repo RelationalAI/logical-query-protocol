@@ -424,179 +424,179 @@ class Parser:
     def _extract_value_int32(self, value: logic_pb2.Value | None, default: int) -> int:
         if value is not None:
             assert value is not None
-            _t2040 = value.HasField("int32_value")
+            _t2039 = value.HasField("int32_value")
         else:
-            _t2040 = False
-        if _t2040:
+            _t2039 = False
+        if _t2039:
             assert value is not None
             return value.int32_value
         else:
-            _t2041 = None
+            _t2040 = None
         return int(default)
 
     def _extract_value_int64(self, value: logic_pb2.Value | None, default: int) -> int:
         if value is not None:
             assert value is not None
-            _t2042 = value.HasField("int_value")
+            _t2041 = value.HasField("int_value")
         else:
-            _t2042 = False
-        if _t2042:
+            _t2041 = False
+        if _t2041:
             assert value is not None
             return value.int_value
         else:
-            _t2043 = None
+            _t2042 = None
         return default
 
     def _extract_value_string(self, value: logic_pb2.Value | None, default: str) -> str:
         if value is not None:
             assert value is not None
-            _t2044 = value.HasField("string_value")
+            _t2043 = value.HasField("string_value")
         else:
-            _t2044 = False
-        if _t2044:
+            _t2043 = False
+        if _t2043:
             assert value is not None
             return value.string_value
         else:
-            _t2045 = None
+            _t2044 = None
         return default
 
     def _extract_value_boolean(self, value: logic_pb2.Value | None, default: bool) -> bool:
         if value is not None:
             assert value is not None
-            _t2046 = value.HasField("boolean_value")
+            _t2045 = value.HasField("boolean_value")
         else:
-            _t2046 = False
-        if _t2046:
+            _t2045 = False
+        if _t2045:
             assert value is not None
             return value.boolean_value
         else:
-            _t2047 = None
+            _t2046 = None
         return default
 
     def _extract_value_string_list(self, value: logic_pb2.Value | None, default: Sequence[str]) -> Sequence[str]:
         if value is not None:
             assert value is not None
-            _t2048 = value.HasField("string_value")
+            _t2047 = value.HasField("string_value")
         else:
-            _t2048 = False
-        if _t2048:
+            _t2047 = False
+        if _t2047:
             assert value is not None
             return [value.string_value]
         else:
-            _t2049 = None
+            _t2048 = None
         return default
 
     def _try_extract_value_int64(self, value: logic_pb2.Value | None) -> int | None:
         if value is not None:
             assert value is not None
-            _t2050 = value.HasField("int_value")
+            _t2049 = value.HasField("int_value")
         else:
-            _t2050 = False
-        if _t2050:
+            _t2049 = False
+        if _t2049:
             assert value is not None
             return value.int_value
         else:
-            _t2051 = None
+            _t2050 = None
         return None
 
     def _try_extract_value_float64(self, value: logic_pb2.Value | None) -> float | None:
         if value is not None:
             assert value is not None
-            _t2052 = value.HasField("float_value")
+            _t2051 = value.HasField("float_value")
         else:
-            _t2052 = False
-        if _t2052:
+            _t2051 = False
+        if _t2051:
             assert value is not None
             return value.float_value
         else:
-            _t2053 = None
+            _t2052 = None
         return None
 
     def _try_extract_value_bytes(self, value: logic_pb2.Value | None) -> bytes | None:
         if value is not None:
             assert value is not None
-            _t2054 = value.HasField("string_value")
+            _t2053 = value.HasField("string_value")
         else:
-            _t2054 = False
-        if _t2054:
+            _t2053 = False
+        if _t2053:
             assert value is not None
             return value.string_value.encode()
         else:
-            _t2055 = None
+            _t2054 = None
         return None
 
     def _try_extract_value_uint128(self, value: logic_pb2.Value | None) -> logic_pb2.UInt128Value | None:
         if value is not None:
             assert value is not None
-            _t2056 = value.HasField("uint128_value")
+            _t2055 = value.HasField("uint128_value")
         else:
-            _t2056 = False
-        if _t2056:
+            _t2055 = False
+        if _t2055:
             assert value is not None
             return value.uint128_value
         else:
-            _t2057 = None
+            _t2056 = None
         return None
 
     def construct_csv_config(self, config_dict: Sequence[tuple[str, logic_pb2.Value]]) -> logic_pb2.CSVConfig:
         config = dict(config_dict)
-        _t2058 = self._extract_value_int32(config.get("csv_header_row"), 1)
-        header_row = _t2058
-        _t2059 = self._extract_value_int64(config.get("csv_skip"), 0)
-        skip = _t2059
-        _t2060 = self._extract_value_string(config.get("csv_new_line"), "")
-        new_line = _t2060
-        _t2061 = self._extract_value_string(config.get("csv_delimiter"), ",")
-        delimiter = _t2061
-        _t2062 = self._extract_value_string(config.get("csv_quotechar"), '"')
-        quotechar = _t2062
-        _t2063 = self._extract_value_string(config.get("csv_escapechar"), '"')
-        escapechar = _t2063
-        _t2064 = self._extract_value_string(config.get("csv_comment"), "")
-        comment = _t2064
-        _t2065 = self._extract_value_string_list(config.get("csv_missing_strings"), [])
-        missing_strings = _t2065
-        _t2066 = self._extract_value_string(config.get("csv_decimal_separator"), ".")
-        decimal_separator = _t2066
-        _t2067 = self._extract_value_string(config.get("csv_encoding"), "utf-8")
-        encoding = _t2067
-        _t2068 = self._extract_value_string(config.get("csv_compression"), "auto")
-        compression = _t2068
-        _t2069 = self._extract_value_int64(config.get("csv_partition_size_mb"), 0)
-        partition_size_mb = _t2069
-        _t2070 = logic_pb2.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression, partition_size_mb=partition_size_mb)
-        return _t2070
+        _t2057 = self._extract_value_int32(config.get("csv_header_row"), 1)
+        header_row = _t2057
+        _t2058 = self._extract_value_int64(config.get("csv_skip"), 0)
+        skip = _t2058
+        _t2059 = self._extract_value_string(config.get("csv_new_line"), "")
+        new_line = _t2059
+        _t2060 = self._extract_value_string(config.get("csv_delimiter"), ",")
+        delimiter = _t2060
+        _t2061 = self._extract_value_string(config.get("csv_quotechar"), '"')
+        quotechar = _t2061
+        _t2062 = self._extract_value_string(config.get("csv_escapechar"), '"')
+        escapechar = _t2062
+        _t2063 = self._extract_value_string(config.get("csv_comment"), "")
+        comment = _t2063
+        _t2064 = self._extract_value_string_list(config.get("csv_missing_strings"), [])
+        missing_strings = _t2064
+        _t2065 = self._extract_value_string(config.get("csv_decimal_separator"), ".")
+        decimal_separator = _t2065
+        _t2066 = self._extract_value_string(config.get("csv_encoding"), "utf-8")
+        encoding = _t2066
+        _t2067 = self._extract_value_string(config.get("csv_compression"), "auto")
+        compression = _t2067
+        _t2068 = self._extract_value_int64(config.get("csv_partition_size_mb"), 0)
+        partition_size_mb = _t2068
+        _t2069 = logic_pb2.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression, partition_size_mb=partition_size_mb)
+        return _t2069
 
     def construct_betree_info(self, key_types: Sequence[logic_pb2.Type], value_types: Sequence[logic_pb2.Type], config_dict: Sequence[tuple[str, logic_pb2.Value]]) -> logic_pb2.BeTreeInfo:
         config = dict(config_dict)
-        _t2071 = self._try_extract_value_float64(config.get("betree_config_epsilon"))
-        epsilon = _t2071
-        _t2072 = self._try_extract_value_int64(config.get("betree_config_max_pivots"))
-        max_pivots = _t2072
-        _t2073 = self._try_extract_value_int64(config.get("betree_config_max_deltas"))
-        max_deltas = _t2073
-        _t2074 = self._try_extract_value_int64(config.get("betree_config_max_leaf"))
-        max_leaf = _t2074
-        _t2075 = logic_pb2.BeTreeConfig(epsilon=epsilon, max_pivots=max_pivots, max_deltas=max_deltas, max_leaf=max_leaf)
-        storage_config = _t2075
-        _t2076 = self._try_extract_value_uint128(config.get("betree_locator_root_pageid"))
-        root_pageid = _t2076
-        _t2077 = self._try_extract_value_bytes(config.get("betree_locator_inline_data"))
-        inline_data = _t2077
-        _t2078 = self._try_extract_value_int64(config.get("betree_locator_element_count"))
-        element_count = _t2078
-        _t2079 = self._try_extract_value_int64(config.get("betree_locator_tree_height"))
-        tree_height = _t2079
-        _t2080 = logic_pb2.BeTreeLocator(root_pageid=root_pageid, inline_data=inline_data, element_count=element_count, tree_height=tree_height)
-        relation_locator = _t2080
-        _t2081 = logic_pb2.BeTreeInfo(key_types=key_types, value_types=value_types, storage_config=storage_config, relation_locator=relation_locator)
-        return _t2081
+        _t2070 = self._try_extract_value_float64(config.get("betree_config_epsilon"))
+        epsilon = _t2070
+        _t2071 = self._try_extract_value_int64(config.get("betree_config_max_pivots"))
+        max_pivots = _t2071
+        _t2072 = self._try_extract_value_int64(config.get("betree_config_max_deltas"))
+        max_deltas = _t2072
+        _t2073 = self._try_extract_value_int64(config.get("betree_config_max_leaf"))
+        max_leaf = _t2073
+        _t2074 = logic_pb2.BeTreeConfig(epsilon=epsilon, max_pivots=max_pivots, max_deltas=max_deltas, max_leaf=max_leaf)
+        storage_config = _t2074
+        _t2075 = self._try_extract_value_uint128(config.get("betree_locator_root_pageid"))
+        root_pageid = _t2075
+        _t2076 = self._try_extract_value_bytes(config.get("betree_locator_inline_data"))
+        inline_data = _t2076
+        _t2077 = self._try_extract_value_int64(config.get("betree_locator_element_count"))
+        element_count = _t2077
+        _t2078 = self._try_extract_value_int64(config.get("betree_locator_tree_height"))
+        tree_height = _t2078
+        _t2079 = logic_pb2.BeTreeLocator(root_pageid=root_pageid, inline_data=inline_data, element_count=element_count, tree_height=tree_height)
+        relation_locator = _t2079
+        _t2080 = logic_pb2.BeTreeInfo(key_types=key_types, value_types=value_types, storage_config=storage_config, relation_locator=relation_locator)
+        return _t2080
 
     def default_configure(self) -> transactions_pb2.Configure:
-        _t2082 = transactions_pb2.IVMConfig(level=transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_OFF)
-        ivm_config = _t2082
-        _t2083 = transactions_pb2.Configure(semantics_version=0, ivm_config=ivm_config)
-        return _t2083
+        _t2081 = transactions_pb2.IVMConfig(level=transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_OFF)
+        ivm_config = _t2081
+        _t2082 = transactions_pb2.Configure(semantics_version=0, ivm_config=ivm_config)
+        return _t2082
 
     def construct_configure(self, config_dict: Sequence[tuple[str, logic_pb2.Value]]) -> transactions_pb2.Configure:
         config = dict(config_dict)
@@ -613,50 +613,42 @@ class Parser:
                         maintenance_level = transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_ALL
                     else:
                         maintenance_level = transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
-        _t2084 = transactions_pb2.IVMConfig(level=maintenance_level)
-        ivm_config = _t2084
-        _t2085 = self._extract_value_int64(config.get("semantics_version"), 0)
-        semantics_version = _t2085
-        _t2086 = transactions_pb2.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
-        return _t2086
+        _t2083 = transactions_pb2.IVMConfig(level=maintenance_level)
+        ivm_config = _t2083
+        _t2084 = self._extract_value_int64(config.get("semantics_version"), 0)
+        semantics_version = _t2084
+        _t2085 = transactions_pb2.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
+        return _t2085
 
     def construct_export_csv_config(self, path: str, columns: Sequence[transactions_pb2.ExportCSVColumn], config_dict: Sequence[tuple[str, logic_pb2.Value]]) -> transactions_pb2.ExportCSVConfig:
         config = dict(config_dict)
-        _t2087 = self._extract_value_int64(config.get("partition_size"), 0)
-        partition_size = _t2087
-        _t2088 = self._extract_value_string(config.get("compression"), "")
-        compression = _t2088
-        _t2089 = self._extract_value_boolean(config.get("syntax_header_row"), True)
-        syntax_header_row = _t2089
-        _t2090 = self._extract_value_string(config.get("syntax_missing_string"), "")
-        syntax_missing_string = _t2090
-        _t2091 = self._extract_value_string(config.get("syntax_delim"), ",")
-        syntax_delim = _t2091
-        _t2092 = self._extract_value_string(config.get("syntax_quotechar"), '"')
-        syntax_quotechar = _t2092
-        _t2093 = self._extract_value_string(config.get("syntax_escapechar"), "\\")
-        syntax_escapechar = _t2093
-        _t2094 = transactions_pb2.ExportCSVConfig(path=path, data_columns=columns, partition_size=partition_size, compression=compression, syntax_header_row=syntax_header_row, syntax_missing_string=syntax_missing_string, syntax_delim=syntax_delim, syntax_quotechar=syntax_quotechar, syntax_escapechar=syntax_escapechar)
-        return _t2094
+        _t2086 = self._extract_value_int64(config.get("partition_size"), 0)
+        partition_size = _t2086
+        _t2087 = self._extract_value_string(config.get("compression"), "")
+        compression = _t2087
+        _t2088 = self._extract_value_boolean(config.get("syntax_header_row"), True)
+        syntax_header_row = _t2088
+        _t2089 = self._extract_value_string(config.get("syntax_missing_string"), "")
+        syntax_missing_string = _t2089
+        _t2090 = self._extract_value_string(config.get("syntax_delim"), ",")
+        syntax_delim = _t2090
+        _t2091 = self._extract_value_string(config.get("syntax_quotechar"), '"')
+        syntax_quotechar = _t2091
+        _t2092 = self._extract_value_string(config.get("syntax_escapechar"), "\\")
+        syntax_escapechar = _t2092
+        _t2093 = transactions_pb2.ExportCSVConfig(path=path, data_columns=columns, partition_size=partition_size, compression=compression, syntax_header_row=syntax_header_row, syntax_missing_string=syntax_missing_string, syntax_delim=syntax_delim, syntax_quotechar=syntax_quotechar, syntax_escapechar=syntax_escapechar)
+        return _t2093
 
     def construct_export_csv_config_with_source(self, path: str, csv_source: transactions_pb2.ExportCSVSource, csv_config: logic_pb2.CSVConfig) -> transactions_pb2.ExportCSVConfig:
-        _t2095 = transactions_pb2.ExportCSVConfig(path=path, csv_source=csv_source, csv_config=csv_config)
-        return _t2095
+        _t2094 = transactions_pb2.ExportCSVConfig(path=path, csv_source=csv_source, csv_config=csv_config)
+        return _t2094
 
     def construct_iceberg_config(self, catalog_uri: str, scope_opt: str | None, property_pairs: Sequence[tuple[str, str]], auth_property_pairs: Sequence[tuple[str, str]]) -> logic_pb2.IcebergConfig:
         props = dict(property_pairs)
         auth_props = dict(auth_property_pairs)
-        _t2096 = self.iceberg_optional_string_field(scope_opt)
-        scope_pb = _t2096
-        _t2097 = logic_pb2.IcebergConfig(catalog_uri=catalog_uri, scope=scope_pb, properties=props, auth_properties=auth_props)
-        return _t2097
-
-    def iceberg_optional_string_field(self, s: str | None) -> str | None:
-        if s is None:
-            return None
-        else:
-            _t2098 = None
-        return s
+        scope_pb = (scope_opt if scope_opt is not None else "")
+        _t2095 = logic_pb2.IcebergConfig(catalog_uri=catalog_uri, scope=scope_pb, properties=props, auth_properties=auth_props)
+        return _t2095
 
     def construct_export_iceberg_config_full(self, locator: logic_pb2.IcebergLocator, config: logic_pb2.IcebergConfig, columns: Sequence[transactions_pb2.IcebergExportColumn], config_dict: Sequence[tuple[str, logic_pb2.Value]] | None) -> transactions_pb2.ExportIcebergConfig:
         prefix = ""
@@ -665,14 +657,14 @@ class Parser:
         if config_dict is not None:
             assert config_dict is not None
             cfg = dict(config_dict)
-            _t2099 = self._extract_value_string(cfg.get("prefix"), "")
-            prefix = _t2099
-            _t2100 = self._extract_value_int64(cfg.get("target_file_size_bytes"), 0)
-            target_file_size_bytes = _t2100
-            _t2101 = self._extract_value_string(cfg.get("compression"), "")
-            compression = _t2101
-        _t2102 = transactions_pb2.ExportIcebergConfig(locator=locator, config=config, columns=columns, prefix=prefix, target_file_size_bytes=target_file_size_bytes, compression=compression)
-        return _t2102
+            _t2096 = self._extract_value_string(cfg.get("prefix"), "")
+            prefix = _t2096
+            _t2097 = self._extract_value_int64(cfg.get("target_file_size_bytes"), 0)
+            target_file_size_bytes = _t2097
+            _t2098 = self._extract_value_string(cfg.get("compression"), "")
+            compression = _t2098
+        _t2099 = transactions_pb2.ExportIcebergConfig(locator=locator, config=config, columns=columns, prefix=prefix, target_file_size_bytes=target_file_size_bytes, compression=compression)
+        return _t2099
 
     # --- Parse methods ---
 
@@ -3399,9 +3391,8 @@ class Parser:
             _t1942 = None
         iceberg_to_snapshot1184 = _t1942
         self.consume_literal(")")
-        _t1944 = self.iceberg_optional_string_field(iceberg_to_snapshot1184)
-        _t1945 = logic_pb2.IcebergData(locator=iceberg_locator1181, config=iceberg_config1182, columns=gnf_columns1183, to_snapshot=_t1944)
-        result1186 = _t1945
+        _t1944 = logic_pb2.IcebergData(locator=iceberg_locator1181, config=iceberg_config1182, columns=gnf_columns1183, to_snapshot=(iceberg_to_snapshot1184 if iceberg_to_snapshot1184 is not None else ""))
+        result1186 = _t1944
         self.record_span(span_start1185, "IcebergData")
         return result1186
 
@@ -3428,8 +3419,8 @@ class Parser:
         string_121192 = self.consume_terminal("STRING")
         self.consume_literal(")")
         self.consume_literal(")")
-        _t1946 = logic_pb2.IcebergLocator(table_name=string1187, namespace=strings1191, warehouse=string_121192)
-        result1194 = _t1946
+        _t1945 = logic_pb2.IcebergLocator(table_name=string1187, namespace=strings1191, warehouse=string_121192)
+        result1194 = _t1945
         self.record_span(span_start1193, "IcebergLocator")
         return result1194
 
@@ -3442,18 +3433,18 @@ class Parser:
         string1195 = self.consume_terminal("STRING")
         self.consume_literal(")")
         if (self.match_lookahead_literal("(", 0) and self.match_lookahead_literal("scope", 1)):
-            _t1948 = self.parse_iceberg_config_scope()
-            _t1947 = _t1948
+            _t1947 = self.parse_iceberg_config_scope()
+            _t1946 = _t1947
         else:
-            _t1947 = None
-        iceberg_config_scope1196 = _t1947
+            _t1946 = None
+        iceberg_config_scope1196 = _t1946
         self.consume_literal("(")
         self.consume_literal("properties")
         xs1197 = []
         cond1198 = self.match_lookahead_literal("(", 0)
         while cond1198:
-            _t1949 = self.parse_iceberg_property_entry()
-            item1199 = _t1949
+            _t1948 = self.parse_iceberg_property_entry()
+            item1199 = _t1948
             xs1197.append(item1199)
             cond1198 = self.match_lookahead_literal("(", 0)
         iceberg_property_entrys1200 = xs1197
@@ -3463,15 +3454,15 @@ class Parser:
         xs1201 = []
         cond1202 = self.match_lookahead_literal("(", 0)
         while cond1202:
-            _t1950 = self.parse_iceberg_property_entry()
-            item1203 = _t1950
+            _t1949 = self.parse_iceberg_property_entry()
+            item1203 = _t1949
             xs1201.append(item1203)
             cond1202 = self.match_lookahead_literal("(", 0)
         iceberg_property_entrys_131204 = xs1201
         self.consume_literal(")")
         self.consume_literal(")")
-        _t1951 = self.construct_iceberg_config(string1195, iceberg_config_scope1196, iceberg_property_entrys1200, iceberg_property_entrys_131204)
-        result1206 = _t1951
+        _t1950 = self.construct_iceberg_config(string1195, iceberg_config_scope1196, iceberg_property_entrys1200, iceberg_property_entrys_131204)
+        result1206 = _t1950
         self.record_span(span_start1205, "IcebergConfig")
         return result1206
 
@@ -3501,11 +3492,11 @@ class Parser:
         span_start1212 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("undefine")
-        _t1952 = self.parse_fragment_id()
-        fragment_id1211 = _t1952
+        _t1951 = self.parse_fragment_id()
+        fragment_id1211 = _t1951
         self.consume_literal(")")
-        _t1953 = transactions_pb2.Undefine(fragment_id=fragment_id1211)
-        result1213 = _t1953
+        _t1952 = transactions_pb2.Undefine(fragment_id=fragment_id1211)
+        result1213 = _t1952
         self.record_span(span_start1212, "Undefine")
         return result1213
 
@@ -3516,14 +3507,14 @@ class Parser:
         xs1214 = []
         cond1215 = (self.match_lookahead_literal(":", 0) or self.match_lookahead_terminal("UINT128", 0))
         while cond1215:
-            _t1954 = self.parse_relation_id()
-            item1216 = _t1954
+            _t1953 = self.parse_relation_id()
+            item1216 = _t1953
             xs1214.append(item1216)
             cond1215 = (self.match_lookahead_literal(":", 0) or self.match_lookahead_terminal("UINT128", 0))
         relation_ids1217 = xs1214
         self.consume_literal(")")
-        _t1955 = transactions_pb2.Context(relations=relation_ids1217)
-        result1219 = _t1955
+        _t1954 = transactions_pb2.Context(relations=relation_ids1217)
+        result1219 = _t1954
         self.record_span(span_start1218, "Context")
         return result1219
 
@@ -3534,25 +3525,25 @@ class Parser:
         xs1220 = []
         cond1221 = self.match_lookahead_literal("[", 0)
         while cond1221:
-            _t1956 = self.parse_snapshot_mapping()
-            item1222 = _t1956
+            _t1955 = self.parse_snapshot_mapping()
+            item1222 = _t1955
             xs1220.append(item1222)
             cond1221 = self.match_lookahead_literal("[", 0)
         snapshot_mappings1223 = xs1220
         self.consume_literal(")")
-        _t1957 = transactions_pb2.Snapshot(mappings=snapshot_mappings1223)
-        result1225 = _t1957
+        _t1956 = transactions_pb2.Snapshot(mappings=snapshot_mappings1223)
+        result1225 = _t1956
         self.record_span(span_start1224, "Snapshot")
         return result1225
 
     def parse_snapshot_mapping(self) -> transactions_pb2.SnapshotMapping:
         span_start1228 = self.span_start()
-        _t1958 = self.parse_edb_path()
-        edb_path1226 = _t1958
-        _t1959 = self.parse_relation_id()
-        relation_id1227 = _t1959
-        _t1960 = transactions_pb2.SnapshotMapping(destination_path=edb_path1226, source_relation=relation_id1227)
-        result1229 = _t1960
+        _t1957 = self.parse_edb_path()
+        edb_path1226 = _t1957
+        _t1958 = self.parse_relation_id()
+        relation_id1227 = _t1958
+        _t1959 = transactions_pb2.SnapshotMapping(destination_path=edb_path1226, source_relation=relation_id1227)
+        result1229 = _t1959
         self.record_span(span_start1228, "SnapshotMapping")
         return result1229
 
@@ -3562,8 +3553,8 @@ class Parser:
         xs1230 = []
         cond1231 = self.match_lookahead_literal("(", 0)
         while cond1231:
-            _t1961 = self.parse_read()
-            item1232 = _t1961
+            _t1960 = self.parse_read()
+            item1232 = _t1960
             xs1230.append(item1232)
             cond1231 = self.match_lookahead_literal("(", 0)
         reads1233 = xs1230
@@ -3574,69 +3565,69 @@ class Parser:
         span_start1240 = self.span_start()
         if self.match_lookahead_literal("(", 0):
             if self.match_lookahead_literal("what_if", 1):
-                _t1963 = 2
+                _t1962 = 2
             else:
                 if self.match_lookahead_literal("output", 1):
-                    _t1964 = 1
+                    _t1963 = 1
                 else:
                     if self.match_lookahead_literal("export_iceberg", 1):
-                        _t1965 = 4
+                        _t1964 = 4
                     else:
                         if self.match_lookahead_literal("export", 1):
-                            _t1966 = 4
+                            _t1965 = 4
                         else:
                             if self.match_lookahead_literal("demand", 1):
-                                _t1967 = 0
+                                _t1966 = 0
                             else:
                                 if self.match_lookahead_literal("abort", 1):
-                                    _t1968 = 3
+                                    _t1967 = 3
                                 else:
-                                    _t1968 = -1
-                                _t1967 = _t1968
-                            _t1966 = _t1967
-                        _t1965 = _t1966
-                    _t1964 = _t1965
-                _t1963 = _t1964
-            _t1962 = _t1963
+                                    _t1967 = -1
+                                _t1966 = _t1967
+                            _t1965 = _t1966
+                        _t1964 = _t1965
+                    _t1963 = _t1964
+                _t1962 = _t1963
+            _t1961 = _t1962
         else:
-            _t1962 = -1
-        prediction1234 = _t1962
+            _t1961 = -1
+        prediction1234 = _t1961
         if prediction1234 == 4:
-            _t1970 = self.parse_export()
-            export1239 = _t1970
-            _t1971 = transactions_pb2.Read(export=export1239)
-            _t1969 = _t1971
+            _t1969 = self.parse_export()
+            export1239 = _t1969
+            _t1970 = transactions_pb2.Read(export=export1239)
+            _t1968 = _t1970
         else:
             if prediction1234 == 3:
-                _t1973 = self.parse_abort()
-                abort1238 = _t1973
-                _t1974 = transactions_pb2.Read(abort=abort1238)
-                _t1972 = _t1974
+                _t1972 = self.parse_abort()
+                abort1238 = _t1972
+                _t1973 = transactions_pb2.Read(abort=abort1238)
+                _t1971 = _t1973
             else:
                 if prediction1234 == 2:
-                    _t1976 = self.parse_what_if()
-                    what_if1237 = _t1976
-                    _t1977 = transactions_pb2.Read(what_if=what_if1237)
-                    _t1975 = _t1977
+                    _t1975 = self.parse_what_if()
+                    what_if1237 = _t1975
+                    _t1976 = transactions_pb2.Read(what_if=what_if1237)
+                    _t1974 = _t1976
                 else:
                     if prediction1234 == 1:
-                        _t1979 = self.parse_output()
-                        output1236 = _t1979
-                        _t1980 = transactions_pb2.Read(output=output1236)
-                        _t1978 = _t1980
+                        _t1978 = self.parse_output()
+                        output1236 = _t1978
+                        _t1979 = transactions_pb2.Read(output=output1236)
+                        _t1977 = _t1979
                     else:
                         if prediction1234 == 0:
-                            _t1982 = self.parse_demand()
-                            demand1235 = _t1982
-                            _t1983 = transactions_pb2.Read(demand=demand1235)
-                            _t1981 = _t1983
+                            _t1981 = self.parse_demand()
+                            demand1235 = _t1981
+                            _t1982 = transactions_pb2.Read(demand=demand1235)
+                            _t1980 = _t1982
                         else:
                             raise ParseError("Unexpected token in read" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
-                        _t1978 = _t1981
-                    _t1975 = _t1978
-                _t1972 = _t1975
-            _t1969 = _t1972
-        result1241 = _t1969
+                        _t1977 = _t1980
+                    _t1974 = _t1977
+                _t1971 = _t1974
+            _t1968 = _t1971
+        result1241 = _t1968
         self.record_span(span_start1240, "Read")
         return result1241
 
@@ -3644,11 +3635,11 @@ class Parser:
         span_start1243 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("demand")
-        _t1984 = self.parse_relation_id()
-        relation_id1242 = _t1984
+        _t1983 = self.parse_relation_id()
+        relation_id1242 = _t1983
         self.consume_literal(")")
-        _t1985 = transactions_pb2.Demand(relation_id=relation_id1242)
-        result1244 = _t1985
+        _t1984 = transactions_pb2.Demand(relation_id=relation_id1242)
+        result1244 = _t1984
         self.record_span(span_start1243, "Demand")
         return result1244
 
@@ -3656,13 +3647,13 @@ class Parser:
         span_start1247 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("output")
-        _t1986 = self.parse_name()
-        name1245 = _t1986
-        _t1987 = self.parse_relation_id()
-        relation_id1246 = _t1987
+        _t1985 = self.parse_name()
+        name1245 = _t1985
+        _t1986 = self.parse_relation_id()
+        relation_id1246 = _t1986
         self.consume_literal(")")
-        _t1988 = transactions_pb2.Output(name=name1245, relation_id=relation_id1246)
-        result1248 = _t1988
+        _t1987 = transactions_pb2.Output(name=name1245, relation_id=relation_id1246)
+        result1248 = _t1987
         self.record_span(span_start1247, "Output")
         return result1248
 
@@ -3670,13 +3661,13 @@ class Parser:
         span_start1251 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("what_if")
-        _t1989 = self.parse_name()
-        name1249 = _t1989
-        _t1990 = self.parse_epoch()
-        epoch1250 = _t1990
+        _t1988 = self.parse_name()
+        name1249 = _t1988
+        _t1989 = self.parse_epoch()
+        epoch1250 = _t1989
         self.consume_literal(")")
-        _t1991 = transactions_pb2.WhatIf(branch=name1249, epoch=epoch1250)
-        result1252 = _t1991
+        _t1990 = transactions_pb2.WhatIf(branch=name1249, epoch=epoch1250)
+        result1252 = _t1990
         self.record_span(span_start1251, "WhatIf")
         return result1252
 
@@ -3685,16 +3676,16 @@ class Parser:
         self.consume_literal("(")
         self.consume_literal("abort")
         if (self.match_lookahead_literal(":", 0) and self.match_lookahead_terminal("SYMBOL", 1)):
-            _t1993 = self.parse_name()
-            _t1992 = _t1993
+            _t1992 = self.parse_name()
+            _t1991 = _t1992
         else:
-            _t1992 = None
-        name1253 = _t1992
-        _t1994 = self.parse_relation_id()
-        relation_id1254 = _t1994
+            _t1991 = None
+        name1253 = _t1991
+        _t1993 = self.parse_relation_id()
+        relation_id1254 = _t1993
         self.consume_literal(")")
-        _t1995 = transactions_pb2.Abort(name=(name1253 if name1253 is not None else "abort"), relation_id=relation_id1254)
-        result1256 = _t1995
+        _t1994 = transactions_pb2.Abort(name=(name1253 if name1253 is not None else "abort"), relation_id=relation_id1254)
+        result1256 = _t1994
         self.record_span(span_start1255, "Abort")
         return result1256
 
@@ -3702,38 +3693,38 @@ class Parser:
         span_start1260 = self.span_start()
         if self.match_lookahead_literal("(", 0):
             if self.match_lookahead_literal("export_iceberg", 1):
-                _t1997 = 1
+                _t1996 = 1
             else:
                 if self.match_lookahead_literal("export", 1):
-                    _t1998 = 0
+                    _t1997 = 0
                 else:
-                    _t1998 = -1
-                _t1997 = _t1998
-            _t1996 = _t1997
+                    _t1997 = -1
+                _t1996 = _t1997
+            _t1995 = _t1996
         else:
-            _t1996 = -1
-        prediction1257 = _t1996
+            _t1995 = -1
+        prediction1257 = _t1995
         if prediction1257 == 1:
             self.consume_literal("(")
             self.consume_literal("export_iceberg")
-            _t2000 = self.parse_export_iceberg_config()
-            export_iceberg_config1259 = _t2000
+            _t1999 = self.parse_export_iceberg_config()
+            export_iceberg_config1259 = _t1999
             self.consume_literal(")")
-            _t2001 = transactions_pb2.Export(iceberg_config=export_iceberg_config1259)
-            _t1999 = _t2001
+            _t2000 = transactions_pb2.Export(iceberg_config=export_iceberg_config1259)
+            _t1998 = _t2000
         else:
             if prediction1257 == 0:
                 self.consume_literal("(")
                 self.consume_literal("export")
-                _t2003 = self.parse_export_csv_config()
-                export_csv_config1258 = _t2003
+                _t2002 = self.parse_export_csv_config()
+                export_csv_config1258 = _t2002
                 self.consume_literal(")")
-                _t2004 = transactions_pb2.Export(csv_config=export_csv_config1258)
-                _t2002 = _t2004
+                _t2003 = transactions_pb2.Export(csv_config=export_csv_config1258)
+                _t2001 = _t2003
             else:
                 raise ParseError("Unexpected token in export" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
-            _t1999 = _t2002
-        result1261 = _t1999
+            _t1998 = _t2001
+        result1261 = _t1998
         self.record_span(span_start1260, "Export")
         return result1261
 
@@ -3741,46 +3732,46 @@ class Parser:
         span_start1269 = self.span_start()
         if self.match_lookahead_literal("(", 0):
             if self.match_lookahead_literal("export_csv_config_v2", 1):
-                _t2006 = 0
+                _t2005 = 0
             else:
                 if self.match_lookahead_literal("export_csv_config", 1):
-                    _t2007 = 1
+                    _t2006 = 1
                 else:
-                    _t2007 = -1
-                _t2006 = _t2007
-            _t2005 = _t2006
+                    _t2006 = -1
+                _t2005 = _t2006
+            _t2004 = _t2005
         else:
-            _t2005 = -1
-        prediction1262 = _t2005
+            _t2004 = -1
+        prediction1262 = _t2004
         if prediction1262 == 1:
             self.consume_literal("(")
             self.consume_literal("export_csv_config")
-            _t2009 = self.parse_export_csv_path()
-            export_csv_path1266 = _t2009
-            _t2010 = self.parse_export_csv_columns_list()
-            export_csv_columns_list1267 = _t2010
-            _t2011 = self.parse_config_dict()
-            config_dict1268 = _t2011
+            _t2008 = self.parse_export_csv_path()
+            export_csv_path1266 = _t2008
+            _t2009 = self.parse_export_csv_columns_list()
+            export_csv_columns_list1267 = _t2009
+            _t2010 = self.parse_config_dict()
+            config_dict1268 = _t2010
             self.consume_literal(")")
-            _t2012 = self.construct_export_csv_config(export_csv_path1266, export_csv_columns_list1267, config_dict1268)
-            _t2008 = _t2012
+            _t2011 = self.construct_export_csv_config(export_csv_path1266, export_csv_columns_list1267, config_dict1268)
+            _t2007 = _t2011
         else:
             if prediction1262 == 0:
                 self.consume_literal("(")
                 self.consume_literal("export_csv_config_v2")
-                _t2014 = self.parse_export_csv_path()
-                export_csv_path1263 = _t2014
-                _t2015 = self.parse_export_csv_source()
-                export_csv_source1264 = _t2015
-                _t2016 = self.parse_csv_config()
-                csv_config1265 = _t2016
+                _t2013 = self.parse_export_csv_path()
+                export_csv_path1263 = _t2013
+                _t2014 = self.parse_export_csv_source()
+                export_csv_source1264 = _t2014
+                _t2015 = self.parse_csv_config()
+                csv_config1265 = _t2015
                 self.consume_literal(")")
-                _t2017 = self.construct_export_csv_config_with_source(export_csv_path1263, export_csv_source1264, csv_config1265)
-                _t2013 = _t2017
+                _t2016 = self.construct_export_csv_config_with_source(export_csv_path1263, export_csv_source1264, csv_config1265)
+                _t2012 = _t2016
             else:
                 raise ParseError("Unexpected token in export_csv_config" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
-            _t2008 = _t2013
-        result1270 = _t2008
+            _t2007 = _t2012
+        result1270 = _t2007
         self.record_span(span_start1269, "ExportCSVConfig")
         return result1270
 
@@ -3795,25 +3786,25 @@ class Parser:
         span_start1278 = self.span_start()
         if self.match_lookahead_literal("(", 0):
             if self.match_lookahead_literal("table_def", 1):
-                _t2019 = 1
+                _t2018 = 1
             else:
                 if self.match_lookahead_literal("gnf_columns", 1):
-                    _t2020 = 0
+                    _t2019 = 0
                 else:
-                    _t2020 = -1
-                _t2019 = _t2020
-            _t2018 = _t2019
+                    _t2019 = -1
+                _t2018 = _t2019
+            _t2017 = _t2018
         else:
-            _t2018 = -1
-        prediction1272 = _t2018
+            _t2017 = -1
+        prediction1272 = _t2017
         if prediction1272 == 1:
             self.consume_literal("(")
             self.consume_literal("table_def")
-            _t2022 = self.parse_relation_id()
-            relation_id1277 = _t2022
+            _t2021 = self.parse_relation_id()
+            relation_id1277 = _t2021
             self.consume_literal(")")
-            _t2023 = transactions_pb2.ExportCSVSource(table_def=relation_id1277)
-            _t2021 = _t2023
+            _t2022 = transactions_pb2.ExportCSVSource(table_def=relation_id1277)
+            _t2020 = _t2022
         else:
             if prediction1272 == 0:
                 self.consume_literal("(")
@@ -3821,19 +3812,19 @@ class Parser:
                 xs1273 = []
                 cond1274 = self.match_lookahead_literal("(", 0)
                 while cond1274:
-                    _t2025 = self.parse_export_csv_column()
-                    item1275 = _t2025
+                    _t2024 = self.parse_export_csv_column()
+                    item1275 = _t2024
                     xs1273.append(item1275)
                     cond1274 = self.match_lookahead_literal("(", 0)
                 export_csv_columns1276 = xs1273
                 self.consume_literal(")")
-                _t2026 = transactions_pb2.ExportCSVColumns(columns=export_csv_columns1276)
-                _t2027 = transactions_pb2.ExportCSVSource(gnf_columns=_t2026)
-                _t2024 = _t2027
+                _t2025 = transactions_pb2.ExportCSVColumns(columns=export_csv_columns1276)
+                _t2026 = transactions_pb2.ExportCSVSource(gnf_columns=_t2025)
+                _t2023 = _t2026
             else:
                 raise ParseError("Unexpected token in export_csv_source" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
-            _t2021 = _t2024
-        result1279 = _t2021
+            _t2020 = _t2023
+        result1279 = _t2020
         self.record_span(span_start1278, "ExportCSVSource")
         return result1279
 
@@ -3842,11 +3833,11 @@ class Parser:
         self.consume_literal("(")
         self.consume_literal("column")
         string1280 = self.consume_terminal("STRING")
-        _t2028 = self.parse_relation_id()
-        relation_id1281 = _t2028
+        _t2027 = self.parse_relation_id()
+        relation_id1281 = _t2027
         self.consume_literal(")")
-        _t2029 = transactions_pb2.ExportCSVColumn(column_name=string1280, column_data=relation_id1281)
-        result1283 = _t2029
+        _t2028 = transactions_pb2.ExportCSVColumn(column_name=string1280, column_data=relation_id1281)
+        result1283 = _t2028
         self.record_span(span_start1282, "ExportCSVColumn")
         return result1283
 
@@ -3856,8 +3847,8 @@ class Parser:
         xs1284 = []
         cond1285 = self.match_lookahead_literal("(", 0)
         while cond1285:
-            _t2030 = self.parse_export_csv_column()
-            item1286 = _t2030
+            _t2029 = self.parse_export_csv_column()
+            item1286 = _t2029
             xs1284.append(item1286)
             cond1285 = self.match_lookahead_literal("(", 0)
         export_csv_columns1287 = xs1284
@@ -3868,30 +3859,30 @@ class Parser:
         span_start1295 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("export_iceberg_config")
-        _t2031 = self.parse_iceberg_locator()
-        iceberg_locator1288 = _t2031
-        _t2032 = self.parse_iceberg_config()
-        iceberg_config1289 = _t2032
+        _t2030 = self.parse_iceberg_locator()
+        iceberg_locator1288 = _t2030
+        _t2031 = self.parse_iceberg_config()
+        iceberg_config1289 = _t2031
         self.consume_literal("(")
         self.consume_literal("columns")
         xs1290 = []
         cond1291 = self.match_lookahead_literal("(", 0)
         while cond1291:
-            _t2033 = self.parse_iceberg_export_column()
-            item1292 = _t2033
+            _t2032 = self.parse_iceberg_export_column()
+            item1292 = _t2032
             xs1290.append(item1292)
             cond1291 = self.match_lookahead_literal("(", 0)
         iceberg_export_columns1293 = xs1290
         self.consume_literal(")")
         if self.match_lookahead_literal("{", 0):
-            _t2035 = self.parse_config_dict()
-            _t2034 = _t2035
+            _t2034 = self.parse_config_dict()
+            _t2033 = _t2034
         else:
-            _t2034 = None
-        config_dict1294 = _t2034
+            _t2033 = None
+        config_dict1294 = _t2033
         self.consume_literal(")")
-        _t2036 = self.construct_export_iceberg_config_full(iceberg_locator1288, iceberg_config1289, iceberg_export_columns1293, config_dict1294)
-        result1296 = _t2036
+        _t2035 = self.construct_export_iceberg_config_full(iceberg_locator1288, iceberg_config1289, iceberg_export_columns1293, config_dict1294)
+        result1296 = _t2035
         self.record_span(span_start1295, "ExportIcebergConfig")
         return result1296
 
@@ -3900,13 +3891,13 @@ class Parser:
         self.consume_literal("(")
         self.consume_literal("iceberg_column")
         string1297 = self.consume_terminal("STRING")
-        _t2037 = self.parse_type()
-        type1298 = _t2037
-        _t2038 = self.parse_boolean_value()
-        boolean_value1299 = _t2038
+        _t2036 = self.parse_type()
+        type1298 = _t2036
+        _t2037 = self.parse_boolean_value()
+        boolean_value1299 = _t2037
         self.consume_literal(")")
-        _t2039 = transactions_pb2.IcebergExportColumn(name=string1297, type=type1298, nullable=boolean_value1299)
-        result1301 = _t2039
+        _t2038 = transactions_pb2.IcebergExportColumn(name=string1297, type=type1298, nullable=boolean_value1299)
+        result1301 = _t2038
         self.record_span(span_start1300, "IcebergExportColumn")
         return result1301
 

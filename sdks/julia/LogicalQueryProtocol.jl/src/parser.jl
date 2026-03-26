@@ -372,7 +372,7 @@ function _extract_value_int32(parser::ParserState, value::Union{Nothing, Proto.V
     if (!isnothing(value) && _has_proto_field(value, Symbol("int32_value")))
         return _get_oneof_field(value, :int32_value)
     else
-        _t2040 = nothing
+        _t2039 = nothing
     end
     return Int32(default)
 end
@@ -381,7 +381,7 @@ function _extract_value_int64(parser::ParserState, value::Union{Nothing, Proto.V
     if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
         return _get_oneof_field(value, :int_value)
     else
-        _t2041 = nothing
+        _t2040 = nothing
     end
     return default
 end
@@ -390,7 +390,7 @@ function _extract_value_string(parser::ParserState, value::Union{Nothing, Proto.
     if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
         return _get_oneof_field(value, :string_value)
     else
-        _t2042 = nothing
+        _t2041 = nothing
     end
     return default
 end
@@ -399,7 +399,7 @@ function _extract_value_boolean(parser::ParserState, value::Union{Nothing, Proto
     if (!isnothing(value) && _has_proto_field(value, Symbol("boolean_value")))
         return _get_oneof_field(value, :boolean_value)
     else
-        _t2043 = nothing
+        _t2042 = nothing
     end
     return default
 end
@@ -408,7 +408,7 @@ function _extract_value_string_list(parser::ParserState, value::Union{Nothing, P
     if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
         return String[_get_oneof_field(value, :string_value)]
     else
-        _t2044 = nothing
+        _t2043 = nothing
     end
     return default
 end
@@ -417,7 +417,7 @@ function _try_extract_value_int64(parser::ParserState, value::Union{Nothing, Pro
     if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
         return _get_oneof_field(value, :int_value)
     else
-        _t2045 = nothing
+        _t2044 = nothing
     end
     return nothing
 end
@@ -426,7 +426,7 @@ function _try_extract_value_float64(parser::ParserState, value::Union{Nothing, P
     if (!isnothing(value) && _has_proto_field(value, Symbol("float_value")))
         return _get_oneof_field(value, :float_value)
     else
-        _t2046 = nothing
+        _t2045 = nothing
     end
     return nothing
 end
@@ -435,7 +435,7 @@ function _try_extract_value_bytes(parser::ParserState, value::Union{Nothing, Pro
     if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
         return Vector{UInt8}(_get_oneof_field(value, :string_value))
     else
-        _t2047 = nothing
+        _t2046 = nothing
     end
     return nothing
 end
@@ -444,72 +444,72 @@ function _try_extract_value_uint128(parser::ParserState, value::Union{Nothing, P
     if (!isnothing(value) && _has_proto_field(value, Symbol("uint128_value")))
         return _get_oneof_field(value, :uint128_value)
     else
-        _t2048 = nothing
+        _t2047 = nothing
     end
     return nothing
 end
 
 function construct_csv_config(parser::ParserState, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.CSVConfig
     config = Dict(config_dict)
-    _t2049 = _extract_value_int32(parser, get(config, "csv_header_row", nothing), 1)
-    header_row = _t2049
-    _t2050 = _extract_value_int64(parser, get(config, "csv_skip", nothing), 0)
-    skip = _t2050
-    _t2051 = _extract_value_string(parser, get(config, "csv_new_line", nothing), "")
-    new_line = _t2051
-    _t2052 = _extract_value_string(parser, get(config, "csv_delimiter", nothing), ",")
-    delimiter = _t2052
-    _t2053 = _extract_value_string(parser, get(config, "csv_quotechar", nothing), "\"")
-    quotechar = _t2053
-    _t2054 = _extract_value_string(parser, get(config, "csv_escapechar", nothing), "\"")
-    escapechar = _t2054
-    _t2055 = _extract_value_string(parser, get(config, "csv_comment", nothing), "")
-    comment = _t2055
-    _t2056 = _extract_value_string_list(parser, get(config, "csv_missing_strings", nothing), String[])
-    missing_strings = _t2056
-    _t2057 = _extract_value_string(parser, get(config, "csv_decimal_separator", nothing), ".")
-    decimal_separator = _t2057
-    _t2058 = _extract_value_string(parser, get(config, "csv_encoding", nothing), "utf-8")
-    encoding = _t2058
-    _t2059 = _extract_value_string(parser, get(config, "csv_compression", nothing), "auto")
-    compression = _t2059
-    _t2060 = _extract_value_int64(parser, get(config, "csv_partition_size_mb", nothing), 0)
-    partition_size_mb = _t2060
-    _t2061 = Proto.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression, partition_size_mb=partition_size_mb)
-    return _t2061
+    _t2048 = _extract_value_int32(parser, get(config, "csv_header_row", nothing), 1)
+    header_row = _t2048
+    _t2049 = _extract_value_int64(parser, get(config, "csv_skip", nothing), 0)
+    skip = _t2049
+    _t2050 = _extract_value_string(parser, get(config, "csv_new_line", nothing), "")
+    new_line = _t2050
+    _t2051 = _extract_value_string(parser, get(config, "csv_delimiter", nothing), ",")
+    delimiter = _t2051
+    _t2052 = _extract_value_string(parser, get(config, "csv_quotechar", nothing), "\"")
+    quotechar = _t2052
+    _t2053 = _extract_value_string(parser, get(config, "csv_escapechar", nothing), "\"")
+    escapechar = _t2053
+    _t2054 = _extract_value_string(parser, get(config, "csv_comment", nothing), "")
+    comment = _t2054
+    _t2055 = _extract_value_string_list(parser, get(config, "csv_missing_strings", nothing), String[])
+    missing_strings = _t2055
+    _t2056 = _extract_value_string(parser, get(config, "csv_decimal_separator", nothing), ".")
+    decimal_separator = _t2056
+    _t2057 = _extract_value_string(parser, get(config, "csv_encoding", nothing), "utf-8")
+    encoding = _t2057
+    _t2058 = _extract_value_string(parser, get(config, "csv_compression", nothing), "auto")
+    compression = _t2058
+    _t2059 = _extract_value_int64(parser, get(config, "csv_partition_size_mb", nothing), 0)
+    partition_size_mb = _t2059
+    _t2060 = Proto.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression, partition_size_mb=partition_size_mb)
+    return _t2060
 end
 
 function construct_betree_info(parser::ParserState, key_types::Vector{Proto.var"#Type"}, value_types::Vector{Proto.var"#Type"}, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.BeTreeInfo
     config = Dict(config_dict)
-    _t2062 = _try_extract_value_float64(parser, get(config, "betree_config_epsilon", nothing))
-    epsilon = _t2062
-    _t2063 = _try_extract_value_int64(parser, get(config, "betree_config_max_pivots", nothing))
-    max_pivots = _t2063
-    _t2064 = _try_extract_value_int64(parser, get(config, "betree_config_max_deltas", nothing))
-    max_deltas = _t2064
-    _t2065 = _try_extract_value_int64(parser, get(config, "betree_config_max_leaf", nothing))
-    max_leaf = _t2065
-    _t2066 = Proto.BeTreeConfig(epsilon=epsilon, max_pivots=max_pivots, max_deltas=max_deltas, max_leaf=max_leaf)
-    storage_config = _t2066
-    _t2067 = _try_extract_value_uint128(parser, get(config, "betree_locator_root_pageid", nothing))
-    root_pageid = _t2067
-    _t2068 = _try_extract_value_bytes(parser, get(config, "betree_locator_inline_data", nothing))
-    inline_data = _t2068
-    _t2069 = _try_extract_value_int64(parser, get(config, "betree_locator_element_count", nothing))
-    element_count = _t2069
-    _t2070 = _try_extract_value_int64(parser, get(config, "betree_locator_tree_height", nothing))
-    tree_height = _t2070
-    _t2071 = Proto.BeTreeLocator(location=(!isnothing(root_pageid) ? OneOf(:root_pageid, root_pageid) : (!isnothing(inline_data) ? OneOf(:inline_data, inline_data) : nothing)), element_count=element_count, tree_height=tree_height)
-    relation_locator = _t2071
-    _t2072 = Proto.BeTreeInfo(key_types=key_types, value_types=value_types, storage_config=storage_config, relation_locator=relation_locator)
-    return _t2072
+    _t2061 = _try_extract_value_float64(parser, get(config, "betree_config_epsilon", nothing))
+    epsilon = _t2061
+    _t2062 = _try_extract_value_int64(parser, get(config, "betree_config_max_pivots", nothing))
+    max_pivots = _t2062
+    _t2063 = _try_extract_value_int64(parser, get(config, "betree_config_max_deltas", nothing))
+    max_deltas = _t2063
+    _t2064 = _try_extract_value_int64(parser, get(config, "betree_config_max_leaf", nothing))
+    max_leaf = _t2064
+    _t2065 = Proto.BeTreeConfig(epsilon=epsilon, max_pivots=max_pivots, max_deltas=max_deltas, max_leaf=max_leaf)
+    storage_config = _t2065
+    _t2066 = _try_extract_value_uint128(parser, get(config, "betree_locator_root_pageid", nothing))
+    root_pageid = _t2066
+    _t2067 = _try_extract_value_bytes(parser, get(config, "betree_locator_inline_data", nothing))
+    inline_data = _t2067
+    _t2068 = _try_extract_value_int64(parser, get(config, "betree_locator_element_count", nothing))
+    element_count = _t2068
+    _t2069 = _try_extract_value_int64(parser, get(config, "betree_locator_tree_height", nothing))
+    tree_height = _t2069
+    _t2070 = Proto.BeTreeLocator(location=(!isnothing(root_pageid) ? OneOf(:root_pageid, root_pageid) : (!isnothing(inline_data) ? OneOf(:inline_data, inline_data) : nothing)), element_count=element_count, tree_height=tree_height)
+    relation_locator = _t2070
+    _t2071 = Proto.BeTreeInfo(key_types=key_types, value_types=value_types, storage_config=storage_config, relation_locator=relation_locator)
+    return _t2071
 end
 
 function default_configure(parser::ParserState)::Proto.Configure
-    _t2073 = Proto.IVMConfig(level=Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF)
-    ivm_config = _t2073
-    _t2074 = Proto.Configure(semantics_version=0, ivm_config=ivm_config)
-    return _t2074
+    _t2072 = Proto.IVMConfig(level=Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF)
+    ivm_config = _t2072
+    _t2073 = Proto.Configure(semantics_version=0, ivm_config=ivm_config)
+    return _t2073
 end
 
 function construct_configure(parser::ParserState, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.Configure
@@ -531,55 +531,45 @@ function construct_configure(parser::ParserState, config_dict::Vector{Tuple{Stri
             end
         end
     end
-    _t2075 = Proto.IVMConfig(level=maintenance_level)
-    ivm_config = _t2075
-    _t2076 = _extract_value_int64(parser, get(config, "semantics_version", nothing), 0)
-    semantics_version = _t2076
-    _t2077 = Proto.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
-    return _t2077
+    _t2074 = Proto.IVMConfig(level=maintenance_level)
+    ivm_config = _t2074
+    _t2075 = _extract_value_int64(parser, get(config, "semantics_version", nothing), 0)
+    semantics_version = _t2075
+    _t2076 = Proto.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
+    return _t2076
 end
 
 function construct_export_csv_config(parser::ParserState, path::String, columns::Vector{Proto.ExportCSVColumn}, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.ExportCSVConfig
     config = Dict(config_dict)
-    _t2078 = _extract_value_int64(parser, get(config, "partition_size", nothing), 0)
-    partition_size = _t2078
-    _t2079 = _extract_value_string(parser, get(config, "compression", nothing), "")
-    compression = _t2079
-    _t2080 = _extract_value_boolean(parser, get(config, "syntax_header_row", nothing), true)
-    syntax_header_row = _t2080
-    _t2081 = _extract_value_string(parser, get(config, "syntax_missing_string", nothing), "")
-    syntax_missing_string = _t2081
-    _t2082 = _extract_value_string(parser, get(config, "syntax_delim", nothing), ",")
-    syntax_delim = _t2082
-    _t2083 = _extract_value_string(parser, get(config, "syntax_quotechar", nothing), "\"")
-    syntax_quotechar = _t2083
-    _t2084 = _extract_value_string(parser, get(config, "syntax_escapechar", nothing), "\\")
-    syntax_escapechar = _t2084
-    _t2085 = Proto.ExportCSVConfig(path=path, data_columns=columns, partition_size=partition_size, compression=compression, syntax_header_row=syntax_header_row, syntax_missing_string=syntax_missing_string, syntax_delim=syntax_delim, syntax_quotechar=syntax_quotechar, syntax_escapechar=syntax_escapechar)
-    return _t2085
+    _t2077 = _extract_value_int64(parser, get(config, "partition_size", nothing), 0)
+    partition_size = _t2077
+    _t2078 = _extract_value_string(parser, get(config, "compression", nothing), "")
+    compression = _t2078
+    _t2079 = _extract_value_boolean(parser, get(config, "syntax_header_row", nothing), true)
+    syntax_header_row = _t2079
+    _t2080 = _extract_value_string(parser, get(config, "syntax_missing_string", nothing), "")
+    syntax_missing_string = _t2080
+    _t2081 = _extract_value_string(parser, get(config, "syntax_delim", nothing), ",")
+    syntax_delim = _t2081
+    _t2082 = _extract_value_string(parser, get(config, "syntax_quotechar", nothing), "\"")
+    syntax_quotechar = _t2082
+    _t2083 = _extract_value_string(parser, get(config, "syntax_escapechar", nothing), "\\")
+    syntax_escapechar = _t2083
+    _t2084 = Proto.ExportCSVConfig(path=path, data_columns=columns, partition_size=partition_size, compression=compression, syntax_header_row=syntax_header_row, syntax_missing_string=syntax_missing_string, syntax_delim=syntax_delim, syntax_quotechar=syntax_quotechar, syntax_escapechar=syntax_escapechar)
+    return _t2084
 end
 
 function construct_export_csv_config_with_source(parser::ParserState, path::String, csv_source::Proto.ExportCSVSource, csv_config::Proto.CSVConfig)::Proto.ExportCSVConfig
-    _t2086 = Proto.ExportCSVConfig(path=path, csv_source=csv_source, csv_config=csv_config)
-    return _t2086
+    _t2085 = Proto.ExportCSVConfig(path=path, csv_source=csv_source, csv_config=csv_config)
+    return _t2085
 end
 
 function construct_iceberg_config(parser::ParserState, catalog_uri::String, scope_opt::Union{Nothing, String}, property_pairs::Vector{Tuple{String, String}}, auth_property_pairs::Vector{Tuple{String, String}})::Proto.IcebergConfig
     props = Dict(property_pairs)
     auth_props = Dict(auth_property_pairs)
-    _t2087 = iceberg_optional_string_field(parser, scope_opt)
-    scope_pb = _t2087
-    _t2088 = Proto.IcebergConfig(catalog_uri=catalog_uri, scope=scope_pb, properties=props, auth_properties=auth_props)
-    return _t2088
-end
-
-function iceberg_optional_string_field(parser::ParserState, s::Union{Nothing, String})::Union{Nothing, String}
-    if isnothing(s)
-        return nothing
-    else
-        _t2089 = nothing
-    end
-    return s
+    scope_pb = (!isnothing(scope_opt) ? scope_opt : "")
+    _t2086 = Proto.IcebergConfig(catalog_uri=catalog_uri, scope=scope_pb, properties=props, auth_properties=auth_props)
+    return _t2086
 end
 
 function construct_export_iceberg_config_full(parser::ParserState, locator::Proto.IcebergLocator, config::Proto.IcebergConfig, columns::Vector{Proto.IcebergExportColumn}, config_dict::Union{Nothing, Vector{Tuple{String, Proto.Value}}})::Proto.ExportIcebergConfig
@@ -588,15 +578,15 @@ function construct_export_iceberg_config_full(parser::ParserState, locator::Prot
     compression = ""
     if !isnothing(config_dict)
         cfg = Dict(config_dict)
-        _t2090 = _extract_value_string(parser, get(cfg, "prefix", nothing), "")
-        prefix = _t2090
-        _t2091 = _extract_value_int64(parser, get(cfg, "target_file_size_bytes", nothing), 0)
-        target_file_size_bytes = _t2091
-        _t2092 = _extract_value_string(parser, get(cfg, "compression", nothing), "")
-        compression = _t2092
+        _t2087 = _extract_value_string(parser, get(cfg, "prefix", nothing), "")
+        prefix = _t2087
+        _t2088 = _extract_value_int64(parser, get(cfg, "target_file_size_bytes", nothing), 0)
+        target_file_size_bytes = _t2088
+        _t2089 = _extract_value_string(parser, get(cfg, "compression", nothing), "")
+        compression = _t2089
     end
-    _t2093 = Proto.ExportIcebergConfig(locator=locator, config=config, columns=columns, prefix=prefix, target_file_size_bytes=target_file_size_bytes, compression=compression)
-    return _t2093
+    _t2090 = Proto.ExportIcebergConfig(locator=locator, config=config, columns=columns, prefix=prefix, target_file_size_bytes=target_file_size_bytes, compression=compression)
+    return _t2090
 end
 
 # --- Parse functions ---
@@ -3722,9 +3712,8 @@ function parse_iceberg_data(parser::ParserState)::Proto.IcebergData
     end
     iceberg_to_snapshot1184 = _t1942
     consume_literal!(parser, ")")
-    _t1944 = iceberg_optional_string_field(parser, iceberg_to_snapshot1184)
-    _t1945 = Proto.IcebergData(locator=iceberg_locator1181, config=iceberg_config1182, columns=gnf_columns1183, to_snapshot=_t1944)
-    result1186 = _t1945
+    _t1944 = Proto.IcebergData(locator=iceberg_locator1181, config=iceberg_config1182, columns=gnf_columns1183, to_snapshot=(!isnothing(iceberg_to_snapshot1184) ? iceberg_to_snapshot1184 : ""))
+    result1186 = _t1944
     record_span!(parser, span_start1185, "IcebergData")
     return result1186
 end
@@ -3753,8 +3742,8 @@ function parse_iceberg_locator(parser::ParserState)::Proto.IcebergLocator
     string_121192 = consume_terminal!(parser, "STRING")
     consume_literal!(parser, ")")
     consume_literal!(parser, ")")
-    _t1946 = Proto.IcebergLocator(table_name=string1187, namespace=strings1191, warehouse=string_121192)
-    result1194 = _t1946
+    _t1945 = Proto.IcebergLocator(table_name=string1187, namespace=strings1191, warehouse=string_121192)
+    result1194 = _t1945
     record_span!(parser, span_start1193, "IcebergLocator")
     return result1194
 end
@@ -3768,19 +3757,19 @@ function parse_iceberg_config(parser::ParserState)::Proto.IcebergConfig
     string1195 = consume_terminal!(parser, "STRING")
     consume_literal!(parser, ")")
     if (match_lookahead_literal(parser, "(", 0) && match_lookahead_literal(parser, "scope", 1))
-        _t1948 = parse_iceberg_config_scope(parser)
-        _t1947 = _t1948
+        _t1947 = parse_iceberg_config_scope(parser)
+        _t1946 = _t1947
     else
-        _t1947 = nothing
+        _t1946 = nothing
     end
-    iceberg_config_scope1196 = _t1947
+    iceberg_config_scope1196 = _t1946
     consume_literal!(parser, "(")
     consume_literal!(parser, "properties")
     xs1197 = Tuple{String, String}[]
     cond1198 = match_lookahead_literal(parser, "(", 0)
     while cond1198
-        _t1949 = parse_iceberg_property_entry(parser)
-        item1199 = _t1949
+        _t1948 = parse_iceberg_property_entry(parser)
+        item1199 = _t1948
         push!(xs1197, item1199)
         cond1198 = match_lookahead_literal(parser, "(", 0)
     end
@@ -3791,16 +3780,16 @@ function parse_iceberg_config(parser::ParserState)::Proto.IcebergConfig
     xs1201 = Tuple{String, String}[]
     cond1202 = match_lookahead_literal(parser, "(", 0)
     while cond1202
-        _t1950 = parse_iceberg_property_entry(parser)
-        item1203 = _t1950
+        _t1949 = parse_iceberg_property_entry(parser)
+        item1203 = _t1949
         push!(xs1201, item1203)
         cond1202 = match_lookahead_literal(parser, "(", 0)
     end
     iceberg_property_entrys_131204 = xs1201
     consume_literal!(parser, ")")
     consume_literal!(parser, ")")
-    _t1951 = construct_iceberg_config(parser, string1195, iceberg_config_scope1196, iceberg_property_entrys1200, iceberg_property_entrys_131204)
-    result1206 = _t1951
+    _t1950 = construct_iceberg_config(parser, string1195, iceberg_config_scope1196, iceberg_property_entrys1200, iceberg_property_entrys_131204)
+    result1206 = _t1950
     record_span!(parser, span_start1205, "IcebergConfig")
     return result1206
 end
@@ -3834,11 +3823,11 @@ function parse_undefine(parser::ParserState)::Proto.Undefine
     span_start1212 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "undefine")
-    _t1952 = parse_fragment_id(parser)
-    fragment_id1211 = _t1952
+    _t1951 = parse_fragment_id(parser)
+    fragment_id1211 = _t1951
     consume_literal!(parser, ")")
-    _t1953 = Proto.Undefine(fragment_id=fragment_id1211)
-    result1213 = _t1953
+    _t1952 = Proto.Undefine(fragment_id=fragment_id1211)
+    result1213 = _t1952
     record_span!(parser, span_start1212, "Undefine")
     return result1213
 end
@@ -3850,15 +3839,15 @@ function parse_context(parser::ParserState)::Proto.Context
     xs1214 = Proto.RelationId[]
     cond1215 = (match_lookahead_literal(parser, ":", 0) || match_lookahead_terminal(parser, "UINT128", 0))
     while cond1215
-        _t1954 = parse_relation_id(parser)
-        item1216 = _t1954
+        _t1953 = parse_relation_id(parser)
+        item1216 = _t1953
         push!(xs1214, item1216)
         cond1215 = (match_lookahead_literal(parser, ":", 0) || match_lookahead_terminal(parser, "UINT128", 0))
     end
     relation_ids1217 = xs1214
     consume_literal!(parser, ")")
-    _t1955 = Proto.Context(relations=relation_ids1217)
-    result1219 = _t1955
+    _t1954 = Proto.Context(relations=relation_ids1217)
+    result1219 = _t1954
     record_span!(parser, span_start1218, "Context")
     return result1219
 end
@@ -3870,27 +3859,27 @@ function parse_snapshot(parser::ParserState)::Proto.Snapshot
     xs1220 = Proto.SnapshotMapping[]
     cond1221 = match_lookahead_literal(parser, "[", 0)
     while cond1221
-        _t1956 = parse_snapshot_mapping(parser)
-        item1222 = _t1956
+        _t1955 = parse_snapshot_mapping(parser)
+        item1222 = _t1955
         push!(xs1220, item1222)
         cond1221 = match_lookahead_literal(parser, "[", 0)
     end
     snapshot_mappings1223 = xs1220
     consume_literal!(parser, ")")
-    _t1957 = Proto.Snapshot(mappings=snapshot_mappings1223)
-    result1225 = _t1957
+    _t1956 = Proto.Snapshot(mappings=snapshot_mappings1223)
+    result1225 = _t1956
     record_span!(parser, span_start1224, "Snapshot")
     return result1225
 end
 
 function parse_snapshot_mapping(parser::ParserState)::Proto.SnapshotMapping
     span_start1228 = span_start(parser)
-    _t1958 = parse_edb_path(parser)
-    edb_path1226 = _t1958
-    _t1959 = parse_relation_id(parser)
-    relation_id1227 = _t1959
-    _t1960 = Proto.SnapshotMapping(destination_path=edb_path1226, source_relation=relation_id1227)
-    result1229 = _t1960
+    _t1957 = parse_edb_path(parser)
+    edb_path1226 = _t1957
+    _t1958 = parse_relation_id(parser)
+    relation_id1227 = _t1958
+    _t1959 = Proto.SnapshotMapping(destination_path=edb_path1226, source_relation=relation_id1227)
+    result1229 = _t1959
     record_span!(parser, span_start1228, "SnapshotMapping")
     return result1229
 end
@@ -3901,8 +3890,8 @@ function parse_epoch_reads(parser::ParserState)::Vector{Proto.Read}
     xs1230 = Proto.Read[]
     cond1231 = match_lookahead_literal(parser, "(", 0)
     while cond1231
-        _t1961 = parse_read(parser)
-        item1232 = _t1961
+        _t1960 = parse_read(parser)
+        item1232 = _t1960
         push!(xs1230, item1232)
         cond1231 = match_lookahead_literal(parser, "(", 0)
     end
@@ -3915,81 +3904,81 @@ function parse_read(parser::ParserState)::Proto.Read
     span_start1240 = span_start(parser)
     if match_lookahead_literal(parser, "(", 0)
         if match_lookahead_literal(parser, "what_if", 1)
-            _t1963 = 2
+            _t1962 = 2
         else
             if match_lookahead_literal(parser, "output", 1)
-                _t1964 = 1
+                _t1963 = 1
             else
                 if match_lookahead_literal(parser, "export_iceberg", 1)
-                    _t1965 = 4
+                    _t1964 = 4
                 else
                     if match_lookahead_literal(parser, "export", 1)
-                        _t1966 = 4
+                        _t1965 = 4
                     else
                         if match_lookahead_literal(parser, "demand", 1)
-                            _t1967 = 0
+                            _t1966 = 0
                         else
                             if match_lookahead_literal(parser, "abort", 1)
-                                _t1968 = 3
+                                _t1967 = 3
                             else
-                                _t1968 = -1
+                                _t1967 = -1
                             end
-                            _t1967 = _t1968
+                            _t1966 = _t1967
                         end
-                        _t1966 = _t1967
+                        _t1965 = _t1966
                     end
-                    _t1965 = _t1966
+                    _t1964 = _t1965
                 end
-                _t1964 = _t1965
+                _t1963 = _t1964
             end
-            _t1963 = _t1964
+            _t1962 = _t1963
         end
-        _t1962 = _t1963
+        _t1961 = _t1962
     else
-        _t1962 = -1
+        _t1961 = -1
     end
-    prediction1234 = _t1962
+    prediction1234 = _t1961
     if prediction1234 == 4
-        _t1970 = parse_export(parser)
-        export1239 = _t1970
-        _t1971 = Proto.Read(read_type=OneOf(:var"#export", export1239))
-        _t1969 = _t1971
+        _t1969 = parse_export(parser)
+        export1239 = _t1969
+        _t1970 = Proto.Read(read_type=OneOf(:var"#export", export1239))
+        _t1968 = _t1970
     else
         if prediction1234 == 3
-            _t1973 = parse_abort(parser)
-            abort1238 = _t1973
-            _t1974 = Proto.Read(read_type=OneOf(:abort, abort1238))
-            _t1972 = _t1974
+            _t1972 = parse_abort(parser)
+            abort1238 = _t1972
+            _t1973 = Proto.Read(read_type=OneOf(:abort, abort1238))
+            _t1971 = _t1973
         else
             if prediction1234 == 2
-                _t1976 = parse_what_if(parser)
-                what_if1237 = _t1976
-                _t1977 = Proto.Read(read_type=OneOf(:what_if, what_if1237))
-                _t1975 = _t1977
+                _t1975 = parse_what_if(parser)
+                what_if1237 = _t1975
+                _t1976 = Proto.Read(read_type=OneOf(:what_if, what_if1237))
+                _t1974 = _t1976
             else
                 if prediction1234 == 1
-                    _t1979 = parse_output(parser)
-                    output1236 = _t1979
-                    _t1980 = Proto.Read(read_type=OneOf(:output, output1236))
-                    _t1978 = _t1980
+                    _t1978 = parse_output(parser)
+                    output1236 = _t1978
+                    _t1979 = Proto.Read(read_type=OneOf(:output, output1236))
+                    _t1977 = _t1979
                 else
                     if prediction1234 == 0
-                        _t1982 = parse_demand(parser)
-                        demand1235 = _t1982
-                        _t1983 = Proto.Read(read_type=OneOf(:demand, demand1235))
-                        _t1981 = _t1983
+                        _t1981 = parse_demand(parser)
+                        demand1235 = _t1981
+                        _t1982 = Proto.Read(read_type=OneOf(:demand, demand1235))
+                        _t1980 = _t1982
                     else
                         throw(ParseError("Unexpected token in read" * ": " * string(lookahead(parser, 0))))
                     end
-                    _t1978 = _t1981
+                    _t1977 = _t1980
                 end
-                _t1975 = _t1978
+                _t1974 = _t1977
             end
-            _t1972 = _t1975
+            _t1971 = _t1974
         end
-        _t1969 = _t1972
+        _t1968 = _t1971
     end
-    result1241 = _t1969
+    result1241 = _t1968
     record_span!(parser, span_start1240, "Read")
     return result1241
 end
@@ -3998,11 +3987,11 @@ function parse_demand(parser::ParserState)::Proto.Demand
     span_start1243 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "demand")
-    _t1984 = parse_relation_id(parser)
-    relation_id1242 = _t1984
+    _t1983 = parse_relation_id(parser)
+    relation_id1242 = _t1983
     consume_literal!(parser, ")")
-    _t1985 = Proto.Demand(relation_id=relation_id1242)
-    result1244 = _t1985
+    _t1984 = Proto.Demand(relation_id=relation_id1242)
+    result1244 = _t1984
     record_span!(parser, span_start1243, "Demand")
     return result1244
 end
@@ -4011,13 +4000,13 @@ function parse_output(parser::ParserState)::Proto.Output
     span_start1247 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "output")
-    _t1986 = parse_name(parser)
-    name1245 = _t1986
-    _t1987 = parse_relation_id(parser)
-    relation_id1246 = _t1987
+    _t1985 = parse_name(parser)
+    name1245 = _t1985
+    _t1986 = parse_relation_id(parser)
+    relation_id1246 = _t1986
     consume_literal!(parser, ")")
-    _t1988 = Proto.Output(name=name1245, relation_id=relation_id1246)
-    result1248 = _t1988
+    _t1987 = Proto.Output(name=name1245, relation_id=relation_id1246)
+    result1248 = _t1987
     record_span!(parser, span_start1247, "Output")
     return result1248
 end
@@ -4026,13 +4015,13 @@ function parse_what_if(parser::ParserState)::Proto.WhatIf
     span_start1251 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "what_if")
-    _t1989 = parse_name(parser)
-    name1249 = _t1989
-    _t1990 = parse_epoch(parser)
-    epoch1250 = _t1990
+    _t1988 = parse_name(parser)
+    name1249 = _t1988
+    _t1989 = parse_epoch(parser)
+    epoch1250 = _t1989
     consume_literal!(parser, ")")
-    _t1991 = Proto.WhatIf(branch=name1249, epoch=epoch1250)
-    result1252 = _t1991
+    _t1990 = Proto.WhatIf(branch=name1249, epoch=epoch1250)
+    result1252 = _t1990
     record_span!(parser, span_start1251, "WhatIf")
     return result1252
 end
@@ -4042,17 +4031,17 @@ function parse_abort(parser::ParserState)::Proto.Abort
     consume_literal!(parser, "(")
     consume_literal!(parser, "abort")
     if (match_lookahead_literal(parser, ":", 0) && match_lookahead_terminal(parser, "SYMBOL", 1))
-        _t1993 = parse_name(parser)
-        _t1992 = _t1993
+        _t1992 = parse_name(parser)
+        _t1991 = _t1992
     else
-        _t1992 = nothing
+        _t1991 = nothing
     end
-    name1253 = _t1992
-    _t1994 = parse_relation_id(parser)
-    relation_id1254 = _t1994
+    name1253 = _t1991
+    _t1993 = parse_relation_id(parser)
+    relation_id1254 = _t1993
     consume_literal!(parser, ")")
-    _t1995 = Proto.Abort(name=(!isnothing(name1253) ? name1253 : "abort"), relation_id=relation_id1254)
-    result1256 = _t1995
+    _t1994 = Proto.Abort(name=(!isnothing(name1253) ? name1253 : "abort"), relation_id=relation_id1254)
+    result1256 = _t1994
     record_span!(parser, span_start1255, "Abort")
     return result1256
 end
@@ -4061,43 +4050,43 @@ function parse_export(parser::ParserState)::Proto.Export
     span_start1260 = span_start(parser)
     if match_lookahead_literal(parser, "(", 0)
         if match_lookahead_literal(parser, "export_iceberg", 1)
-            _t1997 = 1
+            _t1996 = 1
         else
             if match_lookahead_literal(parser, "export", 1)
-                _t1998 = 0
+                _t1997 = 0
             else
-                _t1998 = -1
+                _t1997 = -1
             end
-            _t1997 = _t1998
+            _t1996 = _t1997
         end
-        _t1996 = _t1997
+        _t1995 = _t1996
     else
-        _t1996 = -1
+        _t1995 = -1
     end
-    prediction1257 = _t1996
+    prediction1257 = _t1995
     if prediction1257 == 1
         consume_literal!(parser, "(")
         consume_literal!(parser, "export_iceberg")
-        _t2000 = parse_export_iceberg_config(parser)
-        export_iceberg_config1259 = _t2000
+        _t1999 = parse_export_iceberg_config(parser)
+        export_iceberg_config1259 = _t1999
         consume_literal!(parser, ")")
-        _t2001 = Proto.Export(export_config=OneOf(:iceberg_config, export_iceberg_config1259))
-        _t1999 = _t2001
+        _t2000 = Proto.Export(export_config=OneOf(:iceberg_config, export_iceberg_config1259))
+        _t1998 = _t2000
     else
         if prediction1257 == 0
             consume_literal!(parser, "(")
             consume_literal!(parser, "export")
-            _t2003 = parse_export_csv_config(parser)
-            export_csv_config1258 = _t2003
+            _t2002 = parse_export_csv_config(parser)
+            export_csv_config1258 = _t2002
             consume_literal!(parser, ")")
-            _t2004 = Proto.Export(export_config=OneOf(:csv_config, export_csv_config1258))
-            _t2002 = _t2004
+            _t2003 = Proto.Export(export_config=OneOf(:csv_config, export_csv_config1258))
+            _t2001 = _t2003
         else
             throw(ParseError("Unexpected token in export" * ": " * string(lookahead(parser, 0))))
         end
-        _t1999 = _t2002
+        _t1998 = _t2001
     end
-    result1261 = _t1999
+    result1261 = _t1998
     record_span!(parser, span_start1260, "Export")
     return result1261
 end
@@ -4106,51 +4095,51 @@ function parse_export_csv_config(parser::ParserState)::Proto.ExportCSVConfig
     span_start1269 = span_start(parser)
     if match_lookahead_literal(parser, "(", 0)
         if match_lookahead_literal(parser, "export_csv_config_v2", 1)
-            _t2006 = 0
+            _t2005 = 0
         else
             if match_lookahead_literal(parser, "export_csv_config", 1)
-                _t2007 = 1
+                _t2006 = 1
             else
-                _t2007 = -1
+                _t2006 = -1
             end
-            _t2006 = _t2007
+            _t2005 = _t2006
         end
-        _t2005 = _t2006
+        _t2004 = _t2005
     else
-        _t2005 = -1
+        _t2004 = -1
     end
-    prediction1262 = _t2005
+    prediction1262 = _t2004
     if prediction1262 == 1
         consume_literal!(parser, "(")
         consume_literal!(parser, "export_csv_config")
-        _t2009 = parse_export_csv_path(parser)
-        export_csv_path1266 = _t2009
-        _t2010 = parse_export_csv_columns_list(parser)
-        export_csv_columns_list1267 = _t2010
-        _t2011 = parse_config_dict(parser)
-        config_dict1268 = _t2011
+        _t2008 = parse_export_csv_path(parser)
+        export_csv_path1266 = _t2008
+        _t2009 = parse_export_csv_columns_list(parser)
+        export_csv_columns_list1267 = _t2009
+        _t2010 = parse_config_dict(parser)
+        config_dict1268 = _t2010
         consume_literal!(parser, ")")
-        _t2012 = construct_export_csv_config(parser, export_csv_path1266, export_csv_columns_list1267, config_dict1268)
-        _t2008 = _t2012
+        _t2011 = construct_export_csv_config(parser, export_csv_path1266, export_csv_columns_list1267, config_dict1268)
+        _t2007 = _t2011
     else
         if prediction1262 == 0
             consume_literal!(parser, "(")
             consume_literal!(parser, "export_csv_config_v2")
-            _t2014 = parse_export_csv_path(parser)
-            export_csv_path1263 = _t2014
-            _t2015 = parse_export_csv_source(parser)
-            export_csv_source1264 = _t2015
-            _t2016 = parse_csv_config(parser)
-            csv_config1265 = _t2016
+            _t2013 = parse_export_csv_path(parser)
+            export_csv_path1263 = _t2013
+            _t2014 = parse_export_csv_source(parser)
+            export_csv_source1264 = _t2014
+            _t2015 = parse_csv_config(parser)
+            csv_config1265 = _t2015
             consume_literal!(parser, ")")
-            _t2017 = construct_export_csv_config_with_source(parser, export_csv_path1263, export_csv_source1264, csv_config1265)
-            _t2013 = _t2017
+            _t2016 = construct_export_csv_config_with_source(parser, export_csv_path1263, export_csv_source1264, csv_config1265)
+            _t2012 = _t2016
         else
             throw(ParseError("Unexpected token in export_csv_config" * ": " * string(lookahead(parser, 0))))
         end
-        _t2008 = _t2013
+        _t2007 = _t2012
     end
-    result1270 = _t2008
+    result1270 = _t2007
     record_span!(parser, span_start1269, "ExportCSVConfig")
     return result1270
 end
@@ -4167,28 +4156,28 @@ function parse_export_csv_source(parser::ParserState)::Proto.ExportCSVSource
     span_start1278 = span_start(parser)
     if match_lookahead_literal(parser, "(", 0)
         if match_lookahead_literal(parser, "table_def", 1)
-            _t2019 = 1
+            _t2018 = 1
         else
             if match_lookahead_literal(parser, "gnf_columns", 1)
-                _t2020 = 0
+                _t2019 = 0
             else
-                _t2020 = -1
+                _t2019 = -1
             end
-            _t2019 = _t2020
+            _t2018 = _t2019
         end
-        _t2018 = _t2019
+        _t2017 = _t2018
     else
-        _t2018 = -1
+        _t2017 = -1
     end
-    prediction1272 = _t2018
+    prediction1272 = _t2017
     if prediction1272 == 1
         consume_literal!(parser, "(")
         consume_literal!(parser, "table_def")
-        _t2022 = parse_relation_id(parser)
-        relation_id1277 = _t2022
+        _t2021 = parse_relation_id(parser)
+        relation_id1277 = _t2021
         consume_literal!(parser, ")")
-        _t2023 = Proto.ExportCSVSource(csv_source=OneOf(:table_def, relation_id1277))
-        _t2021 = _t2023
+        _t2022 = Proto.ExportCSVSource(csv_source=OneOf(:table_def, relation_id1277))
+        _t2020 = _t2022
     else
         if prediction1272 == 0
             consume_literal!(parser, "(")
@@ -4196,22 +4185,22 @@ function parse_export_csv_source(parser::ParserState)::Proto.ExportCSVSource
             xs1273 = Proto.ExportCSVColumn[]
             cond1274 = match_lookahead_literal(parser, "(", 0)
             while cond1274
-                _t2025 = parse_export_csv_column(parser)
-                item1275 = _t2025
+                _t2024 = parse_export_csv_column(parser)
+                item1275 = _t2024
                 push!(xs1273, item1275)
                 cond1274 = match_lookahead_literal(parser, "(", 0)
             end
             export_csv_columns1276 = xs1273
             consume_literal!(parser, ")")
-            _t2026 = Proto.ExportCSVColumns(columns=export_csv_columns1276)
-            _t2027 = Proto.ExportCSVSource(csv_source=OneOf(:gnf_columns, _t2026))
-            _t2024 = _t2027
+            _t2025 = Proto.ExportCSVColumns(columns=export_csv_columns1276)
+            _t2026 = Proto.ExportCSVSource(csv_source=OneOf(:gnf_columns, _t2025))
+            _t2023 = _t2026
         else
             throw(ParseError("Unexpected token in export_csv_source" * ": " * string(lookahead(parser, 0))))
         end
-        _t2021 = _t2024
+        _t2020 = _t2023
     end
-    result1279 = _t2021
+    result1279 = _t2020
     record_span!(parser, span_start1278, "ExportCSVSource")
     return result1279
 end
@@ -4221,11 +4210,11 @@ function parse_export_csv_column(parser::ParserState)::Proto.ExportCSVColumn
     consume_literal!(parser, "(")
     consume_literal!(parser, "column")
     string1280 = consume_terminal!(parser, "STRING")
-    _t2028 = parse_relation_id(parser)
-    relation_id1281 = _t2028
+    _t2027 = parse_relation_id(parser)
+    relation_id1281 = _t2027
     consume_literal!(parser, ")")
-    _t2029 = Proto.ExportCSVColumn(column_name=string1280, column_data=relation_id1281)
-    result1283 = _t2029
+    _t2028 = Proto.ExportCSVColumn(column_name=string1280, column_data=relation_id1281)
+    result1283 = _t2028
     record_span!(parser, span_start1282, "ExportCSVColumn")
     return result1283
 end
@@ -4236,8 +4225,8 @@ function parse_export_csv_columns_list(parser::ParserState)::Vector{Proto.Export
     xs1284 = Proto.ExportCSVColumn[]
     cond1285 = match_lookahead_literal(parser, "(", 0)
     while cond1285
-        _t2030 = parse_export_csv_column(parser)
-        item1286 = _t2030
+        _t2029 = parse_export_csv_column(parser)
+        item1286 = _t2029
         push!(xs1284, item1286)
         cond1285 = match_lookahead_literal(parser, "(", 0)
     end
@@ -4250,32 +4239,32 @@ function parse_export_iceberg_config(parser::ParserState)::Proto.ExportIcebergCo
     span_start1295 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "export_iceberg_config")
-    _t2031 = parse_iceberg_locator(parser)
-    iceberg_locator1288 = _t2031
-    _t2032 = parse_iceberg_config(parser)
-    iceberg_config1289 = _t2032
+    _t2030 = parse_iceberg_locator(parser)
+    iceberg_locator1288 = _t2030
+    _t2031 = parse_iceberg_config(parser)
+    iceberg_config1289 = _t2031
     consume_literal!(parser, "(")
     consume_literal!(parser, "columns")
     xs1290 = Proto.IcebergExportColumn[]
     cond1291 = match_lookahead_literal(parser, "(", 0)
     while cond1291
-        _t2033 = parse_iceberg_export_column(parser)
-        item1292 = _t2033
+        _t2032 = parse_iceberg_export_column(parser)
+        item1292 = _t2032
         push!(xs1290, item1292)
         cond1291 = match_lookahead_literal(parser, "(", 0)
     end
     iceberg_export_columns1293 = xs1290
     consume_literal!(parser, ")")
     if match_lookahead_literal(parser, "{", 0)
-        _t2035 = parse_config_dict(parser)
-        _t2034 = _t2035
+        _t2034 = parse_config_dict(parser)
+        _t2033 = _t2034
     else
-        _t2034 = nothing
+        _t2033 = nothing
     end
-    config_dict1294 = _t2034
+    config_dict1294 = _t2033
     consume_literal!(parser, ")")
-    _t2036 = construct_export_iceberg_config_full(parser, iceberg_locator1288, iceberg_config1289, iceberg_export_columns1293, config_dict1294)
-    result1296 = _t2036
+    _t2035 = construct_export_iceberg_config_full(parser, iceberg_locator1288, iceberg_config1289, iceberg_export_columns1293, config_dict1294)
+    result1296 = _t2035
     record_span!(parser, span_start1295, "ExportIcebergConfig")
     return result1296
 end
@@ -4285,13 +4274,13 @@ function parse_iceberg_export_column(parser::ParserState)::Proto.IcebergExportCo
     consume_literal!(parser, "(")
     consume_literal!(parser, "iceberg_column")
     string1297 = consume_terminal!(parser, "STRING")
-    _t2037 = parse_type(parser)
-    type1298 = _t2037
-    _t2038 = parse_boolean_value(parser)
-    boolean_value1299 = _t2038
+    _t2036 = parse_type(parser)
+    type1298 = _t2036
+    _t2037 = parse_boolean_value(parser)
+    boolean_value1299 = _t2037
     consume_literal!(parser, ")")
-    _t2039 = Proto.IcebergExportColumn(name=string1297, var"#type"=type1298, nullable=boolean_value1299)
-    result1301 = _t2039
+    _t2038 = Proto.IcebergExportColumn(name=string1297, var"#type"=type1298, nullable=boolean_value1299)
+    result1301 = _t2038
     record_span!(parser, span_start1300, "IcebergExportColumn")
     return result1301
 end

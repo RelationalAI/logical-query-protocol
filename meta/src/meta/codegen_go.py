@@ -562,7 +562,15 @@ class GoCodeGenerator(CodeGenerator):
         # option_var is the original Option variable name for checking .Valid
         oneof_groups: dict[str, list[tuple[str, str, str]]] = {}
 
-        from .target import OptionType, Var
+        from .target import Builtin, OptionType, Var
+
+        def _go_optional_string_unwrap_needs_ptr(field_expr: TargetExpr) -> bool:
+            """unwrap_option_or yields a plain string; optional proto fields need *string."""
+            return (
+                isinstance(field_expr, Call)
+                and isinstance(field_expr.func, Builtin)
+                and field_expr.func.name == "unwrap_option_or"
+            )
 
         def unwrap_if_option(field_expr, field_value: str) -> tuple[str, str]:
             """Unwrap Option type values for struct field assignment.
@@ -654,6 +662,22 @@ class GoCodeGenerator(CodeGenerator):
                     assert field_value is not None
                     pascal_field = to_pascal_case(field_name)
                     _, field_value = unwrap_if_option(field_expr, field_value)
+
+                    proto_msg = self.proto_messages.get((expr.module, expr.name))
+                    if proto_msg is not None:
+                        pf = next(
+                            (f for f in proto_msg.fields if f.name == field_name),
+                            None,
+                        )
+                        if (
+                            pf is not None
+                            and pf.is_optional
+                            and not pf.is_repeated
+                            and pf.type == "string"
+                            and _go_optional_string_unwrap_needs_ptr(field_expr)
+                        ):
+                            field_value = f"ptr({field_value})"
+
                     regular_assignments.append(f"{pascal_field}: {field_value}")
 
         # Generate struct literal with regular fields only
@@ -920,8 +944,9 @@ class GoCodeGenerator(CodeGenerator):
         ):
             var_type = self.gen_type(expr.var.type)
             if var_type in ("int64", "int32", "uint32", "uint64"):
-                lines.append(f"{indent}{var_name} := {var_type}({expr.expr.value})")
-                self.mark_declared(var_name)
+                lines.append(
+                    f"{indent}{self.gen_assignment(var_name, f'{var_type}({expr.expr.value})')}"
+                )
                 return self.gen_none()
 
         # Regular assignment

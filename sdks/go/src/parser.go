@@ -655,152 +655,152 @@ func toPascalCase(s string) string {
 // --- Helper functions ---
 
 func (p *Parser) _extract_value_int32(value *pb.Value, default_ int64) int32 {
-	var _t2051 interface{}
+	var _t2050 interface{}
 	if (value != nil && hasProtoField(value, "int32_value")) {
 		return value.GetInt32Value()
 	}
-	_ = _t2051
+	_ = _t2050
 	return int32(default_)
 }
 
 func (p *Parser) _extract_value_int64(value *pb.Value, default_ int64) int64 {
-	var _t2052 interface{}
+	var _t2051 interface{}
 	if (value != nil && hasProtoField(value, "int_value")) {
 		return value.GetIntValue()
+	}
+	_ = _t2051
+	return default_
+}
+
+func (p *Parser) _extract_value_string(value *pb.Value, default_ string) string {
+	var _t2052 interface{}
+	if (value != nil && hasProtoField(value, "string_value")) {
+		return value.GetStringValue()
 	}
 	_ = _t2052
 	return default_
 }
 
-func (p *Parser) _extract_value_string(value *pb.Value, default_ string) string {
+func (p *Parser) _extract_value_boolean(value *pb.Value, default_ bool) bool {
 	var _t2053 interface{}
-	if (value != nil && hasProtoField(value, "string_value")) {
-		return value.GetStringValue()
+	if (value != nil && hasProtoField(value, "boolean_value")) {
+		return value.GetBooleanValue()
 	}
 	_ = _t2053
 	return default_
 }
 
-func (p *Parser) _extract_value_boolean(value *pb.Value, default_ bool) bool {
+func (p *Parser) _extract_value_string_list(value *pb.Value, default_ []string) []string {
 	var _t2054 interface{}
-	if (value != nil && hasProtoField(value, "boolean_value")) {
-		return value.GetBooleanValue()
+	if (value != nil && hasProtoField(value, "string_value")) {
+		return []string{value.GetStringValue()}
 	}
 	_ = _t2054
 	return default_
 }
 
-func (p *Parser) _extract_value_string_list(value *pb.Value, default_ []string) []string {
-	var _t2055 interface{}
-	if (value != nil && hasProtoField(value, "string_value")) {
-		return []string{value.GetStringValue()}
-	}
-	_ = _t2055
-	return default_
-}
-
 func (p *Parser) _try_extract_value_int64(value *pb.Value) *int64 {
-	var _t2056 interface{}
+	var _t2055 interface{}
 	if (value != nil && hasProtoField(value, "int_value")) {
 		return ptr(value.GetIntValue())
+	}
+	_ = _t2055
+	return nil
+}
+
+func (p *Parser) _try_extract_value_float64(value *pb.Value) *float64 {
+	var _t2056 interface{}
+	if (value != nil && hasProtoField(value, "float_value")) {
+		return ptr(value.GetFloatValue())
 	}
 	_ = _t2056
 	return nil
 }
 
-func (p *Parser) _try_extract_value_float64(value *pb.Value) *float64 {
+func (p *Parser) _try_extract_value_bytes(value *pb.Value) []byte {
 	var _t2057 interface{}
-	if (value != nil && hasProtoField(value, "float_value")) {
-		return ptr(value.GetFloatValue())
+	if (value != nil && hasProtoField(value, "string_value")) {
+		return []byte(value.GetStringValue())
 	}
 	_ = _t2057
 	return nil
 }
 
-func (p *Parser) _try_extract_value_bytes(value *pb.Value) []byte {
+func (p *Parser) _try_extract_value_uint128(value *pb.Value) *pb.UInt128Value {
 	var _t2058 interface{}
-	if (value != nil && hasProtoField(value, "string_value")) {
-		return []byte(value.GetStringValue())
+	if (value != nil && hasProtoField(value, "uint128_value")) {
+		return value.GetUint128Value()
 	}
 	_ = _t2058
 	return nil
 }
 
-func (p *Parser) _try_extract_value_uint128(value *pb.Value) *pb.UInt128Value {
-	var _t2059 interface{}
-	if (value != nil && hasProtoField(value, "uint128_value")) {
-		return value.GetUint128Value()
-	}
-	_ = _t2059
-	return nil
-}
-
 func (p *Parser) construct_csv_config(config_dict [][]interface{}) *pb.CSVConfig {
 	config := dictFromList(config_dict)
-	_t2060 := p._extract_value_int32(dictGetValue(config, "csv_header_row"), 1)
-	header_row := _t2060
-	_t2061 := p._extract_value_int64(dictGetValue(config, "csv_skip"), 0)
-	skip := _t2061
-	_t2062 := p._extract_value_string(dictGetValue(config, "csv_new_line"), "")
-	new_line := _t2062
-	_t2063 := p._extract_value_string(dictGetValue(config, "csv_delimiter"), ",")
-	delimiter := _t2063
-	_t2064 := p._extract_value_string(dictGetValue(config, "csv_quotechar"), "\"")
-	quotechar := _t2064
-	_t2065 := p._extract_value_string(dictGetValue(config, "csv_escapechar"), "\"")
-	escapechar := _t2065
-	_t2066 := p._extract_value_string(dictGetValue(config, "csv_comment"), "")
-	comment := _t2066
-	_t2067 := p._extract_value_string_list(dictGetValue(config, "csv_missing_strings"), []string{})
-	missing_strings := _t2067
-	_t2068 := p._extract_value_string(dictGetValue(config, "csv_decimal_separator"), ".")
-	decimal_separator := _t2068
-	_t2069 := p._extract_value_string(dictGetValue(config, "csv_encoding"), "utf-8")
-	encoding := _t2069
-	_t2070 := p._extract_value_string(dictGetValue(config, "csv_compression"), "auto")
-	compression := _t2070
-	_t2071 := p._extract_value_int64(dictGetValue(config, "csv_partition_size_mb"), 0)
-	partition_size_mb := _t2071
-	_t2072 := &pb.CSVConfig{HeaderRow: header_row, Skip: skip, NewLine: new_line, Delimiter: delimiter, Quotechar: quotechar, Escapechar: escapechar, Comment: comment, MissingStrings: missing_strings, DecimalSeparator: decimal_separator, Encoding: encoding, Compression: compression, PartitionSizeMb: partition_size_mb}
-	return _t2072
+	_t2059 := p._extract_value_int32(dictGetValue(config, "csv_header_row"), 1)
+	header_row := _t2059
+	_t2060 := p._extract_value_int64(dictGetValue(config, "csv_skip"), 0)
+	skip := _t2060
+	_t2061 := p._extract_value_string(dictGetValue(config, "csv_new_line"), "")
+	new_line := _t2061
+	_t2062 := p._extract_value_string(dictGetValue(config, "csv_delimiter"), ",")
+	delimiter := _t2062
+	_t2063 := p._extract_value_string(dictGetValue(config, "csv_quotechar"), "\"")
+	quotechar := _t2063
+	_t2064 := p._extract_value_string(dictGetValue(config, "csv_escapechar"), "\"")
+	escapechar := _t2064
+	_t2065 := p._extract_value_string(dictGetValue(config, "csv_comment"), "")
+	comment := _t2065
+	_t2066 := p._extract_value_string_list(dictGetValue(config, "csv_missing_strings"), []string{})
+	missing_strings := _t2066
+	_t2067 := p._extract_value_string(dictGetValue(config, "csv_decimal_separator"), ".")
+	decimal_separator := _t2067
+	_t2068 := p._extract_value_string(dictGetValue(config, "csv_encoding"), "utf-8")
+	encoding := _t2068
+	_t2069 := p._extract_value_string(dictGetValue(config, "csv_compression"), "auto")
+	compression := _t2069
+	_t2070 := p._extract_value_int64(dictGetValue(config, "csv_partition_size_mb"), 0)
+	partition_size_mb := _t2070
+	_t2071 := &pb.CSVConfig{HeaderRow: header_row, Skip: skip, NewLine: new_line, Delimiter: delimiter, Quotechar: quotechar, Escapechar: escapechar, Comment: comment, MissingStrings: missing_strings, DecimalSeparator: decimal_separator, Encoding: encoding, Compression: compression, PartitionSizeMb: partition_size_mb}
+	return _t2071
 }
 
 func (p *Parser) construct_betree_info(key_types []*pb.Type, value_types []*pb.Type, config_dict [][]interface{}) *pb.BeTreeInfo {
 	config := dictFromList(config_dict)
-	_t2073 := p._try_extract_value_float64(dictGetValue(config, "betree_config_epsilon"))
-	epsilon := _t2073
-	_t2074 := p._try_extract_value_int64(dictGetValue(config, "betree_config_max_pivots"))
-	max_pivots := _t2074
-	_t2075 := p._try_extract_value_int64(dictGetValue(config, "betree_config_max_deltas"))
-	max_deltas := _t2075
-	_t2076 := p._try_extract_value_int64(dictGetValue(config, "betree_config_max_leaf"))
-	max_leaf := _t2076
-	_t2077 := &pb.BeTreeConfig{Epsilon: deref(epsilon, 0.0), MaxPivots: deref(max_pivots, 0), MaxDeltas: deref(max_deltas, 0), MaxLeaf: deref(max_leaf, 0)}
-	storage_config := _t2077
-	_t2078 := p._try_extract_value_uint128(dictGetValue(config, "betree_locator_root_pageid"))
-	root_pageid := _t2078
-	_t2079 := p._try_extract_value_bytes(dictGetValue(config, "betree_locator_inline_data"))
-	inline_data := _t2079
-	_t2080 := p._try_extract_value_int64(dictGetValue(config, "betree_locator_element_count"))
-	element_count := _t2080
-	_t2081 := p._try_extract_value_int64(dictGetValue(config, "betree_locator_tree_height"))
-	tree_height := _t2081
-	_t2082 := &pb.BeTreeLocator{ElementCount: deref(element_count, 0), TreeHeight: deref(tree_height, 0)}
+	_t2072 := p._try_extract_value_float64(dictGetValue(config, "betree_config_epsilon"))
+	epsilon := _t2072
+	_t2073 := p._try_extract_value_int64(dictGetValue(config, "betree_config_max_pivots"))
+	max_pivots := _t2073
+	_t2074 := p._try_extract_value_int64(dictGetValue(config, "betree_config_max_deltas"))
+	max_deltas := _t2074
+	_t2075 := p._try_extract_value_int64(dictGetValue(config, "betree_config_max_leaf"))
+	max_leaf := _t2075
+	_t2076 := &pb.BeTreeConfig{Epsilon: deref(epsilon, 0.0), MaxPivots: deref(max_pivots, 0), MaxDeltas: deref(max_deltas, 0), MaxLeaf: deref(max_leaf, 0)}
+	storage_config := _t2076
+	_t2077 := p._try_extract_value_uint128(dictGetValue(config, "betree_locator_root_pageid"))
+	root_pageid := _t2077
+	_t2078 := p._try_extract_value_bytes(dictGetValue(config, "betree_locator_inline_data"))
+	inline_data := _t2078
+	_t2079 := p._try_extract_value_int64(dictGetValue(config, "betree_locator_element_count"))
+	element_count := _t2079
+	_t2080 := p._try_extract_value_int64(dictGetValue(config, "betree_locator_tree_height"))
+	tree_height := _t2080
+	_t2081 := &pb.BeTreeLocator{ElementCount: deref(element_count, 0), TreeHeight: deref(tree_height, 0)}
 	if root_pageid != nil {
-		_t2082.Location = &pb.BeTreeLocator_RootPageid{RootPageid: root_pageid}
+		_t2081.Location = &pb.BeTreeLocator_RootPageid{RootPageid: root_pageid}
 	} else {
-		_t2082.Location = &pb.BeTreeLocator_InlineData{InlineData: inline_data}
+		_t2081.Location = &pb.BeTreeLocator_InlineData{InlineData: inline_data}
 	}
-	relation_locator := _t2082
-	_t2083 := &pb.BeTreeInfo{KeyTypes: key_types, ValueTypes: value_types, StorageConfig: storage_config, RelationLocator: relation_locator}
-	return _t2083
+	relation_locator := _t2081
+	_t2082 := &pb.BeTreeInfo{KeyTypes: key_types, ValueTypes: value_types, StorageConfig: storage_config, RelationLocator: relation_locator}
+	return _t2082
 }
 
 func (p *Parser) default_configure() *pb.Configure {
-	_t2084 := &pb.IVMConfig{Level: pb.MaintenanceLevel_MAINTENANCE_LEVEL_OFF}
-	ivm_config := _t2084
-	_t2085 := &pb.Configure{SemanticsVersion: 0, IvmConfig: ivm_config}
-	return _t2085
+	_t2083 := &pb.IVMConfig{Level: pb.MaintenanceLevel_MAINTENANCE_LEVEL_OFF}
+	ivm_config := _t2083
+	_t2084 := &pb.Configure{SemanticsVersion: 0, IvmConfig: ivm_config}
+	return _t2084
 }
 
 func (p *Parser) construct_configure(config_dict [][]interface{}) *pb.Configure {
@@ -822,55 +822,45 @@ func (p *Parser) construct_configure(config_dict [][]interface{}) *pb.Configure 
 			}
 		}
 	}
-	_t2086 := &pb.IVMConfig{Level: maintenance_level}
-	ivm_config := _t2086
-	_t2087 := p._extract_value_int64(dictGetValue(config, "semantics_version"), 0)
-	semantics_version := _t2087
-	_t2088 := &pb.Configure{SemanticsVersion: semantics_version, IvmConfig: ivm_config}
-	return _t2088
+	_t2085 := &pb.IVMConfig{Level: maintenance_level}
+	ivm_config := _t2085
+	_t2086 := p._extract_value_int64(dictGetValue(config, "semantics_version"), 0)
+	semantics_version := _t2086
+	_t2087 := &pb.Configure{SemanticsVersion: semantics_version, IvmConfig: ivm_config}
+	return _t2087
 }
 
 func (p *Parser) construct_export_csv_config(path string, columns []*pb.ExportCSVColumn, config_dict [][]interface{}) *pb.ExportCSVConfig {
 	config := dictFromList(config_dict)
-	_t2089 := p._extract_value_int64(dictGetValue(config, "partition_size"), 0)
-	partition_size := _t2089
-	_t2090 := p._extract_value_string(dictGetValue(config, "compression"), "")
-	compression := _t2090
-	_t2091 := p._extract_value_boolean(dictGetValue(config, "syntax_header_row"), true)
-	syntax_header_row := _t2091
-	_t2092 := p._extract_value_string(dictGetValue(config, "syntax_missing_string"), "")
-	syntax_missing_string := _t2092
-	_t2093 := p._extract_value_string(dictGetValue(config, "syntax_delim"), ",")
-	syntax_delim := _t2093
-	_t2094 := p._extract_value_string(dictGetValue(config, "syntax_quotechar"), "\"")
-	syntax_quotechar := _t2094
-	_t2095 := p._extract_value_string(dictGetValue(config, "syntax_escapechar"), "\\")
-	syntax_escapechar := _t2095
-	_t2096 := &pb.ExportCSVConfig{Path: path, DataColumns: columns, PartitionSize: ptr(partition_size), Compression: ptr(compression), SyntaxHeaderRow: ptr(syntax_header_row), SyntaxMissingString: ptr(syntax_missing_string), SyntaxDelim: ptr(syntax_delim), SyntaxQuotechar: ptr(syntax_quotechar), SyntaxEscapechar: ptr(syntax_escapechar)}
-	return _t2096
+	_t2088 := p._extract_value_int64(dictGetValue(config, "partition_size"), 0)
+	partition_size := _t2088
+	_t2089 := p._extract_value_string(dictGetValue(config, "compression"), "")
+	compression := _t2089
+	_t2090 := p._extract_value_boolean(dictGetValue(config, "syntax_header_row"), true)
+	syntax_header_row := _t2090
+	_t2091 := p._extract_value_string(dictGetValue(config, "syntax_missing_string"), "")
+	syntax_missing_string := _t2091
+	_t2092 := p._extract_value_string(dictGetValue(config, "syntax_delim"), ",")
+	syntax_delim := _t2092
+	_t2093 := p._extract_value_string(dictGetValue(config, "syntax_quotechar"), "\"")
+	syntax_quotechar := _t2093
+	_t2094 := p._extract_value_string(dictGetValue(config, "syntax_escapechar"), "\\")
+	syntax_escapechar := _t2094
+	_t2095 := &pb.ExportCSVConfig{Path: path, DataColumns: columns, PartitionSize: ptr(partition_size), Compression: ptr(compression), SyntaxHeaderRow: ptr(syntax_header_row), SyntaxMissingString: ptr(syntax_missing_string), SyntaxDelim: ptr(syntax_delim), SyntaxQuotechar: ptr(syntax_quotechar), SyntaxEscapechar: ptr(syntax_escapechar)}
+	return _t2095
 }
 
 func (p *Parser) construct_export_csv_config_with_source(path string, csv_source *pb.ExportCSVSource, csv_config *pb.CSVConfig) *pb.ExportCSVConfig {
-	_t2097 := &pb.ExportCSVConfig{Path: path, CsvSource: csv_source, CsvConfig: csv_config}
-	return _t2097
+	_t2096 := &pb.ExportCSVConfig{Path: path, CsvSource: csv_source, CsvConfig: csv_config}
+	return _t2096
 }
 
 func (p *Parser) construct_iceberg_config(catalog_uri string, scope_opt *string, property_pairs [][]interface{}, auth_property_pairs [][]interface{}) *pb.IcebergConfig {
 	props := stringMapFromPairs(property_pairs)
 	auth_props := stringMapFromPairs(auth_property_pairs)
-	_t2098 := p.iceberg_optional_string_field(scope_opt)
-	scope_pb := _t2098
-	_t2099 := &pb.IcebergConfig{CatalogUri: catalog_uri, Scope: scope_pb, Properties: props, AuthProperties: auth_props}
-	return _t2099
-}
-
-func (p *Parser) iceberg_optional_string_field(s *string) *string {
-	var _t2100 interface{}
-	if s == nil {
-		return nil
-	}
-	_ = _t2100
-	return s
+	scope_pb := deref(scope_opt, "")
+	_t2097 := &pb.IcebergConfig{CatalogUri: catalog_uri, Scope: scope_pb, Properties: props, AuthProperties: auth_props}
+	return _t2097
 }
 
 func (p *Parser) construct_export_iceberg_config_full(locator *pb.IcebergLocator, config *pb.IcebergConfig, columns []*pb.IcebergExportColumn, config_dict [][]interface{}) *pb.ExportIcebergConfig {
@@ -879,15 +869,15 @@ func (p *Parser) construct_export_iceberg_config_full(locator *pb.IcebergLocator
 	compression := ""
 	if config_dict != nil {
 		cfg := dictFromList(config_dict)
-		_t2101 := p._extract_value_string(dictGetValue(cfg, "prefix"), "")
-		prefix = _t2101
-		_t2102 := p._extract_value_int64(dictGetValue(cfg, "target_file_size_bytes"), 0)
-		target_file_size_bytes = _t2102
-		_t2103 := p._extract_value_string(dictGetValue(cfg, "compression"), "")
-		compression = _t2103
+		_t2098 := p._extract_value_string(dictGetValue(cfg, "prefix"), "")
+		prefix = _t2098
+		_t2099 := p._extract_value_int64(dictGetValue(cfg, "target_file_size_bytes"), 0)
+		target_file_size_bytes = _t2099
+		_t2100 := p._extract_value_string(dictGetValue(cfg, "compression"), "")
+		compression = _t2100
 	}
-	_t2104 := &pb.ExportIcebergConfig{Locator: locator, Config: config, Columns: columns, Prefix: ptr(prefix), TargetFileSizeBytes: ptr(target_file_size_bytes), Compression: compression}
-	return _t2104
+	_t2101 := &pb.ExportIcebergConfig{Locator: locator, Config: config, Columns: columns, Prefix: ptr(prefix), TargetFileSizeBytes: ptr(target_file_size_bytes), Compression: compression}
+	return _t2101
 }
 
 // --- Parse functions ---
@@ -4390,9 +4380,8 @@ func (p *Parser) parse_iceberg_data() *pb.IcebergData {
 	}
 	iceberg_to_snapshot1184 := _t1953
 	p.consumeLiteral(")")
-	_t1955 := p.iceberg_optional_string_field(iceberg_to_snapshot1184)
-	_t1956 := &pb.IcebergData{Locator: iceberg_locator1181, Config: iceberg_config1182, Columns: gnf_columns1183, ToSnapshot: _t1955}
-	result1186 := _t1956
+	_t1955 := &pb.IcebergData{Locator: iceberg_locator1181, Config: iceberg_config1182, Columns: gnf_columns1183, ToSnapshot: ptr(deref(iceberg_to_snapshot1184, ""))}
+	result1186 := _t1955
 	p.recordSpan(int(span_start1185), "IcebergData")
 	return result1186
 }
@@ -4421,8 +4410,8 @@ func (p *Parser) parse_iceberg_locator() *pb.IcebergLocator {
 	string_121192 := p.consumeTerminal("STRING").Value.str
 	p.consumeLiteral(")")
 	p.consumeLiteral(")")
-	_t1957 := &pb.IcebergLocator{TableName: string1187, Namespace: strings1191, Warehouse: string_121192}
-	result1194 := _t1957
+	_t1956 := &pb.IcebergLocator{TableName: string1187, Namespace: strings1191, Warehouse: string_121192}
+	result1194 := _t1956
 	p.recordSpan(int(span_start1193), "IcebergLocator")
 	return result1194
 }
@@ -4435,19 +4424,19 @@ func (p *Parser) parse_iceberg_config() *pb.IcebergConfig {
 	p.consumeLiteral("catalog_uri")
 	string1195 := p.consumeTerminal("STRING").Value.str
 	p.consumeLiteral(")")
-	var _t1958 *string
+	var _t1957 *string
 	if (p.matchLookaheadLiteral("(", 0) && p.matchLookaheadLiteral("scope", 1)) {
-		_t1959 := p.parse_iceberg_config_scope()
-		_t1958 = ptr(_t1959)
+		_t1958 := p.parse_iceberg_config_scope()
+		_t1957 = ptr(_t1958)
 	}
-	iceberg_config_scope1196 := _t1958
+	iceberg_config_scope1196 := _t1957
 	p.consumeLiteral("(")
 	p.consumeLiteral("properties")
 	xs1197 := [][]interface{}{}
 	cond1198 := p.matchLookaheadLiteral("(", 0)
 	for cond1198 {
-		_t1960 := p.parse_iceberg_property_entry()
-		item1199 := _t1960
+		_t1959 := p.parse_iceberg_property_entry()
+		item1199 := _t1959
 		xs1197 = append(xs1197, item1199)
 		cond1198 = p.matchLookaheadLiteral("(", 0)
 	}
@@ -4458,16 +4447,16 @@ func (p *Parser) parse_iceberg_config() *pb.IcebergConfig {
 	xs1201 := [][]interface{}{}
 	cond1202 := p.matchLookaheadLiteral("(", 0)
 	for cond1202 {
-		_t1961 := p.parse_iceberg_property_entry()
-		item1203 := _t1961
+		_t1960 := p.parse_iceberg_property_entry()
+		item1203 := _t1960
 		xs1201 = append(xs1201, item1203)
 		cond1202 = p.matchLookaheadLiteral("(", 0)
 	}
 	iceberg_property_entrys_131204 := xs1201
 	p.consumeLiteral(")")
 	p.consumeLiteral(")")
-	_t1962 := p.construct_iceberg_config(string1195, iceberg_config_scope1196, iceberg_property_entrys1200, iceberg_property_entrys_131204)
-	result1206 := _t1962
+	_t1961 := p.construct_iceberg_config(string1195, iceberg_config_scope1196, iceberg_property_entrys1200, iceberg_property_entrys_131204)
+	result1206 := _t1961
 	p.recordSpan(int(span_start1205), "IcebergConfig")
 	return result1206
 }
@@ -4501,11 +4490,11 @@ func (p *Parser) parse_undefine() *pb.Undefine {
 	span_start1212 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("undefine")
-	_t1963 := p.parse_fragment_id()
-	fragment_id1211 := _t1963
+	_t1962 := p.parse_fragment_id()
+	fragment_id1211 := _t1962
 	p.consumeLiteral(")")
-	_t1964 := &pb.Undefine{FragmentId: fragment_id1211}
-	result1213 := _t1964
+	_t1963 := &pb.Undefine{FragmentId: fragment_id1211}
+	result1213 := _t1963
 	p.recordSpan(int(span_start1212), "Undefine")
 	return result1213
 }
@@ -4517,15 +4506,15 @@ func (p *Parser) parse_context() *pb.Context {
 	xs1214 := []*pb.RelationId{}
 	cond1215 := (p.matchLookaheadLiteral(":", 0) || p.matchLookaheadTerminal("UINT128", 0))
 	for cond1215 {
-		_t1965 := p.parse_relation_id()
-		item1216 := _t1965
+		_t1964 := p.parse_relation_id()
+		item1216 := _t1964
 		xs1214 = append(xs1214, item1216)
 		cond1215 = (p.matchLookaheadLiteral(":", 0) || p.matchLookaheadTerminal("UINT128", 0))
 	}
 	relation_ids1217 := xs1214
 	p.consumeLiteral(")")
-	_t1966 := &pb.Context{Relations: relation_ids1217}
-	result1219 := _t1966
+	_t1965 := &pb.Context{Relations: relation_ids1217}
+	result1219 := _t1965
 	p.recordSpan(int(span_start1218), "Context")
 	return result1219
 }
@@ -4537,27 +4526,27 @@ func (p *Parser) parse_snapshot() *pb.Snapshot {
 	xs1220 := []*pb.SnapshotMapping{}
 	cond1221 := p.matchLookaheadLiteral("[", 0)
 	for cond1221 {
-		_t1967 := p.parse_snapshot_mapping()
-		item1222 := _t1967
+		_t1966 := p.parse_snapshot_mapping()
+		item1222 := _t1966
 		xs1220 = append(xs1220, item1222)
 		cond1221 = p.matchLookaheadLiteral("[", 0)
 	}
 	snapshot_mappings1223 := xs1220
 	p.consumeLiteral(")")
-	_t1968 := &pb.Snapshot{Mappings: snapshot_mappings1223}
-	result1225 := _t1968
+	_t1967 := &pb.Snapshot{Mappings: snapshot_mappings1223}
+	result1225 := _t1967
 	p.recordSpan(int(span_start1224), "Snapshot")
 	return result1225
 }
 
 func (p *Parser) parse_snapshot_mapping() *pb.SnapshotMapping {
 	span_start1228 := int64(p.spanStart())
-	_t1969 := p.parse_edb_path()
-	edb_path1226 := _t1969
-	_t1970 := p.parse_relation_id()
-	relation_id1227 := _t1970
-	_t1971 := &pb.SnapshotMapping{DestinationPath: edb_path1226, SourceRelation: relation_id1227}
-	result1229 := _t1971
+	_t1968 := p.parse_edb_path()
+	edb_path1226 := _t1968
+	_t1969 := p.parse_relation_id()
+	relation_id1227 := _t1969
+	_t1970 := &pb.SnapshotMapping{DestinationPath: edb_path1226, SourceRelation: relation_id1227}
+	result1229 := _t1970
 	p.recordSpan(int(span_start1228), "SnapshotMapping")
 	return result1229
 }
@@ -4568,8 +4557,8 @@ func (p *Parser) parse_epoch_reads() []*pb.Read {
 	xs1230 := []*pb.Read{}
 	cond1231 := p.matchLookaheadLiteral("(", 0)
 	for cond1231 {
-		_t1972 := p.parse_read()
-		item1232 := _t1972
+		_t1971 := p.parse_read()
+		item1232 := _t1971
 		xs1230 = append(xs1230, item1232)
 		cond1231 = p.matchLookaheadLiteral("(", 0)
 	}
@@ -4580,100 +4569,100 @@ func (p *Parser) parse_epoch_reads() []*pb.Read {
 
 func (p *Parser) parse_read() *pb.Read {
 	span_start1240 := int64(p.spanStart())
-	var _t1973 int64
+	var _t1972 int64
 	if p.matchLookaheadLiteral("(", 0) {
-		var _t1974 int64
+		var _t1973 int64
 		if p.matchLookaheadLiteral("what_if", 1) {
-			_t1974 = 2
+			_t1973 = 2
 		} else {
-			var _t1975 int64
+			var _t1974 int64
 			if p.matchLookaheadLiteral("output", 1) {
-				_t1975 = 1
+				_t1974 = 1
 			} else {
-				var _t1976 int64
+				var _t1975 int64
 				if p.matchLookaheadLiteral("export_iceberg", 1) {
-					_t1976 = 4
+					_t1975 = 4
 				} else {
-					var _t1977 int64
+					var _t1976 int64
 					if p.matchLookaheadLiteral("export", 1) {
-						_t1977 = 4
+						_t1976 = 4
 					} else {
-						var _t1978 int64
+						var _t1977 int64
 						if p.matchLookaheadLiteral("demand", 1) {
-							_t1978 = 0
+							_t1977 = 0
 						} else {
-							var _t1979 int64
+							var _t1978 int64
 							if p.matchLookaheadLiteral("abort", 1) {
-								_t1979 = 3
+								_t1978 = 3
 							} else {
-								_t1979 = -1
+								_t1978 = -1
 							}
-							_t1978 = _t1979
+							_t1977 = _t1978
 						}
-						_t1977 = _t1978
+						_t1976 = _t1977
 					}
-					_t1976 = _t1977
+					_t1975 = _t1976
 				}
-				_t1975 = _t1976
+				_t1974 = _t1975
 			}
-			_t1974 = _t1975
+			_t1973 = _t1974
 		}
-		_t1973 = _t1974
+		_t1972 = _t1973
 	} else {
-		_t1973 = -1
+		_t1972 = -1
 	}
-	prediction1234 := _t1973
-	var _t1980 *pb.Read
+	prediction1234 := _t1972
+	var _t1979 *pb.Read
 	if prediction1234 == 4 {
-		_t1981 := p.parse_export()
-		export1239 := _t1981
-		_t1982 := &pb.Read{}
-		_t1982.ReadType = &pb.Read_Export{Export: export1239}
-		_t1980 = _t1982
+		_t1980 := p.parse_export()
+		export1239 := _t1980
+		_t1981 := &pb.Read{}
+		_t1981.ReadType = &pb.Read_Export{Export: export1239}
+		_t1979 = _t1981
 	} else {
-		var _t1983 *pb.Read
+		var _t1982 *pb.Read
 		if prediction1234 == 3 {
-			_t1984 := p.parse_abort()
-			abort1238 := _t1984
-			_t1985 := &pb.Read{}
-			_t1985.ReadType = &pb.Read_Abort{Abort: abort1238}
-			_t1983 = _t1985
+			_t1983 := p.parse_abort()
+			abort1238 := _t1983
+			_t1984 := &pb.Read{}
+			_t1984.ReadType = &pb.Read_Abort{Abort: abort1238}
+			_t1982 = _t1984
 		} else {
-			var _t1986 *pb.Read
+			var _t1985 *pb.Read
 			if prediction1234 == 2 {
-				_t1987 := p.parse_what_if()
-				what_if1237 := _t1987
-				_t1988 := &pb.Read{}
-				_t1988.ReadType = &pb.Read_WhatIf{WhatIf: what_if1237}
-				_t1986 = _t1988
+				_t1986 := p.parse_what_if()
+				what_if1237 := _t1986
+				_t1987 := &pb.Read{}
+				_t1987.ReadType = &pb.Read_WhatIf{WhatIf: what_if1237}
+				_t1985 = _t1987
 			} else {
-				var _t1989 *pb.Read
+				var _t1988 *pb.Read
 				if prediction1234 == 1 {
-					_t1990 := p.parse_output()
-					output1236 := _t1990
-					_t1991 := &pb.Read{}
-					_t1991.ReadType = &pb.Read_Output{Output: output1236}
-					_t1989 = _t1991
+					_t1989 := p.parse_output()
+					output1236 := _t1989
+					_t1990 := &pb.Read{}
+					_t1990.ReadType = &pb.Read_Output{Output: output1236}
+					_t1988 = _t1990
 				} else {
-					var _t1992 *pb.Read
+					var _t1991 *pb.Read
 					if prediction1234 == 0 {
-						_t1993 := p.parse_demand()
-						demand1235 := _t1993
-						_t1994 := &pb.Read{}
-						_t1994.ReadType = &pb.Read_Demand{Demand: demand1235}
-						_t1992 = _t1994
+						_t1992 := p.parse_demand()
+						demand1235 := _t1992
+						_t1993 := &pb.Read{}
+						_t1993.ReadType = &pb.Read_Demand{Demand: demand1235}
+						_t1991 = _t1993
 					} else {
 						panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in read", p.lookahead(0).Type, p.lookahead(0).Value)})
 					}
-					_t1989 = _t1992
+					_t1988 = _t1991
 				}
-				_t1986 = _t1989
+				_t1985 = _t1988
 			}
-			_t1983 = _t1986
+			_t1982 = _t1985
 		}
-		_t1980 = _t1983
+		_t1979 = _t1982
 	}
-	result1241 := _t1980
+	result1241 := _t1979
 	p.recordSpan(int(span_start1240), "Read")
 	return result1241
 }
@@ -4682,11 +4671,11 @@ func (p *Parser) parse_demand() *pb.Demand {
 	span_start1243 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("demand")
-	_t1995 := p.parse_relation_id()
-	relation_id1242 := _t1995
+	_t1994 := p.parse_relation_id()
+	relation_id1242 := _t1994
 	p.consumeLiteral(")")
-	_t1996 := &pb.Demand{RelationId: relation_id1242}
-	result1244 := _t1996
+	_t1995 := &pb.Demand{RelationId: relation_id1242}
+	result1244 := _t1995
 	p.recordSpan(int(span_start1243), "Demand")
 	return result1244
 }
@@ -4695,13 +4684,13 @@ func (p *Parser) parse_output() *pb.Output {
 	span_start1247 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("output")
-	_t1997 := p.parse_name()
-	name1245 := _t1997
-	_t1998 := p.parse_relation_id()
-	relation_id1246 := _t1998
+	_t1996 := p.parse_name()
+	name1245 := _t1996
+	_t1997 := p.parse_relation_id()
+	relation_id1246 := _t1997
 	p.consumeLiteral(")")
-	_t1999 := &pb.Output{Name: name1245, RelationId: relation_id1246}
-	result1248 := _t1999
+	_t1998 := &pb.Output{Name: name1245, RelationId: relation_id1246}
+	result1248 := _t1998
 	p.recordSpan(int(span_start1247), "Output")
 	return result1248
 }
@@ -4710,13 +4699,13 @@ func (p *Parser) parse_what_if() *pb.WhatIf {
 	span_start1251 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("what_if")
-	_t2000 := p.parse_name()
-	name1249 := _t2000
-	_t2001 := p.parse_epoch()
-	epoch1250 := _t2001
+	_t1999 := p.parse_name()
+	name1249 := _t1999
+	_t2000 := p.parse_epoch()
+	epoch1250 := _t2000
 	p.consumeLiteral(")")
-	_t2002 := &pb.WhatIf{Branch: name1249, Epoch: epoch1250}
-	result1252 := _t2002
+	_t2001 := &pb.WhatIf{Branch: name1249, Epoch: epoch1250}
+	result1252 := _t2001
 	p.recordSpan(int(span_start1251), "WhatIf")
 	return result1252
 }
@@ -4725,127 +4714,127 @@ func (p *Parser) parse_abort() *pb.Abort {
 	span_start1255 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("abort")
-	var _t2003 *string
+	var _t2002 *string
 	if (p.matchLookaheadLiteral(":", 0) && p.matchLookaheadTerminal("SYMBOL", 1)) {
-		_t2004 := p.parse_name()
-		_t2003 = ptr(_t2004)
+		_t2003 := p.parse_name()
+		_t2002 = ptr(_t2003)
 	}
-	name1253 := _t2003
-	_t2005 := p.parse_relation_id()
-	relation_id1254 := _t2005
+	name1253 := _t2002
+	_t2004 := p.parse_relation_id()
+	relation_id1254 := _t2004
 	p.consumeLiteral(")")
-	_t2006 := &pb.Abort{Name: deref(name1253, "abort"), RelationId: relation_id1254}
-	result1256 := _t2006
+	_t2005 := &pb.Abort{Name: deref(name1253, "abort"), RelationId: relation_id1254}
+	result1256 := _t2005
 	p.recordSpan(int(span_start1255), "Abort")
 	return result1256
 }
 
 func (p *Parser) parse_export() *pb.Export {
 	span_start1260 := int64(p.spanStart())
-	var _t2007 int64
+	var _t2006 int64
 	if p.matchLookaheadLiteral("(", 0) {
-		var _t2008 int64
+		var _t2007 int64
 		if p.matchLookaheadLiteral("export_iceberg", 1) {
-			_t2008 = 1
+			_t2007 = 1
 		} else {
-			var _t2009 int64
+			var _t2008 int64
 			if p.matchLookaheadLiteral("export", 1) {
-				_t2009 = 0
+				_t2008 = 0
 			} else {
-				_t2009 = -1
+				_t2008 = -1
 			}
-			_t2008 = _t2009
+			_t2007 = _t2008
 		}
-		_t2007 = _t2008
+		_t2006 = _t2007
 	} else {
-		_t2007 = -1
+		_t2006 = -1
 	}
-	prediction1257 := _t2007
-	var _t2010 *pb.Export
+	prediction1257 := _t2006
+	var _t2009 *pb.Export
 	if prediction1257 == 1 {
 		p.consumeLiteral("(")
 		p.consumeLiteral("export_iceberg")
-		_t2011 := p.parse_export_iceberg_config()
-		export_iceberg_config1259 := _t2011
+		_t2010 := p.parse_export_iceberg_config()
+		export_iceberg_config1259 := _t2010
 		p.consumeLiteral(")")
-		_t2012 := &pb.Export{}
-		_t2012.ExportConfig = &pb.Export_IcebergConfig{IcebergConfig: export_iceberg_config1259}
-		_t2010 = _t2012
+		_t2011 := &pb.Export{}
+		_t2011.ExportConfig = &pb.Export_IcebergConfig{IcebergConfig: export_iceberg_config1259}
+		_t2009 = _t2011
 	} else {
-		var _t2013 *pb.Export
+		var _t2012 *pb.Export
 		if prediction1257 == 0 {
 			p.consumeLiteral("(")
 			p.consumeLiteral("export")
-			_t2014 := p.parse_export_csv_config()
-			export_csv_config1258 := _t2014
+			_t2013 := p.parse_export_csv_config()
+			export_csv_config1258 := _t2013
 			p.consumeLiteral(")")
-			_t2015 := &pb.Export{}
-			_t2015.ExportConfig = &pb.Export_CsvConfig{CsvConfig: export_csv_config1258}
-			_t2013 = _t2015
+			_t2014 := &pb.Export{}
+			_t2014.ExportConfig = &pb.Export_CsvConfig{CsvConfig: export_csv_config1258}
+			_t2012 = _t2014
 		} else {
 			panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in export", p.lookahead(0).Type, p.lookahead(0).Value)})
 		}
-		_t2010 = _t2013
+		_t2009 = _t2012
 	}
-	result1261 := _t2010
+	result1261 := _t2009
 	p.recordSpan(int(span_start1260), "Export")
 	return result1261
 }
 
 func (p *Parser) parse_export_csv_config() *pb.ExportCSVConfig {
 	span_start1269 := int64(p.spanStart())
-	var _t2016 int64
+	var _t2015 int64
 	if p.matchLookaheadLiteral("(", 0) {
-		var _t2017 int64
+		var _t2016 int64
 		if p.matchLookaheadLiteral("export_csv_config_v2", 1) {
-			_t2017 = 0
+			_t2016 = 0
 		} else {
-			var _t2018 int64
+			var _t2017 int64
 			if p.matchLookaheadLiteral("export_csv_config", 1) {
-				_t2018 = 1
+				_t2017 = 1
 			} else {
-				_t2018 = -1
+				_t2017 = -1
 			}
-			_t2017 = _t2018
+			_t2016 = _t2017
 		}
-		_t2016 = _t2017
+		_t2015 = _t2016
 	} else {
-		_t2016 = -1
+		_t2015 = -1
 	}
-	prediction1262 := _t2016
-	var _t2019 *pb.ExportCSVConfig
+	prediction1262 := _t2015
+	var _t2018 *pb.ExportCSVConfig
 	if prediction1262 == 1 {
 		p.consumeLiteral("(")
 		p.consumeLiteral("export_csv_config")
-		_t2020 := p.parse_export_csv_path()
-		export_csv_path1266 := _t2020
-		_t2021 := p.parse_export_csv_columns_list()
-		export_csv_columns_list1267 := _t2021
-		_t2022 := p.parse_config_dict()
-		config_dict1268 := _t2022
+		_t2019 := p.parse_export_csv_path()
+		export_csv_path1266 := _t2019
+		_t2020 := p.parse_export_csv_columns_list()
+		export_csv_columns_list1267 := _t2020
+		_t2021 := p.parse_config_dict()
+		config_dict1268 := _t2021
 		p.consumeLiteral(")")
-		_t2023 := p.construct_export_csv_config(export_csv_path1266, export_csv_columns_list1267, config_dict1268)
-		_t2019 = _t2023
+		_t2022 := p.construct_export_csv_config(export_csv_path1266, export_csv_columns_list1267, config_dict1268)
+		_t2018 = _t2022
 	} else {
-		var _t2024 *pb.ExportCSVConfig
+		var _t2023 *pb.ExportCSVConfig
 		if prediction1262 == 0 {
 			p.consumeLiteral("(")
 			p.consumeLiteral("export_csv_config_v2")
-			_t2025 := p.parse_export_csv_path()
-			export_csv_path1263 := _t2025
-			_t2026 := p.parse_export_csv_source()
-			export_csv_source1264 := _t2026
-			_t2027 := p.parse_csv_config()
-			csv_config1265 := _t2027
+			_t2024 := p.parse_export_csv_path()
+			export_csv_path1263 := _t2024
+			_t2025 := p.parse_export_csv_source()
+			export_csv_source1264 := _t2025
+			_t2026 := p.parse_csv_config()
+			csv_config1265 := _t2026
 			p.consumeLiteral(")")
-			_t2028 := p.construct_export_csv_config_with_source(export_csv_path1263, export_csv_source1264, csv_config1265)
-			_t2024 = _t2028
+			_t2027 := p.construct_export_csv_config_with_source(export_csv_path1263, export_csv_source1264, csv_config1265)
+			_t2023 = _t2027
 		} else {
 			panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in export_csv_config", p.lookahead(0).Type, p.lookahead(0).Value)})
 		}
-		_t2019 = _t2024
+		_t2018 = _t2023
 	}
-	result1270 := _t2019
+	result1270 := _t2018
 	p.recordSpan(int(span_start1269), "ExportCSVConfig")
 	return result1270
 }
@@ -4860,60 +4849,60 @@ func (p *Parser) parse_export_csv_path() string {
 
 func (p *Parser) parse_export_csv_source() *pb.ExportCSVSource {
 	span_start1278 := int64(p.spanStart())
-	var _t2029 int64
+	var _t2028 int64
 	if p.matchLookaheadLiteral("(", 0) {
-		var _t2030 int64
+		var _t2029 int64
 		if p.matchLookaheadLiteral("table_def", 1) {
-			_t2030 = 1
+			_t2029 = 1
 		} else {
-			var _t2031 int64
+			var _t2030 int64
 			if p.matchLookaheadLiteral("gnf_columns", 1) {
-				_t2031 = 0
+				_t2030 = 0
 			} else {
-				_t2031 = -1
+				_t2030 = -1
 			}
-			_t2030 = _t2031
+			_t2029 = _t2030
 		}
-		_t2029 = _t2030
+		_t2028 = _t2029
 	} else {
-		_t2029 = -1
+		_t2028 = -1
 	}
-	prediction1272 := _t2029
-	var _t2032 *pb.ExportCSVSource
+	prediction1272 := _t2028
+	var _t2031 *pb.ExportCSVSource
 	if prediction1272 == 1 {
 		p.consumeLiteral("(")
 		p.consumeLiteral("table_def")
-		_t2033 := p.parse_relation_id()
-		relation_id1277 := _t2033
+		_t2032 := p.parse_relation_id()
+		relation_id1277 := _t2032
 		p.consumeLiteral(")")
-		_t2034 := &pb.ExportCSVSource{}
-		_t2034.CsvSource = &pb.ExportCSVSource_TableDef{TableDef: relation_id1277}
-		_t2032 = _t2034
+		_t2033 := &pb.ExportCSVSource{}
+		_t2033.CsvSource = &pb.ExportCSVSource_TableDef{TableDef: relation_id1277}
+		_t2031 = _t2033
 	} else {
-		var _t2035 *pb.ExportCSVSource
+		var _t2034 *pb.ExportCSVSource
 		if prediction1272 == 0 {
 			p.consumeLiteral("(")
 			p.consumeLiteral("gnf_columns")
 			xs1273 := []*pb.ExportCSVColumn{}
 			cond1274 := p.matchLookaheadLiteral("(", 0)
 			for cond1274 {
-				_t2036 := p.parse_export_csv_column()
-				item1275 := _t2036
+				_t2035 := p.parse_export_csv_column()
+				item1275 := _t2035
 				xs1273 = append(xs1273, item1275)
 				cond1274 = p.matchLookaheadLiteral("(", 0)
 			}
 			export_csv_columns1276 := xs1273
 			p.consumeLiteral(")")
-			_t2037 := &pb.ExportCSVColumns{Columns: export_csv_columns1276}
-			_t2038 := &pb.ExportCSVSource{}
-			_t2038.CsvSource = &pb.ExportCSVSource_GnfColumns{GnfColumns: _t2037}
-			_t2035 = _t2038
+			_t2036 := &pb.ExportCSVColumns{Columns: export_csv_columns1276}
+			_t2037 := &pb.ExportCSVSource{}
+			_t2037.CsvSource = &pb.ExportCSVSource_GnfColumns{GnfColumns: _t2036}
+			_t2034 = _t2037
 		} else {
 			panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in export_csv_source", p.lookahead(0).Type, p.lookahead(0).Value)})
 		}
-		_t2032 = _t2035
+		_t2031 = _t2034
 	}
-	result1279 := _t2032
+	result1279 := _t2031
 	p.recordSpan(int(span_start1278), "ExportCSVSource")
 	return result1279
 }
@@ -4923,11 +4912,11 @@ func (p *Parser) parse_export_csv_column() *pb.ExportCSVColumn {
 	p.consumeLiteral("(")
 	p.consumeLiteral("column")
 	string1280 := p.consumeTerminal("STRING").Value.str
-	_t2039 := p.parse_relation_id()
-	relation_id1281 := _t2039
+	_t2038 := p.parse_relation_id()
+	relation_id1281 := _t2038
 	p.consumeLiteral(")")
-	_t2040 := &pb.ExportCSVColumn{ColumnName: string1280, ColumnData: relation_id1281}
-	result1283 := _t2040
+	_t2039 := &pb.ExportCSVColumn{ColumnName: string1280, ColumnData: relation_id1281}
+	result1283 := _t2039
 	p.recordSpan(int(span_start1282), "ExportCSVColumn")
 	return result1283
 }
@@ -4938,8 +4927,8 @@ func (p *Parser) parse_export_csv_columns_list() []*pb.ExportCSVColumn {
 	xs1284 := []*pb.ExportCSVColumn{}
 	cond1285 := p.matchLookaheadLiteral("(", 0)
 	for cond1285 {
-		_t2041 := p.parse_export_csv_column()
-		item1286 := _t2041
+		_t2040 := p.parse_export_csv_column()
+		item1286 := _t2040
 		xs1284 = append(xs1284, item1286)
 		cond1285 = p.matchLookaheadLiteral("(", 0)
 	}
@@ -4952,31 +4941,31 @@ func (p *Parser) parse_export_iceberg_config() *pb.ExportIcebergConfig {
 	span_start1295 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("export_iceberg_config")
-	_t2042 := p.parse_iceberg_locator()
-	iceberg_locator1288 := _t2042
-	_t2043 := p.parse_iceberg_config()
-	iceberg_config1289 := _t2043
+	_t2041 := p.parse_iceberg_locator()
+	iceberg_locator1288 := _t2041
+	_t2042 := p.parse_iceberg_config()
+	iceberg_config1289 := _t2042
 	p.consumeLiteral("(")
 	p.consumeLiteral("columns")
 	xs1290 := []*pb.IcebergExportColumn{}
 	cond1291 := p.matchLookaheadLiteral("(", 0)
 	for cond1291 {
-		_t2044 := p.parse_iceberg_export_column()
-		item1292 := _t2044
+		_t2043 := p.parse_iceberg_export_column()
+		item1292 := _t2043
 		xs1290 = append(xs1290, item1292)
 		cond1291 = p.matchLookaheadLiteral("(", 0)
 	}
 	iceberg_export_columns1293 := xs1290
 	p.consumeLiteral(")")
-	var _t2045 [][]interface{}
+	var _t2044 [][]interface{}
 	if p.matchLookaheadLiteral("{", 0) {
-		_t2046 := p.parse_config_dict()
-		_t2045 = _t2046
+		_t2045 := p.parse_config_dict()
+		_t2044 = _t2045
 	}
-	config_dict1294 := _t2045
+	config_dict1294 := _t2044
 	p.consumeLiteral(")")
-	_t2047 := p.construct_export_iceberg_config_full(iceberg_locator1288, iceberg_config1289, iceberg_export_columns1293, config_dict1294)
-	result1296 := _t2047
+	_t2046 := p.construct_export_iceberg_config_full(iceberg_locator1288, iceberg_config1289, iceberg_export_columns1293, config_dict1294)
+	result1296 := _t2046
 	p.recordSpan(int(span_start1295), "ExportIcebergConfig")
 	return result1296
 }
@@ -4986,13 +4975,13 @@ func (p *Parser) parse_iceberg_export_column() *pb.IcebergExportColumn {
 	p.consumeLiteral("(")
 	p.consumeLiteral("iceberg_column")
 	string1297 := p.consumeTerminal("STRING").Value.str
-	_t2048 := p.parse_type()
-	type1298 := _t2048
-	_t2049 := p.parse_boolean_value()
-	boolean_value1299 := _t2049
+	_t2047 := p.parse_type()
+	type1298 := _t2047
+	_t2048 := p.parse_boolean_value()
+	boolean_value1299 := _t2048
 	p.consumeLiteral(")")
-	_t2050 := &pb.IcebergExportColumn{Name: string1297, Type: type1298, Nullable: boolean_value1299}
-	result1301 := _t2050
+	_t2049 := &pb.IcebergExportColumn{Name: string1297, Type: type1298, Nullable: boolean_value1299}
+	result1301 := _t2049
 	p.recordSpan(int(span_start1300), "IcebergExportColumn")
 	return result1301
 }
