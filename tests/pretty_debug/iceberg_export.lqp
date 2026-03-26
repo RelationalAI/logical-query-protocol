@@ -29,6 +29,7 @@
       (
       catalog_uri
       "https://catalog.example.com")
+    (scope "")
     (
     properties)
   (
@@ -83,6 +84,7 @@ columns
   (
   catalog_uri
   "https://catalog.example.com")
+(scope "")
 (
 properties)
 (

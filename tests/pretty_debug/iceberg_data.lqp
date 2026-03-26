@@ -21,6 +21,7 @@
         (
         catalog_uri
         "https://catalog.example")
+      (scope "")
       (
       properties
       (prop "type" "rest"))

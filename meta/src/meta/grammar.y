@@ -1182,7 +1182,7 @@ iceberg_to_snapshot
 
 iceberg_data
     : "(" "iceberg_data" iceberg_locator iceberg_config gnf_columns iceberg_to_snapshot? ")"
-      construct: $$ = logic.IcebergData(locator=$3, config=$4, columns=$5, to_snapshot=$6)
+      construct: $$ = logic.IcebergData(locator=$3, config=$4, columns=$5, to_snapshot=builtin.some(builtin.unwrap_option_or($6, "")))
       deconstruct:
         $3: logic.IcebergLocator = $$.locator
         $4: logic.IcebergConfig = $$.config
@@ -1645,20 +1645,20 @@ def construct_iceberg_config(
     auth_props: Dict[String, String] = builtin.string_map_from_pairs(auth_property_pairs)
     return logic.IcebergConfig(
         catalog_uri=catalog_uri,
-        scope=scope_opt,
+        scope=builtin.some(builtin.unwrap_option_or(scope_opt, "")),
         properties=props,
         auth_properties=auth_props,
     )
 
 
 def deconstruct_iceberg_config_scope_optional(msg: logic.IcebergConfig) -> Optional[String]:
-    if builtin.has_proto_field(msg, "scope"):
+    if builtin.unwrap_option(msg.scope) != "":
         return builtin.some(builtin.unwrap_option(msg.scope))
     return builtin.none()
 
 
 def deconstruct_iceberg_data_to_snapshot_optional(msg: logic.IcebergData) -> Optional[String]:
-    if builtin.has_proto_field(msg, "to_snapshot"):
+    if builtin.unwrap_option(msg.to_snapshot) != "":
         return builtin.some(builtin.unwrap_option(msg.to_snapshot))
     return builtin.none()
 

@@ -646,7 +646,7 @@ class Parser:
     def construct_iceberg_config(self, catalog_uri: str, scope_opt: str | None, property_pairs: Sequence[tuple[str, str]], auth_property_pairs: Sequence[tuple[str, str]]) -> logic_pb2.IcebergConfig:
         props = dict(property_pairs)
         auth_props = dict(auth_property_pairs)
-        _t2095 = logic_pb2.IcebergConfig(catalog_uri=catalog_uri, scope=scope_opt, properties=props, auth_properties=auth_props)
+        _t2095 = logic_pb2.IcebergConfig(catalog_uri=catalog_uri, scope=(scope_opt if scope_opt is not None else ""), properties=props, auth_properties=auth_props)
         return _t2095
 
     def construct_export_iceberg_config_full(self, locator: logic_pb2.IcebergLocator, config: logic_pb2.IcebergConfig, columns: Sequence[transactions_pb2.IcebergExportColumn], config_dict: Sequence[tuple[str, logic_pb2.Value]] | None) -> transactions_pb2.ExportIcebergConfig:
@@ -3385,7 +3385,7 @@ class Parser:
             _t1942 = None
         iceberg_to_snapshot1184 = _t1942
         self.consume_literal(")")
-        _t1944 = logic_pb2.IcebergData(locator=iceberg_locator1181, config=iceberg_config1182, columns=gnf_columns1183, to_snapshot=iceberg_to_snapshot1184)
+        _t1944 = logic_pb2.IcebergData(locator=iceberg_locator1181, config=iceberg_config1182, columns=gnf_columns1183, to_snapshot=(iceberg_to_snapshot1184 if iceberg_to_snapshot1184 is not None else ""))
         result1186 = _t1944
         self.record_span(span_start1185, "IcebergData")
         return result1186

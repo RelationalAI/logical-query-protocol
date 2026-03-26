@@ -858,7 +858,7 @@ func (p *Parser) construct_export_csv_config_with_source(path string, csv_source
 func (p *Parser) construct_iceberg_config(catalog_uri string, scope_opt *string, property_pairs [][]interface{}, auth_property_pairs [][]interface{}) *pb.IcebergConfig {
 	props := stringMapFromPairs(property_pairs)
 	auth_props := stringMapFromPairs(auth_property_pairs)
-	_t2097 := &pb.IcebergConfig{CatalogUri: catalog_uri, Scope: scope_opt, Properties: props, AuthProperties: auth_props}
+	_t2097 := &pb.IcebergConfig{CatalogUri: catalog_uri, Scope: ptr(deref(scope_opt, "")), Properties: props, AuthProperties: auth_props}
 	return _t2097
 }
 
@@ -4378,7 +4378,7 @@ func (p *Parser) parse_iceberg_data() *pb.IcebergData {
 	}
 	iceberg_to_snapshot1184 := _t1953
 	p.consumeLiteral(")")
-	_t1955 := &pb.IcebergData{Locator: iceberg_locator1181, Config: iceberg_config1182, Columns: gnf_columns1183, ToSnapshot: iceberg_to_snapshot1184}
+	_t1955 := &pb.IcebergData{Locator: iceberg_locator1181, Config: iceberg_config1182, Columns: gnf_columns1183, ToSnapshot: ptr(deref(iceberg_to_snapshot1184, ""))}
 	result1186 := _t1955
 	p.recordSpan(int(span_start1185), "IcebergData")
 	return result1186
