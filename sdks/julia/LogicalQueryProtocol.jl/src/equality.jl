@@ -1,5 +1,4 @@
 # Equality and hashing for LQP types
-# These are auto-generated protobuf types that need proper equality and hashing
 
 using ProtoBuf: OneOf
 
@@ -347,15 +346,68 @@ Base.:(==)(a::ExportCSVConfig, b::ExportCSVConfig) = a.path == b.path && a.data_
 Base.hash(a::ExportCSVConfig, h::UInt) = hash(a.syntax_escapechar, hash(a.syntax_quotechar, hash(a.syntax_delim, hash(a.syntax_missing_string, hash(a.syntax_header_row, hash(a.compression, hash(a.partition_size, hash(a.data_columns, hash(a.path, h)))))))))
 Base.isequal(a::ExportCSVConfig, b::ExportCSVConfig) = isequal(a.path, b.path) && isequal(a.data_columns, b.data_columns) && isequal(a.partition_size, b.partition_size) && isequal(a.compression, b.compression) && isequal(a.syntax_header_row, b.syntax_header_row) && isequal(a.syntax_missing_string, b.syntax_missing_string) && isequal(a.syntax_delim, b.syntax_delim) && isequal(a.syntax_quotechar, b.syntax_quotechar) && isequal(a.syntax_escapechar, b.syntax_escapechar)
 
-# IcebergCatalogProperties
-Base.:(==)(a::IcebergCatalogProperties, b::IcebergCatalogProperties) = a.warehouse == b.warehouse && a.token == b.token && a.credential == b.credential
-Base.hash(a::IcebergCatalogProperties, h::UInt) = hash(a.credential, hash(a.token, hash(a.warehouse, h)))
-Base.isequal(a::IcebergCatalogProperties, b::IcebergCatalogProperties) = isequal(a.warehouse, b.warehouse) && isequal(a.token, b.token) && isequal(a.credential, b.credential)
+# IcebergLocator
+Base.:(==)(a::IcebergLocator, b::IcebergLocator) =
+    a.table_name == b.table_name && a.namespace == b.namespace && a.warehouse == b.warehouse
+Base.hash(a::IcebergLocator, h::UInt) = hash(a.warehouse, hash(a.namespace, hash(a.table_name, h)))
+Base.isequal(a::IcebergLocator, b::IcebergLocator) =
+    isequal(a.table_name, b.table_name) && isequal(a.namespace, b.namespace) && isequal(a.warehouse, b.warehouse)
+
+# IcebergConfig
+# auth_properties is omitted from == / hash / isequal: secrets must not define value identity
+# or appear in hashed structures (e.g. Dict keys, caches).
+Base.:(==)(a::IcebergConfig, b::IcebergConfig) =
+    a.catalog_uri == b.catalog_uri && a.scope == b.scope && a.properties == b.properties
+Base.hash(a::IcebergConfig, h::UInt) = hash(a.properties, hash(a.scope, hash(a.catalog_uri, h)))
+Base.isequal(a::IcebergConfig, b::IcebergConfig) =
+    isequal(a.catalog_uri, b.catalog_uri) &&
+    isequal(a.scope, b.scope) &&
+    isequal(a.properties, b.properties)
+
+# IcebergExportColumn
+Base.:(==)(a::IcebergExportColumn, b::IcebergExportColumn) =
+    a.name == b.name && a.var"#type" == b.var"#type" && a.nullable == b.nullable
+Base.hash(a::IcebergExportColumn, h::UInt) =
+    hash(a.nullable, hash(a.var"#type", hash(a.name, h)))
+Base.isequal(a::IcebergExportColumn, b::IcebergExportColumn) =
+    isequal(a.name, b.name) && isequal(a.var"#type", b.var"#type") && isequal(a.nullable, b.nullable)
 
 # ExportIcebergConfig
-Base.:(==)(a::ExportIcebergConfig, b::ExportIcebergConfig) = a.catalog_uri == b.catalog_uri && a.namespace == b.namespace && a.table_name == b.table_name && a.catalog_properties == b.catalog_properties && a.schema == b.schema && a.prefix == b.prefix && a.target_file_size_bytes == b.target_file_size_bytes && a.compression == b.compression
-Base.hash(a::ExportIcebergConfig, h::UInt) = hash(a.compression, hash(a.target_file_size_bytes, hash(a.prefix, hash(a.schema, hash(a.catalog_properties, hash(a.table_name, hash(a.namespace, hash(a.catalog_uri, h))))))))
-Base.isequal(a::ExportIcebergConfig, b::ExportIcebergConfig) = isequal(a.catalog_uri, b.catalog_uri) && isequal(a.namespace, b.namespace) && isequal(a.table_name, b.table_name) && isequal(a.catalog_properties, b.catalog_properties) && isequal(a.schema, b.schema) && isequal(a.prefix, b.prefix) && isequal(a.target_file_size_bytes, b.target_file_size_bytes) && isequal(a.compression, b.compression)
+Base.:(==)(a::ExportIcebergConfig, b::ExportIcebergConfig) =
+    a.locator == b.locator &&
+    a.config == b.config &&
+    a.columns == b.columns &&
+    a.prefix == b.prefix &&
+    a.target_file_size_bytes == b.target_file_size_bytes &&
+    a.compression == b.compression
+Base.hash(a::ExportIcebergConfig, h::UInt) = hash(
+    a.compression,
+    hash(
+        a.target_file_size_bytes,
+        hash(a.prefix, hash(a.columns, hash(a.config, hash(a.locator, h))))),
+    ),
+)
+Base.isequal(a::ExportIcebergConfig, b::ExportIcebergConfig) =
+    isequal(a.locator, b.locator) &&
+    isequal(a.config, b.config) &&
+    isequal(a.columns, b.columns) &&
+    isequal(a.prefix, b.prefix) &&
+    isequal(a.target_file_size_bytes, b.target_file_size_bytes) &&
+    isequal(a.compression, b.compression)
+
+# IcebergData
+Base.:(==)(a::IcebergData, b::IcebergData) =
+    a.locator == b.locator &&
+    a.config == b.config &&
+    a.columns == b.columns &&
+    a.to_snapshot == b.to_snapshot
+Base.hash(a::IcebergData, h::UInt) =
+    hash(a.to_snapshot, hash(a.columns, hash(a.config, hash(a.locator, h))))
+Base.isequal(a::IcebergData, b::IcebergData) =
+    isequal(a.locator, b.locator) &&
+    isequal(a.config, b.config) &&
+    isequal(a.columns, b.columns) &&
+    isequal(a.to_snapshot, b.to_snapshot)
 
 # Demand
 Base.:(==)(a::Demand, b::Demand) = a.relation_id == b.relation_id
