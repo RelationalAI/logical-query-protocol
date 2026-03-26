@@ -592,7 +592,13 @@ class GoCodeGenerator(CodeGenerator):
                         lines.append(f"{indent}}}")
                         return (field_value, tmp)
                     else:
-                        # Ptr-wrapped scalar: use deref()
+                        # Ptr-wrapped scalar: usually deref for plain struct fields (float64, int64, …).
+                        # Proto `optional string` fields are *string in Go — pass *string through.
+                        inner_go = self.gen_type(field_expr.type.element_type)
+                        if inner_go == "string":
+                            opt_go = self.gen_option_type(inner_go)
+                            if opt_go.startswith("*"):
+                                return (field_value, field_value)
                         return (field_value, f"deref({field_value}, {zero})")
             return (field_value, field_value)
 
@@ -904,6 +910,21 @@ class GoCodeGenerator(CodeGenerator):
             lines.append(f"{indent}var {var_name} {var_type}")
             self.mark_declared(var_name)
             return self.gen_none()
+
+        # Integer literal with explicit Int32/Int64/... annotation: avoid untyped `:= 0` (int)
+        # so later assignments from int64 (e.g. _extract_value_int64) type-check.
+        if (
+            isinstance(expr.expr, Lit)
+            and type(expr.expr.value) is int
+            and expr.var.type is not None
+        ):
+            var_type = self.gen_type(expr.var.type)
+            if var_type in ("int64", "int32", "uint32", "uint64"):
+                lines.append(
+                    f"{indent}{var_name} := {var_type}({expr.expr.value})"
+                )
+                self.mark_declared(var_name)
+                return self.gen_none()
 
         # Regular assignment
         expr_code = self.generate_lines(expr.expr, lines, indent)

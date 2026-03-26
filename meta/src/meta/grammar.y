@@ -1328,7 +1328,7 @@ def _extract_value_int32(value: Optional[logic.Value], default: int) -> Int32:
     return builtin.int64_to_int32(default)
 
 
-def _extract_value_int64(value: Optional[logic.Value], default: int) -> int:
+def _extract_value_int64(value: Optional[logic.Value], default: int) -> Int64:
     if value is not None and builtin.has_proto_field(builtin.unwrap_option(value), 'int_value'):
         return builtin.unwrap_option(value).int_value
     return default
@@ -1641,8 +1641,8 @@ def construct_iceberg_config(
     property_pairs: Sequence[Tuple[String, String]],
     auth_property_pairs: Sequence[Tuple[String, String]],
 ) -> logic.IcebergConfig:
-    props: Dict[String, String] = builtin.dict_from_list(property_pairs)
-    auth_props: Dict[String, String] = builtin.dict_from_list(auth_property_pairs)
+    props: Dict[String, String] = builtin.string_map_from_pairs(property_pairs)
+    auth_props: Dict[String, String] = builtin.string_map_from_pairs(auth_property_pairs)
     scope_pb: Optional[String] = iceberg_optional_string_field(scope_opt)
     return logic.IcebergConfig(
         catalog_uri=catalog_uri,
@@ -1677,7 +1677,7 @@ def construct_export_iceberg_config_full(
     config_dict: Optional[Sequence[Tuple[String, logic.Value]]],
 ) -> transactions.ExportIcebergConfig:
     prefix: String = ""
-    target_file_size_bytes: int = 0
+    target_file_size_bytes: Int64 = 0
     compression: String = ""
     if config_dict is not None:
         cfg: Dict[String, logic.Value] = builtin.dict_from_list(builtin.unwrap_option(config_dict))
