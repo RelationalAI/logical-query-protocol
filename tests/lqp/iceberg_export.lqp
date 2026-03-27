@@ -21,9 +21,10 @@
             (properties)
             (auth_properties))
           (columns
-            (iceberg_column "id" INT false)
-            (iceberg_column "region" STRING false)
-            (iceberg_column "amount" FLOAT false))))
+            (iceberg_column "id" :id INT false)
+            (iceberg_column "region" :region STRING false)
+            (iceberg_column "amount" :amount FLOAT false))
+          (create_table_properties)))
 
       ;; Full export with scope, property maps, and trailing export options
       (export_iceberg
@@ -40,9 +41,10 @@
               (prop "credential" "my-credential")
               (prop "token" "secret-token-123")))
           (columns
-            (iceberg_column "id" INT false)
-            (iceberg_column "region" STRING false)
-            (iceberg_column "amount" FLOAT false))
+            (iceberg_column "id" :id INT false)
+            (iceberg_column "region" :region STRING false)
+            (iceberg_column "amount" :amount FLOAT false))
+          (create_table_properties (prop "write.format.default" "parquet"))
           {:prefix "part" :target_file_size_bytes 268435456 :compression "SNAPPY"}))
 
       ;; Empty namespace on the locator
@@ -57,4 +59,5 @@
             (properties)
             (auth_properties))
           (columns
-            (iceberg_column "id" INT false)))))))
+            (iceberg_column "id" :id INT false))
+          (create_table_properties))))))

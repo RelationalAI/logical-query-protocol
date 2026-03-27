@@ -5,10 +5,10 @@ import ProtoBuf as PB
 using ProtoBuf: OneOf
 using ProtoBuf.EnumX: @enumx
 
-export DateTimeType, RelationId, Var, FloatType, UInt128Type, Int32Type, Float32Type
-export BeTreeConfig, DateTimeValue, IcebergLocator, DateValue, OrMonoid, CSVLocator
-export Int128Type, DecimalType, UnspecifiedType, DateType, MissingType, MissingValue
-export CSVConfig, IcebergConfig, IntType, StringType, Int128Value, UInt128Value
+export DateTimeType, RelationId, Var, FloatType, IcebergCatalogConfig, UInt128Type
+export Int32Type, Float32Type, BeTreeConfig, DateTimeValue, IcebergLocator, DateValue
+export OrMonoid, CSVLocator, Int128Type, DecimalType, UnspecifiedType, DateType
+export MissingType, MissingValue, CSVConfig, IntType, StringType, Int128Value, UInt128Value
 export BooleanType, UInt32Type, DecimalValue, BeTreeLocator, var"#Type", Value, GNFColumn
 export MinMonoid, SumMonoid, MaxMonoid, BeTreeInfo, Binding, EDB, Attribute, Term, CSVData
 export IcebergData, Monoid, BeTreeRelation, Cast, Pragma, Atom, RelTerm, Data, Primitive
@@ -142,6 +142,55 @@ function PB.encode(e::PB.AbstractProtoEncoder, x::FloatType)
 end
 function PB._encoded_size(x::FloatType)
     encoded_size = 0
+    return encoded_size
+end
+
+struct IcebergCatalogConfig
+    catalog_uri::String
+    scope::String
+    properties::Dict{String,String}
+    auth_properties::Dict{String,String}
+end
+IcebergCatalogConfig(;catalog_uri = "", scope = "", properties = Dict{String,String}(), auth_properties = Dict{String,String}()) = IcebergCatalogConfig(catalog_uri, scope, properties, auth_properties)
+PB.default_values(::Type{IcebergCatalogConfig}) = (;catalog_uri = "", scope = "", properties = Dict{String,String}(), auth_properties = Dict{String,String}())
+PB.field_numbers(::Type{IcebergCatalogConfig}) = (;catalog_uri = 1, scope = 2, properties = 3, auth_properties = 4)
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:IcebergCatalogConfig}, _endpos::Int=0, _group::Bool=false)
+    catalog_uri = ""
+    scope = ""
+    properties = Dict{String,String}()
+    auth_properties = Dict{String,String}()
+    while !PB.message_done(d, _endpos, _group)
+        field_number, wire_type = PB.decode_tag(d)
+        if field_number == 1
+            catalog_uri = PB.decode(d, String)
+        elseif field_number == 2
+            scope = PB.decode(d, String)
+        elseif field_number == 3
+            PB.decode!(d, properties)
+        elseif field_number == 4
+            PB.decode!(d, auth_properties)
+        else
+            Base.skip(d, wire_type)
+        end
+    end
+    return IcebergCatalogConfig(catalog_uri, scope, properties, auth_properties)
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::IcebergCatalogConfig)
+    initpos = position(e.io)
+    !isempty(x.catalog_uri) && PB.encode(e, 1, x.catalog_uri)
+    !isempty(x.scope) && PB.encode(e, 2, x.scope)
+    !isempty(x.properties) && PB.encode(e, 3, x.properties)
+    !isempty(x.auth_properties) && PB.encode(e, 4, x.auth_properties)
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::IcebergCatalogConfig)
+    encoded_size = 0
+    !isempty(x.catalog_uri) && (encoded_size += PB._encoded_size(x.catalog_uri, 1))
+    !isempty(x.scope) && (encoded_size += PB._encoded_size(x.scope, 2))
+    !isempty(x.properties) && (encoded_size += PB._encoded_size(x.properties, 3))
+    !isempty(x.auth_properties) && (encoded_size += PB._encoded_size(x.auth_properties, 4))
     return encoded_size
 end
 
@@ -686,55 +735,6 @@ function PB._encoded_size(x::CSVConfig)
     !isempty(x.encoding) && (encoded_size += PB._encoded_size(x.encoding, 10))
     !isempty(x.compression) && (encoded_size += PB._encoded_size(x.compression, 11))
     x.partition_size_mb != zero(Int64) && (encoded_size += PB._encoded_size(x.partition_size_mb, 12))
-    return encoded_size
-end
-
-struct IcebergConfig
-    catalog_uri::String
-    scope::String
-    properties::Dict{String,String}
-    auth_properties::Dict{String,String}
-end
-IcebergConfig(;catalog_uri = "", scope = "", properties = Dict{String,String}(), auth_properties = Dict{String,String}()) = IcebergConfig(catalog_uri, scope, properties, auth_properties)
-PB.default_values(::Type{IcebergConfig}) = (;catalog_uri = "", scope = "", properties = Dict{String,String}(), auth_properties = Dict{String,String}())
-PB.field_numbers(::Type{IcebergConfig}) = (;catalog_uri = 1, scope = 2, properties = 3, auth_properties = 4)
-
-function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:IcebergConfig}, _endpos::Int=0, _group::Bool=false)
-    catalog_uri = ""
-    scope = ""
-    properties = Dict{String,String}()
-    auth_properties = Dict{String,String}()
-    while !PB.message_done(d, _endpos, _group)
-        field_number, wire_type = PB.decode_tag(d)
-        if field_number == 1
-            catalog_uri = PB.decode(d, String)
-        elseif field_number == 2
-            scope = PB.decode(d, String)
-        elseif field_number == 3
-            PB.decode!(d, properties)
-        elseif field_number == 4
-            PB.decode!(d, auth_properties)
-        else
-            Base.skip(d, wire_type)
-        end
-    end
-    return IcebergConfig(catalog_uri, scope, properties, auth_properties)
-end
-
-function PB.encode(e::PB.AbstractProtoEncoder, x::IcebergConfig)
-    initpos = position(e.io)
-    !isempty(x.catalog_uri) && PB.encode(e, 1, x.catalog_uri)
-    !isempty(x.scope) && PB.encode(e, 2, x.scope)
-    !isempty(x.properties) && PB.encode(e, 3, x.properties)
-    !isempty(x.auth_properties) && PB.encode(e, 4, x.auth_properties)
-    return position(e.io) - initpos
-end
-function PB._encoded_size(x::IcebergConfig)
-    encoded_size = 0
-    !isempty(x.catalog_uri) && (encoded_size += PB._encoded_size(x.catalog_uri, 1))
-    !isempty(x.scope) && (encoded_size += PB._encoded_size(x.scope, 2))
-    !isempty(x.properties) && (encoded_size += PB._encoded_size(x.properties, 3))
-    !isempty(x.auth_properties) && (encoded_size += PB._encoded_size(x.auth_properties, 4))
     return encoded_size
 end
 
@@ -1619,7 +1619,7 @@ end
 
 struct IcebergData
     locator::Union{Nothing,IcebergLocator}
-    config::Union{Nothing,IcebergConfig}
+    config::Union{Nothing,IcebergCatalogConfig}
     columns::Vector{GNFColumn}
     to_snapshot::String
 end
@@ -1629,7 +1629,7 @@ PB.field_numbers(::Type{IcebergData}) = (;locator = 1, config = 2, columns = 3, 
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:IcebergData}, _endpos::Int=0, _group::Bool=false)
     locator = Ref{Union{Nothing,IcebergLocator}}(nothing)
-    config = Ref{Union{Nothing,IcebergConfig}}(nothing)
+    config = Ref{Union{Nothing,IcebergCatalogConfig}}(nothing)
     columns = PB.BufferedVector{GNFColumn}()
     to_snapshot = ""
     while !PB.message_done(d, _endpos, _group)

@@ -353,24 +353,24 @@ Base.hash(a::IcebergLocator, h::UInt) = hash(a.warehouse, hash(a.namespace, hash
 Base.isequal(a::IcebergLocator, b::IcebergLocator) =
     isequal(a.table_name, b.table_name) && isequal(a.namespace, b.namespace) && isequal(a.warehouse, b.warehouse)
 
-# IcebergConfig
+# IcebergCatalogConfig
 # auth_properties is omitted from == / hash / isequal: secrets must not define value identity
 # or appear in hashed structures (e.g. Dict keys, caches).
-Base.:(==)(a::IcebergConfig, b::IcebergConfig) =
+Base.:(==)(a::IcebergCatalogConfig, b::IcebergCatalogConfig) =
     a.catalog_uri == b.catalog_uri && a.scope == b.scope && a.properties == b.properties
-Base.hash(a::IcebergConfig, h::UInt) = hash(a.properties, hash(a.scope, hash(a.catalog_uri, h)))
-Base.isequal(a::IcebergConfig, b::IcebergConfig) =
+Base.hash(a::IcebergCatalogConfig, h::UInt) = hash(a.properties, hash(a.scope, hash(a.catalog_uri, h)))
+Base.isequal(a::IcebergCatalogConfig, b::IcebergCatalogConfig) =
     isequal(a.catalog_uri, b.catalog_uri) &&
     isequal(a.scope, b.scope) &&
     isequal(a.properties, b.properties)
 
-# IcebergExportColumn
-Base.:(==)(a::IcebergExportColumn, b::IcebergExportColumn) =
-    a.name == b.name && a.var"#type" == b.var"#type" && a.nullable == b.nullable
-Base.hash(a::IcebergExportColumn, h::UInt) =
-    hash(a.nullable, hash(a.var"#type", hash(a.name, h)))
-Base.isequal(a::IcebergExportColumn, b::IcebergExportColumn) =
-    isequal(a.name, b.name) && isequal(a.var"#type", b.var"#type") && isequal(a.nullable, b.nullable)
+# ExportIcebergColumn
+Base.:(==)(a::ExportIcebergColumn, b::ExportIcebergColumn) =
+    a.name == b.name && a.column_data == b.column_data && a.var"#type" == b.var"#type" && a.nullable == b.nullable
+Base.hash(a::ExportIcebergColumn, h::UInt) =
+    hash(a.nullable, hash(a.var"#type", hash(a.column_data, hash(a.name, h))))
+Base.isequal(a::ExportIcebergColumn, b::ExportIcebergColumn) =
+    isequal(a.name, b.name) && isequal(a.column_data, b.column_data) && isequal(a.var"#type", b.var"#type") && isequal(a.nullable, b.nullable)
 
 # ExportIcebergConfig
 Base.:(==)(a::ExportIcebergConfig, b::ExportIcebergConfig) =
@@ -379,12 +379,16 @@ Base.:(==)(a::ExportIcebergConfig, b::ExportIcebergConfig) =
     a.columns == b.columns &&
     a.prefix == b.prefix &&
     a.target_file_size_bytes == b.target_file_size_bytes &&
-    a.compression == b.compression
+    a.compression == b.compression &&
+    a.create_table_properties == b.create_table_properties
 Base.hash(a::ExportIcebergConfig, h::UInt) = hash(
-    a.compression,
+    a.create_table_properties,
     hash(
-        a.target_file_size_bytes,
-        hash(a.prefix, hash(a.columns, hash(a.config, hash(a.locator, h)))),
+        a.compression,
+        hash(
+            a.target_file_size_bytes,
+            hash(a.prefix, hash(a.columns, hash(a.config, hash(a.locator, h)))),
+        ),
     ),
 )
 Base.isequal(a::ExportIcebergConfig, b::ExportIcebergConfig) =
@@ -393,7 +397,8 @@ Base.isequal(a::ExportIcebergConfig, b::ExportIcebergConfig) =
     isequal(a.columns, b.columns) &&
     isequal(a.prefix, b.prefix) &&
     isequal(a.target_file_size_bytes, b.target_file_size_bytes) &&
-    isequal(a.compression, b.compression)
+    isequal(a.compression, b.compression) &&
+    isequal(a.create_table_properties, b.create_table_properties)
 
 # IcebergData
 Base.:(==)(a::IcebergData, b::IcebergData) =

@@ -117,10 +117,10 @@
 %nonterm export_csv_path String
 %nonterm export_csv_source transactions.ExportCSVSource
 %nonterm export_iceberg_config transactions.ExportIcebergConfig
-%nonterm iceberg_config logic.IcebergConfig
+%nonterm iceberg_config logic.IcebergCatalogConfig
 %nonterm iceberg_config_scope String
 %nonterm iceberg_data logic.IcebergData
-%nonterm iceberg_export_column transactions.IcebergExportColumn
+%nonterm iceberg_export_column transactions.ExportIcebergColumn
 %nonterm iceberg_locator logic.IcebergLocator
 %nonterm iceberg_property_entry Tuple[String, String]
 %nonterm iceberg_to_snapshot String
@@ -1168,12 +1168,13 @@ iceberg_config
         $14: Sequence[Tuple[String, String]] = builtin.dict_to_pairs($$.auth_properties)
 
 iceberg_export_column
-    : "(" "iceberg_column" STRING type boolean_value ")"
-      construct: $$ = transactions.IcebergExportColumn(name=$3, type=$4, nullable=$5)
+    : "(" "iceberg_column" STRING relation_id type boolean_value ")"
+      construct: $$ = transactions.ExportIcebergColumn(name=$3, column_data=$4, type=$5, nullable=$6)
       deconstruct:
         $3: String = $$.name
-        $4: logic.Type = $$.type
-        $5: Boolean = $$.nullable
+        $4: logic.RelationId = $$.column_data
+        $5: logic.Type = $$.type
+        $6: Boolean = $$.nullable
 
 iceberg_to_snapshot
     : "(" "to_snapshot" STRING ")"
@@ -1185,7 +1186,7 @@ iceberg_data
       construct: $$ = logic.IcebergData(locator=$3, config=$4, columns=$5, to_snapshot=builtin.some(builtin.unwrap_option_or($6, "")))
       deconstruct:
         $3: logic.IcebergLocator = $$.locator
-        $4: logic.IcebergConfig = $$.config
+        $4: logic.IcebergCatalogConfig = $$.config
         $5: Sequence[logic.GNFColumn] = $$.columns
         $6: Optional[String] = deconstruct_iceberg_data_to_snapshot_optional($$)
 
@@ -1310,13 +1311,14 @@ export_csv_source
         $3: logic.RelationId = $$.table_def
 
 export_iceberg_config
-    : "(" "export_iceberg_config" iceberg_locator iceberg_config "(" "columns" iceberg_export_column* ")" config_dict? ")"
-      construct: $$ = construct_export_iceberg_config_full($3, $4, $7, $9)
+    : "(" "export_iceberg_config" iceberg_locator iceberg_config "(" "columns" iceberg_export_column* ")" "(" "create_table_properties" iceberg_property_entry* ")" config_dict? ")"
+      construct: $$ = construct_export_iceberg_config_full($3, $4, $7, $11, $13)
       deconstruct:
         $3: logic.IcebergLocator = $$.locator
-        $4: logic.IcebergConfig = $$.config
-        $7: Sequence[transactions.IcebergExportColumn] = $$.columns
-        $9: Optional[Sequence[Tuple[String, logic.Value]]] = deconstruct_export_iceberg_config_optional($$)
+        $4: logic.IcebergCatalogConfig = $$.config
+        $7: Sequence[transactions.ExportIcebergColumn] = $$.columns
+        $11: Sequence[Tuple[String, String]] = builtin.dict_to_pairs($$.create_table_properties)
+        $13: Optional[Sequence[Tuple[String, logic.Value]]] = deconstruct_export_iceberg_config_optional($$)
 
 
 %%
@@ -1640,10 +1642,10 @@ def construct_iceberg_config(
     scope_opt: Optional[String],
     property_pairs: Sequence[Tuple[String, String]],
     auth_property_pairs: Sequence[Tuple[String, String]],
-) -> logic.IcebergConfig:
+) -> logic.IcebergCatalogConfig:
     props: Dict[String, String] = builtin.string_map_from_pairs(property_pairs)
     auth_props: Dict[String, String] = builtin.string_map_from_pairs(auth_property_pairs)
-    return logic.IcebergConfig(
+    return logic.IcebergCatalogConfig(
         catalog_uri=catalog_uri,
         scope=builtin.some(builtin.unwrap_option_or(scope_opt, "")),
         properties=props,
@@ -1651,7 +1653,7 @@ def construct_iceberg_config(
     )
 
 
-def deconstruct_iceberg_config_scope_optional(msg: logic.IcebergConfig) -> Optional[String]:
+def deconstruct_iceberg_config_scope_optional(msg: logic.IcebergCatalogConfig) -> Optional[String]:
     if builtin.unwrap_option(msg.scope) != "":
         return builtin.some(builtin.unwrap_option(msg.scope))
     return builtin.none()
@@ -1665,14 +1667,16 @@ def deconstruct_iceberg_data_to_snapshot_optional(msg: logic.IcebergData) -> Opt
 
 def construct_export_iceberg_config_full(
     locator: logic.IcebergLocator,
-    config: logic.IcebergConfig,
-    columns: Sequence[transactions.IcebergExportColumn],
+    config: logic.IcebergCatalogConfig,
+    columns: Sequence[transactions.ExportIcebergColumn],
+    create_table_property_pairs: Sequence[Tuple[String, String]],
     config_dict: Optional[Sequence[Tuple[String, logic.Value]]],
 ) -> transactions.ExportIcebergConfig:
     cfg: Dict[String, logic.Value] = builtin.dict_from_list(builtin.unwrap_option_or(config_dict, list[Tuple[String, logic.Value]]()))
     prefix: String = _extract_value_string(builtin.dict_get(cfg, "prefix"), "")
     target_file_size_bytes: int = _extract_value_int64(builtin.dict_get(cfg, "target_file_size_bytes"), 0)
     compression: String = _extract_value_string(builtin.dict_get(cfg, "compression"), "")
+    create_table_props: Dict[String, String] = builtin.string_map_from_pairs(create_table_property_pairs)
     return transactions.ExportIcebergConfig(
         locator=locator,
         config=config,
@@ -1680,6 +1684,7 @@ def construct_export_iceberg_config_full(
         prefix=builtin.some(prefix),
         target_file_size_bytes=builtin.some(target_file_size_bytes),
         compression=compression,
+        create_table_properties=create_table_props,
     )
 
 

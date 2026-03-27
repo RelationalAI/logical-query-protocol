@@ -456,10 +456,10 @@ class IcebergData(_message.Message):
     COLUMNS_FIELD_NUMBER: _ClassVar[int]
     TO_SNAPSHOT_FIELD_NUMBER: _ClassVar[int]
     locator: IcebergLocator
-    config: IcebergConfig
+    config: IcebergCatalogConfig
     columns: _containers.RepeatedCompositeFieldContainer[GNFColumn]
     to_snapshot: str
-    def __init__(self, locator: _Optional[_Union[IcebergLocator, _Mapping]] = ..., config: _Optional[_Union[IcebergConfig, _Mapping]] = ..., columns: _Optional[_Iterable[_Union[GNFColumn, _Mapping]]] = ..., to_snapshot: _Optional[str] = ...) -> None: ...
+    def __init__(self, locator: _Optional[_Union[IcebergLocator, _Mapping]] = ..., config: _Optional[_Union[IcebergCatalogConfig, _Mapping]] = ..., columns: _Optional[_Iterable[_Union[GNFColumn, _Mapping]]] = ..., to_snapshot: _Optional[str] = ...) -> None: ...
 
 class IcebergLocator(_message.Message):
     __slots__ = ("table_name", "namespace", "warehouse")
@@ -471,7 +471,7 @@ class IcebergLocator(_message.Message):
     warehouse: str
     def __init__(self, table_name: _Optional[str] = ..., namespace: _Optional[_Iterable[str]] = ..., warehouse: _Optional[str] = ...) -> None: ...
 
-class IcebergConfig(_message.Message):
+class IcebergCatalogConfig(_message.Message):
     __slots__ = ("catalog_uri", "scope", "properties", "auth_properties")
     class PropertiesEntry(_message.Message):
         __slots__ = ("key", "value")
