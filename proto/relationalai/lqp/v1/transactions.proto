@@ -166,6 +166,8 @@ message Export {
   oneof export_config {
     ExportCSVConfig csv_config = 1;
     ExportIcebergConfig iceberg_config = 2;
+
+    // TODO: support JSON export
   }
 }
 
