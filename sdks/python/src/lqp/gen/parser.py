@@ -3887,8 +3887,11 @@ class Parser:
         span_start1311 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("columns")
+        self.consume_literal("(")
+        self.consume_literal("source_table_def")
         _t2053 = self.parse_relation_id()
         relation_id1306 = _t2053
+        self.consume_literal(")")
         self.consume_literal("(")
         self.consume_literal("target_columns")
         xs1307 = []

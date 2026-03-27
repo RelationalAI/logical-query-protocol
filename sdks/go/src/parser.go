@@ -4975,8 +4975,11 @@ func (p *Parser) parse_export_iceberg_columns() *pb.ExportIcebergColumns {
 	span_start1311 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("columns")
+	p.consumeLiteral("(")
+	p.consumeLiteral("source_table_def")
 	_t2064 := p.parse_relation_id()
 	relation_id1306 := _t2064
+	p.consumeLiteral(")")
 	p.consumeLiteral("(")
 	p.consumeLiteral("target_columns")
 	xs1307 := []*pb.ExportIcebergColumn{}

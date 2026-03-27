@@ -4270,8 +4270,11 @@ function parse_export_iceberg_columns(parser::ParserState)::Proto.ExportIcebergC
     span_start1311 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "columns")
+    consume_literal!(parser, "(")
+    consume_literal!(parser, "source_table_def")
     _t2053 = parse_relation_id(parser)
     relation_id1306 = _t2053
+    consume_literal!(parser, ")")
     consume_literal!(parser, "(")
     consume_literal!(parser, "target_columns")
     xs1307 = Proto.ExportIcebergColumn[]

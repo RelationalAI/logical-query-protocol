@@ -1177,11 +1177,11 @@ export_iceberg_column
         $5: Boolean = $$.nullable
 
 export_iceberg_columns
-    : "(" "columns" relation_id "(" "target_columns" export_iceberg_column* ")" ")"
-      construct: $$ = transactions.ExportIcebergColumns(source_table_def=$3, target_columns=$6)
+    : "(" "columns" "(" "source_table_def" relation_id ")" "(" "target_columns" export_iceberg_column* ")" ")"
+      construct: $$ = transactions.ExportIcebergColumns(source_table_def=$5, target_columns=$9)
       deconstruct:
-        $3: logic.RelationId = $$.source_table_def
-        $6: Sequence[transactions.ExportIcebergColumn] = $$.target_columns
+        $5: logic.RelationId = $$.source_table_def
+        $9: Sequence[transactions.ExportIcebergColumn] = $$.target_columns
 
 iceberg_to_snapshot
     : "(" "to_snapshot" STRING ")"

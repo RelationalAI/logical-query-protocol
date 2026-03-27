@@ -34,12 +34,14 @@
   (
   auth_properties))
 (columns
-  0x585c5a1121bd88784c1378aa8837195c
   (
-  target_columns
-  (iceberg_column "id" INT false)
-  (iceberg_column "region" STRING false)
-  (iceberg_column "amount" FLOAT false)))
+  source_table_def
+  0x585c5a1121bd88784c1378aa8837195c)
+(
+target_columns
+(iceberg_column "id" INT false)
+(iceberg_column "region" STRING false)
+(iceberg_column "amount" FLOAT false)))
 (
 table_properties)))
 (export_iceberg
@@ -67,12 +69,14 @@ auth_properties
 (prop "credential" "my-credential")
 (prop "token" "secret-token-123")))
 (columns
-  0x585c5a1121bd88784c1378aa8837195c
   (
-  target_columns
-  (iceberg_column "id" INT false)
-  (iceberg_column "region" STRING false)
-  (iceberg_column "amount" FLOAT false)))
+  source_table_def
+  0x585c5a1121bd88784c1378aa8837195c)
+(
+target_columns
+(iceberg_column "id" INT false)
+(iceberg_column "region" STRING false)
+(iceberg_column "amount" FLOAT false)))
 (
 table_properties
 (prop "write.format.default" "parquet"))
@@ -97,10 +101,12 @@ properties)
 (
 auth_properties))
 (columns
-  0x585c5a1121bd88784c1378aa8837195c
   (
-  target_columns
-  (iceberg_column "id" INT false)))
+  source_table_def
+  0x585c5a1121bd88784c1378aa8837195c)
+(
+target_columns
+(iceberg_column "id" INT false)))
 (
 table_properties))))))
 
