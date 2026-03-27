@@ -33,13 +33,18 @@
     properties)
   (
   auth_properties))
+(columns
+  (source_gnf_defs
+    0x7dd618d496488bc608a3cb43ce3547dd
+    0x5398f3cc77d2b905819aa99c46ecf6f6
+    0x7727ef4cfb3f5116a602fe2b25115c13)
+  (
+  target_columns
+  (iceberg_column "id" INT false)
+  (iceberg_column "region" STRING false)
+  (iceberg_column "amount" FLOAT false)))
 (
-columns
-(iceberg_column "id" 0x7dd618d496488bc608a3cb43ce3547dd INT false)
-(iceberg_column "region" 0x5398f3cc77d2b905819aa99c46ecf6f6 STRING false)
-(iceberg_column "amount" 0x7727ef4cfb3f5116a602fe2b25115c13 FLOAT false))
-(
-create_table_properties)))
+table_properties)))
 (export_iceberg
   (export_iceberg_config
     (iceberg_locator
@@ -64,13 +69,16 @@ properties
 auth_properties
 (prop "credential" "my-credential")
 (prop "token" "secret-token-123")))
+(columns
+  (source_table_def
+    :sales)
+  (
+  target_columns
+  (iceberg_column "id" INT false)
+  (iceberg_column "region" STRING false)
+  (iceberg_column "amount" FLOAT false)))
 (
-columns
-(iceberg_column "id" 0x7dd618d496488bc608a3cb43ce3547dd INT false)
-(iceberg_column "region" 0x5398f3cc77d2b905819aa99c46ecf6f6 STRING false)
-(iceberg_column "amount" 0x7727ef4cfb3f5116a602fe2b25115c13 FLOAT false))
-(
-create_table_properties
+table_properties
 (prop "write.format.default" "parquet"))
 { :compression "SNAPPY" :prefix "part" :target_file_size_bytes 268435456}))
 (export_iceberg
@@ -92,8 +100,11 @@ create_table_properties
 properties)
 (
 auth_properties))
+(columns
+  (source_gnf_defs
+    0x7dd618d496488bc608a3cb43ce3547dd)
+  (
+  target_columns
+  (iceberg_column "id" INT false)))
 (
-columns
-(iceberg_column "id" 0x7dd618d496488bc608a3cb43ce3547dd INT false))
-(
-create_table_properties))))))
+table_properties))))))

@@ -1179,11 +1179,11 @@ export_iceberg_column
 
 export_iceberg_column_source
     : "(" "source_gnf_defs" relation_id* ")"
-      construct: $$ = transactions.ExportIcebergColumns(source_gnf_defs=transactions.ExportIcebergGnfDefs(defs=$3))
+      construct: $$ = transactions.ExportIcebergColumns(source_gnf_defs=transactions.ExportIcebergGnfDefs(defs=$3), target_columns=list[transactions.ExportIcebergColumn]())
       deconstruct if builtin.has_proto_field($$, 'source_gnf_defs'):
         $3: Sequence[logic.RelationId] = $$.source_gnf_defs.defs
     | "(" "source_table_def" relation_id ")"
-      construct: $$ = transactions.ExportIcebergColumns(source_table_def=$3)
+      construct: $$ = transactions.ExportIcebergColumns(source_table_def=$3, target_columns=list[transactions.ExportIcebergColumn]())
       deconstruct if builtin.has_proto_field($$, 'source_table_def'):
         $3: logic.RelationId = $$.source_table_def
 

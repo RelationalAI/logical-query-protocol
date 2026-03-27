@@ -379,11 +379,11 @@ Base.isequal(a::ExportIcebergGnfDefs, b::ExportIcebergGnfDefs) = isequal(a.defs,
 
 # ExportIcebergColumns
 Base.:(==)(a::ExportIcebergColumns, b::ExportIcebergColumns) =
-    a.iceberg_columns == b.iceberg_columns && a.target_columns == b.target_columns
+    _isequal_oneof(a.iceberg_columns, b.iceberg_columns) && a.target_columns == b.target_columns
 Base.hash(a::ExportIcebergColumns, h::UInt) =
-    hash(a.target_columns, hash(a.iceberg_columns, h))
+    hash(a.target_columns, _hash_oneof(a.iceberg_columns, h))
 Base.isequal(a::ExportIcebergColumns, b::ExportIcebergColumns) =
-    isequal(a.iceberg_columns, b.iceberg_columns) && isequal(a.target_columns, b.target_columns)
+    _isequal_oneof(a.iceberg_columns, b.iceberg_columns) && isequal(a.target_columns, b.target_columns)
 
 # ExportIcebergConfig
 Base.:(==)(a::ExportIcebergConfig, b::ExportIcebergConfig) =
