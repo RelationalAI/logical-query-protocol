@@ -132,7 +132,7 @@ message ExportIcebergColumn {
   string name = 1;
   RelationId column_data = 2;
   Type type = 3;
-  bool nullable = 3;
+  bool nullable = 4;
 }
 
 //
