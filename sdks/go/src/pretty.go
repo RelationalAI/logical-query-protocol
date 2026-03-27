@@ -495,7 +495,7 @@ func (p *PrettyPrinter) deconstruct_export_csv_config(msg *pb.ExportCSVConfig) [
 	return listSort(result)
 }
 
-func (p *PrettyPrinter) deconstruct_iceberg_config_scope_optional(msg *pb.IcebergCatalogConfig) *string {
+func (p *PrettyPrinter) deconstruct_iceberg_catalog_config_scope_optional(msg *pb.IcebergCatalogConfig) *string {
 	var _t1718 interface{}
 	if *msg.Scope != "" {
 		return ptr(*msg.Scope)
@@ -4003,7 +4003,7 @@ func (p *PrettyPrinter) pretty_iceberg_data(msg *pb.IcebergData) interface{} {
 		p.pretty_iceberg_locator(field1401)
 		p.newline()
 		field1402 := unwrapped_fields1400[1].(*pb.IcebergCatalogConfig)
-		p.pretty_iceberg_config(field1402)
+		p.pretty_iceberg_catalog_config(field1402)
 		p.newline()
 		field1403 := unwrapped_fields1400[2].([]*pb.GNFColumn)
 		p.pretty_gnf_columns(field1403)
@@ -4071,18 +4071,18 @@ func (p *PrettyPrinter) pretty_iceberg_locator(msg *pb.IcebergLocator) interface
 	return nil
 }
 
-func (p *PrettyPrinter) pretty_iceberg_config(msg *pb.IcebergCatalogConfig) interface{} {
-	flat1426 := p.tryFlat(msg, func() { p.pretty_iceberg_config(msg) })
+func (p *PrettyPrinter) pretty_iceberg_catalog_config(msg *pb.IcebergCatalogConfig) interface{} {
+	flat1426 := p.tryFlat(msg, func() { p.pretty_iceberg_catalog_config(msg) })
 	if flat1426 != nil {
 		p.write(*flat1426)
 		return nil
 	} else {
 		_dollar_dollar := msg
-		_t1666 := p.deconstruct_iceberg_config_scope_optional(_dollar_dollar)
+		_t1666 := p.deconstruct_iceberg_catalog_config_scope_optional(_dollar_dollar)
 		fields1415 := []interface{}{_dollar_dollar.GetCatalogUri(), _t1666, dictToPairs(_dollar_dollar.GetProperties()), dictToPairs(_dollar_dollar.GetAuthProperties())}
 		unwrapped_fields1416 := fields1415
 		p.write("(")
-		p.write("iceberg_config")
+		p.write("iceberg_catalog_config")
 		p.indentSexp()
 		p.newline()
 		p.write("(")
@@ -4097,7 +4097,7 @@ func (p *PrettyPrinter) pretty_iceberg_config(msg *pb.IcebergCatalogConfig) inte
 		if field1418 != nil {
 			p.newline()
 			opt_val1419 := *field1418
-			p.pretty_iceberg_config_scope(opt_val1419)
+			p.pretty_iceberg_catalog_config_scope(opt_val1419)
 		}
 		p.newline()
 		p.write("(")
@@ -4137,8 +4137,8 @@ func (p *PrettyPrinter) pretty_iceberg_config(msg *pb.IcebergCatalogConfig) inte
 	return nil
 }
 
-func (p *PrettyPrinter) pretty_iceberg_config_scope(msg string) interface{} {
-	flat1428 := p.tryFlat(msg, func() { p.pretty_iceberg_config_scope(msg) })
+func (p *PrettyPrinter) pretty_iceberg_catalog_config_scope(msg string) interface{} {
+	flat1428 := p.tryFlat(msg, func() { p.pretty_iceberg_catalog_config_scope(msg) })
 	if flat1428 != nil {
 		p.write(*flat1428)
 		return nil
@@ -4721,7 +4721,7 @@ func (p *PrettyPrinter) pretty_export_iceberg_config(msg *pb.ExportIcebergConfig
 		p.pretty_iceberg_locator(field1524)
 		p.newline()
 		field1525 := unwrapped_fields1523[1].(*pb.IcebergCatalogConfig)
-		p.pretty_iceberg_config(field1525)
+		p.pretty_iceberg_catalog_config(field1525)
 		p.newline()
 		p.write("(")
 		p.newline()
@@ -5142,7 +5142,7 @@ func (p *PrettyPrinter) pprintDispatch(msg interface{}) {
 	case *pb.IcebergLocator:
 		p.pretty_iceberg_locator(m)
 	case *pb.IcebergCatalogConfig:
-		p.pretty_iceberg_config(m)
+		p.pretty_iceberg_catalog_config(m)
 	case *pb.Undefine:
 		p.pretty_undefine(m)
 	case *pb.Context:

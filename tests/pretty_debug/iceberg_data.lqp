@@ -17,7 +17,7 @@
           (
           warehouse
           "wh"))
-      (iceberg_config
+      (iceberg_catalog_config
         (
         catalog_uri
         "https://catalog.example")

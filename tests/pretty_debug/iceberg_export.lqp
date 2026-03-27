@@ -25,7 +25,7 @@
         (
         warehouse
         "s3://bucket/warehouse"))
-    (iceberg_config
+    (iceberg_catalog_config
       (
       catalog_uri
       "https://catalog.example.com")
@@ -52,7 +52,7 @@ create_table_properties)))
   (
   warehouse
   "s3://bucket/warehouse"))
-(iceberg_config
+(iceberg_catalog_config
   (
   catalog_uri
   "https://catalog.example.com")
@@ -84,7 +84,7 @@ create_table_properties
   (
   warehouse
   "s3://bucket/default"))
-(iceberg_config
+(iceberg_catalog_config
   (
   catalog_uri
   "https://catalog.example.com")

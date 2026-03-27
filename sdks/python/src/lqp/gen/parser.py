@@ -643,7 +643,7 @@ class Parser:
         _t2106 = transactions_pb2.ExportCSVConfig(path=path, csv_source=csv_source, csv_config=csv_config)
         return _t2106
 
-    def construct_iceberg_config(self, catalog_uri: str, scope_opt: str | None, property_pairs: Sequence[tuple[str, str]], auth_property_pairs: Sequence[tuple[str, str]]) -> logic_pb2.IcebergCatalogConfig:
+    def construct_iceberg_catalog_config(self, catalog_uri: str, scope_opt: str | None, property_pairs: Sequence[tuple[str, str]], auth_property_pairs: Sequence[tuple[str, str]]) -> logic_pb2.IcebergCatalogConfig:
         props = dict(property_pairs)
         auth_props = dict(auth_property_pairs)
         _t2107 = logic_pb2.IcebergCatalogConfig(catalog_uri=catalog_uri, scope=(scope_opt if scope_opt is not None else ""), properties=props, auth_properties=auth_props)
@@ -3375,8 +3375,8 @@ class Parser:
         self.consume_literal("iceberg_data")
         _t1949 = self.parse_iceberg_locator()
         iceberg_locator1186 = _t1949
-        _t1950 = self.parse_iceberg_config()
-        iceberg_config1187 = _t1950
+        _t1950 = self.parse_iceberg_catalog_config()
+        iceberg_catalog_config1187 = _t1950
         _t1951 = self.parse_gnf_columns()
         gnf_columns1188 = _t1951
         if self.match_lookahead_literal("(", 0):
@@ -3386,7 +3386,7 @@ class Parser:
             _t1952 = None
         iceberg_to_snapshot1189 = _t1952
         self.consume_literal(")")
-        _t1954 = logic_pb2.IcebergData(locator=iceberg_locator1186, config=iceberg_config1187, columns=gnf_columns1188, to_snapshot=(iceberg_to_snapshot1189 if iceberg_to_snapshot1189 is not None else ""))
+        _t1954 = logic_pb2.IcebergData(locator=iceberg_locator1186, config=iceberg_catalog_config1187, columns=gnf_columns1188, to_snapshot=(iceberg_to_snapshot1189 if iceberg_to_snapshot1189 is not None else ""))
         result1191 = _t1954
         self.record_span(span_start1190, "IcebergData")
         return result1191
@@ -3419,20 +3419,20 @@ class Parser:
         self.record_span(span_start1198, "IcebergLocator")
         return result1199
 
-    def parse_iceberg_config(self) -> logic_pb2.IcebergCatalogConfig:
+    def parse_iceberg_catalog_config(self) -> logic_pb2.IcebergCatalogConfig:
         span_start1210 = self.span_start()
         self.consume_literal("(")
-        self.consume_literal("iceberg_config")
+        self.consume_literal("iceberg_catalog_config")
         self.consume_literal("(")
         self.consume_literal("catalog_uri")
         string1200 = self.consume_terminal("STRING")
         self.consume_literal(")")
         if (self.match_lookahead_literal("(", 0) and self.match_lookahead_literal("scope", 1)):
-            _t1957 = self.parse_iceberg_config_scope()
+            _t1957 = self.parse_iceberg_catalog_config_scope()
             _t1956 = _t1957
         else:
             _t1956 = None
-        iceberg_config_scope1201 = _t1956
+        iceberg_catalog_config_scope1201 = _t1956
         self.consume_literal("(")
         self.consume_literal("properties")
         xs1202 = []
@@ -3456,12 +3456,12 @@ class Parser:
         iceberg_property_entrys_131209 = xs1206
         self.consume_literal(")")
         self.consume_literal(")")
-        _t1960 = self.construct_iceberg_config(string1200, iceberg_config_scope1201, iceberg_property_entrys1205, iceberg_property_entrys_131209)
+        _t1960 = self.construct_iceberg_catalog_config(string1200, iceberg_catalog_config_scope1201, iceberg_property_entrys1205, iceberg_property_entrys_131209)
         result1211 = _t1960
         self.record_span(span_start1210, "IcebergCatalogConfig")
         return result1211
 
-    def parse_iceberg_config_scope(self) -> str:
+    def parse_iceberg_catalog_config_scope(self) -> str:
         self.consume_literal("(")
         self.consume_literal("scope")
         string1212 = self.consume_terminal("STRING")
@@ -3856,8 +3856,8 @@ class Parser:
         self.consume_literal("export_iceberg_config")
         _t2040 = self.parse_iceberg_locator()
         iceberg_locator1293 = _t2040
-        _t2041 = self.parse_iceberg_config()
-        iceberg_config1294 = _t2041
+        _t2041 = self.parse_iceberg_catalog_config()
+        iceberg_catalog_config1294 = _t2041
         self.consume_literal("(")
         self.consume_literal("columns")
         xs1295 = []
@@ -3887,7 +3887,7 @@ class Parser:
             _t2044 = None
         config_dict1303 = _t2044
         self.consume_literal(")")
-        _t2046 = self.construct_export_iceberg_config_full(iceberg_locator1293, iceberg_config1294, iceberg_export_columns1298, iceberg_property_entrys1302, config_dict1303)
+        _t2046 = self.construct_export_iceberg_config_full(iceberg_locator1293, iceberg_catalog_config1294, iceberg_export_columns1298, iceberg_property_entrys1302, config_dict1303)
         result1305 = _t2046
         self.record_span(span_start1304, "ExportIcebergConfig")
         return result1305

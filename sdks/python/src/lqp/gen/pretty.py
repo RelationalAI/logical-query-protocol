@@ -347,7 +347,7 @@ class PrettyPrinter:
             result.append(("syntax_escapechar", _t1717,))
         return sorted(result)
 
-    def deconstruct_iceberg_config_scope_optional(self, msg: logic_pb2.IcebergCatalogConfig) -> str | None:
+    def deconstruct_iceberg_catalog_config_scope_optional(self, msg: logic_pb2.IcebergCatalogConfig) -> str | None:
         assert msg.scope is not None
         if msg.scope != "":
             assert msg.scope is not None
@@ -3505,7 +3505,7 @@ class PrettyPrinter:
             self.pretty_iceberg_locator(field1401)
             self.newline()
             field1402 = unwrapped_fields1400[1]
-            self.pretty_iceberg_config(field1402)
+            self.pretty_iceberg_catalog_config(field1402)
             self.newline()
             field1403 = unwrapped_fields1400[2]
             self.pretty_gnf_columns(field1403)
@@ -3565,19 +3565,19 @@ class PrettyPrinter:
             self.dedent()
             self.write(")")
 
-    def pretty_iceberg_config(self, msg: logic_pb2.IcebergCatalogConfig):
-        flat1426 = self._try_flat(msg, self.pretty_iceberg_config)
+    def pretty_iceberg_catalog_config(self, msg: logic_pb2.IcebergCatalogConfig):
+        flat1426 = self._try_flat(msg, self.pretty_iceberg_catalog_config)
         if flat1426 is not None:
             assert flat1426 is not None
             self.write(flat1426)
             return None
         else:
             _dollar_dollar = msg
-            _t1666 = self.deconstruct_iceberg_config_scope_optional(_dollar_dollar)
+            _t1666 = self.deconstruct_iceberg_catalog_config_scope_optional(_dollar_dollar)
             fields1415 = (_dollar_dollar.catalog_uri, _t1666, sorted(_dollar_dollar.properties.items()), sorted(_dollar_dollar.auth_properties.items()),)
             assert fields1415 is not None
             unwrapped_fields1416 = fields1415
-            self.write("(iceberg_config")
+            self.write("(iceberg_catalog_config")
             self.indent_sexp()
             self.newline()
             self.write("(")
@@ -3593,7 +3593,7 @@ class PrettyPrinter:
                 self.newline()
                 assert field1418 is not None
                 opt_val1419 = field1418
-                self.pretty_iceberg_config_scope(opt_val1419)
+                self.pretty_iceberg_catalog_config_scope(opt_val1419)
             self.newline()
             self.write("(")
             self.newline()
@@ -3623,8 +3623,8 @@ class PrettyPrinter:
             self.dedent()
             self.write(")")
 
-    def pretty_iceberg_config_scope(self, msg: str):
-        flat1428 = self._try_flat(msg, self.pretty_iceberg_config_scope)
+    def pretty_iceberg_catalog_config_scope(self, msg: str):
+        flat1428 = self._try_flat(msg, self.pretty_iceberg_catalog_config_scope)
         if flat1428 is not None:
             assert flat1428 is not None
             self.write(flat1428)
@@ -4145,7 +4145,7 @@ class PrettyPrinter:
             self.pretty_iceberg_locator(field1524)
             self.newline()
             field1525 = unwrapped_fields1523[1]
-            self.pretty_iceberg_config(field1525)
+            self.pretty_iceberg_catalog_config(field1525)
             self.newline()
             self.write("(")
             self.newline()
@@ -4491,7 +4491,7 @@ class PrettyPrinter:
         elif isinstance(msg, logic_pb2.IcebergLocator):
             self.pretty_iceberg_locator(msg)
         elif isinstance(msg, logic_pb2.IcebergCatalogConfig):
-            self.pretty_iceberg_config(msg)
+            self.pretty_iceberg_catalog_config(msg)
         elif isinstance(msg, transactions_pb2.Undefine):
             self.pretty_undefine(msg)
         elif isinstance(msg, transactions_pb2.Context):

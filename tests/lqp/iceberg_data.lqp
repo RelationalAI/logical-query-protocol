@@ -8,7 +8,7 @@
               (table_name "events")
               (namespace "analytics" "raw")
               (warehouse "wh"))
-            (iceberg_config
+            (iceberg_catalog_config
               (catalog_uri "https://catalog.example")
               (properties (prop "type" "rest"))
               (auth_properties (prop "token" "random token")))

@@ -855,7 +855,7 @@ func (p *Parser) construct_export_csv_config_with_source(path string, csv_source
 	return _t2108
 }
 
-func (p *Parser) construct_iceberg_config(catalog_uri string, scope_opt *string, property_pairs [][]interface{}, auth_property_pairs [][]interface{}) *pb.IcebergCatalogConfig {
+func (p *Parser) construct_iceberg_catalog_config(catalog_uri string, scope_opt *string, property_pairs [][]interface{}, auth_property_pairs [][]interface{}) *pb.IcebergCatalogConfig {
 	props := stringMapFromPairs(property_pairs)
 	auth_props := stringMapFromPairs(auth_property_pairs)
 	_t2109 := &pb.IcebergCatalogConfig{CatalogUri: catalog_uri, Scope: ptr(deref(scope_opt, "")), Properties: props, AuthProperties: auth_props}
@@ -4368,8 +4368,8 @@ func (p *Parser) parse_iceberg_data() *pb.IcebergData {
 	p.consumeLiteral("iceberg_data")
 	_t1960 := p.parse_iceberg_locator()
 	iceberg_locator1186 := _t1960
-	_t1961 := p.parse_iceberg_config()
-	iceberg_config1187 := _t1961
+	_t1961 := p.parse_iceberg_catalog_config()
+	iceberg_catalog_config1187 := _t1961
 	_t1962 := p.parse_gnf_columns()
 	gnf_columns1188 := _t1962
 	var _t1963 *string
@@ -4379,7 +4379,7 @@ func (p *Parser) parse_iceberg_data() *pb.IcebergData {
 	}
 	iceberg_to_snapshot1189 := _t1963
 	p.consumeLiteral(")")
-	_t1965 := &pb.IcebergData{Locator: iceberg_locator1186, Config: iceberg_config1187, Columns: gnf_columns1188, ToSnapshot: ptr(deref(iceberg_to_snapshot1189, ""))}
+	_t1965 := &pb.IcebergData{Locator: iceberg_locator1186, Config: iceberg_catalog_config1187, Columns: gnf_columns1188, ToSnapshot: ptr(deref(iceberg_to_snapshot1189, ""))}
 	result1191 := _t1965
 	p.recordSpan(int(span_start1190), "IcebergData")
 	return result1191
@@ -4415,20 +4415,20 @@ func (p *Parser) parse_iceberg_locator() *pb.IcebergLocator {
 	return result1199
 }
 
-func (p *Parser) parse_iceberg_config() *pb.IcebergCatalogConfig {
+func (p *Parser) parse_iceberg_catalog_config() *pb.IcebergCatalogConfig {
 	span_start1210 := int64(p.spanStart())
 	p.consumeLiteral("(")
-	p.consumeLiteral("iceberg_config")
+	p.consumeLiteral("iceberg_catalog_config")
 	p.consumeLiteral("(")
 	p.consumeLiteral("catalog_uri")
 	string1200 := p.consumeTerminal("STRING").Value.str
 	p.consumeLiteral(")")
 	var _t1967 *string
 	if (p.matchLookaheadLiteral("(", 0) && p.matchLookaheadLiteral("scope", 1)) {
-		_t1968 := p.parse_iceberg_config_scope()
+		_t1968 := p.parse_iceberg_catalog_config_scope()
 		_t1967 = ptr(_t1968)
 	}
-	iceberg_config_scope1201 := _t1967
+	iceberg_catalog_config_scope1201 := _t1967
 	p.consumeLiteral("(")
 	p.consumeLiteral("properties")
 	xs1202 := [][]interface{}{}
@@ -4454,13 +4454,13 @@ func (p *Parser) parse_iceberg_config() *pb.IcebergCatalogConfig {
 	iceberg_property_entrys_131209 := xs1206
 	p.consumeLiteral(")")
 	p.consumeLiteral(")")
-	_t1971 := p.construct_iceberg_config(string1200, iceberg_config_scope1201, iceberg_property_entrys1205, iceberg_property_entrys_131209)
+	_t1971 := p.construct_iceberg_catalog_config(string1200, iceberg_catalog_config_scope1201, iceberg_property_entrys1205, iceberg_property_entrys_131209)
 	result1211 := _t1971
 	p.recordSpan(int(span_start1210), "IcebergCatalogConfig")
 	return result1211
 }
 
-func (p *Parser) parse_iceberg_config_scope() string {
+func (p *Parser) parse_iceberg_catalog_config_scope() string {
 	p.consumeLiteral("(")
 	p.consumeLiteral("scope")
 	string1212 := p.consumeTerminal("STRING").Value.str
@@ -4942,8 +4942,8 @@ func (p *Parser) parse_export_iceberg_config() *pb.ExportIcebergConfig {
 	p.consumeLiteral("export_iceberg_config")
 	_t2051 := p.parse_iceberg_locator()
 	iceberg_locator1293 := _t2051
-	_t2052 := p.parse_iceberg_config()
-	iceberg_config1294 := _t2052
+	_t2052 := p.parse_iceberg_catalog_config()
+	iceberg_catalog_config1294 := _t2052
 	p.consumeLiteral("(")
 	p.consumeLiteral("columns")
 	xs1295 := []*pb.ExportIcebergColumn{}
@@ -4975,7 +4975,7 @@ func (p *Parser) parse_export_iceberg_config() *pb.ExportIcebergConfig {
 	}
 	config_dict1303 := _t2055
 	p.consumeLiteral(")")
-	_t2057 := p.construct_export_iceberg_config_full(iceberg_locator1293, iceberg_config1294, iceberg_export_columns1298, iceberg_property_entrys1302, config_dict1303)
+	_t2057 := p.construct_export_iceberg_config_full(iceberg_locator1293, iceberg_catalog_config1294, iceberg_export_columns1298, iceberg_property_entrys1302, config_dict1303)
 	result1305 := _t2057
 	p.recordSpan(int(span_start1304), "ExportIcebergConfig")
 	return result1305

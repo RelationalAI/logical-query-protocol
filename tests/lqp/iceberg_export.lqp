@@ -16,7 +16,7 @@
             (table_name "sales")
             (namespace "db" "schema")
             (warehouse "s3://bucket/warehouse"))
-          (iceberg_config
+          (iceberg_catalog_config
             (catalog_uri "https://catalog.example.com")
             (properties)
             (auth_properties))
@@ -33,7 +33,7 @@
             (table_name "sales_archive")
             (namespace "production")
             (warehouse "s3://bucket/warehouse"))
-          (iceberg_config
+          (iceberg_catalog_config
             (catalog_uri "https://catalog.example.com")
             (scope "read-only")
             (properties (prop "client.region" "us-east-1"))
@@ -54,7 +54,7 @@
             (table_name "flat_table")
             (namespace)
             (warehouse "s3://bucket/default"))
-          (iceberg_config
+          (iceberg_catalog_config
             (catalog_uri "https://catalog.example.com")
             (properties)
             (auth_properties))

@@ -526,7 +526,7 @@ function deconstruct_export_csv_config(pp::PrettyPrinter, msg::Proto.ExportCSVCo
     return sort(result)
 end
 
-function deconstruct_iceberg_config_scope_optional(pp::PrettyPrinter, msg::Proto.IcebergCatalogConfig)::Union{Nothing, String}
+function deconstruct_iceberg_catalog_config_scope_optional(pp::PrettyPrinter, msg::Proto.IcebergCatalogConfig)::Union{Nothing, String}
     if msg.scope != ""
         return msg.scope
     else
@@ -4087,7 +4087,7 @@ function pretty_iceberg_data(pp::PrettyPrinter, msg::Proto.IcebergData)
         pretty_iceberg_locator(pp, field1401)
         newline(pp)
         field1402 = unwrapped_fields1400[2]
-        pretty_iceberg_config(pp, field1402)
+        pretty_iceberg_catalog_config(pp, field1402)
         newline(pp)
         field1403 = unwrapped_fields1400[3]
         pretty_gnf_columns(pp, field1403)
@@ -4155,17 +4155,17 @@ function pretty_iceberg_locator(pp::PrettyPrinter, msg::Proto.IcebergLocator)
     return nothing
 end
 
-function pretty_iceberg_config(pp::PrettyPrinter, msg::Proto.IcebergCatalogConfig)
-    flat1426 = try_flat(pp, msg, pretty_iceberg_config)
+function pretty_iceberg_catalog_config(pp::PrettyPrinter, msg::Proto.IcebergCatalogConfig)
+    flat1426 = try_flat(pp, msg, pretty_iceberg_catalog_config)
     if !isnothing(flat1426)
         write(pp, flat1426)
         return nothing
     else
         _dollar_dollar = msg
-        _t1697 = deconstruct_iceberg_config_scope_optional(pp, _dollar_dollar)
+        _t1697 = deconstruct_iceberg_catalog_config_scope_optional(pp, _dollar_dollar)
         fields1415 = (_dollar_dollar.catalog_uri, _t1697, sort([(k, v) for (k, v) in _dollar_dollar.properties]), sort([(k, v) for (k, v) in _dollar_dollar.auth_properties]),)
         unwrapped_fields1416 = fields1415
-        write(pp, "(iceberg_config")
+        write(pp, "(iceberg_catalog_config")
         indent_sexp!(pp)
         newline(pp)
         write(pp, "(")
@@ -4180,7 +4180,7 @@ function pretty_iceberg_config(pp::PrettyPrinter, msg::Proto.IcebergCatalogConfi
         if !isnothing(field1418)
             newline(pp)
             opt_val1419 = field1418
-            pretty_iceberg_config_scope(pp, opt_val1419)
+            pretty_iceberg_catalog_config_scope(pp, opt_val1419)
         end
         newline(pp)
         write(pp, "(")
@@ -4222,8 +4222,8 @@ function pretty_iceberg_config(pp::PrettyPrinter, msg::Proto.IcebergCatalogConfi
     return nothing
 end
 
-function pretty_iceberg_config_scope(pp::PrettyPrinter, msg::String)
-    flat1428 = try_flat(pp, msg, pretty_iceberg_config_scope)
+function pretty_iceberg_catalog_config_scope(pp::PrettyPrinter, msg::String)
+    flat1428 = try_flat(pp, msg, pretty_iceberg_catalog_config_scope)
     if !isnothing(flat1428)
         write(pp, flat1428)
         return nothing
@@ -4802,7 +4802,7 @@ function pretty_export_iceberg_config(pp::PrettyPrinter, msg::Proto.ExportIceber
         pretty_iceberg_locator(pp, field1524)
         newline(pp)
         field1525 = unwrapped_fields1523[2]
-        pretty_iceberg_config(pp, field1525)
+        pretty_iceberg_catalog_config(pp, field1525)
         newline(pp)
         write(pp, "(")
         newline(pp)
@@ -5135,7 +5135,7 @@ _pprint_dispatch(pp::PrettyPrinter, x::Vector{Proto.GNFColumn}) = pretty_gnf_col
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.GNFColumn) = pretty_gnf_column(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.IcebergData) = pretty_iceberg_data(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.IcebergLocator) = pretty_iceberg_locator(pp, x)
-_pprint_dispatch(pp::PrettyPrinter, x::Proto.IcebergCatalogConfig) = pretty_iceberg_config(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.IcebergCatalogConfig) = pretty_iceberg_catalog_config(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Tuple{String, String}) = pretty_iceberg_property_entry(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.Undefine) = pretty_undefine(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.Context) = pretty_context(pp, x)
