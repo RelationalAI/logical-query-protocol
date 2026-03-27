@@ -20,7 +20,8 @@
             (catalog_uri "https://catalog.example.com")
             (properties)
             (auth_properties))
-          (columns (source_table_def :sales)
+          (columns
+            (source_table_def :sales)
             (target_columns
               (iceberg_column "id" INT false)
               (iceberg_column "region" STRING false)
@@ -41,7 +42,8 @@
             (auth_properties
               (prop "credential" "my-credential")
               (prop "token" "secret-token-123")))
-          (columns (source_table_def :sales)
+          (columns
+            (source_table_def :sales)
             (target_columns
               (iceberg_column "id" INT false)
               (iceberg_column "region" STRING false)
@@ -60,7 +62,8 @@
             (catalog_uri "https://catalog.example.com")
             (properties)
             (auth_properties))
-          (columns (source_table_def :sales)
+          (columns
+            (source_table_def :sales)
             (target_columns
               (iceberg_column "id" INT false)))
           (table_properties))))))
