@@ -9,7 +9,7 @@
                 (and (= id 1) (= region "us-east") (= amount 100.0))
                 (and (= id 2) (= region "eu-west") (= amount 250.5))))))))
     (reads
-      ;; Minimal export with gnf defs as column source
+      ;; Minimal export
       (export_iceberg
         (export_iceberg_config
           (iceberg_locator
@@ -20,15 +20,14 @@
             (catalog_uri "https://catalog.example.com")
             (properties)
             (auth_properties))
-          (columns
-            (source_gnf_defs :id :region :amount)
+          (columns :sales
             (target_columns
               (iceberg_column "id" INT false)
               (iceberg_column "region" STRING false)
               (iceberg_column "amount" FLOAT false)))
           (table_properties)))
 
-      ;; Full export with scope, property maps, table source, and trailing export options
+      ;; Full export with scope, property maps, and trailing export options
       (export_iceberg
         (export_iceberg_config
           (iceberg_locator
@@ -42,8 +41,7 @@
             (auth_properties
               (prop "credential" "my-credential")
               (prop "token" "secret-token-123")))
-          (columns
-            (source_table_def :sales)
+          (columns :sales
             (target_columns
               (iceberg_column "id" INT false)
               (iceberg_column "region" STRING false)
@@ -62,8 +60,7 @@
             (catalog_uri "https://catalog.example.com")
             (properties)
             (auth_properties))
-          (columns
-            (source_gnf_defs :id)
+          (columns :sales
             (target_columns
               (iceberg_column "id" INT false)))
           (table_properties))))))

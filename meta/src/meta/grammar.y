@@ -117,7 +117,6 @@
 %nonterm export_csv_path String
 %nonterm export_csv_source transactions.ExportCSVSource
 %nonterm export_iceberg_column transactions.ExportIcebergColumn
-%nonterm export_iceberg_column_source transactions.ExportIcebergColumns
 %nonterm export_iceberg_columns transactions.ExportIcebergColumns
 %nonterm export_iceberg_config transactions.ExportIcebergConfig
 %nonterm iceberg_catalog_config logic.IcebergCatalogConfig
@@ -1177,21 +1176,11 @@ export_iceberg_column
         $4: logic.Type = $$.type
         $5: Boolean = $$.nullable
 
-export_iceberg_column_source
-    : "(" "source_gnf_defs" relation_id* ")"
-      construct: $$ = transactions.ExportIcebergColumns(source_gnf_defs=transactions.ExportIcebergGnfDefs(defs=$3), target_columns=list[transactions.ExportIcebergColumn]())
-      deconstruct if builtin.has_proto_field($$, 'source_gnf_defs'):
-        $3: Sequence[logic.RelationId] = $$.source_gnf_defs.defs
-    | "(" "source_table_def" relation_id ")"
-      construct: $$ = transactions.ExportIcebergColumns(source_table_def=$3, target_columns=list[transactions.ExportIcebergColumn]())
-      deconstruct if builtin.has_proto_field($$, 'source_table_def'):
-        $3: logic.RelationId = $$.source_table_def
-
 export_iceberg_columns
-    : "(" "columns" export_iceberg_column_source "(" "target_columns" export_iceberg_column* ")" ")"
-      construct: $$ = merge_export_iceberg_columns($3, $6)
+    : "(" "columns" relation_id "(" "target_columns" export_iceberg_column* ")" ")"
+      construct: $$ = transactions.ExportIcebergColumns(source_table_def=$3, target_columns=$6)
       deconstruct:
-        $3: transactions.ExportIcebergColumns = $$
+        $3: logic.RelationId = $$.source_table_def
         $6: Sequence[transactions.ExportIcebergColumn] = $$.target_columns
 
 iceberg_to_snapshot
@@ -1704,15 +1693,6 @@ def construct_export_iceberg_config_full(
         compression=compression,
         table_properties=table_props,
     )
-
-
-def merge_export_iceberg_columns(
-    source: transactions.ExportIcebergColumns,
-    target_columns: Sequence[transactions.ExportIcebergColumn],
-) -> transactions.ExportIcebergColumns:
-    if builtin.has_proto_field(source, 'source_gnf_defs'):
-        return transactions.ExportIcebergColumns(source_gnf_defs=transactions.ExportIcebergGnfDefs(defs=source.source_gnf_defs.defs), target_columns=target_columns)
-    return transactions.ExportIcebergColumns(source_table_def=source.source_table_def, target_columns=target_columns)
 
 
 def deconstruct_export_iceberg_config_optional(

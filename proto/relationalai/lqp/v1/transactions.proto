@@ -134,16 +134,9 @@ message ExportIcebergColumn {
   bool nullable = 3;
 }
 
-message ExportIcebergGnfDefs {
-  repeated RelationId defs = 1;
-}
-
 message ExportIcebergColumns {
-  oneof iceberg_columns {
-    ExportIcebergGnfDefs source_gnf_defs = 1;
-    RelationId source_table_def = 2;
-  }
-  repeated ExportIcebergColumn target_columns = 3;
+  RelationId source_table_def = 1;
+  repeated ExportIcebergColumn target_columns = 2;
 }
 
 //

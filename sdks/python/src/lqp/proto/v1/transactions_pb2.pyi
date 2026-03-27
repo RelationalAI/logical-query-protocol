@@ -184,21 +184,13 @@ class ExportIcebergColumn(_message.Message):
     nullable: bool
     def __init__(self, name: _Optional[str] = ..., type: _Optional[_Union[_logic_pb2.Type, _Mapping]] = ..., nullable: bool = ...) -> None: ...
 
-class ExportIcebergGnfDefs(_message.Message):
-    __slots__ = ("defs",)
-    DEFS_FIELD_NUMBER: _ClassVar[int]
-    defs: _containers.RepeatedCompositeFieldContainer[_logic_pb2.RelationId]
-    def __init__(self, defs: _Optional[_Iterable[_Union[_logic_pb2.RelationId, _Mapping]]] = ...) -> None: ...
-
 class ExportIcebergColumns(_message.Message):
-    __slots__ = ("source_gnf_defs", "source_table_def", "target_columns")
-    SOURCE_GNF_DEFS_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("source_table_def", "target_columns")
     SOURCE_TABLE_DEF_FIELD_NUMBER: _ClassVar[int]
     TARGET_COLUMNS_FIELD_NUMBER: _ClassVar[int]
-    source_gnf_defs: ExportIcebergGnfDefs
     source_table_def: _logic_pb2.RelationId
     target_columns: _containers.RepeatedCompositeFieldContainer[ExportIcebergColumn]
-    def __init__(self, source_gnf_defs: _Optional[_Union[ExportIcebergGnfDefs, _Mapping]] = ..., source_table_def: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ..., target_columns: _Optional[_Iterable[_Union[ExportIcebergColumn, _Mapping]]] = ...) -> None: ...
+    def __init__(self, source_table_def: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ..., target_columns: _Optional[_Iterable[_Union[ExportIcebergColumn, _Mapping]]] = ...) -> None: ...
 
 class Read(_message.Message):
     __slots__ = ("demand", "output", "what_if", "abort", "export")

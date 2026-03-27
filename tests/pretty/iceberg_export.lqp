@@ -34,10 +34,7 @@
   (
   auth_properties))
 (columns
-  (source_gnf_defs
-    0x7dd618d496488bc608a3cb43ce3547dd
-    0x5398f3cc77d2b905819aa99c46ecf6f6
-    0x7727ef4cfb3f5116a602fe2b25115c13)
+  :sales
   (
   target_columns
   (iceberg_column "id" INT false)
@@ -70,8 +67,7 @@ auth_properties
 (prop "credential" "my-credential")
 (prop "token" "secret-token-123")))
 (columns
-  (source_table_def
-    :sales)
+  :sales
   (
   target_columns
   (iceberg_column "id" INT false)
@@ -100,11 +96,6 @@ table_properties
 properties)
 (
 auth_properties))
-(columns
-  (source_gnf_defs
-    0x7dd618d496488bc608a3cb43ce3547dd)
-  (
-  target_columns
-  (iceberg_column "id" INT false)))
+(columns :sales ( target_columns (iceberg_column "id" INT false)))
 (
 table_properties))))))
