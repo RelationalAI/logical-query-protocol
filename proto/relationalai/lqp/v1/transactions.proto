@@ -120,16 +120,18 @@ message ExportCSVSource {
 
 message ExportIcebergConfig {
   IcebergLocator locator = 1;
-  IcebergConfig config = 2;
-  repeated IcebergExportColumn columns = 3;
+  IcebergCatalogConfig config = 2;
+  repeated ExportIcebergColumn columns = 3;
   optional string prefix = 4;                    // Default: "data"
   optional int64 target_file_size_bytes = 5;     // Default: 512 MB
   string compression = 6;                        // UNCOMPRESSED, SNAPPY, GZIP, LZ4, ZSTD
+  map<string, string> create_table_properties = 7;            // properties for table creation
 }
 
-message IcebergExportColumn {
+message ExportIcebergColumn {
   string name = 1;
-  Type type = 2;
+  RelationId column_data = 2;
+  Type type = 3;
   bool nullable = 3;
 }
 

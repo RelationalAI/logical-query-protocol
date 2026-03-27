@@ -316,7 +316,7 @@ message CSVConfig {
 
 message IcebergData {
   IcebergLocator locator = 1;
-  IcebergConfig config = 2;
+  IcebergCatalogConfig config = 2;
   repeated GNFColumn columns = 3;
   optional string to_snapshot = 4;
 }
@@ -327,7 +327,7 @@ message IcebergLocator {
   string warehouse = 3;
 }
 
-message IcebergConfig {
+message IcebergCatalogConfig {
   string catalog_uri = 1;
   optional string scope = 2;
   map<string, string> properties = 3;
