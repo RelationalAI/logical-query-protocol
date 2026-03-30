@@ -149,8 +149,16 @@ class ExportCSVSource(_message.Message):
     table_def: _logic_pb2.RelationId
     def __init__(self, gnf_columns: _Optional[_Union[ExportCSVColumns, _Mapping]] = ..., table_def: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ...) -> None: ...
 
+class ExportIcebergColumn(_message.Message):
+    __slots__ = ("name", "nullable")
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    NULLABLE_FIELD_NUMBER: _ClassVar[int]
+    name: str
+    nullable: bool
+    def __init__(self, name: _Optional[str] = ..., nullable: bool = ...) -> None: ...
+
 class ExportIcebergConfig(_message.Message):
-    __slots__ = ("locator", "config", "columns", "prefix", "target_file_size_bytes", "compression", "table_properties")
+    __slots__ = ("locator", "config", "table_def", "columns", "prefix", "target_file_size_bytes", "compression", "table_properties")
     class TablePropertiesEntry(_message.Message):
         __slots__ = ("key", "value")
         KEY_FIELD_NUMBER: _ClassVar[int]
@@ -160,6 +168,7 @@ class ExportIcebergConfig(_message.Message):
         def __init__(self, key: _Optional[str] = ..., value: _Optional[str] = ...) -> None: ...
     LOCATOR_FIELD_NUMBER: _ClassVar[int]
     CONFIG_FIELD_NUMBER: _ClassVar[int]
+    TABLE_DEF_FIELD_NUMBER: _ClassVar[int]
     COLUMNS_FIELD_NUMBER: _ClassVar[int]
     PREFIX_FIELD_NUMBER: _ClassVar[int]
     TARGET_FILE_SIZE_BYTES_FIELD_NUMBER: _ClassVar[int]
@@ -167,30 +176,13 @@ class ExportIcebergConfig(_message.Message):
     TABLE_PROPERTIES_FIELD_NUMBER: _ClassVar[int]
     locator: _logic_pb2.IcebergLocator
     config: _logic_pb2.IcebergCatalogConfig
-    columns: ExportIcebergColumns
+    table_def: _logic_pb2.RelationId
+    columns: _containers.RepeatedCompositeFieldContainer[ExportIcebergColumn]
     prefix: str
     target_file_size_bytes: int
     compression: str
     table_properties: _containers.ScalarMap[str, str]
-    def __init__(self, locator: _Optional[_Union[_logic_pb2.IcebergLocator, _Mapping]] = ..., config: _Optional[_Union[_logic_pb2.IcebergCatalogConfig, _Mapping]] = ..., columns: _Optional[_Union[ExportIcebergColumns, _Mapping]] = ..., prefix: _Optional[str] = ..., target_file_size_bytes: _Optional[int] = ..., compression: _Optional[str] = ..., table_properties: _Optional[_Mapping[str, str]] = ...) -> None: ...
-
-class ExportIcebergColumn(_message.Message):
-    __slots__ = ("name", "type", "nullable")
-    NAME_FIELD_NUMBER: _ClassVar[int]
-    TYPE_FIELD_NUMBER: _ClassVar[int]
-    NULLABLE_FIELD_NUMBER: _ClassVar[int]
-    name: str
-    type: _logic_pb2.Type
-    nullable: bool
-    def __init__(self, name: _Optional[str] = ..., type: _Optional[_Union[_logic_pb2.Type, _Mapping]] = ..., nullable: bool = ...) -> None: ...
-
-class ExportIcebergColumns(_message.Message):
-    __slots__ = ("source_table_def", "target_columns")
-    SOURCE_TABLE_DEF_FIELD_NUMBER: _ClassVar[int]
-    TARGET_COLUMNS_FIELD_NUMBER: _ClassVar[int]
-    source_table_def: _logic_pb2.RelationId
-    target_columns: _containers.RepeatedCompositeFieldContainer[ExportIcebergColumn]
-    def __init__(self, source_table_def: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ..., target_columns: _Optional[_Iterable[_Union[ExportIcebergColumn, _Mapping]]] = ...) -> None: ...
+    def __init__(self, locator: _Optional[_Union[_logic_pb2.IcebergLocator, _Mapping]] = ..., config: _Optional[_Union[_logic_pb2.IcebergCatalogConfig, _Mapping]] = ..., table_def: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ..., columns: _Optional[_Iterable[_Union[ExportIcebergColumn, _Mapping]]] = ..., prefix: _Optional[str] = ..., target_file_size_bytes: _Optional[int] = ..., compression: _Optional[str] = ..., table_properties: _Optional[_Mapping[str, str]] = ...) -> None: ...
 
 class Read(_message.Message):
     __slots__ = ("demand", "output", "what_if", "abort", "export")

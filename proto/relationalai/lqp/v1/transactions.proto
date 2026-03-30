@@ -118,25 +118,20 @@ message ExportCSVSource {
 
 // Iceberg Export config
 
+message ExportIcebergColumn {
+  string name = 1;
+  bool nullable = 2;
+}
+
 message ExportIcebergConfig {
   IcebergLocator locator = 1;
   IcebergCatalogConfig config = 2;
-  ExportIcebergColumns columns = 3;
-  optional string prefix = 4;                    // Default: "data"
-  optional int64 target_file_size_bytes = 5;     // Default: 512 MB
-  string compression = 6;                        // UNCOMPRESSED, SNAPPY, GZIP, LZ4, ZSTD
-  map<string, string> table_properties = 7;      // properties for table creation
-}
-
-message ExportIcebergColumn {
-  string name = 1;
-  Type type = 2;
-  bool nullable = 3;
-}
-
-message ExportIcebergColumns {
-  RelationId source_table_def = 1;
-  repeated ExportIcebergColumn target_columns = 2;
+  RelationId table_def = 3;
+  repeated ExportIcebergColumn columns = 4;
+  optional string prefix = 5;
+  optional int64 target_file_size_bytes = 6;
+  string compression = 7;
+  map<string, string> table_properties = 8;
 }
 
 //

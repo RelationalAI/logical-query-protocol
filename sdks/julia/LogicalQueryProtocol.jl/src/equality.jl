@@ -366,24 +366,17 @@ Base.isequal(a::IcebergCatalogConfig, b::IcebergCatalogConfig) =
 
 # ExportIcebergColumn
 Base.:(==)(a::ExportIcebergColumn, b::ExportIcebergColumn) =
-    a.name == b.name && a.var"#type" == b.var"#type" && a.nullable == b.nullable
+    a.name == b.name && a.nullable == b.nullable
 Base.hash(a::ExportIcebergColumn, h::UInt) =
-    hash(a.nullable, hash(a.var"#type", hash(a.name, h)))
+    hash(a.nullable, hash(a.name, h))
 Base.isequal(a::ExportIcebergColumn, b::ExportIcebergColumn) =
-    isequal(a.name, b.name) && isequal(a.var"#type", b.var"#type") && isequal(a.nullable, b.nullable)
-
-# ExportIcebergColumns
-Base.:(==)(a::ExportIcebergColumns, b::ExportIcebergColumns) =
-    a.source_table_def == b.source_table_def && a.target_columns == b.target_columns
-Base.hash(a::ExportIcebergColumns, h::UInt) =
-    hash(a.target_columns, hash(a.source_table_def, h))
-Base.isequal(a::ExportIcebergColumns, b::ExportIcebergColumns) =
-    isequal(a.source_table_def, b.source_table_def) && isequal(a.target_columns, b.target_columns)
+    isequal(a.name, b.name) && isequal(a.nullable, b.nullable)
 
 # ExportIcebergConfig
 Base.:(==)(a::ExportIcebergConfig, b::ExportIcebergConfig) =
     a.locator == b.locator &&
     a.config == b.config &&
+    a.table_def == b.table_def &&
     a.columns == b.columns &&
     a.prefix == b.prefix &&
     a.target_file_size_bytes == b.target_file_size_bytes &&
@@ -395,13 +388,14 @@ Base.hash(a::ExportIcebergConfig, h::UInt) = hash(
         a.compression,
         hash(
             a.target_file_size_bytes,
-            hash(a.prefix, hash(a.columns, hash(a.config, hash(a.locator, h)))),
+            hash(a.prefix, hash(a.columns, hash(a.table_def, hash(a.config, hash(a.locator, h))))),
         ),
     ),
 )
 Base.isequal(a::ExportIcebergConfig, b::ExportIcebergConfig) =
     isequal(a.locator, b.locator) &&
     isequal(a.config, b.config) &&
+    isequal(a.table_def, b.table_def) &&
     isequal(a.columns, b.columns) &&
     isequal(a.prefix, b.prefix) &&
     isequal(a.target_file_size_bytes, b.target_file_size_bytes) &&
