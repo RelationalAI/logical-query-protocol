@@ -118,7 +118,7 @@ message ExportCSVSource {
 
 // Iceberg Export config
 
-message ExportIcebergColumn {
+message ExportGNFColumn {
   string name = 1;
   bool nullable = 2;
 }
@@ -126,9 +126,9 @@ message ExportIcebergColumn {
 message ExportIcebergConfig {
   IcebergLocator locator = 1;
   IcebergCatalogConfig config = 2;
-  RelationId table_def = 3;
-  repeated ExportIcebergColumn columns = 4;
-  optional string prefix = 5;
+  RelationId table_def = 3;              // Which definition to export as a table.
+  repeated ExportGNFColumn columns = 4;
+  optional string prefix = 5;            // File name prefix for parquet files that are produced.
   optional int64 target_file_size_bytes = 6;
   string compression = 7;
   map<string, string> table_properties = 8;
