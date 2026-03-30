@@ -1,4 +1,5 @@
 # Equality and hashing for LQP types
+# These are auto-generated protobuf types that need proper equality and hashing
 
 using ProtoBuf: OneOf
 
