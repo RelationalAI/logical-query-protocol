@@ -16,7 +16,9 @@
             "raw")
           (
           warehouse
-          "wh"))
+          "wh")
+        (from_snapshot "snap-111")
+        (to_snapshot "snap-abc"))
       (iceberg_catalog_config
         (
         catalog_uri
@@ -28,4 +30,4 @@
     auth_properties
     (prop "token" "random token")))
 (columns (column "id" [INT]))
-(to_snapshot "snap-abc")))))))
+true))))))

@@ -349,10 +349,15 @@ Base.isequal(a::ExportCSVConfig, b::ExportCSVConfig) = isequal(a.path, b.path) &
 
 # IcebergLocator
 Base.:(==)(a::IcebergLocator, b::IcebergLocator) =
-    a.table_name == b.table_name && a.namespace == b.namespace && a.warehouse == b.warehouse
-Base.hash(a::IcebergLocator, h::UInt) = hash(a.warehouse, hash(a.namespace, hash(a.table_name, h)))
+    a.table_name == b.table_name && a.namespace == b.namespace && a.warehouse == b.warehouse &&
+    a.from_snapshot == b.from_snapshot && a.to_snapshot == b.to_snapshot
+Base.hash(a::IcebergLocator, h::UInt) = hash(a.to_snapshot, hash(a.from_snapshot, hash(a.warehouse, hash(a.namespace, hash(a.table_name, h)))))
 Base.isequal(a::IcebergLocator, b::IcebergLocator) =
-    isequal(a.table_name, b.table_name) && isequal(a.namespace, b.namespace) && isequal(a.warehouse, b.warehouse)
+    isequal(a.table_name, b.table_name) &&
+    isequal(a.namespace, b.namespace) &&
+    isequal(a.warehouse, b.warehouse) &&
+    isequal(a.from_snapshot, b.from_snapshot) &&
+    isequal(a.to_snapshot, b.to_snapshot)
 
 # IcebergCatalogConfig
 # auth_properties is omitted from == / hash / isequal: secrets must not define value identity
@@ -365,12 +370,12 @@ Base.isequal(a::IcebergCatalogConfig, b::IcebergCatalogConfig) =
     isequal(a.scope, b.scope) &&
     isequal(a.properties, b.properties)
 
-# ExportIcebergColumn
-Base.:(==)(a::ExportIcebergColumn, b::ExportIcebergColumn) =
+# ExportGNFColumn
+Base.:(==)(a::ExportGNFColumn, b::ExportGNFColumn) =
     a.name == b.name && a.nullable == b.nullable
-Base.hash(a::ExportIcebergColumn, h::UInt) =
+Base.hash(a::ExportGNFColumn, h::UInt) =
     hash(a.nullable, hash(a.name, h))
-Base.isequal(a::ExportIcebergColumn, b::ExportIcebergColumn) =
+Base.isequal(a::ExportGNFColumn, b::ExportGNFColumn) =
     isequal(a.name, b.name) && isequal(a.nullable, b.nullable)
 
 # ExportIcebergConfig
@@ -408,14 +413,14 @@ Base.:(==)(a::IcebergData, b::IcebergData) =
     a.locator == b.locator &&
     a.config == b.config &&
     a.columns == b.columns &&
-    a.to_snapshot == b.to_snapshot
+    a.returns_delta == b.returns_delta
 Base.hash(a::IcebergData, h::UInt) =
-    hash(a.to_snapshot, hash(a.columns, hash(a.config, hash(a.locator, h))))
+    hash(a.returns_delta, hash(a.columns, hash(a.config, hash(a.locator, h))))
 Base.isequal(a::IcebergData, b::IcebergData) =
     isequal(a.locator, b.locator) &&
     isequal(a.config, b.config) &&
     isequal(a.columns, b.columns) &&
-    isequal(a.to_snapshot, b.to_snapshot)
+    isequal(a.returns_delta, b.returns_delta)
 
 # Demand
 Base.:(==)(a::Demand, b::Demand) = a.relation_id == b.relation_id

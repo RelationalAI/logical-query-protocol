@@ -38,9 +38,9 @@ table_def
 0x585c5a1121bd88784c1378aa8837195c)
 (
 columns
-(iceberg_column "id" false)
-(iceberg_column "region" false)
-(iceberg_column "amount" false))
+(gnf_column "id" false)
+(gnf_column "region" false)
+(gnf_column "amount" false))
 (
 table_properties)))
 (export_iceberg
@@ -72,9 +72,9 @@ table_def
 0x585c5a1121bd88784c1378aa8837195c)
 (
 columns
-(iceberg_column "id" false)
-(iceberg_column "region" false)
-(iceberg_column "amount" false))
+(gnf_column "id" false)
+(gnf_column "region" false)
+(gnf_column "amount" false))
 (
 table_properties
 (prop "write.format.default" "parquet"))
@@ -103,7 +103,7 @@ table_def
 0x585c5a1121bd88784c1378aa8837195c)
 (
 columns
-(iceberg_column "id" false))
+(gnf_column "id" false))
 (
 table_properties))))))
 

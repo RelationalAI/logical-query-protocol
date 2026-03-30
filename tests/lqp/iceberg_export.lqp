@@ -22,9 +22,9 @@
             (auth_properties))
           (table_def :sales)
           (columns
-            (iceberg_column "id" false)
-            (iceberg_column "region" false)
-            (iceberg_column "amount" false))
+            (gnf_column "id" false)
+            (gnf_column "region" false)
+            (gnf_column "amount" false))
           (table_properties)))
 
       ;; Full export with scope, property maps, and trailing export options
@@ -43,9 +43,9 @@
               (prop "token" "secret-token-123")))
           (table_def :sales)
           (columns
-            (iceberg_column "id" false)
-            (iceberg_column "region" false)
-            (iceberg_column "amount" false))
+            (gnf_column "id" false)
+            (gnf_column "region" false)
+            (gnf_column "amount" false))
           (table_properties (prop "write.format.default" "parquet"))
           {:prefix "part" :target_file_size_bytes 268435456 :compression "SNAPPY"}))
 
@@ -62,5 +62,5 @@
             (auth_properties))
           (table_def :sales)
           (columns
-            (iceberg_column "id" false))
+            (gnf_column "id" false))
           (table_properties))))))

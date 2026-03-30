@@ -5,10 +5,10 @@ import ProtoBuf as PB
 using ProtoBuf: OneOf
 using ProtoBuf.EnumX: @enumx
 
-export ExportCSVColumn, Demand, ExportIcebergColumn, Undefine, MaintenanceLevel, Define
-export Context, Sync, SnapshotMapping, Abort, Output, ExportCSVColumns, ExportIcebergConfig
-export IVMConfig, Snapshot, ExportCSVSource, Configure, Write, ExportCSVConfig, Export
-export Epoch, Read, Transaction, WhatIf
+export ExportCSVColumn, Demand, Undefine, MaintenanceLevel, Define, Context, Sync
+export SnapshotMapping, ExportGNFColumn, Abort, Output, ExportCSVColumns, IVMConfig
+export Snapshot, ExportIcebergConfig, ExportCSVSource, Configure, Write, ExportCSVConfig
+export Export, Epoch, Read, Transaction, WhatIf
 abstract type var"##Abstract#Transaction" end
 abstract type var"##Abstract#Epoch" end
 abstract type var"##Abstract#Read" end
@@ -80,43 +80,6 @@ end
 function PB._encoded_size(x::Demand)
     encoded_size = 0
     !isnothing(x.relation_id) && (encoded_size += PB._encoded_size(x.relation_id, 1))
-    return encoded_size
-end
-
-struct ExportIcebergColumn
-    name::String
-    nullable::Bool
-end
-ExportIcebergColumn(;name = "", nullable = false) = ExportIcebergColumn(name, nullable)
-PB.default_values(::Type{ExportIcebergColumn}) = (;name = "", nullable = false)
-PB.field_numbers(::Type{ExportIcebergColumn}) = (;name = 1, nullable = 2)
-
-function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:ExportIcebergColumn}, _endpos::Int=0, _group::Bool=false)
-    name = ""
-    nullable = false
-    while !PB.message_done(d, _endpos, _group)
-        field_number, wire_type = PB.decode_tag(d)
-        if field_number == 1
-            name = PB.decode(d, String)
-        elseif field_number == 2
-            nullable = PB.decode(d, Bool)
-        else
-            Base.skip(d, wire_type)
-        end
-    end
-    return ExportIcebergColumn(name, nullable)
-end
-
-function PB.encode(e::PB.AbstractProtoEncoder, x::ExportIcebergColumn)
-    initpos = position(e.io)
-    !isempty(x.name) && PB.encode(e, 1, x.name)
-    x.nullable != false && PB.encode(e, 2, x.nullable)
-    return position(e.io) - initpos
-end
-function PB._encoded_size(x::ExportIcebergColumn)
-    encoded_size = 0
-    !isempty(x.name) && (encoded_size += PB._encoded_size(x.name, 1))
-    x.nullable != false && (encoded_size += PB._encoded_size(x.nullable, 2))
     return encoded_size
 end
 
@@ -283,6 +246,43 @@ function PB._encoded_size(x::SnapshotMapping)
     return encoded_size
 end
 
+struct ExportGNFColumn
+    name::String
+    nullable::Bool
+end
+ExportGNFColumn(;name = "", nullable = false) = ExportGNFColumn(name, nullable)
+PB.default_values(::Type{ExportGNFColumn}) = (;name = "", nullable = false)
+PB.field_numbers(::Type{ExportGNFColumn}) = (;name = 1, nullable = 2)
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:ExportGNFColumn}, _endpos::Int=0, _group::Bool=false)
+    name = ""
+    nullable = false
+    while !PB.message_done(d, _endpos, _group)
+        field_number, wire_type = PB.decode_tag(d)
+        if field_number == 1
+            name = PB.decode(d, String)
+        elseif field_number == 2
+            nullable = PB.decode(d, Bool)
+        else
+            Base.skip(d, wire_type)
+        end
+    end
+    return ExportGNFColumn(name, nullable)
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::ExportGNFColumn)
+    initpos = position(e.io)
+    !isempty(x.name) && PB.encode(e, 1, x.name)
+    x.nullable != false && PB.encode(e, 2, x.nullable)
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::ExportGNFColumn)
+    encoded_size = 0
+    !isempty(x.name) && (encoded_size += PB._encoded_size(x.name, 1))
+    x.nullable != false && (encoded_size += PB._encoded_size(x.nullable, 2))
+    return encoded_size
+end
+
 struct Abort
     name::String
     relation_id::Union{Nothing,RelationId}
@@ -388,79 +388,6 @@ function PB._encoded_size(x::ExportCSVColumns)
     return encoded_size
 end
 
-struct ExportIcebergConfig
-    locator::Union{Nothing,IcebergLocator}
-    config::Union{Nothing,IcebergCatalogConfig}
-    table_def::Union{Nothing,RelationId}
-    columns::Vector{ExportIcebergColumn}
-    prefix::String
-    target_file_size_bytes::Int64
-    compression::String
-    table_properties::Dict{String,String}
-end
-ExportIcebergConfig(;locator = nothing, config = nothing, table_def = nothing, columns = Vector{ExportIcebergColumn}(), prefix = "", target_file_size_bytes = zero(Int64), compression = "", table_properties = Dict{String,String}()) = ExportIcebergConfig(locator, config, table_def, columns, prefix, target_file_size_bytes, compression, table_properties)
-PB.default_values(::Type{ExportIcebergConfig}) = (;locator = nothing, config = nothing, table_def = nothing, columns = Vector{ExportIcebergColumn}(), prefix = "", target_file_size_bytes = zero(Int64), compression = "", table_properties = Dict{String,String}())
-PB.field_numbers(::Type{ExportIcebergConfig}) = (;locator = 1, config = 2, table_def = 3, columns = 4, prefix = 5, target_file_size_bytes = 6, compression = 7, table_properties = 8)
-
-function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:ExportIcebergConfig}, _endpos::Int=0, _group::Bool=false)
-    locator = Ref{Union{Nothing,IcebergLocator}}(nothing)
-    config = Ref{Union{Nothing,IcebergCatalogConfig}}(nothing)
-    table_def = Ref{Union{Nothing,RelationId}}(nothing)
-    columns = PB.BufferedVector{ExportIcebergColumn}()
-    prefix = ""
-    target_file_size_bytes = zero(Int64)
-    compression = ""
-    table_properties = Dict{String,String}()
-    while !PB.message_done(d, _endpos, _group)
-        field_number, wire_type = PB.decode_tag(d)
-        if field_number == 1
-            PB.decode!(d, locator)
-        elseif field_number == 2
-            PB.decode!(d, config)
-        elseif field_number == 3
-            PB.decode!(d, table_def)
-        elseif field_number == 4
-            PB.decode!(d, columns)
-        elseif field_number == 5
-            prefix = PB.decode(d, String)
-        elseif field_number == 6
-            target_file_size_bytes = PB.decode(d, Int64)
-        elseif field_number == 7
-            compression = PB.decode(d, String)
-        elseif field_number == 8
-            PB.decode!(d, table_properties)
-        else
-            Base.skip(d, wire_type)
-        end
-    end
-    return ExportIcebergConfig(locator[], config[], table_def[], columns[], prefix, target_file_size_bytes, compression, table_properties)
-end
-
-function PB.encode(e::PB.AbstractProtoEncoder, x::ExportIcebergConfig)
-    initpos = position(e.io)
-    !isnothing(x.locator) && PB.encode(e, 1, x.locator)
-    !isnothing(x.config) && PB.encode(e, 2, x.config)
-    !isnothing(x.table_def) && PB.encode(e, 3, x.table_def)
-    !isempty(x.columns) && PB.encode(e, 4, x.columns)
-    !isempty(x.prefix) && PB.encode(e, 5, x.prefix)
-    x.target_file_size_bytes != zero(Int64) && PB.encode(e, 6, x.target_file_size_bytes)
-    !isempty(x.compression) && PB.encode(e, 7, x.compression)
-    !isempty(x.table_properties) && PB.encode(e, 8, x.table_properties)
-    return position(e.io) - initpos
-end
-function PB._encoded_size(x::ExportIcebergConfig)
-    encoded_size = 0
-    !isnothing(x.locator) && (encoded_size += PB._encoded_size(x.locator, 1))
-    !isnothing(x.config) && (encoded_size += PB._encoded_size(x.config, 2))
-    !isnothing(x.table_def) && (encoded_size += PB._encoded_size(x.table_def, 3))
-    !isempty(x.columns) && (encoded_size += PB._encoded_size(x.columns, 4))
-    !isempty(x.prefix) && (encoded_size += PB._encoded_size(x.prefix, 5))
-    x.target_file_size_bytes != zero(Int64) && (encoded_size += PB._encoded_size(x.target_file_size_bytes, 6))
-    !isempty(x.compression) && (encoded_size += PB._encoded_size(x.compression, 7))
-    !isempty(x.table_properties) && (encoded_size += PB._encoded_size(x.table_properties, 8))
-    return encoded_size
-end
-
 struct IVMConfig
     level::MaintenanceLevel.T
 end
@@ -520,6 +447,79 @@ end
 function PB._encoded_size(x::Snapshot)
     encoded_size = 0
     !isempty(x.mappings) && (encoded_size += PB._encoded_size(x.mappings, 1))
+    return encoded_size
+end
+
+struct ExportIcebergConfig
+    locator::Union{Nothing,IcebergLocator}
+    config::Union{Nothing,IcebergCatalogConfig}
+    table_def::Union{Nothing,RelationId}
+    columns::Vector{ExportGNFColumn}
+    prefix::String
+    target_file_size_bytes::Int64
+    compression::String
+    table_properties::Dict{String,String}
+end
+ExportIcebergConfig(;locator = nothing, config = nothing, table_def = nothing, columns = Vector{ExportGNFColumn}(), prefix = "", target_file_size_bytes = zero(Int64), compression = "", table_properties = Dict{String,String}()) = ExportIcebergConfig(locator, config, table_def, columns, prefix, target_file_size_bytes, compression, table_properties)
+PB.default_values(::Type{ExportIcebergConfig}) = (;locator = nothing, config = nothing, table_def = nothing, columns = Vector{ExportGNFColumn}(), prefix = "", target_file_size_bytes = zero(Int64), compression = "", table_properties = Dict{String,String}())
+PB.field_numbers(::Type{ExportIcebergConfig}) = (;locator = 1, config = 2, table_def = 3, columns = 4, prefix = 5, target_file_size_bytes = 6, compression = 7, table_properties = 8)
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:ExportIcebergConfig}, _endpos::Int=0, _group::Bool=false)
+    locator = Ref{Union{Nothing,IcebergLocator}}(nothing)
+    config = Ref{Union{Nothing,IcebergCatalogConfig}}(nothing)
+    table_def = Ref{Union{Nothing,RelationId}}(nothing)
+    columns = PB.BufferedVector{ExportGNFColumn}()
+    prefix = ""
+    target_file_size_bytes = zero(Int64)
+    compression = ""
+    table_properties = Dict{String,String}()
+    while !PB.message_done(d, _endpos, _group)
+        field_number, wire_type = PB.decode_tag(d)
+        if field_number == 1
+            PB.decode!(d, locator)
+        elseif field_number == 2
+            PB.decode!(d, config)
+        elseif field_number == 3
+            PB.decode!(d, table_def)
+        elseif field_number == 4
+            PB.decode!(d, columns)
+        elseif field_number == 5
+            prefix = PB.decode(d, String)
+        elseif field_number == 6
+            target_file_size_bytes = PB.decode(d, Int64)
+        elseif field_number == 7
+            compression = PB.decode(d, String)
+        elseif field_number == 8
+            PB.decode!(d, table_properties)
+        else
+            Base.skip(d, wire_type)
+        end
+    end
+    return ExportIcebergConfig(locator[], config[], table_def[], columns[], prefix, target_file_size_bytes, compression, table_properties)
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::ExportIcebergConfig)
+    initpos = position(e.io)
+    !isnothing(x.locator) && PB.encode(e, 1, x.locator)
+    !isnothing(x.config) && PB.encode(e, 2, x.config)
+    !isnothing(x.table_def) && PB.encode(e, 3, x.table_def)
+    !isempty(x.columns) && PB.encode(e, 4, x.columns)
+    !isempty(x.prefix) && PB.encode(e, 5, x.prefix)
+    x.target_file_size_bytes != zero(Int64) && PB.encode(e, 6, x.target_file_size_bytes)
+    !isempty(x.compression) && PB.encode(e, 7, x.compression)
+    !isempty(x.table_properties) && PB.encode(e, 8, x.table_properties)
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::ExportIcebergConfig)
+    encoded_size = 0
+    !isnothing(x.locator) && (encoded_size += PB._encoded_size(x.locator, 1))
+    !isnothing(x.config) && (encoded_size += PB._encoded_size(x.config, 2))
+    !isnothing(x.table_def) && (encoded_size += PB._encoded_size(x.table_def, 3))
+    !isempty(x.columns) && (encoded_size += PB._encoded_size(x.columns, 4))
+    !isempty(x.prefix) && (encoded_size += PB._encoded_size(x.prefix, 5))
+    x.target_file_size_bytes != zero(Int64) && (encoded_size += PB._encoded_size(x.target_file_size_bytes, 6))
+    !isempty(x.compression) && (encoded_size += PB._encoded_size(x.compression, 7))
+    !isempty(x.table_properties) && (encoded_size += PB._encoded_size(x.table_properties, 8))
     return encoded_size
 end
 

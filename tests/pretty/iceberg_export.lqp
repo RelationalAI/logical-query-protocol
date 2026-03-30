@@ -38,9 +38,9 @@ table_def
 :sales)
 (
 columns
-(iceberg_column "id" false)
-(iceberg_column "region" false)
-(iceberg_column "amount" false))
+(gnf_column "id" false)
+(gnf_column "region" false)
+(gnf_column "amount" false))
 (
 table_properties)))
 (export_iceberg
@@ -72,9 +72,9 @@ table_def
 :sales)
 (
 columns
-(iceberg_column "id" false)
-(iceberg_column "region" false)
-(iceberg_column "amount" false))
+(gnf_column "id" false)
+(gnf_column "region" false)
+(gnf_column "amount" false))
 (
 table_properties
 (prop "write.format.default" "parquet"))
@@ -103,6 +103,6 @@ table_def
 :sales)
 (
 columns
-(iceberg_column "id" false))
+(gnf_column "id" false))
 (
 table_properties))))))

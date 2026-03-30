@@ -450,26 +450,30 @@ class CSVConfig(_message.Message):
     def __init__(self, header_row: _Optional[int] = ..., skip: _Optional[int] = ..., new_line: _Optional[str] = ..., delimiter: _Optional[str] = ..., quotechar: _Optional[str] = ..., escapechar: _Optional[str] = ..., comment: _Optional[str] = ..., missing_strings: _Optional[_Iterable[str]] = ..., decimal_separator: _Optional[str] = ..., encoding: _Optional[str] = ..., compression: _Optional[str] = ..., partition_size_mb: _Optional[int] = ...) -> None: ...
 
 class IcebergData(_message.Message):
-    __slots__ = ("locator", "config", "columns", "to_snapshot")
+    __slots__ = ("locator", "config", "columns", "returns_delta")
     LOCATOR_FIELD_NUMBER: _ClassVar[int]
     CONFIG_FIELD_NUMBER: _ClassVar[int]
     COLUMNS_FIELD_NUMBER: _ClassVar[int]
-    TO_SNAPSHOT_FIELD_NUMBER: _ClassVar[int]
+    RETURNS_DELTA_FIELD_NUMBER: _ClassVar[int]
     locator: IcebergLocator
     config: IcebergCatalogConfig
     columns: _containers.RepeatedCompositeFieldContainer[GNFColumn]
-    to_snapshot: str
-    def __init__(self, locator: _Optional[_Union[IcebergLocator, _Mapping]] = ..., config: _Optional[_Union[IcebergCatalogConfig, _Mapping]] = ..., columns: _Optional[_Iterable[_Union[GNFColumn, _Mapping]]] = ..., to_snapshot: _Optional[str] = ...) -> None: ...
+    returns_delta: bool
+    def __init__(self, locator: _Optional[_Union[IcebergLocator, _Mapping]] = ..., config: _Optional[_Union[IcebergCatalogConfig, _Mapping]] = ..., columns: _Optional[_Iterable[_Union[GNFColumn, _Mapping]]] = ..., returns_delta: bool = ...) -> None: ...
 
 class IcebergLocator(_message.Message):
-    __slots__ = ("table_name", "namespace", "warehouse")
+    __slots__ = ("table_name", "namespace", "warehouse", "from_snapshot", "to_snapshot")
     TABLE_NAME_FIELD_NUMBER: _ClassVar[int]
     NAMESPACE_FIELD_NUMBER: _ClassVar[int]
     WAREHOUSE_FIELD_NUMBER: _ClassVar[int]
+    FROM_SNAPSHOT_FIELD_NUMBER: _ClassVar[int]
+    TO_SNAPSHOT_FIELD_NUMBER: _ClassVar[int]
     table_name: str
     namespace: _containers.RepeatedScalarFieldContainer[str]
     warehouse: str
-    def __init__(self, table_name: _Optional[str] = ..., namespace: _Optional[_Iterable[str]] = ..., warehouse: _Optional[str] = ...) -> None: ...
+    from_snapshot: str
+    to_snapshot: str
+    def __init__(self, table_name: _Optional[str] = ..., namespace: _Optional[_Iterable[str]] = ..., warehouse: _Optional[str] = ..., from_snapshot: _Optional[str] = ..., to_snapshot: _Optional[str] = ...) -> None: ...
 
 class IcebergCatalogConfig(_message.Message):
     __slots__ = ("catalog_uri", "scope", "properties", "auth_properties")
