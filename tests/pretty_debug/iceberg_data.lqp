@@ -7,27 +7,14 @@
           :f1
           (iceberg_data
             (iceberg_locator
-              (
-              table_name
-              "events")
-            (
-            namespace
-            "analytics"
-            "raw")
-          (
-          warehouse
-          "wh")
-        (from_snapshot "snap-111")
-        (to_snapshot "snap-abc"))
-      (iceberg_catalog_config
-        (
-        catalog_uri
-        "https://catalog.example")
-      (
-      properties
-      (prop "type" "rest"))
-    (
-    auth_properties
-    (prop "token" "***")))
-(columns (column "id" [INT]))
-true))))))
+              (table_name "events")
+              (namespace "analytics" "raw")
+              (warehouse "wh")
+              (from_snapshot "snap-111")
+              (to_snapshot "snap-abc"))
+            (iceberg_catalog_config
+              (catalog_uri "https://catalog.example")
+              (properties (prop "type" "rest"))
+              (auth_properties))
+            (columns (column "id" [INT]))
+            true))))))
