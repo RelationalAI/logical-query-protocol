@@ -84,9 +84,9 @@ class PrettyPrinter:
 
     def _try_flat(self, msg: Any, pretty_fn: Any) -> str | None:
         """Try to render msg flat (space-separated). Return flat string if it fits, else None."""
-        memo_key = (id(msg), id(pretty_fn))
-        if memo_key not in self._memo and memo_key not in self._computing:
-            self._computing.add(memo_key)
+        msg_id = id(msg)
+        if msg_id not in self._memo and msg_id not in self._computing:
+            self._computing.add(msg_id)
             saved_io = self.io
             saved_sep = self.separator
             saved_indent = self.indent_stack
@@ -99,7 +99,7 @@ class PrettyPrinter:
                 self.column = 0
                 self.at_line_start = False
                 pretty_fn(msg)
-                self._memo[memo_key] = self.io.getvalue()
+                self._memo[msg_id] = self.io.getvalue()
                 self._memo_refs.append(msg)
             finally:
                 self.io = saved_io
@@ -107,9 +107,9 @@ class PrettyPrinter:
                 self.indent_stack = saved_indent
                 self.column = saved_col
                 self.at_line_start = saved_at_line_start
-                self._computing.discard(memo_key)
-        if memo_key in self._memo:
-            flat = self._memo[memo_key]
+                self._computing.discard(msg_id)
+        if msg_id in self._memo:
+            flat = self._memo[msg_id]
             if self.separator != '\n':
                 return flat
             effective_col = self.column if not self.at_line_start else self.indent_level
