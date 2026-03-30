@@ -105,6 +105,9 @@ func (p *PrettyPrinter) tryFlat(msg interface{{}}, prettyFn func()) *string {{
 		}}
 		return nil
 	}}
+	// Non-pointer types (e.g., RelationId passed to different wrapper nonterminals)
+	// cannot be safely memoized because the same value may need different renderings
+	// depending on the calling context. Always render fresh.
 	// If already in flat mode, return nil to prevent infinite recursion.
 	if p.separator != "\n" {{
 		return nil
