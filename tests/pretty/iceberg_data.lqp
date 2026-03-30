@@ -28,6 +28,6 @@
       (prop "type" "rest"))
     (
     auth_properties
-    (prop "token" "random token")))
+    (prop "token" "***")))
 (columns (column "id" [INT]))
 true))))))

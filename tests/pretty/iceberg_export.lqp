@@ -65,8 +65,8 @@ properties
 (prop "client.region" "us-east-1"))
 (
 auth_properties
-(prop "credential" "my-credential")
-(prop "token" "secret-token-123")))
+(prop "credential" "***")
+(prop "token" "***")))
 (
 table_def
 :sales)

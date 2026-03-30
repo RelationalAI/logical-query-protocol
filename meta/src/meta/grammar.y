@@ -123,6 +123,7 @@
 %nonterm iceberg_data logic.IcebergData
 %nonterm iceberg_from_snapshot String
 %nonterm iceberg_locator logic.IcebergLocator
+%nonterm iceberg_masked_property_entry Tuple[String, String]
 %nonterm iceberg_property_entry Tuple[String, String]
 %nonterm iceberg_to_snapshot String
 %nonterm false logic.Disjunction
@@ -1146,6 +1147,13 @@ iceberg_property_entry
         $3: String = $$[0]
         $4: String = $$[1]
 
+iceberg_masked_property_entry
+    : "(" "prop" STRING STRING ")"
+      construct: $$ = builtin.tuple($3, $4)
+      deconstruct:
+        $3: String = $$[0]
+        $4: String = mask_secret_value($$)
+
 iceberg_from_snapshot
     : "(" "from_snapshot" STRING ")"
       construct: $$ = $3
@@ -1167,7 +1175,7 @@ iceberg_catalog_config_scope
       deconstruct: $3: String = $$
 
 iceberg_catalog_config
-    : "(" "iceberg_catalog_config" "(" "catalog_uri" STRING ")" iceberg_catalog_config_scope? "(" "properties" iceberg_property_entry* ")" "(" "auth_properties" iceberg_property_entry* ")" ")"
+    : "(" "iceberg_catalog_config" "(" "catalog_uri" STRING ")" iceberg_catalog_config_scope? "(" "properties" iceberg_property_entry* ")" "(" "auth_properties" iceberg_masked_property_entry* ")" ")"
       construct: $$ = construct_iceberg_catalog_config($5, $7, $10, $14)
       deconstruct:
         $5: String = $$.catalog_uri
@@ -1658,6 +1666,10 @@ def construct_iceberg_catalog_config(
         properties=props,
         auth_properties=auth_props,
     )
+
+
+def mask_secret_value(pair: Tuple[String, String]) -> String:
+    return "***"
 
 
 def deconstruct_iceberg_catalog_config_scope_optional(msg: logic.IcebergCatalogConfig) -> Optional[String]:
