@@ -571,12 +571,12 @@ function construct_iceberg_catalog_config(parser::ParserState, catalog_uri::Stri
     return _t2139
 end
 
-function construct_iceberg_locator(parser::ParserState, table_name::String, namespace::Vector{String}, warehouse::String, from_snapshot_opt::Union{Nothing, String}, to_snapshot_opt::Union{Nothing, String})::Proto.IcebergLocator
-    _t2140 = Proto.IcebergLocator(table_name=table_name, namespace=namespace, warehouse=warehouse, from_snapshot=(!isnothing(from_snapshot_opt) ? from_snapshot_opt : ""), to_snapshot=(!isnothing(to_snapshot_opt) ? to_snapshot_opt : ""))
+function construct_iceberg_data(parser::ParserState, locator::Proto.IcebergLocator, config::Proto.IcebergCatalogConfig, columns::Vector{Proto.GNFColumn}, from_snapshot_opt::Union{Nothing, String}, to_snapshot_opt::Union{Nothing, String}, returns_delta::Bool)::Proto.IcebergData
+    _t2140 = Proto.IcebergData(locator=locator, config=config, columns=columns, from_snapshot=(!isnothing(from_snapshot_opt) ? from_snapshot_opt : ""), to_snapshot=(!isnothing(to_snapshot_opt) ? to_snapshot_opt : ""), returns_delta=returns_delta)
     return _t2140
 end
 
-function construct_export_iceberg_config_full(parser::ParserState, locator::Proto.IcebergLocator, config::Proto.IcebergCatalogConfig, table_def::Proto.RelationId, columns::Vector{Proto.ExportGNFColumn}, table_property_pairs::Vector{Tuple{String, String}}, config_dict::Union{Nothing, Vector{Tuple{String, Proto.Value}}})::Proto.ExportIcebergConfig
+function construct_export_iceberg_config_full(parser::ParserState, locator::Proto.IcebergLocator, config::Proto.IcebergCatalogConfig, table_def::Proto.RelationId, columns::Vector{Proto.ExportColumn}, table_property_pairs::Vector{Tuple{String, String}}, config_dict::Union{Nothing, Vector{Tuple{String, Proto.Value}}})::Proto.ExportIcebergConfig
     cfg = Dict((!isnothing(config_dict) ? config_dict : Tuple{String, Proto.Value}[]))
     _t2141 = _extract_value_string(parser, get(cfg, "prefix", nothing), "")
     prefix = _t2141
@@ -3695,7 +3695,7 @@ function parse_csv_asof(parser::ParserState)::String
 end
 
 function parse_iceberg_data(parser::ParserState)::Proto.IcebergData
-    span_start1205 = span_start(parser)
+    span_start1207 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "iceberg_data")
     _t1979 = parse_iceberg_locator(parser)
@@ -3704,41 +3704,41 @@ function parse_iceberg_data(parser::ParserState)::Proto.IcebergData
     iceberg_catalog_config1202 = _t1980
     _t1981 = parse_gnf_columns(parser)
     gnf_columns1203 = _t1981
-    _t1982 = parse_boolean_value(parser)
-    boolean_value1204 = _t1982
+    if (match_lookahead_literal(parser, "(", 0) && match_lookahead_literal(parser, "from_snapshot", 1))
+        _t1983 = parse_iceberg_from_snapshot(parser)
+        _t1982 = _t1983
+    else
+        _t1982 = nothing
+    end
+    iceberg_from_snapshot1204 = _t1982
+    if match_lookahead_literal(parser, "(", 0)
+        _t1985 = parse_iceberg_to_snapshot(parser)
+        _t1984 = _t1985
+    else
+        _t1984 = nothing
+    end
+    iceberg_to_snapshot1205 = _t1984
+    _t1986 = parse_boolean_value(parser)
+    boolean_value1206 = _t1986
     consume_literal!(parser, ")")
-    _t1983 = Proto.IcebergData(locator=iceberg_locator1201, config=iceberg_catalog_config1202, columns=gnf_columns1203, returns_delta=boolean_value1204)
-    result1206 = _t1983
-    record_span!(parser, span_start1205, "IcebergData")
-    return result1206
+    _t1987 = construct_iceberg_data(parser, iceberg_locator1201, iceberg_catalog_config1202, gnf_columns1203, iceberg_from_snapshot1204, iceberg_to_snapshot1205, boolean_value1206)
+    result1208 = _t1987
+    record_span!(parser, span_start1207, "IcebergData")
+    return result1208
 end
 
 function parse_iceberg_locator(parser::ParserState)::Proto.IcebergLocator
     span_start1212 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "iceberg_locator")
-    _t1984 = parse_iceberg_locator_table_name(parser)
-    iceberg_locator_table_name1207 = _t1984
-    _t1985 = parse_iceberg_locator_namespace(parser)
-    iceberg_locator_namespace1208 = _t1985
-    _t1986 = parse_iceberg_locator_warehouse(parser)
-    iceberg_locator_warehouse1209 = _t1986
-    if (match_lookahead_literal(parser, "(", 0) && match_lookahead_literal(parser, "from_snapshot", 1))
-        _t1988 = parse_iceberg_from_snapshot(parser)
-        _t1987 = _t1988
-    else
-        _t1987 = nothing
-    end
-    iceberg_from_snapshot1210 = _t1987
-    if match_lookahead_literal(parser, "(", 0)
-        _t1990 = parse_iceberg_to_snapshot(parser)
-        _t1989 = _t1990
-    else
-        _t1989 = nothing
-    end
-    iceberg_to_snapshot1211 = _t1989
+    _t1988 = parse_iceberg_locator_table_name(parser)
+    iceberg_locator_table_name1209 = _t1988
+    _t1989 = parse_iceberg_locator_namespace(parser)
+    iceberg_locator_namespace1210 = _t1989
+    _t1990 = parse_iceberg_locator_warehouse(parser)
+    iceberg_locator_warehouse1211 = _t1990
     consume_literal!(parser, ")")
-    _t1991 = construct_iceberg_locator(parser, iceberg_locator_table_name1207, iceberg_locator_namespace1208, iceberg_locator_warehouse1209, iceberg_from_snapshot1210, iceberg_to_snapshot1211)
+    _t1991 = Proto.IcebergLocator(table_name=iceberg_locator_table_name1209, namespace=iceberg_locator_namespace1210, warehouse=iceberg_locator_warehouse1211)
     result1213 = _t1991
     record_span!(parser, span_start1212, "IcebergLocator")
     return result1213
@@ -3775,110 +3775,110 @@ function parse_iceberg_locator_warehouse(parser::ParserState)::String
     return string1219
 end
 
-function parse_iceberg_from_snapshot(parser::ParserState)::String
-    consume_literal!(parser, "(")
-    consume_literal!(parser, "from_snapshot")
-    string1220 = consume_terminal!(parser, "STRING")
-    consume_literal!(parser, ")")
-    return string1220
-end
-
-function parse_iceberg_to_snapshot(parser::ParserState)::String
-    consume_literal!(parser, "(")
-    consume_literal!(parser, "to_snapshot")
-    string1221 = consume_terminal!(parser, "STRING")
-    consume_literal!(parser, ")")
-    return string1221
-end
-
 function parse_iceberg_catalog_config(parser::ParserState)::Proto.IcebergCatalogConfig
-    span_start1226 = span_start(parser)
+    span_start1224 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "iceberg_catalog_config")
     _t1992 = parse_iceberg_catalog_uri(parser)
-    iceberg_catalog_uri1222 = _t1992
+    iceberg_catalog_uri1220 = _t1992
     if (match_lookahead_literal(parser, "(", 0) && match_lookahead_literal(parser, "scope", 1))
         _t1994 = parse_iceberg_catalog_config_scope(parser)
         _t1993 = _t1994
     else
         _t1993 = nothing
     end
-    iceberg_catalog_config_scope1223 = _t1993
+    iceberg_catalog_config_scope1221 = _t1993
     _t1995 = parse_iceberg_properties(parser)
-    iceberg_properties1224 = _t1995
+    iceberg_properties1222 = _t1995
     _t1996 = parse_iceberg_auth_properties(parser)
-    iceberg_auth_properties1225 = _t1996
+    iceberg_auth_properties1223 = _t1996
     consume_literal!(parser, ")")
-    _t1997 = construct_iceberg_catalog_config(parser, iceberg_catalog_uri1222, iceberg_catalog_config_scope1223, iceberg_properties1224, iceberg_auth_properties1225)
-    result1227 = _t1997
-    record_span!(parser, span_start1226, "IcebergCatalogConfig")
-    return result1227
+    _t1997 = construct_iceberg_catalog_config(parser, iceberg_catalog_uri1220, iceberg_catalog_config_scope1221, iceberg_properties1222, iceberg_auth_properties1223)
+    result1225 = _t1997
+    record_span!(parser, span_start1224, "IcebergCatalogConfig")
+    return result1225
 end
 
 function parse_iceberg_catalog_uri(parser::ParserState)::String
     consume_literal!(parser, "(")
     consume_literal!(parser, "catalog_uri")
-    string1228 = consume_terminal!(parser, "STRING")
+    string1226 = consume_terminal!(parser, "STRING")
     consume_literal!(parser, ")")
-    return string1228
+    return string1226
 end
 
 function parse_iceberg_catalog_config_scope(parser::ParserState)::String
     consume_literal!(parser, "(")
     consume_literal!(parser, "scope")
-    string1229 = consume_terminal!(parser, "STRING")
+    string1227 = consume_terminal!(parser, "STRING")
     consume_literal!(parser, ")")
-    return string1229
+    return string1227
 end
 
 function parse_iceberg_properties(parser::ParserState)::Vector{Tuple{String, String}}
     consume_literal!(parser, "(")
     consume_literal!(parser, "properties")
-    xs1230 = Tuple{String, String}[]
-    cond1231 = match_lookahead_literal(parser, "(", 0)
-    while cond1231
+    xs1228 = Tuple{String, String}[]
+    cond1229 = match_lookahead_literal(parser, "(", 0)
+    while cond1229
         _t1998 = parse_iceberg_property_entry(parser)
-        item1232 = _t1998
-        push!(xs1230, item1232)
-        cond1231 = match_lookahead_literal(parser, "(", 0)
+        item1230 = _t1998
+        push!(xs1228, item1230)
+        cond1229 = match_lookahead_literal(parser, "(", 0)
     end
-    iceberg_property_entrys1233 = xs1230
+    iceberg_property_entrys1231 = xs1228
     consume_literal!(parser, ")")
-    return iceberg_property_entrys1233
+    return iceberg_property_entrys1231
 end
 
 function parse_iceberg_property_entry(parser::ParserState)::Tuple{String, String}
     consume_literal!(parser, "(")
     consume_literal!(parser, "prop")
-    string1234 = consume_terminal!(parser, "STRING")
-    string_31235 = consume_terminal!(parser, "STRING")
+    string1232 = consume_terminal!(parser, "STRING")
+    string_31233 = consume_terminal!(parser, "STRING")
     consume_literal!(parser, ")")
-    return (string1234, string_31235,)
+    return (string1232, string_31233,)
 end
 
 function parse_iceberg_auth_properties(parser::ParserState)::Vector{Tuple{String, String}}
     consume_literal!(parser, "(")
     consume_literal!(parser, "auth_properties")
-    xs1236 = Tuple{String, String}[]
-    cond1237 = match_lookahead_literal(parser, "(", 0)
-    while cond1237
+    xs1234 = Tuple{String, String}[]
+    cond1235 = match_lookahead_literal(parser, "(", 0)
+    while cond1235
         _t1999 = parse_iceberg_masked_property_entry(parser)
-        item1238 = _t1999
-        push!(xs1236, item1238)
-        cond1237 = match_lookahead_literal(parser, "(", 0)
+        item1236 = _t1999
+        push!(xs1234, item1236)
+        cond1235 = match_lookahead_literal(parser, "(", 0)
     end
-    iceberg_masked_property_entrys1239 = xs1236
+    iceberg_masked_property_entrys1237 = xs1234
     consume_literal!(parser, ")")
-    return iceberg_masked_property_entrys1239
+    return iceberg_masked_property_entrys1237
 end
 
 function parse_iceberg_masked_property_entry(parser::ParserState)::Tuple{String, String}
     consume_literal!(parser, "(")
     consume_literal!(parser, "prop")
-    string1240 = consume_terminal!(parser, "STRING")
-    string_31241 = consume_terminal!(parser, "STRING")
+    string1238 = consume_terminal!(parser, "STRING")
+    string_31239 = consume_terminal!(parser, "STRING")
     consume_literal!(parser, ")")
-    return (string1240, string_31241,)
+    return (string1238, string_31239,)
+end
+
+function parse_iceberg_from_snapshot(parser::ParserState)::String
+    consume_literal!(parser, "(")
+    consume_literal!(parser, "from_snapshot")
+    string1240 = consume_terminal!(parser, "STRING")
+    consume_literal!(parser, ")")
+    return string1240
+end
+
+function parse_iceberg_to_snapshot(parser::ParserState)::String
+    consume_literal!(parser, "(")
+    consume_literal!(parser, "to_snapshot")
+    string1241 = consume_terminal!(parser, "STRING")
+    consume_literal!(parser, ")")
+    return string1241
 end
 
 function parse_undefine(parser::ParserState)::Proto.Undefine
@@ -4337,33 +4337,33 @@ function parse_export_iceberg_table_def(parser::ParserState)::Proto.RelationId
     return result1329
 end
 
-function parse_export_iceberg_columns(parser::ParserState)::Vector{Proto.ExportGNFColumn}
+function parse_export_iceberg_columns(parser::ParserState)::Vector{Proto.ExportColumn}
     consume_literal!(parser, "(")
     consume_literal!(parser, "columns")
-    xs1330 = Proto.ExportGNFColumn[]
+    xs1330 = Proto.ExportColumn[]
     cond1331 = match_lookahead_literal(parser, "(", 0)
     while cond1331
-        _t2088 = parse_export_gnf_column(parser)
+        _t2088 = parse_export_iceberg_column(parser)
         item1332 = _t2088
         push!(xs1330, item1332)
         cond1331 = match_lookahead_literal(parser, "(", 0)
     end
-    export_gnf_columns1333 = xs1330
+    export_iceberg_columns1333 = xs1330
     consume_literal!(parser, ")")
-    return export_gnf_columns1333
+    return export_iceberg_columns1333
 end
 
-function parse_export_gnf_column(parser::ParserState)::Proto.ExportGNFColumn
+function parse_export_iceberg_column(parser::ParserState)::Proto.ExportColumn
     span_start1336 = span_start(parser)
     consume_literal!(parser, "(")
-    consume_literal!(parser, "gnf_column")
+    consume_literal!(parser, "column")
     string1334 = consume_terminal!(parser, "STRING")
     _t2089 = parse_boolean_value(parser)
     boolean_value1335 = _t2089
     consume_literal!(parser, ")")
-    _t2090 = Proto.ExportGNFColumn(name=string1334, nullable=boolean_value1335)
+    _t2090 = Proto.ExportColumn(name=string1334, nullable=boolean_value1335)
     result1337 = _t2090
-    record_span!(parser, span_start1336, "ExportGNFColumn")
+    record_span!(parser, span_start1336, "ExportColumn")
     return result1337
 end
 

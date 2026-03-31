@@ -359,7 +359,7 @@ class PrettyPrinter:
             _t1774 = None
         return None
 
-    def deconstruct_iceberg_locator_from_snapshot_optional(self, msg: logic_pb2.IcebergLocator) -> str | None:
+    def deconstruct_iceberg_data_from_snapshot_optional(self, msg: logic_pb2.IcebergData) -> str | None:
         assert msg.from_snapshot is not None
         if msg.from_snapshot != "":
             assert msg.from_snapshot is not None
@@ -368,7 +368,7 @@ class PrettyPrinter:
             _t1775 = None
         return None
 
-    def deconstruct_iceberg_locator_to_snapshot_optional(self, msg: logic_pb2.IcebergLocator) -> str | None:
+    def deconstruct_iceberg_data_to_snapshot_optional(self, msg: logic_pb2.IcebergData) -> str | None:
         assert msg.to_snapshot is not None
         if msg.to_snapshot != "":
             assert msg.to_snapshot is not None
@@ -3499,14 +3499,16 @@ class PrettyPrinter:
             self.write(")")
 
     def pretty_iceberg_data(self, msg: logic_pb2.IcebergData):
-        flat1432 = self._try_flat(msg, self.pretty_iceberg_data)
-        if flat1432 is not None:
-            assert flat1432 is not None
-            self.write(flat1432)
+        flat1436 = self._try_flat(msg, self.pretty_iceberg_data)
+        if flat1436 is not None:
+            assert flat1436 is not None
+            self.write(flat1436)
             return None
         else:
             _dollar_dollar = msg
-            fields1426 = (_dollar_dollar.locator, _dollar_dollar.config, _dollar_dollar.columns, _dollar_dollar.returns_delta,)
+            _t1719 = self.deconstruct_iceberg_data_from_snapshot_optional(_dollar_dollar)
+            _t1720 = self.deconstruct_iceberg_data_to_snapshot_optional(_dollar_dollar)
+            fields1426 = (_dollar_dollar.locator, _dollar_dollar.config, _dollar_dollar.columns, _t1719, _t1720, _dollar_dollar.returns_delta,)
             assert fields1426 is not None
             unwrapped_fields1427 = fields1426
             self.write("(iceberg_data")
@@ -3520,9 +3522,21 @@ class PrettyPrinter:
             self.newline()
             field1430 = unwrapped_fields1427[2]
             self.pretty_gnf_columns(field1430)
-            self.newline()
             field1431 = unwrapped_fields1427[3]
-            self.pretty_boolean_value(field1431)
+            if field1431 is not None:
+                self.newline()
+                assert field1431 is not None
+                opt_val1432 = field1431
+                self.pretty_iceberg_from_snapshot(opt_val1432)
+            field1433 = unwrapped_fields1427[4]
+            if field1433 is not None:
+                self.newline()
+                assert field1433 is not None
+                opt_val1434 = field1433
+                self.pretty_iceberg_to_snapshot(opt_val1434)
+            self.newline()
+            field1435 = unwrapped_fields1427[5]
+            self.pretty_boolean_value(field1435)
             self.dedent()
             self.write(")")
 
@@ -3534,34 +3548,20 @@ class PrettyPrinter:
             return None
         else:
             _dollar_dollar = msg
-            _t1719 = self.deconstruct_iceberg_locator_from_snapshot_optional(_dollar_dollar)
-            _t1720 = self.deconstruct_iceberg_locator_to_snapshot_optional(_dollar_dollar)
-            fields1433 = (_dollar_dollar.table_name, _dollar_dollar.namespace, _dollar_dollar.warehouse, _t1719, _t1720,)
-            assert fields1433 is not None
-            unwrapped_fields1434 = fields1433
+            fields1437 = (_dollar_dollar.table_name, _dollar_dollar.namespace, _dollar_dollar.warehouse,)
+            assert fields1437 is not None
+            unwrapped_fields1438 = fields1437
             self.write("(iceberg_locator")
             self.indent_sexp()
             self.newline()
-            field1435 = unwrapped_fields1434[0]
-            self.pretty_iceberg_locator_table_name(field1435)
+            field1439 = unwrapped_fields1438[0]
+            self.pretty_iceberg_locator_table_name(field1439)
             self.newline()
-            field1436 = unwrapped_fields1434[1]
-            self.pretty_iceberg_locator_namespace(field1436)
+            field1440 = unwrapped_fields1438[1]
+            self.pretty_iceberg_locator_namespace(field1440)
             self.newline()
-            field1437 = unwrapped_fields1434[2]
-            self.pretty_iceberg_locator_warehouse(field1437)
-            field1438 = unwrapped_fields1434[3]
-            if field1438 is not None:
-                self.newline()
-                assert field1438 is not None
-                opt_val1439 = field1438
-                self.pretty_iceberg_from_snapshot(opt_val1439)
-            field1440 = unwrapped_fields1434[4]
-            if field1440 is not None:
-                self.newline()
-                assert field1440 is not None
-                opt_val1441 = field1440
-                self.pretty_iceberg_to_snapshot(opt_val1441)
+            field1441 = unwrapped_fields1438[2]
+            self.pretty_iceberg_locator_warehouse(field1441)
             self.dedent()
             self.write(")")
 
@@ -3614,178 +3614,178 @@ class PrettyPrinter:
             self.dedent()
             self.write(")")
 
-    def pretty_iceberg_from_snapshot(self, msg: str):
-        flat1452 = self._try_flat(msg, self.pretty_iceberg_from_snapshot)
-        if flat1452 is not None:
-            assert flat1452 is not None
-            self.write(flat1452)
-            return None
-        else:
-            fields1451 = msg
-            self.write("(from_snapshot")
-            self.indent_sexp()
-            self.newline()
-            self.write(self.format_string_value(fields1451))
-            self.dedent()
-            self.write(")")
-
-    def pretty_iceberg_to_snapshot(self, msg: str):
-        flat1454 = self._try_flat(msg, self.pretty_iceberg_to_snapshot)
-        if flat1454 is not None:
-            assert flat1454 is not None
-            self.write(flat1454)
-            return None
-        else:
-            fields1453 = msg
-            self.write("(to_snapshot")
-            self.indent_sexp()
-            self.newline()
-            self.write(self.format_string_value(fields1453))
-            self.dedent()
-            self.write(")")
-
     def pretty_iceberg_catalog_config(self, msg: logic_pb2.IcebergCatalogConfig):
-        flat1462 = self._try_flat(msg, self.pretty_iceberg_catalog_config)
+        flat1458 = self._try_flat(msg, self.pretty_iceberg_catalog_config)
+        if flat1458 is not None:
+            assert flat1458 is not None
+            self.write(flat1458)
+            return None
+        else:
+            _dollar_dollar = msg
+            _t1721 = self.deconstruct_iceberg_catalog_config_scope_optional(_dollar_dollar)
+            fields1451 = (_dollar_dollar.catalog_uri, _t1721, sorted(_dollar_dollar.properties.items()), sorted(_dollar_dollar.auth_properties.items()),)
+            assert fields1451 is not None
+            unwrapped_fields1452 = fields1451
+            self.write("(iceberg_catalog_config")
+            self.indent_sexp()
+            self.newline()
+            field1453 = unwrapped_fields1452[0]
+            self.pretty_iceberg_catalog_uri(field1453)
+            field1454 = unwrapped_fields1452[1]
+            if field1454 is not None:
+                self.newline()
+                assert field1454 is not None
+                opt_val1455 = field1454
+                self.pretty_iceberg_catalog_config_scope(opt_val1455)
+            self.newline()
+            field1456 = unwrapped_fields1452[2]
+            self.pretty_iceberg_properties(field1456)
+            self.newline()
+            field1457 = unwrapped_fields1452[3]
+            self.pretty_iceberg_auth_properties(field1457)
+            self.dedent()
+            self.write(")")
+
+    def pretty_iceberg_catalog_uri(self, msg: str):
+        flat1460 = self._try_flat(msg, self.pretty_iceberg_catalog_uri)
+        if flat1460 is not None:
+            assert flat1460 is not None
+            self.write(flat1460)
+            return None
+        else:
+            fields1459 = msg
+            self.write("(catalog_uri")
+            self.indent_sexp()
+            self.newline()
+            self.write(self.format_string_value(fields1459))
+            self.dedent()
+            self.write(")")
+
+    def pretty_iceberg_catalog_config_scope(self, msg: str):
+        flat1462 = self._try_flat(msg, self.pretty_iceberg_catalog_config_scope)
         if flat1462 is not None:
             assert flat1462 is not None
             self.write(flat1462)
             return None
         else:
-            _dollar_dollar = msg
-            _t1721 = self.deconstruct_iceberg_catalog_config_scope_optional(_dollar_dollar)
-            fields1455 = (_dollar_dollar.catalog_uri, _t1721, sorted(_dollar_dollar.properties.items()), sorted(_dollar_dollar.auth_properties.items()),)
-            assert fields1455 is not None
-            unwrapped_fields1456 = fields1455
-            self.write("(iceberg_catalog_config")
+            fields1461 = msg
+            self.write("(scope")
             self.indent_sexp()
             self.newline()
-            field1457 = unwrapped_fields1456[0]
-            self.pretty_iceberg_catalog_uri(field1457)
-            field1458 = unwrapped_fields1456[1]
-            if field1458 is not None:
-                self.newline()
-                assert field1458 is not None
-                opt_val1459 = field1458
-                self.pretty_iceberg_catalog_config_scope(opt_val1459)
-            self.newline()
-            field1460 = unwrapped_fields1456[2]
-            self.pretty_iceberg_properties(field1460)
-            self.newline()
-            field1461 = unwrapped_fields1456[3]
-            self.pretty_iceberg_auth_properties(field1461)
+            self.write(self.format_string_value(fields1461))
             self.dedent()
             self.write(")")
 
-    def pretty_iceberg_catalog_uri(self, msg: str):
-        flat1464 = self._try_flat(msg, self.pretty_iceberg_catalog_uri)
-        if flat1464 is not None:
-            assert flat1464 is not None
-            self.write(flat1464)
-            return None
-        else:
-            fields1463 = msg
-            self.write("(catalog_uri")
-            self.indent_sexp()
-            self.newline()
-            self.write(self.format_string_value(fields1463))
-            self.dedent()
-            self.write(")")
-
-    def pretty_iceberg_catalog_config_scope(self, msg: str):
-        flat1466 = self._try_flat(msg, self.pretty_iceberg_catalog_config_scope)
+    def pretty_iceberg_properties(self, msg: Sequence[tuple[str, str]]):
+        flat1466 = self._try_flat(msg, self.pretty_iceberg_properties)
         if flat1466 is not None:
             assert flat1466 is not None
             self.write(flat1466)
             return None
         else:
-            fields1465 = msg
-            self.write("(scope")
-            self.indent_sexp()
-            self.newline()
-            self.write(self.format_string_value(fields1465))
-            self.dedent()
-            self.write(")")
-
-    def pretty_iceberg_properties(self, msg: Sequence[tuple[str, str]]):
-        flat1470 = self._try_flat(msg, self.pretty_iceberg_properties)
-        if flat1470 is not None:
-            assert flat1470 is not None
-            self.write(flat1470)
-            return None
-        else:
-            fields1467 = msg
+            fields1463 = msg
             self.write("(properties")
             self.indent_sexp()
-            if not len(fields1467) == 0:
+            if not len(fields1463) == 0:
                 self.newline()
-                for i1469, elem1468 in enumerate(fields1467):
-                    if (i1469 > 0):
+                for i1465, elem1464 in enumerate(fields1463):
+                    if (i1465 > 0):
                         self.newline()
-                    self.pretty_iceberg_property_entry(elem1468)
+                    self.pretty_iceberg_property_entry(elem1464)
             self.dedent()
             self.write(")")
 
     def pretty_iceberg_property_entry(self, msg: tuple[str, str]):
-        flat1475 = self._try_flat(msg, self.pretty_iceberg_property_entry)
+        flat1471 = self._try_flat(msg, self.pretty_iceberg_property_entry)
+        if flat1471 is not None:
+            assert flat1471 is not None
+            self.write(flat1471)
+            return None
+        else:
+            _dollar_dollar = msg
+            fields1467 = (_dollar_dollar[0], _dollar_dollar[1],)
+            assert fields1467 is not None
+            unwrapped_fields1468 = fields1467
+            self.write("(prop")
+            self.indent_sexp()
+            self.newline()
+            field1469 = unwrapped_fields1468[0]
+            self.write(self.format_string_value(field1469))
+            self.newline()
+            field1470 = unwrapped_fields1468[1]
+            self.write(self.format_string_value(field1470))
+            self.dedent()
+            self.write(")")
+
+    def pretty_iceberg_auth_properties(self, msg: Sequence[tuple[str, str]]):
+        flat1475 = self._try_flat(msg, self.pretty_iceberg_auth_properties)
         if flat1475 is not None:
             assert flat1475 is not None
             self.write(flat1475)
             return None
         else:
-            _dollar_dollar = msg
-            fields1471 = (_dollar_dollar[0], _dollar_dollar[1],)
-            assert fields1471 is not None
-            unwrapped_fields1472 = fields1471
-            self.write("(prop")
-            self.indent_sexp()
-            self.newline()
-            field1473 = unwrapped_fields1472[0]
-            self.write(self.format_string_value(field1473))
-            self.newline()
-            field1474 = unwrapped_fields1472[1]
-            self.write(self.format_string_value(field1474))
-            self.dedent()
-            self.write(")")
-
-    def pretty_iceberg_auth_properties(self, msg: Sequence[tuple[str, str]]):
-        flat1479 = self._try_flat(msg, self.pretty_iceberg_auth_properties)
-        if flat1479 is not None:
-            assert flat1479 is not None
-            self.write(flat1479)
-            return None
-        else:
-            fields1476 = msg
+            fields1472 = msg
             self.write("(auth_properties")
             self.indent_sexp()
-            if not len(fields1476) == 0:
+            if not len(fields1472) == 0:
                 self.newline()
-                for i1478, elem1477 in enumerate(fields1476):
-                    if (i1478 > 0):
+                for i1474, elem1473 in enumerate(fields1472):
+                    if (i1474 > 0):
                         self.newline()
-                    self.pretty_iceberg_masked_property_entry(elem1477)
+                    self.pretty_iceberg_masked_property_entry(elem1473)
             self.dedent()
             self.write(")")
 
     def pretty_iceberg_masked_property_entry(self, msg: tuple[str, str]):
-        flat1484 = self._try_flat(msg, self.pretty_iceberg_masked_property_entry)
+        flat1480 = self._try_flat(msg, self.pretty_iceberg_masked_property_entry)
+        if flat1480 is not None:
+            assert flat1480 is not None
+            self.write(flat1480)
+            return None
+        else:
+            _dollar_dollar = msg
+            _t1722 = self.mask_secret_value(_dollar_dollar)
+            fields1476 = (_dollar_dollar[0], _t1722,)
+            assert fields1476 is not None
+            unwrapped_fields1477 = fields1476
+            self.write("(prop")
+            self.indent_sexp()
+            self.newline()
+            field1478 = unwrapped_fields1477[0]
+            self.write(self.format_string_value(field1478))
+            self.newline()
+            field1479 = unwrapped_fields1477[1]
+            self.write(self.format_string_value(field1479))
+            self.dedent()
+            self.write(")")
+
+    def pretty_iceberg_from_snapshot(self, msg: str):
+        flat1482 = self._try_flat(msg, self.pretty_iceberg_from_snapshot)
+        if flat1482 is not None:
+            assert flat1482 is not None
+            self.write(flat1482)
+            return None
+        else:
+            fields1481 = msg
+            self.write("(from_snapshot")
+            self.indent_sexp()
+            self.newline()
+            self.write(self.format_string_value(fields1481))
+            self.dedent()
+            self.write(")")
+
+    def pretty_iceberg_to_snapshot(self, msg: str):
+        flat1484 = self._try_flat(msg, self.pretty_iceberg_to_snapshot)
         if flat1484 is not None:
             assert flat1484 is not None
             self.write(flat1484)
             return None
         else:
-            _dollar_dollar = msg
-            _t1722 = self.mask_secret_value(_dollar_dollar)
-            fields1480 = (_dollar_dollar[0], _t1722,)
-            assert fields1480 is not None
-            unwrapped_fields1481 = fields1480
-            self.write("(prop")
+            fields1483 = msg
+            self.write("(to_snapshot")
             self.indent_sexp()
             self.newline()
-            field1482 = unwrapped_fields1481[0]
-            self.write(self.format_string_value(field1482))
-            self.newline()
-            field1483 = unwrapped_fields1481[1]
-            self.write(self.format_string_value(field1483))
+            self.write(self.format_string_value(fields1483))
             self.dedent()
             self.write(")")
 
@@ -4293,7 +4293,7 @@ class PrettyPrinter:
             self.dedent()
             self.write(")")
 
-    def pretty_export_iceberg_columns(self, msg: Sequence[transactions_pb2.ExportGNFColumn]):
+    def pretty_export_iceberg_columns(self, msg: Sequence[transactions_pb2.ExportColumn]):
         flat1586 = self._try_flat(msg, self.pretty_export_iceberg_columns)
         if flat1586 is not None:
             assert flat1586 is not None
@@ -4308,12 +4308,12 @@ class PrettyPrinter:
                 for i1585, elem1584 in enumerate(fields1583):
                     if (i1585 > 0):
                         self.newline()
-                    self.pretty_export_gnf_column(elem1584)
+                    self.pretty_export_iceberg_column(elem1584)
             self.dedent()
             self.write(")")
 
-    def pretty_export_gnf_column(self, msg: transactions_pb2.ExportGNFColumn):
-        flat1591 = self._try_flat(msg, self.pretty_export_gnf_column)
+    def pretty_export_iceberg_column(self, msg: transactions_pb2.ExportColumn):
+        flat1591 = self._try_flat(msg, self.pretty_export_iceberg_column)
         if flat1591 is not None:
             assert flat1591 is not None
             self.write(flat1591)
@@ -4323,7 +4323,7 @@ class PrettyPrinter:
             fields1587 = (_dollar_dollar.name, _dollar_dollar.nullable,)
             assert fields1587 is not None
             unwrapped_fields1588 = fields1587
-            self.write("(gnf_column")
+            self.write("(column")
             self.indent_sexp()
             self.newline()
             field1589 = unwrapped_fields1588[0]
@@ -4664,8 +4664,8 @@ class PrettyPrinter:
             self.pretty_export_csv_column(msg)
         elif isinstance(msg, transactions_pb2.ExportIcebergConfig):
             self.pretty_export_iceberg_config(msg)
-        elif isinstance(msg, transactions_pb2.ExportGNFColumn):
-            self.pretty_export_gnf_column(msg)
+        elif isinstance(msg, transactions_pb2.ExportColumn):
+            self.pretty_export_iceberg_column(msg)
         elif isinstance(msg, fragments_pb2.DebugInfo):
             self.pretty_debug_info(msg)
         elif isinstance(msg, logic_pb2.BeTreeConfig):

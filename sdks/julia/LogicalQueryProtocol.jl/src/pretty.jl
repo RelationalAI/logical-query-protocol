@@ -539,7 +539,7 @@ function deconstruct_iceberg_catalog_config_scope_optional(pp::PrettyPrinter, ms
     return nothing
 end
 
-function deconstruct_iceberg_locator_from_snapshot_optional(pp::PrettyPrinter, msg::Proto.IcebergLocator)::Union{Nothing, String}
+function deconstruct_iceberg_data_from_snapshot_optional(pp::PrettyPrinter, msg::Proto.IcebergData)::Union{Nothing, String}
     if msg.from_snapshot != ""
         return msg.from_snapshot
     else
@@ -548,7 +548,7 @@ function deconstruct_iceberg_locator_from_snapshot_optional(pp::PrettyPrinter, m
     return nothing
 end
 
-function deconstruct_iceberg_locator_to_snapshot_optional(pp::PrettyPrinter, msg::Proto.IcebergLocator)::Union{Nothing, String}
+function deconstruct_iceberg_data_to_snapshot_optional(pp::PrettyPrinter, msg::Proto.IcebergData)::Union{Nothing, String}
     if msg.to_snapshot != ""
         return msg.to_snapshot
     else
@@ -4084,13 +4084,15 @@ function pretty_csv_asof(pp::PrettyPrinter, msg::String)
 end
 
 function pretty_iceberg_data(pp::PrettyPrinter, msg::Proto.IcebergData)
-    flat1432 = try_flat(pp, msg, pretty_iceberg_data)
-    if !isnothing(flat1432)
-        write(pp, flat1432)
+    flat1436 = try_flat(pp, msg, pretty_iceberg_data)
+    if !isnothing(flat1436)
+        write(pp, flat1436)
         return nothing
     else
         _dollar_dollar = msg
-        fields1426 = (_dollar_dollar.locator, _dollar_dollar.config, _dollar_dollar.columns, _dollar_dollar.returns_delta,)
+        _t1749 = deconstruct_iceberg_data_from_snapshot_optional(pp, _dollar_dollar)
+        _t1750 = deconstruct_iceberg_data_to_snapshot_optional(pp, _dollar_dollar)
+        fields1426 = (_dollar_dollar.locator, _dollar_dollar.config, _dollar_dollar.columns, _t1749, _t1750, _dollar_dollar.returns_delta,)
         unwrapped_fields1427 = fields1426
         write(pp, "(iceberg_data")
         indent_sexp!(pp)
@@ -4103,9 +4105,21 @@ function pretty_iceberg_data(pp::PrettyPrinter, msg::Proto.IcebergData)
         newline(pp)
         field1430 = unwrapped_fields1427[3]
         pretty_gnf_columns(pp, field1430)
-        newline(pp)
         field1431 = unwrapped_fields1427[4]
-        pretty_boolean_value(pp, field1431)
+        if !isnothing(field1431)
+            newline(pp)
+            opt_val1432 = field1431
+            pretty_iceberg_from_snapshot(pp, opt_val1432)
+        end
+        field1433 = unwrapped_fields1427[5]
+        if !isnothing(field1433)
+            newline(pp)
+            opt_val1434 = field1433
+            pretty_iceberg_to_snapshot(pp, opt_val1434)
+        end
+        newline(pp)
+        field1435 = unwrapped_fields1427[6]
+        pretty_boolean_value(pp, field1435)
         dedent!(pp)
         write(pp, ")")
     end
@@ -4119,33 +4133,19 @@ function pretty_iceberg_locator(pp::PrettyPrinter, msg::Proto.IcebergLocator)
         return nothing
     else
         _dollar_dollar = msg
-        _t1749 = deconstruct_iceberg_locator_from_snapshot_optional(pp, _dollar_dollar)
-        _t1750 = deconstruct_iceberg_locator_to_snapshot_optional(pp, _dollar_dollar)
-        fields1433 = (_dollar_dollar.table_name, _dollar_dollar.namespace, _dollar_dollar.warehouse, _t1749, _t1750,)
-        unwrapped_fields1434 = fields1433
+        fields1437 = (_dollar_dollar.table_name, _dollar_dollar.namespace, _dollar_dollar.warehouse,)
+        unwrapped_fields1438 = fields1437
         write(pp, "(iceberg_locator")
         indent_sexp!(pp)
         newline(pp)
-        field1435 = unwrapped_fields1434[1]
-        pretty_iceberg_locator_table_name(pp, field1435)
+        field1439 = unwrapped_fields1438[1]
+        pretty_iceberg_locator_table_name(pp, field1439)
         newline(pp)
-        field1436 = unwrapped_fields1434[2]
-        pretty_iceberg_locator_namespace(pp, field1436)
+        field1440 = unwrapped_fields1438[2]
+        pretty_iceberg_locator_namespace(pp, field1440)
         newline(pp)
-        field1437 = unwrapped_fields1434[3]
-        pretty_iceberg_locator_warehouse(pp, field1437)
-        field1438 = unwrapped_fields1434[4]
-        if !isnothing(field1438)
-            newline(pp)
-            opt_val1439 = field1438
-            pretty_iceberg_from_snapshot(pp, opt_val1439)
-        end
-        field1440 = unwrapped_fields1434[5]
-        if !isnothing(field1440)
-            newline(pp)
-            opt_val1441 = field1440
-            pretty_iceberg_to_snapshot(pp, opt_val1441)
-        end
+        field1441 = unwrapped_fields1438[3]
+        pretty_iceberg_locator_warehouse(pp, field1441)
         dedent!(pp)
         write(pp, ")")
     end
@@ -4211,67 +4211,33 @@ function pretty_iceberg_locator_warehouse(pp::PrettyPrinter, msg::String)
     return nothing
 end
 
-function pretty_iceberg_from_snapshot(pp::PrettyPrinter, msg::String)
-    flat1452 = try_flat(pp, msg, pretty_iceberg_from_snapshot)
-    if !isnothing(flat1452)
-        write(pp, flat1452)
-        return nothing
-    else
-        fields1451 = msg
-        write(pp, "(from_snapshot")
-        indent_sexp!(pp)
-        newline(pp)
-        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, fields1451))
-        dedent!(pp)
-        write(pp, ")")
-    end
-    return nothing
-end
-
-function pretty_iceberg_to_snapshot(pp::PrettyPrinter, msg::String)
-    flat1454 = try_flat(pp, msg, pretty_iceberg_to_snapshot)
-    if !isnothing(flat1454)
-        write(pp, flat1454)
-        return nothing
-    else
-        fields1453 = msg
-        write(pp, "(to_snapshot")
-        indent_sexp!(pp)
-        newline(pp)
-        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, fields1453))
-        dedent!(pp)
-        write(pp, ")")
-    end
-    return nothing
-end
-
 function pretty_iceberg_catalog_config(pp::PrettyPrinter, msg::Proto.IcebergCatalogConfig)
-    flat1462 = try_flat(pp, msg, pretty_iceberg_catalog_config)
-    if !isnothing(flat1462)
-        write(pp, flat1462)
+    flat1458 = try_flat(pp, msg, pretty_iceberg_catalog_config)
+    if !isnothing(flat1458)
+        write(pp, flat1458)
         return nothing
     else
         _dollar_dollar = msg
         _t1752 = deconstruct_iceberg_catalog_config_scope_optional(pp, _dollar_dollar)
-        fields1455 = (_dollar_dollar.catalog_uri, _t1752, sort([(k, v) for (k, v) in _dollar_dollar.properties]), sort([(k, v) for (k, v) in _dollar_dollar.auth_properties]),)
-        unwrapped_fields1456 = fields1455
+        fields1451 = (_dollar_dollar.catalog_uri, _t1752, sort([(k, v) for (k, v) in _dollar_dollar.properties]), sort([(k, v) for (k, v) in _dollar_dollar.auth_properties]),)
+        unwrapped_fields1452 = fields1451
         write(pp, "(iceberg_catalog_config")
         indent_sexp!(pp)
         newline(pp)
-        field1457 = unwrapped_fields1456[1]
-        pretty_iceberg_catalog_uri(pp, field1457)
-        field1458 = unwrapped_fields1456[2]
-        if !isnothing(field1458)
+        field1453 = unwrapped_fields1452[1]
+        pretty_iceberg_catalog_uri(pp, field1453)
+        field1454 = unwrapped_fields1452[2]
+        if !isnothing(field1454)
             newline(pp)
-            opt_val1459 = field1458
-            pretty_iceberg_catalog_config_scope(pp, opt_val1459)
+            opt_val1455 = field1454
+            pretty_iceberg_catalog_config_scope(pp, opt_val1455)
         end
         newline(pp)
-        field1460 = unwrapped_fields1456[3]
-        pretty_iceberg_properties(pp, field1460)
+        field1456 = unwrapped_fields1452[3]
+        pretty_iceberg_properties(pp, field1456)
         newline(pp)
-        field1461 = unwrapped_fields1456[4]
-        pretty_iceberg_auth_properties(pp, field1461)
+        field1457 = unwrapped_fields1452[4]
+        pretty_iceberg_auth_properties(pp, field1457)
         dedent!(pp)
         write(pp, ")")
     end
@@ -4279,16 +4245,16 @@ function pretty_iceberg_catalog_config(pp::PrettyPrinter, msg::Proto.IcebergCata
 end
 
 function pretty_iceberg_catalog_uri(pp::PrettyPrinter, msg::String)
-    flat1464 = try_flat(pp, msg, pretty_iceberg_catalog_uri)
-    if !isnothing(flat1464)
-        write(pp, flat1464)
+    flat1460 = try_flat(pp, msg, pretty_iceberg_catalog_uri)
+    if !isnothing(flat1460)
+        write(pp, flat1460)
         return nothing
     else
-        fields1463 = msg
+        fields1459 = msg
         write(pp, "(catalog_uri")
         indent_sexp!(pp)
         newline(pp)
-        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, fields1463))
+        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, fields1459))
         dedent!(pp)
         write(pp, ")")
     end
@@ -4296,16 +4262,16 @@ function pretty_iceberg_catalog_uri(pp::PrettyPrinter, msg::String)
 end
 
 function pretty_iceberg_catalog_config_scope(pp::PrettyPrinter, msg::String)
-    flat1466 = try_flat(pp, msg, pretty_iceberg_catalog_config_scope)
-    if !isnothing(flat1466)
-        write(pp, flat1466)
+    flat1462 = try_flat(pp, msg, pretty_iceberg_catalog_config_scope)
+    if !isnothing(flat1462)
+        write(pp, flat1462)
         return nothing
     else
-        fields1465 = msg
+        fields1461 = msg
         write(pp, "(scope")
         indent_sexp!(pp)
         newline(pp)
-        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, fields1465))
+        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, fields1461))
         dedent!(pp)
         write(pp, ")")
     end
@@ -4313,22 +4279,22 @@ function pretty_iceberg_catalog_config_scope(pp::PrettyPrinter, msg::String)
 end
 
 function pretty_iceberg_properties(pp::PrettyPrinter, msg::Vector{Tuple{String, String}})
-    flat1470 = try_flat(pp, msg, pretty_iceberg_properties)
-    if !isnothing(flat1470)
-        write(pp, flat1470)
+    flat1466 = try_flat(pp, msg, pretty_iceberg_properties)
+    if !isnothing(flat1466)
+        write(pp, flat1466)
         return nothing
     else
-        fields1467 = msg
+        fields1463 = msg
         write(pp, "(properties")
         indent_sexp!(pp)
-        if !isempty(fields1467)
+        if !isempty(fields1463)
             newline(pp)
-            for (i1753, elem1468) in enumerate(fields1467)
-                i1469 = i1753 - 1
-                if (i1469 > 0)
+            for (i1753, elem1464) in enumerate(fields1463)
+                i1465 = i1753 - 1
+                if (i1465 > 0)
                     newline(pp)
                 end
-                pretty_iceberg_property_entry(pp, elem1468)
+                pretty_iceberg_property_entry(pp, elem1464)
             end
         end
         dedent!(pp)
@@ -4338,22 +4304,22 @@ function pretty_iceberg_properties(pp::PrettyPrinter, msg::Vector{Tuple{String, 
 end
 
 function pretty_iceberg_property_entry(pp::PrettyPrinter, msg::Tuple{String, String})
-    flat1475 = try_flat(pp, msg, pretty_iceberg_property_entry)
-    if !isnothing(flat1475)
-        write(pp, flat1475)
+    flat1471 = try_flat(pp, msg, pretty_iceberg_property_entry)
+    if !isnothing(flat1471)
+        write(pp, flat1471)
         return nothing
     else
         _dollar_dollar = msg
-        fields1471 = (_dollar_dollar[1], _dollar_dollar[2],)
-        unwrapped_fields1472 = fields1471
+        fields1467 = (_dollar_dollar[1], _dollar_dollar[2],)
+        unwrapped_fields1468 = fields1467
         write(pp, "(prop")
         indent_sexp!(pp)
         newline(pp)
-        field1473 = unwrapped_fields1472[1]
-        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, field1473))
+        field1469 = unwrapped_fields1468[1]
+        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, field1469))
         newline(pp)
-        field1474 = unwrapped_fields1472[2]
-        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, field1474))
+        field1470 = unwrapped_fields1468[2]
+        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, field1470))
         dedent!(pp)
         write(pp, ")")
     end
@@ -4361,22 +4327,22 @@ function pretty_iceberg_property_entry(pp::PrettyPrinter, msg::Tuple{String, Str
 end
 
 function pretty_iceberg_auth_properties(pp::PrettyPrinter, msg::Vector{Tuple{String, String}})
-    flat1479 = try_flat(pp, msg, pretty_iceberg_auth_properties)
-    if !isnothing(flat1479)
-        write(pp, flat1479)
+    flat1475 = try_flat(pp, msg, pretty_iceberg_auth_properties)
+    if !isnothing(flat1475)
+        write(pp, flat1475)
         return nothing
     else
-        fields1476 = msg
+        fields1472 = msg
         write(pp, "(auth_properties")
         indent_sexp!(pp)
-        if !isempty(fields1476)
+        if !isempty(fields1472)
             newline(pp)
-            for (i1754, elem1477) in enumerate(fields1476)
-                i1478 = i1754 - 1
-                if (i1478 > 0)
+            for (i1754, elem1473) in enumerate(fields1472)
+                i1474 = i1754 - 1
+                if (i1474 > 0)
                     newline(pp)
                 end
-                pretty_iceberg_masked_property_entry(pp, elem1477)
+                pretty_iceberg_masked_property_entry(pp, elem1473)
             end
         end
         dedent!(pp)
@@ -4386,23 +4352,57 @@ function pretty_iceberg_auth_properties(pp::PrettyPrinter, msg::Vector{Tuple{Str
 end
 
 function pretty_iceberg_masked_property_entry(pp::PrettyPrinter, msg::Tuple{String, String})
-    flat1484 = try_flat(pp, msg, pretty_iceberg_masked_property_entry)
-    if !isnothing(flat1484)
-        write(pp, flat1484)
+    flat1480 = try_flat(pp, msg, pretty_iceberg_masked_property_entry)
+    if !isnothing(flat1480)
+        write(pp, flat1480)
         return nothing
     else
         _dollar_dollar = msg
         _t1755 = mask_secret_value(pp, _dollar_dollar)
-        fields1480 = (_dollar_dollar[1], _t1755,)
-        unwrapped_fields1481 = fields1480
+        fields1476 = (_dollar_dollar[1], _t1755,)
+        unwrapped_fields1477 = fields1476
         write(pp, "(prop")
         indent_sexp!(pp)
         newline(pp)
-        field1482 = unwrapped_fields1481[1]
-        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, field1482))
+        field1478 = unwrapped_fields1477[1]
+        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, field1478))
         newline(pp)
-        field1483 = unwrapped_fields1481[2]
-        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, field1483))
+        field1479 = unwrapped_fields1477[2]
+        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, field1479))
+        dedent!(pp)
+        write(pp, ")")
+    end
+    return nothing
+end
+
+function pretty_iceberg_from_snapshot(pp::PrettyPrinter, msg::String)
+    flat1482 = try_flat(pp, msg, pretty_iceberg_from_snapshot)
+    if !isnothing(flat1482)
+        write(pp, flat1482)
+        return nothing
+    else
+        fields1481 = msg
+        write(pp, "(from_snapshot")
+        indent_sexp!(pp)
+        newline(pp)
+        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, fields1481))
+        dedent!(pp)
+        write(pp, ")")
+    end
+    return nothing
+end
+
+function pretty_iceberg_to_snapshot(pp::PrettyPrinter, msg::String)
+    flat1484 = try_flat(pp, msg, pretty_iceberg_to_snapshot)
+    if !isnothing(flat1484)
+        write(pp, flat1484)
+        return nothing
+    else
+        fields1483 = msg
+        write(pp, "(to_snapshot")
+        indent_sexp!(pp)
+        newline(pp)
+        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, fields1483))
         dedent!(pp)
         write(pp, ")")
     end
@@ -4971,7 +4971,7 @@ function pretty_export_iceberg_table_def(pp::PrettyPrinter, msg::Proto.RelationI
     return nothing
 end
 
-function pretty_export_iceberg_columns(pp::PrettyPrinter, msg::Vector{Proto.ExportGNFColumn})
+function pretty_export_iceberg_columns(pp::PrettyPrinter, msg::Vector{Proto.ExportColumn})
     flat1586 = try_flat(pp, msg, pretty_export_iceberg_columns)
     if !isnothing(flat1586)
         write(pp, flat1586)
@@ -4987,7 +4987,7 @@ function pretty_export_iceberg_columns(pp::PrettyPrinter, msg::Vector{Proto.Expo
                 if (i1585 > 0)
                     newline(pp)
                 end
-                pretty_export_gnf_column(pp, elem1584)
+                pretty_export_iceberg_column(pp, elem1584)
             end
         end
         dedent!(pp)
@@ -4996,8 +4996,8 @@ function pretty_export_iceberg_columns(pp::PrettyPrinter, msg::Vector{Proto.Expo
     return nothing
 end
 
-function pretty_export_gnf_column(pp::PrettyPrinter, msg::Proto.ExportGNFColumn)
-    flat1591 = try_flat(pp, msg, pretty_export_gnf_column)
+function pretty_export_iceberg_column(pp::PrettyPrinter, msg::Proto.ExportColumn)
+    flat1591 = try_flat(pp, msg, pretty_export_iceberg_column)
     if !isnothing(flat1591)
         write(pp, flat1591)
         return nothing
@@ -5005,7 +5005,7 @@ function pretty_export_gnf_column(pp::PrettyPrinter, msg::Proto.ExportGNFColumn)
         _dollar_dollar = msg
         fields1587 = (_dollar_dollar.name, _dollar_dollar.nullable,)
         unwrapped_fields1588 = fields1587
-        write(pp, "(gnf_column")
+        write(pp, "(column")
         indent_sexp!(pp)
         newline(pp)
         field1589 = unwrapped_fields1588[1]
@@ -5320,8 +5320,8 @@ _pprint_dispatch(pp::PrettyPrinter, x::Proto.ExportCSVSource) = pretty_export_cs
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.ExportCSVColumn) = pretty_export_csv_column(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Vector{Proto.ExportCSVColumn}) = pretty_export_csv_columns_list(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.ExportIcebergConfig) = pretty_export_iceberg_config(pp, x)
-_pprint_dispatch(pp::PrettyPrinter, x::Vector{Proto.ExportGNFColumn}) = pretty_export_iceberg_columns(pp, x)
-_pprint_dispatch(pp::PrettyPrinter, x::Proto.ExportGNFColumn) = pretty_export_gnf_column(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Vector{Proto.ExportColumn}) = pretty_export_iceberg_columns(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.ExportColumn) = pretty_export_iceberg_column(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.DebugInfo) = pretty_debug_info(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.BeTreeConfig) = pretty_be_tree_config(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.BeTreeLocator) = pretty_be_tree_locator(pp, x)

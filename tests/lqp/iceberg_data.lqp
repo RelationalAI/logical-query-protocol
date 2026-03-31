@@ -7,13 +7,13 @@
             (iceberg_locator
               (table_name "events")
               (namespace "analytics" "raw")
-              (warehouse "wh")
-              (from_snapshot "snap-111")
-              (to_snapshot "snap-abc"))
+              (warehouse "wh"))
             (iceberg_catalog_config
               (catalog_uri "https://catalog.example")
               (properties (prop "type" "rest"))
               (auth_properties))
             (columns
               (column "id" [INT]))
+            (from_snapshot "snap-111")
+            (to_snapshot "snap-abc")
             true))))))

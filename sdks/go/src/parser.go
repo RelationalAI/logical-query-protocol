@@ -862,12 +862,12 @@ func (p *Parser) construct_iceberg_catalog_config(catalog_uri string, scope_opt 
 	return _t2150
 }
 
-func (p *Parser) construct_iceberg_locator(table_name string, namespace []string, warehouse string, from_snapshot_opt *string, to_snapshot_opt *string) *pb.IcebergLocator {
-	_t2151 := &pb.IcebergLocator{TableName: table_name, Namespace: namespace, Warehouse: warehouse, FromSnapshot: ptr(deref(from_snapshot_opt, "")), ToSnapshot: ptr(deref(to_snapshot_opt, ""))}
+func (p *Parser) construct_iceberg_data(locator *pb.IcebergLocator, config *pb.IcebergCatalogConfig, columns []*pb.GNFColumn, from_snapshot_opt *string, to_snapshot_opt *string, returns_delta bool) *pb.IcebergData {
+	_t2151 := &pb.IcebergData{Locator: locator, Config: config, Columns: columns, FromSnapshot: ptr(deref(from_snapshot_opt, "")), ToSnapshot: ptr(deref(to_snapshot_opt, "")), ReturnsDelta: returns_delta}
 	return _t2151
 }
 
-func (p *Parser) construct_export_iceberg_config_full(locator *pb.IcebergLocator, config *pb.IcebergCatalogConfig, table_def *pb.RelationId, columns []*pb.ExportGNFColumn, table_property_pairs [][]interface{}, config_dict [][]interface{}) *pb.ExportIcebergConfig {
+func (p *Parser) construct_export_iceberg_config_full(locator *pb.IcebergLocator, config *pb.IcebergCatalogConfig, table_def *pb.RelationId, columns []*pb.ExportColumn, table_property_pairs [][]interface{}, config_dict [][]interface{}) *pb.ExportIcebergConfig {
 	_t2152 := config_dict
 	if config_dict == nil {
 		_t2152 = [][]interface{}{}
@@ -4368,7 +4368,7 @@ func (p *Parser) parse_csv_asof() string {
 }
 
 func (p *Parser) parse_iceberg_data() *pb.IcebergData {
-	span_start1205 := int64(p.spanStart())
+	span_start1207 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("iceberg_data")
 	_t1990 := p.parse_iceberg_locator()
@@ -4377,39 +4377,39 @@ func (p *Parser) parse_iceberg_data() *pb.IcebergData {
 	iceberg_catalog_config1202 := _t1991
 	_t1992 := p.parse_gnf_columns()
 	gnf_columns1203 := _t1992
-	_t1993 := p.parse_boolean_value()
-	boolean_value1204 := _t1993
+	var _t1993 *string
+	if (p.matchLookaheadLiteral("(", 0) && p.matchLookaheadLiteral("from_snapshot", 1)) {
+		_t1994 := p.parse_iceberg_from_snapshot()
+		_t1993 = ptr(_t1994)
+	}
+	iceberg_from_snapshot1204 := _t1993
+	var _t1995 *string
+	if p.matchLookaheadLiteral("(", 0) {
+		_t1996 := p.parse_iceberg_to_snapshot()
+		_t1995 = ptr(_t1996)
+	}
+	iceberg_to_snapshot1205 := _t1995
+	_t1997 := p.parse_boolean_value()
+	boolean_value1206 := _t1997
 	p.consumeLiteral(")")
-	_t1994 := &pb.IcebergData{Locator: iceberg_locator1201, Config: iceberg_catalog_config1202, Columns: gnf_columns1203, ReturnsDelta: boolean_value1204}
-	result1206 := _t1994
-	p.recordSpan(int(span_start1205), "IcebergData")
-	return result1206
+	_t1998 := p.construct_iceberg_data(iceberg_locator1201, iceberg_catalog_config1202, gnf_columns1203, iceberg_from_snapshot1204, iceberg_to_snapshot1205, boolean_value1206)
+	result1208 := _t1998
+	p.recordSpan(int(span_start1207), "IcebergData")
+	return result1208
 }
 
 func (p *Parser) parse_iceberg_locator() *pb.IcebergLocator {
 	span_start1212 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("iceberg_locator")
-	_t1995 := p.parse_iceberg_locator_table_name()
-	iceberg_locator_table_name1207 := _t1995
-	_t1996 := p.parse_iceberg_locator_namespace()
-	iceberg_locator_namespace1208 := _t1996
-	_t1997 := p.parse_iceberg_locator_warehouse()
-	iceberg_locator_warehouse1209 := _t1997
-	var _t1998 *string
-	if (p.matchLookaheadLiteral("(", 0) && p.matchLookaheadLiteral("from_snapshot", 1)) {
-		_t1999 := p.parse_iceberg_from_snapshot()
-		_t1998 = ptr(_t1999)
-	}
-	iceberg_from_snapshot1210 := _t1998
-	var _t2000 *string
-	if p.matchLookaheadLiteral("(", 0) {
-		_t2001 := p.parse_iceberg_to_snapshot()
-		_t2000 = ptr(_t2001)
-	}
-	iceberg_to_snapshot1211 := _t2000
+	_t1999 := p.parse_iceberg_locator_table_name()
+	iceberg_locator_table_name1209 := _t1999
+	_t2000 := p.parse_iceberg_locator_namespace()
+	iceberg_locator_namespace1210 := _t2000
+	_t2001 := p.parse_iceberg_locator_warehouse()
+	iceberg_locator_warehouse1211 := _t2001
 	p.consumeLiteral(")")
-	_t2002 := p.construct_iceberg_locator(iceberg_locator_table_name1207, iceberg_locator_namespace1208, iceberg_locator_warehouse1209, iceberg_from_snapshot1210, iceberg_to_snapshot1211)
+	_t2002 := &pb.IcebergLocator{TableName: iceberg_locator_table_name1209, Namespace: iceberg_locator_namespace1210, Warehouse: iceberg_locator_warehouse1211}
 	result1213 := _t2002
 	p.recordSpan(int(span_start1212), "IcebergLocator")
 	return result1213
@@ -4446,109 +4446,109 @@ func (p *Parser) parse_iceberg_locator_warehouse() string {
 	return string1219
 }
 
-func (p *Parser) parse_iceberg_from_snapshot() string {
-	p.consumeLiteral("(")
-	p.consumeLiteral("from_snapshot")
-	string1220 := p.consumeTerminal("STRING").Value.str
-	p.consumeLiteral(")")
-	return string1220
-}
-
-func (p *Parser) parse_iceberg_to_snapshot() string {
-	p.consumeLiteral("(")
-	p.consumeLiteral("to_snapshot")
-	string1221 := p.consumeTerminal("STRING").Value.str
-	p.consumeLiteral(")")
-	return string1221
-}
-
 func (p *Parser) parse_iceberg_catalog_config() *pb.IcebergCatalogConfig {
-	span_start1226 := int64(p.spanStart())
+	span_start1224 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("iceberg_catalog_config")
 	_t2003 := p.parse_iceberg_catalog_uri()
-	iceberg_catalog_uri1222 := _t2003
+	iceberg_catalog_uri1220 := _t2003
 	var _t2004 *string
 	if (p.matchLookaheadLiteral("(", 0) && p.matchLookaheadLiteral("scope", 1)) {
 		_t2005 := p.parse_iceberg_catalog_config_scope()
 		_t2004 = ptr(_t2005)
 	}
-	iceberg_catalog_config_scope1223 := _t2004
+	iceberg_catalog_config_scope1221 := _t2004
 	_t2006 := p.parse_iceberg_properties()
-	iceberg_properties1224 := _t2006
+	iceberg_properties1222 := _t2006
 	_t2007 := p.parse_iceberg_auth_properties()
-	iceberg_auth_properties1225 := _t2007
+	iceberg_auth_properties1223 := _t2007
 	p.consumeLiteral(")")
-	_t2008 := p.construct_iceberg_catalog_config(iceberg_catalog_uri1222, iceberg_catalog_config_scope1223, iceberg_properties1224, iceberg_auth_properties1225)
-	result1227 := _t2008
-	p.recordSpan(int(span_start1226), "IcebergCatalogConfig")
-	return result1227
+	_t2008 := p.construct_iceberg_catalog_config(iceberg_catalog_uri1220, iceberg_catalog_config_scope1221, iceberg_properties1222, iceberg_auth_properties1223)
+	result1225 := _t2008
+	p.recordSpan(int(span_start1224), "IcebergCatalogConfig")
+	return result1225
 }
 
 func (p *Parser) parse_iceberg_catalog_uri() string {
 	p.consumeLiteral("(")
 	p.consumeLiteral("catalog_uri")
-	string1228 := p.consumeTerminal("STRING").Value.str
+	string1226 := p.consumeTerminal("STRING").Value.str
 	p.consumeLiteral(")")
-	return string1228
+	return string1226
 }
 
 func (p *Parser) parse_iceberg_catalog_config_scope() string {
 	p.consumeLiteral("(")
 	p.consumeLiteral("scope")
-	string1229 := p.consumeTerminal("STRING").Value.str
+	string1227 := p.consumeTerminal("STRING").Value.str
 	p.consumeLiteral(")")
-	return string1229
+	return string1227
 }
 
 func (p *Parser) parse_iceberg_properties() [][]interface{} {
 	p.consumeLiteral("(")
 	p.consumeLiteral("properties")
-	xs1230 := [][]interface{}{}
-	cond1231 := p.matchLookaheadLiteral("(", 0)
-	for cond1231 {
+	xs1228 := [][]interface{}{}
+	cond1229 := p.matchLookaheadLiteral("(", 0)
+	for cond1229 {
 		_t2009 := p.parse_iceberg_property_entry()
-		item1232 := _t2009
-		xs1230 = append(xs1230, item1232)
-		cond1231 = p.matchLookaheadLiteral("(", 0)
+		item1230 := _t2009
+		xs1228 = append(xs1228, item1230)
+		cond1229 = p.matchLookaheadLiteral("(", 0)
 	}
-	iceberg_property_entrys1233 := xs1230
+	iceberg_property_entrys1231 := xs1228
 	p.consumeLiteral(")")
-	return iceberg_property_entrys1233
+	return iceberg_property_entrys1231
 }
 
 func (p *Parser) parse_iceberg_property_entry() []interface{} {
 	p.consumeLiteral("(")
 	p.consumeLiteral("prop")
-	string1234 := p.consumeTerminal("STRING").Value.str
-	string_31235 := p.consumeTerminal("STRING").Value.str
+	string1232 := p.consumeTerminal("STRING").Value.str
+	string_31233 := p.consumeTerminal("STRING").Value.str
 	p.consumeLiteral(")")
-	return []interface{}{string1234, string_31235}
+	return []interface{}{string1232, string_31233}
 }
 
 func (p *Parser) parse_iceberg_auth_properties() [][]interface{} {
 	p.consumeLiteral("(")
 	p.consumeLiteral("auth_properties")
-	xs1236 := [][]interface{}{}
-	cond1237 := p.matchLookaheadLiteral("(", 0)
-	for cond1237 {
+	xs1234 := [][]interface{}{}
+	cond1235 := p.matchLookaheadLiteral("(", 0)
+	for cond1235 {
 		_t2010 := p.parse_iceberg_masked_property_entry()
-		item1238 := _t2010
-		xs1236 = append(xs1236, item1238)
-		cond1237 = p.matchLookaheadLiteral("(", 0)
+		item1236 := _t2010
+		xs1234 = append(xs1234, item1236)
+		cond1235 = p.matchLookaheadLiteral("(", 0)
 	}
-	iceberg_masked_property_entrys1239 := xs1236
+	iceberg_masked_property_entrys1237 := xs1234
 	p.consumeLiteral(")")
-	return iceberg_masked_property_entrys1239
+	return iceberg_masked_property_entrys1237
 }
 
 func (p *Parser) parse_iceberg_masked_property_entry() []interface{} {
 	p.consumeLiteral("(")
 	p.consumeLiteral("prop")
-	string1240 := p.consumeTerminal("STRING").Value.str
-	string_31241 := p.consumeTerminal("STRING").Value.str
+	string1238 := p.consumeTerminal("STRING").Value.str
+	string_31239 := p.consumeTerminal("STRING").Value.str
 	p.consumeLiteral(")")
-	return []interface{}{string1240, string_31241}
+	return []interface{}{string1238, string_31239}
+}
+
+func (p *Parser) parse_iceberg_from_snapshot() string {
+	p.consumeLiteral("(")
+	p.consumeLiteral("from_snapshot")
+	string1240 := p.consumeTerminal("STRING").Value.str
+	p.consumeLiteral(")")
+	return string1240
+}
+
+func (p *Parser) parse_iceberg_to_snapshot() string {
+	p.consumeLiteral("(")
+	p.consumeLiteral("to_snapshot")
+	string1241 := p.consumeTerminal("STRING").Value.str
+	p.consumeLiteral(")")
+	return string1241
 }
 
 func (p *Parser) parse_undefine() *pb.Undefine {
@@ -5041,33 +5041,33 @@ func (p *Parser) parse_export_iceberg_table_def() *pb.RelationId {
 	return result1329
 }
 
-func (p *Parser) parse_export_iceberg_columns() []*pb.ExportGNFColumn {
+func (p *Parser) parse_export_iceberg_columns() []*pb.ExportColumn {
 	p.consumeLiteral("(")
 	p.consumeLiteral("columns")
-	xs1330 := []*pb.ExportGNFColumn{}
+	xs1330 := []*pb.ExportColumn{}
 	cond1331 := p.matchLookaheadLiteral("(", 0)
 	for cond1331 {
-		_t2099 := p.parse_export_gnf_column()
+		_t2099 := p.parse_export_iceberg_column()
 		item1332 := _t2099
 		xs1330 = append(xs1330, item1332)
 		cond1331 = p.matchLookaheadLiteral("(", 0)
 	}
-	export_gnf_columns1333 := xs1330
+	export_iceberg_columns1333 := xs1330
 	p.consumeLiteral(")")
-	return export_gnf_columns1333
+	return export_iceberg_columns1333
 }
 
-func (p *Parser) parse_export_gnf_column() *pb.ExportGNFColumn {
+func (p *Parser) parse_export_iceberg_column() *pb.ExportColumn {
 	span_start1336 := int64(p.spanStart())
 	p.consumeLiteral("(")
-	p.consumeLiteral("gnf_column")
+	p.consumeLiteral("column")
 	string1334 := p.consumeTerminal("STRING").Value.str
 	_t2100 := p.parse_boolean_value()
 	boolean_value1335 := _t2100
 	p.consumeLiteral(")")
-	_t2101 := &pb.ExportGNFColumn{Name: string1334, Nullable: boolean_value1335}
+	_t2101 := &pb.ExportColumn{Name: string1334, Nullable: boolean_value1335}
 	result1337 := _t2101
-	p.recordSpan(int(span_start1336), "ExportGNFColumn")
+	p.recordSpan(int(span_start1336), "ExportColumn")
 	return result1337
 }
 

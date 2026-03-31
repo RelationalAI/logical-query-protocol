@@ -22,9 +22,9 @@
             (auth_properties))
           (table_def :sales)
           (columns
-            (gnf_column "id" false)
-            (gnf_column "region" false)
-            (gnf_column "amount" false))
+            (column "id" false)
+            (column "region" false)
+            (column "amount" false))
           (table_properties)))
 
       ;; Full export with scope, property maps, and trailing export options
@@ -43,9 +43,9 @@
               (prop "token" "***")))
           (table_def :sales)
           (columns
-            (gnf_column "id" false)
-            (gnf_column "region" false)
-            (gnf_column "amount" false))
+            (column "id" false)
+            (column "region" false)
+            (column "amount" false))
           (table_properties (prop "write.format.default" "parquet"))
           {:prefix "part" :target_file_size_bytes 268435456 :compression "SNAPPY"}))
 
@@ -62,5 +62,5 @@
             (auth_properties))
           (table_def :sales)
           (columns
-            (gnf_column "id" false))
+            (column "id" false))
           (table_properties))))))

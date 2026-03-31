@@ -318,15 +318,15 @@ message IcebergData {
   IcebergLocator locator = 1;
   IcebergCatalogConfig config = 2;
   repeated GNFColumn columns = 3;
-  bool returns_delta = 4;
+  optional string from_snapshot = 4;
+  optional string to_snapshot = 5;
+  bool returns_delta = 6;
 }
 
 message IcebergLocator {
   string table_name = 1;
   repeated string namespace = 2;
   string warehouse = 3;
-  optional string from_snapshot = 4;
-  optional string to_snapshot = 5;
 }
 
 message IcebergCatalogConfig {

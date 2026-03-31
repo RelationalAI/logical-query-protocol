@@ -23,10 +23,7 @@
             (properties)
             (auth_properties))
           (table_def 0x585c5a1121bd88784c1378aa8837195c)
-          (columns
-            (gnf_column "id" false)
-            (gnf_column "region" false)
-            (gnf_column "amount" false))
+          (columns (column "id" false) (column "region" false) (column "amount" false))
           (table_properties)))
       (export_iceberg
         (export_iceberg_config
@@ -40,10 +37,7 @@
             (properties (prop "client.region" "us-east-1"))
             (auth_properties (prop "credential" "***") (prop "token" "***")))
           (table_def 0x585c5a1121bd88784c1378aa8837195c)
-          (columns
-            (gnf_column "id" false)
-            (gnf_column "region" false)
-            (gnf_column "amount" false))
+          (columns (column "id" false) (column "region" false) (column "amount" false))
           (table_properties (prop "write.format.default" "parquet"))
           { :compression "SNAPPY" :prefix "part" :target_file_size_bytes 268435456}))
       (export_iceberg
@@ -57,7 +51,7 @@
             (properties)
             (auth_properties))
           (table_def 0x585c5a1121bd88784c1378aa8837195c)
-          (columns (gnf_column "id" false))
+          (columns (column "id" false))
           (table_properties))))))
 
 ;; Debug information

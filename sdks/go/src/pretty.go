@@ -511,7 +511,7 @@ func (p *PrettyPrinter) deconstruct_iceberg_catalog_config_scope_optional(msg *p
 	return nil
 }
 
-func (p *PrettyPrinter) deconstruct_iceberg_locator_from_snapshot_optional(msg *pb.IcebergLocator) *string {
+func (p *PrettyPrinter) deconstruct_iceberg_data_from_snapshot_optional(msg *pb.IcebergData) *string {
 	var _t1775 interface{}
 	if *msg.FromSnapshot != "" {
 		return ptr(*msg.FromSnapshot)
@@ -520,7 +520,7 @@ func (p *PrettyPrinter) deconstruct_iceberg_locator_from_snapshot_optional(msg *
 	return nil
 }
 
-func (p *PrettyPrinter) deconstruct_iceberg_locator_to_snapshot_optional(msg *pb.IcebergLocator) *string {
+func (p *PrettyPrinter) deconstruct_iceberg_data_to_snapshot_optional(msg *pb.IcebergData) *string {
 	var _t1776 interface{}
 	if *msg.ToSnapshot != "" {
 		return ptr(*msg.ToSnapshot)
@@ -4002,13 +4002,15 @@ func (p *PrettyPrinter) pretty_csv_asof(msg string) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_iceberg_data(msg *pb.IcebergData) interface{} {
-	flat1432 := p.tryFlat(msg, func() { p.pretty_iceberg_data(msg) })
-	if flat1432 != nil {
-		p.write(*flat1432)
+	flat1436 := p.tryFlat(msg, func() { p.pretty_iceberg_data(msg) })
+	if flat1436 != nil {
+		p.write(*flat1436)
 		return nil
 	} else {
 		_dollar_dollar := msg
-		fields1426 := []interface{}{_dollar_dollar.GetLocator(), _dollar_dollar.GetConfig(), _dollar_dollar.GetColumns(), _dollar_dollar.GetReturnsDelta()}
+		_t1719 := p.deconstruct_iceberg_data_from_snapshot_optional(_dollar_dollar)
+		_t1720 := p.deconstruct_iceberg_data_to_snapshot_optional(_dollar_dollar)
+		fields1426 := []interface{}{_dollar_dollar.GetLocator(), _dollar_dollar.GetConfig(), _dollar_dollar.GetColumns(), _t1719, _t1720, _dollar_dollar.GetReturnsDelta()}
 		unwrapped_fields1427 := fields1426
 		p.write("(")
 		p.write("iceberg_data")
@@ -4022,9 +4024,21 @@ func (p *PrettyPrinter) pretty_iceberg_data(msg *pb.IcebergData) interface{} {
 		p.newline()
 		field1430 := unwrapped_fields1427[2].([]*pb.GNFColumn)
 		p.pretty_gnf_columns(field1430)
+		field1431 := unwrapped_fields1427[3].(*string)
+		if field1431 != nil {
+			p.newline()
+			opt_val1432 := *field1431
+			p.pretty_iceberg_from_snapshot(opt_val1432)
+		}
+		field1433 := unwrapped_fields1427[4].(*string)
+		if field1433 != nil {
+			p.newline()
+			opt_val1434 := *field1433
+			p.pretty_iceberg_to_snapshot(opt_val1434)
+		}
 		p.newline()
-		field1431 := unwrapped_fields1427[3].(bool)
-		p.pretty_boolean_value(field1431)
+		field1435 := unwrapped_fields1427[5].(bool)
+		p.pretty_boolean_value(field1435)
 		p.dedent()
 		p.write(")")
 	}
@@ -4038,34 +4052,20 @@ func (p *PrettyPrinter) pretty_iceberg_locator(msg *pb.IcebergLocator) interface
 		return nil
 	} else {
 		_dollar_dollar := msg
-		_t1719 := p.deconstruct_iceberg_locator_from_snapshot_optional(_dollar_dollar)
-		_t1720 := p.deconstruct_iceberg_locator_to_snapshot_optional(_dollar_dollar)
-		fields1433 := []interface{}{_dollar_dollar.GetTableName(), _dollar_dollar.GetNamespace(), _dollar_dollar.GetWarehouse(), _t1719, _t1720}
-		unwrapped_fields1434 := fields1433
+		fields1437 := []interface{}{_dollar_dollar.GetTableName(), _dollar_dollar.GetNamespace(), _dollar_dollar.GetWarehouse()}
+		unwrapped_fields1438 := fields1437
 		p.write("(")
 		p.write("iceberg_locator")
 		p.indentSexp()
 		p.newline()
-		field1435 := unwrapped_fields1434[0].(string)
-		p.pretty_iceberg_locator_table_name(field1435)
+		field1439 := unwrapped_fields1438[0].(string)
+		p.pretty_iceberg_locator_table_name(field1439)
 		p.newline()
-		field1436 := unwrapped_fields1434[1].([]string)
-		p.pretty_iceberg_locator_namespace(field1436)
+		field1440 := unwrapped_fields1438[1].([]string)
+		p.pretty_iceberg_locator_namespace(field1440)
 		p.newline()
-		field1437 := unwrapped_fields1434[2].(string)
-		p.pretty_iceberg_locator_warehouse(field1437)
-		field1438 := unwrapped_fields1434[3].(*string)
-		if field1438 != nil {
-			p.newline()
-			opt_val1439 := *field1438
-			p.pretty_iceberg_from_snapshot(opt_val1439)
-		}
-		field1440 := unwrapped_fields1434[4].(*string)
-		if field1440 != nil {
-			p.newline()
-			opt_val1441 := *field1440
-			p.pretty_iceberg_to_snapshot(opt_val1441)
-		}
+		field1441 := unwrapped_fields1438[2].(string)
+		p.pretty_iceberg_locator_warehouse(field1441)
 		p.dedent()
 		p.write(")")
 	}
@@ -4133,70 +4133,34 @@ func (p *PrettyPrinter) pretty_iceberg_locator_warehouse(msg string) interface{}
 	return nil
 }
 
-func (p *PrettyPrinter) pretty_iceberg_from_snapshot(msg string) interface{} {
-	flat1452 := p.tryFlat(msg, func() { p.pretty_iceberg_from_snapshot(msg) })
-	if flat1452 != nil {
-		p.write(*flat1452)
-		return nil
-	} else {
-		fields1451 := msg
-		p.write("(")
-		p.write("from_snapshot")
-		p.indentSexp()
-		p.newline()
-		p.write(p.formatStringValue(fields1451))
-		p.dedent()
-		p.write(")")
-	}
-	return nil
-}
-
-func (p *PrettyPrinter) pretty_iceberg_to_snapshot(msg string) interface{} {
-	flat1454 := p.tryFlat(msg, func() { p.pretty_iceberg_to_snapshot(msg) })
-	if flat1454 != nil {
-		p.write(*flat1454)
-		return nil
-	} else {
-		fields1453 := msg
-		p.write("(")
-		p.write("to_snapshot")
-		p.indentSexp()
-		p.newline()
-		p.write(p.formatStringValue(fields1453))
-		p.dedent()
-		p.write(")")
-	}
-	return nil
-}
-
 func (p *PrettyPrinter) pretty_iceberg_catalog_config(msg *pb.IcebergCatalogConfig) interface{} {
-	flat1462 := p.tryFlat(msg, func() { p.pretty_iceberg_catalog_config(msg) })
-	if flat1462 != nil {
-		p.write(*flat1462)
+	flat1458 := p.tryFlat(msg, func() { p.pretty_iceberg_catalog_config(msg) })
+	if flat1458 != nil {
+		p.write(*flat1458)
 		return nil
 	} else {
 		_dollar_dollar := msg
 		_t1721 := p.deconstruct_iceberg_catalog_config_scope_optional(_dollar_dollar)
-		fields1455 := []interface{}{_dollar_dollar.GetCatalogUri(), _t1721, dictToPairs(_dollar_dollar.GetProperties()), dictToPairs(_dollar_dollar.GetAuthProperties())}
-		unwrapped_fields1456 := fields1455
+		fields1451 := []interface{}{_dollar_dollar.GetCatalogUri(), _t1721, dictToPairs(_dollar_dollar.GetProperties()), dictToPairs(_dollar_dollar.GetAuthProperties())}
+		unwrapped_fields1452 := fields1451
 		p.write("(")
 		p.write("iceberg_catalog_config")
 		p.indentSexp()
 		p.newline()
-		field1457 := unwrapped_fields1456[0].(string)
-		p.pretty_iceberg_catalog_uri(field1457)
-		field1458 := unwrapped_fields1456[1].(*string)
-		if field1458 != nil {
+		field1453 := unwrapped_fields1452[0].(string)
+		p.pretty_iceberg_catalog_uri(field1453)
+		field1454 := unwrapped_fields1452[1].(*string)
+		if field1454 != nil {
 			p.newline()
-			opt_val1459 := *field1458
-			p.pretty_iceberg_catalog_config_scope(opt_val1459)
+			opt_val1455 := *field1454
+			p.pretty_iceberg_catalog_config_scope(opt_val1455)
 		}
 		p.newline()
-		field1460 := unwrapped_fields1456[2].([][]interface{})
-		p.pretty_iceberg_properties(field1460)
+		field1456 := unwrapped_fields1452[2].([][]interface{})
+		p.pretty_iceberg_properties(field1456)
 		p.newline()
-		field1461 := unwrapped_fields1456[3].([][]interface{})
-		p.pretty_iceberg_auth_properties(field1461)
+		field1457 := unwrapped_fields1452[3].([][]interface{})
+		p.pretty_iceberg_auth_properties(field1457)
 		p.dedent()
 		p.write(")")
 	}
@@ -4204,17 +4168,17 @@ func (p *PrettyPrinter) pretty_iceberg_catalog_config(msg *pb.IcebergCatalogConf
 }
 
 func (p *PrettyPrinter) pretty_iceberg_catalog_uri(msg string) interface{} {
-	flat1464 := p.tryFlat(msg, func() { p.pretty_iceberg_catalog_uri(msg) })
-	if flat1464 != nil {
-		p.write(*flat1464)
+	flat1460 := p.tryFlat(msg, func() { p.pretty_iceberg_catalog_uri(msg) })
+	if flat1460 != nil {
+		p.write(*flat1460)
 		return nil
 	} else {
-		fields1463 := msg
+		fields1459 := msg
 		p.write("(")
 		p.write("catalog_uri")
 		p.indentSexp()
 		p.newline()
-		p.write(p.formatStringValue(fields1463))
+		p.write(p.formatStringValue(fields1459))
 		p.dedent()
 		p.write(")")
 	}
@@ -4222,17 +4186,17 @@ func (p *PrettyPrinter) pretty_iceberg_catalog_uri(msg string) interface{} {
 }
 
 func (p *PrettyPrinter) pretty_iceberg_catalog_config_scope(msg string) interface{} {
-	flat1466 := p.tryFlat(msg, func() { p.pretty_iceberg_catalog_config_scope(msg) })
-	if flat1466 != nil {
-		p.write(*flat1466)
+	flat1462 := p.tryFlat(msg, func() { p.pretty_iceberg_catalog_config_scope(msg) })
+	if flat1462 != nil {
+		p.write(*flat1462)
 		return nil
 	} else {
-		fields1465 := msg
+		fields1461 := msg
 		p.write("(")
 		p.write("scope")
 		p.indentSexp()
 		p.newline()
-		p.write(p.formatStringValue(fields1465))
+		p.write(p.formatStringValue(fields1461))
 		p.dedent()
 		p.write(")")
 	}
@@ -4240,22 +4204,22 @@ func (p *PrettyPrinter) pretty_iceberg_catalog_config_scope(msg string) interfac
 }
 
 func (p *PrettyPrinter) pretty_iceberg_properties(msg [][]interface{}) interface{} {
-	flat1470 := p.tryFlat(msg, func() { p.pretty_iceberg_properties(msg) })
-	if flat1470 != nil {
-		p.write(*flat1470)
+	flat1466 := p.tryFlat(msg, func() { p.pretty_iceberg_properties(msg) })
+	if flat1466 != nil {
+		p.write(*flat1466)
 		return nil
 	} else {
-		fields1467 := msg
+		fields1463 := msg
 		p.write("(")
 		p.write("properties")
 		p.indentSexp()
-		if !(len(fields1467) == 0) {
+		if !(len(fields1463) == 0) {
 			p.newline()
-			for i1469, elem1468 := range fields1467 {
-				if (i1469 > 0) {
+			for i1465, elem1464 := range fields1463 {
+				if (i1465 > 0) {
 					p.newline()
 				}
-				p.pretty_iceberg_property_entry(elem1468)
+				p.pretty_iceberg_property_entry(elem1464)
 			}
 		}
 		p.dedent()
@@ -4265,23 +4229,23 @@ func (p *PrettyPrinter) pretty_iceberg_properties(msg [][]interface{}) interface
 }
 
 func (p *PrettyPrinter) pretty_iceberg_property_entry(msg []interface{}) interface{} {
-	flat1475 := p.tryFlat(msg, func() { p.pretty_iceberg_property_entry(msg) })
-	if flat1475 != nil {
-		p.write(*flat1475)
+	flat1471 := p.tryFlat(msg, func() { p.pretty_iceberg_property_entry(msg) })
+	if flat1471 != nil {
+		p.write(*flat1471)
 		return nil
 	} else {
 		_dollar_dollar := msg
-		fields1471 := []interface{}{_dollar_dollar[0].(string), _dollar_dollar[1].(string)}
-		unwrapped_fields1472 := fields1471
+		fields1467 := []interface{}{_dollar_dollar[0].(string), _dollar_dollar[1].(string)}
+		unwrapped_fields1468 := fields1467
 		p.write("(")
 		p.write("prop")
 		p.indentSexp()
 		p.newline()
-		field1473 := unwrapped_fields1472[0].(string)
-		p.write(p.formatStringValue(field1473))
+		field1469 := unwrapped_fields1468[0].(string)
+		p.write(p.formatStringValue(field1469))
 		p.newline()
-		field1474 := unwrapped_fields1472[1].(string)
-		p.write(p.formatStringValue(field1474))
+		field1470 := unwrapped_fields1468[1].(string)
+		p.write(p.formatStringValue(field1470))
 		p.dedent()
 		p.write(")")
 	}
@@ -4289,22 +4253,22 @@ func (p *PrettyPrinter) pretty_iceberg_property_entry(msg []interface{}) interfa
 }
 
 func (p *PrettyPrinter) pretty_iceberg_auth_properties(msg [][]interface{}) interface{} {
-	flat1479 := p.tryFlat(msg, func() { p.pretty_iceberg_auth_properties(msg) })
-	if flat1479 != nil {
-		p.write(*flat1479)
+	flat1475 := p.tryFlat(msg, func() { p.pretty_iceberg_auth_properties(msg) })
+	if flat1475 != nil {
+		p.write(*flat1475)
 		return nil
 	} else {
-		fields1476 := msg
+		fields1472 := msg
 		p.write("(")
 		p.write("auth_properties")
 		p.indentSexp()
-		if !(len(fields1476) == 0) {
+		if !(len(fields1472) == 0) {
 			p.newline()
-			for i1478, elem1477 := range fields1476 {
-				if (i1478 > 0) {
+			for i1474, elem1473 := range fields1472 {
+				if (i1474 > 0) {
 					p.newline()
 				}
-				p.pretty_iceberg_masked_property_entry(elem1477)
+				p.pretty_iceberg_masked_property_entry(elem1473)
 			}
 		}
 		p.dedent()
@@ -4314,24 +4278,60 @@ func (p *PrettyPrinter) pretty_iceberg_auth_properties(msg [][]interface{}) inte
 }
 
 func (p *PrettyPrinter) pretty_iceberg_masked_property_entry(msg []interface{}) interface{} {
-	flat1484 := p.tryFlat(msg, func() { p.pretty_iceberg_masked_property_entry(msg) })
-	if flat1484 != nil {
-		p.write(*flat1484)
+	flat1480 := p.tryFlat(msg, func() { p.pretty_iceberg_masked_property_entry(msg) })
+	if flat1480 != nil {
+		p.write(*flat1480)
 		return nil
 	} else {
 		_dollar_dollar := msg
 		_t1722 := p.mask_secret_value(_dollar_dollar)
-		fields1480 := []interface{}{_dollar_dollar[0].(string), _t1722}
-		unwrapped_fields1481 := fields1480
+		fields1476 := []interface{}{_dollar_dollar[0].(string), _t1722}
+		unwrapped_fields1477 := fields1476
 		p.write("(")
 		p.write("prop")
 		p.indentSexp()
 		p.newline()
-		field1482 := unwrapped_fields1481[0].(string)
-		p.write(p.formatStringValue(field1482))
+		field1478 := unwrapped_fields1477[0].(string)
+		p.write(p.formatStringValue(field1478))
 		p.newline()
-		field1483 := unwrapped_fields1481[1].(string)
-		p.write(p.formatStringValue(field1483))
+		field1479 := unwrapped_fields1477[1].(string)
+		p.write(p.formatStringValue(field1479))
+		p.dedent()
+		p.write(")")
+	}
+	return nil
+}
+
+func (p *PrettyPrinter) pretty_iceberg_from_snapshot(msg string) interface{} {
+	flat1482 := p.tryFlat(msg, func() { p.pretty_iceberg_from_snapshot(msg) })
+	if flat1482 != nil {
+		p.write(*flat1482)
+		return nil
+	} else {
+		fields1481 := msg
+		p.write("(")
+		p.write("from_snapshot")
+		p.indentSexp()
+		p.newline()
+		p.write(p.formatStringValue(fields1481))
+		p.dedent()
+		p.write(")")
+	}
+	return nil
+}
+
+func (p *PrettyPrinter) pretty_iceberg_to_snapshot(msg string) interface{} {
+	flat1484 := p.tryFlat(msg, func() { p.pretty_iceberg_to_snapshot(msg) })
+	if flat1484 != nil {
+		p.write(*flat1484)
+		return nil
+	} else {
+		fields1483 := msg
+		p.write("(")
+		p.write("to_snapshot")
+		p.indentSexp()
+		p.newline()
+		p.write(p.formatStringValue(fields1483))
 		p.dedent()
 		p.write(")")
 	}
@@ -4867,7 +4867,7 @@ func (p *PrettyPrinter) pretty_export_iceberg_config(msg *pb.ExportIcebergConfig
 		field1575 := unwrapped_fields1572[2].(*pb.RelationId)
 		p.pretty_export_iceberg_table_def(field1575)
 		p.newline()
-		field1576 := unwrapped_fields1572[3].([]*pb.ExportGNFColumn)
+		field1576 := unwrapped_fields1572[3].([]*pb.ExportColumn)
 		p.pretty_export_iceberg_columns(field1576)
 		p.newline()
 		field1577 := unwrapped_fields1572[4].([][]interface{})
@@ -4902,7 +4902,7 @@ func (p *PrettyPrinter) pretty_export_iceberg_table_def(msg *pb.RelationId) inte
 	return nil
 }
 
-func (p *PrettyPrinter) pretty_export_iceberg_columns(msg []*pb.ExportGNFColumn) interface{} {
+func (p *PrettyPrinter) pretty_export_iceberg_columns(msg []*pb.ExportColumn) interface{} {
 	flat1586 := p.tryFlat(msg, func() { p.pretty_export_iceberg_columns(msg) })
 	if flat1586 != nil {
 		p.write(*flat1586)
@@ -4918,7 +4918,7 @@ func (p *PrettyPrinter) pretty_export_iceberg_columns(msg []*pb.ExportGNFColumn)
 				if (i1585 > 0) {
 					p.newline()
 				}
-				p.pretty_export_gnf_column(elem1584)
+				p.pretty_export_iceberg_column(elem1584)
 			}
 		}
 		p.dedent()
@@ -4927,8 +4927,8 @@ func (p *PrettyPrinter) pretty_export_iceberg_columns(msg []*pb.ExportGNFColumn)
 	return nil
 }
 
-func (p *PrettyPrinter) pretty_export_gnf_column(msg *pb.ExportGNFColumn) interface{} {
-	flat1591 := p.tryFlat(msg, func() { p.pretty_export_gnf_column(msg) })
+func (p *PrettyPrinter) pretty_export_iceberg_column(msg *pb.ExportColumn) interface{} {
+	flat1591 := p.tryFlat(msg, func() { p.pretty_export_iceberg_column(msg) })
 	if flat1591 != nil {
 		p.write(*flat1591)
 		return nil
@@ -4937,7 +4937,7 @@ func (p *PrettyPrinter) pretty_export_gnf_column(msg *pb.ExportGNFColumn) interf
 		fields1587 := []interface{}{_dollar_dollar.GetName(), _dollar_dollar.GetNullable()}
 		unwrapped_fields1588 := fields1587
 		p.write("(")
-		p.write("gnf_column")
+		p.write("column")
 		p.indentSexp()
 		p.newline()
 		field1589 := unwrapped_fields1588[0].(string)
@@ -5355,10 +5355,10 @@ func (p *PrettyPrinter) pprintDispatch(msg interface{}) {
 		p.pretty_export_csv_columns_list(m)
 	case *pb.ExportIcebergConfig:
 		p.pretty_export_iceberg_config(m)
-	case []*pb.ExportGNFColumn:
+	case []*pb.ExportColumn:
 		p.pretty_export_iceberg_columns(m)
-	case *pb.ExportGNFColumn:
-		p.pretty_export_gnf_column(m)
+	case *pb.ExportColumn:
+		p.pretty_export_iceberg_column(m)
 	case *pb.DebugInfo:
 		p.pretty_debug_info(m)
 	case *pb.BeTreeConfig:
